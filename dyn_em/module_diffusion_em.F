@@ -3,8 +3,9 @@
 
     MODULE module_diffusion_em
 
-    USE module_bc, only: set_physical_bc3d
-    USE module_state_description, only: p_m23, p_m13, p_m22, p_m33, p_r23, p_r13, p_r12, p_m12, p_m11
+    USE module_bc, only: set_physical_bc3d, set_physical_bc2d ! XZ
+    USE module_state_description, only: p_m23, p_m13, p_m22, p_m33, p_r23, p_r13, p_r12, p_m12, p_m11, &
+                                        P_QNS, P_QNR, P_QNG, P_QT, P_QNH, P_QVOLG ! XZ
     USE module_big_step_utilities_em, only: grid_config_rec_type, param_first_scalar, p_qv, p_qi, p_qc
     USE module_model_constants
 
@@ -1203,6 +1204,7 @@
                                 mix_upper_bound,                         &
                                 msftx, msfty,                            &
                                 zx, zy,                                  &
+                                hpbl,dlk,xkmv_meso,xkmh_t,               & !XZ
                                 ids, ide, jds, jde, kds, kde,            &
                                 ims, ime, jms, jme, kms, kme,            &
                                 its, ite, jts, jte, kts, kte             )
@@ -1259,7 +1261,17 @@
 
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: msftx, msfty
+!XZ
+    REAL, DIMENSION( ims:ime, jms:jme ), INTENT( INOUT )          &
+    :: hpbl  
 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )    & 
+    :: dlk
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT ) & 
+    :: xkmv_meso,xkmh_t
+!
+ 
 ! Local variables.
 
     INTEGER  &
@@ -1292,11 +1304,13 @@
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                its, ite, jts, jte, kts, kte             )
-      CASE (2)
+      CASE (2, 5) !XZ
             CALL tke_km(       config_flags, xkmh, xkmv,                &
                                xkhh, xkhv, BN2, tke, p8w, t8w, theta,   &
                                rdz, rdzw, dx, dy, dt, isotropic,        &
                                mix_upper_bound, msftx, msfty,           &
+                               hpbl,dlk,xkmv_meso,                      & ! XZ
+                               defor11,defor22,defor12,zx,zy,xkmh_t,    & ! XZ
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                its, ite, jts, jte, kts, kte             )
@@ -2035,6 +2049,8 @@ END SUBROUTINE smag2d_km
                        bn2, tke, p8w, t8w, theta,                    &
                        rdz, rdzw, dx,dy, dt, isotropic,              &
                        mix_upper_bound, msftx, msfty,                &
+                       hpbl,dlk,xkmv_meso,                           &  ! XZ
+                       defor11,defor22,defor12,zx,zy,xkmh_t,         &  ! XZ
                        ids, ide, jds, jde, kds, kde,                 &
                        ims, ime, jms, jme, kms, kme,                 &
                        its, ite, jts, jte, kts, kte                  )
@@ -2077,9 +2093,25 @@ END SUBROUTINE smag2d_km
 
    REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   ) ::     msftx, &
                                                              msfty
+!XZ
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )     &
+   :: zx,zy
+ 
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )     &
+   :: defor11, defor22, defor12
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
+   :: xkmh_t, xkmv_meso
+ 
+   REAL, DIMENSION( ims:ime, jms:jme), INTENT( INOUT )            &
+   :: hpbl 
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )     &
+   :: dlk
+!
 ! Local variables.
 
-    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  &   !XZ
     :: l_scale
 
     REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
@@ -2095,7 +2127,13 @@ END SUBROUTINE smag2d_km
     REAL, PARAMETER :: tke_seed_value = 1.e-06
     REAL            :: tke_seed
     REAL, PARAMETER :: epsilon = 1.e-10
-
+!XZ
+    REAL            :: pth1, delxy, pu1, xkmv_les, pr_inv_v_meso, pr_inv_v_les, pr 
+    REAL            :: dxm, dym, tmpzx, tmpzy, alpha, def_limit, c_s
+    REAL, DIMENSION( its:ite , kts:kte , jts:jte )   ::  def2
+    REAL, DIMENSION( its:ite , kts:kte , jts:jte )   ::  xkmh_s, xkhh_s, xkhh_t
+    REAL, PARAMETER :: xkmvo = 0.0, xkhvo = 0.0 !background diffusivity
+!
 ! End declarations.
 !-----------------------------------------------------------------------
 
@@ -2152,7 +2190,7 @@ END SUBROUTINE smag2d_km
     END DO
     END DO
 
-    IF ( isotropic .EQ. 0 ) THEN
+    IF ( config_flags%km_opt .EQ. 2 .and. isotropic .EQ. 0 ) THEN  !XZ
       DO j = j_start, j_end
       DO k = kts, ktf
       DO i = i_start, i_end
@@ -2175,7 +2213,9 @@ END SUBROUTINE smag2d_km
       END DO
       END DO
       END DO
-    ELSE
+    ENDIF  !XZ    
+
+    IF ( config_flags%km_opt .eq.2.and.isotropic .NE. 0 ) THEN  ! XZ
       CALL calc_l_scale( config_flags, tke, BN2, l_scale,      &
                          i_start, i_end, ktf, j_start, j_end,  &
                          dx, dy, rdzw, msftx, msfty,           &
@@ -2199,6 +2239,90 @@ END SUBROUTINE smag2d_km
       END DO
     END IF
 
+!!!XZ
+    IF(config_flags%km_opt .eq.5 ) THEN  ! 3DTKE diffusivity
+ 
+!  smag_2d horizontal diffusivity 
+       pr=prandtl
+       c_s = config_flags%c_s
+ 
+       DO j=j_start,j_end
+       DO k=kts,ktf
+       DO i=i_start,i_end
+             def2(i,k,j) = 0.25*((defor11(i,k,j)-defor22(i,k,j))*(defor11(i,k,j)-defor22(i,k,j)))
+                     tmp = 0.25*(defor12(i  ,k,j)+defor12(i  ,k,j+1)+ &
+                                 defor12(i+1,k,j)+defor12(i+1,k,j+1))
+              def2(i,k,j)= def2(i,k,j)+tmp*tmp
+       ENDDO
+       ENDDO
+       ENDDO
+
+       DO j = j_start, j_end
+       DO k = kts, ktf
+       DO i = i_start, i_end
+          mlen_h = sqrt(dx/msftx(i,j) * dy/msfty(i,j))
+          tmp    = sqrt(def2(i,k,j))
+          xkmh_s(i,k,j) = c_s*c_s*mlen_h*mlen_h*tmp
+          xkmh_s(i,k,j) = min(xkmh_s(i,k,j), 10.*mlen_h )
+          xkhh_s(i,k,j) = xkmh_s(i,k,j)/pr
+          IF(config_flags%diff_opt .EQ. 2)THEN
+            dxm=dx/msftx(i,j)
+            dym=dy/msfty(i,j)
+            tmpzx = (0.25*( abs(zx(i,k,j))+ abs(zx(i+1,k,j  )) + abs(zx(i,k+1,j))+ abs(zx(i+1,k+1,j  )))*rdzw(i,k,j)*dxm)
+            tmpzy = (0.25*( abs(zy(i,k,j))+ abs(zy(i  ,k,j+1)) + abs(zy(i,k+1,j))+ abs(zy(i  ,k+1,j+1)))*rdzw(i,k,j)*dym)
+            alpha = max(sqrt(tmpzx*tmpzx+tmpzy*tmpzy),1.0)
+            def_limit = max(10./mlen_h,1.e-3)
+            IF ( tmp .GT. def_limit ) THEN
+              xkmh_s(i,k,j)=xkmh_s(i,k,j)/(alpha*alpha)
+            ELSE
+              xkmh_s(i,k,j)=xkmh_s(i,k,j)/(alpha)
+            ENDIF
+              xkhh_s(i,k,j)=xkmh_s(i,k,j)/pr
+          ENDIF
+       ENDDO
+       ENDDO
+       ENDDO
+
+!! difusivity based on TKE
+       DO j = j_start, j_end
+       DO k = kts, ktf
+       DO i = i_start, i_end
+              mlen_h = SQRT( dx/msftx(i,j) * dy/msfty(i,j) )  ! horizontal mixing length
+              tmp    = SQRT( MAX( tke(i,k,j), tke_seed ) ) 
+              deltas = 1.0 / rdzw(i,k,j)
+              mlen_v = deltas
+          IF ( dthrdn(i,k,j) .GT. 0.) THEN
+              mlen_s = 0.76 * tmp / ( ABS( g / theta(i,k,j) * dthrdn(i,k,j)))**0.5
+              mlen_v = MIN( mlen_v, mlen_s )
+          END IF
+! length scales multiplied by partial function for grid-size dependency
+              delxy = SQRT(dx/msftx(i,j)*dy/msfty(i,j))
+              pth1= pthl(delxy,hpbl(i,j))
+              pu1 = pu  (delxy,hpbl(i,j))
+
+              xkmh_t(i,k,j)    =  c_k * tmp * mlen_h
+              xkmv_meso(i,k,j) =  0.4 * tmp * dlk(i,k,j)      ! diffusivity using mesoscale length scale
+              xkmv_meso(i,k,j) =  xkmv_meso(i,k,j) + xkmvo
+              xkmv_les         =  c_k * tmp * mlen_v          ! diffusivity using LES length scale
+              xkmv(i,k,j)      =  ( 1.0 - pu1 ) * xkmv_les  +  pu1 * xkmv_meso(i,k,j)
+              xkmv(i,k,j)      =  MIN(xkmv(i,k,j), 1000.)  
+ 
+              pr_inv_h         =  1./prandtl
+              pr_inv_v_les     =  1.0 + 2.0 * mlen_v / deltas
+              pr_inv_v_meso    =  1.0
+              xkhh_t(i,k,j)    =  xkmh_t(i,k,j) * pr_inv_h
+              xkhv(i,k,j)      =  xkmv(i,k,j) * (1.0-pth1) * pr_inv_v_les    &
+                                + pth1 * (pr_inv_v_meso * xkmv(i,k,j) + xkhvo)
+              xkhv(i,k,j)      =  MIN(xkhv(i,k,j), 1000.)
+!  blending of horizontal K(deformation) and K(TKE)
+              xkmh(i,k,j) = pth1 * xkmh_s(i,k,j) + ( 1.0 - pth1 ) * xkmh_t(i,k,j)
+              xkhh(i,k,j) = pth1 * xkhh_s(i,k,j) + ( 1.0 - pth1 ) * xkhh_t(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+
+    ENDIF
+!!!
     END SUBROUTINE tke_km
 
 !=======================================================================
@@ -2236,7 +2360,7 @@ END SUBROUTINE smag2d_km
     REAL, INTENT( IN )  &
     :: dx, dy
 
-    REAL, DIMENSION( its:ite, kts:kte, jts:jte ), INTENT( OUT )  &
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( OUT )  &  !XZ
     :: l_scale
 
     REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   ) ::     msftx, &
@@ -2273,6 +2397,461 @@ END SUBROUTINE smag2d_km
 
 !=======================================================================
 !=======================================================================
+!XZ
+    SUBROUTINE meso_length_scale(config_flags,dx,dy,rdzw,rdz,tke,      &
+                                 p8w,t8w,theta,dlk,hpbl,elmin,         &
+                                 rmol,rho,hfx,qfx,moist,n_moist,       &
+                                 ids, ide, jds, jde, kds, kde,         &
+                                 ims, ime, jms, jme, kms, kme,         &
+                                 its, ite, jts, jte, kts, kte )
+!
+! The mesoscale length scale based on MYNN scheme modified by X. Zhang 
+ 
+   IMPLICIT NONE
+
+   TYPE( grid_config_rec_type ), INTENT( IN )        &
+   ::  config_flags
+
+   INTEGER,                      INTENT( IN )        &
+   ::  ids, ide, jds, jde, kds, kde,                 &
+       ims, ime, jms, jme, kms, kme,                 &
+       its, ite, jts, jte, kts, kte
+
+   INTEGER,                      INTENT( IN )        &
+   ::  n_moist
+
+   REAL,                         INTENT( IN )        &
+   ::  dx,dy
+   
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ), INTENT( INOUT )  &
+   ::  moist
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )     &
+   ::  tke, rdzw, rdz, p8w, t8w
+   
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )     &
+   ::  theta,rho
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( INOUT )  &
+   ::  dlk,elmin
+
+   REAL, DIMENSION( ims:ime, jms:jme ),                   INTENT( INOUT )  &
+   ::  rmol,hfx,qfx,hpbl
+
+!Local variables.
+   REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: zfull,za
+   REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: elb,qtke,els,elf
+   REAL, DIMENSION( its:ite,          jts:jte )  :: sflux,elt,vsc
+   REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: dthrdn
+   INTEGER        :: izz,i,k,j
+   INTEGER        :: i_start, i_end, ktf, j_start, j_end
+   REAL,PARAMETER :: alp1 = 0.9, alp2 = 1.0, alp3 = 1.0, alp4 = 100.0 
+   REAL           :: cpm,qcv,N2,tmpdz,thetasfc,thetatop,heat_flux,gtr,qdz,coe
+   REAL           :: zi2,h1,h2,wt
+
+!THEY ONLY IMPOSE LIMITS ON THE CALCULATION OF THE MIXING LENGTH 
+!SCALES SO THAT THE BOULAC MIXING LENGTH (IN FREE ATMOS) DOES
+!NOT ENCROACH UPON THE BOUNDARY LAYER MIXING LENGTH (els, elb & elt).
+   REAL, PARAMETER :: minzi = 300.  !min mixed-layer height
+   REAL, PARAMETER :: maxdz = 750.  !max (half) transition layer depth
+                                    !=0.3*2500 m PBLH, so the transition
+                                    !layer stops growing for PBLHs > 2.5 km.
+   REAL, PARAMETER :: mindz = 300.  !min (half) transition layer depth
+
+
+    ktf     = MIN( kte, kde-1 )
+    i_start = its
+    i_end   = MIN( ite, ide-1 )
+    j_start = jts
+    j_end   = MIN( jte, jde-1 )
+ 
+    IF ( config_flags%open_xs .OR. config_flags%specified .OR. &
+         config_flags%nested) i_start = MAX( ids+1, its )
+    IF ( config_flags%open_xe .OR. config_flags%specified .OR. &
+         config_flags%nested) i_end   = MIN( ide-2, ite )
+    IF ( config_flags%open_ys .OR. config_flags%specified .OR. &
+         config_flags%nested) j_start = MAX( jds+1, jts )
+    IF ( config_flags%open_ye .OR. config_flags%specified .OR. &
+         config_flags%nested) j_end   = MIN( jde-2, jte)
+    IF ( config_flags%periodic_x ) i_start = its
+    IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
+ 
+ 
+    DO  j = j_start, j_end
+    DO  i = i_start, i_end
+        zfull(i,1,j) = 0.
+    ENDDO
+    ENDDO
+ 
+    DO  j = j_start, j_end
+    DO  k = kts, ktf
+    DO  i = i_start, i_end
+        zfull(i,k+1,j) = 1.0/rdzw(i,k,j) + zfull(i,k,j)
+    ENDDO
+    ENDDO
+    ENDDO
+
+    DO  j = j_start, j_end
+    DO  k = kts, ktf
+    DO  i = i_start, i_end
+        za(i,k,j) = (zfull(i,k,j) + zfull(i,k+1,j))/2.0
+    ENDDO
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+       dlk(i,k,j) = 0.0
+    ENDDO
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO k = kts+1, ktf-1
+    DO i = i_start, i_end
+      tmpdz         = 1.0 / rdz(i,k+1,j) + 1.0 / rdz(i,k,j)
+      dthrdn(i,k,j) = ( theta(i,k+1,j) - theta(i,k-1,j) ) / tmpdz
+    END DO
+    END DO
+    END DO
+ 
+    k = kts
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+      tmpdz         = 1.0 / rdzw(i,k+1,j) + 1.0 / rdzw(i,k,j)
+      thetasfc      = T8w(i,kts,j) / ( p8w(i,k,j) / p1000mb )**( R_d / Cp )
+      dthrdn(i,k,j) = ( theta(i,k+1,j) - thetasfc ) / tmpdz
+    END DO
+    END DO
+
+    k = ktf
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+      tmpdz         = 1.0 / rdz(i,k,j) + 0.5 / rdzw(i,k,j)
+      thetatop      = T8w(i,kde,j) / ( p8w(i,kde,j) / p1000mb )**( R_d / Cp )
+      dthrdn(i,k,j) = ( thetatop - theta(i,k-1,j) ) / tmpdz
+    END DO
+    END DO
+ 
+    DO j = j_start, j_end
+    DO k = kts,ktf
+    DO i = i_start, i_end
+      qtke(i,k,j) = sqrt(2.0*tke(i,k,j))
+    ENDDO
+    ENDDO
+    ENDDO
+
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+      elt(i,j) = 1.0e-5
+      vsc(i,j) = 1.0e-5
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+      qdz      = qtke(i,k,j)*(1.0/rdzw(i,k,j))
+      elt(i,j) = elt(i,j) + qdz*za(i,k,j)
+      vsc(i,j) = vsc(i,j) + qdz
+    ENDDO
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+      elt(i,j) = alp1*elt(i,j)/vsc(i,j)
+    ENDDO
+    ENDDO
+
+    hflux: SELECT CASE( config_flags%isfflx )
+    CASE (0,2) ! with fixed surface heat flux given in the namelist
+     heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
+     DO j = j_start, j_end
+     DO i = i_start, i_end
+        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+        hfx(i,j)= heat_flux*cpm*rho(i,1,j)
+     ENDDO
+     ENDDO
+ 
+    CASE (1) ! use surface heat flux computed from surface routine
+     DO j = j_start, j_end
+     DO i = i_start, i_end
+        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+        heat_flux = hfx(i,j)/cpm/rho(i,1,j)
+     ENDDO
+     ENDDO
+ 
+    CASE DEFAULT
+     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
+    END SELECT hflux
+
+    DO j = j_start,j_end
+    DO i = i_start,i_end
+       cpm        = cp  * (1. + 0.8*moist(i,1,j,P_QV))
+       sflux(i,j) = (hfx(i,j)/cpm)/rho(i,1,j)
+    ENDDO
+    ENDDO
+
+!-------Length scale limited by bouyancy effect-----
+    gtr  = g/300.
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+       IF( dthrdn(i,k,j).GT.0.0 ) THEN
+        N2 = gtr*dthrdn(i,k,j)
+        qcv = (gtr*MAX(sflux(i,j),0.0)*elt(i,j))**(1.0/3.0)
+        elb(i,k,j) = qtke(i,k,j)/sqrt(N2)*(alp2 + alp3*sqrt(qcv/(elt(i,j)*sqrt(N2))))
+        elf(i,k,j) = alp2*qtke(i,k,j)/sqrt(N2)
+       ELSE
+        elb(i,k,j) = 1.0e10
+        elf(i,k,j) = elb(i,k,j)
+       ENDIF
+    ENDDO
+    ENDDO
+    ENDDO
+ 
+!------Length scale in the surface layer-------
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start,i_end
+       IF (rmol(i,j) .GT. 0.0) THEN
+         els(i,k,j) = karman*za(i,k,j)/(1.0+2.7*min(za(i,k,j)*rmol(i,j),1.0))
+       ELSE
+         coe = (1.0 - alp4*za(i,k,j)*rmol(i,j))**0.2
+         els(i,k,j) = 1.0*karman*za(i,k,j)*coe
+       ENDIF
+    ENDDO
+    ENDDO
+    ENDDO
+
+!----Harmonic averaging of mixing length scales-----
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+         dlk(i,k,j) = MIN(elb(i,k,j)/(elb(i,k,j)/elt(i,j)+elb(i,k,j)/els(i,k,j)+1.0),elf(i,k,j))
+    ENDDO
+    ENDDO
+    ENDDO
+ 
+!add blending to use BouLac mixing length in free atmos;
+!defined relative to the PBLH (zi) + transition layer (h1)
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+         zi2=MAX(hpbl(i,j),minzi)
+         h1=MAX(0.3*zi2,mindz)
+         h1=MIN(h1,maxdz)         ! 1/2 transition layer depth
+         h2=h1/2.0                ! 1/4 transition layer depth
+ 
+         wt=.5*TANH((za(i,k,j) - (zi2+h1))/h2) + .5
+         dlk(i,k,j) = dlk(i,k,j)*(1.-wt) + 0.4*elmin(i,k,j)*wt  
+    ENDDO
+    ENDDO
+    ENDDO
+
+    END SUBROUTINE meso_length_scale
+!=======================================================================
+!=======================================================================
+    SUBROUTINE free_atmos_length(config_flags,dx,dy,rdzw,rdz,tke,theta,elmin,    &
+                                 hfx,qfx,moist,n_moist,                          &
+                                 ids, ide, jds, jde, kds, kde,                   &
+                                 ims, ime, jms, jme, kms, kme,                   &
+                                 its, ite, jts, jte, kts, kte )
+!
+! NOTE: This subroutine was taken from the BouLac scheme to calculate mixing length
+!       in the free atmosphere and modified for integration into the 3DTKE scheme. 
+!       Modified by X.Zhang
+!
+!  dlu = the distance a parcel can be lifted upwards give a finite 
+!        amount of TKE.
+!  dld = the distance a parcel can be displaced downwards given a
+!        finite amount of TKE.
+  
+! compute the length scales up and down
+ 
+    IMPLICIT NONE
+
+    TYPE( grid_config_rec_type ), INTENT( IN )  &
+    ::  config_flags
+  
+    INTEGER,                      INTENT( IN )  &
+    ::  ids, ide, jds, jde, kds, kde,           &
+        ims, ime, jms, jme, kms, kme,           &
+        its, ite, jts, jte, kts, kte
+  
+    INTEGER,                      INTENT( IN )  &
+    ::  n_moist
+  
+    REAL,                         INTENT( IN )  &    
+    ::  dx,dy
+  
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ), INTENT( INOUT ) &
+    ::  moist
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )    &
+    ::  tke, rdzw, rdz
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )    &
+    ::  theta
+    
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( INOUT ) &
+    ::  elmin 
+
+    REAL, DIMENSION( ims:ime, jms:jme ),                   INTENT( INOUT ) &
+    ::  hfx,qfx
+
+!Local variables
+    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: zfull,za
+ 
+    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: dlg,dlu,dld
+
+    INTEGER   :: izz, found, i, k, j
+
+    REAL      :: dzt,zup,beta,zup_inf,bbb,tl,zdo,zdo_sup,zzz
+
+    INTEGER   :: i_start, i_end, ktf, j_start, j_end
+ 
+    ktf     = MIN( kte, kde-1 )
+    i_start = its
+    i_end   = MIN( ite, ide-1 )
+    j_start = jts
+    j_end   = MIN( jte, jde-1 )
+
+    IF ( config_flags%open_xs .OR. config_flags%specified .OR. &
+         config_flags%nested) i_start = MAX( ids+1, its )
+    IF ( config_flags%open_xe .OR. config_flags%specified .OR. &
+         config_flags%nested) i_end   = MIN( ide-2, ite )
+    IF ( config_flags%open_ys .OR. config_flags%specified .OR. &
+         config_flags%nested) j_start = MAX( jds+1, jts )
+    IF ( config_flags%open_ye .OR. config_flags%specified .OR. &
+         config_flags%nested) j_end   = MIN( jde-2, jte)
+    IF ( config_flags%periodic_x ) i_start = its
+    IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
+ 
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+         zfull(i,1,j)= 0.
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+         zfull(i,k+1,j) = 1.0/rdzw(i,k,j) + zfull(i,k,j)
+    ENDDO 
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+         za(i,k,j) = (zfull(i,k,j) + zfull(i,k+1,j))/2.0
+    ENDDO
+    ENDDO
+    ENDDO
+
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+       elmin(i,k,j) = 0.0
+    ENDDO
+    ENDDO
+    ENDDO
+
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+          zup=0.
+          dlu(i,k,j) = zfull(i,ktf+1,j) - zfull(i,k,j) - 1.0/rdzw(i,k,j)/2.
+          zzz=0.
+          zup_inf=0.
+          beta=g/300. !th(i,1,j)      !Buoyancy coefficient
+ 
+          IF (k.LT.ktf) THEN
+            found = 0
+            izz = k
+            DO WHILE (found.EQ.0)
+              IF (izz .LT. ktf) THEN
+                 dzt = (1.0/rdzw(i,izz+1,j) + 1.0/rdzw(i,izz,j))/2.
+                 zup = zup - beta * theta(i,k,j) * dzt
+                 zup = zup + beta * (theta(i,izz+1,j) + theta(i,izz,j)) * dzt/2.
+                 zzz = zzz + dzt
+                 IF (tke(i,k,j).LT.zup.and.tke(i,k,j).GE.zup_inf) THEN
+                    bbb=(theta(i,izz+1,j)-theta(i,izz,j))/dzt
+                    IF(bbb.NE.0) THEN
+                       tl = (-beta * (theta(i,izz,j) - theta(i,k,j))               &
+                          + sqrt(max(0.,(beta*(theta(i,izz,j)-theta(i,k,j)))**2.   &
+                          + 2.*bbb*beta*(tke(i,k,j) - zup_inf))))/bbb/beta
+                    ELSE
+                       IF (theta(i,izz,j) .NE. theta(i,k,j)) THEN
+                          tl = (tke(i,k,j) - zup_inf)/(beta*(theta(i,izz,j) - theta(i,k,j)))
+                       ELSE
+                          tl = 0.
+                       ENDIF
+                    ENDIF
+                   dlu(i,k,j) = zzz - dzt + tl
+                   found      = 1
+                 ENDIF
+                 zup_inf = zup
+                 izz = izz + 1
+              ELSE
+                found = 1
+              ENDIF
+            ENDDO
+          ENDIF
+
+          zdo     = 0.
+          zdo_sup = 0.
+          dld(i,k,j) = zfull(i,k,j) + 1.0/rdzw(i,k,j)/2.
+          zzz = 0.
+          IF (k .GT. kts) THEN
+              found = 0
+              izz   = k
+              DO WHILE (found.EQ.0)
+                  IF (izz .GT. kts) THEN
+                     dzt = (1.0/rdzw(i,izz-1,j) + 1.0/rdzw(i,izz,j))/2.
+                     zdo = zdo + beta*theta(i,k,j)*dzt
+                     zdo = zdo - beta*(theta(i,izz-1,j) + theta(i,izz,j))*dzt/2.
+                     zzz = zzz + dzt
+                     IF(tke(i,k,j) .LT. zdo .and. tke(i,k,j).GE.zdo_sup) THEN
+                        bbb = (theta(i,izz,j) - theta(i,izz-1,j))/dzt
+                           IF(bbb.NE.0.) THEN
+                              tl = (beta*(theta(i,izz,j) - theta(i,k,j))    &
+                                 + sqrt(max(0.,(beta*(theta(i,izz,j) - theta(i,k,j)))**2. &
+                                 + 2.*bbb*beta*(tke(i,k,j) - zdo_sup))))/bbb/beta
+                           ELSE
+                              IF(theta(i,izz,j).NE.theta(i,k,j)) THEN
+                                 tl = (tke(i,k,j) - zdo_sup)/(beta*(theta(i,izz,j) - theta(i,k,j)))
+                              ELSE
+                                 tl = 0.
+                              ENDIF
+                           ENDIF
+ 
+                        dld(i,k,j) = zzz - dzt + tl
+                        found      = 1
+                     ENDIF
+                     zdo_sup = zdo
+                     izz     = izz - 1
+                  ELSE
+                     found = 1
+                  ENDIF
+              ENDDO
+          ENDIF
+ 
+          dlg(i,k,j) = (zfull(i,k,j)+zfull(i,k+1,j))/2.0
+          dld(i,k,j) = min(dld(i,k,j),dlg(i,k,j))
+ 
+          elmin(i,k,j) = min(dlu(i,k,j),dld(i,k,j))
+          elmin(i,k,j) = elmin(i,k,j)/(1. + (elmin(i,k,j)/2000.))
+    ENDDO
+    ENDDO
+    ENDDO
+
+    END SUBROUTINE free_atmos_length
+!=======================================================================
+!=======================================================================
 
 SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                     tke_tendf,                                 &
@@ -2290,6 +2869,8 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                     msftx, msfty, xkmh, xkhh,km_opt,           &
                                     rdx, rdy, rdz, rdzw, fnm, fnp,             &
                                     cf1, cf2, cf3, zx, zy, dn, dnw, rho,       &
+                                    u_h_tend,v_h_tend,w_h_tend,th_h_tend,      & ! XZ
+                                    tke_diffusion_h_tend,                      & ! XZ
                                     ids, ide, jds, jde, kds, kde,              &
                                     ims, ime, jms, jme, kms, kme,              &
                                     its, ite, jts, jte, kts, kte               )
@@ -2326,7 +2907,13 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                                                  rv_tendf,&
                                                                  rw_tendf,&
                                                                 tke_tendf
-
+! XZ
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::th_h_tend,&
+                                                                  u_h_tend,&
+                                                                  v_h_tend,&
+                                                                  w_h_tend,&
+                                                      tke_diffusion_h_tend
+!
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
           INTENT(INOUT) ::                                    moist_tendf
 
@@ -2380,6 +2967,19 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
    INTEGER :: im, ic, is
 
+! XZ
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist )  &
+   :: moist_h_tend
+ 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_chem )   &
+   :: chem_h_tend
+ 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar ) &
+   :: scalar_h_tend
+ 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_tracer)  &
+   :: tracer_h_tend
+!
 !  REAL , DIMENSION(its-1:ite+1, kts:kte, jts-1:jte+1)       ::     xkhh
 
 ! End declarations.
@@ -2389,6 +2989,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 ! Call diffusion subroutines.
 
     CALL horizontal_diffusion_u_2( ru_tendf, config_flags,                 &
+                                   u_h_tend,                               &! XZ
                                    defor11, defor12, div,                  &
                                    nba_mij, n_nba_mij,                     &
                                    tke(ims,kms,jms),                       &
@@ -2399,6 +3000,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    its, ite, jts, jte, kts, kte           )
 
     CALL horizontal_diffusion_v_2( rv_tendf, config_flags,                 &
+                                   v_h_tend,                               &! XZ
                                    defor12, defor22, div,                  &
                                    nba_mij, n_nba_mij,                     &
                                    tke(ims,kms,jms),                       &
@@ -2409,6 +3011,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    its, ite, jts, jte, kts, kte           )
 
     CALL horizontal_diffusion_w_2( rw_tendf, config_flags,                 &
+                                   w_h_tend,                               &! XZ
                                    defor13, defor23, div,                  &
                                    nba_mij, n_nba_mij,                     &
                                    tke(ims,kms,jms),                       &
@@ -2418,7 +3021,9 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
 
-    CALL horizontal_diffusion_s  ( rt_tendf, config_flags, thp,            &
+    CALL horizontal_diffusion_s  ( rt_tendf, config_flags,                 &
+                                   th_h_tend,                              &! XZ
+                                   thp,                                    &
                                    msftx, msfty, msfux, msfuy,             &
                                    msfvx, msfvy, xkhh, rdx, rdy,           &
                                    fnm, fnp, cf1, cf2, cf3,                &
@@ -2428,10 +3033,12 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
 
-    IF ( (km_opt .eq. 2) .and. (.not.config_flags%tke_mix2_off) )          &
+    IF ( ((km_opt .eq. 2) .and. (.not.config_flags%tke_mix2_off))          & !XZ
+        .or. (km_opt .eq. 5) )                                             & !XZ
     CALL horizontal_diffusion_s  ( tke_tendf(ims,kms,jms),                 &
                                    config_flags,                           &
-                                   tke(ims,kms,jms),                       &
+                                   tke_diffusion_h_tend(ims,kms,jms),      & !XZ
+                                   tke(ims,kms,jms),                       & 
                                    msftx, msfty, msfux, msfuy,             &
                                    msfvx, msfvy, xkhh, rdx, rdy,           &
                                    fnm, fnp, cf1, cf2, cf3,                &
@@ -2447,6 +3054,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
           CALL horizontal_diffusion_s( moist_tendf(ims,kms,jms,im),       &
                                        config_flags,                      &
+                                       moist_h_tend(ims,kms,jms,im),      & ! XZ
                                        moist(ims,kms,jms,im),             &
                                        msftx, msfty, msfux, msfuy,        &
                                        msfvx, msfvy, xkhh, rdx, rdy,      &
@@ -2467,6 +3075,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
         CALL horizontal_diffusion_s( chem_tendf(ims,kms,jms,ic),     &
                                      config_flags,                   &
+                                     chem_h_tend(ims,kms,jms,ic),    & ! XZ
                                      chem(ims,kms,jms,ic),           &
                                      msftx, msfty, msfux, msfuy,     &
                                      msfvx, msfvy, xkhh, rdx, rdy,   &
@@ -2487,6 +3096,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
         CALL horizontal_diffusion_s( tracer_tendf(ims,kms,jms,ic),     &
                                      config_flags,                     &
+                                     tracer_h_tend(ims,kms,jms,ic),    & ! XZ
                                      tracer(ims,kms,jms,ic),           &
                                      msftx, msfty, msfux, msfuy,       &
                                      msfvx, msfvy, xkhh, rdx, rdy,     &
@@ -2506,6 +3116,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
         CALL horizontal_diffusion_s( scalar_tendf(ims,kms,jms,is),     &
                                      config_flags,                     &
+                                     scalar_h_tend(ims,kms,jms,is),    & ! XZ
                                      scalar(ims,kms,jms,is),           &
                                      msftx, msfty, msfux, msfuy,       &
                                      msfvx, msfvy, xkhh, rdx, rdy,     &
@@ -2526,6 +3137,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 !=======================================================================
 
 SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
+                                     u_h_tend,                            & ! XZ
                                      defor11, defor12, div,               &
                                      nba_mij, n_nba_mij,                  &
                                      tke,                                 &
@@ -2555,6 +3167,8 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
                                                                    msfuy
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::tendency
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::u_h_tend ! XZ
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   ) ::   rdzw, &
                                                                      rho
@@ -2602,6 +3216,9 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
 
    REAL :: term1, term2, term3
 
+   LOGICAL :: output_tend  ! XZ
+   
+   output_tend = .false.    ! XZ
 ! End declarations.
 !-----------------------------------------------------------------------
 
@@ -2726,13 +3343,34 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
    ENDDO
    ENDDO
 
+! XZ
+   IF (output_tend) THEN
+      DO j = j_start, j_end
+      DO k = kts,ktf
+      DO i = i_start, i_end
+ 
+         mrdx=msfux(i,j)*rdx
+         mrdy=msfuy(i,j)*rdy
+ 
+         tmpdz = (1./rdzw(i,k,j)+1./rdzw(i-1,k,j))/2.
+         u_h_tend(i,k,j) =  g*tmpdz/dnw(k) *                                            &
+              (mrdx*(titau1(i,k,j  ) - titau1(i-1,k,j)) +                               &
+               mrdy*(titau2(i,k,j+1) - titau2(i  ,k,j)) -                               &
+               msfux(i,j)*zx_at_u(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) /tmpdz - &
+               msfuy(i,j)*zy_at_u(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) /tmpdz   &
+                                                                  )
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDIF
 END SUBROUTINE horizontal_diffusion_u_2
 
 !=======================================================================
 !=======================================================================
 
 SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
-                                     defor12, defor22, div,               &
+                                     v_h_tend,                            & ! XZ
+                                     defor12, defor22, div,               &           
                                      nba_mij, n_nba_mij,                  &
                                      tke,                                 &
                                      msfvx, msfvy,                        &
@@ -2761,6 +3399,8 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
                                                                    msfvy
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: v_h_tend ! XZ
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   ) ::defor12, &
                                                                  defor22, &
@@ -2802,7 +3442,8 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
    REAL :: mrdx, mrdy, rcoup
    REAL :: tmpdz
    REAL :: tmpzx, tmpzeta_z
-
+   LOGICAL :: output_tend  ! XZ
+   output_tend = .false.    ! XZ
 ! End declarations.
 !-----------------------------------------------------------------------
 
@@ -2922,12 +3563,34 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
    ENDDO
    ENDDO
 
+! XZ
+   IF (output_tend) THEN
+      DO j = j_start, j_end
+      DO k = kts,ktf
+      DO i = i_start, i_end
+ 
+         mrdx=msfvx(i,j)*rdx
+         mrdy=msfvy(i,j)*rdy
+         tmpdz = (1./rdzw(i,k,j)+1./rdzw(i,k,j-1))/2.
+         v_h_tend(i,k,j) =               g*tmpdz/dnw(k) *                                &
+              (mrdy*(titau2(i,k,j  ) - titau2(i,k,j-1)) +                                &
+               mrdx*(titau1(i+1,k,j) - titau1(i  ,k,j)) -                                &
+               msfvx(i,j)*zx_at_v(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
+               msfvy(i,j)*zy_at_v(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) / tmpdz   &
+                                                                  )
+ 
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDIF
+!
 END SUBROUTINE horizontal_diffusion_v_2
 
 !=======================================================================
 !=======================================================================
 
 SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
+                                     w_h_tend,                            & ! XZ
                                      defor13, defor23, div,               &
                                      nba_mij, n_nba_mij,                  &
                                      tke,                                 &
@@ -2957,6 +3620,8 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
                                                                    msfty
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: w_h_tend  !XZ
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   ) ::defor13, &
                                                                  defor23, &
@@ -2998,7 +3663,10 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
    REAL :: mrdx, mrdy, rcoup
 
    REAL :: tmpzx, tmpzy, tmpzeta_z
-
+!XZ
+   LOGICAL :: output_tend  
+   output_tend = .false.  
+! 
 ! End declarations.
 !-----------------------------------------------------------------------
 
@@ -3114,12 +3782,35 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
    ENDDO
    ENDDO
 
+! XZ
+   IF (output_tend) THEN
+      DO j = j_start, j_end
+      DO k = kts+1,ktf
+      DO i = i_start, i_end
+ 
+          mrdx=msftx(i,j)*rdx
+          mrdy=msfty(i,j)*rdy
+ 
+          w_h_tend(i,k,j) =    g/(dn(k)*rdz(i,k,j)) *                                        &
+               (mrdx*(titau1(i+1,k,j)-titau1(i,k,j))+                                        &
+                mrdy*(titau2(i,k,j+1)-titau2(i,k,j))-                                        &
+                msfty(i,j)*rdz(i,k,j)*(zx_at_w(i,k,j)*(titau1avg(i,k,j)-titau1avg(i,k-1,j))+ &
+                                       zy_at_w(i,k,j)*(titau2avg(i,k,j)-titau2avg(i,k-1,j))  &
+                                      )                                                      &
+                )
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDIF
+!
 END SUBROUTINE horizontal_diffusion_w_2
 
 !=======================================================================
 !=======================================================================
 
-SUBROUTINE horizontal_diffusion_s (tendency, config_flags, var,           &
+SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
+                                   tendency_s,                            & ! XZ
+                                   var,                                   &
                                    msftx, msfty, msfux, msfuy,            &
                                    msfvx, msfvy, xkhh, rdx, rdy,          &
                                    fnm, fnp, cf1, cf2, cf3,               &
@@ -3158,6 +3849,8 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags, var,           &
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency
 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency_s !XZ
+
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   ) ::         &
                                                                     xkhh, &
                                                                      rdz, &
@@ -3190,7 +3883,10 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags, var,           &
    REAL    :: mrdx, mrdy, rcoup
    REAL    :: tmpzx, tmpzy, tmpzeta_z, rdzu, rdzv
    INTEGER :: ktes1,ktes2
-
+!XZ
+   LOGICAL :: output_tend  
+   output_tend = .true.  
+!
 ! End declarations.
 !-----------------------------------------------------------------------
 
@@ -3395,6 +4091,27 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags, var,           &
    ENDDO
    ENDDO
 
+! XZ
+   IF (output_tend) THEN
+      DO j = j_start, j_end
+      DO k = kts,ktf
+      DO i = i_start, i_end
+ 
+         mrdx=msftx(i,j)*rdx
+         mrdy=msfty(i,j)*rdy
+ 
+         tendency_s(i,k,j) =   g/(dnw(k)*rdzw(i,k,j)) *                                &
+              (mrdx*(H1(i+1,k,j)-H1(i  ,k,j)) +                                        &
+               mrdy*(H2(i,k,j+1)-H2(i,k,j  )) -                                        &
+               msftx(i,j)*zx_at_m(i, k, j)*(H1avg(i,k+1,j)-H1avg(i,k,j))*rdzw(i,k,j) - &
+               msfty(i,j)*zy_at_m(i, k, j)*(H2avg(i,k+1,j)-H2avg(i,k,j))*rdzw(i,k,j)   &
+              )
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDIF
+!
+
    IF ( doing_tke ) THEN
       DO j = j_start, j_end
       DO k = kts,ktf
@@ -3406,6 +4123,19 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags, var,           &
       ENDDO
    ENDIF
 
+! XZ
+   IF(output_tend) THEN
+      IF ( doing_tke ) THEN
+       DO j = j_start, j_end
+       DO k = kts,ktf
+       DO i = i_start, i_end
+          tendency_s(i,k,j) = 2.0*tendency_s(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+      ENDIF
+   ENDIF
+!
 END SUBROUTINE horizontal_diffusion_s
 
 !=======================================================================
@@ -4314,6 +5044,411 @@ END SUBROUTINE vertical_diffusion_s
 
 !=======================================================================
 !=======================================================================
+ SUBROUTINE nonlocal_flux (config_flags,nlflux,gamu,gamv,hpbl,kpbl,     &
+                                  dx,dy,dt,ust,hfx,qfx,br,ep1,ep2,      &
+                                  karman,u_phy,v_phy,th_phy,rho,moist,n_moist, &
+                                  msftx,msfty,rdzw,                            &
+                                  u10,v10,wspd,                                &
+                                  ids, ide, jds, jde, kds, kde,     &
+                                  ims, ime, jms, jme, kms, kme,     &
+                                  its, ite, jts, jte, kts, kte      )
+!-----------------------------------------------------------------------
+!This subroutine prescibes the nonlocal heat flux profile based on LES analysis
+!And compute the nonlocal momentum gamma term 
+!References:
+! Shin and Hong 2015, MWR
+! Xu Zhang et al. 2018, MWR  
+!-----------------------------------------------------------------------
+! Begin declarations.
+ 
+   IMPLICIT NONE
+ 
+   TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
+ 
+   INTEGER ,         INTENT(IN   ) ::       ids, ide, jds, jde, kds, kde, &
+                                            ims, ime, jms, jme, kms, kme, &
+                                            its, ite, jts, jte, kts, kte
+
+   INTEGER ,         INTENT(IN   ) :: n_moist
+
+   REAL,    INTENT(IN )     ::      ep1,ep2,karman
+
+   REAL,    INTENT(IN )     ::      dx,dy,dt
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::   &
+   th_phy,u_phy,v_phy
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: rdzw
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ), INTENT( INOUT ) :: &
+   moist
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: rho
+ 
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)   :: hfx,qfx,br,ust,hpbl
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   :: u10,v10,wspd
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   :: msftx,msfty
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) :: nlflux
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT   )  :: gamu,gamv
+
+   INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT   )  :: kpbl
+
+! Local variables.
+  REAL, DIMENSION( its:ite, kts:kte,   jts:jte ) :: zq
+  REAL, DIMENSION( its:ite, kts:kte-1, jts:jte ) :: za,thv
+  REAL, DIMENSION( its:ite, kts:kte,   jts:jte ) :: zfacmf,entfacmf
+  REAL, DIMENSION( its:ite, jts:jte )            :: govrth,sflux,wstar3,wstar,rigs
+  LOGICAL, DIMENSION( its:ite,jts:jte )          :: pblflg, sfcflg, stable
+  REAL, DIMENSION( its:ite, jts:jte )            :: deltaoh,we,enlfrac2
+  REAL, DIMENSION( its:ite, jts:jte )            :: hfxpbl,bfxpbl
+  REAL, DIMENSION( its:ite, jts:jte )            :: dthv,wm2
+  REAL, DIMENSION( its:ite, jts:jte )            :: wscale,thermal
+  REAL               :: tvcon,delb,cpm,wm3,bfx0,ust3
+  REAL               :: dtheta,du,dv,thsfc,brint
+  INTEGER            :: i,j,k,i_start,i_end,j_start,j_end,ktf
+  REAL               :: mlfrac,ezfrac,sfcfracn,sflux0,snlflux0
+  REAL               :: amf1,amf2,amf3,bmf2,bmf3,pth1,delxy,pu1
+  REAL               :: heat_flux
+  REAL,PARAMETER     :: phifac = 8.,sfcfrac = 0.1,d1 = 0.02, d2 = 0.05, zfmin = 1.e-8
+  REAL,PARAMETER     :: h1 = 0.33333335, h2 = 0.6666667, tmin = 1.e-2
+! tunable parameters
+  REAL,PARAMETER     ::  mltop = 1.0, sfcfracn1 = 0.075
+  REAL,PARAMETER     ::  nlfrac = 0.68 ! the ratio of nonlocal heat flux to total heat flux
+  REAL,PARAMETER     ::  enlfrac = -0.15 
+  REAL,PARAMETER     ::  a11 = 1.0, a12 = -1.15
+  REAL,PARAMETER     ::  ezfac = 1.5
+  REAL,PARAMETER     ::  cpent = -0.4, rigsmax = 100., rimin = -100.
+  REAL,PARAMETER     ::  entfmin = 1.0, entfmax = 5.0, sm = 10.9
+
+   ktf=MIN(kte,kde-1)
+ 
+   i_start = its
+   i_end   = MIN(ite,ide-1)
+   j_start = jts
+   j_end   = MIN(jte,jde-1)
+ 
+   IF ( config_flags%open_xs .or. config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%open_xe .or. config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-2,ite)
+   IF ( config_flags%open_ys .or. config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%open_ye .or. config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-2,jte)
+   IF ( config_flags%periodic_x ) i_start = its
+   IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
+ 
+   DO j = j_start, j_end
+   DO i = i_start, i_end
+       zq(i,1,j) = 0.0
+   ENDDO
+   ENDDO
+
+   DO j = j_start, j_end
+   DO k = kts, ktf
+   DO i = i_start, i_end
+         zq(i,k+1,j) = 1.0/rdzw(i,k,j) + zq(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+ 
+   DO j = j_start,j_end
+   DO k = kts,ktf
+   DO i = i_start,i_end
+     za(i,k,j) = 0.5*(zq(i,k,j) + zq(i,k+1,j))
+   ENDDO
+   ENDDO
+   ENDDO
+ 
+   DO j = j_start, j_end
+   DO i = i_start, i_end
+     deltaoh(i,j)  = 0.0
+     rigs (i,j)    = 0.0
+     enlfrac2(i,j) = 0.0
+   ENDDO
+   ENDDO
+
+   DO j = j_start, j_end
+   DO k = kts, ktf
+   DO i = i_start, i_end
+      zfacmf(i,k,j) = 0.0
+   ENDDO
+   ENDDO
+   ENDDO
+ 
+   DO j = j_start, j_end
+   DO k = kts, ktf
+   DO i = i_start, i_end
+      nlflux(i,k,j) = 0.0
+   ENDDO
+   ENDDO
+   ENDDO
+ 
+   DO j = j_start, j_end
+   DO k = kts, ktf
+   DO i = i_start, i_end
+      tvcon = 1. + ep1*moist(i,k,j,P_QV)
+      thv(i,k,j) = th_phy(i,k,j)*tvcon
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = j_start,j_end
+   DO i = i_start,i_end
+     govrth(i,j) = g/th_phy(i,1,j)
+   ENDDO
+   ENDDO
+
+  hflux: SELECT CASE( config_flags%isfflx )
+  CASE (0,2) ! with fixed surface heat flux given in the namelist
+    heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+       hfx(i,j)= heat_flux*cpm*rho(i,1,j)
+    ENDDO
+    ENDDO
+ 
+  CASE (1) ! use surface heat flux computed from surface routine
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+       heat_flux = hfx(i,j)/cpm/rho(i,1,j)
+    ENDDO
+    ENDDO
+ 
+  CASE DEFAULT
+    CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
+  END SELECT hflux
+
+  DO j = j_start, j_end
+  DO i = i_start, i_end
+     kpbl(i,j)   = 1
+     hpbl(i,j)   = zq(i,1,j)
+     pblflg(i,j) = .true.
+     sfcflg(i,j) = .true.
+ 
+     cpm = cp * (1. + 0.8*moist(i,1,j,P_QV))
+     sflux(i,j) = (hfx(i,j)/cpm)/rho(i,1,j)
+ 
+     IF(br(i,j).GT.0.0) sfcflg(i,j) = .false.
+  ENDDO
+  ENDDO
+
+! get pbl height begin based on theta method
+  DO j = j_start, j_end
+  DO i = i_start, i_end
+        thsfc = thv(i,kts,j) + 0.5
+     DO k=kts+1,ktf
+        IF(thv(i,k,j).GT.thsfc) THEN
+         hpbl(i,j)=za(i,k-1,j)+(thsfc-thv(i,k-1,j))/(max(0.01,thv(i,k,j)-thv(i,k-1,j)))*(za(i,k,j)-za(i,k-1,j))
+         kpbl(i,j) = k
+         GO TO 119
+        ENDIF
+     ENDDO
+  119 CONTINUE
+  ENDDO
+  ENDDO
+
+  DO j = j_start, j_end
+  DO i = i_start, i_end
+     IF(hpbl(i,j).LT.zq(i,2,j)) kpbl(i,j) = 1
+     IF(kpbl(i,j).LT.1) pblflg(i,j) = .false.
+  ENDDO
+  ENDDO
+
+  DO j = j_start, j_end
+  DO i = i_start, i_end
+     IF(sfcflg(i,j))THEN
+       bfx0  = max(sflux(i,j),0.)
+       wstar3(i,j) = (govrth(i,j)*bfx0*hpbl(i,j))
+       wstar(i,j)  = (wstar3(i,j))**h1
+     ELSE
+       wstar(i,j)  = 0.
+       wstar3(i,j) = 0.
+     ENDIF
+       ust3 = ust(i,j)**3
+       wscale(i,j) = (ust3 + phifac*karman*wstar3(i,j)*0.5)**h1
+       wscale(i,j) = MIN(wscale(i,j), ust(i,j)*16.0)
+       wscale(i,j) = MAX(wscale(i,j), ust(i,j)/5.0 )
+  ENDDO
+  ENDDO
+
+  DO j = j_start, j_end
+  DO i = i_start, i_end
+      delxy = sqrt(dx/msftx(i,j)*dy/msfty(i,j))
+      pu1=pu(delxy,hpbl(i,j))
+      IF(sfcflg(i,j).and.sflux(i,j).GT.0.0)THEN
+!nonlocal momentum flux based on Brown and Grant (1997)
+       brint = -sm*ust(i,j)*ust(i,j)*wstar3(i,j)/(hpbl(i,j)*wscale(i,j)**4)
+       gamu(i,j) = pu1 * brint*u_phy(i,1,j)/wspd(i,j)
+       gamv(i,j) = pu1 * brint*v_phy(i,1,j)/wspd(i,j)
+      ELSE
+       pblflg(i,j) = .false.
+      ENDIF
+  ENDDO
+  ENDDO
+
+  DO j = j_start,j_end
+  DO i = i_start,i_end
+     IF(pblflg(i,j))THEN
+       k = kpbl(i,j) - 1
+       wm3           = wstar3(i,j) + 5. * ust(i,j)**3
+       wm2(i,j)      = wm3**h2
+       bfxpbl(i,j)   = -0.15*thv(i,1,j)/g*wm3/hpbl(i,j)
+       dthv(i,j)     = max(thv(i,k+1,j) - thv(i,k,j),tmin)
+       dtheta        = max(th_phy(i,k+1,j) - th_phy(i,k,j),tmin)
+ 
+       du            = u_phy(i,k+1,j)-u_phy(i,k,j)
+       dv            = v_phy(i,k+1,j)-v_phy(i,k,j)
+ 
+       we(i,j)       = max(bfxpbl(i,j)/dthv(i,j),-sqrt(wm2(i,j)))
+       hfxpbl(i,j)   = we(i,j)*dtheta
+       delb          = govrth(i,j)*dthv(i,j)
+ 
+       deltaoh(i,j)  = d1*hpbl(i,j) + d2*wm2(i,j)/delb
+       deltaoh(i,j)  = max(ezfac*deltaoh(i,j),hpbl(i,j)-za(i,kpbl(i,j)-1,j)-1.)
+       deltaoh(i,j)  = min(deltaoh(i,j), hpbl(i,j))
+ 
+       rigs(i,j)     = govrth(i,j)*dthv(i,j)*deltaoh(i,j)/(du**2.+dv**2.)
+       rigs(i,j)     = max(min(rigs(i,j), rigsmax),rimin)
+       enlfrac2(i,j) = max(min(wm3/wstar3(i,j)/(1.+cpent/rigs(i,j)),entfmax),entfmin)
+       enlfrac2(i,j) = enlfrac2(i,j)*enlfrac
+     ENDIF
+  ENDDO
+  ENDDO
+
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+       IF(pblflg(i,j))THEN
+          entfacmf(i,k,j) = sqrt(((zq(i,k+1,j) - hpbl(i,j))/deltaoh(i,j))**2.)
+       ENDIF
+  ENDDO
+  ENDDO
+  ENDDO
+ 
+  DO j = j_start, j_end
+  DO i = i_start, i_end
+         deltaoh(i,j) = deltaoh(i,j)/hpbl(i,j)
+  ENDDO
+  ENDDO
+
+  DO j = j_start, j_end
+  DO i = i_start, i_end
+     delxy = sqrt(dx/msftx(i,j)*dy/msfty(i,j))
+     mlfrac        = mltop-deltaoh(i,j)
+     ezfrac        = mltop+deltaoh(i,j)
+     zfacmf(i,1,j) = min(max((zq(i,2,j)/hpbl(i,j)),zfmin),1.)
+     sfcfracn      = max(sfcfracn1,zfacmf(i,1,j))
+!
+     sflux0      = (a11+a12*sfcfracn)*sflux(i,j)
+     snlflux0    = nlfrac*sflux0
+     amf1        = snlflux0/sfcfracn
+     amf2        = -snlflux0/(mlfrac-sfcfracn)
+     bmf2        = -mlfrac*amf2
+     amf3        = snlflux0*enlfrac2(i,j)/deltaoh(i,j)
+     bmf3        = -amf3*mlfrac
+     hfxpbl(i,j) = amf3+bmf3
+     pth1        = pthnl(delxy,hpbl(i,j))
+     hfxpbl(i,j) = hfxpbl(i,j)*pth1
+
+    DO k = kts, ktf
+       zfacmf(i,k,j) = max((zq(i,k+1,j)/hpbl(i,j)),zfmin)
+       IF(pblflg(i,j).and.k.LT.kpbl(i,j)) THEN
+         IF(zfacmf(i,k,j).LE.sfcfracn) THEN
+           nlflux(i,k,j) =  amf1*zfacmf(i,k,j)
+         ELSE IF (zfacmf(i,k,j).LE.mlfrac) THEN
+           nlflux(i,k,j) =  amf2*zfacmf(i,k,j)+bmf2
+         ENDIF
+         nlflux(i,k,j) = nlflux(i,k,j) + hfxpbl(i,j)*exp(-entfacmf(i,k,j)) 
+         nlflux(i,k,j) = nlflux(i,k,j)*pth1
+       ENDIF
+    ENDDO
+  ENDDO
+  ENDDO
+END SUBROUTINE nonlocal_flux
+
+!==============================================================================
+!==============================================================================
+
+! partial function for nonlocal heat flux
+   FUNCTION pthnl(d,h)
+   IMPLICIT NONE
+   REAL           :: pthnl
+   REAL,PARAMETER :: pmin = 0.0,pmax = 1.0
+   REAL,PARAMETER :: a1 = 1.000, a2 = 0.936, a3 = -1.110,                      &
+                     a4 = 1.000, a5 = 0.312, a6 = 0.329, a7 = 0.243
+   REAL,PARAMETER :: b1 = 2.0, b2 = 0.875
+   real           :: d,h,doh,num,den
+
+   doh   = d/h
+   num   = a1*(doh)**b1 + a2*(doh)**b2+a3
+   den   = a4*(doh)**b1 + a5*(doh)**b2+a6
+   pthnl = a7*num/den + (1. - a7)
+   pthnl = max(pthnl,pmin)
+   pthnl = min(pthnl,pmax)
+
+   IF(d.LE.100.) THEN  ! assume dx<=100m as LES
+      pthnl = 0.0
+   ENDIF
+ 
+   RETURN
+   END FUNCTION
+
+! partial function for local heat flux
+   FUNCTION pthl(d,h)
+   IMPLICIT NONE
+   REAL           :: pthl
+   REAL,PARAMETER :: pmin = 0.0,pmax = 1.0
+   REAL,PARAMETER :: a1 = 1.000, a2 = 0.870, a3 = -0.913,    &
+                     a4 = 1.000, a5 = 0.153, a6 = 0.278, a7 = 0.280
+   REAL,PARAMETER :: b1 = 2.0, b2 = 0.5
+   REAL           :: d,h,doh,num,den
+
+   doh  = d/h
+   num  = a1*(doh)**b1 + a2*(doh)**b2+a3
+   den  = a4*(doh)**b1 + a5*(doh)**b2+a6
+   pthl = a7*num/den+(1. - a7)
+   pthl = max(pthl,pmin)
+   pthl = min(pthl,pmax)
+
+   IF(d.LE.100.) THEN  ! assume dx<=100m as LES
+      pthl = 0.0
+   ENDIF
+
+   RETURN
+   END FUNCTION
+
+! partial function for momentum flux
+   function pu(d,h)
+   IMPLICIT NONE
+   REAL           :: pu
+   REAL,PARAMETER :: pmin = 0.0,pmax = 1.0
+   REAL,PARAMETER :: a1 = 1.0, a2 = 0.070, a3 = 1.0, a4 = 0.142, a5 = 0.071
+   REAL,PARAMETER :: b1 = 2.0, b2 = 0.6666667
+   REAL           :: d,h,doh,num,den
+
+   doh = d/h
+   num = a1*(doh)**b1 + a2*(doh)**b2
+   den = a3*(doh)**b1 + a4*(doh)**b2+a5
+   pu  = num/den
+   pu  = max(pu,pmin)
+   pu  = min(pu,pmax)
+
+   IF(d.LE.100.) THEN  ! assume dx<=100 as LES
+      pu = 0.0
+   ENDIF
+
+   RETURN
+   END FUNCTION
+
+!=======================================================================
+!=======================================================================
 
     SUBROUTINE cal_titau_11_22_33( config_flags, titau,              &
                                    tke, xkx, defor,                  &
@@ -4887,6 +6022,7 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                     RUBLTEN, RVBLTEN,                                      &
                     RUCUTEN, RVCUTEN,                                      &
                     RUSHTEN, RVSHTEN,                                      &
+                    gamu, gamv, xkmv_meso,                                 & ! XZ
                     ids, ide, jds, jde, kds, kde,                          &
                     ims, ime, jms, jme, kms, kme,                          &
                     ips, ipe, jps, jpe, kps, kpe,                          &
@@ -4920,10 +6056,12 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                                                     xkmv, &
                                                                     xkhh, &
                                                                     xkhv, &
+                                                               xkmv_meso, & ! XZ
                                                                      tke, &
                                                                      div, &
                                                                      rho
-
+!XZ
+  REAL , DIMENSION( ims:ime, jms:jme), INTENT(INOUT) :: gamu, gamv
 ! End declarations.
 !-----------------------------------------------------------------------
 
@@ -5053,6 +6191,25 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                 its, ite, jts, jte, kts, kte              )
    ENDIF
 
+!XZ
+   IF(config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 5) THEN
+   CALL set_physical_bc2d( gamu, 't', config_flags,                    &
+                                   ids, ide, jds, jde,                 &
+                                   ims, ime, jms, jme,                 &
+                                   ips, ipe, jps, jpe,                 &
+                                   its, ite, jts, jte                  )
+   CALL set_physical_bc2d( gamv, 't', config_flags,                    &
+                                   ids, ide, jds, jde,                 &
+                                   ims, ime, jms, jme,                 &
+                                   ips, ipe, jps, jpe,                 &
+                                   its, ite, jts, jte                  )
+   CALL set_physical_bc3d( xkmv_meso,'t', config_flags,                &
+                                ids, ide, jds, jde, kds, kde,          &
+                                ims, ime, jms, jme, kms, kme,          &
+                                ips, ipe, jps, jpe, kps, kpe,          &
+                                its, ite, jts, jte, kts, kte           )
+   ENDIF
+!
 END SUBROUTINE phy_bc
 
 !=======================================================================
@@ -5064,10 +6221,13 @@ END SUBROUTINE phy_bc
                         u, v, w, div, tke, mu, c1, c2,          &
                         theta, p, p8w, t8w, z, fnm, fnp,        &
                         cf1, cf2, cf3, msftx, msfty,            &
-                        xkmh, xkmv, xkhv,                       &
+                        xkmh, xkmv, xkhv,                       & 
                         rdx, rdy, dx, dy, dt, zx, zy,           &
                         rdz, rdzw, dn, dnw, isotropic,          &
                         hfx, qfx, qv, ust, rho,                 &
+                        tke_production_tend,tke_buoy_tend,      & !XZ
+                        tke_shear_tend,l_scale,                 & !XZ
+                        nlflux, hpbl, dlk,  xkmh_t,             & !XZ
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         its, ite, jts, jte, kts, kte            )
@@ -5112,7 +6272,22 @@ END SUBROUTINE phy_bc
     :: hfx, ust, qfx
     REAL, DIMENSION ( ims:ime, kms:kme, jms:jme ), INTENT ( IN ) &
     :: qv, rho
+! XZ
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
+    :: tke_production_tend, tke_buoy_tend, tke_shear_tend
+    
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( OUT )  &
+    :: l_scale   
 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT ( IN ) &
+    :: nlflux, dlk
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT ( IN ) &
+    :: xkmh_t
+
+    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) &
+    :: hpbl
+!
 ! Local variables.
 
     INTEGER  &
@@ -5122,20 +6297,24 @@ END SUBROUTINE phy_bc
 !-----------------------------------------------------------------------
 
     CALL tke_shear(    tendency, config_flags,                &
+                       tke_shear_tend,                        & ! XZ
                        defor11, defor22, defor33,             &
                        defor12, defor13, defor23,             &
                        u, v, w, tke, ust, mu,                 &
                        c1, c2, fnm, fnp,                      &
                        cf1, cf2, cf3, msftx, msfty,           &
-                       xkmh, xkmv,                            &
+                       xkmh_t, xkmh, xkmv,                    & ! XZ
                        rdx, rdy, zx, zy, rdz, rdzw, dnw, dn,  &
                        ids, ide, jds, jde, kds, kde,          &
                        ims, ime, jms, jme, kms, kme,          &
                        its, ite, jts, jte, kts, kte           )
 
-    CALL tke_buoyancy( tendency, config_flags, mu, c1, c2,    &
+    CALL tke_buoyancy( tendency, config_flags, mu,            &
+                       tke_buoy_tend,                         & ! XZ
+                       c1, c2,                                &
                        tke, xkhv, BN2, theta, dt,             &
                        hfx, qfx, qv,  rho,                    &
+                       nlflux,                                & ! XZ
                        ids, ide, jds, jde, kds, kde,          &
                        ims, ime, jms, jme, kms, kme,          &
                        its, ite, jts, jte, kts, kte           )
@@ -5144,6 +6323,7 @@ END SUBROUTINE phy_bc
                        tke, bn2, theta, p8w, t8w, z,          &
                        dx, dy,rdz, rdzw, isotropic,           &
                        msftx, msfty,                          &
+                       hpbl, dlk,  l_scale,                   & ! XZ
                        ids, ide, jds, jde, kds, kde,          &
                        ims, ime, jms, jme, kms, kme,          &
                        its, ite, jts, jte, kts, kte           )
@@ -5175,15 +6355,28 @@ END SUBROUTINE phy_bc
     END DO
     END DO
 
+!XZ
+    IF(config_flags%km_opt.eq.5) THEN
+       DO j = j_start, j_end
+       DO k = kts, ktf
+       DO i = i_start, i_end
+          tke_production_tend(i,k,j) = tke_buoy_tend(i,k,j) + tke_shear_tend(i,k,j)
+       END DO
+       END DO
+       END DO
+    ENDIF
+!
     END SUBROUTINE tke_rhs
 
 !=======================================================================
 !=======================================================================
 
     SUBROUTINE tke_buoyancy( tendency, config_flags, mu,    &
+                             tke_buoy_tend,                 & ! XZ
                              c1, c2,                        &
                              tke, xkhv, BN2, theta, dt,     &
                              hfx, qfx, qv,  rho,            &
+                             nlflux,                        & ! XZ
                              ids, ide, jds, jde, kds, kde,  &
                              ims, ime, jms, jme, kms, kme,  &
                              its, ite, jts, jte, kts, kte   )
@@ -5219,7 +6412,13 @@ END SUBROUTINE phy_bc
     :: qv, rho
 
     REAL, DIMENSION(ims:ime, jms:jme ), INTENT ( IN ) :: hfx, qfx
+!XZ
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
+    :: tke_buoy_tend
 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT ( IN ) &
+    :: nlflux
+!
 ! Local variables.
 
     INTEGER  &
@@ -5256,13 +6455,25 @@ END SUBROUTINE phy_bc
       IF ( config_flags%periodic_x ) i_start = its
       IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
-    DO j = j_start, j_end
-    DO k = kts+1, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) - (c1(k)*mu(i,j)+c2(k)) * xkhv(i,k,j) * BN2(i,k,j)
-    END DO
-    END DO
-    END DO
+!XZ
+    IF(config_flags%km_opt.eq.5) THEN
+       DO j = j_start, j_end
+       DO k = kts+1, ktf
+       DO i = i_start, i_end
+              tke_buoy_tend(i,k,j) = - (c1(k)*mu(i,j)+c2(k)) * (xkhv(i,k,j) * BN2(i,k,j)   &
+                                     - 0.5*(nlflux(i,k+1,j)+nlflux(i,k,j))*g/theta(i,k,j))
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = j_start, j_end
+       DO k = kts+1, ktf
+       DO i = i_start, i_end
+              tendency(i,k,j) = tendency(i,k,j) - (c1(k)*mu(i,j)+c2(k)) * xkhv(i,k,j) * BN2(i,k,j)
+       END DO
+       END DO
+       END DO
+    ENDIF
 
 ! MARTA: change in the computation of the tke's tendency  at the surface.
 !  the buoyancy flux is the average of the surface heat flux (0.06) and the
@@ -5276,28 +6487,51 @@ END SUBROUTINE phy_bc
                                             ! set in namelist.input
 ! LES mods
    K=KTS
-   DO j = j_start, j_end
-   DO i = i_start, i_end
-      heat_flux = heat_flux0
-      tendency(i,k,j)= tendency(i,k,j) - &
-                   (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
 
-   ENDDO
-   ENDDO
+!XZ
+   IF(config_flags%km_opt.eq.5) THEN
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+         heat_flux = heat_flux0
+         tke_buoy_tend(i,k,j) = - (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))-(g/theta(i,k,j))*heat_flux)/2.
+      ENDDO
+      ENDDO
+   ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+         heat_flux = heat_flux0
+         tendency(i,k,j)= tendency(i,k,j) - &
+                    (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
+
+      ENDDO
+      ENDDO
+   ENDIF
+!
 
   CASE (1) ! use surface heat flux computed from surface routine
    K=KTS
-   DO j = j_start, j_end
-   DO i = i_start, i_end
-      cpm = cp * (1. + 0.8*qv(i,k,j))
-      heat_flux = (hfx(i,j)/cpm)/rho(i,k,j)
 
-      tendency(i,k,j)= tendency(i,k,j) - &
+!XZ
+   IF(config_flags%km_opt.eq.5) THEN
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+         cpm = cp * (1. + 0.8*qv(i,k,j))
+         heat_flux = (hfx(i,j)/cpm)/rho(i,k,j)
+         tke_buoy_tend(i,k,j)= - (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))-(g/theta(i,k,j))*heat_flux)/2.
+      ENDDO
+      ENDDO
+   ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+         cpm = cp * (1. + 0.8*qv(i,k,j))
+         heat_flux = (hfx(i,j)/cpm)/rho(i,k,j)
+
+         tendency(i,k,j)= tendency(i,k,j) - &
                    (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
-
-   ENDDO
-   ENDDO
-
+      ENDDO
+      ENDDO
+   ENDIF 
+!
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
   END SELECT hflux
@@ -5318,6 +6552,7 @@ END SUBROUTINE phy_bc
                            tke, bn2, theta, p8w, t8w, z,      &
                            dx, dy, rdz, rdzw, isotropic,      &
                            msftx, msfty,                      &
+                           hpbl, dlk,  l_scale,               & !XZ
                            ids, ide, jds, jde, kds, kde,      &
                            ims, ime, jms, jme, kms, kme,      &
                            its, ite, jts, jte, kts, kte       )
@@ -5363,13 +6598,23 @@ END SUBROUTINE phy_bc
 
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: msftx, msfty
+! XZ
+    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) & 
+    :: hpbl
+ 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN)  &
+    :: dlk 
+ 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) & 
+    :: l_scale
+!
 ! Local variables.
 
     REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
     :: dthrdn
 
-    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
-    :: l_scale
+!    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
+!    :: l_scale
 
     REAL, DIMENSION( its:ite )  &
     :: sumtke,  sumtkez
@@ -5380,7 +6625,10 @@ END SUBROUTINE phy_bc
     REAL  &
     :: disp_len, deltas, coefc, tmpdz, len_s, thetasfc,  &
        thetatop, len_0, tketmp, tmp, ce1, ce2, c_k
-
+!XZ
+    REAL                                                 & 
+    :: pth1,delxy,coefc_m,pu1
+!
 ! End declarations.
 !-----------------------------------------------------------------------
     c_k = config_flags%c_k
@@ -5426,24 +6674,32 @@ END SUBROUTINE phy_bc
           coefc = ce1 + ce2 * l_scale(i,k,j) / deltas
         END IF
 
-        tendency(i,k,j) = tendency(i,k,j) - &
-                          (c1(k)*mu(i,j)+c2(k)) * coefc * tketmp**1.5 / l_scale(i,k,j)
+! XZ
+        IF(config_flags%km_opt.eq.5) THEN 
+          delxy = SQRT(dx/msftx(i,j)*dy/msfty(i,j))
+          pu1 = pu(delxy,hpbl(i,j))
+          coefc_m = 0.285 
+          l_scale(i,k,j) = (1.0-pu1)*l_scale(i,k,j)/coefc + pu1*dlk(i,k,j)/coefc_m
+        ELSE 
+          tendency(i,k,j) = tendency(i,k,j) - &
+                           (c1(k)*mu(i,j)+c2(k)) * coefc * tketmp**1.5 / l_scale(i,k,j)
+        ENDIF !
       END DO
       END DO
       END DO
-
     END SUBROUTINE tke_dissip
 
 !=======================================================================
 !=======================================================================
 
     SUBROUTINE tke_shear( tendency, config_flags,                &
+                          tke_shear_tend,                        & !XZ
                           defor11, defor22, defor33,             &
                           defor12, defor13, defor23,             &
                           u, v, w, tke, ust, mu, c1, c2,         &
                           fnm, fnp,                              &
                           cf1, cf2, cf3, msftx, msfty,           &
-                          xkmh, xkmv,                            &
+                          xkmh_t, xkmh, xkmv,                    & !XZ
                           rdx, rdy, zx, zy, rdz, rdzw, dn, dnw,  &
                           ids, ide, jds, jde, kds, kde,          &
                           ims, ime, jms, jme, kms, kme,          &
@@ -5524,7 +6780,13 @@ END SUBROUTINE phy_bc
 
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: ust
-
+!XZ
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
+    :: tke_shear_tend
+   
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )     &
+    :: xkmh_t
+!
 ! Local variables.
 
     INTEGER  &
@@ -5586,36 +6848,66 @@ END SUBROUTINE phy_bc
 
 ! For defor11.
 
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = 0.5 * (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor11(i,k,j ) )**2 )
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
                         (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor11(i,k,j) )**2 )
-    END DO
-    END DO
-    END DO
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 ! For defor22.
-
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + 0.5 *  &
+                             (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor22(i,k,j) )**2 )
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
                         (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor22(i,k,j) )**2 )
-    END DO
-    END DO
-    END DO
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 ! For defor33.
-
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
+    IF(config_flags%km_opt.eq.5) THEN !XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + 0.5 *  &
                         (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * ( ( defor33(i,k,j) )**2 )
-    END DO
-    END DO
-    END DO
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
+                        (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * ( ( defor33(i,k,j) )**2 )
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 ! For defor12.
 
@@ -5629,13 +6921,23 @@ END SUBROUTINE phy_bc
     END DO
     END DO
 
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * avg(i,k,j)
-    END DO
-    END DO
-    END DO
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * avg(i,k,j)
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * avg(i,k,j)
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 ! For defor13.
 
@@ -5664,13 +6966,23 @@ END SUBROUTINE phy_bc
     END DO
     END DO
 
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
-    END DO
-    END DO
-    END DO
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 !MARTA: add the drag at the surface; WCS 040331
     K=KTS
@@ -5680,31 +6992,59 @@ END SUBROUTINE phy_bc
 
     cd0 = config_flags%tke_drag_coefficient  ! drag coefficient set
                                              ! in namelist.input
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+ 
+      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
+      Cd = cd0
+      tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) +         &
+           (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
+                     Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
+ 
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
       Cd = cd0
-      tendency(i,k,j) = tendency(i,k,j) +       &
+      tendency(i,k,j) = tendency(i,k,j) +                     &
            (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
                      Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
 
-    END DO
-    END DO
+      END DO
+      END DO
+    ENDIF
 
   CASE (1,2) ! ustar computed from surface routine
 
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+  IF(config_flags%km_opt.eq.5) THEN !XZ
+     DO j = j_start, j_end
+     DO i = i_start, i_end
+ 
+      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
+      Cd = (ust(i,j)**2)/(absU**2)
+      tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) +         &
+           (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
+                     Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
+ 
+     END DO
+     END DO
+  ELSE
+     DO j = j_start, j_end
+     DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
-      tendency(i,k,j) = tendency(i,k,j) +       &
+      tendency(i,k,j) = tendency(i,k,j) +                     &
            (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
                      Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
 
-    END DO
-    END DO
+     END DO
+     END DO
+  ENDIF
 
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
@@ -5738,13 +7078,23 @@ END SUBROUTINE phy_bc
     END DO
     END DO
 
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
+    IF(config_flags%km_opt.eq.5) THEN !XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+      tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
       tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
-    END DO
-    END DO
-    END DO
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 !MARTA: add the drag at the surface; WCS 040331
     K=KTS
@@ -5754,22 +7104,49 @@ END SUBROUTINE phy_bc
 
     cd0 = config_flags%tke_drag_coefficient   ! constant drag coefficient
                                               ! set in namelist.input
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+    IF(config_flags%km_opt.eq.5) THEN !XZ
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+ 
+      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
+      Cd = cd0
+      tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) +         &
+           (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
+                     Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
+ 
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
       Cd = cd0
-      tendency(i,k,j) = tendency(i,k,j) +       &
+      tendency(i,k,j) = tendency(i,k,j) +                     &
            (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
                      Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
 
-    END DO
-    END DO
+      END DO
+      END DO
+    ENDIF
 
   CASE (1,2) ! ustar computed from surface routine
 
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+   IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+ 
+      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
+      Cd = (ust(i,j)**2)/(absU**2)
+      tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) +         &
+           (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
+                     Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
+ 
+      END DO
+      END DO
+   ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
@@ -5777,8 +7154,9 @@ END SUBROUTINE phy_bc
            (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
                      Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
 
-    END DO
-    END DO
+      END DO
+      END DO
+   ENDIF
 
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
@@ -6488,10 +7866,1186 @@ END SUBROUTINE phy_bc
 ! End update of boundary for updraft helicity.
 
     END SUBROUTINE cal_helicity
+!=======================================================================
+!=======================================================================
+    SUBROUTINE update_tke_implicit( config_flags,tke_old,               &
+                            tke,xkhv,rdz,rdzw,l_scale,                  &
+                            dnw, rdnw, c1h, c2h,                        & 
+                            tke_adv_h_tend,tke_adv_z_tend,              &
+                            tke_production_tend,                        &
+                            tke_diffusion_h_tend,                       &
+                            fnm,fnp,msftx, msfty,                       &
+                            mu_old, mu_new, mu_base,                    &
+                            rk_step, dt, spec_zone,                     &
+                            tke_upper_bound, rho,                       &
+                            ids, ide, jds, jde, kds, kde,               &
+                            ims, ime, jms, jme, kms, kme,               &
+                            its, ite, jts, jte, kts, kte                )
+
+! TO solve the TKE equation using implicit method. The vertical TKE diffusion
+! and dissipation are implicitly treated.
+
+    IMPLICIT NONE
+
+    TYPE( grid_config_rec_type ),                 INTENT( IN )    :: config_flags
+
+    INTEGER,                                      INTENT( IN )    ::           &
+                                                ids, ide, jds, jde, kds, kde,  &
+                                                ims, ime, jms, jme, kms, kme,  &
+                                                its, ite, jts, jte, kts, kte
+
+    INTEGER,                                      INTENT( IN )    :: rk_step, spec_zone
+
+    REAL,                                         INTENT( IN )    :: dt
+
+    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   )   :: fnm,  &
+                                                                     fnp,  &
+                                                                     rdnw, &
+                                                                     dnw,  &
+                                                                     c1h,  &
+                                                                     c2h
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT ) :: tke, tke_old
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) :: l_scale
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
+                                                            tke_adv_h_tend, &
+                                                            tke_adv_z_tend, &
+                                                       tke_production_tend
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
+                                                      tke_diffusion_h_tend
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
+                                                                   xkhv,    &
+                                                                   rdz,     &
+                                                                   rdzw,    &
+                                                                   rho
+
+    REAL, DIMENSION(ims:ime, jms:jme  ),          INTENT( IN ) ::  mu_old,  &
+                                                                   mu_new,  &
+                                                                   mu_base, &
+                                                                   msftx,   &
+                                                                   msfty
+    REAL, INTENT(   IN) :: tke_upper_bound
+
+!LOCAL VARS
+    REAL                     :: temp, beta, muu, rdz_w
+    REAL, DIMENSION(kts:kte) :: a,b,c,d
+    REAL, DIMENSION(its:ite,          jts:jte  ) :: muold, munew
+    REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: advect_h_tend,advect_z_tend
+    REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: xkxavg
+    INTEGER :: i_start_spc,i_end_spc,j_start_spc,j_end_spc,k_start_spc,k_end_spc
+    INTEGER :: i,j,k, nz, ktf, i_start, i_end, j_start, j_end, k_start, k_end
+ 
+      i_start = its
+      i_end   = min(ite,ide-1)
+      j_start = jts
+      j_end   = min(jte,jde-1)
+      k_start = kts
+      k_end   = kte-1
+ 
+      i_start_spc = i_start
+      i_end_spc   = i_end
+      j_start_spc = j_start
+      j_end_spc   = j_end
+      k_start_spc = k_start
+      k_end_spc   = k_end
+ 
+    IF( config_flags%nested .or. config_flags%specified ) THEN
+      IF( .NOT. config_flags%periodic_x)i_start = max( its,ids+spec_zone )
+      IF( .NOT. config_flags%periodic_x)i_end   = min( ite,ide-spec_zone-1 )
+      j_start = max( jts,jds+spec_zone )
+      j_end   = min( jte,jde-spec_zone-1 )
+      k_start = kts
+      k_end   = min( kte, kde-1 )
+    ENDIF
+  
+    ktf = min( kte, kde-1 )
+ 
+    nz = ktf
+ 
+      !  just compute new values, scalar_1 already at time t.
+ 
+       DO  j = jts, min(jte,jde-1)
+       DO  k = kts, min(kte,kde-1)
+       DO  i = its, min(ite,ide-1)
+           advect_h_tend(i,k,j) = 0.
+           advect_z_tend(i,k,j) = 0.
+       ENDDO
+       ENDDO
+       ENDDO
+ 
+       DO  j = j_start,j_end
+       DO  k = k_start,k_end
+       DO  i = i_start,i_end
+           ! scalar was coupled with my
+           advect_h_tend(i,k,j) = tke_adv_h_tend(i,k,j) * msfty(i,j)
+           advect_z_tend(i,k,j) = tke_adv_z_tend(i,k,j) * msfty(i,j)
+       ENDDO
+       ENDDO
+       ENDDO
+ 
+       DO  j = jts, min(jte,jde-1)
+       DO  i = its, min(ite,ide-1)
+           muold(i,j) = mu_old(i,j) + mu_base(i,j)
+           munew(i,j) = mu_new(i,j) + mu_base(i,j)
+       ENDDO
+       ENDDO
+
+       DO  j = jts, min(jte,jde-1)
+       DO  k = kts, min(kte,kde-1)
+       DO  i = its, min(ite,ide-1)
+           tke_old(i,k,j) = tke(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+ 
+       DO j = j_start, j_end
+       DO k = kts+1,ktf
+       DO i = i_start, i_end
+            xkxavg(i,k,j) = ( fnm(k)*xkhv(i,k,j)+fnp(k)*xkhv(i,k-1,j) ) &
+                          * ( fnm(k)*rho (i,k,j)+fnp(k)*rho (i,k-1,j) )
+       ENDDO 
+       ENDDO
+       ENDDO
+ 
+       DO j = j_start, j_end
+       DO i = i_start, i_end
+              xkxavg(i,kts,j)   = 0.0
+              xkxavg(i,ktf+1,j) = 0.0
+       END DO
+       END DO
+
+       DO  j = jts, min(jte,jde-1)
+       DO  i = its, min(ite,ide-1)
+          DO  k = kts,ktf-1
+             muu = c1h(k)*muold(i,j) + c2h(k)
+             rdz_w = -g/(dnw(k)*muu) 
+             temp = xkxavg(i,k,j)*dt*rdz_w
+             beta = 1.5*sqrt(tke_old(i,k,j))/l_scale(i,k,j)
+ 
+             a(k) = - 2.0*temp*rdz(i,k,j)  
+             b(k) =   1.0 + 2.0*dt*rdz_w*(rdz(i,k,j)*xkxavg(i,k,j)    &
+                    + rdz(i,k+1,j)*xkxavg(i,k+1,j))                   &
+                    + dt*beta
+             c(k) = - 2.0*xkxavg(i,k+1,j)*dt*rdz(i,k+1,j)*rdz_w  
+ 
+             d(k) =  (tke_diffusion_h_tend(i,k,j)+advect_h_tend(i,k,j)+tke_production_tend(i,k,j) + advect_z_tend(i,k,j))*dt  &
+                    + muu*tke_old(i,k,j)                              &
+                    + 0.5*dt*muu*tke_old(i,k,j)**1.5/l_scale(i,k,j)
+          ENDDO
+ 
+             a(ktf) = -1. 
+             b(ktf) = 1.
+             c(ktf) = 0.
+             d(ktf) = 0.
+ 
+             CALL tridiag(nz,a,b,c,d)
+ 
+          DO k=kts,ktf
+             tke(i,k,j) = d(k)/(c1h(k)*munew(i,j) + c2h(k))
+          ENDDO
+ 
+       ENDDO
+       ENDDO 
+
+       DO j=jts,min(jte,jde-1)
+       DO k=kts,kte-1
+       DO i=its,min(ite,ide-1)
+             tke(i,k,j) = min(tke_upper_bound,max(tke(i,k,j),0.))
+       ENDDO
+       ENDDO
+       ENDDO
+    END SUBROUTINE update_tke_implicit
+
+    SUBROUTINE tridiag(n,a,b,c,d)
+!! to solve system of linear eqs on tridiagonal matrix n times n
+!! after Peaceman and Rachford, 1955
+!! a,b,c,d - are vectors of order n 
+!! a,b,c - are coefficients on the LHS
+!! d - is initially RHS on the output becomes a solution vector
+!-------------------------------------------------------------------
+ 
+    INTEGER, INTENT(IN)               :: n
+    REAL, DIMENSION(n), INTENT(IN)    :: a,b
+    REAL, DIMENSION(n), INTENT(INOUT) :: c,d
+ 
+    INTEGER :: i
+    REAL    :: p
+    REAL, DIMENSION(n) :: q
+ 
+    c(n) = 0.
+    q(1) = -c(1)/b(1)
+    d(1) = d(1)/b(1)
+ 
+    DO i = 2, n
+       p = 1./(b(i) + a(i)*q(i-1))
+       q(i) = -c(i)*p
+       d(i) = (d(i) - a(i)*d(i-1))*p
+    ENDDO
+ 
+    DO i = n-1, 1, -1
+       d(i) = d(i) + q(i)*d(i+1)
+    ENDDO
+ 
+    END SUBROUTINE tridiag
+!=======================================================================
+!=======================================================================
+    SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
+                                        tke_tendf, moist_tendf, n_moist,          &
+                                        chem_tendf, n_chem,                       &
+                                        scalar_tendf, n_scalar,                   &
+                                        tracer_tendf, n_tracer,                   &
+                                        u_2, v_2, w_2, dt,                        &
+                                        thp,u_base,v_base,t_base,qv_base,mu,tke,  &
+                                        theta, config_flags,                      &
+                                        moist,chem,scalar,tracer,                 &
+                                        xkmv,xkhv,xkmh,km_opt,                    &
+                                        fnm, fnp, dn, dnw, rdz, rdzw,             &
+                                        hfx, qfx, ust, rho,                       &
+                                        nlflux,gamu,gamv,xkmv_meso,               &
+                                        u_z_tend,v_z_tend,w_z_tend,th_z_tend,     &
+                                        tke_diffusion_z_tend,                     &
+                                        c1h, c2h, c1f, c2f,                       &
+                                        ids, ide, jds, jde, kds, kde,             &
+                                        ims, ime, jms, jme, kms, kme,             &
+                                        its, ite, jts, jte, kts, kte              )
+!To solve the vertical diffusion equations for u,v,w,th,tke,moist,
+!chem,scalar,tracer using implicit method.
+!-----------------------------------------------------------------------
+! Begin declarations.
+ 
+   IMPLICIT NONE
+ 
+   TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
+ 
+   INTEGER ,        INTENT(IN   ) ::        ids, ide, jds, jde, kds, kde, &
+                                            ims, ime, jms, jme, kms, kme, &
+                                            its, ite, jts, jte, kts, kte
+ 
+   INTEGER ,        INTENT(IN   ) :: n_moist,n_chem,n_scalar,n_tracer,km_opt
+   REAL,            INTENT(IN   ) :: dt
+ 
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnm
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnp
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: dnw
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::  dn
+
+   REAL , DIMENSION( ims:ime , jms:jme ) ,       INTENT(IN   ) ::  mu
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: qv_base
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::  u_base
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::  v_base
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::  t_base
+
+   REAL , DIMENSION( kms:kme)  ,                 INTENT(IN   ) ::         &
+                                                       c1h, c2h, c1f ,c2f
+ 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::ru_tendf,&
+                                                                 rv_tendf,&
+                                                                 rw_tendf,&
+                                                                tke_tendf,&
+                                                                 rt_tendf
+ 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::u_z_tend, &
+                                                                 v_z_tend, &
+                                                                 w_z_tend, &
+                                                     tke_diffusion_z_tend, &
+                                                                th_z_tend
+ 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
+          INTENT(INOUT) ::                                    moist_tendf
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_chem),                  &
+          INTENT(INOUT) ::                                     chem_tendf
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar) ,               &
+          INTENT(INOUT) ::                                   scalar_tendf
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_tracer) ,               &
+          INTENT(INOUT) ::                                   tracer_tendf
+ 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
+          INTENT(INOUT) ::                                          moist
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_chem),                  &
+          INTENT(INOUT) ::                                           chem
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar) ,               &
+          INTENT(IN   ) ::                                         scalar
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_tracer) ,               &
+          INTENT(IN   ) ::                                         tracer
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme),                          &
+          INTENT(IN   ) ::                                          xkmv, &
+                                                                    xkhv, &
+                                                                    xkmh, &
+                                                                     tke, &
+                                                                   theta, &
+                                                                     rdz, &
+                                                                     u_2, &
+                                                                     v_2, &
+                                                                     w_2, &
+                                                                    rdzw
+ 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   )   :: rho
+
+   REAL , DIMENSION( ims:ime, jms:jme),          INTENT(INOUT)   :: hfx,  &
+                                                                    qfx
+
+   REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   )            :: ust
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT)   :: thp
+ 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT)  :: nlflux
+
+   REAL , DIMENSION( ims:ime, jms:jme), INTENT(INOUT)            :: gamu,&
+                                                                    gamv
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT)   :: xkmv_meso
+
+! LOCAL VAR
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme)           :: var_mix
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist)  :: moist_z_tend
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_chem)   :: chem_z_tend
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar) :: scalar_z_tend
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_tracer) :: tracer_z_tend
+ 
+   REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 ):: xkxavg_m, &
+                                                          xkxavg_s
+   REAL, DIMENSION( its:ite, kts:kte, jts:jte)         :: xkxavg,   &
+                                                          xkxavg_w, &
+                                                          rhoavg,   &
+                                                          nlflux_rho
+   REAL, DIMENSION( its-1:ite+1, jts-1:jte+1 )         :: gamvavg, gamuavg
+   REAL, DIMENSION( its-1:ite+1, jts-1:jte+1 )         :: tao_xz, tao_yz
+   REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 ):: muavg_u,muavg_v
+   REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 ):: rdz_u, rdz_v
+   REAL, DIMENSION(kts:kte) :: a, b, c, d
+   REAL, DIMENSION(kts:kte-1) :: a1, b1, c1, d1
+ 
+   INTEGER :: im, i,j,k,ktf,nz
+   INTEGER :: i_start, i_end, j_start, j_end
+ 
+   REAL :: V0_u,V0_v,ustar
+   REAL :: xsfc,psi1,vk2,zrough,lnz
+   REAL :: heat_flux, moist_flux, heat_flux0
+   REAL :: cpm,rdz_w,rhoavg_u,rhoavg_v,rdz_z
+! End declarations.
+!-----------------------------------------------------------------------
+!!============================================
+!! u
+!!============================================
+   ktf=MIN(kte,kde-1)
+ 
+   i_start = its
+   i_end   = ite
+   j_start = jts
+   j_end   = MIN(jte,jde-1)
+ 
+   IF ( config_flags%open_xs .or. config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%open_xe .or. config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-1,ite)
+   IF ( config_flags%open_ys .or. config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%open_ye .or. config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = ite
+ 
+    DO j = j_start, j_end
+    DO k = kts+1, ktf
+    DO i = i_start, i_end
+      rhoavg_u        =  0.5 * ( fnm(k) * ( rho(i,k  ,j) + rho(i-1,k,j) ) +                 &
+                                 fnp(k) * ( rho(i,k-1,j) + rho(i-1,k-1,j) ) )
+      xkxavg_m(i,k,j) =  0.5 * rhoavg_u *                                                   &
+                               ( fnm(k) * ( xkmv_meso(i,k  ,j) + xkmv_meso(i-1,k,j) ) +     &
+                                 fnp(k) * ( xkmv_meso(i,k-1,j) + xkmv_meso(i-1,k-1,j) ) )
+      xkxavg_s(i,k,j) =  0.5 * rhoavg_u *                                                   & 
+                               ( fnm(k) * ( xkmv(i,k  ,j) + xkmv(i-1,k,j) ) +               &
+                                 fnp(k) * ( xkmv(i,k-1,j) + xkmv(i-1,k-1,j) ) )
+    END DO
+    END DO
+    END DO
+
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+        xkxavg_m(i,kts,j)   = 0.0
+        xkxavg_m(i,ktf+1,j) = 0.0
+        xkxavg_s(i,kts,j)   = 0.0
+        xkxavg_s(i,ktf+1,j) = 0.0
+    END DO
+    END DO
+ 
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+      gamuavg(i,j) = 0.5 * ( gamu(i,j) + gamu(i-1,j) )
+    END DO
+    END DO
+ 
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+       rdz_u(i,k,j)   = 2./( 1./rdz(i,k,j) +  1./rdz(i-1,k,j))
+       muavg_u(i,k,j) = 0.5 * ( (c1h(k)*mu(i,j)+c2h(k)) + (c1h(k)*mu(i-1,j)+c2h(k)) )    
+    ENDDO
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO i = i_start, ite
+       V0_u=0.
+       V0_u=    sqrt((u_2(i,kts,j)**2) +         &
+                        (((v_2(i  ,kts,j  )+          &
+                           v_2(i  ,kts,j+1)+          &
+                           v_2(i-1,kts,j  )+          &
+                           v_2(i-1,kts,j+1))/4)**2))+epsilon
+       ustar = 0.5*(ust(i,j)+ust(i-1,j))
+       tao_xz(i,j)=ustar*ustar*(rho(i,kts,j)+rho(i-1,kts,j))/(2.*V0_u)
+    ENDDO
+    ENDDO
+
+    nz = ktf
+ 
+       DO  j = j_start, j_end
+       DO  i = i_start, i_end
+            k = kts
+            rdz_w = -g/(dnw(k))/muavg_u(i,k,j)
+            a(k) = 0.
+            b(k) = 1.+rdz_w*(rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)+tao_xz(i,j))*dt
+            c(k) =   -rdz_w*rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
+            d(k) = u_2(i,kts,j)
+ 
+          DO  k = kts+1,ktf-1
+            rdz_w =  -g/(dnw(k))/muavg_u(i,k,j)
+            a(k) = -rdz_w*rdz_u(i,k,j)*xkxavg_s(i,k,j)*dt
+            b(k) = 1 + rdz_w*(rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)+rdz_u(i,k,j)*xkxavg_s(i,k,j))*dt
+            c(k) = -rdz_w*rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
+            d(k) = -rdz_w*(xkxavg_m(i,k+1,j)-xkxavg_m(i,k,j))*dt*gamuavg(i,j) + u_2(i,k,j)
+          ENDDO
+ 
+            a(ktf) = 0.
+            b(ktf) = 1.
+            c(ktf) = 0.
+            d(ktf) = u_2(i,ktf,j)
+ 
+         CALL tridiag(nz,a,b,c,d)
+ 
+         DO k=kts,ktf
+              u_z_tend(i,k,j) = muavg_u(i,k,j) * (d(k) - u_2(i,k,j))/dt 
+         ENDDO
+ 
+       ENDDO
+       ENDDO
+ 
+      DO j = j_start, j_end
+      DO k=kts,ktf
+      DO i = i_start, i_end
+         ru_tendf(i,k,j) = ru_tendf(i,k,j) + u_z_tend(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+
+!!============================================
+!! v
+!!============================================
+   ktf=MIN(kte,kde-1)
+ 
+   i_start = its
+   i_end   = MIN(ite,ide-1)
+   j_start = jts
+   j_end   = jte
+ 
+   IF ( config_flags%open_xs .or. config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%open_xe .or. config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-2,ite)
+   IF ( config_flags%open_ys .or. config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%open_ye .or. config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-1,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
+ 
+    DO j = j_start, j_end
+    DO k = kts+1, ktf
+    DO i = i_start, i_end
+      rhoavg_v        = 0.5 * ( fnm(k) * ( rho(i,k  ,j) + rho(i,k,j-1) ) +       &
+                                fnp(k) * ( rho(i,k-1,j) + rho(i,k-1,j-1) ) )
+      xkxavg_m(i,k,j) = 0.5 * rhoavg_v *                                         &  
+                       ( fnm(k) * ( xkmv_meso(i,k  ,j) + xkmv_meso(i,k,j-1) ) +  &
+                         fnp(k) * ( xkmv_meso(i,k-1,j) + xkmv_meso(i,k-1,j-1) ) )
+      xkxavg_s(i,k,j) = 0.5 * rhoavg_v *                                         &
+                       ( fnm(k) * ( xkmv(i,k  ,j) + xkmv(i,k,j-1) ) +            &
+                         fnp(k) * ( xkmv(i,k-1,j) + xkmv(i,k-1,j-1) ) )
+    END DO
+    END DO
+    END DO
+ 
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+        xkxavg_m(i,kts,j)   = 0.0
+        xkxavg_m(i,ktf+1,j) = 0.0
+        xkxavg_s(i,kts,j)   = 0.0
+        xkxavg_s(i,ktf+1,j) = 0.0
+    END DO
+    END DO
+
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+      gamvavg(i,j) = 0.5 * ( gamv(i,j) + gamv(i,j-1) )
+    END DO
+    END DO
+ 
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+       muavg_v(i,k,j) = 0.5 * ( (c1h(k)*mu(i,j)+c2h(k)) + (c1h(k)*mu(i,j-1)+c2h(k)) )
+    END DO
+    END DO
+    END DO
+
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+        rdz_v(i,k,j) = 2./( 1./rdz(i,k,j) +  1./rdz(i,k,j-1))
+    ENDDO
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, jte
+    DO i = i_start, i_end
+       V0_v=0.
+       V0_v=    sqrt((v_2(i,kts,j)**2) +              &
+                        (((u_2(i  ,kts,j  )+          &
+                           u_2(i  ,kts,j-1)+          &
+                           u_2(i+1,kts,j  )+          &
+                           u_2(i+1,kts,j-1))/4)**2))+epsilon
+       ustar=0.5*(ust(i,j)+ust(i,j-1))
+       tao_yz(i,j)=ustar*ustar*(rho(i,kts,j)+rho(i,kts,j-1))/(2.*V0_v)
+    ENDDO
+    ENDDO
+
+       nz = ktf
+ 
+       DO  j = j_start, j_end
+       DO  i = i_start, i_end
+            k = kts
+            rdz_w = -g/(dnw(k))/muavg_v(i,k,j)
+            a(k) = 0.
+            b(k) = 1. + rdz_w*(rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)+tao_yz(i,j))*dt
+            c(k) =     -rdz_w* rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
+            d(k) = v_2(i,kts,j)
+ 
+         DO  k = kts+1,ktf-1
+            rdz_w = -g/(dnw(k))/muavg_v(i,k,j)
+            a(k) = -rdz_w*rdz_v(i,k,j)*xkxavg_s(i,k,j)*dt
+            b(k) = 1. + rdz_w*(rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)+rdz_v(i,k,j)*xkxavg_s(i,k,j))*dt
+            c(k) = -rdz_w*rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
+            d(k) = -rdz_w*(xkxavg_m(i,k+1,j)-xkxavg_m(i,k,j))*dt*gamvavg(i,j) + v_2(i,k,j)
+          ENDDO
+ 
+            a(ktf) = 0.
+            b(ktf) = 1.
+            c(ktf) = 0.
+            d(ktf) = v_2(i,ktf,j)
+ 
+         CALL tridiag(nz,a,b,c,d)
+ 
+         DO k=kts,ktf
+             v_z_tend(i,k,j) = muavg_v(i,k,j) * (d(k) - v_2(i,k,j))/dt
+         ENDDO
+ 
+       ENDDO
+       ENDDO
+ 
+      DO j = j_start, j_end
+      DO k=kts,ktf
+      DO i = i_start, i_end
+         rv_tendf(i,k,j) = rv_tendf(i,k,j) + v_z_tend(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+
+!!============================================
+!! w
+!!============================================
+   ktf=MIN(kte,kde-1)
+ 
+   i_start = its
+   i_end   = MIN(ite,ide-1)
+   j_start = jts
+   j_end   = MIN(jte,jde-1)
+ 
+   IF ( config_flags%open_xs .or. config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%open_xe .or. config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-2,ite)
+   IF ( config_flags%open_ys .or. config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%open_ye .or. config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
+ 
+    nz = ktf-1
+
+       DO j = j_start, j_end
+       DO k = kts, ktf
+       DO i = i_start, i_end
+           xkxavg_w(i,k,j) = xkmh(i,k,j)*rho(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+ 
+       DO  j = j_start, j_end
+       DO  i = i_start, i_end
+ 
+          DO  k = kts+1,ktf
+            rdz_z = -g/dn(k)/(c1f(k)*mu(i,j) + c2f(k)) 
+            a1(k-1) =    - rdz_z* rdzw(i,k-1,j)*xkxavg_w(i,k-1,j)*dt
+            b1(k-1) = 1. + rdz_z*(rdzw(i,k  ,j)*xkxavg_w(i,k,j)+rdzw(i,k-1,j)*xkxavg_w(i,k-1,j))*dt
+            c1(k-1) =    - rdz_z* rdzw(i,k  ,j)*xkxavg_w(i,k,j)*dt
+            d1(k-1) = w_2(i,k,j)
+          ENDDO
+ 
+          CALL tridiag(nz,a1,b1,c1,d1)
+ 
+          DO k = kts+1,ktf
+              w_z_tend(i,k,j) = (c1f(k)*mu(i,j) + c2f(k)) * (d1(k-1)-w_2(i,k,j))/dt
+          ENDDO
+ 
+       ENDDO
+       ENDDO
+ 
+!       DO j = j_start, j_end
+!       DO i = i_start, i_end
+!              w_z_tend(i,kts  ,j) = 0.0
+!              w_z_tend(i,ktf+1,j) = 0.0
+!       ENDDO
+!       ENDDO
+
+       DO j = j_start, j_end
+       DO k = kts+1, ktf
+       DO i = i_start, i_end
+              rw_tendf(i,k,j) = rw_tendf(i,k,j) + w_z_tend(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+
+!!============================================
+!! th
+!!============================================
+   ktf=MIN(kte,kde-1)
+ 
+   i_start = its
+   i_end   = MIN(ite,ide-1)
+   j_start = jts
+   j_end   = MIN(jte,jde-1)
+ 
+   IF ( config_flags%open_xs .or. config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%open_xe .or. config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-2,ite)
+   IF ( config_flags%open_ys .or. config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%open_ye .or. config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
+ 
+   IF ( config_flags%mix_full_fields ) THEN
+     DO j=jts,min(jte,jde-1)
+     DO k=kts,kte-1
+     DO i=its,min(ite,ide-1)
+       var_mix(i,k,j) = thp(i,k,j)
+     ENDDO
+     ENDDO
+     ENDDO
+   ELSE
+     DO j=jts,min(jte,jde-1)
+     DO k=kts,kte-1
+     DO i=its,min(ite,ide-1)
+       var_mix(i,k,j) = thp(i,k,j) - t_base(k)
+     ENDDO
+     ENDDO
+     ENDDO
+   END IF
+
+     DO j = j_start, j_end
+     DO k = kts+1,ktf
+     DO i = i_start, i_end
+         xkxavg(i,k,j) = (fnm(k)*xkhv(i,k,j)+fnp(k)*xkhv(i,k-1,j)) * &
+                         (fnm(k)*rho (i,k,j)+fnp(k)*rho (i,k-1,j))
+     ENDDO
+     ENDDO
+     ENDDO
+ 
+     DO j = j_start, j_end
+     DO k = kts+1,ktf
+     DO i = i_start, i_end
+        nlflux_rho(i,k,j) = nlflux(i,k,j) * &
+                           (fnm(k)*rho (i,k,j)+fnp(k)*rho (i,k-1,j))
+     ENDDO
+     ENDDO
+     ENDDO
+
+     DO j = j_start, j_end
+     DO i = i_start, i_end
+         xkxavg(i,kts  ,j) = 0.0
+         xkxavg(i,ktf+1,j) = 0.0
+     ENDDO
+     ENDDO
+ 
+    nz = ktf
+ 
+  hflux: SELECT CASE( config_flags%isfflx )
+  CASE (0,2) ! with fixed surface heat flux given in the namelist
+    heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
+                                            ! set in namelist.input
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+       hfx(i,j)=heat_flux*cpm*rho(i,1,j)
+    ENDDO
+    ENDDO
+ 
+  CASE (1) ! use surface heat flux computed from surface routine
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+       heat_flux = hfx(i,j)/cpm/rho(i,1,j)
+    ENDDO
+    ENDDO
+ 
+  CASE DEFAULT
+    CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
+  END SELECT hflux
+
+    DO  j = j_start, j_end
+    DO  i = i_start, i_end
+            cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+            k = kts
+            rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j) + c2h(k))
+            a(k) = 0.
+            b(k) = 1. + rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
+            c(k) =    - rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j) *dt
+         
+          IF(config_flags%use_theta_m == 0)THEN
+             d(k) = var_mix(i,kts,j)                    &
+                 - dt*rdz_w*nlflux_rho(i,k+1,j)        &
+                 + dt*rdz_w*hfx(i,j)/cpm
+          ELSE
+             d(k) = var_mix(i,kts,j)                   &
+                 - dt*rdz_w*nlflux_rho(i,k+1,j)        &
+                 + dt*rdz_w*(hfx(i,j)/cpm+1.61*theta(i,kts,j)*qfx(i,j))
+          ENDIF
+ 
+          DO  k = kts+1, ktf-1
+            rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j) + c2h(k))
+            a(k)  = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
+            b(k)  = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
+            c(k)  = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+            d(k)  = -rdz_w*(nlflux_rho(i,k+1,j)-nlflux_rho(i,k,j))*dt + var_mix(i,k,j)
+          ENDDO
+ 
+            a(ktf) = 0.
+            b(ktf) = 1.
+            c(ktf) = 0.
+            d(ktf) = var_mix(i,ktf,j)
+ 
+          CALL tridiag(nz,a,b,c,d)
+ 
+          DO k = kts, ktf
+            th_z_tend(i,k,j) = (c1h(k)*mu(i,j) + c2h(k)) * (d(k) - var_mix(i,k,j))/dt
+          ENDDO
+ 
+       ENDDO
+       ENDDO
+ 
+      DO j = j_start, j_end
+      DO k = kts,ktf
+      DO i = i_start, i_end
+         rt_tendf(i,k,j) = rt_tendf(i,k,j) + th_z_tend(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+
+!!============================================
+!! tke
+!!============================================
+    DO j = j_start, j_end
+    DO k = kts+1, ktf
+    DO i = i_start, i_end
+        xkxavg(i,k,j) = ( fnm(k) * xkhv(i,k,j) + fnp(k) * xkhv(i,k-1,j) ) &
+                       *( fnm(k) * rho (i,k,j) + fnp(k) * rho (i,k-1,j) )
+    END DO
+    END DO
+    END DO
+ 
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+        xkxavg(i,kts,j)   = 0.0
+        xkxavg(i,ktf+1,j) = 0.0
+    END DO
+    END DO
+ 
+    nz = ktf
+ 
+    DO  j = j_start, j_end
+    DO  i = i_start, i_end
+        DO  k = kts, ktf-1
+           rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+           a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
+           b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
+           c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+           d(k) = tke(i,k,j)
+        ENDDO
+ 
+           a(ktf) = 0. !-1
+           b(ktf) = 1.
+           c(ktf) = 0.
+           d(ktf) = 0.
+
+     CALL tridiag(nz,a,b,c,d)
+ 
+        DO k = kts,ktf
+           tke_diffusion_z_tend(i,k,j) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k)-tke(i,k,j))/dt
+        ENDDO
+ 
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+         tke_tendf(i,k,j) = tke_tendf(i,k,j) + tke_diffusion_z_tend(i,k,j)
+    ENDDO
+    ENDDO
+    ENDDO
+
+!!============================================
+!! moisture
+!!============================================
+    DO j = j_start, j_end
+    DO k = kts+1,ktf
+    DO i = i_start, i_end
+       xkxavg(i,k,j) = ( fnm(k) * xkhv(i,k,j) + fnp(k) * xkhv(i,k-1,j) ) &
+                      *( fnm(k) * rho (i,k,j) + fnp(k) * rho (i,k-1,j) )
+    ENDDO
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+        xkxavg(i,kts,j)   = 0.0
+        xkxavg(i,ktf+1,j) = 0.0
+    END DO
+    END DO
+ 
+   IF (n_moist .ge. PARAM_FIRST_SCALAR) THEN
+     moist_loop: do im = PARAM_FIRST_SCALAR, n_moist
+       IF ( (.not. config_flags%mix_full_fields) .and. (im == P_QV) ) THEN
+         DO j=jts,min(jte,jde-1)
+         DO k=kts,kte-1
+         DO i=its,min(ite,ide-1)
+          var_mix(i,k,j) = moist(i,k,j,im) - qv_base(k)
+         ENDDO
+         ENDDO
+         ENDDO
+       ELSE
+         DO j=jts,min(jte,jde-1)
+         DO k=kts,kte-1
+         DO i=its,min(ite,ide-1)
+          var_mix(i,k,j) = moist(i,k,j,im)
+         ENDDO
+         ENDDO
+         ENDDO
+       END IF
+ 
+    nz = ktf
+!!
+    IF ( im == P_QV ) THEN
+         DO  j = j_start, j_end
+         DO  i = i_start, i_end
+             k = kts
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = 0.
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
+             c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j) *dt
+!            d(k) = var_mix(i,k,j) + dt*rdz_w*qfx(i,j)/(1.+moist(i,k,j,P_QV))   !??
+             d(k) = var_mix(i,k,j) + dt*rdz_w*qfx(i,j)           
+ 
+           DO  k = kts+1,ktf-1
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
+             c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,k,j)
+           ENDDO
+ 
+             a(ktf) = 0.
+             b(ktf) = 1.
+             c(ktf) = 0.
+             d(ktf) = var_mix(i,ktf,j)
+ 
+             CALL tridiag(nz,a,b,c,d)
+ 
+           DO k = kts, ktf
+             moist_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k)-var_mix(i,k,j))/dt
+           ENDDO
+         ENDDO
+         ENDDO
+    ENDIF
+!!
+    IF ( im /= P_QV ) THEN
+         DO  j = j_start, j_end
+         DO  i = i_start, i_end
+             k = kts
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = 0.
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
+             c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,k,j)
+ 
+           DO  k = kts+1,ktf-1
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
+             c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,k,j)
+           ENDDO
+ 
+             a(ktf) = 0.
+             b(ktf) = 1.
+             c(ktf) = 0.
+             d(ktf) = var_mix(i,ktf,j)
+ 
+             CALL tridiag(nz,a,b,c,d)
+ 
+           DO k = kts, ktf
+             moist_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k)-var_mix(i,k,j))/dt
+           ENDDO
+         ENDDO
+         ENDDO
+    ENDIF
+ 
+     ENDDO moist_loop
+   ENDIF
+
+    DO im = PARAM_FIRST_SCALAR, n_moist
+       DO j = j_start, j_end
+       DO k = kts, ktf
+       DO i = i_start, i_end
+           moist_tendf(i,k,j,im) = moist_tendf(i,k,j,im) + moist_z_tend(i,k,j,im)
+       ENDDO
+       ENDDO
+       ENDDO
+    ENDDO
+
+!!============================================
+!! scalar
+!!============================================
+    DO j = j_start, j_end
+    DO k = kts+1, ktf
+    DO i = i_start, i_end
+        xkxavg(i,k,j) = ( fnm(k) * xkhv(i,k,j) + fnp(k) * xkhv(i,k-1,j) ) &
+                       *( fnm(k) * rho (i,k,j) + fnp(k) * rho (i,k-1,j) )
+    ENDDO
+    ENDDO
+    ENDDO
+ 
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+        xkxavg(i,kts  ,j) = 0.0
+        xkxavg(i,ktf+1,j) = 0.0
+    END DO
+    END DO
+ 
+   IF (n_scalar .ge. PARAM_FIRST_SCALAR) THEN
+     scalar_loop: do im = PARAM_FIRST_SCALAR, n_scalar
+! need to avoid mixing scalars associated with precipitating species (e.g. Nr)
+    IF(im.NE.P_QNS .AND. im.NE.P_QNR .AND. im.NE.P_QNG .AND. im.NE.P_QNH .AND. &
+       im.NE.P_QT .AND. im.NE.P_QVOLG) THEN
+         DO j = jts, min(jte,jde-1)
+         DO k = kts, kte-1
+         DO i = its, min(ite,ide-1)
+          var_mix(i,k,j) = scalar(i,k,j,im)
+         ENDDO
+         ENDDO
+         ENDDO
+        
+         DO  j = j_start, j_end
+         DO  i = i_start, i_end
+             k = kts
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = 0.
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
+             c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,k,j)
+ 
+           DO  k = kts+1, ktf-1
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k)  = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
+             b(k)  = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
+             c(k)  = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k)  = var_mix(i,k,j)
+           ENDDO
+ 
+             a(ktf) = 0.
+             b(ktf) = 1.
+             c(ktf) = 0.
+             d(ktf) = var_mix(i,ktf,j)
+ 
+             CALL tridiag(nz,a,b,c,d)
+ 
+           DO  k = kts, ktf
+             scalar_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k)-var_mix(i,k,j))/dt
+           ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
+     ENDDO scalar_loop
+   ENDIF
+ 
+   DO im = PARAM_FIRST_SCALAR, n_scalar
+! need to avoid mixing scalars associated with precipitating species (e.g. Nr)
+    IF(im.NE.P_QNS .AND. im.NE.P_QNR .AND. im.NE.P_QNG .AND. im.NE.P_QNH .AND. &
+       im.NE.P_QT .AND. im.NE.P_QVOLG) THEN
+       DO j = j_start, j_end
+       DO k = kts, ktf
+       DO i = i_start, i_end
+          scalar_tendf(i,k,j,im) = scalar_tendf(i,k,j,im) + scalar_z_tend(i,k,j,im)
+       ENDDO
+       ENDDO
+       ENDDO
+    ENDIF
+   ENDDO
+
+!!============================================
+!! tracer
+!!============================================
+   IF (n_tracer .ge. PARAM_FIRST_SCALAR) THEN
+     tracer_loop: do im = PARAM_FIRST_SCALAR, n_tracer
+         DO j = jts, min(jte,jde-1)
+         DO k = kts, kte-1
+         DO i = its, min(ite,ide-1)
+          var_mix(i,k,j) = tracer(i,k,j,im)
+         ENDDO
+         ENDDO
+         ENDDO
+ 
+         DO  j = j_start, j_end
+         DO  i = i_start, i_end
+             k = kts
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = 0.
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
+             c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,kts,j)
+ 
+           DO  k = kts+1,ktf-1
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
+             c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,k,j)
+           ENDDO
+ 
+             a(ktf) = 0.
+             b(ktf) = 1.
+             c(ktf) = 0.
+             d(ktf) = var_mix(i,ktf,j)
+ 
+             CALL tridiag(nz,a,b,c,d)
+ 
+           DO k = kts, ktf
+             tracer_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k) - var_mix(i,k,j))/dt
+           ENDDO
+         ENDDO
+         ENDDO
+     ENDDO tracer_loop
+   ENDIF
+ 
+   DO im = PARAM_FIRST_SCALAR, n_tracer
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tracer_tendf(i,k,j,im) = tracer_tendf(i,k,j,im) + tracer_z_tend(i,k,j,im)
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDDO
+
+!!============================================
+!! chemistry
+!!============================================
+   IF (n_chem .ge. PARAM_FIRST_SCALAR) THEN
+     chem_loop: do im = PARAM_FIRST_SCALAR, n_chem
+         DO j = jts,min(jte,jde-1)
+         DO k = kts,kte-1
+         DO i = its,min(ite,ide-1)
+          var_mix(i,k,j) = chem(i,k,j,im)
+         ENDDO
+         ENDDO
+         ENDDO
+ 
+        DO  j = j_start, j_end
+        DO  i = i_start, i_end
+            k = kts
+            rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            a(k) = 0.
+            b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
+            c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+            d(k) = var_mix(i,kts,j)
+ 
+          DO  k = kts+1,ktf-1
+            rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
+            b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
+            c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+            d(k) = var_mix(i,k,j)
+          ENDDO
+ 
+            a(ktf) = 0.
+            b(ktf) = 1.
+            c(ktf) = 0.
+            d(ktf) = var_mix(i,ktf,j)
+ 
+            CALL tridiag(nz,a,b,c,d)
+ 
+          DO k = kts, ktf
+             chem_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k) - var_mix(i,k,j))/dt
+          ENDDO
+        ENDDO
+        ENDDO
+     ENDDO chem_loop
+   ENDIF
+ 
+   DO im = PARAM_FIRST_SCALAR, n_chem
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         chem_tendf(i,k,j,im) = chem_tendf(i,k,j,im) + chem_z_tend(i,k,j,im)
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDDO
+ 
+    END SUBROUTINE vertical_diffusion_implicit
 
 !=======================================================================
 !=======================================================================
-
     END MODULE module_diffusion_em
 
 !=======================================================================

@@ -1,9 +1,7 @@
 variable "aws_profile" {
-  description = "Name of the public subnet of aza"
+  description = "Name of the public subnet of az"
   default     = "default"
 }
-
-
 
 variable "region" {
   description = "Region for launching subnets"

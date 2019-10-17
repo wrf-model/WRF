@@ -2,23 +2,20 @@ provider "aws" {
    region     = "${var.region}"
    profile    = "${var.aws_profile}" #.aws/credentials
    }
+
+//Run number of test case based on count value: say 3 will run 3 test cases 
 variable "instance_count" {
  default = 3
 }
-variable "hostnames" {
 
-    default = ["wrf_testcase_1.sh", "wrf_testcase_2.sh", "wrf_testcase_3.sh" ]
- }
+variable "hostnames" {
+   default = ["wrf_testcase_1.sh", "wrf_testcase_2.sh", "wrf_testcase_3.sh","wrf_testcase_4.sh","wrf_testcase_5.sh","wrf_testcase_6.sh","wrf_testcase_7.sh", "wrf_testcase_8.sh","wrf_testcase_9.sh","wrf_testcase_10.sh"]
+}
 
 data "template_file" "user-data" {
      count = "${length(var.hostnames)}"
-      template = "${file("${element(var.hostnames, count.index)}")}"
+     template = "${file("${element(var.hostnames, count.index)}")}"
 }
-
-
-
-
-
 
 resource "aws_instance" "application" {
   count                         = "${var.instance_count}"

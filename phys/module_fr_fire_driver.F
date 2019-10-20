@@ -867,6 +867,7 @@ do ij=1,num_tiles
 
     if(fire_run)then
       call fire_model (id,ifun,restart,need_lfn_update,  &
+        run_fuel_moisture,                      & ! if fuel moisture needs to be updated
         num_ignitions,                          & ! switches
         ifuelread,nfuel_cat0,                   & ! initialize fuel categories
         ifds,ifde,jfds,jfde,                    & ! fire domain dims

@@ -1,5 +1,6 @@
 MODULE module_ltng_strokes
 !https://journals.ametsoc.org/doi/10.1175/WAF-D-11-00144.1
+!modified
 
 ! j_pos,j_neg,j_neu:Energy per flash; threshold values set in Registry.EM_COMMON
 ! Values can be modified through namelist.input

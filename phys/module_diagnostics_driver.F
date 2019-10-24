@@ -1,4 +1,5 @@
 #if (NMM_CORE == 1)
+!Modifed
 MODULE module_diagnostics_driver
 CONTAINS
    SUBROUTINE diagnostics_driver_stub

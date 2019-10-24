@@ -1,4 +1,5 @@
 !WRF:MEDIATION_LAYER:PHYSICS
+!Modified
 !
 ! Contains initialization subroutine lightning_init and driver subroutine
 ! lightning_driver.

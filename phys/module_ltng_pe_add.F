@@ -1,6 +1,5 @@
 MODULE module_ltng_pe
 CONTAINS
-! Modified
 !https://journals.ametsoc.org/doi/10.1175/WAF-D-11-00144.1
 ! coul_pos, etc, are charging constants, in units of Coulombs..
 ! coul_pos, etc, now set in Registry.EM_COMMON; can be added to namelist.input

@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# Check for build
+# Clean
 set nonomatch
 
 

@@ -1,5 +1,5 @@
 #!/bin/csh -f
-
+#compile
 setenv START_OF_COMPILE "`date`"
 
 cont1:

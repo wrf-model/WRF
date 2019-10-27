@@ -787,7 +787,7 @@ endif
 
 ! and print to file
 IF ( wrf_dm_on_monitor() ) THEN
-  call write_fuels_m(61,30.,1.)
+!jm  call write_fuels_m(61,30.,1.)
 ENDIF
 end subroutine init_fuel_cats
 

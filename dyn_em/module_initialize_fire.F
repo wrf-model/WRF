@@ -543,6 +543,14 @@ CONTAINS
           call read_array_2d_real   ('input_fmc_g',grid%fmc_g,    ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
   endif
 
+  if(config_flags%fire_fmc_read.eq.0) then
+          write(6,*)'Setting fuel moisture in wrfinput to constant 0.08'
+          do j = jfds,jfde
+             do i= ifds,ifde
+                grid%fmc_g(i,j)=0.08
+             enddo
+          enddo
+  endif
 
   if(config_flags%fire_fuel_read.eq.2) then
       write(6,*)'Reading fuel map from file input_fc'

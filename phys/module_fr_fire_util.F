@@ -1361,9 +1361,9 @@ character(len=256)msg
 
 if(fire_print_msg.le.0)return
 
-ipe1=ifval(ipe.eq.ide.and.istag.ne.0,ipe+1,ipe)
-kpe1=ifval(kpe.eq.kde.and.kstag.ne.0,kpe+1,kpe)
-jpe1=ifval(jpe.eq.jde.and.jstag.ne.0,jpe+1,jpe)
+ipe1=min(ime,ifval(ipe.eq.ide.and.istag.ne.0,ipe+1,ipe))
+kpe1=min(kme,ifval(kpe.eq.kde.and.kstag.ne.0,kpe+1,kpe))
+jpe1=min(jme,ifval(jpe.eq.jde.and.jstag.ne.0,jpe+1,jpe))
 is=ifval(istag.ne.0,1,0)
 ks=ifval(kstag.ne.0,1,0)
 js=ifval(jstag.ne.0,1,0)

@@ -1,4 +1,4 @@
-### WRF-ARW Modeling System  ###
+#### WRF-ARW Modeling System  ###
 
 We request that all new users of WRF please register. This allows us to better determine how to support and develop the model. Please register using this form:[http://www2.mmm.ucar.edu/wrf/users/download/wrf-regist.php](http://www2.mmm.ucar.edu/wrf/users/download/wrf-regist.php).
 

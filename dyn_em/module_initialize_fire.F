@@ -28,7 +28,7 @@ MODULE module_initialize_ideal
    USE module_dm
 #endif
    USE module_fr_fire_util, ONLY: continue_at_boundary,crash,read_array_2d_real, &
-     read_array_2d_integer,interpolate_2d,set_ideal_coord
+     read_array_2d_integer,interpolate_2d,set_ideal_coord,print_2d_stats
 
 CONTAINS
 
@@ -551,6 +551,11 @@ CONTAINS
              enddo
           enddo
   endif
+
+  call print_2d_stats(ifds,ifde,jfds,jfde, &
+                         ifms,ifme,jfms,jfme, &
+                         grid%fmc_g, 'fmc_g')
+
 
   if(config_flags%fire_fuel_read.eq.2) then
       write(6,*)'Reading fuel map from file input_fc'

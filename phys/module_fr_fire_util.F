@@ -16,7 +16,7 @@ module module_fr_fire_util
 
 
 integer,save::          &
- fire_print_msg=1,      &  ! print FIRE progress 
+ fire_print_msg=2,      &  ! print FIRE progress
  fire_print_file=1,     &  ! write many files by write_array_m; compile with DEBUG_OUT, do not run in parallel
  fuel_left_method=1,    &  ! 1=simple, 2=exact in linear case
  fuel_left_irl=2,       &  ! refinement for fuel calculation, must be even

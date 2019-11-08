@@ -593,7 +593,7 @@ namelist /fuel_scalars/ cmbcnst,hfgl,fuelmc_g,fuelmc_c,nfuelcats,no_fuel_cat
 namelist /fuel_categories/ fuel_name,windrf,fgi,fueldepthm,savr, &
     fuelmce,fueldens,st,se,weight,fci_d,fct,ichap,fmc_gw01,fmc_gw02,fmc_gw03,fmc_gw04,fmc_gw05
 
-namelist /moisture/ moisture_classes,drying_lag,wetting_lag,saturation_moisture,saturation_rain,rain_threshold, &
+namelist /fuel_moisture/ moisture_classes,drying_lag,wetting_lag,saturation_moisture,saturation_rain,rain_threshold, &
     drying_model,wetting_model, moisture_class_name,fmc_gc_initialization
 
 #ifdef _OPENMP
@@ -621,7 +621,7 @@ IF ( wrf_dm_on_monitor() ) THEN
 
     read(iounit,fuel_categories)
     if(init_fuel_moisture)then
-        read(iounit,moisture)
+        read(iounit,fuel_moisture)
     endif
     fmc_gw(1:mfuelcats,1)=fmc_gw01
     fmc_gw(1:mfuelcats,2)=fmc_gw02

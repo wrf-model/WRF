@@ -66,7 +66,7 @@ no_fuel_cat = 14                   ! extra category for no fuel
              0.00000, 0.00000, 0.16639, 0.00000, 0.00000, 0.00000, 0.00000,
  /
 
-&moisture
+&fuel_moisture
 moisture_classes=         5,               ! number of classes, max 5 (see comments in module_fr_sfire_phys.F how to increase)
 drying_model=             1,     1,     1,    1,     1, ! number of model - only 1= equilibrium moisture Van Wagner (1972) per Viney (1991)  allowed
 drying_lag=               1,    10,   100,  1000,   1e9, ! so-called 10hr and 100hr fuel

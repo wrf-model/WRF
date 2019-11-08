@@ -150,9 +150,11 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
             write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
             write(unit=innov_rad_unit,fmt='(a)') 'CLOUD   : '
             write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%cloud_flag(:,n)
-            if ( abi .and. crtm_cloud(it) ) then ! write out ca_mean, tb_xb_clr
-               write(unit=innov_rad_unit,fmt='(a)') 'CA   : '
-               write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%ca_mean(:,n)
+            if ( abi .and. crtm_cloud(it) ) then ! write out cloud_mod, cloud_obs, tb_xb_clr
+               write(unit=innov_rad_unit,fmt='(a)') 'CMOD   : '
+               write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%cloud_mod(:,n)
+               write(unit=innov_rad_unit,fmt='(a)') 'COBS   : '
+               write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%cloud_obs(:,n)
                write(unit=innov_rad_unit,fmt='(a)') 'BGCLR: '
                write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_xb_clr(:,n)
             end if

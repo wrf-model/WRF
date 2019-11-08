@@ -62,7 +62,7 @@ program da_rad_diags
    real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp
    integer, dimension(:,:), allocatable   :: tb_qc, tb_cloud
    real*4,  dimension(:,:), allocatable   :: tb_obs, tb_bak, tb_inv, tb_oma, tb_err, ems, ems_jac
-   real*4,  dimension(:,:), allocatable   :: ca_mean, tb_bak_clr
+   real*4,  dimension(:,:), allocatable   :: cloud_mod, cloud_obs, tb_bak_clr
    real*4,  dimension(:,:), allocatable   :: prf_pfull, prf_phalf, prf_t, prf_q, prf_water
    real*4,  dimension(:,:), allocatable   :: prf_ice, prf_rain, prf_snow, prf_grau, prf_hail
    real*4,  dimension(:,:), allocatable   :: prf_water_reff, prf_ice_reff, prf_rain_reff
@@ -257,7 +257,8 @@ ntime_loop: do itime = 1, ntime
             allocate ( tb_cloud(1:nchan,1:total_npixel)  )
             tb_cloud = 0
             if ( abi ) then
-               allocate ( ca_mean(1:nchan,1:total_npixel) )
+               allocate ( cloud_mod(1:nchan,1:total_npixel) )
+               allocate ( cloud_obs(1:nchan,1:total_npixel) )
                allocate ( tb_bak_clr(1:nchan,1:total_npixel) )
             end if
             allocate (    ems(1:nchan,1:total_npixel) )
@@ -329,7 +330,8 @@ ntime_loop: do itime = 1, ntime
             tb_oma = missing_r
             tb_err = missing_r
             if ( abi ) then
-               ca_mean = missing_r
+               cloud_mod = missing_r
+               cloud_obs = missing_r
                tb_bak_clr = missing_r
             end if
 
@@ -385,10 +387,12 @@ ntime_loop: do itime = 1, ntime
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! CLOUD, CA, INFO, or level
             if ( buf(1:5) == "CLOUD" ) then ! read cloud detection info
                read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) tb_cloud(:,ipixel)
-               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! CA, INFO, or level
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! CMOD, INFO, or level
             end if
-            if ( abi .and. buf(1:2) == "CA" ) then ! read ca_mean, tb_bak_clr for abi
-               read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) ca_mean(:,ipixel)
+            if ( abi .and. buf(1:4) == "CMOD" ) then ! read cloud_mod, cloud_obs, tb_bak_clr for abi
+               read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) cloud_mod(:,ipixel)
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! COBS
+               read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) cloud_obs(:,ipixel)
                read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! BGCLR
                read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_bak_clr(:,ipixel)
                read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! INFO or level
@@ -521,7 +525,9 @@ ntime_loop: do itime = 1, ntime
       ios = NF_DEF_VAR(ncid, 'tb_qc',  NF_INT,   2, ishape(1:2), varid)
       ios = NF_DEF_VAR(ncid, 'tb_cloud',  NF_INT,   2, ishape(1:2), varid)
       if ( abi ) then
-         ios = NF_DEF_VAR(ncid, 'ca_mean', NF_FLOAT, 2, ishape(1:2), varid)
+         ios = NF_DEF_VAR(ncid, 'cloud_mod', NF_FLOAT, 2, ishape(1:2), varid)
+         ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
+         ios = NF_DEF_VAR(ncid, 'cloud_obs', NF_FLOAT, 2, ishape(1:2), varid)
          ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
          ios = NF_DEF_VAR(ncid, 'tb_bak_clr', NF_FLOAT, 2, ishape(1:2), varid)
          ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
@@ -666,8 +672,10 @@ ntime_loop: do itime = 1, ntime
       ios = NF_INQ_VARID (ncid, 'tb_cloud', varid)
       ios = NF_PUT_VARA_INT(ncid,  varid, istart(1:2), icount(1:2), tb_cloud)
       if ( abi ) then
-         ios = NF_INQ_VARID (ncid, 'ca_mean', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), ca_mean)
+         ios = NF_INQ_VARID (ncid, 'cloud_mod', varid)
+         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), cloud_mod)
+         ios = NF_INQ_VARID (ncid, 'cloud_obs', varid)
+         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), cloud_obs)
          ios = NF_INQ_VARID (ncid, 'tb_bak_clr', varid)
          ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), tb_bak_clr)
       end if
@@ -876,7 +884,8 @@ ntime_loop: do itime = 1, ntime
       deallocate ( tb_bak )
       deallocate ( tb_inv )
       if ( abi ) then
-         deallocate ( ca_mean )
+         deallocate ( cloud_mod )
+         deallocate ( cloud_obs )
          deallocate ( tb_bak_clr )
       end if
       deallocate ( tb_oma )

@@ -106,7 +106,8 @@
                deallocate (iv%instid(i)%cloudflag)
             end if
             if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
-               deallocate (iv%instid(i)%ca_mean)
+               deallocate (iv%instid(i)%cloud_mod)
+               deallocate (iv%instid(i)%cloud_obs)
             end if
             deallocate (iv%instid(i)%ps)
             deallocate (iv%instid(i)%tb_xb)

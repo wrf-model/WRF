@@ -39,7 +39,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
    logical           :: print_cld_debug
 
    !! Additional variables used by Harnish, Weissmann, & Perianez (2016)
-   real              :: BTlim(nchan)
+   real              :: BTlim(nchan), cloud_mean(nchan)
    real, allocatable :: cld_impact(:,:), cld_impact_global(:,:), weights_global(:)
    integer           :: buf_i, buf_f, nbuf, nlocal, nglobal, iproc
    real, parameter   :: camin = 0.0 !Harnisch et al. (2016)
@@ -65,7 +65,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
    integer            :: nrej_clddet(nchan,num_clddet_tests)
    integer*2          :: clddet_tests(num_clddet_tests)
 
-   real, pointer      :: tb_ob(:,:), tb_xb(:,:), tb_inv(:,:), tb_xb_clr(:,:), ca_mean(:,:)
+   real, pointer      :: tb_ob(:,:), tb_xb(:,:), tb_inv(:,:), tb_xb_clr(:,:), cloud_obs(:,:), cloud_mod(:,:)
    integer            :: tb_qc(nchan), tb_qc_clddet(nchan)
 
    real               :: big_num
@@ -173,8 +173,11 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
       BTlim(9)  = 270.5
       BTlim(10) = 258.0
 
-      ca_mean => iv%instid(isens)%ca_mean
-      ca_mean = missing_r
+      cloud_obs => iv%instid(isens)%cloud_obs
+      cloud_obs = missing_r
+
+      cloud_mod => iv%instid(isens)%cloud_mod
+      cloud_mod = missing_r
    end if
 
    PixelQCLoop: do n= iv%instid(isens)%info%n1,iv%instid(isens)%info%n2
@@ -499,7 +502,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
             iv%instid(isens)%tb_error(:,n) = satinfo(isens)%error_std(:)
          end if
       else !crtm_cloud(it)
-         ! calculate ca_mean
+         ! calculate cloud impacts
          where (    tb_inv( :, n ) > missing_r &
                .and. tb_ob( :, n ) > 0.        &
                .and. tb_xb( :, n ) > 0.        &
@@ -510,43 +513,45 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 ! using ob with VarBC (tb_inv + tb_xb)
 ! -------------------------------
 !! Harnisch et al. (2016)
-            ca_mean(:,n) = 0.5 * ( max( 0., BTlim(:) - tb_xb(:,n) ) + &
-                                   max( 0., BTlim(:) - (tb_inv(:,n) + tb_xb(:,n)) ) )
+            cloud_mod(:,n) = max( 0., BTlim(:) - tb_xb(:,n) )
+            cloud_obs(:,n) = max( 0., BTlim(:) - (tb_inv(:,n) + tb_xb(:,n)) )
+
 !! Okamoto et al. (2013)
-!            ca_mean(:,n) = 0.5 * ( abs(  tb_xb(:,n)                - tb_xb_clr(:,n) ) + &
-!                                   abs( (tb_inv(:,n) + tb_xb(:,n)) - tb_xb_clr(:,n) ) )
+!            cloud_mod(:,n) = abs(  tb_xb(:,n)                - tb_xb_clr(:,n) ) + &
+!            cloud_obs(:,n) = abs( (tb_inv(:,n) + tb_xb(:,n)) - tb_xb_clr(:,n) )
 !!! J. Guerrette
-!            ca_mean(:,n) = 0.5 * ( max( 0., tb_xb_clr(:,n) - tb_xb(:,n) ) + &
-!                                   max( 0., tb_xb_clr(:,n) - (tb_inv(:,n) + tb_xb(:,n)) ) )
+!            cloud_mod(:,n) = max( 0., tb_xb_clr(:,n) - tb_xb(:,n) ) + &
+!            cloud_obs(:,n) = max( 0., tb_xb_clr(:,n) - (tb_inv(:,n) + tb_xb(:,n)) )
          endwhere
 !JJGDEBUG
          if (print_cld_debug) write(stdout,'(A,I8,*(2x,F16.8))') 'PIXEL_DEBUG93: ', n, &
-            ca_mean(:,n)
+            0.5 * ( cloud_mod(:,n) + cloud_obs(:,n) )
 !JJGDEBUG
 
-         if ( crtm_cloud(it) ) then
-            if (use_rad_symm_err) then
-               ! symmetric error model
-               ! - Okamoto, McNally, & Bell (2013)
-               ! - Harnish, Weissmann, & Perianez (2016)
-               do k = 1, nchan
-                  if ( ca_mean(k,n).gt.missing_r ) then
-                     if ( ca_mean(k,n).lt.camin ) then
-                        iv%instid(isens)%tb_error(k,n) = satinfo(isens)%error_std(k)
-                     else if ( ca_mean(k,n) .lt. satinfo(isens)%error_cld_x(k) ) then
-                        iv%instid(isens)%tb_error(k,n) = satinfo(isens)%error_std(k) + &
-                           ( satinfo(isens)%error_cld_y(k) - satinfo(isens)%error_std(k) ) * &
-                           ( ca_mean(k,n) - camin ) / ( satinfo(isens)%error_cld_x(k) - camin )
-                     else
-                        iv%instid(isens)%tb_error(k,n) = satinfo(isens)%error_cld_y(k)
-                     end if
+         if (use_rad_symm_err) then
+            ! symmetric error model
+            ! - Okamoto, McNally, & Bell (2013)
+            ! - Harnish, Weissmann, & Perianez (2016)
+
+            cloud_mean = 0.5 * ( cloud_mod(:,n) + cloud_obs(:,n) )
+
+            do k = 1, nchan
+               if ( cloud_mean(k).gt.missing_r ) then
+                  if ( cloud_mean(k).lt.camin ) then
+                     iv%instid(isens)%tb_error(k,n) = satinfo(isens)%error_std(k)
+                  else if ( cloud_mean(k) .lt. satinfo(isens)%error_cld_x(k) ) then
+                     iv%instid(isens)%tb_error(k,n) = satinfo(isens)%error_std(k) + &
+                        ( satinfo(isens)%error_cld_y(k) - satinfo(isens)%error_std(k) ) * &
+                        ( cloud_mean(k) - camin ) / ( satinfo(isens)%error_cld_x(k) - camin )
                   else
-                     iv%instid(isens)%tb_error(k,n) = missing_r
+                     iv%instid(isens)%tb_error(k,n) = satinfo(isens)%error_cld_y(k)
                   end if
-               end do ! nchan
-            else
-               iv%instid(isens)%tb_error(1:nchan,n) = satinfo(isens)%error_std(1:nchan)
-            end if
+               else
+                  iv%instid(isens)%tb_error(k,n) = missing_r
+               end if
+            end do ! nchan
+         else
+            iv%instid(isens)%tb_error(1:nchan,n) = satinfo(isens)%error_std(1:nchan)
          end if
       end if
 

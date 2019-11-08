@@ -10,3 +10,4 @@ The WRF Model is open-source code in the public domain, and its use is unrestric
 
 Change that should not trigger a Jenkins test.
 
+OK, does not trigger a test, but do I get a "FAIL" message?

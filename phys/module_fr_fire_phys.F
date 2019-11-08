@@ -8,7 +8,7 @@ PRIVATE
 
 ! subroutines and functions 
 PUBLIC:: init_fuel_cats,fire_ros,heat_fluxes,set_nfuel_cat,set_fire_params,write_fuels_m
-PUBLIC:: fuel_moisture,advance_moisture
+PUBLIC:: fuel_moisture,advance_moisture,read_namelist_fire
 
 ! variables
 PUBLIC:: moisture_classes
@@ -574,9 +574,9 @@ end subroutine get_equi_moist
 end subroutine advance_moisture
 
 
-subroutine init_fuel_cats(init_fuel_moisture)
+subroutine read_namelist_fire(init_fuel_moisture)
 implicit none
-!*** purpose: initialize fuel tables and variables by constants
+!*** purpose: read namelist.fire 
 !*** arguments: 
 logical, intent(in)::init_fuel_moisture
 logical, external:: wrf_dm_on_monitor
@@ -584,8 +584,7 @@ logical, external:: wrf_dm_on_monitor
 !integer, external:: OMP_GET_THREAD_NUM
 #endif
 !*** local
-integer:: i,j,k,ii,iounit
-integer:: kk
+integer:: iounit
 character(len=128):: msg
 !*** executable
 
@@ -607,8 +606,19 @@ IF ( wrf_dm_on_monitor() ) THEN
     ! we are the master task
 
     ! read the file
+    call message('Reading file namelist.fire')
     iounit=open_text_file('namelist.fire','read')
     read(iounit,fuel_scalars)
+
+    if (nfuelcats>mfuelcats) then
+        write(msg,*)'nfuelcats=',nfuelcats,' is too large, increase mfuelcats'
+        call crash(msg)
+    endif
+    if (no_fuel_cat >= 1 .and. no_fuel_cat <= nfuelcats)then
+        write(msg,*)'no_fuel_cat=',no_fuel_cat,' may not be between 1 and nfuelcats=',nfuelcats
+        call crash(msg)
+    endif
+
     read(iounit,fuel_categories)
     if(init_fuel_moisture)then
         read(iounit,moisture)
@@ -618,17 +628,30 @@ IF ( wrf_dm_on_monitor() ) THEN
     fmc_gw(1:mfuelcats,3)=fmc_gw03
     fmc_gw(1:mfuelcats,4)=fmc_gw04
     fmc_gw(1:mfuelcats,5)=fmc_gw05
+
     CLOSE(iounit)
     
-    if (nfuelcats>mfuelcats) then
-        write(msg,*)'nfuelcats=',nfuelcats,' is too large, increase mfuelcats'
-        call crash(msg)
-    endif
-        if (no_fuel_cat >= 1 .and. no_fuel_cat <= nfuelcats)then
-        write(msg,*)'no_fuel_cat=',no_fuel_cat,' may not be between 1 and nfuelcats=',nfuelcats
-        call crash(msg)
-    endif
 ENDIF
+
+end
+
+
+subroutine init_fuel_cats(init_fuel_moisture)
+implicit none
+!*** purpose: initialize fuel tables and variables by constants
+!*** arguments: 
+logical, intent(in)::init_fuel_moisture
+logical, external:: wrf_dm_on_monitor
+#ifdef _OPENMP
+!integer, external:: OMP_GET_THREAD_NUM
+#endif
+!*** local
+integer:: i,j,k,ii
+integer:: kk
+character(len=128):: msg
+!*** executable
+
+call read_namelist_fire(init_fuel_moisture)
 
 ! broadcast the contents of the file
 call wrf_dm_bcast_real(cmbcnst,1)

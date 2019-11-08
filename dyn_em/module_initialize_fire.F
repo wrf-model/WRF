@@ -29,7 +29,7 @@ MODULE module_initialize_ideal
 #endif
    USE module_fr_fire_util, ONLY: continue_at_boundary,crash,read_array_2d_real, &
      read_array_2d_integer,interpolate_2d,set_ideal_coord,print_2d_stats
-   USE module_fr_fire_phys, ONLY: fuelmc_g,init_fuel_cats 
+   USE module_fr_fire_phys, ONLY: fuelmc_g,read_namelist_fire 
 
 CONTAINS
 
@@ -544,7 +544,7 @@ CONTAINS
           call read_array_2d_real   ('input_fmc_g',grid%fmc_g,    ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
   endif
 
-  call init_fuel_cats(.false.)  ! read fuel coefficienrs
+  call read_namelist_fire(.false.)  ! read fuel coefficienrs
 
   if(config_flags%fire_fmc_read.eq.0) then
           write(6,*)'Setting fuel moisture in wrfinput to constant ', fuelmc_g

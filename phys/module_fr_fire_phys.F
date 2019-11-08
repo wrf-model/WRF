@@ -12,6 +12,7 @@ PUBLIC:: fuel_moisture,advance_moisture
 
 ! variables
 PUBLIC:: moisture_classes
+PUBLIC::fuelmc_g
 
 PUBLIC::fire_params
 

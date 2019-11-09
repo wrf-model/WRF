@@ -839,8 +839,8 @@ CONTAINS
 #if ( EM_CORE == 1 )
 
    !  Compute 2d grid distance and 2d grid cell area. For use with
-   !  physics schemes to make them compatible with models that have
-   !  a need for those 2d fields.
+   !  physics schemes that have a grid distance (area) as input for
+   !  scale-aware capability.
 
    if ( .not. restart) then
      if ( present(dx2d) .and. present(area2d) ) then

@@ -991,9 +991,10 @@ real::t1,t2
          END IF
       END IF
 
-      !  If the lateral boundary conditions are split into single times per file, then
-      !  open the file with a date string. Also, it is easier to CLOSE the file just 
-      !  before we need it OPENed.
+      !  If the lateral boundary conditions are split, then open the file with a 
+      !  date string. Only single time periods are allowed in a lateral BC file
+      !  when the files are split into multiple pieces. Also, it is easier to 
+      !  CLOSE the file just before we need it OPENed.
 
       IF ( config_flags%multi_bdy_files ) THEN
          CALL construct_filename2a( bdyname , TRIM(config_flags%bdy_inname) , grid%id , 2 , prev_date_char )

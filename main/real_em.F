@@ -992,7 +992,7 @@ real::t1,t2
       END IF
 
       !  If the lateral boundary conditions are split into single times per file, then
-      !  open the file with a date string. Also, if is easier to CLOSE the file just 
+      !  open the file with a date string. Also, it is easier to CLOSE the file just 
       !  before we need it OPENed.
 
       IF ( config_flags%multi_bdy_files ) THEN

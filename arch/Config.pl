@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Configuration Script for WRF prototype code
+# Configuration script for WRF prototype code
 # 
 # Be sure to run as ./configure (to avoid getting a system configure command by mistake)
 #

@@ -262,7 +262,8 @@ CONTAINS
       DOUBLE PRECISION:: lamr, N0min
       REAL:: mvd_r, xslw1, ygra1, zans1
       INTEGER:: ng, n
-      INTEGER:: bc ! largest number of integer buckets that can be removed
+      INTEGER:: bc ! largest number of integer buckets that can be removed,
+                   ! this is used locally within about a dozen computations
 
 !-----------------------------------------------------------------
 ! Handle accumulations with buckets to prevent round-off truncation in long runs

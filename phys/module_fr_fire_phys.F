@@ -641,19 +641,20 @@ IF ( wrf_dm_on_monitor() ) THEN
     fmc_gw(1:mfuelcats,4)=fmc_gw04
     fmc_gw(1:mfuelcats,5)=fmc_gw05
 
+    call message('Scaling fuel loads within each fuel category to averaging weights of fuel moisture classes')
     do i=1,mfuelcats
         tgw = 0.
             do k=1,max_moisture_classes
                 if(fmc_gw(i,k).ge.0.)then
                     tgw = tgw + fmc_gw(i,k)
-                else
-!$OMP CRITICAL(FIRE_PHYS_CRIT)
+                else ! no need for OMP CRITICAL this needs to run in master thread anyway
                     write(msg,*)'fmc_gw(',i,',',k,')=',fmc_gw(i,k),' must be nonegative.'
-!$OMP END CRITICAL(FIRE_PHYS_CRIT)
                     call crash(msg)
                 endif
             enddo
             if (tgw > 0.) then
+                write(msg,'(a,i4,1x,a,g13.6)')'fuel category',i,'total fuel load',tgw
+                call message(msg)
                 do k=1,max_moisture_classes
                     fmc_gw(i,k) = fmc_gw(i,k) / tgw
                 enddo

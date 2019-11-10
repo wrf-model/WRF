@@ -179,7 +179,7 @@ aymin=coord_yf(ifts,jfts)
 axmax=coord_xf(ifte,jfte)
 aymax=coord_yf(ifte,jfte)
 !$OMP CRITICAL(FIRE_CORE_CRIT)
-write(msg,'(a,2f11.6,a,2f11.6)')'IGN from ',sx,sy,' to ',ex,ey
+write(msg,'(a,2g13.6,a,2g13.6)')'IGN from ',sx,sy,' to ',ex,ey
 call message(msg)
 write(msg,'(a,2f10.2,a,2f10.2,a)')'IGN timestep [',start_ts,end_ts,'] in [',start_time,end_time,']'
 call message(msg)

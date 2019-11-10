@@ -55,7 +55,7 @@ end type fire_params
 !  1. change parameter max_moisture_classes below
 !  2. change the default of nfmc to the same value in Registry/registry.fire
 !  3. add the appropriate lines real::fmc_gw<number>= <default values>
-!  4. add dfault 
+!  4. add default 
 
 !*** dimensions
   INTEGER, PARAMETER :: mfuelcats = 30     ! allowable number of fuel categories 
@@ -584,8 +584,9 @@ logical, external:: wrf_dm_on_monitor
 !integer, external:: OMP_GET_THREAD_NUM
 #endif
 !*** local
-integer:: iounit
+integer:: iounit, i, k
 character(len=128):: msg
+real:: tgw
 !*** executable
 
 ! read 
@@ -623,13 +624,42 @@ IF ( wrf_dm_on_monitor() ) THEN
     if(init_fuel_moisture)then
         read(iounit,fuel_moisture)
     endif
+
+    CLOSE(iounit)
+
+    ! convert fuel loads in the fuel classes to internal as weights adding up to one
+    ! 
+    ! copy the fuel weights and scale to 1
+
+    ! just checking
+    if (max_moisture_classes.ne.5)then
+        call crash('Must have 5 fuel classes, modify fmc_gw0* in the source if not')
+    endif
     fmc_gw(1:mfuelcats,1)=fmc_gw01
     fmc_gw(1:mfuelcats,2)=fmc_gw02
     fmc_gw(1:mfuelcats,3)=fmc_gw03
     fmc_gw(1:mfuelcats,4)=fmc_gw04
     fmc_gw(1:mfuelcats,5)=fmc_gw05
 
-    CLOSE(iounit)
+    do i=1,mfuelcats
+        tgw = 0.
+            do k=1,max_moisture_classes
+                if(fmc_gw(i,k).ge.0.)then
+                    tgw = tgw + fmc_gw(i,k)
+                else
+!$OMP CRITICAL(FIRE_PHYS_CRIT)
+                    write(msg,*)'fmc_gw(',i,',',k,')=',fmc_gw(i,k),' must be nonegative.'
+!$OMP END CRITICAL(FIRE_PHYS_CRIT)
+                    call crash(msg)
+                endif
+            enddo
+            if (tgw > 0.) then
+                do k=1,max_moisture_classes
+                    fmc_gw(i,k) = fmc_gw(i,k) / tgw
+                enddo
+            endif
+    enddo
+
     
 ENDIF
 

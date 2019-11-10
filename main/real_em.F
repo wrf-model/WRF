@@ -969,7 +969,7 @@ real::t1,t2
                CALL construct_filename2a( bdyname , TRIM(config_flags%bdy_inname) , grid%id , 2 , " " )
                CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
                IF ( ierr .NE. 0 ) THEN
-                  CALL wrf_error_fatal( 'real: error opening ' // TRIM(bdyname) // ' for writing' )
+                  CALL wrf_error_fatal( 'REAL: error opening ' // TRIM(bdyname) // ' for writing' )
                END IF
             END IF
          END IF
@@ -977,7 +977,7 @@ real::t1,t2
             CALL construct_filename1( inpname , 'wrffdda' , grid%id , 2 )
             CALL open_w_dataset ( id2, TRIM(inpname) , grid , config_flags , output_auxinput10 , "DATASET=AUXINPUT10", ierr )
             IF ( ierr .NE. 0 ) THEN
-               CALL wrf_error_fatal( 'real: error opening wrffdda for writing' )
+               CALL wrf_error_fatal( 'REAL: error opening wrffdda for writing' )
             END IF
          END IF
       ELSE

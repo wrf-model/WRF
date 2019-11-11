@@ -62,7 +62,7 @@ end type fire_params
   INTEGER, PARAMETER ::max_moisture_classes=5
 !***
 
-  integer, parameter::zm=max_moisture_classes - 3
+  integer, parameter::zm=max_moisture_classes - 3, zm2=zm-2
   integer:: moisture_classes=3
   real, dimension(max_moisture_classes):: drying_lag,wetting_lag,saturation_moisture,saturation_rain, &
          rain_threshold,rec_drying_lag_sec,rec_wetting_lag_sec
@@ -71,7 +71,7 @@ end type fire_params
    integer::itmp
    CHARACTER (len=80), DIMENSION(max_moisture_classes), save :: moisture_class_name
     
-  data moisture_class_name /'1-hour fuel','10-hour fuel','100-hour fuel',zm*'NOT USED'/
+  data moisture_class_name /'1-h fuel','10-h fuel','100-h fuel','Not used','Live fuel',zm2*'NOT USED'/
   data drying_lag                 /1., 10., 100. , zm*0./  ! time lag (h) approaching equilibrium moisture 
   data wetting_lag                   /1.4, 14., 140., zm*0./  ! time lag (h) for approaching saturation in rain
   data saturation_moisture        /2.5, 2.5, 2.5 , zm*0./  ! saturation moisture contents (1) in rain
@@ -170,9 +170,10 @@ end type fire_params
    INTEGER, DIMENSION( mfuelcats ), save :: ichap
    REAL   , DIMENSION( mfuelcats ), save :: windrf,weight,fgi,fci,fci_d,fct,fcbr, &
                                             fueldepthm,fueldens,fuelmce,   &
-                                            savr,st,se,fmc_gw01,fmc_gw02,  &
-                                            fmc_gw03,fmc_gw04,fmc_gw05, tgw
-   REAL ,   DIMENSION(mfuelcats,max_moisture_classes), save :: fmc_gw ! fuel moisture class weights
+                                            savr,st,se, &
+                                            fmc_gw01,fmc_gw02,fmc_gw03,fmc_gw04,fmc_gw05, &
+                                            fgi_t,fmc_gwt
+   REAL ,   DIMENSION(mfuelcats,max_moisture_classes), save :: fgi_c, fmc_gw ! fuel moisture class weights
    DATA windrf /0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44, &     
                 0.36, 0.36, 0.36,  0.36,  0.43,  0.46,  1e-7, zf*0 /
    DATA fgi / 0.166, 0.896, 0.674, 3.591, 0.784, 1.344, 1.091, &
@@ -603,7 +604,7 @@ namelist /fuel_moisture/ moisture_classes,drying_lag,wetting_lag,saturation_mois
 #endif
 
 IF ( wrf_dm_on_monitor() ) THEN
-    ! we are the master task
+    ! we are the MPI rank 0
 
     ! read the file
     call message('Reading file namelist.fire')
@@ -634,32 +635,39 @@ IF ( wrf_dm_on_monitor() ) THEN
     if (max_moisture_classes.ne.5)then
         call crash('Must have 5 fuel classes, modify fmc_gw0* in the source if not')
     endif
-    fmc_gw(1:mfuelcats,1)=fmc_gw01
-    fmc_gw(1:mfuelcats,2)=fmc_gw02
-    fmc_gw(1:mfuelcats,3)=fmc_gw03
-    fmc_gw(1:mfuelcats,4)=fmc_gw04
-    fmc_gw(1:mfuelcats,5)=fmc_gw05
+    fgi_c(1:mfuelcats,1)=fmc_gw01
+    fgi_c(1:mfuelcats,2)=fmc_gw02
+    fgi_c(1:mfuelcats,3)=fmc_gw03
+    fgi_c(1:mfuelcats,4)=fmc_gw04
+    fgi_c(1:mfuelcats,5)=fmc_gw05
 
     call message('Scaling fuel loads within each fuel category to averaging weights of fuel moisture classes')
     do i=1,mfuelcats
-        tgw(i) = 0.
+            fgi_t(i) = 0.
             do k=1,max_moisture_classes
-                if(fmc_gw(i,k).ge.0.)then
-                    tgw(i) = tgw(i) + fmc_gw(i,k)
+                if(fgi_c(i,k).ge.0.)then
+                    fgi_t(i) = fgi_t(i) + fgi_c(i,k)
                 else ! no need for OMP CRITICAL this needs to run in master thread anyway
-                    write(msg,*)'fmc_gw(',i,',',k,')=',fmc_gw(i,k),' must be nonegative.'
+                    write(msg,*)'fuel load in category',i,' fuel class ',k,' is ',fgi_c(i,k),',must be nonegative.'
                     call crash(msg)
                 endif
             enddo
-            if (tgw(i) > 0.) then
+            if (fgi_t(i)>0. .or. fgi(i)>0.)then
                 write(msg,'(a,i4,1x,a,g13.6,1x,a,g13.6,1x,a,g13.6)') &
-                    'fuel category',i,'total loads',tgw(i), &
-                    'fuel load',fgi(i),'ratio',fgi(i)/(tgw(i)+1e-30)
+                    'fuel category',i,'fuel load',fgi(i),'total by class',fgi_t(i), &
+                    'ratio',fgi(i)/fgi_t(i)
                 call message(msg)
-                do k=1,max_moisture_classes
-                    fmc_gw(i,k) = fmc_gw(i,k) / tgw(i)
-                enddo
             endif
+            ! fuel moisture averaging weights for fuel classes in category i
+            fmc_gwt(i)=0.
+            do k=1,max_moisture_classes
+               if (fgi_t(i) > 0.) then
+                   fmc_gw(i,k) = fgi_c(i,k) / fgi_t(i)
+                   fmc_gwt(i) = fmc_gwt(i) + fmc_gw(i,k)
+               else
+                   fmc_gw(i,k) = 0.
+               endif
+            enddo
     enddo
 
     
@@ -682,6 +690,12 @@ integer:: i,j,k,ii
 integer:: kk
 character(len=128):: msg
 !*** executable
+
+#ifdef _OPENMP
+!   if (OMP_GET_THREAD_NUM() .ne. 0)then
+!      call crash('init_fuel_cats: must be called from master thread')
+!   endif
+#endif
 
 call read_namelist_fire(init_fuel_moisture)
 
@@ -760,11 +774,12 @@ if(init_fuel_moisture)then
     call message(msg)
 endif
 
-j=1
-7 format(a,5(1x,i8,4x))
+j=1    ! number of columns; max 5, but we do only one anyway, or would need to line up
+7 format(a,(1x,i8,4x))
 8 format(a,5(1x,g12.5e2))
 9 format(a,5(1x,a))
-10 format(a,i2.2,2x,5(1x,g12.5e2))
+10 format(a,2x,99(1x,f12.5))
+11 format(a,2x,99(1x,a12))
 do i=1,nfuelcats,j
     k=min(i+j-1,nfuelcats)
     call message(' ')
@@ -801,10 +816,12 @@ do i=1,nfuelcats,j
     write(msg,8)'fcbr      ',(fcbr(ii),ii=i,k)
     call message(msg)
     if(init_fuel_moisture)then
-        do kk=1,moisture_classes 
-            write(msg,10)'fmc_gw',kk,(fmc_gw(ii,kk),ii=i,k)
-            call message(msg)
-        enddo
+        write(msg,11)'fuel class name',(trim(moisture_class_name(kk)),kk=1,moisture_classes),'Total','Total/fgi'
+        call message(msg)
+        write(msg,10)'fuel load fgi_c',(fgi_c(i,kk),kk=1,moisture_classes),fgi_t(i),fgi_t(i)/fgi(i)
+        call message(msg)
+        write(msg,10)'fraction fmc_gw',(fmc_gw(i,kk),kk=1,moisture_classes),fmc_gwt(i)
+        call message(msg)
     endif
 enddo
 call message(' ')

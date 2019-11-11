@@ -1006,7 +1006,7 @@ real::t1,t2
 
          CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
          IF ( ierr .NE. 0 ) THEN
-            CALL wrf_error_fatal( 'real: error opening ' // TRIM(bdyname) // ' for writing' )
+            CALL wrf_error_fatal( 'REAL: error opening ' // TRIM(bdyname) // ' for writing' )
          END IF
       END IF
 

@@ -171,7 +171,7 @@ end type fire_params
    REAL   , DIMENSION( mfuelcats ), save :: windrf,weight,fgi,fci,fci_d,fct,fcbr, &
                                             fueldepthm,fueldens,fuelmce,   &
                                             savr,st,se,fmc_gw01,fmc_gw02,  &
-                                            fmc_gw03,fmc_gw04,fmc_gw05
+                                            fmc_gw03,fmc_gw04,fmc_gw05, tgw
    REAL ,   DIMENSION(mfuelcats,max_moisture_classes), save :: fmc_gw ! fuel moisture class weights
    DATA windrf /0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44, &     
                 0.36, 0.36, 0.36,  0.36,  0.43,  0.46,  1e-7, zf*0 /
@@ -586,7 +586,6 @@ logical, external:: wrf_dm_on_monitor
 !*** local
 integer:: iounit, i, k
 character(len=128):: msg
-real:: tgw
 !*** executable
 
 ! read 
@@ -643,20 +642,22 @@ IF ( wrf_dm_on_monitor() ) THEN
 
     call message('Scaling fuel loads within each fuel category to averaging weights of fuel moisture classes')
     do i=1,mfuelcats
-        tgw = 0.
+        tgw(i) = 0.
             do k=1,max_moisture_classes
                 if(fmc_gw(i,k).ge.0.)then
-                    tgw = tgw + fmc_gw(i,k)
+                    tgw(i) = tgw(i) + fmc_gw(i,k)
                 else ! no need for OMP CRITICAL this needs to run in master thread anyway
                     write(msg,*)'fmc_gw(',i,',',k,')=',fmc_gw(i,k),' must be nonegative.'
                     call crash(msg)
                 endif
             enddo
-            if (tgw > 0.) then
-                write(msg,'(a,i4,1x,a,g13.6)')'fuel category',i,'total fuel load',tgw
+            if (tgw(i) > 0.) then
+                write(msg,'(a,i4,1x,a,g13.6,1x,a,g13.6,1x,a,g13.6)') &
+                    'fuel category',i,'total loads',tgw(i), &
+                    'fuel load',fgi(i),'ratio',fgi(i)/(tgw(i)+1e-30)
                 call message(msg)
                 do k=1,max_moisture_classes
-                    fmc_gw(i,k) = fmc_gw(i,k) / tgw
+                    fmc_gw(i,k) = fmc_gw(i,k) / tgw(i)
                 enddo
             endif
     enddo

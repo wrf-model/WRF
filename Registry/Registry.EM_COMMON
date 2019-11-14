@@ -2918,7 +2918,8 @@ package   pbl_cloud      icloud_bl==1                -             state:cldfra_
 #jm deleting from package sms_3dtke variables used elsewhere
 # l_scale
 # th_h_tend
-package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,elmin,xkmv_meso,xkmh_t,u_h_tend,u_z_tend,v_h_tend,v_z_tend,w_h_tend,w_z_tend,th_z_tend,tke_buoy_tend,tke_shear_tend,tke_production_tend,tke_diffusion_h_tend,tke_diffusion_z_tend
+# tke_diffusion_h_tend
+package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,elmin,xkmv_meso,xkmh_t,u_h_tend,u_z_tend,v_h_tend,v_z_tend,w_h_tend,w_z_tend,th_z_tend,tke_buoy_tend,tke_shear_tend,tke_production_tend,tke_diffusion_z_tend
 #package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_scale,elmin,xkmv_meso,xkmh_t,u_h_tend,u_z_tend,v_h_tend,v_z_tend,w_h_tend,w_z_tend,th_h_tend,th_z_tend,tke_buoy_tend,tke_shear_tend,tke_production_tend,tke_diffusion_h_tend,tke_diffusion_z_tend
 
 # dfi

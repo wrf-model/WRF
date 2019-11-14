@@ -3344,7 +3344,7 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
    ENDDO
 
 ! XZ
-   IF (output_tend) THEN
+   IF ( ( output_tend ) .AND. ( config_flags%km_opt .EQ. 5 ) ) THEN
       DO j = j_start, j_end
       DO k = kts,ktf
       DO i = i_start, i_end
@@ -3564,7 +3564,7 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
    ENDDO
 
 ! XZ
-   IF (output_tend) THEN
+   IF ( ( output_tend ) .AND. ( config_flags%km_opt .EQ. 5 ) ) THEN
       DO j = j_start, j_end
       DO k = kts,ktf
       DO i = i_start, i_end
@@ -3783,7 +3783,7 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
    ENDDO
 
 ! XZ
-   IF (output_tend) THEN
+   IF ( ( output_tend ) .AND. ( config_flags%km_opt .EQ. 5 ) ) THEN
       DO j = j_start, j_end
       DO k = kts+1,ktf
       DO i = i_start, i_end
@@ -3885,7 +3885,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
    INTEGER :: ktes1,ktes2
 !XZ
    LOGICAL :: output_tend  
-   output_tend = .true.  
+   output_tend = .false.  
 !
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -4092,7 +4092,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
    ENDDO
 
 ! XZ
-   IF (output_tend) THEN
+   IF ( ( output_tend ) .AND. ( config_flags%km_opt .EQ. 5 ) ) THEN
       DO j = j_start, j_end
       DO k = kts,ktf
       DO i = i_start, i_end
@@ -4124,7 +4124,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
    ENDIF
 
 ! XZ
-   IF(output_tend) THEN
+   IF ( ( output_tend ) .AND. ( config_flags%km_opt .EQ. 5 ) ) THEN
       IF ( doing_tke ) THEN
        DO j = j_start, j_end
        DO k = kts,ktf

@@ -62,7 +62,7 @@ module da_radiance
       airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
       ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer, use_blacklist_rad, use_satcv, &
       use_goesimgobs, use_goesabiobs, pi, earth_radius, satellite_height, &
-      var4d, var4d_bin, use_clddet_abi
+      var4d, var4d_bin, use_clddet_abi, abi_superob_buffer
  
 #ifdef CRTM
    use da_crtm, only : da_crtm_init, da_get_innov_vector_crtm

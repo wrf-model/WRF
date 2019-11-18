@@ -2914,8 +2914,8 @@ package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,
 package   mynn_dmp_edmf  bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,ktop_shallow,maxmf,nupdraft
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
 
-#SMS-3DTKE
-package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_scale,elmin,xkmv_meso,xkmh_t,u_h_tend,u_z_tend,v_h_tend,v_z_tend,w_h_tend,w_z_tend,th_h_tend,th_z_tend,tke_buoy_tend,tke_shear_tend,tke_production_tend,tke_diffusion_h_tend,tke_diffusion_z_tend
+#package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_scale,elmin,xkmv_meso,xkmh_t,u_h_tend,u_z_tend,v_h_tend,v_z_tend,w_h_tend,w_z_tend,th_h_tend,th_z_tend,tke_buoy_tend,tke_shear_tend,tke_production_tend,tke_diffusion_h_tend,tke_diffusion_z_tend
+package   sms_3dtke      km_opt==5                   -             -
 
 # dfi
 package   mynnpblscheme2_dfi bl_pbl_physics_dfi==5   -             dfi_scalar:dfi_qke_adv

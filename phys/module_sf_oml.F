@@ -228,7 +228,7 @@ CONTAINS
         ENDDO
      ELSE
         IF(I.EQ.1 .and. J.EQ.1) then
-          WRITE(message,*)'Initializing OML with real HML0, h(1,1) = ', h0ml(1,1)
+          WRITE(message,*)'Initializing OML with 2d HML0, h0ml(1,1) = ', h0ml(1,1)
         ENDIF
         CALL wrf_debug (0, TRIM(message))
         DO J=jts,jtf

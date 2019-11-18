@@ -2575,6 +2575,7 @@
     
 ! Recompute original s.s.a. to test for conservative solution
             denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
+	    ! Code added to avoid 'divide by zero' error in zwo computation
             if (abs(denom).eq.0.0_rb) then
                denom = 1.0E-30_rb
             end if

@@ -3708,6 +3708,7 @@
             tmr_racg(i,j,k,m) = DMIN1(z1, r_r(m)*1.0d0)
             tcr_gacr(i,j,k,m) = t2
             tmg_gacr(i,j,k,m) = DMIN1(z2, r_g(j)*1.0d0)
+            !DAVE tmg_gacr(i,j,k,m) = DMIN1(z2, DBLE(r_g(j)))
             tnr_racg(i,j,k,m) = y1
             tnr_gacr(i,j,k,m) = y2
          enddo

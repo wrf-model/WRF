@@ -207,7 +207,7 @@ fi
 if [ "`uname`" = "Linux" ] ; then
   ans="`which nf-config`"
 elif [ "`uname`" = "Darwin" ] ; then
-  ans="`whereis nf-config`"
+  ans="`which nf-config`"
 else
   ans=""
 # echo "Add in your architecture's uname and the command to find executables in the path"

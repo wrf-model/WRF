@@ -3611,7 +3611,7 @@
               ENDIF
             ENDIF
           ELSE
-            INQUIRE(63,opened=lopen)
+            INQUIRE(63,OPENED=lopen)
             IF (lopen) THEN
               CLOSE(63)
             ENDIF

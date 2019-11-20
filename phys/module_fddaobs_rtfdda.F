@@ -2834,7 +2834,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   if(iprt) then
     if(prt_max.gt.0) then
 
-      ! If ANY of the obs are not missing, then execute these prints (which 
+      ! If ANY of the obs are NOT missing, then execute these prints (which 
       ! include the headers for the rows of data to be printed in the next 
       ! do loop)
       if(ANY(obs.ne.-999)) then

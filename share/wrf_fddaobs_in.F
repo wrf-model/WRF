@@ -949,6 +949,7 @@
       IF(RTIMOB.LT.TBACK)then
         IF (iprt) call wrf_message("ob too early")
 !       Adjust n to omit ALL levels of the current observation
+!       since it is too early
         n=n-meas_count
         GOTO 110
       ENDIF

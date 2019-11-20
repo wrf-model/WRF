@@ -1970,6 +1970,17 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+!   Check that max_ts_level is smaller than the number of half levels
+!-----------------------------------------------------------------------
+      IF ( model_config_rec % max_ts_level .gt. model_config_rec %e_vert(1)-1 )  then
+        wrf_err_message = ' max_ts_level must be <= number of znu half layers '
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        wrf_err_message = ' max_ts_level is reset to the number of znu half layers '
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        model_config_rec % max_ts_level = model_config_rec %e_vert(1)-1
+      ENDIF
+
+!-----------------------------------------------------------------------
 !  Consistency checks between vertical refinement and radiation
 !  scheme selection.  For "choose any vertical levels" for the nest,
 !  only RRTM is eligible.

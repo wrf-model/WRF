@@ -71,7 +71,7 @@
 !---------------------------------------------------------------------
 ! Sept. 2019:
 ! Bug fixes:
-!  - effective radius calculation was only done at history times. Now every time step (though should be just before radiation is called)
+!  - Effective radius calculation was only done at history times. Now every time step (though should be just before radiation is called)
 !  - Snow reflectivity: Previous "fix" was incorrect and yields snow dBZ that is too low. Reverted to old version which was correct
 !  - Incorrectly updated a state value in the reflectivity code. (Could cause small differences if reflectivity is not calculated)
 ! Updates:
@@ -83,7 +83,7 @@
 !---------------------------------------------------------------------
 ! WRF 4.0 update:
 !  Major:
-!   Fixed excessive sublimation that could occur in very stron downdrafts (3.9.1.1 update)
+!   Fixed excessive sublimation that could occur in very strong downdrafts (3.9.1.1 update)
 !
 !  Minor:
 !    icefallopt=3 : New ice crystal fall speed that has faster speeds for small ice particles. Main effect

@@ -15,9 +15,7 @@ subroutine dcosq1b ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !    by a call to DCOSQ1F (or vice-versa) reproduces the original
 !    array  within roundoff error.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

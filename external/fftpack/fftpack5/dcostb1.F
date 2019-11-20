@@ -4,9 +4,7 @@ subroutine dcostb1 ( n, inc, x, wsave, work, ier )
 !
 !! DCOSTB1 is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

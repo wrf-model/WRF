@@ -851,7 +851,7 @@ BENCH_START(tke_rhs_tim)
                          grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV), &
                          grid%ustm, grid%rho,                         &
                          grid%tke_production_tend,grid%tke_buoy_tend, & !XZ
-                         grid%tke_shear_tend, grid%l_scale,           & !XZ
+                         grid%tke_shear_tend, grid%l_diss,            & !XZ
                          grid%nlflux, grid%pblh, grid%dlk,            & !XZ 
                          grid%xkmh_t,                                 & !XZ
                          ids, ide, jds, jde, kds, kde,                &
@@ -1042,7 +1042,6 @@ BENCH_START(hor_diff_tim)
                                       grid%rdx, grid%rdy, grid%rdz, grid%rdzw,                   &
                                       grid%fnm, grid%fnp, grid%cf1, grid%cf2, grid%cf3,          &
                                       grid%zx, grid%zy, grid%dn, grid%dnw, grid%rho,             &
-                                      grid%u_h_tend, grid%v_h_tend, grid%w_h_tend,               & !XZ
                                       grid%th_h_tend, grid%tke_diffusion_h_tend,                 & !XZ
                                       ids, ide, jds, jde, kds, kde,          &
                                       ims, ime, jms, jme, kms, kme,          &

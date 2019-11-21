@@ -342,15 +342,12 @@ state    real  nlflux          ikj     dyn_em        1         Z      -      "NL
 state    real  gamu            ij      dyn_em        1         -      r      "GAMU"            "NONLOCAL U GAMMA TERM IN 3DTKE SCHEME"         "s-1"
 state    real  gamv            ij      dyn_em        1         -      r      "GAMV"            "NONLOCAL V GAMMA TERM IN 3DTKE SCHEME"         "s-1"
 state    real  dlk             ikj     dyn_em        1         -      -      "DLK"             "TURBULENT LENGTH SCALE"     "m"
-state    real  l_scale         ikj     dyn_em        1         -      -      "L_SCALE"         "DISSIPATION LENGTH SCALE"   "m"
+state    real  l_diss          ikj     dyn_em        1         -      -      "L_DISS"          "DISSIPATION LENGTH SCALE"   "m"
 state    real  elmin           ikj     dyn_em        1         -      -      "ELMIN"           "FREE ATMOS LENGTH SCALE (FROM BOULAC SCHEME)"  "m"
 state    real  xkmv_meso       ikj     dyn_em        1         -      -      "XKMV_MESO"       "XKMV AT MESOSCALE LIMIT"    "m2 s-1"
 state    real  xkmh_t          ikj     dyn_em        1         -      -      "XKMH_T"          "HORIZONTAL DIFFUSIVITY BASED ON 1.5-ORDER TKE" "m2 s-1"
-state    real  U_H_TEND        ikj     dyn_em        1         X      -      "U_H_TEND"        "X WIND HORIZONTAL TENDENCY IN 3DTKE SCHEME"  "m s-2"
 state    real  U_Z_TEND        ikj     dyn_em        1         X      -      "U_Z_TEND"        "X WIND VERTICAL TENDENCY IN 3DTKE SCHEME"  "m s-2"
-state    real  V_H_TEND        ikj     dyn_em        1         Y      -      "V_H_TEND"        "Y WIND HORIZONTAL TENDENCY IN 3DTKE SCHEME"  "m s-2"
 state    real  V_Z_TEND        ikj     dyn_em        1         Y      -      "V_Z_TEND"        "Y WIND VERTICAL TENDENCY IN 3DTKE SCHEME"  "m s-2"
-state    real  W_H_TEND        ikj     dyn_em        1         Z      -      "W_H_TEND"        "W WIND HORIZONTAL TENDENCY IN 3DTKE SCHEME"  "m s-2"
 state    real  W_Z_TEND        ikj     dyn_em        1         Z      -      "W_Z_TEND"        "W WIND VERTICAL TENDENCY IN 3DTKE SCHEME"  "m s-2"
 state    real  TH_H_TEND       ikj     dyn_em        1         -      -      "TH_H_TEND"       "TH HORIZONTAL TENDENCY IN 3DTKE SCHEME"  "m s-2"
 state    real  TH_Z_TEND       ikj     dyn_em        1         -      -      "TH_Z_TEND"       "TH VERTICAL TENDENCY IN 3DTKE SCHEME"  "m s-2"
@@ -2914,8 +2911,7 @@ package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,
 package   mynn_dmp_edmf  bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,ktop_shallow,maxmf,nupdraft
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
 
-#package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_scale,elmin,xkmv_meso,xkmh_t,u_h_tend,u_z_tend,v_h_tend,v_z_tend,w_h_tend,w_z_tend,th_h_tend,th_z_tend,tke_buoy_tend,tke_shear_tend,tke_production_tend,tke_diffusion_h_tend,tke_diffusion_z_tend
-package   sms_3dtke      km_opt==5                   -             -
+package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_diss,elmin,xkmv_meso,xkmh_t,u_z_tend,v_z_tend,w_z_tend,th_h_tend,th_z_tend,tke_buoy_tend,tke_shear_tend,tke_production_tend,tke_diffusion_h_tend,tke_diffusion_z_tend
 
 # dfi
 package   mynnpblscheme2_dfi bl_pbl_physics_dfi==5   -             dfi_scalar:dfi_qke_adv

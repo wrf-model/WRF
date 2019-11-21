@@ -2373,7 +2373,7 @@ BENCH_START(tke_adv_tim)
          IF(rk_step == rk_order.and.config_flags%km_opt .eq. 5 ) THEN
           CALL update_tke_implicit( config_flags,grid%tke_1,              &
                                     grid%tke_2,grid%xkhv,                 &
-                                    grid%rdz,grid%rdzw,grid%l_scale,      &
+                                    grid%rdz,grid%rdzw,grid%l_diss,       &
                                     grid%dnw,grid%rdnw,grid%c1h,grid%c2h, &
                                     h_tendency,z_tendency,                &
                                     grid%tke_production_tend,             &

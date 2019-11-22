@@ -2869,7 +2869,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                     msftx, msfty, xkmh, xkhh,km_opt,           &
                                     rdx, rdy, rdz, rdzw, fnm, fnp,             &
                                     cf1, cf2, cf3, zx, zy, dn, dnw, rho,       &
-                                    th_h_tend, tke_diffusion_h_tend,           & ! XZ
+                                    th_h_tend, tke_diffusion_h_tend,           &
                                     ids, ide, jds, jde, kds, kde,              &
                                     ims, ime, jms, jme, kms, kme,              &
                                     its, ite, jts, jte, kts, kte               )

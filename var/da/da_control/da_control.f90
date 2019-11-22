@@ -421,7 +421,7 @@ module da_control
                                            ! missing_r
       outside_of_domain       = -77, &     ! Data outside horizontal domain 
                                            ! or time window, data set to missing_r
-      fail_varbc_aircraft     = -55, &     ! Data fails VarBC of aircraft 
+      fail_varbc_aircraft     = -55, &     ! Data fail VarBC of aircraft 
                                            ! => no action
       wrong_direction         = -15, &     ! Wind vector direction <0 or> 360 
                                            ! => direction set to missing_r

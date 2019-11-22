@@ -62,10 +62,10 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
    yhat=xhat
 
    call da_calculate_j(1, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                       be%cv%size_jl, xbx, be, iv, yhat, cv, re, y, j_cost, grid, config_flags)
+                       be%cv%size_jl, be%cv%size_jt, xbx, be, iv, yhat, cv, re, y, j_cost, grid, config_flags)
 
    call da_calculate_gradj(1,1,cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp, &
-                           be%cv%size_jl,xbx, be, iv, yhat+cv, y, grad, grid, config_flags, re)
+                           be%cv%size_jl, be%cv%size_jt, xbx, be, iv, yhat+cv, y, grad, grid, config_flags, re)
 
    zfy = j_cost%total
 
@@ -110,10 +110,10 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
       end do
 
       call da_calculate_j(1, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                          be%cv%size_jl, xbx, be, iv, yhat, cv, re, y, j_cost, grid, config_flags)
+                          be%cv%size_jl, be%cv%size_jt, xbx, be, iv, yhat, cv, re, y, j_cost, grid, config_flags)
 
       call da_calculate_gradj(1,1,cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp, &
-                              be%cv%size_jl,xbx, be, iv, yhat+cv, y, grad, grid, config_flags, re)
+                              be%cv%size_jl, be%cv%size_jt, xbx, be, iv, yhat+cv, y, grad, grid, config_flags, re)
 
       zfy = j_cost%total
 

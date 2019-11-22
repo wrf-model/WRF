@@ -284,6 +284,10 @@ subroutine da_wrfvar_init2
       open(unit=jo_unit,file="jo",status="replace")
       open(unit=check_max_iv_unit,file="check_max_iv",status="replace")
       open(unit=check_buddy_unit ,file="buddy_check" ,status="replace")
+      if (use_varbc_tamdar) then
+          call da_get_unit (varbc_tamdar_unit)
+          open(unit=varbc_tamdar_unit,file="varbc_tamdar_detail.log",status="replace")
+      end if
    end if
 
    if (trace_use) call da_trace_exit("da_wrfvar_init2")

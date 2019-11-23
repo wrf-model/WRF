@@ -579,6 +579,7 @@ logical, external:: wrf_dm_on_monitor
 !*** local
 integer:: iounit, i, k
 character(len=128):: msg
+real:: rat
 !*** executable
 
 ! read 
@@ -645,9 +646,13 @@ IF ( wrf_dm_on_monitor() ) THEN
                 endif
             enddo
             if (fgi_t(i)>0. .or. fgi(i)>0.)then
+                if (fgi_t(i)>0.) then
+                     rat = fgi(i)/fgi_t(i)
+                else
+                     rat = 0.
+                endif
                 write(msg,'(a,i4,1x,a,g13.6,1x,a,g13.6,1x,a,g13.6)') &
-                    'fuel category',i,'fuel load',fgi(i),'total by class',fgi_t(i), &
-                    'ratio',fgi(i)/fgi_t(i)
+                    'fuel category',i,'fuel load',fgi(i),'total by class',fgi_t(i), 'ratio',rat
                 call message(msg)
             endif
             ! fuel moisture averaging weights for fuel classes in category i

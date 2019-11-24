@@ -62,14 +62,14 @@ end type fire_params
   INTEGER, PARAMETER ::max_moisture_classes=5
 !***
 
-  integer, parameter::zm=max_moisture_classes - 3, zm2=zm-2
   integer:: moisture_classes=5
   real, dimension(max_moisture_classes):: drying_lag,wetting_lag,saturation_moisture,saturation_rain, &
-         rain_threshold,rec_drying_lag_sec,rec_wetting_lag_sec
+         rain_threshold,rec_drying_lag_sec,rec_wetting_lag_sec,fmc_gc_initial_value
   integer, dimension(max_moisture_classes):: drying_model,wetting_model,fmc_gc_initialization
    ! relative weights of moisture class for each fuel category
    integer::itmp
    CHARACTER (len=80), DIMENSION(max_moisture_classes), save :: moisture_class_name
+  REAL, save:: fmc_1h, fmc_10h, fmc_100h, fmc_1000h, fmc_live
     
   data moisture_class_name /'1-h','10-h','100-h','1000-h','Live'/
   data drying_lag          /1., 10., 100., 1000.,1e9/  ! time lag (h) approaching equilibrium moisture 
@@ -79,7 +79,11 @@ end type fire_params
   data rain_threshold      /0.05,0.05,0.05,0.05,0.05/ ! rain intensity this small is same as nothing
   data drying_model        /1,   1,   1,   1,   1 / ! future proofing 
   data wetting_model       /1,   1,   1,   1,   1 / ! future proofing
-  data fmc_gc_initialization/2,  2,   2,   2,   1 / ! initialization 0=input, 1=from fuelmc_g, 2=from equilibrium
+  data fmc_gc_initialization/2,  2,   2,   2,   1 / ! initialization 0=input, 1=from fuelmc_g, 
+                                                    ! 2=from equilibrium, 3=from fmc_1h, etc.
+  data fmc_1h /0.08/, fmc_10h/0.08/, fmc_100h/0.08/, fmc_1000h/0.08/, fmc_live/0.2/
+  data fmc_gc_initial_value/0.00,0.00,0.00,0.00,0.00/ ! should not be used 
+
   real, dimension(7)::eq_p
   data eq_p/  1.035e-09, &   !(3.893e-10, 1.681e-09) ! coefficients of the equilibrium fuel moisture polynomial
               -2.62e-07, &   !(-4.593e-07, -6.473e-08) ! fitted from the graph in Schroeder and Buck (1970)
@@ -173,7 +177,7 @@ end type fire_params
                                             savr,st,se, &
                                             fgi_1h,fgi_10h,fgi_100h,fgi_1000h,fgi_live, &
                                             fgi_t,fmc_gwt
-   REAL ,   DIMENSION(mfuelcats,max_moisture_classes), save :: fgi_c, fmc_gw ! fuel moisture class weights
+   REAL,   DIMENSION(mfuelcats,max_moisture_classes), save :: fgi_c, fmc_gw ! fuel moisture class weights
    DATA windrf /0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44, &     
                 0.36, 0.36, 0.36,  0.36,  0.43,  0.46,  1e-7, zf*0 /
    DATA fueldepthm /0.305,  0.305,  0.762, 1.829, 0.61,  0.762,0.762, &
@@ -490,6 +494,8 @@ do j=jts,jte
                     fmc_old = fuelmc_g
                 elseif(fmc_gc_initialization(k).eq.2)then ! from computed equilibrium
                     fmc_old=0.5*(EMC_d+EMC_w)
+                elseif(fmc_gc_initialization(k).eq.3)then ! from scalar parameter
+                    fmc_old = fmc_gc_initial_value(k)
                 else
                     call crash('bad value of fmc_gc_initialization(k), must be between 0 and 2')
                 endif
@@ -586,7 +592,7 @@ real:: rat
 !*** executable
 
 ! read 
-namelist /fuel_scalars/ cmbcnst,hfgl,fuelmc_g,fuelmc_c,nfuelcats,no_fuel_cat
+namelist /fuel_scalars/ cmbcnst,hfgl,fuelmc_g,fuelmc_c,nfuelcats,no_fuel_cat,fmc_1h,fmc_10h,fmc_100h,fmc_1000h,fmc_live
 namelist /fuel_categories/ fuel_name,windrf,fgi,fueldepthm,savr, &
     fuelmce,fueldens,st,se,weight,fci_d,fct,ichap,fgi_1h,fgi_10h,fgi_100h,fgi_1000h,fgi_live
 
@@ -631,11 +637,24 @@ IF ( wrf_dm_on_monitor() ) THEN
     if (max_moisture_classes.ne.5)then
         call crash('Must have 5 fuel classes, modify source code if not')
     endif
+    !**************************************************************************************************
+    ! WARNING: initialization from scalars tied to a particular model with 5 fuel moisture classes
+    ! the rest of the code can be used for various models with different number of fuel moisture classes
+    !
     fgi_c(1:mfuelcats,1)=fgi_1h
     fgi_c(1:mfuelcats,2)=fgi_10h
     fgi_c(1:mfuelcats,3)=fgi_100h
     fgi_c(1:mfuelcats,4)=fgi_1000h
     fgi_c(1:mfuelcats,5)=fgi_live
+    fmc_gc_initial_value(1)=fmc_1h
+    fmc_gc_initial_value(2)=fmc_10h
+    fmc_gc_initial_value(3)=fmc_100h
+    fmc_gc_initial_value(3)=fmc_1000h
+    fmc_gc_initial_value(5)=fmc_live
+    !
+    ! end initialization from scalars tied to a particular model with 5 fuel moisture classes
+    ! WARNING: delete this and set fgi_c and fmc_gc_initial_value directly for more general models!
+    !**************************************************************************************************
 
     call message('Scaling fuel loads within each fuel category to averaging weights of fuel moisture classes')
     do i=1,mfuelcats
@@ -728,6 +747,7 @@ call wrf_dm_bcast_real(rain_threshold,     max_moisture_classes)
 call wrf_dm_bcast_integer(drying_model,     max_moisture_classes)
 call wrf_dm_bcast_integer(wetting_model,     max_moisture_classes)
 call wrf_dm_bcast_integer(fmc_gc_initialization,     max_moisture_classes)
+call wrf_dm_bcast_real(fmc_gc_initial_value,     max_moisture_classes)
 call wrf_dm_bcast_real(fmc_gw,     mfuelcats*max_moisture_classes)
 
 ! moisture model derived scalars

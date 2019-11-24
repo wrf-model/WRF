@@ -2,7 +2,6 @@
 cmbcnst  = 17.433e+06,             ! J/kg combustion heat dry fuel
 hfgl     = 17.e4 ,                 ! W/m^2 heat flux to ignite canopy
 fuelmc_g = 0.08,                   ! ground fuel moisture, set = 0 for dry
-!jc fuelmc_g = 0.09,                   ! ground fuel moisture, set = 0 for dry
 fuelmc_c = 1.00,                   ! canopy fuel moisture, set = 0 for dry
 nfuelcats = 13,                    ! number of fuel categories used
 no_fuel_cat = 14                   ! extra category for no fuel
@@ -27,7 +26,6 @@ no_fuel_cat = 14                   ! extra category for no fuel
  windrf= 0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44,
          0.36, 0.36, 0.36,  0.36,  0.43,  0.46, 1e-7
  fgi =  0.166, 0.897, 0.675, 2.468, 0.785, 1.345, 1.092, 
-!jc fgi=  0.166, 0.897, 1.076, 2.468, 0.785, 1.345, 1.092
         1.121, 0.780, 2.694, 2.582, 7.749, 13.024, 1.e-7, 
  fueldepthm=0.305, 0.305, 0.762, 1.829, 0.61,  0.762, 0.762, 
             0.061, 0.061, 0.305, 0.305, 0.701, 0.914, 0.305,
@@ -52,32 +50,28 @@ no_fuel_cat = 14                   ! extra category for no fuel
 ! fct = 60., 60., 60., 60., 60., 60., 60.,  
 !      60., 120., 180., 180., 180., 180. , 60., 
 ! ichap = 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 
-! fuel loading 1-h, 10-h, 100-h, 1000-h, live following Albini 1976 table 7 page 92, lb/sqf
-!            1      2      3      4      5      6      7      8      9      10     11     12     13  
-!  fmc_gw01 = 0.034, 0.092, 0.138, 0.230, 0.046, 0.069, 0.052, 0.069, 0.134, 0.138, 0.069, 0.184, 0.322,
-!  fmc_gw02 = 0.000, 0.046, 0.000, 0.184, 0.023, 0.115, 0.086, 0.046, 0.019, 0.092, 0.207, 0.644, 1.058,
-!  fmc_gw03 = 0.000, 0.023, 0.000, 0.092, 0.000, 0.092, 0.069, 0.115  0.007, 0.230, 0.253, 0.759, 0.759, 
-!  fmc_gw04 = 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-!  fmc_gw05 = 0.000, 0.023, 0.000, 0.230, 0.092, 0.000, 0.017, 0.000, 0.000, 0.092, 0.000, 0.000, 0.000
 !
-! fuel loading 1-h, 10-h, 100-h, 1000-h, live following Albini 1976 as reprinted in Anderson 1982 Table 1, tons/acre
-!            1      2      3      4      5      6      7      8      9      10     11     12     13  
-  fmc_gw01 = 0.74,  2.00,  3.01,  5.01,  1.00,  1.50,  1.13,  1.50,  2.92,  3.01,  1.50,  4.01,  7.01,
-  fmc_gw02 = 0.000, 1.00,  0.00,  4.01,  0.50,  2.50,  1.87,  1.00,  0.41,  2.00,  4.51, 14.03, 23.04,
-  fmc_gw03 = 0.000, 0.50,  0.00,  2.00,  0.00,  2.00,  1.50,  2.50,  0.15,  5.01,  5.51, 16.53, 28.05,
-  fmc_gw04 = 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-  fmc_gw05 = 0.000, 0.50,  0.000, 5.01,  2.00,  0.00,  0.37,  0.00,  0.00,  2.00,  0.00,  2.3,   0.00
+! fuel loading 1-h, 10-h, 100-h, 1000-h, live following Albini 1976 as reprinted in Anderson 1982 Table 1
+! for relative proportions between classes only
+!               1      2      3      4      5      6      7      8      9      10     11     12     13  
+  fgi_1h    = 0.74,  2.00,  3.01,  5.01,  1.00,  1.50,  1.13,  1.50,  2.92,  3.01,  1.50,  4.01,  7.01,
+  fgi_10h   = 0.000, 1.00,  0.00,  4.01,  0.50,  2.50,  1.87,  1.00,  0.41,  2.00,  4.51, 14.03, 23.04,
+  fgi_100h  = 0.000, 0.50,  0.00,  2.00,  0.00,  2.00,  1.50,  2.50,  0.15,  5.01,  5.51, 16.53, 28.05,
+  fgi_1000h = 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+  fgi_live  = 0.000, 0.50,  0.000, 5.01,  2.00,  0.00,  0.37,  0.00,  0.00,  2.00,  0.00,  2.3,   0.00
  /
 
 &fuel_moisture
-moisture_classes=         5,               ! number of classes, max 5 (see comments in module_fr_sfire_phys.F how to increase)
-drying_model=             1,     1,     1,    1,     1, ! number of model - only 1= equilibrium moisture Van Wagner (1972) per Viney (1991)  allowed
+! Fuel moisture model coefficients to experiment with different models. 
+! Can be omitted, then the defaults in the code are used.
+moisture_classes = 5,
+moisture_class_name=   '1-h','10-h','100-h','1000-h','Live', ! identification to be printed
+drying_model=             1,     1,     1,    1,     1,  ! number of model - only 1= equilibrium moisture Van Wagner (1972) per Viney (1991)  allowed
 drying_lag=               1,    10,   100,  1000,   1e9, ! so-called 10hr and 100hr fuel
 wetting_model=            1,     1,     1,    1,     1, ! number of model - only 1= allowed at this moment
-wetting_lag=            1.4,  14.0,  140.0, 1400.0, 1e9, ! 14 is callibrated to VanWagner&Pickett 1985, Canadian fire danger rating system
+wetting_lag=            1.4,  14.0,  140.0, 1400.0, 1e9, ! 10-h lag callibrated to VanWagner&Pickett 1985, Canadian fire danger rating system, rest by scaling 
 saturation_moisture=    2.5,   2.5,   2.5,  2.5,   2.5, ! ditto
 saturation_rain =       8.0,   8.0,   8.0,  8.0,   8.0, ! stronger rain than this (mm/h) does not make much difference.
 rain_threshold =       0.05,  0.05,  0.05,  0.05,  0.05,! mm/h rain too weak to wet anything.
-
+fmc_gc_initialization=    2,     2,     2,     2,     2 ! 0: from wrfinput, 1:from fuelmc_g, 2: from equilibrium 
 /
-

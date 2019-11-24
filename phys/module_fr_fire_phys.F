@@ -63,7 +63,7 @@ end type fire_params
 !***
 
   integer, parameter::zm=max_moisture_classes - 3, zm2=zm-2
-  integer:: moisture_classes=3
+  integer:: moisture_classes=5
   real, dimension(max_moisture_classes):: drying_lag,wetting_lag,saturation_moisture,saturation_rain, &
          rain_threshold,rec_drying_lag_sec,rec_wetting_lag_sec
   integer, dimension(max_moisture_classes):: drying_model,wetting_model,fmc_gc_initialization
@@ -71,15 +71,15 @@ end type fire_params
    integer::itmp
    CHARACTER (len=80), DIMENSION(max_moisture_classes), save :: moisture_class_name
     
-  data moisture_class_name /'1-h fuel','10-h fuel','100-h fuel','Not used','Live fuel',zm2*'NOT USED'/
-  data drying_lag                 /1., 10., 100. , zm*0./  ! time lag (h) approaching equilibrium moisture 
-  data wetting_lag                   /1.4, 14., 140., zm*0./  ! time lag (h) for approaching saturation in rain
-  data saturation_moisture        /2.5, 2.5, 2.5 , zm*0./  ! saturation moisture contents (1) in rain
-  data saturation_rain            /8.0, 8.0, 8.0 , zm*0./  ! stronger rain matters only in duration (mm/h) 
-  data rain_threshold             /0.05, 0.05, 0.05, zm*0 /! rain intensity this small is same as nothing
-  data drying_model               /1,   1,   1,    zm*1 /
-  data wetting_model              /1,   1,   1,    zm*1 /
-  data fmc_gc_initialization      /2,   2,   2,    zm*2 /  ! initialization 0=input, 1=from fuelmc_g, 2=from equilibrium
+  data moisture_class_name /'1-h','10-h','100-h','1000-h','Live'/
+  data drying_lag          /1., 10., 100., 1000.,1e9/  ! time lag (h) approaching equilibrium moisture 
+  data wetting_lag         /1.4,14., 140., 1400.,1e9/  ! time lag (h) for approaching saturation in rain
+  data saturation_moisture /2.5, 2.5, 2.5 ,2.5, 2.5/  ! saturation moisture contents (1) in rain
+  data saturation_rain     /8.0, 8.0, 8.0, 8.0, 8.0/  ! stronger rain matters only in duration (mm/h) 
+  data rain_threshold      /0.05,0.05,0.05,0.05,0.05/ ! rain intensity this small is same as nothing
+  data drying_model        /1,   1,   1,   1,   1 / ! future proofing 
+  data wetting_model       /1,   1,   1,   1,   1 / ! future proofing
+  data fmc_gc_initialization/2,  2,   2,   2,   1 / ! initialization 0=input, 1=from fuelmc_g, 2=from equilibrium
   real, dimension(7)::eq_p
   data eq_p/  1.035e-09, &   !(3.893e-10, 1.681e-09) ! coefficients of the equilibrium fuel moisture polynomial
               -2.62e-07, &   !(-4.593e-07, -6.473e-08) ! fitted from the graph in Schroeder and Buck (1970)
@@ -171,13 +171,11 @@ end type fire_params
    REAL   , DIMENSION( mfuelcats ), save :: windrf,weight,fgi,fci,fci_d,fct,fcbr, &
                                             fueldepthm,fueldens,fuelmce,   &
                                             savr,st,se, &
-                                            fmc_gw01,fmc_gw02,fmc_gw03,fmc_gw04,fmc_gw05, &
+                                            fgi_1h,fgi_10h,fgi_100h,fgi_1000h,fgi_live, &
                                             fgi_t,fmc_gwt
    REAL ,   DIMENSION(mfuelcats,max_moisture_classes), save :: fgi_c, fmc_gw ! fuel moisture class weights
    DATA windrf /0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44, &     
                 0.36, 0.36, 0.36,  0.36,  0.43,  0.46,  1e-7, zf*0 /
-   DATA fgi / 0.166, 0.896, 0.674, 3.591, 0.784, 1.344, 1.091, &
-              1.120, 0.780, 2.692, 2.582, 7.749, 13.024, 1.e-7, zf*0.  /
    DATA fueldepthm /0.305,  0.305,  0.762, 1.829, 0.61,  0.762,0.762, &
                     0.0610, 0.0610, 0.305, 0.305, 0.701, 0.914, 0.305,zf*0. /
    DATA savr / 3500., 2784., 1500., 1739., 1683., 1564., 1562.,  &
@@ -198,21 +196,17 @@ end type fire_params
    DATA fct / 60., 60., 60., 60., 60., 60., 60.,  &
             60., 120., 180., 180., 180., 180. , 60. , zf*0.   /
    DATA ichap / 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 , zf*0/
-! fuel loading 1-h, 10-h, 100-h, 1000-h, live following Albini 1976 table 7 page 92
-!                    1      2      3      4      5      6      7      8      9      10     11     12     13
-!  DATA fmc_gw01 / 0.034, 0.092, 0.138, 0.230, 0.046, 0.069, 0.052, 0.069, 0.134, 0.138, 0.069, 0.184, 0.322, zf*0/
-!  DATA fmc_gw02 / 0.000, 0.046, 0.000, 0.184, 0.023, 0.115, 0.086, 0.046, 0.019, 0.092, 0.207, 0.644, 1.058, zf*0/
-!  DATA fmc_gw03 / 0.000, 0.023, 0.000, 0.092, 0.000, 0.092, 0.069, 0.115, 0.007, 0.230, 0.253, 0.759, 0.759, zf*0/
-!  DATA fmc_gw04 / 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0, zf*0/
 !  DATA fmc_gw05 / 0.000, 0.023, 0.000, 0.230, 0.092, 0.000, 0.017, 0.000, 0.000, 0.092, 0.000, 0.000, 0.000, zf*0/
 
-! fuel loading 1-h, 10-h, 100-h, 1000-h, live following Albini 1976 as reprinted in Anderson 1982 Table 1, tons/acre
-!            1      2      3      4      5      6      7      8      9     10     11     12     13
-  DATA fmc_gw01 / 0.74,  2.00,  3.01,  5.01,  1.00,  1.50,  1.13,  1.50,  2.92,  3.01,  1.50,  4.01,  7.01, zf*0./
-  DATA fmc_gw02 / 0.00,  1.00,  0.00,  4.01,  0.50,  2.50,  1.87,  1.00,  0.41,  2.00,  4.51, 14.03, 23.04, zf*0./
-  DATA fmc_gw03 / 0.00,  0.50,  0.00,  2.00,  0.00,  2.00,  1.50,  2.50,  0.15,  5.01,  5.51, 16.53, 28.05, zf*0./
-  DATA fmc_gw04 / 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,  zf*0./
-  DATA fmc_gw05 / 0.00,  0.50,  0.000, 5.01,  2.00,  0.00,  0.37,  0.00,  0.00,  2.00,  0.00,  2.3,   0.00, zf*0./
+! fuel loading 1-h, 10-h, 100-h, 1000-h, live following Albini 1976 as reprinted in Anderson 1982 Table 1 (for proportions only)
+!                     1      2      3      4      5      6      7      8      9     10     11     12     13
+  DATA fgi_1h    / 0.74,   2.00,  3.01,  5.01,  1.00,  1.50,  1.13,  1.50,  2.92,  3.01,  1.50,  4.01,  7.01, zf*0./
+  DATA fgi_10h   / 0.00,   1.00,  0.00,  4.01,  0.50,  2.50,  1.87,  1.00,  0.41,  2.00,  4.51, 14.03, 23.04, zf*0./
+  DATA fgi_100h  / 0.00,   0.50,  0.00,  2.00,  0.00,  2.00,  1.50,  2.50,  0.15,  5.01,  5.51, 16.53, 28.05, zf*0./
+  DATA fgi_1000h / 0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,  zf*0./
+  DATA fgi_live  / 0.00,   0.50,  0.000, 5.01,  2.00,  0.00,  0.37,  0.00,  0.00,  2.00,  0.00,  2.3,   0.00, zf*0./
+! total fuel loading kg/m^2
+  DATA fgi       / 0.166,  0.896, 0.674, 3.591, 0.784, 1.344, 1.091, 1.120, 0.780, 2.692, 2.582, 7.749, 13.024, 1.e-7, zf*0.  /
 
 ! =========================================================================
 contains
@@ -594,7 +588,7 @@ real:: rat
 ! read 
 namelist /fuel_scalars/ cmbcnst,hfgl,fuelmc_g,fuelmc_c,nfuelcats,no_fuel_cat
 namelist /fuel_categories/ fuel_name,windrf,fgi,fueldepthm,savr, &
-    fuelmce,fueldens,st,se,weight,fci_d,fct,ichap,fmc_gw01,fmc_gw02,fmc_gw03,fmc_gw04,fmc_gw05
+    fuelmce,fueldens,st,se,weight,fci_d,fct,ichap,fgi_1h,fgi_10h,fgi_100h,fgi_1000h,fgi_live
 
 namelist /fuel_moisture/ moisture_classes,drying_lag,wetting_lag,saturation_moisture,saturation_rain,rain_threshold, &
     drying_model,wetting_model, moisture_class_name,fmc_gc_initialization
@@ -635,13 +629,13 @@ IF ( wrf_dm_on_monitor() ) THEN
 
     ! just checking
     if (max_moisture_classes.ne.5)then
-        call crash('Must have 5 fuel classes, modify fmc_gw0* in the source if not')
+        call crash('Must have 5 fuel classes, modify source code if not')
     endif
-    fgi_c(1:mfuelcats,1)=fmc_gw01
-    fgi_c(1:mfuelcats,2)=fmc_gw02
-    fgi_c(1:mfuelcats,3)=fmc_gw03
-    fgi_c(1:mfuelcats,4)=fmc_gw04
-    fgi_c(1:mfuelcats,5)=fmc_gw05
+    fgi_c(1:mfuelcats,1)=fgi_1h
+    fgi_c(1:mfuelcats,2)=fgi_10h
+    fgi_c(1:mfuelcats,3)=fgi_100h
+    fgi_c(1:mfuelcats,4)=fgi_1000h
+    fgi_c(1:mfuelcats,5)=fgi_live
 
     call message('Scaling fuel loads within each fuel category to averaging weights of fuel moisture classes')
     do i=1,mfuelcats

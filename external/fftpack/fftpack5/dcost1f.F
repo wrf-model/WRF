@@ -15,9 +15,7 @@ subroutine dcost1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !    to DCOST1B (or vice-versa) reproduces the original array within
 !    roundoff error.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

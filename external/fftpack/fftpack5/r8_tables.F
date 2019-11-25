@@ -4,9 +4,7 @@ subroutine r8_tables ( ido, ip, wa )
 !
 !! R8_TABLES computes trigonometric tables, real double precision arithmetic.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

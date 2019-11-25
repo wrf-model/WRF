@@ -506,12 +506,13 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             if ( num_pseudo == 0 ) then
                grid%moist(i,j,k,P_QV) = max(grid%moist(i,j,k,P_QV), qlimit)
             end if
+            ! water vapor mixing ratio (kg h2o / kg dry air) from wrfinput file
             grid%xb%q(i,j,k) = grid%moist(i,j,k,P_QV)
 
             theta = t0 + grid%t_2(i,j,k)
             grid%xb%t(i,j,k) = theta*(grid%xb%p(i,j,k)/base_pres)**kappa
 
-            ! Convert to specific humidity from mixing ratio of water vapor:
+            ! Convert to specific humidity (kg h2o / kg moist air) from mixing ratio:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
    
             ! Background qrn needed for radar radial velocity assimilation:

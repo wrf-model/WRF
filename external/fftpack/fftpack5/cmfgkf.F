@@ -5,9 +5,7 @@ subroutine cmfgkf ( lot, ido, ip, l1, lid, na, cc, cc1, im1, in1, &
 !
 !! CMFGKF is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

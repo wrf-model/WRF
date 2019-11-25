@@ -1370,7 +1370,7 @@ js=ifval(jstag.ne.0,1,0)
 
 lsum=0
 do j=jps,jpe1
-  do k=kps,kpe1
+  do k=kps,kpe1-1
     do i=ips,ipe1
       rel=a(i,k,j)
       lsum=ieor(lsum,iel)

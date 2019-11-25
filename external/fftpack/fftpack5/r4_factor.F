@@ -4,9 +4,7 @@ subroutine r4_factor ( n, nf, fac )
 !
 !! R4_FACTOR factors of an integer for real single precision computations.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

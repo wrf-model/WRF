@@ -679,6 +679,7 @@ CONTAINS
       DCLDTOP(I,J)=0.0
       DCLDBASE(I,J)=0.0
       CLDBMFLX(I,J)=0.0
+      RADIUSC(I,J)=0.0
 #endif
 !
 !...INPUT A VERTICAL SOUNDING ... NOTE THAT MODEL LAYERS ARE NUMBERED FROM THE
@@ -2244,15 +2245,27 @@ CONTAINS
       ENDDO
 !
 !...CHECK TO SEE IF MIXING RATIO DIPS BELOW ZERO ANYWHERE;  IF SO, BORROW
-!...MOISTURE FROM ADJACENT LAYERS TO BRING IT BACK UP ABOVE ZERO...
+!...MOISTURE FROM ADJACENT LAYERS TO BRING IT BACK UP ABOVE ZERO; WITH
+!...INDEX NK-1, MINIMUM VALUE FOR NK=2...
 !
-      DO NK = 1,LTOP
+      DO NK = 2,LTOP
         IF(QQG(NK).LT.0.)THEN
           TMA = QQG(NK+1)*EMS(NK+1)
           TMB = QQG(NK-1)*EMS(NK-1)
           TMM = (QQG(NK)-1.E-9)*EMS(NK  )
-          BCOEFF = -TMM/((TMA*TMA)/TMB+TMB)
-          ACOEFF = BCOEFF*TMA/TMB
+          IF(TMA .NE. 0.0 .AND. TMB .NE. 0.0)THEN
+            BCOEFF = -TMM/((TMA*TMA)/TMB+TMB)
+            ACOEFF = BCOEFF*TMA/TMB
+          ELSE IF(TMA .EQ. 0.0 .AND. TMB .EQ. 0.0) THEN
+            BCOEFF = 0.0
+            ACOEFF = 0.0
+          ELSE IF(TMA .EQ. 0.0) THEN
+            BCOEFF = -TMM/TMB
+            ACOEFF = 0.0
+          ELSE IF(TMB .EQ. 0.0) THEN
+            BCOEFF = 0.0
+            ACOEFF = -TMM/TMA
+          ENDIF
           TMB = TMB*(1.-BCOEFF)
           TMA = TMA*(1.-ACOEFF)
           QQG(NK) = 1.E-9

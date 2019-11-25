@@ -12,9 +12,7 @@ subroutine dfft1i ( n, wsave, lensav, ier )
 !    in array WSAVE.  Separate WSAVE arrays are required for different
 !    values of N.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

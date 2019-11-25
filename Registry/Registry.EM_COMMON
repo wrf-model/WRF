@@ -54,8 +54,6 @@ state    real  XLONG            ij      misc        1         -     i0123rh0156{
 
 # It is required that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
-# this next 1 is for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
-# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  LU_INDEX         ij      misc        1         -     i012rh01d=(interp_fcnm_lu:xlat,xlong,dx,grid_id)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
 state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
 
@@ -398,8 +396,6 @@ state    real   T2               ij     misc        1         -     i01rh01{22}{
 state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
 state    real   PSFC             ij     misc        1         -     i01rh01du   "PSFC"                 "SFC PRESSURE"      "Pa"
 
-# these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
-# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real   U10              ij     misc        1         -     irh01{22}{23}du     "U10"                "U at 10 M"         "m s-1"
 state    real   V10              ij     misc        1         -     irh01{22}{23}du     "V10"                "V at 10 M"         "m s-1"
 # LPI
@@ -1075,7 +1071,7 @@ state    real    dl_u_bep      ikj     misc        1         Z      -        "dl
 state    real    sf_bep        ikj     misc        1         Z      -        "sf_bep"                "surface grid"              "-"
 state    real    vl_bep        ikj     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
 state    real   tke_pbl        ikj     misc        1         Z      rh       "tke_pbl"              "TKE from PBL"      "m2 s-2"
-state    real   el_pbl         ikj     misc        1         Z      h        "el_pbl"               "Length scale from PBL"      "m"
+state    real   el_pbl         ikj     misc        1         Z      rh       "el_pbl"               "Length scale from PBL"      "m"
 # Diagnostic BOULAC PBL variables
 state    real   wu_tur         ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
 state    real   wv_tur         ikj     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
@@ -1533,7 +1529,7 @@ state    real  RTHRATENLW      ikj      misc        1         -      r        "R
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  CLDFRA          ikj      misc        1         -      rh       "CLDFRA"                "CLOUD FRACTION"                                       ""
 state    real  CLDFRA_OLD      ikj      misc        1         -      r        "CLDFRA_OLD"            "previous time level cldfra"                           ""
-state    real  CLDFRA_BL       ikj      misc        1         -      -        "CLDFRA_BL"             "CLOUD FRACTION pbl"                                   ""
+state    real  CLDFRA_BL       ikj      misc        1         -      r        "CLDFRA_BL"             "CLOUD FRACTION pbl"                                   ""
 state    real  CLDT             ij      misc        1         -      -        "CFRACT"                "TOTAL CLOUD FRACTION"                                 ""
 #state    real  CLDL             ij      misc        1         -      -        "CFRACL"                "LOW CLOUD FRACTION (ETA GREATER THAN 0.69)"           ""
 #state    real  LWP              ij      misc        1         -      -        "LWP"                   "LIQUID CLOUD WATER PATH"                              "kg m-2"
@@ -1665,8 +1661,6 @@ state    real  SWCF             ij      misc        1         -      r        "S
 state    real  LWCF             ij      misc        1         -      r        "LWCF"                  "LONG WAVE CLOUD FORCING AT TOA"                      "W m-2"
 state    real  OLR              ij      misc        1         -      rh        "OLR"                   "TOA OUTGOING LONG WAVE"                              "W m-2"
 
-# these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
-# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  XLAT_U           ij      dyn_em      1         X     i012rhdu=(copy_fcnm)         "XLAT_U"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
 state    real  XLONG_U          ij      dyn_em      1         X     i012rhd=(interp_fcn_blint_ll:xlat_u,input_from_file)u=(copy_fcnm)         "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  XLAT_V           ij      dyn_em      1         Y     i012rhdu=(copy_fcnm)         "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
@@ -3062,7 +3056,6 @@ package   io_netcdf   io_form_restart==2                     -             -
 package   io_hdf      io_form_restart==3                     -             -
 package   io_phdf5    io_form_restart==4                     -             -
 package   io_grib1    io_form_restart==5                     -             -
-package   io_mcel     io_form_restart==6                     -             -
 package   io_esmf     io_form_restart==7                     -             -
 package   io_yyy      io_form_restart==8                     -             -
 package   io_zzz      io_form_restart==9                     -             -

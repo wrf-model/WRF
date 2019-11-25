@@ -974,7 +974,7 @@
     IF      ( ( switch .EQ. auxinput1_only  ) .AND. &
               ( config_flags%auxinput1_inname(1:8) .EQ. 'wrf_real' ) ) THEN
 
-       CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMSNSION' ,   kde_compare , 1 , icnt , ierr3 )
+       CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 )
 
        !  Test to make sure that the input data is the right size.
 

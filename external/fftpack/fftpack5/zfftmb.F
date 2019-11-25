@@ -20,9 +20,7 @@ subroutine zfftmb ( lot, jump, n, inc, c, lenc, wsave, lensav, work, &
 !    input variables INC, JUMP, N and LOT must be consistent, otherwise
 !    at least one array element mistakenly is transformed more than once.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

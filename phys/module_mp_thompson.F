@@ -1123,6 +1123,7 @@
             qg1d(k) = qg(i,k,j)
             ni1d(k) = ni(i,k,j)
             nr1d(k) = nr(i,k,j)
+            rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
          enddo
          if (is_aerosol_aware) then
             do k = kts, kte
@@ -1133,7 +1134,6 @@
             nwfa1 = nwfa2d(i,j)
          else
             do k = kts, kte
-               rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
                nc1d(k) = Nt_c/rho(k)
                nwfa1d(k) = 11.1E6/rho(k)
                nifa1d(k) = naIN1*0.01/rho(k)
@@ -1944,8 +1944,12 @@
 !..Compute all frozen hydrometeor species' process terms.
 !+---+-----------------------------------------------------------------+
       if (.not. iiwarm) then
+      !..vts_boost is the factor applied to snow terminal
+      !..fallspeed due to riming of snow
       do k = kts, kte
-         vts_boost(k) = 1.5
+         vts_boost(k) = 1.0
+         xDs = 0.0
+         if (L_qs(k)) xDs = smoc(k) / smob(k)
 
 !..Temperature lookup table indexes.
          tempc = temp(k) - 273.15
@@ -2097,13 +2101,12 @@
 
 !..Snow collecting cloud water.  In CE, assume Dc<<Ds and vtc=~0.
          if (L_qc(k) .and. mvd_c(k).gt. D0c) then
-          xDs = 0.0
-          if (L_qs(k)) xDs = smoc(k) / smob(k)
           if (xDs .gt. D0s) then
            idx = 1 + INT(nbs*DLOG(xDs/Ds(1))/DLOG(Ds(nbs)/Ds(1)))
            idx = MIN(idx, nbs)
            Ef_sw = t_Efsw(idx, INT(mvd_c(k)*1.E6))
            prs_scw(k) = rhof(k)*t1_qs_qc*Ef_sw*rc(k)*smoe(k)
+           prs_scw(k) = MIN(DBLE(rc(k)*odts), prs_scw(k))
            pnc_scw(k) = rhof(k)*t1_qs_qc*Ef_sw*nc(k)*smoe(k)                ! Qc2M
            pnc_scw(k) = MIN(DBLE(nc(k)*odts), pnc_scw(k))
           endif
@@ -2132,7 +2135,6 @@
 
 !..Snow and graupel collecting aerosols, wet scavenging.
          if (rs(k) .gt. r_s(1)) then
-          xDs = smoc(k) / smob(k)
           Ef_sa = Eff_aero(xDs,0.04E-6,visco(k),rho(k),temp(k),'s')
           pna_sca(k) = rhof(k)*t1_qs_qc*Ef_sa*nwfa(k)*smoe(k)
           pna_sca(k) = MIN(DBLE(nwfa(k)*odts), pna_sca(k))
@@ -2296,7 +2298,7 @@
 
 !..Freezing of aqueous aerosols based on Koop et al (2001, Nature)
           xni = smo0(k)+ni(k) + (pni_rfz(k)+pni_wfz(k)+pni_inu(k))*dtsave
-          if (is_aerosol_aware .AND. homogIce .AND. (xni.le.500.E3)     &
+          if (is_aerosol_aware .AND. homogIce .AND. (xni.le.999.E3)     &
      &                .AND.(temp(k).lt.238).AND.(ssati(k).ge.0.4) ) then
             xnc = iceKoop(temp(k),qv(k),qvs(k),nwfa(k), dtsave)
             pni_iha(k) = xnc*odts
@@ -2419,7 +2421,7 @@
                          prs_sde(k).gt.eps) then
            r_frac = MIN(30.0D0, prs_scw(k)/prs_sde(k))
            g_frac = MIN(0.95, 0.15 + (r_frac-2.)*.028)
-           vts_boost(k) = MIN(1.5, 1.1 + (r_frac-2.)*.016)
+           vts_boost(k) = MIN(1.5, 1.1 + (r_frac-2.)*.014)
            prg_scw(k) = g_frac*prs_scw(k)
            prs_scw(k) = (1. - g_frac)*prs_scw(k)
           endif
@@ -2431,12 +2433,13 @@
           if (L_qs(k)) then
            prr_sml(k) = (tempc*tcond(k)-lvap0*diffu(k)*delQvs(k))       &
                       * (t1_qs_me*smo1(k) + t2_qs_me*rhof2(k)*vsc2(k)*smof(k))
-           prr_sml(k) = prr_sml(k) + 4218.*olfus*tempc &
-                                   * (prr_rcs(k)+prs_scw(k))
+           if (prr_sml(k) .gt. 0.) then
+              prr_sml(k) = prr_sml(k) + 4218.*olfus*tempc               &
+                                      * (prr_rcs(k)+prs_scw(k))
+           endif
            prr_sml(k) = MIN(DBLE(rs(k)*odts), MAX(0.D0, prr_sml(k)))
            pnr_sml(k) = smo0(k)/rs(k)*prr_sml(k) * 10.0**(-0.25*tempc)      ! RAIN2M
            pnr_sml(k) = MIN(DBLE(smo0(k)*odts), pnr_sml(k))
-!          if (tempc.gt.3.5 .or. rs(k).lt.0.005E-3) pnr_sml(k)=0.0
 
            if (ssati(k).lt. 0.) then
             prs_sde(k) = C_cube*t1_subl*diffu(k)*ssati(k)*rvs &
@@ -2455,7 +2458,6 @@
            prr_gml(k) = MIN(DBLE(rg(k)*odts), MAX(0.D0, prr_gml(k)))
            pnr_gml(k) = N0_g(k)*cgg(2)*ilamg(k)**cge(2) / rg(k)         &   ! RAIN2M
                       * prr_gml(k) * 10.0**(-0.5*tempc)
-!          if (tempc.gt.7.5 .or. rg(k).lt.0.005E-3) pnr_gml(k)=0.0
 
            if (ssati(k).lt. 0.) then
             prg_gde(k) = C_cube*t1_subl*diffu(k)*ssati(k)*rvs &
@@ -3610,6 +3612,11 @@
                 CALL wrf_error_fatal("Error opening qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
               ENDIF
             ENDIF
+          ELSE
+            INQUIRE(63,OPENED=lopen)
+            IF (lopen) THEN
+              CLOSE(63)
+            ENDIF
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN
@@ -3705,7 +3712,8 @@
             tcg_racg(i,j,k,m) = t1
             tmr_racg(i,j,k,m) = DMIN1(z1, r_r(m)*1.0d0)
             tcr_gacr(i,j,k,m) = t2
-            tmg_gacr(i,j,k,m) = z2
+            tmg_gacr(i,j,k,m) = DMIN1(z2, r_g(j)*1.0d0)
+            !DAVE tmg_gacr(i,j,k,m) = DMIN1(z2, DBLE(r_g(j)))
             tnr_racg(i,j,k,m) = y1
             tnr_gacr(i,j,k,m) = y2
          enddo
@@ -4082,6 +4090,11 @@
               IF( force_read_thompson ) THEN
                 CALL wrf_error_fatal("Error opening freezeH2O.dat. Aborting because force_read_thompson is .true.")
               ENDIF
+            ENDIF
+          ELSE
+            INQUIRE(63,opened=lopen)
+            IF (lopen) THEN
+              CLOSE(63)
             ENDIF
           ENDIF
         ELSE
@@ -5222,8 +5235,15 @@
 !+---+-----------------------------------------------------------------+
 !..Calculate y-intercept, slope, and useful moments for snow.
 !+---+-----------------------------------------------------------------+
+      do k = kts, kte
+         smo2(k) = 0.
+         smob(k) = 0.
+         smoc(k) = 0.
+         smoz(k) = 0.
+      enddo
       if (ANY(L_qs .eqv. .true.)) then
       do k = kts, kte
+         if (.not. L_qs(k)) CYCLE
          tc0 = MIN(-0.1, temp(k)-273.15)
          smob(k) = rs(k)*oams
 

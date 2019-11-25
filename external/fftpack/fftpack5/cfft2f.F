@@ -16,9 +16,7 @@ subroutine cfft2f ( ldim, l, m, c, wsave, lensav, work, lenwrk, ier )
 !    On 10 May 2010, this code was modified by changing the value
 !    of an index into the WSAVE array.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

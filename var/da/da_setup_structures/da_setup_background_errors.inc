@@ -19,8 +19,8 @@ subroutine da_setup_background_errors(grid, be)
    be % ne = ensdim_alpha                          ! Size of ensemble.
 
    if (be % ne > 0) then     ! Calculation to preserve total variance.
-      if ( je_factor > alpha_std_dev**2 ) then
-         jb_factor   = je_factor / ( je_factor - alpha_std_dev**2 )
+      if ( je_factor > 1.0 ) then
+         jb_factor   = je_factor / ( je_factor - 1.0 )
       else
          jb_factor   = -999.
          write(6,*) 'Full ensemble mode: deactivating Jb control variable'

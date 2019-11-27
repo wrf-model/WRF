@@ -652,6 +652,13 @@ IF ( wrf_dm_on_monitor() ) THEN
        close(iounit)
     endif
 
+    ! write to output file
+    iounit=open_text_file('namelist.fire.output','write')
+    write(iounit,fuel_scalars)
+    write(iounit,fuel_categories)
+    write(iounit,fuel_moisture)
+    close(iounit)
+
     if (nfuelcats>mfuelcats) then
         write(msg,*)'nfuelcats=',nfuelcats,' is too large, increase mfuelcats'
         call crash(msg)

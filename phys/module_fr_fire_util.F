@@ -199,22 +199,28 @@ end subroutine message
 !
 
 
-integer function open_text_file(filename,rw)
+integer function open_text_file(filename,rw,allow_fail)
 implicit none
 character(len=*),intent(in):: filename,rw
+logical, intent(in), optional:: allow_fail
 #ifdef _OPENMP
 !integer, external:: OMP_GET_THREAD_NUM
 #endif
 character(len=128):: msg
 character(len=1)::act
 integer::iounit,ierr
-logical::op
+logical::op,ok
 
 #ifdef _OPENMP
 !   if (OMP_GET_THREAD_NUM() .ne. 0)then
 !      call crash('open_input_text_file: called from parallel loop')
 !   endif
 #endif
+if(present(allow_fail))then
+    ok=allow_fail
+else
+    ok=.false.  ! default
+endif
 
     do iounit=19,99
        inquire(iounit,opened=op)
@@ -233,10 +239,16 @@ logical::op
     end select
     
     if(ierr.ne.0)then 
-	write(msg,*)'open_text_file: Cannot open file ',filename
-        call crash(msg)
+	write(msg,*)'Cannot open file ',filename
+        if(ok)then
+            call message(msg)
+            open_text_file=-1
+        else
+            call crash(msg)
+        endif
+    else
+        open_text_file=iounit
     endif
-    open_text_file=iounit
 
 end function open_text_file
 

@@ -178,6 +178,21 @@ end type fire_params
                                             fgi_1h,fgi_10h,fgi_100h,fgi_1000h,fgi_live, &
                                             fgi_t,fmc_gwt
    REAL,   DIMENSION(mfuelcats,max_moisture_classes), save :: fgi_c, fmc_gw ! fuel moisture class weights
+   DATA fuel_name /'1: Short grass (1 ft)', &
+     '2: Timber (grass and understory)', &
+     '3: Tall grass (2.5 ft)', &
+     '4: Chaparral (6 ft)', &
+     '5: Brush (2 ft) ', &
+     '6: Dormant brush, hardwood slash', &
+     '7: Southern rough', &
+     '8: Closed timber litter', &
+     '9: Hardwood litter', &
+     '10: Timber (litter + understory)', &
+     '11: Light logging slash', &
+     '12: Medium logging slash', &
+     '13: Heavy logging slash', &
+     '14: no fuel', zf* ' '/
+
    DATA windrf /0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44, &     
                 0.36, 0.36, 0.36,  0.36,  0.43,  0.46,  1e-7, zf*0 /
    DATA fueldepthm /0.305,  0.305,  0.762, 1.829, 0.61,  0.762,0.762, &
@@ -586,7 +601,7 @@ logical, external:: wrf_dm_on_monitor
 !integer, external:: OMP_GET_THREAD_NUM
 #endif
 !*** local
-integer:: iounit, i, k
+integer:: iounit, i, k, io
 character(len=128):: msg
 real:: rat
 !*** executable
@@ -609,9 +624,33 @@ IF ( wrf_dm_on_monitor() ) THEN
     ! we are the MPI rank 0
 
     ! read the file
-    call message('Reading file namelist.fire')
-    iounit=open_text_file('namelist.fire','read')
-    read(iounit,fuel_scalars)
+    call message('Reading file namelist.fire',level=0)
+    iounit=open_text_file('namelist.fire','read',allow_fail=.true.)
+    if(iounit < 0)then
+       call message('File namelist.fire not found, using defaults',level=0)
+    else  
+       read(iounit,fuel_scalars,iostat=io)
+       if(io < 0)then
+           call message('Namelist fuel_scalars not found, using defaults',level=0)
+       elseif(io > 0)then
+           call crash('Error in file namelist.fire, namelist fuel_scalars')
+       endif
+       rewind(iounit)
+       read(iounit,fuel_categories,iostat=io)
+       if(io < 0)then
+           call message('Namelist fuel_categories not found, using defaults',level=0)
+       elseif(io > 0)then
+           call crash('Error in file namelist.fire, namelist fuel_categories')
+       endif
+       rewind(iounit)
+       read(iounit,fuel_moisture,iostat=io)
+       if(io < 0)then
+           call message('Namelist fuel_moisture not found, using defaults',level=0)
+       elseif(io > 0)then
+           call crash('Error in file namelist.fire, namelist fuel_moisture')
+       endif
+       close(iounit)
+    endif
 
     if (nfuelcats>mfuelcats) then
         write(msg,*)'nfuelcats=',nfuelcats,' is too large, increase mfuelcats'
@@ -621,13 +660,6 @@ IF ( wrf_dm_on_monitor() ) THEN
         write(msg,*)'no_fuel_cat=',no_fuel_cat,' may not be between 1 and nfuelcats=',nfuelcats
         call crash(msg)
     endif
-
-    read(iounit,fuel_categories)
-    if(init_fuel_moisture)then
-        read(iounit,fuel_moisture)
-    endif
-
-    CLOSE(iounit)
 
     ! convert fuel loads in the fuel classes to internal as weights adding up to one
     ! 

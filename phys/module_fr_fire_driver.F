@@ -602,10 +602,6 @@ if(fire_print_file.gt.0)then
     if(itimestep.le.fire_print_file.or.mod(itimestep,fire_print_file).eq.0)pid=itimestep ! print 1-fire_print_file then every fire_print_file-th
 endif
 
-if(ifun.eq.1)then
-         call init_fuel_cats(fmoist_run .or. fmoist_interp) ! properties of fuel categories and moisture classes from namelist.fire
-endif
-
 if(ifun.eq.3)then
  call print_chsum(itimestep,ims,ime,kms,kme,jms,jme,ids,ide,kds,kde,jds,jde,ips,ipe,kps,kpe,jps,jpe,1,0,0,u,'u')
  call print_chsum(itimestep,ims,ime,kms,kme,jms,jme,ids,ide,kds,kde,jds,jde,ips,ipe,kps,kpe,jps,jpe,0,0,1,v,'v')

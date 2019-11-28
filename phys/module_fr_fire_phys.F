@@ -79,10 +79,16 @@ end type fire_params
   data rain_threshold      /0.05,0.05,0.05,0.05,0.05/ ! rain intensity this small is same as nothing
   data drying_model        /1,   1,   1,   1,   1 / ! future proofing 
   data wetting_model       /1,   1,   1,   1,   1 / ! future proofing
-  data fmc_gc_initialization/2,  2,   2,   2,   1 / ! initialization 0=input, 1=from fuelmc_g, 
-                                                    ! 2=from equilibrium, 3=from fmc_1h, etc.
-  data fmc_1h /0.08/, fmc_10h/0.08/, fmc_100h/0.08/, fmc_1000h/0.08/, fmc_live/0.2/
-  data fmc_gc_initial_value/0.00,0.00,0.00,0.00,0.00/ ! should not be used 
+  data fmc_gc_initialization/2,  2,   2,   2,   3 / ! initialization 0=input, 1=from fuelmc_g, 
+                                                    ! 2=from equilibrium, 3=from fmc_1h,...,fmc_live
+  data fmc_gc_initial_value/0.,  0.,  0.,  0.,  0./ ! initial value used in the model, to be the actual value fmc_1h,...,fmc_live or read in
+  data fmc_1h /0.08/, fmc_10h/0.08/, fmc_100h/0.08/, fmc_1000h/0.08/, fmc_live/1.0/
+  ! live fuel moisture following https://www.nwcg.gov/publications/pms437/fuel-moisture/live-fuel-moisture-content
+  ! 300% Fresh foliage, annuals developing early in the growing cycle
+  ! 200% Maturing foliage, still developing, with full turgor
+  ! 100% Mature foliage, new growth complete and comparable to older perennial foliage
+  ! 50%  Entering dormancy, coloration starting, some leaves may have dropped from stem
+  ! 30%  Completely cured, treat as dead fuel
 
   real, dimension(7)::eq_p
   data eq_p/  1.035e-09, &   !(3.893e-10, 1.681e-09) ! coefficients of the equilibrium fuel moisture polynomial

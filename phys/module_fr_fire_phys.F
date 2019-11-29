@@ -84,6 +84,7 @@ end type fire_params
   data fmc_gc_initial_value/0.,  0.,  0.,  0.,  0./ ! initial value used in the model, to be the actual value fmc_1h,...,fmc_live or read in
   data fmc_1h /0.08/, fmc_10h/0.08/, fmc_100h/0.08/, fmc_1000h/0.08/, fmc_live/1.0/
   ! live fuel moisture following https://www.nwcg.gov/publications/pms437/fuel-moisture/live-fuel-moisture-content
+  ! from Rothermel, 1983 Table II-2 p.13 https://www.fs.usda.gov/treesearch/pubs/24635
   ! 300% Fresh foliage, annuals developing early in the growing cycle
   ! 200% Maturing foliage, still developing, with full turgor
   ! 100% Mature foliage, new growth complete and comparable to older perennial foliage

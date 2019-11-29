@@ -90,16 +90,7 @@ end type fire_params
   ! 50%  Entering dormancy, coloration starting, some leaves may have dropped from stem
   ! 30%  Completely cured, treat as dead fuel
 
-  real, dimension(7)::eq_p
-  data eq_p/  1.035e-09, &   !(3.893e-10, 1.681e-09) ! coefficients of the equilibrium fuel moisture polynomial
-              -2.62e-07, &   !(-4.593e-07, -6.473e-08) ! fitted from the graph in Schroeder and Buck (1970)
-              2.507e-05, &   !(2.194e-06, 4.795e-05)
-              -0.001107, &   !(-0.002353, 0.000139)
-                0.02245, &   !(-0.009188, 0.05409)
-               -0.05901, &   !(-0.3721, 0.254)
-                  3.043/   !(2.17, 3.915)
-   
-   ! =========================================================================
+! =========================================================================
 
 !D in col 2 means quantity derived from the others
 !

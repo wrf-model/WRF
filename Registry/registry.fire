@@ -90,7 +90,7 @@ rconfig logical   fmoist_interp     namelist,fire  max_domains   .false.       h
 rconfig logical   fmoist_only       namelist,fire  max_domains   .false.       hr   "only run moisture model, skip fire"
 rconfig integer   fmoist_freq       namelist,fire  max_domains    0       hr   "fmoist_freq"    "frequency to run moisture model 0: use fmoist_dt, k>0: every k timesteps" "1"
 rconfig real      fmoist_dt         namelist,fire  max_domains    600     hr   "fmoist_dt  "    "moisture model time step" "s"
-rconfig real      fmep_decay_tlag   namelist,fire  1              0.01    hr   "fmep_decay_tlag" "time constant of assimilated adjustments of equilibria decay" "1"
+rconfig real      fmep_decay_tlag   namelist,fire  1              999999  hr   "fmep_decay_tlag" "time constant of assimilated adjustments of equilibria decay" "1"
 halo      HALO_FIRE_MFG dyn_em 24:fmc_g
 halo      HALO_FIRE_MAG dyn_em 8:fmc_gc
 

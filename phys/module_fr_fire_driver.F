@@ -1,3 +1,5 @@
+
+! SFIRE - Spread fire model in WRF-Fire
 !
 ! This module is the entry point from WRF ARW to the wildland 
 ! fire module. The call to fire_driver advances the fire module by 
@@ -302,12 +304,14 @@ halo_fire_mag_sub
             grid%fuel_time,                      & 
             config_flags%nfmc,         & ! moisture model variables start
             run_advance_moisture,run_fuel_moisture,dt_moisture,     &    ! moisture model control
+            config_flags%fmep_decay_tlag,                               & ! moisture extended model assim. diffs decay time lag
             grid%rainc, grid%rainnc,                       & ! accumulated rain from different sources
             grid%t2, grid%q2, grid%psfc,               & ! temperature (K), vapor contents (kg/kg), pressure (Pa) at the surface
             grid%rain_old,                   & ! previous value of accumulated rain
             grid%t2_old, grid%q2_old, grid%psfc_old,   & ! previous values of the atmospheric state at surface
             grid%rh_fire,                    & ! relative humidity, diagnostics
             grid%fmc_gc,                      & ! fuel moisture fields updated, by class, assumed set to something reasonable
+            grid%fmep,                      & ! fuel moisture extended model parameters
             grid%fmc_equi,                      & ! fuel moisture fields updated, by class, equilibrium diagnostic 
             grid%fmc_lag,                      & ! fuel moisture fields updated, by class, tendency diagnostic
             fp%fmc_g , &                             !  write-only alias. need to exit before using fp again
@@ -403,12 +407,14 @@ subroutine fire_driver_phys (ifun,need_lfn_update,    &
     fuel_time,                                & ! save constant internal data, fire grid
     nfmc,                                     & ! number of fuel moisture classes
     run_advance_moisture,run_fuel_moisture,dt_moisture,& ! moisture model control
+    fmep_decay_tlag,                              & ! moist. extended model assim. diffs time lag
     rainc,rainnc,              & ! accumulated rain from different sources
     t2, q2, psfc,               & ! temperature (K), vapor contents (kg/kg), pressure (Pa) at the surface
     rain_old,                   & ! previous value of accumulated rain
     t2_old, q2_old, psfc_old,   & ! previous values of the atmospheric state at surface
     rh_fire,                    & ! relative humidity, diagnostics
     fmc_gc,                    &  ! fuel moisture fields updated, by class, assumed set to something reasonable
+    fmep,                       &  ! fuel moisture extended model parameters
     fmc_equi,                    &  ! fuel moisture fields updated, by class equilibrium diagnostic
     fmc_lag,                    &  ! fuel moisture fields updated, by class tendency diagnostic
     fmc_g, &                          ! fuel moisture, alias of fp%fmc_g
@@ -522,10 +528,12 @@ real, intent(out), dimension(ifms:ifme, jfms:jfme):: &  ! redundant arrays, for 
 ! moisture model arguments
 logical, intent(in)::run_advance_moisture,run_fuel_moisture
 real, intent(in)::dt_moisture
+real, intent(in)::fmep_decay_tlag
 real, intent(in), dimension(ims:ime,jms:jme):: t2, q2, psfc, rainc, rainnc
 real, intent(inout), dimension(ims:ime,jms:jme):: t2_old, q2_old, psfc_old, rain_old 
 real, intent(out),dimension(ims:ime,jms:jme):: rh_fire
 real, intent(inout), dimension(ims:ime,nfmc,jms:jme):: fmc_gc
+real, intent(inout), dimension(ims:ime,2,jms:jme):: fmep
 real, intent(out), dimension(ims:ime,nfmc,jms:jme):: fmc_equi,fmc_lag
 real, intent(inout), dimension(ifms:ifme,jfms:jfme):: fmc_g
 
@@ -672,12 +680,14 @@ do ij=1,num_tiles
               its,ite,  jts,jte,          & ! tile dimensions
               nfmc,                       & ! number of moisture fields
               dt_moisture,                & ! moisture model time step
+              fmep_decay_tlag,            & ! moisture extended model assim. diffs decay tlag
               rainc, rainnc,              & ! accumulated rain 
               t2, q2, psfc,               & ! temperature (K), vapor contents (kg/kg), pressure (Pa) at the surface
               rain_old,                   & ! previous value of accumulated rain
               t2_old, q2_old, psfc_old,   & ! previous values of the atmospheric state at surface
               rh_fire,                    & ! relative humidity, diagnostics
               fmc_gc,                     & ! fuel moisture fields updated, by class, assumed set to something reasonable
+              fmep,                       & ! fuel moisture extended model parameters
               fmc_equi,                   &  ! fuel moisture fields updated, by class equilibrium diagnostic
               fmc_lag                    &  ! fuel moisture fields updated, by class tendency diagnostic
           )

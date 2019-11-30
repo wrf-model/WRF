@@ -336,12 +336,14 @@ subroutine advance_moisture(    &
     its,ite,  jts,jte,          & ! tile dimensions
     nfmc,                       & ! dimension of moisture fields
     moisture_dt,                & ! timestep = time step time elapsed from the last call
+    fmep_decay_tlag,            & ! moisture extended model assimilated diffs. decay time lag
     rainc, rainnc,              & ! accumulated rain 
     t2, q2, psfc,               & ! temperature (K), vapor contents (kg/kg), pressure (Pa) at the surface
     rain_old,                   & ! previous value of accumulated rain
     t2_old, q2_old, psfc_old,   & ! previous values of the atmospheric state at surface
     rh_fire,                    & ! relative humidity at surface, for diagnostic only
     fmc_gc,                     & ! fuel moisture by class, updated
+    fmep,                       & ! fuel moisture extended model parameters
     fmc_equi,                   & ! fuel moisture equilibrium by class, for diagnostics only
     fmc_lag                     & ! fuel moisture tendency by classe, for diagnostics only
     )
@@ -354,10 +356,11 @@ integer, intent(in)::           &
     ims,ime,  jms,jme,          & ! memory dimensions
     its,ite,  jts,jte,          & ! tile dimensions
     nfmc                          ! number of moisture fields
-real, intent(in):: moisture_dt
+real, intent(in):: moisture_dt, fmep_decay_tlag
 real, intent(in), dimension(ims:ime,jms:jme):: t2, q2, psfc, rainc, rainnc
 real, intent(inout), dimension(ims:ime,jms:jme):: t2_old, q2_old, psfc_old, rain_old 
 real, intent(inout), dimension(ims:ime,nfmc,jms:jme):: fmc_gc
+real, intent(inout), dimension(ims:ime,2,jms:jme):: fmep
 real, intent(out), dimension(ims:ime,nfmc,jms:jme):: fmc_equi, fmc_lag
 real, intent(out), dimension(ims:ime,jms:jme)::rh_fire 
 
@@ -367,7 +370,7 @@ real, intent(out), dimension(ims:ime,jms:jme)::rh_fire
 !*** local
 integer:: i,j,k
 real::rain_int, T, P, Q, QRS, ES, RH, tend, EMC_d, EMC_w, EMC, R, rain_diff, fmc, rlag, equi, &
-    d, w, rhmax, rhmin, change, rainmax,rainmin, fmc_old, H
+    d, w, rhmax, rhmin, change, rainmax,rainmin, fmc_old, H, deltaS, deltaE
 real, parameter::tol=1e-2 ! relative change larger than that will switch to exponential ode solver 
 character(len=256)::msg
 integer::msglevel=2
@@ -460,6 +463,10 @@ do j=jts,jte
             rh_fire(i,j)=RH
             rhmax=max(RH,rhmax)         
             rhmin=min(RH,rhmin)         
+
+            deltaE = fmep(i,1,j)
+            deltaS = fmep(i,2,j)
+
             if(.not.check_rh)then
                 RH = min(RH,1.0)
             else
@@ -477,8 +484,8 @@ do j=jts,jte
             if (R > 0.) then
                 select case(wetting_model(k))
                 case(1) ! saturation_moisture=2.5 wetting_lag=14h saturation_rain=8 mm/h calibrated to VanWagner&Pickett 1985 per 24 hours
-                    EMC_w=saturation_moisture(k)
-                    EMC_d=saturation_moisture(k)
+                    EMC_w=saturation_moisture(k) + deltaS
+                    EMC_d=saturation_moisture(k) + deltaS
                     rlag=rec_wetting_lag_sec(k) * (1. - exp(-R/saturation_rain(k)))
                 end select
             else ! not raining
@@ -490,8 +497,8 @@ do j=jts,jte
                     if(d.ne.d.or.w.ne.w)call crash('equilibrium moisture calculation failed, result is NaN')
                     d = d*0.01
                     w = w*0.01
-                    EMC_d = max(d,w)
-                    EMC_w = min(d,w)
+                    EMC_d = max(max(d,w)+deltaE,0.0)
+                    EMC_w = max(min(d,w)+deltaE,0.0)
                     rlag=rec_drying_lag_sec(k)
                 end select
             endif
@@ -543,6 +550,22 @@ do j=jts,jte
       enddo
    enddo
 enddo
+
+
+! assimilated differences decay
+do j=jts,jte
+  do k=1,2
+    do i=its,ite
+      change = moisture_dt / (fmep_decay_tlag * 3600.)
+      if(change < tol) then
+        fmep(i,k,j) = fmep(i,k,j)*(1.0 - change * (1.0 - 0.5 * change))
+      else
+        fmep(i,k,j) = fmep(i,k,j)*exp(-change)
+      endif
+    enddo
+  enddo
+enddo
+
 
 if(fire_print_msg.ge.2)then
 !$OMP CRITICAL(SFIRE_PHYS_CRIT)

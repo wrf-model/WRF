@@ -62,10 +62,10 @@ end type fire_params
   INTEGER, PARAMETER ::max_moisture_classes=5
 !***
 
-  integer:: moisture_classes=5
-  real, dimension(max_moisture_classes):: drying_lag,wetting_lag,saturation_moisture,saturation_rain, &
+  integer, save:: moisture_classes=5
+  real, dimension(max_moisture_classes), save:: drying_lag,wetting_lag,saturation_moisture,saturation_rain, &
          rain_threshold,rec_drying_lag_sec,rec_wetting_lag_sec,fmc_gc_initial_value
-  integer, dimension(max_moisture_classes):: drying_model,wetting_model,fmc_gc_initialization
+  integer, dimension(max_moisture_classes), save:: drying_model,wetting_model,fmc_gc_initialization
    ! relative weights of moisture class for each fuel category
    integer::itmp
    CHARACTER (len=80), DIMENSION(max_moisture_classes), save :: moisture_class_name

@@ -204,16 +204,9 @@ fi
 
 # If the user asked for classic netcdf, acquiesce to the request.
 
-if [ "`uname`" = "Linux" ] ; then
-  ans="`whereis nf-config`"
-elif [ "`uname`" = "Darwin" ] ; then
-  ans="`which nf-config`"
-else
-  ans=""
-# echo "Add in your architecture's uname and the command to find executables in the path"
-# exit 1
-fi
-if [ "$ans" = "nf-config:" -o "$ans" = "" ] ; then
+ans="`which nf-config`"
+status="$?"
+if [ "$ans" = "nf-config:" -o "$ans" = "" -o "$status" != "0" ] ; then
     export NETCDF_classic=1
     unset NETCDF4
 else

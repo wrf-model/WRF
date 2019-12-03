@@ -2367,7 +2367,7 @@ rconfig   integer no_src_types            namelist,physics      1             1 
 rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosol optical depth data levels from EC (12)"  ""
 rconfig   integer o3input                 namelist,physics      1             2       -      "o3input"      "ozone input for RRTMG for CG domain: original = 0; CAM ozone = 2"      ""
 rconfig   integer aer_opt                 namelist,physics      1             0       -      "aer_opt"      "aerosol input option for radiation"      ""
-rconfig   integer swint_opt               namelist,physics      1             0       -      "swint_opt"    "interpolation option for sw radiation"      ""
+rconfig   integer swint_opt               namelist,physics      1             0       -      "swint_opt"    "interpolation option for sw radiation: 0 = off, 1 = cosine zenit angle correction, 2 = FARMS (can include fast-moving clouds)"      ""
 rconfig   integer aer_type                namelist,physics      max_domains   1       irh    "aer_type"       "aerosol type: 1 is SF79 rural, 2 is SF79 urban" ""
 rconfig   integer aer_aod550_opt          namelist,physics      max_domains   1       irh    "aer_aod550_opt" "input option for aerosol optical depth at 550 nm" ""
 rconfig   integer aer_angexp_opt          namelist,physics      max_domains   1       irh    "aer_angexp_opt" "input option for aerosol Angstrom exponent" ""

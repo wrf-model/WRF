@@ -560,7 +560,7 @@ BENCH_START(calc_tke_tim)
                                  grid%mix_upper_bound,                                  &
                                  grid%msftx, grid%msfty,                                &
                                  grid%zx, grid%zy,                                      &
-                                 grid%pblh, grid%dlk, grid%xkmv_meso,                   & ! XZ 
+                                 grid%pblh, grid%dlk, grid%xkmv_meso,                   &  
                                  ids,ide, jds,jde, kds,kde,                             &
                                  ims,ime, jms,jme, kms,kme,                             &
                                  grid%i_start(ij), grid%i_end(ij),                      &

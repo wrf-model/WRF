@@ -337,7 +337,7 @@ state    real   ht_coarse       ij     misc        1   -     r                - 
 state    real   tke            ikj     dyn_em      2         -       r        "tke"          "TURBULENCE KINETIC ENERGY"     "m2 s-2"
 i1       real   tke_tend       ikj     dyn_em      1         -      
 
-# variables in 3DTKE scheme (km_opt=5, XZ)
+# variables in 3DTKE scheme (km_opt=5)
 state    real  nlflux          ikj     dyn_em        1         Z      -      "NLFLUX"          "PRESCRIBED NONLOCAL HEAT FLUX IN 3DTKE SCHEME"         "K m s-1"
 state    real  gamu            ij      dyn_em        1         -      r      "GAMU"            "NONLOCAL U GAMMA TERM IN 3DTKE SCHEME"         "s-1"
 state    real  gamv            ij      dyn_em        1         -      r      "GAMV"            "NONLOCAL V GAMMA TERM IN 3DTKE SCHEME"         "s-1"

@@ -4,9 +4,7 @@ subroutine z1fgkb ( ido, ip, l1, lid, na, cc, cc1, in1, ch, ch1, in2, wa )
 !
 !! Z1FGKB is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

@@ -1250,11 +1250,6 @@ endif
       ENDDO
    ENDIF
 
-#ifdef MCELIO
-   grid%LU_MASK = 0.
-   WHERE ( grid%lu_index .EQ. 16 ) grid%LU_MASK = 1.
-#endif
-
    call wrf_debug(100,'start_em: calling lightning_init')
    CALL lightning_init ( id=grid%id, itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
                     ! Namelist control options

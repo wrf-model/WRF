@@ -508,6 +508,8 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
+                                     = 24, WSM 7-class scheme (separate hail and graupel categories)
+                                     = 26, WDM 7-class scheme (separate hail and graupel categories)
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
                                        This option has two climatological aerosol input options:

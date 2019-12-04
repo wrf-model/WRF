@@ -2574,8 +2574,11 @@
             zgamma4= 1._rb - zgamma3
     
 ! Recompute original s.s.a. to test for conservative solution
-            !Balwinder.Singh@pnnl.gov: Code added to avoid 'divide by zero' error in zwo computation
-            denom = max((1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2),1.0E-30_rb)
+            denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
+	    ! Code added to avoid 'divide by zero' error in zwo computation
+            if (abs(denom).eq.0.0_rb) then
+               denom = 1.0E-30_rb
+            end if
             zwo= zw / denom
 
             if (zwo >= zwcrit) then

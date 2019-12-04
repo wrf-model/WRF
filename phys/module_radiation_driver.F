@@ -48,7 +48,7 @@ CONTAINS
               ,CURR_SECS, ADAPT_STEP_FLAG       &
               ,MUT, DNW                            & ! FARMS coupling
               ,SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2  & ! FARMS coupling
-              ,SWDOWNC2, SWDDNIC2                  & ! PAJ: FARMS coupling
+              ,SWDOWNC2, SWDDNIC2                  & ! FARMS coupling
               !BSINGH - For WRFCuP scheme (optional args)
               ,cu_physics,shallowcu_forced_ra   & !CuP, wig 1-Oct-2006
               ,cubot,cutop,cldfra_cup           & !CuP, wig 1-Oct-2006

@@ -1556,7 +1556,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    CYGWIN_NT i686, PGI compiler on Windows # serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       PGI ($SFC/$SCC): Windows native
+DESCRIPTION     =       PGI ($SFC/$SCC): Windows POSIX native
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp

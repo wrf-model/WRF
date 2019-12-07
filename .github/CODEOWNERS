@@ -4,13 +4,18 @@
 
 *					@wrf-model/global_owner
 
-#	Next, generic top-level run dir and build files
+#	Generic top-level build files
 
-/run/					@wrf-model/infrastructure
 /configure				@wrf-model/infrastructure
 /compile				@wrf-model/infrastructure
 /clean					@wrf-model/infrastructure
 /Makefile				@wrf-model/infrastructure
+
+#	General use top-level files
+
+LICENSE.txt				@wrf-model/global_owner
+README					@wrf-model/global_owner
+README.md				@wrf-model/global_owner
 
 #	Architecture directories
 
@@ -19,10 +24,13 @@
 
 #	Common directories
 
-/share/					@wrf-model/infrastructure
+/doc/					@wrf-model/arw_dev @wrf-model/hwrf_dev @wrf-model/physics @wrf-model/infrastructure
 /frame/					@wrf-model/infrastructure
+/run/					@wrf-model/infrastructure
+/share/					@wrf-model/infrastructure @wrf-model/physics
 
 #	Chemistry
+
 /chem/					@wrf-model/chem
 
 #	Physics
@@ -30,6 +38,15 @@
 /phys/					@wrf-model/physics
 
 /phys/module_mp_thompson.F		@gthompsnWRF @wrf-model/physics
+/phys/module_mp_jensen_ishmael.F	@graupely @wrf-model/physics
+/phys/module_mp_gsfcgce_4ice_nuwrf.F	@cacruz @wrf-model/physics
+/phys/module_sf_noahmp*.F		@barlage @wrf-model/physics
+/phys/module_fr_*			@pedro-jm @brankokosovic @domingom @wrf-model/physics
+/phys/module_bl_mynn.F			@joeolson42 @wrf-model/physics
+/phys/module_sf_mynn.F			@joeolson42 @wrf-model/physics
+/phys/module_sf_px*.F 			@coawstwx @wrf-model/physics
+/phys/module_bl_acm.F  			@coawstwx @wrf-model/physics
+/phys/module_sf_ruclsm.F		@tanyasmirnova @wrf-model/physics
 
 #	Shared Physics Between MPAS and WRF
 

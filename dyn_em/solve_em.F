@@ -779,7 +779,7 @@ BENCH_START(calc_p_rho_tim)
                              , pi_phy , p_phy , grid%t_phy      &
                              , dz8w , p8w , t8w                 &
                              , nba_mij, num_nba_mij             & !JDM 
-                             , nba_rij, num_nba_rij             & !JDM  
+                             , nba_rij, num_nba_rij             & !JDM 
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -2283,7 +2283,7 @@ BENCH_END(flow_depbdy_tim)
        ENDIF moist_scalar_advance
 
 BENCH_START(tke_adv_tim)
-       TKE_advance: IF (config_flags%km_opt .eq. 2) then
+       TKE_advance: IF (config_flags%km_opt .eq. 2.or.config_flags%km_opt.eq.5) then ! XZ
 #ifdef DM_PARALLEL
          IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
 #       include "HALO_EM_TKE_ADVECT_3.inc"
@@ -2300,6 +2300,11 @@ BENCH_START(tke_adv_tim)
 
            CALL wrf_debug ( 200 , ' call rk_scalar_tend for tke' )
            tenddec = .false.
+! XZ
+         IF( config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 5 ) THEN
+           tenddec = .true.
+         ENDIF
+!!
            CALL rk_scalar_tend ( 1, 1, config_flags, tenddec,                      & 
                             rk_step, dt_rk,                                        &
                             grid%ru_m, grid%rv_m, grid%ww_m,                       &
@@ -2333,6 +2338,8 @@ BENCH_START(tke_adv_tim)
          !$OMP PRIVATE ( ij, tenddec )
          tke_tile_loop_2: DO ij = 1 , grid%num_tiles
 
+         IF( config_flags%km_opt .eq. 2 ) THEN   !XZ
+
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
            tenddec = .false.
            CALL rk_update_scalar( scs=1,  sce=1,                                          &
@@ -2360,6 +2367,28 @@ BENCH_START(tke_adv_tim)
                            grid%i_start(ij), grid%i_end(ij),    &
                            grid%j_start(ij), grid%j_end(ij),    &
                            k_start    , k_end                  )
+         ENDIF !XZ
+
+!XZ
+         IF(rk_step == rk_order.and.config_flags%km_opt .eq. 5 ) THEN
+          CALL update_tke_implicit( config_flags,grid%tke_1,              &
+                                    grid%tke_2,grid%xkhv,                 &
+                                    grid%rdz,grid%rdzw,grid%l_scale,      &
+                                    grid%dnw,grid%rdnw,grid%c1h,grid%c2h, &
+                                    h_tendency,z_tendency,                &
+                                    grid%tke_production_tend,             &
+                                    grid%tke_diffusion_h_tend,            &
+                                    grid%fnm,grid%fnp,                    &
+                                    grid%msftx, grid%msfty,               &
+                                    grid%mu_1, grid%mu_2, grid%mub,       &
+                                    rk_step, dt_rk, grid%spec_zone,       &
+                                    grid%tke_upper_bound, grid%rho,       &
+                                    ids, ide, jds, jde, kds, kde,         &
+                                    ims, ime, jms, jme, kms, kme,         &
+                                    grid%i_start(ij),grid%i_end(ij),      &
+                                    grid%j_start(ij),grid%j_end(ij),      &
+                                    k_start    , k_end                    )
+         ENDIF  !XZ
 
            IF( config_flags%specified .or. config_flags%nested ) THEN
               CALL flow_dep_bdy (  grid%tke_2,                     &

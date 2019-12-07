@@ -60,8 +60,8 @@ Namelist.input variables related to to this new capability:
 
  * max_ts_locs = maximum number of locations in 'tslist' ( default is 5)
  * ts_buf_size = buffer size for time series output (default is 200)
- * max_ts_level = number of model levels for time series vertical
-   profiles (default is 15)
+ * max_ts_level = number of model levels for time series vertical profiles, the default is 15. 
+   The maximum number of max_ts_level is e_vert-1 (the number of half layers in the model run)
  * tslist_unstagger_winds = output the unstaggered u, v, and w component
    winds (default is false)
 

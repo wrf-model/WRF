@@ -3762,6 +3762,15 @@ CONTAINS
    REAL,DIMENSION(jms:jme,kms:kme,ims:ime) :: Tmpv409
    REAL,DIMENSION(jms:jme,kms:kme,ims:ime) :: Tmpv4010
 
+    REAL, DIMENSION( ims:ime, jms:jme )           &
+    :: hpbl
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  &
+    :: dlk
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  &
+    :: xkmv_meso,xkmh_t
+
 !PART II: CALCULATIONS OF B. S. TRAJECTORY
 
 !LPB[0]
@@ -3798,6 +3807,8 @@ CONTAINS
                                   xkhh, xkhv, BN2, tke, p8w, t8w, theta,     &
                                   rdz, rdzw, dx, dy, dt, isotropic,          &
                                   mix_upper_bound, msftx, msfty,             &
+                                  hpbl,dlk,xkmv_meso,                        &
+                                  defor11,defor22,defor12,zx,zy,xkmh_t,      &
                                   ids, ide, jds, jde, kds, kde,              &
                                   ims, ime, jms, jme, kms, kme,              &
                                   its, ite, jts, jte, kts, kte             )
@@ -7499,6 +7510,21 @@ Tmpv001 =(rdz(i,k+1,j)+rdz(i,k,j))
    REAL,DIMENSION(jms:jme,kms:kme,ims:ime) :: Tmpv401
    REAL,DIMENSION(jms:jme,kms:kme,ims:ime) :: Tmpv402
 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) &
+    :: tke_buoy_tend, tke_shear_tend
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) &
+    :: l_scale
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) &
+    :: nlflux, dlk
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) &
+    :: xkmh_t
+
+    REAL, DIMENSION( ims:ime, jms:jme ) &
+    :: hpbl
+
 !PART II: CALCULATIONS OF B. S. TRAJECTORY
 
 !LPB[0]
@@ -7512,19 +7538,22 @@ Tmpv001 =(rdz(i,k+1,j)+rdz(i,k,j))
 !   END DO
 
        CALL tke_shear(    tendency, config_flags,                  &
+                          tke_shear_tend,                          &
                           defor11, defor22, defor33,               &
                           defor12, defor13, defor23,               &
                           u, v, w, tke, ust, mu,                   &
                           c1, c2, fnm, fnp,                        &
                           cf1, cf2, cf3, msftx, msfty,             &
-                          xkmh, xkmv,                              &
+                          xkmh_t, xkmh, xkmv,                      &
                           rdx, rdy, zx, zy, rdz, rdzw, dnw, dn,    &
                           ids, ide, jds, jde, kds, kde,            &
                           ims, ime, jms, jme, kms, kme,            &
                           its, ite, jts, jte, kts, kte           )
-       CALL tke_buoyancy( tendency, config_flags, mu, c1, c2,      &
+       CALL tke_buoyancy( tendency, config_flags, mu,              &
+                          tke_buoy_tend,c1, c2,                    &
                           tke, xkhv, BN2, theta, dt,               &
                           hfx, qfx, qv,  rho,                      &
+                          nlflux,                                  &
                           ids, ide, jds, jde, kds, kde,            &
                           ims, ime, jms, jme, kms, kme,            &
                           its, ite, jts, jte, kts, kte           )
@@ -7532,6 +7561,7 @@ Tmpv001 =(rdz(i,k+1,j)+rdz(i,k,j))
                           tke, bn2, theta, p8w, t8w, z,            &
                           dx, dy,rdz, rdzw, isotropic,             &
                           msftx, msfty,                            &
+                          hpbl, dlk,  l_scale,                     &
                           ids, ide, jds, jde, kds, kde,            &
                           ims, ime, jms, jme, kms, kme,            &
                           its, ite, jts, jte, kts, kte           )
@@ -10501,6 +10531,9 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty,mu,a_mu
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rt_tendf,a_rt_tendf,ru_tendf, &
    a_ru_tendf,rv_tendf,a_rv_tendf,rw_tendf,a_rw_tendf,tke_tendf,a_tke_tendf
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme) :: &
+                                                                  u_h_tend,&
+                                                                  v_h_tend
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_moist) :: moist_tendf,a_moist_tendf
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_chem) :: chem_tendf,a_chem_tendf
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_scalar) :: scalar_tendf,a_scalar_tendf
@@ -11040,7 +11073,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
    Keep_Lpb0_nba_mij = nba_mij  ! Added by Ning Pan, 2010-08-11
-   CALL horizontal_diffusion_u_2(ru_tendf,config_flags,defor11,defor12,div,  &
+   CALL horizontal_diffusion_u_2(ru_tendf,config_flags,u_h_tend,defor11,defor12,div,  &
    nba_mij,n_nba_mij,tke(ims,kms,jms),msfux,msfuy,xkmh,rdx,rdy,fnm,fnp,dnw,zx,zy,rdzw,rho,ids,  &
    ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
@@ -11064,7 +11097,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
    Keep_Lpb1_nba_mij = nba_mij  ! Added by Ning Pan, 2010-08-11
-   CALL horizontal_diffusion_v_2(rv_tendf,config_flags,defor12,defor22,div,  &
+   CALL horizontal_diffusion_v_2(rv_tendf,config_flags,v_h_tend,defor12,defor22,div,  &
    nba_mij,n_nba_mij,tke(ims,kms,jms),msfvx,msfvy,xkmh,rdx,rdy,fnm,fnp,dnw,zx,zy,rdzw,rho,ids,  &
    ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 

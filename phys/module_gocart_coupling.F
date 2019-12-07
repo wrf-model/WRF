@@ -8845,7 +8845,9 @@
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
  subroutine mass2icn(p_air,t_air,aero,icn_out,ii,jj,kk)
+#ifndef NO_IEEE_MODULE
  use, intrinsic :: ieee_arithmetic
+#endif
  implicit none
 !------------------------------------------------------------------------
 ! Comments: Convert GOCART aerosol mass concentrations into IN number conc 
@@ -8929,6 +8931,7 @@
 !
  icn_estimate = icn_std * (p_air*t_std) / (p_std*t_air)  ! [#/std L] --> [#/L]
 
+#ifndef NO_IEEE_MODULE
          if( ieee_is_nan( icn_estimate ) ) then
             print*, 'NAN in mass2icn, i,j,k, icn_estimate = ', ii, jj, kk, icn_estimate
             print*, 'icn_std, t_std, p_std, p_air, t_air =', icn_std, t_std, p_std, p_air, t_air
@@ -8939,6 +8942,7 @@
             print*, 'icn_std, t_std, p_std, p_air, t_air =', icn_std, t_std, p_std, p_air, t_air
             print*, 'aero = ', aero
          endif
+#endif
 
 !
 ! IN conc ranges from 100 ~ 1000000 per litter based on DeMott et al. 2010 PNAS.

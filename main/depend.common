@@ -1241,9 +1241,11 @@ ndown_em.o: \
 	../share/module_bc.o \
 	../share/module_io_domain.o \
 	../share/module_get_file_names.o \
+	../share/module_model_constants.o \
 	../share/module_soil_pre.o \
 	../dyn_em/module_initialize_$(IDEAL_CASE).o \
 	../dyn_em/module_big_step_utilities_em.o \
+	../dyn_em/nest_init_utils.o \
 	$(ESMF_MOD_DEPENDENCE)
 
 # this already built above :../dyn_em/module_initialize.real.o \

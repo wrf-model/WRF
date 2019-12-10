@@ -765,6 +765,8 @@ endif
       ENDIF
 
       CALL wrf_put_dom_ti_integer   ( fid, 'CLDOVRLP',    config_flags%cldovrlp    , 1 , ierr ) ! J. Henderson AER: cldovrlp namelist value
+      CALL wrf_put_dom_ti_integer   ( fid, 'IDCOR',       config_flags%idcor       , 1 , ierr ) ! J. Henderson AER: idcor namelist value
+      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'TRACER_PBLMIX', tracer_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'YSU_TOPDOWN_PBLMIX', ysu_topdown_pblmix , 1 , ierr )

@@ -993,7 +993,7 @@ real::t1,t2
 
       !  If the lateral boundary conditions are split, then open the file with a 
       !  date string. Only single time periods are allowed in a lateral BC file
-      !  when the files are split into multiple pieces. Also, it is easier to 
+      !  when the files are split into multiple pieces. Also, we choose to 
       !  CLOSE the file just before we need it OPENed.
 
       IF ( config_flags%multi_bdy_files ) THEN

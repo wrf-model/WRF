@@ -815,7 +815,7 @@ real::t1,t2
       CALL construct_filename1( inpname , 'wrfinput' , grid%id , 2 )
       CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_input , "DATASET=INPUT", ierr )
       IF ( ierr .NE. 0 ) THEN
-         CALL wrf_error_fatal( 'real: error opening wrfinput for writing' )
+         CALL wrf_error_fatal( 'REAL: error opening wrfinput for writing' )
       END IF
       CALL output_input ( id1, grid , config_flags , ierr )
       CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
@@ -825,7 +825,7 @@ real::t1,t2
            CALL construct_filename1( inpname , 'wrflowinp' , grid%id , 2 )
            CALL open_w_dataset ( id4, TRIM(inpname) , grid , config_flags , output_auxinput4 , "DATASET=AUXINPUT4", ierr )
            IF ( ierr .NE. 0 ) THEN
-              CALL wrf_error_fatal( 'real: error opening wrflowinp for writing' )
+              CALL wrf_error_fatal( 'REAL: error opening wrflowinp for writing' )
            END IF
            CALL output_auxinput4 ( id4, grid , config_flags , ierr )
          END IF

@@ -2,7 +2,7 @@
 !==============================================================================
 !
 !     ESMF Calendar Module
-      module ESMF_CalendarMod
+      module WRF_ESMF_CalendarMod
 !
 !==============================================================================
 !
@@ -15,7 +15,7 @@
 
 !==============================================================================
 !BOPI
-! !MODULE: ESMF_CalendarMod
+! !MODULE: WRF_ESMF_CalendarMod
 !
 ! !DESCRIPTION:
 ! Part of Time Manager F90 API wrapper of C++ implemenation
@@ -28,10 +28,10 @@
 !------------------------------------------------------------------------------
 ! !USES:
       ! inherit from ESMF base class
-      use ESMF_BaseMod
+      use WRF_ESMF_BaseMod
 
       ! inherit from base time class
-      use ESMF_BaseTimeMod
+      use WRF_ESMF_BaseTimeMod
 
       implicit none
 !
@@ -273,4 +273,4 @@
 
      end function ESMF_CalendarInitialized
 
-      end module ESMF_CalendarMod
+      end module WRF_ESMF_CalendarMod

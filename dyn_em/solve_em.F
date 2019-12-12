@@ -81,7 +81,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
    IMPLICIT NONE
 
-   !  Input data.
+   !  mc Input data.
 
    TYPE(domain) , TARGET          :: grid
 

@@ -7049,7 +7049,7 @@ print *,'p sfc = ',psfc(i,j)
 #if 0
 program foo
 
-integer , parameter :: max_eta = 1000
+integer , parameter :: max_eta = 10001
 
 INTEGER :: ids , ide , jds , jde , kds , kde , &
            ims , ime , jms , jme , kms , kme , &

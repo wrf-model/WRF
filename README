@@ -494,3 +494,4 @@ What is in WRF V4?
   * ESMF integration - WRF can be run as an ESMF component.
   * Improved documentation, both on-line (web based browsing tools) and in-line
 
+Jenkins test

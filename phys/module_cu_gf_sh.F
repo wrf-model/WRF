@@ -1,4 +1,4 @@
-! module cup_gf_sh will call shallow convection as described in Grell and
+!  module cup_gf_sh will call shallow convection as described in Grell and
 ! Freitas (2016). Input variables are:
 !    zo               Height at model levels
 !    t,tn             Temperature without and with forcing at model levels

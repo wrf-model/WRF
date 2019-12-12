@@ -45,7 +45,8 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_moves       =   50
 
-   !  The maximum number of eta levels
+   !  The maximum number of eta levels. With vertical refinement defining
+   !  each domain separately, the aggregated number of levels could be large.
 
    INTEGER , PARAMETER :: max_eta         =   10001
 

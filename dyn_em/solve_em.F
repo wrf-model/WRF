@@ -3,7 +3,8 @@
 SUBROUTINE solve_em ( grid , config_flags  &
 ! Arguments generated from Registry
 #include "dummy_new_args.inc"
-!
+! JGP test comment
+! 
                     )
 ! Driver layer modules
    USE module_state_description

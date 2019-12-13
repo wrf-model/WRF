@@ -100,6 +100,9 @@ NETCDF4_DEP_LIB = $(DEP_LIB_PATH) $(HDF5) $(ZLIB) $(GPFS) $(CURL)
 
 # NETCDF4INCLUDEGOESHERE
 
+#### CTSM pieces
+
+# CTSMINCLUDEGOESHERE
 
 ##############################################################################
 

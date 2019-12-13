@@ -808,7 +808,7 @@ while ( <ARCH_PREAMBLE> )
 
   # CTSM substitutions in preamble
   if ( $sw_ctsm_mkfile_path ) {
-     $_ =~ s:\# CTSMINCLUDEGOESHERE:include \$\(WRF_CTSM_MKFILE\): ;
+     $_ =~ s:\# CTSMINCLUDEGOESHERE:include $sw_ctsm_mkfile_path: ;
   }
 
   if ( $ENV{HWRF} )

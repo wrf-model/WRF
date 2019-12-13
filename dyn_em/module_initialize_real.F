@@ -7049,6 +7049,7 @@ print *,'p sfc = ',psfc(i,j)
 #if 0
 program foo
 
+!  Make this the same as frame/module_driver_constants.F max_eta
 integer , parameter :: max_eta = 10001
 
 INTEGER :: ids , ide , jds , jde , kds , kde , &

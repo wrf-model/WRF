@@ -2528,6 +2528,7 @@ END MODULE module_dm
    SUBROUTINE pop_communicators_for_domain
       USE module_dm
       IMPLICIT NONE
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       IF ( communicator_stack_cursor .LT. 1 ) CALL wrf_error_fatal("pop_communicators_for_domain on empty stack")
       current_id = id_stack(communicator_stack_cursor)
       local_communicator = local_communicator_stack( communicator_stack_cursor )
@@ -2542,6 +2543,7 @@ END MODULE module_dm
       mytask_x = mytask_x_stack( communicator_stack_cursor )
       mytask_y = mytask_y_stack( communicator_stack_cursor )
       communicator_stack_cursor = communicator_stack_cursor - 1
+#endif
    END SUBROUTINE pop_communicators_for_domain
    SUBROUTINE instate_communicators_for_domain( id )
       USE module_dm

@@ -1594,7 +1594,7 @@ CONTAINS
    REAL :: xice_threshold
 !---------------------------------------------------------------------
 !
-! Variable Description:
+! Input Variable Description:
 !  ALBD: Surface albedo
 !  SLMO: Moisture availability
 !  SFEM: Emissivity

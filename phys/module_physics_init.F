@@ -8,11 +8,134 @@
 !  This MODULE CONTAINS the following routines:
 
 
+
+module module_create_gindex
+  implicit none
+!========================================================================
+contains
+!========================================================================
+
+  subroutine create_gindex(ide, jde, its, ite, jts, jte, gindex)
+    ! Create a gindex array on each task. This gives the list of global indices owned by
+    ! each processor, on the mass point grid.
+    integer, intent(in) :: ide  ! domain end index, i
+    integer, intent(in) :: jde  ! domain end index, j
+    integer, intent(in) :: its  ! task start index, i
+    integer, intent(in) :: ite  ! task end index, i
+    integer, intent(in) :: jts  ! task start index, j
+    integer, intent(in) :: jte  ! task end index, j
+    integer, allocatable, intent(out) :: gindex(:)
+
+    integer :: ite_limited  ! task end index on the mass point grid, i
+    integer :: jte_limited  ! task end index on the mass point grid, j
+    integer :: num_points
+    integer :: i, j, n
+
+    ! The very last index in both row & column space is just used on the momentum grid.
+    ! Here we are just working with the mass point grid, so we need to ignore that last
+    ! index.
+    ite_limited = min(ite, ide-1)
+    jte_limited = min(jte, jde-1)
+
+    num_points = ((ite_limited - its + 1) * (jte_limited - jts + 1))
+
+    print *, "ide :", ide
+    print *, "jde :", jde
+    print *, "its :", its
+    print *, "ite :", ite
+    print *, "jts :", jts
+    print *, "jte :", jte
+    print *, "ite_limited :", ite_limited
+    print *, "jte_limited :", jte_limited
+    print *, "num_points :, " , num_points
+
+    allocate(gindex(num_points))
+
+    print *, "here 3"
+    n = 0
+    do j = jts, jte_limited
+       do i = its, ite_limited
+          n = n + 1
+          print *, "about to set ", n , "of", num_points
+          ! In the following, note that we use ide-1 rather than ide for the same reason
+          ! that we need ite_limited: ide gives the domain end index on the momentum grid,
+          ! but here we're just dealing with the mass point grid, which has one less point
+          ! in each direction.
+          gindex(n) = (j-1)*(ide-1) + i
+
+          ! This should be added in later:
+          !INTEGER , DIMENSION(total_computational_MPI_ranks) :: count
+          ! INTEGER, INTENT(IN) :: total_computational_MPI_ranks
+          !DO m = 1, total_computational_MPI_ranks
+          ! IF (m==1) THEN
+          !WRITE(UNIT=10,FMT='("MPI RANK = ",I6," OF ",I6," Processes")') m-1,total_computational_MPI_ranks
+          !DO c = 1, count(m)
+          !    WRITE(UNIT=10,FMT='(I8i)' gindex
+          ! END DO
+          !ENDIF
+          !END DO
+
+       end do
+    end do
+  end subroutine create_gindex
+end module module_create_gindex
+
+
+module module_lilac_reshape
+  implicit none
+!========================================================================
+contains
+!========================================================================
+
+  subroutine lilac_reshape (ide, jde, its, ite, jts, jte, var_2d, var_1d)
+
+    ! input/output variables
+    integer, intent(in)               :: ide  ! domain end index, i
+    integer, intent(in)               :: jde  ! domain end index, j
+    integer, intent(in)               :: its  ! task start index, i
+    integer, intent(in)               :: ite  ! task end index, i
+    integer, intent(in)               :: jts  ! task start index, j
+    integer, intent(in)               :: jte  ! task end index, j
+    real,  intent(in)  :: var_2d (:,:)
+    real, allocatable, intent(out) :: var_1d(:)
+
+    ! local variables
+    integer :: ite_limited  ! task end index on the mass point grid, i
+    integer :: jte_limited  ! task end index on the mass point grid, j
+    integer :: num_points
+    integer :: i, j, n
+
+    num_points  = ((ite_limited - its + 1) * (jte_limited - jts + 1))
+    ite_limited = min(ite, ide-1)
+    jte_limited = min(jte, jde-1)
+
+
+    allocate (var_1d (num_points))
+
+    n= 0
+
+    do j = jts, jte_limited
+       do i = its, ite_limited
+          n = n + 1
+          print *, "about to set var1d of ",n,"to var_2d of", i, j
+          var_1d(n) = var_2d(i, j)
+
+       end do
+    end do
+
+
+  end subroutine lilac_reshape
+end module module_lilac_reshape
+
+
 MODULE module_physics_init
 
    USE module_state_description
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
+   USE lilac_mod, ONLY : lilac_init
+   USE module_create_gindex
+   USE module_lilac_reshape
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
@@ -20,9 +143,8 @@ MODULE module_physics_init
    LOGICAL  :: WINDFARM_INITIALIZED = .FALSE.
 
 
+!=================================================================
 CONTAINS
-
-
 !=================================================================
    SUBROUTINE phy_init ( id, config_flags, DT, restart, zfull, zhalf,     &
                          p_top, TSK,RADT,BLDT,CUDT,MPDT,         &
@@ -2448,6 +2570,10 @@ CONTAINS
 #if (NMM_CORE == 1)
    USE module_sf_gfdl
 #endif
+
+!!!! For lilac
+
+    USE mpi , only : MPI_COMM_WORLD, MPI_COMM_NULL
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
@@ -2548,6 +2674,7 @@ CONTAINS
 !Noah-MP
 
    REAL,    DIMENSION(ims:ime, jms:jme) :: XLAT
+   REAL,    DIMENSION(ims:ime, jms:jme) :: XLONG
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: TSNOXY
@@ -2778,6 +2905,47 @@ CONTAINS
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhtran,lhveg
 
+
+!-------------------------------------------------
+! lilac variable declrations
+!-------------------------------------------------
+         integer :: comp_comm
+         integer :: ierr
+         integer :: mytask, ntasks
+         integer , allocatable :: atm_global_index(:)
+         real , allocatable    :: atm_lons(:)
+         real , allocatable    :: atm_lats(:)
+
+
+
+         ! Namelist and related variables
+         character(len=128) :: atm_calendar
+         character(len=128) :: atm_starttype
+         integer            :: atm_timestep
+         integer            :: atm_start_year ! (yyyy)
+         integer            :: atm_start_mon  ! (mm)
+         integer            :: atm_start_day
+         integer            :: atm_start_secs
+         integer            :: atm_stop_year  ! (yyyy)
+         integer            :: atm_stop_mon   ! (mm)
+         integer            :: atm_stop_day
+         integer            :: atm_stop_secs
+         integer            :: atm_timestep_start  ! for internal time loop only
+         integer            :: atm_timestep_stop ! for internal time loop only
+
+
+         integer            :: start_year   ! (yyyy)
+         integer            :: start_month  ! (mm)
+         integer            :: start_day
+         integer            :: start_second
+
+
+
+         integer            :: atm_global_nx
+         integer            :: atm_global_ny
+
+
+
 !-------------------------------------------------
 ! Noah-mosaic related variables are added to declaration  (danli)
 !-------------------------------------------------
@@ -2969,6 +3137,72 @@ CONTAINS
                      its,ite, jts,jte, kts,kte                     )
 
 #endif
+!--------------------------------------------------------------
+!--------------------------------------------------------------
+! LILAC initialization which initialize CLM
+     !CASE ((LILACSCHEME))
+
+         ! TODO (NS) : Possibly hide all 
+         !
+           ! get comp_comm
+           comp_comm = MPI_COMM_WORLD
+           CALL MPI_COMM_RANK(comp_comm, mytask, ierr)
+           CALL MPI_COMM_SIZE(comp_comm, ntasks, ierr)
+
+
+           ! get the gindex
+           CALL create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
+
+
+           ! reshape lats and lons to 1d for lilac
+            CALL lilac_reshape (ide, jde, its, ite, jts, jte, XLONG, atm_lons)
+            CALL lilac_reshape (ide, jde, its, ite, jts, jte, XLAT , atm_lats)
+
+
+
+           ! atm_global_nx and atm_global_ny ???????
+
+           atm_global_nx = ide-ids
+           atm_global_ny = jde-jds
+
+           ! TODO (NS) : Make sure the here I understood the meaning of
+           ! atm_global_nx abd atm_global_ny correctly
+
+
+           ! calendar stuff
+
+           atm_start_year    = start_year  ! 2000
+           atm_start_mon     = start_month !1
+           atm_start_day     = start_day   !1
+           atm_start_secs    = start_second ! 0
+           ! TODO(NS) : make sure start_second is a correct input for atm_start_secs 
+
+           ! TODO (NS) How are we going to pass atm_stop_year here?? !
+           atm_stop_year     = 2000
+           atm_stop_mon      = 1
+           atm_stop_day      = 2
+           atm_stop_secs     = 0
+
+           atm_timestep      =  DT
+
+           !atm_calendar      = 'NOLEAP'
+           atm_calendar      = 'GREGORIAN'
+           atm_starttype     = 'startup'
+
+
+           CALL lilac_init(&
+                     comp_comm, &
+                     atm_global_index,&
+                     atm_lons, &
+                     atm_lats, &
+                     atm_global_nx, &
+                     atm_global_ny, &
+                     atm_calendar, &
+                     atm_timestep, &
+                     atm_start_year, atm_start_mon, atm_start_day, atm_start_secs, &
+                     atm_stop_year , atm_stop_mon , atm_stop_day , atm_stop_secs , &
+                     atm_starttype)
+!--------------------------------------------------------------
       CASE (LSMSCHEME)
           
           IF(TRIM(mminlu) .EQ. 'NLCD40')THEN
@@ -3212,6 +3446,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
              CALL wrf_error_fatal ( 'SSIB does not work with NLCD data. Stop.' )
           ENDIF
+
+
+
+
 !--------------------------------------------------------------
 ! CLM Init Coupling
       CASE (CLMSCHEME)
@@ -5201,3 +5439,5 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
 !---------------------END   PSH/TWG  CHANGES----------------
 
 END MODULE module_physics_init
+
+

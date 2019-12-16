@@ -216,8 +216,7 @@ CONTAINS
                          nssl_rho_qs,                             &
 ! next 2 flags for Explicit lightning:
                          nssl_ipelec,                             &
-                         nssl_isaund,                             &
-   ! OPTIONAL 
+                         nssl_isaund,                             & ! OPTIONAL 
                          RQCNCUTEN, RQINCUTEN,                   &
                          rliq,                                   &  !BSINGH:01/31/2013 - Added rliq and is_CAMMGMP_used for CAM5 physics
                          cldfra_dp,cldfra_sh                     & !ckay for subgrid cloud

@@ -303,7 +303,6 @@ CONTAINS
           INTENT(INOUT) ::                                  aerodm
 
 #if ( EM_CORE == 1 )
-  !PSH/TWG 06/10/16
    INTEGER,      INTENT(IN   )    ::   alevsiz_cu, num_months, no_src_types_cu !PSH/TWG 06/10/16
    REAL,  DIMENSION( ims:ime, alevsiz_cu, jms:jme, num_months, no_src_types_cu), OPTIONAL, &
           INTENT(INOUT) ::                                  aeromcu 

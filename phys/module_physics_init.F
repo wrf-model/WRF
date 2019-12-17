@@ -3124,21 +3124,6 @@ CONTAINS
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
 
-#if (NMM_CORE == 1)
-     CASE (GFDLSLAB)
-           CALL hwrfsfcinit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV, &
-                     SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,     &
-                     ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,   &
-                     TMN,                                          &
-                     num_soil_layers,                              &
-                     allowed_to_read ,                             &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
-
-#endif
-!--------------------------------------------------------------
-!--------------------------------------------------------------
 ! LILAC initialization which initialize CLM
      !CASE ((LILACSCHEME))
 
@@ -3146,8 +3131,6 @@ CONTAINS
          !
            ! get comp_comm
            comp_comm = MPI_COMM_WORLD
-           CALL MPI_COMM_RANK(comp_comm, mytask, ierr)
-           CALL MPI_COMM_SIZE(comp_comm, ntasks, ierr)
 
 
            ! get the gindex
@@ -3160,7 +3143,7 @@ CONTAINS
 
 
 
-           ! atm_global_nx and atm_global_ny ???????
+           ! atm_global_nx and atm_global_ny
 
            atm_global_nx = ide-ids
            atm_global_ny = jde-jds
@@ -3202,6 +3185,21 @@ CONTAINS
                      atm_start_year, atm_start_mon, atm_start_day, atm_start_secs, &
                      atm_stop_year , atm_stop_mon , atm_stop_day , atm_stop_secs , &
                      atm_starttype)
+!--------------------------------------------------------------
+#if (NMM_CORE == 1)
+     CASE (GFDLSLAB)
+           CALL hwrfsfcinit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV, &
+                     SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,     &
+                     ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,   &
+                     TMN,                                          &
+                     num_soil_layers,                              &
+                     allowed_to_read ,                             &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+                     its,ite, jts,jte, kts,kte                     )
+
+#endif
+!--------------------------------------------------------------
 !--------------------------------------------------------------
       CASE (LSMSCHEME)
           

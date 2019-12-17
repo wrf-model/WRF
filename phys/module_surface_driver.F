@@ -1384,7 +1384,7 @@ CONTAINS
    real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: XLAIDYN
 !
 !------------------------------------------------------------------
-call ESMF_Initialize()
+!call ESMF_Initialize()
 ! Initialize local variables
   q_ref2m = 0.0
 !------------------------------------------------------------------

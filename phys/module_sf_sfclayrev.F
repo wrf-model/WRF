@@ -1119,6 +1119,8 @@ CONTAINS
       fx1=zolri2(x1,ri,z,z0)
       fx2=zolri2(x2,ri,z,z0)
       Do While (abs(x1 - x2) > 0.01)
+! check added for potential divide by zero (2019/11)
+      if(fx1.eq.fx2)return
       if(abs(fx2).lt.abs(fx1))then
         x1=x1-fx1/(fx2-fx1)*(x2-x1)
         fx1=zolri2(x1,ri,z,z0)

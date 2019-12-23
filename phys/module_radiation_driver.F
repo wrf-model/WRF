@@ -22,6 +22,7 @@ CONTAINS
               ,O3INPUT, O3RAD           &
               ,AER_OPT, aerod           &
               ,swint_opt                &
+              ,solar_opt                &
               ,P8W    ,P ,PI            &
               ,p_top                    &
               ,RADT   ,RA_CALL_OFFSET   &
@@ -46,6 +47,8 @@ CONTAINS
               ,CAM_ABS_FREQ_S                         &
               ,XTIME                                           &
               ,CURR_SECS, ADAPT_STEP_FLAG       &
+              ,MUT, DNW                            & ! FARMS coupling
+              ,SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2  & ! FARMS coupling
               !BSINGH - For WRFCuP scheme (optional args)
               ,cu_physics,shallowcu_forced_ra   & !CuP, wig 1-Oct-2006
               ,cubot,cutop,cldfra_cup           & !CuP, wig 1-Oct-2006
@@ -94,6 +97,7 @@ CONTAINS
               , QNDROP, F_QNDROP    &
               ,QNIFA,F_QNIFA                  &   ! trude
               ,QNWFA,F_QNWFA                  &   ! trude
+              ,qc_tot, qi_tot                 &   ! Solar diag
               ,ACSWUPT   ,ACSWUPTC            &
               ,ACSWDNT   ,ACSWDNTC            &
               ,ACSWUPB   ,ACSWUPBC            &
@@ -237,6 +241,8 @@ CONTAINS
    
    USE module_ra_aerosol    , ONLY : calc_aerosol_goddard_sw, &
                                      calc_aerosol_rrtmg_sw
+
+   USE module_ra_farms      , ONLY : farms_driver
 
    !  This driver calls subroutines for the radiation parameterizations.
    !
@@ -414,6 +420,7 @@ CONTAINS
    INTEGER, INTENT(IN)            :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
+   INTEGER, INTENT(IN)            :: solar_opt
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
@@ -466,6 +473,10 @@ CONTAINS
                                                            HTOPR, &
                                                            HBOTR, &
                                                            CUPPT
+     ! FARMS coupling
+   REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(IN) ::  MUT
+   REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: DNW
+
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                 &
         INTENT(INOUT)  ::                                         &
@@ -605,6 +616,9 @@ CONTAINS
                                                              GLW
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)  ::   SWDOWN
+
+     ! FARMS coupling
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)  ::   SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2
 
 ! ------------------------------------------------------------------------------ jararias 2013/08/10 -----------
    REAL, DIMENSION( ims:ime, jms:jme ),  INTENT(OUT) :: swddir, & ! All-sky SW broadband surface direct irradiance
@@ -774,6 +788,9 @@ CONTAINS
    LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qh,f_qndrop,&
                                                 f_qnifa,f_qnwfa,        &  ! trude
                                                 f_qi2,f_qi3            ! for P3
+     ! Solar diag
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT)  ::  qc_tot, qi_tot
+
 !shbaek
    real, dimension ( ims:ime, kms:kme, jms:jme ), optional, intent(in) :: qnc_curr
    LOGICAL, OPTIONAL :: f_qnc
@@ -963,7 +980,7 @@ CONTAINS
       radtacttime = curr_secs + radt*60
    END IF
 
-   if(swint_opt.eq.1) then
+   if(swint_opt.eq.1 .or. swint_opt == 2) then   ! Coupling with FARMS
       DO ij = 1 , num_tiles
          its = i_start(ij)
          ite = i_end(ij)
@@ -977,32 +994,7 @@ CONTAINS
       end do
    end if
 
-   Radiation_step: IF ( run_param ) then
-
-! CAM-specific additional radiation frequency - cam_abs_freq_s (=21600s by default)
-     STEPABS = nint(cam_abs_freq_s/(dt*STEPRA))*STEPRA
-     IF (itimestep .eq. 1 .or. mod(itimestep,STEPABS) .eq. 1 + ra_call_offset &
-                                        .or. STEPABS .eq. 1 ) THEN
-       doabsems = .true.
-     ELSE
-       doabsems = .false.
-     ENDIF
-   IF (PRESENT(adapt_step_flag)) THEN
-     IF ((adapt_step_flag)) THEN
-       IF ( (itimestep .EQ. 1) .OR. (cam_abs_freq_s .EQ. 0) .OR. &
-           ( CURR_SECS + dt >= ( INT( CURR_SECS / ( cam_abs_freq_s ) + 1 ) * cam_abs_freq_s) ) ) THEN
-         doabsems = .true.
-       ELSE
-         doabsems = .false.
-       ENDIF
-     ENDIF
-   ENDIF
-
-   gfdl_lw = .false.
-   gfdl_sw = .false.
-   flg_lw = .false.
-   flg_sw = .false.
-
+   IF (run_param .or. swint_opt == 2 .or. solar_opt == 1) THEN  !!! FARMS/Solar mod
 ! Allocate aerosol arrays used by aer_opt = 2 option
    IF ( PRESENT( AOD5502D ) ) THEN
      ! jararias, 2013/11
@@ -1056,7 +1048,7 @@ CONTAINS
            end do
 
            call gt_aod (p, DZ8W, t, qv, qnwfa, qnifa, taod5503d,        &
-                    ims,ime, jms,jme, kms,kme,its,ite, jts,jte, kts,kte) 
+                    ims,ime, jms,jme, kms,kme,its,ite, jts,jte, kts,kte)
 
            do j=jts,jte
               do i=its,ite
@@ -1094,70 +1086,6 @@ CONTAINS
      call calc_coszen(ims,ime,jms,jme,its,ite,jts,jte,  &
                       julian,xtime+radt*0.5,gmt, &
                       declin,degrad,xlong,xlat,coszen,hrang)
-   ENDDO
-
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
-
-   DO ij = 1 , num_tiles
-     its = i_start(ij)
-     ite = i_end(ij)
-     jts = j_start(ij)
-     jte = j_end(ij)
-
-! initialize data
-
-     if ((itimestep.eq.1).and.(swint_opt.eq.1)) then
-        do j=jts,jte
-           do i=its,ite
-              Bx(i,j)=0.
-              bb(i,j)=0.
-              Gx(i,j)=0.
-              gg(i,j)=0.
-           end do
-        end do
-     end if
-
-     DO j=jts,jte
-     DO i=its,ite
-        GSW(I,J)=0.
-        GLW(I,J)=0.
-        SWDOWN(I,J)=0.
-        swddir(i,j)=0.  ! jararias, 2013/08/10
-        swddni(i,j)=0.  ! jararias, 2013/08/10
-        swddif(i,j)=0.  ! jararias, 2013/08/10
-        GLAT(I,J)=XLAT(I,J)*DEGRAD
-        GLON(I,J)=XLONG(I,J)*DEGRAD
-     ENDDO
-     ENDDO
- 
-     DO j=jts,jte
-     DO k=kts,kte+1
-     DO i=its,ite
-        RTHRATEN(I,K,J)=0.
-        RTHRATENLW(I,K,J)=0.
-        RTHRATENSW(I,K,J)=0.
-        CEMISS(I,K,J)=0.0
-     ENDDO
-     ENDDO
-     ENDDO
-
-     IF ( PRESENT( SWUPFLX ) ) THEN
-        DO j=jts,jte
-        DO k=kts,kte+2
-        DO i=its,ite
-           SWUPFLX(I,K,J) = 0.0
-           SWDNFLX(I,K,J) = 0.0
-           SWUPFLXC(I,K,J) = 0.0
-           SWDNFLXC(I,K,J) = 0.0
-           LWUPFLX(I,K,J) = 0.0
-           LWDNFLX(I,K,J) = 0.0
-           LWUPFLXC(I,K,J) = 0.0
-           LWDNFLXC(I,K,J) = 0.0
-        ENDDO
-        ENDDO
-        ENDDO
-     ENDIF
 
 ! backup the incoming hydrometeors
 
@@ -1191,7 +1119,6 @@ CONTAINS
           ENDDO
      ENDIF
    END IF
-
 
 ! Fill temporary water variable depending on micro package (tgs 25 Apr 2006)
      if( F_QC ) then
@@ -1266,43 +1193,6 @@ CONTAINS
           ENDDO
      ENDIF
 #endif
-
-! these are half level parameters.....so, it should start from kts to kte - 1
-!NUWRF JJS 20101021 vvvvv
-#if ( WRF_CHEM == 1)
-! Pack gocart aerosol species
-! All aerosol species in chem are in "ug/kg-dryair"
-!  and conerted to (g/m**3)
-
-   aero(:,:,:,:) = 0.
-   if ( (chem_opt == 300 .or. chem_opt == 301 .or. &
-         chem_opt == 302 .or. chem_opt == 303) .and. &
-         (gsfcrad_gocart_coupling == 1) ) then
-      do j = jts, jte
-         do k = kts, kte  !corrected memory order
-            do i = its, ite
-               ! aero(i,k,j, 1) = max(0.0, chem(i,k,j,p_sulf)*1.0e-6*rho(i,k,j))             !  1 = SO4
-               aero(i,k,j, 1) = max(0.0, chem(i,k,j,p_sulf)*1.0e-6*p(i,k,j)*96.0/(8.314*t(i,k,j)))  ! 1 = SO4
-               aero(i,k,j, 2) = max(0.0, (chem(i,k,j,p_bc1)+chem(i,k,j,p_bc2))*1.0e-6*rho(i,k,j))  ! 2 = BC1+BC2
-               aero(i,k,j, 3) = max(0.0, chem(i,k,j,p_oc1)*1.0e-6*rho(i,k,j)*1.4e0)          !  3 = OC1
-               aero(i,k,j, 4) = max(0.0, chem(i,k,j,p_oc2)*1.0e-6*rho(i,k,j)*1.4e0)          !  4 = OC2
-               aero(i,k,j, 5) = max(0.0, chem(i,k,j,p_seas_1)*1.0e-6*rho(i,k,j))           !  5 = SS1
-               aero(i,k,j, 6) = max(0.0, (chem(i,k,j,p_seas_2)+chem(i,k,j,p_seas_3)+  &
-                    chem(i,k,j,p_seas_4))*1.0e-6*rho(i,k,j))          !  6 = SS2+SS3+SS4
-               aero(i,k,j, 7) = max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(1))   !  7 = DU1 dust mode 1
-               aero(i,k,j, 8) = max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(2))   !  8 = DU1 dust mode 2
-               aero(i,k,j, 9) = max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(3))   !  9 = DU1 dust mode 3
-               aero(i,k,j,10) = max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(4))   ! 10 = DU1 dust mode 4
-               aero(i,k,j,11) = max(0.0, chem(i,k,j,p_dust_2)*1.0e-6*rho(i,k,j))           ! 11 = DU2 dust mode 5
-               aero(i,k,j,12) = max(0.0, chem(i,k,j,p_dust_3)*1.0e-6*rho(i,k,j))           ! 11 = DU3 dust mode 6
-               aero(i,k,j,13) = max(0.0, chem(i,k,j,p_dust_4)*1.0e-6*rho(i,k,j))           ! 11 = DU4 dust mode 7
-               aero(i,k,j,14) = max(0.0, chem(i,k,j,p_dust_5)*1.0e-6*rho(i,k,j))           ! 11 = DU5 dust mode 8
-            enddo ! i
-         enddo ! k
-      enddo ! j
-   end if ! if (gsfcrad_gocart_coupling == 1)
-#endif
-!NUWRF JJS 20101021 ^^^^^
 
 ! Choose how to compute cloud fraction (since 3.6)
 ! Initialize to zero 
@@ -1609,7 +1499,198 @@ CONTAINS
      ENDIF
 #endif
 
-        
+     IF ( PRESENT( AOD5502D ) ) THEN
+     ! jararias, 2013/11
+     IF ( aer_opt .EQ. 2 ) THEN
+     swrad_aerosol_select2: select case(sw_physics)
+
+        case(GODDARDSWSCHEME)
+           call wrf_debug(100, 'call calc_aerosol_goddard_sw')
+           call calc_aerosol_goddard_sw(ht,dz8w,p,t,qv,aer_type,aer_aod550_opt,aer_angexp_opt,    &
+                                        aer_ssa_opt,aer_asy_opt,aer_aod550_val,aer_angexp_val,    &
+                                        aer_ssa_val,aer_asy_val,aod5502d,angexp2d,aerssa2d,       &
+                                        aerasy2d,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte, &
+                                        tauaer_sw,ssaaer_sw,asyaer_sw                             )
+           do j=jts,jte
+              do i=its,ite
+                 do k=kts,kte
+                    aod5503d(i,k,j)=tauaer_sw(i,k,j,8) ! band at 550 nm
+                 end do
+              end do
+           end do
+
+        case(RRTMG_SWSCHEME,&
+#if( BUILD_RRTMG_FAST == 1)
+             RRTMG_SWSCHEME_FAST,&
+#endif
+             RRTMK_SWSCHEME)
+           call wrf_debug(100, 'call calc_aerosol_rrtmg_sw')
+           call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,aer_type,aer_aod550_opt,aer_angexp_opt,    &
+                                      aer_ssa_opt,aer_asy_opt,aer_aod550_val,aer_angexp_val,    &
+                                      aer_ssa_val,aer_asy_val,aod5502d,angexp2d,aerssa2d,       &
+                                      aerasy2d,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte, &
+                                      tauaer_sw,ssaaer_sw,asyaer_sw                             )
+           do j=jts,jte
+              do i=its,ite
+                 do k=kts,kte
+                    aod5503d(i,k,j)=tauaer_sw(i,k,j,10) ! band at 550 nm
+                 end do
+              end do
+           end do
+
+        case default
+     end select swrad_aerosol_select2
+     ENDIF
+     ENDIF
+
+     !..Different treatment for aer_opt=3 using QNWFA+QNIFA aerosol species (Trude)
+
+     IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa)) THEN
+       IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                             &
+                             (sw_physics.eq.RRTMG_SWSCHEME .OR.         &
+#if( BUILD_RRTMG_FAST == 1)
+                              sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.    &
+#endif
+                              sw_physics.eq.RRTMK_SWSCHEME )) THEN
+         call wrf_debug(100, 'call calc_aerosol_rrtmg_sw with 3D AOD values')
+         call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,taer_type,taer_aod550_opt,taer_angexp_opt,  &
+                                    taer_ssa_opt,taer_asy_opt,aer_aod550_val,aer_angexp_val,   &
+                                    aer_ssa_val,aer_asy_val,taod5502d,angexp2d,aerssa2d,       &
+                                    aerasy2d,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte,  &
+                                    tauaer_sw,ssaaer_sw,asyaer_sw, taod5503d)
+       ENDIF
+     ENDIF
+
+   ENDDO
+
+   ENDIF  !!! FARMS/Solar mod
+   
+   Radiation_step: IF ( run_param ) then
+
+! CAM-specific additional radiation frequency - cam_abs_freq_s (=21600s by default)
+     STEPABS = nint(cam_abs_freq_s/(dt*STEPRA))*STEPRA
+     IF (itimestep .eq. 1 .or. mod(itimestep,STEPABS) .eq. 1 + ra_call_offset &
+                                        .or. STEPABS .eq. 1 ) THEN
+       doabsems = .true.
+     ELSE
+       doabsems = .false.
+     ENDIF
+   IF (PRESENT(adapt_step_flag)) THEN
+     IF ((adapt_step_flag)) THEN
+       IF ( (itimestep .EQ. 1) .OR. (cam_abs_freq_s .EQ. 0) .OR. &
+           ( CURR_SECS + dt >= ( INT( CURR_SECS / ( cam_abs_freq_s ) + 1 ) * cam_abs_freq_s) ) ) THEN
+         doabsems = .true.
+       ELSE
+         doabsems = .false.
+       ENDIF
+     ENDIF
+   ENDIF
+
+   gfdl_lw = .false.
+   gfdl_sw = .false.
+   flg_lw = .false.
+   flg_sw = .false.
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+
+   DO ij = 1 , num_tiles
+     its = i_start(ij)
+     ite = i_end(ij)
+     jts = j_start(ij)
+     jte = j_end(ij)
+
+! initialize data
+
+     if ((itimestep.eq.1).and.(swint_opt.eq.1)) then
+        do j=jts,jte
+           do i=its,ite
+              Bx(i,j)=0.
+              bb(i,j)=0.
+              Gx(i,j)=0.
+              gg(i,j)=0.
+           end do
+        end do
+     end if
+
+     DO j=jts,jte
+     DO i=its,ite
+        GSW(I,J)=0.
+        GLW(I,J)=0.
+        SWDOWN(I,J)=0.
+        swddir(i,j)=0.  ! jararias, 2013/08/10
+        swddni(i,j)=0.  ! jararias, 2013/08/10
+        swddif(i,j)=0.  ! jararias, 2013/08/10
+        GLAT(I,J)=XLAT(I,J)*DEGRAD
+        GLON(I,J)=XLONG(I,J)*DEGRAD
+     ENDDO
+     ENDDO
+
+     DO j=jts,jte
+     DO k=kts,kte+1
+     DO i=its,ite
+        RTHRATEN(I,K,J)=0.
+        RTHRATENLW(I,K,J)=0.
+        RTHRATENSW(I,K,J)=0.
+        CEMISS(I,K,J)=0.0
+     ENDDO
+     ENDDO
+     ENDDO
+
+     IF ( PRESENT( SWUPFLX ) ) THEN
+        DO j=jts,jte
+        DO k=kts,kte+2
+        DO i=its,ite
+           SWUPFLX(I,K,J) = 0.0
+           SWDNFLX(I,K,J) = 0.0
+           SWUPFLXC(I,K,J) = 0.0
+           SWDNFLXC(I,K,J) = 0.0
+           LWUPFLX(I,K,J) = 0.0
+           LWDNFLX(I,K,J) = 0.0
+           LWUPFLXC(I,K,J) = 0.0
+           LWDNFLXC(I,K,J) = 0.0
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
+
+! these are half level parameters.....so, it should start from kts to kte - 1
+!NUWRF JJS 20101021 vvvvv
+#if ( WRF_CHEM == 1)
+! Pack gocart aerosol species
+! All aerosol species in chem are in "ug/kg-dryair"
+!  and conerted to (g/m**3)
+
+   aero(:,:,:,:) = 0.
+   if ( (chem_opt == 300 .or. chem_opt == 301 .or. &
+         chem_opt == 302 .or. chem_opt == 303) .and. &
+         (gsfcrad_gocart_coupling == 1) ) then
+      do j = jts, jte
+         do k = kts, kte  !corrected memory order
+            do i = its, ite
+               ! aero(i,k,j, 1) = max(0.0, chem(i,k,j,p_sulf)*1.0e-6*rho(i,k,j))             !  1 = SO4
+               aero(i,k,j, 1) = max(0.0, chem(i,k,j,p_sulf)*1.0e-6*p(i,k,j)*96.0/(8.314*t(i,k,j)))  ! 1 = SO4
+               aero(i,k,j, 2) = max(0.0, (chem(i,k,j,p_bc1)+chem(i,k,j,p_bc2))*1.0e-6*rho(i,k,j))  ! 2 = BC1+BC2
+               aero(i,k,j, 3) = max(0.0, chem(i,k,j,p_oc1)*1.0e-6*rho(i,k,j)*1.4e0)          !  3 = OC1
+               aero(i,k,j, 4) = max(0.0, chem(i,k,j,p_oc2)*1.0e-6*rho(i,k,j)*1.4e0)          !  4 = OC2
+               aero(i,k,j, 5) = max(0.0, chem(i,k,j,p_seas_1)*1.0e-6*rho(i,k,j))           !  5 = SS1
+               aero(i,k,j, 6) = max(0.0, (chem(i,k,j,p_seas_2)+chem(i,k,j,p_seas_3)+  &
+                    chem(i,k,j,p_seas_4))*1.0e-6*rho(i,k,j))          !  6 = SS2+SS3+SS4
+               aero(i,k,j, 7) = max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(1))   !  7 = DU1 dust mode 1
+               aero(i,k,j, 8) = max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(2))   !  8 = DU1 dust mode 2
+               aero(i,k,j, 9) = max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(3))   !  9 = DU1 dust mode 3
+               aero(i,k,j,10) = max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(4))   ! 10 = DU1 dust mode 4
+               aero(i,k,j,11) = max(0.0, chem(i,k,j,p_dust_2)*1.0e-6*rho(i,k,j))           ! 11 = DU2 dust mode 5
+               aero(i,k,j,12) = max(0.0, chem(i,k,j,p_dust_3)*1.0e-6*rho(i,k,j))           ! 11 = DU3 dust mode 6
+               aero(i,k,j,13) = max(0.0, chem(i,k,j,p_dust_4)*1.0e-6*rho(i,k,j))           ! 11 = DU4 dust mode 7
+               aero(i,k,j,14) = max(0.0, chem(i,k,j,p_dust_5)*1.0e-6*rho(i,k,j))           ! 11 = DU5 dust mode 8
+            enddo ! i
+         enddo ! k
+      enddo ! j
+   end if ! if (gsfcrad_gocart_coupling == 1)
+#endif
+!NUWRF JJS 20101021 ^^^^^
+
 
      lwrad_select: SELECT CASE(lw_physics)
 
@@ -2060,53 +2141,6 @@ CONTAINS
           ENDIF
      ENDIF       
 !NUWRF JJS 20090623 ^^^^^
-
-     IF ( PRESENT( AOD5502D ) ) THEN
-     ! jararias, 2013/11
-     IF ( aer_opt .EQ. 2 ) THEN
-     swrad_aerosol_select2: select case(sw_physics)
-
-        case(RRTMG_SWSCHEME,&
-#if( BUILD_RRTMG_FAST == 1)
-             RRTMG_SWSCHEME_FAST,&
-#endif
-             RRTMK_SWSCHEME)
-           call wrf_debug(100, 'call calc_aerosol_rrtmg_sw')
-           call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,aer_type,aer_aod550_opt,aer_angexp_opt,    &
-                                      aer_ssa_opt,aer_asy_opt,aer_aod550_val,aer_angexp_val,    &
-                                      aer_ssa_val,aer_asy_val,aod5502d,angexp2d,aerssa2d,       &
-                                      aerasy2d,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte, &
-                                      tauaer_sw,ssaaer_sw,asyaer_sw                             )
-           do j=jts,jte
-              do i=its,ite
-                 do k=kts,kte
-                    aod5503d(i,k,j)=tauaer_sw(i,k,j,10) ! band at 550 nm
-                 end do
-              end do
-           end do
-
-        case default
-     end select swrad_aerosol_select2
-     ENDIF
-     ENDIF
-
-     !..Different treatment for aer_opt=3 using QNWFA+QNIFA aerosol species (Trude)
-
-     IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa)) THEN
-       IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                             &
-                             (sw_physics.eq.RRTMG_SWSCHEME .OR.         &
-#if( BUILD_RRTMG_FAST == 1)
-                              sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.    &
-#endif
-                              sw_physics.eq.RRTMK_SWSCHEME )) THEN
-         call wrf_debug(100, 'call calc_aerosol_rrtmg_sw with 3D AOD values')
-         call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,taer_type,taer_aod550_opt,taer_angexp_opt,  &
-                                    taer_ssa_opt,taer_asy_opt,aer_aod550_val,aer_angexp_val,   &
-                                    aer_ssa_val,aer_asy_val,taod5502d,angexp2d,aerssa2d,       &
-                                    aerasy2d,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte,  &
-                                    tauaer_sw,ssaaer_sw,asyaer_sw, taod5503d)
-       ENDIF
-     ENDIF
 
      swrad_select: SELECT CASE(sw_physics)
 
@@ -2634,6 +2668,97 @@ CONTAINS
          ENDDO
      ENDIF
 
+      ! jararias, aug 2013, updated 2013/11
+      ! parameters update for SW surface fluxes interpolation
+      IF (swint_opt.EQ.1) THEN
+         ! interpolation applies on all-sky fluxes (swddir, swdown)
+         CALL update_swinterp_parameters(ims,ime,jms,jme,its,ite,jts,jte,   &
+                                         coszen,coszen_loc,swddir,swdown,   &
+                                         swddir_ref,bb,Bx,swdown_ref,gg,Gx, &
+                                         coszen_ref                         )
+      ENDIF
+
+   ENDDO
+   !$OMP END PARALLEL DO
+
+   ENDIF Radiation_step
+
+   IF (run_param .or. swint_opt == 2 .or. solar_opt == 1) then
+     IF ( associated(tauaer_sw) ) deallocate(tauaer_sw)
+     IF ( associated(ssaaer_sw) ) deallocate(ssaaer_sw)
+     IF ( associated(asyaer_sw) ) deallocate(asyaer_sw)
+   ENDIF
+
+ ! jararias, aug 2013
+ ! SW surface fluxes interpolation (meaningful when not in a Radiation_step)
+ if (swint_opt .eq. 1) then
+    call wrf_debug(100,'SW surface irradiance interpolation')
+
+    !---------------
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+    do ij = 1,num_tiles
+      its = i_start(ij)
+      ite = i_end(ij)
+      jts = j_start(ij)
+      jte = j_end(ij)
+      call interp_sw_radiation(ims,ime,jms,jme,its,ite,jts,jte,  &
+                               coszen_ref,coszen_loc,swddir_ref, &
+                               bb,Bx,swdown_ref,gg,Gx,albedo,    &
+                               swdown,swddir,swddni,swddif,gsw   )
+    enddo
+    !$OMP END PARALLEL DO
+ end if
+
+   ! Coupling with FARMS
+ if (swint_opt == 2) then
+    call wrf_debug(100,'SW surface irradiance calculated with FARMS')
+
+    !---------------
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+    do ij = 1,num_tiles
+      its = i_start(ij)
+      ite = i_end(ij)
+      jts = j_start(ij)
+      jte = j_end(ij)
+      call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
+           p8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
+           coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
+           swdown, swddir, swddni, swddif, &
+           julian, mut, dnw, swdown2, swddir2, swddni2, swddif2)
+    enddo
+    !$OMP END PARALLEL DO
+ end if
+
+ IF (run_param .or. swint_opt == 2 .or. solar_opt == 1) then
+    do ij = 1,num_tiles
+      its = i_start(ij)
+      ite = i_end(ij)
+      jts = j_start(ij)
+      jte = j_end(ij)
+ ! Save resolved + unresolved hydrometeor mass mixing ratios for Solar diag
+ ! Only done for icloud = 3
+      IF ( solar_opt == 1 .and. icloud == 3 ) THEN
+        IF ( F_QC ) THEN
+           DO j=jts,jte
+           DO k=kts,kte
+           DO i=its,ite
+             qc_tot(i,k,j) = qc(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+        ENDIF
+        IF ( F_QI ) THEN
+           DO j=jts,jte
+           DO k=kts,kte
+           DO i=its,ite
+             qi_tot(i,k,j) = qi(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+        ENDIF
+      ENDIF
  ! Restore qc & qi for any model physics configuration
       IF ( F_QC ) THEN
          DO j=jts,jte
@@ -2665,46 +2790,8 @@ CONTAINS
          ENDDO
       ENDIF
       END IF
-
-      ! jararias, aug 2013, updated 2013/11
-      ! parameters update for SW surface fluxes interpolation
-      IF (swint_opt.EQ.1) THEN
-         ! interpolation applies on all-sky fluxes (swddir, swdown)
-         CALL update_swinterp_parameters(ims,ime,jms,jme,its,ite,jts,jte,   &
-                                         coszen,coszen_loc,swddir,swdown,   &
-                                         swddir_ref,bb,Bx,swdown_ref,gg,Gx, &
-                                         coszen_ref                         )
-      ENDIF
-
-   ENDDO
-   !$OMP END PARALLEL DO
-
-   IF ( associated(tauaer_sw) ) deallocate(tauaer_sw)
-   IF ( associated(ssaaer_sw) ) deallocate(ssaaer_sw)
-   IF ( associated(asyaer_sw) ) deallocate(asyaer_sw)
-
-   ENDIF Radiation_step
-
- ! jararias, aug 2013
- ! SW surface fluxes interpolation (meaningful when not in a Radiation_step)
- if (swint_opt .eq. 1) then
-    call wrf_debug(100,'SW surface irradiance interpolation')
-
-    !---------------
-    !$OMP PARALLEL DO   &
-    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
-    do ij = 1,num_tiles
-      its = i_start(ij)
-      ite = i_end(ij)
-      jts = j_start(ij)
-      jte = j_end(ij)
-      call interp_sw_radiation(ims,ime,jms,jme,its,ite,jts,jte,  &
-                               coszen_ref,coszen_loc,swddir_ref, &
-                               bb,Bx,swdown_ref,gg,Gx,albedo,    &
-                               swdown,swddir,swddni,swddif,gsw   )
-    enddo
-    !$OMP END PARALLEL DO
- end if
+    end do
+ END IF
 
      accumulate_lw_select: SELECT CASE(lw_physics)
 

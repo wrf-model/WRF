@@ -121,6 +121,7 @@ MODULES = \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_ra_aerosol.o  \
+        module_ra_farms.o  \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
 	module_sf_gfs.o \
@@ -209,7 +210,8 @@ DIAGNOSTIC_MODULES_EM = \
         module_diag_rasm.o \
 	module_diag_pld.o \
 	module_diag_zld.o \
-	module_diag_trad_fields.o
+	module_diag_trad_fields.o \
+        module_diag_solar.o
   
 DIAGNOSTIC_MODULES_NMM = \
 	module_diag_refl.o

@@ -1,0 +1,68 @@
+#	Registry file specifically for the output of WRF-Solar fields
+
+#  Namelist parameter to activate the output of WRF-Solar fields
+
+rconfig   integer     solar_diagnostics           namelist,diags   1            0   -    "solar diagnostics: 0=no, 1=yes"
+
+#  3-D arrays used for diagnosed quantities
+state   real    qc_tot        ikj    dyn_em       1         -     -      "QC_TOT"       "CLOUD WATER MIXING RATIO RES + UNRES"                       "kg kg-1"
+state   real    qi_tot        ikj    dyn_em       1         -     -      "QI_TOT"       "ICE MIXING RATIO RES + UNRES"                               "kg kg-1"
+
+#  2-D arrays that will be filled with diagnosed quantities
+state   real    cldfrac2d     ij     dyn_em       1         -     h      "CLDFRAC2D"    "2-D MAX CLOUD FRACTION"                                     "%"
+state   real    wvp           ij     dyn_em       1         -     h      "WVP"          "WATER VAPOR PATH"                                           "kg m-2"
+state   real    lwp           ij     dyn_em       1         -     h      "LWP"          "LIQUID CLOUD WATER PATH"                                    "kg m-2"
+state   real    iwp           ij     dyn_em       1         -     h      "IWP"          "ICE CLOUD WATER PATH"                                       "kg m-2"
+state   real    swp           ij     dyn_em       1         -     h      "SWP"          "SNOW CLOUD WATER PATH"                                      "kg m-2"
+state   real    wp_sum        ij     dyn_em       1         -     h      "WP_SUM"       "SUM OF LWP+IWP+SWP"                                         "kg m-2"
+state   real    lwp_tot       ij     dyn_em       1         -     h      "LWP_TOT"      "LIQUID CLOUD WATER PATH RES + UNRES"                        "kg m-2"
+state   real    iwp_tot       ij     dyn_em       1         -     h      "IWP_TOT"      "ICE CLOUD WATER PATH RES + UNRES"                           "kg m-2"
+state   real    wp_tot_sum    ij     dyn_em       1         -     h      "WP_TOT_SUM"   "SUM OF LWP+IWP+SWP RES + UNRES"                             "kg m-2"
+state   real    re_qc         ij     dyn_em       1         -     h      "RE_QC"        "MASS-WEIGHTED LIQUID CLOUD EFFECTIVE RADIUS"                "m"
+state   real    re_qi         ij     dyn_em       1         -     h      "RE_QI"        "MASS-WEIGHTED ICE EFFECTIVE RADIUS"                         "m"
+state   real    re_qs         ij     dyn_em       1         -     h      "RE_QS"        "MASS-WEIGHTED SNOW EFFECTIVE RADIUS"                        "m"
+state   real    re_qc_tot     ij     dyn_em       1         -     h      "RE_QC_TOT"    "MASS-WEIGHTED LIQUID CLOUD EFFECTIVE RADIUS RES + UNRES"    "m"
+state   real    re_qi_tot     ij     dyn_em       1         -     h      "RE_QI_TOT"    "MASS-WEIGHTED ICE EFFECTIVE RADIUS RES + UNRES"             "m"
+state   real    tau_qc        ij     dyn_em       1         -     h      "TAU_QC"       "MASS-WEIGHTED LIQUID CLOUD OPTICAL THICKNESS"               " "
+state   real    tau_qi        ij     dyn_em       1         -     h      "TAU_QI"       "MASS-WEIGHTED ICE OPTICAL THICKNESS"                        " "
+state   real    tau_qs        ij     dyn_em       1         -     h      "TAU_QS"       "MASS-WEIGHTED SNOW OPTICAL THICKNESS"                       " "
+state   real    tau_qc_tot    ij     dyn_em       1         -     h      "TAU_QC_TOT"   "MASS-WEIGHTED LIQUID CLOUD OPTICAL THICKNESS RES + UNRES"   " "
+state   real    tau_qi_tot    ij     dyn_em       1         -     h      "TAU_QI_TOT"   "MASS-WEIGHTED ICE OPTICAL THICKNESS RES + UNRES"            " "
+state   real    cbaseht       ij     dyn_em       1         -     h      "CBASEHT"      "CLOUD BASE HEIGHT"                                          "m"
+state   real    ctopht        ij     dyn_em       1         -     h      "CTOPHT"       "CLOUD TOP HEIGHT"                                           "m"
+state   real    cbaseht_tot   ij     dyn_em       1         -     h      "CBASEHT_TOT"  "CLOUD BASE HEIGHT RES + UNRES"                              "m"
+state   real    ctopht_tot    ij     dyn_em       1         -     h      "CTOPHT_TOT"   "CLOUD TOP HEIGHT RES + UNRES"                               "m"
+state   real    clrnidx       ij     dyn_em       1         -     h      "CLRNIDX"      "CLEARNESS INDEX"                                            " "
+state   real    sza           ij     dyn_em       1         -     h      "SZA"          "SOLAR ZENITH ANGLE"                                        "deg"
+
+#  Time series variables
+state    real   ts_cldfrac2d    ?!       misc       -         -     -      "TS_CLDFRAC2D"    "2-D MAX CLOUD FRACTION"
+state    real   ts_wvp          ?!       misc       -         -     -      "TS_WVP"          "WATER VAPOR PATH"
+state    real   ts_lwp          ?!       misc       -         -     -      "TS_LWP"          "LIQUID CLOUD WATER PATH"
+state    real   ts_iwp          ?!       misc       -         -     -      "TS_IWP"          "ICE CLOUD WATER PATH"
+state    real   ts_swp          ?!       misc       -         -     -      "TS_SWP"          "SNOW CLOUD WATER PATH"
+state    real   ts_wp_sum       ?!       misc       -         -     -      "TS_WP_SUM"       "SUM OF LWP+IWP+SWP"
+state    real   ts_lwp_tot      ?!       misc       -         -     -      "TS_LWP_TOT"      "LIQUID CLOUD WATER PATH RES + UNRES"
+state    real   ts_iwp_tot      ?!       misc       -         -     -      "TS_IWP_TOT"      "ICE CLOUD WATER PATH RES + UNRES"
+state    real   ts_wp_tot_sum   ?!       misc       -         -     -      "TS_WP_TOT_SUM"   "SUM OF LWP+IWP+SWP RES + UNRES"
+state    real   ts_re_qc        ?!       misc       -         -     -      "TS_RE_QC"        "MASS-WEIGHTED LIQUID CLOUD EFFECTIVE RADIUS"
+state    real   ts_re_qi        ?!       misc       -         -     -      "TS_RE_QI"        "MASS-WEIGHTED ICE EFFECTIVE RADIUS"
+state    real   ts_re_qs        ?!       misc       -         -     -      "TS_RE_QS"        "MASS-WEIGHTED SNOW EFFECTIVE RADIUS"
+state    real   ts_re_qc_tot    ?!       misc       -         -     -      "TS_RE_QC_TOT"    "MASS-WEIGHTED LIQUID CLOUD EFFECTIVE RADIUS RES + UNRES"
+state    real   ts_re_qi_tot    ?!       misc       -         -     -      "TS_RE_QI_TOT"    "MASS-WEIGHTED ICE EFFECTIVE RADIUS RES + UNRES"
+state    real   ts_tau_qc       ?!       misc       -         -     -      "TS_TAU_QC"       "MASS-WEIGHTED LIQUID CLOUD OPTICAL THICKNESS"
+state    real   ts_tau_qi       ?!       misc       -         -     -      "TS_TAU_QI"       "MASS-WEIGHTED ICE OPTICAL THICKNESS"
+state    real   ts_tau_qs       ?!       misc       -         -     -      "TS_TAU_QS"       "MASS-WEIGHTED SNOW OPTICAL THICKNESS"
+state    real   ts_tau_qc_tot   ?!       misc       -         -     -      "TS_TAU_QC_TOT"   "MASS-WEIGHTED LIQUID CLOUD OPTICAL THICKNESS RES + UNRES"
+state    real   ts_tau_qi_tot   ?!       misc       -         -     -      "TS_TAU_QI_TOT"   "MASS-WEIGHTED ICE OPTICAL THICKNESS RES + UNRES"
+state    real   ts_cbaseht      ?!       misc       -         -     -      "TS_CBASEHT"      "CLOUD BASE HEIGHT"
+state    real   ts_ctopht       ?!       misc       -         -     -      "TS_CTOPHT"       "CLOUD TOP HEIGHT"
+state    real   ts_cbaseht_tot  ?!       misc       -         -     -      "TS_CBASEHT_TOT"  "CLOUD BASE HEIGHT RES + UNRES"
+state    real   ts_ctopht_tot   ?!       misc       -         -     -      "TS_CTOPHT_TOT"   "CLOUD TOP HEIGHT RES + UNRES"
+state    real   ts_clrnidx      ?!       misc       -         -     -      "TS_CLRNIDX"      "CLEARNESS INDEX"
+state    real   ts_sza          ?!       misc       -         -     -      "TS_SZA"          "SOLAR ZENITH ANGLE"
+
+#  Package declarations
+
+package   skip_solar_output     solar_diagnostics==0            -       -
+package     do_solar_output     solar_diagnostics==1            -       state:cldfrac2d,wvp,lwp,iwp,swp,wp_sum,lwp_tot,iwp_tot,wp_tot_sum,re_qc,re_qi,re_qs,re_qc_tot,re_qi_tot,tau_qc,tau_qi,tau_qs,tau_qc_tot,tau_qi_tot,cbaseht,ctopht,cbaseht_tot,ctopht_tot,clrnidx,sza

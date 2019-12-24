@@ -105,10 +105,10 @@ contains
     integer :: num_points
     integer :: i, j, n
 
-    num_points  = ((ite_limited - its + 1) * (jte_limited - jts + 1))
     ite_limited = min(ite, ide-1)
     jte_limited = min(jte, jde-1)
 
+    num_points  = ((ite_limited - its + 1) * (jte_limited - jts + 1))
 
     allocate (var_1d (num_points))
 
@@ -117,7 +117,7 @@ contains
     do j = jts, jte_limited
        do i = its, ite_limited
           n = n + 1
-          print *, "about to set var1d of ",n,"to var_2d of", i, j
+          print *, "about to set var1d of ",n,"to var_2d of", i, j, " to var2d(i,j)", var_2d(i,j)
           var_1d(n) = var_2d(i, j)
 
        end do
@@ -3116,6 +3116,7 @@ CONTAINS
    sfc_select: SELECT CASE(config_flags%sf_surface_physics)
 
       CASE (SLABSCHEME)
+           
 
            CALL slabinit(TSK,TMN,                              &
                          TSLB,ZS,DZS,num_soil_layers,          &
@@ -3124,68 +3125,6 @@ CONTAINS
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
 
-! LILAC initialization which initialize CLM
-     !CASE ((LILACSCHEME))
-
-         ! TODO (NS) : Possibly hide all 
-         !
-           ! get comp_comm
-           comp_comm = MPI_COMM_WORLD
-
-
-           ! get the gindex
-           CALL create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
-
-
-           ! reshape lats and lons to 1d for lilac
-            CALL lilac_reshape (ide, jde, its, ite, jts, jte, XLONG, atm_lons)
-            CALL lilac_reshape (ide, jde, its, ite, jts, jte, XLAT , atm_lats)
-
-
-
-           ! atm_global_nx and atm_global_ny
-
-           atm_global_nx = ide-ids
-           atm_global_ny = jde-jds
-
-           ! TODO (NS) : Make sure the here I understood the meaning of
-           ! atm_global_nx abd atm_global_ny correctly
-
-
-           ! calendar stuff
-
-           atm_start_year    = start_year  ! 2000
-           atm_start_mon     = start_month !1
-           atm_start_day     = start_day   !1
-           atm_start_secs    = start_second ! 0
-           ! TODO(NS) : make sure start_second is a correct input for atm_start_secs 
-
-           ! TODO (NS) How are we going to pass atm_stop_year here?? !
-           atm_stop_year     = 2000
-           atm_stop_mon      = 1
-           atm_stop_day      = 2
-           atm_stop_secs     = 0
-
-           atm_timestep      =  DT
-
-           !atm_calendar      = 'NOLEAP'
-           atm_calendar      = 'GREGORIAN'
-           atm_starttype     = 'startup'
-
-
-           CALL lilac_init(&
-                     comp_comm, &
-                     atm_global_index,&
-                     atm_lons, &
-                     atm_lats, &
-                     atm_global_nx, &
-                     atm_global_ny, &
-                     atm_calendar, &
-                     atm_timestep, &
-                     atm_start_year, atm_start_mon, atm_start_day, atm_start_secs, &
-                     atm_stop_year , atm_stop_mon , atm_stop_day , atm_stop_secs , &
-                     atm_starttype)
-!--------------------------------------------------------------
 #if (NMM_CORE == 1)
      CASE (GFDLSLAB)
            CALL hwrfsfcinit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV, &
@@ -3213,6 +3152,7 @@ CONTAINS
             ENDDO
           ENDIF
  
+          print *, "here we are initializing NOAH SCHEME "
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
@@ -3224,6 +3164,82 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
 
+! LILAC initialization which initialize CLM
+     !CASE ((LILACSCHEME))
+
+         ! TODO (NS) : Possibly hide all 
+         !
+           ! get comp_comm
+           comp_comm = MPI_COMM_WORLD
+
+
+           ! get the gindex
+           CALL create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
+
+
+           ! reshape lats and lons to 1d for lilac
+            CALL lilac_reshape (ide, jde, ims, ime, jms, jme, XLONG, atm_lons)
+            CALL lilac_reshape (ide, jde, ims, ime, jms, jme, XLAT , atm_lats)
+            print *, "lilac_reshape (XLONG) "
+            print *, "lilac_reshape (XLAT)"
+
+            print *, "size of atm_lats:", SIZE(atm_lats)
+            print *, "size of XLAT:", SIZE(XLAT)
+            print *, "XLAT : ", XLAT
+
+            !print *, "atm_lats : ", atm_lats
+            !print *, "atm_lons : ", atm_lons
+
+           ! atm_global_nx and atm_global_ny
+
+           atm_global_nx = ide-ids
+           atm_global_ny = jde-jds
+            print *, "atm_global_nx = ", atm_global_nx
+            print *, "atm_global_ny = ", atm_global_ny
+
+           ! TODO (NS) : Make sure the here I understood the meaning of
+           ! atm_global_nx abd atm_global_ny correctly
+
+
+           ! calendar stuff
+
+           !atm_start_year    = start_year  ! 2000
+           !atm_start_mon     = start_month !1
+           !atm_start_day     = start_day   !1
+           !atm_start_secs    = start_second ! 0
+           atm_start_year    = 2000
+           atm_start_mon     = 1
+           atm_start_day     = 1
+           atm_start_secs    = 0! 0
+           ! TODO(NS) : make sure start_second is a correct input for atm_start_secs 
+
+           ! TODO (NS) How are we going to pass atm_stop_year here?? !
+           atm_stop_year     = 2000
+           atm_stop_mon      = 1
+           atm_stop_day      = 2
+           atm_stop_secs     = 0
+
+           atm_timestep      =  DT
+
+           !atm_calendar      = 'NOLEAP'
+           atm_calendar      = 'GREGORIAN'
+           atm_starttype     = 'startup'
+           print *, "before lilac initialization....."
+
+                  CALL lilac_init(  &
+                      comp_comm,        &
+                      atm_global_index, &
+                      atm_lons,         &
+                      atm_lats,         &
+                      atm_global_nx,    &
+                      atm_global_ny,    &
+                      atm_calendar,     &
+                      atm_timestep,     &
+                      atm_start_year, atm_start_mon, atm_start_day, atm_start_secs, &
+                      atm_stop_year , atm_stop_mon , atm_stop_day , atm_stop_secs , &
+                      atm_starttype)
+                 ! --------------------------------------------------------------
+           print *, "after lilac initialization...."
 
 !URBAN
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN

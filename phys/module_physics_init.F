@@ -87,23 +87,31 @@ module module_lilac_reshape
 contains
 !========================================================================
 
-  subroutine lilac_reshape (ide, jde, its, ite, jts, jte, var_2d, var_1d)
+  subroutine lilac_reshape (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, var_2d, var_1d)
 
     ! input/output variables
-    integer, intent(in)               :: ide  ! domain end index, i
-    integer, intent(in)               :: jde  ! domain end index, j
-    integer, intent(in)               :: its  ! task start index, i
-    integer, intent(in)               :: ite  ! task end index, i
-    integer, intent(in)               :: jts  ! task start index, j
-    integer, intent(in)               :: jte  ! task end index, j
-    real,  intent(in)  :: var_2d (:,:)
-    real, allocatable, intent(out) :: var_1d(:)
+    integer , intent(in)  :: ide ! domain end index, i
+    integer , intent(in)  :: jde ! domain end index, j
+    integer , intent(in)  :: ims ! memory start index (includes halo cells), i
+    integer , intent(in)  :: ime ! memory end index (includes halo cells), i
+    integer , intent(in)  :: jms ! memory start index (includes halo cells), j
+    integer , intent(in)  :: jme ! memory end index (includes halo cells), j
+    integer , intent(in)  :: its ! task start index, i
+    integer , intent(in)  :: ite ! task end index, i
+    integer , intent(in)  :: jts ! task start index, j
+    integer , intent(in)  :: jte ! task end index, j
+    real    , intent(in)  :: var_2d (ims: , jms: )
+    real    , allocatable, intent(out) :: var_1d(:)
 
     ! local variables
     integer :: ite_limited  ! task end index on the mass point grid, i
     integer :: jte_limited  ! task end index on the mass point grid, j
     integer :: num_points
     integer :: i, j, n
+
+    if (.not. all(ubound(var_2d) == [ime, jme])) then
+       call wrf_error_fatal('lilac_reshape: incorrect bounds for var_2d')
+    end if
 
     ite_limited = min(ite, ide-1)
     jte_limited = min(jte, jde-1)
@@ -112,17 +120,14 @@ contains
 
     allocate (var_1d (num_points))
 
-    n= 0
+    n = 0
 
     do j = jts, jte_limited
        do i = its, ite_limited
           n = n + 1
-          print *, "about to set var1d of ",n,"to var_2d of", i, j, " to var2d(i,j)", var_2d(i,j)
-          var_1d(n) = var_2d(i, j)
-
+          var_1d(n) = var_2d(i,j)
        end do
     end do
-
 
   end subroutine lilac_reshape
 end module module_lilac_reshape
@@ -1403,7 +1408,7 @@ CONTAINS
                 QKE,                                            &
                 SFCEVP,GRDFLX,                                  &
                 TRIM (MMINLU_LOC),                              &
-                XLAT,                                           &
+                XLAT, XLONG,                                    &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
@@ -2393,7 +2398,7 @@ CONTAINS
 #endif
                 QKE, SFCEVP,GRDFLX,                             &
                 MMINLU,                                         &
-                XLAT,                                           &
+                XLAT, XLONG,                                    &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
@@ -2913,6 +2918,7 @@ CONTAINS
          integer :: ierr
          integer :: mytask, ntasks
          integer , allocatable :: atm_global_index(:)
+         real , dimension(ims:ime, jms:jme) :: XLONG_0360
          real , allocatable    :: atm_lons(:)
          real , allocatable    :: atm_lats(:)
 
@@ -3176,26 +3182,31 @@ CONTAINS
            ! get the gindex
            CALL create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
 
+           ! Convert longitude from -180..180 to 0..360
+           XLONG_0360 = XLONG
+           where (XLONG_0360 < 0)
+              XLONG_0360 = 360. + XLONG_0360
+           end where
 
            ! reshape lats and lons to 1d for lilac
-            CALL lilac_reshape (ide, jde, ims, ime, jms, jme, XLONG, atm_lons)
-            CALL lilac_reshape (ide, jde, ims, ime, jms, jme, XLAT , atm_lats)
-            print *, "lilac_reshape (XLONG) "
-            print *, "lilac_reshape (XLAT)"
 
-            print *, "size of atm_lats:", SIZE(atm_lats)
-            print *, "size of XLAT:", SIZE(XLAT)
-            print *, "XLAT : ", XLAT
-
-            !print *, "atm_lats : ", atm_lats
-            !print *, "atm_lons : ", atm_lons
-
-           ! atm_global_nx and atm_global_ny
+           CALL lilac_reshape ( &
+                ide=ide, jde=jde, &
+                ims=ims, ime=ime, &
+                jms=jms, jme=jme, &
+                its=its, ite=ite, &
+                jts=jts, jte=jte, &
+                var_2d=XLONG_0360, var_1d=atm_lons)
+           CALL lilac_reshape ( &
+                ide=ide, jde=jde, &
+                ims=ims, ime=ime, &
+                jms=jms, jme=jme, &
+                its=its, ite=ite, &
+                jts=jts, jte=jte, &
+                var_2d=XLAT, var_1d=atm_lats)
 
            atm_global_nx = ide-ids
            atm_global_ny = jde-jds
-            print *, "atm_global_nx = ", atm_global_nx
-            print *, "atm_global_ny = ", atm_global_ny
 
            ! TODO (NS) : Make sure the here I understood the meaning of
            ! atm_global_nx abd atm_global_ny correctly

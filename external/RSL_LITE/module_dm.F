@@ -2507,6 +2507,7 @@ END MODULE module_dm
    SUBROUTINE push_communicators_for_domain( id )
       USE module_dm
       INTEGER, INTENT(IN) :: id   ! if specified also does an instate for grid id
+!  Only required for distrbuted memory parallel runs
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       IF ( communicator_stack_cursor .GE. max_domains ) CALL wrf_error_fatal("push_communicators_for_domain would excede stacksize")
       communicator_stack_cursor = communicator_stack_cursor + 1
@@ -2550,6 +2551,7 @@ END MODULE module_dm
    END SUBROUTINE pop_communicators_for_domain
    SUBROUTINE instate_communicators_for_domain( id )
       USE module_dm
+!  Only required for distrbuted memory parallel runs
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: id
@@ -2570,6 +2572,7 @@ END MODULE module_dm
    END SUBROUTINE instate_communicators_for_domain
    SUBROUTINE store_communicators_for_domain( id )
       USE module_dm
+!  Only required for distrbuted memory parallel runs
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: id

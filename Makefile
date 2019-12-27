@@ -878,8 +878,8 @@ nmm_real : nmm_wrf
 	( cd test/nmm_real ; /bin/rm -f real_nmm.exe ; ln -s ../../main/real_nmm.exe . )
 	( cd test/nmm_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/nmm_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA ;    \
-	     ln -sf ../../run/ETAMPNEW_DATA . ;                     \
-	     ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
+             ln -sf ../../run/ETAMPNEW_DATA . ;                     \
+             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
              ln -sf ../../run/RRTM_DATA . ;                         \
              ln -sf ../../run/RRTMG_LW_DATA . ;                     \
              ln -sf ../../run/RRTMG_SW_DATA . ;                     \

@@ -530,6 +530,7 @@ module_physics_init.o : \
 		module_sf_noahlsm.o		\
 		module_sf_noahdrv.o		\
 		module_sf_clm.o			\
+                module_sf_ctsm.o                \
                 module_sf_ssib.o                \
 		module_sf_noahmplsm.o		\
 		module_sf_noahmpdrv.o		\
@@ -730,6 +731,7 @@ module_surface_driver.o: \
                 module_sf_noahmp_groundwater.o  \
 		module_sf_noahdrv.o		\
 		module_sf_clm.o			\
+                module_sf_ctsm.o                \
                 module_sf_ssib.o                \
 		module_sf_noahmpdrv.o		\
 		module_sf_ruclsm.o		\

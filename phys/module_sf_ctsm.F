@@ -46,7 +46,7 @@ contains
     end do
   end subroutine create_gindex
 
-  subroutine lilac_2d_to_1d (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, var_2d, var_1d)
+  subroutine convert_2d_to_1d (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, var_2d, var_1d)
     ! Convert a 2-d native WRF array to a 1-d array appropriate for LILAC
 
     use module_wrf_error
@@ -72,7 +72,7 @@ contains
     integer :: i, j, n
 
     if (.not. all(ubound(var_2d) == [ime, jme])) then
-       call wrf_error_fatal('lilac_2d_to_1d: incorrect bounds for var_2d')
+       call wrf_error_fatal('convert_2d_to_1d: incorrect bounds for var_2d')
     end if
 
     ite_limited = min(ite, ide-1)
@@ -91,7 +91,7 @@ contains
        end do
     end do
 
-  end subroutine lilac_2d_to_1d
+  end subroutine convert_2d_to_1d
 
   subroutine ctsm_init( &
        ids, ide, jds, jde, &
@@ -128,7 +128,6 @@ contains
 
     character(len=128) :: atm_calendar
     character(len=128) :: atm_starttype
-    integer            :: atm_timestep
     integer            :: atm_start_year ! (yyyy)
     integer            :: atm_start_mon  ! (mm)
     integer            :: atm_start_day
@@ -143,7 +142,7 @@ contains
 
     comp_comm = MPI_COMM_WORLD
 
-    CALL create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
+    call create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
 
     ! Convert longitude from -180..180 to 0..360
     xlong_0360 = xlong
@@ -152,14 +151,14 @@ contains
     end where
 
     ! reshape lats and lons to 1d for lilac
-    CALL lilac_2d_to_1d ( &
+    call convert_2d_to_1d ( &
          ide=ide, jde=jde, &
          ims=ims, ime=ime, &
          jms=jms, jme=jme, &
          its=its, ite=ite, &
          jts=jts, jte=jte, &
          var_2d=xlong_0360, var_1d=atm_lons)
-    CALL lilac_2d_to_1d ( &
+    call convert_2d_to_1d ( &
          ide=ide, jde=jde, &
          ims=ims, ime=ime, &
          jms=jms, jme=jme, &
@@ -184,23 +183,27 @@ contains
     atm_stop_day      = 2
     atm_stop_secs     = 0
 
-    atm_timestep      =  DT
-
     atm_calendar      = 'GREGORIAN'
     atm_starttype     = 'startup'
 
     call lilac_init(  &
-         comp_comm,        &
-         atm_global_index, &
-         atm_lons,         &
-         atm_lats,         &
-         atm_global_nx,    &
-         atm_global_ny,    &
-         atm_calendar,     &
-         atm_timestep,     &
-         atm_start_year, atm_start_mon, atm_start_day, atm_start_secs, &
-         atm_stop_year , atm_stop_mon , atm_stop_day , atm_stop_secs , &
-         atm_starttype)
+         mpicom           = comp_comm,        &
+         atm_global_index = atm_global_index, &
+         atm_lons         = atm_lons,         &
+         atm_lats         = atm_lats,         &
+         atm_global_nx    = atm_global_nx,    &
+         atm_global_ny    = atm_global_ny,    &
+         atm_calendar     = atm_calendar,     &
+         atm_timestep     = dt,               &
+         atm_start_year   = atm_start_year,   &
+         atm_start_mon    = atm_start_mon,    &
+         atm_start_day    = atm_start_day,    &
+         atm_start_secs   = atm_start_secs,   &
+         atm_stop_year    = atm_stop_year,    &
+         atm_stop_mon     = atm_stop_mon,     &
+         atm_stop_day     = atm_stop_day,     &
+         atm_stop_secs    = atm_stop_secs,    &
+         starttype_in     = atm_starttype)
 
   end subroutine ctsm_init
 

@@ -187,8 +187,10 @@ contains
     atm_calendar      = 'GREGORIAN'
     atm_starttype     = 'startup'
 
+    ! TODO(wjs, 2019-12-31) Is there a way to directly get dt as an integer, rather than
+    ! relying on converting this real-valued dt to an integer?
     atm_timestep      = nint(dt)
-    if (abs(atm_timestep - dt) > 1.e-5) then
+    if (abs(atm_timestep - dt) > (1.e-5 * dt)) then
        call wrf_error_fatal('ctsm_init: expect dt representable as integer')
     end if
 

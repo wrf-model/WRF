@@ -100,7 +100,6 @@ contains
        dt, xlat, xlong)
     ! Initialize CTSM via LILAC
 
-    USE mpi , only : MPI_COMM_WORLD
     use module_wrf_error
     use lilac_mod, only : lilac_init
 
@@ -142,7 +141,7 @@ contains
     integer            :: atm_global_nx
     integer            :: atm_global_ny
 
-    comp_comm = MPI_COMM_WORLD
+    call wrf_get_dm_communicator(comp_comm)
 
     call create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
 

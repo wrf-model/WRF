@@ -449,7 +449,8 @@ module_sf_clm.o: module_cam_shr_kind_mod.o \
 		 ../frame/module_wrf_error.o  \
 		../frame/module_configure.o
 
-module_sf_ctsm.o: ../frame/module_wrf_error.o
+module_sf_ctsm.o: ../frame/module_dm.o \
+                  ../frame/module_wrf_error.o
 
 module_sf_ssib.o: ../share/module_model_constants.o  
 

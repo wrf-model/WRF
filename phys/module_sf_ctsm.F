@@ -101,6 +101,7 @@ contains
     ! Initialize CTSM via LILAC
 
     USE mpi , only : MPI_COMM_WORLD
+    use module_wrf_error
     use lilac_mod, only : lilac_init
 
     integer, intent(in) :: ids
@@ -128,6 +129,7 @@ contains
 
     character(len=128) :: atm_calendar
     character(len=128) :: atm_starttype
+    integer            :: atm_timestep
     integer            :: atm_start_year ! (yyyy)
     integer            :: atm_start_mon  ! (mm)
     integer            :: atm_start_day
@@ -186,6 +188,11 @@ contains
     atm_calendar      = 'GREGORIAN'
     atm_starttype     = 'startup'
 
+    atm_timestep      = nint(dt)
+    if (abs(atm_timestep - dt) > 1.e-5) then
+       call wrf_error_fatal('ctsm_init: expect dt representable as integer')
+    end if
+
     call lilac_init(  &
          mpicom           = comp_comm,        &
          atm_global_index = atm_global_index, &
@@ -194,7 +201,7 @@ contains
          atm_global_nx    = atm_global_nx,    &
          atm_global_ny    = atm_global_ny,    &
          atm_calendar     = atm_calendar,     &
-         atm_timestep     = dt,               &
+         atm_timestep     = atm_timestep,     &
          atm_start_year   = atm_start_year,   &
          atm_start_mon    = atm_start_mon,    &
          atm_start_day    = atm_start_day,    &

@@ -14,7 +14,7 @@ MODULE module_physics_init
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
    USE lilac_mod, ONLY : lilac_init
-   USE module_sf_ctsm, only : create_gindex, lilac_2d_to_1d
+   USE module_sf_ctsm, only : ctsm_init
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
@@ -2451,9 +2451,6 @@ CONTAINS
    USE module_sf_gfdl
 #endif
 
-!!!! For lilac
-
-    USE mpi , only : MPI_COMM_WORLD, MPI_COMM_NULL
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
@@ -2786,45 +2783,6 @@ CONTAINS
                 SWUPsubgrid,lhsoi,lhtran,lhveg
 
 
-!-------------------------------------------------
-! lilac variable declrations
-!-------------------------------------------------
-         integer :: comp_comm
-         integer :: ierr
-         integer :: mytask, ntasks
-         integer , allocatable :: atm_global_index(:)
-         real , dimension(ims:ime, jms:jme) :: XLONG_0360
-         real , allocatable    :: atm_lons(:)
-         real , allocatable    :: atm_lats(:)
-
-
-
-         ! Namelist and related variables
-         character(len=128) :: atm_calendar
-         character(len=128) :: atm_starttype
-         integer            :: atm_timestep
-         integer            :: atm_start_year ! (yyyy)
-         integer            :: atm_start_mon  ! (mm)
-         integer            :: atm_start_day
-         integer            :: atm_start_secs
-         integer            :: atm_stop_year  ! (yyyy)
-         integer            :: atm_stop_mon   ! (mm)
-         integer            :: atm_stop_day
-         integer            :: atm_stop_secs
-         integer            :: atm_timestep_start  ! for internal time loop only
-         integer            :: atm_timestep_stop ! for internal time loop only
-
-
-         integer            :: start_year   ! (yyyy)
-         integer            :: start_month  ! (mm)
-         integer            :: start_day
-         integer            :: start_second
-
-
-
-         integer            :: atm_global_nx
-         integer            :: atm_global_ny
-
 
 
 !-------------------------------------------------
@@ -3041,87 +2999,11 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
 
-! LILAC initialization which initialize CLM
-     !CASE ((LILACSCHEME))
-
-         ! TODO (NS) : Possibly hide all 
-         !
-           ! get comp_comm
-           comp_comm = MPI_COMM_WORLD
-
-
-           ! get the gindex
-           CALL create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
-
-           ! Convert longitude from -180..180 to 0..360
-           XLONG_0360 = XLONG
-           where (XLONG_0360 < 0)
-              XLONG_0360 = 360. + XLONG_0360
-           end where
-
-           ! reshape lats and lons to 1d for lilac
-
-           CALL lilac_2d_to_1d ( &
-                ide=ide, jde=jde, &
-                ims=ims, ime=ime, &
-                jms=jms, jme=jme, &
-                its=its, ite=ite, &
-                jts=jts, jte=jte, &
-                var_2d=XLONG_0360, var_1d=atm_lons)
-           CALL lilac_2d_to_1d ( &
-                ide=ide, jde=jde, &
-                ims=ims, ime=ime, &
-                jms=jms, jme=jme, &
-                its=its, ite=ite, &
-                jts=jts, jte=jte, &
-                var_2d=XLAT, var_1d=atm_lats)
-
-           atm_global_nx = ide-ids
-           atm_global_ny = jde-jds
-
-           ! TODO (NS) : Make sure the here I understood the meaning of
-           ! atm_global_nx abd atm_global_ny correctly
-
-
-           ! calendar stuff
-
-           !atm_start_year    = start_year  ! 2000
-           !atm_start_mon     = start_month !1
-           !atm_start_day     = start_day   !1
-           !atm_start_secs    = start_second ! 0
-           atm_start_year    = 2000
-           atm_start_mon     = 1
-           atm_start_day     = 1
-           atm_start_secs    = 0! 0
-           ! TODO(NS) : make sure start_second is a correct input for atm_start_secs 
-
-           ! TODO (NS) How are we going to pass atm_stop_year here?? !
-           atm_stop_year     = 2000
-           atm_stop_mon      = 1
-           atm_stop_day      = 2
-           atm_stop_secs     = 0
-
-           atm_timestep      =  DT
-
-           !atm_calendar      = 'NOLEAP'
-           atm_calendar      = 'GREGORIAN'
-           atm_starttype     = 'startup'
-           print *, "before lilac initialization....."
-
-                  CALL lilac_init(  &
-                      comp_comm,        &
-                      atm_global_index, &
-                      atm_lons,         &
-                      atm_lats,         &
-                      atm_global_nx,    &
-                      atm_global_ny,    &
-                      atm_calendar,     &
-                      atm_timestep,     &
-                      atm_start_year, atm_start_mon, atm_start_day, atm_start_secs, &
-                      atm_stop_year , atm_stop_mon , atm_stop_day , atm_stop_secs , &
-                      atm_starttype)
-                 ! --------------------------------------------------------------
-           print *, "after lilac initialization...."
+          CALL ctsm_init( &
+               ids=ids, ide=ide, jds=jds, jde=jde, &
+               ims=ims, ime=ime, jms=jms, jme=jme, &
+               its=its, ite=ite, jts=jts, jte=jte, &
+               dt=DT, xlat=XLAT, xlong=XLONG)
 
 !URBAN
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN

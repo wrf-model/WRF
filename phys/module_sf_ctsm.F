@@ -3,8 +3,7 @@ module module_sf_ctsm
   implicit none
   private
 
-  public :: create_gindex
-  public :: lilac_2d_to_1d
+  public :: ctsm_init
 
 contains
 
@@ -93,5 +92,115 @@ contains
     end do
 
   end subroutine lilac_2d_to_1d
+
+  subroutine ctsm_init( &
+       ids, ide, jds, jde, &
+       ims, ime, jms, jme, &
+       its, ite, jts, jte, &
+       dt, xlat, xlong)
+    ! Initialize CTSM via LILAC
+
+    USE mpi , only : MPI_COMM_WORLD
+
+    integer, intent(in) :: ids
+    integer, intent(in) :: ide
+    integer, intent(in) :: jds
+    integer, intent(in) :: jde
+    integer, intent(in) :: ims
+    integer, intent(in) :: ime
+    integer, intent(in) :: jms
+    integer, intent(in) :: jme
+    integer, intent(in) :: its
+    integer, intent(in) :: ite
+    integer, intent(in) :: jts
+    integer, intent(in) :: jte
+
+    real, intent(in) :: dt       ! time step (seconds)
+    real, intent(in) :: xlat(ims: , jms: )  ! latitudes (deg)
+    real, intent(in) :: xlong(ims: , jms: ) ! longitudes (deg)
+
+    integer :: comp_comm
+    integer , allocatable :: atm_global_index(:)
+    real                  :: xlong_0360(ims:ime, jms:jme)
+    real , allocatable    :: atm_lons(:)
+    real , allocatable    :: atm_lats(:)
+
+    character(len=128) :: atm_calendar
+    character(len=128) :: atm_starttype
+    integer            :: atm_timestep
+    integer            :: atm_start_year ! (yyyy)
+    integer            :: atm_start_mon  ! (mm)
+    integer            :: atm_start_day
+    integer            :: atm_start_secs
+    integer            :: atm_stop_year  ! (yyyy)
+    integer            :: atm_stop_mon   ! (mm)
+    integer            :: atm_stop_day
+    integer            :: atm_stop_secs
+
+    integer            :: atm_global_nx
+    integer            :: atm_global_ny
+
+    comp_comm = MPI_COMM_WORLD
+
+    CALL create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
+
+    ! Convert longitude from -180..180 to 0..360
+    xlong_0360 = xlong
+    where (xlong_0360 < 0)
+       xlong_0360 = 360. + xlong_0360
+    end where
+
+    ! reshape lats and lons to 1d for lilac
+    CALL lilac_2d_to_1d ( &
+         ide=ide, jde=jde, &
+         ims=ims, ime=ime, &
+         jms=jms, jme=jme, &
+         its=its, ite=ite, &
+         jts=jts, jte=jte, &
+         var_2d=xlong_0360, var_1d=atm_lons)
+    CALL lilac_2d_to_1d ( &
+         ide=ide, jde=jde, &
+         ims=ims, ime=ime, &
+         jms=jms, jme=jme, &
+         its=its, ite=ite, &
+         jts=jts, jte=jte, &
+         var_2d=xlat, var_1d=atm_lats)
+
+    atm_global_nx = ide-ids
+    atm_global_ny = jde-jds
+
+    ! calendar stuff
+
+    atm_start_year    = 2000
+    atm_start_mon     = 1
+    atm_start_day     = 1
+    atm_start_secs    = 0! 0
+    ! TODO(NS) : make sure start_second is a correct input for atm_start_secs 
+
+    ! TODO (NS) How are we going to pass atm_stop_year here?? !
+    atm_stop_year     = 2000
+    atm_stop_mon      = 1
+    atm_stop_day      = 2
+    atm_stop_secs     = 0
+
+    atm_timestep      =  DT
+
+    atm_calendar      = 'GREGORIAN'
+    atm_starttype     = 'startup'
+
+    call lilac_init(  &
+         comp_comm,        &
+         atm_global_index, &
+         atm_lons,         &
+         atm_lats,         &
+         atm_global_nx,    &
+         atm_global_ny,    &
+         atm_calendar,     &
+         atm_timestep,     &
+         atm_start_year, atm_start_mon, atm_start_day, atm_start_secs, &
+         atm_stop_year , atm_stop_mon , atm_stop_day , atm_stop_secs , &
+         atm_starttype)
+
+  end subroutine ctsm_init
 
 end module module_sf_ctsm

@@ -13,7 +13,6 @@ MODULE module_physics_init
    USE module_state_description
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
-   USE lilac_mod, ONLY : lilac_init
    USE module_sf_ctsm, only : ctsm_init
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
@@ -2450,7 +2449,6 @@ CONTAINS
 #if (NMM_CORE == 1)
    USE module_sf_gfdl
 #endif
-
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
@@ -2781,9 +2779,6 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhtran,lhveg
-
-
-
 
 !-------------------------------------------------
 ! Noah-mosaic related variables are added to declaration  (danli)

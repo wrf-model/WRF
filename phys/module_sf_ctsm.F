@@ -101,6 +101,7 @@ contains
     ! Initialize CTSM via LILAC
 
     USE mpi , only : MPI_COMM_WORLD
+    use lilac_mod, only : lilac_init
 
     integer, intent(in) :: ids
     integer, intent(in) :: ide

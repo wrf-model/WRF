@@ -7,6 +7,7 @@
 
 !  This MODULE CONTAINS the following routines:
 
+
 MODULE module_physics_init
 
    USE module_state_description
@@ -21,8 +22,9 @@ MODULE module_physics_init
    LOGICAL  :: WINDFARM_INITIALIZED = .FALSE.
 
 
-!=================================================================
 CONTAINS
+
+
 !=================================================================
    SUBROUTINE phy_init ( id, config_flags, DT, restart, zfull, zhalf,     &
                          p_top, TSK,RADT,BLDT,CUDT,MPDT,         &
@@ -2995,7 +2997,6 @@ CONTAINS
    sfc_select: SELECT CASE(config_flags%sf_surface_physics)
 
       CASE (SLABSCHEME)
-           
 
            CALL slabinit(TSK,TMN,                              &
                          TSLB,ZS,DZS,num_soil_layers,          &
@@ -3017,8 +3018,6 @@ CONTAINS
                      its,ite, jts,jte, kts,kte                     )
 
 #endif
-!--------------------------------------------------------------
-!--------------------------------------------------------------
       CASE (LSMSCHEME)
           
           IF(TRIM(mminlu) .EQ. 'NLCD40')THEN
@@ -3031,7 +3030,6 @@ CONTAINS
             ENDDO
           ENDIF
  
-          print *, "here we are initializing NOAH SCHEME "
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
@@ -3344,10 +3342,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
              CALL wrf_error_fatal ( 'SSIB does not work with NLCD data. Stop.' )
           ENDIF
-
-
-
-
 !--------------------------------------------------------------
 ! CLM Init Coupling
       CASE (CLMSCHEME)
@@ -5337,5 +5331,3 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
 !---------------------END   PSH/TWG  CHANGES----------------
 
 END MODULE module_physics_init
-
-

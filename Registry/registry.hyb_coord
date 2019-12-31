@@ -1,7 +1,7 @@
 #	Dry pressure, Pd
 #	Dry surface pressure = Pds
 #	Model top pressure = Pt
-#	Mass in column, Pc = Pds - Pt
+#	Dry mass in column (base + perturbation), Pcb + Pc = Pds - Pt
 #	1d column weighting term, B: BF is full levels, BH is half levels
 
 #	Total dry pressure

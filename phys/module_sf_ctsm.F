@@ -141,6 +141,7 @@ contains
     integer            :: atm_global_nx
     integer            :: atm_global_ny
 
+    ! TODO(wjs, 2019-12-31) Is this the correct way to get the communicator?
     call wrf_get_dm_communicator(comp_comm)
 
     call create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)

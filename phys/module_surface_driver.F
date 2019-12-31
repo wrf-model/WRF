@@ -310,6 +310,7 @@ CONTAINS
                                        ,RUCLSMSCHEME              &
                                        ,PXLSMSCHEME               &
                                        ,CLMSCHEME                 &
+                                       ,CTSMSCHEME                &
                                        ,SSIBSCHEME                & !ssib
                                        ,MYNNSFCSCHEME             &
                                        ,OMLSCHEME                 &
@@ -328,6 +329,7 @@ CONTAINS
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
                                        ,CLMSCHEME                 &
+                                       ,CTSMSCHEME                &
                                        ,PXLSMSCHEME               &
                                        ,TEMFSFCSCHEME             &
                                        ,GFDLSFCSCHEME             &

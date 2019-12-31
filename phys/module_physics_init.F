@@ -13,7 +13,6 @@ MODULE module_physics_init
    USE module_state_description
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
-   USE module_sf_ctsm, only : ctsm_init
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
@@ -2422,6 +2421,9 @@ CONTAINS
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
 #endif
+#ifdef WRF_USE_CTSM
+   USE module_sf_ctsm, only : ctsm_init
+#endif
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
    USE module_sf_bep_bem
@@ -2994,11 +2996,6 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
 
-          CALL ctsm_init( &
-               ids=ids, ide=ide, jds=jds, jde=jde, &
-               ims=ims, ime=ime, jms=jms, jme=jme, &
-               its=its, ite=ite, jts=jts, jte=jte, &
-               dt=DT, xlat=XLAT, xlong=XLONG)
 
 !URBAN
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
@@ -3283,6 +3280,19 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         ENDIF
 #else
         CALL wrf_error_fatal ( "SF CLM CURRENTLY ifdef'ed out, set -DWRF_USE_CLM in configure.wrf in ARCH_LOCAL" )
+#endif
+
+      CASE (CTSMSCHEME)
+
+#ifdef WRF_USE_CTSM
+         CALL ctsm_init( &
+              ids=ids, ide=ide, jds=jds, jde=jde, &
+              ims=ims, ime=ime, jms=jms, jme=jme, &
+              its=its, ite=ite, jts=jts, jte=jte, &
+              dt=DT, xlat=XLAT, xlong=XLONG)
+#else
+         CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting&
+              & WRF_CTSM_MKFILE before running configure" )
 #endif
 
       CASE DEFAULT

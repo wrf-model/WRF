@@ -1836,6 +1836,31 @@
 #endif
 
 !-----------------------------------------------------------------------
+!  The CTSM scheme may not even be compiled, so make sure it is not allowed
+!  to be run if the code is not available.
+!-----------------------------------------------------------------------
+
+#if !defined ( WRF_USE_CTSM )
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%sf_surface_physics(i) .EQ. CTSMSCHEME ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: The CTSM surface scheme was requested in the namelist.input file.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: However, the WRF CTSM scheme was not compiled in WRF.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: Please set -DWRF_USE_CTSM by setting WRF_CTSM_MKFILE&
+              & before running configure, and then recompile.'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
+!-----------------------------------------------------------------------
 !  grav_settling = 1 must be turned off for mp_physics=28.
 !-----------------------------------------------------------------------
       oops = 0
@@ -2661,6 +2686,9 @@
          model_config_rec % num_soil_layers = 2
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME    ) THEN
          model_config_rec % num_soil_layers = 10
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CTSMSCHEME    ) THEN
+         ! TODO(wjs, 2019-12-31) This value shouldn't matter, right?
+         model_config_rec % num_soil_layers = 4
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SSIBSCHEME   ) THEN
          model_config_rec % num_soil_layers = 3
 #if (NMM_CORE == 1)

@@ -132,14 +132,22 @@ contains
     integer            :: atm_start_year ! (yyyy)
     integer            :: atm_start_mon  ! (mm)
     integer            :: atm_start_day
-    integer            :: atm_start_secs
+    integer            :: atm_start_hour
+    integer            :: atm_start_minute
+    integer            :: atm_start_second ! seconds after the minute
+    integer            :: atm_start_secs_since_midnight ! total seconds since midnight
     integer            :: atm_stop_year  ! (yyyy)
     integer            :: atm_stop_mon   ! (mm)
     integer            :: atm_stop_day
-    integer            :: atm_stop_secs
+    integer            :: atm_stop_hour
+    integer            :: atm_stop_minute
+    integer            :: atm_stop_second ! seconds after the minute
+    integer            :: atm_stop_secs_since_midnight ! total seconds since midnight
 
     integer            :: atm_global_nx
     integer            :: atm_global_ny
+
+    character(len=512) :: message
 
     ! TODO(wjs, 2019-12-31) Is this the correct way to get the communicator?
     call wrf_get_dm_communicator(comp_comm)
@@ -173,17 +181,34 @@ contains
 
     ! calendar stuff
 
-    atm_start_year    = 2000
-    atm_start_mon     = 1
-    atm_start_day     = 1
-    atm_start_secs    = 0! 0
-    ! TODO(NS) : make sure start_second is a correct input for atm_start_secs 
-
-    ! TODO (NS) How are we going to pass atm_stop_year here?? !
-    atm_stop_year     = 2000
-    atm_stop_mon      = 1
-    atm_stop_day      = 2
-    atm_stop_secs     = 0
+    ! TODO(wjs, 2019-12-31) Is this the appropriate way to get the start and end times?
+    ! (End times may not be important, but start times are.) Some specific questions:
+    ! - Should we use some passed-in argument rather than getting the namelist values
+    !   directly here?
+    ! - nl_get_start_year vs. nl_get_simulation_start_year (and similar for other units)
+    ! - Is it correct to form the total seconds from hour, minute & second like this?
+    ! - I'm using 1 for the first argument; I think this gives the domain id; is this an
+    !   okay thing to do for now, or can we somehow determine the actual domain id?
+    call nl_get_start_year(1, atm_start_year)
+    call nl_get_start_month(1, atm_start_mon)
+    call nl_get_start_day(1, atm_start_day)
+    call nl_get_start_hour(1, atm_start_hour)
+    call nl_get_start_minute(1, atm_start_minute)
+    call nl_get_start_second(1, atm_start_second)
+    atm_start_secs_since_midnight = 60*(60*atm_start_hour + atm_start_minute) + atm_start_second
+    write(message, '("CTSM start time: ", I4, 1X, I2, 1X, I2, 1X, I5)') &
+         atm_start_year, atm_start_mon, atm_start_day, atm_start_secs_since_midnight
+    call wrf_message(message)
+    call nl_get_end_year(1, atm_stop_year)
+    call nl_get_end_month(1, atm_stop_mon)
+    call nl_get_end_day(1, atm_stop_day)
+    call nl_get_end_hour(1, atm_stop_hour)
+    call nl_get_end_minute(1, atm_stop_minute)
+    call nl_get_end_second(1, atm_stop_second)
+    atm_stop_secs_since_midnight = 60*(60*atm_stop_hour + atm_stop_minute) + atm_stop_second
+    write(message, '("CTSM stop time: ", I4, 1X, I2, 1X, I2, 1X, I5)') &
+         atm_stop_year, atm_stop_mon, atm_stop_day, atm_stop_secs_since_midnight
+    call wrf_message(message)
 
     atm_calendar      = 'GREGORIAN'
     atm_starttype     = 'startup'
@@ -207,11 +232,11 @@ contains
          atm_start_year   = atm_start_year,   &
          atm_start_mon    = atm_start_mon,    &
          atm_start_day    = atm_start_day,    &
-         atm_start_secs   = atm_start_secs,   &
+         atm_start_secs   = atm_start_secs_since_midnight, &
          atm_stop_year    = atm_stop_year,    &
          atm_stop_mon     = atm_stop_mon,     &
          atm_stop_day     = atm_stop_day,     &
-         atm_stop_secs    = atm_stop_secs,    &
+         atm_stop_secs    = atm_stop_secs_since_midnight,  &
          starttype_in     = atm_starttype)
 
   end subroutine ctsm_init

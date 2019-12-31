@@ -182,10 +182,12 @@ contains
     ! calendar stuff
 
     ! TODO(wjs, 2019-12-31) Is this the appropriate way to get the start and end times?
-    ! (End times may not be important, but start times are.) Some specific questions:
+    !
+    ! Some specific questions:
     ! - Should we use some passed-in argument rather than getting the namelist values
     !   directly here?
-    ! - nl_get_start_year vs. nl_get_simulation_start_year (and similar for other units)
+    ! - nl_get_start_year vs. nl_get_simulation_start_year (and similar for other units):
+    !   should we be using nl_get_simulation_* here?
     ! - Is it correct to form the total seconds from hour, minute & second like this?
     ! - I'm using 1 for the first argument; I think this gives the domain id; is this an
     !   okay thing to do for now, or can we somehow determine the actual domain id?

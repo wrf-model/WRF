@@ -10,6 +10,7 @@ module module_sf_ctsm
 
 contains
 
+  !-----------------------------------------------------------------------
   subroutine get_num_points(ide, jde, its, ite, jts, jte, &
        num_points, ite_limited, jte_limited)
     ! Return the number of points owned by this task
@@ -84,7 +85,9 @@ contains
        end do
     end do
   end subroutine create_gindex
+  !-----------------------------------------------------------------------
 
+  !-----------------------------------------------------------------------
   subroutine convert_2d_to_1d (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, var_2d, var_1d)
     ! Convert a 2-d native WRF array to a 1-d array appropriate for LILAC
     !
@@ -136,7 +139,9 @@ contains
     end do
 
   end subroutine convert_2d_to_1d
+  !-----------------------------------------------------------------------
 
+  !-----------------------------------------------------------------------
   subroutine convert_1d_to_2d (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, var_1d, var_2d)
     ! Convert a 1-d array from lilac to a 2-d native WRF array
 
@@ -188,89 +193,9 @@ contains
     end do
 
   end subroutine convert_1d_to_2d
+  !-----------------------------------------------------------------------
 
-  subroutine export_to_lilac(ide, jde, ims, ime, jms, jme, its, ite, jts, jte, &
-       var_name, var_2d)
-    ! Reshape var_2d to 1d for LILAC, then set the appropriate atm2lnd variable in LILAC
-
-    use lilac_atmcap, only : lilac_atmcap_atm2lnd
-
-    integer , intent(in) :: ide ! domain end index, i
-    integer , intent(in) :: jde ! domain end index, j
-    integer , intent(in) :: ims ! memory start index (includes halo cells), i
-    integer , intent(in) :: ime ! memory end index (includes halo cells), i
-    integer , intent(in) :: jms ! memory start index (includes halo cells), j
-    integer , intent(in) :: jme ! memory end index (includes halo cells), j
-    integer , intent(in) :: its ! task start index, i
-    integer , intent(in) :: ite ! task end index, i
-    integer , intent(in) :: jts ! task start index, j
-    integer , intent(in) :: jte ! task end index, j
-
-    character(len=*), intent(in) :: var_name  ! name of variable in LILAC
-    real, intent(in) :: var_2d(ims: , jms: )
-
-    real, allocatable :: var_1d(:)
-
-    call convert_2d_to_1d( &
-         ide=ide, jde=jde, &
-         ims=ims, ime=ime, &
-         jms=jms, jme=jme, &
-         its=its, ite=ite, &
-         jts=jts, jte=jte, &
-         var_2d=var_2d, var_1d=var_1d)
-
-    call lilac_atmcap_atm2lnd( &
-         fldname = var_name, &
-         data = var_1d)
-
-  end subroutine export_to_lilac
-
-  subroutine import_from_lilac(ide, jde, ims, ime, jms, jme, its, ite, jts, jte, &
-       var_name, var_2d)
-    ! Get the appropriate lnd2atm variable from LILAC, then reshape 1d LILAC variable to
-    ! fill var_2d
-
-    use lilac_atmcap, only : lilac_atmcap_lnd2atm
-
-    integer , intent(in) :: ide ! domain end index, i
-    integer , intent(in) :: jde ! domain end index, j
-    integer , intent(in) :: ims ! memory start index (includes halo cells), i
-    integer , intent(in) :: ime ! memory end index (includes halo cells), i
-    integer , intent(in) :: jms ! memory start index (includes halo cells), j
-    integer , intent(in) :: jme ! memory end index (includes halo cells), j
-    integer , intent(in) :: its ! task start index, i
-    integer , intent(in) :: ite ! task end index, i
-    integer , intent(in) :: jts ! task start index, j
-    integer , intent(in) :: jte ! task end index, j
-
-    character(len=*), intent(in) :: var_name  ! name of variable in LILAC
-    real, intent(inout) :: var_2d(ims: , jms: )
-
-    real, allocatable :: var_1d(:)
-    integer :: num_points
-
-    call get_num_points( &
-         ide=ide, jde=jde, &
-         its=its, ite=ite, &
-         jts=jts, jte=jte, &
-         num_points = num_points)
-
-    allocate(var_1d(num_points))
-
-    call lilac_atmcap_lnd2atm( &
-         fldname = var_name, &
-         data = var_1d)
-
-    call convert_1d_to_2d( &
-         ide=ide, jde=jde, &
-         ims=ims, ime=ime, &
-         jms=jms, jme=jme, &
-         its=its, ite=ite, &
-         jts=jts, jte=jte, &
-         var_1d=var_1d, var_2d=var_2d)
-
-  end subroutine import_from_lilac
-
+  !-----------------------------------------------------------------------
   subroutine ctsm_init( &
        ids, ide, jds, jde, &
        ims, ime, jms, jme, &
@@ -420,10 +345,198 @@ contains
          starttype_in     = atm_starttype)
 
   end subroutine ctsm_init
+  !-----------------------------------------------------------------------
 
-  subroutine ctsm_run
+  !-----------------------------------------------------------------------
+  subroutine ctsm_run( &
+       ! bounds
+       ids, ide, jds, jde, &
+       ims, ime, jms, jme, kms, &
+       its, ite, jts, jte, &
+
+       ! general information
+       dt, &
+
+       ! atm -> lnd variables
+       dz8w, ht, u_phy, v_phy, p8w, t_phy, qv_curr, &
+       rainbl, sr, &
+       glw, swvisdir, swvisdif, swnirdir, swnirdif)
+
+    integer, intent(in) :: ids
+    integer, intent(in) :: ide
+    integer, intent(in) :: jds
+    integer, intent(in) :: jde
+    integer, intent(in) :: ims
+    integer, intent(in) :: ime
+    integer, intent(in) :: jms
+    integer, intent(in) :: jme
+    integer, intent(in) :: kms
+    integer, intent(in) :: its
+    integer, intent(in) :: ite
+    integer, intent(in) :: jts
+    integer, intent(in) :: jte
+
+    real, intent(in) :: dt ! timestep [s]
+
+    real, intent(in) :: dz8w(ims: , kms: , jms: ) ! thickness of atmo layers [m]
+    real, intent(in) :: ht(ims: , jms: )  ! terrain height [m]
+    real, intent(in) :: u_phy(ims: , kms: , jms: ) ! 3D U wind component [m/s]
+    real, intent(in) :: v_phy(ims: , kms: , jms: ) ! 3D V wind component [m/s]
+    real, intent(in) :: p8w(ims: , kms: , jms: ) ! 3D pressure, valid at interface [Pa]
+    real, intent(in) :: t_phy(ims: , kms: , jms: ) ! 3D atmospheric temperature valid at mid-levels [K]
+    real, intent(in) :: qv_curr(ims: , kms: , jms: ) ! 3D water vapor mixing ratio [kg/kg_dry]
+    real, intent(in) :: rainbl(ims: , jms: ) ! total input precipitation [mm]
+    real, intent(in) :: sr(ims: , jms: ) ! frozen precipitation ratio [-]
+    real, intent(in) :: glw(ims: , jms: ) ! longwave down at surface [W m-2]
+    real, intent(in) :: swvisdir(ims: , jms: ) ! vis direct beam solar rad onto surface [W m-2]
+    real, intent(in) :: swvisdif(ims: , jms: ) ! vis diffuse solar rad onto surface [W m-2]
+    real, intent(in) :: swnirdir(ims: , jms: ) ! nir direct beam solar rad onto surface [W m-2]
+    real, intent(in) :: swnirdif(ims: , jms: ) ! nir diffuse solar rad onto surface [W m-2]
+
+    real :: zlvl(ims:ime, jms:jme)   ! mid-point of bottom atm layer [m]
+    real :: forc_u(ims:ime, jms:jme) ! u wind component, bottom atm layer [m/s]
+    real :: forc_v(ims:ime, jms:jme) ! v wind component, bottom atm layer [m/s]
+    real :: pbot(ims:ime, jms:jme)   ! surface pressure [Pa]
+    real :: forc_th(ims:ime, jms:jme) ! potential temperature [K]
+    real :: forc_t(ims:ime, jms:jme) ! temperature [K]
+    real :: forc_q(ims:ime, jms:jme) ! specific humidity [kg/kg]
+    real :: precip_rate(ims:ime, jms:jme) ! total precipitation rate [mm/s]
+    real :: rain_convective_rate(ims:ime, jms:jme) ! rate of convective rain [mm/s]
+    real :: rain_largescale_rate(ims:ime, jms:jme) ! rate of large-scale rain [mm/s]
+    real :: snow_convective_rate(ims:ime, jms:jme) ! rate of convective snow [mm/s]
+    real :: snow_largescale_rate(ims:ime, jms:jme) ! rate of large-scale snow [mm/s]
+
+    ! ------------------------------------------------------------------------
+    ! Calculate derived variables, and 2-d versions of 3-d fields
+    ! ------------------------------------------------------------------------
+
+    ! dz8w = thickness of full levels; we want the mid-point of the bottom-most level
+    zlvl(:,:) = 0.5 * dz8w(:,1,:)
+
+    forc_u(:,:) = u_phy(:,1,:)
+    forc_v(:,:) = v_phy(:,1,:)
+
+    ! TODO(wjs, 2020-01-01) Is this correct? Or does this give the pressure at the
+    ! interface, whereas we may want the pressure at the mid-point???
+    pbot(:,:) = p8w(:,1,:)
+
+    ! TODO(wjs, 2020-01-01) For now, I'm setting potential temperature equal to
+    ! temperature. Line 58470 of module_sf_clm has:
+    !
+    !     clm_a2l%forc_th(g)  = clm_a2l%forc_t(g) * (clm_a2l%forc_psrf(g) &
+    !          / clm_a2l%forc_pbot(g))**(rair/cpair)
+    !
+    ! but it looks like it is using the same WRF variable for both forc_psrf and
+    ! forc_pbot, so the adjustment from forc_t to forc_th isn't actually accomplishing
+    ! anything. Should we do some sort of adjustment here?
+    forc_th(:,:) = t_phy(:,1,:)
+
+    forc_t(:,:) = t_phy(:,1,:)
+
+    ! Convert from mixing ratio to specific humidity
+    ! TODO(wjs, 2020-01-01) Confirm that this is correct
+    forc_q(:,:) = qv_curr(:,1,:)/(1.0 + qv_curr(:,1,:))
+
+    ! Separate total precip into rain and snow. Arbitrarily assign all precipitation to
+    ! convective (CTSM requires separate convective vs. large-scale precipitation, but
+    ! then just adds the two together).
+    precip_rate(:,:) = rainbl(:,:)/dt
+    snow_convective_rate(:,:) = precip_rate(:,:) * sr(:,:)
+    snow_largescale_rate(:,:) = 0.
+    rain_convective_rate(:,:) = precip_rate(:,:) * (1. - sr(:,:))
+    rain_largescale_rate(:,:) = 0.
+
+    ! ------------------------------------------------------------------------
+    ! Export data to ctsm via lilac
+    ! ------------------------------------------------------------------------
+
+    call export_to_lilac('Sa_z', zlvl)
+    call export_to_lilac('Sa_topo', ht)
+    call export_to_lilac('Sa_u', forc_u)
+    call export_to_lilac('Sa_v', forc_v)
+    call export_to_lilac('Sa_ptem', forc_th)
+    call export_to_lilac('Sa_pbot', pbot)
+    call export_to_lilac('Sa_tbot', forc_t)
+    call export_to_lilac('Sa_shum', forc_q)
+    call export_to_lilac('Faxa_lwdn', glw)
+    call export_to_lilac('Faxa_rainc', rain_convective_rate)
+    call export_to_lilac('Faxa_rainl', rain_largescale_rate)
+    call export_to_lilac('Faxa_snowc', snow_convective_rate)
+    call export_to_lilac('Faxa_snowl', snow_largescale_rate)
+    call export_to_lilac('Faxa_swndr', swnirdir)
+    call export_to_lilac('Faxa_swvdr', swvisdir)
+    call export_to_lilac('Faxa_swndf', swnirdif)
+    call export_to_lilac('Faxa_swvdf', swvisdif)
+
+    ! FIXME(wjs, 2020-01-01) Use correct values for restart and stop alarms
+    call lilac_run( &
+         restart_alarm_is_ringing = .false., &
+         stop_alarm_is_ringing = .false.)
+
+    ! FIXME(wjs, 2020-01-01) Here we should have the imports from lilac
+
+  contains
+
+    subroutine export_to_lilac(var_name, var_2d)
+      ! Reshape var_2d to 1d for LILAC, then set the appropriate atm2lnd variable in LILAC
+
+      use lilac_atmcap, only : lilac_atmcap_atm2lnd
+
+      character(len=*), intent(in) :: var_name  ! name of variable in LILAC
+      real, intent(in) :: var_2d(ims: , jms: )
+
+      real, allocatable :: var_1d(:)
+
+      call convert_2d_to_1d( &
+           ide=ide, jde=jde, &
+           ims=ims, ime=ime, &
+           jms=jms, jme=jme, &
+           its=its, ite=ite, &
+           jts=jts, jte=jte, &
+           var_2d=var_2d, var_1d=var_1d)
+
+      call lilac_atmcap_atm2lnd( &
+           fldname = var_name, &
+           data = var_1d)
+
+    end subroutine export_to_lilac
+
+    subroutine import_from_lilac(var_name, var_2d)
+      ! Get the appropriate lnd2atm variable from LILAC, then reshape 1d LILAC variable to
+      ! fill var_2d
+
+      use lilac_atmcap, only : lilac_atmcap_lnd2atm
+
+      character(len=*), intent(in) :: var_name  ! name of variable in LILAC
+      real, intent(inout) :: var_2d(ims: , jms: )
+
+      real, allocatable :: var_1d(:)
+      integer :: num_points
+
+      call get_num_points( &
+           ide=ide, jde=jde, &
+           its=its, ite=ite, &
+           jts=jts, jte=jte, &
+           num_points = num_points)
+
+      allocate(var_1d(num_points))
+
+      call lilac_atmcap_lnd2atm( &
+           fldname = var_name, &
+           data = var_1d)
+
+      call convert_1d_to_2d( &
+           ide=ide, jde=jde, &
+           ims=ims, ime=ime, &
+           jms=jms, jme=jme, &
+           its=its, ite=ite, &
+           jts=jts, jte=jte, &
+           var_1d=var_1d, var_2d=var_2d)
+
+    end subroutine import_from_lilac
 
   end subroutine ctsm_run
+  !-----------------------------------------------------------------------
 
 #endif   ! WRF_USE_CTSM
 

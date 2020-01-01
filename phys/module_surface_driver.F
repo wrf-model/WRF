@@ -3806,7 +3806,32 @@ CONTAINS
      CASE (CTSMSCHEME)
 
 #ifdef WRF_USE_CTSM
-        CALL ctsm_run()
+        CALL ctsm_run( &
+             ! bounds
+             ids=ids, ide=ide, jds=jds, jde=jde, &
+             ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, &
+             its=its, ite=ite, jts=jts, jte=jte, &
+
+             ! general information
+             dt = dt, &
+
+             ! atm -> lnd variables
+             ! TODO(wjs, 2020-01-01) Confirm correctness of these variables
+             dz8w     = dz8w, &
+             ht       = ht, &
+             u_phy    = u_phy, &
+             v_phy    = u_phy, &
+             p8w      = p8w, &
+             t_phy    = t_phy, &
+             qv_curr  = qv_curr, &
+             rainbl   = rainbl, &
+             sr       = sr, &
+             glw      = glw, &
+             swvisdir = swvisdir, &
+             swvisdif = swvisdif, &
+             swnirdir = swnirdir, &
+             swnirdif = swnirdif)
+
 #else
         CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting&
              & WRF_CTSM_MKFILE before running configure" )

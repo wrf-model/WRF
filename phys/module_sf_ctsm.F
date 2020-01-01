@@ -191,7 +191,7 @@ contains
 
   subroutine export_to_lilac(ide, jde, ims, ime, jms, jme, its, ite, jts, jte, &
        var_name, var_2d)
-    ! Reshape var_2d to 1d for LILAC, then set the appropriate variable in LILAC
+    ! Reshape var_2d to 1d for LILAC, then set the appropriate atm2lnd variable in LILAC
 
     use lilac_atmcap, only : lilac_atmcap_atm2lnd
 
@@ -224,6 +224,52 @@ contains
          data = var_1d)
 
   end subroutine export_to_lilac
+
+  subroutine import_from_lilac(ide, jde, ims, ime, jms, jme, its, ite, jts, jte, &
+       var_name, var_2d)
+    ! Get the appropriate lnd2atm variable from LILAC, then reshape 1d LILAC variable to
+    ! fill var_2d
+
+    use lilac_atmcap, only : lilac_atmcap_lnd2atm
+
+    integer , intent(in) :: ide ! domain end index, i
+    integer , intent(in) :: jde ! domain end index, j
+    integer , intent(in) :: ims ! memory start index (includes halo cells), i
+    integer , intent(in) :: ime ! memory end index (includes halo cells), i
+    integer , intent(in) :: jms ! memory start index (includes halo cells), j
+    integer , intent(in) :: jme ! memory end index (includes halo cells), j
+    integer , intent(in) :: its ! task start index, i
+    integer , intent(in) :: ite ! task end index, i
+    integer , intent(in) :: jts ! task start index, j
+    integer , intent(in) :: jte ! task end index, j
+
+    character(len=*), intent(in) :: var_name  ! name of variable in LILAC
+    real, intent(inout) :: var_2d(ims: , jms: )
+
+    real, allocatable :: var_1d(:)
+    integer :: num_points
+
+    call get_num_points( &
+         ide=ide, jde=jde, &
+         its=its, ite=ite, &
+         jts=jts, jte=jte, &
+         num_points = num_points)
+
+    allocate(var_1d(num_points))
+
+    call lilac_atmcap_lnd2atm( &
+         fldname = var_name, &
+         data = var_1d)
+
+    call convert_1d_to_2d( &
+         ide=ide, jde=jde, &
+         ims=ims, ime=ime, &
+         jms=jms, jme=jme, &
+         its=its, ite=ite, &
+         jts=jts, jte=jte, &
+         var_1d=var_1d, var_2d=var_2d)
+
+  end subroutine import_from_lilac
 
   subroutine ctsm_init( &
        ids, ide, jds, jde, &

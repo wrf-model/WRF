@@ -10,6 +10,42 @@ module module_sf_ctsm
 
 contains
 
+  subroutine get_num_points(ide, jde, its, ite, jts, jte, &
+       num_points, ite_limited, jte_limited)
+    ! Return the number of points owned by this task
+    !
+    ! If ite_limited and/or jte_limited are provided, then return those values, too.
+    ! These are the task end indices on the mass point grid.
+    integer, intent(in) :: ide  ! domain end index, i
+    integer, intent(in) :: jde  ! domain end index, j
+    integer, intent(in) :: its  ! task start index, i
+    integer, intent(in) :: ite  ! task end index, i
+    integer, intent(in) :: jts  ! task start index, j
+    integer, intent(in) :: jte  ! task end index, j
+    integer, intent(out) :: num_points  ! number of points owned by this task
+    integer, optional, intent(out) :: ite_limited  ! task end index on the mass point grid, i
+    integer, optional, intent(out) :: jte_limited  ! task end index on the mass point grid, j
+
+    integer :: my_ite_limited  ! task end index on the mass point grid, i
+    integer :: my_jte_limited  ! task end index on the mass point grid, j
+
+    ! The very last index in both row & column space is just used on the momentum grid.
+    ! Here we are just working with the mass point grid, so we need to ignore that last
+    ! index.
+    my_ite_limited = min(ite, ide-1)
+    my_jte_limited = min(jte, jde-1)
+
+    num_points = ((my_ite_limited - its + 1) * (my_jte_limited - jts + 1))
+
+    if (present(ite_limited)) then
+       ite_limited = my_ite_limited
+    end if
+    if (present(jte_limited)) then
+       jte_limited = my_jte_limited
+    end if
+
+  end subroutine get_num_points
+
   subroutine create_gindex(ide, jde, its, ite, jts, jte, gindex)
     ! Create a gindex array on each task. This gives the list of global indices owned by
     ! each processor, on the mass point grid.
@@ -26,13 +62,13 @@ contains
     integer :: num_points
     integer :: i, j, n
 
-    ! The very last index in both row & column space is just used on the momentum grid.
-    ! Here we are just working with the mass point grid, so we need to ignore that last
-    ! index.
-    ite_limited = min(ite, ide-1)
-    jte_limited = min(jte, jde-1)
-
-    num_points = ((ite_limited - its + 1) * (jte_limited - jts + 1))
+    call get_num_points( &
+         ide=ide, jde=jde, &
+         its=its, ite=ite, &
+         jts=jts, jte=jte, &
+         num_points = num_points, &
+         ite_limited = ite_limited, &
+         jte_limited = jte_limited)
 
     allocate(gindex(num_points))
 
@@ -80,10 +116,13 @@ contains
        call wrf_error_fatal('convert_2d_to_1d: incorrect bounds for var_2d')
     end if
 
-    ite_limited = min(ite, ide-1)
-    jte_limited = min(jte, jde-1)
-
-    num_points  = ((ite_limited - its + 1) * (jte_limited - jts + 1))
+    call get_num_points( &
+         ide=ide, jde=jde, &
+         its=its, ite=ite, &
+         jts=jts, jte=jte, &
+         num_points = num_points, &
+         ite_limited = ite_limited, &
+         jte_limited = jte_limited)
 
     allocate (var_1d (num_points))
 
@@ -127,10 +166,13 @@ contains
        call wrf_error_fatal('convert_1d_to_2d: incorrect bounds for var_2d')
     end if
 
-    ite_limited = min(ite, ide-1)
-    jte_limited = min(jte, jde-1)
-
-    num_points  = ((ite_limited - its + 1) * (jte_limited - jts + 1))
+    call get_num_points( &
+         ide=ide, jde=jde, &
+         its=its, ite=ite, &
+         jts=jts, jte=jte, &
+         num_points = num_points, &
+         ite_limited = ite_limited, &
+         jte_limited = jte_limited)
 
     if (.not. (ubound(var_1d, 1) == num_points)) then
        call wrf_error_fatal('convert_1d_to_2d: incorrect size of var_1d')

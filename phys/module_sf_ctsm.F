@@ -50,6 +50,8 @@ contains
 
   subroutine convert_2d_to_1d (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, var_2d, var_1d)
     ! Convert a 2-d native WRF array to a 1-d array appropriate for LILAC
+    !
+    ! Allocates var_1d here
 
     use module_wrf_error
 
@@ -64,7 +66,7 @@ contains
     integer , intent(in)  :: ite ! task end index, i
     integer , intent(in)  :: jts ! task start index, j
     integer , intent(in)  :: jte ! task end index, j
-    real    , intent(in)  :: var_2d (ims: , jms: )
+    real    , intent(in)  :: var_2d(ims: , jms: )
     real    , allocatable, intent(out) :: var_1d(:)
 
     ! local variables
@@ -94,6 +96,55 @@ contains
     end do
 
   end subroutine convert_2d_to_1d
+
+  subroutine convert_1d_to_2d (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, var_1d, var_2d)
+    ! Convert a 1-d array from lilac to a 2-d native WRF array
+
+    use module_wrf_error
+
+    ! input/output variables
+    integer , intent(in)  :: ide ! domain end index, i
+    integer , intent(in)  :: jde ! domain end index, j
+    integer , intent(in)  :: ims ! memory start index (includes halo cells), i
+    integer , intent(in)  :: ime ! memory end index (includes halo cells), i
+    integer , intent(in)  :: jms ! memory start index (includes halo cells), j
+    integer , intent(in)  :: jme ! memory end index (includes halo cells), j
+    integer , intent(in)  :: its ! task start index, i
+    integer , intent(in)  :: ite ! task end index, i
+    integer , intent(in)  :: jts ! task start index, j
+    integer , intent(in)  :: jte ! task end index, j
+    real    , intent(in)  :: var_1d(:)
+    real    , intent(inout) :: var_2d(ims: , jms: )
+
+    ! local variables
+    integer :: ite_limited  ! task end index on the mass point grid, i
+    integer :: jte_limited  ! task end index on the mass point grid, j
+    integer :: num_points
+    integer :: i, j, n
+
+    if (.not. all(ubound(var_2d) == [ime, jme])) then
+       call wrf_error_fatal('convert_1d_to_2d: incorrect bounds for var_2d')
+    end if
+
+    ite_limited = min(ite, ide-1)
+    jte_limited = min(jte, jde-1)
+
+    num_points  = ((ite_limited - its + 1) * (jte_limited - jts + 1))
+
+    if (.not. (ubound(var_1d, 1) == num_points)) then
+       call wrf_error_fatal('convert_1d_to_2d: incorrect size of var_1d')
+    end if
+
+    n = 0
+
+    do j = jts, jte_limited
+       do i = its, ite_limited
+          n = n + 1
+          var_2d(i,j) = var_1d(n)
+       end do
+    end do
+
+  end subroutine convert_1d_to_2d
 
   subroutine ctsm_init( &
        ids, ide, jds, jde, &

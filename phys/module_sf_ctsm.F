@@ -6,6 +6,7 @@ module module_sf_ctsm
 #ifdef WRF_USE_CTSM
 
   public :: ctsm_init
+  public :: ctsm_run
 
 contains
 
@@ -295,6 +296,10 @@ contains
          starttype_in     = atm_starttype)
 
   end subroutine ctsm_init
+
+  subroutine ctsm_run
+
+  end subroutine ctsm_run
 
 #endif   ! WRF_USE_CTSM
 

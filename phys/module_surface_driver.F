@@ -353,6 +353,9 @@ CONTAINS
 #ifdef WRF_USE_CLM
    USE module_sf_clm
 #endif
+#ifdef WRF_USE_CTSM
+   USE module_sf_ctsm, only : ctsm_run
+#endif
    USE module_sf_ssib  ! ssib
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
@@ -3798,6 +3801,15 @@ CONTAINS
 
 ! end of CLM scehme
 ! -------------------------------------------------------------------
+#endif
+
+     CASE (CTSMSCHEME)
+
+#ifdef WRF_USE_CTSM
+        CALL ctsm_run()
+#else
+        CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting&
+             & WRF_CTSM_MKFILE before running configure" )
 #endif
 
      CASE (SSIBSCHEME)

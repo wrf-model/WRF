@@ -3810,7 +3810,7 @@ CONTAINS
              ! bounds
              ids=ids, ide=ide, jds=jds, jde=jde, &
              ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, &
-             its=its, ite=ite, jts=jts, jte=jte, &
+             its=i_start(ij), ite=i_end(ij), jts=j_start(ij), jte=j_end(ij), &
 
              ! general information
              dt = dt, &

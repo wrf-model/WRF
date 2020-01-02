@@ -8,6 +8,9 @@ module module_sf_ctsm
   public :: ctsm_init
   public :: ctsm_run
 
+  ! FIXME(wjs, 2020-01-01) Introduce a lilac_kinds module, and get this from there
+  integer, parameter :: r8 = selected_real_kind(12)  ! 8 byte real
+
 contains
 
   !-----------------------------------------------------------------------
@@ -107,7 +110,7 @@ contains
     integer , intent(in)  :: jts ! task start index, j
     integer , intent(in)  :: jte ! task end index, j
     real    , intent(in)  :: var_2d(ims: , jms: )
-    real    , allocatable, intent(out) :: var_1d(:)
+    real(r8), allocatable, intent(out) :: var_1d(:)
 
     ! local variables
     integer :: ite_limited  ! task end index on the mass point grid, i
@@ -158,7 +161,7 @@ contains
     integer , intent(in)  :: ite ! task end index, i
     integer , intent(in)  :: jts ! task start index, j
     integer , intent(in)  :: jte ! task end index, j
-    real    , intent(in)  :: var_1d(:)
+    real(r8), intent(in)  :: var_1d(:)
     real    , intent(inout) :: var_2d(ims: , jms: )
 
     ! local variables
@@ -226,8 +229,8 @@ contains
     integer :: comp_comm
     integer , allocatable :: atm_global_index(:)
     real                  :: xlong_0360(ims:ime, jms:jme)
-    real , allocatable    :: atm_lons(:)
-    real , allocatable    :: atm_lats(:)
+    real(r8) , allocatable    :: atm_lons(:)
+    real(r8) , allocatable    :: atm_lats(:)
 
     character(len=128) :: atm_calendar
     character(len=128) :: atm_starttype
@@ -328,8 +331,10 @@ contains
     call lilac_init(  &
          mpicom           = comp_comm,        &
          atm_global_index = atm_global_index, &
-         atm_lons         = atm_lons,         &
-         atm_lats         = atm_lats,         &
+         ! FIXME(wjs, 2020-01-01) the following conversions to default real won't be
+         ! needed once we fix lilac to expect double-precision
+         atm_lons         = real(atm_lons),         &
+         atm_lats         = real(atm_lats),         &
          atm_global_nx    = atm_global_nx,    &
          atm_global_ny    = atm_global_ny,    &
          atm_calendar     = atm_calendar,     &
@@ -361,6 +366,8 @@ contains
        dz8w, ht, u_phy, v_phy, p8w, t_phy, qv_curr, &
        rainbl, sr, &
        glw, swvisdir, swvisdif, swnirdir, swnirdif)
+
+    use lilac_mod, only : lilac_run
 
     integer, intent(in) :: ids
     integer, intent(in) :: ide
@@ -485,7 +492,7 @@ contains
       character(len=*), intent(in) :: var_name  ! name of variable in LILAC
       real, intent(in) :: var_2d(ims: , jms: )
 
-      real, allocatable :: var_1d(:)
+      real(r8), allocatable :: var_1d(:)
 
       call convert_2d_to_1d( &
            ide=ide, jde=jde, &
@@ -510,7 +517,7 @@ contains
       character(len=*), intent(in) :: var_name  ! name of variable in LILAC
       real, intent(inout) :: var_2d(ims: , jms: )
 
-      real, allocatable :: var_1d(:)
+      real(r8), allocatable :: var_1d(:)
       integer :: num_points
 
       call get_num_points( &
@@ -538,6 +545,7 @@ contains
   end subroutine ctsm_run
   !-----------------------------------------------------------------------
 
-#endif   ! WRF_USE_CTSM
+#endif
+  ! endif WRF_USE_CTSM
 
 end module module_sf_ctsm

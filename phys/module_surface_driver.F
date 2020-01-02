@@ -3820,7 +3820,7 @@ CONTAINS
              dz8w     = dz8w, &
              ht       = ht, &
              u_phy    = u_phy, &
-             v_phy    = u_phy, &
+             v_phy    = v_phy, &
              p8w      = p8w, &
              t_phy    = t_phy, &
              qv_curr  = qv_curr, &

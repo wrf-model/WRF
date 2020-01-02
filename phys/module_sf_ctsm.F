@@ -516,11 +516,10 @@ contains
 
     ! TODO(wjs, 2020-01-02) Confirm: Does QSFC correspond to Sl_qref (2m specific
     ! humidity)? And is this the correct conversion from CTSM's units to WRF's units?
+    ! Note that module_sf_clm has the following, for what it's worth:
+    !     qsfc(i,j)  = forc_qxy(i,1,j) +qfx(i,j)/(rhoxy_buf*chs(i,j))
     call import_from_lilac('Sl_qref', qref)
     qsfc(its:ite, jts:jte) = qref(its:ite, jts:jte) / (1. - qref(its:ite, jts:jte))
-
-    ! TODO(wjs, 2020-01-02) Do we need to retrieve Sl_qref (2m specific humidity)? If so,
-    ! what variable should that go into? QSFC?
 
     ! TODO(wjs, 2020-01-02) Note that we retrieve all four components of albedo, but only
     ! deliver the total albedo back to WRF. Is it sufficient to send total albedo, or

@@ -365,7 +365,11 @@ contains
        ! atm -> lnd variables
        dz8w, ht, u_phy, v_phy, p8w, t_phy, qv_curr, &
        rainbl, sr, &
-       glw, swvisdir, swvisdif, swnirdir, swnirdif)
+       glw, swvisdir, swvisdif, swnirdir, swnirdif, &
+
+       ! lnd -> atm variables
+       tsk, qsfc, albedo, snow, &
+       hfx, lh, qfx)
 
     use lilac_mod, only : lilac_run
 
@@ -400,6 +404,16 @@ contains
     real, intent(in) :: swnirdir(ims: , jms: ) ! nir direct beam solar rad onto surface [W m-2]
     real, intent(in) :: swnirdif(ims: , jms: ) ! nir diffuse solar rad onto surface [W m-2]
 
+    real, intent(inout) :: tsk(ims: , jms: ) ! surface temperature [K]
+    real, intent(inout) :: qsfc(ims: , jms: ) ! bulk surface specific humidity
+    real, intent(inout) :: albedo(ims: , jms: ) ! total grid albedo [-]
+    real, intent(inout) :: snow(ims: , jms: ) ! snow water equivalent [mm]
+    real, intent(inout) :: hfx(ims: , jms: ) ! sensible heat flux [W m-2]
+    real, intent(inout) :: lh(ims: , jms: ) ! latent heat flux [W m-2]
+    real, intent(inout) :: qfx(ims: , jms: ) ! latent heat flux [kg s-1 m-2]
+
+    integer :: i, j
+
     real :: zlvl(ims:ime, jms:jme)   ! mid-point of bottom atm layer [m]
     real :: forc_u(ims:ime, jms:jme) ! u wind component, bottom atm layer [m/s]
     real :: forc_v(ims:ime, jms:jme) ! v wind component, bottom atm layer [m/s]
@@ -412,6 +426,13 @@ contains
     real :: rain_largescale_rate(ims:ime, jms:jme) ! rate of large-scale rain [mm/s]
     real :: snow_convective_rate(ims:ime, jms:jme) ! rate of convective snow [mm/s]
     real :: snow_largescale_rate(ims:ime, jms:jme) ! rate of large-scale snow [mm/s]
+
+    real :: qref(ims:ime, jms:jme) ! 2m surface specific humidity calculated by CTSM [kg/kg]
+    real :: albedo_visdir(ims:ime, jms:jme) ! albedo calculated by CTSM, visible direct [-]
+    real :: albedo_visdif(ims:ime, jms:jme) ! albedo calculated by CTSM, visible diffuse [-]
+    real :: albedo_nirdir(ims:ime, jms:jme) ! albedo calculated by CTSM, near IR direct [-]
+    real :: albedo_nirdif(ims:ime, jms:jme) ! albedo calculated by CTSM, near IR diffuse [-]
+    real :: snow_m(ims:ime, jms:jme) ! snow water equivalent in meters [m]
 
     ! ------------------------------------------------------------------------
     ! Calculate derived variables, and 2-d versions of 3-d fields
@@ -475,12 +496,89 @@ contains
     call export_to_lilac('Faxa_swndf', swnirdif)
     call export_to_lilac('Faxa_swvdf', swvisdif)
 
+    ! ------------------------------------------------------------------------
+    ! Run ctsm via lilac
+    ! ------------------------------------------------------------------------
+
     ! FIXME(wjs, 2020-01-01) Use correct values for restart and stop alarms
     call lilac_run( &
          restart_alarm_is_ringing = .false., &
          stop_alarm_is_ringing = .false.)
 
-    ! FIXME(wjs, 2020-01-01) Here we should have the imports from lilac
+    ! ------------------------------------------------------------------------
+    ! Import data from ctsm via lilac
+    ! ------------------------------------------------------------------------
+
+    call import_from_lilac('Sl_t', tsk)
+
+    ! TODO(wjs, 2020-01-02) Do we need to retrieve Sl_tref (2m surface air temperature)?
+    ! If so, what variable should that go into?
+
+    ! TODO(wjs, 2020-01-02) Confirm: Does QSFC correspond to Sl_qref (2m specific
+    ! humidity)? And is this the correct conversion from CTSM's units to WRF's units?
+    call import_from_lilac('Sl_qref', qref)
+    qsfc(its:ite, jts:jte) = qref(its:ite, jts:jte) / (1. - qref(its:ite, jts:jte))
+
+    ! TODO(wjs, 2020-01-02) Do we need to retrieve Sl_qref (2m specific humidity)? If so,
+    ! what variable should that go into? QSFC?
+
+    ! TODO(wjs, 2020-01-02) Note that we retrieve all four components of albedo, but only
+    ! deliver the total albedo back to WRF. Is it sufficient to send total albedo, or
+    ! should we also send the four components? In clmdrv, the individual components are
+    ! alswvisdir, alswvisdif, alswnirdir, alswnirdif. These come from alswvisdir,
+    ! alswvisdif, alswnirdir, alswnirdif in surface_driver, but it looks like these aren't
+    ! set by most surface schemes. So, okay to only send total albedo?
+    call import_from_lilac('Sl_avsdr', albedo_visdir)
+    call import_from_lilac('Sl_anidr', albedo_nirdir)
+    call import_from_lilac('Sl_avsdf', albedo_visdif)
+    call import_from_lilac('Sl_anidf', albedo_nirdif)
+    call calculate_total_albedo( &
+         ims=ims, ime=ime, jms=jms, jme=jme, &
+         its=its, ite=ite, jts=jts, jte=jte, &
+         albedo_visdir = albedo_visdir, &
+         albedo_nirdir = albedo_nirdir, &
+         albedo_visdif = albedo_visdif, &
+         albedo_nirdif = albedo_nirdif, &
+         swvisdir      = swvisdir, &
+         swnirdir      = swnirdir, &
+         swvisdif      = swvisdif, &
+         swnirdif      = swnirdif, &
+         albedo        = albedo)
+
+    ! TODO(wjs, 2020-01-02) Do we need to provide any other snow-related variables
+    ! (physical snow depth, snow cover fraction, etc.)? And is this one (SWE) actually
+    ! needed?
+    call import_from_lilac('Sl_snowh', snow_m)
+    snow(its:ite, jts:jte) = snow_m(its:ite, jts:jte) * 1000.
+
+    ! TODO(wjs, 2020-01-02) Do we need to retrieve Sl_u10 (10-m wind speed)? If so, what
+    ! variable should that go into?
+
+    ! TODO(wjs, 2020-01-02) Do we need to retrieve Fall_taux and Fall_tauy (wind
+    ! stresses)? I see taux and tauy in surface_driver, but they appear to only be used
+    ! in sf_gfdl.
+
+    ! TODO(wjs, 2020-01-02) Check sign on these
+    call import_from_lilac('Fall_sen', hfx)
+    call import_from_lilac('Fall_lat', lh)
+    call import_from_lilac('Fall_evap', qfx)
+
+    ! TODO(wjs, 2020-01-02) Do we need to retrieve Fall_lwup (longwave radiation)? If so,
+    ! what variable should that go into? Or do we need to set EMISS instead?
+
+    ! TODO(wjs, 2020-01-02) Do we need to retrieve swnet (solar rad absorbed)? If so,
+    ! what variable should that go into? (It seems like that could be another way to
+    ! calculate albedo. I'm not sure if the results would differ in any way.)
+
+    ! TODO(wjs, 2020-01-02) Should we retrieve any of the dust fluxes (flxdst1, flxdst2,
+    ! flxdst3, flxdst4)?
+
+    ! TODO(wjs, 2020-01-02) What other variables need to be set in WRF that we are not
+    ! setting here? For example:
+    ! - ZNT and/or Z0?
+    ! - GRDFLX?
+    ! - EMISS?
+    ! - others?
 
   contains
 
@@ -544,6 +642,67 @@ contains
 
   end subroutine ctsm_run
   !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  subroutine calculate_total_albedo( &
+       ims, ime, jms, jme, its, ite, jts, jte, &
+       albedo_visdir, albedo_nirdir, albedo_visdif, albedo_nirdif, &
+       swvisdir, swnirdir, swvisdif, swnirdif, &
+       albedo)
+    ! Calculate total albedo from its 4 components, based on ratio of incoming SW in the
+    ! 4 components.
+
+    integer, intent(in) :: ims
+    integer, intent(in) :: ime
+    integer, intent(in) :: jms
+    integer, intent(in) :: jme
+    integer, intent(in) :: its
+    integer, intent(in) :: ite
+    integer, intent(in) :: jts
+    integer, intent(in) :: jte
+
+    real, intent(in) :: albedo_visdir(ims: , jms: ) ! albedo, visible direct [-]
+    real, intent(in) :: albedo_nirdir(ims: , jms: ) ! albedo, near IR direct [-]
+    real, intent(in) :: albedo_visdif(ims: , jms: ) ! albedo, visible diffuse [-]
+    real, intent(in) :: albedo_nirdif(ims: , jms: ) ! albedo, near IR diffuse [-]
+    real, intent(in) :: swvisdir(ims: , jms: ) ! solar rad onto surface, visible direct [W m-2]
+    real, intent(in) :: swnirdir(ims: , jms: ) ! solar rad onto surface, near IR direct [W m-2]
+    real, intent(in) :: swvisdif(ims: , jms: ) ! solar rad onto surface, visible diffuse [W m-2]
+    real, intent(in) :: swnirdif(ims: , jms: ) ! solar rad onto surface, near IR diffuse [W m-2]
+
+    real, intent(inout) :: albedo(ims: , jms: ) ! total surface albedo [-]
+
+    integer :: i, j
+    real :: sw_tot  ! total solar rad onto surface [W m-2]
+
+    do j = jms, jme
+       do i = ims, ime
+          ! TODO(wjs, 2020-01-02) Confirm that this is the right way to determine total
+          ! albedo. (This is what seems to be done in module_sf_clm.)
+          sw_tot = swvisdir(i,j) + swnirdir(i,j) + swvisdif(i,j) + swnirdif(i,j)
+          if (sw_tot > 0.) then
+             albedo(i,j) = &
+                  albedo_visdir * (swvisdir / sw_tot) + &
+                  albedo_nirdir * (swnirdir / sw_tot) + &
+                  albedo_visdif * (swvisdif / sw_tot) + &
+                  albedo_nirdif * (swnirdif / sw_tot)
+          else
+             ! Night; albedo shouldn't matter; use coefficients from module_sf_clm
+             albedo(i,j) = &
+                  albedo_visdir * 0.35 + &
+                  albedo_nirdir * 0.35 + &
+                  albedo_visdif * 0.15 + &
+                  albedo_nirdif * 0.15
+          end if
+
+          ! TODO(wjs, 2020-01-02) There was a correction like this in clmdrv (line 4799).
+          ! Do we want this here?
+          if (abs(albedo(i,j) - 1.) < 1.e-5) then
+             albedo(i,j) = 0.991
+          end if
+       end do
+    end do
+  end subroutine calculate_total_albedo
 
 #endif
   ! endif WRF_USE_CTSM

@@ -3830,7 +3830,14 @@ CONTAINS
              swvisdir = swvisdir, &
              swvisdif = swvisdif, &
              swnirdir = swnirdir, &
-             swnirdif = swnirdif)
+             swnirdif = swnirdif, &
+             tsk      = tsk, &
+             qsfc     = qsfc, &
+             albedo   = albedo, &
+             snow     = snow, &
+             hfx      = hfx, &
+             lh       = lh, &
+             qfx      = qfx)
 
 #else
         CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting&

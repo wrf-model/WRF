@@ -682,17 +682,17 @@ contains
           sw_tot = swvisdir(i,j) + swnirdir(i,j) + swvisdif(i,j) + swnirdif(i,j)
           if (sw_tot > 0.) then
              albedo(i,j) = &
-                  albedo_visdir * (swvisdir / sw_tot) + &
-                  albedo_nirdir * (swnirdir / sw_tot) + &
-                  albedo_visdif * (swvisdif / sw_tot) + &
-                  albedo_nirdif * (swnirdif / sw_tot)
+                  albedo_visdir(i,j) * (swvisdir(i,j) / sw_tot) + &
+                  albedo_nirdir(i,j) * (swnirdir(i,j) / sw_tot) + &
+                  albedo_visdif(i,j) * (swvisdif(i,j) / sw_tot) + &
+                  albedo_nirdif(i,j) * (swnirdif(i,j) / sw_tot)
           else
              ! Night; albedo shouldn't matter; use coefficients from module_sf_clm
              albedo(i,j) = &
-                  albedo_visdir * 0.35 + &
-                  albedo_nirdir * 0.35 + &
-                  albedo_visdif * 0.15 + &
-                  albedo_nirdif * 0.15
+                  albedo_visdir(i,j) * 0.35 + &
+                  albedo_nirdir(i,j) * 0.35 + &
+                  albedo_visdif(i,j) * 0.15 + &
+                  albedo_nirdif(i,j) * 0.15
           end if
 
           ! TODO(wjs, 2020-01-02) There was a correction like this in clmdrv (line 4799).

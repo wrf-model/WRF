@@ -505,6 +505,11 @@ contains
          restart_alarm_is_ringing = .false., &
          stop_alarm_is_ringing = .false.)
 
+    ! FIXME(wjs, 2020-01-02) For now, I'm returning without setting any import fields,
+    ! because when I set only a subset of the import fields, I get a segmentation fault in
+    ! WRF after a few time steps. Remove this once we think the import code is complete.
+    return
+
     ! ------------------------------------------------------------------------
     ! Import data from ctsm via lilac
     ! ------------------------------------------------------------------------

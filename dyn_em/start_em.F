@@ -1097,6 +1097,24 @@ endif
                       grid%A_E_BEP,grid%B_U_BEP,grid%B_V_BEP,grid%B_T_BEP,             & !multi-layer urban
                       grid%B_Q_BEP,grid%B_E_BEP,grid%DLG_BEP,                          & !multi-layer urban
                       grid%DL_U_BEP,grid%SF_BEP,grid%VL_BEP,                           & !multi-layer urban
+                      ! optional urban for TEB
+                      grid%teb_num_snow_layers,                                  & 
+                      grid%teb_num_road_layers,                                  & 
+                      grid%teb_num_roof_layers,                                  & 
+                      grid%teb_num_wall_layers,                                  & 
+                      grid%teb_num_floor_layers,                                 & 
+                      grid%TEB_TI_BLD,                                           & 
+                      grid%TEB_T_CANYON, grid%TEB_Q_CANYON,                      & 
+                      grid%TEB_WS_ROOF, grid%TEB_WS_ROAD,                        & 
+                      grid%TEB_WSNOW_ROOF, grid%TEB_TSNOW_ROOF, grid%TEB_RSNOW_ROOF, grid%TEB_ASNOW_ROOF, & 
+                      grid%TEB_TSSNOW_ROOF, grid%TEB_ESNOW_ROOF,                 & 
+                      grid%TEB_WSNOW_ROAD, grid%TEB_TSNOW_ROAD, grid%TEB_RSNOW_ROAD, grid%TEB_ASNOW_ROAD, & 
+                      grid%TEB_TSSNOW_ROAD, grid%TEB_ESNOW_ROAD,                 &  
+                      grid%TEB_T_WIN1, grid%TEB_T_WIN2, grid%TEB_AUX_MAX, grid%TEB_THER_PRODC_DAY,        & 
+                      grid%TEB_QI_BLD, grid%TEB_T_FLOOR, grid%TEB_T_MASS,        & 
+                      grid%TEB_T_ROAD, grid%TEB_T_ROOF, grid%TEB_T_WALL_A,  grid%TEB_T_WALL_B,            &
+                      grid%TEB_TSK_RURAL,                                        &
+                      ! end for TEB
                       grid%TML,grid%T0ML,grid%HML,grid%H0ML,grid%HUML,grid%HVML,grid%TMOML,     & !Optional oml
                       grid%lakedepth2d,  grid%savedtke12d,  grid%snowdp2d,   grid%h2osno2d,       & !lake
                       grid%snl2d,        grid%t_grnd2d,     grid%t_lake3d,   grid%lake_icefrac3d, & !lake

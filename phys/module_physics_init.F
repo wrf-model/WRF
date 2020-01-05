@@ -155,6 +155,29 @@ CONTAINS
                          A_E_BEP,B_U_BEP,B_V_BEP,                & !Optional multi-layer urban
                          B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,        & !Optional multi-layer urban
                          DL_U_BEP,SF_BEP,VL_BEP,                 & !Optional multi-layer urban
+                         ! optional urban for TEB
+                         teb_num_snow_layers,              & 
+                         teb_num_road_layers,              & 
+                         teb_num_roof_layers,              & 
+                         teb_num_wall_layers,              & 
+                         teb_num_floor_layers,             & 
+                         TEB_TI_BLD,                       & 
+                         TEB_T_CANYON,TEB_Q_CANYON,        & 
+                         TEB_WS_ROOF, TEB_WS_ROAD,         & 
+                         TEB_WSNOW_ROOF, TEB_TSNOW_ROOF,   &
+                         TEB_RSNOW_ROOF, TEB_ASNOW_ROOF,   & 
+                         TEB_TSSNOW_ROOF, TEB_ESNOW_ROOF,  & 
+                         TEB_WSNOW_ROAD, TEB_TSNOW_ROAD,   &
+                         TEB_RSNOW_ROAD, TEB_ASNOW_ROAD,   & 
+                         TEB_TSSNOW_ROAD, TEB_ESNOW_ROAD,  & 
+                         TEB_T_WIN1, TEB_T_WIN2,           &
+                         TEB_AUX_MAX, TEB_THER_PRODC_DAY,  &
+                         TEB_QI_BLD,                       & 
+                         TEB_T_FLOOR, TEB_T_MASS,          &
+                         TEB_T_ROAD, TEB_T_ROOF,           &
+                         TEB_T_WALL_A, TEB_T_WALL_B,       & 
+                         TEB_TSK_RURAL,                    &
+                         ! end for TEB
                          TML,T0ML,HML,H0ML,HUML,HVML,TMOML,      & !Optional oml
                          lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
                          snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
@@ -667,6 +690,42 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme), INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
+   !for TEB
+   INTEGER, INTENT(IN)                                                               :: teb_num_snow_layers
+   INTEGER, INTENT(IN)                                                               :: teb_num_road_layers
+   INTEGER, INTENT(IN)                                                               :: teb_num_roof_layers
+   INTEGER, INTENT(IN)                                                               :: teb_num_wall_layers
+   INTEGER, INTENT(IN)                                                               :: teb_num_floor_layers
+   REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT)                         :: TEB_TI_BLD
+   REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT)                         :: TEB_T_CANYON
+   REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT)                         :: TEB_Q_CANYON
+   REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT)                         :: TEB_WS_ROOF
+   REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT)                         :: TEB_WS_ROAD
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)   :: TEB_WSNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)   :: TEB_TSNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)   :: TEB_RSNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_ASNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_ESNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_TSSNOW_ROOF
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)   :: TEB_WSNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)   :: TEB_TSNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)   :: TEB_RSNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_ASNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_ESNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_TSSNOW_ROAD
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_T_WIN1         
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_T_WIN2         
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_AUX_MAX        
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_THER_PRODC_DAY 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_QI_BLD         
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT)  :: TEB_T_FLOOR
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT)  :: TEB_T_MASS
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT)  :: TEB_T_ROAD
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT)  :: TEB_T_ROOF
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT)  :: TEB_T_WALL_A
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT)  :: TEB_T_WALL_B
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                        :: TEB_TSK_RURAL    
+   !end TEB
 ! lake varibles:
   real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
                                                                              savedtke12d
@@ -1350,6 +1409,29 @@ CONTAINS
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
                 B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                & !Optional multi-layer urban
                 DL_U_BEP,SF_BEP,VL_BEP,                         & !Optional multi-layer urban
+                ! optional urban for TEB
+                teb_num_snow_layers,                            & 
+                teb_num_road_layers,                            & 
+                teb_num_roof_layers,                            & 
+                teb_num_wall_layers,                            & 
+                teb_num_floor_layers,                           & 
+                TEB_TI_BLD,                                     & 
+                TEB_T_CANYON,TEB_Q_CANYON,                      &
+                TEB_WS_ROOF, TEB_WS_ROAD,                       &
+                TEB_WSNOW_ROOF, TEB_TSNOW_ROOF,                 &
+                TEB_RSNOW_ROOF, TEB_ASNOW_ROOF,                 & 
+                TEB_TSSNOW_ROOF, TEB_ESNOW_ROOF,                & 
+                TEB_WSNOW_ROAD, TEB_TSNOW_ROAD,                 &
+                TEB_RSNOW_ROAD, TEB_ASNOW_ROAD,                 & 
+                TEB_TSSNOW_ROAD, TEB_ESNOW_ROAD,                & 
+                TEB_T_WIN1, TEB_T_WIN2,                         &
+                TEB_AUX_MAX, TEB_THER_PRODC_DAY,                &
+                TEB_QI_BLD,                                     &
+                TEB_T_FLOOR, TEB_T_MASS,                        & 
+                TEB_T_ROAD, TEB_T_ROOF,                         &
+                TEB_T_WALL_A, TEB_T_WALL_B,                     & 
+                TEB_TSK_RURAL,                                  &
+                ! end for TEB
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
@@ -2341,6 +2423,29 @@ CONTAINS
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
                 B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                & !Optional multi-layer urban
                 DL_U_BEP,SF_BEP,VL_BEP,                         & !Optional multi-layer urban
+                ! optional urban for TEB
+                teb_num_snow_layers,                            &  
+                teb_num_road_layers,                            &  
+                teb_num_roof_layers,                            &  
+                teb_num_wall_layers,                            &  
+                teb_num_floor_layers,                           & 
+                TEB_TI_BLD,                                     &  
+                TEB_T_CANYON,TEB_Q_CANYON,                      & 
+                TEB_WS_ROOF, TEB_WS_ROAD,                       &
+                TEB_WSNOW_ROOF, TEB_TSNOW_ROOF,                 &
+                TEB_RSNOW_ROOF, TEB_ASNOW_ROOF,                 & 
+                TEB_TSSNOW_ROOF, TEB_ESNOW_ROOF,                & 
+                TEB_WSNOW_ROAD, TEB_TSNOW_ROAD,                 &
+                TEB_RSNOW_ROAD, TEB_ASNOW_ROAD,                 & 
+                TEB_TSSNOW_ROAD, TEB_ESNOW_ROAD,                & 
+                TEB_T_WIN1, TEB_T_WIN2,                         &
+                TEB_AUX_MAX, TEB_THER_PRODC_DAY,                &
+                TEB_QI_BLD,                                     &
+                TEB_T_FLOOR, TEB_T_MASS,                        & 
+                TEB_T_ROAD, TEB_T_ROOF,                         &
+                TEB_T_WALL_A, TEB_T_WALL_B,                     &
+                TEB_TSK_RURAL,                                  &
+                ! end for TEB
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
@@ -2697,6 +2802,42 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme),INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
+   !for TEB
+   INTEGER, INTENT(IN)                                                              :: teb_num_snow_layers
+   INTEGER, INTENT(IN)                                                              :: teb_num_road_layers
+   INTEGER, INTENT(IN)                                                              :: teb_num_roof_layers
+   INTEGER, INTENT(IN)                                                              :: teb_num_wall_layers
+   INTEGER, INTENT(IN)                                                              :: teb_num_floor_layers
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TI_BLD
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_T_CANYON
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_Q_CANYON
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_WS_ROOF
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_WS_ROAD
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_WSNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_TSNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_RSNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ASNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ESNOW_ROOF 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TSSNOW_ROOF
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_WSNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_TSNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_RSNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ASNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ESNOW_ROAD 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TSSNOW_ROAD
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_T_WIN1         
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_T_WIN2         
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_AUX_MAX        
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_THER_PRODC_DAY 
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_QI_BLD         
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_FLOOR
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_MASS
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_ROAD
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_ROOF
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_WALL_A
+   REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_WALL_B
+   REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TSK_RURAL
+   !end TEB
 ! lake varibles:
   real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
                                                                              savedtke12d
@@ -2993,14 +3134,19 @@ CONTAINS
                      its,ite, jts,jte, kts,kte                 )
 
 
-!URBAN
-          IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
+!URBAN. Add TEB with option 4.
+          IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3).OR.(SF_URBAN_PHYSICS.EQ.4)) THEN
 
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics)
-!                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
+                                sf_urban_physics,                                    &
+!                                num_roof_layers,num_wall_layers,road_soil_layers,   !urban
+                                teb_num_snow_layers, &
+                                teb_num_road_layers, &
+                                teb_num_roof_layers, &
+                                teb_num_wall_layers, &
+                                teb_num_floor_layers)                                    
                                
                 
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,                     & !urban
@@ -3043,7 +3189,31 @@ CONTAINS
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
-                              FRC_URB2D, UTYPE_URB2D)                            !urban
+                              FRC_URB2D, UTYPE_URB2D,                           & !urban
+                              ! for TEB
+                              teb_num_snow_layers,                & 
+                              teb_num_road_layers,                &
+                              teb_num_roof_layers,                &
+                              teb_num_wall_layers,                &
+                              teb_num_floor_layers,               &
+                              TEB_TI_BLD,                         &
+                              TEB_T_CANYON, TEB_Q_CANYON,         & 
+                              TEB_WS_ROOF, TEB_WS_ROAD,           &
+                              TEB_WSNOW_ROOF, TEB_TSNOW_ROOF,     &
+                              TEB_RSNOW_ROOF, TEB_ASNOW_ROOF,     & 
+                              TEB_TSSNOW_ROOF, TEB_ESNOW_ROOF,    & 
+                              TEB_WSNOW_ROAD, TEB_TSNOW_ROAD,     &
+                              TEB_RSNOW_ROAD, TEB_ASNOW_ROAD,     &
+                              TEB_TSSNOW_ROAD, TEB_ESNOW_ROAD,    & 
+                              TEB_T_WIN1, TEB_T_WIN2,             &
+                              TEB_AUX_MAX, TEB_THER_PRODC_DAY,    &
+                              TEB_QI_BLD,                         &
+                              TEB_T_FLOOR, TEB_T_MASS,            &
+                              TEB_T_ROAD, TEB_T_ROOF,             &
+                              TEB_T_WALL_A, TEB_T_WALL_B,         & 
+                              TEB_TSK_RURAL                       &
+                              ! end TEB
+                             )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
@@ -3119,7 +3289,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics)
+                                sf_urban_physics, &
+                                 teb_num_snow_layers, & 
+                                 teb_num_road_layers, & 
+                                 teb_num_roof_layers, & 
+                                 teb_num_wall_layers, & 
+                                 teb_num_floor_layers)                
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,         & !urban
                               LOW_DENSITY_RESIDENTIAL_TABLE,                   &
@@ -3159,10 +3334,36 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
-                              FRC_URB2D, UTYPE_URB2D)                            !urban
+                              FRC_URB2D, UTYPE_URB2D, &                           !urban
+                              !for TEB
+                              teb_num_snow_layers,              & 
+                              teb_num_road_layers,              & 
+                              teb_num_roof_layers,              & 
+                              teb_num_wall_layers,              & 
+                              teb_num_floor_layers,             &      
+                              TEB_TI_BLD,                       &
+                              TEB_T_CANYON, TEB_Q_CANYON,       &
+                              TEB_WS_ROOF, TEB_WS_ROAD,         & 
+                              TEB_WSNOW_ROOF, TEB_TSNOW_ROOF,   &
+                              TEB_RSNOW_ROOF, TEB_ASNOW_ROOF,   &
+                              TEB_TSSNOW_ROOF, TEB_ESNOW_ROOF,  &
+                              TEB_WSNOW_ROAD, TEB_TSNOW_ROAD,   &
+                              TEB_RSNOW_ROAD, TEB_ASNOW_ROAD,   &
+                              TEB_TSSNOW_ROAD, TEB_ESNOW_ROAD,  &
+                              TEB_T_WIN1, TEB_T_WIN2,           &
+                              TEB_AUX_MAX, TEB_THER_PRODC_DAY,  &
+                              TEB_QI_BLD,                       &
+                              TEB_T_FLOOR, TEB_T_MASS,          &
+                              TEB_T_ROAD, TEB_T_ROOF,           &
+                              TEB_T_WALL_A, TEB_T_WALL_B,       &
+                              TEB_TSK_RURAL                     &
+                              ! end TEB
+                             )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
+          ELSE
+            CALL wrf_error_fatal('TEB does not support NOAHMP')
           ENDIF
 
       CASE (RUCLSMSCHEME)
@@ -3215,7 +3416,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !--------------------------------------------------------------
 ! CLM Init Coupling
       CASE (CLMSCHEME)
-        IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
+        IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3).OR.(SF_URBAN_PHYSICS.EQ.4)) THEN
                 CALL wrf_error_fatal ( 'CLM DOES NOT WORK WITH URBAN SCHEME' ) 
         ENDIF
         IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN

@@ -690,6 +690,50 @@ BENCH_START(surf_driver_tim)
      &        ,SF_BEP=grid%sf_bep,VL_BEP=grid%vl_bep                            &
      &        ,A_E_BEP=grid%a_e_bep,B_E_BEP=grid%b_e_bep,DLG_BEP=grid%dlg_bep   &
      &        ,DL_U_BEP=grid%dl_u_bep                                           &
+     !
+     ! BEGIN: Optional urban for TEB
+     &        ,teb_test_integration=grid%teb_test_integration                           & 
+     &        ,teb_num_snow_layers=grid%teb_num_snow_layers                             & 
+     &        ,teb_num_road_layers=grid%teb_num_road_layers                             & 
+     &        ,teb_num_roof_layers=grid%teb_num_roof_layers                             & 
+     &        ,teb_num_wall_layers=grid%teb_num_wall_layers                             & 
+     &        ,teb_num_floor_layers=grid%teb_num_floor_layers                           & 
+     &        ,TEB_TI_BLD=grid%TEB_TI_BLD                                               & 
+     &        ,TEB_T_CANYON=grid%TEB_T_CANYON, TEB_Q_CANYON=grid%TEB_Q_CANYON           &
+     &        ,TEB_WS_ROOF=grid%TEB_WS_ROOF, TEB_WS_ROAD=grid%TEB_WS_ROAD               &
+     &        ,TEB_WSNOW_ROOF=grid%TEB_WSNOW_ROOF, TEB_TSNOW_ROOF=grid%TEB_TSNOW_ROOF   &
+     &        ,TEB_RSNOW_ROOF=grid%TEB_RSNOW_ROOF, TEB_ASNOW_ROOF=grid%TEB_ASNOW_ROOF   &
+     &        ,TEB_TSSNOW_ROOF=grid%TEB_TSSNOW_ROOF, TEB_ESNOW_ROOF=grid%TEB_ESNOW_ROOF &
+     &        ,TEB_WSNOW_ROAD=grid%TEB_WSNOW_ROAD,   TEB_TSNOW_ROAD=grid%TEB_TSNOW_ROAD &
+     &        ,TEB_RSNOW_ROAD=grid%TEB_RSNOW_ROAD,   TEB_ASNOW_ROAD=grid%TEB_ASNOW_ROAD &
+     &        ,TEB_TSSNOW_ROAD=grid%TEB_TSSNOW_ROAD, TEB_ESNOW_ROAD=grid%TEB_ESNOW_ROAD &
+     &        ,TEB_T_WIN1=grid%TEB_T_WIN1, TEB_T_WIN2=grid%TEB_T_WIN2                   &
+     &        ,TEB_AUX_MAX=grid%TEB_AUX_MAX, TEB_THER_PRODC_DAY=grid%TEB_THER_PRODC_DAY &
+     &        ,TEB_QI_BLD=grid%TEB_QI_BLD                                               &
+     &        ,TEB_T_FLOOR=grid%TEB_T_FLOOR, TEB_T_MASS=grid%TEB_T_MASS                 &
+     &        ,TEB_T_ROAD=grid%TEB_T_ROAD, TEB_T_ROOF=grid%TEB_T_ROOF                   &
+     &        ,TEB_T_WALL_A=grid%TEB_T_WALL_A, TEB_T_WALL_B=grid%TEB_T_WALL_B           &
+     &        ,TEB_HVAC_COOL=grid%TEB_HVAC_COOL, TEB_HVAC_HEAT=grid%TEB_HVAC_HEAT       &
+     &        ,TEB_THER_PROD_PANEL=grid%TEB_THER_PROD_PANEL                             &
+     &        ,TEB_PHOT_PROD_PANEL=grid%TEB_PHOT_PROD_PANEL                             &
+     &        ,TEB_TSK_RURAL=grid%TEB_TSK_RURAL                                         &
+     !
+     ! BEGIN: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
+     &        ,TEB_INPUT_TA=grid%TEB_INPUT_TA                   &
+     &        ,TEB_INPUT_PS=grid%TEB_INPUT_PS                   &
+     &        ,TEB_INPUT_QA=grid%TEB_INPUT_QA                   &
+     &        ,TEB_INPUT_WIND=grid%TEB_INPUT_WIND               &
+     &        ,TEB_INPUT_DIR=grid%TEB_INPUT_DIR                 &
+     &        ,TEB_INPUT_DIR_SW=grid%TEB_INPUT_DIR_SW           &
+     &        ,TEB_INPUT_SCA_SW=grid%TEB_INPUT_SCA_SW           &
+     &        ,TEB_INPUT_LW=grid%TEB_INPUT_LW                   &
+     &        ,TEB_INPUT_RAIN=grid%TEB_INPUT_RAIN               &
+     &        ,TEB_INPUT_SNOW=grid%TEB_INPUT_SNOW               &
+     &        ,TEB_INPUT_DIR_CO2=grid%TEB_INPUT_DIR_CO2         &
+     ! END: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
+     !
+     ! END: Optional urban for TEB
+     !
      &        ,CMR_SFCDIF=grid%cmr_sfcdif, CHR_SFCDIF=grid%chr_sfcdif     & !I/O urban
      &        ,CMC_SFCDIF=grid%cmc_sfcdif, CHC_SFCDIF=grid%chc_sfcdif     & !I/O urban
      &        ,CMGR_SFCDIF=grid%cmgr_sfcdif, CHGR_SFCDIF=grid%chgr_sfcdif & !I/O urban

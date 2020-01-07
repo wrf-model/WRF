@@ -439,14 +439,14 @@ contains
     ! ------------------------------------------------------------------------
 
     ! dz8w = thickness of full levels; we want the mid-point of the bottom-most level
-    zlvl(:,:) = 0.5 * dz8w(:,1,:)
+    zlvl(its:ite, jts:jte) = 0.5 * dz8w(its:ite, 1, jts:jte)
 
-    forc_u(:,:) = u_phy(:,1,:)
-    forc_v(:,:) = v_phy(:,1,:)
+    forc_u(its:ite, jts:jte) = u_phy(its:ite, 1, jts:jte)
+    forc_v(its:ite, jts:jte) = v_phy(its:ite, 1, jts:jte)
 
     ! TODO(wjs, 2020-01-01) Is this correct? Or does this give the pressure at the
     ! interface, whereas we may want the pressure at the mid-point???
-    pbot(:,:) = p8w(:,1,:)
+    pbot(its:ite, jts:jte) = p8w(its:ite, 1, jts:jte)
 
     ! TODO(wjs, 2020-01-01) For now, I'm setting potential temperature equal to
     ! temperature. Line 58470 of module_sf_clm has:
@@ -457,22 +457,22 @@ contains
     ! but it looks like it is using the same WRF variable for both forc_psrf and
     ! forc_pbot, so the adjustment from forc_t to forc_th isn't actually accomplishing
     ! anything. Should we do some sort of adjustment here?
-    forc_th(:,:) = t_phy(:,1,:)
+    forc_th(its:ite, jts:jte) = t_phy(its:ite, 1, jts:jte)
 
-    forc_t(:,:) = t_phy(:,1,:)
+    forc_t(its:ite, jts:jte) = t_phy(its:ite, 1, jts:jte)
 
     ! Convert from mixing ratio to specific humidity
     ! TODO(wjs, 2020-01-01) Confirm that this is correct
-    forc_q(:,:) = qv_curr(:,1,:)/(1.0 + qv_curr(:,1,:))
+    forc_q(its:ite, jts:jte) = qv_curr(its:ite, 1, jts:jte)/(1.0 + qv_curr(its:ite, 1, jts:jte))
 
     ! Separate total precip into rain and snow. Arbitrarily assign all precipitation to
     ! convective (CTSM requires separate convective vs. large-scale precipitation, but
     ! then just adds the two together).
-    precip_rate(:,:) = rainbl(:,:)/dt
-    snow_convective_rate(:,:) = precip_rate(:,:) * sr(:,:)
-    snow_largescale_rate(:,:) = 0.
-    rain_convective_rate(:,:) = precip_rate(:,:) * (1. - sr(:,:))
-    rain_largescale_rate(:,:) = 0.
+    precip_rate(its:ite, jts:jte) = rainbl(its:ite, jts:jte)/dt
+    snow_convective_rate(its:ite, jts:jte) = precip_rate(its:ite, jts:jte) * sr(its:ite, jts:jte)
+    snow_largescale_rate(its:ite, jts:jte) = 0.
+    rain_convective_rate(its:ite, jts:jte) = precip_rate(its:ite, jts:jte) * (1. - sr(its:ite, jts:jte))
+    rain_largescale_rate(its:ite, jts:jte) = 0.
 
     ! ------------------------------------------------------------------------
     ! Export data to ctsm via lilac

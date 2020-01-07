@@ -91,6 +91,25 @@ contains
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
+  logical function is_land(xland, xice, xice_threshold)
+    ! Returns true if the given point is land, false if ocean or sea ice
+    real , intent(in) :: xland          ! land mask (1 for land, 2 for water)
+    real , intent(in) :: xice           ! fraction of grid that is seaice
+    real , intent(in) :: xice_threshold ! fraction of grid determining seaice
+
+    if (xland >= 1.5) then
+       ! ocean
+       is_land = .false.
+    else if (xice >= xice_threshold) then
+       ! sea ice
+       is_land = .false.
+    else
+       is_land = .true.
+    end if
+  end function is_land
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
   subroutine convert_2d_to_1d (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, var_2d, var_1d)
     ! Convert a 2-d native WRF array to a 1-d array appropriate for LILAC
     !
@@ -145,24 +164,31 @@ contains
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine convert_1d_to_2d (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, var_1d, var_2d)
+  subroutine convert_1d_to_2d (ide, jde, ims, ime, jms, jme, its, ite, jts, jte, &
+       xland, xice, xice_threshold, &
+       var_1d, var_2d)
     ! Convert a 1-d array from lilac to a 2-d native WRF array
+    !
+    ! The output array is only set for land points (as determined by xland, xice, xice_threshold)
 
     use module_wrf_error
 
     ! input/output variables
-    integer , intent(in)  :: ide ! domain end index, i
-    integer , intent(in)  :: jde ! domain end index, j
-    integer , intent(in)  :: ims ! memory start index (includes halo cells), i
-    integer , intent(in)  :: ime ! memory end index (includes halo cells), i
-    integer , intent(in)  :: jms ! memory start index (includes halo cells), j
-    integer , intent(in)  :: jme ! memory end index (includes halo cells), j
-    integer , intent(in)  :: its ! task start index, i
-    integer , intent(in)  :: ite ! task end index, i
-    integer , intent(in)  :: jts ! task start index, j
-    integer , intent(in)  :: jte ! task end index, j
-    real(r8), intent(in)  :: var_1d(:)
-    real    , intent(inout) :: var_2d(ims: , jms: )
+    integer  , intent(in) :: ide                 ! domain end index, i
+    integer  , intent(in) :: jde                 ! domain end index, j
+    integer  , intent(in) :: ims                 ! memory start index (includes halo cells), i
+    integer  , intent(in) :: ime                 ! memory end index (includes halo cells), i
+    integer  , intent(in) :: jms                 ! memory start index (includes halo cells), j
+    integer  , intent(in) :: jme                 ! memory end index (includes halo cells), j
+    integer  , intent(in) :: its                 ! task start index, i
+    integer  , intent(in) :: ite                 ! task end index, i
+    integer  , intent(in) :: jts                 ! task start index, j
+    integer  , intent(in) :: jte                 ! task end index, j
+    real     , intent(in) :: xland(ims: , jms: ) ! land mask (1 for land, 2 for water)
+    real     , intent(in) :: xice(ims: , jms: )  ! fraction of grid that is seaice
+    real     , intent(in) :: xice_threshold      ! fraction of grid determining seaice
+    real(r8) , intent(in) :: var_1d(:)
+    real     , intent(inout) :: var_2d(ims: , jms: )
 
     ! local variables
     integer :: ite_limited  ! task end index on the mass point grid, i
@@ -191,7 +217,9 @@ contains
     do j = jts, jte_limited
        do i = its, ite_limited
           n = n + 1
-          var_2d(i,j) = var_1d(n)
+          if (is_land(xland(i,j), xice(i,j), xice_threshold)) then
+             var_2d(i,j) = var_1d(n)
+          end if
        end do
     end do
 
@@ -360,7 +388,7 @@ contains
        its, ite, jts, jte, &
 
        ! general information
-       dt, &
+       dt, xland, xice, xice_threshold, &
 
        ! atm -> lnd variables
        dz8w, ht, u_phy, v_phy, p8w, t_phy, qv_curr, &
@@ -387,7 +415,10 @@ contains
     integer, intent(in) :: jts
     integer, intent(in) :: jte
 
-    real, intent(in) :: dt ! timestep [s]
+    real , intent(in) :: dt                  ! timestep [s]
+    real , intent(in) :: xland(ims: , jms: ) ! land mask (1 for land, 2 for water)
+    real , intent(in) :: xice(ims: , jms: )  ! fraction of grid that is seaice
+    real , intent(in) :: xice_threshold      ! fraction of grid determining seaice
 
     real, intent(in) :: dz8w(ims: , kms: , jms: ) ! thickness of atmo layers [m]
     real, intent(in) :: ht(ims: , jms: )  ! terrain height [m]
@@ -519,12 +550,7 @@ contains
     ! TODO(wjs, 2020-01-02) Do we need to retrieve Sl_tref (2m surface air temperature)?
     ! If so, what variable should that go into?
 
-    ! TODO(wjs, 2020-01-02) Confirm: Does QSFC correspond to Sl_qref (2m specific
-    ! humidity)? And is this the correct conversion from CTSM's units to WRF's units?
-    ! Note that module_sf_clm has the following, for what it's worth:
-    !     qsfc(i,j)  = forc_qxy(i,1,j) +qfx(i,j)/(rhoxy_buf*chs(i,j))
     call import_from_lilac('Sl_qref', qref)
-    qsfc(its:ite, jts:jte) = qref(its:ite, jts:jte) / (1. - qref(its:ite, jts:jte))
 
     ! TODO(wjs, 2020-01-02) Note that we retrieve all four components of albedo, but only
     ! deliver the total albedo back to WRF. Is it sufficient to send total albedo, or
@@ -539,21 +565,23 @@ contains
     call calculate_total_albedo( &
          ims=ims, ime=ime, jms=jms, jme=jme, &
          its=its, ite=ite, jts=jts, jte=jte, &
-         albedo_visdir = albedo_visdir, &
-         albedo_nirdir = albedo_nirdir, &
-         albedo_visdif = albedo_visdif, &
-         albedo_nirdif = albedo_nirdif, &
-         swvisdir      = swvisdir, &
-         swnirdir      = swnirdir, &
-         swvisdif      = swvisdif, &
-         swnirdif      = swnirdif, &
-         albedo        = albedo)
+         xland          = xland, &
+         xice           = xice, &
+         xice_threshold = xice_threshold, &
+         albedo_visdir  = albedo_visdir, &
+         albedo_nirdir  = albedo_nirdir, &
+         albedo_visdif  = albedo_visdif, &
+         albedo_nirdif  = albedo_nirdif, &
+         swvisdir       = swvisdir, &
+         swnirdir       = swnirdir, &
+         swvisdif       = swvisdif, &
+         swnirdif       = swnirdif, &
+         albedo         = albedo)
 
     ! TODO(wjs, 2020-01-02) Do we need to provide any other snow-related variables
     ! (physical snow depth, snow cover fraction, etc.)? And is this one (SWE) actually
     ! needed?
     call import_from_lilac('Sl_snowh', snow_m)
-    snow(its:ite, jts:jte) = snow_m(its:ite, jts:jte) * 1000.
 
     ! TODO(wjs, 2020-01-02) Do we need to retrieve Sl_u10 (10-m wind speed)? If so, what
     ! variable should that go into?
@@ -583,6 +611,26 @@ contains
     ! - GRDFLX?
     ! - EMISS?
     ! - others?
+
+    ! ------------------------------------------------------------------------
+    ! Calculate derived variables
+    ! ------------------------------------------------------------------------
+
+    do j = jts, jte
+       do i = its, ite
+          if (is_land(xland(i,j), xice(i,j), xice_threshold)) then
+
+             ! Convert from specific humidity to mixing ratio. Note that qref is specific
+             ! humidity at 2m, whereas qsfc is supposed to be specified right at the
+             ! surface. So there isn't a perfect correspondence between the two, but
+             ! given that qsfc is just being used as a diagnostic quantity when using
+             ! CTSM (for now), we won't worry about this.
+             qsfc(i,j) = qref(i,j) / (1. - qref(i,j))
+
+             snow(i,j) = snow_m(i,j) * 1000.
+          end if
+       end do
+    end do
 
   contains
 
@@ -640,6 +688,7 @@ contains
            jms=jms, jme=jme, &
            its=its, ite=ite, &
            jts=jts, jte=jte, &
+           xland=xland, xice=xice, xice_threshold=xice_threshold, &
            var_1d=var_1d, var_2d=var_2d)
 
     end subroutine import_from_lilac
@@ -650,6 +699,7 @@ contains
   !-----------------------------------------------------------------------
   subroutine calculate_total_albedo( &
        ims, ime, jms, jme, its, ite, jts, jte, &
+       xland, xice, xice_threshold, &
        albedo_visdir, albedo_nirdir, albedo_visdif, albedo_nirdif, &
        swvisdir, swnirdir, swvisdif, swnirdif, &
        albedo)
@@ -664,6 +714,10 @@ contains
     integer, intent(in) :: ite
     integer, intent(in) :: jts
     integer, intent(in) :: jte
+
+    real, intent(in) :: xland(ims: , jms: ) ! land mask (1 for land, 2 for water)
+    real, intent(in) :: xice(ims: , jms: )  ! fraction of grid that is seaice
+    real, intent(in) :: xice_threshold      ! fraction of grid determining seaice
 
     real, intent(in) :: albedo_visdir(ims: , jms: ) ! albedo, visible direct [-]
     real, intent(in) :: albedo_nirdir(ims: , jms: ) ! albedo, near IR direct [-]
@@ -681,28 +735,30 @@ contains
 
     do j = jms, jme
        do i = ims, ime
-          ! TODO(wjs, 2020-01-02) Confirm that this is the right way to determine total
-          ! albedo. (This is what seems to be done in module_sf_clm.)
-          sw_tot = swvisdir(i,j) + swnirdir(i,j) + swvisdif(i,j) + swnirdif(i,j)
-          if (sw_tot > 0.) then
-             albedo(i,j) = &
-                  albedo_visdir(i,j) * (swvisdir(i,j) / sw_tot) + &
-                  albedo_nirdir(i,j) * (swnirdir(i,j) / sw_tot) + &
-                  albedo_visdif(i,j) * (swvisdif(i,j) / sw_tot) + &
-                  albedo_nirdif(i,j) * (swnirdif(i,j) / sw_tot)
-          else
-             ! Night; albedo shouldn't matter; use coefficients from module_sf_clm
-             albedo(i,j) = &
-                  albedo_visdir(i,j) * 0.35 + &
-                  albedo_nirdir(i,j) * 0.35 + &
-                  albedo_visdif(i,j) * 0.15 + &
-                  albedo_nirdif(i,j) * 0.15
-          end if
+          if (is_land(xland(i,j), xice(i,j), xice_threshold)) then
+             ! TODO(wjs, 2020-01-02) Confirm that this is the right way to determine total
+             ! albedo. (This is what seems to be done in module_sf_clm.)
+             sw_tot = swvisdir(i,j) + swnirdir(i,j) + swvisdif(i,j) + swnirdif(i,j)
+             if (sw_tot > 0.) then
+                albedo(i,j) = &
+                     albedo_visdir(i,j) * (swvisdir(i,j) / sw_tot) + &
+                     albedo_nirdir(i,j) * (swnirdir(i,j) / sw_tot) + &
+                     albedo_visdif(i,j) * (swvisdif(i,j) / sw_tot) + &
+                     albedo_nirdif(i,j) * (swnirdif(i,j) / sw_tot)
+             else
+                ! Night; albedo shouldn't matter; use coefficients from module_sf_clm
+                albedo(i,j) = &
+                     albedo_visdir(i,j) * 0.35 + &
+                     albedo_nirdir(i,j) * 0.35 + &
+                     albedo_visdif(i,j) * 0.15 + &
+                     albedo_nirdif(i,j) * 0.15
+             end if
 
-          ! TODO(wjs, 2020-01-02) There was a correction like this in clmdrv (line 4799).
-          ! Do we want this here?
-          if (abs(albedo(i,j) - 1.) < 1.e-5) then
-             albedo(i,j) = 0.991
+             ! TODO(wjs, 2020-01-02) There was a correction like this in clmdrv (line 4799).
+             ! Do we want this here?
+             if (abs(albedo(i,j) - 1.) < 1.e-5) then
+                albedo(i,j) = 0.991
+             end if
           end if
        end do
     end do

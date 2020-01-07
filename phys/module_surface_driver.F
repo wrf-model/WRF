@@ -3813,7 +3813,10 @@ CONTAINS
              its=i_start(ij), ite=i_end(ij), jts=j_start(ij), jte=j_end(ij), &
 
              ! general information
-             dt = dt, &
+             dt             = dt, &
+             xland          = xland, &
+             xice           = xice, &
+             xice_threshold = xice_threshold, &
 
              ! atm -> lnd variables
              ! TODO(wjs, 2020-01-01) Confirm correctness of these variables

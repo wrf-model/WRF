@@ -3834,6 +3834,8 @@ CONTAINS
              swvisdif = swvisdif, &
              swnirdir = swnirdir, &
              swnirdif = swnirdif, &
+
+             ! lnd -> atm variables
              tsk      = tsk, &
              qsfc     = qsfc, &
              albedo   = albedo, &

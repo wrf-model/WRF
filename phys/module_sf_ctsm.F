@@ -536,11 +536,6 @@ contains
          restart_alarm_is_ringing = .false., &
          stop_alarm_is_ringing = .false.)
 
-    ! FIXME(wjs, 2020-01-02) For now, I'm returning without setting any import fields,
-    ! because when I set only a subset of the import fields, I get a segmentation fault in
-    ! WRF after a few time steps. Remove this once we think the import code is complete.
-    return
-
     ! ------------------------------------------------------------------------
     ! Import data from ctsm via lilac
     ! ------------------------------------------------------------------------
@@ -552,12 +547,6 @@ contains
 
     call import_from_lilac('Sl_qref', qref)
 
-    ! TODO(wjs, 2020-01-02) Note that we retrieve all four components of albedo, but only
-    ! deliver the total albedo back to WRF. Is it sufficient to send total albedo, or
-    ! should we also send the four components? In clmdrv, the individual components are
-    ! alswvisdir, alswvisdif, alswnirdir, alswnirdif. These come from alswvisdir,
-    ! alswvisdif, alswnirdir, alswnirdif in surface_driver, but it looks like these aren't
-    ! set by most surface schemes. So, okay to only send total albedo?
     call import_from_lilac('Sl_avsdr', albedo_visdir)
     call import_from_lilac('Sl_anidr', albedo_nirdir)
     call import_from_lilac('Sl_avsdf', albedo_visdif)
@@ -583,9 +572,6 @@ contains
     ! needed?
     call import_from_lilac('Sl_snowh', snow_m)
 
-    ! TODO(wjs, 2020-01-02) Do we need to retrieve Sl_u10 (10-m wind speed)? If so, what
-    ! variable should that go into?
-
     ! TODO(wjs, 2020-01-02) Do we need to retrieve Fall_taux and Fall_tauy (wind
     ! stresses)? I see taux and tauy in surface_driver, but they appear to only be used
     ! in sf_gfdl.
@@ -595,22 +581,12 @@ contains
     call import_from_lilac('Fall_lat', lh)
     call import_from_lilac('Fall_evap', qfx)
 
-    ! TODO(wjs, 2020-01-02) Do we need to retrieve Fall_lwup (longwave radiation)? If so,
-    ! what variable should that go into? Or do we need to set EMISS instead?
-
-    ! TODO(wjs, 2020-01-02) Do we need to retrieve swnet (solar rad absorbed)? If so,
-    ! what variable should that go into? (It seems like that could be another way to
-    ! calculate albedo. I'm not sure if the results would differ in any way.)
-
-    ! TODO(wjs, 2020-01-02) Should we retrieve any of the dust fluxes (flxdst1, flxdst2,
-    ! flxdst3, flxdst4)?
-
     ! TODO(wjs, 2020-01-02) What other variables need to be set in WRF that we are not
     ! setting here? For example:
     ! - ZNT and/or Z0?
-    ! - GRDFLX?
     ! - EMISS?
     ! - others?
+    !   - (2020-01-07) Mike thinks psi_h and psi_m may be needed
 
     ! ------------------------------------------------------------------------
     ! Calculate derived variables

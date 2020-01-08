@@ -3840,9 +3840,13 @@ CONTAINS
              qsfc     = qsfc, &
              albedo   = albedo, &
              snow     = snow, &
+             ust      = ust, &
              hfx      = hfx, &
              lh       = lh, &
-             qfx      = qfx)
+             qfx      = qfx, &
+             emiss    = emiss, &
+             z0       = z0, &
+             znt      = znt)
 
 #else
         CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting&

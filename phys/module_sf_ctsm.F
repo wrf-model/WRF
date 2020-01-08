@@ -397,7 +397,7 @@ contains
 
        ! lnd -> atm variables
        tsk, qsfc, albedo, snow, &
-       hfx, lh, qfx)
+       ust, hfx, lh, qfx, emiss, z0, znt)
 
     use lilac_mod, only : lilac_run
 
@@ -439,9 +439,13 @@ contains
     real, intent(inout) :: qsfc(ims: , jms: ) ! bulk surface specific humidity
     real, intent(inout) :: albedo(ims: , jms: ) ! total grid albedo [-]
     real, intent(inout) :: snow(ims: , jms: ) ! snow water equivalent [mm]
+    real, intent(inout) :: ust(ims: , jms: ) ! u* in similarity theory [m/s]
     real, intent(inout) :: hfx(ims: , jms: ) ! sensible heat flux [W m-2]
     real, intent(inout) :: lh(ims: , jms: ) ! latent heat flux [W m-2]
     real, intent(inout) :: qfx(ims: , jms: ) ! latent heat flux [kg s-1 m-2]
+    real, intent(inout) :: emiss(ims: , jms: ) ! surface emissivity [between 0 and 1]
+    real, intent(inout) :: z0(ims: , jms: ) ! background roughness length [m]
+    real, intent(inout) :: znt(ims: , jms: ) ! thermal time-varying roughness length [m]
 
     integer :: i, j
 
@@ -572,6 +576,8 @@ contains
     ! needed?
     call import_from_lilac('Sl_snowh', snow_m)
 
+    call import_from_lilac('Sl_fv', ust)
+
     ! TODO(wjs, 2020-01-02) Do we need to retrieve Fall_taux and Fall_tauy (wind
     ! stresses)? I see taux and tauy in surface_driver, but they appear to only be used
     ! in sf_gfdl.
@@ -604,6 +610,14 @@ contains
              qsfc(i,j) = qref(i,j) / (1. - qref(i,j))
 
              snow(i,j) = snow_m(i,j) * 1000.
+
+             ! CTSM assumes an emissivity of 1
+             emiss(i,j) = 1.
+
+             ! TODO(wjs, 2020-01-08) Replace these hard-coded roughness lengths with
+             ! something from CTSM
+             z0(i,j) = 0.25
+             znt(i,j) = 0.25
           end if
        end do
     end do
@@ -706,6 +720,8 @@ contains
 
     real, intent(inout) :: albedo(ims: , jms: ) ! total surface albedo [-]
 
+    real, parameter :: albedo_default = 0.3
+
     integer :: i, j
     real :: sw_tot  ! total solar rad onto surface [W m-2]
 
@@ -730,10 +746,11 @@ contains
                      albedo_nirdif(i,j) * 0.15
              end if
 
-             ! TODO(wjs, 2020-01-02) There was a correction like this in clmdrv (line 4799).
-             ! Do we want this here?
              if (abs(albedo(i,j) - 1.) < 1.e-5) then
-                albedo(i,j) = 0.991
+                ! CTSM gives albedo values of 1 at night. To avoid problems (in case CTSM
+                ! thinks it's night but the albedo is still needed in WRF), use some more
+                ! reasonable value in this case.
+                albedo(i,j) = albedo_default
              end if
           end if
        end do

@@ -396,7 +396,7 @@ contains
        glw, swvisdir, swvisdif, swnirdir, swnirdif, &
 
        ! lnd -> atm variables
-       tsk, qsfc, albedo, snow, &
+       tsk, t2, qsfc, albedo, &
        ust, hfx, lh, qfx, emiss, z0, znt)
 
     use lilac_mod, only : lilac_run
@@ -436,9 +436,9 @@ contains
     real, intent(in) :: swnirdif(ims: , jms: ) ! nir diffuse solar rad onto surface [W m-2]
 
     real, intent(inout) :: tsk(ims: , jms: ) ! surface temperature [K]
+    real, intent(inout) :: t2(ims: , jms: ) ! diagnostic 2-m temperature [K]
     real, intent(inout) :: qsfc(ims: , jms: ) ! bulk surface specific humidity
     real, intent(inout) :: albedo(ims: , jms: ) ! total grid albedo [-]
-    real, intent(inout) :: snow(ims: , jms: ) ! snow water equivalent [mm]
     real, intent(inout) :: ust(ims: , jms: ) ! u* in similarity theory [m/s]
     real, intent(inout) :: hfx(ims: , jms: ) ! sensible heat flux [W m-2]
     real, intent(inout) :: lh(ims: , jms: ) ! latent heat flux [W m-2]
@@ -467,7 +467,6 @@ contains
     real :: albedo_visdif(ims:ime, jms:jme) ! albedo calculated by CTSM, visible diffuse [-]
     real :: albedo_nirdir(ims:ime, jms:jme) ! albedo calculated by CTSM, near IR direct [-]
     real :: albedo_nirdif(ims:ime, jms:jme) ! albedo calculated by CTSM, near IR diffuse [-]
-    real :: snow_m(ims:ime, jms:jme) ! snow water equivalent in meters [m]
 
     ! ------------------------------------------------------------------------
     ! Calculate derived variables, and 2-d versions of 3-d fields
@@ -545,10 +544,7 @@ contains
     ! ------------------------------------------------------------------------
 
     call import_from_lilac('Sl_t', tsk)
-
-    ! TODO(wjs, 2020-01-02) Do we need to retrieve Sl_tref (2m surface air temperature)?
-    ! If so, what variable should that go into?
-
+    call import_from_lilac('Sl_tref', t2)
     call import_from_lilac('Sl_qref', qref)
 
     call import_from_lilac('Sl_avsdr', albedo_visdir)
@@ -571,28 +567,12 @@ contains
          swnirdif       = swnirdif, &
          albedo         = albedo)
 
-    ! TODO(wjs, 2020-01-02) Do we need to provide any other snow-related variables
-    ! (physical snow depth, snow cover fraction, etc.)? And is this one (SWE) actually
-    ! needed?
-    call import_from_lilac('Sl_snowh', snow_m)
-
     call import_from_lilac('Sl_fv', ust)
-
-    ! TODO(wjs, 2020-01-02) Do we need to retrieve Fall_taux and Fall_tauy (wind
-    ! stresses)? I see taux and tauy in surface_driver, but they appear to only be used
-    ! in sf_gfdl.
 
     ! TODO(wjs, 2020-01-02) Check sign on these
     call import_from_lilac('Fall_sen', hfx)
     call import_from_lilac('Fall_lat', lh)
     call import_from_lilac('Fall_evap', qfx)
-
-    ! TODO(wjs, 2020-01-02) What other variables need to be set in WRF that we are not
-    ! setting here? For example:
-    ! - ZNT and/or Z0?
-    ! - EMISS?
-    ! - others?
-    !   - (2020-01-07) Mike thinks psi_h and psi_m may be needed
 
     ! ------------------------------------------------------------------------
     ! Calculate derived variables
@@ -609,12 +589,10 @@ contains
              ! CTSM (for now), we won't worry about this.
              qsfc(i,j) = qref(i,j) / (1. - qref(i,j))
 
-             snow(i,j) = snow_m(i,j) * 1000.
-
              ! CTSM assumes an emissivity of 1
              emiss(i,j) = 1.
 
-             ! TODO(wjs, 2020-01-08) Replace these hard-coded roughness lengths with
+             ! FIXME(wjs, 2020-01-08) Replace these hard-coded roughness lengths with
              ! something from CTSM
              z0(i,j) = 0.25
              znt(i,j) = 0.25
@@ -728,8 +706,6 @@ contains
     do j = jms, jme
        do i = ims, ime
           if (is_land(xland(i,j), xice(i,j), xice_threshold)) then
-             ! TODO(wjs, 2020-01-02) Confirm that this is the right way to determine total
-             ! albedo. (This is what seems to be done in module_sf_clm.)
              sw_tot = swvisdir(i,j) + swnirdir(i,j) + swvisdif(i,j) + swnirdif(i,j)
              if (sw_tot > 0.) then
                 albedo(i,j) = &

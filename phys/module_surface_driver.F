@@ -3837,9 +3837,9 @@ CONTAINS
 
              ! lnd -> atm variables
              tsk      = tsk, &
+             t2       = t2, &
              qsfc     = qsfc, &
              albedo   = albedo, &
-             snow     = snow, &
              ust      = ust, &
              hfx      = hfx, &
              lh       = lh, &

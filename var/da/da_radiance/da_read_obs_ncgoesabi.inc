@@ -203,7 +203,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
    !Cloud QC variables
    integer :: tbuf, nkeep, ikeep
-   integer :: neighbor_buffer  ! Must be ≥ 0
+   integer :: abi_halo_width  ! Must be ≥ 0
    real    :: mu10, mu14, sigma10, sigma14, pearson, temp_max
    real    :: mu, sigma
    real, allocatable :: tb_temp(:,:)
@@ -312,9 +312,9 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    num_goesabi_thinned   = 0
 
    if ( use_clddet_abi ) then
-      neighbor_buffer = max(10,abi_superob_buffer)
+      abi_halo_width = max(10,abi_superob_halfwidth)
    else
-      neighbor_buffer = max(0,abi_superob_buffer)
+      abi_halo_width = max(0,abi_superob_halfwidth)
    end if
 
    tot_files_used = 0
@@ -618,8 +618,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             ! Only ny_global and nx_global need to be read for all views, but this is a cheap subroutine
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!            write(unit=stdout,fmt='(A)') &
-!               '          Reading abi metadata...'
+            write(unit=stdout,fmt='(A)') &
+               '          Reading abi metadata...'
 
             this_view % meta_initialized = .true.
 
@@ -658,8 +658,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
          DoGridGen: if (  this_view % moving .or. .not.this_view % grid_initialized ) then
 
             ! Read grid from file, convert to lat, lon, satzen, satazi
-!            write(unit=stdout,fmt='(2A)') &
-!               '          Establishing abi grid info...'
+            write(unit=stdout,fmt='(2A)') &
+               '          Establishing abi grid info...'
 
             this_view % grid_initialized = .true.
 
@@ -710,18 +710,24 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                do ixl = 1, nx_local
                   do iyl = 1, ny_local
-                     !This mod test produces balanced loads between processors
-                     if ( mod( n, num_procs ) .eq. myproc ) then
-                        icount = icount + 1
+                     iy = iyl + this_view % ys_local - 1
+                     ix = ixl + this_view % xs_local - 1
+                     if ( mod( iy-abi_superob_halfwidth-1, 2*abi_superob_halfwidth+1 ) == 0  .and. &
+                          mod( ix-abi_superob_halfwidth-1, 2*abi_superob_halfwidth+1 ) == 0 ) then
+!                     if ( abi_superob_halfwidth == 0 .or. &
+!                          ( mod( iy-abi_superob_halfwidth-1, 2*abi_superob_halfwidth+1 ) == 0  .and. &
+!                            mod( ix-abi_superob_halfwidth-1, 2*abi_superob_halfwidth+1 ) == 0 ) ) then
+                        !This mod test produces balanced loads between processors
+                        if ( mod( n, num_procs ) .eq. myproc ) then
+                           icount = icount + 1
 
-                        iy = iyl + this_view % ys_local - 1
-                        ix = ixl + this_view % xs_local - 1
-                        yy_1d ( icount ) = yy_abi( iy )
-                        xx_1d ( icount ) = xx_abi( ix )
-                        iy_1d ( icount ) = iy
-                        ix_1d ( icount ) = ix
+                           yy_1d ( icount ) = yy_abi( iy )
+                           xx_1d ( icount ) = xx_abi( ix )
+                           iy_1d ( icount ) = iy
+                           ix_1d ( icount ) = ix
+                        end if
+                        n = n + 1
                      end if
-                     n = n + 1
                   end do
                end do
             end do
@@ -760,8 +766,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             deallocate( iy_1d )
             deallocate( ix_1d )
 
-!            write(unit=stdout,fmt='(3A,I0)') &
-!               '          ',trim(this_view % name),' locations processed on this core: ', nrad_local
+            write(unit=stdout,fmt='(3A,I0)') &
+               '          ',trim(this_view % name),' locations processed on this core: ', nrad_local
 
             if (nrad_local .gt. 0) &
                call get_abil1b_grid2_1d( yy_1d(1:nrad_local), xx_1d(1:nrad_local), &
@@ -1081,10 +1087,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 !               write(stdout,'(A,4I10)') 'ys_p_fd, ye_p_fd, xs_p_fd, xe_p_fd',this_view % ys_p_fd, this_view % ye_p_fd, this_view % xs_p_fd, this_view % xe_p_fd
 
                ! Setup ZZ clddet extents
-               this_view % ys_local = max(this_view % ys_p - neighbor_buffer, 1)
-               this_view % ye_local = min(this_view % ye_p + neighbor_buffer, ny_global)
-               this_view % xs_local = max(this_view % xs_p - neighbor_buffer, 1)
-               this_view % xe_local = min(this_view % xe_p + neighbor_buffer, nx_global)
+               this_view % ys_local = max(this_view % ys_p - abi_halo_width, 1)
+               this_view % ye_local = min(this_view % ye_p + abi_halo_width, ny_global)
+               this_view % xs_local = max(this_view % xs_p - abi_halo_width, 1)
+               this_view % xe_local = min(this_view % xe_p + abi_halo_width, nx_global)
 
                ! Setup patch mask for this view, including ZZ clddet buffer
                allocate( this_view % patchmask( &
@@ -1097,8 +1103,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                   ix = this_view % ix_1d % patch (n)
 
                   cldqc = .true.
-                  do jy = iy - neighbor_buffer, iy + neighbor_buffer
-                  do jx = ix - neighbor_buffer, ix + neighbor_buffer
+                  do jy = iy - abi_halo_width, iy + abi_halo_width
+                  do jx = ix - abi_halo_width, ix + abi_halo_width
                      if ( &
                           jy.ge.1 .and. jy.le.ny_global &
                     .and. jx.ge.1 .and. jx.le.nx_global &
@@ -1355,7 +1361,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                   first_chan = (this_view % nfiles_used(ifgat).eq.1)
 
-                  if ( use_clddet_abi .and. channel_list(ichan).eq.14 .and. neighbor_buffer.ge.1) then
+                  if ( use_clddet_abi .and. channel_list(ichan).eq.14 .and. abi_halo_width.ge.1) then
                      ! Allocate terrain_hgt using local indices for this view
                      allocate( terrain_hgt ( &
                                        this_view % ys_local:this_view % ye_local, &
@@ -1478,8 +1484,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      end if
 
                      ! Super-ob the BT for this channel
-                     tbuf = abi_superob_buffer
-                     if (neighbor_buffer.ge.tbuf .and. tbuf.gt.0) then
+                     tbuf = abi_superob_halfwidth
+                     if (abi_halo_width.ge.tbuf .and. tbuf.gt.0) then
                         nkeep = count ( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r )
                         if (nkeep .gt. 0) then
                            allocate( tb_temp ( nkeep, 1 ) )
@@ -1501,7 +1507,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      end if
 
                      tbuf = 1
-                     if (neighbor_buffer.ge.tbuf .and. bt_p( iy, ix, 1 ).gt.missing_r) then
+                     if (abi_halo_width.ge.tbuf .and. bt_p( iy, ix, 1 ).gt.missing_r) then
 
                         nkeep = count ( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r )
                         if (nkeep .gt. 0) then
@@ -1571,7 +1577,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      ! Values for RFMFT cloud QC
                      ! - channels 14 and 15
                      tbuf = 10
-                     if (neighbor_buffer.ge.tbuf .and. bt_p( iy, ix, 1 ).gt.missing_r) then
+                     if (abi_halo_width.ge.tbuf .and. bt_p( iy, ix, 1 ).gt.missing_r) then
                         if (channel_list(ichan).eq.14) then
                            !Determine Neighboring Warm Center (NWC) for this pixel
                            temp_max = 0.
@@ -1605,7 +1611,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      ! Values for CIRH2O cloud QC
                      !  - channels 10 and 14 for Pearson correlation coefficient of CIRH2O test
                      tbuf = 2
-                     if (neighbor_buffer.ge.tbuf .and. bt_p( iy, ix, 1 ).gt.missing_r) then
+                     if (abi_halo_width.ge.tbuf .and. bt_p( iy, ix, 1 ).gt.missing_r) then
                         if (channel_list(ichan).eq.10) then
                            allocate( p % cld_qc % CIRH2O ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 2 ) )
                            p % cld_qc % CIRH2O(:,:,1) = bt_p( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 )

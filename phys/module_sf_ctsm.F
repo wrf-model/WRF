@@ -569,7 +569,6 @@ contains
 
     call import_from_lilac('Sl_fv', ust)
 
-    ! TODO(wjs, 2020-01-02) Check sign on these
     call import_from_lilac('Fall_sen', hfx)
     call import_from_lilac('Fall_lat', lh)
     call import_from_lilac('Fall_evap', qfx)
@@ -596,6 +595,12 @@ contains
              ! something from CTSM
              z0(i,j) = 0.25
              znt(i,j) = 0.25
+
+             ! Flip signs of heat and moisture fluxes: CTSM sends as positive downwards;
+             ! WRF expects them to be positive upwards
+             hfx(i,j) = -hfx(i,j)
+             lh(i,j) = -lh(i,j)
+             qfx(i,j) = -qfx(i,j)
           end if
        end do
     end do

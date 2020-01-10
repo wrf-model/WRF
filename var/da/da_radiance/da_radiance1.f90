@@ -23,10 +23,11 @@ module da_radiance1
       global, gas_constant, gravity, monitor_on,kts,kte,use_rttov_kmatrix, &
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
       use_crtm_kmatrix,use_clddet, use_clddet_abi, use_satcv, cv_size_domain, &
-      cv_size_domain_js, calc_weightfunc, deg_to_rad, rad_to_deg, use_rad_symm_err
+      cv_size_domain_js, calc_weightfunc, deg_to_rad, rad_to_deg, use_rad_symm_err, &
+      abi_superob_halfwidth
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
       iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
-      be_type, cld_qc_type
+      be_type, superob_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
 #ifdef DM_PARALLEL
    use da_par_util, only :  da_proc_stats_combine, true_mpi_real
@@ -57,7 +58,7 @@ module da_radiance1
 
       type (info_type)        :: info
       type (model_loc_type)   :: loc
-      type (cld_qc_type), pointer :: cld_qc => null()
+      type (superob_type), allocatable :: superob(:,:)
       integer   ::  ifgat, landsea_mask, rain_flag
       integer   ::  scanline, scanpos
       real      ::  satzen, satazi, solzen, solazi  !  satellite and solar angles
@@ -78,6 +79,7 @@ module da_radiance1
       real, pointer             :: tb_inv(:)
       real, pointer             :: tb_qc(:)
       real, pointer             :: tb_error(:)
+      real, pointer             :: rad_obs(:)
       integer                   :: sensor_index
       type (datalink_type), pointer  :: next ! pointer to next data
    end type datalink_type

@@ -61,7 +61,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
          write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi '
       end if
       write(unit=oma_rad_unit,fmt='(a)') ' xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
-                       & soiltyp vegtyp vegfra elev clwp'
+                       & soiltyp vegtyp vegfra elev clwp cloud_frac'
       ndomain = 0
       do n=1,iv%instid(i)%num_rad
          if (iv%instid(i)%info%proc_domain(1,n)) then
@@ -106,7 +106,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
             case (7) ;
                surftype = 'MSNO : '
             end select
-            write(unit=oma_rad_unit,fmt='(a,i7,9f10.2,3i3,f8.3,f10.2,f8.3)') surftype, n, &
+            write(unit=oma_rad_unit,fmt='(a,i7,9f10.2,3i3,f8.3,f10.2,f8.3,f15.5)') surftype, n, &
                              iv%instid(i)%t2m(n), &
                              iv%instid(i)%mr2m(n),   &
                              iv%instid(i)%u10(n), &
@@ -121,7 +121,8 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                              nint(iv%instid(i)%vegtyp(n)), &
                              iv%instid(i)%vegfra(n), &
                              iv%instid(i)%elevation(n), &
-                             iv%instid(i)%clwp(n)
+                             iv%instid(i)%clwp(n), &
+                             iv%instid(i)%cloud_frac(n)
 
             write(unit=oma_rad_unit,fmt='(a)') 'OBS  : '
             write(unit=oma_rad_unit,fmt='(10f11.2)') ob%instid(i)%tb(:,n)

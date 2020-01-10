@@ -51,7 +51,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
    real               :: crit_clddet
    real               :: rad_O14, rad_M14, rad_tropt
    real               :: rad_o_ch7, rad_b_ch7, rad_o_ch14, rad_b_ch14   
-   real               :: Relaz, Glintzen, tb_temp1 
+   real               :: Relaz, Glintzen
    real               :: wave_num(10)
    real               :: plbc1(10), plbc2(10)
    real               :: plfk1(10), plfk2(10)
@@ -63,10 +63,15 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
    logical            :: qual_clddet(num_clddet_cats)
    character(len=10)  :: crit_names_clddet(num_clddet_tests)
    integer            :: nrej_clddet(nchan,num_clddet_tests)
-   integer*2          :: clddet_tests(num_clddet_tests)
+   integer            :: superob_center
+   integer*2          :: clddet_tests(iv%instid(isens)%superob_width, &
+                                      iv%instid(isens)%superob_width, &
+                                      num_clddet_tests)
+   integer            :: isuper, jsuper
 
-   real, pointer      :: tb_ob(:,:), tb_xb(:,:), tb_inv(:,:), tb_xb_clr(:,:), cloud_obs(:,:), cloud_mod(:,:)
-   integer            :: tb_qc(nchan), tb_qc_clddet(nchan)
+   real, pointer      :: tb_obs(:,:), tb_xb(:,:), tb_inv(:,:), tb_xb_clr(:,:), &
+                         cloud_obs(:,:), cloud_mod(:,:)
+   integer            :: tb_qc(nchan)
 
    real               :: big_num
 
@@ -84,7 +89,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 
    if (trace_use) call da_trace_entry("da_qc_goesabi")
 
-!!   if (iv%instid(isens)%num_rad .le. 0) return
+!!   if (iv%instid(isens)%num_rad <= 0) return
 
    ! These values can change as SRF (spectral response function) is updated
    ! It is recommended to acquire these from L1B files, not copy them from GOES R PUG L1b Vol. 3
@@ -142,7 +147,6 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 
    nrej_clddet         = 0
 
-   tb_ob => ob%instid(isens)%tb
    tb_xb => iv%instid(isens)%tb_xb
    tb_inv => iv%instid(isens)%tb_inv
 
@@ -178,9 +182,14 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 
       cloud_mod => iv%instid(isens)%cloud_mod
       cloud_mod = missing_r
+   else
+      tb_xb_clr => iv%instid(isens)%tb_xb
    end if
 
-   PixelQCLoop: do n= iv%instid(isens)%info%n1,iv%instid(isens)%info%n2
+   superob_center = abi_superob_halfwidth + 1
+
+   ABIPixelQCLoop: do n= iv%instid(isens)%info%n1,iv%instid(isens)%info%n2
+      tb_obs => ob%instid(isens)%tb
 
       if (iv%instid(isens)%info%proc_domain(1,n)) &
             num_proc_domain = num_proc_domain + 1
@@ -188,7 +197,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
       !  0.0  initialise QC by flags assuming good obs
       !-----------------------------------------------------------------
       tb_qc = qc_good
-      iv%instid(isens)%cloud_flag(:,n) = qc_good
+      iv%instid(isens)%cloud_flag(:,n) = 0
 
       !  1.0  reject all channels over mixed surface type
       !------------------------------------------------------  
@@ -229,13 +238,13 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
          cloud_detection=.false.
          if (cloud_detection) then
             if (iv%instid(isens)%landsea_mask(n) == 0 ) then
-               if ( ( tb_xb(3,n) - tb_ob(3,n) ) > 3.5) then
+               if ( ( tb_xb(3,n) - tb_obs(3,n) ) > 3.5) then
                   tb_qc = qc_bad
                   if (iv%instid(isens)%info%proc_domain(1,n)) &
                      nrej_eccloud(:) = nrej_eccloud(:) + 1
                end if
             else
-               if ( ( tb_xb(3,n) - tb_ob(3,n) ) > 2.5) then
+               if ( ( tb_xb(3,n) - tb_obs(3,n) ) > 2.5) then
                   tb_qc = qc_bad
                   if (iv%instid(isens)%info%proc_domain(1,n)) &
                      nrej_eccloud(:) = nrej_eccloud(:) + 1
@@ -244,11 +253,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
          end if
       end if
 
-      abi_clddet: if ( use_clddet_abi &
-                     .and. all(tb_inv( (/ch7,ch14,ch15/), n ) .gt. missing_r) &
-                     .and. all(tb_ob(  (/ch7,ch14,ch15/), n ) .gt. missing_r) &
-                     .and. all(tb_xb(  (/ch7,ch14,ch15/), n ) .gt. missing_r) &
-                     ) then
+      abi_clddet: if ( use_clddet_abi ) then
 
          !!===============================================================================
          !!===============================================================================
@@ -265,9 +270,9 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
          if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG1: ', n, &
             tb_inv(:,n)
          if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG2: ', n, &
-            tb_xb(:,n)
+            tb_xb_clr(:,n)
          if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG3: ', n, &
-            tb_ob(:,n)
+            tb_obs(:,n)
          if (crtm_cloud(it) ) then
             if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG4: ', n, &
                tb_xb_clr(:,n)
@@ -277,51 +282,64 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
             iv%instid(isens)%info%lat(1,n), iv%instid(isens)%info%lon(1,n), &
             iv%instid(isens)%satzen(n), iv%instid(isens)%satazi(n), &
             iv%instid(isens)%solzen(n), iv%instid(isens)%solazi(n), &
-            iv%instid(isens)%tropt(n), iv%instid(isens)%cld_qc(n)%terr_hgt, &
+            iv%instid(isens)%tropt(n), iv%instid(isens)%superob(superob_center,superob_center)%cld_qc(n)%terr_hgt, &
             iv%instid(isens)%info%date_char(n)
 !JJGDEBUG
 
-         clddet_tests = 0
 
-         if ( tb_xb(ch14,n) .gt. 0. .and. iv%instid(isens)%tropt(n) .gt. 0. ) then
-            tb_temp1  = tb_ob(ch14,n)
-            rad_O14   = plfk1(ch14) / &
-                        ( exp( plfk2(ch14) / (plbc1(ch14) + plbc2(ch14) * tb_temp1 ) ) -1 )
-            tb_temp1  = tb_xb(ch14,n)
-            rad_M14   = plfk1(ch14) / &
-                        ( exp( plfk2(ch14) / (plbc1(ch14) + plbc2(ch14) * tb_temp1) ) -1 )
-            tb_temp1  = iv%instid(isens)%tropt(n)
-            rad_tropt = plfk1(ch14) / &
-                        ( exp( plfk2(ch14) / (plbc1(ch14) + plbc2(ch14) * tb_temp1) ) -1 )
+         ! Assume tb_xb_clr (central pixel) is applicable to all super-obbed pixels
+         if (tb_xb_clr(ch7,n) > 0.) then
+            rad_b_ch7  = plfk1(ch7) / &
+                          ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_xb_clr(ch7,n) ) ) - 1.0 )
          else
-            rad_O14 = missing_r
-            rad_M14 = missing_r
-            rad_tropt = missing_r
+            rad_b_ch7 = missing_r
          end if
 
-         if (tb_ob(ch7,n) .gt. 0. .and. tb_ob(ch14,n) .gt. 0.) then
-            tb_temp1   = tb_ob(ch7,n)
-            rad_o_ch7  = plfk1(ch7) / & 
-                          ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_temp1 ) ) - 1. )
-            tb_temp1   = tb_xb(ch7,n)
-            rad_b_ch7  = plfk1(ch7) / & 
-                          ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_temp1 ) ) - 1. )
-            tb_temp1   = tb_ob(ch14,n)
-            rad_o_ch14 = plfk1(ch7) / & 
-                          ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_temp1 ) ) - 1. )
-            tb_temp1   = tb_xb(ch14,n)
-            rad_b_ch14 = plfk1(ch7) / & 
-                          ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_temp1 ) ) - 1. )
+         if (tb_xb_clr(ch14,n) > 0.) then
+            rad_b_ch14 = plfk1(ch7) / &
+                          ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_xb_clr(ch14,n) ) ) - 1.0 )
          else
-            rad_o_ch7 = missing_r
-            rad_b_ch7 = missing_r
-            rad_o_ch14 = missing_r
             rad_b_ch14 = missing_r
          end if
 
-         tb_qc_clddet = tb_qc
+         if ( tb_xb_clr(ch14,n) > 0. ) then
+            rad_M14   = plfk1(ch14) / &
+                        ( exp( plfk2(ch14) / (plbc1(ch14) + plbc2(ch14) * tb_xb_clr(ch14,n)) ) - 1.0 )
+         else
+            rad_M14   = missing_r
+         end if
+         if ( iv%instid(isens)%tropt(n) > 0. ) then
+            rad_tropt = plfk1(ch14) / &
+                        ( exp( plfk2(ch14) / (plbc1(ch14) + plbc2(ch14) * iv%instid(isens)%tropt(n)) ) - 1.0 )
+         else
+            rad_tropt = missing_r
+         end if
 
-         do itest = 1, num_clddet_tests
+         clddet_tests = 0
+         do jsuper = 1, iv%instid(isens)%superob_width
+         do isuper = 1, iv%instid(isens)%superob_width
+            ! Use tb_obs for this particular super-ob pixel
+
+            tb_obs => iv%instid(isens)%superob(isuper,jsuper)%tb_obs
+
+            if (tb_obs(ch7,n) > 0.) then
+               rad_o_ch7  = plfk1(ch7) / &
+                             ( exp( plfk2(ch7)  / ( plbc1(ch7)  + plbc2(ch7)  * tb_obs(ch7,n)  ) ) - 1.0 )
+            else
+               rad_o_ch7  = missing_r
+            end if
+            if (tb_obs(ch14,n) > 0.) then
+               rad_o_ch14 = plfk1(ch7) / &
+                             ( exp( plfk2(ch7)  / ( plbc1(ch7)  + plbc2(ch7)  * tb_obs(ch14,n) ) ) - 1.0 )
+               rad_O14   = plfk1(ch14) / &
+                             ( exp( plfk2(ch14) / ( plbc1(ch14) + plbc2(ch14) * tb_obs(ch14,n) ) ) - 1.0 )
+            else
+               rad_o_ch14 = missing_r
+               rad_O14    = missing_r
+            end if
+
+
+         ABICloudTestLoop: do itest = 1, num_clddet_tests
             qual_clddet = .true.
             offset_clddet = 0
             crit_clddet = missing_r
@@ -331,7 +349,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                   !--------------------------------------------------------------------------
                   ! 4.1 Relative Thermal Contrast Test (RTCT)
                   !--------------------------------------------------------------------------
-                  crit_clddet = iv%instid(isens)%cld_qc(n)%RTCT
+                  crit_clddet = iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%RTCT
                   qual_clddet(3:4) = .false.
 
                case (2)
@@ -339,7 +357,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                   ! 4.2 Cloud check: step 1  
                   ! Emissivity at Tropopause Test (ETROP)
                   !--------------------------------------------------------------------------
-                  if ( tb_xb(ch14,n) .gt. 0. .and. iv%instid(isens)%tropt(n) .gt. 0. ) &
+                  if ( all((/rad_O14,rad_M14,rad_tropt/) > 0.0) ) &
                      crit_clddet = (rad_O14 - rad_M14) / (rad_tropt - rad_M14)
 
                case (3)
@@ -348,48 +366,54 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                   ! Positive Fourteen Minus Fifteen Test (PFMFT)
                   !--------------------------------------------------------------------------
                   ! See ABI Cloud Mask Description for qual_clddet
-                  qual_clddet = (tb_xb(ch14,n).ge.tb_xb(ch15,n))
+                  qual_clddet = &
+                     tb_xb_clr(ch14,n) > 0.0 .and. &
+                     tb_xb_clr(ch15,n) > 0.0 .and. &
+                     (tb_xb_clr(ch14,n) >= tb_xb_clr(ch15,n))
 
-                  if ( (tb_inv(ch14,n) + tb_xb(ch14,n)).le.310. .and. &
-                       iv%instid(isens)%cld_qc(n)%tb_stddev_3x3(ch14).ge.0.3 .and. &
-                       tb_ob(ch14,n).gt.0. .and. tb_ob(ch15,n).gt.0. ) &
-                        crit_clddet = ( tb_ob(ch14,n) - tb_ob(ch15,n) )
+                  if ( (tb_obs(ch14,n)) <= 310. .and. &
+                       iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%tb_stddev_3x3(ch14) >= 0.3 .and. &
+                       tb_obs(ch14,n) > 0. .and. tb_obs(ch15,n) > 0. ) &
+                        crit_clddet = ( tb_obs(ch14,n) - tb_obs(ch15,n) )
 ! above using ob without VarBC 
 ! -------------------------------
-!                        crit_clddet = (tb_inv(ch14,n) + tb_xb(ch14,n) - &
-!                                (tb_inv(ch15,n) + tb_xb(ch15,n)) ) 
-! above using ob with VarBC
+!                        crit_clddet = (tb_inv(ch14,n) + tb_xb_clr(ch14,n) - &
+!                                (tb_inv(ch15,n) + tb_xb_clr(ch15,n)) ) 
+! above using ob with VarBC (requires clear-sky tb_inv)
 ! -------------------------------
 
-!JJG: Why does this logical test not use tb_ob(ch14,n)? Something to do with VarBC...
-                  if ( crit_clddet.gt.missing_r .and. &
-                       (tb_inv(ch14,n) + tb_xb(ch14,n)).gt.270. .and. &
-                       tb_xb(ch14,n).gt.270. ) &
-                        crit_clddet = crit_clddet       - &
-                                (tb_xb(ch14,n) - tb_xb(ch15,n)) * &
-                                (tb_ob(ch14,n) - 260.) / (tb_xb(ch14,n) - 260.) 
+                  if ( crit_clddet > missing_r .and. &
+                       (tb_obs(ch14,n)) > 270. .and. &
+                       tb_xb_clr(ch14,n) > 270. ) &
+                        crit_clddet = crit_clddet  - &
+                                (tb_xb_clr(ch14,n) - tb_xb_clr(ch15,n)) * &
+                                (tb_obs(ch14,n) - 260.) / (tb_xb_clr(ch14,n) - 260.) 
 ! above 1 line using ob without VarBC
-!                               (tb_inv(ch14,n) + tb_xb(ch14,n) - 260.)/ & 
-!                               (tb_xb(ch14,n) - 260.) 
-! above 2 lines using ob with VarBC  
+!                               (tb_inv(ch14,n) + tb_xb_clr(ch14,n) - 260.)/ & 
+!                               (tb_xb_clr(ch14,n) - 260.) 
+! above 2 lines using ob with VarBC   (requires clear-sky tb_inv)
 
                case (4)
                   !--------------------------------------------------------------------------
                   ! 4.4 Negative Fourteen Minus Fifteen Test (NFMFT)
                   !--------------------------------------------------------------------------
-                  if (tb_ob(ch14,n) .gt. 0. .and. tb_ob(ch15,n) .gt. 0.) &
-                     crit_clddet = tb_inv(ch15,n) - tb_inv(ch14,n)
+                  if (tb_obs(ch14,n)    > 0. .and. tb_obs(ch15,n)    > 0. .and. &
+                      tb_xb_clr(ch14,n) > 0. .and. tb_xb_clr(ch15,n) > 0. ) &
+                     crit_clddet = (tb_xb_clr(ch14,n)  - tb_xb_clr(ch15,n) ) &
+                                 - (tb_obs(ch14,n) - tb_obs(ch15,n))
 
                case (5)
                   !--------------------------------------------------------------------------
                   ! 4.5 Relative Fourteen Minus Fifteen Test (RFMFT)
                   !--------------------------------------------------------------------------
                   ! See ABI Cloud Mask Description for qual_clddet
-                  qual_clddet      = ( tb_ob(ch14,n) - tb_ob(ch15,n) ) .lt. 1.0
-                  qual_clddet(2)   = qual_clddet(2) .and. tb_ob(ch14,n) .le. 300.
-                  qual_clddet(3:4) = .false.
+                  if (tb_obs(ch14,n) > 0. .and. tb_obs(ch15,n) > 0. ) then
+                     qual_clddet      = ( tb_obs(ch14,n) - tb_obs(ch15,n) ) < 1.0
+                     qual_clddet(2)   = qual_clddet(2) .and. tb_obs(ch14,n) <= 300.
+                     qual_clddet(3:4) = .false.
 
-                  crit_clddet = iv%instid(isens)%cld_qc(n)%RFMFT
+                     crit_clddet = iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%RFMFT
+                  end if
 
                case (6)
                   !--------------------------------------------------------------------------
@@ -397,11 +421,11 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                   !--------------------------------------------------------------------------
                   ! See ABI Cloud Mask Description for qual_clddet
                   qual_clddet = &
-                           iv%instid(isens)%cld_qc(n)%terr_hgt .le. 2000.  &
-                     .and. iv%instid(isens)%cld_qc(n)%tb_stddev_3x3(ch10) .gt. 0.5 &
-                     .and. iv%instid(isens)%cld_qc(n)%tb_stddev_3x3(ch14) .gt. 0.5
-                  if ( allocated(iv%instid(isens)%cld_qc(n)%CIRH2O) ) &
-                     crit_clddet = iv%instid(isens)%cld_qc(n)%CIRH2O(1,1,1)
+                           iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%terr_hgt <= 2000.  &
+                     .and. iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%tb_stddev_3x3(ch10) > 0.5 &
+                     .and. iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%tb_stddev_3x3(ch14) > 0.5
+                  if ( allocated(iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%CIRH2O) ) &
+                     crit_clddet = iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%CIRH2O(1,1,1)
 
                case (7)
                   !--------------------------------------------------------------------------
@@ -409,8 +433,9 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                   !--------------------------------------------------------------------------
                   ! Modify EMISS for sun glint area may be  not work, because we are at north land
                   ! - compute relative azimuth
-                  crit_clddet = (rad_o_ch7/rad_o_ch14 - rad_b_ch7/rad_b_ch14)/ & 
-                            (rad_b_ch7 / rad_b_ch14)
+                  if ( all((/rad_o_ch7,rad_o_ch14,rad_b_ch7,rad_b_ch14/) > 0.0) ) & 
+                     crit_clddet = (rad_o_ch7/rad_o_ch14 - rad_b_ch7/rad_b_ch14) / & 
+                                   (rad_b_ch7 / rad_b_ch14)
 
                   if (     iv%instid(isens)%solzen(n) > 0. &
                      .and. iv%instid(isens)%solzen(n) < 90. ) then
@@ -419,8 +444,12 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                      ! - compute glint angle
                      Glintzen = GLINT_ANGLE(iv%instid(isens)%solzen(n),iv%instid(isens)%satzen(n),Relaz )
 
-                     if ( Glintzen.lt.40.0 .and. isflg==sea_flag) then
-                        crit_clddet = - tb_inv(ch7,n) ! (B_ch7 - O_ch7)
+                     if ( Glintzen < 40.0 .and. isflg==sea_flag) then
+                        if (tb_xb_clr(ch7,n) > 0. .and. tb_obs(ch7,n) > 0.) then
+                           crit_clddet = tb_xb_clr(ch7,n) - tb_obs(ch7,n) ! (B_ch7 - O_ch7)
+                        else
+                           crit_clddet = missing_r
+                        endif
                         offset_clddet = 1
                      end if
                   end if
@@ -431,7 +460,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                   !--------------------------------------------------------------------------
 !JJG, AHI error: Changed this to solzen instead of solazi for night/day test
                   qual_clddet = iv%instid(isens)%solzen(n) >= 85.0
-                  if (tb_ob(ch7,n) .gt. 0. .and. tb_ob(ch14,n) .gt. 0.) &
+                  if ( all((/rad_o_ch7,rad_o_ch14,rad_b_ch7,rad_b_ch14/) > 0.0) ) & 
                      crit_clddet = rad_b_ch7/rad_b_ch14 - rad_o_ch7/rad_o_ch14
 
                case (9)
@@ -439,27 +468,27 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                   ! 4.9 New Optically Thin Cloud Test (N-OTC)
                   !--------------------------------------------------------------------------
 !JJG, AHI error: Changed this to solzen instead of solazi for night/day test
-                  if ( iv%instid(isens)%solzen(n) .ge. 85.0 ) &
+                  if ( iv%instid(isens)%solzen(n) >= 85.0 ) &
                      offset_clddet = 1 ! night time
 
-                  if (tb_ob(ch7,n) .gt. 0. .and. tb_ob(ch15,n) .gt. 0.) &
+                  if (tb_obs(ch7,n) > 0. .and. tb_obs(ch15,n) > 0.) &
 ! using ob without VarBC
 ! -------------------------------
-                       crit_clddet = tb_ob(ch7,n) - tb_ob(ch15,n)  
+                       crit_clddet = tb_obs(ch7,n) - tb_obs(ch15,n)  
 
-! using ob with VarBC
+! using ob with VarBC (requires clear-sky tb_inv)
 ! -------------------------------
-!                       crit_clddet = tb_inv(ch7,n) + tb_xb(ch7,n) - & 
-!                             (tb_inv(ch15,n) + tb_xb(ch15,n))
+!                       crit_clddet = tb_inv(ch7,n) + tb_xb_clr(ch7,n) - & 
+!                             (tb_inv(ch15,n) + tb_xb_clr(ch15,n))
 
                case (10)
                   !--------------------------------------------------------------------------
                   ! 4.10 Temporal Infrared Test (TEMPIR)
                   !--------------------------------------------------------------------------
-                  crit_clddet = iv%instid(isens)%cld_qc(n)%TEMPIR
+                  crit_clddet = iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%TEMPIR
 
                case default
-                  cycle
+                  cycle ABICloudTestLoop
             end select
 
 !            call evaluate_clddet_test ( &
@@ -467,13 +496,12 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 !                  iv%instid(isens)%info%lat(1,n), iv%instid(isens)%info%lon(1,n), &
 !                  reject_clddet )
 
-            reject_clddet = crit_clddet.gt.missing_r .and. &
+            reject_clddet = crit_clddet > missing_r .and. &
                         any( isflg.eq.isflgs_clddet .and. &
-                             crit_clddet.gt.eps_clddet(index_clddet(itest)+offset_clddet,:) .and. &
+                             crit_clddet > eps_clddet(index_clddet(itest)+offset_clddet,:) .and. &
                              qual_clddet )
 
             if (reject_clddet) then
-               tb_qc_clddet = qc_bad
                if (iv%instid(isens)%info%proc_domain(1,n)) then
                   nrej_clddet(:,itest) = nrej_clddet(:,itest) + 1
 !JJGDEBUG
@@ -481,16 +509,31 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 !JJGDEBUG
                end if
 
-               clddet_tests(itest) = 1
+               clddet_tests(isuper, jsuper, itest) = 1
             end if
-         end do
-         if (.not. crtm_cloud(it) ) tb_qc = tb_qc_clddet
-         if (any(tb_qc_clddet.lt.0)) iv%instid(isens)%cloud_flag(:,n) = sum(clddet_tests) * qc_bad
+         end do ABICloudTestLoop
+         end do ! isuper
+         end do ! jsuper
+         if ( iv%instid(isens)%superob_width > 1 ) then
+            iv%instid(isens)%cloud_frac(n) = &
+               real( count(sum(clddet_tests,3) > 0), 8 ) / real( iv%instid(isens)%superob_width**2, 8 )
+         end if
+
+         ! cloud_flag = - round (mean number of tests failed)
+         iv%instid(isens)%cloud_flag(:,n) = &
+            - NINT( real( sum(clddet_tests) , 8 ) / real( iv%instid(isens)%superob_width**2, 8 ) )
+
+         if (.not. crtm_cloud(it) .and. &
+             iv%instid(isens)%cloud_flag(1,n) < 0) then
+            tb_qc = qc_bad
+         end if
 
 !JJGDEBUG
-         if (print_cld_debug) write(stdout,'(A,I8,*(2x,I1:))') 'PIXEL_DEBUG6: ', n, clddet_tests
+         if (print_cld_debug) write(stdout,'(A,I8,*(2x,I1:))') 'PIXEL_DEBUG6: ', n, clddet_tests(superob_center,superob_center,:)
 !JJGDEBUG
       end if abi_clddet
+
+      tb_obs => ob%instid(isens)%tb
 
       ! ---------------------------
       ! 5.0 assigning obs errors
@@ -504,7 +547,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
       else !crtm_cloud(it)
          ! calculate cloud impacts
          where (    tb_inv( :, n ) > missing_r &
-               .and. tb_ob( :, n ) > 0.        &
+               .and. tb_obs( :, n ) > 0.        &
                .and. tb_xb( :, n ) > 0.        &
                .and. BTlim( : )    > 0.        & !Harnisch
                )
@@ -536,10 +579,10 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
             cloud_mean = 0.5 * ( cloud_mod(:,n) + cloud_obs(:,n) )
 
             do k = 1, nchan
-               if ( cloud_mean(k).gt.missing_r ) then
-                  if ( cloud_mean(k).lt.camin ) then
+               if ( cloud_mean(k) > missing_r ) then
+                  if ( cloud_mean(k) < camin ) then
                      iv%instid(isens)%tb_error(k,n) = satinfo(isens)%error_std(k)
-                  else if ( cloud_mean(k) .lt. satinfo(isens)%error_cld_x(k) ) then
+                  else if ( cloud_mean(k) < satinfo(isens)%error_cld_x(k) ) then
                      iv%instid(isens)%tb_error(k,n) = satinfo(isens)%error_std(k) + &
                         ( satinfo(isens)%error_cld_y(k) - satinfo(isens)%error_std(k) ) * &
                         ( cloud_mean(k) - camin ) / ( satinfo(isens)%error_cld_x(k) - camin )
@@ -555,7 +598,19 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
          end if
       end if
 
-      !  5.1 check innovation
+      !  5.1 check obs and background
+      !-----------------------------------------------------------------
+      do k = 1, nchan
+         if (tb_obs(k,n) < 0.0) then
+             tb_qc(k)  = qc_bad
+         end if
+         if (tb_xb(k,n) < 0.0) then
+             tb_qc(k)  = qc_bad
+         end if
+      end do ! nchan
+
+
+      !  5.2 check innovation
       !-----------------------------------------------------------------
       ! absolute departure check
       do k = 1, nchan
@@ -586,7 +641,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                   ngood(k) = ngood(k) + 1
          end if
       end do      ! nchan
-   end do PixelQCLoop
+   end do ABIPixelQCLoop
  
    ! Do inter-processor communication to gather statistics.
    call da_proc_sum_int  (num_proc_domain)
@@ -698,7 +753,7 @@ end function glint_angle
 !   logical, intent(out)     :: reject_clddet
 !
 !   reject_clddet = .false.
-!   reject_clddet = crit_clddet.gt.missing_r .and. any( isflg.eq.isflgs .and. crit_clddet.gt.eps .and. extra_qual )
+!   reject_clddet = crit_clddet > missing_r .and. any( isflg.eq.isflgs .and. crit_clddet > eps .and. extra_qual )
 !
 !end subroutine evaluate_clddet_test
 

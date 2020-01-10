@@ -11,7 +11,7 @@
    type (iv_type),       intent(inout)  :: iv        ! Obs. increment structure.
    type (j_type),        intent(inout)  :: j         ! Cost function.
 
-   integer                        :: i,n,ichan
+   integer                        :: i,n,ichan,ix,iy
 
    if (trace_use) call da_trace_entry("da_deallocate_radiance")
 
@@ -133,17 +133,24 @@
             deallocate (iv%instid(i)%solzen)
             deallocate (iv%instid(i)%solazi)
             deallocate (iv%instid(i)%tropt)
-            if ( use_clddet_abi ) then
-               do n = 1,iv%instid(i)%num_rad
-                  if ( allocated (iv%instid(i)%cld_qc(n)%tb_stddev_3x3) ) &
-                     deallocate (iv%instid(i)%cld_qc(n)%tb_stddev_3x3) 
-                  if ( allocated (iv%instid(i)%cld_qc(n)%CIRH2O) ) &
-                     deallocate (iv%instid(i)%cld_qc(n)%CIRH2O)
+            deallocate(iv%instid(i)%cloud_frac)
+            if ( use_clddet_abi .and. &
+                 index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+               do iy = 1, iv%instid(i)%superob_width
+               do ix = 1, iv%instid(i)%superob_width
+                  do n = 1,iv%instid(i)%num_rad
+                     if ( allocated (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3) ) &
+                        deallocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3)
+                     if ( allocated (iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O) ) &
+                        deallocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O)
+                  end do
+                  deallocate (iv%instid(i)%superob(ix,iy)%cld_qc)
+                  deallocate (iv%instid(i)%superob(ix,iy)%tb_obs)
                end do
-               deallocate (iv%instid(i)%cld_qc)
+               end do
+               deallocate (iv%instid(i)%superob)
                deallocate (iv%instid(i)%gamma_jacobian)
            end if
-
            if (ANY(use_satcv)) then
 	      if (use_satcv(2)) then
                  do n = 1,iv%instid(i)%num_rad

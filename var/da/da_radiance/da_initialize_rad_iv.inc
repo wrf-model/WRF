@@ -11,6 +11,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    integer,             intent(in)    :: i, n
    type(datalink_type), intent(in)    :: p
    type(iv_type),       intent(inout) :: iv
+   integer :: ix, iy
 
    call da_trace_entry("da_initialize_rad_iv")
 
@@ -87,7 +88,11 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%tb_sens(:,n)    = 0.0
    iv%instid(i)%tb_imp(:,n)     = 0.0
    iv%instid(i)%rad_xb(:,n)     = 0.0
-   iv%instid(i)%rad_obs(:,n)    = 0.0
+   if ( associated( p % rad_obs ) ) then
+      iv%instid(i)%rad_obs(:,n) = p%rad_obs(:)
+   else
+      iv%instid(i)%rad_obs(:,n) = 0.0
+   end if
    iv%instid(i)%rad_ovc(:,:,n)  = 0.0
    iv%instid(i)%emiss(:,n)      = 0.0
    iv%instid(i)%scanpos(n)      = p%scanpos
@@ -102,19 +107,27 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%solazi(n)       = p%solazi
  !  iv%instid(i)%solazi(n)       = 0.0
    iv%instid(i)%tropt(n)        = 0.0
-   if ( use_clddet_abi ) then
-      if ( associated ( p % cld_qc ) ) then
-         iv%instid(i)%cld_qc(n)%RTCT = p % cld_qc % RTCT
-         iv%instid(i)%cld_qc(n)%RFMFT = p % cld_qc % RFMFT
-         iv%instid(i)%cld_qc(n)%TEMPIR = p % cld_qc % TEMPIR
-         if ( allocated ( p % cld_qc % tb_stddev_3x3 ) ) &
-            iv%instid(i)%cld_qc(n)%tb_stddev_3x3(:) = p % cld_qc % tb_stddev_3x3(:)
-         iv%instid(i)%cld_qc(n)%terr_hgt = p % cld_qc % terr_hgt
-         if ( allocated ( p % cld_qc % CIRH2O ) .and. &
-            size(p % cld_qc % CIRH2O).eq.1) then
-            allocate ( iv%instid(i)%cld_qc(n)%CIRH2O(1,1,1) )
-            iv%instid(i)%cld_qc(n)%CIRH2O = p % cld_qc % CIRH2O
-         end if
+   iv%instid(i)%cloud_frac(n)   = missing_r
+   if ( use_clddet_abi .and. &
+        index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+      if ( allocated ( p % superob ) ) then
+         do iy = 1, iv%instid(i)%superob_width
+         do ix = 1, iv%instid(i)%superob_width
+            iv%instid(i)%superob(ix,iy)%tb_obs(:,n) = p % superob(ix,iy) % tb_obs(:,1)
+
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RTCT = p % superob(ix,iy) % cld_qc(1) % RTCT
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RFMFT = p % superob(ix,iy) % cld_qc(1) % RFMFT
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%TEMPIR = p % superob(ix,iy) % cld_qc(1) % TEMPIR
+            if ( allocated ( p % superob(ix,iy) % cld_qc(1) % tb_stddev_3x3 ) ) &
+               iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3(:) = p % superob(ix,iy) % cld_qc(1) % tb_stddev_3x3(:)
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%terr_hgt = p % superob(ix,iy) % cld_qc(1) % terr_hgt
+            if ( allocated ( p % superob(ix,iy) % cld_qc(1) % CIRH2O ) .and. &
+               size(p % superob(ix,iy) % cld_qc(1) % CIRH2O).eq.1) then
+               allocate ( iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O(1,1,1) )
+               iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O = p % superob(ix,iy) % cld_qc(1) % CIRH2O
+            end if
+         end do
+         end do
       end if
    end if
 

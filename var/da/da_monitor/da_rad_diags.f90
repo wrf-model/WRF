@@ -59,8 +59,8 @@ program da_rad_diags
    real*4,  dimension(:), allocatable     :: lat, lon, elv, elev
    real*4,  dimension(:), allocatable     :: ret_clw
    real*4,  dimension(:), allocatable     :: satzen, satazi, t2m, mr2m, u10, v10, ps, ts
-   real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp
-   integer, dimension(:,:), allocatable   :: tb_qc, tb_cloud
+   real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp, cloud_frac
+   integer, dimension(:,:), allocatable   :: tb_qc, cloud_flag
    real*4,  dimension(:,:), allocatable   :: tb_obs, tb_bak, tb_inv, tb_oma, tb_err, ems, ems_jac
    real*4,  dimension(:,:), allocatable   :: cloud_mod, cloud_obs, tb_bak_clr
    real*4,  dimension(:,:), allocatable   :: prf_pfull, prf_phalf, prf_t, prf_q, prf_water
@@ -248,14 +248,15 @@ ntime_loop: do itime = 1, ntime
             allocate (       vegfra(1:total_npixel) )
             allocate (         elev(1:total_npixel) )
             allocate (         clwp(1:total_npixel) ) !model/guess clwp
+            allocate (   cloud_frac(1:total_npixel) )
             allocate ( tb_obs(1:nchan,1:total_npixel) )
             allocate ( tb_bak(1:nchan,1:total_npixel) )
             allocate ( tb_inv(1:nchan,1:total_npixel) )
             allocate ( tb_oma(1:nchan,1:total_npixel) )
             allocate ( tb_err(1:nchan,1:total_npixel) )
             allocate ( tb_qc(1:nchan,1:total_npixel)  )
-            allocate ( tb_cloud(1:nchan,1:total_npixel)  )
-            tb_cloud = 0
+            allocate ( cloud_flag(1:nchan,1:total_npixel)  )
+            cloud_flag = 0
             if ( abi ) then
                allocate ( cloud_mod(1:nchan,1:total_npixel) )
                allocate ( cloud_obs(1:nchan,1:total_npixel) )
@@ -359,11 +360,10 @@ ntime_loop: do itime = 1, ntime
             read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i6,i3,f6.0,4f8.2,f8.3)',iostat=ios)  &
                n, datestr2(ipixel), scanpos(ipixel), landsea_mask(ipixel), elv(ipixel), &
                lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel), ret_clw(ipixel)
-
-            read(unit=iunit(iproc),fmt='(14x,9f10.2,3i3,3f10.2)',iostat=ios)  &
+            read(unit=iunit(iproc),fmt='(14x,9f10.2,3i3,f8.3,f10.2,f8.3,f15.5)',iostat=ios)  &
                t2m(ipixel), mr2m(ipixel), u10(ipixel), v10(ipixel), ps(ipixel), ts(ipixel), &
                smois(ipixel), tslb(ipixel), snowh(ipixel), isflg(ipixel), soiltyp(ipixel),  &
-               vegtyp(ipixel), vegfra(ipixel), elev(ipixel), clwp(ipixel)
+               vegtyp(ipixel), vegfra(ipixel), elev(ipixel), clwp(ipixel), cloud_frac(ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! OBS
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_obs(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! BAK
@@ -384,11 +384,9 @@ ntime_loop: do itime = 1, ntime
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_err(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! QC
             read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) tb_qc(:,ipixel)
-            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! CLOUD, CA, INFO, or level
-            if ( buf(1:5) == "CLOUD" ) then ! read cloud detection info
-               read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) tb_cloud(:,ipixel)
-               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! CMOD, INFO, or level
-            end if
+            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! CLOUD
+            read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) cloud_flag(:,ipixel)
+            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! CMOD, INFO, or level
             if ( abi .and. buf(1:4) == "CMOD" ) then ! read cloud_mod, cloud_obs, tb_bak_clr for abi
                read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) cloud_mod(:,ipixel)
                read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! COBS
@@ -523,7 +521,7 @@ ntime_loop: do itime = 1, ntime
       end if
       ios = NF_DEF_VAR(ncid, 'tb_err', NF_FLOAT, 2, ishape(1:2), varid)
       ios = NF_DEF_VAR(ncid, 'tb_qc',  NF_INT,   2, ishape(1:2), varid)
-      ios = NF_DEF_VAR(ncid, 'tb_cloud',  NF_INT,   2, ishape(1:2), varid)
+      ios = NF_DEF_VAR(ncid, 'cloud_flag',  NF_INT,   2, ishape(1:2), varid)
       if ( abi ) then
          ios = NF_DEF_VAR(ncid, 'cloud_mod', NF_FLOAT, 2, ishape(1:2), varid)
          ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
@@ -634,6 +632,9 @@ ntime_loop: do itime = 1, ntime
       if ( amsr2 ) then
          ios = NF_DEF_VAR(ncid, 'ret_clw',   NF_FLOAT, 1, ishape(1), varid)
       end if
+      ios = NF_DEF_VAR(ncid, 'cloud_frac',   NF_FLOAT, 1, ishape(1), varid)
+      ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
+
 
       ios = NF_ENDDEF(ncid)
       !
@@ -669,8 +670,8 @@ ntime_loop: do itime = 1, ntime
       ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), tb_err)
       ios = NF_INQ_VARID (ncid, 'tb_qc', varid)
       ios = NF_PUT_VARA_INT(ncid,  varid, istart(1:2), icount(1:2), tb_qc)
-      ios = NF_INQ_VARID (ncid, 'tb_cloud', varid)
-      ios = NF_PUT_VARA_INT(ncid,  varid, istart(1:2), icount(1:2), tb_cloud)
+      ios = NF_INQ_VARID (ncid, 'cloud_flag', varid)
+      ios = NF_PUT_VARA_INT(ncid,  varid, istart(1:2), icount(1:2), cloud_flag)
       if ( abi ) then
          ios = NF_INQ_VARID (ncid, 'cloud_mod', varid)
          ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), cloud_mod)
@@ -848,6 +849,9 @@ ntime_loop: do itime = 1, ntime
          ios = NF_INQ_VARID (ncid, 'ret_clw', varid)
          ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), ret_clw)
       end if
+      ios = NF_INQ_VARID (ncid, 'cloud_frac', varid)
+      ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), cloud_frac)
+
       !
       ios = NF_CLOSE(ncid)
 
@@ -879,6 +883,7 @@ ntime_loop: do itime = 1, ntime
       deallocate ( vegfra )
       deallocate ( elev )
       deallocate ( clwp )
+      deallocate ( cloud_frac )
       deallocate ( ret_clw )
       deallocate ( tb_obs )
       deallocate ( tb_bak )
@@ -893,7 +898,7 @@ ntime_loop: do itime = 1, ntime
       if ( jac_found ) deallocate ( ems_jac )
       deallocate ( tb_err )
       deallocate ( tb_qc )
-      deallocate ( tb_cloud )
+      deallocate ( cloud_flag )
       if ( prf_found .and. (rtm_option == 'CRTM') ) then
          deallocate ( prf_pfull )
          deallocate ( prf_phalf )

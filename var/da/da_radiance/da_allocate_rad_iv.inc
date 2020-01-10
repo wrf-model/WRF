@@ -11,7 +11,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
    integer           ,  intent (in)    :: i, nchan
    type (iv_type)    ,  intent (inout) :: iv
 
-   integer :: n
+   integer :: n, ix, iy
 
    call da_trace_entry("da_allocate_rad_iv")
 
@@ -111,11 +111,21 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%solzen(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%solazi(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tropt(iv%instid(i)%num_rad))
+      allocate (iv%instid(i)%cloud_frac(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%gamma_jacobian(nchan,iv%instid(i)%num_rad))
-      if ( use_clddet_abi ) then
-         allocate (iv%instid(i)%cld_qc(iv%instid(i)%num_rad))
-         do n = 1, iv%instid(i)%num_rad
-            allocate (iv%instid(i)%cld_qc(n)%tb_stddev_3x3(nchan))
+      if ( use_clddet_abi .and. &
+           index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+         iv%instid(i)%superob_width = 2*abi_superob_halfwidth+1
+         allocate (iv%instid(i)%superob(iv%instid(i)%superob_width, &
+                                        iv%instid(i)%superob_width))
+         do iy = 1, iv%instid(i)%superob_width
+         do ix = 1, iv%instid(i)%superob_width
+            allocate (iv%instid(i)%superob(ix,iy)%cld_qc(iv%instid(i)%num_rad))
+            allocate (iv%instid(i)%superob(ix,iy)%tb_obs(nchan,iv%instid(i)%num_rad))
+            do n = 1, iv%instid(i)%num_rad
+               allocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3(nchan))
+            end do
+         end do
          end do
       end if
       if ( use_rttov_kmatrix .or. use_crtm_kmatrix ) then

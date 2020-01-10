@@ -22,7 +22,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    ! WRFDA subs: da_llxy, da_get_julian_time,
    !             da_get_unit, da_free_unit,
    !             da_get_sat_angles(_1d), da_get_solar_angles(_1d)
-   !             da_trace_entry, da_trace_exit, 
+   !             da_trace_entry, da_trace_exit,
    ! precisions: r_double, i_kind
 
    type (iv_type),intent (inout) :: iv
@@ -78,12 +78,14 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
 
    ! Brightness Temperature (K)
-   real, allocatable            :: bt_p(:,:,:), terrain_hgt(:,:)
+   real, allocatable            :: bt_p(:,:,:), rad_p(:,:,:), terrain_hgt(:,:)
+   real                         :: bc1, bc2, fk1, fk2
 
    !! Iterates
    integer                      :: ichan, ifile, iview, ifgat, ipass, ioff, &
                                    jchan, jfile, jview, icount, io_stat, &
-                                   n, i, j, iy, ix, jy, jx, iyl, ixl, iyfd, ixfd, iproc, subgrid
+                                   n, i, j, iy, ix, jy, jx, iyl, ixl, iyfd, ixfd, iproc, subgrid, &
+                                   isup, jsup, ixsup, iysup
    INTEGER :: cstat, estat
    CHARACTER(LEN=100) :: cmsg
    logical :: exists
@@ -145,7 +147,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       logical, allocatable             :: file_fgat_match(:,:)
       real*8, allocatable              :: fgat_time_abs_diff(:,:) ! seconds
       real*8, allocatable              :: min_time_diff(:,:) ! seconds
-      integer, allocatable             :: nfiles_used(:) 
+      integer, allocatable             :: nfiles_used(:)
       logical                          :: meta_initialized = .false.
       logical                          :: grid_initialized = .false.
       integer                          :: ny_global, nx_global, yoff_fd, xoff_fd
@@ -204,6 +206,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    !Cloud QC variables
    integer :: tbuf, nkeep, ikeep
    integer :: abi_halo_width  ! Must be ≥ 0
+   integer :: superob_width
    real    :: mu10, mu14, sigma10, sigma14, pearson, temp_max
    real    :: mu, sigma
    real, allocatable :: tb_temp(:,:)
@@ -273,7 +276,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    allocate(view_att(nviews))
    ! (default) All views are used (algorithm figures out which views have files present)
    ! Could set this according to namelist entries
-   view_att(:) % select = .true.  
+   view_att(:) % select = .true.
    view_att(1) % name_short = 'F'
    view_att(2) % name_short = 'C'
    view_att(3) % name_short = 'M1'
@@ -311,11 +314,12 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    num_goesabi_used_fgat = 0
    num_goesabi_thinned   = 0
 
+   abi_halo_width = abi_superob_halfwidth
    if ( use_clddet_abi ) then
-      abi_halo_width = max(10,abi_superob_halfwidth)
-   else
-      abi_halo_width = max(0,abi_superob_halfwidth)
+      abi_halo_width = abi_halo_width + 10
    end if
+
+   superob_width = 2*abi_superob_halfwidth+1
 
    tot_files_used = 0
    use_view_mask = .false.
@@ -361,7 +365,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
          icount = 0
          io_stat = -1
-         do while (io_stat .ne. 0) 
+         do while (io_stat .ne. 0)
             open(unit=file_unit,file=trim(list_file), iostat = io_stat)
             icount = icount + 1
             if (icount .gt. 10000) exit
@@ -522,7 +526,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
          end if
 
          if (count(this_view % file_fgat_match(ifile,:)) .gt. 1) then
-            print*, 'WARNING: More than one bin was selected for ',trim(fname) 
+            print*, 'WARNING: More than one bin was selected for ',trim(fname)
             print*, 'num_bin_per_file = ',count(this_view % file_fgat_match(ifile,:))
             print*, 'obs_time = ',obs_time
             print*, 'Ignoring this file for reading.'
@@ -697,8 +701,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             n = 0 ; icount = 0
 
 !JJG: Not convinced that these subgrids are needed.  Might be able to loop over global X/Y instead. This solution may be overly complex.  mod test for load balancing is still needed!
-            ! This loop over subgrids and the selective logic 
-            !  below for myproc balances the processor loads  
+            ! This loop over subgrids and the selective logic
+            !  below for myproc balances the processor loads
             !  when some imager pixels are off-earth or outside
             !  zenith-angle limits (Full Disk and CONUS)
             do subgrid = 1, num_procs
@@ -712,11 +716,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                   do iyl = 1, ny_local
                      iy = iyl + this_view % ys_local - 1
                      ix = ixl + this_view % xs_local - 1
-                     if ( mod( iy-abi_superob_halfwidth-1, 2*abi_superob_halfwidth+1 ) == 0  .and. &
-                          mod( ix-abi_superob_halfwidth-1, 2*abi_superob_halfwidth+1 ) == 0 ) then
-!                     if ( abi_superob_halfwidth == 0 .or. &
-!                          ( mod( iy-abi_superob_halfwidth-1, 2*abi_superob_halfwidth+1 ) == 0  .and. &
-!                            mod( ix-abi_superob_halfwidth-1, 2*abi_superob_halfwidth+1 ) == 0 ) ) then
+                     if ( mod( iy-abi_superob_halfwidth-1, superob_width ) == 0  .and. &
+                          mod( ix-abi_superob_halfwidth-1, superob_width ) == 0 ) then
                         !This mod test produces balanced loads between processors
                         if ( mod( n, num_procs ) .eq. myproc ) then
                            icount = icount + 1
@@ -778,9 +779,9 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                                          this_view % satazi_1d % local, &
                                          earthmask_1d, zenmask_1d )
 
-            ! Reduce values for iy, ix, lat, lon, satzen, satazi 
+            ! Reduce values for iy, ix, lat, lon, satzen, satazi
             ! using earth and zenith masks
-            nrad_mask = count ( earthmask_1d .and. zenmask_1d ) 
+            nrad_mask = count ( earthmask_1d .and. zenmask_1d )
             this_view % lat_1d % local(1:nrad_mask) = &
                      pack(this_view % lat_1d % local    , earthmask_1d .and. zenmask_1d )
             this_view % lon_1d % local(1:nrad_mask) = &
@@ -818,7 +819,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             call mpi_barrier(comm, ierr)
 #endif
             ! COMMUNICATE 1D FIELDS FROM REMOTE PROCS TO LOCAL BUFFER
-            !  Note: these comms are a minor bottleneck, which will be 
+            !  Note: these comms are a minor bottleneck, which will be
             !  more noticeable for 4D-Var when MESO1/2 is processed
             !  at multiple fgat's
             !  Potential Solutions
@@ -855,7 +856,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 !
 !            displs = 0
 !            do iproc = 1, num_procs - 1
-!               displs(iproc+1) = displs(iproc) + nbufs(iproc)      
+!               displs(iproc+1) = displs(iproc) + nbufs(iproc)
 !            end do
 !
 !            this_view % nrad_on_domain = sum( nbufs )
@@ -1053,7 +1054,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                allocate( this_view % satzen_1d % patch (this_view % nrad_on_patch) )
                allocate( this_view % satazi_1d % patch (this_view % nrad_on_patch) )
                allocate( this_view % iy_1d % patch     (this_view % nrad_on_patch) )
-               allocate( this_view % ix_1d % patch     (this_view % nrad_on_patch) ) 
+               allocate( this_view % ix_1d % patch     (this_view % nrad_on_patch) )
                allocate( this_view % loc_1d % patch    (this_view % nrad_on_patch) )
 
                this_view % lat_1d % patch    = &
@@ -1183,9 +1184,9 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                VIEW_SELECT: &
                if ( ipass.lt.npass .and. use_view_mask ) then
                   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                  !! Determine which view has the closest observed 
+                  !! Determine which view has the closest observed
                   !!  time to fgat for this channel
-                  !!  Note: this only needs to be done for a single channel, 
+                  !!  Note: this only needs to be done for a single channel,
                   !!    unless individual channel files are missing at fgat.
                   !!    Solution where file view availability differs by channel used here.
                   !!  (only available when FD data present for one of the fgat times)
@@ -1206,7 +1207,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                         best_view = best_view .and. &
                            this_view % min_time_diff(ichan, ifgat) .lt. &
                               view_att(jview) % min_time_diff(ichan, ifgat)
-                     end do 
+                     end do
                      if ( best_view ) then
                         do n = 1, this_view % nrad_on_patch
                            iy = this_view % iy_1d % patch (n)
@@ -1280,7 +1281,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                   !! Read radiance and convert to brightness temp.
-                  !! once per permutation of 
+                  !! once per permutation of
                   !! + INST VIEW (FD, CONUS, MESOx2)
                   !! + fgat
                   !! + channel/band
@@ -1320,33 +1321,53 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                   ! Allocate and read bt for this patch and current time
                   if ( TEMPIR_ifile.gt.0 ) then
+                     allocate( rad_p ( &
+                        this_view % ys_local:this_view % ye_local, &
+                        this_view % xs_local:this_view % xe_local, 2 ) )
+
                      allocate( bt_p ( &
                         this_view % ys_local:this_view % ye_local, &
                         this_view % xs_local:this_view % xe_local, 2 ) )
                   else
+                     allocate( rad_p ( &
+                        this_view % ys_local:this_view % ye_local, &
+                        this_view % xs_local:this_view % xe_local, 1 ) )
+
                      allocate( bt_p ( &
                         this_view % ys_local:this_view % ye_local, &
                         this_view % xs_local:this_view % xe_local, 1 ) )
                   end if
+
                   fname = trim(this_view % filename(ifile))
-                  call get_abil1b_bt( fname, &
-                                      this_view % ys_local, this_view % ye_local, &
-                                      this_view % xs_local, this_view % xe_local, &
-                                      readmask_p, bt_p(:,:,1), inst, ichan )
+                  call get_abil1b_rad( fname, &
+                                       this_view % ys_local, this_view % ye_local, &
+                                       this_view % xs_local, this_view % xe_local, &
+                                       readmask_p, inst, ichan, &
+                                       rad_p(:,:,1), bc1, bc2, fk1, fk2 )
+
+                  bt_p = missing_r
+                  where (readmask_p)
+                     bt_p(:,:,1) = rad2bt(rad_p(:,:,1), bc1, bc2, fk1, fk2)
+                  end where
 
                   !JJG: It is possible for readmask_p to differ across channels.
-                  ! readmask_p needs to be incorporated, but presently causes error between channel reading 
-                  ! when lining up channels to identical members of linked p list.  
-                  ! Fixing this will require moving away from linked list including the readmask_p quality 
+                  ! readmask_p needs to be incorporated, but presently causes error between channel reading
+                  ! when lining up channels to identical members of linked p list.
+                  ! Fixing this will require moving away from linked list including the readmask_p quality
                   ! flag in the datalink_type.
-                  ! Presently readmask_p is used internally within get_abil1b_bt to set bt_p=missing_r (works fine)
+                  ! Presently readmask_p is used internally within get_abil1b_rad to set rad_p=missing_r (works fine)
                   !allmask_p = (allmask_p .and. readmask_p)
                   if ( TEMPIR_ifile.gt.0 ) then
                      fname = trim(this_view % filename(TEMPIR_ifile))
-                     call get_abil1b_bt( fname, &
-                                         this_view % ys_local, this_view % ye_local, &
-                                         this_view % xs_local, this_view % xe_local, &
-                                         readmask_p, bt_p(:,:,2), inst, ichan )
+                     call get_abil1b_rad( fname, &
+                                          this_view % ys_local, this_view % ye_local, &
+                                          this_view % xs_local, this_view % xe_local, &
+                                          readmask_p, inst, ichan, &
+                                          rad_p(:,:,2), bc1, bc2, fk1, fk2 )
+
+                     where (readmask_p)
+                        bt_p(:,:,2) = rad2bt(rad_p(:,:,2), bc1, bc2, fk1, fk2)
+                     end where
 
                      yr = this_view % filedate(TEMPIR_ifile) % yr
                      mt = this_view % filedate(TEMPIR_ifile) % mt
@@ -1361,22 +1382,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                   first_chan = (this_view % nfiles_used(ifgat).eq.1)
 
-                  if ( use_clddet_abi .and. channel_list(ichan).eq.14 .and. abi_halo_width.ge.1) then
-                     ! Allocate terrain_hgt using local indices for this view
-                     allocate( terrain_hgt ( &
-                                       this_view % ys_local:this_view % ye_local, &
-                                       this_view % xs_local:this_view % xe_local ) )
-
-                     ! Read terrain file using Full Disk global indices
-                     call get_abil1b_terr( terr_fname, &
-                                       this_view % ys_local + this_view % yoff_fd - 1, &
-                                       this_view % ye_local + this_view % yoff_fd - 1, &
-                                       this_view % xs_local + this_view % xoff_fd - 1, &
-                                       this_view % xe_local + this_view % xoff_fd - 1, &
-                                       terrain_hgt )
-
-                  end if
-
                   !! Write bt, lat, lon, satzen, satazi, solzen, solazi to datalink structures
                   if (first_chan) then
                      p_fgat => p
@@ -1388,22 +1393,27 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      mn = this_view % filedate(ifile) % mn
                      sc = this_view % filedate(ifile) % sc
 
-                     if ( use_clddet_abi ) then
-                        allocate( solzen_1d (this_view % nrad_on_patch) )
-                        allocate( solazi_1d (this_view % nrad_on_patch) )
+                     allocate( solzen_1d (this_view % nrad_on_patch) )
+                     allocate( solazi_1d (this_view % nrad_on_patch) )
 
-                        call da_get_solar_angles_1d ( yr, mt, dy, hr, mn, sc, &
-                           this_view % lat_1d % patch, this_view % lon_1d % patch, &
-                           solzen_1d, solazi_1d )
+                     call da_get_solar_angles_1d ( yr, mt, dy, hr, mn, sc, &
+                        this_view % lat_1d % patch, this_view % lon_1d % patch, &
+                        solzen_1d, solazi_1d )
 
-!                        do n = 1, this_view % nrad_on_patch
-!                           iy = this_view % iy_1d % patch (n)
-!                           ix = this_view % ix_1d % patch (n)
-!                           if (.not. allmask_p( iy, ix )) cycle
-!                           call da_get_solar_angles ( yr, mt, dy, hr, mn, sc, &
-!                              this_view % lat_1d % patch(n), this_view % lon_1d % patch(n), &
-!                              solzen_1d(n), solazi_1d(n) )
-!                        end do
+                     if ( use_clddet_abi .and. &
+                          abi_halo_width-abi_superob_halfwidth.ge.1) then
+                           ! Allocate terrain_hgt using local indices for this view
+                           allocate( terrain_hgt ( &
+                                             this_view % ys_local:this_view % ye_local, &
+                                             this_view % xs_local:this_view % xe_local ) )
+
+                           ! Read terrain file using Full Disk global indices
+                           call get_abil1b_terr( terr_fname, &
+                                             this_view % ys_local + this_view % yoff_fd - 1, &
+                                             this_view % ye_local + this_view % yoff_fd - 1, &
+                                             this_view % xs_local + this_view % xoff_fd - 1, &
+                                             this_view % xe_local + this_view % xoff_fd - 1, &
+                                             terrain_hgt )
                      end if
 
                      allocate(thinmask(this_view % ys_p:this_view % ye_p, &
@@ -1422,7 +1432,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      if (first_chan) then
                         info % lat = this_view % lat_1d % patch (n) ! latitude
                         info % lon = this_view % lon_1d % patch (n) ! longitude
-!                        num_goesabi_global = num_goesabi_global + 1
                         num_goesabi_local = num_goesabi_local + 1
                      end if
 
@@ -1449,13 +1458,19 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      if (first_chan) then
                         num_goesabi_used_fgat(ifgat) = num_goesabi_used_fgat(ifgat) + 1
 
+                        allocate ( p % tb_inv (1:nchan) )
+                        allocate ( p % rad_obs (1:nchan) )
+                        p % tb_inv                = missing_r
+                        p % rad_obs               = missing_r
+
                         write(unit=info % date_char, &
                            fmt='(I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
                            yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
-                        info % elv = 0.0
-                        allocate ( p % tb_inv (1:nchan) )
-                        p % tb_inv = missing_r
-
+                        if ( allocated(terrain_hgt) ) then
+                           info % elv = terrain_hgt( iy, ix )
+                        else
+                           info % elv = 0.0
+                        end if
                         p % info                  = info
                         p % loc                   = this_view % loc_1d % patch (n)
 
@@ -1471,201 +1486,247 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                         end if
                         p % satzen                = this_view % satzen_1d % patch (n)
                         p % satazi                = this_view % satazi_1d % patch (n)
-                        if ( use_clddet_abi ) then
-                           p % solzen             = solzen_1d (n)
-                           p % solazi             = solazi_1d (n)
-                        else
-                           p % solzen             = missing_r
-                           p % solazi             = missing_r
-                        end if
+                        p % solzen                = solzen_1d (n)
+                        p % solazi                = solazi_1d (n)
                         if ( p % solzen < 0. ) p % solzen = 150.
                         p % sensor_index          = inst
                         p % ifgat                 = ifgat
                      end if
 
-                     ! Super-ob the BT for this channel
+                     ! Super-ob the radiance, then convert to BT for this channel
                      tbuf = abi_superob_halfwidth
                      if (abi_halo_width.ge.tbuf .and. tbuf.gt.0) then
-                        nkeep = count ( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r )
-                        if (nkeep .gt. 0) then
-                           allocate( tb_temp ( nkeep, 1 ) )
-                           tb_temp(:,1) = pack( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ), &
-                                                bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r)
-                           p % tb_inv(ichan)  = sum( tb_temp(:,1) ) / real(nkeep,r_double)
-                           deallocate( tb_temp )
+                        ! require that nkeep >= superob_width to filter out bad data
+                        nkeep = count ( rad_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. 0.0 )
+                        if (nkeep .ge. superob_width) then
+                           p % rad_obs(ichan) = sum( pack( &
+                                                   rad_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ), &
+                                                   rad_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. 0.0 ) ) &
+                                                   / real(nkeep,r_double)
                         end if
                      else
-                        ! Extract single pixel BT value for this channel
-                        p % tb_inv(ichan)     = bt_p( iy, ix, 1 )
+                        ! Extract single pixel BT and radiance value for this channel
+                        p % rad_obs(ichan)    = rad_p( iy, ix, 1 )
+                     end if
+                     if (p % rad_obs(ichan) .gt. 0.0) then
+                        p % tb_inv(ichan) = rad2bt(p % rad_obs(ichan), bc1, bc2, fk1, fk2 )
                      end if
 
                      ! Preprocessing for Cloud Mask (da_qc_goesabi.inc) including
                      !  extracting Tb values from cloud QC buffer
-                     if (.not. associated(p % cld_qc)) then
-                        allocate( p % cld_qc )
-                        allocate( p % cld_qc % tb_stddev_3x3(nchan) )
+                     if (.not. allocated(p % superob)) then
+                        allocate( p % superob(superob_width,superob_width) )
                      end if
 
-                     tbuf = 1
-                     if (abi_halo_width.ge.tbuf .and. bt_p( iy, ix, 1 ).gt.missing_r) then
-
-                        nkeep = count ( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r )
-                        if (nkeep .gt. 0) then
-                           allocate( tb_temp ( nkeep, 1 ) )
-                           tb_temp(:,1) = pack( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ), &
-                                                bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r)
-                           mu  = sum( tb_temp(:,1) ) / real(nkeep,r_double)
-                           sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
-                           deallocate( tb_temp )
-
-                           p % cld_qc % tb_stddev_3x3(ichan) = sigma
-                        else
-                           p % cld_qc % tb_stddev_3x3(ichan) = missing_r
+                     ! Loops over superob pixels
+                     do jsup = 1, superob_width
+                     do isup = 1, superob_width
+                        iysup = iy + jsup-1-abi_superob_halfwidth
+                        ixsup = ix + isup-1-abi_superob_halfwidth
+                        if (first_chan) then
+                           allocate ( p % superob(isup,jsup) % tb_obs  (1:nchan,1) )
+                           allocate ( p % superob(isup,jsup) % cld_qc(1) )
+                           allocate ( p % superob(isup,jsup) % cld_qc(1) % tb_stddev_3x3(nchan) )
                         end if
-                        if (channel_list(ichan).eq.14) then
+                        p % superob(isup,jsup) % tb_obs(ichan,1) = bt_p( iysup, ixsup, 1 )
 
-                           if ( allocated(terrain_hgt) ) then
-                              ! Determine sigma_z of terrain height across these pixels
-                              p % cld_qc % terr_hgt = terrain_hgt( iy, ix )
-                              p % info % elv = p % cld_qc % terr_hgt
+                        tbuf = 1
+                        if (abi_halo_width-abi_superob_halfwidth.ge.tbuf .and. &
+                            bt_p( iysup, ixsup, 1 ).gt.0.0) then
+                           nkeep = count ( bt_p ( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf, 1 ) .gt. 0.0 )
+                           if (nkeep .gt. 0) then
+                              allocate( tb_temp ( nkeep, 1 ) )
+                              tb_temp(:,1) = pack( bt_p ( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf, 1 ), &
+                                                   bt_p ( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf, 1 ) .gt. 0.0)
+                              mu  = sum( tb_temp(:,1) ) / real(nkeep,r_double)
+                              sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
+                              deallocate( tb_temp )
 
-                              nkeep = count ( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r )
-                              if (nkeep .gt. 0) then
-                                 allocate( tb_temp ( nkeep, 1 ) )
-                                 tb_temp(:,1) = pack( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ), &
-                                               terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r)
-                                 mu = sum( tb_temp(:,1) ) / real(nkeep,r_double)
-                                 sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
-                                 deallocate( tb_temp )
+                              p % superob(isup,jsup) % cld_qc(1) % tb_stddev_3x3(ichan) = sigma
+                           else
+                              p % superob(isup,jsup) % cld_qc(1) % tb_stddev_3x3(ichan) = missing_r
+                           end if
+                           if (channel_list(ichan).eq.14) then
 
-                                 ! Values for RTCT cloud QC
-                                 ! - channel 14 and sigma_z (std. dev. of terrain height in km)
-                                 !   w/ landmask and lapse rate of 7 K km^-1
+                              if ( allocated(terrain_hgt) ) then
+                                 ! Determine sigma_z of terrain height across these pixels
+                                 p % superob(isup,jsup) % cld_qc(1) % terr_hgt = terrain_hgt( iysup, ixsup )
+                                 nkeep = count ( terrain_hgt ( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf ) .gt. missing_r )
+                                 if (nkeep .gt. 0) then
+                                    allocate( tb_temp ( nkeep, 1 ) )
+                                    tb_temp(:,1) = pack( terrain_hgt ( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf ), &
+                                                  terrain_hgt ( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf ) .gt. missing_r)
+                                    mu = sum( tb_temp(:,1) ) / real(nkeep,r_double)
+                                    sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
+                                    deallocate( tb_temp )
 
-                                 temp_max = 0.
-                                 do jy = iy-tbuf, iy+tbuf
-                                 do jx = ix-tbuf, ix+tbuf
-                                    if ( bt_p( jy, jx, 1) .gt. 0. ) &
-                                       temp_max = max(temp_max,bt_p( jy, jx, 1 ) )
-                                 end do
-                                 end do
+                                    ! Values for RTCT cloud QC
+                                    ! - channel 14 and sigma_z (std. dev. of terrain height in km)
+                                    !   w/ landmask and lapse rate of 7 K km^-1
 
-                                 if (temp_max .gt. missing_r) then
-                                    ! Store RTCT
-                                    p % cld_qc % RTCT = temp_max - bt_p( iy, ix, 1 ) - &
-                                                        3.0_r_double * 0.007_r_double * sigma
+                                    temp_max = 0.
+                                    do jy = iysup-tbuf, iysup+tbuf
+                                    do jx = ixsup-tbuf, ixsup+tbuf
+                                       if ( bt_p( jy, jx, 1) .gt. 0. ) &
+                                          temp_max = max(temp_max,bt_p( jy, jx, 1 ) )
+                                    end do
+                                    end do
+
+                                    if (temp_max .gt. missing_r) then
+                                       ! Store RTCT
+                                       p % superob(isup,jsup) % cld_qc(1) % RTCT = temp_max - bt_p( iysup, ixsup, 1 ) - &
+                                                           3.0_r_double * 0.007_r_double * sigma
+                                    else
+                                       p % superob(isup,jsup) % cld_qc(1) % RTCT = missing_r
+                                    end if
                                  else
-                                    p % cld_qc % RTCT = missing_r
+                                    p % superob(isup,jsup) % cld_qc(1) % RTCT = missing_r
                                  end if
                               else
-                                 p % cld_qc % RTCT = missing_r
+                                 p % superob(isup,jsup) % cld_qc(1) % RTCT = missing_r
+                                 p % superob(isup,jsup) % cld_qc(1) % terr_hgt = missing_r
                               end if
-                           else
-                              p % cld_qc % RTCT = missing_r
-                              p % cld_qc % terr_hgt = missing_r
+
+                           end if
+                        else
+                           p % superob(isup,jsup) % cld_qc(1) % tb_stddev_3x3(ichan) = missing_r
+                           if (channel_list(ichan).eq.14) then
+                              p % superob(isup,jsup) % cld_qc(1) % RTCT = missing_r
+                              p % superob(isup,jsup) % cld_qc(1) % terr_hgt = missing_r
+                           end if
+                        end if
+
+                        ! Values for RFMFT cloud QC
+                        ! - channels 14 and 15
+                        tbuf = 10
+                        if (abi_halo_width-abi_superob_halfwidth.ge.tbuf .and. &
+                            bt_p( iysup, ixsup, 1 ).gt.0.0) then
+                           if (channel_list(ichan).eq.14) then
+                              p % superob(isup,jsup) % cld_qc(1) % RFMFT_ij = -1
+
+                              !Determine Neighboring Warm Center (NWC) for this pixel
+                              temp_max = 0.0
+                              do jy = iysup-tbuf, iysup+tbuf
+                              do jx = ixsup-tbuf, ixsup+tbuf
+                                 if ( bt_p( jy, jx, 1 ) .gt. temp_max ) then
+                                    temp_max = bt_p( jy, jx, 1 )
+                                    p % superob(isup,jsup) % cld_qc(1) % RFMFT_ij(1) = jy
+                                    p % superob(isup,jsup) % cld_qc(1) % RFMFT_ij(2) = jx
+                                 end if
+                              end do
+                              end do
+                              p % superob(isup,jsup) % cld_qc(1) % RFMFT = &
+                                          bt_p( iysup, ixsup, 1 ) - temp_max
+                           end if
+                           if (channel_list(ichan).eq.15 .and. &
+                               all(p % superob(isup,jsup) % cld_qc(1) % RFMFT_ij.gt.0)) then
+
+                              temp_max = bt_p ( p % superob(isup,jsup) % cld_qc(1) % RFMFT_ij(1), &
+                                                p % superob(isup,jsup) % cld_qc(1) % RFMFT_ij(2), 1 )
+
+                              p % superob(isup,jsup) % cld_qc(1) % RFMFT = abs( &
+                                 p % superob(isup,jsup) % cld_qc(1) % RFMFT + &
+                                 temp_max  - bt_p( iysup, ixsup, 1 ) )
+
+                           end if
+                        else
+                           if ( any( channel_list(ichan).eq.(/14,15/) ) ) then
+
+                               p % superob(isup,jsup) % cld_qc(1) % RFMFT = missing_r
+
+                               p % superob(isup,jsup) % cld_qc(1) % RFMFT_ij = -1
+
+                           end if
+                        end if
+
+                        ! Values for CIRH2O cloud QC
+                        !  - channels 10 and 14 for Pearson correlation coefficient of CIRH2O test
+                        tbuf = 2
+                        if (abi_halo_width-abi_superob_halfwidth.ge.tbuf .and. &
+                            bt_p( iysup, ixsup, 1 ).gt.0.0) then
+
+                           if (channel_list(ichan).eq.10) then
+
+                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O ( &
+                                 iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf, 2 ) )
+
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O(:,:,1) = &
+                                 bt_p( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf, 1 )
+
+                           end if
+                           if (channel_list(ichan).eq.14 .and. &
+                               size(p % superob(isup,jsup) % cld_qc(1) % CIRH2O).gt.1) then
+
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O(:,:,2) = &
+                                 bt_p( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf, 1 )
+                              nkeep = 0
+                              do jy = iysup-tbuf, iysup+tbuf
+                              do jx = ixsup-tbuf, ixsup+tbuf
+                                 if ( all(p % superob(isup,jsup) % cld_qc(1) % CIRH2O( jy, jx, : ) .gt. missing_r) ) nkeep = nkeep + 1
+                              end do
+                              end do
+                              allocate( tb_temp ( nkeep, 2 ) )
+                              ikeep = 0
+                              do jy = iysup-tbuf, iysup+tbuf
+                              do jx = ixsup-tbuf, ixsup+tbuf
+                                 if ( all(p % superob(isup,jsup) % cld_qc(1) % CIRH2O( jy, jx, : ) .gt. missing_r) ) then
+                                    ikeep = ikeep + 1
+                                    tb_temp(ikeep,1) = &
+                                       p % superob(isup,jsup) % cld_qc(1) % CIRH2O( jy, jx, 1 )
+                                    tb_temp(ikeep,2) = &
+                                       p % superob(isup,jsup) % cld_qc(1) % CIRH2O( jy, jx, 2 )
+                                 end if
+                              end do
+                              end do
+
+                              mu10 = sum( tb_temp(:,1) ) / real(nkeep,r_double)
+                              sigma10 = sqrt( sum( (tb_temp(:,1) - mu10)**2 ) &
+                                           / real(nkeep,r_double) )
+
+                              mu14 = sum( tb_temp(:,2) ) / real(nkeep,r_double)
+                              sigma14 = sqrt( sum( (tb_temp(:,2) - mu14)**2 ) / &
+                                           real(nkeep,r_double) )
+
+                              pearson = sum((tb_temp(:,1) - mu10) * (tb_temp(:,2) - mu14)) / &
+                                           real(nkeep,r_double) / ( sigma10 * sigma14 )
+
+                              deallocate( tb_temp )
+                              deallocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O )
+                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O (1,1,1) )
+
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O (1,1,1) = pearson
+
+                           end if
+                        else
+                           if ( any( channel_list(ichan).eq.(/10,14/) ) ) then
+
+                              if ( allocated( p % superob(isup,jsup) % cld_qc(1) % CIRH2O ) ) &
+                                 deallocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O)
+
+                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O (1,1,1))
+
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O = missing_r
+
+                           end if
+                        end if
+
+                        ! Values for TEMPIR cloud QC
+                        ! - channel 14
+                        if ( use_clddet_abi .and. (channel_list(ichan).eq.14) ) then
+
+                           p % superob(isup,jsup) % cld_qc(1) % TEMPIR = missing_r
+
+                           if ( TEMPIR_ifile.gt.0 .and. &
+                                bt_p( iysup, ixsup, 1 ).gt.0.0 .and. &
+                                bt_p( iysup, ixsup, 2 ).gt.0.0 ) then
+                              if ( bt_p( iysup, ixsup, 2 ).lt.330. ) &
+                                 p % superob(isup,jsup) % cld_qc(1) % TEMPIR = &
+                                    bt_p( iysup, ixsup, 2 ) - bt_p( iysup, ixsup, 1 )
                            end if
 
                         end if
-                     else
-                        p % cld_qc % tb_stddev_3x3(ichan) = missing_r
-                        if (channel_list(ichan).eq.14) then
-                           p % cld_qc % RTCT = missing_r
-                           p % cld_qc % terr_hgt = missing_r
-                        end if
-                     end if
-
-                     ! Values for RFMFT cloud QC
-                     ! - channels 14 and 15
-                     tbuf = 10
-                     if (abi_halo_width.ge.tbuf .and. bt_p( iy, ix, 1 ).gt.missing_r) then
-                        if (channel_list(ichan).eq.14) then
-                           !Determine Neighboring Warm Center (NWC) for this pixel
-                           temp_max = 0.
-                           do jy = iy-tbuf, iy+tbuf
-                           do jx = ix-tbuf, ix+tbuf
-                              if ( bt_p( jy, jx, 1 ) .gt. missing_r ) then
-                                 if ( bt_p( jy, jx, 1 ) .gt. temp_max ) then
-                                    temp_max = bt_p( jy, jx, 1 )
-                                    p % cld_qc % RFMFT_ij(1) = jy
-                                    p % cld_qc % RFMFT_ij(2) = jx
-                                 end if
-                              end if
-                           end do
-                           end do
-                           p % cld_qc % RFMFT = &
-                                       bt_p( iy, ix, 1 ) - temp_max
-                        end if
-                        if (channel_list(ichan).eq.15 .and. all(p % cld_qc % RFMFT_ij.gt.0)) then
-                           temp_max = bt_p ( p % cld_qc % RFMFT_ij(1), &
-                                             p % cld_qc % RFMFT_ij(2), 1 )
-                           p % cld_qc % RFMFT = abs( p % cld_qc % RFMFT + &
-                                       temp_max  - bt_p( iy, ix, 1 ) )
-                        end if
-                     else
-                        if ( any( channel_list(ichan).eq.(/14,15/) ) ) then
-                            p % cld_qc % RFMFT = missing_r
-                            p % cld_qc % RFMFT_ij = -1
-                        end if
-                     end if
-
-                     ! Values for CIRH2O cloud QC
-                     !  - channels 10 and 14 for Pearson correlation coefficient of CIRH2O test
-                     tbuf = 2
-                     if (abi_halo_width.ge.tbuf .and. bt_p( iy, ix, 1 ).gt.missing_r) then
-                        if (channel_list(ichan).eq.10) then
-                           allocate( p % cld_qc % CIRH2O ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 2 ) )
-                           p % cld_qc % CIRH2O(:,:,1) = bt_p( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 )
-                        end if
-                        if (channel_list(ichan).eq.14 .and. size(p % cld_qc % CIRH2O).gt.1) then
-                           p % cld_qc % CIRH2O(:,:,2) = bt_p( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 )
-                           nkeep = 0
-                           do jy = iy-tbuf, iy+tbuf
-                           do jx = ix-tbuf, ix+tbuf
-                              if ( all(p % cld_qc % CIRH2O( jy, jx, : ) .gt. missing_r) ) nkeep = nkeep + 1
-                           end do
-                           end do
-                           allocate( tb_temp ( nkeep, 2 ) )
-                           ikeep = 0
-                           do jy = iy-tbuf, iy+tbuf
-                           do jx = ix-tbuf, ix+tbuf
-                              if ( all(p % cld_qc % CIRH2O( jy, jx, : ) .gt. missing_r) ) then
-                                 ikeep = ikeep + 1
-                                 tb_temp(ikeep,1) = p % cld_qc % CIRH2O( jy, jx, 1 )
-                                 tb_temp(ikeep,2) = p % cld_qc % CIRH2O( jy, jx, 2 )
-                              end if
-                           end do
-                           end do
-                           mu10 = sum( tb_temp(:,1) ) / real(nkeep,r_double)
-                           sigma10 = sqrt( sum( (tb_temp(:,1) - mu10)**2 ) &
-                                        / real(nkeep,r_double) )
-                           mu14 = sum( tb_temp(:,2) ) / real(nkeep,r_double)
-                           sigma14 = sqrt( sum( (tb_temp(:,2) - mu14)**2 ) / &
-                                        real(nkeep,r_double) )
-                           pearson = sum((tb_temp(:,1) - mu10) * (tb_temp(:,2) - mu14)) / &
-                                        real(nkeep,r_double) / ( sigma10 * sigma14 )
-                           deallocate( tb_temp )
-                           deallocate( p % cld_qc % CIRH2O )
-                           allocate( p % cld_qc % CIRH2O (1,1,1) )
-                           p % cld_qc % CIRH2O (1,1,1) = pearson
-                        end if
-                     else
-                        if ( any( channel_list(ichan).eq.(/10,14/) ) ) then
-                           if ( allocated( p % cld_qc % CIRH2O ) ) deallocate( p % cld_qc % CIRH2O)
-                           allocate( p % cld_qc % CIRH2O (1,1,1))
-                           p % cld_qc % CIRH2O = missing_r
-                        end if
-                     end if
-
-                     ! Values for TEMPIR cloud QC
-                     ! - channel 14
-                     if ( use_clddet_abi .and. (channel_list(ichan).eq.14) ) then
-                        p % cld_qc % TEMPIR = missing_r
-                        if ( TEMPIR_ifile.gt.0 .and. &
-                             bt_p( iy, ix, 1 ).gt.missing_r ) then
-                           if ( bt_p( iy, ix, 2 ).lt.330. ) &
-                              p % cld_qc % TEMPIR = bt_p( iy, ix, 2 ) - bt_p( iy, ix, 1 )
-                        end if
-                     end if
+                     end do ! isup
+                     end do ! jsup
 
                      if (first_chan) &
                         allocate (p % next)   ! add next data
@@ -1677,11 +1738,12 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                   end do PixelLoop
                   if ( allocated(bt_p)        ) deallocate ( bt_p )
+                  if ( allocated(rad_p)       ) deallocate ( rad_p )
                   if ( allocated(allmask_p)   ) deallocate ( allmask_p )
                   if ( allocated(readmask_p)  ) deallocate ( readmask_p )
-                  if ( allocated(terrain_hgt) ) deallocate ( terrain_hgt )
                end if VIEW_SELECT
             end do ChannelLoop
+            if ( allocated(terrain_hgt) ) deallocate ( terrain_hgt )
 
             if ( allocated(thinmask)    ) deallocate ( thinmask )
             if ( allocated(solzen_1d)   ) deallocate ( solzen_1d )
@@ -1712,7 +1774,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       if (ipass .eq. 2) tot_files_used = tot_files_used + sum(view_att(iview) % nfiles_used)
 
    end do ! end view loop
-   
+
    end do ! end pass loop
 
    if ( allocated(view_mask) ) deallocate(view_mask)
@@ -1739,7 +1801,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
 !      write(unit=message(1),fmt='(A)') "Either no L1B data found or no matching"
 !      write(unit=message(2),fmt='(A,I2,A)') "fgat windows for GOES-",satellite_id," ABI using"
-!      write(unit=message(3),fmt='(3A)') "prefix ",INST_PREFIX, " for this process rank." 
+!      write(unit=message(3),fmt='(3A)') "prefix ",INST_PREFIX, " for this process rank."
 !      write(unit=message(4),fmt='(A)') "This subdomain may have an unacceptable zenith "
 !      write(unit=message(5),fmt='(A)') "angle or fall entirely outside the GOES viewing"
 !      write(unit=message(6),fmt='(A)') "extent."
@@ -1822,12 +1884,18 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                prev => p
             end if
             deallocate ( current % tb_inv )
-      !      deallocate ( current % cloud_flag )
-            if ( associated(current % cld_qc ) ) then
-               if ( allocated ( current % cld_qc % CIRH2O ) ) &
-                  deallocate ( current % cld_qc % CIRH2O )
-               deallocate ( current % cld_qc % tb_stddev_3x3 )
-               deallocate ( current % cld_qc )
+            deallocate ( current % rad_obs )
+            if ( allocated( current % superob ) ) then
+               do jsup = 1, superob_width
+               do isup = 1, superob_width
+                  deallocate ( current % superob(isup,jsup) % tb_obs )
+                  if ( allocated ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O ) ) &
+                     deallocate ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O )
+                  deallocate ( current % superob(isup,jsup) % cld_qc(1) % tb_stddev_3x3 )
+                  deallocate ( current % superob(isup,jsup) % cld_qc )
+               end do
+               end do
+               deallocate ( current % superob )
             end if
             deallocate ( current )
             num_goesabi_thinned = num_goesabi_thinned + 1
@@ -1917,12 +1985,18 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
       ! free current data
       deallocate ( current % tb_inv )
-!!!      deallocate ( current % cloud_flag )
-      if ( associated ( current % cld_qc ) ) then
-         if ( allocated ( current % cld_qc % CIRH2O ) ) &
-            deallocate ( current % cld_qc % CIRH2O )
-         deallocate ( current % cld_qc % tb_stddev_3x3 )
-         deallocate ( current % cld_qc )
+      deallocate ( current % rad_obs )
+      if ( allocated ( current % superob ) ) then
+         do jsup = 1, superob_width
+         do isup = 1, superob_width
+            deallocate ( current % superob(isup,jsup) % tb_obs )
+            if ( allocated ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O ) ) &
+               deallocate ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O )
+            deallocate ( current % superob(isup,jsup) % cld_qc(1) % tb_stddev_3x3 )
+            deallocate ( current % superob(isup,jsup) % cld_qc )
+         end do
+         end do
+         deallocate ( current % superob )
       end if
       deallocate ( current )
    end do
@@ -2037,7 +2111,7 @@ subroutine get_abil1b_grid1( filename, &
 
    ierr=nf_get_att_double(ncid,varid,'scale_factor',slp)
    ierr=nf_get_att_double(ncid,varid,'add_offset',itp)
-   yy_abi = yy_abi*slp+itp 
+   yy_abi = yy_abi*slp+itp
    yoff = floor(itp/slp)
 
    ierr=nf_inq_varid(ncid,'x',varid)
@@ -2096,7 +2170,7 @@ subroutine get_abil1b_grid2_1d( yy_abi, xx_abi, req, rpol, pph, nam, satellite_i
    call get_abil1b_latlon_1d ( yy_abi, xx_abi, lat, lon, req, rpol, hh, nam )
 
    where( lat.eq.missing_r .OR. lon.eq.missing_r .OR. &
-          isnan(lat)       .OR. isnan(lon) ) 
+          isnan(lat)       .OR. isnan(lon) )
       earthmask = .false.
       lat       = missing_r
       lon       = missing_r
@@ -2116,7 +2190,8 @@ end subroutine get_abil1b_grid2_1d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt, inst, ichan )
+subroutine get_abil1b_rad( filename, ys, ye, xs, xe, radmask, inst, ichan, &
+                           radout, bc1, bc2, fk1, fk2 )
    implicit none
 
    character(*), intent(in)      :: filename
@@ -2124,11 +2199,12 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt, inst, ichan )
    !Size of full data set
 
    !Starting and stopping indices of this view desired (not equivalent to Full Disk indices)
-   integer, intent(in)           :: ys, ye, xs, xe 
+   integer, intent(in)           :: ys, ye, xs, xe
    integer, intent(in)           :: inst, ichan
 
    logical, intent(inout)        :: radmask( ys:ye, xs:xe )
-   real, intent(out)             :: bt( ys:ye, xs:xe )
+   real, intent(out)             :: radout( ys:ye, xs:xe )
+   real, intent(out)             :: bc1, bc2, fk1, fk2
 
    real             :: rad(xs:xe, ys:ye)
    integer          :: DQF(xs:xe, ys:ye)
@@ -2137,11 +2213,9 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt, inst, ichan )
    integer          :: iy, ix
    integer          :: nykeep, nxkeep
    real             :: slp, itp
-   real             :: bc1, bc2, fk1, fk2
 
-   if (trace_use) call da_trace_entry("get_abil1b_bt")
+   if (trace_use) call da_trace_entry("get_abil1b_rad")
 
-   bt = missing_r
    rad = missing_r
 
    !! Save rad reading time by selecting a subset of netcdf var
@@ -2176,36 +2250,49 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt, inst, ichan )
    ierr=nf_get_var_double( ncid, varid, fk2 )
 
    radmask = ( radmask .and. (transpose(DQF).eq.0 .or. transpose(DQF).eq.1) )
-   radmask = ( radmask .and. transpose(rad).ge.0.0 )
+   radmask = ( radmask .and. transpose(rad).gt.0.0 )
 
-
-!!!JJGDEBUG
-!   if (rtm_option == rtm_option_crtm) then
-!      do ix = xs, xe
-!         do iy = ys, ye
-!            if ( radmask( iy, ix ) ) then
-!!               call CRTM_Planck_Temperature(inst, ichan, rad( iy, ix ), bt( iy, ix ))
-!               call CRTM_Planck_Temperature(inst, ichan, rad( ix, iy ), bt( iy, ix ))
-!            end if
-!         end do
-!      end do
-!   else
-!!!JJGDEBUG
-
-      where ( radmask )
-         bt = ( fk2 / ( log(( fk1 / transpose(rad) ) + 1.0) ) - bc1 ) / bc2
-      end where
-
-!!!JJGDEBUG
-!   end if
-!!!JJGDEBUG
+   radout = missing_r
+   where ( radmask )
+      radout = transpose(rad)
+   end where
 
    ierr=nf_close(ncid)
    call handle_err('Error closing file',ierr)
 
-   if (trace_use) call da_trace_exit("get_abil1b_bt")
+   if (trace_use) call da_trace_exit("get_abil1b_rad")
 
-end subroutine get_abil1b_bt
+end subroutine get_abil1b_rad
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+elemental function rad2bt( rad, bc1, bc2, fk1, fk2 ) result(bt)
+   implicit none
+
+   real, intent(in) :: rad
+   real, intent(in) :: bc1, bc2, fk1, fk2
+
+   real :: bt
+
+   bt = ( fk2 / ( log(( fk1 / rad ) + 1.0) ) - bc1 ) / bc2
+
+end function rad2bt
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+elemental function bt2rad( bt, bc1, bc2, fk1, fk2 ) result(rad)
+   implicit none
+
+   real, intent(in) :: bt
+   real, intent(in) :: bc1, bc2, fk1, fk2
+
+   real :: rad
+
+   rad = fk1 / ( exp( fk2 / (bc1 + bc2 * bt)) - 1.0 )
+
+end function bt2rad
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2218,7 +2305,7 @@ subroutine get_abil1b_terr( filename, ys, ye, xs, xe, terr )
    !Size of full data set
 
    !Starting and stopping indices of this view desired (not equivalent to Full Disk indices)
-   integer, intent(in)           :: ys, ye, xs, xe 
+   integer, intent(in)           :: ys, ye, xs, xe
    real, intent(out)             :: terr( ys:ye, xs:xe ) ! unit = meters
 
    real             :: terr_trans( xs:xe, ys:ye ) ! unit = meters
@@ -2519,7 +2606,7 @@ subroutine handle_err(rmarker,nf_status)
    if (nf_status .ne. nf_noerr) then
       write(*,*)  'NetCDF error : ',rmarker
       write(*,*)  '  ',nf_strerror(nf_status)
-      stop 
-   endif    
+      stop
+   endif
 end subroutine handle_err
 

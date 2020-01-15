@@ -1854,7 +1854,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       deallocate( out )
 
 #endif
-      ! Delete the nodes which being thinning out
+      ! Delete the nodes being thinned out
       p => head
       prev => head
       head_found = .false.

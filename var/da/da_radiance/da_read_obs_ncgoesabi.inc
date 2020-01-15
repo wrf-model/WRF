@@ -1739,15 +1739,14 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                   end do PixelLoop
                   if ( allocated(bt_p)        ) deallocate ( bt_p )
                   if ( allocated(rad_p)       ) deallocate ( rad_p )
+                  if ( allocated(solzen_1d)   ) deallocate ( solzen_1d )
+                  if ( allocated(solazi_1d)   ) deallocate ( solazi_1d )
                   if ( allocated(allmask_p)   ) deallocate ( allmask_p )
                   if ( allocated(readmask_p)  ) deallocate ( readmask_p )
                end if VIEW_SELECT
             end do ChannelLoop
             if ( allocated(terrain_hgt) ) deallocate ( terrain_hgt )
-
             if ( allocated(thinmask)    ) deallocate ( thinmask )
-            if ( allocated(solzen_1d)   ) deallocate ( solzen_1d )
-            if ( allocated(solazi_1d)   ) deallocate ( solazi_1d )
          else
             write(unit=stdout,fmt='(A)') &
                '          No pixels to read within this subdomain. Waiting for other processors...'

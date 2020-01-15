@@ -56,9 +56,9 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                            ' index-of-channels : '
       write(unit=oma_rad_unit,fmt='(10i5)') iv%instid(i)%ichan
       if ( amsr2 ) then
-         write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi clw'
+         write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi solzen solazi clw'
       else
-         write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi '
+         write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi solzen solazi '
       end if
       write(unit=oma_rad_unit,fmt='(a)') ' xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
                        & soiltyp vegtyp vegfra elev clwp cloud_frac'
@@ -67,7 +67,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
          if (iv%instid(i)%info%proc_domain(1,n)) then
             ndomain=ndomain+1
             if ( amsr2 ) then !write out clw
-               write(unit=oma_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2,f8.3)') 'INFO : ', ndomain, &
+               write(unit=oma_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,6f8.2,f8.3)') 'INFO : ', ndomain, &
                                    iv%instid(i)%info%date_char(n), &
                                    iv%instid(i)%scanpos(n),        &
                                    iv%instid(i)%landsea_mask(n),   &
@@ -76,9 +76,11 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                                    iv%instid(i)%info%lon(1,n),     &
                                    iv%instid(i)%satzen(n),         &
                                    iv%instid(i)%satazi(n),         &
+                                   iv%instid(i)%solzen(n),         &
+                                   iv%instid(i)%solazi(n),         &
                                    iv%instid(i)%clw(n)
             else !no clw info
-               write(unit=oma_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2)') 'INFO : ', ndomain, &
+               write(unit=oma_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,6f8.2)') 'INFO : ', ndomain, &
                                    iv%instid(i)%info%date_char(n), &
                                    iv%instid(i)%scanpos(n),        &
                                    iv%instid(i)%landsea_mask(n),   &
@@ -86,7 +88,9 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                                    iv%instid(i)%info%lat(1,n),     &
                                    iv%instid(i)%info%lon(1,n),     &
                                    iv%instid(i)%satzen(n),         &
-                                   iv%instid(i)%satazi(n)
+                                   iv%instid(i)%satazi(n),         &
+                                   iv%instid(i)%solzen(n),         &
+                                   iv%instid(i)%solazi(n)
             end if
             select case (iv%instid(i)%isflg(n))
             case (0) ;

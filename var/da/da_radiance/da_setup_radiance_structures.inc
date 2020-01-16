@@ -267,7 +267,7 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 
          call da_read_obs_ncgoesabi(iv, 16)
 
-!         call da_read_obs_ncgoesabi(iv, 17)
+         call da_read_obs_ncgoesabi(iv, 17)
       end if
 
    end if

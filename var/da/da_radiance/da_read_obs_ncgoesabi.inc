@@ -211,7 +211,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    real    :: mu, sigma
    real, allocatable :: tb_temp(:,:)
    logical :: cldqc
-   character(18), parameter :: terr_fname = 'OR_ABI-TERR_G16.nc'
+   character(18) :: terr_fname
 
    integer :: TEMPIR_ifile
    real    :: TEMPIR_min_time_diff, TEMPIR_time_abs_diff
@@ -227,6 +227,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       return
    endif
 
+   write(terr_fname,'(A,I2.2,A)') 'OR_ABI-TERR_G',satellite_id,'.nc'
+
 ! determine if sensor triplet is in the sensor list
 !-----------------------------------------------------
    inst = 0
@@ -240,7 +242,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       end if
    end do
    if (inst == 0) then
-      write(unit=message(1),fmt='(A,I2,A)') " goes-",satellite_id,"-abi is not in sensor list"
+      write(unit=message(1),fmt='(A,I2.2,A)') " goes-",satellite_id,"-abi is not in sensor list"
       call da_warning(__FILE__,__LINE__, message(1:1))
       return
    end if
@@ -287,10 +289,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    view_att(3) % name = 'MESO1'
    view_att(4) % name = 'MESO2'
 
-   view_att(1) % fpath = "./goes-fdisk*/"
-   view_att(2) % fpath = "./goes-conus*/"
-   view_att(3) % fpath = "./goes-meso*/"
-   view_att(4) % fpath = "./goes-meso*/"
+   write(view_att(1) % fpath,'(A,I2.2,A)') "./goes-",satellite_id,"-fdisk*/"
+   write(view_att(2) % fpath,'(A,I2.2,A)') "./goes-",satellite_id,"-conus*/"
+   write(view_att(3) % fpath,'(A,I2.2,A)') "./goes-",satellite_id,"-meso*/"
+   write(view_att(4) % fpath,'(A,I2.2,A)') "./goes-",satellite_id,"-meso*/"
 
    ! (default) Full Disk and CONUS are fixed while MESO 1 & 2 can move within an assimilation window
    view_att(1) % moving = .false.
@@ -334,7 +336,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
       ! Query fpath for files that match L1B naming conventions for this_view and satellite_id
       fname = trim(INST_PREFIX)//trim(this_view % name_short)
-      list_file    = 'file_list_GOES-ABI_'//trim(this_view % name_short)
+      write(list_file,'(A,I2.2,2A)') &
+         'file_list_GOES-',satellite_id,'-ABI_',trim(this_view % name_short)
 
       call da_get_unit(file_unit)
 

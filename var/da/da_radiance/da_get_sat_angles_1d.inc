@@ -53,10 +53,9 @@ subroutine da_get_sat_angles_1d ( lat, lon, sate_index, satzen, satazi )
    else if (sate_index .eq. 15) then
       alon_sat = -135. * deg2rad
    else if (sate_index .eq. 16) then
-!      alon_sat = -75.2 * deg2rad !True Value?
-      alon_sat = -75. * deg2rad !Nominal Value
-!   else if (sate_index .eq. 17) then
-!      alon_sat = -137. * deg2rad
+      alon_sat = -75.2 * deg2rad
+   else if (sate_index .eq. 17) then
+      alon_sat = -137.2 * deg2rad
    else
       write(*,*)'this satellite is not included'
       stop

@@ -6334,9 +6334,9 @@ IF ( grid%active_this_task ) THEN
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
 
-     smoother: if(config_flags%smooth_option/=0) then
+     smoothr: if(config_flags%smooth_option/=0) then
 #include "nest_feedbackup_smooth.inc"
-     endif smoother
+     endif smoothr
 
     CALL pop_communicators_for_domain
 END IF

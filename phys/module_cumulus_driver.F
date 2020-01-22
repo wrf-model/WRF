@@ -1060,7 +1060,7 @@ CONTAINS
                ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS                   &
                ,RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,XLAND=XLAND)       !JTR
 #endif  
-           print *,'here'     
+ 
      CASE (GDSCHEME)
           CALL wrf_debug(100,'in grelldrv')
           CALL GRELLDRV(                                        &

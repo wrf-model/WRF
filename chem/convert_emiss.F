@@ -1074,11 +1074,11 @@ PROGRAM convert_emissions
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
            write(0,*)'now do ho2 '
-           read(92)ho_mass(ids:ide  ,jds:jde  )
+           read(92)ho2_mass(ids:ide  ,jds:jde  )
        ENDIF
-       DM_BCAST_MACRO(ho_mass)
+       DM_BCAST_MACRO(ho2_mass)
 #else
-       read(92)ho_mass(ids:ide  ,jds:jde  )
+       read(92)ho2_mass(ids:ide  ,jds:jde  )
 #endif
 
 

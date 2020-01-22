@@ -262,10 +262,11 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! The nominal grid distance on each of the domains is ENTIRELY a function 
+! The nominal grid distance on each child domain is ENTIRELY a function 
 ! of the MOAD grid distance and the accumulated recursive parent grid ratios
-! of each child domain. Even if the values are specified, overwrite the dx
-! and dy namelist input with the computed values.
+! of each child domain. Even if the child grid distance values are specified
+! in the namelist file, overwrite the dx and dy namelist input with the 
+! computed grid distance values.
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom

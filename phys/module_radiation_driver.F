@@ -1844,7 +1844,7 @@ CONTAINS
              ELSE
                 p_top_dummy = -1. ! not used by NMM
              END IF
-             IF ( p_top .GT. 0 ) THEN ! flag value for NMM = -1
+             IF ( p_top_dummy .GT. 0 ) THEN ! flag value for NMM = -1
                 !NLAYERS is recalculated
                 !every time the radiation scheme is called. This is
                 !necessary if e_vert parent .NE. e_vert nest since

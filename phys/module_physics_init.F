@@ -1593,6 +1593,16 @@ CONTAINS
 
    REAL :: xice_threshold
 !---------------------------------------------------------------------
+!
+! Input Variable Description:
+!  ALBD: Surface albedo
+!  SLMO: Moisture availability
+!  SFEM: Emissivity
+!  SFZ0: Roughness length
+!  THERIN: Thermal inertia (only used in SLAB)
+!  SFHC: Soil heat capacity (not used)
+!  SCFX: Snow cover effect (dependent on SNOWC)
+!
 ! Local
    CHARACTER*256 LUTYPE
    CHARACTER*512 :: message

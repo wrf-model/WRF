@@ -1003,7 +1003,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- ERROR: bl_pbl_physics cannot be set to 4, 5, or 6 for cu_physics = 11 '
+         wrf_err_message = '--- ERROR: bl_pbl_physics cannot be set to 2, 4, 5, or 6 for cu_physics = 11 '
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '--- Fix bl_pbl_physics in namelist.input OR use another cu_physics option '
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )

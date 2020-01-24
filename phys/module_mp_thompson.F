@@ -5194,6 +5194,7 @@
 
       DOUBLE PRECISION:: cback, x, eta, f_d
       REAL:: xslw1, ygra1, zans1
+      INTEGER :: k_0loop
 
 !+---+
 
@@ -5349,8 +5350,8 @@
       enddo
  195  continue
 
-
-      k_0 = Min(k_0, ke_diag+1)
+! Set loop limit for wet ice according to whether the full 3D field is needed or just k=1
+      k_0loop = Min(k_0, ke_diag+1)
 
 !+---+-----------------------------------------------------------------+
 !..Assume Rayleigh approximation at 10 cm wavelength. Rain (all temps)
@@ -5379,7 +5380,7 @@
 !+---+-----------------------------------------------------------------+
 
       if (.not. iiwarm .and. melti .and. k_0.ge.2) then
-       do k = k_0-1, kts, -1
+       do k = k_0loop-1, kts, -1
 
 !..Reflectivity contributed by melting snow
           if (L_qs(k) .and. L_qs(k_0) ) then
@@ -5426,7 +5427,7 @@
        enddo
       endif
 
-      do k = kte, kts, -1
+      do k = ke_diag, kts, -1
          dBZ(k) = 10.*log10((ze_rain(k)+ze_snow(k)+ze_graupel(k))*1.d18)
       enddo
 

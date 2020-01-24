@@ -2854,6 +2854,7 @@ package   goddardswscheme ra_sw_physics==5           -             state:tswdn,t
 package   flgswscheme     ra_sw_physics==7           -             -
 package   gfdlswscheme    ra_sw_physics==99          -             -
 
+package   nosfcscheme        sf_sfclay_physics==0        -             -
 package   sfclayrevscheme    sf_sfclay_physics==1        -             -
 package   myjsfcscheme       sf_sfclay_physics==2        -             state:tke_pbl
 package   gfssfcscheme       sf_sfclay_physics==3        -             -

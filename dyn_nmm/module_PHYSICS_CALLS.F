@@ -3664,7 +3664,8 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: CWM,Q
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &   !<--- Used only with physics (IKJ)
+      !REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &   !<--- Used only with physics (IKJ)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: F_ICE       &   !<--- Used only with physics (IKJ)
      &                                                     ,F_RAIN
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST),INTENT(OUT) :: MOIST
@@ -3689,6 +3690,12 @@
         QI=0.
         QR=0.
         QW=0.
+
+!wang  2019 make sure the ice and rain fractions are in the range of 0.0 to 1.0
+        F_ice(I,K,J)=max(0.0,min(1.0,F_ice(I,K,J)))
+        F_rain(I,K,J)=max(0.0,min(1.0,F_rain(I,K,J)))
+!wang
+
         FICE=F_ICE(I,K,J)
         FRAIN=F_RAIN(I,K,J)
 !

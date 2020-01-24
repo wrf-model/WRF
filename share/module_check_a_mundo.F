@@ -987,28 +987,8 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! cu_physics = 11 (scale-aware KF) only works with YSU PBL.
+! cu_physics = 11 (scale-aware KF)
 !-----------------------------------------------------------------------
-
-      oops = 0
-      DO i = 1, model_config_rec % max_dom
-         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. QNSEPBLSCHEME   .or. &
-                model_config_rec%bl_pbl_physics(i) .EQ. MYJPBLSCHEME    .or. &
-                model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2  .or. &
-                model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 )  &
-                                                                  .AND.   &
-              ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) ) THEN
-            oops = oops + 1
-         END IF
-      ENDDO      ! Loop over domains
-      IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- ERROR: bl_pbl_physics cannot be set to 2, 4, 5, or 6 for cu_physics = 11 '
-         CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- Fix bl_pbl_physics in namelist.input OR use another cu_physics option '
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-      END IF
 
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE

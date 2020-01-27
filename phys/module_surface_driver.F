@@ -337,8 +337,8 @@ CONTAINS
 
 #endif
    USE module_model_constants
-   USE ESMF
 ! *** add new modules of schemes here
+
    USE module_sf_sfclay
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
@@ -1384,7 +1384,6 @@ CONTAINS
    real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: XLAIDYN
 !
 !------------------------------------------------------------------
-call ESMF_Initialize()
 ! Initialize local variables
   q_ref2m = 0.0
 !------------------------------------------------------------------

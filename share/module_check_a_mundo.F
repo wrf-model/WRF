@@ -365,14 +365,16 @@
 !-----------------------------------------------------------------------
 ! Check that SMS-3DTKE scheme Must work with Revised MM5 surface layer 
 ! scheme (sf_sfclay_physics = 1), MYNN surface (sf_sfclay_physics = 5)
-! and old MM5 surface scheme (sf_sfclay_physics = 91)
+! and old MM5 surface scheme (sf_sfclay_physics = 91). Also, SMS-3DTKE
+! Must work with no surface layer scheme.
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % km_opt(i) .EQ. 5 .AND. &
-              (model_config_rec % sf_sfclay_physics(i) .NE. sfclayscheme    .AND. &
+              (model_config_rec % sf_sfclay_physics(i) .NE. nosfcscheme     .AND. &
+               model_config_rec % sf_sfclay_physics(i) .NE. sfclayscheme    .AND. &
                model_config_rec % sf_sfclay_physics(i) .NE. sfclayrevscheme .AND. &
                model_config_rec % sf_sfclay_physics(i) .NE. mynnsfcscheme  ) ) THEN
-            wrf_err_message = '--- ERROR: SMS-3DTKE scheme works with sf_sfclay_physics = 1,5,91 '
+            wrf_err_message = '--- ERROR: SMS-3DTKE scheme works with sf_sfclay_physics = 0,1,5,91 '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Fix km_opt or sf_sfclay_physics in namelist.input.'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )

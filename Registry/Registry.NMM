@@ -1819,6 +1819,7 @@ package   gfdlswscheme  ra_sw_physics==99            -             -
 package   hwrfswscheme  ra_sw_physics==98            -             state:o3rad
 package   heldsuarez    ra_lw_physics==31            -             -
 
+package   nosfcscheme    sf_sfclay_physics==0        -             -
 package   sfclayscheme   sf_sfclay_physics==91       -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -

@@ -53,18 +53,11 @@
       LOGICAL :: exists, vnest
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, j, oops, d1_value, EDMFMAX, SCHUMAX
+      INTEGER :: id, factor
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
       LOGICAL :: lon_extent_is_global , lat_extent_is_global
-
-!TWG2015
-!
-!FASDAS
-!
       LOGICAL :: rinblw_already_done
-!
-!END FASDAS
-!
       INTEGER :: count_fatal_error
 
       !  These functions are located with in the Urban Physics files, but
@@ -268,6 +261,31 @@
 #endif
 
 #if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! The nominal grid distance on each child domain is ENTIRELY a function 
+! of the MOAD grid distance and the accumulated recursive parent grid ratios
+! of each child domain. Even if the child grid distance values are specified
+! in the namelist file, overwrite the dx and dy namelist input with the 
+! computed grid distance values.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) THEN
+            WRITE(wrf_err_message,FMT='(A,I2,A)') 'Domain #',i,': grid turned OFF'
+            CALL wrf_debug ( 0, wrf_err_message )
+            CYCLE
+         END IF
+         id = i
+         factor = 1
+         call get_moad_factor ( id,  model_config_rec % parent_id,  &
+                                model_config_rec % parent_grid_ratio,  &
+                                model_config_rec % max_dom, factor )
+         model_config_rec % dx(i) = model_config_rec % dx(1) / REAL(factor)
+         model_config_rec % dy(i) = model_config_rec % dy(1) / REAL(factor)
+         WRITE(wrf_err_message,FMT='(A,I2,A,F9.3,A)') 'Domain #',i,': dx = ',model_config_rec % dx(i),' m'
+         CALL wrf_debug ( 0, wrf_err_message )
+      END DO
+
 !-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
@@ -2727,6 +2745,21 @@
 
    END SUBROUTINE set_physics_rconfigs
 
+!=======================================================================
+
+   RECURSIVE SUBROUTINE get_moad_factor ( id, parent_id, parent_grid_ratio, max_dom, factor )
+      IMPLICIT NONE
+      INTEGER                     :: max_dom
+      INTEGER, DIMENSION(max_dom) :: parent_id, parent_grid_ratio
+      INTEGER                     :: factor, id
+   
+      IF ( id .EQ. 1 ) THEN
+         RETURN
+      ELSE
+         factor = factor * parent_grid_ratio(id)
+         CALL get_moad_factor ( parent_id(id), parent_id, parent_grid_ratio, max_dom, factor )
+      END IF
+   END  SUBROUTINE get_moad_factor
 
 !=======================================================================
 

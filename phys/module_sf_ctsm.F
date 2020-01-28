@@ -573,6 +573,11 @@ contains
     call import_from_lilac('Fall_lat', lh)
     call import_from_lilac('Fall_evap', qfx)
 
+    ! At least for now, use CTSM's Sl_z0m (momentum roughness length) for both background
+    ! roughness length and thermal time-varying roughness length, even though it's
+    ! possible that those two should differ in some way.
+    call import_from_lilac('Sl_z0m', z0)
+
     ! ------------------------------------------------------------------------
     ! Calculate derived variables
     ! ------------------------------------------------------------------------
@@ -591,10 +596,10 @@ contains
              ! CTSM assumes an emissivity of 1
              emiss(i,j) = 1.
 
-             ! FIXME(wjs, 2020-01-08) Replace these hard-coded roughness lengths with
-             ! something from CTSM
-             z0(i,j) = 0.25
-             znt(i,j) = 0.25
+             ! At least for now, use CTSM's Sl_z0m (momentum roughness length) for both
+             ! background roughness length and thermal time-varying roughness length, even
+             ! though it's possible that those two should differ in some way.
+             znt(i,j) = z0(i,j)
 
              ! Flip signs of heat and moisture fluxes: CTSM sends as positive downwards;
              ! WRF expects them to be positive upwards

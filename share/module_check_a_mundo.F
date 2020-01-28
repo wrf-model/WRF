@@ -59,6 +59,7 @@
       LOGICAL :: lon_extent_is_global , lat_extent_is_global
       LOGICAL :: rinblw_already_done
       INTEGER :: count_fatal_error
+      INTEGER :: len1, len2, len_loop
 
       !  These functions are located with in the Urban Physics files, but
       !  not within the confines of the modules. Since we are in the share
@@ -980,6 +981,49 @@
          wrf_err_message = '--- WARNING: traj_opt is zero, but num_traj is not zero; setting num_traj to zero.'
          CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
          model_config_rec%num_traj = 0
+   END IF
+
+!-----------------------------------------------------------------------
+! Catch old method for using multi-file LBCs. Let folks know the 
+! new way to get the same functionality with run-time options.
+!-----------------------------------------------------------------------
+#if _MULTI_BDY_FILES_
+   wrf_err_message = '--- ERROR: Do not use the compile-time -D_MULTI_BDY_FILES_ option for multi-file LBCs.'
+   CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+   wrf_err_message = '--- ERROR: Use the run-time namelist option multi_bdy_files in nml record bdy_control.'
+   CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+   count_fatal_error = count_fatal_error + 1
+#endif
+
+!----------------------------------------------------------------------------
+! If using multi_bdy_files option or not, make the lateral bdy file root name
+! correct. For example, we want "wrfbdy_d01" for NON multi_bdy_files and we
+! want "wrfbdy_d01_SOME_DATE" when using the multi_bdy_files option.
+!----------------------------------------------------------------------------
+   IF      ( model_config_rec%multi_bdy_files ) THEN
+      IF ( INDEX ( TRIM(model_config_rec%bdy_inname) , "_<date>" ) .GT. 0 ) THEN
+         ! No op, all OK
+      ELSE
+         wrf_err_message = '--- ERROR: Need bdy_inname = "wrfbdy_d<domain>_<date>"'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         count_fatal_error = count_fatal_error + 1
+!        len1 = LEN_TRIM(model_config_rec%bdy_inname)
+!        len2 = "_<date>"
+!        model_config_rec%bdy_inname(1:len1+len2) = TRIM(model_config_rec%bdy_inname) // "_<date>"
+      END IF
+   ELSE IF ( .NOT. model_config_rec%multi_bdy_files ) THEN
+      IF ( INDEX ( TRIM(model_config_rec%bdy_inname) , "_<date>" ) .EQ. 0 ) THEN
+         ! No op, all OK
+      ELSE
+         wrf_err_message = '--- ERROR: Remove bdy_inname = "wrfbdy_d<domain>_<date>"'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         count_fatal_error = count_fatal_error + 1
+!        len1 = LEN_TRIM(model_config_rec%bdy_inname)
+!        len2 = "_<date>"
+!        DO len_loop len1-len2+1 , len1
+!           model_config_rec%bdy_inname(len_loop:len_loop) = " "
+!        END DO 
+      END IF
    END IF
 
 #elif( NMM_CORE == 1 )

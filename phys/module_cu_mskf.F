@@ -6715,6 +6715,7 @@ iter:     DO NCOUNT=1,10
                  IL1G = 1
                  IL2G = 1
                  ILG = 1
+		 MSG1 = 0
 !ckay
                  JBB(1) = KTE-KLCL+1  ! updraft base level   =====>>> flipped for CAM5 indexing
                  JDD(1) = KTE-LFS+1

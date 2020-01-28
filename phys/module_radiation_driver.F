@@ -218,7 +218,7 @@ CONTAINS
    USE module_ra_sw         , ONLY : swrad
    USE module_ra_gsfcsw     , ONLY : gsfcswrad
    USE module_ra_rrtm       , ONLY : rrtmlwrad
-   USE module_ra_rrtmg_lw   , ONLY : rrtmg_lwrad
+   USE module_ra_rrtmg_lw   , ONLY : rrtmg_lwrad, rrtmg_lwinit
    USE module_ra_rrtmg_sw   , ONLY : rrtmg_swrad
 #if( BUILD_RRTMG_FAST == 1)
    USE module_ra_rrtmg_lwf  , ONLY : rrtmg_lwrad_fast
@@ -1835,6 +1835,26 @@ CONTAINS
                 ENDDO
                 ENDDO
              END IF
+
+             !Need to reset NLAYERS if vertical nesting is used.
+             !This code follows that for case RRTMSCHEME within
+             !subroutine RRTMLWRAD.
+             IF ( PRESENT(p_top) ) THEN
+                p_top_dummy = p_top
+             ELSE
+                p_top_dummy = -1. ! not used by NMM
+             END IF
+             IF ( p_top_dummy .GT. 0 ) THEN ! flag value for NMM = -1
+                !NLAYERS is recalculated
+                !every time the radiation scheme is called. This is
+                !necessary if e_vert parent .NE. e_vert nest since
+                !NLAYERS could then be different for each domain.
+                CALL RRTMG_LWINIT(                             &
+                              p_top, .FALSE. ,                 &
+                              ids, ide, jds, jde, kds, kde,    &
+                              ims, ime, jms, jme, kms, kme,    &
+                              its, ite, jts, jte, kts, kte     )
+             ENDIF
 
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &

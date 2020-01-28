@@ -333,7 +333,8 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    CHARACTER (LEN=256)     :: si_inpname
    CHARACTER (LEN=80)      :: message
 
-   CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char
+   CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char , &
+                        prev_date_char
 
    INTEGER :: time_loop_max , loop, rc
    INTEGER :: julyr , julday 
@@ -377,6 +378,7 @@ real::t1,t2,t3,t4
    !  Here we define the initial time to process, for later use by the code.
    
    current_date_char = start_date_char
+   prev_date_char = start_date_char
    start_date = start_date_char // '.0000'
    current_date = start_date
 
@@ -576,7 +578,8 @@ real::t1,t2,t3,t4
 #endif
 
       CALL cpu_time ( t3 )
-      CALL assemble_output ( grid , config_flags , loop , time_loop_max )
+      CALL assemble_output ( grid , config_flags , loop , time_loop_max, current_date_char , prev_date_char )
+      prev_date_char = current_date_char
       CALL cpu_time ( t4 )
       WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for output ',NINT(t4-t3) ,' s.'
       CALL wrf_debug( 0, wrf_err_message )
@@ -668,7 +671,7 @@ SUBROUTINE compute_si_start_and_end (  &
    END DO loop_count
 END SUBROUTINE compute_si_start_and_end
 
-SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
+SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max , current_date_char , prev_date_char )
 
    USE module_big_step_utilities_em
    USE module_domain
@@ -693,6 +696,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
    CHARACTER (LEN=256) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
    CHARACTER (LEN=256) :: message
+   CHARACTER (LEN=19) , INTENT(IN) :: current_date_char, prev_date_char
 character *19 :: temp19
 character *24 :: temp24 , temp24b
 
@@ -702,6 +706,10 @@ character *24 :: temp24 , temp24b
    REAL , DIMENSION(:,:,:) , ALLOCATABLE , SAVE :: mbdy2dtemp2
    REAL , DIMENSION(:,:,:) , ALLOCATABLE , SAVE :: qn1bdy3dtemp1, qn1bdy3dtemp2, qn2bdy3dtemp1, qn2bdy3dtemp2
 real::t1,t2
+
+   INTEGER                                :: open_status
+
+#include "wrf_io_flags.h"
 
    !  Various sizes that we need to be concerned about.
 
@@ -807,7 +815,7 @@ real::t1,t2
       CALL construct_filename1( inpname , 'wrfinput' , grid%id , 2 )
       CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_input , "DATASET=INPUT", ierr )
       IF ( ierr .NE. 0 ) THEN
-         CALL wrf_error_fatal( 'real: error opening wrfinput for writing' )
+         CALL wrf_error_fatal( 'REAL: error opening wrfinput for writing' )
       END IF
       CALL output_input ( id1, grid , config_flags , ierr )
       CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
@@ -817,7 +825,7 @@ real::t1,t2
            CALL construct_filename1( inpname , 'wrflowinp' , grid%id , 2 )
            CALL open_w_dataset ( id4, TRIM(inpname) , grid , config_flags , output_auxinput4 , "DATASET=AUXINPUT4", ierr )
            IF ( ierr .NE. 0 ) THEN
-              CALL wrf_error_fatal( 'real: error opening wrflowinp for writing' )
+              CALL wrf_error_fatal( 'REAL: error opening wrflowinp for writing' )
            END IF
            CALL output_auxinput4 ( id4, grid , config_flags , ierr )
          END IF
@@ -957,24 +965,48 @@ real::t1,t2
 
       IF ( loop .eq. 2 ) THEN
          IF ( (grid%id .eq. 1) .and. ( .NOT. config_flags%polar ) ) THEN
-            CALL construct_filename1( bdyname , 'wrfbdy' , grid%id , 2 )
-            CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
-            IF ( ierr .NE. 0 ) THEN
-               CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
+            IF      ( .NOT. config_flags%multi_bdy_files ) THEN
+               CALL construct_filename2a( bdyname , TRIM(config_flags%bdy_inname) , grid%id , 2 , " " )
+               CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
+               IF ( ierr .NE. 0 ) THEN
+                  CALL wrf_error_fatal( 'REAL: error opening ' // TRIM(bdyname) // ' for writing' )
+               END IF
             END IF
          END IF
          IF(grid_fdda .GE. 1)THEN
             CALL construct_filename1( inpname , 'wrffdda' , grid%id , 2 )
             CALL open_w_dataset ( id2, TRIM(inpname) , grid , config_flags , output_auxinput10 , "DATASET=AUXINPUT10", ierr )
             IF ( ierr .NE. 0 ) THEN
-               CALL wrf_error_fatal( 'real: error opening wrffdda for writing' )
+               CALL wrf_error_fatal( 'REAL: error opening wrffdda for writing' )
             END IF
          END IF
       ELSE
+         
+         !  Advance the clock to the next time period.
+
          IF ( .NOT. domain_clockisstoptime(grid) ) THEN
             CALL domain_clockadvance( grid )
             CALL domain_clockprint ( 150, grid, &
                    'DEBUG assemble_output:  clock after ClockAdvance,' )
+         END IF
+      END IF
+
+      !  If the lateral boundary conditions are split, then open the file with a 
+      !  date string. Only single time periods are allowed in a lateral BC file
+      !  when the files are split into multiple pieces. Also, we choose to 
+      !  CLOSE the file just before we need it OPENed.
+
+      IF ( config_flags%multi_bdy_files ) THEN
+         CALL construct_filename2a( bdyname , TRIM(config_flags%bdy_inname) , grid%id , 2 , prev_date_char )
+
+         CALL wrf_inquire_opened(id , TRIM(bdyname) , open_status , ierr )
+         IF ( open_status .EQ. WRF_FILE_OPENED_FOR_WRITE ) THEN
+            CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
+         END IF
+
+         CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
+         IF ( ierr .NE. 0 ) THEN
+            CALL wrf_error_fatal( 'REAL: error opening ' // TRIM(bdyname) // ' for writing' )
          END IF
       END IF
 
@@ -1160,7 +1192,7 @@ real::t1,t2
          !  Output boundary file.
    
          IF(grid%id .EQ. 1)THEN
-           print *,'LBC valid between these times ',current_date, ' ',start_date
+           print *,'LBC valid between these times ',prev_date_char, ' and ',current_date_char
            CALL output_boundary ( id, grid , config_flags , ierr )
          END IF
 

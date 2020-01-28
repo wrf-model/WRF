@@ -1568,121 +1568,18 @@ integer::oops1,oops2
                                its , ite , jts , jte , kts , kte )
          END IF
 
-         !  For hybrid coord
+         !  For vertical coordinate, compute 1d arrays.
 
-         DO k=kts, kte
-            IF      ( config_flags%hybrid_opt .EQ. 0 ) THEN
-               grid%c3f(k) = grid%znw(k)
-            ELSE IF ( config_flags%hybrid_opt .EQ. 1 ) THEN
-               grid%c3f(k) = grid%znw(k)
-            ELSE IF ( config_flags%hybrid_opt .EQ. 2 ) THEN
-               B1 = 2. * grid%etac**2 * ( 1. - grid%etac )
-               B2 = -grid%etac * ( 4. - 3. * grid%etac - grid%etac**3 )
-               B3 = 2. * ( 1. - grid%etac**3 )
-               B4 = - ( 1. - grid%etac**2 )
-               B5 = (1.-grid%etac)**4
-               grid%c3f(k) = ( B1 + B2*grid%znw(k) + B3*grid%znw(k)**2 + B4*grid%znw(k)**3 ) / B5
-               IF ( grid%znw(k) .LT. grid%etac ) THEN
-                  grid%c3f(k) = 0.
-               END IF
-               IF ( k .EQ. kds ) THEN
-                  grid%c3f(k) = 1.
-               ELSE IF ( k .EQ. kde ) THEN
-                  grid%c3f(k) = 0.
-               END IF
-            ELSE IF ( config_flags%hybrid_opt .EQ. 3 ) THEN
-               grid%c3f(k) = grid%znw(k)*sin(0.5*3.14159*grid%znw(k))**2
-               IF      ( k .EQ. kds ) THEN
-                  grid%c3f(k) = 1.
-               ELSE IF ( k .EQ. kds ) THEN
-                  grid%c3f(kde) = 0.
-               END IF
-            ELSE
-               CALL wrf_message     ( 'ERROR: --- hybrid_opt' )
-               CALL wrf_message     ( 'ERROR: --- hybrid_opt=0    ==> Standard WRF terrain-following coordinate' )
-               CALL wrf_message     ( 'ERROR: --- hybrid_opt=1    ==> Standard WRF terrain-following coordinate, hybrid c1, c2, c3, c4' )
-               CALL wrf_message     ( 'ERROR: --- hybrid_opt=2    ==> Hybrid, Klemp polynomial' )
-               CALL wrf_message     ( 'ERROR: --- hybrid_opt=3    ==> Hybrid, sin^2' )
-               CALL wrf_error_fatal ( 'ERROR: --- Invalid option' )
-            END IF
-         END DO
-
-         !  c4 is a function of c3 and eta.
-
-         DO k=1, kde
-            grid%c4f(k) = ( grid%znw(k) - grid%c3f(k) ) * ( p1000mb - grid%p_top )
-         ENDDO
-      
-         !  Now on half levels, just add up and divide by 2 (for c3h).  Use (eta-c3)*(p00-pt) for c4 on half levels.
-      
-         DO k=1, kde-1
-            grid%znu(k) = ( grid%znw(k+1) + grid%znw(k) ) * 0.5
-            grid%c3h(k) = ( grid%c3f(k+1) + grid%c3f(k) ) * 0.5
-            grid%c4h(k) = ( grid%znu(k) - grid%c3h(k) ) * ( p1000mb - grid%p_top )
-         ENDDO
-      
-         !  c1 = d(B)/d(eta).  We define c1f as c1 on FULL levels.  For a vertical difference,
-         !  we need to use B and eta on half levels.  The k-loop ends up referring to the
-         !  full levels, neglecting the top and bottom.
-      
-         DO k=kds+1, kde-1
-            grid%c1f(k) = ( grid%c3h(k) - grid%c3h(k-1) ) / ( grid%znu(k) - grid%znu(k-1) )
-         ENDDO
-      
-         !  The boundary conditions to get the coefficients:
-         !  1) At k=kts: define d(B)/d(eta) = 1.  This gives us the same value of B and d(B)/d(eta)
-         !     when doing the sigma-only B=eta.
-         !  2) At k=kte: define d(B)/d(eta) = 0.  The curve B SMOOTHLY goes to zero, and at the very
-         !     top, B continues to SMOOTHLY go to zero.  Note that for almost all cases of non B=eta,
-         !     B is ALREADY=ZERO at the top, so this is a reasonable BC to assume.
-      
-         grid%c1f(kds) = 1.
-         IF ( ( config_flags%hybrid_opt .EQ. 0 ) .OR. ( config_flags%hybrid_opt .EQ. 1 ) ) THEN
-            grid%c1f(kde) = 1.
-         ELSE
-            grid%c1f(kde) = 0.
-         END IF
-      
-         !  c2 = ( 1. - c1(k) ) * (p00 - pt).  There is no vertical differencing, so we can do the
-         !  full kds to kde looping.
-      
-         DO k=kds, kde
-            grid%c2f(k) = ( 1. - grid%c1f(k) ) * ( p1000mb - grid%p_top )
-         ENDDO
-      
-         !  Now on half levels for c1 and c2.  The c1h will result from the full level c3 and full
-         !  level eta differences.  The c2 value use the half level c1(k).
-      
-         DO k=1, kde-1
-            grid%c1h(k) = ( grid%c3f(k+1) - grid%c3f(k) ) / ( grid%znw(k+1) - grid%znw(k) )
-            grid%c2h(k) = ( 1. - grid%c1h(k) ) * ( p1000mb - grid%p_top )
-         ENDDO
-
-         !  With c3 and c4 on full levels, we can verify that we are maintaining monotonically
-         !  decreasing reference pressure.
-         !  P_dry_ref(k)  = c3f(k) * ( psurf - p_top ) + c4f(k) + p_top
-
-         DO j = jts, MIN(jde-1,jte)
-            DO i = its, MIN(ide-1,ite)
-               p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
-               DO k=1, kde-1
-                  press_above = grid%c3f(k+1)*(p_surf-grid%p_top) + grid%c4f(k+1) + grid%p_top
-                  press_below = grid%c3f(k  )*(p_surf-grid%p_top) + grid%c4f(k  ) + grid%p_top
-                  IF ( press_below - press_above .LE. 0.0 ) THEN
-                     CALL wrf_message ( '----- ERROR: The reference pressure is not monotonically decreasing' )
-                     CALL wrf_message ( '             This tends to be caused by very high topography')
-                     WRITE (a_message,*) '(i,j) = ',i,j,', topography = ',grid%ht(i,j),' m'
-                     CALL wrf_message ( TRIM(a_message) )
-                     WRITE (a_message,*) 'k = ',k,', reference pressure = ',press_below,' Pa'
-                     CALL wrf_message ( TRIM(a_message) )
-                     WRITE (a_message,*) 'k = ',k+1,', reference pressure = ',press_above,' Pa'
-                     CALL wrf_message ( TRIM(a_message) )
-                     WRITE (a_message,*) 'In the dynamics namelist record, reduce etac from ',config_flags%etac
-                     CALL wrf_error_fatal ( TRIM(a_message) )
-                  END IF
-               ENDDO
-            ENDDO
-         ENDDO
+         CALL compute_vcoord_1d_coeffs ( grid%ht, grid%etac, grid%znw, &
+                                         config_flags%hybrid_opt, &
+                                         r_d, g, p1000mb, &
+                                         grid%p_top, grid%p00, grid%t00, grid%tlp, &
+                                         ids, ide, jds, jde, kds, kde, &
+                                         ims, ime, jms, jme, kms, kme, &
+                                         its, ite, jts, jte, kts, kte, &
+                                         grid%znu, &
+                                         grid%c1f, grid%c2f, grid%c3f, grid%c4f, &
+                                         grid%c1h, grid%c2h, grid%c3h, grid%c4h )
 
          IF ( config_flags%interp_theta ) THEN
 

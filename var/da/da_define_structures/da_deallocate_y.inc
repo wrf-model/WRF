@@ -85,6 +85,10 @@ subroutine da_deallocate_y(y)
        do n = 1, y % nlocal(radar)
           deallocate (y % radar(n)%rv)
           deallocate (y % radar(n)%rf)
+          if (associated(y%radar(n)%rqv)) deallocate(y%radar(n)%rqv)
+          if (associated(y%radar(n)%rgr)) deallocate(y%radar(n)%rgr)
+          if (associated(y%radar(n)%rsn)) deallocate(y%radar(n)%rsn)
+          if (associated(y%radar(n)%rrn)) deallocate(y%radar(n)%rrn)
        end do
        deallocate (y % radar)
     end if

@@ -54,8 +54,6 @@ state    real  XLONG            ij      misc        1         -     i0123rh0156{
 
 # It is required that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
-# this next 1 is for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
-# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  LU_INDEX         ij      misc        1         -     i012rh01d=(interp_fcnm_lu:xlat,xlong,dx,grid_id)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
 state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
 
@@ -337,6 +335,15 @@ state    real   ht_coarse       ij     misc        1   -     r                - 
 state    real   tke            ikj     dyn_em      2         -       r        "tke"          "TURBULENCE KINETIC ENERGY"     "m2 s-2"
 i1       real   tke_tend       ikj     dyn_em      1         -      
 
+# variables in 3DTKE scheme (km_opt=5)
+state    real  nlflux          ikj     dyn_em        1         Z      -      "NLFLUX"          "PRESCRIBED NONLOCAL HEAT FLUX IN 3DTKE SCHEME"         "K m s-1"
+state    real  gamu            ij      dyn_em        1         -      r      "GAMU"            "NONLOCAL U GAMMA TERM IN 3DTKE SCHEME"         "s-1"
+state    real  gamv            ij      dyn_em        1         -      r      "GAMV"            "NONLOCAL V GAMMA TERM IN 3DTKE SCHEME"         "s-1"
+state    real  dlk             ikj     dyn_em        1         -      -      "DLK"             "TURBULENT LENGTH SCALE"     "m"
+state    real  l_diss          ikj     dyn_em        1         -      -      "L_DISS"         "DISSIPATION LENGTH SCALE"   "m"
+state    real  elmin           ikj     dyn_em        1         -      -      "ELMIN"           "FREE ATMOS LENGTH SCALE (FROM BOULAC SCHEME)"  "m"
+state    real  xkmv_meso       ikj     dyn_em        1         -      -      "XKMV_MESO"       "XKMV AT MESOSCALE LIMIT"    "m2 s-1"
+
 # Pressure and Density
 state    real   p              ikj     dyn_em      1         -      irh       "p"           "perturbation pressure"         "Pa"
 state    real   al             ikj     dyn_em      1         -      ir        "al"          "inverse perturbation density"  "m3 kg-1"
@@ -398,8 +405,6 @@ state    real   T2               ij     misc        1         -     i01rh01{22}{
 state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
 state    real   PSFC             ij     misc        1         -     i01rh01du   "PSFC"                 "SFC PRESSURE"      "Pa"
 
-# these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
-# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real   U10              ij     misc        1         -     irh01{22}{23}du     "U10"                "U at 10 M"         "m s-1"
 state    real   V10              ij     misc        1         -     irh01{22}{23}du     "V10"                "V at 10 M"         "m s-1"
 # LPI
@@ -1028,7 +1033,12 @@ state   real   edmf_thl        ikj     misc        1         -      h         "e
 state   real   edmf_qt         ikj     misc        1         -      h         "edmf_qt"          "EDMF qt  - mean moist updrafts" "kg kg-1"
 state   real   edmf_ent        ikj     misc        1         -      h         "edmf_ent"         "EDMF entrainment  - mean moist updrafts" "m-1"
 state   real   edmf_qc         ikj     misc        1         -      h         "edmf_qc"          "EDMF qc - mean moist updrafts" "kg kg-1"
+state   real   sub_thl3D       ikj     misc        1         -      h         "sub_thl3D"        "thetaL subsidence tendency from EDMF" "K s-1"
+state   real   sub_sqv3D       ikj     misc        1         -      h         "sub_sqv3D"        "qv subsidence tendency from EDMF" "kg kg-1 s-1"
+state   real   det_thl3D       ikj     misc        1         -      h         "det_thl3D"        "thetaL detrainment tendency from EDMF" "K s-1"
+state   real   det_sqv3D       ikj     misc        1         -      h         "det_sqv3D"        "qv detrainment tendency from EDMF" "kg kg-1 s-1"
 state   integer  nupdraft       ij     misc        1         -      h         "nupdraft"         "Number of updrafts per grid cell"  ""
+state   integer  ktop_plume     ij     misc        1         -      h         "ktop_plume"       "k-level of highest pentrating plume"    ""
 state   real   maxMF            ij     misc        1         -      h         "maxMF"            "Maximum mass-flux (neg: all dry, pos: moist)"   "m/s * area"
 
 #FogDES variables
@@ -1075,7 +1085,7 @@ state    real    dl_u_bep      ikj     misc        1         Z      -        "dl
 state    real    sf_bep        ikj     misc        1         Z      -        "sf_bep"                "surface grid"              "-"
 state    real    vl_bep        ikj     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
 state    real   tke_pbl        ikj     misc        1         Z      rh       "tke_pbl"              "TKE from PBL"      "m2 s-2"
-state    real   el_pbl         ikj     misc        1         Z      h        "el_pbl"               "Length scale from PBL"      "m"
+state    real   el_pbl         ikj     misc        1         Z      rh       "el_pbl"               "Length scale from PBL"      "m"
 # Diagnostic BOULAC PBL variables
 state    real   wu_tur         ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
 state    real   wv_tur         ikj     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
@@ -1247,7 +1257,7 @@ state   real    ht_fine        ij      misc         1         -     -          "
 state   real    ht_int         ij      misc         1         -     -          "HGT_INT"          "Terrain Height Horizontally Interpolated"   "m"
 state   real    ht_input       ij      misc         1         -     -          "HGT_INPUT"        "Terrain Height from FG Input File"   "m"
 state   real    ht_smooth      ij      misc         1         -     -          "HGT_SMOOTH"       "Terrain Height Smoothed with External Model Topo (d1 only)"   "m"
-state   real    ht_shad        ijb     misc         1         -     df=(bdy_interp:dt)         "HGT_SHAD"        "Height of orographic shadow"   "m"
+state   real    ht_shad        ijb     misc         1         -     rdf=(bdy_interp:dt)         "HGT_SHAD"        "Height of orographic shadow"   "m"
 i1      real    ht_loc         ij      misc         1         -     - 
 state   integer  shadowmask    ij      misc         1         -     - 
 state   integer min_ptchsz     -       misc         1         -     r
@@ -1537,7 +1547,7 @@ state    real  CLDFRA          ikj      misc        1         -      rh       "C
 state    real  CONVCLD          ij      misc        1         -      rh       "CONVCLD"               "BMJ CONVECTIVE CLOUD" "kg m-2"
 state    real  CCLDFRA         ikj      misc        1         -      rh       "CCLDFRA"               "CONVECTIVE CLOUD FRACTION" ""
 state    real  CLDFRA_OLD      ikj      misc        1         -      r        "CLDFRA_OLD"            "previous time level cldfra"                           ""
-state    real  CLDFRA_BL       ikj      misc        1         -      -        "CLDFRA_BL"             "CLOUD FRACTION pbl"                                   ""
+state    real  CLDFRA_BL       ikj      misc        1         -      r        "CLDFRA_BL"             "CLOUD FRACTION pbl"                                   ""
 state    real  CLDT             ij      misc        1         -      -        "CFRACT"                "TOTAL CLOUD FRACTION"                                 ""
 #state    real  CLDL             ij      misc        1         -      -        "CFRACL"                "LOW CLOUD FRACTION (ETA GREATER THAN 0.69)"           ""
 #state    real  LWP              ij      misc        1         -      -        "LWP"                   "LIQUID CLOUD WATER PATH"                              "kg m-2"
@@ -1669,8 +1679,6 @@ state    real  SWCF             ij      misc        1         -      r        "S
 state    real  LWCF             ij      misc        1         -      r        "LWCF"                  "LONG WAVE CLOUD FORCING AT TOA"                      "W m-2"
 state    real  OLR              ij      misc        1         -      rh        "OLR"                   "TOA OUTGOING LONG WAVE"                              "W m-2"
 
-# these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
-# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  XLAT_U           ij      dyn_em      1         X     i012rhdu=(copy_fcnm)         "XLAT_U"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
 state    real  XLONG_U          ij      dyn_em      1         X     i012rhd=(interp_fcn_blint_ll:xlat_u,input_from_file)u=(copy_fcnm)         "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  XLAT_V           ij      dyn_em      1         Y     i012rhdu=(copy_fcnm)         "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
@@ -2259,6 +2267,7 @@ rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    1
 rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    1       irh      "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
 rconfig   integer     bl_mynn_edmf_tke    namelist,physics      max_domains    0       irh      "bl_mynn_edmf_tke"              "0:off,1:activate mass-flux transport of tke"           ""
 rconfig   integer     bl_mynn_mixscalars  namelist,physics      max_domains    0       irh      "bl_mynn_mixscalars"            "0:off,1:activate mixing of scalars (qnx, qnxfa) in MYNN"      ""
+rconfig   integer     bl_mynn_output      namelist,physics      max_domains    0       irh      "bl_mynn_output"                "0:off,1:Allocate and output extra 3D arrays"      ""
 rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh      "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud species"          ""
 rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh      "bl_mynn_mixqt"                 "0:mix moisture species separate,1: mix total water"    ""
 rconfig   integer     icloud_bl           namelist,physics      1              1       irh      "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
@@ -2692,6 +2701,7 @@ rconfig   integer spec_bdy_final_mu       namelist,bdy_control	        1     1  
 rconfig   integer real_data_init_type     namelist,bdy_control		1                 1    irh   "real_data_init_type"   "REAL DATA INITIALIZATION OPTIONS: 1=SI, 2=MM5, 3=GENERIC" "PRE-PROCESSOR TYPES"
 rconfig   logical have_bcs_moist          namelist,bdy_control  max_domains    .false. rh    "have_bcs_moist"           ""      ""
 rconfig   logical have_bcs_scalar         namelist,bdy_control  max_domains    .false. rh    "have_bcs_scalar"          ""      ""
+rconfig   logical multi_bdy_files         namelist,bdy_control          1      .false. rh    "multi_bdy_files"          ""      ""
 
 rconfig   integer background_proc_id      namelist,grib2 	        1     255    rh    "background_proc_id"    "Background processing id for grib2"  ""
 rconfig   integer forecast_proc_id        namelist,grib2 	        1     255    rh    "forecast_proc_id"      "Analysis and forecast processing id for grib2"  ""
@@ -2820,7 +2830,7 @@ package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_2category_dfi  mp_physics_dfi==52    -                dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib,dfi_qni2,dfi_qir2,dfi_qib2;state:dfi_re_cloud,dfi_re_ice
-package   jensen_ishmael_dfi  mp_physics_dfi==55         -         dfi_moist:qdfi_v,dfi_qc,dfi_qr,dfi_qi,dfi_qi2,dfi_qi3;dfi_scalar:dfi_qnr,dfi_qni,dfi_qvoli,dfi_qaoli,dfi_qni2,dfi_qvoli2,dfi_qaoli2,dfi_qni3,dfi_qvoli3,dfi_qaoli3;state:dfi_re_cloud,dfi_re_ice
+package   jensen_ishmael_dfi  mp_physics_dfi==55         -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2,dfi_qi3;dfi_scalar:dfi_qnr,dfi_qni,dfi_qvoli,dfi_qaoli,dfi_qni2,dfi_qvoli2,dfi_qaoli2,dfi_qni3,dfi_qvoli3,dfi_qaoli3;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 package   gsfcgcescheme_dfi   mp_physics_dfi==97     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 
@@ -2850,6 +2860,7 @@ package   goddardswscheme ra_sw_physics==5           -             state:tswdn,t
 package   flgswscheme     ra_sw_physics==7           -             -
 package   gfdlswscheme    ra_sw_physics==99          -             -
 
+package   nosfcscheme        sf_sfclay_physics==0        -             -
 package   sfclayrevscheme    sf_sfclay_physics==1        -             -
 package   myjsfcscheme       sf_sfclay_physics==2        -             state:tke_pbl
 package   gfssfcscheme       sf_sfclay_physics==3        -             -
@@ -2892,8 +2903,11 @@ package   gbmpblscheme   bl_pbl_physics==12          -             state:exch_tk
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
-package   mynn_dmp_edmf  bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,ktop_shallow,maxmf,nupdraft
+package   mynn_dmp_edmf  bl_mynn_edmf==1             -             state:ktop_plume,maxmf,nupdraft
+package   mynn_3Doutput  bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
+
+package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_diss,elmin,xkmv_meso
 
 # dfi
 package   mynnpblscheme2_dfi bl_pbl_physics_dfi==5   -             dfi_scalar:dfi_qke_adv
@@ -3069,7 +3083,6 @@ package   io_netcdf   io_form_restart==2                     -             -
 package   io_hdf      io_form_restart==3                     -             -
 package   io_phdf5    io_form_restart==4                     -             -
 package   io_grib1    io_form_restart==5                     -             -
-package   io_mcel     io_form_restart==6                     -             -
 package   io_esmf     io_form_restart==7                     -             -
 package   io_yyy      io_form_restart==8                     -             -
 package   io_zzz      io_form_restart==9                     -             -
@@ -3128,7 +3141,7 @@ halo      HALO_EM_TKE_A dyn_em 4:ph_2,phb
 halo      HALO_EM_TKE_B dyn_em 4:z,rdz,rdzw,zx,zy
 halo      HALO_EM_TKE_C dyn_em 8:u_2,v_2,z,zx,zy,rdz,rdzw,ustm,ust
 halo      HALO_EM_TKE_D dyn_em 8:defor11,defor22,defor33,defor12,defor13,defor23,div
-halo      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkhv,xkhh,BN2,moist,rho
+halo      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkhv,xkhh,BN2,moist,rho,gamu,gamv,xkmv_meso 
 halo      HALO_EM_TKE_3 dyn_em   24:tke_1,tke_2
 halo      HALO_EM_TKE_5 dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2
@@ -3229,7 +3242,7 @@ period    PERIOD_BDY_EM_E dyn_em 2:u_2,v_2,ht
 period    PERIOD_EM_HYDRO_UV dyn_em 1:u_2,v_2
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy,ustm,ust
-period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,rucuten,rvcuten,xkmh,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2,rho
+period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,rucuten,rvcuten,xkmh,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2,rho,gamu,gamv,xkmv_meso
 period    PERIOD_BDY_EM_FDDA_BC dyn_em 2:rundgdten,rvndgdten
 period    PERIOD_BDY_EM_B dyn_em 2:ru_tend,rv_tend,ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
 period    PERIOD_BDY_EM_B3 dyn_em 2:ph_2,al,p,mu_2,muts,mudf

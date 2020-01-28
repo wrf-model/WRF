@@ -33,6 +33,7 @@ module da_radiance1
    use da_tools, only : da_residual_new, da_eof_decomposition
    use da_tools_serial, only : da_free_unit, da_get_unit
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace_int_sort
+   use da_wrf_interfaces, only : wrf_dm_bcast_integer
 
 #if defined(RTTOV) || defined(CRTM)
    use da_control, only : rtminit_sensor,write_profile,num_procs,tovs_min_transfer

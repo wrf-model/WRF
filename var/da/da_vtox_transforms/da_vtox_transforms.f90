@@ -12,6 +12,7 @@ module da_vtox_transforms
    use module_comm_dm, only : halo_psichi_uv_adj_sub,halo_ssmi_xa_sub,halo_sfc_xa_sub, &
       halo_radar_xa_w_sub, halo_xa_sub, halo_psichi_uv_sub, &
       halo_psichi_uv_sub, halo_xa_wpec_sub,halo_xb_wpec_sub
+   use da_par_util, only : true_mpi_real, mpi_sum, comm
 #endif
    use module_domain, only : xb_type, xpose_type, ep_type, vp_type, x_type, domain, get_ijk_from_grid
    use module_domain, only : x_subtype
@@ -120,5 +121,6 @@ module da_vtox_transforms
 #include "da_calc_flow_dependence_xa_dual_res.inc"
 #include "da_calc_flow_dependence_xa_adj.inc"
 #include "da_calc_flow_dependence_xa_adj_dual_res.inc"
+#include "da_dual_res_c2n_ad.inc"
 
 end module da_vtox_transforms

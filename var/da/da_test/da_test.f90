@@ -74,8 +74,7 @@ module da_test
    use da_tracing, only : da_trace_entry,da_trace_exit
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &
       da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj,da_transfer_wrftoxb
-   ! Don't use, as we pass a 3D array into a 1D one
-   ! use da_wrf_interfaces, only : wrf_dm_bcast_real
+   use da_wrf_interfaces, only : wrf_dm_bcast_real
    use da_wrf_interfaces, only : wrf_debug, wrf_shutdown
    use da_wrfvar_io, only : da_med_initialdata_output,da_med_initialdata_input
    use da_vtox_transforms, only : da_transform_xtotb_lin, &

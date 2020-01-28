@@ -194,9 +194,9 @@
    endif
 
    if (anal_type_randomcv) then
-      ntmax = 0
-      write(unit=stdout,fmt='(a)') &
-         ' Resetting ntmax = 0 for analysis_type = randomcv' 
+      write_gts_omb_oma  = .false.
+      write_rej_obs_conv = .false.
+      write_unpert_obs   = .false.
    end if
 
    if ( cv_options == 3 ) then
@@ -483,6 +483,7 @@
    be % cv % size_jp = 0
    be % cv % size_js = 0
    be % cv % size_jl = 0
+   be % cv % size_jt = 0
    
    !---------------------------------------------------------------------------
    ! [5.1] Set up background errors (be):
@@ -518,6 +519,13 @@
    if (use_rad .and. (use_varbc.or.freeze_varbc)) call da_varbc_init(iv, be)
 #endif
 
+   if (use_tamdarobs .and. use_varbc_tamdar) then
+        call da_varbc_tamdar_init(iv)
+   else
+        use_varbc_tamdar = .false.
+   end if
+   if (use_varbc_tamdar) call da_varbc_tamdar_pred(iv, be, ob)
+
    !---------------------------------------------------------------------------
    ! [5.3] Set up satellite control variable:
    !---------------------------------------------------------------------------
@@ -528,7 +536,7 @@
    !---------------------------------------------------------------------------
    ! [5.4] Total control variable:
    !---------------------------------------------------------------------------   
-   be % cv % size = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_js + be%cv%size_jl
+   be % cv % size = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_js + be%cv%size_jl + be%cv%size_jt
    cv_size = be % cv % size
 
    !---------------------------------------------------------------------------
@@ -595,6 +603,35 @@
 !      if (use_lanczos) then
 !        allocate (full_eignvec(cv_size))
 !      end if
+
+      !------------------------------------------------------
+      ! set CV to random noise ("RANDOMCV")
+      !------------------------------------------------------
+      if (anal_type_randomcv) then
+         it = 1
+         ! Initialize random number generator and scalars
+         call da_random_seed
+         do i= 1, n_randomcv
+            write(ci,'(i3.3)') i
+            write(unit=message(1),fmt='(a,a)') &
+               '  Setting randomcv for wrfvar_output_randomcv.e', trim(ci)
+            call da_message(message(1:1))
+            call da_set_randomcv    (cv_size, cvt)
+            call da_transform_vtox  (grid,cv_size,xbx,be,grid%ep,cvt,grid%vv,grid%vp)
+            call da_transform_xtoxa (grid)
+            call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
+            call da_update_firstguess(grid,'wrfvar_output_randomcv.e'//trim(ci))
+            if ( i < n_randomcv ) then
+               ! restore the original grid info for the next realization of randomcv
+               call da_med_initialdata_input( grid , config_flags, 'fg')
+               call da_setup_firstguess(xbx, grid, config_flags, .false.)
+            end if
+         end do
+         ! Done with randomcv.
+         ! Set the following to skip some code to get to the deallocation part.
+         max_ext_its = 0
+         outer_loop_restart = .false.
+      end if  !anal_type_randomcv
 
       if ( outer_loop_restart ) then
          !call da_get_unit(cvt_unit)
@@ -809,7 +846,7 @@
                              be,iv,xhat,qhat,cvt,re,y,j,eignvec,eignval,neign)
           ! Output Cost Function
             call da_calculate_j(it, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                             be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, grid, config_flags )
+                             be%cv%size_jl, be%cv%size_jt, xbx, be, iv, xhat, cvt, re, y, j, grid, config_flags )
 
          else
             call da_minimise_lz(grid, config_flags, it, cv_size, xbx,& 
@@ -846,11 +883,6 @@
         !call da_free_unit(cvt_unit)
       end if
       !------------------------------------------------------------------------
-
-      ! reset cv to random noise
-      if (anal_type_randomcv) then
-         call da_set_randomcv (cv_size, xhat)
-      end if
 
       ! [8.5] Update latest analysis solution:
 
@@ -925,6 +957,8 @@
                 call da_varbc_update(it, cv_size, xhat, iv)
 #endif
 
+      if (use_varbc_tamdar) &
+         call da_varbc_tamdar_update(cv_size, xhat, iv)
 
       !------------------------------------------------------------------------
       ! [8.10] Output WRFVAR analysis and analysis increments:
@@ -1042,6 +1076,19 @@
    end if
 
    if ( anal_type_hybrid_dual_res ) deallocate(aens_locs)
+
+   if (use_varbc_tamdar) then
+      deallocate (iv%varbc_tamdar%nobs)
+      deallocate (iv%varbc_tamdar%nobs_sum)
+      deallocate (iv%varbc_tamdar%tail_id)
+      deallocate (iv%varbc_tamdar%obs_sn)
+      deallocate (iv%varbc_tamdar%ifuse)
+      deallocate (iv%varbc_tamdar%index)
+      deallocate (iv%varbc_tamdar%pred)
+      deallocate (iv%varbc_tamdar%param)
+      deallocate (iv%varbc_tamdar%bgerr)
+      deallocate (iv%varbc_tamdar%vtox)
+   end if
 
    deallocate ( c1f )
    deallocate ( c2f )

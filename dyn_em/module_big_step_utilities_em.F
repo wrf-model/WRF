@@ -6306,6 +6306,8 @@ END SUBROUTINE set_tend
 ! Also modified to work with idealized boundary conditions.
 
     ktf = MIN( kte, kde-1 )
+    specified = .false.
+    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
     IF ( name .EQ. 'u' ) THEN
 

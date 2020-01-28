@@ -277,9 +277,7 @@ CONTAINS
                                                         PSIM,PSIH
 
 !ADDITIONAL OUTPUT
-!JOE-begin
       REAL,     DIMENSION( ims:ime, jms:jme )    ::   wstar,qstar
-!JOE-end
 !===================================
 ! 1D LOCAL ARRAYS
 !===================================

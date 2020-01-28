@@ -1403,6 +1403,7 @@
          IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
               ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
               model_config_rec % bl_mynn_edmf(i) = 0
+              model_config_rec % bl_mynn_output(i) = 0
          END IF
       ENDDO
 

@@ -359,10 +359,8 @@ contains
     call lilac_init(  &
          mpicom           = comp_comm,        &
          atm_global_index = atm_global_index, &
-         ! FIXME(wjs, 2020-01-01) the following conversions to default real won't be
-         ! needed once we fix lilac to expect double-precision
-         atm_lons         = real(atm_lons),         &
-         atm_lats         = real(atm_lats),         &
+         atm_lons         = atm_lons,         &
+         atm_lats         = atm_lats,         &
          atm_global_nx    = atm_global_nx,    &
          atm_global_ny    = atm_global_ny,    &
          atm_calendar     = atm_calendar,     &

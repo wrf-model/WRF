@@ -822,12 +822,17 @@ CONTAINS
    LOGICAL ::    doabsems
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    INTEGER ::    s
-
+   REAL ::                                                ITRMX, &
+                                                          ITRMN
    REAL    ::    OBECL,SINOB,SXLONG,ARG,DECDEG,                  &
                  DJUL,RJUL,ECCFAC
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_temp
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_save
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_old
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_old
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: cldfra_old
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_cu_weight
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_cu_weight
@@ -1249,6 +1254,7 @@ CONTAINS
           ENDDO
           ENDDO
      ENDIF
+
 #if (EM_CORE == 1)
 ! temporarily modify hydrometeors (for P3, if 2 cat then add ice from both categories)
 !
@@ -1320,7 +1326,6 @@ CONTAINS
      END DO
      END DO
      END DO
-
 !---------------
 ! Calculate constant for short wave radiation
 
@@ -1337,7 +1342,6 @@ CONTAINS
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
-
         IF ( PRESENT ( CLDFRA_DP ) ) THEN
 ! this is for Kain-Fritsch schemes
           IF ( icloud_cu .EQ. 2 .OR. aercu_opt .GT. 0 ) THEN
@@ -1354,7 +1358,6 @@ CONTAINS
              ENDDO
              ENDDO
              ENDDO
-
              IF (aercu_opt.gt.0.0) THEN
              DO j = jts,jte
              DO k = kts,kte
@@ -1628,6 +1631,33 @@ CONTAINS
              ELSE
                 p_top_dummy = -1. ! not used by NMM
              END IF
+
+             ! save old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc_old(i,k,j) = qc(i,k,j)
+                qi_old(i,k,j) = qi(i,k,j)
+                cldfra_old(i,k,j) = cldfra(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
+
+             IF ( cu_physics .eq. 2 ) THEN
+                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
+                 DO j=jts,jte
+                 DO k=kts,kte
+                 DO i=its,ite
+                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
+                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
+                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
+                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
+                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
+                 ENDDO
+                 ENDDO
+                 ENDDO
+             ENDIF
+
              CALL RRTMLWRAD(                                        &
                   P_TOP=p_top_dummy                                 & 
                  ,RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
@@ -1637,14 +1667,11 @@ CONTAINS
                  ,QI3D=QI                                           &
                  ,QS3D=QS                                           &
                  ,QG3D=QG                                           &
-                 ,QCCONV=QCCONV,QICONV=QICONV                       &
                  ,P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t     &
                  ,T8W=t8w,RHO3D=rho,CLDFRA3D=CLDFRA,R=R_d,G=G       &
-                 ,CCLDFRA=CCLDFRA                                   &
                  ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR                     &
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
-                 ,cu_physics=cu_physics                             &
 !ccc Added for time-varying trace gases.
                  ,YR=YR,JULIAN=JULIAN                               &
 !ccc
@@ -1652,6 +1679,17 @@ CONTAINS
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+
+             ! restore old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc(i,k,j) = qc_old(i,k,j)
+                qi(i,k,j) = qi_old(i,k,j)
+                cldfra(i,k,j) = cldfra_old(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
 
 ! NUWRF Version by Toshihisa Matsui and Jainn Shi 20090623
         case (goddardlwscheme)
@@ -1846,6 +1884,32 @@ CONTAINS
                 ENDDO
              END IF
 
+             ! save old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc_old(i,k,j) = qc(i,k,j)
+                qi_old(i,k,j) = qi(i,k,j)
+                cldfra_old(i,k,j) = cldfra(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
+
+             IF ( cu_physics .eq. 2 ) THEN
+                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
+                 DO j=jts,jte
+                 DO k=kts,kte
+                 DO i=its,ite
+                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
+                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
+                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
+                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
+                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
+                 ENDDO
+                 ENDDO
+                 ENDDO
+             ENDIF
+
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
                   LWUPT=LWUPT,LWUPTC=LWUPTC,LWUPTCLN=LWUPTCLN,      &
@@ -1857,7 +1921,6 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
-                  CCLDFRA=CCLDFRA,                                  &
                   cldovrlp=cldovrlp,                                & ! J. Henderson AER: cldovrlp namelist value
 #if (EM_CORE == 1)
                   LRADIUS=lradius, IRADIUS=iradius,                 &
@@ -1870,7 +1933,6 @@ CONTAINS
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
                   QI3D=QI,QS3D=QS,QG3D=QG,                          &
-                  QCCONV=QCCONV,QICONV=QICONV,                      &
                   O3INPUT=O3INPUT,O33D=O3RAD,                       &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
@@ -1899,8 +1961,18 @@ CONTAINS
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
-                  cu_physics=cu_physics,                            &
                   mp_physics=mp_physics                             )
+
+             ! restore old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc(i,k,j) = qc_old(i,k,j)
+                qi(i,k,j) = qi_old(i,k,j)
+                cldfra(i,k,j) = cldfra_old(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
 
         CASE (RRTMK_LWSCHEME)
 
@@ -1935,6 +2007,32 @@ CONTAINS
         CASE (RRTMG_LWSCHEME_FAST)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
 
+             ! save old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc_old(i,k,j) = qc(i,k,j)
+                qi_old(i,k,j) = qi(i,k,j)
+                cldfra_old(i,k,j) = cldfra(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
+
+             IF ( cu_physics .eq. 2 ) THEN
+                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
+                 DO j=jts,jte
+                 DO k=kts,kte
+                 DO i=its,ite
+                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
+                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
+                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
+                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
+                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
+                 ENDDO
+                 ENDDO
+                 ENDDO
+             ENDIF
+
              CALL RRTMG_LWRAD_FAST(                                 &
                   RTHRATENLW=RTHRATEN,                              &
                   LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
@@ -1946,7 +2044,6 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
-                  CCLDFRA=CCLDFRA,                                  &
 #if (EM_CORE == 1)
                   LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif
@@ -1958,7 +2055,6 @@ CONTAINS
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
                   QI3D=QI,QS3D=QS,QG3D=QG,                          &
-                  QCCONV=QCCONV,QICONV=QICONV,                      &
                   O3INPUT=O3INPUT,O33D=O3RAD,                       &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
@@ -1985,9 +2081,19 @@ CONTAINS
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
-                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
-                  cu_physics=cu_physics                             &
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
                                                                     )
+
+             ! restore old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc(i,k,j) = qc_old(i,k,j)
+                qi(i,k,j) = qi_old(i,k,j)
+                cldfra(i,k,j) = cldfra_old(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
 #endif
 
         CASE (HELDSUAREZ)
@@ -2334,6 +2440,32 @@ CONTAINS
                 ENDDO
              END IF
 
+             ! save old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc_old(i,k,j) = qc(i,k,j)
+                qi_old(i,k,j) = qi(i,k,j)
+                cldfra_old(i,k,j) = cldfra(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
+
+             IF ( cu_physics .eq. 2 ) THEN
+                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
+                 DO j=jts,jte
+                 DO k=kts,kte
+                 DO i=its,ite
+                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
+                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
+                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
+                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
+                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
+                 ENDDO
+                 ENDDO
+                 ENDDO
+             ENDIF
+
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,SWUPTCLN=SWUPTCLN,      &
@@ -2346,7 +2478,7 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,CCLDFRA=CCLDFRA,        &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
 #if (EM_CORE == 1)
                      LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif
@@ -2360,7 +2492,6 @@ CONTAINS
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                      QV3D=qv,QC3D=qc,QR3D=qr,                          &
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
-                     QCCONV=QCCONV,QICONV=QICONV,                      &
                      O3INPUT=O3INPUT,O33D=O3RAD,                       &
                      AER_OPT=AER_OPT,aerod=aerod,no_src=no_src_types,  &
                      ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif,     &  !Zhenxin ssib alb comp (06/2010)
@@ -2390,7 +2521,6 @@ CONTAINS
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                      SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,                &
                      SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,                &
-                     cu_physics=cu_physics,                            &
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
@@ -2402,6 +2532,17 @@ CONTAINS
              DO k=kts,kte
              DO i=its,ite
                 RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+RTHRATENSW(I,K,J)
+             ENDDO
+             ENDDO
+             ENDDO
+
+             ! restore old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc(i,k,j) = qc_old(i,k,j)
+                qi(i,k,j) = qi_old(i,k,j)
+                cldfra(i,k,j) = cldfra_old(i,k,j)
              ENDDO
              ENDDO
              ENDDO
@@ -2419,6 +2560,33 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
         CASE (RRTMG_SWSCHEME_FAST)
              CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
+
+             ! save old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc_old(i,k,j) = qc(i,k,j)
+                qi_old(i,k,j) = qi(i,k,j)
+                cldfra_old(i,k,j) = cldfra(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
+
+             IF ( cu_physics .eq. 2 ) THEN
+                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
+                 DO j=jts,jte
+                 DO k=kts,kte
+                 DO i=its,ite
+                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
+                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
+                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
+                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
+                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
+                 ENDDO
+                 ENDDO
+                 ENDDO
+             ENDIF
+
              CALL RRTMG_SWRAD_FAST(                                    &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
@@ -2431,7 +2599,7 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,CCLDFRA=CCLDFRA,        &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
 #if (EM_CORE == 1)
                      LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif
@@ -2444,7 +2612,6 @@ CONTAINS
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                      QV3D=qv,QC3D=qc,QR3D=qr,                          &
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
-                     QCCONV=QCCONV,QICONV=QICONV,                      &
                      O3INPUT=O3INPUT,O33D=O3RAD,                       &
                      AER_OPT=AER_OPT,aerod=aerod,no_src=no_src_types,  &
                      ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif,     &  !Zhenxin ssib alb comp (06/2010)
@@ -2473,7 +2640,6 @@ CONTAINS
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                      SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,                &
                      SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,                &
-                     cu_physics=cu_physics,                            &
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
@@ -2485,6 +2651,17 @@ CONTAINS
              DO k=kts,kte
              DO i=its,ite
                 RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+RTHRATENSW(I,K,J)
+             ENDDO
+             ENDDO
+             ENDDO
+
+             ! restore old hydrometeors & cloud fraction
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                qc(i,k,j) = qc_old(i,k,j)
+                qi(i,k,j) = qi_old(i,k,j)
+                cldfra(i,k,j) = cldfra_old(i,k,j)
              ENDDO
              ENDDO
              ENDDO

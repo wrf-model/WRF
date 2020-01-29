@@ -346,7 +346,7 @@ CONTAINS
 #endif
    USE module_model_constants
 ! *** add new modules of schemes here
-   USE module_irrigation_arianna
+   USE module_irrigation
    USE module_sf_sfclay
    USE module_sf_myjsfc
    USE module_sf_qnsesfc

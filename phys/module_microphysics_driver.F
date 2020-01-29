@@ -236,7 +236,7 @@ SUBROUTINE microphysics_driver(                                          &
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
    USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
-   USE module_irrigation_arianna
+   USE module_irrigation
 
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.

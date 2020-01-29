@@ -560,8 +560,7 @@ BENCH_START(calc_tke_tim)
                                  grid%mix_upper_bound,                                  &
                                  grid%msftx, grid%msfty,                                &
                                  grid%zx, grid%zy,                                      &
-                                 grid%pblh, grid%dlk,                                   & ! XZ
-                                 grid%xkmv_meso, grid%xkmh_t,                           & ! XZ 
+                                 grid%pblh, grid%dlk, grid%xkmv_meso,                   &  
                                  ids,ide, jds,jde, kds,kde,                             &
                                  ims,ime, jms,jme, kms,kme,                             &
                                  grid%i_start(ij), grid%i_end(ij),                      &
@@ -850,10 +849,8 @@ BENCH_START(tke_rhs_tim)
                          grid%dnw,config_flags%mix_isotropic,         &
                          grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV), &
                          grid%ustm, grid%rho,                         &
-                         grid%tke_production_tend,grid%tke_buoy_tend, & !XZ
-                         grid%tke_shear_tend, grid%l_scale,           & !XZ
-                         grid%nlflux, grid%pblh, grid%dlk,            & !XZ 
-                         grid%xkmh_t,                                 & !XZ
+                         grid%l_diss, grid%nlflux,                    & !XZ
+                         grid%pblh, grid%dlk,                         & !XZ 
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          grid%i_start(ij), grid%i_end(ij),            &
@@ -952,7 +949,7 @@ BENCH_END(tke_rhs_tim)
 
          IF (config_flags%bl_pbl_physics .eq. 0) THEN
 
-!XZ    implicit solver for vertical tendency
+!XZ    implicit solver for vertical diffusion tendency
          IF( config_flags%km_opt .eq. 5 ) THEN
               !$OMP PARALLEL DO   &
               !$OMP PRIVATE ( ij )
@@ -970,9 +967,8 @@ BENCH_END(tke_rhs_tim)
                                                grid%xkmv, grid%xkhv, grid%xkmh, config_flags%km_opt,      &
                                                grid%fnm, grid%fnp, grid%dn, grid%dnw, grid%rdz, grid%rdzw,&
                                                grid%hfx, grid%qfx, grid%ustm, grid%rho,                   &
-                                               grid%nlflux,grid%gamu,grid%gamv,grid%xkmv_meso,            &
-                                               grid%u_z_tend,grid%v_z_tend,grid%w_z_tend,grid%th_z_tend,  &
-                                               grid%tke_diffusion_z_tend,                                 &
+                                               grid%nlflux, grid%gamu, grid%gamv,                         & 
+                                               grid%xkmv_meso, grid%l_diss,                               &
                                                grid%c1h, grid%c2h, grid%c1f, grid%c2f,                    &
                                                ids, ide, jds, jde, kds, kde,                              &
                                                ims, ime, jms, jme, kms, kme,                              &
@@ -1042,8 +1038,6 @@ BENCH_START(hor_diff_tim)
                                       grid%rdx, grid%rdy, grid%rdz, grid%rdzw,                   &
                                       grid%fnm, grid%fnp, grid%cf1, grid%cf2, grid%cf3,          &
                                       grid%zx, grid%zy, grid%dn, grid%dnw, grid%rho,             &
-                                      grid%u_h_tend, grid%v_h_tend, grid%w_h_tend,               & !XZ
-                                      grid%th_h_tend, grid%tke_diffusion_h_tend,                 & !XZ
                                       ids, ide, jds, jde, kds, kde,          &
                                       ims, ime, jms, jme, kms, kme,          &
                                       grid%i_start(ij), grid%i_end(ij),      &

@@ -53,19 +53,13 @@
       LOGICAL :: exists, vnest
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, j, oops, d1_value, EDMFMAX, SCHUMAX
+      INTEGER :: id, factor
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
       LOGICAL :: lon_extent_is_global , lat_extent_is_global
-
-!TWG2015
-!
-!FASDAS
-!
       LOGICAL :: rinblw_already_done
-!
-!END FASDAS
-!
       INTEGER :: count_fatal_error
+      INTEGER :: len1, len2, len_loop
 
       !  These functions are located with in the Urban Physics files, but
       !  not within the confines of the modules. Since we are in the share
@@ -269,6 +263,31 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
+! The nominal grid distance on each child domain is ENTIRELY a function 
+! of the MOAD grid distance and the accumulated recursive parent grid ratios
+! of each child domain. Even if the child grid distance values are specified
+! in the namelist file, overwrite the dx and dy namelist input with the 
+! computed grid distance values.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) THEN
+            WRITE(wrf_err_message,FMT='(A,I2,A)') 'Domain #',i,': grid turned OFF'
+            CALL wrf_debug ( 0, wrf_err_message )
+            CYCLE
+         END IF
+         id = i
+         factor = 1
+         call get_moad_factor ( id,  model_config_rec % parent_id,  &
+                                model_config_rec % parent_grid_ratio,  &
+                                model_config_rec % max_dom, factor )
+         model_config_rec % dx(i) = model_config_rec % dx(1) / REAL(factor)
+         model_config_rec % dy(i) = model_config_rec % dy(1) / REAL(factor)
+         WRITE(wrf_err_message,FMT='(A,I2,A,F9.3,A)') 'Domain #',i,': dx = ',model_config_rec % dx(i),' m'
+         CALL wrf_debug ( 0, wrf_err_message )
+      END DO
+
+!-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
 ! filled as a max_doamins variable.  Since we changed these two variables
@@ -347,14 +366,16 @@
 !-----------------------------------------------------------------------
 ! Check that SMS-3DTKE scheme Must work with Revised MM5 surface layer 
 ! scheme (sf_sfclay_physics = 1), MYNN surface (sf_sfclay_physics = 5)
-! and old MM5 surface scheme (sf_sfclay_physics = 91)
+! and old MM5 surface scheme (sf_sfclay_physics = 91). Also, SMS-3DTKE
+! Must work with no surface layer scheme.
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % km_opt(i) .EQ. 5 .AND. &
-              (model_config_rec % sf_sfclay_physics(i) .NE. sfclayscheme    .AND. &
+              (model_config_rec % sf_sfclay_physics(i) .NE. nosfcscheme     .AND. &
+               model_config_rec % sf_sfclay_physics(i) .NE. sfclayscheme    .AND. &
                model_config_rec % sf_sfclay_physics(i) .NE. sfclayrevscheme .AND. &
                model_config_rec % sf_sfclay_physics(i) .NE. mynnsfcscheme  ) ) THEN
-            wrf_err_message = '--- ERROR: SMS-3DTKE scheme works with sf_sfclay_physics = 1,5,91 '
+            wrf_err_message = '--- ERROR: SMS-3DTKE scheme works with sf_sfclay_physics = 0,1,5,91 '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Fix km_opt or sf_sfclay_physics in namelist.input.'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
@@ -962,6 +983,49 @@
          model_config_rec%num_traj = 0
    END IF
 
+!-----------------------------------------------------------------------
+! Catch old method for using multi-file LBCs. Let folks know the 
+! new way to get the same functionality with run-time options.
+!-----------------------------------------------------------------------
+#if _MULTI_BDY_FILES_
+   wrf_err_message = '--- ERROR: Do not use the compile-time -D_MULTI_BDY_FILES_ option for multi-file LBCs.'
+   CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+   wrf_err_message = '--- ERROR: Use the run-time namelist option multi_bdy_files in nml record bdy_control.'
+   CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+   count_fatal_error = count_fatal_error + 1
+#endif
+
+!----------------------------------------------------------------------------
+! If using multi_bdy_files option or not, make the lateral bdy file root name
+! correct. For example, we want "wrfbdy_d01" for NON multi_bdy_files and we
+! want "wrfbdy_d01_SOME_DATE" when using the multi_bdy_files option.
+!----------------------------------------------------------------------------
+   IF      ( model_config_rec%multi_bdy_files ) THEN
+      IF ( INDEX ( TRIM(model_config_rec%bdy_inname) , "_<date>" ) .GT. 0 ) THEN
+         ! No op, all OK
+      ELSE
+         wrf_err_message = '--- ERROR: Need bdy_inname = "wrfbdy_d<domain>_<date>"'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         count_fatal_error = count_fatal_error + 1
+!        len1 = LEN_TRIM(model_config_rec%bdy_inname)
+!        len2 = "_<date>"
+!        model_config_rec%bdy_inname(1:len1+len2) = TRIM(model_config_rec%bdy_inname) // "_<date>"
+      END IF
+   ELSE IF ( .NOT. model_config_rec%multi_bdy_files ) THEN
+      IF ( INDEX ( TRIM(model_config_rec%bdy_inname) , "_<date>" ) .EQ. 0 ) THEN
+         ! No op, all OK
+      ELSE
+         wrf_err_message = '--- ERROR: Remove bdy_inname = "wrfbdy_d<domain>_<date>"'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         count_fatal_error = count_fatal_error + 1
+!        len1 = LEN_TRIM(model_config_rec%bdy_inname)
+!        len2 = "_<date>"
+!        DO len_loop len1-len2+1 , len1
+!           model_config_rec%bdy_inname(len_loop:len_loop) = " "
+!        END DO 
+      END IF
+   END IF
+
 #elif( NMM_CORE == 1 )
 !----------------------------------------------------------------------------
 ! If NMM core and trajectories are on then halt.
@@ -1339,6 +1403,7 @@
          IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
               ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
               model_config_rec % bl_mynn_edmf(i) = 0
+              model_config_rec % bl_mynn_output(i) = 0
          END IF
       ENDDO
 
@@ -2030,20 +2095,22 @@
 !-----------------------------------------------------------------------
 !  Consistency checks between vertical refinement and radiation
 !  scheme selection.  For "choose any vertical levels" for the nest,
-!  only RRTM is eligible.
+!  only option 1 (RRTM/Dudhia) or option 4 (RRTMG) are eligible.
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
         IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
           IF ( ( ( model_config_rec%ra_lw_physics(i) .EQ. 0                   ) .OR. &
-                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) ) .AND. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) .OR. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      ) ) .AND. &
                ( ( model_config_rec%ra_sw_physics(i) .EQ. 0                   ) .OR. &
-                 ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) ) ) THEN
+                 ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
+                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) ) ) THEN
              !  We are OK, I just hate writing backwards / negative / convoluted if tests
              !  that are not easily comprehensible.
           ELSE
-            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with ra_lw_physics=1 (RRTM) and ra_sw_physics=1 (Dudhia)'
+            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with ra_lw/sw_physics=1 (RRTM/Dudhia) or ra_lw/sw_physics=4 (RRTMG)'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
           END IF
@@ -2727,6 +2794,21 @@
 
    END SUBROUTINE set_physics_rconfigs
 
+!=======================================================================
+
+   RECURSIVE SUBROUTINE get_moad_factor ( id, parent_id, parent_grid_ratio, max_dom, factor )
+      IMPLICIT NONE
+      INTEGER                     :: max_dom
+      INTEGER, DIMENSION(max_dom) :: parent_id, parent_grid_ratio
+      INTEGER                     :: factor, id
+   
+      IF ( id .EQ. 1 ) THEN
+         RETURN
+      ELSE
+         factor = factor * parent_grid_ratio(id)
+         CALL get_moad_factor ( parent_id(id), parent_id, parent_grid_ratio, max_dom, factor )
+      END IF
+   END  SUBROUTINE get_moad_factor
 
 !=======================================================================
 

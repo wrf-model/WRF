@@ -437,17 +437,14 @@ CONTAINS
    INTEGER,  DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: LOWLYR
 
 ! bmj
-
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
              CCLDFRA, QCCONV, QICONV
-
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::            &
              CONVCLD
 
 !pbl
 
    ! soil layer
-
 
    REAL,     DIMENSION(1:num_soil_layers),      INTENT(INOUT) :: ZS,DZS
 

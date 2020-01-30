@@ -113,7 +113,7 @@ CONTAINS
    INTEGER,      INTENT(IN   ) ::                                          &
                                   ktau,stepbioe,stepfirepl
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),                &
-         INTENT(IN ) ::                                   moist
+         INTENT(INOUT ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_tracer ),               &
@@ -640,8 +640,8 @@ if(config_flags%emiss_opt_vol == 5)then
          endhr=beghr+int(erup_end(i,j)/60.)
          endday=int(begday+endhr/24)-1
          endmin=00.
-!        write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
-!        write(0,*)'begday,endday,julday = ',begday,endday,julday
+         write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
+         write(0,*)'begday,endday,julday = ',begday,endday,julday
          ivolcano = 1
          if(julday.le.begday .or. julday.ge.endday)then
 !           write(0,*)'endhr,endmin,beghr,begmin = ',endhr,endmin,beghr,begmin
@@ -704,15 +704,42 @@ if(config_flags%emiss_opt_vol == 5)then
                 chem(i,k,j,p_so4_a06)=chem(i,k,j,p_so4_a06)+(emis_vol(i,k,j,p_e_vash6)*conv1*0.3)
                 chem(i,k,j,p_so4_a07)=chem(i,k,j,p_so4_a07)+(emis_vol(i,k,j,p_e_vash7)*conv1*0.3)
                 chem(i,k,j,p_so4_a08)=chem(i,k,j,p_so4_a08)+(emis_vol(i,k,j,p_e_vash8)*conv1*0.3)
+                
                 !gas phase chemistry species
                 conv = float(ivolcano)*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
-                !sulfur species
+                write(message,'("ivolcano = ",i8)') ivolcano
+                CALL wrf_debug(15,message)  
+                write(message,'("rho_phy(i,k,j) = ",E10.2)') rho_phy(i,k,j)
+                CALL wrf_debug(15,message)  
+                write(message,'("dtstep = ",E10.2)') dtstep
+                CALL wrf_debug(15,message)  
+                write(message,'("dz8w(i,k,j) = ",E10.2)') dz8w(i,k,j)
+                CALL wrf_debug(15,message)  
+                write(message,'("conv = ",E10.2)') conv
+                CALL wrf_debug(15,message)  
+                !so2
                 chem(i,k,j,p_so2)  = chem(i,k,j,p_so2) +emis_vol(i,k,j,p_e_vso2) *conv
+                write(message,'("Increased SO2 mixing ratio by ppm = ",E10.2)') &
+                    emis_vol(i,k,j,p_e_vso2) *conv
+                CALL wrf_debug(15,message)
+                !water (1ppmv of water = 6.25e-7 kg water/kg air)
+                moist(i,k,j,p_qv)  = moist(i,k,j,p_qv) + emis_vol(i,k,j,p_e_vh2o) *conv *&
+                   (18e-6/28.8)
+                write(message,'("Increased H2O by kg/kg= ",E10.2)') &
+                    emis_vol(i,k,j,p_e_vh2o) *conv * (18e-6/28.8)
+                CALL wrf_debug(15,message)
+                !gas-phase sulphate
                 chem(i,k,j,p_sulf) = chem(i,k,j,p_sulf)+emis_vol(i,k,j,p_e_vsulf)*conv
                 !chem(i,k,j,p_h2s)  = chem(i,k,j,p_h2s)+emis_vol(i,k,j,p_e_vh2s)*conv
                 !bromine species 
                 chem(i,k,j,p_br)   = chem(i,k,j,p_br)  +emis_vol(i,k,j,p_e_vbr)  *conv
+                write(message,'("Increased Br mixing ratio by ppm = ",E10.2)') &
+                    emis_vol(i,k,j,p_e_vbr) *conv
+                CALL wrf_debug(15,message)
                 chem(i,k,j,p_hbr)  = chem(i,k,j,p_hbr) +emis_vol(i,k,j,p_e_vhbr) *conv
+                write(message,'("Increased HBr mixing ratio by ppm = ",E10.2)') &
+                    emis_vol(i,k,j,p_e_vhbr) *conv
+                CALL wrf_debug(15,message)
                 chem(i,k,j,p_hobr) = chem(i,k,j,p_hobr)+emis_vol(i,k,j,p_e_vhobr)*conv
                 chem(i,k,j,p_br2)  = chem(i,k,j,p_br2) +emis_vol(i,k,j,p_e_vbr2) *conv
                 chem(i,k,j,p_bro)  = chem(i,k,j,p_bro) +emis_vol(i,k,j,p_e_vbro) *conv
@@ -734,6 +761,9 @@ if(config_flags%emiss_opt_vol == 5)then
                 !tracers
                 chem(i,k,j,p_tracer_1) = chem(i,k,j,p_tracer_1)+&
                    emis_vol(i,k,j,p_e_vtracer1)*conv
+                write(message,'("Increased tracer1 mixing ratio by ppm = ",E10.2)') &
+                    emis_vol(i,k,j,p_e_vtracer1) *conv
+                CALL wrf_debug(15,message)
                 chem(i,k,j,p_tracer_2) = chem(i,k,j,p_tracer_2)+&
                    emis_vol(i,k,j,p_e_vtracer2)*conv
                 chem(i,k,j,p_tracer_3) = chem(i,k,j,p_tracer_3)+&

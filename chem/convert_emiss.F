@@ -99,6 +99,7 @@ PROGRAM convert_emissions
    real, allocatable, dimension (:,:) :: ash_height,volc_vent,erup_dt
    real, allocatable, dimension (:,:) :: ash_mass
    real, allocatable, dimension (:,:) :: so2_mass,sulf_mass
+   real, allocatable, dimension (:,:) :: h2o_mass 
    real, allocatable, dimension (:,:) :: br_mass,hbr_mass,hobr_mass,br2_mass,bro_mass
    real, allocatable, dimension (:,:) :: cl_mass,hcl_mass,hocl_mass,cl2_mass,clo_mass
    real, allocatable, dimension (:,:) :: ho_mass,ho2_mass
@@ -379,6 +380,7 @@ PROGRAM convert_emissions
         ALLOCATE( zlevel(ids:ide,kds:kde,jds:jde) )
      endif
      if(config_flags%emiss_opt_vol == 5) then
+        ALLOCATE( h2o_mass(ids:ide,jds:jde) )
         ALLOCATE( sulf_mass(ids:ide,jds:jde) )
         ALLOCATE( br_mass(ids:ide,jds:jde) )
         ALLOCATE( hbr_mass(ids:ide,jds:jde) )
@@ -947,6 +949,18 @@ PROGRAM convert_emissions
 #else
        read(92)so2_mass(ids:ide  ,jds:jde  )
 #endif
+
+!h2o
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do h2o '
+           read(92)h2o_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(h2o_mass)
+#else
+       read(92)h2o_mass(ids:ide  ,jds:jde  )
+#endif
+
 !sulf
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1233,8 +1247,11 @@ PROGRAM convert_emissions
                  grid%emis_vol(i,ko,j,p_e_vash8)=size_dist(8)*vert_mass_dist(ko)*ash_mass(i,j)
                  grid%emis_vol(i,ko,j,p_e_vash9)=size_dist(9)*vert_mass_dist(ko)*ash_mass(i,j)
                  grid%emis_vol(i,ko,j,p_e_vash10)=size_dist(10)*vert_mass_dist(ko)*ash_mass(i,j)
-                 !S species
+                 !SO2
                  grid%emis_vol(i,ko,j,p_e_vso2)=vert_mass_dist(ko)*so2_mass(i,j)
+                 !Water
+                 grid%emis_vol(i,ko,j,p_e_vh2o)=vert_mass_dist(ko)*h2o_mass(i,j)
+                 !Gas-phase sulphate
                  grid%emis_vol(i,ko,j,p_e_vsulf)=vert_mass_dist(ko)*sulf_mass(i,j)
                  !Br species
                  grid%emis_vol(i,ko,j,p_e_vbr)   =vert_mass_dist(ko)*br_mass(i,j)
@@ -1302,10 +1319,24 @@ PROGRAM convert_emissions
      endif
 
      if(config_flags%emiss_opt_vol == 5) then
-       DEALLOCATE( br_mass )
-       DEALLOCATE( hbr_mass )
-       DEALLOCATE( hcl_mass )
-       DEALLOCATE( hg_mass )
+        !DEALLOCATE( h2o_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( sulf_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( br_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( hbr_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( hobr_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( br2_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( bro_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( cl_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( hcl_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( hocl_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( cl2_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( clo_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( ho_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( ho2_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( no_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( no2_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( hno3_mass(ids:ide,jds:jde) )
+        !DEALLOCATE( hg_mass(ids:ide,jds:jde) )
      endif
 
 !

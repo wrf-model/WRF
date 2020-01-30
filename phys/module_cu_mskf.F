@@ -6750,6 +6750,7 @@ iter:     DO NCOUNT=1,10
                !JTRnew: Pulled this out of the main loop so the entire column
                !gets defined before use in the main loop
                DO KQ=KTS,KTE
+	          zf_wrf(KQ) = zf_wrf(KQ-1)+DZQ(KQ)
                   stat_energy(KQ) = CP*(T0(KQ)*(1.0+0.622*Q0(KQ))) + G*Zf_wrf(KQ)
                ENDDO
 

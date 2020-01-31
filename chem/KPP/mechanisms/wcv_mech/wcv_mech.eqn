@@ -278,11 +278,10 @@
  {Het5} CLNO3 + HCL = CL2 + HNO3                        : xhet_sim3(2,2,HBR,HCL,SURF_DCEN,TEMP); 
  {Het6} CLNO3 + HBR = BRCL + HNO3                       : xhet_sim3(3,2,HBR,HCL,SURF_DCEN,TEMP); 
  {Het7} BRNO3       = HOBR + HNO3                       : xhet_sim3(1,3,HBR,HCL,SURF_DCEN,TEMP); 
- {Het7} BRNO3       = HOBR                              : xhet_sim1(2,SURF_DCEN,TEMP);
  {Het8} BRNO3 + HCL = BRCL + HNO3                       : xhet_sim3(2,3,HBR,HCL,SURF_DCEN,TEMP); 
  {Het9} BRNO3 + HBR = BR2 + HNO3                        : xhet_sim3(3,3,HBR,HCL,SURF_DCEN,TEMP); 
- {Het10} HOBR + HBR = BR2                               : xhet_sim2b(1,SURF_DCEN,HBR,HOBR,HCL,HOCL,TEMP);
- {Het11} HOBR + HCL = BRCL                              : xhet_sim2b(2,SURF_DCEN,HBR,HOBR,HCL,HOCL,TEMP);
- {Het13} HOCL + HBR = BRCL                              : xhet_sim2b(3,SURF_DCEN,HBR,HOBR,HCL,HOCL,TEMP);
+ {Het10} HOBR + HBR = BR2                               : xhet_sim2b(1,SURF_DCEN,HET_GAMMA1,HBR,HOBR,HCL,HOCL,TEMP);
+ {Het11} HOBR + HCL = BRCL                              : xhet_sim2b(2,SURF_DCEN,HET_GAMMA1,HBR,HOBR,HCL,HOCL,TEMP);
+ {Het13} HOCL + HBR = BRCL                              : xhet_sim2b(3,SURF_DCEN,HET_GAMMA1,HBR,HOBR,HCL,HOCL,TEMP);
  {Hg88} HGCL2       = HG + CL2                          : xhet_sim1(3,SURF_DCEN,TEMP);
  {Hg99} HGBR2       = HG + BR2                          : xhet_sim1(4,SURF_DCEN,TEMP);

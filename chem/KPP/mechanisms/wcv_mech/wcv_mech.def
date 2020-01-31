@@ -317,11 +317,14 @@
 
 !_________________________________________________
 
-      REAL(KIND=dp) FUNCTION xhet_sim2b(J,SURF_DCEN,C_HBR,&
+      REAL(KIND=dp) FUNCTION xhet_sim2b(J,SURF_DCEN,&
+                             HET_GAMMA1,&
+                             C_HBR,&
                              C_HOBR,C_HCL,C_HOCL,TEMP)
       
       INTEGER,INTENT(IN) :: J
       REAL(KIND=dp),INTENT(IN) :: SURF_DCEN,C_HBR,C_HOBR,C_HCL,C_HOCL,TEMP
+      REAL(KIND=dp),INTENT(IN) :: HET_GAMMA1
       REAL(KIND=dp) :: xg,xc
       REAL(KIND=dp) :: xMHOCL,xMHCL,xMHOBR,xMHBR
       REAL(KIND=dp) :: xH_HCL,xH_HBR
@@ -335,8 +338,8 @@
 ! parameterisation documentation
 
       xhet_sim2b = 0.d0
-! gamma = 0.1; values vary for surface type, see IUPAC 2013 compilation #5649, g=0.1 is not too bad...
-      xg = 0.1d0
+! gamma set in namelist.input
+      xg = HET_GAMMA1
 ! Molar mass for HOCl
       xMHOCL = 5.2d-2
 ! Molar mass for HCl

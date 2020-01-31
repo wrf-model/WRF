@@ -15,7 +15,7 @@ module module_cam_mam_gas_wetdep_driver
 
 contains
 
-  subroutine cam_mam_gas_wetdep_inti()
+  subroutine cam_mam_gas_wetdep_inti() !
     use mo_sethet, only : sethet_inti
     implicit none
 

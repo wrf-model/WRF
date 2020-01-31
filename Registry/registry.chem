@@ -3974,6 +3974,9 @@ rconfig   integer     dust_smois          namelist,chem          1    0       rh
 # Volcanic ash height
 rconfig   real        emiss_ash_hgt       namelist,chem          1      0.      rh    "emiss_ash_hgt"       "Volcanic ash cloud top elevation (AGL)"      ""
 
+# Heterogenous chemistry co-efficients
+rconfig   real        het_gamma1          namelist,chem          1    0.1     rh    "het_gamma1"    "Reactive uptake value for heterogenous halogen reactions (1)"
+
 # additional namelist variables to control deposition of the organic condensable vapors
 rconfig   real        depo_fact           namelist,chem          max_domains    0.25       rh    "deposition factor for SOA vapors"      ""      ""
 

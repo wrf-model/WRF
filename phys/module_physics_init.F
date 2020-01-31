@@ -437,17 +437,14 @@ CONTAINS
    INTEGER,  DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: LOWLYR
 
 ! bmj
-
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
              CCLDFRA, QCCONV, QICONV
-
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::            &
              CONVCLD
 
 !pbl
 
    ! soil layer
-
 
    REAL,     DIMENSION(1:num_soil_layers),      INTENT(INOUT) :: ZS,DZS
 
@@ -1602,6 +1599,16 @@ CONTAINS
 
    REAL :: xice_threshold
 !---------------------------------------------------------------------
+!
+! Input Variable Description:
+!  ALBD: Surface albedo
+!  SLMO: Moisture availability
+!  SFEM: Emissivity
+!  SFZ0: Roughness length
+!  THERIN: Thermal inertia (only used in SLAB)
+!  SFHC: Soil heat capacity (not used)
+!  SCFX: Snow cover effect (dependent on SNOWC)
+!
 ! Local
    CHARACTER*256 LUTYPE
    CHARACTER*512 :: message
@@ -3494,11 +3501,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            END SELECT
 
            CALL mynn_bl_init_driver(&
-                &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,&
-                &RQIBLTEN,                                  &
-                !RQNCBLTEN,RQNIBLTEN,                       &
-                &QKE,                                       &
-                &TKE_PBL,EXCH_H                             &
+                &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN, &
+                &RQIBLTEN,                                   &
+                &QKE,EXCH_H                                  &
                 &,restart,allowed_to_read,mynn_closure_level &
                 &,IDS,IDE,JDS,JDE,KDS,KDE                    &
                 &,IMS,IME,JMS,JME,KMS,KME                    &

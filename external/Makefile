@@ -6,7 +6,6 @@ superclean :
 	@( cd io_pio ;  make -s superclean )
 	@( cd io_int ; make -s superclean )
 	@( cd io_netcdf ;  make -s superclean )
-	@( cd io_mcel ;  make -s superclean )
 	@( cd io_phdf5 ; make -s superclean )
 	@( cd io_grib1 ; make -s superclean )
 	@( cd io_grib_share ; make -s superclean )

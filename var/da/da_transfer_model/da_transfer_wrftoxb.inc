@@ -21,7 +21,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    character(len=19) :: current_date
 
-   real :: loc_psac_mean
+   real :: loc_psac_mean(1)
 
    real, dimension(jds:jde) :: loc_latc_mean
 
@@ -506,12 +506,13 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             if ( num_pseudo == 0 ) then
                grid%moist(i,j,k,P_QV) = max(grid%moist(i,j,k,P_QV), qlimit)
             end if
+            ! water vapor mixing ratio (kg h2o / kg dry air) from wrfinput file
             grid%xb%q(i,j,k) = grid%moist(i,j,k,P_QV)
 
             theta = t0 + grid%t_2(i,j,k)
             grid%xb%t(i,j,k) = theta*(grid%xb%p(i,j,k)/base_pres)**kappa
 
-            ! Convert to specific humidity from mixing ratio of water vapor:
+            ! Convert to specific humidity (kg h2o / kg moist air) from mixing ratio:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
    
             ! Background qrn needed for radar radial velocity assimilation:
@@ -911,12 +912,12 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    if (test_dm_exact) then
       ! Broadcast result from monitor to other tasks.
       call wrf_dm_bcast_real(loc_psac_mean, 1)
-      xbx % psac_mean = loc_psac_mean
+      xbx % psac_mean = loc_psac_mean(1)
       ! Broadcast result from monitor to other tasks.
       call wrf_dm_bcast_real(loc_latc_mean, (jde-jds+1))
       xbx % latc_mean = loc_latc_mean
    else
-      xbx % psac_mean = wrf_dm_sum_real(loc_psac_mean)
+      xbx % psac_mean = wrf_dm_sum_real(loc_psac_mean(1))
       call wrf_dm_sum_reals(loc_latc_mean, xbx % latc_mean)
    end if
 

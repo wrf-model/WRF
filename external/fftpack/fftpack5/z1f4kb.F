@@ -4,9 +4,7 @@ subroutine z1f4kb ( ido, l1, na, cc, in1, ch, in2, wa )
 !
 !! Z1F4KB is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

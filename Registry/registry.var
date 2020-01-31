@@ -192,6 +192,11 @@ rconfig   logical   use_atmsobs             namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_mwtsobs             namelist,wrfvar4  1  .false.  - "use_mwtsobs"              ""  ""
 rconfig   logical   use_mwhsobs             namelist,wrfvar4  1  .false.  - "use_mwhsobs"              ""  ""
 rconfig   logical   use_mwhs2obs            namelist,wrfvar4  1  .false.  - "use_mwhs2obs"             ""  ""
+rconfig   logical   use_varbc_tamdar        namelist,wrfvar4  1  .false.  - "use_varbc_tamdar"         ""  ""
+rconfig   integer   varbc_tamdar_bm         namelist,wrfvar4  1   1       - "For VarBC: 1-ADR; 2-WMP"  ""  ""
+rconfig   integer   varbc_tamdar_nbgerr     namelist,wrfvar4  1   1000    - "Scaling B-beta"           ""  ""
+rconfig   integer   varbc_tamdar_nobsmin    namelist,wrfvar4  1   6       - "OB count req to run VarBC"""  ""
+rconfig   real      varbc_tamdar_pred0      namelist,wrfvar4  1   1.0     - "Predictor(1)"             ""  ""
 rconfig   logical   check_max_iv            namelist,wrfvar5  1  .true.   - "check_max_iv"             ""  ""
 rconfig   real      max_error_t             namelist,wrfvar5  1   5.0     - "max_error_t"              ""  ""
 rconfig   real      max_error_uv            namelist,wrfvar5  1   5.0     - "max_error_uv"             ""  ""
@@ -466,12 +471,13 @@ rconfig   integer   alpha_truncation        namelist,wrfvar16  1  0        - "al
 rconfig   integer   alpha_corr_type         namelist,wrfvar16  1  3        - "alpha_corr_type"         ""  ""   
 rconfig   real      alpha_corr_scale        namelist,wrfvar16  1  200.0    - "alpha_corr_scale"        ""  "km" 
 rconfig   real      alpha_std_dev           namelist,wrfvar16  1  1.0      - "alpha_std_dev"           ""  ""
-rconfig   logical   alpha_vertloc           namelist,wrfvar16  1  .false.  - "alpha_vertloc"           ""  ""
+rconfig   integer   alpha_vertloc_opt       namelist,wrfvar16  1  2        - "alpha_vertloc_opt"       "option for vertical localization of alpha control variable"  "0: no vertical localization, 1:read vertloc function from be.vertloc.dat, 2:to calculate in WRFDA using log-P method"
 rconfig   logical   alpha_hydrometeors      namelist,wrfvar16  1  .false.  - "alpha_hydrometeors"      ""  ""
 rconfig   logical   hybrid_dual_res         namelist,wrfvar16  1  .false.  - "hybrid_dual_res"         ""  ""
 rconfig   integer   dual_res_upscale_opt    namelist,wrfvar16  1  3        - "dual_res_upscale_opt"    ""  ""
 rconfig   logical   use_4denvar             namelist,wrfvar16  1  .false.  - "4D-En-Var"               "switch for activating 4D-Ensemble-Var"  ""
 rconfig   character analysis_type           namelist,wrfvar17  1  "3D-VAR" - "analysis_type"           ""  ""
+rconfig   integer   n_randomcv              namelist,wrfvar17  1  1        - "n_randomcv"              "number of realizations of random_cv"  ""
 rconfig   integer   sensitivity_option      namelist,wrfvar17  1  -1       - "sensitivity_option"      ""  ""
 rconfig   logical   adj_sens                namelist,wrfvar17  1  .false.  - "adj_sens"                ""  ""
 rconfig   character analysis_date           namelist,wrfvar18  1  "2002-08-03_00:00:00.0000" -  "analysis_date"      ""  "" 
@@ -527,6 +533,7 @@ package   nomoist_ad   mp_physics_ad==98            -             -
 package   warmrain_ad  mp_physics_ad==99            -             -
 
 #do "grep package Registry/Registry.EM_COMMON | grep mp_physics==", then remove non-moist lists
+package   mpnotset        mp_physics==-1               -             moist:qv
 package   passiveqv       mp_physics==0                -             moist:qv
 package   kesslerscheme   mp_physics==1                -             moist:qv,qc,qr
 package   linscheme       mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
@@ -557,6 +564,7 @@ package   etampnew        mp_physics==95               -             moist:qv,qc
 package   lscondscheme    mp_physics==98               -             moist:qv
 package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr
 #
+package   mpnotset_4dvar         mp_physics_4dvar==-1     -          g_moist:g_qv;a_moist:a_qv
 package   passiveqv_4dvar        mp_physics_4dvar==0      -          g_moist:g_qv;a_moist:a_qv
 package   kessler_4dvar          mp_physics_4dvar==1      -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   lins_4dvar             mp_physics_4dvar==2      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr
@@ -940,6 +948,8 @@ rconfig   integer var4d_cloudcv           derived               1            -1 
 rconfig   integer var4d_w_cv              derived               1             0       -     "var4d_w_cv"      "turn on if var4d=true and use_cv_w=true"
 rconfig   integer wpec_used               derived               1             0       -     "wpec_used"       "turn on if use_wpec=true"
 rconfig   integer alloc_xa_static         derived               1             0       -     "alloc_xa_static" "turn on if use_4denvar=true and num_fgat_time>1"
+rconfig   integer alloc_ep                derived               1             0       -     "alloc_ep"        "always 0, ep needs to be allocated outside alloc_and_configure_domain"
+rconfig   integer alloc_alphacv           derived               1             0       -     "alloc_alphacv"   "turn on if ensdim_alpha>0 and not hybrid_dual_res"
 
 #package derived types
 package   no_cloud_cv     cloud_cv_options==0         -             -
@@ -956,9 +966,13 @@ package   has_cv_w        cv_w_used==1                -             state:vp%v11
 package   no_var4d_cv_w   var4d_w_cv==0               -             -
 package   has_var4d_cv_w  var4d_w_cv==1               -             state:vp6%v11,vv6%v11
 package   no_ens          ens_used==0                 -             -
-package   has_ens         ens_used==1                 -             state:xa_ens%u,xa_ens%v,xa_ens%t,xa_ens%q,xa_ens%psfc,ep%v1,ep%v2,ep%v3,ep%v4,ep%v5,vp%alpha,vv%alpha
+package   has_ens         ens_used==1                 -             state:xa_ens%u,xa_ens%v,xa_ens%t,xa_ens%q,xa_ens%psfc
 package   no_ens_cloud    cloud_ens_used==0           -             -
-package   has_ens_cloud   cloud_ens_used==1           -             state:xa_ens%qrn,xa_ens%qcw,xa_ens%qci,xa_ens%qsn,xa_ens%qgr,ep%cw,ep%rn,ep%ci,ep%sn,ep%gr
+package   has_ens_cloud   cloud_ens_used==1           -             state:xa_ens%qrn,xa_ens%qcw,xa_ens%qci,xa_ens%qsn,xa_ens%qgr
+package   no_ep_alloc     alloc_ep==0                 -             -
+package   do_ep_alloc     alloc_ep==1                 -             state:ep%v1,ep%v2,ep%v3,ep%v4,ep%v5,ep%cw,ep%rn,ep%ci,ep%sn,ep%gr
+package   no_alphacv_alloc alloc_alphacv==0           -             -
+package   do_alphacv_alloc alloc_alphacv==1           -             state:vp%alpha,vv%alpha
 package   no_wpec         wpec_used==0                -             -
 package   has_wpec        wpec_used==1                -             state:xa%grad_p_x,xa%grad_p_y,xa%geoh,xa%mu,xb%xb_p_x,xb%xb_p_y
 package   no_xa_static    alloc_xa_static==0          -             -

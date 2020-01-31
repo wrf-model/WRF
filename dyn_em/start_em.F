@@ -1036,8 +1036,7 @@ endif
                       grid%re_snow_gsfc, grid%re_graupel_gsfc,          & ! Goddard
                       grid%re_hail_gsfc, grid%re_rain_gsfc,             & ! Goddard
                       grid%nca,grid%swrad_scat,                         &
-                      grid%cldefi, grid%ccldfra, grid%convcld,          &
-                      grid%qcconv, grid%qiconv,  grid%lowlyr,           &
+                      grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                                   &
                       grid%rthften, grid%rqvften,                       &
                       grid%cldfra,                                      &

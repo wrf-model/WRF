@@ -1808,8 +1808,8 @@ CONTAINS
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
       SUBROUTINE BMJINIT(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN            &
-     &                  ,CLDEFI,CCLDFRA,CONVCLD,QCCONV,QICONV,LOWLYR,CP &
-     &                  ,RD,RESTART,ALLOWED_TO_READ                     &
+     &                  ,CLDEFI,LOWLYR,CP,RD,RESTART                    &
+                        ,ALLOWED_TO_READ                                &
      &                  ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1827,12 +1827,9 @@ CONTAINS
      &                                              RTHCUTEN            &
      &                                             ,RQVCUTEN            &
      &                                             ,RQCCUTEN            &
-     &                                             ,RQRCUTEN            &
-     &                                             ,CCLDFRA             &
-     &                                             ,QCCONV              & 
-     &                                             ,QICONV
+     &                                             ,RQRCUTEN
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CLDEFI,CONVCLD
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CLDEFI
 
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: LOWLYR
 !
@@ -1860,9 +1857,6 @@ CONTAINS
         DO J=JTS,JTF
         DO K=KTS,KTF
         DO I=ITS,ITF
-          QICONV(I,K,J)=0.
-          QCCONV(I,K,J)=0.
-          CCLDFRA(I,K,J)=0.
           RTHCUTEN(I,K,J)=0.
           RQVCUTEN(I,K,J)=0.
           RQCCUTEN(I,K,J)=0.
@@ -1873,7 +1867,6 @@ CONTAINS
 !
         DO J=JTS,JTF
         DO I=ITS,ITF
-          CONVCLD(I,J)=0.
           CLDEFI(I,J)=AVGEFI
         ENDDO
         ENDDO

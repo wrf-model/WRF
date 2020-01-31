@@ -6704,6 +6704,27 @@ iter:     DO NCOUNT=1,10
 !JTR Begin CMT
         IF(cmt_opt_flag) THEN
 
+              DO KQ=KTS,KTE
+                 JK = KTE-KQ+1
+                 DPconvF(1,JK)=0.0
+                 DERconvF(1,JK)=0.0
+                 UERconvF(1,JK)=0.0
+                 MC(1,JK)=0.0
+                 UMFconvF(1,JK)=0.0
+                 PRU(1,JK)=0.0
+                 QDN(1,JK)=0.0
+                 QUP(1,JK)=0.0
+                 QHAT(1,JK)=0.0
+                 SDD(1,JK)=0.0
+                 SUU(1,JK)=0.0
+                 SHAT(1,JK)=0.0
+                 TEE(1,JK)=0.0
+                 U0F(1,JK)=0.0
+                 V0F(1,JK)=0.0
+                 Z0F(1,JK)=0.0
+                 ZFU(1,JK)=0.0
+              END DO
+
               zf_wrf(0) = 0.0  ! ground
               grav = 9.8
               cpin = CP

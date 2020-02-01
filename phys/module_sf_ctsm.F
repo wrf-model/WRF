@@ -270,13 +270,6 @@ contains
     integer            :: atm_start_minute
     integer            :: atm_start_second ! seconds after the minute
     integer            :: atm_start_secs_since_midnight ! total seconds since midnight
-    integer            :: atm_stop_year  ! (yyyy)
-    integer            :: atm_stop_mon   ! (mm)
-    integer            :: atm_stop_day
-    integer            :: atm_stop_hour
-    integer            :: atm_stop_minute
-    integer            :: atm_stop_second ! seconds after the minute
-    integer            :: atm_stop_secs_since_midnight ! total seconds since midnight
 
     integer            :: atm_global_nx
     integer            :: atm_global_ny
@@ -335,16 +328,6 @@ contains
     write(message, '("CTSM start time: ", I4, 1X, I2, 1X, I2, 1X, I5)') &
          atm_start_year, atm_start_mon, atm_start_day, atm_start_secs_since_midnight
     call wrf_message(message)
-    call nl_get_end_year(1, atm_stop_year)
-    call nl_get_end_month(1, atm_stop_mon)
-    call nl_get_end_day(1, atm_stop_day)
-    call nl_get_end_hour(1, atm_stop_hour)
-    call nl_get_end_minute(1, atm_stop_minute)
-    call nl_get_end_second(1, atm_stop_second)
-    atm_stop_secs_since_midnight = 60*(60*atm_stop_hour + atm_stop_minute) + atm_stop_second
-    write(message, '("CTSM stop time: ", I4, 1X, I2, 1X, I2, 1X, I5)') &
-         atm_stop_year, atm_stop_mon, atm_stop_day, atm_stop_secs_since_midnight
-    call wrf_message(message)
 
     atm_calendar      = 'GREGORIAN'
     atm_starttype     = 'startup'
@@ -369,10 +352,6 @@ contains
          atm_start_mon    = atm_start_mon,    &
          atm_start_day    = atm_start_day,    &
          atm_start_secs   = atm_start_secs_since_midnight, &
-         atm_stop_year    = atm_stop_year,    &
-         atm_stop_mon     = atm_stop_mon,     &
-         atm_stop_day     = atm_stop_day,     &
-         atm_stop_secs    = atm_stop_secs_since_midnight,  &
          starttype_in     = atm_starttype)
 
   end subroutine ctsm_init

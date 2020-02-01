@@ -205,7 +205,7 @@ CONTAINS
                                        ,p_seas_3, p_seas_4          & !NUWRF
 #endif
 #endif
-                                       ,KFCUPSCHEME                     & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
+                                       ,KFCUPSCHEME, BMJSCHEME      & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
                                        ,FLGLWSCHEME, FLGSWSCHEME
 
    USE module_model_constants
@@ -219,7 +219,7 @@ CONTAINS
    USE module_ra_sw         , ONLY : swrad
    USE module_ra_gsfcsw     , ONLY : gsfcswrad
    USE module_ra_rrtm       , ONLY : rrtmlwrad
-   USE module_ra_rrtmg_lw   , ONLY : rrtmg_lwrad, rrtmg_lwinit
+   USE module_ra_rrtmg_lw   , ONLY : rrtmg_lwrad
    USE module_ra_rrtmg_sw   , ONLY : rrtmg_swrad
 #if( BUILD_RRTMG_FAST == 1)
    USE module_ra_rrtmg_lwf  , ONLY : rrtmg_lwrad_fast
@@ -832,7 +832,6 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_old
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_old
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: cldfra_old
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_cu_weight
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_cu_weight
@@ -1619,7 +1618,29 @@ CONTAINS
      ENDIF
 #endif
 
-        
+     IF ( cu_physics == BMJSCHEME ) THEN
+	  ! save old hydrometeors
+	  DO j=jts,jte
+	  DO k=kts,kte
+	  DO i=its,ite
+             qc_old(i,k,j) = qc(i,k,j)
+             qi_old(i,k,j) = qi(i,k,j)
+	 ENDDO
+	 ENDDO
+	 ENDDO
+         ! Modify cloud fraction and temporarily hydrometeors (PCC scheme)
+         DO j=jts,jte
+         DO k=kts,kte
+         DO i=its,ite
+            qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
+            qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
+            ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
+            ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
+            cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
+         ENDDO
+         ENDDO
+         ENDDO
+     ENDIF
 
      lwrad_select: SELECT CASE(lw_physics)
 
@@ -1631,32 +1652,6 @@ CONTAINS
              ELSE
                 p_top_dummy = -1. ! not used by NMM
              END IF
-
-             ! save old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc_old(i,k,j) = qc(i,k,j)
-                qi_old(i,k,j) = qi(i,k,j)
-                cldfra_old(i,k,j) = cldfra(i,k,j)
-             ENDDO
-             ENDDO
-             ENDDO
-
-             IF ( cu_physics .eq. 2 ) THEN
-                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
-                 DO j=jts,jte
-                 DO k=kts,kte
-                 DO i=its,ite
-                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
-                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
-                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
-                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
-                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
-                 ENDDO
-                 ENDDO
-                 ENDDO
-             ENDIF
 
              CALL RRTMLWRAD(                                        &
                   P_TOP=p_top_dummy                                 & 
@@ -1680,16 +1675,6 @@ CONTAINS
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
 
-             ! restore old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc(i,k,j) = qc_old(i,k,j)
-                qi(i,k,j) = qi_old(i,k,j)
-                cldfra(i,k,j) = cldfra_old(i,k,j)
-             ENDDO
-             ENDDO
-             ENDDO
 
 ! NUWRF Version by Toshihisa Matsui and Jainn Shi 20090623
         case (goddardlwscheme)
@@ -1884,52 +1869,6 @@ CONTAINS
                 ENDDO
              END IF
 
-             ! save old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc_old(i,k,j) = qc(i,k,j)
-                qi_old(i,k,j) = qi(i,k,j)
-                cldfra_old(i,k,j) = cldfra(i,k,j)
-             ENDDO
-             ENDDO
-             ENDDO
-
-             IF ( cu_physics .eq. 2 ) THEN
-                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
-                 DO j=jts,jte
-                 DO k=kts,kte
-                 DO i=its,ite
-                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
-                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
-                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
-                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
-                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
-                 ENDDO
-                 ENDDO
-                 ENDDO
-             ENDIF
-             
-             !Need to reset NLAYERS if vertical nesting is used.
-             !This code follows that for case RRTMSCHEME within
-             !subroutine RRTMLWRAD.
-             IF ( PRESENT(p_top) ) THEN
-                p_top_dummy = p_top
-             ELSE
-                p_top_dummy = -1. ! not used by NMM
-             END IF
-             IF ( p_top_dummy .GT. 0 ) THEN ! flag value for NMM = -1
-                !NLAYERS is recalculated
-                !every time the radiation scheme is called. This is
-                !necessary if e_vert parent .NE. e_vert nest since
-                !NLAYERS could then be different for each domain.
-                CALL RRTMG_LWINIT(                             &
-                              p_top, .FALSE. ,                 &
-                              ids, ide, jds, jde, kds, kde,    &
-                              ims, ime, jms, jme, kms, kme,    &
-                              its, ite, jts, jte, kts, kte     )
-             ENDIF
-
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
                   LWUPT=LWUPT,LWUPTC=LWUPTC,LWUPTCLN=LWUPTCLN,      &
@@ -1983,16 +1922,6 @@ CONTAINS
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
                   mp_physics=mp_physics                             )
 
-             ! restore old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc(i,k,j) = qc_old(i,k,j)
-                qi(i,k,j) = qi_old(i,k,j)
-                cldfra(i,k,j) = cldfra_old(i,k,j)
-             ENDDO
-             ENDDO
-             ENDDO
 
         CASE (RRTMK_LWSCHEME)
 
@@ -2026,32 +1955,6 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
         CASE (RRTMG_LWSCHEME_FAST)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
-
-             ! save old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc_old(i,k,j) = qc(i,k,j)
-                qi_old(i,k,j) = qi(i,k,j)
-                cldfra_old(i,k,j) = cldfra(i,k,j)
-             ENDDO
-             ENDDO
-             ENDDO
-
-             IF ( cu_physics .eq. 2 ) THEN
-                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
-                 DO j=jts,jte
-                 DO k=kts,kte
-                 DO i=its,ite
-                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
-                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
-                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
-                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
-                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
-                 ENDDO
-                 ENDDO
-                 ENDDO
-             ENDIF
 
              CALL RRTMG_LWRAD_FAST(                                 &
                   RTHRATENLW=RTHRATEN,                              &
@@ -2104,16 +2007,6 @@ CONTAINS
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
                                                                     )
 
-             ! restore old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc(i,k,j) = qc_old(i,k,j)
-                qi(i,k,j) = qi_old(i,k,j)
-                cldfra(i,k,j) = cldfra_old(i,k,j)
-             ENDDO
-             ENDDO
-             ENDDO
 #endif
 
         CASE (HELDSUAREZ)
@@ -2460,32 +2353,6 @@ CONTAINS
                 ENDDO
              END IF
 
-             ! save old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc_old(i,k,j) = qc(i,k,j)
-                qi_old(i,k,j) = qi(i,k,j)
-                cldfra_old(i,k,j) = cldfra(i,k,j)
-             ENDDO
-             ENDDO
-             ENDDO
-
-             IF ( cu_physics .eq. 2 ) THEN
-                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
-                 DO j=jts,jte
-                 DO k=kts,kte
-                 DO i=its,ite
-                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
-                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
-                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
-                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
-                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
-                 ENDDO
-                 ENDDO
-                 ENDDO
-             ENDIF
-
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,SWUPTCLN=SWUPTCLN,      &
@@ -2556,17 +2423,6 @@ CONTAINS
              ENDDO
              ENDDO
 
-             ! restore old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc(i,k,j) = qc_old(i,k,j)
-                qi(i,k,j) = qi_old(i,k,j)
-                cldfra(i,k,j) = cldfra_old(i,k,j)
-             ENDDO
-             ENDDO
-             ENDDO
-
         CASE (RRTMK_SWSCHEME)
   
              DO j=jts,jte
@@ -2580,32 +2436,6 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
         CASE (RRTMG_SWSCHEME_FAST)
              CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
-
-             ! save old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc_old(i,k,j) = qc(i,k,j)
-                qi_old(i,k,j) = qi(i,k,j)
-                cldfra_old(i,k,j) = cldfra(i,k,j)
-             ENDDO
-             ENDDO
-             ENDDO
-
-             IF ( cu_physics .eq. 2 ) THEN
-                 ! temporarily modify hydrometeors & cloud fraction (PCC scheme)
-                 DO j=jts,jte
-                 DO k=kts,kte
-                 DO i=its,ite
-                    qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
-                    qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
-                    ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
-                    ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
-                    cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
-                 ENDDO
-                 ENDDO
-                 ENDDO
-             ENDIF
 
              CALL RRTMG_SWRAD_FAST(                                    &
                      RTHRATENSW=RTHRATENSW,                            &
@@ -2671,17 +2501,6 @@ CONTAINS
              DO k=kts,kte
              DO i=its,ite
                 RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+RTHRATENSW(I,K,J)
-             ENDDO
-             ENDDO
-             ENDDO
-
-             ! restore old hydrometeors & cloud fraction
-             DO j=jts,jte
-             DO k=kts,kte
-             DO i=its,ite
-                qc(i,k,j) = qc_old(i,k,j)
-                qi(i,k,j) = qi_old(i,k,j)
-                cldfra(i,k,j) = cldfra_old(i,k,j)
              ENDDO
              ENDDO
              ENDDO
@@ -2850,6 +2669,18 @@ CONTAINS
          ENDDO
          ENDDO
      ENDIF
+
+  IF ( cu_physics == BMJSCHEME ) THEN
+      ! Restore old hydrometeors (PCC scheme)
+      DO j=jts,jte
+      DO k=kts,kte
+      DO i=its,ite
+         qc(i,k,j) = qc_old(i,k,j)
+         qi(i,k,j) = qi_old(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+  ENDIF
 
  ! Restore qc & qi for any model physics configuration
       IF ( F_QC ) THEN

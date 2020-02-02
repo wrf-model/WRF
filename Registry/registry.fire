@@ -10,6 +10,8 @@
 # 
 package   fire_sfire    ifire==2                    -             state:avg_fuel_frac,bbb,betafl,burnt_area_dt,canhfx,canqfx,dzdxf,dzdyf,fcanhfx,fcanqfx,fgip,fgrnhfx,fgrnqfx,fire_area,fire_smoke,flame_length,fmc_equi,fmc_g,fmc_gc,fmep,fmc_lag,fmoist_lasttime,fmoist_nexttime,fuel_frac,fuel_time,fxlat,fxlong,fz0,grnhfx,grnhfx_fu,grnqfx,grnqfx_fu,iboros,ischap,lfn,lfn_0,lfn_1,lfn_2,lfn_hist,lfn_s0,lfn_s1,lfn_s2,lfn_s3,lfn_time,nfuel_cat,phiwc,psfc_old,q2_old,r_0,rain_old,rh_fire,ros,ros_front,rqvfrten,rthfrten,t2_old,tign_g,uah,uf,vah,vf,zsf
 
+package  fire_fmoist_run   fmoist_run==.true.       -            state:fmc_gc,fmep,fmc_equi,fmc_lag,rain_old,t2_old,psfc_old,rh_fire
+
 # level function history support
 dimspec   ign   2           constant=1      z    i_lfn_history
 state     real  lfn_hist    *i*j        fire   1    Z   i012hr     "LFN_HIST"    "level function history" "1"

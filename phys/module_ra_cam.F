@@ -718,7 +718,6 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       enddo
    endif
 
-   ! TODO(wjs, 2019-12-31) Should we handle CTSM like CLM here?
    CASE (CLMSCHEME)
    if (xtime .gt. 1.0) then
       do i = its,ite
@@ -910,7 +909,6 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       enddo
       endif
 
-      ! TODO(wjs, 2019-12-31) Should we handle CTSM like CLM here?
    CASE (CLMSCHEME)
       if(dosw)then
       do i = its,ite

@@ -1525,7 +1525,7 @@ The following are for observation nudging:
  pos_def                             = .false.  ! T/F remove negative values of scalar arrays by setting minimum value to zero
  swap_pole_with_next_j               = .false.  ! T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
  actual_distance_average             = .false.  ! T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
- gwd_opt                             = 0       ! for running without gravity wave drag
+ gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
                                      = 1       ; for running the WRF-ARW with its gravity wave drag
                                      = 2       ; for running the WRF-NMM with its gravity wave drag
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off

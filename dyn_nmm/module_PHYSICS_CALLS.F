@@ -454,6 +454,7 @@
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
      &                 ,CCLDFRA=grid%ccldfra                            &
      &                 ,QCCONV=grid%qcconv,QICONV=grid%qiconv           &
+     &                 ,BMJ_RAD_FEEDBACK=config_flags%bmj_rad_feedback  &
      &                 ,SWUPT=SWUPT                                     &
      &                 ,SWUPTC=SWUPTC                                   &
      &                 ,SWDNT=SWDNT                                     &

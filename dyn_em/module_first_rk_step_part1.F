@@ -1006,17 +1006,17 @@ BENCH_START(pbl_driver_tim)
      &        ,icloud_bl=config_flags%icloud_bl                           &
      &        ,qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                  &
      &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     &
-     &        ,bl_mynn_output=config_flags%bl_mynn_output                 &
      &        ,bl_mynn_edmf_mom=config_flags%bl_mynn_edmf_mom             &
      &        ,bl_mynn_edmf_tke=config_flags%bl_mynn_edmf_tke             &
      &        ,bl_mynn_mixscalars=config_flags%bl_mynn_mixscalars         &
+     &        ,bl_mynn_output=config_flags%bl_mynn_output                 &
      &        ,bl_mynn_cloudmix=config_flags%bl_mynn_cloudmix             &
      &        ,bl_mynn_mixqt=config_flags%bl_mynn_mixqt                   &
-     &        ,sub_thl3D=grid%sub_thl3D,sub_sqv3D=grid%sub_sqv3D          &
-     &        ,det_thl3D=grid%det_thl3D,det_sqv3D=grid%det_sqv3D          &
      &        ,edmf_a=grid%edmf_a,edmf_w=grid%edmf_w                      &
      &        ,edmf_thl=grid%edmf_thl,edmf_qt=grid%edmf_qt                &
      &        ,edmf_ent=grid%edmf_ent,edmf_qc=grid%edmf_qc                &
+     &        ,sub_thl3D=grid%sub_thl3D,sub_sqv3D=grid%sub_sqv3D          &
+     &        ,det_thl3D=grid%det_thl3D,det_sqv3D=grid%det_sqv3D          &
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &

@@ -787,8 +787,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
                                      = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
-                                     = 14, A modified  GFS simplified Arakawa-Schubert scheme that enables NSAS to work 
-                                           in various model grids across gray-zone resolutions (from KIAPS,ARW only)
+                                     = 14, KIM Simplified Arakawa-Schubert scheme (KSAS) across gray-zone resolutions
                                      = 16, A newer Tiedtke scheme
                                      = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
                                      = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 

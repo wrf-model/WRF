@@ -1018,7 +1018,7 @@ BENCH_START(pbl_driver_tim)
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
      &        ,vdfg=grid%vdfg,nupdraft=grid%nupdraft,maxMF=grid%maxmf     &
-     &        ,ktop_shallow=grid%ktop_shallow                             &
+     &        ,ktop_plume=grid%ktop_plume                                 &
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
 !GWD for ARW

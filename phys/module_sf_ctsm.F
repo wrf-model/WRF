@@ -424,8 +424,11 @@ contains
     real, intent(inout) :: z0(ims: , jms: ) ! background roughness length [m]
     real, intent(inout) :: znt(ims: , jms: ) ! thermal time-varying roughness length [m]
 
+    logical, save :: first_call = .true. ! true if and only if this is the first time this subroutine has been called in this run
+
     integer :: i, j
 
+    real :: landmask(ims:ime, jms:jme) ! 1 over land, 0 over non-land (ocean, sea ice)
     real :: zlvl(ims:ime, jms:jme)   ! mid-point of bottom atm layer [m]
     real :: forc_u(ims:ime, jms:jme) ! u wind component, bottom atm layer [m/s]
     real :: forc_v(ims:ime, jms:jme) ! v wind component, bottom atm layer [m/s]
@@ -444,6 +447,27 @@ contains
     real :: albedo_visdif(ims:ime, jms:jme) ! albedo calculated by CTSM, visible diffuse [-]
     real :: albedo_nirdir(ims:ime, jms:jme) ! albedo calculated by CTSM, near IR direct [-]
     real :: albedo_nirdif(ims:ime, jms:jme) ! albedo calculated by CTSM, near IR diffuse [-]
+
+    ! ------------------------------------------------------------------------
+    ! Calculate landmask and export it to ctsm via lilac.
+    !
+    ! For efficiency, only do this the first time this subroutine is called: we assume
+    ! landmask stays constant throughout the run (there can be transitions between open
+    ! ocean and sea ice, but the land itself stays fixed).
+    ! ------------------------------------------------------------------------
+
+    if (first_call) then
+       do j = jts, jte
+          do i = its, ite
+             if (is_land(xland(i,j), xice(i,j), xice_threshold)) then
+                landmask(i,j) = 1.
+             else
+                landmask(i,j) = 0.
+             end if
+          end do
+       end do
+       call export_to_lilac('Sa_landfrac', landmask)
+    end if
 
     ! ------------------------------------------------------------------------
     ! Calculate derived variables, and 2-d versions of 3-d fields
@@ -586,6 +610,8 @@ contains
           end if
        end do
     end do
+
+    first_call = .false.
 
   contains
 

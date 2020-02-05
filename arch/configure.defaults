@@ -1556,7 +1556,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    CYGWIN_NT i686, PGI compiler on Windows # serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       PGI ($SFC/$SCC): Windows native
+DESCRIPTION     =       PGI ($SFC/$SCC): Windows POSIX native
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp
@@ -1917,7 +1917,7 @@ RLFLAGS		=
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    CYGWIN_NT i686 x86_64, gfortran compiler with gcc  #serial smpar dmpar dm+sm
+#ARCH    CYGWIN_NT i686 x86_64 Cygwin, gfortran compiler with gcc  #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1

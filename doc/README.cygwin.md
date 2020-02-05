@@ -32,6 +32,10 @@
 5. Follow usual instructions for installing WRF
    - Download and unpack source
    - `./clean -a`
+   - Export variables so WRF can find everything:
+	 - `export NETCDF=/usr/ NETCDF4=1 HDF5=/usr`
+	 - (Optional) `export JASPER=/usr JASPERLIB=/usr/lib JASPERINC=/usr/include`
+	 - (Optional) `export WRFIO_NCD_NO_LARGE_FILE_SUPPORT=0 NETCDF_classic=0`
    - `./configure`, follow directions
    - `./compile`, follow directions
    - ...

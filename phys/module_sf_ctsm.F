@@ -537,8 +537,8 @@ contains
 
     ! FIXME(wjs, 2020-01-01) Use correct values for restart and stop alarms
     call lilac_run( &
-         restart_alarm_is_ringing = .false., &
-         stop_alarm_is_ringing = .false.)
+         write_restarts_now = .false., &
+         stop_now = .false.)
 
     ! ------------------------------------------------------------------------
     ! Import data from ctsm via lilac

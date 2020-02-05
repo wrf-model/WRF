@@ -2156,6 +2156,7 @@ rconfig   integer fft_used                derived               1             0 
 rconfig   integer cu_used                 derived               1             0       -     "cu_used"   "turn on if any cumulus scheme is used"
 rconfig   integer shcu_used               derived               1             0       -     "shcu_used" "turn on if any shallow cumulus scheme is used"
 rconfig   integer cam_used                derived               1             0       -     "cam_used"  "turn on if one of the following CAM schemes is used: MP, PBL, SHCU"
+rconfig   integer gwd_used                derived               1             0       -     "gwd_used"  "turn on if gwd_opt is on on any domains"
 rconfig   integer alloc_qndropsource      derived               1             0       -     "alloc_qndropsource"  "allocate qndropsource if CHEM==1 or if progn=1"
 
 rconfig   integer   num_moves       namelist,domains    1                0
@@ -2599,7 +2600,7 @@ rconfig   integer km_opt                  namelist,dynamics	max_domains   -1    
 rconfig   integer km_opt_dfi              namelist,dynamics	max_domains   1       irh    "km_opt_dfi"            ""      ""
 rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
 rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
-rconfig   integer gwd_opt                 namelist,dynamics     1             0       irh    "gwd_opt"              ""      ""
+rconfig   integer gwd_opt                 namelist,dynamics     max_domains   0       irh    "gwd_opt"              ""      ""
 rconfig   real    max_rot_angle_gwd       namelist,dynamics     1             22.5    irh    "max_rot_angle_gwd"    "max projection rotation angle permitted for gwd_opt=1"      ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
@@ -2965,7 +2966,9 @@ package   aeropt2        aer_opt==2                 -              state:aod5503
 package   aercuopt       aercu_used==1              -              state:aeromcu,CU_UAF,EFCS,EFIS,EFSS,qr_cu,qs_cu,nc_cu,ni_cu,nr_cu,ns_cu,ccn_cu,aerovar;aerocu:cu_sulfate,cu_seasalt,cu_dust1,cu_dust2,cu_dust3,cu_dust4,cu_phoocar,cu_phiocar,cu_phobcar,cu_phibcar
 
 package   slopeopt       slope_rad==1               -              -
-package   gwdopt         gwd_opt==1                 -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg
+package   gwd_used       gwd_used==1                -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg
+package   nogwdopt       gwd_opt==0                 -              -
+package   gwdopt         gwd_opt==1                 -              -
 package   omlscheme      sf_ocean_physics==1        -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
 package   pwp3dscheme    sf_ocean_physics==2        -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml,om_tmp,om_s,om_depth,om_u,om_v,om_lat,om_lon,om_ml,om_tini,om_sini
 

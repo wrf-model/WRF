@@ -7,7 +7,7 @@ CONTAINS
      &           HYDRO_dt,sfcheadrt,INFXSRT,soldrain,                 &
      &           acgrdflx,achfx,aclhf                                 &
      &          ,acsnom,acsnow,snowfallac,akhs,akms,albedo,br,canwat  &
-     &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
+     &          ,chklowq,dt,dx,dx2d,area2d,dz8w,dzs,glw               &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,fractional_seaice,seaice_albedo_opt                  &
      &          ,seaice_albedo_default,seaice_thickness_opt,          &
@@ -500,7 +500,9 @@ CONTAINS
 !-- t_phy         temperature (K)
 !-- dz8w          dz between full levels (m)
 !-- z             height above sea level (m)
-!-- DX            horizontal space interval (m)
+!-- DX            nominal horizontal space interval (m)
+!-- DX2D          horizontal space interval (m), sqrt(dx/mftx * dy/mfty)
+!-- AREA2D        horizontal cell area (m^2), (dx/mftx * dy/mfty)
 !-- DT            time step (second)
 !-- PSFC          pressure at the surface (Pa)
 !-- SST           sea-surface temperature (K)
@@ -848,6 +850,7 @@ CONTAINS
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   ZS
    REAL, INTENT(IN )::   DT
    REAL, INTENT(IN )::   DX
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN ), OPTIONAL :: DX2D, AREA2D
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
    REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
    LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
@@ -1906,7 +1909,7 @@ CONTAINS
                  znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
                  xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                  u10,v10,th2,t2,q2,                                  &
-                 gz1oz0,wspd,br,isfflx,dx,                           &
+                 gz1oz0,wspd,br,isfflx,dx2d,                         &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
                  P1000mb,                                            &
                  XICE,SST,TSK_SEA,                                                  &
@@ -1924,7 +1927,7 @@ CONTAINS
                znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,                                  &
-               gz1oz0,wspd,br,isfflx,dx,                           &
+               gz1oz0,wspd,br,isfflx,dx2d,                         &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
                P1000mb,                                            &
                ids,ide, jds,jde, kds,kde,                          &
@@ -5850,7 +5853,7 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
-                     P1000,                                      &
+                     P1000,                                        &
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -5927,7 +5930,9 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                INTENT(INOUT)   ::                                 &
                                                               QGH
 
-     REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
+     REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV
+     REAL,     DIMENSION( ims:ime, jms:jme )                    , &
+               INTENT(IN) ::   DX
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                INTENT(OUT)     ::                   ck,cka,cd,cda
@@ -6106,7 +6111,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,EOMEG,STBOLT,                          &
-                 P1000,                                      &
+                 P1000,                                        &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &

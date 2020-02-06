@@ -14,7 +14,8 @@ CONTAINS
                      ,u,v,th,t,w                                      &
                      ,p,pi,rho                                        &
                  ! --Other arguments
-                     ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
+                     ,itimestep,dt,dx,dx2d,area2d                     &
+                     ,cudt,curr_secs,adapt_step_flag                  &
                      ,cudtacttime                                     & 
                      ,rainc,raincv,pratec,nca                         &
                      ,cldfra_dp,cldfra_sh,w_up                        & !ckay for subgrid cloud
@@ -98,7 +99,7 @@ CONTAINS
                      ,ens_sasamp                                      &
                      ,shalconv,shal_pgcon                             &
                      ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
-                     ,DX2D, DYNMM                                     & ! For scale-aware SAS
+                     ,DYNMM                                           & ! For scale-aware SAS
                      ,SCALEFUN,SCALEFUN1                              & !    scale functions 
                      ,SIGMU,SIGMU1                                    & !    updraft fraction
 
@@ -509,7 +510,9 @@ CONTAINS
    INTEGER, INTENT(IN   ), OPTIONAL        ::   nsas_dx_factor
 
    REAL,  INTENT(IN   ) :: DT, DX
-   INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
+                    INTENT(IN) ::  DX2D, AREA2D
+   INTEGER,      INTENT(IN   ),OPTIONAL    ::                    &
                    ips,ipe, jps,jpe, kps,kpe,imomentum,ishallow
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
@@ -524,8 +527,6 @@ CONTAINS
    REAL, OPTIONAL,  INTENT(INOUT) :: mommix
 
 
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
-                    INTENT(IN) ::  DX2D                           ! For scale-aware SAS
    REAL, OPTIONAL,  INTENT(IN) ::  DYNMM                          ! For scale-aware SAS  
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,INTENT(INOUT) :: &
                                    SCALEFUN,SCALEFUN1,SIGMU,SIGMU1    
@@ -1402,7 +1403,7 @@ CONTAINS
                ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx          &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
-               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND,DX=dx      &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND,DX=dx2d    &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &

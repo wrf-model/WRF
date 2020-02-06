@@ -1064,7 +1064,8 @@ endif
                       grid%acsnom,grid%ivgtyp,grid%isltyp, grid%sfcevp,grid%smois,     &
                       grid%sh2o, grid%snowh, grid%smfr3d,                    &
                       grid%snoalb,                 &
-                      grid%DX,grid%DY,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy, &
+                      grid%DX,grid%DY,grid%dx2d,grid%area2d,              &
+                      grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy, &
                       grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state,&
                       allowed_to_read, grid%moved, start_of_simulation,               &
                       grid%LAGDAY, &

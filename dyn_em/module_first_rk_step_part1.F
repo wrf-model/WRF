@@ -223,12 +223,14 @@ BENCH_END(phy_prep_tim)
          ENDIF
 
 ! this driver is only needed to handle non-local shadowing effects
-      CALL pre_radiation_driver ( grid, config_flags                        &
+      CALL pre_radiation_driver ( grid, config_flags                           &
      &        ,itimestep=grid%itimestep, ra_call_offset=grid%ra_call_offset    &
      &        ,XLAT=grid%xlat, XLONG=grid%xlong, GMT=grid%gmt                  &
      &        ,julian=grid%julian, xtime=grid%xtime, RADT=grid%radt            &
      &        ,STEPRA=grid%stepra                                              &
-     &        ,ht=grid%ht,dx=grid%dx,dy=grid%dy,sina=grid%sina,cosa=grid%cosa  &
+     &        ,ht=grid%ht,dx=grid%dx,dy=grid%dy                                &
+     &        ,dx2d=grid%dx2d,area2d=grid%area2d                               &
+     &        ,sina=grid%sina,cosa=grid%cosa                                   &
      &        ,shadowmask=grid%shadowmask,slope_rad=config_flags%slope_rad     &
      &        ,topo_shading=config_flags%topo_shading                          &
      &        ,shadlen=config_flags%shadlen,ht_shad=grid%ht_shad,ht_loc=ht_loc &
@@ -237,13 +239,13 @@ BENCH_END(phy_prep_tim)
      &        ,nested=config_flags%nested, min_ptchsz=grid%min_ptchsz          &
      &        ,spec_bdy_width=config_flags%spec_bdy_width                      &
             ! indexes
-     &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
-     &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
-     &        ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe          &
-     &        ,i_start=grid%i_start,i_end=min(grid%i_end, ide-1)          &
-     &        ,j_start=grid%j_start,j_end=min(grid%j_end, jde-1)          &
-     &        ,kts=k_start, kte=min(k_end,kde-1)                          &
-     &        ,num_tiles=grid%num_tiles                                   )
+     &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde               &
+     &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme               &
+     &        ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe               &
+     &        ,i_start=grid%i_start,i_end=min(grid%i_end, ide-1)               &
+     &        ,j_start=grid%j_start,j_end=min(grid%j_end, jde-1)               &
+     &        ,kts=k_start, kte=min(k_end,kde-1)                               &
+     &        ,num_tiles=grid%num_tiles                                        )
 
       CALL wrf_debug ( 200 , ' call radiation_driver' )
 BENCH_START(rad_driver_tim)
@@ -418,7 +420,8 @@ BENCH_START(rad_driver_tim)
      &        ,progn=config_flags%progn                                            &
 #endif
      &         ,slope_rad=config_flags%slope_rad,topo_shading=config_flags%topo_shading     &
-     &         ,shadowmask=grid%shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy &           
+     &         ,shadowmask=grid%shadowmask   &
+     &         ,ht=grid%ht,dx=grid%dx,dy=grid%dy,dx2d=grid%dx2d,area2d=grid%area2d &           
      &         ,diffuse_frac=grid%diffuse_frac &           
      &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    &
      &         ,cw_rad=grid%cw_rad                     &
@@ -474,7 +477,8 @@ BENCH_START(surf_driver_tim)
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
      &        ,EMBCK=grid%embck                                                          &
      &        ,BR=grid%br              ,CANWAT=grid%canwat      ,CHKLOWQ=chklowq    &
-     &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx         &
+     &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx              &
+     &        ,DX2D=grid%dx2d          ,AREA2d=grid%area2d                          &
      &        ,DZ8W=dz8w          ,DZS=grid%dzs            ,FLHC=grid%flhc          &
      &        ,FM=grid%fm         ,FHH=grid%fh                                      &
      &        ,FLQC=grid%flqc          ,GLW=grid%glw            ,GRDFLX=grid%grdflx      &
@@ -910,6 +914,7 @@ BENCH_START(pbl_driver_tim)
      &        ,BLDTACTTIME=grid%bldtacttime                               &  
      &        ,BR=grid%br         ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
      &        ,DT=grid%dt         ,DX=grid%dx         ,DY=grid%dy                   &
+     &        ,DX2D=grid%dx2d     ,AREA2D=grid%area2d                               &
      &        ,DZ8W=dz8w          ,HPBL_HOLD=hpbl_hold                              &
      &        ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m                           &
      &        ,FM=grid%fm         ,FHH=grid%fh                                      &
@@ -1128,6 +1133,7 @@ BENCH_START(cu_driver_tim)
      &             ,W=grid%w_2     ,P=grid%p_hyd   ,PI=pi_phy  ,RHO=grid%rho             &
                  ! Other arguments
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx              &
+     &             ,DX2D=grid%dx2d, AREA2D=grid%area2d                                 &
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
      &             ,CUDTACTTIME=grid%cudtacttime                                       & 
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
@@ -1319,6 +1325,7 @@ BENCH_START(shcu_driver_tim)
      &             ,P=grid%p_hyd, PI=pi_phy, RHO=grid%rho, MOIST=moist    &
      &             ,NUM_MOIST=num_moist                                   &
      &             ,ITIMESTEP=grid%itimestep, DT=grid%dt, DX=grid%dx      &
+     &             ,DX2D=grid%dx2d, AREA2D=grid%area2d                    &
      &             ,CUDT=grid%cudt                                        &
      &             ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag  &
      &             ,RAINSH=grid%rainsh, PRATESH=grid%pratesh, NCA=grid%nca&

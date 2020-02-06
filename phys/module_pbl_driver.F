@@ -24,6 +24,7 @@ CONTAINS
                  ,lowlyr,u10,v10,uoce,voce,t2                      &
                  ,psim,psih,fm,fhh,gz1oz0, wspd,br,chklowq         &
                  ,bl_pbl_physics, ra_lw_physics, dx, dy            &
+                 ,dx2d ,area2d                                     &
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
@@ -430,6 +431,8 @@ CONTAINS
                                                            znw
 !
    REAL,       INTENT(IN   )    ::     DT,DX,DY
+   REAL,       DIMENSION( ims:ime, jms:jme ), INTENT(IN) , OPTIONAL :: &
+                                                dx2d, area2d
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
    REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
    LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag

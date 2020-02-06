@@ -77,7 +77,8 @@ CONTAINS
                          ACSNOM,IVGTYP,ISLTYP, SFCEVP, SMOIS,    &
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
                          SNOALB,                                 &
-                         DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
+                         DX,DY,DX2D,AREA2D,                      &
+                         F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
                          mp_restart_state,tbpvs_state,tbpvs0_state,&
                          allowed_to_read, moved, start_of_simulation,&
                          LAGDAY,                                 &
@@ -286,6 +287,7 @@ CONTAINS
 
    LOGICAL,  INTENT(IN)        :: start_of_simulation
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
+   REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: DX2D, AREA2D
    LOGICAL,  INTENT(IN)        :: restart
    REAL,     INTENT(IN)        :: RADT,BLDT,CUDT,MPDT
    REAL,     INTENT(IN)        :: swrad_scat
@@ -833,6 +835,22 @@ CONTAINS
 !-------------------------------------------------  
    
 !-----------------------------------------------------------------
+
+#if ( EM_CORE == 1 )
+
+   !  Compute 2d grid distance and 2d grid cell area. For use with
+   !  physics schemes that have a grid distance (area) as input for
+   !  scale-aware capability.
+
+   if ( .not. restart) then
+     if ( present(dx2d) .and. present(area2d) ) then
+        call compute_2d_dx_area(dx, dy, msftx, msfty, dx2d, area2d, &
+                              ids, ide, jds, jde, kds, kde,       &
+                              ims, ime, jms, jme, kms, kme,       &
+                              its, ite, jts, jte, kts, kte)
+      end if
+   end if
+#endif
 
    aercu_opt=config_flags%aercu_opt !PSH/TWG 06/10/16
    aercu_fct=config_flags%aercu_fct !PSH/TWG 06/10/16
@@ -5207,5 +5225,31 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
   return
   end subroutine interp_vec_cu
 !---------------------END   PSH/TWG  CHANGES----------------
+
+  subroutine compute_2d_dx_area(dx, dy, msftx, msfty, dx2d, area2d, &
+                                ids, ide, jds, jde, kds, kde,       &
+                                ims, ime, jms, jme, kms, kme,       &
+                                its, ite, jts, jte, kts, kte)
+
+     implicit none
+
+     integer , intent(in) :: ids, ide, jds, jde, kds, kde,       &
+                             ims, ime, jms, jme, kms, kme,       &
+                             its, ite, jts, jte, kts, kte
+
+     real,                             intent(in)  :: dx, dy
+     real, dimension(ims:ime,jms:jme), intent(in)  :: msftx, msfty
+     real, dimension(ims:ime,jms:jme), intent(out) :: dx2d, area2d
+
+     integer :: i, j
+
+     do j = jts, min(jde-1,jte)
+        do i = its, min(ide-1,ite)
+           area2d(i,j) = dx/msftx(i,j) * dy/msfty(i,j)
+           dx2d  (i,j) = sqrt ( area2d(i,j) )
+        end do
+     end do
+
+  end subroutine compute_2d_dx_area
 
 END MODULE module_physics_init

@@ -7,168 +7,168 @@ CONTAINS
 ! !IROUTINE: radiation_driver - interface to radiation physics options
 
 ! !INTERFACE:
-   SUBROUTINE radiation_driver (                                  &
-               ACFRCV ,ACFRST ,ALBEDO  &
-              ,CFRACH ,CFRACL ,CFRACM  &
-              ,CUPPT  ,CZMEAN ,DT      &
-              ,DZ8W   ,EMISS  ,GLW     &
-              ,GMT    ,GSW    ,HBOT    &
-              ,HTOP   ,HBOTR  ,HTOPR   &
-              ,ICLOUD                  &
-              ,cldovrlp                 & 
-              ,ITIMESTEP,JULDAY, JULIAN &
-              ,JULYR  ,LW_PHYSICS       &
-              ,NCFRCV ,NCFRST ,NPHS     &
-              ,O3INPUT, O3RAD           &
-              ,AER_OPT, aerod           &
-              ,swint_opt                &
-              ,P8W    ,P ,PI            &
-              ,p_top                    &
-              ,RADT   ,RA_CALL_OFFSET   &
-              ,RHO    ,RLWTOA           &
-              ,RSWTOA ,RTHRATEN         &
-              ,RTHRATENLW      ,RTHRATENSW    &
-              ,SNOW   ,STEPRA ,SWDOWN  &
-              ,SWDOWNC ,SW_PHYSICS     &
-              ,T8W     ,T ,TAUCLDC &
-              ,TAUCLDI ,TSK ,VEGFRA  &
-              ,WARM_RAIN ,XICE ,XLAND   &
-              ,XLAT ,XLONG ,YR          &
+   SUBROUTINE radiation_driver (                                          &
+               ACFRCV ,ACFRST ,ALBEDO                                     &
+              ,CFRACH ,CFRACL ,CFRACM                                     &
+              ,CUPPT  ,CZMEAN ,DT                                         &
+              ,DZ8W   ,EMISS  ,GLW                                        &
+              ,GMT    ,GSW    ,HBOT                                       &
+              ,HTOP   ,HBOTR  ,HTOPR                                      &
+              ,ICLOUD                                                     &
+              ,cldovrlp                                                   & 
+              ,ITIMESTEP,JULDAY, JULIAN                                   &
+              ,JULYR  ,LW_PHYSICS                                         &
+              ,NCFRCV ,NCFRST ,NPHS                                       &
+              ,O3INPUT, O3RAD                                             &
+              ,AER_OPT, aerod                                             &
+              ,swint_opt                                                  &
+              ,P8W    ,P ,PI                                              &
+              ,p_top                                                      &
+              ,RADT   ,RA_CALL_OFFSET                                     &
+              ,RHO    ,RLWTOA                                             &
+              ,RSWTOA ,RTHRATEN                                           &
+              ,RTHRATENLW      ,RTHRATENSW                                &
+              ,SNOW   ,STEPRA ,SWDOWN                                     &
+              ,SWDOWNC ,SW_PHYSICS                                        &
+              ,T8W     ,T ,TAUCLDC                                        &
+              ,TAUCLDI ,TSK ,VEGFRA                                       &
+              ,WARM_RAIN ,XICE ,XLAND                                     &
+              ,XLAT ,XLONG ,YR                                            &
 !Optional solar variables
-              ,DECLINX ,SOLCONX ,COSZEN ,HRANG    &
-              , CEN_LAT                                      &
-              ,Z                                             &
-              ,ALEVSIZ, no_src_types               &
-              ,LEVSIZ, N_OZMIXM                    &
-              ,N_AEROSOLC                                    &
-              ,PAERLEV   ,ID                                 &
-              ,CAM_ABS_DIM1, CAM_ABS_DIM2 &
-              ,CAM_ABS_FREQ_S                         &
-              ,XTIME                                           &
-              ,CURR_SECS, ADAPT_STEP_FLAG       &
+              ,DECLINX ,SOLCONX ,COSZEN ,HRANG                            &
+              , CEN_LAT                                                   &
+              ,Z                                                          &
+              ,ALEVSIZ, no_src_types                                      &
+              ,LEVSIZ, N_OZMIXM                                           &
+              ,N_AEROSOLC                                                 &
+              ,PAERLEV   ,ID                                              &
+              ,CAM_ABS_DIM1, CAM_ABS_DIM2                                 &
+              ,CAM_ABS_FREQ_S                                             &
+              ,XTIME                                                      &
+              ,CURR_SECS, ADAPT_STEP_FLAG                                 &
               !BSINGH - For WRFCuP scheme (optional args)
-              ,cu_physics,shallowcu_forced_ra   & !CuP, wig 1-Oct-2006
-              ,cubot,cutop,cldfra_cup           & !CuP, wig 1-Oct-2006
-              ,shall                            & !CuP, wig 4-Feb-2008
+              ,cu_physics,shallowcu_forced_ra                             &
+              ,cubot,cutop,cldfra_cup                                     &
+              ,shall                                                      &
               !BSINGH - ENDS
             ! indexes
-              ,IDS,IDE, JDS,JDE, KDS,KDE          &
-              ,IMS,IME, JMS,JME, KMS,KME          &
-              ,i_start,i_end          &
-              ,j_start,j_end          &
-              ,kts, kte                          &
-              ,num_tiles                                   &
+              ,IDS,IDE, JDS,JDE, KDS,KDE                                  &
+              ,IMS,IME, JMS,JME, KMS,KME                                  &
+              ,i_start,i_end                                              &
+              ,j_start,j_end                                              &
+              ,kts, kte                                                   &
+              ,num_tiles                                                  &
             ! Optional
-              , TLWDN, TLWUP                        & ! goddard schemes
-              , SLWDN, SLWUP                        & ! goddard schemes
-              , TSWDN, TSWUP                        & ! goddard schemes
-              , SSWDN, SSWUP                        & ! goddard schemes
-              , RE_CLOUD_GSFC                       & ! goddard
-              , RE_RAIN_GSFC                        & ! goddard
-              , RE_ICE_GSFC                         & ! goddard
-              , RE_SNOW_GSFC                        & ! goddard
-              , RE_GRAUPEL_GSFC                     & ! goddard
-              , RE_HAIL_GSFC                        & ! goddard
-              , COD2D_OUT                           & ! goddardrad
-              , CTOP2D_OUT                          & ! goddardrad
-              , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU       &
+              , TLWDN, TLWUP                                              &
+              , SLWDN, SLWUP                                              &
+              , TSWDN, TSWUP                                              &
+              , SSWDN, SSWUP                                              &
+              , RE_CLOUD_GSFC                                             &
+              , RE_RAIN_GSFC                                              &
+              , RE_ICE_GSFC                                               &
+              , RE_SNOW_GSFC                                              &
+              , RE_GRAUPEL_GSFC                                           &
+              , RE_HAIL_GSFC                                              &
+              , COD2D_OUT                                                 &
+              , CTOP2D_OUT                                                &
+              , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU                             &
 #if (EM_CORE == 1)
-              , lradius,iradius                     &
+              , lradius,iradius                                           &
 #endif
-              , cldfra_dp, cldfra_sh                & ! ckay for sub-grid cloud fraction
-              , re_cloud, re_ice, re_snow           & ! G. Thompson
-              , has_reqc, has_reqi, has_reqs        & ! G. Thompson
-              , PB                                                &
-              , F_ICE_PHY,F_RAIN_PHY       &
-              , F_QNC                      &
-              , QNC_CURR                   &
-              , QV, F_QV                     &
-              , QC, F_QC                     &
-              , QR, F_QR                     &
-              , QI, F_QI                     &
-              , QI2, F_QI2                   & ! for P3
-              , QI3, F_QI3                   & ! for Jensen ISHMAEL
-              , QS, F_QS                     &
-              , QG, F_QG                     &
-              , QH, F_QH                     &  !goddardrad
-              , QNDROP, F_QNDROP    &
-              ,QNIFA,F_QNIFA                  &   ! trude
-              ,QNWFA,F_QNWFA                  &   ! trude
-              ,ACSWUPT   ,ACSWUPTC            &
-              ,ACSWDNT   ,ACSWDNTC            &
-              ,ACSWUPB   ,ACSWUPBC            &
-              ,ACSWDNB   ,ACSWDNBC            &
-              ,ACLWUPT   ,ACLWUPTC            &
-              ,ACLWDNT   ,ACLWDNTC            &
-              ,ACLWUPB   ,ACLWUPBC            &
-              ,ACLWDNB   ,ACLWDNBC            &
-              ,SWUPT ,SWUPTC, SWUPTCLN        &
-              ,SWDNT ,SWDNTC, SWDNTCLN        &
-              ,SWUPB ,SWUPBC, SWUPBCLN        &
-              ,SWDNB ,SWDNBC, SWDNBCLN        &
-              ,LWUPT ,LWUPTC, LWUPTCLN        &
-              ,LWDNT ,LWDNTC, LWDNTCLN        &
-              ,LWUPB ,LWUPBC, LWUPBCLN        &
-              ,LWDNB ,LWDNBC, LWDNBCLN        &
-              ,LWCF                           &
-              ,SWCF                           &
-              ,OLR                            &
-              ,aerodm, PINA, aodtot           &
-              ,OZMIXM, PIN                    &
-              ,M_PS_1, M_PS_2, AEROSOLC_1     &
-              ,AEROSOLC_2, M_HYBI0            &
-              ,ABSTOT, ABSNXT, EMSTOT         &
-              ,ICLOUD_CU                      &
-              ,CALC_CLEAN_ATM_DIAG            &
-              ,AER_RA_FEEDBACK                &
-              ,QC_CU , QI_CU                  &
-              ,icloud_bl,qc_bl,cldfra_bl     & !JOE-subgrid bl clouds
-              ,PM2_5_DRY, PM2_5_WATER         &
-              ,PM2_5_DRY_EC                   &
-              ,TAUAER300, TAUAER400 & ! jcb
-              ,TAUAER600, TAUAER999 & ! jcb
-              ,GAER300, GAER400, GAER600, GAER999 & ! jcb
-              ,WAER300, WAER400, WAER600, WAER999 & ! jcb
-              ,TAUAERlw1,  TAUAERlw2  &
-              ,TAUAERlw3,  TAUAERlw4  &
-              ,TAUAERlw5,  TAUAERlw6  &
-              ,TAUAERlw7,  TAUAERlw8  &
-              ,TAUAERlw9,  TAUAERlw10   &
-              ,TAUAERlw11, TAUAERlw12   &
-              ,TAUAERlw13, TAUAERlw14   &
-              ,TAUAERlw15, TAUAERlw16  &
-              ,progn                                            &
-              ,slope_rad,topo_shading     &
-              ,shadowmask,ht,dx,dy                 &
+              , cldfra_dp, cldfra_sh                                      &
+              , re_cloud, re_ice, re_snow                                 &
+              , has_reqc, has_reqi, has_reqs                              &
+              , PB                                                        &
+              , F_ICE_PHY,F_RAIN_PHY                                      &
+              , F_QNC                                                     &
+              , QNC_CURR                                                  &
+              , QV, F_QV                                                  &
+              , QC, F_QC                                                  &
+              , QR, F_QR                                                  &
+              , QI, F_QI                                                  &
+              , QI2, F_QI2                                                &
+              , QI3, F_QI3                                                &
+              , QS, F_QS                                                  &
+              , QG, F_QG                                                  &
+              , QH, F_QH                                                  &
+              , QNDROP, F_QNDROP                                          &
+              ,QNIFA,F_QNIFA                                              &
+              ,QNWFA,F_QNWFA                                              &
+              ,ACSWUPT   ,ACSWUPTC                                        &
+              ,ACSWDNT   ,ACSWDNTC                                        &
+              ,ACSWUPB   ,ACSWUPBC                                        &
+              ,ACSWDNB   ,ACSWDNBC                                        &
+              ,ACLWUPT   ,ACLWUPTC                                        &
+              ,ACLWDNT   ,ACLWDNTC                                        &
+              ,ACLWUPB   ,ACLWUPBC                                        &
+              ,ACLWDNB   ,ACLWDNBC                                        &
+              ,SWUPT ,SWUPTC, SWUPTCLN                                    &
+              ,SWDNT ,SWDNTC, SWDNTCLN                                    &
+              ,SWUPB ,SWUPBC, SWUPBCLN                                    &
+              ,SWDNB ,SWDNBC, SWDNBCLN                                    &
+              ,LWUPT ,LWUPTC, LWUPTCLN                                    &
+              ,LWDNT ,LWDNTC, LWDNTCLN                                    &
+              ,LWUPB ,LWUPBC, LWUPBCLN                                    &
+              ,LWDNB ,LWDNBC, LWDNBCLN                                    &
+              ,LWCF                                                       &
+              ,SWCF                                                       &
+              ,OLR                                                        &
+              ,aerodm, PINA, aodtot                                       &
+              ,OZMIXM, PIN                                                &
+              ,M_PS_1, M_PS_2, AEROSOLC_1                                 &
+              ,AEROSOLC_2, M_HYBI0                                        &
+              ,ABSTOT, ABSNXT, EMSTOT                                     &
+              ,ICLOUD_CU                                                  &
+              ,CALC_CLEAN_ATM_DIAG                                        &
+              ,AER_RA_FEEDBACK                                            &
+              ,QC_CU , QI_CU                                              &
+              ,icloud_bl,qc_bl,cldfra_bl                                  &
+              ,PM2_5_DRY, PM2_5_WATER                                     &
+              ,PM2_5_DRY_EC                                               &
+              ,TAUAER300, TAUAER400                                       &
+              ,TAUAER600, TAUAER999                                       &
+              ,GAER300, GAER400, GAER600, GAER999                         &
+              ,WAER300, WAER400, WAER600, WAER999                         &
+              ,TAUAERlw1,  TAUAERlw2                                      &
+              ,TAUAERlw3,  TAUAERlw4                                      &
+              ,TAUAERlw5,  TAUAERlw6                                      &
+              ,TAUAERlw7,  TAUAERlw8                                      &
+              ,TAUAERlw9,  TAUAERlw10                                     &
+              ,TAUAERlw11, TAUAERlw12                                     &
+              ,TAUAERlw13, TAUAERlw14                                     &
+              ,TAUAERlw15, TAUAERlw16                                     &
+              ,progn                                                      &
+              ,slope_rad,topo_shading                                     &
+              ,shadowmask,ht,dx,dy,dx2d,area2d                            &
               ,dxkm                                                       &
-              ,diffuse_frac               &
-              ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          & ! Optional
-              ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          & ! Optional
+              ,diffuse_frac                                               &
+              ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          &
+              ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          &
               ,radtacttime                                                &
-              ,ALSWVISDIR, ALSWVISDIF, ALSWNIRDIR, ALSWNIRDIF             & !fds ssib alb comp (06/2010)
-              ,SWVISDIR, SWVISDIF, SWNIRDIR, SWNIRDIF                     & !fds ssib swr comp (06/2010)
-              ,SF_SURFACE_PHYSICS, IS_CAMMGMP_USED                        & !fds
-              ,EXPLICIT_CONVECTION                                        & ! .true.=no conv. scheme
-              ,swddir,swddni,swddif                                       & ! jararias 2013/08
-              ,swddirc,swddnic                                            & ! PAJ: clear-sky direct irradiance
+              ,ALSWVISDIR, ALSWVISDIF, ALSWNIRDIR, ALSWNIRDIF             &
+              ,SWVISDIR, SWVISDIF, SWNIRDIR, SWNIRDIF                     &
+              ,SF_SURFACE_PHYSICS, IS_CAMMGMP_USED                        &
+              ,EXPLICIT_CONVECTION                                        &
+              ,swddir,swddni,swddif                                       &
+              ,swddirc,swddnic                                            &
               ,swdown_ref,swddir_ref,coszen_ref,Gx,gg,Bx,bb               &
-              ,aer_type                                                   & ! jararias 2013/11
+              ,aer_type                                                   &
               ,aer_aod550_opt, aer_aod550_val                             &
               ,aer_angexp_opt, aer_angexp_val                             &
               ,aer_ssa_opt, aer_ssa_val                                   &
               ,aer_asy_opt, aer_asy_val                                   &
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
-              ,cw_rad, shcu_physics                      &
-              ,taod5502d, taod5503d                                       & !  Trude
+              ,cw_rad, shcu_physics                                       &
+              ,taod5502d, taod5503d                                       &
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
               ,EFSS,QS_CU                                                 &
 #if (WRF_CHEM == 1)
-              ,chem                                                       & ! inline gocart
-              ,aod_out                                                    & ! optional gocart
-              , AOD2D_OUT                                                 & ! goddardrad
-              , ATOP2D_OUT                                                & ! goddardrad
+              ,chem                                                       &
+              ,aod_out                                                    &
+              , AOD2D_OUT                                                 &
+              , ATOP2D_OUT                                                &
               ,chem_opt                                                   &
               ,gsfcrad_gocart_coupling                                    &
 #endif
@@ -787,6 +787,7 @@ CONTAINS
 ! Variables for slope-dependent radiation
 
      REAL, OPTIONAL, INTENT(IN) :: dx,dy
+     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN), OPTIONAL  :: dx2d, area2d
      INTEGER, OPTIONAL, INTENT(IN) :: slope_rad,topo_shading
      REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: ht
      INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: shadowmask
@@ -2846,7 +2847,8 @@ CONTAINS
    SUBROUTINE pre_radiation_driver ( grid, config_flags                   &
               ,itimestep, ra_call_offset                                  &
               ,XLAT, XLONG, GMT, julian, xtime, RADT, STEPRA              &
-              ,ht,dx,dy,sina,cosa,shadowmask,slope_rad ,topo_shading      &
+              ,ht,dx,dy,dx2d,area2d                                       &
+              ,sina,cosa,shadowmask,slope_rad ,topo_shading               &
               ,shadlen,ht_shad,ht_loc                                     &
               ,ht_shad_bxs, ht_shad_bxe                                   &
               ,ht_shad_bys, ht_shad_bye                                   &
@@ -2898,6 +2900,9 @@ CONTAINS
                                                               HT, &
                                                             SINA, &
                                                             COSA
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         INTENT(IN   ), OPTIONAL ::                         DX2D, &
+                                                          AREA2D
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  ::  ht_shad,ht_loc
 

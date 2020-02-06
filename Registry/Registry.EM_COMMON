@@ -417,8 +417,10 @@ state    real   tratx           ij      misc        1         -      r          
 state    real   obs_savwt      hikj     dyn_em      1         X      -       "OBS_SAVWT"           "Internal space holding weights of each ob, for each i,j,k" "dimensionless"
 
 # Other
-state   real    rdx            -        misc      -         -     irh       "rdx"                   "INVERSE X GRID LENGTH"         ""      
-state   real    rdy            -        misc      -         -     irh       "rdy"                   "INVERSE Y GRID LENGTH"         ""      
+state   real    rdx            -        misc      -         -     irh       "rdx"                   "INVERSE X GRID LENGTH"         "m-1"      
+state   real    rdy            -        misc      -         -     irh       "rdy"                   "INVERSE Y GRID LENGTH"         "m-1"      
+state   real    area2d         ij       misc      -         -     rh        "area2d"                "Horizontal grid cell area, using dx, dy, and map factors" "m2"
+state   real    dx2d           ij       misc      -         -     rh        "dx2d"                  "Horizontal grid distance: sqrt(area2d)"   "m"
 state   real    dts            -        misc      -         -     ir        "dts"                   "SMALL TIMESTEP"         ""      
 state   real    dtseps         -        misc      -         -     ir        "dtseps"                "TIME WEIGHT CONSTANT FOR SMALL STEPS"         ""      
 state   real    resm           -        misc      -         -     irh       "resm"                  "TIME WEIGHT CONSTANT FOR SMALL STEPS"         ""      

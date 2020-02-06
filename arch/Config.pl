@@ -799,45 +799,9 @@ while ( <ARCH_PREAMBLE> )
 
   $_ =~ s/CONFIGURE_DEP_LIB_PATH/$sw_dep_lib_path/g ;
 
-    $_ =~ s/CONFIGURE_PERL_PATH/$sw_perl_path/g ;
-    $_ =~ s/CONFIGURE_NETCDF_PATH/$sw_netcdf_path/g ;
-    $_ =~ s/CONFIGURE_PNETCDF_PATH/$sw_pnetcdf_path/g ;
-    $_ =~ s/CONFIGURE_HDF5_PATH/$sw_hdf5_path/g ;
-    $_ =~ s/CONFIGURE_PHDF5_PATH/$sw_phdf5_path/g ;
-    $_ =~ s/CONFIGURE_LDFLAGS/$sw_ldflags/g ;
-    $_ =~ s/CONFIGURE_COMPILEFLAGS/$sw_compileflags/g ;
-    $_ =~ s/CONFIGURE_RWORDSIZE/$sw_rwordsize/g ;
-    $_ =~ s/CONFIGURE_FC/$sw_time $sw_fc/g ;
-    $_ =~ s/CONFIGURE_CC/$sw_cc/g ;
     $_ =~ s/CONFIGURE_COMMS_LIB/$sw_comms_lib/g ;
-    $_ =~ s/CONFIGURE_COMMS_INCLUDE/$sw_comms_include/g ;
-    $_ =~ s/CONFIGURE_COMMS_EXTERNAL/$sw_comms_external/g ;
     if ( $sw_os ne "CYGWIN_NT" ) {
       $_ =~ s/#NOWIN// ;
-    }
-    $_ =~ s/CONFIGURE_DMPARALLEL/$sw_dmparallelflag/g ;
-    $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
-    $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
-    $_ =~ s/CONFIGURE_TRADFLAG/$sw_tfl/g ;
-    $_ =~ s/CONFIGURE_CPPFLAGS/$sw_cfl/g ;
-    $_ =~ s/CONFIGURE_4DVAR_FLAG/$sw_4dvar_flag/g ;
-    $_ =~ s/CONFIGURE_WRFPLUS_PATH/$sw_wrfplus_path/g ;
-    $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;
-    $_ =~ s/CONFIGURE_RTTOV_FLAG/$sw_rttov_flag/g ;
-    $_ =~ s/CONFIGURE_RTTOV_INC/$sw_rttov_inc/g ;
-    $_ =~ s/CONFIGURE_RTTOV_PATH/$sw_rttov_path/g ;
-    $_ =~ s/CONFIGURE_CLOUDCV_FLAG/$sw_cloudcv_flag/g ;
-    $_ =~ s/CONFIGURE_WAVELET_FLAG/$sw_wavelet_flag/g ;
-    if ( $sw_ifort_r8 ) {
-      $_ =~ s/^PROMOTION.*=/PROMOTION       =       -r8 /g ;
-    }
-    if ( $sw_dmparallel ne "" && ($_ =~ /^DMPARALLEL[=\t ]/) ) {
-       $_ =~ s/#// ;
-    }
-    if ( $sw_ompparallel ne "" && ( $_ =~ /^OMPCPP[=\t ]/ || $_ =~ /^OMPCC[=\t ]/ || $_ =~ /^OMP[=\t ]/ ) ) {
-       $_ =~ s/#// ;
-       $_ =~ s/#// ;
-       $_ =~ s/#// ;
     }
     if ( $sw_netcdf_path )
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
@@ -904,15 +868,6 @@ while ( <ARCH_PREAMBLE> )
         $_ =~ s:CONFIGURE_GRIB2_INC::g ;
         $_ =~ s:CONFIGURE_GRIB2_LIB::g ;
       }
-
-   if ( $sw_terrain_and_landuse )
-     {
-        $_ =~ s/CONFIGURE_TERRAIN_AND_LANDUSE/$sw_terrain_and_landuse/g;
-     }
-   else
-     {
-       $_  =~ s:CONFIGURE_TERRAIN_AND_LANDUSE:-DLANDREAD_STUB=1:g;
-     }
 
   if ( $sw_gpfs_path ne "" )
     { if (/^GPFS.*=/)

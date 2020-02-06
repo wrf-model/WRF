@@ -1262,7 +1262,7 @@ BENCH_START(cu_driver_tim)
      &             ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI            &
      &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
-     &             ,ZOL=grid%ZOL,WSTAR=grid%wstar_ysu                     & !ckay
+     &             ,ZOL=grid%ZOL                                          & !ckay
 ! Variables for Tiedtke and NSAS schemes
      &             ,ZNU=grid%znu                                          &
      &             ,MP_PHYSICS=config_flags%mp_physics                    &

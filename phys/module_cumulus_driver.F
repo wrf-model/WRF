@@ -22,7 +22,7 @@ CONTAINS
                      ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
-                     ,ZOL,WSTAR                                       &  !ckay
+                     ,ZOL                                             & !ckay
                      ,forcet,forceq,w0avg,stepcu,gsw                  &
                      ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
                      ,hfx,qfx,cldfra,cldfra_mp_all,tpert2d            &
@@ -493,11 +493,9 @@ CONTAINS
         PRATEC,MAVAIL,PBLH,PSFC,TSK,TPERT2D,UST,HFX,QFX
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT)          :: &
                                                       HPBL_HOLD
-
 !ckay
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
-         OPTIONAL, INTENT(INOUT) ::                         ZOL  &
-                                                    ,     WSTAR
+         OPTIONAL, INTENT(INOUT) ::                         ZOL
 
    REAL, DIMENSION( ims:ime , jms:jme ) :: tmppratec
                                                     
@@ -1054,7 +1052,7 @@ CONTAINS
                ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
                ,UER_KF=uer_kf,DER_KF=der_kf                     & 
                ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
-               ,ZOL=zol,WSTAR=wstar,UST=ust,PBLH=pblh           & !ckay
+               ,ZOL=zol,HFX=hfx,UST=ust,PBLH=pblh               & !ckay
                ,AEROCU=aerocu,NO_SRC_TYPES_CU=no_src_types_cu   &
                ,AERCU_FCT=aercu_fct,AERCU_OPT=aercu_opt        &
                ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS)

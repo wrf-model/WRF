@@ -4300,7 +4300,7 @@ end module module_mp_SBM_Auxiliary
        		    else
        		    	w_stag_my = 100*w(i,k,j)
        		 	end if
-       			if(SUP_WATER > 0.0D0 .and. w_stag_my > 0.1*1.0D2 .and. K_found == .FALSE. .and. K > 2 .and. zcgs(I,K,J) < 3.0*1.0D5)then
+       			if(SUP_WATER > 0.0D0 .and. w_stag_my > 0.1*1.0D2 .and. K_found .eqv. .FALSE. .and. K > 2 .and. zcgs(I,K,J) < 3.0*1.0D5)then
        				KZ_Cloud_Base(I,J) = K ! K-level index of cloud base
        				K_found = .TRUE.
        			endif
@@ -5366,9 +5366,9 @@ end module module_mp_SBM_Auxiliary
  	2060  CONTINUE
  	ENDIF
 
- 	#if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  		CALL wrf_dm_bcast_bytes( hujisbm_unit1 , IWORDSIZE )
- 	#endif
+#endif
  	IF ( hujisbm_unit1 < 0 ) THEN
      	CALL wrf_error_fatal ( 'module_mp_FAST-SBM: Table-1 -- FAST_SBM_INIT: '// 			&
  							              'Can not find unused fortran unit to read in lookup table, model stop' )
@@ -5389,7 +5389,7 @@ end module module_mp_SBM_Auxiliary
 #define DM_BCAST_MACRO_R8(A) CALL wrf_dm_bcast_bytes(A, size(A)*R8SIZE)
 #define DM_BCAST_MACRO_R16(A) CALL wrf_dm_bcast_bytes(A, size(A)*R16SIZE)
 
-#if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
     DM_BCAST_MACRO_R8(bin_mass)
  	  DM_BCAST_MACRO_R8(tab_colum)
  	  DM_BCAST_MACRO_R8(tab_dendr)
@@ -5422,9 +5422,9 @@ end module module_mp_SBM_Auxiliary
      2061  CONTINUE
      ENDIF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  	CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
- #endif
+#endif
      IF ( hujisbm_unit1 < 0 ) THEN
          CALL wrf_error_fatal ( 'module_mp_FAST-SBM: Table-2 -- FAST_SBM_INIT: '// 			&
                                'Can not find unused fortran unit to read in lookup table,model stop' )
@@ -5439,13 +5439,13 @@ end module module_mp_SBM_Auxiliary
  	READ(hujisbm_unit1,900) RLEC,RIEC,RSEC,RGEC,RHEC
  END IF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
      DM_BCAST_MACRO_R4(RLEC)
      DM_BCAST_MACRO_R4(RIEC)
      DM_BCAST_MACRO_R4(RSEC)
      DM_BCAST_MACRO_R4(RGEC)
      DM_BCAST_MACRO_R4(RHEC)
- #endif
+#endif
 
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-2'
      print*,errmess
@@ -5472,9 +5472,9 @@ end module module_mp_SBM_Auxiliary
      2062 CONTINUE
      ENDIF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
      CALL wrf_dm_bcast_bytes ( hujisbm_unit1, IWORDSIZE )
- #endif
+#endif
 
      IF ( hujisbm_unit1 < 0 ) THEN
          CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-3 -- FAST_SBM_INIT: '// 		&
@@ -5489,13 +5489,13 @@ end module module_mp_SBM_Auxiliary
          CLOSE(hujisbm_unit1)
      ENDIF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
    	DM_BCAST_MACRO_R4(XL)
      DM_BCAST_MACRO_R4(XI)
      DM_BCAST_MACRO_R4(XS)
      DM_BCAST_MACRO_R4(XG)
      DM_BCAST_MACRO_R4(XH)
- #endif
+#endif
 
       WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-3'
       print*,errmess
@@ -5523,9 +5523,9 @@ end module module_mp_SBM_Auxiliary
      2063   CONTINUE
      ENDIF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
      CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
- #endif
+#endif
      IF ( hujisbm_unit1 < 0 ) THEN
          CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-4 -- FAST_SBM_INIT: '// 										&
                                  'Can not find unused fortran unit to read in lookup table,model stop' )
@@ -5540,13 +5540,13 @@ end module module_mp_SBM_Auxiliary
         CLOSE(hujisbm_unit1)
      ENDIF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  	DM_BCAST_MACRO_R4(VR1)
      DM_BCAST_MACRO_R4(VR2)
      DM_BCAST_MACRO_R4(VR3)
      DM_BCAST_MACRO_R4(VR4)
      DM_BCAST_MACRO_R4(VR5)
- #endif
+#endif
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-4'
      CALL wrf_debug(000, errmess)
  ! +----------------------------------------------------------------------+
@@ -5572,9 +5572,9 @@ end module module_mp_SBM_Auxiliary
      2065     CONTINUE
      ENDIF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  		CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
- #endif
+#endif
 
      IF ( hujisbm_unit1 < 0 ) THEN
          CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-5 -- FAST_SBM_INIT: '// 										&
@@ -5590,11 +5590,11 @@ end module module_mp_SBM_Auxiliary
       CLOSE(hujisbm_unit1)
      END IF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  	  DM_BCAST_MACRO_R4(SLIC)
     DM_BCAST_MACRO_R4(TLIC)
     DM_BCAST_MACRO_R4(COEFIN)
- #endif
+#endif
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-5'
      CALL wrf_debug(000, errmess)
  ! +----------------------------------------------------------------------+
@@ -5619,9 +5619,9 @@ end module module_mp_SBM_Auxiliary
      2066     CONTINUE
      ENDIF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  		CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
- #endif
+#endif
      IF ( hujisbm_unit1 < 0 ) THEN
          CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-6 -- FAST_SBM_INIT: '// 			&
                                  'Can not find unused fortran unit to read in lookup table,model stop' )
@@ -5646,11 +5646,11 @@ end module module_mp_SBM_Auxiliary
    		ENDDO
    	ENDDO
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  	DM_BCAST_MACRO_R4(YWLL_1000MB)
      DM_BCAST_MACRO_R4(YWLL_750MB)
      DM_BCAST_MACRO_R4(YWLL_500MB)
- #endif
+#endif
 
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-6'
      CALL wrf_debug(000, errmess)
@@ -5712,9 +5712,9 @@ end module module_mp_SBM_Auxiliary
      2067     CONTINUE
      ENDIF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
      CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
- #endif
+#endif
  IF ( hujisbm_unit1 < 0 ) THEN
  	CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-7 -- FAST_SBM_INIT: '// 			&
  											'Can not find unused fortran unit to read in lookup table,model stop' )
@@ -5854,7 +5854,7 @@ end module module_mp_SBM_Auxiliary
   CLOSE(hujisbm_unit1)
  END IF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
 	   DM_BCAST_MACRO_R4(YWLI_300MB)
      DM_BCAST_MACRO_R4(YWLI_500MB)
      DM_BCAST_MACRO_R4(YWLI_750MB)
@@ -5887,7 +5887,7 @@ end module module_mp_SBM_Auxiliary
      DM_BCAST_MACRO_R4(YWSS_300MB)
      DM_BCAST_MACRO_R4(YWSS_500MB)
      DM_BCAST_MACRO_R4(YWSS_750MB)
- #endif
+#endif
 
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-7'
      CALL wrf_debug(000, errmess)
@@ -5914,9 +5914,9 @@ end module module_mp_SBM_Auxiliary
      2068     CONTINUE
      ENDIF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
      CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
- #endif
+#endif
      IF ( hujisbm_unit1 < 0 ) THEN
          CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-8 -- FAST_SBM_INIT: '// 			&
                                  'Can not find unused fortran unit to read in lookup table,model stop' )
@@ -5930,13 +5930,13 @@ end module module_mp_SBM_Auxiliary
          CLOSE(hujisbm_unit1)
      END IF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  	    DM_BCAST_MACRO_R4(RO1BL)
       DM_BCAST_MACRO_R4(RO2BL)
       DM_BCAST_MACRO_R4(RO3BL)
       DM_BCAST_MACRO_R4(RO4BL)
       DM_BCAST_MACRO_R4(RO5BL)
- #endif
+#endif
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-8'
      CALL wrf_debug(000, errmess)
  ! +----------------------------------------------------------------------+
@@ -5956,9 +5956,9 @@ end module module_mp_SBM_Auxiliary
        ENDDO
      2069     CONTINUE
      ENDIF
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  		CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
- #endif
+#endif
      IF ( hujisbm_unit1 < 0 ) THEN
       CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-9 -- FAST_SBM_INIT: '// 			&
                                  'Can not find unused fortran unit to read in lookup table,model stop' )
@@ -5972,9 +5972,9 @@ end module module_mp_SBM_Auxiliary
          CLOSE(hujisbm_unit1)
      END IF
 
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
        DM_BCAST_MACRO_R4(RADXXO)
- #endif
+#endif
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-9'
      CALL wrf_debug(000, errmess)
  ! +-----------------------------------------------------------------------+
@@ -5985,7 +5985,7 @@ end module module_mp_SBM_Auxiliary
   CALL LOAD_TABLES(NKR)  ! (KS) - Loading the scattering look-up-table
 
  ! ... (KS) - Broadcating Liquid drops
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
    	DM_BCAST_MACRO_R16 ( FAF1 )
    	DM_BCAST_MACRO_R16 ( FBF1 )
    	DM_BCAST_MACRO_R16 ( FAB1 )
@@ -6020,7 +6020,7 @@ end module module_mp_SBM_Auxiliary
    	DM_BCAST_MACRO_R4 ( fws_hail )
  ! ### (KS) - Broadcating Usetables array
  	  CALL wrf_dm_bcast_integer ( usetables , size ( usetables ) * IWORDSIZE )
- #endif
+#endif
   WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : succesfull reading Table-10'
   call wrf_message(errmess)
  ! +-----------------------------------------------------------------------+
@@ -6087,10 +6087,10 @@ end module module_mp_SBM_Auxiliary
     ECOALMASSM = 0.0d0
     BRKWEIGHT = 0.0d0
  	 CALL BREAKINIT_KS(PKIJ,QKJ,ECOALMASSM,BRKWEIGHT,XL,DROPRADII,BR_MAX,JBREAK,JMAX,NKR,VR1) ! Rain Spontanous Breakup
- #if defined(DM_PARALLEL)
+#if (defined(DM_PARALLEL))
  	 	DM_BCAST_MACRO_R4 (PKIJ)
     DM_BCAST_MACRO_R4 (QKJ)
- #endif
+#endif
  	  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading BREAKINIT_KS" '
     CALL wrf_debug(000, errmess)
   ! +--------------------------------------------------------------------------------------------------------------------+

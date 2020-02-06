@@ -322,6 +322,7 @@ state    real  dfi_SNOWC        ij      misc        1       -      r  "dfi_SNOWC
 # module_DYNAM
 #
 state  real   dx_nmm    ij     dyn_nmm     1      -      irh023     "DX_NMM"  "East-west distance H-to-V points"              "m"
+state  real   area_nmm  ij     dyn_nmm     1      -      -          "AREA_NMM"  "Grid cell area"                              "m2"
 state  real   wpdar     ij     dyn_nmm     1      -      ir
 state  real   cpgfu     ij     dyn_nmm     1      -      ir
 state  real   curv      ij     dyn_nmm     1      -      ir      "CURV"    "Curvature term= .5*DT*TAN(phi)/RadEarth"       "s m-1"

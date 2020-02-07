@@ -74,19 +74,6 @@ CONTAINS
               , COD2D_OUT                           & ! goddardrad
               , CTOP2D_OUT                          & ! goddardrad
               , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU       &
-              , TLWDN, TLWUP                                              &
-              , SLWDN, SLWUP                                              &
-              , TSWDN, TSWUP                                              &
-              , SSWDN, SSWUP                                              &
-              , RE_CLOUD_GSFC                                             &
-              , RE_RAIN_GSFC                                              &
-              , RE_ICE_GSFC                                               &
-              , RE_SNOW_GSFC                                              &
-              , RE_GRAUPEL_GSFC                                           &
-              , RE_HAIL_GSFC                                              &
-              , COD2D_OUT                                                 &
-              , CTOP2D_OUT                                                &
-              , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU                             &
 #if (EM_CORE == 1)
               , lradius,iradius                                           &
 #endif

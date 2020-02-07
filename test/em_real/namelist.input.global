@@ -82,7 +82,7 @@
  tke_adv_opt                         = 0,      0,      0,     
  fft_filter_lat                      = 45.,
  w_damping                           = 1,
- gwd_opt                             = 1,
+ gwd_opt                             = 1,      1,      1,
  /
 
  &bdy_control

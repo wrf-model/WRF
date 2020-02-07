@@ -1051,24 +1051,8 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! cu_physics = 11 (scale-aware KF) only works with YSU PBL.
+! cu_physics = 11 (scale-aware KF)
 !-----------------------------------------------------------------------
-
-      oops = 0
-      DO i = 1, model_config_rec % max_dom
-         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
-              ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) ) THEN
-            oops = oops + 1
-         END IF
-      ENDDO      ! Loop over domains
-      IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- ERROR: bl_pbl_physics must be set to 1 for cu_physics = 11 '
-         CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- Fix bl_pbl_physics in namelist.input OR use another cu_physics option '
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-      END IF
 
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
@@ -1426,6 +1410,28 @@
          END IF
 
 !-----------------------------------------------------------------------
+! Make sure icloud_bl is only used when MYNN is chosen.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%icloud_bl .eq. 1) THEN
+           IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 .OR. &
+                model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) THEN
+              !CORRECTLY CONFIGURED
+           ELSE
+              model_config_rec%icloud_bl = 0
+              oops = oops + 1
+           END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'Need MYNN PBL for icloud_bl = 1, resetting to 0'
+         CALL wrf_debug ( 1, wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  We need to know if any of the cumulus schemes are active. This
 !  allows the model to allocate space.
 !-----------------------------------------------------------------------
@@ -1452,26 +1458,17 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-! Make sure icloud_bl is only used when MYNN is chosen.
+!  We need to know if the orographic gravity wave drag scheme is active 
+!  on any domains. This allows the model to allocate space.
 !-----------------------------------------------------------------------
 
-      oops = 0
+      model_config_rec%gwd_used = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%icloud_bl .eq. 1) THEN
-           IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 .OR. &
-                model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) THEN
-              !CORRECTLY CONFIGURED
-           ELSE
-              model_config_rec%icloud_bl = 0
-              oops = oops + 1
-           END IF
+         IF ( model_config_rec%gwd_opt(i) .NE. NOGWDOPT ) THEN
+            model_config_rec%gwd_used = 1
          END IF
-      ENDDO      ! Loop over domains
-      IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'Need MYNN PBL for icloud_bl = 1, resetting to 0'
-         CALL wrf_debug ( 1, wrf_err_message )
-      END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Make sure microphysics option without QICE array cannot be used with icloud=3

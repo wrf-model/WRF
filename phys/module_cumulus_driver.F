@@ -14,7 +14,8 @@ CONTAINS
                      ,u,v,th,t,w                                      &
                      ,p,pi,rho                                        &
                  ! --Other arguments
-                     ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
+                     ,itimestep,dt,dx,dx2d,area2d                     &
+                     ,cudt,curr_secs,adapt_step_flag                  &
                      ,cudtacttime                                     & 
                      ,ccldfra,convcld,qcconv,qiconv                   &
                      ,bmj_rad_feedback                                & 
@@ -24,7 +25,7 @@ CONTAINS
                      ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
-                     ,ZOL,WSTAR                                       &  !ckay
+                     ,ZOL                                             & !ckay
                      ,forcet,forceq,w0avg,stepcu,gsw                  &
                      ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
                      ,hfx,qfx,cldfra,cldfra_mp_all,tpert2d            &
@@ -100,7 +101,7 @@ CONTAINS
                      ,ens_sasamp                                      &
                      ,shalconv,shal_pgcon                             &
                      ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
-                     ,DX2D, DYNMM                                     & ! For scale-aware SAS
+                     ,DYNMM                                           & ! For scale-aware SAS
                      ,SCALEFUN,SCALEFUN1                              & !    scale functions 
                      ,SIGMU,SIGMU1                                    & !    updraft fraction
 
@@ -503,11 +504,9 @@ CONTAINS
         PRATEC,MAVAIL,PBLH,PSFC,TSK,TPERT2D,UST,HFX,QFX
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT)          :: &
                                                       HPBL_HOLD
-
 !ckay
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
-         OPTIONAL, INTENT(INOUT) ::                         ZOL  &
-                                                    ,     WSTAR
+         OPTIONAL, INTENT(INOUT) ::                         ZOL
 
    REAL, DIMENSION( ims:ime , jms:jme ) :: tmppratec
                                                     
@@ -521,7 +520,9 @@ CONTAINS
    INTEGER, INTENT(IN   ), OPTIONAL        ::   nsas_dx_factor
 
    REAL,  INTENT(IN   ) :: DT, DX
-   INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
+                    INTENT(IN) ::  DX2D, AREA2D
+   INTEGER,      INTENT(IN   ),OPTIONAL    ::                    &
                    ips,ipe, jps,jpe, kps,kpe,imomentum,ishallow
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
@@ -537,8 +538,6 @@ CONTAINS
    REAL, OPTIONAL,  INTENT(INOUT) :: mommix
 
 
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
-                    INTENT(IN) ::  DX2D                           ! For scale-aware SAS
    REAL, OPTIONAL,  INTENT(IN) ::  DYNMM                          ! For scale-aware SAS  
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,INTENT(INOUT) :: &
                                    SCALEFUN,SCALEFUN1,SIGMU,SIGMU1    
@@ -1068,7 +1067,7 @@ CONTAINS
                ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
                ,UER_KF=uer_kf,DER_KF=der_kf                     & 
                ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
-               ,ZOL=zol,WSTAR=wstar,UST=ust,PBLH=pblh           & !ckay
+               ,ZOL=zol,HFX=hfx,UST=ust,PBLH=pblh               & !ckay
                ,AEROCU=aerocu,NO_SRC_TYPES_CU=no_src_types_cu   &
                ,AERCU_FCT=aercu_fct,AERCU_OPT=aercu_opt        &
                ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS)
@@ -1418,7 +1417,7 @@ CONTAINS
                ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx          &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
-               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND,DX=dx      &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND,DX=dx2d    &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &

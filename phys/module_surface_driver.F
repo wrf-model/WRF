@@ -4482,8 +4482,8 @@ CONTAINS
               T02(i,j)    = T02(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * T02_SEA(i,j)
               U10(i,j)    = U10(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * U10_SEA(i,j)
               V10(i,j)    = V10(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * V10_SEA(i,j)
-              U10E(i,j)   = U10E(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * U10E_SEA(i,j)
-              V10E(i,j)   = V10E(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * V10E_SEA(i,j)
+              U10E(i,j)   = U10(i,j)
+              V10E(i,j)   = V10(i,j)
 
               ! INTENT(INOUT):  updated by MYJSFC
               ! QSFC:  wait

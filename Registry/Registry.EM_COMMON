@@ -2862,7 +2862,7 @@ package   nosfcscheme        sf_sfclay_physics==0        -             -
 package   sfclayrevscheme    sf_sfclay_physics==1        -             -
 package   myjsfcscheme       sf_sfclay_physics==2        -             state:tke_pbl,u10e,v10e
 package   gfssfcscheme       sf_sfclay_physics==3        -             -
-package   qnsesfcscheme      sf_sfclay_physics==4        -             -
+package   qnsesfcscheme      sf_sfclay_physics==4        -             state:u10e,v10e
 package   mynnsfcscheme      sf_sfclay_physics==5        -             -
 package   pxsfcscheme        sf_sfclay_physics==7        -             -
 package   temfsfcscheme      sf_sfclay_physics==10       -             state:wm_temf

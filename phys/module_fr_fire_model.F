@@ -14,6 +14,7 @@ subroutine fire_model (                    &
     ifun,                                   & ! what to do see below
     restart,                                &
     need_lfn_update,                          & ! if lfn needs to be synced between tiles
+    run_fuel_moisture,                      & ! if need update fuel moisture in pass 4
     num_ignitions,                          & ! number of ignitions before advancing
     ifuelread,nfuel_cat0,                   & ! initialize fuel categories
     ifds,ifde,jfds,jfde,                    & ! fire domain dims - the whole domain
@@ -106,6 +107,7 @@ integer, intent(in) :: ifun                 ! 1 = initialize run pass 1
                                             ! 6 = compute output fluxes
 logical, intent(in):: restart               ! if true, use existing state
 logical, intent(out)::need_lfn_update       ! if true, halo update on lfn afterwards
+logical, intent(in)::run_fuel_moisture      ! 
 ! scalar data
 integer, intent(in) :: num_ignitions        ! number of ignition lines
 integer, intent(in) :: ifuelread,nfuel_cat0 ! for set_fire_params
@@ -248,6 +250,19 @@ elseif(ifun.eq.3)then   ! ignition if so specified
 
     
 elseif (ifun.eq.4) then  ! do the timestep
+
+    if(run_fuel_moisture)then
+        ! fuel moisture may have changed, reset the precomputed ros parameters
+        ! uses nfuel_cat to set the other fuel data arrays
+        ! needs zsf on halo width 1 to compute the terrain gradient
+        call set_fire_params(    &       ! also on restart
+            ifds,ifde,jfds,jfde, &
+            ifms,ifme,jfms,jfme, &
+            ifts,ifte,jfts,jfte, &
+            fdx,fdy,nfuel_cat0,  &
+            nfuel_cat,fuel_time, &
+            fp)
+    endif
 
     if(fire_print_msg.ge.stat_lev)then
       aw=fun_real(RNRM_SUM,  &
@@ -440,7 +455,7 @@ elseif (ifun.eq.6) then ! timestep postprocessing
                    ifts,ifte,jfts,jfte, &
                    fuel_frac_burnt,'model: fuel_frac burned')
         
-    call heat_fluxes(dt,                          &
+    call heat_fluxes(dt,fp,                       &
         ifms,ifme,jfms,jfme,                      &
         ifts,ifte,jfts,jfte,                      &
         ifts,ifte,jfts,jfte,                      &  ! fuel_frac_burned is tile dimensioned

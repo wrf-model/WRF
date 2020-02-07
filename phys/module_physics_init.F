@@ -1173,9 +1173,10 @@ CONTAINS
    end if
 #endif
 
-!  Initializing special output from myjsfc
+!  Initializing special output from myjsfc and qnsesfc
 
-   if ( config_flags%sf_sfclay_physics .EQ. MYJSFCSCHEME ) THEN
+   if ( config_flags%sf_sfclay_physics .EQ. MYJSFCSCHEME .OR. &
+        config_flags%sf_sfclay_physics .EQ. QNSESFCSCHEME ) THEN
       do j=jts,jtf
          do i=its,itf
             u10e(i,j) = u10(i,j)

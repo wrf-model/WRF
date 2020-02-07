@@ -2160,7 +2160,8 @@ CONTAINS
                 akhs,akms,                                           &
                 br,                                                 &
                 chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
-                u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
+                u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,     &
+                u10e,v10e,                                           &
                 ids,ide, jds,jde, kds,kde,                           &
                 ims,ime, jms,jme, kms,kme,                           &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,SCM_FORCE_FLUX    )
@@ -2176,7 +2177,8 @@ CONTAINS
               akhs,akms,                                           &
               br,                                                 &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
-              u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
+              u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,     &
+              u10e,v10e,                                           &
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij),     &
@@ -4524,6 +4526,7 @@ CONTAINS
         &     CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,     &
         &     QGH,CPM,CT,                                 &
         &     U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR,          &
+        &     U10E,V10E,                                  &
         &     IDS,IDE,JDS,JDE,KDS,KDE,                        &
         &     IMS,IME,JMS,JME,KMS,KME,                        &
         &     ITS,ITE,JTS,JTE,KTS,KTE,SCM_FORCE_FLUX )
@@ -4593,6 +4596,8 @@ CONTAINS
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CT
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: U10
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: V10
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: U10E
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: V10E
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: T02
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: TH02
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: TSHLTR
@@ -4615,6 +4620,8 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: ct_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: u10_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: v10_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: u10e_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: v10e_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: t02_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: th02_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: tshltr_sea
@@ -4752,6 +4759,7 @@ CONTAINS
           &        QGH, CPM, CT, U10, V10,T02,TH02,                    &  ! 0,0,0,0,0,0,0
           &        TSHLTR, TH10, Q02,                    &  ! 0,0,0
           &        QSHLTR, Q10, PSHLTR,                            &  ! 0,0,0,
+          &        U10E, V10E,                                     &  ! 0,0,0,
           &        ids,ide, jds,jde, kds,kde,                      &
           &        ims,ime, jms,jme, kms,kme,                      &
           &        its,ite, jts,jte, kts,kte, SCM_FORCE_FLUX    )
@@ -4805,6 +4813,7 @@ CONTAINS
           &        CHS_SEA, CHS2_SEA, CQS2_SEA, HFX_SEA, QFX_SEA, FLX_LH_SEA, FLHC_SEA,        & ! 0,0,0,0,0,0,0,
           &        FLQC_SEA, QGH_SEA, CPM_SEA, CT_SEA, U10_SEA, V10_SEA,T02_SEA,TH02_SEA,   & ! 0,0,0,0,0,0,0,0
           &        TSHLTR_SEA, TH10_SEA, Q02_SEA, QSHLTR_SEA, Q10_SEA, PSHLTR_SEA,             & ! 0,0,0,0,0,0
+          &        U10E, V10E,                                                                 &
           &        ids,ide, jds,jde, kds,kde,                                                  &
           &        ims,ime, jms,jme, kms,kme,                                                  &
           &        its,ite, jts,jte, kts,kte, SCM_FORCE_FLUX    )
@@ -4840,6 +4849,8 @@ CONTAINS
               T02(i,j)    = T02(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * T02_SEA(i,j)
               U10(i,j)    = U10(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * U10_SEA(i,j)
               V10(i,j)    = V10(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * V10_SEA(i,j)
+              U10E(i,j)   = U10E(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * U10E_SEA(i,j)
+              V10E(i,j)   = V10E(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * V10E_SEA(i,j)
 
               ! INTENT(INOUT):  updated by QNSESFC
               ! QSFC:  wait

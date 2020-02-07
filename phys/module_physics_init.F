@@ -5047,7 +5047,6 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
 ! This module was taken from the radiation driver and modified for the
 ! cumulus aerosol input. - PSH
 !
-  use netcdf !PSH
    IMPLICIT NONE
 
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
@@ -5063,17 +5062,12 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
    REAL    :: interp_ptcu, interp_pt_latcu, interp_pt_loncu,wlat1cu,wlat2cu,wlon1cu,wlon2cu
    CHARACTER*256 :: message
 
-   integer                               :: ncId, lonID, latID, levID, &
-                                            lonDimID, latDimId, timeDimId, &
-                                            numLons, numLats, numLevs,    &
-                                            ncfcode, &
-                                            varID
+   integer                               :: numLons, numLats, numLevs
 
    REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months, no_src_types ),&
           INTENT(OUT   ) ::                                  aeromcu !PSH
    REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months), OPTIONAL, &
    INTENT(OUT)  :: aeropcu !PSH
-   integer, dimension(nf90_max_var_dims) :: dimIDs
    real, dimension(:, :, :, :, :), allocatable  :: aeroin !PSH
    real, dimension(:, :, :, :), allocatable  :: aeropin !PSH
    CHARACTER (len=10), dimension(no_src_types) :: species !PSH

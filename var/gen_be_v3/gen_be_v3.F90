@@ -1731,20 +1731,6 @@ subroutine compute_bv_sl
 
    inv_nij = 1.0 / real(ni*nj)
    allocate( field(1:ni,1:nj,1:nk) )
-   allocate( bv(1:nk,1:nk,1:num_bins2d) )
-   field(:,:,:) = 0.0
-   bv(:,:,:) = 0.0
-
-   allocate( bin_pts2d(1:num_bins2d) )
-   bin_pts2d(:) = 0
-
-      allocate( work(1:nk,1:nk) )
-      allocate( e_vec_loc(1:nk,1:nk,1:num_bins2d) )
-      allocate( e_val_loc(1:nk,1:num_bins2d) )
-      allocate( e_vec(1:nk,1:nk) )
-      allocate( e_val(1:nk) )
-      allocate( evec(1:nj,1:nk,1:nk) )
-      allocate( eval(1:nj,1:nk) )
 
    if ( trim(be_method) == 'NMC' ) then
       istart_member = 1
@@ -1788,12 +1774,25 @@ subroutine compute_bv_sl
 
       if ( myproc == root ) write(stdout,'(4a)')'====== Computing vertical error eigenvalues, eigenvectors ======'
 
+      allocate( bv(1:nk,1:nk,1:num_bins2d) )
+      allocate( bin_pts2d(1:num_bins2d) )
+      allocate( work(1:nk,1:nk) )
+      allocate( e_vec_loc(1:nk,1:nk,1:num_bins2d) )
+      allocate( e_val_loc(1:nk,1:num_bins2d) )
+      allocate( e_vec(1:nk,1:nk) )
+      allocate( e_val(1:nk) )
+      allocate( evec(1:nj,1:nk,1:nk) )
+      allocate( eval(1:nj,1:nk) )
+
       var_loop: do iv = 1, nvar
 
          if ( .not. read_it(iv) ) cycle var_loop
          if ( myproc /= MOD((iv-1), num_procs) ) cycle var_loop
 
          write(stdout,'(a,i3,2a)') ' Proc', myproc, ' Processing vertical error stats for variable ', trim(varnames(iv))
+
+         bv(:,:,:) = 0.0
+         bin_pts2d(:) = 0
 
          if ( var_dim(iv) == 2 ) then
             nkk = 1
@@ -1908,9 +1907,8 @@ subroutine compute_bv_sl
             end do
          end do
 
-         !if ( myproc == root ) write(stdout,'(a)')' Projecting fields onto vertical modes'
-
          if ( var_dim(iv) == 3 ) then
+            if ( myproc == root ) write(stdout,'(a)')' Projecting fields onto vertical modes'
             do ic = 1, ncase
                do ie = istart_member, iend_member
                   !write(stdout,'(5a,i4)')'    Date = ', filedates(ie,ic), ', variable ', trim(varnames(iv)), &
@@ -1949,6 +1947,16 @@ subroutine compute_bv_sl
          end do
       end do
 #endif
+
+      deallocate( eval )
+      deallocate( evec )
+      deallocate( e_val )
+      deallocate( e_vec )
+      deallocate( e_val_loc )
+      deallocate( e_vec_loc )
+      deallocate( work )
+      deallocate( bin_pts2d )
+      deallocate( bv )
 
    end if ! do_eof_transform
 

@@ -1,7 +1,7 @@
 
-*** gen_be_b3.F90 is a user-contribute program and is provided as it is. ***
-*** gen_be_b3.F90 is for univariate processing only. ***
-*** gen_be_b3.F90 is for bin_type=5 (domain-average BE statistics) only. ***
+*** gen_be_v3.F90 is a user-contribute program and is provided as it is. ***
+*** gen_be_v3.F90 is for univariate processing only. ***
+*** gen_be_v3.F90 is for bin_type=5 (domain-average BE statistics) only. ***
 
 1. To compile:
 

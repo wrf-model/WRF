@@ -965,6 +965,9 @@ state   real   QSFC             ij     misc        1         -      r        "QS
 state   real   AKHS             ij     misc        1         -      r        "AKHS"                  "SFC EXCH COEFF FOR HEAT"                      "m s-1"    
 state   real   AKMS             ij     misc        1         -      r        "AKMS"                  "SFC EXCH COEFF FOR MOMENTUM"                  "m s-1"    
 state   integer KPBL            ij     misc        1         -     r         "KPBL"                  "LEVEL OF PBL TOP"                             ""
+state   real   U10E             ij     misc        1         -     irhdu     "U10E"                  "Special U at 10 M from MYJSFC"         "m s-1"
+state   real   V10E             ij     misc        1         -     irhdu     "V10E"                  "Special V at 10 M from MYJSFC"         "m s-1"
+
 #BSINGH - For CuP
 #~wig: added real pbl level index for output tests
 state   real   AKPBL            ij     misc        1         -      r        "AKPBL"                  "LEVEL OF PBL TOP"                             ""

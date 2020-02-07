@@ -31,7 +31,7 @@ CONTAINS
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
      &          ,t_phy,u10,udrunoff,ust,uz0                           &
-     &          ,u_frame,u_phy,v10,vegfra,uoce,voce                   &
+     &          ,u_frame,u_phy,v10,vegfra,u10e,v10e,uoce,voce         &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt    &
      &          ,max_edom,cplmask                                     &
 #if (HWRF==1)
@@ -817,6 +817,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   TSHLTR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   U10
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   V10
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   U10E
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   V10E
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   UOCE
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   VOCE
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSFC
@@ -2066,7 +2068,7 @@ CONTAINS
                 br,                                                 &
                 chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
                 u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
-                p1000mb,                                             &
+                p1000mb,u10e,v10e,                                   &
                 ids,ide, jds,jde, kds,kde,                           &
                 ims,ime, jms,jme, kms,kme,                           &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -2083,7 +2085,7 @@ CONTAINS
               br,                                                 &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
               u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
-              p1000mb,                                             &
+              p1000mb,u10e,v10e,                                   &
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -4151,7 +4153,7 @@ CONTAINS
         &     CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,     &
         &     QGH,CPM,CT,                                 &
         &     U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR,          &
-        &     P1000,                                        &
+        &     P1000,U10E,V10E,                            &
         &     IDS,IDE,JDS,JDE,KDS,KDE,                        &
         &     IMS,IME,JMS,JME,KMS,KME,                        &
         &     ITS,ITE,JTS,JTE,KTS,KTE )
@@ -4224,6 +4226,8 @@ CONTAINS
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CT
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: U10
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: V10
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: U10E
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: V10E
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: T02
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: TH02
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: TSHLTR
@@ -4246,6 +4250,8 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: ct_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: u10_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: v10_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: u10e_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: v10e_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: t02_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: th02_sea
      REAL, DIMENSION( ims:ime, jms:jme ) :: tshltr_sea
@@ -4384,7 +4390,7 @@ CONTAINS
           &        QGH, CPM, CT, U10, V10, T02,                    &  ! 0,0,0,0,0,0,
           &        TH02, TSHLTR, TH10, Q02,                        &  ! 0,0,0,0,
           &        QSHLTR, Q10, PSHLTR,                            &  ! 0,0,0,
-          &        P1000,                                        &  ! I
+          &        P1000, U10E, V10E,                              &  ! I
           &        ids,ide, jds,jde, kds,kde,                      &
           &        ims,ime, jms,jme, kms,kme,                      &
           &        its,ite, jts,jte, kts,kte    )
@@ -4438,7 +4444,7 @@ CONTAINS
           &        CHS_SEA, CHS2_SEA, CQS2_SEA, HFX_SEA, QFX_SEA, FLX_LH_SEA, FLHC_SEA,        & ! 0,0,0,0,0,0,0,
           &        FLQC_SEA, QGH_SEA, CPM_SEA, CT_SEA, U10_SEA, V10_SEA, T02_SEA, TH02_SEA,    & ! 0,0,0,0,0,0,0,0,
           &        TSHLTR_SEA, TH10_SEA, Q02_SEA, QSHLTR_SEA, Q10_SEA, PSHLTR_SEA,             & ! 0,0,0,0,0,0,
-          &        p1000,                                                                    & ! I
+          &        p1000, u10e_sea,  v10e_sea,                                                 & ! I
           &        ids,ide, jds,jde, kds,kde,                                                  &
           &        ims,ime, jms,jme, kms,kme,                                                  &
           &        its,ite, jts,jte, kts,kte    )
@@ -4474,6 +4480,8 @@ CONTAINS
               T02(i,j)    = T02(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * T02_SEA(i,j)
               U10(i,j)    = U10(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * U10_SEA(i,j)
               V10(i,j)    = V10(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * V10_SEA(i,j)
+              U10E(i,j)   = U10E(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * U10E_SEA(i,j)
+              V10E(i,j)   = V10E(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * V10E_SEA(i,j)
 
               ! INTENT(INOUT):  updated by MYJSFC
               ! QSFC:  wait

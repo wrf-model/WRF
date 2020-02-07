@@ -308,6 +308,10 @@ BENCH_START(rad_driver_tim)
      &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
      &        ,XTIME=grid%xtime                                                &
               ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag       &
+     &        ,mut=grid%mut,dnw=grid%dnw                                  & ! FARMS coupling
+     &        ,swdown2=grid%swdown2, swddni2=grid%swddni2                 & ! FARMS coupling
+     &        ,swddif2=grid%swddif2, swddir2=grid%swddir2                 & ! FARMS coupling
+     &        ,swdownc2=grid%swdownc2, swddnic2=grid%swddnic2             & ! FARMS coupling
 !BSINGH - For WRFCuP scheme
      &        ,CU_PHYSICS=config_flags%cu_physics                         & !CuP, wig 5-Oct-2006
      &        ,SHALLOWCU_FORCED_RA=config_flags%shallowcu_forced_ra       & !CuP, wig

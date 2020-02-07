@@ -615,6 +615,8 @@ Namelist variables for controlling the adaptive time step option:
                                             between SW call
                                      = 0,  ! no interpolation
                                      = 1,  ! use interpolation
+                                     = 2,  ! Calls the Fast All-Sky Radiation Model for Solar applications (FARMS)
+                                           ! every model time step. 
  cam_abs_freq_s                      = 21600  ! default CAM clearsky longwave absorption calculation frequency
                                                 (recommended minimum value to speed scheme up)
  levsiz                              = 59     ! for CAM radiation input ozone levels, set automatically

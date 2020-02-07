@@ -46,6 +46,9 @@ CONTAINS
               ,CAM_ABS_FREQ_S                                             &
               ,XTIME                                                      &
               ,CURR_SECS, ADAPT_STEP_FLAG                                 &
+              ,MUT, DNW                                                   &
+              ,SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2                         &
+              ,SWDOWNC2, SWDDNIC2                                         &
               !BSINGH - For WRFCuP scheme (optional args)
               ,cu_physics,shallowcu_forced_ra                             &
               ,cubot,cutop,cldfra_cup                                     &
@@ -237,6 +240,8 @@ CONTAINS
    
    USE module_ra_aerosol    , ONLY : calc_aerosol_goddard_sw, &
                                      calc_aerosol_rrtmg_sw
+   USE module_ra_farms      , ONLY : farms_driver
+
 
    !  This driver calls subroutines for the radiation parameterizations.
    !
@@ -466,6 +471,10 @@ CONTAINS
                                                            HTOPR, &
                                                            HBOTR, &
                                                            CUPPT
+     ! FARMS coupling
+   REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(IN) ::  MUT
+   REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: DNW
+
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                 &
         INTENT(INOUT)  ::                                         &
@@ -605,6 +614,8 @@ CONTAINS
                                                              GLW
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)  ::   SWDOWN
+     ! PAJ: FARMS coupling
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)  ::   SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2, SWDOWNC2, SWDDNIC2
 
 ! ------------------------------------------------------------------------------ jararias 2013/08/10 -----------
    REAL, DIMENSION( ims:ime, jms:jme ),  INTENT(OUT) :: swddir, & ! All-sky SW broadband surface direct irradiance
@@ -964,7 +975,7 @@ CONTAINS
       radtacttime = curr_secs + radt*60
    END IF
 
-   if(swint_opt.eq.1) then
+   if(swint_opt.eq.1 .or. swint_opt == 2) then
       DO ij = 1 , num_tiles
          its = i_start(ij)
          ite = i_end(ij)
@@ -2126,6 +2137,12 @@ CONTAINS
                                     aer_ssa_val,aer_asy_val,taod5502d,angexp2d,aerssa2d,       &
                                     aerasy2d,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte,  &
                                     tauaer_sw,ssaaer_sw,asyaer_sw, taod5503d)
+
+           do j=jts,jte
+              do i=its,ite
+                    aod5502d(i,j)= taod5502d(i, j)
+              end do
+           end do
        ENDIF
      ENDIF
 
@@ -2723,6 +2740,34 @@ CONTAINS
                                coszen_ref,coszen_loc,swddir_ref, &
                                bb,Bx,swdown_ref,gg,Gx,albedo,    &
                                swdown,swddir,swddni,swddif,gsw   )
+    enddo
+    !$OMP END PARALLEL DO
+ end if
+
+   ! Coupling with FARMS
+ if (swint_opt == 2) then
+    call wrf_debug(100,'SW surface irradiance calculated with FARMS')
+
+    if (aer_opt == 1) then
+      DO j=jts,jte
+        DO i=its,ite
+          aod5502d(i, j) = aodtot(i, j)
+        ENDDO
+      ENDDO
+    end if
+
+    !---------------
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+    do ij = 1,num_tiles
+      its = i_start(ij)
+      ite = i_end(ij)
+      jts = j_start(ij)
+      jte = j_end(ij)
+      call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
+           p8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
+           coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
+           julian, mut, dnw, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
     enddo
     !$OMP END PARALLEL DO
  end if

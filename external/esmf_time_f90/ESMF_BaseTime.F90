@@ -2,7 +2,7 @@
 !==============================================================================
 !
 !     ESMF BaseTime Module
-      module ESMF_BaseTimeMod
+      module WRF_ESMF_BaseTimeMod
 !
 !==============================================================================
 !
@@ -16,7 +16,7 @@
 !
 !===============================================================================
 !BOPI
-! !MODULE: ESMF_BaseTimeMod - Base ESMF time definition 
+! !MODULE: WRF_ESMF_BaseTimeMod - Base ESMF time definition 
 !
 ! !DESCRIPTION:
 ! Part of Time Manager F90 API wrapper of C++ implemenation
@@ -28,7 +28,7 @@
 !
 !------------------------------------------------------------------------------
 ! !USES:
-      use ESMF_BaseMod    ! ESMF Base class
+      use WRF_ESMF_BaseMod    ! ESMF Base class
       implicit none
 !
 !------------------------------------------------------------------------------
@@ -307,4 +307,4 @@
       END FUNCTION ESMF_BaseTimeGE
 
 
-      end module ESMF_BaseTimeMod
+      end module WRF_ESMF_BaseTimeMod

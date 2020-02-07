@@ -2167,7 +2167,8 @@
      &             ,grid%acsnom,grid%ivgtyp,grid%isltyp,grid%sfcevp,grid%smc                     &
      &             ,grid%sh2o, grid%snowh, grid%smfr3d                                 &  ! temporary
      &             ,grid%SNOALB                                         &
-     &             ,GRID%DX,GRID%DY,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy    &
+     &             ,GRID%DX,GRID%DY,GRID%DX_NMM,GRID%AREA_NMM           &
+     &             ,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy     &
      &             ,grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state           &
      &             ,ALLOWED_TO_READ,grid%moved,START_OF_SIMULATION                    &
      &             ,1                                                   & ! lagday

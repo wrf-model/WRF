@@ -215,6 +215,8 @@ module da_define_structures
       real, pointer           :: model_t(:)
       real, pointer           :: model_rho(:)
       real, pointer           :: model_qrn(:)
+      real, pointer           :: model_qcl(:)
+      real, pointer           :: model_qci(:)
       real, pointer           :: model_qsn(:)
       real, pointer           :: model_qgr(:)
       real, pointer           :: model_zmm(:)  ! reflectivity in mm^6 mm^-3
@@ -227,10 +229,14 @@ module da_define_structures
       type (field_type)     , pointer :: rf       (:) ! Reflectivity
       type (field_type)     , pointer :: zmm      (:) ! Reflectivity (mm^6 mm^-3)
       type (field_type)     , pointer :: rrn      (:) ! qrain
+      type (field_type)     , pointer :: rcl      (:) !
+      type (field_type)     , pointer :: rci      (:) !
       type (field_type)     , pointer :: rsn      (:) ! qsnow
       type (field_type)     , pointer :: rgr      (:) ! qgraupel
       type (field_type)     , pointer :: rqv      (:)
       real                  , pointer :: rrno     (:)
+      real                  , pointer :: rclo     (:)
+      real                  , pointer :: rcio     (:)
       real                  , pointer :: rsno     (:)
       real                  , pointer :: rgro     (:)
       real                  , pointer :: rqvo     (:)
@@ -700,6 +706,8 @@ module da_define_structures
       type (bad_info_type)       :: rrn
       type (bad_info_type)       :: rsn
       type (bad_info_type)       :: rgr
+      type (bad_info_type)       :: rcl
+      type (bad_info_type)       :: rci
       type (bad_info_type)       :: rqv
       type (bad_info_type)       :: slp
       type (bad_info_type)       :: rad
@@ -840,6 +848,8 @@ module da_define_structures
       real, pointer :: rv(:)                    ! rv
       real, pointer :: rf(:)                    ! rf
       real, pointer :: rrn(:)                   ! rrain
+      real, pointer :: rcl(:)                   ! 
+      real, pointer :: rci(:)                   !
       real, pointer :: rsn(:)                   ! rsnow
       real, pointer :: rgr(:)                   ! rgraupel
       real, pointer :: rqv(:) 
@@ -938,7 +948,7 @@ module da_define_structures
       real                :: qscat_u, qscat_v
       real                :: profiler_u, profiler_v
       real                :: buoy_u, buoy_v, buoy_t, buoy_p, buoy_q
-      real                :: radar_rv, radar_rf, radar_rrn,radar_rsn,radar_rgr,radar_rqv
+      real                :: radar_rv, radar_rf, radar_rrn,radar_rsn,radar_rgr,radar_rcl,radar_rci,radar_rqv
       real                :: bogus_u, bogus_v, bogus_t, bogus_q, bogus_slp
       real                :: airsr_t, airsr_q
       real                :: rain_r

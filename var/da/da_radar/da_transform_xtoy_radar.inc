@@ -187,10 +187,10 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
                    prs=model_p(k,n)
                    zmm=iv % radar(n) % zmm(k) % inv
                    zmm_ref=0
-                   call RadZIceVar(model_qvb(k,n),model_qrnb(k,n),model_qsnb(k,n),model_qgrb(k,n),qnr,qns,qng,tmk,prs,dbz,                   &
-                                   1,1,1,0,0,0,rn0_r,rn0_s,rn0_g,                                                                            &
-                                   rhos,rhog,model_t(k,n),model_qv(k,n),model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),dqnr,dqns,dqng,zmm,2,   &
-                                   0,zmm_ref)
+                   call da_radzicevar_tl(model_qvb(k,n),model_qrnb(k,n),model_qsnb(k,n),model_qgrb(k,n),qnr,qns,qng,tmk,prs,dbz,                   &
+                                      0,0,0,rn0_r,rn0_s,rn0_g,                                                                                  &
+                                      rhos,rhog,model_t(k,n),model_qv(k,n),model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),dqnr,dqns,dqng,zmm,2,   &
+                                      0,zmm_ref)
                    y%radar(n)%rf(k) =radar_rf_rscl*dbz
                  end select
               end if

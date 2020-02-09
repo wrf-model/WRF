@@ -9,7 +9,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    !-----------------------------------------------------------------------
 
    !------------------------------------------------------------------------
-   ! This subroutine is the adjoint of Doppler radar observation operators.
+   ! This subroutine is the adj of Doppler radar observation operators.
    !------------------------------------------------------------------------
 
    implicit none
@@ -174,10 +174,10 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
                    zmm=iv % radar(n) % zmm(k) % inv
                    zmm_ref=radar_rf_rscl*jo_grad_y%radar(n)%rf(k)
  
-                   call RadZIceVar(model_qvb(k,n),model_qrnb(k,n),model_qsnb(k,n),model_qgrb(k,n),qnr,qns,qng,tmk,prs,dbz,                  &
-                                   1,1,1,0,0,0,rn0_r,rn0_s,rn0_g,                                                                           &
-                                   rhos,rhog,dtmk,dqvp,dqra,dqsn,dqgr,dqnr,dqns,dqng,zmm,2,                                                 &
-                                   2,zmm_ref)
+                   call da_radzicevar_adj(model_qvb(k,n),model_qrnb(k,n),model_qsnb(k,n),model_qgrb(k,n),qnr,qns,qng,tmk,prs,dbz,                  &
+                                      0,0,0,rn0_r,rn0_s,rn0_g,                                                                                 &
+                                      rhos,rhog,dtmk,dqvp,dqra,dqsn,dqgr,dqnr,dqns,dqng,zmm,2,                                                 &
+                                      2,zmm_ref)
                    model_qrn(k,n) = dqra
                    model_qsn(k,n) = dqsn
                    model_qgr(k,n) = dqgr

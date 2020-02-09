@@ -907,8 +907,8 @@ CONTAINS
         LTOP=KTE
         PBOT=PRSMID(LMH)
         PTOP=PBOT
-!        CLDEFI=AVGEFI*SM+STEFI*(1.-SM)
-        CLDEFI=(EFIMN-0.2)*SM+(1.+0.2)*(1.-SM)
+        CLDEFI=AVGEFI*SM+STEFI*(1.-SM)
+!       CLDEFI=(EFIMN-0.2)*SM+(1.+0.2)*(1.-SM)
         GO TO 800
       ENDIF
 !
@@ -921,7 +921,7 @@ CONTAINS
         DEEP=.TRUE.
       ELSE
         SHALLOW=.TRUE.
-        CLDEFI=(EFIMN-0.1)*SM+(1.+0.1)*(1.-SM)
+!       CLDEFI=(EFIMN-0.1)*SM+(1.+0.1)*(1.-SM)
         GO TO 600
       ENDIF
 !
@@ -1238,8 +1238,8 @@ CONTAINS
 !        ENDIF
 !
 !        CLDEFI=AVGEFI
-!        CLDEFI=EFIMN*SM+STEFI*(1.-SM)
-         CLDEFI=(EFIMN-0.1)*SM+(1.+0.1)*(1.-SM)
+         CLDEFI=EFIMN*SM+STEFI*(1.-SM)
+!        CLDEFI=(EFIMN-0.1)*SM+(1.+0.1)*(1.-SM)
 !***
 !***  SEARCH FOR SHALLOW CLOUD TOP
 !***

@@ -58,8 +58,6 @@ CONTAINS
               ,j_start,j_end                                              &
               ,kts, kte                                                   &
               ,num_tiles                                                  &
-              ,CCLDFRA, QCCONV, QICONV                                    &
-              ,bmj_rad_feedback                                           &
             ! Optional
               , TLWDN, TLWUP                        & ! goddard schemes
               , SLWDN, SLWUP                        & ! goddard schemes
@@ -74,6 +72,8 @@ CONTAINS
               , COD2D_OUT                           & ! goddardrad
               , CTOP2D_OUT                          & ! goddardrad
               , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU       &
+	      ,CCLDFRA, QCCONV, QICONV                                    &
+              ,bmj_rad_feedback                                           &
 #if (EM_CORE == 1)
               , lradius,iradius                                           &
 #endif

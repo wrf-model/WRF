@@ -869,19 +869,12 @@ module da_define_structures
    type residual_radar_type
       real, pointer :: rv(:)                    ! rv
       real, pointer :: rf(:)                    ! rf
-<<<<<<< HEAD
-      real, pointer :: rrn(:)                   ! rrain
       real, pointer :: rcl(:)                   ! 
       real, pointer :: rci(:)                   !
-      real, pointer :: rsn(:)                   ! rsnow
-      real, pointer :: rgr(:)                   ! rgraupel
-      real, pointer :: rqv(:) 
-=======
       real, pointer :: rrn(:) => null()         ! rrain
       real, pointer :: rsn(:) => null()         ! rsnow
       real, pointer :: rgr(:) => null()         ! rgraupel
       real, pointer :: rqv(:) => null()
->>>>>>> develop
    end type residual_radar_type
 
    type residual_instid_type

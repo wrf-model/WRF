@@ -2711,6 +2711,28 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! If a user selected LOGICAL fire-related switches, convert those to
+! INTEGER for the package allocation assignment required in the 
+! registry file.
+!-----------------------------------------------------------------------
+
+#if (EM_CORE == 1)
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % fmoist_run(i) .EQV. .TRUE.  ) THEN
+            model_config_rec % fmoisti_run(i) = 1
+         ELSE 
+            model_config_rec % fmoisti_run(i) = 0
+         END IF
+         IF ( model_config_rec % fmoist_interp(i) .EQV. .TRUE.  ) THEN
+            model_config_rec % fmoisti_interp(i) = 1
+         ELSE 
+            model_config_rec % fmoisti_interp(i) = 0
+         END IF
+      ENDDO
+#endif
+
+!-----------------------------------------------------------------------
 ! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that we don't get 
 ! additional output 
 !-----------------------------------------------------------------------

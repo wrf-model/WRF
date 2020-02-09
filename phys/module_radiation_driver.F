@@ -58,23 +58,8 @@ CONTAINS
               ,j_start,j_end                                              &
               ,kts, kte                                                   &
               ,num_tiles                                                  &
-              ,CCLDFRA, QCCONV, QICONV                                    &
-              ,bmj_rad_feedback                                           &
             ! Optional
-              , TLWDN, TLWUP                        & ! goddard schemes
-              , SLWDN, SLWUP                        & ! goddard schemes
-              , TSWDN, TSWUP                        & ! goddard schemes
-              , SSWDN, SSWUP                        & ! goddard schemes
-              , RE_CLOUD_GSFC                       & ! goddard
-              , RE_RAIN_GSFC                        & ! goddard
-              , RE_ICE_GSFC                         & ! goddard
-              , RE_SNOW_GSFC                        & ! goddard
-              , RE_GRAUPEL_GSFC                     & ! goddard
-              , RE_HAIL_GSFC                        & ! goddard
-              , COD2D_OUT                           & ! goddardrad
-              , CTOP2D_OUT                          & ! goddardrad
-              , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU       &
-              , TLWDN, TLWUP                                              &
+	        , TLWDN, TLWUP                                              &
               , SLWDN, SLWUP                                              &
               , TSWDN, TSWUP                                              &
               , SSWDN, SSWUP                                              &
@@ -87,6 +72,8 @@ CONTAINS
               , COD2D_OUT                                                 &
               , CTOP2D_OUT                                                &
               , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU                             &
+              , CCLDFRA, QCCONV, QICONV                                   &
+              , bmj_rad_feedback                                          &
 #if (EM_CORE == 1)
               , lradius,iradius                                           &
 #endif

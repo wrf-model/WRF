@@ -56,9 +56,9 @@ CONTAINS
                      ,qg_curr                                         &
                      ,ng_curr,qh_curr,nh_curr,qr_curr,nr_curr         & !  Optional (gthompsn)
                      ,rho,ph,phb,g                                    &
+                     ,max_time_step,adaptive_ts                       &
                                                                       )
 !----------------------------------------------------------------------
-
   USE module_dm, ONLY: wrf_dm_sum_real, wrf_dm_maxval
   USE module_state_description, ONLY :                                  &
       KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
@@ -263,6 +263,11 @@ CONTAINS
       REAL:: mvd_r, xslw1, ygra1, zans1
       INTEGER:: ng, n
 
+   REAL                                       :: time_from_output
+   INTEGER                                    :: max_time_step
+   LOGICAL                                    :: adaptive_ts
+   LOGICAL                                    :: reset_arrays = .FALSE.
+
 !-----------------------------------------------------------------
 ! Handle accumulations with buckets to prevent round-off truncation in long runs
 ! This is done every 360 minutes assuming time step fits exactly into 360 minutes
@@ -442,18 +447,41 @@ CONTAINS
    IF ( nwp_diagnostics .EQ. 1 ) THEN
 
      idump = (history_interval * 60.) / dt
-
-!   print *,' history_interval = ', history_interval
-!   print *,' itimestep        = ', itimestep
-!   print *,' idump            = ', idump
-!   print *,' xtime            = ', xtime
-
-
+     
 ! IF ( MOD(itimestep, idump) .eq. 0 ) THEN
 !    WRITE(outstring,*) 'Computing PH0 for this domain with curr_secs2 = ', curr_secs2
 !    CALL wrf_message ( TRIM(outstring) )
+   
+   time_from_output = mod( xtime, REAL(history_interval) )
 
-   IF ( MOD((itimestep - 1), idump) .eq. 0 ) THEN
+!   print *,' history_interval     = ', history_interval
+!   print *,' itimestep            = ', itimestep
+!   print *,' idump                = ', idump
+!   print *,' xtime                = ', xtime
+!   print *,' time_from_output     = ', time_from_output
+!   print *,' max_time_step        = ', max_time_step
+   
+   IF ( adaptive_ts .EQV. .TRUE. ) THEN
+!     if timestep is adaptive, use new resetting method;
+!     also, we are multiplying max_time_step with 1.05; because of rounding error, 
+!     the time_from_output can become slightly larger than max_time_step when
+!     adaptive time step is maximized, in which case the if condition below fails to detect
+!     that we just wrote an output
+       IF ( ( time_from_output .GT. 0 ) .AND. ( time_from_output .LE. ( ( max_time_step * 1.05 ) / 60. ) ) )  THEN 
+          reset_arrays = .TRUE.
+       ENDIF
+   ELSE
+!     if timestep is fixed, use original resetting method
+      IF ( MOD((itimestep - 1), idump) .eq. 0 )  THEN
+        reset_arrays = .TRUE.
+      ENDIF
+   ENDIF
+
+!   print *,' reset_arrays = ', reset_arrays
+   IF ( reset_arrays .EQV. .TRUE. ) THEN
+
+!   print *,' Resetting NWP max arrays '
+   
      WRITE(outstring,*) 'NSSL Diagnostics: Resetting max arrays for domain with dt = ', dt
      CALL wrf_debug ( 10,TRIM(outstring) )
 
@@ -475,6 +503,7 @@ CONTAINS
        ENDDO
      ENDDO
 !  !$OMP END PARALLEL DO
+     reset_arrays = .FALSE.
    ENDIF
 
 !  !$OMP PARALLEL DO   &
@@ -806,13 +835,6 @@ CONTAINS
      CASE (THOMPSON, THOMPSONAERO)
 
        scheme_has_graupel = .true.
-       xmu_g = 1.
-       cge(1) = xbm_g + 1.
-       cge(2) = xmu_g + 1.
-       cge(3) = xbm_g + xmu_g + 1.
-       do n = 1, 3
-          cgg(n) = WGAMMA(cge(n))
-       enddo
 
 !  !$OMP PARALLEL DO   &
 !  !$OMP PRIVATE ( ij )
@@ -821,7 +843,7 @@ CONTAINS
        DO i=i_start(ij),i_end(ij)
         DO k=kme-1, kms, -1
          if (temp_qg(i,k,j) .LT. 1.E-6) CYCLE
-         zans1 = (2.5 + 2./7. * (ALOG10(temp_qg(i,k,j))+7.))
+         zans1 = (2.5 + 2.5/7. * (ALOG10(temp_qg(i,k,j))+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
          N0exp = 10.**zans1
          lam_exp = (N0exp*xam_g*cgg(1)/temp_qg(i,k,j))**(1./cge(1))
@@ -833,7 +855,6 @@ CONTAINS
        ENDDO
       ENDDO
 !  !$OMP END PARALLEL DO
-
 
 !    CASE (MORR_MILB_P3)
 !      scheme_has_graupel = .true.

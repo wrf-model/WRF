@@ -21,6 +21,7 @@ module da_define_structures
       trace_use_dull,comm, num_pseudo
    use da_control, only : cloud_cv_options, use_cv_w
    use da_control, only : pseudo_uvtpq
+   use da_control, only : use_radar_rhv, use_radar_rqv
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -228,18 +229,18 @@ module da_define_structures
       type (field_type)     , pointer :: rv       (:) ! Radial Velocity
       type (field_type)     , pointer :: rf       (:) ! Reflectivity
       type (field_type)     , pointer :: zmm      (:) ! Reflectivity (mm^6 mm^-3)
-      type (field_type)     , pointer :: rrn      (:) ! qrain
       type (field_type)     , pointer :: rcl      (:) !
       type (field_type)     , pointer :: rci      (:) !
-      type (field_type)     , pointer :: rsn      (:) ! qsnow
-      type (field_type)     , pointer :: rgr      (:) ! qgraupel
-      type (field_type)     , pointer :: rqv      (:)
-      real                  , pointer :: rrno     (:)
       real                  , pointer :: rclo     (:)
       real                  , pointer :: rcio     (:)
-      real                  , pointer :: rsno     (:)
-      real                  , pointer :: rgro     (:)
-      real                  , pointer :: rqvo     (:)
+      type (field_type)     , pointer :: rrn      (:) => null() ! qrain
+      type (field_type)     , pointer :: rsn      (:) => null() ! qsnow
+      type (field_type)     , pointer :: rgr      (:) => null() ! qgraupel
+      type (field_type)     , pointer :: rqv      (:) => null()
+      real                  , pointer :: rrno     (:) => null()
+      real                  , pointer :: rsno     (:) => null()
+      real                  , pointer :: rgro     (:) => null()
+      real                  , pointer :: rqvo     (:) => null()
    end type radar_type
 
    type multi_level_type
@@ -412,6 +413,25 @@ module da_define_structures
       type (field_type)     , pointer :: t        (:) ! temperature.
       type (field_type)     , pointer :: q        (:) ! q.
    end type tamdar_type
+
+   type varbc_tamdar_type
+      character(len=40)               :: fmt_param    ! Format of parameter table
+      integer                         :: nmaxpred     ! Max. No. of predictors
+      integer                         :: nphase       ! No. of flight phases
+      integer                         :: nair         ! No. of aircrafts in table
+      integer                         :: npred        ! No. of predictors
+      integer                         :: nmaxobs      ! Max Obs No.
+      integer               , pointer :: nobs    (:,:)! Obs No. in proc
+      integer               , pointer :: nobs_sum(:,:)! Total Obs No.
+      integer               , pointer :: tail_id   (:)! Tail ID of aircrafts
+      integer               , pointer :: obs_sn(:,:,:)! Serial No. of Obs in proc
+      integer               , pointer :: ifuse   (:,:)! run varbc or not
+      integer               , pointer :: index (:,:,:)! Index in CV
+      real                  , pointer :: pred  (:,:,:)! Predictors
+      real                  , pointer :: param (:,:,:)! Parameters
+      real                  , pointer :: bgerr (:,:,:)! Bkg err in Hessian
+      real                  , pointer :: vtox(:,:,:,:)! Transformation of CV
+   end type varbc_tamdar_type
 
    type airsr_type
       real                  , pointer :: h        (:) ! Height in m
@@ -673,6 +693,8 @@ module da_define_structures
       type (synop_type)    , pointer :: tamdar_sfc(:)
       type (rain_type)     , pointer :: rain(:)
 
+      type (varbc_tamdar_type) :: varbc_tamdar
+
       real :: missing
       real :: ptop
    end type iv_type
@@ -847,12 +869,19 @@ module da_define_structures
    type residual_radar_type
       real, pointer :: rv(:)                    ! rv
       real, pointer :: rf(:)                    ! rf
+<<<<<<< HEAD
       real, pointer :: rrn(:)                   ! rrain
       real, pointer :: rcl(:)                   ! 
       real, pointer :: rci(:)                   !
       real, pointer :: rsn(:)                   ! rsnow
       real, pointer :: rgr(:)                   ! rgraupel
       real, pointer :: rqv(:) 
+=======
+      real, pointer :: rrn(:) => null()         ! rrain
+      real, pointer :: rsn(:) => null()         ! rsnow
+      real, pointer :: rgr(:) => null()         ! rgraupel
+      real, pointer :: rqv(:) => null()
+>>>>>>> develop
    end type residual_radar_type
 
    type residual_instid_type
@@ -965,6 +994,7 @@ module da_define_structures
       real             :: jl
       real             :: jd
       real             :: jm
+      real             :: jt
       type (jo_type)   :: jo
    end type j_type
 
@@ -975,6 +1005,7 @@ module da_define_structures
       integer :: size_jp     ! Size of CV array for Jp term.
       integer :: size_js     ! Size of CV array for Js term.
       integer :: size_jl     ! Size of CV array for Jl term.
+      integer :: size_jt     ! Size of CV array for Jt term.
       integer :: size1c      ! Complex size of CV array of 1st variable error.
       integer :: size2c      ! Complex size of CV array of 2nd variable error.
       integer :: size3c      ! Complex size of CV array of 3rd variable error.

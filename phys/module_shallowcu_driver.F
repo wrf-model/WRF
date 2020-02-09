@@ -15,7 +15,8 @@ CONTAINS
                      ,p,pi,rho,moist                                  &
                  ! --Other arguments
                      ,num_moist                                       &
-                     ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
+                     ,itimestep,dt,dx,dx2d,area2d                     &
+                     ,cudt,curr_secs,adapt_step_flag                  &
                      ,rainsh,pratesh,nca,rainshv                      &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w                   &
                      ,tke_pbl                                         &
@@ -304,6 +305,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ) :: tmppratesh
                                                     
    REAL,  INTENT(IN   ) :: DT, DX
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN), OPTIONAL :: &
+        DX2D, AREA2D
    INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
                                       ips,ipe, jps,jpe, kps,kpe
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT

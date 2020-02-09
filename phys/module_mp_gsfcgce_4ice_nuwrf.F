@@ -33,7 +33,7 @@ MODULE module_mp_gsfcgce_4ice_nuwrf
 #endif
    USE module_mp_radar
 
-   INTEGER, PARAMETER, PRIVATE:: CHUNK = 16
+   INTEGER, PARAMETER, PRIVATE:: chunk = 16
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
@@ -4955,7 +4955,9 @@ CONTAINS
 ! Calculate cloud droplet effective radius
    real function eff_rad(lambda)
 
+#ifndef NO_IEEE_MODULE
       use, intrinsic :: ieee_arithmetic
+#endif
       implicit none
 
 !---------------------------------------------------------------------------------------------------
@@ -4972,7 +4974,11 @@ CONTAINS
 !
 ! for no particles.
 !
+#ifndef NO_IEEE_MODULE
        if ( lambda <= 0.e0  .or. ieee_is_nan(lambda) ) then
+#else
+       if ( lambda <= 0.e0                           ) then
+#endif
           eff_rad = 0.e0
           return
        endif

@@ -463,7 +463,8 @@ Namelist variables for controlling the adaptive time step option:
  dfi_fwdstop_hour                    = 12       ! two-digit month of stop time for forward DFI integration
  dfi_fwdstop_minute                  = 00       ! two-digit month of stop time for forward DFI integration
  dfi_fwdstop_second                  = 00       ! two-digit month of stop time for forward DFI integration
- dfi_radar                           = 0        ! DFI radar da switch
+ dfi_savehydmeteors                  = 0        ! option for radar DA: 0: set hydrometeors to 0 before DFI and
+                                                  let them spin up in DFI; 1: keep them unchanged in DFI
 
  &physics
 
@@ -507,6 +508,8 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
+                                     = 24, WSM 7-class scheme (separate hail and graupel categories)
+                                     = 26, WDM 7-class scheme (separate hail and graupel categories)
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
                                        This option has two climatological aerosol input options:
@@ -612,6 +615,8 @@ Namelist variables for controlling the adaptive time step option:
                                             between SW call
                                      = 0,  ! no interpolation
                                      = 1,  ! use interpolation
+                                     = 2,  ! Calls the Fast All-Sky Radiation Model for Solar applications (FARMS)
+                                           ! every model time step. 
  cam_abs_freq_s                      = 21600  ! default CAM clearsky longwave absorption calculation frequency
                                                 (recommended minimum value to speed scheme up)
  levsiz                              = 59     ! for CAM radiation input ozone levels, set automatically
@@ -656,7 +661,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0, no surface-layer
                                      = 1, Revised MM5 Monin-Obukhov scheme (Jimenez, renamed in v3.6)
                                      = 2, Monin-Obukhov (Janjic) scheme
-                                     = 3, NCEP Global Forecast System scheme (NMM only)
+                                     = 3, NCEP Global Forecast System scheme 
                                      = 4, QNSE surface layer
                                      = 5, MYNN surface layer
                                      = 7, Pleim-Xiu surface layer (ARW only)
@@ -695,7 +700,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0, no boundary-layer 
                                      = 1, YSU scheme
                                      = 2, Mellor-Yamada-Janjic TKE scheme
-                                     = 3, Hybrid EDMF GFS scheme (NMM only)
+                                     = 3, Hybrid EDMF GFS scheme 
                                      = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
                                      = 5, MYNN 2.5 level TKE scheme, works with
                                           sf_sfclay_physics=1 or 2 as well as 5
@@ -950,6 +955,8 @@ Namelist variables for controlling the adaptive time step option:
  shadlen                             = 25000.   ! max shadow length in meters for topo_shading=1
  sf_ocean_physics                    = 0        ! activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathymetry)
  oml_hml0                            = 50       ! oml model can be initialized with a constant depth everywhere (m)
+                                                  < 0, oml is initialized with real-time ocean mixed depth
+                                                  = 0, oml is initialized with climatological ocean mixed depth
  oml_gamma                           = 0.14     ! oml deep water lapse rate (K m-1)
  oml_relaxation_time                 = 0.       ! Relaxation time (in second) of mixed layer ocean model back to original values 
                                                   (an example value is 259200 sec. (3 days)) (new in 3.8)
@@ -1415,6 +1422,9 @@ The following are for observation nudging:
                                                       Note: option 2 and 3 are not recommended for DX > 2 km
                                                   4 = horizontal Smagorinsky first order closure
                                                       (recommended for real-data cases)
+                                                  5 = SMS-3DTKE scale-adaptive LES/PBL scheme. It must be
+                                                      used with diff_opt = 2. PBL schemes must be turned off
+                                                      (bl_pbl_physics=0). It can work with sf_sfclay_physics = 1, 5, 91.
  damp_opt                            = 0,	! upper level damping flag 
                                                   0 = without damping
                                                   1 = with diffusive damping, maybe used for real-data cases 
@@ -1517,7 +1527,7 @@ The following are for observation nudging:
  pos_def                             = .false.  ! T/F remove negative values of scalar arrays by setting minimum value to zero
  swap_pole_with_next_j               = .false.  ! T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
  actual_distance_average             = .false.  ! T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
- gwd_opt                             = 0       ! for running without gravity wave drag
+ gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
                                      = 1       ; for running the WRF-ARW with its gravity wave drag
                                      = 2       ; for running the WRF-NMM with its gravity wave drag
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
@@ -1556,6 +1566,10 @@ The following are for observation nudging:
                                      = .true. , ! use microphysics variables in bdy file
  have_bcs_scalar (max_dom)           = .false., ! model run after ndown only: do not use scalar variables in bdy file
                                      = .true. , ! use scalar variables in bdy file
+ multi_bdy_files                     = .false., ! F=default; T=model will run with split and individually named LBC files
+                                                  requires usage of bdy_inname = "wrfbdy_d<domain>_<date>"
+                                                  the real program can generate all LBC files in a single run
+                                                  only a single time period is in each separate LBC file
 
  euler_adv                           = .false., ! conservative Eulerian passive advection (NMM only)
  idtadt                              = 1,       ! fundamental timesteps between calls to Euler advection, dynamics (NMM only)

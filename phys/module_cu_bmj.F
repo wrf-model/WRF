@@ -18,7 +18,7 @@
      &                 ,EPSNTP=.0001,EPSNTT=.0001,EPSPR=1.E-7           &
      &                 ,EPSUP=1.00                                      &
      &                 ,FR=1.00,FSL=0.85,FSS=0.85                       &
-     &                 ,FUP=0.,CRMN=0.14                                &
+     &                 ,FUP=0.                                          &
      &                 ,PBM=13000.,PFRZ=15000.,PNO=1000.                &
      &                 ,PONE=2500.,PQM=20000.                           &
      &                 ,PSH=20000.,PSHU=45000.                          &
@@ -126,7 +126,6 @@ CONTAINS
       INTEGER :: LBOT,LPBL,LTOP
 !
       REAL :: DTCNVC,LANDMASK,PCPCOL,PSFC,PTOP
-      REAL :: PWCOL,DQCOL,DQCOLMIN
 ! 
       REAL,DIMENSION(KTS:KTE) :: DPCOL,DQDT,DTDT,PCOL,QCOL,TCOL
 !
@@ -170,12 +169,9 @@ CONTAINS
             DTDT(K)=0.
           ENDDO
 !
-          DQCOL=0.
-          PWCOL=0.
-          PCPCOL=0.
-          DQCOLMIN=0.
           RAINCV(I,J)=0.
           PRATEC(I,J)=0.
+          PCPCOL=0.
           PSFC=PINT(I,LOWLYR(I,J),J)
           PTOP=PINT(I,KTE+1,J)      ! KTE+1=KME
 !
@@ -216,7 +212,6 @@ CONTAINS
           CALL BMJ(ITIMESTEP,I,J,DTCNVC,LMH,LANDMASK,CLDEFI(I,J)        &
      &            ,DPCOL,PCOL,QCOL,TCOL,PSFC,PTOP                       &
      &            ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                      &
-     &            ,PWCOL,DQCOL,DQCOLMIN                                 &
      &            ,CP,R,ELWV,ELIV,G,TFRZ,D608                           &   
      &            ,PRINT_DIAG                                           &   
      &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &     
@@ -293,7 +288,6 @@ CONTAINS
      & (ITIMESTEP,I,J,DTCNVC,LMH,SM,CLDEFI                              &
      & ,DPRS,PRSMID,Q,T,PSFC,PT                                         &
      & ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                                 &
-     & ,PWCOL,DQCOL,DQCOLMIN                                            &
      & ,CP,R,ELWV,ELIV,G,TFRZ,D608                                      &
      & ,PRINT_DIAG                                                      &   
      & ,IDS,IDE,JDS,JDE,KDS,KDE                                         &
@@ -315,7 +309,7 @@ CONTAINS
 !
       REAL,DIMENSION(KTS:KTE),INTENT(IN) :: DPRS,PRSMID,Q,T
 !
-      REAL,INTENT(INOUT) :: CLDEFI,PCPCOL,PWCOL,DQCOL,DQCOLMIN
+      REAL,INTENT(INOUT) :: CLDEFI,PCPCOL
 !
       REAL,DIMENSION(KTS:KTE),INTENT(INOUT) :: DQDT,DTDT
 !
@@ -354,7 +348,7 @@ CONTAINS
      &            ,PART1,PART2,PART3,PBOT,PBOTFC,PBTK                   &
      &            ,PK0,PKB,PKL,PKT,PKXXXX,PKXXXY                        &
      &            ,PLMH,PELEVFC,PBTmx,plo,POTSUM,PP1,PPK,PRECK          &
-     &            ,PRWD,PDQD,PRESK,PSP,PSUM,PTHRS,PTOP,PTPK,PUP         &
+     &            ,PRESK,PSP,PSUM,PTHRS,PTOP,PTPK,PUP                   &
      &            ,QBT,QKL,QNEW,QOTSUM,QQ1,QQK,QRFKL                    &
      &            ,QRFTP,QSP,QSUM,QUP,RDP0T                             &
      &            ,RDPSUM,RDTCNVC,RHH,RHL,RHMAX,ROTSUM,RTBAR,RHAVG      &
@@ -412,10 +406,7 @@ CONTAINS
 !-----------------------------PREPARATIONS------------------------------
 !-----------------------------------------------------------------------
       LBOT=LMH
-      DQCOL=0.
-      PWCOL=0.
       PCPCOL=0.
-      DQCOLMIN=0.
       TREF(KTS)=T(KTS)
 !
       DO L=KTS,LMH
@@ -808,8 +799,7 @@ CONTAINS
         LTOP=KTE
         PBOT=PRSMID(LMH)
         PTOP=PBOT
-!        CLDEFI=AVGEFI*SM+STEFI*(1.-SM)
-        CLDEFI=(EFIMN-0.2)*SM+(1.+0.2)*(1.-SM)
+        CLDEFI=AVGEFI*SM+STEFI*(1.-SM)
         GO TO 800
       ENDIF
 !
@@ -822,7 +812,6 @@ CONTAINS
         DEEP=.TRUE.
       ELSE
         SHALLOW=.TRUE.
-        CLDEFI=(EFIMN-0.1)*SM+(1.+0.1)*(1.-SM)
         GO TO 600
       ENDIF
 !
@@ -1058,8 +1047,6 @@ CONTAINS
 !-----------------------------------------------------------------------
         AVRGT=0.
         PRECK=0.
-        PDQD=0.
-        PRWD=0.
         DSQ=0.
         DST=0.
 !
@@ -1073,8 +1060,6 @@ CONTAINS
           DSQ=DIFQL*EL(L)*DPOT+DSQ
           AVRGT=AVRGTL*DPRS(L)+AVRGT
           PRECK=DIFTL*DPRS(L)+PRECK
-          PDQD=(QK(L)-QREFK(L))*DPRS(L)+PDQD
-          PRWD=QK(L)*DPRS(L)+PRWD
           DIFT(L)=DIFTL
           DIFQ(L)=DIFQL
         ENDDO
@@ -1112,9 +1097,6 @@ CONTAINS
 !
         CUP=PRECK*CPRLG
         PCPCOL=CUP
-        DQCOL=PDQD/G
-        PWCOL=PRWD/G
-        DQCOLMIN=(CRMN*TREL)/(FEFI*86400.)
 !
         DO L=LTOP,LB
           DTDT(L)=DIFT(L)*FEFI*RDTCNVC
@@ -1139,8 +1121,7 @@ CONTAINS
 !        ENDIF
 !
 !        CLDEFI=AVGEFI
-!        CLDEFI=EFIMN*SM+STEFI*(1.-SM)
-         CLDEFI=(EFIMN-0.1)*SM+(1.+0.1)*(1.-SM)
+         CLDEFI=EFIMN*SM+STEFI*(1.-SM)
 !***
 !***  SEARCH FOR SHALLOW CLOUD TOP
 !***

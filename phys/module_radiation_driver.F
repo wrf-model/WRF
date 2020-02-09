@@ -1613,7 +1613,6 @@ CONTAINS
         DO k=kts,kte
         DO i=its,ite
            cldfra(I,K,J) = max(cldfra_sh(I,K,J), cldfra(I,K,J))
-           qc_save(I,K,J)=qc(I,K,J)
            qc(I,K,J)=cw_rad(I,K,J)+qc(I,K,J)
         ENDDO
         ENDDO

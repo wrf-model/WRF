@@ -58,7 +58,7 @@ subroutine da_ao_stats_radar (stats_unit, iv, re)
                   stats%average%rf, stats%rms_err%rf)
             end if
 
-            if (.not. use_radar_rf .and. use_radar_rhv.and.radar_rf_opt==1) then
+            if (.not. use_radar_rf .and. (use_radar_rhv.and.radar_rf_opt==1)) then
                call da_stats_calculate (n, k, iv%radar(n)%rrn(k)%qc, &
                   re%radar(n)%rrn(k), nrrn, &
                   stats%minimum%rrn, stats%maximum%rrn, &
@@ -99,7 +99,7 @@ subroutine da_ao_stats_radar (stats_unit, iv, re)
           stats%minimum%rf%l, stats%maximum%rf%l)
    end if
 
-   if (.not.use_radar_rf .and. use_radar_rhv.and.radar_rf_opt==1) then
+   if (.not.use_radar_rf .and. (use_radar_rhv.and.radar_rf_opt==1)) then
       call da_proc_sum_int (nrrn)
       call da_proc_stats_combine(stats%average%rrn, stats%rms_err%rrn, &
           stats%minimum%rrn%value, stats%maximum%rrn%value, &

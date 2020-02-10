@@ -169,6 +169,7 @@ rconfig   logical   use_radar_rqv           namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_radar_rhv           namelist,wrfvar4  1  .false.  - "use_radar_rhv"            ""  ""
 rconfig   integer   radar_rf_opt            namelist,wrfvar4  1  1        - "radar_rf_opt"             ""  ""
 rconfig   real      rf_qthres               namelist,wrfvar4  1  1e-12    - "qthres for rf da"         ""  ""
+rconfig   real      rfmin                   namelist,wrfvar4  1  0.0      - "min rf of obs"            ""  ""
 rconfig   integer   rf_noice                namelist,wrfvar4  1  0        - "rf_noice"                 ""  ""
 rconfig   real      radar_rf_rscl           namelist,wrfvar4  1  1.0      - "radar_rf_rscl"            ""  ""
 rconfig   real      radar_rv_rscl           namelist,wrfvar4  1  1.0      - "radar_rv_rscl"            ""  ""

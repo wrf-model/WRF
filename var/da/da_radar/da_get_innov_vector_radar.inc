@@ -381,16 +381,16 @@ END IF
                   model_rf(k,n)=dbz*radar_rf_rscl
                   iv % radar(n) % zmm(k) % inv = zmm
                   iv % radar(n) % rf(k) % inv = 0
-                  if(ob % radar(n) % rf(k) < -15.0 .and. ( model_qrn(k,n)<=2.0*rf_qthres.and. &
+                  if(ob % radar(n) % rf(k) < rfmin .and. ( model_qrn(k,n)<=2.0*rf_qthres.and. &
                                                            model_qsn(k,n)<=2.0*rf_qthres.and. &
                                                            model_qgr(k,n)<=2.0*rf_qthres)) then
                      iv % radar(n) % zmm(k) % inv = 0
                      iv % radar(n) % rf (k) % qc = -5                 
-                  else if( ob % radar(n) % rf(k) < -15.0 .and. ( model_qrn(k,n)>2.0*rf_qthres.or. &
+                  else if( ob % radar(n) % rf(k) < rfmin .and. ( model_qrn(k,n)>2.0*rf_qthres.or. &
                                                                  model_qsn(k,n)>2.0*rf_qthres.or. &
                                                                  model_qgr(k,n)>2.0*rf_qthres) ) then
-                     iv % radar(n) % rf(k) % inv = -15.0 - model_rf(k,n)
-                  else if( ob % radar(n) % rf(k) >= -15.0 ) then
+                     iv % radar(n) % rf(k) % inv = rfmin - model_rf(k,n)
+                  else if( ob % radar(n) % rf(k) >= rfmin ) then
                      iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - model_rf(k,n)  
                   endif
                 end select

@@ -834,9 +834,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_save
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_old
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_old
-
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_cu_weight
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_cu_weight
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_cu_weight
@@ -1623,16 +1620,8 @@ CONTAINS
 #endif
 
      IF ( cu_physics == BMJSCHEME .AND. bmj_rad_feedback .EQV. .TRUE. ) THEN
-	  ! save old hydrometeors
-	  DO j=jts,jte
-	  DO k=kts,kte
-	  DO i=its,ite
-             qc_old(i,k,j) = qc(i,k,j)
-             qi_old(i,k,j) = qi(i,k,j)
-	 ENDDO
-	 ENDDO
-	 ENDDO
-         ! Modify cloud fraction and temporarily hydrometeors (PCC scheme)
+! hydrometeors from microphysics scheme have saved in q*_save 
+! Modify cloud fraction and temporarily hydrometeors (PCC scheme)
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2693,18 +2682,6 @@ CONTAINS
          ENDDO
          ENDDO
      ENDIF
-
-  IF ( cu_physics == BMJSCHEME .AND. bmj_rad_feedback .EQV. .TRUE. ) THEN
-      ! Restore old hydrometeors (PCC scheme)
-      DO j=jts,jte
-      DO k=kts,kte
-      DO i=its,ite
-         qc(i,k,j) = qc_old(i,k,j)
-         qi(i,k,j) = qi_old(i,k,j)
-      ENDDO
-      ENDDO
-      ENDDO
-  ENDIF
 
  ! Restore qc & qi for any model physics configuration
       IF ( F_QC ) THEN

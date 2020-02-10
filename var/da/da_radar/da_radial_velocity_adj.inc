@@ -1,7 +1,7 @@
 subroutine da_radial_velocity_adj(rv,p,u,v,w,qrn,ps,x,y,z,qrn9,rho)
 
    !-----------------------------------------------------------------------
-   ! Purpose: adj of da_radial_velocity_lin
+   ! Purpose: adjoint of da_radial_velocity_lin
    ! History:
    !    08/2017 - bug fix for Vt (Siou-Ying Jiang, CWB, Taiwan)
    !-----------------------------------------------------------------------

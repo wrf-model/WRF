@@ -1091,9 +1091,10 @@ CONTAINS
 !***
 !***  HUMIDITY PROFILE
 !***
+          PSK(L)=PK(L)+DSP
+          APESK(L)=(1.E5/PSK(L))**CAPA
+
           IF(PK(L)>PQM)THEN
-            PSK(L)=PK(L)+DSP
-            APESK(L)=(1.E5/PSK(L))**CAPA
             THSK(L)=TREFK(L)*APEK(L)
             QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSK(L)-A3*APESK(L))            &
      &                                /(THSK(L)-A4*APESK(L)))
@@ -1111,6 +1112,7 @@ CONTAINS
 !
           SUMDE=0.
           SUMDP=0.
+          DHDT =0.
 !
           DO L=LTOP,LB
             SUMDE=((TK(L)-TREFK(L))*CP+(QK(L)-QREFK(L))*EL(L))*DPRS(L)  &

@@ -9,7 +9,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    !-----------------------------------------------------------------------
 
    !------------------------------------------------------------------------
-   ! This subroutine is the adj of Doppler radar observation operators.
+   ! This subroutine is the adjoint of Doppler radar observation operators.
    !------------------------------------------------------------------------
 
    implicit none
@@ -117,7 +117,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    allocate (model_qv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_t(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
-   if ( use_radar_rqv .or. (use_radar_rhv.and.radar_rf_opt>=2) ) then
+   if ( use_radar_rqv ) then
       !basic states
       allocate (model_qvb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
       allocate (model_tb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -164,11 +164,10 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
          if (iv % radar(n) % height_qc(k) /= below_model_surface .and.  &
               iv % radar(n) % height_qc(k) /= above_model_lid) then
 
-            if ((use_radar_rf.or.use_radar_rhv).and.radar_rf_opt>=2) then
+            if (use_radar_rf .and. radar_rf_opt==2) then
                if (iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
-                 select case (radar_rf_opt)
- 
-                 case(2)
+                 !select case (radar_rf_opt)
+                 !case(2)
                    tmk=model_tb(k,n)
                    prs=model_p(k,n)
                    zmm=iv % radar(n) % zmm(k) % inv
@@ -183,17 +182,17 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
                    model_qgr(k,n) = dqgr
                    model_t(k,n)   = dtmk
                    model_qv(k,n)  = dqvp
-                 end select
+                 !end select
                end if
             end if
 
-            if (use_radar_rf .and. .not.use_radar_rhv.and.radar_rf_opt==1) then
+            if (use_radar_rf .and. radar_rf_opt==1) then
                if (iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
                   model_qrn(k,n) = model_qrn(k,n) + leh2/(model_qrnb(k,n)*alog10) * jo_grad_y%radar(n)%rf(k)
                end if
             end if
 
-            if (.not.use_radar_rf .and. use_radar_rhv.and.radar_rf_opt==1) then
+            if (.not.use_radar_rf .and. use_radar_rhv) then
                if (iv % radar(n) % rrn(k) % qc >= obs_qc_pointer) then
                   model_qrn(k,n) = model_qrn(k,n) + jo_grad_y%radar(n)%rrn(k)
                end if
@@ -205,7 +204,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
                end if
             end if
 
-            if (use_radar_rqv.and.radar_rf_opt==1) then
+            if (use_radar_rqv) then
                if (iv % radar(n) % rqv(k) % qc >= obs_qc_pointer) then
                !TL  y%radar(n)%rqv(k) = y%radar(n)%rqv(k) +( es_beta*es_gamma/(model_tb(k,n)+es_gamma)**2.0 )*model_qvb(k,n)*model_t(k,n)
                   model_qv(k,n) = model_qv(k,n) + jo_grad_y%radar(n)%rqv(k)
@@ -271,7 +270,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    deallocate (model_qsn)
    deallocate (model_qgr)
    deallocate (model_rho)
-   if ( use_radar_rqv .or. (use_radar_rhv.and.radar_rf_opt>=2) ) then
+   if ( use_radar_rqv ) then
       deallocate (model_qvb)
       deallocate (model_tb)
    end if

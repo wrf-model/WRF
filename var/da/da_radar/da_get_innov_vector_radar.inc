@@ -120,7 +120,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    allocate (model_w(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
    if ( use_radar_rv ) allocate (model_rv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   if ( use_radar_rf .or. (use_radar_rhv.and.radar_rf_opt>=2) ) allocate (model_rf(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   if ( use_radar_rf ) allocate (model_rf(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_ps(iv%info(radar)%n1:iv%info(radar)%n2))
 
    allocate (model_qv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -146,7 +146,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    model_w(:,:)    = 0.
 
    if ( use_radar_rv ) model_rv(:,:)   = 0.
-   if ( use_radar_rf .or. (use_radar_rhv.and.radar_rf_opt>=2) ) model_rf(:,:)   = 0.
+   if ( use_radar_rf ) model_rf(:,:)   = 0.
    model_ps(:)     = 0.
 
    model_qv(:,:)   = 0.
@@ -366,10 +366,10 @@ END IF
                end if
             end if
 
-            if ((use_radar_rf.or.use_radar_rhv).and.radar_rf_opt>=2) then
+            if (use_radar_rf .and. radar_rf_opt==2) then
               if ( echo_rf_good ) then
-                select case (radar_rf_opt)
-                case(2)
+                !select case (radar_rf_opt)
+                !case(2)
                   tmk=model_tc(k,n)+273.15
                   prs=model_p(k,n)
                   zmm=0
@@ -393,7 +393,7 @@ END IF
                   else if( ob % radar(n) % rf(k) >= rfmin ) then
                      iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - model_rf(k,n)  
                   endif
-                end select
+                !end select
               end if
             end if
 
@@ -405,7 +405,7 @@ END IF
             end if
 
             ! calculate background/model reflectivity
-            if ((use_radar_rhv .or. use_radar_rqv).and.radar_rf_opt==1) then
+            if (use_radar_rhv .or. use_radar_rqv) then
                if ( echo_rf_good ) then
                   call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),bg_rze)
                   bg_rf = 10.0*log10(bg_rze)  ! Z to dBZ
@@ -416,7 +416,7 @@ END IF
 
             ! calculate retrieved hydrometeorological variables
             ! Jidong Gao JAS 2013
-            if (use_radar_rhv.and.radar_rf_opt==1) then
+            if (use_radar_rhv) then
                if ( echo_rf_good ) then
 
                   ! compute retrieved hydrometeors rhv
@@ -526,7 +526,7 @@ END IF
             end if ! rhv
 
             ! retrieved water vapor
-            if (use_radar_rqv.and.radar_rf_opt==1) then
+            if (use_radar_rqv) then
                !iv%%rqv and iv%%rqvo were assigned to missing values in read_obs_radar_ascii.inc
                !iter=1, rqv is missing; for second loop, dont change rqv value
                if (it .eq. 1) then

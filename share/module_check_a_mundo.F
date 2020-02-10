@@ -2235,8 +2235,8 @@
 !-----------------------------------------------------------------------
 
 #if( BUILD_RRTMK != 1)
-      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME_FAST )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMK_SWSCHEME_FAST )  ) THEN
+      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMK_SWSCHEME )  ) THEN
          wrf_err_message = '--- ERROR: RRTMG-based KIAPS schemes must be built with a default compile-time flag'
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '--- ERROR: Run ./clean -a, ./configure, ./compile scripts again'

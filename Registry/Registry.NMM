@@ -456,8 +456,8 @@ state  real   t_adj     ijk   dyn_nmm   1    -     rd=(DownNear)  "T_ADJ"    "T 
 state  real   t_old     ijk   dyn_nmm   1    -     r        "T_OLD"    "T before last call to precip"         "K"
 state  real   zero_3d   ijk   dyn_nmm   1    -     r
 state  real   W0AVG     ikj   dyn_nmm   1    -     r        "W0AVG" "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"  "m s-1"
-state  real   qcconv    ikj   dyn_nmm   1    -     rh       "QCCONV"                "CLOUD MIXING RATIO FOR BMJ CUMULUS SCHEME"        "kg kg-1"
-state  real   qiconv    ikj   dyn_nmm   1    -     rh       "QICONV"                "ICE MIXING RATIO FOR BMJ CUMULUS SCHEME"          "kg kg-1"
+state  real   qcconv    ikj   dyn_nmm   1    -     r        "QCCONV"                "CLOUD MIXING RATIO FOR BMJ CUMULUS SCHEME"        "kg kg-1"
+state  real   qiconv    ikj   dyn_nmm   1    -     r        "QICONV"                "ICE MIXING RATIO FOR BMJ CUMULUS SCHEME"          "kg kg-1"
 state  real   AKHS_OUT  ij    dyn_nmm   1    -     rh023       "AKHS_OUT"  "Output sfc exch coeff for heat"               "m2 s-1"
 state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Output sfc exch coeff for momentum"           "m2 s-1"
 #
@@ -591,8 +591,8 @@ state  real   f_ice     ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,
 state  real   f_rain    ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
 state  real   f_rimef   ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,1.0)u=(UpMassIKJ:@EExtrap,1.0)  "F_RIMEF"   "Rime factor"                          ""
 state  real   cldfra    ijk   dyn_nmm   1    -     rh023   "CLDFRA"    "Cloud fraction"                       ""
-state  real   CONVCLD   ij    dyn_nmm   1    -     rh     "CONVCLD"    "BMJ CONVECTIVE CLOUD"                 "kg m-2"
-state  real   CCLDFRA   ikj   dyn_nmm   1    -     rh     "CCLDFRA"    "CONVECTIVE CLOUD FRACTION"            ""
+state  real   CONVCLD   ij    dyn_nmm   1    -     r      "CONVCLD"    "BMJ CONVECTIVE CLOUD"                 "kg m-2"
+state  real   CCLDFRA   ikj   dyn_nmm   1    -     r      "CCLDFRA"    "CONVECTIVE CLOUD FRACTION"            ""
 state  real   sr        ij    dyn_nmm   1    -     irh023      "SR"        "Timestep mass ratio of snow:precip"   ""
 state  real   cfrach    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "CFRACH"    "High cloud fraction"                  ""
 state  real   cfracl    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "CFRACL"    "Low cloud fraction"                   ""

@@ -202,7 +202,7 @@
           CALL wrf_get_dom_ti_integer( fid , 'HYBRID_OPT',  hybrid_opt,  1, icnt, ierr )
           CALL wrf_get_dom_ti_integer( fid , 'USE_THETA_M', use_theta_m, 1, icnt, ierr )
 
-          IF ( hybrid_opt .NE. config_flags%hybrid_opt .and. hybrid_opt .le. 100 ) THEN
+          IF ( hybrid_opt .NE. config_flags%hybrid_opt ) THEN
             WRITE(wrf_err_message,*) '---- ERROR: Input file hybrid_opt = ',hybrid_opt
             CALL wrf_debug ( 0, TRIM(wrf_err_message) )
             WRITE(wrf_err_message,*) '---- ERROR: Namelist hybrid_opt   = ',config_flags%hybrid_opt
@@ -211,7 +211,7 @@
             count_fatal_error = count_fatal_error + 1
           END IF
 
-          IF ( use_theta_m .NE. config_flags%use_theta_m .and. use_theta_m .le.100 ) THEN
+          IF ( use_theta_m .NE. config_flags%use_theta_m ) THEN
             WRITE(wrf_err_message,*) '---- ERROR: Input file use_theta_m = ',use_theta_m
             CALL wrf_debug ( 0, TRIM(wrf_err_message) )
             WRITE(wrf_err_message,*) '---- ERROR: Namelist use_theta_m   = ',config_flags%use_theta_m

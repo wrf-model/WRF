@@ -2745,7 +2745,6 @@ CONTAINS
  end if
 
    ! Coupling with FARMS
-!dave
  if( present(mut      ) .and. &
      present(dnw      ) .and. &
      present(swdown2  ) .and. &

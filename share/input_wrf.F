@@ -202,7 +202,7 @@
           CALL wrf_get_dom_ti_integer( fid , 'HYBRID_OPT',  hybrid_opt,  1, icnt, ierr )
           CALL wrf_get_dom_ti_integer( fid , 'USE_THETA_M', use_theta_m, 1, icnt, ierr )
 
-          IF ( hybrid_opt .NE. config_flags%hybrid_opt .and. hybrid_opt .le. 100 ) THEN
+          IF ( hybrid_opt .NE. config_flags%hybrid_opt ) THEN
             WRITE(wrf_err_message,*) '---- ERROR: Input file hybrid_opt = ',hybrid_opt
             CALL wrf_debug ( 0, TRIM(wrf_err_message) )
             WRITE(wrf_err_message,*) '---- ERROR: Namelist hybrid_opt   = ',config_flags%hybrid_opt

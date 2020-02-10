@@ -144,8 +144,6 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
       write(unit=message(1),fmt='(A,A)') trim(filename), ' appears to be from earlier than WRF V3.9'
       write(unit=message(2),fmt='(A)')   'Setting hybrid_opt = 0'
       call da_message(message(1:2))
-   else if( grid%hybrid_opt .gt. 100 ) then
-      grid%hybrid_opt = 0
    else
       ! when input file contains HYBRID_OPT, stop 4DVAR if not terrain-following.
       if ( var4d ) then
@@ -167,8 +165,6 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
       write(unit=message(1),fmt='(A,A)') trim(filename), ' appears to be from earlier than WRF V3.7'
       write(unit=message(2),fmt='(A)')   'Setting use_theta_m = 0'
       call da_message(message(1:2))
-   else if(grid%use_theta_m.gt.100) then
-      grid%use_theta_m=0
    else 
       ! when input file contains USE_THETA_M, stop 4DVAR (wrfplus not work with thetam yet).
       if ( var4d ) then

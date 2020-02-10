@@ -448,6 +448,8 @@ state  real   deep      ij    dyn_nmm   1    -     r        "DEEP"     "Deep con
 state  real   rf        ij    dyn_nmm   1    -     r
 state  real   th10      ij    dyn_nmm   1    -     rh023d=(DownCopy)       "TH10"     "10-m potential temperature from MYJ"  "K"
 state  real   q10       ij    dyn_nmm   1    -     rh023d=(DownCopy)       "Q10"      "10-m specific humidity from MYJ"      "kg kg-1"
+state  real   u10e      ij    dyn_nmm   1    -     rhd=(DownCopy)          "U10E"     "Special 10-m U from MYJ"      "m s-1"
+state  real   v10e      ij    dyn_nmm   1    -     rhd=(DownCopy)          "V10E"     "Special 10-m V from MYJ"      "m s-1"
 state  real   pshltr    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "PSHLTR"   "2-m pressure from MYJ"                "Pa"
 state  real   tshltr    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "TSHLTR"   "2-m potential temperature from MYJ"    "K"
 state  real   qshltr    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "QSHLTR"   "2-m specific humidity from MYJ"       "kg kg-1"

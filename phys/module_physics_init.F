@@ -82,6 +82,7 @@ CONTAINS
                          mp_restart_state,tbpvs_state,tbpvs0_state,&
                          allowed_to_read, moved, start_of_simulation,&
                          LAGDAY,                                 &
+                         u10,v10,u10e,v10e,                      &
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
@@ -359,7 +360,12 @@ CONTAINS
    INTEGER, DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                         IVGTYP, &
                                                         ISLTYP
-
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            OPTIONAL, INTENT(IN)    ::                     U10, &
+                                                           V10
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            OPTIONAL, INTENT(OUT)    ::                   U10E, &
+                                                          V10E
 #if ( EM_CORE == 1 )
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, jms:jme )                        , &
@@ -1184,6 +1190,18 @@ CONTAINS
       end do
    end if
 #endif
+
+!  Initializing special output from myjsfc and qnsesfc
+
+   if ( config_flags%sf_sfclay_physics .EQ. MYJSFCSCHEME .OR. &
+        config_flags%sf_sfclay_physics .EQ. QNSESFCSCHEME ) THEN
+      do j=jts,jtf
+         do i=its,itf
+            u10e(i,j) = u10(i,j)
+            v10e(i,j) = v10(i,j)
+         end do
+      end do
+   end if
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to landuse_init' )
 

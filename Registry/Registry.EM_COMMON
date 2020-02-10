@@ -967,6 +967,9 @@ state   real   QSFC             ij     misc        1         -      r        "QS
 state   real   AKHS             ij     misc        1         -      r        "AKHS"                  "SFC EXCH COEFF FOR HEAT"                      "m s-1"    
 state   real   AKMS             ij     misc        1         -      r        "AKMS"                  "SFC EXCH COEFF FOR MOMENTUM"                  "m s-1"    
 state   integer KPBL            ij     misc        1         -     r         "KPBL"                  "LEVEL OF PBL TOP"                             ""
+state   real   U10E             ij     misc        1         -     hdu       "U10E"                  "Special U at 10 M from MYJSFC"         "m s-1"
+state   real   V10E             ij     misc        1         -     hdu       "V10E"                  "Special V at 10 M from MYJSFC"         "m s-1"
+
 #BSINGH - For CuP
 #~wig: added real pbl level index for output tests
 state   real   AKPBL            ij     misc        1         -      r        "AKPBL"                  "LEVEL OF PBL TOP"                             ""
@@ -2866,9 +2869,9 @@ package   gfdlswscheme    ra_sw_physics==99          -             -
 
 package   nosfcscheme        sf_sfclay_physics==0        -             -
 package   sfclayrevscheme    sf_sfclay_physics==1        -             -
-package   myjsfcscheme       sf_sfclay_physics==2        -             state:tke_pbl
+package   myjsfcscheme       sf_sfclay_physics==2        -             state:tke_pbl,u10e,v10e
 package   gfssfcscheme       sf_sfclay_physics==3        -             -
-package   qnsesfcscheme      sf_sfclay_physics==4        -             -
+package   qnsesfcscheme      sf_sfclay_physics==4        -             state:u10e,v10e
 package   mynnsfcscheme      sf_sfclay_physics==5        -             -
 package   pxsfcscheme        sf_sfclay_physics==7        -             -
 package   temfsfcscheme      sf_sfclay_physics==10       -             state:wm_temf

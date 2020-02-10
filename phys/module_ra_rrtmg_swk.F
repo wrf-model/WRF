@@ -1,3 +1,12 @@
+#if( BUILD_RRTMK != 1)
+      MODULE module_ra_rrtmg_swk
+      CONTAINS
+      SUBROUTINE rrtmg_sw
+         REAL :: dummy
+         dummy = 1
+      END SUBROUTINE rrtmg_sw
+      END MODULE module_ra_rrtmg_swk
+#else
 !
 !-------------------------------------------------------------------------------
    module parrrsw_k
@@ -12064,3 +12073,4 @@ contains
 !-------------------------------------------------------------------------------
    end module module_ra_rrtmg_swk
 !-------------------------------------------------------------------------------
+#endif

@@ -29,6 +29,7 @@ subroutine da_calculate_grady_radar(iv, re, jo_grad_y)
             end if
             jo_grad_y%radar(n)%rf(k) = -re%radar(n)%rf(k) / (iv%radar(n)%rf(k)%error * iv%radar(n)%rf(k)%error) 
          end if
+            
          if (.not.use_radar_rf .and. (use_radar_rhv.and.radar_rf_opt==1)) then
             if (iv%radar(n)%rrn(k)%qc < obs_qc_pointer) then
                re%radar(n)%rrn(k) = 0.0

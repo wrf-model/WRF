@@ -3747,7 +3747,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
-                      its, ite, jts, jte, kts, kte                )
+                      its, ite, jts, jte, kts, kte,               &
+                      RUCUTEN, RVCUTEN)                              !JTR
 #endif
 
      CASE (GDSCHEME)

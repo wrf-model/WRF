@@ -65,8 +65,13 @@ int GET_LANDUSE (        float *adx,
 #ifndef MS_SUA
 # include <stdio.h>
 #endif
-#include <rpc/types.h>
-#include <rpc/xdr.h>
+#if (RPC_TYPES == 1)
+# include <rpc/types.h>
+# include <rpc/xdr.h>
+#elif (RPC_TYPES == 2)
+# include <tirpc/rpc/types.h>
+# include <tirpc/rpc/xdr.h>
+#endif
 #include <math.h>
 #ifndef MACOS
 # include <malloc.h>

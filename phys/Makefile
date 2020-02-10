@@ -218,7 +218,7 @@ DIAGNOSTIC_MODULES_NMM = \
 
 OBJS    =
 
-NMM_MODULES = 
+NMM_MODULES =  
 
 LIBTARGET    =  physics
 TARGETDIR    =  ./

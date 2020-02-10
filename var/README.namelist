@@ -36,6 +36,9 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
                                     ;         the first and final iterations.
   print_detail_outerloop  = .false. ; .true.: to write out wrfvar_output file at different outer loops
   check_max_iv_print      = .true.  ; obsolete (only used by Radar)
+  write_gts_omb_oma       = .true.  ;(default)
+  write_rej_obs_conv      = .false. ;(default), the information is not too helpful
+  write_unpert_obs        = .false. ;(default), the information is not usually used
 /
 &wrfvar2
   analysis_accu           = 900     ; seconds, if time difference between namelist setting
@@ -495,7 +498,11 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
   ep_para_read            = 0          ; how ensemble perturbations are read. 0: serial read; 1: parallel read
   rden_bin                = 1          ; number of bins/batches to read ensemble perturbations in parallel
   alpha_std_dev           = 1.0        ;
-  alpha_vertloc           = .false.    ; switch for vertical localization
+  alpha_vertloc_opt       = 2          ; new option since v4.2 (to replace previous alpha_vertloc)
+                                       ; for choosing the source of vertical localization for alpha control variable
+                                       ; 0: no vertical localization applied for alpha control variable.
+                                       ; 1: read in vertloc function from be.vertloc.dat. The same behavior as pre-v4.2.
+                                       ; 2: (default, recommended) let WRFDA calculate logP-based vertical localization. be.vertloc.dat will be written out.
   alpha_hydrometeors      = .false.    ; switch for cloud alpha control variables
   hybrid_dual_res         = .false.    ; swithc for dual-resolution hybrid
   dual_res_upscale_opt    = 3          ;
@@ -507,6 +514,8 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
                                        ; "VERIFY": verification mode.
                                        ;           WRFDA resets check_max_iv=.false. and ntmax=0
                                        ; "RANDOMCV": for creating ensemble perturbations
+  n_randomcv              = 1          ; number of realizations of randomcv
+                                       ; set to > 1 to get multiple perturbed output in one execution
   adj_sens	          = .false.    ; .true.: write out gradient of Jo for adjoint sensitivity
 /
 &wrfvar18   ; needs to set &wrfvar21 and &wrfvar22 as well if ob_format=1 and/or radiances are used.
@@ -563,6 +572,11 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
   radar_rqv_rh2           = 85.0      ; RH (%) for (radar_rqv_thresh1 < rf < radar_rqv_thresh2)
   radar_rqv_h_lbound      = -999.0    ; height (m) lower bound for rqv
   radar_rqv_h_ubound      = -999.0    ; height (m) upper bound for rqv
+  radar_rhv_err_opt       = 1         ;(default) 1: calculated (original), 2: from namelist
+  radar_rhv_rrn_err       = 0.15      ;(default) obs error of retrieved qrain in g/kg
+  radar_rhv_rsn_err       = 0.15      ;(default) obs error of retrieved qsnow in g/kg
+  radar_rhv_rgr_err       = 0.15      ;(default) obs error of retrieved qgraup in g/kg
+  write_oa_radar_ascii    = .true.    ;(default)
 /
 &obs_opt
   gpsro_drift             = 1         ; horizontal drifting for GPSRO.  0=no drift, 1=drift

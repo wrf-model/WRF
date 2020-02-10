@@ -77,7 +77,8 @@ CONTAINS
                          ACSNOM,IVGTYP,ISLTYP, SFCEVP, SMOIS,    &
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
                          SNOALB,                                 &
-                         DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
+                         DX,DY,DX2D,AREA2D,                      &
+                         F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
                          mp_restart_state,tbpvs_state,tbpvs0_state,&
                          allowed_to_read, moved, start_of_simulation,&
                          LAGDAY,                                 &
@@ -286,6 +287,7 @@ CONTAINS
 
    LOGICAL,  INTENT(IN)        :: start_of_simulation
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
+   REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: DX2D, AREA2D
    LOGICAL,  INTENT(IN)        :: restart
    REAL,     INTENT(IN)        :: RADT,BLDT,CUDT,MPDT
    REAL,     INTENT(IN)        :: swrad_scat
@@ -834,6 +836,22 @@ CONTAINS
    
 !-----------------------------------------------------------------
 
+#if ( EM_CORE == 1 )
+
+   !  Compute 2d grid distance and 2d grid cell area. For use with
+   !  physics schemes that have a grid distance (area) as input for
+   !  scale-aware capability.
+
+   if ( .not. restart) then
+     if ( present(dx2d) .and. present(area2d) ) then
+        call compute_2d_dx_area(dx, dy, msftx, msfty, dx2d, area2d, &
+                              ids, ide, jds, jde, kds, kde,       &
+                              ims, ime, jms, jme, kms, kme,       &
+                              its, ite, jts, jte, kts, kte)
+      end if
+   end if
+#endif
+
    aercu_opt=config_flags%aercu_opt !PSH/TWG 06/10/16
    aercu_fct=config_flags%aercu_fct !PSH/TWG 06/10/16
    sf_urban_physics=config_flags%sf_urban_physics
@@ -869,12 +887,18 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST ) .or. &
 #endif
-         (config_flags%ra_lw_physics .eq. RRTMK_LWSCHEME  ) ) .and. &
+#if( BUILD_RRTMK == 1)
+         (config_flags%ra_lw_physics .eq. RRTMK_LWSCHEME  ) .or. &
+#endif
+         (config_flags%ra_lw_physics .eq. goddardlwscheme ) ) .and. &
        ( (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME ) .or. &
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST ) .or. &
 #endif
-         (config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) ) .and. &
+#if( BUILD_RRTMK == 1)
+         (config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) .or. &
+#endif
+         (config_flags%ra_sw_physics .eq. goddardswscheme ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
          config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
@@ -886,8 +910,9 @@ CONTAINS
          config_flags%mp_physics  .eq. WSM7SCHEME .or.      &
          config_flags%mp_physics  .eq. WDM5SCHEME .or.      &
          config_flags%mp_physics  .eq. WDM6SCHEME .or.      &
-         config_flags%mp_physics  .eq. JENSEN_ISHMAEL .or.  &
          config_flags%mp_physics  .eq. WDM7SCHEME .or.      &
+         config_flags%mp_physics  .eq. nuwrf4icescheme .or. &
+         config_flags%mp_physics  .eq. JENSEN_ISHMAEL .or.  &
          config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
          config_flags%mp_physics  .eq. P3_1CATEGORY_NC .or. &
          config_flags%mp_physics  .eq. P3_2CATEGORY    ) ) then    ! P3
@@ -1142,6 +1167,27 @@ CONTAINS
           end do
        end do
     endif
+
+!  Initialize cloud droplet effective radii for Goddard MP and/or Radiation
+#if ( EM_CORE == 1 )
+
+   if ( config_flags%ra_lw_physics .EQ. GODDARDLWSCHEME .OR. &
+        config_flags%ra_sw_physics .EQ. GODDARDSWSCHEME .OR. &
+        config_flags%mp_physics    .EQ. NUWRF4ICESCHEME ) THEN
+      do j=jts,jtf
+         do k=kts,ktf
+            do i=its,itf
+               re_cloud_gsfc(i,k,j)   = 0.
+               re_rain_gsfc(i,k,j)    = 0.
+               re_snow_gsfc(i,k,j)    = 0.
+               re_ice_gsfc(i,k,j)     = 0.
+               re_graupel_gsfc(i,k,j) = 0.
+               re_hail_gsfc(i,k,j)    = 0.
+            end do
+         end do
+      end do
+   end if
+#endif
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to landuse_init' )
 
@@ -1535,29 +1581,6 @@ CONTAINS
    end if
 #endif
 
-!  Initialize cloud droplet effective radius for Goddard MP and Radiation
-!  Must be (Goddard LW and SW) AND must be (Goddard 3ice OR 4ice)
-#if ( EM_CORE == 1 )
-    
-   if ( ( ( config_flags%ra_lw_physics .EQ. GODDARDLWSCHEME )   .AND. &
-          ( config_flags%ra_sw_physics .EQ. GODDARDSWSCHEME ) ) .AND. &
-        ( ( config_flags%mp_physics    .EQ. NUWRF3ICESCHEME )   .OR.  &
-          ( config_flags%mp_physics    .EQ. NUWRF4ICESCHEME ) ) ) THEN
-      do j=jts,jtf
-         do k=kts,ktf
-            do i=its,itf
-               re_cloud_gsfc(i,k,j)   = 0.
-               re_rain_gsfc(i,k,j)    = 0.
-               re_snow_gsfc(i,k,j)    = 0.
-               re_ice_gsfc(i,k,j)     = 0.
-               re_graupel_gsfc(i,k,j) = 0.
-               re_hail_gsfc(i,k,j)    = 0.
-            end do
-         end do
-      end do
-   end if
-#endif
-
    END SUBROUTINE phy_init
 
 !=====================================================================
@@ -1592,6 +1615,16 @@ CONTAINS
 
    REAL :: xice_threshold
 !---------------------------------------------------------------------
+!
+! Input Variable Description:
+!  ALBD: Surface albedo
+!  SLMO: Moisture availability
+!  SFEM: Emissivity
+!  SFZ0: Roughness length
+!  THERIN: Thermal inertia (only used in SLAB)
+!  SFHC: Soil heat capacity (not used)
+!  SCFX: Snow cover effect (dependent on SNOWC)
+!
 ! Local
    CHARACTER*256 LUTYPE
    CHARACTER*512 :: message
@@ -1864,8 +1897,10 @@ CONTAINS
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swinit_fast
 #endif
 #if (EM_CORE == 1)
+# if( BUILD_RRTMK == 1)
    USE module_ra_rrtmg_lwk  , ONLY : rrtmg_lwinit_k
    USE module_ra_rrtmg_swk  , ONLY : rrtmg_swinit_k
+# endif
 #endif
    USE module_ra_cam       , ONLY : camradinit
    USE module_ra_cam_support , ONLY : oznini
@@ -2074,6 +2109,7 @@ CONTAINS
 
             aclwalloc = .true.
 #if ( EM_CORE == 1 )
+# if( BUILD_RRTMK == 1)
         CASE (RRTMK_LWSCHEME)  
 
              CALL rrtmg_lwinit_k(                           &
@@ -2083,6 +2119,7 @@ CONTAINS
                            its, ite, jts, jte, kts, kte     )
 
              aclwalloc = .true.
+# endif
 #endif
 
 #if( BUILD_RRTMG_FAST == 1)
@@ -2187,6 +2224,7 @@ CONTAINS
              acswalloc = .true.
 
 #if ( EM_CORE == 1 )
+# if( BUILD_RRTMK == 1)
         CASE (RRTMK_SWSCHEME)
 
              CALL rrtmg_swinit_k(                           &
@@ -2196,6 +2234,7 @@ CONTAINS
                            its, ite, jts, jte, kts, kte     )
 
              acswalloc = .true.
+# endif
 #endif
 
 
@@ -3484,11 +3523,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            END SELECT
 
            CALL mynn_bl_init_driver(&
-                &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,&
-                &RQIBLTEN,                                  &
-                !RQNCBLTEN,RQNIBLTEN,                       &
-                &QKE,                                       &
-                &TKE_PBL,EXCH_H                             &
+                &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN, &
+                &RQIBLTEN,                                   &
+                &QKE,EXCH_H                                  &
                 &,restart,allowed_to_read,mynn_closure_level &
                 &,IDS,IDE,JDS,JDE,KDS,KDE                    &
                 &,IMS,IME,JMS,JME,KMS,KME                    &
@@ -4070,6 +4107,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    INTEGER :: i, j, itf, jtf
    REAL, DIMENSION(20) :: nssl_params
    INTEGER    :: nssl_ipelec_tmp
+   INTEGER    :: i_err
 
    warm_rain = .false.
    adv_moist_cond = .true.
@@ -4186,11 +4224,11 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         CALL jensen_ishmael_init()
 
      CASE (P3_1CATEGORY)
-         CALL p3_init('.',1)
+         CALL p3_init('.',1,'WRF',i_err,.false.)
      CASE (P3_1CATEGORY_NC)
-         CALL p3_init('.',1)
+         CALL p3_init('.',1,'WRF',i_err,.false.)
      CASE (P3_2CATEGORY)
-         CALL p3_init('.',2)
+         CALL p3_init('.',2,'WRF',i_err,.false.)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)
@@ -5019,7 +5057,6 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
 ! This module was taken from the radiation driver and modified for the
 ! cumulus aerosol input. - PSH
 !
-  use netcdf !PSH
    IMPLICIT NONE
 
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
@@ -5035,17 +5072,12 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
    REAL    :: interp_ptcu, interp_pt_latcu, interp_pt_loncu,wlat1cu,wlat2cu,wlon1cu,wlon2cu
    CHARACTER*256 :: message
 
-   integer                               :: ncId, lonID, latID, levID, &
-                                            lonDimID, latDimId, timeDimId, &
-                                            numLons, numLats, numLevs,    &
-                                            ncfcode, &
-                                            varID
+   integer                               :: numLons, numLats, numLevs
 
    REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months, no_src_types ),&
           INTENT(OUT   ) ::                                  aeromcu !PSH
    REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months), OPTIONAL, &
    INTENT(OUT)  :: aeropcu !PSH
-   integer, dimension(nf90_max_var_dims) :: dimIDs
    real, dimension(:, :, :, :, :), allocatable  :: aeroin !PSH
    real, dimension(:, :, :, :), allocatable  :: aeropin !PSH
    CHARACTER (len=10), dimension(no_src_types) :: species !PSH
@@ -5197,5 +5229,31 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
   return
   end subroutine interp_vec_cu
 !---------------------END   PSH/TWG  CHANGES----------------
+
+  subroutine compute_2d_dx_area(dx, dy, msftx, msfty, dx2d, area2d, &
+                                ids, ide, jds, jde, kds, kde,       &
+                                ims, ime, jms, jme, kms, kme,       &
+                                its, ite, jts, jte, kts, kte)
+
+     implicit none
+
+     integer , intent(in) :: ids, ide, jds, jde, kds, kde,       &
+                             ims, ime, jms, jme, kms, kme,       &
+                             its, ite, jts, jte, kts, kte
+
+     real,                             intent(in)  :: dx, dy
+     real, dimension(ims:ime,jms:jme), intent(in)  :: msftx, msfty
+     real, dimension(ims:ime,jms:jme), intent(out) :: dx2d, area2d
+
+     integer :: i, j
+
+     do j = jts, min(jde-1,jte)
+        do i = its, min(ide-1,ite)
+           area2d(i,j) = dx/msftx(i,j) * dy/msfty(i,j)
+           dx2d  (i,j) = sqrt ( area2d(i,j) )
+        end do
+     end do
+
+  end subroutine compute_2d_dx_area
 
 END MODULE module_physics_init

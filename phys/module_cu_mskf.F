@@ -3387,10 +3387,18 @@ MODULE module_cu_mskf
 !     by introducing subgrid-scale cloud-radiation interactions. JGR, 119,
 !     5317-5330, doi:10.1002/2014JD021504.
 !
-! Zheng et al., 2015: Improving High-Resolution Weather Forecasts using the
+! Zheng et al., 2016: Improving High-Resolution Weather Forecasts using the
 !     Weather Research and Forecasting (WRF) Model with an Updated Kain-Fritsch
-!     Scheme. Revision - Mon. Wea. Rev.
-!ckay
+!     Scheme. Mon. Wea. Rev., 144, 833-860
+!
+! He, J., and K. Alapaty, 2018:  Precipitation partitioning in multiscale atmospheric 
+!     simulations: Impacts of stability restoration methods. Journal of Geophysical 
+!     Research: Atmospheres, 123. https://doi.org/10.1029/2018JD028710
+!
+! Glotfelty, T., K. Alapaty, J. He, P. Hawbecker, X. Song, and G. Zhang, 2019: 
+!     The Weather Research and Forecasting Model with Aerosol Cloud Interactions 
+!     (WRF-ACI): Development, Evaluation, and Initial Application. Mon. Wea. Rev., IN PRESS.
+!
 !--------------------------------------------------------------------
 ! Lookup table variables:
       INTEGER, PARAMETER :: KFNT=250,KFNP=220
@@ -3429,7 +3437,7 @@ CONTAINS
              ,UDR_KF,DDR_KF                                  &
              ,UER_KF,DER_KF                                  &
              ,TIMEC_KF,KF_EDRATES                            & 
-             ,ZOL,WSTAR,UST,PBLH                             &   !ckay
+             ,ZOL,HFX,UST,PBLH                               &   !ckay
              ,aerocu,no_src_types_cu,aercu_fct,aercu_opt     & !PSH/TWG
              ,EFCS,EFIS,EFSS)
 !
@@ -3561,7 +3569,7 @@ CONTAINS
 !ckay
    REAL, DIMENSION( ims:ime, jms:jme )                     , &
          INTENT(   IN) ::                               ZOL, &
-                                                      WSTAR, &
+                                                        HFX, &
                                                         UST, &
                                                        PBLH
 !ckaywup
@@ -3914,7 +3922,7 @@ CONTAINS
                  UDR_KF,DDR_KF,                     &
                  UER_KF,DER_KF,                     &
                  TIMEC_KF,KF_EDRATES,               &                 
-                 ZOL,WSTAR,UST,PBLH,                &
+                 ZOL,HFX,UST,PBLH,                  &
                  aerocu,no_src_types_cu,aercu_fct,  &
                  aercu_opt,EFCS,EFIS,EFSS) !PSH/TWG
 
@@ -3980,7 +3988,7 @@ CONTAINS
                       UDR_KF,DDR_KF,                       &
                       UER_KF,DER_KF,                       &
                       TIMEC_KF,KF_EDRATES,                 &
-                      ZOL,WSTAR,UST,PBLH,                  &
+                      ZOL,HFX,UST,PBLH,                    &
                       aerocu,no_src_types_cu,aercu_fct,    &
                       aercu_opt,EFCS,EFIS,EFSS) !PSH/TWG
 
@@ -4030,7 +4038,7 @@ CONTAINS
 !ckay
       REAL, DIMENSION( ims:ime, jms:jme ),                 &
             INTENT(   IN) ::                          ZOL, &
-                                                    WSTAR, &
+                                                      HFX, &
                                                       UST, &
                                                      PBLH
 !
@@ -4167,7 +4175,7 @@ CONTAINS
 
 !ckaywup
    REAL    :: envEsat, envQsat, envRH, envRHavg, denSplume
-   REAL    :: updil, Drag
+   REAL    :: updil, Drag, WST, thetav
 !TWG Mar 2017
    REAL, PARAMETER :: P1_HU10 = 7.6725
    REAL, PARAMETER :: P2_HU10 = 1.0118
@@ -5537,7 +5545,19 @@ updraft:    DO NK=K,KL-1
          TIMEC = TIMEC*Scale_Fac
 
 !ckay SCLvel = SubCloudLayerVELOCITY = Wsb
-         SCLvel = WSTAR(I,J)**3
+!ckay estimate WSTAR to allow most of the PBL schemes here...
+         densPlume = P0(1)/R/T0(1)
+         WST = HFX(I,J)/densPlume/CP  ! hfx in kinematic units  CKAY
+         WST = amax1(0.,WST)  ! +ve hfx only
+         WST = G*PBLH(I,J)*WST
+         thetav = (1.E5/P0(1))**(R/CP)
+         thetav = T0(1) * thetav
+         eps1u = 0.622
+         thetav = thetav*(1.+Q0(1)*eps1u)
+         WST = WST/thetav
+         WST = WST**0.3333
+
+         SCLvel = WST**3
          ZLCL_KAY = amax1(ZLCL,Z0(KPBL))
          SCLvel = SCLvel/PBLH(I,J)
          SCLvel = SCLvel*ZLCL_kay   

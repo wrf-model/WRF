@@ -157,7 +157,7 @@ subroutine da_update_firstguess(grid, out_filename)
      nlat_regional=end_index1(2)
      nsig_regional=end_index1(3)
 
-     write(6,*)' nlon,nlat,nsig_regional=',nlon_regional,nlat_regional,nsig_regional
+     !write(6,*)' nlon,nlat,nsig_regional=',nlon_regional,nlat_regional,nsig_regional
      allocate(field2(nlon_regional,nlat_regional),field3(nlon_regional,nlat_regional,nsig_regional))
      allocate(field3u(nlon_regional+1,nlat_regional,nsig_regional))
      allocate(field3v(nlon_regional,nlat_regional+1,nsig_regional))

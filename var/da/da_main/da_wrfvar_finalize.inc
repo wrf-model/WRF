@@ -81,6 +81,10 @@ subroutine da_wrfvar_finalize
       call da_free_unit (jo_unit)
       call da_free_unit (check_max_iv_unit)
       call da_free_unit (check_buddy_unit )
+      if (use_varbc_tamdar) then
+          close (varbc_tamdar_unit)
+          call da_free_unit (varbc_tamdar_unit)
+      end if
    end if
 
 #ifdef CRTM

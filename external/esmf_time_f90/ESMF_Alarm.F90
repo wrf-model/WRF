@@ -1,16 +1,8 @@
 !
-! Earth System Modeling Framework
-! Copyright 2002-2003, University Corporation for Atmospheric Research,
-! Massachusetts Institute of Technology, Geophysical Fluid Dynamics
-! Laboratory, University of Michigan, National Centers for Environmental
-! Prediction, Los Alamos National Laboratory, Argonne National Laboratory,
-! NASA Goddard Space Flight Center.
-! Licensed under the University of Illinois-NCSA license.
-!
 !==============================================================================
 !
 !     ESMF Alarm Module
-      module ESMF_AlarmMod
+      module WRF_ESMF_AlarmMod
 !
 !==============================================================================
 !
@@ -24,7 +16,7 @@
 !===============================================================================
 !BOPI
 !
-! !MODULE: ESMF_AlarmMod
+! !MODULE: WRF_ESMF_AlarmMod
 !
 ! !DESCRIPTION:
 ! Part of Time Manager F90 API wrapper of C++ implemenation
@@ -37,12 +29,12 @@
 !------------------------------------------------------------------------------
 ! !USES:
       ! inherit from ESMF base class
-      use ESMF_BaseMod
+      use WRF_ESMF_BaseMod
 
       ! associated derived types
-      use ESMF_TimeIntervalMod, only : ESMF_TimeInterval, &
-                                       ESMF_TimeIntervalAbsValue
-      use ESMF_TimeMod,         only : ESMF_Time
+      use WRF_ESMF_TimeIntervalMod, only : ESMF_TimeInterval, &
+                                           ESMF_TimeIntervalAbsValue
+      use WRF_ESMF_TimeMod,         only : ESMF_Time
 
       implicit none
 
@@ -960,4 +952,4 @@
 
 !------------------------------------------------------------------------------
 
-      end module ESMF_AlarmMod
+      end module WRF_ESMF_AlarmMod

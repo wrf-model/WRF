@@ -1064,7 +1064,8 @@ endif
                       grid%acsnom,grid%ivgtyp,grid%isltyp, grid%sfcevp,grid%smois,     &
                       grid%sh2o, grid%snowh, grid%smfr3d,                    &
                       grid%snoalb,                 &
-                      grid%DX,grid%DY,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy, &
+                      grid%DX,grid%DY,grid%dx2d,grid%area2d,              &
+                      grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy, &
                       grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state,&
                       allowed_to_read, grid%moved, start_of_simulation,               &
                       grid%LAGDAY, &
@@ -1287,11 +1288,6 @@ endif
          call wrf_debug(200,'In start_em, after zero_avgflx call')
       ENDDO
    ENDIF
-
-#ifdef MCELIO
-   grid%LU_MASK = 0.
-   WHERE ( grid%lu_index .EQ. 16 ) grid%LU_MASK = 1.
-#endif
 
    call wrf_debug(100,'start_em: calling lightning_init')
    CALL lightning_init ( id=grid%id, itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
@@ -2065,7 +2061,7 @@ DEALLOCATE(z_at_q)
                U=grid%u_2                                           &
                ,V=grid%v_2                                          &
                ,W=grid%w_2                                          &
-               ,t=grid%t_2                                          &
+               ,t=grid%th_phy_m_t0                                  &
                ,qv=moist(:,:,:,P_QV)                                &
                ,zp=grid%ph_2                                        &
                ,zb=grid%phb                                         &

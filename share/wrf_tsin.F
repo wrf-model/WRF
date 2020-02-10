@@ -17,7 +17,6 @@ SUBROUTINE wrf_tsin ( grid , ierr )
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
     INTEGER, EXTERNAL :: get_unused_unit
 
-    REAL, ALLOCATABLE, DIMENSION(:) :: lattslocs, lontslocs
     INTEGER :: istatus, iunit
     LOGICAL :: exists
     CHARACTER (LEN=256) :: errmess
@@ -120,8 +119,11 @@ SUBROUTINE wrf_tsin ( grid , ierr )
 
 #ifdef DM_PARALLEL
        CALL wrf_dm_bcast_integer(grid%ntsloc, 1)
+       CALL wrf_dm_bcast_integer(grid%tslist_ij, 1)
        CALL wrf_dm_bcast_real(grid%lattsloc, grid%max_ts_locs)
        CALL wrf_dm_bcast_real(grid%lontsloc, grid%max_ts_locs)
+       CALL wrf_dm_bcast_integer(grid%itsloc, grid%max_ts_locs)
+       CALL wrf_dm_bcast_integer(grid%jtsloc, grid%max_ts_locs)
 #endif
 #if ((EM_CORE == 1) && (DA_CORE != 1))
     END IF

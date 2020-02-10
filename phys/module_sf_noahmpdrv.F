@@ -1268,6 +1268,8 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
   use module_sf_noahmplsm
   use noahmp_tables
         
+  implicit none
+        
   integer,                    intent(in   ) :: nsoil     ! number of soil layers
   real, dimension( 1:nsoil ), intent(inout) :: sand
   real, dimension( 1:nsoil ), intent(inout) :: clay
@@ -1283,6 +1285,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
   real, dimension( 1:nsoil ) :: psi_e
     
   type(noahmp_parameters), intent(inout) :: parameters
+  integer :: k
 
   do k = 1,4
     if(sand(k) <= 0 .or. clay(k) <= 0) then

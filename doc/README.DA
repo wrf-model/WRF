@@ -22,6 +22,47 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 4 source code release.
 ======================================
 
+V4.1 Release Notes :
+-------------------
+
+Version 4.1 was released on April 12, 2019.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  New features:
+  ------------------
+    - Himawari AHI radiance data assimilation
+      Wang, Y., Z. Liu, S. Yang, J. Min, L. Chen, Y. Chen, and T. Zhang, 2018: 
+        Added value of assimilating Himawari-8 AHI water vapor radiances on analyses 
+        and forecasts for "7.19" severe storm over north China. J. Geophys. Res. Atmos., 
+        123, https://doi.org/10.1002/2017JD027697.
+    - 3DVAR and hybrid-3D/4DEnVar now work with moist potential temperature.
+
+  Updated features:
+  ------------------
+   - Update WRFDA to handle RTTOV v12.1. New emissivity formulations are enabled 
+     as well as HDF-only emissivity atlas files. Compiling WRFDA for RTTOV now 
+     requires an HDF5 library.
+   - The code-base of CRTM carried with WRFDA is updated from v2.2.3 to v2.3.0.
+     Starting with V4.0, CRTM coefficient files are NOT included 
+     in any of the WRF or WRFDA tar files. There are two ways to get this data.
+      1. A subset of coefficient files can be download from
+         http://www2.mmm.ucar.edu/wrf/users/wrfda/download/crtm_coeffs.html
+      2. The full set of CRTM coefficients may be downloaded from:
+         ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.3.0/crtm_v2.3.0.tar.gz
+     For external users, replace the link ‘var/run/crtm_coeffs’ with the directory
+     contained in the appropriate tar file. A copy is also available under ~wrfhelp 
+     on the NCAR cheyenne supercomputer (for internal use).
+   - Enhance the gts_omb_oma diagnostics by appending time slot information after the level information.
+   - Allow pseudo ob at not-first time slot for 4DVAR.
+   - New WRFDA namelist options for specifying errors for radar rhv(rrn/rsn/rgr)
+   - New WRFDA namelist options for turning on/off some diagnostic output.
+   - Fix to allow assimilation of SSMI TPW contained (prior to Nov 2009) in prepbufr 
+     obs files when ob_format=1 and use_ssmiretrievalobs=.true.
+
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-4.1.html for a full list of updates
+
 V4.0 Release Notes :
 -------------------
 

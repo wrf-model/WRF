@@ -4,9 +4,7 @@ subroutine r4_tables ( ido, ip, wa )
 !
 !! R4_TABLES computes trigonometric tables, real single precision arithmetic.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

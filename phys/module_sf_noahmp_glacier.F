@@ -1004,6 +1004,7 @@ contains
         NITERB = 5
         MPE    = 1E-6
         DTG    = 0.
+        MOZ    = 0.
         MOZSGN = 0
         MOZOLD = 0.
         H      = 0.

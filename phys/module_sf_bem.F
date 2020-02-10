@@ -7,7 +7,8 @@ MODULE module_sf_bem
 use mpas_atmphys_utilities, only: physics_error_fatal
 #define FATAL_ERROR(M) call physics_error_fatal( M )
 #else
-#define FATAL_ERROR(M) write(0,*) M ; stop
+use module_wrf_error
+#define FATAL_ERROR(M) call wrf_error_fatal( M )
 #endif
          
         real emins		!emissivity of the internal walls

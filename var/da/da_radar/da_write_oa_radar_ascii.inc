@@ -56,7 +56,7 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re, it )
                num_obs = num_obs + 1
                write(oma_radar_unit,'(i8)') iv % info(radar) % levels(n)
                do k = 1, iv % info(radar) % levels(n)
-                  if ( .not. use_radar_rhv .or. (use_radar_rhv .and. radar_rf_opt.eq.2) ) then
+                  if ( .not. use_radar_rhv ) then
                      write(oma_radar_unit,'(2i8,a5,2f9.2,f17.7,2(2f17.7,i8,2f17.7),f17.7)')&
                         num_obs , k, 'RADAR', &
                         iv % info (radar) % lat(1,n), &  ! Latitude
@@ -164,7 +164,7 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re, it )
                write(omb_radar_iter_unit,'(i8)') levels
                num = num + 1
                do m = 1, levels
-                  if ( .not. use_radar_rhv .or. (use_radar_rhv .and. radar_rf_opt.eq.2) ) then
+                  if ( .not. use_radar_rhv ) then
                      read(omb_radar_unit,'(2i8,a5,2f9.2,f17.7,2(2f17.7,i8,2f17.7),f17.7)')&
                          kk,l, stn_id,     &  ! Station
                          lat, lon, height, &  ! Lat/lon, height

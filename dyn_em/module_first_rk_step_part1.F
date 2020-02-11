@@ -308,10 +308,12 @@ BENCH_START(rad_driver_tim)
      &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
      &        ,XTIME=grid%xtime                                                &
               ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag       &
+#if ( EM_CORE == 1)
      &        ,mut=grid%mut,dnw=grid%dnw                                  & ! FARMS coupling
      &        ,swdown2=grid%swdown2, swddni2=grid%swddni2                 & ! FARMS coupling
      &        ,swddif2=grid%swddif2, swddir2=grid%swddir2                 & ! FARMS coupling
      &        ,swdownc2=grid%swdownc2, swddnic2=grid%swddnic2             & ! FARMS coupling
+#endif
 !BSINGH - For WRFCuP scheme
      &        ,CU_PHYSICS=config_flags%cu_physics                         & !CuP, wig 5-Oct-2006
      &        ,SHALLOWCU_FORCED_RA=config_flags%shallowcu_forced_ra       & !CuP, wig
@@ -353,6 +355,9 @@ BENCH_START(rad_driver_tim)
      &        , CLDT=grid%cldt, ZNU=grid%znu                              &
 !ZCX-
      &        , CLDFRA=grid%cldfra, CLDFRA_MP_ALL=grid%cldfra_mp_all      &
+     &        , CCLDFRA=grid%ccldfra                                      &
+     &        , QCCONV=grid%qcconv, QICONV=grid%qiconv                    &
+     &        , BMJ_RAD_FEEDBACK=config_flags%bmj_rad_feedback            &
      &        , LRADIUS=grid%LRADIUS,IRADIUS=grid%IRADIUS                 & !BSINGH(01/22/2014)
      &        , CLDFRA_DP=grid%cldfra_dp                                  & ! ckay for subgrid cloud
      &        , CLDFRA_SH=grid%cldfra_sh                                  &
@@ -534,6 +539,7 @@ BENCH_START(surf_driver_tim)
      &        ,URATX=grid%uratx        ,VRATX=grid%vratx   ,TRATX=grid%tratx        &
      &        ,UDRUNOFF=grid%udrunoff  ,UST=grid%ust       ,UZ0=grid%uz0            &
      &        ,U_FRAME=grid%u_frame    ,U_PHY=grid%u_phy   ,V10=grid%v10            &
+     &        ,U10E=grid%u10e          ,V10E=grid%v10e                              &
      &        ,UOCE=grid%uoce          ,VOCE=grid%voce                              &
      &        ,VEGFRA=grid%vegfra      ,VZ0=grid%vz0       ,V_FRAME=grid%v_frame    &
      &        ,V_PHY=grid%v_phy        ,WARM_RAIN=grid%warm_rain                    &
@@ -1139,6 +1145,8 @@ BENCH_START(cu_driver_tim)
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx              &
      &             ,DX2D=grid%dx2d, AREA2D=grid%area2d                                 &
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
+     &             ,CCLDFRA=grid%ccldfra     ,CONVCLD=grid%convcld                     &
+     &             ,QCCONV=grid%qcconv     ,QICONV=grid%qiconv                         &
      &             ,CUDTACTTIME=grid%cudtacttime                                       & 
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
      &             ,NCA=grid%nca                                                       &
@@ -1235,6 +1243,7 @@ BENCH_START(cu_driver_tim)
      &             ,lengath2d=grid%lengath2d                              &
                  ! Selection flag
      &             ,pgcon=config_flags%sas_pgcon                          &
+     &             ,BMJ_RAD_FEEDBACK=config_flags%bmj_rad_feedback        &
      &             ,CU_PHYSICS=config_flags%cu_physics                    &
      &             ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics            &
      &             ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics      &

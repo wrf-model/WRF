@@ -82,6 +82,7 @@ CONTAINS
                          mp_restart_state,tbpvs_state,tbpvs0_state,&
                          allowed_to_read, moved, start_of_simulation,&
                          LAGDAY,                                 &
+                         u10,v10,u10e,v10e,                      &
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
@@ -359,7 +360,12 @@ CONTAINS
    INTEGER, DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                         IVGTYP, &
                                                         ISLTYP
-
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            OPTIONAL, INTENT(IN)    ::                     U10, &
+                                                           V10
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            OPTIONAL, INTENT(OUT)    ::                   U10E, &
+                                                          V10E
 #if ( EM_CORE == 1 )
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, jms:jme )                        , &
@@ -440,7 +446,6 @@ CONTAINS
 !pbl
 
    ! soil layer
-
 
    REAL,     DIMENSION(1:num_soil_layers),      INTENT(INOUT) :: ZS,DZS
 
@@ -1189,6 +1194,18 @@ CONTAINS
    end if
 #endif
 
+!  Initializing special output from myjsfc and qnsesfc
+
+   if ( config_flags%sf_sfclay_physics .EQ. MYJSFCSCHEME .OR. &
+        config_flags%sf_sfclay_physics .EQ. QNSESFCSCHEME ) THEN
+      do j=jts,jtf
+         do i=its,itf
+            u10e(i,j) = u10(i,j)
+            v10e(i,j) = v10(i,j)
+         end do
+      end do
+   end if
+
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to landuse_init' )
 
    IF(mminlu_loc .ne. '    ')THEN
@@ -1436,8 +1453,8 @@ CONTAINS
    CALL cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,     &
                 RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,   &
                 NCA,RAINC,RAINCV,W0AVG,config_flags,restart,    &
-                CLDEFI,LOWLYR,MASS_FLUX,                        &
-                RTHFTEN, RQVFTEN,                               &
+                CLDEFI,LOWLYR,                                  &
+                MASS_FLUX,RTHFTEN,RQVFTEN,                      &
 #if ( EM_CORE == 1 )
                 !BSINGH - For WRFCuP Scheme
                 cupflag,cldfra_cup,cldfratend_cup,              & !CuP, wig 18-Sep-2006
@@ -3585,8 +3602,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    SUBROUTINE cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,  &
                       RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,&
                       NCA,RAINC,RAINCV,W0AVG,config_flags,restart, &
-                      CLDEFI,LOWLYR,MASS_FLUX,                     &
-                      RTHFTEN, RQVFTEN,                            &
+                      CLDEFI,LOWLYR,                               &
+                      MASS_FLUX, RTHFTEN, RQVFTEN,                 &
 #if ( EM_CORE == 1 )
                       !BSINGH - For WRFCuP Scheme
                       cupflag,cldfra_cup,cldfratend_cup,          & !CuP, wig 18-Sep-2006
@@ -3639,8 +3656,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    INTEGER , INTENT(INOUT)     :: STEPCU
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
-            RUCUTEN, RVCUTEN, RTHCUTEN, &
-            RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
+            RUCUTEN, RVCUTEN, RTHCUTEN, RQVCUTEN, RQCCUTEN,                &
+            RQRCUTEN, RQICUTEN, RQSCUTEN
 #if ( EM_CORE == 1 )
    !BSINGH - For WRFCuP Scheme
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
@@ -3715,7 +3732,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (BMJSCHEME)
           CALL bmjinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,       &
                       CLDEFI,LOWLYR,cp,r_d,restart,               &
-                      allowed_to_read ,                           &
+                      allowed_to_read,                            &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -3739,7 +3756,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
-                      its, ite, jts, jte, kts, kte                )
+                      its, ite, jts, jte, kts, kte,               &
+                      RUCUTEN, RVCUTEN)                              !JTR
 #endif
 
      CASE (GDSCHEME)
@@ -5057,7 +5075,6 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
 ! This module was taken from the radiation driver and modified for the
 ! cumulus aerosol input. - PSH
 !
-  use netcdf !PSH
    IMPLICIT NONE
 
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
@@ -5073,17 +5090,12 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
    REAL    :: interp_ptcu, interp_pt_latcu, interp_pt_loncu,wlat1cu,wlat2cu,wlon1cu,wlon2cu
    CHARACTER*256 :: message
 
-   integer                               :: ncId, lonID, latID, levID, &
-                                            lonDimID, latDimId, timeDimId, &
-                                            numLons, numLats, numLevs,    &
-                                            ncfcode, &
-                                            varID
+   integer                               :: numLons, numLats, numLevs
 
    REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months, no_src_types ),&
           INTENT(OUT   ) ::                                  aeromcu !PSH
    REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months), OPTIONAL, &
    INTENT(OUT)  :: aeropcu !PSH
-   integer, dimension(nf90_max_var_dims) :: dimIDs
    real, dimension(:, :, :, :, :), allocatable  :: aeroin !PSH
    real, dimension(:, :, :, :), allocatable  :: aeropin !PSH
    CHARACTER (len=10), dimension(no_src_types) :: species !PSH

@@ -16,7 +16,15 @@ MODULE module_sf_noahdrv
   USE module_sf_noahlsm_glacial_only, only: sflx_glacial
   USE module_sf_bep,      only: bep
   USE module_sf_bep_bem,  only: bep_bem
-  USE module_ra_gfdleta,  only: cal_mon_day
+#if defined(mpas)
+use mpas_atmphys_date_time, only: cal_mon_day
+use mpas_atmphys_utilities, only: physics_error_fatal
+#define FATAL_ERROR(M) call physics_error_fatal( M )
+#else
+ use module_ra_gfdleta,  only: cal_mon_day
+ use module_wrf_error
+#define FATAL_ERROR(M) call wrf_error_fatal( M )
+#endif
 #if ( WRF_CHEM == 1 )
   USE module_data_gocart_dust
 #endif
@@ -351,7 +359,7 @@ CONTAINS
                INTENT(OUT)    ::                        CHKLOWQ
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT) ::  RC2, XLAI2
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) ::  RC2, XLAI2
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
@@ -961,10 +969,10 @@ CONTAINS
 
 	  IF(SF_URBAN_PHYSICS == 2 .or. SF_URBAN_PHYSICS == 3) THEN
           IF(AOASIS > 1.0) THEN
-          CALL wrf_error_fatal('Urban oasis option is for SF_URBAN_PHYSICS == 1 only')
+          FATAL_ERROR('Urban oasis option is for SF_URBAN_PHYSICS == 1 only')
           ENDIF
           IF(IRIOPTION == 1) THEN
-          CALL wrf_error_fatal('Urban irrigation option is for SF_URBAN_PHYSICS == 1 only')
+          FATAL_ERROR('Urban irrigation option is for SF_URBAN_PHYSICS == 1 only')
           ENDIF
           ENDIF
 
@@ -1107,8 +1115,10 @@ CONTAINS
     ENDIF
 
        lai(i,j) = xlai
+       if (present(rc2) .and. present(xlai2)) then
        rc2(I,J) = RC                                              ! for output
        xlai2(I,J) = XLAI
+       endif
 
 #if 0
           IF(IPRINT) THEN
@@ -1167,9 +1177,11 @@ CONTAINS
 !
           TSK(I,J)=T1
           TSK_RURAL(I,J)=T1
-          IF(SF_URBAN_PHYSICS == 2 .or. SF_URBAN_PHYSICS == 3) THEN
-            TSK_RURAL_BEP(I,J)=T1
-          END IF
+          if (present(tsk_rural_bep)) then
+             IF(SF_URBAN_PHYSICS == 2 .or. SF_URBAN_PHYSICS == 3) THEN
+               TSK_RURAL_BEP(I,J)=T1
+             END IF
+          endif
           HFX(I,J)=SHEAT
           HFX_RURAL(I,J)=SHEAT
 ! MEk Jul07 add potential evap accum
@@ -1695,6 +1707,12 @@ CONTAINS
    END SUBROUTINE lsm
 !------------------------------------------------------
 
+!For MPAS, the below section of the module is moved to module_physics_lsm_noahinit.F in
+!./../core_physics to accomodate differences in the mpi calls between WRF and MPAS.I thought
+!that it would be cleaner to do this instead of adding a lot of #ifdef statements throughout
+!the initialization subroutine.
+
+#if defined(wrfmodel)
   SUBROUTINE LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,    &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
@@ -5102,5 +5120,6 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 !--------------------------------      
   END SUBROUTINE lsm_mosaic_init  
 !--------------------------------  
+#endif
 
 END MODULE module_sf_noahdrv

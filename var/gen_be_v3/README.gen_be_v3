@@ -70,6 +70,9 @@
 
       For cv_options=7 purpose, util/combine_be_cv7.f90 can be used to combine be_[T/U/V/RH/PSFC].dat into be.dat that WRFDA can read.
 
+      For cv_options=7 and cloud_cv_options=2 purpose, util/combine_be_cv7_ccv2.f90 can be used to
+          combine be_[T/U/V/RH/PSFC/QCLOUD/QRAIN/QICE/QSNOW/QGRAUP/W].dat into be.dat that WRFDA can read.
+
       pert1.* files are intermediate output that can be removed after the successful execution.
 
       pertv_* files are intermediate pert1_read_opt=2 output that can be removed after the successful execution.

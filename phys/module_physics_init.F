@@ -447,7 +447,6 @@ CONTAINS
 
    ! soil layer
 
-
    REAL,     DIMENSION(1:num_soil_layers),      INTENT(INOUT) :: ZS,DZS
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
@@ -1450,8 +1449,8 @@ CONTAINS
    CALL cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,     &
                 RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,   &
                 NCA,RAINC,RAINCV,W0AVG,config_flags,restart,    &
-                CLDEFI,LOWLYR,MASS_FLUX,                        &
-                RTHFTEN, RQVFTEN,                               &
+                CLDEFI,LOWLYR,                                  &
+                MASS_FLUX,RTHFTEN,RQVFTEN,                      &
 #if ( EM_CORE == 1 )
                 !BSINGH - For WRFCuP Scheme
                 cupflag,cldfra_cup,cldfratend_cup,              & !CuP, wig 18-Sep-2006
@@ -3593,8 +3592,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    SUBROUTINE cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,  &
                       RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,&
                       NCA,RAINC,RAINCV,W0AVG,config_flags,restart, &
-                      CLDEFI,LOWLYR,MASS_FLUX,                     &
-                      RTHFTEN, RQVFTEN,                            &
+                      CLDEFI,LOWLYR,                               &
+                      MASS_FLUX, RTHFTEN, RQVFTEN,                 &
 #if ( EM_CORE == 1 )
                       !BSINGH - For WRFCuP Scheme
                       cupflag,cldfra_cup,cldfratend_cup,          & !CuP, wig 18-Sep-2006
@@ -3647,8 +3646,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    INTEGER , INTENT(INOUT)     :: STEPCU
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
-            RUCUTEN, RVCUTEN, RTHCUTEN, &
-            RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
+            RUCUTEN, RVCUTEN, RTHCUTEN, RQVCUTEN, RQCCUTEN,                &
+            RQRCUTEN, RQICUTEN, RQSCUTEN
 #if ( EM_CORE == 1 )
    !BSINGH - For WRFCuP Scheme
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
@@ -3723,7 +3722,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (BMJSCHEME)
           CALL bmjinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,       &
                       CLDEFI,LOWLYR,cp,r_d,restart,               &
-                      allowed_to_read ,                           &
+                      allowed_to_read,                            &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )

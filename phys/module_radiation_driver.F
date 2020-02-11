@@ -75,6 +75,8 @@ CONTAINS
               , COD2D_OUT                                                 &
               , CTOP2D_OUT                                                &
               , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU                             &
+              , CCLDFRA, QCCONV, QICONV                                   &
+              , bmj_rad_feedback                                          &
 #if (EM_CORE == 1)
               , lradius,iradius                                           &
 #endif
@@ -207,7 +209,7 @@ CONTAINS
                                        ,p_seas_3, p_seas_4          & !NUWRF
 #endif
 #endif
-                                       ,KFCUPSCHEME                     & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
+                                       ,KFCUPSCHEME, BMJSCHEME      & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
                                        ,FLGLWSCHEME, FLGSWSCHEME
 
    USE module_model_constants
@@ -333,6 +335,8 @@ CONTAINS
 ! Qr         rain water mixing ratio (kg/kg)
 ! Qi         cloud ice mixing ratio (kg/kg)
 ! Qs         snow mixing ratio (kg/kg)
+! QCCONV     convective cloud mixing ratio (kg/kg)
+! QICONV     convective ice mixing ratio (kg/kg)
 !-----------------------------------------------------------------
 !-- PM2_5_DRY     Dry PM2.5 aerosol mass for all species (ug m^-3)
 !-- PM2_5_WATER   PM2.5 water mass (ug m^-3)
@@ -358,6 +362,7 @@ CONTAINS
 !-- CLDFRA_DP     cloud fraction from deep cloud in a cumulus scheme
 !-- CLDFRA_SH     cloud fraction from shallow cloud in a cumulus scheme
 !-- CLDFRA_MP_ALL cloud fraction from CAMMGMP microphysics scheme
+!-- CCLDFRA       convective cloud fraction (between 0 and 1)
 !-- EMISS         surface emissivity (between 0 and 1)
 !-- rho_phy       density (kg/m^3)
 !-- rr            dry air density (kg/m^3)
@@ -409,6 +414,8 @@ CONTAINS
 !==================================================================
 !
    LOGICAL, OPTIONAL, INTENT(IN) :: explicit_convection
+   LOGICAL,INTENT(IN)            :: bmj_rad_feedback
+
    LOGICAL :: expl_conv
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -743,7 +750,10 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
-         INTENT(INOUT) ::                                 CLDFRA   
+         INTENT(INOUT) ::                                 CLDFRA, &
+                                                          CCLDFRA,&
+                                                          QCCONV, &
+                                                          QICONV   
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  & ! ckay for sub-grid cloud fraction
          OPTIONAL,                                                &
@@ -827,7 +837,8 @@ CONTAINS
    LOGICAL ::    doabsems
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    INTEGER ::    s
-
+   REAL ::                                                ITRMX, &
+                                                          ITRMN
    REAL    ::    OBECL,SINOB,SXLONG,ARG,DECDEG,                  &
                  DJUL,RJUL,ECCFAC
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_temp
@@ -1254,6 +1265,7 @@ CONTAINS
           ENDDO
           ENDDO
      ENDIF
+
 #if (EM_CORE == 1)
 ! temporarily modify hydrometeors (for P3, if 2 cat then add ice from both categories)
 !
@@ -1325,7 +1337,6 @@ CONTAINS
      END DO
      END DO
      END DO
-
 !---------------
 ! Calculate constant for short wave radiation
 
@@ -1342,7 +1353,6 @@ CONTAINS
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
-
         IF ( PRESENT ( CLDFRA_DP ) ) THEN
 ! this is for Kain-Fritsch schemes
           IF ( icloud_cu .EQ. 2 .OR. aercu_opt .GT. 0 ) THEN
@@ -1359,7 +1369,6 @@ CONTAINS
              ENDDO
              ENDDO
              ENDDO
-
              IF (aercu_opt.gt.0.0) THEN
              DO j = jts,jte
              DO k = kts,kte
@@ -1621,7 +1630,21 @@ CONTAINS
      ENDIF
 #endif
 
-        
+     IF ( cu_physics == BMJSCHEME .AND. bmj_rad_feedback .EQV. .TRUE. ) THEN
+! hydrometeors from microphysics scheme have saved in q*_save 
+! Modify cloud fraction and temporarily hydrometeors (PCC scheme)
+         DO j=jts,jte
+         DO k=kts,kte
+         DO i=its,ite
+            qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
+            qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
+            ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
+            ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
+            cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
+         ENDDO
+         ENDDO
+         ENDDO
+     ENDIF
 
      lwrad_select: SELECT CASE(lw_physics)
 
@@ -1633,6 +1656,7 @@ CONTAINS
              ELSE
                 p_top_dummy = -1. ! not used by NMM
              END IF
+
              CALL RRTMLWRAD(                                        &
                   P_TOP=p_top_dummy                                 & 
                  ,RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
@@ -1643,7 +1667,7 @@ CONTAINS
                  ,QS3D=QS                                           &
                  ,QG3D=QG                                           &
                  ,P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t     &
-                 ,T8W=t8w,RHO3D=rho, CLDFRA3D=CLDFRA,R=R_d,G=G      &
+                 ,T8W=t8w,RHO3D=rho,CLDFRA3D=CLDFRA,R=R_d,G=G       &
                  ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR                     &
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
@@ -1654,6 +1678,7 @@ CONTAINS
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+
 
 ! NUWRF Version by Toshihisa Matsui and Jainn Shi 20090623
         case (goddardlwscheme)
@@ -1921,6 +1946,7 @@ CONTAINS
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
                   mp_physics=mp_physics                             )
 
+
         CASE (RRTMK_LWSCHEME)
 
            IF ( PRESENT(F_QNC) .AND. PRESENT(QNC_CURR) ) THEN
@@ -2004,6 +2030,7 @@ CONTAINS
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
                                                                     )
+
 #endif
 
         CASE (HELDSUAREZ)
@@ -2439,6 +2466,7 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
         CASE (RRTMG_SWSCHEME_FAST)
              CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
+
              CALL RRTMG_SWRAD_FAST(                                    &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &

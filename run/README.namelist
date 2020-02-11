@@ -702,7 +702,7 @@ Namelist variables for controlling the adaptive time step option:
  irr_start_julianday (max_dom)       = Julian start day of irrigation (int, e.g. 135)
  irr_end_julianday (max_dom)         = Julian end day of irrigation (int, e.g. 255)
  irr_ph (max_dom)                    = 0: all the static IRRIGATION field is activated
-                                     = 1: pseudo random activation field: ensures repetability across compilers
+                                     = 1: pseudo random activation field: ensures repeatability across compilers
                                      = 2: random activation field: results might depend on the compiler fortran RANDOM_SEED
  irr_freq (max_dom)                  = irrigation frequency in days (int, e.g. 3)
 

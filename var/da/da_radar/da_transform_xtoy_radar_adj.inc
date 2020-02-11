@@ -102,14 +102,16 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    !------------------------
    !  for jung et al 2008
    !------------------------
-   allocate (model_qsnb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qgrb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qnrb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qnsb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qngb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qnr(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qns(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qng(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   if (use_radar_rf .and. radar_rf_opt==2) then
+     allocate (model_qsnb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+     allocate (model_qgrb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+     allocate (model_qnrb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+     allocate (model_qnsb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+     allocate (model_qngb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+     allocate (model_qnr(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+     allocate (model_qns(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+     allocate (model_qng(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   end if
    !------------------------
  
    allocate (model_qsn(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -117,13 +119,13 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    allocate (model_qv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_t(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
-   if ( use_radar_rqv ) then
+   !if ( use_radar_rqv ) then
       !basic states
       allocate (model_qvb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
       allocate (model_tb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
       call da_interp_lin_3d (grid%xb%t,   iv%info(radar), model_tb)
       call da_interp_lin_3d (grid%xb%q,   iv%info(radar), model_qvb)
-   end if
+   !end if
 
    ! Needed
    model_u = 0.0
@@ -153,11 +155,13 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
       !------------------------
       !  for jung et al 2008
       !------------------------
-      model_qsnb(1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_qsn(1:iv%info(radar)%levels(n))
-      model_qgrb(1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_qgr(1:iv%info(radar)%levels(n))
-      model_qnrb(1:iv%info(radar)%levels(n),n) = 0
-      model_qnsb(1:iv%info(radar)%levels(n),n) = 0
-      model_qngb(1:iv%info(radar)%levels(n),n) = 0
+      if (use_radar_rf .and. radar_rf_opt==2) then
+        model_qsnb(1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_qsn(1:iv%info(radar)%levels(n))
+        model_qgrb(1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_qgr(1:iv%info(radar)%levels(n))
+        model_qnrb(1:iv%info(radar)%levels(n),n) = 0
+        model_qnsb(1:iv%info(radar)%levels(n),n) = 0
+        model_qngb(1:iv%info(radar)%levels(n),n) = 0
+      end if
       !------------------------
 
       do k = 1,iv%info(radar)%levels(n)
@@ -166,8 +170,6 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
 
             if (use_radar_rf .and. radar_rf_opt==2) then
                if (iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
-                 !select case (radar_rf_opt)
-                 !case(2)
                    tmk=model_tb(k,n)
                    prs=model_p(k,n)
                    zmm=iv % radar(n) % zmm(k) % inv
@@ -182,7 +184,6 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
                    model_qgr(k,n) = dqgr
                    model_t(k,n)   = dtmk
                    model_qv(k,n)  = dqvp
-                 !end select
                end if
             end if
 
@@ -270,19 +271,21 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    deallocate (model_qsn)
    deallocate (model_qgr)
    deallocate (model_rho)
-   if ( use_radar_rqv ) then
+   !if ( use_radar_rqv ) then
       deallocate (model_qvb)
       deallocate (model_tb)
-   end if
+   !end if
 
-   deallocate (model_qsnb)
-   deallocate (model_qgrb)
-   deallocate (model_qnr)
-   deallocate (model_qns)
-   deallocate (model_qng)
-   deallocate (model_qnrb)
-   deallocate (model_qnsb)
-   deallocate (model_qngb)
+   if (use_radar_rf .and. radar_rf_opt==2) then
+     deallocate (model_qsnb)
+     deallocate (model_qgrb)
+     deallocate (model_qnr)
+     deallocate (model_qns)
+     deallocate (model_qng)
+     deallocate (model_qnrb)
+     deallocate (model_qnsb)
+     deallocate (model_qngb)
+   end if
 
    if (trace_use) call da_trace_exit("da_transform_xtoy_radar_adj")
 

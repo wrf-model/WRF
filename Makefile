@@ -628,6 +628,8 @@ em_real : wrf
              ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;                   \
              ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;                   \
              ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
+             ln -sf ../../run/SBM_input_33 . ;        \
+             ln -sf ../../run/scattering_tables_2layer_high_quad_1dT_1%fw_110 . ;        \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \

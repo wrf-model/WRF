@@ -892,14 +892,18 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST ) .or. &
 #endif
-         (config_flags%ra_lw_physics .eq. goddardlwscheme ) .or. &
-         (config_flags%ra_lw_physics .eq. RRTMK_LWSCHEME  ) ) .and. &
+#if( BUILD_RRTMK == 1)
+         (config_flags%ra_lw_physics .eq. RRTMK_LWSCHEME  ) .or. &
+#endif
+         (config_flags%ra_lw_physics .eq. goddardlwscheme ) ) .and. &
        ( (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME ) .or. &
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST ) .or. &
 #endif
-         (config_flags%ra_sw_physics .eq. goddardswscheme ) .or. &
-         (config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) ) .and. &
+#if( BUILD_RRTMK == 1)
+         (config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) .or. &
+#endif
+         (config_flags%ra_sw_physics .eq. goddardswscheme ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
          config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
@@ -1910,8 +1914,10 @@ CONTAINS
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swinit_fast
 #endif
 #if (EM_CORE == 1)
+# if( BUILD_RRTMK == 1)
    USE module_ra_rrtmg_lwk  , ONLY : rrtmg_lwinit_k
    USE module_ra_rrtmg_swk  , ONLY : rrtmg_swinit_k
+# endif
 #endif
    USE module_ra_cam       , ONLY : camradinit
    USE module_ra_cam_support , ONLY : oznini
@@ -2120,6 +2126,7 @@ CONTAINS
 
             aclwalloc = .true.
 #if ( EM_CORE == 1 )
+# if( BUILD_RRTMK == 1)
         CASE (RRTMK_LWSCHEME)  
 
              CALL rrtmg_lwinit_k(                           &
@@ -2129,6 +2136,7 @@ CONTAINS
                            its, ite, jts, jte, kts, kte     )
 
              aclwalloc = .true.
+# endif
 #endif
 
 #if( BUILD_RRTMG_FAST == 1)
@@ -2233,6 +2241,7 @@ CONTAINS
              acswalloc = .true.
 
 #if ( EM_CORE == 1 )
+# if( BUILD_RRTMK == 1)
         CASE (RRTMK_SWSCHEME)
 
              CALL rrtmg_swinit_k(                           &
@@ -2242,6 +2251,7 @@ CONTAINS
                            its, ite, jts, jte, kts, kte     )
 
              acswalloc = .true.
+# endif
 #endif
 
 

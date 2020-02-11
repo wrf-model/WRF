@@ -188,7 +188,9 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
                                        ,RRTMG_LWSCHEME_FAST, RRTMG_SWSCHEME_FAST  &
 #endif
+#if( BUILD_RRTMK == 1)
                                        ,RRTMK_LWSCHEME, RRTMK_SWSCHEME  & 
+#endif
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ                      &
@@ -229,7 +231,9 @@ CONTAINS
    USE module_ra_rrtmg_lwf  , ONLY : rrtmg_lwrad_fast
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swrad_fast
 #endif
+#if( BUILD_RRTMK == 1)
    USE module_ra_rrtmg_swk  , ONLY : rad_rrtmg_driver
+#endif
    USE module_ra_cam        , ONLY : camrad
    USE module_ra_gfdleta    , ONLY : etara
 #if ( HWRF == 1 )
@@ -1037,11 +1041,14 @@ CONTAINS
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
 
-           case(RRTMG_SWSCHEME,&
+           case(RRTMG_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
-                RRTMG_SWSCHEME_FAST,&
+                ,RRTMG_SWSCHEME_FAST &
 #endif
-                RRTMK_SWSCHEME)
+#if( BUILD_RRTMK == 1)
+                ,RRTMK_SWSCHEME &
+#endif
+                )
               allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -1053,11 +1060,14 @@ CONTAINS
 ! Allocate aerosol arrays used by aer_opt = 3 option, and explicit AOD from QNWFA+QNIFA   (Trude)
    IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa) .AND. PRESENT(taod5503d) .AND.  PRESENT(taod5502d)) THEN
       IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                              &
-                 (sw_physics.eq.RRTMG_SWSCHEME .OR.                     &
+                 (sw_physics.eq.RRTMG_SWSCHEME                          &
 #if( BUILD_RRTMG_FAST == 1)
-                  sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.                &
+                  .OR. sw_physics.eq.RRTMG_SWSCHEME_FAST                &
 #endif
-                  sw_physics.eq.RRTMK_SWSCHEME )) THEN
+#if( BUILD_RRTMK == 1)
+                  .OR. sw_physics.eq.RRTMK_SWSCHEME                     &
+#endif
+                  )) THEN
          CALL wrf_debug (150, 'DEBUG-GT:  computing 3D AOD from QNWFA+QNIFA')
 
          allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -1947,6 +1957,7 @@ CONTAINS
                   mp_physics=mp_physics                             )
 
 
+#if( BUILD_RRTMK == 1)
         CASE (RRTMK_LWSCHEME)
 
            IF ( PRESENT(F_QNC) .AND. PRESENT(QNC_CURR) ) THEN
@@ -1974,6 +1985,7 @@ CONTAINS
              ELSE
                 call wrf_error_fatal('Can not call RRTMG-K. Missing QNC field.')
              ENDIF
+#endif
 
 
 #if( BUILD_RRTMG_FAST == 1)
@@ -2125,11 +2137,14 @@ CONTAINS
      IF ( aer_opt .EQ. 2 ) THEN
      swrad_aerosol_select2: select case(sw_physics)
 
-        case(RRTMG_SWSCHEME,&
+        case(RRTMG_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
-             RRTMG_SWSCHEME_FAST,&
+             ,RRTMG_SWSCHEME_FAST &
 #endif
-             RRTMK_SWSCHEME)
+#if( BUILD_RRTMK == 1)
+             ,RRTMK_SWSCHEME &
+#endif
+            )
            call wrf_debug(100, 'call calc_aerosol_rrtmg_sw')
            call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,aer_type,aer_aod550_opt,aer_angexp_opt,    &
                                       aer_ssa_opt,aer_asy_opt,aer_aod550_val,aer_angexp_val,    &
@@ -2153,11 +2168,14 @@ CONTAINS
 
      IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa)) THEN
        IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                             &
-                             (sw_physics.eq.RRTMG_SWSCHEME .OR.         &
+                             (sw_physics.eq.RRTMG_SWSCHEME              &
 #if( BUILD_RRTMG_FAST == 1)
-                              sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.    &
+                              .OR. sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.    &
 #endif
-                              sw_physics.eq.RRTMK_SWSCHEME )) THEN
+#if( BUILD_RRTMK == 1)
+                              .OR. sw_physics.eq.RRTMK_SWSCHEME &
+#endif
+                             )) THEN
          call wrf_debug(100, 'call calc_aerosol_rrtmg_sw with 3D AOD values')
          call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,taer_type,taer_aod550_opt,taer_angexp_opt,  &
                                     taer_ssa_opt,taer_asy_opt,aer_aod550_val,aer_angexp_val,   &
@@ -2453,6 +2471,7 @@ CONTAINS
              ENDDO
              ENDDO
 
+#if( BUILD_RRTMK == 1)
         CASE (RRTMK_SWSCHEME)
   
              DO j=jts,jte
@@ -2462,6 +2481,7 @@ CONTAINS
              ENDDO
              ENDDO
              ENDDO
+#endif
 
 #if( BUILD_RRTMG_FAST == 1)
         CASE (RRTMG_SWSCHEME_FAST)
@@ -2662,7 +2682,9 @@ CONTAINS
            .AND. (sw_physics .NE. RRTMG_SWSCHEME_FAST) &
 #endif
            .AND. (sw_physics .NE. FLGSWSCHEME) .AND. (sw_physics .NE. CAMSWSCHEME) &  ! amontornes-bcodina (2014-04-20)
+#if( BUILD_RRTMK == 1)
            .AND. (sw_physics .NE. RRTMK_SWSCHEME) &
+#endif
            .AND. (sw_physics .ne. GODDARDSWSCHEME)) THEN
         DO j=jts,jte
            DO i=its,ite
@@ -2812,11 +2834,14 @@ CONTAINS
      accumulate_lw_select: SELECT CASE(lw_physics)
 
      CASE (CAMLWSCHEME,& 
-           RRTMG_LWSCHEME,&
+           RRTMG_LWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
-           RRTMG_LWSCHEME_FAST,&
+           ,RRTMG_LWSCHEME_FAST &
 #endif
-           RRTMK_LWSCHEME)
+#if( BUILD_RRTMK == 1)
+           ,RRTMK_LWSCHEME &
+#endif
+          )
    IF(PRESENT(LWUPTC))THEN
 !  NMM calls the driver every RADT time steps, EM calls every DT
 #if (EM_CORE == 1)
@@ -2854,11 +2879,14 @@ CONTAINS
      accumulate_sw_select: SELECT CASE(sw_physics)
 
      CASE (CAMSWSCHEME,&
-           RRTMG_SWSCHEME,&
+           RRTMG_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
-           RRTMG_SWSCHEME_FAST,&
+           ,RRTMG_SWSCHEME_FAST &
 #endif
-           RRTMK_SWSCHEME)
+#if( BUILD_RRTMK == 1)
+           ,RRTMK_SWSCHEME &
+#endif
+          )
    IF(PRESENT(SWUPTC))THEN
 !  NMM calls the driver every RADT time steps, EM calls every DT
 #if (EM_CORE == 1)

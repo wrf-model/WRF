@@ -1162,7 +1162,7 @@ use module_wrf_error
      END DO
        ! Update temperature in soil layer
        CALL SHFLX (SSOILR,TGRL,SMR,SMCMAX,NGR,TGRP,DELT,YY,ZZ1,ZSOILR,       &
-                   TRLEND,ZBOT,SMCWLT,DF1,QUARTZ,CSOIL,CAPR)
+                  TRLEND,ZBOT,SMCWLT,DF1,QUARTZ,CSOIL,CAPR)
    FLXTHGR=HGR/RHO/CP/100.
    FLXHUMGR=ELEGR/RHO/EL/100.
 ELSE

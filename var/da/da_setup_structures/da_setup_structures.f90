@@ -71,7 +71,7 @@ module da_setup_structures
    use da_control, only: rden_bin, use_lsac
    use da_control, only: use_cv_w
    use da_control, only: pseudo_tpw, pseudo_ztd, pseudo_ref, pseudo_uvtpq, pseudo_elv, anal_type_qcobs
-   use da_control, only: ccv_be_inp_opt, use_gpsephobs, gpseph_loadbalance, gpseph
+   use da_control, only: use_gpsephobs, gpseph_loadbalance, gpseph
    use da_control, only: ep_format
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_rad, &

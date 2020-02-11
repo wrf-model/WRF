@@ -675,6 +675,7 @@ ENDIF
        IF ( config_flags%cu_physics == SASSCHEME      .or.   &
             config_flags%cu_physics == TIEDTKESCHEME  .or.   &
             config_flags%cu_physics == NTIEDTKESCHEME .or.   &
+            config_flags%cu_physics == MSKFSCHEME     .or.   &
             config_flags%cu_physics == CAMZMSCHEME    .or.   &
             config_flags%cu_physics == SCALESASSCHEME .or.   &
             config_flags%cu_physics == NSASSCHEME     .or.   &

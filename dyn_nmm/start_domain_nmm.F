@@ -2172,6 +2172,7 @@
      &             ,grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state           &
      &             ,ALLOWED_TO_READ,grid%moved,START_OF_SIMULATION                    &
      &             ,1                                                   & ! lagday
+     &             ,grid%U10,grid%V10,grid%U10E,grid%V10E               &
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &

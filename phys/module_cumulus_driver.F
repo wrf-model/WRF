@@ -1056,9 +1056,10 @@ CONTAINS
                ,ZOL=zol,HFX=hfx,UST=ust,PBLH=pblh               & !ckay
                ,AEROCU=aerocu,NO_SRC_TYPES_CU=no_src_types_cu   &
                ,AERCU_FCT=aercu_fct,AERCU_OPT=aercu_opt        &
-               ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS)
-#endif
-
+               ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS                   &
+               ,RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,XLAND=XLAND)       !JTR
+#endif  
+ 
      CASE (GDSCHEME)
           CALL wrf_debug(100,'in grelldrv')
           CALL GRELLDRV(                                        &

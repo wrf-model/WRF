@@ -981,9 +981,10 @@ CONTAINS
 !***
 !***  HUMIDITY PROFILE
 !***
+          PSK(L)=PK(L)+DSP
+          APESK(L)=(1.E5/PSK(L))**CAPA
+
           IF(PK(L)>PQM)THEN
-            PSK(L)=PK(L)+DSP
-            APESK(L)=(1.E5/PSK(L))**CAPA
             THSK(L)=TREFK(L)*APEK(L)
             QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSK(L)-A3*APESK(L))            &
      &                                /(THSK(L)-A4*APESK(L)))
@@ -1001,14 +1002,18 @@ CONTAINS
 !
           SUMDE=0.
           SUMDP=0.
+          DHDT =0.
 !
           DO L=LTOP,LB
             SUMDE=((TK(L)-TREFK(L))*CP+(QK(L)-QREFK(L))*EL(L))*DPRS(L)  &
      &            +SUMDE
+            DHDT=(QREFK(L)*A23M4L/((TREFK(L)*APEK(L)/APESK(L))-A4)**2+CP)*DPRS(L) &
+     &            +DHDT
             SUMDP=SUMDP+DPRS(L)
           ENDDO
 !
           HCORR=SUMDE/(SUMDP-DPRS(LTOP))
+          DHDT=DHDT/(SUMDP-DPRS(LTOP))
           LCOR=LTOP+1
 !***
 !***  FIND LQM
@@ -1030,8 +1035,6 @@ CONTAINS
 !***  BELOW LQM CORRECT BOTH TEMPERATURE AND MOISTURE
 !***
           DO L=LCOR,LB
-            TSKL=TREFK(L)*APEK(L)/APESK(L)
-            DHDT=QREFK(L)*A23M4L/(TSKL-A4)**2+CP
             TREFK(L)=HCORR/DHDT+TREFK(L)
             THSKL=TREFK(L)*APEK(L)
             QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSKL-A3*APESK(L))              &

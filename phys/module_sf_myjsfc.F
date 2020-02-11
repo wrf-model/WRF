@@ -73,7 +73,7 @@ CONTAINS
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC         &
      &                 ,QGH,CPM,CT                                     &
      &                 ,U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR          &
-     &                 ,P1000mb                                        &
+     &                 ,P1000mb,U10E,V10E                              &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -105,7 +105,8 @@ CONTAINS
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: FLX_LH,HFX,PSHLTR &
      &                                              ,QFX,Q10,QSHLTR    &
      &                                              ,TH10,TSHLTR,T02   &
-     &                                              ,U10,V10,TH02,Q02
+     &                                              ,U10,V10,TH02,Q02  &
+     &                                              ,U10E,V10E
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS       &
      &                                                ,PBLH,QSFC
@@ -315,6 +316,7 @@ CONTAINS
      &               ,ZSL,PLOW                                         &
      &               ,U10(I,J),V10(I,J),TSHLTR(I,J),TH10(I,J)          &
      &               ,QSHLTR(I,J),Q10(I,J),PSHLTR(I,J)                 &
+     &               ,U10E(I,J),V10E(I,J)                              &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1))
@@ -364,6 +366,7 @@ CONTAINS
      &                 ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
      &                 ,ZSL,PLOW                                       &
      &                 ,U10,V10,TH02,TH10,Q02,Q10,PSHLTR               &
+     &                 ,U10E,V10E                                      &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC)
@@ -390,7 +393,7 @@ CONTAINS
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
      &                   ,PSHLTR,Q02,Q10,QFX,QGH,RIB,RLMO              &
-     &                   ,TH02,TH10,U10,V10
+     &                   ,TH02,TH10,U10,V10,U10E,V10E
 !
       REAL,INTENT(INOUT) :: AKHS,AKMS,QZ0,THZ0,USTAR,UZ0,VZ0,Z0,QS
 !----------------------------------------------------------------------
@@ -412,7 +415,7 @@ CONTAINS
 !
       REAL :: AKHS02,AKHS10,AKMS02,AKMS10,EKMS10,QSAT10,QSAT2          &
      &       ,RLNT02,RLNT10,RLNU10,SIMH02,SIMH10,SIMM10,T02,T10        &
-     &       ,TERM1,RLOW,U10E,V10E,WSTAR,XLT02,XLT024,XLT10            &
+     &       ,TERM1,RLOW,WSTAR,XLT02,XLT024,XLT10            &
      &       ,XLT104,XLU10,XLU104,XU10,XU104,ZT02,ZT10,ZTAT02,ZTAT10   &
      &       ,ZTAU,ZTAU10,ZU10,ZUUZ
 !----------------------------------------------------------------------
@@ -1016,8 +1019,8 @@ CONTAINS
 
       ENDIF
 !
-      U10=U10E
-      V10=V10E
+!     U10=U10E
+!     V10=V10E
 !
 !----------------------------------------------------------------------
 !***  SET OTHER WRF DRIVER ARRAYS

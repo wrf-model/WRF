@@ -472,8 +472,8 @@ CONTAINS
                                                            HBOTR, &
                                                            CUPPT
      ! FARMS coupling
-   REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(IN) ::  MUT
-   REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: DNW
+   REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(IN), OPTIONAL ::  MUT
+   REAL , DIMENSION( kms:kme ) , INTENT(IN   ), OPTIONAL :: DNW
 
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                 &
@@ -615,7 +615,7 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)  ::   SWDOWN
      ! PAJ: FARMS coupling
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)  ::   SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2, SWDOWNC2, SWDDNIC2
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT), OPTIONAL  ::   SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2, SWDOWNC2, SWDDNIC2
 
 ! ------------------------------------------------------------------------------ jararias 2013/08/10 -----------
    REAL, DIMENSION( ims:ime, jms:jme ),  INTENT(OUT) :: swddir, & ! All-sky SW broadband surface direct irradiance
@@ -2745,31 +2745,40 @@ CONTAINS
  end if
 
    ! Coupling with FARMS
- if (swint_opt == 2) then
-    call wrf_debug(100,'SW surface irradiance calculated with FARMS')
-
-    if (aer_opt == 1) then
-      DO j=jts,jte
-        DO i=its,ite
-          aod5502d(i, j) = aodtot(i, j)
-        ENDDO
-      ENDDO
+ if( present(mut      ) .and. &
+     present(dnw      ) .and. &
+     present(swdown2  ) .and. &
+     present(swddir2  ) .and. &
+     present(swddni2  ) .and. &
+     present(swddif2  ) .and. &
+     present(swdownc2 ) .and. &
+     present(swddnic2 ) ) then
+    if (swint_opt == 2) then
+       call wrf_debug(100,'SW surface irradiance calculated with FARMS')
+   
+       if (aer_opt == 1) then
+         DO j=jts,jte
+           DO i=its,ite
+             aod5502d(i, j) = aodtot(i, j)
+           ENDDO
+         ENDDO
+       end if
+   
+       !---------------
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+       do ij = 1,num_tiles
+         its = i_start(ij)
+         ite = i_end(ij)
+         jts = j_start(ij)
+         jte = j_end(ij)
+         call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
+              p8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
+              coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
+              julian, mut, dnw, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+       enddo
+       !$OMP END PARALLEL DO
     end if
-
-    !---------------
-    !$OMP PARALLEL DO   &
-    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
-    do ij = 1,num_tiles
-      its = i_start(ij)
-      ite = i_end(ij)
-      jts = j_start(ij)
-      jte = j_end(ij)
-      call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
-           p8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
-           coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-           julian, mut, dnw, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
-    enddo
-    !$OMP END PARALLEL DO
  end if
 
      accumulate_lw_select: SELECT CASE(lw_physics)

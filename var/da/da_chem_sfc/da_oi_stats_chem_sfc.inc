@@ -16,7 +16,6 @@ subroutine da_oi_stats_chem_sfc (stats_unit, iv)
 
    if (trace_use_dull) call da_trace_entry("da_oi_stats_chem_sfc")
 
-   nchem=0
 
    allocate(stats%maximum%chem(num_chemic_surf))
    allocate(stats%minimum%chem(num_chemic_surf))
@@ -31,6 +30,7 @@ subroutine da_oi_stats_chem_sfc (stats_unit, iv)
    end do
 
    do ichem=PARAM_FIRST_SCALAR, num_chemic_surf
+   nchem=0
 
 !   stats%maximum%chem(ichem) = maxmin_type (missing_r, 0, 0)
 !   stats%minimum%chem(ichem) = maxmin_type (missing_r, 0, 0)
@@ -56,15 +56,19 @@ subroutine da_oi_stats_chem_sfc (stats_unit, iv)
       stats%minimum%chem(ichem)%value, stats%maximum%chem(ichem)%value, &
       stats%minimum%chem(ichem)%n, stats%maximum%chem(ichem)%n, &
       stats%minimum%chem(ichem)%l, stats%maximum%chem(ichem)%l)
-   end do
 
    if (rootproc) then
       if (nchem /= 0 ) then
          write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of OI for chem'
-         call da_print_stats_chem_sfc(stats_unit, nchem, stats)
+         if (chemicda_opt == 1 .or. chemicda_opt == 2) then
+           call da_print_stats_chem_sfc(stats_unit, nchem, stats)
+         else if (chemicda_opt == 3 .or. chemicda_opt == 4 .or. chemicda_opt == 5) then
+             call da_print_stats_chem_sfc(stats_unit, nchem, stats, ichem)   
+         end if
       end if
    end if
 
+   end do
     deallocate(stats%maximum%chem)
     deallocate(stats%minimum%chem)
     deallocate(stats%average%chem)

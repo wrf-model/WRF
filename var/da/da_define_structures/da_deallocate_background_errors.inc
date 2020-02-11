@@ -46,7 +46,7 @@ subroutine da_deallocate_background_errors (be)
 #endif
 
 #if (WRF_CHEM == 1)
-     if (chem_cv_options ==1 ) then
+     if (chem_cv_options >=10 ) then
        !! Chem SFC
        do ic = PARAM_FIRST_SCALAR, num_chem
           if ( be % v12(ic-1) % mz > 0 ) then

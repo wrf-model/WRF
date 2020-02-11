@@ -55,7 +55,7 @@ module da_minimisation
       chem_surf, chem_acft, num_platform, &
       chemic_surf, &
       sigma_r_acft, sigma_c_acft, &
-      num_ant_steps, num_bb_steps, &
+      num_ant_steps, num_bb_steps, chemicda_opt, &
 #endif
       info_stop, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpseph, gpspw, polaramv, geoamv, ships, metar, &
@@ -152,7 +152,7 @@ module da_minimisation
       da_jo_and_grady_chem_surf, da_jo_and_grady_chem_acft, &
       da_calculate_grady_chem_surf, da_calculate_grady_chem_acft
 
-   use da_obs_io, only : da_write_obs_chem_sfc, da_final_write_obs_chem_sfc
+   use da_obs_io, only : da_write_obs_chem_sfc, da_final_write_obs_chem_sfc, da_final_write_obs_gas_sfc
 
    use da_chem_sfc, only : da_get_innov_vector_chem_sfc, da_ao_stats_chem_sfc, &
       da_residual_chem_sfc, da_oi_stats_chem_sfc, &

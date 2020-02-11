@@ -78,10 +78,11 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp &
    ! [2.0]: Perform vp = u_v vv transform:
    !----------------------------------------------------------------------
 
-!   if (chem_cv_options ==1 .and. present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
-   if (chem_cv_options ==1 .and. present(vchem)) then
+#if (WRF_CHEM == 1)
+   if (chem_cv_options >= 10 .and. present(vchem)) then
       call da_transform_vchemtox(grid, vchem, be)
    end if
+#endif
 
    if (  cv_options == 3 ) then
 

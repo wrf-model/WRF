@@ -66,10 +66,10 @@ state    real   chems_ch4          f  chem_surf               1         -      h
 state    real   -                   f  chemic_surf               -         -      -       -   "Chem IC Surface Obs."  ""
 state    real   chemsi_pm25         f  chemic_surf               1         -      h{19}      "chems_pm25"   "pm25 observation"           "ug/m^3"
 state    real   chemsi_pm10         f  chemic_surf               1         -      h{19}      "chems_pm10"   "pm10 observation"           "ug/m^3"
-##state    real   chemsi_so2          f  chemic_surf               1         -      h{19}      "chems_so2"    "so2 observation"            "ug/m^3"
-##state    real   chemsi_no2          f  chemic_surf               1         -      h{19}      "chems_no2"    "no2 observation"            "ug/m^3"
-##state    real   chemsi_o3           f  chemic_surf               1         -      h{19}      "chems_o3"     "o3 observation"             "ug/m^3"
-##state    real   chemsi_co           f  chemic_surf               1         -      h{19}      "chems_co"     "co observation"             "mg/m^3"
+state    real   chemsi_so2          f  chemic_surf               1         -      h{19}      "chems_so2"    "so2 observation"            "ug/m^3"
+state    real   chemsi_no2          f  chemic_surf               1         -      h{19}      "chems_no2"    "no2 observation"            "ug/m^3"
+state    real   chemsi_o3           f  chemic_surf               1         -      h{19}      "chems_o3"     "o3 observation"             "ug/m^3"
+state    real   chemsi_co           f  chemic_surf               1         -      h{19}      "chems_co"     "co observation"             "mg/m^3"
 
 #state    real    -             {nsurfic}f  surfic_hx       1         -     -          -  "surface model Chem IC concentrations" ""
 #state    real    surf_pm25     {nsurfic}f  surfic_hx       1         -     h{19}      "surf_pm25"     "surface modeled pm25"    "ug/m^3"
@@ -3783,6 +3783,38 @@ typedef xchem_type real chem_ic_seas_1          ijkf          chem_ic     1   - 
 typedef xchem_type real chem_ic_seas_2          ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_seas_3          ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_seas_4          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bc_a01          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bc_a02          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bc_a03          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bc_a04          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oc_a01          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oc_a02          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oc_a03          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oc_a04          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4_a01          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4_a02          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4_a03          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4_a04          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3_a01          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3_a02          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3_a03          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3_a04          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4_a01          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4_a02          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4_a03          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4_a04          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_cl_a01          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_cl_a02          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_cl_a03          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_cl_a04          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_na_a01          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_na_a02          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_na_a03          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_na_a04          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oin_a01          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oin_a02          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oin_a03          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oin_a04          ijkf          chem_ic     1   -   -
 
 ##END XCHEM_TYPE DEFINITION
 
@@ -3793,7 +3825,10 @@ state xchem_type vchem2  -  -
 
 #-----------------------------
 #CHEMISTRY PACKAGE DEFINITIONS
-package    gocart_test       chem_cv_options==1     -           chem:sulf,p10,p25,so2,no2,o3,co,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,seas_1,seas_2,seas_3,seas_4;chem_ic:chem_ic_sulf,chem_ic_p10,chem_ic_p25,chem_ic_so2,chem_ic_no2,chem_ic_o3,chem_ic_co,chem_ic_bc1,chem_ic_bc2,chem_ic_oc1,chem_ic_oc2,chem_ic_dust_1,chem_ic_dust_2,chem_ic_dust_3,chem_ic_dust_4,chem_ic_seas_1,chem_ic_seas_2,chem_ic_seas_3,chem_ic_seas_4
+package    gocart_test       chem_cv_options==10     -           chem:sulf,p10,p25,so2,no2,o3,co,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,seas_1,seas_2,seas_3,seas_4;chem_ic:chem_ic_sulf,chem_ic_p10,chem_ic_p25,chem_ic_so2,chem_ic_no2,chem_ic_o3,chem_ic_co,chem_ic_bc1,chem_ic_bc2,chem_ic_oc1,chem_ic_oc2,chem_ic_dust_1,chem_ic_dust_2,chem_ic_dust_3,chem_ic_dust_4,chem_ic_seas_1,chem_ic_seas_2,chem_ic_seas_3,chem_ic_seas_4
+#package    mosaic_test       chem_cv_options==20     -           chem:bc_a01,bc_a02,bc_a03,oc_a01,oc_a02,oc_a03,so4_a01,so4_a02,so4_a03,no3_a01,no3_a02,no3_a03,nh4_a01,nh4_a02,nh4_a03,cl_a01,cl_a02,cl_a03,na_a01,na_a02,na_a03,oin_a01,oin_a02,oin_a03;chem_ic:chem_ic_bc_a01,chem_ic_bc_a02,chem_ic_bc_a03,chem_ic_oc_a01,chem_ic_oc_a02,chem_ic_oc_a03,chem_ic_so4_a01,chem_ic_so4_a02,chem_ic_so4_a03,chem_ic_no3_a01,chem_ic_no3_a02,chem_ic_no3_a03,chem_ic_nh4_a01,chem_ic_nh4_a02,chem_ic_nh4_a03,chem_ic_cl_a01,chem_ic_cl_a02,chem_ic_cl_a03,chem_ic_na_a01,chem_ic_na_a02,chem_ic_na_a03,chem_ic_oin_a01,chem_ic_oin_a02,chem_ic_oin_a03
+#package    mosaic_test       chem_cv_options==20     -           chem:bc_a01,bc_a02,bc_a03,bc_a04,oc_a01,oc_a02,oc_a03,oc_a04,so4_a01,so4_a02,so4_a03,so4_a04,no3_a01,no3_a02,no3_a03,no3_a04,nh4_a01,nh4_a02,nh4_a03,nh4_a04,cl_a01,cl_a02,cl_a03,cl_a04,na_a01,na_a02,na_a03,na_a04,oin_a01,oin_a02,oin_a03,oin_a04;chem_ic:chem_ic_bc_a01,chem_ic_bc_a02,chem_ic_bc_a03,chem_ic_bc_a04,chem_ic_oc_a01,chem_ic_oc_a02,chem_ic_oc_a03,chem_ic_oc_a04,chem_ic_so4_a01,chem_ic_so4_a02,chem_ic_so4_a03,chem_ic_so4_a04,chem_ic_no3_a01,chem_ic_no3_a02,chem_ic_no3_a03,chem_ic_no3_a04,chem_ic_nh4_a01,chem_ic_nh4_a02,chem_ic_nh4_a03,chem_ic_nh4_a04,chem_ic_cl_a01,chem_ic_cl_a02,chem_ic_cl_a03,chem_ic_cl_a04,chem_ic_na_a01,chem_ic_na_a02,chem_ic_na_a03,chem_ic_na_a04,chem_ic_oin_a01,chem_ic_oin_a02,chem_ic_oin_a03,chem_ic_oin_a04
+package    mosaic_test       chem_cv_options==20     -           chem:bc_a01,bc_a02,bc_a03,bc_a04,oc_a01,oc_a02,oc_a03,oc_a04,so4_a01,so4_a02,so4_a03,so4_a04,no3_a01,no3_a02,no3_a03,no3_a04,nh4_a01,nh4_a02,nh4_a03,nh4_a04,cl_a01,cl_a02,cl_a03,cl_a04,na_a01,na_a02,na_a03,na_a04,oin_a01,oin_a02,oin_a03,oin_a04,so2,no2,o3,co;chem_ic:chem_ic_bc_a01,chem_ic_bc_a02,chem_ic_bc_a03,chem_ic_bc_a04,chem_ic_oc_a01,chem_ic_oc_a02,chem_ic_oc_a03,chem_ic_oc_a04,chem_ic_so4_a01,chem_ic_so4_a02,chem_ic_so4_a03,chem_ic_so4_a04,chem_ic_no3_a01,chem_ic_no3_a02,chem_ic_no3_a03,chem_ic_no3_a04,chem_ic_nh4_a01,chem_ic_nh4_a02,chem_ic_nh4_a03,chem_ic_nh4_a04,chem_ic_cl_a01,chem_ic_cl_a02,chem_ic_cl_a03,chem_ic_cl_a04,chem_ic_na_a01,chem_ic_na_a02,chem_ic_na_a03,chem_ic_na_a04,chem_ic_oin_a01,chem_ic_oin_a02,chem_ic_oin_a03,chem_ic_oin_a04,chem_ic_so2,chem_ic_no2,chem_ic_o3,chem_ic_co
 #package   nta_radm2         nta_chem_opt==1                  -             a_chem:a_so2,a_sulf,a_no2,a_no,a_o3,a_hno3,a_h2o2,a_ald,a_hcho,a_op1,a_op2,a_paa,a_ora1,a_ora2,a_nh3,a_n2o5,a_no3,a_pan,a_hc3,a_hc5,a_hc8,a_eth,a_co,a_ol2,a_olt,a_oli,a_tol,a_xyl,a_aco3,a_tpan,a_hono,a_hno4,a_ket,a_gly,a_mgly,a_dcb,a_onit,a_csl,a_iso,a_hcl,a_ho,a_ho2;g_chem:g_so2,g_sulf,g_no2,g_no,g_o3,g_hno3,g_h2o2,g_ald,g_hcho,g_op1,g_op2,g_paa,g_ora1,g_ora2,g_nh3,g_n2o5,g_no3,g_pan,g_hc3,g_hc5,g_hc8,g_eth,g_co,g_ol2,g_olt,g_oli,g_tol,g_xyl,g_aco3,g_tpan,g_hono,g_hno4,g_ket,g_gly,g_mgly,g_dcb,g_onit,g_csl,g_iso,g_hcl,g_ho,g_ho2
 #package   nta_radm2sorg     nta_chem_opt==2                  -             a_chem:a_so2,a_sulf,a_no2,a_no,a_o3,a_hno3,a_h2o2,a_ald,a_hcho,a_op1,a_op2,a_paa,a_ora1,a_ora2,a_nh3,a_n2o5,a_no3,a_pan,a_hc3,a_hc5,a_hc8,a_eth,a_co,a_ol2,a_olt,a_oli,a_tol,a_xyl,a_aco3,a_tpan,a_hono,a_hno4,a_ket,a_gly,a_mgly,a_dcb,a_onit,a_csl,a_iso,a_hcl,a_ho,a_ho2,a_so4aj,a_so4ai,a_nh4aj,a_nh4ai,a_no3aj,a_no3ai,a_naaj,a_naai,a_claj,a_clai,a_orgaro1j,a_orgaro1i,a_orgaro2j,a_orgaro2i,a_orgalk1j,a_orgalk1i,a_orgole1j,a_orgole1i,a_orgba1j,a_orgba1i,a_orgba2j,a_orgba2i,a_orgba3j,a_orgba3i,a_orgba4j,a_orgba4i,a_orgpaj,a_orgpai,a_ecj,a_eci,a_p25j,a_p25i,a_antha,a_seas,a_soila,a_nu0,a_ac0,a_corn;g_chem:g_so2,g_sulf,g_no2,g_no,g_o3,g_hno3,g_h2o2,g_ald,g_hcho,g_op1,g_op2,g_paa,g_ora1,g_ora2,g_nh3,g_n2o5,g_no3,g_pan,g_hc3,g_hc5,g_hc8,g_eth,g_co,g_ol2,g_olt,g_oli,g_tol,g_xyl,g_aco3,g_tpan,g_hono,g_hno4,g_ket,g_gly,g_mgly,g_dcb,g_onit,g_csl,g_iso,g_hcl,g_ho,g_ho2,g_so4aj,g_so4ai,g_nh4aj,g_nh4ai,g_no3aj,g_no3ai,g_naaj,g_naai,g_claj,g_clai,g_orgaro1j,g_orgaro1i,g_orgaro2j,g_orgaro2i,g_orgalk1j,g_orgalk1i,g_orgole1j,g_orgole1i,g_orgba1j,g_orgba1i,g_orgba2j,g_orgba2i,g_orgba3j,g_orgba3i,g_orgba4j,g_orgba4i,g_orgpaj,g_orgpai,g_ecj,g_eci,g_p25j,g_p25i,g_antha,g_seas,g_soila,g_nu0,g_ac0,g_corn
 #package   nta_cbmz          nta_chem_opt==5                  -             a_chem:a_so2,a_sulf,a_no2,a_no,a_o3,a_hno3,a_h2o2,a_ald,a_hcho,a_op1,a_op2,a_ora1,a_ora2,a_nh3,a_n2o5,a_no3,a_pan,a_eth,a_co,a_ol2,a_olt,a_oli,a_tol,a_xyl,a_hono,a_hno4,a_ket,a_mgly,a_onit,a_csl,a_iso,a_ho,a_ho2,a_hcl,a_ch3o2,a_ethp,a_ch3oh,a_c2h5oh,a_par,a_to2,a_cro,a_open,a_op3,a_c2o3,a_ro2,a_ano2,a_nap,a_xo2,a_xpar,a_isoprd,a_isopp,a_isopn,a_isopo2,a_dms,a_msa,a_dmso,a_dmso2,a_ch3so2h,a_ch3sch2oo,a_ch3so2,a_ch3so3,a_ch3so2oo,a_ch3so2ch2oo,a_mtf;g_chem:g_so2,g_sulf,g_no2,g_no,g_o3,g_hno3,g_h2o2,g_ald,g_hcho,g_op1,g_op2,g_ora1,g_ora2,g_nh3,g_n2o5,g_no3,g_pan,g_eth,g_co,g_ol2,g_olt,g_oli,g_tol,g_xyl,g_hono,g_hno4,g_ket,g_mgly,g_onit,g_csl,g_iso,g_ho,g_ho2,g_hcl,g_ch3o2,g_ethp,g_ch3oh,g_c2h5oh,g_par,g_to2,g_cro,g_open,g_op3,g_c2o3,g_ro2,g_ano2,g_nap,g_xo2,g_xpar,g_isoprd,g_isopp,g_isopn,g_isopo2,g_dms,g_msa,g_dmso,g_dmso2,g_ch3so2h,g_ch3sch2oo,g_ch3so2,g_ch3so3,g_ch3so2oo,g_ch3so2ch2oo,g_mtf
@@ -3981,14 +4016,10 @@ package   all_surf         chemda_opt==11                     -          chem_su
 
 
 package   pm25_only        chemicda_opt==1                    -          chemic_surf:chemsi_pm25
-#package   pm10_only        chemicda_opt==2                    -          chemic_surf:chemsi_pm10
-#package   so2_only         chemicda_opt==3                    -          chemic_surf:chemsi_so2
-#package   no2_only         chemicda_opt==4                    -          chemic_surf:chemsi_no2
-#package   o3_only          chemicda_opt==5                    -          chemic_surf:chemsi_o3
-#package   co_only          chemicda_opt==6                    -          chemic_surf:chemsi_co
-package   all_pm           chemicda_opt==7                    -          chemic_surf:chemsi_pm25,chemsi_pm10
-
-#package   all_ic           chemicda_opt==10                   -          chem_surf:chemsi_pm25,chemsi_pm10,chemsi_so2,chemsi_no2,chemsi_o3,chemsi_co
+package   pm10_only        chemicda_opt==2                    -          chemic_surf:chemsi_pm10
+package   all_pm           chemicda_opt==3                    -          chemic_surf:chemsi_pm25,chemsi_pm10
+package   all_gas          chemicda_opt==4                    -          chemic_surf:chemsi_so2,chemsi_no2,chemsi_o3,chemsi_co
+package   all_ic           chemicda_opt==5                    -          chemic_surf:chemsi_pm25,chemsi_pm10,chemsi_so2,chemsi_no2,chemsi_o3,chemsi_co
 
 halo      HALO_CHEM_INIT     dyn_em 24:xbchem%chem_ic
 halo      HALO_CHEM_XB       dyn_em 24:xbchem%chem_ic

@@ -21,6 +21,8 @@ use da_control, only : rootproc,ierr,comm,num_surf_obs,num_acft_obs,num_ts, &
       max_error_chemic_surf, &
       sigma_r_surf, sigma_r_acft, sigma_c_surf, sigma_c_acft, &
       pinterp_option, &
+      chem_cv_options, &
+      chemicda_opt, &
       use_chemic_surfobs, chemic_surf, &
       missing_r, stdout, adtl_run_hours, &
       its, ite, jts, jte, kts, kte, &
@@ -34,10 +36,16 @@ use da_par_util1, only : da_proc_sum_int, da_proc_sum_ints
 use da_par_util, only : da_proc_stats_combine
 use module_state_description, only : num_chemic_surf, num_chem, &
       PARAM_FIRST_SCALAR, &
+      p_chemsi_pm25, p_chemsi_pm10, &
+      p_chemsi_so2, p_chemsi_no2, p_chemsi_o3, p_chemsi_co, &
       p_chem_ic_p25, p_chem_ic_p10, p_chem_ic_sulf, p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2, &
       p_chem_ic_dust_1, p_chem_ic_dust_2, p_chem_ic_dust_3, p_chem_ic_dust_4, &
       p_chem_ic_seas_1, p_chem_ic_seas_2, p_chem_ic_seas_3, p_chem_ic_seas_4, &
-      p_chemsi_pm25, p_chemsi_pm10
+      p_chem_ic_bc_a01, p_chem_ic_bc_a02, p_chem_ic_bc_a03, p_chem_ic_bc_a04, p_chem_ic_oc_a01, p_chem_ic_oc_a02, p_chem_ic_oc_a03, p_chem_ic_oc_a04, &
+      p_chem_ic_so4_a01, p_chem_ic_so4_a02, p_chem_ic_so4_a03, p_chem_ic_so4_a04, p_chem_ic_no3_a01, p_chem_ic_no3_a02, p_chem_ic_no3_a03, p_chem_ic_no3_a04,&
+      p_chem_ic_nh4_a01, p_chem_ic_nh4_a02, p_chem_ic_nh4_a03, p_chem_ic_nh4_a04, p_chem_ic_cl_a01, p_chem_ic_cl_a02, p_chem_ic_cl_a03, p_chem_ic_cl_a04, &
+      p_chem_ic_na_a01, p_chem_ic_na_a02, p_chem_ic_na_a03, p_chem_ic_na_a04, p_chem_ic_oin_a01, p_chem_ic_oin_a02, p_chem_ic_oin_a03, p_chem_ic_oin_a04, &
+      p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co
 #endif
 
 use da_define_structures, only : iv_type, y_type, jo_type, maxmin_type, &
@@ -80,7 +88,6 @@ contains
 #include "da_calculate_grady_chem_sfc.inc"
 #include "da_oi_stats_chem_sfc.inc"
 #include "da_print_stats_chem_sfc.inc" 
-#include "da_print_aostats_chem_sfc.inc" 
 
 #endif
 

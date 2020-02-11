@@ -18,7 +18,6 @@ subroutine da_ao_stats_chem_sfc (stats_unit, iv, re, ob)
 
    if (trace_use_dull) call da_trace_entry("da_ao_stats_chem_sfc")
 
-   nchem=0
 
    allocate(stats%maximum%chem(num_chemic_surf))
    allocate(stats%minimum%chem(num_chemic_surf))
@@ -32,8 +31,10 @@ subroutine da_ao_stats_chem_sfc (stats_unit, iv, re, ob)
     stats%rms_err%chem(ichem) = 0.0
    end do
 
-   do ichem=PARAM_FIRST_SCALAR, num_chemic_surf
+   iv%nstats(chemic_surf) = 0
 
+   do ichem=PARAM_FIRST_SCALAR, num_chemic_surf
+   nchem=0
 !   stats%maximum%chem(ichem) = maxmin_type (missing_r, 0, 0)
 !   stats%minimum%chem(ichem) = maxmin_type (missing_r, 0, 0)
 !   stats%average = residual_chem_sfc_type(0.0, 0.0, 0.0, 0.0, 0.0)
@@ -54,21 +55,24 @@ subroutine da_ao_stats_chem_sfc (stats_unit, iv, re, ob)
    ! Do inter-processor communication to gather statistics.
    call da_proc_sum_int (nchem)
 
-   iv%nstats(chemic_surf) = nchem
+   iv%nstats(chemic_surf) = iv%nstats(chemic_surf)+nchem
 
    call da_proc_stats_combine(stats%average%chem(ichem), stats%rms_err%chem(ichem), &
       stats%minimum%chem(ichem)%value, stats%maximum%chem(ichem)%value, &
       stats%minimum%chem(ichem)%n, stats%maximum%chem(ichem)%n, &
       stats%minimum%chem(ichem)%l, stats%maximum%chem(ichem)%l)
-   end do
 
    if (rootproc) then
       if (nchem /= 0 ) then
          write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for chem'
-!         call da_print_aostats_chem_sfc(stats_unit, nchem, stats)
-         call da_print_stats_chem_sfc(stats_unit, nchem, stats)
+         if (chemicda_opt == 1 .or. chemicda_opt == 2) then
+           call da_print_stats_chem_sfc(stats_unit, nchem, stats)
+         else if (chemicda_opt == 3 .or. chemicda_opt == 4 .or. chemicda_opt == 5) then
+              call da_print_stats_chem_sfc(stats_unit, nchem, stats, ichem)
+         end if
       end if
    end if
+   end do
 
     deallocate(stats%maximum%chem)
     deallocate(stats%minimum%chem)

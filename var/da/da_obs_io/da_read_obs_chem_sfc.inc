@@ -97,25 +97,149 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
          platform%chem(:)%qc  = missing
          platform%chem(:)%error = missing_r
 
-      read (iunit, *, iostat =  iost)  &
-         platform%info%id,                 &
-         platform%info%lat,                &
-         platform%info%lon,                &
-         platform%info%date_char,          &
-         platform%chem(PARAM_FIRST_SCALAR)%inv,    &  !!! pm10 !!!
-         platform%chem(PARAM_FIRST_SCALAR)%inv        !!! pm25 !!!
+      if (chem_cv_options == 10) then
+!!!! ium data !!!!
+
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv        !!! pm25 only !!!
+            write (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour
+            platform%info%id = "333"
+
+!!!! korus data !!!!
+!         read (iunit, *, iostat =  iost)  &
+!         platform%info%id,                 &
+!         platform%info%lat,                &
+!         platform%info%lon,                &
+!         platform%info%date_char,          &
+!         platform%chem(PARAM_FIRST_SCALAR)%inv,    &  !!! pm10 !!!
+!         platform%chem(PARAM_FIRST_SCALAR)%inv        !!! pm25 !!!
 !!!         platform%chem(PARAM_FIRST_SCALAR+1)%inv
+!         read (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour
+!!!!!!!!!!!!!!!!!!!
           
-!!!      if (platform%chem(PARAM_FIRST_SCALAR)%inv==-999.or.platform%chem(PARAM_FIRST_SCALAR)%inv>=500) then
-      if (platform%chem(PARAM_FIRST_SCALAR)%inv==-999.or.platform%chem(PARAM_FIRST_SCALAR)%inv>=100) then
-         platform%chem(PARAM_FIRST_SCALAR)%inv=missing_r
-      else
-         platform%chem(PARAM_FIRST_SCALAR)%qc=333
-      end if
+      if (platform%chem(PARAM_FIRST_SCALAR)%inv==-999.or.platform%chem(PARAM_FIRST_SCALAR)%inv>=500) then
+!!!         if (platform%chem(PARAM_FIRST_SCALAR)%inv==-999.or.platform%chem(PARAM_FIRST_SCALAR)%inv>=100) then
+            platform%chem(PARAM_FIRST_SCALAR)%inv=missing_r
+         else
+            platform%chem(PARAM_FIRST_SCALAR)%qc=333
+         end if
 !!!      if (platform%chem(PARAM_FIRST_SCALAR+1)%inv==-999) platform%chem(PARAM_FIRST_SCALAR)%inv=missing_r 
 
-      read (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour
-      imin=0
+         imin=0
+
+      else if (chem_cv_options == 20) then
+         if (chemicda_opt == 1) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv        !!! pm25 only !!!
+         else if (chemicda_opt == 2) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &     
+            platform%chem(PARAM_FIRST_SCALAR)%inv        !!! pm10 only !!!    
+         else if (chemicda_opt == 3) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &     
+            platform%chem(PARAM_FIRST_SCALAR+1)%inv        !!! pm25 & pm10 !!! 
+         else if (chemicda_opt == 4) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &     
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &     
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &      !!! so2 !!! 
+            platform%chem(PARAM_FIRST_SCALAR+1)%inv,  &    !!! no2 !!! 
+            platform%chem(PARAM_FIRST_SCALAR+2)%inv,  &    !!! o3 !!! 
+            platform%chem(PARAM_FIRST_SCALAR+3)%inv        !!! co !!!
+ 
+	    platform%chem(PARAM_FIRST_SCALAR+3)%inv = platform%chem(PARAM_FIRST_SCALAR+3)%inv*1000 !!! mg to ug !!! 
+
+         else if (chemicda_opt == 5) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &      !!! pm25 !!!
+            platform%chem(PARAM_FIRST_SCALAR+1)%inv,  &    !!! pm10 !!!
+            platform%chem(PARAM_FIRST_SCALAR+2)%inv,  &    !!! so2 !!! 
+            platform%chem(PARAM_FIRST_SCALAR+3)%inv,  &    !!! no2 !!! 
+            platform%chem(PARAM_FIRST_SCALAR+4)%inv,  &    !!! o3 !!! 
+            platform%chem(PARAM_FIRST_SCALAR+5)%inv        !!! co !!!
+ 
+            platform%chem(PARAM_FIRST_SCALAR+5)%inv = platform%chem(PARAM_FIRST_SCALAR+5)%inv*1000 !!! mg to ug !!! 
+         end if
+
+         write (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour
+         platform%info%id = "333"
+
+         if (platform%chem(PARAM_FIRST_SCALAR)%inv==-999.or.platform%chem(PARAM_FIRST_SCALAR)%inv>=500) then
+            platform%chem(PARAM_FIRST_SCALAR)%inv=missing_r
+         else
+            platform%chem(PARAM_FIRST_SCALAR)%qc=333
+         end if
+
+         if (chemicda_opt == 3) then
+           if (platform%chem(PARAM_FIRST_SCALAR+1)%inv==-999.or.platform%chem(PARAM_FIRST_SCALAR+1)%inv>=500.or.platform%chem(PARAM_FIRST_SCALAR)%inv==-999.or.platform%chem(PARAM_FIRST_SCALAR+1)%inv.lt.platform%chem(PARAM_FIRST_SCALAR)%inv) then
+              platform%chem(PARAM_FIRST_SCALAR+1)%inv=missing_r
+           else
+              platform%chem(PARAM_FIRST_SCALAR+1)%inv=platform%chem(PARAM_FIRST_SCALAR+1)%inv-platform%chem(PARAM_FIRST_SCALAR)%inv
+              platform%chem(PARAM_FIRST_SCALAR+1)%qc=333
+           end if
+
+         else if (chemicda_opt == 4) then
+	   do ichem = PARAM_FIRST_SCALAR+1, num_chemic_surf  !!! PARAM_FIRST_SCALAR+1 to PARAM_FIRST_SCALAR+3 !!!
+		if (ichem.eq.num_chemic_surf) then
+                    if (platform%chem(ichem)%inv==-999.or.platform%chem(ichem)%inv>=500*1000) then
+                        platform%chem(ichem)%inv=missing_r
+                    else
+                        platform%chem(ichem)%qc=333
+                    end if
+                else
+                    if (platform%chem(ichem)%inv==-999.or.platform%chem(ichem)%inv>=500) then
+                        platform%chem(ichem)%inv=missing_r
+                    else
+                        platform%chem(ichem)%qc=333
+                    end if
+                end if
+	   end do
+
+         else if (chemicda_opt == 5) then
+           do ichem = PARAM_FIRST_SCALAR+1, num_chemic_surf  !!! PARAM_FIRST_SCALAR+1 to PARAM_FIRST_SCALAR+5 !!!
+                if (ichem.eq.num_chemic_surf) then
+                    if (platform%chem(ichem)%inv==-999.or.platform%chem(ichem)%inv>=500*1000) then
+                        platform%chem(ichem)%inv=missing_r
+                    else
+                        platform%chem(ichem)%qc=333
+                    end if
+                else if (ichem.eq.PARAM_FIRST_SCALAR+1) then
+                    if (platform%chem(PARAM_FIRST_SCALAR+1)%inv==-999.or.platform%chem(PARAM_FIRST_SCALAR+1)%inv>=500.or.platform%chem(PARAM_FIRST_SCALAR)%inv==-999.or.platform%chem(PARAM_FIRST_SCALAR+1)%inv.lt.platform%chem(PARAM_FIRST_SCALAR)%inv) then
+                       platform%chem(PARAM_FIRST_SCALAR+1)%inv=missing_r
+                    else
+                       platform%chem(PARAM_FIRST_SCALAR+1)%inv=platform%chem(PARAM_FIRST_SCALAR+1)%inv-platform%chem(PARAM_FIRST_SCALAR)%inv
+                       platform%chem(PARAM_FIRST_SCALAR+1)%qc=333
+                    end if
+                else
+                    if (platform%chem(ichem)%inv==-999.or.platform%chem(ichem)%inv>=500) then
+                        platform%chem(ichem)%inv=missing_r
+                    else
+                        platform%chem(ichem)%qc=333
+                    end if
+                end if
+           end do
+
+         end if
+      end if
 
       if (iost /= 0) then
          ! FIX? This is expected, but its unclear how we handle failure
@@ -235,7 +359,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
                nlocal(chemic_surf) = nlocal(chemic_surf) + 1
                ilocal(chemic_surf) = ilocal(chemic_surf) + 1
             end if
-
 
         allocate ( iv%chemic_surf(ilocal(chemic_surf))%chem(num_chemic_surf))
 

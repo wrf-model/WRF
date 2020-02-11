@@ -108,7 +108,6 @@ if (.not. anal_type_verify) then
 
 #if (WRF_CHEM == 1)
    if (iv%info(chemic_surf)%ntotal    > 0) call da_ao_stats_chem_sfc    (stats_unit2, iv, re, ob)
-!!   call da_ao_stats_chem_sfc    (stats_unit2, iv, re, ob)
 #endif
 
 #if defined(CRTM) || defined(RTTOV)
@@ -164,7 +163,14 @@ end if
 #if (WRF_CHEM == 1)
    if ( write_gts_omb_oma ) then
       call da_write_obs_chem_sfc(it, ob, iv, re)
-      call da_final_write_obs_chem_sfc(it, iv)
+      if (chemicda_opt == 5) then
+         call da_final_write_obs_chem_sfc(it, iv)
+         call da_final_write_obs_gas_sfc(it, iv)
+      else if (chemicda_opt == 4) then
+         call da_final_write_obs_gas_sfc(it, iv)
+      else
+         call da_final_write_obs_chem_sfc(it, iv)
+      end if
    end if
 #endif
 

@@ -739,12 +739,11 @@ subroutine da_transfer_xatowrf(grid, config_flags)
 #else !! not var4d !!
 
 #if (WRF_CHEM == 1)
-!!!      do ic = 1, num_chem-1
       do ic = PARAM_FIRST_SCALAR, num_chem
          do j=jts,jte
             do i=its,ite
                do k=kts, kte
-!!!                  grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic)
+!!!                     grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic)
 !!!                  grid%chem(i,j,k,ic) = max(grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic), 0.0)
 			if (grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic).lt.0.0) then
 	                  grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic)

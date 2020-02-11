@@ -45,23 +45,19 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
 
     call da_zero_xch_type (vch)
     call da_transform_vchtox_adj(grid, vch, be)
-
-   else if ( chem_cv_options == 1 .and. present(vchem) ) then
-      call da_zero_xchem_type (vchem)
-      call da_transform_vchemtox_adj(grid, vchem, be)    
-	write(*,*) 'chk options222'
    else
 #endif
 
+#if (WRF_CHEM == 1)
+   if ( chem_cv_options >= 10 .and. present(vchem) ) then
+      call da_zero_xchem_type (vchem)
+      call da_transform_vchemtox_adj(grid, vchem, be)   
+   end if
+#endif
+ 
    !-------------------------------------------------------------------------
    ! [3.0]: Perform x = u_p vp transform::
    !-------------------------------------------------------------------------
-
-!   if ( chem_cv_options == 1 .and. present(vchem)) then
-!      call da_zero_xchem_type (vchem)
-!      call da_transform_vchemtox_adj(grid, vchem, be)
-!	write(*,*) 'chk options'
-!   end if
 
    !zero out vp outside this subroutine in order for vp%alpha to pass in
    !call da_zero_vp_type (vp)

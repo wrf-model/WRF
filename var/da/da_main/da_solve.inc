@@ -972,7 +972,7 @@
 #if (WRF_CHEM == 1)
    if (cv_options == 10 ) then
             call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,grid%vch)
-   else if (cv_options == 7 .and. chem_cv_options==1) then
+   else if (cv_options == 7 .and. chem_cv_options>=10) then
 !            call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp,grid%vch,grid%vchem)
             call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,vchem=grid%vchem)
    end if

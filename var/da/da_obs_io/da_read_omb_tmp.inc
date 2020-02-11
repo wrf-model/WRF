@@ -31,8 +31,14 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                    ref_obs, ref_inv, ref_error, ref_inc, &
                    eph_obs, eph_inv, eph_error, eph_inc, &
                    rain_obs, rain_inv, rain_error, rain_inc, zk, &
-                   chem_obs, chem_inv, chem_err, chem_inc
-   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc, chem_qc
+                   chem_obs, chem_inv, chem_err, chem_inc, &
+                   chem_obs2, chem_inv2, chem_err2, chem_inc2, &
+                   chem_obs3, chem_inv3, chem_err3, chem_inc3, &
+                   chem_obs4, chem_inv4, chem_err4, chem_inc4, &
+                   chem_obs5, chem_inv5, chem_err5, chem_inc5, &
+                   chem_obs6, chem_inv6, chem_err6, chem_inc6
+   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc, &
+                  chem_qc, chem_qc2, chem_qc3, chem_qc4, chem_qc5, chem_qc6
    integer     :: eph_qc
    integer     :: ifgat
 
@@ -439,6 +445,7 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                num = num + 1
                end if
                do k = 1, levels
+                 if (chemicda_opt == 1 .or. chemicda_opt ==2 ) then
                   read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                      kk,l, stn_id, &          ! Station
                      lat, lon, dummy, &       ! Lat/lon, dummy
@@ -448,6 +455,56 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                         num, k, stn_id,  &       ! Station
                         lat, lon, dummy, &       ! Lat/lon, dummy
                         chem_obs, chem_inv, chem_qc, chem_err, chem_inc
+                 else if (chemicda_opt == 3) then
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                     kk,l, stn_id, &          ! Station
+                     lat, lon, dummy, &       ! Lat/lon, dummy
+                     chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                     chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2
+                  if (if_write) &
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                        num, k, stn_id,  &       ! Station
+                        lat, lon, dummy, &       ! Lat/lon, dummy
+                        chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                        chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2
+                 else if (chemicda_opt == 4) then                                                                                                             
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                     kk,l, stn_id, &          ! Station
+                     lat, lon, dummy, &       ! Lat/lon, dummy
+                     chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                     chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2, &
+                     chem_obs3, chem_inv3, chem_qc3, chem_err3, chem_inc3, &
+                     chem_obs4, chem_inv4, chem_qc4, chem_err4, chem_inc4
+                  if (if_write) &
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                        num, k, stn_id,  &       ! Station
+                        lat, lon, dummy, &       ! Lat/lon, dummy
+                        chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                        chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2, &
+                        chem_obs3, chem_inv3, chem_qc3, chem_err3, chem_inc3, &
+                        chem_obs4, chem_inv4, chem_qc4, chem_err4, chem_inc4
+                 else if (chemicda_opt == 5) then
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,6(2f17.7,i8,2f17.7))', err= 1000)&
+                     kk,l, stn_id, &          ! Station
+                     lat, lon, dummy, &       ! Lat/lon, dummy
+                     chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                     chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2, &
+                     chem_obs3, chem_inv3, chem_qc3, chem_err3, chem_inc3, &
+                     chem_obs4, chem_inv4, chem_qc4, chem_err4, chem_inc4, &
+                     chem_obs5, chem_inv5, chem_qc5, chem_err5, chem_inc5, &
+                     chem_obs6, chem_inv6, chem_qc6, chem_err6, chem_inc6
+                  if (if_write) &
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,6(2f17.7,i8,2f17.7))', err= 1000)&
+                        num, k, stn_id,  &       ! Station
+                        lat, lon, dummy, &       ! Lat/lon, dummy
+                        chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                        chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2, &
+                        chem_obs3, chem_inv3, chem_qc3, chem_err3, chem_inc3, &
+                        chem_obs4, chem_inv4, chem_qc4, chem_err4, chem_inc4, &
+                        chem_obs5, chem_inv5, chem_qc5, chem_err5, chem_inc5, &
+                        chem_obs6, chem_inv6, chem_qc6, chem_err6, chem_inc6
+
+                 end if
                end do
             end do
          end if

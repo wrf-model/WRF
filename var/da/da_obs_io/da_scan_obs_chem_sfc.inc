@@ -94,16 +94,85 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
          platform%chem(:)%qc = missing
          platform%chem(:)%error = missing_r 
 
-      read (iunit, *, iostat =  iost)  &
-         platform%info%date_char,          &
-         platform%info%lat,                &
-         platform%info%lon,                &
-         platform%info%date_char,          &
-         platform%chem(PARAM_FIRST_SCALAR)%inv
-!!!         platform%chem(PARAM_FIRST_SCALAR+1)%inv
-           
-      read (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour
-      imin=0
+         if (chem_cv_options == 10) then
+
+!!!! ium data !!!!
+
+        write(*,*) 'read ium data'
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv        !!! pm25 only !!!
+            write (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour
+            platform%info%id = "333"
+
+!!!! korus data !!!!
+!           read (iunit, *, iostat =  iost)  &
+!              platform%info%id,                 &
+!              platform%info%lat,                &                                                                                                       
+!              platform%info%lon,                &
+!              platform%info%date_char,          &
+!              platform%chem(PARAM_FIRST_SCALAR)%inv
+!!!              platform%chem(PARAM_FIRST_SCALAR+1)%inv
+!           read (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour
+!!!!!!!!!!!!!!!!!!!
+
+           imin=0
+
+         else if (chem_cv_options == 20) then
+
+         if (chemicda_opt == 1) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv        !!! pm25 only !!!
+         else if (chemicda_opt == 2) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &    !!! pm25 read !!! 
+            platform%chem(PARAM_FIRST_SCALAR)%inv        !!! pm10 only !!!   
+         else if (chemicda_opt == 3) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &     
+            platform%chem(PARAM_FIRST_SCALAR+1)%inv        !!! pm10 & pm25 !!!   
+         else if (chemicda_opt == 4) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &      !!! so2 !!!
+            platform%chem(PARAM_FIRST_SCALAR+1)%inv,  &    !!! no2 !!!
+            platform%chem(PARAM_FIRST_SCALAR+2)%inv,  &    !!! o3 !!!
+            platform%chem(PARAM_FIRST_SCALAR+3)%inv        !!! co !!!
+
+           write (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour                                                                
+
+         else if (chemicda_opt == 5) then
+            read (iunit, *, iostat =  iost)  &
+            iyear, imonth, iday, ihour, imin, &
+            platform%info%lat,                &
+            platform%info%lon,                &
+            platform%chem(PARAM_FIRST_SCALAR)%inv,  &      !!! pm25 !!!
+            platform%chem(PARAM_FIRST_SCALAR+1)%inv,  &    !!! pm10 !!!
+            platform%chem(PARAM_FIRST_SCALAR+2)%inv,  &    !!! so2 !!! 
+            platform%chem(PARAM_FIRST_SCALAR+3)%inv,  &    !!! no2 !!! 
+            platform%chem(PARAM_FIRST_SCALAR+4)%inv,  &    !!! o3 !!! 
+            platform%chem(PARAM_FIRST_SCALAR+5)%inv        !!! co !!!
+
+           write (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour      
+ 
+         end if
+           platform%info%id = "333"
+         end if
 
       if (iost /= 0) then
          ! FIX? This is expected, but its unclear how we handle failure

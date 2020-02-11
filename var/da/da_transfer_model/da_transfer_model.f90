@@ -21,7 +21,15 @@ module da_transfer_model
       num_scalebb, PARAM_FIRST_SCALAR, num_chem, p_bc2, p_oc2, p_co, p_no2, p_o3, p_so2, &
       p_p10, p_p25, p_sulf, &
       p_chem_ic_bc2, p_chem_ic_oc2, p_chem_ic_co, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_so2, &
-      p_chem_ic_p10, p_chem_ic_p25, p_chem_ic_sulf
+      p_chem_ic_p10, p_chem_ic_p25, p_chem_ic_sulf , &
+      p_bc_a01, p_bc_a02, p_bc_a03, p_oc_a01, p_oc_a02, p_oc_a03,  &
+      p_so4_a01, p_so4_a02, p_so4_a03, p_no3_a01, p_no3_a02, p_no3_a03,  &
+      p_nh4_a01, p_nh4_a02, p_nh4_a03, p_cl_a01, p_cl_a02, p_cl_a03,  &
+      p_na_a01, p_na_a02, p_na_a03, p_oin_a01, p_oin_a02, p_oin_a03,  &
+      p_chem_ic_bc_a01, p_chem_ic_bc_a02, p_chem_ic_bc_a03, p_chem_ic_oc_a01, p_chem_ic_oc_a02, p_chem_ic_oc_a03, &
+      p_chem_ic_so4_a01, p_chem_ic_so4_a02, p_chem_ic_so4_a03, p_chem_ic_no3_a01, p_chem_ic_no3_a02, p_chem_ic_no3_a03, &
+      p_chem_ic_nh4_a01, p_chem_ic_nh4_a02, p_chem_ic_nh4_a03, p_chem_ic_cl_a01, p_chem_ic_cl_a02, p_chem_ic_cl_a03, &
+      p_chem_ic_na_a01, p_chem_ic_na_a02, p_chem_ic_na_a03, p_chem_ic_oin_a01, p_chem_ic_oin_a02, p_chem_ic_oin_a03   
 #endif
 
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals

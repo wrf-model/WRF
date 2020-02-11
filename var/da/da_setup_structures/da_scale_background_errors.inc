@@ -35,17 +35,27 @@ subroutine da_scale_background_errors ( be, it )
       read(be_rf_unit) kz, jy, ix, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz, &
                        v6_mz, v7_mz, v8_mz, v9_mz, v10_mz,v11_mz,      &
                        ds   
-    else if(chem_cv_options ==1 ) then
+    else if(chem_cv_options ==10 ) then
       read(be_rf_unit)  kz, jy, ix, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz, &
                                     v12_mz(1), v12_mz(2), v12_mz(3), v12_mz(4), v12_mz(5), &
                                     v12_mz(6), v12_mz(7), v12_mz(8), v12_mz(9), v12_mz(10), &
                                     v12_mz(11), v12_mz(12), v12_mz(13), v12_mz(14), v12_mz(15), &
                                     v12_mz(16), v12_mz(17), v12_mz(18), v12_mz(19), &
-                                    v11_mz, ds 
+                                    v11_mz, ds
+    else if(chem_cv_options ==20 ) then
+      read(be_rf_unit)  kz, jy, ix, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz, &
+                                    v12_mz(1), v12_mz(2), v12_mz(3), v12_mz(4), v12_mz(5), &
+                                    v12_mz(6), v12_mz(7), v12_mz(8), v12_mz(9), v12_mz(10), &
+                                    v12_mz(11), v12_mz(12), v12_mz(13), v12_mz(14), v12_mz(15), &
+                                    v12_mz(16), v12_mz(17), v12_mz(18), v12_mz(19), v12_mz(20), &
+                                    v12_mz(21), v12_mz(22), v12_mz(23), v12_mz(24), &
+                                    v12_mz(25), v12_mz(26), v12_mz(27), v12_mz(28), &
+                                    v12_mz(29), v12_mz(30), v12_mz(31), v12_mz(32), &
+                                    v11_mz, ds  
     else
       read(be_rf_unit) kz, jy, ix, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz, ds
     endif
-!
+
     allocate ( v1_val (1:jy,1:v1_mz) )
     allocate ( rf_len1(1:kz) )
     allocate ( v2_val (1:jy,1:v2_mz) )
@@ -57,7 +67,8 @@ subroutine da_scale_background_errors ( be, it )
     allocate ( v5_val (1:jy,1:v5_mz) )
     allocate ( rf_len5(1:1) )
 
-    if (chem_cv_options ==1) then
+!!!    if (chem_cv_options ==10) then
+    if (chem_cv_options >=10) then
      allocate ( v12_val (num_chem,1:jy,1:maxval(v12_mz(1:num_chem-1))) )
      allocate ( rf_len12(num_chem,1:kz) )  
      allocate ( v11_val (1:jy,1:v11_mz) )
@@ -86,7 +97,7 @@ subroutine da_scale_background_errors ( be, it )
                        rf_len1, rf_len2, rf_len3, rf_len4, rf_len5, &
                        rf_len6, rf_len7, rf_len8, rf_len9, rf_len10,rf_len11
 
-   else if(chem_cv_options ==1 ) then
+   else if(chem_cv_options ==10 ) then
       read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val , &
                        v12_val(1,:,1:v12_mz(1)),  v12_val(2,:,1:v12_mz(2)),  v12_val(3,:,1:v12_mz(3)),  v12_val(4,:,1:v12_mz(4)), &
                        v12_val(5,:,1:v12_mz(5)),  v12_val(6,:,1:v12_mz(6)),  v12_val(7,:,1:v12_mz(7)),  v12_val(8,:,1:v12_mz(8)), &
@@ -99,6 +110,26 @@ subroutine da_scale_background_errors ( be, it )
                        rf_len12(6,:), rf_len12(7,:), rf_len12(8,:), rf_len12(9,:), rf_len12(10,:), &
                        rf_len12(11,:), rf_len12(12,:), rf_len12(13,:), rf_len12(14,:), rf_len12(15,:), &
                        rf_len12(16,:), rf_len12(17,:), rf_len12(18,:), rf_len12(19,:), &
+                       rf_len11 
+   else if(chem_cv_options ==20 ) then
+      read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val , &
+                       v12_val(1,:,1:v12_mz(1)),  v12_val(2,:,1:v12_mz(2)),  v12_val(3,:,1:v12_mz(3)),  v12_val(4,:,1:v12_mz(4)), &
+                       v12_val(5,:,1:v12_mz(5)),  v12_val(6,:,1:v12_mz(6)),  v12_val(7,:,1:v12_mz(7)),  v12_val(8,:,1:v12_mz(8)), &
+                       v12_val(9,:,1:v12_mz(9)),  v12_val(10,:,1:v12_mz(10)),  v12_val(11,:,1:v12_mz(11)),  v12_val(12,:,1:v12_mz(12)), &
+                       v12_val(13,:,1:v12_mz(13)),  v12_val(14,:,1:v12_mz(14)),  v12_val(15,:,1:v12_mz(15)),  v12_val(16,:,1:v12_mz(16)), &
+                       v12_val(17,:,1:v12_mz(17)),  v12_val(18,:,1:v12_mz(18)),  v12_val(19,:,1:v12_mz(19)), v12_val(20,:,1:v12_mz(20)), &
+                       v12_val(21,:,1:v12_mz(21)),  v12_val(22,:,1:v12_mz(22)),  v12_val(23,:,1:v12_mz(23)), v12_val(24,:,1:v12_mz(24)), &
+                       v12_val(25,:,1:v12_mz(25)),  v12_val(26,:,1:v12_mz(26)),  v12_val(27,:,1:v12_mz(27)), v12_val(28,:,1:v12_mz(28)), &
+                       v12_val(29,:,1:v12_mz(29)),  v12_val(30,:,1:v12_mz(30)),  v12_val(31,:,1:v12_mz(31)), v12_val(32,:,1:v12_mz(32)), &
+                       v11_val, &
+                       rf_len1, rf_len2, rf_len3, rf_len4, rf_len5, &
+                       rf_len12(1,:), rf_len12(2,:), rf_len12(3,:), rf_len12(4,:), rf_len12(5,:), &
+                       rf_len12(6,:), rf_len12(7,:), rf_len12(8,:), rf_len12(9,:), rf_len12(10,:), &
+                       rf_len12(11,:), rf_len12(12,:), rf_len12(13,:), rf_len12(14,:), rf_len12(15,:), &
+                       rf_len12(16,:), rf_len12(17,:), rf_len12(18,:), rf_len12(19,:), rf_len12(20,:), &
+                       rf_len12(21,:), rf_len12(22,:), rf_len12(23,:), rf_len12(24,:), &
+                       rf_len12(25,:), rf_len12(26,:), rf_len12(27,:), rf_len12(28,:), &
+                       rf_len12(29,:), rf_len12(30,:), rf_len12(31,:), rf_len12(32,:), &
                        rf_len11 
    else
       read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val , &
@@ -119,7 +150,8 @@ subroutine da_scale_background_errors ( be, it )
       be % v11 % val = v11_val
     endif
 
-   if (chem_cv_options ==1) then
+!!!   if (chem_cv_options ==10) then
+   if (chem_cv_options >=10) then
    do ic=PARAM_FIRST_SCALAR, num_chem
      be % v12(ic-1) % val = v12_val(ic-1,:,1:v12_mz(ic-1))
    end do
@@ -142,7 +174,8 @@ subroutine da_scale_background_errors ( be, it )
    CALL da_rescale_background_errors( var_scaling5(it), len_scaling5(it), &
                                       ds, rf_len5, be % v5 )
 ! ..............................................................
-   if (chem_cv_options ==1) then
+!!!   if (chem_cv_options ==10) then
+   if (chem_cv_options >=10) then
    do ic=PARAM_FIRST_SCALAR, num_chem
 	   CALL da_rescale_background_errors( var_scaling12(it), len_scaling12(it), &
                                       ds, rf_len12(ic-1,:), be % v12(ic-1) )
@@ -219,7 +252,8 @@ subroutine da_scale_background_errors ( be, it )
     deallocate ( v5_val )
     deallocate ( rf_len5 )
 
-   if (chem_cv_options ==1) then
+!!!   if (chem_cv_options ==10) then
+   if (chem_cv_options >=10) then
     deallocate ( v12_val )
     deallocate ( rf_len12 )
       if(allocated(v11_val))deallocate(v11_val)

@@ -61,10 +61,18 @@ subroutine da_scale_background_errors ( be, it )
 !
 ! Read the variances and scale-lengths and restore them to be:
    if(cloud_cv_options >= 2.and.cloud_cv_options.ne.3) then
-      read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val , &
-                       v6_val , v7_val , v8_val , v9_val , v10_val , v11_val, &
-                       rf_len1, rf_len2, rf_len3, rf_len4, rf_len5, &
-                       rf_len6, rf_len7, rf_len8, rf_len9, rf_len10,rf_len11
+      if(use_cv_w) then
+        read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val , &
+                         v6_val , v7_val , v8_val , v9_val , v10_val , v11_val, &
+                         rf_len1, rf_len2, rf_len3, rf_len4, rf_len5, &
+                         rf_len6, rf_len7, rf_len8, rf_len9, rf_len10,rf_len11
+      else
+        read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val ,  &
+                         v6_val , v7_val , v8_val , v9_val , v10_val , &
+                         rf_len1, rf_len2, rf_len3, rf_len4, rf_len5,  &
+                         rf_len6, rf_len7, rf_len8, rf_len9, rf_len10
+
+      endif
 
    else
       read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val , &

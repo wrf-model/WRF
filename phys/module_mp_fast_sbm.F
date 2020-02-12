@@ -3765,11 +3765,14 @@ end module module_mp_SBM_Auxiliary
  ! +----------------------------------------------------------------------------+
   MODULE module_mp_fast_sbm
 
+#if( BUILD_POLAR_HUCM == 1)
   USE module_mp_SBM_polar_radar,ONLY:polar_hucm
+#endif
   USE module_mp_SBM_BreakUp,ONLY:Spont_Rain_BreakUp,BreakUp_Snow,KR_SNOW_MIN,KR_SNOW_MAX
   USE module_mp_SBM_Nucleation,ONLY:JERNUCL01_KS, LogNormal_modes_Aerosol
   USE module_mp_SBM_Auxiliary,ONLY:JERRATE_KS,JERTIMESC_KS,JERSUPSAT_KS,  &
                                    JERDFUN_KS,JERDFUN_NEW_KS,POLYSVP,Relaxation_Time
+#if( BUILD_POLAR_HUCM == 1)
   USE scatt_tables,ONLY:faf1,fbf1,fab1,fbb1,         &
  						            faf3,fbf3,fab3,fbb3,         &
              						faf4,fbf4,fab4,fbb4,         &
@@ -3781,6 +3784,7 @@ end module module_mp_SBM_Auxiliary
              						fws_graupel,fws_hail, 		            &
              						usetables,                            &
              						twolayer_hail,twolayer_graupel,twolayer_fd,twolayer_snow,rpquada,usequad
+#endif
 
   USE module_state_description,ONLY:  p_ff1i01,p_ff1i33,p_ff5i01,p_ff5i33, &
                                       p_ff6i01,p_ff6i33,p_ff8i01,p_ff8i43
@@ -5056,6 +5060,7 @@ end module module_mp_SBM_Auxiliary
       chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
   endif
   END DO
+#if( BUILD_POLAR_HUCM == 1)
 ! ..........................................
 ! ... Polarimetric Forward Radar Operator
 ! ..........................................
@@ -5195,6 +5200,7 @@ end module module_mp_SBM_Auxiliary
  		endif
  	! PRESENT(diagflag)
  	endif
+#endif
 
    ! cycle by I
    END DO
@@ -5977,6 +5983,7 @@ end module module_mp_SBM_Auxiliary
 #endif
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-9'
      CALL wrf_debug(000, errmess)
+#if( BUILD_POLAR_HUCM == 1)
  ! +-----------------------------------------------------------------------+
 
  ! LookUpTable #10
@@ -6024,6 +6031,7 @@ end module module_mp_SBM_Auxiliary
   WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : succesfull reading Table-10'
   call wrf_message(errmess)
  ! +-----------------------------------------------------------------------+
+#endif
 
  ! calculation of the mass(in mg) for categories boundaries :
    ax=2.d0**(1.0)

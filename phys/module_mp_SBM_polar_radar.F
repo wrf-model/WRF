@@ -1,3 +1,12 @@
+#if( BUILD_POLAR_HUCM != 1)
+      MODULE module_mp_SBM_polar_radar
+      CONTAINS
+      SUBROUTINE SBM_polar_radar
+         REAL :: dummy
+         dummy = 1
+      END SUBROUTINE SBM_polar_radar
+      END MODULE module_mp_SBM_polar_radar
+#else
 !******************
 module scatt_tables
 ! JCS - This module pertains to the reading of scattering amplitude files
@@ -2970,3 +2979,4 @@ public polar_hucm
 
 END MODULE module_mp_SBM_polar_radar
 !**** **************************************************************** &
+#endif

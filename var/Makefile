@@ -13,8 +13,8 @@ superclean :
           links README* landread.c.dist \
           depend inc/*.inc inc/*.h preproc.sh )
 	@( cd da; /bin/rm -f *.exe )
-	@( cd external/bufr; make clean )
-	@( cd external/crtm_2.3.0; make clean )
-	@( cd external/wavelet ; make superclean )
+	@( cd external/bufr; make -s clean )
+	@( cd external/crtm_2.3.0; make -s clean )
+	@( cd external/wavelet ; make -s superclean )
 	@( cd da/makedepf90-2.8.8; /bin/rm -f makedepf90 config.log Makefile config.status )
 	@( cd gen_be; /bin/rm -f *.exe )

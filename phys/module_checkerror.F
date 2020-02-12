@@ -70,7 +70,9 @@
 !SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU 
 
  subroutine checkerror_single(subroutine_name, param_id,i,k,j,input_real)
+#ifndef NO_IEEE_MODULE
  use, intrinsic :: ieee_arithmetic
+#endif
  implicit none
  character*(*),intent(in) :: subroutine_name
  character*(*),intent(in) :: param_id
@@ -217,12 +219,14 @@
     call wrf_error_fatal('Terminate run.')
  end if
 
+#ifndef NO_IEEE_MODULE
  if (ieee_is_nan(input_real)) then
     write(string,*) 'MSG '//trim(subroutine_name)//': '//trim(param_id)//' =',input_real,&
                ' NaN at grid(i,k,j) =',i,k,j
     call wrf_message(string)
     call wrf_error_fatal('Terminate run.')
  end if
+#endif
 
  end subroutine checkerror_single
 
@@ -230,7 +234,9 @@
 !SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU 
 
  subroutine checkerror_double(subroutine_name, param_id,i,k,j,input_real)
+#ifndef NO_IEEE_MODULE
  use, intrinsic :: ieee_arithmetic
+#endif
  implicit none
  character*(*),intent(in) :: subroutine_name
  character*(*),intent(in) :: param_id
@@ -377,12 +383,14 @@
     call wrf_error_fatal('Terminate run.')
  end if
 
+#ifndef NO_IEEE_MODULE
  if (ieee_is_nan(input_real)) then
     write(string,*) 'MSG '//trim(subroutine_name)//': '//trim(param_id)//' =',input_real,&
                ' NaN at grid(i,k,j) =',i,k,j
     call wrf_message(string)
     call wrf_error_fatal('Terminate run.')
  end if
+#endif
 
  end subroutine checkerror_double
 

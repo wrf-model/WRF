@@ -84,8 +84,6 @@
 
 MODULE MODULE_MP_MORR_TWO_MOMENT
    USE     module_wrf_error
-   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm  ! GT
-   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep  ! GT
    USE module_mp_radar
 
 ! USE WRF PHYSICS CONSTANTS

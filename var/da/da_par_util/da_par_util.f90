@@ -40,7 +40,8 @@ module da_par_util
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_wrf_interfaces, only : &
       wrf_dm_xpose_z2x, wrf_dm_xpose_x2y, wrf_dm_xpose_y2x, wrf_dm_xpose_x2z, &
-      wrf_dm_xpose_z2y, wrf_dm_xpose_y2z, wrf_patch_to_global_real, wrf_debug
+      wrf_dm_xpose_z2y, wrf_dm_xpose_y2z, wrf_patch_to_global_real, wrf_debug, &
+      wrf_dm_bcast_integer, wrf_dm_bcast_real
 
    implicit none
 

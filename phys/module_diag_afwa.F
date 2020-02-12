@@ -112,6 +112,7 @@ CONTAINS
     TYPE(WRFU_Time) :: hist_time, aux2_time, CurrTime, StartTime
     TYPE(WRFU_TimeInterval) :: dtint, histint, aux2int
     LOGICAL :: is_after_history_dump, is_output_timestep, is_first_timestep
+    INTEGER , PARAMETER :: DEBUG_LEVEL = 1
 
     ! Chirp the routine name for debugging purposes
     ! ---------------------------------------------
@@ -180,19 +181,79 @@ CONTAINS
 
     ! 3-D arrays for moisture variables
     ! ---------------------------------
-    DO i=ims, ime
-      DO k=kms, kme
-        DO j=jms, jme
-          qvapr(i,k,j) = moist(i,k,j,P_QV)
-          qrain(i,k,j) = moist(i,k,j,P_QR)
-          qsnow(i,k,j) = moist(i,k,j,P_QS)
-          qgrpl(i,k,j) = moist(i,k,j,P_QG)
-          qcloud(i,k,j) = moist(i,k,j,P_QC)
-          qice(i,k,j) = moist(i,k,j,P_QI)
-          ncloud(i,k,j) = scalar(i,k,j,P_QNC)
+
+    IF ( F_QV ) THEN
+      DO i=ims, ime
+        DO k=kms, kme
+          DO j=jms, jme
+            qvapr(i,k,j) = moist(i,k,j,P_QV)
+          ENDDO
         ENDDO
       ENDDO
-    ENDDO
+    END IF
+    IF ( F_QR ) THEN
+      DO i=ims, ime
+        DO k=kms, kme
+          DO j=jms, jme
+            qrain(i,k,j) = moist(i,k,j,P_QR)
+          ENDDO
+        ENDDO
+      ENDDO
+    END IF
+    IF ( F_QS ) THEN
+      DO i=ims, ime
+        DO k=kms, kme
+          DO j=jms, jme
+            qsnow(i,k,j) = moist(i,k,j,P_QS)
+          ENDDO
+        ENDDO
+      ENDDO
+    END IF
+    IF ( F_QG ) THEN
+      DO i=ims, ime
+        DO k=kms, kme
+          DO j=jms, jme
+            qgrpl(i,k,j) = moist(i,k,j,P_QG)
+          ENDDO
+        ENDDO
+      ENDDO
+    END IF
+    IF ( F_QC ) THEN
+      DO i=ims, ime
+        DO k=kms, kme
+          DO j=jms, jme
+            qcloud(i,k,j) = moist(i,k,j,P_QC)
+          ENDDO
+        ENDDO
+      ENDDO
+    END IF
+    IF ( F_QI ) THEN
+      DO i=ims, ime
+        DO k=kms, kme
+          DO j=jms, jme
+            qice(i,k,j) = moist(i,k,j,P_QI)
+          ENDDO
+        ENDDO
+      ENDDO
+    END IF
+    IF ( F_QNC ) THEN
+      DO i=ims, ime
+        DO k=kms, kme
+          DO j=jms, jme
+            ncloud(i,k,j) = scalar(i,k,j,P_QNC)
+          ENDDO
+        ENDDO
+      ENDDO
+    END IF
+    IF ( F_QNG ) THEN
+      DO i=ims, ime
+        DO k=kms, kme
+          DO j=jms, jme
+            ngraup(i,k,j) = scalar(i,k,j,P_QNG)
+          ENDDO
+        ENDDO
+      ENDDO
+    END IF
     
     ! Total pressure
     ! -------------- 
@@ -216,14 +277,28 @@ CONTAINS
 
     ! Calculate relative humidity
     ! ---------------------------
-    DO i=ims,ime
-      DO k=kms,kme    
-        DO j=jms,jme
-          rh(i,k,j)=calc_rh(ptot(i,k,j),grid%t_phy(i,k,j), qvapr(i,k,j))
-          rh_cld(i,k,j)=calc_rh(ptot(i,k,j),grid%t_phy(i,k,j), qvapr(i,k,j)+qcloud(i,k,j)+qice(i,k,j))
+    IF ( F_QV ) THEN
+      DO i=ims,ime
+        DO k=kms,kme    
+          DO j=jms,jme
+            rh(i,k,j)=calc_rh(ptot(i,k,j),grid%t_phy(i,k,j), qvapr(i,k,j))
+          ENDDO
         ENDDO
       ENDDO
-    ENDDO
+    ELSE
+      CALL wrf_debug ( DEBUG_LEVEL, 'Option rh requires: QV' )
+    END IF
+    IF ( F_QV .AND. F_QC .AND. F_QI ) THEN
+      DO i=ims,ime
+        DO k=kms,kme    
+          DO j=jms,jme
+            rh_cld(i,k,j)=calc_rh(ptot(i,k,j),grid%t_phy(i,k,j), qvapr(i,k,j)+qcloud(i,k,j)+qice(i,k,j))
+          ENDDO
+        ENDDO
+      ENDDO
+    ELSE
+      CALL wrf_debug ( DEBUG_LEVEL, 'Option rh_cld requires: QV, QC, QI' )
+    END IF
 
     ! Time-step precipitation (convective + nonconvective)
     ! --------------------------------------------------------------
@@ -236,26 +311,32 @@ CONTAINS
 
     ! Calculate precipitable water
     ! ----------------------------
-    nz=kme-kms+1
-    DO i=ims,ime
-      DO j=jms,jme
-        grid % afwa_pwat ( i, j ) = Pwat( nz,                  &
-                                          qvapr(i,kms:kme,j),  &
-                                          qcloud(i,kms:kme,j), &
-                                          dz8w(i,kms:kme,j),   &
-                                          rho(i,kms:kme,j) )
+    IF ( F_QV .AND. F_QC ) THEN
+      nz=kme-kms+1
+      DO i=ims,ime
+        DO j=jms,jme
+          grid % afwa_pwat ( i, j ) = Pwat( nz,                  &
+                                            qvapr(i,kms:kme,j),  &
+                                            qcloud(i,kms:kme,j), &
+                                            dz8w(i,kms:kme,j),   &
+                                            rho(i,kms:kme,j) )
+        ENDDO
       ENDDO
-    ENDDO
+    ELSE
+      CALL wrf_debug ( DEBUG_LEVEL, 'Option pwat requires: QV, QC' )
+    END IF
 
     ! After each history dump, reset max/min value arrays
     ! ----------------------------------------------------------------------
     IF ( is_after_history_dump ) THEN
-      DO j = jms, jme
-        DO i = ims, ime
-          grid % wspd10max(i,j) = 0.
-          grid % afwa_llws(i,j) = 0.
+      IF ( config_flags % afwa_severe_opt == 1 ) THEN
+        DO j = jms, jme
+          DO i = ims, ime
+            grid % wspd10max(i,j) = 0.
+            grid % afwa_llws(i,j) = 0.
+          ENDDO
         ENDDO
-      ENDDO
+      ENDIF
     ENDIF 
 
     ! Calculate the max 10 m wind speed between output times
@@ -268,50 +349,53 @@ CONTAINS
     ! higher of the surface and the blended winds. Blending
     ! is linear weighted between 50-150 mm/hr precip rates.
     ! -------------------------------------------------------
-    DO j = jms, jme
-      DO i = ims, ime
-        wind_vel = uv_wind ( grid % u10(i,j) , grid % v10(i,j) )
-        prate_mm_per_hr = ( grid % afwa_precip(i,j) / grid % dt ) * 3600.
-
-        ! Is this an area of heavy precip?  Calculate 1km winds to blend down
-        ! -------------------------------------------------------------------
-        IF ( prate_mm_per_hr .GT. 50. ) THEN
-          is_target_level=.false.
-          DO k=kms,kme    
-            IF ( ( zagl(i,k,j) >= 1000. ) .and. &
-                 ( .NOT. is_target_level ) .and. &
-                 ( k .ne. kms ) ) THEN
-              is_target_level = .true.
-              u1km = u_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
-                     * ((u_phy(i,k,j) - u_phy(i,k-1,j))/(zagl(i,k,j)))
-              v1km = v_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
-                     * ((v_phy(i,k,j) - v_phy(i,k-1,j))/(zagl(i,k,j)))
-              EXIT ! We've found our level, break the loop
+    IF ( config_flags % afwa_severe_opt == 1 ) THEN
+      DO j = jms, jme
+        DO i = ims, ime
+          wind_vel = uv_wind ( grid % u10(i,j) , grid % v10(i,j) )
+          prate_mm_per_hr = ( grid % afwa_precip(i,j) / grid % dt ) * 3600.
+  
+          ! Is this an area of heavy precip?  Calculate 1km winds to blend down
+          ! -------------------------------------------------------------------
+          IF ( prate_mm_per_hr .GT. 50. ) THEN
+            is_target_level=.false.
+            DO k=kms,kme    
+              IF ( ( zagl(i,k,j) >= 1000. ) .and. &
+                   ( .NOT. is_target_level ) .and. &
+                   ( k .ne. kms ) ) THEN
+                is_target_level = .true.
+                u1km = u_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
+                       * ((u_phy(i,k,j) - u_phy(i,k-1,j))/(zagl(i,k,j)))
+                v1km = v_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
+                       * ((v_phy(i,k,j) - v_phy(i,k-1,j))/(zagl(i,k,j)))
+                EXIT ! We've found our level, break the loop
+              ENDIF
+            ENDDO
+            
+            ! Compute blended wind
+            ! --------------------
+            factor = MAX ( ( ( 150. - prate_mm_per_hr ) / 100. ), 0. )
+            ublend = grid % u10(i,j) * factor + u1km * (1. - factor)
+            vblend = grid % v10(i,j) * factor + v1km * (1. - factor)
+            wind_blend = uv_wind ( ublend, vblend )
+  
+            ! Set the surface wind to the blended wind if higher
+            ! --------------------------------------------------
+            IF ( wind_blend .GT. wind_vel ) THEN
+              wind_vel = wind_blend
             ENDIF
-          ENDDO
-          
-          ! Compute blended wind
-          ! --------------------
-          factor = MAX ( ( ( 150. - prate_mm_per_hr ) / 100. ), 0. )
-          ublend = grid % u10(i,j) * factor + u1km * (1. - factor)
-          vblend = grid % v10(i,j) * factor + v1km * (1. - factor)
-          wind_blend = uv_wind ( ublend, vblend )
-
-          ! Set the surface wind to the blended wind if higher
-          ! --------------------------------------------------
-          IF ( wind_blend .GT. wind_vel ) THEN
-            wind_vel = wind_blend
           ENDIF
-        ENDIF
-
-        IF ( wind_vel .GT. grid % wspd10max(i,j) ) THEN
-          grid % wspd10max(i,j) = wind_vel
-        ENDIF
+  
+          IF ( wind_vel .GT. grid % wspd10max(i,j) ) THEN
+            grid % wspd10max(i,j) = wind_vel
+          ENDIF
+        ENDDO
       ENDDO
-    ENDDO
+    ENDIF
 
     ! Calculate 0-2000 foot (0 - 609.6 meter) shear.
     ! ----------------------------------------------
+    IF ( config_flags % afwa_severe_opt == 1 ) THEN
     DO j = jts, jte
       DO i = its, ite
         is_target_level=.false.
@@ -335,6 +419,7 @@ CONTAINS
         ENDDO
       ENDDO
     ENDDO
+    ENDIF
 
 #if ( WRF_CHEM == 1 )
     ! Surface dust concentration array (ug m-3)
@@ -365,13 +450,11 @@ CONTAINS
       IF ( is_after_history_dump ) THEN
         DO j = jms, jme
           DO i = ims, ime
-!            grid%wspd10max(i,j) = 0.
             grid%w_up_max(i,j) = 0.
             grid%w_dn_max(i,j) = 0.
             grid%tcoli_max(i,j) = 0.
             grid%grpl_flx_max(i,j) = 0.
             grid%up_heli_max(i,j) = 0.
-!            grid%refd_max(i,j) = 0.
             grid%afwa_tornado(i,j) = 0.
             grid%midrh_min_old(i,j) = grid%midrh_min(i,j) ! Save old midrh_min
             grid%midrh_min(i,j) = 999.
@@ -386,74 +469,76 @@ CONTAINS
         do_buoy_calc = .false.
       ENDIF
 
-      !-->RAS
-      ! We need to do some neighboring gridpoint comparisons in this next function;
-      ! set these values so we don't go off the edges of the domain.  Updraft
-      ! duration on domain edges will always be 0.
-      ! ----------------------------------------------------------------------
-      i_start = its
-      i_end   = ite
-      j_start = jts
-      j_end   = jte
+      IF ( F_QV .AND. F_QR .AND. F_QC .AND. F_QI .AND. F_QS .AND. F_QG .AND. F_QNG ) THEN
+        !-->RAS
+        ! We need to do some neighboring gridpoint comparisons in this next function;
+        ! set these values so we don't go off the edges of the domain.  Updraft
+        ! duration on domain edges will always be 0.
+        ! ----------------------------------------------------------------------
+        i_start = its
+        i_end   = ite
+        j_start = jts
+        j_end   = jte
 
-      IF ( config_flags%open_xs .OR. config_flags%specified .OR. &
-           config_flags%nested) i_start = MAX( ids+1, its )
-      IF ( config_flags%open_xe .OR. config_flags%specified .OR. &
-           config_flags%nested) i_end   = MIN( ide-1, ite )
-      IF ( config_flags%open_ys .OR. config_flags%specified .OR. &
-           config_flags%nested) j_start = MAX( jds+1, jts )
-      IF ( config_flags%open_ye .OR. config_flags%specified .OR. &
-           config_flags%nested) j_end   = MIN( jde-1, jte )
-      IF ( config_flags%periodic_x ) i_start = its
-      IF ( config_flags%periodic_x ) i_end = ite
+        IF ( config_flags%open_xs .OR. config_flags%specified .OR. &
+             config_flags%nested) i_start = MAX( ids+1, its )
+        IF ( config_flags%open_xe .OR. config_flags%specified .OR. &
+             config_flags%nested) i_end   = MIN( ide-1, ite )
+        IF ( config_flags%open_ys .OR. config_flags%specified .OR. &
+             config_flags%nested) j_start = MAX( jds+1, jts )
+        IF ( config_flags%open_ye .OR. config_flags%specified .OR. &
+             config_flags%nested) j_end   = MIN( jde-1, jte )
+        IF ( config_flags%periodic_x ) i_start = its
+        IF ( config_flags%periodic_x ) i_end = ite
 
-      CALL severe_wx_diagnostics ( grid % wspd10max             &
-                             , grid % w_up_max                  &
-                             , grid % w_dn_max                  &
-                             , grid % up_heli_max               &
-                             , grid % tcoli_max                 &
-                             , grid % midrh_min_old             &
-                             , grid % midrh_min                 &
-                             , grid % afwa_hail                 &
-                             , grid % afwa_cape                 &
-                             , grid % afwa_cin                  &
-!                             , grid % afwa_cape_mu              &
-!                             , grid % afwa_cin_mu               &
-                             , grid % afwa_zlfc                 &
-                             , grid % afwa_plfc                 &
-                             , grid % afwa_lidx                 &
-                             , llws                             &
-                             , grid % afwa_tornado              &
-                             , grid % grpl_flx_max              &
-                             , grid % u10                       &
-                             , grid % v10                       &
-                             , grid % w_2                       &
-                             , grid % uh                        &
-                             , grid % t_phy                     &
-                             , grid % t2                        &
-                             , grid % z                         &
-                             , grid % ht                        &
-                             , grid % tornado_mask              &
-                             , grid % tornado_dur               &
-                             , grid % dt                        &
-                             , grid % afwa_pwat                 &
-                             , u_phy                            &
-                             , v_phy                            &
-                             , ptot                             &
-                             , qice                             &
-                             , qsnow                            &
-                             , qgrpl                            &
-                             , ngraup                           &
-                             , qvapr, qrain, qcloud             &
-                             , rho                              &
-                             , dz8w                             &
-                             , rh                               &
-                             , do_buoy_calc                     &
-                             , ims, ime, jms, jme, kms, kme     &
-                             , its, ite, jts, jte               &
-                             , k_start, k_end                   &
-                             , j_start, j_end, i_start, i_end   )
+        CALL severe_wx_diagnostics ( grid % wspd10max             &
+                               , grid % w_up_max                  &
+                               , grid % w_dn_max                  &
+                               , grid % up_heli_max               &
+                               , grid % tcoli_max                 &
+                               , grid % midrh_min_old             &
+                               , grid % midrh_min                 &
+                               , grid % afwa_hail                 &
+                               , grid % afwa_cape                 &
+                               , grid % afwa_cin                  &
+                               , grid % afwa_zlfc                 &
+                               , grid % afwa_plfc                 &
+                               , grid % afwa_lidx                 &
+                               , llws                             &
+                               , grid % afwa_tornado              &
+                               , grid % grpl_flx_max              &
+                               , grid % u10                       &
+                               , grid % v10                       &
+                               , grid % w_2                       &
+                               , grid % uh                        &
+                               , grid % t_phy                     &
+                               , grid % t2                        &
+                               , grid % z                         &
+                               , grid % ht                        &
+                               , grid % tornado_mask              &
+                               , grid % tornado_dur               &
+                               , grid % dt                        &
+                               , grid % afwa_pwat                 &
+                               , u_phy                            &
+                               , v_phy                            &
+                               , ptot                             &
+                               , qice                             &
+                               , qsnow                            &
+                               , qgrpl                            &
+                               , ngraup                           &
+                               , qvapr, qrain, qcloud             &
+                               , rho                              &
+                               , dz8w                             &
+                               , rh                               &
+                               , do_buoy_calc                     &
+                               , ims, ime, jms, jme, kms, kme     &
+                               , its, ite, jts, jte               &
+                               , k_start, k_end                   &
+                               , j_start, j_end, i_start, i_end   )
 
+      ELSE
+        CALL wrf_debug ( DEBUG_LEVEL, 'Option severe_wx_diagnostics requires: QV, QR, QC, QI, QS, QG, QNG' )
+      END IF
     ENDIF   ! afwa_severe_opt == 1
 
     ! Calculate precipitation type diagnostics
@@ -480,6 +565,7 @@ CONTAINS
                              , grid % t2                        &
                              , rh                               &
                              , grid % z                         &
+                             , dz8w                             &
                              , grid % ht                        &
                              , grid % afwa_precip               &
                              , grid % swdown                    &
@@ -688,61 +774,69 @@ CONTAINS
                              , ips, ipe, jps, jpe, kps, kpe )
       ENDIF  ! afwa_vil_opt ==1 
 
-      ! Calculate icing and freezing level
-      ! ----------------------------------
-      IF ( config_flags % afwa_icing_opt == 1 ) THEN
-
-        ! Determine icing option from microphysics scheme
-        ! -----------------------------------------------
-        
-        IF ( config_flags % mp_physics == GSFCGCESCHEME ) THEN
-          icing_opt=1
-        ELSEIF ( config_flags % mp_physics == ETAMPNEW ) THEN
-          icing_opt=2
-        ELSEIF ( config_flags % mp_physics == THOMPSON ) THEN
-          icing_opt=3
-        ELSEIF ( config_flags % mp_physics == WSM5SCHEME .OR.   &
-                 config_flags % mp_physics == WSM6SCHEME ) THEN
-          icing_opt=4
-        ELSEIF ( config_flags % mp_physics == MORR_TWO_MOMENT .OR. &
-                 config_flags % mp_physics == MORR_TM_AERO ) THEN  !TWG add 2017
-
-          ! Is this run with prognostic cloud droplets or no?
-          ! -------------------------------------------------
-          IF (config_flags % progn > 0) THEN
-             icing_opt=6
+      IF ( F_QR .AND. F_QC .AND. F_QNC ) THEN
+        ! Calculate icing and freezing level
+        ! ----------------------------------
+        IF ( config_flags % afwa_icing_opt == 1 ) THEN
+  
+          ! Determine icing option from microphysics scheme
+          ! -----------------------------------------------
+          
+          IF ( config_flags % mp_physics == GSFCGCESCHEME ) THEN
+            icing_opt=1
+          ELSEIF ( config_flags % mp_physics == ETAMPNEW ) THEN
+            icing_opt=2
+          ELSEIF ( config_flags % mp_physics == THOMPSON ) THEN
+            icing_opt=3
+          ELSEIF ( config_flags % mp_physics == WSM5SCHEME .OR.   &
+                   config_flags % mp_physics == WSM6SCHEME ) THEN
+            icing_opt=4
+          ELSEIF ( config_flags % mp_physics == MORR_TWO_MOMENT .OR. &
+                   config_flags % mp_physics == MORR_TM_AERO ) THEN  !TWG add 2017
+  
+            ! Is this run with prognostic cloud droplets or no?
+            ! -------------------------------------------------
+            IF (config_flags % progn > 0) THEN
+               icing_opt=6
+            ELSE
+               icing_opt=5
+            ENDIF
+          ELSEIF ( config_flags % mp_physics == WDM6SCHEME ) THEN
+            icing_opt=7
           ELSE
-             icing_opt=5
+            icing_opt=0  ! Not supported
           ENDIF
-        ELSEIF ( config_flags % mp_physics == WDM6SCHEME ) THEN
-          icing_opt=7
-        ELSE
-          icing_opt=0  ! Not supported
-        ENDIF
- 
-        write ( message, * ) 'Calculating Icing with icing opt ',icing_opt 
-        CALL wrf_debug( 100 , message )
-        CALL icing_diagnostics ( icing_opt                      &
-                             , grid % fzlev                     &
-                             , grid % icing_lg                  &
-                             , grid % icing_sm                  &
-                             , grid % qicing_lg_max             &
-                             , grid % qicing_sm_max             &
-                             , grid % qicing_lg                 &
-                             , grid % qicing_sm                 &
-                             , grid % icingtop                  &
-                             , grid % icingbot                  &
-                             , grid % t_phy                     &
-                             , grid % z                         &
-                             , dz8w                             &
-                             , rho                              &
-                             , qrain                            &
-                             , qcloud                           &
-                             , ncloud                           &
-                             , ids, ide, jds, jde, kds, kde     &
-                             , ims, ime, jms, jme, kms, kme     &
-                             , ips, ipe, jps, jpe, kps, kpe )
-      ENDIF  ! afwa_icing_opt
+   
+          IF ( icing_opt .NE. 0 ) THEN
+            write ( message, * ) 'Calculating Icing with icing opt ',icing_opt 
+            CALL wrf_debug( 100 , message )
+            CALL icing_diagnostics ( icing_opt                      &
+                                 , grid % fzlev                     &
+                                 , grid % icing_lg                  &
+                                 , grid % icing_sm                  &
+                                 , grid % qicing_lg_max             &
+                                 , grid % qicing_sm_max             &
+                                 , grid % qicing_lg                 &
+                                 , grid % qicing_sm                 &
+                                 , grid % icingtop                  &
+                                 , grid % icingbot                  &
+                                 , grid % t_phy                     &
+                                 , grid % z                         &
+                                 , dz8w                             &
+                                 , rho                              &
+                                 , qrain                            &
+                                 , qcloud                           &
+                                 , ncloud                           &
+                                 , ids, ide, jds, jde, kds, kde     &
+                                 , ims, ime, jms, jme, kms, kme     &
+                                 , ips, ipe, jps, jpe, kps, kpe )
+          ELSE
+            CALL wrf_debug ( DEBUG_LEVEL, 'Icing diagnostics not processed due to unknown MP scheme' )
+          END IF
+        ENDIF  ! afwa_icing_opt
+      ELSE
+        CALL wrf_debug ( DEBUG_LEVEL, 'Option icing_diagnostics requires: QC, QR, QNC' )
+      END IF
 
       ! Calculate visiblility diagnostics
       ! ---------------------------------
@@ -808,50 +902,58 @@ CONTAINS
           ENDDO
         ENDDO
 
-        write ( message, * ) 'Calculating visibility'
-        CALL wrf_debug( 100 , message )
-        CALL vis_diagnostics ( qcloud(ims:ime,k_start,jms:jme)  &
-                             , qrain(ims:ime,k_start,jms:jme)   &
-                             , qice(ims:ime,k_start,jms:jme)    &
-                             , qsnow(ims:ime,k_start,jms:jme)   &
-                             , qgrpl(ims:ime,k_start,jms:jme)   &
-                             , rho(ims:ime,k_start,jms:jme)     &
-                             , wind10m                          &
-                             , wind125m                         &
-                             , grid % afwa_pwat                 &
-                             , grid % q2                        &
-                             , rh2m                             &
-                             , rh20m                            &
-                             , tv2m                             &
-                             , tv20m                            &
-                             , dustc                            &
-                             , grid % afwa_vis                  &
-                             , grid % afwa_vis_dust             &
-                             , grid % afwa_vis_alpha            &
-                             , ids, ide, jds, jde, kds, kde     &
-                             , ims, ime, jms, jme, kms, kme     &
-                             , ips, ipe, jps, jpe, kps, kpe ) 
+        IF ( F_QC .AND. F_QR .AND. F_QI .AND. F_QS .AND. F_QG ) THEN
+          write ( message, * ) 'Calculating visibility'
+          CALL wrf_debug( 100 , message )
+          CALL vis_diagnostics ( qcloud(ims:ime,k_start,jms:jme)  &
+                               , qrain(ims:ime,k_start,jms:jme)   &
+                               , qice(ims:ime,k_start,jms:jme)    &
+                               , qsnow(ims:ime,k_start,jms:jme)   &
+                               , qgrpl(ims:ime,k_start,jms:jme)   &
+                               , rho(ims:ime,k_start,jms:jme)     &
+                               , wind10m                          &
+                               , wind125m                         &
+                               , grid % afwa_pwat                 &
+                               , grid % q2                        &
+                               , rh2m                             &
+                               , rh20m                            &
+                               , tv2m                             &
+                               , tv20m                            &
+                               , dustc                            &
+                               , grid % afwa_vis                  &
+                               , grid % afwa_vis_dust             &
+                               , grid % afwa_vis_alpha            &
+                               , ids, ide, jds, jde, kds, kde     &
+                               , ims, ime, jms, jme, kms, kme     &
+                               , ips, ipe, jps, jpe, kps, kpe ) 
+        ELSE
+          CALL wrf_debug ( DEBUG_LEVEL, 'Option vis_diagnostics requires: QC, QR, QI, QS, QG' )
+        END IF
       ENDIF
 
-      ! Calculate cloud diagnostics
-      ! ---------------------------
-      IF ( config_flags % afwa_cloud_opt == 1 ) THEN
-        write ( message, * ) 'Calculating cloud'
-        CALL wrf_debug( 100 , message )
-        CALL cloud_diagnostics (qcloud                          &
-                             , qice                             &
-                             , qsnow                            &
-                             , rh_cld                           &
-                             , dz8w                             &
-                             , rho                              &
-                             , grid % z                         &
-                             , grid % ht                        &
-                             , grid % afwa_cloud                &
-                             , grid % afwa_cloud_ceil           &
-                             , ids, ide, jds, jde, kds, kde     &
-                             , ims, ime, jms, jme, kms, kme     &
-                             , ips, ipe, jps, jpe, kps, kpe )
-      ENDIF
+      IF ( F_QC .AND. F_QI .AND. F_QS ) THEN
+        ! Calculate cloud diagnostics
+        ! ---------------------------
+        IF ( config_flags % afwa_cloud_opt == 1 ) THEN
+          write ( message, * ) 'Calculating cloud'
+          CALL wrf_debug( 100 , message )
+          CALL cloud_diagnostics (qcloud                          &
+                               , qice                             &
+                               , qsnow                            &
+                               , rh_cld                           &
+                               , dz8w                             &
+                               , rho                              &
+                               , grid % z                         &
+                               , grid % ht                        &
+                               , grid % afwa_cloud                &
+                               , grid % afwa_cloud_ceil           &
+                               , ids, ide, jds, jde, kds, kde     &
+                               , ims, ime, jms, jme, kms, kme     &
+                               , ips, ipe, jps, jpe, kps, kpe )
+        ENDIF
+      ELSE
+        CALL wrf_debug ( DEBUG_LEVEL, 'Option cloud_diagnostics requires: QC, QI, QS' )
+      END IF
 
     ENDIF  ! is_output_timestep
 
@@ -869,8 +971,6 @@ CONTAINS
                              , afwa_hail                        &
                              , cape                             &
                              , cin                              &
-!                             , cape_mu                          &
-!                             , cin_mu                           &
                              , zlfc                             &
                              , plfc                             &
                              , lidx                             &
@@ -954,14 +1054,6 @@ CONTAINS
                                               ,    tornado_dur 
 
 
-!    REAL, DIMENSION( ims:ime, jms:jme ),                        &
-!         INTENT(  OUT) ::                                 cape  &
-!                                              ,            cin  &
-!                                              ,        cape_mu  &
-!                                              ,         cin_mu  &
-!                                              ,           zlfc  &
-!                                              ,           plfc  &
-!                                              ,           lidx
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
          INTENT(INOUT) ::                                 cape  &
                                               ,            cin  &
@@ -1703,6 +1795,7 @@ CONTAINS
                              , t2                               &
                              , rh                               &
                              , z                                &
+                             , dz8w                             &
                              , ht                               &
                              , precip                           &
                              , swdown                           &
@@ -1724,7 +1817,8 @@ CONTAINS
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),               &
          INTENT(IN   ) ::                                t_phy  &
                                               ,             rh  &
-                                              ,              z
+                                              ,              z  &
+                                              ,           dz8w
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
          INTENT(IN   ) ::                                   t2  &
                                               ,             ht  &
@@ -1833,7 +1927,7 @@ CONTAINS
               IF ((precip_type(i,j) .eq. 2 .or. precip_type(i,j) .eq. 3) .and. &
               t_phy(i,k,j) .gt. 273.15) THEN
                 melt(i,j)=melt(i,j)+9.8*(((t_phy(i,k,j)-273.15)/273.15)* &
-                          (z(i,k,j)-z(i,k-1,j)))
+                          (dz8w(i,k,j)))
                 IF (melt(i,j) .gt. total_melt) THEN
                   precip_type(i,j)=1  ! Rain
                   melt(i,j)=0.0  ! Reset melting energy in case it re-freezes

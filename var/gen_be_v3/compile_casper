@@ -1,0 +1,44 @@
+#!/bin/csh
+#set echo
+
+set MACHINE = `hostname -s`
+
+if ( `echo $MACHINE|cut -c1-6` == casper ) then #NCAR casper DAV
+
+   # WRFIO_LIB = WRF/external/io_netcdf/libwrfio_nf.a
+   set WRFIO_LIB = /gpfs/u/home/hclin/extlib/intel/libwrfio_nf.a
+   if ( ! $?WRFIO_LIB ) then
+      echo "environment variable WRFIO_LIB not set"
+      exit 1
+   endif
+
+   # LAPACK library for EOF decomposition
+   set LAPACK_LIB = /glade/u/apps/opt/intel/2017u1/mkl/lib/intel64_lin/libmkl_lapack95_lp64.a
+   if ( ! $?LAPACK_LIB ) then
+      echo "environment variable LAPACK_LIB not set"
+      exit 1
+   endif
+
+   module purge
+   module load ncarenv
+   module load intel
+   module load ncarcompilers
+   module load netcdf
+   module load mkl
+   module load openmpi
+   module list
+
+set echo
+
+   #MPI/OMP
+   cpp -P -traditional -DDM_PARALLEL gen_be_v3.F90 > be.f90
+   mpif90 be.f90 -o gen_be_v3_mpp.exe -qopenmp -convert big_endian ${WRFIO_LIB} -L${NETCDF}/lib -lnetcdf -lnetcdff -lm -I${NETCDF}/include ${LAPACK_LIB}
+
+   #serial/OMP
+   cpp -P -traditional gen_be_v3.F90 > be.f90
+   ifort be.f90 -o gen_be_v3.exe -qopenmp -convert big_endian ${WRFIO_LIB} -L${NETCDF}/lib -lnetcdf -lnetcdff -lm -I${NETCDF}/include ${LAPACK_LIB}
+
+unset echo
+
+   \rm -f be.f90
+endif

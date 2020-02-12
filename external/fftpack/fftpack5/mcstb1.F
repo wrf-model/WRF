@@ -4,9 +4,7 @@ subroutine mcstb1 ( lot, jump, n, inc, x, wsave, dsum, work, ier )
 !
 !! MCSTB1 is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

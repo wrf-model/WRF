@@ -24,7 +24,10 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
 
    integer  :: cims, cime, ckms, ckme, cjms, cjme, &
                nims, nime, nkms, nkme, njms, njme
-   integer  :: nvar
+   integer  :: cids, cide, ckds, ckde, cjds, cjde, &
+               cips, cipe, ckps, ckpe, cjps, cjpe, &
+               nids, nide, nkds, nkde, njds, njde, &
+               nips, nipe, nkps, nkpe, njps, njpe
 
    if (trace_use) call da_trace_entry("da_calc_flow_dependence_xa_adj_dual_res")
 
@@ -34,14 +37,16 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    end if
 
    ! Get coarse (ensemble) grid dimensions ( grid%intermediate_grid)
-   cims = ims_int; cime = ime_int
-   cjms = jms_int; cjme = jme_int
-   ckms = kms_int; ckme = kme_int
+   CALL get_ijk_from_grid (  grid%intermediate_grid ,               &
+                             cids, cide, cjds, cjde, ckds, ckde,    &
+                             cims, cime, cjms, cjme, ckms, ckme,    &
+                             cips, cipe, cjps, cjpe, ckps, ckpe    )
 
-   ! Get fine (analysis) grid dimensions (grid)
-   nims = ims;     nime = ime
-   njms = jms;     njme = jme
-   nkms = kms;     nkme = kme
+   ! Get fine (analysis) grid dimensions ( grid)
+   CALL get_ijk_from_grid (  grid,                                  &
+                             nids, nide, njds, njde, nkds, nkde,    &
+                             nims, nime, njms, njme, nkms, nkme,    &
+                             nips, nipe, njps, njpe, nkps, nkpe )
 
    !
    ! Allocate and initialize arrays
@@ -128,76 +133,70 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    !call da_message(message(1:3))
 
    !
-   ! Now interpolate grid%xa from hi-res to low-res
+   ! Now getting low-res xa from high-res xa using adjoint of bilinear interpolation
    !
-      !call da_message((/'Using adjoint of bilinear interpolation'/))
-   do k = kts,kte
-      do j = jts,jte
-         do i = its,ite
-            output_u(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_u(i,j,k) + output_u(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
-            output_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_u(i,j,k) + output_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
-            output_u(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_u(i,j,k) + output_u(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
-            output_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_u(i,j,k) + output_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
-
-            output_v(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_v(i,j,k) + output_v(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
-            output_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_v(i,j,k) + output_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
-            output_v(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_v(i,j,k) + output_v(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
-            output_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_v(i,j,k) + output_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
-
-            output_t(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_t(i,j,k) + output_t(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
-            output_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_t(i,j,k) + output_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
-            output_t(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_t(i,j,k) + output_t(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
-            output_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_t(i,j,k) + output_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
-
-            output_q(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_q(i,j,k) + output_q(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
-            output_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_q(i,j,k) + output_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
-            output_q(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_q(i,j,k) + output_q(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
-            output_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_q(i,j,k) + output_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
-         end do
-      end do
-   end do
-
-   do j = jts,jte
-      do i = its,ite
-         output_p(aens_locs(i,j)%i  ,aens_locs(i,j)%j,1)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_p(i,j,1) + output_p(aens_locs(i,j)%i  ,aens_locs(i,j)%j,1)
-         output_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j,1)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_p(i,j,1) + output_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j,1)
-         output_p(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,1) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_p(i,j,1) + output_p(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,1)
-         output_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,1) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_p(i,j,1) + output_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,1)
-
-      end do
-   end do
+   call da_dual_res_c2n_ad( input_u, output_u,  &
+           nims, nime, njms, njme, nkms, nkme,  &
+            its,  ite,  jts,  jte,  kts,  kte,  &
+           cids, cide, cjds, cjde, ckds, ckde,  &
+           cims, cime, cjms, cjme, ckms, ckme,  &
+           its_int, ite_int, jts_int, jte_int, kts_int, kte_int)
+   call da_dual_res_c2n_ad( input_v, output_v,  &
+           nims, nime, njms, njme, nkms, nkme,  &
+            its,  ite,  jts,  jte,  kts,  kte,  &
+           cids, cide, cjds, cjde, ckds, ckde,  &
+           cims, cime, cjms, cjme, ckms, ckme,  &
+           its_int, ite_int, jts_int, jte_int, kts_int, kte_int)
+   call da_dual_res_c2n_ad( input_t, output_t,  &
+           nims, nime, njms, njme, nkms, nkme,  &
+            its,  ite,  jts,  jte,  kts,  kte,  &
+           cids, cide, cjds, cjde, ckds, ckde,  &
+           cims, cime, cjms, cjme, ckms, ckme,  &
+           its_int, ite_int, jts_int, jte_int, kts_int, kte_int)
+   call da_dual_res_c2n_ad( input_q, output_q,  &
+           nims, nime, njms, njme, nkms, nkme,  &
+            its,  ite,  jts,  jte,  kts,  kte,  &
+           cids, cide, cjds, cjde, ckds, ckde,  &
+           cims, cime, cjms, cjme, ckms, ckme,  &
+           its_int, ite_int, jts_int, jte_int, kts_int, kte_int)
+   call da_dual_res_c2n_ad( input_p(:,:,1:1), output_p(:,:,1:1), &
+           nims, nime, njms, njme, 1, 1,        &
+            its,  ite,  jts,  jte, 1, 1,        &
+           cids, cide, cjds, cjde, 1, 1,        &
+           cims, cime, cjms, cjme, 1, 1,        &
+           its_int, ite_int, jts_int, jte_int, 1, 1)
 
    if ( alpha_hydrometeors ) then
-      do k = kts,kte
-         do j = jts,jte
-            do i = its,ite
-               output_qcw(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qcw(i,j,k) + output_qcw(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
-               output_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qcw(i,j,k) + output_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
-               output_qcw(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qcw(i,j,k) + output_qcw(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
-               output_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qcw(i,j,k) + output_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
-
-               output_qrn(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qrn(i,j,k) + output_qrn(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
-               output_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qrn(i,j,k) + output_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
-               output_qrn(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qrn(i,j,k) + output_qrn(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
-               output_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qrn(i,j,k) + output_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
-
-               output_qci(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qci(i,j,k) + output_qci(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
-               output_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qci(i,j,k) + output_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
-               output_qci(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qci(i,j,k) + output_qci(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
-               output_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qci(i,j,k) + output_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
-
-               output_qsn(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qsn(i,j,k) + output_qsn(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
-               output_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qsn(i,j,k) + output_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
-               output_qsn(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qsn(i,j,k) + output_qsn(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
-               output_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qsn(i,j,k) + output_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
-
-               output_qgr(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qgr(i,j,k) + output_qgr(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
-               output_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qgr(i,j,k) + output_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
-               output_qgr(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qgr(i,j,k) + output_qgr(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
-               output_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qgr(i,j,k) + output_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
-            end do
-         end do
-      end do
+      call da_dual_res_c2n_ad( input_qcw, output_qcw, &
+              nims, nime, njms, njme, nkms, nkme,     &
+               its,  ite,  jts,  jte,  kts,  kte,     &
+              cids, cide, cjds, cjde, ckds, ckde,     &
+              cims, cime, cjms, cjme, ckms, ckme,     &
+              its_int, ite_int, jts_int, jte_int, kts_int, kte_int)
+      call da_dual_res_c2n_ad( input_qrn, output_qrn, &
+              nims, nime, njms, njme, nkms, nkme,     &
+               its,  ite,  jts,  jte,  kts,  kte,     &
+              cids, cide, cjds, cjde, ckds, ckde,     &
+              cims, cime, cjms, cjme, ckms, ckme,     &
+              its_int, ite_int, jts_int, jte_int, kts_int, kte_int)
+      call da_dual_res_c2n_ad( input_qci, output_qci, &
+              nims, nime, njms, njme, nkms, nkme,     &
+               its,  ite,  jts,  jte,  kts,  kte,     &
+              cids, cide, cjds, cjde, ckds, ckde,     &
+              cims, cime, cjms, cjme, ckms, ckme,     &
+              its_int, ite_int, jts_int, jte_int, kts_int, kte_int)
+      call da_dual_res_c2n_ad( input_qsn, output_qsn, &
+              nims, nime, njms, njme, nkms, nkme,     &
+               its,  ite,  jts,  jte,  kts,  kte,     &
+              cids, cide, cjds, cjde, ckds, ckde,     &
+              cims, cime, cjms, cjme, ckms, ckme,     &
+              its_int, ite_int, jts_int, jte_int, kts_int, kte_int)
+      call da_dual_res_c2n_ad( input_qgr, output_qgr, &
+              nims, nime, njms, njme, nkms, nkme,     &
+               its,  ite,  jts,  jte,  kts,  kte,     &
+              cids, cide, cjds, cjde, ckds, ckde,     &
+              cims, cime, cjms, cjme, ckms, ckme,     &
+              its_int, ite_int, jts_int, jte_int, kts_int, kte_int)
    end if ! alpha_hydrometeors
 
    write (unit=message(1), fmt='(A,2F12.5)') ' min/max U  Input = ',minval(input_u),maxval(input_u)

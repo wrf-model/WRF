@@ -92,7 +92,6 @@ MODULES = \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
-	module_mp_gsfcgce_3ice_nuwrf.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
 	module_mp_morr_two_moment.o \
         module_mp_p3.o \
@@ -123,6 +122,7 @@ MODULES = \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_ra_aerosol.o  \
+	module_ra_farms.o  \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
 	module_sf_gfs.o \

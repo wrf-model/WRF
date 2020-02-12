@@ -779,7 +779,7 @@ BENCH_START(calc_p_rho_tim)
                              , pi_phy , p_phy , grid%t_phy      &
                              , dz8w , p8w , t8w                 &
                              , nba_mij, num_nba_mij             & !JDM 
-                             , nba_rij, num_nba_rij             & !JDM  
+                             , nba_rij, num_nba_rij             & !JDM 
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -2283,7 +2283,7 @@ BENCH_END(flow_depbdy_tim)
        ENDIF moist_scalar_advance
 
 BENCH_START(tke_adv_tim)
-       TKE_advance: IF (config_flags%km_opt .eq. 2) then
+       TKE_advance: IF (config_flags%km_opt .eq. 2.or.config_flags%km_opt.eq.5) then ! XZ
 #ifdef DM_PARALLEL
          IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
 #       include "HALO_EM_TKE_ADVECT_3.inc"

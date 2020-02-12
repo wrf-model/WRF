@@ -4,9 +4,7 @@ subroutine c1fm1b ( n, inc, c, ch, wa, fnf, fac )
 !
 !! C1FM1B is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

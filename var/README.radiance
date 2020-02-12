@@ -7,8 +7,8 @@ required for radiance data assimilation.
 Please see also Chapter 6 of WRF ARW User's Guide for more details.
 
 RTM (Radiative Transfer Model) that can be used in WRFDA:
-  CRTM REL-2.2.3
-  RTTOV v11
+  CRTM REL-2.3.0
+  RTTOV v12.1
 =============================================================================
 
 Setup and Run - with radiance data
@@ -25,9 +25,9 @@ in README.basics, the following extra files are required for radiance:
   ln -sf WRFDA/var/run/radiance_info    ./radiance_info  # radiance_info is a directory
   ln -sf WRFDA/var/run/VARBC.in         ./VARBC.in
   (CRTM only)
-     Either ln -sf WRFDA/var/run/crtm_coeffs_2.2.3 ./crtm_coeffs  # crtm_coeffs is a directory
+     Either ln -sf WRFDA/var/run/crtm_coeffs_2.3.0 ./crtm_coeffs  # crtm_coeffs is a directory
      or set namelist variable crtm_coef_path to the location of coef files
-        crtm_coef_path='/user/WRFDA/var/run/crtm_coeffs_2.2.3'
+        crtm_coef_path='/user/WRFDA/var/run/crtm_coeffs_2.3.0'
   (RTTOV only) ln -sf rttov10/rtcoef_rttov10/rttov7pred51L ./rttov_coeffs  # rttov_coeffs is a directory
 
 2. namelist.input
@@ -78,13 +78,13 @@ WRF or WRFDA tar files. There are two ways to get this data.
 from this web page:
 http://www2.mmm.ucar.edu/wrf/users/wrfda/download/crtm_coeffs.html
 2. The full set of CRTM coefficients may be downloaded from:
-ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.2.3/crtm_v2.2.3.tar.gz
+ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.3.0/crtm_v2.3.0.tar.gz
 
 Prior to  V4.0, the subset of CRTM coefficient files were included in the 
 WRFDA tar file in the WRFDA/var/run/crtm_coeffs_2.2.3 directory (please see 
 also WRFDA/var/run/README).
 
-After unzip/untar crtm_v2.2.3.tar.gz, you will find all the coefficient files
+After unzip/untar crtm_v2.3.0.tar.gz, you will find all the coefficient files
 under the directory fix. You will need to create another directory to copy or link 
 the files that will be used in WRFDA. Please see also the CRTM user guide
 ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/CRTM_User_Guide.pdf

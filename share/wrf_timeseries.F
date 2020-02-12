@@ -33,7 +33,9 @@ SUBROUTINE calc_ts_locations( grid )
    REAL :: known_lat, known_lon
    CHARACTER (LEN=132) :: message
    CHARACTER (LEN=24) :: ts_profile_filename
-   CHARACTER (LEN=2), DIMENSION(6) :: ts_file_endings = (/ 'UU', 'VV', 'PH', 'TH', 'QV' ,'WW'/) 
+   INTEGER, PARAMETER :: TS_FIELDS = 7
+   CHARACTER (LEN=2), DIMENSION(TS_FIELDS) :: &
+      ts_file_endings = (/ 'UU', 'VV', 'PH', 'TH', 'QV' ,'WW', 'PR'/) 
    TYPE (PROJ_INFO) :: ts_proj
    TYPE (grid_config_rec_type) :: config_flags
 
@@ -219,14 +221,25 @@ SUBROUTINE calc_ts_locations( grid )
                WRITE(grid%ts_filename(k)(i-4:i-3),'(I2.2)') grid%id
                OPEN(UNIT=iunit, FILE=TRIM(grid%ts_filename(k)), FORM='FORMATTED', STATUS='REPLACE')
 #if (EM_CORE == 1)
-               WRITE(UNIT=iunit, &
-                     FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
-                     grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
-                     ' '//grid%nametsloc(grid%id_tsloc(k)), &
-                     ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
-                     grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
-                     ts_xlat, ',', ts_xlong, ') ', &
-                     ts_hgt,' meters'
+               IF ( .NOT. grid%tslist_ij ) THEN 
+                  WRITE(UNIT=iunit, &
+                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                        grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
+                        ' '//grid%nametsloc(grid%id_tsloc(k)), &
+                        ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
+                        grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
+                        ts_xlat, ',', ts_xlong, ') ', &
+                        ts_hgt,' meters'
+               ELSE
+                  WRITE(UNIT=iunit, &
+                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                        grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
+                        ' '//grid%nametsloc(grid%id_tsloc(k)), &
+                        ' (', ts_xlat, ',', ts_xlong, ') (', &
+                        grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
+                        ts_xlat, ',', ts_xlong, ') ', &
+                        ts_hgt,' meters'
+               END IF
 #else
                WRITE(UNIT=iunit, &
                      FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2)') &
@@ -249,14 +262,25 @@ SUBROUTINE calc_ts_locations( grid )
                   WRITE(ts_profile_filename(i-1:i),'(A2)') ts_file_endings(j)
                   OPEN(UNIT=iunit, FILE=TRIM(ts_profile_filename), FORM='FORMATTED', STATUS='REPLACE')
 #if (EM_CORE == 1)
-                  WRITE(UNIT=iunit, &
-                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
-                        grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
-                        ' '//grid%nametsloc(grid%id_tsloc(k)), &
-                        ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
-                        grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
-                        ts_xlat, ',', ts_xlong, ') ', &
-                        ts_hgt,' meters'
+                  IF ( .NOT. grid%tslist_ij ) THEN 
+                     WRITE(UNIT=iunit, &
+                           FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                           grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
+                           ' '//grid%nametsloc(grid%id_tsloc(k)), &
+                           ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
+                           grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
+                           ts_xlat, ',', ts_xlong, ') ', &
+                           ts_hgt,' meters'
+                  ELSE
+                     WRITE(UNIT=iunit, &
+                           FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                           grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
+                           ' '//grid%nametsloc(grid%id_tsloc(k)), &
+                           ' (', ts_xlat, ',', ts_xlong, ') (', &
+                           grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
+                           ts_xlat, ',', ts_xlong, ') ', &
+                           ts_hgt,' meters'
+                 END IF
 #else
                   WRITE(UNIT=iunit, &
                         FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2)') &
@@ -411,6 +435,7 @@ SUBROUTINE calc_ts( grid )
                grid%ts_th_profile(n,i,k)  =  grid%t_2(ix,k,iy) + T0
             END IF
             grid%ts_qv_profile(n,i,k)  = grid%moist(ix,k,iy,P_QV)
+            grid%ts_p_profile(n,i,k)   = grid%pb(ix,k,iy)+grid%p(ix,k,iy)
             END DO
 #endif
          grid%ts_u(n,i)    = earth_u
@@ -441,6 +466,7 @@ SUBROUTINE calc_ts( grid )
          grid%ts_gph_profile(n,i,k)   = 1.E30
          grid%ts_th_profile(n,i,k)    = 1.E30
          grid%ts_qv_profile(n,i,k)    = 1.E30
+         grid%ts_p_profile(n,i,k)     = 1.E30
          END DO
 #endif   
          grid%ts_hour(n,i) = 1.E30
@@ -536,6 +562,11 @@ SUBROUTINE write_ts( grid )
    DO k=1,grid%max_ts_level
    ts_buf(:,:) = grid%ts_qv_profile(:,:,k)
    CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_qv_profile(:,:,k),grid%ts_buf_size*grid%max_ts_locs)
+   END DO
+
+   DO k=1,grid%max_ts_level
+   ts_buf(:,:) = grid%ts_p_profile(:,:,k)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_p_profile(:,:,k),grid%ts_buf_size*grid%max_ts_locs)
    END DO
 #endif         
    ts_buf(:,:) = grid%ts_u(:,:)
@@ -753,6 +784,26 @@ SUBROUTINE write_ts( grid )
                               grid%ts_qv_profile(n,i,1:grid%max_ts_level)                                       
          END DO
          CLOSE(UNIT=iunit)
+       
+         !Write pressure profile to separate file
+         iunit = get_unused_unit()
+            IF ( iunit <= 0 ) THEN
+            CALL wrf_error_fatal('Error in write_ts: could not find a free Fortran unit.')
+            END IF
+         !Recreate filename for pressure profiles
+         k = LEN_TRIM(ts_profile_filename)
+         WRITE(ts_profile_filename(k-1:k),'(A2)') 'PR'
+         
+         OPEN(UNIT=iunit, FILE=TRIM(ts_profile_filename), STATUS='unknown', POSITION='append', FORM='formatted')
+
+         DO n=1,grid%next_ts_time - 1
+
+            WRITE(UNIT=iunit,FMT=profile_format)  &
+                              grid%ts_hour(n,i),             &
+                              grid%ts_p_profile(n,i,1:grid%max_ts_level)                                       
+         END DO
+         CLOSE(UNIT=iunit)
+
 #endif   
 
       END DO

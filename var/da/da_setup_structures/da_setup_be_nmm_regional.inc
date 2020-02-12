@@ -652,7 +652,7 @@ subroutine da_setup_be_nmm_regional(xb, be)
       allocate (alpha_val(1:kz)) ! Not using jy dimension yet.
       allocate (alpha_evec(1:kz,1:kz)) ! Not using jy dimension yet.
 
-      if ( alpha_vertloc ) then ! Use vertical localization:
+      if ( alpha_vertloc_opt > 0 ) then ! Use vertical localization:
          call da_get_unit(be_unit)
          open(unit=be_unit,file='be.vertloc.dat', status='old', form='unformatted')
 

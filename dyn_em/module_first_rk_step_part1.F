@@ -355,6 +355,9 @@ BENCH_START(rad_driver_tim)
      &        , CLDT=grid%cldt, ZNU=grid%znu                              &
 !ZCX-
      &        , CLDFRA=grid%cldfra, CLDFRA_MP_ALL=grid%cldfra_mp_all      &
+     &        , CCLDFRA=grid%ccldfra                                      &
+     &        , QCCONV=grid%qcconv, QICONV=grid%qiconv                    &
+     &        , BMJ_RAD_FEEDBACK=config_flags%bmj_rad_feedback            &
      &        , LRADIUS=grid%LRADIUS,IRADIUS=grid%IRADIUS                 & !BSINGH(01/22/2014)
      &        , CLDFRA_DP=grid%cldfra_dp                                  & ! ckay for subgrid cloud
      &        , CLDFRA_SH=grid%cldfra_sh                                  &
@@ -1142,6 +1145,8 @@ BENCH_START(cu_driver_tim)
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx              &
      &             ,DX2D=grid%dx2d, AREA2D=grid%area2d                                 &
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
+     &             ,CCLDFRA=grid%ccldfra     ,CONVCLD=grid%convcld                     &
+     &             ,QCCONV=grid%qcconv     ,QICONV=grid%qiconv                         &
      &             ,CUDTACTTIME=grid%cudtacttime                                       & 
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
      &             ,NCA=grid%nca                                                       &
@@ -1238,6 +1243,7 @@ BENCH_START(cu_driver_tim)
      &             ,lengath2d=grid%lengath2d                              &
                  ! Selection flag
      &             ,pgcon=config_flags%sas_pgcon                          &
+     &             ,BMJ_RAD_FEEDBACK=config_flags%bmj_rad_feedback        &
      &             ,CU_PHYSICS=config_flags%cu_physics                    &
      &             ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics            &
      &             ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics      &

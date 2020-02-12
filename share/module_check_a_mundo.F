@@ -2230,6 +2230,22 @@
 #endif
 
 !-----------------------------------------------------------------------
+!  If the RRTMG KIAPS schemes are requested, check that the code with
+!  built to use them.
+!-----------------------------------------------------------------------
+
+#if( BUILD_RRTMK != 1)
+      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMK_SWSCHEME )  ) THEN
+         wrf_err_message = '--- ERROR: RRTMG-based KIAPS schemes must be built with a default compile-time flag'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Run ./clean -a, ./configure, ./compile scripts again'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
+!-----------------------------------------------------------------------
 !  Set the namelist parameter o3input to 0 for the radiation schemes other
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
 !-----------------------------------------------------------------------

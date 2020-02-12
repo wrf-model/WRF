@@ -447,7 +447,6 @@ CONTAINS
 
    ! soil layer
 
-
    REAL,     DIMENSION(1:num_soil_layers),      INTENT(INOUT) :: ZS,DZS
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
@@ -893,14 +892,18 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST ) .or. &
 #endif
-         (config_flags%ra_lw_physics .eq. goddardlwscheme ) .or. &
-         (config_flags%ra_lw_physics .eq. RRTMK_LWSCHEME  ) ) .and. &
+#if( BUILD_RRTMK == 1)
+         (config_flags%ra_lw_physics .eq. RRTMK_LWSCHEME  ) .or. &
+#endif
+         (config_flags%ra_lw_physics .eq. goddardlwscheme ) ) .and. &
        ( (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME ) .or. &
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST ) .or. &
 #endif
-         (config_flags%ra_sw_physics .eq. goddardswscheme ) .or. &
-         (config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) ) .and. &
+#if( BUILD_RRTMK == 1)
+         (config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) .or. &
+#endif
+         (config_flags%ra_sw_physics .eq. goddardswscheme ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
          config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
@@ -1450,8 +1453,8 @@ CONTAINS
    CALL cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,     &
                 RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,   &
                 NCA,RAINC,RAINCV,W0AVG,config_flags,restart,    &
-                CLDEFI,LOWLYR,MASS_FLUX,                        &
-                RTHFTEN, RQVFTEN,                               &
+                CLDEFI,LOWLYR,                                  &
+                MASS_FLUX,RTHFTEN,RQVFTEN,                      &
 #if ( EM_CORE == 1 )
                 !BSINGH - For WRFCuP Scheme
                 cupflag,cldfra_cup,cldfratend_cup,              & !CuP, wig 18-Sep-2006
@@ -1911,8 +1914,10 @@ CONTAINS
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swinit_fast
 #endif
 #if (EM_CORE == 1)
+# if( BUILD_RRTMK == 1)
    USE module_ra_rrtmg_lwk  , ONLY : rrtmg_lwinit_k
    USE module_ra_rrtmg_swk  , ONLY : rrtmg_swinit_k
+# endif
 #endif
    USE module_ra_cam       , ONLY : camradinit
    USE module_ra_cam_support , ONLY : oznini
@@ -2121,6 +2126,7 @@ CONTAINS
 
             aclwalloc = .true.
 #if ( EM_CORE == 1 )
+# if( BUILD_RRTMK == 1)
         CASE (RRTMK_LWSCHEME)  
 
              CALL rrtmg_lwinit_k(                           &
@@ -2130,6 +2136,7 @@ CONTAINS
                            its, ite, jts, jte, kts, kte     )
 
              aclwalloc = .true.
+# endif
 #endif
 
 #if( BUILD_RRTMG_FAST == 1)
@@ -2234,6 +2241,7 @@ CONTAINS
              acswalloc = .true.
 
 #if ( EM_CORE == 1 )
+# if( BUILD_RRTMK == 1)
         CASE (RRTMK_SWSCHEME)
 
              CALL rrtmg_swinit_k(                           &
@@ -2243,6 +2251,7 @@ CONTAINS
                            its, ite, jts, jte, kts, kte     )
 
              acswalloc = .true.
+# endif
 #endif
 
 
@@ -3593,8 +3602,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    SUBROUTINE cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,  &
                       RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,&
                       NCA,RAINC,RAINCV,W0AVG,config_flags,restart, &
-                      CLDEFI,LOWLYR,MASS_FLUX,                     &
-                      RTHFTEN, RQVFTEN,                            &
+                      CLDEFI,LOWLYR,                               &
+                      MASS_FLUX, RTHFTEN, RQVFTEN,                 &
 #if ( EM_CORE == 1 )
                       !BSINGH - For WRFCuP Scheme
                       cupflag,cldfra_cup,cldfratend_cup,          & !CuP, wig 18-Sep-2006
@@ -3647,8 +3656,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    INTEGER , INTENT(INOUT)     :: STEPCU
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
-            RUCUTEN, RVCUTEN, RTHCUTEN, &
-            RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
+            RUCUTEN, RVCUTEN, RTHCUTEN, RQVCUTEN, RQCCUTEN,                &
+            RQRCUTEN, RQICUTEN, RQSCUTEN
 #if ( EM_CORE == 1 )
    !BSINGH - For WRFCuP Scheme
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
@@ -3723,7 +3732,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (BMJSCHEME)
           CALL bmjinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,       &
                       CLDEFI,LOWLYR,cp,r_d,restart,               &
-                      allowed_to_read ,                           &
+                      allowed_to_read,                            &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )

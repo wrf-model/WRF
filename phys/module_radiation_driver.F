@@ -75,6 +75,8 @@ CONTAINS
               , COD2D_OUT                                                 &
               , CTOP2D_OUT                                                &
               , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU                             &
+              , CCLDFRA, QCCONV, QICONV                                   &
+              , bmj_rad_feedback                                          &
 #if (EM_CORE == 1)
               , lradius,iradius                                           &
 #endif
@@ -186,7 +188,9 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
                                        ,RRTMG_LWSCHEME_FAST, RRTMG_SWSCHEME_FAST  &
 #endif
+#if( BUILD_RRTMK == 1)
                                        ,RRTMK_LWSCHEME, RRTMK_SWSCHEME  & 
+#endif
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ                      &
@@ -207,7 +211,7 @@ CONTAINS
                                        ,p_seas_3, p_seas_4          & !NUWRF
 #endif
 #endif
-                                       ,KFCUPSCHEME                     & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
+                                       ,KFCUPSCHEME, BMJSCHEME      & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
                                        ,FLGLWSCHEME, FLGSWSCHEME
 
    USE module_model_constants
@@ -227,7 +231,9 @@ CONTAINS
    USE module_ra_rrtmg_lwf  , ONLY : rrtmg_lwrad_fast
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swrad_fast
 #endif
+#if( BUILD_RRTMK == 1)
    USE module_ra_rrtmg_swk  , ONLY : rad_rrtmg_driver
+#endif
    USE module_ra_cam        , ONLY : camrad
    USE module_ra_gfdleta    , ONLY : etara
 #if ( HWRF == 1 )
@@ -333,6 +339,8 @@ CONTAINS
 ! Qr         rain water mixing ratio (kg/kg)
 ! Qi         cloud ice mixing ratio (kg/kg)
 ! Qs         snow mixing ratio (kg/kg)
+! QCCONV     convective cloud mixing ratio (kg/kg)
+! QICONV     convective ice mixing ratio (kg/kg)
 !-----------------------------------------------------------------
 !-- PM2_5_DRY     Dry PM2.5 aerosol mass for all species (ug m^-3)
 !-- PM2_5_WATER   PM2.5 water mass (ug m^-3)
@@ -358,6 +366,7 @@ CONTAINS
 !-- CLDFRA_DP     cloud fraction from deep cloud in a cumulus scheme
 !-- CLDFRA_SH     cloud fraction from shallow cloud in a cumulus scheme
 !-- CLDFRA_MP_ALL cloud fraction from CAMMGMP microphysics scheme
+!-- CCLDFRA       convective cloud fraction (between 0 and 1)
 !-- EMISS         surface emissivity (between 0 and 1)
 !-- rho_phy       density (kg/m^3)
 !-- rr            dry air density (kg/m^3)
@@ -409,6 +418,8 @@ CONTAINS
 !==================================================================
 !
    LOGICAL, OPTIONAL, INTENT(IN) :: explicit_convection
+   LOGICAL,INTENT(IN)            :: bmj_rad_feedback
+
    LOGICAL :: expl_conv
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -743,7 +754,10 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
-         INTENT(INOUT) ::                                 CLDFRA   
+         INTENT(INOUT) ::                                 CLDFRA, &
+                                                          CCLDFRA,&
+                                                          QCCONV, &
+                                                          QICONV   
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  & ! ckay for sub-grid cloud fraction
          OPTIONAL,                                                &
@@ -827,7 +841,8 @@ CONTAINS
    LOGICAL ::    doabsems
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    INTEGER ::    s
-
+   REAL ::                                                ITRMX, &
+                                                          ITRMN
    REAL    ::    OBECL,SINOB,SXLONG,ARG,DECDEG,                  &
                  DJUL,RJUL,ECCFAC
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_temp
@@ -1026,11 +1041,14 @@ CONTAINS
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
 
-           case(RRTMG_SWSCHEME,&
+           case(RRTMG_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
-                RRTMG_SWSCHEME_FAST,&
+                ,RRTMG_SWSCHEME_FAST &
 #endif
-                RRTMK_SWSCHEME)
+#if( BUILD_RRTMK == 1)
+                ,RRTMK_SWSCHEME &
+#endif
+                )
               allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -1042,11 +1060,14 @@ CONTAINS
 ! Allocate aerosol arrays used by aer_opt = 3 option, and explicit AOD from QNWFA+QNIFA   (Trude)
    IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa) .AND. PRESENT(taod5503d) .AND.  PRESENT(taod5502d)) THEN
       IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                              &
-                 (sw_physics.eq.RRTMG_SWSCHEME .OR.                     &
+                 (sw_physics.eq.RRTMG_SWSCHEME                          &
 #if( BUILD_RRTMG_FAST == 1)
-                  sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.                &
+                  .OR. sw_physics.eq.RRTMG_SWSCHEME_FAST                &
 #endif
-                  sw_physics.eq.RRTMK_SWSCHEME )) THEN
+#if( BUILD_RRTMK == 1)
+                  .OR. sw_physics.eq.RRTMK_SWSCHEME                     &
+#endif
+                  )) THEN
          CALL wrf_debug (150, 'DEBUG-GT:  computing 3D AOD from QNWFA+QNIFA')
 
          allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -1254,6 +1275,7 @@ CONTAINS
           ENDDO
           ENDDO
      ENDIF
+
 #if (EM_CORE == 1)
 ! temporarily modify hydrometeors (for P3, if 2 cat then add ice from both categories)
 !
@@ -1325,7 +1347,6 @@ CONTAINS
      END DO
      END DO
      END DO
-
 !---------------
 ! Calculate constant for short wave radiation
 
@@ -1342,7 +1363,6 @@ CONTAINS
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
-
         IF ( PRESENT ( CLDFRA_DP ) ) THEN
 ! this is for Kain-Fritsch schemes
           IF ( icloud_cu .EQ. 2 .OR. aercu_opt .GT. 0 ) THEN
@@ -1359,7 +1379,6 @@ CONTAINS
              ENDDO
              ENDDO
              ENDDO
-
              IF (aercu_opt.gt.0.0) THEN
              DO j = jts,jte
              DO k = kts,kte
@@ -1621,7 +1640,21 @@ CONTAINS
      ENDIF
 #endif
 
-        
+     IF ( cu_physics == BMJSCHEME .AND. bmj_rad_feedback .EQV. .TRUE. ) THEN
+! hydrometeors from microphysics scheme have saved in q*_save 
+! Modify cloud fraction and temporarily hydrometeors (PCC scheme)
+         DO j=jts,jte
+         DO k=kts,kte
+         DO i=its,ite
+            qc(i,k,j) = qc(i,k,j) + QCCONV(i,k,j)
+            qi(i,k,j) = qi(i,k,j) + QICONV(i,k,j)
+            ITRMX=MIN(cldfra(i,k,j),ccldfra(i,k,j))
+            ITRMN=MAX(0.,cldfra(i,k,j)+ccldfra(i,k,j)-1.)
+            cldfra(i,k,j)=cldfra(i,k,j)+ccldfra(i,k,j)-0.5*(ITRMX+ITRMN)
+         ENDDO
+         ENDDO
+         ENDDO
+     ENDIF
 
      lwrad_select: SELECT CASE(lw_physics)
 
@@ -1633,6 +1666,7 @@ CONTAINS
              ELSE
                 p_top_dummy = -1. ! not used by NMM
              END IF
+
              CALL RRTMLWRAD(                                        &
                   P_TOP=p_top_dummy                                 & 
                  ,RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
@@ -1643,7 +1677,7 @@ CONTAINS
                  ,QS3D=QS                                           &
                  ,QG3D=QG                                           &
                  ,P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t     &
-                 ,T8W=t8w,RHO3D=rho, CLDFRA3D=CLDFRA,R=R_d,G=G      &
+                 ,T8W=t8w,RHO3D=rho,CLDFRA3D=CLDFRA,R=R_d,G=G       &
                  ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR                     &
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
@@ -1654,6 +1688,7 @@ CONTAINS
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+
 
 ! NUWRF Version by Toshihisa Matsui and Jainn Shi 20090623
         case (goddardlwscheme)
@@ -1921,6 +1956,8 @@ CONTAINS
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
                   mp_physics=mp_physics                             )
 
+
+#if( BUILD_RRTMK == 1)
         CASE (RRTMK_LWSCHEME)
 
            IF ( PRESENT(F_QNC) .AND. PRESENT(QNC_CURR) ) THEN
@@ -1948,6 +1985,7 @@ CONTAINS
              ELSE
                 call wrf_error_fatal('Can not call RRTMG-K. Missing QNC field.')
              ENDIF
+#endif
 
 
 #if( BUILD_RRTMG_FAST == 1)
@@ -2004,6 +2042,7 @@ CONTAINS
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
                                                                     )
+
 #endif
 
         CASE (HELDSUAREZ)
@@ -2098,11 +2137,14 @@ CONTAINS
      IF ( aer_opt .EQ. 2 ) THEN
      swrad_aerosol_select2: select case(sw_physics)
 
-        case(RRTMG_SWSCHEME,&
+        case(RRTMG_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
-             RRTMG_SWSCHEME_FAST,&
+             ,RRTMG_SWSCHEME_FAST &
 #endif
-             RRTMK_SWSCHEME)
+#if( BUILD_RRTMK == 1)
+             ,RRTMK_SWSCHEME &
+#endif
+            )
            call wrf_debug(100, 'call calc_aerosol_rrtmg_sw')
            call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,aer_type,aer_aod550_opt,aer_angexp_opt,    &
                                       aer_ssa_opt,aer_asy_opt,aer_aod550_val,aer_angexp_val,    &
@@ -2126,11 +2168,14 @@ CONTAINS
 
      IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa)) THEN
        IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                             &
-                             (sw_physics.eq.RRTMG_SWSCHEME .OR.         &
+                             (sw_physics.eq.RRTMG_SWSCHEME              &
 #if( BUILD_RRTMG_FAST == 1)
-                              sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.    &
+                              .OR. sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.    &
 #endif
-                              sw_physics.eq.RRTMK_SWSCHEME )) THEN
+#if( BUILD_RRTMK == 1)
+                              .OR. sw_physics.eq.RRTMK_SWSCHEME &
+#endif
+                             )) THEN
          call wrf_debug(100, 'call calc_aerosol_rrtmg_sw with 3D AOD values')
          call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,taer_type,taer_aod550_opt,taer_angexp_opt,  &
                                     taer_ssa_opt,taer_asy_opt,aer_aod550_val,aer_angexp_val,   &
@@ -2426,6 +2471,7 @@ CONTAINS
              ENDDO
              ENDDO
 
+#if( BUILD_RRTMK == 1)
         CASE (RRTMK_SWSCHEME)
   
              DO j=jts,jte
@@ -2435,10 +2481,12 @@ CONTAINS
              ENDDO
              ENDDO
              ENDDO
+#endif
 
 #if( BUILD_RRTMG_FAST == 1)
         CASE (RRTMG_SWSCHEME_FAST)
              CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
+
              CALL RRTMG_SWRAD_FAST(                                    &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
@@ -2634,7 +2682,9 @@ CONTAINS
            .AND. (sw_physics .NE. RRTMG_SWSCHEME_FAST) &
 #endif
            .AND. (sw_physics .NE. FLGSWSCHEME) .AND. (sw_physics .NE. CAMSWSCHEME) &  ! amontornes-bcodina (2014-04-20)
+#if( BUILD_RRTMK == 1)
            .AND. (sw_physics .NE. RRTMK_SWSCHEME) &
+#endif
            .AND. (sw_physics .ne. GODDARDSWSCHEME)) THEN
         DO j=jts,jte
            DO i=its,ite
@@ -2784,11 +2834,14 @@ CONTAINS
      accumulate_lw_select: SELECT CASE(lw_physics)
 
      CASE (CAMLWSCHEME,& 
-           RRTMG_LWSCHEME,&
+           RRTMG_LWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
-           RRTMG_LWSCHEME_FAST,&
+           ,RRTMG_LWSCHEME_FAST &
 #endif
-           RRTMK_LWSCHEME)
+#if( BUILD_RRTMK == 1)
+           ,RRTMK_LWSCHEME &
+#endif
+          )
    IF(PRESENT(LWUPTC))THEN
 !  NMM calls the driver every RADT time steps, EM calls every DT
 #if (EM_CORE == 1)
@@ -2826,11 +2879,14 @@ CONTAINS
      accumulate_sw_select: SELECT CASE(sw_physics)
 
      CASE (CAMSWSCHEME,&
-           RRTMG_SWSCHEME,&
+           RRTMG_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
-           RRTMG_SWSCHEME_FAST,&
+           ,RRTMG_SWSCHEME_FAST &
 #endif
-           RRTMK_SWSCHEME)
+#if( BUILD_RRTMK == 1)
+           ,RRTMK_SWSCHEME &
+#endif
+          )
    IF(PRESENT(SWUPTC))THEN
 !  NMM calls the driver every RADT time steps, EM calls every DT
 #if (EM_CORE == 1)

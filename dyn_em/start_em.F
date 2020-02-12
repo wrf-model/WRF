@@ -1035,15 +1035,15 @@ endif
                       grid%re_cloud_gsfc, grid%re_ice_gsfc,             & ! Goddard
                       grid%re_snow_gsfc, grid%re_graupel_gsfc,          & ! Goddard
                       grid%re_hail_gsfc, grid%re_rain_gsfc,             & ! Goddard
-                      grid%nca,grid%swrad_scat,                    &
+                      grid%nca,grid%swrad_scat,                         &
                       grid%cldefi,grid%lowlyr,                          &
-                      grid%mass_flux,                              &
+                      grid%mass_flux,                                   &
                       grid%rthften, grid%rqvften,                       &
                       grid%cldfra,                                      &
 #if (WRF_CHEM == 1)
                       grid%cldfra_old,                                  &
 #else
-                      cldfra_old,                                  &
+                      cldfra_old,                                       &
 #endif
                       grid%glw,grid%gsw,grid%emiss,grid%embck,            &
                       grid%lu_index,                                      &

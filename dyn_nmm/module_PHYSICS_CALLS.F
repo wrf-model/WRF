@@ -452,6 +452,9 @@
      &                 ,cldovrlp=config_flags%cldovrlp                  & ! J. Henderson AER: cldovrlp namelist value
      &                 ,WARM_RAIN=WARM_RAIN                             &
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
+     &                 ,CCLDFRA=grid%ccldfra                            &
+     &                 ,QCCONV=grid%qcconv,QICONV=grid%qiconv           &
+     &                 ,BMJ_RAD_FEEDBACK=config_flags%bmj_rad_feedback  &
      &                 ,SWUPT=SWUPT                                     &
      &                 ,SWUPTC=SWUPTC                                   &
      &                 ,SWDNT=SWDNT                                     &
@@ -2864,6 +2867,8 @@
      &                 ,ITIMESTEP=NTSD,DT=DT,DX=GPS                     &
      &                 ,RAINC=RAINC,RAINCV=RAINCV,NCA=NCA               &
      &                 ,CLDFRA_DP=CLDFRA_DP,CLDFRA_SH=CLDFRA_SH         &
+     &                 ,CCLDFRA=grid%ccldfra, CONVCLD=grid%convcld      &
+     &                 ,QCCONV=grid%qcconv, QICONV=grid%qiconv          &
      &                 ,QC_CU=QC_CU, QI_CU=QI_CU                        &
      &                 ,DZ8W=DZ,P8W=P8W,FORCET=TTEN,FORCEQ=QTEN         &
      &                 ,CLDEFI=CLDEFI,LOWLYR=LOWLYR,XLAND=XLAND         &
@@ -2914,6 +2919,7 @@
      &                 ,shalconv=config_flags%sas_shal_conv             &
      &                 ,shal_pgcon=config_flags%sas_shal_pgcon          &
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
+     &                 ,BMJ_RAD_FEEDBACK=config_flags%bmj_rad_feedback  &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &

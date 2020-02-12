@@ -1428,6 +1428,8 @@ state    real  RQCNCUTEN       ikj      misc        1         -      r        "R
 state    real  RQINCUTEN       ikj      misc        1         -      r        "RQINCUTEN"             "Q_IN TENDENCY DUE TO CUMULUS SCHEME"      "# kg-1 s-1"
 state    real  W0AVG           ikj      misc        1         -      r        "W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
 
+state    real  qcconv          ikj      misc        1         -      r        "QCCONV"                "CLOUD MIXING RATIO FOR BMJ CUMULUS SCHEME"        "kg kg-1"
+state    real  qiconv          ikj      misc        1         -      r        "QICONV"                "ICE MIXING RATIO FOR BMJ CUMULUS SCHEME"          "kg kg-1"
 state    real  RAINC            ij      misc        1         -      rh01du   "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  RAINSH           ij      misc        1         -      rh01du   "RAINSH"                "ACCUMULATED SHALLOW CUMULUS PRECIPITATION"               "mm"
 state    real  RAINNC           ij      misc        1         -      rh01du   "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
@@ -1546,7 +1548,9 @@ state integer  STEPCU          -        misc        1         -      r        "S
 state    real  RTHRATEN        ikj      misc        1         -      rd       "RTHRATEN"              "THETA TENDENCY DUE TO RADIATION"              "K s-1"
 state    real  RTHRATENLW      ikj      misc        1         -      r        "RTHRATLW"              "UNCOUPLED THETA TENDENCY DUE TO LONG WAVE RADIATION"    "K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
-state    real  CLDFRA          ikj      misc        1         -      rh       "CLDFRA"                "CLOUD FRACTION"                                       ""
+state    real  CLDFRA          ikj      misc        1         -      rh       "CLDFRA"                "CLOUD FRACTION"   ""
+state    real  CONVCLD          ij      misc        1         -      r        "CONVCLD"               "BMJ CONVECTIVE CLOUD" "kg m-2"
+state    real  CCLDFRA         ikj      misc        1         -      r        "CCLDFRA"               "CONVECTIVE CLOUD FRACTION" ""
 state    real  CLDFRA_OLD      ikj      misc        1         -      r        "CLDFRA_OLD"            "previous time level cldfra"                           ""
 state    real  CLDFRA_BL       ikj      misc        1         -      r        "CLDFRA_BL"             "CLOUD FRACTION pbl"                                   ""
 state    real  CLDT             ij      misc        1         -      -        "CFRACT"                "TOTAL CLOUD FRACTION"                                 ""
@@ -2343,6 +2347,7 @@ rconfig   integer num_soil_cat            namelist,physics	1            16      
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics	1            100       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
+rconfig   logical bmj_rad_feedback        namelist,physics      max_domains  .false.   -    "if true include radiative effects of bmj clouds"  ""
 rconfig   integer sst_update              namelist,physics	1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 
 rconfig   integer sst_skin                namelist,physics      1            0         h    "sst_skin" "calculate sst skin temperature 0=no, 1=yes"   ""
@@ -2922,7 +2927,7 @@ package   mynnpblscheme3_dfi bl_pbl_physics_dfi==6   -             dfi_scalar:df
 
 package   nocuscheme     cu_physics==0               -             -
 package   kfetascheme    cu_physics==1               -             state:w0avg
-package   bmjscheme      cu_physics==2               -             -
+package   bmjscheme      cu_physics==2               -             state:qcconv,qiconv,convcld,ccldfra
 package   gfscheme       cu_physics==3               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
 package   scalesasscheme cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow

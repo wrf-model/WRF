@@ -17,6 +17,8 @@ CONTAINS
                      ,itimestep,dt,dx,dx2d,area2d                     &
                      ,cudt,curr_secs,adapt_step_flag                  &
                      ,cudtacttime                                     & 
+                     ,ccldfra,convcld,qcconv,qiconv                   &
+                     ,bmj_rad_feedback                                & 
                      ,rainc,raincv,pratec,nca                         &
                      ,cldfra_dp,cldfra_sh,w_up                        & !ckay for subgrid cloud
                      ,udr_kf,ddr_kf,uer_kf,der_kf,timec_kf,kf_edrates & !kf_edrates
@@ -244,6 +246,8 @@ CONTAINS
 ! Qr         rain water mixing ratio (kg/kg)
 ! Qi         cloud ice mixing ratio (kg/kg)
 ! Qs         snow mixing ratio (kg/kg)
+! QCCONV     convective cloud mixing ratio (kg/kg)
+! QICONV     convective ice mixing ratio (kg/kg)
 !-----------------------------------------------------------------
 !-- DT            time step (second)
 !-- CUDT          cumulus time step (minute)
@@ -311,6 +315,8 @@ CONTAINS
 !-- kfeta_trigger namelist for KF trigger (=1, default; =2, moisture-advection-dependent trigger)
 !-- nsas_dx_factor namelist for NSAS deep scheme to have some dependency on grid sizes
 !-- rho           density (kg/m^3)
+!-- CONVCLD       Convective cloud (for BMJ scheme) (kg/m^2)
+!-- CCLDFRA       convective cloud fraction (for BMJ scheme)
 !-- CLDEFI        precipitation efficiency (for BMJ scheme) (dimensionless)
 !-- STEPCU        # of fundamental timesteps between convection calls
 !-- XLAND         land-sea mask (1.0 for land; 2.0 for water)
@@ -441,7 +447,10 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                                       &
-                                                          W0AVG 
+                                                          W0AVG  &
+                                                    ,   CCLDFRA  &
+                                                    ,    QCCONV  &
+                                                    ,    QICONV 
 !ckay
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                            cldfra_dp  &
@@ -482,7 +491,8 @@ CONTAINS
                                                     ,       NCA  & 
                                                     ,      HTOP  & 
                                                     ,      HBOT  &
-                                                    ,    CLDEFI
+                                                    ,    CLDEFI  &
+                                                    ,    CONVCLD
 #if (EM_CORE == 1)
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: akpbl    !CuP, wig 6-Oct-2006 testing !BSINGH - For WRFCuP scheme
 #endif
@@ -517,6 +527,7 @@ CONTAINS
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
+   LOGICAL,INTENT(IN   ) :: bmj_rad_feedback
    REAL,  INTENT(INOUT ),OPTIONAL :: cudtacttime                 
    REAL   :: cudt_pass, curr_secs_pass,cudtacttime_pass          
    LOGICAL :: adapt_step_flag_pass
@@ -972,6 +983,9 @@ CONTAINS
                ,LOWLYR=lowlyr ,XLAND=xland                      &
                ,CU_ACT_FLAG=cu_act_flag                         &
                ,QV=qv_curr                                      &
+               ,CCLDFRA=ccldfra, CONVCLD=convcld                &
+               ,QCCONV=qcconv, QICONV=qiconv                    &
+               ,BMJ_RAD_FEEDBACK=bmj_rad_feedback               &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &

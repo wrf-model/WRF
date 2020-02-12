@@ -7049,7 +7049,9 @@ print *,'p sfc = ',psfc(i,j)
 #if 0
 program foo
 
-integer , parameter :: max_eta = 1000
+!  Make this local variable have the same value as in 
+!  frame/module_driver_constants.F: MAX_ETA
+integer , parameter :: max_eta = 10001
 
 INTEGER :: ids , ide , jds , jde , kds , kde , &
            ims , ime , jms , jme , kms , kme , &

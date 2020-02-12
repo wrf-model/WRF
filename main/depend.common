@@ -701,6 +701,7 @@ module_radiation_driver.o: \
                 module_ra_rrtmg_lwk.o \
                 module_ra_rrtmg_swk.o \
 		module_ra_cam.o \
+		module_ra_farms.o \
 		module_ra_gfdleta.o \
 		module_ra_HWRF.o \
 		module_ra_hs.o \

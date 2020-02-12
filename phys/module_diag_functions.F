@@ -368,7 +368,6 @@ CONTAINS
   !~ Description:
   !~    This function calculates precipitable water by summing up the 
   !~    water vapor in a column from the first eta layer to model top
-  !~    converting rho to dry rho
   !~
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   FUNCTION Pwat  ( nz, qv, qc, dz8w, rho )
@@ -389,7 +388,7 @@ CONTAINS
      !  ---------------------------
      Pwat=0
      DO k = 1, nz
-       Pwat = Pwat + (qv(k) + qc(k)) * dz8w(k) * rho(k) / (1. + qv(k))
+       Pwat = Pwat + (qv(k) + qc(k)) * dz8w(k) * rho(k)
      ENDDO
              
   END FUNCTION Pwat

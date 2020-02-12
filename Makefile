@@ -628,14 +628,16 @@ em_real : wrf
              ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;                   \
              ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;                   \
              ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
-             ln -sf ../../run/SBM_input_33 . ;        \
-             ln -sf ../../run/scattering_tables_2layer_high_quad_1dT_1%fw_110 . ;        \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
                 ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
                 ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;  \
                 ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;  \
+             fi )
+	( cd test/em_real ; if test -d ../../run/SBM_input_33 ; then				\
+             ln -sf ../../run/SBM_input_33 . ;						\
+             ln -sf ../../run/scattering_tables_2layer_high_quad_1dT_1%fw_110 . ;	\
              fi )
 	( cd test/em_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )

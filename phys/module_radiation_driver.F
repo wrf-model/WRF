@@ -2170,7 +2170,7 @@ CONTAINS
        IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                             &
                              (sw_physics.eq.RRTMG_SWSCHEME              &
 #if( BUILD_RRTMG_FAST == 1)
-                              .OR. sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.    &
+                              .OR. sw_physics.eq.RRTMG_SWSCHEME_FAST    &
 #endif
 #if( BUILD_RRTMK == 1)
                               .OR. sw_physics.eq.RRTMK_SWSCHEME &

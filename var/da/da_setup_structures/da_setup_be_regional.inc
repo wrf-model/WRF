@@ -245,14 +245,14 @@ subroutine da_setup_be_regional(xb, be, grid)
    print *, 'bin = ',   bin(1:1,1:1,1:1)
    print *, 'bin2d = ', bin2d(1:1,1:1)
 
-   num_cv_3d_basic = 4
-   num_cv_3d_extra = 0
-   num_cv_2d       = 1
+   num_cv_3d_basic = 4 ! (Psi, Chi_u, T_u, Pseudo RH) or (U,V,T,Pseudo RH)
+   num_cv_3d_extra = 0 ! default: no cloud and w
+   num_cv_2d       = 1 ! Ps_u
    if ( cloud_cv_options >= 2 ) then
-      num_cv_3d_extra = 5
+      num_cv_3d_extra = 5 ! 5 hydrometeors, qc,qr,qi,qs,qg
    end if
    if ( use_cv_w ) then
-      num_cv_3d_extra = num_cv_3d_extra + 1
+      num_cv_3d_extra = num_cv_3d_extra + 1 ! clouds+w
    end if
 
 !-----------for interpolating CV5--------------------------------------------------------------
@@ -1469,30 +1469,28 @@ subroutine da_setup_be_regional(xb, be, grid)
       it = 1
 
       if (max_ext_its > 1 .and. jb_factor > 0.0) then
-
+        
+        if ( rootproc ) then
           write(unit=message(1),fmt='(A,I4)') '>>> Save the variances and scale-lengths in outer-loop', it
           call da_message(message(1:1))
-          if ( cloud_cv_options >= 2.and. cloud_cv_options.ne.3 ) then
-             write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
-                                     be % v4 % mz, be % v5 % mz,                  &
-                                     be % v6 % mz, be % v7 % mz, be% v8 % mz,be % v9 % mz, be % v10 % mz, be% v11 % mz, &
-                                     xb % ds
-             write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
-                                     be % v4 % val, be % v5 % val, &
-                                     be % v6 % val, be % v7 % val, be% v8 % val,be % v9 % val, be % v10 % val, be% v11 % val, &
-                                     be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
-                                     be4_rf_lengthscale, be5_rf_lengthscale,                     &
-                                     be6_rf_lengthscale, be7_rf_lengthscale, be8_rf_lengthscale, &
-                                     be9_rf_lengthscale, be10_rf_lengthscale,be11_rf_lengthscale
-          else
-             write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
+          write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
                                      be % v4 % mz, be % v5 % mz,                  &
                                      xb % ds
-             write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
+          write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
                                      be % v4 % val, be % v5 % val, &
-                                     be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
-                                     be4_rf_lengthscale, be5_rf_lengthscale
-          endif
+             be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
+             be4_rf_lengthscale, be5_rf_lengthscale
+          if ( cloud_cv_options >= 2 ) then
+             write(be_rf_unit) be%v6%val, be%v7%val, be%v8%val, be%v9%val, be%v10%val
+             write(be_rf_unit) be6_rf_lengthscale, be7_rf_lengthscale, be8_rf_lengthscale, &
+                               be9_rf_lengthscale, be10_rf_lengthscale
+          end if
+          if ( use_cv_w ) then
+             write(be_rf_unit) be%v11%val
+             write(be_rf_unit) be11_rf_lengthscale
+          end if
+        end if ! rootproc
+
           if (print_detail_be ) then
              write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
                                                it, kz, jy, ix, xb % ds

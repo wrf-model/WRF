@@ -1469,13 +1469,12 @@ subroutine da_setup_be_regional(xb, be, grid)
       it = 1
 
       if (max_ext_its > 1 .and. jb_factor > 0.0) then
-        
+
         if ( rootproc ) then
           write(unit=message(1),fmt='(A,I4)') '>>> Save the variances and scale-lengths in outer-loop', it
           call da_message(message(1:1))
           write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
-                                     be % v4 % mz, be % v5 % mz,                  &
-                                     xb % ds
+                                     be % v4 % mz, be % v5 % mz, xb % ds
           write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
                                      be % v4 % val, be % v5 % val, &
              be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &

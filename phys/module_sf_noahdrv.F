@@ -104,7 +104,8 @@ CONTAINS
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
                   dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
-                 ,RC2,XLAI2                                               &
+                 ,RC2,XLAI2                                         &
+                 ,IRR_CHAN                                          &
                  )
 
 !----------------------------------------------------------------
@@ -668,6 +669,9 @@ CONTAINS
    REAL                    ::  DZQ
    REAL                    ::  HCPCT_FASDAS
 
+   REAL,OPTIONAL,INTENT(IN),DIMENSION( ims:ime, jms:jme )       :: IRR_CHAN
+   REAL       ::  IRRIGATION_CHANNEL
+
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
    XQNORM  = 0.0
@@ -785,6 +789,11 @@ CONTAINS
 ! use mid-day albedo to determine net downward solar (no solar zenith angle correction)
         SOLNET=SOLDN*(1.-ALBEDO(I,J))
         PRCP=RAINBL(i,j)/DT
+        IF(IRR_CHAN(i,j).NE.0) THEN
+           IRRIGATION_CHANNEL=IRR_CHAN(i,j)/DT
+        ELSE
+           IRRIGATION_CHANNEL=0.
+        END IF
         VEGTYP=IVGTYP(I,J)
         SOILTYP=ISLTYP(I,J)
         SHDFAC=VEGFRA(I,J)/100.
@@ -1053,7 +1062,7 @@ CONTAINS
                  sfcheadrt(i,j),                                   &    !I
                  INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    &   ! fasdas
-                 )
+                ,IRRIGATION_CHANNEL)
 
 
 #ifdef WRF_HYDRO
@@ -1781,6 +1790,8 @@ CONTAINS
 ! <--GAC
 
    IF(.not.restart)THEN
+   
+#if ( EM_CORE==1 )
    IF (irr_ph.NE.0)THEN
    DO i = its,ite
     DO j=jts,jte
@@ -1794,6 +1805,7 @@ CONTAINS
       irr_rand_field(i,:)=int(modulo(rand_tmp(i,:)*100,real(irr_freq)))
    END DO
    END IF
+#endif
 
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
@@ -2329,6 +2341,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                  ,sfcheadrt,INFXSRT, soldrain                   & !hydro
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                     & !O
+                 ,IRR_CHAN                                      &
                   )
 
 !----------------------------------------------------------------
@@ -2929,6 +2942,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL                    ::  HFX_PHY, QFX_PHY
    REAL                    ::  DZQ
    REAL                    ::  HCPCT_FASDAS
+   REAL,OPTIONAL,DIMENSION( ims:ime, jms:jme ) :: IRR_CHAN
+   REAL               :: IRRIGATION_CHANNEL 
 
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
@@ -3121,6 +3136,11 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       ! use mid-day albedo to determine net downward solar (no solar zenith angle correction)
               SOLNET=SOLDN*(1.-ALBEDO(I,J))
               PRCP=RAINBL(i,j)/DT
+              IF(IRR_CHAN(i,j).NE.0) THEN
+                IRRIGATION_CHANNEL=IRR_CHAN(i,j)/DT
+              ELSE
+                IRRIGATION_CHANNEL=0.
+              END IF
               VEGTYP=IVGTYP(I,J)
               SOILTYP=ISLTYP(I,J)
               SHDFAC=VEGFRA(I,J)/100.
@@ -3408,7 +3428,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        sfcheadrt(i,j),                                   &    !I
                        INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
-                       )
+                 ,IRRIGATION_CHANNEL  )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0
@@ -4293,7 +4313,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        sfcheadrt(i,j),                                   &    !I
                        INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
-                       )
+                      ,IRRIGATION_CHANNEL )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0

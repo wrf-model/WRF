@@ -293,7 +293,7 @@ CONTAINS
      &          ,XLAIDYN                                              &
      &          ,irrigation,sf_surf_irr_scheme, irr_daily_amount      & !IRRIG
      &          ,irr_start_hour,irr_num_hours,irr_start_julianday     &
-     &          ,irr_freq,irr_ph,irr_rand_field                       &
+     &          ,irr_end_julianday,irr_freq,irr_ph,irr_rand_field     &
      &                                                             )
 
 #if ( ! NMM_CORE == 1 )
@@ -1400,7 +1400,7 @@ CONTAINS
    REAL,  INTENT(IN),OPTIONAL::  irr_daily_amount     
    INTEGER :: phase
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT),OPTIONAL :: irr_rand_field
-   INTEGER, INTENT(IN ),OPTIONAL:: sf_surf_irr_scheme,irr_start_hour,irr_num_hours,irr_start_julianday,irr_freq,irr_ph
+   INTEGER, INTENT(IN ),OPTIONAL:: sf_surf_irr_scheme,irr_start_hour,irr_num_hours,irr_start_julianday,irr_end_julianday,irr_freq,irr_ph
 
 
 !
@@ -1506,7 +1506,8 @@ CONTAINS
                CALL drip_irrigation(                                     &
                 &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
                 &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
-                &  irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),  &
+                &  irr_start_julianday,irr_end_julianday,                &
+                &  irr_freq,irr_ph,i,j,RAINBL(i,j),                      &
                 &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
                 &  irr_rand_field(i,j)                                   &
                    )
@@ -1514,7 +1515,8 @@ CONTAINS
                CALL channel_irrigation(                                  &
                 &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
                 &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
-                &  irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),  &
+                &  irr_start_julianday,irr_end_julianday,                &
+                &  irr_freq,irr_ph,i,j,RAINBL(i,j),                      &
                 &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
                 &  irr_rand_field(i,j)                                   &
                    )
@@ -1538,7 +1540,8 @@ CONTAINS
                CALL drip_irrigation(                                     &
                 &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
                 &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
-                &  irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),  &
+                &  irr_start_julianday,irr_end_julianday,                &
+                &  irr_freq,irr_ph,i,j,RAINBL(i,j),                      &
                 &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
                 &  irr_rand_field(i,j)                                   &
                    )
@@ -1547,7 +1550,8 @@ CONTAINS
                CALL channel_irrigation(                                  &
                 &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
                 &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
-                &  irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),  &
+                &  irr_start_julianday,irr_end_julianday,                &
+                &  irr_freq,irr_ph,i,j,RAINBL(i,j),                      &
                 &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
                 &  irr_rand_field(i,j)                                   &
                    )

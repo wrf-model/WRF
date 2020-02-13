@@ -3686,6 +3686,7 @@ BENCH_START(micro_driver_tim)
       &        ,IRR_NUM_HOURS=config_flags%irr_num_hours                  &
       &        ,JULIAN_IN=grid%julian                                     &
       &        ,IRR_START_JULIANDAY=config_flags%irr_start_julianday      &
+      &        ,IRR_END_JULIANDAY=config_flags%irr_end_julianday          &
       &        ,IRR_FREQ=config_flags%irr_freq,IRR_PH=config_flags%irr_ph &
       &        ,IRR_RAND_FIELD=grid%irr_rand_field                        &
       &        ,GMT=grid%gmt,XTIME=grid%xtime                             & 

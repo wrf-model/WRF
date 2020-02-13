@@ -789,11 +789,13 @@ CONTAINS
 ! use mid-day albedo to determine net downward solar (no solar zenith angle correction)
         SOLNET=SOLDN*(1.-ALBEDO(I,J))
         PRCP=RAINBL(i,j)/DT
-        IF(IRR_CHAN(i,j).NE.0) THEN
+        IF(PRESENT(IRR_CHAN)) THEN
+         IF(IRR_CHAN(i,j).NE.0) THEN
            IRRIGATION_CHANNEL=IRR_CHAN(i,j)/DT
-        ELSE
+         ELSE
            IRRIGATION_CHANNEL=0.
-        END IF
+         END IF
+        ENDIF
         VEGTYP=IVGTYP(I,J)
         SOILTYP=ISLTYP(I,J)
         SHDFAC=VEGFRA(I,J)/100.
@@ -3136,11 +3138,13 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       ! use mid-day albedo to determine net downward solar (no solar zenith angle correction)
               SOLNET=SOLDN*(1.-ALBEDO(I,J))
               PRCP=RAINBL(i,j)/DT
-              IF(IRR_CHAN(i,j).NE.0) THEN
+              IF(PRESENT(IRR_CHAN)) THEN
+               IF(IRR_CHAN(i,j).NE.0) THEN
                 IRRIGATION_CHANNEL=IRR_CHAN(i,j)/DT
-              ELSE
+               ELSE
                 IRRIGATION_CHANNEL=0.
-              END IF
+               END IF
+              ENDIF
               VEGTYP=IVGTYP(I,J)
               SOILTYP=ISLTYP(I,J)
               SHDFAC=VEGFRA(I,J)/100.

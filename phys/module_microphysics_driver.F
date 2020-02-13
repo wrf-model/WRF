@@ -827,13 +827,13 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
        sf_surf_irr: SELECT CASE(sf_surf_irr_scheme)
             CASE(SPRINKLER)
-             CALL sprinkler_irrigation(  julian_in                               & !ARI
-     &          ,irrigation, irr_daily_amount,rho,dz8w      & !ARI   
+             CALL sprinkler_irrigation(  julian_in                    & !ARI
+     &          ,irrigation, irr_daily_amount,rho,dz8w                & !ARI   
      &          ,irr_start_hour,irr_num_hours,irr_start_julianday     & !ARI
-     &          ,irr_freq,irr_ph,qr_curr                      &
-     &          ,gmt,xtime,dt,irr_rand_field                    &
-     &          ,ids,ide, jds,jde                 & ! domain dims
-     &          ,ims,ime, jms,jme, kms,kme                & ! memory dims
+     &          ,irr_end_julianday,irr_freq,irr_ph,qr_curr            &
+     &          ,gmt,xtime,dt,irr_rand_field                          &
+     &          ,ids,ide, jds,jde                                     & ! domain dims
+     &          ,ims,ime, jms,jme, kms,kme                            & ! memory dims
      &          ,its,ite, jts,jte               )
        END SELECT sf_surf_irr
 

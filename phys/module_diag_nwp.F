@@ -205,38 +205,6 @@ CONTAINS
 
 !-----------------------------------------------------------------
 
-!  idump = (history_interval * 60.) / dt
-!  IF ( MOD((itimestep - 1), idump) .eq. 0 ) THEN
-!  IF (mod(curr_secs2, 60.*60.) == 0.) THEN
-!    WRITE(outstring,*) 'Resetting max refl array for domain with dt = ', dt
-!    CALL wrf_debug ( 0,TRIM(outstring) )
-
-!  !$OMP PARALLEL DO   &
-!  !$OMP PRIVATE ( ij )
-     DO ij = 1 , num_tiles
-       DO j=j_start(ij),j_end(ij)
-       DO i=i_start(ij),i_end(ij)
-         refd_max(i,j)    = 0.
-       ENDDO
-       ENDDO
-     ENDDO
-!  !$OMP END PARALLEL DO
-!  ENDIF
-
-!  !$OMP PARALLEL DO   &
-!  !$OMP PRIVATE ( ij )
-   DO ij = 1 , num_tiles
-     DO j=j_start(ij),j_end(ij)
-     DO i=i_start(ij),i_end(ij)
-! Calculate the max radar reflectivity at this output times
-       IF ( refl_10cm(i,kms,j) .GT. refd_max(i,j) ) THEN
-         refd_max(i,j) = refl_10cm(i,kms,j)
-       ENDIF
-     ENDDO
-     ENDDO
-   ENDDO
-!  !$OMP END PARALLEL DO
-
     idump = (history_interval * 60.) / dt
 
 ! IF ( MOD(itimestep, idump) .eq. 0 ) THEN

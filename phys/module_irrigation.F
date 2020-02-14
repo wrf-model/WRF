@@ -2,7 +2,6 @@ MODULE module_irrigation
 CONTAINS
 
 
-
 SUBROUTINE irr_calc_phase(irr_ph,phase,irr_rand_field_val,i,j,IRRIGATION,irr_freq)
   IMPLICIT NONE
   INTEGER :: irr_ph,irr_freq

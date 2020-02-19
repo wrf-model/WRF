@@ -154,7 +154,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
                     ,WSM7SCHEME, WDM7SCHEME &
                     ,NUWRF4ICESCHEME & 
-                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL,SPRINKLER  !, P3_2CATEGORY ,MILBRANDT3MOM 
+                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL !, P3_2CATEGORY ,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
@@ -729,13 +729,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    integer :: ierr
 ! IRRIGATION
 
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN):: IRRIGATION !ARI
-   REAL,  INTENT(IN)::  irr_daily_amount, xtime, gmt, julian_in
-   INTEGER, INTENT(IN ):: sf_surf_irr_scheme, irr_start_hour, irr_num_hours,irr_start_julianday,irr_end_julianday,irr_freq,irr_ph
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN):: IRRIGATION !ARI
+   REAL,  OPTIONAL, INTENT(IN)::  irr_daily_amount, julian_in, xtime, gmt
+   INTEGER, OPTIONAL, INTENT(IN ):: sf_surf_irr_scheme, irr_start_hour, irr_num_hours, &
+                                    irr_start_julianday,irr_end_julianday,irr_freq,irr_ph
    REAL, PARAMETER    :: PI_GRECO=3.14159
    INTEGER  :: end_hour,a,b,xt24,irr_day,timing
    REAL :: constants_irrigation,tloc,irr_start,phase
-   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: irr_rand_field
+   INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: irr_rand_field
 
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to
@@ -825,6 +826,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
        jts = max(j_start(ij),jds+sz)
        jte = min(j_end(ij),jde-1-sz)
 
+# if( EM_CORE==1 )
        sf_surf_irr: SELECT CASE(sf_surf_irr_scheme)
             CASE(SPRINKLER)
              CALL sprinkler_irrigation(  julian_in                    & !ARI
@@ -836,6 +838,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
      &          ,ims,ime, jms,jme, kms,kme                            & ! memory dims
      &          ,its,ite, jts,jte               )
        END SELECT sf_surf_irr
+#endif
 
 
 

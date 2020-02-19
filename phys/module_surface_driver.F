@@ -315,7 +315,7 @@ CONTAINS
                                        ,MYNNSFCSCHEME             &
                                        ,OMLSCHEME                 &
                                        ,PWP3DSCHEME               &
-                                       ,DRIP                      & 
+                                       ,DRIP                      &
                                        ,CHANNEL                   
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
@@ -335,9 +335,7 @@ CONTAINS
                                        ,TEMFSFCSCHEME             &
                                        ,GFDLSFCSCHEME             &
                                        ,SSIBSCHEME                & ! ssib
-                                       ,GFDLSLAB                  &
-                                       ,DRIP                      &
-                                       ,CHANNEL                   
+                                       ,GFDLSLAB                   
 
 
 
@@ -1500,6 +1498,7 @@ CONTAINS
          RAINBL(i,j) = RAINBL(i,j) + RAINCV(i,j) + RAINNCV(i,j)
          IF ( PRESENT( rainshv ))RAINBL(i,j) = RAINBL(i,j) + RAINSHV(i,j)
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
+#if (EM_CORE==1)
          sf_surf_irr: SELECT CASE(sf_surf_irr_scheme)
             CASE(DRIP)
                CALL drip_irrigation(                                     &
@@ -1520,6 +1519,7 @@ CONTAINS
                 &  irr_rand_field(i,j)                                   &
                    )
            END SELECT sf_surf_irr
+#endif
       ENDDO
       ENDDO
     ENDDO
@@ -1534,6 +1534,7 @@ CONTAINS
          IF ( PRESENT( rainshv ))RAINBL(i,j) = RAINBL(i,j) + RAINSHV(i,j)
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
 
+#if (EM_CORE==1)
           sf_surf_irr1: SELECT CASE(sf_surf_irr_scheme)
              CASE(DRIP)
                CALL drip_irrigation(                                     &
@@ -1555,6 +1556,7 @@ CONTAINS
                 &  irr_rand_field(i,j)                                   &
                    )
         END SELECT sf_surf_irr1
+#endif
 
       ENDDO
       ENDDO

@@ -508,6 +508,8 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
+                                     = 24, WSM 7-class scheme (separate hail and graupel categories)
+                                     = 26, WDM 7-class scheme (separate hail and graupel categories)
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
                                        This option has two climatological aerosol input options:
@@ -613,6 +615,8 @@ Namelist variables for controlling the adaptive time step option:
                                             between SW call
                                      = 0,  ! no interpolation
                                      = 1,  ! use interpolation
+                                     = 2,  ! Calls the Fast All-Sky Radiation Model for Solar applications (FARMS)
+                                           ! every model time step. 
  cam_abs_freq_s                      = 21600  ! default CAM clearsky longwave absorption calculation frequency
                                                 (recommended minimum value to speed scheme up)
  levsiz                              = 59     ! for CAM radiation input ozone levels, set automatically
@@ -799,8 +803,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
                                      = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
-                                     = 14, A modified  GFS simplified Arakawa-Schubert scheme that enables NSAS to work 
-                                           in various model grids across gray-zone resolutions (from KIAPS,ARW only)
+                                     = 14, KIM Simplified Arakawa-Schubert scheme (KSAS) across gray-zone resolutions
                                      = 16, A newer Tiedtke scheme
                                      = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
                                      = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
@@ -1537,7 +1540,7 @@ The following are for observation nudging:
  pos_def                             = .false.  ! T/F remove negative values of scalar arrays by setting minimum value to zero
  swap_pole_with_next_j               = .false.  ! T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
  actual_distance_average             = .false.  ! T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
- gwd_opt                             = 0       ! for running without gravity wave drag
+ gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
                                      = 1       ; for running the WRF-ARW with its gravity wave drag
                                      = 2       ; for running the WRF-NMM with its gravity wave drag
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
@@ -1576,6 +1579,10 @@ The following are for observation nudging:
                                      = .true. , ! use microphysics variables in bdy file
  have_bcs_scalar (max_dom)           = .false., ! model run after ndown only: do not use scalar variables in bdy file
                                      = .true. , ! use scalar variables in bdy file
+ multi_bdy_files                     = .false., ! F=default; T=model will run with split and individually named LBC files
+                                                  requires usage of bdy_inname = "wrfbdy_d<domain>_<date>"
+                                                  the real program can generate all LBC files in a single run
+                                                  only a single time period is in each separate LBC file
 
  euler_adv                           = .false., ! conservative Eulerian passive advection (NMM only)
  idtadt                              = 1,       ! fundamental timesteps between calls to Euler advection, dynamics (NMM only)

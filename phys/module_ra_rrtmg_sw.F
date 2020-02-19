@@ -2574,8 +2574,11 @@
             zgamma4= 1._rb - zgamma3
     
 ! Recompute original s.s.a. to test for conservative solution
-            !Balwinder.Singh@pnnl.gov: Code added to avoid 'divide by zero' error in zwo computation
-            denom = max((1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2),1.0E-30_rb)
+            denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
+	    ! Code added to avoid 'divide by zero' error in zwo computation
+            if (abs(denom).eq.0.0_rb) then
+               denom = 1.0E-30_rb
+            end if
             zwo= zw / denom
 
             if (zwo >= zwcrit) then
@@ -9959,7 +9962,7 @@ CONTAINS
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,julian                             & ! jararias 2013/08
+                       xcoszen,yr,julian                          & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -10032,6 +10035,7 @@ CONTAINS
             swddnic, & ! Clear ski DNI
             swddirc    ! Clear ski direct horizontal irradiance
 
+   integer, intent(in)        :: yr
    real, optional, intent(in) :: &
             julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), intent(in) :: &
@@ -10239,9 +10243,9 @@ CONTAINS
     real:: corr
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
-! carbon dioxide (379 ppmv)
+! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
-    data co2 / 379.e-6 / 
+!   data co2 / 379.e-6 /
 ! methane (1774 ppbv)
     real :: ch4
     data ch4 / 1774.e-9 / 
@@ -10312,6 +10316,8 @@ CONTAINS
     REAL :: da, eot ! jararias, 14/08/2013
 
 !------------------------------------------------------------------
+! Annual function for co2 in WRF v4.2
+      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &

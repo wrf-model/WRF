@@ -10,9 +10,7 @@ subroutine cfftmi ( n, wsave, lensav, ier )
 !    CFFTMB and CFFTMF.  CFFTMI must be called before the first call
 !    to CFFTMB or CFFTMF, and after whenever the value of integer N changes.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

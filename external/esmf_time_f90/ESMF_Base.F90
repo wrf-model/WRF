@@ -1,12 +1,4 @@
 !
-! Earth System Modeling Framework
-! Copyright 2002-2003, University Corporation for Atmospheric Research,
-! Massachusetts Institute of Technology, Geophysical Fluid Dynamics
-! Laboratory, University of Michigan, National Centers for Environmental
-! Prediction, Los Alamos National Laboratory, Argonne National Laboratory,
-! NASA Goddard Space Flight Center.
-! Licensed under the University of Illinois-NCSA license.
-!
 ! ESMF Base Module
 !
 ! (all lines between the !BOP and !EOP markers will be included in the
@@ -16,10 +8,10 @@
 !------------------------------------------------------------------------------
 ! module definition
 
-      module ESMF_BaseMod
+      module WRF_ESMF_BaseMod
  
 !BOP
-! !MODULE: ESMF_BaseMod - Base class for all ESMF classes
+! !MODULE: WRF_ESMF_BaseMod - Base class for all ESMF classes
 !
 ! !DESCRIPTION:
 !
@@ -1089,4 +1081,4 @@ end function
 !  overridden by higher level more specialized functions.
 !-------------------------------------------------------------------------
 
-      end module ESMF_BaseMod
+      end module WRF_ESMF_BaseMod

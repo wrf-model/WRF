@@ -1,4 +1,4 @@
-WRF Model Version 4.1.2
+WRF Model Version 4.1.4
 
 http://www2.mmm.ucar.edu/wrf/users/
 
@@ -40,6 +40,7 @@ doc/README.irr_diag
 doc/README.rsl_output
 doc/README.windturbine
 doc/README_test_cases
+doc/README.cygwin.md
 
 - Beginning with version 4.0, for more information on the releases, visit 
   the WRF GitHub Release Page:

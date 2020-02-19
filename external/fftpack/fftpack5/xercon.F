@@ -17,9 +17,7 @@ function xercon ( inc, jump, n, lot )
 !    be consistent, or else at least one array element will be
 !    transformed more than once.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

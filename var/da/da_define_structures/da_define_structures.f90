@@ -406,6 +406,25 @@ module da_define_structures
       type (field_type)     , pointer :: q        (:) ! q.
    end type tamdar_type
 
+   type varbc_tamdar_type
+      character(len=40)               :: fmt_param    ! Format of parameter table
+      integer                         :: nmaxpred     ! Max. No. of predictors
+      integer                         :: nphase       ! No. of flight phases
+      integer                         :: nair         ! No. of aircrafts in table
+      integer                         :: npred        ! No. of predictors
+      integer                         :: nmaxobs      ! Max Obs No.
+      integer               , pointer :: nobs    (:,:)! Obs No. in proc
+      integer               , pointer :: nobs_sum(:,:)! Total Obs No.
+      integer               , pointer :: tail_id   (:)! Tail ID of aircrafts
+      integer               , pointer :: obs_sn(:,:,:)! Serial No. of Obs in proc
+      integer               , pointer :: ifuse   (:,:)! run varbc or not
+      integer               , pointer :: index (:,:,:)! Index in CV
+      real                  , pointer :: pred  (:,:,:)! Predictors
+      real                  , pointer :: param (:,:,:)! Parameters
+      real                  , pointer :: bgerr (:,:,:)! Bkg err in Hessian
+      real                  , pointer :: vtox(:,:,:,:)! Transformation of CV
+   end type varbc_tamdar_type
+
    type airsr_type
       real                  , pointer :: h        (:) ! Height in m
       real                  , pointer :: p        (:) ! pressure.
@@ -665,6 +684,8 @@ module da_define_structures
       type (tamdar_type)   , pointer :: tamdar(:)
       type (synop_type)    , pointer :: tamdar_sfc(:)
       type (rain_type)     , pointer :: rain(:)
+
+      type (varbc_tamdar_type) :: varbc_tamdar
 
       real :: missing
       real :: ptop
@@ -954,6 +975,7 @@ module da_define_structures
       real             :: jl
       real             :: jd
       real             :: jm
+      real             :: jt
       type (jo_type)   :: jo
    end type j_type
 
@@ -964,6 +986,7 @@ module da_define_structures
       integer :: size_jp     ! Size of CV array for Jp term.
       integer :: size_js     ! Size of CV array for Js term.
       integer :: size_jl     ! Size of CV array for Jl term.
+      integer :: size_jt     ! Size of CV array for Jt term.
       integer :: size1c      ! Complex size of CV array of 1st variable error.
       integer :: size2c      ! Complex size of CV array of 2nd variable error.
       integer :: size3c      ! Complex size of CV array of 3rd variable error.

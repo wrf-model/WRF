@@ -3808,7 +3808,7 @@ CONTAINS
                                   rdz, rdzw, dx, dy, dt, isotropic,          &
                                   mix_upper_bound, msftx, msfty,             &
                                   hpbl,dlk,xkmv_meso,                        &
-                                  defor11,defor22,defor12,zx,zy,xkmh_t,      &
+                                  defor11,defor22,defor12,zx,zy,             &
                                   ids, ide, jds, jde, kds, kde,              &
                                   ims, ime, jms, jme, kms, kme,              &
                                   its, ite, jts, jte, kts, kte             )
@@ -7538,19 +7538,18 @@ Tmpv001 =(rdz(i,k+1,j)+rdz(i,k,j))
 !   END DO
 
        CALL tke_shear(    tendency, config_flags,                  &
-                          tke_shear_tend,                          &
                           defor11, defor22, defor33,               &
                           defor12, defor13, defor23,               &
                           u, v, w, tke, ust, mu,                   &
                           c1, c2, fnm, fnp,                        &
                           cf1, cf2, cf3, msftx, msfty,             &
-                          xkmh_t, xkmh, xkmv,                      &
+                          xkmh, xkmv,                              &
                           rdx, rdy, zx, zy, rdz, rdzw, dnw, dn,    &
                           ids, ide, jds, jde, kds, kde,            &
                           ims, ime, jms, jme, kms, kme,            &
                           its, ite, jts, jte, kts, kte           )
        CALL tke_buoyancy( tendency, config_flags, mu,              &
-                          tke_buoy_tend,c1, c2,                    &
+                          c1, c2,                                  &
                           tke, xkhv, BN2, theta, dt,               &
                           hfx, qfx, qv,  rho,                      &
                           nlflux,                                  &
@@ -7561,7 +7560,7 @@ Tmpv001 =(rdz(i,k+1,j)+rdz(i,k,j))
                           tke, bn2, theta, p8w, t8w, z,            &
                           dx, dy,rdz, rdzw, isotropic,             &
                           msftx, msfty,                            &
-                          hpbl, dlk,  l_scale,                     &
+                          hpbl, dlk,  l_scale,                      &
                           ids, ide, jds, jde, kds, kde,            &
                           ims, ime, jms, jme, kms, kme,            &
                           its, ite, jts, jte, kts, kte           )
@@ -11073,7 +11072,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
    Keep_Lpb0_nba_mij = nba_mij  ! Added by Ning Pan, 2010-08-11
-   CALL horizontal_diffusion_u_2(ru_tendf,config_flags,u_h_tend,defor11,defor12,div,  &
+   CALL horizontal_diffusion_u_2(ru_tendf,config_flags,defor11,defor12,div,  &
    nba_mij,n_nba_mij,tke(ims,kms,jms),msfux,msfuy,xkmh,rdx,rdy,fnm,fnp,dnw,zx,zy,rdzw,rho,ids,  &
    ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
@@ -11097,7 +11096,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
    Keep_Lpb1_nba_mij = nba_mij  ! Added by Ning Pan, 2010-08-11
-   CALL horizontal_diffusion_v_2(rv_tendf,config_flags,v_h_tend,defor12,defor22,div,  &
+   CALL horizontal_diffusion_v_2(rv_tendf,config_flags,defor12,defor22,div,  &
    nba_mij,n_nba_mij,tke(ims,kms,jms),msfvx,msfvy,xkmh,rdx,rdy,fnm,fnp,dnw,zx,zy,rdzw,rho,ids,  &
    ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 

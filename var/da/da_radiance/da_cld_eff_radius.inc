@@ -142,13 +142,13 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
 !
    piover6 = pi/6.
    if ( qrn > limit ) then
-      lamda_rain = (piover6*rho_w*n0_rain*rho/qrn)**0.25
+      lamda_rain = (piover6*rho_w*n0_rain/(rho*qrn))**0.25
    end if
    if ( qsn > limit ) then
-      lamda_snow = (piover6*rho_snow*n0_snow*rho/qsn)**0.25
+      lamda_snow = (piover6*rho_snow*n0_snow/(rho*qsn))**0.25
    end if
    if ( qgr > limit ) then
-      lamda_grau = (piover6*rho_grau*n0_grau*rho/qgr)**0.25
+      lamda_grau = (piover6*rho_grau*n0_grau/(rho*qgr))**0.25
    end if
    sum1_rain = 0.0
    sum2_rain = 0.0

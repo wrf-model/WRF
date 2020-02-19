@@ -3786,8 +3786,9 @@ end module module_mp_SBM_Auxiliary
              						twolayer_hail,twolayer_graupel,twolayer_fd,twolayer_snow,rpquada,usequad
 #endif
 
-  USE module_state_description,ONLY:  p_ff1i01,p_ff1i33,p_ff5i01,p_ff5i33, &
-                                      p_ff6i01,p_ff6i33,p_ff8i01,p_ff8i43
+! USE module_state_description,ONLY:  p_ff1i01,p_ff1i33,p_ff5i01,p_ff5i33, &
+!                                     p_ff6i01,p_ff6i33,p_ff8i01,p_ff8i43
+  INTEGER, PRIVATE,PARAMETER ::   r_p_ff1i33=12,r_p_ff5i33=12,r_p_ff6i33=12,r_p_ff8i43=12
 
  PRIVATE
 
@@ -4144,19 +4145,19 @@ end module module_mp_SBM_Auxiliary
             rhocgs(I,K,J)=rho_phy(I,K,J)*0.001
  				! ... Drops
    				  KRR=0
-   				  DO KR=p_ff1i01,p_ff1i33
+   				  DO KR=r_p_ff1i01,r_p_ff1i33
 			        KRR=KRR+1
 		          chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XL(KRR)/XL(KRR)/3.0
    				  END DO
  				! ... Snow
    				  KRR=0
-   				  DO KR=p_ff5i01,p_ff5i33
+   				  DO KR=r_p_ff5i01,r_p_ff5i33
   			      KRR=KRR+1
   			      chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XS(KRR)/XS(KRR)/3.0
    				  END DO
  				! ... Aerosols
    				  KRR=0
-   				  DO KR=p_ff8i01,p_ff8i43
+   				  DO KR=r_p_ff8i01,r_p_ff8i43
   		          KRR=KRR+1
    					    chem_new(I,K,J,KR) = chem_new(I,K,J,KR)*RHOCGS(I,K,J)/1000.
    													       ! chem_new (input) is #/kg
@@ -4164,14 +4165,14 @@ end module module_mp_SBM_Auxiliary
  				!  ... Hail or Graupel [same registry adresses]
            if(hail_opt == 1) then
              KRR=0
-             DO KR=p_ff6i01,p_ff6i33
+             DO KR=r_p_ff6i01,r_p_ff6i33
                  KRR=KRR+1
                  chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XH(KRR)/XH(KRR)/3.0
              END DO
 
            else
              KRR=0
-             DO KR=p_ff6i01,p_ff6i33
+             DO KR=r_p_ff6i01,r_p_ff6i33
                  KRR=KRR+1
                  chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XG(KRR)/XG(KRR)/3.0
              END DO
@@ -4220,7 +4221,7 @@ end module module_mp_SBM_Auxiliary
  				  END IF
  				  ! ... CCN
  				  KRR = 0
- 				  DO KR = p_ff8i01,p_ff8i43
+ 				  DO KR = r_p_ff8i01,r_p_ff8i43
  					KRR = KRR + 1
    					if (xland(i,j) == 1)then
    						! chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
@@ -4253,7 +4254,7 @@ end module module_mp_SBM_Auxiliary
                     END IF
                     ! ... CCN
 	                  KRR = 0
-                    DO kr = p_ff8i01,p_ff8i43
+                    DO kr = r_p_ff8i01,r_p_ff8i43
                       KRR = KRR + 1
            						if (xland(i,j) == 1)then
            							! chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
@@ -4449,14 +4450,14 @@ end module module_mp_SBM_Auxiliary
 
      			! ... Liquid
      			  KRR = 0
-     			  DO kr = p_ff1i01,p_ff1i33
+     			  DO kr = r_p_ff1i01,r_p_ff1i33
      				 KRR = KRR + 1
      				 FF1R(KRR) = chem_new(I,K,J,KR)
      				 IF (FF1R(KRR) < 0.0)FF1R(KRR) = 0.0
      			  END DO
      			! ... CCN
      			  KRR = 0
-     			  DO kr=p_ff8i01,p_ff8i43
+     			  DO kr=r_p_ff8i01,r_p_ff8i43
      				 KRR = KRR + 1
      				 FCCN(KRR) = chem_new(I,K,J,KR)
      				 if (fccn(krr) < 0.0)fccn(krr) = 0.0
@@ -4469,7 +4470,7 @@ end module module_mp_SBM_Auxiliary
 
    				! ... Snow
    				KRR=0
-   				DO kr=p_ff5i01,p_ff5i33
+   				DO kr=r_p_ff5i01,r_p_ff5i33
    					KRR=KRR+1
    					FF3R(KRR)=chem_new(I,K,J,KR)
    					if (ff3r(krr) < 0.0)ff3r(krr) = 0.0
@@ -4478,7 +4479,7 @@ end module module_mp_SBM_Auxiliary
           ! ... Hail or Graupel
           if(hail_opt == 1)then
            KRR=0
-           DO kr=p_ff6i01,p_ff6i33
+           DO kr=r_p_ff6i01,r_p_ff6i33
                KRR=KRR+1
                FF5R(KRR) = chem_new(I,K,J,KR)
                if (ff5r(krr) < 0.0)ff5r(krr) = 0.0
@@ -4486,7 +4487,7 @@ end module module_mp_SBM_Auxiliary
            ENDDO
           else
            KRR=0
-           DO kr=p_ff6i01,p_ff6i33
+           DO kr=r_p_ff6i01,r_p_ff6i33
                KRR=KRR+1
                FF4R(KRR) = chem_new(I,K,J,KR)
                if (ff4r(krr) < 0.0)ff4r(krr) = 0.0
@@ -4790,33 +4791,33 @@ end module module_mp_SBM_Auxiliary
 
     ! ... Drops
 	  KRR = 0
-	  DO kr = p_ff1i01,p_ff1i33
+	  DO kr = r_p_ff1i01,r_p_ff1i33
 		 KRR = KRR+1
 		 chem_new(I,K,J,KR) = FF1R(KRR)
 	  END DO
 	  ! ... CCN
 	  KRR = 0
-	  DO kr=p_ff8i01,p_ff8i43
+	  DO kr=r_p_ff8i01,r_p_ff8i43
 		  KRR=KRR+1
 		  chem_new(I,K,J,KR)=FCCN(KRR)
 	  END DO
 	  IF (ICEPROCS == 1)THEN
 	  ! ... Snow
 		  KRR = 0
-		  DO kr=p_ff5i01,p_ff5i33
+		  DO kr=r_p_ff5i01,r_p_ff5i33
 			  KRR=KRR+1
 			  chem_new(I,K,J,KR)=FF3R(KRR)
 		  END DO
      ! ... Hail/ Graupel
       if(hail_opt == 1)then
        KRR = 0
-       DO KR=p_ff6i01,p_ff6i33
+       DO KR=r_p_ff6i01,r_p_ff6i33
            KRR=KRR+1
            chem_new(I,K,J,KR) = FF5R(KRR)
        END DO
       else
        KRR = 0
-       DO KR=p_ff6i01,p_ff6i33
+       DO KR=r_p_ff6i01,r_p_ff6i33
            KRR=KRR+1
            chem_new(I,K,J,KR) = FF4R(KRR)
        END DO
@@ -4840,7 +4841,7 @@ end module module_mp_SBM_Auxiliary
             zcgs_z(k)=zcgs(i,k,j)
             vrx(k,:)=vr1_z(:,k)
             krr=0
-            do kr=p_ff1i01,p_ff1i33
+            do kr=r_p_ff1i01,r_p_ff1i33
               krr=krr+1
               ffx_z(k,krr)=chem_new(i,k,j,kr)/rhocgs(i,k,j)
             end do
@@ -4848,7 +4849,7 @@ end module module_mp_SBM_Auxiliary
           call FALFLUXHUCM_Z(ffx_z,VRX,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
           do k = kts,kte
             krr=0
-            do kr=p_ff1i01,p_ff1i33
+            do kr=r_p_ff1i01,r_p_ff1i33
               krr=krr+1
               chem_new(i,k,j,kr)=ffx_z(k,krr)*rhocgs(i,k,j)
             end do
@@ -4861,7 +4862,7 @@ end module module_mp_SBM_Auxiliary
             zcgs_z(k)=zcgs(i,k,j)
             vrx(k,:)=vr3_z3D(:,i,k,j)
             krr=0
-            do kr=p_ff5i01,p_ff5i33
+            do kr=r_p_ff5i01,r_p_ff5i33
               krr=krr+1
               ffx_z(k,krr)=chem_new(i,k,j,kr)/rhocgs(i,k,j)
             end do
@@ -4869,7 +4870,7 @@ end module module_mp_SBM_Auxiliary
           call FALFLUXHUCM_Z(ffx_z,VRX,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
           do k = kts,kte
             krr=0
-            do kr=p_ff5i01,p_ff5i33
+            do kr=r_p_ff5i01,r_p_ff5i33
               krr=krr+1
               chem_new(i,k,j,kr)=ffx_z(k,krr)*rhocgs(i,k,j)
             end do
@@ -4885,7 +4886,7 @@ end module module_mp_SBM_Auxiliary
               vrx(k,:) = vr4_z3D(:,i,k,j)
             endif
             krr=0
-            do kr=p_ff6i01,p_ff6i33
+            do kr=r_p_ff6i01,r_p_ff6i33
               krr=krr+1
               ffx_z(k,krr)=chem_new(i,k,j,kr)/rhocgs(i,k,j)
             end do
@@ -4893,7 +4894,7 @@ end module module_mp_SBM_Auxiliary
           call FALFLUXHUCM_Z(ffx_z,VRX,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
           do k = kts,kte
             krr=0
-            do kr=p_ff6i01,p_ff6i33
+            do kr=r_p_ff6i01,r_p_ff6i33
               krr=krr+1
               chem_new(i,k,j,kr)=ffx_z(k,krr)*rhocgs(i,k,j)
             end do
@@ -4928,7 +4929,7 @@ end module module_mp_SBM_Auxiliary
 
           ! ... Drop output
           KRR = 0
-          DO KR = p_ff1i01,p_ff1i33
+          DO KR = r_p_ff1i01,r_p_ff1i33
             KRR=KRR+1
             IF (KRR < KRDROP)THEN
               QC(I,K,J) = QC(I,K,J) &
@@ -4947,7 +4948,7 @@ end module module_mp_SBM_Auxiliary
  			  IF (ICEPROCS == 1)THEN
  			  ! ... Snow output
  			   	KRR=0
- 			   	DO  KR=p_ff5i01,p_ff5i33
+ 			   	DO  KR=r_p_ff5i01,r_p_ff5i33
  					KRR=KRR+1
  					 if (KRR <= KRICE)THEN
  						 QI(I,K,J) = QI(I,K,J) &
@@ -4964,7 +4965,7 @@ end module module_mp_SBM_Auxiliary
 
  			   ! ... Hail / Graupel output
           KRR=0
-          DO  KR=p_ff6i01,p_ff6i33
+          DO  KR=r_p_ff6i01,r_p_ff6i33
             KRR=KRR+1
             ! ... Hail or Graupel
             if(hail_opt == 1)then
@@ -4982,7 +4983,7 @@ end module module_mp_SBM_Auxiliary
    		END IF !IF (ICEPROCS.EQ.1)THEN
 
       KRR = 0
-      DO  KR = p_ff8i01,p_ff8i43
+      DO  KR = r_p_ff8i01,r_p_ff8i43
       	KRR = KRR + 1
       	QNA(I,K,J) = QNA(I,K,J) &
       			   	+ COL*chem_new(I,K,J,KR)/rhocgs(I,K,J)*1000.   ! #/kg
@@ -5000,7 +5001,7 @@ end module module_mp_SBM_Auxiliary
       SNOWNCV(I,J) = 0.0
       GRAUPELNCV(I,J) = 0.0
       krr=0
-      DO KR=p_ff1i01,p_ff1i33
+      DO KR=r_p_ff1i01,r_p_ff1i33
         krr=krr+1
         DELTAW = VR1_Z(KRR,1)
         RAINNC(I,J) = RAINNC(I,J) &
@@ -5011,7 +5012,7 @@ end module module_mp_SBM_Auxiliary
           chem_new(I,1,J,KR)*XL(KRR)*XL(KRR)
       END DO
       KRR=0
-      DO KR=p_ff5i01,p_ff5i33
+      DO KR=r_p_ff5i01,r_p_ff5i33
         KRR=KRR+1
         DELTAW = VR3_Z(KRR,1)
         RAINNC(I,J)=RAINNC(I,J) &
@@ -5028,7 +5029,7 @@ end module module_mp_SBM_Auxiliary
        chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
      END DO
      KRR=0
-     DO KR=p_ff6i01,p_ff6i33
+     DO KR=r_p_ff6i01,r_p_ff6i33
        KRR=KRR+1
        if(hail_opt == 1)then
          DELTAW = VR5_Z(KRR,1)
@@ -5088,7 +5089,7 @@ end module module_mp_SBM_Auxiliary
 
 ! ... Drops
         KRR=0
-        do kr = p_ff1i01,p_ff1i33     ! [KS] >> erased the COL factor ; Here DSDs input to Polar_HUCM is in units [g/g/dln(r)]
+        do kr = r_p_ff1i01,r_p_ff1i33     ! [KS] >> erased the COL factor ; Here DSDs input to Polar_HUCM is in units [g/g/dln(r)]
           KRR=KRR+1
           FF1R_D(KRR) = (1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XL(KRR)*XL(KRR)*3
           if (FF1R_D(KRR) < 1.0D-20) FF1R_D(KRR) = 0.0
@@ -5096,7 +5097,7 @@ end module module_mp_SBM_Auxiliary
         if (ICEPROCS == 1)then
 ! ... SNOW
           KRR=0
-          do kr=p_ff5i01,p_ff5i33
+          do kr=r_p_ff5i01,r_p_ff5i33
             KRR=KRR+1
             FF3R_D(KRR)=(1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3
             FF3R (KRR) = chem_new(I,K,J,KR)
@@ -5105,7 +5106,7 @@ end module module_mp_SBM_Auxiliary
 ! ... Graupel or Hail
           KRR=0
           if(hail_opt == 0)then
-            do kr = p_ff6i01,p_ff6i33
+            do kr = r_p_ff6i01,r_p_ff6i33
               KRR=KRR+1
               FF4R_D(KRR) = (1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XG(KRR)*XG(KRR)*3
               FF4R(KRR) = chem_new(I,K,J,KR)
@@ -5113,7 +5114,7 @@ end module module_mp_SBM_Auxiliary
               FF5R_d(KRR) = 0.0
             end do
           else
-            do kr=p_ff6i01,p_ff6i33
+            do kr=r_p_ff6i01,r_p_ff6i33
               KRR=KRR+1
               FF5R_D(KRR)=(1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XH(KRR)*XH(KRR)*3
               FF5R(KRR)=chem_new(I,K,J,KR)
@@ -5149,47 +5150,47 @@ end module module_mp_SBM_Auxiliary
 
 
    			KRR=0
-   			DO KR=r_p_ff1i01,r_p_ff1i06
+   			DO KR=r_r_p_ff1i01,r_r_p_ff1i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR) = out1(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_p_ff2i01,r_p_ff2i06
+   			DO KR=r_r_p_ff2i01,r_r_p_ff2i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out2(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_p_ff3i01,r_p_ff3i06
+   			DO KR=r_r_p_ff3i01,r_r_p_ff3i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out3(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_p_ff4i01,r_p_ff4i06
+   			DO KR=r_r_p_ff4i01,r_r_p_ff4i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out4(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_p_ff5i01,r_p_ff5i06
+   			DO KR=r_r_p_ff5i01,r_r_p_ff5i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out5(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_p_ff6i01,r_p_ff6i06
+   			DO KR=r_r_p_ff6i01,r_r_p_ff6i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out6(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_p_ff7i01,r_p_ff7i06
+   			DO KR=r_r_p_ff7i01,r_r_p_ff7i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out7(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_p_ff8i01,r_p_ff8i06
+   			DO KR=r_r_p_ff8i01,r_r_p_ff8i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out8(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_p_ff9i01,r_p_ff9i06
+   			DO KR=r_r_p_ff9i01,r_r_p_ff9i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out9(KRR)
    			END DO
@@ -5222,34 +5223,34 @@ end module module_mp_SBM_Auxiliary
  		        DO k = kts,kte
          		  rhocgs(I,K,J)=rho_phy(I,K,J)*0.001
          		  krr=0
-         		  DO KR=p_ff1i01,p_ff1i33
+         		  DO KR=r_p_ff1i01,r_p_ff1i33
          			    krr=krr+1
          		       chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XL(KRR)*XL(KRR)*3.0
          		        if (qc(i,k,j)+qr(i,k,j).lt.1.e-13)chem_new(I,K,J,KR)=0.
          		  END DO
          		  KRR=0
-         		  DO KR=p_ff5i01,p_ff5i33
+         		  DO KR=r_p_ff5i01,r_p_ff5i33
          		   KRR=KRR+1
          		   chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XS(KRR)*XS(KRR)*3.0
          		   if (qs(i,k,j).lt.1.e-13)chem_new(I,K,J,KR)=0.
          		  END DO
          		  ! ... CCN
          		  KRR=0
-         		  DO KR=p_ff8i01,p_ff8i43
+         		  DO KR=r_p_ff8i01,r_p_ff8i43
          		   KRR=KRR+1
          		   chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*1000.0
          		  END DO
               ! ... Hail / Graupel
               if(hail_opt == 1)then
                  KRR=0
-                 DO KR=p_ff6i01,p_ff6i33
+                 DO KR=r_p_ff6i01,r_p_ff6i33
                      KRR=KRR+1
                      chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XH(KRR)*XH(KRR)*3.0
                      if (qg(i,k,j) < 1.e-13) chem_new(I,K,J,KR) = 0.0
                  END DO
                else
                  KRR=0
-                 DO KR=p_ff6i01,p_ff6i33
+                 DO KR=r_p_ff6i01,r_p_ff6i33
                      KRR=KRR+1
                      chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XG(KRR)*XG(KRR)*3.0
                      if (qg(i,k,j) < 1.e-13) chem_new(I,K,J,KR) = 0.0

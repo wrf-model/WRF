@@ -1563,8 +1563,8 @@ CONTAINS
 ! (NC->NCCN)
 !----------------------------------------------------------------------
           if(pcond(i,k).eq.-qci(i,k,1)/dtcld) then
-            ncr(i,k,2) = 0.
             ncr(i,k,1) = ncr(i,k,1)+ncr(i,k,2)
+            ncr(i,k,2) = 0.
           endif
 !
           q(i,k) = q(i,k)-pcond(i,k)*dtcld

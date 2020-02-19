@@ -40,7 +40,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    USE mediation_pertmod_io , ONLY : save_tl_pert, read_ad_forcing, save_xtraj, read_xtraj, read_xtraj_reverse
    USE module_bc_em, ONLY : rk_phys_bc_dry_2
    USE module_bc, ONLY : set_physical_bc3d
-   USE esmf_timemod, ONLY : ESMF_TimeInc
+   USE wrf_esmf_timemod, ONLY : ESMF_TimeInc
 
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : ntasks_x, ntasks_y, &

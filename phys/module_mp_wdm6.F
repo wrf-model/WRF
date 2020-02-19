@@ -905,8 +905,6 @@
                          +precs2*work2(i,k)*coeres)/den(i,k)                  
               psmlt(i,k) = min(max(psmlt(i,k)*dtcld/mstep(i),-qrs(i,k,2)     &
                          /mstep(i)),0.)
-              qrs(i,k,2) = qrs(i,k,2) + psmlt(i,k)
-              qrs(i,k,1) = qrs(i,k,1) - psmlt(i,k)
 !-------------------------------------------------------------------
 ! nsmlt: melting of snow [LH A27]
 !       (T>T0: ->NR)
@@ -915,6 +913,9 @@
                 sfac = rslope(i,k,2)*n0s*n0sfac(i,k)/qrs(i,k,2)
                 ncr(i,k,3) = ncr(i,k,3) - sfac*psmlt(i,k)
               endif
+! error correction based on Lei et al., (JGR, 2020)
+              qrs(i,k,2) = qrs(i,k,2) + psmlt(i,k)
+              qrs(i,k,1) = qrs(i,k,1) - psmlt(i,k)
               t(i,k) = t(i,k) + xlf/cpm(i,k)*psmlt(i,k)
             endif
 !---------------------------------------------------------------
@@ -928,8 +929,6 @@
                            /den(i,k)                                          
               pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld/mstep(i),                &
                           -qrs(i,k,3)/mstep(i)),0.)
-              qrs(i,k,3) = qrs(i,k,3) + pgmlt(i,k)
-              qrs(i,k,1) = qrs(i,k,1) - pgmlt(i,k)
 !-------------------------------------------------------------------
 ! ngmlt: melting of graupel [LH A28]
 !       (T>T0: ->NR)
@@ -938,6 +937,9 @@
                 gfac = rslope(i,k,3)*n0g/qrs(i,k,3)
                 ncr(i,k,3) = ncr(i,k,3) - gfac*pgmlt(i,k)
               endif
+! error correction based on Lei et al., (JGR, 2020)
+              qrs(i,k,3) = qrs(i,k,3) + pgmlt(i,k)
+              qrs(i,k,1) = qrs(i,k,1) - pgmlt(i,k)
               t(i,k) = t(i,k) + xlf/cpm(i,k)*pgmlt(i,k)
             endif
           endif
@@ -1982,8 +1984,9 @@
 ! (NC->NCCN) 
 !----------------------------------------------------------------
           if(pcond(i,k).eq.-qci(i,k,1)/dtcld) then
-            ncr(i,k,2) = 0.
             ncr(i,k,1) = ncr(i,k,1)+ncr(i,k,2)
+! error correction based on Lei et al. (JGR, 2020)
+            ncr(i,k,2) = 0.
           endif
 !
           q(i,k) = q(i,k)-pcond(i,k)*dtcld

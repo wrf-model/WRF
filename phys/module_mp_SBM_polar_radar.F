@@ -1,4 +1,4 @@
-#if( BUILD_POLAR_HUCM != 1)
+#if( BUILD_SBM_FAST != 1)
       MODULE module_mp_SBM_polar_radar
       CONTAINS
       SUBROUTINE SBM_polar_radar

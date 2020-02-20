@@ -5153,47 +5153,47 @@ end module module_mp_SBM_Auxiliary
 
 
    			KRR=0
-   			DO KR=r_r_p_ff1i01,r_r_p_ff1i06
+   			DO KR=r_p_ff1i01,r_p_ff1i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR) = out1(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_r_p_ff2i01,r_r_p_ff2i06
+   			DO KR=r_p_ff2i01,r_p_ff2i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out2(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_r_p_ff3i01,r_r_p_ff3i06
+   			DO KR=r_p_ff3i01,r_p_ff3i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out3(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_r_p_ff4i01,r_r_p_ff4i06
+   			DO KR=r_p_ff4i01,r_p_ff4i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out4(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_r_p_ff5i01,r_r_p_ff5i06
+   			DO KR=r_p_ff5i01,r_p_ff5i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out5(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_r_p_ff6i01,r_r_p_ff6i06
+   			DO KR=r_p_ff6i01,r_p_ff6i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out6(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_r_p_ff7i01,r_r_p_ff7i06
+   			DO KR=r_p_ff7i01,r_p_ff7i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out7(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_r_p_ff8i01,r_r_p_ff8i06
+   			DO KR=r_p_ff8i01,r_p_ff8i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out8(KRR)
    			END DO
    			KRR=0
-   			DO KR=r_r_p_ff9i01,r_r_p_ff9i06
+   			DO KR=r_p_ff9i01,r_p_ff9i06
    				KRR=KRR+1
    				sbmradar(I,K,J,KR)=out9(KRR)
    			END DO

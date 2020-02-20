@@ -760,6 +760,7 @@ module_sf_ocean_driver.o : \
 module_diagnostics_driver.o: \
 		module_lightning_driver.o 		\
 		module_diag_misc.o 			\
+		module_diag_nwp.o 			\
 		module_diag_cl.o			\
 		module_diag_pld.o 			\
 		module_diag_zld.o 			\

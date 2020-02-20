@@ -307,7 +307,7 @@ BENCH_START(rad_driver_tim)
      &        ,PAERLEV=grid%paerlev   ,ID=grid%id                         &
      &        ,CAM_ABS_DIM1=grid%cam_abs_dim1, CAM_ABS_DIM2=grid%cam_abs_dim2 &
      &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
-     &        ,XTIME=grid%xtime                                                &
+     &        ,XTIME=grid%xtime                                           &
               ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag       &
 #if ( EM_CORE == 1)
      &        ,mut=grid%mut,dnw=grid%dnw                                  & ! FARMS coupling

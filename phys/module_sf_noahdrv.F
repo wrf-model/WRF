@@ -1782,7 +1782,7 @@ CONTAINS
                                 GRAV = 9.81, T0 = 273.15
    INTEGER                   :: errflag
    CHARACTER(LEN=80)         :: err_message
-   INTEGER,DIMENSION(its:ite, jts:jte ),INTENT(INOUT):: irr_rand_field   
+   INTEGER,DIMENSION(ims:ime, jms:jme ),INTENT(INOUT):: irr_rand_field   
    INTEGER , DIMENSION(jts:jte) :: my_seeds  
    INTEGER :: irr_ph,irr_freq         
    REAL,DIMENSION(its:ite, jts:jte ) :: rand_tmp

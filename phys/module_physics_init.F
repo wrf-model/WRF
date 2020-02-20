@@ -841,7 +841,7 @@ CONTAINS
 !-------------------------------------------------  
    
 ! IRRIGATION
-  INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ids:ide,jds:jde):: irr_rand_field 
+  INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ims:ime,jms:jme):: irr_rand_field 
   INTEGER, OPTIONAL :: irr_ph,irr_freq 
 !-----------------------------------------------------------------
 
@@ -2871,7 +2871,7 @@ CONTAINS
 ! End of Noah-mosaic related variables 
 !-------------------------------------------------  
 ! IRRIGATION
-  INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ids:ide,jds:jde):: irr_rand_field  
+  INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ims:ime,jms:jme):: irr_rand_field  
   INTEGER,OPTIONAL :: irr_ph,irr_freq       
 #if ( EM_CORE == 1 )
 !local mynn 

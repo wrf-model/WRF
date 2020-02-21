@@ -33,7 +33,7 @@ END SUBROUTINE irr_calc_phase
    REAL::  irr_daily_amount
    REAL, INTENT(IN) :: julian_in
    INTEGER, INTENT(INOUT) :: irr_rand_field_val
-
+  IRRIGATION_CHANNEL=0.
   IF(RAINBL.LE.0.01 .AND. IRRIGATION.GE.0.001) THEN
    end_hour=irr_start_hour+irr_num_hours    
    constants_irrigation=irr_freq*irr_daily_amount*0.000277778*0.01/irr_num_hours  ! hours in second:1/3600=0.000277778 

@@ -679,7 +679,7 @@ CONTAINS
 
    REAL,OPTIONAL,INTENT(IN),DIMENSION( ims:ime, jms:jme )       :: IRR_CHAN
    REAL       ::  IRRIGATION_CHANNEL
-
+   IRRIGATION_CHANNEL =0.0
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
    XQNORM  = 0.0
@@ -1783,9 +1783,9 @@ CONTAINS
    INTEGER                   :: errflag
    CHARACTER(LEN=80)         :: err_message
    INTEGER,DIMENSION(ims:ime, jms:jme ),INTENT(INOUT):: irr_rand_field   
-   INTEGER , DIMENSION(jts:jte) :: my_seeds  
+   INTEGER , DIMENSION(jds:jde) :: my_seeds  
    INTEGER :: irr_ph,irr_freq         
-   REAL,DIMENSION(its:ite, jts:jte ) :: rand_tmp
+   REAL,DIMENSION(ims:ime, jms:jme ) :: rand_tmp
    character*256 :: MMINSL
         MMINSL='STAS'
 !
@@ -1815,7 +1815,7 @@ CONTAINS
    IF (irr_ph.NE.0)THEN
    DO i = its,ite
     DO j=jts,jte
-      my_seeds(j) =sqrt(ite*(real(j-1)**2))+sqrt(real(jte*i))
+      my_seeds(j) =sqrt(ide*(real(j-1)**2))+sqrt(real(jde*i))
 !      PRINT*,'myseed', my_seeds(j),j,jts,jds
     END DO
       CALL RANDOM_SEED ( PUT = my_seeds )
@@ -2964,7 +2964,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL                    ::  HCPCT_FASDAS
    REAL,OPTIONAL,DIMENSION( ims:ime, jms:jme ) :: IRR_CHAN
    REAL               :: IRRIGATION_CHANNEL 
-
+   IRRIGATION_CHANNEL=0.0
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
    XQNORM  = 0.0

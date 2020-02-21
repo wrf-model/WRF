@@ -1577,7 +1577,7 @@ END MODULE module_interp_info
    
         !  Shown below is the area of the CG that is in the area of the FG.   The
         !  first grid point of the depicted CG is the starting location of the nest
-        !  in the parent domain (ipos,jpos - i_parent_start and j_parent_start from
+        !  in the parent domain (ipos,jpos = i_parent_start and j_parent_start from
         !  the namelist).  
    
         !  For each of the CG points, the feedback loop is over each of the FG points
@@ -1616,7 +1616,7 @@ END MODULE module_interp_info
 !              |-------------||-------------|                          |-------------||-------------|
 ! jpoints = 1  |  t      t   ||  t      t   |                          |  t      t   ||  t      t   |
 !              |             ||             |                          |             ||             |
-!    jpos      |      T      ||      T      |          ...             |      T      ||      T      |
+!    jpos -->  |      T      ||      T      |          ...             |      T      ||      T      |
 !              |             ||             |          ...             |             ||             |
 ! jpoints = 0, |  t      t   ||  t      t   |          ...             |  t      t   ||  t      t   |
 !  nj=1        |-------------||-------------|                          |-------------||-------------|

@@ -1465,11 +1465,11 @@ END MODULE module_interp_info
 
         IF      ( ( .NOT. xstag ) .AND. ( .NOT. ystag ) ) THEN
            DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
-              nj = (cj-jpos)*nrj + jstag + 1
+              nj = (cj-jpos)*nrj + nrj/2 + 1
               DO ck = ckts, ckte
                  nk = ck
                  DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
-                    ni = (ci-ipos)*nri + istag + 1
+                    ni = (ci-ipos)*nri + nri/2 + 1
                     cfld( ci, ck, cj ) = 0.
                     DO ijpoints = 1 , nri * nrj
                        ipoints = MOD((ijpoints-1),nri) + 1 - nri/2 - 1
@@ -1487,17 +1487,43 @@ END MODULE module_interp_info
 !                                           nfld( ni-1, nk , nj+1) + &
 !                                           nfld( ni  , nk , nj+1) + &
 !                                           nfld( ni+1, nk , nj+1) )
+!                   cfld( ci, ck, cj ) =  1./25. * &
+!                                         ( nfld( ni-2, nk , nj-2) + &
+!                                           nfld( ni-2, nk , nj-1) + &
+!                                           nfld( ni-2, nk , nj-0) + &
+!                                           nfld( ni-2, nk , nj+1) + &
+!                                           nfld( ni-2, nk , nj+2) + &
+!                                           nfld( ni-1, nk , nj-2) + &
+!                                           nfld( ni-1, nk , nj-1) + &
+!                                           nfld( ni-1, nk , nj-0) + &
+!                                           nfld( ni-1, nk , nj+1) + &
+!                                           nfld( ni-1, nk , nj+2) + &
+!                                           nfld( ni-0, nk , nj-2) + &
+!                                           nfld( ni-0, nk , nj-1) + &
+!                                           nfld( ni-0, nk , nj-0) + &
+!                                           nfld( ni-0, nk , nj+1) + &
+!                                           nfld( ni-0, nk , nj+2) + &
+!                                           nfld( ni+1, nk , nj-2) + &
+!                                           nfld( ni+1, nk , nj-1) + &
+!                                           nfld( ni+1, nk , nj-0) + &
+!                                           nfld( ni+1, nk , nj+1) + &
+!                                           nfld( ni+1, nk , nj+2) + &
+!                                           nfld( ni+2, nk , nj-2) + &
+!                                           nfld( ni+2, nk , nj-1) + &
+!                                           nfld( ni+2, nk , nj-0) + &
+!                                           nfld( ni+2, nk , nj+1) + &
+!                                           nfld( ni+2, nk , nj+2) )
                  ENDDO
               ENDDO
            ENDDO
 
         ELSE IF ( (       xstag ) .AND. ( .NOT. ystag ) ) THEN
            DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
-              nj = (cj-jpos)*nrj + jstag + 1
+              nj = (cj-jpos)*nrj + nrj/2 + 1
               DO ck = ckts, ckte
                  nk = ck
                  DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
-                    ni = (ci-ipos)*nri + istag + 1
+                    ni = (ci-ipos)*nri + 1
                     cfld( ci, ck, cj ) = 0.
                     DO ijpoints = (nri+1)/2 , (nri+1)/2 + nri*(nri-1) , nri
                        ipoints = MOD((ijpoints-1),nri) + 1 - nri/2 - 1
@@ -1515,11 +1541,11 @@ END MODULE module_interp_info
 
         ELSE IF ( ( .NOT. xstag ) .AND. (       ystag ) ) THEN
            DO cj = MAX(jpos+spec_zone,cjts),MIN(jpos+(njde-njds)/nrj-jstag-spec_zone,cjte)
-              nj = (cj-jpos)*nrj + jstag + 1
+              nj = (cj-jpos)*nrj + 1
               DO ck = ckts, ckte
                  nk = ck
                  DO ci = MAX(ipos+spec_zone,cits),MIN(ipos+(nide-nids)/nri-istag-spec_zone,cite)
-                    ni = (ci-ipos)*nri + istag + 1
+                    ni = (ci-ipos)*nri + nri/2 + 1
                     cfld( ci, ck, cj ) = 0.
                     DO ijpoints = ( nrj*nrj +1 )/2 - nrj/2 , ( nrj*nrj +1 )/2 - nrj/2 + nrj-1
                        ipoints = MOD((ijpoints-1),nri) + 1 - nri/2 - 1

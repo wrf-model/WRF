@@ -3791,23 +3791,21 @@ end module module_mp_SBM_Auxiliary
              						usetables,                            &
              						twolayer_hail,twolayer_graupel,twolayer_fd,twolayer_snow,rpquada,usequad
 
-!FIX THESE
-  INTEGER, PRIVATE,PARAMETER ::   r_p_ff1i33=12,r_p_ff5i33=12,r_p_ff6i33=12,r_p_ff8i43=12
-
  PRIVATE
 
  PUBLIC FAST_SBM,FAST_HUCMINIT
 
  ! Kind paramater
  INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
- INTEGER, PARAMETER, PRIVATE:: R16SIZE = 16
+ INTEGER, PARAMETER, PRIVATE:: R16SIZE = 16 
  INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
 
 
  ! Polar radar indices ([KS] >> Should be read automatically from "module_state_description")
- INTEGER, PRIVATE,PARAMETER :: r_p_ff1i01=2, r_p_ff1i06=07,r_p_ff2i01=08,r_p_ff2i06=13,r_p_ff3i01=14,&
-          r_p_ff3i06=19,r_p_ff4i01=20,r_p_ff4i06=25,r_p_ff5i01=26,r_p_ff5i06=31,r_p_ff6i01=32,r_p_ff6i06=37,&
-				  r_p_ff7i01=38,r_p_ff7i06=43,r_p_ff8i01=44,r_p_ff8i06=49,r_p_ff9i01=50,r_p_ff9i06=55
+ INTEGER, PRIVATE,PARAMETER :: r_p_ff1i33=34,r_p_ff5i33=67,r_p_ff6i33=100,r_p_ff8i43=143
+ INTEGER, PRIVATE,PARAMETER :: r_p_ff1i01=2, r_p_ff1i06=07,r_p_ff2i01=01,r_p_ff2i06=1,r_p_ff3i01=1,&
+          r_p_ff3i06=1,r_p_ff4i01=1,r_p_ff4i06=1,r_p_ff5i01=35,r_p_ff5i06=40,r_p_ff6i01=68,r_p_ff6i06=73,&
+          r_p_ff7i01=1,r_p_ff7i06=1,r_p_ff8i01=101,r_p_ff8i06=106,r_p_ff9i01=50,r_p_ff9i06=55
 
  INTEGER,PARAMETER :: IBREAKUP = 1
  INTEGER,PARAMETER :: Snow_BreakUp_On = 1

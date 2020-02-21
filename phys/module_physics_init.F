@@ -2870,6 +2870,7 @@ CONTAINS
 !-------------------------------------------------
 ! End of Noah-mosaic related variables 
 !-------------------------------------------------  
+
 ! IRRIGATION
   INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ims:ime,jms:jme):: irr_rand_field  
   INTEGER,OPTIONAL :: irr_ph,irr_freq       

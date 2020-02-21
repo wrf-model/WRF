@@ -163,7 +163,7 @@ contains
          call get_dist_ll(dist,latrt,lonrt,global_rt_nx,global_rt_ny)
       end if
      do k = 1 , 9
-        call decompose_RT_real(dist(:,:,k),rt_domain(did)%dist(:,:,k), &
+        call decompose_RT_real(dist(:,:,k),rt_domain(did)%overland%properties%distance_to_neighbor(:,:,k), &
                 global_rt_nx,global_rt_ny,rt_domain(did)%ixrt,rt_domain(did)%jxrt)
      end do
 #else
@@ -173,7 +173,7 @@ contains
                      trim(nlst_rt(did)%GEO_FINEGRID_FLNM ))
          iret =  get2d_real("LATITUDE",latrt,rt_domain(did)%ixrt,rt_domain(did)%jxrt,&
                      trim(nlst_rt(did)%GEO_FINEGRID_FLNM ))
-         call get_dist_ll(rt_domain(did)%dist,latrt,lonrt,rt_domain(did)%ixrt,rt_domain(did)%jxrt)
+         call get_dist_ll(rt_domain(did)%overland%properties%distance_to_neighbor,latrt,lonrt,rt_domain(did)%ixrt,rt_domain(did)%jxrt)
 #endif
 
    end subroutine get_rt_dxdy_ll
@@ -312,11 +312,11 @@ contains
         call get_rt_dxdy_ll(did)
      else
         ! mapp projected grid.
-         call get_dxdy_mp(rt_domain(did)%dist,rt_domain(did)%ixrt,rt_domain(did)%jxrt, &
+         call get_dxdy_mp(rt_domain(did)%overland%properties%distance_to_neighbor,rt_domain(did)%ixrt,rt_domain(did)%jxrt, &
               nlst_rt(did)%dxrt0,nlst_rt(did)%dxrt0)
 #ifdef MPP_LAND
         do k = 1, 9
-           call MPP_LAND_COM_REAL(rt_domain(did)%dist(:,:,k),rt_domain(did)%IXRT,rt_domain(did)%JXRT,99)
+           call MPP_LAND_COM_REAL(rt_domain(did)%overland%properties%distance_to_neighbor(:,:,k),rt_domain(did)%IXRT,rt_domain(did)%JXRT,99)
         end do
 #endif
      endif
@@ -329,18 +329,18 @@ contains
 ! calculate the distance from channel routing
 !     if(nlst_rt(did)%dxrt0 .lt. 0) then
 !        ! lat and lon grid
-!        if(rt_domain(did)%dist(1,1,9) .eq. -999)   &
-!           call get_dist_ll(rt_domain(did)%dist,rt_domain(did)%latval,rt_domain(did)%lonval,  &
+!        if(rt_domain(did)%overland%properties%distance_to_neighbor(1,1,9) .eq. -999)   &
+!           call get_dist_ll(rt_domain(did)%overland%properties%distance_to_neighbor,rt_domain(did)%latval,rt_domain(did)%lonval,  &
 !                      rt_domain(did)%ixrt,rt_domain(did)%jxrt)
 !     else
 !        ! mapp projected grid.
-!        if(rt_domain(did)%dist(1,1,9) .eq. -999)   &
-!           call get_dxdy_mp(rt_domain(did)%dist,rt_domain(did)%ixrt,rt_domain(did)%jxrt, &
+!        if(rt_domain(did)%overland%properties%distance_to_neighbor(1,1,9) .eq. -999)   &
+!           call get_dxdy_mp(rt_domain(did)%overland%properties%distance_to_neighbor,rt_domain(did)%ixrt,rt_domain(did)%jxrt, &
 !              nlst_rt(did)%dxrt0,nlst_rt(did)%dxrt0)
 !     endif
 !#ifdef MPP_LAND
 !     do k = 1, 9
-!       call MPP_LAND_COM_REAL(rt_domain(did)%dist(:,:,k),rt_domain(did)%IXRT,rt_domain(did)%JXRT,99)
+!       call MPP_LAND_COM_REAL(rt_domain(did)%overland%properties%distance_to_neighbor(:,:,k),rt_domain(did)%IXRT,rt_domain(did)%JXRT,99)
 !     end do
 !#endif
 !   end subroutine get_dist_crt
@@ -410,7 +410,7 @@ contains
    subroutine get_node_area(did)
        integer :: did
        call get_area_g(rt_domain(did)%node_area,rt_domain(did)%CH_NETLNK, &
-         rt_domain(did)%NLINKS,rt_domain(did)%ixrt,rt_domain(did)%jxrt,rt_domain(did)%dist)
+         rt_domain(did)%NLINKS,rt_domain(did)%ixrt,rt_domain(did)%jxrt,rt_domain(did)%overland%properties%distance_to_neighbor)
    end subroutine get_node_area
     
 

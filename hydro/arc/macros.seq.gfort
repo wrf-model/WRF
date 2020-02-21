@@ -28,11 +28,6 @@ else
 HYDRO_D =  $(WRF_HYDRO)
 endif
 
-ifeq ($(WRFIO_NCD_LARGE_FILE_SUPPORT),1)
-WRFIO_NCD_LARGE_FILE_SUPPORT = -DWRFIO_NCD_LARGE_FILE_SUPPORT
-else
-WRFIO_NCD_LARGE_FILE_SUPPORT = 
-endif
 
 
 RMD		=	rm -f
@@ -40,8 +35,8 @@ COMPILER90=	gfortran
 F90FLAGS  =       -w -c -ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4 
 MODFLAG	=	-I./ -I../mod
 LDFLAGS	=	
-CPP	=       cpp
-CPPFLAGS	=       -C -P -xassembler-with-cpp -traditional -I"../Data_Rec" $(HYDRO_D) $(SPATIAL_SOIL) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
+CPPINVOKE 	=       -cpp
+CPPFLAGS	=       -I"../Data_Rec" $(HYDRO_D) $(SPATIAL_SOIL) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
 LIBS 	=	
 NETCDFINC       =       $(NETCDF_INC)
 NETCDFLIB       =       -L$(NETCDF_LIB) -lnetcdff -lnetcdf

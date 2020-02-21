@@ -3260,8 +3260,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      irr_rand_field,irr_ph,irr_freq,           &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte                 &
-                     )
+                     its,ite, jts,jte, kts,kte                 )
 
 !--------------fds (06/2010)-----------------------------------
      CASE  (SSIBSCHEME)

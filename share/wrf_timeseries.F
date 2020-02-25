@@ -767,7 +767,6 @@ SUBROUTINE write_ts( grid )
 
 #if (EM_CORE == 1)
             IF ( model_config_rec%process_time_series == 1 ) THEN
-               WRITE(UNIT=iunit,FMT='(i2,f13.6,i5,i5,i5,1x,14(f13.5,1x))')  &
                                  grid%id, grid%ts_hour(n,i),                &
                                  grid%id_tsloc(i), ix, iy,                  &
                                  grid%ts_t(n,i),                            &

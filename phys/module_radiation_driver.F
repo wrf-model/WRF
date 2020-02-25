@@ -251,6 +251,8 @@ CONTAINS
    USE module_ra_farms      , ONLY : farms_driver
 
 
+   USE module_ra_farms      , ONLY : farms_driver
+
    !  This driver calls subroutines for the radiation parameterizations.
    !
    !  short wave radiation choices:
@@ -1397,7 +1399,6 @@ CONTAINS
      ite = i_end(ij)
      jts = j_start(ij)
      jte = j_end(ij)
-! initialize data
      if ((itimestep.eq.1).and.(swint_opt.eq.1)) then
         do j=jts,jte
            do i=its,ite
@@ -1420,7 +1421,6 @@ CONTAINS
         GLON(I,J)=XLONG(I,J)*DEGRAD
      ENDDO
      ENDDO
- 
      DO j=jts,jte
      DO k=kts,kte+1
      DO i=its,ite
@@ -2520,11 +2520,13 @@ CONTAINS
    ENDDO
    !$OMP END PARALLEL DO
 
-   IF ( associated(tauaer_sw) ) deallocate(tauaer_sw)
-   IF ( associated(ssaaer_sw) ) deallocate(ssaaer_sw)
-   IF ( associated(asyaer_sw) ) deallocate(asyaer_sw)
-
    ENDIF Radiation_step
+
+   IF (run_param .or. swint_opt == 2 .or. solar_opt == 1) then
+     IF ( associated(tauaer_sw) ) deallocate(tauaer_sw)
+     IF ( associated(ssaaer_sw) ) deallocate(ssaaer_sw)
+     IF ( associated(asyaer_sw) ) deallocate(asyaer_sw)
+   ENDIF
 
  ! jararias, aug 2013
  ! SW surface fluxes interpolation (meaningful when not in a Radiation_step)

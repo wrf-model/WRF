@@ -1,13 +1,11 @@
 ! Module for handling National Water Model streamflow, land surface,
 ! gridded routing, lake, and groundwater output.
 
-! Logan Karsten
-! National Center for Atmospheric Research
-! Research Applications Laboratory
-! karsten@ucar.edu
-! 303-497-2693
+! Logan Karsten, NCAR, RAL
 
 module module_NWM_io
+
+use module_version, only: get_code_version, get_nwm_version
 
 implicit none
 
@@ -503,15 +501,13 @@ subroutine output_chrt_NWM(domainId)
    validTime = trim(nlst_rt(domainId)%olddate(1:4)//'-'//&
                     nlst_rt(domainId)%olddate(6:7)//'-'//&
                     nlst_rt(domainId)%olddate(9:10)//'_'//&
-                    nlst_rt(domainId)%olddate(12:13)//':'//&
-                    nlst_rt(domainId)%olddate(15:16)//':'//&
-                    nlst_rt(domainId)%olddate(18:19))   
+                    nlst_rt(domainId)%olddate(12:13)//&
+                    &':00:00')
    initTime = trim(nlst_rt(domainId)%startdate(1:4)//'-'//&
                   nlst_rt(domainId)%startdate(6:7)//'-'//&
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
-                  nlst_rt(domainId)%startdate(12:13)//':'//&
-                  nlst_rt(domainId)%startdate(15:16)//':'//&
-                  nlst_rt(domainId)%startdate(18:19)) 
+                  nlst_rt(domainId)%startdate(12:13)//&
+                  &':00:00') 
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
@@ -640,7 +636,7 @@ subroutine output_chrt_NWM(domainId)
       where ( varOutReal == fileMeta%modelNdv ) varOutReal = -9999.0
 
       ! Open output NetCDF file for writing.
-      iret = nf90_create(trim(output_flnm),cmode=nf90_hdf5,ncid = ftn)
+      iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create CHRTOUT NetCDF file.')
 
       ! Write global attributes.
@@ -664,8 +660,12 @@ subroutine output_chrt_NWM(domainId)
       !call nwmCheck(diagFlag,iret,'ERROR: Unable to create ESRI attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"Conventions",trim(fileMeta%conventions))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create conventions attribute')
-      iret = nf90_put_att(ftn,NF90_GLOBAL,"model_version",trim(fileMeta%outVersion))
-      call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_version attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+#ifdef NCEP_WCOSS
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
+#endif
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_output_type",trim(fileMeta%modelOutputType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_output_type attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_configuration",modelConfigType)
@@ -757,7 +757,9 @@ subroutine output_chrt_NWM(domainId)
       iret = nf90_put_att(ftn,featureVarId,'cf_role',trim(fileMeta%cfRole))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place cf_role attribute into feature_id variable')
 
+#ifndef NCEP_WCOSS
       ! Create channel lat/lon variables
+      ! NOTE: NWM current operations do not permit the output of latitude and longitude for streamflow. 
       iret = nf90_def_var(ftn,"latitude",nf90_float,dimId(1),latVarId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create latitude variable.')
       iret = nf90_put_att(ftn,latVarId,'long_name',trim(fileMeta%latLName))
@@ -792,6 +794,7 @@ subroutine output_chrt_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place stndard_name attribute into elevation variable')
       iret = nf90_put_att(ftn,elevVarId,'units',trim(fileMeta%elevUnits))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into elevation variable')
+#endif
 
       ! Define deflation levels for these meta-variables. For now, we are going to
       ! default to a compression level of 2. Only compress if io_form_outputs is set to 1.
@@ -802,6 +805,7 @@ subroutine output_chrt_NWM(domainId)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for feature_id.')
          iret = nf90_def_var_deflate(ftn,refTimeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for reference_time.')
+#ifndef NCEP_WCOSS
          iret = nf90_def_var_deflate(ftn,latVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for latitude.')
          iret = nf90_def_var_deflate(ftn,lonVarId,0,1,2)
@@ -810,6 +814,7 @@ subroutine output_chrt_NWM(domainId)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for order.')  
          iret = nf90_def_var_deflate(ftn,elevVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for elevation.')  
+#endif
       endif
 
       ! Allocate memory for the output variables, then place the real output
@@ -830,8 +835,8 @@ subroutine output_chrt_NWM(domainId)
             ! Extract valid range into a 1D array for placement. 
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
-            varRangeReal(1) = fileMeta%validMinReal(iTmp)
-            varRangeReal(2) = fileMeta%validMaxReal(iTmp)
+            varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
+            varRangeReal(2) = real(fileMeta%validMaxDbl(iTmp))
 
             ! Establish a compression level for the variables. For now we are using a
             ! compression level of 2. In addition, we are choosing to turn the shuffle
@@ -912,6 +917,7 @@ subroutine output_chrt_NWM(domainId)
       iret = nf90_put_var(ftn,varId,varMetaInt(2,:))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into feature_id output variable.')
       
+#ifndef NCEP_WCOSS
       iret = nf90_inq_varid(ftn,'latitude',varId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to locate latitude in NetCDF file.')
       iret = nf90_put_var(ftn,varId,varMetaReal(1,:))
@@ -931,6 +937,7 @@ subroutine output_chrt_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to locate elevation in NetCDF file.')
       iret = nf90_put_var(ftn,varId,varMetaReal(3,:))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into elevation output variable.')
+#endif
 
       ! Place time values into time variables.
       iret = nf90_inq_varid(ftn,'time',varId)
@@ -1051,7 +1058,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    character(len=1024) :: output_flnm ! Output file name
    integer :: iret ! NetCDF return status
    integer :: ftn  ! NetCDF file handle
-   integer :: dimId(6) ! NetCDF dimension ID values
+   integer :: dimId(7) ! NetCDF dimension ID values
    integer :: varId ! NetCDF variable ID value
    integer :: timeId ! NetCDF time variable ID
    integer :: refTimeId ! NetCDF reference_time variable ID
@@ -1105,7 +1112,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
 
    ! Initialize water type to 16.
    ! NOTE THIS MAY CHANGE IN THE FUTURE!!!!!
-   waterVal = 16
+   waterVal = rt_domain(1)%iswater
 
    ! Initialize NWM dictionary derived type containing all the necessary
    ! metadata for the output file.
@@ -1132,15 +1139,13 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    validTime = trim(nlst_rt(1)%olddate(1:4)//'-'//&
                     nlst_rt(1)%olddate(6:7)//'-'//&
                     nlst_rt(1)%olddate(9:10)//'_'//&
-                    nlst_rt(1)%olddate(12:13)//':'//&
-                    nlst_rt(1)%olddate(15:16)//':'//&
-                    nlst_rt(1)%olddate(18:19))
+                    nlst_rt(1)%olddate(12:13)//&
+                    &':00:00')
    initTime = trim(nlst_rt(1)%startdate(1:4)//'-'//&
                   nlst_rt(1)%startdate(6:7)//'-'//&
                   nlst_rt(1)%startdate(9:10)//'_'//&
-                  nlst_rt(1)%startdate(12:13)//':'//&
-                  nlst_rt(1)%startdate(15:16)//':'//&
-                  nlst_rt(1)%startdate(18:19))
+                  nlst_rt(1)%startdate(12:13)//&
+                  &':00:00') 
 
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
@@ -1162,49 +1167,49 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                              1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,&
                              1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,&
                              1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,&
-                             1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                             1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
    else if(nlst_rt(1)%io_config_outputs .eq. 1) then
       ! Analysis and Assimilation
       fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,&
                              0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,&
-                             0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,&
-                             0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,&
-                             0,0,0,0,0,0,0,0,0,1,0,0,1,0,1]
+                             0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,&
+                             0,0,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,&
+                             0,0,0,0,0,0,0,0,0,1,0,1,1,0,1,0,0]
    else if(nlst_rt(1)%io_config_outputs .eq. 2) then
       ! Short Range
       fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,&
                              0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,&
                              0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,&
                              0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,&
-                             0,0,0,0,0,0,0,0,0,1,0,0,1,0,1]
+                             0,0,0,0,0,0,0,0,0,1,0,0,1,0,1,0,0]
    else if(nlst_rt(1)%io_config_outputs .eq. 3) then
       ! Medium Range
       fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,1,&
                              0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,&
                              0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,&
                              0,0,1,1,1,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,&
-                             0,0,0,0,0,0,0,0,0,1,1,1,1,0,1]
+                             0,0,0,0,0,0,0,0,0,1,1,1,1,0,1,0,0]
    else if(nlst_rt(1)%io_config_outputs .eq. 4) then
       ! Long Range
       fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,&
                              1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,&
                              0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,&
                              0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,&
-                             0,0,0,0,0,0,0,0,0,1,1,0,1,1,0]
+                             0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,0,0]
    else if(nlst_rt(1)%io_config_outputs .eq. 5) then
       ! Retrospective
-      fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,0,0,0,1,& !1-20
+      fileMeta%outFlag(:) = [0,0,0,0,0,0,1,0,0,0,1,1,0,1,1,0,0,1,0,1,& !1-20
                              1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,& !21-40
                              0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,& !41-60
                              1,0,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,& !61-80
-                             0,0,0,0,0,0,0,0,0,1,0,0,0,0,0]            !81-95
+                             0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1]        !81-97
    else if(nlst_rt(1)%io_config_outputs .eq. 6) then
       ! Diagnostics
       fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,1,&
                              1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,&
                              0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,&
                              1,0,1,1,1,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,&
-                             0,0,0,0,0,0,0,0,0,1,1,1,1,1,1]
+                             0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0]
    else
       call nwmCheck(diagFlag,1,'ERROR: Invalid IOC flag provided by namelist file.')
    endif
@@ -1235,7 +1240,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                   date(6:7)//date(9:10)//date(12:13)//date(15:16)//date(18:19), igrid
          endif
 
-         iret = nf90_create(trim(output_flnm),cmode=nf90_hdf5,ncid = ftn)
+         iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to create LDASOUT NetCDF file.')
          ftnNoahMP = ftn
 
@@ -1250,8 +1255,12 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          call nwmCheck(diagFlag,iret,'ERROR: Unable to place model total_valid_times attribute into LDASOUT file.')
          iret = nf90_put_att(ftnNoahMP,NF90_GLOBAL,'Conventions',trim(fileMeta%conventions))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to place CF conventions attribute into LDASOUT file.')
-         iret = nf90_put_att(ftnNoahMP,NF90_GLOBAL,"model_version",trim(fileMeta%outVersion))
-         call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_version attribute')
+         iret = nf90_put_att(ftnNoahMP,NF90_GLOBAL,"code_version",trim(get_code_version()))
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+#ifdef NCEP_WCOSS
+         iret = nf90_put_att(ftnNoahMP,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
+#endif
          iret = nf90_put_att(ftn,NF90_GLOBAL,"model_output_type",trim(fileMeta%modelOutputType))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_output_type attribute')
          iret = nf90_put_att(ftn,NF90_GLOBAL,"model_configuration",modelConfigType)
@@ -1274,6 +1283,12 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define snow_layers dimension')
          iret = nf90_def_dim(ftnNoahMP,'reference_time',1,dimId(6))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define reference_time dimension')
+         ! Only create vis_nir if we are outputting the two snow albedo variables. 
+         ! Otherwise these are unecessary dimensions.
+         if ((fileMeta%outFlag(96) .eq. 1) .or. (fileMeta%outFlag(96) .eq. 1)) then
+            iret = nf90_def_dim(ftnNoahMP,'vis_nir',fileMeta%numSpectrumBands,dimId(7))
+            call nwmCheck(diagFlag,iret,'ERROR: Unable to define vis_nir dimension')
+         endif
 
          ! Create and populate reference_time and time variables.
          iret = nf90_def_var(ftnNoahMP,"time",nf90_int,dimId(1),timeId)
@@ -1356,6 +1371,8 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                      iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_int,(/dimId(2),dimId(4),dimId(3),dimId(1)/),varId)
                   else if(fileMeta%numLev(iTmp) .eq. fileMeta%numSnowLayers) then
                      iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_int,(/dimId(2),dimId(5),dimId(3),dimId(1)/),varId)
+                  else if(fileMeta%numLev(iTmp) .eq. fileMeta%numSpectrumBands) then
+                     iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_int,(/dimId(2),dimId(7),dimId(3),dimId(1)/),varId)
                   else if(fileMeta%numLev(iTmp) .eq. 1) then
                      iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_int,(/dimId(2),dimId(3),dimId(1)/),varId)
                   endif
@@ -1364,6 +1381,8 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                      iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_float,(/dimId(2),dimId(4),dimId(3),dimId(1)/),varId)
                   else if(fileMeta%numLev(iTmp) .eq. fileMeta%numSnowLayers) then
                      iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_float,(/dimId(2),dimId(5),dimId(3),dimId(1)/),varId)
+                  else if(fileMeta%numLev(iTmp) .eq. fileMeta%numSpectrumBands) then
+                     iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_float,(/dimId(2),dimId(7),dimId(3),dimId(1)/),varId)
                   else if(fileMeta%numLev(iTmp) .eq. 1) then
                      iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_float,(/dimId(2),dimId(3),dimId(1)/),varId)
                   endif
@@ -1373,8 +1392,8 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                ! Extract valid range into a 1D array for placement.
                varRange(1) = fileMeta%validMinComp(iTmp)
                varRange(2) = fileMeta%validMaxComp(iTmp)
-               varRangeReal(1) = fileMeta%validMinReal(iTmp)
-               varRangeReal(2) = fileMeta%validMaxReal(iTmp)
+               varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
+               varRangeReal(2) = real(fileMeta%validMaxDbl(iTmp))
 
                ! Establish a compression level for the variables. For now we are using a
                ! compression level of 2. In addition, we are choosing to turn the shuffle
@@ -1786,15 +1805,13 @@ subroutine output_rt_NWM(domainId,iGrid)
    validTime = trim(nlst_rt(domainId)%olddate(1:4)//'-'//&
                     nlst_rt(domainId)%olddate(6:7)//'-'//&
                     nlst_rt(domainId)%olddate(9:10)//'_'//&
-                    nlst_rt(domainId)%olddate(12:13)//':'//&
-                    nlst_rt(domainId)%olddate(15:16)//':'//&
-                    nlst_rt(domainId)%olddate(18:19))
+                    nlst_rt(domainId)%olddate(12:13)//&
+                    &':00:00')
    initTime = trim(nlst_rt(domainId)%startdate(1:4)//'-'//&
                   nlst_rt(domainId)%startdate(6:7)//'-'//&
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
-                  nlst_rt(domainId)%startdate(12:13)//':'//&
-                  nlst_rt(domainId)%startdate(15:16)//':'//&
-                  nlst_rt(domainId)%startdate(18:19))
+                  nlst_rt(domainId)%startdate(12:13)//&
+                  &':00:00')
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
@@ -1815,7 +1832,7 @@ subroutine output_rt_NWM(domainId,iGrid)
 
    if(myId .eq. 0) then
       ! Create output NetCDF file for writing. 
-      iret = nf90_create(trim(output_flnm),cmode=nf90_hdf5,ncid = ftn)
+      iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create RT_DOMAIN NetCDF file.')
 
       ! Write global attributes
@@ -1827,8 +1844,12 @@ subroutine output_rt_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place model total valid times attribute into RT_DOMAIN file.')
       iret = nf90_put_att(ftn,NF90_GLOBAL,'Conventions',trim(fileMeta%conventions))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place CF conventions attribute into RT_DOMAIN file.')
-      iret = nf90_put_att(ftn,NF90_GLOBAL,"model_version",trim(fileMeta%outVersion))
-      call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_version attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+#ifdef NCEP_WCOSS
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
+#endif
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_output_type",trim(fileMeta%modelOutputType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_output_type attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_configuration",modelConfigType)
@@ -1847,8 +1868,12 @@ subroutine output_rt_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to define y dimension')
       iret = nf90_def_dim(ftn,'reference_time',1,dimId(4))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to define reference_time dimension') 
-      iret = nf90_def_dim(ftn,'soil_layers_stag',fileMeta%numSoilLayers,dimId(5))
-      call nwmCheck(diagFlag,iret,'ERROR: Unable to define soil_layers_stag dimension')
+      ! Only create soil layers stag dimension if we are outputting to the soil moisture grid. 
+      ! Otherwise this creates unused dimensions. 
+      if (fileMeta%outFlag(5) .eq. 1) then
+         iret = nf90_def_dim(ftn,'soil_layers_stag',fileMeta%numSoilLayers,dimId(5))
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define soil_layers_stag dimension')
+      endif
 
       ! Create and populate reference_time and time variables.
       iret = nf90_def_var(ftn,"time",nf90_int,dimId(1),timeId)
@@ -1946,8 +1971,8 @@ subroutine output_rt_NWM(domainId,iGrid)
             ! Extract valid range into a 1D array for placement.
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
-            varRangeReal(1) = fileMeta%validMinReal(iTmp)
-            varRangeReal(2) = fileMeta%validMaxReal(iTmp)
+            varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
+            varRangeReal(2) = real(fileMeta%validMaxDbl(iTmp))
 
             ! Establish a compression level for the variables. For now we are using a
             ! compression level of 2. In addition, we are choosing to turn the shuffle
@@ -2102,21 +2127,21 @@ subroutine output_rt_NWM(domainId,iGrid)
                   if(iTmp2 .eq. 1) then
                      varRealTmp = RT_DOMAIN(domainId)%ZWATTABLRT(iTmp,jTmp)
                   else if(iTmp2 .eq. 2) then
-                     varRealTmp = RT_DOMAIN(domainId)%SFCHEADSUBRT(iTmp,jTmp)
+                     varRealTmp = RT_DOMAIN(domainId)%overland%control%surface_water_head_routing(iTmp,jTmp)
                   else if(iTmp2 .eq. 3) then
                      varRealTmp = RT_DOMAIN(domainId)%QSTRMVOLRT_ACC(iTmp,jTmp)
                   else if(iTmp2 .eq. 4) then
-                     varRealTmp = RT_DOMAIN(domainId)%QBDRYRT(iTmp,jTmp)
+                     varRealTmp = RT_DOMAIN(domainId)%overland%control%boundary_flux(iTmp,jTmp)
                   else if(iTmp2 .eq. 5) then
                      varRealTmp = RT_DOMAIN(domainId)%SMCRT(iTmp,jTmp,zTmp)
                   endif
 
                   ! Run a quick gross check on values to ensure they aren't outside our
                   ! defined limits.
-                  !if(varRealTmp .lt. fileMeta%validMinReal(iTmp2)) then
+                  !if(varRealTmp .lt. fileMeta%validMinDbl(iTmp2)) then
                   !   varRealTmp = fileMeta%fillReal(iTmp2)
                   !endif
-                  !if(varRealTmp .gt. fileMeta%validMaxReal(iTmp2)) then
+                  !if(varRealTmp .gt. fileMeta%validMaxDbl(iTmp2)) then
                   !   varRealTmp = fileMeta%fillReal(iTmp2)
                   !endif
                   if(varRealTmp .ne. varRealTmp) then
@@ -2440,15 +2465,13 @@ subroutine output_lakes_NWM(domainId,iGrid)
    validTime = trim(nlst_rt(domainId)%olddate(1:4)//'-'//&
                     nlst_rt(domainId)%olddate(6:7)//'-'//&
                     nlst_rt(domainId)%olddate(9:10)//'_'//&
-                    nlst_rt(domainId)%olddate(12:13)//':'//&
-                    nlst_rt(domainId)%olddate(15:16)//':'//&
-                    nlst_rt(domainId)%olddate(18:19))
+                    nlst_rt(domainId)%olddate(12:13)//&
+                    &':00:00')
    initTime = trim(nlst_rt(domainId)%startdate(1:4)//'-'//&
                   nlst_rt(domainId)%startdate(6:7)//'-'//&
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
-                  nlst_rt(domainId)%startdate(12:13)//':'//&
-                  nlst_rt(domainId)%startdate(15:16)//':'//&
-                  nlst_rt(domainId)%startdate(18:19))
+                  nlst_rt(domainId)%startdate(12:13)//&
+                  &':00:00')
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
@@ -2515,7 +2538,7 @@ subroutine output_lakes_NWM(domainId,iGrid)
       ! Mask out missing values
       where ( varOutReal == fileMeta%modelNdv ) varOutReal = -9999.0
 
-      iret = nf90_create(trim(output_flnm),cmode=nf90_hdf5,ncid = ftn)
+      iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create LAKEOUT NetCDF file.')
 
       ! Write global attributes.
@@ -2535,8 +2558,12 @@ subroutine output_lakes_NWM(domainId,iGrid)
       !call nwmCheck(diagFlag,iret,'ERROR: Unable to create ESRI attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"Conventions",trim(fileMeta%conventions))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create conventions attribute')
-      iret = nf90_put_att(ftn,NF90_GLOBAL,"model_version",trim(fileMeta%outVersion))
-      call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_version attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+#ifdef NCEP_WCOSS
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
+#endif
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_output_type",trim(fileMeta%modelOutputType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_output_type attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_configuration",modelConfigType)
@@ -2675,8 +2702,8 @@ subroutine output_lakes_NWM(domainId,iGrid)
             ! Extract valid range into a 1D array for placement. 
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
-            varRangeReal(1) = fileMeta%validMinReal(iTmp)
-            varRangeReal(2) = fileMeta%validMaxReal(iTmp)
+            varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
+            varRangeReal(2) = real(fileMeta%validMaxDbl(iTmp))
 
             ! Establish a compression level for the variables. For now we are using a
             ! compression level of 2. In addition, we are choosing to turn the shuffle
@@ -2998,15 +3025,13 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
    validTime = trim(nlst_rt(domainId)%olddate(1:4)//'-'//&
                     nlst_rt(domainId)%olddate(6:7)//'-'//&
                     nlst_rt(domainId)%olddate(9:10)//'_'//&
-                    nlst_rt(domainId)%olddate(12:13)//':'//&
-                    nlst_rt(domainId)%olddate(15:16)//':'//&
-                    nlst_rt(domainId)%olddate(18:19))
+                    nlst_rt(domainId)%olddate(12:13)//&
+                    &':00:00')
    initTime = trim(nlst_rt(domainId)%startdate(1:4)//'-'//&
                   nlst_rt(domainId)%startdate(6:7)//'-'//&
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
-                  nlst_rt(domainId)%startdate(12:13)//':'//&
-                  nlst_rt(domainId)%startdate(15:16)//':'//&
-                  nlst_rt(domainId)%startdate(18:19))
+                  nlst_rt(domainId)%startdate(12:13)//&
+                  &':00:00')
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
@@ -3030,7 +3055,7 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
 
    if(myId .eq. 0) then
       ! Create output NetCDF file for writing. 
-      iret = nf90_create(trim(output_flnm),cmode=nf90_hdf5,ncid = ftn)
+      iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create RT_DOMAIN NetCDF file.')
   
       ! Write global attributes
@@ -3042,8 +3067,12 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place model total valid times attribute into RT_DOMAIN file.')
       iret = nf90_put_att(ftn,NF90_GLOBAL,'Conventions',trim(fileMeta%conventions))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place CF conventions attribute into RT_DOMAIN file.')
-      iret = nf90_put_att(ftn,NF90_GLOBAL,"model_version",trim(fileMeta%outVersion))
-      call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_version attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+#ifdef NCEP_WCOSS
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
+#endif
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_output_type",trim(fileMeta%modelOutputType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_output_type attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_configuration",modelConfigType)
@@ -3174,8 +3203,8 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
             ! Extract valid range into a 1D array for placement.
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
-            varRangeReal(1) = fileMeta%validMinReal(iTmp)
-            varRangeReal(2) = fileMeta%validMaxReal(iTmp)
+            varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
+            varRangeReal(2) = real(fileMeta%validMaxDbl(iTmp))
 
             ! Establish a compression level for the variables. For now we are
             ! using a
@@ -3453,15 +3482,13 @@ subroutine output_lsmOut_NWM(domainId)
    validTime = trim(nlst_rt(1)%olddate(1:4)//'-'//&
                     nlst_rt(1)%olddate(6:7)//'-'//&
                     nlst_rt(1)%olddate(9:10)//'_'//&
-                    nlst_rt(1)%olddate(12:13)//':'//&
-                    nlst_rt(1)%olddate(15:16)//':'//&
-                    nlst_rt(1)%olddate(18:19))
+                    nlst_rt(1)%olddate(12:13)//&
+                    &':00:00')
    initTime = trim(nlst_rt(1)%startdate(1:4)//'-'//&
                   nlst_rt(1)%startdate(6:7)//'-'//&
                   nlst_rt(1)%startdate(9:10)//'_'//&
-                  nlst_rt(1)%startdate(12:13)//':'//&
-                  nlst_rt(1)%startdate(15:16)//':'//&
-                  nlst_rt(1)%startdate(18:19))
+                  nlst_rt(1)%startdate(12:13)//&
+                  &':00:00')
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
@@ -3495,7 +3522,7 @@ subroutine output_lsmOut_NWM(domainId)
             nlst_rt(domainId)%olddate(12:13)//nlst_rt(domainId)%olddate(15:16)//  &
             nlst_rt(domainId)%hgrid
   
-      iret = nf90_create(trim(output_flnm),cmode=nf90_hdf5,ncid = ftn)
+      iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create LSMOUT NetCDF file.')
 
       ! Write global attributes
@@ -3509,8 +3536,12 @@ subroutine output_lsmOut_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place model total valid time attribute into LDASOUT file.')
       iret = nf90_put_att(ftn,NF90_GLOBAL,'Conventions',trim(fileMeta%conventions))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place CF conventions attribute into LDASOUT file.')
-      iret = nf90_put_att(ftn,NF90_GLOBAL,"model_version",trim(fileMeta%outVersion))
-      call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_version attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+#ifdef NCEP_WCOSS
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
+#endif
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_output_type",trim(fileMeta%modelOutputType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_output_type attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_configuration",modelConfigType)
@@ -3612,8 +3643,8 @@ subroutine output_lsmOut_NWM(domainId)
             call nwmCheck(diagFlag,iret,"ERROR: Unable to create variable: "//trim(fileMeta%varNames(iTmp)))
 
             ! Extract valid range into a 1D array for placement.
-            varRange(1) = fileMeta%validMinReal(iTmp)
-            varRange(2) = fileMeta%validMaxReal(iTmp)
+            varRange(1) = fileMeta%validMinDbl(iTmp)
+            varRange(2) = fileMeta%validMaxDbl(iTmp)
 
             ! Establish a compression level for the variables. For now we are using a
             ! compression level of 2. In addition, we are choosing to turn the shuffle
@@ -3767,7 +3798,7 @@ subroutine output_lsmOut_NWM(domainId)
                else if(iTmp .eq. 13) then
                   varRealTmp = rt_domain(domainId)%INFXSRT(iTmp2,jTmp2)
                else if(iTmp .eq. 14) then
-                  varRealTmp = rt_domain(domainId)%SFCHEADRT(iTmp2,jTmp2)
+                  varRealTmp = rt_domain(domainId)%overland%control%surface_water_head_lsm(iTmp2,jTmp2) ! updated to use new location of sfcheadrt
                endif
 
                ! For now, we are foregoing converting these variables to integer
@@ -4246,15 +4277,13 @@ subroutine output_chanObs_NWM(domainId)
    validTime = trim(nlst_rt(domainId)%olddate(1:4)//'-'//&
                     nlst_rt(domainId)%olddate(6:7)//'-'//&
                     nlst_rt(domainId)%olddate(9:10)//'_'//&
-                    nlst_rt(domainId)%olddate(12:13)//':'//&
-                    nlst_rt(domainId)%olddate(15:16)//':'//&
-                    nlst_rt(domainId)%olddate(18:19))
+                    nlst_rt(domainId)%olddate(12:13)//&
+                    &':00:00')
    initTime = trim(nlst_rt(domainId)%startdate(1:4)//'-'//&
                   nlst_rt(domainId)%startdate(6:7)//'-'//&
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
-                  nlst_rt(domainId)%startdate(12:13)//':'//&
-                  nlst_rt(domainId)%startdate(15:16)//':'//&
-                  nlst_rt(domainId)%startdate(18:19))
+                  nlst_rt(domainId)%startdate(12:13)//&
+                  &':00:00') 
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
@@ -4456,7 +4485,7 @@ subroutine output_chanObs_NWM(domainId)
      modelConfigType = GetModelConfigType(nlst_rt(1)%io_config_outputs)
 
       ! Create NetCDF for output.
-      iret = nf90_create(trim(output_flnm),cmode=nf90_hdf5,ncid = ftn)
+      iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create CHANOBS NetCDF file.')
       
       ! Write global attributes.
@@ -4480,8 +4509,12 @@ subroutine output_chanObs_NWM(domainId)
       !call nwmCheck(diagFlag,iret,'ERROR: Unable to create ESRI attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"Conventions",trim(fileMeta%conventions))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create conventions attribute')
-      iret = nf90_put_att(ftn,NF90_GLOBAL,"model_version",trim(fileMeta%outVersion))
-      call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_version attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+#ifdef NCEP_WCOSS
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
+#endif
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_output_type",trim(fileMeta%modelOutputType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_output_type attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_configuration",modelConfigType)
@@ -4654,8 +4687,8 @@ subroutine output_chanObs_NWM(domainId)
             ! Extract valid range into a 1D array for placement. 
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
-            varRangeReal(1) = fileMeta%validMinReal(iTmp)
-            varRangeReal(2) = fileMeta%validMaxReal(iTmp)
+            varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
+            varRangeReal(2) = real(fileMeta%validMaxDbl(iTmp))
 
             ! Establish a compression level for the variables. For now we are
             ! using a
@@ -5032,15 +5065,13 @@ subroutine output_gw_NWM(domainId,iGrid)
    validTime = trim(nlst_rt(domainId)%olddate(1:4)//'-'//&
                     nlst_rt(domainId)%olddate(6:7)//'-'//&
                     nlst_rt(domainId)%olddate(9:10)//'_'//&
-                    nlst_rt(domainId)%olddate(12:13)//':'//&
-                    nlst_rt(domainId)%olddate(15:16)//':'//&
-                    nlst_rt(domainId)%olddate(18:19))
+                    nlst_rt(domainId)%olddate(12:13)//&
+                    &':00:00')
    initTime = trim(nlst_rt(domainId)%startdate(1:4)//'-'//&
                   nlst_rt(domainId)%startdate(6:7)//'-'//&
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
-                  nlst_rt(domainId)%startdate(12:13)//':'//&
-                  nlst_rt(domainId)%startdate(15:16)//':'//&
-                  nlst_rt(domainId)%startdate(18:19))
+                  nlst_rt(domainId)%startdate(12:13)//&
+                  &':00:00')
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
@@ -5072,7 +5103,7 @@ subroutine output_gw_NWM(domainId,iGrid)
       ! Mask out missing values
       where ( varOutReal == fileMeta%modelNdv ) varOutReal = -9999.0
 
-      iret = nf90_create(trim(output_flnm),cmode=nf90_hdf5,ncid = ftn)
+      iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create GWOUT NetCDF file.')
 
       ! Write global attributes.
@@ -5092,8 +5123,12 @@ subroutine output_gw_NWM(domainId,iGrid)
       !call nwmCheck(diagFlag,iret,'ERROR: Unable to create ESRI attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"Conventions",trim(fileMeta%conventions))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create conventions attribute')
-      iret = nf90_put_att(ftn,NF90_GLOBAL,"model_version",trim(fileMeta%outVersion))
-      call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_version attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+#ifdef NCEP_WCOSS
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
+#endif
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_output_type",trim(fileMeta%modelOutputType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create model_output_type attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"model_configuration",modelConfigType)
@@ -5171,8 +5206,8 @@ subroutine output_gw_NWM(domainId,iGrid)
             ! Extract valid range into a 1D array for placement. 
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
-            varRangeReal(1) = fileMeta%validMinReal(iTmp)
-            varRangeReal(2) = fileMeta%validMaxReal(iTmp)
+            varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
+            varRangeReal(2) = real(fileMeta%validMaxDbl(iTmp))
 
             ! Establish a compression level for the variables. For now we are using a
             ! compression level of 2. In addition, we are choosing to turn the shuffle

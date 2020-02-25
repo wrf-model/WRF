@@ -66,7 +66,6 @@ CONTAINS
      REAL, PARAMETER :: WC_MIN = 1E-5
      REAL, PARAMETER :: RE_MIN = 0.0
      REAL, PARAMETER :: MISSING = -999.0
-     LOGICAL, PARAMETER :: DEBUG = .false.
      INTEGER, PARAMETER :: TAU_ICE_METHOD = 1
      INTEGER, PARAMETER :: I_TO_PLOT = 299, J_TO_PLOT = 84
 
@@ -79,8 +78,6 @@ CONTAINS
          jte = j_end(ij)
          DO j = jts, jte
            DO i = its, ite
-             if (DEBUG) print *, '-----------------------------------------------'
-             if (DEBUG) print *, 'i, j = ', i, j
 
              !!! SOLAR ZENITH ANGLE
              sza(i, j) = DEGRAD * MAX( ACOS( coszen(i, j) ), 0.0 )
@@ -97,11 +94,9 @@ CONTAINS
 
              !!! WATER VAPOR
              if (f_qv) then
-               if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, ' '
                  ! Calc water vapor path
                pmw = ONE_OVER_G * integrate_1var (mut(i, j), dnw, qv(i, :, j), kms, kme, kts, kte)
                wvp2d(i, j) = pmw
-               if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'PMW = ', pmw
              end if
 
              !!! LIQUID WATER
@@ -111,7 +106,6 @@ CONTAINS
                q_aux = integrate_1var (mut(i, j), dnw, qc(i, :, j), kms, kme, kts, kte)
                lwp = ONE_OVER_G * q_aux
                lwp2d(i, j) = SIGN( MAX( lwp, 0.0 ), 1.0 )
-               if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'LWP = ', lwp
 
                if (has_reqc == 1) then
                    ! Calc effective radius water
@@ -122,7 +116,6 @@ CONTAINS
                  else
                    re_cloud_path(i, j) = 0.0
                  end if
-                 if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 're cloud = ', re_cloud_path(i, j)
 
                    ! Calc optical thickness water
                  if (re_cloud_path(i, j) > RE_MIN) then
@@ -130,7 +123,6 @@ CONTAINS
                  else
                    tau_qc(i, j) = 0.0
                  end if
-                 if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'Tau water = ', tau_qc(i, j)
                else
                  re_cloud_path(i, j) = MISSING
                  tau_qc(i, j) = MISSING
@@ -142,7 +134,6 @@ CONTAINS
                  q_aux = integrate_1var (mut(i, j), dnw, qc_tot(i, :, j), kms, kme, kts, kte)
                  lwp = ONE_OVER_G * q_aux
                  lwp2d_tot(i, j) = SIGN( MAX( lwp, 0.0 ), 1.0 )
-                 if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'LWP = ', lwp
 
                  if (has_reqc == 1) then
                      ! Calc effective radius water
@@ -153,7 +144,6 @@ CONTAINS
                    else
                      re_cloud_path_tot(i, j) = 0.0
                    end if
-                   if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 're cloud = ', re_cloud_path_tot(i, j)
 
                      ! Calc optical thickness water
                    if (re_cloud_path_tot(i, j) > RE_MIN) then
@@ -161,7 +151,6 @@ CONTAINS
                    else
                      tau_qc_tot(i, j) = 0.0
                    end if
-                   if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'Tau water = ', tau_qc_tot(i, j)
                  else
                    re_cloud_path_tot(i, j) = MISSING
                    tau_qc_tot(i, j) = MISSING
@@ -180,7 +169,6 @@ CONTAINS
                q_aux = integrate_1var (mut(i, j), dnw, qi(i, :, j), kms, kme, kts, kte)
                iwp = ONE_OVER_G * q_aux
                iwp2d(i, j) = SIGN( MAX( iwp, 0.0 ), 1.0 )
-               if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'IWP = ', iwp
 
                if (has_reqi == 1) then
                    ! Calc effective radius ice
@@ -191,7 +179,6 @@ CONTAINS
                  else
                    re_ice_path(i, j) = 0.0
                  end if
-                 if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 're ice = ', re_ice_path(i, j)
 
                    ! Calc optical thickness ice
                  if (re_ice_path(i, j) > RE_MIN) then
@@ -204,7 +191,6 @@ CONTAINS
                  else
                    tau_qi(i, j) = 0.0
                  end if
-                 if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'Tau ice = ', tau_qi(i, j)
                else
                  re_ice_path(i, j) = MISSING
                  tau_qi(i, j) = MISSING
@@ -216,7 +202,6 @@ CONTAINS
                  q_aux = integrate_1var (mut(i, j), dnw, qi_tot(i, :, j), kms, kme, kts, kte)
                  iwp = ONE_OVER_G * q_aux
                  iwp2d_tot(i, j) = SIGN( MAX( iwp, 0.0 ), 1.0 )
-                 if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'IWP = ', iwp
 
                  if (has_reqi == 1) then
                      ! Calc effective radius ice
@@ -227,7 +212,6 @@ CONTAINS
                    else
                      re_ice_path_tot(i, j) = 0.0
                    end if
-                   if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 're ice = ', re_ice_path_tot(i, j)
 
                      ! Calc optical thickness ice
                    if (re_ice_path_tot(i, j) > RE_MIN) then
@@ -240,7 +224,6 @@ CONTAINS
                    else
                      tau_qi_tot(i, j) = 0.0
                    end if
-                   if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'Tau ice = ', tau_qi_tot(i, j)
                  else
                    re_ice_path_tot(i, j) = MISSING
                    tau_qi_tot(i, j) = MISSING
@@ -259,7 +242,6 @@ CONTAINS
                q_aux = integrate_1var (mut(i, j), dnw, qs(i, :, j), kms, kme, kts, kte)
                swp = ONE_OVER_G * q_aux
                swp2d(i, j) = SIGN( MAX( swp, 0.0 ), 1.0 )
-               if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'SWP = ', swp
 
                if (has_reqs == 1) then
                  if (q_aux > Q_MIN) then
@@ -269,7 +251,6 @@ CONTAINS
                  else
                    re_snow_path(i, j) = 0.0
                  end if
-                 if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 're snow = ', re_snow_path(i, j)
 
                    ! Optical thickness snow
                  if (re_snow_path(i, j) > RE_MIN) then
@@ -282,7 +263,6 @@ CONTAINS
                  else
                    tau_qs(i, j) = 0.0
                  end if
-                 if (DEBUG .and. i == I_TO_PLOT .and. j == J_TO_PLOT) print *, 'Tau snow = ', tau_qs(i, j)
                else
                  re_snow_path(i, j) = MISSING
                  tau_qs(i, j) = MISSING

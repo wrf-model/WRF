@@ -3101,7 +3101,7 @@ CONTAINS
 	 ENDIF 
 
   if(iopt_run.eq.5)then
-     if (mod(itimestep,STEPWTD).eq.0)then
+     if (mod(itimestep,STEPWTD).eq.0)then ! STEPWTD always and only defined for iopt_run == 5
            CALL wrf_debug( 100, 'calling WTABLE' )
 
 !gmm update wtable from lateral flow and shed water to rivers

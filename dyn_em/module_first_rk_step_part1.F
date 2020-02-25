@@ -147,19 +147,26 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
     INTEGER  do_capsupress   ! =1 do CAP supress, other = don't
 #endif
+
   CALL get_ijk_from_subgrid (  grid ,                   &
                             sids, side, sjds, sjde, skds, skde,    &
                             sims, sime, sjms, sjme, skms, skme,    &
                             sips, sipe, sjps, sjpe, skps, skpe    )
+
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).
+
    l_flux=.FALSE.
    if (present(f_flux)) l_flux=f_flux
+
     rk_step = 1
+
 BENCH_START(init_zero_tend_tim)
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
+
        DO ij = 1 , grid%num_tiles
+
          CALL wrf_debug ( 200 , ' call init_zero_tendency' )
          CALL init_zero_tendency ( ru_tendf, rv_tendf, rw_tendf,     &
                                    ph_tendf, t_tendf, tke_tend,      &
@@ -173,15 +180,19 @@ BENCH_START(init_zero_tend_tim)
                                    grid%i_start(ij), grid%i_end(ij), &
                                    grid%j_start(ij), grid%j_end(ij), &
                                    k_start, k_end                   )
+
        END DO
        !$OMP END PARALLEL DO
 BENCH_END(init_zero_tend_tim)
+
 #ifdef DM_PARALLEL
 #     include "HALO_EM_PHYS_A.inc"
 #endif
+
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles
+
         CALL wrf_debug ( 200 , ' call phy_prep' )
         CALL phy_prep ( config_flags,                                    &
                         grid%mut, grid%muu, grid%muv,                    &
@@ -200,7 +211,9 @@ BENCH_END(init_zero_tend_tim)
                         k_start, k_end                                   )
       ENDDO
       !$OMP END PARALLEL DO
+
 BENCH_END(phy_prep_tim)
+
 ! radiation
      CALL domain_clock_get( grid, current_time=currentTime, &
                             current_timestr=mesg )
@@ -208,6 +221,7 @@ BENCH_END(phy_prep_tim)
          IF( rc/= WRFU_SUCCESS)THEN
          CALL wrf_error_fatal('WRFU_TimeGet failed')
          ENDIF
+
 ! this driver is only needed to handle non-local shadowing effects
       CALL pre_radiation_driver ( grid, config_flags                           &
      &        ,itimestep=grid%itimestep, ra_call_offset=grid%ra_call_offset    &
@@ -232,8 +246,10 @@ BENCH_END(phy_prep_tim)
      &        ,j_start=grid%j_start,j_end=min(grid%j_end, jde-1)               &
      &        ,kts=k_start, kte=min(k_end,kde-1)                               &
      &        ,num_tiles=grid%num_tiles                                        )
+
       CALL wrf_debug ( 200 , ' call radiation_driver' )
 BENCH_START(rad_driver_tim)
+
       CALL radiation_driver(                                                  &
      &         p_top=grid%p_top & !DJW 140312 added p_top for vertical nesting
      &        ,ACFRCV=grid%acfrcv      ,ACFRST=grid%acfrst      ,ALBEDO=grid%albedo  &
@@ -425,10 +441,14 @@ BENCH_START(rad_driver_tim)
      &         ,EFCG=grid%EFCG,EFCS=grid%EFCS,EFIG=grid%EFIG &
      &         ,EFIS=grid%EFIS,EFSG=grid%EFSG,aercu_opt=config_flags%aercu_opt & 
      &         ,EFSS=grid%EFSS,QS_CU=grid%QS_CU)
+
 BENCH_END(rad_driver_tim)
+
 !********* Surface driver
 ! surface
+
 BENCH_START(surf_driver_tim)
+
 !gmm halo of wtd and riverflow for leafhydro
 #ifdef DM_PARALLEL
   IF ( config_flags%sf_surface_physics.eq.NOAHMPSCHEME ) THEN
@@ -437,6 +457,7 @@ BENCH_START(surf_driver_tim)
        ENDIF
   ENDIF
 #endif
+
 !-----------------------------------------------------------------
 ! urban related variable are added to arguments of surface_driver
 !-----------------------------------------------------------------
@@ -446,15 +467,19 @@ BENCH_START(surf_driver_tim)
       CALL nl_get_iswater(grid%id, iswater)
       CALL nl_get_isurban(grid%id, isurban)
       call nl_get_mminlu(grid%id, mminlu)
+
 #ifdef DM_PARALLEL
 #     include "HALO_PWP.inc"
 #endif
+
       CALL wrf_debug ( 200 , ' call surface_driver' )
+
       if( grid%num_nests .lt. 1 )then
           HYDRO_dt = 0
       else
           HYDRO_dt = -1
       endif
+
       CALL surface_driver(                                                &
      &        HYDRO_dt=HYDRO_dt,  sfcheadrt=grid%sfcheadrt,               &
      &        INFXSRT=grid%INFXSRT,  soldrain=grid%soldrain,              &
@@ -872,12 +897,15 @@ BENCH_START(surf_driver_tim)
      &        ,field_sf=grid%field_sf                                                & !SPP
      &        ,spp_pbl=config_flags%spp_pbl,pattern_spp_pbl=grid%pattern_spp_pbl     & !SPP
      &                                                           )
+
 #ifdef WRF_HYDRO
         if(HYDRO_dt .gt. 1 ) call wrf_drv_HYDRO(HYDRO_dt, grid,  &
      &     grid%i_start(1),min(grid%i_end(1), ide-1),      &
      &     grid%j_start(1),min(grid%j_end(1), jde-1) )
 #endif
+
 BENCH_END(surf_driver_tim)
+
 !*********
 ! pbl
 #if ( WRFPLUS == 1 )
@@ -887,6 +915,7 @@ BENCH_END(surf_driver_tim)
       ENDIF
 #endif
 #endif
+
       CALL wrf_debug ( 200 , ' call pbl_driver' )
 BENCH_START(pbl_driver_tim)
       CALL pbl_driver(                                                              &
@@ -1052,6 +1081,7 @@ BENCH_START(pbl_driver_tim)
 #endif
      &        ,QNORM=grid%QNORM, fasdas=config_flags%fasdas              & !fasdas
      &        )
+
 #if (WRF_CHEM == 1)
 #ifdef DM_PARALLEL
      IF ( num_chem >= PARAM_FIRST_SCALAR .AND. (config_flags%bl_pbl_physics == &
@@ -1068,9 +1098,12 @@ BENCH_START(pbl_driver_tim)
      ENDIF
 #endif
 #endif
+
 BENCH_END(pbl_driver_tim)
+
 !*****
 ! fire 
+
 ! Jan Mandel's call to SFIRE
 
       IF ((grid%sr_x > 0 .OR. grid%sr_y > 0) .AND. config_flags%ifire == 2) THEN
@@ -1254,6 +1287,7 @@ BENCH_START(cu_driver_tim)
 #if (WRF_CHEM == 1)
      &             ,CHEM_OPT=config_flags%chem_opt                             & !CuP, rce 22-aug-2011 !BSINGH - For WRFCuP scheme
 #endif
+
 #if ( WRF_DFI_RADAR == 1 )
      &             ,DO_CAPSUPPRESS=do_capsupress                          &
 #endif
@@ -1289,8 +1323,10 @@ BENCH_END(cu_driver_tim)
       ENDDO
       !$OMP END PARALLEL DO
      endif
+
 ! shallow cumulus parameterization
       CALL wrf_debug ( 200 , ' call shallow_cumulus_driver' )
+
 BENCH_START(shcu_driver_tim)
       CALL shallowcu_driver(                                              &
      &              IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &

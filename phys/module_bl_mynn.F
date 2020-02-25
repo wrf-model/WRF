@@ -107,6 +107,16 @@
 !            Added namelist option bl_mynn_output (0 or 1) to suppress or activate the
 !                allocation and output of 10 3D variables. Most people will want this
 !                set to 0 (default) to save memory and disk space.
+!            Added new array qi_bl as opposed to using qc_bl for both SGS qc and qi. This
+!                gives us more control of the magnitudes which can be confounded by using
+!                a single array. As a results, many subroutines needed to be modified,
+!                especially mym_condensation.
+!            Added the blending of the stratus component of the SGS clouds to the mass-flux
+!                clouds to account for situations where stratus and cumulus may exist in the
+!                grid cell.
+!            Misc small-impact bugfixes:
+!                1) dz was incorrectly indexed in mym_condensation
+!                2) configurations with icloud_bl = 0 were using uninitialized arrays
 !
 !            Many of these changes are now documented in Olson et al. (2019,
 !                NOAA Technical Memorandum)
@@ -2310,11 +2320,12 @@ CONTAINS
 !-------------------------------------------------------------------
   SUBROUTINE  mym_condensation (kts,kte,  &
     &            dx, dz, zw,              &
-    &            thl, qw,                 &
+    &            thl, qw, qv, qc, qi,     &
     &            p,exner,                 &
     &            tsq, qsq, cov,           &
     &            Sh, el, bl_mynn_cloudpdf,&
-    &            qc_bl1D, cldfra_bl1D,    &
+    &            qc_bl1D, qi_bl1D,        &
+    &            cldfra_bl1D,             &
     &            PBLH1,HFX1,              &
     &            Vt, Vq, th, sgm, rmo,    &
     &            spp_pbl,rstoch_col       )
@@ -2331,18 +2342,19 @@ CONTAINS
     REAL, INTENT(IN)      :: dx,PBLH1,HFX1,rmo
     REAL, DIMENSION(kts:kte), INTENT(IN) :: dz
     REAL, DIMENSION(kts:kte+1), INTENT(IN) :: zw
-    REAL, DIMENSION(kts:kte), INTENT(IN) :: p,exner, thl, qw, &
+    REAL, DIMENSION(kts:kte), INTENT(IN) :: p,exner,thl,qw,qv,qc,qi, &
          &tsq, qsq, cov, th
 
     REAL, DIMENSION(kts:kte), INTENT(INOUT) :: vt,vq,sgm
 
-    REAL, DIMENSION(kts:kte) :: qmq,alp,a,bet,b,ql,q1,cld,RH
-    REAL, DIMENSION(kts:kte), INTENT(OUT) :: qc_bl1D,cldfra_bl1D
+    REAL, DIMENSION(kts:kte) :: qmq,alp,a,bet,b,ql,q1,RH
+    REAL, DIMENSION(kts:kte), INTENT(OUT) :: qc_bl1D,qi_bl1D, &
+                                             cldfra_bl1D
     DOUBLE PRECISION :: t3sq, r3sq, c3sq
 
     REAL :: qsl,esat,qsat,tlk,qsat_tl,dqsl,cld0,q1k,eq1,qll,&
          &q2p,pt,rac,qt,t,xl,rsl,cpm,cdhdz,Fng,qww,alpha,beta,bb,&
-         &ls_min,ls,wt,cld_factor,fac_damp
+         &ls_min,ls,wt,cld_factor,fac_damp,liq_frac,ql_ice,ql_water
     INTEGER :: i,j,k
 
     REAL :: erf
@@ -2352,12 +2364,8 @@ CONTAINS
     REAL, DIMENSION(kts:kte), INTENT(IN) :: Sh,el
 
     !JOE: variables for BL clouds
-    REAL::zagl,cld9,damp,edown,RHcrit,RHmean,RHsum,RHnum,Hshcu,PBLH2,ql_limit
-    REAL, PARAMETER :: Hfac = 3.0     !cloud depth factor for HFX (m^3/W)
-    REAL, PARAMETER :: HFXmin = 50.0  !min W/m^2 for BL clouds
-    REAL            :: RH_00L, RH_00O, phi_dz, lfac
-    REAL, PARAMETER :: cdz = 2.0
-    REAL, PARAMETER :: mdz = 1.5
+    REAL::zagl,damp,PBLH2,ql_limit
+    REAL            :: lfac
 
     !JAYMES:  variables for tropopause-height estimation
     REAL            :: theta1, theta2, ht1, ht2
@@ -2412,14 +2420,10 @@ CONTAINS
            qsl=ep_2*esat/max(1.e-4,(p(k)-ep_3*esat))
            !dqw/dT: Clausius-Clapeyron
            dqsl = qsl*ep_2*ev/( rd*t**2 )
-           !RH (0 to 1.0)
-           RH(k)=MAX(MIN(1.0,qw(k)/MAX(1.E-8,qsl)),0.001)
 
            alp(k) = 1.0/( 1.0+dqsl*xlvcp )
            bet(k) = dqsl*exner(k)
 
-           !NOTE: negative bl_mynn_cloudpdf will zero-out the stratus subgrid clouds
-           !      at the end of this subroutine. 
            !Sommeria and Deardorff (1977) scheme, as implemented
            !in Nakanishi and Niino (2009), Appendix B
            t3sq = MAX( tsq(k), 0.0 )
@@ -2429,13 +2433,38 @@ CONTAINS
            r3sq = r3sq +bet(k)**2*t3sq -2.0*bet(k)*c3sq
            !DEFICIT/EXCESS WATER CONTENT
            qmq(k) = qw(k) -qsl
-           !ORIGINAL STANDARD DEVIATION: limit e-6 produces ~10% more BL clouds
-           !than e-10
+           !ORIGINAL STANDARD DEVIATION
            sgm(k) = SQRT( MAX( r3sq, 1.0d-10 ))
            !NORMALIZED DEPARTURE FROM SATURATION
            q1(k)   = qmq(k) / sgm(k)
            !CLOUD FRACTION. rr2 = 1/SQRT(2) = 0.707
-           cld(k) = 0.5*( 1.0+erf( q1(k)*rr2 ) )
+           cldfra_bl1D(k) = 0.5*( 1.0+erf( q1(k)*rr2 ) )
+
+           eq1  = rrp*EXP( -0.5*q1k*q1k )
+           qll  = MAX( cldfra_bl1D(k)*q1k + eq1, 0.0 )
+           !ESTIMATED LIQUID WATER CONTENT (UNNORMALIZED)
+           ql(k) = alp(k)*sgm(k)*qll
+           !LIMIT SPECIES TO TEMPERATURE RANGES
+           liq_frac = min(1.0, max(0.0,(t-240.0)/29.0))
+           qc_bl1D(k) = liq_frac*ql(k)
+           qi_bl1D(k) = (1.0 - liq_frac)*ql(k)
+
+           if(cldfra_bl1D(k)>0.01 .and. qc_bl1D(k)<1.E-6)qc_bl1D(k)=1.E-6
+           if(cldfra_bl1D(k)>0.01 .and. qi_bl1D(k)<1.E-8)qi_bl1D(k)=1.E-8
+
+           !Now estimate the buiyancy flux functions
+           q2p = xlvcp/exner(k)
+           pt = thl(k) +q2p*ql(k) ! potential temp
+
+           !qt is a THETA-V CONVERSION FOR TOTAL WATER (i.e., THETA-V = qt*THETA)
+           qt   = 1.0 +p608*qw(k) -(1.+p608)*(qc_bl1D(k)+qi_bl1D(k))*cldfra_bl1D(k)
+           rac  = alp(k)*( cldfra_bl1D(K)-qll*eq1 )*( q2p*qt-(1.+p608)*pt )
+
+           !BUOYANCY FACTORS: wherever vt and vq are used, there is a
+           !"+1" and "+tv0", respectively, so these are subtracted out here.
+           !vt is unitless and vq has units of K.
+           vt(k) =      qt-1.0 -rac*bet(k)
+           vq(k) = p608*pt-tv0 +rac
 
         END DO
 
@@ -2450,8 +2479,6 @@ CONTAINS
            qsl=ep_2*esat/max(1.e-4,(p(k)-ep_3*esat))
            !dqw/dT: Clausius-Clapeyron
            dqsl = qsl*ep_2*ev/( rd*t**2 )
-           !RH (0 to 1.0)
-           RH(k)=MAX(MIN(1.0,qw(k)/MAX(1.E-8,qsl)),0.001)
 
            alp(k) = 1.0/( 1.0+dqsl*xlvcp )
            bet(k) = dqsl*exner(k)
@@ -2459,7 +2486,7 @@ CONTAINS
            if (k .eq. kts) then 
              dzk = 0.5*dz(k)
            else
-             dzk = 0.5*( dz(k) + dz(k-1) )
+             dzk = dz(k)
            end if
            dth = 0.5*(thl(k+1)+thl(k)) - 0.5*(thl(k)+thl(MAX(k-1,kts)))
            dqw = 0.5*(qw(k+1) + qw(k)) - 0.5*(qw(k) + qw(MAX(k-1,kts)))
@@ -2468,12 +2495,44 @@ CONTAINS
                       (dqw/dzk - bet(k)*(dth/dzk ))**2 , 1.0e-10) )
            qmq(k) = qw(k) -qsl
            q1(k)   = qmq(k) / sgm(k)
-           cld(k) = 0.5*( 1.0+erf( q1(k)*rr2 ) )
+           cldfra_bl1D(K) = 0.5*( 1.0+erf( q1(k)*rr2 ) )
+
+           !now compute estimated lwc for PBL scheme's use 
+           !qll IS THE NORMALIZED LIQUID WATER CONTENT (Sommeria and
+           !Deardorff (1977, eq 29a). rrp = 1/(sqrt(2*pi)) = 0.3989
+           q1k  = q1(k)
+           eq1  = rrp*EXP( -0.5*q1k*q1k )
+           qll  = MAX( cldfra_bl1D(K)*q1k + eq1, 0.0 )
+           !ESTIMATED LIQUID WATER CONTENT (UNNORMALIZED)
+           ql (k) = alp(k)*sgm(k)*qll
+           liq_frac = min(1.0, max(0.0,(t-240.0)/29.0))
+           qc_bl1D(k) = liq_frac*ql(k)
+           qi_bl1D(k) = (1.0 - liq_frac)*ql(k)
+
+           if(cldfra_bl1D(k)>0.01 .and. qc_bl1D(k)<1.E-6)qc_bl1D(k)=1.E-6
+           if(cldfra_bl1D(k)>0.01 .and. qi_bl1D(k)<1.E-8)qi_bl1D(k)=1.E-8
+
+           !Now estimate the buiyancy flux functions
+           q2p = xlvcp/exner(k)
+           pt = thl(k) +q2p*ql(k) ! potential temp
+
+           !qt is a THETA-V CONVERSION FOR TOTAL WATER (i.e., THETA-V = qt*THETA)
+           qt   = 1.0 +p608*qw(k) -(1.+p608)*(qc_bl1D(k)+qi_bl1D(k))*cldfra_bl1D(k)
+           rac  = alp(k)*( cldfra_bl1D(K)-qll*eq1 )*( q2p*qt-(1.+p608)*pt )
+
+           !BUOYANCY FACTORS: wherever vt and vq are used, there is a
+           !"+1" and "+tv0", respectively, so these are subtracted out here.
+           !vt is unitless and vq has units of K.
+           vt(k) =      qt-1.0 -rac*bet(k)
+           vq(k) = p608*pt-tv0 +rac
+
         END DO
 
       CASE (2, -2)
-          !Diagnostic statistical scheme of Chaboureau and Bechtold (2002), JAS
-          !JAYMES- this added 27 Apr 2015
+        !Diagnostic statistical scheme of Chaboureau and Bechtold (2002), JAS
+        !JAYMES- this added 27 Apr 2015
+        PBLH2=MAX(10.,PBLH1)
+        zagl = 0.
         DO k = kts,kte-1
            t  = th(k)*exner(k)
            !SATURATED VAPOR PRESSURE
@@ -2490,42 +2549,31 @@ CONTAINS
            bet(k) = dqsl*exner(k)
 
            xl = xl_blend(t)                    ! obtain latent heat
-
            tlk = thl(k)*(p(k)/p1000mb)**rcp    ! recover liquid temp (tl) from thl
-
            qsat_tl = qsat_blend(tlk,p(k))      ! get saturation water vapor mixing ratio
                                                !   at tl and p
-
            rsl = xl*qsat_tl / (r_v*tlk**2)     ! slope of C-C curve at t = tl
                                                ! CB02, Eqn. 4
- 
            cpm = cp + qw(k)*cpv                ! CB02, sec. 2, para. 1
-     
            a(k) = 1./(1. + xl*rsl/cpm)         ! CB02 variable "a"
-
            !SPP
            qw_pert = qw(k) + qw(k)*0.5*rstoch_col(k)*real(spp_pbl)
-
            !qmq(k) = a(k) * (qw(k) - qsat_tl) ! saturation deficit/excess;
                                                !   the numerator of Q1
            qmq(k) = a(k) * (qw_pert - qsat_tl)
-
            b(k) = a(k)*rsl                     ! CB02 variable "b"
-
            dtl =    0.5*(thl(k+1)*(p(k+1)/p1000mb)**rcp + tlk) &
                & - 0.5*(tlk + thl(MAX(k-1,kts))*(p(MAX(k-1,kts))/p1000mb)**rcp)
-
            dqw = 0.5*(qw(k+1) + qw(k)) - 0.5*(qw(k) + qw(MAX(k-1,kts)))
 
            if (k .eq. kts) then
              dzk = 0.5*dz(k)
            else
-             dzk = 0.5*( dz(k) + dz(k-1) )
+             dzk = dz(k)
            end if
 
            cdhdz = dtl/dzk + (g/cpm)*(1.+qw(k))  ! expression below Eq. 9
                                                  ! in CB02
-
            zagl = zagl + dz(k)
            !Use analog to surface layer length scale to make the cloud mixing length scale
            !become less than z in stable conditions.
@@ -2539,7 +2587,6 @@ CONTAINS
                                         !   lfac(750 m) = 4.4
                                         !   lfac(3 km)  = 5.0
                                         !   lfac(13 km) = 6.0
-
            ls = MAX(MIN(lfac*el(k),600.),ls_min)  ! Bounded:  ls_min < ls < 600 m
                    ! Note: CB02 use 900 m as a constant free-atmosphere length scale. 
 
@@ -2555,118 +2602,76 @@ CONTAINS
                    ! based on tests
 
            q1(k) = qmq(k) / sgm(k)  ! Q1, the normalized saturation
-
-           cld(k) = MAX(0., MIN(1., 0.5+0.36*ATAN(1.55*q1(k)))) ! Eq. 7 in CB02
-
-         END DO
-
-    END SELECT
-
-    zagl = 0.
-    RHsum=0.
-    RHnum=0.
-    RHmean=0.1 !initialize with small value for small PBLH cases
-    damp =0
-    PBLH2=MAX(10.,PBLH1)
-
-    SELECT CASE(bl_mynn_cloudpdf)
-
-      CASE (-1 : 1) ! ORIGINAL MYNN PARTIAL-CONDENSATION SCHEME
-                    ! OR KUWANO ET AL.
-        DO k = kts,kte-1
-           t    = th(k)*exner(k)
-           q1k  = q1(k)
-           zagl = zagl + dz(k)
-           !q1=0.
-           !cld(k)=0.
-
-           !COMPUTE MEAN RH IN PBL (NOT PRESSURE WEIGHTED).
-           IF (zagl < PBLH2 .AND. PBLH2 > 400.) THEN
-              RHsum=RHsum+RH(k)
-              RHnum=RHnum+1.0
-              RHmean=RHsum/RHnum
-           ENDIF
-
-           RHcrit = 1. - 0.35*(1.0 - (MAX(250.- MAX(HFX1,HFXmin),0.0)/200.)**2)
-           if (HFX1 > HFXmin) then
-              cld9=MIN(MAX(0., (rh(k)-RHcrit)/(1.1-RHcrit)), 1.)**2
-           else
-              cld9=0.0
-           endif
-       
-           edown=PBLH2*.1
-           !Vary BL cloud depth (Hshcu) by mean RH in PBL and HFX 
-           !(somewhat following results from Zhang and Klein (2013, JAS))
-           Hshcu=200. + (RHmean+0.5)**1.5*MAX(HFX1,0.)*Hfac
-           if (zagl < PBLH2-edown) then
-              damp=MIN(1.0,exp(-ABS(((PBLH2-edown)-zagl)/edown)))
-           elseif(zagl >= PBLH2-edown .AND. zagl < PBLH2+Hshcu)then
-              damp=1.
-           elseif (zagl >= PBLH2+Hshcu)then
-              damp=MIN(1.0,exp(-ABS((zagl-(PBLH2+Hshcu))/500.)))
-           endif
-           cldfra_bl1D(k)=cld9*damp
-           !cldfra_bl1D(k)=cld(k) ! JAYMES: use this form to retain the Sommeria-Deardorff value
-       
-           !use alternate cloud fraction to estimate qc for use in BL clouds-radiation
-           eq1  = rrp*EXP( -0.5*q1k*q1k )
-           qll  = MAX( cldfra_bl1D(k)*q1k + eq1, 0.0 )
-           !ESTIMATED LIQUID WATER CONTENT (UNNORMALIZED)
-           ql (k) = alp(k)*sgm(k)*qll
-           if(cldfra_bl1D(k)>0.01 .and. ql(k)<1.E-6)ql(k)=1.E-6
-           qc_bl1D(k)=ql(k)*damp
-           !qc_bl1D(k)=ql(k) ! JAYMES: use this form to retain the Sommeria-Deardorff value
-       
-           !now recompute estimated lwc for PBL scheme's use
-           !qll IS THE NORMALIZED LIQUID WATER CONTENT (Sommeria and
-           !Deardorff (1977, eq 29a). rrp = 1/(sqrt(2*pi)) = 0.3989
-           eq1  = rrp*EXP( -0.5*q1k*q1k )
-           qll  = MAX( cld(k)*q1k + eq1, 0.0 )
-           !ESTIMATED LIQUID WATER CONTENT (UNNORMALIZED)
-           ql (k) = alp(k)*sgm(k)*qll
-       
-           q2p = xlvcp/exner(k)
-           pt = thl(k) +q2p*ql(k) ! potential temp
-       
-           !qt is a THETA-V CONVERSION FOR TOTAL WATER (i.e., THETA-V = qt*THETA)
-           qt   = 1.0 +p608*qw(k) -(1.+p608)*ql(k)
-           rac  = alp(k)*( cld(k)-qll*eq1 )*( q2p*qt-(1.+p608)*pt )
-       
-           !BUOYANCY FACTORS: wherever vt and vq are used, there is a
-           !"+1" and "+tv0", respectively, so these are subtracted out here.
-           !vt is unitless and vq has units of K.
-           vt(k) =      qt-1.0 -rac*bet(k)
-           vq(k) = p608*pt-tv0 +rac
+           cldfra_bl1D(K) = MAX(0., MIN(1., 0.5+0.36*ATAN(1.55*q1(k)))) ! Eq. 7 in CB02
 
         END DO
-      CASE ( 2, -2)
+
         ! JAYMES- this option added 8 May 2015
         ! The cloud water formulations are taken from CB02, Eq. 8.
         ! "fng" represents the non-Gaussian contribution to the liquid
         ! water flux; these formulations are from Cuijpers and Bechtold
         ! (1995), Eq. 7.  CB95 also draws from Bechtold et al. 1995,
         ! hereafter BCMT95
+        zagl = 0.
         DO k = kts,kte-1
            t    = th(k)*exner(k)
            q1k  = q1(k)
            zagl = zagl + dz(k)
-           IF (q1k < 0.) THEN                 
-              ql (k) = sgm(k)*EXP(1.2*q1k-1)
-           ELSE IF (q1k > 2.) THEN
-              ql (k) = sgm(k)*q1k
-           ELSE
-              ql (k) = sgm(k)*(EXP(-1.) + 0.66*q1k + 0.086*q1k**2)
+
+           !CLOUD WATER AND ICE
+           IF (q1k < 0.) THEN        !unstaurated
+              ql_water = sgm(k)*EXP(1.2*q1k-1)
+              ql_ice   = sgm(k)*EXP(0.7*q1k-4.3)
+           ELSE IF (q1k > 2.) THEN   !supersaturated
+              ql_water = sgm(k)*q1k
+              ql_ice = MIN(50.*qv(k),0.05)*sgm(k)*q1k
+           ELSE                      !slightly saturated (0 > q1 < 2)
+              ql_water = sgm(k)*(EXP(-1.) + 0.66*q1k + 0.086*q1k**2)
+              ql_ice = MIN(50.*qv(k),0.05)*sgm(k)*(EXP(-1.) + 0.66*q1k + 0.086*q1k**2)
            ENDIF
-  
+
+           !In saturated grid cells, use average of current estimate and prev time step
+           IF ( qc(k) > 1.e-7 ) ql_water = 0.5 * ( ql_water + qc(k) )
+           IF ( qi(k) > 1.e-9 ) ql_ice = 0.5 * ( ql_ice + qi(k) )
+
+           IF (cldfra_bl1D(K) < 0.005) THEN
+              ql_ice   = 0.0
+              ql_water = 0.0
+           ENDIF
+
+           !PHASE PARTITIONING:  Make some inferences about the relative amounts of subgrid cloud water vs. ice
+           !based on collocated explicit clouds.  Otherise, use a simple temperature-dependent partitioning.
+           IF ( qc(k) + qi(k) > 0.0 ) THEN ! explicit condensate exists, so attempt to retain its phase partitioning
+              IF ( qi(k) == 0.0 ) THEN       ! explicit contains no ice; assume subgrid liquid
+                liq_frac = 1.0  
+              ELSE IF ( qc(k) == 0.0 ) THEN  ! explicit contains no liquid; assume subgrid ice
+                liq_frac = 0.0
+              ELSE IF ( (qc(k) >= 1.E-10) .AND. (qi(k) >= 1.E-10) ) THEN  ! explicit contains mixed phase of workably 
+                                                                          ! large amounts; assume subgrid follows 
+                                                                          ! same partioning
+                liq_frac = qc(k) / ( qc(k) + qi(k) )
+              ELSE 
+                liq_frac = MIN(1.0, MAX(0.0, (t-240.)/29.)) ! explicit contains mixed phase, but at least one 
+                                                                   ! species is very small, so make a temperature-
+                                                                   ! depedent guess
+              ENDIF
+           ELSE                          ! no explicit condensate, so make a temperature-dependent guess
+             liq_frac = MIN(1.0, MAX(0.0, (t-240.)/29.))
+           ENDIF
+
+           qc_bl1D(k) = liq_frac*ql_water       ! apply liq_frac to ql_water and ql_ice
+           qi_bl1D(k) = (1.0-liq_frac)*ql_ice
+
            !Above tropopause:  eliminate subgrid clouds from CB scheme
            if (k .ge. k_tropo-1) then
-              cld(k) = 0.
-               ql(k) = 0.
+              cldfra_bl1D(K) = 0.
+              qc_bl1D(k)  = 0.
+              qi_bl1D(k)  = 0.
            endif
        
            !Buoyancy-flux-related calculations follow...
            ! "Fng" represents the non-Gaussian transport factor
-           ! (non-dimensional) from from Bechtold et al. 1995 
+           ! (non-dimensional) from Bechtold et al. 1995 
            ! (hereafter BCMT95), section 3(c).  Their suggested 
            ! forms for Fng (from their Eq. 20) are:
            !IF (q1k < -2.) THEN
@@ -2701,32 +2706,21 @@ CONTAINS
            alpha = 0.61*th(k)
            beta  = (th(k)/t)*(xl/cp) - 1.61*th(k)
        
-           vt(k) = qww   - MIN(cld(k),0.99)*beta*bb*Fng   - 1.
-           vq(k) = alpha + MIN(cld(k),0.99)*beta*a(k)*Fng - tv0
+           vt(k) = qww   - MIN(cldfra_bl1D(K),0.99)*beta*bb*Fng   - 1.
+           vq(k) = alpha + MIN(cldfra_bl1D(K),0.99)*beta*a(k)*Fng - tv0
            ! vt and vq correspond to beta-theta and beta-q, respectively,  
            ! in NN09, Eq. B8.  They also correspond to the bracketed
            ! expressions in BCMT95, Eq. 15, since (s*ql/sigma^2) = cldfra*Fng
            ! The "-1" and "-tv0" terms are included for consistency with 
            ! the legacy vt and vq formulations (above).
 
-           !OLD--
-           ! increase the cloud fraction estimate below PBLH+1km
-           !if (zagl .lt. PBLH2+1000.) then
-           !     cld_factor = 1.0 + MAX(0.0, ( RH(k) - 0.83 ) / 0.18 )
-           !     cld(k) = MIN( 1., cld_factor*cld(k) )  
-           !end if
-           !NEW--
            ! dampen the amplification factor (cld_factor) with height in order
            ! to limit excessively large cloud fractions aloft
            fac_damp = 1. -MIN(MAX( zagl-(PBLH2+1000.),0.0)/ &
                               MAX((zw(k_tropo)-(PBLH2+1000.)),500.), 1.)
            !cld_factor = 1.0 + fac_damp*MAX(0.0, ( RH(k) - 0.5 ) / 0.51 )**3.3
            cld_factor = 1.0 + fac_damp*MAX(0.0, ( RH(k) - 0.75 ) / 0.26 )**1.9
-           cld(k) = MIN( 1., cld_factor*cld(k) )
-
-           ! return a cloud condensate and cloud fraction for icloud_bl option:
-           cldfra_bl1D(k) = cld(k)
-           qc_bl1D(k) = ql(k)
+           cldfra_bl1D(K) = MIN( 1., cld_factor*cldfra_bl1D(K) )
 
          END DO
 
@@ -2735,16 +2729,17 @@ CONTAINS
       !FOR TESTING PURPOSES ONLY, ISOLATE ON THE MASS-CLOUDS.
       IF (bl_mynn_cloudpdf .LT. 0) THEN
          DO k = kts,kte-1
-              cldfra_bl1D(k) = 0.0
-              qc_bl1D(k) = 0.0
+            cldfra_bl1D(k) = 0.0
+            qc_bl1D(k) = 0.0
+            qi_bl1D(k) = 0.0
          END DO
       ENDIF
 !
-      cld(kte) = cld(kte-1)
       ql(kte) = ql(kte-1)
       vt(kte) = vt(kte-1)
       vq(kte) = vq(kte-1)
       qc_bl1D(kte)=0.
+      qi_bl1D(kte)=0.
       cldfra_bl1D(kte)=0.
 
     RETURN
@@ -3823,7 +3818,7 @@ ENDIF
        &bl_mynn_tkebudget,              &
        &bl_mynn_cloudpdf,Sh3D,          &
        &bl_mynn_mixlength,              &
-       &icloud_bl,qc_bl,cldfra_bl,      &
+       &icloud_bl,qc_bl,qi_bl,cldfra_bl,&
        &bl_mynn_edmf,                   &
        &bl_mynn_edmf_mom,bl_mynn_edmf_tke, &
        &bl_mynn_mixscalars,             &
@@ -3936,9 +3931,9 @@ ENDIF
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: Sh3D
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
-         &qc_bl,cldfra_bl
-    REAL, DIMENSION(KTS:KTE) :: qc_bl1D,cldfra_bl1D,&
-                            qc_bl1D_old,cldfra_bl1D_old
+         &qc_bl,qi_bl,cldfra_bl
+    REAL, DIMENSION(KTS:KTE) :: qc_bl1D,qi_bl1D,cldfra_bl1D,&
+                         qc_bl1D_old,qi_bl1D_old,cldfra_bl1D_old
 
 ! WA 7/29/15 Mix chemical arrays
 #if (WRF_CHEM == 1)
@@ -3974,7 +3969,8 @@ ENDIF
 
     REAL, DIMENSION(KTS:KTE+1) :: zw
     REAL :: cpm,sqcg,flt,flq,flqv,flqc,pmz,phh,exnerg,zet,&
-          & afk,abk,ts_decay,th_sfc,ztop_plume,sqc9,sqi9
+          & afk,abk,ts_decay, qc_bl2, qi_bl2,             &
+          & th_sfc,ztop_plume,sqc9,sqi9
 
 !JOE-add GRIMS parameters & variables
    real,parameter    ::  d1 = 0.02, d2 = 0.05, d3 = 0.001
@@ -4073,6 +4069,7 @@ ENDIF
        dqnwfa1(kts:kte)=0.0
        dqnifa1(kts:kte)=0.0
        qc_bl1D(kts:kte)=0.0
+       qi_bl1D(kts:kte)=0.0
        cldfra_bl1D(kts:kte)=0.0
        qc_bl1D_old(kts:kte)=0.0
        cldfra_bl1D_old(kts:kte)=0.0
@@ -4119,6 +4116,11 @@ ENDIF
                 sqc(k)=qc(i,k,j)/(1.+qv(i,k,j))
                 sqv(k)=qv(i,k,j)/(1.+qv(i,k,j))
                 thetav(k)=th(i,k,j)*(1.+0.61*sqv(k))
+                IF (icloud_bl > 0) THEN
+                   CLDFRA_BL1D(k)=CLDFRA_BL(i,k,j)
+                   QC_BL1D(k)=QC_BL(i,k,j)
+                   QI_BL1D(k)=QI_BL(i,k,j)
+                ENDIF
                 IF (PRESENT(qi) .AND. FLAG_QI ) THEN
                    sqi(k)=qi(i,k,j)/(1.+qv(i,k,j))
                    sqw(k)=sqv(k)+sqc(k)+sqi(k)
@@ -4129,9 +4131,9 @@ ENDIF
                    !thl(k)=th(i,k,j)*(1.- xlvcp/MAX(tk1(k),TKmin)*sqc(k) &
                    !    &               - xlscp/MAX(tk1(k),TKmin)*sqi(k))
                    !COMPUTE THL USING SGS CLOUDS FOR PBLH DIAG
-                   IF(sqc(k)<1e-6 .and. sqi(k)<1e-8 .and. CLDFRA_BL(i,k,j)>0.001)THEN
-                      sqc9=QC_BL(i,k,j)*(MIN(1., MAX(0., (tk1(k)-254.)/15.)))*CLDFRA_BL(i,k,j)
-                      sqi9=QC_BL(i,k,j)*(1. - MIN(1., MAX(0., (tk1(k)-254.)/15.)))*CLDFRA_BL(i,k,j)
+                   IF(sqc(k)<1e-6 .and. sqi(k)<1e-8 .and. CLDFRA_BL1D(k)>0.001)THEN
+                      sqc9=QC_BL1D(k)*CLDFRA_BL1D(k)
+                      sqi9=QI_BL1D(k)*CLDFRA_BL1D(k)
                    ELSE
                       sqc9=sqc(k)
                       sqi9=sqi(k)
@@ -4146,9 +4148,9 @@ ENDIF
                    !suggested min temperature to improve accuracy.      
                    !thl(k)=th(i,k,j)*(1.- xlvcp/MAX(tk1(k),TKmin)*sqc(k))
                    !COMPUTE THL USING SGS CLOUDS FOR PBLH DIAG
-                   IF(sqc(k)<1e-6 .and. CLDFRA_BL(i,k,j)>0.001)THEN
-		      sqc9=QC_BL(i,k,j)*(MIN(1., MAX(0., (tk1(k)-254.)/15.)))*CLDFRA_BL(i,k,j)
-                      sqi9=QC_BL(i,k,j)*(1. - MIN(1., MAX(0., (tk1(k)-254.)/15.)))*CLDFRA_BL(i,k,j)
+                   IF(sqc(k)<1e-6 .and. CLDFRA_BL1D(k)>0.001)THEN
+		      sqc9=QC_BL1D(k)*CLDFRA_BL1D(k)
+                      sqi9=0.0
                    ELSE
                       sqc9=sqc(k)
                       sqi9=0.0
@@ -4251,6 +4253,14 @@ ENDIF
              IF ( bl_mynn_tkebudget == 1) THEN
                 dqke(i,k,j)=qke(i,k,j)
              END IF
+             IF (icloud_bl > 0) THEN
+                CLDFRA_BL1D(k)=CLDFRA_BL(i,k,j)
+                QC_BL1D(k)=QC_BL(i,k,j)
+                QI_BL1D(k)=QI_BL(i,k,j)
+                cldfra_bl1D_old(k)=cldfra_bl(i,k,j)
+                qc_bl1D_old(k)=qc_bl(i,k,j)
+                qi_bl1D_old(k)=qi_bl(i,k,j)
+             ENDIF
              dz1(k)= dz(i,k,j)
              u1(k) = u(i,k,j)
              v1(k) = v(i,k,j)
@@ -4262,8 +4272,6 @@ ENDIF
              qc1(k)= qc(i,k,j)
              sqv(k)= qv(i,k,j)/(1.+qv(i,k,j))
              sqc(k)= qc(i,k,j)/(1.+qv(i,k,j))
-             IF(icloud_bl > 0)cldfra_bl1D_old(k)=cldfra_bl(i,k,j)
-             IF(icloud_bl > 0)qc_bl1D_old(k)=qc_bl(i,k,j)
              dqc1(k)=0.0
              dqi1(k)=0.0
              dqni1(k)=0.0
@@ -4281,9 +4289,9 @@ ENDIF
                 !thl(k)=th(i,k,j)*(1.- xlvcp/MAX(tk1(k),TKmin)*sqc(k) &
                 !    &               - xlscp/MAX(tk1(k),TKmin)*sqi(k))
                 !COMPUTE THL USING SGS CLOUDS FOR PBLH DIAG
-                IF(sqc(k)<1e-6 .and. sqi(k)<1e-8 .and. CLDFRA_BL(i,k,j)>0.001)THEN
-                   sqc9=QC_BL(i,k,j)*(MIN(1., MAX(0., (tk1(k)-254.)/15.)))*CLDFRA_BL(i,k,j)
-                   sqi9=QC_BL(i,k,j)*(1. - MIN(1., MAX(0., (tk1(k)-254.)/15.)))*CLDFRA_BL(i,k,j)
+                IF(sqc(k)<1e-6 .and. sqi(k)<1e-8 .and. CLDFRA_BL1D(k)>0.001)THEN
+                   sqc9=QC_BL1D(k)*CLDFRA_BL1D(k)
+                   sqi9=QI_BL1D(k)*CLDFRA_BL1D(k)
                 ELSE
                    sqc9=sqc(k)
                    sqi9=sqi(k)
@@ -4299,9 +4307,9 @@ ENDIF
                 !suggested min temperature to improve accuracy.    
                 !thl(k)=th(i,k,j)*(1.- xlvcp/MAX(tk1(k),TKmin)*sqc(k))
                 !COMPUTE THL USING SGS CLOUDS FOR PBLH DIAG
-                IF(sqc(k)<1e-6 .and. CLDFRA_BL(i,k,j)>0.001)THEN
-                   sqc9=QC_BL(i,k,j)*(MIN(1., MAX(0., (tk1(k)-254.)/15.)))*CLDFRA_BL(i,k,j)
-                   sqi9=QC_BL(i,k,j)*(1. - MIN(1., MAX(0., (tk1(k)-254.)/15.)))*CLDFRA_BL(i,k,j)
+                IF(sqc(k)<1e-6 .and. CLDFRA_BL1D(k)>0.001)THEN
+                   sqc9=QC_BL1D(k)*CLDFRA_BL1D(k)
+                   sqi9=QI_BL1D(k)*CLDFRA_BL1D(k)
                 ELSE
                    sqc9=sqc(k)
                    sqi9=0.0
@@ -4485,10 +4493,10 @@ ENDIF
           !-- End GRIMS-----------------------------------------
 
           CALL  mym_condensation ( kts,kte,      &
-               &dx,dz1,zw,thl,sqw,p1,ex1,        &
-               &tsq1, qsq1, cov1,                &
+               &dx,dz1,zw,thl,sqw,sqv,sqc,sqi,   &
+               &p1,ex1,tsq1,qsq1,cov1,           &
                &Sh,el,bl_mynn_cloudpdf,          &
-               &qc_bl1D,cldfra_bl1D,             &
+               &qc_bl1D,qi_bl1D,cldfra_bl1D,     &
                &PBLH(i,j),HFX(i,j),              &
                &Vt, Vq, th1, sgm, rmol(i,j),     &
                &spp_pbl, rstoch_col              )
@@ -4616,6 +4624,7 @@ ENDIF
                & nchem,chem1,s_awchem1,           &
 #endif
                & qc_bl1D,cldfra_bl1D,             &
+               & qc_bl1D_old,cldfra_bl1D_old,     &
                & FLAG_QC,FLAG_QI,                 &
                & FLAG_QNC,FLAG_QNI,               &
                & FLAG_QNWFA,FLAG_QNIFA,           &
@@ -4748,25 +4757,32 @@ ENDIF
              ENDIF
 
              IF(icloud_bl > 0)THEN
-               qc_bl(i,k,j)=qc_bl1D(k)
-               cldfra_bl(i,k,j)=cldfra_bl1D(k)
-
                !DIAGNOSTIC-DECAY FOR SUBGRID-SCALE CLOUDS
-               IF (CLDFRA_BL(i,k,j) < cldfra_bl1D_old(k)) THEN
+               IF (CLDFRA_BL1D(k) < cldfra_bl1D_old(k)) THEN
                   !DECAY TIMESCALE FOR CALM CONDITION IS THE EDDY TURNOVER
                   !TIMESCALE, BUT FOR WINDY CONDITIONS, IT IS THE ADVECTIVE 
                   !TIMESCALE. USE THE MINIMUM OF THE TWO.
                   ts_decay = MIN( 1800., 3.*dx/MAX(SQRT(u1(k)**2 + v1(k)**2),1.0) )
                   cldfra_bl(i,k,j)= MAX(cldfra_bl1D(k),cldfra_bl1D_old(k)-(0.25*delt/ts_decay))
-                  qc_bl(i,k,j)    = MAX(qc_bl1D(k),qc_bl1D_old(k)-(1.0E-4 * delt/ts_decay))
-                  IF (cldfra_bl(i,k,j) < 0.005) THEN
-                    CLDFRA_BL(i,k,j)= 0.
-                    QC_BL(i,k,j)    = 0.
+                  qc_bl2          = MAX(qc_bl1D(k),qc_bl1D_old(k))
+                  qi_bl2          = MAX(qi_bl1D(k),qi_bl1D_old(k))
+                  qc_bl(i,k,j)    = MAX(qc_bl1D(k),qc_bl1D_old(k)-(MIN(qc_bl2,1.0E-4) * delt/ts_decay))
+                  qi_bl(i,k,j)    = MAX(qi_bl1D(k),qi_bl1D_old(k)-(MIN(qi_bl2,1.0E-5) * delt/ts_decay))
+                  IF (cldfra_bl(i,k,j) < 0.005 .OR. &
+                     (qc_bl(i,k,j) + qi_bl(i,k,j)) < 1E-9) THEN
+                     CLDFRA_BL(i,k,j)= 0.
+                     QC_BL(i,k,j)    = 0.
+                     QI_BL(i,k,j)    = 0.
                   ENDIF
+               ELSE
+                  qc_bl(i,k,j)=qc_bl1D(k)
+                  qi_bl(i,k,j)=qi_bl1D(k)
+                  cldfra_bl(i,k,j)=cldfra_bl1D(k)
                ENDIF
 
                !Reapply checks on cldfra_bl and qc_bl to avoid FPEs in radiation driver
                IF (QC_BL(i,k,j) < 1E-8 .AND. CLDFRA_BL(i,k,j) > 0.005) QC_BL(i,k,j)= 1E-8
+               IF (QI_BL(i,k,j) < 1E-9 .AND. CLDFRA_BL(i,k,j) > 0.005) QI_BL(i,k,j)= 1E-9
              ENDIF
 
              el_pbl(i,k,j)=el(k)
@@ -5113,7 +5129,8 @@ ENDIF
                  & nchem,chem,s_awchem,     &
 #endif
             ! in/outputs - subgrid scale clouds
-                 & qc_bl1d,cldfra_bl1d,     &
+                 & qc_bl1d,cldfra_bl1d,         &
+                 & qc_bl1D_old,cldfra_bl1D_old, &
             ! inputs - flags for moist arrays
                  & F_QC,F_QI,               &
                  F_QNC,F_QNI,               &
@@ -5165,7 +5182,8 @@ ENDIF
                                  s_awv,      &
                                s_awqke, s_aw2
 
-     REAL,DIMENSION(KTS:KTE), INTENT(INOUT) :: qc_bl1d,cldfra_bl1d
+     REAL,DIMENSION(KTS:KTE), INTENT(INOUT) :: qc_bl1d,cldfra_bl1d, &
+                                       qc_bl1d_old,cldfra_bl1d_old
 
     INTEGER, PARAMETER :: NUP=10, debug_mf=0
 
@@ -5225,7 +5243,8 @@ ENDIF
   ! VARIABLES FOR CHABOUREAU-BECHTOLD CLOUD FRACTION
    REAL,DIMENSION(KTS:KTE), INTENT(INOUT) :: vt, vq, sgm
    REAL :: sigq,xl,tlk,qsat_tl,rsl,cpm,a,qmq,mf_cf,Q1,diffqt,&
-           Fng,qww,alpha,beta,bb,f,pt,t,q2p,b9,satvp,rhgrid
+           Fng,qww,alpha,beta,bb,f,pt,t,q2p,b9,satvp,rhgrid, &
+           Ac_mf,Ac_strat,qc_mf
 
   ! Variables for plume interpolation/saturation check
    REAL,DIMENSION(KTS:KTE) :: exneri,dzi
@@ -5251,7 +5270,7 @@ ENDIF
                                        envm_u,envm_v  !environmental variables defined at middle of layer
    REAL,DIMENSION(KTS:KTE+1) ::  envi_a,envi_w        !environmental variables defined at model interface
    REAL :: temp,sublim,qc_ent,qv_ent,qt_ent,thl_ent,detrate,  &
-           oow,exc_fac,aratio,detturb
+           oow,exc_fac,aratio,detturb,qc_grid
    !parameter "subfac" determines the propotion of upward vertical velocity that contributes to
    !environmenatal subsidence. Some portion is expected to be compensated by downdrafts instead of
    !gentle environmental subsidence. 1.0 assumes all upward vertical velocity in the mass-flux scheme
@@ -5695,7 +5714,12 @@ ENDIF
           qv_ent = 0.5*(MAX(qt_ent-qc_ent,0.) + MAX(UPQT(K-1,I)-UPQC(K-1,I),0.))
           envm_sqv(k)=envm_sqv(k) + (qv_ent-QV(K))*detrate*aratio*dzp
           IF (UPQC(K-1,I) > 1.0e-8) THEN
-             envm_sqc(k)=envm_sqc(k) + (0.5*(QCn + UPQC(K-1,I)) - QC(K))*detrate*aratio*dzp 
+             IF (QC(K) < 1E-5) THEN
+                qc_grid = MAX(QC(K), cldfra_bl1d_old(k)*qc_bl1d_old(k))
+             ELSE
+                qc_grid = QC(K)
+             ENDIF
+             envm_sqc(k)=envm_sqc(k) + (UPA(K-1,I)*0.5*(QCn + UPQC(K-1,I)) - qc_grid)*detrate*aratio*dzp
           ENDIF
           envm_u(k)  =envm_u(k)   + (0.5*(Un + UPU(K-1,I)) - U(K))*detrate*aratio*dzp
           envm_v(k)  =envm_v(k)   + (0.5*(Vn + UPV(K-1,I)) - V(K))*detrate*aratio*dzp
@@ -6030,13 +6054,28 @@ ENDIF
                print*,"  CB: mf_cf=",mf_cf," cldfra_bl=",cldfra_bl1d(k)," edmf_a=",edmf_a(k)
             ENDIF
 
+            ! Update cloud fractions and specific humidities in grid cells
+            ! where the mass-flux scheme is active. Now, we also use the
+            ! stratus component of the SGS clouds as well. The stratus cloud 
+            ! fractions (Ac_strat) are reduced slightly to give way to the 
+            ! mass-flux SGS cloud fractions (Ac_mf).
             IF (cldfra_bl1d(k) < 0.5) THEN
                IF (mf_cf > 0.5*(edmf_a(k)+edmf_a(k-1))) THEN
-                  cldfra_bl1d(k) = mf_cf
-                  qc_bl1d(k) = QCp*0.5*(edmf_a(k)+edmf_a(k-1))/mf_cf 
+                  !cldfra_bl1d(k) = mf_cf
+                  !qc_bl1d(k) = QCp*0.5*(edmf_a(k)+edmf_a(k-1))/mf_cf
+                  Ac_mf      = mf_cf
+                  Ac_strat   = cldfra_bl1d(k)*(1.0-mf_cf)
+                  cldfra_bl1d(k) = Ac_mf + Ac_strat
+                  !dillute Qc from updraft area to larger cloud area
+                  qc_mf      = QCp*0.5*(edmf_a(k)+edmf_a(k-1))/mf_cf
+                  qc_bl1d(k) = (qc_mf*Ac_mf + qc_bl1d(k)*Ac_strat)/cldfra_bl1d(k)
                ELSE
-                  cldfra_bl1d(k)=0.5*(edmf_a(k)+edmf_a(k-1))
-                  qc_bl1d(k) = QCp
+                  !cldfra_bl1d(k)=0.5*(edmf_a(k)+edmf_a(k-1))
+                  !qc_bl1d(k) = QCp
+                  Ac_mf      = 0.5*(edmf_a(k)+edmf_a(k-1))
+                  Ac_strat   = cldfra_bl1d(k)*(1.0-Ac_mf)
+                  cldfra_bl1d(k)=Ac_mf + Ac_strat
+                  qc_bl1d(k) = (QCp*Ac_mf + qc_bl1d(k)*Ac_strat)/cldfra_bl1d(k)
                ENDIF
             ENDIF
 

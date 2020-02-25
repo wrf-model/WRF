@@ -127,7 +127,7 @@ CONTAINS
               ,CALC_CLEAN_ATM_DIAG                                        &
               ,AER_RA_FEEDBACK                                            &
               ,QC_CU , QI_CU                                              &
-              ,icloud_bl,qc_bl,cldfra_bl                                  &
+              ,icloud_bl,qc_bl,qi_bl,cldfra_bl                            &
               ,PM2_5_DRY, PM2_5_WATER                                     &
               ,PM2_5_DRY_EC                                               &
               ,TAUAER300, TAUAER400                                       &
@@ -537,7 +537,7 @@ CONTAINS
          INTENT(IN ) ::          qc_cu, qi_cu
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
-         INTENT(IN ) ::          qc_bl, qs_cu
+         INTENT(IN ) ::          qc_bl, qi_bl, qs_cu
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
@@ -1435,24 +1435,29 @@ CONTAINS
 
         IF ( PRESENT ( CLDFRA_BL ) .AND.  PRESENT ( QC_BL ) ) THEN
            IF ( icloud_bl > 0 ) THEN
-           CALL wrf_debug (1, 'in rad driver; use BL clouds')
-           DO j = jts,jte
-           DO i = its,ite
-           DO k = kts,kte
-              IF (qc(i,k,j) < 1.E-6 .AND. qi(i,k,j) < 1.E-6 .AND. CLDFRA_BL(i,k,j)>0.001) THEN
-               !Partition the BL clouds into water & ice according to a linear
-               !approximation of Hobbs et al. (1974). This allows us to only use
-               !one 3D array for both cloud water & ice.
-!              Wice = 1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.))
-!              Wh2o = 1. - Wice
-               CLDFRA(i,k,j)=MAX(CLDFRA(i,k,j),CLDFRA_BL(i,k,j))
-               CLDFRA(i,k,j)=MAX(0.0,MIN(1.0,CLDFRA(i,k,j)))
-               qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)*(MIN(1., MAX(0., (t(i,k,j)-254.)/15.)))*CLDFRA_BL(i,k,j)
-               qi(i,k,j)=qi(i,k,j) + QC_BL(i,k,j)*(1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.)))*CLDFRA_BL(i,k,j)
+              CALL wrf_debug (1, 'in rad driver; use BL clouds')
+              IF (itimestep .NE. 1) THEN
+                 DO j = jts,jte
+                 DO i = its,ite
+                 DO k = kts,kte
+                    CLDFRA(i,k,j)=CLDFRA_BL(i,k,j)
+                 ENDDO
+                 ENDDO
+                 ENDDO
               ENDIF
-           ENDDO
-           ENDDO
-           ENDDO
+
+              DO j = jts,jte
+              DO i = its,ite
+              DO k = kts,kte
+                 IF (qc(i,k,j) < 1.E-6 .AND. CLDFRA_BL(i,k,j) > 0.001) THEN
+                     qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)*CLDFRA_BL(i,k,j)
+                 ENDIF
+                 IF (qi(i,k,j) < 1.E-8 .AND. CLDFRA_BL(i,k,j) > 0.001) THEN
+                    qi(i,k,j)=qi(i,k,j) + QI_BL(i,k,j)*CLDFRA_BL(i,k,j)
+                 ENDIF
+              ENDDO
+              ENDDO
+              ENDDO
            ENDIF
         ENDIF
 

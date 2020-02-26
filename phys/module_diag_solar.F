@@ -22,7 +22,6 @@ CONTAINS
 ! Activated using [solar_diagnostics = 1] option &diags section of namelist.input file   !
 !                                                                                        !
 ! Note that output variables with 'tot' include unresolved hydrometeors                  !
-! but only when using [icloud = 3] namelist.input option                                 !
 ! Only subgrid qcloud and qice are accounted for                                         !
 !                                                                                        !
 ! Corresponding variables are located in registry.solar_fields                           !
@@ -30,7 +29,7 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    SUBROUTINE solar_diag (mut, dnw, ph, phb, cldfrac3d, coszen, swdnb, swdnt, qv, qc, qi, qs, &
-             qc_tot, qi_tot, icloud, has_reqc, has_reqi, has_reqs, f_qv, f_qc, f_qi, f_qs, &
+             qc_tot, qi_tot, has_reqc, has_reqi, has_reqs, f_qv, f_qc, f_qi, f_qs, &
              re_cloud, re_ice, re_snow, clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, &
              wp2d_sum, lwp2d_tot, iwp2d_tot, wp2d_tot_sum, re_cloud_path, re_ice_path, re_snow_path, &
              re_cloud_path_tot, re_ice_path_tot, tau_qc, tau_qi, tau_qs, tau_qc_tot, tau_qi_tot, &
@@ -47,7 +46,7 @@ CONTAINS
      REAL, DIMENSION(kms:kme), INTENT(IN) :: dnw
      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: ph, phb, cldfrac3d, qv, qc, qi, qs, qc_tot, qi_tot, &
           re_cloud, re_ice, re_snow
-     INTEGER, INTENT(IN) :: icloud, has_reqc, has_reqi, has_reqs
+     INTEGER, INTENT(IN) :: has_reqc, has_reqi, has_reqs
      LOGICAL, INTENT(IN) :: f_qv, f_qc, f_qi, f_qs
      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, wp2d_sum, &
           lwp2d_tot, iwp2d_tot, wp2d_tot_sum, re_cloud_path, re_ice_path, re_snow_path, re_cloud_path_tot, re_ice_path_tot, &
@@ -128,35 +127,29 @@ CONTAINS
                  tau_qc(i, j) = MISSING
                end if
 
-               if (icloud == 3) then
-                   !!! TOTAL (RESOLVED + UNRESOLVED) !!!
-                   ! Calc liquid water path
-                 q_aux = integrate_1var (mut(i, j), dnw, qc_tot(i, :, j), kms, kme, kts, kte)
-                 lwp = ONE_OVER_G * q_aux
-                 lwp2d_tot(i, j) = SIGN( MAX( lwp, 0.0 ), 1.0 )
+                 !!! TOTAL (RESOLVED + UNRESOLVED) !!!
+                 ! Calc liquid water path
+               q_aux = integrate_1var (mut(i, j), dnw, qc_tot(i, :, j), kms, kme, kts, kte)
+               lwp = ONE_OVER_G * q_aux
+               lwp2d_tot(i, j) = SIGN( MAX( lwp, 0.0 ), 1.0 )
 
-                 if (has_reqc == 1) then
-                     ! Calc effective radius water
-                   if (q_aux > Q_MIN) then
-                     re_cloud_path_tot(i, j) = integrate_2var (mut(i, j), dnw, qc_tot(i, :, j), &
-                         re_cloud(i, :, j), kms, kme, kts, kte)
-                     re_cloud_path_tot(i, j) = re_cloud_path_tot(i, j) / q_aux
-                   else
-                     re_cloud_path_tot(i, j) = 0.0
-                   end if
-
-                     ! Calc optical thickness water
-                   if (re_cloud_path_tot(i, j) > RE_MIN) then
-                     tau_qc_tot(i, j) = THREE_OVER_TWO * lwp / re_cloud_path_tot(i, j) / 1000.0
-                   else
-                     tau_qc_tot(i, j) = 0.0
-                   end if
+               if (has_reqc == 1) then
+                   ! Calc effective radius water
+                 if (q_aux > Q_MIN) then
+                   re_cloud_path_tot(i, j) = integrate_2var (mut(i, j), dnw, qc_tot(i, :, j), &
+                       re_cloud(i, :, j), kms, kme, kts, kte)
+                   re_cloud_path_tot(i, j) = re_cloud_path_tot(i, j) / q_aux
                  else
-                   re_cloud_path_tot(i, j) = MISSING
-                   tau_qc_tot(i, j) = MISSING
+                   re_cloud_path_tot(i, j) = 0.0
+                 end if
+
+                   ! Calc optical thickness water
+                 if (re_cloud_path_tot(i, j) > RE_MIN) then
+                   tau_qc_tot(i, j) = THREE_OVER_TWO * lwp / re_cloud_path_tot(i, j) / 1000.0
+                 else
+                   tau_qc_tot(i, j) = 0.0
                  end if
                else
-                 lwp2d_tot(i, j) = MISSING
                  re_cloud_path_tot(i, j) = MISSING
                  tau_qc_tot(i, j) = MISSING
                end if
@@ -196,40 +189,34 @@ CONTAINS
                  tau_qi(i, j) = MISSING
                end if
 
-               if (icloud == 3) then
-                   !!! TOTAL (RESOLVED + UNRESOLVED) !!!
-                   ! Calc ice water path
-                 q_aux = integrate_1var (mut(i, j), dnw, qi_tot(i, :, j), kms, kme, kts, kte)
-                 iwp = ONE_OVER_G * q_aux
-                 iwp2d_tot(i, j) = SIGN( MAX( iwp, 0.0 ), 1.0 )
+                 !!! TOTAL (RESOLVED + UNRESOLVED) !!!
+                 ! Calc ice water path
+               q_aux = integrate_1var (mut(i, j), dnw, qi_tot(i, :, j), kms, kme, kts, kte)
+               iwp = ONE_OVER_G * q_aux
+               iwp2d_tot(i, j) = SIGN( MAX( iwp, 0.0 ), 1.0 )
 
-                 if (has_reqi == 1) then
-                     ! Calc effective radius ice
-                   if (q_aux > Q_MIN) then
-                     re_ice_path_tot(i, j) = integrate_2var (mut(i, j), dnw, qi_tot(i, :, j), &
-                         re_ice(i, :, j), kms, kme, kts, kte)
-                     re_ice_path_tot(i, j) = re_ice_path_tot(i, j) / q_aux
-                   else
-                     re_ice_path_tot(i, j) = 0.0
-                   end if
+               if (has_reqi == 1) then
+                   ! Calc effective radius ice
+                 if (q_aux > Q_MIN) then
+                   re_ice_path_tot(i, j) = integrate_2var (mut(i, j), dnw, qi_tot(i, :, j), &
+                       re_ice(i, :, j), kms, kme, kts, kte)
+                   re_ice_path_tot(i, j) = re_ice_path_tot(i, j) / q_aux
+                 else
+                   re_ice_path_tot(i, j) = 0.0
+                 end if
 
-                     ! Calc optical thickness ice
-                   if (re_ice_path_tot(i, j) > RE_MIN) then
-                     if (TAU_ICE_METHOD == 1) then
-                         ! Eq 10 in Matrosov et al. (2002)
-                       tau_qi_tot(i, j) = iwp * 1000.0 * (0.02 + 4.2 / (2.0 * re_ice_path_tot(i, j) * 1.0e+6))
-                     else
-                       tau_qi_tot(i, j) = iwp * 1000.0 * (-0.006656 + 3.686 / (2.0 * re_ice_path_tot(i, j) * 1.0e+6))
-                     end if
+                   ! Calc optical thickness ice
+                 if (re_ice_path_tot(i, j) > RE_MIN) then
+                   if (TAU_ICE_METHOD == 1) then
+                       ! Eq 10 in Matrosov et al. (2002)
+                     tau_qi_tot(i, j) = iwp * 1000.0 * (0.02 + 4.2 / (2.0 * re_ice_path_tot(i, j) * 1.0e+6))
                    else
-                     tau_qi_tot(i, j) = 0.0
+                     tau_qi_tot(i, j) = iwp * 1000.0 * (-0.006656 + 3.686 / (2.0 * re_ice_path_tot(i, j) * 1.0e+6))
                    end if
                  else
-                   re_ice_path_tot(i, j) = MISSING
-                   tau_qi_tot(i, j) = MISSING
+                   tau_qi_tot(i, j) = 0.0
                  end if
                else
-                 iwp2d_tot(i, j) = MISSING
                  re_ice_path_tot(i, j) = MISSING
                  tau_qi_tot(i, j) = MISSING
                end if
@@ -305,8 +292,7 @@ CONTAINS
 
                  !!! TOTAL (RESOLVED + UNRESOLVED) !!!
                  ! Sum water paths (cloud liquid + ice + snow)
-                 ! Note that snow is from resolved only, as icloud = 3
-                 ! does not account for subgrid snow water content
+                 ! Note that snow is from resolved only
                wp2d_tot_sum(i, j) = lwp2d_tot(i, j) + iwp2d_tot(i, j) + swp2d(i, j)
 
                  ! Cloud base first

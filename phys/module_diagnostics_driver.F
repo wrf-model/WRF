@@ -1087,7 +1087,7 @@ CONTAINS
               swdnt=grid%swdnt, qv=moist(ims,kms,jms,P_QV),                 &
               qc=moist(ims,kms,jms,P_QC), qi=moist(ims,kms,jms,P_QI),       &
               qs=moist(ims,kms,jms,P_QS), qc_tot=grid%qc_tot,               &
-              qi_tot=grid%qi_tot, icloud=config_flags%icloud,               &
+              qi_tot=grid%qi_tot,                                           &
               has_reqc=grid%has_reqc, has_reqi=grid%has_reqi,               &
               has_reqs=grid%has_reqs, f_qv=f_qv, f_qc=f_qc, f_qi=f_qi,      &
               f_qs=f_qs, re_cloud=grid%re_cloud, re_ice=grid%re_ice,        &

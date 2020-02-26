@@ -484,6 +484,7 @@ SUBROUTINE calc_ts( grid )
          grid%ts_tsk(n,i)  = grid%nmm_tsk(ix,iy)
 #endif
          grid%ts_tslb(n,i) = grid%tslb(ix,1,iy)
+
       ELSE
 #if (EM_CORE == 1 )   
          DO k=1,grid%max_ts_level
@@ -541,6 +542,7 @@ SUBROUTINE calc_ts( grid )
 #endif
          grid%ts_tsk(n,i)  = 1.E30
          grid%ts_tslb(n,i) = 1.E30
+
       END IF
    END DO
 

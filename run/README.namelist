@@ -695,6 +695,20 @@ Namelist variables for controlling the adaptive time step option:
  num_urban_nf                        = 1! (= 10 if BEM active)        number of grid levels in the floors (nf_u in BEM header)
  num_urban_nbui                      = 1! (= 15 if BEM active)        maximum number of types of buildings in an urban class (nbui_max in BEM header)
 
+ sf_surf_irr_scheme (max_dom)        = 0: no irrigation scheme
+                                     = 1: channel scheme (in Noah only)
+                                     = 2: drip scheme
+                                     = 3: sprinkler scheme
+ 
+ irr_daily_amount (max_dom)          = daily equivalent irrigation water amount in mm (float, e.g. 5.7)
+ irr_start_hour (max_dom)            = UTC start hour for irrigation (int, e.g. 5)
+ irr_num_hours (max_dom)             = number of consecutive hours for irrigation (int, e.g. 3)
+ irr_start_julianday (max_dom)       = Julian start day of irrigation (int, e.g. 135)
+ irr_end_julianday (max_dom)         = Julian end day of irrigation (int, e.g. 255)
+ irr_ph (max_dom)                    = 0: all the static IRRIGATION field is activated
+                                     = 1: pseudo random activation field: ensures repeatability across compilers
+                                     = 2: random activation field: results might depend on the compiler fortran RANDOM_SEED
+ irr_freq (max_dom)                  = irrigation frequency in days (int, e.g. 3)
 
  bl_pbl_physics (max_dom)            boundary-layer option
                                      = 0, no boundary-layer 

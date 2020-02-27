@@ -87,6 +87,7 @@ MODULES = \
 	module_mp_fer_hires.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
+	module_mp_SBM_polar_radar.o \
 	module_mp_full_sbm.o \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \
@@ -190,7 +191,8 @@ MODULES = \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
 	module_sf_lake.o \
-	module_diagnostics_driver.o
+	module_diagnostics_driver.o \
+	module_irrigation.o
 
 FIRE_MODULES = \
         module_fr_fire_driver.o \

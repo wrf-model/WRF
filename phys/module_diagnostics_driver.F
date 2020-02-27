@@ -44,7 +44,7 @@ CONTAINS
                      WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
                      MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
                      NSSL_2MOM, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
-                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN,  &
+                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN_SHPUND, FULL_KHAIN_LYNN,  &
                      MORR_TM_AERO !TWG add    !,MILBRANDT3MOM, NSSL_3MOM, MORR_MILB_P3
 
       USE module_driver_constants, ONLY: max_plevs, max_zlevs
@@ -659,7 +659,7 @@ CONTAINS
 
 !       CASE (FULL_KHAIN_LYNN)
 
-!       CASE (FAST_KHAIN_LYNN)
+!       CASE (FAST_KHAIN_LYNN_SHPUND)
 
 !       CASE (WSM3SCHEME)
 

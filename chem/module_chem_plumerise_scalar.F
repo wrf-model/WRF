@@ -153,8 +153,8 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,firesize,mean_fct   &
 	   !- define o dominio vertical onde a emissao flaming ira ser colocada
 	   call set_flam_vert(ztopmax,k1,k2,nkp,zzcon,W_VMD,VMD)
 	   
-	   !- espessura da camada vertical 
-	   dz_flam=zzcon(k2)-zzcon(k1-1)
+	   !- espessura da camada vertical (compute the vertical layer thickness)
+	   dz_flam=zzcon(k2+1)-zzcon(k1)
 	   
 	   !- distribui a emissao flaming entre os niveis k1 e k2	 
 !          print *,'distribui, k1,k2,dz_flam',k1,k2,dz_flam

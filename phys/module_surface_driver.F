@@ -289,6 +289,9 @@ CONTAINS
      &          ,spp_lsm,pattern_spp_lsm,field_sf                     &  !SPP
      &          ,spp_pbl,pattern_spp_pbl                              &  !SPP
      &          ,XLAIDYN                                              &
+     &          ,irrigation,sf_surf_irr_scheme, irr_daily_amount      & !IRRIG
+     &          ,irr_start_hour,irr_num_hours,irr_start_julianday     &
+     &          ,irr_end_julianday,irr_freq,irr_ph,irr_rand_field     &
      &                                                             )
 
 #if ( ! NMM_CORE == 1 )
@@ -311,7 +314,9 @@ CONTAINS
                                        ,SSIBSCHEME                & !ssib
                                        ,MYNNSFCSCHEME             &
                                        ,OMLSCHEME                 &
-                                       ,PWP3DSCHEME
+                                       ,PWP3DSCHEME               &
+                                       ,DRIP                      &
+                                       ,CHANNEL                   
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
@@ -330,13 +335,14 @@ CONTAINS
                                        ,TEMFSFCSCHEME             &
                                        ,GFDLSFCSCHEME             &
                                        ,SSIBSCHEME                & ! ssib
-                                       ,GFDLSLAB 
+                                       ,GFDLSLAB                   
+
 
 
 #endif
    USE module_model_constants
 ! *** add new modules of schemes here
-
+   USE module_irrigation
    USE module_sf_sfclay
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
@@ -1381,6 +1387,19 @@ CONTAINS
    INTEGER                                             ::   spp_lsm_loc
 
    real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: XLAIDYN
+! IRRIGATION
+   INTEGER :: tloc, jmonth,timing  
+   REAL, PARAMETER    :: PI_GRECO=3.14159 
+   INTEGER  :: end_hour, irr_start,xt24,irr_day  
+   REAL :: constants_irrigation   
+   REAL,DIMENSION( ims:ime, jms:jme ) :: IRRIGATION_CHANNEL      
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN),OPTIONAL::   IRRIGATION
+   REAL,  INTENT(IN),OPTIONAL::  irr_daily_amount     
+   INTEGER :: phase
+   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT),OPTIONAL :: irr_rand_field
+   INTEGER, INTENT(IN ),OPTIONAL:: sf_surf_irr_scheme,irr_start_hour,irr_num_hours,irr_start_julianday,irr_end_julianday,irr_freq,irr_ph
+
+
 !
 !------------------------------------------------------------------
 ! Initialize local variables
@@ -1479,6 +1498,28 @@ CONTAINS
          RAINBL(i,j) = RAINBL(i,j) + RAINCV(i,j) + RAINNCV(i,j)
          IF ( PRESENT( rainshv ))RAINBL(i,j) = RAINBL(i,j) + RAINSHV(i,j)
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
+#if (EM_CORE==1)
+         sf_surf_irr: SELECT CASE(sf_surf_irr_scheme)
+            CASE(DRIP)
+               CALL drip_irrigation(                                     &
+                &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
+                &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
+                &  irr_start_julianday,irr_end_julianday,                &
+                &  irr_freq,irr_ph,i,j,RAINBL(i,j),                      &
+                &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
+                &  irr_rand_field(i,j)                                   &
+                   )
+            CASE(CHANNEL)
+               CALL channel_irrigation(                                  &
+                &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
+                &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
+                &  irr_start_julianday,irr_end_julianday,                &
+                &  irr_freq,irr_ph,i,j,RAINBL(i,j),                      &
+                &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
+                &  irr_rand_field(i,j)                                   &
+                   )
+           END SELECT sf_surf_irr
+#endif
       ENDDO
       ENDDO
     ENDDO
@@ -1492,6 +1533,31 @@ CONTAINS
          RAINBL(i,j) = RAINBL(i,j) + RAINCV(i,j)
          IF ( PRESENT( rainshv ))RAINBL(i,j) = RAINBL(i,j) + RAINSHV(i,j)
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
+
+#if (EM_CORE==1)
+          sf_surf_irr1: SELECT CASE(sf_surf_irr_scheme)
+             CASE(DRIP)
+               CALL drip_irrigation(                                     &
+                &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
+                &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
+                &  irr_start_julianday,irr_end_julianday,                &
+                &  irr_freq,irr_ph,i,j,RAINBL(i,j),                      &
+                &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
+                &  irr_rand_field(i,j)                                   &
+                   )
+
+            CASE(CHANNEL)
+               CALL channel_irrigation(                                  &
+                &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
+                &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
+                &  irr_start_julianday,irr_end_julianday,                &
+                &  irr_freq,irr_ph,i,j,RAINBL(i,j),                      &
+                &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
+                &  irr_rand_field(i,j)                                   &
+                   )
+        END SELECT sf_surf_irr1
+#endif
+
       ENDDO
       ENDDO
     ENDDO

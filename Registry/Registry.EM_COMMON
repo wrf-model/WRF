@@ -716,6 +716,8 @@ state   real   soilctop            isj   misc          1     Z     i012rdu   "SO
 state   real   soilcbot            isj   misc          1     Z     i012rdu   "SOILCBOT"      "SOIL CAT FRACTION (BOTTOM)"  ""
 state   real   soilcat             ij    misc          1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
 state   real   vegcat              ij    misc          1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
+state   real   irrigation          ij    misc          1     -     i012rdu "IRRIGATION"    "irrigated land percentage" ""
+state   integer   irr_rand_field   ij    misc          1     -     hrdu    "IRR_PH_FIELD"  "irrigated land percentage" ""
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 # SI - end variables from netCDF format from Standard Initialization
@@ -2267,6 +2269,17 @@ rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1    
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   real    naer                    namelist,physics      max_domains    1e9     rh   "NAER"          ""      ""
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    -1      rh       "sf_sfclay_physics"             ""      ""
+rconfig   integer     sf_surf_irr_scheme  namelist,physics      max_domains    0       rh       "sf_surf_irr_scheme"            "ARI:: 0:no irr 1: drip 2:sprinkler 3:channel" ""
+# IRRIGATION
+rconfig   real        irr_daily_amount    namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme WATER AMOUNT [mm]" ""  ""
+rconfig   integer     irr_start_hour      namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme, local start"            "Local start hour" ""
+rconfig   integer     irr_num_hours       namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme" "Number of hours to irrigate"  ""
+rconfig   integer     irr_start_julianday namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme" "Julian day to start irrigation (included)"  ""
+rconfig   integer     irr_end_julianday   namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme" "Julian day to end irrigation (not included)"  ""
+rconfig   integer     irr_freq            namelist,physics      max_domains    1       rh        "sf_surf_irr_scheme" "frequency of irrigation in days"  ""
+rconfig   integer     irr_ph              namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme" "phase of irrigation, 0:in phase, 1: not in phase"  ""
+
+
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    -1      rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    -1      rh       "bl_pbl_physics"                ""      ""
 rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0       rh       "bl_mynn_tkebudget"             ""      ""
@@ -2899,6 +2912,11 @@ package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm
 package   noahmpoptcrop2 opt_crop==2                 -             state:gecros_state
 
 package   noahmosaicscheme  sf_surface_mosaic==1         -        state:TSK_mosaic,QSFC_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic,ALBEDO_mosaic,ALBBCK_mosaic,EMISS_mosaic,EMBCK_mosaic,ZNT_mosaic,Z0_mosaic,HFX_mosaic,QFX_mosaic,LH_mosaic,GRDFLX_mosaic,SNOTIME_mosaic,TR_URB2D_mosaic,TB_URB2D_mosaic,TG_URB2D_mosaic,TC_URB2D_mosaic,TS_URB2D_mosaic,TS_RUL2D_mosaic,QC_URB2D_mosaic,UC_URB2D_mosaic,TRL_URB3D_mosaic,TBL_URB3D_mosaic,TGL_URB3D_mosaic,SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,mosaic_cat_index,landusef2,smcrel,RS_mosaic,LAI_mosaic
+# IRRIGATION
+package   channel        sf_surf_irr_scheme==1        -            state:irrigation,irr_rand_field
+package   drip           sf_surf_irr_scheme==2        -            state:irrigation,irr_rand_field
+package   sprinkler      sf_surf_irr_scheme==3        -            state:irrigation,irr_rand_field
+
 
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_pbl,el_pbl

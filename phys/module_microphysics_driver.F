@@ -22,6 +22,11 @@ SUBROUTINE microphysics_driver(                                          &
                       ,ips,ipe, jps,jpe, kps,kpe                         &
                       ,i_start,i_end,j_start,j_end,kts,kte               &
                       ,num_tiles, naer                                   &
+                      ,irrigation,sf_surf_irr_scheme, irr_daily_amount   &   
+                      ,irr_start_hour,irr_num_hours,julian_in            &
+                      ,irr_start_julianday,irr_end_julianday             &
+                      ,irr_freq,irr_ph,irr_rand_field                    &
+                      ,gmt,xtime                                         &
 !======================
                       !Variables required for CAMMGMP Scheme
                       ,dlf,dlf2,t_phy,p_hyd,p8w_hyd,tke_pbl,z_at_w,qfx   &
@@ -149,7 +154,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
                     ,WSM7SCHEME, WDM7SCHEME &
                     ,NUWRF4ICESCHEME & 
-                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL  !, P3_2CATEGORY ,MILBRANDT3MOM 
+                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL !, P3_2CATEGORY ,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
@@ -158,7 +163,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
                     ,WSM7SCHEME, WDM7SCHEME &
                     ,NUWRF4ICESCHEME &
-                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, MORR_TM_AERO, JENSEN_ISHMAEL !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, MORR_TM_AERO, JENSEN_ISHMAEL,SPRINKLER !,MILBRANDT3MOM
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
 #endif
@@ -232,6 +237,7 @@ SUBROUTINE microphysics_driver(                                          &
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
    USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
+   USE module_irrigation
 
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
@@ -721,6 +727,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    integer, parameter :: ntot = 50
    real :: wmin, wmax
    integer :: ierr
+! IRRIGATION
+
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN):: IRRIGATION !ARI
+   REAL,  OPTIONAL, INTENT(IN)::  irr_daily_amount, julian_in, xtime, gmt
+   INTEGER, OPTIONAL, INTENT(IN ):: sf_surf_irr_scheme, irr_start_hour, irr_num_hours, &
+                                    irr_start_julianday,irr_end_julianday,irr_freq,irr_ph
+   REAL, PARAMETER    :: PI_GRECO=3.14159
+   INTEGER  :: end_hour,a,b,xt24,irr_day,timing
+   REAL :: constants_irrigation,tloc,irr_start,phase
+   INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: irr_rand_field
 
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to
@@ -809,6 +825,22 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
        ENDIF
        jts = max(j_start(ij),jds+sz)
        jte = min(j_end(ij),jde-1-sz)
+
+# if( EM_CORE==1 )
+       sf_surf_irr: SELECT CASE(sf_surf_irr_scheme)
+            CASE(SPRINKLER)
+             CALL sprinkler_irrigation(  julian_in                    & 
+     &          ,irrigation, irr_daily_amount,rho,dz8w                & 
+     &          ,irr_start_hour,irr_num_hours,irr_start_julianday     & 
+     &          ,irr_end_julianday,irr_freq,irr_ph,qr_curr            &
+     &          ,gmt,xtime,dt,irr_rand_field                          &
+     &          ,ids,ide, jds,jde                                     & ! domain dims
+     &          ,ims,ime, jms,jme, kms,kme                            & ! memory dims
+     &          ,its,ite, jts,jte               )
+       END SELECT sf_surf_irr
+#endif
+
+
 
 ! 2009-06009 rce - zero all these for safety
        IF( PRESENT(qlsink) ) qlsink(its:ite,kts:kte,jts:jte) = 0.

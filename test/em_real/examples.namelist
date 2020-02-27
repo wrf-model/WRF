@@ -682,6 +682,17 @@ To overwrite the cu_physics option for a second nest, set
  /
 
 
+** Using the irrigation parameterizations:
+&physics
+ sf_surf_irr_scheme                  = 3,
+ irr_daily_amount                    = 5.7,
+ irr_start_hour                      = 2,
+ irr_num_hours                       = 3,
+ irr_start_julianday                 = 135,
+ irr_end_julianday                   = 350,
+ irr_ph                              = 0,
+ irr_freq                            = 1,
+/
 
 
 

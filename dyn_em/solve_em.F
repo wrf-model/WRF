@@ -3598,7 +3598,7 @@ BENCH_START(micro_driver_tim)
      CALL microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
       &        ,DZ8W=dz8w          ,F_ICE_PHY=grid%f_ice_phy              &
-      &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
+      &        ,ITIMESTEP=grid%itimestep             ,LOWLYR=grid%lowlyr  &
       &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy     &
       &        ,RHO=grid%rho       ,SPEC_ZONE=grid%spec_zone              &
       &        ,SR=grid%sr              ,TH=th_phy                        &
@@ -3649,6 +3649,18 @@ BENCH_START(micro_driver_tim)
       &        ,KTS=k_start, KTE=min(k_end,kde-1)                         &
       &        ,NUM_TILES=grid%num_tiles                                  &
       &        ,NAER=grid%naer                                            &
+!===================== IRRIGATION =========================
+      &        ,IRRIGATION=grid%irrigation                                &
+      &        ,SF_SURF_IRR_SCHEME=config_flags%sf_surf_irr_scheme        &
+      &        ,IRR_DAILY_AMOUNT=config_flags%irr_daily_amount            & 
+      &        ,IRR_START_HOUR=config_flags%irr_start_hour                &
+      &        ,IRR_NUM_HOURS=config_flags%irr_num_hours                  &
+      &        ,JULIAN_IN=grid%julian                                     &
+      &        ,IRR_START_JULIANDAY=config_flags%irr_start_julianday      &
+      &        ,IRR_END_JULIANDAY=config_flags%irr_end_julianday          &
+      &        ,IRR_FREQ=config_flags%irr_freq,IRR_PH=config_flags%irr_ph &
+      &        ,IRR_RAND_FIELD=grid%irr_rand_field                        &
+      &        ,GMT=grid%gmt,XTIME=grid%xtime                             & 
 !======================
       ! Variables required for CAMMGMP Scheme
       &        ,DLF=grid%dlf,DLF2=grid%dlf2,T_PHY=grid%t_phy,P_HYD=grid%p_hyd  &

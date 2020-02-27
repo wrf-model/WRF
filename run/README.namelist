@@ -1782,3 +1782,16 @@ is "h1", so that stream needs to be explicitly requested in the namelist.input f
  auxhist1_outname                    = "wrf_trad_fields_d<domain>_<date>"
  /
 
+
+
+Solar diagnostics output
+
+For solar diagnostics, 2-D fields of variables relevant to solar forecasting are output
+when option solar_diagnostics is activated in diags section of namelist, as shown below.
+Also, if tslist is present when solar_diagnostics is activated, then these same variables
+are output to the time series files for the location(s) specified in tslist (see README.tslist).
+All variables are calculated in phys/module_diag_solar.F and defined in registry.solar_fields
+
+ &diags
+ solar_diagnostics                   =  1
+ /

@@ -38,8 +38,10 @@ CONTAINS
       USE module_state_description, ONLY: num_moist, num_chem, num_tracer, num_scalar, &
                                           SKIP_PRESS_DIAGS, SKIP_Z_DIAGS,              &
                                           DO_TRAD_FIELDS,                              &
-                                          P_QG, P_QH, P_QV, P_QC,                      &
+                                          DO_SOLAR_OUTPUT,                             &
+                                          P_QG, P_QH, P_QV, P_QC, P_QI, P_QS,          &
                                           P_QNG, P_QH, P_QNH, P_QR, P_QNR,             &
+                                          F_QV, F_QC, F_QI, F_QS,                      &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
                      WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
                      MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
@@ -81,6 +83,7 @@ CONTAINS
       USE module_diag_afwa, ONLY : afwa_diagnostics_driver
       USE module_diag_rasm, ONLY : mean_output_calc, diurnalcycle_output_calc
       USE module_diag_hailcast, ONLY : hailcast_diagnostic_driver
+      USE module_diag_solar, ONLY : solar_diag
       USE module_trad_fields, ONLY : trad_fields
 
       IMPLICIT NONE
@@ -1076,6 +1079,37 @@ CONTAINS
       END IF RASM_DIAGS_DIURNAL
 
 
+      SOLAR_FIELDS: IF (config_flags%solar_diagnostics == do_solar_output) THEN
+          CALL wrf_debug (100 , '--> CALL DIAGNOSTICS PACKAGE: SOLAR_DIAG')
+          CALL solar_diag (                                                 &
+              mut=grid%mut, dnw=grid%dnw, ph=grid%ph_2, phb=grid%phb,       &
+              cldfrac3d=grid%cldfra, coszen=grid%coszen, swdnb=grid%swdnb,  &
+              swdnt=grid%swdnt, qv=moist(ims,kms,jms,P_QV),                 &
+              qc=moist(ims,kms,jms,P_QC), qi=moist(ims,kms,jms,P_QI),       &
+              qs=moist(ims,kms,jms,P_QS), qc_tot=grid%qc_tot,               &
+              qi_tot=grid%qi_tot,                                           &
+              has_reqc=grid%has_reqc, has_reqi=grid%has_reqi,               &
+              has_reqs=grid%has_reqs, f_qv=f_qv, f_qc=f_qc, f_qi=f_qi,      &
+              f_qs=f_qs, re_cloud=grid%re_cloud, re_ice=grid%re_ice,        &
+              re_snow=grid%re_snow, cldfrac2d=grid%cldfrac2d,               &
+              wvp2d=grid%wvp, lwp2d=grid%lwp, iwp2d=grid%iwp,               &
+              swp2d=grid%swp, wp2d_sum=grid%wp_sum, lwp2d_tot=grid%lwp_tot, &
+              iwp2d_tot=grid%iwp_tot, wp2d_tot_sum=grid%wp_tot_sum,         &
+              re_cloud_path=grid%re_qc, re_ice_path=grid%re_qi,             &
+              re_snow_path=grid%re_qs, re_cloud_path_tot=grid%re_qc_tot,    &
+              re_ice_path_tot=grid%re_qi_tot, tau_qc=grid%tau_qc,           &
+              tau_qi=grid%tau_qi, tau_qs=grid%tau_qs,                       &
+              tau_qc_tot=grid%tau_qc_tot, tau_qi_tot=grid%tau_qi_tot,       &
+              cbase=grid%cbaseht, ctop=grid%ctopht,                         &
+              cbase_tot=grid%cbaseht_tot, ctop_tot=grid%ctopht_tot,         &
+              clrnidx=grid%clrnidx, sza=grid%sza,                           &
+              ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde,         &
+              ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme,         &
+              ips=ips, ipe=ipe, jps=jps, jpe=jpe, kps=kps, kpe=kpe,         &
+              i_start=grid%i_start, i_end=min(grid%i_end, ide-1),           &
+              j_start=grid%j_start, j_end=min(grid%j_end, jde-1),           &
+              kts=k_start, kte=min(k_end,kde-1), num_tiles=grid%num_tiles   )
+      END IF SOLAR_FIELDS
 
 
    END SUBROUTINE diagnostics_driver

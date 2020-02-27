@@ -768,6 +768,7 @@ module_diagnostics_driver.o: \
 		module_diag_hailcast.o 			\
                 module_diag_rasm.o                      \
                 module_diag_trad_fields.o               \
+                module_diag_solar.o                     \
 		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
 		../frame/module_domain.o 		\
@@ -813,6 +814,9 @@ module_diag_rasm.o: \
 module_diag_trad_fields.o: \
 		module_diag_functions.o			\
 		../share/module_model_constants.o
+
+module_diag_solar.o: \
+                ../share/module_model_constants.o
 
 module_diag_refl.o: \
 		../frame/module_dm.o			\

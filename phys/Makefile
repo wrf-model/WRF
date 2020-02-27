@@ -213,7 +213,8 @@ DIAGNOSTIC_MODULES_EM = \
         module_diag_rasm.o \
 	module_diag_pld.o \
 	module_diag_zld.o \
-	module_diag_trad_fields.o
+	module_diag_trad_fields.o \
+        module_diag_solar.o
   
 DIAGNOSTIC_MODULES_NMM = \
 	module_diag_refl.o

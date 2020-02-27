@@ -432,7 +432,8 @@ CONTAINS
    INTEGER, INTENT(IN)            :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
-   integer, intent(in)            :: solar_opt
+   integer, intent(in), OPTIONAL  :: solar_opt
+   integer                        :: solar_opt_local
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
@@ -803,7 +804,7 @@ CONTAINS
                                                 f_qnifa,f_qnwfa,        &  ! trude
                                                 f_qi2,f_qi3            ! for P3
      ! Solar diag
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT)  ::  qc_tot, qi_tot
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT), OPTIONAL  ::  qc_tot, qi_tot
 !shbaek
    real, dimension ( ims:ime, kms:kme, jms:jme ), optional, intent(in) :: qnc_curr
    LOGICAL, OPTIONAL :: f_qnc
@@ -1009,7 +1010,11 @@ CONTAINS
       end do
    end if
 
-   Solar_step: IF (run_param .or. solar_opt == 1) THEN
+   solar_opt_local = 0
+   IF ( PRESENT(solar_opt) ) THEN
+      solar_opt_local = solar_opt
+   END IF
+   Solar_step: IF (run_param .or. solar_opt_local == 1) THEN
 
      !---------------
      ! Calculate constant for short wave radiation
@@ -2809,7 +2814,11 @@ CONTAINS
     end if
  end if
 
- IF (run_param .or. solar_opt == 1) THEN
+ solar_opt_local = 0
+ IF ( PRESENT(solar_opt) ) THEN
+    solar_opt_local = solar_opt
+ END IF
+ IF (run_param .or. solar_opt_local == 1) THEN
     do ij = 1,num_tiles
       its = i_start(ij)
       ite = i_end(ij)
@@ -2817,25 +2826,27 @@ CONTAINS
       jte = j_end(ij)
  ! Save resolved + unresolved hydrometeor mass mixing ratios for Solar diag
  ! Only done for icloud = 3
-      IF ( solar_opt == 1 .and. icloud == 3 ) THEN
-        IF ( F_QC ) THEN
-           DO j=jts,jte
-           DO k=kts,kte
-           DO i=its,ite
-             qc_tot(i,k,j) = qc(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-        ENDIF
-        IF ( F_QI ) THEN
-           DO j=jts,jte
-           DO k=kts,kte
-           DO i=its,ite
-             qi_tot(i,k,j) = qi(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-        ENDIF
+      IF ( solar_opt_local == 1 .and. icloud == 3 ) THEN
+        IF ( PRESENT(qc_tot) .AND. PRESENT(qi_tot) ) THEN
+          IF ( F_QC ) THEN
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+               qc_tot(i,k,j) = qc(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
+          ENDIF
+          IF ( F_QI ) THEN
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+               qi_tot(i,k,j) = qi(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
+          ENDIF
+        END IF
       ENDIF
  ! Restore qc & qi for any model physics configuration
       IF ( F_QC ) THEN

@@ -27,3 +27,4 @@ include registry.bdy_perturb
 include registry.hyb_coord
 include registry.new3d_wif
 include registry.trad_fields
+include registry.solar_fields

@@ -1854,7 +1854,11 @@
       IF ( wrf_dm_on_monitor() ) THEN
          CALL wrf_tsin_exist ( exists )
          IF ( exists ) THEN
-            model_config_rec%process_time_series = 1
+            IF ( model_config_rec%solar_diagnostics == 1 ) THEN
+               model_config_rec%process_time_series = 2
+            ELSE
+               model_config_rec%process_time_series = 1
+            END IF
          ELSE
             model_config_rec%process_time_series = 0
          END IF

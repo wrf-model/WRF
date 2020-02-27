@@ -441,6 +441,17 @@ for z_levels means AGL, so -500 is 500 m AGL, and 10000 is 10 km).
  /
 
 
+** For solar diagnostics, 2-D fields of variables relevant to solar forecasting are output 
+when option solar_diagnostics is activated in diags section of namelist, as shown below.
+Also, if tslist is present when solar_diagnostics is activated, then these same variables
+are output to the time series files for the location(s) specified in tslist.
+All variables are calculated in phys/module_diag_solar.F and defined in registry.solar_fields
+
+ &diags
+ solar_diagnostics                   =  1
+ /
+
+
 ** Using different flux formulation for tropical storm simulations
    (best for grid spacing less than 2 km) 
    simple 1-D ocean mixed layer, or University of Miami 3DPWP ocean model

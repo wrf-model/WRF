@@ -265,6 +265,7 @@ BENCH_START(rad_driver_tim)
      &        ,o3input=config_flags%o3input     ,O3rad=grid%o3rad                    &
      &        ,aer_opt=config_flags%aer_opt ,aerod=aerod(:,:,:,P_ocarbon:P_upperaer) &
      &        ,swint_opt=config_flags%swint_opt                                      &
+     &        ,solar_opt=config_flags%solar_diagnostics                              &
      &        ,P8W=grid%p_hyd_w        ,P=grid%p_hyd            ,PI=pi_phy           &
      &        ,RADT=grid%radt          ,RA_CALL_OFFSET=grid%ra_call_offset           &
      &        ,RHO=grid%rho            ,RLWTOA=grid%rlwtoa                           &
@@ -306,7 +307,7 @@ BENCH_START(rad_driver_tim)
      &        ,PAERLEV=grid%paerlev   ,ID=grid%id                         &
      &        ,CAM_ABS_DIM1=grid%cam_abs_dim1, CAM_ABS_DIM2=grid%cam_abs_dim2 &
      &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
-     &        ,XTIME=grid%xtime                                                &
+     &        ,XTIME=grid%xtime                                           &
               ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag       &
 #if ( EM_CORE == 1)
      &        ,mut=grid%mut,dnw=grid%dnw                                  & ! FARMS coupling
@@ -382,6 +383,7 @@ BENCH_START(rad_driver_tim)
      &        , QNDROP=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP    &
      &        ,QNIFA=scalar(ims,kms,jms,P_QNIFA),F_QNIFA=F_QNIFA          & !Trude
      &        ,QNWFA=scalar(ims,kms,jms,P_QNWFA),F_QNWFA=F_QNWFA          & !Trude
+     &        ,qc_tot=grid%qc_tot, qi_tot=grid%qi_tot                     & ! Solar diag
      &        ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc            &
      &        ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc            &
      &        ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc            &

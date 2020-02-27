@@ -361,9 +361,9 @@ BENCH_START(rad_driver_tim)
      &        , LRADIUS=grid%LRADIUS,IRADIUS=grid%IRADIUS                 & !BSINGH(01/22/2014)
      &        , CLDFRA_DP=grid%cldfra_dp                                  & ! ckay for subgrid cloud
      &        , CLDFRA_SH=grid%cldfra_sh                                  &
-     &        , icloud_bl=config_flags%icloud_bl                          & !JOE: subgrid BL clouds
+     &        , icloud_bl=config_flags%icloud_bl                          &
      &        , cldovrlp=config_flags%cldovrlp                            & ! J. Henderson AER: cldovrlp namelist value
-     &        , qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                 & !JOE: subgrid bl clouds
+     &        , qc_bl=grid%qc_bl,qi_bl=grid%qi_bl,cldfra_bl=grid%cldfra_bl&
      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
      &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
      &        , PB=grid%pb                                                &
@@ -1018,7 +1018,7 @@ BENCH_START(pbl_driver_tim)
      &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             &
      &        ,bl_mynn_mixlength=config_flags%bl_mynn_mixlength           &
      &        ,icloud_bl=config_flags%icloud_bl                           &
-     &        ,qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                  &
+     &        ,qc_bl=grid%qc_bl,qi_bl=grid%qi_bl,cldfra_bl=grid%cldfra_bl &
      &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     &
      &        ,bl_mynn_edmf_mom=config_flags%bl_mynn_edmf_mom             &
      &        ,bl_mynn_edmf_tke=config_flags%bl_mynn_edmf_tke             &

@@ -190,7 +190,8 @@ MODULES = \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
 	module_sf_lake.o \
-	module_diagnostics_driver.o
+	module_diagnostics_driver.o \
+	module_irrigation.o
 
 FIRE_MODULES = \
         module_fr_fire_driver.o \

@@ -719,12 +719,14 @@ To overwrite the cu_physics option for a second nest, set
  ltng_temp_upper                    = -45., ; used by lnox_opt=2
  ltng_temp_lower                    = -15., ; used by lnox_opt=2
  /
+ 
  &chem
  lnox_opt                           = 2,
  n_ic                               = 200,
  n_cg                               = 200,
  lnox_passive                       = .false.,
  /
+
 
 
 

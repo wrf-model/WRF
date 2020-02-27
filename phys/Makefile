@@ -87,6 +87,7 @@ MODULES = \
 	module_mp_fer_hires.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
+	module_mp_SBM_polar_radar.o \
 	module_mp_full_sbm.o \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \

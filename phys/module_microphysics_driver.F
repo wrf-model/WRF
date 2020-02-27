@@ -138,6 +138,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qrimef_curr,f_qrimef                              &
                       ,aercu_opt                                         &
 # if( EM_CORE==1 )
+                      ,sbmradar,num_sbmradar                             &
                       ,aerocu,aercu_fct,no_src_types_cu                  &
                       ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           &
                       ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           &
@@ -158,7 +159,7 @@ SUBROUTINE microphysics_driver(                                          &
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN_SHPUND, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
                     ,WSM7SCHEME, WDM7SCHEME &
@@ -212,7 +213,9 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_fer_hires
    USE module_mp_thompson
    USE module_mp_full_sbm
+#if ( BUILD_SBM_FAST == 1 )
    USE module_mp_fast_sbm
+#endif
    USE module_mp_gsfcgce
    USE module_mp_gsfcgce_4ice_nuwrf, only: gsfcgce_4ice_nuwrf
    USE module_mp_morr_two_moment
@@ -405,6 +408,9 @@ SUBROUTINE microphysics_driver(                                          &
 !
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme,num_scalar
+#if (EM_CORE == 1)
+   INTEGER,      INTENT(IN   )    ::     num_sbmradar
+#endif
    INTEGER, OPTIONAL, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
    INTEGER,      INTENT(IN   )    ::                         kts,kte
    INTEGER,      INTENT(IN   )    ::     itimestep,num_tiles,spec_zone
@@ -463,6 +469,9 @@ SUBROUTINE microphysics_driver(                                          &
 
     REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),INTENT(INOUT), OPTIONAL :: th_old,qv_old
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT), OPTIONAL   :: scalar
+#if (EM_CORE == 1)
+    REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_sbmradar),INTENT(INOUT) :: sbmradar
+#endif
     INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN), OPTIONAL::   IVGTYP
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN), OPTIONAL    :: XLAT, XLONG
 
@@ -1098,7 +1107,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
 #if (EM_CORE==1)
-       CASE (FAST_KHAIN_LYNN)
+# if ( BUILD_SBM_FAST == 1 )
+       CASE (FAST_KHAIN_LYNN_SHPUND)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling sbm' )
                CALL fast_sbm(W=w,U=u,V=v,TH_OLD=th_old          &
                  ,CHEM_new=scalar,N_CHEM=num_scalar                     &
@@ -1117,15 +1127,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,QV_OLD=qv_old                                     &
                  ,QNC=qnc_curr                                      &
                  ,QNR=qnr_curr                                      &
+                 ,QNI=qni_curr                                      &
                  ,QNS=qns_curr                                      &
                  ,QNG=qng_curr                                      &
                  ,QNA=qnn_curr                                      &
+                 ,sbmradar=sbmradar,num_sbmradar=num_sbmradar       &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
                  ,diagflag=diagflag                   &  ! added for radar reflectivity
-                 ,do_radar_ref=do_radar_ref           &  ! added for radar reflectivity
                  ,RAINNC=rainnc                       &
                  ,RAINNCV=rainncv                     &
                  ,SNOWNC=snownc                       &
@@ -1134,6 +1144,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,GRAUPELNCV=graupelncv               &
                  ,SR=sr                               &
                                          )
+# endif
 
 !
        CASE (FULL_KHAIN_LYNN)

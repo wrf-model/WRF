@@ -18,6 +18,7 @@ include registry.lake
 include registry.ssib
 include registry.noahmp
 include registry.sbm
+include registry.polrad
 include registry.diags
 include registry.afwa
 include registry.rasm_diag

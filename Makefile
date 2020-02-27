@@ -642,6 +642,10 @@ em_real : wrf
                 ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;  \
                 ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;  \
              fi )
+	( cd test/em_real ; if test -d ../../run/SBM_input_33 ; then				\
+             ln -sf ../../run/SBM_input_33 . ;						\
+             ln -sf ../../run/scattering_tables_2layer_high_quad_1dT_1%fw_110 . ;	\
+             fi )
 	( cd test/em_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
 	( cd test/em_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )

@@ -569,6 +569,8 @@ if test -n "$PERL" ; then
          sed -e '/^RWORDSIZE/s/$(NATIVE_RWORDSIZE)/8/' configure.wrf > configure.wrf.edit
        fi
        /bin/mv configure.wrf.edit configure.wrf
+       sed -e 's/-DBUILD_SBM_FAST=1/-DBUILD_SBM_FAST=0/' configure.wrf > configure.wrf.edit
+       /bin/mv configure.wrf.edit configure.wrf
      fi
    else
      echo '*********************************************************'

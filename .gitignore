@@ -16,3 +16,4 @@
 configure.wrf*
 *.backup
 *.f90
+!chem/KPP/kpp/kpp-2.1/**/*.f90

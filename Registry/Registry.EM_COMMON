@@ -1538,8 +1538,9 @@ state    real  CCN4_GS          ikj      misc        1         -      rh      "C
 state    real  CCN5_GS          ikj      misc        1         -      rh      "CCN5_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.3%"       "#/cm-3"
 state    real  CCN6_GS          ikj      misc        1         -      rh      "CCN6_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.5%"       "#/cm-3"
 state    real  CCN7_GS          ikj      misc        1         -      rh      "CCN7_GS"             "Grid Scale Cloud Condensation Nuclei at S=1.0%"       "#/cm-3"
-state    real  QC_BL             ikj      misc        1         -      r      "QC_BL"                "CLOUD WATER MIXING RATIO IN PBL schemes"          "kg kg-1"
-state integer  STEPAVE_COUNT     -        misc        1         -      r      "STEPAVE_COUNT"        "time steps contained in averages for convective transport" ""
+state    real  QC_BL            ikj      misc        1         -      r      "QC_BL"                "CLOUD WATER MIXING RATIO IN PBL schemes"          "kg kg-1"
+state    real  QI_BL            ikj      misc        1         -      r      "QI_BL"                "CLOUD ICE MIXING RATIO IN PBL schemes"            "kg kg-1"
+state integer  STEPAVE_COUNT     -       misc        1         -      r      "STEPAVE_COUNT"        "time steps contained in averages for convective transport" ""
 
 #
 state    real  RTHFTEN          ikj     misc        1         -      r        "RTHFTEN"               "TOTAL ADVECTIVE POTENTIAL TEMPERATURE TENDENCY"  "K s-1"
@@ -2935,7 +2936,7 @@ package   mrfscheme      bl_pbl_physics==99          -             -
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
 package   mynn_dmp_edmf  bl_mynn_edmf==1             -             state:ktop_plume,maxmf,nupdraft
 package   mynn_3Doutput  bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
-package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
+package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl,qi_bl
 
 package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_diss,elmin,xkmv_meso
 

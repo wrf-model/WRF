@@ -48,9 +48,9 @@ CONTAINS
       KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
       WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
       MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
-      NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
-      MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN,  &
-      MORR_TM_AERO  !TWG 2017  !,MILBRANDT3MOM, NSSL_3MOM
+      NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,     &
+      MILBRANDT2MOM , CAMMGMPSCHEME, FULL_KHAIN_LYNN, MORR_TM_AERO,     &
+      FAST_KHAIN_LYNN_SHPUND  !,MILBRANDT3MOM, NSSL_3MOM
 
    IMPLICIT NONE
 !======================================================================
@@ -693,7 +693,7 @@ CONTAINS
 !      explicit bin scheme so code below not applicable
 !      scheme authors need to implement if desired.
 
-     CASE (FAST_KHAIN_LYNN)
+     CASE (FAST_KHAIN_LYNN_SHPUND)
 !      explicit bin scheme so code below not applicable
 !      scheme authors need to implement if desired.
 

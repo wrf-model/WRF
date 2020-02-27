@@ -2226,6 +2226,21 @@
 #endif
 
 !-----------------------------------------------------------------------
+!  If the FAST SBM scheme is requested and it is not compiled, let the
+!  user know.
+!-----------------------------------------------------------------------
+
+#if( BUILD_SBM_FAST != 1)
+      IF ( model_config_rec % mp_physics(1) .EQ. FAST_KHAIN_LYNN_SHPUND ) THEN
+         wrf_err_message = '--- ERROR: FAST SBM scheme must be built with a default compile-time flag'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Run ./clean -a, ./configure, ./compile scripts again'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
+!-----------------------------------------------------------------------
 !  If the RRTMG FAST schemes are requested, check that the code with
 !  built to use them.
 !-----------------------------------------------------------------------

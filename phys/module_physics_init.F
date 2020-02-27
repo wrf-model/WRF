@@ -4084,7 +4084,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 #endif
    USE module_mp_thompson
    USE module_mp_full_sbm
+#if (BUILD_SBM_FAST == 1)
    USE module_mp_fast_sbm
+#endif
    USE module_mp_morr_two_moment
    USE module_mp_p3
    USE module_mp_jensen_ishmael
@@ -4275,10 +4277,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      IF(start_of_simulation.or.restart)THEN
           CALL full_hucminit(dt)
      END IF
-    CASE (FAST_KHAIN_LYNN)
+# if (BUILD_SBM_FAST == 1)
+    CASE (FAST_KHAIN_LYNN_SHPUND)
      IF(start_of_simulation.or.restart)THEN
           CALL fast_hucminit(dt)
      END IF
+# endif
 #endif
      CASE (NSSL_1MOMLFO)
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=-1) ! no separate hail

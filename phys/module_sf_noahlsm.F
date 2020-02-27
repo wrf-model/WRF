@@ -2727,7 +2727,9 @@ CONTAINS
 ! ----------------------------------------------------------------------
       IF (EXCESS > CMCMAX) DRIP = EXCESS - CMCMAX
       PCPDRP = (1. - SHDFAC) * PRCP1+ DRIP / DT
-      IF(PRESENT(IRRIGATION_CHANNEL) .AND. IRRIGATION_CHANNEL.NE.0.)PCPDRP =PCPDRP+ 0.001*IRRIGATION_CHANNEL !conversion of units
+      IF(PRESENT(IRRIGATION_CHANNEL)) THEN
+         IF (IRRIGATION_CHANNEL.NE.0.)PCPDRP =PCPDRP+ 0.001*IRRIGATION_CHANNEL !conversion of units
+      END IF
 ! ----------------------------------------------------------------------
 ! STORE ICE CONTENT AT EACH SOIL LAYER BEFORE CALLING SRT and SSTEP
 !

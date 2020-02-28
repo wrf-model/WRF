@@ -58,6 +58,7 @@
       INTEGER :: count_opt
       LOGICAL :: lon_extent_is_global , lat_extent_is_global
       LOGICAL :: rinblw_already_done
+      LOGICAL :: fsbm_table1_exists, fsbm_table2_exists
       INTEGER :: count_fatal_error
       INTEGER :: len1, len2, len_loop
 
@@ -569,6 +570,29 @@
       END DO
 
 #if (EM_CORE == 1)
+!--------------------------------------------------------------------------------------------------
+! Input tables must exist in running directory for fast bin microphysics scheme (mp_physics = 30)
+!--------------------------------------------------------------------------------------------------
+      IF (  model_config_rec % mp_physics(1) .EQ. FAST_KHAIN_LYNN_SHPUND   ) THEN
+           INQUIRE(FILE='./SBM_input_33', EXIST=fsbm_table1_exists)
+           IF (.not.fsbm_table1_exists ) THEN
+           wrf_err_message = "Input table SBM_input_33 doesn't exist !!!"
+           CALL wrf_debug ( 1, wrf_err_message )
+           wrf_err_message = 'Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
+           CALL wrf_debug ( 1, wrf_err_message )
+           CALL wrf_debug ( 0, TRIM( "  " ) )
+           count_fatal_error = count_fatal_error + 1
+           END IF
+           INQUIRE(FILE='./scattering_tables_2layer_high_quad_1dT_1%fw_110', EXIST=fsbm_table2_exists)
+           IF (.not.fsbm_table1_exists ) THEN
+           wrf_err_message = "Input table scattering_tables_2layer_high_quad_1dT_1%fw_110 doesn't exist !!!"
+           CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
+           wrf_err_message = 'Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
+           CALL wrf_debug ( 1, wrf_err_message )
+           CALL wrf_debug ( 0, TRIM( "  " ) )
+           count_fatal_error = count_fatal_error + 1
+           END IF
+      END IF
 !-----------------------------------------------------------------------
 ! There are restrictions on the AFWA diagnostics regarding the choice
 ! of microphysics scheme. These are hard coded in the AFWA diags driver,

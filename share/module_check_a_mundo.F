@@ -577,19 +577,17 @@
            INQUIRE(FILE='./SBM_input_33', EXIST=fsbm_table1_exists)
            IF (.not.fsbm_table1_exists ) THEN
            wrf_err_message = "Input table SBM_input_33 doesn't exist !!!"
-           CALL wrf_debug ( 1, wrf_err_message )
+           CALL wrf_debug ( 0, wrf_err_message )
            wrf_err_message = 'Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
-           CALL wrf_debug ( 1, wrf_err_message )
-           CALL wrf_debug ( 0, TRIM( "  " ) )
+           CALL wrf_debug ( 0, wrf_err_message )
            count_fatal_error = count_fatal_error + 1
            END IF
            INQUIRE(FILE='./scattering_tables_2layer_high_quad_1dT_1%fw_110', EXIST=fsbm_table2_exists)
            IF (.not.fsbm_table1_exists ) THEN
            wrf_err_message = "Input table scattering_tables_2layer_high_quad_1dT_1%fw_110 doesn't exist !!!"
-           CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
            wrf_err_message = 'Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
-           CALL wrf_debug ( 1, wrf_err_message )
-           CALL wrf_debug ( 0, TRIM( "  " ) )
+           CALL wrf_debug ( 0, wrf_err_message )
            count_fatal_error = count_fatal_error + 1
            END IF
       END IF

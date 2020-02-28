@@ -1063,6 +1063,8 @@ Namelist variables for lake module:
                                                   Points with 0/0 values use ratio defined by iccg_prescribed_(num|den)
  iccg_prescribed_num (max_dom)       = 0.       ! Numerator of user-specified prescribed IC:CG
  iccg_prescribed_den (max_dom)       = 1.       ! Denominator of user-specified prescribed IC:CG
+ ltng_temp_upper                     = -45.     ! Temperature (C) of upper peak of LNOx vertical distribution for IC lightning (used by &chem lnox_opt=2).
+ ltng_temp_lower                     = -15.     ! Temperatures (C) of lower peak of LNOx vertical distribution for both IC and CG lightning (used by &chem lnox_opt=2).
 
 Options for wind turbine drag parameterization:
 

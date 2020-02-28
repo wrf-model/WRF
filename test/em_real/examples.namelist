@@ -693,6 +693,28 @@ To overwrite the cu_physics option for a second nest, set
  /
 
 
+** Using lightning option
+ &physics
+ lightning_option                    = 2,
+ iccg_method                         = 1,
+ iccg_prescribed_num                 = 2,
+ iccg_prescribed_den                 = 1,
+ cldtop_adjustment                   = 0,
+ lightning_dt                        = 5,   ; default: time_step
+ lightning_start_seconds             = 600,
+ flashrate_factor                    = 1.0,
+ ltng_temp_upper                    = -45., ; used by lnox_opt=2
+ ltng_temp_lower                    = -15., ; used by lnox_opt=2
+ /
+ 
+ &chem
+ lnox_opt                           = 2,
+ n_ic                               = 200,
+ n_cg                               = 200,
+ lnox_passive                       = .false.,
+ /
+
+
 ** Using the irrigation parameterizations:
 &physics
  sf_surf_irr_scheme                  = 3,
@@ -704,6 +726,7 @@ To overwrite the cu_physics option for a second nest, set
  irr_ph                              = 0,
  irr_freq                            = 1,
 /
+
 
 
 

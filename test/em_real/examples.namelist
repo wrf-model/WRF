@@ -716,8 +716,8 @@ To overwrite the cu_physics option for a second nest, set
  lightning_dt                        = 5,   ; default: time_step
  lightning_start_seconds             = 600,
  flashrate_factor                    = 1.0,
- ltng_temp_upper                    = -45., ; used by lnox_opt=2
- ltng_temp_lower                    = -15., ; used by lnox_opt=2
+ ltng_temp_upper                     = -45., ; used by lnox_opt=2
+ ltng_temp_lower                     = -15., ; used by lnox_opt=2
  /
  
  &chem

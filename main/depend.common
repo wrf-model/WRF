@@ -574,6 +574,7 @@ module_physics_init.o : \
 		module_mp_etanew.o		\
 		module_mp_fer_hires.o 		\
 		module_mp_HWRF.o		\
+		module_mp_fast_sbm.o		\
 		module_fdda_psufddagd.o		\
 		module_fdda_spnudging.o         \
 		module_fddaobs_rtfdda.o		\
@@ -618,6 +619,8 @@ module_microphysics_driver.o: \
                 module_mp_nssl_2mom.o         \
 		module_mp_wdm5.o module_mp_wdm6.o \
 		module_mp_cammgmp_driver.o \
+		module_irrigation.o \
+		module_mp_fast_sbm.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
@@ -747,6 +750,7 @@ module_surface_driver.o: \
 		module_sf_scmflux.o		\
 		module_sf_scmskintemp.o		\
 		module_sf_ocean_driver.o	\
+		module_irrigation.o             \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_cpl.o \

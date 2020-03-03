@@ -6,6 +6,7 @@
 ! vertical profiles added by Torge Lorenz -- June 2012
 ! ability to output at either i/j or lat/lon locations, and ability to 
 !     output W, added by Pat Hawbecker -- Jan 2019
+! ability to output O3 (chem), added by Xin Zhang -- Feb 2020
 ! 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE calc_ts_locations( grid )
@@ -33,9 +34,15 @@ SUBROUTINE calc_ts_locations( grid )
    REAL :: known_lat, known_lon
    CHARACTER (LEN=132) :: message
    CHARACTER (LEN=24) :: ts_profile_filename
+#if (WRF_CHEM == 1)
+   INTEGER, PARAMETER :: TS_FIELDS = 8
+   CHARACTER (LEN=2), DIMENSION(TS_FIELDS) :: &
+      ts_file_endings = (/ 'UU', 'VV', 'PH', 'TH', 'QV' ,'WW', 'PR', 'O3'/)
+#else
    INTEGER, PARAMETER :: TS_FIELDS = 7
    CHARACTER (LEN=2), DIMENSION(TS_FIELDS) :: &
       ts_file_endings = (/ 'UU', 'VV', 'PH', 'TH', 'QV' ,'WW', 'PR'/) 
+#endif
    TYPE (PROJ_INFO) :: ts_proj
    TYPE (grid_config_rec_type) :: config_flags
 
@@ -438,6 +445,11 @@ SUBROUTINE calc_ts( grid )
             grid%ts_p_profile(n,i,k)   = grid%pb(ix,k,iy)+grid%p(ix,k,iy)
             END DO
 #endif
+#if (WRF_CHEM == 1)
+            DO k=1,grid%max_ts_level
+            grid%ts_o3_profile(n,i,k)   = grid%chem(ix,k,iy,p_o3)
+            END DO
+#endif
          grid%ts_u(n,i)    = earth_u
          grid%ts_v(n,i)    = earth_v
          grid%ts_t(n,i)    = output_t
@@ -497,6 +509,11 @@ SUBROUTINE calc_ts( grid )
          grid%ts_p_profile(n,i,k)     = 1.E30
          END DO
 #endif   
+#if (WRF_CHEM == 1)
+         DO k=1,grid%max_ts_level
+         grid%ts_o3_profile(n,i,k)    = 1.E30
+         END DO
+#endif
          grid%ts_hour(n,i) = 1.E30
          grid%ts_u(n,i)    = 1.E30
          grid%ts_v(n,i)    = 1.E30
@@ -626,6 +643,12 @@ SUBROUTINE write_ts( grid )
    CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_p_profile(:,:,k),grid%ts_buf_size*grid%max_ts_locs)
    END DO
 #endif         
+#if (WRF_CHEM == 1)
+   DO k=1,grid%max_ts_level
+   ts_buf(:,:) = grid%ts_o3_profile(:,:,k)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_o3_profile(:,:,k),grid%ts_buf_size*grid%max_ts_locs)
+   END DO
+#endif
    ts_buf(:,:) = grid%ts_u(:,:)
    CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_u(:,:),grid%ts_buf_size*grid%max_ts_locs)
 
@@ -986,6 +1009,26 @@ SUBROUTINE write_ts( grid )
          CLOSE(UNIT=iunit)
 
 #endif   
+#if (WRF_CHEM == 1)
+         !Write O3 profile to separate file
+         iunit = get_unused_unit()
+            IF ( iunit <= 0 ) THEN
+            CALL wrf_error_fatal('Error in write_ts: could not find a free Fortran unit.')
+            END IF
+         !Recreate filename for O3 profiles
+         k = LEN_TRIM(ts_profile_filename)
+         WRITE(ts_profile_filename(k-1:k),'(A2)') 'O3'
+
+         OPEN(UNIT=iunit, FILE=TRIM(ts_profile_filename), STATUS='unknown', POSITION='append', FORM='formatted')
+
+         DO n=1,grid%next_ts_time - 1
+
+            WRITE(UNIT=iunit,FMT=profile_format)  &
+                              grid%ts_hour(n,i),             &
+                              grid%ts_o3_profile(n,i,1:grid%max_ts_level)
+         END DO
+         CLOSE(UNIT=iunit)
+#endif
 
       END DO
 

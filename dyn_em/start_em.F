@@ -1035,15 +1035,15 @@ endif
                       grid%re_cloud_gsfc, grid%re_ice_gsfc,             & ! Goddard
                       grid%re_snow_gsfc, grid%re_graupel_gsfc,          & ! Goddard
                       grid%re_hail_gsfc, grid%re_rain_gsfc,             & ! Goddard
-                      grid%nca,grid%swrad_scat,                    &
+                      grid%nca,grid%swrad_scat,                         &
                       grid%cldefi,grid%lowlyr,                          &
-                      grid%mass_flux,                              &
+                      grid%mass_flux,                                   &
                       grid%rthften, grid%rqvften,                       &
                       grid%cldfra,                                      &
 #if (WRF_CHEM == 1)
                       grid%cldfra_old,                                  &
 #else
-                      cldfra_old,                                  &
+                      cldfra_old,                                       &
 #endif
                       grid%glw,grid%gsw,grid%emiss,grid%embck,            &
                       grid%lu_index,                                      &
@@ -1064,10 +1064,12 @@ endif
                       grid%acsnom,grid%ivgtyp,grid%isltyp, grid%sfcevp,grid%smois,     &
                       grid%sh2o, grid%snowh, grid%smfr3d,                    &
                       grid%snoalb,                 &
-                      grid%DX,grid%DY,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy, &
+                      grid%DX,grid%DY,grid%dx2d,grid%area2d,              &
+                      grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy, &
                       grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state,&
                       allowed_to_read, grid%moved, start_of_simulation,               &
-                      grid%LAGDAY, &
+                      grid%LAGDAY,                            &
+                      grid%U10,grid%V10,grid%U10E,grid%V10E,  &
                       ids, ide, jds, jde, kds, kde,           &
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &
@@ -1241,6 +1243,7 @@ endif
                       ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic
                       ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic
                       ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
+                      ,grid%irr_rand_field,config_flags%irr_ph,config_flags%irr_freq                 &
                       ,grid%QR_CU, grid%QS_CU                                                        &
                       ,grid%NC_CU, grid%NI_CU, grid%NR_CU, grid%NS_CU,grid%CCN_CU                    &
                       ,grid%alevsiz_cu,grid%num_months,grid%no_src_types_cu,grid%aeromcu             &
@@ -1287,11 +1290,6 @@ endif
          call wrf_debug(200,'In start_em, after zero_avgflx call')
       ENDDO
    ENDIF
-
-#ifdef MCELIO
-   grid%LU_MASK = 0.
-   WHERE ( grid%lu_index .EQ. 16 ) grid%LU_MASK = 1.
-#endif
 
    call wrf_debug(100,'start_em: calling lightning_init')
    CALL lightning_init ( id=grid%id, itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &

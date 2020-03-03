@@ -55,7 +55,7 @@ program gen_be_v3
 
    namelist /gen_be_nml/ nc_list_file, be_method, varnames, outnames, &
       do_pert_calc, do_eof_transform, do_slen_calc, slen_opt, stride, yr_cutoff, &
-      verbose, level_start, level_end, aux_file, write_be_dat_r8
+      verbose, level_start, level_end, aux_file, write_be_dat_r8, pert1_read_opt
    namelist /ens_nml/ nens, write_ep, write_ens_stdv, ep_format, nproc_out
 
    character(len=filename_len) :: nc_list_file  ! the text file that contains a list of netcdf files to process
@@ -80,6 +80,9 @@ program gen_be_v3
    integer :: nproc_out              ! number of processors to decompose for ep_format=3
 
    integer :: level_start, level_end ! for do_slen_calc=true. Can be set to be other than 1 and nvert for quick debugging/testing
+   integer :: pert1_read_opt         ! how to access pert1 data for compute_bv_sl
+                                     ! 1: read and store all cases in memory at once
+                                     ! 2: read from pert1 file when need it
    logical :: write_pert0
    logical :: write_pert1
    logical :: write_be_dat_r8        ! if writing out be.dat in real*8
@@ -188,6 +191,7 @@ program gen_be_v3
    verbose = .false.
    aux_file = 'none'
    write_be_dat_r8 = .true.
+   pert1_read_opt = 1
 
    ! initialize internal options
    write_pert0 = .false.
@@ -1696,6 +1700,7 @@ subroutine compute_bv_sl
 
    integer, allocatable:: bin_pts2d(:)               ! Number of points in bin (2D fields).
    real, allocatable   :: field(:,:,:)               ! Input field.
+   real, allocatable   :: fieldv(:,:,:)              ! projected field
    real, allocatable   :: field2d(:,:)               ! Input field.
    real, allocatable   :: bv(:,:,:)                  ! Vertical BE for this time.
    real, allocatable   :: work(:,:)                  ! EOF work array.
@@ -1731,20 +1736,6 @@ subroutine compute_bv_sl
 
    inv_nij = 1.0 / real(ni*nj)
    allocate( field(1:ni,1:nj,1:nk) )
-   allocate( bv(1:nk,1:nk,1:num_bins2d) )
-   field(:,:,:) = 0.0
-   bv(:,:,:) = 0.0
-
-   allocate( bin_pts2d(1:num_bins2d) )
-   bin_pts2d(:) = 0
-
-      allocate( work(1:nk,1:nk) )
-      allocate( e_vec_loc(1:nk,1:nk,1:num_bins2d) )
-      allocate( e_val_loc(1:nk,1:num_bins2d) )
-      allocate( e_vec(1:nk,1:nk) )
-      allocate( e_val(1:nk) )
-      allocate( evec(1:nj,1:nk,1:nk) )
-      allocate( eval(1:nj,1:nk) )
 
    if ( trim(be_method) == 'NMC' ) then
       istart_member = 1
@@ -1753,6 +1744,8 @@ subroutine compute_bv_sl
       istart_member = 1
       iend_member   = nens
    end if
+
+   if ( pert1_read_opt == 1 ) then
 
    allocate(xdata(1:nvar,istart_member:iend_member,1:ncase), stat=ierr)
    call error_handler(ierr, 'allocating xdata in compute_bv_sl')
@@ -1784,9 +1777,25 @@ subroutine compute_bv_sl
       end do
    end do
 
+   end if ! pert1_read_opt=1, store all pert1 data in memory
+
    if ( do_eof_transform ) then
 
       if ( myproc == root ) write(stdout,'(4a)')'====== Computing vertical error eigenvalues, eigenvectors ======'
+
+      allocate( bv(1:nk,1:nk,1:num_bins2d) )
+      allocate( bin_pts2d(1:num_bins2d) )
+      allocate( work(1:nk,1:nk) )
+      allocate( e_vec_loc(1:nk,1:nk,1:num_bins2d) )
+      allocate( e_val_loc(1:nk,1:num_bins2d) )
+      allocate( e_vec(1:nk,1:nk) )
+      allocate( e_val(1:nk) )
+      allocate( evec(1:nj,1:nk,1:nk) )
+      allocate( eval(1:nj,1:nk) )
+
+      if ( pert1_read_opt == 2 ) then
+         allocate( fieldv(1:ni,1:nj,1:nk) )
+      end if
 
       var_loop: do iv = 1, nvar
 
@@ -1794,6 +1803,9 @@ subroutine compute_bv_sl
          if ( myproc /= MOD((iv-1), num_procs) ) cycle var_loop
 
          write(stdout,'(a,i3,2a)') ' Proc', myproc, ' Processing vertical error stats for variable ', trim(varnames(iv))
+
+         bv(:,:,:) = 0.0
+         bin_pts2d(:) = 0
 
          if ( var_dim(iv) == 2 ) then
             nkk = 1
@@ -1806,7 +1818,18 @@ subroutine compute_bv_sl
                !write(stdout,'(5a,i4)')'    Processing data for date ', filedates(ie,ic), ', variable ', trim(varnames(iv)), &
                !                  ', member ', ie
 
-               field(:,:,:) = xdata(iv,ie,ic)%value(:,:,:)
+               if ( pert1_read_opt == 1 ) then
+
+                  field(:,:,:) = xdata(iv,ie,ic)%value(:,:,:)
+
+               else if ( pert1_read_opt == 2 ) then
+
+                  write(ce,'(i3.3)') ie
+                  input_file = 'pert1.'//filedates(ie,ic)//'.e'//trim(ce)
+
+                  call get_pert1_data(trim(input_file), trim(varnames(iv)), ni, nj, nk, field)
+
+               end if
 
                ! Remove area mean
                do k = 1, nkk
@@ -1908,15 +1931,15 @@ subroutine compute_bv_sl
             end do
          end do
 
-         !if ( myproc == root ) write(stdout,'(a)')' Projecting fields onto vertical modes'
-
          if ( var_dim(iv) == 3 ) then
+            if ( myproc == root ) write(stdout,'(a)')' Projecting fields onto vertical modes'
             do ic = 1, ncase
                do ie = istart_member, iend_member
                   !write(stdout,'(5a,i4)')'    Date = ', filedates(ie,ic), ', variable ', trim(varnames(iv)), &
                   !                  ', member ', ie
                   ! Project fields onto vertical modes
                   ! Perform vv(i,j,m) = L^{-1/2} E^T vp(i,j,k) transform
+                if ( pert1_read_opt == 1 ) then
                   do m = 1, nk
                      do j = 1, nj
                         do i = 1, ni
@@ -1926,11 +1949,33 @@ subroutine compute_bv_sl
                      end do
                   end do
                   xdata(iv,ie,ic)%value(:,:,:) = field(:,:,:)
+                else if ( pert1_read_opt == 2 ) then
+                  write(ce,'(i3.3)') ie
+                  input_file = 'pert1.'//filedates(ie,ic)//'.e'//trim(ce)
+                  call get_pert1_data(trim(input_file), trim(varnames(iv)), ni, nj, nk, field)
+                  do m = 1, nk
+                     do j = 1, nj
+                        do i = 1, ni
+                           ETVp = sum(evec(j,1:nk,m) * field(i,j,1:nk))
+                           fieldv(i,j,m) = ETVp / eval(j,m)
+                        end do
+                     end do
+                  end do
+                  output_file = 'pertv_'//trim(varnames(iv))//'.'//filedates(ie,ic)//'.e'//trim(ce)
+                  !write(stdout,'(a,i3,a,a)') ' Proc', myproc, ' writing to ', trim(output_file)
+                  open (ounit, file=output_file, form='unformatted')
+                  write(ounit) 1, ni, nj, nk
+                  write(ounit) var_dim(iv)
+                  write(ounit) filedates(ie,ic), varnames(iv)
+                  write(ounit) fieldv(:,:,:)
+                  close(ounit)
+                end if ! pert1_read_opt
                end do ! End loop over members.
             end do
          end if
       end do var_loop
 
+      if ( pert1_read_opt == 1 ) then
 #ifdef DM_PARALLEL
       ijk = ni*nj*nk
       do iv = 1, nvar
@@ -1949,10 +1994,25 @@ subroutine compute_bv_sl
          end do
       end do
 #endif
+      end if ! pert1_read_opt=1
+
+      if ( pert1_read_opt == 2 ) then
+         deallocate( fieldv )
+#ifdef DM_PARALLEL
+         call mpi_barrier(mpi_comm_world,ierr)
+#endif
+      end if
+      deallocate( eval )
+      deallocate( evec )
+      deallocate( e_val )
+      deallocate( e_vec )
+      deallocate( e_val_loc )
+      deallocate( e_vec_loc )
+      deallocate( work )
+      deallocate( bin_pts2d )
+      deallocate( bv )
 
    end if ! do_eof_transform
-
-   deallocate(field)
 
    if ( do_slen_calc ) then
       if ( myproc == root ) write(stdout,'(4a)')' ====== Computing horizontal length scales ======'
@@ -1993,7 +2053,20 @@ subroutine compute_bv_sl
                cov(0:nn,k) = 0.0
                do ic = 1, ncase
                   do ie = istart_member, iend_member
-                    field2d(:,:) = xdata(iv,ie,ic)%value(:,:,k)
+
+                     if ( pert1_read_opt == 1 ) then
+                        field2d(:,:) = xdata(iv,ie,ic)%value(:,:,k)
+                     else if ( pert1_read_opt == 2 ) then
+                        write(ce,'(i3.3)') ie
+                        if ( do_eof_transform .and. (var_dim(iv) == 3) ) then
+                           input_file = 'pertv_'//trim(varnames(iv))//'.'//filedates(ie,ic)//'.e'//trim(ce)
+                        else
+                           input_file = 'pert1.'//filedates(ie,ic)//'.e'//trim(ce)
+                        end if
+                        call get_pert1_data(trim(input_file), trim(varnames(iv)), ni, nj, nk, field)
+                        field2d(:,:) = field(:,:,k)
+                     end if
+
                      icount(k) = icount(k) + 1
                      ! Calculate spatial correlation
                      call get_covariance( ni, nj, nn, stride, icount(k), nr, &
@@ -2038,7 +2111,20 @@ subroutine compute_bv_sl
                hlt(:) = 0.0
                do ic = 1, ncase
                   do ie = istart_member, iend_member
-                    field2d(:,:) = xdata(iv,ie,ic)%value(:,:,k)
+
+                     if ( pert1_read_opt == 1 ) then
+                        field2d(:,:) = xdata(iv,ie,ic)%value(:,:,k)
+                     else if ( pert1_read_opt == 2 ) then
+                        write(ce,'(i3.3)') ie
+                        if ( do_eof_transform .and. (var_dim(iv) == 3) ) then
+                           input_file = 'pertv_'//trim(varnames(iv))//'.'//filedates(ie,ic)//'.e'//trim(ce)
+                        else
+                           input_file = 'pert1.'//filedates(ie,ic)//'.e'//trim(ce)
+                        end if
+                        call get_pert1_data(trim(input_file), trim(varnames(iv)), ni, nj, nk, field)
+                        field2d(:,:) = field(:,:,k)
+                     end if
+
                     call horz_lenscale(ni,nj,field2d,ds,mapfac_x,mapfac_y,hl,bin2d,num_bins2d)
                     icount(k) = icount(k) + 1
                     hlt(:) = hlt(:) + hl(:)
@@ -2069,6 +2155,9 @@ subroutine compute_bv_sl
       deallocate(sl_g)
    end if ! do_slen_calc
 
+   deallocate(field)
+
+   if ( pert1_read_opt == 1 ) then
    do ic = 1, ncase
       do ie = istart_member, iend_member
          do iv = 1, nvar
@@ -2077,6 +2166,7 @@ subroutine compute_bv_sl
       end do
    end do
    if ( allocated(xdata)) deallocate(xdata)
+   end if ! pert1_read_opt=1
 
 end subroutine compute_bv_sl
 
@@ -2607,6 +2697,60 @@ subroutine error_handler(ierr, err_message)
    end if
 
 end subroutine error_handler
+
+subroutine get_pert1_data(pert_file, vname, nx, ny, nz, vdata)
+
+   implicit none
+
+   character(len=*), intent(in)    :: pert_file
+   character(len=*), intent(in)    :: vname
+   integer,          intent(in)    :: nx, ny, nz
+   real,             intent(inout) :: vdata(nx,ny,nz)
+
+   integer :: nvar_read, nx_read, ny_read, nz_read
+   integer :: iv, iunit, ndim
+   logical :: isfile
+   real, allocatable :: field(:,:,:)
+   character(len=DateStrLen) :: DateStr_tmp
+   character(len=VarNameLen) :: var_tmp
+
+   !pert_file = 'pert1.'//filedates(ie,ic)//'.e'//trim(ce)
+   inquire(file=trim(pert_file), exist=isfile)
+   if ( .not. isfile ) then
+      call error_handler(-1, trim(pert_file)//' not found for getting perturbation')
+   end if
+   !write(stdout,'(a,i3,a,a)') ' Proc', myproc, ' Reading from ', trim(pert_file)
+   open (iunit, file=trim(pert_file), form='unformatted', status='old')
+   read(iunit) nvar_read, nx_read, ny_read, nz_read
+   if ( nx/=nx_read .or. ny/=ny_read .or. nz/=nz_read ) then
+      call error_handler(-1, 'dimensions mismatch in get_pert1_data')
+   end if
+   allocate(field(nx,ny,nz))
+   field(:,:,:) = 0.0
+   read_loop: do iv = 1, nvar_read
+      read(iunit) ndim
+      read(iunit) DateStr_tmp, var_tmp
+      if ( ndim == 2 ) then
+         read(iunit) field(:,:,1)
+      else if ( ndim == 3 ) then
+         read(iunit) field(:,:,:)
+      end if
+      if ( trim(vname) == trim(var_tmp) ) then
+         exit read_loop
+      else
+         if ( iv < nvar_read ) then
+            cycle read_loop
+         else
+            close(iunit)
+            call error_handler(-1, 'error reading pert1 for variable '//trim(vname))
+         end if
+      end if
+   end do read_loop
+   vdata(:,:,:) = field(:,:,:)
+   close(iunit)
+   deallocate(field)
+
+end subroutine get_pert1_data
 
 end program gen_be_v3
 

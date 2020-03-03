@@ -574,6 +574,7 @@ module_physics_init.o : \
 		module_mp_etanew.o		\
 		module_mp_fer_hires.o 		\
 		module_mp_HWRF.o		\
+		module_mp_fast_sbm.o		\
 		module_fdda_psufddagd.o		\
 		module_fdda_spnudging.o         \
 		module_fddaobs_rtfdda.o		\
@@ -618,6 +619,8 @@ module_microphysics_driver.o: \
                 module_mp_nssl_2mom.o         \
 		module_mp_wdm5.o module_mp_wdm6.o \
 		module_mp_cammgmp_driver.o \
+		module_irrigation.o \
+		module_mp_fast_sbm.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
@@ -701,6 +704,7 @@ module_radiation_driver.o: \
                 module_ra_rrtmg_lwk.o \
                 module_ra_rrtmg_swk.o \
 		module_ra_cam.o \
+		module_ra_farms.o \
 		module_ra_gfdleta.o \
 		module_ra_HWRF.o \
 		module_ra_hs.o \
@@ -746,6 +750,7 @@ module_surface_driver.o: \
 		module_sf_scmflux.o		\
 		module_sf_scmskintemp.o		\
 		module_sf_ocean_driver.o	\
+		module_irrigation.o             \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_cpl.o \
@@ -759,6 +764,7 @@ module_sf_ocean_driver.o : \
 module_diagnostics_driver.o: \
 		module_lightning_driver.o 		\
 		module_diag_misc.o 			\
+		module_diag_nwp.o 			\
 		module_diag_cl.o			\
 		module_diag_pld.o 			\
 		module_diag_zld.o 			\
@@ -766,6 +772,7 @@ module_diagnostics_driver.o: \
 		module_diag_hailcast.o 			\
                 module_diag_rasm.o                      \
                 module_diag_trad_fields.o               \
+                module_diag_solar.o                     \
 		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
 		../frame/module_domain.o 		\
@@ -811,6 +818,9 @@ module_diag_rasm.o: \
 module_diag_trad_fields.o: \
 		module_diag_functions.o			\
 		../share/module_model_constants.o
+
+module_diag_solar.o: \
+                ../share/module_model_constants.o
 
 module_diag_refl.o: \
 		../frame/module_dm.o			\

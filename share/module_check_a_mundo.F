@@ -53,19 +53,14 @@
       LOGICAL :: exists, vnest
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, j, oops, d1_value, EDMFMAX, SCHUMAX
+      INTEGER :: id, factor
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
       LOGICAL :: lon_extent_is_global , lat_extent_is_global
-
-!TWG2015
-!
-!FASDAS
-!
       LOGICAL :: rinblw_already_done
-!
-!END FASDAS
-!
+      LOGICAL :: fsbm_table1_exists, fsbm_table2_exists
       INTEGER :: count_fatal_error
+      INTEGER :: len1, len2, len_loop
 
       !  These functions are located with in the Urban Physics files, but
       !  not within the confines of the modules. Since we are in the share
@@ -269,6 +264,31 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
+! The nominal grid distance on each child domain is ENTIRELY a function 
+! of the MOAD grid distance and the accumulated recursive parent grid ratios
+! of each child domain. Even if the child grid distance values are specified
+! in the namelist file, overwrite the dx and dy namelist input with the 
+! computed grid distance values.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) THEN
+            WRITE(wrf_err_message,FMT='(A,I2,A)') 'Domain #',i,': grid turned OFF'
+            CALL wrf_debug ( 0, wrf_err_message )
+            CYCLE
+         END IF
+         id = i
+         factor = 1
+         call get_moad_factor ( id,  model_config_rec % parent_id,  &
+                                model_config_rec % parent_grid_ratio,  &
+                                model_config_rec % max_dom, factor )
+         model_config_rec % dx(i) = model_config_rec % dx(1) / REAL(factor)
+         model_config_rec % dy(i) = model_config_rec % dy(1) / REAL(factor)
+         WRITE(wrf_err_message,FMT='(A,I2,A,F9.3,A)') 'Domain #',i,': dx = ',model_config_rec % dx(i),' m'
+         CALL wrf_debug ( 0, wrf_err_message )
+      END DO
+
+!-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
 ! filled as a max_doamins variable.  Since we changed these two variables
@@ -347,14 +367,16 @@
 !-----------------------------------------------------------------------
 ! Check that SMS-3DTKE scheme Must work with Revised MM5 surface layer 
 ! scheme (sf_sfclay_physics = 1), MYNN surface (sf_sfclay_physics = 5)
-! and old MM5 surface scheme (sf_sfclay_physics = 91)
+! and old MM5 surface scheme (sf_sfclay_physics = 91). Also, SMS-3DTKE
+! Must work with no surface layer scheme.
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % km_opt(i) .EQ. 5 .AND. &
-              (model_config_rec % sf_sfclay_physics(i) .NE. sfclayscheme    .AND. &
+              (model_config_rec % sf_sfclay_physics(i) .NE. nosfcscheme     .AND. &
+               model_config_rec % sf_sfclay_physics(i) .NE. sfclayscheme    .AND. &
                model_config_rec % sf_sfclay_physics(i) .NE. sfclayrevscheme .AND. &
                model_config_rec % sf_sfclay_physics(i) .NE. mynnsfcscheme  ) ) THEN
-            wrf_err_message = '--- ERROR: SMS-3DTKE scheme works with sf_sfclay_physics = 1,5,91 '
+            wrf_err_message = '--- ERROR: SMS-3DTKE scheme works with sf_sfclay_physics = 0,1,5,91 '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Fix km_opt or sf_sfclay_physics in namelist.input.'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
@@ -367,6 +389,7 @@
 ! each of those respective modules.
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % sf_urban_physics(i) == bepscheme     ) THEN
            model_config_rec % num_urban_ndm  = bep_ndm()
            model_config_rec % num_urban_nz   = bep_nz_um()
@@ -388,6 +411,7 @@
 ! Check that mosiac option cannot turn on when sf_urban_physics = 2 and 3
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % sf_surface_mosaic .EQ. 1 .AND. &
               (model_config_rec % sf_urban_physics(i) .EQ. 2 .OR. &
                model_config_rec % sf_urban_physics(i) .EQ. 3 ) ) THEN
@@ -402,9 +426,22 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that channel irrigation is run with Noah
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % sf_surface_physics(i) .NE. LSMSCHEME .AND.  &
+             model_config_rec % sf_surf_irr_scheme(i) .EQ. CHANNEL ) THEN
+              wrf_err_message = '--- ERROR: irrigation Opt 1 works only with Noah-LSM'
+              CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Check that Deng Shallow Convection Must work with MYJ or MYNN PBL
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % shcu_physics(i) == dengshcuscheme .AND. &
               (model_config_rec % bl_pbl_physics(i) /= myjpblscheme .AND. &
                model_config_rec % bl_pbl_physics(i) /= mynnpblscheme2 ) ) THEN
@@ -424,6 +461,7 @@
 !-----------------------------------------------------------------------
 # if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
       god_r8 : DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % ra_lw_physics(i) == goddardlwscheme ) .OR. &
               ( model_config_rec % ra_sw_physics(i) == goddardswscheme ) ) THEN
             wrf_err_message = '--- ERROR: Goddard radiation scheme cannot run with real*8 floats'
@@ -441,6 +479,7 @@
 ! Print a warning message for not using a combination of radiation and microphysics from Goddard
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( (model_config_rec % ra_lw_physics(i) == goddardlwscheme .OR. &
                  model_config_rec % ra_sw_physics(i) == goddardswscheme) .AND. &
                  model_config_rec % mp_physics(i) /= nuwrf4icescheme ) .OR. &
@@ -461,6 +500,7 @@
 !-----------------------------------------------------------------------
 #if (NMM_CORE == 1) || (HWRF == 1)
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % mp_physics(i) == nuwrf4icescheme .OR. &
               model_config_rec % mp_physics(i) == nssl_2mom .OR. &
               model_config_rec % mp_physics(i) == nssl_2momccn .OR. &
@@ -481,6 +521,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % sf_surface_physics(i)     .NE. &
               model_config_rec % sf_surface_physics(1) ) THEN
             wrf_err_message = '--- ERROR: sf_surface_physics must be equal for all domains '
@@ -497,6 +538,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % sf_sfclay_physics(i)     .NE. &
               model_config_rec % sf_sfclay_physics(1) ) THEN
             wrf_err_message = '--- ERROR: sf_sfclay_physics must be equal for all domains '
@@ -513,6 +555,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % mp_physics(i)     .NE. &
               model_config_rec % mp_physics(1) ) THEN
             wrf_err_message = '--- NOTE: mp_physics must be equal for all domains '
@@ -527,6 +570,27 @@
       END DO
 
 #if (EM_CORE == 1)
+!--------------------------------------------------------------------------------------------------
+! Input tables must exist in running directory for fast bin microphysics scheme (mp_physics = 30)
+!--------------------------------------------------------------------------------------------------
+      IF (  model_config_rec % mp_physics(1) .EQ. FAST_KHAIN_LYNN_SHPUND   ) THEN
+         INQUIRE(FILE='./SBM_input_33', EXIST=fsbm_table1_exists)
+         IF (.not.fsbm_table1_exists ) THEN
+            wrf_err_message = "--- ERROR: Input table SBM_input_33 doesn't exist !!!"
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- ERROR: Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
+             CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+         INQUIRE(FILE='./scattering_tables_2layer_high_quad_1dT_1%fw_110', EXIST=fsbm_table2_exists)
+         IF (.not.fsbm_table2_exists ) THEN
+            wrf_err_message = "--- ERROR: Input table scattering_tables_2layer_high_quad_1dT_1%fw_110 doesn't exist !!!"
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '--- ERROR: Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      END IF
 !-----------------------------------------------------------------------
 ! There are restrictions on the AFWA diagnostics regarding the choice
 ! of microphysics scheme. These are hard coded in the AFWA diags driver,
@@ -557,6 +621,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % ra_lw_physics(i)     .NE. &
               model_config_rec % ra_lw_physics(1) ) THEN
             wrf_err_message = '--- ERROR: ra_lw_physics must be equal for all domains '
@@ -568,6 +633,7 @@
       ENDDO
 
       DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % ra_sw_physics(i)     .NE. &
               model_config_rec % ra_sw_physics(1) ) THEN
             wrf_err_message = '--- ERROR: ra_sw_physics must be equal for all domains '
@@ -597,6 +663,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % bl_pbl_physics(i) .NE. model_config_rec % bl_pbl_physics(1) ) .AND. &
               ( model_config_rec % bl_pbl_physics(i) .NE. 0                                    ) ) THEN
             wrf_err_message = '--- ERROR: bl_pbl_physics must be equal for all domains (or = zero)'
@@ -614,6 +681,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % cu_physics(i) .NE. model_config_rec % cu_physics(1) ) .AND. &
               ( model_config_rec % cu_physics(i) .NE. 0                                ) ) THEN
             wrf_err_message = '--- ERROR: cu_physics must be equal for all domains (or = zero)'
@@ -632,6 +700,7 @@
 !-----------------------------------------------------------------------
 
       GF_test : DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % cu_physics(i) .EQ. GFSCHEME ) THEN
             wrf_err_message = '--- ERROR: cu_physics GF uses an intrinsic gamma function that is not available with this compiler'
             CALL wrf_message ( TRIM( wrf_err_message ) )
@@ -660,6 +729,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%fine_input_stream(i) .NE. 0 ).AND. &
               ( model_config_rec%io_form_auxinput2 .EQ. 0 ) ) THEN
             wrf_err_message = '--- ERROR: If fine_input_stream /= 0, io_form_auxinput2 must be /= 0'
@@ -687,6 +757,7 @@
 
       d1_value = model_config_rec%sf_urban_physics(1)
       DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%sf_urban_physics(i) /= d1_value ) THEN
             wrf_err_message = '--- NOTE:   sf_urban_physics option must be identical in each domain'
             CALL wrf_debug ( 1, wrf_err_message )
@@ -696,6 +767,7 @@
       END DO
       d1_value = model_config_rec%sf_urban_physics(model_config_rec % max_dom)
       DO i = 1, model_config_rec % max_dom-1
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          model_config_rec%sf_urban_physics(i) = d1_value
       END DO
 
@@ -704,6 +776,7 @@
 !------------------------------------------------------------------------
       IF ( model_config_rec%seaice_albedo_opt == 1 ) THEN
          DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             IF ( ( model_config_rec%sf_surface_physics(i) /= LSMSCHEME ) .AND. &
                  ( model_config_rec%sf_surface_physics(i) /= NOAHMPSCHEME ) ) THEN
 
@@ -728,6 +801,7 @@
 !           Check that NOAH-MP LSM is not allowed for WRF-NMM run
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
             WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
             CALL wrf_message ( TRIM ( wrf_err_message ) )
@@ -744,6 +818,7 @@
 !           Check that NSAS shallow convection is not allowed to turn on simultaneously with NSAS
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%shcu_physics(i) == nscvshcuscheme .AND. model_config_rec%cu_physics(i) == nsasscheme) THEN
             WRITE(wrf_err_message, '(" --- ERROR: NSCV shallow convection scheme is already included in NSAS ")')
             CALL wrf_message ( TRIM ( wrf_err_message ) )
@@ -789,6 +864,7 @@
 !-----------------------------------------------------------------------
 
    DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % sppt(i) .ne. 0)  then
            model_config_rec % sppt_on=1
            IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   &
@@ -804,6 +880,7 @@
          endif
    ENDDO
    DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % rand_perturb(i) .ne. 0)  then
            model_config_rec % rand_perturb_on=1
            IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   &
@@ -819,6 +896,7 @@
          endif
    ENDDO
    DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF (( model_config_rec % spp_conv(i) .ne. 0).or.( model_config_rec % spp_pbl(i) .ne. 0).or. (model_config_rec % spp_lsm(i) .ne. 0)  &
            .or. ( model_config_rec % spp(i) .ne. 0))  then
            model_config_rec % spp_on=1
@@ -840,6 +918,7 @@
          endif
    ENDDO
    DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % stoch_vertstruc_opt(i) ==1 )  then
            model_config_rec % skebs_vertstruc=1       ! parameter stoch_vertstruc_opt is being replaced with skebs_vertstruc
                                                       ! stoch_vertstruc_opt is obsolete starting with V3.7
@@ -851,6 +930,7 @@
    ENDDO
 
    DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % stoch_force_opt(i) ==1 )  THEN
            model_config_rec % skebs(i)=1    ! parameter stoch_forc_opt is being replaced with skebs;
                                             ! stoch_vertstruc_opt is obsolete starting with V3.7
@@ -861,6 +941,7 @@
          ENDIF
    ENDDO
    DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % skebs(i) .ne. 0)  then
            model_config_rec % skebs_on=1
          endif
@@ -936,6 +1017,49 @@
          model_config_rec%num_traj = 0
    END IF
 
+!-----------------------------------------------------------------------
+! Catch old method for using multi-file LBCs. Let folks know the 
+! new way to get the same functionality with run-time options.
+!-----------------------------------------------------------------------
+#if _MULTI_BDY_FILES_
+   wrf_err_message = '--- ERROR: Do not use the compile-time -D_MULTI_BDY_FILES_ option for multi-file LBCs.'
+   CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+   wrf_err_message = '--- ERROR: Use the run-time namelist option multi_bdy_files in nml record bdy_control.'
+   CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+   count_fatal_error = count_fatal_error + 1
+#endif
+
+!----------------------------------------------------------------------------
+! If using multi_bdy_files option or not, make the lateral bdy file root name
+! correct. For example, we want "wrfbdy_d01" for NON multi_bdy_files and we
+! want "wrfbdy_d01_SOME_DATE" when using the multi_bdy_files option.
+!----------------------------------------------------------------------------
+   IF      ( model_config_rec%multi_bdy_files ) THEN
+      IF ( INDEX ( TRIM(model_config_rec%bdy_inname) , "_<date>" ) .GT. 0 ) THEN
+         ! No op, all OK
+      ELSE
+         wrf_err_message = '--- ERROR: Need bdy_inname = "wrfbdy_d<domain>_<date>"'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         count_fatal_error = count_fatal_error + 1
+!        len1 = LEN_TRIM(model_config_rec%bdy_inname)
+!        len2 = "_<date>"
+!        model_config_rec%bdy_inname(1:len1+len2) = TRIM(model_config_rec%bdy_inname) // "_<date>"
+      END IF
+   ELSE IF ( .NOT. model_config_rec%multi_bdy_files ) THEN
+      IF ( INDEX ( TRIM(model_config_rec%bdy_inname) , "_<date>" ) .EQ. 0 ) THEN
+         ! No op, all OK
+      ELSE
+         wrf_err_message = '--- ERROR: Remove bdy_inname = "wrfbdy_d<domain>_<date>"'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         count_fatal_error = count_fatal_error + 1
+!        len1 = LEN_TRIM(model_config_rec%bdy_inname)
+!        len2 = "_<date>"
+!        DO len_loop len1-len2+1 , len1
+!           model_config_rec%bdy_inname(len_loop:len_loop) = " "
+!        END DO 
+      END IF
+   END IF
+
 #elif( NMM_CORE == 1 )
 !----------------------------------------------------------------------------
 ! If NMM core and trajectories are on then halt.
@@ -961,25 +1085,11 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! cu_physics = 11 (scale-aware KF) only works with YSU PBL.
+! cu_physics = 11 (scale-aware KF)
 !-----------------------------------------------------------------------
 
-      oops = 0
       DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
-              ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) ) THEN
-            oops = oops + 1
-         END IF
-      ENDDO      ! Loop over domains
-      IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- ERROR: bl_pbl_physics must be set to 1 for cu_physics = 11 '
-         CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- Fix bl_pbl_physics in namelist.input OR use another cu_physics option '
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-      END IF
-
-      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) THEN
             wrf_err_message = '--- NOTE: cu_physics is 11, setting icloud = 1 and cu_rad_feedback = T'
             CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
@@ -993,6 +1103,7 @@
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%aercu_opt .GT. 0 .AND.       &
               ( model_config_rec%cu_physics(i) .NE. MSKFSCHEME .OR. &
               model_config_rec%mp_physics(i) .NE. MORR_TM_AERO ) ) THEN
@@ -1035,6 +1146,7 @@
       IF ( model_config_rec%sst_update .EQ. 0 ) THEN
          model_config_rec%io_form_auxinput4 = 0
          DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             wrf_err_message = '--- NOTE: sst_update is 0, ' // &
                   'setting io_form_auxinput4 = 0 and auxinput4_interval = 0 for all domains'
             CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
@@ -1107,6 +1219,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%grid_sfdda(i) .GT. 0 ).AND. &
               ( model_config_rec%grid_fdda (i) .NE. 1 ) ) THEN
             wrf_err_message = '--- ERROR: If grid_sfdda >= 1, then grid_fdda must also = 1 for that domain '
@@ -1126,6 +1239,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
 
          IF ( model_config_rec%grid_fdda(i) .EQ. 0 ) THEN
             WRITE (wrf_err_message, FMT='(A,I6,A)') '--- NOTE: grid_fdda is 0 for domain ', &
@@ -1192,6 +1306,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          model_config_rec%fasdas(i) = 0
          IF ( model_config_rec%grid_sfdda(i) .EQ. 2 ) THEN
             model_config_rec%fasdas(i) = 1
@@ -1203,8 +1318,10 @@
 !-----------------------------------------------------------------------
     rinblw_already_done = .FALSE.
     DO j = 1, model_config_rec%max_dom
+    IF ( .NOT. model_config_rec % grid_allowed(j) ) CYCLE
     IF (model_config_rec%grid_sfdda(j) .EQ. 1 ) THEN
       DO i = 2, model_config_rec%max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%rinblw(i) .EQ. -1 ) THEN
             model_config_rec%rinblw(i) = model_config_rec % rinblw(1)
             IF ( .NOT. rinblw_already_done ) THEN
@@ -1232,6 +1349,7 @@
 ! Check to see if FASDAS is active
 !------------------------------------------------------------------------
     DO i = 1, model_config_rec%max_dom
+     IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
      IF (model_config_rec%fasdas(i) .EQ. 1 ) THEN
         wrf_err_message = 'FASDAS is active. Mixed Layer fdda is inactive'
         CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
@@ -1257,6 +1375,7 @@
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%bl_pbl_physics(i) .NE. QNSEPBLSCHEME ) .AND. &
               ( model_config_rec%mfshconv(i) .NE. 0 ) ) THEN
             model_config_rec%mfshconv(i) = 0
@@ -1274,6 +1393,7 @@
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%shcu_physics(i) .EQ. GRIMSSHCUSCHEME ) THEN
             IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME) .OR. &
                  (model_config_rec%bl_pbl_physics(i) .EQ. SHINHONGSCHEME) .OR. &
@@ -1297,9 +1417,11 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
               ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
               model_config_rec % bl_mynn_edmf(i) = 0
+              model_config_rec % bl_mynn_output(i) = 0
          END IF
       ENDDO
 
@@ -1322,35 +1444,12 @@
          END IF
 
 !-----------------------------------------------------------------------
-!  We need to know if any of the cumulus schemes are active. This
-!  allows the model to allocate space.
-!-----------------------------------------------------------------------
-
-      model_config_rec%cu_used = 0
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%cu_physics(i) .NE. NOCUSCHEME ) THEN
-            model_config_rec%cu_used = 1
-         END IF
-      ENDDO
-
-!-----------------------------------------------------------------------
-!  We need to know if any of the shallow cumulus schemes are active. This
-!  allows the model to allocate space.
-!-----------------------------------------------------------------------
-
-      model_config_rec%shcu_used = 0
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%shcu_physics(i) .NE. NOSHCUSCHEME ) THEN
-            model_config_rec%shcu_used = 1
-         END IF
-      ENDDO
-
-!-----------------------------------------------------------------------
 ! Make sure icloud_bl is only used when MYNN is chosen.
 !-----------------------------------------------------------------------
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%icloud_bl .eq. 1) THEN
            IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 .OR. &
                 model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) THEN
@@ -1367,11 +1466,51 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  We need to know if any of the cumulus schemes are active. This
+!  allows the model to allocate space.
+!-----------------------------------------------------------------------
+
+      model_config_rec%cu_used = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%cu_physics(i) .NE. NOCUSCHEME ) THEN
+            model_config_rec%cu_used = 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+!  We need to know if any of the shallow cumulus schemes are active. This
+!  allows the model to allocate space.
+!-----------------------------------------------------------------------
+
+      model_config_rec%shcu_used = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%shcu_physics(i) .NE. NOSHCUSCHEME ) THEN
+            model_config_rec%shcu_used = 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+!  We need to know if the orographic gravity wave drag scheme is active 
+!  on any domains. This allows the model to allocate space.
+!-----------------------------------------------------------------------
+
+      model_config_rec%gwd_used = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%gwd_opt(i) .NE. NOGWDOPT ) THEN
+            model_config_rec%gwd_used = 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Make sure microphysics option without QICE array cannot be used with icloud=3
 !-----------------------------------------------------------------------
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%icloud .eq. 3) THEN
            IF ( model_config_rec%mp_physics(i) .EQ. WSM3SCHEME .OR. &
                 model_config_rec%mp_physics(i) .EQ. KESSLERSCHEME ) THEN
@@ -1421,6 +1560,7 @@
 
       IF ( model_config_rec%p_lev_diags .EQ. 1 ) THEN
          DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             IF ( ( MAX ( model_config_rec%auxhist23_interval  (i) , &
                          model_config_rec%auxhist23_interval_d(i) , &
                          model_config_rec%auxhist23_interval_h(i) , &
@@ -1437,6 +1577,7 @@
             END IF
          END DO
          DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             model_config_rec%p_lev_interval(i) = model_config_rec%auxhist23_interval  (i)*   60 + &
                                                  model_config_rec%auxhist23_interval_d(i)*86400 + &
                                                  model_config_rec%auxhist23_interval_h(i)* 3600 + &
@@ -1452,6 +1593,7 @@
 
       IF ( model_config_rec%z_lev_diags .EQ. 1 ) THEN
          DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             IF ( ( MAX ( model_config_rec%auxhist22_interval  (i) , &
                          model_config_rec%auxhist22_interval_d(i) , &
                          model_config_rec%auxhist22_interval_h(i) , &
@@ -1468,6 +1610,7 @@
             END IF
          END DO
          DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             model_config_rec%z_lev_interval(i) = model_config_rec%auxhist22_interval  (i)*   60 + &
                                                  model_config_rec%auxhist22_interval_d(i)*86400 + &
                                                  model_config_rec%auxhist22_interval_h(i)* 3600 + &
@@ -1486,6 +1629,7 @@
 ! 1. Only one time interval type specified
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          count_opt = 0
          IF ( model_config_rec%mean_diag_interval_s (i) .GT. 0 ) THEN
             count_opt = count_opt + 1
@@ -1515,6 +1659,7 @@
 ! 2. Put canonical intervals into RASM expected form
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%mean_diag_interval_s (i) .GT. 0 ) THEN
             model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_s (i)
             model_config_rec%mean_freq = 1
@@ -1546,6 +1691,7 @@
       IF ( model_config_rec%mean_diag .EQ. 1 ) THEN
          count_opt = 0
          DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             IF ( model_config_rec%mean_interval   (i) .GT. 0 ) THEN
                count_opt = count_opt + 1
             END IF
@@ -1584,6 +1730,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
               (model_config_rec%cu_physics(i) .NE. 0) ) THEN
               wrf_err_message = '--- hailcast_opt and cu_physics cannot both be turned on for the same domain. You must turn one of them off (=0).'
@@ -1656,6 +1803,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%cu_rad_feedback(i) .EQV. .TRUE. )  .OR. &
               ( model_config_rec%cu_rad_feedback(i) .EQV. .true. ) ) THEN
             IF ( ( model_config_rec%cu_physics(1) .EQ. GFSCHEME     ) .OR. &
@@ -1676,6 +1824,7 @@
 !-----------------------------------------------------------------------
 
        DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%cu_diag(i) .EQ. G3TAVE ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. GDSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. GFSCHEME ) .AND. &
@@ -1702,6 +1851,7 @@
 !-----------------------------------------------------------------------
 
        DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%kf_edrates(i) .EQ. KFEDRATES ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. KFETASCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. MSKFSCHEME ) .AND. &
@@ -1726,7 +1876,11 @@
       IF ( wrf_dm_on_monitor() ) THEN
          CALL wrf_tsin_exist ( exists )
          IF ( exists ) THEN
-            model_config_rec%process_time_series = 1
+            IF ( model_config_rec%solar_diagnostics == 1 ) THEN
+               model_config_rec%process_time_series = 2
+            ELSE
+               model_config_rec%process_time_series = 1
+            END IF
          ELSE
             model_config_rec%process_time_series = 0
          END IF
@@ -1741,6 +1895,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%cu_physics(i) .EQ. GDSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. GFSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) .OR. &
@@ -1756,6 +1911,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
               ( model_config_rec%sf_sfclay_physics(i) .NE. TEMFSFCSCHEME ) )  THEN
             wrf_err_message = '--- ERROR: Using bl_pbl_physics=10 requires sf_sfclay_physics=10 '
@@ -1785,6 +1941,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
               (model_config_rec%dfi_opt .NE. DFI_NODFI) )  THEN
             wrf_err_message = '--- ERROR: DFI not available for bl_pbl_physics=10 '
@@ -1809,6 +1966,7 @@
 #if !defined ( WRF_USE_CLM )
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%sf_surface_physics(i) .EQ. CLMSCHEME ) THEN
             oops = oops + 1
          END IF
@@ -1829,6 +1987,7 @@
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
             IF ( model_config_rec%grav_settling(i) .NE. FOGSETTLING0 ) THEN
                 model_config_rec%grav_settling(i) = 0
@@ -1846,6 +2005,7 @@
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
             IF ( model_config_rec%use_aero_icbc .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
                 model_config_rec%scalar_pblmix(i) = 1
@@ -1863,6 +2023,7 @@
       !NOW CHECK FOR MYNN
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ((model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2) .OR. &
              (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
             IF ( model_config_rec%bl_mynn_mixscalars(i) .EQ. 1 ) THEN
@@ -1880,6 +2041,7 @@
 !  DJW Check that we're not using ndown and vertical nesting.
 !-----------------------------------------------------------------------
      DO i=1,model_config_rec%max_dom
+       IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
        IF ((model_config_rec%vert_refine_method(i) .NE. 0) .AND. (model_config_rec%vert_refine_fact .NE. 1)) THEN
          wrf_err_message = '--- ERROR: vert_refine_fact is ndown specific and cannot be used with vert_refine_method, and vice versa.'
          CALL wrf_debug ( 1, wrf_err_message )
@@ -1890,6 +2052,7 @@
 !  DJW Check that only one type of vertical nesting is enabled.
 !-----------------------------------------------------------------------
      DO i=1,model_config_rec%max_dom
+       IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
        IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
          DO j=1,model_config_rec%max_dom
            IF ((model_config_rec%vert_refine_method(i) .NE. model_config_rec%vert_refine_method(j)) .AND. (model_config_rec%vert_refine_method(j) .NE. 0)) THEN
@@ -1907,6 +2070,7 @@
 !-----------------------------------------------------------------------
       IF ((model_config_rec%max_dom .GT. 1) .AND. (model_config_rec%vert_refine_fact .EQ. 1)) THEN
         DO i=1,model_config_rec%max_dom
+          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
           IF (((model_config_rec%parent_id(i) .NE. 0) .AND. (model_config_rec%parent_id(i) .NE. model_config_rec%grid_id(i))) .AND. (model_config_rec%vert_refine_method(i) .EQ. 0)) THEN
             DO j=1,model_config_rec%max_dom
               IF ((i .NE. j) .AND. (model_config_rec%parent_id(i) .EQ. model_config_rec%grid_id(j))) THEN
@@ -1927,6 +2091,7 @@
 !  nesting enabled.
 !-----------------------------------------------------------------------
       DO i=1,model_config_rec%max_dom
+        IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
         IF ((model_config_rec%parent_id(i) .EQ. 0) .OR. (model_config_rec%parent_id(i) .EQ. model_config_rec%grid_id(i))) THEN
           IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
             write(wrf_err_message,'(A,I1,A,I2,A)') '--- ERROR: vert_refine_method=',model_config_rec%vert_refine_method(i),' for grid_id=',model_config_rec%grid_id(i),', must be 0 for a non-nested domain.'
@@ -1940,6 +2105,7 @@
 !  DJW Check that we've got appropriate e_vert for integer refinement.
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+        IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
         IF (model_config_rec%vert_refine_method(i) .EQ. 1) THEN
           j = model_config_rec%parent_id(i)
           IF (MOD(model_config_rec%e_vert(i)-1, model_config_rec%e_vert(j)-1) .NE. 0) THEN
@@ -1951,21 +2117,35 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+!   Check that max_ts_level is smaller than the number of half levels
+!-----------------------------------------------------------------------
+      IF ( model_config_rec % max_ts_level .gt. model_config_rec %e_vert(1)-1 )  then
+        wrf_err_message = ' max_ts_level must be <= number of znu half layers '
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        wrf_err_message = ' max_ts_level is reset to the number of znu half layers '
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        model_config_rec % max_ts_level = model_config_rec %e_vert(1)-1
+      ENDIF
+
+!-----------------------------------------------------------------------
 !  Consistency checks between vertical refinement and radiation
 !  scheme selection.  For "choose any vertical levels" for the nest,
-!  only RRTM is eligible.
+!  only option 1 (RRTM/Dudhia) or option 4 (RRTMG) are eligible.
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
+        IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
         IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
           IF ( ( ( model_config_rec%ra_lw_physics(i) .EQ. 0                   ) .OR. &
-                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) ) .AND. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) .OR. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      ) ) .AND. &
                ( ( model_config_rec%ra_sw_physics(i) .EQ. 0                   ) .OR. &
-                 ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) ) ) THEN
+                 ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
+                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) ) ) THEN
              !  We are OK, I just hate writing backwards / negative / convoluted if tests
              !  that are not easily comprehensible.
           ELSE
-            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with ra_lw_physics=1 (RRTM) and ra_sw_physics=1 (Dudhia)'
+            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with ra_lw/sw_physics=1 (RRTM/Dudhia) or ra_lw/sw_physics=4 (RRTMG)'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
           END IF
@@ -2071,6 +2251,23 @@
       ENDDO
 #endif
 
+#if (EM_CORE == 1)
+# if( BUILD_SBM_FAST != 1)
+!-----------------------------------------------------------------------
+!  If the FAST SBM scheme is requested and it is not compiled, let the
+!  user know.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % mp_physics(1) .EQ. FAST_KHAIN_LYNN_SHPUND ) THEN
+         wrf_err_message = '--- ERROR: FAST SBM scheme must be built with a default compile-time flag'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Run ./clean -a, ./configure, ./compile scripts again'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+# endif
+#endif
+
 !-----------------------------------------------------------------------
 !  If the RRTMG FAST schemes are requested, check that the code with
 !  built to use them.
@@ -2080,6 +2277,22 @@
       IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
            ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
          wrf_err_message = '--- ERROR: RRTMG FAST schemes must be built with a default compile-time flag'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Run ./clean -a, ./configure, ./compile scripts again'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
+!-----------------------------------------------------------------------
+!  If the RRTMG KIAPS schemes are requested, check that the code with
+!  built to use them.
+!-----------------------------------------------------------------------
+
+#if( BUILD_RRTMK != 1)
+      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMK_SWSCHEME )  ) THEN
+         wrf_err_message = '--- ERROR: RRTMG-based KIAPS schemes must be built with a default compile-time flag'
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '--- ERROR: Run ./clean -a, ./configure, ./compile scripts again'
          CALL wrf_message ( wrf_err_message )
@@ -2113,6 +2326,7 @@
 ! Check for consistent chem_opt and irr_opt
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%irr_opt(i) > 0 .and. &
               (model_config_rec%chem_opt(i) /= mozcart_kpp .and. &
                model_config_rec%chem_opt(i) /= t1_mozcart_kpp .and. &
@@ -2137,6 +2351,7 @@
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % e_we(i) /  model_config_rec % nproc_x .LT. 10 ) .OR. &
               ( model_config_rec % e_sn(i) /  model_config_rec % nproc_y .LT. 10 ) ) THEN
             WRITE ( wrf_err_message , * ) 'For domain ',i,', the domain size is too small for this many processors, ', & 
@@ -2290,6 +2505,7 @@
       CASE ('conus')
          DO i = 1, max_dom
 
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             IF ( model_config_rec % cu_physics(i) == -1 ) model_config_rec % cu_physics(i) = TIEDTKESCHEME               ! Tiedtke
             IF ( model_config_rec % mp_physics(i) == -1 ) model_config_rec % mp_physics(i) = THOMPSON                    ! Thompson
             IF ( model_config_rec % ra_lw_physics(i) == -1 ) model_config_rec % ra_lw_physics(i) = RRTMG_LWSCHEME        ! RRTMG LW
@@ -2306,6 +2522,7 @@
       CASE ('tropical')
          DO i = 1, max_dom
 
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             IF ( model_config_rec % cu_physics(i) == -1 ) model_config_rec % cu_physics(i) = NTIEDTKESCHEME              ! New Tiedtke
             IF ( model_config_rec % mp_physics(i) == -1 ) model_config_rec % mp_physics(i) = WSM6SCHEME                  ! WSM6
             IF ( model_config_rec % ra_lw_physics(i) == -1 ) model_config_rec % ra_lw_physics(i) = RRTMG_LWSCHEME        ! RRTMG LW
@@ -2510,6 +2727,7 @@
 #if ( (EM_CORE == 1) && (WRF_CHEM != 1) )
       model_config_rec % cam_used = 0
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % mp_physics(i)     .EQ. CAMMGMPSCHEME   ) .OR. &
               ( model_config_rec % bl_pbl_physics(i) .EQ. CAMUWPBLSCHEME  ) .OR. &
               ( model_config_rec % shcu_physics(i)   .EQ. CAMUWSHCUSCHEME ) ) THEN
@@ -2549,6 +2767,7 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % mp_physics(i) .EQ. MILBRANDT2MOM ) .OR. &
 #if (EM_CORE == 1)
               ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOM     ) .OR. &
@@ -2563,12 +2782,35 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! If a user selected LOGICAL fire-related switches, convert those to
+! INTEGER for the package allocation assignment required in the 
+! registry file.
+!-----------------------------------------------------------------------
+
+#if (EM_CORE == 1)
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % fmoist_run(i) .EQV. .TRUE.  ) THEN
+            model_config_rec % fmoisti_run(i) = 1
+         ELSE 
+            model_config_rec % fmoisti_run(i) = 0
+         END IF
+         IF ( model_config_rec % fmoist_interp(i) .EQV. .TRUE.  ) THEN
+            model_config_rec % fmoisti_interp(i) = 1
+         ELSE 
+            model_config_rec % fmoisti_interp(i) = 0
+         END IF
+      ENDDO
+#endif
+
+!-----------------------------------------------------------------------
 ! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that we don't get 
 ! additional output 
 !-----------------------------------------------------------------------
 
 #if (EM_CORE == 1)
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
               ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
             model_config_rec % bl_mynn_edmf = 0
@@ -2642,6 +2884,21 @@
 
    END SUBROUTINE set_physics_rconfigs
 
+!=======================================================================
+
+   RECURSIVE SUBROUTINE get_moad_factor ( id, parent_id, parent_grid_ratio, max_dom, factor )
+      IMPLICIT NONE
+      INTEGER                     :: max_dom
+      INTEGER, DIMENSION(max_dom) :: parent_id, parent_grid_ratio
+      INTEGER                     :: factor, id
+   
+      IF ( id .EQ. 1 ) THEN
+         RETURN
+      ELSE
+         factor = factor * parent_grid_ratio(id)
+         CALL get_moad_factor ( parent_id(id), parent_id, parent_grid_ratio, max_dom, factor )
+      END IF
+   END  SUBROUTINE get_moad_factor
 
 !=======================================================================
 

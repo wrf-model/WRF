@@ -4,9 +4,7 @@ subroutine r1f2kb ( ido, l1, cc, in1, ch, in2, wa1 )
 !
 !! R1F2KB is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

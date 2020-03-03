@@ -101,9 +101,6 @@ SUBROUTINE wrf_ioinit( Status )
 #ifdef PHDF5
   CALL ext_phdf5_ioinit( SysDepInfo, ierr( 3) )
 #endif
-#ifdef MCELIO
-  CALL ext_mcel_ioinit ( SysDepInfo, ierr( 4) )
-#endif
 #ifdef XXX
   CALL ext_xxx_ioinit  ( SysDepInfo, ierr( 5) )
 #endif
@@ -164,9 +161,6 @@ SUBROUTINE wrf_ioexit( Status )
 #endif
 #ifdef PHDF5
   CALL ext_phdf5_ioexit( ierr( 3) )
-#endif
-#ifdef MCELIO
-  CALL ext_mcel_ioexit ( ierr( 4) )
 #endif
 #ifdef XXX
   CALL ext_xxx_ioexit  ( ierr( 5) )
@@ -379,16 +373,6 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
-#ifdef MCELIO
-      CASE ( IO_MCEL )
-        IF ( wrf_dm_on_monitor() ) THEN
-          tstr = TRIM(SysDepInfo) // ',' // 'LAT_R=XLAT,LON_R=XLONG,LANDMASK_I=LU_MASK'
-          CALL ext_mcel_open_for_write_begin ( FileName , Comm_compute, Comm_io, tstr, &
-                                               Hndl , Status )
-        ENDIF
-        CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
-        CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
-#endif
 #ifdef ESMFIO
       CASE ( IO_ESMF )
         CALL ext_esmf_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
@@ -469,13 +453,6 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
             CALL ext_ncd_open_for_write_commit ( Hndl , Status )
           ENDIF
           IF ( .NOT. multi_files(io_form) ) CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
-#endif
-#ifdef MCELIO
-        CASE ( IO_MCEL   )
-          IF ( wrf_dm_on_monitor() ) THEN
-            CALL ext_mcel_open_for_write_commit ( Hndl , Status )
-          ENDIF
-          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef ESMFIO
         CASE ( IO_ESMF )
@@ -629,20 +606,6 @@ SUBROUTINE wrf_open_for_read_begin( FileName , grid, SysDepInfo, &
         CALL ext_zzz_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                             Hndl , Status )
 #endif
-#ifdef MCELIO
-      CASE ( IO_MCEL )
-        also_for_out = .TRUE.
-        IF ( wrf_dm_on_monitor() ) THEN
-          
-        WRITE(fhand,'(a,i0)')"filter_",filtno
-        filtno = filtno + 1
-tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDMASK_I=LU_MASK,FILTER_HANDLE=' // TRIM(fhand)
-          CALL ext_mcel_open_for_read_begin ( FileName , Comm_compute, Comm_io, tstr, &
-                                               Hndl , Status )
-        ENDIF
-        CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
-        CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
-#endif
 #ifdef ESMFIO
       CASE ( IO_ESMF )
         also_for_out = .TRUE.
@@ -736,13 +699,6 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
             CALL ext_ncd_open_for_read_commit ( Hndl , Status )
           ENDIF
           IF ( .NOT. multi_files(io_form) ) CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
-#endif
-#ifdef MCELIO
-        CASE ( IO_MCEL   )
-          IF ( wrf_dm_on_monitor() ) THEN
-            CALL ext_mcel_open_for_read_commit ( Hndl , Status )
-          ENDIF
-          CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
 #ifdef ESMFIO
         CASE ( IO_ESMF )
@@ -1281,10 +1237,6 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
         CASE ( IO_GRIB2   )
           IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_gr2_ioclose( Hndl, Status )
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
-#endif
-#ifdef MCELIO
-        CASE ( IO_MCEL   )
-          CALL ext_mcel_ioclose( Hndl, Status )
 #endif
 #ifdef ESMFIO
         CASE ( IO_ESMF )
@@ -1864,10 +1816,6 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
       CASE ( IO_PIO )
         CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for PIO' )
 #endif
-#ifdef MCELIO
-      CASE ( IO_MCEL   )
-        CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for MCEL' )
-#endif
 #ifdef ESMFIO
       CASE ( IO_ESMF )
         CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for ESMF' )
@@ -2154,9 +2102,6 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #ifdef PIO
   EXTERNAL     ext_pio_read_field
 #endif
-#ifdef MCELIO
-  EXTERNAL     ext_mcel_read_field
-#endif
 #ifdef ESMFIO
   EXTERNAL     ext_esmf_read_field
 #endif
@@ -2233,16 +2178,6 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
                                   MemoryStart , MemoryEnd ,                             &
                                   PatchStart , PatchEnd ,                               &
                                   Status)
-#endif
-#ifdef MCELIO
-        CASE ( IO_MCEL   )
-          CALL call_pkg_and_dist   ( ext_mcel_read_field, multi_files(io_form), .true. ,         &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
 #endif
 #ifdef ESMFIO
         CASE ( IO_ESMF )
@@ -2426,9 +2361,6 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 #ifdef PIO
   EXTERNAL     ext_pio_write_field
 #endif
-#ifdef MCELIO
-  EXTERNAL     ext_mcel_write_field
-#endif
 #ifdef ESMFIO
   EXTERNAL     ext_esmf_write_field
 #endif
@@ -2466,16 +2398,6 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 #ifdef NETCDF
         CASE ( IO_NETCDF   )
           CALL collect_fld_and_call_pkg ( ext_ncd_write_field, multi_files(io_form),                  &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
-#endif
-#ifdef MCELIO
-        CASE ( IO_MCEL   )
-          CALL collect_fld_and_call_pkg ( ext_mcel_write_field, multi_files(io_form),                  &
                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                                      DomainStart , DomainEnd ,                                    &
@@ -3919,7 +3841,7 @@ include "mpif.h"
 
   IF ( distributed_field ) THEN
 
-! added 8/2004 for interfaces, like MCEL, that want the old values so they can be updated
+! added 8/2004 for interfaces that want the old values so they can be updated
     IF ( update_arg ) THEN
       SELECT CASE (TRIM(MemOrd))
         CASE (  'xzy','zxy','xyz','yxz','xy','yx' )

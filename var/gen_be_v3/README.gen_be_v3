@@ -1,7 +1,7 @@
 
-*** gen_be_b3.F90 is a user-contribute program and is provided as it is. ***
-*** gen_be_b3.F90 is for univariate processing only. ***
-*** gen_be_b3.F90 is for bin_type=5 (domain-average BE statistics) only. ***
+*** gen_be_v3.F90 is a user-contribute program and is provided as it is. ***
+*** gen_be_v3.F90 is for univariate processing only. ***
+*** gen_be_v3.F90 is for bin_type=5 (domain-average BE statistics) only. ***
 
 1. To compile:
 
@@ -14,7 +14,7 @@
             Either a list of WRF ensembles,
             or a list of WRF forecasts with proper forecast lengths (for example: 24-h and 12-h forecasts).
       (3) Execute gen_be_v3.exe
-            The code can be built and run with MPI, however seriel code should have good enough
+            The code can be built and run with MPI, however serial code should have good enough
             performance by submitting/running each variable separately (in different working directory).
 
 (a) namelist.gen_be_v3 for generating ensemble perturbations to be used in WRFDA
@@ -55,6 +55,11 @@
                               ! 2: laplacian method (recommended)
    do_eof_transform = .true.  ! .true.: statistics on EOF space for WRFDA runs
                               ! .false.: statistics on physical model levels for diagnostics
+   pert1_read_opt = 1         ! specify how the program accesses the pert1 data (output of do_pert_calc=.true.)
+                              ! 1: (default) read and store all cases in memory at once
+                              ! 2: read from pert1 file when need it
+                              !    This option writes out additional vertical-mode-projected fields when do_eof_transform=.true.
+                              ! Set pert1_read_opt=2 for large number of cases and large domain sizes that encounter memory insufficiency.
 /
 &ens_nml
 /
@@ -65,4 +70,9 @@
 
       For cv_options=7 purpose, util/combine_be_cv7.f90 can be used to combine be_[T/U/V/RH/PSFC].dat into be.dat that WRFDA can read.
 
+      For cv_options=7 and cloud_cv_options=2 purpose, util/combine_be_cv7_ccv2.f90 can be used to
+          combine be_[T/U/V/RH/PSFC/QCLOUD/QRAIN/QICE/QSNOW/QGRAUP/W].dat into be.dat that WRFDA can read.
+
       pert1.* files are intermediate output that can be removed after the successful execution.
+
+      pertv_* files are intermediate pert1_read_opt=2 output that can be removed after the successful execution.

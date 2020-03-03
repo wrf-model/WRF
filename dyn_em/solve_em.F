@@ -2300,11 +2300,6 @@ BENCH_START(tke_adv_tim)
 
            CALL wrf_debug ( 200 , ' call rk_scalar_tend for tke' )
            tenddec = .false.
-! XZ
-         IF( config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 5 ) THEN
-           tenddec = .true.
-         ENDIF
-!!
            CALL rk_scalar_tend ( 1, 1, config_flags, tenddec,                      & 
                             rk_step, dt_rk,                                        &
                             grid%ru_m, grid%rv_m, grid%ww_m,                       &
@@ -2338,8 +2333,6 @@ BENCH_START(tke_adv_tim)
          !$OMP PRIVATE ( ij, tenddec )
          tke_tile_loop_2: DO ij = 1 , grid%num_tiles
 
-         IF( config_flags%km_opt .eq. 2 ) THEN   !XZ
-
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
            tenddec = .false.
            CALL rk_update_scalar( scs=1,  sce=1,                                          &
@@ -2367,28 +2360,6 @@ BENCH_START(tke_adv_tim)
                            grid%i_start(ij), grid%i_end(ij),    &
                            grid%j_start(ij), grid%j_end(ij),    &
                            k_start    , k_end                  )
-         ENDIF !XZ
-
-!XZ
-         IF(rk_step == rk_order.and.config_flags%km_opt .eq. 5 ) THEN
-          CALL update_tke_implicit( config_flags,grid%tke_1,              &
-                                    grid%tke_2,grid%xkhv,                 &
-                                    grid%rdz,grid%rdzw,grid%l_scale,      &
-                                    grid%dnw,grid%rdnw,grid%c1h,grid%c2h, &
-                                    h_tendency,z_tendency,                &
-                                    grid%tke_production_tend,             &
-                                    grid%tke_diffusion_h_tend,            &
-                                    grid%fnm,grid%fnp,                    &
-                                    grid%msftx, grid%msfty,               &
-                                    grid%mu_1, grid%mu_2, grid%mub,       &
-                                    rk_step, dt_rk, grid%spec_zone,       &
-                                    grid%tke_upper_bound, grid%rho,       &
-                                    ids, ide, jds, jde, kds, kde,         &
-                                    ims, ime, jms, jme, kms, kme,         &
-                                    grid%i_start(ij),grid%i_end(ij),      &
-                                    grid%j_start(ij),grid%j_end(ij),      &
-                                    k_start    , k_end                    )
-         ENDIF  !XZ
 
            IF( config_flags%specified .or. config_flags%nested ) THEN
               CALL flow_dep_bdy (  grid%tke_2,                     &
@@ -3627,7 +3598,7 @@ BENCH_START(micro_driver_tim)
      CALL microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
       &        ,DZ8W=dz8w          ,F_ICE_PHY=grid%f_ice_phy              &
-      &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
+      &        ,ITIMESTEP=grid%itimestep             ,LOWLYR=grid%lowlyr  &
       &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy     &
       &        ,RHO=grid%rho       ,SPEC_ZONE=grid%spec_zone              &
       &        ,SR=grid%sr              ,TH=th_phy                        &
@@ -3678,6 +3649,18 @@ BENCH_START(micro_driver_tim)
       &        ,KTS=k_start, KTE=min(k_end,kde-1)                         &
       &        ,NUM_TILES=grid%num_tiles                                  &
       &        ,NAER=grid%naer                                            &
+!===================== IRRIGATION =========================
+      &        ,IRRIGATION=grid%irrigation                                &
+      &        ,SF_SURF_IRR_SCHEME=config_flags%sf_surf_irr_scheme        &
+      &        ,IRR_DAILY_AMOUNT=config_flags%irr_daily_amount            & 
+      &        ,IRR_START_HOUR=config_flags%irr_start_hour                &
+      &        ,IRR_NUM_HOURS=config_flags%irr_num_hours                  &
+      &        ,JULIAN_IN=grid%julian                                     &
+      &        ,IRR_START_JULIANDAY=config_flags%irr_start_julianday      &
+      &        ,IRR_END_JULIANDAY=config_flags%irr_end_julianday          &
+      &        ,IRR_FREQ=config_flags%irr_freq,IRR_PH=config_flags%irr_ph &
+      &        ,IRR_RAND_FIELD=grid%irr_rand_field                        &
+      &        ,GMT=grid%gmt,XTIME=grid%xtime                             & 
 !======================
       ! Variables required for CAMMGMP Scheme
       &        ,DLF=grid%dlf,DLF2=grid%dlf2,T_PHY=grid%t_phy,P_HYD=grid%p_hyd  &
@@ -3828,6 +3811,7 @@ BENCH_START(micro_driver_tim)
       &        ,height=grid%height                                         &
       &        ,tempc=grid%tempc                                         &
       &        ,ccn_conc=grid%ccn_conc                                   & ! RAS
+      &        ,sbmradar=sbmradar,num_sbmradar=num_sbmradar              & ! for SBM
       &        ,aerocu=aerocu                                            &
       &        ,aercu_fct=config_flags%aercu_fct                         &
       &        ,aercu_opt=config_flags%aercu_opt                         &

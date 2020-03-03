@@ -230,7 +230,7 @@ CONTAINS
             end do 
 
 ! update WRF variable after running routing model.
-            grid%sfcheadrt(its:ite,jts:jte) = rt_domain(did)%sfcheadrt
+            grid%sfcheadrt(its:ite,jts:jte) = rt_domain(did)%overland%control%surface_water_head_lsm
 
 ! provide groundwater soil flux to WRF for fully coupled simulations (FERSCH 09/2014)            
             if(nlst_rt(did)%GWBASESWCRT .eq. 3 ) then

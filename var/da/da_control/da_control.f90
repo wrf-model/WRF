@@ -278,6 +278,7 @@ module da_control
    integer :: check_max_iv_unit, check_buddy_unit, rand_unit, omb_unit, &
               filtered_obs_unit
    integer :: biasprep_unit, qcstat_conv_unit
+   integer :: varbc_tamdar_unit
 
    integer,parameter :: filename_len = 200
 
@@ -369,6 +370,7 @@ module da_control
    integer       :: cv_size_domain_jp    ! Total jp cv size.
    integer       :: cv_size_domain_js    ! Total js cv size.
    integer       :: cv_size_domain_jl    ! Total jl cv size.
+   integer       :: cv_size_domain_jt    ! Total jt cv size.
    integer       :: cv_size_domain       ! Total cv size.    
 
    ! Hybrid:
@@ -419,6 +421,8 @@ module da_control
                                            ! missing_r
       outside_of_domain       = -77, &     ! Data outside horizontal domain 
                                            ! or time window, data set to missing_r
+      fail_varbc_aircraft     = -55, &     ! Data fail VarBC of aircraft 
+                                           ! => no action
       wrong_direction         = -15, &     ! Wind vector direction <0 or> 360 
                                            ! => direction set to missing_r
       negative_spd            = -14, &     ! Wind vector norm is negative 

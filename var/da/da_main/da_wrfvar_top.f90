@@ -111,6 +111,9 @@ module da_wrfvar_top
    use da_rain, only : da_oi_stats_rain
    use da_gpseph, only : da_gpseph_final
 
+   use da_varbc_tamdar, only : da_varbc_tamdar_init, da_varbc_tamdar_pred, &
+                               da_varbc_tamdar_update
+
    use da_wrf_interfaces
 
    use da_netcdf_interface, only : da_get_var_2d_real_cdf

@@ -1,3 +1,4 @@
+##############################################################################
 # This is the top-level .gitignore file for the WRF model                    #
 #                                                                            #
 # Filenames and wildcards added below will not be tracked by git in any      #
@@ -16,4 +17,12 @@
 configure.wrf*
 *.backup
 *.f90
+
+
+##############################################################################
+# These files are EXCLUDED from not being tracked, so they are still         #
+# tracked                                                                    #
+# The "!" character is the NOT                                               #
+# The "**" syntax is "this directory and recursively all below"              #
+##############################################################################
 !chem/KPP/kpp/kpp-2.1/**/*.f90

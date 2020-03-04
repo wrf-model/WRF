@@ -47,7 +47,6 @@ CONTAINS
               ,CAM_ABS_FREQ_S                                             &
               ,XTIME                                                      &
               ,CURR_SECS, ADAPT_STEP_FLAG                                 &
-              ,MUT, DNW                                                   &
               ,SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2                         &
               ,SWDOWNC2, SWDDNIC2                                         &
               !BSINGH - For WRFCuP scheme (optional args)
@@ -486,9 +485,6 @@ CONTAINS
                                                            HTOPR, &
                                                            HBOTR, &
                                                            CUPPT
-     ! FARMS coupling
-   REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(IN), OPTIONAL ::  MUT
-   REAL , DIMENSION( kms:kme ) , INTENT(IN   ), OPTIONAL :: DNW
 
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                 &
@@ -2778,9 +2774,7 @@ CONTAINS
  end if
 
    ! Coupling with FARMS
- if( present(mut      ) .and. &
-     present(dnw      ) .and. &
-     present(swdown2  ) .and. &
+ if( present(swdown2  ) .and. &
      present(swddir2  ) .and. &
      present(swddni2  ) .and. &
      present(swddif2  ) .and. &
@@ -2806,9 +2800,9 @@ CONTAINS
          jts = j_start(ij)
          jte = j_end(ij)
          call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
-              p8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
+              p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
               coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-              julian, mut, dnw, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+              julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
        enddo
        !$OMP END PARALLEL DO
     end if

@@ -21,8 +21,11 @@ configure.wrf*
 
 ##############################################################################
 # These files are EXCLUDED from not being tracked, so they are still         #
-# tracked                                                                    #
-# The "!" character is the NOT                                               #
-# The "**" syntax is "this directory and recursively all below"              #
+# tracked (double negative logic hurts my head)                              #
+#                                                                            #
+# The leading "!" character is the NOT operator                              #
+#                                                                            #
+# The "**" syntax means "this directory level and recursively all            #
+# directories below this level"                                              #
 ##############################################################################
 !chem/KPP/kpp/kpp-2.1/**/*.f90

@@ -3248,7 +3248,7 @@ halo      HALO_EM_F_1 dyn_em  24:muus,muvs
 #halo      em_shift_halo_x  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
 
 # For observational nudging
-halo      HALO_OBS_NUDGE dyn_em 24:ph_2,p,uratx,vratx,tratx,kpbl
+halo      HALO_OBS_NUDGE dyn_em 24:ph_2,p,uratx,vratx,tratx,kpbl,th_phy_m_t0
 
 # cyl: For 3DPWP
 halo      HALO_PWP dyn_em 8: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_TINI,OM_SINI

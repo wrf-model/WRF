@@ -800,7 +800,7 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_X',         ntasks_x                  , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_Y',         ntasks_y                  , 1 , ierr )
-      CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS',           ntasks_x*ntasks_y         , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_TOTAL',     ntasks_x*ntasks_y         , 1 , ierr )
 
       ENDIF ! history_only
 

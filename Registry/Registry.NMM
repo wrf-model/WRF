@@ -378,6 +378,8 @@ state  real   pdslo     ij     dyn_nmm     1      -      r       "PDSLO"   "PDSL
 state  real   psdt      ij     dyn_nmm     1      -      r       "PSDT"    "Surface pressure tendency"                  "Pa s-1"
 state  real   div       ijk    dyn_nmm     1      -      r       "DIV"     "Divergence"                                 "Pa s-1"
 state  real   def3d     ijk    dyn_nmm     1      -      r       "DEF3D"   "Deformation term from horizontal diffusion"      ""
+state  real   varlen    ijk    dyn_nmm     1      -      r       "VARLEN"  "horizontal length scale"      "m"
+state  real   hadjust   ijk    dyn_nmm     1      -      r       "HADJUST" "horizontal diffusion adjust"  ""
 #for HWRF: add to restart
 state  real   few       ijk    dyn_nmm     1      -      r       "FEW"     "Integrated east-west mass flux"             "Pa m2 s-1"
 state  real   fne       ijk    dyn_nmm     1      -      r       "FNE"     "Integrated northeast-southwest mass flux"   "Pa m2 s-1"

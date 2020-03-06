@@ -9479,11 +9479,10 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
     
 ! Recompute original s.s.a. to test for conservative solution
 
-               denom = (1. - (1. - zw) * (zg / (1. - zg))**2)
-               if (abs(denom).eq.0.0) then
-                  denom = 1.0E-30
-               end if
-               zwo= zw / denom
+               zwo = 0._rb
+               denom = 1._rb
+               if (zg .ne. 1._rb) denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
+               if (zw .gt. 0._rb .and. denom .ne. 0._rb) zwo = zw / denom
     
                if (zwo >= zwcrit) then
 ! Conservative scattering

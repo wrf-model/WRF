@@ -46,7 +46,7 @@ CONTAINS
                  ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    &
                  ,bl_mynn_cloudpdf                                 &
                  ,bl_mynn_mixlength                                &
-                 ,icloud_bl,qc_bl,cldfra_bl                        &
+                 ,icloud_bl,qc_bl,qi_bl,cldfra_bl                  &
                  ,bl_mynn_edmf,bl_mynn_edmf_mom,bl_mynn_edmf_tke   &
                  ,bl_mynn_mixscalars,bl_mynn_output                &
                  ,bl_mynn_cloudmix,bl_mynn_mixqt                   &
@@ -559,7 +559,7 @@ CONTAINS
           INTENT(INOUT) ::        tsq,qsq,cov, & !,k_m,k_h,k_q &
                                   qke,Sh3d,                    &
                                   dqke,qWT,qSHEAR,qBUOY,qDISS, &
-                                  qc_bl,cldfra_bl
+                                  qc_bl,qi_bl,cldfra_bl
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
           INTENT(INOUT) ::         edmf_a,edmf_w,edmf_thl,     & !JOE- MYNN edmf
@@ -1717,7 +1717,7 @@ CONTAINS
                    &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
                    &,bl_mynn_cloudpdf=bl_mynn_cloudpdf                   &
                    &,bl_mynn_mixlength=bl_mynn_mixlength                 &
-                   &,icloud_bl=icloud_bl,qc_bl=qc_bl                     &
+                   &,icloud_bl=icloud_bl,qc_bl=qc_bl,qi_bl=qi_bl         &
                    &,cldfra_bl=cldfra_bl                                 &
                    &,bl_mynn_edmf=bl_mynn_edmf                           &
                    &,bl_mynn_edmf_mom=bl_mynn_edmf_mom                   &

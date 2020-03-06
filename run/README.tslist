@@ -97,6 +97,36 @@ Example:
  2     0.033333    7  153  207     -39.49153       0.00104      -4.57959       7.21139   99064.35938     168.17384      12.06811     -41.77642       0.00001     259.18286     271.35104       0.00000       0.00000       0.00000
 
 
+If solar_diagnostics is activated (see README.namelist) and tslist is present, then time series variables relevant to solar forecasting.
+These additional variables from the time series output are:
+
+cldfrac2d:     2-D MAX CLOUD FRACTION (%)
+wvp:           WATER VAPOR PATH (kg m-2)
+lwp:           LIQUID CLOUD WATER PATH (kg m-2)
+iwp:           ICE CLOUD WATER PATH (kg m-2)
+swp:           SNOW CLOUD WATER PATH (kg m-2)
+wp_sum:        SUM OF LWP+IWP+SWP (kg m-2)
+lwp_tot:       LIQUID CLOUD WATER PATH RES + UNRES (kg m-2)
+iwp_tot:       ICE CLOUD WATER PATH RES + UNRES (kg m-2)
+wp_tot_sum:    SUM OF LWP+IWP+SWP RES + UNRES (kg m-2)
+re_qc:         MASS-WEIGHTED LIQUID CLOUD EFFECTIVE RADIUS (m)
+re_qi:         MASS-WEIGHTED ICE EFFECTIVE RADIUS (m)
+re_qs:         MASS-WEIGHTED SNOW EFFECTIVE RADIUS (m)
+re_qc_tot:     MASS-WEIGHTED LIQUID CLOUD EFFECTIVE RADIUS RES + UNRES (m)
+re_qi_tot:     MASS-WEIGHTED ICE EFFECTIVE RADIUS RES + UNRES (m)
+tau_qc:        MASS-WEIGHTED LIQUID CLOUD OPTICAL THICKNESS ()
+tau_qi:        MASS-WEIGHTED ICE OPTICAL THICKNESS ()
+tau_qs:        MASS-WEIGHTED SNOW OPTICAL THICKNESS ()
+tau_qc_tot:    MASS-WEIGHTED LIQUID CLOUD OPTICAL THICKNESS RES + UNRES ()
+tau_qi_tot:    MASS-WEIGHTED ICE OPTICAL THICKNESS RES + UNRES ()
+cbaseht:       CLOUD BASE HEIGHT (m)
+ctopht:        CLOUD TOP HEIGHT (m)
+cbaseht_tot:   CLOUD BASE HEIGHT RES + UNRES (m)
+ctopht_tot:    CLOUD TOP HEIGHT RES + UNRES (m)
+clrnidx:       CLEARNESS INDEX ()
+sza:           SOLAR ZENITH ANGLE (deg)
+
+
 Format of the files of vertical  profile:
 each line starting with the model time in hours, followed by the variable 
 at model level 1,2,3, ... up to the highest model level of interest 

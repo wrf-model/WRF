@@ -112,8 +112,9 @@ CONTAINS
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
                   dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
-                 ,RC2,XLAI2                                               &
-                  )
+                 ,RC2,XLAI2                                         &
+                 ,IRR_CHAN                                          &
+                 )
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -676,6 +677,9 @@ CONTAINS
    REAL                    ::  DZQ
    REAL                    ::  HCPCT_FASDAS
 
+   REAL,OPTIONAL,INTENT(IN),DIMENSION( ims:ime, jms:jme )       :: IRR_CHAN
+   REAL       ::  IRRIGATION_CHANNEL
+   IRRIGATION_CHANNEL =0.0
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
    XQNORM  = 0.0
@@ -793,6 +797,13 @@ CONTAINS
 ! use mid-day albedo to determine net downward solar (no solar zenith angle correction)
         SOLNET=SOLDN*(1.-ALBEDO(I,J))
         PRCP=RAINBL(i,j)/DT
+        IF(PRESENT(IRR_CHAN)) THEN
+         IF(IRR_CHAN(i,j).NE.0) THEN
+           IRRIGATION_CHANNEL=IRR_CHAN(i,j)/DT
+         ELSE
+           IRRIGATION_CHANNEL=0.
+         END IF
+        ENDIF
         VEGTYP=IVGTYP(I,J)
         SOILTYP=ISLTYP(I,J)
         SHDFAC=VEGFRA(I,J)/100.
@@ -1061,7 +1072,7 @@ CONTAINS
                  sfcheadrt(i,j),                                   &    !I
                  INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    &   ! fasdas
-                 )
+                ,IRRIGATION_CHANNEL)
 
 
 #ifdef WRF_HYDRO
@@ -1720,9 +1731,11 @@ CONTAINS
                      SNOALB, FNDSOILW, FNDSNOWH, RDMAXALB,     &
                      num_soil_layers, restart,                 &
                      allowed_to_read ,                         &
+                     irr_rand_field,irr_ph,irr_freq,           &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte                 )
+                     its,ite, jts,jte, kts,kte                 &                     
+                    )
 
    INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
                                     ims,ime, jms,jme, kms,kme,  &
@@ -1769,7 +1782,10 @@ CONTAINS
                                 GRAV = 9.81, T0 = 273.15
    INTEGER                   :: errflag
    CHARACTER(LEN=80)         :: err_message
-
+   INTEGER,DIMENSION(ims:ime, jms:jme ),INTENT(INOUT):: irr_rand_field   
+   INTEGER , DIMENSION(jds:jde) :: my_seeds  
+   INTEGER :: irr_ph,irr_freq         
+   REAL,DIMENSION(ims:ime, jms:jme ) :: rand_tmp
    character*256 :: MMINSL
         MMINSL='STAS'
 !
@@ -1794,6 +1810,22 @@ CONTAINS
 ! <--GAC
 
    IF(.not.restart)THEN
+   
+#if ( EM_CORE==1 )
+   IF (irr_ph.NE.0)THEN
+   DO i = its,ite
+    DO j=jts,jte
+      my_seeds(j) =sqrt(ide*(real(j-1)**2))+sqrt(real(jde*i))
+!      PRINT*,'myseed', my_seeds(j),j,jts,jds
+    END DO
+      CALL RANDOM_SEED ( PUT = my_seeds )
+      CALL RANDOM_NUMBER ( rand_tmp(i,:) )
+      CALL RANDOM_SEED ( GET = my_seeds )
+      CALL RANDOM_NUMBER ( rand_tmp(i,:) )
+      irr_rand_field(i,:)=int(modulo(rand_tmp(i,:)*100,real(irr_freq)))
+   END DO
+   END IF
+#endif
 
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
@@ -2329,6 +2361,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                  ,sfcheadrt,INFXSRT, soldrain                   & !hydro
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                     & !O
+                 ,IRR_CHAN                                      &
                   )
 
 !----------------------------------------------------------------
@@ -2929,7 +2962,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL                    ::  HFX_PHY, QFX_PHY
    REAL                    ::  DZQ
    REAL                    ::  HCPCT_FASDAS
-
+   REAL,OPTIONAL,DIMENSION( ims:ime, jms:jme ) :: IRR_CHAN
+   REAL               :: IRRIGATION_CHANNEL 
+   IRRIGATION_CHANNEL=0.0
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
    XQNORM  = 0.0
@@ -3121,6 +3156,13 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       ! use mid-day albedo to determine net downward solar (no solar zenith angle correction)
               SOLNET=SOLDN*(1.-ALBEDO(I,J))
               PRCP=RAINBL(i,j)/DT
+              IF(PRESENT(IRR_CHAN)) THEN
+               IF(IRR_CHAN(i,j).NE.0) THEN
+                IRRIGATION_CHANNEL=IRR_CHAN(i,j)/DT
+               ELSE
+                IRRIGATION_CHANNEL=0.
+               END IF
+              ENDIF
               VEGTYP=IVGTYP(I,J)
               SOILTYP=ISLTYP(I,J)
               SHDFAC=VEGFRA(I,J)/100.
@@ -3408,7 +3450,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        sfcheadrt(i,j),                                   &    !I
                        INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
-                       )
+                 ,IRRIGATION_CHANNEL  )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0
@@ -4293,7 +4335,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        sfcheadrt(i,j),                                   &    !I
                        INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
-                       )
+                      ,IRRIGATION_CHANNEL )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0

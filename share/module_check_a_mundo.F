@@ -58,6 +58,7 @@
       INTEGER :: count_opt
       LOGICAL :: lon_extent_is_global , lat_extent_is_global
       LOGICAL :: rinblw_already_done
+      LOGICAL :: fsbm_table1_exists, fsbm_table2_exists
       INTEGER :: count_fatal_error
       INTEGER :: len1, len2, len_loop
 
@@ -425,6 +426,18 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that channel irrigation is run with Noah
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % sf_surface_physics(i) .NE. LSMSCHEME .AND.  &
+             model_config_rec % sf_surf_irr_scheme(i) .EQ. CHANNEL ) THEN
+              wrf_err_message = '--- ERROR: irrigation Opt 1 works only with Noah-LSM'
+              CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Check that Deng Shallow Convection Must work with MYJ or MYNN PBL
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
@@ -557,6 +570,27 @@
       END DO
 
 #if (EM_CORE == 1)
+!--------------------------------------------------------------------------------------------------
+! Input tables must exist in running directory for fast bin microphysics scheme (mp_physics = 30)
+!--------------------------------------------------------------------------------------------------
+      IF (  model_config_rec % mp_physics(1) .EQ. FAST_KHAIN_LYNN_SHPUND   ) THEN
+         INQUIRE(FILE='./SBM_input_33', EXIST=fsbm_table1_exists)
+         IF (.not.fsbm_table1_exists ) THEN
+            wrf_err_message = "--- ERROR: Input table SBM_input_33 doesn't exist !!!"
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- ERROR: Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
+             CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+         INQUIRE(FILE='./scattering_tables_2layer_high_quad_1dT_1%fw_110', EXIST=fsbm_table2_exists)
+         IF (.not.fsbm_table2_exists ) THEN
+            wrf_err_message = "--- ERROR: Input table scattering_tables_2layer_high_quad_1dT_1%fw_110 doesn't exist !!!"
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '--- ERROR: Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      END IF
 !-----------------------------------------------------------------------
 ! There are restrictions on the AFWA diagnostics regarding the choice
 ! of microphysics scheme. These are hard coded in the AFWA diags driver,
@@ -1842,7 +1876,11 @@
       IF ( wrf_dm_on_monitor() ) THEN
          CALL wrf_tsin_exist ( exists )
          IF ( exists ) THEN
-            model_config_rec%process_time_series = 1
+            IF ( model_config_rec%solar_diagnostics == 1 ) THEN
+               model_config_rec%process_time_series = 2
+            ELSE
+               model_config_rec%process_time_series = 1
+            END IF
          ELSE
             model_config_rec%process_time_series = 0
          END IF
@@ -2211,6 +2249,23 @@
             model_config_rec%shcu_used_plus = 1
          END IF
       ENDDO
+#endif
+
+#if (EM_CORE == 1)
+# if( BUILD_SBM_FAST != 1)
+!-----------------------------------------------------------------------
+!  If the FAST SBM scheme is requested and it is not compiled, let the
+!  user know.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % mp_physics(1) .EQ. FAST_KHAIN_LYNN_SHPUND ) THEN
+         wrf_err_message = '--- ERROR: FAST SBM scheme must be built with a default compile-time flag'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Run ./clean -a, ./configure, ./compile scripts again'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+# endif
 #endif
 
 !-----------------------------------------------------------------------

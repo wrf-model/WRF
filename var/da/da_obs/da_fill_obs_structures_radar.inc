@@ -40,8 +40,14 @@ subroutine da_fill_obs_structures_radar(iv, ob)
       do n = 1, iv%info(radar)%nlocal
          do k = 1, iv%info(radar)%levels(n)
             ! Copy observation variables:
-            ob % radar(n) % rv(k) = iv % radar(n) % rv(k) % inv
-            ob % radar(n) % rf(k) = iv % radar(n) % rf(k) % inv
+            !ob % radar(n) % rv(k) = iv % radar(n) % rv(k) % inv
+            !ob % radar(n) % rf(k) = iv % radar(n) % rf(k) % inv
+            if(iv % radar(n) % rv(k) % qc-missing_data>1.0)  then
+              ob % radar(n) % rv(k) = iv % radar(n) % rv(k) % inv * radar_rv_rscl
+            endif
+            if(iv % radar(n) % rf(k) % qc-missing_data>1.0)  then
+              ob % radar(n) % rf(k) = iv % radar(n) % rf(k) % inv * radar_rf_rscl
+            endif
          end do
       end do
    end if

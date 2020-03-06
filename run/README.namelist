@@ -695,6 +695,20 @@ Namelist variables for controlling the adaptive time step option:
  num_urban_nf                        = 1! (= 10 if BEM active)        number of grid levels in the floors (nf_u in BEM header)
  num_urban_nbui                      = 1! (= 15 if BEM active)        maximum number of types of buildings in an urban class (nbui_max in BEM header)
 
+ sf_surf_irr_scheme (max_dom)        = 0: no irrigation scheme
+                                     = 1: channel scheme (in Noah only)
+                                     = 2: drip scheme
+                                     = 3: sprinkler scheme
+ 
+ irr_daily_amount (max_dom)          = daily equivalent irrigation water amount in mm (float, e.g. 5.7)
+ irr_start_hour (max_dom)            = UTC start hour for irrigation (int, e.g. 5)
+ irr_num_hours (max_dom)             = number of consecutive hours for irrigation (int, e.g. 3)
+ irr_start_julianday (max_dom)       = Julian start day of irrigation (int, e.g. 135)
+ irr_end_julianday (max_dom)         = Julian end day of irrigation (int, e.g. 255)
+ irr_ph (max_dom)                    = 0: all the static IRRIGATION field is activated
+                                     = 1: pseudo random activation field: ensures repeatability across compilers
+                                     = 2: random activation field: results might depend on the compiler fortran RANDOM_SEED
+ irr_freq (max_dom)                  = irrigation frequency in days (int, e.g. 3)
 
  bl_pbl_physics (max_dom)            boundary-layer option
                                      = 0, no boundary-layer 
@@ -1049,6 +1063,8 @@ Namelist variables for lake module:
                                                   Points with 0/0 values use ratio defined by iccg_prescribed_(num|den)
  iccg_prescribed_num (max_dom)       = 0.       ! Numerator of user-specified prescribed IC:CG
  iccg_prescribed_den (max_dom)       = 1.       ! Denominator of user-specified prescribed IC:CG
+ ltng_temp_upper                     = -45.     ! Temperature (C) of upper peak of LNOx vertical distribution for IC lightning (used by &chem lnox_opt=2).
+ ltng_temp_lower                     = -15.     ! Temperatures (C) of lower peak of LNOx vertical distribution for both IC and CG lightning (used by &chem lnox_opt=2).
 
 Options for wind turbine drag parameterization:
 
@@ -1768,3 +1784,16 @@ is "h1", so that stream needs to be explicitly requested in the namelist.input f
  auxhist1_outname                    = "wrf_trad_fields_d<domain>_<date>"
  /
 
+
+
+Solar diagnostics output
+
+For solar diagnostics, 2-D fields of variables relevant to solar forecasting are output
+when option solar_diagnostics is activated in diags section of namelist, as shown below.
+Also, if tslist is present when solar_diagnostics is activated, then these same variables
+are output to the time series files for the location(s) specified in tslist (see README.tslist).
+All variables are calculated in phys/module_diag_solar.F and defined in registry.solar_fields
+
+ &diags
+ solar_diagnostics                   =  1
+ /

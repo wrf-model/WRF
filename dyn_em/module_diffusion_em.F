@@ -2003,7 +2003,7 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
 !        xkmh(i,k,j)=max(c_s*c_s*mlen_h*mlen_h*tmp, 1.0E-6*mlen_h*mlen_h )
          xkmh(i,k,j)=c_s*c_s*mlen_h*mlen_h*tmp
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*mlen_h )
-         xkmv(i,k,j)=0.
+         xkmv(i,k,j)=xkmh(i,k,j)               ! after v4.2 this is used for hor. diff. of w
          xkhh(i,k,j)=xkmh(i,k,j)/pr
          xkhv(i,k,j)=0.
          IF(config_flags%diff_opt .EQ. 2)THEN
@@ -2021,6 +2021,7 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
              xkmh(i,k,j)=xkmh(i,k,j)/(alpha)
            endif
            xkhh(i,k,j)=xkmh(i,k,j)/pr
+           xkmv(i,k,j)=xkmh(i,k,j)               ! after v4.2 this is used for hor. diff. of w
          ENDIF
       ENDDO
       ENDDO

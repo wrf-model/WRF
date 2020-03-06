@@ -573,6 +573,7 @@
 !--------------------------------------------------------------------------------------------------
 ! Input tables must exist in running directory for fast bin microphysics scheme (mp_physics = 30)
 !--------------------------------------------------------------------------------------------------
+# if ( BUILD_SBM_FAST == 1 )
       IF (  model_config_rec % mp_physics(1) .EQ. FAST_KHAIN_LYNN_SHPUND   ) THEN
          INQUIRE(FILE='./SBM_input_33', EXIST=fsbm_table1_exists)
          IF (.not.fsbm_table1_exists ) THEN
@@ -591,6 +592,9 @@
             count_fatal_error = count_fatal_error + 1
          END IF
       END IF
+#else
+      EXIT
+#endif
 !-----------------------------------------------------------------------
 ! There are restrictions on the AFWA diagnostics regarding the choice
 ! of microphysics scheme. These are hard coded in the AFWA diags driver,

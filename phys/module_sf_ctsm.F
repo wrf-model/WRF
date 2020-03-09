@@ -235,7 +235,8 @@ contains
     ! Initialize CTSM via LILAC
 
     use module_wrf_error
-    use lilac_mod, only : lilac_init
+    use lilac_mod, only : lilac_init1, lilac_init2
+    use ctsm_LilacCouplingFieldIndices
 
     integer, intent(in) :: ids
     integer, intent(in) :: ide
@@ -339,7 +340,8 @@ contains
        call wrf_error_fatal('ctsm_init: expect dt representable as integer')
     end if
 
-    call lilac_init(  &
+    call lilac_init1()
+    call lilac_init2(  &
          mpicom           = comp_comm,        &
          atm_global_index = atm_global_index, &
          atm_lons         = atm_lons,         &
@@ -352,7 +354,14 @@ contains
          atm_start_mon    = atm_start_mon,    &
          atm_start_day    = atm_start_day,    &
          atm_start_secs   = atm_start_secs_since_midnight, &
-         starttype_in     = atm_starttype)
+         starttype_in     = atm_starttype, &
+         fields_needed_from_data = [ &
+         lilac_a2l_Faxa_bcphidry, lilac_a2l_Faxa_bcphodry, lilac_a2l_Faxa_bcphiwet, &
+         lilac_a2l_Faxa_ocphidry, lilac_a2l_Faxa_ocphodry, lilac_a2l_Faxa_ocphiwet, &
+         lilac_a2l_Faxa_dstwet1, lilac_a2l_Faxa_dstdry1, &
+         lilac_a2l_Faxa_dstwet2, lilac_a2l_Faxa_dstdry2, &
+         lilac_a2l_Faxa_dstwet3, lilac_a2l_Faxa_dstdry3, &
+         lilac_a2l_Faxa_dstwet4, lilac_a2l_Faxa_dstdry4])
 
   end subroutine ctsm_init
   !-----------------------------------------------------------------------
@@ -377,6 +386,7 @@ contains
        ust, hfx, lh, qfx, emiss, z0, znt)
 
     use lilac_mod, only : lilac_run
+    use ctsm_LilacCouplingFieldIndices
 
     integer, intent(in) :: ids
     integer, intent(in) :: ide
@@ -466,7 +476,7 @@ contains
              end if
           end do
        end do
-       call export_to_lilac('Sa_landfrac', landmask)
+       call export_to_lilac(lilac_a2l_Sa_landfrac, landmask)
     end if
 
     ! ------------------------------------------------------------------------
@@ -513,23 +523,23 @@ contains
     ! Export data to ctsm via lilac
     ! ------------------------------------------------------------------------
 
-    call export_to_lilac('Sa_z', zlvl)
-    call export_to_lilac('Sa_topo', ht)
-    call export_to_lilac('Sa_u', forc_u)
-    call export_to_lilac('Sa_v', forc_v)
-    call export_to_lilac('Sa_ptem', forc_th)
-    call export_to_lilac('Sa_pbot', pbot)
-    call export_to_lilac('Sa_tbot', forc_t)
-    call export_to_lilac('Sa_shum', forc_q)
-    call export_to_lilac('Faxa_lwdn', glw)
-    call export_to_lilac('Faxa_rainc', rain_convective_rate)
-    call export_to_lilac('Faxa_rainl', rain_largescale_rate)
-    call export_to_lilac('Faxa_snowc', snow_convective_rate)
-    call export_to_lilac('Faxa_snowl', snow_largescale_rate)
-    call export_to_lilac('Faxa_swndr', swnirdir)
-    call export_to_lilac('Faxa_swvdr', swvisdir)
-    call export_to_lilac('Faxa_swndf', swnirdif)
-    call export_to_lilac('Faxa_swvdf', swvisdif)
+    call export_to_lilac(lilac_a2l_Sa_z, zlvl)
+    call export_to_lilac(lilac_a2l_Sa_topo, ht)
+    call export_to_lilac(lilac_a2l_Sa_u, forc_u)
+    call export_to_lilac(lilac_a2l_Sa_v, forc_v)
+    call export_to_lilac(lilac_a2l_Sa_ptem, forc_th)
+    call export_to_lilac(lilac_a2l_Sa_pbot, pbot)
+    call export_to_lilac(lilac_a2l_Sa_tbot, forc_t)
+    call export_to_lilac(lilac_a2l_Sa_shum, forc_q)
+    call export_to_lilac(lilac_a2l_Faxa_lwdn, glw)
+    call export_to_lilac(lilac_a2l_Faxa_rainc, rain_convective_rate)
+    call export_to_lilac(lilac_a2l_Faxa_rainl, rain_largescale_rate)
+    call export_to_lilac(lilac_a2l_Faxa_snowc, snow_convective_rate)
+    call export_to_lilac(lilac_a2l_Faxa_snowl, snow_largescale_rate)
+    call export_to_lilac(lilac_a2l_Faxa_swndr, swnirdir)
+    call export_to_lilac(lilac_a2l_Faxa_swvdr, swvisdir)
+    call export_to_lilac(lilac_a2l_Faxa_swndf, swnirdif)
+    call export_to_lilac(lilac_a2l_Faxa_swvdf, swvisdif)
 
     ! ------------------------------------------------------------------------
     ! Run ctsm via lilac
@@ -544,14 +554,14 @@ contains
     ! Import data from ctsm via lilac
     ! ------------------------------------------------------------------------
 
-    call import_from_lilac('Sl_t', tsk)
-    call import_from_lilac('Sl_tref', t2)
-    call import_from_lilac('Sl_qref', qref)
+    call import_from_lilac(lilac_l2a_Sl_t, tsk)
+    call import_from_lilac(lilac_l2a_Sl_tref, t2)
+    call import_from_lilac(lilac_l2a_Sl_qref, qref)
 
-    call import_from_lilac('Sl_avsdr', albedo_visdir)
-    call import_from_lilac('Sl_anidr', albedo_nirdir)
-    call import_from_lilac('Sl_avsdf', albedo_visdif)
-    call import_from_lilac('Sl_anidf', albedo_nirdif)
+    call import_from_lilac(lilac_l2a_Sl_avsdr, albedo_visdir)
+    call import_from_lilac(lilac_l2a_Sl_anidr, albedo_nirdir)
+    call import_from_lilac(lilac_l2a_Sl_avsdf, albedo_visdif)
+    call import_from_lilac(lilac_l2a_Sl_anidf, albedo_nirdif)
     call calculate_total_albedo( &
          ims=ims, ime=ime, jms=jms, jme=jme, &
          its=its, ite=ite, jts=jts, jte=jte, &
@@ -568,16 +578,16 @@ contains
          swnirdif       = swnirdif, &
          albedo         = albedo)
 
-    call import_from_lilac('Sl_fv', ust)
+    call import_from_lilac(lilac_l2a_Sl_fv, ust)
 
-    call import_from_lilac('Fall_sen', hfx)
-    call import_from_lilac('Fall_lat', lh)
-    call import_from_lilac('Fall_evap', qfx)
+    call import_from_lilac(lilac_l2a_Fall_sen, hfx)
+    call import_from_lilac(lilac_l2a_Fall_lat, lh)
+    call import_from_lilac(lilac_l2a_Fall_evap, qfx)
 
     ! At least for now, use CTSM's Sl_z0m (momentum roughness length) for both background
     ! roughness length and thermal time-varying roughness length, even though it's
     ! possible that those two should differ in some way.
-    call import_from_lilac('Sl_z0m', z0)
+    call import_from_lilac(lilac_l2a_Sl_z0m, z0)
 
     ! ------------------------------------------------------------------------
     ! Calculate derived variables
@@ -615,12 +625,12 @@ contains
 
   contains
 
-    subroutine export_to_lilac(var_name, var_2d)
+    subroutine export_to_lilac(field_index, var_2d)
       ! Reshape var_2d to 1d for LILAC, then set the appropriate atm2lnd variable in LILAC
 
-      use lilac_atmcap, only : lilac_atmcap_atm2lnd
+      use ctsm_LilacCouplingFields, only : lilac_atm2lnd
 
-      character(len=*), intent(in) :: var_name  ! name of variable in LILAC
+      integer, intent(in) :: field_index  ! one of the field indices defined in ctsm_LilacCouplingFieldIndices
       real, intent(in) :: var_2d(ims: , jms: )
 
       real(r8), allocatable :: var_1d(:)
@@ -633,19 +643,19 @@ contains
            jts=jts, jte=jte, &
            var_2d=var_2d, var_1d=var_1d)
 
-      call lilac_atmcap_atm2lnd( &
-           fldname = var_name, &
+      call lilac_atm2lnd( &
+           field_index = field_index, &
            data = var_1d)
 
     end subroutine export_to_lilac
 
-    subroutine import_from_lilac(var_name, var_2d)
+    subroutine import_from_lilac(field_index, var_2d)
       ! Get the appropriate lnd2atm variable from LILAC, then reshape 1d LILAC variable to
       ! fill var_2d
 
-      use lilac_atmcap, only : lilac_atmcap_lnd2atm
+      use ctsm_LilacCouplingFields, only : lilac_lnd2atm
 
-      character(len=*), intent(in) :: var_name  ! name of variable in LILAC
+      integer, intent(in) :: field_index  ! one of the field indices defined in ctsm_LilacCouplingFieldIndices
       real, intent(inout) :: var_2d(ims: , jms: )
 
       real(r8), allocatable :: var_1d(:)
@@ -659,8 +669,8 @@ contains
 
       allocate(var_1d(num_points))
 
-      call lilac_atmcap_lnd2atm( &
-           fldname = var_name, &
+      call lilac_lnd2atm( &
+           field_index = field_index, &
            data = var_1d)
 
       call convert_1d_to_2d( &

@@ -10,7 +10,7 @@
 ! +-----------------------------------------------------------------------------+
 ! +-----------------------------------------------------------------------------+
 
-  ! This is the spectral-bin microphysics scheme based on the Hebrew University
+! This is the spectral-bin microphysics scheme based on the Hebrew University
 ! Cloud Model (HUCM), originally formulated and coded by Alexander Khain
 ! (email: Alexander.Khain@mail.huji.ac.il);
 ! The WRF bin microphysics scheme (Fast SBM or FSBM) solves equations for four

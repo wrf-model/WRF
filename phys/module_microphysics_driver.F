@@ -1114,7 +1114,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,CHEM_new=scalar,N_CHEM=num_scalar                     &
                  ,ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
                  ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
-                 ,xland=xland                                       &
+                 ,xland=xland,domain_id=id                          &
                  ,ivgtyp=ivgtyp                                      &
                  ,xlat=xlat                                        &
                  ,xlong=xlong                                        &

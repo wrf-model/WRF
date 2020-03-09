@@ -3972,7 +3972,7 @@ enddo
       &                      chem_new,n_chem,                            &
       &                      itimestep,DT,DX,DY,                         &
       &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,           &
-      &                      xland,ivgtyp,xlat,xlong,                    &
+      &                      xland,domain_id,ivgtyp,xlat,xlong,          &
       &                      QV,QC,QR,QI,QS,QG,QV_OLD,                   &
       &                      QNC,QNR,QNI,QNS,QNG,QNA,                    &
       &                      ids,ide, jds,jde, kds,kde,		        	     &
@@ -3989,7 +3989,7 @@ enddo
  	INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
  	&                     ,IMS,IME,JMS,JME,KMS,KME                    &
  	&                     ,ITS,ITE,JTS,JTE,KTS,KTE                    &
- 	&                     ,ITIMESTEP,N_CHEM,NUM_SBMRADAR
+ 	&                     ,ITIMESTEP,N_CHEM,NUM_SBMRADAR,domain_id
 
  	REAL, INTENT(IN) 	    :: DT,DX,DY
  	REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), &
@@ -4281,7 +4281,7 @@ enddo
  ! +--------------------------------------------+
  ! ... Aerosols boundary conditions
  ! +--------------------------------------------+
-    if (itimestep > 1 .and. dx > dx_bound)then
+    if (itimestep > 1 .and. domain_id == 1)then
         DO j = jts,jte
          DO k = kts,kte
            DO i = its,ite

@@ -256,7 +256,7 @@
       real :: de_cloud, de_cloud2, de_ice, de_ice2, de_snow, de_snow2, f0, f1, ftotal, ozone, &
           p, radius, Ruucld, pi, Ruucld_water, Ruucld_ice, Ruucld_snow, Ruuclr, tau_qv2, tau_qi2, &
           tau_qs2, tau, Tddcld, Tddclr, Tducld, Tducld_ice, tducld_snow, tducld_water, Tduclr, Tuuclr, &
-          w, Z
+          w, Z, tau_tot
 
 
       PI = acos(-1.0)
@@ -288,6 +288,12 @@
       tau_qs2 = Max (tau_qs, TAU_MIN)
       tau_qs2 = Min (tau_qs2, TAU_MAX)
 
+      tau_tot = 0.0
+      if (tau_qv > TAU_MIN) tau_tot = tau_tot + tau_qv2
+      if (tau_qi > TAU_MIN) tau_tot = tau_tot + tau_qi2
+      if (tau_qs > TAU_MIN) tau_tot = tau_tot + tau_qs2
+      tau_tot = Min (tau_tot, TAU_MAX)
+
       Z = acos(solarangle) * 180.0 / PI
 
       call SUNEARTH( juday, Radius )
@@ -296,45 +302,42 @@
       call CLEARSKYALL(p, albdo, SSA, g, Z, Radius, beta,&
           alpha, ozone, w, Tddclr, Tduclr, Ruuclr, Tuuclr)
 
-        ! Avoid calling the WATER/ICE model for optically
-        ! thin clouds and low zenit angles
-      if (tau_qv > 1.0) then
-        Call Watermodel (tau_qv2, de_cloud2, solarangle, Tducld_water, Ruucld_water)
+        ! Liquid hydrometeors
+      if (tau_qv > TAU_MIN) then
+        Call Watermodel (tau_tot, de_cloud2, solarangle, Tducld_water, Ruucld_water)
       else
         Tducld_water = 1.0
         Ruucld_water = 0.0
         tau_qv2 = 0.0
       end if
 
-        ! Avoid calling the WATER/ICE model for optically
-        ! thin clouds and low zenit angles
-      if (tau_qi > 1.0) then
-        call Icemodel (tau_qi2, de_ice2, solarangle, Tducld_ice, Ruucld_ice)
+        ! Ice hydrometeors
+      if (tau_qi > TAU_MIN) then
+        call Icemodel (tau_tot, de_ice2, solarangle, Tducld_ice, Ruucld_ice)
       else
         Tducld_ice = 1.0
         Ruucld_ice = 0.0
         tau_qi2 = 0.0
       end if
 
-        ! Avoid calling the WATER/ICE model for optically
-        ! thin clouds and low zenit angles
-      if (tau_qs > 1.0) then
-        call Icemodel (tau_qs2, de_snow2, solarangle, Tducld_snow, Ruucld_snow)
+        ! Snow hydrometeors
+      if (tau_qs > TAU_MIN) then
+        call Icemodel (tau_tot, de_snow2, solarangle, Tducld_snow, Ruucld_snow)
       else
         Tducld_snow = 1.0
         Ruucld_snow = 0.0
         tau_qs2 = 0.0
       end if
 
-      Tducld =  Tducld_water * Tducld_ice * Tducld_snow
-      if (Tducld == 1.0) Tducld=0.0
+      if (tau_tot > 0.0) then
+        Tducld =  (tau_qv2 * Tducld_water + tau_qi2 * Tducld_ice + tau_qs2 * Tducld_snow) / tau_tot
+        Tducld = min(Tducld, 1.0)
+        Tducld = max(Tducld, 0.0)
 
-      Tducld = min(Tducld, 1.0)
-      Tducld = max(Tducld, 0.0)
-
-      Ruucld = 1.0 - (1.0 - Ruucld_water) * (1.0 - Ruucld_ice) * (1.0 - Ruucld_snow) 
-      Ruucld = min(Ruucld, 1.0) 
-      Ruucld = max(Ruucld, 0.0) 
+        Ruucld = (tau_qv2 * Ruucld_water + tau_qi2 * Ruucld_ice + tau_qs2 * Ruucld_snow)  / tau_tot
+        Ruucld = min(Ruucld, 1.0) 
+        Ruucld = max(Ruucld, 0.0) 
+      end if
 
       tau = tau_qv2 + tau_qi2 + tau_qs2 
       tau = Min (tau, TAU_MAX)

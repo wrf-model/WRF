@@ -17,7 +17,6 @@
 
     public :: Farms_driver
 
-    real, parameter :: ONE_OVER_G = 1.0 / G
     real, parameter :: THREE_OVER_TWO = 3.0 / 2.0
     integer, parameter :: TAU_ICE_METHOD = 1
     logical, parameter :: USE_REST2 = .false.
@@ -32,9 +31,9 @@
   contains
 
     subroutine Farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte,  &
-           p8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
+           p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
            coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-           julian, mut, dnw, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+           julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
 
       implicit None
 
@@ -44,11 +43,10 @@
       integer, intent(in) :: aer_opt
       real,    intent(in) :: julian
 
-      real, dimension(ims:ime, jms:jme), intent(in) :: albedo, coszen_loc, mut
-      real, dimension(kms:kme), intent(in) :: dnw
+      real, dimension(ims:ime, jms:jme), intent(in) :: albedo, coszen_loc
 
       real, dimension(ims:ime, kms:kme, jms:jme ), intent(in) :: qv, qi, qs, qc, &
-          p8w, re_cloud, re_ice, re_snow 
+          p8w, rho, dz8w, re_cloud, re_ice, re_snow 
 
       real, dimension(ims:ime, jms:jme), intent(inout) :: aerssa2d, aerasy2d, aod5502d, angexp2d
       real, dimension(ims:ime,jms:jme), intent(inout) :: swddir2, swdown2, &
@@ -59,6 +57,7 @@
       integer :: i, j
       real    :: tau_qv, tau_qi, tau_qs, pmw, swp, iwp, lwp, beta
       real    :: re_cloud_path, re_ice_path, re_snow_path, q_aux
+      real, dimension(kms:kme) :: rhodz
 
 
       j_loop: do j = jts, jte
@@ -71,15 +70,16 @@
              swdownc2(i, j) = 0.0
              swddnic2(i, j) = 0.0
            else
+             rhodz(:) = rho(i, :, j) * dz8w(i, :, j) / (1. + qv(i, :, j))
                ! PMW
-             pmw = ONE_OVER_G * integrate_1var (mut(i, j), dnw, qv(i, :, j), kms, kme, kts, kte)
+             pmw = integrate_1var (rhodz, qv(i, :, j), kms, kme, kts, kte)
 
                ! Calc effective radius water
-             q_aux = integrate_1var (mut(i, j), dnw, qc(i, :, j), kms, kme, kts, kte)
-             lwp = ONE_OVER_G * q_aux
+             q_aux = integrate_1var (rhodz, qc(i, :, j), kms, kme, kts, kte)
+             lwp = q_aux
 
              if (q_aux > 0.0) then
-               re_cloud_path = integrate_2var (mut(i, j), dnw, qc(i, :, j), &
+               re_cloud_path = integrate_2var (rhodz, qc(i, :, j), &
                    re_cloud(i, :, j), kms, kme, kts, kte)
                re_cloud_path = re_cloud_path / q_aux
              else
@@ -87,11 +87,11 @@
              end if
 
                ! Calc effective radius ice
-             q_aux = integrate_1var (mut(i, j), dnw, qi(i, :, j), kms, kme, kts, kte)
-             iwp = ONE_OVER_G * q_aux
+             q_aux = integrate_1var (rhodz, qi(i, :, j), kms, kme, kts, kte)
+             iwp = q_aux
 
              if (q_aux > 0.0) then
-               re_ice_path = integrate_2var (mut(i, j), dnw, qi(i, :, j), &
+               re_ice_path = integrate_2var (rhodz, qi(i, :, j), &
                    re_ice(i, :, j), kms, kme, kts, kte)
                re_ice_path = re_ice_path / q_aux
              else
@@ -99,11 +99,11 @@
              end if
 
                ! Calc effective radius snow
-             q_aux = integrate_1var (mut(i, j), dnw, qs(i, :, j), kms, kme, kts, kte)
-             swp = ONE_OVER_G * q_aux
+             q_aux = integrate_1var (rhodz, qs(i, :, j), kms, kme, kts, kte)
+             swp = q_aux
 
              if (q_aux > 0.0) then
-               re_snow_path = integrate_2var (mut(i, j), dnw, qs(i, :, j), &
+               re_snow_path = integrate_2var (rhodz, qs(i, :, j), &
                    re_snow(i, :, j), kms, kme, kts, kte)
                re_snow_path = re_snow_path / q_aux
              else
@@ -169,14 +169,13 @@
     end subroutine Farms_driver
 
 
-    function Integrate_1var(mut_val, dnw, var1_1d, kms, kme, kts, kte) &
+    function Integrate_1var(rhodz, var1_1d, kms, kme, kts, kte) &
         result (return_value)
       
       implicit none
 
-      real, intent(in) :: mut_val
       integer, intent(in) :: kts, kte, kms, kme
-      real, dimension(kms:kme), intent(in) :: var1_1d, dnw
+      real, dimension(kms:kme), intent(in) :: var1_1d, rhodz
 
         ! Local
       real :: return_value
@@ -184,21 +183,19 @@
 
       return_value = 0.0
       do k = kts, kte - 1
-        return_value = return_value + var1_1d(k) * dnw(k)
+        return_value = return_value + var1_1d(k) * rhodz(k)
       end do
-      return_value = - mut_val * return_value
 
     end function Integrate_1var
 
 
-    function Integrate_2var(mut_val, dnw, var1_1d, var2_1d, kms, kme, kts, kte) &
+    function Integrate_2var(rhodz, var1_1d, var2_1d, kms, kme, kts, kte) &
         result (return_value)
 
       implicit none
 
-      real, intent(in) :: mut_val
       integer, intent(in) :: kts, kte, kms, kme
-      real, dimension(kms:kme), intent(in) :: var1_1d, var2_1d, dnw
+      real, dimension(kms:kme), intent(in) :: var1_1d, var2_1d, rhodz
 
         ! Local
       real :: return_value
@@ -206,9 +203,8 @@
 
       return_value = 0.0
       do k = kts, kte - 1
-        return_value = return_value + var1_1d(k) * var2_1d(k) * dnw(k)
+        return_value = return_value + var1_1d(k) * var2_1d(k) * rhodz(k)
       end do
-      return_value = - mut_val * return_value
 
     end function Integrate_2var
 

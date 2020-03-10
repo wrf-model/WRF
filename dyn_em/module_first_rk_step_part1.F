@@ -310,7 +310,6 @@ BENCH_START(rad_driver_tim)
      &        ,XTIME=grid%xtime                                           &
               ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag       &
 #if ( EM_CORE == 1)
-     &        ,mut=grid%mut,dnw=grid%dnw                                  & ! FARMS coupling
      &        ,swdown2=grid%swdown2, swddni2=grid%swddni2                 & ! FARMS coupling
      &        ,swddif2=grid%swddif2, swddir2=grid%swddir2                 & ! FARMS coupling
      &        ,swdownc2=grid%swdownc2, swddnic2=grid%swddnic2             & ! FARMS coupling

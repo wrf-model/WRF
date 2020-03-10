@@ -437,8 +437,8 @@ BENCH_START(surf_driver_tim)
 
 !gmm halo of wtd and riverflow for leafhydro
 #ifdef DM_PARALLEL
-  IF ( config_flags%sf_surface_physics.eq.NOAHMPSCHEME ) THEN
-       IF ( config_flags%opt_run.eq.5.and.mod(grid%itimestep,grid%STEPWTD).eq.0 )  THEN
+  IF ( ( config_flags%sf_surface_physics.EQ.NOAHMPSCHEME ) .and. ( config_flags%opt_run.EQ.5 ) ) THEN
+       IF ( mod(grid%itimestep,grid%STEPWTD).EQ.0 )  THEN
 #     include "HALO_EM_HYDRO_NOAHMP.inc"
        ENDIF
   ENDIF

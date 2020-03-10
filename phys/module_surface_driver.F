@@ -3103,7 +3103,8 @@ CONTAINS
 	 
 	 ENDIF 
 
-  if(iopt_run.eq.5.and.mod(itimestep,STEPWTD).eq.0)then
+  IF ( iopt_run .EQ. 5 ) THEN
+      IF ( MOD(itimestep,STEPWTD) .EQ. 0 ) THEN ! STEPWTD always and only non-zero for iopt_run == 5
            CALL wrf_debug( 100, 'calling WTABLE' )
 
 !gmm update wtable from lateral flow and shed water to rivers
@@ -3118,7 +3119,8 @@ CONTAINS
                                   ims,ime, jms,jme, kms,kme,                             &
                                   i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
 
-  endif
+      ENDIF
+  ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &

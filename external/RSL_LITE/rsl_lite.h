@@ -148,7 +148,7 @@
 #define RSL_SENDBUF 0
 #define RSL_RECVBUF 1
 #define RSL_FREEBUF 3
-#define RSL_MAXPROC 10000
+#define RSL_MAXPROC 100001
 #define RSL_INVALID -1
 
 /* this must be the same as defined in frame/module_driver_constants.F */

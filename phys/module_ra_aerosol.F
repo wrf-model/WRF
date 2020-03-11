@@ -551,7 +551,7 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
                    xy=xy+x*log(aod550spc3d(i,k,j,nb)/aod5503d(i,k,j))
                    xx=xx+x*x
                 end do
-                angexp2d(i,j) = angexp2d(i,j) - (xy/(N_BANDS-3-8+1))/(xx/(N_BANDS-3-8+1))
+                angexp2d(i,j) = angexp2d(i,j) - (xy/(N_BANDS-3-8+1))/(xx/(N_BANDS-3-8+1))*(p(i,k,j)-p(i,k+1,j))/(p(i,kts,j)-p(i,kte,j))
               enddo
              enddo
             enddo

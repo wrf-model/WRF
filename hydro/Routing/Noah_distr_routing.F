@@ -270,7 +270,7 @@
 
 ! ADCHANGE: IMPORTANT!
 ! 2D subsurface option currently has bug so forcing to option 1 in this routine to
-! allow users to still have option to use 2d overland (both are controlled by same 
+! allow users to still have option to use 2d overland (both are controlled by same
 ! rt_option flag). Remove this hard-coded option when rt_option=2 is fixed for subsurface.
 !     if(rt_option .eq. 1) then
         CALL ROUTE_SUBSURFACE1(dist,ZWATTABLRT,QSUBRT,SOXRT,SOYRT,  &   
@@ -772,11 +772,22 @@
 !DJG   SUBROUTINE OV_RTNG
 !DJG ------------------------------------------------
 
-	SUBROUTINE OV_RTNG(DT,DTRT_TER,IXRT,JXRT,INFXSUBRT,      &
-          SFCHEADSUBRT,DHRT,CH_NETRT,RETDEPRT,OVROUGHRT,      &
-          QSTRMVOLRT,QBDRYRT,QSTRMVOLTRT,QBDRYTRT,SOXRT,     &
-          SOYRT,dist,LAKE_MSKRT,LAKE_INFLORT,LAKE_INFLOTRT,  &
-          SO8RT,SO8RT_D,rt_option,q_sfcflx_x,q_sfcflx_y)
+	!SUBROUTINE OV_RTNG(DT,DTRT_TER,IXRT,JXRT,INFXSUBRT,      &
+        !  SFCHEADSUBRT,DHRT,CH_NETRT,RETDEPRT,OVROUGHRT,      &
+        !  QSTRMVOLRT,QBDRYRT,QSTRMVOLTRT,QBDRYTRT,SOXRT,     &
+        !  SOYRT,dist,LAKE_MSKRT,LAKE_INFLORT,LAKE_INFLOTRT,  &
+        !  SO8RT,SO8RT_D,rt_option,q_sfcflx_x,q_sfcflx_y)
+
+       subroutine ov_rtng( &
+           ovrt_data, &
+           DT, &
+           DTRT_TER, &
+           IXRT, &
+           JXRT, &
+           rt_option, &
+           q_sfcflx_x, &
+           q_sfcflx_y &
+       )
 
 !yyww 
 #ifdef MPP_LAND
@@ -784,32 +795,34 @@
               up_id,mpp_land_com_real, my_id, &
              mpp_land_sync
 #endif
-
+        use overland_data
 	IMPLICIT NONE
 
 !DJG --------DECLARATIONS----------------------------
 
-	INTEGER, INTENT(IN)			:: IXRT,JXRT
+        type (overland_struct), intent(inout) :: ovrt_data 
+        INTEGER, INTENT(IN)			:: IXRT,JXRT
 	REAL, INTENT(IN)			:: DT,DTRT_TER
+        integer, intent(in) :: rt_option
 
-	INTEGER, INTENT(IN), DIMENSION(IXRT,JXRT) :: CH_NETRT
-	INTEGER, INTENT(IN), DIMENSION(IXRT,JXRT) :: LAKE_MSKRT
-	REAL, INTENT(IN), DIMENSION(IXRT,JXRT)	:: INFXSUBRT
-	REAL, INTENT(IN), DIMENSION(IXRT,JXRT)	:: SOXRT
-	REAL, INTENT(IN), DIMENSION(IXRT,JXRT)	:: SOYRT
-	REAL, INTENT(IN), DIMENSION(IXRT,JXRT,9):: dist 
-	REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT)	:: RETDEPRT
-	REAL, INTENT(IN), DIMENSION(IXRT,JXRT)	:: OVROUGHRT
+        !INTEGER, INTENT(IN), DIMENSION(IXRT,JXRT) :: CH_NETRT
+        !INTEGER, INTENT(IN), DIMENSION(IXRT,JXRT) :: LAKE_MSKRT
+        !REAL, INTENT(IN), DIMENSION(IXRT,JXRT)	:: INFXSUBRT
+        !REAL, INTENT(IN), DIMENSION(IXRT,JXRT)	:: SOXRT
+        !REAL, INTENT(IN), DIMENSION(IXRT,JXRT)	:: SOYRT
+        !REAL, INTENT(IN), DIMENSION(IXRT,JXRT,9):: dist 
+        !REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT)	:: RETDEPRT
+        !REAL, INTENT(IN), DIMENSION(IXRT,JXRT)	:: OVROUGHRT
 
-	REAL, INTENT(OUT), DIMENSION(IXRT,JXRT)	:: SFCHEADSUBRT
-	REAL, INTENT(OUT), DIMENSION(IXRT,JXRT)	:: DHRT
+        !REAL, INTENT(OUT), DIMENSION(IXRT,JXRT)	:: SFCHEADSUBRT
+        !REAL, INTENT(OUT), DIMENSION(IXRT,JXRT)	:: DHRT
 
-	REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: QSTRMVOLRT
-	REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: LAKE_INFLORT
-	REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: QBDRYRT
+        !REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: QSTRMVOLRT
+        !REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: LAKE_INFLORT
+        !REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: QBDRYRT
 	REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: q_sfcflx_x,q_sfcflx_y
-	REAL, INTENT(INOUT)     :: QSTRMVOLTRT,QBDRYTRT,LAKE_INFLOTRT
-        REAL, INTENT(IN), DIMENSION(IXRT,JXRT,8)  :: SO8RT
+        !REAL, INTENT(INOUT)     :: QSTRMVOLTRT,QBDRYTRT,LAKE_INFLOTRT
+        !REAL, INTENT(IN), DIMENSION(IXRT,JXRT,8)  :: SO8RT
 
 !DJG Local Variables
 
@@ -817,7 +830,7 @@
 
 	REAL, DIMENSION(IXRT,JXRT)	:: INFXS_FRAC
 	REAL	:: DT_FRAC,SUM_INFXS,sum_head
-        INTEGER SO8RT_D(IXRT,JXRT,3), rt_option
+        !INTEGER SO8RT_D(IXRT,JXRT,3), rt_option
 	
 	
 
@@ -842,7 +855,7 @@
 
 
 !DJG Assign all infiltration excess to surface head...
-            SFCHEADSUBRT=INFXSUBRT
+            ovrt_data%control%surface_water_head_routing=ovrt_data%control%infiltration_excess
 
 !DJG Divide infiltration excess over all routing time-steps
 !	     INFXS_FRAC=INFXSUBRT/(DT/DTRT_TER)
@@ -868,12 +881,12 @@
 
 !DJG ERROR Check...
 
-	   IF (SFCHEADSUBRT(I,J).lt.0.) THEN 
+	   IF (ovrt_data%control%surface_water_head_routing(I,J).lt.0.) THEN 
 #ifdef HYDRO_D
 		print *, "ywcheck 2 ERROR!!!: Neg. Surface Head Value at (i,j):",    &
-                    i,j,SFCHEADSUBRT(I,J)
-                print *, "RETDEPRT(I,J) = ",RETDEPRT(I,J), "KRT=",KRT
-                print *, "INFXSUBRT(i,j)=",INFXSUBRT(i,j)
+                    i,j,ovrt_data%control%surface_water_head_routing(I,J)
+                print *, "RETDEPRT(I,J) = ",ovrt_data%properties%retention_depth(I,J), "KRT=",KRT
+                print *, "INFXSUBRT(i,j)=",ovrt_data%control%infiltration_excess(i,j)
                 print *, "jxrt=",jxrt," ixrt=",ixrt
 #endif
            END IF
@@ -885,7 +898,7 @@
 
 
 !yw            IF (CH_NETRT(I,J).ne.-9999) THEN
-           IF (CH_NETRT(I,J).ge.0) THEN
+           IF (ovrt_data%streams_and_lakes%CH_NETRT(I,J).ge.0) THEN
              ct = ct +1
 
 !DJG Temporary test to up the retention depth of channel grid cells to 'soak' 
@@ -894,31 +907,31 @@
 !	     RETDEPRT(I,J) = RETDEPRT(I,J) * 100.0    !DJG TEMP HARDWIRE!!!!
 !	     RETDEPRT(I,J) = 10.0    !DJG TEMP HARDWIRE!!!!
 
-! AD hardwire to force channel retention depth to be 5mm.
-             RETDEPRT(I,J) = 5.0
-
-             IF (SFCHEADSUBRT(I,J).GT.RETDEPRT(I,J)) THEN
+             IF (ovrt_data%control%surface_water_head_routing(I,J) .GT. ovrt_data%properties%retention_depth(I,J)) THEN
 !!               QINFLO(CH_NET(I,J)=QINFLO(CH_NET(I,J)+SFCHEAD(I,J) - RETDEPRT(I,J)
-               QSTRMVOLTRT = QSTRMVOLTRT + (SFCHEADSUBRT(I,J) - RETDEPRT(I,J))
-               QSTRMVOLRT(I,J) = QSTRMVOLRT(I,J)+SFCHEADSUBRT(I,J)-RETDEPRT(I,J)
+               ovrt_data%streams_and_lakes%accumulated_surface_water_to_channel = ovrt_data%streams_and_lakes%accumulated_surface_water_to_channel + &
+                  (ovrt_data%control%surface_water_head_routing(I,J) - ovrt_data%properties%retention_depth(I,J))
+               ovrt_data%streams_and_lakes%surface_water_to_channel(I,J) = ovrt_data%streams_and_lakes%surface_water_to_channel(I,J) + &
+                  (ovrt_data%control%surface_water_head_routing(I,J) - ovrt_data%properties%retention_depth(I,J))
 
              ! if(QSTRMVOLRT(I,J) .gt. 0) then 
              !     print *, "QSTRVOL GT 0", QSTRMVOLRT(I,J),I,J 
              !  endif
 
-               SFCHEADSUBRT(I,J) = RETDEPRT(I,J)
+               ovrt_data%control%surface_water_head_routing(I,J) = ovrt_data%properties%retention_depth(I,J)
              END IF
            END IF
 
 !DJG Lake inflow withdrawl from surface head...(4/29/05)
            
 
-           IF (LAKE_MSKRT(I,J).gt.0) THEN
-             IF (SFCHEADSUBRT(I,J).GT.RETDEPRT(I,J)) THEN
-               LAKE_INFLOTRT = LAKE_INFLOTRT + (SFCHEADSUBRT(I,J) - RETDEPRT(I,J))
-               LAKE_INFLORT(I,J) = LAKE_INFLORT(I,J)+SFCHEADSUBRT(I,J)-RETDEPRT(I,J)
-               SFCHEADSUBRT(I,J) = RETDEPRT(I,J)
-              
+           IF (ovrt_data%streams_and_lakes%lake_mask(I,J) .gt. 0) THEN
+             IF (ovrt_data%control%surface_water_head_routing(I,J) .GT. ovrt_data%properties%retention_depth(I,J)) THEN
+               ovrt_data%streams_and_lakes%accumulated_surface_water_to_lake = ovrt_data%streams_and_lakes%accumulated_surface_water_to_lake + &
+                   (ovrt_data%control%surface_water_head_routing(I,J) - ovrt_data%properties%retention_depth(I,J))
+               ovrt_data%streams_and_lakes%surface_water_to_lake(I,J) = ovrt_data%streams_and_lakes%surface_water_to_lake(I,J) + &
+                   (ovrt_data%control%surface_water_head_routing(I,J)- ovrt_data%properties%retention_depth(I,J))
+               ovrt_data%control%surface_water_head_routing(I,J) = ovrt_data%properties%retention_depth(I,J)
              END IF
            END IF
 
@@ -936,12 +949,32 @@
 
 
            if(rt_option .eq. 1) then
-              CALL ROUTE_OVERLAND1(DTRT_TER,dist,SFCHEADSUBRT,DHRT,SOXRT,   &
-		SOYRT,RETDEPRT,OVROUGHRT,IXRT,JXRT,QBDRYRT,QBDRYTRT,    & 
-                SO8RT,SO8RT_D,q_sfcflx_x,q_sfcflx_y)
+              CALL ROUTE_OVERLAND1(DTRT_TER, &
+                  ovrt_data%properties%distance_to_neighbor, &
+                  ovrt_data%control%surface_water_head_routing, &
+                  ovrt_data%control%DHRT, &
+                  ovrt_data%properties%surface_slope_x,   &
+		  ovrt_data%properties%surface_slope_y, &
+                  ovrt_data%properties%retention_depth, &
+                  ovrt_data%properties%roughness, &
+                  IXRT, JXRT, &
+                  ovrt_data%control%boundary_flux, &
+                  ovrt_data%control%boundary_flux_total,    & 
+                  ovrt_data%properties%water_surface_slope, &
+                  ovrt_data%properties%max_water_surface_slope_index, &
+                  q_sfcflx_x, q_sfcflx_y)
             else
-              CALL ROUTE_OVERLAND2(DTRT_TER,dist,SFCHEADSUBRT,DHRT,SOXRT,   &
-                  SOYRT,RETDEPRT,OVROUGHRT,IXRT,JXRT,QBDRYRT,QBDRYTRT,  &
+              CALL ROUTE_OVERLAND2(DTRT_TER, &
+                  ovrt_data%properties%distance_to_neighbor, & 
+                  ovrt_data%control%surface_water_head_routing, & 
+                  ovrt_data%control%DHRT, &
+                  ovrt_data%properties%surface_slope_x, &
+                  ovrt_data%properties%surface_slope_y, &
+                  ovrt_data%properties%retention_depth, &
+                  ovrt_data%properties%roughness, &
+                  IXRT, JXRT, &
+                  ovrt_data%control%boundary_flux, & 
+                  ovrt_data%control%boundary_flux_total,  &
                   q_sfcflx_x,q_sfcflx_y)    
             end if
              
@@ -2400,12 +2433,12 @@
              RT_DOMAIN(did)%IXRT,RT_DOMAIN(did)%JXRT,nlst_rt(did)%AGGFACTRT,RT_DOMAIN(did)%SICE, &
              RT_DOMAIN(did)%SMC,RT_DOMAIN(did)%SH2OX,RT_DOMAIN(did)%INFXSRT, &
              rt_domain(did)%dist_lsm(:,:,9),RT_DOMAIN(did)%SMCMAX1,RT_DOMAIN(did)%SMCREF1, &
-             RT_DOMAIN(did)%SMCWLT1,RT_DOMAIN(did)%VEGTYP,RT_DOMAIN(did)%LKSAT,RT_DOMAIN(did)%dist, &
+             RT_DOMAIN(did)%SMCWLT1,RT_DOMAIN(did)%VEGTYP,RT_DOMAIN(did)%LKSAT,rt_domain(did)%overland%properties%distance_to_neighbor, &
              RT_DOMAIN(did)%INFXSWGT, RT_DOMAIN(did)%OVROUGHRTFAC,RT_DOMAIN(did)%LKSATFAC, &
-             RT_DOMAIN(did)%CH_NETRT,RT_DOMAIN(did)%SH2OWGT,RT_DOMAIN(did)%SMCREFRT,       &
-             RT_DOMAIN(did)%INFXSUBRT,RT_DOMAIN(did)%SMCMAXRT, RT_DOMAIN(did)%SMCWLTRT,    &
+             rt_domain(did)%overland%streams_and_lakes%ch_netrt,RT_DOMAIN(did)%SH2OWGT,RT_DOMAIN(did)%SMCREFRT,       &
+             rt_domain(did)%overland%control%infiltration_excess,RT_DOMAIN(did)%SMCMAXRT, RT_DOMAIN(did)%SMCWLTRT,    &
              RT_DOMAIN(did)%SMCRT, &
-             RT_DOMAIN(did)%OVROUGHRT, RT_DOMAIN(did)%LAKE_MSKRT, &
+             rt_domain(did)%overland%properties%roughness, rt_domain(did)%overland%streams_and_lakes%lake_mask, &
              RT_DOMAIN(did)%LKSATRT, RT_DOMAIN(did)%OV_ROUGH2d, RT_DOMAIN(did)%SLDPTH, &
 	     RT_DOMAIN(did)%soiltypRT, RT_DOMAIN(did)%soiltyp, rt_domain(did)%ELRT, &
              RT_DOMAIN(did)%iswater)
@@ -2749,11 +2782,11 @@
                 call subsurfaceRouting (RT_DOMAIN(did)%ixrt, RT_DOMAIN(did)%jxrt , nlst_rt(did)%nsoil, &
                      RT_DOMAIN(did)%SMCRT,RT_DOMAIN(did)%SMCMAXRT,RT_DOMAIN(did)%SMCREFRT,&
                      RT_DOMAIN(did)%SMCWLTRT, RT_DOMAIN(did)%ZSOIL, RT_DOMAIN(did)%SLDPTH, & 
-                     nlst_rt(did)%DT,RT_DOMAIN(did)%ZWATTABLRT,RT_DOMAIN(did)%SOXRT,       &
-                     RT_DOMAIN(did)%SOYRT,RT_DOMAIN(did)%LKSATRT, RT_DOMAIN(did)%SOLDEPRT, &
-                     RT_DOMAIN(did)%INFXSUBRT,RT_DOMAIN(did)%QSUBBDRYTRT, RT_DOMAIN(did)%QSUBBDRYRT,&
-                     RT_DOMAIN(did)%QSUBRT ,nlst_rt(did)%rt_option, RT_DOMAIN(did)%dist, &
-                     RT_DOMAIN(did)%sub_resid,RT_DOMAIN(did)%SO8RT_D, RT_DOMAIN(did)%SO8RT)
+                     nlst_rt(did)%DT,RT_DOMAIN(did)%ZWATTABLRT,rt_domain(did)%overland%properties%surface_slope_x,       &
+                     rt_domain(did)%overland%properties%surface_slope_y,RT_DOMAIN(did)%LKSATRT, RT_DOMAIN(did)%SOLDEPRT, &
+                     rt_domain(did)%overland%control%infiltration_excess,RT_DOMAIN(did)%QSUBBDRYTRT, RT_DOMAIN(did)%QSUBBDRYRT,&
+                     RT_DOMAIN(did)%QSUBRT ,nlst_rt(did)%rt_option, rt_domain(did)%overland%properties%distance_to_neighbor, &
+                     RT_DOMAIN(did)%sub_resid,rt_domain(did)%overland%properties%max_water_surface_slope_index, rt_domain(did)%overland%properties%water_surface_slope)
              endif
 
          end subroutine SubsurfaceRouting_drv
@@ -2830,56 +2863,83 @@
              implicit none
              integer :: did
              if(nlst_rt(did)%OVRTSWCRT .eq. 1) then
-                 call OverlandRouting (nlst_rt(did)%DT, nlst_rt(did)%DTRT_TER, nlst_rt(did)%rt_option, &
-                          rt_domain(did)%ixrt, rt_domain(did)%jxrt,rt_domain(did)%LAKE_MSKRT, &
-                          rt_domain(did)%INFXSUBRT, rt_domain(did)%RETDEPRT,rt_domain(did)%OVROUGHRT, &
-                          rt_domain(did)%SOXRT, rt_domain(did)%SOYRT, rt_domain(did)%SFCHEADSUBRT,  &
-                          rt_domain(did)%DHRT, rt_domain(did)%CH_NETRT, rt_domain(did)%QSTRMVOLRT, &
-                          rt_domain(did)%LAKE_INFLORT,rt_domain(did)%QBDRYRT, &
-                          rt_domain(did)%QSTRMVOLTRT,rt_domain(did)%QBDRYTRT, rt_domain(did)%LAKE_INFLOTRT,&
-                          rt_domain(did)%q_sfcflx_x,rt_domain(did)%q_sfcflx_y, &
-                          rt_domain(did)%dist, rt_domain(did)%SO8RT, rt_domain(did)%SO8RT_D , &
-                          rt_domain(did)%SMCTOT2,rt_domain(did)%suminfxs1,rt_domain(did)%suminfxsrt, &
-                          rt_domain(did)%smctot1,rt_domain(did)%dsmctot )
+                 !call OverlandRouting (nlst_rt(did)%DT, nlst_rt(did)%DTRT_TER, nlst_rt(did)%rt_option, &
+                 !         rt_domain(did)%ixrt, rt_domain(did)%jxrt,rt_domain(did)%overland%streams_and_lakes%lake_mask, &
+                 !         rt_domain(did)%overland%control%infiltration_excess, rt_domain(did)%overland%properties%retention_depth,rt_domain(did)%overland%properties%roughness, &
+                 !         rt_domain(did)%overland%properties%surface_slope_x, rt_domain(did)%overland%properties%surface_slope_y, rt_domain(did)%overland%control%surface_water_head_routing,  &
+                 !         rt_domain(did)%overland%control%dhrt, rt_domain(did)%overland%streams_and_lakes%ch_netrt, rt_domain(did)%overland%streams_and_lakes%surface_water_to_channel,&
+                 !         rt_domain(did)%overland%streams_and_lakes%surface_water_to_lake,rt_domain(did)%overland%control%boundary_flux, &
+                 !         rt_domain(did)%overland%streams_and_lakes%accumulated_surface_water_to_channel,rt_domain(did)%overland%control%boundary_flux_total, rt_domain(did)%overland%streams_and_lakes%accumulated_surface_water_to_lake,&
+                 !         rt_domain(did)%q_sfcflx_x,rt_domain(did)%q_sfcflx_y, &
+                 !         rt_domain(did)%overland%properties%distance_to_neighbor, rt_domain(did)%overland%properties%water_surface_slope, rt_domain(did)%overland%properties%max_water_surface_slope_index , &
+                 !         rt_domain(did)%overland%mass_balance%post_soil_moisture_content,rt_domain(did)%overland%mass_balance%pre_infiltration_excess,rt_domain(did)%overland%mass_balance%post_infiltration_excess, &
+                 !         rt_domain(did)%overland%mass_balance%pre_soil_moisture_content,rt_domain(did)%overland%mass_balance%accumulated_change_in_soil_moisture )
+                 call OverlandRouting( &
+                          rt_domain(did)%overland, &
+                          nlst_rt(did)%DT, &
+                          nlst_rt(did)%DTRT_TER, &
+                          nlst_rt(did)%rt_option, &
+                          rt_domain(did)%ixrt, &
+                          rt_domain(did)%jxrt, &
+                          rt_domain(did)%q_sfcflx_x, &
+                          rt_domain(did)%q_sfcflx_y &
+                      )
 ! ADCHANGE: If overland routing is called, INFXSUBRT is moved to SFCHEADSUBRT, so 
 !           zeroing out just in case
-             rt_domain(did)%INFXSUBRT = 0.0
+                rt_domain(did)%overland%control%infiltration_excess = 0.0
              endif
        end subroutine OverlandRouting_drv
 
 
 
-       subroutine OverlandRouting (DT, DTRT_TER, rt_option, ixrt, jxrt,LAKE_MSKRT, &
-                  INFXSUBRT, RETDEPRT,OVROUGHRT,SOXRT, SOYRT, SFCHEADSUBRT,DHRT, &
-                  CH_NETRT, QSTRMVOLRT,LAKE_INFLORT,QBDRYRT, &
-                  QSTRMVOLTRT,QBDRYTRT, LAKE_INFLOTRT, q_sfcflx_x,q_sfcflx_y, &
-                  dist, SO8RT, SO8RT_D, &
-                  SMCTOT2,suminfxs1,suminfxsrt,smctot1,dsmctot )
+       !subroutine OverlandRouting (DT, DTRT_TER, rt_option, ixrt, jxrt,LAKE_MSKRT, &
+       !           INFXSUBRT, RETDEPRT,OVROUGHRT,SOXRT, SOYRT, SFCHEADSUBRT,DHRT, &
+       !           CH_NETRT, QSTRMVOLRT,LAKE_INFLORT,QBDRYRT, &
+       !           QSTRMVOLTRT,QBDRYTRT, LAKE_INFLOTRT, q_sfcflx_x,q_sfcflx_y, &
+       !           dist, SO8RT, SO8RT_D, &
+       !           SMCTOT2,suminfxs1,suminfxsrt,smctot1,dsmctot )
+
+       subroutine OverlandRouting( &
+            ovrt_data, & ! overland data structure
+            DT, &
+            DTRT_TER, &
+            rt_option, &
+            ixrt, &       ! routing grid x size
+            jxrt, &      ! routing grid y size
+            q_sfcflx_x, &! accumulated x flux
+            q_sfcflx_y  &! accumulated y flux
+       )
 #ifdef MPP_LAND
         use module_mpp_land, only:  mpp_land_max_int1,  sum_real1, my_id, io_id, numprocs
+        use overland_data
 #endif
        implicit none
 
+       type (overland_struct), intent(inout) :: ovrt_data
        REAL, INTENT(IN) :: DT, DTRT_TER
        integer, INTENT(IN) :: ixrt, jxrt, rt_option
-       INTEGER, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: LAKE_MSKRT
+       !REAL, INTENT(out), DIMENSION(IXRT,JXRT)   :: SFCHEADSUBRT  ! moved into overland_data%control
+       real, intent(inout) :: q_sfcflx_x,q_sfcflx_y
 
-       REAL, INTENT(IN), DIMENSION(IXRT,JXRT)   :: INFXSUBRT,  &
-                 RETDEPRT,OVROUGHRT,SOXRT, SOYRT
-       REAL, INTENT(OUT), DIMENSION(IXRT,JXRT) :: SFCHEADSUBRT,DHRT
-       INTEGER, INTENT(IN), DIMENSION(IXRT,JXRT) :: CH_NETRT
-       REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: QSTRMVOLRT,LAKE_INFLORT,QBDRYRT, &
-                QSTRMVOLTRT,QBDRYTRT, LAKE_INFLOTRT, q_sfcflx_x,q_sfcflx_y
+       ! REMOVED VARIABLES
+       !INTEGER, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: LAKE_MSKRT
 
-       REAL, INTENT(IN), DIMENSION(IXRT,JXRT,9):: dist
-       REAL, INTENT(IN), DIMENSION(IXRT,JXRT,8)  :: SO8RT
-       INTEGER SO8RT_D(IXRT,JXRT,3)
+       !REAL, INTENT(IN), DIMENSION(IXRT,JXRT)   :: INFXSUBRT,  &
+       !          RETDEPRT,OVROUGHRT,SOXRT, SOYRT
+       !REAL, INTENT(OUT), DIMENSION(IXRT,JXRT) :: SFCHEADSUBRT,DHRT
+       !INTEGER, INTENT(IN), DIMENSION(IXRT,JXRT) :: CH_NETRT
+       !REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: QSTRMVOLRT,LAKE_INFLORT,QBDRYRT, &
+       !         QSTRMVOLTRT,QBDRYTRT, LAKE_INFLOTRT, q_sfcflx_x,q_sfcflx_y
+
+       !REAL, INTENT(IN), DIMENSION(IXRT,JXRT,9):: dist
+       !REAL, INTENT(IN), DIMENSION(IXRT,JXRT,8)  :: SO8RT
+       !INTEGER SO8RT_D(IXRT,JXRT,3)
 
        integer  :: i,j
       
 
-       real            :: smctot2,smctot1,dsmctot
-       real            :: suminfxsrt,suminfxs1
+       !real            :: smctot2,smctot1,dsmctot
+       !real            :: suminfxsrt,suminfxs1
 ! local variable
        real            :: chan_in1,chan_in2
        real            :: lake_in1,lake_in2
@@ -2895,26 +2955,27 @@
 #endif
 
 !DJG debug...OV Routing...
-	suminfxs1=0.
+	ovrt_data%mass_balance%pre_infiltration_excess = 0.
         chan_in1=0.
         lake_in1=0.
         qbdry1=0.
         do i=1,IXRT
          do j=1,JXRT
-            suminfxs1=suminfxs1+INFXSUBRT(I,J)/float(IXRT*JXRT)
-            chan_in1=chan_in1+QSTRMVOLRT(I,J)/float(IXRT*JXRT)
-            lake_in1=lake_in1+LAKE_INFLORT(I,J)/float(IXRT*JXRT)
-            qbdry1=qbdry1+QBDRYRT(I,J)/float(IXRT*JXRT)
+            ovrt_data%mass_balance%pre_infiltration_excess = &
+                ovrt_data%mass_balance%pre_infiltration_excess + ( ovrt_data%control%infiltration_excess(I,J)/float(IXRT*JXRT) )
+            chan_in1 = chan_in1 + ( ovrt_data%streams_and_lakes%surface_water_to_channel(I,J)/float(IXRT*JXRT) )
+            lake_in1 = lake_in1 + ( ovrt_data%streams_and_lakes%surface_water_to_lake(I,J)/float(IXRT*JXRT) )
+            qbdry1 = qbdry1 + ( ovrt_data%control%boundary_flux(I,J)/float(IXRT*JXRT) )
          end do
         end do
 
 #ifdef MPP_LAND
 ! not tested
-        CALL sum_real1(suminfxs1)
+        CALL sum_real1(ovrt_data%mass_balance%pre_infiltration_excess)
         CALL sum_real1(chan_in1)
         CALL sum_real1(lake_in1)
         CALL sum_real1(qbdry1)
-        suminfxs1 = suminfxs1/float(numprocs)
+        ovrt_data%mass_balance%pre_infiltration_excess = ovrt_data%mass_balance%pre_infiltration_excess/float(numprocs)
         chan_in1 = chan_in1/float(numprocs)
         lake_in1 = lake_in1/float(numprocs)
         qbdry1 = qbdry1/float(numprocs)
@@ -2928,12 +2989,12 @@
         
         do j=1,jxrt
           do i=1,ixrt
-            if(INFXSUBRT(i,j).gt.RETDEPRT(i,j)) then
+            if( ovrt_data%control%infiltration_excess(i,j) .gt. ovrt_data%properties%retention_depth(i,j) ) then
               sfcrt_flag = 1
               exit
             end if
           end do
-          if(sfcrt_flag.eq.1) exit
+          if(sfcrt_flag .eq. 1) exit
         end do   
 
 #ifdef MPP_LAND
@@ -2945,13 +3006,17 @@
 #ifdef HYDRO_D
       write(6,*) "calling OV_RTNG "
 #endif
-      CALL OV_RTNG(DT,DTRT_TER,IXRT,JXRT,INFXSUBRT,SFCHEADSUBRT,DHRT,      &
-        CH_NETRT,RETDEPRT,OVROUGHRT,QSTRMVOLRT,QBDRYRT,              &
-        QSTRMVOLTRT,QBDRYTRT,SOXRT,SOYRT,dist,                       &
-        LAKE_MSKRT,LAKE_INFLORT,LAKE_INFLOTRT,SO8RT,SO8RT_D,rt_option,&
-        q_sfcflx_x,q_sfcflx_y) 
+      CALL OV_RTNG(           &
+        ovrt_data, &
+        DT,                   &
+        DTRT_TER,             &
+        IXRT,                 &
+        JXRT,                 &
+        rt_option,            &
+        q_sfcflx_x,           &
+        q_sfcflx_y)
     else
-      SFCHEADSUBRT = INFXSUBRT
+      ovrt_data%control%surface_water_head_routing = ovrt_data%control%infiltration_excess
 #ifdef HYDRO_D
       print *, "No water to route overland..."
 #endif
@@ -2964,25 +3029,26 @@
 #endif
 
 !DJG Debug...OV Routing...
-	suminfxsrt=0.
+	ovrt_data%mass_balance%post_infiltration_excess = 0.
         chan_in2=0.
         lake_in2=0.
         qbdry2=0.
         do i=1,IXRT
          do j=1,JXRT
-            suminfxsrt=suminfxsrt+SFCHEADSUBRT(I,J)/float(IXRT*JXRT)
-            chan_in2=chan_in2+QSTRMVOLRT(I,J)/float(IXRT*JXRT)
-            lake_in2=lake_in2+LAKE_INFLORT(I,J)/float(IXRT*JXRT)
-            qbdry2=qbdry2+QBDRYRT(I,J)/float(IXRT*JXRT)
+            ovrt_data%mass_balance%post_infiltration_excess = &
+                ovrt_data%mass_balance%post_infiltration_excess + (ovrt_data%control%surface_water_head_routing(I,J)/float(IXRT*JXRT))
+            chan_in2=chan_in2 + (ovrt_data%streams_and_lakes%surface_water_to_channel(I,J)/float(IXRT*JXRT))
+            lake_in2=lake_in2 + (ovrt_data%streams_and_lakes%surface_water_to_lake(I,J)/float(IXRT*JXRT))
+            qbdry2=qbdry2 + (ovrt_data%control%boundary_flux(I,J)/float(IXRT*JXRT))
          end do
         end do
 #ifdef MPP_LAND
 ! not tested
-        CALL sum_real1(suminfxsrt)
+        CALL sum_real1(ovrt_data%mass_balance%post_infiltration_excess)
         CALL sum_real1(chan_in2)
         CALL sum_real1(lake_in2)
         CALL sum_real1(qbdry2)
-        suminfxsrt = suminfxsrt/float(numprocs)
+        ovrt_data%mass_balance%post_infiltration_excess = ovrt_data%mass_balance%post_infiltration_excess/float(numprocs)
         chan_in2 = chan_in2/float(numprocs)
         lake_in2 = lake_in2/float(numprocs)
         qbdry2 = qbdry2/float(numprocs)
@@ -2993,9 +3059,9 @@
        if(my_id .eq. IO_id) then
 #endif
 	print *, "OV Routing Mass Bal: "
-        print *, "WB_OV!InfxsDiff", suminfxsrt-suminfxs1
-        print *, "WB_OV!Infxs1", suminfxs1
-        print *, "WB_OV!Infxs2", suminfxsrt
+        print *, "WB_OV!InfxsDiff", ovrt_data%mass_balance%post_infiltration_excess - ovrt_data%mass_balance%pre_infiltration_excess
+        print *, "WB_OV!Infxs1", ovrt_data%mass_balance%pre_infiltration_excess
+        print *, "WB_OV!Infxs2", ovrt_data%mass_balance%post_infiltration_excess
         print *, "WB_OV!ChaninDiff", chan_in2-chan_in1
         print *, "WB_OV!Chanin1", chan_in1
         print *, "WB_OV!Chanin2", chan_in2
@@ -3005,8 +3071,8 @@
         print *, "WB_OV!QbdryDiff", qbdry2-qbdry1
         print *, "WB_OV!Qbdry1", qbdry1
         print *, "WB_OV!Qbdry2", qbdry2
-        print *, "WB_OV!Residual", (suminfxs1-suminfxsrt)-(chan_in2-chan_in1) &
-                      -(lake_in2-lake_in1)-(qbdry2-qbdry1)
+        print *, "WB_OV!Residual", (ovrt_data%mass_balance%post_infiltration_excess - ovrt_data%mass_balance%pre_infiltration_excess)&
+            -(chan_in2-chan_in1) -(lake_in2 - lake_in1) - (qbdry2 - qbdry1)
 #ifdef MPP_LAND
        endif
 #endif

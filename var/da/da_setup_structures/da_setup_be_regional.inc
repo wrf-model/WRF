@@ -121,7 +121,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    real, allocatable   :: regcoeff_chi_u_rh(:,:,:)   ! chi_u/rh   regression coefficient
    real, allocatable   :: regcoeff_t_u_rh(:,:,:)     ! t_u/rh     regression coefficient
    real, allocatable   :: regcoeff_ps_u_rh(:,:)      ! ps_u/rh    regression coefficient
-   real                :: qrain_th_low, qrain_th_high
+   !real                :: qrain_th_low, qrain_th_high
 
    integer                     :: be_unit, ier, be_rf_unit, be_print_unit, it, idummy
 
@@ -171,11 +171,13 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    rewind (be_unit)
    read (be_unit, iostat=ier) ni, nj, nk
+   print *, 'ni, nj, nk = ', ni, nj, nk
    if (ier /= 0) then
       write (unit=message(1),fmt='(a,i3)') 'Error in reading be.dat, unit= ',be_unit
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
    read (be_unit) bin_type
+   print *, 'bin_type = ', bin_type
 
 !-----------for interpolating CV5--------------------------------------------------------------
    if ( .not. interpolate_stats ) then 
@@ -222,29 +224,35 @@ subroutine da_setup_be_regional(xb, be, grid)
    allocate (bin(1:ni,1:nj,1:nk))
    allocate (bin2d(1:ni,1:nj))
 
-  if(cloud_cv_options.eq.2)then
-   read (be_unit)num_bins, num_bins2d
+  !if(cloud_cv_options.eq.2)then
+  ! read (be_unit)num_bins, num_bins2d
+  ! read (be_unit)lat_min, lat_max, binwidth_lat
+  ! read (be_unit)hgt_min, hgt_max, binwidth_hgt
+  ! read (be_unit)qrain_th_low, qrain_th_high
+  ! read (be_unit)bin(1:ni,1:nj,1:nk)
+  ! read (be_unit)bin2d(1:ni,1:nj)
+  !else
    read (be_unit)lat_min, lat_max, binwidth_lat
    read (be_unit)hgt_min, hgt_max, binwidth_hgt
-   read (be_unit)qrain_th_low, qrain_th_high
-   read (be_unit)bin(1:ni,1:nj,1:nk)
-   read (be_unit)bin2d(1:ni,1:nj)
-  else
-   read (be_unit)lat_min, lat_max, binwidth_lat
-   read (be_unit)hgt_min, hgt_max, binwidth_hgt
    read (be_unit)num_bins, num_bins2d
    read (be_unit)bin(1:ni,1:nj,1:nk)
    read (be_unit)bin2d(1:ni,1:nj)
-  end if
+  !end if
 
-   num_cv_3d_basic = 4
-   num_cv_3d_extra = 0
-   num_cv_2d       = 1
+   print *, lat_min, lat_max, binwidth_lat
+   print *, hgt_min, hgt_max, binwidth_hgt
+   print *, 'num_bins, num_bins2d = ', num_bins, num_bins2d
+   print *, 'bin = ',   bin(1:1,1:1,1:1)
+   print *, 'bin2d = ', bin2d(1:1,1:1)
+
+   num_cv_3d_basic = 4 ! (Psi, Chi_u, T_u, Pseudo RH) or (U,V,T,Pseudo RH)
+   num_cv_3d_extra = 0 ! default: no cloud and w
+   num_cv_2d       = 1 ! Ps_u
    if ( cloud_cv_options >= 2 ) then
-      num_cv_3d_extra = 5
+      num_cv_3d_extra = 5 ! 5 hydrometeors, qc,qr,qi,qs,qg
    end if
    if ( use_cv_w ) then
-      num_cv_3d_extra = num_cv_3d_extra + 1
+      num_cv_3d_extra = num_cv_3d_extra + 1 ! clouds+w
    end if
 
 !-----------for interpolating CV5--------------------------------------------------------------
@@ -583,14 +591,14 @@ subroutine da_setup_be_regional(xb, be, grid)
       be % v7  % name     = "qrain"
       be % v8  % name     = "qice"
       be % v9  % name     = "qsnow"
-      be % v10 % name     = "qgraupel"
+      be % v10 % name     = "qgraup"
       be6_eval_glo        = 1.0e-6
       be7_eval_glo        = 1.0e-6
       be8_eval_glo        = 1.0e-6
       be9_eval_glo        = 1.0e-6
       be10_eval_glo       = 1.0e-6
       if ( use_cv_w ) then
-         be % v11 % name     = "z-wind"
+         be % v11 % name     = "w"
          be11_eval_glo       = 1.0
       end if
       if ( use_rf ) then
@@ -607,9 +615,11 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    ! 2.2 Read in the eigenvector and eigenvalue
 
+   print *, '-------- reading eigen vector/value -------'
    do i = 1 , num_cv_3d_basic
       read (be_unit) variable
       read (be_unit) nk, num_bins2d
+      print *, trim(adjustl(variable)), nk, num_bins2d
       if ( i == 1 ) then
          allocate (evec_loc(1:nk,1:nk,1:num_bins2d))
          allocate (eval_loc(1:nk,     1:num_bins2d))
@@ -671,12 +681,14 @@ subroutine da_setup_be_regional(xb, be, grid)
       end select
 
    end do !1-num_cv_3d_basic
-
+   
    if ( cloud_cv_options == 2 ) then
+      print*,"cloud_cv_options == 2 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra
       do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
 
          read (be_unit) variable
          read (be_unit) nk, num_bins2d
+         print *, trim(adjustl(variable)), nk, num_bins2d
 
          select case( trim(adjustl(variable)) )
 
@@ -728,9 +740,9 @@ subroutine da_setup_be_regional(xb, be, grid)
                be9_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
             end do
 
-         case ('qgraupel' )
+         case ('qgraup' )
             be % v10 % name = trim(adjustl(variable))
-            read (be_unit) nk, num_bins2d
+            !read (be_unit) nk, num_bins2d
             read (be_unit)  be10_evec_glo
             read (be_unit)  be10_eval_glo
             read (be_unit)  evec_loc
@@ -741,15 +753,9 @@ subroutine da_setup_be_regional(xb, be, grid)
                be10_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
             end do
 
-         case default;
-            message(1)=' Read problem in eigen vectors/values in BE file '
-            write (unit=message(2),fmt='(A,A)') ' Trying to read Eigenvectors for variable: ',trim(adjustl(variable))
-            write (unit=message(3),fmt='(A)') ' Make sure you are using the correct be.dat file for your cv_options setting!'
-            call da_error(__FILE__,__LINE__,message(1:3))
-         end select
-
-         if ( use_cv_w ) then
-            if ( trim(adjustl(variable)) == 'z-wind' ) then
+         case ('w' )
+           !if ( use_cv_w ) then
+           ! if ( trim(adjustl(variable)) == 'w' ) then
                be % v11 % name = trim(adjustl(variable))
                read (be_unit)  be11_evec_glo
                read (be_unit)  be11_eval_glo
@@ -760,11 +766,18 @@ subroutine da_setup_be_regional(xb, be, grid)
                   be11_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
                   be11_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
                end do
-            end if
-         end if
+           ! end if
+           !end if
 
-      end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra
+         case default;
+            message(1)=' Read problem in eigen vectors/values in BE file '
+            write (unit=message(2),fmt='(A,A)') ' Trying to read Eigenvectors for variable: ',trim(adjustl(variable))
+            write (unit=message(3),fmt='(A)') ' Make sure you are using the correct be.dat file for your cv_options setting!'
+            call da_error(__FILE__,__LINE__,message(1:3))
+         end select
 
+      end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra-1
+      print*,"reading variables for cloud_cv_options=2 is done"
    end if ! cloud_cv_options=2
 
    deallocate (evec_loc)
@@ -774,6 +787,8 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    read (be_unit) variable
    read (be_unit) nk_2d, num_bins2d
+   print *, trim(adjustl(variable)), nk_2d, num_bins2d
+
 !hcl-why
 !#ifdef CLOUD_CV
 !   nk_2d=1
@@ -822,7 +837,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    end if
    if ( use_cv_w ) then
       write (unit=message(5),fmt='(3x,A)') &
-         'z-wind control variable is activated'
+         'w control variable is activated'
    end if
    call da_message(message(1:5))
 
@@ -857,8 +872,10 @@ subroutine da_setup_be_regional(xb, be, grid)
 
       ! 3.2 read in the scale lengths
 
+      print *, '----- read lengthscale --------'
       do i = 1 , num_cv_3d_basic
          read (be_unit) variable
+         print *, trim(adjustl(variable))
          select case( trim(adjustl(variable)) )
          case ('psi', 'u')
             read(be_unit) rfls1_be
@@ -882,6 +899,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       if ( cloud_cv_options == 2 ) then
          do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
             read (be_unit) variable
+            print *, trim(adjustl(variable))
             select case( trim(adjustl(variable)) )
             case ('qcloud')
                read(be_unit) be6_rf_lengthscale
@@ -891,24 +909,26 @@ subroutine da_setup_be_regional(xb, be, grid)
                read(be_unit) be8_rf_lengthscale
             case ('qsnow')
                read(be_unit) be9_rf_lengthscale
-            case ('qgraupel')
+            case ('qgraup')
                read(be_unit) be10_rf_lengthscale
+            case ('w')
+            !if ( use_cv_w ) then
+            !   if ( trim(adjustl(variable)) == 'w' ) then
+               read(be_unit) be11_rf_lengthscale
+            !   end if
+            !end if
             case default;
                message(1)='Read problem in lengthscales in be.dat'
                write(message(2),'("Trying to read lengthscales for variable ",I0,": ",A)')i,trim(adjustl(variable))
                call da_error(__FILE__,__LINE__,message(1:2))
             end select
-            if ( use_cv_w ) then
-               if ( trim(adjustl(variable)) == 'z-wind' ) then
-                  read(be_unit) be11_rf_lengthscale
-               end if
-            end if
          end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra
       end if
 
       ! Read in lengthscale of 2D Control variable ps_u
 
       read (be_unit) variable
+      print *, trim(adjustl(variable))
       if ( trim(adjustl(variable)) /= 'ps_u' .and. &
            trim(adjustl(variable)) /= 'ps' ) then
          message(1)='Read problem in lengthscales in be.dat'
@@ -1703,17 +1723,13 @@ subroutine da_setup_be_regional(xb, be, grid)
       allocate (alpha_val(1:nk)) ! Not using jy dimension yet.
       allocate (alpha_evec(1:nk,1:nk)) ! Not using jy dimension yet.
 
-      if ( alpha_vertloc ) then ! Use vertical localization:
-         call da_get_unit(be_unit)
-         open(unit=be_unit,file='be.vertloc.dat', status='old', form='unformatted')
-
-         read (be_unit)nk
-         read (be_unit)alpha_val(1:nk)
-         read (be_unit)alpha_evec(1:nk,1:nk)
-         close(be_unit)
-         call da_free_unit(be_unit)
+      if ( alpha_vertloc_opt > 0 ) then ! Use vertical localization:
+         if ( rootproc ) then
+            call da_get_alpha_vertloc(xb, alpha_val, alpha_evec)
+         end if
+         call wrf_dm_bcast_real(alpha_val,  nk)
+         call wrf_dm_bcast_real(alpha_evec, nk*nk)
          be % alpha % mz = nk
-
          call da_get_vertical_truncation(max_vert_var_alpha, alpha_val, be % alpha)
       else
          be % alpha % mz = 1 ! No vertical localization.

@@ -14,6 +14,13 @@ module module_HIFREQ
   private
   public HIFREQ_WRITE, HIFREQ_READ, HIFREQ_OPEN
 
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+  include 'mpif.h'
+#else
+  integer, parameter :: MPI_UNDEFINED = -1
+#endif
+
+
 CONTAINS
 
   !----------------------------------------------------------------------------------
@@ -135,7 +142,6 @@ CONTAINS
     !**********************************************************************
     !
 #ifdef DM_PARALLEL
-    use mpi ! , only: MPI_MAXLOC, MPI_Allreduce, MPI_Bcast, MPI_2REAL, MPI_REAL
     USE MODULE_DM, only : wrf_dm_minloc_real, wrf_dm_maxloc_real, mytask, local_communicator
 #endif
     USE MODULE_NEST_UTIL, only : MSLP_DIAG

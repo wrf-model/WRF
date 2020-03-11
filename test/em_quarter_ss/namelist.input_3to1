@@ -44,8 +44,8 @@
 
  e_we                                = 61,    91,
  e_sn                                = 61,    91,
- dx                                  = 2000,  666.6667
- dy                                  = 2000,  666.6667
+ dx                                  = 2000,
+ dy                                  = 2000,
  parent_grid_ratio                   = 1,     3,
  parent_time_step_ratio              = 1,     3,
  /

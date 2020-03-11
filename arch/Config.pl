@@ -42,7 +42,7 @@ $sw_usenetcdff = "" ;    # UNIDATA switches around library names a bit
 $sw_usenetcdf = "" ;    
 $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
 $sw_ifort_r8 = 0 ;
-$sw_hdf5 = "-lhdf5 -lhdf5_hl";
+$sw_hdf5 = "-lhdf5_hl -lhdf5";
 $sw_zlib = "-lz";
 $sw_dep_lib_path = "";
 $sw_gpfs_path = "";
@@ -604,8 +604,7 @@ while ( <CONFIGURE_DEFAULTS> )
                  $_ .= " \$\(NETCDF4_IO_OPTS\)\n" ; 
                }
              if (/^LIB.*=/) 
-               { $_  =~ s/\r|\n//g ;
-                 $_ .=" \$\(NETCDF4_DEP_LIB\)\n" ;
+               { $_  =~ s/(\\?)[\r\n]/ \$\(NETCDF4_DEP_LIB\)\1\n/g ;
                }
            }
        }
@@ -756,6 +755,9 @@ my @preamble;
 # apply substitutions to the preamble...
 while ( <ARCH_PREAMBLE> )
   {
+    if ( $sw_os ne "CYGWIN_NT" ) {
+      $_ =~ s/#NOWIN// ;
+    }
   # ESMF substitutions in preamble
   if ( $sw_esmflib_path && $sw_esmfinc_path )
     {
@@ -796,6 +798,76 @@ while ( <ARCH_PREAMBLE> )
   $_ =~ s/CONFIGURE_CONFIG_NEST/Nesting option: $response_nesting/g ;
 
   $_ =~ s/CONFIGURE_DEP_LIB_PATH/$sw_dep_lib_path/g ;
+
+    $_ =~ s/CONFIGURE_COMMS_LIB/$sw_comms_lib/g ;
+    if ( $sw_os ne "CYGWIN_NT" ) {
+      $_ =~ s/#NOWIN// ;
+    }
+    if ( $sw_netcdf_path )
+      { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
+	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
+        if ( $ENV{NETCDF_LDFLAGS} ) {
+          $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a $ENV{NETCDF_LDFLAGS} : ;
+        } elsif ( $sw_os eq "Interix" ) {
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+        } else {
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+        }
+	 }
+    else
+      { $_ =~ s/CONFIGURE_WRFIO_NF//g ;
+	$_ =~ s:CONFIGURE_NETCDF_FLAG::g ;
+	$_ =~ s:CONFIGURE_NETCDF_LIB_PATH::g ;
+	 }
+
+    if ( $sw_pnetcdf_path )
+      { $_ =~ s/CONFIGURE_WRFIO_PNF/wrfio_pnf/g ;
+	$_ =~ s:CONFIGURE_PNETCDF_FLAG:-DPNETCDF: ;
+        if ( $sw_os eq "Interix" ) {
+	  $_ =~ s:CONFIGURE_PNETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_pnetcdf/libwrfio_pnf.a -L$sw_pnetcdf_path/lib -lpnetcdf: ;
+        } else {
+	  $_ =~ s:CONFIGURE_PNETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_pnetcdf -lwrfio_pnf -L$sw_pnetcdf_path/lib -lpnetcdf: ;
+        }
+	 }
+    else
+      { $_ =~ s/CONFIGURE_WRFIO_PNF//g ;
+	$_ =~ s:CONFIGURE_PNETCDF_FLAG::g ;
+	$_ =~ s:CONFIGURE_PNETCDF_LIB_PATH::g ;
+	 }
+
+    if ( $sw_hdf5_path )
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
+        $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
+         }
+    else
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH::g ;
+        $_ =~ s:CONFIGURE_HDF5_FLAG::g ;
+         }
+
+    if ( $sw_phdf5_path )
+
+      { $_ =~ s/CONFIGURE_WRFIO_PHDF5/wrfio_phdf5/g ;
+	$_ =~ s:CONFIGURE_PHDF5_FLAG:-DPHDF5: ;
+	$_ =~ s:CONFIGURE_PHDF5_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_phdf5 -lwrfio_phdf5 -L$sw_phdf5_path/lib -lhdf5_fortran -lhdf5 -lm -lz -L$sw_phdf5_path/lib -lsz: ;
+	 }
+    else
+      { $_ =~ s/CONFIGURE_WRFIO_PHDF5//g ;
+	$_ =~ s:CONFIGURE_PHDF5_FLAG::g ;
+	$_ =~ s:CONFIGURE_PHDF5_LIB_PATH::g ;
+	 }
+
+    if ( $sw_jasperlib_path && $sw_jasperinc_path )
+      { $_ =~ s/CONFIGURE_WRFIO_GRIB2/wrfio_grib2/g ;
+        $_ =~ s:CONFIGURE_GRIB2_FLAG:-DGRIB2:g ;
+        $_ =~ s:CONFIGURE_GRIB2_INC:-I$sw_jasperinc_path:g ;
+        $_ =~ s:CONFIGURE_GRIB2_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_grib2 -lio_grib2 -L$sw_jasperlib_path -ljasper:g ;
+      }
+    else
+      { $_ =~ s/CONFIGURE_WRFIO_GRIB2//g ;
+        $_ =~ s:CONFIGURE_GRIB2_FLAG::g ;
+        $_ =~ s:CONFIGURE_GRIB2_INC::g ;
+        $_ =~ s:CONFIGURE_GRIB2_LIB::g ;
+      }
 
   if ( $sw_gpfs_path ne "" )
     { if (/^GPFS.*=/)

@@ -38,6 +38,7 @@ README.md				@wrf-model/global_owner
 /phys/					@wrf-model/physics
 
 /phys/module_mp_thompson.F		@gthompsnWRF @wrf-model/physics
+/phys/module_diag_nwp.F                 @gthompsnWRF @wrf-model/physics
 /phys/module_mp_jensen_ishmael.F	@graupely @wrf-model/physics
 /phys/module_mp_gsfcgce_4ice_nuwrf.F	@cacruz @wrf-model/physics
 /phys/module_sf_noahmp*.F		@barlage @wrf-model/physics

@@ -2574,12 +2574,10 @@
             zgamma4= 1._rb - zgamma3
     
 ! Recompute original s.s.a. to test for conservative solution
-            denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
-	    ! Code added to avoid 'divide by zero' error in zwo computation
-            if (abs(denom).eq.0.0_rb) then
-               denom = 1.0E-30_rb
-            end if
-            zwo= zw / denom
+            zwo = 0._rb
+            denom = 1._rb
+            if (zg .ne. 1._rb) denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
+            if (zw .gt. 0._rb .and. denom .ne. 0._rb) zwo = zw / denom
 
             if (zwo >= zwcrit) then
 ! Conservative scattering

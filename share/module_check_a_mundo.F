@@ -573,24 +573,26 @@
 !--------------------------------------------------------------------------------------------------
 ! Input tables must exist in running directory for fast bin microphysics scheme (mp_physics = 30)
 !--------------------------------------------------------------------------------------------------
-      IF (  model_config_rec % mp_physics(1) .EQ. FAST_KHAIN_LYNN_SHPUND   ) THEN
-         INQUIRE(FILE='./SBM_input_33', EXIST=fsbm_table1_exists)
+# if ( BUILD_SBM_FAST == 1 )
+      IF ( model_config_rec % mp_physics(1) .EQ. FAST_KHAIN_LYNN_SHPUND ) THEN
+         INQUIRE(FILE='./SBM_input_33/BLKD_SDC.dat', EXIST=fsbm_table1_exists)
          IF (.not.fsbm_table1_exists ) THEN
-            wrf_err_message = "--- ERROR: Input table SBM_input_33 doesn't exist !!!"
+            wrf_err_message = "--- ERROR: Input directory SBM_input_33 doesn't exist !!!"
             CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '--- ERROR: Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
+            wrf_err_message = '--- ERROR: Download this directory of table files from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
              CALL wrf_message ( wrf_err_message )
             count_fatal_error = count_fatal_error + 1
          END IF
-         INQUIRE(FILE='./scattering_tables_2layer_high_quad_1dT_1%fw_110', EXIST=fsbm_table2_exists)
+         INQUIRE(FILE='./scattering_tables_2layer_high_quad_1dT_1%fw_110/GRAUPEL_+00C_000fvw.sct', EXIST=fsbm_table2_exists)
          IF (.not.fsbm_table2_exists ) THEN
-            wrf_err_message = "--- ERROR: Input table scattering_tables_2layer_high_quad_1dT_1%fw_110 doesn't exist !!!"
+            wrf_err_message = "--- ERROR: Input directory scattering_tables_2layer_high_quad_1dT_1%fw_110 doesn't exist !!!"
             CALL wrf_message ( TRIM( wrf_err_message ) )
-            wrf_err_message = '--- ERROR: Download this table from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
+            wrf_err_message = '--- ERROR: Download this directory of input table files from http://www2.mmm.ucar.edu/wrf/src/wrf_files/'
             CALL wrf_message ( wrf_err_message )
             count_fatal_error = count_fatal_error + 1
          END IF
       END IF
+# endif
 !-----------------------------------------------------------------------
 ! There are restrictions on the AFWA diagnostics regarding the choice
 ! of microphysics scheme. These are hard coded in the AFWA diags driver,

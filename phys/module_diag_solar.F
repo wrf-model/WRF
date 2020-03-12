@@ -28,7 +28,7 @@ CONTAINS
 !                                                                                        !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE solar_diag (mut, dnw, ph, phb, cldfrac3d, coszen, swdnb, swdnt, qv, qc, qi, qs, &
+   SUBROUTINE solar_diag (rho, dz8w, ph, phb, cldfrac3d, coszen, swdnb, swdnt, qv, qc, qi, qs, &
              qc_tot, qi_tot, has_reqc, has_reqi, has_reqs, f_qv, f_qc, f_qi, f_qs, &
              re_cloud, re_ice, re_snow, clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, &
              wp2d_sum, lwp2d_tot, iwp2d_tot, wp2d_tot_sum, re_cloud_path, re_ice_path, re_snow_path, &
@@ -42,10 +42,9 @@ CONTAINS
 
      IMPLICIT NONE
 
-     REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mut, coszen, swdnb, swdnt
-     REAL, DIMENSION(kms:kme), INTENT(IN) :: dnw
+     REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: coszen, swdnb, swdnt
      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: ph, phb, cldfrac3d, qv, qc, qi, qs, qc_tot, qi_tot, &
-          re_cloud, re_ice, re_snow
+          re_cloud, re_ice, re_snow, rho, dz8w
      INTEGER, INTENT(IN) :: has_reqc, has_reqi, has_reqs
      LOGICAL, INTENT(IN) :: f_qv, f_qc, f_qi, f_qs
      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, wp2d_sum, &
@@ -57,7 +56,6 @@ CONTAINS
  
      INTEGER :: i, j, k, its, ite, jts, jte, ij
      REAL    :: pmw, swp, iwp, lwp, q_aux, wc
-     REAL, PARAMETER :: ONE_OVER_G = 1.0 / G
      REAL, PARAMETER :: THREE_OVER_TWO = 3.0 / 2.0
      REAL, PARAMETER :: PI = 4.0 * ATAN(1.0)
      REAL, PARAMETER :: DEGRAD = 180.0 / PI
@@ -65,6 +63,7 @@ CONTAINS
      REAL, PARAMETER :: WC_MIN = 1E-5
      REAL, PARAMETER :: RE_MIN = 0.0
      REAL, PARAMETER :: MISSING = -999.0
+     REAL, DIMENSION(kms:kme) :: rhodz
      INTEGER, PARAMETER :: TAU_ICE_METHOD = 1
      INTEGER, PARAMETER :: I_TO_PLOT = 299, J_TO_PLOT = 84
 
@@ -91,10 +90,13 @@ CONTAINS
              !!! 2-D CLOUD FRACTION
              cldfrac2d(i, j) = MAXVAL( cldfrac3d(i, kts:kte-1, j) )
 
+             !!! PREPARE FOR VARIABLE INTEGRATIONS
+             rhodz(:) = rho(i, :, j) * dz8w(i, :, j) / (1. + qv(i, :, j))
+
              !!! WATER VAPOR
              if (f_qv) then
                  ! Calc water vapor path
-               pmw = ONE_OVER_G * integrate_1var (mut(i, j), dnw, qv(i, :, j), kms, kme, kts, kte)
+               pmw = integrate_1var (rhodz, qv(i, :, j), kms, kme, kts, kte)
                wvp2d(i, j) = pmw
              end if
 
@@ -102,14 +104,14 @@ CONTAINS
              if (f_qc) then
                  !!! RESOLVED !!!
                  ! Calc liquid water pth
-               q_aux = integrate_1var (mut(i, j), dnw, qc(i, :, j), kms, kme, kts, kte)
-               lwp = ONE_OVER_G * q_aux
+               q_aux = integrate_1var (rhodz, qc(i, :, j), kms, kme, kts, kte)
+               lwp = q_aux
                lwp2d(i, j) = SIGN( MAX( lwp, 0.0 ), 1.0 )
 
                if (has_reqc == 1) then
                    ! Calc effective radius water
                  if (q_aux > Q_MIN) then
-                   re_cloud_path(i, j) = integrate_2var (mut(i, j), dnw, qc(i, :, j), &
+                   re_cloud_path(i, j) = integrate_2var (rhodz, qc(i, :, j), &
                        re_cloud(i, :, j), kms, kme, kts, kte)
                    re_cloud_path(i, j) = re_cloud_path(i, j) / q_aux
                  else
@@ -129,14 +131,14 @@ CONTAINS
 
                  !!! TOTAL (RESOLVED + UNRESOLVED) !!!
                  ! Calc liquid water path
-               q_aux = integrate_1var (mut(i, j), dnw, qc_tot(i, :, j), kms, kme, kts, kte)
-               lwp = ONE_OVER_G * q_aux
+               q_aux = integrate_1var (rhodz, qc_tot(i, :, j), kms, kme, kts, kte)
+               lwp = q_aux
                lwp2d_tot(i, j) = SIGN( MAX( lwp, 0.0 ), 1.0 )
 
                if (has_reqc == 1) then
                    ! Calc effective radius water
                  if (q_aux > Q_MIN) then
-                   re_cloud_path_tot(i, j) = integrate_2var (mut(i, j), dnw, qc_tot(i, :, j), &
+                   re_cloud_path_tot(i, j) = integrate_2var (rhodz, qc_tot(i, :, j), &
                        re_cloud(i, :, j), kms, kme, kts, kte)
                    re_cloud_path_tot(i, j) = re_cloud_path_tot(i, j) / q_aux
                  else
@@ -159,14 +161,14 @@ CONTAINS
              if (f_qi) then
                  !!! RESOLVED !!!
                  ! Calc ice water path
-               q_aux = integrate_1var (mut(i, j), dnw, qi(i, :, j), kms, kme, kts, kte)
-               iwp = ONE_OVER_G * q_aux
+               q_aux = integrate_1var (rhodz, qi(i, :, j), kms, kme, kts, kte)
+               iwp = q_aux
                iwp2d(i, j) = SIGN( MAX( iwp, 0.0 ), 1.0 )
 
                if (has_reqi == 1) then
                    ! Calc effective radius ice
                  if (q_aux > Q_MIN) then
-                   re_ice_path(i, j) = integrate_2var (mut(i, j), dnw, qi(i, :, j), &
+                   re_ice_path(i, j) = integrate_2var (rhodz, qi(i, :, j), &
                        re_ice(i, :, j), kms, kme, kts, kte)
                    re_ice_path(i, j) = re_ice_path(i, j) / q_aux
                  else
@@ -191,14 +193,14 @@ CONTAINS
 
                  !!! TOTAL (RESOLVED + UNRESOLVED) !!!
                  ! Calc ice water path
-               q_aux = integrate_1var (mut(i, j), dnw, qi_tot(i, :, j), kms, kme, kts, kte)
-               iwp = ONE_OVER_G * q_aux
+               q_aux = integrate_1var (rhodz, qi_tot(i, :, j), kms, kme, kts, kte)
+               iwp = q_aux
                iwp2d_tot(i, j) = SIGN( MAX( iwp, 0.0 ), 1.0 )
 
                if (has_reqi == 1) then
                    ! Calc effective radius ice
                  if (q_aux > Q_MIN) then
-                   re_ice_path_tot(i, j) = integrate_2var (mut(i, j), dnw, qi_tot(i, :, j), &
+                   re_ice_path_tot(i, j) = integrate_2var (rhodz, qi_tot(i, :, j), &
                        re_ice(i, :, j), kms, kme, kts, kte)
                    re_ice_path_tot(i, j) = re_ice_path_tot(i, j) / q_aux
                  else
@@ -226,13 +228,13 @@ CONTAINS
              if (f_qs) then
                  !!! RESOLVED !!!
                  ! Calc effective radius snow
-               q_aux = integrate_1var (mut(i, j), dnw, qs(i, :, j), kms, kme, kts, kte)
-               swp = ONE_OVER_G * q_aux
+               q_aux = integrate_1var (rhodz, qs(i, :, j), kms, kme, kts, kte)
+               swp = q_aux
                swp2d(i, j) = SIGN( MAX( swp, 0.0 ), 1.0 )
 
                if (has_reqs == 1) then
                  if (q_aux > Q_MIN) then
-                   re_snow_path(i, j) = integrate_2var (mut(i, j), dnw, qs(i, :, j), &
+                   re_snow_path(i, j) = integrate_2var (rhodz, qs(i, :, j), &
                        re_snow(i, :, j), kms, kme, kts, kte)
                    re_snow_path(i, j) = re_snow_path(i, j) / q_aux
                  else
@@ -332,14 +334,13 @@ CONTAINS
    END SUBROUTINE solar_diag
 
 
-   FUNCTION Integrate_1var (mut_val, dnw, var1_1d, kms, kme, kts, kte) &
+   FUNCTION Integrate_1var (rhodz, var1_1d, kms, kme, kts, kte) &
         RESULT (return_value)
 
       IMPLICIT NONE
 
-      REAL, INTENT(IN) :: mut_val
       INTEGER, INTENT(IN) :: kts, kte, kms, kme
-      REAL, DIMENSION(kms:kme), INTENT(IN) :: var1_1d, dnw
+      REAL, DIMENSION(kms:kme), INTENT(IN) :: var1_1d, rhodz
 
         ! Local
       REAL :: return_value
@@ -347,21 +348,19 @@ CONTAINS
 
       return_value = 0.0
       do k = kts, kte - 1
-        return_value = return_value + var1_1d(k) * dnw(k)
+        return_value = return_value + var1_1d(k) * rhodz(k)
       end do
-      return_value = - mut_val * return_value
 
     END FUNCTION Integrate_1var
 
 
-    FUNCTION Integrate_2var (mut_val, dnw, var1_1d, var2_1d, kms, kme, kts, kte) &
+    FUNCTION Integrate_2var (rhodz, var1_1d, var2_1d, kms, kme, kts, kte) &
         RESULT (return_value)
 
       IMPLICIT NONE
 
-      REAL, INTENT(IN) :: mut_val
       INTEGER, INTENT(IN) :: kts, kte, kms, kme
-      REAL, DIMENSION(kms:kme), INTENT(IN) :: var1_1d, var2_1d, dnw
+      REAL, DIMENSION(kms:kme), INTENT(IN) :: var1_1d, var2_1d, rhodz
 
         ! Local
       REAL :: return_value
@@ -369,9 +368,8 @@ CONTAINS
 
       return_value = 0.0
       do k = kts, kte - 1
-        return_value = return_value + var1_1d(k) * var2_1d(k) * dnw(k)
+        return_value = return_value + var1_1d(k) * var2_1d(k) * rhodz(k)
       end do
-      return_value = - mut_val * return_value
 
     END FUNCTION Integrate_2var
 

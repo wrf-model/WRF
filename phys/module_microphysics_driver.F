@@ -1110,14 +1110,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 # if ( BUILD_SBM_FAST == 1 )
        CASE (FAST_KHAIN_LYNN_SHPUND)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling sbm' )
-               CALL fast_sbm(W=w,U=u,V=v,TH_OLD=th_old          &
-                 ,CHEM_new=scalar,N_CHEM=num_scalar                     &
+               CALL fast_sbm(W=w,U=u,V=v,TH_OLD=th_old              &
+                 ,CHEM_new=scalar,N_CHEM=num_scalar                 &
                  ,ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
-                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
-                 ,xland=xland                                       &
-                 ,ivgtyp=ivgtyp                                      &
-                 ,xlat=xlat                                        &
-                 ,xlong=xlong                                        &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p                     &
+                 ,PI_PHY=pi_phy,TH_PHY=th                           &
+                 ,xland=xland,domain_id=id                          &
+                 ,ivgtyp=ivgtyp                                     &
+                 ,xlat=xlat                                         &
+                 ,xlong=xlong                                       &
                  ,QV=qv_curr                                        &
                  ,QC=qc_curr                                        &
                  ,QR=qr_curr                                        &
@@ -1135,15 +1136,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,diagflag=diagflag                   &  ! added for radar reflectivity
-                 ,RAINNC=rainnc                       &
-                 ,RAINNCV=rainncv                     &
-                 ,SNOWNC=snownc                       &
-                 ,SNOWNCV=snowncv                     &
-                 ,GRAUPELNC=graupelnc                 &
-                 ,GRAUPELNCV=graupelncv               &
-                 ,SR=sr                               &
-                                         )
+                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
+                 ,RAINNC=rainnc                                     &
+                 ,RAINNCV=rainncv                                   &
+                 ,SNOWNC=snownc                                     &
+                 ,SNOWNCV=snowncv                                   &
+                 ,GRAUPELNC=graupelnc                               &
+                 ,GRAUPELNCV=graupelncv                             &
+                 ,SR=sr                                             &
+                                                                    )
 # endif
 
 !

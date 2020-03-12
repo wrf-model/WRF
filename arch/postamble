@@ -28,7 +28,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       -DLIMIT_ARGS \
                       -DBUILD_RRTMG_FAST=0 \
                       -DBUILD_RRTMK=0 \
-                      -DBUILD_SBM_FAST=0 \
+                      -DBUILD_SBM_FAST=1 \
                       -DSHOW_ALL_VARS_USED=0 \
                       -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \
                       -DMAX_DOMAINS_F=$(MAX_DOMAINS) \

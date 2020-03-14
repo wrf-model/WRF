@@ -43,6 +43,15 @@ SUBROUTINE calc_ts_locations( grid )
    CHARACTER (LEN=2), DIMENSION(TS_FIELDS) :: &
       ts_file_endings = (/ 'UU', 'VV', 'PH', 'TH', 'QV' ,'WW', 'PR'/) 
 #endif
+   INTEGER   ierr
+   CHARACTER (len=19) simulation_start_date
+   INTEGER simulation_start_year   , &
+           simulation_start_month  , &
+           simulation_start_day    , &
+           simulation_start_hour   , &
+           simulation_start_minute , &
+           simulation_start_second
+
    TYPE (PROJ_INFO) :: ts_proj
    TYPE (grid_config_rec_type) :: config_flags
 
@@ -154,10 +163,25 @@ SUBROUTINE calc_ts_locations( grid )
    
       END IF
    
+      ! Determine simulation start time
+      ierr = 0
+      CALL nl_get_simulation_start_year   ( 1 , simulation_start_year   )
+      CALL nl_get_simulation_start_month  ( 1 , simulation_start_month  )
+      CALL nl_get_simulation_start_day    ( 1 , simulation_start_day    )
+      CALL nl_get_simulation_start_hour   ( 1 , simulation_start_hour   )
+      CALL nl_get_simulation_start_minute ( 1 , simulation_start_minute )
+      CALL nl_get_simulation_start_second ( 1 , simulation_start_second )
+      WRITE ( simulation_start_date , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
+              simulation_start_year,simulation_start_month,simulation_start_day,simulation_start_hour, &
+              simulation_start_minute,simulation_start_second
+!     WRITE(message,*)'wrf_timeseries: SIMULATION_START_DATE = ',simulation_start_date(1:19)
+!     CALL wrf_debug ( 0, TRIM( message ) )
+      
       ! Determine time series locations for domain
       IF (.NOT. grid%have_calculated_tslocs) THEN
          grid%have_calculated_tslocs = .TRUE.
-         WRITE(message, '(A43,I3)') 'Computing time series locations for domain ', grid%id
+         WRITE(message, '(A43,I3,A15,A19)') 'Computing time series locations for domain ', grid%id, &
+                                            ' starting from ',simulation_start_date
          CALL wrf_message(message)
    
          ntsloc_temp = 0
@@ -230,22 +254,22 @@ SUBROUTINE calc_ts_locations( grid )
 #if (EM_CORE == 1)
                IF ( .NOT. grid%tslist_ij ) THEN 
                   WRITE(UNIT=iunit, &
-                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7,A2,A19)') &
                         grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
                         ' '//grid%nametsloc(grid%id_tsloc(k)), &
                         ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
                         grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
                         ts_xlat, ',', ts_xlong, ') ', &
-                        ts_hgt,' meters'
+                        ts_hgt,' meters','  ',simulation_start_date(1:19)
                ELSE
                   WRITE(UNIT=iunit, &
-                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7,A2,A19)') &
                         grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
                         ' '//grid%nametsloc(grid%id_tsloc(k)), &
                         ' (', ts_xlat, ',', ts_xlong, ') (', &
                         grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
                         ts_xlat, ',', ts_xlong, ') ', &
-                        ts_hgt,' meters'
+                        ts_hgt,' meters','  ',simulation_start_date(1:19)
                END IF
 #else
                WRITE(UNIT=iunit, &
@@ -271,22 +295,22 @@ SUBROUTINE calc_ts_locations( grid )
 #if (EM_CORE == 1)
                   IF ( .NOT. grid%tslist_ij ) THEN 
                      WRITE(UNIT=iunit, &
-                           FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                           FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7,A2,A19)') &
                            grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
                            ' '//grid%nametsloc(grid%id_tsloc(k)), &
                            ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
                            grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
                            ts_xlat, ',', ts_xlong, ') ', &
-                           ts_hgt,' meters'
+                           ts_hgt,' meters','  ',simulation_start_date
                   ELSE
                      WRITE(UNIT=iunit, &
-                           FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                           FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7,A2,A19)') &
                            grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
                            ' '//grid%nametsloc(grid%id_tsloc(k)), &
                            ' (', ts_xlat, ',', ts_xlong, ') (', &
                            grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
                            ts_xlat, ',', ts_xlong, ') ', &
-                           ts_hgt,' meters'
+                           ts_hgt,' meters,','  ',simulation_start_date
                  END IF
 #else
                   WRITE(UNIT=iunit, &
@@ -435,7 +459,8 @@ SUBROUTINE calc_ts( grid )
             grid%ts_u_profile(n,i,k)   = earth_u_profile(k)
             grid%ts_v_profile(n,i,k)   = earth_v_profile(k)
             grid%ts_w_profile(n,i,k)   = (grid%w_2(ix,k,iy)+grid%w_2(ix,k+1,iy))/2.0 ! w on cell center
-            grid%ts_gph_profile(n,i,k) = (grid%phb(ix,k,iy)+grid%ph_2(ix,k,iy))/9.81 
+            grid%ts_gph_profile(n,i,k) = 0.5*((grid%phb(ix,k,iy)+grid%ph_2(ix,k,iy)) &
+                                             +(grid%phb(ix,k+1,iy)+grid%ph_2(ix,k+1,iy)))/9.81 
             IF (grid%use_theta_m == 1) THEN
                grid%ts_th_profile(n,i,k)  = (grid%t_2(ix,k,iy) + T0)/(1.+R_v/R_d*grid%moist(ix,k,iy,P_QV))
             ELSE

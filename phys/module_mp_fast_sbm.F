@@ -4730,7 +4730,7 @@ enddo
 
                         ELSE IF(ISYM1==0 .AND. (TT-273.15)<-0.187 .AND. &
                                 (sum(ISYM2)>1 .OR. ISYM3==1 .OR. ISYM4==1 .OR. ISYM5==1))THEN
-                                  !IF (TT(I,K,J).GT.213.15)THEN
+                                  !IF (TT.GT.213.15)THEN
                                     VR2_Z(:,1) = VR2_ZC(:,K)
                                     VR2_Z(:,2) = VR2_ZP(:,K)
                                     VR2_Z(:,3) = VR2_ZD(:,K)
@@ -4748,7 +4748,7 @@ enddo
                                 !END IF
                           ELSE IF(ISYM1==1 .AND. (TT-273.15)<-0.187 .AND. &
                               (sum(ISYM2)>1 .OR. ISYM3==1 .OR. ISYM4==1 .OR. ISYM5==1))THEN
-                              IF (TT(I,K,J) > 233.15)THEN
+                              IF (TT > 233.15)THEN
                                 VR2_Z(:,1) = VR2_ZC(:,K)
                                 VR2_Z(:,2) = VR2_ZP(:,K)
                                 VR2_Z(:,3) = VR2_ZD(:,K)
@@ -8371,18 +8371,18 @@ enddo
    END SUBROUTINE ONECOND3
  ! +---------------------------------------------------------+
  	SUBROUTINE COAL_BOTT_NEW(FF1R,FF2R,FF3R,                      &
- 							      FF4R,FF5R,TT,QQ,PP,RHO,dt_coll,TCRIT,TTCOAL,&
-			              FLIQFR_S,FLIQFR_G,FLIQFR_H,FRIMFR_S,        &
-				            DEL1in, DEL2in,                             &
-  		              Iin,Jin,Kin,CollEff)
+				FF4R,FF5R,TT,QQ,PP,RHO,dt_coll,TCRIT,TTCOAL,&
+			      	FLIQFR_S,FLIQFR_G,FLIQFR_H,FRIMFR_S,        &
+			    	DEL1in, DEL2in,                             &
+  		              	Iin,Jin,Kin,itimestep,CollEff)
 
     use module_mp_SBM_Collision,only:coll_xyy_lwf,coll_xyx_lwf,coll_xxx_lwf,    &
- 								                     coll_xyz_lwf, modkrn_KS, coll_breakup_KS, 	&
-				                             coll_xxy_lwf
+				     coll_xyz_lwf, modkrn_KS, coll_breakup_KS, 	&
+				     coll_xxy_lwf
 
      implicit none
 
-     integer,intent(in) :: Iin,Jin,Kin
+     integer,intent(in) :: Iin,Jin,Kin,itimestep
      real(kind=r4size),intent(in) :: tcrit,ttcoal,dt_coll
      real(kind=r4size),intent(inout) :: ff1r(:),ff2r(:,:),ff3r(:),ff4r(:),  &
                                         ff5r(:),colleff

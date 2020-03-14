@@ -2819,8 +2819,7 @@ CONTAINS
       jts = j_start(ij)
       jte = j_end(ij)
  ! Save resolved + unresolved hydrometeor mass mixing ratios for Solar diag
- ! Only done for icloud = 3
-      IF ( solar_opt_local == 1 .and. icloud == 3 ) THEN
+      IF ( solar_opt_local == 1 ) THEN
         IF ( PRESENT(qc_tot) .AND. PRESENT(qi_tot) ) THEN
           IF ( F_QC ) THEN
              DO j=jts,jte

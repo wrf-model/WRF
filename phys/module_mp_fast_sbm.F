@@ -4767,7 +4767,7 @@ enddo
                               ENDIF
                             END IF
                           END IF ! DIFF.NE.0
-                      END IF 	! DIFFU.NE.0
+                      END IF ! DIFFU.NE.0
                   END DO ! NCOND - end of NCOND loop
 ! +----------------------------------+
 ! Collision-Coallescnce

@@ -1962,7 +1962,7 @@ enddo
 		REAL(KIND=r8size),INTENT(INOUT) :: DEL1N,DEL2N,DEL1INT,DEL2INT,RW, PW, RI, PI
 ! ... Interface
 ! ... Locals
-	   INTEGER :: I, ISYMICE
+	   INTEGER :: I, ISYMICE, IRW, IPW, IRI, IPI
 	   REAL(KIND=r8size) :: X, EXPM1, DETER, EXPR, EXPP, A, ALFA, BETA, GAMA, G31, G32, G2, EXPB, EXPG, &
 	   				  C11, C21, C12, C22, A1DEL1N, A2DEL1N, A3DEL1N, A4DEL1N, A1DEL1INT, A2DEL1INT, &
 							A3DEL1INT, A4DEL1INT, A1DEL2N, A2DEL2N, A3DEL2N , A4DEL2N, A1DEL2INT, A2DEL2INT, &
@@ -1972,45 +1972,64 @@ enddo
 		EXPM1(x)=x+x*x/2.0D0+x*x*x/6.0D0+x*x*x*x/24.0D0+ &
                  x*x*x*x*x/120.0D0
 
-	ISYMICE = sum(ISYM2) + ISYM3 + ISYM4 + ISYM5
+  ISYMICE = sum(ISYM2) + ISYM3 + ISYM4 + ISYM5
+  IRW = 1
+  IPW = 1
+  IRI = 1
+  IPI = 1
 
 	IF(AMAX1(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
 
-	    RW = 0.0
-	    PW = 0.0
-	    RI = 0.0
-	    PI = 0.0
-	    ISYM1 = 0
-	    ISYMICE = 0
+    RW = 0.0
+    IRW = 0
+    PW = 0.0
+    IPW = 0
+    RI = 0.0
+    IRI = 0
+    PI = 0.0
+    IPI = 0
+    ISYM1 = 0
+    ISYMICE = 0
 
 	ELSE
 
     IF(DMAX1(RW,PW)>RW_PW_MIN) THEN
 
 			! ... (KS) - A zero can pass through, assign a minimum value
-			IF(RW < RW_PW_MIN*RW_PW_MIN) RW = 1.0D-20
-			IF(PW < RW_PW_MIN*RW_PW_MIN) PW = 1.0D-20
-			! ... (KS) ...................................................
+			IF(RW < RW_PW_MIN*RW_PW_MIN) THEN
+        RW = 1.0D-20
+        IRW = 0
+      ENDIF
+      IF(PW < RW_PW_MIN*RW_PW_MIN)THEN
+        PW = 1.0D-20
+        IPW = 0
+      ENDIF
 
-        IF(DMAX1(PI/PW,RI/RW)<=RATIO_ICEW_MIN) THEN
-			! only water
-	      		RI = 0.0
-	      		PI = 0.0
-	      		ISYMICE = 0
-	    	ENDIF
+      IF(DMAX1(PI/PW,RI/RW)<=RATIO_ICEW_MIN) THEN
+			  ! ... only water
+        RI = 0.0
+        IRI = 0
+        PI = 0.0
+        IPI = 0
+        ISYMICE = 0
+      ENDIF
 
-        IF(DMIN1(PI/PW,RI/RW)>1.0D0/RATIO_ICEW_MIN) THEN
-			! only ice
-	      		RW = 0.0
-	      		PW = 0.0
-	      		ISYM1 = 0
-       ENDIF
+      IF(DMIN1(PI/PW,RI/RW)>1.0D0/RATIO_ICEW_MIN) THEN
+			  ! ... only ice
+        RW = 0.0
+        IRW = 0
+        PW = 0.0
+        IPW = 0
+        ISYM1 = 0
+      ENDIF
 
     ELSE
 			! only ice
 			RW = 0.0
-    	PW = 0.0
-    	ISYM1 = 0
+      IRW = 0
+      PW = 0.0
+      IPW = 0
+      ISYM1 = 0
 
 	  ENDIF
 	 ENDIF
@@ -2025,7 +2044,7 @@ enddo
     DETER=RW*PI-PW*RI
 
 
-    IF(RW==0.0 .AND. RI==0.0) THEN
+    IF(IRW == 0 .AND. IRI == 0) THEN
 
           DEL1N=DEL1+DYN1*DT
           DEL2N=DEL2+DYN2*DT
@@ -2039,8 +2058,8 @@ enddo
 ! solution of equation for supersaturation with
 ! different DETER values
 
-    IF(RI==0.0) THEN
-! only water                                                     (start)
+    IF(IRI == 0) THEN
+! ... only water                                                     (start)
 
       EXPR=EXP(-RW*DT)
       IF(ABS(RW*DT)>1.0E-6) THEN
@@ -2071,13 +2090,13 @@ enddo
           GOTO 100
 
 	       ENDIF
-! only water                                                    (end)
+! ... only water                                                    (end)
 
 ! in case RI==0.0D0
     ENDIF
 
-    IF(RW==0.0) THEN
-! only ice                                                    (start)
+    IF(IRW == 0) THEN
+! ... only ice                                                    (start)
 
       EXPP=EXP(-PI*DT)
 
@@ -2110,12 +2129,12 @@ enddo
           GOTO 100
 
       ENDIF
-! only ice                                                      (end)
+! ... only ice                                                      (end)
 
 ! in case RW==0.0D0
     ENDIF
 
-    IF(RW/=0.0 .AND. RI/=0.0) THEN
+    IF(IRW == 1 .AND. IRI == 1) THEN
 
       A=(RW-PI)*(RW-PI)+4.0E0*PW*RI
 
@@ -2132,18 +2151,17 @@ enddo
 	          PRINT*,   'STOP 1905:A < 0'
 	          call wrf_error_fatal("fatal error: STOP 1905:A < 0, model stop")
        ENDIF
-! water and ice                                               (start)
+! ... water and ice                                               (start)
        ALFA=DSQRT((RW-PI)*(RW-PI)+4.0D0*PW*RI)
 
-! 5/8/04 Nir, Beta is negative to the simple solution so
-! it will decay
+! 5/8/04 Nir, Beta is negative to the simple solution so it will decay
 
         BETA=0.5D0*(ALFA+RW+PI)
         GAMA=0.5D0*(ALFA-RW-PI)
         G31=PI*DYN1-RI*DYN2
         G32=-PW*DYN1+RW*DYN2
         G2=RW*PI-RI*PW
-        IF (G2 == 0.0D0) G2 = 1.0004d-11*1.0003d-11-1.0002d-11*1.0001e-11 ! ... (KS) - 24th,May,2016
+        IF (G2 < 1.0d-20) G2 = 1.0004d-11*1.0003d-11-1.0002d-11*1.0001e-11 ! ... (KS) - 24th,May,2016
         EXPB=DEXP(-BETA*DT)
         EXPG=DEXP(GAMA*DT)
 
@@ -2167,7 +2185,7 @@ enddo
                 ALFA=DSQRT((RW-PI)*(RW-PI)+4.0D0*PW*RI)
                 BETA=0.5D0*(ALFA+RW+PI)
                 GAMA=0.5D0*(ALFA-RW-PI)
-		            IF (GAMA == 0.0D0) GAMA=0.5D0*(2.002d-10-2.001d-10) ! ... (KS) - 24th,May,2016
+		            IF (GAMA < 0.5*2.0d-10) GAMA=0.5D0*(2.002d-10-2.001d-10) ! ... (KS) - 24th,May,2016
                 EXPG=EXPM1(GAMA*DT)
                 EXPB=DEXP(-BETA*DT)
 
@@ -2433,7 +2451,7 @@ enddo
 		INTEGER,PARAMETER :: KRDROP_REMAPING_MIN = 6, KRDROP_REMAPING_MAX = 12
 ! ... Locals
 
-	IF(TPN .LT. 273.15-5.0D0) IDROP=0
+! >> [KS] 22ndMay19	IF(TPN .LT. 273.15-5.0D0) IDROP=0
 
 ! INITIAL VALUES FOR SOME VARIABLES
 
@@ -2888,9 +2906,9 @@ enddo
 		  ! ... Drops
 		  IF(ISYM1 == 1)THEN
   			FL1 = 0.0
-  			CALL JERRATE_KS &
-           	 	(R1D,TPS,PP,VR1_d,RLEC,RO1BL,B11_MY,1,1,fl1,NKR,ICEMAX)
-  			sfndummy(1) = SFN11
+  			CALL JERRATE_KS(R1D,TPS,PP,VR1_d,RLEC,RO1BL,B11_MY,1,1,fl1,NKR,ICEMAX)
+        sfndummy(1) = SFN11
+        CALL JERTIMESC_KS(FF1in,R1D,SFNDUMMY,B11_MY,B8I,1,NKR,ICEMAX,COL)
   			SFN11 = sfndummy(1)
 		  ENDIF
 		  ! ... IC
@@ -2990,7 +3008,7 @@ end module module_mp_SBM_Auxiliary
  	INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
 
 	INTEGER,PARAMETER :: Use_cloud_base_nuc = 1
-	real(kind=r8size),PARAMETER::T_NUCL_DROP_MIN = -60.0D0
+	real(kind=r8size),PARAMETER::T_NUCL_DROP_MIN = -80.0D0
 	real(kind=r8size),PARAMETER::T_NUCL_ICE_MIN = -37.0D0
 ! Ice nucleation method
 ! using MEYERS method : ice_nucl_method == 0
@@ -3700,23 +3718,23 @@ end module module_mp_SBM_Auxiliary
 	RETURN
 	END SUBROUTINE SupMax_COEFF
 ! +----------------------------------------------------------------------------------------------------+
-	SUBROUTINE LogNormal_modes_Aerosol(FCCNR_CON,FCCNR_MAR,NKR,COL,XL,XCCN,RCCN,RO_SOLUTE,Scale_Fa,IType)
+	SUBROUTINE LogNormal_modes_Aerosol(FCCNR_CON,FCCNR_MAR,NKR_local,COL,XL,XCCN,RCCN,RO_SOLUTE,Scale_Fa,IType)
 
 	implicit none
 ! ... Interface
-		integer,intent(in) :: NKR, Itype
+		integer,intent(in) :: NKR_local, Itype
 		real(kind=r4size) ,intent(in) :: XL(:), COL, RO_SOLUTE, Scale_Fa
 		real(kind=r8size) ,intent(out) :: FCCNR_CON(:), FCCNR_MAR(:)
 		real(kind=r4size) ,intent(out) :: XCCN(:),RCCN(:)
 ! ... Interface
 ! ... Local
-		integer :: mode_num, KR, NKR_local
+		integer :: mode_num, KR
 		integer,parameter :: modemax = 3
 		real(kind=r8size)  :: ccncon1, ccncon2, ccncon3, radius_mean1, radius_mean2, radius_mean3, &
 							            sig1, sig2, sig3,													 &
 							            ccncon(modemax), sig(modemax), radius_mean(modemax)
-		real(kind=r8size)  :: CONCCCNIN, FCCNR_tmp(NKR), DEG01, X0DROP, &
-						              XOCCN, X0, R0, RCCN_MICRON, S_KR, S(NKR), X0CCN, ROCCN(NKR), &
+		real(kind=r8size)  :: CONCCCNIN, FCCNR_tmp(NKR_local), DEG01, X0DROP, &
+						              XOCCN, X0, R0, RCCN_MICRON, S_KR, S(NKR_local), X0CCN, ROCCN(NKR_local), &
 	                        RO_SOLUTE_Ammon, RO_SOLUTE_NaCl,arg11,arg12,arg13,arg21,arg22,arg23, & 
                           arg31,arg32,arg33,dNbydlogR_norm1,dNbydlogR_norm2,dNbydlogR_norm3
 
@@ -3728,17 +3746,15 @@ end module module_mp_SBM_Auxiliary
 		real(kind=r8size) ,PARAMETER :: PI = 3.14159265D0
 ! ... Local
 
-	NKR_local = 43
-
 	! ... Calculating the CCN radius grid
 	!RO_SOLUTE_NaCl = 2.16D0  ! [g/cm3]
 	!RO_SOLUTE_Ammon = 1.79	 ! [g/cm3]
 	DEG01 = 1.0D0/3.0D0
-	X0DROP = XL(1)
-	X0CCN = X0DROP/(2.0**(NKR_local-1))
-	DO KR = NKR,1,-1
+	X0DROP = XL(2)
+	X0CCN = X0DROP/(2.0**(NKR_local))
+	DO KR = NKR_local,1,-1
 	   ROCCN(KR) = RO_SOLUTE
-	   X0 = X0CCN*2.0D0**(KR-1)
+	   X0 = X0CCN*2.0D0**(KR)
 	   R0 = (3.0D0*X0/4.0D0/3.141593D0/ROCCN(KR))**DEG01
 	   XCCN(KR) = X0
 	   RCCN(KR) = R0
@@ -3784,7 +3800,7 @@ end module module_mp_SBM_Auxiliary
   dNbydlogR_norm1 = 0.0
   dNbydlogR_norm2 = 0.0
   dNbydlogR_norm3 = 0.0
-  do kr = nkr,1,-1
+  do kr = NKR_local,1,-1
       if(RCCN(kr) > RCCN_MIN_3LN .and. RCCN(kr) < RCCN_MAX)then
           arg12 = (log(RCCN(kr)/radius_mean1))**2.0
           arg13 = 2.0D0*((log(sig1))**2.0);
@@ -3827,7 +3843,7 @@ enddo
              						fws_fd,fws_crystals,fws_snow,		      &
              						fws_graupel,fws_hail, 		            &
              						usetables,                            &
-             						twolayer_hail,twolayer_graupel,twolayer_fd,twolayer_snow,rpquada,usequad
+                         twolayer_hail,twolayer_graupel,twolayer_fd,twolayer_snow,rpquada,usequad
 
  PRIVATE
 
@@ -4097,7 +4113,7 @@ enddo
  	REAL (KIND=R4SIZE) :: z_full
  	REAL (KIND=R4SIZE) :: VRX(kts:kte,NKR)
 
- 	REAL (KIND=R4SIZE) :: VR1_Z(NKR,KTS:KTE), FACTOR_P
+ 	REAL (KIND=R4SIZE) :: VR1_Z(NKR,KTS:KTE), FACTOR_P, VR1_Z3D(NKR,ITS:ITE,KTS:KTE,JTS:JTE)
  	REAL (KIND=R4SIZE) :: VR2_ZC(NKR,KTS:KTE), VR2_Z(NKR,ICEMAX)
  	REAL (KIND=R4SIZE) :: VR2_ZP(NKR,KTS:KTE)
  	REAL (KIND=R4SIZE) :: VR2_ZD(NKR,KTS:KTE)
@@ -4201,8 +4217,7 @@ enddo
    				  KRR=0
    				  DO KR=p_ff8i01,p_ff8i43
   		          KRR=KRR+1
-   					    chem_new(I,K,J,KR) = chem_new(I,K,J,KR)*RHOCGS(I,K,J)/1000.
-   													       ! chem_new (input) is #/kg
+   					    chem_new(I,K,J,KR) = chem_new(I,K,J,KR)*RHOCGS(I,K,J)/1000.0
    				  END DO
  				!  ... Hail or Graupel [same registry adresses]
            if(hail_opt == 1) then
@@ -4268,7 +4283,8 @@ enddo
    					if (xland(i,j) == 1)then
    						! chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
    						chem_new(I,K,J,KR) = (FCCNR_CON(KRR)/rhoair_max)*rhocgs(i,k,j) ! ... distributed vertically as [#/g]
-   					else
+             else
+              ! chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
    						chem_new(I,K,J,KR) = (FCCNR_MAR(KRR)/rhoair_max)*rhocgs(i,k,j) ! ... distributed vertically as [#/g]
    					endif
  				  END DO
@@ -4278,9 +4294,11 @@ enddo
  	   end do
  	 end if
 
- ! +--------------------------------------------+
+! +--------------------------------------------+
  ! ... Aerosols boundary conditions
+ !    (for 3D application running with MPI)   
  ! +--------------------------------------------+
+#if (defined(DM_PARALLEL))
     if (itimestep > 1 .and. domain_id == 1)then
         DO j = jts,jte
          DO k = kts,kte
@@ -4301,7 +4319,8 @@ enddo
            						if (xland(i,j) == 1)then
            							! chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
            							chem_new(I,K,J,KR) = (FCCNR_CON(KRR)/rhoair_max)*rhocgs(i,k,j)
-                   		else
+                       else
+                        ! chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
            							chem_new(I,K,J,KR) = (FCCNR_MAR(KRR)/rhoair_max)*rhocgs(i,k,j)
            						endif
                    END DO
@@ -4311,6 +4330,7 @@ enddo
          end do
        end do
      end if
+#endif
 
      if (itimestep == 1)then
         DO j = j_start,j_end
@@ -4488,6 +4508,7 @@ enddo
             VR3_Z(1:nkr,K) = VR3(1:nkr)*FACTOR_P
             VR4_Z(1:nkr,K) = VR4(1:nkr)*FACTOR_P
             VR5_Z(1:nkr,k) = VR5(1:nkr)*FACTOR_P
+            VR1_Z3D(1:nkr,I,K,J) = VR1(1:nkr)*FACTOR_P
             VR3_Z3D(1:nkr,I,K,J) = VR3(1:nkr)*FACTOR_P
             VR4_Z3D(1:nkr,I,K,J) = VR4(1:nkr)*FACTOR_P
             VR5_Z3D(1:nkr,I,K,J) = VR5(1:nkr)*FACTOR_P
@@ -4554,24 +4575,13 @@ enddo
              IF (QQA.LE.0) print*,'I,J,K,Told,Tnew,QQA = ',I,J,K,TT,TTA,QQA
              IF (QQA.LE.0) QQA = 1.0D-10
 
-             ES1N = AA1_MY*DEXP(-BB1_MY/TT)
-             ES2N = AA2_MY*DEXP(-BB2_MY/TT)
-             EW1N=QQ*PP/(0.622+0.378*QQ)
-             DIV1=EW1N/ES1N
-             DEL1IN=EW1N/ES1N-1.
-             DIV2=EW1N/ES2N
-             DEL2IN=EW1N/ES2N-1.
-            
-
-! JacobS: commented out for this version
-!               CALL Relaxation_Time(TT,QQ,PP,rhocgs(I,K,J),DEL1IN,DEL2IN, &
-!                                     XL,VR1_Z(:,K),FF1R,RLEC,RO1BL, &
-!                                     XI,VR2_Z,FF2R,RIEC,RO2BL, &
-!                                     XS,VR3_Z(:,K),FF3R,RSEC,RO3BL, &
-!                                     XG,VR4_Z(:,K),FF4R,RGEC,RO4BL, &
-!                                     XH,VR5_Z(:,k),FF5R,RHEC,RO5BL, &
-!                                     NKR,ICEMAX,COL,DT,NCOND,DTCOND)
-
+              ES1N = AA1_MY*DEXP(-BB1_MY/TT)
+              ES2N = AA2_MY*DEXP(-BB2_MY/TT)
+              EW1N=QQ*PP/(0.622+0.378*QQ)
+              DIV1=EW1N/ES1N
+              DEL1IN=EW1N/ES1N-1.
+              DIV2=EW1N/ES2N
+              DEL2IN=EW1N/ES2N-1.
               ES1N=AA1_MY*DEXP(-BB1_MY/TTA)
               ES2N=AA2_MY*DEXP(-BB2_MY/TTA)
               EW1N=QQA*PP/(0.622+0.378*QQA)
@@ -4580,17 +4590,25 @@ enddo
               DIV4=EW1N/ES2N
               DEL2AD=EW1N/ES2N-1.
               SUP2_OLD=DEL2IN
-              DELSUP1=(DEL1AD-DEL1IN)/NCOND
-              DELSUP2=(DEL2AD-DEL2IN)/NCOND
-              DELDIV1=(DIV3-DIV1)/NCOND
-              DELDIV2=(DIV4-DIV2)/NCOND
-              DELTATEMP = 0
-              DELTAQ = 0
-              tt_old = TT
-              qq_old = qq
-              DIFFU=1
 
-              IF(DEL1IN+DELSUP1*ncond > 0.0 .or. DEL2IN+DELSUP2*ncond > 0.0 .or. (sum(FF1R)+sum(FF3R)+sum(FF4R)+sum(FF5R)) > 1.0e-20)THEN 
+              IF(del1ad > 0.0 .or. del2ad > 0.0 .or. (sum(FF1R)+sum(FF3R)+sum(FF4R)+sum(FF5R)) > 1.0e-20)THEN
+                ! JacobS: commented for this version                
+                !                CALL Relaxation_Time(TT,QQ,PP,rhocgs(I,K,J),DEL1IN,DEL2IN, &
+                !                                      XL,VR1_Z(:,K),FF1R,RLEC,RO1BL, &
+                !                                      XI,VR2_Z,FF2R,RIEC,RO2BL, &
+                !                                      XS,VR3_Z(:,K),FF3R,RSEC,RO3BL, &
+                !                                      XG,VR4_Z(:,K),FF4R,RGEC,RO4BL, &
+                !                                      XH,VR5_Z(:,k),FF5R,RHEC,RO5BL, &
+                !                                      NKR,ICEMAX,COL,DT,NCOND,DTCOND)
+                  DELSUP1=(DEL1AD-DEL1IN)/NCOND
+                  DELSUP2=(DEL2AD-DEL2IN)/NCOND
+                  DELDIV1=(DIV3-DIV1)/NCOND
+                  DELDIV2=(DIV4-DIV2)/NCOND
+                  DELTATEMP = 0
+                  DELTAQ = 0
+                  tt_old = TT
+                  qq_old = qq
+                  DIFFU=1
 
                   IF (DIV1.EQ.DIV3) DIFFU = 0
                   IF (DIV2.EQ.DIV4) DIFFU = 0
@@ -4607,7 +4625,9 @@ enddo
                           DIV1 = DIV1+DELDIV1
                           DIV2 = DIV2+DELDIV2
                       END IF
-              
+                      IF (DIV1.GT.DIV2.AND.TT.LE.265)THEN
+                        DIFFU=0
+                      END IF
                       IF (DIFFU == 1)THEN
                         DEL1NR=A1_MYN*(100.*DIV1)
                         DEL2NR=A2_MYN*(100.*DIV2)
@@ -4621,17 +4641,16 @@ enddo
                         TT=-DEL_BB/DLOG(DEL12R)
                         QQ=0.622*EW1PN/(PP-0.378*EW1PN)
 
-                        DO KR=1,NKR
-                        FF1IN(KR)=FF1R(KR)
-                          DO ICE=1,ICEMAX
-                            FF2IN(KR,ICE)=FF2R(KR,ICE)
-                          ENDDO
-                        ENDDO
-
-                        IF(DEL1IN .GT. 0.0 .OR. DEL2IN .GT. 0.0)THEN
+                        IF(DEL1IN > 0.0 .OR. DEL2IN > 0.0)THEN
 ! +------------------------------------------+
 ! Droplet nucleation :
 ! +------------------------------------------+
+                          DO KR=1,NKR
+                            FF1IN(KR)=FF1R(KR)
+                              DO ICE=1,ICEMAX
+                                FF2IN(KR,ICE)=FF2R(KR,ICE)
+                              ENDDO
+                            ENDDO
                           Is_This_CloudBase = 0
                           IF(KZ_Cloud_Base(I,J) == K .and. col*sum(FF1IN*XL) < 5.0) Is_This_CloudBase = 1
                           if (k.lt.kte)then
@@ -4648,16 +4667,17 @@ enddo
                                             ,RCCN,DROPRADII,NKR,NKR_aerosol,ICEMAX,ICEPROCS &
                                             ,W_Stag_My,Is_This_CloudBase,RO_SOLUTE,IONS,MWAERO &
                                             ,I,J,K)
-                        END IF
-
-                        DO KR=1,NKR
-                        FF1R(KR)=FF1IN(KR)
-                          DO ICE=1,ICEMAX
-                            FF3R(KR) = FF3R(KR) + FF2IN(KR,ICE)
-                            FF2IN(KR,ICE) = 0.0
-                            FF2R(KR,ICE) = 0.0
+                        
+                        
+                          DO KR=1,NKR
+                            FF1R(KR)=FF1IN(KR)
+                            DO ICE=1,ICEMAX
+                              FF3R(KR) = FF3R(KR) + FF2IN(KR,ICE)
+                              FF2IN(KR,ICE) = 0.0
+                              FF2R(KR,ICE) = 0.0
+                            END DO
                           END DO
-                        END DO
+                        END IF
 
                         FMAX1=0.
                         FMAX2=0.
@@ -4708,7 +4728,7 @@ enddo
 
                         ELSE IF(ISYM1==0 .AND. (TT-273.15)<-0.187 .AND. &
                                 (sum(ISYM2)>1 .OR. ISYM3==1 .OR. ISYM4==1 .OR. ISYM5==1))THEN
-                                  !IF (T_OLD(I,K,J).GT.213.15)THEN
+                                  !IF (TT.GT.213.15)THEN
                                     VR2_Z(:,1) = VR2_ZC(:,K)
                                     VR2_Z(:,2) = VR2_ZP(:,K)
                                     VR2_Z(:,3) = VR2_ZD(:,K)
@@ -4726,7 +4746,7 @@ enddo
                                 !END IF
                           ELSE IF(ISYM1==1 .AND. (TT-273.15)<-0.187 .AND. &
                               (sum(ISYM2)>1 .OR. ISYM3==1 .OR. ISYM4==1 .OR. ISYM5==1))THEN
-                              IF (T_OLD(I,K,J).GT.233.15)THEN
+                              IF (TT > 233.15)THEN
                                 VR2_Z(:,1) = VR2_ZC(:,K)
                                 VR2_Z(:,2) = VR2_ZP(:,K)
                                 VR2_Z(:,3) = VR2_ZD(:,K)
@@ -4745,7 +4765,7 @@ enddo
                               ENDIF
                             END IF
                           END IF ! DIFF.NE.0
-                      END IF 	! DIFFU.NE.0
+                      END IF ! DIFFU.NE.0
                   END DO ! NCOND - end of NCOND loop
 ! +----------------------------------+
 ! Collision-Coallescnce
@@ -4761,7 +4781,7 @@ enddo
                                 rhocgs(I,K,J),dt_coll,TCRIT,TTCOAL, 	    &
                                 FLIQFR_SD,FLIQFR_GD,FLIQFR_HD,FRIMFR_SD,  &
                                 DEL1IN, DEL2IN, 			        	          &
-                                I,J,K,CollEff_out)
+                                I,J,K,Itimestep,CollEff_out)
 
                     END IF
                   END DO ! NCOLL - end of NCOLL loop
@@ -4882,7 +4902,7 @@ enddo
             rhocgs_z(k)=rhocgs(i,k,j)
             pcgs_z(k)=pcgs(i,k,j)
             zcgs_z(k)=zcgs(i,k,j)
-            vrx(k,:)=vr1_z(:,k)
+            vrx(k,:)=vr1_z3D(:,i,k,j)
             krr=0
             do kr=p_ff1i01,p_ff1i33
               krr=krr+1
@@ -4968,7 +4988,7 @@ enddo
           QNG(I,K,J) = 0.0
           QNA(I,K,J) = 0.0
 
-          tt= th_phy(i,k,j)*pi_phy(i,k,j)
+          tt = th_phy(i,k,j)*pi_phy(i,k,j)
 
           ! ... Drop output
           KRR = 0
@@ -4995,14 +5015,14 @@ enddo
  					KRR=KRR+1
  					 if (KRR <= KRICE)THEN
  						 QI(I,K,J) = QI(I,K,J) &
- 					                 +(1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3
+ 					                 +(1.0/RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3.0
  						 QNI(I,K,J) = QNI(I,K,J) &
-         				  			  + COL*chem_new(I,K,J,KR)*XS(KRR)*3/rhocgs(I,K,J)*1000. ! #/kg
+         				  			  + COL*chem_new(I,K,J,KR)*XS(KRR)*3.0/rhocgs(I,K,J)*1000.0 ! #/kg
  					 else
  						 QS(I,K,J) = QS(I,K,J) &
- 									+ (1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3
+ 									+ (1.0/RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3.0
  						 QNS(I,K,J) = QNS(I,K,J) &
- 								 	+ COL*chem_new(I,K,J,KR)*XS(KRR)*3/rhocgs(I,K,J)*1000. ! #/kg
+ 								 	+ COL*chem_new(I,K,J,KR)*XS(KRR)*3.0/rhocgs(I,K,J)*1000.0 ! #/kg
  					endif
  			   END DO
 
@@ -5013,14 +5033,14 @@ enddo
             ! ... Hail or Graupel
             if(hail_opt == 1)then
               QG(I,K,J)=QG(I,K,J) &
-              +(1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XH(KRR)*XH(KRR)*3
+              +(1.0/RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XH(KRR)*XH(KRR)*3.0
               QNG(I,K,J)=QNG(I,K,J) &
-              +COL*chem_new(I,K,J,KR)*XH(KRR)*3/rhocgs(I,K,J)*1000. ! #/kg
+              +COL*chem_new(I,K,J,KR)*XH(KRR)*3.0/rhocgs(I,K,J)*1000.0 ! #/kg
             else
               QG(I,K,J)=QG(I,K,J) &
-              +(1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XG(KRR)*XG(KRR)*3
+              +(1.0/RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XG(KRR)*XG(KRR)*3.0
               QNG(I,K,J)=QNG(I,K,J) &
-              +COL*chem_new(I,K,J,KR)*XG(KRR)*3/rhocgs(I,K,J)*1000. ! #/kg
+              +COL*chem_new(I,K,J,KR)*XG(KRR)*3.0/rhocgs(I,K,J)*1000.0 ! #/kg
             endif
           END DO
    		END IF !IF (ICEPROCS.EQ.1)THEN
@@ -5029,7 +5049,7 @@ enddo
       DO  KR = p_ff8i01,p_ff8i43
       	KRR = KRR + 1
       	QNA(I,K,J) = QNA(I,K,J) &
-      			   	+ COL*chem_new(I,K,J,KR)/rhocgs(I,K,J)*1000.   ! #/kg
+      			   	+ COL*chem_new(I,K,J,KR)/rhocgs(I,K,J)*1000.0   ! #/kg
       END DO
 
  		END DO
@@ -5131,9 +5151,9 @@ enddo
 
 ! ... Drops
         KRR=0
-        do kr = p_ff1i01,p_ff1i33     ! JS: Here DSDs input to Polar_HUCM is in [g/g/dln(r)]
+        do kr = p_ff1i01,p_ff1i33 
           KRR=KRR+1
-          FF1R_D(KRR) = (1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XL(KRR)*XL(KRR)*3
+          FF1R_D(KRR) = (1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XL(KRR)*XL(KRR)*3.0
           if (FF1R_D(KRR) < 1.0D-20) FF1R_D(KRR) = 0.0
         end do
         if (ICEPROCS == 1)then
@@ -5141,7 +5161,7 @@ enddo
           KRR=0
           do kr=p_ff5i01,p_ff5i33
             KRR=KRR+1
-            FF3R_D(KRR)=(1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3
+            FF3R_D(KRR)=(1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3.0
             FF3R (KRR) = chem_new(I,K,J,KR)
             if (ff3r_D(krr) < 1.0D-20) ff3r_D(krr) = 0.0
           end do
@@ -5150,7 +5170,7 @@ enddo
           if(hail_opt == 0)then
             do kr = p_ff6i01,p_ff6i33
               KRR=KRR+1
-              FF4R_D(KRR) = (1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XG(KRR)*XG(KRR)*3
+              FF4R_D(KRR) = (1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XG(KRR)*XG(KRR)*3.0
               FF4R(KRR) = chem_new(I,K,J,KR)
               if (FF4R_D(KRR) < 1.0D-20) FF4R_D(KRR)= 0.0
               FF5R_d(KRR) = 0.0
@@ -5158,7 +5178,7 @@ enddo
           else
             do kr=p_ff6i01,p_ff6i33
               KRR=KRR+1
-              FF5R_D(KRR)=(1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XH(KRR)*XH(KRR)*3
+              FF5R_D(KRR)=(1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XH(KRR)*XH(KRR)*3.0
               FF5R(KRR)=chem_new(I,K,J,KR)
               if (ff5r_d(krr) < 1.0D-20) ff5r_d(krr)=0.0
               FF4R_d(KRR) = 0.0
@@ -5267,13 +5287,13 @@ enddo
          		  DO KR=p_ff1i01,p_ff1i33
          			    krr=krr+1
          		       chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XL(KRR)*XL(KRR)*3.0
-         		        if (qc(i,k,j)+qr(i,k,j).lt.1.e-13)chem_new(I,K,J,KR)=0.
+         		        if (qc(i,k,j)+qr(i,k,j).lt.1.e-13)chem_new(I,K,J,KR)=0.0
          		  END DO
          		  KRR=0
          		  DO KR=p_ff5i01,p_ff5i33
          		   KRR=KRR+1
          		   chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XS(KRR)*XS(KRR)*3.0
-         		   if (qs(i,k,j).lt.1.e-13)chem_new(I,K,J,KR)=0.
+         		   if (qs(i,k,j).lt.1.e-13)chem_new(I,K,J,KR)=0.0
          		  END DO
          		  ! ... CCN
          		  KRR=0
@@ -5427,8 +5447,7 @@ enddo
  			CALL wrf_debug(150, errmess)
  			OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/BLKD_SDC.dat",FORM="FORMATTED",STATUS="OLD",ERR=2070)
  			DO kr=1,NKR
- 				READ(hujisbm_unit1,*) bin_mass(kr),tab_colum(kr),tab_dendr(kr), &
- 									            tab_snow(kr)
+ 				READ(hujisbm_unit1,*) bin_mass(kr),tab_colum(kr),tab_dendr(kr),tab_snow(kr)
  				bin_log(kr) = log10(bin_mass(kr))
  			ENDDO
  	ENDIF
@@ -5446,7 +5465,6 @@ enddo
 #endif
 
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-1'
-     print*,errmess
      CALL wrf_debug(000, errmess)
  ! +-----------------------------------------------------------------------+
 
@@ -5496,7 +5514,6 @@ enddo
 #endif
 
      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-2'
-     print*,errmess
      CALL wrf_debug(000, errmess)
  ! +----------------------------------------------------------------------+
 
@@ -5546,7 +5563,6 @@ enddo
 #endif
 
       WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-3'
-      print*,errmess
       CALL wrf_debug(000, errmess)
  ! +-------------------------------------------------------------------------+
 
@@ -8353,18 +8369,18 @@ enddo
    END SUBROUTINE ONECOND3
  ! +---------------------------------------------------------+
  	SUBROUTINE COAL_BOTT_NEW(FF1R,FF2R,FF3R,                      &
- 							      FF4R,FF5R,TT,QQ,PP,RHO,dt_coll,TCRIT,TTCOAL,&
-			              FLIQFR_S,FLIQFR_G,FLIQFR_H,FRIMFR_S,        &
-				            DEL1in, DEL2in,                             &
-  		              Iin,Jin,Kin,CollEff)
+				FF4R,FF5R,TT,QQ,PP,RHO,dt_coll,TCRIT,TTCOAL,&
+			      	FLIQFR_S,FLIQFR_G,FLIQFR_H,FRIMFR_S,        &
+			    	DEL1in, DEL2in,                             &
+  		              	Iin,Jin,Kin,itimestep,CollEff)
 
     use module_mp_SBM_Collision,only:coll_xyy_lwf,coll_xyx_lwf,coll_xxx_lwf,    &
- 								                     coll_xyz_lwf, modkrn_KS, coll_breakup_KS, 	&
-				                             coll_xxy_lwf
+				     coll_xyz_lwf, modkrn_KS, coll_breakup_KS, 	&
+				     coll_xxy_lwf
 
      implicit none
 
-     integer,intent(in) :: Iin,Jin,Kin
+     integer,intent(in) :: Iin,Jin,Kin,itimestep
      real(kind=r4size),intent(in) :: tcrit,ttcoal,dt_coll
      real(kind=r4size),intent(inout) :: ff1r(:),ff2r(:,:),ff3r(:),ff4r(:),  &
                                         ff5r(:),colleff
@@ -8446,14 +8462,12 @@ enddo
 
 
  ! calculation of initial hydromteors content in g/cm**3 :
-  cont_init_drop=0.
-  cont_init_ice=0.
-  do kr=1,nkr
-    cont_init_drop=cont_init_drop+g1(kr)
-    cont_init_ice=cont_init_ice+g3(kr)+g4(kr)+g5(kr)
-    do ice=1,icemax
-      cont_init_ice=cont_init_ice+g2(kr,ice)
-    enddo
+  cont_init_drop = 0.0
+  cont_init_ice = 0.0
+  cont_init_drop = sum(g1(1:nkr))
+  cont_init_ice = sum(g3(1:nkr)) + sum(g4(1:nkr)) + sum(g5(1:nkr))
+  do ice=1,icemax
+      cont_init_ice = cont_init_ice + sum(g2(1:nkr,ice))
   enddo
   cont_init_drop=col*cont_init_drop*1.e-3
   cont_init_ice=col*cont_init_ice*1.e-3
@@ -8472,8 +8486,6 @@ enddo
     ndiv = 1
     10     	continue
     do it = 1,ndiv
-      if (ndiv > 1024)print*,'ndiv in coal_bott_new = ',ndiv
-      if (ndiv > 1024) go to 11
       dtbreakup = dt_coll/ndiv
       if (it == 1)then
         do kr=1,JMAX
@@ -8488,22 +8500,28 @@ enddo
       end if
 
       call coll_breakup_KS(gdumb, xl_dumb, JMAX, dtbreakup, JBREAK, PKIJ, QKJ, NKR, NKR)
+    end do
 
-      do KR=1,NKR
-        FF1R(KR) = (1.0d3*GDUMB(KR))/(3.*XL(KR)*XL(KR)*1.E3)
-        if(GDUMB(KR) < 0.0)then
+    do KR=1,NKR
+      FF1R(KR) = (1.0d3*GDUMB(KR))/(3.0*XL(KR)*XL(KR)*1.E3)
+      if(FF1R(KR) < 0.0)then
+        if(ndiv < 8)then
+          ndiv = 2*ndiv
+          go to 10
+        else
+          !print*,"noBreakUp",Iin,Jin,Kin,Itimestep,ndiv
           go to 11
           !call wrf_error_fatal("in coal_bott af-coll_breakup - FF1R/GDUMB < 0.0")
         endif
-        if(GDUMB(kr) .ne. GDUMB(kr)) then
-          print*,kr,GDUMB(kr),GDUMB_BF_BREAKUP(kr),XL(kr)
-          print*,IT,NDIV, DTBREAKUP
-          print*,GDUMB
-          print*,GDUMB_BF_BREAKUP
-          call wrf_error_fatal("in coal_bott af-coll_breakup - FF1R NaN, model stop")
-        endif
-      enddo
-    end do
+      endif
+      if(FF1R(kr) .ne. FF1R(kr)) then
+        print*,kr,GDUMB(kr),GDUMB_BF_BREAKUP(kr),XL(kr)
+        print*,IT,NDIV, DTBREAKUP
+        print*,GDUMB
+        print*,GDUMB_BF_BREAKUP
+        call wrf_error_fatal("in coal_bott af-coll_breakup - FF1R NaN, model stop")
+      endif
+    enddo
 
     break_drop_aft=0.0d0
     do kr=1,JMAX
@@ -8676,13 +8694,13 @@ end if
     deldrop=cont_init_drop-cont_fin_drop ! [g/cm**3]
  ! riming temperature correction (rho in g/cm**3) :
      if(t_new <= 273.15) then
-       if(deldrop >= 0.0) then
+       if(deldrop > 0.0) then
           t_new = t_new + 320.*deldrop/rho
-  	        ES1N = AA1_MY*DEXP(-BB1_MY/t_new)
-            ES2N = AA2_MY*DEXP(-BB2_MY/t_new)
-            EW1N = QQ*PP/(0.622+0.378*QQ)
-            DEL1in = EW1N/ES1N - 1.0
-            DEL2in = EW1N/ES2N - 1.0
+          ES1N = POLYSVP(t_new,0)
+          ES2N = POLYSVP(t_new,1)
+          EW1N = QQ*PP/(0.622+0.378*QQ)
+          DEL1in = EW1N/ES1N - 1.0
+          DEL2in = EW1N/ES2N - 1.0
        else
   	     ! if deldrop < 0
          if(abs(deldrop).gt.cont_init_drop*0.05) then

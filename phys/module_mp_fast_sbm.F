@@ -3844,8 +3844,6 @@ enddo
              						fws_graupel,fws_hail, 		            &
              						usetables,                            &
                          twolayer_hail,twolayer_graupel,twolayer_fd,twolayer_snow,rpquada,usequad
-  USE module_domain
-  USE module_dm
 
  PRIVATE
 
@@ -4990,7 +4988,7 @@ enddo
           QNG(I,K,J) = 0.0
           QNA(I,K,J) = 0.0
 
-          tt= th_phy(i,k,j)*pi_phy(i,k,j)
+          tt = th_phy(i,k,j)*pi_phy(i,k,j)
 
           ! ... Drop output
           KRR = 0

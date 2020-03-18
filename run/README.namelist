@@ -519,8 +519,9 @@ Namelist variables for controlling the adaptive time step option:
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version
                                      = 40, Morrison (2 moments) with consideration of CESM-NCSU RCP4.5 climatological aerosol 
-                                     = 50, P3 1-category
-                                     = 51, P3 1-category plus double-moment cloud water
+                                     = 50, P3 1-ice category, 1-moment cloud water
+                                     = 51, P3 1-ice category plus double-moment cloud water
+                                     = 52, P3 2-ice categories plus double-moment cloud water
                                      = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
                                            for each ice
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version

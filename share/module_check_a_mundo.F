@@ -1089,6 +1089,24 @@
 !-----------------------------------------------------------------------
 ! cu_physics = 11 (scale-aware KF)
 !-----------------------------------------------------------------------
+! scale-aware KF cannot work with 3DTKE (km_opt=5)
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec%km_opt(i) .EQ. SMS_3DTKE ) .AND. &
+              ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: cu_physics = 11 cannot work with 3DTKE scheme '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Choose another bl_pbl_physics OR use another cu_physics option '
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
 
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE

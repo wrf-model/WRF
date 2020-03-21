@@ -1087,8 +1087,6 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! cu_physics = 11 (scale-aware KF)
-!-----------------------------------------------------------------------
 ! scale-aware KF cannot work with 3DTKE (km_opt=5)
 !-----------------------------------------------------------------------
 
@@ -1107,6 +1105,10 @@
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
+      
+!-----------------------------------------------------------------------
+! cu_physics = 11 (scale-aware KF)     
+!-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
@@ -1117,6 +1119,7 @@
             model_config_rec%icloud = 1
          END IF
       ENDDO
+      
 !-----------------------------------------------------------------------
 ! aercu_opt = 1 (CESM-aerosal) only works with MSKF, special Morrison
 !-----------------------------------------------------------------------

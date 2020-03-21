@@ -1107,7 +1107,8 @@
       END IF
       
 !-----------------------------------------------------------------------
-! cu_physics = 11 (scale-aware KF)     
+! IF cu_physics = 11 (scale-aware KF), THEN set other required flags. This 
+! is not an error, just a convenience for the user.
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom

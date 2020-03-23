@@ -519,8 +519,11 @@ Namelist variables for controlling the adaptive time step option:
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version
                                      = 40, Morrison (2 moments) with consideration of CESM-NCSU RCP4.5 climatological aerosol 
-                                     = 50, P3 1-category
-                                     = 51, P3 1-category plus double-moment cloud water
+                                     = 50, P3 1-ice category, 1-moment cloud water
+                                     = 51, P3 1-ice category plus double-moment cloud water
+                                     = 52, P3 2-ice categories plus double-moment cloud water
+                                     = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
+                                           for each ice
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
@@ -831,6 +834,7 @@ Namelist variables for controlling the adaptive time step option:
  cu_rad_feedback (max_dom)           = .false.  ! sub-grid cloud effect to the optical depth in radiation
                                                   currently it works only for GF, G3, GD and KF scheme
                                                   One also needs to set cu_diag = 1 for GF, G3, KF-CuP, and GD schemes
+ bmj_rad_feedback (max_dom)          = .false.  ! BMJ convective precipitation-derived sub-grid cloud effect to radiation
  cudt (max_dom)                      = 0,       ! minutes between cumulus physics calls
  kfeta_trigger                       KF trigger option (cu_physics=1 only):
                                      = 1, default option

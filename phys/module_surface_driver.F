@@ -3182,13 +3182,8 @@ CONTAINS
                                   ims,ime, jms,jme, kms,kme,                             &
                                   i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
 
-<<<<<<< HEAD
-     END IF
-  END IF
-=======
       ENDIF
   ENDIF
->>>>>>> origin/master
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &

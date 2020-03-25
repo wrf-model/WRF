@@ -390,7 +390,6 @@
 !-----------------------------------------------------------------------
 ! Assign the dimensions for the urban options to the values defined in 
 ! each of those respective modules.
-
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE

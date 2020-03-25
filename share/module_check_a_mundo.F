@@ -460,7 +460,7 @@
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%shcu_physics(i) .EQ. 5 .AND.       &
+         IF ( ( model_config_rec%shcu_physics(i) .EQ. dengshcuscheme ) .AND. &
               ( model_config_rec%icloud .EQ. 3 ) ) THEN
               oops = oops + 1
          END IF

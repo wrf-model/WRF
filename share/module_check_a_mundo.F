@@ -445,13 +445,34 @@
          IF ( model_config_rec % shcu_physics(i) == dengshcuscheme .AND. &
               (model_config_rec % bl_pbl_physics(i) /= myjpblscheme .AND. &
                model_config_rec % bl_pbl_physics(i) /= mynnpblscheme2 ) ) THEN
-            wrf_err_message = '--- ERROR: Deng shallow convection can only work with MYJ or MYNN PBL '
+            wrf_err_message = '--- ERROR: Deng shallow convection can only work with MYJ or MYNN (with bl_mynn_edmf off) PBL '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Fix shcu_physics or bl_pbl_physics in namelist.input.'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
          END IF
       ENDDO
+
+!-----------------------------------------------------------------------
+! If Deng Shallow Convection is on, icloud cannot be 3
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec%shcu_physics(i) .EQ. dengshcuscheme ) .AND. &
+              ( model_config_rec%icloud .EQ. 3 ) ) THEN
+              oops = oops + 1
+         END IF
+      ENDDO
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: Options shcu_physics = 5 and icloud = 3 should not be used together'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Choose either one in namelist.input and rerun the model'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
 
 #endif
 

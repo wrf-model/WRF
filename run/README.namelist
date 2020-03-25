@@ -822,7 +822,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Deng cumulus scheme (including both shallow and deep convections) from PSU and WRF-Solar.
                                           However the deep part isn't very active. Not recommended to use alone for deep convection 
                                           case. Could work well for grid sizes 3-9 km.
-                                          This scheme only works with MYJ or MYNN PBL schemes 
+                                          This scheme only works with MYJ PBL scheme, and should not be combined with icloud=3
+                                          This scheme can also work with MYNN PBL scheme, but one should turn off EDMF (bl_mynn_edmf=0)
 
  ishallow                            = 0, !  = 1 turns on shallow convection, used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0, !  closure choice (place holder only)

@@ -1808,10 +1808,10 @@ END SUBROUTINE SFCLAY1D_mynn
        REAL, INTENT(IN)  :: zL,z0L
        REAL, INTENT(OUT) :: psim1,psih1
 
-       psim1 = -6.1*LOG(zL + (1.+ zL**2.5)**0.4) - &
+       psim1 = -6.1*LOG(zL  + (1.+ zL **2.5)**0.4) &
                -6.1*LOG(z0L + (1.+ z0L**2.5)**0.4)
-       psih1 = -5.5*log(zL + (1.+ zL**1.1)**0.90909090909) - &
-               -5.5*log(z0L + (1.+ z0L**1.1)**0.90909090909)
+       psih1 = -5.5*LOG(zL  + (1.+ zL **1.1)**0.90909090909) &
+               -5.5*LOG(z0L + (1.+ z0L**1.1)**0.90909090909)
 
        return
 

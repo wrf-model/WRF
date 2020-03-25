@@ -467,9 +467,9 @@
       ENDDO
 
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- ERROR: Options shcu_physics = 5 and icloud = 3 should not be used together '
+         wrf_err_message = '--- ERROR: Options shcu_physics = 5 and icloud = 3 should not be used together'
          CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- Choose either one in namelist.input and rerun the model '
+         wrf_err_message = '--- Choose either one in namelist.input and rerun the model'
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF

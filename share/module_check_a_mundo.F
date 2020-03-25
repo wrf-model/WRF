@@ -340,6 +340,7 @@
 ! Check that SMS-3DTKE scheme (km_opt=5) Must work with diff_opt=2
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % km_opt(i) .EQ. 5 .AND. &
               model_config_rec % diff_opt(i) .NE. 2  ) THEN
             wrf_err_message = '--- ERROR: SMS-3DTKE scheme can only work with diff_opt=2 '
@@ -354,6 +355,7 @@
 ! Check that SMS-3DTKE scheme (km_opt=5) Must work with bl_pbl_physics=0
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % km_opt(i) .EQ. 5 .AND. &
               model_config_rec % bl_pbl_physics(i) .NE. 0  ) THEN
             wrf_err_message = '--- ERROR: SMS-3DTKE scheme can only work with bl_pbl_physics=0 '
@@ -371,6 +373,7 @@
 ! Must work with no surface layer scheme.
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % km_opt(i) .EQ. 5 .AND. &
               (model_config_rec % sf_sfclay_physics(i) .NE. nosfcscheme     .AND. &
                model_config_rec % sf_sfclay_physics(i) .NE. sfclayscheme    .AND. &
@@ -429,6 +432,7 @@
 ! Check that channel irrigation is run with Noah
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % sf_surface_physics(i) .NE. LSMSCHEME .AND.  &
              model_config_rec % sf_surf_irr_scheme(i) .EQ. CHANNEL ) THEN
               wrf_err_message = '--- ERROR: irrigation Opt 1 works only with Noah-LSM'
@@ -456,7 +460,6 @@
 !-----------------------------------------------------------------------
 ! If Deng Shallow Convection is on, icloud cannot be 3
 !-----------------------------------------------------------------------
-
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
@@ -469,14 +472,31 @@
       IF ( oops .GT. 0 ) THEN
          wrf_err_message = '--- ERROR: Options shcu_physics = 5 and icloud = 3 should not be used together'
          CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- Choose either one in namelist.input and rerun the model'
+         wrf_err_message = '--- ERROR: Choose either one in namelist.input and rerun the model'
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
 
-#endif
+!-----------------------------------------------------------------------
+! For ARW users, a request for CU=4 (SAS) should be switched to option
+! CU = 95. The option CU = 4 is a scaleaware scheme used by NMM.
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%cu_physics(i) .EQ. scalesasscheme ) THEN
+              oops = oops + 1
+         END IF
+      ENDDO
 
-#if (EM_CORE == 1)
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: Option cu_physics = 4 should not be used for ARW; cu_physics = 95 is suggested'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Choose a different cu_physics option in the namelist.input file'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
 !-----------------------------------------------------------------------
 ! There is a binary file for Goddard radiation. It is single precision.
 !-----------------------------------------------------------------------

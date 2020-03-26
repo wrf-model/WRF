@@ -145,17 +145,15 @@ SUBROUTINE sprinkler_irrigation(  julian_in                                     
    DO a=its, ite
      DO b=jts,jte
 
-      IF ((irr_num_hours.GT.0) .AND. &
-          (tloc.GE.irr_start_hour .AND. tloc.LT.end_hour) .AND. &
+      constants_irrigation=irr_freq*irr_daily_amount/(irr_num_hours*3600*rho(a,kms,b)*dz8w(a,kms,b)*100)
+      IF ( (tloc.GE.irr_start_hour .AND. tloc.LT.end_hour) .AND. &
           (irrigation(a,b).GE.0.1) .AND. &
           (julian_in.GE.irr_start_julianday .AND. julian_in.LT.irr_end_julianday )) THEN
         CALL irr_calc_phase(irr_ph,phase,irr_rand_field_val(a,b),a,b,irrigation(a,b),irr_freq)
         IF(irr_ph.EQ.0) THEN
-              constants_irrigation=irr_freq*irr_daily_amount/(irr_num_hours*3600*rho(a,kms,b)*dz8w(a,kms,b)*100)
               qr_curr(a,kms,b)=qr_curr(a,kms,b)+irrigation(a,b)*constants_irrigation*dt
         ELSE
               IF(timing.EQ.int(phase))  THEN
-                   constants_irrigation=irr_freq*irr_daily_amount/(irr_num_hours*3600*rho(a,kms,b)*dz8w(a,kms,b)*100)
                    qr_curr(a,kms,b)=qr_curr(a,kms,b)+irrigation(a,b)*constants_irrigation*dt
               END IF
         END IF

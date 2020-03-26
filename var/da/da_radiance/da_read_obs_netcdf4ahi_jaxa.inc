@@ -1,6 +1,6 @@
 subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    !--------------------------------------------------------
-   !  Purpose: read in JAXA AHI Level-1 and Level-1 (previous) data in NETCDF4 format
+   !  Purpose: read in JAXA AHI Level-1 data in NETCDF4 format for different times
    !           and form innovation structure
    !
    !   METHOD: use F90 sequantial data structure to avoid read the file twice
@@ -10,7 +10,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    !                  and deallocate sequential data structure
    !
    !  HISTORY: 2016/10/22 - Creation         Yuanbing Wang, NUIST/CAS, NCAR/NESL/MMM/DAS
-   !  HISTORY: 2020/03/01 - Add clear sky cloud detection procedures   Dongmei Xu, NUIST/CAS, NCAR/NESL/MMM/DAS  
+   !  HISTORY: 2020/03/01 - Add clear sky cloud detection procedures   Dongmei Xu, NUIST, NCAR/MMM  
    !  To be devoloped: 1.time information; 2.dimension sequence
    !------------------------------------------------------------------------------
    
@@ -83,7 +83,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    real(r_kind), allocatable       :: tempir(:,:),cwvt1(:,:)
    real(r_kind), allocatable    :: ter_sat(:,:),SDob_10(:,:),SDob_13(:,:),SDob_14(:,:)
    character(200)    :: filenameStatic
-   type(cld_qc_type) ::cld_qc  
+   type(clddet_geoir_type) ::cld_qc  
 ! Allocatable arrays
    integer(i_kind),allocatable  :: ptotal(:)
    real,allocatable             :: in(:), out(:)

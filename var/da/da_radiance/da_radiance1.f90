@@ -24,7 +24,7 @@ module da_radiance1
       cv_size_domain_js, calc_weightfunc, deg_to_rad, rad_to_deg,use_clddet_zz
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
       iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
-      be_type, cld_qc_type
+      be_type, clddet_geoir_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
    use da_par_util, only : da_proc_stats_combine
    use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
@@ -47,7 +47,7 @@ module da_radiance1
 
       type (info_type)        :: info
       type (model_loc_type)   :: loc
-      type (cld_qc_type)    :: cld_qc
+      type (clddet_geoir_type)    :: cld_qc
       integer   ::  ifgat, landsea_mask, rain_flag
       integer   ::  scanline, scanpos
       real      ::  satzen, satazi, solzen, solazi  !  satellite and solar angles

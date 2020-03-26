@@ -1,4 +1,4 @@
-  module mod_qc
+  module mod_clddet_geoir
 !   use netcdf
 !  use mod_para
   use da_control, only: missing_r

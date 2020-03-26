@@ -440,22 +440,26 @@
          count_fatal_error = count_fatal_error + 1
          END IF
       ENDDO
+
 !-----------------------------------------------------------------------
-! Check that number of hours for irrigation is more than zero
+! Check that number of hours for irrigation is greater than zero
 !-----------------------------------------------------------------------
+      oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec % sf_surf_irr_scheme(i) .EQ. CHANNEL .OR. &
-              model_config_rec % sf_surf_irr_scheme(i) .EQ. SPRINKLER .OR. &
-              model_config_rec % sf_surf_irr_scheme(i) .EQ. DRIP .AND. model_config_rec % irr_num_hours(i) .EQ. 0 ) THEN
-              wrf_err_message = '--- ERROR: irr_num_hours must be greater than zero to work with irrigation'
-              CALL wrf_message ( wrf_err_message )
-         count_fatal_error = count_fatal_error + 1
+         IF ( ( model_config_rec % sf_surf_irr_scheme(i) .EQ. CHANNEL   )   .OR. &
+              ( model_config_rec % sf_surf_irr_scheme(i) .EQ. SPRINKLER )   .OR. &
+              ( model_config_rec % sf_surf_irr_scheme(i) .EQ. DRIP      ) ) .AND. &
+              ( model_config_rec % irr_num_hours(i) .LE. 0 ) ) THEN
+            oops = oops + 1
          END IF
       ENDDO
-
-
-
+      
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: irr_num_hours must be greater than zero to work with irrigation'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that Deng Shallow Convection Must work with MYJ or MYNN PBL

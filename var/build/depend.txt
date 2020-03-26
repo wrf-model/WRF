@@ -230,7 +230,7 @@ gen_spectra.o : gen_spectra.f90 da_tracing.o da_spectral.o da_control.o
 gsi_constants.o : gsi_constants.f90 init_constants_derived.inc gsi_kinds.o 
 gsi_kinds.o : gsi_kinds.f90 
 gsi_thinning.o : gsi_thinning.f90 gsi_constants.o gsi_kinds.o 
-mod_qc.o : mod_qc.f90 da_control.o
+mod_clddet_geoir.o : mod_clddet_geoir.f90 da_control.o
 kma2netcdf.o : kma2netcdf.f90 module_kma_wave2grid.o module_kma2netcdf_interface.o da_wrfvar_io.o module_dm.o module_wrf_error.o module_timing.o module_driver_constants.o module_machine.o da_control.o module_domain.o module_configure.o 
 module_ffts.o : module_ffts.f90 qpassm.inc fft661.inc fft551.inc 
 module_kma2netcdf_interface.o : module_kma2netcdf_interface.f90 module_tiles.o module_configure.o module_driver_constants.o module_timing.o module_domain.o module_kma_wave2grid.o 

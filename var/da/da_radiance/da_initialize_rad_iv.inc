@@ -100,8 +100,18 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%satazi(n)       = p%satazi
    iv%instid(i)%solzen(n)       = p%solzen
    iv%instid(i)%solazi(n)       = p%solazi
+   iv%instid(i)%tropt(n)        = 0.0   
  !  iv%instid(i)%solazi(n)       = 0.0
-
+   if ( use_clddet_zz ) then
+      iv%instid(i)%cld_qc(n)%RTCT = p % cld_qc % RTCT
+      iv%instid(i)%cld_qc(n)%RFMFT = p % cld_qc % RFMFT
+      iv%instid(i)%cld_qc(n)%TEMPIR = p % cld_qc % TEMPIR
+      iv%instid(i)%cld_qc(n)%tb_stddev_10 = p % cld_qc % tb_stddev_10
+      iv%instid(i)%cld_qc(n)%tb_stddev_13 = p % cld_qc % tb_stddev_13
+      iv%instid(i)%cld_qc(n)%tb_stddev_14 = p % cld_qc % tb_stddev_14
+      iv%instid(i)%cld_qc(n)%terr_hgt = p % cld_qc % terr_hgt
+      iv%instid(i)%cld_qc(n)%CIRH2O = p % cld_qc % CIRH2O
+   end if
    if ( rtm_option == rtm_option_rttov ) then
       iv%instid(i)%surftype(n)     = 0
       iv%instid(i)%snow_frac(n)     = 0.0

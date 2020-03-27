@@ -508,7 +508,12 @@ module da_define_structures
       real,    pointer     :: bgerr(:) 
       real,    pointer     :: vtox(:,:)
    end type varbc_type
-   
+   type clddet_geoir_type
+     real  :: RTCT, RFMFT, TEMPIR, terr_hgt
+     real  :: tb_stddev_10, tb_stddev_13,tb_stddev_14
+     real  :: CIRH2O
+     !real, allocatable :: CIRH2O(:,:,:)
+   end type clddet_geoir_type   
    type cv_index_type
       integer              :: ts
       integer              :: nclouds
@@ -548,6 +553,7 @@ module da_define_structures
       real,    pointer     :: satazi(:) 
       real,    pointer     :: solzen(:) 
       real,    pointer     :: solazi(:) 
+      real,    pointer     :: tropt(:)  !! Tropopause temperature, K.
       real,    pointer     :: t(:,:)
       real,    pointer     :: q(:,:)
       real,    pointer     :: mr(:,:)
@@ -623,7 +629,7 @@ module da_define_structures
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
       integer, pointer     :: crtm_climat(:) ! CRTM only
-
+      type (clddet_geoir_type), pointer :: cld_qc(:)
       type (varbc_info_type)        :: varbc_info
       type (varbc_type),pointer     :: varbc(:)
       type (cv_index_type), pointer :: cv_index(:)

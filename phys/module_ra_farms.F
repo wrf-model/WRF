@@ -17,7 +17,6 @@
 
     public :: Farms_driver
 
-    real, parameter :: ONE_OVER_G = 1.0 / G
     real, parameter :: THREE_OVER_TWO = 3.0 / 2.0
     integer, parameter :: TAU_ICE_METHOD = 1
     logical, parameter :: USE_REST2 = .false.
@@ -32,9 +31,9 @@
   contains
 
     subroutine Farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte,  &
-           p8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
+           p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
            coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-           julian, mut, dnw, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+           julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
 
       implicit None
 
@@ -44,11 +43,10 @@
       integer, intent(in) :: aer_opt
       real,    intent(in) :: julian
 
-      real, dimension(ims:ime, jms:jme), intent(in) :: albedo, coszen_loc, mut
-      real, dimension(kms:kme), intent(in) :: dnw
+      real, dimension(ims:ime, jms:jme), intent(in) :: albedo, coszen_loc
 
       real, dimension(ims:ime, kms:kme, jms:jme ), intent(in) :: qv, qi, qs, qc, &
-          p8w, re_cloud, re_ice, re_snow 
+          p8w, rho, dz8w, re_cloud, re_ice, re_snow 
 
       real, dimension(ims:ime, jms:jme), intent(inout) :: aerssa2d, aerasy2d, aod5502d, angexp2d
       real, dimension(ims:ime,jms:jme), intent(inout) :: swddir2, swdown2, &
@@ -59,6 +57,7 @@
       integer :: i, j
       real    :: tau_qv, tau_qi, tau_qs, pmw, swp, iwp, lwp, beta
       real    :: re_cloud_path, re_ice_path, re_snow_path, q_aux
+      real, dimension(kms:kme) :: rhodz
 
 
       j_loop: do j = jts, jte
@@ -71,15 +70,16 @@
              swdownc2(i, j) = 0.0
              swddnic2(i, j) = 0.0
            else
+             rhodz(:) = rho(i, :, j) * dz8w(i, :, j) / (1. + qv(i, :, j))
                ! PMW
-             pmw = ONE_OVER_G * integrate_1var (mut(i, j), dnw, qv(i, :, j), kms, kme, kts, kte)
+             pmw = integrate_1var (rhodz, qv(i, :, j), kms, kme, kts, kte)
 
                ! Calc effective radius water
-             q_aux = integrate_1var (mut(i, j), dnw, qc(i, :, j), kms, kme, kts, kte)
-             lwp = ONE_OVER_G * q_aux
+             q_aux = integrate_1var (rhodz, qc(i, :, j), kms, kme, kts, kte)
+             lwp = q_aux
 
              if (q_aux > 0.0) then
-               re_cloud_path = integrate_2var (mut(i, j), dnw, qc(i, :, j), &
+               re_cloud_path = integrate_2var (rhodz, qc(i, :, j), &
                    re_cloud(i, :, j), kms, kme, kts, kte)
                re_cloud_path = re_cloud_path / q_aux
              else
@@ -87,11 +87,11 @@
              end if
 
                ! Calc effective radius ice
-             q_aux = integrate_1var (mut(i, j), dnw, qi(i, :, j), kms, kme, kts, kte)
-             iwp = ONE_OVER_G * q_aux
+             q_aux = integrate_1var (rhodz, qi(i, :, j), kms, kme, kts, kte)
+             iwp = q_aux
 
              if (q_aux > 0.0) then
-               re_ice_path = integrate_2var (mut(i, j), dnw, qi(i, :, j), &
+               re_ice_path = integrate_2var (rhodz, qi(i, :, j), &
                    re_ice(i, :, j), kms, kme, kts, kte)
                re_ice_path = re_ice_path / q_aux
              else
@@ -99,11 +99,11 @@
              end if
 
                ! Calc effective radius snow
-             q_aux = integrate_1var (mut(i, j), dnw, qs(i, :, j), kms, kme, kts, kte)
-             swp = ONE_OVER_G * q_aux
+             q_aux = integrate_1var (rhodz, qs(i, :, j), kms, kme, kts, kte)
+             swp = q_aux
 
              if (q_aux > 0.0) then
-               re_snow_path = integrate_2var (mut(i, j), dnw, qs(i, :, j), &
+               re_snow_path = integrate_2var (rhodz, qs(i, :, j), &
                    re_snow(i, :, j), kms, kme, kts, kte)
                re_snow_path = re_snow_path / q_aux
              else
@@ -169,14 +169,13 @@
     end subroutine Farms_driver
 
 
-    function Integrate_1var(mut_val, dnw, var1_1d, kms, kme, kts, kte) &
+    function Integrate_1var(rhodz, var1_1d, kms, kme, kts, kte) &
         result (return_value)
       
       implicit none
 
-      real, intent(in) :: mut_val
       integer, intent(in) :: kts, kte, kms, kme
-      real, dimension(kms:kme), intent(in) :: var1_1d, dnw
+      real, dimension(kms:kme), intent(in) :: var1_1d, rhodz
 
         ! Local
       real :: return_value
@@ -184,21 +183,19 @@
 
       return_value = 0.0
       do k = kts, kte - 1
-        return_value = return_value + var1_1d(k) * dnw(k)
+        return_value = return_value + var1_1d(k) * rhodz(k)
       end do
-      return_value = - mut_val * return_value
 
     end function Integrate_1var
 
 
-    function Integrate_2var(mut_val, dnw, var1_1d, var2_1d, kms, kme, kts, kte) &
+    function Integrate_2var(rhodz, var1_1d, var2_1d, kms, kme, kts, kte) &
         result (return_value)
 
       implicit none
 
-      real, intent(in) :: mut_val
       integer, intent(in) :: kts, kte, kms, kme
-      real, dimension(kms:kme), intent(in) :: var1_1d, var2_1d, dnw
+      real, dimension(kms:kme), intent(in) :: var1_1d, var2_1d, rhodz
 
         ! Local
       real :: return_value
@@ -206,9 +203,8 @@
 
       return_value = 0.0
       do k = kts, kte - 1
-        return_value = return_value + var1_1d(k) * var2_1d(k) * dnw(k)
+        return_value = return_value + var1_1d(k) * var2_1d(k) * rhodz(k)
       end do
-      return_value = - mut_val * return_value
 
     end function Integrate_2var
 
@@ -260,7 +256,7 @@
       real :: de_cloud, de_cloud2, de_ice, de_ice2, de_snow, de_snow2, f0, f1, ftotal, ozone, &
           p, radius, Ruucld, pi, Ruucld_water, Ruucld_ice, Ruucld_snow, Ruuclr, tau_qv2, tau_qi2, &
           tau_qs2, tau, Tddcld, Tddclr, Tducld, Tducld_ice, tducld_snow, tducld_water, Tduclr, Tuuclr, &
-          w, Z
+          w, Z, tau_tot
 
 
       PI = acos(-1.0)
@@ -292,6 +288,12 @@
       tau_qs2 = Max (tau_qs, TAU_MIN)
       tau_qs2 = Min (tau_qs2, TAU_MAX)
 
+      tau_tot = 0.0
+      if (tau_qv > TAU_MIN) tau_tot = tau_tot + tau_qv2
+      if (tau_qi > TAU_MIN) tau_tot = tau_tot + tau_qi2
+      if (tau_qs > TAU_MIN) tau_tot = tau_tot + tau_qs2
+      tau_tot = Min (tau_tot, TAU_MAX)
+
       Z = acos(solarangle) * 180.0 / PI
 
       call SUNEARTH( juday, Radius )
@@ -300,45 +302,42 @@
       call CLEARSKYALL(p, albdo, SSA, g, Z, Radius, beta,&
           alpha, ozone, w, Tddclr, Tduclr, Ruuclr, Tuuclr)
 
-        ! Avoid calling the WATER/ICE model for optically
-        ! thin clouds and low zenit angles
-      if (tau_qv > 1.0) then
-        Call Watermodel (tau_qv2, de_cloud2, solarangle, Tducld_water, Ruucld_water)
+        ! Liquid hydrometeors
+      if (tau_qv > TAU_MIN) then
+        Call Watermodel (tau_tot, de_cloud2, solarangle, Tducld_water, Ruucld_water)
       else
         Tducld_water = 1.0
         Ruucld_water = 0.0
         tau_qv2 = 0.0
       end if
 
-        ! Avoid calling the WATER/ICE model for optically
-        ! thin clouds and low zenit angles
-      if (tau_qi > 1.0) then
-        call Icemodel (tau_qi2, de_ice2, solarangle, Tducld_ice, Ruucld_ice)
+        ! Ice hydrometeors
+      if (tau_qi > TAU_MIN) then
+        call Icemodel (tau_tot, de_ice2, solarangle, Tducld_ice, Ruucld_ice)
       else
         Tducld_ice = 1.0
         Ruucld_ice = 0.0
         tau_qi2 = 0.0
       end if
 
-        ! Avoid calling the WATER/ICE model for optically
-        ! thin clouds and low zenit angles
-      if (tau_qs > 1.0) then
-        call Icemodel (tau_qs2, de_snow2, solarangle, Tducld_snow, Ruucld_snow)
+        ! Snow hydrometeors
+      if (tau_qs > TAU_MIN) then
+        call Icemodel (tau_tot, de_snow2, solarangle, Tducld_snow, Ruucld_snow)
       else
         Tducld_snow = 1.0
         Ruucld_snow = 0.0
         tau_qs2 = 0.0
       end if
 
-      Tducld =  Tducld_water * Tducld_ice * Tducld_snow
-      if (Tducld == 1.0) Tducld=0.0
+      if (tau_tot > 0.0) then
+        Tducld =  (tau_qv2 * Tducld_water + tau_qi2 * Tducld_ice + tau_qs2 * Tducld_snow) / tau_tot
+        Tducld = min(Tducld, 1.0)
+        Tducld = max(Tducld, 0.0)
 
-      Tducld = min(Tducld, 1.0)
-      Tducld = max(Tducld, 0.0)
-
-      Ruucld = 1.0 - (1.0 - Ruucld_water) * (1.0 - Ruucld_ice) * (1.0 - Ruucld_snow) 
-      Ruucld = min(Ruucld, 1.0) 
-      Ruucld = max(Ruucld, 0.0) 
+        Ruucld = (tau_qv2 * Ruucld_water + tau_qi2 * Ruucld_ice + tau_qs2 * Ruucld_snow)  / tau_tot
+        Ruucld = min(Ruucld, 1.0) 
+        Ruucld = max(Ruucld, 0.0) 
+      end if
 
       tau = tau_qv2 + tau_qi2 + tau_qs2 
       tau = Min (tau, TAU_MAX)

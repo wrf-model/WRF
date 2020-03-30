@@ -2272,7 +2272,7 @@ rconfig   real    naer                    namelist,physics      max_domains    1
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    -1      rh       "sf_sfclay_physics"             ""      ""
 # IRRIGATION
 rconfig   integer     sf_surf_irr_scheme  namelist,physics      max_domains    0       rh       "sf_surf_irr_scheme"   "ARI: 0=no irr; 1=drip; 2=sprinkler; 3=channel" ""
-rconfig   integer     sf_surf_irr_alloc   derived               1              0       rh       "sf_surf_irr_alloc"    "allocations/: 0=no irr; 1=drip; 2=sprinkler; 3=channel" ""
+rconfig   integer     sf_surf_irr_alloc   derived               1              0       rh       "sf_surf_irr_alloc"    "sf_surf_irr_scheme, for packaging: 0=no irr; 1=drip; 2=sprinkler; 3=channel" ""
 rconfig   real        irr_daily_amount    namelist,physics      max_domains    0       rh       "irr_daily_amount"     "sf_surf_irr_scheme WATER AMOUNT [mm]" ""
 rconfig   integer     irr_start_hour      namelist,physics      max_domains    0       rh       "irr_start_hour"       "sf_surf_irr_scheme, local start hour" ""
 rconfig   integer     irr_num_hours       namelist,physics      max_domains    0       rh       "irr_num_hours"        "sf_surf_irr_scheme, Number of hours to irrigate"  ""

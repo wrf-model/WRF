@@ -1411,12 +1411,18 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                                              this_view % xs_local:this_view % xe_local ) )
 
                            ! Read terrain file using Full Disk global indices
+                           write(*,*)  'DEBUG da_read_obs_ncgoesabi, ys_local, ye_local, yoff_fd-1: ', &
+                              this_view % ys_local, this_view % ye_local, this_view % yoff_fd-1
+                           write(*,*)  'DEBUG da_read_obs_ncgoesabi, xs_local, xe_local, xoff_fd-1: ', &
+                              this_view % xs_local, this_view % xe_local, this_view % xoff_fd-1
+
                            call get_abil1b_terr( terr_fname, &
                                              this_view % ys_local + this_view % yoff_fd - 1, &
                                              this_view % ye_local + this_view % yoff_fd - 1, &
                                              this_view % xs_local + this_view % xoff_fd - 1, &
                                              this_view % xe_local + this_view % xoff_fd - 1, &
                                              terrain_hgt )
+
                      end if
 
                      allocate(thinmask(this_view % ys_p:this_view % ye_p, &
@@ -2331,6 +2337,9 @@ subroutine get_abil1b_terr( filename, ys, ye, xs, xe, terr )
                      nf_open(trim(filename),nf_nowrite,ncid) )
    call handle_err ( 'Error getting terr ID', &
                      nf_inq_varid( ncid, 'terr', varid ) )
+
+   write(*,*)  'DEBUG get_abil1b_terr, xs, ys, xs+nxkeep, ys+nykeep: ',xs,ys,xs+nxkeep,ys+nykeep
+
    call handle_err ( 'Error reading terrain height', &
                      nf_get_vara_double ( ncid, varid, (/xs,ys/), (/nxkeep,nykeep/), terr_trans ) )
    terr = transpose(terr_trans)

@@ -442,7 +442,7 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-! Check that number of hours for irrigation is greater than zero
+! Check that number of hours of daily irrigation is greater than zero
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom

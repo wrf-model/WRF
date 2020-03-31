@@ -20,6 +20,7 @@
 
 module module_GW_baseflow
 
+!   use overland_data
 #ifdef MPP_LAND
    use module_mpp_land
    use MODULE_mpp_GWBUCKET, only: gw_sum_real, gw_write_io_real
@@ -27,7 +28,7 @@ module module_GW_baseflow
 #endif
    implicit none
 
-#include "rt_include.inc"
+!#include "rt_include.inc"
 !yw #include "namelist.inc"
 contains
 
@@ -139,10 +140,6 @@ contains
                    ii =  LUDRSL(k)%cell_i(m)
                    jj =  LUDRSL(k)%cell_j(m)
                    if(ii .gt. 0 .and. jj .gt. 0) then
-                      if(OVRTSWCRT.ne.1) then
-                           LQLateral(k) = LQLateral(k)+runoff1x(ii,jj)*LUDRSL(k)%cellWeight(m)/1000 &
-                               *cellArea(ii,jj)
-                      endif
                            LQLateral(k) = LQLateral(k)+runoff2x(ii,jj)*LUDRSL(k)%cellWeight(m)/1000 &
                                *cellArea(ii,jj)
                    endif
@@ -275,6 +272,7 @@ contains
    real, intent(in),dimension(numbasns)              :: C,ex,z_mx
    real, intent(out),dimension(numbasns)             :: qout_gwsubbas
    real, intent(out),dimension(numbasns)             :: qin_gwsubbas
+   real, dimension(numbasns)                         :: qin_gwsubbas_surf
    real*8                                            :: z_gwsubbas(numbasns)
    real                                              :: qout_max, qout_spill, z_gw_spill
    real, intent(inout),dimension(numbasns)           :: z_gwsubbas_tmp
@@ -284,9 +282,9 @@ contains
    integer, intent(in)                               :: OVRTSWCRT
    
 
-   real*8, dimension(numbasns)                      :: sum_perc8,ct_bas8
-   real, dimension(numbasns)                        :: sum_perc
-   real, dimension(numbasns)                        :: net_perc
+   real*8, dimension(numbasns)                      :: sum_perc8, ct_bas8, sum_perc8_surf
+   real, dimension(numbasns)                        :: sum_perc, sum_perc_surf
+   real, dimension(numbasns)                        :: net_perc, net_perc_surf
 
    real, dimension(numbasns)                        :: ct_bas
    real, dimension(numbasns)                        :: gwbas_pix_ct
@@ -298,9 +296,12 @@ contains
 !!!Initialize variables...
    ct_bas8 = 0
    sum_perc8 = 0.
+   sum_perc8_surf = 0.
    net_perc = 0.
+   net_perc_surf = 0.
    qout_gwsubbas = 0.
    qin_gwsubbas = 0.
+   qin_gwsubbas_surf = 0.
    z_gwsubbas = z_gwsubbas_tmp
 
 !Assign local value of runoff2 (drainage) for flux caluclation to buckets...
@@ -325,11 +326,11 @@ contains
 
        do bas=1,numbasns
          if(gwsubbasmsk(i,j).eq.basnsInd(bas) ) then
-           if(OVRTSWCRT.ne.0) then
-             sum_perc8(bas) = sum_perc8(bas)+runoff2x(i,j)  !Add only drainage to bucket...runoff2x in (mm)
-           else
-             sum_perc8(bas) = sum_perc8(bas)+runoff1x(i,j)+runoff2x(i,j)  !Add sfc water & drainage to bucket...runoff1x and runoff2x in (mm)
+           !ADCHANGE: Separate surface input from subsurface
+           if(OVRTSWCRT.eq.0) then
+             sum_perc8_surf(bas) = sum_perc8_surf(bas)+runoff1x(i,j)
            end if
+           sum_perc8(bas) = sum_perc8(bas)+runoff2x(i,j)  !Add only drainage to bucket...runoff2x in (mm)
            ct_bas8(bas) = ct_bas8(bas) + 1
          end if
        end do
@@ -338,9 +339,11 @@ contains
 
 #ifdef MPP_LAND
     call gw_sum_real(sum_perc8,numbasns,gnumbasns,basnsInd)
+    call gw_sum_real(sum_perc8_surf,numbasns,gnumbasns,basnsInd)
     call gw_sum_real(ct_bas8,numbasns,gnumbasns,basnsInd)
 #endif
    sum_perc = sum_perc8
+   sum_perc_surf = sum_perc8_surf
    ct_bas = ct_bas8
    
 
@@ -358,6 +361,10 @@ contains
      qin_gwsubbas(bas) = net_perc(bas)/1000.* &
                          ct_bas(bas)*basns_area(bas)/DT    !units (m^3/s)
 
+!ADCHANGE: Separate tracking for surface runoff term to push straight to pass-through
+     net_perc_surf(bas) = sum_perc_surf(bas) / ct_bas(bas)   !units (mm)
+     qin_gwsubbas_surf(bas) = net_perc_surf(bas)/1000.* &
+                         ct_bas(bas)*basns_area(bas)/DT    !units (m^3/s)
 
 !Adjust level of GW depth...(conceptual GW bucket units (mm))
 !DJG...old change to cms inflow...     z_gwsubbas(bas) = z_gwsubbas(bas) + net_perc(bas) / 1000.0   ! (m)
@@ -429,7 +436,8 @@ contains
                        ct_bas(bas)*basns_area(bas))*1000.   ! units (mm)	
 
 !DJG...Combine calculated bucket discharge and amount spilled from bucket...
-     qout_gwsubbas(bas) = qout_gwsubbas(bas) + qout_spill   ! units (cms)
+!ADCHANGE: Add in surface runoff as direct pass-through
+     qout_gwsubbas(bas) = qout_gwsubbas(bas) + qout_spill + qin_gwsubbas_surf(bas)  ! units (cms)
 
 
 !DJG...debug     write (6,*) "DJG...after",C(bas),ex(bas),z_gwsubbas(bas),z_mx(bas),z_gwsubbas(bas)/z_mx(bas), qout_gwsubbas(bas), qout_spill

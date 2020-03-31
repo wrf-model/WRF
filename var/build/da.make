@@ -22,6 +22,7 @@ WRFVAR_OBJS = \
    da_sound.o \
    da_mtgirs.o \
    da_tamdar.o \
+   da_varbc_tamdar.o \
    da_bogus.o \
    da_airep.o \
    da_pilot.o \

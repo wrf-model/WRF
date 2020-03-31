@@ -16,7 +16,7 @@ module module_fr_fire_util
 
 
 integer,save::          &
- fire_print_msg=1,      &  ! print FIRE progress 
+ fire_print_msg=2,      &  ! print FIRE progress
  fire_print_file=1,     &  ! write many files by write_array_m; compile with DEBUG_OUT, do not run in parallel
  fuel_left_method=1,    &  ! 1=simple, 2=exact in linear case
  fuel_left_irl=2,       &  ! refinement for fuel calculation, must be even
@@ -28,6 +28,7 @@ integer,save::          &
  fire_test_steps=0,     &  ! 0=no fire, 1=normal, >1 = do specified number of steps and terminate (testing only)
  fire_topo_from_atm=1,  &  ! 0 = expect ZSF set correctly on entry, 1 = populate by interploating from atmosphere
  fire_advection=0,      &  ! 0 = fire spread from normal wind/slope (CAWFE), 1 = full speed projected
+ fire_fmc_read=1,       &  ! fuel moisture: 0 from wrfinput, 1 from namelist.fire, 2 read from file in ideal
  fire_upwinding_reinit=4, &  ! spatial discretization for reinitialization PDE: 1=WENO3, 2=WENO5, 3=hybrid WENO3-ENO1, 4=hybrid WENO5-ENO1 
  fire_lsm_reinit_iter=1,  &  ! number of iterations for the reinitialization PDE 
  fire_lsm_band_ngp=4,     &  ! number of grid points around lfn=0 that the higher-order scheme WENO5/WENO3 is used (ENO1 elsewhere), for ire_upwinding=8,9 and fire_upwinding_reinit=3,4 and
@@ -53,9 +54,93 @@ integer, parameter:: REAL_SUM=10, REAL_MAX=20, RNRM_SUM=30, RNRM_MAX=40
 
 contains
 
+
+subroutine interpolate_z2fire(id,                 & ! for debug output, <= 0 no output
+    ids,ide, jds,jde,                    & ! atm grid dimensions
+    ims,ime, jms,jme,                    &
+    ips,ipe,jps,jpe,                              &
+    its,ite,jts,jte,                              &
+    ifds, ifde, jfds, jfde,                       & ! fire grid dimensions
+    ifms, ifme, jfms, jfme,                       &
+    ifts,ifte,jfts,jfte,                          &
+    ir,jr,                                        & ! atm/fire grid ratio
+    zs,                                       & ! atm grid arrays in
+    zsf,flag_z0)                                      ! fire grid arrays out
+    
+implicit none
+!*** purpose: interpolate height or any other 2d variable defined at mesh cell centers
+
+!*** arguments
+integer, intent(in)::id,                          &
+    ids,ide, jds,jde,                    & ! atm domain bounds
+    ims,ime,jms,jme,                    & ! atm memory bounds 
+    ips,ipe,jps,jpe,                              &
+    its,ite,jts,jte,                              & ! atm tile bounds
+    ifds, ifde, jfds, jfde,                       & ! fire domain bounds
+    ifms, ifme, jfms, jfme,                       & ! fire memory bounds
+    ifts,ifte,jfts,jfte,                          & ! fire tile bounds
+    ir,jr                                         ! atm/fire grid refinement ratio
+real, intent(in), dimension(ims:ime, jms:jme):: zs  ! terrain height at atm cell centers                                        & ! terrain height  
+real,intent(out), dimension(ifms:ifme,jfms:jfme)::&
+    zsf                                             ! terrain height fire grid nodes
+integer,intent(in)::flag_z0 
+    
+    
+!*** local
+real, dimension(its-2:ite+2,jts-2:jte+2):: za      ! terrain height
+integer:: i,j,jts1,jte1,its1,ite1,jfts1,jfte1,ifts1,ifte1,itso,jtso,iteo,jteo
+
+! terrain height
+
+    jts1=max(jts-1,jds) ! lower loop limit by one less when at end of domain
+    its1=max(its-1,ids) ! ASSUMES THE HALO IS THERE if patch != domain
+    jte1=min(jte+1,jde) 
+    ite1=min(ite+1,ide)
+    do j = jts1,jte1
+        do i = its1,ite1 
+            ! copy to local array
+            za(i,j)=zs(i,j)           
+        enddo
+    enddo
+
+    call continue_at_boundary(1,1,0., & ! do x direction or y direction
+    its-2,ite+2,jts-2,jte+2,           &                ! memory dims
+    ids,ide,jds,jde, &            ! domain dims - winds defined up to +1
+    ips,ipe,jps,jpe, &            ! patch dims - winds defined up to +1
+    its1,ite1,jts1,jte1, &                ! tile dims
+    itso,jtso,iteo,jteo, &
+    za)                               ! array
+
+    ! interpolate to tile plus strip along domain boundary if at boundary
+    jfts1=snode(jfts,jfds,-1) ! lower loop limit by one less when at end of domain
+    ifts1=snode(ifts,ifds,-1)
+    jfte1=snode(jfte,jfde,+1) 
+    ifte1=snode(ifte,ifde,+1)
+                     
+    call interpolate_2d(  &
+        its-2,ite+2,jts-2,jte+2, & ! memory dims atm grid tile
+        its1-1,ite1+1,jts1-1,jte1+1, & ! where atm grid values set
+        ifms,ifme,jfms,jfme,    & ! array dims fire grid
+        ifts1,ifte1,jfts1,jfte1,  & ! dimensions fire grid tile
+        ir,jr,                  & ! refinement ratio
+        real(ids),real(jds),ifds+(ir-1)*0.5,jfds+(jr-1)*0.5, & ! line up by lower left corner of domain
+        za,                     & ! in atm grid     
+        zsf)                      ! out fire grid
+
+if (flag_z0 .eq. 1 ) then 
+  do j=jfts1,jfte1
+    do i=ifts1,ifte1
+      zsf(i,j)=max(zsf(i,j),0.001)
+    enddo
+  enddo
+endif
+
+end subroutine interpolate_z2fire
+
 !
 !****************
 !
+
 subroutine crash(s)
 use module_wrf_error
 implicit none
@@ -114,22 +199,28 @@ end subroutine message
 !
 
 
-integer function open_text_file(filename,rw)
+integer function open_text_file(filename,rw,allow_fail)
 implicit none
 character(len=*),intent(in):: filename,rw
+logical, intent(in), optional:: allow_fail
 #ifdef _OPENMP
 !integer, external:: OMP_GET_THREAD_NUM
 #endif
 character(len=128):: msg
 character(len=1)::act
 integer::iounit,ierr
-logical::op
+logical::op,ok
 
 #ifdef _OPENMP
 !   if (OMP_GET_THREAD_NUM() .ne. 0)then
 !      call crash('open_input_text_file: called from parallel loop')
 !   endif
 #endif
+if(present(allow_fail))then
+    ok=allow_fail
+else
+    ok=.false.  ! default
+endif
 
     do iounit=19,99
        inquire(iounit,opened=op)
@@ -148,10 +239,16 @@ logical::op
     end select
     
     if(ierr.ne.0)then 
-	write(msg,*)'open_text_file: Cannot open file ',filename
-        call crash(msg)
+	write(msg,*)'Cannot open file ',filename
+        if(ok)then
+            call message(msg)
+            open_text_file=-1
+        else
+            call crash(msg)
+        endif
+    else
+        open_text_file=iounit
     endif
-    open_text_file=iounit
 
 end function open_text_file
 
@@ -997,6 +1094,27 @@ write(msg,'(a,4i4,3g11.3)')id,ips,ipe,jps,jpe,min_a,max_a,avg_a
 call message(msg)
 if(.not.avg_a.eq.avg_a)call crash('NaN detected')
 end subroutine print_stat_line
+
+
+subroutine print_3d_stats_by_slice(ips,ipe,kps,kpe,jps,jpe, &
+                         ims,ime,kms,kme,jms,jme, &
+                         a,name)
+implicit none
+integer, intent(in)::ips,ipe,jps,jpe,ims,ime,jms,jme,kms,kme,kps,kpe
+real, intent(in)::a(ims:ime,kms:kme,jms:jme)
+character(len=*),intent(in)::name
+integer::k
+character(len=128)::msg
+do k=kps,kpe
+! print 3d stats for each horizontal slice separately
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
+    write(msg,'(i2,1x,a)')k,name
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
+    call print_3d_stats(ips,ipe,k,k,jps,jpe, &
+                         ims,ime,kms,kme,jms,jme, &
+                         a,msg)
+enddo
+end subroutine print_3d_stats_by_slice 
 
 
 subroutine print_3d_stats(ips,ipe,kps,kpe,jps,jpe, &

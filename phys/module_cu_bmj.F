@@ -17,8 +17,8 @@
      &                 ,EPSDN=1.05,EPSDT=0.                             &
      &                 ,EPSNTP=.0001,EPSNTT=.0001,EPSPR=1.E-7           &
      &                 ,EPSUP=1.00                                      &
-     &                 ,FR=1.00,FSL=0.85,FSS=0.85                       &
-     &                 ,FUP=0.                                          &
+     &                 ,FR=1.00,FSL=0.85,FSS=0.85,GAM=0.5,PEPS=1./2.5   &
+     &                 ,FUP=0.,FCC=5.00,CRMN=0.14,CRMX=85.0             &
      &                 ,PBM=13000.,PFRZ=15000.,PNO=1000.                &
      &                 ,PONE=2500.,PQM=20000.                           &
      &                 ,PSH=20000.,PSHU=45000.                          &
@@ -77,14 +77,14 @@ CONTAINS
      &                  IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE                         &
-     &                 ,DT,ITIMESTEP,STEPCU                             &
+     &                 ,DT,ITIMESTEP,STEPCU,CCLDFRA,CONVCLD             &
      &                 ,RAINCV,PRATEC,CUTOP,CUBOT,KPBL                  &
-     &                 ,TH,T,QV                                         &
+     &                 ,TH,T,QV,QCCONV,QICONV,BMJ_RAD_FEEDBACK          &
      &                 ,PINT,PMID,PI,RHO,DZ8W                           &
      &                 ,CP,R,ELWV,ELIV,G,TFRZ,D608                      &
      &                 ,CLDEFI,LOWLYR,XLAND,CU_ACT_FLAG                 &
                       ! optional
-     &                 ,RTHCUTEN, RQVCUTEN                              &
+     &                 ,RTHCUTEN,RQVCUTEN                               &
      &                                                                  )
 !-----------------------------------------------------------------------
       IMPLICIT NONE
@@ -105,16 +105,21 @@ CONTAINS
      &                                                     ,PI,PINT     &
      &                                                     ,PMID,QV     &
      &                                                     ,RHO,T,TH
+! 
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: CCLDFRA  &
+                                                              ,QCCONV   &
+                                                              ,QICONV
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                           &
      &    ,OPTIONAL                                                     &
-     &    ,INTENT(INOUT) ::                        RQVCUTEN,RTHCUTEN 
+     &    ,INTENT(INOUT) ::                        RQVCUTEN,RTHCUTEN
 ! 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CLDEFI,RAINCV,   &
-           PRATEC
+           PRATEC,CONVCLD
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CUBOT,CUTOP
 !
+      LOGICAL,INTENT(IN) :: bmj_rad_feedback
       LOGICAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CU_ACT_FLAG
 
 !
@@ -126,8 +131,12 @@ CONTAINS
       INTEGER :: LBOT,LPBL,LTOP
 !
       REAL :: DTCNVC,LANDMASK,PCPCOL,PSFC,PTOP
+      REAL :: PAVG,PWCOL,DQCOL,DQCOLMIN
+      REAL :: CUMX,QCIS,RRP,PRRT,MCOL,MPVPR,FACTL
+      INTEGER :: BBOT,TTOP
 ! 
       REAL,DIMENSION(KTS:KTE) :: DPCOL,DQDT,DTDT,PCOL,QCOL,TCOL
+      REAL,DIMENSION(KTS:KTE) :: PVPR,JPR
 !
       INTEGER :: I,J,K,KFLIP,LMH
 
@@ -167,11 +176,20 @@ CONTAINS
           DO K=KTS,KTE
             DQDT(K)=0.
             DTDT(K)=0.
+            JPR(K)=0.
+            PVPR(K)=0.
+            QCCONV(I,K,J)=0.
+            QICONV(I,K,J)=0.
+            CCLDFRA(I,K,J)=0.
           ENDDO
 !
+          DQCOL=0.
+          PWCOL=0.
+          PCPCOL=0.
+          DQCOLMIN=0.
           RAINCV(I,J)=0.
           PRATEC(I,J)=0.
-          PCPCOL=0.
+          CONVCLD(I,J)=0.
           PSFC=PINT(I,LOWLYR(I,J),J)
           PTOP=PINT(I,KTE+1,J)      ! KTE+1=KME
 !
@@ -212,6 +230,7 @@ CONTAINS
           CALL BMJ(ITIMESTEP,I,J,DTCNVC,LMH,LANDMASK,CLDEFI(I,J)        &
      &            ,DPCOL,PCOL,QCOL,TCOL,PSFC,PTOP                       &
      &            ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                      &
+     &            ,PWCOL,DQCOL,DQCOLMIN                                 &
      &            ,CP,R,ELWV,ELIV,G,TFRZ,D608                           &   
      &            ,PRINT_DIAG                                           &   
      &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &     
@@ -242,6 +261,92 @@ CONTAINS
 !
           CUTOP(I,J)=REAL(KTE+1-LTOP)
           CUBOT(I,J)=REAL(KTE+1-LBOT)
+!
+       IF ( bmj_rad_feedback ) THEN
+!
+           IF (DQCOL.GT.DQCOLMIN) THEN
+!
+!***  CONVECTIVE CLOUD FRACTION: BASED ON SLINGO (1987) WITH A POISSON 
+!***  VERTICAL PROFILE. PLEASE NOTE THAT THE BMJ PRECIPITATION RATE
+!***  (PRATEC) HAS TO BE CONVERTED FROM MMS-1 TO MMDAY-1.
+!
+             TTOP=0
+             BBOT=0
+             PAVG=0.
+             CUMX=0.
+             MPVPR=0.
+             FACTL=0.
+!
+             PRRT=(PRATEC(I,J)*86400.0)/CRMN
+             RRP=0.8/(LOG(CRMX/CRMN))
+             IF (PRRT<CRMX/CRMN) THEN
+               CUMX=RRP*LOG(PRRT)
+             ELSE
+               CUMX=0.8
+             ENDIF
+!
+!***  COMPUTE THE CONVECTIVE CLOUD FRACTION (CCLDFRA) AT EACH MODEL LEVEL.
+!***  FOR N>=17 USE THE STERLING APPROXIMATION AS FOR N=17 IT GIVES A RELATIVE
+!***  ERROR OF ~9.4x10E-8.
+!
+             TTOP=NINT(CUTOP(I,J))
+             BBOT=NINT(CUBOT(I,J))
+             PAVG=1./(PEPS*3.)**2
+             DO K=KTS,KTE
+              IF (K.GE.BBOT.AND.K.LE.TTOP) THEN
+                JPR(K)=(1./PEPS)*((PMID(I,K,J)-PMID(I,TTOP,J))/(PMID(I,BBOT,J)-PMID(I,TTOP,J)))
+              ELSE
+                JPR(K)=0.0
+              ENDIF
+             ENDDO
+!
+             DO K=KTS,KTE
+               PVPR(K)=0.
+             ENDDO
+             IF (JPR(BBOT).LT.17) THEN
+              DO K=BBOT,TTOP
+                PVPR(K)=(PAVG)**(JPR(K))/GAMMA(JPR(K)+1.)
+              ENDDO 
+             ELSE
+              DO K=BBOT,TTOP
+                FACTL=JPR(K)*LOG(JPR(K))-JPR(K)+1./2.*LOG(2.*JPR(K)*ACOS(-1.))+ &
+                     LOG(1.+1./(12.*JPR(K))+1./(288.*JPR(K)**2))
+                PVPR(K)=EXP((JPR(K))*LOG(1.*PAVG)-FACTL)
+              ENDDO
+             ENDIF
+             MPVPR=MAXVAL(PVPR)
+             DO K=BBOT,TTOP
+               PVPR(K)=PVPR(K)/MPVPR
+             ENDDO
+             DO K=KTS,KTE
+               CCLDFRA(I,K,J)=CUMX*PVPR(K)
+             ENDDO
+!
+!***  COMPUTE THE CONVECTIVE CLOUD CONDENSATES (QCCONV,QICONV). PLEASE NOTE THAT
+!***  THE EQUATION FOR QCIS IS VALID FOR PRRTs IN THE RANGE 10**(-7) TO 10**3.
+!
+             QCIS=0.
+             MCOL=0.
+             DO K=CUBOT(I,J),CUTOP(I,J)
+               KFLIP=KTE+1-K
+               MCOL=RHO(I,K,J)*DZ8W(I,K,J)*QCOL(KFLIP)*CCLDFRA(I,K,J)+MCOL
+             ENDDO
+             CONVCLD(I,J)=PWCOL**GAM*(DQCOL-DQCOLMIN)**(1.-GAM)
+             QCIS=CONVCLD(I,J)/MCOL
+             DO K=KTS,KTE
+              KFLIP=KTE+1-K
+              IF (TCOL(KFLIP)>=TFRZ) THEN
+                QICONV(I,K,J)=0.
+                QCCONV(I,K,J)=(QCIS*QCOL(KFLIP)*CCLDFRA(I,K,J))/(1.-QCOL(KFLIP))
+              ELSE
+                QICONV(I,K,J)=(QCIS*QCOL(KFLIP)*CCLDFRA(I,K,J))/(1.-QCOL(KFLIP))
+                QCCONV(I,K,J)=0.
+              ENDIF
+             ENDDO
+!
+          ENDIF
+!
+       ENDIF
 !
 !-----------------------------------------------------------------------
 !***  Begin debugging convection
@@ -288,6 +393,7 @@ CONTAINS
      & (ITIMESTEP,I,J,DTCNVC,LMH,SM,CLDEFI                              &
      & ,DPRS,PRSMID,Q,T,PSFC,PT                                         &
      & ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                                 &
+     & ,PWCOL,DQCOL,DQCOLMIN                                            &
      & ,CP,R,ELWV,ELIV,G,TFRZ,D608                                      &
      & ,PRINT_DIAG                                                      &   
      & ,IDS,IDE,JDS,JDE,KDS,KDE                                         &
@@ -309,7 +415,7 @@ CONTAINS
 !
       REAL,DIMENSION(KTS:KTE),INTENT(IN) :: DPRS,PRSMID,Q,T
 !
-      REAL,INTENT(INOUT) :: CLDEFI,PCPCOL
+      REAL,INTENT(INOUT) :: CLDEFI,PCPCOL,PWCOL,DQCOL,DQCOLMIN
 !
       REAL,DIMENSION(KTS:KTE),INTENT(INOUT) :: DQDT,DTDT
 !
@@ -348,7 +454,7 @@ CONTAINS
      &            ,PART1,PART2,PART3,PBOT,PBOTFC,PBTK                   &
      &            ,PK0,PKB,PKL,PKT,PKXXXX,PKXXXY                        &
      &            ,PLMH,PELEVFC,PBTmx,plo,POTSUM,PP1,PPK,PRECK          &
-     &            ,PRESK,PSP,PSUM,PTHRS,PTOP,PTPK,PUP                   &
+     &            ,PRWD,PDQD,PRESK,PSP,PSUM,PTHRS,PTOP,PTPK,PUP         &
      &            ,QBT,QKL,QNEW,QOTSUM,QQ1,QQK,QRFKL                    &
      &            ,QRFTP,QSP,QSUM,QUP,RDP0T                             &
      &            ,RDPSUM,RDTCNVC,RHH,RHL,RHMAX,ROTSUM,RTBAR,RHAVG      &
@@ -406,7 +512,10 @@ CONTAINS
 !-----------------------------PREPARATIONS------------------------------
 !-----------------------------------------------------------------------
       LBOT=LMH
+      DQCOL=0.
+      PWCOL=0.
       PCPCOL=0.
+      DQCOLMIN=0.
       TREF(KTS)=T(KTS)
 !
       DO L=KTS,LMH
@@ -800,6 +909,7 @@ CONTAINS
         PBOT=PRSMID(LMH)
         PTOP=PBOT
         CLDEFI=AVGEFI*SM+STEFI*(1.-SM)
+!       CLDEFI=(EFIMN-0.2)*SM+(1.+0.2)*(1.-SM)
         GO TO 800
       ENDIF
 !
@@ -812,6 +922,7 @@ CONTAINS
         DEEP=.TRUE.
       ELSE
         SHALLOW=.TRUE.
+!       CLDEFI=(EFIMN-0.1)*SM+(1.+0.1)*(1.-SM)
         GO TO 600
       ENDIF
 !
@@ -981,9 +1092,10 @@ CONTAINS
 !***
 !***  HUMIDITY PROFILE
 !***
+          PSK(L)=PK(L)+DSP
+          APESK(L)=(1.E5/PSK(L))**CAPA
+
           IF(PK(L)>PQM)THEN
-            PSK(L)=PK(L)+DSP
-            APESK(L)=(1.E5/PSK(L))**CAPA
             THSK(L)=TREFK(L)*APEK(L)
             QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSK(L)-A3*APESK(L))            &
      &                                /(THSK(L)-A4*APESK(L)))
@@ -1001,14 +1113,18 @@ CONTAINS
 !
           SUMDE=0.
           SUMDP=0.
+          DHDT =0.
 !
           DO L=LTOP,LB
             SUMDE=((TK(L)-TREFK(L))*CP+(QK(L)-QREFK(L))*EL(L))*DPRS(L)  &
      &            +SUMDE
+            DHDT=(QREFK(L)*A23M4L/((TREFK(L)*APEK(L)/APESK(L))-A4)**2+CP)*DPRS(L) &
+     &            +DHDT
             SUMDP=SUMDP+DPRS(L)
           ENDDO
 !
           HCORR=SUMDE/(SUMDP-DPRS(LTOP))
+          DHDT=DHDT/(SUMDP-DPRS(LTOP))
           LCOR=LTOP+1
 !***
 !***  FIND LQM
@@ -1030,8 +1146,6 @@ CONTAINS
 !***  BELOW LQM CORRECT BOTH TEMPERATURE AND MOISTURE
 !***
           DO L=LCOR,LB
-            TSKL=TREFK(L)*APEK(L)/APESK(L)
-            DHDT=QREFK(L)*A23M4L/(TSKL-A4)**2+CP
             TREFK(L)=HCORR/DHDT+TREFK(L)
             THSKL=TREFK(L)*APEK(L)
             QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSKL-A3*APESK(L))              &
@@ -1046,6 +1160,8 @@ CONTAINS
 !-----------------------------------------------------------------------
         AVRGT=0.
         PRECK=0.
+        PDQD=0.
+        PRWD=0.
         DSQ=0.
         DST=0.
 !
@@ -1059,6 +1175,8 @@ CONTAINS
           DSQ=DIFQL*EL(L)*DPOT+DSQ
           AVRGT=AVRGTL*DPRS(L)+AVRGT
           PRECK=DIFTL*DPRS(L)+PRECK
+          PDQD=(QK(L)-QREFK(L))*DPRS(L)+PDQD
+          PRWD=QK(L)*DPRS(L)+PRWD
           DIFT(L)=DIFTL
           DIFQ(L)=DIFQL
         ENDDO
@@ -1096,6 +1214,9 @@ CONTAINS
 !
         CUP=PRECK*CPRLG
         PCPCOL=CUP
+        DQCOL=PDQD/G
+        PWCOL=PRWD/G
+        DQCOLMIN=(CRMN*TREL)/(FEFI*86400.)
 !
         DO L=LTOP,LB
           DTDT(L)=DIFT(L)*FEFI*RDTCNVC
@@ -1121,6 +1242,7 @@ CONTAINS
 !
 !        CLDEFI=AVGEFI
          CLDEFI=EFIMN*SM+STEFI*(1.-SM)
+!        CLDEFI=(EFIMN-0.1)*SM+(1.+0.1)*(1.-SM)
 !***
 !***  SEARCH FOR SHALLOW CLOUD TOP
 !***
@@ -1690,7 +1812,7 @@ CONTAINS
 !-----------------------------------------------------------------------
       SUBROUTINE BMJINIT(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN            &
      &                  ,CLDEFI,LOWLYR,CP,RD,RESTART                    &
-     &                  ,ALLOWED_TO_READ                                &
+                        ,ALLOWED_TO_READ                                &
      &                  ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)

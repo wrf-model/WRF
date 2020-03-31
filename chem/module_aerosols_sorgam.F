@@ -7522,7 +7522,7 @@ END SUBROUTINE VDVG_2
 !  IF USING OLD SIMULATION, DO NOT REINITIALIZE!
 !
 !
-        if(chem_in_opt == 1 ) return
+        if(chem_in_opt == 1 .OR. config_flags%restart) return
         do l=p_so4aj,num_chem
          chem(ims:ime,kms:kme,jms:jme,l)=epsilc
         enddo

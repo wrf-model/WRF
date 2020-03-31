@@ -14,7 +14,7 @@ subroutine da_qc_rad (it, ob, iv)
 
    integer :: i, nchan,p,j
    logical   :: amsua, amsub, hirs, msu,airs, hsb, ssmis, mhs, iasi, seviri
-   logical   :: mwts, mwhs, atms, amsr2, imager, ahi
+   logical   :: mwts, mwhs, atms, amsr2, imager, ahi, mwhs2
 
    integer, allocatable :: index(:)
    integer :: num_tovs_avg
@@ -60,6 +60,7 @@ subroutine da_qc_rad (it, ob, iv)
       iasi  = trim(rttov_inst_name(rtminit_sensor(i))) == 'iasi'	  
       mwts  = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwts'
       mwhs  = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwhs'
+      mwhs2 = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwhs2'
       atms  = trim(rttov_inst_name(rtminit_sensor(i))) == 'atms'
       seviri = trim(rttov_inst_name(rtminit_sensor(i))) == 'seviri'
       amsr2 = trim(rttov_inst_name(rtminit_sensor(i))) == 'amsr2'
@@ -89,6 +90,8 @@ subroutine da_qc_rad (it, ob, iv)
          call da_qc_iasi(it,i,nchan,ob,iv)		 
       else if (mwhs) then
          call da_qc_mwhs(it,i,nchan,ob,iv)
+      else if (mwhs2) then
+         call da_qc_mwhs2(it,i,nchan,ob,iv)      
       else if (mwts) then
          call da_qc_mwts(it,i,nchan,ob,iv)
       else if (atms) then

@@ -1,6 +1,13 @@
 MODULE module_ra_cam_support
   use module_cam_support, only: endrun
   implicit none
+
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+  include 'mpif.h'
+#else
+  integer, parameter :: MPI_UNDEFINED = -1
+#endif
+
       integer, parameter :: r8 = 8
       real(r8), parameter:: inf = 1.e20 ! CAM sets this differently in infnan.F90
       integer, parameter:: bigint = O'17777777777'           ! largest possible 32-bit integer 
@@ -3459,7 +3466,6 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
 !
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-  use mpi
   use module_dm, only: local_communicator
 #endif
       IMPLICIT NONE

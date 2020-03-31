@@ -22,11 +22,6 @@ else
 HYDRO_D =  $(WRF_HYDRO)
 endif
 
-ifeq ($(WRFIO_NCD_LARGE_FILE_SUPPORT),1)
-WRFIO_NCD_LARGE_FILE_SUPPORT = -DWRFIO_NCD_LARGE_FILE_SUPPORT
-else
-WRFIO_NCD_LARGE_FILE_SUPPORT = 
-endif
 
 ifneq ($(origin ESMFMKFILE), environment)
 $(error Environment variable ESMFMKFILE was not set.)
@@ -85,8 +80,8 @@ F90FLAGS        += -g -traceback
 #                        byte units)
 MODFLAG         = -I./ -I../../MPP -I../MPP -I../mod
 LDFLAGS         = 
-CPP             = cpp
-CPPFLAGS        = -P -traditional -DMPP_LAND -I../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
+CPPINVOKE       = -fpp
+CPPFLAGS        = -DMPP_LAND -I../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
 # -C:                  Do not discard comments.
 # -P:                  Inhibit generation of linemarkers in the output 
 #                       from the preprocessor.

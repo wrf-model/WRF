@@ -1423,7 +1423,6 @@ CONTAINS
 #if ( HWRF == 1 )
    SUBROUTINE wrf_dm_minloc_real ( val, lat, lon, z, idex, jdex )
 #ifndef STUBMPI
-      use mpi
       IMPLICIT NONE
       REAL val, lat, lon, z
       INTEGER idex, jdex, ierr, mrank, comm
@@ -1450,7 +1449,6 @@ CONTAINS
    END SUBROUTINE wrf_dm_minloc_real
    SUBROUTINE wrf_dm_maxloc_real ( val, lat, lon, z, idex, jdex )
 #ifndef STUBMPI
-      use mpi
       IMPLICIT NONE
       REAL val, lat, lon, z
       INTEGER idex, jdex, ierr, mrank, comm
@@ -1524,7 +1522,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
 # ifndef STUBMPI
-      use mpi
       IMPLICIT NONE
       REAL val
       INTEGER :: idex, jdex, i, comm
@@ -1550,7 +1547,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 
    SUBROUTINE wrf_dm_minval_real ( val, idex, jdex )
 # ifndef STUBMPI
-      use mpi
       IMPLICIT NONE
       REAL val
       INTEGER :: idex, jdex, i, comm
@@ -1577,7 +1573,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 #ifndef PROMOTE_FLOAT
    SUBROUTINE wrf_dm_maxval_doubleprecision ( val, idex, jdex )
 # ifndef STUBMPI
-      use mpi
       IMPLICIT NONE
       DOUBLE PRECISION val
       INTEGER :: idex, jdex, i, comm
@@ -1603,7 +1598,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 
    SUBROUTINE wrf_dm_minval_doubleprecision ( val, idex, jdex )
 # ifndef STUBMPI
-      use mpi
       IMPLICIT NONE
       DOUBLE PRECISION val
       INTEGER :: idex, jdex, i, comm
@@ -1630,7 +1624,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 
    SUBROUTINE wrf_dm_maxval_integer ( val, idex, jdex )
 # ifndef STUBMPI
-      use mpi
       IMPLICIT NONE
       INTEGER val
       INTEGER :: idex, jdex, i, comm
@@ -1656,7 +1649,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 
    SUBROUTINE wrf_dm_minval_integer ( val, idex, jdex )
 # ifndef STUBMPI
-      use mpi
       IMPLICIT NONE
       INTEGER val
       INTEGER :: idex, jdex, i, comm
@@ -2659,7 +2651,7 @@ SUBROUTINE wrf_termio_dup( comm )
   CALL mpi_comm_size(comm, ntasks, ierr )
   CALL mpi_comm_rank(comm, mytask, ierr )
   write(0,*)'starting wrf task ',mytask,' of ',ntasks
-  CALL rsl_error_dup1( mytask )
+  CALL rsl_error_dup1( mytask, ntasks )
 #else
   mytask = 0
   ntasks = 1

@@ -1,0 +1,886 @@
+# The parameters in this table may vary greatly from city to city.
+# The default values are probably not appropriate for any given city.
+# Users should adapt these values based on the city they are working
+# with.
+
+# Urban Parameters depending on Urban type
+# USGS
+
+Number of urban categories: 3
+
+# Main TEB options
+##############################################################################
+
+#
+# TEB_CBEM: Building Energy model 'DEF' or 'BEM'
+#         (sf_urban_physics=4)
+#
+
+TEB_CBEM: BEM BEM BEM
+
+#
+# TEB_HROAD_DIR: road direction option ('UNIF' = uniform roads, 'ORIE' = specified road orientation)
+#         (sf_urban_physics=4)
+#
+
+TEB_HROAD_DIR: UNIF UNIF UNIF
+
+#
+# TEB_WALL_OPT: Wall option ('UNIF' = uniform walls, 'TWO' = 2 opposite  walls)
+#         (sf_urban_physics=4)
+#
+
+TEB_WALL_OPT: UNIF UNIF UNIF
+
+#
+# TEB_LGARDEN: Flag to use a vegetation scheme in gardens
+#         (sf_urban_physics=4)
+#
+
+TEB_LGARDEN: .TRUE. .TRUE. .TRUE.
+
+#
+# TEB_GREENROOF: Flag to use a green roofs scheme
+#         (sf_urban_physics=4)
+#
+
+TEB_GREENROOF: .FALSE. .FALSE. .FALSE.
+
+#
+# TEB_FRAC_GR: fraction of greenroofs on roofs
+#         (sf_urban_physics=4)
+#
+
+TEB_FRAC_GR: 0.0 0.0 0.0
+
+#
+# TEB_SOLAR_PANEL: Flag to use a solar panels on roofs
+#         (sf_urban_physics=4)
+#
+
+TEB_SOLAR_PANEL: .FALSE. .FALSE. .FALSE.
+
+#
+# TEB_FRAC_PANEL: fraction of solar panels on roofs
+#         (sf_urban_physics=4)
+#
+
+TEB_FRAC_PANEL: 0.0 0.0 0.0
+
+#
+# TEB_PAR_RD_IRRIG: Flag for road watering
+#         (sf_urban_physics=4)
+#
+
+TEB_PAR_RD_IRRIG: .FALSE. .FALSE. .FALSE.
+
+#
+# TEB_HNATVENT: flag to activate natural ventilation 'NONE', 'MANU', 'AUTO'
+#         (sf_urban_physics=4)
+#
+
+TEB_HNATVENT: NONE NONE NONE
+
+#
+# TEB_COOL_COIL: option for cooling device type ('IDEAL', 'DXCOIL', 'MinimalDX')
+#         (sf_urban_physics=4)
+#
+
+TEB_COOL_COIL: MinimalDX MinimalDX MinimalDX
+
+#
+# TEB_HEAT_COIL: option for heating device type ('IDEAL', 'FINCAP')
+#         (sf_urban_physics=4)
+#
+
+TEB_HEAT_COIL: IDEAL IDEAL IDEAL
+
+#
+# TEB_OPT_ZOH : TEB option for z0h roof & road
+#       [ 1: Mascart et al 1995, 2: Brustaert 1982, 3: Kanda  2007 ]
+#         (sf_urban_physics=4)
+
+ TEB_OPT_ZOH: 3, 3, 3
+
+
+# Urban geometry
+##############################################################################
+
+#
+# TEB_Z0_TOWN :  roughness length for momentum over town
+#         (sf_urban_physics=4)
+#
+
+ TEB_Z0_TOWN : 2.0, 2.0, 2.0
+
+#
+# TEB_FRAC_BLD : fraction of building (= roof fraction ).
+#          (sf_urban_physics=4)
+#
+
+ TEB_FRAC_BLD: 0.55, 0.55, 0.55
+
+#
+# TEB_USE_NOAH: whether to use Noah or TEB for vegetation
+#         (sf_urban_physics=4)
+#
+
+TEB_USE_NOAH: .FALSE.
+
+#
+# TEB_USE_ZGARDEN_FROM_TBL: whether to use TEB_ZGARDEN or the urban fraction from WRF
+#                           (requires TEB_USE_NOAH=.FALSE.)
+#         (sf_urban_physics=4)
+#
+
+TEB_USE_ZGARDEN_FROM_TBL: .TRUE.
+
+#
+# TEB_ZGARDEN: fraction of GARDEN areas
+#              (requires TEB_USE_NOAH=.FALSE. and TEB_USE_ZGARDEN_FROM_TBL=.TRUE.)
+#         (sf_urban_physics=4)
+#
+
+TEB_ZGARDEN: 0.10 0.10 0.10
+
+#
+# TEB_BLD_HEIGHT:  Roof level (building height)  [ m ]
+#      (sf_urban_physics=4)
+
+TEB_BLD_HEIGHT: 15.0,  15.0,  15.0
+
+#
+# TEB_WALL_O_HOR : wall surfuce. / hor. surface
+#          (sf_urban_physics=4)
+#
+
+ TEB_WALL_O_HOR: 1.4, 1.4, 1.4
+
+#
+# TEB_ZROAD_DIR: road direction (° from North, clockwise)
+#         (sf_urban_physics=4)
+#
+
+TEB_ZROAD_DIR: 0. 0. 0.
+
+# Roof
+##############################################################################
+
+#
+# TEB_ALB_ROOF:   Surface albedo of roof [ fraction ]
+#      (sf_urban_physics=4)
+#
+
+TEB_ALB_ROOF: 0.15, 0.15, 0.15
+
+#
+# TEB_EMIS_ROOF:  Surface emissivity of roof [ - ]
+#      (sf_urban_physics=4)
+#
+
+TEB_EMIS_ROOF: 0.90, 0.90, 0.90
+
+
+TEB ROOF PARAMETERS:
+#      (sf_urban_physics=4)
+
+#  urban         heat          thermal         thickcness
+# category     capacity      conductivity
+# [index]    [J m-3 K-1]       [W/m K]            [m]
+    1        1580000.           1.15            0.001
+    1        1580000.           1.15            0.098
+    1        1580000.           1.15            0.132
+    1        1127845.62         0.095454545     0.098
+    1          52030.           0.03            0.001
+    2        1580000.           1.15            0.001
+    2        1580000.           1.15            0.098
+    2        1580000.           1.15            0.132
+    2        1127845.62         0.095454545     0.098
+    2          52030.           0.03            0.001
+    3        1580000.           1.15            0.001
+    3        1580000.           1.15            0.098
+    3        1580000.           1.15            0.132
+    3        1127845.62         0.095454545     0.098
+    3          52030.           0.03            0.001
+
+END TEB ROOF PARAMETERS
+
+# Road
+##############################################################################
+
+#
+# TEB_ALB_ROAD:  Surface albedo of ground (road) [ fraction ]
+#      (sf_urban_physics=4)
+#
+
+TEB_ALB_ROAD: 0.08, 0.08, 0.08
+
+#
+# TEB_EMIS_ROAD:  Surface emissivity of ground (road) [ - ]
+#      (sf_urban_physics=4)
+#
+
+TEB_EMIS_ROAD: 0.95, 0.95, 0.95
+
+TEB ROAD PARAMETERS:
+#      (sf_urban_physics=4)
+
+#  urban         heat          thermal         thickness
+# category     capacity      conductivity
+# [index]    [J m-3 K-1]       [W/m K]            [m]
+
+    1        1740000.           0.82            0.001
+    1        1740000.           0.82            0.045296296
+    1        1989600.           1.976584        0.092592593
+    1        1640000.           0.5915493       0.27777778
+    1        1400000.           0.4000          0.83333333
+    2        1740000.           0.82            0.001
+    2        1740000.           0.82            0.045296296
+    2        1989600.           1.976584        0.092592593
+    2        1640000.           0.5915493       0.27777778
+    2        1400000.           0.4000          0.83333333
+    3        1740000.           0.82            0.001
+    3        1740000.           0.82            0.045296296
+    3        1989600.           1.976584        0.092592593
+    3        1640000.           0.5915493       0.27777778
+    3        1400000.           0.4000          0.83333333
+
+END TEB ROAD PARAMETERS
+
+# Wall
+##############################################################################
+
+#
+# TEB_ALB_WALL:  Surface albedo of building wall [ fraction ]
+#      (sf_urban_physics=1,2,3,4)
+#
+
+TEB_ALB_WALL: 0.25, 0.25, 0.25
+
+#
+# TEB_EMIS_WALL:  Surface emissivity of building wall [-]
+#      (sf_urban_physics=4)
+#
+
+TEB_EMIS_WALL: 0.92, 0.92, 0.92
+
+TEB WALL PARAMETERS:
+#      (sf_urban_physics=4)
+
+#  urban         heat          thermal         thickness
+# category     capacity      conductivity
+# [index]    [J m-3 K-1]       [W/m K]            [m]
+
+    1        1580000.           1.15            0.001
+    1        1580000.           1.15            0.098
+    1        1580000.           1.15            0.132
+    1        1127845.62         0.095454545     0.098
+    1          52030.           0.03            0.001
+    2        1580000.           1.15            0.001
+    2        1580000.           1.15            0.098
+    2        1580000.           1.15            0.132
+    2        1127845.62         0.095454545     0.098
+    2          52030.           0.03            0.001
+    3        1580000.           1.15            0.001
+    3        1580000.           1.15            0.098
+    3        1580000.           1.15            0.132
+    3        1127845.62         0.095454545     0.098
+    3          52030.           0.03            0.001
+
+END TEB WALL PARAMETERS
+
+
+# Floor and internal mass
+##############################################################################
+
+TEB FLOOR PARAMETERS:
+#      (sf_urban_physics=4)
+
+#  urban         heat          thermal         thickness
+# category     capacity      conductivity
+# [index]    [J m-3 K-1]       [W/m K]            [m]
+
+    1        2016000.           1.95            0.001
+    1        2016000.           1.95            0.0064074074
+    1        2016000.           1.95            0.014814815
+    1        2016000.           1.95            0.044444444
+    1        2016000.           1.95            0.13333333
+    2        2016000.           1.95            0.001
+    2        2016000.           1.95            0.0064074074
+    2        2016000.           1.95            0.014814815
+    2        2016000.           1.95            0.044444444
+    2        2016000.           1.95            0.13333333
+    3        2016000.           1.95            0.001
+    3        2016000.           1.95            0.0064074074
+    3        2016000.           1.95            0.014814815
+    3        2016000.           1.95            0.044444444
+    3        2016000.           1.95            0.13333333
+
+END TEB FLOOR PARAMETERS
+
+
+# Anthropogenic heat fluxes
+##############################################################################
+
+#
+# TEB_H_TRAFFIC : anthropogenic sensible heat flux dues to traffic  (w/m2)
+#          (sf_urban_physics=4)
+#
+
+ TEB_H_TRAFFIC: 8.00, 8.00, 8.00
+
+#
+# TEB_LE_TRAFFIC : anthropogenic latent heat flux dues to traffic (w/m2)
+#          (sf_urban_physics=4)
+#
+
+ TEB_LE_TRAFFIC: 2.00, 2.00, 2.00
+
+#
+# TEB_H_INDUSTRY : anthropogenic sensible heat flux dues to industry (w/m2)
+#          (sf_urban_physics=4)
+#
+
+ TEB_H_INDUSTRY: 0.00, 0.00, 0.00
+
+#
+# TEB_LE_INDUSTRY : latent sensible heat flux dues to industry (w/m2)
+#         (sf_urban_physics=4)
+#
+
+ TEB_LE_INDUSTRY: 0.00, 0.00, 0.00
+
+
+# Road watering
+##############################################################################
+
+#
+# TEB_RD_START_MONTH: start month for watering of roads(included)
+#         (sf_urban_physics=4)
+#
+
+TEB_RD_START_MONTH: 0. 0. 0.
+
+#
+# TEB_RD_END_MONTH: end month for watering of roads(included)
+#         (sf_urban_physics=4)
+#
+
+TEB_RD_END_MONTH: 0. 0. 0.
+
+#
+# TEB_RD_START_HOUR: start hour for watering of roads(included)
+#         (sf_urban_physics=4)
+#
+
+TEB_RD_START_HOUR: 0. 0. 0.
+
+#
+# TEB_RD_END_HOUR: end hour for watering of roads(excluded)
+#         (sf_urban_physics=4)
+#
+
+TEB_RD_END_HOUR: 0. 0. 0.
+
+#
+# TEB_RD_24H_IRRIG: 24h quantity of water used
+#         (sf_urban_physics=4)
+#
+
+TEB_RD_24H_IRRIG: 0. 0. 0.
+
+
+# Solar panels
+##############################################################################
+
+#
+# TEB_EMIS_PANEL: Emissivity of solar panel
+#         (sf_urban_physics=4)
+#
+
+TEB_EMIS_PANEL: 0.9 0.9 0.9
+
+#
+# TEB_ALB_PANEL: albedo of solar panel
+#         (sf_urban_physics=4)
+#
+
+TEB_ALB_PANEL: 0.1 0.1 0.1
+
+#
+# TEB_EFF_PANEL: Efficiency of solar panel
+#         (sf_urban_physics=4)
+#
+
+TEB_EFF_PANEL: 0.14 0.14 0.14
+
+
+# Buildings' use information
+##############################################################################
+
+#
+# TEB_RESIDENTIAL: Fraction of residential use in buildings
+#         (sf_urban_physics=4)
+#
+
+TEB_RESIDENTIAL: 1.0 1.0 1.0
+
+#
+# TEB_DT_RES: target temperature change when unoccupied (K) (residential buildings)
+#         (sf_urban_physics=4)
+#
+
+TEB_DT_RES: 3. 3. 3.
+
+#
+# TEB_DT_OFF: target temperature change when unoccupied (K) (office buildings)
+#         (sf_urban_physics=4)
+#
+
+TEB_DT_OFF: 3. 3. 3.
+
+
+# Parameters for Building Energy Module (BEM)
+##############################################################################
+
+# Building configuration
+##############################################################################
+
+#
+# TEB_FLOOR_HEIGHT: Floor height (m)
+#         (sf_urban_physics=4)
+#
+
+TEB_FLOOR_HEIGHT: 3.0 3.0 3.0
+
+#
+# TEB_INF: Infiltration flow rate [AC/H]
+#         (sf_urban_physics=4)
+#
+
+TEB_INF: 0.5 0.5 0.5
+
+#
+# TEB_QIN: Internal heat gains [W m-2(floor)]
+#         (sf_urban_physics=4)
+#
+
+TEB_QIN: 5.8 5.8 5.8
+
+#
+# TEB_QIN_FRAD: Radiant fraction of internal heat gains
+#         (sf_urban_physics=4)
+#
+
+TEB_QIN_FRAD: 0.2 0.2 0.2
+
+#
+# TEB_QIN_FLAT: Latent franction of internal heat gains
+#         (sf_urban_physics=4)
+#
+
+TEB_QIN_FLAT: 0.2 0.2 0.2
+
+
+# Windows
+##############################################################################
+
+#
+# TEB_GR: Glazing ratio
+#         (sf_urban_physics=4)
+#
+
+TEB_GR: 0.1 0.1 0.1
+
+#
+# TEB_SHGC: window solar transmittance
+#         (sf_urban_physics=4)
+#
+
+TEB_SHGC: 0.763 0.763 0.763
+
+#
+# TEB_U_WIN: window U-factor [K m W-2]
+#         (sf_urban_physics=4)
+#
+
+TEB_U_WIN: 2.716 2.716 2.716
+
+
+# Shading devices
+##############################################################################
+
+#
+# TEB_LSHADE: Flag to use shading devices
+#         (sf_urban_physics=4)
+#
+
+TEB_LSHADE: .FALSE. .FALSE. .FALSE.
+
+#
+# TEB_ZSHADE: flag to activate shading devices (-> REAL for i/o 0. or 1)
+#         (sf_urban_physics=4)
+#
+
+TEB_ZSHADE: 0. 0. 0.
+
+#
+# TEB_SHGC_SH: window + shading solar heat gain coef.
+#         (sf_urban_physics=4)
+#
+
+TEB_SHGC_SH: 0.025 0.025 0.025
+
+
+# Natural ventilation
+##############################################################################
+
+#
+# TEB_ZNATVENT: flag to describe surventilation system for i/o (0 for NONE, 1 for MANU and 2 for AUTO)
+#         (sf_urban_physics=4)
+#
+
+TEB_ZNATVENT: 0. 0. 0.
+
+
+# HVAC system
+##############################################################################
+
+#
+# TEB_V_VENT: Ventilation flow rate [AC/H]
+#         (sf_urban_physics=4)
+#
+
+TEB_V_VENT: 0.0 0.0 0.0
+
+#
+# TEB_F_WATER_COND: fraction of evaporation for the condensers
+#         (sf_urban_physics=4)
+#
+
+TEB_F_WATER_COND: 0. 0. 0.
+
+#
+# TEB_F_WASTE_CAN: fraction of waste heat released into the canyon
+#         (sf_urban_physics=4)
+#
+
+TEB_F_WASTE_CAN: 1.0 1.0 1.0
+
+
+# Internal target temperatures
+##############################################################################
+
+#
+# TEB_TCOOL_TARGET: Cooling setpoint of HVAC system [K]
+#         (sf_urban_physics=4)
+#
+
+TEB_TCOOL_TARGET: 400.16 400.16 400.16
+
+#
+# TEB_THEAT_TARGET: Heating setpoint of HVAC system [K]
+#         (sf_urban_physics=4)
+#
+
+TEB_THEAT_TARGET: 200.16 200.16 200.16
+
+#
+# TEB_HR_TARGET: Relative humidity setpoint
+#         (sf_urban_physics=4)
+#
+
+TEB_HR_TARGET: 0.5 0.5 0.5
+
+
+# Heating system
+##############################################################################
+
+#
+# TEB_EFF_HEAT: Efficiency of the heating system
+#         (sf_urban_physics=4)
+#
+
+TEB_EFF_HEAT: 0.9 0.9 0.9
+
+#
+# TEB_CAP_SYS_HEAT: Capacity of the heating system [W m-2(bld)]
+#         (sf_urban_physics=4)
+#
+
+TEB_CAP_SYS_HEAT: 90.0 90.0 90.0
+
+
+# Cooling system
+##############################################################################
+
+#
+# TEB_CAP_SYS_RAT: Rated capacity of the cooling system [W m-2(bld)]
+#         (sf_urban_physics=4)
+#
+
+TEB_CAP_SYS_RAT: 100.0 100.0 100.0
+
+#
+# TEB_T_ADP: Apparatus dewpoint temperature of the cooling coil [K]
+#         (sf_urban_physics=4)
+#
+
+TEB_T_ADP: 285.66 285.66 285.66
+
+#
+# TEB_M_SYS_RAT: Rated HVAC mass flow rate [kg s-1 m-2(bld)]
+#         (sf_urban_physics=4)
+#
+
+TEB_M_SYS_RAT: 0.0067 0.0067 0.0067
+
+#
+# TEB_COP_RAT: Rated COP of the cooling system
+#         (sf_urban_physics=4)
+#
+
+TEB_COP_RAT: 2.5 2.5 2.5
+
+
+# Convection coefficients option
+##############################################################################
+
+#
+# TEB_CH_BEM: TEB option for building outside conv. coef
+#         (sf_urban_physics=4)
+#
+
+TEB_CH_BEM: NO-DOE-2 NO-DOE-2 NO-DOE-2
+
+#
+# TEB_ROUGH_ROOF: roof roughness coef.
+#         (sf_urban_physics=4)
+#
+
+TEB_ROUGH_ROOF: 1.52 1.52 1.52
+
+#
+# TEB_ROUGH_WALL: wall roughness coef.
+#         (sf_urban_physics=4)
+#
+
+TEB_ROUGH_WALL: 1.52 1.52 1.52
+
+
+# Initialization for first time-step
+##############################################################################
+# These values correspond to the "capitoul" test case
+# These values are NOT a function of urban type, but a function
+# of the number of layers.
+
+#
+# TEB_T_ROAD: Initial internal mass layers temperatures [K]
+#        This is currently NOT a function of urban type, but a function
+#        of the number of layers.
+#         (sf_urban_physics=4)
+#
+
+TEB_T_ROAD: 274.07256 274.16793 274.45198 275.21494 277.50383
+
+#
+# TEB_T_ROOF: Initial internal mass layers temperatures [K]
+#        This is currently NOT a function of urban type, but a function
+#        of the number of layers.
+#         (sf_urban_physics=4)
+#
+
+TEB_T_ROOF: 274.09930 276.95065 283.57500 289.55152 292.12402
+
+#
+# TEB_T_WALL_A: Initial internal mass layers temperatures [K]
+##        This is currently NOT a function of urban type, but a function
+#        of the number of layers.
+#         (sf_urban_physics=4)
+#
+
+TEB_T_WALL_A: 274.09930 276.95065 283.57500 289.55152 292.12402
+
+#
+# TEB_T_WALL_B: Initial internal mass layers temperatures [K]
+##        This is currently NOT a function of urban type, but a function
+#        of the number of layers.
+#         (sf_urban_physics=4)
+#
+
+TEB_T_WALL_B: 274.09930 276.95065 283.57500 289.55152 292.12402
+
+#
+# TEB_T_FLOOR: Initial floor layers temperatures [K]
+#        This is currently NOT a function of urban type, but a function
+#        of the number of layers.
+#         (sf_urban_physics=4)
+#
+
+TEB_T_FLOOR: 292.12 291.89778 291.26111 289.48333 283.84017
+
+#
+# TEB_T_MASS: Initial internal mass layers temperatures [K]
+#        This is currently NOT a function of urban type, but a function
+#        of the number of layers.
+#         (sf_urban_physics=4)
+#
+
+TEB_T_MASS: 292.15 292.15 292.15 292.15 291.84017
+
+#
+# TEB_TI_BLD: Initial indoor air temperature
+#         (sf_urban_physics=4)
+#
+
+TEB_TI_BLD: 292.15 292.15 292.15
+
+#
+# TEB_T_CANYON: Initial indoor air temperature
+#         (sf_urban_physics=4)
+#
+
+TEB_T_CANYON: 274.07050 274.07050 274.07050
+
+
+#
+# TEB_T_WIN1: Initial external window temperature
+#         (sf_urban_physics=4)
+#
+
+TEB_T_WIN1: 275. 275. 275.
+
+#
+# TEB_T_WIN2: Initial internal window temperature
+#         (sf_urban_physics=4)
+#
+
+TEB_T_WIN2: 292.15 292.15 292.15
+
+#
+# TEB_Q_CANYON: Initial indoor air temperature
+#         (sf_urban_physics=4)
+#
+
+TEB_Q_CANYON: 0.0020888011 0.0020888011 0.0020888011
+
+#
+# TEB_QI_BLD: Initial indoor air specific humidity [kg kg-1]
+#         (sf_urban_physics=4)
+#
+
+TEB_QI_BLD: 0.0068794074 0.0068794074 0.0068794074
+
+
+#
+# TEB_SNOW_SCH_ROOF: Option for roof snow [ 1: none,  2: D95, 3: 1-L]
+#         (sf_urban_physics=4)
+#
+
+ TEB_SNOW_SCH_ROOF: 3, 3, 3
+
+#
+# TEB_SNOW_SCH_ROAD: Option for road snow [ 1: none,  2: D95, 3: 1-L]
+#         (sf_urban_physics=4)
+#
+
+ TEB_SNOW_SCH_ROAD: 3, 3, 3
+
+#
+# TEB_WSNOW_ROOF: Initial snow layers reservoir
+#         (sf_urban_physics=4)
+#
+
+TEB_WSNOW_ROOF: 0. 0. 0.
+
+#
+# TEB_TSNOW_ROOF: Initial snow layers temperature
+#         (sf_urban_physics=4)
+#
+
+TEB_TSNOW_ROOF: 0. 0. 0.
+
+#
+# TEB_RSNOW_ROOF: Initial snow layers density
+#         (sf_urban_physics=4)
+#
+
+TEB_RSNOW_ROOF: 0. 0. 0.
+
+#
+# TEB_ASNOW_ROOF: Initial snow albedo
+#         (sf_urban_physics=4)
+#
+
+TEB_ASNOW_ROOF: 0.9 0.9 0.9
+
+#
+# TEB_ESNOW_ROOF: Initial snow emissivity
+#         (sf_urban_physics=4)
+#
+
+TEB_ESNOW_ROOF: 0.91 0.91 0.91
+
+#
+# TEB_TSSNOW_ROOF: Initial snow surface temperature
+#         (sf_urban_physics=4)
+#
+
+TEB_TSSNOW_ROOF: 0. 0. 0.
+
+#
+# TEB_WSNOW_ROAD: Initial snow layers reservoir
+#         (sf_urban_physics=4)
+#
+
+TEB_WSNOW_ROAD: 0. 0. 0.
+
+#
+# TEB_TSNOW_ROAD: Initial snow layers temperature
+#         (sf_urban_physics=4)
+#
+
+TEB_TSNOW_ROAD: 0. 0. 0.
+
+#
+# TEB_RSNOW_ROAD: Initial snow layers density
+#         (sf_urban_physics=4)
+#
+
+TEB_RSNOW_ROAD: 0. 0. 0.
+
+#
+# TEB_ASNOW_ROAD: Initial snow albedo
+#         (sf_urban_physics=4)
+#
+
+TEB_ASNOW_ROAD: 0.9 0.9 0.9
+
+#
+# TEB_ESNOW_ROAD: Initial snow emissivity
+#         (sf_urban_physics=4)
+#
+
+TEB_ESNOW_ROAD: 0.91 0.91 0.91
+
+#
+# TEB_TSSNOW_ROAD: Initial snow surface temperature
+#         (sf_urban_physics=4)
+#
+
+TEB_TSSNOW_ROAD: 0. 0. 0.
+
+
+#
+# TEB_WS_ROOF: Initial roof water reservoir(kg/m2)
+#         (sf_urban_physics=4)
+#
+
+TEB_WS_ROOF: 0. 0. 0.
+
+#
+# TEB_WS_ROAD: Initial road water reservoir(kg/m2)
+#         (sf_urban_physics=4)
+#
+
+TEB_WS_ROAD: 0. 0. 0.

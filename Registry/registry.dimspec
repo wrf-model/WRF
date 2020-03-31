@@ -53,6 +53,12 @@ dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
 dimspec    l       2     namelist=num_soil_layers          z     soil_layers
 dimspec    snsl    2     namelist=num_snso_layers          z     snso_layers
 
+dimspec    teb_flly  2   namelist=teb_num_floor_layers     z     teb_floor_layers
+dimspec    teb_rdly  2   namelist=teb_num_road_layers      z     teb_road_layers
+dimspec    teb_roly  2   namelist=teb_num_roof_layers      z     teb_roof_layers
+dimspec    teb_waly  2   namelist=teb_num_wall_layers      z     teb_wall_layers
+dimspec    teb_snly  2   namelist=teb_num_snow_layers      z     teb_snow_layers
+
 dimspec    umap0   2     namelist=num_urban_ndm            z     num_urban_ndm
 dimspec    umap1   2     namelist=urban_map_zrd            z     urban_map_zrd
 dimspec    umap2   2     namelist=urban_map_zwd            z     urban_map_zwd

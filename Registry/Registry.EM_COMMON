@@ -901,6 +901,56 @@ state    real   CHC_SFCDIF      ij          misc       1         -     r      "C
 state    real   CMGR_SFCDIF     ij          misc       1         -     r      "CMGR_SFCDIF" "" ""
 state    real   CHGR_SFCDIF     ij          misc       1         -     r      "CHGR_SFCDIF" "" ""
 
+# Town Energy Balance (TEB)
+state    real   TEB_TI_BLD       ij              misc        1     -      r   "TEB_TI_BLD"         "inside building temp computed with its equation evolution"   "K"
+state    real   TEB_TI_BLD_EQ    ij              misc        1     -      r   "TEB_TI_BLD_EQ"      "inside building temperature"                   "K"
+state    real   TEB_TI_BLDWFR    ij              misc        1     -      r   "TEB_TI_BLDWFR"      "inside building temperature without heating"   "K"
+state    real   TEB_T_CANYON     ij              misc        1     -      r   "TEB_T_CANYON"       "outdoor temperature without heating"           "K"
+state    real   TEB_Q_CANYON     ij              misc        1     -      r   "TEB_Q_CANYON"       "outdoor air specific humidity"                 "kg kg-1"
+state    real   TEB_WS_ROOF      ij              misc        1     -      rh  "TEB_WS_ROOF"        "roof water content"                            "(kg/m2)"
+state    real   TEB_WS_ROAD      ij              misc        1     -      rh  "TEB_WS_ROAD"        "road water content"                            "(kg/m2)"
+state    real   TEB_WSNOW_ROOF   i{teb_snly}j    misc        1     Z      r   "TEB_WSNOW_ROOF"     "roof snow layers reservoir"                    "kg m{-2}"
+state    real   TEB_TSNOW_ROOF   i{teb_snly}j    misc        1     Z      r   "TEB_TSNOW_ROOF"     "roof snow layers temperature"                  "K"
+state    real   TEB_RSNOW_ROOF   i{teb_snly}j    misc        1     Z      r   "TEB_RSNOW_ROOF"     "roof snow layers density"                      "kg m{-3}"
+state    real   TEB_ASNOW_ROOF   ij              misc        1     -      r   "TEB_ASNOW_ROOF"     "roof snow albedo"                              "dimensionless"
+state    real   TEB_ESNOW_ROOF   ij              misc        1     -      r   "TEB_ESNOW_ROOF"     "roof snow emissivity"                          "dimensionless"
+state    real   TEB_TSSNOW_ROOF  ij              misc        1     -      r   "TEB_TSSNOW_ROOF"    "roof snow surface temperature"                 "K"
+state    real   TEB_WSNOW_ROAD   i{teb_snly}j    misc        1     Z      r   "TEB_WSNOW_ROAD"     "road snow layers reservoir"                    "kg m{-2}"
+state    real   TEB_TSNOW_ROAD   i{teb_snly}j    misc        1     Z      r   "TEB_TSNOW_ROAD"     "road snow layers temperature"                  "K"
+state    real   TEB_RSNOW_ROAD   i{teb_snly}j    misc        1     Z      r   "TEB_RSNOW_ROAD"     "road snow layers density"                      "kg m{-3}"
+state    real   TEB_ASNOW_ROAD   ij              misc        1     -      r   "TEB_ASNOW_ROAD"     "road snow albedo"                              "dimensionless"
+state    real   TEB_ESNOW_ROAD   ij              misc        1     -      r   "TEB_ESNOW_ROAD"     "road snow emissivity"                          "dimensionless"
+state    real   TEB_TSSNOW_ROAD  ij              misc        1     -      r   "TEB_TSSNOW_ROAD"    "road snow surface temperature"                 "K"
+state    real   TEB_T_WIN1       ij              misc        1     -      r   "TEB_T_WIN1"         "outdoor window temperature"                    "K"
+state    real   TEB_T_WIN2       ij              misc        1     -      r   "TEB_T_WIN2"         "indoor window temperature"                     "K"
+state    real   TEB_AUX_MAX      ij              misc        1     -      r   "TEB_AUX_MAX"        "auxiliar variable for autosize calcs"          "W m-2"
+state    real   TEB_QI_BLD       ij              misc        1     -      r   "TEB_QI_BLD"         "indoor air specific humidity"                  "kg kg-1"
+state    real   TEB_THER_PRODC_DAY ij            misc        1     -      r   "TEB_THER_PRODC_DAY" "present day integrated thermal production of energy"     "J/m2"
+state    real   TEB_T_FLOOR      i{teb_flly}j    misc        1     Z      r   "TEB_T_FLOOR"        "floor layers temperatures"                     "K"
+state    real   TEB_T_MASS       i{teb_flly}j    misc        1     Z      r   "TEB_T_MASS"         "internal mass layers temperatures"             "K"
+state    real   TEB_T_ROAD       i{teb_rdly}j    misc        1     Z      r   "TEB_T_ROAD"         "road layers temperatures"                      "K"
+state    real   TEB_T_ROOF       i{teb_roly}j    misc        1     Z      r   "TEB_T_ROOF"         "roof layers temperatures"                      "K"
+state    real   TEB_T_WALL_A     i{teb_waly}j    misc        1     Z      r   "TEB_T_WALL_A"       "wall layers temperatures (wall A)"             "K"
+state    real   TEB_T_WALL_B     i{teb_waly}j    misc        1     Z      r   "TEB_T_WALL_B"       "wall layers temperatures (wall B)"             "K"
+state    real   TEB_HVAC_COOL    ij              misc        1     -      h   "TEB_HVAC_COOL"      "energy consumption of the cooling system"      "W m-2"
+state    real   TEB_HVAC_HEAT    ij              misc        1     -      h   "TEB_HVAC_HEAT"      "energy consumption of the heating system"      "W m-2"
+state    real   TEB_THER_PROD_PANEL ij           misc        1     -      h   "TEB_THER_PROD_PANEL" "thermal energy production of solar panel on roofs"      "W m-2"
+state    real   TEB_PHOT_PROD_PANEL ij           misc        1     -      h   "TEB_PHOT_PROD_PANEL" "photovoltaic energy production of solar panel on roofs" "W m-2"
+state    real   TEB_TSK_RURAL    ij              misc        1     -      r   "TEB_TSK_RURAL"       "TSK for rural fraction (TEB only)"                       "K"
+
+# BEGIN: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
+state    real   TEB_INPUT_TA           ij     misc        1     -      h   "TEB_INPUT_TA"      " "       " "
+state    real   TEB_INPUT_PS           ij     misc        1     -      h   "TEB_INPUT_PS"      " "       " "
+state    real   TEB_INPUT_QA           ij     misc        1     -      h   "TEB_INPUT_QA"      " "       " "
+state    real   TEB_INPUT_WIND         ij     misc        1     -      h   "TEB_INPUT_WIND"    " "       " "
+state    real   TEB_INPUT_DIR          ij     misc        1     -      h   "TEB_INPUT_DIR"     " "       " "
+state    real   TEB_INPUT_DIR_SW       ij     misc        1     -      h   "TEB_INPUT_DIR_SW"  " "       " "
+state    real   TEB_INPUT_SCA_SW       ij     misc        1     -      h   "TEB_INPUT_SCA_SW"  " "       " "
+state    real   TEB_INPUT_LW           ij     misc        1     -      h   "TEB_INPUT_LW"      " "       " "
+state    real   TEB_INPUT_RAIN         ij     misc        1     -      h   "TEB_INPUT_RAIN"    " "       " "
+state    real   TEB_INPUT_SNOW         ij     misc        1     -      h   "TEB_INPUT_SNOW"    " "       " "
+state    real   TEB_INPUT_DIR_CO2      ij     misc        1     -      h   "TEB_INPUT_DIR_CO2" " "       " "
+# END: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
 
 # solar location variables from radiation driver
 state    real   COSZEN           ij     misc        1         -      rh      "COSZEN"  "COS of SOLAR ZENITH ANGLE"     "dimensionless"
@@ -2320,6 +2370,14 @@ rconfig   integer maxpatch                namelist,physics      1            10 
 rconfig   integer num_snow_layers         namelist,physics	1             3       irh    "num_snow_layers"               ""      ""
 rconfig   integer num_snso_layers         namelist,physics	1             7       irh    "num_snso_layers"               ""      ""
 
+# TEB
+rconfig   integer teb_num_floor_layers    namelist,physics	1             5       irh    "teb_num_floor_layers"               ""      ""
+rconfig   integer teb_num_road_layers     namelist,physics	1             5       irh    "teb_num_road_layers"               ""      ""
+rconfig   integer teb_num_roof_layers     namelist,physics	1             5       irh    "teb_num_roof_layers"               ""      ""
+rconfig   integer teb_num_wall_layers     namelist,physics	1             5       irh    "teb_num_wall_layers"               ""      ""
+rconfig   integer teb_num_snow_layers     namelist,physics	1             1       irh    "teb_num_snow_layers"               ""      ""
+rconfig   integer teb_test_integration    namelist,physics	1             0       irh    "teb_test_integration"               ""      ""
+
 rconfig   integer num_urban_ndm           derived               1             1       irh    "num_urban_ndm"   "maximum number of street dimensions (ndm in BEP or BEM header)"                     ""
 rconfig   integer num_urban_ng            derived               1             1       irh    "num_urban_ng"    "number of grid levels in the ground (ng_u in BEP or BEM header)"                    ""
 rconfig   integer num_urban_nwr           derived               1             1       irh    "num_urban_nwr"   "number of grid levels in the walls or roof (nwr_u in BEP or BEM header)"            ""
@@ -2900,6 +2958,10 @@ package   sfclayscheme       sf_sfclay_physics==91       -             -
 package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,mh_urb2d,stdh_urb2d,lf_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d,tgr_urb2d,cmcr_urb2d,drelr_urb2d,drelb_urb2d,drelg_urb2d,flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,tgrl_urb3d,smr_urb3d,cmgr_sfcdif,chgr_sfcdif,trl_urb3d,tgl_urb3d,tbl_urb3d
 package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d,trl_urb3d,tgl_urb3d,tbl_urb3d,tsk_rural
 package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,sfwin1_urb3d,sfwin2_urb3d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d,trl_urb3d,tgl_urb3d,tbl_urb3d,tsk_rural
+package   tebscheme      sf_urban_physics==4         -             state:lp_urb2d,hgt_urb2d,lb_urb2d,trl_urb3d,tgl_urb3d,tbl_urb3d,TEB_TI_BLD,TEB_T_CANYON,TEB_Q_CANYON,TEB_TI_BLD_EQ,TEB_TI_BLDWFR,TEB_WS_ROOF,TEB_WS_ROAD,TEB_WSNOW_ROOF,TEB_TSNOW_ROOF,TEB_RSNOW_ROOF,TEB_ASNOW_ROOF,TEB_TSSNOW_ROOF,TEB_ESNOW_ROOF,TEB_WSNOW_ROAD,TEB_TSNOW_ROAD,TEB_RSNOW_ROAD,TEB_ASNOW_ROAD,TEB_TSSNOW_ROAD,TEB_ESNOW_ROAD,TEB_T_WIN1,TEB_T_WIN2,TEB_AUX_MAX,TEB_QI_BLD,TEB_THER_PRODC_DAY,TEB_T_FLOOR,TEB_T_MASS,TEB_T_ROAD,TEB_T_ROOF,TEB_T_WALL_A,TEB_T_WALL_B,TEB_HVAC_COOL,TEB_HVAC_HEAT,TEB_TSK_RURAL
+
+package   teb_notest     teb_test_integration==0     -             -
+package   teb_test       teb_test_integration==1     -             state:TEB_INPUT_TA,TEB_INPUT_PS,TEB_INPUT_QA,TEB_INPUT_WIND,TEB_INPUT_DIR,TEB_INPUT_DIR_SW,TEB_INPUT_SCA_SW,TEB_INPUT_LW,TEB_INPUT_RAIN,TEB_INPUT_SNOW,TEB_INPUT_DIR_CO2
 
 package   nolsmscheme    sf_surface_physics==0       -             -
 package   slabscheme     sf_surface_physics==1       -             -

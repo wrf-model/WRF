@@ -266,7 +266,49 @@ CONTAINS
      &          ,b_u_bep,b_v_bep,b_t_bep,b_q_bep                      &
      &          ,sf_bep,vl_bep                                        &
      &          ,a_e_bep,b_e_bep,dlg_bep                              &
-     &          ,dl_u_bep                                             &                          
+     &          ,dl_u_bep                                             &
+         ! Optional urban Bep end
+     ! BEGIN: Optional urban for TEB
+     &         ,teb_test_integration                                  & 
+     &         ,teb_num_snow_layers                                   & 
+     &         ,teb_num_road_layers                                   &
+     &         ,teb_num_roof_layers                                   &
+     &         ,teb_num_wall_layers                                   &
+     &         ,teb_num_floor_layers                                  & 
+     &         ,TEB_TI_BLD                                            & 
+     &         ,TEB_T_CANYON, TEB_Q_CANYON                            &
+     &         ,TEB_WS_ROOF, TEB_WS_ROAD                              & 
+     &         ,TEB_WSNOW_ROOF, TEB_TSNOW_ROOF                        &
+     &         ,TEB_RSNOW_ROOF, TEB_ASNOW_ROOF                        & 
+     &         ,TEB_TSSNOW_ROOF, TEB_ESNOW_ROOF                       &
+     &         ,TEB_WSNOW_ROAD, TEB_TSNOW_ROAD                        &
+     &         ,TEB_RSNOW_ROAD, TEB_ASNOW_ROAD                        & 
+     &         ,TEB_TSSNOW_ROAD, TEB_ESNOW_ROAD                       & 
+     &         ,TEB_T_WIN1, TEB_T_WIN2                                &
+     &         ,TEB_AUX_MAX, TEB_THER_PRODC_DAY, TEB_QI_BLD           & 
+     &         ,TEB_T_FLOOR, TEB_T_MASS                               & 
+     &         ,TEB_T_ROAD, TEB_T_ROOF                                &
+     &         ,TEB_T_WALL_A, TEB_T_WALL_B                            & 
+     &         ,TEB_HVAC_COOL, TEB_HVAC_HEAT                          & 
+     &         ,TEB_THER_PROD_PANEL, TEB_PHOT_PROD_PANEL              & 
+     &         ,TEB_TSK_RURAL                                         & 
+     !
+     ! BEGIN: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
+     &         ,TEB_INPUT_TA                                      &
+     &         ,TEB_INPUT_PS                                      &
+     &         ,TEB_INPUT_QA                                      &
+     &         ,TEB_INPUT_WIND                                    &
+     &         ,TEB_INPUT_DIR                                     &
+     &         ,TEB_INPUT_DIR_SW                                  &
+     &         ,TEB_INPUT_SCA_SW                                  &
+     &         ,TEB_INPUT_LW                                      &
+     &         ,TEB_INPUT_RAIN                                    &
+     &         ,TEB_INPUT_SNOW                                    &
+     &         ,TEB_INPUT_DIR_CO2                                 &
+     ! END: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
+     !
+     ! END: Optional urban for TEB
+     !
      &          ,tsk_save                                             & !for fractional seaice
      &          ,cldfra                                               & !ssib
      &          ,sf_surface_mosaic,mosaic_cat,mosaic_cat_index                                    & !danli mosaic
@@ -1255,6 +1297,63 @@ CONTAINS
 !
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: FRC_URB2D  !urban
      INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: UTYPE_URB2D  !urban
+
+    ! BEGIN: Optional urban for TEB
+    INTEGER                , INTENT(IN)                                             :: teb_test_integration
+    INTEGER                , INTENT(IN)                                             :: teb_num_snow_layers
+    INTEGER                , INTENT(IN)                                             :: teb_num_road_layers
+    INTEGER                , INTENT(IN)                                             :: teb_num_roof_layers
+    INTEGER                , INTENT(IN)                                             :: teb_num_wall_layers
+    INTEGER                , INTENT(IN)                                             :: teb_num_floor_layers
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TI_BLD
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_T_CANYON
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_Q_CANYON
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_WS_ROOF
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_WS_ROAD
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_WSNOW_ROOF 
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_TSNOW_ROOF 
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_RSNOW_ROOF 
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ASNOW_ROOF 
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ESNOW_ROOF 
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TSSNOW_ROOF
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_WSNOW_ROAD 
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_TSNOW_ROAD 
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_RSNOW_ROAD 
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ASNOW_ROAD 
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ESNOW_ROAD 
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TSSNOW_ROAD
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_T_WIN1         
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_T_WIN2         
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_AUX_MAX        
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_THER_PRODC_DAY 
+    REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_QI_BLD         
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_FLOOR
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_MASS
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_ROAD
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_ROOF
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_WALL_A
+    REAL, OPTIONAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_WALL_B
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(OUT)                                    :: TEB_HVAC_COOL 
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(OUT)                                    :: TEB_HVAC_HEAT 
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(OUT)                                    :: TEB_THER_PROD_PANEL
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(OUT)                                    :: TEB_PHOT_PROD_PANEL
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT)                                  :: TEB_TSK_RURAL
+    !
+    ! BEGIN: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_TA
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_PS
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_QA
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_WIND
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_DIR
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_DIR_SW
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_SCA_SW
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_LW
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_RAIN
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_SNOW
+    REAL, OPTIONAL, DIMENSION (ims:ime,jms:jme), INTENT(OUT)   :: TEB_INPUT_DIR_CO2
+    ! END: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
+    !
+    ! END: Optional urban for TEB
 
      REAL,  DIMENSION( ims:ime, jms:jme )  :: PSIM_URB2D  !urban local var
      REAL,  DIMENSION( ims:ime, jms:jme )  :: PSIH_URB2D  !urban local var
@@ -2851,8 +2950,50 @@ CONTAINS
                 a_u_bep,a_v_bep,a_t_bep,a_q_bep,                & !O multi-layer urban
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
-                dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
-                ,sfcheadrt,INFXSRT, soldrain &
+                dl_u_bep,sf_bep,vl_bep,                         & !O multi-layer urban
+                ! BEGIN: Optional urban for TEB
+                XTIME,                                          & !I
+                teb_test_integration,                           & !I
+                teb_num_snow_layers,                            & !I
+                teb_num_road_layers,                            & !I
+                teb_num_roof_layers,                            & !I
+                teb_num_wall_layers,                            & !I
+                teb_num_floor_layers,                           & !I
+                diffuse_frac,                                   & !I
+                TEB_TI_BLD,                                     & !H
+                TEB_T_CANYON,TEB_Q_CANYON,                      & !H
+                TEB_WS_ROOF, TEB_WS_ROAD,                       & !H
+                TEB_WSNOW_ROOF, TEB_TSNOW_ROOF,                 & !H
+                TEB_RSNOW_ROOF, TEB_ASNOW_ROOF,                 & !H
+                TEB_TSSNOW_ROOF, TEB_ESNOW_ROOF,                & !H
+                TEB_WSNOW_ROAD, TEB_TSNOW_ROAD,                 & !H
+                TEB_RSNOW_ROAD, TEB_ASNOW_ROAD,                 & !H
+                TEB_TSSNOW_ROAD, TEB_ESNOW_ROAD,                & !H
+                TEB_T_WIN1, TEB_T_WIN2,                         & !H
+                TEB_AUX_MAX, TEB_THER_PRODC_DAY, TEB_QI_BLD,    & !H
+                TEB_T_FLOOR, TEB_T_MASS,                        & !H
+                TEB_T_ROAD, TEB_T_ROOF,                         & !H
+                TEB_T_WALL_A,  TEB_T_WALL_B,                    & !H
+                TEB_TSK_RURAL,                                  & !H
+                TEB_HVAC_COOL, TEB_HVAC_HEAT,                   & !O
+                TEB_THER_PROD_PANEL, TEB_PHOT_PROD_PANEL,       & !O
+                !
+                ! BEGIN: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
+                TEB_INPUT_TA,                               &
+                TEB_INPUT_PS,                               &
+                TEB_INPUT_QA,                               &
+                TEB_INPUT_WIND,                             &
+                TEB_INPUT_DIR,                              &
+                TEB_INPUT_DIR_SW,                           &
+                TEB_INPUT_SCA_SW,                           &
+                TEB_INPUT_LW,                               &
+                TEB_INPUT_RAIN,                             &
+                TEB_INPUT_SNOW,                             &
+                TEB_INPUT_DIR_CO2,                          &
+                ! END: INPUT quantities used for evaluating WRF-TEB with TEB OFFLINE
+                !
+                ! END: Optional urban for TEB
+                sfcheadrt,INFXSRT, soldrain                    &
 !
 !  FASDAS
 !
@@ -2982,6 +3123,25 @@ CONTAINS
          ENDDO                                                !urban
        ENDDO                                                  !urban
      ENDIF
+
+ ! TEB
+      IF(SF_URBAN_PHYSICS.eq.4) THEN
+        DO j=j_start(ij),j_end(ij)                             !urban
+          DO i=i_start(ij),i_end(ij)                           !urban
+            IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &  
+              IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN 
+              ! TH2_URB2D(I,J): temperature urb (not potential temp)   
+              T2(I,J)   = TH2_URB2D(i,j)
+              TH2(I,J)  = T2(I,J)*((1.E5/PSFC(I,J))**RCP)
+              Q2(I,J)   = Q2_URB2D(i,j)
+              U10(I,J)  = U10_URB2D(I,J)                       !urban
+              V10(I,J)  = V10_URB2D(I,J)                       !urban
+            END IF
+          ENDDO
+        ENDDO
+      END IF
+ !end TEB
+!
 
 !------------------------------------------------------------------
 

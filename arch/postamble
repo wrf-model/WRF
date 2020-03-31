@@ -19,6 +19,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       CONFIGURE_4DVAR_FLAG \
                       CONFIGURE_TERRAIN_AND_LANDUSE \
                       CONFIGURE_WAVELET_FLAG \
+                      CONFIGURE_TEB_FLAG \
                       CONFIGURE_NESTOPT \
                       -DUSE_ALLOCATABLES \
                       -Dwrfmodel \
@@ -53,7 +54,9 @@ INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                       -I$(WRF_SRC_ROOT_DIR)/wrftladj \
                       -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc \
                       -I$(NETCDFPATH)/include \
-                      CONFIGURE_RTTOV_INC
+                      CONFIGURE_RTTOV_INC \
+                      CONFIGURE_TEB_INC
+
 REGISTRY        =    Registry
 CC_TOOLS_CFLAGS = CONFIGURE_NMM_CORE
 

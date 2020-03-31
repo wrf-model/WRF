@@ -15,6 +15,10 @@ use module_wrf_error
 !     Last Update:      2006/08/24 by Fei Chen and Mukul Tewari (NCAR/RAL)  
 !===============================================================================
 
+   REAL, PARAMETER                 :: UNINIT_REAL = -9999.
+   INTEGER, PARAMETER              :: UNINIT_INT  = -9999
+   CHARACTER, PARAMETER            :: UNINIT_CHAR = '?'
+
    CHARACTER(LEN=4)                :: LU_DATA_TYPE
 
    INTEGER                         :: ICATE
@@ -99,9 +103,218 @@ use module_wrf_error
 !   INTEGER                         :: num_wall_layers
 !   INTEGER                         :: num_road_layers
 
+
+!for TEB
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ALB_ROOF_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ALB_ROAD_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ALB_WALL_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_EMIS_ROOF_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_EMIS_ROAD_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_EMIS_WALL_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_BLD_HEIGHT_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_FRAC_BLD_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_WALL_O_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_H_TRAFFIC_TBL, TEB_LE_TRAFFIC_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_H_INDUSTRY_TBL, TEB_LE_INDUSTRY_TBL
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_Z0_TOWN_TBL
+   CHARACTER(LEN=6),              DIMENSION(3)  :: TEB_Z0H_TBL   ! not in urbparm.tbl
+   CHARACTER(LEN=4),              DIMENSION(3)  :: TEB_SNOW_ROOF_TBL ! not in urbparm.tbl
+   CHARACTER(LEN=4),              DIMENSION(3)  :: TEB_SNOW_ROAD_TBL ! not in urbparm.tbl
+   INTEGER,          ALLOCATABLE, DIMENSION(:)  :: TEB_OPT_ZOH_TBL       
+   INTEGER,          ALLOCATABLE, DIMENSION(:)  :: TEB_SNOW_SCH_ROOF_TBL 
+   INTEGER,          ALLOCATABLE, DIMENSION(:)  :: TEB_SNOW_SCH_ROAD_TBL 
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_FLOOR_TBL ! function of teb_num_floor_layers
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_MASS_TBL  ! function of teb_num_floor_layers
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_TI_BLD_TBL        
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_CANYON_TBL        
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_Q_CANYON_TBL        
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_WIN1_TBL        
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_WIN2_TBL        
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_QI_BLD_TBL        
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_WS_ROOF_TBL      ! roof water reservoir(kg/m2)
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_WS_ROAD_TBL      ! road water reservoir(kg/m2)
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_WSNOW_ROOF_TBL   ! snow layers reservoir
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_TSNOW_ROOF_TBL   ! snow layers temperature
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_RSNOW_ROOF_TBL   ! snow layers density
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ASNOW_ROOF_TBL   ! snow albedo
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ESNOW_ROOF_TBL   ! snow emissivity
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_TSSNOW_ROOF_TBL  ! snow surface temperature
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_WSNOW_ROAD_TBL   ! snow layers reservoir
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_TSNOW_ROAD_TBL   ! snow layers temperature
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_RSNOW_ROAD_TBL   ! snow layers density
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ASNOW_ROAD_TBL   ! snow albedo
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ESNOW_ROAD_TBL   ! snow emissivity
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_TSSNOW_ROAD_TBL  ! snow surface temperature
+   LOGICAL,          ALLOCATABLE, DIMENSION(:)  :: TEB_SOLAR_PANEL_TBL   
+   LOGICAL                                      :: TEB_SOLAR_PANEL_INITED = .FALSE.
+   LOGICAL,          ALLOCATABLE, DIMENSION(:)  :: TEB_LGARDEN_TBL       
+   LOGICAL                                      :: TEB_LGARDEN_INITED   = .FALSE.
+   LOGICAL,          ALLOCATABLE, DIMENSION(:)  :: TEB_GREENROOF_TBL    
+   LOGICAL                                      :: TEB_GREENROOF_INITED = .FALSE.
+   CHARACTER(LEN=4), ALLOCATABLE, DIMENSION(:)  :: TEB_HROAD_DIR_TBL    
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ZROAD_DIR_TBL      
+   CHARACTER(LEN=4), ALLOCATABLE, DIMENSION(:)  :: TEB_WALL_OPT_TBL 
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ZGARDEN_TBL
+   LOGICAL                                      :: TEB_USE_ZGARDEN_FROM_TBL
+   LOGICAL                                      :: TEB_USE_ZGARDEN_FROM_TBL_INITED = .FALSE.
+   LOGICAL                                      :: TEB_USE_NOAH
+   LOGICAL                                      :: TEB_USE_NOAH_INITED = .FALSE.
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_FRAC_GR_TBL   
+   CHARACTER(LEN=12),ALLOCATABLE, DIMENSION(:)  :: TEB_COOL_COIL_TBL      
+   CHARACTER(LEN=6), ALLOCATABLE, DIMENSION(:)  :: TEB_HEAT_COIL_TBL      
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_F_WATER_COND_TBL   
+   CHARACTER(LEN=4), ALLOCATABLE, DIMENSION(:)  :: TEB_HNATVENT_TBL       
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ZNATVENT_TBL       
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_F_WASTE_CAN_TBL    
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_QIN_TBL            
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_QIN_FRAD_TBL       
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_QIN_FLAT_TBL       
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_GR_TBL             
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_EFF_HEAT_TBL       
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_INF_TBL            
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_TCOOL_TARGET_TBL   
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_THEAT_TARGET_TBL   
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_HR_TARGET_TBL              
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_V_VENT_TBL         
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_CAP_SYS_HEAT_TBL   
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_CAP_SYS_RAT_TBL    
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_ADP_TBL          
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_M_SYS_RAT_TBL      
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_COP_RAT_TBL        
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_SHGC_TBL            
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_SHGC_SH_TBL         
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_U_WIN_TBL           
+   LOGICAL,          ALLOCATABLE, DIMENSION(:)  :: TEB_LSHADE_TBL          
+   LOGICAL                                      :: TEB_LSHADE_INITED   
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ZSHADE_TBL          
+   CHARACTER(LEN=3), ALLOCATABLE, DIMENSION(:)  :: TEB_CBEM_TBL            
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_FLOOR_HEIGHT_TBL    
+   CHARACTER(LEN=5), ALLOCATABLE, DIMENSION(:)  :: TEB_CH_BEM_TBL            
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ROUGH_ROOF_TBL      
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ROUGH_WALL_TBL      
+   LOGICAL,          ALLOCATABLE, DIMENSION(:)  :: TEB_PAR_RD_IRRIG_TBL    
+   LOGICAL                                      :: TEB_PAR_RD_IRRIG_INITED
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_RD_START_MONTH_TBL  
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_RD_END_MONTH_TBL    
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_RD_START_HOUR_TBL   
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_RD_END_HOUR_TBL     
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_RD_24H_IRRIG_TBL    
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_EMIS_PANEL_TBL      
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_ALB_PANEL_TBL       
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_EFF_PANEL_TBL       
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_FRAC_PANEL_TBL      
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_RESIDENTIAL_TBL     
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_DT_RES_TBL          
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_DT_OFF_TBL          
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_ROAD_TBL  ! function of teb_num_floor_layers
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_ROOF_TBL  ! function of teb_num_floor_layers
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_WALL_A_TBL  ! function of teb_num_floor_layers
+   REAL,             ALLOCATABLE, DIMENSION(:)  :: TEB_T_WALL_B_TBL  ! function of teb_num_floor_layers
+
+   ! ROOF
+   INTEGER, ALLOCATABLE, DIMENSION(:)   :: teb_numroof_tbl
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_HC_ROOF_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_TC_ROOF_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_D_ROOF_TBL
+
+   ! ROAD
+   INTEGER, ALLOCATABLE, DIMENSION(:)   :: teb_numroad_tbl
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_HC_ROAD_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_TC_ROAD_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_D_ROAD_TBL
+
+   ! WALL
+   INTEGER, ALLOCATABLE, DIMENSION(:)   :: teb_numwall_tbl
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_HC_WALL_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_TC_WALL_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_D_WALL_TBL
+
+   ! FLOOR
+   INTEGER, ALLOCATABLE, DIMENSION(:)   :: teb_numfloor_tbl
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_HC_FLOOR_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_TC_FLOOR_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: TEB_D_FLOOR_TBL
+
+!end TEB
+
+
+
    CHARACTER (LEN=256) , PRIVATE   :: mesg
 
    CONTAINS
+
+
+   SUBROUTINE check_init_integer(x, name)
+     IMPLICIT NONE
+     INTEGER,          INTENT(IN) :: x
+     CHARACTER(LEN=*), INTENT(IN) :: name
+     if (x == UNINIT_INT) then
+       FATAL_ERROR('URBPARM.TBL: "'//name//'" uninitialized')
+     end if 
+    END SUBROUTINE
+
+   SUBROUTINE check_init_integer_array(x, name)
+     IMPLICIT NONE
+     INTEGER, DIMENSION(:), INTENT(IN) :: x
+     CHARACTER(LEN=*),      INTENT(IN) :: name
+     INTEGER :: i
+     do i = 1, size(x)
+      if (x(i) == UNINIT_INT) then
+         FATAL_ERROR('URBPARM.TBL: "'//name//'" uninitialized')
+      end if
+     enddo
+    END SUBROUTINE
+ 
+   SUBROUTINE check_init_real(x, name)
+     IMPLICIT NONE
+     REAL,             INTENT(IN) :: x
+     CHARACTER(LEN=*), INTENT(IN) :: name
+     if (x == UNINIT_REAL) then
+       FATAL_ERROR('URBPARM.TBL: "'//name//'" uninitialized')
+     end if 
+   END SUBROUTINE
+
+   SUBROUTINE check_init_real_array(x, name)
+     IMPLICIT NONE
+     REAL, DIMENSION(:), INTENT(IN) :: x
+     CHARACTER(LEN=*),   INTENT(IN) :: name
+     INTEGER :: i
+     do i = 1, size(x)
+       if (x(i) == UNINIT_REAL) then
+         FATAL_ERROR('URBPARM.TBL: "'//name//'" uninitialized')
+       end if 
+     enddo
+   END SUBROUTINE
+
+   SUBROUTINE check_init_string(x, name)
+     IMPLICIT NONE
+     CHARACTER(LEN=*), INTENT(IN) :: x
+     CHARACTER(LEN=*), INTENT(IN) :: name
+     if (x == repeat(UNINIT_CHAR, len(x))) then
+       FATAL_ERROR('URBPARM.TBL: "'//name//'" uninitialized')
+     end if 
+   END SUBROUTINE
+
+   SUBROUTINE check_init_string_array(x, name)
+     IMPLICIT NONE
+     CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: x
+     CHARACTER(LEN=*),               INTENT(IN) :: name
+     INTEGER :: i
+     do i = 1, size(x)
+       if (x(i) == repeat(UNINIT_CHAR, len(x(i)))) then
+         FATAL_ERROR('URBPARM.TBL: "'//name//'" uninitialized')
+       end if 
+     enddo
+   END SUBROUTINE
+
+   SUBROUTINE check_init_logical(x, name)
+     IMPLICIT NONE
+     LOGICAL,          INTENT(IN) :: x
+     CHARACTER(LEN=*), INTENT(IN) :: name
+     if (.not. x) then
+       FATAL_ERROR('URBPARM.TBL: "'//name//'" uninitialized')
+     end if 
+    END SUBROUTINE
 
 !===============================================================================
 !
@@ -312,6 +525,12 @@ use module_wrf_error
                     lp_urb,hgt_urb,frc_urb,lb_urb,zo_check,           & ! O
                     CMCR,TGR,TGRL,SMR,CMGR_URB,CHGR_URB,jmonth,       & ! H
                     DRELR,DRELB,DRELG,FLXHUMR,FLXHUMB,FLXHUMG)
+
+#ifdef WRF_TEB
+   ! External TEB library
+   USE MODI_INI_CSTS,         ONLY: INI_CSTS
+   USE MODI_INIT_SURFCONSPHY, ONLY: INIT_SURFCONSPHY
+#endif
 
    IMPLICIT NONE
 
@@ -1942,12 +2161,22 @@ ENDIF
 !
 !===============================================================================
    SUBROUTINE urban_param_init(DZR,DZB,DZG,num_soil_layers, &
-                               sf_urban_physics)
+                               sf_urban_physics, &
+                               teb_num_snow_layers, &
+                               teb_num_road_layers, &
+                               teb_num_roof_layers, &
+                               teb_num_wall_layers, &
+                               teb_num_floor_layers)
 !                              num_roof_layers,num_wall_layers,num_road_layers)
 
    IMPLICIT NONE
 
    INTEGER, INTENT(IN) :: num_soil_layers
+   INTEGER, INTENT(IN) :: teb_num_snow_layers
+   INTEGER, INTENT(IN) :: teb_num_road_layers
+   INTEGER, INTENT(IN) :: teb_num_roof_layers
+   INTEGER, INTENT(IN) :: teb_num_wall_layers
+   INTEGER, INTENT(IN) :: teb_num_floor_layers
 
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR
 !   REAL, DIMENSION(1:num_wall_layers), INTENT(INOUT) :: DZB
@@ -2094,6 +2323,345 @@ ENDIF
             ! if(allocate_status /= 0) FATAL_ERROR('Error allocating ROOF_WIDTH in urban_param_init')
             ! ALLOCATE( ROAD_WIDTH(ICATE), stat=allocate_status )
             ! if(allocate_status /= 0) FATAL_ERROR('Error allocating ROAD_WIDTH in urban_param_init')
+            !for TEB
+            ALLOCATE( TEB_ALB_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ALB_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_ALB_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ALB_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_ALB_WALL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ALB_WALL_TBL in urban_param_init')
+            ALLOCATE( TEB_EMIS_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_EMIS_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_EMIS_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_EMIS_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_EMIS_WALL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_EMIS_WALL_TBL in urban_param_init')
+            ALLOCATE( TEB_BLD_HEIGHT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_BLD_HEIGHT_TBL in urban_param_init')
+            ALLOCATE( TEB_FRAC_BLD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_FRAC_BLD_TBL in urban_param_init')
+            ALLOCATE( TEB_WALL_O_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_WALL_O_TBL in urban_param_init')
+            ALLOCATE( TEB_H_TRAFFIC_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_H_TRAFFIC_TBL in urban_param_init')
+            ALLOCATE( TEB_LE_TRAFFIC_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_LE_TRAFFIC_TBL in urban_param_init')
+            ALLOCATE( TEB_H_INDUSTRY_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_H_INDUSTRY_TBL in urban_param_init')
+            ALLOCATE( TEB_LE_INDUSTRY_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_LE_INDUSTRY_TBL in urban_param_init')
+            ALLOCATE( TEB_Z0_TOWN_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_Z0_TOWN_TBL in urban_param_init')
+            ALLOCATE( TEB_OPT_ZOH_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_OPT_ZOH_TBL in urban_param_init')
+            ALLOCATE( TEB_SNOW_SCH_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_SNOW_SCH_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_SNOW_SCH_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_SNOW_SCH_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_TI_BLD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TI_BLD_TBL in urban_param_init')
+            ALLOCATE( TEB_T_CANYON_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_CANYON_TBL in urban_param_init')
+            ALLOCATE( TEB_Q_CANYON_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_Q_CANYON_TBL in urban_param_init')
+            ALLOCATE( TEB_T_WIN1_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_WIN1_TBL in urban_param_init')
+            ALLOCATE( TEB_T_WIN2_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_WIN2_TBL in urban_param_init')
+            ALLOCATE( TEB_QI_BLD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_QI_BLD_TBL in urban_param_init')
+            ALLOCATE( TEB_WS_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_WS_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_WS_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_WS_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_WSNOW_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_WSNOW_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_TSNOW_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TSNOW_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_RSNOW_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_RSNOW_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_ASNOW_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ASNOW_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_ESNOW_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ESNOW_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_TSSNOW_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TSSNOW_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_WSNOW_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_WSNOW_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_TSNOW_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TSNOW_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_RSNOW_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_RSNOW_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_ASNOW_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ASNOW_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_ESNOW_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ESNOW_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_TSSNOW_ROAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TSSNOW_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_SOLAR_PANEL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_SOLAR_PANEL_TBL in urban_param_init')
+            ALLOCATE( TEB_LGARDEN_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_LGARDEN_TBL in urban_param_init')
+            ALLOCATE( TEB_GREENROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_GREENROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_HROAD_DIR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_HROAD_DIR_TBL in urban_param_init')
+            ALLOCATE( TEB_ZROAD_DIR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ZROAD_DIR_TBL in urban_param_init')
+            ALLOCATE( TEB_WALL_OPT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_WALL_OPT_TBL in urban_param_init')
+            ALLOCATE( TEB_ZGARDEN_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ZGARDEN_TBL in urban_param_init')
+            ALLOCATE( TEB_FRAC_GR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_FRAC_GR_TBL in urban_param_init')
+            ALLOCATE( TEB_COOL_COIL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_COOL_COIL_TBL in urban_param_init')
+            ALLOCATE( TEB_HEAT_COIL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_HEAT_COIL_TBL in urban_param_init')
+            ALLOCATE( TEB_F_WATER_COND_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_F_WATER_COND_TBL in urban_param_init')
+            ALLOCATE( TEB_HNATVENT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_HNATVENT_TBL in urban_param_init')
+            ALLOCATE( TEB_ZNATVENT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ZNATVENT_TBL in urban_param_init')
+            ALLOCATE( TEB_F_WASTE_CAN_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_F_WASTE_CAN_TBL in urban_param_init')
+            ALLOCATE( TEB_QIN_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_QIN_TBL in urban_param_init')
+            ALLOCATE( TEB_QIN_FRAD_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_QIN_FRAD_TBL in urban_param_init')
+            ALLOCATE( TEB_QIN_FLAT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_QIN_FLAT_TBL in urban_param_init')
+            ALLOCATE( TEB_GR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_GR_TBL in urban_param_init')
+            ALLOCATE( TEB_EFF_HEAT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_EFF_HEAT_TBL in urban_param_init')
+            ALLOCATE( TEB_INF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_INF_TBL in urban_param_init')
+            ALLOCATE( TEB_TCOOL_TARGET_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TCOOL_TARGET_TBL in urban_param_init')
+            ALLOCATE( TEB_THEAT_TARGET_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_THEAT_TARGET_TBL in urban_param_init')
+            ALLOCATE( TEB_HR_TARGET_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_HR_TARGET_TBL in urban_param_init')
+            ALLOCATE( TEB_V_VENT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_V_VENT_TBL in urban_param_init')
+            ALLOCATE( TEB_CAP_SYS_HEAT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_CAP_SYS_HEAT_TBL in urban_param_init')
+            ALLOCATE( TEB_CAP_SYS_RAT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_CAP_SYS_RAT_TBL in urban_param_init')
+            ALLOCATE( TEB_T_ADP_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_ADP_TBL in urban_param_init')
+            ALLOCATE( TEB_M_SYS_RAT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_M_SYS_RAT_TBL in urban_param_init')
+            ALLOCATE( TEB_COP_RAT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_COP_RAT_TBL in urban_param_init')
+            ALLOCATE( TEB_SHGC_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_SHGC_TBL in urban_param_init')
+            ALLOCATE( TEB_SHGC_SH_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_SHGC_SH_TBL in urban_param_init')
+            ALLOCATE( TEB_U_WIN_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_U_WIN_TBL in urban_param_init')
+            ALLOCATE( TEB_LSHADE_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_LSHADE_TBL in urban_param_init')
+            ALLOCATE( TEB_ZSHADE_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ZSHADE_TBL in urban_param_init')
+            ALLOCATE( TEB_CBEM_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_CBEM_TBL in urban_param_init')
+            ALLOCATE( TEB_FLOOR_HEIGHT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_FLOOR_HEIGHT_TBL in urban_param_init')
+            ALLOCATE( TEB_CH_BEM_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_CH_BEM_TBL in urban_param_init')
+            ALLOCATE( TEB_ROUGH_ROOF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ROUGH_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_ROUGH_WALL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ROUGH_WALL_TBL in urban_param_init')
+            ALLOCATE( TEB_PAR_RD_IRRIG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_PAR_RD_IRRIG_TBL in urban_param_init')
+            ALLOCATE( TEB_RD_START_MONTH_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_RD_START_MONTH_TBL in urban_param_init')
+            ALLOCATE( TEB_RD_END_MONTH_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_RD_END_MONTH_TBL in urban_param_init')
+            ALLOCATE( TEB_RD_START_HOUR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_RD_START_HOUR_TBL in urban_param_init')
+            ALLOCATE( TEB_RD_END_HOUR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_RD_END_HOUR_TBL in urban_param_init')
+            ALLOCATE( TEB_RD_24H_IRRIG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_RD_24H_IRRIG_TBL in urban_param_init')
+            ALLOCATE( TEB_EMIS_PANEL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_EMIS_PANEL_TBL in urban_param_init')
+            ALLOCATE( TEB_ALB_PANEL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_ALB_PANEL_TBL in urban_param_init')
+            ALLOCATE( TEB_EFF_PANEL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_EFF_PANEL_TBL in urban_param_init')
+            ALLOCATE( TEB_FRAC_PANEL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_FRAC_PANEL_TBL in urban_param_init')
+            ALLOCATE( TEB_RESIDENTIAL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_RESIDENTIAL_TBL in urban_param_init')
+            ALLOCATE( TEB_DT_RES_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_DT_RES_TBL in urban_param_init')
+            ALLOCATE( TEB_DT_OFF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_DT_OFF_TBL in urban_param_init')
+
+            ALLOCATE( TEB_T_FLOOR_TBL(teb_num_floor_layers), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_FLOOR in urban_param_init')        
+            ALLOCATE( TEB_T_MASS_TBL(teb_num_floor_layers), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_MASS in urban_param_init')        
+
+            ALLOCATE( TEB_T_ROAD_TBL(teb_num_road_layers), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_ROAD_TBL in urban_param_init')        
+            ALLOCATE( TEB_T_ROOF_TBL(teb_num_roof_layers), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_ROOF_TBL in urban_param_init')        
+            ALLOCATE( TEB_T_WALL_A_TBL(teb_num_wall_layers), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_WALL_A_TBL in urban_param_init')        
+            ALLOCATE( TEB_T_WALL_B_TBL(teb_num_wall_layers), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_T_WALL_B_TBL in urban_param_init')        
+            ! ROOF
+            ALLOCATE( teb_numroof_tbl(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating teb_numroof_tbl in urban_param_init')
+            ALLOCATE( TEB_HC_ROOF_TBL(teb_num_roof_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_HC_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_TC_ROOF_TBL(teb_num_roof_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TC_ROOF_TBL in urban_param_init')
+            ALLOCATE( TEB_D_ROOF_TBL(teb_num_roof_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_D_ROOF_TBL in urban_param_init')
+            ! ROAD
+            ALLOCATE( teb_numroad_tbl(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating teb_numroad_tbl in urban_param_init')
+            ALLOCATE( TEB_HC_ROAD_TBL(teb_num_road_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_HC_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_TC_ROAD_TBL(teb_num_road_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TC_ROAD_TBL in urban_param_init')
+            ALLOCATE( TEB_D_ROAD_TBL(teb_num_road_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_D_ROAD_TBL in urban_param_init')
+            ! WALL
+            ALLOCATE( teb_numwall_tbl(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating teb_numwall_tbl in urban_param_init')
+            ALLOCATE( TEB_HC_WALL_TBL(teb_num_wall_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_HC_WALL_TBL in urban_param_init')
+            ALLOCATE( TEB_TC_WALL_TBL(teb_num_wall_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TC_WALL_TBL in urban_param_init')
+            ALLOCATE( TEB_D_WALL_TBL(teb_num_wall_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_D_WALL_TBL in urban_param_init')
+            ! FLOOR
+            ALLOCATE( teb_numfloor_tbl(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating teb_numfloor_tbl in urban_param_init')
+            ALLOCATE( TEB_HC_FLOOR_TBL(teb_num_floor_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_HC_FLOOR_TBL in urban_param_init')
+            ALLOCATE( TEB_TC_FLOOR_TBL(teb_num_floor_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_TC_FLOOR_TBL in urban_param_init')
+            ALLOCATE( TEB_D_FLOOR_TBL(teb_num_floor_layers , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TEB_D_FLOOR_TBL in urban_param_init')
+
+            TEB_EMIS_ROOF_TBL      = UNINIT_REAL
+            TEB_EMIS_ROAD_TBL      = UNINIT_REAL
+            TEB_EMIS_WALL_TBL      = UNINIT_REAL
+            TEB_ALB_ROOF_TBL       = UNINIT_REAL
+            TEB_ALB_ROAD_TBL       = UNINIT_REAL
+            TEB_ALB_WALL_TBL       = UNINIT_REAL
+            TEB_BLD_HEIGHT_TBL     = UNINIT_REAL
+            TEB_FRAC_BLD_TBL       = UNINIT_REAL
+            TEB_WALL_O_TBL         = UNINIT_REAL
+            TEB_H_TRAFFIC_TBL      = UNINIT_REAL
+            TEB_LE_TRAFFIC_TBL     = UNINIT_REAL
+            TEB_H_INDUSTRY_TBL     = UNINIT_REAL
+            TEB_LE_INDUSTRY_TBL    = UNINIT_REAL
+            TEB_Z0_TOWN_TBL        = UNINIT_REAL
+            TEB_OPT_ZOH_TBL        = UNINIT_INT
+            TEB_SNOW_SCH_ROOF_TBL  = UNINIT_INT
+            TEB_SNOW_SCH_ROAD_TBL  = UNINIT_INT
+            TEB_TI_BLD_TBL         = UNINIT_REAL
+            TEB_T_CANYON_TBL       = UNINIT_REAL
+            TEB_Q_CANYON_TBL       = UNINIT_REAL
+            TEB_T_WIN1_TBL         = UNINIT_REAL
+            TEB_T_WIN2_TBL         = UNINIT_REAL
+            TEB_QI_BLD_TBL         = UNINIT_REAL
+            TEB_WS_ROOF_TBL        = UNINIT_REAL
+            TEB_WS_ROAD_TBL        = UNINIT_REAL
+            TEB_WSNOW_ROOF_TBL     = UNINIT_REAL
+            TEB_TSNOW_ROOF_TBL     = UNINIT_REAL
+            TEB_RSNOW_ROOF_TBL     = UNINIT_REAL
+            TEB_ASNOW_ROOF_TBL     = UNINIT_REAL
+            TEB_ESNOW_ROOF_TBL     = UNINIT_REAL
+            TEB_TSSNOW_ROOF_TBL    = UNINIT_REAL
+            TEB_WSNOW_ROAD_TBL     = UNINIT_REAL
+            TEB_TSNOW_ROAD_TBL     = UNINIT_REAL
+            TEB_RSNOW_ROAD_TBL     = UNINIT_REAL
+            TEB_ASNOW_ROAD_TBL     = UNINIT_REAL
+            TEB_ESNOW_ROAD_TBL     = UNINIT_REAL
+            TEB_TSSNOW_ROAD_TBL    = UNINIT_REAL
+            TEB_HROAD_DIR_TBL      = repeat(UNINIT_CHAR, 4)
+            TEB_ZROAD_DIR_TBL      = UNINIT_REAL
+            TEB_WALL_OPT_TBL       = repeat(UNINIT_CHAR, 4)
+            TEB_ZGARDEN_TBL        = UNINIT_REAL
+            TEB_FRAC_GR_TBL        = UNINIT_REAL
+            TEB_COOL_COIL_TBL      = repeat(UNINIT_CHAR, 12)
+            TEB_HEAT_COIL_TBL      = repeat(UNINIT_CHAR, 6)
+            TEB_F_WATER_COND_TBL   = UNINIT_REAL
+            TEB_HNATVENT_TBL       = repeat(UNINIT_CHAR, 4)
+            TEB_ZNATVENT_TBL       = UNINIT_REAL
+            TEB_F_WASTE_CAN_TBL    = UNINIT_REAL
+            TEB_QIN_TBL            = UNINIT_REAL
+            TEB_QIN_FRAD_TBL       = UNINIT_REAL
+            TEB_QIN_FLAT_TBL       = UNINIT_REAL
+            TEB_GR_TBL             = UNINIT_REAL
+            TEB_EFF_HEAT_TBL       = UNINIT_REAL
+            TEB_INF_TBL            = UNINIT_REAL
+            TEB_TCOOL_TARGET_TBL   = UNINIT_REAL
+            TEB_THEAT_TARGET_TBL   = UNINIT_REAL
+            TEB_HR_TARGET_TBL      = UNINIT_REAL
+            TEB_V_VENT_TBL         = UNINIT_REAL
+            TEB_CAP_SYS_HEAT_TBL   = UNINIT_REAL
+            TEB_CAP_SYS_RAT_TBL    = UNINIT_REAL
+            TEB_T_ADP_TBL          = UNINIT_REAL
+            TEB_M_SYS_RAT_TBL      = UNINIT_REAL
+            TEB_COP_RAT_TBL        = UNINIT_REAL
+            TEB_SHGC_TBL           = UNINIT_REAL
+            TEB_SHGC_SH_TBL        = UNINIT_REAL
+            TEB_U_WIN_TBL          = UNINIT_REAL
+            TEB_ZSHADE_TBL         = UNINIT_REAL
+            TEB_CBEM_TBL           = repeat(UNINIT_CHAR, 3)
+            TEB_FLOOR_HEIGHT_TBL   = UNINIT_REAL
+            TEB_CH_BEM_TBL         = repeat(UNINIT_CHAR, 5)
+            TEB_ROUGH_ROOF_TBL     = UNINIT_REAL
+            TEB_ROUGH_WALL_TBL     = UNINIT_REAL
+            TEB_RD_START_MONTH_TBL = UNINIT_REAL
+            TEB_RD_END_MONTH_TBL   = UNINIT_REAL
+            TEB_RD_START_HOUR_TBL  = UNINIT_REAL
+            TEB_RD_END_HOUR_TBL    = UNINIT_REAL
+            TEB_RD_24H_IRRIG_TBL   = UNINIT_REAL
+            TEB_EMIS_PANEL_TBL     = UNINIT_REAL
+            TEB_ALB_PANEL_TBL      = UNINIT_REAL
+            TEB_EFF_PANEL_TBL      = UNINIT_REAL
+            TEB_FRAC_PANEL_TBL     = UNINIT_REAL
+            TEB_RESIDENTIAL_TBL    = UNINIT_REAL
+            TEB_DT_RES_TBL         = UNINIT_REAL
+            TEB_DT_OFF_TBL         = UNINIT_REAL
+  
+            TEB_T_FLOOR_TBL        = UNINIT_REAL
+            TEB_T_MASS_TBL         = UNINIT_REAL
+            TEB_T_ROAD_TBL         = UNINIT_REAL
+            TEB_T_ROOF_TBL         = UNINIT_REAL
+            TEB_T_WALL_A_TBL       = UNINIT_REAL
+            TEB_T_WALL_B_TBL       = UNINIT_REAL
+
+            ! ROOF
+            TEB_HC_ROOF_TBL = UNINIT_REAL
+            TEB_TC_ROOF_TBL = UNINIT_REAL
+            TEB_D_ROOF_TBL = UNINIT_REAL
+            ! ROAD
+            TEB_HC_ROAD_TBL = UNINIT_REAL
+            TEB_TC_ROAD_TBL = UNINIT_REAL
+            TEB_D_ROAD_TBL = UNINIT_REAL
+            ! WALL
+            TEB_HC_WALL_TBL = UNINIT_REAL
+            TEB_TC_WALL_TBL = UNINIT_REAL
+            TEB_D_WALL_TBL = UNINIT_REAL
+            ! FLOOR
+            TEB_HC_FLOOR_TBL = UNINIT_REAL
+            TEB_TC_FLOOR_TBL = UNINIT_REAL
+            TEB_D_FLOOR_TBL = UNINIT_REAL
+            !end TEB
             !for BEP
             ALLOCATE( NUMDIR_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating NUMDIR_TBL in urban_param_init')
@@ -2145,6 +2713,13 @@ ENDIF
          numhgt_tbl = 0
          height_bin_tbl = -1.E36
          hpercent_bin_tbl = -1.E36
+
+         ! TEB
+         ! Note: This must be here as urban_param_init may be called more than once.
+         teb_numroof_tbl = 0
+         teb_numroad_tbl = 0
+         teb_numwall_tbl = 0
+         teb_numfloor_tbl = 0
 !end BEP
 
       else if (name == "ZR") then
@@ -2330,6 +2905,268 @@ ENDIF
       else if (name == "HSEQUIP_SCALE_FACTOR") then
          read(string(indx+1:),*) hsesf_tbl(1:icate)
 !end BEP         
+
+!for TEB
+      else if (name == "TEB_USE_ZGARDEN_FROM_TBL") then
+         read(string(indx+1:),*) TEB_USE_ZGARDEN_FROM_TBL
+         TEB_USE_ZGARDEN_FROM_TBL_INITED = .true.
+      else if (name == "TEB_USE_NOAH") then
+         read(string(indx+1:),*) TEB_USE_NOAH
+         TEB_USE_NOAH_INITED = .true.
+      else if (name == "TEB_ALB_ROOF") then
+         read(string(indx+1:),*) TEB_ALB_ROOF_TBL(1:icate)
+      else if (name == "TEB_ALB_ROAD") then
+         read(string(indx+1:),*) TEB_ALB_ROAD_TBL(1:icate)
+      else if (name == "TEB_ALB_WALL") then
+         read(string(indx+1:),*) TEB_ALB_WALL_TBL(1:icate)
+      else if (name == "TEB_EMIS_ROOF") then
+         read(string(indx+1:),*) TEB_EMIS_ROOF_TBL(1:icate)
+      else if (name == "TEB_EMIS_ROAD") then
+         read(string(indx+1:),*) TEB_EMIS_ROAD_TBL(1:icate)
+      else if (name == "TEB_EMIS_WALL") then
+         read(string(indx+1:),*) TEB_EMIS_WALL_TBL(1:icate)
+      else if (name == "TEB_BLD_HEIGHT") then
+         read(string(indx+1:),*) TEB_BLD_HEIGHT_TBL(1:icate)
+      else if (name == "TEB_FRAC_BLD") then
+         read(string(indx+1:),*) TEB_FRAC_BLD_TBL(1:icate)
+      else if (name == "TEB_WALL_O_HOR") then
+         read(string(indx+1:),*) TEB_WALL_O_TBL(1:icate)
+      else if (name == "TEB_H_TRAFFIC") then
+         read(string(indx+1:),*) TEB_H_TRAFFIC_TBL(1:icate)
+      else if (name == "TEB_LE_TRAFFIC") then
+         read(string(indx+1:),*) TEB_LE_TRAFFIC_TBL(1:icate)
+      else if (name == "TEB_H_INDUSTRY") then
+         read(string(indx+1:),*) TEB_H_INDUSTRY_TBL(1:icate)
+      else if (name == "TEB_LE_INDUSTRY") then
+         read(string(indx+1:),*) TEB_LE_INDUSTRY_TBL(1:icate)
+      else if (name == "TEB_Z0_TOWN") then
+         read(string(indx+1:),*) TEB_Z0_TOWN_TBL(1:icate)
+      else if (name == "TEB_SNOW_SCH_ROOF") then
+         read(string(indx+1:),*) TEB_SNOW_SCH_ROOF_TBL(1:icate)
+      else if (name == "TEB_SNOW_SCH_ROAD") then
+         read(string(indx+1:),*) TEB_SNOW_SCH_ROAD_TBL(1:icate)
+      else if (name == "TEB_OPT_ZOH") then
+         read(string(indx+1:),*)TEB_OPT_ZOH_TBL(1:icate)
+      else if (name == "TEB_SOLAR_PANEL") then
+         read(string(indx+1:),*)TEB_SOLAR_PANEL_TBL(1:icate)
+         TEB_SOLAR_PANEL_INITED = .TRUE.
+      else if (name == "TEB_LGARDEN") then
+         read(string(indx+1:),*)TEB_LGARDEN_TBL(1:icate) 
+         TEB_LGARDEN_INITED = .TRUE.
+      else if (name == "TEB_GREENROOF") then
+         read(string(indx+1:),*)TEB_GREENROOF_TBL(1:icate) 
+         TEB_GREENROOF_INITED = .TRUE.
+      else if (name == "TEB_HROAD_DIR") then
+         read(string(indx+1:),*)TEB_HROAD_DIR_TBL(1:icate) 
+      else if (name == "TEB_WALL_OPT") then
+         read(string(indx+1:),*)TEB_WALL_OPT_TBL(1:icate) 
+      else if (name == "TEB_ZGARDEN") then
+         read(string(indx+1:),*)TEB_ZGARDEN_TBL(1:icate) 
+      else if (name == "TEB_ZROAD_DIR") then
+         read(string(indx+1:),*)TEB_ZROAD_DIR_TBL(1:icate)  
+      else if (name == "TEB_FRAC_GR") then
+         read(string(indx+1:),*)TEB_FRAC_GR_TBL(1:icate) 
+      else if (name == "TEB_COOL_COIL") then
+         read(string(indx+1:),*)TEB_COOL_COIL_TBL(1:icate)
+      else if (name == "TEB_HEAT_COIL") then
+         read(string(indx+1:),*)TEB_HEAT_COIL_TBL(1:icate)
+      else if (name == "TEB_F_WATER_COND") then
+         read(string(indx+1:),*)TEB_F_WATER_COND_TBL(1:icate)
+      else if (name == "TEB_HNATVENT") then
+         read(string(indx+1:),*)TEB_HNATVENT_TBL(1:icate)
+      else if (name == "TEB_ZNATVENT") then
+         read(string(indx+1:),*)TEB_ZNATVENT_TBL(1:icate)
+      else if (name == "TEB_F_WASTE_CAN") then
+         read(string(indx+1:),*)TEB_F_WASTE_CAN_TBL(1:icate)
+      else if (name == "TEB_QIN") then
+         read(string(indx+1:),*)TEB_QIN_TBL(1:icate)
+      else if (name == "TEB_QIN_FRAD") then
+         read(string(indx+1:),*)TEB_QIN_FRAD_TBL(1:icate)
+      else if (name == "TEB_QIN_FLAT") then
+         read(string(indx+1:),*)TEB_QIN_FLAT_TBL(1:icate)
+      else if (name == "TEB_GR") then
+         read(string(indx+1:),*)TEB_GR_TBL(1:icate)
+      else if (name == "TEB_EFF_HEAT") then
+         read(string(indx+1:),*)TEB_EFF_HEAT_TBL(1:icate)
+      else if (name == "TEB_INF") then
+         read(string(indx+1:),*)TEB_INF_TBL(1:icate)
+      else if (name == "TEB_TCOOL_TARGET") then
+         read(string(indx+1:),*)TEB_TCOOL_TARGET_TBL(1:icate)
+      else if (name == "TEB_THEAT_TARGET") then
+         read(string(indx+1:),*)TEB_THEAT_TARGET_TBL(1:icate)
+      else if (name == "TEB_HR_TARGET") then
+         read(string(indx+1:),*)TEB_HR_TARGET_TBL(1:icate)
+      else if (name == "TEB_V_VENT") then
+         read(string(indx+1:),*)TEB_V_VENT_TBL(1:icate)
+      else if (name == "TEB_CAP_SYS_HEAT") then
+         read(string(indx+1:),*)TEB_CAP_SYS_HEAT_TBL(1:icate)
+      else if (name == "TEB_CAP_SYS_RAT") then
+         read(string(indx+1:),*)TEB_CAP_SYS_RAT_TBL(1:icate)
+      else if (name == "TEB_T_ADP") then
+         read(string(indx+1:),*)TEB_T_ADP_TBL(1:icate)
+      else if (name == "TEB_M_SYS_RAT") then
+         read(string(indx+1:),*)TEB_M_SYS_RAT_TBL(1:icate)
+      else if (name == "TEB_COP_RAT") then
+         read(string(indx+1:),*)TEB_COP_RAT_TBL(1:icate)
+      else if (name == "TEB_T_FLOOR") then
+         read(string(indx+1:),*)TEB_T_FLOOR_TBL(1:teb_num_floor_layers)
+      else if (name == "TEB_T_MASS") then
+         read(string(indx+1:),*)TEB_T_MASS_TBL(1:teb_num_floor_layers)
+      else if (name == "TEB_TI_BLD") then
+         read(string(indx+1:),*)TEB_TI_BLD_TBL(1:icate)
+      else if (name == "TEB_T_CANYON") then
+         read(string(indx+1:),*)TEB_T_CANYON_TBL(1:icate)
+      else if (name == "TEB_Q_CANYON") then
+         read(string(indx+1:),*)TEB_Q_CANYON_TBL(1:icate)
+      else if (name == "TEB_T_WIN1") then
+         read(string(indx+1:),*)TEB_T_WIN1_TBL(1:icate)
+      else if (name == "TEB_T_WIN2") then
+         read(string(indx+1:),*)TEB_T_WIN2_TBL(1:icate)
+      else if (name == "TEB_QI_BLD") then
+         read(string(indx+1:),*)TEB_QI_BLD_TBL(1:icate)
+      else if (name == "TEB_WS_ROOF") then
+         read(string(indx+1:),*)TEB_WS_ROOF_TBL(1:icate)
+      else if (name == "TEB_WS_ROAD") then
+         read(string(indx+1:),*)TEB_WS_ROAD_TBL(1:icate)
+      else if (name == "TEB_WSNOW_ROOF") then
+         read(string(indx+1:),*)TEB_WSNOW_ROOF_TBL(1:icate)
+      else if (name == "TEB_TSNOW_ROOF") then
+         read(string(indx+1:),*)TEB_TSNOW_ROOF_TBL(1:icate)
+      else if (name == "TEB_RSNOW_ROOF") then
+         read(string(indx+1:),*)TEB_RSNOW_ROOF_TBL(1:icate)
+      else if (name == "TEB_ASNOW_ROOF") then
+         read(string(indx+1:),*)TEB_ASNOW_ROOF_TBL(1:icate)
+      else if (name == "TEB_ESNOW_ROOF") then
+         read(string(indx+1:),*)TEB_ESNOW_ROOF_TBL(1:icate)
+      else if (name == "TEB_TSSNOW_ROOF") then
+         read(string(indx+1:),*)TEB_TSSNOW_ROOF_TBL(1:icate)
+      else if (name == "TEB_WSNOW_ROAD") then
+         read(string(indx+1:),*)TEB_WSNOW_ROAD_TBL(1:icate)
+      else if (name == "TEB_TSNOW_ROAD") then
+         read(string(indx+1:),*)TEB_TSNOW_ROAD_TBL(1:icate)
+      else if (name == "TEB_RSNOW_ROAD") then
+         read(string(indx+1:),*)TEB_RSNOW_ROAD_TBL(1:icate)
+      else if (name == "TEB_ASNOW_ROAD") then
+         read(string(indx+1:),*)TEB_ASNOW_ROAD_TBL(1:icate)
+      else if (name == "TEB_ESNOW_ROAD") then
+         read(string(indx+1:),*)TEB_ESNOW_ROAD_TBL(1:icate)
+      else if (name == "TEB_TSSNOW_ROAD") then
+         read(string(indx+1:),*)TEB_TSSNOW_ROAD_TBL(1:icate)
+      else if (name == "TEB_SHGC") then
+         read(string(indx+1:),*)TEB_SHGC_TBL(1:icate)
+      else if (name == "TEB_SHGC_SH") then
+         read(string(indx+1:),*)TEB_SHGC_SH_TBL(1:icate)
+      else if (name == "TEB_U_WIN") then
+         read(string(indx+1:),*)TEB_U_WIN_TBL(1:icate)
+      else if (name == "TEB_LSHADE") then
+         read(string(indx+1:),*)TEB_LSHADE_TBL(1:icate)
+         TEB_LSHADE_INITED = .TRUE.
+      else if (name == "TEB_ZSHADE") then
+         read(string(indx+1:),*)TEB_ZSHADE_TBL(1:icate)
+      else if (name == "TEB_CBEM") then
+         read(string(indx+1:),*)TEB_CBEM_TBL(1:icate)
+      else if (name == "TEB_FLOOR_HEIGHT") then
+         read(string(indx+1:),*)TEB_FLOOR_HEIGHT_TBL(1:icate)
+      else if (name == "TEB_CH_BEM") then
+         read(string(indx+1:),*)TEB_CH_BEM_TBL(1:icate)
+      else if (name == "TEB_ROUGH_ROOF") then
+         read(string(indx+1:),*)TEB_ROUGH_ROOF_TBL(1:icate)
+      else if (name == "TEB_ROUGH_WALL") then
+         read(string(indx+1:),*)TEB_ROUGH_WALL_TBL(1:icate)
+      else if (name == "TEB_PAR_RD_IRRIG") then
+         read(string(indx+1:),*)TEB_PAR_RD_IRRIG_TBL(1:icate)
+         TEB_PAR_RD_IRRIG_INITED = .TRUE.
+      else if (name == "TEB_RD_START_MONTH") then
+         read(string(indx+1:),*)TEB_RD_START_MONTH_TBL(1:icate)
+      else if (name == "TEB_RD_END_MONTH") then
+         read(string(indx+1:),*)TEB_RD_END_MONTH_TBL(1:icate)
+      else if (name == "TEB_RD_START_HOUR") then
+         read(string(indx+1:),*)TEB_RD_START_HOUR_TBL(1:icate)
+      else if (name == "TEB_RD_END_HOUR") then
+         read(string(indx+1:),*)TEB_RD_END_HOUR_TBL(1:icate)
+      else if (name == "TEB_RD_24H_IRRIG") then
+         read(string(indx+1:),*)TEB_RD_24H_IRRIG_TBL(1:icate)
+      else if (name == "TEB_EMIS_PANEL") then
+         read(string(indx+1:),*)TEB_EMIS_PANEL_TBL(1:icate)
+      else if (name == "TEB_ALB_PANEL") then
+         read(string(indx+1:),*)TEB_ALB_PANEL_TBL(1:icate)
+      else if (name == "TEB_EFF_PANEL") then
+         read(string(indx+1:),*)TEB_EFF_PANEL_TBL(1:icate)
+      else if (name == "TEB_FRAC_PANEL") then
+         read(string(indx+1:),*)TEB_FRAC_PANEL_TBL(1:icate)
+      else if (name == "TEB_RESIDENTIAL") then
+         read(string(indx+1:),*)TEB_RESIDENTIAL_TBL(1:icate)
+      else if (name == "TEB_DT_RES") then
+         read(string(indx+1:),*)TEB_DT_RES_TBL(1:icate)
+      else if (name == "TEB_DT_OFF") then
+         read(string(indx+1:),*)TEB_DT_OFF_TBL(1:icate)
+      else if (name == "TEB_T_ROAD") then
+         read(string(indx+1:),*)TEB_T_ROAD_TBL(1:teb_num_floor_layers)
+      else if (name == "TEB_T_ROOF") then
+         read(string(indx+1:),*)TEB_T_ROOF_TBL(1:teb_num_floor_layers)
+      else if (name == "TEB_T_WALL_A") then
+         read(string(indx+1:),*)TEB_T_WALL_A_TBL(1:teb_num_floor_layers)
+      else if (name == "TEB_T_WALL_B") then
+         read(string(indx+1:),*)TEB_T_WALL_B_TBL(1:teb_num_floor_layers)
+      ! ROOF
+      else if (name == "TEB ROOF PARAMETERS") then
+
+         TEBROOFLOOP : do
+            read(11,'(A512)', iostat=iostatus) string
+            if (string(1:1) == "#") cycle TEBROOFLOOP
+            if (trim(string) == "") cycle TEBROOFLOOP
+            if (string == "END TEB ROOF PARAMETERS") exit TEBROOFLOOP
+            read(string, *) k
+            teb_numroof_tbl(k) = teb_numroof_tbl(k) + 1
+            read(string, *) k, TEB_HC_ROOF_TBL(teb_numroof_tbl(k),k), &
+                               TEB_TC_ROOF_TBL(teb_numroof_tbl(k),k), &
+                               TEB_D_ROOF_TBL(teb_numroof_tbl(k),k)
+         enddo TEBROOFLOOP
+      ! ROAD
+      else if (name == "TEB ROAD PARAMETERS") then
+
+         TEBROADLOOP : do
+            read(11,'(A512)', iostat=iostatus) string
+            if (string(1:1) == "#") cycle TEBROADLOOP
+            if (trim(string) == "") cycle TEBROADLOOP
+            if (string == "END TEB ROAD PARAMETERS") exit TEBROADLOOP
+            read(string, *) k
+            teb_numroad_tbl(k) = teb_numroad_tbl(k) + 1
+            read(string, *) k, TEB_HC_ROAD_TBL(teb_numroad_tbl(k),k), &
+                               TEB_TC_ROAD_TBL(teb_numroad_tbl(k),k), &
+                               TEB_D_ROAD_TBL(teb_numroad_tbl(k),k)
+         enddo TEBROADLOOP
+      ! WALL
+      else if (name == "TEB WALL PARAMETERS") then
+
+         TEBWALLLOOP : do
+            read(11,'(A512)', iostat=iostatus) string
+            if (string(1:1) == "#") cycle TEBWALLLOOP
+            if (trim(string) == "") cycle TEBWALLLOOP
+            if (string == "END TEB WALL PARAMETERS") exit TEBWALLLOOP
+            read(string, *) k
+            teb_numwall_tbl(k) = teb_numwall_tbl(k) + 1
+            read(string, *) k, TEB_HC_WALL_TBL(teb_numwall_tbl(k),k), &
+                               TEB_TC_WALL_TBL(teb_numwall_tbl(k),k), &
+                               TEB_D_WALL_TBL(teb_numwall_tbl(k),k)
+         enddo TEBWALLLOOP
+      ! FLOOR
+      else if (name == "TEB FLOOR PARAMETERS") then
+
+         TEBFLOORLOOP : do
+            read(11,'(A512)', iostat=iostatus) string
+            if (string(1:1) == "#") cycle TEBFLOORLOOP
+            if (trim(string) == "") cycle TEBFLOORLOOP
+            if (string == "END TEB FLOOR PARAMETERS") exit TEBFLOORLOOP
+            read(string, *) k
+            teb_numfloor_tbl(k) = teb_numfloor_tbl(k) + 1
+            read(string, *) k, TEB_HC_FLOOR_TBL(teb_numfloor_tbl(k),k), &
+                               TEB_TC_FLOOR_TBL(teb_numfloor_tbl(k),k), &
+                               TEB_D_FLOOR_TBL(teb_numfloor_tbl(k),k)
+         enddo TEBFLOORLOOP
+
+! END: TEB
+
       else
          FATAL_ERROR('URBPARM.TBL: Unrecognized NAME = "'//trim(name)//'" in Subr URBAN_PARAM_INIT')
       endif
@@ -2337,6 +3174,114 @@ ENDIF
 
    CLOSE(11)
 
+   ! TEB: check whether all required parameters are initialized
+   if (SF_URBAN_PHYSICS == 4 ) then
+      call check_init_real_array(TEB_ALB_ROOF_TBL, "TEB_ALB_ROOF")
+      call check_init_real_array(TEB_ALB_ROAD_TBL, "TEB_ALB_ROAD")
+      call check_init_real_array(TEB_ALB_WALL_TBL, "TEB_ALB_WALL")
+      call check_init_real_array(TEB_EMIS_ROOF_TBL, "TEB_EMIS_ROOF")
+      call check_init_real_array(TEB_EMIS_ROAD_TBL, "TEB_EMIS_ROAD")
+      call check_init_real_array(TEB_EMIS_WALL_TBL, "TEB_EMIS_WALL")
+      call check_init_real_array(TEB_BLD_HEIGHT_TBL, "TEB_BLD_HEIGHT")
+      call check_init_real_array(TEB_FRAC_BLD_TBL, "TEB_FRAC_BLD")
+      call check_init_real_array(TEB_WALL_O_TBL, "TEB_WALL_O_HOR")
+      call check_init_real_array(TEB_H_TRAFFIC_TBL, "TEB_H_TRAFFIC")
+      call check_init_real_array(TEB_LE_TRAFFIC_TBL, "TEB_LE_TRAFFIC")
+      call check_init_real_array(TEB_H_INDUSTRY_TBL, "TEB_H_INDUSTRY")
+      call check_init_real_array(TEB_LE_INDUSTRY_TBL, "TEB_LE_INDUSTRY")
+      call check_init_real_array(TEB_Z0_TOWN_TBL, "TEB_Z0_TOWN")
+      call check_init_integer_array(TEB_OPT_ZOH_TBL, "TEB_OPT_ZOH")
+      call check_init_integer_array(TEB_SNOW_SCH_ROOF_TBL, "TEB_SNOW_SCH_ROOF")
+      call check_init_integer_array(TEB_SNOW_SCH_ROAD_TBL, "TEB_SNOW_SCH_ROAD")
+      call check_init_real_array(TEB_T_FLOOR_TBL, "TEB_T_FLOOR")
+      call check_init_real_array(TEB_T_MASS_TBL, "TEB_T_MASS")
+      call check_init_real_array(TEB_TI_BLD_TBL, "TEB_TI_BLD")
+      call check_init_real_array(TEB_T_CANYON_TBL, "TEB_T_CANYON")
+      call check_init_real_array(TEB_Q_CANYON_TBL, "TEB_Q_CANYON")
+      call check_init_real_array(TEB_T_WIN1_TBL, "TEB_T_WIN1")
+      call check_init_real_array(TEB_T_WIN2_TBL, "TEB_T_WIN2")
+      call check_init_real_array(TEB_QI_BLD_TBL, "TEB_QI_BLD")
+      call check_init_real_array(TEB_WS_ROOF_TBL, "TEB_WS_ROOF")
+      call check_init_real_array(TEB_WS_ROAD_TBL, "TEB_WS_ROAD")
+      call check_init_real_array(TEB_WSNOW_ROOF_TBL, "TEB_WSNOW_ROOF")
+      call check_init_real_array(TEB_TSNOW_ROOF_TBL, "TEB_TSNOW_ROOF")
+      call check_init_real_array(TEB_RSNOW_ROOF_TBL, "TEB_RSNOW_ROOF")
+      call check_init_real_array(TEB_ASNOW_ROOF_TBL, "TEB_ASNOW_ROOF")
+      call check_init_real_array(TEB_ESNOW_ROOF_TBL, "TEB_ESNOW_ROOF")
+      call check_init_real_array(TEB_TSSNOW_ROOF_TBL, "TEB_TSSNOW_ROOD")
+      call check_init_real_array(TEB_WSNOW_ROAD_TBL, "TEB_WSNOW_ROAD")
+      call check_init_real_array(TEB_TSNOW_ROAD_TBL, "TEB_TSNOW_ROAD")
+      call check_init_real_array(TEB_RSNOW_ROAD_TBL, "TEB_RSNOW_ROAD")
+      call check_init_real_array(TEB_ASNOW_ROAD_TBL, "TEB_ASNOW_ROAD")
+      call check_init_real_array(TEB_ESNOW_ROAD_TBL, "TEB_ESNOW_ROAD")
+      call check_init_real_array(TEB_TSSNOW_ROAD_TBL, "TEB_TSSNOW_ROAD")
+      call check_init_logical(TEB_SOLAR_PANEL_INITED, "TEB_SOLAR_PANEL")
+      call check_init_logical(TEB_LGARDEN_INITED, "TEB_LGARDEN")
+      call check_init_logical(TEB_GREENROOF_INITED, "TEB_GREENROOF")
+      call check_init_logical(TEB_USE_NOAH_INITED, "TEB_USE_NOAH")
+      call check_init_logical(TEB_USE_ZGARDEN_FROM_TBL_INITED, "TEB_USE_ZGARDEN_FROM_TBL")
+      call check_init_string_array(TEB_HROAD_DIR_TBL, "TEB_HROAD_DIR")
+      call check_init_real_array(TEB_ZROAD_DIR_TBL, "TEB_ZROAD_DIR")
+      call check_init_string_array(TEB_WALL_OPT_TBL, "TEB_WALL_OPT")
+      call check_init_real_array(TEB_ZGARDEN_TBL, "TEB_ZGARDEN")
+      call check_init_real_array(TEB_FRAC_GR_TBL, "TEB_FRAC_GR")
+      call check_init_string_array(TEB_COOL_COIL_TBL, "TEB_COOL_COIL")
+      call check_init_string_array(TEB_HEAT_COIL_TBL, "TEB_HEAT_COIL")
+      call check_init_real_array(TEB_F_WATER_COND_TBL, "TEB_F_WATER_COND")
+      call check_init_string_array(TEB_HNATVENT_TBL, "TEB_HNATVENT")
+      call check_init_real_array(TEB_ZNATVENT_TBL, "TEB_ZNATVENT")
+      call check_init_real_array(TEB_F_WASTE_CAN_TBL, "TEB_F_WASTE_CAN")
+      call check_init_real_array(TEB_QIN_TBL, "TEB_QIN")
+      call check_init_real_array(TEB_QIN_FRAD_TBL, "TEB_QIN_FRAD")
+      call check_init_real_array(TEB_QIN_FLAT_TBL, "TEB_QIN_FLAT")
+      call check_init_real_array(TEB_GR_TBL, "TEB_GR")
+      call check_init_real_array(TEB_EFF_HEAT_TBL, "TEB_EFF_HEAT")
+      call check_init_real_array(TEB_INF_TBL, "TEB_INF")
+      call check_init_real_array(TEB_TCOOL_TARGET_TBL, "TEB_TCOOL_TARGET")
+      call check_init_real_array(TEB_THEAT_TARGET_TBL, "TEB_THEAT_TARGET")
+      call check_init_real_array(TEB_HR_TARGET_TBL, "TEB_HR_TARGET")
+      call check_init_real_array(TEB_V_VENT_TBL, "TEB_V_VENT")
+      call check_init_real_array(TEB_CAP_SYS_HEAT_TBL, "TEB_CAP_SYS_HEAT")
+      call check_init_real_array(TEB_CAP_SYS_RAT_TBL, "TEB_CAP_SYS_RAT")
+      call check_init_real_array(TEB_T_ADP_TBL, "TEB_T_ADP")
+      call check_init_real_array(TEB_M_SYS_RAT_TBL, "TEB_M_SYS_RAT")
+      call check_init_real_array(TEB_COP_RAT_TBL, "TEB_COP_RAT")
+      call check_init_real_array(TEB_SHGC_TBL, "TEB_SHGC")
+      call check_init_real_array(TEB_SHGC_SH_TBL, "TEB_SHGC_SH")
+      call check_init_real_array(TEB_U_WIN_TBL, "TEB_U_WIN")
+      call check_init_logical(TEB_LSHADE_INITED, "TEB_LSHADE")
+      call check_init_real_array(TEB_ZSHADE_TBL, "TEB_ZSHADE")
+      call check_init_string_array(TEB_CBEM_TBL, "TEB_CBEM")
+      call check_init_real_array(TEB_FLOOR_HEIGHT_TBL, "TEB_FLOOR_HEIGHT")
+      call check_init_string_array(TEB_CH_BEM_TBL, "TEB_CH_BEM")
+      call check_init_real_array(TEB_ROUGH_ROOF_TBL, "TEB_ROUGH_ROOF")
+      call check_init_real_array(TEB_ROUGH_WALL_TBL, "TEB_ROUGH_WALL")
+      call check_init_logical(TEB_PAR_RD_IRRIG_INITED, "TEB_PAR_RD_IRRIG")
+      call check_init_real_array(TEB_RD_START_MONTH_TBL, "TEB_RD_START_MONTH")
+      call check_init_real_array(TEB_RD_END_MONTH_TBL, "TEB_RD_END_MONTH")
+      call check_init_real_array(TEB_RD_START_HOUR_TBL, "TEB_RD_START_HOUR")
+      call check_init_real_array(TEB_RD_END_HOUR_TBL, "TEB_RD_END_HOUR")
+      call check_init_real_array(TEB_RD_24H_IRRIG_TBL, "TEB_RD_24H_IRRIG")
+      call check_init_real_array(TEB_EMIS_PANEL_TBL, "TEB_EMIS_PANEL")
+      call check_init_real_array(TEB_ALB_PANEL_TBL, "TEB_ALB_PANEL")
+      call check_init_real_array(TEB_EFF_PANEL_TBL, "TEB_EFF_PANEL")
+      call check_init_real_array(TEB_FRAC_PANEL_TBL, "TEB_FRAC_PANEL")
+      call check_init_real_array(TEB_RESIDENTIAL_TBL, "TEB_RESIDENTIAL")
+      call check_init_real_array(TEB_DT_RES_TBL, "TEB_DT_RES")
+      call check_init_real_array(TEB_DT_OFF_TBL, "TEB_DT_OFF")
+      call check_init_real_array(TEB_T_ROAD_TBL, "TEB_T_ROAD")
+      call check_init_real_array(TEB_T_ROOF_TBL, "TEB_T_ROOF")
+      call check_init_real_array(TEB_T_WALL_A_TBL, "TEB_T_WALL_A")
+      call check_init_real_array(TEB_T_WALL_B_TBL, "TEB_T_WALL_B")
+   
+#ifdef WRF_TEB
+      ! initialize constants in external TEB library
+      CALL INI_CSTS
+      CALL INIT_SURFCONSPHY
+#endif
+   end if
+
+   IF (SF_URBAN_PHYSICS /= 4) THEN
    ! Assign a few table values that do not need to come from URBPARM.TBL
 
    Z0HB_TBL = 0.1 * Z0B_TBL
@@ -2412,6 +3357,22 @@ ENDIF
    deallocate(roof_width)
    deallocate(road_width)
 
+   END IF
+
+   !for TEB
+ IF (SF_URBAN_PHYSICS == 4) THEN
+   TEB_Z0H_TBL(1)     = 'MASC95' ! Mascart et al 1995
+   TEB_Z0H_TBL(2)     = 'BRUT82' ! Brustaert     1982
+   TEB_Z0H_TBL(3)     = 'KAND07' ! Kanda         2007
+   TEB_SNOW_ROOF_TBL(1)   = 'NONE'
+   TEB_SNOW_ROOF_TBL(2)   = 'D95 '
+   TEB_SNOW_ROOF_TBL(3)   = '1-L '
+   TEB_SNOW_ROAD_TBL(1)   = 'NONE'
+   TEB_SNOW_ROAD_TBL(2)   = 'D95 '
+   TEB_SNOW_ROAD_TBL(3)   = '1-L '
+ ENDIF
+!end TEB
+
    END SUBROUTINE urban_param_init
 !===========================================================================
 !
@@ -2460,7 +3421,33 @@ ENDIF
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
                              B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,              & ! inout multi-layer urban
                              DL_U_BEP,SF_BEP,VL_BEP,                       & ! inout multi-layer urban
-                             FRC_URB2D, UTYPE_URB2D)                         ! inout
+                             FRC_URB2D, UTYPE_URB2D,                       & ! inout
+
+!for TEB
+                             teb_num_snow_layers,                          & ! in   
+                             teb_num_road_layers,                          & ! in   
+                             teb_num_roof_layers,                          & ! in   
+                             teb_num_wall_layers,                          & ! in   
+                             teb_num_floor_layers,                         & ! in   
+                             TEB_TI_BLD,                                   & ! inout
+                             TEB_T_CANYON, TEB_Q_CANYON,                   & ! inout
+                             TEB_WS_ROOF, TEB_WS_ROAD,                     & ! inout
+                             TEB_WSNOW_ROOF, TEB_TSNOW_ROOF,               & ! inout
+                             TEB_RSNOW_ROOF, TEB_ASNOW_ROOF,               & ! inout
+                             TEB_TSSNOW_ROOF, TEB_ESNOW_ROOF,              & ! inout
+                             TEB_WSNOW_ROAD, TEB_TSNOW_ROAD,               & ! inout
+                             TEB_RSNOW_ROAD, TEB_ASNOW_ROAD,               & ! inout
+                             TEB_TSSNOW_ROAD, TEB_ESNOW_ROAD,              & ! inout
+                             TEB_T_WIN1, TEB_T_WIN2,                       & ! inout
+                             TEB_AUX_MAX, TEB_THER_PRODC_DAY, TEB_QI_BLD,  & ! inout
+                             TEB_T_FLOOR, TEB_T_MASS,                      & ! inout
+                             TEB_T_ROAD, TEB_T_ROOF,                       & ! inout
+                             TEB_T_WALL_A, TEB_T_WALL_B,                   & ! inout
+                             TEB_TSK_RURAL                                 & ! inout
+                             )
+! end TEB
+
+
    IMPLICIT NONE
 
    INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics
@@ -2563,6 +3550,42 @@ ENDIF
    REAL, DIMENSION(ims:ime, kms:kme,jms:jme),INTENT(INOUT) :: SF_BEP
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
 !
+!for TEB
+   INTEGER, INTENT(IN)                                                    :: teb_num_snow_layers
+   INTEGER, INTENT(IN)                                                    :: teb_num_road_layers
+   INTEGER, INTENT(IN)                                                    :: teb_num_roof_layers
+   INTEGER, INTENT(IN)                                                    :: teb_num_wall_layers
+   INTEGER, INTENT(IN)                                                    :: teb_num_floor_layers
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TI_BLD
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_T_CANYON
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_Q_CANYON
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_WS_ROOF
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_WS_ROAD
+   REAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_WSNOW_ROOF 
+   REAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_TSNOW_ROOF 
+   REAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_RSNOW_ROOF 
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ASNOW_ROOF 
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ESNOW_ROOF 
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TSSNOW_ROOF
+   REAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_WSNOW_ROAD 
+   REAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_TSNOW_ROAD 
+   REAL, DIMENSION(ims:ime, teb_num_snow_layers, jms:jme), INTENT(INOUT)  :: TEB_RSNOW_ROAD 
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ASNOW_ROAD 
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_ESNOW_ROAD 
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TSSNOW_ROAD
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_T_WIN1         
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_T_WIN2         
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_AUX_MAX        
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_THER_PRODC_DAY 
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_QI_BLD         
+   REAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_FLOOR
+   REAL, DIMENSION(ims:ime, teb_num_floor_layers, jms:jme), INTENT(INOUT) :: TEB_T_MASS
+   REAL, DIMENSION(ims:ime, teb_num_road_layers, jms:jme), INTENT(INOUT)  :: TEB_T_ROAD
+   REAL, DIMENSION(ims:ime, teb_num_roof_layers, jms:jme), INTENT(INOUT)  :: TEB_T_ROOF
+   REAL, DIMENSION(ims:ime, teb_num_wall_layers, jms:jme), INTENT(INOUT)  :: TEB_T_WALL_A
+   REAL, DIMENSION(ims:ime, teb_num_wall_layers, jms:jme), INTENT(INOUT)  :: TEB_T_WALL_B
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)                       :: TEB_TSK_RURAL
+!end TEB
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D
    INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D
    INTEGER                                            :: UTYPE_URB
@@ -2892,6 +3915,52 @@ ENDIF
           DL_U_BEP(I,K,J)=0.
       END DO
       ENDIF       !sf_urban_physics=2
+
+!for TEB
+     IF( sf_urban_physics .EQ. 4 )THEN
+
+      TEB_TSK_RURAL(I,J) = TSURFACE0_URB(I,J)
+
+      IF (UTYPE_URB2D(I,J) > 0) THEN
+         TEB_TI_BLD(I,J)       = TEB_TI_BLD_TBL(UTYPE_URB2D(I,J)) ! indoor air temperature
+         TEB_T_CANYON(I,J)     = TEB_T_CANYON_TBL(UTYPE_URB2D(I,J)) ! indoor air temperature
+         TEB_Q_CANYON(I,J)     = TEB_Q_CANYON_TBL(UTYPE_URB2D(I,J)) ! indoor air temperature
+
+         TEB_WS_ROOF(I,J)      = TEB_WS_ROOF_TBL(UTYPE_URB2D(I,J)) ! roof water reservoir(kg/m2)
+         TEB_WS_ROAD(I,J)      = TEB_WS_ROAD_TBL(UTYPE_URB2D(I,J)) ! road water reservoir(kg/m2)
+         TEB_ASNOW_ROOF(I,J)   = TEB_ASNOW_ROOF_TBL(UTYPE_URB2D(I,J)) ! snow albedo
+         TEB_ESNOW_ROOF(I,J)   = TEB_ESNOW_ROOF_TBL(UTYPE_URB2D(I,J)) ! snow emissivity
+         TEB_TSSNOW_ROOF(I,J)  = TEB_TSSNOW_ROOF_TBL(UTYPE_URB2D(I,J)) ! snow surface temperature
+         TEB_ASNOW_ROAD(I,J)   = TEB_ASNOW_ROAD_TBL(UTYPE_URB2D(I,J)) ! snow albedo
+         TEB_ESNOW_ROAD(I,J)   = TEB_ESNOW_ROAD_TBL(UTYPE_URB2D(I,J)) ! snow emissivity
+         TEB_TSSNOW_ROAD(I,J)  = TEB_TSSNOW_ROAD_TBL(UTYPE_URB2D(I,J)) ! snow surface temperature
+         DO K=1, teb_num_snow_layers
+            TEB_WSNOW_ROOF(I,K,J) = TEB_WSNOW_ROOF_TBL(UTYPE_URB2D(I,J)) ! snow layers reservoir
+            TEB_TSNOW_ROOF(I,K,J) = TEB_TSNOW_ROOF_TBL(UTYPE_URB2D(I,J)) ! snow layers temperature
+            TEB_RSNOW_ROOF(I,K,J) = TEB_RSNOW_ROOF_TBL(UTYPE_URB2D(I,J)) ! snow layers density
+            TEB_WSNOW_ROAD(I,K,J) = TEB_WSNOW_ROAD_TBL(UTYPE_URB2D(I,J)) ! snow layers reservoir
+            TEB_TSNOW_ROAD(I,K,J) = TEB_TSNOW_ROAD_TBL(UTYPE_URB2D(I,J)) ! snow layers temperature
+            TEB_RSNOW_ROAD(I,K,J) = TEB_RSNOW_ROAD_TBL(UTYPE_URB2D(I,J)) ! snow layers density
+         END DO
+         TEB_T_WIN1(I,J)       = TEB_T_WIN1_TBL(UTYPE_URB2D(I,J)) ! External window temperature
+         TEB_T_WIN2(I,J)       = TEB_T_WIN2_TBL(UTYPE_URB2D(I,J)) ! Internal window temperature
+         TEB_QI_BLD(I,J)       = TEB_QI_BLD_TBL(UTYPE_URB2D(I,J))  ! Indoor air specific humidity [kg kg-1]
+      
+         TEB_AUX_MAX(I,J)        = 5.  ! Auxiliar variable for autosize calcs (NOT USED IN TEB!)
+         TEB_THER_PRODC_DAY(I,J) = 0.  ! Present day integrated thermal production
+                                       ! of energy (J/m2 panel). zero value at start
+         
+         TEB_T_FLOOR(I,:,J)  = TEB_T_FLOOR_TBL ! building floor temperature
+         TEB_T_MASS(I,:,J)   = TEB_T_MASS_TBL ! building mass temperature
+         TEB_T_ROAD(I,:,J)   = TEB_T_ROAD_TBL ! road temperature
+         TEB_T_ROOF(I,:,J)   = TEB_T_ROOF_TBL ! roof temperature
+         TEB_T_WALL_A(I,:,J) = TEB_T_WALL_A_TBL ! wall temperature
+         TEB_T_WALL_B(I,:,J) = TEB_T_WALL_B_TBL ! wall temperature
+      ENDIF
+
+     ENDIF
+!end TEB
+
      ENDIF        !restart
 
 

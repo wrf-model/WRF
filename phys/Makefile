@@ -145,6 +145,7 @@ MODULES = \
         module_sf_bep.o  \
         module_sf_bep_bem.o \
         module_sf_bem.o \
+        module_sf_teb.o \
 	module_sf_pxlsm.o \
 	module_sf_pxlsm_data.o \
 	module_sf_ruclsm.o \

@@ -408,14 +408,31 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-! Check that mosiac option cannot turn on when sf_urban_physics = 2 and 3
+! Check that sf_urban_physics = 4 can only be used if compiled with TEB
+
+!-----------------------------------------------------------------------
+#ifndef WRF_TEB
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % sf_urban_physics(i) .EQ. 4 ) THEN
+            wrf_err_message = '--- ERROR: urban option 4 can only be used if TEB was enabled during compilation'
+            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+#endif
+
+!-----------------------------------------------------------------------
+! Check that mosiac option cannot turn on when sf_urban_physics = 2, 3 and 4
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % sf_surface_mosaic .EQ. 1 .AND. &
               (model_config_rec % sf_urban_physics(i) .EQ. 2 .OR. &
-               model_config_rec % sf_urban_physics(i) .EQ. 3 ) ) THEN
-            wrf_err_message = '--- ERROR: mosaic option cannot work with urban options 2 and 3 '
+               model_config_rec % sf_urban_physics(i) .EQ. 3 .OR. &
+               model_config_rec % sf_urban_physics(i) .EQ. 4 ) ) THEN
+            wrf_err_message = '--- ERROR: mosaic option cannot work with urban options 2, 3 and 4'
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Fix sf_surface_mosaic and sf_urban_physics in namelist.input.'
             CALL wrf_message ( wrf_err_message )
@@ -808,6 +825,25 @@
             WRITE(wrf_err_message, '("              does not work with NMM ")')
             CALL wrf_message ( TRIM ( wrf_err_message ) )
             WRITE(wrf_err_message, '("Select a different LSM scheme ")')
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      END DO
+#endif
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+!           Check that NOAH-MP LSM is not allowed for TEB urban physics
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME .and. &
+              model_config_rec%sf_urban_physics(i) == 4 ) THEN
+            WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, '("              does not work with sf_urban_physics = 4 ")')
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, '("Select a different LSM or urban scheme ")')
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
          END IF

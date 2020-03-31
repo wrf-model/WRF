@@ -15,6 +15,8 @@ $sw_jasperlib_path="";
 $sw_jasperinc_path=""; 
 $sw_esmflib_path="";
 $sw_esmfinc_path="";
+$sw_teblib_path="";
+$sw_tebinc_path="";
 $sw_ldflags=""; 
 $sw_compileflags=""; 
 $sw_opt_level=""; 
@@ -321,6 +323,17 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
    $sw_esmf_ldflag = "yes" ;
    }
 
+# A separately-installed TEB library is required to build the WRF-TEB physics option.
+# User must set environment variable TEB_PATH to the build folder of TEB 
+# to enable this feature prior to running configure.
+ if ( $ENV{WRF_TEB} eq "1" && $ENV{TEB_PATH} )
+   {
+   printf "Configuring to use TEB library for WRF-TEB support...\n" ;
+   printf("  \$TEB_PATH = %s\n",$ENV{TEB_PATH});
+   $sw_teblib_path = $ENV{TEB_PATH};
+   $sw_tebinc_path = "$ENV{TEB_PATH}/mod";
+   }
+
 # parse the configure.wrf file
 
 $validresponse = 0 ;
@@ -555,6 +568,16 @@ while ( <CONFIGURE_DEFAULTS> )
      {
        $_  =~ s:CONFIGURE_TERRAIN_AND_LANDUSE:-DLANDREAD_STUB=1:g;
      }
+
+    if ( $sw_teblib_path && $sw_tebinc_path ) 
+      {
+        $_ =~ s:CONFIGURE_TEB_FLAG:-DWRF_TEB:g ;
+        $_ =~ s:CONFIGURE_TEB_INC:-I$sw_tebinc_path:g ;
+      }
+    else                   
+      { $_ =~ s:CONFIGURE_TEB_FLAG::g ;
+        $_ =~ s:CONFIGURE_TEB_INC::g ;
+      }
 
     # ESMF substitutions in configure.defaults
     if ( $sw_esmflib_path && $sw_esmfinc_path )
@@ -867,6 +890,15 @@ while ( <ARCH_PREAMBLE> )
         $_ =~ s:CONFIGURE_GRIB2_FLAG::g ;
         $_ =~ s:CONFIGURE_GRIB2_INC::g ;
         $_ =~ s:CONFIGURE_GRIB2_LIB::g ;
+      }
+
+    if ( $sw_teblib_path && $sw_tebinc_path ) 
+      {
+        $_ =~ s:CONFIGURE_TEB_LIB:-L$sw_teblib_path -lteb:g ;
+      }
+    else                   
+      { 
+        $_ =~ s:CONFIGURE_TEB_LIB::g ;
       }
 
   if ( $sw_gpfs_path ne "" )

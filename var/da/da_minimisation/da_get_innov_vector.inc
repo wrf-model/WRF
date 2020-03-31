@@ -189,8 +189,21 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
-      if ( use_varbc .or. freeze_varbc ) then
-         if ( num_fgat_time > 1 ) call da_varbc_coldstart(iv)
+      if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
+         if ( num_fgat_time > 1 ) then
+            iv%instid(:)%info%n1 = 1
+            iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(num_fgat_time)
+            call da_varbc_coldstart(iv)
+            do n= num_fgat_time , 1, -1
+               iv%time = n
+               iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
+               iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
+               call da_varbc_direct(iv)
+               if (qc_rad) then
+                  call da_qc_rad(it, ob, iv)
+               end if     ! qc is conducted inside n1-n2
+            end do
+         end if
       end if
       if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
    end if

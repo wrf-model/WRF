@@ -444,7 +444,9 @@
 !-----------------------------------------------------------------------
 ! Check that number of hours of daily irrigation is greater than zero.
 ! This value is used in the denominator to compute the amount of 
-! irrigated water per timestep, which would give a divide by zero.
+! irrigated water per timestep, and the default value from the Registry
+! is zero. This is a reminder to the user that this value needs to be
+! manually set.
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom

@@ -50,19 +50,22 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
    !------------------------------------------------------------------------
    ! [2.0] Perform (Variational) bias correction
    !------------------------------------------------------------------------
-   if (biascorr) then
+   if (use_varbc .or. freeze_varbc) then
+      call da_varbc_pred(iv)
+
+      !varbc coldstart can not be done here when num_fgat_time>1
+      if ( num_fgat_time == 1 ) then
+         call da_varbc_coldstart(iv)
+         call da_varbc_direct(iv)
+         if (qc_rad) call da_qc_rad(it, ob, iv)
+      end if
+   else if (biascorr) then
       do inst = 1, iv%num_inst                 ! loop for sensor
          write(unit=stdout,fmt='(A,A)') 'Performing bias correction for ', &
             trim(iv%instid(inst)%rttovid_string)
          call da_biascorr(inst,ob,iv)
       end do                                   ! end loop for sensor
-   end if
-
-   !------------------------------------------------------------------------
-   ! [3.0] Perform QC check
-   !------------------------------------------------------------------------
-   if (qc_rad) then
-      call da_qc_rad(it, ob, iv)
+      if (qc_rad) call da_qc_rad(it, ob, iv)
    end if
 
    !------------------------------------------------------------------------

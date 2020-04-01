@@ -52,43 +52,13 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
    !------------------------------------------------------------------------
    if (use_varbc .or. freeze_varbc) then
       call da_varbc_pred(iv)
-
       !varbc coldstart can not be done here when num_fgat_time>1
-      if ( num_fgat_time == 1 ) then
-         call da_varbc_coldstart(iv)
-         call da_varbc_direct(iv)
-         if (qc_rad) call da_qc_rad(it, ob, iv)
-      end if
    else if (biascorr) then
       do inst = 1, iv%num_inst                 ! loop for sensor
          write(unit=stdout,fmt='(A,A)') 'Performing bias correction for ', &
             trim(iv%instid(inst)%rttovid_string)
          call da_biascorr(inst,ob,iv)
       end do                                   ! end loop for sensor
-   end if
-
-   !------------------------------------------------------------------------
-   ! [3.0] Perform QC check
-   !------------------------------------------------------------------------
-   if (.not. use_varbc .and. .not freeze_varbc .and. qc_rad) then
-      call da_qc_rad(it, ob, iv)
-   end if
-
-   !------------------------------------------------------------------------
-   ! [4.0] Compute preconditioning for Variational bias correction
-   !------------------------------------------------------------------------
-   !varbc preconditioning shoud be done after get_innov_vector is done for all time slots
-   !if (use_varbc .and. it == 1) call da_varbc_precond(iv)  !moved to da_get_innov_vector.inc
-   
-   !------------------------------------------------------------------------
-   ! [5.0] Prepare (QCed) bias statistics files
-   !------------------------------------------------------------------------
-   if (biasprep) then
-      do inst = 1, iv%num_inst
-         write(unit=stdout,fmt='(A,A)') 'Preparing bias statistics files for ', &
-            trim(iv%instid(inst)%rttovid_string)
-         call da_biasprep(inst,ob,iv)
-      end do
    end if
 
    if(trace_use) call  da_trace_exit("da_get_innov_vector_radiance")

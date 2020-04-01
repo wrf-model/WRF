@@ -65,7 +65,13 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
             trim(iv%instid(inst)%rttovid_string)
          call da_biascorr(inst,ob,iv)
       end do                                   ! end loop for sensor
-      if (qc_rad) call da_qc_rad(it, ob, iv)
+   end if
+
+   !------------------------------------------------------------------------
+   ! [3.0] Perform QC check
+   !------------------------------------------------------------------------
+   if (.not. use_varbc .and. .not freeze_varbc .and. qc_rad) then
+      call da_qc_rad(it, ob, iv)
    end if
 
    !------------------------------------------------------------------------

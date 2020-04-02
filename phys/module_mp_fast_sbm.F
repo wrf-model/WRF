@@ -6071,19 +6071,6 @@ enddo
    	DM_BCAST_MACRO_R16 ( FBF5 )
    	DM_BCAST_MACRO_R16 ( FAB5 )
    	DM_BCAST_MACRO_R16 ( FBB5 )
- ! ### (KS) - Broadcating Temperature intervals
-   	CALL wrf_dm_bcast_integer ( temps_water , size ( temps_water ) )
-   	CALL wrf_dm_bcast_integer ( temps_fd , size ( temps_fd ) )
-   	CALL wrf_dm_bcast_integer ( temps_crystals , size ( temps_crystals ) )
-   	CALL wrf_dm_bcast_integer ( temps_snow , size ( temps_snow ) )
-   	CALL wrf_dm_bcast_integer ( temps_graupel , size ( temps_graupel ) )
-   	CALL wrf_dm_bcast_integer ( temps_hail , size ( temps_hail ) )
- ! ### (KS) - Broadcating Liquid fraction intervals
-   	DM_BCAST_MACRO_R4 ( fws_fd )
-   	DM_BCAST_MACRO_R4 ( fws_crystals )
-   	DM_BCAST_MACRO_R4 ( fws_snow )
-   	DM_BCAST_MACRO_R4 ( fws_graupel )
-   	DM_BCAST_MACRO_R4 ( fws_hail )
  ! ### (KS) - Broadcating Usetables array
  	  CALL wrf_dm_bcast_integer ( usetables , size ( usetables ) * IWORDSIZE )
 #endif

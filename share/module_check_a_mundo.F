@@ -2218,7 +2218,7 @@
 
 !-----------------------------------------------------------------------
 !  Consistency checks for vertical refinement:
-!  must using the terrain following vertical coordinate
+!  must use the terrain following vertical coordinate
 !-----------------------------------------------------------------------
       oops = 0 
       DO i = 2, model_config_rec % max_dom

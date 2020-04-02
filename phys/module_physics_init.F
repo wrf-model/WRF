@@ -5280,6 +5280,7 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
      real, dimension(ims:ime,jms:jme), intent(out) :: dx2d, area2d
 
      integer :: i, j
+
 #if 0
      do j = jts, min(jde-1,jte)
         do i = its, min(ide-1,ite)

@@ -139,6 +139,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,aercu_opt                                         &
 # if( EM_CORE==1 )
                       ,sbmradar,num_sbmradar                             &
+                      ,sbm_diagnostics                                   &
                       ,aerocu,aercu_fct,no_src_types_cu                  &
                       ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           &
                       ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           &
@@ -410,6 +411,7 @@ SUBROUTINE microphysics_driver(                                          &
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme,num_scalar
 #if (EM_CORE == 1)
    INTEGER,      INTENT(IN   )    ::     num_sbmradar
+   INTEGER,      INTENT(IN   )    ::     sbm_diagnostics
 #endif
    INTEGER, OPTIONAL, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
    INTEGER,      INTENT(IN   )    ::                         kts,kte
@@ -1133,6 +1135,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,QNG=qng_curr                                      &
                  ,QNA=qnn_curr                                      &
                  ,sbmradar=sbmradar,num_sbmradar=num_sbmradar       &
+                 ,sbm_diagnostics=sbm_diagnostics                   &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &

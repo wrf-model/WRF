@@ -2136,6 +2136,13 @@ if( grid%traj_opt /= no_trajectory ) then
 endif
 #endif
 
+!DAVE make some b4b failures
+if (config_flags%ra_lw_physics .eq. 4) then
+   grid%t_1(ipe-2,3,10:15) = grid%t_1(ipe-1,3,10:15)
+   grid%t_2(ipe-2,3,10:15) = grid%t_2(ipe-1,3,10:15)
+   grid%u_1(ipe-2,9,10:15) = grid%u_1(ipe-1,9,10:15)
+   grid%u_2(ipe-2,9,10:15) = grid%u_2(ipe-1,9,10:15)
+endif
 
      CALL wrf_debug ( 100 , 'start_domain_em: Returning' )
 

@@ -8,6 +8,7 @@ MODULE module_optional_input
               flag_qni      , flag_qnc      , flag_qnr      , &
               flag_qns      , flag_qng      , flag_qnh      , &
               flag_qnwfa    , flag_qnifa    , &
+              flag_qnwfa_cl , flag_qnifa_cl , &
               flag_sh       , flag_speccldl , flag_speccldf
 
    INTEGER :: flag_soil_levels, flag_soil_layers
@@ -325,6 +326,8 @@ USE module_io_domain
       flag_qnh      = 0
       flag_qnwfa    = 0
       flag_qnifa    = 0
+      flag_qnwfa_cl = 0
+      flag_qnifa_cl = 0
       flag_sh       = 0
       flag_speccldl = 0
       flag_speccldf = 0
@@ -403,6 +406,16 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qnifa     = itmp
+      END IF
+      flag_name(1:8) = 'QNWFA_CL'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnwfa_cl  = itmp
+      END IF
+      flag_name(1:8) = 'QNIFA_CL'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnifa_cl  = itmp
       END IF
       flag_name(1:8) = 'SH      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 

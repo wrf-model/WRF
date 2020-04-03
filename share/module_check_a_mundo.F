@@ -2114,14 +2114,14 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
-            IF ( model_config_rec%use_aero_icbc .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
+            IF ( model_config_rec%use_aero_icbc > 0 .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
                 model_config_rec%scalar_pblmix(i) = 1
                 oops = oops + 1
             END IF
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- WARNING: For mp_physics == 28 and use_aero_icbc is true, recommend to turn on scalar_pblmix'
+         wrf_err_message = '--- WARNING: For mp_physics == 28 and use_aero_icbc > 0, recommend to turn on scalar_pblmix'
          CALL wrf_debug ( 1, wrf_err_message )
          wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_debug ( 1, wrf_err_message )

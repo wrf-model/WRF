@@ -13,8 +13,8 @@
 
 dimspec  wif    2     namelist=num_wif_levels          z     num_wif_levels
 
-rconfig   integer num_wif_levels    namelist,domains	   1              27      irh    "num_wif_levels" "number of levels in the Thompson Water Ice Friendly Aerosols" ""
-rconfig   integer wif_input_opt     namelist,domains       1              0       irh    "wif_input_opt"  "0=do not process the Water Ice Friendly Aerosol input from metgrid"
+rconfig   integer num_wif_levels    namelist,domains	   1              30      irh    "num_wif_levels" "number of levels in the Thompson Water Ice Friendly Aerosols" ""
+rconfig   integer wif_input_opt     namelist,domains       1              1       irh    "wif_input_opt"  "0=do not process the Water Ice Friendly Aerosol input from metgrid"
 
 state    real       p_wif_now      i{wif}j      dyn_em      1        Z     -          "P_WIF_NOW"   "Pressure for Water Ice Friendly Aerosols Now"   "Pa"
 state    real       p_wif_jan      i{wif}j      dyn_em      1        Z     i1         "P_WIF_JAN"   "Pressure for Water Ice Friendly Aerosols Jan"   "Pa"

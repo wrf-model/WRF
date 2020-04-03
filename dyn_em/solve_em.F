@@ -2723,7 +2723,7 @@ BENCH_END(tracer_adv_tim)
            IF( rk_step == 1 ) THEN
              IF ( config_flags%nested .OR. &
                 ( config_flags%specified .AND. config_flags%have_bcs_scalar ) .OR. &
-                ( ( is .EQ. P_QNWFA .OR. is .EQ. P_QNIFA) .AND. config_flags%use_aero_icbc ) ) THEN
+                ( ( is .EQ. P_QNWFA .OR. is .EQ. P_QNIFA) .AND. config_flags%use_aero_icbc > 0 ) ) THEN
 
                CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),                            &
                                        scalar(ims,kms,jms,is),  grid%mut,                      &
@@ -2801,7 +2801,7 @@ BENCH_END(tracer_adv_tim)
                                   grid%j_start(ij), grid%j_end(ij),  &
                                   k_start, k_end                    )
              ELSE IF ( ( ( ( is .EQ. P_QNWFA ) .OR. ( is .EQ. P_QNIFA ) ) .AND. &
-                         ( .NOT. config_flags%use_aero_icbc ) ) &
+                         ( config_flags%use_aero_icbc == 0 ) ) &
                          .OR. &
                        ( ( .NOT. ( ( is .EQ. P_QNWFA ) .OR. ( is .EQ. P_QNIFA ) ) ) .AND. &
                          ( .NOT. config_flags%have_bcs_scalar ) ) ) THEN

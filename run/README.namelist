@@ -512,9 +512,10 @@ Namelist variables for controlling the adaptive time step option:
                                      = 26, WDM 7-class scheme (separate hail and graupel categories)
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
-                                       This option has two climatological aerosol input options:
-                                       use_aero_icbc = .F. : use constant values
-                                       use_aero_icbc = .T. : use input from WPS
+                                       This option has three aerosol input options:
+                                       use_aero_icbc = 0 : use constant values
+                                       use_aero_icbc = 1 : use climatology from WPS
+                                       use_aero_icbc = 2 : use first guess from WPS
                                      = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version

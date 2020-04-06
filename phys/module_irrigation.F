@@ -136,7 +136,8 @@ SUBROUTINE sprinkler_irrigation(  julian_in                                     
          INTENT(INOUT) ::                                       &
                                                         qr_curr
    REAL, INTENT(IN   ) :: dt
-!
+   end_hour=irr_start_hour+irr_num_hours
+
    xt24=mod(xtime,1440.)
    tloc=floor(gmt+xt24/60.)
    if(tloc.lt.0) tloc=tloc+24

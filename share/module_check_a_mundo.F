@@ -442,6 +442,48 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that number of hours of daily irrigation is greater than zero.
+! This value is used in the denominator to compute the amount of 
+! irrigated water per timestep, and the default value from the Registry
+! is zero. This is a reminder to the user that this value needs to be
+! manually set.
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( ( model_config_rec % sf_surf_irr_scheme(i) .EQ. CHANNEL   )   .OR. &
+                ( model_config_rec % sf_surf_irr_scheme(i) .EQ. SPRINKLER )   .OR. &
+                ( model_config_rec % sf_surf_irr_scheme(i) .EQ. DRIP      ) ) .AND. &
+              ( model_config_rec % irr_num_hours(i) .LE. 0 ) ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO
+      
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: irr_num_hours must be greater than zero to work with irrigation'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+! Fix derived setting for irrigation. Since users may only want the irrigation
+! to be active in the inner-most domain, we have a separate variable that is
+! used to define packaging for the irrigation fields.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % sf_surf_irr_scheme(i) .EQ. CHANNEL   ) THEN
+            model_config_rec % sf_surf_irr_alloc = CHANNEL
+         END IF
+         IF ( model_config_rec % sf_surf_irr_scheme(i) .EQ. SPRINKLER ) THEN
+            model_config_rec % sf_surf_irr_alloc = SPRINKLER
+         END IF
+         IF ( model_config_rec % sf_surf_irr_scheme(i) .EQ. DRIP      ) THEN
+            model_config_rec % sf_surf_irr_alloc = DRIP    
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Check that Deng Shallow Convection Must work with MYJ or MYNN PBL
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom

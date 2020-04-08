@@ -2557,7 +2557,7 @@ integer::oops1,oops2
             WRITE (a_message,*) '--- ERROR: See https://www2.mmm.ucar.edu/wrf/users/wrfv3.9/mp28_updated.html'
             CALL wrf_message ( a_message)
             WRITE (a_message,*) '--- ERROR: Neither wif_input_opt=1 nor use_aero_icbc=T are allowed without aerosol data'
-            CALL wrf_message ( a_message)
+            CALL wrf_error_fatal ( a_message)
 
          END IF
 

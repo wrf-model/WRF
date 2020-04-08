@@ -2547,12 +2547,12 @@ integer::oops1,oops2
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte )
 
-         ELSE IF ( ( config_flags%mp_physics .EQ. THOMPSONAERO ) .AND. &
-                   ( ( config_flags%wif_input_opt .EQ. USE_WIF_INPUT ) .OR. &
+         ELSE IF ( ( config_flags%mp_physics .EQ. THOMPSONAERO  ) .AND. &
+                   ( ( config_flags%wif_input_opt .EQ. USE_WIF_INPUT ) .OR.  &
                      ( config_flags%use_aero_icbc                    ) ) .AND. &
                    ( ( flag_qnwfa .NE. 1 ) .OR.  &
                      ( flag_qnifa .NE. 1 ) ) ) THEN
-            WRITE (a_message,*) '--- ERROR: QNWFA or QNIFA fields are not in the metgrid input'
+            WRITE (a_message,*) "--- ERROR: QNWFA or QNIFA fields are not in the metgrid input, they can't be interpolated"
             CALL wrf_message ( a_message)
             WRITE (a_message,*) '--- ERROR: See https://www2.mmm.ucar.edu/wrf/users/wrfv3.9/mp28_updated.html'
             CALL wrf_message ( a_message)

@@ -2189,8 +2189,8 @@ integer::oops1,oops2
          !  met variables? If so, we can skip all of this interpolation, as the pressure field
          !  is allocated, but all zeros.
  
+         IF ( config_flags%gca_input_opt .EQ. 1 ) THEN
          IF ( ( config_flags%num_gca_levels .GT. 0 ) .AND. &
-              ( config_flags%gca_input_opt .EQ. 1 ) .AND. &
               ( ABS(grid %p_gca_jan(its,config_flags%num_gca_levels/2,jts)) .GT. 1 ) ) THEN
 
             !  Insert source code here to vertically interpolate an extra set of 3d arrays
@@ -2370,6 +2370,7 @@ integer::oops1,oops2
                                   ims , ime , jms , jme , kms , kme , &
                                   its , ite , jts , jte , kts , kte )
             END IF
+            END IF
          END IF
 #endif
 
@@ -2377,8 +2378,8 @@ integer::oops1,oops2
          !  met variables? If so, we can skip all of this interpolation, as the pressure field
          !  is allocated, but all zeros.
  
+         IF ( config_flags%wif_input_opt .EQ. 1 ) THEN
          IF ( ( config_flags%num_wif_levels .GT. 0 ) .AND. &
-              ( config_flags%wif_input_opt .EQ. 1 ) .AND. &
               ( ABS(grid %p_wif_jan(its,config_flags%num_wif_levels/2,jts)) .GT. 1 ) ) THEN
 
             ! OPTIONAL DATA #2: Thompson Water-Friendly Ice-Friendly Aerosols
@@ -2576,6 +2577,7 @@ integer::oops1,oops2
                WRITE (a_message,*) '--- ERROR: Neither wif_input_opt=1 nor use_aero_icbc=T are allowed without aerosol data'
                CALL wrf_error_fatal ( a_message)
 
+            END IF
             END IF
          END IF
 

@@ -34,7 +34,7 @@
       use WRF_ESMF_BaseTimeMod
 
       ! associated derived types
-      use ESMF_FractionMod, only : ESMF_Fraction
+      use WRF_ESMF_FractionMod, only : ESMF_Fraction
       use WRF_ESMF_CalendarMod
 
       implicit none

@@ -2191,7 +2191,7 @@ integer::oops1,oops2
  
          IF ( config_flags%gca_input_opt .EQ. 1 ) THEN
          IF ( ( config_flags%num_gca_levels .GT. 0 ) .AND. &
-              ( ABS(grid %p_gca_jan(its,config_flags%num_gca_levels/2,jts)) .GT. 1 ) ) THEN
+              ( ABS(grid %p_gca(its,config_flags%num_gca_levels/2,jts)) .GT. 1 ) ) THEN
 
             !  Insert source code here to vertically interpolate an extra set of 3d arrays
             !  that could be on a different vertical structure than the input atmospheric

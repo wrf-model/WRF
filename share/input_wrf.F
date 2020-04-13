@@ -805,8 +805,9 @@
 #if ( DA_CORE != 1 )
     ! Test here to check that config_flags%sf_urban_physics in namelist
     ! is equal to the value listed the global attributes of the wrfinput files.
-    ! We only perform this check if the WRF model has sf_urban_physics turned on,
-    ! as the WRF model can run with any IC if the differing option is de-activated.
+    ! We only perform this check if the WRF model has sf_urban_physics turned on.
+    ! If the WRF model runs with nml sf_urban_physics==0, then any setting of the 
+    ! sf_urban_physics in the metadata is acceptable, so not test is required.
 
     IF ( config_flags%sf_urban_physics /= 0 ) THEN
        IF ( switch .EQ. input_only  ) THEN

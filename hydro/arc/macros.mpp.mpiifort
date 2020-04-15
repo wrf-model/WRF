@@ -22,11 +22,6 @@ else
 HYDRO_D =  $(WRF_HYDRO)
 endif
 
-ifeq ($(WRFIO_NCD_LARGE_FILE_SUPPORT),1)
-WRFIO_NCD_LARGE_FILE_SUPPORT = -DWRFIO_NCD_LARGE_FILE_SUPPORT
-else
-WRFIO_NCD_LARGE_FILE_SUPPORT = 
-endif
 
 #################
 # NEMS Settings #
@@ -42,14 +37,14 @@ FC          = mpiifort -g -openmp -mkl=sequential -align array32byte -lmkl_intel
 
 RMD		= rm -f
 COMPILER90	= $(FC)
-F90FLAGS	= -w -c -ftz -fno-alias -fp-model precise -FR
+F90FLAGS	= -O2 -g -w -c -ftz -fno-alias -fp-model precise -FR
 # -w	: disable all warnings
 # -c	: compile to object (.o) only, do not link
 # -ftz	: enable flush denormal results to zero
 MODFLAG		= -I./ -I../../MPP -I../MPP -I../mod
 LDFLAGS		= 
-CPP		= cpp
-CPPFLAGS	= -P -traditional -DMPP_LAND -I ../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
+CPPINVOKE	= -fpp
+CPPFLAGS	= -DMPP_LAND -I ../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
 LIBS		=	
 NETCDFINC       = $(NETCDF)/include
 NETCDFLIB       = -L$(NETCDF)/lib -lnetcdff -lnetcdf

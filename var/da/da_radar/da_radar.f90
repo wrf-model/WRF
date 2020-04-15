@@ -8,7 +8,7 @@ module da_radar
       max_error_p,max_error_q, check_max_iv_unit,check_max_iv,  &
       max_stheight_diff,missing_data,max_error_bq,max_error_slp, &
       max_error_bt, max_error_buv, radar,fails_error_max, &
-      use_radar_rv, use_radar_rf, use_radar_rhv, use_radar_rqv, &
+      use_radar_rv, use_radar_rf,radar_rf_opt,radar_rf_rscl,radar_rv_rscl,rf_noice,rfmin, rf_qthres, use_radar_rhv, use_radar_rqv, &
       below_model_surface,mkz,above_model_lid,&
       fg_format,fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional,fg_format_wrf_arw_global,&
       fg_format_kma_global,max_error_rv,max_error_rf, &
@@ -80,6 +80,30 @@ contains
 #include "da_max_error_qc_radar.inc"
 #include "da_write_oa_radar_ascii.inc"
 #include "da_radar_rf.inc"
+
+#include "da_radzicevar_calc_ice_abc.inc"
+#include "da_radzicevar_pkx.inc"
+#include "da_radzicevar_upper_f.inc"
+#include "da_radzicevar_cal_tl_fw4wetice.inc"
+#include "da_radzicevar_prepare_interceptpara.inc"
+#include "da_radzicevar_virtual.inc"
+#include "da_radzicevar_parameter_zrx.inc"
+#include "da_radzicevar_prepare_mixingratios.inc"
+#include "da_radzicevar_waterfraction.inc"
+#include "da_radzicevar_parameter_zxx.inc"
+#include "da_radzicevar_prepare_zmm_adj.inc"
+#include "da_radzicevar_dryice_adj.inc"
+#include "da_radzicevar_pxabk.inc"
+#include "da_radzicevar_wetice_adj.inc"
+#include "da_radzicevar_dryice_tl.inc"
+#include "da_radzicevar_rain_adj.inc"
+#include "da_radzicevar_wetice_tl.inc"
+#include "da_radzicevar_rain_tl.inc"
+#include "da_radzicevar_rhoair_tl.inc"
+#include "da_radzicevar.inc"
+#include "da_radzicevar_tl.inc"
+#include "da_radzicevar_adj.inc"
+#include "da_radzicevar_sigma_in_abc.inc"
 
 end module da_radar
 

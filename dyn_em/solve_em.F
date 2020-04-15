@@ -295,9 +295,9 @@ SUBROUTINE solve_em ( grid , config_flags  &
 !
 ! Set diagnostic flag value history output time
 !-----------------------------------------------------------------------------
-!  if ( Is_alarm_tstep(grid_clock, grid_alarms(HISTORY_ALARM)) ) then
-      ke_diag = kms ! default to ke_diag=1 in case of nwp_diagnostics == 1
-      diag_flag = .false.
+
+   ke_diag = kms ! default to ke_diag=1 in case of nwp_diagnostics == 1
+   diag_flag = .false.
    if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(HISTORY_ALARM)) ) then
       diag_flag = .true.
       ke_diag = min(k_end,kde-1) ! set depth to full domain for reflectivity field

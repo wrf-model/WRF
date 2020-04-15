@@ -1039,7 +1039,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                      REFL_10CM=refl_10cm,                &
                      diagflag=diagflag,                  &
-                     ke_diag = ke_diag,                  &
+                     ke_diag=ke_diag,                    &
                      do_radar_ref=do_radar_ref,          &
                      re_cloud=re_cloud,                  &
                      re_ice=re_ice,                      &

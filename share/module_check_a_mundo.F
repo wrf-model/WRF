@@ -576,6 +576,27 @@
          END IF
       ENDDO
 
+!-----------------------------------------------------------------------
+! The combination of using the FARMS option (swint_opt==2) along with the
+! Goddard MP scheme requires that the RRTMG radiation be used.
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec%swint_opt .EQ. SWINTOPT2 ) .AND. &
+              ( model_config_rec%mp_physics(i) .EQ. nuwrf4icescheme ) ) THEN
+            IF ( ( model_config_rec%ra_sw_physics(i) .NE. rrtmg_lwscheme ) .OR. &
+                 ( model_config_rec%ra_lw_physics(i) .NE. rrtmg_swscheme ) ) THEN
+              oops = oops + 1
+            END IF
+         END IF
+      ENDDO
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: Option FARMS + Goddard MP requires RRTMG radiation'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      END IF
 #endif
 
 !-----------------------------------------------------------------------

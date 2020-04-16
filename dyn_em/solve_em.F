@@ -127,6 +127,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    
    ! Flag for producing diagnostic fields (e.g., radar reflectivity)
    LOGICAL                        :: diag_flag
+   INTEGER                        :: ke_diag ! tells reflectivity calculation whether to do full depth or only k=1
    
 #if (WRF_CHEM == 1)
    ! Index cross-referencing array for tendency accumulation
@@ -294,10 +295,12 @@ SUBROUTINE solve_em ( grid , config_flags  &
 !
 ! Set diagnostic flag value history output time
 !-----------------------------------------------------------------------------
-!  if ( Is_alarm_tstep(grid_clock, grid_alarms(HISTORY_ALARM)) ) then
-      diag_flag = .false.
+
+   ke_diag = kms ! default to ke_diag=1 in case of nwp_diagnostics == 1
+   diag_flag = .false.
    if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(HISTORY_ALARM)) ) then
       diag_flag = .true.
+      ke_diag = min(k_end,kde-1) ! set depth to full domain for reflectivity field
    endif
    IF (config_flags%nwp_diagnostics == 1) diag_flag = .true.
 
@@ -3784,6 +3787,7 @@ BENCH_START(micro_driver_tim)
       &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
       &        , qnwfa2d=grid%qnwfa2d, qnifa2d=grid%qnifa2d                             & ! G. Thompson
       &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &
+      &        , ke_diag=ke_diag                                           &
       &        ,u=grid%u_phy,v=grid%v_phy &
       &        ,scalar=scalar,num_scalar=num_scalar                             &
       &        ,TH_OLD=grid%th_old                                        &

@@ -950,7 +950,7 @@ CONTAINS
            ( f_qs            ) ) THEN
          !  everything is A-OK for FARMS
       ELSE
-         CALL wrf_error_fatal ('--- ERROR: FARMS requires a different MP scheme')
+         CALL wrf_error_fatal ('--- ERROR: FARMS (swint_opt==2) requires a different MP scheme')
       END IF
    END IF
 

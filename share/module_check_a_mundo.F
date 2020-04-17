@@ -576,6 +576,24 @@
          END IF
       ENDDO
 
+!-----------------------------------------------------------------------
+! The FARMS radiation option (swint_opt==2) requires both effective radii
+! and mass for cloud, ice, and snow. A run-time option is available to 
+! disable the use of effective radii in the MP schemes. These two options 
+! may not be used together.
+!-----------------------------------------------------------------------
+      oops = 0
+      IF ( ( model_config_rec%swint_opt .EQ. 2 ) .AND. &
+           ( model_config_rec%use_mp_re .NE. 1 ) ) THEN
+         oops = oops + 1
+      END IF
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: FARMS (swint_opt=2) requires effective radii (use_mp_re=1)'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
 #endif
 
 !-----------------------------------------------------------------------

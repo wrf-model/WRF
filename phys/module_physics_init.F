@@ -941,7 +941,7 @@ CONTAINS
 ! If using FARMS (swint_opt==2), we need both effective radii and the mass
 ! for cloud, ice, and snow.
 
-   IF ( config_flags%swint_opt .eq. swintopt2 ) THEN
+   IF ( config_flags%swint_opt .eq. 2 ) THEN
       IF ( ( has_reqc .EQ. 1 ) .AND. &
            ( has_reqi .EQ. 1 ) .AND. &
            ( has_reqs .EQ. 1 ) .AND. &

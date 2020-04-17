@@ -53,6 +53,7 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
    if (use_varbc .or. freeze_varbc) then
       call da_varbc_pred(iv)
       !varbc coldstart can not be done here when num_fgat_time>1
+      !because da_varbc_coldstart uses all obs at all time slots
    else if (biascorr) then
       do inst = 1, iv%num_inst                 ! loop for sensor
          write(unit=stdout,fmt='(A,A)') 'Performing bias correction for ', &

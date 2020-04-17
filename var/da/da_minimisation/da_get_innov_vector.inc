@@ -191,33 +191,33 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
 
+      iv%time = num_fgat_time
+      iv%instid(:)%info%n1 = 1
+      iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(num_fgat_time)
+
       !------------------------------------------------------------------------
       ! Perform (Variational) bias correction
       !------------------------------------------------------------------------
-      if ( use_varbc .or. freeze_varbc ) da_varbc_coldstart(iv)
+      if ( use_varbc .or. freeze_varbc ) then
+         call da_varbc_coldstart(iv)
+         call da_varbc_direct(iv)
+      end if
 
-      do n= num_fgat_time , 1, -1
-         iv%time = n
-         iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
-         iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
-         if ( use_varbc .or. freeze_varbc )  call da_varbc_direct(iv)
+      !------------------------------------------------------------------------
+      ! Perform QC check
+      !------------------------------------------------------------------------
+      if (qc_rad) call da_qc_rad(it, ob, iv)
 
-         !------------------------------------------------------------------------
-         ! Perform QC check
-         !------------------------------------------------------------------------
-         if (qc_rad) call da_qc_rad(it, ob, iv)
-
-         !------------------------------------------------------------------------
-         ! Prepare (QCed) bias statistics files
-         !------------------------------------------------------------------------
-         if (biasprep) then
-            do inst = 1, iv%num_inst
-               write(unit=stdout,fmt='(A,A)') 'Preparing bias statistics files for ', &
-                     trim(iv%instid(inst)%rttovid_string)
-               call da_biasprep(inst,ob,iv)
-            end do
-         end if
-      end do
+      !------------------------------------------------------------------------
+      ! Prepare (QCed) bias statistics files
+      !------------------------------------------------------------------------
+      if (biasprep) then
+         do inst = 1, iv%num_inst
+            write(unit=stdout,fmt='(A,A)') 'Preparing bias statistics files for ', &
+                  trim(iv%instid(inst)%rttovid_string)
+            call da_biasprep(inst,ob,iv)
+         end do
+      end if
 
       if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
    end if

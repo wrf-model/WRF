@@ -992,6 +992,24 @@ CONTAINS
       radtacttime = curr_secs + radt*60
    END IF
 
+   IF ( mp_physics .EQ. nuwrf4icescheme ) THEN
+      DO ij = 1 , num_tiles
+         its = i_start(ij)
+         ite = i_end(ij)
+         jts = j_start(ij)
+         jte = j_end(ij)
+         DO j=jts,jte
+         DO k=kts,kte
+         DO i=its,ite
+            re_cloud(i,k,j) = re_cloud_gsfc(i,k,j) * 1.E-6
+            re_ice(i,k,j) = re_ice_gsfc(i,k,j) * 1.E-6
+            re_snow(i,k,j) = re_snow_gsfc(i,k,j) * 1.E-6
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDDO
+   END IF
+
    if(swint_opt.eq.1 .or. swint_opt == 2) then
       DO ij = 1 , num_tiles
          its = i_start(ij)
@@ -1010,7 +1028,7 @@ CONTAINS
    IF ( PRESENT(solar_opt) ) THEN
       solar_opt_local = solar_opt
    END IF
-   Solar_step: IF (run_param .or. solar_opt_local == 1) THEN
+   Solar_step: IF (run_param .or. solar_opt_local == 1 .or. swint_opt == 2) THEN
 
      !---------------
      ! Calculate constant for short wave radiation
@@ -1882,17 +1900,6 @@ CONTAINS
         CASE (RRTMG_LWSCHEME)
 
              CALL wrf_debug (100, 'CALL rrtmg_lw')
-             IF ( mp_physics .EQ. nuwrf4icescheme ) THEN
-                DO j=jts,jte
-                DO k=kts,kte
-                DO i=its,ite
-                   re_cloud(i,k,j) = re_cloud_gsfc(i,k,j) * 1.E-6
-                   re_ice(i,k,j) = re_ice_gsfc(i,k,j) * 1.E-6
-                   re_snow(i,k,j) = re_snow_gsfc(i,k,j) * 1.E-6
-                ENDDO
-                ENDDO
-                ENDDO
-             END IF
 
              !Need to reset NLAYERS if vertical nesting is used.
              !This code follows that for case RRTMSCHEME within
@@ -2400,17 +2407,6 @@ CONTAINS
         CASE (RRTMG_SWSCHEME)
 
              CALL wrf_debug(100, 'CALL rrtmg_sw')
-             IF ( mp_physics .EQ. nuwrf4icescheme ) THEN
-                DO j=jts,jte
-                DO k=kts,kte
-                DO i=its,ite
-                   re_cloud(i,k,j) = re_cloud_gsfc(i,k,j) * 1.E-6
-                   re_ice(i,k,j) = re_ice_gsfc(i,k,j) * 1.E-6
-                   re_snow(i,k,j) = re_snow_gsfc(i,k,j) * 1.E-6
-                ENDDO
-                ENDDO
-                ENDDO
-             END IF
 
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
@@ -2812,7 +2808,7 @@ CONTAINS
  IF ( PRESENT(solar_opt) ) THEN
     solar_opt_local = solar_opt
  END IF
- IF (run_param .or. solar_opt_local == 1) THEN
+ IF (run_param .or. solar_opt_local == 1 .or. swint_opt == 2) THEN
     do ij = 1,num_tiles
       its = i_start(ij)
       ite = i_end(ij)

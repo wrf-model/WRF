@@ -938,7 +938,22 @@ CONTAINS
       has_reqs = 0
    end if
 
-   ENDIF
+! If using FARMS, we need both effective radii and the mass
+
+   IF ( config_flags%swint_opt .eq. swintopt2 ) THEN
+      IF ( ( has_reqc .EQ. 1 ) .AND. &
+           ( has_reqi .EQ. 1 ) .AND. &
+           ( has_reqs .EQ. 1 ) .AND. &
+           ( f_qc            ) .AND. &
+           ( f_qi            ) .AND. &
+           ( f_qs            ) ) THEN
+         !  everything is A-OK for FARMS
+      ELSE
+         CALL wrf_error_fatal ('--- ERROR: FARMS requires a different MP scheme')
+      END IF
+   END IF
+
+   ENDIF ! use_mp_re .EQ. 1
 
 !-- should be from the namelist
 

@@ -77,18 +77,19 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    integer, parameter :: ch13 = 7  
    integer, parameter :: ch14 = 8
    integer, parameter :: ch15 = 9    
+   integer            :: superob_width ! Must be ≥ 0
+   integer            :: first_boxcenter, last_boxcenter_x, last_boxcenter_y, box_bottom, box_upper, box_left, box_right
+   integer            :: isup, jsup, ixsup, iysup, ibox, jbox, nkeep
    real(4), allocatable    :: tbbp(:,:,:)  ! tb for band 7-16   
    real(r_kind), allocatable       :: tbb_temp1(:,:), tbb_temp2(:,:)
    real(r_kind), allocatable       :: rtct(:,:), rtct2(:,:),rtmt(:,:)
    real(r_kind), allocatable       :: tempir(:,:),cwvt1(:,:)
    real(r_kind), allocatable    :: ter_sat(:,:),SDob_10(:,:),SDob_13(:,:),SDob_14(:,:)
    character(200)    :: filenameStatic
-   type(clddet_geoir_type) ::cld_qc  
 ! Allocatable arrays
    integer(i_kind),allocatable  :: ptotal(:)
    real,allocatable             :: in(:), out(:)
-   real(r_kind),allocatable     :: data_all(:)
-   
+   real(r_kind)                 :: temp1 = 0.0
    character(len=80) tbb_name(10)
    data tbb_name/'tbb_07','tbb_08','tbb_09','tbb_10','tbb_11', &
                  'tbb_12','tbb_13','tbb_14','tbb_15','tbb_16'/   
@@ -128,7 +129,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
 
    nchan = iv%instid(inst)%nchan
    write(unit=stdout,fmt=*)'AHI nchan: ',nchan
-   allocate(data_all(1:nchan))
+   superob_width = 2*ahi_superob_halfwidth+1
 
 ! 1.0 Assign file names and prepare to read ahi files
 !-------------------------------------------------------------------------
@@ -319,7 +320,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    ! close infile_tb file 		 
       iret = nf90_close(ncid)
       allocate( tbbp(nlongitude,nlatitude,nchan)) 	  
-	  allocate( ter_sat(nlongitude,nlatitude))
+      allocate( ter_sat(nlongitude,nlatitude))
       allocate( SDob_10(nlongitude,nlatitude))
       allocate( SDob_13(nlongitude,nlatitude))
       allocate( SDob_14(nlongitude,nlatitude))
@@ -452,7 +453,11 @@ end if
       end if
    ! start scan_loop
 
-      scan_loop:     do ilatitude=1, nlatitude
+      first_boxcenter = ahi_superob_halfwidth + 1
+      last_boxcenter_y = superob_width * (nlatitude / superob_width) - ahi_superob_halfwidth
+      last_boxcenter_x = superob_width * (nlongitude / superob_width) - ahi_superob_halfwidth
+
+      scan_loop:     do ilatitude=first_boxcenter, nlatitude, superob_width
          call da_get_julian_time(idate5(1),idate5(2),idate5(3),idate5(4),idate5(5),obs_time)
          if ( obs_time < time_slots(0) .or.  &
             obs_time >= time_slots(num_fgat_time) ) cycle scan_loop
@@ -461,23 +466,24 @@ end if
                obs_time  < time_slots(ifgat) ) exit
          end do
       ! start fov_loop
-         fov_loop:      do ilongitude=1, nlongitude		 
-			if ( sat_zenith(ilongitude,ilatitude) > 65.0 ) cycle fov_loop
-			
+
+         jbox = ilatitude/superob_width + 1
+         if ( ahi_superob_halfwidth .gt. 0 ) then
+            box_bottom = superob_width * (jbox-1) +1
+            box_upper  = superob_width * jbox
+         else
+            box_bottom = superob_width * (jbox-1)
+            box_upper  = superob_width * (jbox-1)
+         end if
+
+         fov_loop:      do ilongitude=first_boxcenter, nlongitude, superob_width
+
+            if ( sat_zenith(ilongitude,ilatitude) > 65.0 ) cycle fov_loop
+
             num_ahi_file       = num_ahi_file + 1
             num_ahi_file_local = num_ahi_file_local + 1
             info%lat  =  vlatitude(ilatitude)
             info%lon  =  vlongitude(ilongitude)
-            if (use_clddet_zz) then				
-                cld_qc%TEMPIR        = tempir(ilongitude,ilatitude)
-                cld_qc%RTCT        = rtct(ilongitude,ilatitude)
-                cld_qc%RFMFT        = rtmt(ilongitude,ilatitude)
-                cld_qc%CIRH2O        = cwvt1(ilongitude,ilatitude)
-                cld_qc%tb_stddev_10 = SDob_10(ilongitude,ilatitude)
-                cld_qc%tb_stddev_13 =  SDob_13(ilongitude,ilatitude)
-                cld_qc%tb_stddev_14 = SDob_14(ilongitude,ilatitude)
-                cld_qc % terr_hgt=ter_sat(ilongitude,ilatitude)
-	    end if
             call da_llxy (info, loc, outside, outside_all)
             if (outside_all) cycle fov_loop
             num_ahi_global       = num_ahi_global + 1
@@ -492,9 +498,9 @@ end if
                ':', idate5(5), ':', idate5(6)
             info%elv = 0.0
 
-! 3.0  Make Thinning
-! Map obs to thinning grid
-!-------------------------------------------------------------------
+            ! 3.0  Make Thinning
+            ! Map obs to thinning grid
+            !-------------------------------------------------------------------
             if (thinning) then
                dlat_earth = info%lat !degree
                dlon_earth = info%lon
@@ -510,17 +516,74 @@ end if
                end if
             end if
             num_ahi_used = num_ahi_used + 1
-            data_all = missing_r		
 
-            do k=1,nchan
-               tb = tbb(ilongitude,ilatitude,k)
-               if( tb < tbmin .or. tb > tbmax ) tb = missing_r
-               data_all(k)= tb
-            end do
-		
-! 4.0 assign information to sequential radiance structure
-!--------------------------------------------------------------------------
-            allocate ( p % tb_inv (1:nchan ))				
+            ibox = ilongitude/superob_width + 1
+            if ( ahi_superob_halfwidth .gt. 0 ) then
+               box_left  = superob_width * (ibox-1) +1 ! will exceed nlatitude/nlongitude if ahi_superob_halfwidth = 0
+               box_right = superob_width * ibox
+            else
+               box_left  = superob_width * (ibox-1)
+               box_right = superob_width * (ibox-1)
+            end if
+
+            ! Super-ob BT for this channel
+
+            allocate ( p % tb_inv (1:nchan) )
+            p % tb_inv = missing_r
+
+            do k = 1, nchan
+               nkeep = count(tbb(box_left:box_right,box_bottom:box_upper,k) > 0.0 )
+               temp1 = sum ( tbb(box_left:box_right,box_bottom:box_upper,k), &
+                             tbb(box_left:box_right,box_bottom:box_upper,k) > 0.0 )
+
+               if (ahi_superob_halfwidth .gt.0 .and. nkeep .gt. 0) then
+                  tb = temp1 / real(nkeep,8)
+               else
+                  ! Extract single pixel BT and radiance value for this channel
+                  tb = tbb(ilongitude,ilatitude,k)
+               end if
+
+               if (tb > 0.0)   p % tb_inv(k) = tb
+
+             end do
+
+            ! Preprocessing for cloud detection including
+            ! extracting Tb values from cloud QC buffer
+
+            if (use_clddet_zz) then
+
+               if (.not. allocated(p % superob)) then
+                  allocate( p % superob(superob_width,superob_width) )
+               end if
+
+               ! Loops over superob pixels
+               do jsup = 1, superob_width
+               do isup = 1, superob_width
+                  iysup = ilatitude + jsup-1-ahi_superob_halfwidth
+                  ixsup = ilongitude + isup-1-ahi_superob_halfwidth
+                  if (ixsup < 1 .or. ixsup > nlongitude .or. iysup < 1 .or. iysup > nlatitude ) then
+                     cycle
+                  end if
+                  if ( .not. allocated(p % superob(isup,jsup) % tb_obs ) ) then
+                     allocate ( p % superob(isup,jsup) % tb_obs  (1:nchan,1) )
+                     allocate ( p % superob(isup,jsup) % cld_qc(1) )
+                  end if
+                  p % superob(isup,jsup) % tb_obs(1:nchan,1)      = tbb( ixsup, iysup, 1:nchan )
+                  p % superob(isup,jsup) % cld_qc(1) % TEMPIR        = tempir(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % RTCT          = rtct(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % RFMFT         = rtmt(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % CIRH2O        = cwvt1(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % tb_stddev_10  = SDob_10(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % tb_stddev_13  = SDob_13(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % tb_stddev_14  = SDob_14(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % terr_hgt      = ter_sat(ixsup, iysup)
+
+               end do !isup
+               end do !jsup
+
+            end if
+            ! 4.0 assign information to sequential radiance structure
+            !--------------------------------------------------------------------------
             p%info             = info
             p%loc              = loc
             p%landsea_mask     = 1
@@ -529,10 +592,8 @@ end if
             p%satazi           = sat_azi(ilongitude,ilatitude)
             p%solzen           = sol_zenith(ilongitude,ilatitude)
             p%solazi           = sol_azi(ilongitude,ilatitude)
-            p%tb_inv(1:nchan)  = data_all(1:nchan)
             p%sensor_index     = inst
             p%ifgat            = ifgat
-	        p%cld_qc        = cld_qc
             allocate (p%next)   ! add next data			
             p => p%next			
             nullify (p%next)
@@ -543,7 +604,6 @@ end if
       write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_ahi_local   : ',num_ahi_local_local
 
 
-   deallocate(data_all) ! Deallocate data arrays
    deallocate(vlatitude)
    deallocate(vlongitude)
    deallocate(tbb) 
@@ -629,6 +689,15 @@ end if
                prev => p
             end if
             deallocate ( current % tb_inv )
+            if ( allocated ( current % superob ) ) then
+               do jsup = 1, superob_width
+               do isup = 1, superob_width
+                  deallocate ( current % superob(isup,jsup) % tb_obs )
+                  deallocate ( current % superob(isup,jsup) % cld_qc )
+               end do
+               end do
+               deallocate ( current % superob )
+            end if
             deallocate ( current )
             num_ahi_thinned = num_ahi_thinned + 1
             num_ahi_used = num_ahi_used - 1
@@ -697,6 +766,15 @@ end if
       p => p%next
    ! free current data
       deallocate ( current % tb_inv )
+      if ( allocated ( current % superob ) ) then
+         do jsup = 1, superob_width
+         do isup = 1, superob_width
+            deallocate ( current % superob(isup,jsup) % tb_obs )
+            deallocate ( current % superob(isup,jsup) % cld_qc )
+         end do
+         end do
+         deallocate ( current % superob )
+      end if
       deallocate ( current )
    end do
    deallocate ( p )

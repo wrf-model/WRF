@@ -175,7 +175,7 @@
     call nl_get_feedback             ( 1      ,  feedback             )
     call nl_get_smooth_option        ( 1      ,  smooth_option        )
     call nl_get_swrad_scat           ( 1      ,  swrad_scat           )
-    call nl_get_sf_urban_physics     ( 1      ,  sf_urban_physics     )
+    call nl_get_sf_urban_physics     ( grid%id,  sf_urban_physics     )
     call nl_get_w_damping            ( 1      ,  w_damping            )
 
 #if (EM_CORE == 1)

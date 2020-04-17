@@ -442,6 +442,48 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that number of hours of daily irrigation is greater than zero.
+! This value is used in the denominator to compute the amount of 
+! irrigated water per timestep, and the default value from the Registry
+! is zero. This is a reminder to the user that this value needs to be
+! manually set.
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( ( model_config_rec % sf_surf_irr_scheme(i) .EQ. CHANNEL   )   .OR. &
+                ( model_config_rec % sf_surf_irr_scheme(i) .EQ. SPRINKLER )   .OR. &
+                ( model_config_rec % sf_surf_irr_scheme(i) .EQ. DRIP      ) ) .AND. &
+              ( model_config_rec % irr_num_hours(i) .LE. 0 ) ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO
+      
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: irr_num_hours must be greater than zero to work with irrigation'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+! Fix derived setting for irrigation. Since users may only want the irrigation
+! to be active in the inner-most domain, we have a separate variable that is
+! used to define packaging for the irrigation fields.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % sf_surf_irr_scheme(i) .EQ. CHANNEL   ) THEN
+            model_config_rec % sf_surf_irr_alloc = CHANNEL
+         END IF
+         IF ( model_config_rec % sf_surf_irr_scheme(i) .EQ. SPRINKLER ) THEN
+            model_config_rec % sf_surf_irr_alloc = SPRINKLER
+         END IF
+         IF ( model_config_rec % sf_surf_irr_scheme(i) .EQ. DRIP      ) THEN
+            model_config_rec % sf_surf_irr_alloc = DRIP    
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Check that Deng Shallow Convection Must work with MYJ or MYNN PBL
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
@@ -2197,7 +2239,6 @@
 !  scheme selection.  For "choose any vertical levels" for the nest,
 !  only option 1 (RRTM/Dudhia) or option 4 (RRTMG) are eligible.
 !-----------------------------------------------------------------------
-
       DO i = 2, model_config_rec % max_dom
         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
         IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
@@ -2216,6 +2257,46 @@
           END IF
         END IF
       END DO
+
+!-----------------------------------------------------------------------
+!  Consistency checks for vertical refinement:
+!  must use the terrain following vertical coordinate
+!-----------------------------------------------------------------------
+      oops = 0 
+      DO i = 2, model_config_rec % max_dom
+        IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+        IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+          IF ( model_config_rec%hybrid_opt .NE. 0 ) THEN
+            oops = oops + 1
+          END IF
+        END IF
+      END DO
+
+      IF ( oops .GT. 0 ) THEN
+        wrf_err_message = '--- ERROR: vert_refine_method=2 only works with hybrid_opt = 0 '
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+!  Consistency checks for vertical refinement:
+!  feedback has to be turned off
+!-----------------------------------------------------------------------
+      oops = 0 
+      DO i = 2, model_config_rec % max_dom
+        IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+        IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+          IF ( model_config_rec%feedback .NE. 0 ) THEN
+            oops = oops + 1
+          END IF
+        END IF
+      END DO
+
+      IF ( oops .GT. 0 ) THEN
+        wrf_err_message = '--- ERROR: vert_refine_method=2 only works with feedback = 0 '
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        count_fatal_error = count_fatal_error + 1
+      END IF
 
 !-----------------------------------------------------------------------
 ! This WRF version does not support trajectories on a global domain

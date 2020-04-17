@@ -1028,7 +1028,7 @@ CONTAINS
    IF ( PRESENT(solar_opt) ) THEN
       solar_opt_local = solar_opt
    END IF
-   Solar_step: IF (run_param .or. solar_opt_local == 1) THEN
+   Solar_step: IF (run_param .or. solar_opt_local == 1 .or. swint_opt == 2) THEN
 
      !---------------
      ! Calculate constant for short wave radiation
@@ -2808,7 +2808,7 @@ CONTAINS
  IF ( PRESENT(solar_opt) ) THEN
     solar_opt_local = solar_opt
  END IF
- IF (run_param .or. solar_opt_local == 1) THEN
+ IF (run_param .or. solar_opt_local == 1 .or. swint_opt == 2) THEN
     do ij = 1,num_tiles
       its = i_start(ij)
       ite = i_end(ij)

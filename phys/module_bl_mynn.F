@@ -2697,7 +2697,7 @@ CONTAINS
               Fng = 1.0
            ELSEIF (Q1(k) .GE. -1.7 .AND. Q1(k) < 1.0) THEN
               Fng = EXP(-0.4*(Q1(k)-1.0))
-           ELSEIF (Q1(k) .GE. -2.5 .AND. Q1(k) .LT. -1.7) THEN ! cause jenkins test
+           ELSEIF (Q1(k) .GE. -2.5 .AND. Q1(k) .LT. -1.7) THEN
               Fng = 3.0 + EXP(-3.8*(Q1(k)+1.7))
            ELSE
               Fng = MIN(23.9 + EXP(-1.6*(Q1(k)+2.5)), 60.)

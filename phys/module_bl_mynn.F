@@ -1003,7 +1003,7 @@ CONTAINS
         Ugrid  = sqrt(u1(kts)**2 + v1(kts)**2)
         cns  = 3.5 * (1.0 - MIN(MAX(Ugrid - Uonset, 0.0)/10.0, 1.0))
         alp1 = 0.23
-        alp2 = 0.35
+        alp2 = 0.30
         alp3 = 2.0
         alp4 = 20.  !10.
         alp5 = alp2 !like alp2, but for free atmosphere
@@ -2629,8 +2629,8 @@ CONTAINS
 !              ql_ice   = sgm(k)*EXP(0.9*q1k-2.6)
               !Reduce ice mixing ratios in the upper troposphere
               low_weight = MIN(MAX(p(k)-40000.0, 0.0),40000.0)/40000.0
-              ql_ice   = low_weight * sgm(k)*EXP(q1k-2.0) &  !low-lev
-                  + (1.-low_weight) * sgm(k)*EXP(0.7*q1k-4.0)!upper-lev
+              ql_ice   = low_weight * sgm(k)*EXP(1.1*q1k-1.6) &  !low-lev
+                  + (1.-low_weight) * sgm(k)*EXP(1.1*q1k-2.8)!upper-lev
            ELSE IF (q1k > 2.) THEN   !supersaturated
               ql_water = sgm(k)*q1k
               ql_ice = MIN(80.*qv(k),0.1)*sgm(k)*q1k
@@ -4635,10 +4635,17 @@ ENDIF
                    radflux=radflux*cp/g*(p1(kk)-p1(kk+1)) ! converts temp/s to W/m^2
                    if (radflux < 0.0 ) radsum=abs(radflux)+radsum
                 ENDDO
-                radsum=MIN(radsum,120.0)
+
+                !More strict limits over land to reduce stable-layer mixouts
+                if ((xland(i,j)-1.5).GE.0)THEN ! WATER
+                   radsum=MIN(radsum,120.0)
+                   bfx0 = max(radsum/rho1(k)/cp,0.)
+                else                           ! LAND
+                   radsum=MIN(0.25*radsum,30.0)!practically turn off over land
+                   bfx0 = max(radsum/rho1(k)/cp - max(sflux,0.0),0.)
+                endif
 
                 !entrainment from PBL top thermals
-                bfx0 = max(radsum/rho1(k)/cp,0.)
                 wm3    = g/thetav(k)*bfx0*MIN(pblh(i,j),1500.) ! this is wstar3(i)
                 wm2    = wm2 + wm3**h2
                 bfxpbl = - ent_eff * bfx0
@@ -5652,7 +5659,7 @@ ENDIF
           !w-dependency for entrainment a la Tian and Kuang (2016)
           !ENT(k,i) = 0.35/(MIN(MAX(UPW(K-1,I),0.75),1.9)*l)
           wmin = 0.3 + l*0.0005 !* MAX(pblh-ZW(k+1), 0.0)/pblh
-          ENT(k,i) = 0.35/(MIN(MAX(UPW(K-1,I),wmin),1.9)*l)
+          ENT(k,i) = 0.31/(MIN(MAX(UPW(K-1,I),wmin),1.9)*l)
           !Entrainment from Negggers (2015, JAMES)
           !ENT(k,i) = 0.02*l**-0.35 - 0.0009
           !Minimum background entrainment 
@@ -5796,22 +5803,22 @@ ENDIF
           !Reminder: w is limited to be non-negative (above)
           aratio   = MIN(UPA(K-1,I)/(1.-UPA(K-1,I)), 0.5) !limit should never get hit
           detturb  = 0.00008
-          oow      = -0.070/MAX(0.9,(0.5*(Wn+UPW(K-1,I))))   !coef for dynamical detrainment rate
-          detrate  = MIN(MAX(oow*(Wn-UPW(K-1,I))/dz(k), detturb), .0004) ! dynamical detrainment rate (m^-1)
+          oow      = -0.060/MAX(1.0,(0.5*(Wn+UPW(K-1,I))))   !coef for dynamical detrainment rate
+          detrate  = MIN(MAX(oow*(Wn-UPW(K-1,I))/dz(k), detturb), .0002) ! dynamical detrainment rate (m^-1)
           detrateUV= MIN(MAX(oow*(Wn-UPW(K-1,I))/dz(k), detturb), .0001) ! dynamical detrainment rate (m^-1) 
-          envm_thl(k)=envm_thl(k) + (0.5*(thl_ent + UPTHL(K-1,I)) - thl(k))*detrate*aratio*dzp
+          envm_thl(k)=envm_thl(k) + (0.5*(thl_ent + UPTHL(K-1,I)) - thl(k))*detrate*aratio*MIN(dzp,300.)
           qv_ent = 0.5*(MAX(qt_ent-qc_ent,0.) + MAX(UPQT(K-1,I)-UPQC(K-1,I),0.))
-          envm_sqv(k)=envm_sqv(k) + (qv_ent-QV(K))*detrate*aratio*dzp
+          envm_sqv(k)=envm_sqv(k) + (qv_ent-QV(K))*detrate*aratio*MIN(dzp,300.)
           IF (UPQC(K-1,I) > 1E-8) THEN
              IF (QC(K) > 1E-6) THEN
                 qc_grid = QC(K)
              ELSE
                 qc_grid = cldfra_bl1d(k)*qc_bl1d(K)
              ENDIF
-             envm_sqc(k)=envm_sqc(k) + MAX(UPA(K-1,I)*0.5*(QCn + UPQC(K-1,I)) - qc_grid, 0.0)*detrate*aratio*dzp
+             envm_sqc(k)=envm_sqc(k) + MAX(UPA(K-1,I)*0.5*(QCn + UPQC(K-1,I)) - qc_grid, 0.0)*detrate*aratio*MIN(dzp,300.)
           ENDIF
-          envm_u(k)  =envm_u(k)   + (0.5*(Un + UPU(K-1,I)) - U(K))*detrateUV*aratio*dzp
-          envm_v(k)  =envm_v(k)   + (0.5*(Vn + UPV(K-1,I)) - V(K))*detrateUV*aratio*dzp
+          envm_u(k)  =envm_u(k)   + (0.5*(Un + UPU(K-1,I)) - U(K))*detrateUV*aratio*MIN(dzp,300.)
+          envm_v(k)  =envm_v(k)   + (0.5*(Vn + UPV(K-1,I)) - V(K))*detrateUV*aratio*MIN(dzp,300.)
 
           IF (Wn > 0.) THEN
              !Update plume variables at current k index

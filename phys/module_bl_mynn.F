@@ -6189,10 +6189,13 @@ ENDIF
                   Ac_mf      = 0.5*(edmf_a(k)+edmf_a(k-1))
                   Ac_strat   = cldfra_bl1d(k)*(1.0-Ac_mf)
                   cldfra_bl1d(k)=Ac_mf + Ac_strat
+                  qc_mf      = QCp
                   !Ensure stratus clouds have mixing ratio similar to cumulus
                   QCs        = MIN(MAX(qc_bl1d(k), 0.5*qc_mf), 5E-4)
                   qc_bl1d(k) = (QCp*Ac_mf + QCs*Ac_strat)/cldfra_bl1d(k)
                ENDIF
+            ELSE
+               Ac_mf = mf_cf
             ENDIF
 
             !Now recalculate the terms for the buoyancy flux for mass-flux clouds:

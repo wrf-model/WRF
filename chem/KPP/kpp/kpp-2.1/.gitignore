@@ -1,0 +1,9 @@
+##############################################################################
+# These files are EXCLUDED from not being tracked, so they are still tracked #
+#                                                                            #
+# The leading "!" character is the NOT operator                              #
+#                                                                            #
+# The "**" syntax means "this directory level and recursively all            #
+# directories below this level"                                              #
+##############################################################################
+!**/*.f90

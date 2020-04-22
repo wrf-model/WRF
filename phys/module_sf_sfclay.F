@@ -173,14 +173,10 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)   ::                                 &
                                                               QGH
-#if defined(mpas)
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV
 
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(IN   )               ::                 DX
-#else
-      REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
-#endif
  
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::                  ck,cka,cd,cda
@@ -217,15 +213,9 @@ CONTAINS
 
       DO J=jts,jte
 
-#if defined(mpas)
         DO i=its,ite
            DX2D(i)=DX(i,j)
         ENDDO
-#else
-        DO i=its,ite
-           DX2D(i)=DX
-        ENDDo
-#endif
 
         DO i=its,ite
           dz8w1d(I) = dz8w(i,1,j)

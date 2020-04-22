@@ -437,6 +437,10 @@
 
 #if (EM_CORE == 1)
 
+       IF ( switch .EQ. input_only ) then
+          CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
+       END IF
+
        !  Test to make sure that the grid distances are the right size.
 
        CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
@@ -800,21 +804,26 @@
 
 #if ( DA_CORE != 1 )
     ! Test here to check that config_flags%sf_urban_physics in namelist
-    ! is equal to what is in the global attributes of the wrfinput files
+    ! is equal to the value listed the global attributes of the wrfinput files.
+    ! We only perform this check if the WRF model has sf_urban_physics turned on.
+    ! If the WRF model runs with nml sf_urban_physics==0, then any setting of the 
+    ! sf_urban_physics in the metadata is acceptable, so not test is required.
 
-    IF ( switch .EQ. input_only  ) THEN
-       CALL wrf_get_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', itmp, 1, icnt, ierr )
-       IF ( ierr .EQ. 0 ) THEN
-          WRITE(wrf_err_message,*)'input_wrf: global attribute SF_URBAN_PHYSICS returns ', itmp
-          CALL wrf_debug ( 300 , wrf_err_message )
-          IF ( config_flags%sf_urban_physics /= itmp ) THEN
-             call wrf_message("----------------- ERROR -------------------")
-             WRITE(wrf_err_message,'("namelist    : sf_urban_physics   = ",I10)') config_flags%sf_urban_physics
-             call wrf_message(wrf_err_message)
-             WRITE(wrf_err_message,'("input files : SF_URBAN_PHYSICS   = ",I10, " (from wrfinput files).")') itmp
-             call wrf_message(wrf_err_message)
-             call wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute SF_URBAN_PHYSICS")
-             count_fatal_error = count_fatal_error + 1
+    IF ( config_flags%sf_urban_physics /= 0 ) THEN
+       IF ( switch .EQ. input_only  ) THEN
+          CALL wrf_get_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', itmp, 1, icnt, ierr )
+          IF ( ierr .EQ. 0 ) THEN
+             WRITE(wrf_err_message,*)'input_wrf: global attribute SF_URBAN_PHYSICS returns ', itmp
+             CALL wrf_debug ( 300 , wrf_err_message )
+             IF ( config_flags%sf_urban_physics /= itmp ) THEN
+                call wrf_message("----------------- ERROR -------------------")
+                WRITE(wrf_err_message,'("namelist    : sf_urban_physics   = ",I10)') config_flags%sf_urban_physics
+                call wrf_message(wrf_err_message)
+                WRITE(wrf_err_message,'("input files : SF_URBAN_PHYSICS   = ",I10, " (from wrfinput files).")') itmp
+                call wrf_message(wrf_err_message)
+                call wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute SF_URBAN_PHYSICS")
+                count_fatal_error = count_fatal_error + 1
+             END IF
           END IF
        END IF
     END IF
@@ -1174,6 +1183,12 @@
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )
 #if (DA_CORE != 1) 
+            IF ( (switch .EQ. input_only) .and. (grid%id .EQ. 1) .and. (grid%itimestep .EQ. 0) ) THEN
+               WRITE( wrf_err_message , * ) 'CURRENT DATE          = ',TRIM( currtimestr )
+               CALL wrf_message ( trim(wrf_err_message) )
+               WRITE( wrf_err_message , * ) 'SIMULATION START DATE = ', simulation_start_date(1:19)
+               CALL wrf_message ( TRIM(wrf_err_message ) )
+            END IF
 ! Don't perform the check for WRFVAR, as we're not passing the right dates
 ! around
             CALL domain_clockprint(150, grid, &

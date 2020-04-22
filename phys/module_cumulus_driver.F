@@ -14,15 +14,18 @@ CONTAINS
                      ,u,v,th,t,w                                      &
                      ,p,pi,rho                                        &
                  ! --Other arguments
-                     ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
+                     ,itimestep,dt,dx,dx2d,area2d                     &
+                     ,cudt,curr_secs,adapt_step_flag                  &
                      ,cudtacttime                                     & 
+                     ,ccldfra,convcld,qcconv,qiconv                   &
+                     ,bmj_rad_feedback                                & 
                      ,rainc,raincv,pratec,nca                         &
                      ,cldfra_dp,cldfra_sh,w_up                        & !ckay for subgrid cloud
                      ,udr_kf,ddr_kf,uer_kf,der_kf,timec_kf,kf_edrates & !kf_edrates
                      ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
-                     ,ZOL,WSTAR                                       &  !ckay
+                     ,ZOL                                             & !ckay
                      ,forcet,forceq,w0avg,stepcu,gsw                  &
                      ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
                      ,hfx,qfx,cldfra,cldfra_mp_all,tpert2d            &
@@ -98,7 +101,7 @@ CONTAINS
                      ,ens_sasamp                                      &
                      ,shalconv,shal_pgcon                             &
                      ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
-                     ,DX2D, DYNMM                                     & ! For scale-aware SAS
+                     ,DYNMM                                           & ! For scale-aware SAS
                      ,SCALEFUN,SCALEFUN1                              & !    scale functions 
                      ,SIGMU,SIGMU1                                    & !    updraft fraction
 
@@ -243,6 +246,8 @@ CONTAINS
 ! Qr         rain water mixing ratio (kg/kg)
 ! Qi         cloud ice mixing ratio (kg/kg)
 ! Qs         snow mixing ratio (kg/kg)
+! QCCONV     convective cloud mixing ratio (kg/kg)
+! QICONV     convective ice mixing ratio (kg/kg)
 !-----------------------------------------------------------------
 !-- DT            time step (second)
 !-- CUDT          cumulus time step (minute)
@@ -310,6 +315,8 @@ CONTAINS
 !-- kfeta_trigger namelist for KF trigger (=1, default; =2, moisture-advection-dependent trigger)
 !-- nsas_dx_factor namelist for NSAS deep scheme to have some dependency on grid sizes
 !-- rho           density (kg/m^3)
+!-- CONVCLD       Convective cloud (for BMJ scheme) (kg/m^2)
+!-- CCLDFRA       convective cloud fraction (for BMJ scheme)
 !-- CLDEFI        precipitation efficiency (for BMJ scheme) (dimensionless)
 !-- STEPCU        # of fundamental timesteps between convection calls
 !-- XLAND         land-sea mask (1.0 for land; 2.0 for water)
@@ -440,7 +447,10 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                                       &
-                                                          W0AVG 
+                                                          W0AVG  &
+                                                    ,   CCLDFRA  &
+                                                    ,    QCCONV  &
+                                                    ,    QICONV 
 !ckay
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                            cldfra_dp  &
@@ -481,7 +491,8 @@ CONTAINS
                                                     ,       NCA  & 
                                                     ,      HTOP  & 
                                                     ,      HBOT  &
-                                                    ,    CLDEFI
+                                                    ,    CLDEFI  &
+                                                    ,    CONVCLD
 #if (EM_CORE == 1)
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: akpbl    !CuP, wig 6-Oct-2006 testing !BSINGH - For WRFCuP scheme
 #endif
@@ -493,11 +504,9 @@ CONTAINS
         PRATEC,MAVAIL,PBLH,PSFC,TSK,TPERT2D,UST,HFX,QFX
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT)          :: &
                                                       HPBL_HOLD
-
 !ckay
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
-         OPTIONAL, INTENT(INOUT) ::                         ZOL  &
-                                                    ,     WSTAR
+         OPTIONAL, INTENT(INOUT) ::                         ZOL
 
    REAL, DIMENSION( ims:ime , jms:jme ) :: tmppratec
                                                     
@@ -511,11 +520,14 @@ CONTAINS
    INTEGER, INTENT(IN   ), OPTIONAL        ::   nsas_dx_factor
 
    REAL,  INTENT(IN   ) :: DT, DX
-   INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
+                    INTENT(IN) ::  DX2D, AREA2D
+   INTEGER,      INTENT(IN   ),OPTIONAL    ::                    &
                    ips,ipe, jps,jpe, kps,kpe,imomentum,ishallow
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
+   LOGICAL,INTENT(IN   ) :: bmj_rad_feedback
    REAL,  INTENT(INOUT ),OPTIONAL :: cudtacttime                 
    REAL   :: cudt_pass, curr_secs_pass,cudtacttime_pass          
    LOGICAL :: adapt_step_flag_pass
@@ -526,8 +538,6 @@ CONTAINS
    REAL, OPTIONAL,  INTENT(INOUT) :: mommix
 
 
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
-                    INTENT(IN) ::  DX2D                           ! For scale-aware SAS
    REAL, OPTIONAL,  INTENT(IN) ::  DYNMM                          ! For scale-aware SAS  
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,INTENT(INOUT) :: &
                                    SCALEFUN,SCALEFUN1,SIGMU,SIGMU1    
@@ -973,6 +983,9 @@ CONTAINS
                ,LOWLYR=lowlyr ,XLAND=xland                      &
                ,CU_ACT_FLAG=cu_act_flag                         &
                ,QV=qv_curr                                      &
+               ,CCLDFRA=ccldfra, CONVCLD=convcld                &
+               ,QCCONV=qcconv, QICONV=qiconv                    &
+               ,BMJ_RAD_FEEDBACK=bmj_rad_feedback               &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -1054,12 +1067,13 @@ CONTAINS
                ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
                ,UER_KF=uer_kf,DER_KF=der_kf                     & 
                ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
-               ,ZOL=zol,WSTAR=wstar,UST=ust,PBLH=pblh           & !ckay
+               ,ZOL=zol,HFX=hfx,UST=ust,PBLH=pblh               & !ckay
                ,AEROCU=aerocu,NO_SRC_TYPES_CU=no_src_types_cu   &
                ,AERCU_FCT=aercu_fct,AERCU_OPT=aercu_opt        &
-               ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS)
-#endif
-
+               ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS                   &
+               ,RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,XLAND=XLAND)       !JTR
+#endif  
+ 
      CASE (GDSCHEME)
           CALL wrf_debug(100,'in grelldrv')
           CALL GRELLDRV(                                        &
@@ -1404,7 +1418,7 @@ CONTAINS
                ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx          &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
-               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND,DX=dx      &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND,DX=dx2d    &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &

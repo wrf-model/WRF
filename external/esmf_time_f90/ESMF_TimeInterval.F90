@@ -2,7 +2,7 @@
 !==============================================================================
 !
 !     ESMF TimeInterval Module
-      module ESMF_TimeIntervalMod
+      module WRF_ESMF_TimeIntervalMod
 !
 !==============================================================================
 !
@@ -15,7 +15,7 @@
 !
 !===============================================================================
 !BOPI
-! !MODULE: ESMF_TimeIntervalMod
+! !MODULE: WRF_ESMF_TimeIntervalMod
 !
 ! !DESCRIPTION:
 ! Part of Time Manager F90 API wrapper of C++ implemenation
@@ -28,14 +28,14 @@
 !------------------------------------------------------------------------------
 ! !USES:
       ! inherit from ESMF base class
-      use ESMF_BaseMod
+      use WRF_ESMF_BaseMod
 
       ! inherit from base time class
-      use ESMF_BaseTimeMod
+      use WRF_ESMF_BaseTimeMod
 
       ! associated derived types
-      use ESMF_FractionMod, only : ESMF_Fraction
-      use ESMF_CalendarMod
+      use WRF_ESMF_FractionMod, only : ESMF_Fraction
+      use WRF_ESMF_CalendarMod
 
       implicit none
 !
@@ -1255,6 +1255,6 @@
                                                          zerotimeint )
       end function ESMF_TimeIntervalIsPositive
 
-      end module ESMF_TimeIntervalMod
+      end module WRF_ESMF_TimeIntervalMod
 
 

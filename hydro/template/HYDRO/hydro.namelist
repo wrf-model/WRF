@@ -59,17 +59,17 @@ SPLIT_OUTPUT_COUNT = 1
 
 ! Specify the minimum stream order to output to netcdf point file...(integer)
 ! Note: lower value of stream order produces more output.
-order_to_write = 4
+order_to_write = 1
 
 ! Flag to turn on/off new I/O routines: 0 = deprecated output routines (use when running with Noah LSM),
-! 1 = with scale/offset/compression, ! 2 = with scale/offset/NO compression, 
+! 1 = with scale/offset/compression, ! 2 = with scale/offset/NO compression,
 ! 3 = compression only, 4 = no scale/offset/compression (default)
-io_form_outputs = 1
+io_form_outputs = 4
 
 ! Realtime run configuration option:
 ! 0=all (default), 1=analysis, 2=short-range, 3=medium-range, 4=long-range, 5=retrospective,
 ! 6=diagnostic (includes all of 1-4 outputs combined)
-io_config_outputs = 1
+io_config_outputs = 0
 
 ! Option to write output files at time 0 (restart cold start time): 0=no, 1=yes (default)
 t0OutputFlag = 1
@@ -143,6 +143,10 @@ channel_option = 3
 ! Specify the reach file for reach-based routing options (e.g.: "Route_Link.nc")
 !route_link_f = "./DOMAIN/Route_Link.nc"
 
+! If using channel_option=2, activate the compound channel formulation? (Default=.FALSE.)
+! This option is currently only supported if using reach-based routing with UDMP=1.
+compound_channel = .FALSE.
+
 ! Specify the lake parameter file (e.g.: "LAKEPARM.nc").
 ! Note REQUIRED if lakes are on.
 route_lake_f = "./DOMAIN/LAKEPARM.nc"
@@ -183,20 +187,20 @@ readTimesliceParallel = .TRUE.
 ! temporalPersistence defaults to true, only runs if necessary params present.
 temporalPersistence = .FALSE.
 
-! The total number of last (obs, modeled) pairs to save in nudgingLastObs for 
+! The total number of last (obs, modeled) pairs to save in nudgingLastObs for
 ! removal of bias. This is the maximum array length. (This option is active when persistBias=FALSE)
 ! (Default=960=10days @15min obs resolution, if all the obs are present and longer if not.)
 nLastObs = 960
 
-! If using temporalPersistence the last observation persists by default. 
-! This option instead persists the bias after the last observation. 
+! If using temporalPersistence the last observation persists by default.
+! This option instead persists the bias after the last observation.
 persistBias = .FALSE.
 
 ! AnA (FALSE)  vs Forecast (TRUE) bias persistence.
-! If persistBias: Does the window for calculating the bias end at 
+! If persistBias: Does the window for calculating the bias end at
 ! model init time (=t0)?
-! FALSE = window ends at model time (moving), 
-! TRUE = window ends at init=t0(fcst) time. 
+! FALSE = window ends at model time (moving),
+! TRUE = window ends at init=t0(fcst) time.
 ! (If commented out, Default=FALSE)
 ! Note: Perfect restart tests require this option to be .FALSE.
 biasWindowBeforeT0 = .FALSE.

@@ -38,13 +38,15 @@ CONTAINS
       USE module_state_description, ONLY: num_moist, num_chem, num_tracer, num_scalar, &
                                           SKIP_PRESS_DIAGS, SKIP_Z_DIAGS,              &
                                           DO_TRAD_FIELDS,                              &
-                                          P_QG, P_QH, P_QV, P_QC,                      &
+                                          DO_SOLAR_OUTPUT,                             &
+                                          P_QG, P_QH, P_QV, P_QC, P_QI, P_QS,          &
                                           P_QNG, P_QH, P_QNH, P_QR, P_QNR,             &
+                                          F_QV, F_QC, F_QI, F_QS,                      &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
                      WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
                      MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
                      NSSL_2MOM, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
-                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN,  &
+                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN_SHPUND, FULL_KHAIN_LYNN,  &
                      MORR_TM_AERO !TWG add    !,MILBRANDT3MOM, NSSL_3MOM, MORR_MILB_P3
 
       USE module_driver_constants, ONLY: max_plevs, max_zlevs
@@ -74,12 +76,14 @@ CONTAINS
       
       USE module_lightning_driver, ONLY : lightning_driver      
       USE module_diag_misc, ONLY : diagnostic_output_calc
+      USE module_diag_nwp, ONLY : diagnostic_output_nwp
       USE module_diag_cl, ONLY : clwrf_output_calc
       USE module_diag_pld, ONLY : pld
       USE module_diag_zld, ONLY : zld
       USE module_diag_afwa, ONLY : afwa_diagnostics_driver
       USE module_diag_rasm, ONLY : mean_output_calc, diurnalcycle_output_calc
       USE module_diag_hailcast, ONLY : hailcast_diagnostic_driver
+      USE module_diag_solar, ONLY : solar_diag
       USE module_trad_fields, ONLY : trad_fields
 
       IMPLICIT NONE
@@ -337,29 +341,21 @@ CONTAINS
         !$OMP END PARALLEL DO
       END IF TRADITIONAL_FIELDS
 
-
       !  Mostly surface values, precip, column integrated quantities.
 
-      CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: NWP DIAGNOSTICS' )
-
-
-
-      mp_select: SELECT CASE(config_flags%mp_physics)
-
-        CASE (LINSCHEME, WSM6SCHEME, WDM6SCHEME, GSFCGCESCHEME, NSSL_1MOMLFO)
+      CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: ACCUMULATED AND BUCKET DIAGNOSTICS' )
 
       CALL diagnostic_output_calc(                                   &
                  DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
                 ,P8W=p8w   ,PK1M=grid%pk1m                           &
                 ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
-                ,U=grid%u_2    ,V=grid%v_2                           &
-                ,TEMP=grid%t_phy                                     &
                 ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
                 ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
                 ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
                 ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
-                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
-                ,XTIME=grid%xtime   ,T2=grid%t2                      &
+                ,T2=grid%t2                                          &    
+                ,DT=grid%dt                                          &    
+                ,XTIME=grid%xtime                                    &
            ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
            ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
            ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
@@ -380,6 +376,36 @@ CONTAINS
                 ,DIAG_PRINT=config_flags%diag_print                  &
                 ,BUCKET_MM=config_flags%bucket_mm                    &
                 ,BUCKET_J =config_flags%bucket_J                     &
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,PREC_ACC_C=grid%prec_acc_c                          &
+                ,PREC_ACC_NC=grid%prec_acc_nc                        &
+                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
+                ,CURR_SECS2=curr_secs2                               &
+                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,ITIMESTEP=grid%itimestep                            &
+      ! Dimension arguments
+                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+                ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+                ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)   &
+                ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
+                ,KTS=k_start, KTE=min(k_end,kde-1)                   &
+                ,NUM_TILES=grid%num_tiles                            &
+                                                                    )
+
+      NWPDIAGS: IF ( config_flags%nwp_diagnostics == 1 ) THEN
+      CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: NWP DIAGNOSTICS' )
+
+      mp_select: SELECT CASE(config_flags%mp_physics)
+
+        CASE (LINSCHEME, WSM6SCHEME, WDM6SCHEME, GSFCGCESCHEME, NSSL_1MOMLFO)
+
+      CALL diagnostic_output_nwp(                                   &
+                 U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy ,P8W=p8w                            &
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,XTIME=grid%xtime                                    &
+      ! Selection flag 
                 ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
                 ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
                 ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
@@ -390,10 +416,6 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
-                ,PREC_ACC_C=grid%prec_acc_c                          &
-                ,PREC_ACC_NC=grid%prec_acc_nc                        &
-                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
@@ -419,42 +441,18 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
                                                                     )
 
         CASE (THOMPSON, THOMPSONAERO)
 
-      CALL diagnostic_output_calc(                                   &
-                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
-                ,P8W=p8w   ,PK1M=grid%pk1m                           &
-                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
-                ,U=grid%u_2    ,V=grid%v_2                           &
-                ,TEMP=grid%t_phy                                     &
-                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
-                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
-                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+      CALL diagnostic_output_nwp(                                   &
+                 U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy ,P8W=p8w                            &
                 ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
-                ,XTIME=grid%xtime   ,T2=grid%t2                      &
-           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
-           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
-           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
-           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
-           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
-           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
-           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
-           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
-         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
-         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
-         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
-         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
-         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
-         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
-         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
-         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+                ,XTIME=grid%xtime                                    &
       ! Selection flag 
-                ,DIAG_PRINT=config_flags%diag_print                  &
-                ,BUCKET_MM=config_flags%bucket_mm                    &
-                ,BUCKET_J =config_flags%bucket_J                     &
                 ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
                 ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
                 ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
@@ -465,10 +463,6 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
-                ,PREC_ACC_C=grid%prec_acc_c                          &
-                ,PREC_ACC_NC=grid%prec_acc_nc                        &
-                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
@@ -496,42 +490,18 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
                                                                     )
 
         CASE (MORR_TWO_MOMENT, MORR_TM_AERO)  ! TWG add
 
-      CALL diagnostic_output_calc(                                   &
-                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
-                ,P8W=p8w   ,PK1M=grid%pk1m                           &
-                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
-                ,U=grid%u_2    ,V=grid%v_2                           &
-                ,TEMP=grid%t_phy                                     &
-                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
-                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
-                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+      CALL diagnostic_output_nwp(                                   &
+                 U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy ,P8W=p8w                            &
                 ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
-                ,XTIME=grid%xtime   ,T2=grid%t2                      &
-           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
-           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
-           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
-           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
-           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
-           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
-           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
-           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
-         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
-         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
-         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
-         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
-         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
-         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
-         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
-         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+                ,XTIME=grid%xtime                                    &
       ! Selection flag 
-                ,DIAG_PRINT=config_flags%diag_print                  &
-                ,BUCKET_MM=config_flags%bucket_mm                    &
-                ,BUCKET_J =config_flags%bucket_J                     &
                 ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
                 ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
                 ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
@@ -542,10 +512,6 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
-                ,PREC_ACC_C=grid%prec_acc_c                          &
-                ,PREC_ACC_NC=grid%prec_acc_nc                        &
-                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
@@ -572,42 +538,18 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
                                                                     )
 
         CASE (NSSL_1MOM)
 
-      CALL diagnostic_output_calc(                                   &
-                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
-                ,P8W=p8w   ,PK1M=grid%pk1m                           &
-                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
-                ,U=grid%u_2    ,V=grid%v_2                           &
-                ,TEMP=grid%t_phy                                     &
-                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
-                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
-                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+      CALL diagnostic_output_nwp(                                   &
+                 U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy ,P8W=p8w                            &
                 ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
-                ,XTIME=grid%xtime   ,T2=grid%t2                      &
-           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
-           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
-           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
-           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
-           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
-           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
-           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
-           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
-         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
-         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
-         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
-         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
-         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
-         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
-         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
-         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+                ,XTIME=grid%xtime                                    &
       ! Selection flag 
-                ,DIAG_PRINT=config_flags%diag_print                  &
-                ,BUCKET_MM=config_flags%bucket_mm                    &
-                ,BUCKET_J =config_flags%bucket_J                     &
                 ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
                 ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
                 ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
@@ -618,10 +560,6 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
-                ,PREC_ACC_C=grid%prec_acc_c                          &
-                ,PREC_ACC_NC=grid%prec_acc_nc                        &
-                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
@@ -648,42 +586,18 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
                                                                     )
 
         CASE (MILBRANDT2MOM, NSSL_2MOM, NSSL_2MOMCCN)
 
-      CALL diagnostic_output_calc(                                   &
-                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
-                ,P8W=p8w   ,PK1M=grid%pk1m                           &
-                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
-                ,U=grid%u_2    ,V=grid%v_2                           &
-                ,TEMP=grid%t_phy                                     &
-                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
-                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
-                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+      CALL diagnostic_output_nwp(                                   &
+                 U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy ,P8W=p8w                            &
                 ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
-                ,XTIME=grid%xtime   ,T2=grid%t2                      &
-           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
-           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
-           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
-           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
-           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
-           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
-           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
-           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
-         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
-         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
-         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
-         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
-         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
-         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
-         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
-         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+                ,XTIME=grid%xtime                                    &
       ! Selection flag 
-                ,DIAG_PRINT=config_flags%diag_print                  &
-                ,BUCKET_MM=config_flags%bucket_mm                    &
-                ,BUCKET_J =config_flags%bucket_J                     &
                 ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
                 ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
                 ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
@@ -694,10 +608,6 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
-                ,PREC_ACC_C=grid%prec_acc_c                          &
-                ,PREC_ACC_NC=grid%prec_acc_nc                        &
-                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
@@ -726,8 +636,9 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
                                                                     )
-
 
         !..The remaining microphysics schemes do not have graupel, but
         !..P_QG will just be empty and the remaining NWP-diagnostics can
@@ -751,7 +662,7 @@ CONTAINS
 
 !       CASE (FULL_KHAIN_LYNN)
 
-!       CASE (FAST_KHAIN_LYNN)
+!       CASE (FAST_KHAIN_LYNN_SHPUND)
 
 !       CASE (WSM3SCHEME)
 
@@ -759,38 +670,12 @@ CONTAINS
 
         CASE DEFAULT
 
-      CALL diagnostic_output_calc(                                   &
-                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
-                ,P8W=p8w   ,PK1M=grid%pk1m                           &
-                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
-                ,U=grid%u_2    ,V=grid%v_2                           &
-                ,TEMP=grid%t_phy                                     &
-                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
-                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
-                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+      CALL diagnostic_output_nwp(                                    &
+                 U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy ,P8W=p8w                            &
                 ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
-                ,XTIME=grid%xtime   ,T2=grid%t2                      &
-           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
-           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
-           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
-           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
-           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
-           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
-           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
-           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
-         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
-         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
-         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
-         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
-         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
-         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
-         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
-         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+                ,XTIME=grid%xtime                                    &
       ! Selection flag 
-                ,DIAG_PRINT=config_flags%diag_print                  &
-                ,BUCKET_MM=config_flags%bucket_mm                    &
-                ,BUCKET_J =config_flags%bucket_J                     &
                 ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
                 ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
                 ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
@@ -801,10 +686,6 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
-                ,PREC_ACC_C=grid%prec_acc_c                          &
-                ,PREC_ACC_NC=grid%prec_acc_nc                        &
-                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
@@ -830,11 +711,12 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
                                                                     )
 
-
-
    END SELECT mp_select
+   END IF NWPDIAGS
 
 
       !  Climate-oriented diagnostic quantities.
@@ -1197,6 +1079,37 @@ CONTAINS
       END IF RASM_DIAGS_DIURNAL
 
 
+      SOLAR_FIELDS: IF (config_flags%solar_diagnostics == do_solar_output) THEN
+          CALL wrf_debug (100 , '--> CALL DIAGNOSTICS PACKAGE: SOLAR_DIAG')
+          CALL solar_diag (                                                 &
+              rho=grid%rho, dz8w=dz8w, ph=grid%ph_2, phb=grid%phb,          &
+              cldfrac3d=grid%cldfra, coszen=grid%coszen, swdnb=grid%swdnb,  &
+              swdnt=grid%swdnt, qv=moist(ims,kms,jms,P_QV),                 &
+              qc=moist(ims,kms,jms,P_QC), qi=moist(ims,kms,jms,P_QI),       &
+              qs=moist(ims,kms,jms,P_QS), qc_tot=grid%qc_tot,               &
+              qi_tot=grid%qi_tot,                                           &
+              has_reqc=grid%has_reqc, has_reqi=grid%has_reqi,               &
+              has_reqs=grid%has_reqs, f_qv=f_qv, f_qc=f_qc, f_qi=f_qi,      &
+              f_qs=f_qs, re_cloud=grid%re_cloud, re_ice=grid%re_ice,        &
+              re_snow=grid%re_snow, cldfrac2d=grid%cldfrac2d,               &
+              wvp2d=grid%wvp, lwp2d=grid%lwp, iwp2d=grid%iwp,               &
+              swp2d=grid%swp, wp2d_sum=grid%wp_sum, lwp2d_tot=grid%lwp_tot, &
+              iwp2d_tot=grid%iwp_tot, wp2d_tot_sum=grid%wp_tot_sum,         &
+              re_cloud_path=grid%re_qc, re_ice_path=grid%re_qi,             &
+              re_snow_path=grid%re_qs, re_cloud_path_tot=grid%re_qc_tot,    &
+              re_ice_path_tot=grid%re_qi_tot, tau_qc=grid%tau_qc,           &
+              tau_qi=grid%tau_qi, tau_qs=grid%tau_qs,                       &
+              tau_qc_tot=grid%tau_qc_tot, tau_qi_tot=grid%tau_qi_tot,       &
+              cbase=grid%cbaseht, ctop=grid%ctopht,                         &
+              cbase_tot=grid%cbaseht_tot, ctop_tot=grid%ctopht_tot,         &
+              clrnidx=grid%clrnidx, sza=grid%sza,                           &
+              ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde,         &
+              ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme,         &
+              ips=ips, ipe=ipe, jps=jps, jpe=jpe, kps=kps, kpe=kpe,         &
+              i_start=grid%i_start, i_end=min(grid%i_end, ide-1),           &
+              j_start=grid%j_start, j_end=min(grid%j_end, jde-1),           &
+              kts=k_start, kte=min(k_end,kde-1), num_tiles=grid%num_tiles   )
+      END IF SOLAR_FIELDS
 
 
    END SUBROUTINE diagnostics_driver

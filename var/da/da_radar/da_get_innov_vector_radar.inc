@@ -463,12 +463,13 @@ END IF
                         if (model_tc(k,n).le.0.0) then
                            czs = (1.0-czr)*zds/(zds+zg) ! dry snow
                            czg = (1.0-czr)*zg/(zds+zg)
+                           iv % radar(n) % rsno(k) = exp ( log(czs*rze/zds)/1.75 )/model_rho(k,n)
                         else
                            czs = (1.0-czr)*zws/(zws+zg) ! wet snow
                            czg = (1.0-czr)*zg/(zws+zg)
+                           iv % radar(n) % rsno(k) = exp ( log(czs*rze/zws)/1.75 )/model_rho(k,n)
                         end if
                         iv % radar(n) % rrno(k) = exp ( log(czr*rze/zrr)/1.75 )/model_rho(k,n)
-                        iv % radar(n) % rsno(k) = exp ( log(czs*rze/zds)/1.75 )/model_rho(k,n)
                         iv % radar(n) % rgro(k) = exp ( log(czg*rze/zg )/1.75 )/model_rho(k,n)
                         iv % radar(n) % rrn(k) % qc = 0
                         iv % radar(n) % rsn(k) % qc = 0

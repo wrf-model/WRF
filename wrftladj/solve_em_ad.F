@@ -3920,6 +3920,7 @@ BENCH_START(micro_driver_tim)
       &        ,tempc=grid%tempc                                         &
       &        ,ccn_conc=grid%ccn_conc                                   & ! RAS
       &        ,sbmradar=sbmradar,num_sbmradar=num_sbmradar              & ! for SBM
+      &        ,sbm_diagnostics=config_flags%sbm_diagnostics             & ! for SBM
       &        ,aerocu=aerocu                                            &
       &        ,aercu_fct=config_flags%aercu_fct                         &
       &        ,aercu_opt=config_flags%aercu_opt                         &

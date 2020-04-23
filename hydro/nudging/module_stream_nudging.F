@@ -1770,17 +1770,28 @@ if(.not. temporalPersistence) return
 !! 1. loop over obsStaticStr.
 !! 2. find the image holding obsCellInd
 !! 3. communicate it's last ob back to image0.
-allocate(theMask(size(linkls_s)))
-do oo=1, size(obsStaticStr(:)%obsCellInd)
+allocate(theMask(size(linkls_s)))  ! number of processors
+
+do oo=1, size(obsStaticStr(:)%obsCellInd) ! loop over the gages
+
+   ! Is this gage in the range for this image?
    theMask = ( obsStaticStr(oo)%obsCellInd .ge. linkls_s .and. &
-               obsStaticStr(oo)%obsCellInd .le. linkls_e       )
+               obsStaticStr(oo)%obsCellInd .le. linkls_e        )
+   ! The image where the gage info is located
    whImage = whUniLoop(theMask) - 1
-   if(whImage .eq. io_id) continue
+
+   ! if the data is on this image or this image is the receiver, then communicate.
+   if(my_id .ne. whImage .and. my_id .ne. io_id) cycle
+   ! no communication necessary on the io image
+   if(whImage .eq. io_id) cycle
+
    call mpp_comm_1d_real(obsStaticStr(oo)%lastObsDischarge,      whImage, io_id)
    call mpp_comm_1d_real(obsStaticStr(oo)%lastObsModelDischarge, whImage, io_id)   
    call mpp_comm_1d_char(obsStaticStr(oo)%lastObsTime,           whImage, io_id)
    call mpp_comm_1d_real(obsStaticStr(oo)%lastObsQuality,        whImage, io_id)
+
 end do
+
 deallocate(theMask)      
 
 if(my_id .eq. io_id) then
@@ -1808,7 +1819,7 @@ end subroutine output_nudging_last_obs
 ! Author(s)/Contact(s): 
 !   James L McCreight <jamesmcc><ucar><edu>
 ! Abstract: 
-!   Keep a running, non-redundant log of gages seen in the forecast cycle 
+!   Keep a running, non-redundant log of gages seen in the forecast cycle
 !   (from nwis) which were not found in the intersection of the Route_Link
 !   gages and the parameter file gages. 
 ! History Log: 
@@ -2597,9 +2608,9 @@ else if (temporalPersistence) then
    do tt=nTimesLastObs,1,-1
       ! Conditons for rejecting obs
       if(persistBias_local) then
-         if(.not. biasMask(tt)) continue
+         if(.not. biasMask(tt)) cycle
       else 
-         if(obsStaticStr(whGageId)%lastObsQuality(tt) .eq. 0) continue
+         if(obsStaticStr(whGageId)%lastObsQuality(tt) .eq. 0) cycle
       end if
       call geth_idts(hydroTime, obsStaticStr(whGageId)%lastObsTime(tt), prstDtErrInt)
       if(prstDtErrInt .lt. zeroInt) then

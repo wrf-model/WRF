@@ -26,7 +26,9 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       -DINTIO \
                       -DKEEP_INT_AROUND \
                       -DLIMIT_ARGS \
-                      -DBUILD_RRTMG_FAST=1 \
+                      -DBUILD_RRTMG_FAST=0 \
+                      -DBUILD_RRTMK=0 \
+                      -DBUILD_SBM_FAST=1 \
                       -DSHOW_ALL_VARS_USED=0 \
                       -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \
                       -DMAX_DOMAINS_F=$(MAX_DOMAINS) \
@@ -54,19 +56,6 @@ INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                       CONFIGURE_RTTOV_INC
 REGISTRY        =    Registry
 CC_TOOLS_CFLAGS = CONFIGURE_NMM_CORE
-
-#NOWIN LIB_BUNDLED     = \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5/libfftpack.a \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib1/libio_grib1.a \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib_share/libio_grib_share.a \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_int/libwrfio_int.a \
-#NOWIN                      $(ESMF_IO_LIB) \
-#NOWIN                      CONFIGURE_COMMS_LIB \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o 
-
-#NOWIN LIB_EXTERNAL    = \
-#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB CONFIGURE_HDF5_LIB_PATH
 
 LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL) $(LIB_WRF_HYDRO)
 LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS

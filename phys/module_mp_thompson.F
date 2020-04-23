@@ -107,8 +107,8 @@
 !.. mixing ratio.  Also, when mu_g is non-zero, these become equiv
 !.. y-intercept for an exponential distrib and proper values are
 !.. computed based on same mixing ratio and total number concentration.
-      REAL, PARAMETER, PRIVATE:: gonv_min = 1.E4
-      REAL, PARAMETER, PRIVATE:: gonv_max = 3.E6
+      REAL, PARAMETER, PRIVATE:: gonv_min = 1.E3
+      REAL, PARAMETER, PRIVATE:: gonv_max = 9.E6
 
 !..Mass power law relations:  mass = am*D**bm
 !.. Snow from Field et al. (2005), others assume spherical form.
@@ -211,9 +211,9 @@
       INTEGER, PARAMETER, PRIVATE:: ntb_c = 37
       INTEGER, PARAMETER, PRIVATE:: ntb_i = 64
       INTEGER, PARAMETER, PRIVATE:: ntb_r = 37
-      INTEGER, PARAMETER, PRIVATE:: ntb_s = 28
-      INTEGER, PARAMETER, PRIVATE:: ntb_g = 28
-      INTEGER, PARAMETER, PRIVATE:: ntb_g1 = 28
+      INTEGER, PARAMETER, PRIVATE:: ntb_s = 37
+      INTEGER, PARAMETER, PRIVATE:: ntb_g = 37
+      INTEGER, PARAMETER, PRIVATE:: ntb_g1 = 37
       INTEGER, PARAMETER, PRIVATE:: ntb_r1 = 37
       INTEGER, PARAMETER, PRIVATE:: ntb_i1 = 55
       INTEGER, PARAMETER, PRIVATE:: ntb_t = 9
@@ -264,14 +264,16 @@
 
 !..Lookup tables for graupel content (kg/m**3).
       REAL, DIMENSION(ntb_g), PARAMETER, PRIVATE:: &
-      r_g = (/1.e-5,2.e-5,3.e-5,4.e-5,5.e-5,6.e-5,7.e-5,8.e-5,9.e-5, &
+      r_g = (/1.e-6,2.e-6,3.e-6,4.e-6,5.e-6,6.e-6,7.e-6,8.e-6,9.e-6, &
+              1.e-5,2.e-5,3.e-5,4.e-5,5.e-5,6.e-5,7.e-5,8.e-5,9.e-5, &
               1.e-4,2.e-4,3.e-4,4.e-4,5.e-4,6.e-4,7.e-4,8.e-4,9.e-4, &
               1.e-3,2.e-3,3.e-3,4.e-3,5.e-3,6.e-3,7.e-3,8.e-3,9.e-3, &
               1.e-2/)
 
 !..Lookup tables for snow content (kg/m**3).
       REAL, DIMENSION(ntb_s), PARAMETER, PRIVATE:: &
-      r_s = (/1.e-5,2.e-5,3.e-5,4.e-5,5.e-5,6.e-5,7.e-5,8.e-5,9.e-5, &
+      r_s = (/1.e-6,2.e-6,3.e-6,4.e-6,5.e-6,6.e-6,7.e-6,8.e-6,9.e-6, &
+              1.e-5,2.e-5,3.e-5,4.e-5,5.e-5,6.e-5,7.e-5,8.e-5,9.e-5, &
               1.e-4,2.e-4,3.e-4,4.e-4,5.e-4,6.e-4,7.e-4,8.e-4,9.e-4, &
               1.e-3,2.e-3,3.e-3,4.e-3,5.e-3,6.e-3,7.e-3,8.e-3,9.e-3, &
               1.e-2/)
@@ -286,7 +288,8 @@
 
 !..Lookup tables for graupel y-intercept parameter (/m**4).
       REAL, DIMENSION(ntb_g1), PARAMETER, PRIVATE:: &
-      N0g_exp = (/1.e4,2.e4,3.e4,4.e4,5.e4,6.e4,7.e4,8.e4,9.e4, &
+      N0g_exp = (/1.e3,2.e3,3.e3,4.e3,5.e3,6.e3,7.e3,8.e3,9.e3, &
+                  1.e4,2.e4,3.e4,4.e4,5.e4,6.e4,7.e4,8.e4,9.e4, &
                   1.e5,2.e5,3.e5,4.e5,5.e5,6.e5,7.e5,8.e5,9.e5, &
                   1.e6,2.e6,3.e6,4.e6,5.e6,6.e6,7.e6,8.e6,9.e6, &
                   1.e7/)
@@ -979,7 +982,7 @@
 #if ( WRF_CHEM == 1 )
                               rainprod, evapprod, &
 #endif
-                              refl_10cm, diagflag, do_radar_ref,      &
+                              refl_10cm, diagflag, ke_diag, do_radar_ref,      &
                               re_cloud, re_ice, re_snow,              &
                               has_reqc, has_reqi, has_reqs,           &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
@@ -1035,8 +1038,10 @@
       INTEGER:: kmax_qc,kmax_qr,kmax_qi,kmax_qs,kmax_qg,kmax_ni,kmax_nr
       INTEGER:: i_start, j_start, i_end, j_end
       LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
-      INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+      INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref, ke_diag
       CHARACTER*256:: mp_debug
+      
+      integer :: kediagloc
 
 !+---+
 
@@ -1282,8 +1287,15 @@
 
          IF ( PRESENT (diagflag) ) THEN
          if (diagflag .and. do_radar_ref == 1) then
+          
+          IF ( present(ke_diag) ) THEN
+            kediagloc = ke_diag
+          ELSE
+            kediagloc = kte
+          ENDIF
+          
           call calc_refl10cm (qv1d, qc1d, qr1d, nr1d, qs1d, qg1d,       &
-                      t1d, p1d, dBZ, kts, kte, i, j)
+                      t1d, p1d, dBZ, kts, kte, i, j, kediagloc)
           do k = kts, kte
              refl_10cm(i,k,j) = MAX(-35., dBZ(k))
           enddo
@@ -1833,23 +1845,12 @@
 !+---+-----------------------------------------------------------------+
 !..Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
-      N0_min = gonv_max
-      k_0 = kts
+
       do k = kte, kts, -1
-         if (temp(k).ge.270.65) k_0 = MAX(k_0, k)
-      enddo
-      do k = kte, kts, -1
-         if (k.gt.k_0 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
-            xslw1 = 4.01 + alog10(mvd_r(k))
-         else
-            xslw1 = 0.01
-         endif
-         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
-         zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
+         ygra1 = alog10(max(1.E-9, rg(k)))
+         zans1 = (3.5 + 2./7. * (ygra1+7.))
+         zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
-         N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
-         N0_min = MIN(N0_exp, N0_min)
-         N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
          ilamg(k) = 1./lamg
@@ -2905,23 +2906,12 @@
 !+---+-----------------------------------------------------------------+
 !..Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
-      N0_min = gonv_max
-      k_0 = kts
+
       do k = kte, kts, -1
-         if (temp(k).ge.270.65) k_0 = MAX(k_0, k)
-      enddo
-      do k = kte, kts, -1
-         if (k.gt.k_0 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
-            xslw1 = 4.01 + alog10(mvd_r(k))
-         else
-            xslw1 = 0.01
-         endif
-         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
-         zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
+         ygra1 = alog10(max(1.E-9, rg(k)))
+         zans1 = (3.5 + 2./7. * (ygra1+7.))
+         zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
-         N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
-         N0_min = MIN(N0_exp, N0_min)
-         N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
          ilamg(k) = 1./lamg
@@ -3588,10 +3578,10 @@
 
       good = 0
       IF ( wrf_dm_on_monitor() ) THEN
-        INQUIRE(FILE="qr_acr_qg.dat",EXIST=lexist)
+        INQUIRE(FILE="qr_acr_qgV2.dat",EXIST=lexist)
         IF ( lexist ) THEN
-          CALL wrf_message("ThompMP: read qr_acr_qg.dat instead of computing")
-          OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=1234)
+          CALL wrf_message("ThompMP: read qr_acr_qgV2.dat instead of computing")
+          OPEN(63,file="qr_acr_qgV2.dat",form="unformatted",err=1234)
           READ(63,err=1234) tcg_racg
           READ(63,err=1234) tmr_racg
           READ(63,err=1234) tcr_gacr
@@ -3604,12 +3594,12 @@
             INQUIRE(63,opened=lopen)
             IF (lopen) THEN
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error reading qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error reading qr_acr_qgV2.dat. Aborting because force_read_thompson is .true.")
               ENDIF
               CLOSE(63)
             ELSE
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error opening qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error opening qr_acr_qgV2.dat. Aborting because force_read_thompson is .true.")
               ENDIF
             ENDIF
           ELSE
@@ -3620,7 +3610,7 @@
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN
-            CALL wrf_error_fatal("Non-existent qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
+            CALL wrf_error_fatal("Non-existent qr_acr_qgV2.dat. Aborting because force_read_thompson is .true.")
           ENDIF
         ENDIF
       ENDIF
@@ -3732,8 +3722,8 @@
 #endif
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
-          CALL wrf_message("Writing qr_acr_qg.dat in Thompson MP init")
-          OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=9234)
+          CALL wrf_message("Writing qr_acr_qgV2.dat in Thompson MP init")
+          OPEN(63,file="qr_acr_qgV2.dat",form="unformatted",err=9234)
           WRITE(63,err=9234) tcg_racg
           WRITE(63,err=9234) tmr_racg
           WRITE(63,err=9234) tcr_gacr
@@ -3743,7 +3733,7 @@
           CLOSE(63)
           RETURN    ! ----- RETURN
  9234     CONTINUE
-          CALL wrf_error_fatal("Error writing qr_acr_qg.dat")
+          CALL wrf_error_fatal("Error writing qr_acr_qgV2.dat")
         ENDIF
       ENDIF
 
@@ -3780,10 +3770,10 @@
 
       good = 0
       IF ( wrf_dm_on_monitor() ) THEN
-        INQUIRE(FILE="qr_acr_qs.dat",EXIST=lexist)
+        INQUIRE(FILE="qr_acr_qsV2.dat",EXIST=lexist)
         IF ( lexist ) THEN
-          CALL wrf_message("ThompMP: read qr_acr_qs.dat instead of computing")
-          OPEN(63,file="qr_acr_qs.dat",form="unformatted",err=1234)
+          CALL wrf_message("ThompMP: read qr_acr_qsV2.dat instead of computing")
+          OPEN(63,file="qr_acr_qsV2.dat",form="unformatted",err=1234)
           READ(63,err=1234)tcs_racs1
           READ(63,err=1234)tmr_racs1
           READ(63,err=1234)tcs_racs2
@@ -3802,12 +3792,12 @@
             INQUIRE(63,opened=lopen)
             IF (lopen) THEN
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error reading qr_acr_qs.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error reading qr_acr_qsV2.dat. Aborting because force_read_thompson is .true.")
               ENDIF
               CLOSE(63)
             ELSE
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error opening qr_acr_qs.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error opening qr_acr_qsV2.dat. Aborting because force_read_thompson is .true.")
               ENDIF
             ENDIF
           ELSE
@@ -3818,7 +3808,7 @@
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN
-            CALL wrf_error_fatal("Non-existent qr_acr_qs.dat. Aborting because force_read_thompson is .true.")
+            CALL wrf_error_fatal("Non-existent qr_acr_qsV2.dat. Aborting because force_read_thompson is .true.")
           ENDIF
         ENDIF
       ENDIF
@@ -4011,8 +4001,8 @@
 #endif
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
-          CALL wrf_message("Writing qr_acr_qs.dat in Thompson MP init")
-          OPEN(63,file="qr_acr_qs.dat",form="unformatted",err=9234)
+          CALL wrf_message("Writing qr_acr_qsV2.dat in Thompson MP init")
+          OPEN(63,file="qr_acr_qsV2.dat",form="unformatted",err=9234)
           WRITE(63,err=9234)tcs_racs1
           WRITE(63,err=9234)tmr_racs1
           WRITE(63,err=9234)tcs_racs2
@@ -4028,7 +4018,7 @@
           CLOSE(63)
           RETURN    ! ----- RETURN
  9234     CONTINUE
-          CALL wrf_error_fatal("Error writing qr_acr_qs.dat")
+          CALL wrf_error_fatal("Error writing qr_acr_qsV2.dat")
         ENDIF
       ENDIF
 
@@ -5151,12 +5141,12 @@
 !+---+-----------------------------------------------------------------+
 
       subroutine calc_refl10cm (qv1d, qc1d, qr1d, nr1d, qs1d, qg1d,     &
-                          t1d, p1d, dBZ, kts, kte, ii, jj)
+                          t1d, p1d, dBZ, kts, kte, ii, jj, ke_diag)
 
       IMPLICIT NONE
 
 !..Sub arguments
-      INTEGER, INTENT(IN):: kts, kte, ii, jj
+      INTEGER, INTENT(IN):: kts, kte, ii, jj, ke_diag
       REAL, DIMENSION(kts:kte), INTENT(IN)::                            &
                           qv1d, qc1d, qr1d, nr1d, qs1d, qg1d, t1d, p1d
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: dBZ
@@ -5179,12 +5169,13 @@
       REAL:: a_, b_, loga_, tc0
       DOUBLE PRECISION:: fmelt_s, fmelt_g
 
-      INTEGER:: i, k, k_0, kbot, n
+      INTEGER:: i, k, k_0, kbot, n, ktop
       LOGICAL:: melti
       LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
 
       DOUBLE PRECISION:: cback, x, eta, f_d
       REAL:: xslw1, ygra1, zans1
+      INTEGER :: k_0loop
 
 !+---+
 
@@ -5195,6 +5186,7 @@
 !+---+-----------------------------------------------------------------+
 !..Put column of data into local arrays.
 !+---+-----------------------------------------------------------------+
+
       do k = kts, kte
          temp(k) = t1d(k)
          qv(k) = MAX(1.E-10, qv1d(k))
@@ -5241,8 +5233,9 @@
          smoc(k) = 0.
          smoz(k) = 0.
       enddo
-      if (ANY(L_qs .eqv. .true.)) then
-      do k = kts, kte
+      if ( ( ke_diag > kts .and. ANY(L_qs .eqv. .true.) ) .or.  &
+            (ke_diag == kts .and. L_qs(kts) .eqv. .true. ) ) then
+      do k = kts, ke_diag ! kte
          if (.not. L_qs(k)) CYCLE
          tc0 = MIN(-0.1, temp(k)-273.15)
          smob(k) = rs(k)*oams
@@ -5299,23 +5292,11 @@
 !+---+-----------------------------------------------------------------+
 
       if (ANY(L_qg .eqv. .true.)) then
-      N0_min = gonv_max
-      k_0 = kts
       do k = kte, kts, -1
-         if (temp(k).ge.270.65) k_0 = MAX(k_0, k)
-      enddo
-      do k = kte, kts, -1
-         if (k.gt.k_0 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
-            xslw1 = 4.01 + alog10(mvd_r(k))
-         else
-            xslw1 = 0.01
-         endif
-         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
-         zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
+         ygra1 = alog10(max(1.E-9, rg(k)))
+         zans1 = (3.5 + 2./7. * (ygra1+7.))
+         zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
-         N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
-         N0_min = MIN(N0_exp, N0_min)
-         N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
          ilamg(k) = 1./lamg
@@ -5338,13 +5319,16 @@
       enddo
  195  continue
 
+! Set loop limit for wet ice according to whether the full 3D field is needed or just k=1
+      k_0loop = Min(k_0, ke_diag+1)
+
 !+---+-----------------------------------------------------------------+
 !..Assume Rayleigh approximation at 10 cm wavelength. Rain (all temps)
 !.. and non-water-coated snow and graupel when below freezing are
 !.. simple. Integrations of m(D)*m(D)*N(D)*dD.
 !+---+-----------------------------------------------------------------+
 
-      do k = kts, kte
+      do k = kts, ke_diag ! kte
          ze_rain(k) = 1.e-22
          ze_snow(k) = 1.e-22
          ze_graupel(k) = 1.e-22
@@ -5365,7 +5349,7 @@
 !+---+-----------------------------------------------------------------+
 
       if (.not. iiwarm .and. melti .and. k_0.ge.2) then
-       do k = k_0-1, kts, -1
+       do k = k_0loop-1, kts, -1
 
 !..Reflectivity contributed by melting snow
           if (L_qs(k) .and. L_qs(k_0) ) then
@@ -5412,7 +5396,7 @@
        enddo
       endif
 
-      do k = kte, kts, -1
+      do k = ke_diag, kts, -1
          dBZ(k) = 10.*log10((ze_rain(k)+ze_snow(k)+ze_graupel(k))*1.d18)
       enddo
 

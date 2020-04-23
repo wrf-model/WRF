@@ -9479,11 +9479,10 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
     
 ! Recompute original s.s.a. to test for conservative solution
 
-               denom = (1. - (1. - zw) * (zg / (1. - zg))**2)
-               if (abs(denom).eq.0.0) then
-                  denom = 1.0E-30
-               end if
-               zwo= zw / denom
+               zwo = 0.
+               denom = 1.
+               if (zg .ne. 1.) denom = (1. - (1. - zw) * (zg / (1. - zg))**2)
+               if (zw .gt. 0. .and. denom .ne. 0.) zwo = zw / denom
     
                if (zwo >= zwcrit) then
 ! Conservative scattering
@@ -11256,7 +11255,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,julian                             & ! jararias 2013/08
+                       xcoszen,yr,julian                          & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
       IMPLICIT NONE
@@ -11327,6 +11326,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
          swdownc, & ! Clear sky GHI
          swddnic, & ! Clear ski DNI
          swddirc    ! Clear ski direct horizontal irradiance
+   integer, intent(in)        :: yr
    real, optional, intent(in) :: &
          julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), optional, intent(in) :: &
@@ -11522,9 +11522,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
     real:: corr
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
-! carbon dioxide (379 ppmv)
+! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
-    data co2 / 379.e-6 / 
+!   data co2 / 379.e-6 /
 ! methane (1774 ppbv)
     real :: ch4
     data ch4 / 1774.e-9 / 
@@ -11604,6 +11604,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !    REAL, DIMENSION( ims:ime, jms:jme ) ::         SWDB, SWUT
 
 !------------------------------------------------------------------
+! Annual function for co2 in WRF v4.2
+      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &

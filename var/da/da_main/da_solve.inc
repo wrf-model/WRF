@@ -56,7 +56,10 @@
    integer   :: cvt_unit, iost
    character(len=8) :: cvtfile
    logical :: ex
- 
+
+   character(len=10) :: this_time
+   character(len=8)  :: this_date
+
    if (trace_use) call da_trace_entry("da_solve")
 
 #ifdef DM_PARALLEL
@@ -191,9 +194,9 @@
    endif
 
    if (anal_type_randomcv) then
-      ntmax = 0
-      write(unit=stdout,fmt='(a)') &
-         ' Resetting ntmax = 0 for analysis_type = randomcv' 
+      write_gts_omb_oma  = .false.
+      write_rej_obs_conv = .false.
+      write_unpert_obs   = .false.
    end if
 
    if ( cv_options == 3 ) then
@@ -220,8 +223,8 @@
          write(unit=message(2),fmt='(A)') "You must only choose one of these options"
          call da_error(__FILE__,__LINE__,message(1:2))
       end if
-      if ( use_radar_rf .and. cloud_cv_options /= 1 ) then
-         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=1 for use_radar_rf"
+      if ( (use_radar_rf .and. radar_rf_opt==1) .and. cloud_cv_options /= 1 ) then
+         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=1 for use_radar_rf and radar_rf_opt=1"
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
       if ( use_radar_rhv .and. cloud_cv_options == 1 ) then
@@ -480,6 +483,7 @@
    be % cv % size_jp = 0
    be % cv % size_js = 0
    be % cv % size_jl = 0
+   be % cv % size_jt = 0
    
    !---------------------------------------------------------------------------
    ! [5.1] Set up background errors (be):
@@ -515,6 +519,13 @@
    if (use_rad .and. (use_varbc.or.freeze_varbc)) call da_varbc_init(iv, be)
 #endif
 
+   if (use_tamdarobs .and. use_varbc_tamdar) then
+        call da_varbc_tamdar_init(iv)
+   else
+        use_varbc_tamdar = .false.
+   end if
+   if (use_varbc_tamdar) call da_varbc_tamdar_pred(iv, be, ob)
+
    !---------------------------------------------------------------------------
    ! [5.3] Set up satellite control variable:
    !---------------------------------------------------------------------------
@@ -525,7 +536,7 @@
    !---------------------------------------------------------------------------
    ! [5.4] Total control variable:
    !---------------------------------------------------------------------------   
-   be % cv % size = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_js + be%cv%size_jl
+   be % cv % size = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_js + be%cv%size_jl + be%cv%size_jt
    cv_size = be % cv % size
 
    !---------------------------------------------------------------------------
@@ -534,17 +545,52 @@
 
       grid % ep % ne = be % ne
       if (use_background_errors .and. be % ne > 0) then
-!        call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
-!                                        its, ite, jts, jte, kts, kte )
-         select case ( ep_para_read )
-            case ( 0 ) ! serial read (default)
-               call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
-                                               its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
-            case ( 1 ) ! para_read_opt1, breaks total number of ep into reading bins
-               call da_setup_flow_predictors_para_read_opt1 ( &
-                                            ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
-                                            its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+
+         call date_and_time(date=this_date, time=this_time)
+         write(unit=message(1),fmt='(a,a8,1x,a12)') &
+            '   Begin reading ensemble perturbations at ', this_date, &
+            this_time(1:2)//':'//this_time(3:4)//' '//this_time(5:10)
+         call da_message(message(1:1))
+
+         select case ( ep_format )
+            case ( 1 ) ! original behavior
+               if ( ep_para_read == 0 ) then
+                  ! each ep file is for one variable and one member
+                  call da_setup_flow_predictors ( &
+                     ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                     its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+               else if ( ep_para_read == 1 ) then
+                  ! para_read_opt1, breaks total number of ep into reading bins
+                  call da_setup_flow_predictors_para_read_opt1 ( &
+                     ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                     its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+               end if
+            case ( 11 )
+               ! similar to ep_format=1 except data are in single precision
+               ! each ep file is for one variable and one member
+               call da_setup_flow_predictors ( &
+                  ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                  its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+            case ( 2 )
+               ! full-domain
+               ! each ep file in single precision is for one variable and all members
+               call da_setup_flow_predictors_ep_format2 ( &
+                  ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                  its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+            case ( 3 )
+               ! decomposed sub-domain
+               ! each ep file in single precision is for one variable and all members
+               call da_setup_flow_predictors_ep_format3 ( &
+                  ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                  its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
          end select
+
+         call date_and_time(date=this_date, time=this_time)
+         write(unit=message(1),fmt='(a,a8,1x,a12)') &
+            '  Fihish reading ensemble perturbations at ', this_date, &
+            this_time(1:2)//':'//this_time(3:4)//' '//this_time(5:10)
+         call da_message(message(1:1))
+
       end if
 
    !---------------------------------------------------------------------------
@@ -557,6 +603,35 @@
 !      if (use_lanczos) then
 !        allocate (full_eignvec(cv_size))
 !      end if
+
+      !------------------------------------------------------
+      ! set CV to random noise ("RANDOMCV")
+      !------------------------------------------------------
+      if (anal_type_randomcv) then
+         it = 1
+         ! Initialize random number generator and scalars
+         call da_random_seed
+         do i= 1, n_randomcv
+            write(ci,'(i3.3)') i
+            write(unit=message(1),fmt='(a,a)') &
+               '  Setting randomcv for wrfvar_output_randomcv.e', trim(ci)
+            call da_message(message(1:1))
+            call da_set_randomcv    (cv_size, cvt)
+            call da_transform_vtox  (grid,cv_size,xbx,be,grid%ep,cvt,grid%vv,grid%vp)
+            call da_transform_xtoxa (grid)
+            call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
+            call da_update_firstguess(grid,'wrfvar_output_randomcv.e'//trim(ci))
+            if ( i < n_randomcv ) then
+               ! restore the original grid info for the next realization of randomcv
+               call da_med_initialdata_input( grid , config_flags, 'fg')
+               call da_setup_firstguess(xbx, grid, config_flags, .false.)
+            end if
+         end do
+         ! Done with randomcv.
+         ! Set the following to skip some code to get to the deallocation part.
+         max_ext_its = 0
+         outer_loop_restart = .false.
+      end if  !anal_type_randomcv
 
       if ( outer_loop_restart ) then
          !call da_get_unit(cvt_unit)
@@ -771,7 +846,7 @@
                              be,iv,xhat,qhat,cvt,re,y,j,eignvec,eignval,neign)
           ! Output Cost Function
             call da_calculate_j(it, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                             be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, grid, config_flags )
+                             be%cv%size_jl, be%cv%size_jt, xbx, be, iv, xhat, cvt, re, y, j, grid, config_flags )
 
          else
             call da_minimise_lz(grid, config_flags, it, cv_size, xbx,& 
@@ -808,11 +883,6 @@
         !call da_free_unit(cvt_unit)
       end if
       !------------------------------------------------------------------------
-
-      ! reset cv to random noise
-      if (anal_type_randomcv) then
-         call da_set_randomcv (cv_size, xhat)
-      end if
 
       ! [8.5] Update latest analysis solution:
 
@@ -887,6 +957,8 @@
                 call da_varbc_update(it, cv_size, xhat, iv)
 #endif
 
+      if (use_varbc_tamdar) &
+         call da_varbc_tamdar_update(cv_size, xhat, iv)
 
       !------------------------------------------------------------------------
       ! [8.10] Output WRFVAR analysis and analysis increments:
@@ -1004,6 +1076,19 @@
    end if
 
    if ( anal_type_hybrid_dual_res ) deallocate(aens_locs)
+
+   if (use_varbc_tamdar) then
+      deallocate (iv%varbc_tamdar%nobs)
+      deallocate (iv%varbc_tamdar%nobs_sum)
+      deallocate (iv%varbc_tamdar%tail_id)
+      deallocate (iv%varbc_tamdar%obs_sn)
+      deallocate (iv%varbc_tamdar%ifuse)
+      deallocate (iv%varbc_tamdar%index)
+      deallocate (iv%varbc_tamdar%pred)
+      deallocate (iv%varbc_tamdar%param)
+      deallocate (iv%varbc_tamdar%bgerr)
+      deallocate (iv%varbc_tamdar%vtox)
+   end if
 
    deallocate ( c1f )
    deallocate ( c2f )

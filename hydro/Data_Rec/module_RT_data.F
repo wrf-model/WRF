@@ -19,6 +19,7 @@
 !  User controllable options: <if applicable>
 
 Module module_RT_data
+   use overland_data
    IMPLICIT NONE
    INTEGER, PARAMETER :: max_domain=5
 

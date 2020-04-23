@@ -16,7 +16,15 @@ MODULE module_sf_noahdrv
   USE module_sf_noahlsm_glacial_only, only: sflx_glacial
   USE module_sf_bep,      only: bep
   USE module_sf_bep_bem,  only: bep_bem
-  USE module_ra_gfdleta,  only: cal_mon_day
+#if defined(mpas)
+use mpas_atmphys_date_time, only: cal_mon_day
+use mpas_atmphys_utilities, only: physics_error_fatal
+#define FATAL_ERROR(M) call physics_error_fatal( M )
+#else
+ use module_ra_gfdleta,  only: cal_mon_day
+ use module_wrf_error
+#define FATAL_ERROR(M) call wrf_error_fatal( M )
+#endif
 #if ( WRF_CHEM == 1 )
   USE module_data_gocart_dust
 #endif
@@ -104,8 +112,9 @@ CONTAINS
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
                   dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
-                 ,RC2,XLAI2                                               &
-                  )
+                 ,RC2,XLAI2                                         &
+                 ,IRR_CHAN                                          &
+                 )
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -351,7 +360,7 @@ CONTAINS
                INTENT(OUT)    ::                        CHKLOWQ
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT) ::  RC2, XLAI2
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) ::  RC2, XLAI2
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
@@ -668,6 +677,9 @@ CONTAINS
    REAL                    ::  DZQ
    REAL                    ::  HCPCT_FASDAS
 
+   REAL,OPTIONAL,INTENT(IN),DIMENSION( ims:ime, jms:jme )       :: IRR_CHAN
+   REAL       ::  IRRIGATION_CHANNEL
+   IRRIGATION_CHANNEL =0.0
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
    XQNORM  = 0.0
@@ -785,6 +797,13 @@ CONTAINS
 ! use mid-day albedo to determine net downward solar (no solar zenith angle correction)
         SOLNET=SOLDN*(1.-ALBEDO(I,J))
         PRCP=RAINBL(i,j)/DT
+        IF(PRESENT(IRR_CHAN)) THEN
+         IF(IRR_CHAN(i,j).NE.0) THEN
+           IRRIGATION_CHANNEL=IRR_CHAN(i,j)/DT
+         ELSE
+           IRRIGATION_CHANNEL=0.
+         END IF
+        ENDIF
         VEGTYP=IVGTYP(I,J)
         SOILTYP=ISLTYP(I,J)
         SHDFAC=VEGFRA(I,J)/100.
@@ -961,10 +980,10 @@ CONTAINS
 
 	  IF(SF_URBAN_PHYSICS == 2 .or. SF_URBAN_PHYSICS == 3) THEN
           IF(AOASIS > 1.0) THEN
-          CALL wrf_error_fatal('Urban oasis option is for SF_URBAN_PHYSICS == 1 only')
+          FATAL_ERROR('Urban oasis option is for SF_URBAN_PHYSICS == 1 only')
           ENDIF
           IF(IRIOPTION == 1) THEN
-          CALL wrf_error_fatal('Urban irrigation option is for SF_URBAN_PHYSICS == 1 only')
+          FATAL_ERROR('Urban irrigation option is for SF_URBAN_PHYSICS == 1 only')
           ENDIF
           ENDIF
 
@@ -1053,7 +1072,7 @@ CONTAINS
                  sfcheadrt(i,j),                                   &    !I
                  INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    &   ! fasdas
-                 )
+                ,IRRIGATION_CHANNEL)
 
 
 #ifdef WRF_HYDRO
@@ -1107,8 +1126,10 @@ CONTAINS
     ENDIF
 
        lai(i,j) = xlai
+       if (present(rc2) .and. present(xlai2)) then
        rc2(I,J) = RC                                              ! for output
        xlai2(I,J) = XLAI
+       endif
 
 #if 0
           IF(IPRINT) THEN
@@ -1167,9 +1188,11 @@ CONTAINS
 !
           TSK(I,J)=T1
           TSK_RURAL(I,J)=T1
-          IF(SF_URBAN_PHYSICS == 2 .or. SF_URBAN_PHYSICS == 3) THEN
-            TSK_RURAL_BEP(I,J)=T1
-          END IF
+          if (present(tsk_rural_bep)) then
+             IF(SF_URBAN_PHYSICS == 2 .or. SF_URBAN_PHYSICS == 3) THEN
+               TSK_RURAL_BEP(I,J)=T1
+             END IF
+          endif
           HFX(I,J)=SHEAT
           HFX_RURAL(I,J)=SHEAT
 ! MEk Jul07 add potential evap accum
@@ -1695,6 +1718,12 @@ CONTAINS
    END SUBROUTINE lsm
 !------------------------------------------------------
 
+!For MPAS, the below section of the module is moved to module_physics_lsm_noahinit.F in
+!./../core_physics to accomodate differences in the mpi calls between WRF and MPAS.I thought
+!that it would be cleaner to do this instead of adding a lot of #ifdef statements throughout
+!the initialization subroutine.
+
+#if defined(wrfmodel)
   SUBROUTINE LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,    &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
@@ -1702,9 +1731,11 @@ CONTAINS
                      SNOALB, FNDSOILW, FNDSNOWH, RDMAXALB,     &
                      num_soil_layers, restart,                 &
                      allowed_to_read ,                         &
+                     irr_rand_field,irr_ph,irr_freq,           &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte                 )
+                     its,ite, jts,jte, kts,kte                 &                     
+                    )
 
    INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
                                     ims,ime, jms,jme, kms,kme,  &
@@ -1751,7 +1782,10 @@ CONTAINS
                                 GRAV = 9.81, T0 = 273.15
    INTEGER                   :: errflag
    CHARACTER(LEN=80)         :: err_message
-
+   INTEGER,DIMENSION(ims:ime, jms:jme ),INTENT(INOUT):: irr_rand_field   
+   INTEGER , DIMENSION(jds:jde) :: my_seeds  
+   INTEGER :: irr_ph,irr_freq         
+   REAL,DIMENSION(ims:ime, jms:jme ) :: rand_tmp
    character*256 :: MMINSL
         MMINSL='STAS'
 !
@@ -1776,6 +1810,22 @@ CONTAINS
 ! <--GAC
 
    IF(.not.restart)THEN
+   
+#if ( EM_CORE==1 )
+   IF (irr_ph.NE.0)THEN
+   DO i = its,ite
+    DO j=jts,jte
+      my_seeds(j) =sqrt(ide*(real(j-1)**2))+sqrt(real(jde*i))
+!      PRINT*,'myseed', my_seeds(j),j,jts,jds
+    END DO
+      CALL RANDOM_SEED ( PUT = my_seeds )
+      CALL RANDOM_NUMBER ( rand_tmp(i,:) )
+      CALL RANDOM_SEED ( GET = my_seeds )
+      CALL RANDOM_NUMBER ( rand_tmp(i,:) )
+      irr_rand_field(i,:)=int(modulo(rand_tmp(i,:)*100,real(irr_freq)))
+   END DO
+   END IF
+#endif
 
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
@@ -2311,6 +2361,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                  ,sfcheadrt,INFXSRT, soldrain                   & !hydro
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                     & !O
+                 ,IRR_CHAN                                      &
                   )
 
 !----------------------------------------------------------------
@@ -2911,7 +2962,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL                    ::  HFX_PHY, QFX_PHY
    REAL                    ::  DZQ
    REAL                    ::  HCPCT_FASDAS
-
+   REAL,OPTIONAL,DIMENSION( ims:ime, jms:jme ) :: IRR_CHAN
+   REAL               :: IRRIGATION_CHANNEL 
+   IRRIGATION_CHANNEL=0.0
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
    XQNORM  = 0.0
@@ -3103,6 +3156,13 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       ! use mid-day albedo to determine net downward solar (no solar zenith angle correction)
               SOLNET=SOLDN*(1.-ALBEDO(I,J))
               PRCP=RAINBL(i,j)/DT
+              IF(PRESENT(IRR_CHAN)) THEN
+               IF(IRR_CHAN(i,j).NE.0) THEN
+                IRRIGATION_CHANNEL=IRR_CHAN(i,j)/DT
+               ELSE
+                IRRIGATION_CHANNEL=0.
+               END IF
+              ENDIF
               VEGTYP=IVGTYP(I,J)
               SOILTYP=ISLTYP(I,J)
               SHDFAC=VEGFRA(I,J)/100.
@@ -3390,7 +3450,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        sfcheadrt(i,j),                                   &    !I
                        INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
-                       )
+                 ,IRRIGATION_CHANNEL  )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0
@@ -4275,7 +4335,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        sfcheadrt(i,j),                                   &    !I
                        INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
-                       )
+                      ,IRRIGATION_CHANNEL )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0
@@ -5102,5 +5162,6 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 !--------------------------------      
   END SUBROUTINE lsm_mosaic_init  
 !--------------------------------  
+#endif
 
 END MODULE module_sf_noahdrv

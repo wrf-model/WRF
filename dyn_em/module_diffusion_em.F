@@ -2017,7 +2017,7 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
 !        xkmh(i,k,j)=max(c_s*c_s*mlen_h*mlen_h*tmp, 1.0E-6*mlen_h*mlen_h )
          xkmh(i,k,j)=c_s*c_s*mlen_h*mlen_h*tmp
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*mlen_h )
-         xkmv(i,k,j)=0.
+         xkmv(i,k,j)=xkmh(i,k,j)               ! v4.2 and later, this is used for hor. diff. of w
          xkhh(i,k,j)=xkmh(i,k,j)/pr
          xkhv(i,k,j)=0.
          IF(config_flags%diff_opt .EQ. 2)THEN
@@ -2035,6 +2035,7 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
              xkmh(i,k,j)=xkmh(i,k,j)/(alpha)
            endif
            xkhh(i,k,j)=xkmh(i,k,j)/pr
+           xkmv(i,k,j)=xkmh(i,k,j)               ! v4.2 and later, this is used for hor. diff. of w
          ENDIF
       ENDDO
       ENDDO
@@ -2864,7 +2865,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                     div,                                       &
                                     moist, chem, scalar,tracer,                &
                                     msfux, msfuy, msfvx, msfvy,                &
-                                    msftx, msfty, xkmh, xkhh,km_opt,           &
+                                    msftx, msfty, xkmh, xkmv, xkhh, km_opt,    &
                                     rdx, rdy, rdz, rdzw, fnm, fnp,             &
                                     cf1, cf2, cf3, zx, zy, dn, dnw, rho,       &
                                     ids, ide, jds, jde, kds, kde,              &
@@ -2935,6 +2936,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                                                  defor23, &
                                                                      div, &
                                                                     xkmh, &
+                                                                    xkmv, &
                                                                     xkhh, &
                                                                       zx, &
                                                                       zy, &
@@ -2989,7 +2991,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    defor13, defor23, div,                  &
                                    nba_mij, n_nba_mij,                     &
                                    tke(ims,kms,jms),                       &
-                                   msftx, msfty, xkmh, rdx, rdy, fnm, fnp, &
+                                   msftx, msfty, xkmv, rdx, rdy, fnm, fnp, &
                                    dn, zx, zy, rdz, rho,                   &
                                    ids, ide, jds, jde, kds, kde,           &
                                    ims, ime, jms, jme, kms, kme,           &
@@ -3510,7 +3512,7 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
                                      nba_mij, n_nba_mij,                  &
                                      tke,                                 &
                                      msftx, msfty,                        &
-                                     xkmh, rdx, rdy, fnm, fnp,            &
+                                     xkmv, rdx, rdy, fnm, fnp,            &
                                      dn, zx, zy, rdz, rho,                &
                                      ids, ide, jds, jde, kds, kde,        &
                                      ims, ime, jms, jme, kms, kme,        &
@@ -3540,7 +3542,7 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
                                                                  defor23, &
                                                                      div, &
                                                                      tke, &
-                                                                    xkmh, &
+                                                                    xkmv, &
                                                                       zx, &
                                                                       zy, &
                                                                      rdz, &
@@ -3622,7 +3624,7 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
    je_ext=0
    CALL cal_titau_13_31( config_flags, titau1, defor13,   &
                          nba_mij(ims,kms,jms,P_m13),      &
-                         xkmh, fnm, fnp, rho,             &
+                         xkmv, fnm, fnp, rho,             &
                          is_ext, ie_ext, js_ext, je_ext,  &
                          ids, ide, jds, jde, kds, kde,    &
                          ims, ime, jms, jme, kms, kme,    &
@@ -3635,7 +3637,7 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
    je_ext=1
    CALL cal_titau_23_32( config_flags, titau2, defor23,   &
                          nba_mij(ims,kms,jms,P_m23),      &
-                         xkmh, fnm, fnp, rho,             &
+                         xkmv, fnm, fnp, rho,             &
                          is_ext, ie_ext, js_ext, je_ext,  &
                          ids, ide, jds, jde, kds, kde,    &
                          ims, ime, jms, jme, kms, kme,    &

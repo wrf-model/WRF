@@ -537,6 +537,16 @@ elif command -v time > /dev/null 2>&1; then
   echo "Will use 'time' to report timing information"
 fi
 
+# Is this some type of WRF DA build? If so, it is real*8.
+# Let's go ahead and set a flag internally.
+if test -n "$wrf_core" ; then
+   if [ "$wrf_core" = "DA_CORE" -o \
+        "$wrf_core" = "4D_DA_CORE" -o \
+        "$wrf_core" = "WRF_PLUS_CORE" ] ; then
+      rword="-r8"
+   fi
+fi
+
 # Found perl, so proceed with configuration
 if test -n "$PERL" ; then
    srch=`grep -i "^#ARCH.*$os" arch/configure.defaults | grep -i "$mach"`

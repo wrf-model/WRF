@@ -759,13 +759,13 @@ state    real   DZR             l        em      -         Z     r        "DZR" 
 state    real   DZB             l        em      -         Z     r        "DZB"            "THICKNESSES OF WALL LAYERS"                      "m"
 state    real   DZG             l        em      -         Z     r        "DZG"            "THICKNESSES OF ROAD LAYERS"                      "m"
 state    real   URB_PARAM      i{urb}j  misc      1        -     i1       "URB_PARAM" "NUDAPT_NBSD Urban Parameters" "parameter"
-state    real   LP_URB2D       ij       misc      1        -     i0  "BUILD_AREA_FRACTION" "BUILDING PLAN AREA DENSITY"   "dimensionless"
-state    real   HI_URB2D       i{uhi}j  misc      1        Z     i0  "HEIGHT_HISTOGRAMS" "DISTRIBUTION OF BUILDING HEIGHTS" "dimensionless"
-state    real   LB_URB2D       ij       misc      1        -     i0  "BUILD_SURF_RATIO" "BUILDING SURFACE AREA TO PLAN AREA RATIO" "dimensionless"
-state    real   HGT_URB2D      ij       misc      1        -     i0  "BUILD_HEIGHT" "AVERAGE BUILDING HEIGHT WEIGHTED BY BUILDING PLAN AREA" "m"
-state    real   MH_URB2D       ij       misc      1        -     i0  "MH_URB2D"  "Mean Building Height" "m"
-state    real   STDH_URB2D     ij       misc      1        -     i0  "STDH_URB2D" "Standard Deviation of Building Height" "m2"
-state    real   LF_URB2D       i{udr}j  misc      1        Z     i0  "LF_URB2D"   "Frontal Area Index" "dimensionless"
+state    real   LP_URB2D       ij       misc      1        -     ir       "BUILD_AREA_FRACTION" "BUILDING PLAN AREA DENSITY"   "dimensionless"
+state    real   HI_URB2D       i{uhi}j  misc      1        Z     ir       "HEIGHT_HISTOGRAMS" "DISTRIBUTION OF BUILDING HEIGHTS" "dimensionless"
+state    real   LB_URB2D       ij       misc      1        -     ir       "BUILD_SURF_RATIO" "BUILDING SURFACE AREA TO PLAN AREA RATIO" "dimensionless"
+state    real   HGT_URB2D      ij       misc      1        -     ir       "BUILD_HEIGHT" "AVERAGE BUILDING HEIGHT WEIGHTED BY BUILDING PLAN AREA" "m"
+state    real   MH_URB2D       ij       misc      1        -     ir       "MH_URB2D"  "Mean Building Height" "m"
+state    real   STDH_URB2D     ij       misc      1        -     ir       "STDH_URB2D" "Standard Deviation of Building Height" "m2"
+state    real   LF_URB2D       i{udr}j  misc      1        Z     ir       "LF_URB2D"   "Frontal Area Index" "dimensionless"
 
 # lsm State Variables
 
@@ -2270,15 +2270,16 @@ rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1    
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   real    naer                    namelist,physics      max_domains    1e9     rh   "NAER"          ""      ""
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    -1      rh       "sf_sfclay_physics"             ""      ""
-rconfig   integer     sf_surf_irr_scheme  namelist,physics      max_domains    0       rh       "sf_surf_irr_scheme"            "ARI:: 0:no irr 1: drip 2:sprinkler 3:channel" ""
 # IRRIGATION
-rconfig   real        irr_daily_amount    namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme WATER AMOUNT [mm]" ""  ""
-rconfig   integer     irr_start_hour      namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme, local start"            "Local start hour" ""
-rconfig   integer     irr_num_hours       namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme" "Number of hours to irrigate"  ""
-rconfig   integer     irr_start_julianday namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme" "Julian day to start irrigation (included)"  ""
-rconfig   integer     irr_end_julianday   namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme" "Julian day to end irrigation (not included)"  ""
-rconfig   integer     irr_freq            namelist,physics      max_domains    1       rh        "sf_surf_irr_scheme" "frequency of irrigation in days"  ""
-rconfig   integer     irr_ph              namelist,physics      max_domains    0       rh        "sf_surf_irr_scheme" "phase of irrigation, 0:in phase, 1: not in phase"  ""
+rconfig   integer     sf_surf_irr_scheme  namelist,physics      max_domains    0       rh       "sf_surf_irr_scheme"   "ARI: 0=no irr; 1=drip; 2=sprinkler; 3=channel" ""
+rconfig   integer     sf_surf_irr_alloc   derived               1              0       rh       "sf_surf_irr_alloc"    "sf_surf_irr_scheme, for packaging: 0=no irr; 1=drip; 2=sprinkler; 3=channel" ""
+rconfig   real        irr_daily_amount    namelist,physics      max_domains    0       rh       "irr_daily_amount"     "sf_surf_irr_scheme WATER AMOUNT [mm]" ""
+rconfig   integer     irr_start_hour      namelist,physics      max_domains    0       rh       "irr_start_hour"       "sf_surf_irr_scheme, local start hour" ""
+rconfig   integer     irr_num_hours       namelist,physics      max_domains    0       rh       "irr_num_hours"        "sf_surf_irr_scheme, Number of hours to irrigate"  ""
+rconfig   integer     irr_start_julianday namelist,physics      max_domains    0       rh       "irr_start_julianday"  "sf_surf_irr_scheme, Julian day to start irrigation (included)"  ""
+rconfig   integer     irr_end_julianday   namelist,physics      max_domains    0       rh       "irr_end_julianday"    "sf_surf_irr_scheme, Julian day to end irrigation (not included)"  ""
+rconfig   integer     irr_freq            namelist,physics      max_domains    1       rh       "irr_freq"             "sf_surf_irr_scheme, frequency of irrigation in days"  ""
+rconfig   integer     irr_ph              namelist,physics      max_domains    0       rh       "irr_ph"               "sf_surf_irr_scheme, phase of irrigation, 0=in phase; 1=not in phase; 2=not in phase, random"  ""
 
 
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    -1      rh       "sf_surface_physics"            ""      ""
@@ -2912,11 +2913,11 @@ package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm
 
 package   noahmpoptcrop2 opt_crop==2                 -             state:gecros_state
 
-package   noahmosaicscheme  sf_surface_mosaic==1         -        state:TSK_mosaic,QSFC_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic,ALBEDO_mosaic,ALBBCK_mosaic,EMISS_mosaic,EMBCK_mosaic,ZNT_mosaic,Z0_mosaic,HFX_mosaic,QFX_mosaic,LH_mosaic,GRDFLX_mosaic,SNOTIME_mosaic,TR_URB2D_mosaic,TB_URB2D_mosaic,TG_URB2D_mosaic,TC_URB2D_mosaic,TS_URB2D_mosaic,TS_RUL2D_mosaic,QC_URB2D_mosaic,UC_URB2D_mosaic,TRL_URB3D_mosaic,TBL_URB3D_mosaic,TGL_URB3D_mosaic,SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,mosaic_cat_index,landusef2,smcrel,RS_mosaic,LAI_mosaic
+package   noahmosaicscheme  sf_surface_mosaic==1     -             state:TSK_mosaic,QSFC_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic,ALBEDO_mosaic,ALBBCK_mosaic,EMISS_mosaic,EMBCK_mosaic,ZNT_mosaic,Z0_mosaic,HFX_mosaic,QFX_mosaic,LH_mosaic,GRDFLX_mosaic,SNOTIME_mosaic,TR_URB2D_mosaic,TB_URB2D_mosaic,TG_URB2D_mosaic,TC_URB2D_mosaic,TS_URB2D_mosaic,TS_RUL2D_mosaic,QC_URB2D_mosaic,UC_URB2D_mosaic,TRL_URB3D_mosaic,TBL_URB3D_mosaic,TGL_URB3D_mosaic,SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,mosaic_cat_index,landusef2,smcrel,RS_mosaic,LAI_mosaic
 # IRRIGATION
-package   channel        sf_surf_irr_scheme==1        -            state:irrigation,irr_rand_field
-package   drip           sf_surf_irr_scheme==2        -            state:irrigation,irr_rand_field
-package   sprinkler      sf_surf_irr_scheme==3        -            state:irrigation,irr_rand_field
+package   channel        sf_surf_irr_alloc==1        -             state:irrigation,irr_rand_field
+package   drip           sf_surf_irr_alloc==2        -             state:irrigation,irr_rand_field
+package   sprinkler      sf_surf_irr_alloc==3        -             state:irrigation,irr_rand_field
 
 
 package   ysuscheme      bl_pbl_physics==1           -             -
@@ -3060,7 +3061,7 @@ package   icedepth_one   seaice_thickness_opt==1     -             state:icedept
 
 #Time series options for text output
 package   notseries             process_time_series==0                 -             -
-package   tseries               process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile
+package   tseries               process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_p_profile,ts_w_profile
 package   tseries_add_solar     process_time_series==2                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_cldfrac2d,ts_wvp,ts_lwp,ts_iwp,ts_swp,ts_lwp_tot,ts_iwp_tot,ts_swp_tot,ts_re_qc,ts_re_qi,ts_re_qs,ts_re_qc_tot,ts_re_qi_tot,ts_re_qs_tot,ts_tau_qc,ts_tau_qi,ts_tau_qs,ts_tau_qc_tot,ts_tau_qi_tot,ts_tau_qs_tot,ts_cbaseht,ts_ctopht,ts_cbaseht_tot,ts_ctopht_tot,ts_clrnidx
 
 # WRF-HAILCAST
@@ -3248,7 +3249,7 @@ halo      HALO_EM_F_1 dyn_em  24:muus,muvs
 #halo      em_shift_halo_x  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
 
 # For observational nudging
-halo      HALO_OBS_NUDGE dyn_em 24:ph_2,p,uratx,vratx,tratx,kpbl
+halo      HALO_OBS_NUDGE dyn_em 24:ph_2,p,uratx,vratx,tratx,kpbl,th_phy_m_t0
 
 # cyl: For 3DPWP
 halo      HALO_PWP dyn_em 8: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_TINI,OM_SINI

@@ -122,6 +122,7 @@ SUBROUTINE microphysics_driver(                                          &
 ! Added the RI_CURR array to the call
                       ,ri_curr                                           &
                       ,diagflag,   do_radar_ref                          &
+                      ,ke_diag                                           &
                       ,re_cloud, re_ice, re_snow                         & ! G. Thompson
                       ,has_reqc, has_reqi, has_reqs                      & ! G. Thompson
                       ,ccn_conc                                          & ! RAS
@@ -139,6 +140,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,aercu_opt                                         &
 # if( EM_CORE==1 )
                       ,sbmradar,num_sbmradar                             &
+                      ,sbm_diagnostics                                   &
                       ,aerocu,aercu_fct,no_src_types_cu                  &
                       ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           &
                       ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           &
@@ -410,6 +412,7 @@ SUBROUTINE microphysics_driver(                                          &
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme,num_scalar
 #if (EM_CORE == 1)
    INTEGER,      INTENT(IN   )    ::     num_sbmradar
+   INTEGER,      INTENT(IN   )    ::     sbm_diagnostics
 #endif
    INTEGER, OPTIONAL, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
    INTEGER,      INTENT(IN   )    ::                         kts,kte
@@ -690,6 +693,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
+   INTEGER, OPTIONAL, INTENT(IN) :: ke_diag ! tells reflectivity calculation whether to do full depth or only k=1
    REAL, INTENT(IN) :: ccn_conc ! RAS
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
@@ -1035,6 +1039,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                      REFL_10CM=refl_10cm,                &
                      diagflag=diagflag,                  &
+                     ke_diag = ke_diag,                  &
                      do_radar_ref=do_radar_ref,          &
                      re_cloud=re_cloud,                  &
                      re_ice=re_ice,                      &
@@ -1093,6 +1098,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                      REFL_10CM=refl_10cm,                &
                      diagflag=diagflag,                  &
+                     ke_diag = ke_diag,                  &
                      do_radar_ref=do_radar_ref,          &
                      re_cloud=re_cloud,                  & ! G. Thompson
                      re_ice=re_ice,                      & ! G. Thompson
@@ -1110,14 +1116,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 # if ( BUILD_SBM_FAST == 1 )
        CASE (FAST_KHAIN_LYNN_SHPUND)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling sbm' )
-               CALL fast_sbm(W=w,U=u,V=v,TH_OLD=th_old          &
-                 ,CHEM_new=scalar,N_CHEM=num_scalar                     &
+               CALL fast_sbm(W=w,U=u,V=v,TH_OLD=th_old              &
+                 ,CHEM_new=scalar,N_CHEM=num_scalar                 &
                  ,ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
-                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
-                 ,xland=xland                                       &
-                 ,ivgtyp=ivgtyp                                      &
-                 ,xlat=xlat                                        &
-                 ,xlong=xlong                                        &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p                     &
+                 ,PI_PHY=pi_phy,TH_PHY=th                           &
+                 ,xland=xland,domain_id=id                          &
+                 ,ivgtyp=ivgtyp                                     &
+                 ,xlat=xlat                                         &
+                 ,xlong=xlong                                       &
                  ,QV=qv_curr                                        &
                  ,QC=qc_curr                                        &
                  ,QR=qr_curr                                        &
@@ -1132,18 +1139,19 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,QNG=qng_curr                                      &
                  ,QNA=qnn_curr                                      &
                  ,sbmradar=sbmradar,num_sbmradar=num_sbmradar       &
+                 ,sbm_diagnostics=sbm_diagnostics                   &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,diagflag=diagflag                   &  ! added for radar reflectivity
-                 ,RAINNC=rainnc                       &
-                 ,RAINNCV=rainncv                     &
-                 ,SNOWNC=snownc                       &
-                 ,SNOWNCV=snowncv                     &
-                 ,GRAUPELNC=graupelnc                 &
-                 ,GRAUPELNCV=graupelncv               &
-                 ,SR=sr                               &
-                                         )
+                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
+                 ,RAINNC=rainnc                                     &
+                 ,RAINNCV=rainncv                                   &
+                 ,SNOWNC=snownc                                     &
+                 ,SNOWNCV=snowncv                                   &
+                 ,GRAUPELNC=graupelnc                               &
+                 ,GRAUPELNCV=graupelncv                             &
+                 ,SR=sr                                             &
+                                                                    )
 # endif
 
 !
@@ -1725,6 +1733,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      SR=SR,                              &
                      dbz      = refl_10cm,               &
                      diagflag = diagflag,                &
+                     ke_diag = ke_diag,                &
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
@@ -1774,6 +1783,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      SR=SR,                              &
                      dbz      = refl_10cm,               &
                      diagflag = diagflag,                &
+                     ke_diag = ke_diag,                &
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
@@ -1842,6 +1852,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                      nssl_progn=nssl_progn,              &
                      diagflag = diagflag,                &
+                     ke_diag = ke_diag,                &
                      cu_used=cu_used,                    &
                      qrcuten=qrcuten,                    &  ! hm
                      qscuten=qscuten,                    &  ! hm
@@ -1999,6 +2010,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                      nssl_progn=nssl_progn,              &
                      diagflag = diagflag,                &
+                     ke_diag = ke_diag,                &
                      cu_used=cu_used,                    &
                      qrcuten=qrcuten,                    &  ! hm
                      qscuten=qscuten,                    &  ! hm

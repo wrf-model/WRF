@@ -47,7 +47,6 @@ CONTAINS
               ,CAM_ABS_FREQ_S                                             &
               ,XTIME                                                      &
               ,CURR_SECS, ADAPT_STEP_FLAG                                 &
-              ,MUT, DNW                                                   &
               ,SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2                         &
               ,SWDOWNC2, SWDDNIC2                                         &
               !BSINGH - For WRFCuP scheme (optional args)
@@ -486,9 +485,6 @@ CONTAINS
                                                            HTOPR, &
                                                            HBOTR, &
                                                            CUPPT
-     ! FARMS coupling
-   REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(IN), OPTIONAL ::  MUT
-   REAL , DIMENSION( kms:kme ) , INTENT(IN   ), OPTIONAL :: DNW
 
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                 &
@@ -996,6 +992,24 @@ CONTAINS
       radtacttime = curr_secs + radt*60
    END IF
 
+   IF ( mp_physics .EQ. nuwrf4icescheme ) THEN
+      DO ij = 1 , num_tiles
+         its = i_start(ij)
+         ite = i_end(ij)
+         jts = j_start(ij)
+         jte = j_end(ij)
+         DO j=jts,jte
+         DO k=kts,kte
+         DO i=its,ite
+            re_cloud(i,k,j) = re_cloud_gsfc(i,k,j) * 1.E-6
+            re_ice(i,k,j) = re_ice_gsfc(i,k,j) * 1.E-6
+            re_snow(i,k,j) = re_snow_gsfc(i,k,j) * 1.E-6
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDDO
+   END IF
+
    if(swint_opt.eq.1 .or. swint_opt == 2) then
       DO ij = 1 , num_tiles
          its = i_start(ij)
@@ -1014,7 +1028,7 @@ CONTAINS
    IF ( PRESENT(solar_opt) ) THEN
       solar_opt_local = solar_opt
    END IF
-   Solar_step: IF (run_param .or. solar_opt_local == 1) THEN
+   Solar_step: IF (run_param .or. solar_opt_local == 1 .or. swint_opt == 2) THEN
 
      !---------------
      ! Calculate constant for short wave radiation
@@ -1886,17 +1900,6 @@ CONTAINS
         CASE (RRTMG_LWSCHEME)
 
              CALL wrf_debug (100, 'CALL rrtmg_lw')
-             IF ( mp_physics .EQ. nuwrf4icescheme ) THEN
-                DO j=jts,jte
-                DO k=kts,kte
-                DO i=its,ite
-                   re_cloud(i,k,j) = re_cloud_gsfc(i,k,j) * 1.E-6
-                   re_ice(i,k,j) = re_ice_gsfc(i,k,j) * 1.E-6
-                   re_snow(i,k,j) = re_snow_gsfc(i,k,j) * 1.E-6
-                ENDDO
-                ENDDO
-                ENDDO
-             END IF
 
              !Need to reset NLAYERS if vertical nesting is used.
              !This code follows that for case RRTMSCHEME within
@@ -2404,17 +2407,6 @@ CONTAINS
         CASE (RRTMG_SWSCHEME)
 
              CALL wrf_debug(100, 'CALL rrtmg_sw')
-             IF ( mp_physics .EQ. nuwrf4icescheme ) THEN
-                DO j=jts,jte
-                DO k=kts,kte
-                DO i=its,ite
-                   re_cloud(i,k,j) = re_cloud_gsfc(i,k,j) * 1.E-6
-                   re_ice(i,k,j) = re_ice_gsfc(i,k,j) * 1.E-6
-                   re_snow(i,k,j) = re_snow_gsfc(i,k,j) * 1.E-6
-                ENDDO
-                ENDDO
-                ENDDO
-             END IF
 
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
@@ -2778,9 +2770,7 @@ CONTAINS
  end if
 
    ! Coupling with FARMS
- if( present(mut      ) .and. &
-     present(dnw      ) .and. &
-     present(swdown2  ) .and. &
+ if( present(swdown2  ) .and. &
      present(swddir2  ) .and. &
      present(swddni2  ) .and. &
      present(swddif2  ) .and. &
@@ -2806,9 +2796,9 @@ CONTAINS
          jts = j_start(ij)
          jte = j_end(ij)
          call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
-              p8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
+              p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
               coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-              julian, mut, dnw, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+              julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
        enddo
        !$OMP END PARALLEL DO
     end if
@@ -2818,15 +2808,14 @@ CONTAINS
  IF ( PRESENT(solar_opt) ) THEN
     solar_opt_local = solar_opt
  END IF
- IF (run_param .or. solar_opt_local == 1) THEN
+ IF (run_param .or. solar_opt_local == 1 .or. swint_opt == 2) THEN
     do ij = 1,num_tiles
       its = i_start(ij)
       ite = i_end(ij)
       jts = j_start(ij)
       jte = j_end(ij)
  ! Save resolved + unresolved hydrometeor mass mixing ratios for Solar diag
- ! Only done for icloud = 3
-      IF ( solar_opt_local == 1 .and. icloud == 3 ) THEN
+      IF ( solar_opt_local == 1 ) THEN
         IF ( PRESENT(qc_tot) .AND. PRESENT(qi_tot) ) THEN
           IF ( F_QC ) THEN
              DO j=jts,jte

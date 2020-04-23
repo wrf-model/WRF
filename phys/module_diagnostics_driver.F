@@ -1082,7 +1082,7 @@ CONTAINS
       SOLAR_FIELDS: IF (config_flags%solar_diagnostics == do_solar_output) THEN
           CALL wrf_debug (100 , '--> CALL DIAGNOSTICS PACKAGE: SOLAR_DIAG')
           CALL solar_diag (                                                 &
-              mut=grid%mut, dnw=grid%dnw, ph=grid%ph_2, phb=grid%phb,       &
+              rho=grid%rho, dz8w=dz8w, ph=grid%ph_2, phb=grid%phb,          &
               cldfrac3d=grid%cldfra, coszen=grid%coszen, swdnb=grid%swdnb,  &
               swdnt=grid%swdnt, qv=moist(ims,kms,jms,P_QV),                 &
               qc=moist(ims,kms,jms,P_QC), qi=moist(ims,kms,jms,P_QI),       &

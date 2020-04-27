@@ -22,9 +22,9 @@
 MODULE MODULE_MPP_LAND
 
   use MODULE_CPL_LAND
-
+  use mpi
+  
   IMPLICIT NONE
-  include "mpif.h"
   !integer, public :: HYDRO_COMM_WORLD ! communicator for WRF-Hydro - moved to MODULE_CPL_LAND
   integer, public :: left_id,right_id,up_id,down_id,my_id
   integer, public :: left_right_np,up_down_np ! define total process in two dimensions.
@@ -137,28 +137,37 @@ MODULE MODULE_MPP_LAND
 
   return 
   end  subroutine log_map2d
-!old subroutine MPP_LAND_INIT(flag, ew_numprocs, sn_numprocs)
+
+
+  !old subroutine MPP_LAND_INIT(flag, ew_numprocs, sn_numprocs)
   subroutine MPP_LAND_INIT()
 !    ### initialize the land model logically based on the two D method. 
 !    ### Call this function directly if it is nested with WRF.
     implicit none
-    integer :: ierr
+    integer :: ierr, provided
     integer :: ew_numprocs, sn_numprocs  ! input the processors in x and y direction.
     logical mpi_inited
-     
-!     left_right_np = ew_numprocs
-!     up_down_np  = sn_numprocs
 
-      CALL mpi_initialized( mpi_inited, ierr )
-      if ( .NOT. mpi_inited ) then
-           call MPI_INIT( ierr )  ! stand alone land model.
-      endif
-           HYDRO_COMM_WORLD = MPI_COMM_WORLD
-           call MPI_COMM_RANK( HYDRO_COMM_WORLD, my_id, ierr )
-           call MPI_COMM_SIZE( HYDRO_COMM_WORLD, numprocs, ierr )
-!     create 2d logical mapping of the CPU.
-      call log_map2d()
-      return
+    ! left_right_np = ew_numprocs
+    ! up_down_np  = sn_numprocs
+
+    call mpi_initialized( mpi_inited, ierr )
+    if ( .not. mpi_inited ) then
+       call MPI_INIT_THREAD( MPI_THREAD_FUNNELED, provided, ierr )
+       if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_INIT failed")
+    endif
+    if (HYDRO_COMM_WORLD == MPI_COMM_NULL) then
+       call MPI_COMM_DUP(MPI_COMM_WORLD, HYDRO_COMM_WORLD, ierr)
+       if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_COMM_DUP failed")
+    endif
+
+    call MPI_COMM_RANK( HYDRO_COMM_WORLD, my_id, ierr )
+    call MPI_COMM_SIZE( HYDRO_COMM_WORLD, numprocs, ierr )
+    if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_COMM_RANK and/or MPI_COMM_SIZE failed")
+
+    !     create 2d logical mapping of the CPU.
+    call log_map2d()
+    return
   end   subroutine MPP_LAND_INIT
 
 
@@ -2035,7 +2044,6 @@ MODULE MODULE_MPP_LAND
 !  subroutine get_globalDim(ix,g_ix)
 !     implicit none
 !     integer ix,g_ix, ierr
-!     include "mpif.h"
 !
 !     if ( my_id .eq. IO_id ) then
 !           g_ix = ix
@@ -2274,17 +2282,6 @@ MODULE MODULE_MPP_LAND
    
   end subroutine mpp_collect_1d_int_mem
 
-! stop the job due to the fatal error.
-      subroutine fatal_error_stop(msg)
-        character(len=*) :: msg
-        integer :: ierr
-      write(6,*) "The job is stoped due to the fatal error. ", trim(msg)
-      call flush(6)
-      call mpp_land_abort()
-      call MPI_finalize(ierr)
-     return
-     end  subroutine fatal_error_stop
-
      subroutine updateLake_seqInt(in,nsize,in0)
        implicit none
        integer :: nsize
@@ -2463,15 +2460,15 @@ MODULE MODULE_MPP_LAND
     integer:: ierr, tag
     integer:: my_id,numprocs
     tag=2   
-    call MPI_COMM_RANK(MPI_COMM_WORLD,my_id,ierr)
-    call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs,ierr)
+    call MPI_COMM_RANK(HYDRO_COMM_WORLD,my_id,ierr)
+    call MPI_COMM_SIZE(HYDRO_COMM_WORLD,numprocs,ierr)
     if(numprocs > 1) then
        if(my_id .eq. fromImage) &
           call mpi_send(vector, size(vector), MPI_REAL, &
-                        toImage, tag, MPI_COMM_WORLD, ierr)
+                        toImage, tag, HYDRO_COMM_WORLD, ierr)
        if(my_id .eq. toImage) &
           call mpi_recv(vector, size(vector), MPI_REAL, &
-                        fromImage, tag, MPI_COMM_WORLD, mpp_status, ierr)
+                        fromImage, tag, HYDRO_COMM_WORLD, mpp_status, ierr)
     endif
     end subroutine mpp_comm_1d_real
 
@@ -2483,8 +2480,8 @@ MODULE MODULE_MPP_LAND
     integer:: ierr, tag, totalLength
     integer:: my_id,numprocs
     tag=2
-    call MPI_COMM_RANK(MPI_COMM_WORLD,my_id,ierr)
-    call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs,ierr)
+    call MPI_COMM_RANK(HYDRO_COMM_WORLD,my_id,ierr)
+    call MPI_COMM_SIZE(HYDRO_COMM_WORLD,numprocs,ierr)
     totalLength=len(vector(1))*size(vector,1)
     if(numprocs > 1) then
        if(my_id .eq. fromImage) &

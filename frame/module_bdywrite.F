@@ -4,6 +4,13 @@ module module_bdywrite
 #ifdef EXTRA_HWRF_DEBUG_STUFF
   private
   public :: bdywrite
+
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+  include 'mpif.h'
+#else
+  integer, parameter :: MPI_UNDEFINED = -1
+#endif
+
   CHACARCTER (LEN=256) , PRIVATE :: a_message
 contains
   subroutine bdywrite(grid,filename)
@@ -368,7 +375,6 @@ contains
     subroutine bdy_send_one(bdyactive,m1,m2, &
          counts,disp,mstore,kstore,rstore, &
          bdy, bm1,bm2, bk1,bk2, nreceive, storesize)
-      use mpi
       implicit none
       integer, intent(in) :: storesize
       integer, intent(in) :: bm1,bm2,bk1,bk2
@@ -630,7 +636,6 @@ contains
     subroutine bdy_send_one(bdyactive,m1,m2, &
          counts,disp,mstore,kstore,rstore, &
          bdy, bm1,bm2, bk1,bk2, nreceive, storesize)
-      use mpi
       implicit none
       integer, intent(in) :: storesize
       integer, intent(in) :: bm1,bm2,bk1,bk2

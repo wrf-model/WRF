@@ -17,7 +17,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNEC -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -c  
+CFLAGS_LOCAL    =       -c   # -DRSL0_ONLY
 #-DNCARIBM_NOC99 -Xa -Kc99
 LDFLAGS_LOCAL   =       -Wl,-h nodefs
 CPLUSPLUSLIB    =       
@@ -62,7 +62,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -c 
+CFLAGS_LOCAL    =       -w -O3 -c  # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -105,7 +105,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DF2CSTYLE -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DF2CSTYLE
+CFLAGS_LOCAL    =       -DF2CSTYLE # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -148,7 +148,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3
+CFLAGS_LOCAL    =       -w -O3 # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -191,7 +191,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3
+CFLAGS_LOCAL    =       -w -O3 # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -L$(MPI_ROOT)/lib -lmpi
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -234,7 +234,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -D_ACCEL  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3
+CFLAGS_LOCAL    =       -w -O3 # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -309,7 +309,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
+CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -356,7 +356,7 @@ PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DXEON_SIMD -DOPTIMIZE_CFL_TEST -DFSEEKO64_OK -DINTEL_YSU_KLUDGE  -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTKNC          =       -fimf-precision=low -fimf-domain-exclusion=15 -opt-assume-safe-padding -opt-streaming-stores always -opt-streaming-cache-evict=0 -mP2OPT_hlo_pref_use_outer_strategy=F
-CFLAGS_LOCAL    =       -w -O3 $(OPTKNC)
+CFLAGS_LOCAL    =       -w -O3 $(OPTKNC) # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       $(OPTKNC)
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -403,7 +403,7 @@ PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=64 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST  -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTAVX          =       -xAVX
-CFLAGS_LOCAL    =       -w -O3 $(OPTAVX)
+CFLAGS_LOCAL    =       -w -O3 $(OPTAVX) # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       $(OPTAVX)
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -474,7 +474,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
+CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -ip -lmpi #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -523,7 +523,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
+CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -602,7 +602,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
+CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -685,7 +685,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
+CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -731,7 +731,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM -D__PATHSCALE__
-CFLAGS_LOCAL    =       
+CFLAGS_LOCAL    =        # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -774,7 +774,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -c 
+CFLAGS_LOCAL    =       -w -O3 -c  # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -817,7 +817,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DMACOS
+CFLAGS_LOCAL    =       -DMACOS # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -860,7 +860,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS
+CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS # -DRSL0_ONLY
 # increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
 LDFLAGS_LOCAL   =       -ip -Wl,-stack_addr,0xF10000000 -Wl,-stack_size,0x64000000 #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
 CPLUSPLUSLIB    =       
@@ -906,7 +906,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS
+CFLAGS_LOCAL    =       -w -O3 -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS # -DRSL0_ONLY
 # increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
 LDFLAGS_LOCAL   =       -Wl,-stack_addr,0xF10000000 -Wl,-stack_size,0x64000000 #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
 CPLUSPLUSLIB    =       
@@ -951,7 +951,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DG95 -DMACOS -DF2CSTYLE -DNONSTANDARD_SYSTEM_SUBR -DRCONFIG_CHARLEN=64  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DMACOS -DF2CSTYLE
+CFLAGS_LOCAL    =       -DMACOS -DF2CSTYLE # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -995,7 +995,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DMACOS  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS
+CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1038,7 +1038,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DMACOS -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS
+CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1081,7 +1081,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 ARCH_LOCAL      =       -DMAC_KLUDGE -DF2CSTYLE -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DMACOS -DF2CSTYLE
+CFLAGS_LOCAL    =       -DMACOS -DF2CSTYLE # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1127,7 +1127,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DNATIVE_MASSV  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DNOUNDERSCORE
+CFLAGS_LOCAL    =       -DNOUNDERSCORE # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -lmass -lmassv -bnoquiet # print diagnostic messages
 CPLUSPLUSLIB    =       -lC
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1143,7 +1143,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       #CONFIGURE_TRADFLAG  # causing troubles with xl cpp on AIX, -traditional removed fom default settings
@@ -1175,7 +1175,7 @@ LD              =        $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -qrealsize=$(RWORDSIZE) -qintsize=4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DNATIVE_MASSV  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DNOUNDERSCORE
+CFLAGS_LOCAL    =       -DNOUNDERSCORE # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -lmass_64 -lmassvp7_64 -q64 -bnoquiet # linking diagnostics
 CPLUSPLUSLIB    =       -lC
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1192,7 +1192,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       
@@ -1229,7 +1229,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR
-CFLAGS_LOCAL    =       -w -O3
+CFLAGS_LOCAL    =       -w -O3 # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 # module load libfast to use Cray XT fast math library
 #LIB_LOCAL       =       -lfast_mv
@@ -1291,7 +1291,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -s integer32 -s real`expr 8 \* $(RWORDSIZE)`
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -O3 
+CFLAGS_LOCAL    =       -O3  # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 # uncomment this for wrfda build
 #LIB_LOCAL       =       -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
@@ -1341,7 +1341,7 @@ ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
 OPTNOSIMD       =
 # set this to override Cray 'craype' module setting
 #OPTAVX          =       -xAVX
-CFLAGS_LOCAL    =       -w -O3 -ip $(OPTAVX)
+CFLAGS_LOCAL    =       -w -O3 -ip $(OPTAVX) # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       $(OPTAVX)
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1391,7 +1391,7 @@ RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 # If system has even more processors, set VERY_LARGE_MAXPROC to that number
 ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR  -DVERY_LARGE_MAXPROC=36768 -DBLUEGENE  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DNOUNDERSCORE -DNCARIBM_NOC99 $(MPI_INC)  
+CFLAGS_LOCAL    =       -DNOUNDERSCORE -DNCARIBM_NOC99 $(MPI_INC)   # -DRSL0_ONLY
 LIB_LOCAL       =       $(MPI_LIB)
 LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition -qstatic
 CPLUSPLUSLIB    =       
@@ -1403,7 +1403,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) $(BYTESWAPIO) $(MPI_INC) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO) $(MPI_INC) #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       CONFIGURE_TRADFLAG
@@ -1440,7 +1440,7 @@ RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 # If system has even more processors, set VERY_LARGE_MAXPROC to that number
 ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR  -DVERY_LARGE_MAXPROC=36768 -DBLUEGENE  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DNOUNDERSCORE 
+CFLAGS_LOCAL    =       -DNOUNDERSCORE  # -DRSL0_ONLY
 LIB_LOCAL       =
 LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition,--relax -qstatic
 CPLUSPLUSLIB    =       
@@ -1452,7 +1452,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       CONFIGURE_TRADFLAG
@@ -1486,7 +1486,7 @@ RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 # If system has even more processors, set VERY_LARGE_MAXPROC to that number
 ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR  -DVERY_LARGE_MAXPROC=36768  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DNOUNDERSCORE 
+CFLAGS_LOCAL    =       -DNOUNDERSCORE  # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       -lC
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1497,7 +1497,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=32767 $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=32767 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       CONFIGURE_TRADFLAG
@@ -1529,7 +1529,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3
+CFLAGS_LOCAL    =       -w -O3 # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1556,7 +1556,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    CYGWIN_NT i686, PGI compiler on Windows # serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       PGI ($SFC/$SCC): Windows
+DESCRIPTION     =       PGI ($SFC/$SCC): Windows POSIX native
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp
@@ -1572,7 +1572,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -D_WIN32  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -DMEMCPY_FOR_BCOPY 
+CFLAGS_LOCAL    =       -w -O3 -DMEMCPY_FOR_BCOPY  # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       Ws2_32.lib # -lnetcdff
 CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1629,7 +1629,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3
+CFLAGS_LOCAL    =       -w -O3 # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1672,7 +1672,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DMACOS
+CFLAGS_LOCAL    =       -DMACOS # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1715,7 +1715,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS
+CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS # -DRSL0_ONLY
 # increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
 LDFLAGS_LOCAL   =       -ip -Wl,-stack_addr,0xF10000000 -Wl,-stack_size,0x64000000 #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
 CPLUSPLUSLIB    =       
@@ -1761,7 +1761,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DMACOS  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS
+CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1804,7 +1804,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3
+CFLAGS_LOCAL    =       -w -O3 # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1847,7 +1847,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -ip -xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -xCORE-AVX2
+CFLAGS_LOCAL    =       -w -O3 -ip -xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -xCORE-AVX2 # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -ip -xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common -xCORE-AVX2
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1891,7 +1891,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -ip -xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -xMIC-AVX512
+CFLAGS_LOCAL    =       -w -O3 -ip -xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -xMIC-AVX512 # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       -ip -xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common -xMIC-AVX512
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1916,6 +1916,64 @@ RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
+###########################################################
+#ARCH    CYGWIN_NT i686 x86_64 Cygwin, gfortran compiler with gcc  #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       GNU ($SFC/$SCC)
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
+SFC             =       gfortran
+SCC             =       gcc
+CCOMP           =       gcc
+DM_FC           =       mpif90
+DM_CC           =       mpicc
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       #-fdefault-real-8
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -w -O3 -c
+LDFLAGS_LOCAL   =       
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT		=       -O0
+FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbacktrace
+FORMAT_FIXED    =       -ffixed-form
+FORMAT_FREE     =       -ffree-form -ffree-line-length-none
+FCSUFFIX        =       
+BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -P
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -G
+RANLIB          =      ranlib
+RLFLAGS		=	
+CC_TOOLS        =      $(SCC)
+
+LIB_EXTERNAL    = \
+                     $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.dll.a \
+		     -L CONFIGURE_NETCDF_PATH -lnetcdff -lnetcdf -lnetcdf -ltirpc -lhdf5_hl -lhdf5 -lm -lz \
+		     CONFIGURE_GRIB2_LIB
+ESMF_IO_LIB     =    $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
+LIB_BUNDLED     = \
+                     $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5/libfftpack.a \
+                     $(WRF_SRC_ROOT_DIR)/external/io_grib1/libio_grib1.a \
+                     $(WRF_SRC_ROOT_DIR)/external/io_grib_share/libio_grib_share.a \
+                     $(WRF_SRC_ROOT_DIR)/external/io_int/libwrfio_int.a \
+                     $(ESMF_IO_LIB) \
+                     CONFIGURE_COMMS_LIB \
+                     $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
+                     $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o
+
 #insert new stanza here
 
 ###########################################################
@@ -1937,7 +1995,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -CcdRR$(RWORDSIZE)
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
+CFLAGS_LOCAL    =       -Kfast -Xg -DSUN # -DRSL0_ONLY
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)

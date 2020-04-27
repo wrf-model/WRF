@@ -147,7 +147,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
             iv%instid(i)%der_trans(:,:,n) = 0.0
          end if
 
-         if (use_clddet_ecmwf) then
+         if (use_clddet==3) then
             iv%instid(i)%kmin_t(n) = 0.0
             iv%instid(i)%kmax_p(n) = 0.0
             iv%instid(i)%sensitivity_ratio(:,:,n) = 0.0

@@ -182,10 +182,14 @@ if [ -n "$NETCDF" ] ; then
 # Oh UNIDATA, why make it so hard ...
   if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" -o -f "$NETCDF/lib/libnetcdff.dll.a" ] ; then
     USENETCDFF="-lnetcdff"
+  elif [ -f "/usr/lib/x86_64-linux-gnu/libnetcdff.a" -o -f "/usr/lib/x86_64-linux-gnu/libnetcdff.so" -o -f "/usr/lib/x86_64-linux-gnu/libnetcdff.dll.a" ] ; then
+    USENETCDFF="-lnetcdff"
   else
     USENETCDFF=" "
   fi
   if [ -f "$NETCDF/lib/libnetcdf.a" -o -f "$NETCDF/lib/libnetcdf.so" -o -f "$NETCDF/lib/libnetcdf.dll.a" ] ; then
+    USENETCDF="-lnetcdf"
+  elif [ -f "/usr/lib/x86_64-linux-gnu/libnetcdf.a" -o -f "/usr/lib/x86_64-linux-gnu/libnetcdf.so" -o -f "$NETCDF/lib/libnetcdf.dll.a" ] ; then
     USENETCDF="-lnetcdf"
   else
     USENETCDF=" "
@@ -718,7 +722,7 @@ EOF
     fi
   fi
 
-  if [ -e $NETCDF/lib/libnetcdf.a -a "$SFC" != "" -a "$SCC" != "" -a "$CCOMP" != "" ]; then
+  if [ -e $NETCDF/lib/libnetcdf.a ] || [ -e /usr/lib/x86_64-linux-gnu/libnetcdf.a ] && [-a "$SFC" != "" -a "$SCC" != "" -a "$CCOMP" != "" ]; then
 
     SFC_MULTI_ABI=0
     SCC_MULTI_ABI=0
@@ -729,7 +733,11 @@ EOF
     echo Testing for NetCDF, C and Fortran compiler
     echo
 
-    ar p $NETCDF/lib/libnetcdf.a `ar t $NETCDF/lib/libnetcdf.a | grep -E '\.o' | head -n 1 | sed 's/://'` > ${foo}.o
+    if [ -e $NETCDF/lib/libnetcdf.a ]; then
+        ar p $NETCDF/lib/libnetcdf.a `ar t $NETCDF/lib/libnetcdf.a | grep -E '\.o' | head -n 1 | sed 's/://'` > ${foo}.o
+    elif [ -e /usr/lib/x86_64-linux-gnu/libnetcdf.a ]; then
+	ar p /usr/lib/x86_64-linux-gnu/libnetcdf.a `ar t /usr/lib/x86_64-linux-gnu/libnetcdf.a | grep -E '\.o' | head -n 1 | sed 's/://'` > ${foo}.o
+    fi
     netcdf_arch="`file ${foo}.o | grep -o -E '[0-9]{2}-bit|i386'`"
     rm ${foo}.o
 

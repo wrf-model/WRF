@@ -240,6 +240,8 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
       do k=kts,kte ! from bottom to top
          call da_interp_2d_partial (grid%xa%t(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             temperature(kte-k+1,:))
+
+         ! dq=xa%q and absorber both specific humidity (kg h2o / kg moist air)
          call da_interp_2d_partial (grid%xa%q(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             absorber(kte-k+1,:))
 
@@ -295,7 +297,8 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
             Atmosphere(n)%level_pressure(k) = iv%instid(inst)%pf(k,n)
             Atmosphere(n)%temperature(k)    = iv%instid(inst)%tm(k,n)
             Atmosphere(n)%absorber(k,1)     = iv%instid(inst)%qm(k,n)
-            xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+iv%instid(inst)%qm(k,n)) ! specific humidity
+            ! convert mixing ratio (g h2o / kg dry air) to specific humidity (kg h2o / kg moist air)
+            xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+0.001*iv%instid(inst)%qm(k,n)) ! specific humidity
          end do
          if (crtm_cloud) then
             do k=1,Atmosphere(n)%n_layers
@@ -378,6 +381,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
         do k = kts, kte
           if ( iv%instid(inst)%pm(k,n) < 75.0 ) absorber(k,n) = 0.0
         end do
+        ! compute mixing ratio increment, dr, (g h2o / kg dry air) from xb_q and dq (both kg h2o / kg moist air)
         Atmosphere_TL(n)%Absorber(kts+1:kte,1)  = 1000.0 / (1.0-xb_q(kts+1:kte,n))**2  &
                                                   * absorber(kts+1:kte,n)
 

@@ -1,9014 +1,9150 @@
-!WRF:MODEL_MP:PHYSICS
-! The fast version calculates hydrometeor distributions for qc,qr,qs,qg, and their number concentrations
-! (including aerosol concentrations).
-! To use the FAST version of SBM, please do the following.
-! Set DX_BOUND to some value larger than the first inner nest, but smaller than the outer domain in meters
-! Set the aerosol concentration with the variables FCCNR_MAR, and FCCNR_CON, FCCNR_MIX.  
-! Each of the aerosol distributions are set with ACCN (concentration of ccn particles at 1% saturation), and
-! BCCN (the "k" coefficient; for example: FCCNR(KR)=1.5*ACCN*BCCN*S_KR**BCCN). 
-! Questions: contact barry.h.lynn@gmail.com (Barry Lynn)
-!
-MODULE module_mp_fast_sbm
-USE module_mp_radar
-!      USE module_state_description
-!
-!-----------------------------------------------------------------------
-! BARRY
-      INTEGER,PRIVATE,PARAMETER :: REMSAT = 0
-      INTEGER, PRIVATE,PARAMETER :: IBREAKUP=1
-      INTEGER, PRIVATE,PARAMETER :: p_ff1i01=2, p_ff1i33=34,p_ff5i01=35,p_ff5i33=67,p_ff6i01=68,&
-     & p_ff6i33=100,p_ff8i01=101,p_ff8i33=133
-
-      LOGICAL, PRIVATE,PARAMETER :: CONSERV=.TRUE.
-! SET ONE = TRUE
-!     LOGICAL, PRIVATE,PARAMETER :: ORIGINAL_MELT=.FALSE.
-!     LOGICAL, PRIVATE,PARAMETER :: JIWEN_FAN_MELT=.TRUE.
-      LOGICAL, PRIVATE,PARAMETER :: ORIGINAL_MELT=.TRUE.
-      LOGICAL, PRIVATE,PARAMETER :: JIWEN_FAN_MELT=.FALSE.
-      REAL, PRIVATE,PARAMETER :: PI_MORR = 3.1415926535897932384626434
-      REAL, PRIVATE,PARAMETER ::  R_MORR = 287.15
-
-
-
-      REAL,PRIVATE,PARAMETER :: DX_BOUND=7500.
-      REAL ACCN,BCCN
-      REAL,PRIVATE,PARAMETER :: ACCN_MAR=1.0000E02, BCCN_MAR=0.900E00,ROCCN0=0.1000E01
-      REAL,PRIVATE,PARAMETER :: ACCN_CON=4.00000E03, BCCN_CON=0.400E00,ROCCN03=0.1000E01
-      REAL,PRIVATE,PARAMETER :: I3POINT=1
-      INTEGER,PRIVATE,PARAMETER :: ICCN = 1
-       DOUBLE PRECISION, PRIVATE, PARAMETER ::  SCAL=1.d0
-       INTEGER, PRIVATE,PARAMETER :: ICEPROCS=1,BULKNUC=0 
-       INTEGER, PRIVATE,PARAMETER :: ICETURB=0,LIQTURB=0
-!      INTEGER, PRIVATE,PARAMETER :: RAIN_INIT=1,GRAUPEL_INIT=1
-!      INTEGER, PRIVATE,PARAMETER :: ICE_INIT=0,SNOW_INIT=1
-
-       INTEGER, PRIVATE,PARAMETER :: ICEMAX=3,NCD=33,NHYDR=5,NHYDRO=7  &
-     &        ,ifreez_down1=0,ifreez_down2=1,ifreez_top=1              &
-     &        ,K0_LL=8,KRMIN_LL=1,KRMAX_LL=19,L0_LL=6                  &
-     &        , IEPS_400=1,IEPS_800=0,IEPS_1600=0                      &
-     &        ,K0L_GL=16,K0G_GL=16                                     &
-     &        ,KRMINL_GL=1,KRMAXL_GL=24                                &
-     &        ,KRMING_GL=1,KRMAXG_GL=33                                &
-     &        ,KRDROP=18,KRBREAK=17,KRICE=18                           &
-     &        ,NKR=33,JMAX=33,NRG=2,JBREAK = 18 
-       REAL dt_coll
-       REAL, PRIVATE,PARAMETER ::C1_MEY=0.00033,C2_MEY=0.              &
-! New CONTINENTAL
-!      REAL, PRIVATE,PARAMETER ::C1_MEY=0.0033,C2_MEY=0.              &
-     &        ,an0_freez=10.,COL=0.23105                                
-       REAL, PRIVATE,PARAMETER :: p1=1000000.0,p2=750000.0,p3=500000.0                     
-!      INTEGER, PRIVATE,PARAMETER :: NCOND=3
-!      INTEGER, PRIVATE,PARAMETER :: NCOND=6
-       INTEGER, PRIVATE :: NCOND
-       INTEGER, PRIVATE,PARAMETER :: kr_icempl=9
-!      REAL, PRIVATE, PARAMETER :: ALCR = 1.0
-!      REAL, PRIVATE, PARAMETER :: ALCR = 2.0
-!      REAL, PRIVATE, PARAMETER :: ALCR = 1.5
-       REAL, PRIVATE, PARAMETER :: ALCR = 2.25
-!      REAL, PRIVATE, PARAMETER :: ALCR = 3.0
-       REAL, PRIVATE, PARAMETER :: ALCR_G = 3.0
-!      REAL, PRIVATE, PARAMETER :: ALCR_G = 1.0
-       INTEGER,PRIVATE,PARAMETER :: icempl=1
-       REAL, PRIVATE, PARAMETER :: COEFREFLL=1.E6*36.E6*COL/3.1453/3.1453 
-       REAL, PRIVATE, PARAMETER :: COEFREFLI=1.E9*36.E3*COL/3.1453/3.1453/5.
-       REAL, PRIVATE, PARAMETER :: COEFREF00=1.E9*36.E3*COL/3.1453/3.1453       
-       REAL, PRIVATE,DIMENSION(NKR) ::COLREFLL,COLREFLI,COLREFLS,COLREFLG,COLREFLH
-
-
-! YWLL_1000MB(nkr,nkr) - input array of kernels for pressure 1000mb
-! YWLL_750MB(nkr,nkr) - input array of kernels for pressure 750mb
-! YWLL_500MB(nkr,nkr) - input array of kernels for pressure 500mb
-       REAL, PRIVATE, SAVE :: &
-! CRYSTALS 
-     &YWLI(NKR,NKR,ICEMAX) &
-! MIXTURES
-     &,YWIL(NKR,NKR,ICEMAX),YWII(NKR,NKR,ICEMAX,ICEMAX) &
-     &,YWIS(NKR,NKR,ICEMAX),YWIG(NKR,NKR,ICEMAX) &
-     &,YWIH(NKR,NKR,ICEMAX),YWSI(NKR,NKR,ICEMAX) &
-     &,YWGI(NKR,NKR,ICEMAX),YWHI(NKR,NKR,ICEMAX)
-!
-      REAL,PRIVATE,DIMENSION(NKR,NKR),SAVE :: &
-     & YWLL_1000MB,YWLL_750MB,YWLL_500MB,YWLL,YWLS,YWLG,YWLH &
-! SNOW :
-     &,YWSL,YWSS,YWSG,YWSH &
-! GRAUPELS :
-     &,YWGL,YWGS,YWGG,YWGH &
-! HAIL :
-     &,YWHL,YWHS,YWHG,YWHH
-       REAL, PRIVATE, SAVE :: &
-     &  XI(NKR,ICEMAX) &
-     & ,RADXX(NKR,NHYDR-1),MASSXX(NKR,NHYDR-1),DENXX(NKR,NHYDR-1) &
-     & ,RADXXO(NKR,NHYDRO),MASSXXO(NKR,NHYDRO),DENXXO(NKR,NHYDRO) &
-     & ,RIEC(NKR,ICEMAX),COEFIN(NKR),SLIC(NKR,6),TLIC(NKR,2) &
-     & ,RO2BL(NKR,ICEMAX)
-       REAL, PRIVATE, SAVE :: VR1(NKR),VR2(NKR,ICEMAX),VR3(NKR) &
-     & ,VR4(NKR),VR5(NKR),VRX(NKR)
-      REAL,PRIVATE,DIMENSION(NKR),SAVE ::  &
-     &  XL,RLEC,XX,XCCN,XS,RSEC &
-     & ,XG,RGEC,XH,RHEC,RO1BL,RO3BL,RO4BL,RO5BL &
-     & ,ROCCN,RCCN,DROPRADII
-  
-      REAL, PRIVATE,SAVE ::  FCCNR_MAR(NKR),FCCNR_CON(NKR)
-      REAL, PRIVATE,SAVE ::  FCCNR_MIX(NKR)
-      REAL, PRIVATE,SAVE ::  FCCNR(NKR)
-
-        REAL, PRIVATE :: C2,C3,C4
-      double precision,private,save ::  cwll(nkr,nkr)
-      double precision,private,save::  &
-     & xl_mg(0:nkr),xs_mg(0:nkr),xg_mg(0:nkr),xh_mg(0:nkr) &
-     &,xi1_mg(0:nkr),xi2_mg(0:nkr),xi3_mg(0:nkr) &
-     &,chucm(nkr,nkr),ima(nkr,nkr) &
-     &,cwll_1000mb(nkr,nkr),cwll_750mb(nkr,nkr),cwll_500mb(nkr,nkr) &
-     &,cwli_1(nkr,nkr),cwli_2(nkr,nkr),cwli_3(nkr,nkr) &
-     &,cwls(nkr,nkr),cwlg(nkr,nkr),cwlh(nkr,nkr) &
-
-     &,cwil_1(nkr,nkr),cwil_2(nkr,nkr),cwil_3(nkr,nkr) &
-
-     &,cwii_1_1(nkr,nkr),cwii_1_2(nkr,nkr),cwii_1_3(nkr,nkr) &
-     &,cwii_2_1(nkr,nkr),cwii_2_2(nkr,nkr),cwii_2_3(nkr,nkr) &
-     &,cwii_3_1(nkr,nkr),cwii_3_2(nkr,nkr),cwii_3_3(nkr,nkr) &
-
-     &,cwis_1(nkr,nkr),cwis_2(nkr,nkr),cwis_3(nkr,nkr) &
-     &,cwig_1(nkr,nkr),cwig_2(nkr,nkr),cwig_3(nkr,nkr) &
-     &,cwih_1(nkr,nkr),cwih_2(nkr,nkr),cwih_3(nkr,nkr) &
-
-     &,cwsl(nkr,nkr) &
-     &,cwsi_1(nkr,nkr),cwsi_2(nkr,nkr),cwsi_3(nkr,nkr)&
-     &,cwss(nkr,nkr),cwsg(nkr,nkr),cwsh(nkr,nkr) &
-     &,cwgl(nkr,nkr)&
-     &,cwgi_1(nkr,nkr),cwgi_2(nkr,nkr),cwgi_3(nkr,nkr)&
-     &,cwgs(nkr,nkr),cwgg(nkr,nkr),cwgh(nkr,nkr) &
-
-     &,cwhl(nkr,nkr) &
-     &,cwhi_1(nkr,nkr),cwhi_2(nkr,nkr),cwhi_3(nkr,nkr) &
-     &,cwhs(nkr,nkr),cwhg(nkr,nkr),cwhh(nkr,nkr) &
-     &,dlnr &
-     &,CTURBLL(KRMAX_LL,KRMAX_LL)&
-     &,CTURB_LL(K0_LL,K0_LL)&
-     &,CTURBGL(KRMAXG_GL,KRMAXL_GL)&
-     &,CTURB_GL(K0G_GL,K0L_GL)
-
-      DOUBLE PRECISION,private, save :: &
-     &   BRKWEIGHT(JBREAK),PKIJ(JBREAK,JBREAK,JBREAK), &
-     &   QKJ(JBREAK,JBREAK),ECOALMASSM(NKR,NKR)
-
- 
-
-
-
-!
-!
+#if( BUILD_SBM_FAST != 1)
+      MODULE module_mp_fast_sbm
       CONTAINS
+      SUBROUTINE SBM_fast
+         REAL :: dummy
+         dummy = 1
+      END SUBROUTINE SBM_fast
+      END MODULE module_mp_fast_sbm
+#else
+! +-----------------------------------------------------------------------------+
+! +-----------------------------------------------------------------------------+
 
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-      SUBROUTINE FAST_SBM (w,u,v,th_old,                                &
-     &                      chem_new,n_chem,                              &
-     &                      itimestep,DT,DX,DY,                         &
-     &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,           &
-     &                      xland,ivgtyp,xlat,xlong,                           &
-     &                      QV,QC,QR,QI,QS,QG,QV_OLD,                   &
-     &                      QNC,QNR,QNS,QNG,QNA,                        &
-     &                      ids,ide, jds,jde, kds,kde,		        &
-     &                      ims,ime, jms,jme, kms,kme,		        &
-     &                      its,ite, jts,jte, kts,kte,                  &
-     &                      refl_10cm, diagflag, do_radar_ref,      & ! GT added for reflectivity calcs
-     &                      RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,SR )
-!-----------------------------------------------------------------------
-      IMPLICIT NONE
-!-----------------------------------------------------------------------
-      INTEGER, PARAMETER :: ITLO=-60, ITHI=40
-      INTEGER NKRO,NKRE
-      INTEGER KR,IKL,ICE
+! This is the spectral-bin microphysics scheme based on the Hebrew University
+! Cloud Model (HUCM), originally formulated and coded by Alexander Khain
+! (email: Alexander.Khain@mail.huji.ac.il);
+! The WRF bin microphysics scheme (Fast SBM or FSBM) solves equations for four
+! size distribution functions: aerosols, drop (including rain drops), snow and
+! graupel/hail (from which mass mixing ratio qna, qc, qr, qs, qg/qh and
+! their number concentrations are calculated).
 
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
-     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
-     &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
-     &                     ,ITIMESTEP,N_CHEM
+! The scheme is generally written in CGS units. In the updated scheme (FSBM-2)
+! the users can choose either graupel or hail to describe dense particles
+! (see the 'hail_opt' switch). By default, the 'hail_opt = 1' is used.
+! Hail particles have larger terminal velocity than graupel per mass bin.
+! 'hail_opt' is recommended to be used in simulations of continental cloud
+! systems. The Graupel option may lead to better results in simulations of
+! maritime convection.
 
-      REAL, INTENT(IN) 	    :: DT,DX,DY
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
-          INTENT(IN   ) ::                                   &
-                                                          U, &
-                                                          V, &
-                                                          W   
-!                                                        pi
-  REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,n_chem),INTENT(INOUT)   :: chem_new
-  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(INOUT) ::                                          &
-                                                              qv, &
-                                                          qv_old, &
-                                                          th_old, &
-                                                              qc, &
-                                                              qr, &
-                                                              qi, &
-                                                              qs, &
-                                                              qg, &
-                                                              qnc, &
-                                                              qnr, &
-                                                              qns, &
-                                                              qng, &
-                                                              qna
+! The aerosol spectrum in FSBM-2 is approximated by 3-lognormal size distribution
+! representing smallest aerosols (nucleation mode), intermediate-size
+! (accumulation mode) and largest aerosols (coarse mode). The BC/IC for aerosols
+! ,as well as aerosols vertical distribution profile -- are set from within the
+! FSBM scheme (see the 'DX_BOUND' parameter). The flag to enable the lognormal
+! aerosols is (ILogNormal_modes_Aerosol = 1, manadatory flag). The modes parameters
+! (concentration, mean radius and model width) are defined inside the routine
+! "LogNormal_modes_Aerosol".
+!  **NOTE**: In order to set aerosol BC for the outer-most domain, set the threshold 
+! 'DX_BOUND' = 'MY_DX_OUTER_DOMAIN'-1. For example, if the outermost domain 
+! resolutionis is 4km 'DX_BOUND' = 3999.
 
 
+! The user can set the liquid water content threshold (LWC) in which rimed snow
+! is being transferred to hail/graupel (see 'ALCR' parameter).
+! The default value is ALCR = 0.5 [g/m3]. Increasing this value will result
+! in an increase of snow mass content, and a decrease in hail/graupel mass
+! contents.
 
-      REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
-      LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
-      INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+! We thank and acknowledge contribution from Jiwen Fan (PNNL), Alexander Rhyzkov
+! (CIMMS/NSSL), Jeffery Snyder (CIMMS/NSSL), Jimy Dudhia (NCAR) and Dave Gill
+! (NCAR).
 
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &  
-                          refl_10cm
+! The previous WRF FSBM version  (FSBM-1) was coded by Barry Lynn (email:
+! Barry.H.Lynn@gmail.com); This updated WRF SBM version (FSBM-2) was coded and
+! is maintained by Jacob Shpund (email: kobby.shpund@mail.huji.ac.il).
+! Please feel free to reachout with questions about the scheme.
 
-      INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   IVGTYP
-      REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    :: XLAT, XLONG
-      REAL, INTENT(IN),     DIMENSION(ims:ime, kms:kme, jms:jme)::      &
-     &                      dz8w,p_phy,pi_phy,rho_phy
-      REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme)::      &
-     &                      th_phy
-      REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme), OPTIONAL ::     &
-     &      RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,SR
-!     REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme), OPTIONAL ::     &
-!     REAL,                 DIMENSION(ims:ime,jms:jme), OPTIONAL ::     &
-!    &              LIQUEXP,ICEEXP,SNOWEXP,GRAUEXP,HAILEXP
-!
+! Usefull references:
+! -------------------
+!     Khain, A. P., and I. Sednev, 1996: Simulation of precipitation formation in
+! the Eastern Mediterranean coastal zone using a spectral microphysics cloud
+! ensemble model. Atmospheric Research, 43: 77-110;
+!     Khain, A. P., A. Pokrovsky and M. Pinsky, A. Seifert, and V. Phillips, 2004:
+! Effects of atmospheric aerosols on deep convective clouds as seen from
+! simulations using a spectral microphysics mixed-phase cumulus cloud model
+! Part 1: Model description. J. Atmos. Sci 61, 2963-2982);
+!     Khain A. P. and M. Pinsky, 2018: Physical Processes in Clouds and Cloud
+! modeling. Cambridge University Press. 642 pp
+!     Shpund, J., A. Khain, and D. Rosenfeld, 2019: Effects of Sea Spray on the
+! Dynamics and Microphysics of an Idealized Tropical Cyclone. J. Atmos. Sci., 0,
+! https://doi.org/10.1175/JAS-D-18-0270.1 (A preliminary description of the
+! updated FSBM-2 scheme)
 
-!-----------------------------------------------------------------------
-!     LOCAL VARS
-!-----------------------------------------------------------------------
+! When using the FSBM-2 version please cite:
+! -------------------------------------------
+!     Shpund, J., Khain, A., Lynn, B., Fan, J., Han, B., Ryzhkov, A., Snyder, J., 
+! Dudhia, J. and Gill, D., 2019. Simulating a Mesoscale Convective System Using WRF 
+! With a New Spectral Bin Microphysics: 1: Hail vs Graupel. 
+! Journal of Geophysical Research: Atmospheres.
 
-!     NSTATS,QMAX,QTOT are diagnostic vars
+! +---------------------------------------------------------------------------- +
+! +-----------------------------------------------------------------------------+
+module module_mp_SBM_BreakUp
 
-      INTEGER,DIMENSION(ITLO:ITHI,4) :: NSTATS
-!     REAL,   DIMENSION(ITLO:ITHI,5) :: QMAX
-      REAL,   DIMENSION(ITLO:ITHI,22):: QTOT
+private
+public Spont_Rain_BreakUp,Spontanous_Init,BreakUp_Snow,KR_SNOW_MIN,KR_SNOW_MAX
 
-!     SOME VARS WILL BE USED FOR DATA ASSIMILATION (DON'T NEED THEM NOW). 
-!     THEY ARE TREATED AS LOCAL VARS, BUT WILL BECOME STATE VARS IN THE 
-!     FUTURE. SO, WE DECLARED THEM AS MEMORY SIZES FOR THE FUTURE USE
+! Kind paramater
+INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
+INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
 
-!     TLATGS_PHY,TRAIN_PHY,APREC,PREC,ACPREC,SR are not directly related 
-!     the microphysics scheme. Instead, they will be used by Eta precip 
-!     assimilation.
+! ... Spontanous Rain BreakUp
+INTEGER,PARAMETER :: 		JBreak_Spontanous = 28, &
+              					I_Break_Method = 1
+DOUBLE PRECISION,PARAMETER :: COL = 0.23105
+! ... Snow-BreakUp
+INTEGER,PARAMETER :: KR_SNOW_MAX = 35
+INTEGER,PARAMETER :: KR_SNOW_MIN = 34
+! ... Snow breakup probability
+DOUBLE PRECISION,PARAMETER :: BREAK_SNOW_KRMAX_0 = 0.02D0
+DOUBLE PRECISION,PARAMETER :: BREAK_SNOW_KRMAX_1 = 0.012D0
+!DOUBLE PRECISION,PARAMETER :: BREAK_SNOW_KRMAX_2 = 0.08D0
+!DOUBLE PRECISION,PARAMETER :: BREAK_SNOW_KRMAX_3 = 0.04D0
 
-      REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ) ::                  &
-     &       TLATGS_PHY,TRAIN_PHY
-      REAL,  DIMENSION(ims:ime,jms:jme):: APREC,PREC,ACPREC
-      REAL,  DIMENSION(its-1:ite+1, kts:kte, jts-1:jte+1):: t_new,t_old,   &
-     &                                      zcgs,       rhocgs,pcgs
+contains
+	! +--------------------------------------------------------------------------+
+  subroutine Spontanous_Init(DTwrf, XL, DROPRADII, Prob, Gain_Var_New, NND, NKR, &
+                           ikr_spon_break)
 
-      INTEGER :: I,J,K,KFLIP
-! BARRY
-      INTEGER :: KRFREEZ
-! DATA
-       REAL Z0IN,ZMIN
-       DATA  ZMIN/2.0E5/
-       DATA  Z0IN/2.0E5 /
+  implicit none
 
-!      REAL,DIMENSION(1) :: EPSF2D, &
-       REAL EPSF2D, &
-     &        TAUR1,TAUR2,EPS_R1,EPS_R2,ANC1IN, &
-     &        PEPL,PEPI,PERL,PERI,ANC1,ANC2,PARSP, &
-     &        AFREEZMY,BFREEZMY,BFREEZMAX, &
-     &        TCRIT,TTCOAL, &
-     &        EPSF1,EPSF3,EPSF4, &
-     &        SUP2_OLD, DSUPICEXZ,TFREEZ_OLD,DTFREEZXZ, &
-     &        AA1_MY,BB1_MY,AA2_MY,BB2_MY, &
-     &        DTIME,DTCOND, &
-     &        A1_MYN, BB1_MYN, A2_MYN, BB2_MYN
-        DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN  &
-     &      /2.53,5.42,3.41E1,6.13/
-        DATA AA1_MY,BB1_MY,AA2_MY,BB2_MY/2.53E12,5.42E3,3.41E13,6.13E3/
-!            QSUM,ISUM,QSUM1,QSUM2,CCNSUM1,CCNSUM2
-        DATA KRFREEZ,BFREEZMAX,ANC1,ANC2,PARSP,PEPL,PEPI,PERL,PERI, &
-     &  TAUR1,TAUR2,EPS_R1,EPS_R2,TTCOAL,AFREEZMY,&
-     &  BFREEZMY,EPSF1,EPSF3,EPSF4,TCRIT/21,&
-     &  0.6600E00, &
-     &  1.0000E02,1.0000E02,0.9000E02, &
-     &  0.6000E00,0.6000E00,1.0000E-03,1.0000E-03, &
-     &  0.5000E00,0.8000E00,0.1500E09,0.1500E09, &
-     &  2.3315E02,0.3333E-04,0.6600E00, &
-     &  0.1000E-02,0.1000E-05,0.1000E-05, &
-     &  2.7015E02/
-! JIMY: N_CHEM,variables read in as data
-! SBM VARIABLES
-      REAL,DIMENSION (nkr) :: FF1IN,FF3IN,FF4IN,FF5IN,&
-     &              FF1R,FF3R,FF4R,FF5R,FCCN
-      REAL,DIMENSION (nkr,icemax) :: FF2IN,FF2R
-!!!! NOTE: ZCGS AND OTHER VARIABLES ARE ALSO DIMENSIONED IN FALFLUXHUCM
-      DOUBLE PRECISION DEL1NR,DEL2NR,DEL12R,DEL12RD,ES1N,ES2N,EW1N,EW1PN
-      DOUBLE PRECISION DELSUP1,DELSUP2,DELDIV1,DELDIV2
-      DOUBLE PRECISION TT,QQ,TTA,QQA,PP,DPSA,DELTATEMP,DELTAQ
-      DOUBLE PRECISION DIV1,DIV2,DIV3,DIV4,DEL1IN,DEL2IN,DEL1AD,DEL2AD
-      REAL DEL_BB,DEL_BBN,DEL_BBR
-      REAL FACTZ,CONCCCN_XZ,CONCDROP
-       REAL SUPICE(KTE),AR1,AR2, &
-     & DERIVT_X,DERIVT_Y,DERIVT_Z,DERIVS_X,DERIVS_Y,DERIVS_Z, &
-     & ES2NPLSX,ES2NPLSY,EW1NPLSX,EW1NPLSY,UX,VX, &
-     & DEL2INPLSX,DEL2INPLSY,DZZ(KTE)
-       INTEGER KRR,I_START,I_END,J_START,J_END
-   
-       REAL DTFREEZ_XYZ(ITE,KTE,JTE),DSUPICE_XYZ(ITE,KTE,JTE)
+  integer,intent(in):: NKR
+  real(kind=r4size),intent(in) :: 	DTwrf,XL(:),DROPRADII(:)
+  real(kind=r8size),intent(out) :: Prob(:), Gain_Var_New(:,:), NND(:,:)
 
-       REAL DXHUCM,DYHUCM
-       REAL FMAX1,FMAX2,FMAX3,FMAX4,FMAX5
-       INTEGER ISYM1,ISYM2,ISYM3,ISYM4,ISYM5
-       INTEGER DIFFU
-       REAL DELTAW
-       real zcgs_z(kts:kte),pcgs_z(kts:kte),rhocgs_z(kts:kte),ffx_z(kts:kte,nkr)
-       real z_full
-! SLOPE INTERCEPT FOR RAIN, SNOW, AND GRAUPEL                                    PARAMR.32
-!     RON=8.E6                                                                   PARAMR.33
-!     RON2=1.E10                                                                 23DEC04.211
-!     RON2=1.E9                                                                  23DEC04.212
-!     SON=2.E7                                                                   PARAMR.36
-!     GON=5.E7                                                                   23DEC04.213
-!     GON=4.E6
-       REAL, PARAMETER :: RON=8.E6, GON=5.E7
-       REAL EFF_N,EFF_D
-       real nzero,son,nzero_less
-       parameter (son=2.E7)
-       real raddumb(nkr),massdumb(nkr)
-       real hydrosum
+! ... Locals
+  real(kind=r8size) :: diameter(nkr), ratio_new, q_m, gain_var(nkr,nkr), dtime_spon_break, &
+                  		 DROPRADII_dp(nkr),XL_dp(nkr)
+  integer :: kr,i,j, ikr_spon_break
+  real(kind=r8size),parameter :: gamma = 0.453d0
+  character*256 :: wrf_err_message
+! ... Locals
 
-       integer imax,kmax,jmax
-       real gmax
-       real tmax,qmax,divmax,rainmax
-       real qnmax,inmax,knmax
-       real hydro
-       real difmax,tdif,tt_old,w_stag,qq_old
-       real teten,es
-      REAL, DIMENSION(kts:kte)::                            &
-                      qv1d, qr1d, nr1d, qs1d, ns1d, qg1d, ng1d, t1d, p1d
-      REAL, DIMENSION(kts:kte):: dBZ
+!dtime_spon_break = DTwrf
+DROPRADII_dp = DROPRADII
+XL_dp = XL
+! diameter in nm
+diameter(:) = DROPRADII_dp(:)*2.0d0*10.0d0
 
-       integer  print_int
-       parameter (print_int=300)
+DO KR=1,NKR
+	ikr_spon_break=kr
+	IF (DROPRADII(kr)>=0.3) exit
+END DO
 
-       integer t_print,xlong10
-       t_print=print_int/dt
+WRITE( wrf_err_message , * ) 'IKR_Spon_Break=',ikr_spon_break
+CALL wrf_message ( TRIM ( wrf_err_message ) )
 
-       difmax = 0
-!      print*,'itimestep = ',itimestep
-!        if (itimestep.gt.150)return
-        if (itimestep.eq.1)then
-         if (iceprocs.eq.1) call wrf_message("SBM FAST: ICE PROCESES ACTIVE")
-         if (iceprocs.eq.0) call wrf_message("SBM FAST: LIQUID PROCESES ONLY")
-        print*,'num_chem = ',n_chem
-        end if
-       tmax = 0
-! COAL BOTT IS EITHER CALLED EVERY TIME STEP OR TWICE
-       NCOND = 0
-!       if (mod(dx,1000.).eq.0)then
-!       NCOND=dx/1000
-!       else if (mod(dx,2000.).eq.0)then
-!       NCOND=dx/500
-!       else if (mod(dx,3000.).eq.0)then
-!       NCOND=dx/1000
-!       else if (mod(dx,4000.).eq.0)then
-!       NCOND=dx/1000
-!       else if (mod(dx,1333.).eq.0)then
-!       NCOND=dx/1.3333
-!       end if
-       NCOND=nint(dx/1000)
-
- !      IF (NCOND.EQ.0)NCOND=3
-       NCOND=max(NCOND,1)
-       DTCOND=DT/NCOND
-       dt_coll=dt
-       call kernals(dt)
-!      if (itimestep.eq.1.or.itimestep.eq.3)then
-!            do kr = 1,nkr
-!             print*,'xl = ',xl(kr),vr1(kr),RLEC(kr),RO1BL(kr)
-!             print*,'xi = ',xi(kr,1),vr2(kr,1),RIEC(KR,1),RO2BL(KR,1)
-!             print*,'xi = ',xi(kr,2),vr2(kr,2),RIEC(KR,2),RO2BL(KR,2)
-!             print*,'xi = ',xi(kr,3),vr2(kr,3),RIEC(KR,3),RO2BL(KR,3)
-!             print*,'xs = ',xs(kr),vr3(kr),RSEC(kr),RO3BL(kr)
-!             print*,'xg = ',xg(kr),vr4(kr),RGEC(kr),RO4BL(kr)
-!             print*,'xh = ',xh(kr),vr5(kr),RHEC(kr),RO5BL(kr)
-!            end do
-!       end if
-
-!
-      DEL_BB=BB2_MY-BB1_MY
-      DEL_BBN=BB2_MYN-BB1_MYN
-      DEL_BBR=BB1_MYN/DEL_BBN
-!
-      if (conserv)then
-      DO j = jts,jte
-      DO i = its,ite
-      DO k = kts,kte
-      rhocgs(I,K,J)=rho_phy(I,K,J)*0.001
-      KRR=0
-      DO kr=p_ff1i01,p_ff1i33
-      KRR=KRR+1
-        chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XL(KRR)/XL(KRR)/3.0
-      END DO
-      KRR=0
-      DO KR=p_ff5i01,p_ff5i33
-        KRR=KRR+1
-        chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XS(KRR)/XS(KRR)/3.0
-      END DO
-      KRR=0
-      DO KR=p_ff6i01,p_ff6i33
-        KRR=KRR+1
-        chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XG(KRR)/XG(KRR)/3.0
-      END DO
-      KRR=0
-      DO KR=p_ff8i01,p_ff8i33
-        KRR=KRR+1
-! change by J. Fan
-!        chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/XCCN(KRR)
-        chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/1000.   ! chem_new (input) is #/kg
-      END DO
-      END DO
-      END DO
-      END DO
-      end if
-
-      call kernals(dt)
-
-      DXHUCM=100.*DX
-      DYHUCM=100.*DY
-
-! JIMY
-      I_START=MAX(1,ITS-1)
-      J_START=MAX(1,JTS-1)
-      I_END=MIN(IDE-1,ITE+1)
-      J_END=MIN(JDE-1,JTE+1)
-!     print*,'ide-1 = ',ide-1
-!     print*,'jde-1 = ',jde-1
-!     print*,'kte = ',kte
-!     print*,'i_start,i_end = ',i_start,i_end
-!     print*,'j_start,j_end = ',j_start,j_end
-!     print*,'its,ite = ',its,ite
-!     print*,'jts,jte = ',jts,jte
-      if (itimestep.eq.1)then
-      DO j = j_start,j_end
-      DO k = kts,kte
-      DO i = i_start,i_end
-         th_old(i,k,j)=th_phy(i,k,j)
-         qv_old(i,k,j)=qv(i,k,j)
-      END DO
-      END DO
-      END DO
-      end if
-      DO j = j_start,j_end
-      DO k = kts,kte
-      DO i = i_start,i_end
-        t_new(i,k,j) = th_phy(i,k,j)*pi_phy(i,k,j)
-        t_old(i,k,j) = th_old(i,k,j)*pi_phy(i,k,j)
-      ENDDO
-      ENDDO
-      ENDDO
-      DO j = j_start,j_end
-      DO i = i_start,i_end
-      z_full=0.
-      DO k = kts,kte
-          pcgs(I,K,J)=P_PHY(I,K,J)*10.
-          rhocgs(I,K,J)=rho_phy(I,K,J)*0.001
-          zcgs(I,K,J)=z_full+0.5*dz8w(I,K,J)*100
-          z_full=z_full+dz8w(i,k,j)*100.
-      ENDDO
-      ENDDO
-      ENDDO
- 
-!!!!!
-         if (itimestep.eq.1)then
-!      DO j = j_start,j_end
-!      DO i = i_start,i_end
-       DO j = jts,jte
-       DO i = its,ite
-       DO k = kts,kte
-         IF (zcgs(I,K,J).LE.ZMIN)THEN
-            FACTZ=1.
-         ELSE
-            FACTZ=EXP(-(zcgs(I,K,J)-ZMIN)/Z0IN)
-         END IF
-!        FACTZ = 1
-         KRR=0
-         DO KR=p_ff8i01,p_ff8i33
-          KRR=KRR+1
-          if (xland(i,j).lt.1.5)then
-             chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
-          else
-             chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
-          end if
-!         if (dx.ge.4500)then
-!         if (xlat(i,j).ge.10.and.xlat(i,j).le.30.and.zcgs(i,k,j).le.300000)then
-!             chem_new(I,K,J,KR)=FCCNR_MIX(KRR)
-!         end if
-!         end if
-
-         END DO
-       end do
-       end do
-       end do
-         end if
-       if (itimestep.ne.1.and.dx.gt.dx_bound)then  
-       DO j = jts,jte
-       DO k = kts,kte
-       DO i = its,ite
-        if (i.le.5.or.i.ge.IDE-5.OR. &
-     &       j.le.5.or.j.ge.JDE-5)THEN
-         IF (zcgs(I,K,J).LE.ZMIN)THEN
-            FACTZ=1.
-         ELSE
-            FACTZ=EXP(-(zcgs(I,K,J)-ZMIN)/Z0IN)
-         END IF
-         KRR=0
-         DO kr=p_ff8i01,p_ff8i33
-          KRR=KRR+1
-          if (xland(i,j).lt.1.5)then
-             chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
-          else
-             chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
-          end if
-         End do
-        end if
-       end do
-       end do
-       end do
-       end if
-
-!     print*,'dxhucm = ',dxhucm
-!     print*,'dyhucm = ',dyhucm
-!
-!-----------------------------------------------------------------------
-!**********************************************************************
-!-----------------------------------------------------------------------
-!
-!
-!     print*,'here at 1'
-      DO j = jts,jte
-      DO i = its,ite
-      DO k = kts,kte
-       IF(K.EQ.KTE)THEN
-        DZZ(K)=(zcgs(I,K,J)-zcgs(I,K-1,J))
-       ELSE IF(K.EQ.1)THEN
-        DZZ(K)=(zcgs(I,K+1,J)-zcgs(I,K,J))
-       ELSE
-        DZZ(K)=(zcgs(I,K+1,J)-zcgs(I,K-1,J))
-       END IF
-       ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
-       EW1N=QV_OLD(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV_OLD(I,K,J))
-       SUPICE(K)=EW1N/ES2N-1.
-       IF(SUPICE(K).GT.0.5) SUPICE(K)=.5
- 
-      END DO
-      DO k = kts,kte
-       IF(T_OLD(I,K,J).GE.238.15.AND.T_OLD(I,K,J).LT.274.15) THEN
-       if (k.lt.kte)then       
-        w_stag=50.*(w(i,k,j)+w(i,k+1,j)) 
-       else
-        w_stag=100*w(i,k,j)
-       end if
-             IF (I.LT.IDE-1.AND.J.LT.JDE-1)THEN
-              UX=25.*(U(I,K,J)+U(I+1,K,J)+U(I,K,J+1)+U(I+1,K,J+1))
-              VX=25.*(V(I,K,J)+V(I+1,K,J)+V(I,K,J+1)+V(I+1,K,J+1))
-             ELSE
-              UX=U(I,K,J)*100.
-              VX=V(I,K,J)*100.
-             END IF  
-             IF(K.EQ.1) DERIVT_Z=(T_OLD(I,K+1,J)-T_OLD(I,K,J))/DZZ(K)
-             IF(K.EQ.KTE) DERIVT_Z=(T_OLD(I,K,J)-T_OLD(I,K-1,J))/DZZ(K)
-             IF(K.GT.1.AND.K.LT.KTE) DERIVT_Z= &
-     &        (T_OLD(I,K+1,J)-T_OLD(I,K-1,J))/DZZ(K)
-             IF (I.EQ.1)THEN
-              DERIVT_X=(T_OLD(I+1,K,J)-T_OLD(I,K,J))/(DXHUCM)
-             ELSE IF (I.EQ.IDE-1)THEN
-              DERIVT_X=(T_OLD(I,K,J)-T_OLD(I-1,K,J))/(DXHUCM)
-             ELSE
-              DERIVT_X=(T_OLD(I+1,K,J)-T_OLD(I-1,K,J))/(2.*DXHUCM)
-             END IF
-             IF (J.EQ.1)THEN
-              DERIVT_Y=(T_OLD(I,K,J+1)-T_OLD(I,K,J))/(DYHUCM)
-             ELSE IF (J.EQ.JDE-1)THEN
-              DERIVT_Y=(T_OLD(I,K,J)-T_OLD(I,K,J-1))/(DYHUCM)
-             ELSE
-              DERIVT_Y=(T_OLD(I,K,J+1)-T_OLD(I,K,J-1))/(2.*DYHUCM)
-             END IF
-             DTFREEZ_XYZ(I,K,J)=DT*(VX*DERIVT_Y+ &
-     &            UX*DERIVT_X+w_stag*DERIVT_Z)
-          ELSE
-             DTFREEZ_XYZ(I,K,J)=0.
-          ENDIF
-          IF(SUPICE(K).GE.0.02.AND.T_OLD(I,K,J).LT.268.15) THEN
-            IF (I.LT.IDE-1)THEN
-             ES2NPLSX=AA2_MY*EXP(-BB2_MY/T_OLD(I+1,K,J))
-             EW1NPLSX=QV_OLD(I+1,K,J)*pcgs(I+1,K,J)/ &
-     &               (0.622+0.378*QV_OLD(I+1,K,J))
-            ELSE
-             ES2NPLSX=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
-             EW1NPLSX=QV_OLD(I,K,J)*pcgs(I,K,J)/ &
-     &               (0.622+0.378*QV_OLD(I,K,J))
-            END IF
-            IF (ES2NPLSX.EQ.0)THEN
-             DEL2INPLSX=0.5
-            ELSE
-             DEL2INPLSX=EW1NPLSX/ES2NPLSX-1.
-            END IF
-            IF(DEL2INPLSX.GT.0.5) DEL2INPLSX=.5
-            IF (I.GT.1)THEN
-             ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I-1,K,J))
-             EW1N=QV_OLD(I-1,K,J)*pcgs(I-1,K,J)/(0.622+0.378*QV_OLD(I-1,K,J))
-            ELSE
-             ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
-             EW1N=QV_OLD(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV_OLD(I,K,J))
-            END IF
-            DEL2IN=EW1N/ES2N-1.
-            IF(DEL2IN.GT.0.5) DEL2IN=.5
-            IF (I.GT.1.AND.I.LT.IDE-1)THEN
-             DERIVS_X=(DEL2INPLSX-DEL2IN)/(2.*DXHUCM)
-            ELSE
-             DERIVS_X=(DEL2INPLSX-DEL2IN)/(DXHUCM)
-            END IF
-            IF (J.LT.JDE-1)THEN
-             ES2NPLSY=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J+1))
-             EW1NPLSY=QV_OLD(I,K,J+1)*pcgs(I,K,J+1)/(0.622+0.378*QV_OLD(I,K,J+1))
-            ELSE
-             ES2NPLSY=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
-             EW1NPLSY=QV_OLD(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV_OLD(I,K,J))
-            END IF
-            DEL2INPLSY=EW1NPLSY/ES2NPLSY-1.
-            IF(DEL2INPLSY.GT.0.5) DEL2INPLSY=.5
-            IF (J.GT.1)THEN
-             ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J-1))
-             EW1N=QV_OLD(I,K,J-1)*pcgs(I,K,J-1)/(0.622+0.378*QV_OLD(I,K,J-1))
-            ELSE
-             ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
-             EW1N=QV_OLD(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV_OLD(I,K,J))
-            END IF
-             DEL2IN=EW1N/ES2N-1.
-            IF(DEL2IN.GT.0.5) DEL2IN=.5
-            IF (J.GT.1.AND.J.LT.JDE-1)THEN
-             DERIVS_Y=(DEL2INPLSY-DEL2IN)/(2.*DYHUCM)
-            ELSE
-             DERIVS_Y=(DEL2INPLSY-DEL2IN)/(DYHUCM)
-            END IF
-!
-            IF (K.EQ.1)DERIVS_Z=(SUPICE(K+1)-SUPICE(K))/DZZ(K)
-            IF (K.EQ.KTE)DERIVS_Z=(SUPICE(K)-SUPICE(K-1))/DZZ(K)
-            IF(K.GT.1.and.K.LT.KTE) DERIVS_Z=(SUPICE(K+1)-SUPICE(K-1))/DZZ(K)
-            IF (I.LT.IDE-1.AND.J.LT.JDE-1)THEN
-             UX=25.*(U(I,K,J)+U(I+1,K,J)+U(I,K,J+1)+U(I+1,K,J+1))
-             VX=25.*(V(I,K,J)+V(I+1,K,J)+V(I,K,J+1)+V(I+1,K,J+1))
-            ELSE
-             UX=U(I,K,J)*100.
-             VX=V(I,K,J)*100.
-            END IF  
-            DSUPICE_XYZ(I,K,J)=(UX*DERIVS_X+VX*DERIVS_Y+ &
-      &                        w_stag*DERIVS_Z)*DTCOND
-          ELSE
-            DSUPICE_XYZ(I,K,J)=0.0
-          END IF
-         END DO
-         END DO
-         END DO
-     
-
-      do j = jts,jte
-      do i = its,ite
-      do k = kts,kte
-!     if (i.eq.214.and.j.eq.60.and.k.eq.14)then
-!     if (i.eq.214.and.j.eq.60)then
-!     print*,'i,j = ',i,j,k
-!     end if
-!     print*,'i,j = ',i,j,k
-!     print*,'i,j,k = ',i,j,k
-! LIQUID
-!      do kr=1,nkr
-!       if (ff4r(kr).lt.0)then
-!        print*,'i,k,j = ',i,k,j
-!        print*,'ff4r 0 = ',kr,ff4r(kr)
-!       end if
-!      end do
-
-          KRR=0
-          DO KR=p_ff1i01,p_ff1i33
-          KRR=KRR+1
-!          FF1R(KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XL(KR)/XL(KR)/3
-           FF1R(KRR)=chem_new(I,K,J,KR)
-           IF (FF1R(KRR).LT.0)FF1R(KRR)=0.
-          END DO
-!        DO KR=1,NKR
-!          FF1R(KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XL(KR)/XL(KR)/3
-!          IF (FF1R(KR).LT.0)FF1R(KR)=0.
-!         END DO   
-! CCN
-        KRR=0
-        DO KR=p_ff8i01,p_ff8i33
-          KRR=KRR+1
-!         FCCN(KRR)=chem_new(I,K,J,KR)
-!         FCCN(KRR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/XCCN(KRR)
-          FCCN(KRR)=chem_new(I,K,J,KR)
-          if (fccn(krr).lt.0)fccn(krr)=0.
-        END DO
-        IF (ICEPROCS.EQ.1)THEN
-! COLUMNS!
-         KRR=0
-         DO KR=NKR+1,NKR*2
-          KRR=KRR+1
-          FF2R(KRR,1)=0.
-         END DO
-! PLATES!
-         KRR=0
-         DO KR=NKR*2+1,NKR*3
-          KRR=KRR+1
-          FF2R(KRR,2)=0.
-         END DO
-! DENDRITES!
-         KRR=0
-         DO KR=NKR*3+1,NKR*4
-          KRR=KRR+1
-          FF2R(KRR,3)=0.
-         END DO
-! SNOW
-           KRR=0
-           DO KR=p_ff5i01,p_ff5i33
-            KRR=KRR+1
-!           FF3R(KRR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XS(KRR)/XS(KRR)/3
-            FF3R(KRR)=chem_new(I,K,J,KR)
-            if (ff3r(krr).lt.0)ff3r(krr)=0.
-           END DO
-
-!          KRR=0
-!          DO KR=NKR*1+1,NKR*2
-!           KRR=KRR+1
-!           FF3R(KRR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XS(KRR)/XS(KRR)/3
-!           if (ff3r(krr).lt.0)ff3r(krr)=0.
-!          END DO
-! Graupel
-           KRR=0
-           DO KR=p_ff6i01,p_ff6i33
-            KRR=KRR+1
-!           FF4R(KRR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XG(KRR)/XG(KRR)/3
-            FF4R(KRR)=chem_new(I,K,J,KR)
-            IF (FF4R(KRR).LT.0)FF4R(KRR)=0.
-           END DO
-
-!          KRR=0
-!          DO KR=NKR*2+1,NKR*3
-!           KRR=KRR+1
-!           FF4R(KRR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XG(KRR)/XG(KRR)/3
-!           IF (FF4R(KRR).LT.0)FF4R(KRR)=0.
-!          END DO   
-! Hail
-         KRR=0
-         DO KR=NKR*6+1,NKR*7
-          KRR=KRR+1
-          FF5R(KRR)=0.
-          if (ff5r(krr).lt.0)ff5r(krr)=0.
-         END DO
-!
-!     if (i.eq.43.and.k.eq.6.and.j.eq.41)then
-!      print*,'here 2'
-!     end if
-
-!      do kr=1,nkr
-!       if (ff4r(kr).lt.0)then
-!        print*,'i,k,j = ',i,k,j
-!        print*,'ff4r 1 = ',kr,ff4r(kr)
-!       end if
-!      end do
-         CALL FREEZ &
-     &     (FF1R,XL,FF2R,XI,FF3R,XS,FF4R,XG,FF5R,XH, &
-     &      T_NEW(I,K,J),DT,rhocgs(I,K,J), &
-     &      COL,AFREEZMY,BFREEZMY,BFREEZMAX, &
-     &      KRFREEZ,ICEMAX,NKR)
-          DO KR=1,NKR
-            DO ICE=1,ICEMAX
-             FF3R(KR)=FF2IN(KR,ICE)+FF3R(KR)
-             FF2IN(KR,ICE)=0
-             FF2R(KR,ICE)=0
-             FF4R(KR)=FF5R(KR)+FF4R(KR)
-             FF5R(KR)=0
-            ENDDO
-          END DO
-         IF (ORIGINAL_MELT)THEN
-         CALL ORIG_MELT  &
-     &    (FF1R,XL,FF2R,XI,FF3R,XS,FF4R,XG,FF5R,XH, &
-     &     T_NEW(I,K,J),DT,rhocgs(I,K,J),COL,ICEMAX,NKR)
-         END IF
-         IF (JIWEN_FAN_MELT) THEN
-         CALL J_W_MELT &
-     &    (FF1R,XL,FF2R,XI,FF3R,XS,FF4R,XG,FF5R,XH, &
-     &     T_NEW(I,K,J),DT,rhocgs(I,K,J),COL,ICEMAX,NKR)
-         END IF
-
-        ENDIF
-!      do kr=1,nkr
-!       if (ff4r(kr).lt.0)then
-!        print*,'i,k,j = ',i,k,j
-!        print*,'ff4r 2 = ',ff4r(kr)
-!       end if
-!       end do
-!     if(i.eq.64.and.j.eq.2.and.k.eq.16)then
-!        print*,'T_NEW(I,K,J) = ',T_NEW(I,K,J)
-!        print*,'T_OLD(I,K,J) = ',T_OLD(I,K,J)
-!     end if
-        DO KR=1,NKR
-         DO ICE=1,ICEMAX
-             FF3R(KR)=FF3R(KR)+FF2R(KR,ICE)
-             FF2R(KR,ICE)=0.
-         ENDDO
-         FF4R(KR)=FF4R(KR)+FF5R(KR)
-         FF5R(KR)=0.
-        END DO
-!      do kr=1,nkr
-!       if (ff4r(kr).lt.0)then
-!        print*,'i,k,j = ',i,k,j
-!        print*,'ff4r 3 = ',ff4r(kr)
-!       end if
-!       end do
-        IF (T_OLD(I,K,J).GT.233)THEN     
-         TT=T_OLD(I,K,J)
-         QQ=QV_OLD(I,K,J)
-         IF (QQ.LE.0)  call wrf_message("WARNING : SBM FAST: QQ < 0")
-         IF (QQ.LE.0)QQ=1.D-10
-         PP=pcgs(I,K,J)
-         TTA=T_NEW(I,K,J)
-         QQA=QV(I,K,J)
-         IF (QQA.LE.0) call wrf_message("WARNING : SBM FAST: QQA < 0")
-    !     IF (QQA.LE.0)print*,'QQA = ',qqa
-    !     IF (QQA.LE.0)print*,'i,k,j = ',i,k,j
-    !     IF (QQA.LE.0)print*,'tta = ',tta
-    !     IF (QQA.LE.0)print*,'tt = ',tt
-    !     IF (QQA.LE.0)print*,'qq = ',qq
-         IF (QQA.LE.0)QQA=1.D-10
-         ES1N=AA1_MY*DEXP(-BB1_MY/TT)
-         ES2N=AA2_MY*DEXP(-BB2_MY/TT)
-         EW1N=QQ*PP/(0.622+0.378*QQ)
-         DIV1=EW1N/ES1N
-!     if(i.eq.64.and.j.eq.2.and.k.eq.16)then
-!        print*,'T_NEW(I,K,J) = ',T_NEW(I,K,J)
-!        print*,'tt = ',tt
-!        print*,'qq = ',qq
-!        print*,'tta = ',tta
-!        print*,'qqa = ',qqa
-!        print*,'ES1N = ',ES1N
-!        print*,'ES2N = ',ES2N
-!        print*,'EW1N = ',EW1N
-!        print*,'DIV1 = ',DIV1
-!        print*,'pp = ',pp
-!        print*,'zcgs = ',zcgs(i,k,j)
-!     end if
-
-         DEL1IN=EW1N/ES1N-1.
-         DIV2=EW1N/ES2N
-         DEL2IN=EW1N/ES2N-1.
-         ES1N=AA1_MY*DEXP(-BB1_MY/TTA)
-         ES2N=AA2_MY*DEXP(-BB2_MY/TTA)
-         EW1N=QQA*PP/(0.622+0.378*QQA)
-         DIV3=EW1N/ES1N
-         DEL1AD=EW1N/ES1N-1.
-         DIV4=EW1N/ES2N
-         DEL2AD=EW1N/ES2N-1.
-         SUP2_OLD=DEL2IN
-         DELSUP1=(DEL1AD-DEL1IN)/NCOND
-         DELSUP2=(DEL2AD-DEL2IN)/NCOND
-         DELDIV1=(DIV3-DIV1)/NCOND
-         DELDIV2=(DIV4-DIV2)/NCOND
-         DELTATEMP=0
-         DELTAQ=0
-         tt_old = TT
-         qq_old = qq
-!     if (i.eq.43.and.k.eq.6.and.j.eq.41)then
-!      print*,'here 4'
-!     end if
-         DIFFU=1
-         DO IKL=1,NCOND
-          IF (DIFFU.NE.0)THEN
-          DEL1IN=DEL1IN+DELSUP1
-          DEL2IN=DEL2IN+DELSUP2
-          DIV1=DIV1+DELDIV1
-          DIV2=DIV2+DELDIV2
-          END IF
-!959       format (' ',i3,1x,f7.1,1x,f6.1,1x,f6.4,1x,f6.2,1x,f6.3)
-          IF (DIV1.GT.DIV2.AND.TT.LE.265)THEN
-           call wrf_error_fatal("fatal error in module_mp_fast_sbm (DIV1>DIV2), model stop")
-           DIFFU=0
-          END IF
-          IF (DIFFU.NE.0)THEN
-          DEL1NR=A1_MYN*(100.*DIV1)
-          DEL2NR=A2_MYN*(100.*DIV2)
- !         IF (DEL2NR.EQ.0) PRINT*,'DEL2NR = 0'
-          IF (DEL2NR.EQ.0)call wrf_error_fatal("fatal error in module_mp_fast_sbm (DEL2NR.EQ.0), model stop")
-          DEL12R=DEL1NR/DEL2NR
-          DEL12RD=DEL12R**DEL_BBR
-          EW1PN=AA1_MY*100.*DIV1*DEL12RD/100.
-!          IF (DEL12R.EQ.0)PRINT*,'DEL12R = 0'
-          IF (DEL12R.EQ.0)call wrf_error_fatal("fatal error in module_mp_fast_sbm (DEL12R.EQ.0), model stop")
-          TT=-DEL_BB/DLOG(DEL12R)
-          QQ=0.622*EW1PN/(PP-0.378*EW1PN)
-          DO KR=1,NKR
-            FF1IN(KR)=FF1R(KR)
-            DO ICE=1,ICEMAX
-             FF2IN(KR,ICE)=FF2R(KR,ICE)
-            ENDDO
-          ENDDO
-          IF (BULKNUC.eq.1)THEN
-            IF (DEL1IN.GT.0)THEN
-              IF (zcgs(I,K,J).LE.500.E2)THEN
-                FACTZ=0.
-              ELSE
-                FACTZ=1
-!               FACTZ=EXP(-(zcgs(I,K,J)-2.E5)/Z0IN)
-              END IF
-             CONCCCN_XZ=FACTZ*ACCN*(100.*DEL1IN)**BCCN
-
-             CONCDROP=0.D0
-
-             DO KR=1,NKR
-               CONCDROP=CONCDROP+FF1IN(KR)*XL(KR)
-             ENDDO
-
-             CONCDROP=CONCDROP*3.D0*COL
-             IF(CONCCCN_XZ.GT.CONCDROP) &
-     &       FF1IN(1)=FF1IN(1)+(CONCCCN_XZ-CONCDROP)/(3.D0*COL*XL(1))
-            END IF
-          ELSE
-            IF(DEL1IN.GT.0.OR.DEL2IN.GT.0)THEN
-             CALL JERNUCL01(FF1IN,FF2IN,FCCN &
-     &       ,XL,XI,TT,QQ &
-     &       ,rhocgs(I,K,J),pcgs(I,K,J) &
-     &       ,DEL1IN,DEL2IN &
-     &       ,COL,AA1_MY, BB1_MY, AA2_MY,BB2_MY &
-     &       ,C1_MEY,C2_MEY,SUP2_OLD,DSUPICE_XYZ(I,K,J) &
-     &       ,RCCN,DROPRADII,NKR,ICEMAX,ICEPROCS)
-            END IF
-          END IF
-          DO KR=1,NKR
-            DO ICE=1,ICEMAX
-             FF3R(KR)=FF3R(KR)+FF2IN(KR,ICE)
-             FF2IN(KR,ICE)=0.
-             FF2R(KR,ICE)=0.
-            END DO
-          END DO
-          DO KR=1,NKR
-            FF1R(KR)=FF1IN(KR)
-!           DO ICE=1,ICEMAX
-!            FF2R(KR,ICE)=FF2IN(KR,ICE)
-!           ENDDO
-          ENDDO
-          FMAX1=0.
-          FMAX2=0.
-          FMAX3=0.
-          FMAX4=0.
-          FMAX5=0.
-          DO KR=1,NKR
-            FF1IN(KR)=FF1R(KR)
-            FMAX1=AMAX1(FF1R(KR),FMAX1)
-            FF3IN(KR)=FF3R(KR)
-            FMAX3=AMAX1(FF3R(KR),FMAX3)
-            FF4IN(KR)=FF4R(KR)
-            FMAX4=AMAX1(FF4R(KR),FMAX4)
-            FF5IN(KR)=FF5R(KR)
-            FMAX5=AMAX1(FF5R(KR),FMAX5)
-            DO ICE=1,ICEMAX
-             FF2IN(KR,ICE)=FF2R(KR,ICE)
-             FMAX2=AMAX1(FF2R(KR,ICE),FMAX2)
-            END DO
-          END DO
-          ISYM1=0
-          ISYM2=0
-          ISYM3=0
-          ISYM4=0
-          ISYM5=0
-          IF(FMAX1.GT.0)ISYM1=1
-          IF (ICEPROCS.EQ.1)THEN
-           IF(FMAX2.GT.1.E-4)ISYM2=1
-           IF(FMAX3.GT.1.E-4)ISYM3=1
-           IF(FMAX4.GT.1.E-4)ISYM4=1
-           IF(FMAX5.GT.1.E-4)ISYM5=1
-          END IF
-! Avoid Diffusional Growth
-!         IF (T_OLD(I,K,J).GE.237)THEN     
-! Same temperature range as above.
-          IF (T_OLD(I,K,J).GT.233)THEN     
-          IF(ISYM1.EQ.1.AND.((TT-273.15).GT.-0.187.OR. &
-     &     (ISYM2.EQ.0.AND. &
-     &     ISYM3.EQ.0.AND.ISYM4.EQ.0.AND.ISYM5.EQ.0)))THEN
-           CALL ONECOND1(TT,QQ,PP,rhocgs(I,K,J) &
-     &      ,VR1,pcgs(I,K,J) &
-     &      ,DEL1IN,DEL2IN,DIV1,DIV2 &
-     &      ,FF1R,FF1IN,XL,RLEC,RO1BL &
-     &      ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
-     &      ,C1_MEY,C2_MEY &
-     &      ,COL,DTCOND,ICEMAX,NKR)
-          ELSE IF(ISYM1.EQ.0.AND.(TT-273.15).LE.-0.187.AND. &
-     &     (ISYM2.EQ.1.OR.ISYM3.EQ.1.OR.ISYM4.EQ.1.OR.ISYM5.EQ.1))THEN
-           CALL ONECOND2(TT,QQ,PP,rhocgs(I,K,J) &
-     &      ,VR2,VR3,VR4,VR5,pcgs(I,K,J) &
-     &      ,DEL1IN,DEL2IN,DIV1,DIV2 &
-     &      ,FF2R,FF2IN,XI,RIEC,RO2BL &
-     &      ,FF3R,FF3IN,XS,RSEC,RO3BL &
-     &      ,FF4R,FF4IN,XG,RGEC,RO4BL &
-     &      ,FF5R,FF5IN,XH,RHEC,RO5BL &
-     &      ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
-     &      ,C1_MEY,C2_MEY &
-     &      ,COL,DTCOND,ICEMAX,NKR &
-     &      ,ISYM2,ISYM3,ISYM4,ISYM5)
-          ELSE IF(ISYM1.EQ.1.AND.(TT-273.15).LE.-0.187.AND. &
-     &     (ISYM2.EQ.1.OR.ISYM3.EQ.1.OR.ISYM4.EQ.1 &
-     &     .OR.ISYM5.EQ.1))THEN
-           CALL ONECOND3(TT,QQ,PP,rhocgs(I,K,J) &
-     &      ,VR1,VR2,VR3,VR4,VR5,pcgs(I,K,J) &
-     &      ,DEL1IN,DEL2IN,DIV1,DIV2 &
-     &      ,FF1R,FF1IN,XL,RLEC,RO1BL &
-     &      ,FF2R,FF2IN,XI,RIEC,RO2BL &
-     &      ,FF3R,FF3IN,XS,RSEC,RO3BL &
-     &      ,FF4R,FF4IN,XG,RGEC,RO4BL &
-     &      ,FF5R,FF5IN,XH,RHEC,RO5BL &
-     &      ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
-     &      ,C1_MEY,C2_MEY &
-     &      ,COL,DTCOND,ICEMAX,NKR &
-     &      ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
-          END IF
-          DO KR=1,NKR
-            DO ICE=1,ICEMAX
-             FF3R(KR)=FF3R(KR)+FF2R(KR,ICE)
-             FF2R(KR,ICE)=0
-            END DO
-            FF4R(KR)=FF4R(KR)+FF5R(KR)
-            FF5R(KR)=0
-          END DO
-          END IF
-          END IF
-             IF (IKL.EQ.NCOND)CALL COAL_BOTT_NEW(FF1R,FF2R,FF3R, &
-     &       FF4R,FF5R,TT,QQ,PP,rhocgs(I,K,J),dt_coll,TCRIT,TTCOAL)
-         END DO
-         IF (DIFFU.EQ.0)THEN
-         th_phy(i,k,j) = tt_old/pi_phy(i,k,j)
-         qv(i,k,j)=qq_old
-    !     print*,'tt_old = ',tt_old
-    !     print*,'qq_old = ',qq_old
-         ELSE
-         th_phy(i,k,j) = tt/pi_phy(i,k,j)
-         qv(i,k,j)=qq
-         END IF
-        END IF
-! LIQIUD
-        IF (REMSAT.EQ.1)THEN
-        DO KR=1,NKR
-         FF1R(KR)=0.
-         FCCN(KR)=0
-         IF (ICEPROCS.EQ.1)THEN
-          FF2R(KR,1)=0.
-          FF2R(KR,2)=0.
-          FF2R(KR,3)=0.
-          FF3R(KR)=0.
-          FF4R(KR)=0.
-          FF5R(KR)=0.
-         END IF
-        END DO
-        END IF
-        KRR=0
-        DO KR=p_ff1i01,p_ff1i33
-          KRR=KRR+1
-          chem_new(I,K,J,KR)=FF1R(KRR)
-        END DO   
-! CCN
-        KRR=0
-        DO KR=p_ff8i01,p_ff8i33
-          KRR=KRR+1
-!         chem_new(I,K,J,KR)=FCCN(KRR)
-!         chem_new(I,K,J,KR)=FCCN(KRR)/RHOCGS(I,K,J)*XCCN(KRR)
-          chem_new(I,K,J,KR)=FCCN(KRR)
-        END DO
-        IF (ICEPROCS.EQ.1)THEN
-         KRR=0
-         DO KR=p_ff5i01,p_ff5i33
-          KRR=KRR+1
-!         chem_new(I,K,J,KR)=FF3R(KRR)
-!         chem_new(I,K,J,KR)=FF3R(KRR)*(1./RHOCGS(I,K,J))*COL*XS(KRR)*XS(KRR)*3
-          chem_new(I,K,J,KR)=FF3R(KRR)
-         END DO
-! Graupel
-         KRR=0
-         DO KR=p_ff6i01,p_ff6i33
-          KRR=KRR+1
-!         chem_new(I,K,J,KR)=FF4R(KRR)
-!         chem_new(I,K,J,KR)=FF4R(KRR)*(1./RHOCGS(I,K,J))*COL*XG(KRR)*XG(KRR)*3
-          chem_new(I,K,J,KR)=FF4R(KRR)
-         END DO
-        END IF
-      END DO
-      END DO
-      END DO
-      NKRO=1
-      NKRE=NKR
-      DO j = jts,jte
-      DO i = its,ite
-      DO k = kts,kte
-      rhocgs_z(k)=rhocgs(i,k,j)
-      pcgs_z(k)=pcgs(i,k,j)
-      zcgs_z(k)=zcgs(i,k,j)
-      krr=0
-      do kr=p_ff1i01,p_ff1i33
-       krr=krr+1
-       ffx_z(k,krr)=chem_new(i,k,j,kr)/rhocgs(i,k,j)
-      end do
-      end do
-      CALL FALFLUXHUCM(ffx_z,VR1,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
-      DO k = kts,kte
-      krr=0
-      do kr=p_ff1i01,p_ff1i33
-       krr=krr+1
-       chem_new(i,k,j,kr)=ffx_z(k,krr)*rhocgs(i,k,j)
-      end do
-      end do
-      if (iceprocs.eq.1)then
-      DO k = kts,kte
-      rhocgs_z(k)=rhocgs(i,k,j)
-      pcgs_z(k)=pcgs(i,k,j)
-      zcgs_z(k)=zcgs(i,k,j)
-      krr=0
-      do kr=p_ff5i01,p_ff5i33
-       krr=krr+1
-       ffx_z(k,krr)=chem_new(i,k,j,kr)/rhocgs(i,k,j)
-      end do
-      end do
-      CALL FALFLUXHUCM(ffx_z,VR3,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
-      DO k = kts,kte
-      krr=0
-      do kr=p_ff5i01,p_ff5i33
-       krr=krr+1
-       chem_new(i,k,j,kr)=ffx_z(k,krr)*rhocgs(i,k,j)
-      end do
-      end do
-      DO k = kts,kte
-      rhocgs_z(k)=rhocgs(i,k,j)
-      pcgs_z(k)=pcgs(i,k,j)
-      zcgs_z(k)=zcgs(i,k,j)
-      krr=0
-      do kr=p_ff6i01,p_ff6i33
-       krr=krr+1
-       ffx_z(k,krr)=chem_new(i,k,j,kr)/rhocgs(i,k,j)
-      end do
-      end do
-      CALL FALFLUXHUCM(ffx_z,VR4,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
-      DO k = kts,kte
-      krr=0
-      do kr=p_ff6i01,p_ff6i33
-       krr=krr+1
-       chem_new(i,k,j,kr)=ffx_z(k,krr)*rhocgs(i,k,j)
-      end do
-      end do
-!    &     ims,ime,jms,jme,kms,kme)
-      end if
-     end do 
-     end do 
-
-      gmax=0
-      qmax=0
-      imax=0
-      kmax=0
-      qnmax=0
-      inmax=0
-      knmax=0
-      DO j = jts,jte
-      DO i = its,ite
-      DO k = kts,kte
-      QC(I,K,J)=0
-      QR(I,K,J)=0
-!     QI(I,K,J)=0
-!     QIC(I,K,J)=0
-!     QIP(I,K,J)=0
-!     QID(I,K,J)=0
-      QI(I,K,J)=0
-      QS(I,K,J)=0
-      QG(I,K,J)=0
-      QNC(I,K,J)=0
-      QNR(I,K,J)=0
-      QNS(I,K,J)=0
-      QNG(I,K,J)=0
-      QNA(I,K,J)=0
-!     EFFR(I,K,J)=0
-!     if (mod(itimestep,t_print).eq.0)then
-      tt= th_phy(i,k,j)*pi_phy(i,k,j)
-      DO KR=1,NKR
-      COLREFLL(KR)=COEFREFLL
-      COLREFLI(KR)=COEFREFLI
-        IF(TT.GE.271.15.AND.TT.LE.273.15) THEN
-               COLREFLS(KR)=COEFREF00/0.09
-               COLREFLG(KR)=COEFREF00/RO4BL(KR)/RO4BL(KR)
-               COLREFLH(KR)=COEFREF00/RO5BL(KR)/RO5BL(KR)
-        ELSE
-               COLREFLS(KR)=COEFREFLI
-               COLREFLG(KR)=COEFREFLI
-               COLREFLH(KR)=COEFREFLI
-        ENDIF
-      END DO
-!     END IF
-      EFF_N=0.
-      EFF_D=0.
-      krr=0
-      DO kr= p_ff1i01,p_ff1i33
-          KRR=KRR+1
-        IF (KRR.LT.KRDROP)THEN
-          EFF_N=DROPRADII(KRR)**3*chem_new(i,k,j,KR)*XL(KRR)+EFF_N
-          EFF_D=DROPRADII(KRR)**2*chem_new(i,k,j,KR)*XL(KRR)+EFF_D
-          QC(I,K,J)=QC(I,K,J) &
-     &      +(1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XL(KRR)*XL(KRR)*3
-!          QNC(I,K,J)=QNC(I,K,J) &
-! J. Fan
-!     &      +COL*chem_new(I,K,J,KR)*XL(KR)*3
-           QNC(I,K,J)=QNC(I,K,J) &
-    &       +COL*chem_new(I,K,J,KR)*XL(KRR)*3/rhocgs(I,K,J)*1000. ! #/kg
-        ELSE
-          QR(I,K,J)=QR(I,K,J) &
-     &      +(1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XL(KRR)*XL(KRR)*3
-          QNR(I,K,J)=QNR(I,K,J) &
-     &      +COL*chem_new(I,K,J,KR)*XL(KRR)*3/rhocgs(I,K,J)*1000. ! #/kg by Fan
-        END IF
-      END DO
-!     IF(QC(I,K,J).GT.1.E-6.and.EFF_D.GT.0)THEN
-!         EFFR(I,K,J)=EFF_N/EFF_D
-!     END IF
-      KRR=0
-      IF (ICEPROCS.EQ.1)THEN
-       KRR=0
-       DO  KR=p_ff5i01,p_ff5i33
-        KRR=KRR+1
-        if (KRR.LE.KRICE)THEN
-        QI(I,K,J)=QI(I,K,J) &
-     &   +(1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3
-        ELSE
-        QS(I,K,J)=QS(I,K,J) &
-     &   +(1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3
-        END IF
-        QNS(I,K,J)=QNS(I,K,J) &
-!     &   +1000*COL*chem_new(I,K,J,KR)*XS(KRR)*3
-     &   +COL*chem_new(I,K,J,KR)*XS(KRR)*3/rhocgs(I,K,J)*1000. ! #/kg by Fan
-       END DO
-       KRR=0
-       DO  KR=p_ff6i01,p_ff6i33
-        KRR=KRR+1
-        QG(I,K,J)=QG(I,K,J) &
-     &   +(1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XG(KRR)*XG(KRR)*3
-        QNG(I,K,J)=QNG(I,K,J) &
-!     &   +1000*COL*chem_new(I,K,J,KR)*XG(KRR)*3
-     &   +COL*chem_new(I,K,J,KR)*XG(KRR)*3/rhocgs(I,K,J)*1000. ! #/kg by Fan
-       END DO
-      END IF
-       KRR=0
-       DO  KR=p_ff8i01,p_ff8i33
-        KRR=KRR+1
-        QNA(I,K,J)=QNA(I,K,J) &
-!     &   +COL*chem_new(I,K,J,KR)*3
-!  change by J.Fan
-     &   +COL*chem_new(I,K,J,KR)/rhocgs(I,K,J)*1000.   ! #/kg
-       END DO
-
-      END DO
-      END DO
-      END DO
-
-
-
-998   format(' ',10(f10.1,1x))
-      DO j = jts,jte
-      DO i = its,ite
-       krr=0
-       RAINNCV(I,J)=0.
-       SNOWNCV(I,J)=0.
-       GRAUPELNCV(I,J)=0.
-       DO KR=p_ff1i01,p_ff1i33
-        krr=krr+1
-        DELTAW=VR1(KRR)
-        RAINNC(I,J)=RAINNC(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XL(KRR)*XL(KRR)
-        RAINNCV(I,J)= RAINNCV(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XL(KRR)*XL(KRR)
-       END DO
-       KRR=0
-       DO KR= p_ff5i01,p_ff5i33
-        KRR=KRR+1
-        DELTAW=VR3(KRR)
-        RAINNC(I,J)=RAINNC(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
-        RAINNCV(I,J)=RAINNCV(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
-        SNOWNC(I,J)=SNOWNC(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
-        SNOWNCV(I,J)= SNOWNCV(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
-       END DO
-       KRR=0
-       DO KR=p_ff6i01,p_ff6i33
-        KRR=KRR+1
-        DELTAW=VR4(KRR)
-        RAINNC(I,J)=RAINNC(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
-        RAINNCV(I,J)=RAINNCV(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
-        GRAUPELNC(I,J)=GRAUPELNC(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
-        GRAUPELNCV(I,J)= GRAUPELNCV(I,J) &
-     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
-     &           chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
-       END DO
-      do k=kts,kte
-
-
-          qv1d(k)=qv(i,k,j)
-          qr1d(k)=qr(i,k,j)
-          nr1d(k)=qnr(i,k,j)
-          qs1d(k)=qs(i,k,j)
-          ns1d(k)=qns(i,k,j)
-          qg1d(k)=qg(i,k,j)
-          ng1d(k)=qng(i,k,j)
-          t1d(k)=th_phy(i,k,j)*pi_phy(i,k,j)
-          p1d(k)=P_PHY(I,K,J)
-       end do
-! wrf-chem
-
-!+---+-----------------------------------------------------------------+
-         IF ( PRESENT (diagflag) ) THEN
-         if (diagflag .and. do_radar_ref == 1) then
-          call refl10cm_hm (qv1d, qr1d, nr1d, qs1d, ns1d, qg1d, ng1d,   &
-                      t1d, p1d, dBZ, kts, kte, i, j)
-          do k = kts, kte
-             refl_10cm(i,k,j) = MAX(-35., dBZ(k))
-          enddo
-         endif
-         ENDIF
-         SR(I,J) = (SNOWNCV(I,J)+GRAUPELNCV(I,J))/(RAINNCV(I,J)+1.e-12)
-
-!     print*, i,j,rainnc(i,j)
-      END DO
-      END DO
-
-
-      do j=jts,jte
-      do k=kts,kte
-      do i=its,ite
-         th_old(i,k,j)=th_phy(i,k,j)
-         qv_old(i,k,j)=qv(i,k,j)
-      end do
-      end do
-      end do
-      if (conserv)then
-      DO j = jts,jte
-      DO i = its,ite
-      DO k = kts,kte
-      rhocgs(I,K,J)=rho_phy(I,K,J)*0.001
-      krr=0
-      DO KR=p_ff1i01,p_ff1i33
-        krr=krr+1
-       chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XL(KRR)*XL(KRR)*3.0
-      END DO
-      KRR=0
-      DO KR=p_ff5i01,p_ff5i33
-       KRR=KRR+1
-       chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XS(KRR)*XS(KRR)*3.0
-      END DO
-      KRR=0
-      DO KR=p_ff6i01,p_ff6i33
-       KRR=KRR+1
-       chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XG(KRR)*XG(KRR)*3.0
-      END DO
-      KRR=0
-      DO KR=p_ff8i01,p_ff8i33
-       KRR=KRR+1
-! change by Fan
-!       chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*XCCN(KRR)
-       chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*1000.          ! #/kg; remember chem_new for CCN is #/cm3, not #/(gcm-3)
-      END DO
-      END DO
-      END DO
-      END DO
-      END IF
-     
-      RETURN
-  END SUBROUTINE FAST_SBM
-      SUBROUTINE FALFLUXHUCM(chem_new,VR1,RHOCGS,PCGS,ZCGS,DT, &
-     &     kts,kte,nkr)
-      IMPLICIT NONE
-      INTEGER I,J,K,KR
-      INTEGER    kts,kte,nkr
-      REAL TFALL,DTFALL,VFALL(KTE),DWFLUX(KTE)
-      REAL DT
-      INTEGER IFALL,N,NSUB
-      REAL, DIMENSION( kts:kte,nkr ) :: chem_new 
-      REAL,  DIMENSION(kts:kte) :: rhocgs,pcgs,zcgs
-      REAL VR1(NKR)
-
-! FALLING FLUXES FOR EACH KIND OF CLOUD PARTICLES: C.G.S. UNIT
-! ADAPTED FROM GSFC CODE FOR HUCM
-!  The flux at k=1 is assumed to be the ground so FLUX(1) is the
-! flux into the ground. DWFLUX(1) is at the lowest half level where
-! Q(1) etc are defined. The formula for FLUX(1) uses Q(1) etc which
-! is actually half a grid level above it. This is what is meant by
-! an upstream method. Upstream in this case is above because the
-! velocity is downwards.      
-! USE UPSTREAM METHOD (VFALL IS POSITIVE)                 
-!        print*,'pcgs(i,k,j) = ',pcgs(100,10,1)
-!        print*,'pcgs(i,k,j) = ',pcgs(100,1,1)
-!      read(5,*)
-!        print*,'pcgs(i,k,j) = ',zcgs(100,10,1)
-!        print*,'pcgs(i,k,j) = ',zcgs(100,1,1)
-!      read(5,*)
-      DO KR=1,NKR
-       IFALL=0
-       DO k = kts,kte
-          IF(chem_new(K,KR).GE.1.E-10)IFALL=1
-       END DO 
-       IF (IFALL.EQ.1)THEN
-        TFALL=1.E10                
-        DO K=kts,kte
-         VFALL(K) = VR1(KR)*SQRT(1.E6/PCGS(K))
-!        if (krr.eq.20.or.krr.eq.33)then
-!        if (k.eq.5.or.k.eq.10.or.k.eq.20)then
-!        print*,'vr1(krr) = ',krr,vr1(krr)
-!        print*, 'SQRT(1.E6/PCGS(I,K,J)) = ',i,k,SQRT(1.E6/PCGS(I,K,J))
-!        print*,'vfall(k) = ',i,k,vfall(k)
-!        print*,'zcgs(k) = ',i,k,zcgs(i,k,j)
-!        read(5,*)
-!        end if
-!        end if
-         TFALL=AMIN1(TFALL,ZCGS(K)/(VFALL(K)+1.E-20))    
-!        print*,'tfall = ',i,k,tfall
-!        if (krr.eq.5.or.krr.eq.10.or.krr.eq.20.or.krr.eq.33)read(5,*)
-        END DO                                                 
-        IF(TFALL.GE.1.E10)call wrf_error_fatal("fatal error in module_mp_fast_sbm (TFALL.GE.1.E10), model stop")
-        NSUB=(INT(2.0*DT/TFALL)+1)                           
-        DTFALL=DT/NSUB                                      
-
-        DO N=1,NSUB                                    
-          DO K=KTS,KTE-1                               
-           DWFLUX(K)=-(RHOCGS(K)*VFALL(K)*chem_new(k,kr)- &
-     &     RHOCGS(K+1)* &
-     &     VFALL(K+1)*chem_new(K+1,KR))/(RHOCGS(K)*(ZCGS(K+1)- &
-     &      ZCGS(K)))    
-          END DO    
-! NO Z ABOVE TOP, SO USE THE SAME DELTAZ
-          DWFLUX(KTE)=-(RHOCGS(KTE)*VFALL(KTE)* & 
-     &       chem_new(kte,kr))/(RHOCGS(KTE)*(ZCGS(KTE)-ZCGS(KTE-1)))         
-          DO K=kts,kte                                         
-           chem_new(k,kr)=chem_new(k,kr)+DWFLUX(K)*DTFALL
-          END DO  
-        END DO  
-       END IF
-      END DO  
-      RETURN                                                                  
-      END SUBROUTINE FALFLUXHUCM                                                                    
-      SUBROUTINE FAST_HUCMINIT(DT)
-      IMPLICIT NONE
-      INTEGER IKERN_0,IKERN_Z,L0_REAL,L0_INTEGER,INEWMEY,INEST
-      INTEGER I,J,K,KR
-      REAL DT
-      INTEGER :: hujisbm_unit1
-      LOGICAL, PARAMETER :: PRINT_diag=.FALSE.
-      LOGICAL :: opened 
-      LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
-      CHARACTER*80 errmess
-      REAL PI
-      double precision ax
-      data pi/3.141592654/
-! dtime - timestep of integration (calculated in main program) :
-! ax - coefficient used for masses calculation 
-! ima(i,j) - k-category number, c(i,j) - courant number 
-
-        REAL C1(NKR,NKR)
-! DON'T NEED ALL THESE VARIABLES: STILL NEED EDITING
-       INTEGER ICE,KGRAN,IPRINT01
-       REAL TWSIN,TWCIN,TWNUC,XF5,XF4,XF3,CONCHIN,CONCGIN,CONCSIN, &
-     & CONCCLIN,TWHIN,RADH,RADS,RADG,RADL,CONCLIN,A1_MY,A2,A2_MY,XLK, &
-     & A1N,A3_MY,A3,A1_MYN,R0CCN,X0DROP,DEG01,CONTCCNIN,CONCCCNIN, &
-     & A,B,X0CCN,S_KR,RCCNKR,R0,X0,TWCALLIN,A1,RCCNKR_CM,SUMIIN,TWGIN, &
-     & XF1N,XF1,WC1N,RF1N,WNUC,RNUC,WC5,RF5, &
-     & WC4,RF4,WC3,RF3,WC1,RF1,SMAX
-       REAL TWIIN(ICEMAX)
-       REAL RO_SOLUTE      
-       REAL A_FALL,B_FALL
-       real graupel_fall(nkr)
-       data graupel_fall/0.36840E-01,0.57471E-01,0.88417E-01,0.13999E+00,&
-     &  0.22841E+00,0.36104E+00,0.56734E+00, 0.88417E+00, 0.13999E+01,&
-     &  0.22104E+01, 0.35367E+01, 0.54524E+01, 0.81049E+01,0.12526E+02,&
-     &  0.19157E+02, 0.27262E+02, 0.34627E+02, 0.39776E+02,0.45690E+02,& 
-     &  0.52485E+02, 0.60289E+02, 0.69254E+02, 0.10000E+03, 0.15429E+03,&
-     &  0.18561E+03, 0.22329E+03, 0.26863E+03,  0.32316E+03,0.38877E+03,& 
-     &  0.46770E+03, 0.56266E+03, 0.67690E+03,  0.81432E+03/
-
-       PARAMETER (RO_SOLUTE=2.16)
-       INTEGER KR_MIN,KR_MIN1,KR_MAX
-       REAL RADCCN_MIN,RADCCN_MIN1,RADCCN_MAX
-     REAL  ::      RHOSU       ! STANDARD AIR DENSITY AT 850 MB
-     REAL ::      RHOW        ! DENSITY OF LIQUID WATER
-     REAL ::      RHOI        ! BULK DENSITY OF CLOUD ICE
-     REAL ::      RHOSN       ! BULK DENSITY OF SNOW
-     REAL ::      RHOG        ! BULK DENSITY OF GRAUPEL
-     REAL ::      CI,DI,CS,DS,CG,DG ! SIZE DISTRIBUTION PARAMETERS FOR CLOUD ICE, SNOW, GRAUPE
-
-       REAL FR_CON,FR_MAR
-       FR_MAR=1.0
-!      FR_CON=1-FR_MAR
-       FR_CON=1.0
- !       PRINT*, 'INITIALIZING HUCM'  
-!	print *, ' ****** HUCM *******'
-       call wrf_message("SBM FAST: INITIALIZING HUCM")
-
-! INPUT :
-        dlnr=dlog(2.d0)/(3.d0*scal)
-!     print*,'here in hucmint 1'
-!
-!--- Read in various lookup tables
-!
-    !    print*,'wrf_dm_on_monitor() =',wrf_dm_on_monitor() 
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2061
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2061     CONTINUE
-        ENDIF
-!
-!     print*,'here in hucmint 2',hujisbm_unit1
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!     print*,'here in hucmint 3',hujisbm_unit1
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-!       print*,'here at 1'
-!      print*,'here in hucmint 4'
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="capacity.asc",                  &
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-
-  900	FORMAT(6E13.5)
-	READ(hujisbm_unit1,900) RLEC,RIEC,RSEC,RGEC,RHEC
-	CLOSE(hujisbm_unit1)
-!     print*,'here in hucmint 5'
-        END IF
-        CALL wrf_dm_bcast_bytes ( RLEC , size ( RLEC ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( RIEC , size ( RIEC ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( RSEC , size ( RSEC ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( RGEC , size ( RGEC ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( RHEC , size ( RHEC ) * RWORDSIZE )
-! MASSES :
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2062
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2062     CONTINUE
-        ENDIF
-!
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="masses.asc",                  &
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-	READ(hujisbm_unit1,900) XL,XI,XS,XG,XH          
-	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file2: succesfull *******'
-        call wrf_message("SBM FAST: file2: succesfull")
-        ENDIF
-        CALL wrf_dm_bcast_bytes ( XL , size ( XL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( XI , size ( XI ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( XS , size ( XS ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( XG , size ( XG ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( XH , size ( XH ) * RWORDSIZE )
-! TERMINAL VELOSITY :
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2063
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2063     CONTINUE
-        ENDIF
-!
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="termvels.asc",                  &
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-	READ(hujisbm_unit1,900) VR1,VR2,VR3,VR4,VR5     
-	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file3: succesfull *******'
-        call wrf_message("SBM FAST: file3: succesfull")
-        ENDIF
-        CALL wrf_dm_bcast_bytes ( VR1 , size ( VR1 ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( VR2 , size ( VR2 ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( VR3 , size ( VR3 ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( VR4 , size ( VR4 ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( VR5 , size ( VR5 ) * RWORDSIZE )
-! CHANGE FALL VELOCITY OF GRAUPEL
-        DO KR=1,NKR
-!        A=RADXXO(KR,6)
-!        B=RADXXO(KR,7)
-         if (kr.le.17)then
-          A_FALL=1
-          B_FALL=0
-         else
-          B_FALL=1
-          A_FALL=0
-         end if
-  
-!        VR4(KR)=A_FALL*VR4(KR)+B_FALL*VR5(KR)
-!        print*,'vr4,vr5,graupel_fall=',vr3(kr),vr5(kr),graupel_fall(kr)
-         VR4(KR)=graupel_fall(kr)
-        END DO
- 
-! CONSTANTS :
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2065
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2065     CONTINUE
-        ENDIF
-!
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="constants.asc",                  &
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-	READ(hujisbm_unit1,900) SLIC,TLIC,COEFIN,C2,C3,C4
-	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file4: succesfull *******'
-        call wrf_message("SBM FAST: file4: succesfull")
-        END IF
-        CALL wrf_dm_bcast_bytes ( SLIC , size ( SLIC ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( TLIC , size ( TLIC ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( COEFIN , size ( COEFIN ) * RWORDSIZE )
-!       CALL wrf_dm_bcast_bytes ( C2 , size ( C2 ) * RWORDSIZE )
-!       CALL wrf_dm_bcast_bytes ( C3 , size ( C3 ) * RWORDSIZE )
-!       CALL wrf_dm_bcast_bytes ( C4 , size ( C4 ) * RWORDSIZE )
-! CONSTANTS :
-! KERNELS DEPENDING ON PRESSURE :
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2066
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2066     CONTINUE
-        ENDIF
-!
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="kernels_z.asc",                  &
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-        READ(hujisbm_unit1,900)  &
-     &  YWLL_1000MB,YWLL_750MB,YWLL_500MB
-	CLOSE(hujisbm_unit1)
-        END IF
-        CALL wrf_dm_bcast_bytes ( YWLL_1000MB , size ( YWLL_1000MB ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWLL_750MB , size ( YWLL_750MB ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWLL_500MB , size ( YWLL_500MB ) * RWORDSIZE )
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2067
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2067     CONTINUE
-        ENDIF
-!
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="kernels.asc_s_0_03_0_9",                  &
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-! KERNELS NOT DEPENDING ON PRESSURE :
-	READ(hujisbm_unit1,900) &
-     &  YWLL,YWLI,YWLS,YWLG,YWLH, &
-     &  YWIL,YWII,YWIS,YWIG,YWIH, &
-     &  YWSL,YWSI,YWSS,YWSG,YWSH, &
-     &  YWGL,YWGI,YWGS,YWGG,YWGH, &
-     &  YWHL,YWHI,YWHS,YWHG,YWHH
-       close (hujisbm_unit1)
-        END IF
-        CALL wrf_dm_bcast_bytes ( YWLL , size ( YWLL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWLI , size ( YWLI ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWLS , size ( YWLS ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWLG , size ( YWLG ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWLH , size ( YWLH ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWIL , size ( YWIL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWII , size ( YWII ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWIS , size ( YWIS ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWIG , size ( YWIG ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWIH , size ( YWIH ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWSL , size ( YWSL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWSI , size ( YWSI ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWSS , size ( YWSS ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWSG , size ( YWSG ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWSH , size ( YWSH ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWGL , size ( YWGL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWGI , size ( YWGI ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWGS , size ( YWGS ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWGG , size ( YWGG ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWGH , size ( YWGH ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWHL , size ( YWHL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWHI , size ( YWHI ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWHS , size ( YWHS ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWHG , size ( YWHG ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( YWHH , size ( YWHH ) * RWORDSIZE )
-! BULKDENSITY :
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2068
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2068     CONTINUE
-        ENDIF
-!
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="bulkdens.asc_s_0_03_0_9",         & 
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-	READ(hujisbm_unit1,900) RO1BL,RO2BL,RO3BL,RO4BL,RO5BL
-	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file6: succesfull *******'
-        call wrf_message("SBM FAST: file6: succesfull")
-        END IF
-        CALL wrf_dm_bcast_bytes (RO1BL  , size ( RO1BL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes (RO2BL  , size ( RO2BL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes (RO3BL  , size ( RO3BL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes (RO4BL  , size ( RO4BL ) * RWORDSIZE )
-        CALL wrf_dm_bcast_bytes (RO5BL  , size ( RO5BL ) * RWORDSIZE )
-! BULKRADIUS
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2069
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2069     CONTINUE
-        ENDIF
-!
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="bulkradii.asc_s_0_03_0_9",         & 
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-	READ(hujisbm_unit1,*) RADXXO
-	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file7: succesfull *******'
-        call wrf_message("SBM FAST: file7: succesfull")
-!	PRINT *, '******* Hebrew Univ Cloud model-HUCM *******'
-        call wrf_message("SBM FAST: Hebrew Univ Cloud model-HUCM")
-
-        END IF
-        CALL wrf_dm_bcast_bytes (RADXXO  , size ( RADXXO ) * RWORDSIZE )
-! calculation of the mass(in mg) for categories boundaries :
-        ax=2.d0**(1.0/scal)
-        xl_mg(1)=0.3351d-7
-	do i=2,nkr
-           xl_mg(i)=ax*xl_mg(i-1)
-!        if (i.eq.22)print*,'printing xl_mg = ',xl_mg(22)
-        enddo
-	do i=1,nkr
-           xs_mg(i)=xs(i)*1.e3
-           xg_mg(i)=xg(i)*1.e3
-           xh_mg(i)=xh(i)*1.e3
-           xi1_mg(i)=xi(i,1)*1.e3
-           xi2_mg(i)=xi(i,2)*1.e3
-           xi3_mg(i)=xi(i,3)*1.e3
-        enddo
-! calculation of c(i,j) and ima(i,j) :
-! ima(i,j) - k-category number, c(i,j) - courant number 
-!       print*, 'calling courant_bott'
-        call courant_bott
-!       print*, 'called courant_bott'
- 
-
-	DEG01=1./3.
-
-!------------------------------------------------------------------
-
-!       print*,'XL(ICCN) = ',ICCN,XL
-	X0DROP=XL(ICCN)
-!       print*,'X0DROP = ',X0DROP
-	X0CCN =X0DROP/(2.**(NKR-1))
-	R0CCN =(3.*X0CCN/4./3.141593/ROCCN0)**DEG01
-!------------------------------------------------------------------
-! THIS TEXT FROM TWOINITM.F_203
-!------------------------------------------------------------------
-! TEMPERATURA IN SURFACE LAYER EQUAL 15 Celsius(288.15 K)  
-        A=3.3E-05/288.15
-        B=2.*4.3/(22.9+35.5)
-        B=B*(4./3.)*3.14*RO_SOLUTE
-        A1=2.*(A/3.)**1.5/SQRT(B)
-        A2=A1*100.
-!------------------------------------------------------------------
-	CONCCCNIN=0.
-	CONTCCNIN=0.
-	DO KR=1,NKR
-           DROPRADII(KR)=(3.*XL(KR)/4./3.141593/1.)**DEG01
-        ENDDO
-	DO KR=1,NKR
-!          print*,'ROCCN0 = ',ROCCN0
-!          print*, 'X0CCN = ',X0CCN 
-!          print*, 'DEG01 = ',DEG01
-	   ROCCN(KR)=ROCCN0
-	   X0=X0CCN*2.**(KR-1)
-	   R0=(3.*X0/4./3.141593/ROCCN(KR))**DEG01
-	   XCCN(KR)=X0
-	   RCCN(KR)=R0
-!          print*,'RCCN(KR)= ', KR,RCCN(KR)
-           RCCNKR_CM=R0
-! CCN SPECTRUM 
-
-           S_KR=A2/RCCNKR_CM**1.5
-           ACCN=ACCN_CON
-           BCCN=BCCN_CON
-!          print*,'accn, bccn,S_KR = ',accn,bccn,S_KR
-!  CONTINENTAL
-           FCCNR(KR)=1.5*ACCN*BCCN*S_KR**BCCN
-           FCCNR_CON(KR)=FCCNR(KR)
-!  MARITIME
-           ACCN=ACCN_MAR
-           BCCN=BCCN_MAR
-           FCCNR(KR)=1.5*ACCN*BCCN*S_KR**BCCN
-           FCCNR_MAR(KR)=FCCNR(KR)
-
-	     CONTCCNIN=CONTCCNIN+COL*FCCNR(KR)*R0*R0*R0
-             CONCCCNIN=CONCCCNIN+COL*FCCNR(KR)
+if (i_break_method==1) then
+ 	DO KR=1,NKR
+		 prob(kr)=2.94d-7*dexp(34.0d0*DROPRADII(kr))
 	ENDDO
-!PRINT *, '********* MAR CCN CONCENTRATION & MASS *******'
-!	PRINT 200, CONCCCNIN,CONTCCNIN
-! CALCULATION OF FINAL MARITIME
-!RCCN(KR)=            1  1.2303877E-07
-!RCCN(KR)=            2  1.5501914E-07
-!RCCN(KR)=            3  1.9531187E-07
-!RCCN(KR)=           16  3.9372408E-06
-!RCCN(KR)=           21  1.2499960E-05
-!RCCN(KR)=           33  1.9999935E-04
-        RADCCN_MAX=RCCN(NKR)
-        RADCCN_MIN=0.005E-4         
-        RADCCN_MIN1=0.02E-4         
-!       print*,'ALOG(RADCCN_MIN) = ',ALOG(RADCCN_MIN)
-!       print*,'ALOG(RCCN(1) = ',ALOG(RCCN(1))
-!       print*,'ALOG(RADCCN_MAX) = ',ALOG(RADCCN_MAX)
-!       KR_MIN=(ALOG(RADCCN_MIN)-ALOG(RCCN(1)))/(3.*ALOG(2.))+1.
-!       KR_MIN1=(ALOG(RADCCN_MIN1)-ALOG(RCCN(1)))/(3.*ALOG(2.))+1.
-        KR_MIN=1.+ 3*(ALOG(RADCCN_MIN)- ALOG(R0CCN))/ALOG(2.)
-        KR_MIN1=1.+3*(ALOG(RADCCN_MIN1)- ALOG(R0CCN))/ALOG(2.)
-!       KR_MAX=(ALOG(RADCCN_MAX)-ALOG(RCCN(1)))/(3.*ALOG(2.))+1.
-        KR_MAX=1.+3.*(ALOG(RADCCN_MAX)- ALOG(R0CCN))/ALOG(2.)
-        KR_MIN=MAX(KR_MIN,1)
-        KR_MIN1=MAX(KR_MIN,KR_MIN1)
-        KR_MAX=MIN(NKR,KR_MAX)
-!       print*,'kr_min,kr_min1 = ',kr_min,kr_min1
-!       print*,'kr_max = ',kr_max
-! Interpolation
-        DO KR=1,NKR
-        IF (kr.ge.kr_min.and.kr.lt.kr_min1)then
-           FCCNR_MAR(KR)=FCCNR_MAR(KR_MIN1)* &
-     &      (ALOG(RCCN(KR))-ALOG(RCCN(KR_MIN)))/ &
-     &      (ALOG(RCCN(KR_MIN1))-ALOG(RCCN(KR_MIN)))
+else if  (i_break_method==2) then
+ 	DO KR=1,NKR
+		 prob(kr)=0.155d-3*dexp(1.466d0*10.0d0*DROPRADII(kr))
+ 	ENDDO
+endif
 
-        END IF
-        IF (KR.GT.KR_MAX.OR.KR.LT.KR_MIN)FCCNR_MAR(KR)=0
-!          print*,'FCCNR_MAR(KR) = ',KR,FCCNR_MAR(KR)
-        END DO
-! CALCULATION OF FINAL CONTINENTAL
-        RADCCN_MAX=0.6E-4
-        RADCCN_MIN=0.005E-4         
-        RADCCN_MIN1=0.02E-4         
-!       KR_MIN=(ALOG(RADCCN_MIN)-ALOG(RCCN(1)))/(3.*ALOG(2.))+1.
-!       KR_MIN1=(ALOG(RADCCN_MIN1)-ALOG(RCCN(1)))/(3.*ALOG(2.))+1.
-        KR_MIN=1.+ 3*(ALOG(RADCCN_MIN)- ALOG(R0CCN))/ALOG(2.)
-        KR_MIN1=1.+3*(ALOG(RADCCN_MIN1)- ALOG(R0CCN))/ALOG(2.)
-!       KR_MAX=(ALOG(RADCCN_MAX)-ALOG(RCCN(1)))/(3.*ALOG(2.))+1.
-        KR_MAX=1.+3.*(ALOG(RADCCN_MAX)- ALOG(R0CCN))/ALOG(2.)
-        KR_MIN=MAX(KR_MIN,1)
-        KR_MIN1=MAX(KR_MIN,KR_MIN1)
-        KR_MAX=MIN(NKR,KR_MAX)
-!       print*,'contin kr_min,kr_min1 = ',kr_min,kr_min1
-!       print*,'kr_max = ',kr_max
-! Interpolation
-        DO KR=1,NKR
-        IF (kr.ge.kr_min.and.kr.lt.kr_min1)then
-           FCCNR_CON(KR)=FCCNR_CON(KR_MIN1)* &
-     &      (ALOG(RCCN(KR))-ALOG(RCCN(KR_MIN)))/ &
-     &      (ALOG(RCCN(KR_MIN1))-ALOG(RCCN(KR_MIN)))
-        END IF
-        IF (KR.GT.KR_MAX.OR.KR.LT.KR_MIN)FCCNR_CON(KR)=0
-!          print*,'FCCNR_CON(KR) = ',KR,FCCNR_CON(KR)
-        END DO
-! CALCULATION OF MIXTURE
-        DO KR=1,NKR
-         FCCNR_MIX(KR)=FR_CON*FCCNR_CON(KR)+FR_MAR*FCCNR_MAR(KR)
-!        print*,'FCCNR_MIX(KR) = ',FCCNR_MIX(KR)
-        END DO
+!DO KR=1,NKR
+!  prob(kr)=2.94d-7*dexp(34.0d0*DROPRADII_dp(kr))*dtime_spon_break
+!  IF (prob(kr)>=1.0d0) exit
+!END DO
 
+DO j=ikr_spon_break,nkr
+	DO i=1,j-1
+		gain_var(j,i)=(145.37d0/xl_dp(i))*(dropradii_dp(i)/dropradii_dp(j))*dexp(-7.0d0*dropradii_dp(i)/dropradii_dp(j))
+		!gain_var_new(j,i)=gain_var(j,i)*xl(j)/(gain_var(j,i)*xl(i)**2.0d0)
+		nnd(j,i)=gamma*dexp(-gamma*diameter(i))/(1-dexp(-gamma*diameter(j)))
+	END DO
+END DO
+! Calculation the ratio that leads to mass conservation
+q_m = 0.0
+DO i=1,ikr_spon_break-1
+  !nnd_m = nnd_m+nnd(ikr_spon_break,i)*m(i);
+   q_m = q_m + gain_var(ikr_spon_break,i)*xl_dp(i)**2;
+END DO
+ratio_new = q_m/xl_dp(ikr_spon_break)
+ ! print*, 'ikr_spon_break,q_m,xl(ikr_spon_break),ratio_new'
+ ! print*,  ikr_spon_break,q_m,xl(ikr_spon_break),ratio_new
+ DO j=ikr_spon_break,nkr
+ 	DO i=1,j-1
+  	gain_var_new(j,i) = gain_var(j,i)/ratio_new
+ 	END DO
+ END DO
 
-         CALL BREAKINIT
-!        CALL TWOINITMXVAR
+ RETURN
+ End Subroutine Spontanous_Init
+! +-----------------------------------------------------------------------------+
+! i_break_method=1: Spontaneous breakup according to Srivastava1971_JAS -
+! Size distribution od raindrops generated by their breakup and coalescence
+! i_break_method=2: Spontaneous breakup according to Kamra et al 1991 JGR -
+! SPONTANEOUS BREAKUP OF CHARGED AND UNCHARGED WATER DROPS FREELY SUSPENDED IN A WIND TUNNEL
+! Eyal's new changes (29/3/15)    (start)
+! Description of variables       (start)
+! FF1R(KR), 1/g/cm3 - non conservative drop size distribution
+! XL(kr), g - Mass of liquid drops
+! prob, dimensionless - probability for breakup
+! dropconc_bf(kr), cm^-3 - drops concentration before breakup
+! dropconc_af(kr), cm^-3 - drops concentration before breakup
+! drops_break(kr), cm^-3 - concentration of breaking drops
+! Description of variables       (end)
 
-!	PRINT *, '**** MIN CCN RADIUS,MASS & DENSITY ***'
-!	PRINT 200, R0CCN,X0CCN,ROCCN0
-!	PRINT *, '*********  CONT CCN CONCENTRATION & MASS *******'
-!	PRINT 200, CONCCCNIN,CONTCCNIN
-!	PRINT *, '*********  DROP RADII *******'
-!	PRINT 200, DROPRADII
-!	PRINT *, '*********  CCN RADII *******'
-!	PRINT 200, RCCN
-!	PRINT *, '********* CCN MASSES *******'
-!	PRINT 200, XCCN
-!	PRINT *, '********* INITIAL CCN DISTRIBUTION *******'
-        
-     
+  SUBROUTINE Spont_Rain_BreakUp (DTwrf, FF1R, XL, Prob, Gain_Var_New, NND, NKR, ikr_spon_break)
 
-!	IF(IPRINT01.NE.0) THEN
+  implicit none
 
-!  PRINT *, '******** INITIAL: TWC,TWI(ICEMAX),TWS ********'
-!  PRINT 300, TWCIN,TWIIN,TWSIN
-!  PRINT *, '******** INITIAL: CONCLIN ********'
-!  PRINT 300, CONCLIN
+  integer,intent(in) :: NKR, IKR_Spon_Break
+  real(kind=r8size),intent(INOUT) :: FF1R(:)
+  real(kind=r8size),intent(IN) ::XL(:),Prob(:),Gain_Var_New(:,:),NND(:,:)
+  real(kind=r4size),intent(in) :: DTwrf
 
-! IN CASE : IPRINT01.NE.0
+! ... Local
+  real(kind=r8size) :: dm, deg01, tmp_1, tmp_2, tmp_3
+  real(kind=r8size),dimension(nkr) :: dropconc_bf, dropconc_af, drops_break, psi1, dropradii
+  integer :: kr,i,imax,j
+  real(kind=r4size) :: start_time, end_time, dtime_spon_break
+! ... Local
 
-!	ENDIF
+ dtime_spon_break = DTwrf
 
-  100	FORMAT(10I4)
-  101   FORMAT(3X,F7.5,E13.5)
-  102	FORMAT(4E12.4)
-  105	FORMAT(A48)
-  106	FORMAT(A80)
-  123	FORMAT(3E12.4,3I4)
-  200	FORMAT(6E13.5)
-  201   FORMAT(6D13.5)
-  300	FORMAT(8E14.6) 
-  301   FORMAT(3X,F8.3,3X,E13.5)
-  302   FORMAT(5E13.5)
-!       if (IFREST)THEN
-!       dtime=dt*0.5
-!       else
-!       END IF
-        call kernals(dt)
-! from morr_two_moment
-!..Set these variables needed for computing radar reflectivity.  These
-!.. get used within radar_init to create other variables used in the
-!.. radar module.
-! SIZE DISTRIBUTION PARAMETERS
-         RHOW = 997.
-         RHOI = 500.
-         RHOSN = 100.
-!        IF (IHAIL.EQ.0) THEN
-!        RHOG = 400.
-!        ELSE
-!        RHOG = 900.
-!        END IF
-         RHOG=450
+  DEG01 = 1.0/3.0
+  DO KR=1,NKR
+     DROPRADII(KR)=(3.*XL(KR)/4./3.141593/1.)**DEG01
+  ENDDO
 
+  if(SUM(FF1R) <= nkr*1.D-30) return
 
-         CI = RHOI*PI_MORR/6.
-         DI = 3.
-         CS = RHOSN*PI_MORR/6.
-         DS = 3.
-         CG = RHOG*PI_MORR/6.
-         DG = 3.
+  imax=nkr
+  do i=nkr,1,-1
+     imax=i
+     if (FF1R(i) > 0.0D0) exit
+  enddo
 
+  if (imax<ikr_spon_break) return
 
-         xam_r = PI_MORR*RHOW/6.
-         xbm_r = 3.
-         xmu_r = 0.
-         xam_s = CS
-         xbm_s = DS
-         xmu_s = 0.
-         xam_g = CG
-         xbm_g = DG
-         xmu_g = 0.
+! Initialization        (start)
+  psi1(:)=ff1r(:)
+  drops_break(:)=0.0d0
+  dropconc_bf(:)=0.0d0
 
-         call radar_init
+! b) Calculation of concentration of raindrops in all bins
+  do kr=1,imax
+     dm=3.0d0*col*xl(kr)
+     dropconc_bf(kr)=dropconc_bf(kr)+dm*psi1(kr)
+  enddo
+  dropconc_af(:)=dropconc_bf(:)
 
-        return
-2070  continue
-      WRITE( errmess , '(A,I4)' )                                        &
-       'module_mp_fast_sbm: error opening hujisbm_DATA on unit '          &
-     &, hujisbm_unit1
-      CALL wrf_error_fatal(errmess)
-        end  subroutine fast_hucminit
-      SUBROUTINE BREAKINIT
-      IMPLICIT NONE
-      INTEGER :: hujisbm_unit1
-      LOGICAL, PARAMETER :: PRINT_diag=.FALSE.
-      LOGICAL :: opened 
-      LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
-      CHARACTER*80 errmess
-!.....INPUT VARIABLES
+! c+d) Calculation of number of breaking drops  and the concentration of drops remaining in particular bin
+
+  do kr=imax,ikr_spon_break,-1
+    !dropconc_af(kr)=dropconc_bf(kr)/(1+prob(kr)*dtime_spon_break)
+		tmp_1 = prob(kr)*dtime_spon_break ! [KS, 18thJan18] >> the time was added here and not in the initialization
+		tmp_2 = dexp(-tmp_1)
+		tmp_3 = dropconc_bf(kr)
+		dropconc_af(kr) = tmp_2*tmp_3
+		!dropconc_af(kr) = dexp(-dtime_spon_break*prob(kr))*dropconc_bf(kr)
+    drops_break(kr) = dropconc_bf(kr)-dropconc_af(kr)
+    !if (dropconc_af(kr)<0.0d0) stop 'Spontaneous breakup'
+  enddo
+
+! e) Recalculation of DSD in bin j using new concentration
+!        do kr=ikr_spon_break,imax
+!           dm=3.0D0*col*xl(kr)
+!           psi1(kr)=psi1(kr)-drops_break(kr)/dm
+!        enddo
+
+! f+g) Redistributing and calculations drops concentration over smaller (i<j) bins
 !
-!     GT    : MASS DISTRIBUTION FUNCTION
-!     XT_MG : MASS OF BIN IN MG
-!     JMAX  : NUMBER OF BINS
+  select case (i_break_method)
+  case(1)
+  do j=ikr_spon_break,imax
+       do i=1,j-1
+            dropconc_af(i)=dropconc_af(i)+drops_break(j)*gain_var_new(j,i)*xl(i)
+        enddo
+  enddo
+
+  case(2)
+  do j=ikr_spon_break,imax
+       do i=1,j-1
+	   		dropconc_af(i)=dropconc_af(i)+drops_break(j)*gain_var_new(j,i)*xl(i)
+            !dropconc_af(i)=dropconc_af(i)+drops_break(j)*nnd(j,i)
+        enddo
+  enddo
+end select
+
+! h) recalculation of DSD in bins kr using new concentrations
+
+  do kr=1,imax
+	   dm=3.0D0*col*xl(kr)
+	   psi1(kr)=dropconc_af(kr)/dm
+  enddo
+
+  ff1r(:)=psi1(:)
+! 200   FORMAT(1X,I2,2X,5D13.5)
+! Eyal's new changes (29/3/15)    (end)
+
+  RETURN
+  END SUBROUTINE Spont_Rain_BreakUp
+! +-------------------------------------------+
+	SUBROUTINE BreakUp_Snow (Tin,F,FL,X,RF,NKR)
+
+	IMPLICIT NONE
+
+	INTEGER,INTENT(in) :: NKR
+	real(kind=r8size),INTENT(inout) :: F(:),FL(:),RF(:)
+	real(kind=r8size),INTENT(in) :: X(:)
+	real(kind=r4size),INTENT(in) :: Tin
+
+! ... Locals
+	real(kind=r8size) :: G(NKR),GLW(NKR),GRM(NKR),DEL_GLW(NKR),DEL_GRM(NKR), BREAK_SNOW(NKR), &
+						           A,GLW_MAX, FLW_MAX, GRM_MAX, FRM_MAX, GMAX
+	INTEGER :: KR,K,KMAX,KMIN
+! ... Locals
+
+	DO KR=1,NKR
+	   BREAK_SNOW(KR)=0.0D0
+	END DO
+
+   if (KR_SNOW_MAX  <=NKR) BREAK_SNOW(KR_SNOW_MAX) = BREAK_SNOW_KRMAX_0
+   if (KR_SNOW_MAX-1<=NKR) BREAK_SNOW(KR_SNOW_MAX-1) = BREAK_SNOW_KRMAX_1
+  !if (KR_SNOW_MAX-2<=NKR) BREAK_SNOW(KR_SNOW_MAX-2) = BREAK_SNOW_KRMAX_2
+  !if (KR_SNOW_MAX-3<=NKR) BREAK_SNOW(KR_SNOW_MAX-3) = BREAK_SNOW_KRMAX_3
+
+	DO K=1,NKR
+		G(K)=0.0D0
+		GLW(K)=0.0D0
+		GRM(K)=0.0D0
+		DEL_GLW(K)=0.0D0
+		DEL_GRM(K)=0.0D0
+	END DO
+
+	KMAX=KR_SNOW_MAX
+	KMIN=KR_SNOW_MIN
+
+	A=X(KMAX)*X(KMAX)
+
+	GLW_MAX=0.0D0
+
+	DO K=KMAX+1,NKR
+   		GLW_MAX=GLW_MAX+X(K)*X(K)*F(K)*FL(K)
+	ENDDO
+
+	GLW_MAX=GLW_MAX+A*F(KMAX)*FL(KMAX)
+
+	FLW_MAX=GLW_MAX/A
+
+	GRM_MAX=0.0D0
+
+	DO K=KMAX+1,NKR
+   		GRM_MAX=GRM_MAX+X(K)*X(K)*F(K)*(1.0D0-FL(K))*RF(K)
+	ENDDO
+
+	GRM_MAX=GRM_MAX+A*F(KMAX)*(1.0D0-FL(KMAX))*RF(KMAX)
+
+	FRM_MAX=GRM_MAX/A
+
+	GMAX=0.0D0
+
+	DO K=KMAX+1,NKR
+   		GMAX=GMAX+X(K)*X(K)*F(K)
+	ENDDO
+
+	GMAX=GMAX+A*F(KMAX)
+
+	F(KMAX) = GMAX/A
+
+	!FL(KMAX)=FLW_MAX/F(KMAX)
+
+	IF (F(KMAX) .lt. 1.0E-20)then
+	   if(TIN > 273.15)then
+        FL(kmax) = 1.0d0
+        RF(kmax) = 0.0d0
+	   else
+        FL(kmax) = 0.0d0
+        RF(kmax) = 1.0d0
+	   endif
+	ELSE
+	   if(TIN > 273.15)then
+		   RF(KMAX) = 0.0
+       FL(KMAX) = FLW_MAX/F(KMAX)
+	  else
+       FL(KMAX) = 0.0
+       RF(KMAX) = FRM_MAX/F(KMAX)/(1.0D0-FL(KMAX))
+	   endif
+	END IF
+
+	DO K=KMAX+1,NKR
+		F(K)=0.0D0
+		if(TIN > 273.15)then
+		  RF(K) = 0.0D0
+		  FL(K) = 1.0D0
+		else
+		  RF(K) = 1.0D0
+		  FL(K) = 0.0D0
+		endif
+	ENDDO
+
+	G(KMAX)=3.0D0*F(KMAX)*A
+	DO K=KMAX-1,KMIN-1,-1
+	   G(K)=F(K)*3.0D0*X(K)*X(K)
+	   GLW(K)=G(K)*FL(K)
+	   GRM(K)=G(K)*(1.0D0-FL(K))*RF(K)
+	ENDDO
+
+	DO K=KMAX,KMIN,-1
+	   DEL_GLW(K) = G(K)*BREAK_SNOW(K)*FL(K)
+	   GLW(K-1) = GLW(K-1)+DEL_GLW(K)
+	   DEL_GRM(K) = G(K)*(1.0D0-FL(K))*RF(K)*BREAK_SNOW(K)
+	   GRM(K-1) = GRM(K-1)+DEL_GRM(K)
+	   G(K-1) = G(K-1)+G(K)*BREAK_SNOW(K)
+	   F(K-1) = G(K-1)/3.0D0/X(K-1)/X(K-1)
+
+   		if (G(k-1) < 1.0d-20) then
+			if(TIN > 273.15)then
+			   	FL(k-1) = 1.0d0
+			   	RF(k-1) = 0.0d0
+			else
+	   			FL(k-1) = 0.0d0
+			   	RF(k-1) = 1.0d0
+			endif
+	   else
+			if(TIN > 273.15)then
+				FL(k-1) = GLW(k-1)/G(k-1)
+				RF(K-1) = 0.0
+			else
+				FL(K-1) = 0.0
+				!print*,'SnowBr',GRM(k-1),G(k-1),FL(k-1)
+				RF(k-1) = GRM(k-1)/G(k-1)/(1.0D0-FL(k-1))
+			endif
+		endif
+
+		 ! FL(K-1)=GLW(K-1)/G(K-1)
+	   ! RF(K-1)=GRM(K-1)/G(K-1)/(1.0D0-FL(K-1))
+
+	   G(K) = G(K)*(1.0D0-BREAK_SNOW(K))
+	   F(K) = G(K)/3.0D0/X(K)/X(K)
+	END DO
+
+	RETURN
+	END SUBROUTINE BreakUp_Snow
+! +------------------------------+
+end module module_mp_SBM_BreakUp
+! +-----------------------------------------------------------------------------+
+! +-----------------------------------------------------------------------------+
+ module module_mp_SBM_Collision
+
+ private
+ public coll_xyy_lwf, coll_xyx_lwf, coll_xxx_lwf, &
+        coll_xyz_lwf, coll_xxy_lwf, &
+        modkrn_KS, coll_breakup_KS, courant_bott_KS
+
+  ! Kind paramater
+  INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
+  INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
+  integer,parameter :: kp_flux_max = 44
+  real(kind=r8size), parameter :: G_LIM = 1.0D-16 ! [g/cm^3]
+  integer,parameter :: kr_sgs_max = 20 ! rg(20)=218.88 mkm
+
+ contains
+! +------------------------------------------------+
+subroutine coll_xyy_lwf (gx,gy,flx,fly,ckxy,x,y, &
+						            c,ima,prdkrn,nkr,indc)
+	implicit none
+
+	integer,intent(in) :: nkr
+	real(kind=r8size),intent(inout) :: gy(:),gx(:),fly(:),flx(:)
+	real(kind=r8size),intent(in) :: ckxy(:,:),x(:),y(:),c(:,:)
+	integer,intent(in) :: ima(:,:)
+	real(kind=r8size),intent(in) :: prdkrn
+
+! ... Locals
+ real(kind=r8size) :: gmin,ckxy_ji,x01,x02,x03,gsi,gsj,gsk,gsi_w,gsj_w,gsk_w,gk,gk_w,&
+                      fl_gk,fl_gsk,flux,x1,flux_w,gy_k_w,gy_kp_old,gy_kp_w
+ integer :: j,jx0,jx1,i,iy0,iy1,jmin,indc,k,kp
+! ... Locals
+
+	  gmin = 1.0d-60
+
+! jx0 - lower limit of integration by j
+do j=1,nkr-1
+   jx0=j
+   if(gx(j).gt.gmin) goto 2000
+enddo
+2000   continue
+if(jx0.eq.nkr-1) return
+
+! jx1 - upper limit of integration by j
+do j=nkr-1,jx0,-1
+   jx1=j
+   if(gx(j).gt.gmin) goto 2010
+enddo
+2010   continue
+
+! iy0 - lower limit of integration by i
+do i=1,nkr-1
+   iy0=i
+   if(gy(i).gt.gmin) goto 2001
+enddo
+2001   continue
+if(iy0.eq.nkr-1) return
+
+! iy1 - upper limit of integration by i
+do i=nkr-1,iy0,-1
+   iy1=i
+   if(gy(i).gt.gmin) goto 2011
+enddo
+2011   continue
+
+! collisions :
+        do i = iy0,iy1
+           if(gy(i).le.gmin) goto 2020
+           jmin = i
+           if(jmin.eq.nkr-1) return
+           if(i.lt.jx0) jmin=jx0-indc
+            do j=jmin+indc,jx1
+              if(gx(j).le.gmin) goto 2021
+              k=ima(i,j)
+              kp=k+1
+              ckxy_ji=ckxy(j,i)
+              x01=ckxy_ji*gy(i)*gx(j)*prdkrn
+              x02=dmin1(x01,gy(i)*x(j))
+              x03=dmin1(x02,gx(j)*y(i))
+              gsi=x03/x(j)
+              gsj=x03/y(i)
+              gsk=gsi+gsj
+              if(gsk.le.gmin) goto 2021
+              gsi_w=gsi*fly(i)
+              gsj_w=gsj*flx(j)
+              gsk_w=gsi_w+gsj_w
+              gsk_w=dmin1(gsk_w,gsk)
+              gy(i)=gy(i)-gsi
+              gy(i)=dmax1(gy(i),0.0d0)
+              gx(j)=gx(j)-gsj
+              gx(j)=dmax1(gx(j),0.0d0)
+              gk=gy(k)+gsk
+              if(gk.le.gmin) goto 2021
+              gk_w=gy(k)*fly(k)+gsk_w
+              gk_w=dmin1(gk_w,gk)
+
+	            fl_gk=gk_w/gk
+
+              fl_gsk=gsk_w/gsk
+
+              flux=0.d0
+              x1=dlog(gy(kp)/gk+1.d-15)
+              flux=gsk/x1*(dexp(0.5d0*x1)-dexp(x1*(0.5d0-c(i,j))))
+              flux=dmin1(flux,gsk)
+              flux=dmin1(flux,gk)
+
+              if(kp.gt.kp_flux_max) flux=0.5d0*flux
+              flux_w=flux*fl_gsk
+              flux_w=dmin1(flux_w,gsk_w)
+              flux_w=dmin1(flux_w,gk_w)
+
+                gy(k)=gk-flux
+                gy(k)=dmax1(gy(k),gmin)
+                gy_k_w=gk*fl_gk-flux_w
+                gy_k_w=dmin1(gy_k_w,gy(k))
+                gy_k_w=dmax1(gy_k_w,0.0d0)
+                fly(k)=gy_k_w/gy(k)
+                gy_kp_old=gy(kp)
+                gy(kp)=gy(kp)+flux
+                gy(kp)=dmax1(gy(kp),gmin)
+                gy_kp_w=gy_kp_old*fly(kp)+flux_w
+                gy_kp_w=dmin1(gy_kp_w,gy(kp))
+                fly(kp)=gy_kp_w/gy(kp)
+
+                if(fly(k).gt.1.0d0.and.fly(k).le.1.0001d0) &
+                   fly(k)=1.0d0
+                if(fly(kp).gt.1.0d0.and.fly(kp).le.1.0001d0) &
+                   fly(kp)=1.0d0
+                if(fly(k).gt.1.0001d0.or.fly(kp).gt.1.0001d0 &
+                   .or.fly(k).lt.0.0d0.or.fly(kp).lt.0.0d0) then
+
+                print*,    'in subroutine coll_xyy_lwf'
+
+                if(fly(k).gt.1.0001d0)  print*, 'fly(k).gt.1.0001d0'
+                if(fly(kp).gt.1.0001d0) print*, 'fly(kp).gt.1.0001d0'
+
+                if(fly(k).lt.0.0d0)  print*, 'fly(k).lt.0.0d0'
+                if(fly(kp).lt.0.0d0) print*, 'fly(kp).lt.0.0d0'
+
+                print*,    'i,j,k,kp'
+                print*,     i,j,k,kp
+
+                print*,    'jx0,jx1,iy0,iy1'
+                print*,     jx0,jx1,iy0,iy1
+
+                print*,   'ckxy(j,i),x01,x02,x03'
+                print 204, ckxy(j,i),x01,x02,x03
+
+                print*,   'gsi,gsj,gsk'
+                print 203, gsi,gsj,gsk
+
+                print*,   'gsi_w,gsj_w,gsk_w'
+                print 203, gsi_w,gsj_w,gsk_w
+
+                print*,   'gk,gk_w'
+                print 202, gk,gk_w
+
+                print*,   'fl_gk,fl_gsk'
+                print 202, fl_gk,fl_gsk
+
+                print*,   'x1,c(i,j)'
+                print 202, x1,c(i,j)
+
+                print*,   'flux'
+                print 201, flux
+
+                print*,   'flux_w'
+                print 201, flux_w
+
+                print*,   'gy_k_w'
+                print 201, gy_k_w
+
+                print*,   'gy_kp_w'
+                print 201, gy_kp_w
+
+		            if(fly(k).lt.0.0d0) print*, &
+				            'stop 2022: in subroutine coll_xyy_lwf, fly(k) < 0'
+
+                if(fly(kp).lt.0.0d0) print*, &
+					           'stop 2022: in subroutine coll_xyy_lwf, fly(kp) < 0'
+
+                if(fly(k).gt.1.0001d0) print*, &
+					           'stop 2022: in sub. coll_xyy_lwf, fly(k) > 1.0001'
+
+				        if(fly(kp).gt.1.0001d0) print*, &
+					           'stop 2022: in sub. coll_xyy_lwf, fly(kp) > 1.0001'
+
+                     call wrf_error_fatal("in coal_bott coll_xyy_lwf, model stop")
+! in case fly(k).gt.1.0001d0.or.fly(kp).gt.1.0001d0
+!        .or.fly(k).lt.0.0d0.or.fly(kp).lt.0.0d0
+          endif
+ 2021   continue
+       enddo
+! cycle by j
+ 2020   continue
+    enddo
+! cycle by i
+
+ 201    format(1x,d13.5)
+ 202    format(1x,2d13.5)
+ 203    format(1x,3d13.5)
+ 204    format(1x,4d13.5)
+
+  return
+  end subroutine coll_xyy_lwf
+! +-----------------------------------------------------+
+  subroutine coll_xxx_lwf(g,fl,ckxx,x,c,ima,prdkrn,nkr)
+
+    implicit none
+
+    integer,intent(in) :: nkr
+    real(kind=r8size),intent(inout) :: g(:),fl(:)
+    real(kind=r8size),intent(in) ::	ckxx(:,:),x(:), c(:,:)
+    integer,intent(in) :: ima(:,:)
+    real(kind=r8size),intent(in) :: prdkrn
+
+! ... Locals
+   real(kind=r8size):: gmin,x01,x02,x03,gsi,gsj,gsk,gsi_w,gsj_w,gsk_w,gk, &
+                       gk_w,fl_gk,fl_gsk,flux,x1,flux_w,g_k_w,g_kp_old,g_kp_w
+   integer :: i,ix0,ix1,j,k,kp
+! ... Locals
+
+  gmin=g_lim*1.0d3
+
+! ix0 - lower limit of integration by i
+
+  do i=1,nkr-1
+   ix0=i
+   if(g(i).gt.gmin) goto 2000
+  enddo
+  2000   continue
+  if(ix0.eq.nkr-1) return
+
+! ix1 - upper limit of integration by i
+  do i=nkr-1,1,-1
+   ix1=i
+   if(g(i).gt.gmin) goto 2010
+  enddo
+  2010   continue
+
+! ... collisions
+      do i=ix0,ix1
+         if(g(i).le.gmin) goto 2020
+         do j=i,ix1
+            if(g(j).le.gmin) goto 2021
+            k=ima(i,j)
+            kp=k+1
+            x01=ckxx(i,j)*g(i)*g(j)*prdkrn
+            x02=dmin1(x01,g(i)*x(j))
+            if(j.ne.k) x03=dmin1(x02,g(j)*x(i))
+            if(j.eq.k) x03=x02
+            gsi=x03/x(j)
+            gsj=x03/x(i)
+            gsk=gsi+gsj
+            if(gsk.le.gmin) goto 2021
+            gsi_w=gsi*fl(i)
+            gsj_w=gsj*fl(j)
+            gsk_w=gsi_w+gsj_w
+            gsk_w=dmin1(gsk_w,gsk)
+            g(i)=g(i)-gsi
+            g(i)=dmax1(g(i),0.0d0)
+            g(j)=g(j)-gsj
+  ! new change of 23.01.11                                      (start)
+            if(j.ne.k) g(j)=dmax1(g(j),0.0d0)
+  ! new change of 23.01.11                                        (end)
+            gk=g(k)+gsk
+
+            if(g(j).lt.0.d0.and.gk.le.gmin) then
+              g(j)=0.d0
+              g(k)=g(k)+gsi
+              goto 2021
+          endif
+
+            if(gk.le.gmin) goto 2021
+
+            gk_w=g(k)*fl(k)+gsk_w
+            gk_w=dmin1(gk_w,gk)
+
+            fl_gk=gk_w/gk
+            fl_gsk=gsk_w/gsk
+            flux=0.d0
+            x1=dlog(g(kp)/gk+1.d-15)
+            flux=gsk/x1*(dexp(0.5d0*x1)-dexp(x1*(0.5d0-c(i,j))))
+            flux=dmin1(flux,gsk)
+            flux=dmin1(flux,gk)
+            if(kp.gt.kp_flux_max) flux=0.5d0*flux
+            flux_w=flux*fl_gsk
+            flux_w=dmin1(flux_w,gsk_w)
+            flux_w=dmin1(flux_w,gk_w)
+            g(k)=gk-flux
+            g(k)=dmax1(g(k),gmin)
+            g_k_w=gk_w-flux_w
+            g_k_w=dmin1(g_k_w,g(k))
+            g_k_w=dmax1(g_k_w,0.0d0)
+            fl(k)=g_k_w/g(k)
+            g_kp_old=g(kp)
+            g(kp)=g(kp)+flux
+            g(kp)=dmax1(g(kp),gmin)
+            g_kp_w=g_kp_old*fl(kp)+flux_w
+            g_kp_w=dmin1(g_kp_w,g(kp))
+            fl(kp)=g_kp_w/g(kp)
+
+            if(fl(k).gt.1.0d0.and.fl(k).le.1.0001d0) &
+                fl(k)=1.0d0
+
+            if(fl(kp).gt.1.0d0.and.fl(kp).le.1.0001d0) &
+                fl(kp)=1.0d0
+
+            if(fl(k).gt.1.0001d0.or.fl(kp).gt.1.0001d0 &
+               .or.fl(k).lt.0.0d0.or.fl(kp).lt.0.0d0) then
+
+              print*,    'in subroutine coll_xxx_lwf'
+              print*,    'snow - snow = snow'
+
+              if(fl(k).gt.1.0001d0)  print*, 'fl(k).gt.1.0001d0'
+              if(fl(kp).gt.1.0001d0) print*, 'fl(kp).gt.1.0001d0'
+
+              if(fl(k).lt.0.0d0)  print*, 'fl(k).lt.0.0d0'
+              if(fl(kp).lt.0.0d0) print*, 'fl(kp).lt.0.0d0'
+
+              print*,    'i,j,k,kp'
+              print*,     i,j,k,kp
+              print*,    'ix0,ix1'
+              print*,     ix0,ix1
+
+              print*,   'ckxx(i,j),x01,x02,x03'
+                print 204, ckxx(i,j),x01,x02,x03
+
+              print*,   'gsi,gsj,gsk'
+                print 203, gsi,gsj,gsk
+
+              print*,   'gsi_w,gsj_w,gsk_w'
+                print 203, gsi_w,gsj_w,gsk_w
+
+              print*,   'gk,gk_w'
+                print 202, gk,gk_w
+
+              print*,   'fl_gk,fl_gsk'
+                print 202, fl_gk,fl_gsk
+
+              print*,   'x1,c(i,j)'
+                print 202, x1,c(i,j)
+
+              print*,   'flux'
+                print 201, flux
+
+              print*,   'flux_w'
+                print 201, flux_w
+
+              print*,   'g_k_w'
+                print 201, g_k_w
+
+                print *,  'g_kp_w'
+                print 201, g_kp_w
+
+              if(fl(k).lt.0.0d0) print*, &
+                 'stop 2022: in subroutine coll_xxx_lwf, fl(k) < 0'
+
+              if(fl(kp).lt.0.0d0) print*, &
+                 'stop 2022: in subroutine coll_xxx_lwf, fl(kp) < 0'
+
+              if(fl(k).gt.1.0001d0) print*, &
+                 'stop 2022: in sub. coll_xxx_lwf, fl(k) > 1.0001'
+
+              if(fl(kp).gt.1.0001d0) print*, &
+                 'stop 2022: in sub. coll_xxx_lwf, fl(kp) > 1.0001'
+                    call wrf_error_fatal("in coal_bott sub. coll_xxx_lwf, model stop")
+              endif
+2021     continue
+       enddo
+! cycle by j
+2020    continue
+   enddo
+! cycle by i
+
+201    format(1x,d13.5)
+202    format(1x,2d13.5)
+203    format(1x,3d13.5)
+204    format(1x,4d13.5)
+
+ return
+ end subroutine coll_xxx_lwf
+! +----------------------------------------------------+
+ subroutine coll_xyx_lwf (gx,gy,flx,fly,ckxy,x,y, &
+					               c,ima,prdkrn,nkr,indc,dm_rime)
+	implicit none
+
+	integer,intent(in) :: nkr
+	real(kind=r8size),intent(inout) :: gy(:),gx(:),fly(:),flx(:),dm_rime(:)
+	real(kind=r8size),intent(in) :: ckxy(:,:),x(:),y(:),c(:,:),prdkrn
+	integer,intent(in) :: ima(:,:)
+
+! ... Locals
+	real(kind=r8size) :: gmin,x01,x02,x03,gsi,gsj,gsk,gk,flux,x1,gsi_w,gsj_w,gsk_w, &
+    	                gk_w,fl_gk,fl_gsk,flux_w,gx_k_w,gx_kp_old,gx_kp_w,frac_split
+	integer :: j, jx0, jx1, i, iy0, iy1, jmin, indc, k, kp
+! ... Locals
+
+	gmin=g_lim*1.0d3
+
+! jx0 - lower limit of integration by j
+        do j=1,nkr-1
+           jx0=j
+           if(gx(j).gt.gmin) goto 2000
+        end do
+ 2000   continue
+        if(jx0.eq.nkr-1) return
+! jx1 - upper limit of integration by j
+        do j=nkr-1,jx0,-1
+           jx1=j
+           if(gx(j).gt.gmin) goto 2010
+        end do
+ 2010   continue
+! iy0 - lower limit of integration by i
+        do i=1,nkr-1
+           iy0=i
+           if(gy(i).gt.gmin) goto 2001
+        end do
+ 2001   continue
+        if(iy0.eq.nkr-1) return
+! iy1 - upper limit of integration by i
+        do i=nkr-1,iy0,-1
+           iy1=i
+           if(gy(i).gt.gmin) goto 2011
+        end do
+ 2011   continue
+
+	 do i = 1,nkr
+	   dm_rime(i)=0.0
+	 end do
+
+! ... collisions :
+        do i=iy0,iy1
+           if(gy(i).le.gmin) goto 2020
+           jmin=i
+           if(jmin.eq.nkr-1) return
+           if(i.lt.jx0) jmin=jx0-indc
+	   		do j=jmin+indc,jx1
+              if(gx(j).le.gmin) goto 2021
+              k=ima(i,j)
+              kp=k+1
+              x01=ckxy(j,i)*gy(i)*gx(j)*prdkrn
+              x02=dmin1(x01,gy(i)*x(j))
+			! new change of 20.01.11                                      (start)
+              if(j.ne.k) x03=dmin1(x02,gx(j)*y(i))
+              if(j.eq.k) x03=x02
+			! new change of 20.01.11                                        (end)
+              gsi=x03/x(j)
+              gsj=x03/y(i)
+              gsk=gsi+gsj
+			        if(gsk.le.gmin) goto 2021
+              gsi_w=gsi*fly(i)
+              gsj_w=gsj*flx(j)
+              gsk_w=gsi_w+gsj_w
+			        gsk_w=dmin1(gsk_w,gsk)
+              gy(i)=gy(i)-gsi
+              gy(i)=dmax1(gy(i),0.0d0)
+              gx(j)=gx(j)-gsj
+			! new change of 20.01.11                                      (start)
+              if(j.ne.k) gx(j)=dmax1(gx(j),0.0d0)
+			! new change of 20.01.11                                        (end)
+              gk=gx(k)+gsk
+              if(gk.le.gmin) goto 2021
+              gk_w=gx(k)*flx(k)+gsk_w
+			        gk_w=dmin1(gk_w,gk)
+	            fl_gk=gk_w/gk
+              fl_gsk=gsk_w/gsk
+              flux=0.d0
+              x1=dlog(gx(kp)/gk+1.d-15)
+              flux=gsk/x1*(dexp(0.5d0*x1)-dexp(x1*(0.5d0-c(i,j))))
+              flux=dmin1(flux,gsk)
+              flux=dmin1(flux,gk)
+
+              if(kp.gt.kp_flux_max) flux=0.5d0*flux
+              flux_w=flux*fl_gsk
+              flux_w=dmin1(flux_w,gsk_w)
+              flux_w=dmin1(flux_w,gk_w)
+			        frac_split = flux/gsk
+              if(frac_split < 0.) frac_split = 0.
+	            if(frac_split > 1.) frac_split = 1.
+              dm_rime(k)=dm_rime(k)+gsi*(1.-frac_split)
+              dm_rime(kp)=dm_rime(kp)+gsi*frac_split
+              gx(k)=gk-flux
+	            gx(k)=dmax1(gx(k),gmin)
+
+              gx_k_w=gk_w-flux_w
+              gx_k_w=dmin1(gx_k_w,gx(k))
+              gx_k_w=dmax1(gx_k_w,0.0d0)
+              flx(k)=gx_k_w/gx(k)
+              gx_kp_old=gx(kp)
+              gx(kp)=gx(kp)+flux
+              gx(kp)=dmax1(gx(kp),gmin)
+
+              gx_kp_w=gx_kp_old*flx(kp)+flux_w
+              gx_kp_w=dmin1(gx_kp_w,gx(kp))
+
+              flx(kp)=gx_kp_w/gx(kp)
+
+              if(flx(k).gt.1.0d0.and.flx(k).le.1.0001d0) &
+              flx(k)=1.0d0
+
+              if(flx(kp).gt.1.0d0.and.flx(kp).le.1.0001d0) &
+              	flx(kp)=1.0d0
+
+              if(flx(k).gt.1.0001d0.or.flx(kp).gt.1.0001d0 &
+              .or.flx(k).lt.0.0d0.or.flx(kp).lt.0.0d0) then
+
+              print*, 'in subroutine coll_xyx_lwf'
+
+              if(flx(k).gt.1.0001d0) &
+              print*, 'flx(k).gt.1.0001d0'
+
+              if(flx(kp).gt.1.0001d0) &
+              print*, 'flx(kp).gt.1.0001d0'
+
+              if(flx(k).lt.0.0d0)  print*, 'flx(k).lt.0.0d0'
+              if(flx(kp).lt.0.0d0) print*, 'flx(kp).lt.0.0d0'
+
+                print*,   'i,j,k,kp'
+                print*,    i,j,k,kp
+
+                print*,   'jx0,jx1,iy0,iy1'
+                print*,    jx0,jx1,iy0,iy1
+
+                print*,   'gx_kp_old'
+                	print 201, gx_kp_old
+
+                print*,   'ckxy(j,i),x01,x02,x03'
+                	print 204, ckxy(j,i),x01,x02,x03
+
+                print*,   'gsi,gsj,gsk'
+                	print 203, gsi,gsj,gsk
+
+                print*,   'gsi_w,gsj_w,gsk_w'
+                	print 203, gsi_w,gsj_w,gsk_w
+
+                print*,   'gk,gk_w'
+                	print 202, gk,gk_w
+
+                print*,   'fl_gk,fl_gsk'
+                	print 202, fl_gk,fl_gsk
+
+                print*,   'x1,c(i,j)'
+                	print 202, x1,c(i,j)
+
+                print*,   'flux'
+                	print 201, flux
+
+                print*,   'flux_w'
+                	print 201, flux_w
+
+                print*,   'gx_k_w'
+                	print 201, gx_k_w
+
+                print*,   'gx_kp_w'
+                	print 201, gx_kp_w
+
+        				if(flx(k).lt.0.0d0) print*, &
+        					   'stop 2022: in subroutine coll_xyx_lwf, flx(k) < 0'
+
+        				if(flx(kp).lt.0.0d0) print*, &
+        					   'stop 2022: in subroutine coll_xyx_lwf, flx(kp) < 0'
+
+        				if(flx(k).gt.1.0001d0) print*, &
+        					   'stop 2022: in sub. coll_xyx_lwf, flx(k) > 1.0001'
+
+        				if(flx(kp).gt.1.0001d0) print*, &
+        					   'stop 2022: in sub. coll_xyx_lwf, flx(kp) > 1.0001'
+                  call wrf_error_fatal("fatal error in module_mp_fast_sbm in coll_xyx_lwf (stop 2022), model stop")
+                  stop 2022
+               endif
+ 2021         continue
+           enddo
+! cycle by j
+ 2020      continue
+        enddo
+! cycle by i
+
+ 201    format(1x,d13.5)
+ 202    format(1x,2d13.5)
+ 203    format(1x,3d13.5)
+ 204    format(1x,4d13.5)
+
+ return
+ end subroutine coll_xyx_lwf
+! -------------------------------------------------------+
+ subroutine coll_xyz_lwf(gx,gy,gz,flx,fly,flz,ckxy,x,y, &
+                        c,ima,prdkrn,nkr,indc)
+
+ implicit none
+
+ integer,intent(in) :: nkr
+ real(kind=r8size),intent(inout) :: gx(:),gy(:),gz(:),flx(:),fly(:),flz(:)
+ real(kind=r8size),intent(in) :: ckxy(:,:),x(:),y(:),c(:,:)
+ integer,intent(in) :: ima(:,:)
+ real(kind=r8size),intent(in) :: prdkrn
+
+! ... Locals
+ real(kind=r8size) :: gmin,ckxy_ji,x01,x02,x03,gsi,gsj,gsk,gsi_w,gsj_w,gsk_w,gk, &
+                      gk_w,fl_gk,fl_gsk,flux,x1,flux_w,gz_k_w,gz_kp_old,gz_kp_w
+integer :: j,jx0,jx1,i,iy0,iy1,jmin,indc,k,kp
+! ... Locals
+
+gmin = 1.0d-60
+
+! jx0 - lower limit of integration by j
+do j=1,nkr-1
+ jx0=j
+ if(gx(j).gt.gmin) goto 2000
+enddo
+2000   continue
+if(jx0.eq.nkr-1) return
+
+! jx1 - upper limit of integration by j
+do j=nkr-1,jx0,-1
+ jx1=j
+ if(gx(j).gt.gmin) goto 2010
+enddo
+2010   continue
+
+! iy0 - lower limit of integration by i
+do i=1,nkr-1
+ iy0=i
+ if(gy(i).gt.gmin) goto 2001
+enddo
+2001   continue
+if(iy0.eq.nkr-1) return
+
+! iy1 - upper limit of integration by i
+do i=nkr-1,iy0,-1
+ iy1=i
+ if(gy(i).gt.gmin) goto 2011
+enddo
+2011   continue
+
+! ... collisions
+
+      do i=iy0,iy1
+         if(gy(i).le.gmin) goto 2020
+         jmin=i
+         if(jmin.eq.nkr-1) return
+         if(i.lt.jx0) jmin=jx0-indc
+         do j=jmin+indc,jx1
+            if(gx(j).le.gmin) goto 2021
+            k=ima(i,j)
+            kp=k+1
+            ckxy_ji=ckxy(j,i)
+            x01=ckxy_ji*gy(i)*gx(j)*prdkrn
+            x02=dmin1(x01,gy(i)*x(j))
+            x03=dmin1(x02,gx(j)*y(i))
+            gsi=x03/x(j)
+            gsj=x03/y(i)
+            gsk=gsi+gsj
+            if(gsk.le.gmin) goto 2021
+            gsi_w=gsi*fly(i)
+            gsj_w=gsj*flx(j)
+            gsk_w=gsi_w+gsj_w
+            gsk_w=dmin1(gsk_w,gsk)
+            gy(i)=gy(i)-gsi
+            gy(i)=dmax1(gy(i),0.0d0)
+
+            gx(j)=gx(j)-gsj
+            gx(j)=dmax1(gx(j),0.0d0)
+
+            gk=gz(k)+gsk
+
+            if(gk.le.gmin) goto 2021
+
+            gk_w=gz(k)*flz(k)+gsk_w
+            gk_w=dmin1(gk_w,gk)
+
+            fl_gk=gk_w/gk
+
+            fl_gsk=gsk_w/gsk
+
+            flux=0.d0
+
+            x1=dlog(gz(kp)/gk+1.d-15)
+
+            flux=gsk/x1*(dexp(0.5d0*x1)-dexp(x1*(0.5d0-c(i,j))))
+            flux=dmin1(flux,gsk)
+            flux=dmin1(flux,gk)
+
+            if(kp.gt.kp_flux_max) flux=0.5d0*flux
+
+            flux_w=flux*fl_gsk
+            flux_w=dmin1(flux_w,gsk_w)
+            flux_w=dmin1(flux_w,gk_w)
+
+            gz(k)=gk-flux
+            gz(k)=dmax1(gz(k),gmin)
+
+            gz_k_w=gk*fl_gk-flux_w
+            gz_k_w=dmin1(gz_k_w,gz(k))
+            gz_k_w=dmax1(gz_k_w,0.0d0)
+
+            flz(k)=gz_k_w/gz(k)
+
+            gz_kp_old=gz(kp)
+
+            gz(kp)=gz(kp)+flux
+            gz(kp)=dmax1(gz(kp),gmin)
+
+            gz_kp_w=gz_kp_old*flz(kp)+flux_w
+            gz_kp_w=dmin1(gz_kp_w,gz(kp))
+
+            flz(kp)=gz_kp_w/gz(kp)
+
+            if(flz(k).gt.1.0d0.and.flz(k).le.1.0001d0) &
+            flz(k)=1.0d0
+
+            if(flz(kp).gt.1.0d0.and.flz(kp).le.1.0001d0) &
+            flz(kp)=1.0d0
+
+            if(flz(k).gt.1.0001d0.or.flz(kp).gt.1.0001d0 &
+            .or.flz(k).lt.0.0d0.or.flz(kp).lt.0.0d0) then
+
+            print*,    'in subroutine coll_xyz_lwf'
+
+            if(flz(k).gt.1.0001d0)  print*, 'flz(k).gt.1.0001d0'
+            if(flz(kp).gt.1.0001d0) print*, 'flz(kp).gt.1.0001d0'
+
+            if(flz(k).lt.0.0d0)  print*, 'flz(k).lt.0.0d0'
+            if(flz(kp).lt.0.0d0) print*, 'flz(kp).lt.0.0d0'
+
+            print*,   'i,j,k,kp'
+            print*,    i,j,k,kp
+
+            print*,   'jx0,jx1,iy0,iy1'
+            print*,    jx0,jx1,iy0,iy1
+
+            print*,   'gz_kp_old'
+            print 201, gz_kp_old
+
+            print*,   'x01,x02,x03'
+            print 203, x01,x02,x03
+
+            print*,   'gsi,gsj,gsk'
+            print 203, gsi,gsj,gsk
+
+            print*,   'gsi_w,gsj_w,gsk_w'
+            print 203, gsi_w,gsj_w,gsk_w
+
+            print*,   'gk,gk_w'
+            print 202, gk,gk_w
+
+            print*,   'fl_gk,fl_gsk'
+            print 202, fl_gk,fl_gsk
+
+            print*,   'x1,c(i,j)'
+            print 202, x1,c(i,j)
+
+            print*,   'flux'
+            print 201, flux
+
+            print*,   'flux_w'
+            print 201, flux_w
+
+            print*,   'gz_k_w'
+            print 201, gz_k_w
+
+            print*,   'gz_kp_w'
+            print 204, gz_kp_w
+
+            if(flz(k).lt.0.0d0) print*, &
+            'stop 2022: in subroutine coll_xyz_lwf, flz(k) < 0'
+
+            if(flz(kp).lt.0.0d0) print*, &
+               'stop 2022: in subroutine coll_xyz_lwf, flz(kp) < 0'
+
+            if(flz(k).gt.1.0001d0) print*, &
+               'stop 2022: in sub. coll_xyz_lwf, flz(k) > 1.0001'
+
+            if(flz(kp).gt.1.0001d0) print*, &
+               'stop 2022: in sub. coll_xyz_lwf, flz(kp) > 1.0001'
+              call wrf_error_fatal("fatal error: in sub. coll_xyz_lwf,model stop")
+            endif
+2021         continue
+         enddo
+! cycle by j
+2020      continue
+      enddo
+! cycle by i
+
+201    format(1x,d13.5)
+202    format(1x,2d13.5)
+203    format(1x,3d13.5)
+204    format(1x,4d13.5)
+
+ return
+ end subroutine coll_xyz_lwf
+! -----------------------------------------------+
+ subroutine coll_xxy_lwf(gx,gy,flx,fly,ckxx,x, &
+                        c,ima,prdkrn,nkr)
+
+  implicit none
+
+  integer,intent(in) :: nkr
+  real(kind=r8size),intent(inout):: gx(nkr),gy(nkr),flx(nkr),fly(nkr)
+  real(kind=r8size),intent(in) :: x(nkr),ckxx(nkr,nkr),c(nkr,nkr)
+  real(kind=r8size),intent(in) :: prdkrn
+  integer,intent(in) :: ima(nkr,nkr)
+
+! ... Locals
+  real(kind=r8size) :: gmin,ckxx_ij,x01,x02,x03,gsi,gsj,gsk,gsi_w,gsj_w,gsk_w, &
+                       gk,gk_w,flux,flux_w,fl_gk,fl_gsk,x1,gy_k_w,gy_kp_w, &
+                       gy_kp_old
+  integer::i,ix0,ix1,j,k,kp
+! ... Locals
+
+!gmin=g_lim*1.0d3
+gmin = 1.0d-60
+
+! ix0 - lower limit of integration by i
+do i=1,nkr-1
+   ix0=i
+   if(gx(i).gt.gmin) goto 2000
+enddo
+2000   continue
+if(ix0.eq.nkr-1) return
+
+! ix1 - upper limit of integration by i
+do i=nkr-1,ix0,-1
+   ix1=i
+   if(gx(i).gt.gmin) goto 2010
+enddo
+2010   continue
+
+! ... collisions
+      do i=ix0,ix1
+         if(gx(i).le.gmin) goto 2020
+         do j=i,ix1
+            if(gx(j).le.gmin) goto 2021
+            k=ima(i,j)
+            kp=k+1
+            ckxx_ij = ckxx(i,j)
+            x01=ckxx_ij*gx(i)*gx(j)*prdkrn
+            x02=dmin1(x01,gx(i)*x(j))
+            x03=dmin1(x02,gx(j)*x(i))
+            gsi=x03/x(j)
+            gsj=x03/x(i)
+            gsk=gsi+gsj
+
+            if(gsk.le.gmin) goto 2021
+
+            gsi_w=gsi*flx(i)
+            gsj_w=gsj*flx(j)
+            gsk_w=gsi_w+gsj_w
+            gsk_w=dmin1(gsk_w,gsk)
+
+            gx(i)=gx(i)-gsi
+            gx(i)=dmax1(gx(i),0.0d0)
+
+            gx(j)=gx(j)-gsj
+            gx(j)=dmax1(gx(j),0.0d0)
+
+            gk=gy(k)+gsk
+
+            if(gk.le.gmin) goto 2021
+
+            gk_w=gy(k)*fly(k)+gsk_w
+            gk_w=dmin1(gk_w,gk)
+            fl_gk=gk_w/gk
+            fl_gsk=gsk_w/gsk
+
+            flux=0.d0
+
+            x1=dlog(gy(kp)/gk+1.d-15)
+            !		print *,'nir1',gy(kp),gk,kp,i,j
+            flux=gsk/x1*(dexp(0.5d0*x1)-dexp(x1*(0.5d0-c(i,j))))
+            flux=dmin1(flux,gsk)
+            flux=dmin1(flux,gk)
+
+            if(kp.gt.kp_flux_max) flux=0.5d0*flux
+
+            flux_w=flux*fl_gsk
+            flux_w=dmin1(flux_w,gk_w)
+            flux_w=dmin1(flux_w,gsk_w)
+            flux_w=dmax1(flux_w,0.0d0)
+
+            gy(k)=gk-flux
+            gy_k_w=gk*fl_gk-flux_w
+            gy_k_w=dmin1(gy_k_w,gy(k))
+            gy_k_w=dmax1(gy_k_w,0.0d0)
+            !		print *,'nirxxylwf4',k,gy(k),gy_k_w,x1,flux
+            if (gy(k)/=0.0) then
+              fly(k)=gy_k_w/gy(k)
+            else
+              fly(k)=0.0d0
+            endif
+            gy_kp_old=gy(kp)
+            gy(kp)=gy(kp)+flux
+            gy_kp_w=gy_kp_old*fly(kp)+flux_w
+            gy_kp_w=dmin1(gy_kp_w,gy(kp))
+            if (gy(kp)/=0.0) then
+              fly(kp)=gy_kp_w/gy(kp)
+            else
+              fly(kp)=0.0d0
+            endif
+2021  continue
+
+      if(fly(k).gt.1.0d0.and.fly(k).le.1.0001d0) &
+          fly(k)=1.0d0
+
+        if(fly(kp).gt.1.0d0.and.fly(kp).le.1.0001d0) &
+          fly(kp)=1.0d0
+
+         end do
+! cycle by j
+2020      continue
+      end do
+! cycle by i
+
+ return
+ end subroutine coll_xxy_lwf
+! +-------------------------------------------+
+ SUBROUTINE INTERPOL_SE (NH, H_TAB, X_TAB, H, X)
+
+  implicit none
+! ### Interface
+ integer :: NH
+ real(kind=r4size) :: H_TAB(NH), X_TAB(NH)
+ real(kind=r8size) :: H, X
+! ### Interface
+ integer :: I, J
+
+ IF(H > H_TAB(1)) THEN
+    X = X_TAB(1)
+    RETURN
+ ENDIF
+
+ IF(H < H_TAB(NH)) THEN
+    X = X_TAB(NH)
+    RETURN
+ ENDIF
+
+ DO I = 2,NH
+    IF(H > H_TAB(I)) THEN
+       J = I-1
+       X = X_TAB(J)+(X_TAB(I)-X_TAB(J))/ &
+           (H_TAB(I)-H_TAB(J))*(H-H_TAB(J))
+
+       RETURN
+    ENDIF
+ ENDDO
+
+ RETURN
+ END SUBROUTINE INTERPOL_SE 
+! +-------------------------------------------------------------------------------+
+    subroutine modkrn_KS (tt,qq,pp,rho,factor_t,ttcoal,ICase,Icondition, &
+                          Iin,Jin,Kin)
+
+    implicit none
+
+    real(kind=r8size),intent(in) :: tt, pp
+    real(kind=r8size),intent(inout) :: qq
+    real(kind=r4size),intent(in) :: ttcoal, rho
+    real(kind=r8size),intent(out) :: factor_t
+    integer :: ICase, Iin, Jin, Kin, Icondition
+
+    real(kind=r8size) :: satq2, temp, epsf, tc, ttt1, ttt, qs2, qq1, dele, tc_min, &
+                          tc_max, factor_max, factor_min, f, t, a, b, c, p, d
+    real(kind=r8size) :: at, bt, ct, dt
+    real(kind=r8size) :: AA,BB,CC,DD,Es,Ew,AA1_MY,BB1_MY
+    real(kind=r4size) :: tt_r, T_tab(7), SE_tab(7)
+
+    satq2(t,p) = 3.80d3*(10**(9.76421d0-2667.1d0/t))/p
+    temp(a,b,c,d,t) = d*t*t*t+c*t*t+b*t+a
 
 
-!.....LOCAL VARIABLES
+    tc = tt - 273.15
+    if (tc > 0.0) return  
 
-      INTEGER AP,IE,JE,KE
+    SELECT CASE (ICase)
 
-      PARAMETER (AP = 1)
+    CASE(1)
 
-      INTEGER I,J,K,JDIFF
-      REAL  RPKIJ(JBREAK,JBREAK,JBREAK),RQKJ(JBREAK,JBREAK)
+        !satq2(t,p) = 3.80d3*(10**(9.76421d0-2667.1d0/t))/p
+        !temp(a,b,c,d,t) = d*t*t*t+c*t*t+b*t+a
 
+        data at, bt, ct, dt /0.88333d0,  0.0931878d0,  0.0034793d0,  4.5185186d-05/
 
-      REAL PI,D0,HLP
-      DOUBLE PRECISION M(0:JBREAK),ALM
-      REAL DBREAK(JBREAK),GAIN,LOSS
-!     REAL ECOALMASS
-!     REAL XL(JMAX)
+        if(qq.le.0.0) qq = 1.0e-15
+          epsf = 0.5d0
+          tc = tt - 273.15
 
+          ttt1	=temp(at,bt,ct,dt,tc)
+          ttt	=ttt1
+          qs2	=satq2(tt,pp)
+          qq1	=qq*(0.622d0+0.378d0*qs2)/(0.622d0+0.378d0*qq)/qs2
+          dele	=ttt*qq1
 
-!.....DECLARATIONS FOR INIT
+          if(tc.ge.-6.0d0) then
+            factor_t = dele
+            if(factor_t.lt.epsf) factor_t = epsf
+            if(factor_t.gt.1.0d0) factor_t = 1.0d0
+          endif
 
-      INTEGER IP,KP,JP,KQ,JQ
-      REAL XTJ
+          if (Icondition == 0) then
+            if(tc.ge.-12.5d0 .and. tc.lt.-6.0d0) factor_t = 0.5D0  ! 0.5d0 !### (KS-ICE-SNOW)
+            if(tc.ge.-17.0d0 .and. tc.lt.-12.5d0) factor_t = 1.0
+            if(tc.ge.-20.0d0 .and. tc.lt.-17.0d0) factor_t = 0.4d0
+          else
+            if(tc.ge.-12.5d0 .and. tc.lt.-6.0d0) factor_t = 0.3D0  ! 0.5d0 !### (KS-ICE-SNOW)
+            if(tc.ge.-17.0d0 .and. tc.lt.-12.5d0) factor_t = 0.1d0
+            if(tc.ge.-20.0d0 .and. tc.lt.-17.0d0) factor_t = 0.05d0
+          endif
 
-      CHARACTER*20 FILENAME_P,FILENAME_Q
+        if(tc.lt.-20.0d0) then
+          tc_min = ttcoal-273.15d0
+          tc_max = -20.0d0
+          if(Icondition == 0)then
+            factor_max = 0.4d0
+            factor_min = 0.0d0
+          else
+            factor_max = 0.05d0
+            factor_min = 0.0d0
+          endif
 
-      FILENAME_P = 'coeff_p.asc'
-      FILENAME_Q = 'coeff_q.asc'
+          f = factor_min + (tc-tc_min)*(factor_max-factor_min)/ &
+                          (tc_max-tc_min)
+          factor_t = f
+        ! in case tc.lt.-20.0d0
+        endif
 
-      IE = JBREAK
-      JE = JBREAK
-      KE = JBREAK
-      PI    = 3.1415927
-      D0    = 0.0101593
-      M(1)  = PI/6.0 * D0**3
+        if(tc.lt.-40.0d0) then
+          factor_t = 0.0d0
+        endif
 
-!.....IN CGS
+        if (factor_t > 1.0) factor_t = 1.0
 
+        if(tc.ge.0.0d0) then
+          factor_t = 1.0d0
+        endif
 
-!.....SHIFT BETWEEN COAGULATION AND BREAKUP GRID
+    CASE(11)
 
-      JDIFF = JMAX - JBREAK
-
-!.....INITIALIZATION
-
-!     IF (FIRSTCALL.NE.1) THEN
-
-!........CALCULATING THE BREAKUP GRID
-!        ALM  = 2.**(1./FLOAT(AP))
-         ALM  = 2.d0
-         M(0)  = M(1)/ALM
-         DO K=1,KE-1
-            M(K+1) = M(K)*ALM
-         ENDDO
-         DO K=1,KE
-            BRKWEIGHT(K) = 2./(M(K)**2 - M(K-1)**2)
-!           print*,'m(k) = ',m(k)
-!           print*,'m(k-1) = ',m(k-1)
-!           print*, 'MWEIGHT = ',BRKWEIGHT(K)
-         ENDDO
-
-!........OUTPUT
-
-         WRITE (*,*) 'COLL_BREAKUP_INI: COAGULATION AND BREAKUP GRID'
-         WRITE (*,'(2A5,5A15)') 'ICOAG','IBREAK', &
-     &        'XCOAG','DCOAG', &
-     &        'XBREAK','DBREAK','MWEIGHT'
-
-!........READ DER BREAKUP COEFFICIENTS FROM INPUT FILE
-
-         WRITE (*,*) 'COLL_BREAKUP: READ THE BREAKUP COEFFS'
-         WRITE (*,*) '              FILE PKIJ: ', FILENAME_P
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2061
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2061     CONTINUE
-        ENDIF
-!
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="coeff_p.asc",                  &
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-
-!         print*,'here at 3'
-         DO K=1,KE
-            DO I=1,IE
-               DO J=1,I
-                  READ(hujisbm_unit1,'(3I6,1E16.8)') KP,IP,JP,PKIJ(KP,IP,JP)
-!                 WRITE(6,*)'PKIJ(KP,IP,JP) =', &
-!    &               KP,IP,JP,PKIJ(KP,IP,JP)
-!                 IF(RPKIJ(KP,IP,JP).EQ.0) THEN
-!    *             PKIJ(KP,IP,JP)=INT(RPKIJ(KP,IP,JP))
-!                 ELSE
-!                  PKIJ(KP,IP,JP)=RPKIJ(KP,IP,JP)
-!                 END IF
-!                 WRITE(6,*)'RPKIJ(KP,IP,JP) =',
-!    *               KP,IP,JP,RPKIJ(KP,IP,JP),
-!    *               PKIJ(KP,IP,JP)
-               ENDDO
-            ENDDO
-!           READ(6,*)
-         ENDDO
-	CLOSE(hujisbm_unit1)
-         WRITE (*,*) '              FILE QKJ:  ', FILENAME_Q
-        END IF
-        CALL wrf_dm_bcast_bytes (PKIJ  , size ( PKIJ ) * DWORDSIZE )
-        IF ( wrf_dm_on_monitor() ) THEN
-          DO i = 31,99
-            INQUIRE ( i , OPENED = opened )
-            IF ( .NOT. opened ) THEN
-              hujisbm_unit1 = i
-              GOTO 2062
-            ENDIF
-          ENDDO
-          hujisbm_unit1 = -1
- 2062     CONTINUE
-        ENDIF
-!
-        CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
-!
-        IF ( hujisbm_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_fast: etanewinit: Can not find unused fortran unit to read in lookup table.' )
-        ENDIF
-!
-        IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="coeff_q.asc",                  &
-     &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-
-         DO K=1,KE
-            DO J=1,JE
-               READ(hujisbm_unit1,'(2I6,1E16.8)') KQ,JQ,QKJ(KQ,JQ)
-!              WRITE(6,*) KQ,JQ,QKJ(KQ,JQ)
-!              QKJ(KQ,JQ) = RQKJ(KQ,JQ)
-!              IF(QKJ(KQ,JQ).LE.1E-35)QKJ(KQ,JQ)=0.D0
-            ENDDO
-         ENDDO
-         CLOSE(hujisbm_unit1)
-
-         WRITE (*,*) 'COLL_BREAKUP READ: ... OK'
-         END IF
-        CALL wrf_dm_bcast_bytes (QKJ  , size ( QKJ ) * DWORDSIZE )
-!     ENDIF
-!        DO K=1,KE
-!           DO J=1,JE
-!              WRITE(6,*) 'After Broadcast, QKJ = ',K,J,QKJ(K,J)
-!           ENDDO
-!        ENDDO
-!        DO K=1,KE
-!           DO I=1,IE
-!              DO J=1,I
-!                 WRITE(6,*)'After Broadcast PKIJ(K,I,J) =', &
-!    &               K,I,J,PKIJ(K,I,J)
-!              ENDDO
-!           ENDDO
-!        ENDDO
-      DO I=1,JMAX
-         DO J=1,JMAX
-              ECOALMASSM(I,J)=1.0D0
-         ENDDO
-      ENDDO
-
-      DO I=1,JMAX
-         DO J=1,JMAX
-           ECOALMASSM(I,J)=ECOALMASS(XL(I),XL(J))
-         ENDDO
-      ENDDO
-      RETURN
-2070  continue
-      WRITE( errmess , '(A,I4)' )                                        &
-       'module_mp_fast: error opening hujisbm_DATA on unit '          &
-     &, hujisbm_unit1
-      CALL wrf_error_fatal(errmess)
-      END SUBROUTINE BREAKINIT
-
-      REAL FUNCTION ECOALMASS(ETA,KSI)
-      IMPLICIT NONE
-!     REAL ECOALMASS
-      REAL PI
-      PARAMETER (PI = 3.1415927)
-
-      REAL ETA,KSI
-      REAL KPI,RHO
-      REAL DETA,DKSI
-
-      PARAMETER (RHO  = 1.0)
-
-!     REAL ECOALDIAM
-!     EXTERNAL ECOALDIAM
-
-      KPI = 6./PI
-
-      DETA = (KPI*ETA/RHO)**(1./3.)
-      DKSI = (KPI*KSI/RHO)**(1./3.)
-
-      ECOALMASS = ECOALDIAM(DETA,DKSI)
-
-      RETURN
-      END FUNCTION ECOALMASS
+    ! ... Dashed-dotted (linear)
+    T_tab =  [0.0, -0.813, -5.26, -10.13, -14.63, -20.02, -40.0 ]
+    SE_tab = [10.0**(-0.693), 10.0**(-0.72), 10.0**(-0.877), 10.0**(-1.050),  10.0**(-1.212),  10.0**(-1.401),  10.0**(-2.082) ]
 
 
-!------------------------------------------------
-!     COALESCENCE EFFICIENCY AS FUNC OF DIAMETERS
-!------------------------------------------------
+    CALL INTERPOL_SE (size(SE_tab), T_TAB, SE_TAB, TC, factor_t)
 
-      REAL FUNCTION ECOALDIAM(DETA,DKSI)
-!     IMPLICIT NONE
-
-      INTEGER N
-      REAL DETA,DKSI
-      REAL DGR,DKL,RGR,RKL,P,Q,E,X,Y,QMIN,QMAX
-      REAL ZERO,ONE,EPS,PI
-
-      PARAMETER (ZERO = 0.0)
-      PARAMETER (ONE  = 1.0)
-      PARAMETER (EPS  = 1.0E-30)
-      PARAMETER (PI   = 3.1415927)
-
-!     REAL   ECOALLOWLIST,ECOALOCHS
-!     EXTERNAL ECOALLOWLIST,ECOALOCHS
-
-      DGR = MAX(DETA,DKSI)
-      DKL = MIN(DETA,DKSI)
-
-      RGR = 0.5*DGR
-      RKL = 0.5*DKL
-
-      P = (RKL / RGR)
-      Q = (RKL * RGR)**0.5
-      Q = 0.5 * (RKL + RGR)
-
-      qmin = 250e-4
-      qmax = 400e-4        
-      if (q.lt.qmin) then
-         e = max(ecoalOchs(Dgr,Dkl),ecoalBeard(Dgr,Dkl)) 
-      elseif (q.ge.qmin.and.q.lt.qmax) then
-         x = (q - qmin) / (qmax - qmin)
-         e = sin(pi/2.0*x)**2 * ecoalLowList(Dgr,Dkl) &
-     &     + sin(pi/2.0*(1 - x))**2 * ecoalOchs(Dgr,Dkl)
-      elseif (q.ge.qmax) then
-         e = ecoalLowList(Dgr,Dkl)
-      else
-         e  = 1.0
+      if(tc < -40.0d0) then
+          factor_t = 0.0d0
       endif
 
-      ECOALDIAM  = MAX(MIN(ONE,E),EPS)
+      if (factor_t > 1.0) factor_t = 1.0
 
-      RETURN
-      END FUNCTION  ECOALDIAM
+      if(tc > 0.0d0) then
+          factor_t = 1.0d0
+      endif
 
-!--------------------------------------------------
-!     COALESCENCE EFFICIENCY (LOW&LIST)
-!--------------------------------------------------
+    END SELECT
 
-      REAL FUNCTION ECOALLOWLIST(DGR,DKL)
-      IMPLICIT NONE
-!     REAL ecoallowlist
-      REAL PI,SIGMA,KA,KB,EPSI
-      REAL DGR,DKL,RGR,RKL,X
-      REAL ST,SC,ET,DSTSC,CKE,W1,W2,DC,ECL
-      REAL QQ0,QQ1,QQ2
+  return
+  end subroutine modkrn_KS
+  ! +-----------------------------------------------------------+
+  subroutine coll_breakup_KS (gt_mg, xt_mg, jmax, dt, jbreak, &
+                              PKIJ, QKJ, NKRinput, NKR)
 
-      PARAMETER (EPSI=1.E-20)
+    implicit none
+  ! ... Interface
+    integer,intent(in) :: jmax, jbreak, NKRInput, NKR
+    real(kind=r8size),intent(in) :: xt_mg(:), dt
+    real(kind=r4size),intent(in) :: pkij(:,:,:),qkj(:,:)
+    real(kind=r8size),intent(inout) :: gt_mg(:)
+  ! ... Interface
 
-      PI = 3.1415927
-      SIGMA = 72.8
-      KA = 0.778
-      KB = 2.61E-4
+  ! ... Locals
+  ! ke = jbreak
+  integer,parameter :: ia=1, ja=1, ka=1
+  integer :: ie, je, ke, nkrdiff, jdiff, k, i, j
+  real(kind=r8size),parameter :: eps = 1.0d-20
+  real(kind=r8size) :: gt(jmax), xt(jmax+1), ft(jmax), fa(jmax), dg(jmax), df(jmax), dbreak(jbreak) &
+                     ,amweight(jbreak), gain, aloss
+  ! ... Locals
 
-      RGR = 0.5*DGR
-      RKL = 0.5*DKL
+  ie=jbreak
+  je=jbreak
+  ke=jbreak
 
-      CALL COLLENERGY(DGR,DKL,CKE,ST,SC,W1,W2,DC)
+  !input variables
 
-      DSTSC = ST-SC
-      ET = CKE+DSTSC
-      IF (ET .LT. 50.0) THEN
-         QQ0=1.0+(DKL/DGR)
-         QQ1=KA/QQ0**2
-         QQ2=KB*SIGMA*(ET**2)/(SC+EPSI)
-         ECL=QQ1*EXP(-QQ2)
-      ELSE
-         ECL=0.0
-      ENDIF
+  ! gt_mg : mass distribution function of Bott
+  ! xt_mg : mass of bin in mg
+  ! jmax  : number of bins
+  ! dt    : timestep in s
 
-      ECOALLOWLIST = ECL
+  !in CGS
 
-      RETURN
-      END FUNCTION ECOALLOWLIST
+  nkrdiff = nkrinput-nkr
+  do j=1,jmax
+  xt(j)=xt_mg(j)
+  gt(j)=gt_mg(j)
+  ft(j)=gt(j)/xt(j)/xt(j)
+  enddo
 
-!--------------------------------------------------
-!     COALESCENCE EFFICIENCY (BEARD AND OCHS)
-!--------------------------------------------------
+  !shift between coagulation and breakup grid
+  jdiff=jmax-jbreak
 
-      REAL FUNCTION ECOALOCHS(D_L,D_S)
-      IMPLICIT NONE
-!     real ecoalochs
-      REAL D_L,D_S
-      REAL PI,SIGMA,N_W,R_S,R_L,DV,P,G,X,E
-!      REAL VTBEARD,EPSF,FPMIN
-      REAL EPSF,FPMIN
+  !initialization
+  !shift to breakup grid
+  fa = 0.0
+  do k=1,ke-nkrdiff
+    fa(k)=ft(k+jdiff+nkrdiff)
+  enddo
 
-!     EXTERNAL VTBEARD
-      PARAMETER (EPSF  = 1.E-30)
-      PARAMETER (FPMIN = 1.E-30)
+  !breakup: bleck's first order method
+  !pkij: gain coefficients
+  !qkj : loss coefficients
 
-      PI = 3.1415927
-      SIGMA = 72.8
+  xt(jmax+1)=xt(jmax)*2.0d0
 
-      R_S = 0.5 * D_S
-      R_L = 0.5 * D_L
-      P   = R_S / R_L
+  amweight = 0.0
+  dbreak = 0.0
+  do k=1,ke-nkrdiff
+    gain=0.0d0
+    do i=1,ie-nkrdiff
+      do j=1,i
+        gain=gain+fa(i)*fa(j)*pkij(k,i,j)
+      enddo
+    enddo
+    aloss=0.0d0
+    do j=1,je-nkrdiff
+      aloss=aloss+fa(j)*qkj(k,j)
+    enddo
+    j=jmax-jbreak+k+nkrdiff
+    amweight(k)=2.0/(xt(j+1)**2.0-xt(j)**2.0)
+    dbreak(k)=amweight(k)*(gain-fa(k)*aloss)
 
-      DV  = ABS(VTBEARD(D_L) - VTBEARD(D_S))
-      IF (DV.LT.FPMIN) DV = FPMIN
-      N_W = R_S * DV**2 / SIGMA
-      G   = 2**(3./2.)/(6.*PI) * P**4 * (1.+ P) / ((1.+P**2)*(1.+P**3))
-      X   = N_W**(0.5) * G
-      E   = 0.767 - 10.14 * X
+    if(dbreak(k) .ne. dbreak(k)) then
+      print*,dbreak(k),amweight(k),gain,fa(k),aloss
+      print*,"-"
+      print*,dbreak
+      print*,"-"
+      print*,amweight
+      print*,"-"
+      print*,j,jmax,jbreak,k,nkrdiff
+      print*,"-"
+      print*,fa
+      print*,"-"
+      print*,xt
+      print*,"-"
+      print*,gt
+      call wrf_error_fatal(" inside coll_breakup, NaN, model stop")
+    endif
+  enddo
 
-      ECOALOCHS = E
+  !shift rate to coagulation grid
+  df = 0.0d0
+  do j=1,jdiff+nkrdiff
+    df(j)=0.0d0
+  enddo
 
-      RETURN
-      END FUNCTION ECOALOCHS
+  do j=1,ke-nkrdiff
+    df(j+jdiff)=dbreak(j)
+  enddo
 
-!-----------------------------------------
-!     CALCULATING THE COLLISION ENERGY
-!-----------------------------------------
+  !transformation to mass distribution function g(ln x)
+  do j=1,jmax
+    dg(j)=df(j)*xt(j)*xt(j)
+  enddo
 
-      SUBROUTINE COLLENERGY(DGR,DKL,CKE,ST,SC,W1,W2,DC)
-!     IMPLICIT NONE
+  !time integration
 
-      REAL DGR,DKL,DC
-      REAL K10,PI,SIGMA,RHO
-      REAL CKE,W1,W2,ST,SC
-      REAL DGKA3,DGKB3,DGKA2
-      REAL V1,V2,DV
-!     REAL VTBEARD,EPSF,FPMIN
-      REAL EPSF,FPMIN
+  do j=1,jmax
+    gt(j)=gt(j)+dg(j)*dt
+  !	if(gt(j)<0.0) then
+    !print*, 'gt(j) < 0'
+    !print*, 'j'
+    !print*,  j
+    !print*, 'dg(j),dt,gt(j)'
+    !print*,  dg(j),dt,gt(j)
+    !hlp=dmin1(gt(j),hlp)
+  !	gt(j) = eps
+  !	print*,'kr',j
+  !	print*,'gt',gt
+  !	print*,'dg',dg
+  !	print*,'gt_mg',gt_mg
+    !stop "in coll_breakup_ks gt(kr) < 0.0 "
+  !	endif
+  enddo
 
-!     EXTERNAL VTBEARD
-      PARAMETER (EPSF  = 1.E-30)
-      PARAMETER (FPMIN = 1.E-30)
+   gt_mg = gt
 
-      PI    = 3.1415927
-      RHO   = 1.0
-      SIGMA = 72.8
+  return
+  end subroutine coll_breakup_KS
+  ! +----------------------------------------------------+
+  subroutine courant_bott_KS(xl, nkr, chucm, ima, scal)
 
-      K10=RHO*PI/12.0D0
+    implicit none
 
-      DGR = MAX(DGR,EPSF)
-      DKL = MAX(DKL,EPSF)
+    integer,intent(in) :: nkr
+    real,intent(in) :: xl(:)
+    real(kind=r8size),intent(inout) :: chucm(:,:)
+    integer,intent(inout) :: ima(:,:)
+    real(kind=r8size),intent(in) :: scal
 
-      DGKA2=(DGR**2)+(DKL**2)
+    ! ... Locals
+    integer :: k, kk, j, i
+    real(kind=r8size) :: x0, xl_mg(nkr), dlnr
+    ! ... Locals
 
-      DGKA3=(DGR**3)+(DKL**3)
+    ! ima(i,j) - k-category number,
+    ! chucm(i,j)   - courant number :
+    ! logarithmic grid distance(dlnr) :
 
-      IF (DGR.NE.DKL) THEN
-         V1 = VTBEARD(DGR)
-         V2 = VTBEARD(DKL)
-         DV = (V1-V2)
-         IF (DV.LT.FPMIN) DV = FPMIN
-         DV = DV**2
-         IF (DV.LT.FPMIN) DV = FPMIN
-         DGKB3=(DGR**3)*(DKL**3)
-         CKE = K10 * DV * DGKB3/DGKA3
-      ELSE
-         CKE = 0.0D0
-      ENDIF
-      ST = PI*SIGMA*DGKA2
-      SC = PI*SIGMA*DGKA3**(2./3.)
+      !xl_mg(0)=xl_mg(1)/2
+      xl_mg(1:nkr) = xl(1:nkr)*1.0D3
 
-      W1=CKE/(SC+EPSF)
-      W2=CKE/(ST+EPSF)
+      dlnr=dlog(2.0d0)/(3.0d0*scal)
 
-      DC=DGKA3**(1./3.)
-
-      RETURN
-      END SUBROUTINE COLLENERGY
-
-!--------------------------------------------------
-!     CALCULATING TERMINAL VELOCITY (BEARD-FORMULA)
-!--------------------------------------------------
-
-      REAL FUNCTION VTBEARD(DIAM)
-      IMPLICIT NONE
-!     REAL VTBEARD
-
-      REAL DIAM,AA
-      REAL ROP,RU,AMT,PP,RL,TT,ETA,DENS,CD,D,A
-      REAL ALA,GR,SI,BOND,PART,XX,YY,RE,VT
-      REAL B00,B11,B22,B33,B44,B55,B0,B1,B2,B3,B4,B5,B6
-      INTEGER ID
-
-      DATA B00,B11,B22,B33,B44,B55,B0,B1,B2,B3,B4,B5,B6/-5.00015, &
-     &5.23778,-2.04914,.475294,-.0542819,.00238449,-3.18657,.992696, &
-     &-.153193E-2,-.987059E-3,-.578878E-3,.855176E-4,-.327815E-5/
-
-      AA   = DIAM/2.0
-      ROP  = 1.0
-      RU   = 8.3144E+7
-      AMT  = 28.9644
-      ID   = 10000
-      PP   = FLOAT(ID)*100.
-      RL   = RU/AMT
-      TT   = 283.15
-      ETA  = (1.718+.0049*(TT-273.15))*1.E-4
-      DENS = PP/TT/RL
-      ALA  = 6.6E-6*1.01325E+6/PP*TT/293.15
-      GR   = 979.69
-      SI   = 76.1-.155*(TT-273.15)
-
-      IF (AA.GT.500.E-4) THEN
-         BOND = GR*(ROP-DENS)*AA*AA/SI
-         PART = (SI**3*DENS*DENS/(ETA**4*GR*(ROP-DENS)))**(1./6.)
-         XX = LOG(16./3.*BOND*PART)
-         YY = B00+B11*XX+B22*XX*XX+B33*XX**3+B44*XX**4+B55*XX**5
-         RE = PART*EXP(YY)
-         VT = ETA*RE/2./DENS/AA
-      ELSEIF (AA.GT.1.E-3) THEN
-         CD = 32.*AA*AA*AA*(ROP-DENS)*DENS*GR/3./ETA/ETA
-         XX = LOG(CD)
-         RE = EXP(B0+B1*XX+B2*XX*XX+B3*XX**3+B4*XX**4+B5*XX**5+B6*XX**6)
-         D  = CD/RE/24.-1.
-         VT = ETA*RE/2./DENS/AA
-      ELSE
-         A  = 1.+1.26*ALA/AA
-         A  = A*2.*AA*AA*GR*(ROP-DENS)/9./ETA
-         CD = 12*ETA/A/AA/DENS
-         VT = A
-      ENDIF
-
-      VTBEARD = VT
-
-      RETURN
-      END FUNCTION VTBEARD
-
-
-      
-!-------------------------------------------------- 
-!     Function f. Coalescence-Efficiency 
-!     Eq. (7) of Beard and Ochs (1995)
-!--------------------------------------------------      
- 
-      REAL FUNCTION ecoalBeard(D_l,D_s) 
-       
-      IMPLICIT NONE 
-!     REAL ecoalBeard
-!     REAL ECOALMASS
-      REAL            D_l,D_s
-      REAL            R_s,R_l
-      REAL            rcoeff
-      REAL epsf
-      PARAMETER (epsf  = 1.e-30) 
-
-      INTEGER its
-      COMPLEX acoeff(4),x
-
-      R_s = 0.5 * D_s
-      R_l = 0.5 * D_l      
-
-      rcoeff = 5.07 - log(R_s*1e4) - log(R_l*1e4/200.0)
-
-      acoeff(1) = CMPLX(rcoeff)
-      acoeff(2) = CMPLX(-5.94)
-      acoeff(3) = CMPLX(+7.27)
-      acoeff(4) = CMPLX(-5.29)
-
-      x = (0.50,0)
-
-      CALL LAGUER(acoeff,3,x,its)
-
-      EcoalBeard = REAL(x)
-
-      RETURN 
-      END FUNCTION ecoalBeard 
-
-!--------------------------------------------------       
-
-      SUBROUTINE laguer(a,m,x,its)
-      INTEGER m,its,MAXIT,MR,MT
-      REAL EPSS
-      COMPLEX a(m+1),x
-      PARAMETER (EPSS=2.e-7,MR=8,MT=10,MAXIT=MT*MR)
-      INTEGER iter,j
-      REAL abx,abp,abm,err,frac(MR)
-      COMPLEX dx,x1,b,d,f,g,h,sq,gp,gm,g2
-      SAVE frac
-      DATA frac /.5,.25,.75,.13,.38,.62,.88,1./
-      do 12 iter=1,MAXIT
-        its=iter
-        b=a(m+1)
-        err=abs(b)
-        d=cmplx(0.,0.)
-        f=cmplx(0.,0.)
-        abx=abs(x)
-        do 11 j=m,1,-1
-          f=x*f+d
-          d=x*d+b
-          b=x*b+a(j)
-          err=abs(b)+abx*err
-11      continue
-        err=EPSS*err
-        if(abs(b).le.err) then
-          return
-        else
-          g=d/b
-          g2=g*g
-          h=g2-2.*f/b
-          sq=sqrt((m-1)*(m*h-g2))
-          gp=g+sq
-          gm=g-sq
-          abp=abs(gp)
-          abm=abs(gm)
-          if(abp.lt.abm) gp=gm
-          if (max(abp,abm).gt.0.) then
-            dx=m/gp
-          else
-            dx=exp(cmplx(log(1.+abx),float(iter)))
-          endif
-        endif
-        x1=x-dx
-        if(x.eq.x1)return
-        if (mod(iter,MT).ne.0) then
-          x=x1
-        else
-          x=x-dx*frac(iter/MT)
-        endif
-12    continue
-      pause 'too many iterations in laguer'
-      return
-      END SUBROUTINE laguer
-
-
-
-
-      subroutine courant_bott
-      implicit none
-      integer k,kk,j,i
-      double precision x0
-! ima(i,j) - k-category number,
-! chucm(i,j)   - courant number :
-! logarithmic grid distance(dlnr) :
-
-
-!================================================================
-! BARRY     
-!     print*,'dlnr in courant_bott = ',dlnr
-      xl_mg(0)=xl_mg(1)/2
-! BARRY
-      do i=1,nkr
-         do j=i,nkr
-            x0=xl_mg(i)+xl_mg(j)
-            do k=j,nkr
-               kk=k
-               if (k.eq.1)then
-!                  print*,'xl_mg(k) = ',xl_mg(k)
-!                  print*,'x0 = ',x0
-! xl_mg(k) =   3.351000000000000E-008
-!  x0 =   6.702000000000000E-008
-!		   read (6,*)
-               end if
-               if(xl_mg(k).ge.x0.and.xl_mg(k-1).lt.x0) then
-                 chucm(i,j)=dlog(x0/xl_mg(k-1))/(3.d0*dlnr)
- 102             continue
-                 if(chucm(i,j).gt.1.-1.d-08) then
-                   chucm(i,j)=0.
-                   kk=kk+1
+      do i = 1,nkr
+         do j = i,nkr
+            x0 = xl_mg(i) + xl_mg(j)
+            do k = j,nkr
+              !if(k == 1) goto 1000 ! ### (KS)
+               kk = k
+               if(k == 1) goto 1000
+               if(xl_mg(k) >= x0 .and. xl_mg(k-1) < x0) then
+                 chucm(i,j) = dlog(x0/xl_mg(k-1))/(3.d0*dlnr)
+                 if(chucm(i,j) > 1.0d0-1.d-08) then
+                   chucm(i,j) = 0.0d0
+                   kk = kk + 1
                  endif
-                 ima(i,j)=min(nkr-1,kk-1)
-
+                 ima(i,j) = min(nkr-1,kk-1)
+                 !if (ima(i,j) == 0) then
+                 !	print*,"ima==0"
+                 !endif
                  goto 2000
                endif
+               1000 continue
             enddo
- 2000       continue
-!            if(i.eq.nkr.or.j.eq.nkr) ima(i,j)=nkr
-            chucm(j,i)=chucm(i,j)
-            ima(j,i)=ima(i,j)
+            2000  continue
+            !if(i.eq.nkr.or.j.eq.nkr) ima(i,j)=nkr
+            chucm(j,i) = chucm(i,j)
+            ima(j,i) = ima(i,j)
          enddo
       enddo
+
       return
-      end subroutine courant_bott
-
-
-      SUBROUTINE KERNALS(DTIME)
-! KHAIN30/07/99
-      IMPLICIT NONE
-      INTEGER I,J
-      REAL PI
-!******************************************************************
-      data pi/3.141592654/
-! dtime - timestep of integration (calculated in main program) :
-! dlnr - logarithmic grid distance
-! ima(i,j) - k-category number, c(i,j) - courant number 
-! cw*(i,j) (in cm**3) - multiply help kernel with constant 
-! timestep(dt) and logarithmic grid distance(dlnr) :
-        REAL DTIME
-! logarithmic grid distance(dlnr) :
-!       dlnr=dlog(2.d0)/(3.d0*scal)
-! scal is micro.prm file parameter(scal=1.d0 for x(k+1)=x(k)*2)
-! calculation of cw*(i,j) (in cm**3) - multiply help kernel 
-! with constant timestep(dtime) and logarithmic grid distance(dlnr) :
-!     print*,'dlnr in kernal = ',dlnr,dtime
-        DO I=1,NKR
-           DO J=1,NKR
-              CWLL_1000MB(I,J)=DTIME*DLNR*YWLL_1000MB(I,J)
-              CWLL_750MB(I,J)=DTIME*DLNR*YWLL_750MB(I,J)
-              CWLL_500MB(I,J)=DTIME*DLNR*YWLL_500MB(I,J)
-
-              CWLL(I,J)=DTIME*DLNR*YWLL(I,J)
-              CWLG(I,J)=DTIME*DLNR*YWLG(I,J)
-              CWLH(I,J)=DTIME*DLNR*YWLH(I,J)
-
-! barry
-              if (i.le.16.and.j.le.16)then
-              CWSL(I,J)=0.d0
-!             CWIL_2(I,J)=DTIME*DLNR*YWIL(I,J,2)
-              CWSL(i,j)=DTIME*DLNR*YWIL(I,J,2)
-              CWLS(I,J)=0.d0
-!             CWLI_2(I,J)=DTIME*DLNR*YWLI(I,J,2)
-              CWLS(I,J)=DTIME*DLNR*YWLI(I,J,2)
-              else
-              CWSL(I,J)=DTIME*DLNR*YWSL(I,J)
-              CWLS(I,J)=DTIME*DLNR*YWLS(I,J)
-              end if
-              CWSS(I,J)=DTIME*DLNR*YWSS(I,J)
-              CWSG(I,J)=DTIME*DLNR*YWSG(I,J)
-              CWSH(I,J)=DTIME*DLNR*YWSH(I,J)
-
-              CWGL(I,J)=0.8*DTIME*DLNR*YWGL(I,J)
-              IF(RADXXO(I,6).LT.2.0D-2) THEN
-                IF(RADXXO(J,1).LT.1.0D-3) THEN
-                  IF(RADXXO(J,1).GE.7.0D-4) THEN
-                    CWGL(I,J)=DTIME*DLNR*YWGL(I,J)/1.5D0
-                  ELSE
-                    CWGL(I,J)=DTIME*DLNR*YWGL(I,J)/3.0D0
-                  ENDIF
-                ENDIF
-              ENDIF
-              IF(I.LE.14.AND.J.LE.7) CWGL(I,J)=0.0D0
-!             IF(I.LE.17.AND.J.LE.7) CWGL(I,J)=0.0D0
-!             IF(I.LE.14.AND.J.LE.14) CWGL(I,J)=0.0D0
-              CWGS(I,J)=DTIME*DLNR*YWGS(I,J)
-              CWGG(I,J)=DTIME*DLNR*YWGG(I,J)
-              CWGH(I,J)=DTIME*DLNR*YWGH(I,J)
-
-              CWHL(I,J)=DTIME*DLNR*YWHL(I,J)
-              CWHS(I,J)=DTIME*DLNR*YWHS(I,J)
-              CWHG(I,J)=DTIME*DLNR*YWHG(I,J)
-              CWHH(I,J)=DTIME*DLNR*YWHH(I,J)
-
-              CWLI_1(I,J)=DTIME*DLNR*YWLI(I,J,1)
-              CWLI_2(I,J)=DTIME*DLNR*YWLI(I,J,2)
-              CWLI_3(I,J)=DTIME*DLNR*YWLI(I,J,3)
-              
-              CWIL_1(I,J)=DTIME*DLNR*YWIL(I,J,1)
-              CWIL_2(I,J)=DTIME*DLNR*YWIL(I,J,2)
-              CWIL_3(I,J)=DTIME*DLNR*YWIL(I,J,3)
-
-              CWIS_1(I,J)=DTIME*DLNR*YWIS(I,J,1)
-              CWIS_2(I,J)=DTIME*DLNR*YWIS(I,J,2)
-              CWIS_3(I,J)=DTIME*DLNR*YWIS(I,J,3)
-
-              CWSI_1(I,J)=DTIME*DLNR*YWSI(I,J,1)
-              CWSI_2(I,J)=DTIME*DLNR*YWSI(I,J,2)
-              CWSI_3(I,J)=DTIME*DLNR*YWSI(I,J,3)
-
-              CWIG_1(I,J)=DTIME*DLNR*YWIG(I,J,1)
-              CWIG_2(I,J)=DTIME*DLNR*YWIG(I,J,2)
-              CWIG_3(I,J)=DTIME*DLNR*YWIG(I,J,3)
-
-              CWGI_1(I,J)=DTIME*DLNR*YWGI(I,J,1)
-              CWGI_2(I,J)=DTIME*DLNR*YWGI(I,J,2)
-              CWGI_3(I,J)=DTIME*DLNR*YWGI(I,J,3)
-
-              CWIH_1(I,J)=DTIME*DLNR*YWIH(I,J,1)
-              CWIH_2(I,J)=DTIME*DLNR*YWIH(I,J,2)
-              CWIH_3(I,J)=DTIME*DLNR*YWIH(I,J,3)
-
-              CWHI_1(I,J)=DTIME*DLNR*YWHI(I,J,1)
-              CWHI_2(I,J)=DTIME*DLNR*YWHI(I,J,2)
-              CWHI_3(I,J)=DTIME*DLNR*YWHI(I,J,3)
-! barry
-              if (i.lt.12.and.j.lt.12)then
-
-               CWII_1_1(I,J)=0.D0
-               CWII_1_2(I,J)=0.D0
-               CWII_1_3(I,J)=0.D0
-
-               CWII_2_1(I,J)=0.D0
-               CWII_2_2(I,J)=0.D0
-               CWII_2_3(I,J)=0.D0
-
-               CWII_3_1(I,J)=0.D0
-               CWII_3_2(I,J)=0.D0
-               CWII_3_3(I,J)=0.D0
-!barry
-              else
-               CWII_1_1(I,J)=DTIME*DLNR*YWII(I,J,1,1)
-               CWII_1_2(I,J)=DTIME*DLNR*YWII(I,J,1,2)
-               CWII_1_3(I,J)=DTIME*DLNR*YWII(I,J,1,3)
-
-               CWII_2_1(I,J)=DTIME*DLNR*YWII(I,J,2,1)
-               CWII_2_2(I,J)=DTIME*DLNR*YWII(I,J,2,2)
-               CWII_2_3(I,J)=DTIME*DLNR*YWII(I,J,2,3)
-
-               CWII_3_1(I,J)=DTIME*DLNR*YWII(I,J,3,1)
-               CWII_3_2(I,J)=DTIME*DLNR*YWII(I,J,3,2)
-               CWII_3_3(I,J)=DTIME*DLNR*YWII(I,J,3,3)
-              end if
-           ENDDO
-        ENDDO
-!       GO TO 88
-! NEW CHANGES 2.06.01 (BEGIN)
-        CALL TURBCOEF
-        DO J=1,7
-           DO I=15,24-J
-              CWGL(I,J)=0.0D0
-           ENDDO
-        ENDDO
-! NEW CHANGES 2.06.01 (END)
-! NEW CHANGES 3.02.01 (BEGIN)
-        DO I=1,NKR
-           DO J=1,NKR
-              CWLG(J,I)=CWGL(I,J)
-           ENDDO
-        ENDDO
-!       print*, 'ICETURB = ',ICETURB
-          DO I=KRMING_GL,KRMAXG_GL
-             DO J=KRMINL_GL,KRMAXL_GL
-               IF (ICETURB.EQ.1)THEN
-                CWGL(I,J)=CTURBGL(I,J)*CWGL(I,J)
-               ELSE
-                CWGL(I,J)=CWGL(I,J)
-               END IF
-             ENDDO
-          ENDDO
-          DO I=KRMING_GL,KRMAXG_GL
-             DO J=KRMINL_GL,KRMAXL_GL
-                CWLG(J,I)=CWGL(I,J)
-             ENDDO
-          ENDDO
-
-88     CONTINUE
-	RETURN
-	END SUBROUTINE KERNALS
-
-      SUBROUTINE KERNALS_IN(DTIME)
-! KHAIN30/07/99
-      IMPLICIT NONE
-      INTEGER I,J
-      REAL PI
-!******************************************************************
-      data pi/3.141592654/
-! dtime - timestep of integration (calculated in main program) :
-! dlnr - logarithmic grid distance
-! ima(i,j) - k-category number, c(i,j) - courant number 
-! cw*(i,j) (in cm**3) - multiply help kernel with constant 
-! timestep(dt) and logarithmic grid distance(dlnr) :
-        REAL DTIME
-! logarithmic grid distance(dlnr) :
-!       dlnr=dlog(2.d0)/(3.d0*scal)
-! scal is micro.prm file parameter(scal=1.d0 for x(k+1)=x(k)*2)
-! calculation of cw*(i,j) (in cm**3) - multiply help kernel 
-! with constant timestep(dtime) and logarithmic grid distance(dlnr) :
-!     print*,'dlnr in kernal = ',dlnr,dtime
-        DO I=1,NKR
-           DO J=1,NKR
-              CWLL_1000MB(I,J)=DTIME*DLNR*YWLL_1000MB(I,J)
-              CWLL_750MB(I,J)=DTIME*DLNR*YWLL_750MB(I,J)
-              CWLL_500MB(I,J)=DTIME*DLNR*YWLL_500MB(I,J)
-
-              CWLL(I,J)=DTIME*DLNR*YWLL(I,J)
-              CWLG(I,J)=DTIME*DLNR*YWLG(I,J)
-!             CWLH(I,J)=DTIME*DLNR*YWLH(I,J)
-
-! barry
-              if (i.le.16.and.j.le.16)then
-              CWSL(I,J)=0.d0
-!             CWIL_2(I,J)=DTIME*DLNR*YWIL(I,J,2)
-              CWSL(i,j)=DTIME*DLNR*YWIL(I,J,2)
-              CWLS(I,J)=0.d0
-!             CWLI_2(I,J)=DTIME*DLNR*YWLI(I,J,2)
-              CWLS(I,J)=DTIME*DLNR*YWLI(I,J,2)
-              else
-              CWSL(I,J)=DTIME*DLNR*YWSL(I,J)
-              CWLS(I,J)=DTIME*DLNR*YWLS(I,J)
-              end if
-              CWSS(I,J)=DTIME*DLNR*YWSS(I,J)
-              CWSG(I,J)=DTIME*DLNR*YWSG(I,J)
-!             CWSH(I,J)=DTIME*DLNR*YWSH(I,J)
-
-              CWGL(I,J)=0.8*DTIME*DLNR*YWGL(I,J)
-              IF(RADXXO(I,6).LT.2.0D-2) THEN
-                IF(RADXXO(J,1).LT.1.0D-3) THEN
-                  IF(RADXXO(J,1).GE.7.0D-4) THEN
-                    CWGL(I,J)=DTIME*DLNR*YWGL(I,J)/1.5D0
-                  ELSE
-                    CWGL(I,J)=DTIME*DLNR*YWGL(I,J)/3.0D0
-                  ENDIF
-                ENDIF
-              ENDIF
-              IF(I.LE.14.AND.J.LE.7) CWGL(I,J)=0.0D0
-!             IF(I.LE.17.AND.J.LE.7) CWGL(I,J)=0.0D0
-!             IF(I.LE.14.AND.J.LE.14) CWGL(I,J)=0.0D0
-              CWGS(I,J)=DTIME*DLNR*YWGS(I,J)
-              CWGG(I,J)=DTIME*DLNR*YWGG(I,J)
-!             CWGH(I,J)=DTIME*DLNR*YWGH(I,J)
-
-!             CWHL(I,J)=DTIME*DLNR*YWHL(I,J)
-!             CWHS(I,J)=DTIME*DLNR*YWHS(I,J)
-!             CWHG(I,J)=DTIME*DLNR*YWHG(I,J)
-!             CWHH(I,J)=DTIME*DLNR*YWHH(I,J)
-
-!             CWLI_1(I,J)=DTIME*DLNR*YWLI(I,J,1)
-!             CWLI_2(I,J)=DTIME*DLNR*YWLI(I,J,2)
-!             CWLI_3(I,J)=DTIME*DLNR*YWLI(I,J,3)
-              
-!             CWIL_1(I,J)=DTIME*DLNR*YWIL(I,J,1)
-!             CWIL_2(I,J)=DTIME*DLNR*YWIL(I,J,2)
-!             CWIL_3(I,J)=DTIME*DLNR*YWIL(I,J,3)
-
-!             CWIS_1(I,J)=DTIME*DLNR*YWIS(I,J,1)
-!             CWIS_2(I,J)=DTIME*DLNR*YWIS(I,J,2)
-!             CWIS_3(I,J)=DTIME*DLNR*YWIS(I,J,3)
-
-!             CWSI_1(I,J)=DTIME*DLNR*YWSI(I,J,1)
-!             CWSI_2(I,J)=DTIME*DLNR*YWSI(I,J,2)
-!             CWSI_3(I,J)=DTIME*DLNR*YWSI(I,J,3)
-
-!             CWIG_1(I,J)=DTIME*DLNR*YWIG(I,J,1)
-!             CWIG_2(I,J)=DTIME*DLNR*YWIG(I,J,2)
-!             CWIG_3(I,J)=DTIME*DLNR*YWIG(I,J,3)
-
-!             CWGI_1(I,J)=DTIME*DLNR*YWGI(I,J,1)
-!             CWGI_2(I,J)=DTIME*DLNR*YWGI(I,J,2)
-!             CWGI_3(I,J)=DTIME*DLNR*YWGI(I,J,3)
-
-!             CWIH_1(I,J)=DTIME*DLNR*YWIH(I,J,1)
-!             CWIH_2(I,J)=DTIME*DLNR*YWIH(I,J,2)
-!             CWIH_3(I,J)=DTIME*DLNR*YWIH(I,J,3)
-
-!             CWHI_1(I,J)=DTIME*DLNR*YWHI(I,J,1)
-!             CWHI_2(I,J)=DTIME*DLNR*YWHI(I,J,2)
-!             CWHI_3(I,J)=DTIME*DLNR*YWHI(I,J,3)
-! barry
-              if (i.lt.12.and.j.lt.12)then
-
-!              CWII_1_1(I,J)=0.D0
-!              CWII_1_2(I,J)=0.D0
-!              CWII_1_3(I,J)=0.D0
-
-!              CWII_2_1(I,J)=0.D0
-!              CWII_2_2(I,J)=0.D0
-!              CWII_2_3(I,J)=0.D0
-
-!              CWII_3_1(I,J)=0.D0
-!              CWII_3_2(I,J)=0.D0
-!              CWII_3_3(I,J)=0.D0
-!barry
-              else
-!              CWII_1_1(I,J)=DTIME*DLNR*YWII(I,J,1,1)
-!              CWII_1_2(I,J)=DTIME*DLNR*YWII(I,J,1,2)
-!              CWII_1_3(I,J)=DTIME*DLNR*YWII(I,J,1,3)
-
-!              CWII_2_1(I,J)=DTIME*DLNR*YWII(I,J,2,1)
-!              CWII_2_2(I,J)=DTIME*DLNR*YWII(I,J,2,2)
-!              CWII_2_3(I,J)=DTIME*DLNR*YWII(I,J,2,3)
-
-!              CWII_3_1(I,J)=DTIME*DLNR*YWII(I,J,3,1)
-!              CWII_3_2(I,J)=DTIME*DLNR*YWII(I,J,3,2)
-!              CWII_3_3(I,J)=DTIME*DLNR*YWII(I,J,3,3)
-              end if
-           ENDDO
-        ENDDO
-!       GO TO 88
-! NEW CHANGES 2.06.01 (BEGIN)
-        CALL TURBCOEF
-        DO J=1,7
-           DO I=15,24-J
-              CWGL(I,J)=0.0D0
-           ENDDO
-        ENDDO
-! NEW CHANGES 2.06.01 (END)
-! NEW CHANGES 3.02.01 (BEGIN)
-        DO I=1,NKR
-           DO J=1,NKR
-              CWLG(J,I)=CWGL(I,J)
-           ENDDO
-        ENDDO
-!       print*, 'ICETURB = ',ICETURB
-          DO I=KRMING_GL,KRMAXG_GL
-             DO J=KRMINL_GL,KRMAXL_GL
-               IF (ICETURB.EQ.1)THEN
-                CWGL(I,J)=CTURBGL(I,J)*CWGL(I,J)
-               ELSE
-                CWGL(I,J)=CWGL(I,J)
-               END IF
-             ENDDO
-          ENDDO
-          DO I=KRMING_GL,KRMAXG_GL
-             DO J=KRMINL_GL,KRMAXL_GL
-                CWLG(J,I)=CWGL(I,J)
-             ENDDO
-          ENDDO
-
-88     CONTINUE
-	RETURN
-	END SUBROUTINE KERNALS_IN
-        SUBROUTINE TURBCOEF
-        IMPLICIT NONE
-        INTEGER I,J
-!       DOUBLE PRECISION X_KERN,Y_KERN,F
-        DOUBLE PRECISION X_KERN,Y_KERN
-	DOUBLE PRECISION RL_LL(K0_LL),RL_GL(K0L_GL),RG_GL(K0G_GL)
-          RL_LL(1)=RADXXO(KRMIN_LL,1)*1.E4
-          RL_LL(2)=10.0D0
-          RL_LL(3)=20.0D0
-          RL_LL(4)=30.0D0
-          RL_LL(5)=40.0D0
-          RL_LL(6)=50.0D0
-          RL_LL(7)=60.0D0
-          RL_LL(8)=RADXXO(KRMAX_LL,1)*1.E4
-          DO J=1,K0_LL
-             DO I=1,K0_LL
-                CTURB_LL(I,J)=1.0D0
-             ENDDO
-          ENDDO 
-	  CTURB_LL(1,1)=4.50D0
-	  CTURB_LL(1,2)=4.50D0
-	  CTURB_LL(1,3)=3.00D0
-	  CTURB_LL(1,4)=2.25D0
-	  CTURB_LL(1,5)=1.95D0
-	  CTURB_LL(1,6)=1.40D0
-	  CTURB_LL(1,7)=1.40D0
-	  CTURB_LL(1,8)=1.40D0
-
-	  CTURB_LL(2,1)=4.50D0
-	  CTURB_LL(2,2)=4.50D0
-	  CTURB_LL(2,3)=3.00D0
-	  CTURB_LL(2,4)=2.25D0
-	  CTURB_LL(2,5)=1.95D0
-	  CTURB_LL(2,6)=1.40D0
-	  CTURB_LL(2,7)=1.40D0
-	  CTURB_LL(2,8)=1.40D0
-
-	  CTURB_LL(3,1)=3.00D0
-	  CTURB_LL(3,2)=3.00D0
-	  CTURB_LL(3,3)=2.70D0
-	  CTURB_LL(3,4)=2.25D0
-	  CTURB_LL(3,5)=1.65D0
-	  CTURB_LL(3,6)=1.40D0
-	  CTURB_LL(3,7)=1.40D0
-	  CTURB_LL(3,8)=1.40D0
-
-	  CTURB_LL(4,1)=2.25D0
-	  CTURB_LL(4,2)=2.25D0
-	  CTURB_LL(4,3)=2.25D0
-	  CTURB_LL(4,4)=1.95D0
-	  CTURB_LL(4,5)=1.65D0
-	  CTURB_LL(4,6)=1.40D0
-	  CTURB_LL(4,7)=1.40D0
-	  CTURB_LL(4,8)=1.40D0
-
-	  CTURB_LL(5,1)=1.95D0
-	  CTURB_LL(5,2)=1.95D0
-	  CTURB_LL(5,3)=1.65D0
-	  CTURB_LL(5,4)=1.65D0
-	  CTURB_LL(5,5)=1.65D0
-	  CTURB_LL(5,6)=1.40D0
-	  CTURB_LL(5,7)=1.40D0
-	  CTURB_LL(5,8)=1.40D0
-
-	  CTURB_LL(6,1)=1.40D0
-	  CTURB_LL(6,2)=1.40D0
-	  CTURB_LL(6,3)=1.40D0
-	  CTURB_LL(6,4)=1.40D0
-	  CTURB_LL(6,5)=1.40D0
-	  CTURB_LL(6,6)=1.40D0
-	  CTURB_LL(6,7)=1.40D0
-	  CTURB_LL(6,8)=1.40D0
-
-	  CTURB_LL(7,1)=1.40D0
-	  CTURB_LL(7,2)=1.40D0
-	  CTURB_LL(7,3)=1.40D0
-	  CTURB_LL(7,4)=1.40D0
-	  CTURB_LL(7,5)=1.40D0
-	  CTURB_LL(7,6)=1.40D0
-	  CTURB_LL(7,7)=1.40D0
-	  CTURB_LL(7,8)=1.40D0
-
-	  CTURB_LL(8,1)=1.40D0
-	  CTURB_LL(8,2)=1.40D0
-	  CTURB_LL(8,3)=1.40D0
-	  CTURB_LL(8,4)=1.40D0
-	  CTURB_LL(8,5)=1.40D0
-	  CTURB_LL(8,6)=1.40D0
-	  CTURB_LL(8,7)=1.40D0
-	  CTURB_LL(8,8)=1.40D0
-          DO J=1,K0_LL
-             DO I=1,K0_LL
-                CTURB_LL(I,J)=(CTURB_LL(I,J)-1.0D0)/1.5D0+1.0D0
-             ENDDO
-          ENDDO
-	  DO I=KRMIN_LL,KRMAX_LL
-             DO J=KRMIN_LL,KRMAX_LL
-                CTURBLL(I,J)=1.0D0
-             ENDDO
-          ENDDO
-          DO I=KRMIN_LL,KRMAX_LL
-             X_KERN=RADXXO(I,1)*1.0D4
-             IF(X_KERN.LT.RL_LL(1)) X_KERN=RL_LL(1)
-             IF(X_KERN.GT.RL_LL(K0_LL)) X_KERN=RL_LL(K0_LL) 
-             DO J=KRMIN_LL,KRMAX_LL
-                Y_KERN=RADXXO(J,1)*1.0D4
-                IF(Y_KERN.LT.RL_LL(1)) Y_KERN=RL_LL(1)
-                IF(Y_KERN.GT.RL_LL(K0_LL)) Y_KERN=RL_LL(K0_LL)
-                CTURBLL(I,J)=F(X_KERN,Y_KERN,RL_LL,RL_LL,CTURB_LL &
-     &                      ,K0_LL,K0_LL)	                         
-             ENDDO
-          ENDDO
-          RL_GL(1) = RADXXO(1,1)*1.E4 
-          RL_GL(2) = 8.0D0
-          RL_GL(3) = 10.0D0
-	  RL_GL(4) = 16.0D0
-          RL_GL(5) = 20.0D0
-          RL_GL(6) = 30.0D0
-          RL_GL(7) = 40.0D0
-          RL_GL(8) = 50.0D0
-          RL_GL(9) = 60.0D0
-          RL_GL(10)= 70.0D0
-          RL_GL(11)= 80.0D0
-	  RL_GL(12)= 90.0D0
-	  RL_GL(13)=100.0D0
-	  RL_GL(14)=200.0D0
-	  RL_GL(15)=300.0D0
-	  RL_GL(16)=RADXXO(24,1)*1.0D4
-! TURBULENCE GRAUPEL BULK RADII IN MKM
-          RG_GL(1) = RADXXO(1,6)*1.0D4 
-          RG_GL(2) = 30.0D0  
-          RG_GL(3) = 60.0D0 
-          RG_GL(4) = 100.0D0 
-          RG_GL(5) = 200.0D0 
-	  RG_GL(6) = 300.0D0
-	  RG_GL(7) = 400.0D0
-	  RG_GL(8) = 500.0D0
-	  RG_GL(9) = 600.0D0
-	  RG_GL(10)= 700.0D0
-	  RG_GL(11)= 800.0D0
-	  RG_GL(12)= 900.0D0
-	  RG_GL(13)=1000.0D0
-	  RG_GL(14)=2000.0D0
-	  RG_GL(15)=3000.0D0
-	  RG_GL(16)=RADXXO(33,6)*1.0D4
-	  DO I=KRMING_GL,KRMAXG_GL
-             DO J=KRMINL_GL,KRMAXL_GL
-                CTURBGL(I,J)=1.0D0
-             ENDDO
-          ENDDO
-          DO I=1,K0G_GL
-             DO J=1,K0L_GL
-                CTURB_GL(I,J)=1.0D0
-             ENDDO
-          ENDDO 
-          IF(IEPS_400.EQ.1) THEN
-	    CTURB_GL(1,1)=0.0D0
-	    CTURB_GL(1,2)=0.0D0
-	    CTURB_GL(1,3)=1.2D0
-	    CTURB_GL(1,4)=1.3D0
-	    CTURB_GL(1,5)=1.4D0
-	    CTURB_GL(1,6)=1.5D0
-	    CTURB_GL(1,7)=1.5D0
-	    CTURB_GL(1,8)=1.5D0
-	    CTURB_GL(1,9)=1.5D0
-	    CTURB_GL(1,10)=1.5D0
-	    CTURB_GL(1,11)=1.5D0
-	    CTURB_GL(1,12)=1.0D0
-	    CTURB_GL(1,13)=1.0D0
-	    CTURB_GL(1,14)=1.0D0
-	    CTURB_GL(1,15)=1.0D0
-	
-	    CTURB_GL(2,1)=1.0D0
-	    CTURB_GL(2,2)=1.4D0
-	    CTURB_GL(2,3)=1.8D0
-	    CTURB_GL(2,4)=2.2D0
-	    CTURB_GL(2,5)=2.6D0
-	    CTURB_GL(2,6)=3.0D0
-	    CTURB_GL(2,7)=2.85D0
-	    CTURB_GL(2,8)=2.7D0
-	    CTURB_GL(2,9)=2.55D0
-	    CTURB_GL(2,10)=2.4D0
-	    CTURB_GL(2,11)=2.25D0
-	    CTURB_GL(2,12)=1.0D0
-	    CTURB_GL(2,13)=1.0D0
-	    CTURB_GL(2,14)=1.0D0
-
-	    CTURB_GL(3,1)=7.5D0
-	    CTURB_GL(3,2)=7.5D0
-	    CTURB_GL(3,3)=4.5D0	
-	    CTURB_GL(3,4)=4.5D0	
-	    CTURB_GL(3,5)=4.65D0	
-	    CTURB_GL(3,6)=4.65D0	
-	    CTURB_GL(3,7)=4.5D0	
-	    CTURB_GL(3,8)=4.5D0	
-	    CTURB_GL(3,9)=4.0D0	
-	    CTURB_GL(3,10)=3.0D0	
-	    CTURB_GL(3,11)=2.0D0	
-	    CTURB_GL(3,12)=1.5D0	
-	    CTURB_GL(3,13)=1.3D0	
-	    CTURB_GL(3,14)=1.0D0	
-    
-	    CTURB_GL(4,1)=5.5D0
-	    CTURB_GL(4,2)=5.5D0
-	    CTURB_GL(4,3)=4.5D0
-	    CTURB_GL(4,4)=4.5D0
-	    CTURB_GL(4,5)=4.65D0
-	    CTURB_GL(4,6)=4.65D0
-	    CTURB_GL(4,7)=4.5D0
-	    CTURB_GL(4,8)=4.5D0
-	    CTURB_GL(4,9)=4.0D0
-	    CTURB_GL(4,10)=3.0D0
-	    CTURB_GL(4,11)=2.0D0
-	    CTURB_GL(4,12)=1.5D0
-	    CTURB_GL(4,13)=1.35D0
-	    CTURB_GL(4,14)=1.0D0
-	 
-	    CTURB_GL(5,1)=4.5D0
-	    CTURB_GL(5,2)=4.5D0
-	    CTURB_GL(5,3)=3.3D0	
-	    CTURB_GL(5,4)=3.3D0	
-	    CTURB_GL(5,5)=3.3D0	
-	    CTURB_GL(5,6)=3.4D0	
-	    CTURB_GL(5,7)=3.8D0	
-	    CTURB_GL(5,8)=3.8D0	
-	    CTURB_GL(5,9)=3.8D0	
-	    CTURB_GL(5,10)=3.6D0
-	    CTURB_GL(5,11)=2.5D0	
-	    CTURB_GL(5,12)=2.0D0	
-	    CTURB_GL(5,13)=1.4D0	
-	    CTURB_GL(5,14)=1.0D0	
-			 		
-	    CTURB_GL(6,1)=4.0D0
-	    CTURB_GL(6,2)=4.0D0
-	    CTURB_GL(6,3)=2.8D0
-	    CTURB_GL(6,4)=2.8D0
-	    CTURB_GL(6,5)=2.85D0
-	    CTURB_GL(6,6)=2.9D0
-	    CTURB_GL(6,7)=3.0D0
-	    CTURB_GL(6,8)=3.1D0
-	    CTURB_GL(6,9)=2.9D0
-	    CTURB_GL(6,10)=2.6D0
-	    CTURB_GL(6,11)=2.5D0
-	    CTURB_GL(6,12)=2.0D0
-	    CTURB_GL(6,13)=1.3D0
-	    CTURB_GL(6,14)=1.1D0
-
-	    CTURB_GL(7,1)=3.5D0
-	    CTURB_GL(7,2)=3.5D0
-	    CTURB_GL(7,3)=2.5D0
-	    CTURB_GL(7,4)=2.5D0
-	    CTURB_GL(7,5)=2.6D0
-	    CTURB_GL(7,6)=2.7D0
-	    CTURB_GL(7,7)=2.8D0
-	    CTURB_GL(7,8)=2.8D0
-	    CTURB_GL(7,9)=2.8D0
-	    CTURB_GL(7,10)=2.6D0
-	    CTURB_GL(7,11)=2.3D0
-	    CTURB_GL(7,12)=2.0D0
-	    CTURB_GL(7,13)=1.3D0
-	    CTURB_GL(7,14)=1.1D0
-
-	    CTURB_GL(8,1)=3.25D0
-	    CTURB_GL(8,2)=3.25D0
-	    CTURB_GL(8,3)=2.3D0
-	    CTURB_GL(8,4)=2.3D0
-	    CTURB_GL(8,5)=2.35D0
-	    CTURB_GL(8,6)=2.37D0
-	    CTURB_GL(8,7)=2.55D0
-	    CTURB_GL(8,8)=2.55D0
-	    CTURB_GL(8,9)=2.55D0
-	    CTURB_GL(8,10)=2.3D0
-	    CTURB_GL(8,11)=2.1D0
-	    CTURB_GL(8,12)=1.9D0
-	    CTURB_GL(8,13)=1.3D0
-	    CTURB_GL(8,14)=1.1D0
-
-	    CTURB_GL(9,1)=3.0D0
-	    CTURB_GL(9,2)=3.0D0
-	    CTURB_GL(9,3)=3.1D0
-	    CTURB_GL(9,4)=2.2D0
-	    CTURB_GL(9,5)=2.2D0
-	    CTURB_GL(9,6)=2.2D0
-	    CTURB_GL(9,7)=2.3D0
-	    CTURB_GL(9,8)=2.3D0
-	    CTURB_GL(9,9)=2.5D0
-	    CTURB_GL(9,10)=2.5D0
-	    CTURB_GL(9,11)=2.2D0
-	    CTURB_GL(9,12)=1.8D0
-	    CTURB_GL(9,13)=1.25D0
-	    CTURB_GL(9,14)=1.1D0
-
-	    CTURB_GL(10,1)=2.75D0
-	    CTURB_GL(10,2)=2.75D0
-	    CTURB_GL(10,3)=2.0D0
-	    CTURB_GL(10,4)=2.0D0
-	    CTURB_GL(10,5)=2.0D0
-	    CTURB_GL(10,6)=2.1D0
-	    CTURB_GL(10,7)=2.2D0
-	    CTURB_GL(10,8)=2.2D0
-	    CTURB_GL(10,9)=2.3D0
-	    CTURB_GL(10,10)=2.3D0
-	    CTURB_GL(10,11)=2.3D0
-	    CTURB_GL(10,12)=1.8D0
-	    CTURB_GL(10,13)=1.2D0
-	    CTURB_GL(10,14)=1.1D0
-
-	    CTURB_GL(11,1)=2.6D0
-	    CTURB_GL(11,2)=2.6D0
-	    CTURB_GL(11,3)=1.95D0
-	    CTURB_GL(11,4)=1.95D0
-	    CTURB_GL(11,5)=1.95D0
-	    CTURB_GL(11,6)=2.05D0
-	    CTURB_GL(11,7)=2.15D0
-	    CTURB_GL(11,8)=2.15D0
-	    CTURB_GL(11,9)=2.25D0
-	    CTURB_GL(11,10)=2.25D0
-	    CTURB_GL(11,11)=1.9D0
-	    CTURB_GL(11,12)=1.8D0
-	    CTURB_GL(11,13)=1.2D0
-	    CTURB_GL(11,14)=1.1D0
-
-	    CTURB_GL(12,1)=2.4D0
-	    CTURB_GL(12,2)=2.4D0
-	    CTURB_GL(12,3)=1.85D0
-	    CTURB_GL(12,4)=1.85D0
-	    CTURB_GL(12,5)=1.85D0
-	    CTURB_GL(12,6)=1.75D0
-	    CTURB_GL(12,7)=1.85D0
-	    CTURB_GL(12,8)=1.85D0
-	    CTURB_GL(12,9)=2.1D0
-	    CTURB_GL(12,10)=2.1D0
-	    CTURB_GL(12,11)=1.9D0
-	    CTURB_GL(12,12)=1.8D0 
-	    CTURB_GL(12,13)=1.3D0
-	    CTURB_GL(12,14)=1.1D0
-
-	    CTURB_GL(13,1)=1.67D0
-	    CTURB_GL(13,2)=1.67D0
-	    CTURB_GL(13,3)=1.75D0
-	    CTURB_GL(13,4)=1.83D0
-	    CTURB_GL(13,5)=1.87D0
-	    CTURB_GL(13,6)=2.0D0
-	    CTURB_GL(13,7)=2.1D0
-	    CTURB_GL(13,8)=2.12D0
-	    CTURB_GL(13,9)=2.15D0
-	    CTURB_GL(13,10)=2.18D0
-	    CTURB_GL(13,11)=2.19D0
-	    CTURB_GL(13,12)=1.67D0
-	    CTURB_GL(13,13)=1.28D0
-	    CTURB_GL(13,14)=1.0D0
-
-	    CTURB_GL(14,1)=1.3D0
-	    CTURB_GL(14,2)=1.3D0
-	    CTURB_GL(14,3)=1.35D0
-	    CTURB_GL(14,4)=1.4D0
-	    CTURB_GL(14,5)=1.6D0
-	    CTURB_GL(14,6)=1.7D0
-	    CTURB_GL(14,7)=1.7D0
-	    CTURB_GL(14,8)=1.7D0
-	    CTURB_GL(14,9)=1.7D0
-	    CTURB_GL(14,10)=1.7D0
-	    CTURB_GL(14,11)=1.7D0
-	    CTURB_GL(14,12)=1.4D0
-	    CTURB_GL(14,13)=1.25D0
-	    CTURB_GL(14,14)=1.0D0
-
-	    CTURB_GL(15,1)=1.17D0
-	    CTURB_GL(15,2)=1.17D0
-	    CTURB_GL(15,3)=1.17D0
-	    CTURB_GL(15,4)=1.25D0
-	    CTURB_GL(15,5)=1.3D0
-	    CTURB_GL(15,6)=1.35D0
-	    CTURB_GL(15,7)=1.4D0
-	    CTURB_GL(15,8)=1.4D0
-	    CTURB_GL(15,9)=1.45D0
-	    CTURB_GL(15,10)=1.47D0
-	    CTURB_GL(15,11)=1.44D0
-	    CTURB_GL(15,12)=1.3D0
-	    CTURB_GL(15,13)=1.12D0
-	    CTURB_GL(15,14)=1.0D0
-
-	    CTURB_GL(16,1)=1.17D0
-	    CTURB_GL(16,2)=1.17D0
-	    CTURB_GL(16,3)=1.17D0
-	    CTURB_GL(16,4)=1.25D0
-	    CTURB_GL(16,5)=1.3D0
-	    CTURB_GL(16,6)=1.35D0
-	    CTURB_GL(16,7)=1.4D0
-	    CTURB_GL(16,8)=1.45D0
-	    CTURB_GL(16,9)=1.45D0
-	    CTURB_GL(16,10)=1.47D0
-	    CTURB_GL(16,11)=1.44D0
-	    CTURB_GL(16,12)=1.3D0
-	    CTURB_GL(16,13)=1.12D0
-	    CTURB_GL(16,14)=1.0D0
-          ENDIF
-          IF(IEPS_800.EQ.1) THEN
-	    CTURB_GL(1,1) =0.00D0
-	    CTURB_GL(1,2) =0.00D0
-	    CTURB_GL(1,3) =1.00D0
-            CTURB_GL(1,4) =1.50D0
-	    CTURB_GL(1,5) =1.40D0
-	    CTURB_GL(1,6) =1.30D0
-	    CTURB_GL(1,7) =1.20D0
-	    CTURB_GL(1,8) =1.10D0
-	    CTURB_GL(1,9) =1.00D0
-	    CTURB_GL(1,10)=1.00D0
-	    CTURB_GL(1,11)=1.00D0
-	    CTURB_GL(1,12)=1.00D0
-	    CTURB_GL(1,13)=1.00D0
-	    CTURB_GL(1,14)=1.00D0
-	    CTURB_GL(1,15)=1.00D0
-	    CTURB_GL(1,16)=1.00D0
-
-	    CTURB_GL(2,1) =0.00D0
-	    CTURB_GL(2,2) =0.00D0
-	    CTURB_GL(2,3) =1.00D0
-	    CTURB_GL(2,4) =2.00D0
-	    CTURB_GL(2,5) =1.80D0
-	    CTURB_GL(2,6) =1.70D0
-	    CTURB_GL(2,7) =1.60D0
-	    CTURB_GL(2,8) =1.50D0
-	    CTURB_GL(2,9) =1.50D0
-	    CTURB_GL(2,10)=1.50D0
-	    CTURB_GL(2,11)=1.50D0
-	    CTURB_GL(2,12)=1.50D0
-	    CTURB_GL(2,13)=1.50D0
-	    CTURB_GL(2,14)=1.00D0
-	    CTURB_GL(2,15)=1.00D0
-	    CTURB_GL(2,16)=1.00D0
-
-	    CTURB_GL(3,1) =0.00D0
-	    CTURB_GL(3,2) =0.00D0
-	    CTURB_GL(3,3) =4.00D0
-	    CTURB_GL(3,4) =7.65D0
-	    CTURB_GL(3,5) =7.65D0
-	    CTURB_GL(3,6) =8.00D0
-	    CTURB_GL(3,7) =8.00D0
-	    CTURB_GL(3,8) =7.50D0
-	    CTURB_GL(3,9) =6.50D0
-	    CTURB_GL(3,10)=6.00D0
-	    CTURB_GL(3,11)=5.00D0
-	    CTURB_GL(3,12)=4.50D0
-	    CTURB_GL(3,13)=4.00D0
-	    CTURB_GL(3,14)=2.00D0
-	    CTURB_GL(3,15)=1.30D0
-	    CTURB_GL(3,16)=1.00D0
-
-	    CTURB_GL(4,1) =7.50D0
-	    CTURB_GL(4,2) =7.50D0
-	    CTURB_GL(4,3) =7.50D0
-	    CTURB_GL(4,4) =7.65D0	
-	    CTURB_GL(4,5) =7.65D0	
-	    CTURB_GL(4,6) =8.00D0	
-	    CTURB_GL(4,7) =8.00D0	
-	    CTURB_GL(4,8) =7.50D0	
-	    CTURB_GL(4,9) =6.50D0	
-	    CTURB_GL(4,10)=6.00D0	
-	    CTURB_GL(4,11)=5.00D0	
-	    CTURB_GL(4,12)=4.50D0	
-	    CTURB_GL(4,13)=4.00D0	
-	    CTURB_GL(4,14)=2.00D0	
-	    CTURB_GL(4,15)=1.30D0	
-	    CTURB_GL(4,16)=1.00D0	
-    
-	    CTURB_GL(5,1) =5.50D0
-	    CTURB_GL(5,2) =5.50D0
-	    CTURB_GL(5,3) =5.50D0
-	    CTURB_GL(5,4) =5.75D0
-	    CTURB_GL(5,5) =5.75D0
-	    CTURB_GL(5,6) =6.00D0
-	    CTURB_GL(5,7) =6.25D0
-	    CTURB_GL(5,8) =6.17D0
-	    CTURB_GL(5,9) =5.75D0
-	    CTURB_GL(5,10)=5.25D0
-	    CTURB_GL(5,11)=4.75D0
-	    CTURB_GL(5,12)=4.25D0
-	    CTURB_GL(5,13)=4.00D0
-	    CTURB_GL(5,14)=2.00D0
-	    CTURB_GL(5,15)=1.35D0
-	    CTURB_GL(5,16)=1.00D0
-	 
-	    CTURB_GL(6,1) =4.50D0
-	    CTURB_GL(6,2) =4.50D0
-	    CTURB_GL(6,3) =4.50D0
-	    CTURB_GL(6,4) =4.75D0	
-	    CTURB_GL(6,5) =4.75D0	
-	    CTURB_GL(6,6) =5.00D0	
-	    CTURB_GL(6,7) =5.25D0	
-	    CTURB_GL(6,8) =5.25D0	
-	    CTURB_GL(6,9) =5.00D0	
-	    CTURB_GL(6,10)=4.75D0	
-	    CTURB_GL(6,11)=4.50D0	
-	    CTURB_GL(6,12)=4.00D0	
-	    CTURB_GL(6,13)=3.75D0	
-	    CTURB_GL(6,14)=2.00D0	
-	    CTURB_GL(6,15)=1.40D0	
-	    CTURB_GL(6,16)=1.00D0	
-			 		
-	    CTURB_GL(7,1) =4.00D0
-	    CTURB_GL(7,2) =4.00D0
-	    CTURB_GL(7,3) =4.00D0
-	    CTURB_GL(7,4) =4.00D0
-	    CTURB_GL(7,5) =4.00D0
-	    CTURB_GL(7,6) =4.25D0
-	    CTURB_GL(7,7) =4.50D0
-	    CTURB_GL(7,8) =4.67D0
-	    CTURB_GL(7,9) =4.50D0
-	    CTURB_GL(7,10)=4.30D0
-	    CTURB_GL(7,11)=4.10D0
-	    CTURB_GL(7,12)=3.80D0
-	    CTURB_GL(7,13)=3.50D0
-	    CTURB_GL(7,14)=2.00D0
-	    CTURB_GL(7,15)=1.30D0
-	    CTURB_GL(7,16)=1.10D0
-
-	    CTURB_GL(8,1) =3.50D0
-	    CTURB_GL(8,2) =3.50D0
-	    CTURB_GL(8,3) =3.50D0
-	    CTURB_GL(8,4) =3.65D0
-	    CTURB_GL(8,5) =3.65D0
-	    CTURB_GL(8,6) =3.80D0
-	    CTURB_GL(8,7) =4.1D02
-	    CTURB_GL(8,8) =4.17D0
-	    CTURB_GL(8,9) =4.17D0
-	    CTURB_GL(8,10)=4.00D0
-	    CTURB_GL(8,11)=3.80D0
-	    CTURB_GL(8,12)=3.67D0
-	    CTURB_GL(8,13)=3.40D0
-	    CTURB_GL(8,14)=2.00D0
-	    CTURB_GL(8,15)=1.30D0
-	    CTURB_GL(8,16)=1.10D0
-
-	    CTURB_GL(9,1) =3.25D0
-	    CTURB_GL(9,2) =3.25D0
-	    CTURB_GL(9,3) =3.25D0
-	    CTURB_GL(9,4) =3.25D0
-	    CTURB_GL(9,5) =3.25D0
-	    CTURB_GL(9,6) =3.50D0
-	    CTURB_GL(9,7) =3.75D0
-	    CTURB_GL(9,8) =3.75D0
-	    CTURB_GL(9,9) =3.75D0
-	    CTURB_GL(9,10)=3.75D0
-	    CTURB_GL(9,11)=3.60D0
-	    CTURB_GL(9,12)=3.40D0
-	    CTURB_GL(9,13)=3.25D0
-	    CTURB_GL(9,14)=2.00D0
-	    CTURB_GL(9,15)=1.30D0
-	    CTURB_GL(9,16)=1.10D0
-	    
-	    CTURB_GL(10,1) =3.00D0
-	    CTURB_GL(10,2) =3.00D0
-	    CTURB_GL(10,3) =3.00D0
-	    CTURB_GL(10,4) =3.10D0
-	    CTURB_GL(10,5) =3.10D0
-	    CTURB_GL(10,6) =3.25D0
-	    CTURB_GL(10,7) =3.40D0
-	    CTURB_GL(10,8) =3.50D0
-	    CTURB_GL(10,9) =3.50D0
-	    CTURB_GL(10,10)=3.50D0
-	    CTURB_GL(10,11)=3.40D0
-	    CTURB_GL(10,12)=3.25D0
-	    CTURB_GL(10,13)=3.15D0
-	    CTURB_GL(10,14)=1.90D0
-	    CTURB_GL(10,15)=1.30D0
-	    CTURB_GL(10,16)=1.10D0
-
-	    CTURB_GL(11,1) =2.75D0
-	    CTURB_GL(11,2) =2.75D0
-	    CTURB_GL(11,3) =2.75D0
-	    CTURB_GL(11,4) =2.75D0
-	    CTURB_GL(11,5) =2.75D0
-	    CTURB_GL(11,6) =3.00D0
-	    CTURB_GL(11,7) =3.25D0
-	    CTURB_GL(11,8) =3.25D0
-	    CTURB_GL(11,9) =3.25D0
-	    CTURB_GL(11,10)=3.25D0
-	    CTURB_GL(11,11)=3.25D0
-	    CTURB_GL(11,12)=3.15D0
-	    CTURB_GL(11,13)=3.00D0
-	    CTURB_GL(11,14)=1.80D0
-	    CTURB_GL(11,15)=1.30D0
-	    CTURB_GL(11,16)=1.10D0
-
-	    CTURB_GL(12,1) =2.60D0
-	    CTURB_GL(12,2) =2.60D0
-	    CTURB_GL(12,3) =2.60D0
-	    CTURB_GL(12,4) =2.67D0
-	    CTURB_GL(12,5) =2.67D0
-	    CTURB_GL(12,6) =2.75D0
-	    CTURB_GL(12,7) =3.00D0
-	    CTURB_GL(12,8) =3.17D0
-	    CTURB_GL(12,9) =3.17D0
-	    CTURB_GL(12,10)=3.17D0
-	    CTURB_GL(12,11)=3.10D0
-	    CTURB_GL(12,12)=2.90D0
-	    CTURB_GL(12,13)=2.80D0
-	    CTURB_GL(12,14)=1.87D0
-	    CTURB_GL(12,15)=1.37D0
-	    CTURB_GL(12,16)=1.10D0
-
-	    CTURB_GL(13,1) =2.40D0
-	    CTURB_GL(13,2) =2.40D0
-	    CTURB_GL(13,3) =2.40D0
-	    CTURB_GL(13,4) =2.50D0
-	    CTURB_GL(13,5) =2.50D0
-	    CTURB_GL(13,6) =2.67D0
-	    CTURB_GL(13,7) =2.83D0
-	    CTURB_GL(13,8) =2.90D0
-	    CTURB_GL(13,9) =3.00D0
-	    CTURB_GL(13,10)=2.90D0
-	    CTURB_GL(13,11)=2.85D0
-	    CTURB_GL(13,12)=2.80D0
-	    CTURB_GL(13,13)=2.75D0
-	    CTURB_GL(13,14)=1.83D0
-	    CTURB_GL(13,15)=1.30D0
-	    CTURB_GL(13,16)=1.10D0
-
-	    CTURB_GL(14,1) =1.67D0
-	    CTURB_GL(14,2) =1.67D0
-	    CTURB_GL(14,3) =1.67D0
-	    CTURB_GL(14,4) =1.75D0
-	    CTURB_GL(14,5) =1.75D0
-	    CTURB_GL(14,6) =1.83D0
-	    CTURB_GL(14,7) =1.87D0
-	    CTURB_GL(14,8) =2.00D0
-	    CTURB_GL(14,9) =2.10D0
-	    CTURB_GL(14,10)=2.12D0
-	    CTURB_GL(14,11)=2.15D0
-	    CTURB_GL(14,12)=2.18D0
-	    CTURB_GL(14,13)=2.19D0
-	    CTURB_GL(14,14)=1.67D0
-	    CTURB_GL(14,15)=1.28D0
-	    CTURB_GL(14,16)=1.00D0
-
-	    CTURB_GL(15,1) =1.30D0
-	    CTURB_GL(15,2) =1.30D0
-	    CTURB_GL(15,3) =1.30D0
-	    CTURB_GL(15,4) =1.35D0
-	    CTURB_GL(15,5) =1.35D0
-	    CTURB_GL(15,6) =1.40D0
-	    CTURB_GL(15,7) =1.60D0
-	    CTURB_GL(15,8) =1.70D0
-	    CTURB_GL(15,9) =1.70D0
-	    CTURB_GL(15,10)=1.70D0
-	    CTURB_GL(15,11)=1.70D0
-	    CTURB_GL(15,12)=1.70D0
-	    CTURB_GL(15,13)=1.70D0
-	    CTURB_GL(15,14)=1.40D0
-	    CTURB_GL(15,15)=1.25D0
-	    CTURB_GL(15,16)=1.00D0
-
-	    CTURB_GL(16,1) =1.17D0
-	    CTURB_GL(16,2) =1.17D0
-	    CTURB_GL(16,3) =1.17D0
-	    CTURB_GL(16,4) =1.17D0
-	    CTURB_GL(16,5) =1.17D0
-	    CTURB_GL(16,6) =1.25D0
-	    CTURB_GL(16,7) =1.30D0
-	    CTURB_GL(16,8) =1.35D0
-	    CTURB_GL(16,9) =1.40D0
-	    CTURB_GL(16,10)=1.45D0
-	    CTURB_GL(16,11)=1.45D0
-	    CTURB_GL(16,12)=1.47D0
-	    CTURB_GL(16,13)=1.44D0
-	    CTURB_GL(16,14)=1.30D0
-	    CTURB_GL(16,15)=1.12D0
-	    CTURB_GL(16,16)=1.00D0
-          ENDIF
-          IF(IEPS_800.EQ.1.AND.IEPS_1600.EQ.1) THEN
-            DO I=1,K0G_GL
-               DO J=1,K0L_GL
-                  CTURB_GL(I,J)=CTURB_GL(I,J)*1.7D0
-               ENDDO
-            ENDDO 
-          ENDIF
-          DO J=1,K0L_GL
-             DO I=1,K0G_GL
-                CTURB_GL(I,J)=(CTURB_GL(I,J)-1.0D0)/1.5D0+1.0D0
-             ENDDO
-          ENDDO
-	  DO I=KRMING_GL,KRMAXG_GL
-             DO J=KRMINL_GL,KRMAXL_GL
-                CTURBGL(I,J)=1.
-             ENDDO
-          ENDDO
-          DO I=KRMING_GL,KRMAXG_GL                   
-             X_KERN=RADXXO(I,6)*1.0D4
-             IF(X_KERN.LT.RG_GL(1)) X_KERN=RG_GL(1)
-             IF(X_KERN.GT.RG_GL(K0G_GL)) X_KERN=RG_GL(K0G_GL) 
-             DO J=KRMINL_GL,KRMAXL_GL
-                Y_KERN=RADXXO(J,1)*1.0D4
-                IF(Y_KERN.LT.RL_GL(1)) Y_KERN=RL_GL(1)
-                IF(Y_KERN.GT.RL_GL(K0L_GL)) Y_KERN=RL_GL(K0L_GL)
-                CTURBGL(I,J)=F(X_KERN,Y_KERN,RG_GL,RL_GL,CTURB_GL &
-     &                      ,K0G_GL,K0L_GL)	      
-             ENDDO
-          ENDDO
-          IF(IEPS_800.EQ.1) THEN
-            DO I=KRMING_GL,15
-               DO J=KRMINL_GL,13
-                  IF(CTURBGL(I,J).LT.3.0D0) CTURBGL(I,J)=3.0D0
-               ENDDO
-            ENDDO
-          ENDIF
-          IF(IEPS_1600.EQ.1) THEN
-            DO I=KRMING_GL,15
-               DO J=KRMINL_GL,13
-                  IF(CTURBGL(I,J).LT.5.1D0) CTURBGL(I,J)=5.1D0
-               ENDDO
-            ENDDO
-          ENDIF
-	  DO I=1,33
-             DO J=1,24
-                IF(I.LE.14.AND.J.EQ.8) CTURBGL(I,J)=1.0D0
-                IF(I.GT.14.AND.J.LE.8) CTURBGL(I,J)=1.2D0
-	     ENDDO
-          ENDDO                       
-	RETURN
-	END SUBROUTINE TURBCOEF
-!===================================================================
-! QUESTION
-        real * 8 function f(x,y,x0,y0,table,k0,kk0)
-! two-dimensional linear interpolation of the collision efficiency
-! with help table(k0,kk0)
-
-       implicit none
-       integer k0,kk0,k,ir,kk,iq
-       double precision x,y,p,q,ec,ek
-!      double precision x,y,p,q,ec,ek,f
-       double precision x0(k0),y0(kk0),table(k0,kk0)
-
-
-        do k=2,k0
-           if(x.le.x0(k).and.x.ge.x0(k-1)) then
-             ir=k     
-           elseif(x.gt.x0(k0)) then
-             ir=k0+1
-           elseif(x.lt.x0(1)) then
-             ir=1
-           endif
-        enddo
-        do kk=2,kk0
-           if(y.le.y0(kk).and.y.ge.y0(kk-1)) iq=kk
-        enddo
-        if(ir.lt.k0+1) then
-          if(ir.ge.2) then
-            p =(x-x0(ir-1))/(x0(ir)-x0(ir-1))
-            q =(y-y0(iq-1))/(y0(iq)-y0(iq-1))
-            ec=(1.d0-p)*(1.d0-q)*table(ir-1,iq-1)+ &
-     &              p*(1.d0-q)*table(ir,iq-1)+ &
-     &              q*(1.d0-p)*table(ir-1,iq)+ &
-     &                   p*q*table(ir,iq)    
-          else
-            q =(y-y0(iq-1))/(y0(iq)-y0(iq-1))
-            ec=(1.d0-q)*table(1,iq-1)+q*table(1,iq)    
-          endif
-        else
-          q =(y-y0(iq-1))/(y0(iq)-y0(iq-1))
-          ek=(1.d0-q)*table(k0,iq-1)+q*table(k0,iq)
-          ec=min(ek,1.d0) 
-        endif
-        f=ec
-        return
-        end function f
-! function f
-                                                                            
-
-                                                                            
-
-!======================================================================
-        SUBROUTINE FREEZ(FF1,XL,FF2,XI,FF3,XS,FF4,XG,FF5,XH &
-     &,TIN,DT,RO,COL,AFREEZMY,BFREEZMY,BFREEZMAX,KRFREEZ,ICEMAX,NKR)       
-      IMPLICIT NONE 
-      INTEGER KR,ICE,ICE_TYPE
-      REAL COL,AFREEZMY,BFREEZMY,BFREEZMAX
-      INTEGER KRFREEZ,ICEMAX,NKR
-      REAL DT,RO,YKK,PF,PF_1,DEL_T,TT_DROP,ARG_1,YK2,DF1,BF,ARG_M, & 
-     & TT_DROP_AFTER_FREEZ,CFREEZ,SUM_ICE,TIN,TTIN,AF,FF_MAX,F1_MAX, &
-     & F2_MAX,F3_MAX,F4_MAX,F5_MAX
-
-
-	REAL FF1(NKR),XL(NKR),FF2(NKR,ICEMAX) &
-     &           ,XI(NKR,ICEMAX),FF3(NKR),XS(NKR),FF4(NKR) &
-     &           ,XG(NKR),FF5(NKR),XH(NKR)
-
-
-
-	TTIN=TIN
-        DEL_T	=TTIN-273.15
-	ICE_TYPE=2
-	F1_MAX=0.
-	F2_MAX=0.
-	F3_MAX=0.
-	F4_MAX=0.
-	F5_MAX=0.
-	DO 1 KR=1,NKR
-	F1_MAX=AMAX1(F1_MAX,FF1(KR))
-	F3_MAX=AMAX1(F3_MAX,FF3(KR))
-	F4_MAX=AMAX1(F4_MAX,FF4(KR))
-	F5_MAX=AMAX1(F5_MAX,FF5(KR))
-	DO 1 ICE=1,ICEMAX
-     	F2_MAX=AMAX1(F2_MAX,FF2(KR,ICE))
-    1   CONTINUE
-    	FF_MAX=AMAX1(F2_MAX,F3_MAX,F4_MAX,F5_MAX)
-!
-!******************************* FREEZING ****************************
-!
-        IF(DEL_T.LT.0.AND.F1_MAX.NE.0) THEN
-	SUM_ICE=0.
-	AF	=AFREEZMY
-	CFREEZ	=(BFREEZMAX-BFREEZMY)/XL(NKR)
-!
-!***************************** MASS LOOP **************************
-!
-         DO  KR	=1,NKR
-	 ARG_M	=XL(KR)
-	 BF	=BFREEZMY+CFREEZ*ARG_M
-         PF_1	=AF*EXP(-BF*DEL_T)
-         PF	=ARG_M*PF_1
-	 YKK	=EXP(-PF*DT)
-         DF1	=FF1(KR)*(1.-YKK)
-	 YK2	=DF1
-         FF1(KR)=FF1(KR)*YKK
-	 IF(KR.LE.KRFREEZ)  THEN
-	 FF2(KR,ICE_TYPE)=FF2(KR,ICE_TYPE)+YK2
-			    ELSE
-	  FF5(KR)	=FF5(KR)+YK2
-	 ENDIF
-         SUM_ICE=SUM_ICE+YK2*3.*XL(KR)*XL(KR)*COL
-!
-!************************ END OF "MASS LOOP" **************************
-!
-	 ENDDO
-!
-!************************** NEW TEMPERATURE *************************
-!	
-	ARG_1	=333.*SUM_ICE/RO
-      	TT_DROP_AFTER_FREEZ=TTIN+ARG_1
-	TIN	=TT_DROP_AFTER_FREEZ
-!
-!************************** END OF "FREEZING" ****************************
-!
-	ENDIF
-!
-   	RETURN                                                           
-      	END SUBROUTINE FREEZ                                                             
-
-        SUBROUTINE ORIG_MELT(FF1,XL,FF2,XI,FF3,XS,FF4,XG,FF5,XH &
-     &                           ,TIN,DT,RO,COL,ICEMAX,NKR)
-      IMPLICIT NONE
-      INTEGER KR,ICE,ICE_TYPE
-      INTEGER ICEMAX,NKR
-      REAL COL
-      REAL ARG_M,TT_DROP,ARG_1,TT_DROP_AFTER_FREEZ,DT,DF1,DN,DN0, &
-     & RO,A,B,DTFREEZ,SUM_ICE,FF_MAX,F1_MAX,F2_MAX,F3_MAX,F4_MAX,F5_MAX, &
-     & DEL_T,gamma,TIN
-        REAL FF1(NKR),XL(NKR),FF2(NKR,ICEMAX),XI(NKR,ICEMAX) &
-     &           ,FF3(NKR),XS(NKR),FF4(NKR) &
-     &           ,XG(NKR),FF5(NKR),XH(NKR)
-
-
-        gamma=4.4
-        DEL_T	=TIN-273.15
-	ICE_TYPE=2
-	F1_MAX=0.
-	F2_MAX=0.
-	F3_MAX=0.
-	F4_MAX=0.
-	F5_MAX=0.
-	DO 1 KR=1,NKR
-	F1_MAX=AMAX1(F1_MAX,FF1(KR))
-	F3_MAX=AMAX1(F3_MAX,FF3(KR))
-	F4_MAX=AMAX1(F4_MAX,FF4(KR))
-	F5_MAX=AMAX1(F5_MAX,FF5(KR))
-	DO 1 ICE=1,ICEMAX
-     	F2_MAX=AMAX1(F2_MAX,FF2(KR,ICE))
-    1	CONTINUE
-    	FF_MAX=AMAX1(F2_MAX,F3_MAX,F4_MAX,F5_MAX)
-! MELTING :
-	IF(DEL_T.GE.0.AND.FF_MAX.NE.0) THEN
-	  SUM_ICE=0.
-! MASS LOOP :
-  	  DO KR=1,NKR
-	     ARG_M=FF3(KR)+FF4(KR)+FF5(KR)
-	     DO ICE=1,ICEMAX
-	        ARG_M=ARG_M+FF2(KR,ICE)
-      	        FF2(KR,ICE)=0.
- 	     ENDDO
-      	     FF1(KR)=FF1(KR)+ARG_M
-      	     FF3(KR)=0.
-             FF4(KR)=0.
-      	     FF5(KR)=0.
-	     SUM_ICE=SUM_ICE+ARG_M*3.*XL(KR)*XL(KR)*COL
-! END OF "MASS LOOP"
-	  ENDDO
-! CYCLE BY KR
-! NEW TEMPERATURE :
-	  ARG_1=333.*SUM_ICE/RO	
-	  TIN=TIN-ARG_1
-! END OF MELTING
-! IN CASE DEL_T.GE.0.AND.FF_MAX.NE.0
-	ENDIF
-   	RETURN                                                           
-      	END SUBROUTINE ORIG_MELT                                                             
-!===================================================================
-       SUBROUTINE J_W_MELT(FF1,XL,FF2,XI,FF3,XS,FF4,XG,FF5,XH &
-     &                           ,TIN,DT,RO,COL,ICEMAX,NKR)
-      IMPLICIT NONE
-      INTEGER KR,ICE,ICE_TYPE
-      INTEGER ICEMAX,NKR
-      REAL COL
-      REAL ARG_M,TT_DROP,ARG_1,TT_DROP_AFTER_FREEZ,DT,DF1,DN,DN0, &
-     & RO,A,B,DTFREEZ,SUM_ICE,FF_MAX,F1_MAX,F2_MAX,F3_MAX,F4_MAX,F5_MAX, &
-     & DEL_T,TIN,meltrate
-        REAL FF1(NKR),XL(NKR),FF2(NKR,ICEMAX),XI(NKR,ICEMAX) &
-     &           ,FF3(NKR),XS(NKR),FF4(NKR) &
-     &           ,XG(NKR),FF5(NKR),XH(NKR)
-
-
-!       gamma=4.4
-        DEL_T	=TIN-273.15
-	F1_MAX=0.
-	F2_MAX=0.
-	F3_MAX=0.
-	F4_MAX=0.
-	F5_MAX=0.
-	DO 1 KR=1,NKR
-	F1_MAX=AMAX1(F1_MAX,FF1(KR))
-	F3_MAX=AMAX1(F3_MAX,FF3(KR))
-	F4_MAX=AMAX1(F4_MAX,FF4(KR))
-	F5_MAX=AMAX1(F5_MAX,FF5(KR))
-	DO 1 ICE=1,ICEMAX
-     	F2_MAX=AMAX1(F2_MAX,FF2(KR,ICE))
-    1	CONTINUE
-    	FF_MAX=AMAX1(F2_MAX,F3_MAX,F4_MAX,F5_MAX)
-! MELTING :
-	SUM_ICE=0.
-	IF(DEL_T.GE.0.AND.FF_MAX.NE.0) THEN
-! Fan's "MASS LOOP"
-          DO KR = 1,NKR
-          ARG_M = 0.
-            DO ICE = 1,ICEMAX
-             IF (ICE ==1) THEN
-                 IF (KR .le. 10) THEN
-                     ARG_M = ARG_M+FF2(KR,ICE)
-                     FF2(KR,ICE)=0.
-                 ELSEIF (KR .gt. 10 .and. KR .lt. 18) THEN
-                     meltrate = 0.5/50.
-                     ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
-                     FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                 ELSE
-                     meltrate = 0.683/120.
-                     ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
-                     FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                 ENDIF
-             ENDIF
-             IF (ICE ==2 .or. ICE ==3) THEN
-                IF (kr .le. 12) THEN
-                    ARG_M = ARG_M+FF2(KR,ICE)
-                    FF2(KR,ICE)=0.
-                ELSEIF (kr .gt. 12 .and. kr .lt. 20) THEN
-                    meltrate = 0.5/50.
-                    ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
-                    FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                 ELSE
-                    meltrate = 0.683/120.
-                    ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
-                    FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                 ENDIF
-             ENDIF
-            ENDDO  ! Do ice
-! snow
-                 IF (kr .le. 14) THEN
-                    ARG_M = ARG_M+FF3(KR)
-                    FF3(KR)=0.
-                 ELSEIF (kr .gt. 14 .and. kr .lt. 22) THEN
-                    meltrate = 0.5/50.
-                    ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
-                    FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
-                 ELSE
-                    meltrate = 0.683/120.
-                    ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
-                    FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
-                 ENDIF
-! graupel/hail
-                 IF (kr .le. 13) then
-                     ARG_M = ARG_M+FF4(KR)+FF5(KR)
-                     FF4(KR)=0.
-                     FF5(KR)=0.
-                 ELSEIF (kr .gt. 13 .and. kr .lt. 23) THEN
-                     meltrate = 0.5/50.
-                     ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
-                     FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
-                     FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
-                 ELSE
-                    meltrate = 0.683/120.
-                    ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
-                    FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
-                    FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
-                 ENDIF
-
-                   FF1(KR)=FF1(KR)+ARG_M
-
-                   SUM_ICE=SUM_ICE+ARG_M*3.*XL(KR)*XL(KR)*COL
-! END OF Fan'a "MASS LOOP"
-       ENDDO
-! CYCLE BY KR
-! NEW TEMPERATURE :
-        ARG_1=333.*SUM_ICE/RO
-        TIN=TIN-ARG_1
-! END OF MELTING
-
-	ENDIF
-   	RETURN                                                           
-      	END SUBROUTINE J_W_MELT                                                             
-!===================================================================
-      SUBROUTINE JERNUCL01(PSI1,PSI2,FCCNR &
-     &                    ,X1,X2,DTT,DQQ,ROR,PP,DSUP1,DSUP2 &
-     &  ,COL,AA1_MY, BB1_MY, AA2_MY, BB2_MY &
-     &  ,C1_MEY,C2_MEY,SUP2_OLD,DSUPICEXZ &
-     &  ,RCCN,DROPRADII,NKR,ICEMAX,ICEPROCS)
-      IMPLICIT NONE 
-!
-      INTEGER ICEMAX,NKR
-      INTEGER ICEPROCS
-      REAL COL,AA1_MY, BB1_MY, AA2_MY, BB2_MY, &
-     &  C1_MEY,C2_MEY,SUP2_OLD,DSUPICEXZ, &
-     &  RCCN(NKR),DROPRADII(NKR),FCCNR(NKR)
-!
-      INTEGER KR,ICE,ITYPE,NRGI,ICORR,II,JJ,KK,NKRDROP,NCRITI
-       DOUBLE PRECISION DTT,DQQ,DSUP1,DSUP2
-       REAL TT,QQ,              &
-     & DX,BMASS,CONCD,C2,CONCDF,DELTACD,CONCDIN,ROR, &
-     & DELTAF,DELMASSL,FMASS,HELEK1,DEL2NN,FF1BN, &
-     & HELEK2,TPCC,PP,ADDF,DSUP2N,FACT,EW1N,ES2N,ES1N,FNEW, &
-     & C1,SUP1N,SUP2N,QPN,TPN,TPC,SUP1,SUP2,DEL1N,DEL2N,AL1,AL2, &
-     & TEMP1,TEMP2,TEMP3,A1,B1,A2,B2 
-!
-
-!********************************************************************
-
-! NEW MEYERS IN JERNUCL01 SUBROUTINE 
-
-
-
-!********************************************************************
-
-
-
-      REAL PSI1(NKR),X1(NKR),DROPCONCN(NKR) &
-     &     ,PSI2(NKR,ICEMAX),X2(NKR,ICEMAX)
-      
-
-      DATA A1,B1,A2,B2/-0.639,0.1296,-2.8,0.262/
-      DATA TEMP1,TEMP2,TEMP3/-5.,-2.,-20./
-      DATA AL1/2500./,AL2/2834./
-      SUP1=DSUP1
-      SUP2=DSUP2
-
-
-      TT=DTT
-      QQ=DQQ
-! DROPLETS NUCLEATION (BEGIN)
-
-        TPN=TT
-        QPN=QQ
-
-        DEL1N=100.*SUP1
-        TPC=TT-273.15
-
-        IF(DEL1N.GT.0.AND.TPC.GT.-30.) THEN
-         CALL WATER_NUCL (PSI1,FCCNR,X1,TT,SUP1  &
-     &        ,COL,RCCN,DROPRADII,NKR,ICEMAX)
-        ENDIF
-! DROPLETS NUCLEATION (END)
-! drop nucleation                                               (end)
-! nucleation of crystals                                      (begin)
-
-       IF (ICEPROCS.EQ.1)THEN
-        DEL2N=100.*SUP2
-        IF(TPC.LT.0..AND.TPC.GE.-35..AND.DEL2N.GT.0.) THEN
-
-              CALL ICE_NUCL (PSI2,X2,TT,ROR,SUP2,SUP2_OLD &
-     &                      ,C1_MEY,C2_MEY,COL,DSUPICEXZ &
-     &                      ,NKR,ICEMAX)
-        ENDIF
-       ENDIF
-! nucleation of crystals                                        (end)
-! new change in drop nucleation                               (begin)
-! no sink of water vapour by nucleation
-      RETURN
-      END SUBROUTINE JERNUCL01
-
-! SUBROUTINE JERNUCL01
-!======================================================================      
-      SUBROUTINE WATER_NUCL (PSI1,FCCNR,X1,TT,SUP1 &
-     &,COL,RCCN,DROPRADII,NKR,ICEMAX)
-      IMPLICIT NONE
-      INTEGER NDROPMAX,KR,ICEMAX,NKR
-      REAL PSI1(NKR),FCCNR(NKR),X1(NKR)
-      REAL DROPCONCN(NKR)
-      REAL RCCN(NKR),DROPRADII(NKR)
-      REAL TT,SUP1,DX,COL
-
-
-      CALL NUCLEATION (SUP1,TT,FCCNR,DROPCONCN  &
-     &,NDROPMAX,COL,RCCN,DROPRADII,NKR,ICEMAX)
-
-! NEW WATER SIZE DISTRIBUTION FUNCTION (BEGIN)
-        DO KR=1,NDROPMAX
-           DX=3.*COL*X1(KR)
-! new changes 25.06.01                                        (begin)
-           PSI1(KR)=PSI1(KR)+DROPCONCN(KR)/DX
-! new changes 25.06.01                                          (end)
-        ENDDO
-
-      RETURN
-      END SUBROUTINE WATER_NUCL
-      SUBROUTINE ICE_NUCL (PSI2,X2,TT,ROR,SUP2,SUP2_OLD &
-     &                      ,C1_MEY,C2_MEY,COL,DSUPICEXZ &
-     &                      ,NKR,ICEMAX)
-        IMPLICIT NONE
-        INTEGER ITYPE,KR,ICE,NRGI,ICEMAX,NKR
-        REAL DEL2N,SUP2,C1,C2,C1_MEY,C2_MEY,TPC,TT,ROR
-        REAL DX,COL,BMASS,BFMASS,FMASS
-        REAL HELEK1,HELEK2,TPCC,DEL2NN,FF1BN,DSUPICEXZ
-        REAL FACT,DSUP2N,SUP2_OLD,DELTACD,DELTAF,ADDF,FNEW
-        REAL X2(NKR,ICEMAX),PSI2(NKR,ICEMAX)
-
-        REAL A1,B1,A2,B2
-        DATA A1,B1,A2,B2/-0.639,0.1296,-2.8,0.262/
-        REAL TEMP1,TEMP2,TEMP3
-        DATA TEMP1,TEMP2,TEMP3/-5.,-2.,-20./
-
-        C1=C1_MEY
-        C2=C2_MEY
-! TYPE OF ICE WITH NUCLEATION (BEGIN)
-
-        TPC=TT-273.15
-        ITYPE=0
-
-        IF((TPC.GT.-4.0).OR.(TPC.LE.-8.1.AND.TPC.GT.-12.7).OR.&
-     &  (TPC.LE.-17.8.AND.TPC.GT.-22.4)) THEN
-          ITYPE=2
-        ELSE
-          IF((TPC.LE.-4.0.AND.TPC.GT.-8.1).OR.(TPC.LE.-22.4)) THEN
-            ITYPE=1
+      end subroutine courant_bott_KS
+  ! +----------------------------------+
+end module module_mp_SBM_Collision
+! +-----------------------------------------------------------------------------+
+! +-----------------------------------------------------------------------------+
+ module module_mp_SBM_Auxiliary
+
+ private
+ public :: POLYSVP, JERRATE_KS, JERTIMESC_KS, JERSUPSAT_KS, &
+ 		       JERDFUN_KS, JERDFUN_NEW_KS, Relaxation_Time
+
+ ! Kind paramater
+ INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
+ INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
+
+ INTEGER,PARAMETER :: ISIGN_KO_1 = 0, ISIGN_KO_2 = 0,  ISIGN_3POINT = 1,  &
+                      IDebug_Print_DebugModule = 1
+ DOUBLE PRECISION,PARAMETER::COEFF_REMAPING = 0.0066667D0
+ DOUBLE PRECISION,PARAMETER::VENTPL_MAX = 5.0D0
+
+ DOUBLE PRECISION,PARAMETER::RW_PW_MIN = 1.0D-10
+ DOUBLE PRECISION,PARAMETER::RI_PI_MIN = 1.0D-10
+ DOUBLE PRECISION,PARAMETER::RW_PW_RI_PI_MIN = 1.0D-10
+ DOUBLE PRECISION,PARAMETER::RATIO_ICEW_MIN = 1.0D-4
+
+ contains
+! +----------------------------------------------------------+
+ double precision FUNCTION POLYSVP (TT,ITYPE)
+
+ implicit none
+
+ real,intent(in) :: TT
+ integer,intent(in) :: ITYPE
+
+ real(4),parameter :: C1 = -9.09718E0, C2 = -3.56654E0, C3 = 0.876793E0, C4 = 0.78583503E0, &
+                      AA1_MY = 2.53E12, BB1_MY = 5.42E3, AA2_MY = 3.41E13, BB2_MY = 6.13E3
+ real(4) :: ES1N, ES2N
+
+ method_select: SELECT CASE(ITYPE)
+
+ ! liquid
+ Case(0)
+   ES1N = AA1_MY*EXP(-BB1_MY/TT)
+   POLYSVP = ES1N ! [dyn/cm2] to [mb]
+
+ ! ice  
+ Case(1)
+   ES2N = AA2_MY*EXP(-BB2_MY/TT)
+   POLYSVP = ES2N ! [dyn/cm2] to [mb]
+
+ END SELECT method_select
+
+ return
+ end function POLYSVP
+! + -------------------------------------------------------- +
+      SUBROUTINE JERRATE_KS (xlS, &
+        						        TP,PP, &
+						                Vxl,RIEC,RO1BL, &
+						                B11_MY, &
+						                ID,IN,fl1,NKR,ICEMAX)
+
+		IMPLICIT NONE
+! ... Interface
+		INTEGER,INTENT(IN) :: ID, IN, NKR, ICEMAX
+		REAL(KIND=r4size),INTENT(IN) :: RO1BL(NKR,ID),RIEC(NKR,ID),FL1(NKR)
+		REAL(KIND=r4size),INTENT(INOUT) :: B11_MY(NKR,ID)
+		REAL(KIND=r8size),INTENT(IN) :: PP, TP, xlS(NKR,ID),Vxl(NKR,ID)
+! ... Interface
+! ... Locals
+		INTEGER :: KR, nskin(nkr), ICE
+		REAL(KIND=r4size) :: VENTPLM(NKR), FD1(NKR,ICEMAX),FK1(NKR,ICEMAX), xl_MY1(NKR,ICEMAX), &
+        		              AL1_MY(2),ESAT1(2), TPreal
+		REAL(KIND=r8size) :: PZERO, TZERO, CONST, D_MY, COEFF_VISCOUS, SHMIDT_NUMBER,     &
+							           A, B, RVT, SHMIDT_NUMBER03, XLS_KR_ICE, RO1BL_KR_ICE, VXL_KR_ICE, REINOLDS_NUMBER, &
+							           RESHM, VENTPL, CONSTL, DETL
+
+		REAL(KIND=r4size) :: deg01,deg03
+
+! A1L_MY - CONSTANTS FOR "MAXWELL": MKS
+		REAL(KIND=r8size),parameter:: RV_MY=461.5D4, CF_MY=2.4D3, D_MYIN=0.211D0
+
+! CGS :
+
+! RV_MY, CM*CM/SEC/SEC/KELVIN - INDIVIDUAL GAS CONSTANT
+!                               FOR WATER VAPOUR
+	!RV_MY=461.5D4
+
+! D_MYIN, CM*CM/SEC - COEFFICIENT OF DIFFUSION OF WATER VAPOUR
+
+	!D_MYIN=0.211D0
+
+! PZERO, DYNES/CM/CM - REFERENCE PRESSURE
+
+	PZERO=1.013D6
+
+! TZERO, KELVIN - REFERENCE TEMPERATURE
+
+	TZERO=273.15D0
+
+do kr=1,nkr
+	if (in==2 .and. fl1(kr)==0.0 .or. in==6 .or. in==3 .and. tp<273.15) then
+	   nskin(kr) = 2
+	else !in==1 or in==6 or lef/=0
+	   nskin(kr) = 1
+	endif
+enddo
+
+! CONSTANTS FOR CLAUSIUS-CLAPEYRON EQUATION :
+
+! A1_MY(1),G/SEC/SEC/CM
+
+!	A1_MY(1)=2.53D12
+
+! A1_MY(2),G/SEC/SEC/CM
+
+!	A1_MY(2)=3.41D13
+
+! BB1_MY(1), KELVIN
+
+!	BB1_MY(1)=5.42D3
+
+! BB1_MY(2), KELVIN
+
+!	BB1_MY(2)=6.13D3
+
+! AL1_MY(1), CM*CM/SEC/SEC - LATENT HEAT OF VAPORIZATION
+
+	AL1_MY(1)=2.5D10
+
+! AL1_MY(2), CM*CM/SEC/SEC - LATENT HEAT OF SUBLIMATION
+
+	AL1_MY(2)=2.834D10
+
+! CF_MY, G*CM/SEC/SEC/SEC/KELVIN - COEFFICIENT OF
+!                                  THERMAL CONDUCTIVITY OF AIR
+	!CF_MY=2.4D3
+
+  DEG01=1.0/3.0
+  DEG03=1.0/3.0
+
+	CONST=12.566372D0
+
+! coefficient of diffusion
+
+	D_MY=D_MYIN*(PZERO/PP)*(TP/TZERO)**1.94D0
+
+! coefficient of viscousity
+
+! COEFF_VISCOUS=0.13 cm*cm/sec
+
+        COEFF_VISCOUS=0.13D0
+
+! Shmidt number
+
+        SHMIDT_NUMBER=COEFF_VISCOUS/D_MY
+
+! Constants used for calculation of Reinolds number
+
+        A=2.0D0*(3.0D0/4.0D0/3.141593D0)**DEG01
+        B=A/COEFF_VISCOUS
+
+	RVT=RV_MY*TP
+  !	ESAT1(IN)=A1_MY(IN)*DEXP(-BB1_MY(IN)/TP)
+  !	if (IN==1) then
+  !            ESAT1(IN)=EW(TP)
+  !	ELSE
+  !            ESAT1(IN)=EI(TP)
+  !	endif
+
+		! ... (KS) - update the saturation vapor pressure
+		!ESAT1(1)=EW(TP)
+    !ESAT1(2)=EI(TP)
+		TPreal = TP
+		ESAT1(1) = POLYSVP(TPreal,0)
+		ESAT1(2) = POLYSVP(TPreal,1)
+
+	   DO KR=1,NKR
+	      VENTPLM(KR)=0.0D0
+    ENDDO
+
+		SHMIDT_NUMBER03=SHMIDT_NUMBER**DEG03
+
+	   DO ICE=1,ID
+	      DO KR=1,NKR
+
+          xlS_KR_ICE=xlS(KR,ICE)
+          RO1BL_KR_ICE=RO1BL(KR,ICE)
+          Vxl_KR_ICE=Vxl(KR,ICE)
+! Reynolds numbers
+          REINOLDS_NUMBER= &
+              B*Vxl_KR_ICE*(xlS_KR_ICE/RO1BL_KR_ICE)**DEG03
+          RESHM=DSQRT(REINOLDS_NUMBER)*SHMIDT_NUMBER03
+
+          IF(REINOLDS_NUMBER<2.5D0) THEN
+            VENTPL=1.0D0+0.108D0*RESHM*RESHM
+            VENTPLM(KR)=VENTPL
           ELSE
-            ITYPE=3
+            VENTPL=0.78D0+0.308D0*RESHM
+            VENTPLM(KR)=VENTPL
           ENDIF
+
+        ENDDO
+! cycle by KR
+
+! VENTPL_MAX is given in MICRO.PRM include file
+
+	     DO KR=1,NKR
+
+        VENTPL=VENTPLM(KR)
+
+        IF(VENTPL>VENTPL_MAX) THEN
+          VENTPL=VENTPL_MAX
+          VENTPLM(KR)=VENTPL
         ENDIF
 
+        CONSTL=CONST*RIEC(KR,ICE)
 
+        FD1(KR,ICE)=RVT/D_MY/ESAT1(nskin(kr))
+        FK1(KR,ICE)=(AL1_MY(nskin(kr))/RVT-1.0D0)*AL1_MY(nskin(kr))/CF_MY/TP
 
-! NEW CRYSTAL SIZE DISTRIBUTION FUNCTION                      (BEGIN)
+        xl_MY1(KR,ICE)=VENTPL*CONSTL
+        ! growth rate
+        DETL=FK1(KR,ICE)+FD1(KR,ICE)
+        B11_MY(KR,ICE)=xl_MY1(KR,ICE)/DETL
 
-        ICE=ITYPE
+       ENDDO
+! cycle by KR
 
-        NRGI=2
-        IF(TPC.LT.TEMP1) THEN
-          DEL2N=100.*SUP2
-          DEL2NN=DEL2N
-          IF(DEL2N.GT.50.0) DEL2NN=50.
-          HELEK1=C1*EXP(A1+B1*DEL2NN)
-        ELSE
-          HELEK1=0.
-        ENDIF
-
-        IF(TPC.LT.TEMP2) THEN
-          TPCC=TPC
-          IF(TPCC.LT.TEMP3) TPCC=TEMP3
-          HELEK2=C2*EXP(A2-B2*TPCC)
-        ELSE
-          HELEK2=0.
-        ENDIF
-
-        FF1BN=HELEK1+HELEK2
-
-        FACT=1.
-        DSUP2N=(SUP2-SUP2_OLD+DSUPICEXZ)*100.
-
-        SUP2_OLD=SUP2
-
-        IF(DSUP2N.GT.50.) DSUP2N=50.
-
-        DELTACD=FF1BN*B1*DSUP2N
-
-        IF(DELTACD.GE.FF1BN) DELTACD=FF1BN
-
-        IF(DELTACD.GT.0.) THEN
-          DELTAF=DELTACD*FACT
-          DO KR=1,NRGI-1
-             DX=3.*X2(KR,ICE)*COL
-             ADDF=DELTAF/DX
-             PSI2(KR,ICE)=PSI2(KR,ICE)+ADDF
-          ENDDO
-        ENDIF
-! NEW CRYSTAL SIZE DISTRIBUTION FUNCTION                        (END)
-       RETURN
-       END SUBROUTINE ICE_NUCL
-
-
-
-
-
-      SUBROUTINE NUCLEATION (SUP1,TT,FCCNR,DROPCONCN  &
-     &,NDROPMAX,COL,RCCN,DROPRADII,NKR,ICEMAX)
-! DROPCONCN(KR), 1/cm^3 - drop bin concentrations, KR=1,...,NKR
-
-! determination of new size spectra due to drop nucleation
-
-      IMPLICIT NONE
-      INTEGER NDROPMAX,IDROP,ICCN,INEXT,ISMALL,KR,NCRITI
-      INTEGER ICEMAX,IMIN,IMAX,NKR,I,II,I0,I1
-      REAL &
-     &  SUP1,TT,RACTMAX,XKOE,R03,SUPCRITI,AKOE23,RCRITI,BKOE, &
-     &  AKOE,CONCCCNIN,DEG01,ALN_IP
-      REAL CCNCONC(NKR)
-      REAL CCNCONC_BFNUCL
-
-
-      REAL COL
-      REAL RCCN(NKR),DROPRADII(NKR),FCCNR(NKR)
-      REAL RACT(NKR),DROPCONC(NKR),DROPCONCN(NKR)
-      REAL DLN1,DLN2,FOLD_IP
-
-
-
-        DEG01=1./3.
-
-
-! calculation initial value of NDROPMAX - maximal number of drop bin
-! which is activated
-
-! initial value of NDROPMAX
-
-        NDROPMAX=0
-
-        DO KR=1,NKR
-! initialization of bin radii of activated drops
-           RACT(KR)=0.
-! initialization of aerosol(CCN) bin concentrations
-           CCNCONC(KR)=0.
-! initialization of drop bin concentrations
-           DROPCONCN(KR)=0.
-        ENDDO
-
-
-! CCNCONC_BFNUCL - concentration of aerosol particles before
-!                  nucleation
-
-        CCNCONC_BFNUCL=0.
-        DO I=1,NKR
-           CCNCONC_BFNUCL=CCNCONC_BFNUCL+FCCNR(I)
-        ENDDO
-
-        CCNCONC_BFNUCL=CCNCONC_BFNUCL*COL
-
-        IF(CCNCONC_BFNUCL.EQ.0.) THEN
-           RETURN    
-        ELSE
-           CALL BOUNDARY(IMIN,IMAX,FCCNR,NKR)
-           CALL CRITICAL (AKOE,BKOE,TT,RCRITI,SUP1,DEG01)
-           IF(RCRITI.GE.RCCN(IMAX))  RETURN
-        END IF
-
-! calculation of CCNCONC(I) - aerosol(CCN) bin concentrations;
-!                             I=IMIN,...,IMAX
-! determination of NCRITI - number bin in which is located RCRITI
-        IF (IMIN.EQ.1)THEN
-         CALL CCNIMIN(IMIN,IMAX,RCRITI,NCRITI,RCCN,CCNCONC,COL, &
-     &       FCCNR,NKR)
-         CALL CCNLOOP(IMIN,IMAX,RCRITI,NCRITI,RCCN,CCNCONC,COL, &
-     &       FCCNR,NKR)
-        ELSE
-         CALL CCNLOOP(IMIN,IMAX,RCRITI,NCRITI,RCCN,CCNCONC,COL, &
-     &       FCCNR,NKR)
-        END IF
-
-
-! calculation CCNCONC_AFNUCL - ccn concentration after nucleation
-
-!       CCNCONC_AFNUCL=0.
-
-!       DO I=IMIN,IMAX
-!          CCNCONC_AFNUCL=CCNCONC_AFNUCL+FCCNR(I)
-!       ENDDO
-
-!       CCNCONC_AFNUCL=CCNCONC_AFNUCL*COL
-
-! calculation DEL_CCNCONC
-
-!       DEL_CCNCONC=CCNCONC_BFNUCL-CCNCONC_AFNUCL
-        CALL ACTIVATE(IMIN,IMAX,AKOE,BKOE,RCCN,RACT,RACTMAX,NKR)
-
-
-
-        CALL DROPMAX(DROPRADII,RACTMAX,NDROPMAX,NKR)
-! put nucleated droplets into the drop bin according to radius
-! change in drop concentration due to activation DROPCONCN(IDROP)
-        ISMALL=NCRITI
-
-        INEXT=ISMALL
-!       ISMALL=1
-
-!       INEXT=ISMALL
-
-        DO IDROP=1,NDROPMAX
-           DROPCONCN(IDROP)=0.
-           DO I=ISMALL,IMAX
-              IF(RACT(I).LE.DROPRADII(IDROP)) THEN
-                DROPCONCN(IDROP)=DROPCONCN(IDROP)+CCNCONC(I)
-                INEXT=I+1
-              ENDIF
-           ENDDO
-           ISMALL=INEXT
-        ENDDO
-
-!999    CONTINUE
-
-
-        RETURN
-        END SUBROUTINE NUCLEATION
-
-
-
-        SUBROUTINE BOUNDARY(IMIN,IMAX,FCCNR,NKR)
-! IMIN - left CCN spectrum boundary
-        IMPLICIT NONE
-        INTEGER I,IMIN,IMAX,NKR
-        REAL FCCNR(NKR)
-
-        IMIN=0
-
-        DO I=1,NKR
-           IF(FCCNR(I).NE.0.) THEN
-             IMIN=I
-             GOTO 40
-           ENDIF
-        ENDDO
-
- 40     CONTINUE
-
-! IMAX - right CCN spectrum boundary
-
-        IMAX=0
-
-        DO I=NKR,1,-1
-           IF(FCCNR(I).NE.0.) THEN
-             IMAX=I
-             GOTO 41
-           ENDIF
-        ENDDO
-
- 41     CONTINUE
-        RETURN
-        END  SUBROUTINE BOUNDARY
-
-        SUBROUTINE CRITICAL (AKOE,BKOE,TT,RCRITI,SUP1,DEG01)
-! AKOE & BKOE - constants in Koehler equation
-        IMPLICIT NONE
-        REAL AKOE,BKOE,TT,RCRITI,SUP1,DEG01
-        REAL RO_SOLUTE
-        PARAMETER (RO_SOLUTE=2.16)
-
-         
-
-        AKOE=3.3E-05/TT
-        BKOE=2.*4.3/(22.9+35.5)
-! new change 21.07.02                                         (begin)
-        BKOE=BKOE*(4./3.)*3.141593*RO_SOLUTE                  
-! new change 21.07.02                                           (end)
-        
-
-! table of critical aerosol radii
-
-!	GOTO 992
-
-! SUP1_TEST(I), %
-!       SUP1_TEST(1)=0.01
-!       DO I=1,99
-!          SUP1_TEST(I+1)=SUP1_TEST(I)+0.01
-!          SUP1_I=SUP1_TEST(I)*0.01
-!          RCRITI_TEST(I)=(AKOE/3.)*(4./BKOE/SUP1_I/SUP1_I)**DEG01
-!       ENDDO
-
-! RCRITI, cm - critical radius of "dry" aerosol
-
-        RCRITI=(AKOE/3.)*(4./BKOE/SUP1/SUP1)**DEG01
-        RETURN
-        END  SUBROUTINE CRITICAL
-            
-        SUBROUTINE CCNIMIN(IMIN,IMAX,RCRITI,NCRITI,RCCN,CCNCONC,COL, &
-     &       FCCNR,NKR)
-! FOR    IMIN=1
-        IMPLICIT NONE
-        INTEGER IMIN,II,IMAX,NCRITI,NKR
-        REAL RCRITI,COL
-        REAL RCCN(NKR),FCCNR(NKR),CCNCONC(NKR)
-        REAL RCCN_MIN
-        REAL DLN1,DLN2,FOLD_IP
-! rccn_min - minimum aerosol(ccn) radius
-        RCCN_MIN=RCCN(1)/10000.
-! calculation of ccnconc(ii)=fccnr(ii)*col - aerosol(ccn) bin
-!                                            concentrations,
-!                                            ii=imin,...,imax
-! determination of ncriti   - number bin in which is located rcriti
-! calculation of ccnconc(ncriti)=fccnr(ncriti)*dln1/(dln1+dln2),
-! where,    
-! dln1=Ln(rcriti)-Ln(rccn_min)
-! dln2=Ln(rccn(1)-Ln(rcriti)
-! calculation of new value of fccnr(ncriti)
-
-!       IF(IMIN.EQ.1) THEN
-          IF(RCRITI.LE.RCCN_MIN) THEN
-            NCRITI=1
-            DO II=NCRITI+1,IMAX
-               CCNCONC(II)=COL*FCCNR(II)     
-               FCCNR(II)=0.                  
-            ENDDO
-            GOTO 42
-          ENDIF
-          IF(RCRITI.GT.RCCN_MIN.AND.RCRITI.LT.RCCN(IMIN)) THEN
-            NCRITI=1
-            DO II=NCRITI+1,IMAX
-               CCNCONC(II)=COL*FCCNR(II)
-               FCCNR(II)=0.
-            ENDDO
-            DLN1=ALOG(RCRITI)-ALOG(RCCN_MIN)
-            DLN2=ALOG(RCCN(1))-ALOG(RCRITI)
-            CCNCONC(NCRITI)=DLN2*FCCNR(NCRITI)
-            FCCNR(NCRITI)=FCCNR(NCRITI)*DLN1/(DLN1+DLN2)
-            GOTO 42
-! in case RCRITI.GT.RCCN_MIN.AND.RCRITI.LT.RCCN(IMIN)
-          ENDIF
-! in case IMIN.EQ.1
-42       CONTINUE
-     
-         RETURN
-         END SUBROUTINE CCNIMIN
-        SUBROUTINE CCNLOOP(IMIN,IMAX,RCRITI,NCRITI,RCCN,CCNCONC,COL, &
-     &       FCCNR,NKR)
-        IMPLICIT NONE
-         INTEGER I,IMIN,IMAX,NKR,II,NCRITI
-         REAL COL
-         REAL RCRITI,RCCN(NKR),CCNCONC(NKR),FCCNR(NKR)
-         REAL DLN1,DLN2,FOLD_IP
-        IF(IMIN.GT.1) THEN
-          IF(RCRITI.LE.RCCN(IMIN-1)) THEN
-            NCRITI=IMIN
-            DO II=NCRITI,IMAX
-               CCNCONC(II)=COL*FCCNR(II)
-               FCCNR(II)=0.
-            ENDDO
-            GOTO 42
-          ENDIF
-          IF(RCRITI.LT.RCCN(IMIN).AND.RCRITI.GT.RCCN(IMIN-1)) &
-     &    THEN
-! this line eliminates bug you found (when IMIN=IMAX)
-            NCRITI=IMIN
-            
-            DO II=NCRITI+1,IMAX
-               CCNCONC(II)=COL*FCCNR(II)
-               FCCNR(II)=0.
-            ENDDO
-            DLN1=ALOG(RCRITI)-ALOG(RCCN(IMIN-1))
-            DLN2=COL-DLN1
-            CCNCONC(NCRITI)=DLN2*FCCNR(NCRITI)
-            FCCNR(NCRITI)=FCCNR(NCRITI)*DLN1/COL
-            GOTO 42
-! in case RCRITI.LT.RCCN(IMIN).AND.RCRITI.GT.RCCN(IMIN-1)
-          ENDIF
-! in case IMIN.GT.1
-        ENDIF
-        
-! END of part of interest. so in case
-!RCRITI.LT.RCCN(IMIN).AND.RCRITI.GT.RCCN(IMIN-1)
-!we go to 42 and avoid the next loop
-
-      
-
-         DO I=IMIN,IMAX-1
-           IF(RCRITI.EQ.RCCN(I)) THEN
-             NCRITI=I+1
-             DO II=I+1,IMAX
-                CCNCONC(II)=COL*FCCNR(II)
-                FCCNR(II)=0.
-             ENDDO
-             GOTO 42
-           ENDIF
-           IF(RCRITI.GT.RCCN(I).AND.RCRITI.LT.RCCN(I+1)) THEN
-             NCRITI=I+1
-             IF(I.NE.IMAX-1) THEN
-               DO II=NCRITI+1,IMAX
-                  CCNCONC(II)=COL*FCCNR(II)
-                  FCCNR(II)=0.
-               ENDDO
-             ENDIF
-             DLN1=ALOG(RCRITI)-ALOG(RCCN(I))
-             DLN2=COL-DLN1
-             CCNCONC(NCRITI)=DLN2*FCCNR(NCRITI)
-             FCCNR(NCRITI)=FCCNR(NCRITI)*DLN1/COL
-             GOTO 42
-! in case RCRITI.GT.RCCN(I).AND.RCRITI.LT.RCCN(I+1)
-           END IF
-      
-
-         ENDDO
-! cycle by I, I=IMIN,...,IMAX-1
-
-  42    CONTINUE
-        RETURN
-        END  SUBROUTINE CCNLOOP
-       SUBROUTINE ACTIVATE(IMIN,IMAX,AKOE,BKOE,RCCN,RACT, RACTMAX,NKR)
-       IMPLICIT NONE
-
-       INTEGER IMIN,IMAX,NKR
-       INTEGER I,I0,I1
-       REAL RCCN(NKR)
-        REAL  R03,SUPCRITI,RACT(NKR),XKOE
-        REAL AKOE,BKOE,AKOE23,RACTMAX
-! Spectrum of activated drops                                 (begin) 
-        DO I=IMIN,IMAX
-
-! critical water supersaturations appropriating CCN radii
-
-           XKOE=(4./27.)*(AKOE**3/BKOE)
-           AKOE23=AKOE*2./3.
-           R03=RCCN(I)**3
-           SUPCRITI=SQRT(XKOE/R03)
-
-! RACT(I) - radii of activated drops, I=IMIN,...,IMAX
-
-           IF(RCCN(I).LE.(0.3E-5)) &
-     &     RACT(I)=AKOE23/SUPCRITI
-           IF(RCCN(I).GT.(0.3E-5))&
-     &     RACT(I)=5.*RCCN(I)
-        ENDDO
-! cycle by I
-
-! calculation of I0
-
-        I0=IMIN
-
-        DO I=IMIN,IMAX-1
-           IF(RACT(I+1).LT.RACT(I)) THEN
-             I0=I+1
-             GOTO 45
-           ENDIF
-        ENDDO
-
- 45     CONTINUE
-! new changes 9.04.02                                         (begin)
-        I1=I0-1
-! new changes 9.04.02                                           (end)
-
-        IF(I0.EQ.IMIN) GOTO 47
-
-! new changes 9.04.02                                         (begin)
-
-        IF(I0.EQ.IMAX) THEN
-          RACT(IMAX)=RACT(IMAX-1)
-          GOTO 47
-        ENDIF
-
-        IF(RACT(IMAX).LE.RACT(I0-1)) THEN
-          DO I=I0,IMAX
-             RACT(I)=RACT(I0-1)
-          ENDDO
-          GOTO 47
-        ENDIF
-
-! new changes 9.04.02                                           (end)
-
-
-
-! calculation of I1
-
-        DO I=I0+1,IMAX
-           IF(RACT(I).GE.RACT(I0-1)) THEN
-             I1=I
-             GOTO 46
-           ENDIF
-        ENDDO
- 46     CONTINUE
-
-! spectrum of activated drops                                   (end)
-
-
-! line interpolation RACT(I) for I=I0,...,I1
-
-        DO I=I0,I1
-           RACT(I)=RACT(I0-1)+(I-I0+1)*(RACT(I1)-RACT(I0-1)) &
-     &                       /(I1-I0+1)
-        ENDDO
-
-
-  47    CONTINUE
-
-
-
-        RACTMAX=0.
-
-        DO I=IMIN,IMAX
-           RACTMAX=AMAX1(RACTMAX,RACT(I))
-	ENDDO
-        RETURN
-
-        END SUBROUTINE ACTIVATE
-        SUBROUTINE DROPMAX(DROPRADII,RACTMAX,NDROPMAX,NKR)
-        IMPLICIT NONE
-        INTEGER IDROP,NKR,NDROPMAX
-        REAL RACTMAX,DROPRADII(NKR)
-! calculation of NDROPMAX - maximal number of drop bin which
-! is activated
-
-        NDROPMAX=1
-
-        DO IDROP=1,NKR
-           IF(RACTMAX.LE.DROPRADII(IDROP)) THEN
-             NDROPMAX=IDROP
-             GOTO 44
-           ENDIF
-        ENDDO
- 44     CONTINUE
-        RETURN
-        END  SUBROUTINE DROPMAX
-
-
-        SUBROUTINE ONECOND1 &
-     & (TT,QQ,PP,ROR &
-     & ,VR1,PSINGLE &
-     & ,DEL1N,DEL2N,DIV1,DIV2 &
-     & ,FF1,PSI1,R1,RLEC,RO1BL &
-     & ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
-     & ,C1_MEY,C2_MEY &
-     & ,COL,DTCOND,ICEMAX,NKR)
-
-       IMPLICIT NONE
-
-
-      INTEGER NKR,ICEMAX
-      REAL    COL,VR1(NKR),PSINGLE &
-     &       ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
-     &       ,DTCOND
-
-      REAL C1_MEY,C2_MEY
-      INTEGER I_ABERGERON,I_BERGERON, &
-     & KR,ICE,ITIME,KCOND,NR,NRM, &
-     & KLIMIT, &
-     & KM,KLIMITL  
-      REAL AL1,AL2,D,GAM,POD, &
-     & RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY,ALC,DT0LREF,DTLREF, &
-     & A1_MYN, BB1_MYN, A2_MYN, BB2_MYN,DT,DTT,XRAD, &
-     & TPC1, TPC2, TPC3, TPC4, TPC5, &
-     & EPSDEL, EPSDEL2,DT0L, DT0I,&
-     & ROR, &
-     & CWHUCM,B6,B8L,B8I, &
-     & DEL1,DEL2,DEL1S,DEL2S, &
-     & TIMENEW,TIMEREV,SFN11,SFN12, &
-     & SFNL,SFNI,B5L,B5I,B7L,B7I,DOPL,DOPI,RW,RI,QW,PW, &
-     & PI,QI,DEL1N0,DEL2N0,D1N0,D2N0,DTNEWL,DTNEWL1,D1N,D2N, &
-     & DEL_R1,DT0L0,DT0I0, &
-     & DTNEWL0, &
-     & DTNEWL2 
-       REAL DT_WATER_COND,DT_WATER_EVAP
-
-       INTEGER K
-! NEW ALGORITHM OF CONDENSATION (12.01.00)
-
-      REAL  FF1_OLD(NKR),SUPINTW(NKR)
-      DOUBLE PRECISION DSUPINTW(NKR),DD1N,DB11_MY,DAL1,DAL2
-      DOUBLE PRECISION COL3,RORI,TPN,TPS,QPN,QPS,TOLD,QOLD &
-     &                  ,FI1_K,FI2_K,FI3_K,FI4_K,FI5_K &
-     &                  ,R1_K,R2_K,R3_K,R4_K,R5_K &
-     &                  ,FI1R1,FI2R2,FI3R3,FI4R4,FI5R5 &
-     &                  ,RMASSLAA,RMASSLBB,RMASSIAA,RMASSIBB &
-     &                  ,ES1N,ES2N,EW1N,ARGEXP &
-     &                  ,TT,QQ,PP &
-     &                  ,DEL1N,DEL2N,DIV1,DIV2 &
-     &                  ,OPER2,OPER3,AR1,AR2
-
-       DOUBLE PRECISION DELMASSL1
-
-! DROPLETS 
-                                                                       
-        REAL R1(NKR) &
-     &           ,RLEC(NKR),RO1BL(NKR) &
-     &           ,FI1(NKR),FF1(NKR),PSI1(NKR) &
-     &           ,B11_MY(NKR),B12_MY(NKR)
-
-! WORK ARRAYS 
-
-! NEW ALGORITHM OF MIXED PHASE FOR EVAPORATION
-
-       
-	REAL DTIMEO(NKR),DTIMEL(NKR) &
-     &           ,TIMESTEPD(NKR)
-
-! NEW ALGORITHM (NO TYPE OF ICE)
-
-
-
-	OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
-	OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
-
-        DATA AL1 /2500./, AL2 /2834./, D /0.211/ &
-     &      ,GAM /1.E-4/, POD /10./ 
-           
-	DATA RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY &
-     &      /461.5,0.24E-1,0.211E-4,2.5E6,2.834E6/
-
-	DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
-     &      /2.53,5.42,3.41E1,6.13/
-
-	DATA TPC1, TPC2, TPC3, TPC4, TPC5 &
-     &      /-4.0,-8.1,-12.7,-17.8,-22.4/ 
-
-
-        DATA EPSDEL, EPSDEL2 /0.1E-03,0.1E-03/  
-    
-	DATA DT0L, DT0I /1.E20,1.E20/
-
-! CONTROL OF DROP SPECTRUM IN SUBROUTINE ONECOND
-
-
-! CONTROL OF TIMESTEP ITERATIONS IN MIXED PHASE: EVAPORATION
-        
-        I_ABERGERON=0
-        I_BERGERON=0
-        COL3=3.0*COL
-        ITIME=0
-        KCOND=0
-        DT_WATER_COND=0.4
-        DT_WATER_EVAP=0.4
-	ITIME=0
-	KCOND=0
-        DT0LREF=0.2
-        DTLREF=0.4
-
-	NR=NKR
-	NRM=NKR-1
-	DT=DTCOND
-	DTT=DTCOND
-	XRAD=0.
-
-!     BARRY
-	CWHUCM=0.
-	XRAD=0.
-	B6=CWHUCM*GAM-XRAD
-	B8L=1./ROR
-	B8I=1./ROR
-        RORI=1./ROR
-
-! INITIALIZATION OF SOME ARRAYS
-!       print*, 'got to here 0'
-
-!       BARRY: REMOVE RS2 LOOP
-        DO KR=1,NKR
-           FF1_OLD(KR)=FF1(KR)
-           SUPINTW(KR)=0.
-           DSUPINTW(KR)=0.
-        ENDDO
-! OLD TREATMENT OF "T" & "Q" 
-!DEL12RD=DEL12R**DEL_BBR
-! BARRY
-!       EW1PN=AA1_MY*(100.+DEL1IN*100.)*DEL12RD/100.
-! 	QQIN=OPER4(EW1PN,PP)
-        TPN=TT
-        QPN=QQ
-        DO 19 KR=1,NKR
-              FI1(KR)=FF1(KR)
-19     CONTINUE
-! WARM OR NO ICE (BEGIN)
-! ONLY WATER (CONDENSATION OR EVAPORATION) (BEGIN)
-              TIMENEW=0.
-              ITIME=0
-! NEW CHANGES 10.01.01 (BEGIN)
-              TOLD=TPN
-              QOLD=QPN
-! NEW CHANGES 10.01.01 (END)
-   56         ITIME=ITIME+1
-              TIMEREV=DT-TIMENEW
-              TIMEREV=DT-TIMENEW
-              DEL1=DEL1N
-              DEL2=DEL2N
-              DEL1S=DEL1N
-              DEL2S=DEL2N
-              TPS=TPN
-              QPS=QPN
-! NO QPS IN JERRATE
-              CALL JERRATE(R1,TPS,PP,ROR,VR1,PSINGLE &
-     &                    ,RLEC,RO1BL,B11_MY,B12_MY,1,1,ICEMAX,NKR)
-
-! INTEGRALS IN DELTA EQUATION (ONLY WATER)
-
-! CONTROL OF DROP SPECRUM IN SUBROUTINE ONECOND
-
-
-! CALL JERTIMESC WATER - 1 (ONLY WATER)
-
-              CALL JERTIMESC(FI1,R1,SFN11,SFN12 &
-     &                      ,B11_MY,B12_MY,RLEC,B8L,1,COL,NKR)        
-
-
-	      SFNL=SFN11+SFN12
-	      SFNI=0.       
-
-! SOME CONSTANTS 
-	      B5L=BB1_MY/TPS/TPS
-	      B5I=BB2_MY/TPS/TPS
-              B7L=B5L*B6                                                     
-              B7I=B5I*B6
-	      DOPL=1.+DEL1S                                                     
-	      DOPI=1.+DEL2S                                                     
-              RW=(OPER2(QPS)+B5L*AL1)*DOPL*SFNL                                                 
-              RI=(OPER2(QPS)+B5L*AL2)*DOPL*SFNI
-	      QW=B7L*DOPL
-	      PW=(OPER2(QPS)+B5I*AL1)*DOPI*SFNL
-              PI=(OPER2(QPS)+B5I*AL2)*DOPI*SFNI
-              QI=B7I*DOPI
-
-! SOLVING FOR TIMEZERO
-
-
-
-	      KCOND=10
-
-	      IF(DEL1.GT.0) KCOND=11
-
-! PROCESS'S TYPE 
-
-	      IF(KCOND.EQ.11) THEN
-! NEW TIME STEP IN CONDENSATION (ONLY WATER) (BEGIN)
-                IF (DEL1N.EQ.0)THEN
-	           DTNEWL=DT
-                ELSE
-                 DTNEWL=ABS(R1(ITIME)/(B11_MY(ITIME)*DEL1N &
-     &                               -B12_MY(ITIME)))
-	         IF(DTNEWL.GT.DT) DTNEWL=DT
-                END IF
-                IF(ITIME.GE.NKR) THEN
-                call wrf_error_fatal("fatal error in module_mp_fast_sbm (ITIME.GE.NKR), model stop")
-                ENDIF
-                TIMESTEPD(ITIME)=DTNEWL
-
-! NEW TIME STEP (ONLY WATER: CONDENSATION)
-
-
-	        IF((TIMENEW+DTNEWL).GT.DT.AND.ITIME.LT.(NKR-1))  & 
-     &          DTNEWL=DT-TIMENEW
-                IF(ITIME.EQ.(NKR-1)) DTNEWL=DT-TIMENEW
-
-	        TIMESTEPD(ITIME)=DTNEWL
-
-	        TIMENEW=TIMENEW+DTNEWL
-
-	        DTT=DTNEWL
-
-! SOLVING FOR SUPERSATURATION 
-
-! CALL JERSUPSAT - 2 (NEW TIMESTEP - ONLY WATER)
-
-
-	        CALL JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N &
-     &                        ,RW,PW,RI,PI,QW,QI &
-     &                        ,DTT,D1N,D2N,DT0L,DT0I)
-
-! END OF "NEW SUPERSATURATION"
-
-! DROPLETS 
-
-! DROPLET DISTRIBUTION FUNCTION 
-                                                         
-! CALL JERDFUN WATER - 1 (ONLY WATER: CONDENSATION)
-	          CALL JERDFUN(R1,B11_MY,B12_MY &
-     &                        ,FI1,PSI1,D1N &
-     &                        ,1,1,COL,NKR,TPN)
-
-	        IF((DEL1.GT.0.AND.DEL1N.LT.0) &
-     &         .AND.ABS(DEL1N).GT.EPSDEL) THEN
-             call wrf_error_fatal("fatal error in module_mp_fast_sbm (DEL1.GT.0.AND.DEL1N.LT.0), model stop")
-	        ENDIF
-
-! IN CASE : KCOND.EQ.11
-
-	      ELSE
-
-! EVAPORATION - ONLY WATER 
-
-! IN CASE : KCOND.NE.11
-               IF (DEL1N.EQ.0)THEN
-                DTIMEO(1)=DT
-	        DO KR=2,NKR
-	           DTIMEO(KR)=DT
-	        ENDDO
-               ELSE
-	        DTIMEO(1)=-R1(1)/(B11_MY(1)*DEL1N-B12_MY(1))
-
-	        DO KR=2,NKR
-	           KM=KR-1
-	           DTIMEO(KR)=(R1(KM)-R1(KR))/(B11_MY(KR)*DEL1N &
-     &                                       -B12_MY(KR))
-	        ENDDO
-               END IF
-
-	        KLIMIT=1
-
-	        DO KR=1,NKR
-	           IF(DTIMEO(KR).GT.TIMEREV) GOTO 55
-	           KLIMIT=KR
-	        ENDDO
-
-   55           KLIMIT=KLIMIT-1
-
-	        IF(KLIMIT.LT.1) KLIMIT=1
-
-! BARRY THIS LINE CAUSED A PROBLEM BECAUSE DTNEWL GOES FROM
-! LARGE TO SMALL
-  	        DTNEWL1=AMIN1(DTIMEO(3),TIMEREV)
-                IF(DTNEWL1.LT.DTLREF) DTNEWL1=AMIN1(DTLREF,TIMEREV)
-	        DTNEWL=DTNEWL1
-	        IF(ITIME.GE.NKR) THEN
-           call wrf_error_fatal("fatal error in module_mp_fast_sbm (ITIME.GE.NKR), model stop")
-	        ENDIF
-
-	        TIMESTEPD(ITIME)=DTNEWL
-
-! NEW TIME STEP (ONLY_WATER: EVAPORATION)
-
-	        IF(DTNEWL.GT.DT) DTNEWL=DT
-                IF((TIMENEW+DTNEWL).GT.DT.AND.ITIME.LT.(NKR-1))  &
-     &          DTNEWL=DT-TIMENEW
-                IF(ITIME.EQ.(NKR-1)) DTNEWL=DT-TIMENEW
-
-	        TIMESTEPD(ITIME)=DTNEWL
-
-	        TIMENEW=TIMENEW+DTNEWL
-
-	        DTT=DTNEWL
-
-! SOLVING FOR SUPERSATURATION 
-
-
-! CALL JERSUPSAT - 3 (ONLY_WATER: EVAPORATION)
-
-	        CALL JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N &
-     &                        ,RW,PW,RI,PI,QW,QI &
-     &                        ,DTT,D1N,D2N,DT0L0,DT0I0)
-! END OF "NEW SUPERSATURATION"
-
-
-! DROPLETS 
-
-
-! DROPLET DISTRIBUTION FUNCTION (ONLY_WATER: EVAPORATION)
-                                                         
-! CALL JERDFUN WATER - 2 (ONLY_WATER: EVAPORATION)
-             
- 	          CALL JERDFUN(R1,B11_MY,B12_MY &
-     &                        ,FI1,PSI1,D1N &
-     &                        ,1,1,COL,NKR,TPN)
-
-! IN CASE : ISYML.NE.0 (ENDING OF 
-! "DROPLET DISTRIBUTION FUNCTION" (ONLY WATER: EVAPORATION)
-
-!        ENDIF
-
-	        IF((DEL1.LT.0.AND.DEL1N.GT.0) &
-     &         .AND.ABS(DEL1N).GT.EPSDEL) THEN
-            call wrf_error_fatal("fatal error in module_mp_fast_sbm (DEL1.LT.0.AND.DEL1N.GT.0), model stop")
-	        ENDIF
-
-! END OF "PROCESS'S TYPE" 
-
-! IN CASE : KCOND.NE.11 (ONLY WATER: EVAPORATION)
-
-              ENDIF
-
-! IN CASES : KCOND.EQ.11 OR KCOND.NE.11 (BOTH CONDENSATION AND
-! EVAPORATION : ONLY WATER)
-
-! CONCENTRATION & MASS (ONLY WATER) 
-
-      RMASSLBB=0.
-      RMASSLAA=0.
-
-! BEFORE JERNEWF (ONLY WATER) 
-
-              DO K=1,NKR
-                 FI1_K=FI1(K)
-                 R1_K=R1(K)
-                 FI1R1=FI1_K*R1_K*R1_K
-                 RMASSLBB=RMASSLBB+FI1R1
-              ENDDO
-              RMASSLBB=RMASSLBB*COL3*RORI
-! NEW CHANGE RMASSLBB
-              IF(RMASSLBB.LE.0.) RMASSLBB=0.
-              DO K=1,NKR
-                 FI1_K=PSI1(K)
-                 R1_K=R1(K)
-                 FI1R1=FI1_K*R1_K*R1_K
-                 RMASSLAA=RMASSLAA+FI1R1
-              ENDDO
-              RMASSLAA=RMASSLAA*COL3*RORI
-              IF(RMASSLAA.LE.0.) RMASSLAA=0.
-! NEW TREATMENT OF "T" & "Q" (ONLY WATER)
-              DELMASSL1=RMASSLAA-RMASSLBB
-              QPN=QPS-DELMASSL1
-              DAL1=AL1
-              TPN=TPS+DAL1*DELMASSL1
-! SUPERSATURATION (ONLY WATER)
-              ARGEXP=-BB1_MY/TPN
-              ES1N=AA1_MY*DEXP(ARGEXP)
-              ARGEXP=-BB2_MY/TPN
-              ES2N=AA2_MY*DEXP(ARGEXP)
-              EW1N=OPER3(QPN,PP)
-              IF(ES1N.EQ.0)THEN
-               DEL1N=0.5
-               DIV1=1.5
-              ELSE
-               DIV1=EW1N/ES1N
-               DEL1N=EW1N/ES1N-1.
-              END IF
-              IF(ES2N.EQ.0)THEN
-               DEL2N=0.5
-               DIV2=1.5
-              ELSE
-               DEL2N=EW1N/ES2N-1.
-               DIV2=EW1N/ES2N
-              END IF
-              DO KR=1,NKR
-                SUPINTW(KR)=SUPINTW(KR)+B11_MY(KR)*D1N
-                DD1N=D1N
-                DB11_MY=B11_MY(KR)
-                DSUPINTW(KR)=DSUPINTW(KR)+DB11_MY*DD1N
-              ENDDO
-! REPEATE TIME STEP (ONLY WATER: CONDENSATION OR EVAPORATION) 
-	      IF(TIMENEW.LT.DT) GOTO 56
-57            CONTINUE
-              CALL JERDFUN_NEW(R1,DSUPINTW &
-     &                        ,FF1_OLD,PSI1,D1N &
-     &                        ,1,1,COL,NKR,TPN)
-              RMASSLAA=0.0
-              RMASSLBB=0.0
-! BEFORE JERNEWF
-              DO K=1,NKR
-                 FI1_K=FF1_OLD(K)
-                 R1_K=R1(K)
-                 FI1R1=FI1_K*R1_K*R1_K
-                 RMASSLBB=RMASSLBB+FI1R1
-              ENDDO
-              RMASSLBB=RMASSLBB*COL3*RORI
-! NEW CHANGE RMASSLBB
-              IF(RMASSLBB.LT.0.0) RMASSLBB=0.0
-! AFTER  JERNEWF
-              DO K=1,NKR
-                 FI1_K=PSI1(K)
-                 R1_K=R1(K)
-                 FI1R1=FI1_K*R1_K*R1_K
-                 RMASSLAA=RMASSLAA+FI1R1
-              ENDDO
-              RMASSLAA=RMASSLAA*COL3*RORI
-! NEW CHANGE RMASSLAA
-              IF(RMASSLAA.LT.0.0) RMASSLAA=0.0
-              IF(RMASSLAA.LT.0.0) RMASSLAA=0.0
-! NEW TREATMENT OF "T" & "Q"
-              DELMASSL1=RMASSLAA-RMASSLBB
-! NEW CHANGES 10.01.01 (BEGIN)
-              QPN=QOLD-DELMASSL1
-              DAL1 = AL1
-              TPN=TOLD+DAL1*DELMASSL1
-! NEW CHANGES 10.01.01 (END)
-! SUPERSATURATION
-              ARGEXP=-BB1_MY/TPN
-              ES1N=AA1_MY*DEXP(ARGEXP)
-              ARGEXP=-BB2_MY/TPN
-              ES2N=AA2_MY*DEXP(ARGEXP)
-              EW1N=OPER3(QPN,PP)
-              IF(ES1N.EQ.0)THEN
-               DEL1N=0.5
-               DIV1=1.5
-   call wrf_error_fatal("fatal error in module_mp_fast_sbm (ES1N.EQ.0), model stop")
-              ELSE
-               DIV1=EW1N/ES1N
-               DEL1N=EW1N/ES1N-1.
-              END IF
-              IF(ES2N.EQ.0)THEN
-               DEL2N=0.5
-               DIV2=1.5
-   call wrf_error_fatal("fatal error in module_mp_fast_sbm (ES2N.EQ.0), model stop")
-              ELSE
-               DEL2N=EW1N/ES2N-1.
-               DIV2=EW1N/ES2N
-              END IF
-        TT=TPN
-        QQ=QPN
-	DO KR=1,NKR
-	   FF1(KR)=PSI1(KR)
-	ENDDO
-
-
-
-
-       RETURN
-!      END 
-
-  END SUBROUTINE ONECOND1
-!==================================================================
-
-
-
-!BARRY
-        SUBROUTINE JERDFUN(R2,B21_MY,B22_MY &
-     &                    ,FI2,PSI2,DEL2N &
-     &                    ,IND,ITYPE,COL,NKR,TPN)
-       IMPLICIT NONE
-
-! CRYSTALS 
-       REAL COL,DEL2N
-                                                                       
-      INTEGER IND,ITYPE,KR,ICE,ITYP,NRM,NR,NKR,IDROP
-       REAL &
-     &       R2(NKR,IND),R2N(NKR,IND) &
-     &      ,FI2(NKR,IND),PSI2(NKR,IND) &
-     &      ,B21_MY(NKR,IND),B22_MY(NKR,IND) &
-     &      ,DEL_R2M(NKR,IND)
-        DOUBLE PRECISION R2R(NKR),R2NR(NKR),FI2R(NKR),PSI2R(NKR)
-        DOUBLE PRECISION DR2(NKR,IND),DR2N(NKR,IND),DDEL2N, &
-     &     DB21_MY(NKR,IND)
-       DOUBLE PRECISION CHECK,TPN
-          CHECK=0.D0
-           DO KR=1,NKR
-             CHECK=B21_MY(1,1)*B21_MY(KR,1)
-             IF (CHECK.LT.0) call wrf_error_fatal("fatal error in module_mp_fast_sbm (CHECK.LT.0), model stop") 
-           END DO
-
-	IF(IND.NE.1) THEN
-	  ITYP=ITYPE
-        ELSE
-	  ITYP=1
-	ENDIF
-
-           DDEL2N=DEL2N
-	DO KR=1,NKR
-	   PSI2R(KR)=FI2(KR,ITYP)
-	   FI2R(KR)=FI2(KR,ITYP)
-           DR2(KR,ITYP)=R2(KR,ITYP)
-           DB21_MY(KR,ITYP)=B21_MY(KR,ITYP)
-	ENDDO
-!
-!Q2=0.
-	NR=NKR
-	NRM=NKR-1
-
-! NEW DISTRIBUTION FUNCTION 
-
-	  DO 8 ICE=1,IND
-	       IF(ITYP.EQ.ICE) THEN
-	          DO KR=1,NKR
-                    DR2N(KR,ICE)=DR2(KR,ICE)+DDEL2N*DB21_MY(KR,ICE)
-                    R2N(KR,ICE)=DR2N(KR,ICE)
-!                   IF (D1N.LT.0)THEN
-!	             if (DR2N(KR,ICE).EQ.DR2(KR,ICE))THEN
-!		        KK=NKR-KR+1
-!	       		DR2N(KR,ICE)=R2N(KR,ICE)-2.E-15/2**KK
-!                    end if
-!                   END IF
-
-	          ENDDO
-	        ENDIF
-    8	  CONTINUE
-! CRYSTAL DISTRIBUTION FUNCTION 
-                                                          
-	  DO ICE=1,IND
-
-! ICE_TYPE 
-	     IF(ITYP.EQ.ICE) THEN
-!       Q2=20.*ITYPE+ICE
-               DO 5 KR=1,NKR
-	            R2R(KR)=DR2(KR,ICE)
-	            R2NR(KR)=DR2N(KR,ICE)               
-    5         continue
-! Andrei's new change 1.12.09                                 (start)
-!            IDROP=1
-!            IDROP=0
-             IF(IND.EQ.1.AND.ITYPE.EQ.1) IDROP=1
-! Andrei's new change 1.12.09                                   (end)
-             CALL JERNEWF(NR,NRM,R2R,FI2R,PSI2R,R2NR,COL,NKR &
-! Andrei's new change 1.12.09                                 (start)
-     &                   ,IDROP,TPN)
-! Andrei's new change 1.12.09                                   (end)
-
-
-
-!              CALL JERNEWF(NR,NRM,R2R,FI2R,PSI2R,R2NR,COL,NKR)
-	       DO KR=1,NKR                              
-	          PSI2(KR,ICE)=PSI2R(KR)
-	       ENDDO
-
-
-! END OF "ICE_TYPE" 
-
-	     ENDIF
-
-! END OF "CRYSTAL DISTRIBUTION FUNCTION" 
-                                                          
-	  ENDDO
-
-! END OF "NEW DISTRIBUTION FUNCTION"
-
+      ENDDO
+! cycle by ICE
 
 	RETURN
-	END SUBROUTINE JERDFUN
-!===================================================================
-        SUBROUTINE JERDFUN_NEW(R2,B21_MY &
-     &                    ,FI2,PSI2,DEL2N &
-     &                    ,IND,ITYPE,COL,NKR,TPN)
-       IMPLICIT NONE
+	END SUBROUTINE JERRATE_KS
 
-! CRYSTALS 
-       REAL COL,DEL2N
-                                                                       
-      INTEGER IND,ITYPE,KR,ICE,ITYP,NRM,NR,KK,NKR,IDROP
-       REAL &
-     &       R2(NKR,IND),R2N(NKR,IND) &
-     &      ,FI2(NKR,IND),PSI2(NKR,IND)
-       DOUBLE PRECISION TPN
-       DOUBLE PRECISION  B21_MY(NKR,IND)
-        DOUBLE PRECISION R2R(NKR),R2NR(NKR),FI2R(NKR),PSI2R(NKR)
-        DOUBLE PRECISION DR2(NKR,IND),DR2N(NKR,IND),DDEL2N, &
-     &     DB21_MY(NKR,IND)
-	IF(IND.NE.1) THEN
-	  ITYP=ITYPE
-        ELSE
-	  ITYP=1
-	ENDIF
+! SUBROUTINE JERRATE
+! ................................................................................
+	SUBROUTINE JERTIMESC_KS (FI1,X1,SFN11, &
+        				  	       B11_MY,CF,ID,NKR,ICEMAX,COL)
 
-           DDEL2N=DEL2N
-	DO KR=1,NKR
-	   PSI2R(KR)=FI2(KR,ITYP)
-	   FI2R(KR)=FI2(KR,ITYP)
-           DR2(KR,ITYP)=R2(KR,ITYP)
-	ENDDO
-!
-!Q2=0.
-	NR=NKR
-	NRM=NKR-1
+	IMPLICIT NONE
 
-! NEW DISTRIBUTION FUNCTION 
+! ... Interface
+	INTEGER,INTENT(IN) :: ID,NKR,ICEMAX
+	REAL(KIND=r4size),INTENT(in) :: B11_MY(NKR,ID), FI1(NKR,ID), COL, CF
+	REAL(KIND=r8size),INTENT(in) :: X1(NKR,ID)
+	REAL(KIND=r4size),INTENT(out) :: SFN11(ID)
+! ... Interface
 
-! CRYSTAL DISTRIBUTION FUNCTION 
-	  DO ICE=1,IND
-! ICE_TYPE 
-	     IF(ITYP.EQ.ICE) THEN
-               DO 5 KR=1,NKR
-	            R2R(KR)=DR2(KR,ICE)
-	            R2NR(KR)=DR2(KR,ICE)+B21_MY(KR,ICE)
-                    R2N(KR,ICE)=R2NR(KR)
-!                   IF (D1N.LT.0)THEN
-!	            	 if (R2NR(KR).EQ.R2R(KR))THEN
-!	       		 KK=NKR-KR+1
-!		        R2NR(KR)=R2R(KR)-2.E-15/2**KK
-!		      end if
-!	            END IF
-    5         continue
-! Andrei's new change 1.12.09                                 (start)
-             IDROP=1
-!            IDROP=0
-             CALL JERNEWF(NR,NRM,R2R,FI2R,PSI2R,R2NR,COL,NKR &
-     &                   ,IDROP,TPN)
-! Andrei's new change 1.12.09                                   (end)
+! ... Locals
+	INTEGER :: ICE, KR
+	REAL(KIND=r4size) :: SFN11S, FK, DELM, FUN, B11
+! ... Locals
 
+	DO ICE=1,ID
+     SFN11S=0.0D0
+ 	   SFN11(ICE)=CF*SFN11S
+   DO KR=1,NKR
+! value of size distribution functions
+      	FK=FI1(KR,ICE)
+! delta-m
+      	DELM=X1(KR,ICE)*3.0D0*COL
+! integral's expression
+	      	FUN=FK*DELM
+! values of integrals
+	      	B11=B11_MY(KR,ICE)
+		  	SFN11S=SFN11S+FUN*B11
+  ENDDO
+! cycle by kr
+! correction
+ 	SFN11(ICE)=CF*SFN11S
+  ENDDO
 
-!              CALL JERNEWF(NR,NRM,R2R,FI2R,PSI2R,R2NR,COL,NKR)
-	       DO KR=1,NKR                              
-	          PSI2(KR,ICE)=PSI2R(KR)
-	       ENDDO
-
-! END OF "ICE_TYPE" 
-
-	     ENDIF
-
-! END OF "CRYSTAL DISTRIBUTION FUNCTION" 
-                                                          
-	  ENDDO
-
-! END OF "NEW DISTRIBUTION FUNCTION"
-
+! cycle by ice
 
 	RETURN
-	END SUBROUTINE JERDFUN_NEW
-! SUBROUTINE JERDFUN_NEW (NEW ALGORITHM OF CONDENSATION, 12.01.00)
+	END SUBROUTINE JERTIMESC_KS
+! +--------------------------------------------------------+
+	SUBROUTINE JERSUPSAT_KS (DEL1,DEL2,DEL1N,DEL2N, &
+			                     RW,PW,RI,PI, &
+          			           DT,DEL1INT,DEL2INT,DYN1,DYN2, &
+          			           ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
 
-! new change 30.01.06                                         (start)
-!       SUBROUTINE JERNEWF(NRX,NRM,RR,FI,PSI,RN,COL,NKR)
+		IMPLICIT NONE
+! ... Interface
+		INTEGER,INTENT(INOUT) :: 		ISYM1, ISYM2(:), ISYM3, ISYM4, ISYM5
+		REAL(KIND=r4size),INTENT(IN) ::   DT, DYN1, DYN2
+		REAL(KIND=r8size),INTENT(IN) :: 	DEL1, DEL2
+		REAL(KIND=r8size),INTENT(INOUT) :: DEL1N,DEL2N,DEL1INT,DEL2INT,RW, PW, RI, PI
+! ... Interface
+! ... Locals
+	   INTEGER :: I, ISYMICE, IRW, IPW, IRI, IPI
+	   REAL(KIND=r8size) :: X, EXPM1, DETER, EXPR, EXPP, A, ALFA, BETA, GAMA, G31, G32, G2, EXPB, EXPG, &
+	   				  C11, C21, C12, C22, A1DEL1N, A2DEL1N, A3DEL1N, A4DEL1N, A1DEL1INT, A2DEL1INT, &
+							A3DEL1INT, A4DEL1INT, A1DEL2N, A2DEL2N, A3DEL2N , A4DEL2N, A1DEL2INT, A2DEL2INT, &
+							A3DEL2INT, A4DEL2INT, A5DEL2INT
+! ... Locals
 
-        SUBROUTINE JERNEWF &
-       (NRX,NRM,RR,FI_OLD,PSI,RN,COL,NKR, &
-! Andrei's new change 1.12.09                                 (start)           
-        IDROP,TPN)
-! Andrei's new change 1.12.09                                   (end)	
- 
+		EXPM1(x)=x+x*x/2.0D0+x*x*x/6.0D0+x*x*x*x/24.0D0+ &
+                 x*x*x*x*x/120.0D0
+
+  ISYMICE = sum(ISYM2) + ISYM3 + ISYM4 + ISYM5
+  IRW = 1
+  IPW = 1
+  IRI = 1
+  IPI = 1
+
+	IF(AMAX1(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
+
+    RW = 0.0
+    IRW = 0
+    PW = 0.0
+    IPW = 0
+    RI = 0.0
+    IRI = 0
+    PI = 0.0
+    IPI = 0
+    ISYM1 = 0
+    ISYMICE = 0
+
+	ELSE
+
+    IF(DMAX1(RW,PW)>RW_PW_MIN) THEN
+
+			! ... (KS) - A zero can pass through, assign a minimum value
+			IF(RW < RW_PW_MIN*RW_PW_MIN) THEN
+        RW = 1.0D-20
+        IRW = 0
+      ENDIF
+      IF(PW < RW_PW_MIN*RW_PW_MIN)THEN
+        PW = 1.0D-20
+        IPW = 0
+      ENDIF
+
+      IF(DMAX1(PI/PW,RI/RW)<=RATIO_ICEW_MIN) THEN
+			  ! ... only water
+        RI = 0.0
+        IRI = 0
+        PI = 0.0
+        IPI = 0
+        ISYMICE = 0
+      ENDIF
+
+      IF(DMIN1(PI/PW,RI/RW)>1.0D0/RATIO_ICEW_MIN) THEN
+			  ! ... only ice
+        RW = 0.0
+        IRW = 0
+        PW = 0.0
+        IPW = 0
+        ISYM1 = 0
+      ENDIF
+
+    ELSE
+			! only ice
+			RW = 0.0
+      IRW = 0
+      PW = 0.0
+      IPW = 0
+      ISYM1 = 0
+
+	  ENDIF
+	 ENDIF
+
+	IF(ISYMICE == 0)THEN
+		ISYM2 = 0
+		ISYM3 = 0
+		ISYM4 = 0
+		ISYM5 = 0
+	ENDIF
+
+    DETER=RW*PI-PW*RI
+
+
+    IF(IRW == 0 .AND. IRI == 0) THEN
+
+          DEL1N=DEL1+DYN1*DT
+          DEL2N=DEL2+DYN2*DT
+          DEL1INT=DEL1*DT+DYN1*DT*DT/2.0D0
+          DEL2INT=DEL2*DT+DYN2*DT*DT/2.0D0
+
+          GOTO 100
+
+    ENDIF
+
+! solution of equation for supersaturation with
+! different DETER values
+
+    IF(IRI == 0) THEN
+! ... only water                                                     (start)
+
+      EXPR=EXP(-RW*DT)
+      IF(ABS(RW*DT)>1.0E-6) THEN
+        DEL1N=DEL1*EXPR+(DYN1/RW)*(1.0D0-EXPR)
+        DEL2N=PW*DEL1*EXPR/RW-PW*DYN1*DT/RW- &
+              PW*DYN1*EXPR/(RW*RW)+DYN2*DT+ &
+              DEL2-PW*DEL1/RW+PW*DYN1/(RW*RW)
+        DEL1INT=-DEL1*EXPR/RW+DYN1*DT/RW+ &
+                 DYN1*EXPR/(RW*RW)+DEL1/RW-DYN1/(RW*RW)
+        DEL2INT=PW*DEL1*EXPR/(-RW*RW)-PW*DYN1*DT*DT/(2.0D0*RW)+ &
+                PW*DYN1*EXPR/(RW*RW*RW)+DYN2*DT*DT/2.0D0+ &
+                DEL2*DT-PW*DEL1*DT/RW+PW*DYN1*DT/(RW*RW)+ &
+                PW*DEL1/(RW*RW)-PW*DYN1/(RW*RW*RW)
+        GOTO 100
+! in case DABS(RW*DT)>1.0D-6
+	     ELSE
+
+! in case DABS(RW*DT)<=1.0D-6
+
+          EXPR=EXPM1(-RW*DT)
+          DEL1N=DEL1+DEL1*EXPR+(DYN1/RW)*(0.0D0-EXPR)
+          DEL2N=PW*DEL1*EXPR/RW-PW*DYN1*DT/RW- &
+                   PW*DYN1*EXPR/(RW*RW)+DYN2*DT+DEL2
+          DEL1INT=-DEL1*EXPR/RW+DYN1*DT/RW+DYN1*EXPR/(RW*RW)
+          DEL2INT=PW*DEL1*EXPR/(-RW*RW)-PW*DYN1*DT*DT/(2.0D0*RW)+ &
+                     PW*DYN1*EXPR/(RW*RW*RW)+DYN2*DT*DT/2.0D0+ &
+                     DEL2*DT-PW*DEL1*DT/RW+PW*DYN1*DT/(RW*RW)
+          GOTO 100
+
+	       ENDIF
+! ... only water                                                    (end)
+
+! in case RI==0.0D0
+    ENDIF
+
+    IF(IRW == 0) THEN
+! ... only ice                                                    (start)
+
+      EXPP=EXP(-PI*DT)
+
+      IF(ABS(PI*DT)>1.0E-6) THEN
+
+        DEL2N = DEL2*EXPP+(DYN2/PI)*(1.0D0-EXPP)
+        DEL2INT = -DEL2*EXPP/PI+DYN2*DT/PI+ &
+                   DYN2*EXPP/(PI*PI)+DEL2/PI-DYN2/(PI*PI)
+        DEL1N = +RI*DEL2*EXPP/PI-RI*DYN2*DT/PI- &
+                  RI*DYN2*EXPP/(PI*PI)+DYN1*DT+ &
+                  DEL1-RI*DEL2/PI+RI*DYN2/(PI*PI)
+        DEL1INT = -RI*DEL2*EXPP/(PI*PI)-RI*DYN2*DT*DT/(2.0D0*PI)+ &
+                    RI*DYN2*EXPP/(PI*PI*PI)+DYN1*DT*DT/2.0D0+ &
+                    DEL1*DT-RI*DEL2*DT/PI+RI*DYN2*DT/(PI*PI)+ &
+                    RI*DEL2/(PI*PI)-RI*DYN2/(PI*PI*PI)
+        GOTO 100
+! in case DABS(PI*DT)>1.0D-6
+      ELSE
+
+! in case DABS(PI*DT)<=1.0D-6
+
+          EXPP=EXPM1(-PI*DT)
+          DEL2N=DEL2+DEL2*EXPP-EXPP*DYN2/PI
+          DEL2INT=-DEL2*EXPP/PI+DYN2*DT/PI+DYN2*EXPP/(PI*PI)
+          DEL1N=+RI*DEL2*EXPP/PI-RI*DYN2*DT/PI- &
+                    RI*DYN2*EXPP/(PI*PI)+DYN1*DT+DEL1
+          DEL1INT=-RI*DEL2*EXPP/(PI*PI)-RI*DYN2*DT*DT/(2.0D0*PI)+ &
+                      RI*DYN2*EXPP/(PI*PI*PI)+DYN1*DT*DT/2.0D0+ &
+                      DEL1*DT-RI*DEL2*DT/PI+RI*DYN2*DT/(PI*PI)
+          GOTO 100
+
+      ENDIF
+! ... only ice                                                      (end)
+
+! in case RW==0.0D0
+    ENDIF
+
+    IF(IRW == 1 .AND. IRI == 1) THEN
+
+      A=(RW-PI)*(RW-PI)+4.0E0*PW*RI
+
+	     IF(A < 0.0) THEN
+	          PRINT*,   'IN SUBROUTINE JERSUPSAT: A < 0'
+            PRINT*,   'DETER'
+            PRINT 201, DETER
+            PRINT*,   'RW,PW,RI,PI'
+            PRINT 204, RW,PW,RI,PI
+            PRINT*,   'DT,DYN1,DYN2'
+            PRINT 203, DT,DYN1,DYN2
+            PRINT*,   'DEL1,DEL2'
+            PRINT 202, DEL1,DEL2
+	          PRINT*,   'STOP 1905:A < 0'
+	          call wrf_error_fatal("fatal error: STOP 1905:A < 0, model stop")
+       ENDIF
+! ... water and ice                                               (start)
+       ALFA=DSQRT((RW-PI)*(RW-PI)+4.0D0*PW*RI)
+
+! 5/8/04 Nir, Beta is negative to the simple solution so it will decay
+
+        BETA=0.5D0*(ALFA+RW+PI)
+        GAMA=0.5D0*(ALFA-RW-PI)
+        G31=PI*DYN1-RI*DYN2
+        G32=-PW*DYN1+RW*DYN2
+        G2=RW*PI-RI*PW
+        IF (G2 < 1.0d-20) G2 = 1.0004d-11*1.0003d-11-1.0002d-11*1.0001e-11 ! ... (KS) - 24th,May,2016
+        EXPB=DEXP(-BETA*DT)
+        EXPG=DEXP(GAMA*DT)
+
+        IF(DABS(GAMA*DT)>1.0E-6) THEN
+          C11=(BETA*DEL1-RW*DEL1-RI*DEL2-BETA*G31/G2+DYN1)/ALFA
+          C21=(GAMA*DEL1+RW*DEL1+RI*DEL2-GAMA*G31/G2-DYN1)/ALFA
+          C12=(BETA*DEL2-PW*DEL1-PI*DEL2-BETA*G32/G2+DYN2)/ALFA
+          C22=(GAMA*DEL2+PW*DEL1+PI*DEL2-GAMA*G32/G2-DYN2)/ALFA
+          DEL1N=C11*EXPG+C21*EXPB+G31/G2
+          DEL1INT=C11*EXPG/GAMA-C21*EXPB/BETA+(C21/BETA-C11/GAMA) &
+                  +G31*DT/G2
+          DEL2N=C12*EXPG+C22*EXPB+G32/G2
+          DEL2INT=C12*EXPG/GAMA-C22*EXPB/BETA+(C22/BETA-C12/GAMA) &
+                  +G32*DT/G2
+            GOTO 100
+! in case DABS(GAMA*DT)>1.0D-6
+	       ELSE
+! in case DABS(GAMA*DT)<=1.0D-6
+            IF(ABS(RI/RW)>1.0E-12) THEN
+              IF(ABS(RW/RI)>1.0E-12) THEN
+                ALFA=DSQRT((RW-PI)*(RW-PI)+4.0D0*PW*RI)
+                BETA=0.5D0*(ALFA+RW+PI)
+                GAMA=0.5D0*(ALFA-RW-PI)
+		            IF (GAMA < 0.5*2.0d-10) GAMA=0.5D0*(2.002d-10-2.001d-10) ! ... (KS) - 24th,May,2016
+                EXPG=EXPM1(GAMA*DT)
+                EXPB=DEXP(-BETA*DT)
+
+! beta/alfa could be very close to 1 that why I transform it
+! remember alfa-beta=gama
+
+                C11=(BETA*DEL1-RW*DEL1-RI*DEL2+DYN1)/ALFA
+                C21=(GAMA*DEL1+RW*DEL1+RI*DEL2-GAMA*G31/G2-DYN1)/ALFA
+                C12=(BETA*DEL2-PW*DEL1-PI*DEL2+DYN2)/ALFA
+                C22=(GAMA*DEL2+PW*DEL1+PI*DEL2-GAMA*G32/G2-DYN2)/ALFA
+
+                A1DEL1N=C11
+                A2DEL1N=C11*EXPG
+                A3DEL1N=C21*EXPB
+                A4DEL1N=G31/G2*(GAMA/ALFA+(GAMA/ALFA-1.0D0)*EXPG)
+
+                DEL1N=A1DEL1N+A2DEL1N+A3DEL1N+A4DEL1N
+
+                A1DEL1INT=C11*EXPG/GAMA
+                A2DEL1INT=-C21*EXPB/BETA
+                A3DEL1INT=C21/BETA
+                A4DEL1INT=G31/G2*DT*(GAMA/ALFA)
+
+                DEL1INT=A1DEL1INT+A2DEL1INT+A3DEL1INT+A4DEL1INT
+
+                A1DEL2N=C12
+                A2DEL2N=C12*EXPG
+                A3DEL2N=C22*EXPB
+                A4DEL2N=G32/G2*(GAMA/ALFA+ &
+                       (GAMA/ALFA-1.0D0)* &
+                       (GAMA*DT+GAMA*GAMA*DT*DT/2.0D0))
+
+                DEL2N=A1DEL2N+A2DEL2N+A3DEL2N+A4DEL2N
+
+                A1DEL2INT=C12*EXPG/GAMA
+                A2DEL2INT=-C22*EXPB/BETA
+                A3DEL2INT=C22/BETA
+                A4DEL2INT=G32/G2*DT*(GAMA/ALFA)
+                A5DEL2INT=G32/G2*(GAMA/ALFA-1.0D0)* &
+                                 (GAMA*DT*DT/2.0D0)
+
+                DEL2INT=A1DEL2INT+A2DEL2INT+A3DEL2INT+A4DEL2INT+ &
+                        A5DEL2INT
+
+! in case DABS(RW/RI)>1D-12
+              ELSE
+
+! in case DABS(RW/RI)<=1D-12
+
+                X=-2.0D0*RW*PI+RW*RW+4.0D0*PW*RI
+
+                ALFA=PI*(1+(X/PI)/2.0D0-(X/PI)*(X/PI)/8.0D0)
+                BETA=PI+(X/PI)/4.0D0-(X/PI)*(X/PI)/16.0D0+RW/2.0D0
+                GAMA=(X/PI)/4.0D0-(X/PI)*(X/PI)/16.0D0-RW/2.0D0
+
+                EXPG=EXPM1(GAMA*DT)
+                EXPB=DEXP(-BETA*DT)
+
+    	        	C11=(BETA*DEL1-RW*DEL1-RI*DEL2+DYN1)/ALFA
+    	        	C21=(GAMA*DEL1+RW*DEL1+RI*DEL2-GAMA*G31/G2-DYN1)/ALFA
+    	        	C12=(BETA*DEL2-PW*DEL1-PI*DEL2+DYN2)/ALFA
+    	        	C22=(GAMA*DEL2+PW*DEL1+PI*DEL2-GAMA*G32/G2-DYN2)/ALFA
+
+                DEL1N=C11+C11*EXPG+C21*EXPB+ &
+                         G31/G2*(GAMA/ALFA+(GAMA/ALFA-1)*EXPG)
+                DEL1INT=C11*EXPG/GAMA-C21*EXPB/BETA+(C21/BETA)+ &
+                           G31/G2*DT*(GAMA/ALFA)
+                DEL2N=C12+C12*EXPG+C22*EXPB+G32/G2*(GAMA/ALFA+ &
+                        (GAMA/ALFA-1.0D0)* &
+                        (GAMA*DT+GAMA*GAMA*DT*DT/2.0D0))
+	              DEL2INT=C12*EXPG/GAMA-C22*EXPB/BETA+ &
+      		       (C22/BETA)+G32/G2*DT*(GAMA/ALFA)+ &
+      		        G32/G2*(GAMA/ALFA-1.0D0)*(GAMA*DT*DT/2.0D0)
+
+! in case DABS(RW/RI)<=1D-12
+	         ENDIF
+! alfa/beta 2
+! in case DABS(RI/RW)>1D-12
+
+            ELSE
+
+! in case DABS(RI/RW)<=1D-12
+
+              X=-2.0D0*RW*PI+PI*PI+4.0D0*PW*RI
+
+              ALFA=RW*(1.0D0+(X/RW)/2.0D0-(X/RW)*(X/RW)/8.0D0)
+              BETA=RW+(X/RW)/4.0D0-(X/RW)*(X/RW)/16.0D0+PI/2.0D0
+              GAMA=(X/RW)/4.0D0-(X/RW)*(X/RW)/16.0D0-PI/2.0D0
+
+              EXPG=EXPM1(GAMA*DT)
+              EXPB=DEXP(-BETA*DT)
+
+              C11=(BETA*DEL1-RW*DEL1-RI*DEL2+DYN1)/ALFA
+      	      C21=(GAMA*DEL1+RW*DEL1+RI*DEL2-GAMA*G31/G2-DYN1)/ALFA
+              C12=(BETA*DEL2-PW*DEL1-PI*DEL2+DYN2)/ALFA
+  	          C22=(GAMA*DEL2+PW*DEL1+PI*DEL2-GAMA*G32/G2-DYN2)/ALFA
+
+              DEL1N=C11+C11*EXPG+C21*EXPB+ &
+                    G31/G2*(GAMA/ALFA+(GAMA/ALFA-1.0D0)*EXPG)
+              DEL1INT=C11*EXPG/GAMA-C21*EXPB/BETA+(C21/BETA)+ &
+                      G31/G2*DT*(GAMA/ALFA)
+              DEL2N=C12+C12*EXPG+C22*EXPB+G32/G2* &
+                    (GAMA/ALFA+ &
+                    (GAMA/ALFA-1.0D0)*(GAMA*DT+GAMA*GAMA*DT*DT/2.0D0))
+	      	   DEL2INT=C12*EXPG/GAMA-C22*EXPB/BETA+C22/BETA+ &
+      		      G32/G2*DT*(GAMA/ALFA)+ &
+      		      G32/G2*(GAMA/ALFA-1.0D0)*(GAMA*DT*DT/2.0D0)
+! alfa/beta
+! in case DABS(RI/RW)<=1D-12
+	    ENDIF
+! in case DABS(GAMA*DT)<=1D-6
+	  ENDIF
+
+! water and ice                                                 (end)
+
+! in case ISYM1/=0.AND.ISYM2/=0
+
+        ENDIF
+
+ 100    CONTINUE
+
+  201	FORMAT(1X,D13.5)
+  202	FORMAT(1X,2D13.5)
+  203	FORMAT(1X,3D13.5)
+  204	FORMAT(1X,4D13.5)
+
+        RETURN
+        END SUBROUTINE JERSUPSAT_KS
+
+! SUBROUTINE JERSUPSAT
+! ....................................................................
+	SUBROUTINE JERDFUN_KS (xi,xiN,B21_MY, &
+        					       FI2,PSI2,fl2,DEL2N, &
+        					       ISYM2,IND,ITYPE,TPN,IDROP, &
+        					       FR_LIM,FRH_LIM,ICEMAX,NKR,COL,Ihydro,Iin,Jin,Kin,Itimestep)
+
+	IMPLICIT NONE
+! ... Interface
+	INTEGER,INTENT(IN) :: ISYM2, IND, ITYPE, NKR, ICEMAX, Ihydro, Iin, Jin ,Kin, Itimestep
+	INTEGER,INTENT(INOUT) :: IDROP
+	REAL(kind=R4SIZE),INTENT(IN) :: B21_MY(:), FI2(:), FR_LIM(:), FRH_LIM(:), &
+					   				DEL2N, COL
+	REAL(kind=R8SIZE),INTENT(IN) :: TPN, xi(:)
+	REAL(kind=R8SIZE),INTENT(INOUT) :: xiN(:)
+	REAL(kind=R4SIZE),INTENT(INOUT) :: PSI2(:), FL2(:)
+! ... Interface
+
+! ... Locals
+	INTEGER :: ITYP, KR, NR, ICE, K, IDSD_Negative
+	REAL(kind=R8SIZE) :: FL2_NEW(NKR), FI2R(NKR), PSI2R(NKR), C, DEGREE1, DEGREE2, DEGREE3, D, RATEXI, &
+						           B, A, xiR(NKR),xiNR(NKR), FR_LIM_KR
+! ... Locals
+
+
+	C = 2.0D0/3.0D0
+
+	DEGREE1 = 1.0D0/3.0D0
+	DEGREE2 = C
+	DEGREE3 = 3.0D0/2.0D0
+
+	IF(IND > 1) THEN
+	  ITYP = ITYPE
+	ELSE
+	  ITYP = 1
+	ENDIF
+
+	DO KR=1,NKR
+	   PSI2R(KR) = FI2(KR)
+	   FI2R(KR) = FI2(KR)
+	ENDDO
+
+	NR=NKR
+
+! new size distribution functions                             (start)
+
+	IF(ISYM2 == 1) THEN
+	  IF(IND==1 .AND. ITYPE==1) THEN
+! drop diffusional growth
+	    DO KR=1,NKR
+	       D=xi(KR)**DEGREE1
+	       RATExi=C*DEL2N*B21_MY(KR)/D
+	       B=xi(KR)**DEGREE2
+	       A=B+RATExi
+	       IF(A<0.0D0) THEN
+	         xiN(KR)=1.0D-50
+	       ELSE
+	         xiN(KR)=A**DEGREE3
+	       ENDIF
+	    ENDDO
+! in case IND==1.AND.ITYPE==1
+	  ELSE
+! in case IND/=1.OR.ITYPE/=1
+	         DO KR=1,NKR
+	            RATExi = DEL2N*B21_MY(KR)
+	            xiN(KR) = xi(KR) + RATExi
+	         ENDDO
+	  ENDIF
+
+! recalculation of size distribution functions                (start)
+
+      DO KR=1,NKR
+        xiR(KR) = xi(KR)
+        xiNR(KR) = xiN(KR)
+      	FI2R(KR) = FI2(KR)
+      END DO
+
+   		IDSD_Negative = 0
+			CALL JERNEWF_KS &
+				    (NR,xiR,FI2R,PSI2R,xiNR,ISIGN_3POINT,TPN,IDROP,NKR,COL,IDSD_Negative,Ihydro,Iin,Jin,Kin,Itimestep)
+			IF(IDSD_Negative == 1)THEN
+				IF(ISIGN_KO_1 == 1) THEN
+					! ... (KS) - we do not use Kovatch-Ouland as separate method
+					!	CALL JERNEWF_KO_KS &
+    			!					(NR,xiR,FI2R,PSI2R,xiNR,NKR,COL)
+				ENDIF
+			ENDIF
+
+   		DO KR=1,NKR
+          IF(ITYPE==5) THEN
+		      			FR_LIM_KR=FRH_LIM(KR)
+	    		ELSE
+		      			FR_LIM_KR=FR_LIM(KR)
+					ENDIF
+		  		IF(PSI2R(KR)<0.0D0) THEN
+					  PRINT*,    'STOP 1506 : PSI2R(KR)<0.0D0, in JERDFUN_KS'
+						call wrf_error_fatal("fatal error in PSI2R(KR)<0.0D0, in JERDFUN_KS, model stop")
+			  	ENDIF
+    	  	PSI2(KR) = PSI2R(KR)
+   	 ENDDO
+! cycle by ICE
+! recalculation of size distribution functions                  (end)
+! in case ISYM2/=0
+	ENDIF
+! new size distribution functions                               (end)
+
+  201	FORMAT(1X,D13.5)
+  304   FORMAT(1X,I2,2X,4D13.5)
+
+	RETURN
+	END SUBROUTINE JERDFUN_KS
+! +----------------------------------------------------------------------------+
+		SUBROUTINE JERNEWF_KS &
+       				(NRX,RR,FI,PSI,RN,I3POINT,TPN,IDROP,NKR,COL,IDSD_Negative,Ihydro, &
+              Iin,Jin,Kin,Itimestep)
+
         IMPLICIT NONE
-        INTEGER  & 
-        I,K,KM,NRXP,IM,IP,IFIN,IIN,ISYM,NKR
-	
-! Andrei's new change 1.12.09                                 (start)
+! ... Interface
+		INTEGER,INTENT(IN) :: NRX, I3POINT, NKR, Ihydro, Iin, Jin, Kin, Itimestep
+		INTEGER,INTENT(INOUT) :: IDROP, IDSD_Negative
+		real(kind=R8SIZE),INTENT(IN) :: TPN
+		real(kind=R4SIZE),INTENT(IN) :: COL
+		real(kind=R8SIZE),INTENT(INOUT) :: PSI(:), RN(:), FI(:), RR(:)
+! ... Interface
 
-        INTEGER &
-	KRDROP_REMAP_MIN,KRDROP_REMAP_MAX,IDROP,KMAX
-	
-        DOUBLE PRECISION &
-	COEFF_REMAP,TPN
-	
-        DOUBLE PRECISION & 
-        CDROP(NRX),DELTA_CDROP(NRX)
-		
-! Andrei's new change 1.12.09                                   (end)                      	
+! ... Locals
+		INTEGER :: KMAX, KR, I, K , NRXP, ISIGN_DIFFUSIONAL_GROWTH, NRX1,  &
+              I3POINT_CONDEVAP, IEvap
+		real(kind=R8SIZE) :: RNTMP,RRTMP,RRP,RRM,RNTMP2,RRTMP2,RRP2,RRM2, GN1,GN2, &
+               GN3,GN1P,GMAT,GMAT2, &
+							 CDROP(NRX),DELTA_CDROP(NRX),RRS(NRX+1),PSINEW(NRX+1), &
+							 PSI_IM,PSI_I,PSI_IP, AOLDCON, ANEWCON, AOLDMASS, ANEWMASS
 
- 
-        REAL & 
-        COL
+		INTEGER,PARAMETER :: KRDROP_REMAPING_MIN = 6, KRDROP_REMAPING_MAX = 12
+! ... Locals
 
-        DOUBLE PRECISION &
-	AOLDCON,ANEWCON,AOLDMASS,ANEWMASS
+! >> [KS] 22ndMay19	IF(TPN .LT. 273.15-5.0D0) IDROP=0
 
-        DOUBLE PRECISION &
-        RNTMP,RRTMP,RRP,RRM,RNTMP2,RRTMP2,RRP2,RRM2, &
-        GN1,GN1P,GN2,GN3,GMAT2
-
-        DOUBLE PRECISION &
-        DRP,FNEW,FIK,PSINEW,DRM,GMAT,R1,R2,R3,DMASS,CONCL,RRI,RNK
-
-        INTEGER NRX,NRM
-
-        DOUBLE PRECISION & 
-        RR(NRX),FI(NRX),PSI(NRX),RN(NRX) &
-       ,RRS(NKR+1),RNS(NKR+1),PSIN(NKR+1),FIN(NKR+1)
-
-        DOUBLE PRECISION & 
-        FI_OLD(NRX)
-! ANDREI                                                      (start) 
-! new change 7.02.06                                          (start)
-        DOUBLE PRECISION & 
-        PSI_IM,PSI_I,PSI_IP
-! ANDREI                                                        (end) 
-! new change 7.02.06                                            (end)
-
-! Andrei's new change 1.12.09                                 (start)           
-
-       IF(TPN.LT.273.15-7.0D0) IDROP=0
-! LEAVE REMAPPING ON
-!      IDROP=0
- 
-! VALUES FOR SOME REMAPING VARIABLES
-
-        KRDROP_REMAP_MIN=8
-	KRDROP_REMAP_MAX=13 
-	
-        COEFF_REMAP=1.0D0/150.0D0 
-	       	
-! Andrei's new change 1.12.09                                   (end)                      
-	
 ! INITIAL VALUES FOR SOME VARIABLES
 
-	NRXP=NRX+1
+		NRXP = NRX + 1
+!   NRX1 = 24
+!   NRX1 = 35
+	  NRX1 = NKR
 
+	  DO I=1,NRX
+! RN(I), g - new masses after condensation or evaporation
+	    IF(RN(I) < 0.0D0) THEN
+		     RN(I) = 1.0D-50
+	       FI(I) = 0.0D0
+	    ENDIF
+	 ENDDO
+
+! new change 26.10.09                                         (start)
 	DO K=1,NRX
-	   FI(K)=FI_OLD(K)
-        ENDDO
- 
+	   RRS(K)=RR(K)
+	ENDDO
+! new change 26.10.09                                           (end)
+
+	I3POINT_CONDEVAP = I3POINT
+
+	IEvap = 0
+	IF(RN(1) < RRS(1)) THEN
+! evaporation
+	  I3POINT_CONDEVAP = 0
+! new change 26.10.09                                         (start)
+	  IDROP = 0
+! new change 26.10.09                                           (end)
+	  NRX1 = NRX
+	  IEvap = 1
+	ENDIF
+
+	IF(IDROP == 0) I3POINT_CONDEVAP = 0
+
+! new change 26.10.09                                         (start)
+
 	DO K=1,NRX
 	   PSI(K)=0.0D0
-        ENDDO
-! ANDREI                                                      (start) 
-! new change 7.02.06                                          (start)
+	   CDROP(K)=0.0D0
+	   DELTA_CDROP(K)=0.0D0
+	   PSINEW(K)=0.0D0
+	ENDDO
 
-	IF(RN(NRX).NE.RR(NRX)) THEN
+	RRS(NRXP)=RRS(NRX)*1024.0D0
+
+	PSINEW(NRXP) = 0.0D0
+
+! new change 26.10.09                                           (end)
+
+	ISIGN_DIFFUSIONAL_GROWTH = 0
+
+	DO K=1,NRX
+	   IF(RN(K).NE.RR(K)) THEN
+		  ISIGN_DIFFUSIONAL_GROWTH = 1
+		  GOTO 2000
+	   ENDIF
+	ENDDO
+
+ 2000   CONTINUE
+
+	IF(ISIGN_DIFFUSIONAL_GROWTH == 1) THEN
 
 ! Kovetz-Olund method                                         (start)
 
-! ANDREI                                                        (end) 
-! new change 7.02.06                                            (end)
-
-	  ISYM=1
-
-	  IF(RN(1).LT.RR(1)) ISYM=-1
-
-! CALCULATION OF DISTRIBUTION FUNCTION 
-
-	  IF(ISYM.GT.0) THEN
-	
-! CONDENSATION 
-
-	    RNS(NRXP)=1024.0D0*RR(NRX)
-	    RRS(NRXP)=1024.0D0*RR(NRX)
-
-  	    PSIN(NRXP)=0.0D0
-	    FIN(NRXP)=0.0D0
-
-	    DO K=1,NRX
-	       RNS(K)=RN(K)
-	       RRS(K)=RR(K)
-	       PSIN(K)=0.0D0
-! FIN(K) - initial(before condensation) concentration of hydrometeors
-	       FIN(K)=3.0D0*FI(K)*RR(K)*COL
-	    ENDDO
-
-! NUMBER OF NEW RADII POSITION IN REGULAR GRID 
-
-! RNK - new first bin mass(after condensation)
-
-	    RNK=RNS(1)
-
-	    DO I=1,NRX
-	       RRI=RRS(I)
-	       IF(RRI.GT.RNK) GOTO 3
-            ENDDO
-
-    3	    IIN=I-1
-
-	    IFIN=NRX
-
-	    CONCL=0.0D0
-            DMASS=0.0D0
-                        
-            DO 6 I=IIN,IFIN
-
-                 IP=I+1
-                                                                                
-                 IM=MAX(1,I-1)
-
-	         R1=RRS(IM)
-	         R2=RRS(I)
-	         R3=RRS(IP)
-
-	         DRM=R2-R1
-	         DRP=R3-R2
-
-	         FNEW=0.0D0
-
-	         DO 7 K=1,I
-                 
-	              FIK=FIN(K)
-
-	              IF(FIK.NE.0.0D0) THEN
-
-	                KM=K-1
-
-! RNK - new bin mass(after condensation)
-
-	                RNK=RNS(K)
-
-	                IF(RNK.NE.R2) THEN
-	                  GMAT=0.0D0
-	                  IF(RNK.GT.R1.AND.RNK.LT.R3) THEN
-	                    IF(RNK.LT.R2) THEN
-	                      GMAT=(RNK-R1)/DRM
-		            ELSE
-	                      GMAT=(R3-RNK)/DRP
-	                    ENDIF
-	                  ENDIF
-	                ELSE
-	                  GMAT=1.0D0
-	                ENDIF
-
-                        FNEW=FNEW+FIK*GMAT
-! in case FIK.NE.0.0D0
-	              ENDIF
-                 
-   7	         CONTINUE
-
-	         CONCL=CONCL+FNEW
-
-	         DMASS=DMASS+FNEW*R2
-
-! PSIN(I)) - new concentration of hydrometeors after condensation
-
-    	         PSIN(I)=FNEW
-                        	
-   6        CONTINUE
-
-! NEW VALUES OF DISTRIBUTION FUNCTION
- 
-! PSI(K) - new size distribution function of hydrometeors after 
-!          condensation, K=1,...,NRX=NKR
-
-	    DO K=1,NRX
-	       PSI(K)=PSIN(K)/3./RR(K)/COL
-	    ENDDO
-
-! IN CASE: ISYM.GT.0 (CONDENSATION)
-	
-          ELSE
-
-! IN CASE: ISYM.LE.0 (EVAPORATION)
-
-	    RNS(1)=0.0D0
-	    RRS(1)=0.0D0
-	    FIN(1)=0.0D0
-	    PSIN(1)=0.0D0
-
-! FIN(K) - initial(before evaporation) concentration of hydrometeors
-
-	    DO K=2,NRXP
-	       KM=K-1
-	       RNS(K)=RN(KM)
-	       RRS(K)=RR(KM)
-	       PSIN(K)=0.0D0
-	       FIN(K)=3.0D0*FI(KM)*RR(KM)*COL
-	    ENDDO
-
-	    DO I=1,NRXP
-
-               IM=MAX(I-1,1)
-               IP=MIN(I+1,NRXP)
-
-   	       R1=RRS(IP)
-	       R2=RRS(I)
-	       R3=RRS(IM)
-
-               DRM=R1-R2
-               DRP=R2-R3
-
-	       FNEW=0.0D0
-
-	       DO K=I,NRXP
-	          RNK=RNS(K)
-                  IF(RNK.GE.R1) GOTO 4321
-                  IF(RNK.GT.R3)THEN
-                    IF(RNK.GT.R2) THEN
-                      FNEW=FNEW+FIN(K)*(R1-RNK)/DRM
-                    ELSE
-                      FNEW=FNEW+FIN(K)*(RNK-R3)/DRP
-	            ENDIF
-	          ENDIF
-               ENDDO
-
- 4321          CONTINUE
-
-! PSIN(I) - new concentration of hydrometeors after evaporation
-
-    	       PSIN(I)=FNEW
-	
-            ENDDO
-! cycle by I
-
-! NEW VALUES OF DISTRIBUTION FUNCTION                         (start)
-
-! PSI(K), 1/g/cm^3 - new size distribution function of hydrometeors 
-!                    after evaporation, K=1,...,NRX
-	    DO K=2,NRXP
-	       KM=K-1
-	       R1=PSIN(K)*RR(KM)
-	       PSINEW=PSIN(K)/3.0D0/RR(KM)/COL
-	       IF(R1.LT.1.0D-20) PSINEW=0.0D0
-	       PSI(KM)=PSINEW
-	    ENDDO
-
-! NEW VALUES OF DISTRIBUTION FUNCTION                           (end)
-
-! IN CASE: ISYM.LE.0 (EVAPORATION)
-
-	  ENDIF
-	
-! Andrei's new change 1.12.09                                 (start)
-          IF(I3POINT.NE.0.AND.ISYM.GT.0) THEN
-! DIFFERENCE
-!         IF(I3POINT.NE.0) THEN
-! Andrei's new change 1.12.09                                   (end)                      
-
-	    DO K=1,NKR
-	       RRS(K)=RR(K)
-	    ENDDO
-
-            RRS(NKR+1)=RRS(NKR)*1024.0D0
-
-	    DO I=1,NKR
- 
-               PSI(I)=PSI(I)*RR(I)
-
-! PSI(I) - concenration hydrometeors after KO divided on COL*3.0D0
-! RN(I), g - new masses after condensation or evaporation
-
-               IF(RN(I).LT.0.0D0) THEN 
-                 RN(I)=1.0D-50
-	         FI(I)=0.0D0
-               ENDIF
-
-            ENDDO
- 
-	    DO K=1,NKR
-
-               IF(FI(K).NE.0.0D0) THEN
-
-                 IF(RRS(2).LT.RN(K)) THEN
- 
-                   I=2
-
-                   DO  WHILE &
-                     (.NOT.(RRS(I).LT.RN(K).AND.RRS(I+1).GT.RN(K)) &
-                      .AND.I.LT.NKR)
-                       I=I+1
-	           ENDDO
-! ANDREI                                                      (start) 
-! new change 7.02.06                                          (start)
-                   IF(I.LT.NKR-2) THEN
-! new change 7.02.06                                            (end)
-! ANDREI                                                        (end)
-                     RNTMP=RN(K)
-
-                     RRTMP=RRS(I)
-                     RRP=RRS(I+1)
-                     RRM=RRS(I-1)
- 
-                     RNTMP2=RN(K+1)
-
-                     RRTMP2=RRS(I+1)
-                     RRP2=RRS(I+2)
-                     RRM2=RRS(I)
- 
-                     GN1=(RRP-RNTMP)*(RRTMP-RNTMP)/(RRP-RRM)/ &
-                       (RRTMP-RRM)
-
-                     GN1P=(RRP2-RNTMP2)*(RRTMP2-RNTMP2)/ &
-                        (RRP2-RRM2)/(RRTMP2-RRM2)
-
-                     GN2=(RRP-RNTMP)*(RNTMP-RRM)/(RRP-RRTMP)/ &
-                       (RRTMP-RRM)
- 
-	             GMAT=(RRP-RNTMP)/(RRP-RRTMP)
-! ANDREI                                                      (start) 
-! new change 7.02.06                                          (start)
-                     GN3=(RRTMP-RNTMP)*(RRM-RNTMP)/(RRP-RRM)/ &
-                                                 (RRP-RRTMP)
-	             GMAT2=(RNTMP-RRTMP)/(RRP-RRTMP)
-
-                     PSI_IM=PSI(I-1)+GN1*FI(K)*RR(K)
-! Andrei's new change 1.12.09                                 (start)           
-!                    PSI_I=PSI(I)+(GN1P+GN2-GMAT)*FI(K+1)*RR(K+1)
-
-                     PSI_I=PSI(I)+GN1P*FI(K+1)*RR(K+1)+&
-	                         (GN2-GMAT)*FI(K)*RR(K)
-! Andrei's new change 1.12.09                                   (end)           
-                     PSI_IP=PSI(I+1)+(GN3-GMAT2)*FI(K)*RR(K)
-                    
-                     IF(PSI_IM.GT.0.0D0) THEN
-
-                       IF(PSI_IP.GT.0.0D0) THEN
-
-                         IF(I.GT.2) THEN
-! smoothing criteria
-                           IF(PSI_IM.GT.PSI(I-2).AND.PSI_IM.LT.PSI_I &
-                          .AND.PSI(I-2).LT.PSI(I).OR.PSI(I-2) &
-                          .GE.PSI(I)) THEN
-
-                             PSI(I-1)=PSI_IM
-
-                             PSI(I)=PSI(I)+FI(K)*RR(K)*(GN2-GMAT)
-
-                             PSI(I+1)=PSI_IP
-
-! in case smoothing criteria
-
-                           ENDIF 
-! in case I.GT.2
-                         ENDIF
-
-! in case PSI_IP.GT.0.0D0
-
-	               ENDIF
-
-! in case PSI_IM.GT.0.0D0
-
-	             ENDIF
-
-! in case I.LT.NKR-2
-
-                   ENDIF
-! new change 7.02.06                                            (end)
-! ANDREI                                                        (end)
-! in case RRS(2).LT.RN(K)
-
-                 ENDIF
- 
+! new change 26.10.09                                         (start)
+	  DO K=1,NRX1 ! ... [KS] >> NRX1-1
+! new change 26.10.09                                           (end)
+
+		 IF(FI(K) > 0.0) THEN
+		   IF(DABS(RN(K)-RR(K)) < 1.0D-16) THEN
+	         PSINEW(K) = FI(K)*RR(K)
+	         CYCLE
+       ENDIF
+
+		   I = 1
+		   DO WHILE (.NOT.(RRS(I) <= RN(K) .AND. RRS(I+1) >= RN(K)) &
+                 .AND.I.LT.NRX1) ! [KS] >> was NRX1-1
+                  I = I + 1
+       ENDDO
+
+       IF(RN(K).LT.RRS(1)) THEN
+          RNTMP=RN(K)
+          RRTMP=0.0D0
+          RRP=RRS(1)
+          GMAT2=(RNTMP-RRTMP)/(RRP-RRTMP)
+          PSINEW(1)=PSINEW(1)+FI(K)*RR(K)*GMAT2
+		   ELSE
+
+        RNTMP=RN(K)
+        RRTMP=RRS(I)
+        RRP=RRS(I+1)
+        GMAT2=(RNTMP-RRTMP)/(RRP-RRTMP)
+        GMAT=(RRP-RNTMP)/(RRP-RRTMP)
+        PSINEW(I)=PSINEW(I)+FI(K)*RR(K)*GMAT
+        PSINEW(I+1)=PSINEW(I+1)+FI(K)*RR(K)*GMAT2
+		   ENDIF
 ! in case FI(K).NE.0.0D0
+		 ENDIF
 
-               ENDIF
+ 3000    CONTINUE
 
- 1000          CONTINUE
-
-	    ENDDO
+	  ENDDO
 ! cycle by K
-	    AOLDCON=0.0D0
-	    ANEWCON=0.0D0
-	    AOLDMASS=0.0D0
-	    ANEWMASS=0.0D0
 
-	    DO K=1,NKR
-	       AOLDCON=AOLDCON+FI(K)*RR(K)
-	       ANEWCON=ANEWCON+PSI(K)
-	       AOLDMASS=AOLDMASS+FI(K)*RR(K)*RN(K)
-	       ANEWMASS=ANEWMASS+PSI(K)*RR(K)
-	    ENDDO
-
-! new change 8.02.06                                          (start)
-! ANDREI                                                      (start)
-
-! PSI(K) - new hydrometeor size distribution function(sdf)
-
-	    DO K=1,NKR
-	       PSI(K)=PSI(K)/RR(K)
-            ENDDO
-	  
-! new change 8.02.06                                            (end)	       
-! ANDREI                                                        (end)
-
-! 3 point method                                                (end)	       
-								     	       
-! in case I3POINT.NE.0.AND.ISYM.GT.0						     		 
-								     		    
-	  ENDIF
-
-! Andrei's new change 1.12.09                                 (start)           
-
-          IF(IDROP.NE.0.AND.ISYM.GT.0) THEN
-	  
-	    DO K=KRDROP_REMAP_MIN,KRDROP_REMAP_MAX
-	       CDROP(K)=3.0D0*COL*PSI(K)*RR(K)
-	    ENDDO
-								     		 
-! KMAX - right boundary of drop sdf spectrum
-!(KRDROP_REMAP_MIN =< KMAX =< KRDROP_REMAP_MAX)
-
-            DO K=KRDROP_REMAP_MAX,KRDROP_REMAP_MIN,-1
-               KMAX=K
-               IF(PSI(K).GT.0.0D0) GOTO 2011
-            ENDDO
-
- 2011       CONTINUE
- 
-! Andrei start
-!           DO K=KMAX-1,1,-1
-! Andre end
-!Alex, Andrei, Barry
-            DO K=KMAX-1,KRDROP_REMAP_MIN,-1
-!Alex, Andrei, Barry
-	       IF(CDROP(K).GT.1.d-20) THEN
-                 DELTA_CDROP(K)=CDROP(K+1)/CDROP(K)
-	         IF(DELTA_CDROP(K).LT.COEFF_REMAP) THEN
-	           CDROP(K)=CDROP(K)+CDROP(K+1)
-		   CDROP(K+1)=0.0D0
-	         ENDIF
-	       ENDIF
-            ENDDO
-	    
-	    DO K=KRDROP_REMAP_MIN,KMAX
-	       PSI(K)=CDROP(K)/(3.0D0*COL*RR(K))
-	    ENDDO
-	    
-! in case IDROP.NE.0.AND.ISYM.GT.0
-		      
-	  ENDIF
-	    	  
-! Andrei's new change 1.12.09                                   (end)           
-! ANDREI                                                      (start) 
-! new change 8.02.06                                          (start)
-
-! in case RN(NRX).NE.RR(NRX)
-
-        ELSE
-
-! in case RN(NRX).EQ.RR(NRX)
-
-	  DO K=1,NKR
-	     PSI(K)=FI(K)
+	  DO KR=1,NRX1
+       PSI(KR)=PSINEW(KR)
 	  ENDDO
 
-        ENDIF
+	  DO KR=NRX1+1,NRX
+       PSI(KR)=FI(KR)
+	  ENDDO
+! Kovetz-Olund method                                           (end)
 
-! new change 8.02.06                                            (end)           
-! ANDREI                                            
+! calculation both new total drop concentrations(after KO) and new
+! total drop masses (after KO)
 
-        RETURN 
+! 3point method	                                              (start)
+	  IF(I3POINT_CONDEVAP == 1) THEN
+	    DO K=1,NRX1-1
+		   IF(FI(K) > 0.0) THEN
+		      IF(DABS(RN(K)-RR(K)).LT.1.0D-16) THEN
+	           PSI(K) = FI(K)*RR(K)
+	           GOTO 3001
+	         ENDIF
 
-! SUBROUTINE JERNEWF
-        END SUBROUTINE JERNEWF
+          IF(RRS(2).LT.RN(K)) THEN
+             I = 2
+             DO WHILE &
+                     (.NOT.(RRS(I) <= RN(K) .AND. RRS(I+1) >= RN(K)) &
+                     .AND.I.LT.NRX1-1)
+                    I = I + 1
+         		ENDDO
+             RNTMP=RN(K)
 
-! BARRY REMOVED QP,ROR
-        SUBROUTINE JERRATEOLD(R1S,TP,PP,ROR,VR1,PSINGLE,RIEC,RO1BL &
-     &                    ,B11_MY,B12_MY,ID,IN,ICEMAX,NKR)
-       IMPLICIT NONE
-       INTEGER ID,IN,KR,ICE,NRM,ICEMAX,NKR
-      DOUBLE PRECISION TP,PP
-      REAL DETL,FACTPL,VENTPL,VR1K,CONSTL,RO1,RVT,D_MY, &
-     & CONST
-       REAL VR1(NKR,ID),PSINGLE,ROR
-        REAL       &
-     & R1S(NKR,ID),B11_MY(NKR,ID),B12_MY(NKR,ID) &
-     &,RO1BL(NKR,ID),RIEC(NKR,ID) &
-     &,VR1KL(NKR,ICEMAX),VENTRL(NKR,ICEMAX) &
-     &,FD1(NKR,ICEMAX),FK1(NKR,ICEMAX),FACTRL(NKR,ICEMAX) &
-     &,R11_MY(NKR,ICEMAX),R12_MY(NKR,ICEMAX) &
-     &,R1_MY1(NKR,ICEMAX),R1_MY2(NKR,ICEMAX),R1_MY3(NKR,ICEMAX) &
-     &,AL1(2),AL1_MY(2),A1_MY(2),BB1_MY(2),ESAT1(2),CONSTLI(ICEMAX)
-      DOUBLE PRECISION TZERO
-      REAL PZERO,CF_MY,D_MYIN,RV_MY
-      PARAMETER (TZERO=273.150,PZERO=1.013E6)
-      DATA AL1/2500.,2833./
-	CONST=12.566372
-        AL1_MY(1)=2.5E10
-        AL1_MY(2)=2.834E10
-        A1_MY(1)=2.53E12
-        A1_MY(2)=3.41E13
-        BB1_MY(1)=5.42E3
-        BB1_MY(2)=6.13E3
-        CF_MY=2.4E3
-        D_MYIN=0.221
-        RV_MY=461.5E4
-	NRM=NKR-1
+             RRTMP=RRS(I)
+             RRP=RRS(I+1)
+             RRM=RRS(I-1)
 
-! RHS FOR "MAXWELL" EQUATION 
+             RNTMP2=RN(K+1)
 
-	D_MY=D_MYIN*(PZERO/PP)*(TP/TZERO)**1.94
-	RVT=RV_MY*TP
-	ESAT1(IN)=A1_MY(IN)*EXP(-BB1_MY(IN)/TP)
+             RRTMP2=RRS(I+1)
+             RRP2=RRS(I+2)
+             RRM2=RRS(I)
 
-	DO 1 ICE=1,ID
-	     DO 1 KR=1,NKR
-	     RO1=RO1BL(KR,ICE)
-	     CONSTL=CONST*RIEC(KR,ICE)
-	     CONSTLI(ICE)=CONSTL
-	     VR1K=0.
-	     VR1KL(KR,ICE)=VR1K
-	     VENTPL=1.
-	     VENTRL(KR,ICE)=VENTPL
-	     FACTPL=1.
-	     FACTRL(KR,ICE)=FACTPL
-	     FD1(KR,ICE)=RVT/D_MY/ESAT1(IN)/FACTPL
-	     FK1(KR,ICE)=(AL1_MY(IN)/RVT-1.)*AL1_MY(IN)/CF_MY/TP
-	     R1_MY1(KR,ICE)=VENTPL*CONSTL
-	     R11_MY(KR,ICE)=R1_MY1(KR,ICE)
-!BARRY
-!     R1_MY2(KR,ICE)=VENTPL*CONSTL*0.
-!     R1_MY3(KR,ICE)=VENTPL*CONSTL*0.
-!     R12_MY(KR,ICE)=R1_MY2(KR,ICE)-R1_MY3(KR,ICE)
-!BARRY
-! GROWTH RATE
+             GN1=(RRP-RNTMP)*(RRTMP-RNTMP)/(RRP-RRM)/ &
+                  (RRTMP-RRM)
 
-	     DETL=FK1(KR,ICE)+FD1(KR,ICE)
-	     B11_MY(KR,ICE)=R11_MY(KR,ICE)/DETL
-!BARRY     B12_MY(KR,ICE)=R12_MY(KR,ICE)/DETL
-           B12_MY(KR,ICE)=0                       
-    1	CONTINUE
+             GN1P=(RRP2-RNTMP2)*(RRTMP2-RNTMP2)/ &
+                   (RRP2-RRM2)/(RRTMP2-RRM2)
 
-	RETURN
-	END SUBROUTINE JERRATEOLD
+             GN2=(RRP-RNTMP)*(RNTMP-RRM)/(RRP-RRTMP)/ &
+                   (RRTMP-RRM)
 
-! SUBROUTINE JERRATE
-!========================================================================
-!BARRY    CALL JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N
-!    *                        ,RW,PW,RI,PI,QW,QI
-! SUBROUTINE JERNEWF
-!=========================================================================
-! BARRY REMOVED QP
-        SUBROUTINE JERRATE(R1S,TP,PP,ROR,VR1,PSINGLE,RIEC,RO1BL &
-     &                    ,B11_MY,B12_MY,ID,IN,ICEMAX,NKR)
-       IMPLICIT NONE
-       INTEGER ID,IN,KR,ICE,NRM,ICEMAX,NKR
-      DOUBLE PRECISION TP,PP
-      REAL DETL,FACTPL,VENTPL,VR1K,CONSTL,RO1,RVT,D_MY, &
-     & CONST
-        REAL VR1(NKR,ID),PSINGLE &
-     &,R1S(NKR,ID),B11_MY(NKR,ID),B12_MY(NKR,ID) &
-     &,RO1BL(NKR,ID),RIEC(NKR,ID) &
-     &,VR1KL(NKR,ICEMAX),VENTRL(NKR,ICEMAX) &
-     &,FD1(NKR,ICEMAX),FK1(NKR,ICEMAX),FACTRL(NKR,ICEMAX) &
-     &,R11_MY(NKR,ICEMAX),R12_MY(NKR,ICEMAX) &
-     &,R1_MY1(NKR,ICEMAX),R1_MY2(NKR,ICEMAX),R1_MY3(NKR,ICEMAX) &
-     &,AL1(2),AL1_MY(2),A1_MY(2),BB1_MY(2),ESAT1(2),CONSTLI(ICEMAX)
-      DOUBLE PRECISION TZERO
-      REAL PZERO,CF_MY,D_MYIN,RV_MY,DEG01,DEG03
-      REAL COEFF_VISCOUS,SHMIDT_NUMBER,A,B
-      REAL REINOLDS_NUMBER,RESHM,ROR
-      PARAMETER (TZERO=273.150,PZERO=1.013E6)
-      DATA AL1/2500.,2833./
-        DEG01=1./3.     
-        DEG03=1./3.     
-	CONST=12.566372
-        AL1_MY(1)=2.5E10
-        AL1_MY(2)=2.834E10
-        A1_MY(1)=2.53E12
-        A1_MY(2)=3.41E13
-        BB1_MY(1)=5.42E3
-        BB1_MY(2)=6.13E3
-        CF_MY=2.4E3
-        D_MYIN=0.221
-        RV_MY=461.5E4
-	NRM=NKR-1
-! rhs for "maxwell" equation
-! coefficient of diffusion
-        D_MY=D_MYIN*(PZERO/PP)*(TP/TZERO)**1.94
-! new change 20.04.02
-! coefficient of viscousity
-        COEFF_VISCOUS=1.72E-2*SQRT(TP/273.)*393./(TP-120.)/ROR
-! Shmidt number
-        SHMIDT_NUMBER=COEFF_VISCOUS/D_MY
-! Constants used for calculation of Reinolds number
-        A=2.*(3./4./3.141593)**DEG01
-        B=A/COEFF_VISCOUS
-        
-        RVT=RV_MY*TP
-        ESAT1(IN)=A1_MY(IN)*EXP(-BB1_MY(IN)/TP)
-        DO ICE=1,ID
-           DO KR=1,NKR
-! Reinolds numbers
-              REINOLDS_NUMBER= &
-     &        B*VR1(KR,ICE)*SQRT(1.E6/PSINGLE)* &
-     &        (R1S(KR,ICE)/RO1BL(KR,ICE))**DEG03
-              RESHM=SQRT(REINOLDS_NUMBER)*SHMIDT_NUMBER**DEG03
-              IF(REINOLDS_NUMBER.LT.2.5) THEN
-                VENTPL=1.+0.108*RESHM*RESHM
-              ELSE
-                VENTPL=0.78+0.308*RESHM
-              ENDIF
-! new change 20.04.02                                           (end)
-              CONSTL=CONST*RIEC(KR,ICE)                         
-              CONSTLI(ICE)=CONSTL
-!             VR1K=0.
-!             VR1KL(KR,ICE)=VR1K
-! new change 20.04.02                                         (begin)
-!             VENTPL=1.                                       
-!             VENTRL(KR,ICE)=VENTPL                           
-! new change 20.04.02                                           (end)
-              FACTPL=1.                                         
-              FACTRL(KR,ICE)=FACTPL                             
-              FD1(KR,ICE)=RVT/D_MY/ESAT1(IN)/FACTPL             
-              FK1(KR,ICE)=(AL1_MY(IN)/RVT-1.)*AL1_MY(IN)/CF_MY/TP
-              R1_MY1(KR,ICE)=VENTPL*CONSTL
-!             R1_MY2(KR,ICE)=VENTPL*CONSTL*0.
-!             R1_MY3(KR,ICE)=VENTPL*CONSTL*0.
-              R11_MY(KR,ICE)=R1_MY1(KR,ICE)
-!BARRY        R12_MY(KR,ICE)=R1_MY2(KR,ICE)-R1_MY3(KR,ICE)
-! growth rate 
-              DETL=FK1(KR,ICE)+FD1(KR,ICE)
-              B11_MY(KR,ICE)=R11_MY(KR,ICE)/DETL
-!BARRY        B12_MY(KR,ICE)=R12_MY(KR,ICE)/DETL
-              B12_MY(KR,ICE)=0.
-           ENDDO
-        ENDDO
+ 	           GMAT=(RRP-RNTMP)/(RRP-RRTMP)
 
+             GN3=(RRTMP-RNTMP)*(RRM-RNTMP)/(RRP-RRM)/ &
+                                           (RRP-RRTMP)
+             GMAT2=(RNTMP-RRTMP)/(RRP-RRTMP)
 
-	RETURN
-	END SUBROUTINE JERRATE
+             PSI_IM = PSI(I-1)+GN1*FI(K)*RR(K)
 
-! SUBROUTINE JERRATE
-!========================================================================
-!BARRY    CALL JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N
-!    *                        ,RW,PW,RI,PI,QW,QI
-!    *                        ,DTT,D1N,D2N,DT0L,DT0I)
-	SUBROUTINE JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N &
-     &                      ,RW,PW,RI,PI,QW,QI &
-     &                      ,DT,DEL1INT,DEL2INT,DT0L,DT0I)
-      IMPLICIT NONE
-   
-      INTEGER ITYPE
-      REAL DEL1,DEL2,RW,PW,RI,PI,QW,QI, &
-     &  DT,DEL1INT,DEL2INT,DT0L,DT0I,DTLIN,DTIIN
-      REAL DETER,DBLRW,DBLPW,DBLPI,DBLRI, &
-     &  DBLDEL1,DBLDEL2,DBLDEL1INT,DBLDTLIN,DBLDTIIN, &
-     &  EXPM,EXPP,ALFAMX,ALFAPX,X,ALFA,DELX,DBLDEL2INT, &
-     &  R1RES,R2RES,R1,R2,R3,R4,R21,R11,R10,R41,R31,R30,DBLDT, &
-     &  DBLDEL1N,DBLDEL2N
-      DOUBLE PRECISION DEL1N,DEL2N
+             PSI_I = PSI(I)+GN1P*FI(K+1)*RR(K+1)+&
+                   (GN2-GMAT)*FI(K)*RR(K)
 
-        DOUBLE PRECISION DEL1N_2P,DEL1INT_2P,DEL2N_2P,DEL2INT_2P 
-        DOUBLE PRECISION EXPP_2P,EXPM_2P,ARGEXP     
-! BARRY
-      DOUBLE PRECISION RW_DP,PW_DP,PI_DP,RI_DP,X_DP,ALFA_DP
-!    * ,ALFAPX_DP
-! Andrei's new change 9.03.10                                 (start)
-      DOUBLE PRECISION  EXPM1
-      EXPM1(x_dp)= &
-     &x_dp+x_dp*x_dp/2.0D0+x_dp*x_dp*x_dp/6.0D0+x_dp*x_dp*x_dp*x_dp/24.0D0+x_dp*x_dp*x_dp*x_dp*x_dp/120.0D0
-      DOUBLE PRECISION  DETER_MIN
-! Andrei's new change 9.03.10                                 (start)
+             PSI_IP = PSI(I+1)+(GN3-GMAT2)*FI(K)*RR(K)
 
-      DOUBLE PRECISION EXP1, EXP2
+             IF(PSI_IM > 0.0D0) THEN
 
-! Andrei's new change 9.03.10                                   (end)
-	DTLIN=1000.E17
-	DTIIN=1000.E17
-! Andrei's new change 9.03.10                                 (start)
-      DETER=RW*PI-PW*RI
-!     DETER_MIN=1.0D-20
-! Andrei's new change 9.03.10                                 (end)
-! SOLUTION  
-!IF(DETER.EQ.0)  THEN
-       IF(RW.EQ.0.AND.RI.EQ.0) THEN
-! NO CLOUD: WITHOUT WATER & ICE
-	    DEL1N_2P=DEL1
-	    DEL2N_2P=DEL2
-	    DEL1INT_2P=DEL1*DT
-	    DEL2INT_2P=DEL2*DT
-! IN CASE: RW.NE.0 OR RI.NE.0 (WATER OR ICE) 
-       ELSE IF(RW.NE.0.AND.RI*1.E5.LT.RW) THEN
-! ONLY WATER
-              ARGEXP=-RW*DT
+               IF(PSI_IP > 0.0D0) THEN
 
-	      DEL1N_2P=DEL1*DEXP(ARGEXP)+QW*(1.-DEXP(ARGEXP))
-	      DEL1INT_2P=(DEL1-DEL1N_2P)/RW
-	      DEL2N_2P=DEL2-PW*DEL1INT_2P
-	      DEL2INT_2P= &
-     &       (DEL2N_2P-PW*DEL1N_2P/RW)*DT+PW*DEL1INT_2P/RW
-	ELSE IF(RI.NE.0.AND.RW*1.E5.LT.RI) THEN
-! IN CASE: RW.EQ.0
-! ONLY ICE 
-              ARGEXP=-PI*DT
+                 IF(I > 2) THEN
+! smoothing criteria
+                   IF(PSI_IM > PSI(I-2) .AND. PSI_IM < PSI_I &
+                     .AND. PSI(I-2) < PSI(I) .OR. PSI(I-2) >= PSI(I)) THEN
 
-	      DEL2N_2P=DEL2*DEXP(ARGEXP)+QI*(1.-DEXP(ARGEXP))
-	      DEL2INT_2P=(DEL2-DEL2N_2P)/PI
-	      DEL1N_2P=DEL1-RI*DEL2INT_2P
-	      DEL1INT_2P= &
-     &       (DEL1N_2P-RI*DEL2N_2P/PI)*DT+RI*DEL2INT_2P/PI
-!             GOTO 100
-! IN CASE: RW.NE.0 OR RI.NE.0 (WATER OR ICE)
-! IN CASE: DETER.EQ.0
-        ELSE
-! IN CASE: DETER.NE.0
-! COMPLETE SOLUTION 
-!  ALFA=SQRT((RW-PI)*(RW-PI)+4.*PW*RI)
-!  X=RW+PI
-!  ALFAPX=.5*(ALFA+X)
-! BARRY 
-          RW_DP=RW
-          RI_DP=RI
-          PI_DP=PI
-          PW_DP=PW
-          IF (RW.LE.0) call wrf_error_fatal("fatal error in module_mp_fast_sbm (RW.LE.0), model stop")
-          IF (PW.LE.0) call wrf_error_fatal("fatal error in module_mp_fast_sbm (PW.LE.0), model stop")
-          IF (RI.LE.0) call wrf_error_fatal("fatal error in module_mp_fast_sbm (RI.LE.0), model stop")
-          IF (PI.LE.0) call wrf_error_fatal("fatal error in module_mp_fast_sbm (PI.LE.0), model stop")
-          ALFA_DP=SQRT((RW_DP-PI_DP)*(RW_DP-PI_DP)+4.*PW_DP*RI_DP) 
-	  X_DP=RW_DP+PI_DP
-	  ALFAPX=.5*(ALFA_DP+X_DP)
-          IF (ALFAPX.LE.0) call wrf_error_fatal("fatal error in module_mp_fast_sbm (CHECK.LT.0), model stop")
-	  ALFAMX=.5*(ALFA_DP-X_DP)
-!
-! 
-          ARGEXP=-ALFAPX*DT
-! Andrei 11/04/10
-	  EXPP_2P=DEXP(ARGEXP)
-          IF(DABS(ARGEXP).LE.1.0E-6) THEN
-               EXP1=EXPM1(ARGEXP)
-          ELSE
-               EXP1=EXPP_2P-1.0D0
+                      PSI(I-1) = PSI_IM
+
+                      PSI(I) = PSI(I) + FI(K)*RR(K)*(GN2-GMAT)
+
+                      PSI(I+1) = PSI_IP
+! in case smoothing criteria
+                   ENDIF
+! in case I.GT.2
+                 ENDIF
+
+! in case PSI_IP.GT.0.0D0
+					   ELSE
+						         EXIT
+   	         ENDIF
+! in case PSI_IM.GT.0.0D0
+				  ELSE
+				        EXIT
           ENDIF
-!
-          ARGEXP=ALFAMX*DT
-!Andre 11/04/10
-	  EXPM_2P=DEXP(ARGEXP)
-              IF(DABS(ARGEXP).LE.1.0E-6) THEN
-                EXP2=EXPM1(ARGEXP)
-              ELSE
-                EXP2=EXPM_2P-1.0D0
-              ENDIF
-!
-! DROPLETS 
-	  R10=RW*DEL1+RI*DEL2
-	  R11=R10-ALFAPX*DEL1
-	  R21=R10+ALFAMX*DEL1
-	  DEL1N_2P=(R21*EXPP_2P-R11*EXPM_2P)/ALFA_DP
-! BARRY
-	  IF(ALFAMX.NE.0) THEN
-	    R1=-R11/ALFAMX
-	    R2=R21/ALFAPX
-!    DEL1INT_2P=(R1*(EXPM_2P-1.)-R2*(EXPP_2P-1.))/ALFA_DP
-            DEL1INT_2P=(R1*EXP2-R2*EXP1)/ALFA_DP
-	  ELSE
-            DEL1INT_2P = 0.
+! in case I.LT.NRX1-2
+!         ENDIF
+
+! in case RRS(2).LT.RN(K)
+       ENDIF
+
+! in case FI(K).NE.0.0D0
+      ENDIF
+
+ 3001 CONTINUE
+
+	    ENDDO
+        ! cycle by K
+
+      ! in case I3POINT_CONDEVAP.NE.0
 	  ENDIF
-! BARRY
-	  R1RES=0.
-	  IF(R11.NE.0) R1RES=R21/R11
-	  IF(R1RES.GT.0) DTLIN=ALOG(R1RES)/ALFA_DP
-! ICE 
-	  R30=PW*DEL1+PI*DEL2
-	  R31=R30-ALFAPX*DEL2
-	  R41=R30+ALFAMX*DEL2
-! BARRY
-	  DEL2N_2P=(R41*EXPP_2P-R31*EXPM_2P)/ALFA_DP
-	  IF(ALFAMX.NE.0.AND.ALFAPX.NE.0) THEN
-	    R3=-R31/ALFAMX
-	    R4=R41/ALFAPX
-!           DEL2INT_2P=(R3*(EXPM_2P-1.)-R4*(EXPP_2P-1.))/ALFA_DP
-            DEL2INT_2P=(R3*EXP2-R4*EXP1)/ALFA_DP
-          ELSE
-	    DEL2INT_2P=0.
-	  ENDIF
-	  R2RES=0.
-	  IF(R31.NE.0) R2RES=R41/R31
-	  IF(R2RES.GT.0) DTIIN=ALOG(R2RES)/ALFA_DP
-! IN CASE: DETER.NE.0
-! END OF COMPLETE SOLUTION
-	ENDIF
-! IN CASES: DETER.EQ.0 OR DETER.NE.0
- 100    CONTINUE
-        DEL1N=DEL1N_2P
-        DEL2N=DEL2N_2P
-       
-! BARRY
-        DEL1INT=DEL1INT_2P
-        DEL2INT=DEL2INT_2P
-	DT0L=DTLIN
-	IF(DT0L.LT.0) DT0L=1.E20
-	DT0I=DTIIN
-	IF(DT0I.LT.0) DT0I=1.E20
-	RETURN
-	END SUBROUTINE JERSUPSAT
-!==========================================================================
-        SUBROUTINE JERTIMESC(FI1,X1,SFN11,SFN12 &
-     &                      ,B11_MY,B12_MY,RIEC,CF,ID,COL,NKR)        
-      IMPLICIT NONE
-       INTEGER NRM,KR,ICE,ID,NKR
-      REAL B12,B11,FUN,DELM,FK,CF,SFN12S,SFN11S
-	REAL  COL, &
-     & X1(NKR,ID),FI1(NKR,ID),B11_MY(NKR,ID),B12_MY(NKR,ID) &
-     &,RIEC(NKR,ID),SFN11,SFN12
+! 3 point method                                                (end)
 
-	NRM=NKR-1
-	DO 1 ICE=1,ID  
-             SFN11S=0.                              
-             SFN12S=0.
-	     SFN11=CF*SFN11S	
-	     SFN12=CF*SFN12S
-             DO KR=1,NRM
-! VALUE OF DISTRIBUTION FUNCTION
-	        FK=FI1(KR,ICE)
-! DELTA-M 
-	        DELM=X1(KR,ICE)*3.*COL
-! INTEGRAL'S EXPRESSION 
-	        FUN=FK*DELM
-! VALUES OF INTEGRALS
-	        B11=B11_MY(KR,ICE)
-        	B12=B12_MY(KR,ICE)
-                SFN11S=SFN11S+FUN*B11                               
-                SFN12S=SFN12S+FUN*B12
-	     ENDDO
-! CORRECTION 
-	     SFN11=CF*SFN11S
-             SFN12=CF*SFN12S
-    1   CONTINUE
-! END 
-	RETURN
-	END SUBROUTINE JERTIMESC
-!
-        SUBROUTINE JERTIMESC_ICE(FI1,X1,SFN11,SFN12 &
-     &                      ,B11_MY,B12_MY,RIEC,CF,ID,COL,NKR)        
-      IMPLICIT NONE
-       INTEGER NRM,KR,ICE,ID,NKR
-      REAL B12,B11,FUN,DELM,FK,CF,SFN12S,SFN11S
-	REAL  COL, &
-     & X1(NKR,ID),FI1(NKR,ID),B11_MY(NKR,ID),B12_MY(NKR,ID) &
-     &,RIEC(NKR,ID),SFN11(ID),SFN12(ID)
+! PSI(K) - new hydrometeor size distribution function
 
-	NRM=NKR-1
-	DO 1 ICE=1,ID  
-             SFN11S=0.                              
-             SFN12S=0.
-	     SFN11(ICE)=CF*SFN11S	
-	     SFN12(ICE)=CF*SFN12S
-             DO KR=1,NRM
-! VALUE OF DISTRIBUTION FUNCTION
-	        FK=FI1(KR,ICE)
-! DELTA-M 
-	        DELM=X1(KR,ICE)*3.*COL
-! INTEGRAL'S EXPRESSION 
-	        FUN=FK*DELM
-! VALUES OF INTEGRALS
-	        B11=B11_MY(KR,ICE)
-        	B12=B12_MY(KR,ICE)
-                SFN11S=SFN11S+FUN*B11                               
-                SFN12S=SFN12S+FUN*B12
-	     ENDDO
-! CORRECTION 
-	     SFN11(ICE)=CF*SFN11S
-             SFN12(ICE)=CF*SFN12S
-    1   CONTINUE
-! END 
-	RETURN
-	END SUBROUTINE JERTIMESC_ICE
+	  DO K=1,NRX1
+	     PSI(K)=PSI(K)/RR(K)
+	  ENDDO
 
+	  DO K=NRX1+1,NRX
+		 PSI(K)=FI(K)
+	  ENDDO
 
-        SUBROUTINE ONECOND2 &
-     & (TT,QQ,PP,ROR  &
-     & ,VR2,VR3,VR4,VR5,PSINGLE &
-     & ,DEL1N,DEL2N,DIV1,DIV2 &
-     & ,FF2,PSI2,R2,RIEC,RO2BL &
-     & ,FF3,PSI3,R3,RSEC,RO3BL &
-     & ,FF4,PSI4,R4,RGEC,RO4BL &
-     & ,FF5,PSI5,R5,RHEC,RO5BL &
-     & ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
-     & ,C1_MEY,C2_MEY &
-     & ,COL,DTCOND,ICEMAX,NKR &
-     & ,ISYM2,ISYM3,ISYM4,ISYM5)
+	  IF(IDROP == 1) THEN
+				DO K=KRDROP_REMAPING_MIN,KRDROP_REMAPING_MAX
+					CDROP(K)=3.0D0*COL*PSI(K)*RR(K)
+				ENDDO
+	       ! KMAX - right boundary spectrum of drop sdf
+	        !(KRDROP_REMAP_MIN =< KMAX =< KRDROP_REMAP_MAX)
+				DO K=KRDROP_REMAPING_MAX,KRDROP_REMAPING_MIN,-1
+				   KMAX=K
+				   IF(PSI(K).GT.0.0D0) GOTO 2011
+				ENDDO
 
-       IMPLICIT NONE
+	 2011  CONTINUE
+	! Andrei's new change 28.04.10                                (start)
+				DO K=KMAX-1,KRDROP_REMAPING_MIN,-1
+	! Andrei's new change 28.04.10                                  (end)
+					IF(CDROP(K).GT.0.0D0) THEN
+						DELTA_CDROP(K)=CDROP(K+1)/CDROP(K)
+							IF(DELTA_CDROP(K).LT.COEFF_REMAPING) THEN
+								CDROP(K)=CDROP(K)+CDROP(K+1)
+								CDROP(K+1)=0.0D0
+							ENDIF
+					ENDIF
+				ENDDO
 
-      INTEGER NKR,ICEMAX
-      REAL    COL,VR2(NKR,ICEMAX),VR3(NKR),VR4(NKR) &
-     &           ,VR5(NKR),PSINGLE &
-     &       ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
-     &       ,DTCOND
+				DO K=KRDROP_REMAPING_MIN,KMAX
+					PSI(K)=CDROP(K)/(3.0D0*COL*RR(K))
+				ENDDO
 
-      REAL C1_MEY,C2_MEY
-      INTEGER I_MIXCOND,I_MIXEVAP,I_ABERGERON,I_BERGERON, &
-     & KR,ICE,ITIME,ICM,KCOND,NR,NRM,INUC, &
-     & ISYM2,ISYM3,ISYM4,ISYM5,KP,KLIMIT, &
-     & KM,ITER,KLIMITL,KLIMITG,KLIMITH,KLIMITI_1,KLIMITI_2,KLIMITI_3, &
-     & NCRITI
-      REAL AL1,AL2,D,GAM,POD, &
-     & RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY,ALC,DT0LREF,DTLREF, &
-     & A1_MYN, BB1_MYN, A2_MYN, BB2_MYN,DT,DTT,XRAD, &
-     & TPC1, TPC2, TPC3, TPC4, TPC5, &
-     & EPSDEL, DT0L, DT0I, &
-     & ROR, &
-     & DEL1NUC,DEL2NUC, &
-     & CWHUCM,B6,B8L,B8I,RMASSGL,RMASSGI, &
-     & DEL1,DEL2,DEL1S,DEL2S, &
-     & TIMENEW,TIMEREV,SFN11,SFN12, &
-     & SFNL,SFNI,B5L,B5I,B7L,B7I,DOPL,DOPI,OPERQ,RW,RI,QW,PW, &
-     & PI,QI,D1N0,D2N0,DTNEWL,DTNEWL1,D1N,D2N, &
-     & DEL_R1,DT0L0,DT0I0,SFN31,SFN32,SFN52, &
-     & SFNII1,SFN21,SFN22,DTNEWI3,DTNEWI4,DTNEWI5,DTNEWI2_1, &
-     & DTNEWI2_2,DTNEWI1,DEL_R2,DEL_R4,DEL_R5,SFN41,SFN42, &
-     & SNF51,DTNEWI2_3,DTNEWI2,DTNEWI_1,DTNEWI_2, &
-     & DTNEWL0,DTNEWG1,DTNEWH1,DTNEWI_3, &
-     & DTNEWL2,SFN51,SFNII2,DEL_R3,DTNEWI  
-       REAL DT_WATER_COND,DT_WATER_EVAP,DT_ICE_COND,DT_ICE_EVAP, &
-     &  DT_MIX_COND,DT_MIX_EVAP,DT_MIX_BERGERON,DT_MIX_ANTIBERGERON
+	! in case IDROP.NE.0
+		  ENDIF
 
-       INTEGER K
+! new change 26.10.09                                           (end)
 
-! NEW ALGORITHM OF CONDENSATION (12.01.00)
+! in case ISIGN_DIFFUSIONAL_GROWTH.NE.0
+        ELSE
+! in case ISIGN_DIFFUSIONAL_GROWTH.EQ.0
+  	  		DO K=1,NRX
+  	     		PSI(K)=FI(K)
+  	  		ENDDO
+       ENDIF
 
-      DOUBLE PRECISION DD1N,DB11_MY,DAL1,DAL2
-      DOUBLE PRECISION COL3,RORI,TPN,TPS,QPN,QPS,TOLD,QOLD &
-     &                  ,FI1_K,FI2_K,FI3_K,FI4_K,FI5_K &
-     &                  ,R1_K,R2_K,R3_K,R4_K,R5_K &
-     &                  ,FI1R1,FI2R2,FI3R3,FI4R4,FI5R5 &
-     &                  ,RMASSLAA,RMASSLBB,RMASSIAA,RMASSIBB &
-     &                  ,ES1N,ES2N,EW1N,ARGEXP &
-     &                  ,TT,QQ,PP &
-     &                  ,DEL1N,DEL2N,DIV1,DIV2 &
-     &                  ,OPER2,OPER3,AR1,AR2  
+		DO KR=1,NRX
+	   		IF(PSI(KR) < 0.0) THEN ! ... (KS)
+					IDSD_Negative = 1
+					print*, "IDSD_Negative=",IDSD_Negative,"kr",kr
+					PRINT*,    'IN SUBROUTINE JERNEWF'
+					PRINT*,		'PSI(KR)<0'
+					PRINT*,    'BEFORE EXIT'
+					PRINT*,    'ISIGN_DIFFUSIONAL_GROWTH'
+					PRINT*,     ISIGN_DIFFUSIONAL_GROWTH
+					PRINT*,    'I3POINT_CONDEVAP'
+					PRINT*,     I3POINT_CONDEVAP
+					PRINT*,    'K,RR(K),RN(K),K=1,NRX'
+					PRINT*,    (K,RR(K),RN(K),K=1,NRX)
+					PRINT*,    'K,RR(K),RN(K),FI(K),PSI(K),K=1,NRX'
+					PRINT 304, (K,RR(K),RN(K),FI(K),PSI(K),K=1,NRX)
+					PRINT*,		IDROP,Ihydro,Iin,Jin,Kin,Itimestep
+          call wrf_error_fatal("fatal error in SUBROUTINE JERNEWF PSI(KR)<0, < min, model stop")
+			ENDIF
+		ENDDO
 
-       DOUBLE PRECISION DELTAQ1,DELMASSI1,DELMASSL1
+  304   FORMAT(1X,I2,2X,4D13.5)
 
-! CONTROL OF DROP SPECTRUM IN SUBROUTINE ONECOND
+        RETURN
+        END SUBROUTINE JERNEWF_KS
+! +------------------------------------------------------------------+
+	SUBROUTINE JERDFUN_NEW_KS &
+       				(xi,xiN,B21_MY, &
+        			FI2,PSI2, &
+        			TPN,IDROP,FR_LIM,NKR,COL,Ihydro,Iin,Jin,Kin,Itimestep)
 
-        CHARACTER*70 CPRINT
+	IMPLICIT NONE
 
+! ... Interface
+	INTEGER,INTENT(INOUT) :: IDROP, NKR
+	INTEGER,INTENT(IN) :: Ihydro,Iin,Jin,Kin,Itimestep
+	REAL(kind=R4SIZE),intent(IN) :: FI2(:), B21_MY(:), FR_LIM(:), COL
+	REAL(kind=R8SIZE), INTENT(IN) :: TPN, xi(:)
+	REAL(kind=R4SIZE),INTENT(INOUT) :: PSI2(:)
+	REAL(kind=R8SIZE),INTENT(INOUT) :: xiN(:)
+! ... Interface
 
+! ... Locals
+	INTEGER :: NR, KR, IDSD_Negative
+	REAL(kind=R8SIZE) :: C, DEGREE1, DEGREE2, DEGREE3, D, RATEXI, B, A, &
+						           xiR(NKR),FI2R(NKR),PSI2R(NKR),xiNR(NKR)
+! ... Locals
 
+	C=2.0D0/3.0D0
 
-
-
-
-! CRYSTALS
-                                                                       
-	REAL R2(NKR,ICEMAX) &
-     &           ,RIEC(NKR,ICEMAX) &
-     &           ,RO2BL(NKR,ICEMAX) &
-     &           ,FI2(NKR,ICEMAX),PSI2(NKR,ICEMAX) &
-     &           ,FF2(NKR,ICEMAX) &
-     &           ,B21_MY(NKR,ICEMAX),B22_MY(NKR,ICEMAX)
-
-! SNOW                                                                          
-        REAL R3(NKR) &
-     &           ,RSEC(NKR),RO3BL(NKR) &
-     &           ,FI3(NKR),FF3(NKR),PSI3(NKR) &
-     &           ,B31_MY(NKR),B32_MY(NKR)
-
-! GRAUPELS 
-                                                                       
-        REAL R4(NKR) &
-     &           ,RGEC(NKR),RO4BL(NKR) &
-     &           ,FI4(NKR),FF4(NKR),PSI4(NKR) &
-     &           ,B41_MY(NKR),B42_MY(NKR)  
-
-! HAIL                                                                          
-        REAL R5(NKR) &
-     &           ,RHEC(NKR),RO5BL(NKR) &
-     &           ,FI5(NKR),FF5(NKR),PSI5(NKR) &
-     &           ,B51_MY(NKR),B52_MY(NKR)  
-
-! CCN                                                                       
-
-! WORK ARRAYS 
-
-! NEW ALGORITHM OF MIXED PHASE FOR EVAPORATION
-
-	REAL DTIMEG(NKR),DTIMEH(NKR) 
-       
-	REAL DEL2D(ICEMAX),DTIMEO(NKR),DTIMEL(NKR) &
-
-! NEW ALGORITHM (NO TYPE OF ICE)
-
-     &           ,DTIMEI_1(NKR),DTIMEI_2(NKR),DTIMEI_3(NKR) &
-     &           ,SFNI1(ICEMAX),SFNI2(ICEMAX) &
-     &           ,TIMESTEPD(NKR) &
-     &           ,FI1REF(NKR),PSI1REF(NKR) &
-     &           ,FI2REF(NKR,ICEMAX),PSI2REF(NKR,ICEMAX)&
-     &           ,FCCNRREF(NKR)
-
-
-	OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
-	OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
-
-        DATA AL1 /2500./, AL2 /2834./, D /0.211/ &
-     &      ,GAM /1.E-4/, POD /10./ 
-           
-	DATA RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY &
-     &      /461.5,0.24E-1,0.211E-4,2.5E6,2.834E6/
-
-	DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
-     &      /2.53,5.42,3.41E1,6.13/
-
-	DATA TPC1, TPC2, TPC3, TPC4, TPC5 &
-     &      /-4.0,-8.1,-12.7,-17.8,-22.4/ 
-
-
-        DATA EPSDEL/0.1E-03/
-    
-	DATA DT0L, DT0I /1.E20,1.E20/
-
-! CONTROL OF DROP SPECTRUM IN SUBROUTINE ONECOND
-
-
-! CONTROL OF TIMESTEP ITERATIONS IN MIXED PHASE: EVAPORATION
-        
-        I_MIXCOND=0
-        I_MIXEVAP=0
-        I_ABERGERON=0
-        I_BERGERON=0
-! SOME CONSTANTS 
-        COL3=3.0*COL
-        ICM=ICEMAX
-        ITIME=0
-        KCOND=0
-        DT_WATER_COND=0.4
-        DT_WATER_EVAP=0.4
-        DT_ICE_COND=0.4
-        DT_ICE_EVAP=0.4
-        DT_MIX_COND=0.4
-        DT_MIX_EVAP=0.4
-        DT_MIX_BERGERON=0.4
-        DT_MIX_ANTIBERGERON=0.4
-	ICM=ICEMAX
-	ITIME=0
-	KCOND=0
-        DT0LREF=0.2
-        DTLREF=0.4
+	DEGREE1=C/2.0D0
+	DEGREE2=C
+	DEGREE3=3.0D0/2.0D0
 
 	NR=NKR
-	NRM=NKR-1
-	DT=DTCOND
-	DTT=DTCOND
-	XRAD=0.
 
-!     BARRY
-	CWHUCM=0.
-	XRAD=0.
-	B6=CWHUCM*GAM-XRAD
-	B8L=1./ROR
-	B8I=1./ROR
-        RORI=1./ROR
+	xiR = xi
+	FI2R = FI2
+	PSI2R = PSI2
+	xiNR = xiN
 
-! INITIALIZATION OF SOME ARRAYS
+! new drop size distribution functions                             (start)
 
-!       BARRY
-        TPN=TT
-        QPN=QQ
+! drop diffusional growth
 
-
-! TYPE OF ICE IN DIFFUSIONAL GROWTH 
-
-	      DO ICE=1,ICEMAX
-	         SFNI1(ICE)=0.
-	         SFNI2(ICE)=0.
-	         DEL2D(ICE)=0.
-	      ENDDO
-
-! TIME SPLITTING 
-
-	      TIMENEW=0.
-	      ITIME=0
-
-! ONLY ICE (CONDENSATION OR EVAPORATION) :
-
-   46         ITIME=ITIME+1
-
-	      TIMEREV=DT-TIMENEW
-
-	      DEL1=DEL1N
-	      DEL2=DEL2N
-	      DEL1S=DEL1N
-	      DEL2S=DEL2N
-	      DEL2D(1)=DEL2N
-	      DEL2D(2)=DEL2N
-	      DEL2D(3)=DEL2N
-	      TPS=TPN
-	      QPS=QPN
-              DO KR=1,NKR
-                 FI3(KR)=PSI3(KR)
-                 FI4(KR)=PSI4(KR)
-                 FI5(KR)=PSI5(KR)
-                 DO ICE=1,ICEMAX
-                    FI2(KR,ICE)=PSI2(KR,ICE)
-                 ENDDO
-              ENDDO
-! TIME-STEP GROWTH RATE: 
-! ONLY ICE (CONDENSATION OR EVAPORATION)
-              CALL JERRATE(R2,TPS,PP,ROR,VR2,PSINGLE &
-     &                    ,RIEC,RO2BL,B21_MY,B22_MY,3,2,ICEMAX,NKR)   
-              CALL JERRATE(R3,TPS,PP,ROR,VR3,PSINGLE &
-     &                    ,RSEC,RO3BL,B31_MY,B32_MY,1,2,ICEMAX,NKR)
-              CALL JERRATE(R4,TPS,PP,ROR,VR4,PSINGLE &
-     &                    ,RGEC,RO4BL,B41_MY,B42_MY,1,2,ICEMAX,NKR)
-              CALL JERRATE(R5,TPS,PP,ROR,VR5,PSINGLE &
-     &                    ,RHEC,RO5BL,B51_MY,B52_MY,1,2,ICEMAX,NKR)
-
-
-! INTEGRALS IN DELTA EQUATION
-
-! CALL JERTIMESC CRYSTAL - 1 (ONLY ICE)
-              CALL JERTIMESC_ICE  &
-     &       (FI2,R2,SFNI1,SFNI2,B21_MY,B22_MY,RIEC,B8I,ICM,COL,NKR) 
-              CALL JERTIMESC &
-     &       (FI3,R3,SFN31,SFN32,B31_MY,B32_MY,RSEC,B8I,1,COL,NKR)  
-              CALL JERTIMESC &
-     &       (FI4,R4,SFN41,SFN42,B41_MY,B42_MY,RGEC,B8I,1,COL,NKR) 
-              CALL JERTIMESC &
-     &       (FI5,R5,SFN51,SFN52,B51_MY,B52_MY,RHEC,B8I,1,COL,NKR)
-	      SFNII1=SFNI1(1)+SFNI1(2)+SFNI1(3)
-	      SFNII2=SFNI2(1)+SFNI2(2)+SFNI2(3)
-	      SFN21=SFNII1+SFN31+SFN41+SFN51        
-	      SFN22=SFNII2+SFN32+SFN42+SFN52 
-	      SFNL=0.
-	      SFNI=SFN21+SFN22       
-! SOME CONSTANTS 
-	      B5L=BB1_MY/TPS/TPS
-	      B5I=BB2_MY/TPS/TPS
-              B7L=B5L*B6                                                     
-              B7I=B5I*B6
-	      DOPL=1.+DEL1S                                                     
-	      DOPI=1.+DEL2S                                                     
-	      OPERQ=OPER2(QPS)  
-              RW=(OPERQ+B5L*AL1)*DOPL*SFNL                                      
-              QW=B7L*DOPL
-              PW=(OPERQ+B5I*AL1)*DOPI*SFNL
-              RI=(OPERQ+B5L*AL2)*DOPL*SFNI
-              PI=(OPERQ+B5I*AL2)*DOPI*SFNI
-              QI=B7I*DOPI
-	      KCOND=20
-	      IF(DEL2.GT.0) KCOND=21
-
-! PROCESS'S TYPE (ONLY ICE) 
-
-	      IF(KCOND.EQ.21)  THEN
-
-! ONLY_ICE: CONDENSATION
-
-	      
-                DT0I=1.E20
-	        DTNEWI1=DTCOND
-	        DTNEWL=DTNEWI1
-	        IF(ITIME.GE.NKR) THEN
-                call wrf_error_fatal("fatal error in module_mp_fast_sbm (ITIME.GE.NKR), model stop")
-	        ENDIF
-	        TIMESTEPD(ITIME)=DTNEWL
-! NEW TIME STEP (ONLY_ICE: CONDENSATION)
-	        IF(DTNEWL.GT.DT) DTNEWL=DT
-	        IF((TIMENEW+DTNEWL).GT.DT.AND.ITIME.LT.(NKR-1))  &
-     &          DTNEWL=DT-TIMENEW
-                IF(ITIME.EQ.(NKR-1)) DTNEWL=DT-TIMENEW
-	        TIMESTEPD(ITIME)=DTNEWL
-	        TIMENEW=TIMENEW+DTNEWL
-	        DTT=DTNEWL
-! SOLVING FOR SUPERSATURATION (ONLY ICE: CONDENSATION) 
-
-! CALL JERSUPSAT - 4 (ONLY ICE: CONDENSATION)
-
-	        CALL JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N &
-     &                        ,RW,PW,RI,PI,QW,QI &
-     &                        ,DTT,D1N,D2N,DT0L0,DT0I0)
-
-! END OF "NEW SUPERSATURATION" (ONLY ICE: CONDENSATION)
-
-
-! CRYSTALS (ONLY ICE: CONDENSATION) 
-
-	        IF(ISYM2.NE.0) THEN
-
-! CRYSTAL DTRIBUTION FUNCTION (ONLY ICE: CONDENSATION) 
- 
-! CALL JERDFUN CRYSTAL - 1 (ONLY ICE: CONDENSATION)
-
-! NEW ALGORITHM (NO TYPE ICE)
-	          CALL JERDFUN(R2,B21_MY,B22_MY &
-     &                        ,FI2,PSI2,D2N &
-     &                        ,ICM,1,COL,NKR,TPN)
-
-	          CALL JERDFUN(R2,B21_MY,B22_MY &
-     &                        ,FI2,PSI2,D2N &
-     &                        ,ICM,2,COL,NKR,TPN)
-
-	          CALL JERDFUN(R2,B21_MY,B22_MY &
-     &                        ,FI2,PSI2,D2N &
-     &                        ,ICM,3,COL,NKR,TPN)
-! IN CASE : ISYM2.NE.0
-
-	        ENDIF
-! SNOW 
-	        IF(ISYM3.NE.0) THEN
-
-! SNOW DTRIBUTION FUNCTION (ONLY ICE: CONDENSATION) 
-                                                         
-
-! CALL JERDFUN SNOW - 1 (ONLY ICE: CONDENSATION)
-                  CALL JERDFUN(R3,B31_MY,B32_MY &
-     &                        ,FI3,PSI3,D2N &
-     &                        ,1,3,COL,NKR,TPN)
-
-	        ENDIF
-! IN CASE : ISYM4.NE.0
-! GRAUPELS (ONLY_ICE: EVAPORATION)
-
-                IF(ISYM4.NE.0) THEN
-
-! GRAUPEL DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION)
-
-                  CALL JERDFUN(R4,B41_MY,B42_MY &
-     &                        ,FI4,PSI4,D2N &
-     &                        ,1,4,COL,NKR,TPN)
-! IN CASE : ISYM4.NE.0
-
-                ENDIF
-
-
-
-! HAIL (ONLY ICE: CONDENSATION) 
-
-	        IF(ISYM5.NE.0) THEN
-
-! HAIL DTRIBUTION FUNCTION (ONLY ICE: CONDENSATION) 
-                                                         
-! CALL JERDFUN HAIL - 1 (ONLY ICE: CONDENSATION) 
-	          CALL JERDFUN(R5,B51_MY,B52_MY &
-     &                        ,FI5,PSI5,D2N &
-     &                        ,1,5,COL,NKR,TPN)
-! IN CASE : ISYM5.NE.0
-
-	        ENDIF
-
-	        IF((DEL2.GT.0.AND.DEL2N.LT.0) &
-     &         .AND.ABS(DEL2N).GT.EPSDEL) THEN
-               call wrf_error_fatal("fatal error in module_mp_fast_sbm (DEL2.GT.0.AND.DEL2N.LT.0), model stop")
-                ENDIF
-
-	      ELSE
-
-! IN CASE KCOND.NE.21 
-
-! ONLY ICE: EVAPORATION  
-
-! NEW TREATMENT OF TIME STEP (ONLY ICE: EVAPORATION) 
-
-	        DT0I=1.E20
-                IF (DEL2N.EQ.0)THEN
-	          DTNEWL=DT
-                ELSE
-	         DTNEWI3=-R3(3)/(B31_MY(3)*DEL2N-B32_MY(3))
-	         DTNEWI4=-R4(3)/(B41_MY(3)*DEL2N-B42_MY(3))
-	         DTNEWI5=-R5(3)/(B51_MY(3)*DEL2N-B52_MY(3))
-! NEW ALGORITHM (NO TYPE OF ICE)
-	         DTNEWI2_1=-R2(3,1)/(B21_MY(1,1)*DEL2N-B22_MY(1,1))
-	         DTNEWI2_2=-R2(3,2)/(B21_MY(1,2)*DEL2N-B22_MY(1,2))
-	         DTNEWI2_3=-R2(3,3)/(B21_MY(1,3)*DEL2N-B22_MY(1,3))
-                 DTNEWI2=AMIN1(DTNEWI2_1,DTNEWI2_2,DTNEWI2_3)
-	         DTNEWI1=AMIN1(DTNEWI2,DTNEWI3,DTNEWI4 &
-     &                       ,DTNEWI5,DT0I,TIMEREV)
-	         DTNEWI1=AMIN1(DTNEWI2,DTNEWI4,DTNEWI5,DT0I,TIMEREV)
-	         DTNEWL=DTNEWI1
-	         IF(DTNEWL.LT.DTLREF) DTNEWL=AMIN1(DTLREF,TIMEREV)
-                END IF
-	        IF(ITIME.GE.NKR) THEN
-                call wrf_error_fatal("fatal error in module_mp_fast_sbm (ITIME.GE.NKR), model stop")
-                ENDIF
-	        TIMESTEPD(ITIME)=DTNEWL
-
-! NEW TIME STEP (ONLY_ICE: EVAPORATION)
-
-	        IF(DTNEWL.GT.DT) DTNEWL=DT
-	        IF((TIMENEW+DTNEWL).GT.DT.AND.ITIME.LT.(NKR-1))  &
-     &          DTNEWL=DT-TIMENEW
-                IF(ITIME.EQ.(NKR-1)) DTNEWL=DT-TIMENEW
-	        TIMENEW=TIMENEW+DTNEWL
-	        TIMESTEPD(ITIME)=DTNEWL
-	        DTT=DTNEWL
-! SOLVING FOR SUPERSATURATION (ONLY_ICE: EVAPORATION) 
-	        CALL JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N &
-     &                        ,RW,PW,RI,PI,QW,QI &
-     &                        ,DTT,D1N,D2N,DT0L0,DT0I0)
-! END OF "NEW SUPERSATURATION" (ONLY_ICE: EVAPORATION) 
-
-! CRYSTALS
-	        IF(ISYM2.NE.0) THEN
-
-! CRYSTAL DISTRIBUTION FUNCTION 
-
-! NEW ALGORITHM (NO TYPE ICE) 
-
-	          CALL JERDFUN(R2,B21_MY,B22_MY &
-     &                         ,FI2,PSI2,D2N &
-     &                         ,ICM,1,COL,NKR,TPN)
-
-	          CALL JERDFUN(R2,B21_MY,B22_MY &
-     &                         ,FI2,PSI2,D2N &
-     &                         ,ICM,2,COL,NKR,TPN)
-
-	          CALL JERDFUN(R2,B21_MY,B22_MY &
-     &                         ,FI2,PSI2,D2N &
-     &                         ,ICM,3,COL,NKR,TPN)
-	        ENDIF
-! SNOW 
-	        IF(ISYM3.NE.0) THEN
-
-! SNOW DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION) 
-                                                         
-
-! CALL JERDFUN - SNOW - 2 (ONLY_ICE: EVAPORATION)
-
-	          CALL JERDFUN(R3,B31_MY,B32_MY &
-     &                        ,FI3,PSI3,D2N &
-     &                        ,1,3,COL,NKR,TPN)
-
-
-
-
-
-! IN CASE : ISYM3.NE.0
-
-	        ENDIF
-
-! GRAUPELS (ONLY_ICE: EVAPORATION) 
-
-	        IF(ISYM4.NE.0) THEN
-
-! GRAUPEL DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION) 
-                                                         
-	          CALL JERDFUN(R4,B41_MY,B42_MY &
-     &                        ,FI4,PSI4,D2N &
-     &                        ,1,4,COL,NKR,TPN)
-! IN CASE : ISYM4.NE.0
-
-	        ENDIF
-
-! HAIL (ONLY_ICE: EVAPORATION) 
-
-	        IF(ISYM5.NE.0) THEN
-
-! HAIL DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION) 
-                                                         
-	          CALL JERDFUN(R5,B51_MY,B52_MY &
-     &                        ,FI5,PSI5,D2N &
-     &                        ,1,5,COL,NKR,TPN)
-! IN CASE : ISYM5.NE.0
-
-	        ENDIF
-
-	        IF((DEL2.LT.0.AND.DEL2N.GT.0) &
-     &         .AND.ABS(DEL2N).GT.EPSDEL) THEN
-                call wrf_error_fatal("fatal error in module_mp_fast_sbm (ABS(DEL2N).GT.EPSDEL), model stop")
-	        ENDIF
-
-! IN CASE : KCOND.NE.21
- 
-	      ENDIF
-
-! IN CASES : KCOND = 21 OR KCOND.NE.21
-
-! END OF "PROCESS'S TYPE" 
-!
-! MASSES
-              RMASSIBB=0.0
-              RMASSIAA=0.0
-! BEFORE JERNEWF
-              DO K=1,NKR
-                 DO ICE =1,ICEMAX
-                    FI2_K=FI2(K,ICE)
-                    R2_K=R2(K,ICE)
-                    FI2R2=FI2_K*R2_K*R2_K
-                    RMASSIBB=RMASSIBB+FI2R2
-                 ENDDO
-                 FI3_K=FI3(K)
-                 FI4_K=FI4(K)
-                 FI5_K=FI5(K)
-                 R3_K=R3(K)
-                 R4_K=R4(K)
-                 R5_K=R5(K)
-                 FI3R3=FI3_K*R3_K*R3_K
-                 FI4R4=FI4_K*R4_K*R4_K
-                 FI5R5=FI5_K*R5_K*R5_K
-                 RMASSIBB=RMASSIBB+FI3R3
-                 RMASSIBB=RMASSIBB+FI4R4
-                 RMASSIBB=RMASSIBB+FI5R5
-              ENDDO
-              RMASSIBB=RMASSIBB*COL3*RORI
-! NEW CHANGE RMASSIBB
-              IF(RMASSIBB.LT.0.0) RMASSIBB=0.0
-! AFTER JERNEWF
-              DO K=1,NKR
-                 DO ICE =1,ICEMAX
-                    FI2_K=PSI2(K,ICE)
-                    R2_K=R2(K,ICE)
-                    FI2R2=FI2_K*R2_K*R2_K
-                    RMASSIAA=RMASSIAA+FI2R2
-                 ENDDO
-                 FI3_K=PSI3(K)
-                 FI4_K=PSI4(K)
-                 FI5_K=PSI5(K)
-                 R3_K=R3(K)
-                 R4_K=R4(K)
-                 R5_K=R5(K)
-                 FI3R3=FI3_K*R3_K*R3_K
-                 FI4R4=FI4_K*R4_K*R4_K
-                 FI5R5=FI5_K*R5_K*R5_K
-                 RMASSIAA=RMASSIAA+FI3R3
-                 RMASSIAA=RMASSIAA+FI4R4
-                 RMASSIAA=RMASSIAA+FI5R5
-              ENDDO
-              RMASSIAA=RMASSIAA*COL3*RORI
-! NEW CHANGE RMASSIAA
-              IF(RMASSIAA.LT.0.0) RMASSIAA=0.0
-! NEW TREATMENT OF "T" & "Q"
-              DELMASSI1=RMASSIAA-RMASSIBB
-              QPN=QPS-DELMASSI1
-              DAL2=AL2
-              TPN=TPS+DAL2*DELMASSI1
-! SUPERSATURATION
-              ARGEXP=-BB1_MY/TPN
-              ES1N=AA1_MY*DEXP(ARGEXP)
-              ARGEXP=-BB2_MY/TPN
-              ES2N=AA2_MY*DEXP(ARGEXP)
-              EW1N=OPER3(QPN,PP)
-              IF(ES1N.EQ.0)THEN
-               DEL1N=0.5
-               DIV1=1.5
-              call wrf_error_fatal("fatal error in module_mp_fast_sbm (ES1N.EQ.0), model stop")
-              ELSE
-               DIV1=EW1N/ES1N
-               DEL1N=EW1N/ES1N-1.
-              END IF
-              IF(ES2N.EQ.0)THEN
-               DEL2N=0.5
-               DIV2=1.5
-              call wrf_error_fatal("fatal error in module_mp_fast_sbm (ES2N.EQ.0), model stop")
-              ELSE
-               DEL2N=EW1N/ES2N-1.
-               DIV2=EW1N/ES2N
-              END IF
-
-!  END OF TIME SPLITTING 
-! (ONLY ICE: CONDENSATION OR EVAPORATION) 
-	      IF(TIMENEW.LT.DT) GOTO 46
-        TT=TPN
-        QQ=QPN
 	DO KR=1,NKR
-	   DO ICE=1,ICEMAX
-	      FF2(KR,ICE)=PSI2(KR,ICE)
-	   ENDDO
-	   FF3(KR)=PSI3(KR)
-	   FF4(KR)=PSI4(KR)
-	   FF5(KR)=PSI5(KR)
+	   D = xiR(KR)**DEGREE1
+! Andrei's new change of 3.09.10                              (start)
+!	   RATExi=C*DEL2N*B21_MY(KR)/D
+	   RATExi = C*B21_MY(KR)/D
+! Andrei's new change of 3.09.10                                (end)
+	   B = xiR(KR)**DEGREE2
+	   A = B+RATExi
+	   IF(A<0.0D0) THEN
+	     xiNR(KR) = 1.0D-50
+	   ELSE
+	     xiNR(KR) = A**DEGREE3
+	   ENDIF
 	ENDDO
 
+! recalculation of size distribution functions                (start)
 
-! GO TO "CONDENSATION AND VAPORATION"
+	IDSD_Negative = 0
+	CALL JERNEWF_KS &
+			(NR,xiR,FI2R,PSI2R,xiNR,ISIGN_3POINT,TPN,IDROP,NKR,COL,IDSD_Negative,Ihydro,Iin,Jin,Kin,Itimestep)
+	IF(IDSD_Negative == 1)THEN
+		IF(ISIGN_KO_2 == 1) THEN
+			! ... (KS) - we do not use Kovatch-Ouland as separate method
+	  	!	CALL JERNEWF_KO_KS &
+      !  				(NR,xiR,FI2R,PSI2R,xiNR,NKR,COL)
+		ENDIF
+	ENDIF
+
+	PSI2 = PSI2R
+
+! recalculation of drop size distribution functions                  (end)
+! new drop size distribution functions                          (end)
+
+  201	FORMAT(1X,D13.5)
+
+	RETURN
+	END SUBROUTINE JERDFUN_NEW_KS
+! +---------------------------------------------------------+
+	SUBROUTINE Relaxation_Time(TPS,QPS,PP,ROR,DEL1S,DEL2S, &
+            							   R1,VR1,FF1in,RLEC,RO1BL, &
+            							   R2,VR2,FF2in,RIEC,RO2BL, &
+            							   R3,VR3,FF3in,RSEC,RO3BL, &
+            							   R4,VR4,FF4in,RGEC,RO4BL, &
+            							   R5,VR5,FF5in,RHEC,RO5BL, &
+            							   NKR,ICEMAX,COL,DTdyn,NCOND,DTCOND)
+
+	implicit none
+! ... Interface
+	integer,intent(in) :: NKR,ICEMAX
+	integer,intent(out) :: NCOND
+	real(kind=R4SIZE),intent(in) :: R1(:),FF1in(:),RLEC(:),RO1BL(:), &
+					   R2(:,:),FF2in(:,:),RIEC(:,:),RO2BL(:,:), &
+					   R3(NKR),FF3in(:),RSEC(:),RO3BL(:), &
+					   R4(NKR),FF4in(:),RGEC(:),RO4BL(:), &
+					   R5(NKR),FF5in(:),RHEC(:),RO5BL(:), &
+					   ROR,COL,DTdyn,VR1(:),VR2(:,:),VR3(:),VR4(:),VR5(:)
+  real(kind=R8SIZE),intent(in) :: TPS,QPS,PP,DEL1S,DEL2S
+  real(kind=R4SIZE),intent(out) :: DTCOND
+! ... Interface
+! ... Local
+	integer :: ISYM1, ISYM2(ICEMAX), ISYM3, ISYM4, ISYM5, ISYM_SUM, ICM
+  real(kind=R8SIZE),parameter :: AA1_MY = 2.53D12, BB1_MY = 5.42D3, AA2_MY = 3.41D13, &
+                                 BB2_MY = 6.13E3, AL1 = 2500.0, AL2 = 2834.0
+	real(kind=R8SIZE),parameter :: TAU_Min = 0.1 ! [s]
+	real(kind=R8SIZE) :: OPER2, AR1, TAU_RELAX, B5L, B5I, &
+						           R1D(NKR), R2D(NKR,ICEMAX), R3D(NKR), R4D(NKR), R5D(NKR), &
+                       VR1_d(nkr),VR2_d(nkr,icemax),VR3_d(nkr),VR4_d(nkr),VR5_d(nkr)
+	real(kind=R4SIZE) :: B11_MY(NKR), B21_MY(NKR,ICEMAX), B31_MY(NKR), &
+			                 B41_MY(NKR), B51_MY(NKR), FL1(NKR), FL3(NKR), FL4(NKR), FL5(NKR), &
+                       SFNDUMMY(3), SFN11, SFNI1(ICEMAX), SFNII1, SFN21, SFN31, SFN41, SFN51, SFNI, SFNL, B8L, B8I, RI, PW, &
+	                     DOPL, DOPI, TAU_w, TAU_i, phi, RW, PI
+! ... Local
+
+		OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
+    VR1_d = VR1
+    VR2_d = VR2
+    VR3_d = VR3
+    VR4_d = VR4
+    VR5_d = VR5
 
 
-        RETURN                                          
-        END SUBROUTINE ONECOND2
-!==================================================================
+		ISYM1 = 0
+		ISYM2 = 0
+		ISYM3 = 0
+		ISYM4 = 0
+		ISYM5 = 0
+		IF(sum(FF1in) > 0.0) ISYM1 = 1
+		IF(sum(FF2in(:,1)) > 1.0D-10) ISYM2(1) = 1
+		IF(sum(FF2in(:,2)) > 1.0D-10) ISYM2(2) = 1
+		IF(sum(FF2in(:,3)) > 1.0D-10) ISYM2(3) = 1
+		IF(sum(FF3in) > 1.0D-10) ISYM3 = 1
+		IF(sum(FF4in) > 1.0D-10) ISYM4 = 1
+		IF(sum(FF5in) > 1.0D-10) ISYM5 = 1
 
-        SUBROUTINE ONECOND3 &
-     & (TT,QQ,PP,ROR &
-     & ,VR1,VR2,VR3,VR4,VR5,PSINGLE &
-     & ,DEL1N,DEL2N,DIV1,DIV2 &
-     & ,FF1,PSI1,R1,RLEC,RO1BL &
-     & ,FF2,PSI2,R2,RIEC,RO2BL &
-     & ,FF3,PSI3,R3,RSEC,RO3BL &
-     & ,FF4,PSI4,R4,RGEC,RO4BL &
-     & ,FF5,PSI5,R5,RHEC,RO5BL &
-     & ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
-     & ,C1_MEY,C2_MEY &
-     & ,COL,DTCOND,ICEMAX,NKR &
-     & ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
+		ISYM_SUM = ISYM1 + sum(ISYM2) + ISYM3 + ISYM4  + ISYM5
+		IF(ISYM_SUM == 0)THEN
+			TAU_RELAX = DTdyn
+			NCOND = nint(DTdyn/TAU_RELAX)
+		    DTCOND = TAU_RELAX
+        RETURN
+		ENDIF
+
+		R1D = R1
+		R2D = R2
+		R3D = R3
+		R4D = R4
+		R5D = R5
+		B8L=1./ROR
+   	B8I=1./ROR
+		ICM = ICEMAX
+		SFN11 = 0.0
+		SFNI1 = 0.0
+		SFN31 = 0.0
+		SFN41 = 0.0
+		SFN51 = 0.0
+		B11_MY = 0.0
+		B21_MY = 0.0
+		B31_MY = 0.0
+		B41_MY = 0.0
+		B51_MY = 0.0
+
+
+		  ! ... Drops
+		  IF(ISYM1 == 1)THEN
+  			FL1 = 0.0
+  			CALL JERRATE_KS(R1D,TPS,PP,VR1_d,RLEC,RO1BL,B11_MY,1,1,fl1,NKR,ICEMAX)
+        sfndummy(1) = SFN11
+        CALL JERTIMESC_KS(FF1in,R1D,SFNDUMMY,B11_MY,B8I,1,NKR,ICEMAX,COL)
+  			SFN11 = sfndummy(1)
+		  ENDIF
+		  ! ... IC
+		  !IF(sum(ISYM2) > 0) THEN
+	  	!	FL1 = 0.0
+	  	!	! ... ice crystals
+		  !	CALL JERRATE_KS (R2D,TPS,PP,VR2_d,RIEC,RO2BL,B21_MY,3,2,fl1,NKR,ICEMAX)
+		  !	CALL JERTIMESC_KS (FF2in,R2D,SFNI1,B21_MY,B8I,ICM,NKR,ICEMAX,COL)
+		  !ENDIF
+      ! ... Snow
+      IF(ISYM3 == 1) THEN
+	  		FL3 = 0.0
+	  		! ... snow
+		  	CALL JERRATE_KS (R3D,TPS,PP,VR3_d,RSEC,RO3BL,B31_MY,1,3,fl3,NKR,ICEMAX)
+		  	sfndummy(1) = SFN31
+		  	CALL JERTIMESC_KS(FF3in,R3D,SFNDUMMY,B31_MY,B8I,1,NKR,ICEMAX,COL)
+	  	  	SFN31 = sfndummy(1)
+     	ENDIF
+      ! ... Graupel
+     IF(ISYM4 == 1) THEN
+	  		FL4 = 0.0
+	  		! ... graupel
+		  	CALL JERRATE_KS(R4D,TPS,PP,VR4_d,RGEC,RO4BL,B41_MY,1,2,fl4,NKR,ICEMAX)
+
+		  	sfndummy(1) = SFN41
+		  	CALL JERTIMESC_KS(FF4in,R4D,SFNDUMMY,B41_MY,B8I,1,NKR,ICEMAX,COL)
+	  	  	SFN41 = sfndummy(1)
+	   ENDIF
+      ! ... Hail
+      IF(ISYM5 == 1) THEN
+        FL5 = 0.0
+        ! ... hail
+        CALL JERRATE_KS(R5D,TPS,PP,VR5_d,RHEC,RO5BL,B51_MY,1,2,fl5,NKR,ICEMAX)
+
+        sfndummy(1) = SFN51
+        CALL JERTIMESC_KS(FF5in,R5D,SFNDUMMY,B51_MY,B8I,1,NKR,ICEMAX,COL)
+        SFN51 = sfndummy(1)
+  	  ENDIF
+
+		  SFNII1 = 0.0
+		  SFN21 = 0.0
+		  SFNL = 0.0
+		  SFNI = 0.0
+		  RI = 0.0
+		  PW = 0.0
+		  SFNII1 = SFNI1(1)+SFNI1(2)+SFNI1(3)
+		  SFN21 = SFNII1 + SFN31 + SFN41 + SFN51
+		  SFNL = SFN11  ! Liquid
+		  SFNI = SFN21 	! Total Ice
+
+		  B5L=BB1_MY/TPS/TPS
+		  B5I=BB2_MY/TPS/TPS
+		  DOPL=1.+ DEL1S
+		  DOPI=1.+ DEL2S
+		  RW=(OPER2(QPS)+B5L*AL1)*DOPL*SFNL
+		  RI=(OPER2(QPS)+B5L*AL2)*DOPL*SFNI
+		  PW=(OPER2(QPS)+B5I*AL1)*DOPI*SFNL
+		  PI=(OPER2(QPS)+B5I*AL2)*DOPI*SFNI
+
+      TAU_w = DTdyn
+      TAU_i = DTdyn
+      phi = (1.0 + DEL2S)/(1.0 + DEL1S)
+      if(PW > 0.0 .or. PI > 0.0) TAU_w = (PW + phi*PI)**(-1.0)
+      if(RW > 0.0 .or. RI > 0.0) TAU_i =  phi/(RW + RI*phi)
+      TAU_RELAX = DTdyn
+		  IF(PW > 0.0 .or. RI > 0.0) TAU_RELAX = (PW + RI)**(-1.0)/3.0
+		  IF(PW > 0.0 .and. RI > 0.0) TAU_RELAX = min(TAU_w,TAU_i)/3.0
+
+      if(TAU_RELAX > DTdyn) TAU_RELAX = DTdyn/3.0
+		  if(TAU_RELAX < TAU_Min) TAU_RELAX = TAU_Min
+      IF(PW <= 0.0 .and. RI <= 0.0) TAU_RELAX = DTdyn
+
+		  !if(TAU_RELAX < DTdyn .and. IDebug_Print_DebugModule==1)then
+		  !		print*,"in Relaxation_Time,TAU_RELAX < DTdyn"
+			!  	print*,TAU_RELAX
+		  !endif
+
+		  !NCOND = nint(DTdyn/TAU_RELAX)
+		  NCOND = ceiling(DTdyn/TAU_RELAX)
+      DTCOND = TAU_RELAX
+
+	RETURN
+	END SUBROUTINE Relaxation_Time
+! +------------------------------+
+end module module_mp_SBM_Auxiliary
+! +-----------------------------------------------------------------------------+
+! +-----------------------------------------------------------------------------+
+ module module_mp_SBM_Nucleation
+
+ USE module_mp_SBM_Auxiliary,ONLY:POLYSVP
+
+ private
+ public JERNUCL01_KS, LogNormal_modes_Aerosol
+
+! Kind paramater
+ 	INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
+ 	INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
+
+	INTEGER,PARAMETER :: Use_cloud_base_nuc = 1
+	real(kind=r8size),PARAMETER::T_NUCL_DROP_MIN = -80.0D0
+	real(kind=r8size),PARAMETER::T_NUCL_ICE_MIN = -37.0D0
+! Ice nucleation method
+! using MEYERS method : ice_nucl_method == 0
+! using DE_MOTT method : ice_nucl_method == 1
+	INTEGER,PARAMETER :: ice_nucl_method = 0
+	INTEGER,PARAMETER :: ISIGN_TQ_ICENUCL = 1
+! DELSUPICE_MAX=59%
+	DOUBLE PRECISION,PARAMETER::DELSUPICE_MAX = 59.0D0
+
+ contains
+! +-----------------------------------------------------------------------------+
+ SUBROUTINE JERNUCL01_KS(PSI1_r, PSI2_r, FCCNR_r, 			   &
+						            XL_r, XI_r, TT, QQ, 			         &
+		                    ROR_r, PP_r, 				               &
+			                  SUP1, SUP2,      			  		       &
+			                  COL_r, 							               &
+			                  SUP2_OLD_r, DSUPICE_XYZ_r, 		     &
+			                  RCCN_r, DROPRADII_r, NKR, NKR_aerosol, ICEMAX, ICEPROCS, &
+			                  Win_r, Is_This_CloudBase, RO_SOLUTE, IONS, MWAERO, &
+			                  Iin, Jin, Kin)
+
+
+	implicit none
+
+ 	integer,intent(in) :: 	 Kin, Jin, Iin, NKR, NKR_aerosol, ICEMAX, ICEPROCS, Is_This_CloudBase,IONS
+ 	real(kind=r4size),intent(in) :: XL_r(:), XI_r(:,:), ROR_r, PP_r, COL_r, Win_r, &
+							             SUP2_OLD_r, DSUPICE_XYZ_r, RCCN_r(:), DROPRADII_r(:)
+  real(kind=r4size),intent(in) ::	 	   MWAERO, RO_SOLUTE
+ 	real(kind=r4size),intent(inout) :: 	 PSI1_r(:),PSI2_r(:,:),FCCNR_r(:)
+ 	real(kind=r8size),intent(inout) :: TT, QQ, SUP1,SUP2
+
+ ! ... Locals
+ 	integer :: KR, ICE, K
+ 	real(kind=r8size) :: DROPCONCN(NKR), ARG_1, COL3, RORI, TPN, QPN, TPC, AR1, AR2, OPER3,           &
+						           SUM_ICE, DEL2N, FI2(NKR,ICEMAX), TFREEZ_OLD, DTFREEZXZ, RMASSIAA_NUCL, RMASSIBB_NUCL, &
+		                   FI2_K, xi_K, FI2R2, DELMASSICE_NUCL, ES1N, ES2N, EW1N
+  real(kind=r8size),parameter :: AL2 = 2834.0D0
+  real(kind=r8size) :: PSI1(NKR),PSI2(NKR,ICEMAX),FCCNR(NKR_aerosol),ROR,XL(NKR),XI(NKR,ICEMAX),PP,COL, &
+						           SUP2_OLD,DSUPICE_XYZ,Win, RCCN(NKR_aerosol),DROPRADII(NKR)
+	real(kind=r4size) :: TPNreal
+ ! ... Locals
+
+ 	OPER3(AR1,AR2) = AR1*AR2/(0.622D0+0.378D0*AR1)
+
+	! ... Adjust the Imput
+	PSI1 = PSI1_r
+	PSI2 = PSI2_r
+	FCCNR = FCCNR_r
+	XL = XL_r
+	XI = XI_r
+	ROR = ROR_r
+	PP = PP_r
+	COL = COL_r
+	SUP2_OLD = SUP2_OLD_r
+	DSUPICE_XYZ = DSUPICE_XYZ_r
+	RCCN = RCCN_r
+	DROPRADII = DROPRADII_r
+  Win = Win_r
+
+	COL3 = 3.0D0*COL
+	RORI = 1.0D0/ROR
+
+! ... Drop Nucleation (start)
+	TPN = TT
+	QPN = QQ
+
+	TPC = TT - 273.15D0
+
+	IF(SUP1>0.0D0 .AND. TPC>T_NUCL_DROP_MIN) THEN
+		if(sum(FCCNR) > 0.0)then
+			DROPCONCN = 0.0D0
+			CALL WATER_NUCLEATION (COL, NKR_aerosol, PSI1, FCCNR, xl, TT, QQ, ROR, SUP1, DROPCONCN, &
+							 	   PP, Is_This_CloudBase, Win, RO_SOLUTE, RCCN, IONS,MWAERO)
+		endif
+		! ... Transfer drops to Ice-Crystals via direct homogenous nucleation
+		IF(TPC <= -38.0D0) THEN
+		  SUM_ICE = 0.0D0
+		  DO KR=1,NKR
+			  PSI2(KR,2) = PSI2(KR,2) + PSI1(KR)
+			  SUM_ICE = SUM_ICE + COL3*xl(KR)*xl(KR)*PSI1(KR)
+			  PSI1(KR) = 0.0D0
+		  END DO
+		  ARG_1 = 334.0D0*SUM_ICE*RORI
+		  TT = TT + ARG_1
+		ENDIF
+	ENDIF
+! ... Drop nucleation (end)
+! ... Nucleation of crystals (start)
+	DEL2N = 100.0D0*SUP2
+	TPC = TT-273.15D0
+
+	IF(TPC < 0.0D0 .AND. TPC >= T_NUCL_ICE_MIN .AND. DEL2N > 0.0D0) THEN
+
+		DO KR=1,NKR
+			DO ICE=1,ICEMAX
+				FI2(KR,ICE)=PSI2(KR,ICE)
+			ENDDO
+		ENDDO
+
+	if(ice_nucl_method == 0) then
+	  CALL ICE_NUCL (PSI2,xi,SUP2,TT,DSUPICE_XYZ,SUP2_OLD,ICEMAX,NKR,COL)
+	endif
+
+	IF(ISIGN_TQ_ICENUCL == 1) THEN
+		RMASSIAA_NUCL=0.0D0
+		RMASSIBB_NUCL=0.0D0
+
+		! before ice crystal nucleation
+		DO K=1,NKR
+			DO ICE=1,ICEMAX
+			  FI2_K=FI2(K,ICE)
+			  xi_K=xi(K,ICE)
+			  FI2R2=FI2_K*xi_K*xi_K
+			  RMASSIBB_NUCL=RMASSIBB_NUCL+FI2R2
+			ENDDO
+		ENDDO
+
+		RMASSIBB_NUCL = RMASSIBB_NUCL*COL3*RORI
+
+		IF(RMASSIBB_NUCL < 0.0D0) RMASSIBB_NUCL = 0.0D0
+
+		! after ice crystal nucleation
+		DO K=1,NKR
+			DO ICE=1,ICEMAX
+			  FI2_K=PSI2(K,ICE)
+			  xi_K=xi(K,ICE)
+			  FI2R2=FI2_K*xi_K*xi_K
+			  RMASSIAA_NUCL=RMASSIAA_NUCL+FI2R2
+			ENDDO
+		ENDDO
+
+		RMASSIAA_NUCL = RMASSIAA_NUCL*COL3*RORI
+
+		IF(RMASSIAA_NUCL < 0.0D0) RMASSIAA_NUCL=0.0D0
+
+		DELMASSICE_NUCL = RMASSIAA_NUCL-RMASSIBB_NUCL
+
+		QPN = QQ-DELMASSICE_NUCL
+		QQ = QPN
+
+		TPN = TT + AL2*DELMASSICE_NUCL
+		TT = TPN
+
+		TPNreal = TPN
+		ES1N = POLYSVP(TPNreal,0)
+		ES2N = POLYSVP(TPNreal,1)
+
+		EW1N = OPER3(QPN,PP)
+
+		SUP1 = EW1N/ES1N-1.0D0
+		SUP2 = EW1N/ES2N-1.0D0
+
+	  ! in case ISIGN_TQ_ICENUCL/=0
+	  ENDIF
+
+	! in case TPC<0.AND.TPC>=T_NUCL_ICE_MIN.AND.DEL2N>0.D0
+	ENDIF
+
+! ... Nucleation of crystals (end)
+
+	! ... Output
+	PSI1_r = PSI1
+	PSI2_r = PSI2
+	FCCNR_r = FCCNR
+
+ RETURN
+ END SUBROUTINE JERNUCL01_KS
+! +-------------------------------------------------------------------------------------------------------------------------+
+ SUBROUTINE WATER_NUCLEATION (COL, NKR, PSI1, FCCNR, xl, TT, QQ, ROR, SUP1,     &
+                              DROPCONCN, PP, Is_This_CloudBase, Win, RO_SOLUTE, &
+                              RCCN, IONS, MWAERO)
+
+!===================================================================!
+!                                                                   !
+! DROP NUCLEATION SCHEME                                            !
+!                                                                   !
+! Authors: Khain A.P. & Pokrovsky A.G. July 2002 at Huji, Israel    !
+!                                                                   !
+!===================================================================!
+ implicit none
+
+! PSI1(KR), 1/g/cm3 - non conservative drop size distribution function
+! FCCNR(KR), 1/cm^3 - aerosol(CCN) non conservative, size distribution function
+! xl((KR), g        - drop bin masses
+
+  integer,intent(in) :: 			Is_This_CloudBase, NKR, IONS
+  real(kind=r8size),intent(in) :: 	xl(:), ROR, PP, Win, RCCN(:), COL
+  real(kind=r8size),intent(inout) :: FCCNR(:), PSI1(:), DROPCONCN(:), QQ, TT, SUP1
+  real(kind=r4size),intent(in) :: 	 RO_SOLUTE, MWAERO
+
+  ! ... Locals
+    integer :: 			IMAX, I, NCRITI, KR
+    real(kind=r8size) :: DX,AR2,RCRITI,DEG01,RORI,CCNCONC(NKR),AKOE,BKOE, AR1, OPER3, RCCN_MINIMUM, &
+						             DLN1, DLN2, RMASSL_NUCL, ES1N, EW1N
+   real(kind=r8size),parameter :: AL1 = 2500.0D0
+	 real(kind=r4size) :: TTreal
+  ! ... Locals
+
+	 OPER3(AR1,AR2)=AR1*AR2/(0.622D0+0.378D0*AR1)
+
+   DROPCONCN(:) = 0.0D0
+
+	DEG01 = 1.0D0/3.0D0
+	RORI=1.0/ROR
+
+	!RO_SOLUTE=2.16D0
+
+	! imax - right CCN spectrum boundary
+	IMAX = NKR
+	DO I=IMAX,1,-1
+	   IF(FCCNR(I) > 0.0D0) THEN
+		 IMAX = I
+		 exit
+	   ENDIF
+	ENDDO
+
+	NCRITI=0
+	! every iteration we will nucleate one bin, then we will check the new supersaturation
+	! and new Rcriti.
+    do while (IMAX>=NCRITI)
+	     CCNCONC = 0.0
+
+	! akoe & bkoe - constants in Koehler equation
+		    AKOE=3.3D-05/TT
+        !BKOE=2.0D0*4.3D0/(22.9D0+35.5D0)
+	      BKOE = ions*4.3/mwaero
+        BKOE=BKOE*(4.0D0/3.0D0)*3.141593D0*RO_SOLUTE
+
+        if(Use_cloud_base_nuc == 1) then
+	        if(Is_This_CloudBase == 1) then
+	            CALL Cloud_Base_Super (FCCNR, RCCN, TT, PP, Win, NKR, RCRITI, RO_SOLUTE, IONS, MWAERO, COL)
+          else
+ 	            ! rcriti, cm - critical radius of "dry" aerosol
+	            RCRITI = (AKOE/3.0D0)*(4.0D0/BKOE/SUP1/SUP1)**DEG01
+	        endif
+       else ! ismax_cloud_base==0
+            ! rcriti, cm - critical radius of "dry" aerosol
+            RCRITI=(AKOE/3.0D0)*(4.0D0/BKOE/SUP1/SUP1)**DEG01
+       endif
+
+        IF(RCRITI >= RCCN(IMAX)) EXIT ! nothing to nucleate
+
+        ! find the minimum bin to nucleate
+        NCRITI = IMAX
+        do while (RCRITI<=RCCN(NCRITI) .and. NCRITI>1)
+            NCRITI=NCRITI-1
+        enddo
+
+		! rccn_minimum - minimum aerosol(ccn) radius
+        RCCN_MINIMUM = RCCN(1)/10000.0D0
+		! calculation of ccnconc(ii)=fccnr(ii)*col - aerosol(ccn) bin
+		!                                            concentrations,
+		!                                            ii=imin,...,imax
+		! determination of ncriti   - number bin in which is located rcriti
+		! calculation of ccnconc(ncriti)=fccnr(ncriti)*dln1/(dln1+dln2),
+		! where,
+		! dln1=Ln(rcriti)-Ln(rccn_minimum)
+		! dln2=Ln(rccn(1)-Ln(rcriti)
+		! calculation of new value of fccnr(ncriti)
+
+        ! each iteration we nucleate the last bin
+        IF (NCRITI==IMAX-1) then
+            if (NCRITI>1) then
+               DLN1=DLOG(RCRITI)-DLOG(RCCN(IMAX-1))
+               DLN2=COL-DLN1
+	           CCNCONC(IMAX)=DLN2*FCCNR(IMAX)
+	           FCCNR(IMAX)=FCCNR(IMAX)*DLN1/COL
+            else ! NCRITI==1
+               DLN1=DLOG(RCRITI)-DLOG(RCCN_MINIMUM)
+               DLN2=DLOG(RCCN(1))-DLOG(RCRITI)
+	           CCNCONC(IMAX)=DLN2*FCCNR(IMAX)
+	           FCCNR(IMAX)=FCCNR(IMAX)*DLN1/(DLN1+DLN2)
+            endif
+        else
+             CCNCONC(IMAX) = COL*FCCNR(IMAX)
+             FCCNR(IMAX)=0.0D0
+        endif
+
+        ! calculate the mass change due to nucleation
+        RMASSL_NUCL=0.0D0
+        if (IMAX <= NKR-7) then ! we pass it to drops mass grid
+	   		    DROPCONCN(1) = DROPCONCN(1)+CCNCONC(IMAX)
+           	RMASSL_NUCL = RMASSL_NUCL+CCNCONC(IMAX)*XL(1)*XL(1)
+        else
+	   		    DROPCONCN(8-(NKR-IMAX)) = DROPCONCN(8-(NKR-IMAX))+CCNCONC(IMAX)
+           	RMASSL_NUCL = RMASSL_NUCL + CCNCONC(IMAX)*XL(8-(NKR-IMAX))*XL(8-(NKR-IMAX))
+        endif
+        RMASSL_NUCL = RMASSL_NUCL*COL*3.0*RORI
+
+        ! prepering to check if we need to nucleate the next bin
+        IMAX = IMAX-1
+
+   ! cycle IMAX>=NCRITI
+   end do
+
+   ! ... Intergarting for including the previous nucleated drops
+   IF(sum(DROPCONCN) > 0.0)THEN
+	    DO KR = 1,8
+	       DX = 3.0D0*COL*xl(KR)
+	       PSI1(KR) = PSI1(KR)+DROPCONCN(KR)/DX
+ 	    ENDDO
+   ENDIF
+
+ RETURN
+ END SUBROUTINE WATER_NUCLEATION
+! +--------------------------------------------------------------------------+
+!====================================================================!
+!                                                                    !
+! ICE NUCLEATION SCHEME                                              !
+!                                                                    !
+! Authors: Khain A.P. & Pokrovsky A.G. July 2002 at Huji, Israel     !
+!                                                                    !
+!====================================================================!
+
+  SUBROUTINE ICE_NUCL (PSI2,xi,SUP2,TT,DSUPICE_XYZ,SUP2_OLD,ICEMAX,NKR,COL)
+
+	implicit none
+
+	integer,intent(in) :: NKR, ICEMAX
+	real(kind=r8size),intent(in) :: xi(:,:), DSUPICE_XYZ, COL
+	real(kind=r8size),intent(inout) :: PSI2(:,:),TT,SUP2,SUP2_OLD
+
+	! ... Locals
+	integer :: KR,ICE,ITYPE
+	real(kind=r8size) :: FI2(NKR,ICEMAX), CONCI_BFNUCL(ICEMAX), CONCI_AFNUCL(ICEMAX)
+	real(kind=r8size),parameter :: A1 = -0.639D0, B1 = 0.1296D0, A2 = -2.8D0, B2 = 0.262D0, &
+								                 TEMP1 = -5.0D0, TEMP2 = -2.0D0, TEMP3 = -20.0D0
+
+	! C1_MEY=0.001 1/cm^3
+	real(kind=r8size),PARAMETER::C1_MEY = 1.0D-3
+	real(kind=r8size),PARAMETER::C2_MEY = 0.0D0
+	INTEGER,PARAMETER :: NRGI = 2
+	real(kind=r8size) :: C1,C2,TPC,DEL2N,DEL2NN,HELEK1,HELEK2,FF1BN,FACT,DSUP2N,DELTACD,DELTAF, &
+			                 ADDF,DELCONCI_AFNUCL,TPCC,DX
+	! ... Locals
+
+	C1=C1_MEY
+	C2=C2_MEY
+
+	! size distribution functions of crystals before ice nucleation
+
+	DO KR=1,NKR
+	   DO ICE=1,ICEMAX
+		  FI2(KR,ICE)=PSI2(KR,ICE)
+	   ENDDO
+	ENDDO
+
+	! calculation concentration of crystals before ice nucleation
+
+	DO ICE=1,ICEMAX
+	   CONCI_BFNUCL(ICE)=0.0D0
+	   DO KR=1,NKR
+		  CONCI_BFNUCL(ICE)=CONCI_BFNUCL(ICE)+ &
+		  					3.0D0*COL*PSI2(KR,ICE)*xi(KR,ICE)
+	   ENDDO
+	ENDDO
+
+	! type of ice with nucleation                                (start)
+
+        TPC = TT-273.15D0
+        ITYPE=0
+
+        IF((TPC>-4.0D0).OR.(TPC<=-8.1D0.AND.TPC>-12.7D0).OR. &
+        	(TPC<=-17.8D0.AND.TPC>-22.4D0)) THEN
+          	ITYPE=2
+        ELSE
+          IF((TPC<=-4.0D0.AND.TPC>-8.1D0) &
+        	 .OR.(TPC<=-22.4D0)) THEN
+            	ITYPE=1
+          ELSE
+            	ITYPE=3
+          ENDIF
+        ENDIF
+
+	! type of ice with nucleation                                  (end)
+
+	! new crystal size distribution function                     (start)
+        ICE=ITYPE
+        IF (TPC < TEMP1) THEN
+          DEL2N = 100.0D0*SUP2
+          DEL2NN = DEL2N
+          IF( DEL2N > DELSUPICE_MAX) DEL2NN = DELSUPICE_MAX
+          HELEK1 = C1*DEXP(A1+B1*DEL2NN)
+	      ELSE
+          HELEK1 = 0.0D0
+        ENDIF
+
+        IF(TPC < TEMP2) THEN
+          TPCC = TPC
+          IF(TPCC < TEMP3) TPCC = TEMP3
+          HELEK2 = C2*DEXP(A2-B2*TPCC)
+        ELSE
+          HELEK2 = 0.0D0
+        ENDIF
+
+        FF1BN = HELEK1+HELEK2
+        FACT=1.0D0
+        DSUP2N = (SUP2-SUP2_OLD+DSUPICE_XYZ)*100.0D0
+        SUP2_OLD = SUP2 ! ### (KS) : We calculate SUP2_OLD outside of JERNUCL01
+
+	      IF(DSUP2N > DELSUPICE_MAX) DSUP2N = DELSUPICE_MAX
+
+        DELTACD = FF1BN*B1*DSUP2N
+
+        IF(DELTACD>=FF1BN) DELTACD=FF1BN
+
+        IF(DELTACD>0.0D0) THEN
+          DELTAF=DELTACD*FACT
+		  ! concentration of ice crystals
+          if(CONCI_BFNUCL(ICE)<=helek1) then
+          	DO KR=1,NRGI-1
+             	DX=3.0D0*xi(KR,ICE)*COL
+             	ADDF=DELTAF/DX
+             	PSI2(KR,ICE)=PSI2(KR,ICE)+ADDF
+          	ENDDO
+          endif
+        ENDIF
+
+		! calculation of crystal concentration after ice nucleation
+
+        DO ICE=1,ICEMAX
+           CONCI_AFNUCL(ICE)=0.0D0
+           DO KR=1,NKR
+              CONCI_AFNUCL(ICE)=CONCI_AFNUCL(ICE)+ &
+              3.0D0*COL*PSI2(KR,ICE)*xi(KR,ICE)
+           END DO
+           DELCONCI_AFNUCL=DABS(CONCI_AFNUCL(ICE)-CONCI_BFNUCL(ICE))
+           IF(DELCONCI_AFNUCL>10.0D0) THEN
+             PRINT*,    'IN SUBROUTINE ICE_NUCL, AFTER NUCLEATION'
+             PRINT*,    'BECAUSE DELCONCI_AFNUCL > 10/cm^3'
+             PRINT*,    'CONCI_BFNUCL(ICE),CONCI_AFNUCL(ICE)'
+             PRINT 202,  CONCI_BFNUCL(ICE),CONCI_AFNUCL(ICE)
+             PRINT*,    'DELTACD,DSUP2N,FF1BN,B1,DSUPICEXZ,SUP2'
+             PRINT 206,  DELTACD,DSUP2N,FF1BN,B1,DSUPICE_XYZ,SUP2
+             PRINT*,    'KR,   FI2(KR,ICE),   PSI2(KR,ICE), KR=1,NKR'
+             PRINT 302, (KR,   FI2(KR,ICE),   PSI2(KR,ICE), KR=1,NKR)
+             PRINT*, 'STOP 099 : DELCONCI_AFNUCL(ICE) > 10/cm^3'
+             STOP 099
+           ENDIF
+        END DO
+
+! new crystal size distribution function                       (end)
+
+
+  202	FORMAT(1X,2D13.5)
+  206	FORMAT(1X,6D13.5)
+  302   FORMAT(1X,I2,2X,2D13.5)
+
+        RETURN
+        END SUBROUTINE ICE_NUCL
+
+! SUBROUTINE ICE_NUCL
+! +-------------------------------------------------------------------------------------------------+
+	SUBROUTINE Cloud_Base_Super (FCCNR, RCCN, TT, PP, Wbase, NKR, RCRITI, RO_SOLUTE, IONS, MWAERO, &
+								              COL)
+
+	implicit none
+
+! RCCN(NKR),  cm- aerosol's radius
+
+! FCCNR(KR), 1/cm^3 - aerosol(CCN) non conservative, size
+!                     distribution function in point with X,Z
+!                     coordinates, KR=1,...,NKR
+	integer,intent(in) :: 				   NKR, IONS
+	real(kind=r8size),intent(in) ::  TT, PP, Wbase, RCCN(:), COL
+	real(kind=r8size),intent(inout) :: 	FCCNR(:), RCRITI
+	real(kind=r4size),intent(in) ::  MWAERO, RO_SOLUTE
+
+	! ... Locals
+	  integer :: NR, NN, KR
+	  real(kind=r8size) :: PL(NKR), supmax(NKR), AKOE, BKOE, C3, PR, CCNCONACT, DL1, DL2, &
+	  					            TPC
+	! ... Locals
+
+	CALL supmax_COEFF(AKOE,BKOE,C3,PP,TT,RO_SOLUTE,IONS,MWAERO)
+
+! supmax calculation
+
+! 'Analytical estimation of droplet concentration at cloud base', eq.21, 2012
+! calculation of right side hand of equation for S_MAX
+! while wbase>0, calculation PR
+
+   	PR = C3*wbase**(0.75D0)
+
+! calculation supersaturation in cloud base
+
+   	SupMax = 999.0
+	  PL = 0.0
+    NN = -1
+    DO NR=2,NKR
+	   supmax(NR)=DSQRT((4.0D0*AKOE**3.0D0)/(27.0D0*RCCN(NR)**3.0D0*BKOE))
+	! calculation CCNCONACT- the concentration of ccn that were activated
+	! following nucleation
+	! CCNCONACT=N from the paper
+	! 'Analytical estimation of droplet concentration at cloud base', eq.19, 2012
+	! CCNCONACT, 1/cm^3- concentration of activated CCN = new droplet concentration
+	! CCNCONACT=FCCNR(KR)*COL
+	! COL=Ln2/3
+
+		CCNCONACT=0.0D0
+
+	! NR represents the number of bin in which rcriti is located
+	! from NR bin to NKR bin goes to droplets
+
+		DO KR=NR,NKR
+			CCNCONACT = CCNCONACT + COL*FCCNR(KR)
+		ENDDO
+
+	! calculate LHS of equation for S_MAX
+	! when PL<PR ccn will activate
+
+		PL(NR)=supmax(NR)*(DSQRT(CCNCONACT))
+		IF(PL(NR).LE.PR) THEN
+			NN = NR
+			EXIT
+		ENDIF
+
+	 END DO ! NR
+
+   if (nn == -1) then
+    print*,"PR, Wbase [cm/s], C3",PR,wbase,C3
+    print*,"PL",PL
+    CALL wrf_error_fatal ( 'NN is not defined in cloud base routine, model stop' )
+   endif
+
+	! linear interpolation- finding radius criti of aerosol between
+	! bin number (nn-1) to (nn)
+	! 1) finding the difference between pl and pr in the left and right over the
+	! final bin.
+
+	DL1 = dabs(PL(NN-1)-PR) ! left side in the final bin
+	DL2 = dabs(PL(NN)-PR)   ! right side in the final bin
+
+	! 2) fining the left part of bin that will not activate
+	!	DLN1=COL*DL1/(DL2+DL1)
+	! 3)finding the right part of bin that activate
+	!	DLN2=COL-DLN1
+	! 4)finding radius criti of aerosol- RCRITI
+
+	RCRITI = RCCN(NN-1)*dexp(COL*DL1/(DL1+DL2))
+
+	! end linear interpolation
+
+	RETURN
+	END SUBROUTINE Cloud_Base_Super
+! +-------------------------------------------------------------------+
+ 	SUBROUTINE supmax_COEFF (AKOE,BKOE,C3,PP,TT,RO_SOLUTE,IONS,MWAERO)
+
+		implicit none
+
+! akoe, cm- constant in Koehler equation
+! bkoe    - constant in Koehler equation
+! F, cm^-2*s-  from Koehler equation
+! C3 - coefficient depends on thermodynamical parameters
+! PP, (DYNES/CM/CM)- PRESSURE
+! TT, (K)- temperature
+
+  integer,intent(in) :: IONS
+	real(kind=r8size) ,intent(in) :: 	PP, TT
+	real(kind=r8size) ,intent(out) :: AKOE, BKOE, C3
+	real,intent(in) :: 				MWAERO, RO_SOLUTE
+
+	! ... Local
+		real(kind=r8size) ,parameter :: RV_MY = 461.5D4, CP = 1005.0D4, G = 9.8D2, RD_MY = 287.0D4, & ![cgs]
+									                  PI = 3.141593D0
+    real(kind=r8size) :: PZERO,TZERO,ALW1,SW,RO_W,HC,EW,RO_V,DV,RO_A,FL,FR,F,TPC,QV,A1,A2, &
+							           C1,C2,DEG01,DEG02
+	! ... Local
+
+     TPC = TT-273.15d0
+
+! CGS :
+! RV_MY, CM*CM/SEC/SEC/KELVIN - INDIVIDUAL GAS CONSTANT
+!                               FOR WATER VAPOUR
+	!RV_MY=461.5D4
+
+! CP,  CM*CM/SEC/SEC/KELVIN- SPECIFIC HEAT CAPACITY OF
+!	                            MOIST AIR AT CONSTANT PRESSURE
+	!CP=1005.0D4
+
+! G,  CM/SEC/SEC- ACCELERATION OF GRAVITY
+	!G=9.8D2
+
+! RD_MY, CM*CM/SEC/SEC/KELVIN - INDIVIDUAL GAS CONSTANT
+!                               FOR DRY AIR
+	!RD_MY=287.0D4
+
+! AL2_MY, CM*CM/SEC/SEC - LATENT HEAT OF SUBLIMATION
+
+!	AL2_MY=2.834D10
+
+! PZERO, DYNES/CM/CM - REFERENCE PRESSURE
+	PZERO=1.01325D6
+
+! TZERO, KELVIN - REFERENCE TEMPERATURE
+	TZERO=273.15D0
+
+! AL1_MY, CM*CM/SEC/SEC - LATENT HEAT OF VAPORIZATION
+! ALW1=AL1_MY - ALW1 depends on temperature
+! ALW1, [m^2/sec^2] -latent heat of vaporization-
+
+	ALW1 = -6.143419998D-2*tpc**(3.0D0)+1.58927D0*tpc**(2.0D0) &
+         -2.36418D3*tpc+2.50079D6
+! ALW1, [cm^2/sec^2]
+
+	ALW1 = ALW1*10.0D3
+
+! Sw, [N*m^-1] - surface tension of water-air interface
+
+ 	IF(tpc.LT.-5.5D0) THEN
+		Sw = 5.285D-11*tpc**(6.0D0)+6.283D-9*tpc**(5.0D0)+ &
+        2.933D-7*tpc**(4.0D0)+6.511D-6*tpc**(3.0D0)+ &
+        6.818D-5*tpc**(2.0D0)+1.15D-4*tpc+7.593D-2
+ 	ELSE
+	   Sw = -1.55D-4*tpc+7.566165D-2
+ 	ENDIF
+
+! Sw, [g/sec^2]
+  	Sw = Sw*10.0D2
+
+! RO_W, [kg/m^3] - density of liquid water
+	IF (tpc.LT.0.0D0) THEN
+            RO_W= -7.497D-9*tpc**(6.0D0)-3.6449D-7*tpc**(5.0D0) &
+                  -6.9987D-6*tpc**(4.0D0)+1.518D-4*tpc**(3.0D0) &
+                  -8.486D-3*tpc**(2.0D0)+6.69D-2*tpc+9.9986D2
+
+	ELSE
+
+            RO_W=(-3.932952D-10*tpc**(5.0D0)+1.497562D-7*tpc**(4.0D0) &
+                 -5.544846D-5*tpc**(3.0D0)-7.92221D-3*tpc**(2.0D0)+ &
+                 1.8224944D1*tpc+9.998396D2)/(1.0D0+1.8159725D-2*tpc)
+	ENDIF
+
+! RO_W, [g/cm^3]
+   	RO_W=RO_W*1.0D-3
+
+! HC, [kg*m/kelvin*sec^3] - coefficient of air heat conductivity
+	HC=7.1128D-5*tpc+2.380696D-2
+
+! HC, [g*cm/kelvin*sec^3]
+	HC=HC*10.0D4
+
+! ew, water vapor pressure ! ... KS (kg/m2/sec)
+
+	ew = 6.38780966D-9*tpc**(6.0D0)+2.03886313D-6*tpc**(5.0D0)+ &
+           3.02246994D-4*tpc**(4.0D0)+2.65027242D-2*tpc**(3.0D0)+ &
+           1.43053301D0*tpc**(2.0D0)+4.43986062D1*tpc+6.1117675D2
+
+! ew, [g/cm*sec^2]
+
+	ew=ew*10.0D0
+
+! akoe & bkoe - constants in Koehler equation
+
+	!RO_SOLUTE=2.16D0
+	AKOE=2.0D0*Sw/(RV_MY*RO_W*(tpc+TZERO))
+	!BKOE=2.0D0*4.3D0/(22.9D0+35.5D0)
+	BKOE = ions*4.3/mwaero
+	BKOE=BKOE*(4.0D0/3.0D0)*pi*RO_SOLUTE
+
+! RO_V, g/cm^3 - density of water vapor
+!                calculate from equation of state for water vapor
+	RO_V = ew/(RV_MY*(tpc+TZERO))
+
+! DV,  [cm^2/sec] - coefficient of diffusion
+
+! 'Pruppacher, H.R., Klett, J.D., 1997. Microphysics of Clouds and Precipitation'
+! 'page num 503, eq. 13-3'
+	DV = 0.211D0*(PZERO/PP)*((tpc+TZERO)/TZERO)**(1.94D0)
+
+! QV,  g/g- water vapor mixing ratio
+! ro_a, g/cm^3 - density of air, from equation of state
+	RO_A=PZERO/((tpc+TZERO)*RD_MY)
+
+! F, s/m^2 - coefficient depending on thermodynamics parameters
+!            such as temperature, thermal conductivity
+!            of air, etc
+! left side of F equation
+	FL=(RO_W*ALW1**(2.0D0))/(HC*RV_MY*(tpc+TZERO)**(2.0D0))
+
+! right side of F equation
+	FR = RO_W*RV_MY*(tpc+TZERO)/(ew*DV)
+	F = FL + FR
+
+! QV, g/g - water vapor mixing ratio
+	QV=RO_V/RO_A
+
+! A1,A2 -  terms from equation describing changes of
+!          supersaturation in an adiabatic cloud air
+!	   parcel
+! A1, [cm^-1] - constant
+! A2, [-]     - constant
+
+	A1=(G*ALW1/(CP*RV_MY*(tpc+TZERO)**(2.0D0)))-(G/(RD_MY*(tpc+TZERO)))
+	A2=(1.0D0/QV)+(ALW1**(2.0D0))/(CP*RV_MY*(tpc+TZERO)**(2.0D0))
+
+! C1,C2,C3,C4- constant parameters
+
+	C1=1.058D0
+	C2=1.904D0
+	DEG01=1.0D0/3.0D0
+	DEG02=1.0D0/6.0D0
+	C3=C1*(F*A1/3.0D0)**(0.75D0)*DSQRT(3.0D0*RO_A/(4.0D0*pi*RO_W*A2))
+  !C4=(C2-C1)**(DEG01)*(F*A1/3.0D0)**(0.25D0)*RO_A**(DEG02)* &
+  !      DSQRT(3.0D0/(4.0D0*pi*RO_W*A2))
+
+	RETURN
+	END SUBROUTINE SupMax_COEFF
+! +----------------------------------------------------------------------------------------------------+
+	SUBROUTINE LogNormal_modes_Aerosol(FCCNR_CON,FCCNR_MAR,NKR_local,COL,XL,XCCN,RCCN,RO_SOLUTE,Scale_Fa,IType)
+
+	implicit none
+! ... Interface
+		integer,intent(in) :: NKR_local, Itype
+		real(kind=r4size) ,intent(in) :: XL(:), COL, RO_SOLUTE, Scale_Fa
+		real(kind=r8size) ,intent(out) :: FCCNR_CON(:), FCCNR_MAR(:)
+		real(kind=r4size) ,intent(out) :: XCCN(:),RCCN(:)
+! ... Interface
+! ... Local
+		integer :: mode_num, KR
+		integer,parameter :: modemax = 3
+		real(kind=r8size)  :: ccncon1, ccncon2, ccncon3, radius_mean1, radius_mean2, radius_mean3, &
+							            sig1, sig2, sig3,													 &
+							            ccncon(modemax), sig(modemax), radius_mean(modemax)
+		real(kind=r8size)  :: CONCCCNIN, FCCNR_tmp(NKR_local), DEG01, X0DROP, &
+						              XOCCN, X0, R0, RCCN_MICRON, S_KR, S(NKR_local), X0CCN, ROCCN(NKR_local), &
+	                        RO_SOLUTE_Ammon, RO_SOLUTE_NaCl,arg11,arg12,arg13,arg21,arg22,arg23, & 
+                          arg31,arg32,arg33,dNbydlogR_norm1,dNbydlogR_norm2,dNbydlogR_norm3
+
+
+		real(kind=r8size) ,PARAMETER :: RCCN_MAX = 0.4D-4         ! [cm]
+		real(kind=r8size) ,PARAMETER :: RCCN_MIN = 0.003D-4		! [cm]
+		! ... Minimal radii for dry aerosol for the 3 log normal distribution
+	 	real(kind=r8size) ,PARAMETER :: RCCN_MIN_3LN = 0.00048D-4 ! [cm]
+		real(kind=r8size) ,PARAMETER :: PI = 3.14159265D0
+! ... Local
+
+	! ... Calculating the CCN radius grid
+	!RO_SOLUTE_NaCl = 2.16D0  ! [g/cm3]
+	!RO_SOLUTE_Ammon = 1.79	 ! [g/cm3]
+	DEG01 = 1.0D0/3.0D0
+	X0DROP = XL(2)
+	X0CCN = X0DROP/(2.0**(NKR_local))
+	DO KR = NKR_local,1,-1
+	   ROCCN(KR) = RO_SOLUTE
+	   X0 = X0CCN*2.0D0**(KR)
+	   R0 = (3.0D0*X0/4.0D0/3.141593D0/ROCCN(KR))**DEG01
+	   XCCN(KR) = X0
+	   RCCN(KR) = R0
+	ENDDO
+
+	IF(IType == 1) THEN ! Maritime regime
+
+		ccncon1 = 340.000
+		radius_mean1 = 0.00500D-04
+		sig1 = 1.60000
+
+		ccncon2 = 60.0000
+		radius_mean2 = 0.03500D-04
+		sig2 = 2.00000
+
+		ccncon3 = 3.10000
+		radius_mean3 = 0.31000D-04
+		sig3 = 2.70000
+
+	ELSE IF(IType == 2) THEN ! Continental regime
+
+		ccncon1 = 1000.000
+		radius_mean1 = 0.00800D-04
+		sig1 = 1.60000
+
+		ccncon2 = 800.0000
+		radius_mean2 = 0.03400D-04
+		sig2 = 2.10000
+
+		ccncon3 = 0.72000
+		radius_mean3 = 0.46000D-04
+		sig3 = 2.20000
+
+	ENDIF
+
+	FCCNR_tmp = 0.0
+  CONCCCNIN = 0.0
+
+  arg11 = ccncon1/(sqrt(2.0D0*pi)*log(sig1))
+  arg21 = ccncon2/(sqrt(2.0D0*pi)*log(sig2))
+  arg31 = ccncon3/(sqrt(2.0D0*pi)*log(sig3))
+  
+  dNbydlogR_norm1 = 0.0
+  dNbydlogR_norm2 = 0.0
+  dNbydlogR_norm3 = 0.0
+  do kr = NKR_local,1,-1
+      if(RCCN(kr) > RCCN_MIN_3LN .and. RCCN(kr) < RCCN_MAX)then
+          arg12 = (log(RCCN(kr)/radius_mean1))**2.0
+          arg13 = 2.0D0*((log(sig1))**2.0);
+          dNbydlogR_norm1 = arg11*exp(-arg12/arg13)*(log(2.0)/3.0)
+          arg22 = (log(RCCN(kr)/radius_mean2))**2.0
+          arg23 = 2.0D0*((log(sig2))**2.0)
+          dNbydlogR_norm2 = dNbydlogR_norm1 + arg21*exp(-arg22/arg23)*(log(2.0)/3.0)
+          arg32 = (log(RCCN(kr)/radius_mean3))**2.0
+          arg33 = 2.0D0*((log(sig3))**2.0)
+          dNbydlogR_norm3 = dNbydlogR_norm2 + arg31*exp(-arg32/arg33)*(log(2.0)/3.0);
+          FCCNR_tmp(kr) = dNbydlogR_norm3/col
+      endif
+enddo
+  
+  CONCCCNIN = col*sum(FCCNR_tmp(:))
+  print*,'CONCCCNIN',CONCCCNIN
+  if(IType == 1) FCCNR_MAR = Scale_Fa*FCCNR_tmp
+  if(IType == 2) FCCNR_CON = Scale_Fa*FCCNR_tmp
+
+	RETURN
+	END SUBROUTINE LogNormal_modes_Aerosol
+! +---------------------------------------+
+ end module module_mp_SBM_Nucleation
+ ! +----------------------------------------------------------------------------+
+ ! +----------------------------------------------------------------------------+
+  MODULE module_mp_fast_sbm
+
+  USE module_mp_SBM_polar_radar,ONLY:polar_hucm
+  USE module_mp_SBM_BreakUp,ONLY:Spont_Rain_BreakUp,BreakUp_Snow,KR_SNOW_MIN,KR_SNOW_MAX
+  USE module_mp_SBM_Nucleation,ONLY:JERNUCL01_KS, LogNormal_modes_Aerosol
+  USE module_mp_SBM_Auxiliary,ONLY:JERRATE_KS,JERTIMESC_KS,JERSUPSAT_KS,  &
+                                   JERDFUN_KS,JERDFUN_NEW_KS,POLYSVP,Relaxation_Time
+  USE scatt_tables,ONLY:faf1,fbf1,fab1,fbb1,         &
+ 						            faf3,fbf3,fab3,fbb3,         &
+             						faf4,fbf4,fab4,fbb4,         &
+             						faf5,fbf5,fab5,fbb5,         &
+             						LOAD_TABLES,                 &
+             						temps_water,temps_fd,temps_crystals,  &
+             						temps_snow,temps_graupel,temps_hail,  &
+             						fws_fd,fws_crystals,fws_snow,		      &
+             						fws_graupel,fws_hail, 		            &
+             						usetables,                            &
+                         twolayer_hail,twolayer_graupel,twolayer_fd,twolayer_snow,rpquada,usequad
+
+ PRIVATE
+
+ PUBLIC FAST_SBM,FAST_HUCMINIT
+
+ ! Kind paramater
+ INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
+ INTEGER, PARAMETER, PRIVATE:: R16SIZE = 16 
+ INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
+
+ ! JacobS: Hard coding the bin-wise indices for the NMM core
+ INTEGER, PRIVATE,PARAMETER ::  p_ff1i01=2, p_ff1i33=34,p_ff5i01=35,p_ff5i33=67,p_ff6i01=68,&
+                                p_ff6i33=100,p_ff8i01=101,p_ff8i43=143
+
+ ! JacobS: Hard coding for the polarimetric operator output array 
+  INTEGER, PRIVATE,PARAMETER :: r_p_ff1i01=2, r_p_ff1i06=07,r_p_ff2i01=08,r_p_ff2i06=13,r_p_ff3i01=14,&
+                                r_p_ff3i06=19,r_p_ff4i01=20,r_p_ff4i06=25,r_p_ff5i01=26,r_p_ff5i06=31,r_p_ff6i01=32,r_p_ff6i06=37,&
+                                r_p_ff7i01=38,r_p_ff7i06=43,r_p_ff8i01=44,r_p_ff8i06=49,r_p_ff9i01=50,r_p_ff9i06=55
+
+ INTEGER,PARAMETER :: IBREAKUP = 1
+ INTEGER,PARAMETER :: Snow_BreakUp_On = 1
+ INTEGER,PARAMETER :: Spont_Rain_BreakUp_On = 1
+ LOGICAL,PARAMETER :: CONSERV = .TRUE.
+ INTEGER,PARAMETER :: JIWEN_FAN_MELT = 1
+ LOGICAL,PARAMETER :: IPolar_HUCM = .TRUE.
+ INTEGER,PARAMETER :: hail_opt = 1
+ INTEGER,PARAMETER :: ILogNormal_modes_Aerosol = 1
+
+ REAL,PARAMETER :: DX_BOUND = 1433
+ REAL(kind=r8size), PARAMETER ::  SCAL = 1.d0
+ INTEGER,PARAMETER :: ICEPROCS = 1
+ INTEGER,PARAMETER :: ICETURB = 0, LIQTURB = 0
+
+ INTEGER,PARAMETER :: icempl=1,ICEMAX=3,NCD=33,NHYDR=5,NHYDRO=7    &
+             					,K0_LL=8,KRMIN_LL=1,KRMAX_LL=19,L0_LL=6                  &
+             					,IEPS_400=1,IEPS_800=0,IEPS_1600=0                       &
+             					,K0L_GL=16,K0G_GL=16                                     &
+             					,KRMINL_GL=1,KRMAXL_GL=24                                &
+             					,KRMING_GL=1,KRMAXG_GL=33                                &
+             					,KRDROP=15,KRBREAK=17,KRICE=18                           & ! KRDROP=Bin 15 --> 50um
+             					!,NKR=43,JMAX=43,NRG=2,JBREAK=28,BR_MAX=43,KRMIN_BREAKUP=31,NKR_aerosol=43   ! 43 bins
+             					,NKR=33,JMAX=33,NRG=2,JBREAK=18,BR_MAX=33,KRMIN_BREAKUP=31,NKR_aerosol=43    ! 33 bins
+
+ REAL(kind=r4size) :: dt_coll
+ REAL,PARAMETER :: C1_MEY=0.00033,C2_MEY=0.0,COL=0.23105, &
+                   p1=1000000.0,p2=750000.0,p3=500000.0,  &
+                   ALCR = 0.5, &
+                   ALCR_G = 100.0 ! ... [KS] forcing no transition from graupel to hail in this version
+ INTEGER :: NCOND, NCOLL
+ INTEGER,PARAMETER :: kr_icempl=9
+
+ REAL(kind=r4size) :: &
+ 					 RADXX(NKR,NHYDR-1),MASSXX(NKR,NHYDR-1),DENXX(NKR,NHYDR-1) &
+ 					,MASSXXO(NKR,NHYDRO),DENXXO(NKR,NHYDRO),VRI(NKR)           &
+          ,XX(nkr),ROCCN(nkr),FCCNR_MIX(NKR),FCCNR(NKR)
+
+ REAL(kind=r8size),DIMENSION (NKR) :: FF1R_D,XL_D,VR1_D &
+ 							,FF3R_D,XS_D,VR3_D,VTS_D,FLIQFR_SD,RO3BL_D &
+ 							,FF4R_D,XG_D,VR4_D,VTG_D,FLIQFR_GD,RO4BL_D &
+ 							,FF5R_D,XH_D,VR5_D,VTH_D,FLIQFR_HD,RO5BL_D &
+ 							,XS_MELT_D,XG_MELT_D,XH_MELT_D,VR_TEST,FRIMFR_SD,RF3R
+
+ ! ... SBMRADAR VARIABLES
+ REAL(kind=r8size),DIMENSION (nkr,icemax) :: XI_MELT_D &
+							,FF2R_D,XI_D,VR2_D,VTC_D,FLIQFR_ID,RO2BL_D
+ REAL(kind=r8size) :: T_NEW_D,rhocgs_D,pcgs_D,DT_D,qv_old_D,qv_d
+
+ REAL(kind=r4size),private :: C2,C3,C4
+ REAL(kind=r8size),private ::  &
+ 	            xl_mg(nkr),xs_mg(nkr),xg_mg(nkr),xh_mg(nkr) &
+             ,xi1_mg(nkr),xi2_mg(nkr),xi3_mg(nkr)
+
+ ! ----------------------------------------------------------------------------------+
+ ! ... WRFsbm_Init
+ ! ... Holding Lookup tables and memory arrays for the FAST_SBM module
+         REAL (KIND=R8SIZE), ALLOCATABLE, DIMENSION(:)::                             &
+                                          bin_mass,tab_colum,tab_dendr,tab_snow,bin_log
+         REAL (KIND=R4SIZE), ALLOCATABLE, DIMENSION(:) ::                            &
+                                          RLEC,RSEC,RGEC,RHEC,XL,XS,XG,XH,VR1,VR3,VR4,VR5
+         REAL (KIND=R4SIZE), ALLOCATABLE, DIMENSION(:,:)::                           &
+                                          RIEC,XI,VR2
+         REAL (KIND=R4SIZE), ALLOCATABLE ::                              &
+                                          COEFIN(:),SLIC(:,:),TLIC(:,:), &
+                                          YWLL_1000MB(:,:),YWLL_750MB(:,:),YWLL_500MB(:,:)
+         REAL (KIND=R4SIZE), ALLOCATABLE ::                              &
+                                         YWLI_300MB(:,:,:),YWLI_500MB(:,:,:),YWLI_750MB(:,:,:),              &
+                                         YWLG_300MB(:,:),YWLG_500MB(:,:),YWLG_750MB(:,:),YWLG(:,:),          &
+                                         YWLH_300MB(:,:),YWLH_500MB(:,:),YWLH_750MB(:,:),                    &
+                                         YWLS_300MB(:,:),YWLS_500MB(:,:),YWLS_750MB(:,:),                    &
+                                         YWII_300MB(:,:,:,:),YWII_500MB(:,:,:,:),YWII_750MB(:,:,:,:),        &
+                                         YWII_300MB_tmp(:,:,:,:),YWII_500MB_tmp(:,:,:,:),YWII_750MB_tmp(:,:,:,:),        &
+                                         YWIS_300MB(:,:,:),YWIS_500MB(:,:,:),YWIS_750MB(:,:,:),              &
+                                         YWSG_300MB(:,:),YWSG_500MB(:,:),YWSG_750MB(:,:),                    &
+                                         YWSS_300MB(:,:),YWSS_500MB(:,:),YWSS_750MB(:,:)
+
+         REAL (KIND=R4SIZE), ALLOCATABLE ::                  &
+                                         RO1BL(:), RO2BL(:,:), RO3BL(:), RO4BL(:), RO5BL(:),                 &
+                                         RADXXO(:,:)
+
+         INTEGER,ALLOCATABLE ::              ima(:,:)
+         REAL (KIND=R8SIZE), ALLOCATABLE ::  chucm(:,:)
+
+         REAL (KIND=R8SIZE), ALLOCATABLE ::  BRKWEIGHT(:),ECOALMASSM(:,:), Prob(:),Gain_Var_New(:,:),NND(:,:)
+         REAL (KIND=R4SIZE), ALLOCATABLE ::  DROPRADII(:),PKIJ(:,:,:),QKJ(:,:)
+         INTEGER ::          ikr_spon_break
+
+         REAL (KIND=R8SIZE), ALLOCATABLE ::  cwll(:,:), &
+                                             cwli_1(:,:),cwli_2(:,:),cwli_3(:,:),        &
+                                             cwil_1(:,:),cwil_2(:,:),cwil_3(:,:),        &
+                                             cwlg(:,:),cwlh(:,:),cwls(:,:),              &
+                                             cwgl(:,:),cwhl(:,:),cwsl(:,:),              &
+                                             cwii_1_1(:,:),cwii_1_2(:,:),cwii_1_3(:,:),  &
+                                             cwii_2_1(:,:),cwii_2_2(:,:),cwii_2_3(:,:),  &
+                                             cwii_3_1(:,:),cwii_3_2(:,:),cwii_3_3(:,:),  &
+                                             cwis_1(:,:),cwis_2(:,:),cwis_3(:,:),        &
+                                             cwsi_1(:,:),cwsi_2(:,:),cwsi_3(:,:),        &
+                                             cwig_1(:,:),cwig_2(:,:),cwig_3(:,:),        &
+                                             cwih_1(:,:),cwih_2(:,:),cwih_3(:,:),        &
+                                             cwsg(:,:),cwss(:,:)
+         REAL(kind=r8size),ALLOCATABLE ::  FCCNR_MAR(:),FCCNR_CON(:)
+         REAL(kind=r4size),ALLOCATABLE :: Scale_CCN_Factor,XCCN(:),RCCN(:),FCCN(:)
+
+ ! ... WRFsbm_Init
+ ! --------------------------------------------------------------------------------+
+
+ INTEGER :: icloud
+
+ ! ### (KS) - CCN related
+ ! -----------------------------------------------------------------------
+ !REAL (KIND=R4SIZE), parameter :: mwaero = 22.9 + 35.5 ! sea salt
+ real(kind=r4size),parameter :: mwaero = 115.0
+ !integer,parameter :: ions = 2        	! sea salt
+ integer,parameter  :: ions = 3         ! ammonium-sulfate
+ !real(KIND=R4SIZE),parameter :: RO_SOLUTE = 2.16   	! sea salt
+ real(kind=r4size),parameter ::  RO_SOLUTE = 1.79  	! ammonium-sulfate
+ ! ----------------------------------------------------------------------
+ REAL (KIND=R4SIZE) :: FR_LIM(NKR), FRH_LIM(NKR)
+
+   CONTAINS
+ !-----------------------------------------------------------------------
+       SUBROUTINE FAST_SBM (w,u,v,th_old,                                &
+      &                      chem_new,n_chem,                            &
+      &                      itimestep,DT,DX,DY,                         &
+      &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,           &
+      &                      xland,domain_id,ivgtyp,xlat,xlong,          &
+      &                      QV,QC,QR,QI,QS,QG,QV_OLD,                   &
+      &                      QNC,QNR,QNI,QNS,QNG,QNA,                    &
+      &                      ids,ide, jds,jde, kds,kde,                  &
+      &                      ims,ime, jms,jme, kms,kme,                  &
+      &                      its,ite, jts,jte, kts,kte,                  &
+      &                      diagflag,                                   &
+      &                      sbmradar,num_sbmradar,                      &
+      &                      sbm_diagnostics,                            &
+      &                      RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,SR)
+ !-----------------------------------------------------------------------
        IMPLICIT NONE
-       INTEGER ICEMAX,NKR,KR,ITIME,ICE,KCOND,K &
-     &           ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5
-       INTEGER KLIMITL,KLIMITG,KLIMITH,KLIMITI_1, &
-     &  KLIMITI_2,KLIMITI_3
-       INTEGER I_MIXCOND,I_MIXEVAP,I_ABERGERON,I_BERGERON  
-       REAL ROR,VR1(NKR),VR2(NKR,ICEMAX),VR3(NKR),VR4(NKR) &
-     &           ,VR5(NKR),PSINGLE &
-     &           ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
-     &           ,C1_MEY,C2_MEY &
-     &           ,COL,DTCOND
+ !-----------------------------------------------------------------------
+ 	INTEGER :: KR,IKL,ICE
 
-! DROPLETS 
-                                                                       
-        REAL R1(NKR)&
-     &           ,RLEC(NKR),RO1BL(NKR) &
-     &           ,FI1(NKR),FF1(NKR),PSI1(NKR) &
-     &           ,B11_MY(NKR),B12_MY(NKR)
+ 	INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+ 	&                     ,IMS,IME,JMS,JME,KMS,KME                    &
+ 	&                     ,ITS,ITE,JTS,JTE,KTS,KTE                    &
+ 	&                     ,ITIMESTEP,N_CHEM,NUM_SBMRADAR,domain_id    &
+ 	&                     ,sbm_diagnostics
 
-! CRYSTALS
-                                                                       
-	REAL R2(NKR,ICEMAX) &
-     &           ,RIEC(NKR,ICEMAX) &
-     &           ,RO2BL(NKR,ICEMAX) &
-     &           ,FI2(NKR,ICEMAX),PSI2(NKR,ICEMAX) &
-     &           ,FF2(NKR,ICEMAX) &
-     &           ,B21_MY(NKR,ICEMAX),B22_MY(NKR,ICEMAX) &
-     &           ,RATE2(NKR,ICEMAX),DEL_R2M(NKR,ICEMAX)
+ 	REAL, INTENT(IN) 	    :: DT,DX,DY
+ 	REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), &
+ 	INTENT(IN   ) ::                                 &
+ 							  U, &
+ 							  V, &
+ 							  W
 
-! SNOW                                                                          
-        REAL R3(NKR) &
-     &           ,RSEC(NKR),RO3BL(NKR) &
-     &           ,FI3(NKR),FF3(NKR),PSI3(NKR) &
-     &           ,B31_MY(NKR),B32_MY(NKR) &
-     &           ,DEL_R3M(NKR)  
+ 	REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,n_chem),INTENT(INOUT)   :: chem_new
+ 	REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_sbmradar),INTENT(INOUT)   :: sbmradar
+ 	REAL,    DIMENSION( ims:ime , kms:kme , jms:jme ),               &
+ 		       INTENT(INOUT) ::                                          &
+ 						  qv, 		&
+ 						  qv_old, 	&
+ 						  th_old, 	&
+ 						  qc, 		&
+ 						  qr, 		&
+ 						  qi,	 	   &
+ 						  qs, 		&
+ 						  qg, 		&
+ 						  qnc, 		&
+ 						  qnr, 		&
+              qni,    &
+ 						  qns, 		&
+ 						  qng, 		&
+ 						  qna
 
-! GRAUPELS 
-                                                                       
-        REAL R4(NKR),R4N(NKR) &
-     &           ,RGEC(NKR),RO4BL(NKR) &
-     &           ,FI4(NKR),FF4(NKR),PSI4(NKR) &
-     &           ,B41_MY(NKR),B42_MY(NKR) &
-     &           ,DEL_R4M(NKR)
+       REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
+       LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
 
-! HAIL                                                                          
-        REAL R5(NKR),R5N(NKR) &
-     &           ,RHEC(NKR),RO5BL(NKR) &
-     &           ,FI5(NKR),FF5(NKR),PSI5(NKR) &
-     &           ,B51_MY(NKR),B52_MY(NKR) &
-     &           ,DEL_R5M(NKR)
+       INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   IVGTYP
+       REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    :: XLAT, XLONG
+       REAL, INTENT(IN),     DIMENSION(ims:ime, kms:kme, jms:jme)::      &
+      &                      dz8w,p_phy,pi_phy,rho_phy
+       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme)::      &
+      &                      th_phy
+       REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme), OPTIONAL ::     &
+      &      RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,SR
 
-      DOUBLE PRECISION DD1N,DB11_MY,DAL1,DAL2
-      DOUBLE PRECISION COL3,RORI,TPN,TPS,QPN,QPS,TOLD,QOLD &
-     &                  ,FI1_K,FI2_K,FI3_K,FI4_K,FI5_K &
-     &                  ,R1_K,R2_K,R3_K,R4_K,R5_K &
-     &                  ,FI1R1,FI2R2,FI3R3,FI4R4,FI5R5 &
-     &                  ,RMASSLAA,RMASSLBB,RMASSIAA,RMASSIBB &
-     &                  ,ES1N,ES2N,EW1N,ARGEXP &
-     &                  ,TT,QQ,PP,DEL1N0,DEL2N0 &
-     &                  ,DEL1N,DEL2N,DIV1,DIV2 &
-     &                  ,OPER2,OPER3,AR1,AR2
+ !-----------------------------------------------------------------------
+ !     LOCAL VARS
+ !-----------------------------------------------------------------------
 
-       DOUBLE PRECISION DELTAQ1,DELMASSI1,DELMASSL1
+       REAL (KIND=R4SIZE),  DIMENSION(its-1:ite+1, kts:kte, jts-1:jte+1)::  &
+                                                  t_new,t_old,zcgs,rhocgs,pcgs
 
-       REAL A1_MYN, BB1_MYN, A2_MYN, BB2_MYN
-        DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
-     &      /2.53,5.42,3.41E1,6.13/
-       REAL B8L,B8I,SFN11,SFN12,SFNL,SFNI
-       REAL B5L,B5I,B7L,B7I,B6,DOPL,DEL1S,DEL2S,DOPI,RW,QW,PW, &
-     &  RI,PI,QI,SFNI1(ICEMAX),SFNI2(ICEMAX),AL1,AL2
-       REAL D1N,D2N,DT0L, DT0I,D1N0,D2N0
-       REAL SFN21,SFN22,SFNII1,SFNII2,SFN31,SFN32,SFN41,SFN42,SFN51, &
-     &  SFN52
-       REAL DEL1,DEL2
-       REAL  TIMEREV,DT,DTT,TIMENEW
-       REAL DTIMEG(NKR),DTIMEH(NKR)
+       INTEGER :: I,J,K,KFLIP
+       INTEGER :: KRFREEZ
 
-       REAL DEL2D(ICEMAX),DTIMEO(NKR),DTIMEL(NKR) &
-     &           ,DTIMEI_1(NKR),DTIMEI_2(NKR),DTIMEI_3(NKR)
-       REAL DT_WATER_COND,DT_WATER_EVAP,DT_ICE_COND,DT_ICE_EVAP, &
-     &  DT_MIX_COND,DT_MIX_EVAP,DT_MIX_BERGERON,DT_MIX_ANTIBERGERON
-       REAL DTNEWL0,DTNEWL1,DTNEWI1,DTNEWI2_1,DTNEWI2_2,DTNEWI2_3, &
-     & DTNEWI2,DTNEWI_1,DTNEWI_2,DTNEWI3,DTNEWI4,DTNEWI5, &
-     & DTNEWL,DTNEWL2,DTNEWG1,DTNEWH1
-       REAL TIMESTEPD(NKR)
+       REAL (KIND=R4SIZE),PARAMETER :: Z0IN=2.0E5,ZMIN=2.0E5
 
-       DATA AL1 /2500./, AL2 /2834./
-       REAL EPSDEL,EPSDEL2
-       DATA EPSDEL, EPSDEL2 /0.1E-03,0.1E-03/
-       OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
-       OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
-      
-! BELOW
-!
-        DT_WATER_COND=0.4
-        DT_WATER_EVAP=0.4
-        DT_ICE_COND=0.4
-        DT_ICE_EVAP=0.4
-        DT_MIX_COND=0.4
-        DT_MIX_EVAP=0.4
-        DT_MIX_BERGERON=0.4
-        DT_MIX_ANTIBERGERON=0.4
+       REAL (KIND=R4SIZE) :: EPSF2D, &
+      &        TAUR1,TAUR2,EPS_R1,EPS_R2,ANC1IN, &
+      &        PEPL,PEPI,PERL,PERI,ANC1,ANC2,PARSP, &
+      &        AFREEZMY,BFREEZMY,BFREEZMAX, &
+      &        TCRIT,TTCOAL, &
+      &        EPSF1,EPSF3,EPSF4, &
+      &        SUP2_OLD, DSUPICEXZ,TFREEZ_OLD,DTFREEZXZ, &
+      &        AA1_MY,BB1_MY,AA2_MY,BB2_MY, &
+      &        DTIME,DTCOND,DTNEW,DTCOLL, &
+      &        A1_MYN, BB1_MYN, A2_MYN, BB2_MYN
+      DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN  &
+      &      /2.53,5.42,3.41E1,6.13/
+      DATA AA1_MY,BB1_MY,AA2_MY,BB2_MY/2.53E12,5.42E3,3.41E13,6.13E3/
+             !QSUM,ISUM,QSUM1,QSUM2,CCNSUM1,CCNSUM2
+      DATA KRFREEZ,BFREEZMAX,ANC1,ANC2,PARSP,PEPL,PEPI,PERL,PERI, &
+      &  TAUR1,TAUR2,EPS_R1,EPS_R2,TTCOAL,AFREEZMY,&
+      &  BFREEZMY,EPSF1,EPSF3,EPSF4,TCRIT/21,&
+      &  0.6600E00, &
+      &  1.0000E02,1.0000E02,0.9000E02, &
+      &  0.6000E00,0.6000E00,1.0000E-03,1.0000E-03, &
+      &  0.5000E00,0.8000E00,0.1500E09,0.1500E09, &
+      &  2.3315E02,0.3333E-04,0.6600E00, &
+      &  0.1000E-02,0.1000E-05,0.1000E-05, &
+      &  2.7015E02/
 
-        I_MIXCOND=0
-        I_MIXEVAP=0
-        I_ABERGERON=0
-        I_BERGERON=0
+      REAL (KIND=R4SIZE),DIMENSION (nkr) :: FF1IN,FF3IN,FF4IN,FF5IN,&
+      &              FF1R,FF3R,FF4R,FF5R,FLIQFR_S,FRIMFR_S,FLIQFR_G,FLIQFR_H, &
+      &              FF1R_NEW,FF3R_NEW,FF4R_NEW,FF5R_NEW
+      REAL (KIND=R4SIZE),DIMENSION (nkr) :: FL3R,FL4R,FL5R,FL3R_NEW,FL4R_NEW,FL5R_NEW
 
-       ITIME = 0
-       TIMENEW=0.
-       DT=DTCOND
-       DTT=DTCOND
+      REAL (KIND=R4SIZE),DIMENSION (nkr,icemax) :: FF2IN,FF2R,FLIQFR_I
 
-       B6=0.
-       B8L=1./ROR
-       B8I=1./ROR
-! NEW CHANGES 19.04.01 (BEGIN)
-        RORI=1.D0/ROR
-! NEW CHANGES 19.04.01 (END)
-! NEW CHANGES 19.04.01 (BEGIN)
-        COL3=3.D0*COL
-! NEW CHANGES 19.04.01 (END)
+      REAL (KIND=R4SIZE) :: XI_MELT(NKR,ICEMAX),XS_MELT(NKR),XG_MELT(NKR),XH_MELT(NKR)
+ !!!! NOTE: ZCGS AND OTHER VARIABLES ARE ALSO DIMENSIONED IN FALFLUXHUCM
+      REAL (KIND=R8SIZE) :: DEL1NR,DEL2NR,DEL12R,DEL12RD,ES1N,ES2N,EW1N,EW1PN
+      REAL (KIND=R8SIZE) :: DELSUP1,DELSUP2,DELDIV1,DELDIV2
+      REAL (KIND=R8SIZE) :: TT,QQ,TTA,QQA,PP,DPSA,DELTATEMP,DELTAQ
+      REAL (KIND=R8SIZE) :: DIV1,DIV2,DIV3,DIV4,DEL1IN,DEL2IN,DEL1AD,DEL2AD
+      REAL (KIND=R4SIZE) :: DEL_BB,DEL_BBN,DEL_BBR, TTA_r
+      REAL (KIND=R4SIZE) :: FACTZ,CONCCCN_XZ,CONCDROP
+      REAL (KIND=R4SIZE) :: SUPICE(KTE),AR1,AR2, &
+      					& DERIVT_X,DERIVT_Y,DERIVT_Z,DERIVS_X,DERIVS_Y,DERIVS_Z, &
+      					& ES2NPLSX,ES2NPLSY,EW1NPLSX,EW1NPLSY,UX,VX, &
+      					& DEL2INPLSX,DEL2INPLSY,DZZ(KTE)
+ 	 INTEGER KRR,I_START,I_END,J_START,J_END
+      REAL (KIND=R4SIZE) :: DTFREEZ_XYZ(ITE,KTE,JTE),DSUPICE_XYZ(ITE,KTE,JTE)
 
+      REAL (KIND=R4SIZE) :: DXHUCM,DYHUCM
+      REAL (KIND=R4SIZE) :: FMAX1,FMAX2(ICEMAX),FMAX3,FMAX4,FMAX5
+ 	INTEGER ISYM1,ISYM2(ICEMAX),ISYM3,ISYM4,ISYM5
+ 	INTEGER DIFFU
+ 	REAL (KIND=R4SIZE) :: DELTAW
+ 	REAL (KIND=R4SIZE) :: zcgs_z(kts:kte),pcgs_z(kts:kte),rhocgs_z(kts:kte),ffx_z(kts:kte,nkr)
+ 	REAL (KIND=R4SIZE) :: z_full
+ 	REAL (KIND=R4SIZE) :: VRX(kts:kte,NKR)
 
+ 	REAL (KIND=R4SIZE) :: VR1_Z(NKR,KTS:KTE), FACTOR_P, VR1_Z3D(NKR,ITS:ITE,KTS:KTE,JTS:JTE)
+ 	REAL (KIND=R4SIZE) :: VR2_ZC(NKR,KTS:KTE), VR2_Z(NKR,ICEMAX)
+ 	REAL (KIND=R4SIZE) :: VR2_ZP(NKR,KTS:KTE)
+ 	REAL (KIND=R4SIZE) :: VR2_ZD(NKR,KTS:KTE)
+ 	REAL (KIND=R4SIZE) :: VR3_Z(NKR,KTS:KTE), VR3_Z3D(NKR,ITS:ITE,KTS:KTE,JTS:JTE)
+ 	REAL (KIND=R4SIZE) :: VR4_Z(NKR,KTS:KTE), VR4_Z3D(NKR,ITS:ITE,KTS:KTE,JTS:JTE)
+ 	REAL (KIND=R4SIZE) :: VR5_Z(NKR,KTS:KTE), VR5_Z3D(NKR,ITS:ITE,KTS:KTE,JTS:JTE)
+ 	REAL (KIND=R4SIZE) :: BulkDen_Snow(NKR,ITS:ITE,KTS:KTE,JTS:JTE) ! Local array for snow density
 
-! BARRY:DIV
-        TPN=TT
-        QPN=QQ
-! HERE
-   16         ITIME=ITIME+1
-! BARRY
-!             TPC_NEW=TPN-273.15
-              IF((TPN-273.15).GE.-0.187) GO TO 17
-              TIMEREV=DT-TIMENEW
-              DEL1=DEL1N
-              DEL2=DEL2N
-              DEL1S=DEL1N
-              DEL2S=DEL2N
-! NEW ALGORITHM (NO TYPE ICE)
-              DEL2D(1)=DEL2N
-              DEL2D(2)=DEL2N
-              DEL2D(3)=DEL2N
-              TPS=TPN
-              QPS=QPN
-              DO KR=1,NKR
-                 FI1(KR)=PSI1(KR)
-                 FI3(KR)=PSI3(KR)
-                 FI4(KR)=PSI4(KR)
-                 FI5(KR)=PSI5(KR)
-                 DO ICE=1,ICEMAX
-                    FI2(KR,ICE)=PSI2(KR,ICE)
-                 ENDDO
-              ENDDO
-! TIME-STEP GROWTH RATE
-! HERE
-              CALL JERRATE(R1,TPS,PP,ROR,VR1,PSINGLE &
-     &                    ,RLEC,RO1BL,B11_MY,B12_MY,1,1,ICEMAX,NKR)
-              CALL JERRATE(R2,TPS,PP,ROR,VR2,PSINGLE &
-     &                    ,RIEC,RO2BL,B21_MY,B22_MY,3,2,ICEMAX,NKR)
-              CALL JERRATE(R3,TPS,PP,ROR,VR3,PSINGLE &
-     &                    ,RSEC,RO3BL,B31_MY,B32_MY,1,2,ICEMAX,NKR)
-              CALL JERRATE(R4,TPS,PP,ROR,VR4,PSINGLE &
-     &                    ,RGEC,RO4BL,B41_MY,B42_MY,1,2,ICEMAX,NKR)
-              CALL JERRATE(R5,TPS,PP,ROR,VR5,PSINGLE &
-     &                    ,RHEC,RO5BL,B51_MY,B52_MY,1,2,ICEMAX,NKR)
-              CALL JERTIMESC(FI1,R1,SFN11,SFN12 &
-     &                      ,B11_MY,B12_MY,RLEC,B8L,1,COL,NKR)
-              CALL JERTIMESC_ICE(FI2,R2,SFNI1,SFNI2 &
-     &                      ,B21_MY,B22_MY,RIEC,B8I,ICEMAX,COL,NKR)
-              CALL JERTIMESC(FI3,R3,SFN31,SFN32 &
-     &                      ,B31_MY,B32_MY,RSEC,B8I,1,COL,NKR)
-              CALL JERTIMESC(FI4,R4,SFN41,SFN42 &
-     &                      ,B41_MY,B42_MY,RGEC,B8I,1,COL,NKR)
-              CALL JERTIMESC(FI5,R5,SFN51,SFN52 &
-     &                      ,B51_MY,B52_MY,RHEC,B8I,1,COL,NKR)
-! NEW ALGORITHM (NO TYPE ICE)
-              SFNII1=SFNI1(1)+SFNI1(2)+SFNI1(3)
-              SFNII2=SFNI2(1)+SFNI2(2)+SFNI2(3)
-              SFN21=SFNII1+SFN31+SFN41+SFN51
-              SFN22=SFNII2+SFN32+SFN42+SFN52
-              SFNL=SFN11+SFN12
-              SFNI=SFN21+SFN22
-! SOME CONSTANTS (QW,QI=0,since B6=0.)
-              B5L=BB1_MY/TPS/TPS
-              B5I=BB2_MY/TPS/TPS
-              B7L=B5L*B6
-              B7I=B5I*B6
-              DOPL=1.+DEL1S
-              DOPI=1.+DEL2S
-              RW=(OPER2(QPS)+B5L*AL1)*DOPL*SFNL
-              QW=B7L*DOPL
-              PW=(OPER2(QPS)+B5I*AL1)*DOPI*SFNL
-              RI=(OPER2(QPS)+B5L*AL2)*DOPL*SFNI
-              PI=(OPER2(QPS)+B5I*AL2)*DOPI*SFNI
-              QI=B7I*DOPI
-! SOLVING FOR TIMEZERO
-              CALL JERSUPSAT(DEL1,DEL2,DEL1N0,DEL2N0 &
-     &                      ,RW,PW,RI,PI,QW,QI &
-     &                      ,DTT,D1N0,D2N0,DT0L,DT0I)
-! DEL1 > 0, DEL2 < 0    (ANTIBERGERON MIXED PHASE - KCOND=50)
-! DEL1 < 0 AND DEL2 < 0 (EVAPORATION MIXED_PHASE - KCOND=30)
-! DEL1 > 0 AND DEL2 > 0 (CONDENSATION MIXED PHASE - KCOND=31)
-! DEL1 < 0, DEL2 > 0    (BERGERON MIXED PHASE - KCOND=32)
-              KCOND=50
+ 	REAL (KIND=R4SIZE), PARAMETER :: RON=8.E6, GON=5.E7,PI=3.14159265359
+ 	REAL (KIND=R4SIZE) :: EFF_N,EFF_D
+     REAL (KIND=R4SIZE) :: EFF_NI(its:ite,kts:kte,jts:jte),eff_di(its:ite,kts:kte,jts:jte)
+ 	REAL (KIND=R4SIZE) :: EFF_NQIC,eff_DQIC
+ 	REAL (KIND=R4SIZE) :: EFF_NQIP,eff_DQIP
+ 	REAL (KIND=R4SIZE) :: EFF_NQID,eff_DQID
+ 	REAL (KIND=R4SIZE) :: lambda,chi0,xi1,xi2,xi3,xi4,xi5,r_e,chi_3,f1,f2,volume,surface_area,xi6,ft,chi_e,ft_bin
+ 	REAL (KIND=R4SIZE), DIMENSION(kts:kte)::                            &
+ 						  qv1d, qr1d, nr1d, qs1d, ns1d, qg1d, ng1d, t1d, p1d
+ 	REAL (KIND=R4SIZE), DIMENSION(kts:kte):: dBZ
 
-              IF(DEL1.LT.0.AND.DEL2.LT.0) KCOND=30
-              IF(DEL1.GT.0.AND.DEL2.GT.0) KCOND=31
-              IF(DEL1.LT.0.AND.DEL2.GT.0) KCOND=32
-              IF(KCOND.EQ.50) THEN 
-                I_ABERGERON=I_ABERGERON+1
-                IF(DT0L.EQ.0) THEN
-                  DTNEWL=DT
-                ELSE
-                  DTNEWL=AMIN1(DT,DT0L)
-                ENDIF
-! NEW TIME STEP (ANTIBERGERON MIXED PHASE)
-                IF(DTNEWL.GT.DT) DTNEWL=DT
-                IF((TIMENEW+DTNEWL).GT.DT.AND.ITIME.LT.(NKR-1)) &
-     &          DTNEWL=DT-TIMENEW
-                IF(ITIME.EQ.(NKR-1)) DTNEWL=DT-TIMENEW
-                TIMENEW=TIMENEW+DTNEWL
-                DTT=DTNEWL
-                IF(ITIME.GE.NKR) THEN
-                call wrf_error_fatal("fatal error in module_mp_fast_sbm (ITIME.GE.NKR), model stop")
-                ENDIF
-                TIMESTEPD(ITIME)=DTNEWL
-! ANTIBERGERON MIXED PHASE (BEGIN)
-! IN CASE : KCOND = 50
-              ENDIF
-              IF(KCOND.EQ.31) THEN
-! CONDENSATION MIXED PHASE (BEGIN)
-! CONTROL OF TIMESTEP ITERATIONS
-                I_MIXCOND=I_MIXCOND+1
-               IF (DEL1N.EQ.0)THEN
-                DTNEWL0=DT
-               ELSE
-                DTNEWL0=ABS(R1(ITIME)/(B11_MY(ITIME)*DEL1N- &
-     &                                 B12_MY(ITIME)))
-               END IF
-! NEW ALGORITHM (NO TYPE OF ICE)
+ 	REAL (KIND=R4SIZE) :: nzero,son,nzero_less
+ 	parameter (son=2.E7)
+ 	REAL (KIND=R4SIZE) :: raddumb(nkr),massdumb(nkr)
+ 	REAL (KIND=R4SIZE) :: hydrosum
 
-               IF (DEL2N.EQ.0)THEN
-                DTNEWI2_1=DT
-                DTNEWI2_2=DT
-                DTNEWI2_3=DT
-                DTNEWI3=DT
-                DTNEWI4=DT
-                DTNEWI5=DT
-               ELSE
-                DTNEWI2_1=ABS(R2(ITIME,1)/ &
-     &         (B21_MY(ITIME,1)*DEL2N-B22_MY(ITIME,1)))
-                DTNEWI2_2=ABS(R2(ITIME,2)/ &
-     &         (B21_MY(ITIME,2)*DEL2N-B22_MY(ITIME,2))) 
-                DTNEWI2_3=ABS(R2(ITIME,3)/ &
-     &         (B21_MY(ITIME,3)*DEL2N-B22_MY(ITIME,3)))  
-                DTNEWI2=AMIN1(DTNEWI2_1,DTNEWI2_2,DTNEWI2_3)
+ 	integer imax,kmax,jmax
+ 	REAL (KIND=R4SIZE) :: gmax,tmax,qmax,divmax,rainmax,qnmax,inmax,knmax,hydro,difmax, tdif, tt_old, w_stag, w_stag_my, qq_old,teten,es
+ 	integer  print_int
+ 	parameter (print_int=300)
 
-                DTNEWI3=ABS(R3(ITIME)/(B31_MY(ITIME)*DEL2N- &
-     &                                 B32_MY(ITIME)))
-                DTNEWI4=ABS(R4(ITIME)/(B41_MY(ITIME)*DEL2N- &
-     &                                 B42_MY(ITIME)))
-                DTNEWI5=ABS(R5(ITIME)/(B51_MY(ITIME)*DEL2N- &
-     &                                 B52_MY(ITIME)))
-               END IF
-                DTNEWI1=AMIN1(DTNEWI2,DTNEWI4,DTNEWI5,DT0I)
-                IF(DT0L.NE.0) THEN
-                  IF(ABS(DT0L).LT.DT_MIX_COND) THEN
-                    DTNEWL1=AMIN1(DT_MIX_COND,DTNEWL0)
-                  ELSE
-                    DTNEWL1=AMIN1(DT0L,DTNEWL0)
-                  ENDIF
-                ELSE
-                  DTNEWL1=DTNEWL0
-                ENDIF
-                DTNEWL=AMIN1(DTNEWL1,DTNEWI1)
-                IF(ITIME.GE.NKR) THEN
-                call wrf_error_fatal("fatal error in module_mp_fast_sbm (ITIME.GE.NKR), model stop")
-                ENDIF
-                TIMESTEPD(ITIME)=DTNEWL
-! NEW TIME STEP (CONDENSATION MIXED PHASE)
-                IF(DTNEWL.GT.DT) DTNEWL=DT
-                IF((TIMENEW+DTNEWL).GT.DT.AND.ITIME.LT.(NKR-1)) &
-     &          DTNEWL=DT-TIMENEW
-                IF(ITIME.EQ.(NKR-1)) DTNEWL=DT-TIMENEW
-                TIMENEW=TIMENEW+DTNEWL
-                TIMESTEPD(ITIME)=DTNEWL
-                DTT=DTNEWL
-! CONDENSATION MIXED PHASE (END)
-! IN CASE : KCOND = 31
-              ENDIF
-              IF(KCOND.EQ.30) THEN
-! EVAPORATION MIXED PHASE (BEGIN)
-! CONTROL OF TIMESTEP ITERATIONS
-                I_MIXEVAP=I_MIXEVAP+1
-                DO KR=1,NKR
-                   DTIMEL(KR)=0.
-                   DTIMEG(KR)=0.
-                   DTIMEH(KR)=0.
-! NEW ALGORITHM (NO TYPE ICE)
-                   DTIMEI_1(KR)=0.
-                   DTIMEI_2(KR)=0.
-                   DTIMEI_3(KR)=0.
-                ENDDO
-                DO KR=1,NKR
-                 IF (DEL1N.EQ.0) THEN
-                   DTIMEL(KR)=DT
-                   DTIMEG(KR)=DT
-                   DTIMEH(KR)=DT
-                 ELSE
-                   DTIMEL(KR)=-R1(KR)/(B11_MY(KR)*DEL1N- &
-     &                                 B12_MY(KR))
-                   DTIMEG(KR)=-R4(KR)/(B41_MY(KR)*DEL1N- &
-     &                                 B42_MY(KR))
-                   DTIMEH(KR)=-R5(KR)/(B51_MY(KR)*DEL1N- &
-     &                             B52_MY(KR))
-! NEW ALGORITHM (NO TYPE OF ICE)
-                 END IF
-                 IF (DEL2N.EQ.0) THEN
-                   DTIMEI_1(KR)=DT
-                   DTIMEI_2(KR)=DT
-                   DTIMEI_3(KR)=DT
-                 ELSE
-                   DTIMEI_1(KR)=-R2(KR,1)/ &
-     &               (B21_MY(KR,1)*DEL2N-B22_MY(KR,1))
-                   DTIMEI_2(KR)=-R2(KR,2)/ &
-     &               (B21_MY(KR,2)*DEL2N-B22_MY(KR,2))
-                   DTIMEI_3(KR)=-R2(KR,3)/ &
-     &               (B21_MY(KR,3)*DEL2N-B22_MY(KR,3))
-                 END IF
-                ENDDO
-! WATER
-                KLIMITL=1
-                DO KR=1,NKR
-                   IF(DTIMEL(KR).GT.TIMEREV) GOTO 355
-                   KLIMITL=KR
-                ENDDO
-  355           KLIMITL=KLIMITL-1
-                IF(KLIMITL.LT.1) KLIMITL=1
-                DTNEWL1=AMIN1(DTIMEL(KLIMITL),DT0L,TIMEREV)
-! GRAUPELS
-                KLIMITG=1
-                DO KR=1,NKR
-                   IF(DTIMEG(KR).GT.TIMEREV) GOTO 455
-                   KLIMITG=KR
-                ENDDO
-  455           KLIMITG=KLIMITG-1
-                IF(KLIMITG.LT.1) KLIMITG=1
-                DTNEWG1=AMIN1(DTIMEG(KLIMITG),TIMEREV)
-! HAIL
-                KLIMITH=1
-                DO KR=1,NKR
-                   IF(DTIMEH(KR).GT.TIMEREV) GOTO 555
-                   KLIMITH=KR
-                ENDDO
-  555           KLIMITH=KLIMITH-1
-                IF(KLIMITH.LT.1) KLIMITH=1
-                DTNEWH1=AMIN1(DTIMEH(KLIMITH),TIMEREV)
-! ICE CRYSTALS
-! NEW ALGORITHM (NO TYPE OF ICE) (BEGIN)
-                KLIMITI_1=1
-                KLIMITI_2=1
-                KLIMITI_3=1
-                DO KR=1,NKR
-                   IF(DTIMEI_1(KR).GT.TIMEREV) GOTO 655
-                   KLIMITI_1=KR
-                ENDDO
-  655           CONTINUE
-                DO KR=1,NKR
-                   IF(DTIMEI_2(KR).GT.TIMEREV) GOTO 656
-                   KLIMITI_2=KR
-                ENDDO
-  656           CONTINUE
-                DO KR=1,NKR
-                   IF(DTIMEI_3(KR).GT.TIMEREV) GOTO 657
-                   KLIMITI_3=KR
-                ENDDO
-  657           CONTINUE
-                KLIMITI_1=KLIMITI_1-1
-                IF(KLIMITI_1.LT.1) KLIMITI_1=1
-                DTNEWI2_1=AMIN1(DTIMEI_1(KLIMITI_1),TIMEREV)
-                KLIMITI_2=KLIMITI_2-1
-                IF(KLIMITI_2.LT.1) KLIMITI_2=1
-                DTNEWI2_2=AMIN1(DTIMEI_2(KLIMITI_2),TIMEREV)
-                KLIMITI_3=KLIMITI_3-1
-                IF(KLIMITI_3.LT.1) KLIMITI_3=1
-                DTNEWI2_3=AMIN1(DTIMEI_3(KLIMITI_3),TIMEREV)
-                DTNEWI2=AMIN1(DTNEWI2_1,DTNEWI2_2,DTNEWI2_3)
-! NEW ALGORITHM (NO TYPE OF ICE) (END)
-                DTNEWI1=AMIN1(DTNEWI2,DTNEWG1,DTNEWH1,DT0I)
-                IF(ABS(DEL2N).LT.EPSDEL2) &
-     &          DTNEWI1=AMIN1(DTNEWI2,DTNEWG1,DTNEWH1)
-                DTNEWL2=AMIN1(DTNEWL1,DTNEWI1)
-                DTNEWL=DTNEWL2
-                IF(DTNEWL.LT.DT_MIX_EVAP) &
-     &          DTNEWL=AMIN1(DT_MIX_EVAP,TIMEREV)  
-                IF(ITIME.GE.NKR) THEN
-                call wrf_error_fatal("fatal error in module_mp_fast_sbm (ITIME.GE.NKR), model stop")
-                ENDIF
-                TIMESTEPD(ITIME)=DTNEWL
-! NEW TIME STEP (EVAPORATION MIXED PHASE)
-                IF(DTNEWL.GT.DT) DTNEWL=DT
-                IF((TIMENEW+DTNEWL).GT.DT &
-     &         .AND.ITIME.LT.(NKR-1)) &
-     &          DTNEWL=DT-TIMENEW
-                IF(ITIME.EQ.(NKR-1)) DTNEWL=DT-TIMENEW
-                TIMESTEPD(ITIME)=DTNEWL
-                TIMENEW=TIMENEW+DTNEWL
-                DTT=DTNEWL
-! EVAPORATION MIXED PHASE (END)
-! IN CASE : KCOND = 30
-              ENDIF
-              IF(KCOND.EQ.32) THEN
-! BERGERON MIXED PHASE (BEGIN)
-! CONTROL OF TIMESTEP ITERATIONS
-                I_BERGERON=I_BERGERON+1
-! NEW TREATMENT OF TIME STEP (BERGERON MIXED PHASE)
-               IF (DEL1N.EQ.0)THEN
-                DTNEWL0=DT
-               ELSE
-                DTNEWL0=-R1(1)/(B11_MY(1)*DEL1N-B12_MY(1))
-               END IF
-! NEW ALGORITHM (NO TYPE ICE)
-               IF (DEL2N.EQ.0)THEN
-                DTNEWI2_1=DT
-                DTNEWI2_2=DT
-                DTNEWI2_3=DT
-               ELSE
-                DTNEWI2_1=R2(1,1)/(B21_MY(1,1)*DEL2N-B22_MY(1,1))
-                DTNEWI2_2=R2(1,2)/(B21_MY(1,2)*DEL2N-B22_MY(1,2))
-                DTNEWI2_3=R2(1,3)/(B21_MY(1,3)*DEL2N-B22_MY(1,3))
-               END IF
-               DTNEWI2=AMIN1(DTNEWI2_1,DTNEWI2_2,DTNEWI2_3)
-               IF (DEL2N.EQ.0)THEN
-                DTNEWI3=DT
-                DTNEWI4=DT
-                DTNEWI5=DT
-               ELSE
-                DTNEWI3=R3(1)/(B31_MY(1)*DEL2N-B32_MY(1))
-                DTNEWI4=R4(1)/(B41_MY(1)*DEL2N-B42_MY(1))
-                DTNEWI5=R5(1)/(B51_MY(1)*DEL2N-B52_MY(1))
-               END IF
-                DTNEWL1=AMIN1(DTNEWL0,DT0L,TIMEREV)
-                DTNEWI1=AMIN1(DTNEWI2,DTNEWI3,DTNEWI4 &
-     &                       ,DTNEWI5,DT0I,TIMEREV)
-                DTNEWI1=AMIN1(DTNEWI2,DTNEWI4,DTNEWI5,DT0I,TIMEREV)
-                DTNEWL=AMIN1(DTNEWL1,DTNEWI1)
-! NEW CHANGES 23.04.01 (BEGIN)
-                IF(DTNEWL.LT.DT_MIX_BERGERON) &
-     &          DTNEWL=AMIN1(DT_MIX_BERGERON,TIMEREV)
-                TIMESTEPD(ITIME)=DTNEWL
-! NEW TIME STEP (BERGERON MIXED PHASE)
-                IF(DTNEWL.GT.DT) DTNEWL=DT
-                IF((TIMENEW+DTNEWL).GT.DT.AND.ITIME.LT.(NKR-1)) &
-     &          DTNEWL=DT-TIMENEW
-                IF(ITIME.EQ.(NKR-1)) DTNEWL=DT-TIMENEW
-                TIMESTEPD(ITIME)=DTNEWL
-                TIMENEW=TIMENEW+DTNEWL
-                DTT=DTNEWL
-! BERGERON MIXED PHASE (END)
-! IN CASE : KCOND = 32
-              ENDIF
-! SOLVING FOR SUPERSATURATION 
-! CALL JERSUPSAT - 7 (MIXED_PHASE)
-         
-	      CALL JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N &
-     &                      ,RW,PW,RI,PI,QW,QI &
-     &                      ,DTT,D1N,D2N,DT0L,DT0I)
-! END OF "NEW SUPERSATURATION" 
+ 	integer t_print,i_print,j_print,k_print
+ 	REAL (KIND=R8SIZE), DIMENSION(kts:kte):: zmks_1d
+ 	REAL (KIND=R8SIZE) :: dx_dbl, dy_dbl
+ 	INTEGER,DIMENSION (nkr) :: melt_snow,melt_graupel,melt_hail,melt_ice
+ 	!DOUBLE PRECISION,DIMENSION (nkr) :: dmelt_snow,dmelt_graupel,dmelt_hail,dmelt_ice
+ 	INTEGER ihucm_flag
+ 	REAL (KIND=R4SIZE) :: NSNOW_ADD
 
-! DROPLETS 
-	      IF(ISYM1.NE.0) THEN
+ 	! ... Polar-HUCM
+ 	INTEGER,PARAMETER :: n_radar = 10
+ 	integer :: ijk, Mod_Flag
+ 	REAL (KIND=R8SIZE),PARAMETER :: wavelength = 11.0D0 ! ### (KS) - Rhyzkov uses this wavelength (NEXRAD)
+ 	INTEGER :: IWL
+ 	REAL (KIND=R4SIZE) :: DIST_SING
+ 	REAL (KIND=R8SIZE) :: BKDEN_Snow(NKR)
+ 	REAL (KIND=R8SIZE) ::  DISTANCE,FL1_FD(NKR),BULK(NKR), BulkDens_Snow(NKR)
+ 	REAL (KIND=R8SIZE) ::  FF1_FD(NKR),FFL_FD(NKR),OUT1(n_radar),OUT2(n_radar),OUT3(n_radar),OUT4(n_radar),OUT5(n_radar), &
+ 						   OUT6(n_radar),OUT7(n_radar),OUT8(n_radar),OUT9(n_radar), FL1R_FD(NKR)
+ 	REAL (KIND=R8SIZE) :: rate_shed_per_grau_grampersec(NKR), rate_shed_per_hail_grampersec(NKR), rhoair_max
 
-! DROPLET DISTRIBUTION FUNCTION 
+ 	integer :: count_H, count_G, count_S_l, count_S_r
 
-                                                         
-! CALL JERDFUN - 3
-	        CALL JERDFUN(R1,B11_MY,B12_MY &
-     &                      ,FI1,PSI1,D1N &
-     &                      ,1,1,COL,NKR,TPN)
-! END OF "DROPLET DISTRIBUTION FUNCTION" 
- 
-! IN CASE ISYM1.NE.0
+ 	REAL (KIND=R8SIZE) :: RMin_G
+ 	integer :: KR_GRAUP_MAX_BLAHAK, KR_G_TO_H
 
- 	      ENDIF                     
-! CRYSTALS 
-	      IF(ISYM2.NE.0) THEN
+ 	! ... Cloud Base .........................................................
+ 	REAL (KIND=R8SIZE) ::	SUP_WATER, ES1N_KS, ES1N_dummy, ES2N_dummy
+ 	logical :: K_found
+ 	integer ::	KZ_Cloud_Base(its:ite,jts:jte), IS_THIS_CLOUDBASE,KR_Small_Ice
+ 	! ........................................................................
+ 	REAL (KIND=R4SIZE) :: qna0(its:ite,kts:kte,jts:jte), fr_hom, w_stagm, CollEff_out, FACT
+ 	REAL (KIND=R4SIZE) :: FACTZ_new(KMS:KME,NKR), TT_r
+ ! ### (KS) ............................................................................................
+ 	INTEGER :: NZ,NZZ,II,JJ
 
-! CRYSTAL DISTRIBUTION FUNCTION 
- 
-	        CALL JERDFUN(R2,B21_MY,B22_MY &
-     &                      ,FI2,PSI2,D2N &
-     &                      ,ICEMAX,1,COL,NKR,TPN)
+  XS_d = XS
 
-	        CALL JERDFUN(R2,B21_MY,B22_MY &
-     &                      ,FI2,PSI2,D2N &
-     &                      ,ICEMAX,2,COL,NKR,TPN)
+  if (itimestep.eq.1)then
+    if (iceprocs.eq.1) call wrf_message(" FAST SBM: ICE PROCESES ACTIVE ")
+    if (iceprocs.eq.0) call wrf_message(" FAST SBM: LIQUID PROCESES ONLY")
+  end if
 
-	        CALL JERDFUN(R2,B21_MY,B22_MY &
-     &                      ,FI2,PSI2,D2N &
-     &                      ,ICEMAX,3,COL,NKR,TPN)
-! IN CASE ISYM2.NE.0
+  NCOND = 3
+  NCOLL = 1
+  DTCOND = DT/REAL(NCOND)
+  DTCOLL = DT/REAL(NCOLL)
+  dt_coll = DTCOLL
 
-	      ENDIF
-! SNOW 
-	      IF(ISYM3.NE.0) THEN
+  DEL_BB=BB2_MY-BB1_MY
+  DEL_BBN=BB2_MYN-BB1_MYN
+  DEL_BBR=BB1_MYN/DEL_BBN
 
-! SNOW DISTRIBUTION FUNCTION 
-                                                         
+ if (conserv)then
+    DO j = jts,jte
+       DO i = its,ite
+          DO k = kts,kte
 
-! CALL JERDFUN - SNOW - 3
+            rhocgs(I,K,J)=rho_phy(I,K,J)*0.001
+ 				! ... Drops
+   				  KRR=0
+   				  DO KR=p_ff1i01,p_ff1i33
+			        KRR=KRR+1
+		          chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XL(KRR)/XL(KRR)/3.0
+   				  END DO
+ 				! ... Snow
+   				  KRR=0
+   				  DO KR=p_ff5i01,p_ff5i33
+  			      KRR=KRR+1
+  			      chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XS(KRR)/XS(KRR)/3.0
+   				  END DO
+ 				! ... Aerosols
+   				  KRR=0
+   				  DO KR=p_ff8i01,p_ff8i43
+  		          KRR=KRR+1
+   					    chem_new(I,K,J,KR) = chem_new(I,K,J,KR)*RHOCGS(I,K,J)/1000.0
+   				  END DO
+ 				!  ... Hail or Graupel [same registry adresses]
+           if(hail_opt == 1) then
+             KRR=0
+             DO KR=p_ff6i01,p_ff6i33
+                 KRR=KRR+1
+                 chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XH(KRR)/XH(KRR)/3.0
+             END DO
 
- 	        CALL JERDFUN(R3,B31_MY,B32_MY &
-     &                      ,FI3,PSI3,D2N &
-     &                      ,1,3,COL,NKR,TPN)
+           else
+             KRR=0
+             DO KR=p_ff6i01,p_ff6i33
+                 KRR=KRR+1
+                 chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XG(KRR)/XG(KRR)/3.0
+             END DO
+           endif
 
+ 				END DO ! K
+ 			END DO	! I
+ 		END DO ! J
+  end if
 
-! IN CASE ISYM3.NE.0
+  DXHUCM=100.*DX
+  DYHUCM=100.*DY
 
-  	      ENDIF
+  I_START=MAX(1,ITS-1)
+  J_START=MAX(1,JTS-1)
+  I_END=MIN(IDE-1,ITE+1)
+  J_END=MIN(JDE-1,JTE+1)
 
-! GRAUPELS 
-
-	      IF(ISYM4.NE.0) THEN
-
-! GRAUPEL DISTRIBUTION FUNCTION
-                                                         
-	        CALL JERDFUN(R4,B41_MY,B42_MY &
-     &                      ,FI4,PSI4,D2N &
-     &                      ,1,4,COL,NKR,TPN)
-! IN CASE ISYM4.NE.0
-
-	      ENDIF
-! HAIL 
-	      IF(ISYM5.NE.0) THEN
-
-! HAIL DISTRIBUTION FUNCTION 
-                                                         
-	        CALL JERDFUN(R5,B51_MY,B52_MY &
-     &                      ,FI5,PSI5,D2N &
-     &                      ,1,5,COL,NKR,TPN)
-! IN CASE ISYM5.NE.0
-
-	      ENDIF
-! MASSES
-              RMASSLBB=0.D0
-              RMASSIBB=0.D0
-              RMASSLAA=0.D0
-              RMASSIAA=0.D0
-! BEFORE JERNEWF
-              DO K=1,NKR
-                 FI1_K=FI1(K)
-                 R1_K=R1(K)
-                 FI1R1=FI1_K*R1_K*R1_K
-                 RMASSLBB=RMASSLBB+FI1R1
-                 DO ICE =1,ICEMAX
-                    FI2_K=FI2(K,ICE)
-                    R2_K=R2(K,ICE)
-                    FI2R2=FI2_K*R2_K*R2_K
-                    RMASSIBB=RMASSIBB+FI2R2
-                 ENDDO
-                 FI3_K=FI3(K)
-                 FI4_K=FI4(K)
-                 FI5_K=FI5(K)
-                 R3_K=R3(K)
-                 R4_K=R4(K)
-                 R5_K=R5(K)
-                 FI3R3=FI3_K*R3_K*R3_K
-                 FI4R4=FI4_K*R4_K*R4_K
-                 FI5R5=FI5_K*R5_K*R5_K
-                 RMASSIBB=RMASSIBB+FI3R3
-                 RMASSIBB=RMASSIBB+FI4R4
-                 RMASSIBB=RMASSIBB+FI5R5
-              ENDDO
-              RMASSIBB=RMASSIBB*COL3*RORI
-! NEW CHANGE RMASSIBB
-              IF(RMASSIBB.LT.0.0) RMASSIBB=0.0
-              RMASSLBB=RMASSLBB*COL3*RORI
-! NEW CHANGE RMASSLBB
-              IF(RMASSLBB.LT.0.0) RMASSLBB=0.0
-! AFTER  JERNEWF
-              DO K=1,NKR
-                 FI1_K=PSI1(K)
-                 R1_K=R1(K)
-                 FI1R1=FI1_K*R1_K*R1_K
-                 RMASSLAA=RMASSLAA+FI1R1
-                 DO ICE =1,ICEMAX
-                    FI2(K,ICE)=PSI2(K,ICE)
-                    FI2_K=FI2(K,ICE)
-                    R2_K=R2(K,ICE)
-                    FI2R2=FI2_K*R2_K*R2_K
-                    RMASSIAA=RMASSIAA+FI2R2
-                 ENDDO
-                 FI3_K=PSI3(K)
-                 FI4_K=PSI4(K)
-                 FI5_K=PSI5(K)
-                 R3_K=R3(K)
-                 R4_K=R4(K)
-                 R5_K=R5(K)
-                 FI3R3=FI3_K*R3_K*R3_K
-                 FI4R4=FI4_K*R4_K*R4_K
-                 FI5R5=FI5_K*R5_K*R5_K
-                 RMASSIAA=RMASSIAA+FI3R3
-                 RMASSIAA=RMASSIAA+FI4R4
-                 RMASSIAA=RMASSIAA+FI5R5
-              ENDDO
-              RMASSIAA=RMASSIAA*COL3*RORI
-! NEW CHANGE RMASSIAA
-              IF(RMASSIAA.LE.0.0) RMASSIAA=0.0
-              RMASSLAA=RMASSLAA*COL3*RORI
-! NEW CHANGE RMASSLAA
-              IF(RMASSLAA.LT.0.0) RMASSLAA=0.0
-! NEW TREATMENT OF "T" & "Q"
-              DELMASSL1=RMASSLAA-RMASSLBB
-              DELMASSI1=RMASSIAA-RMASSIBB
-              DELTAQ1=DELMASSL1+DELMASSI1
-!             QPN=QPS-DELTAQ1-CWQ*DTT
-              QPN=QPS-DELTAQ1
-              DAL1=AL1
-              DAL2=AL2
-!             TPN=TPS+DAL1*DELMASSL1+AL2*DELMASSI1-CWQ*DTT
-              TPN=TPS+DAL1*DELMASSL1+DAL2*DELMASSI1
-! SUPERSATURATION
-              ARGEXP=-BB1_MY/TPN
-              ES1N=AA1_MY*DEXP(ARGEXP)
-              ARGEXP=-BB2_MY/TPN
-              ES2N=AA2_MY*DEXP(ARGEXP)
-              EW1N=OPER3(QPN,PP)
-              IF(ES1N.EQ.0)THEN
-               DEL1N=0.5
-               DIV1=1.5
-!              print*,'es1n onecond3 = 0'
-!              stop
-              ELSE
-               DIV1=EW1N/ES1N
-               DEL1N=EW1N/ES1N-1.
-              END IF
-              IF(ES2N.EQ.0)THEN
-               DEL2N=0.5
-               DIV2=1.5
-!              print*,'es2n onecond3 = 0'
-!              stop
-              ELSE
-               DEL2N=EW1N/ES2N-1.
-               DIV2=EW1N/ES2N
-              END IF
-! END OF TIME SPLITTING
-
-! HERE
-
-        IF(TIMENEW.LT.DT) GOTO 16
-17      CONTINUE
-
-        TT=TPN
-        QQ=QPN
-        DO KR=1,NKR
-           FF1(KR)=PSI1(KR)
-           DO ICE=1,ICEMAX
-              FF2(KR,ICE)=PSI2(KR,ICE)
-           ENDDO
-           FF3(KR)=PSI3(KR)
-           FF4(KR)=PSI4(KR)
-           FF5(KR)=PSI5(KR)
-        ENDDO
-
-
-        RETURN                                          
-        END SUBROUTINE ONECOND3
-        SUBROUTINE COAL_BOTT_NEW(FF1R,FF2R,FF3R, &
-     &   FF4R,FF5R,TT,QQ,PP,RHO,dt_coll,TCRIT,TTCOAL)
-       implicit none
-       INTEGER KR,ICE
-       INTEGER icol_drop,icol_snow,icol_graupel,icol_hail, &
-     & icol_column,icol_plate,icol_dendrite,icol_drop_brk
-       double precision  g1(nkr),g2(nkr,icemax),g3(nkr),g4(nkr),g5(nkr)
-       double precision gdumb(JMAX),xl_dumb(0:nkr),g_orig(nkr)
-       double precision g2_1(nkr),g2_2(nkr),g2_3(nkr)
-       real cont_fin_drop,dconc,conc_icempl,deldrop,t_new, &
-     & delt_new,cont_fin_ice,conc_old,conc_new,cont_init_ice, &
-     & cont_init_drop,ALWC
-       REAL    FF1R(NKR),FF2R(NKR,ICEMAX),FF3R(NKR),FF4R(NKR),FF5R(NKR)
-       REAL dt_coll
-       REAL TCRIT,TTCOAL
-       real tt_no_coll
-       parameter (tt_no_coll=273.16)
-
-
-       
-   
-! SHARED
-       INTEGER I,J,IT,NDIV
-       REAL RHO
-       DOUBLE PRECISION break_drop_bef,break_drop_aft,dtbreakup
-       DOUBLE PRECISION break_drop_per
-       DOUBLE PRECISION TT,QQ,PP,prdkrn,prdkrn1
-       parameter (prdkrn1=1.d0)
-!     print*,'tcrit = ',tcrit
-!     print*,'ttcoal = ',ttcoal
-!     print*,'col = ',col
-!     print*,'p1,p2,p3 = ',p1,p2,p3
-!     print*,'icempl,kr_icempl  = ',icempl,kr_icempl
-!     print*,'dt_coll = ',dt_coll
-      icol_drop_brk=0
-      icol_drop=0
-      icol_snow=0
-      icol_graupel=0
-      icol_hail=0
-      icol_column=0
-      icol_plate=0
-      icol_dendrite=0
-
-
-       t_new=tt
-         CALL MISC1(PP,cwll_1000mb,cwll_750mb,cwll_500mb, &
-     &    cwll,nkr)
-! THIS IS FOR BREAKUP
-         DO I=1,NKR
-            DO J=1,NKR
-               CWLL(I,J)=ECOALMASSM(I,J)*CWLL(I,J)
-            ENDDO
+   DO j = j_start,j_end
+      DO i = i_start,i_end
+         z_full=0.
+         DO k = kts,kte
+            pcgs(I,K,J)=P_PHY(I,K,J)*10.
+            rhocgs(I,K,J)=rho_phy(I,K,J)*0.001
+            zcgs(I,K,J)=z_full+0.5*dz8w(I,K,J)*100
+            !height(i,k,j) = 1.0e-2*zcgs(i,k,j) ! in [m]
+            z_full=z_full+dz8w(i,k,j)*100.
          ENDDO
-!
-! THIS IS FOR TURBULENCE
-        IF (LIQTURB.EQ.1)THEN
-         DO I=1,KRMAX_LL
-           DO J=1,KRMAX_LL
-               CWLL(I,J)=CTURBLL(I,J)*CWLL(I,J)
+      ENDDO
+   ENDDO
+
+ ! +---------------------------------------+
+ ! ... Initial Aerosol distribution
+ ! +---------------------------------------+
+ 	  if (itimestep == 1)then
+ 	   FACTZ_new = 0.0
+ 	   DO j = jts,jte
+ 		  DO i = its,ite
+ 			DO k = kts,kte
+ 			   rhoair_max = rhocgs(i,1,j) ! [g/cm3]
+ 			   if(ILogNormal_modes_Aerosol == 1)then
+ 				  IF (zcgs(I,K,J) .LE. ZMIN)THEN
+ 					  FACTZ = 1.0
+ 				  ELSE
+ 					  FACTZ=EXP(-(zcgs(I,K,J)-ZMIN)/Z0IN)
+ 				  END IF
+ 				  ! ... CCN
+ 				  KRR = 0
+ 				  DO KR = p_ff8i01,p_ff8i43
+ 					KRR = KRR + 1
+   					if (xland(i,j) == 1)then
+   						! chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
+   						chem_new(I,K,J,KR) = (FCCNR_CON(KRR)/rhoair_max)*rhocgs(i,k,j) ! ... distributed vertically as [#/g]
+             else
+              ! chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
+   						chem_new(I,K,J,KR) = (FCCNR_MAR(KRR)/rhoair_max)*rhocgs(i,k,j) ! ... distributed vertically as [#/g]
+   					endif
+ 				  END DO
+ 				endif
+ 			end do
+ 		  end do
+ 	   end do
+ 	 end if
+
+! +--------------------------------------------+
+ ! ... Aerosols boundary conditions
+ !    (for 3D application running with MPI)   
+ ! +--------------------------------------------+
+#if (defined(DM_PARALLEL))
+    if (itimestep > 1 .and. domain_id == 1)then
+        DO j = jts,jte
+         DO k = kts,kte
+           DO i = its,ite
+		          rhoair_max = rhocgs(i,1,j) ! [g/cm3]
+              if (i <= 5 .or. i >= IDE-5 .OR. &
+                  & j <= 5 .or. j >= JDE-5)THEN
+                  if(ILogNormal_modes_Aerosol == 1)then
+                    IF (zcgs(I,K,J).LE.ZMIN) THEN
+                       FACTZ = 1.0
+                    ELSE
+                       FACTZ=EXP(-(zcgs(I,K,J)-ZMIN)/Z0IN)
+                    END IF
+                    ! ... CCN
+	                  KRR = 0
+                    DO kr = p_ff8i01,p_ff8i43
+                      KRR = KRR + 1
+           						if (xland(i,j) == 1)then
+           							! chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
+           							chem_new(I,K,J,KR) = (FCCNR_CON(KRR)/rhoair_max)*rhocgs(i,k,j)
+                       else
+                        ! chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
+           							chem_new(I,K,J,KR) = (FCCNR_MAR(KRR)/rhoair_max)*rhocgs(i,k,j)
+           						endif
+                   END DO
+	               endif
+              end if
+           end do
+         end do
+       end do
+     end if
+#endif
+
+     if (itimestep == 1)then
+        DO j = j_start,j_end
+           DO k = kts,kte
+             DO i = i_start,i_end
+                th_old(i,k,j)=th_phy(i,k,j)
+                qv_old(i,k,j)=qv(i,k,j)
+              END DO
+     	     END DO
+        END DO
+     end if
+
+     DO j = j_start,j_end
+        DO k = kts,kte
+           DO i = i_start,i_end
+              t_new(i,k,j) = th_phy(i,k,j)*pi_phy(i,k,j)
+              !tempc(i,k,j)= t_new(i,k,j)-273.16
+              t_old(i,k,j) = th_old(i,k,j)*pi_phy(i,k,j)
+           END DO
+        END DO
+     END DO
+
+     IF(ICEPROCS == 1)THEN
+      KZ_Cloud_Base = 0
+      DO j = jts,jte
+          DO i = its,ite
+            K_found = .FALSE.
+            DO k = kts,kte
+
+              ES1N = AA1_MY*EXP(-BB1_MY/T_NEW(I,K,J))
+              EW1N = QV(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV(I,K,J))
+              SUP_WATER = EW1N/ES1N - 1.0
+              if(k.lt.kte)then
+                  w_stag_my 	= 50.*(w(i,k,j)+w(i,k+1,j))
+                else
+                  w_stag_my = 100*w(i,k,j)
+              end if
+              if(SUP_WATER > 0.0D0 .and. w_stag_my > 0.1*1.0D2 .and. K_found .eqv. .FALSE. .and. K > 2 .and. zcgs(I,K,J) < 3.0*1.0D5)then
+                KZ_Cloud_Base(I,J) = K ! K-level index of cloud base
+                K_found = .TRUE.
+              endif
+
+              IF(K.EQ.KTE)THEN
+                DZZ(K)=(zcgs(I,K,J)-zcgs(I,K-1,J))
+                ELSE IF(K.EQ.1)THEN
+                DZZ(K)=(zcgs(I,K+1,J)-zcgs(I,K,J))
+              ELSE
+                DZZ(K)=(zcgs(I,K+1,J)-zcgs(I,K-1,J))
+              END IF
+              ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
+              EW1N=QV_OLD(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV_OLD(I,K,J))
+              SUPICE(K)=EW1N/ES2N-1.
+              IF(SUPICE(K).GT.0.5) SUPICE(K)=.5
+            END DO
+            DO k = kts,kte
+              IF(T_OLD(I,K,J).GE.238.15.AND.T_OLD(I,K,J).LT.274.15) THEN
+              if (k.lt.kte)then
+                  w_stag=50.*(w(i,k,j)+w(i,k+1,j))
+              else
+                  w_stag=100*w(i,k,j)
+              end if
+              IF (I.LT.IDE-1.AND.J.LT.JDE-1)THEN
+                UX=25.*(U(I,K,J)+U(I+1,K,J)+U(I,K,J+1)+U(I+1,K,J+1))
+                VX=25.*(V(I,K,J)+V(I+1,K,J)+V(I,K,J+1)+V(I+1,K,J+1))
+              ELSE
+                UX=U(I,K,J)*100.
+                VX=V(I,K,J)*100.
+              END IF
+              IF(K.EQ.1) DERIVT_Z=(T_OLD(I,K+1,J)-T_OLD(I,K,J))/DZZ(K)
+              IF(K.EQ.KTE) DERIVT_Z=(T_OLD(I,K,J)-T_OLD(I,K-1,J))/DZZ(K)
+              IF(K.GT.1.AND.K.LT.KTE) DERIVT_Z= &
+                                    (T_OLD(I,K+1,J)-T_OLD(I,K-1,J))/DZZ(K)
+              IF (I.EQ.1)THEN
+                DERIVT_X=(T_OLD(I+1,K,J)-T_OLD(I,K,J))/(DXHUCM)
+              ELSE IF (I.EQ.IDE-1)THEN
+                DERIVT_X=(T_OLD(I,K,J)-T_OLD(I-1,K,J))/(DXHUCM)
+              ELSE
+                DERIVT_X=(T_OLD(I+1,K,J)-T_OLD(I-1,K,J))/(2.*DXHUCM)
+              END IF
+              IF (J.EQ.1)THEN
+                DERIVT_Y=(T_OLD(I,K,J+1)-T_OLD(I,K,J))/(DYHUCM)
+              ELSE IF (J.EQ.JDE-1)THEN
+                  DERIVT_Y=(T_OLD(I,K,J)-T_OLD(I,K,J-1))/(DYHUCM)
+              ELSE
+                  DERIVT_Y=(T_OLD(I,K,J+1)-T_OLD(I,K,J-1))/(2.*DYHUCM)
+              END IF
+                DTFREEZ_XYZ(I,K,J) = DT*(VX*DERIVT_Y+ &
+                                  UX*DERIVT_X+w_stag*DERIVT_Z)
+              ELSE ! IF(T_OLD(I,K,J).GE.238.15.AND.T_OLD(I,K,J).LT.274.15)
+                DTFREEZ_XYZ(I,K,J)=0.
+              ENDIF
+              IF(SUPICE(K).GE.0.02.AND.T_OLD(I,K,J).LT.268.15) THEN
+                IF (I.LT.IDE-1)THEN
+                    ES2NPLSX=AA2_MY*EXP(-BB2_MY/T_OLD(I+1,K,J))
+                    EW1NPLSX=QV_OLD(I+1,K,J)*pcgs(I+1,K,J)/ &
+                              (0.622+0.378*QV_OLD(I+1,K,J))
+                ELSE
+                    ES2NPLSX = AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
+                    EW1NPLSX = QV_OLD(I,K,J)*pcgs(I,K,J)/ &
+                              (0.622+0.378*QV_OLD(I,K,J))
+                END IF
+                IF (ES2NPLSX.EQ.0)THEN
+                  DEL2INPLSX=0.5
+                ELSE
+                  DEL2INPLSX=EW1NPLSX/ES2NPLSX-1.
+                END IF
+                IF(DEL2INPLSX.GT.0.5) DEL2INPLSX=.5
+                IF (I.GT.1)THEN
+                  ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I-1,K,J))
+                  EW1N=QV_OLD(I-1,K,J)*pcgs(I-1,K,J)/(0.622+0.378*QV_OLD(I-1,K,J))
+                ELSE
+                  ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
+                  EW1N=QV_OLD(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV_OLD(I,K,J))
+                END IF
+                DEL2IN=EW1N/ES2N-1.
+                IF(DEL2IN.GT.0.5) DEL2IN=.5
+                IF (I.GT.1.AND.I.LT.IDE-1)THEN
+                    DERIVS_X=(DEL2INPLSX-DEL2IN)/(2.*DXHUCM)
+                ELSE
+                    DERIVS_X=(DEL2INPLSX-DEL2IN)/(DXHUCM)
+                END IF
+                IF (J.LT.JDE-1)THEN
+                  ES2NPLSY=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J+1))
+                  EW1NPLSY=QV_OLD(I,K,J+1)*pcgs(I,K,J+1)/(0.622+0.378*QV_OLD(I,K,J+1))
+                ELSE
+                  ES2NPLSY=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
+                  EW1NPLSY=QV_OLD(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV_OLD(I,K,J))
+                END IF
+                DEL2INPLSY=EW1NPLSY/ES2NPLSY-1.
+                IF(DEL2INPLSY.GT.0.5) DEL2INPLSY=.5
+                IF (J.GT.1)THEN
+                  ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J-1))
+                  EW1N=QV_OLD(I,K,J-1)*pcgs(I,K,J-1)/(0.622+0.378*QV_OLD(I,K,J-1))
+                ELSE
+                  ES2N=AA2_MY*EXP(-BB2_MY/T_OLD(I,K,J))
+                  EW1N=QV_OLD(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV_OLD(I,K,J))
+                END IF
+                DEL2IN=EW1N/ES2N-1.
+                IF(DEL2IN.GT.0.5) DEL2IN=.5
+                IF (J.GT.1.AND.J.LT.JDE-1)THEN
+                    DERIVS_Y=(DEL2INPLSY-DEL2IN)/(2.*DYHUCM)
+                ELSE
+                    DERIVS_Y=(DEL2INPLSY-DEL2IN)/(DYHUCM)
+                END IF
+                IF (K.EQ.1)DERIVS_Z=(SUPICE(K+1)-SUPICE(K))/DZZ(K)
+                IF (K.EQ.KTE)DERIVS_Z=(SUPICE(K)-SUPICE(K-1))/DZZ(K)
+                IF(K.GT.1.and.K.LT.KTE) DERIVS_Z=(SUPICE(K+1)-SUPICE(K-1))/DZZ(K)
+                IF (I.LT.IDE-1.AND.J.LT.JDE-1)THEN
+                UX=25.*(U(I,K,J)+U(I+1,K,J)+U(I,K,J+1)+U(I+1,K,J+1))
+                VX=25.*(V(I,K,J)+V(I+1,K,J)+V(I,K,J+1)+V(I+1,K,J+1))
+              ELSE
+                UX=U(I,K,J)*100.
+                VX=V(I,K,J)*100.
+              END IF
+              DSUPICE_XYZ(I,K,J)=(UX*DERIVS_X+VX*DERIVS_Y+ &
+                                  w_stag*DERIVS_Z)*DTCOND
+              ELSE
+                DSUPICE_XYZ(I,K,J)=0.0
+              END IF
+              END DO
+            END DO
+          END DO
+        ENDIF
+
+       do j = jts,jte
+          do k = kts,kte
+             do i = its,ite
+
+            ! ... correcting Look-up-table Terminal velocities
+            FACTOR_P = DSQRT(1.0D6/PCGS(I,K,J))
+            VR2_ZC(1:nkr,K) = VR2(1:nkr,1)*FACTOR_P
+            VR2_ZP(1:nkr,K) = VR2(1:nkr,2)*FACTOR_P
+            VR2_ZD(1:nkr,K) = VR2(1:nkr,3)*FACTOR_P
+            VR1_Z(1:nkr,K) =  VR1(1:nkr)*FACTOR_P
+            VR3_Z(1:nkr,K) = VR3(1:nkr)*FACTOR_P
+            VR4_Z(1:nkr,K) = VR4(1:nkr)*FACTOR_P
+            VR5_Z(1:nkr,k) = VR5(1:nkr)*FACTOR_P
+            VR1_Z3D(1:nkr,I,K,J) = VR1(1:nkr)*FACTOR_P
+            VR3_Z3D(1:nkr,I,K,J) = VR3(1:nkr)*FACTOR_P
+            VR4_Z3D(1:nkr,I,K,J) = VR4(1:nkr)*FACTOR_P
+            VR5_Z3D(1:nkr,I,K,J) = VR5(1:nkr)*FACTOR_P
+
+     			! ... Liquid
+     			  KRR = 0
+     			  DO kr = p_ff1i01,p_ff1i33
+     				 KRR = KRR + 1
+     				 FF1R(KRR) = chem_new(I,K,J,KR)
+     				 IF (FF1R(KRR) < 0.0)FF1R(KRR) = 0.0
+     			  END DO
+     			! ... CCN
+     			  KRR = 0
+     			  DO kr=p_ff8i01,p_ff8i43
+     				 KRR = KRR + 1
+     				 FCCN(KRR) = chem_new(I,K,J,KR)
+     				 if (fccn(krr) < 0.0)fccn(krr) = 0.0
+     			  END DO
+
+   				! no explicit Ice Crystals in FSBM
+   				 FF2R(:,1) = 0.0
+   				 FF2R(:,2) = 0.0
+   				 FF2R(:,3) = 0.0
+
+   				! ... Snow
+   				KRR=0
+   				DO kr=p_ff5i01,p_ff5i33
+   					KRR=KRR+1
+   					FF3R(KRR)=chem_new(I,K,J,KR)
+   					if (ff3r(krr) < 0.0)ff3r(krr) = 0.0
+   				END DO
+
+          ! ... Hail or Graupel
+          if(hail_opt == 1)then
+           KRR=0
+           DO kr=p_ff6i01,p_ff6i33
+               KRR=KRR+1
+               FF5R(KRR) = chem_new(I,K,J,KR)
+               if (ff5r(krr) < 0.0)ff5r(krr) = 0.0
+               FF4R(KRR) = 0.0
+           ENDDO
+          else
+           KRR=0
+           DO kr=p_ff6i01,p_ff6i33
+               KRR=KRR+1
+               FF4R(KRR) = chem_new(I,K,J,KR)
+               if (ff4r(krr) < 0.0)ff4r(krr) = 0.0
+               FF5R(KRR) = 0.0
+           ENDDO
+          endif
+
+! +---------------------------------------------+
+! Neucliation, Condensation, Collisions
+! +---------------------------------------------+
+          IF (T_OLD(I,K,J).GT.193.15)THEN
+             TT=T_OLD(I,K,J)
+             QQ=QV_OLD(I,K,J)
+             IF(QQ.LE.0.0) QQ = 1.D-10
+             PP=pcgs(I,K,J)
+             TTA=T_NEW(I,K,J)
+             QQA=QV(I,K,J)
+
+             IF (QQA.LE.0) call wrf_message("WARNING: FAST SBM, QQA < 0")
+             IF (QQA.LE.0) print*,'I,J,K,Told,Tnew,QQA = ',I,J,K,TT,TTA,QQA
+             IF (QQA.LE.0) QQA = 1.0D-10
+
+              ES1N = AA1_MY*DEXP(-BB1_MY/TT)
+              ES2N = AA2_MY*DEXP(-BB2_MY/TT)
+              EW1N=QQ*PP/(0.622+0.378*QQ)
+              DIV1=EW1N/ES1N
+              DEL1IN=EW1N/ES1N-1.
+              DIV2=EW1N/ES2N
+              DEL2IN=EW1N/ES2N-1.
+              ES1N=AA1_MY*DEXP(-BB1_MY/TTA)
+              ES2N=AA2_MY*DEXP(-BB2_MY/TTA)
+              EW1N=QQA*PP/(0.622+0.378*QQA)
+              DIV3=EW1N/ES1N
+              DEL1AD=EW1N/ES1N-1.
+              DIV4=EW1N/ES2N
+              DEL2AD=EW1N/ES2N-1.
+              SUP2_OLD=DEL2IN
+
+              IF(del1ad > 0.0 .or. del2ad > 0.0 .or. (sum(FF1R)+sum(FF3R)+sum(FF4R)+sum(FF5R)) > 1.0e-20)THEN
+                ! JacobS: commented for this version                
+                !                CALL Relaxation_Time(TT,QQ,PP,rhocgs(I,K,J),DEL1IN,DEL2IN, &
+                !                                      XL,VR1_Z(:,K),FF1R,RLEC,RO1BL, &
+                !                                      XI,VR2_Z,FF2R,RIEC,RO2BL, &
+                !                                      XS,VR3_Z(:,K),FF3R,RSEC,RO3BL, &
+                !                                      XG,VR4_Z(:,K),FF4R,RGEC,RO4BL, &
+                !                                      XH,VR5_Z(:,k),FF5R,RHEC,RO5BL, &
+                !                                      NKR,ICEMAX,COL,DT,NCOND,DTCOND)
+                  DELSUP1=(DEL1AD-DEL1IN)/NCOND
+                  DELSUP2=(DEL2AD-DEL2IN)/NCOND
+                  DELDIV1=(DIV3-DIV1)/NCOND
+                  DELDIV2=(DIV4-DIV2)/NCOND
+                  DELTATEMP = 0
+                  DELTAQ = 0
+                  tt_old = TT
+                  qq_old = qq
+                  DIFFU=1
+
+                  IF (DIV1.EQ.DIV3) DIFFU = 0
+                  IF (DIV2.EQ.DIV4) DIFFU = 0
+
+                  DTNEW = 0.0
+                  DO IKL=1,NCOND
+                    DTCOND = min(DT-DTNEW,DTCOND)
+                    DTNEW = DTNEW + DTCOND
+
+                    IF (DIFFU.NE.0)THEN
+                      IF (DIFFU.NE.0)THEN
+                          DEL1IN = DEL1IN+DELSUP1
+                          DEL2IN = DEL2IN+DELSUP2
+                          DIV1 = DIV1+DELDIV1
+                          DIV2 = DIV2+DELDIV2
+                      END IF
+                      IF (DIV1.GT.DIV2.AND.TT.LE.265)THEN
+                        DIFFU=0
+                      END IF
+                      IF (DIFFU == 1)THEN
+                        DEL1NR=A1_MYN*(100.*DIV1)
+                        DEL2NR=A2_MYN*(100.*DIV2)
+                        IF (DEL2NR.EQ.0)print*,'ikl = ',ikl
+                        IF (DEL2NR.EQ.0)print*,'div1,div2 = ',div1,div2
+                        IF (DEL2NR.EQ.0)print*,'i,j,k = ',i,j,k
+                        IF (DEL2NR.EQ.0)call wrf_error_fatal("fatal error in module_mp_fast_sbm (DEL2NR.EQ.0) , model stop ")
+                        DEL12R=DEL1NR/DEL2NR
+                        DEL12RD=DEL12R**DEL_BBR
+                        EW1PN=AA1_MY*100.*DIV1*DEL12RD/100.
+                        TT=-DEL_BB/DLOG(DEL12R)
+                        QQ=0.622*EW1PN/(PP-0.378*EW1PN)
+
+                        IF(DEL1IN > 0.0 .OR. DEL2IN > 0.0)THEN
+! +------------------------------------------+
+! Droplet nucleation :
+! +------------------------------------------+
+                          DO KR=1,NKR
+                            FF1IN(KR)=FF1R(KR)
+                              DO ICE=1,ICEMAX
+                                FF2IN(KR,ICE)=FF2R(KR,ICE)
+                              ENDDO
+                            ENDDO
+                          Is_This_CloudBase = 0
+                          IF(KZ_Cloud_Base(I,J) == K .and. col*sum(FF1IN*XL) < 5.0) Is_This_CloudBase = 1
+                          if (k.lt.kte)then
+                            w_stag_my 	= 50.*(w(i,k,j)+w(i,k+1,j))
+                          else
+                            w_stag_my = 100*w(i,k,j)
+                          end if
+                          CALL JERNUCL01_KS(FF1IN,FF2IN,FCCN 		  &
+                                            ,XL,XI,TT,QQ       					    &
+                                            ,rhocgs(I,K,J),pcgs(I,K,J) 			&
+                                            ,DEL1IN,DEL2IN     			        &
+                                            ,COL 								            &
+                                            ,SUP2_OLD,DSUPICE_XYZ(I,K,J) 		&
+                                            ,RCCN,DROPRADII,NKR,NKR_aerosol,ICEMAX,ICEPROCS &
+                                            ,W_Stag_My,Is_This_CloudBase,RO_SOLUTE,IONS,MWAERO &
+                                            ,I,J,K)
+                        
+                        
+                          DO KR=1,NKR
+                            FF1R(KR)=FF1IN(KR)
+                            DO ICE=1,ICEMAX
+                              FF3R(KR) = FF3R(KR) + FF2IN(KR,ICE)
+                              FF2IN(KR,ICE) = 0.0
+                              FF2R(KR,ICE) = 0.0
+                            END DO
+                          END DO
+                        END IF
+
+                        FMAX1=0.
+                        FMAX2=0.
+                        FMAX3=0.
+                        FMAX4=0.
+                        FMAX5=0.
+                        DO KR=1,NKR
+                          FF1IN(KR)=FF1R(KR)
+                          FMAX1=AMAX1(FF1R(KR),FMAX1)
+                          FF3IN(KR)=FF3R(KR)
+                          FMAX3=AMAX1(FF3R(KR),FMAX3)
+                          FF4IN(KR)=FF4R(KR)
+                          FMAX4=AMAX1(FF4R(KR),FMAX4)
+                          FF5IN(KR)=FF5R(KR)
+                          FMAX5=AMAX1(FF5R(KR),FMAX5)
+                          DO ICE=1,ICEMAX
+                            FF2IN(KR,ICE)=FF2R(KR,ICE)
+                            FMAX2(ICE)=AMAX1(FF2R(KR,ICE),FMAX2(ICE)) ! ### (KS) FMAX2(3)
+                          END DO
+                        END DO
+                      ISYM1=0
+                      ISYM2=0
+                      ISYM3=0
+                      ISYM4=0
+                      ISYM5=0
+                      IF(FMAX1 > 0)ISYM1 = 1
+                      IF (ICEPROCS == 1)THEN
+                        IF(FMAX2(1) > 1.E-10)ISYM2(1) = 1
+                        IF(FMAX2(2) > 1.E-10)ISYM2(2) = 1
+                        IF(FMAX2(3) > 1.E-10)ISYM2(3) = 1
+                        IF(FMAX3 > 1.E-10)ISYM3 = 1
+                        IF(FMAX4 > 1.E-10)ISYM4 = 1
+                        IF(FMAX5 > 1.E-10)ISYM5 = 1
+                      END IF
+
+                      IF(ISYM1==1 .AND. ((TT-273.15)>-0.187 .OR.(sum(ISYM2)==0 .AND. &
+                          ISYM3==0 .AND. ISYM4==0 .AND. ISYM5==0)))THEN
+
+                          ! ... only warm phase
+                          CALL ONECOND1(TT,QQ,PP,rhocgs(I,K,J) &
+                                        ,VR1_Z(:,K),pcgs(I,K,J) &
+                                        ,DEL1IN,DEL2IN,DIV1,DIV2 &
+                                        ,FF1R,FF1IN,XL,RLEC,RO1BL &
+                                        ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
+                                        ,C1_MEY,C2_MEY &
+                                        ,COL,DTCOND,ICEMAX,NKR,ISYM1 &
+                                        ,ISYM2,ISYM3,ISYM4,ISYM5,I,J,K,W(i,k,j),DX,Itimestep)
+
+                        ELSE IF(ISYM1==0 .AND. (TT-273.15)<-0.187 .AND. &
+                                (sum(ISYM2)>1 .OR. ISYM3==1 .OR. ISYM4==1 .OR. ISYM5==1))THEN
+                                  !IF (TT.GT.213.15)THEN
+                                    VR2_Z(:,1) = VR2_ZC(:,K)
+                                    VR2_Z(:,2) = VR2_ZP(:,K)
+                                    VR2_Z(:,3) = VR2_ZD(:,K)
+                                    CALL ONECOND2(TT,QQ,PP,rhocgs(I,K,J) &
+                                    ,VR2_Z,VR3_Z(:,K),VR4_Z(:,K),VR5_Z(:,K),pcgs(I,K,J) &
+                                    ,DEL1IN,DEL2IN,DIV1,DIV2 &
+                                    ,FF2R,FF2IN,XI,RIEC,RO2BL &
+                                    ,FF3R,FF3IN,XS,RSEC,RO3BL &
+                                    ,FF4R,FF4IN,XG,RGEC,RO4BL &
+                                    ,FF5R,FF5IN,XH,RHEC,RO5BL &
+                                    ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
+                                    ,C1_MEY,C2_MEY &
+                                    ,COL,DTCOND,ICEMAX,NKR &
+                                    ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5,I,J,K,W(i,k,j),DX,Itimestep)
+                                !END IF
+                          ELSE IF(ISYM1==1 .AND. (TT-273.15)<-0.187 .AND. &
+                              (sum(ISYM2)>1 .OR. ISYM3==1 .OR. ISYM4==1 .OR. ISYM5==1))THEN
+                              IF (TT > 233.15)THEN
+                                VR2_Z(:,1) = VR2_ZC(:,K)
+                                VR2_Z(:,2) = VR2_ZP(:,K)
+                                VR2_Z(:,3) = VR2_ZD(:,K)
+                                CALL ONECOND3(TT,QQ,PP,rhocgs(I,K,J) &
+                                ,VR1_Z(:,K),VR2_Z,VR3_Z(:,K),VR4_Z(:,K),VR5_Z(:,K),pcgs(I,K,J) &
+                                ,DEL1IN,DEL2IN,DIV1,DIV2 &
+                                ,FF1R,FF1IN,XL,RLEC,RO1BL &
+                                ,FF2R,FF2IN,XI,RIEC,RO2BL &
+                                ,FF3R,FF3IN,XS,RSEC,RO3BL &
+                                ,FF4R,FF4IN,XG,RGEC,RO4BL &
+                                ,FF5R,FF5IN,XH,RHEC,RO5BL &
+                                ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
+                                ,C1_MEY,C2_MEY &
+                                ,COL,DTCOND,ICEMAX,NKR &
+                                ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5,I,J,K,W(i,k,j),DX,Itimestep)
+                              ENDIF
+                            END IF
+                          END IF ! DIFF.NE.0
+                      END IF ! DIFFU.NE.0
+                  END DO ! NCOND - end of NCOND loop
+! +----------------------------------+
+! Collision-Coallescnce
+! +----------------------------------+
+                  DO IKL = 1,NCOLL
+                    IF ( TT >= 233.15 ) THEN
+                      FLIQFR_SD = 0.0
+                      FLIQFR_GD = 0.0
+                      FLIQFR_HD = 0.0
+                      FRIMFR_SD = 0.0
+                      CALL COAL_BOTT_NEW (FF1R,FF2R,FF3R,     				    &
+                                FF4R,FF5R,TT,QQ,PP, 					            &
+                                rhocgs(I,K,J),dt_coll,TCRIT,TTCOAL, 	    &
+                                FLIQFR_SD,FLIQFR_GD,FLIQFR_HD,FRIMFR_SD,  &
+                                DEL1IN, DEL2IN, 			        	          &
+                                I,J,K,Itimestep,CollEff_out)
+
+                    END IF
+                  END DO ! NCOLL - end of NCOLL loop
+                                   
+                  T_new(i,k,j) = tt
+                  qv(i,k,j) = qq
+                   
+            ! in case Sw,Si,mass  
+            ENDIF 
+        ! in case T_OLD(I,K,J).GT.213.15
+        END IF
+ ! +-------------------------------- +
+ ! Immediate Freezing
+ ! +---------------------------------+
+ 				IF(T_NEW(i,k,j) < 273.15 .and. ICEPROCS == 1)THEN
+ 					CALL FREEZ &
+ 							(FF1R,XL,FF2R,XI,FF3R,XS,FF4R,XG,FF5R,XH, &
+ 							 T_NEW(I,K,J),DT,rhocgs(I,K,J), 			  &
+ 							 COL,AFREEZMY,BFREEZMY,BFREEZMAX, 		  &
+ 							 KRFREEZ,ICEMAX,NKR)
+ 				ENDIF
+! --------------------------------------------------------------+
+! Jiwen Fan Melting (melting along a constant time scale)
+! --------------------------------------------------------------+
+		    IF (JIWEN_FAN_MELT == 1 .and. T_NEW(i,k,j) > 273.15 .and. ICEPROCS == 1) THEN
+				   CALL J_W_MELT(FF1R,XL,FF2R,XI,FF3R,XS,FF4R,XG,FF5R,XH, &
+						             T_NEW(I,K,J),DT,rhocgs(I,K,J),COL,ICEMAX,NKR)
+        END IF
+
+        DO KR=1,NKR
+          DO ICE=1,ICEMAX
+            FF3R(KR)=FF3R(KR) + FF2R(KR,ICE)
+            FF2R(KR,ICE) = 0.0
+          END DO
+          if(hail_opt == 1)then
+            FF5R(KR) = FF5R(KR) + FF4R(KR)
+            FF4R(KR) = 0.0
+          else
+            FF4R(KR) = FF4R(KR) + FF5R(KR)
+            FF5R(KR) = 0.0
+          endif
+        END DO
+
+ ! +---------------------------+
+ ! Spontanaous Rain Breakup
+! +----------------------------+
+ 			IF (Spont_Rain_BreakUp_On == 1 .AND. (SUM(FF1R) > 43.0*1.0D-30) )THEN
+ 					FF1R_D(:) = FF1R(:)
+ 					XL_D(:) = XL(:)
+ 					CALL Spont_Rain_BreakUp (DT ,FF1R_D, XL_D, Prob, Gain_Var_New, NND, NKR, ikr_spon_break)
+		      FF1R(:) = FF1R_D(:)
+ 			END IF
+
+ ! -----------------------------------------------------------+
+ ! ... Snow BreakUp
+ ! -----------------------------------------------------------+
+ 		IF (Snow_BreakUp_On == 1 .and. ICEPROCS == 1 .and. sum(FF3R(KR_SNOW_MIN:NKR))> (NKR-KR_SNOW_MIN)*1.0D-30)THEN
+
+ 			DO KR=1,NKR
+ 				FF3R_D(KR) = FF3R(KR)
+ 			END DO
+			IF (KR_SNOW_MAX <= NKR) CALL BreakUp_Snow (TT_r,FF3R_D,FLIQFR_SD,xs_d,FRIMFR_SD,NKR)
+ 					DO KR=1,NKR
+ 						FF3R(KR) = FF3R_D(KR)
+ 					END DO
+ 		END IF
+
+    ! Update temperature at the end of MP
+  	th_phy(i,k,j) = t_new(i,k,j)/pi_phy(i,k,j)
+
+    ! ... Drops
+	  KRR = 0
+	  DO kr = p_ff1i01,p_ff1i33
+		 KRR = KRR+1
+		 chem_new(I,K,J,KR) = FF1R(KRR)
+	  END DO
+	  ! ... CCN
+	  KRR = 0
+	  DO kr=p_ff8i01,p_ff8i43
+		  KRR=KRR+1
+		  chem_new(I,K,J,KR)=FCCN(KRR)
+	  END DO
+	  IF (ICEPROCS == 1)THEN
+	  ! ... Snow
+		  KRR = 0
+		  DO kr=p_ff5i01,p_ff5i33
+			  KRR=KRR+1
+			  chem_new(I,K,J,KR)=FF3R(KRR)
+		  END DO
+     ! ... Hail/ Graupel
+      if(hail_opt == 1)then
+       KRR = 0
+       DO KR=p_ff6i01,p_ff6i33
+           KRR=KRR+1
+           chem_new(I,K,J,KR) = FF5R(KRR)
+       END DO
+      else
+       KRR = 0
+       DO KR=p_ff6i01,p_ff6i33
+           KRR=KRR+1
+           chem_new(I,K,J,KR) = FF4R(KRR)
+       END DO
+      endif
+      ! ICEPROCS == 1
+ 		   END IF
+
+       END DO
+      END DO
+     END DO
+
+! +-----------------------------+
+! Hydrometeor Sedimentation
+! +-----------------------------+
+       do j = jts,jte
+       	do i = its,ite
+ ! ... Drops ...
+ 			    do k = kts,kte
+            rhocgs_z(k)=rhocgs(i,k,j)
+            pcgs_z(k)=pcgs(i,k,j)
+            zcgs_z(k)=zcgs(i,k,j)
+            vrx(k,:)=vr1_z3D(:,i,k,j)
+            krr=0
+            do kr=p_ff1i01,p_ff1i33
+              krr=krr+1
+              ffx_z(k,krr)=chem_new(i,k,j,kr)/rhocgs(i,k,j)
+            end do
+          end do
+          call FALFLUXHUCM_Z(ffx_z,VRX,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
+          do k = kts,kte
+            krr=0
+            do kr=p_ff1i01,p_ff1i33
+              krr=krr+1
+              chem_new(i,k,j,kr)=ffx_z(k,krr)*rhocgs(i,k,j)
+            end do
+          end do
+       		if(iceprocs == 1)then
+ ! ... Snow ...
+          do k = kts,kte
+            rhocgs_z(k)=rhocgs(i,k,j)
+            pcgs_z(k)=pcgs(i,k,j)
+            zcgs_z(k)=zcgs(i,k,j)
+            vrx(k,:)=vr3_z3D(:,i,k,j)
+            krr=0
+            do kr=p_ff5i01,p_ff5i33
+              krr=krr+1
+              ffx_z(k,krr)=chem_new(i,k,j,kr)/rhocgs(i,k,j)
+            end do
+          end do
+          call FALFLUXHUCM_Z(ffx_z,VRX,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
+          do k = kts,kte
+            krr=0
+            do kr=p_ff5i01,p_ff5i33
+              krr=krr+1
+              chem_new(i,k,j,kr)=ffx_z(k,krr)*rhocgs(i,k,j)
+            end do
+          end do
+ ! ... Hail or Graupel ...
+          do k = kts,kte
+            rhocgs_z(k)=rhocgs(i,k,j)
+            pcgs_z(k)=pcgs(i,k,j)
+            zcgs_z(k)=zcgs(i,k,j)
+            if(hail_opt == 1)then
+              vrx(k,:) = vr5_z3D(:,i,k,j)
+            else
+              vrx(k,:) = vr4_z3D(:,i,k,j)
+            endif
+            krr=0
+            do kr=p_ff6i01,p_ff6i33
+              krr=krr+1
+              ffx_z(k,krr)=chem_new(i,k,j,kr)/rhocgs(i,k,j)
+            end do
+          end do
+          call FALFLUXHUCM_Z(ffx_z,VRX,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
+          do k = kts,kte
+            krr=0
+            do kr=p_ff6i01,p_ff6i33
+              krr=krr+1
+              chem_new(i,k,j,kr)=ffx_z(k,krr)*rhocgs(i,k,j)
+            end do
+          end do
+ 			end if ! if (iceprocs == 1)
+   	end do
+   end do
+
+    gmax=0
+    qmax=0
+    imax=0
+    kmax=0
+    qnmax=0
+    inmax=0
+    knmax=0
+    DO j = jts,jte
+      DO k = kts,kte
+        DO i = its,ite
+          QC(I,K,J) = 0.0
+          QR(I,K,J) = 0.0
+          QI(I,K,J) = 0.0
+          QS(I,K,J) = 0.0
+          QG(I,K,J) = 0.0
+          QNC(I,K,J) = 0.0
+          QNR(I,K,J) = 0.0
+          QNI(I,K,J) = 0.0
+          QNS(I,K,J) = 0.0
+          QNG(I,K,J) = 0.0
+          QNA(I,K,J) = 0.0
+
+          tt = th_phy(i,k,j)*pi_phy(i,k,j)
+
+          ! ... Drop output
+          KRR = 0
+          DO KR = p_ff1i01,p_ff1i33
+            KRR=KRR+1
+            IF (KRR < KRDROP)THEN
+              QC(I,K,J) = QC(I,K,J) &
+              + (1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XL(KRR)*XL(KRR)*3
+              QNC(I,K,J) = QNC(I,K,J) &
+              + COL*chem_new(I,K,J,KR)*XL(KRR)*3.0/rhocgs(I,K,J)*1000.0 ! #/kg
+            ELSE
+              QR(I,K,J) = QR(I,K,J) &
+              + (1./RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XL(KRR)*XL(KRR)*3.0
+              QNR(I,K,J) = QNR(I,K,J) &
+              + COL*chem_new(I,K,J,KR)*XL(KRR)*3/rhocgs(I,K,J)*1000.0 ! #/kg
+            END IF
+          END DO
+
+ 			  KRR=0
+ 			  IF (ICEPROCS == 1)THEN
+ 			  ! ... Snow output
+ 			   	KRR=0
+ 			   	DO  KR=p_ff5i01,p_ff5i33
+ 					KRR=KRR+1
+ 					 if (KRR <= KRICE)THEN
+ 						 QI(I,K,J) = QI(I,K,J) &
+ 					                 +(1.0/RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3.0
+ 						 QNI(I,K,J) = QNI(I,K,J) &
+         				  			  + COL*chem_new(I,K,J,KR)*XS(KRR)*3.0/rhocgs(I,K,J)*1000.0 ! #/kg
+ 					 else
+ 						 QS(I,K,J) = QS(I,K,J) &
+ 									+ (1.0/RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3.0
+ 						 QNS(I,K,J) = QNS(I,K,J) &
+ 								 	+ COL*chem_new(I,K,J,KR)*XS(KRR)*3.0/rhocgs(I,K,J)*1000.0 ! #/kg
+ 					endif
+ 			   END DO
+
+ 			   ! ... Hail / Graupel output
+          KRR=0
+          DO  KR=p_ff6i01,p_ff6i33
+            KRR=KRR+1
+            ! ... Hail or Graupel
+            if(hail_opt == 1)then
+              QG(I,K,J)=QG(I,K,J) &
+              +(1.0/RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XH(KRR)*XH(KRR)*3.0
+              QNG(I,K,J)=QNG(I,K,J) &
+              +COL*chem_new(I,K,J,KR)*XH(KRR)*3.0/rhocgs(I,K,J)*1000.0 ! #/kg
+            else
+              QG(I,K,J)=QG(I,K,J) &
+              +(1.0/RHOCGS(I,K,J))*COL*chem_new(I,K,J,KR)*XG(KRR)*XG(KRR)*3.0
+              QNG(I,K,J)=QNG(I,K,J) &
+              +COL*chem_new(I,K,J,KR)*XG(KRR)*3.0/rhocgs(I,K,J)*1000.0 ! #/kg
+            endif
+          END DO
+   		END IF !IF (ICEPROCS.EQ.1)THEN
+
+      KRR = 0
+      DO  KR = p_ff8i01,p_ff8i43
+      	KRR = KRR + 1
+      	QNA(I,K,J) = QNA(I,K,J) &
+      			   	+ COL*chem_new(I,K,J,KR)/rhocgs(I,K,J)*1000.0   ! #/kg
+      END DO
+
+ 		END DO
+   END DO
+  END DO
+
+ 998   format(' ',10(f10.1,1x))
+
+  DO j = jts,jte
+    DO i = its,ite
+      RAINNCV(I,J) = 0.0
+      SNOWNCV(I,J) = 0.0
+      GRAUPELNCV(I,J) = 0.0
+      krr=0
+      DO KR=p_ff1i01,p_ff1i33
+        krr=krr+1
+        DELTAW = VR1_Z(KRR,1)
+        RAINNC(I,J) = RAINNC(I,J) &
+          +10.0*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+          chem_new(I,1,J,KR)*XL(KRR)*XL(KRR)
+        RAINNCV(I,J) = RAINNCV(I,J) &
+          +10.0*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+          chem_new(I,1,J,KR)*XL(KRR)*XL(KRR)
+      END DO
+      KRR=0
+      DO KR=p_ff5i01,p_ff5i33
+        KRR=KRR+1
+        DELTAW = VR3_Z(KRR,1)
+        RAINNC(I,J)=RAINNC(I,J) &
+          +10.0*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+          chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
+        RAINNCV(I,J)=RAINNCV(I,J) &
+          +10.0*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+          chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
+        SNOWNC(I,J) = SNOWNC(I,J) &
+        + 10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+        chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
+       SNOWNCV(I,J) = SNOWNCV(I,J) &
+       + 10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+       chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
+     END DO
+     KRR=0
+     DO KR=p_ff6i01,p_ff6i33
+       KRR=KRR+1
+       if(hail_opt == 1)then
+         DELTAW = VR5_Z(KRR,1)
+         RAINNC(I,J) = RAINNC(I,J) &
+         +10.0*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+         chem_new(I,1,J,KR)*XH(KRR)*XH(KRR)
+       RAINNCV(I,J) = RAINNCV(I,J) &
+         +10.0*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+         chem_new(I,1,J,KR)*XH(KRR)*XH(KRR)
+       GRAUPELNC(I,J) = GRAUPELNC(I,J) &
+       + 10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+       chem_new(I,1,J,KR)*XH(KRR)*XH(KRR)
+     GRAUPELNCV(I,J) = GRAUPELNCV(I,J) &
+     + 10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     chem_new(I,1,J,KR)*XH(KRR)*XH(KRR)
+   else
+     DELTAW = VR4_Z(KRR,1)
+     RAINNC(I,J) = RAINNC(I,J) &
+      +10.0*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+      chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
+    RAINNCV(I,J) = RAINNCV(I,J) &
+      +10.0*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+      chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
+    GRAUPELNC(I,J) = GRAUPELNC(I,J) &
+      + 10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+      chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
+    GRAUPELNCV(I,J) = GRAUPELNCV(I,J) &
+      + 10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+      chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
+  endif
+  END DO
+! ..........................................
+! ... Polarimetric Forward Radar Operator
+! ..........................................
+  if ( PRESENT (diagflag) ) then
+    if( diagflag .and. IPolar_HUCM .and. (sbm_diagnostics==1) ) then
+
+      dx_dbl = dx
+      dy_dbl = dy
+      do k = kts,kte
+      zmks_1d(k) = zcgs(i,k,j)*0.01
+      end do
+      DIST_SING = ((i-ide/2)**2+(j-jde/2)**2)**(0.5)
+      DISTANCE = 1.D5
+
+      do k=kts,kte
+        FF2R_d = 0.0 	 	
+        FLIQFR_SD = 0.0
+        FLIQFR_GD = 0.0
+        FLIQFR_HD = 0.0
+        FF1_FD = 0.0
+        FL1_FD = 0.0
+        BKDEN_Snow(:) = RO3BL(:)
+        RO2BL_D(:,:) = RO2BL(:,:)
+        RO2BL_D(:,:) = RO2BL(:,:)
+
+! ... Drops
+        KRR=0
+        do kr = p_ff1i01,p_ff1i33 
+          KRR=KRR+1
+          FF1R_D(KRR) = (1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XL(KRR)*XL(KRR)*3.0
+          if (FF1R_D(KRR) < 1.0D-20) FF1R_D(KRR) = 0.0
+        end do
+        if (ICEPROCS == 1)then
+! ... SNOW
+          KRR=0
+          do kr=p_ff5i01,p_ff5i33
+            KRR=KRR+1
+            FF3R_D(KRR)=(1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XS(KRR)*XS(KRR)*3.0
+            FF3R (KRR) = chem_new(I,K,J,KR)
+            if (ff3r_D(krr) < 1.0D-20) ff3r_D(krr) = 0.0
+          end do
+! ... Graupel or Hail
+          KRR=0
+          if(hail_opt == 0)then
+            do kr = p_ff6i01,p_ff6i33
+              KRR=KRR+1
+              FF4R_D(KRR) = (1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XG(KRR)*XG(KRR)*3.0
+              FF4R(KRR) = chem_new(I,K,J,KR)
+              if (FF4R_D(KRR) < 1.0D-20) FF4R_D(KRR)= 0.0
+              FF5R_d(KRR) = 0.0
+            end do
+          else
+            do kr=p_ff6i01,p_ff6i33
+              KRR=KRR+1
+              FF5R_D(KRR)=(1./RHOCGS(I,K,J))*chem_new(I,K,J,KR)*XH(KRR)*XH(KRR)*3.0
+              FF5R(KRR)=chem_new(I,K,J,KR)
+              if (ff5r_d(krr) < 1.0D-20) ff5r_d(krr)=0.0
+              FF4R_d(KRR) = 0.0
+            end do
+          endif
+        ! in caseICEPROCS.EQ.1
+        end if
+
+        rhocgs_d = rhocgs(I,K,J)
+        T_NEW_D = T_NEW(I,K,J)
+
+        IWL = 1
+        ICLOUD = 0
+
+ 			  CALL polar_hucm &
+                 				(FF1R_D, FF2R_D, FF3R_D, FF4R_D, FF5R_D, FF1_FD, 		    &
+                 				FLIQFR_SD, FLIQFR_GD, FLIQFR_HD, FL1_FD, 				        &
+                 				BKDEN_Snow, T_NEW_D, rhocgs_D, wavelength, iwl,         &
+                 				distance, dx_dbl, dy_dbl, zmks_1d, 					            &
+                 				out1, out2, out3, out4, out5, out6, out7, out8, out9,   &
+                 				bin_mass, tab_colum, tab_dendr, tab_snow, bin_log, 		  &
+                 				ijk, i, j, k, kts, kte, NKR, ICEMAX, icloud, itimestep, &
+                 				faf1,fbf1,fab1,fbb1, 									    &
+                 				faf3,fbf3,fab3,fbb3,         							&
+                 				faf4,fbf4,fab4,fbb4,         							&
+                 				faf5,fbf5,fab5,fbb5,         							&
+                 				temps_water,temps_fd,temps_crystals,  	  &
+                 				temps_snow,temps_graupel,temps_hail,  		&
+                 				fws_fd,fws_crystals,fws_snow,		  				&
+                 				fws_graupel,fws_hail,usetables)
+
+
+   			KRR=0
+   			DO KR=r_p_ff1i01,r_p_ff1i06
+   				KRR=KRR+1
+   				sbmradar(I,K,J,KR) = out1(KRR)
+   			END DO
+   			KRR=0
+   			DO KR=r_p_ff2i01,r_p_ff2i06
+   				KRR=KRR+1
+   				sbmradar(I,K,J,KR)=out2(KRR)
+   			END DO
+   			KRR=0
+   			DO KR=r_p_ff3i01,r_p_ff3i06
+   				KRR=KRR+1
+   				sbmradar(I,K,J,KR)=out3(KRR)
+   			END DO
+   			KRR=0
+   			DO KR=r_p_ff4i01,r_p_ff4i06
+   				KRR=KRR+1
+   				sbmradar(I,K,J,KR)=out4(KRR)
+   			END DO
+   			KRR=0
+   			DO KR=r_p_ff5i01,r_p_ff5i06
+   				KRR=KRR+1
+   				sbmradar(I,K,J,KR)=out5(KRR)
+   			END DO
+   			KRR=0
+   			DO KR=r_p_ff6i01,r_p_ff6i06
+   				KRR=KRR+1
+   				sbmradar(I,K,J,KR)=out6(KRR)
+   			END DO
+   			KRR=0
+   			DO KR=r_p_ff7i01,r_p_ff7i06
+   				KRR=KRR+1
+   				sbmradar(I,K,J,KR)=out7(KRR)
+   			END DO
+   			KRR=0
+   			DO KR=r_p_ff8i01,r_p_ff8i06
+   				KRR=KRR+1
+   				sbmradar(I,K,J,KR)=out8(KRR)
+   			END DO
+   			KRR=0
+   			DO KR=r_p_ff9i01,r_p_ff9i06
+   				KRR=KRR+1
+   				sbmradar(I,K,J,KR)=out9(KRR)
+   			END DO
+
+ 		 ! cycle by K
+ 		 end do
+ 		! diagflag .and. IPolar_HUCM
+ 		endif
+ 	! PRESENT(diagflag)
+ 	endif
+
+   ! cycle by I
+   END DO
+ ! cycle by J
+ END DO
+
+   do j=jts,jte
+   do k=kts,kte
+   do i=its,ite
+      th_old(i,k,j)=th_phy(i,k,j)
+      qv_old(i,k,j)=qv(i,k,j)
+   end do
+   end do
+   end do
+
+   if (conserv)then
+ 		  DO j = jts,jte
+ 		     DO i = its,ite
+ 		        DO k = kts,kte
+         		  rhocgs(I,K,J)=rho_phy(I,K,J)*0.001
+         		  krr=0
+         		  DO KR=p_ff1i01,p_ff1i33
+         			    krr=krr+1
+         		       chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XL(KRR)*XL(KRR)*3.0
+         		        if (qc(i,k,j)+qr(i,k,j).lt.1.e-13)chem_new(I,K,J,KR)=0.0
+         		  END DO
+         		  KRR=0
+         		  DO KR=p_ff5i01,p_ff5i33
+         		   KRR=KRR+1
+         		   chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XS(KRR)*XS(KRR)*3.0
+         		   if (qs(i,k,j).lt.1.e-13)chem_new(I,K,J,KR)=0.0
+         		  END DO
+         		  ! ... CCN
+         		  KRR=0
+         		  DO KR=p_ff8i01,p_ff8i43
+         		   KRR=KRR+1
+         		   chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*1000.0
+         		  END DO
+              ! ... Hail / Graupel
+              if(hail_opt == 1)then
+                 KRR=0
+                 DO KR=p_ff6i01,p_ff6i33
+                     KRR=KRR+1
+                     chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XH(KRR)*XH(KRR)*3.0
+                     if (qg(i,k,j) < 1.e-13) chem_new(I,K,J,KR) = 0.0
+                 END DO
+               else
+                 KRR=0
+                 DO KR=p_ff6i01,p_ff6i33
+                     KRR=KRR+1
+                     chem_new(I,K,J,KR)=chem_new(I,K,J,KR)/RHOCGS(I,K,J)*COL*XG(KRR)*XG(KRR)*3.0
+                     if (qg(i,k,j) < 1.e-13) chem_new(I,K,J,KR) = 0.0
+                 END DO
+               endif
+
+ 		          END DO
+ 		         END DO
+ 		        END DO
+       END IF
+
+   RETURN
+   END SUBROUTINE FAST_SBM
+ ! +-------------------------------------------------------------+
+   SUBROUTINE FALFLUXHUCM_Z(chem_new,VR1,RHOCGS,PCGS,ZCGS,DT, &
+   						               kts,kte,nkr)
+
+     IMPLICIT NONE
+
+ 	   integer,intent(in) :: kts,kte,nkr
+ 	   real(kind=r4size),intent(inout) :: chem_new(:,:)
+ 	   real(kind=r4size),intent(in) :: rhocgs(:),pcgs(:),zcgs(:),VR1(:,:),DT
+
+ 	  ! ... Locals
+ 	  integer :: I,J,K,KR
+    real(kind=r4size) :: TFALL,DTFALL,VFALL(KTE),DWFLUX(KTE)
+    integer :: IFALL,N,NSUB
+
+ ! FALLING FLUXES FOR EACH KIND OF CLOUD PARTICLES: C.G.S. UNIT
+ ! ADAPTED FROM GSFC CODE FOR HUCM
+ !  The flux at k=1 is assumed to be the ground so FLUX(1) is the
+ ! flux into the ground. DWFLUX(1) is at the lowest half level where
+ ! Q(1) etc are defined. The formula for FLUX(1) uses Q(1) etc which
+ ! is actually half a grid level above it. This is what is meant by
+ ! an upstream method. Upstream in this case is above because the
+ ! velocity is downwards.
+ ! USE UPSTREAM METHOD (VFALL IS POSITIVE)
+
+       DO KR=1,NKR
+        IFALL=0
+        DO k = kts,kte
+           IF(chem_new(K,KR).GE.1.E-20)IFALL=1
+        END DO
+        IF (IFALL.EQ.1)THEN
+         TFALL=1.E10
+         DO K=kts,kte
+          ! [KS] VFALL(K) = VR1(K,KR)*SQRT(1.E6/PCGS(K))
+ 		       VFALL(K) = VR1(K,KR) ! ... [KS] : The pressure effect is taken into account at the beggining of the calculations
+           TFALL=AMIN1(TFALL,ZCGS(K)/(VFALL(K)+1.E-20))
+         END DO
+         IF(TFALL.GE.1.E10)STOP
+         NSUB=(INT(2.0*DT/TFALL)+1)
+         DTFALL=DT/NSUB
+
+         DO N=1,NSUB
+           DO K=KTS,KTE-1
+             DWFLUX(K)=-(RHOCGS(K)*VFALL(K)*chem_new(k,kr)- &
+             RHOCGS(K+1)* &
+             VFALL(K+1)*chem_new(K+1,KR))/(RHOCGS(K)*(ZCGS(K+1)- &
+             ZCGS(K)))
+           END DO
+ ! NO Z ABOVE TOP, SO USE THE SAME DELTAZ
+           DWFLUX(KTE)=-(RHOCGS(KTE)*VFALL(KTE)* &
+      &                 chem_new(kte,kr))/(RHOCGS(KTE)*(ZCGS(KTE)-ZCGS(KTE-1)))
+           DO K=kts,kte
+            chem_new(k,kr)=chem_new(k,kr)+DWFLUX(K)*DTFALL
            END DO
          END DO
         END IF
-         CALL MODKRN(TT,QQ,PP,PRDKRN,TTCOAL)
-        DO 13 KR=1,NKR
-         G1(KR)=FF1R(KR)*3.*XL(KR)*XL(KR)*1.E3
-         G2(KR,1)=FF2R(KR,1)*3*xi(KR,1)*XI(KR,1)*1.e3
-         G2(KR,2)=FF2R(KR,2)*3.*xi(KR,2)*XI(KR,2)*1.e3
-         G2(KR,3)=FF2R(KR,3)*3.*xi(KR,3)*XI(KR,3)*1.e3
-         G3(KR)=FF3R(KR)*3.*xs(kr)*xs(kr)*1.e3
-         G4(KR)=FF4R(KR)*3.*xg(kr)*xg(kr)*1.e3
-         G5(KR)=FF5R(KR)*3.*xh(kr)*xh(kr)*1.e3
-         g2_1(kr)=g2(KR,1)
-         g2_2(KR)=g2(KR,2)
-         g2_3(KR)=g2(KR,3)
-         if(kr.gt.(nkr-jbreak).and.g1(kr).gt.1.e-17)icol_drop_brk=1
-!        icol_drop_brk=0
-         IF (IBREAKUP.NE.1)icol_drop_brk=0 
-         if(g1(kr).gt.1.e-10)icol_drop=1
-         if (tt.le.tt_no_coll)then
-         if(g2_1(kr).gt.1.e-10)icol_column=1
-         if(g2_2(kr).gt.1.e-10)icol_plate=1
-         if(g2_3(kr).gt.1.e-10)icol_dendrite=1
-         if(g3(kr).gt.1.e-10)icol_snow=1
-         if(g4(kr).gt.1.e-10)icol_graupel=1
-         if(g5(kr).gt.1.e-10)icol_hail=1
-         end if
-13     CONTINUE 
-! calculation of initial hydromteors content in g/cm**3 :
-      cont_init_drop=0.
-      cont_init_ice=0.
-      do kr=1,nkr
-         cont_init_drop=cont_init_drop+g1(kr)
-         cont_init_ice=cont_init_ice+g3(kr)+g4(kr)+g5(kr)
-         do ice=1,icemax
-            cont_init_ice=cont_init_ice+g2(kr,ice)
-         enddo
-      enddo
-      cont_init_drop=col*cont_init_drop*1.e-3
-      cont_init_ice=col*cont_init_ice*1.e-3
+       END DO
+
+       RETURN
+       END SUBROUTINE FALFLUXHUCM_Z
+ ! +----------------------------------+
+   SUBROUTINE FAST_HUCMINIT(DT)
+
+    USE module_mp_SBM_BreakUp,ONLY:Spontanous_Init
+ 	  USE module_mp_SBM_Collision,ONLY:courant_bott_KS
+ 	  USE module_domain
+ 	  USE module_dm
+
+ 	  IMPLICIT NONE
+
+    real(kind=r4size),intent(in) :: DT
+
+    LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
+    LOGICAL :: opened
+    CHARACTER*80 errmess
+    integer :: I,J,KR,IType,HUJISBM_UNIT1
+    real(kind=r4size) :: dlnr,ax,deg01,CONCCCNIN,CONTCCNIN
+
+ 	  character(len=256),parameter :: dir_43 = "SBM_input_43", dir_33 = "SBM_input_33"
+ 	  character(len=256) :: input_dir,Fname
+
+ 	 if(nkr == 33) input_dir = trim(dir_33)
+ 	 if(nkr == 43) input_dir = trim(dir_43)
+
+     call wrf_message(" FAST SBM: INITIALIZING WRF_HUJISBM ")
+     call wrf_message(" FAST SBM: ****** WRF_HUJISBM ******* ")
+
+ ! LookUpTable #1
+ ! +-------------------------------------------------------+
+ 	if (.NOT. ALLOCATED(bin_mass)) ALLOCATE(bin_mass(nkr))
+ 	if (.NOT. ALLOCATED(tab_colum)) ALLOCATE(tab_colum(nkr))
+ 	if (.NOT. ALLOCATED(tab_dendr)) ALLOCATE(tab_dendr(nkr))
+ 	if (.NOT. ALLOCATED(tab_snow)) ALLOCATE(tab_snow(nkr))
+ 	if (.NOT. ALLOCATED(bin_log)) ALLOCATE(bin_log(nkr))
+
+ 	dlnr=dlog(2.d0)/(3.d0)
+
+ 	hujisbm_unit1 = -1
+ 	IF ( wrf_dm_on_monitor() ) THEN
+ 		DO i = 20,99
+ 			INQUIRE ( i , OPENED = opened )
+ 			IF ( .NOT. opened ) THEN
+ 				hujisbm_unit1 = i
+ 				GOTO 2060
+ 			ENDIF
+ 		ENDDO
+ 	2060  CONTINUE
+ 	ENDIF
+
+#if (defined(DM_PARALLEL))
+ 		CALL wrf_dm_bcast_bytes( hujisbm_unit1 , IWORDSIZE )
+#endif
+ 	IF ( hujisbm_unit1 < 0 ) THEN
+     	CALL wrf_error_fatal ( 'module_mp_FAST-SBM: Table-1 -- FAST_SBM_INIT: '// 			&
+ 							              'Can not find unused fortran unit to read in lookup table, model stop' )
+ 	ENDIF
+
+ 	IF ( wrf_dm_on_monitor() ) THEN
+ 			WRITE(errmess, '(A,I2)') 'module_mp_FAST-SBM : Table-1 -- opening "BLKD_SDC.dat" on unit',hujisbm_unit1
+ 			CALL wrf_debug(150, errmess)
+ 			OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/BLKD_SDC.dat",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 			DO kr=1,NKR
+ 				READ(hujisbm_unit1,*) bin_mass(kr),tab_colum(kr),tab_dendr(kr),tab_snow(kr)
+ 				bin_log(kr) = log10(bin_mass(kr))
+ 			ENDDO
+ 	ENDIF
+
+#define DM_BCAST_MACRO_R4(A) CALL wrf_dm_bcast_bytes(A, size(A)*R4SIZE)
+#define DM_BCAST_MACRO_R8(A) CALL wrf_dm_bcast_bytes(A, size(A)*R8SIZE)
+#define DM_BCAST_MACRO_R16(A) CALL wrf_dm_bcast_bytes(A, size(A)*R16SIZE)
+
+#if (defined(DM_PARALLEL))
+    DM_BCAST_MACRO_R8(bin_mass)
+ 	  DM_BCAST_MACRO_R8(tab_colum)
+ 	  DM_BCAST_MACRO_R8(tab_dendr)
+ 	  DM_BCAST_MACRO_R8(tab_snow)
+ 	  DM_BCAST_MACRO_R8(bin_log)
+#endif
+
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-1'
+     CALL wrf_debug(000, errmess)
+ ! +-----------------------------------------------------------------------+
+
+ ! LookUpTable #2
+ ! +----------------------------------------------+
+     if (.NOT. ALLOCATED(RLEC)) ALLOCATE(RLEC(nkr))
+     if (.NOT. ALLOCATED(RIEC)) ALLOCATE(RIEC(nkr,icemax))
+     if (.NOT. ALLOCATED(RSEC)) ALLOCATE(RSEC(nkr))
+     if (.NOT. ALLOCATED(RGEC)) ALLOCATE(RGEC(nkr))
+     if (.NOT. ALLOCATED(RHEC)) ALLOCATE(RHEC(nkr))
+
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+         DO i = 31,99
+             INQUIRE ( i , OPENED = opened )
+             IF ( .NOT. opened ) THEN
+                 hujisbm_unit1 = i
+                 GOTO 2061
+             ENDIF
+         ENDDO
+     2061  CONTINUE
+     ENDIF
+
+#if (defined(DM_PARALLEL))
+ 	CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
+#endif
+     IF ( hujisbm_unit1 < 0 ) THEN
+         CALL wrf_error_fatal ( 'module_mp_FAST-SBM: Table-2 -- FAST_SBM_INIT: '// 			&
+                               'Can not find unused fortran unit to read in lookup table,model stop' )
+     ENDIF
+
+ IF ( wrf_dm_on_monitor() ) THEN
+ 	WRITE(errmess, '(A,I2)') 'module_mp_FAST-SBM : Table-2 -- opening capacity.asc on unit',hujisbm_unit1
+ 	CALL wrf_debug(150, errmess)
+ 	OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/capacity33.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/capacity43.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	900	FORMAT(6E13.5)
+ 	READ(hujisbm_unit1,900) RLEC,RIEC,RSEC,RGEC,RHEC
+ END IF
+
+#if (defined(DM_PARALLEL))
+     DM_BCAST_MACRO_R4(RLEC)
+     DM_BCAST_MACRO_R4(RIEC)
+     DM_BCAST_MACRO_R4(RSEC)
+     DM_BCAST_MACRO_R4(RGEC)
+     DM_BCAST_MACRO_R4(RHEC)
+#endif
+
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-2'
+     CALL wrf_debug(000, errmess)
+ ! +----------------------------------------------------------------------+
+
+ ! LookUpTable #3
+ ! +-----------------------------------------------+
+     if (.NOT. ALLOCATED(XL)) ALLOCATE(XL(nkr))
+     if (.NOT. ALLOCATED(XI)) ALLOCATE(XI(nkr,icemax))
+     if (.NOT. ALLOCATED(XS)) ALLOCATE(XS(nkr))
+     if (.NOT. ALLOCATED(XG)) ALLOCATE(XG(nkr))
+     if (.NOT. ALLOCATED(XH)) ALLOCATE(XH(nkr))
+
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+       DO i = 31,99
+         INQUIRE ( i , OPENED = opened )
+         IF ( .NOT. opened ) THEN
+           hujisbm_unit1 = i
+           GOTO 2062
+         ENDIF
+       ENDDO
+     2062 CONTINUE
+     ENDIF
+
+#if (defined(DM_PARALLEL))
+     CALL wrf_dm_bcast_bytes ( hujisbm_unit1, IWORDSIZE )
+#endif
+
+     IF ( hujisbm_unit1 < 0 ) THEN
+         CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-3 -- FAST_SBM_INIT: '// 		&
+                              'Can not find unused fortran unit to read in lookup table,model stop' )
+     ENDIF
+     IF ( wrf_dm_on_monitor() ) THEN
+         WRITE(errmess, '(A,I2)') 'module_mp_FAST_SBM : Table-3 -- opening masses.asc on unit ',hujisbm_unit1
+         CALL wrf_debug(150, errmess)
+         OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/masses33.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         !OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/masses43.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         READ(hujisbm_unit1,900) XL,XI,XS,XG,XH
+         CLOSE(hujisbm_unit1)
+     ENDIF
+
+#if (defined(DM_PARALLEL))
+   	DM_BCAST_MACRO_R4(XL)
+     DM_BCAST_MACRO_R4(XI)
+     DM_BCAST_MACRO_R4(XS)
+     DM_BCAST_MACRO_R4(XG)
+     DM_BCAST_MACRO_R4(XH)
+#endif
+
+      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-3'
+      CALL wrf_debug(000, errmess)
+ ! +-------------------------------------------------------------------------+
+
+ ! LookUpTable #4
+ ! TERMINAL VELOSITY :
+ ! +---------------------------------------------------+
+     if (.NOT. ALLOCATED(VR1)) ALLOCATE(VR1(nkr))
+     if (.NOT. ALLOCATED(VR2)) ALLOCATE(VR2(nkr,icemax))
+     if (.NOT. ALLOCATED(VR3)) ALLOCATE(VR3(nkr))
+     if (.NOT. ALLOCATED(VR4)) ALLOCATE(VR4(nkr))
+     if (.NOT. ALLOCATED(VR5)) ALLOCATE(VR5(nkr))
+
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+       DO i = 31,99
+         INQUIRE ( i , OPENED = opened )
+         IF ( .NOT. opened ) THEN
+           hujisbm_unit1 = i
+           GOTO 2063
+         ENDIF
+       ENDDO
+     2063   CONTINUE
+     ENDIF
+
+#if (defined(DM_PARALLEL))
+     CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
+#endif
+     IF ( hujisbm_unit1 < 0 ) THEN
+         CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-4 -- FAST_SBM_INIT: '// 										&
+                                 'Can not find unused fortran unit to read in lookup table,model stop' )
+     ENDIF
+
+     IF ( wrf_dm_on_monitor() ) THEN
+         WRITE(errmess, '(A,I2)') 'module_mp_FAST_SBM : Table-4 -- opening termvels.asc on unit ',hujisbm_unit1
+         CALL wrf_debug(150, errmess)
+         OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/termvels33_corrected.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         !OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/termvels43_corrected.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         READ(hujisbm_unit1,900) VR1,VR2,VR3,VR4,VR5
+        CLOSE(hujisbm_unit1)
+     ENDIF
+
+#if (defined(DM_PARALLEL))
+ 	DM_BCAST_MACRO_R4(VR1)
+     DM_BCAST_MACRO_R4(VR2)
+     DM_BCAST_MACRO_R4(VR3)
+     DM_BCAST_MACRO_R4(VR4)
+     DM_BCAST_MACRO_R4(VR5)
+#endif
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-4'
+     CALL wrf_debug(000, errmess)
+ ! +----------------------------------------------------------------------+
+
+
+ ! LookUpTable #5
+ ! CONSTANTS :
+ ! +---------------------------------------------------+
+     if (.NOT. ALLOCATED(SLIC)) ALLOCATE(SLIC(nkr,6))
+     if (.NOT. ALLOCATED(TLIC)) ALLOCATE(TLIC(nkr,2))
+     if (.NOT. ALLOCATED(COEFIN)) ALLOCATE(COEFIN(nkr))
+
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+       DO i = 31,99
+         INQUIRE ( i , OPENED = opened )
+         IF ( .NOT. opened ) THEN
+           hujisbm_unit1 = i
+           GOTO 2065
+         ENDIF
+       ENDDO
+       hujisbm_unit1 = -1
+     2065     CONTINUE
+     ENDIF
+
+#if (defined(DM_PARALLEL))
+ 		CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
+#endif
+
+     IF ( hujisbm_unit1 < 0 ) THEN
+         CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-5 -- FAST_SBM_INIT: '// 										&
+                                'Can not find unused fortran unit to read in lookup table,model stop' )
+     ENDIF
+
+     IF ( wrf_dm_on_monitor() ) THEN
+         WRITE(errmess, '(A,I2)') 'module_mp_FAST_SBM : Table-5 -- opening constants.asc on unit  ',hujisbm_unit1
+         CALL wrf_debug(150, errmess)
+         OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/constants33.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         !OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/constants43.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         READ(hujisbm_unit1,900) SLIC,TLIC,COEFIN
+      CLOSE(hujisbm_unit1)
+     END IF
+
+#if (defined(DM_PARALLEL))
+ 	  DM_BCAST_MACRO_R4(SLIC)
+    DM_BCAST_MACRO_R4(TLIC)
+    DM_BCAST_MACRO_R4(COEFIN)
+#endif
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-5'
+     CALL wrf_debug(000, errmess)
+ ! +----------------------------------------------------------------------+
+
+ ! LookUpTable #6
+ ! KERNELS DEPENDING ON PRESSURE :
+ ! +------------------------------------------------------------------+
+     if (.NOT. ALLOCATED(YWLL_1000MB)) ALLOCATE(YWLL_1000MB(nkr,nkr))
+     if (.NOT. ALLOCATED(YWLL_750MB)) ALLOCATE(YWLL_750MB(nkr,nkr))
+     if (.NOT. ALLOCATED(YWLL_500MB)) ALLOCATE(YWLL_500MB(nkr,nkr))
+
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+       DO i = 31,99
+         INQUIRE ( i , OPENED = opened )
+         IF ( .NOT. opened ) THEN
+           hujisbm_unit1 = i
+           GOTO 2066
+         ENDIF
+       ENDDO
+       hujisbm_unit1 = -1
+     2066     CONTINUE
+     ENDIF
+
+#if (defined(DM_PARALLEL))
+ 		CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
+#endif
+     IF ( hujisbm_unit1 < 0 ) THEN
+         CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-6 -- FAST_SBM_INIT: '// 			&
+                                 'Can not find unused fortran unit to read in lookup table,model stop' )
+     ENDIF
+     IF ( wrf_dm_on_monitor() ) THEN
+         WRITE(errmess, '(A,I2)') 'module_mp_FAST_SBM : Table-6 -- opening kernels_z.asc on unit  ',hujisbm_unit1
+         CALL wrf_debug(150, errmess)
+         Fname = trim(input_dir)//'/kernLL_z33.asc'
+         !Fname = trim(input_dir)//'/kernLL_z43.asc'
+         OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         READ(hujisbm_unit1,900) YWLL_1000MB,YWLL_750MB,YWLL_500MB
+         CLOSE(hujisbm_unit1)
+     END IF
+
+   	DO I=1,NKR
+   		DO J=1,NKR
+   			IF(I > 33 .OR. J > 33) THEN
+   				YWLL_1000MB(I,J) = 0.0
+   				YWLL_750MB(I,J) =  0.0
+   				YWLL_500MB(I,J) =  0.0
+   			ENDIF
+   		ENDDO
+   	ENDDO
+
+#if (defined(DM_PARALLEL))
+ 	DM_BCAST_MACRO_R4(YWLL_1000MB)
+     DM_BCAST_MACRO_R4(YWLL_750MB)
+     DM_BCAST_MACRO_R4(YWLL_500MB)
+#endif
+
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-6'
+     CALL wrf_debug(000, errmess)
+ ! +-----------------------------------------------------------------------+
+
+ ! LookUpTable #7
+ ! COLLISIONS KERNELS :
+ ! +-----------------------------------------------------------------------+
+ ! ... Drops - IC
+ if (.NOT. ALLOCATED(YWLI_300MB)) ALLOCATE(YWLI_300MB(nkr,nkr,icemax))
+ if (.NOT. ALLOCATED(YWLI_500MB)) ALLOCATE(YWLI_500MB(nkr,nkr,icemax))
+ if (.NOT. ALLOCATED(YWLI_750MB)) ALLOCATE(YWLI_750MB(nkr,nkr,icemax))
+
+ ! ... Drops - Graupel
+ if (.NOT. ALLOCATED(YWLG_300MB)) ALLOCATE(YWLG_300MB(nkr,nkr))
+ if (.NOT. ALLOCATED(YWLG_500MB)) ALLOCATE(YWLG_500MB(nkr,nkr))
+ if (.NOT. ALLOCATED(YWLG_750MB)) ALLOCATE(YWLG_750MB(nkr,nkr))
+ !if (.NOT. ALLOCATED(YWLG)) ALLOCATE(YWLG(nkr,nkr))
+
+ ! ... Drops - Hail
+ if (.NOT. ALLOCATED(YWLH_300MB)) ALLOCATE(YWLH_300MB(nkr,nkr))
+ if (.NOT. ALLOCATED(YWLH_500MB)) ALLOCATE(YWLH_500MB(nkr,nkr))
+ if (.NOT. ALLOCATED(YWLH_750MB)) ALLOCATE(YWLH_750MB(nkr,nkr))
+
+ ! ... Drops - Snow
+ if (.NOT. ALLOCATED(YWLS_300MB)) ALLOCATE(YWLS_300MB(nkr,nkr))
+ if (.NOT. ALLOCATED(YWLS_500MB)) ALLOCATE(YWLS_500MB(nkr,nkr))
+ if (.NOT. ALLOCATED(YWLS_750MB)) ALLOCATE(YWLS_750MB(nkr,nkr))
+
+ ! ... IC - IC
+ if (.NOT. ALLOCATED(YWII_300MB)) ALLOCATE(YWII_300MB(nkr,nkr,icemax,icemax))
+ if (.NOT. ALLOCATED(YWII_500MB)) ALLOCATE(YWII_500MB(nkr,nkr,icemax,icemax))
+ if (.NOT. ALLOCATED(YWII_750MB)) ALLOCATE(YWII_750MB(nkr,nkr,icemax,icemax))
+
+ ! ... IC - SNow
+ if (.NOT. ALLOCATED(YWIS_300MB)) ALLOCATE(YWIS_300MB(nkr,nkr,icemax))
+ if (.NOT. ALLOCATED(YWIS_500MB)) ALLOCATE(YWIS_500MB(nkr,nkr,icemax))
+ if (.NOT. ALLOCATED(YWIS_750MB)) ALLOCATE(YWIS_750MB(nkr,nkr,icemax))
+
+ ! ... Snow - Graupel
+ if (.NOT. ALLOCATED(YWSG_300MB)) ALLOCATE(YWSG_300MB(nkr,nkr))
+ if (.NOT. ALLOCATED(YWSG_500MB)) ALLOCATE(YWSG_500MB(nkr,nkr))
+ if (.NOT. ALLOCATED(YWSG_750MB)) ALLOCATE(YWSG_750MB(nkr,nkr))
+
+ ! ... Snow - SNow
+ if (.NOT. ALLOCATED(YWSS_300MB)) ALLOCATE(YWSS_300MB(nkr,nkr))
+ if (.NOT. ALLOCATED(YWSS_500MB)) ALLOCATE(YWSS_500MB(nkr,nkR))
+ if (.NOT. ALLOCATED(YWSS_750MB)) ALLOCATE(YWSS_750MB(nkr,nkr))
+
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+     DO i = 31,99
+     INQUIRE ( i , OPENED = opened )
+     IF ( .NOT. opened ) THEN
+       hujisbm_unit1 = i
+       GOTO 2067
+     ENDIF
+     ENDDO
+     2067     CONTINUE
+     ENDIF
+
+#if (defined(DM_PARALLEL))
+     CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
+#endif
+ IF ( hujisbm_unit1 < 0 ) THEN
+ 	CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-7 -- FAST_SBM_INIT: '// 			&
+ 											'Can not find unused fortran unit to read in lookup table,model stop' )
+ ENDIF
+ ! ... KERNELS DEPENDING ON PRESSURE :
+ IF ( wrf_dm_on_monitor() ) THEN
+ 	WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : Table-7 -- opening kernels33.asc on unit',hujisbm_unit1
+ 	CALL wrf_debug(150, errmess)
+
+ 	! ... Drop - IC
+ 	!Fname = trim(input_dir)//'/ckli_300mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLI_300MB
+ 	!Fname = trim(input_dir)//'/ckli_500mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLI_500MB
+ 	!Fname = trim(input_dir)//'/ckli_750mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLI_750MB
+
+ 	Fname = trim(input_dir)//'/ckli_33_300mb_500mb_750mb.asc'
+ 	OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	READ(hujisbm_unit1,900) YWLI_300MB,YWLI_500MB,YWLI_750MB
+ 	CLOSE(hujisbm_unit1)
+
+ 	! ... Drop - Graupel
+ 	!Fname = trim(input_dir)//'/cklg_300mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLG_300MB
+ 	!Fname = trim(input_dir)//'/cklg_500mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLG_500MB
+ 	!Fname = trim(input_dir)//'/cklg_750mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLG_750MB
+
+ 	Fname = trim(input_dir)//'/cklg_33_300mb_500mb_750mb.asc'
+ 	OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	READ(hujisbm_unit1,900) YWLG_300MB,YWLG_500MB,YWLG_750MB
+ 	CLOSE(hujisbm_unit1)
+
+ 	! ... Drop - Hail
+ 	!Fname = trim(input_dir)//'/cklh_300mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLH_300MB
+ 	!Fname = trim(input_dir)//'/cklh_500mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLH_500MB
+ 	!Fname = trim(input_dir)//'/cklh_750mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLH_750MB
+
+ 	Fname = trim(input_dir)//'/cklh_33_300mb_500mb_750mb.asc'
+ 	OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	READ(hujisbm_unit1,900) YWLH_300MB,YWLH_500MB,YWLH_750MB
+ 	CLOSE(hujisbm_unit1)
+
+ 	! ... Drop - Snow
+ 	!Fname = trim(input_dir)//'/ckls_300mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLS_300MB
+ 	!Fname = trim(input_dir)//'/ckls_500mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLS_500MB
+ 	!Fname = trim(input_dir)//'/ckls_750mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWLS_750MB
+
+ 	Fname = trim(input_dir)//'/ckls_33_300mb_500mb_750mb.asc'
+ 	OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	READ(hujisbm_unit1,900) YWLS_300MB,YWLS_500MB,YWLS_750MB
+ 	CLOSE(hujisbm_unit1)
+
+ 	! ... IC - IC
+  !Fname = trim(input_dir)//'/ckii_300mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWII_300MB
+ 	!Fname = trim(input_dir)//'/ckii_500mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWII_500MB
+ 	!Fname = trim(input_dir)//'/ckii_750mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWII_750MB
+ 	!CLOSE(hujisbm_unit1)
+
+ 	Fname = trim(input_dir)//'/ckii_33_300mb_500mb_750mb.asc'
+ 	OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	READ(hujisbm_unit1,900) YWII_300MB,YWII_500MB,YWII_750MB
+ 	CLOSE(hujisbm_unit1)
+
+ 	! ... IC - SNow
+ 	!Fname = trim(input_dir)//'/ckis_300mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWIS_300MB
+ 	!Fname = trim(input_dir)//'/ckis_500mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWIS_500MB
+ 	!Fname = trim(input_dir)//'/ckis_750mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWIS_750MB
+
+ 	Fname = trim(input_dir)//'/ckis_33_300mb_500mb_750mb.asc'
+ 	OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	READ(hujisbm_unit1,900) YWIS_300MB,YWIS_500MB,YWIS_750MB
+ 	CLOSE(hujisbm_unit1)
+
+ 	! ... Snow - Graupel
+ 	!Fname = trim(input_dir)//'/cksg_300mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWSG_300MB
+ 	!Fname = trim(input_dir)//'/cksg_500mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWSG_500MB
+ 	!Fname = trim(input_dir)//'/cksg_750mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWSG_750MB
+
+ 	Fname = trim(input_dir)//'/cksg_33_300mb_500mb_750mb.asc'
+ 	OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	READ(hujisbm_unit1,900) YWSG_300MB,YWSG_500MB,YWSG_750MB
+ 	CLOSE(hujisbm_unit1)
+
+ 	! ... Snow - Snow
+ 	!Fname = trim(input_dir)//'/ckss_300mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWSS_300MB
+ 	!Fname = trim(input_dir)//'/ckss_500mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWSS_500MB
+ 	!Fname = trim(input_dir)//'/ckss_750mb_As'
+ 	!OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	!READ(hujisbm_unit1,900) YWSS_750MB
+
+ 	Fname = trim(input_dir)//'/ckss_33_300mb_500mb_750mb.asc'
+ 	OPEN(UNIT=hujisbm_unit1,FILE=Fname,FORM="FORMATTED",STATUS="OLD",ERR=2070)
+ 	READ(hujisbm_unit1,900) YWSS_300MB,YWSS_500MB,YWSS_750MB
+  CLOSE(hujisbm_unit1)
+ END IF
+
+#if (defined(DM_PARALLEL))
+	   DM_BCAST_MACRO_R4(YWLI_300MB)
+     DM_BCAST_MACRO_R4(YWLI_500MB)
+     DM_BCAST_MACRO_R4(YWLI_750MB)
+
+     DM_BCAST_MACRO_R4(YWLG_300MB)
+     DM_BCAST_MACRO_R4(YWLG_500MB)
+     DM_BCAST_MACRO_R4(YWLG_750MB)
+     !DM_BCAST_MACRO(YWLG)
+
+     DM_BCAST_MACRO_R4(YWLH_300MB)
+     DM_BCAST_MACRO_R4(YWLH_500MB)
+     DM_BCAST_MACRO_R4(YWLH_750MB)
+
+     DM_BCAST_MACRO_R4(YWLS_300MB)
+     DM_BCAST_MACRO_R4(YWLS_500MB)
+     DM_BCAST_MACRO_R4(YWLS_750MB)
+
+     DM_BCAST_MACRO_R4(YWII_300MB)
+     DM_BCAST_MACRO_R4(YWII_500MB)
+     DM_BCAST_MACRO_R4(YWII_750MB)
+
+     DM_BCAST_MACRO_R4(YWIS_300MB)
+     DM_BCAST_MACRO_R4(YWIS_500MB)
+     DM_BCAST_MACRO_R4(YWIS_750MB)
+
+     DM_BCAST_MACRO_R4(YWSG_300MB)
+     DM_BCAST_MACRO_R4(YWSG_500MB)
+     DM_BCAST_MACRO_R4(YWSG_750MB)
+
+     DM_BCAST_MACRO_R4(YWSS_300MB)
+     DM_BCAST_MACRO_R4(YWSS_500MB)
+     DM_BCAST_MACRO_R4(YWSS_750MB)
+#endif
+
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-7'
+     CALL wrf_debug(000, errmess)
+ ! +-----------------------------------------------------------------------+
+
+ ! LookUpTable #8
+ ! BULKDENSITY:
+ ! +--------------------------------------------------------------+
+     if (.NOT. ALLOCATED(RO1BL)) ALLOCATE(RO1BL(nkr))
+     if (.NOT. ALLOCATED(RO2BL)) ALLOCATE(RO2BL(nkr,icemax))
+     if (.NOT. ALLOCATED(RO3BL)) ALLOCATE(RO3BL(nkr))
+     if (.NOT. ALLOCATED(RO4BL)) ALLOCATE(RO4BL(nkr))
+     if (.NOT. ALLOCATED(RO5BL)) ALLOCATE(RO5BL(nkr))
+
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+       DO i = 31,99
+         INQUIRE ( i , OPENED = opened )
+         IF ( .NOT. opened ) THEN
+           hujisbm_unit1 = i
+           GOTO 2068
+         ENDIF
+       ENDDO
+     2068     CONTINUE
+     ENDIF
+
+#if (defined(DM_PARALLEL))
+     CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
+#endif
+     IF ( hujisbm_unit1 < 0 ) THEN
+         CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-8 -- FAST_SBM_INIT: '// 			&
+                                 'Can not find unused fortran unit to read in lookup table,model stop' )
+     ENDIF
+     IF ( wrf_dm_on_monitor() ) THEN
+         WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : Table-8 -- opening bulkdens.asc on unit ',hujisbm_unit1
+         CALL wrf_debug(150, errmess)
+         OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/bulkdens33.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         !OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/bulkdens43.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         READ(hujisbm_unit1,900) RO1BL,RO2BL,RO3BL,RO4BL,RO5BL
+         CLOSE(hujisbm_unit1)
+     END IF
+
+#if (defined(DM_PARALLEL))
+ 	    DM_BCAST_MACRO_R4(RO1BL)
+      DM_BCAST_MACRO_R4(RO2BL)
+      DM_BCAST_MACRO_R4(RO3BL)
+      DM_BCAST_MACRO_R4(RO4BL)
+      DM_BCAST_MACRO_R4(RO5BL)
+#endif
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-8'
+     CALL wrf_debug(000, errmess)
+ ! +----------------------------------------------------------------------+
+
+ ! LookUpTable #9
+ ! BULKRADII:
+ ! +-----------------------------------------------------------+
+     if (.NOT. ALLOCATED(RADXXO)) ALLOCATE(RADXXO(nkr,nhydro))
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+       DO i = 31,99
+         INQUIRE ( i , OPENED = opened )
+         IF ( .NOT. opened ) THEN
+           hujisbm_unit1 = i
+           GOTO 2069
+         ENDIF
+       ENDDO
+     2069     CONTINUE
+     ENDIF
+#if (defined(DM_PARALLEL))
+ 		CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
+#endif
+     IF ( hujisbm_unit1 < 0 ) THEN
+      CALL wrf_error_fatal ( 'module_mp_FAST_SBM: Table-9 -- FAST_SBM_INIT: '// 			&
+                                 'Can not find unused fortran unit to read in lookup table,model stop' )
+     ENDIF
+     IF ( wrf_dm_on_monitor() ) THEN
+         WRITE(errmess, '(A,I2)') 'module_mp_FAST_SBM : Table-9 -- opening bulkradii.asc on unit',hujisbm_unit1
+         CALL wrf_debug(150, errmess)
+         OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/bulkradii33.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         !OPEN(UNIT=hujisbm_unit1,FILE=trim(input_dir)//"/bulkradii43.asc",FORM="FORMATTED",STATUS="OLD",ERR=2070)
+         READ(hujisbm_unit1,*) RADXXO
+         CLOSE(hujisbm_unit1)
+     END IF
+
+#if (defined(DM_PARALLEL))
+       DM_BCAST_MACRO_R4(RADXXO)
+#endif
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-9'
+     CALL wrf_debug(000, errmess)
+ ! +-----------------------------------------------------------------------+
+
+ ! LookUpTable #10
+ ! Polar-HUCM Scattering Amplitudes Look-up table :
+ ! +-----------------------------------------------------------------------+
+  CALL LOAD_TABLES(NKR)  ! (KS) - Loading the scattering look-up-table
+
+ ! ... (KS) - Broadcating Liquid drops
+#if (defined(DM_PARALLEL))
+   	DM_BCAST_MACRO_R16 ( FAF1 )
+   	DM_BCAST_MACRO_R16 ( FBF1 )
+   	DM_BCAST_MACRO_R16 ( FAB1 )
+   	DM_BCAST_MACRO_R16 ( FBB1 )
+   ! ... (KS) - Broadcating Snow
+   	DM_BCAST_MACRO_R16 ( FAF3 )
+   	DM_BCAST_MACRO_R16 ( FBF3 )
+   	DM_BCAST_MACRO_R16 ( FAB3 )
+   	DM_BCAST_MACRO_R16 ( FBB3 )
+   ! ... (KS) - Broadcating Graupel
+   	DM_BCAST_MACRO_R16 ( FAF4 )
+   	DM_BCAST_MACRO_R16 ( FBF4 )
+   	DM_BCAST_MACRO_R16 ( FAB4 )
+   	DM_BCAST_MACRO_R16 ( FBB4 )
+   ! ### (KS) - Broadcating Hail
+   	DM_BCAST_MACRO_R16 ( FAF5 )
+   	DM_BCAST_MACRO_R16 ( FBF5 )
+   	DM_BCAST_MACRO_R16 ( FAB5 )
+   	DM_BCAST_MACRO_R16 ( FBB5 )
+ ! ### (KS) - Broadcating Usetables array
+ 	  CALL wrf_dm_bcast_integer ( usetables , size ( usetables ) * IWORDSIZE )
+#endif
+  WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : succesfull reading Table-10'
+  call wrf_message(errmess)
+ ! +-----------------------------------------------------------------------+
+
+ ! calculation of the mass(in mg) for categories boundaries :
+   ax=2.d0**(1.0)
+
+   do i=1,nkr
+   	 xl_mg(i) = xl(i)*1.e3
+      xs_mg(i) = xs(i)*1.e3
+      xg_mg(i) = xg(i)*1.e3
+      xh_mg(i) = xh(i)*1.e3
+      xi1_mg(i) = xi(i,1)*1.e3
+      xi2_mg(i) = xi(i,2)*1.e3
+      xi3_mg(i) = xi(i,3)*1.e3
+   enddo
+
+   if (.NOT. ALLOCATED(IMA)) ALLOCATE(IMA(nkr,nkr))
+   if (.NOT. ALLOCATED(CHUCM)) ALLOCATE(CHUCM(nkr,nkr))
+   chucm  = 0.0d0
+   ima = 0
+   CALL courant_bott_KS(xl, nkr, chucm, ima, scal) ! ### (KS) : New courant_bott_KS (without XL_MG(0:nkr))
+   WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading "courant_bott_KS" '
+   CALL wrf_debug(000, errmess)
+
+  DEG01=1./3.
+  CONCCCNIN=0.
+  CONTCCNIN=0.
+  if (.NOT. ALLOCATED(DROPRADII)) ALLOCATE(DROPRADII(NKR))
+  DO KR=1,NKR
+  DROPRADII(KR)=(3.0*XL(KR)/4.0/3.141593/1.0)**DEG01
+  ENDDO
+
+ ! +-------------------------------------------------------------+
+ ! Allocating Aerosols Array
+ ! +-------------------------+
+ if (.NOT. ALLOCATED(FCCNR_MAR)) ALLOCATE(FCCNR_MAR(NKR_aerosol))
+ if (.NOT. ALLOCATED(FCCNR_CON)) ALLOCATE(FCCNR_CON(NKR_aerosol))
+ if (.NOT. ALLOCATED(XCCN)) ALLOCATE(XCCN(NKR_aerosol))
+ if (.NOT. ALLOCATED(RCCN)) ALLOCATE(RCCN(NKR_aerosol))
+ if (.NOT. ALLOCATED(Scale_CCN_Factor)) ALLOCATE(Scale_CCN_Factor)
+ if (.NOT. ALLOCATED(FCCN)) ALLOCATE(FCCN(NKR_aerosol))
+
+ 	IF(ILogNormal_modes_Aerosol == 1)THEN
+ 		! ... Initializing the FCCNR_MAR and FCCNR_CON
+ 		FCCNR_CON = 0.0
+ 		FCCNR_MAR = 0.0
+ 		Scale_CCN_Factor = 1.0
+ 		XCCN = 0.0
+ 		RCCN = 0.0
+ 		CALL LogNormal_modes_Aerosol(FCCNR_CON,FCCNR_MAR,NKR_aerosol,COL,XL,XCCN,RCCN,RO_SOLUTE,Scale_CCN_Factor,1)
+ 		CALL LogNormal_modes_Aerosol(FCCNR_CON,FCCNR_MAR,NKR_aerosol,COL,XL,XCCN,RCCN,RO_SOLUTE,Scale_CCN_Factor,2)
+ 		WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : succesfull reading "LogNormal_modes_Aerosol" '
+ 		CALL wrf_debug(000, errmess)
+ 	ENDIF
+ ! +-------------------------------------------------------------+
+
+ 	 if (.NOT. ALLOCATED(PKIJ)) ALLOCATE(PKIJ(JBREAK,JBREAK,JBREAK))
+ 	 if (.NOT. ALLOCATED(QKJ)) ALLOCATE(QKJ(JBREAK,JBREAK))
+ 	 if (.NOT. ALLOCATED(ECOALMASSM)) ALLOCATE(ECOALMASSM(NKR,NKR))
+ 	 if (.NOT. ALLOCATED(BRKWEIGHT)) ALLOCATE(BRKWEIGHT(JBREAK))
+    PKIJ = 0.0e0
+    QKJ = 0.0e0
+    ECOALMASSM = 0.0d0
+    BRKWEIGHT = 0.0d0
+ 	 CALL BREAKINIT_KS(PKIJ,QKJ,ECOALMASSM,BRKWEIGHT,XL,DROPRADII,BR_MAX,JBREAK,JMAX,NKR,VR1) ! Rain Spontanous Breakup
+#if (defined(DM_PARALLEL))
+ 	 	DM_BCAST_MACRO_R4 (PKIJ)
+    DM_BCAST_MACRO_R4 (QKJ)
+#endif
+ 	  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading BREAKINIT_KS" '
+    CALL wrf_debug(000, errmess)
+  ! +--------------------------------------------------------------------------------------------------------------------+
+
+   100	FORMAT(10I4)
+   101   FORMAT(3X,F7.5,E13.5)
+   102	FORMAT(4E12.4)
+   105	FORMAT(A48)
+   106	FORMAT(A80)
+   123	FORMAT(3E12.4,3I4)
+   200	FORMAT(6E13.5)
+   201   FORMAT(6D13.5)
+   300	FORMAT(8E14.6)
+   301   FORMAT(3X,F8.3,3X,E13.5)
+   302   FORMAT(5E13.5)
+
+ if (.NOT. ALLOCATED(cwll)) ALLOCATE(cwll(nkr,nkr))
+
+ if (.NOT. ALLOCATED(cwli_1)) ALLOCATE(cwli_1(nkr,nkr))
+ if (.NOT. ALLOCATED(cwli_2)) ALLOCATE(cwli_2(nkr,nkr))
+ if (.NOT. ALLOCATED(cwli_3)) ALLOCATE(cwli_3(nkr,nkr))
+
+ if (.NOT. ALLOCATED(cwil_1)) ALLOCATE(cwil_1(nkr,nkr))
+ if (.NOT. ALLOCATED(cwil_2)) ALLOCATE(cwil_2(nkr,nkr))
+ if (.NOT. ALLOCATED(cwil_3)) ALLOCATE(cwil_3(nkr,nkr))
+
+ if (.NOT. ALLOCATED(cwlg)) ALLOCATE(cwlg(nkr,nkr))
+ if (.NOT. ALLOCATED(cwlh)) ALLOCATE(cwlh(nkr,nkr))
+ if (.NOT. ALLOCATED(cwls)) ALLOCATE(cwls(nkr,nkr))
+ if (.NOT. ALLOCATED(cwgl)) ALLOCATE(cwgl(nkr,nkr))
+ if (.NOT. ALLOCATED(cwhl)) ALLOCATE(cwhl(nkr,nkr))
+ if (.NOT. ALLOCATED(cwsl)) ALLOCATE(cwsl(nkr,nkr))
+
+ if (.NOT. ALLOCATED(cwii_1_1)) ALLOCATE(cwii_1_1(nkr,nkr))
+ if (.NOT. ALLOCATED(cwii_1_2)) ALLOCATE(cwii_1_2(nkr,nkr))
+ if (.NOT. ALLOCATED(cwii_1_3)) ALLOCATE(cwii_1_3(nkr,nkr))
+ if (.NOT. ALLOCATED(cwii_2_1)) ALLOCATE(cwii_2_1(nkr,nkr))
+ if (.NOT. ALLOCATED(cwii_2_2)) ALLOCATE(cwii_2_2(nkr,nkr))
+ if (.NOT. ALLOCATED(cwii_2_3)) ALLOCATE(cwii_2_3(nkr,nkr))
+ if (.NOT. ALLOCATED(cwii_3_1)) ALLOCATE(cwii_3_1(nkr,nkr))
+ if (.NOT. ALLOCATED(cwii_3_2)) ALLOCATE(cwii_3_2(nkr,nkr))
+ if (.NOT. ALLOCATED(cwii_3_3)) ALLOCATE(cwii_3_3(nkr,nkr))
+
+ if (.NOT. ALLOCATED(cwis_1)) ALLOCATE(cwis_1(nkr,nkr))
+ if (.NOT. ALLOCATED(cwis_2)) ALLOCATE(cwis_2(nkr,nkr))
+ if (.NOT. ALLOCATED(cwis_3)) ALLOCATE(cwis_3(nkr,nkr))
+ if (.NOT. ALLOCATED(cwsi_1)) ALLOCATE(cwsi_1(nkr,nkr))
+ if (.NOT. ALLOCATED(cwsi_2)) ALLOCATE(cwsi_2(nkr,nkr))
+ if (.NOT. ALLOCATED(cwsi_3)) ALLOCATE(cwsi_3(nkr,nkr))
+
+ if (.NOT. ALLOCATED(cwig_1)) ALLOCATE(cwig_1(nkr,nkr))
+ if (.NOT. ALLOCATED(cwig_2)) ALLOCATE(cwig_2(nkr,nkr))
+ if (.NOT. ALLOCATED(cwig_3)) ALLOCATE(cwig_3(nkr,nkr))
+
+ if (.NOT. ALLOCATED(cwih_1)) ALLOCATE(cwih_1(nkr,nkr))
+ if (.NOT. ALLOCATED(cwih_2)) ALLOCATE(cwih_2(nkr,nkr))
+ if (.NOT. ALLOCATED(cwih_3)) ALLOCATE(cwih_3(nkr,nkr))
+
+ if (.NOT. ALLOCATED(cwsg)) ALLOCATE(cwsg(nkr,nkr))
+ if (.NOT. ALLOCATED(cwss)) ALLOCATE(cwss(nkr,nkr))
+
+   cwll(:,:) = 0.0e0
+   cwli_1(:,:) = 0.0e0 ; cwli_2(:,:) = 0.0e0 ; cwli_3(:,:) = 0.0e0
+   cwil_1(:,:) = 0.0e0 ; cwil_2(:,:) = 0.0e0 ; cwil_3(:,:) = 0.0e0
+   cwlg(:,:) = 0.0e0 ; cwlh(:,:) = 0.0e0 ; cwls(:,:) = 0.0e0
+   cwgl(:,:) = 0.0e0 ; cwhl(:,:) = 0.0e0 ; cwsl(:,:) = 0.0e0
+   cwii_1_1(:,:) = 0.0e0 ; cwii_1_2(:,:) = 0.0e0 ; cwii_1_3(:,:) = 0.0e0
+   cwii_2_1(:,:) = 0.0e0 ; cwii_2_2(:,:) = 0.0e0 ; cwii_2_3(:,:) = 0.0e0
+   cwii_3_1(:,:) = 0.0e0 ; cwii_3_2(:,:) = 0.0e0 ; cwii_3_3(:,:) = 0.0e0
+   cwis_1(:,:) = 0.0e0 ; cwis_2(:,:) = 0.0e0 ; cwis_3(:,:) = 0.0e0
+   cwsi_1(:,:) = 0.0e0 ; cwsi_2(:,:) = 0.0e0 ; cwsi_3(:,:) = 0.0e0
+   cwig_1(:,:) = 0.0e0 ; cwig_2(:,:) = 0.0e0 ; cwig_3(:,:) = 0.0e0
+   cwih_1(:,:) = 0.0e0 ; cwih_2(:,:) = 0.0e0 ; cwih_3(:,:) = 0.0e0
+   cwsg(:,:) = 0.0e0 ; cwss(:,:) = 0.0e0
+
+   call Kernals_KS(dt,nkr,7.6E6)
+
+ !+---+-----------------------------------------+
+ if (.NOT. ALLOCATED( Prob)) ALLOCATE( Prob(NKR))
+ if (.NOT. ALLOCATED(Gain_Var_New)) ALLOCATE(Gain_Var_New(NKR,NKR))
+ if (.NOT. ALLOCATED(NND)) ALLOCATE(NND(NKR,NKR))
+  Prob = 0.0
+  Gain_Var_New = 0.0
+  NND = 0.0
+  call Spontanous_Init(dt, XL, DROPRADII, Prob, Gain_Var_New, NND, NKR, ikr_spon_break)
+  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading "Spontanous_Init" '
+  CALL wrf_debug(000, errmess)
+
+  return
+  2070  continue
+
+      WRITE( errmess , '(A,I4)' )                                          &
+                 'module_mp_FAST_SBM_INIT: error opening hujisbm_DATA on unit,model stop ' &
+                 &, hujisbm_unit1
+      CALL wrf_error_fatal(errmess)
+
+  END SUBROUTINE FAST_HUCMINIT
+ ! -----------------------------------------------------------------+
+  subroutine Kernals_KS(dtime_coal,nkr,p_z)
+
+  implicit none
+
+  integer :: nkr
+  real(kind=r4size),intent(in) :: dtime_coal,p_z
+
+  ! ### Locals
+  integer :: i,j
+  real(kind=r4size),parameter :: p1=1.0e6,p2=0.75e6,p3=0.50e6,p4=0.3e6
+  real(kind=r4size) :: dlnr, scal, dtimelnr, pdm, p_1, p_2, p_3, ckern_1, ckern_2, &
+  					  ckern_3
+
+ ! p1=1.00D6 dynes/cm^2 = 1000.0 mb
+ ! p2=0.75D6 dynes/cm^2 =  750.0 mb
+ ! p3=0.50D6 dynes/cm^2 =  500.0 mb
+ ! p4=0.30D6 dynes/cm^2 =  300.0 mb
+
+  scal = 1.0
+ 	dlnr = dlog(2.0d0)/(3.0d0*scal)
+ 	dtimelnr = dtime_coal*dlnr
+
+ 	p_1=p1
+ 	p_2=p2
+ 	p_3=p3
+ 	do i=1,nkr
+ 		do j=1,nkr
+ 			! 1. water - water
+ 			ckern_1 = YWLL_1000mb(i,j)
+ 			ckern_2 = YWLL_750mb(i,j)
+ 			ckern_3 = YWLL_500mb(i,j)
+ 			cwll(i,j) = ckern_z(p_z,p_1,p_2,p_3,ckern_1,ckern_2,ckern_3)*dtime_coal*dlnr
+ 		end do
+ 	end do
+
+ 	! ... ECOALMASSM is from "BreakIniit_KS"
+ 	DO I=1,NKR
+ 	 DO J=1,NKR
+ 		CWLL(I,J) = ECOALMASSM(I,J)*CWLL(I,J)
+ 	 END DO
+  END DO
+
+ 	p_1=p2
+ 	p_2=p3
+ 	p_3=p4
+
+ 	if(p_z >= p_1) then
+ 		do j=1,nkr
+ 	  		do i=1,nkr
+ 				cwli_1(i,j) = ywli_750mb(i,j,1)*dtimelnr
+ 				cwli_2(i,j) = ywli_750mb(i,j,2)*dtimelnr
+ 				cwli_3(i,j) = ywli_750mb(i,j,3)*dtimelnr
+ 				cwlg(i,j) = ywlg_750mb(i,j)*dtimelnr
+ 				cwlh(i,j) = ywlh_750mb(i,j)*dtimelnr
+ 				cwls(i,j) = ywls_750mb(i,j)*dtimelnr
+ 				cwii_1_1(i,j) = ywii_750mb(i,j,1,1)*dtimelnr
+ 				cwii_1_2(i,j) = ywii_750mb(i,j,1,2)*dtimelnr
+ 				cwii_1_3(i,j) = ywii_750mb(i,j,1,3)*dtimelnr
+ 				cwii_2_1(i,j) = ywii_750mb(i,j,2,1)*dtimelnr
+ 				cwii_2_2(i,j) = ywii_750mb(i,j,2,2)*dtimelnr
+ 				cwii_2_3(i,j) = ywii_750mb(i,j,2,3)*dtimelnr
+ 				cwii_3_1(i,j) = ywii_750mb(i,j,3,1)*dtimelnr
+ 				cwii_3_2(i,j) = ywii_750mb(i,j,3,2)*dtimelnr
+ 				cwii_3_3(i,j) = ywii_750mb(i,j,3,3)*dtimelnr
+ 				cwis_1(i,j) = ywis_750mb(i,j,1)*dtimelnr
+ 				cwis_2(i,j) = ywis_750mb(i,j,2)*dtimelnr
+ 				cwis_3(i,j) = ywis_750mb(i,j,3)*dtimelnr
+ 				cwsg(i,j) = ywsg_750mb(i,j)*dtimelnr
+ 				cwss(i,j) = ywss_750mb(i,j)*dtimelnr
+ 	  		end do
+ 		end do
+ 	endif
+
+ 	if (p_z <= p_3) then
+ 		do j=1,nkr
+ 		  do i=1,nkr
+ 			cwli_1(i,j) = ywli_300mb(i,j,1)*dtimelnr
+ 			cwli_2(i,j) = ywli_300mb(i,j,2)*dtimelnr
+ 			cwli_3(i,j) = ywli_300mb(i,j,3)*dtimelnr
+ 			cwlg(i,j) = ywlg_300mb(i,j)*dtimelnr
+ 			cwlh(i,j) = ywlh_300mb(i,j)*dtimelnr
+ 			cwls(i,j) = ywls_300mb(i,j)*dtimelnr
+ 			cwii_1_1(i,j) = ywii_300mb(i,j,1,1)*dtimelnr
+ 			cwii_1_2(i,j) = ywii_300mb(i,j,1,2)*dtimelnr
+ 			cwii_1_3(i,j) = ywii_300mb(i,j,1,3)*dtimelnr
+ 			cwii_2_1(i,j) = ywii_300mb(i,j,2,1)*dtimelnr
+ 			cwii_2_2(i,j) = ywii_300mb(i,j,2,2)*dtimelnr
+ 			cwii_2_3(i,j) = ywii_300mb(i,j,2,3)*dtimelnr
+ 			cwii_3_1(i,j) = ywii_300mb(i,j,3,1)*dtimelnr
+ 			cwii_3_2(i,j) = ywii_300mb(i,j,3,2)*dtimelnr
+ 			cwii_3_3(i,j) = ywii_300mb(i,j,3,3)*dtimelnr
+ 			cwis_1(i,j) = ywis_300mb(i,j,1)*dtimelnr
+ 			cwis_2(i,j) = ywis_300mb(i,j,2)*dtimelnr
+ 			cwis_3(i,j) = ywis_300mb(i,j,3)*dtimelnr
+ 			cwsg(i,j) = ywsg_300mb(i,j)*dtimelnr
+ 			cwss(i,j) = ywss_300mb(i,j)*dtimelnr
+ 		  end do
+ 		end do
+ 	  endif
+
+ 	  if (p_z <  p_1  .and. p_z >= p_2) then
+ 		pdm = (p_z-p_2)/(p_1-p_2)
+ 		do j=1,nkr
+ 		  do i=1,nkr
+ 		  	ckern_1=ywli_750mb(i,j,1)
+ 			ckern_2=ywli_500mb(i,j,1)
+ 			cwli_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywli_750mb(i,j,2)
+ 			ckern_2=ywli_500mb(i,j,2)
+ 			cwli_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywli_750mb(i,j,3)
+ 			ckern_2=ywli_500mb(i,j,3)
+ 			cwli_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywlg_750mb(i,j)
+ 			ckern_2=ywlg_500mb(i,j)
+ 			cwlg(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywlh_750mb(i,j)
+ 			ckern_2=ywlh_500mb(i,j)
+ 			cwlh(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywls_750mb(i,j)
+ 			ckern_2=ywls_500mb(i,j)
+ 			cwls(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywii_750mb(i,j,1,1)
+ 			ckern_2=ywii_500mb(i,j,1,1)
+ 			cwii_1_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywii_750mb(i,j,1,2)
+ 			ckern_2=ywii_500mb(i,j,1,2)
+ 			cwii_1_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywii_750mb(i,j,1,3)
+ 			ckern_2=ywii_500mb(i,j,1,3)
+ 			cwii_1_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywii_750mb(i,j,2,1)
+ 			ckern_2=ywii_500mb(i,j,2,1)
+ 			cwii_2_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+
+ 			ckern_1=ywii_750mb(i,j,2,2)
+ 			ckern_2=ywii_500mb(i,j,2,2)
+ 			cwii_2_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywii_750mb(i,j,2,3)
+ 			ckern_2=ywii_500mb(i,j,2,3)
+ 			cwii_2_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywii_750mb(i,j,3,1)
+ 			ckern_2=ywii_500mb(i,j,3,1)
+ 			cwii_3_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywii_750mb(i,j,3,2)
+ 			ckern_2=ywii_500mb(i,j,3,2)
+ 			cwii_3_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywii_750mb(i,j,3,3)
+ 			ckern_2=ywii_500mb(i,j,3,3)
+ 			cwii_3_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywis_750mb(i,j,1)
+ 			ckern_2=ywis_500mb(i,j,1)
+ 			cwis_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywis_750mb(i,j,2)
+ 			ckern_2=ywis_500mb(i,j,2)
+ 			cwis_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywis_750mb(i,j,3)
+ 			ckern_2=ywis_500mb(i,j,3)
+ 			cwis_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywsg_750mb(i,j)
+ 			ckern_2=ywsg_500mb(i,j)
+ 			cwsg(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+
+ 			ckern_1=ywss_750mb(i,j)
+ 			ckern_2=ywss_500mb(i,j)
+ 			cwss(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+ 		   end do
+ 		 end do
+ 	   endif
+
+  		if (p_z <  p_2  .and. p_z >  p_3) then
+ 		   pdm = (p_z-p_3)/(p_2-p_3)
+ 		   do j=1,nkr
+ 		     do i=1,nkr
+
+ 			  ckern_2=ywli_500mb(i,j,1)
+ 			  ckern_3=ywli_300mb(i,j,1)
+ 			  cwli_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+ 			  ckern_2=ywli_500mb(i,j,2)
+ 			  ckern_3=ywli_300mb(i,j,2)
+ 			  cwli_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+ 			  ckern_2=ywli_500mb(i,j,3)
+ 			  ckern_3=ywli_300mb(i,j,3)
+ 			  cwli_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+ 			  ckern_2=ywlg_500mb(i,j)
+ 			  ckern_3=ywlg_300mb(i,j)
+ 			  cwlg(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywlh_500mb(i,j)
+   			ckern_3=ywlh_300mb(i,j)
+   			cwlh(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywls_500mb(i,j)
+   			ckern_3=ywls_300mb(i,j)
+   			cwls(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywii_500mb(i,j,1,1)
+   			ckern_3=ywii_300mb(i,j,1,1)
+   			cwii_1_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywii_500mb(i,j,1,2)
+   			ckern_3=ywii_300mb(i,j,1,2)
+   			cwii_1_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywii_500mb(i,j,1,3)
+   			ckern_3=ywii_300mb(i,j,1,3)
+   			cwii_1_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywii_500mb(i,j,2,1)
+   			ckern_3=ywii_300mb(i,j,2,1)
+   			cwii_2_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywii_500mb(i,j,2,2)
+   			ckern_3=ywii_300mb(i,j,2,2)
+   			cwii_2_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywii_500mb(i,j,2,3)
+   			ckern_3=ywii_300mb(i,j,2,3)
+   			cwii_2_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywii_500mb(i,j,3,1)
+   			ckern_3=ywii_300mb(i,j,3,1)
+   			cwii_3_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywii_500mb(i,j,3,2)
+   			ckern_3=ywii_300mb(i,j,3,2)
+   			cwii_3_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywii_500mb(i,j,3,3)
+   			ckern_3=ywii_300mb(i,j,3,3)
+   			cwii_3_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywis_500mb(i,j,1)
+   			ckern_3=ywis_300mb(i,j,1)
+   			cwis_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywis_500mb(i,j,2)
+   			ckern_3=ywis_300mb(i,j,2)
+   			cwis_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywis_500mb(i,j,3)
+   			ckern_3=ywis_300mb(i,j,3)
+   			cwis_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywsg_500mb(i,j)
+   			ckern_3=ywsg_300mb(i,j)
+   			cwsg(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+   			ckern_2=ywss_500mb(i,j)
+   			ckern_3=ywss_300mb(i,j)
+   			cwss(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+
+ 		   end do
+ 		 end do
+   endif
+
+ 		do i=1,nkr
+ 		 do j=1,nkr
+ ! columns - water
+ 		  cwil_1(i,j)=cwli_1(j,i)
+ ! plates - water
+ 		  cwil_2(i,j)=cwli_2(j,i)
+ ! dendrites - water
+ 		  cwil_3(i,j)=cwli_3(j,i)
+ ! 3. graupel - water
+ 		  cwgl(i,j)=cwlg(j,i)
+ ! 4. hail - water
+ 		  cwhl(i,j)=cwlh(j,i)
+ ! 5. snow - water
+ 		  cwsl(i,j)=cwls(j,i)
+ ! 7.snow - crystals :
+ ! snow - columns
+ 		  cwsi_1(i,j)=cwis_1(j,i)
+ ! snow - plates
+ 		  cwsi_2(i,j)=cwis_2(j,i)
+ ! snow - dendrites
+ 		  cwsi_3(i,j)=cwis_3(j,i)
+ 		 end do
+ 	  end do
+
+
+  return
+  end subroutine Kernals_KS
+
+ ! ------------------------------------------------------------+
+  real function ckern_z (p_z,p_1,p_2,p_3,ckern_1,ckern_2,ckern_3)
+
+ 	implicit none
+
+ 	real(kind=r4size),intent(in) :: p_z,p_1,p_2,p_3,ckern_1, &
+ 									ckern_2,ckern_3
+
+ 	if(p_z>=p_1) ckern_z = ckern_1
+ 	!if(p_z==p_2) ckern_z=ckern_2
+ 	if(p_z<=p_3) ckern_z = ckern_3
+ 	if(p_z<p_1 .and. p_z>=p_2) ckern_z = ckern_2 + (ckern_1-ckern_2)*(p_z-p_2)/(p_1-p_2)
+ 	if(p_z<p_2 .and. p_z>p_3) ckern_z = ckern_3 + (ckern_2-ckern_3)*(p_z-p_3)/(p_2-p_3)
+
+  return
+  end function ckern_z
+ ! -------------------------------------------------------------+
+  SUBROUTINE FREEZ(FF1,XL,FF2,XI,FF3,XS,FF4,XG,FF5,XH, &
+      					   TIN,DT,RO,COL,AFREEZMY,BFREEZMY,    &
+			             BFREEZMAX,KRFREEZ,ICEMAX,NKR)
+
+ 	  IMPLICIT NONE
+
+ 	    INTEGER KR,ICE,ICE_TYPE
+      REAL COL,AFREEZMY,BFREEZMY,BFREEZMAX
+      INTEGER KRFREEZ,ICEMAX,NKR
+      REAL DT,RO,YKK,PF,PF_1,DEL_T,TT_DROP,ARG_1,YK2,DF1,BF,ARG_M, &
+      	   TT_DROP_AFTER_FREEZ,CFREEZ,SUM_ICE,TIN,TTIN,AF,FF_MAX,F1_MAX, &
+      	   F2_MAX,F3_MAX,F4_MAX,F5_MAX
+
+      REAL FF1(NKR),XL(NKR),FF2(NKR,ICEMAX) &
+           ,XI(NKR,ICEMAX),FF3(NKR),XS(NKR),FF4(NKR) &
+           ,XG(NKR),FF5(NKR),XH(NKR)
+
+ 	TTIN=TIN
+ 	DEL_T	=TTIN-273.15
+ 	ICE_TYPE=2
+ 	F1_MAX=0.
+ 	F2_MAX=0.
+ 	F3_MAX=0.
+ 	F4_MAX=0.
+ 	F5_MAX=0.
+ 	DO KR=1,NKR
+   	F1_MAX=AMAX1(F1_MAX,FF1(KR))
+   	F3_MAX=AMAX1(F3_MAX,FF3(KR))
+   	F4_MAX=AMAX1(F4_MAX,FF4(KR))
+   	F5_MAX=AMAX1(F5_MAX,FF5(KR))
+   	DO ICE=1,ICEMAX
+        	F2_MAX=AMAX1(F2_MAX,FF2(KR,ICE))
+    ENDDO
+ 	  FF_MAX=AMAX1(F2_MAX,F3_MAX,F4_MAX,F5_MAX)
+  ENDDO
+ !
+ !******************************* FREEZING ****************************
+ !
+        IF(DEL_T.LT.0.AND.F1_MAX.NE.0) THEN
+ 			      SUM_ICE=0.
+		        AF	= AFREEZMY
+	          CFREEZ	=(BFREEZMAX-BFREEZMY)/XL(NKR)
+ !
+ !***************************** MASS LOOP **************************
+ !
+          	DO  KR	=1,NKR
+ 	 			        ARG_M	=XL(KR)
+ 			          BF	=BFREEZMY+CFREEZ*ARG_M
+        		    PF_1	=AF*EXP(-BF*DEL_T)
+        		    PF	=ARG_M*PF_1
+ 			          YKK	=EXP(-PF*DT)
+        		    DF1	=FF1(KR)*(1.-YKK)
+ 			          YK2	=DF1
+        		    FF1(KR)=FF1(KR)*YKK
+ 			          IF(KR.LE.KRFREEZ)  THEN
+ 				           FF2(KR,ICE_TYPE)=FF2(KR,ICE_TYPE)+YK2
+                ELSE
+				           FF5(KR)	=FF5(KR)+YK2
+                ENDIF
+		            SUM_ICE=SUM_ICE+YK2*3.*XL(KR)*XL(KR)*COL
+ !
+ !************************ END OF "MASS LOOP" **************************
+ !
+ 	 		       ENDDO
+ !
+ !************************** NEW TEMPERATURE *************************
+ !
+	           ARG_1	=333.*SUM_ICE/RO
+       		   TT_DROP_AFTER_FREEZ=TTIN+ARG_1
+		         TIN	=TT_DROP_AFTER_FREEZ
+ !
+ !************************** END OF "FREEZING" ****************************
+ !
+ 		   ENDIF
+ !
+    	RETURN
+ 	END SUBROUTINE FREEZ
+ ! ----------------------------------------------------------------+
+  SUBROUTINE J_W_MELT(FF1,XL,FF2,XI,FF3,XS,FF4,XG,FF5,XH &
+                     ,TIN,DT,RO,COL,ICEMAX,NKR)
+
+ 	  IMPLICIT NONE
+
+ 	  integer,intent(in) :: NKR,ICEMAX
+ 	  real(kind=R4size),intent(in)    :: DT,COL,RO
+ 	  real(kind=R4size),intent(inout) :: FF1(:),XL(:),FF2(:,:),XI(:,:),FF3(:),XS(:),FF4(:),XG(:), &
+ 	  									                 FF5(:),XH(:),Tin
+
+ 	  !  ... Locals
+      integer :: KR,ICE,ICE_TYPE
+      real(kind=R4size) :: ARG_M,TT_DROP,ARG_1,TT_DROP_AFTER_FREEZ,DF1,DN,DN0, &
+       						         A,B,DTFREEZ,SUM_ICE,FF_MAX,F1_MAX,F2_MAX,F3_MAX,F4_MAX,F5_MAX, &
+		                       DEL_T,meltrate,gamma
+ 	  ! ... Locals
+
+    	gamma=4.4
+ 	   	DEL_T = TIN-273.15
+   		ICE_TYPE = 2
+   		F1_MAX=0.
+   		F2_MAX=0.
+   		F3_MAX=0.
+   		F4_MAX=0.
+   		F5_MAX=0.
+   		DO KR=1,NKR
+   			F1_MAX=AMAX1(F1_MAX,FF1(KR))
+   			F3_MAX=AMAX1(F3_MAX,FF3(KR))
+   			F4_MAX=AMAX1(F4_MAX,FF4(KR))
+   			F5_MAX=AMAX1(F5_MAX,FF5(KR))
+   			DO ICE=1,ICEMAX
+   				F2_MAX=AMAX1(F2_MAX,FF2(KR,ICE))
+   		  END DO
+ 				FF_MAX=AMAX1(F2_MAX,F3_MAX,F4_MAX,F5_MAX)
+       END DO
+ 				SUM_ICE=0.
+ 				IF(DEL_T.GE.0.AND.FF_MAX.NE.0) THEN
+   				DO KR = 1,NKR
+          		ARG_M = 0.0
+           		DO ICE = 1,ICEMAX
+        			   IF (ICE ==1) THEN
+              			IF (KR .le. 10) THEN
+                  			ARG_M = ARG_M+FF2(KR,ICE)
+		                    FF2(KR,ICE) = 0.0
+  			            ELSE IF (KR .gt. 10 .and. KR .lt. 18) THEN
+                  			meltrate = 0.5/50.
+                  			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
+                  			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
+              			ELSE
+                  			meltrate = 0.683/120.
+                  			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
+                  			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
+              			ENDIF
+            			ENDIF
+            			IF (ICE ==2 .or. ICE ==3) THEN
+               			  IF (kr .le. 12) THEN
+                       			FF2(KR,ICE)=0.
+                       			ARG_M = ARG_M+FF2(KR,ICE)
+             			    ELSE IF (kr .gt. 12 .and. kr .lt. 20) THEN
+                       			meltrate = 0.5/50.
+                       			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
+                       			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
+                			ELSE
+                        			meltrate = 0.683/120.
+                       			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
+                       			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
+                			ENDIF
+              			ENDIF
+           		END DO  ! Do ice
+  				         ! ... Snow
+                  IF (kr .le. 14) THEN
+                     ARG_M = ARG_M + FF3(KR)
+  		               FF3(KR) = 0.0
+                  ELSE IF (kr .gt. 14 .and. kr .lt. 22) THEN
+                     meltrate = 0.5/50.
+                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
+                     ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
+                  ELSE
+                     meltrate = 0.683/120.
+                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
+                     ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
+                  ENDIF
+  	             ! ... Graupel/Hail
+                  IF (kr .le. 13) then
+                      ARG_M = ARG_M+FF4(KR)+FF5(KR)
+  		                FF4(KR)=0.
+                      FF5(KR)=0.
+                  ELSE IF (kr .gt. 13 .and. kr .lt. 23) THEN
+                      meltrate = 0.5/50.
+                      FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
+                      FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
+                      ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
+                  ELSE
+                      meltrate = 0.683/120.
+                     FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
+                     FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
+                     ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
+                  ENDIF
+
+                    FF1(KR) = FF1(KR) + ARG_M
+                    SUM_ICE=SUM_ICE+ARG_M*3.*XL(KR)*XL(KR)*COL
+          	END DO
+
+            ARG_1=333.*SUM_ICE/RO
+            TIN = TIN - ARG_1
+          ENDIF
+
+    	RETURN
+ 	END SUBROUTINE J_W_MELT
+ ! +----------------------------------------------------------------------------+
+   SUBROUTINE ONECOND1 &
+				 & (TT,QQ,PP,ROR &
+				 & ,VR1,PSINGLE &
+				 & ,DEL1N,DEL2N,DIV1,DIV2 &
+				 & ,FF1,PSI1,R1,RLEC,RO1BL &
+				 & ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
+				 & ,C1_MEY,C2_MEY &
+				 & ,COL,DTCOND,ICEMAX,NKR,ISYM1 &
+				   ,ISYM2,ISYM3,ISYM4,ISYM5,Iin,Jin,Kin,W_in,DX_in,Itimestep)
+
+        IMPLICIT NONE
+
+
+       INTEGER NKR,ICEMAX, ISYM1, ISYM2(ICEMAX),ISYM3,ISYM4,ISYM5, Iin, Jin, Kin, &
+ 	  		  sea_spray_no_temp_change_per_grid, Itimestep
+       REAL    COL,VR1(NKR),PSINGLE &
+      &       ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
+      &       ,DTCOND, W_in,DX_in
+
+       REAL C1_MEY,C2_MEY
+       INTEGER I_ABERGERON,I_BERGERON, &
+      & KR,ICE,ITIME,KCOND,NR,NRM, &
+      & KLIMIT, &
+      & KM,KLIMITL
+       REAL AL1,AL2,D,GAM,POD, &
+      & RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY,ALC,DT0LREF,DTLREF, &
+      & A1_MYN, BB1_MYN, A2_MYN, BB2_MYN,DT,DTT,XRAD, &
+      & TPC1, TPC2, TPC3, TPC4, TPC5, &
+      & EPSDEL, EPSDEL2,DT0L, DT0I,&
+      & ROR, &
+      & CWHUCM,B6,B8L,B8I, &
+      & DEL1,DEL2,DEL1S,DEL2S, &
+      & TIMENEW,TIMEREV,SFN11,SFN12, &
+      & SFNL,SFNI,B5L,B5I,B7L,B7I,DOPL,DOPI,RW,RI,QW,PW, &
+      & PI,QI,DEL1N0,DEL2N0,D1N0,D2N0,DTNEWL,DTNEWL1,D1N,D2N, &
+      & DEL_R1,DT0L0,DT0I0, &
+      & DTNEWL0, &
+      & DTNEWL2
+        REAL DT_WATER_COND,DT_WATER_EVAP
+
+        INTEGER K
+ ! NEW ALGORITHM OF CONDENSATION (12.01.00)
+
+       REAL  FF1_OLD(NKR),SUPINTW(NKR)
+       DOUBLE PRECISION DSUPINTW(NKR),DD1N,DB11_MY,DAL1,DAL2
+       DOUBLE PRECISION COL3,RORI,TPN,TPS,QPN,QPS,TOLD,QOLD &
+      &                  ,FI1_K,FI2_K,FI3_K,FI4_K,FI5_K &
+      &                  ,R1_K,R2_K,R3_K,R4_K,R5_K &
+      &                  ,FI1R1,FI2R2,FI3R3,FI4R4,FI5R5 &
+      &                  ,RMASSLAA,RMASSLBB,RMASSIAA,RMASSIBB &
+      &                  ,ES1N,ES2N,EW1N,ARGEXP &
+      &                  ,TT,QQ,PP &
+      &                  ,DEL1N,DEL2N,DIV1,DIV2 &
+      &                  ,OPER2,OPER3,AR1,AR2
+
+        DOUBLE PRECISION DELMASSL1
+
+ ! DROPLETS
+
+         REAL R1(NKR) &
+      &           ,RLEC(NKR),RO1BL(NKR) &
+      &           ,FI1(NKR),FF1(NKR),PSI1(NKR) &
+      &           ,B11_MY(NKR),B12_MY(NKR)
+
+ ! WORK ARRAYS
+
+ ! NEW ALGORITHM OF MIXED PHASE FOR EVAPORATION
+
+
+ 	REAL DTIMEO(NKR),DTIMEL(NKR) &
+      &           ,TIMESTEPD(NKR)
+
+ ! NEW ALGORITHM (NO TYPE OF ICE)
+
+ 	REAL :: FL1(NKR), sfndummy(3), R1N(NKR)
+ 	INTEGER :: IDROP
+
+ 	DOUBLE PRECISION :: R1D(NKR),R1ND(NKR)
+
+ 	OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
+ 	OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
+
+ 	DATA AL1 /2500./, AL2 /2834./, D /0.211/ &
+      &      ,GAM /1.E-4/, POD /10./
+
+ 	DATA RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY &
+      &      /461.5,0.24E-1,0.211E-4,2.5E6,2.834E6/
+
+ 	DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
+      &      /2.53,5.42,3.41E1,6.13/
+
+ 	DATA TPC1, TPC2, TPC3, TPC4, TPC5 &
+      &      /-4.0,-8.1,-12.7,-17.8,-22.4/
+
+
+ 	DATA EPSDEL, EPSDEL2 /0.1E-03,0.1E-03/
+
+ 	DATA DT0L, DT0I /1.E20,1.E20/
+
+ 	DOUBLE PRECISION :: DEL1_d , DEL2_d, RW_d , PW_d, RI_d, PI_d, D1N_d, D2N_d, &
+ 						VR1_d(NKR)
+
+ sfndummy = 0.0
+ B12_MY = 0.0
+ B11_MY = 0.0
+
+  I_ABERGERON=0
+  I_BERGERON=0
+  COL3=3.0*COL
+ ITIME=0
+ KCOND=0
+ DT_WATER_COND=0.4
+ DT_WATER_EVAP=0.4
+ ITIME=0
+ KCOND=0
+ DT0LREF=0.2
+ DTLREF=0.4
+
+ NR=NKR
+ NRM=NKR-1
+ DT=DTCOND
+ DTT=DTCOND
+ XRAD=0.
+
+  CWHUCM=0.
+ XRAD=0.
+ B6=CWHUCM*GAM-XRAD
+ B8L=1./ROR
+ B8I=1./ROR
+ RORI=1./ROR
+
+ DO KR=1,NKR
+    FF1_OLD(KR)=FF1(KR)
+    SUPINTW(KR)=0.0
+    DSUPINTW(KR)=0.0
+ ENDDO
+
+ TPN=TT
+ QPN=QQ
+ DO KR=1,NKR
+     FI1(KR)=FF1(KR)
+ END DO
+
+ ! WARM MP (CONDENSATION OR EVAPORATION) (BEGIN)
+ TIMENEW=0.
+ ITIME=0
+
+ TOLD = TPN
+ QOLD = QPN
+ R1D = R1
+ R1ND = R1D
+ SFNL = 0.0
+ SFN11 = 0.0
+
+ 56  ITIME = ITIME+1
+ TIMEREV = DT-TIMENEW
+ TIMEREV = DT-TIMENEW
+ DEL1 = DEL1N
+ DEL2 = DEL2N
+ DEL1S = DEL1N
+ DEL2S = DEL2N
+ TPS = TPN
+ QPS = QPN
+
+ IF(ISYM1 == 1)THEN
+ 	FL1 = 0.0
+ 	VR1_d = VR1
+ 	CALL JERRATE_KS &
+ 				(R1D,TPS,PP,VR1_d,RLEC,RO1BL,B11_MY,1,1,fl1,NKR,ICEMAX)
+ 	sfndummy(1)=SFN11
+ 	CALL JERTIMESC_KS(FI1,R1D,SFNDUMMY,B11_MY,B8L,1,NKR,ICEMAX,COL)
+ 	SFN11 = sfndummy(1)
+ ENDIF
+
+ SFN12 = 0.0
+ SFNL = SFN11 + SFN12
+ SFNI = 0.
+
+ B5L=BB1_MY/TPS/TPS
+ B5I=BB2_MY/TPS/TPS
+ B7L=B5L*B6
+ B7I=B5I*B6
+ DOPL=1.+DEL1S
+ DOPI=1.+DEL2S
+ RW=(OPER2(QPS)+B5L*AL1)*DOPL*SFNL
+ RI=(OPER2(QPS)+B5L*AL2)*DOPL*SFNI
+ QW=B7L*DOPL
+ PW=(OPER2(QPS)+B5I*AL1)*DOPI*SFNL
+ PI=(OPER2(QPS)+B5I*AL2)*DOPI*SFNI
+ QI=B7I*DOPI
+
+ IF(RW.NE.RW .or. PW.NE.PW)THEN
+    print*, 'NaN In ONECOND1'
+    call wrf_error_fatal("fatal error in ONECOND1 (RW or PW are NaN), model stop")
+ ENDIF
+
+ KCOND=10
+ IF(DEL1N >= 0.0D0) KCOND=11
+
+   IF(KCOND == 11) THEN
+   	  DTNEWL = DT
+      DTNEWL = DT
+      DTNEWL = AMIN1(DTNEWL,TIMEREV)
+      TIMENEW = TIMENEW + DTNEWL
+      DTT = DTNEWL
+
+   	  IF (DTT < 0.0) call wrf_error_fatal("fatal error in ONECOND1-DEL1N>0:(DTT<0), model stop")
+
+     	DEL1_d = DEL1
+     	DEL2_d = DEL2
+     	RW_d = RW
+     	PW_d = PW
+     	RI_d = RI
+     	PI_d = PI
+
+ 	    CALL JERSUPSAT_KS(DEL1_d,DEL2_d,DEL1N,DEL2N, &
+             					  RW_d,PW_d,RI_d,PI_d, &
+             					  DTT,D1N_d,D2N_d,0.0,0.0, &
+             					  ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
+     	DEL1 = DEL1_d
+     	DEL2 = DEL2_d
+     	RW = RW_d
+     	PW = PW_d
+     	RI = RI_d
+     	PI = PI_d
+     	D1N = D1N_d
+     	D2N = D2N_d
+
+     	IF(ISYM1 == 1)THEN
+     		IDROP = ISYM1
+     		CALL JERDFUN_KS(R1D, R1ND, B11_MY, FI1, PSI1, fl1, D1N, &
+     						        ISYM1, 1, 1, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 1, Iin, Jin ,Kin, Itimestep)
+     	ENDIF
+
+     	IF((DEL1.GT.0.AND.DEL1N.LT.0) &
+       		&.AND.ABS(DEL1N).GT.EPSDEL) THEN
+             		call wrf_error_fatal("fatal error in ONECOND1-1 (DEL1.GT.0.AND.DEL1N.LT.0), model stop")
+     	ENDIF
+
+    ! IN CASE : KCOND.EQ.11
+    ELSE
+
+ 	    ! EVAPORATION - ONLY WATER
+ 	    ! IN CASE : KCOND.NE.11
+    	DTIMEO = DT
+      DTNEWL = DT
+      DTNEWL = AMIN1(DTNEWL,TIMEREV)
+      TIMENEW = TIMENEW + DTNEWL
+      DTT = DTNEWL
+
+ 	    IF (DTT < 0.0) call wrf_error_fatal("fatal error in ONECOND1-DEL1N<0:(DTT<0), model stop")
+
+ 	    DEL1_d = DEL1
+ 	    DEL2_d = DEL2
+ 	    RW_d = RW
+ 	    PW_d = PW
+ 	    RI_d = RI
+ 	    PI_d = PI
+ 	    CALL JERSUPSAT_KS(DEL1_d,DEL2_d,DEL1N,DEL2N, &
+ 					  RW_d,PW_d,RI_d,PI_d, &
+ 					  DTT,D1N_d,D2N_d,0.0,0.0, &
+ 					  ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
+     	DEL1 = DEL1_d
+     	DEL2 = DEL2_d
+     	RW = RW_d
+     	PW = PW_d
+     	RI = RI_d
+     	PI = PI_d
+     	D1N = D1N_d
+     	D2N = D2N_d
+
+      IF(ISYM1 == 1)THEN
+ 	      IDROP = ISYM1
+ 	      CALL JERDFUN_KS(R1D, R1ND, B11_MY, &
+				              FI1, PSI1, fl1, D1N, &
+ 					            ISYM1, 1, 1, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 1, Iin, Jin ,Kin, Itimestep)
+      ENDIF
+
+      IF((DEL1.LT.0.AND.DEL1N.GT.0) &
+        .AND.ABS(DEL1N).GT.EPSDEL) THEN
+         call wrf_error_fatal("fatal error in ONECOND1-2 (DEL1.LT.0.AND.DEL1N.GT.0), model stop")
+      ENDIF
+
+    ENDIF
+
+
+ RMASSLBB=0.
+ RMASSLAA=0.
+
+ ! ... before JERNEWF (ONLY WATER)
+ DO K=1,NKR
+  FI1_K = FI1(K)
+  R1_K = R1(K)
+  FI1R1 = FI1_K*R1_K*R1_K
+  RMASSLBB = RMASSLBB+FI1R1
+ ENDDO
+ RMASSLBB = RMASSLBB*COL3*RORI
+ IF(RMASSLBB.LE.0.) RMASSLBB=0.
+ ! ... after JERNEWF (ONLY WATER)
+ DO K=1,NKR
+  FI1_K=PSI1(K)
+  R1_K=R1(K)
+  FI1R1=FI1_K*R1_K*R1_K
+  RMASSLAA=RMASSLAA+FI1R1
+ END DO
+ RMASSLAA=RMASSLAA*COL3*RORI
+ IF(RMASSLAA.LE.0.) RMASSLAA=0.
+
+ DELMASSL1 = RMASSLAA - RMASSLBB
+ QPN = QPS - DELMASSL1
+ DAL1 = AL1
+ TPN = TPS + DAL1*DELMASSL1
+
+ IF(ABS(DAL1*DELMASSL1) > 3.0 )THEN
+ 	print*,"ONECOND1-in(start)"
+	print*,"I=",Iin,"J=",Jin,"Kin",Kin,"W",w_in,"DX",dx_in
+ 	print*,"DELMASSL1",DELMASSL1,"DT",DTT
+ 	print*,"DEL1N,DEL2N,DEL1,DEL2,D1N,D2N,RW,PW,RI,PI,DT"
+ 	print*,DEL1N,DEL2N,DEL1,DEL2,D1N,D2N,RW,PW,RI,PI,DTT
+ 	print*,"TPS",TPS,"QPS",QPS
+	print*,'FI1 before',FI1,'PSI1 after',PSI1
+ 	print*,"ONECOND1-in(end)"
+ 	call wrf_error_fatal("fatal error in ONECOND1-in (ABS(DAL1*DELMASSL1) > 3.0), model stop")
+ ENDIF
+
+ ! ... SUPERSATURATION (ONLY WATER)
+ ARGEXP=-BB1_MY/TPN
+ ES1N=AA1_MY*DEXP(ARGEXP)
+ ARGEXP=-BB2_MY/TPN
+ ES2N=AA2_MY*DEXP(ARGEXP)
+ EW1N=OPER3(QPN,PP)
+ IF(ES1N == 0.0D0)THEN
+          DEL1N=0.5
+          DIV1=1.5
+ ELSE
+          DIV1 = EW1N/ES1N
+          DEL1N = EW1N/ES1N-1.
+ END IF
+ IF(ES2N == 0.0D0)THEN
+          DEL2N=0.5
+          DIV2=1.5
+ ELSE
+          DEL2N = EW1N/ES2N-1.
+          DIV2 = EW1N/ES2N
+ END IF
+ IF(ISYM1 == 1) THEN
+ 	DO KR=1,NKR
+           SUPINTW(KR)=SUPINTW(KR)+B11_MY(KR)*D1N
+           DD1N=D1N
+           DB11_MY=B11_MY(KR)
+           DSUPINTW(KR)=DSUPINTW(KR)+DB11_MY*DD1N
+ 	ENDDO
+ ENDIF
+
+ ! ... REPEATE TIME STEP (ONLY WATER: CONDENSATION OR EVAPORATION)
+ IF(TIMENEW.LT.DT) GOTO 56
+
+ 57  CONTINUE
+
+ IF(ISYM1 == 1) THEN
+    CALL JERDFUN_NEW_KS (R1D,R1ND,SUPINTW, &
+ 					FF1_OLD,PSI1, &
+ 					TPN,IDROP,FR_LIM, NKR, COL,1,Iin,Jin,Kin,Itimestep)
+ ENDIF ! in case ISYM1/=0
+
+ RMASSLAA=0.0
+ RMASSLBB=0.0
+
+ DO K=1,NKR
+  FI1_K=FF1_OLD(K)
+  R1_K=R1(K)
+  FI1R1=FI1_K*R1_K*R1_K
+  RMASSLBB=RMASSLBB+FI1R1
+ ENDDO
+ RMASSLBB=RMASSLBB*COL3*RORI
+ IF(RMASSLBB.LT.0.0) RMASSLBB=0.0
+
+ DO K=1,NKR
+  FI1_K=PSI1(K)
+  R1_K=R1(K)
+  FI1R1=FI1_K*R1_K*R1_K
+  RMASSLAA=RMASSLAA+FI1R1
+ ENDDO
+ RMASSLAA=RMASSLAA*COL3*RORI
+ IF(RMASSLAA.LT.0.0) RMASSLAA=0.0
+ DELMASSL1 = RMASSLAA-RMASSLBB
+
+ QPN = QOLD - DELMASSL1
+ DAL1 = AL1
+ TPN = TOLD + DAL1*DELMASSL1
+
+ IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
+ 	print*,"ONECOND1-out (start)"
+ 	print*,"I=",Iin,"J=",Jin,"Kin",Kin,"W",w_in,"DX",dx_in
+ 	print*,"DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DT"
+ 	print*,DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DTT
+ 	print*,"I=",Iin,"J=",Jin,"Kin",Kin
+ 	print*,"TPS=",TPS,"QPS=",QPS,"delmassl1",delmassl1
+ 	print*,"DAL1=",DAL1
+ 	print*,RMASSLBB,RMASSLAA
+ 	print*,"FI1",FI1
+ 	print*,"PSI1",PSI1
+ 	print*,"ONECOND1-out (end)"
+ 	IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
+ 		call wrf_error_fatal("fatal error in ONECOND1-out (ABS(DAL1*DELMASSL1) > 5.0), model stop")
+ 	ENDIF
+ ENDIF
+
+ ! ... SUPERSATURATION
+ ARGEXP=-BB1_MY/TPN
+ ES1N=AA1_MY*DEXP(ARGEXP)
+ ARGEXP=-BB2_MY/TPN
+ ES2N=AA2_MY*DEXP(ARGEXP)
+ EW1N=OPER3(QPN,PP)
+ IF(ES1N == 0.0D0)THEN
+  	DEL1N=0.5
+  	DIV1=1.5
+ 	call wrf_error_fatal("fatal error in ONECOND1 (ES1N.EQ.0), model stop")
+ ELSE
+    DIV1=EW1N/ES1N
+    DEL1N=EW1N/ES1N-1.
+ END IF
+ IF(ES2N.EQ.0)THEN
+    DEL2N=0.5
+    DIV2=1.5
+   call wrf_error_fatal("fatal error in ONECOND1 (ES2N.EQ.0), model stop")
+ ELSE
+    DEL2N=EW1N/ES2N-1.
+    DIV2=EW1N/ES2N
+ END IF
+
+ TT=TPN
+ QQ=QPN
+ DO KR=1,NKR
+  FF1(KR)=PSI1(KR)
+ ENDDO
+
+ RETURN
+ END SUBROUTINE ONECOND1
+ ! +----------------------------------------------------------------------------+
+ SUBROUTINE ONECOND2 &
+ 					 & (TT,QQ,PP,ROR  &
+ 					 & ,VR2,VR3,VR4,VR5,PSINGLE &
+ 					 & ,DEL1N,DEL2N,DIV1,DIV2 &
+ 					 & ,FF2,PSI2,R2,RIEC,RO2BL &
+ 					 & ,FF3,PSI3,R3,RSEC,RO3BL &
+ 					 & ,FF4,PSI4,R4,RGEC,RO4BL &
+ 					 & ,FF5,PSI5,R5,RHEC,RO5BL &
+ 					 & ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
+ 					 & ,C1_MEY,C2_MEY &
+ 					 & ,COL,DTCOND,ICEMAX,NKR &
+ 					 & ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5, &
+ 					 	Iin,Jin,Kin,W_in,DX_in,Itimestep)
+
+    IMPLICIT NONE
+
+       INTEGER NKR,ICEMAX,ISYM1, Iin, Jin, Kin, Itimestep
+       REAL    COL,VR2(NKR,ICEMAX),VR3(NKR),VR4(NKR) &
+      &           ,VR5(NKR),PSINGLE &
+      &       ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
+      &       ,DTCOND,W_in,DX_in
+
+       REAL C1_MEY,C2_MEY
+       INTEGER I_MIXCOND,I_MIXEVAP,I_ABERGERON,I_BERGERON, &
+      & KR,ICE,ITIME,ICM,KCOND,NR,NRM,INUC, &
+      & ISYM2(ICEMAX),ISYM3,ISYM4,ISYM5,KP,KLIMIT, &
+      & KM,ITER,KLIMITL,KLIMITG,KLIMITH,KLIMITI_1,KLIMITI_2,KLIMITI_3, &
+      & NCRITI
+       REAL AL1,AL2,D,GAM,POD, &
+      & RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY,ALC,DT0LREF,DTLREF, &
+      & A1_MYN, BB1_MYN, A2_MYN, BB2_MYN,DT,DTT,XRAD, &
+      & TPC1, TPC2, TPC3, TPC4, TPC5, &
+      & EPSDEL, DT0L, DT0I, &
+      & ROR, &
+      & DEL1NUC,DEL2NUC, &
+      & CWHUCM,B6,B8L,B8I,RMASSGL,RMASSGI, &
+      & DEL1,DEL2,DEL1S,DEL2S, &
+      & TIMENEW,TIMEREV,SFN11,SFN12, &
+      & SFNL,SFNI,B5L,B5I,B7L,B7I,DOPL,DOPI,OPERQ,RW,RI,QW,PW, &
+      & PI,QI,D1N0,D2N0,DTNEWL,DTNEWL1,D1N,D2N, &
+      & DEL_R1,DT0L0,DT0I0,SFN31,SFN32,SFN52, &
+      & SFNII1,SFN21,SFN22,DTNEWI3,DTNEWI4,DTNEWI5,DTNEWI2_1, &
+      & DTNEWI2_2,DTNEWI1,DEL_R2,DEL_R4,DEL_R5,SFN41,SFN42, &
+      & SNF51,DTNEWI2_3,DTNEWI2,DTNEWI_1,DTNEWI_2, &
+      & DTNEWL0,DTNEWG1,DTNEWH1,DTNEWI_3, &
+      & DTNEWL2,SFN51,SFNII2,DEL_R3,DTNEWI
+        REAL DT_WATER_COND,DT_WATER_EVAP,DT_ICE_COND,DT_ICE_EVAP, &
+      &  DT_MIX_COND,DT_MIX_EVAP,DT_MIX_BERGERON,DT_MIX_ANTIBERGERON
+
+        INTEGER K
+
+       DOUBLE PRECISION DD1N,DB11_MY,DAL1,DAL2
+       DOUBLE PRECISION COL3,RORI,TPN,TPS,QPN,QPS,TOLD,QOLD &
+      &                  ,FI1_K,FI2_K,FI3_K,FI4_K,FI5_K &
+      &                  ,R1_K,R2_K,R3_K,R4_K,R5_K &
+      &                  ,FI1R1,FI2R2,FI3R3,FI4R4,FI5R5 &
+      &                  ,RMASSLAA,RMASSLBB,RMASSIAA,RMASSIBB &
+      &                  ,ES1N,ES2N,EW1N,ARGEXP &
+      &                  ,TT,QQ,PP &
+      &                  ,DEL1N,DEL2N,DIV1,DIV2 &
+      &                  ,OPER2,OPER3,AR1,AR2
+
+        DOUBLE PRECISION DELTAQ1,DELMASSI1,DELMASSL1
+
+         CHARACTER*70 CPRINT
+
+ ! CRYSTALS
+
+ 	REAL R2(NKR,ICEMAX) &
+      &           ,RIEC(NKR,ICEMAX) &
+      &           ,RO2BL(NKR,ICEMAX) &
+      &           ,FI2(NKR,ICEMAX),PSI2(NKR,ICEMAX) &
+      &           ,FF2(NKR,ICEMAX) &
+      &           ,B21_MY(NKR,ICEMAX),B22_MY(NKR,ICEMAX)
+
+ ! SNOW
+         REAL R3(NKR) &
+      &           ,RSEC(NKR),RO3BL(NKR) &
+      &           ,FI3(NKR),FF3(NKR),PSI3(NKR) &
+      &           ,B31_MY(NKR),B32_MY(NKR)
+
+ ! GRAUPELS
+
+         REAL R4(NKR) &
+      &           ,RGEC(NKR),RO4BL(NKR) &
+      &           ,FI4(NKR),FF4(NKR),PSI4(NKR) &
+      &           ,B41_MY(NKR),B42_MY(NKR)
+
+ ! HAIL
+         REAL R5(NKR) &
+      &           ,RHEC(NKR),RO5BL(NKR) &
+      &           ,FI5(NKR),FF5(NKR),PSI5(NKR) &
+      &           ,B51_MY(NKR),B52_MY(NKR)
+
+ ! CCN
+
+ 	REAL DTIMEG(NKR),DTIMEH(NKR)
+
+ 	REAL DEL2D(ICEMAX),DTIMEO(NKR),DTIMEL(NKR) &
+
+      &           ,DTIMEI_1(NKR),DTIMEI_2(NKR),DTIMEI_3(NKR) &
+      &           ,SFNI1(ICEMAX),SFNI2(ICEMAX) &
+      &           ,TIMESTEPD(NKR) &
+      &           ,FI1REF(NKR),PSI1REF(NKR) &
+      &           ,FI2REF(NKR,ICEMAX),PSI2REF(NKR,ICEMAX)&
+      &           ,FCCNRREF(NKR)
+
+ 	REAL :: FL1(NKR), sfndummy(3), FL3(NKR), FL4(NKR), FL5(NKR), &
+ 					R2N(NKR,ICEMAX), R3N(NKR), R4N(NKR), R5N(NKR)
+ 	INTEGER :: IDROP, ISYMICE
+ 	DOUBLE PRECISION :: R2D(NKR,ICEMAX),R3D(NKR), R4D(NKR), R5D(NKR), &
+ 			    R2ND(NKR,ICEMAX),R3ND(NKR), R4ND(NKR), R5ND(NKR), &
+ 			    VR2_d(NKR,ICEMAX), VR3_d(NKR), VR4_d(NKR), VR5_d(NKR)
+
+ 	OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
+ 	OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
+
+ 	DATA AL1 /2500./, AL2 /2834./, D /0.211/ &
+      &      ,GAM /1.E-4/, POD /10./
+
+ 	DATA RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY &
+      &      /461.5,0.24E-1,0.211E-4,2.5E6,2.834E6/
+
+ 	DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
+      &      /2.53,5.42,3.41E1,6.13/
+
+ 	DATA TPC1, TPC2, TPC3, TPC4, TPC5 &
+      &      /-4.0,-8.1,-12.7,-17.8,-22.4/
+
+ 	DATA EPSDEL/0.1E-03/
+
+ 	DATA DT0L, DT0I /1.E20,1.E20/
+
+ 	DOUBLE PRECISION :: DEL1_d, DEL2_d, RW_d, PW_d, RI_d, PI_d, D1N_d, D2N_d
+
+ 	B22_MY = 0.0
+ 	B32_MY = 0.0
+ 	B42_MY = 0.0
+ 	B52_MY = 0.0
+
+ 	B21_MY = 0.0
+ 	B31_MY = 0.0
+ 	B41_MY = 0.0
+ 	B51_MY = 0.0
+
+ 	SFNDUMMY = 0.0
+ 	R2D = R2
+ 	R3D = R3
+ 	R4D = R4
+ 	R5D = R5
+ 	R2ND = R2D
+ 	R3ND = R3D
+ 	R4ND = R4D
+ 	R5ND = R5D
+
+ 	SFNI1 = 0.0
+ 	SFN31 = 0.0
+ 	SFN41 = 0.0
+ 	SFN51 = 0.0
+
+ 	I_MIXCOND=0
+ 	I_MIXEVAP=0
+ 	I_ABERGERON=0
+ 	I_BERGERON=0
+ 	COL3=3.0*COL
+ 	ICM=ICEMAX
+ 	ITIME=0
+ 	KCOND=0
+ 	DT_WATER_COND=0.4
+ 	DT_WATER_EVAP=0.4
+ 	DT_ICE_COND=0.4
+ 	DT_ICE_EVAP=0.4
+ 	DT_MIX_COND=0.4
+ 	DT_MIX_EVAP=0.4
+ 	DT_MIX_BERGERON=0.4
+ 	DT_MIX_ANTIBERGERON=0.4
+ 	ICM=ICEMAX
+ 	ITIME=0
+ 	KCOND=0
+ 	DT0LREF=0.2
+ 	DTLREF=0.4
+
+ 	NR=NKR
+ 	NRM=NKR-1
+ 	DT=DTCOND
+ 	DTT=DTCOND
+ 	XRAD=0.
+
+ 	CWHUCM=0.
+ 	XRAD=0.
+ 	B6=CWHUCM*GAM-XRAD
+ 	B8L=1./ROR
+ 	B8I=1./ROR
+ 	RORI=1./ROR
+
+ 	TPN=TT
+ 	QPN=QQ
+
+   	DO ICE=1,ICEMAX
+ 		 SFNI1(ICE)=0.
+ 		 SFNI2(ICE)=0.
+ 		 DEL2D(ICE)=0.
+   	ENDDO
+
+   	TIMENEW = 0.
+   	ITIME = 0
+
+ ! ONLY ICE (CONDENSATION OR EVAPORATION) :
+
+   46 ITIME = ITIME + 1
+
+ 	  TIMEREV=DT-TIMENEW
+
+ 	  DEL1=DEL1N
+ 	  DEL2=DEL2N
+ 	  DEL1S=DEL1N
+ 	  DEL2S=DEL2N
+ 	  DEL2D(1)=DEL2N
+ 	  DEL2D(2)=DEL2N
+ 	  DEL2D(3)=DEL2N
+ 	  TPS=TPN
+ 	  QPS=QPN
+ 	  DO KR=1,NKR
+ 		 FI3(KR)=PSI3(KR)
+ 		 FI4(KR)=PSI4(KR)
+ 		 FI5(KR)=PSI5(KR)
+ 		 DO ICE=1,ICEMAX
+ 			FI2(KR,ICE)=PSI2(KR,ICE)
+ 		 ENDDO
+ 	  ENDDO
+
+ 	  IF(sum(ISYM2) > 0) THEN
+ 	    FL1 = 0.0
+ 	    VR2_d = VR2
+ 	  ! ... ice crystals
+ 		  CALL JERRATE_KS (R2D,TPS,PP,VR2_d,RIEC,RO2BL,B21_MY,3,2,fl1,NKR,ICEMAX)
+
+ 		  CALL JERTIMESC_KS (FI2,R2D,SFNI1,B21_MY,B8I,ICM,NKR,ICEMAX,COL)
+ 	  ENDIF
+ 	  IF(ISYM3 == 1) THEN
+ 	    FL3 = 0.0
+ 	    VR3_d = VR3
+ 	  ! ... snow
+ 		  CALL JERRATE_KS (R3D,TPS,PP,VR3_d,RSEC,RO3BL,B31_MY,1,3,fl3,NKR,ICEMAX)
+
+ 		  sfndummy(1) = SFN31
+ 		  CALL JERTIMESC_KS(FI3,R3D,SFNDUMMY,B31_MY,B8I,1,NKR,ICEMAX,COL)
+ 	  	  SFN31 = sfndummy(1)
+ 	  ENDIF
+ 	  IF(ISYM4 == 1) THEN
+ 	    FL4 = 0.0
+ 	    VR4_d = VR4
+ 	  ! ... graupel
+ 		  CALL JERRATE_KS(R4D,TPS,PP,VR4_d,RGEC,RO4BL,B41_MY,1,2,fl4,NKR,ICEMAX)
+
+ 		  sfndummy(1) = SFN41
+ 		  CALL JERTIMESC_KS(FI4,R4D,SFNDUMMY,B41_MY,B8I,1,NKR,ICEMAX,COL)
+ 	  	  SFN41 = sfndummy(1)
+ 	  ENDIF
+ 	  IF(ISYM5 == 1) THEN
+ 	    FL5 = 0.0
+ 	    VR5_d = VR5
+ 	  ! ... hail
+ 		  CALL JERRATE_KS(R5D,TPS,PP,VR5_d,RHEC,RO5BL,B51_MY,1,2,fl5,NKR,ICEMAX)
+
+ 		  sfndummy(1) = SFN51
+ 		  CALL JERTIMESC_KS(FI5,R5D,SFNDUMMY,B51_MY,B8I,1,NKR,ICEMAX,COL)
+ 	  	  SFN51 = sfndummy(1)
+ 	  ENDIF
+
+
+ 	  SFNII1 = SFNI1(1) + SFNI1(2) + SFNI1(3)
+ 	  SFN21 = SFNII1 + SFN31 + SFN41 + SFN51
+ 	  SFNL = 0.0
+ 	  SFN22 = 0.0
+ 	  SFNI = SFN21 + SFN22
+
+   	B5L=BB1_MY/TPS/TPS
+   	B5I=BB2_MY/TPS/TPS
+   	B7L=B5L*B6
+   	B7I=B5I*B6
+   	DOPL=1.+DEL1S
+   	DOPI=1.+DEL2S
+   	OPERQ=OPER2(QPS)
+   	RW=(OPERQ+B5L*AL1)*DOPL*SFNL
+   	QW=B7L*DOPL
+   	PW=(OPERQ+B5I*AL1)*DOPI*SFNL
+   	RI=(OPERQ+B5L*AL2)*DOPL*SFNI
+   	PI=(OPERQ+B5I*AL2)*DOPI*SFNI
+   	QI=B7I*DOPI
+
+     KCOND=20
+     IF(DEL2N > 0.0) KCOND=21
+
+   	IF(RW.NE.RW .or. PW.NE.PW)THEN
+ 	    print*, 'NaN In ONECOND2'
+ 	    call wrf_error_fatal("fatal error in ONECOND2 (RW or PW are NaN), model stop")
+   	ENDIF
+
+ ! ... (ONLY ICE)
+   	IF(KCOND == 21)  THEN
+ 			! ... ONLY_ICE: CONDENSATION
+       DTNEWL = DT
+       DTNEWL = AMIN1(DTNEWL,TIMEREV)
+       TIMENEW = TIMENEW + DTNEWL
+       DTT = DTNEWL
+
+ 			IF (DTT < 0.0) call wrf_error_fatal("fatal error in ONECOND2-DEL2N>0:(DTT<0), model stop")
+
+ 			DEL1_d = DEL1
+ 			DEL2_d = DEL2
+ 			RW_d = RW
+ 			PW_d = PW
+ 			RI_d = RI
+ 			PI_d = PI
+ 			CALL JERSUPSAT_KS(DEL1_d,DEL2_d,DEL1N,DEL2N, &
+ 											  RW_d,PW_d,RI_d,PI_d, &
+ 											  DTT,D1N_d,D2N_d,0.0,0.0, &
+ 											  ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
+ 			DEL1 = DEL1_d
+ 			DEL2 = DEL2_d
+ 			RW = RW_d
+ 			PW = PW_d
+ 			RI = RI_d
+ 			PI = PI_d
+ 			D1N = D1N_d
+ 			D2N = D2N_d
+
+ 			IF(sum(ISYM2) > 0)THEN
+ 				IDROP = 0
+ 				FL1 = 0.0
+ 				IF(ISYM2(1) == 1) THEN
+ 				  CALL JERDFUN_KS(R2D(:,1), R2ND(:,1), B21_MY(:,1), &
+ 								  FI2(:,1), PSI2(:,1), fl1, D2N, &
+ 								  ISYM2(1), ICM, 1, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 21, Iin, Jin ,Kin, Itimestep)
+ 				ENDIF
+ 				IF(ISYM2(2) == 1) THEN
+ 				  CALL JERDFUN_KS(R2D(:,2), R2ND(:,2), B21_MY(:,2), &
+ 								  FI2(:,2), PSI2(:,2), fl1, D2N, &
+ 								  ISYM2(2), ICM, 2, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 22, Iin, Jin ,Kin, Itimestep)
+ 				ENDIF
+ 				IF(ISYM2(3) == 1) THEN
+ 				  CALL JERDFUN_KS(R2D(:,3), R2ND(:,3), B21_MY(:,3), &
+ 								  FI2(:,3), PSI2(:,3), fl1, D2N, &
+ 								  ISYM2(3), ICM, 3, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 23, Iin, Jin ,Kin, Itimestep)
+
+ 				! IN CASE : ISYM2.NE.0
+ 				ENDIF
+ 			ENDIF
+
+ 			IF(ISYM3 == 1) THEN
+ 				IDROP = 0
+ 				FL3 = 0.0
+ 				CALL JERDFUN_KS(R3D, R3ND, B31_MY, &
+ 								FI3, PSI3, fl3, D2N, &
+ 								ISYM3, 1, 3, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 3, Iin, Jin ,Kin, Itimestep)
+ 			ENDIF
+
+
+ 			IF(ISYM4 == 1) THEN
+ 			 	IDROP = 0
+ 			 	FL4 = 0.0
+ 			 	CALL JERDFUN_KS(R4D, R4ND, B41_MY, &
+ 								FI4, PSI4, fl4, D2N, &
+ 								ISYM4, 1, 4, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 4, Iin, Jin ,Kin, Itimestep)
+ 				! IN CASE : ISYM4.NE.0
+ 			ENDIF
+
+ 			IF(ISYM5 == 1) THEN
+ 			 IDROP = 0
+ 			 FL5 = 0.0
+ 			 CALL JERDFUN_KS(R5D, R5ND, B51_MY, &
+ 							FI5, PSI5, fl5, D2N, &
+ 							ISYM5, 1, 5, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 5, Iin, Jin ,Kin, Itimestep)
+ 			! IN CASE : ISYM5.NE.0
+ 			ENDIF
+
+ 			IF((DEL2.GT.0.AND.DEL2N.LT.0) &
+          		.AND.ABS(DEL2N).GT.EPSDEL) THEN
+                 call wrf_error_fatal("fatal error in module_mp_fast_sbm (DEL2.GT.0.AND.DEL2N.LT.0), model stop")
+ 			ENDIF
+
+ 	  ELSE
+ 	  ! ... IN CASE KCOND.NE.21
+ 			! ONLY ICE: EVAPORATION
+        DTNEWL = DT
+        DTNEWL = AMIN1(DTNEWL,TIMEREV)
+        TIMENEW = TIMENEW + DTNEWL
+        DTT = DTNEWL
+
+ 			  IF (DTT < 0.0) call wrf_error_fatal("fatal error in ONECOND2-DEL2N<0:(DTT<0), model stop")
+
+   			DEL1_d = DEL1
+   			DEL2_d = DEL2
+   			RW_d = RW
+   			PW_d = PW
+   			RI_d = RI
+   			PI_d = PI
+   			CALL JERSUPSAT_KS(DEL1_d,DEL2_d,DEL1N,DEL2N, &
+   												RW_d,PW_d,RI_d,PI_d, &
+   					  						DTT,D1N_d,D2N_d,0.0,0.0, &
+   						  					ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
+   		 	DEL1 = DEL1_d
+   			DEL2 = DEL2_d
+   			RW = RW_d
+   			PW = PW_d
+   			RI = RI_d
+   			PI = PI_d
+   			D1N = D1N_d
+   			D2N = D2N_d
+
+ 			IF(sum(ISYM2) > 0) THEN
+ 			  IDROP = 0
+ 			  FL1 = 0.0
+ 			  IF(ISYM2(1)==1)THEN
+ 			  	CALL JERDFUN_KS(R2D(:,1), R2ND(:,1), B21_MY(:,1), &
+ 							    FI2(:,1), PSI2(:,1), fl1, D2N, &
+ 							    ISYM2(1), ICM, 1, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 21, Iin, Jin ,Kin, Itimestep)
+ 		  	  ENDIF
+ 			  IF(ISYM2(2)==1)THEN
+ 		      	CALL JERDFUN_KS(R2D(:,2), R2ND(:,2), B21_MY(:,2), &
+ 							    FI2(:,2), PSI2(:,2), fl1, D2N, &
+ 								ISYM2(2), ICM, 2, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 22, Iin, Jin ,Kin, Itimestep)
+ 		      ENDIF
+ 			  IF(ISYM2(3)==1)THEN
+ 		      	CALL JERDFUN_KS(R2D(:,3), R2ND(:,3), B21_MY(:,3), &
+ 								FI2(:,3), PSI2(:,3), fl1, D2N, &
+ 							    ISYM2(3), ICM, 3, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 23, Iin, Jin ,Kin, Itimestep)
+ 			 ENDIF
+ 			ENDIF
+
+       IF(ISYM3 == 1) THEN
+ 			! ... SNOW
+ 				IDROP = 0
+ 				FL3 = 0.0
+ 				CALL JERDFUN_KS(R3D, R3ND, B31_MY, &
+ 								FI3, PSI3, fl3, D2N, &
+ 								ISYM3, 1, 3, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 3, Iin, Jin ,Kin, Itimestep)
+ 			! IN CASE : ISYM3.NE.0
+       ENDIF
+
+     IF(ISYM4 == 1) THEN
+     ! ... GRAUPELS (ONLY_ICE: EVAPORATION)
+         ! ... New JERDFUN
+         IDROP = 0
+         FL4 = 0.0
+         CALL JERDFUN_KS(R4D, R4ND, B41_MY, &
+                         FI4, PSI4, fl4, D2N, &
+                         ISYM4, 1, 4, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 4, Iin, Jin ,Kin, Itimestep)
+     ! IN CASE : ISYM4.NE.0
+     ENDIF
+
+       IF(ISYM5 == 1) THEN
+         ! ... HAIL (ONLY_ICE: EVAPORATION)
+           ! ... New JERDFUN
+           IDROP = 0
+           FL5 = 0.0
+           CALL JERDFUN_KS(R5D, R5ND, B51_MY, &
+                           FI5, PSI5, fl5, D2N, &
+                           ISYM5, 1, 5, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 5, Iin, Jin ,Kin, Itimestep)
+             ! IN CASE : ISYM5.NE.0
+       ENDIF
+
+       IF((DEL2.LT.0.AND.DEL2N.GT.0) &
+            .AND.ABS(DEL2N).GT.EPSDEL) THEN
+             call wrf_error_fatal("fatal error in module_mp_fast_sbm (DEL2.LT.0.AND.DEL2N.GT.0), model stop")
+       ENDIF
+
+ 		 ! IN CASE : KCOND.NE.21
+     ENDIF
+
+ ! MASSES
+ 	  RMASSIBB=0.0
+ 	  RMASSIAA=0.0
+
+ 	  DO K=1,NKR
+ 		 DO ICE = 1,ICEMAX
+ 			FI2_K = FI2(K,ICE)
+ 			R2_K = R2(K,ICE)
+ 			FI2R2 = FI2_K*R2_K*R2_K
+ 			RMASSIBB = RMASSIBB + FI2R2
+ 	 	 ENDDO
+ 		 FI3_K=FI3(K)
+ 		 FI4_K=FI4(K)
+ 		 FI5_K=FI5(K)
+ 		 R3_K=R3(K)
+ 		 R4_K=R4(K)
+ 		 R5_K=R5(K)
+ 		 FI3R3=FI3_K*R3_K*R3_K
+ 		 FI4R4=FI4_K*R4_K*R4_K
+ 		 FI5R5=FI5_K*R5_K*R5_K
+ 		 RMASSIBB=RMASSIBB+FI3R3
+ 		 RMASSIBB=RMASSIBB+FI4R4
+ 		 RMASSIBB=RMASSIBB+FI5R5
+ 	  ENDDO
+ 	  RMASSIBB=RMASSIBB*COL3*RORI
+ 	  IF(RMASSIBB.LT.0.0) RMASSIBB=0.0
+
+ 	  DO K=1,NKR
+ 		 DO ICE =1,ICEMAX
+ 			FI2_K=PSI2(K,ICE)
+ 			R2_K=R2(K,ICE)
+ 			FI2R2=FI2_K*R2_K*R2_K
+ 			RMASSIAA=RMASSIAA+FI2R2
+ 		 ENDDO
+ 		 FI3_K = PSI3(K)
+ 		 FI4_K = PSI4(K)
+ 		 FI5_K = PSI5(K)
+ 		 R3_K=R3(K)
+ 		 R4_K=R4(K)
+ 		 R5_K=R5(K)
+ 		 FI3R3=FI3_K*R3_K*R3_K
+ 		 FI4R4=FI4_K*R4_K*R4_K
+ 		 FI5R5=FI5_K*R5_K*R5_K
+ 		 RMASSIAA=RMASSIAA+FI3R3
+ 		 RMASSIAA=RMASSIAA+FI4R4
+ 		 RMASSIAA=RMASSIAA+FI5R5
+ 	  ENDDO
+ 		RMASSIAA = RMASSIAA*COL3*RORI
+
+ 		IF(RMASSIAA.LT.0.0) RMASSIAA=0.0
+
+ 		DELMASSI1 = RMASSIAA-RMASSIBB
+ 		QPN = QPS-DELMASSI1
+ 		DAL2 = AL2
+ 		TPN = TPS+DAL2*DELMASSI1
+
+ 	  IF(ABS(DAL2*DELMASSI1) > 5.0 )THEN
+      print*,"ONECOND2-out (start)"
+      print*,"I=",Iin,"J=",Jin,"Kin",Kin,"W",w_in,"DX",dx_in
+      print*,"DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DT"
+      print*,DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DTT
+      print*,"TPS=",TPS,"QPS=",QPS,"delmassi1",delmassi1
+      print*,"DAL1=",DAL2
+      print*,RMASSIBB,RMASSIAA
+      print*,"FI2_1",FI2(:,1)
+      print*,"FI2_2",FI2(:,2)
+      print*,"FI2_3",FI2(:,3)
+      print*,"FI3",FI3
+      print*,"FI4",FI4
+      print*,"FI5",FI5
+      print*,"PSI2_1",PSI2(:,1)
+      print*,"PSI2_2",PSI2(:,2)
+      print*,"PSI2_3",PSI2(:,3)
+      print*,"PSI3",PSI3
+      print*,"PSI4",PSI4
+      print*,"PSI5",PSI5
+      print*,"ONECOND2-out (end)"
+      IF(ABS(DAL2*DELMASSI1) > 5.0 )THEN
+      call wrf_error_fatal("fatal error in ONECOND2-out (ABS(DAL2*DELMASSI1) > 5.0), model stop")
+ 		ENDIF
+ 	  ENDIF
+
+ ! ... SUPERSATURATION
+ 	  ARGEXP=-BB1_MY/TPN
+ 	  ES1N=AA1_MY*DEXP(ARGEXP)
+ 	  ARGEXP=-BB2_MY/TPN
+ 	  ES2N=AA2_MY*DEXP(ARGEXP)
+ 	  EW1N=OPER3(QPN,PP)
+ 	  IF(ES1N == 0.0)THEN
+ 	   DEL1N=0.5
+ 	   DIV1=1.5
+ 	   call wrf_error_fatal("fatal error in ONECOND2 (ES1N.EQ.0), model stop")
+ 	  ELSE
+ 	   DIV1=EW1N/ES1N
+ 	   DEL1N=EW1N/ES1N-1.
+ 	  END IF
+ 	  IF(ES2N == 0.0)THEN
+ 	   DEL2N=0.5
+ 	   DIV2=1.5
+ 	   call wrf_error_fatal("fatal error in ONECOND2 (ES2N.EQ.0), model stop")
+ 	  ELSE
+ 	   DEL2N=EW1N/ES2N-1.
+ 	   DIV2=EW1N/ES2N
+ 	  END IF
+
+ !  END OF TIME SPLITTING
+ ! (ONLY ICE: CONDENSATION OR EVAPORATION)
+  	IF(TIMENEW.LT.DT) GOTO 46
+
+ 		TT=TPN
+ 		QQ=QPN
+ 		DO KR=1,NKR
+ 			DO ICE=1,ICEMAX
+ 				FF2(KR,ICE)=PSI2(KR,ICE)
+ 			ENDDO
+ 			FF3(KR)=PSI3(KR)
+ 			FF4(KR)=PSI4(KR)
+ 			FF5(KR)=PSI5(KR)
+ 		ENDDO
+
+   RETURN
+   END SUBROUTINE ONECOND2
+ ! +----------------------------------------------------------------------------+
+         SUBROUTINE ONECOND3 &
+ 						 & (TT,QQ,PP,ROR &
+ 						 & ,VR1,VR2,VR3,VR4,VR5,PSINGLE &
+ 						 & ,DEL1N,DEL2N,DIV1,DIV2 &
+ 						 & ,FF1,PSI1,R1,RLEC,RO1BL &
+ 						 & ,FF2,PSI2,R2,RIEC,RO2BL &
+ 						 & ,FF3,PSI3,R3,RSEC,RO3BL &
+ 						 & ,FF4,PSI4,R4,RGEC,RO4BL &
+ 						 & ,FF5,PSI5,R5,RHEC,RO5BL &
+ 						 & ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
+ 						 & ,C1_MEY,C2_MEY &
+ 						 & ,COL,DTCOND,ICEMAX,NKR &
+ 						 & ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5, &
+ 						 	Iin,Jin,Kin,W_in,DX_in, Itimestep)
+
+        IMPLICIT NONE
+        INTEGER ICEMAX,NKR,KR,ITIME,ICE,KCOND,K &
+      &           ,ISYM1,ISYM2(ICEMAX),ISYM3,ISYM4,ISYM5, Kin, Iin, Jin, Itimestep
+        INTEGER KLIMITL,KLIMITG,KLIMITH,KLIMITI_1, &
+      &  KLIMITI_2,KLIMITI_3
+        INTEGER I_MIXCOND,I_MIXEVAP,I_ABERGERON,I_BERGERON
+        REAL ROR,VR1(NKR),VR2(NKR,ICEMAX),VR3(NKR),VR4(NKR) &
+      &           ,VR5(NKR),PSINGLE &
+      &           ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
+      &           ,C1_MEY,C2_MEY &
+      &           ,COL,DTCOND,W_in,DX_in
+
+ ! DROPLETS
+
+         REAL R1(NKR)&
+      &           ,RLEC(NKR),RO1BL(NKR) &
+      &           ,FI1(NKR),FF1(NKR),PSI1(NKR) &
+      &           ,B11_MY(NKR),B12_MY(NKR)
+
+ ! CRYSTALS
+
+ 	REAL R2(NKR,ICEMAX) &
+      &           ,RIEC(NKR,ICEMAX) &
+      &           ,RO2BL(NKR,ICEMAX) &
+      &           ,FI2(NKR,ICEMAX),PSI2(NKR,ICEMAX) &
+      &           ,FF2(NKR,ICEMAX) &
+      &           ,B21_MY(NKR,ICEMAX),B22_MY(NKR,ICEMAX) &
+      &           ,RATE2(NKR,ICEMAX),DEL_R2M(NKR,ICEMAX)
+
+ ! SNOW
+         REAL R3(NKR) &
+      &           ,RSEC(NKR),RO3BL(NKR) &
+      &           ,FI3(NKR),FF3(NKR),PSI3(NKR) &
+      &           ,B31_MY(NKR),B32_MY(NKR) &
+      &           ,DEL_R3M(NKR)
+
+ ! GRAUPELS
+
+         REAL R4(NKR) &
+      &           ,RGEC(NKR),RO4BL(NKR) &
+      &           ,FI4(NKR),FF4(NKR),PSI4(NKR) &
+      &           ,B41_MY(NKR),B42_MY(NKR) &
+      &           ,DEL_R4M(NKR)
+
+ ! HAIL
+         REAL R5(NKR) &
+      &           ,RHEC(NKR),RO5BL(NKR) &
+      &           ,FI5(NKR),FF5(NKR),PSI5(NKR) &
+      &           ,B51_MY(NKR),B52_MY(NKR) &
+      &           ,DEL_R5M(NKR)
+
+       DOUBLE PRECISION DD1N,DB11_MY,DAL1,DAL2
+       DOUBLE PRECISION COL3,RORI,TPN,TPS,QPN,QPS,TOLD,QOLD &
+      &                  ,FI1_K,FI2_K,FI3_K,FI4_K,FI5_K &
+      &                  ,R1_K,R2_K,R3_K,R4_K,R5_K &
+      &                  ,FI1R1,FI2R2,FI3R3,FI4R4,FI5R5 &
+      &                  ,RMASSLAA,RMASSLBB,RMASSIAA,RMASSIBB &
+      &                  ,ES1N,ES2N,EW1N,ARGEXP &
+      &                  ,TT,QQ,PP,DEL1N0,DEL2N0 &
+      &                  ,DEL1N,DEL2N,DIV1,DIV2 &
+      &                  ,OPER2,OPER3,AR1,AR2
+
+        DOUBLE PRECISION DELTAQ1,DELMASSI1,DELMASSL1
+
+        REAL A1_MYN, BB1_MYN, A2_MYN, BB2_MYN
+         DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
+      &      /2.53,5.42,3.41E1,6.13/
+        REAL B8L,B8I,SFN11,SFN12,SFNL,SFNI
+        REAL B5L,B5I,B7L,B7I,B6,DOPL,DEL1S,DEL2S,DOPI,RW,QW,PW, &
+      &  RI,PI,QI,SFNI1(ICEMAX),SFNI2(ICEMAX),AL1,AL2
+        REAL D1N,D2N,DT0L, DT0I,D1N0,D2N0
+        REAL SFN21,SFN22,SFNII1,SFNII2,SFN31,SFN32,SFN41,SFN42,SFN51, &
+      &  SFN52
+        REAL DEL1,DEL2
+        REAL  TIMEREV,DT,DTT,TIMENEW
+        REAL DTIMEG(NKR),DTIMEH(NKR),totccn_before,totccn_after
+
+        REAL DEL2D(ICEMAX),DTIMEO(NKR),DTIMEL(NKR) &
+      &           ,DTIMEI_1(NKR),DTIMEI_2(NKR),DTIMEI_3(NKR)
+        REAL DT_WATER_COND,DT_WATER_EVAP,DT_ICE_COND,DT_ICE_EVAP, &
+      &  DT_MIX_COND,DT_MIX_EVAP,DT_MIX_BERGERON,DT_MIX_ANTIBERGERON
+        REAL DTNEWL0,DTNEWL1,DTNEWI1,DTNEWI2_1,DTNEWI2_2,DTNEWI2_3, &
+      & DTNEWI2,DTNEWI_1,DTNEWI_2,DTNEWI3,DTNEWI4,DTNEWI5, &
+      & DTNEWL,DTNEWL2,DTNEWG1,DTNEWH1
+        REAL TIMESTEPD(NKR)
+
+        DATA AL1 /2500./, AL2 /2834./
+        REAL EPSDEL,EPSDEL2
+        DATA EPSDEL, EPSDEL2 /0.1E-03,0.1E-03/
+
+ 	   REAL :: FL1(NKR), FL2(NKR,ICEMAX), FL3(NKR), FL4(NKR), FL5(NKR), SFNDUMMY(3), &
+ 	   		   R1N(NKR), R2N(NKR,ICEMAX), R3N(NKR), R4N(NKR), R5N(NKR)
+ 	   INTEGER :: IDROP, ICM, ISYMICE
+ 	   DOUBLE PRECISION :: R1D(NKR),R2D(NKR,ICEMAX),R3D(NKR), R4D(NKR), R5D(NKR), &
+ 			       R1ND(NKR),R2ND(NKR,ICEMAX),R3ND(NKR), R4ND(NKR), R5ND(NKR)
+
+
+ 	   DATA DT0L, DT0I /1.E20,1.E20/
+
+ 	   DOUBLE PRECISION :: DEL1_d, DEL2_d , RW_d, PW_d , RI_d , PI_d , D1N_d, D2N_d, &
+ 				VR1_d(NKR), VR2_d(NKR,ICEMAX), VR3_d(NKR), VR4_d(NKR), VR5_d(NKR), &
+ 				TTinput,QQinput,DEL1Ninput,DEL2Ninput
+
+        OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
+        OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
+
+
+
+ TTinput = TT
+ QQinput = QQ
+ DEL1Ninput = DEL1N
+ DEL2Ninput = DEL2N
+
+ B12_MY = 0.0
+ B22_MY = 0.0
+ B32_MY = 0.0
+ B42_MY = 0.0
+ B52_MY = 0.0
+
+ B21_MY = 0.0
+ B31_MY = 0.0
+ B41_MY = 0.0
+ B51_MY = 0.0
+
+ ICM = ICEMAX
+ R1D = R1
+ R2D = R2
+ R3D = R3
+ R4D = R4
+ R5D = R5
+ R1ND = R1D
+ R2ND = R2D
+ R3ND = R3D
+ R4ND = R4D
+ R5ND = R5D
+
+ VR1_d = VR1
+ VR2_d = VR2
+ VR3_d = VR3
+ VR4_d = VR4
+ VR5_d = VR5
+
+ SFN11 = 0.0
+ SFNI1 = 0.0
+ SFN31 = 0.0
+ SFN41 = 0.0
+ SFN51 = 0.0
+
+ DT_WATER_COND=0.4
+ DT_WATER_EVAP=0.4
+ DT_ICE_COND=0.4
+ DT_ICE_EVAP=0.4
+ DT_MIX_COND=0.4
+ DT_MIX_EVAP=0.4
+ DT_MIX_BERGERON=0.4
+ DT_MIX_ANTIBERGERON=0.4
+
+ I_MIXCOND=0
+ I_MIXEVAP=0
+ I_ABERGERON=0
+ I_BERGERON=0
+
+ ITIME = 0
+ TIMENEW = 0.0
+ DT = DTCOND
+ DTT = DTCOND
+
+ B6=0.
+ B8L=1./ROR
+ B8I=1./ROR
+
+ RORI=1.D0/ROR
+  COL3=3.D0*COL
+ TPN=TT
+ QPN=QQ
+
+ 16  ITIME = ITIME + 1
+ IF((TPN-273.15).GE.-0.187) GO TO 17
+ TIMEREV = DT - TIMENEW
+ DEL1 = DEL1N
+ DEL2 = DEL2N
+ DEL1S = DEL1N
+ DEL2S = DEL2N
+
+ DEL2D(1) = DEL2N
+ DEL2D(2) = DEL2N
+ DEL2D(3) = DEL2N
+ TPS = TPN
+ QPS = QPN
+ DO KR = 1,NKR
+ 	FI1(KR) = PSI1(KR)
+ 	FI3(KR) = PSI3(KR)
+ 	FI4(KR) = PSI4(KR)
+ 	FI5(KR) = PSI5(KR)
+ 	DO ICE = 1,ICEMAX
+ 		FI2(KR,ICE) = PSI2(KR,ICE)
+ 	ENDDO
+ ENDDO
+
+ IF(ISYM1 == 1)THEN
+  FL1 = 0.0
+ 	CALL JERRATE_KS &
+      	 	(R1D,TPS,PP,VR1_d,RLEC,RO1BL,B11_MY,1,1,fl1,NKR,ICEMAX)
+
+ 	sfndummy(1) = SFN11
+ 	CALL JERTIMESC_KS(FI1,R1D,SFNDUMMY,B11_MY,B8L,1,NKR,ICEMAX,COL)
+ 	SFN11 = sfndummy(1)
+ ENDIF
+
+ IF(sum(ISYM2) > 0) THEN
+ 		FL1 = 0.0
+ 		! ... ice crystals
+   	CALL JERRATE_KS (R2D,TPS,PP,VR2_d,RIEC,RO2BL,B21_MY,3,2,fl1,NKR,ICEMAX)
+   	CALL JERTIMESC_KS (FI2,R2D,SFNI1,B21_MY,B8I,ICM,NKR,ICEMAX,COL)
+ ENDIF
+ IF(ISYM3 == 1) THEN
+ 		FL3 = 0.0
+ 		! ... snow
+ 		CALL JERRATE_KS (R3D,TPS,PP,VR3_d,RSEC,RO3BL,B31_MY,1,3,fl3,NKR,ICEMAX)
+ 		sfndummy(1) = SFN31
+ 		CALL JERTIMESC_KS(FI3,R3D,SFNDUMMY,B31_MY,B8I,1,NKR,ICEMAX,COL)
+   	SFN31 = sfndummy(1)
+ ENDIF
+ IF(ISYM4 == 1) THEN
+ 		FL4 = 0.0
+ 		! ... graupel
+ 		CALL JERRATE_KS(R4D,TPS,PP,VR4_d,RGEC,RO4BL,B41_MY,1,2,fl4,NKR,ICEMAX)
+ 		sfndummy(1) = SFN41
+ 		CALL JERTIMESC_KS(FI4,R4D,SFNDUMMY,B41_MY,B8I,1,NKR,ICEMAX,COL)
+ 		SFN41 = sfndummy(1)
+ ENDIF
+ IF(ISYM5 == 1) THEN
+ 		FL5 = 0.0
+ 		! ... hail
+ 		CALL JERRATE_KS(R5D,TPS,PP,VR5_d,RHEC,RO5BL,B51_MY,1,2,fl5,NKR,ICEMAX)
+ 		sfndummy(1) = SFN51
+ 		CALL JERTIMESC_KS(FI5,R5D,SFNDUMMY,B51_MY,B8I,1,NKR,ICEMAX,COL)
+ 		SFN51 = sfndummy(1)
+ ENDIF
+
+ 	SFNII1 = SFNI1(1) + SFNI1(2) + SFNI1(3)
+ 	SFN21 = SFNII1 + SFN31 + SFN41 + SFN51
+ 	SFN12 = 0.0
+ 	SFNL = SFN11 + SFN12
+ 	SFN22 = 0.0
+ 	SFNI = SFN21 + SFN22
+
+ 	B5L=BB1_MY/TPS/TPS
+ 	B5I=BB2_MY/TPS/TPS
+ 	B7L=B5L*B6
+ 	B7I=B5I*B6
+ 	DOPL=1.+DEL1S
+ 	DOPI=1.+DEL2S
+ 	RW=(OPER2(QPS)+B5L*AL1)*DOPL*SFNL
+ 	QW=B7L*DOPL
+ 	PW=(OPER2(QPS)+B5I*AL1)*DOPI*SFNL
+ 	RI=(OPER2(QPS)+B5L*AL2)*DOPL*SFNI
+ 	PI=(OPER2(QPS)+B5I*AL2)*DOPI*SFNI
+ 	QI=B7I*DOPI
+
+ 	IF(RW.NE.RW .or. PW.NE.PW)THEN
+ 	  print*, 'NaN In ONECOND3'
+ 	  call wrf_error_fatal("fatal error in ONECOND3 (RW or PW are NaN), model stop")
+ 	ENDIF
+
+ 	! DEL1 > 0, DEL2 < 0    (ANTIBERGERON MIXED PHASE - KCOND=50)
+ 	! DEL1 < 0 AND DEL2 < 0 (EVAPORATION MIXED_PHASE - KCOND=30)
+ 	! DEL1 > 0 AND DEL2 > 0 (CONDENSATION MIXED PHASE - KCOND=31)
+ 	! DEL1 < 0, DEL2 > 0    (BERGERON MIXED PHASE - KCOND=32)
+
+  KCOND=50
+ 	IF(DEL1N .LT. 0.0 .AND. DEL2N .LT. 0.0) KCOND=30
+ 	IF(DEL1N .GT. 0.0 .AND. DEL2N .GT. 0.0) KCOND=31
+ 	IF(DEL1N .LT. 0.0 .AND. DEL2N .GT. 0.0) KCOND=32
+
+ 	IF(KCOND == 50) THEN
+ 		DTNEWL = DT
+    DTNEWL = AMIN1(DTNEWL,TIMEREV)
+    TIMENEW = TIMENEW + DTNEWL
+    DTT = DTNEWL
+
+ 		! ... Incase the Anti-Bregeron regime we do not call diffusional-growth
+ 		PRINT*, "Anti-Bregeron Regime, No DIFFU"
+ 		PRINT*,  DEL1, DEL2, TT, QQ, Kin
+ 		GO TO 17
+ 	  ! IN CASE : KCOND = 50
+  ENDIF
+  IF(KCOND == 31) THEN
+		! ... DEL1 > 0 AND DEL2 > 0 (CONDENSATION MIXED PHASE - KCOND=31)
+		! ... CONDENSATION MIXED PHASE (BEGIN)
+	  DTNEWL = DT
+    DTNEWL = AMIN1(DTNEWL,TIMEREV)
+    TIMENEW = TIMENEW + DTNEWL
+    DTT = DTNEWL
+		! CONDENSATION MIXED PHASE (END)
+	! IN CASE : KCOND = 31
+  ENDIF
+   IF(KCOND == 30) THEN
+ 		! ... DEL1 < 0 AND DEL2 < 0 (EVAPORATION MIXED_PHASE - KCOND=30)
+ 		! ... EVAPORATION MIXED PHASE (BEGIN)
+ 		DTNEWL = DT
+    DTNEWL = AMIN1(DTNEWL,TIMEREV)
+    TIMENEW = TIMENEW + DTNEWL
+    DTT = DTNEWL
+ 	! EVAPORATION MIXED PHASE (END)
+ 	! IN CASE : KCOND = 30
+ 	ENDIF
+ 	IF(KCOND == 32) THEN
+ 		! ... IF(DEL1N < 0.0 .AND. DEL2N > 0.0) KCOND=32
+ 		! ... BERGERON MIXED PHASE (BEGIN)
+ 		DTNEWL = DT
+    DTNEWL = AMIN1(DTNEWL,TIMEREV)
+    TIMENEW = TIMENEW + DTNEWL
+    DTT = DTNEWL
+ 	! BERGERON MIXED PHASE (END)
+ 	! IN CASE : KCOND = 32
+ 	ENDIF
+
+   IF (DTT < 0.0) call wrf_error_fatal("fatal error in ONECOND3:(DTT<0), model stop")
+
+ 	DEL1_d = DEL1
+ 	DEL2_d = DEL2
+ 	RW_d = RW
+ 	PW_d = PW
+ 	RI_d = RI
+ 	PI_d = PI
+ 	CALL JERSUPSAT_KS(DEL1_d,DEL2_d,DEL1N,DEL2N, &
+ 						RW_d,PW_d,RI_d,PI_d, &
+ 						DTT,D1N_d,D2N_d,0.0,0.0, &
+ 						ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
+ 	DEL1 = DEL1_d
+ 	DEL2 = DEL2_d
+ 	RW = RW_d
+ 	PW = PW_d
+ 	RI = RI_d
+ 	PI = PI_d
+ 	D1N = D1N_d
+ 	D2N = D2N_d
+
+ 	IF(ISYM1 == 1) THEN
+ 		! DROPLETS
+ 		! DROPLET DISTRIBUTION FUNCTION
+ 		IDROP = ISYM1
+ 		FL1 = 0.0
+ 		CALL JERDFUN_KS(R1D, R1ND, B11_MY, &
+ 						FI1, PSI1, fl1, D1N, &
+ 						ISYM1, 1, 1, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 1, Iin, Jin ,Kin, Itimestep)
+ 		! IN CASE ISYM1.NE.0
+ 	ENDIF
+ 	IF(sum(ISYM2) > 0) THEN
+ 		! CRYSTALS
+ 		IDROP = 0
+ 		FL1 = 0.0
+ 		IF(ISYM2(1)==1)THEN
+ 			CALL JERDFUN_KS(R2D(:,1), R2ND(:,1), B21_MY(:,1), &
+ 						    FI2(:,1), PSI2(:,1), fl1, D2N, &
+ 							ISYM2(1), ICM, 1, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 21, Iin, Jin ,Kin, Itimestep)
+ 		ENDIF
+ 		IF(ISYM2(2)==1)THEN
+ 	  		CALL JERDFUN_KS(R2D(:,2), R2ND(:,2), B21_MY(:,2), &
+ 						    FI2(:,2), PSI2(:,2), fl1, D2N, &
+ 							ISYM2(2), ICM, 2, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 22, Iin, Jin ,Kin, Itimestep)
+ 		ENDIF
+ 		IF(ISYM2(3)==1)THEN
+ 	  		CALL JERDFUN_KS(R2D(:,3), R2ND(:,3), B21_MY(:,3), &
+ 						    FI2(:,3), PSI2(:,3), fl1, D2N, &
+ 							ISYM2(3), ICM, 3, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 23, Iin, Jin ,Kin, Itimestep)
+ 		ENDIF
+ 	ENDIF
+
+ 	IF(ISYM3 == 1) THEN
+ 		! SNOW
+ 		IDROP = 0
+ 		FL3 = 0.0
+ 		CALL JERDFUN_KS(R3D, R3ND, B31_MY, &
+ 						FI3, PSI3, fl3, D2N, &
+ 						ISYM3, 1, 3, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 3, Iin, Jin ,Kin, Itimestep)
+ 	! IN CASE ISYM3.NE.0
+ 	ENDIF
+
+ 	IF(ISYM4 == 1) THEN
+ 	! GRAUPELS
+ 		IDROP = 0
+ 		FL4 = 0.0
+ 		CALL JERDFUN_KS(R4D, R4ND, B41_MY, &
+ 						FI4, PSI4, fl4, D2N, &
+ 						ISYM4, 1, 4, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 4, Iin, Jin ,Kin, Itimestep)
+
+ 	! IN CASE ISYM4.NE.0
+ 	ENDIF
+
+    IF(ISYM5 == 1) THEN
+     ! HAIL
+ 	  IDROP = 0
+ 	  FL5 = 0.0
+ 	  CALL JERDFUN_KS(R5D, R5ND, B51_MY, &
+ 					FI5, PSI5, fl5, D2N, &
+ 					ISYM5, 1, 5, TPN, IDROP, FR_LIM, FRH_LIM, ICEMAX, NKR, COL, 5, Iin, Jin ,Kin, Itimestep)
+  ! IN CASE ISYM5.NE.0
+  ENDIF
+
+ RMASSLBB=0.D0
+ RMASSIBB=0.D0
+ RMASSLAA=0.D0
+ RMASSIAA=0.D0
+
+ DO K=1,NKR
+  FI1_K=FI1(K)
+  R1_K=R1(K)
+  FI1R1=FI1_K*R1_K*R1_K
+  RMASSLBB=RMASSLBB+FI1R1
+  DO ICE =1,ICEMAX
+ 	FI2_K=FI2(K,ICE)
+ 	R2_K=R2(K,ICE)
+ 	FI2R2=FI2_K*R2_K*R2_K
+ 	RMASSIBB=RMASSIBB+FI2R2
+  ENDDO
+ 	 FI3_K=FI3(K)
+ 	 FI4_K=FI4(K)
+ 	 FI5_K=FI5(K)
+ 	 R3_K=R3(K)
+ 	 R4_K=R4(K)
+ 	 R5_K=R5(K)
+ 	 FI3R3=FI3_K*R3_K*R3_K
+ 	 FI4R4=FI4_K*R4_K*R4_K
+ 	 FI5R5=FI5_K*R5_K*R5_K
+ 	 RMASSIBB=RMASSIBB+FI3R3
+ 	 RMASSIBB=RMASSIBB+FI4R4
+ 	 RMASSIBB=RMASSIBB+FI5R5
+   ENDDO
+   RMASSIBB=RMASSIBB*COL3*RORI
+   IF(RMASSIBB.LT.0.0) RMASSIBB=0.0
+   RMASSLBB=RMASSLBB*COL3*RORI
+   IF(RMASSLBB.LT.0.0) RMASSLBB=0.0
+   DO K=1,NKR
+ 	 FI1_K=PSI1(K)
+ 	 R1_K=R1(K)
+ 	 FI1R1=FI1_K*R1_K*R1_K
+ 	 RMASSLAA=RMASSLAA+FI1R1
+ 	 DO ICE =1,ICEMAX
+ 		FI2(K,ICE)=PSI2(K,ICE)
+ 		FI2_K=FI2(K,ICE)
+ 		R2_K=R2(K,ICE)
+ 		FI2R2=FI2_K*R2_K*R2_K
+ 		RMASSIAA=RMASSIAA+FI2R2
+ 	 ENDDO
+ 	 FI3_K=PSI3(K)
+ 	 FI4_K=PSI4(K)
+ 	 FI5_K=PSI5(K)
+ 	 R3_K=R3(K)
+ 	 R4_K=R4(K)
+ 	 R5_K=R5(K)
+ 	 FI3R3=FI3_K*R3_K*R3_K
+ 	 FI4R4=FI4_K*R4_K*R4_K
+ 	 FI5R5=FI5_K*R5_K*R5_K
+ 	 RMASSIAA=RMASSIAA+FI3R3
+ 	 RMASSIAA=RMASSIAA+FI4R4
+ 	 RMASSIAA=RMASSIAA+FI5R5
+   ENDDO
+ 	RMASSIAA=RMASSIAA*COL3*RORI
+ 	IF(RMASSIAA.LE.0.0) RMASSIAA=0.0
+ 	RMASSLAA=RMASSLAA*COL3*RORI
+ 	IF(RMASSLAA.LT.0.0) RMASSLAA=0.0
+
+ 	DELMASSL1=RMASSLAA-RMASSLBB
+ 	DELMASSI1=RMASSIAA-RMASSIBB
+ 	DELTAQ1=DELMASSL1+DELMASSI1
+ 	QPN=QPS-DELTAQ1
+ 	DAL1=AL1
+ 	DAL2=AL2
+ 	TPN = TPS + DAL1*DELMASSL1+DAL2*DELMASSI1
+
+ 	IF(ABS(DAL1*DELMASSL1+DAL2*DELMASSI1) > 5.0 )THEN
+ 		print*,"ONECOND3-input-start"
+ 		print*,"TTinput",TTinput,"QQinput",QQinput,"PP",PP
+ 		print*,'DEL1Ninput',DEL1Ninput,'DEL2Ninput',DEL2Ninput
+ 		print*,"ROR",ROR,'VR1',VR1,'PSINGLE',PSINGLE
+ 		print*,'DIV1',DIV1,'DIV2',DIV2
+ 		print*,'R1',R1,'RLEC',RLEC,'RO1BL',RO1BL
+ 		print*,'const',AA1_MY,BB1_MY,AA2_MY,BB2_MY
+ 		print*,'const',C1_MEY,C2_MEY,COL
+ 		print*,'DTCOND',DTCOND,'ICEMAX',ICEMAX,'NKR',NKR
+ 		print*,'ISYM1',ISYM1,'ISYM2',ISYM2,'ISYM3',ISYM3,'ISYM4',ISYM4,'ISYM5',ISYM5
+ 		print*,Iin,Jin,Kin,W_in,DX_in
+ 		print*,"ONECOND3-input-end"
+
+ 		print*,"ONECOND3-out (start)"
+ 		print*,"I=",Iin,"J=",Jin,"Kin",Kin,"W",w_in,"DX",dx_in
+ 		print*,"DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DT"
+ 		print*,DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DTT
+ 		print*,"TPS=",TPS,"TPN=",TPN,"QPS=",QPS,"delmassl1",delmassl1,"delmassi1",delmassi1
+ 		print*,"DAL2=",DAL2,"DAL1=",DAL1
+ 		print*,RMASSLAA,RMASSLBB
+ 		print*,RMASSIAA,RMASSIBB
+ 		print*,"FI1",FI1
+ 		print*,"FI3",FI3
+ 		print*,"FI4",FI4
+ 		print*,"FI5",FI5
+ 		print*,"PSI1",PSI1
+ 		print*,"R1D",R1D,"R1ND",R1ND
+ 		print*,"PSI3",PSI3
+ 		print*,"R3D",R3D,"R3ND",R3ND
+ 		print*,"PSI4",PSI4
+ 		print*,"R4D",R4D,"R4ND",R4ND
+ 		print*,"PSI5",PSI5
+ 		print*,"R5D",R5D,"R5ND",R5ND
+ 		print*,"ONECOND3-out (end)"
+ 		IF(ABS(DAL1*DELMASSL1+DAL2*DELMASSI1) > 5.0 )THEN
+ 			call wrf_error_fatal("fatal error in ONECOND3-out (ABS(DAL1*DELMASSL1+DAL2*DELMASSI1) > 5.0), model stop")
+ 		ENDIF
+ 	ENDIF
+
+ ! SUPERSATURATION
+ 	ARGEXP=-BB1_MY/TPN
+ 	ES1N=AA1_MY*DEXP(ARGEXP)
+ 	ARGEXP=-BB2_MY/TPN
+ 	ES2N=AA2_MY*DEXP(ARGEXP)
+ 	EW1N=OPER3(QPN,PP)
+ 	IF(ES1N == 0.0)THEN
+ 	 DEL1N=0.5
+ 	 DIV1=1.5
+ 	 print*,'es1n onecond3 = 0'
+ 	 call wrf_error_fatal("fatal error in ONECOND3 (ES1N.EQ.0), model stop")
+ 	ELSE
+ 	 DIV1=EW1N/ES1N
+ 	 DEL1N=EW1N/ES1N-1.
+ 	END IF
+ 	IF(ES2N == 0.0)THEN
+ 	 DEL2N=0.5
+ 	 DIV2=1.5
+ 	 print*,'es2n onecond3 = 0'
+ 	 call wrf_error_fatal("fatal error in ONECOND3 (ES2N.EQ.0), model stop")
+ 	ELSE
+ 	 DEL2N=EW1N/ES2N-1.
+ 	 DIV2=EW1N/ES2N
+ 	END IF
+ 	! END OF TIME SPLITTING
+
+ 	IF(TIMENEW < DT) GOTO 16
+ 	17 CONTINUE
+
+ 	TT=TPN
+ 	QQ=QPN
+ 	DO KR=1,NKR
+ 	   FF1(KR)=PSI1(KR)
+ 	   DO ICE=1,ICEMAX
+ 	      FF2(KR,ICE)=PSI2(KR,ICE)
+ 	   ENDDO
+ 	   FF3(KR)=PSI3(KR)
+ 	   FF4(KR)=PSI4(KR)
+ 	   FF5(KR)=PSI5(KR)
+ 	ENDDO
+
+   RETURN
+   END SUBROUTINE ONECOND3
+ ! +---------------------------------------------------------+
+ 	SUBROUTINE COAL_BOTT_NEW(FF1R,FF2R,FF3R,                      &
+				FF4R,FF5R,TT,QQ,PP,RHO,dt_coll,TCRIT,TTCOAL,&
+			      	FLIQFR_S,FLIQFR_G,FLIQFR_H,FRIMFR_S,        &
+			    	DEL1in, DEL2in,                             &
+  		              	Iin,Jin,Kin,itimestep,CollEff)
+
+    use module_mp_SBM_Collision,only:coll_xyy_lwf,coll_xyx_lwf,coll_xxx_lwf,    &
+				     coll_xyz_lwf, modkrn_KS, coll_breakup_KS, 	&
+				     coll_xxy_lwf
+
+     implicit none
+
+     integer,intent(in) :: Iin,Jin,Kin,itimestep
+     real(kind=r4size),intent(in) :: tcrit,ttcoal,dt_coll
+     real(kind=r4size),intent(inout) :: ff1r(:),ff2r(:,:),ff3r(:),ff4r(:),  &
+                                        ff5r(:),colleff
+     real(kind=r8size),intent(inout) :: fliqfr_s(:),fliqfr_g(:),fliqfr_h(:), &
+                                       frimfr_s(:),del1in,del2in,tt,qq
+     real(kind=r8size),intent(in) :: pp
+
+ 	   integer :: KR,ICE,icol_drop,icol_snow,icol_graupel,icol_hail, &
+      		      icol_column,icol_plate,icol_dendrite,icol_drop_brk
+     real(kind=r8size) :: g1(nkr),g2(nkr,icemax),g3(nkr),g4(nkr),g5(nkr), &
+                          gdumb(JMAX),gdumb_bf_breakup(JMAX),xl_dumb(JMAX), &
+                          g_orig(nkr),g2_1(nkr),g2_2(nkr),g2_3(nkr)
+     real(kind=r4size) :: cont_fin_drop,dconc,conc_icempl,deldrop,t_new, &
+      	                 delt_new,cont_fin_ice,conc_old,conc_new,cont_init_ice, &
+  		                   cont_init_drop,ALWC,T_new_real,PP_r,rho,ES1N,ES2N,EW1N
+     real(kind=r4size),parameter :: tt_no_coll=273.16
+
+     integer :: I,J,IT,NDIV
+     real(kind=r8size) :: break_drop_bef,break_drop_aft,dtbreakup,break_drop_per, &
+                          prdkrn,fl1(nkr),rf1(nkr),rf3(nkr),fl3(nkr), &
+                          fl4(nkr),fl5(nkr),fl2_1(nkr),fl2_2(nkr),fl2_3(nkr), &
+                          rf2(nkr),rf4(nkr),rf5(nkr),conc_drop_old, conc_drop_new, &
+                          dconc_drop, dm_rime(nkr), conc_plate_icempl, &
+                          col3, cont_coll_drop
+     real(kind=r8size),parameter :: prdkrn1 = 1.0d0
+     real(kind=r4size),parameter :: prdkrn1_r = 1.0
+ 	   integer,parameter :: icempl = 1
+ 	   real(kind=r8size),parameter :: t_ice_mpl = 270.15D0 ! for ice multiplication in temp > 268.15
+ 	   real(kind=r8size),PARAMETER :: g_lim = 1.0D-19*1.0D3,AA1_MY = 2.53E12,  &
+                                    BB1_MY = 5.42E3, AA2_MY = 3.41E13 ,BB2_MY = 6.13E3
+
+    icol_drop_brk=0
+    icol_drop=0
+    icol_snow=0
+    icol_graupel=0
+    icol_hail=0
+    icol_column=0
+    icol_plate=0
+    icol_dendrite=0
+    t_new = tt
+
+    PP_r = PP
+    call Kernals_KS(dt_coll,nkr,PP_r)
+    !CALL MODKRN_KS(TT,QQ,PP,RHO,PRDKRN,TTCOAL,1,1,Iin,Jin,Kin)
+    CALL MODKRN_KS(TT,QQ,PP,RHO,PRDKRN,TTCOAL,11,1,Iin,Jin,Kin)
+
+ 	  CollEff = PRDKRN
+
+    DO KR=1,NKR
+      G1(KR)=FF1R(KR)*3.*XL(KR)*XL(KR)*1.E3
+      G2(KR,1)=FF2R(KR,1)*3*xi(KR,1)*XI(KR,1)*1.e3
+      G2(KR,2)=FF2R(KR,2)*3.*xi(KR,2)*XI(KR,2)*1.e3
+      G2(KR,3)=FF2R(KR,3)*3.*xi(KR,3)*XI(KR,3)*1.e3
+      G3(KR)=FF3R(KR)*3.*xs(kr)*xs(kr)*1.e3
+      G4(KR)=FF4R(KR)*3.*xg(kr)*xg(kr)*1.e3
+      G5(KR)=FF5R(KR)*3.*xh(kr)*xh(kr)*1.e3
+      g2_1(kr)=g2(KR,1)
+      g2_2(KR)=g2(KR,2)
+      g2_3(KR)=g2(KR,3)
+      if(kr .gt. KRMIN_BREAKUP .and. g1(kr) > g_lim) icol_drop_brk = 1
+      IF (IBREAKUP.NE.1) icol_drop_brk = 0
+      if(g1(kr).gt.g_lim) icol_drop=1
+      if(g2_1(kr).gt.g_lim) icol_column = 1
+      if(g2_2(kr).gt.g_lim) icol_plate = 1
+      if(g2_3(kr).gt.g_lim) icol_dendrite = 1
+      if(g3(kr).gt.g_lim) icol_snow = 1
+      if(g4(kr).gt.g_lim) icol_graupel = 1
+      if(g5(kr).gt.g_lim) icol_hail = 1
+    END DO
+
+ 	  fl1 = 1.0
+ 	  fl3(:) = FLIQFR_S(:)
+ 	  fl4(:) = FLIQFR_G(:)
+ 	  fl5(:) = FLIQFR_H(:)
+ 	  rf1 = 1.0
+ 	  rf3(:) = FRIMFR_S(:)
+ 	  rf4(:) = 0.0
+ 	  rf5(:) = 0.0
+
+
+ ! calculation of initial hydromteors content in g/cm**3 :
+  cont_init_drop = 0.0
+  cont_init_ice = 0.0
+  cont_init_drop = sum(g1(1:nkr))
+  cont_init_ice = sum(g3(1:nkr)) + sum(g4(1:nkr)) + sum(g5(1:nkr))
+  do ice=1,icemax
+      cont_init_ice = cont_init_ice + sum(g2(1:nkr,ice))
+  enddo
+  cont_init_drop=col*cont_init_drop*1.e-3
+  cont_init_ice=col*cont_init_ice*1.e-3
 ! calculation of alwc in g/m**3
-      alwc=cont_init_drop*1.e6
+  alwc=cont_init_drop*1.e6
 ! calculation interactions :
 ! droplets - droplets and droplets - ice :
 ! water-water = water
 
-      if (icol_drop.eq.1)then 
-! break-up
-
-       call coll_xxx (G1,CWLL,XL_MG,CHUCM,IMA,NKR)
-! breakup!
-       if(icol_drop_brk.eq.1)then
-       ndiv=1
-10     continue
-       do it = 1,ndiv
-         if (ndiv.gt.10000) call wrf_error_fatal("fatal error in module_mp_fast_sbm (ndiv.gt.10000), model stop")
-         dtbreakup = dt_coll/ndiv
-         if (it.eq.1)then
-!         do kr=1,nkr
-          do kr=1,JMAX
-           gdumb(kr)= g1(kr)*1.D-3
-           xl_dumb(kr)=xl_mg(KR)*1.D-3
-          end do
-          break_drop_bef=0.d0
-!         do kr=1,nkr
-          do kr=1,JMAX
-            break_drop_bef=break_drop_bef+g1(kr)*1.D-3
-          enddo
-         end if
-         call breakup(gdumb,xl_dumb,dtbreakup,brkweight, &
-     &        pkij,qkj,JMAX,jbreak)
-       end do
-       break_drop_aft=0.0d0
-       do kr=1,JMAX
-           break_drop_aft=break_drop_aft+gdumb(kr)
-       enddo
-       break_drop_per=break_drop_aft/break_drop_bef
-       if (break_drop_per.gt.1.001)then
-           ndiv=ndiv*2
-           GO TO 10
-       else
-           do kr=1,JMAX
-            g1(kr)=gdumb(kr)*1.D3
-           end do
-       end if
-       end if
+  if (icol_drop.eq.1)then
+! ... Drop-Drop collisions
+  fl1 = 1.0
+  call coll_xxx_lwf (G1,fl1,CWLL,XL_MG,CHUCM,IMA,1.d0,NKR)
+! ... Breakup
+  if(icol_drop_brk == 1)then
+    ndiv = 1
+    10     	continue
+    do it = 1,ndiv
+      dtbreakup = dt_coll/ndiv
+      if (it == 1)then
+        do kr=1,JMAX
+          gdumb(kr)= g1(kr)*1.D-3
+          gdumb_bf_breakup(kr) =  g1(kr)*1.D-3
+          xl_dumb(kr)=xl_mg(KR)*1.D-3
+        end do
+        break_drop_bef=0.d0
+        do kr=1,JMAX
+          break_drop_bef = break_drop_bef+g1(kr)*1.D-3
+        end do
       end if
-       if (icol_snow.eq.1)then 
-         call coll_xyz (g1,g3,g4,cwls,xl_mg,xs_mg, &
-     &                chucm,ima,prdkrn1,nkr,0)
-         if(alwc.lt.alcr) then
-         call coll_xyx (g3,g1,cwsl,xs_mg,xl_mg, &
-     &                chucm,ima,prdkrn1,nkr,1)
-         endif
-         if(alwc.ge.alcr) then
-!        call coll_xyz (g3,g1,g4,cwsl,xs_mg,xl_mg, &
-!    &                chucm,ima,prdkrn1,nkr,1)
-            call coll_xyxz_h (g3,g1,g4,cwsl,xs_mg,xl_mg, &
-     &                chucm,ima,prdkrn1,nkr,1)
-         endif
-! in case : icolxz_snow.ne.0
-       end if
-! interactions between water and  graupel (begin)
-! water - graupel = graupel (t < tcrit ; xl_mg ge xg_mg)
-! graupel - water = graupel (t < tcrit ; xg_mg > xl_mg)
-! water - graupel = hail (t ge tcrit ; xl_mg ge xg_mg)
-! graupel - water = hail (t ge tcrit ; xg_mg > xl_mg)
-       if (icol_graupel.eq.1)then 
-! water-graupel
-! included kp_bound = 25
-!!         call coll_xyyz_h (g1,g4,g5,cwlg,xl_mg,xg_mg, &
-!!     &                chucm,ima,prdkrn1,nkr,1)
-! for ice multiplication
-          conc_old=0.
-          conc_new=0.
-          do kr=kr_icempl,nkr
-               conc_old=conc_old+col*g1(kr)/xl_mg(kr)
-          enddo
-! graupel-water
-!          if(alwc.lt.alcr_g) then
-! water-graupel
-! TEST
-            call coll_xyy (g1,g4,cwlh,xl_mg,xg_mg, &
-     &               chucm,ima,prdkrn1,nkr,0)
-            call coll_xyx (g4,g1,cwhl,xg_mg,xl_mg, &
-     &          chucm,ima,prdkrn1,nkr,1)
-! TEST
-!          else
-!!          call coll_xyxz_h (g4,g1,g5,cwgl,xg_mg,xl_mg, &
-!!   &                chucm,ima,prdkrn1,nkr,1)
-!          end if
-! interactions between water and  graupels (end)
 
-         if(icempl.eq.1) then
-          if(tt.ge.265.15.and.tt.le.tcrit) then
-! ice-multiplication :
-            do kr=kr_icempl,nkr
-               conc_new=conc_new+col*g1(kr)/xl_mg(kr)
-            enddo
-            dconc=conc_old-conc_new
-            if(tt.le.268.15) then
-              conc_icempl=dconc*4.e-3*(265.15-tt)/(265.15-268.15)
-            endif
-            if(tt.gt.268.15) then
-             conc_icempl=dconc*4.e-3*(tcrit-tt)/(tcrit-268.15)
-            endif
-!CHANGE FOR FOUR BIN SCHEME           g2_2(1)=g2_2(1)+conc_icempl*xi2_mg(1)/col
-            g3(1)=g3(1)+conc_icempl*xs_mg(1)/col
-! in case t.ge.265.15 :
-          endif
-! in case icempl=1
-         endif
-! interactions between water and  graupels (end)
-! in case icolxz_graup.ne.0
-       endif
-! water - hail = hail (xl_mg ge xh_mg)                      (kxyy=2)
-! hail - water = hail (xh_mg > xl_mg)                       (kxyx=3)
-!      if(icol_hail.eq.1) then
-!       call coll_xyy (g1,g5,cwlh,xl_mg,xh_mg, &
-!    &               chucm,ima,prdkrn1,nkr,0)
-!       call coll_xyx (g5,g1,cwhl,xh_mg,xl_mg, &
-!    &               chucm,ima,prdkrn1,nkr,1)
-! in case icolxz_hail.ne.0
-!      endif
-! interactions between water and hail (end)
-! interactions between water and crystals :
-! interactions between water and columns :
-! water - columns = graupel (t < tcrit ; xl_mg ge xi_mg)    (kxyz=6)
-! water - columns = hail (t ge tcrit ; xl_mg ge xi_mg)      (kxyz=7)
-! columns - water = columns/graupel (xi_mg > xl_mg)             (kxyx=4); kxyxz=2)
-! now: columns - water = columns (xi_mg > xl_mg)             (kxyx=4); kxyxz=2)
-!      if(icol_column.eq.1) then
-!       if(tt.lt.tcrit) then
-!        call coll_xyz (g1,g2_1,g4,cwli_1,xl_mg,xi1_mg, &
-!    &                 chucm,ima,prdkrn,nkr,0)
-!       endif
-!       if(tt.ge.tcrit) then
-!        call coll_xyz (g1,g2_1,g5,cwli_1,xl_mg,xi1_mg, &
-!    &                 chucm,ima,prdkrn,nkr,0)
-!       endif
-!       call coll_xyxz (g2_1,g1,g4,cwil_1,xi1_mg,xl_mg, &
-!    &                 chucm,ima,prdkrn,nkr,1)
-!       call coll_xyx (g2_1,g1,cwil_1,xi1_mg,xl_mg, &
-!    &                 chucm,ima,prdkrn,nkr,1)
-! in case icolxz_column.ne.0
-!      endif
+      call coll_breakup_KS(gdumb, xl_dumb, JMAX, dtbreakup, JBREAK, PKIJ, QKJ, NKR, NKR)
+    end do
 
-!     if(icolxz_plate.ne.0) then
-! interactions between water and plates :
-! water - plates = graupel (t < tcrit ; xl_mg ge xi2_mg)    (kxyz=8)
-! water - plates = hail (t ge tcrit ; xl_mg ge xi2_mg)      (kxyz=9)
-! plates - water = plates/graupel (xi2_mg > xl_mg)              (kxyx=5; kxyxz=3)
-!now: plates - water = plates (xi2_mg > xl_mg)              (kxyx=5; kxyxz=3)
-!      if(icol_plate.eq.1) then
-!       if(tt.lt.tcrit) then
-!        call coll_xyz (g1,g2_2,g4,cwli_2,xl_mg,xi2_mg, &
-!    &                 chucm,ima,prdkrn,nkr,0)
-!       endif
-!       if(tt.ge.tcrit) then
-!        call coll_xyz (g1,g2_2,g5,cwli_2,xl_mg,xi2_mg, &
-!    &                 chucm,ima,prdkrn,nkr,0)
-!       endif
-!       call coll_xyxz (g2_2,g1,g4,cwil_2,xi2_mg,xl_mg, &
-!    &                 chucm,ima,prdkrn,nkr,1)
-!       call coll_xyx (g2_2,g1,cwil_2,xi2_mg,xl_mg, &
-!    &                 chucm,ima,prdkrn,nkr,1)
-! in case icolxz_plate.ne.0
-!      endif
-
-! interactions between water and dendrites :
-! water - dendrites = graupel (t < tcrit ; xl_mg ge xi3_mg) (kxyz=10)
-! water - dendrites = hail (t ge tcrit ; xl_mg ge xi3_mg)   (kxyz=11)
-! dendrites - water = dendrites/graupel (xi3_mg > xl_mg)         (kxyx=6; kxyxz=4)
-!now dendrites - water = dendrites (xi3_mg > xl_mg)         (kxyx=6; kxyxz=4)
-!      if(icol_dendrite.eq.1) then
-!       if(tt.lt.tcrit) then
-!        call coll_xyz (g1,g2_3,g4,cwli_3,xl_mg,xi3_mg, &
-!    &                 chucm,ima,prdkrn,nkr,0)
-!       endif
-!       if(tt.ge.tcrit) then
-!        call coll_xyz (g1,g2_3,g5,cwli_3,xl_mg,xi3_mg, &
-!    &                 chucm,ima,prdkrn,nkr,0)
-!       endif
-!       call coll_xyxz (g2_3,g1,g4,cwil_3,xi3_mg,xl_mg, &
-!    &                 chucm,ima,prdkrn,nkr,1)
-!       call coll_xyx (g2_3,g1,cwil_3,xi3_mg,xl_mg, &
-!    &                 chucm,ima,prdkrn,nkr,1)
-! in case icolxz_dendr.ne.0
-!      endif
-! interactions between water and dendrites (end)
-! in case icolxz_drop.ne.0
-!     endif
-! interactions between water and crystals (end)
-
-! interactions between crystals :
-! if(t.le.TTCOAL) - no interactions between crystals
-!     if(tt.gt.TTCOAL) then
-! interactions between columns and other particles (begin)
-!      if(icol_column.eq.1) then
-! columns - columns = snow
-!       call coll_xxy (g2_1,g3,cwii_1_1,xi1_mg, &
-!    &                 chucm,ima,prdkrn,nkr)
-! interactions between columns and plates :
-! columns - plates = snow (xi1_mg ge xi2_mg)                (kxyz=12)
-! plates - columns = snow (xi2_mg > xi1_mg)                 (kxyz=13)
-!       if(icol_plate.eq.1) then     
-!        call coll_xyz (g2_1,g2_2,g3,cwii_1_2,xi1_mg,xi2_mg, &
-!    &                 chucm,ima,prdkrn,nkr,0)
-!        call coll_xyz (g2_2,g2_1,g3,cwii_2_1,xi2_mg,xi1_mg, &
-!    &                 chucm,ima,prdkrn,nkr,1)
-!       end if
-! interactions between columns and dendrites :
-! columns - dendrites = snow (xi1_mg ge xi3_mg)             (kxyz=14)
-! dendrites - columns = snow (xi3_mg > xi1_mg)              (kxyz=15)
-!       if(icol_dendrite.eq.1) then
-!          call coll_xyz (g2_1,g2_3,g3,cwii_1_3,xi1_mg,xi3_mg, &
-!    &                 chucm,ima,prdkrn,nkr,0)
-!          call coll_xyz (g2_3,g2_1,g3,cwii_3_1,xi3_mg,xi1_mg, &
-!    &                 chucm,ima,prdkrn,nkr,1)
-!       end if
-! interactions between columns and snow :
-! columns - snow = snow (xi1_mg ge xs_mg)                   (kxyy=3)
-! snow - columns = snow (xs_mg > xi1_mg)                    (kxyx=7)
-! ALEX?
-!       if(icol_snow.eq.1) then
-!B       call coll_xyy (g2_1,g3,cwis_1,xi1_mg,xs_mg,
-!B   1                 chucm,ima,prdkrn,nkr,0)
-!!        call coll_xyx (g3,g2_1,cwsi_1,xs_mg,xi1_mg, &
-!!    &                 chucm,ima,prdkrn,nkr,1)
-!       endif          
-! in case icolxz_column.ne.0
-!      endif
-! interactions between columns and other particles (end)
-! interactions between plates and other particles (begin)
-! plates - plates = snow
-!      if(icol_plate.eq.1) then
-!       call coll_xxy (g2_2,g3,cwii_2_2,xi2_mg, &
-!    &                 chucm,ima,prdkrn,nkr)
-! interactions between plates and dendrites :
-! plates - dendrites = snow (xi2_mg ge xi3_mg)              (kxyz=17)
-! dendrites - plates = snow (xi3_mg > xi2_mg)               (kxyz=18)
-!       if(icol_dendrite.eq.1) then
-!        call coll_xyz (g2_2,g2_3,g3,cwii_2_3,xi2_mg,xi3_mg, &
-!    &                 chucm,ima,prdkrn,nkr,0)
-!        call coll_xyz (g2_3,g2_2,g3,cwii_3_2,xi3_mg,xi2_mg, &
-!    &                 chucm,ima,prdkrn,nkr,1)
-!       end if
-! interactions between plates and snow :
-! plates - snow = snow (xi2_mg ge xs_mg)                    (kxyy=4)
-! snow - plates = snow (xs_mg > xi2_mg)                     (kxyx=12)
-!       if(icol_snow.eq.1) then
-! ALEX
-!B       call coll_xyy (g2_2,g3,cwis_2,xi2_mg,xs_mg,
-!B   1                 chucm,ima,prdkrn,nkr,0)
-!!        call coll_xyx (g3,g2_2,cwsi_2,xs_mg,xi2_mg, &
-!!     &                 chucm,ima,prdkrn,nkr,1)
-!        end if
-! in case icolxz_plate.ne.0
-!      endif
-! interactions between plates and others particles (end)
-! interactions between dendrites and other hydrometeors (begin)
-! dendrites - dendrites = snow
-!      if(icol_dendrite.eq.1) then
-!!       call coll_xxy (g2_3,g3,cwii_3_3,xi3_mg, &
-!!    &                  chucm,ima,prdkrn,nkr)
-! interactions between dendrites and snow :
-! dendrites - snow = snow (xi3_mg ge xs_mg)                 (kxyy=5)
-! snow - dendrites = snow (xs_mg > xi3_mg)                  (kxyx=17)
-!       if(icol_snow.eq.1) then
-! ALEX
-!B       call coll_xyy (g2_3,g3,cwis_3,xi3_mg,xs_mg,
-!B   1                 chucm,ima,prdkrn,nkr,0)
-!!        call coll_xyx (g3,g2_3,cwsi_3,xs_mg,xi3_mg, &
-!!   &                 chucm,ima,prdkrn,nkr,1)
-!       end if
-! in case icolxz_dendr.ne.0
-!      endif
-! interactions between dendrites and other hydrometeors (end)
-! interactions between snowflakes and other hydromteors (begin)
-!       if(icol_snow.ne.0) then
-! interactions between snowflakes
-! snow - snow = snow
-         call coll_xxx_prd (g3,cwss,xs_mg,chucm,ima,prdkrn,nkr)
-! interactions between snowflakes and graupels :
-! snow - graupel = snow (xs_mg > xg_mg)                     (kxyx=22)
-! graupel - snow = graupel (xg_mg ge xs_mg)                 (kxyx=23)
-!        if(icol_graupel.eq.1) then
-!!         call coll_xyx (g3,g4,cwsg,xs_mg,xg_mg, &
-!!   &                chucm,ima,prdkrn,nkr,1)
-! in case icolxz_graup.ne.0
-!        endif
-! in case icolxz_snow.ne.0
-!       endif
-! interactions between snowflakes and other hydromteors (end)
-! in case : t > TTCOAL
-!     endif
-! in case : t > TTCOAL or t.le.TTCOAL
-! calculation of finish hydrometeors contents in g/cm**3 :
-      cont_fin_drop=0.
-      cont_fin_ice=0.
-      do kr=1,nkr
-!        g2(kr,1)=g2_1(kr)
-!        g2(kr,2)=g2_2(kr)
-!        g2(kr,3)=g2_3(kr)
-         cont_fin_drop=cont_fin_drop+g1(kr)
-!        cont_fin_ice=cont_fin_ice+g3(kr)+g4(kr)+g5(kr)
-         cont_fin_ice=cont_fin_ice+g3(kr)+g4(kr)
-!        do ice=1,icemax
-!           cont_fin_ice=cont_fin_ice+g2(kr,ice)
-!        enddo
-      enddo
-      cont_fin_drop=col*cont_fin_drop*1.e-3
-      cont_fin_ice=col*cont_fin_ice*1.e-3
-      deldrop=cont_init_drop-cont_fin_drop
-! deldrop in g/cm**3
-! resulted value of temperature (rob in g/cm**3) :
-      if(t_new.le.273.15) then
-        if(deldrop.ge.0.) then
-          t_new=t_new+320.*deldrop/rho
+    do KR=1,NKR
+      FF1R(KR) = (1.0d3*GDUMB(KR))/(3.0*XL(KR)*XL(KR)*1.E3)
+      if(FF1R(KR) < 0.0)then
+        if(ndiv < 8)then
+          ndiv = 2*ndiv
+          go to 10
         else
-! if deldrop < 0
-          if(abs(deldrop).gt.cont_init_drop*0.05) then
-            call wrf_error_fatal("fatal error in module_mp_fast_sbm, abs(deldrop).gt.cont_init_drop, model stop")
-          endif
+          !print*,"noBreakUp",Iin,Jin,Kin,Itimestep,ndiv
+          go to 11
+          !call wrf_error_fatal("in coal_bott af-coll_breakup - FF1R/GDUMB < 0.0")
         endif
+      endif
+      if(FF1R(kr) .ne. FF1R(kr)) then
+        print*,kr,GDUMB(kr),GDUMB_BF_BREAKUP(kr),XL(kr)
+        print*,IT,NDIV, DTBREAKUP
+        print*,GDUMB
+        print*,GDUMB_BF_BREAKUP
+        call wrf_error_fatal("in coal_bott af-coll_breakup - FF1R NaN, model stop")
+      endif
+    enddo
+
+    break_drop_aft=0.0d0
+    do kr=1,JMAX
+      break_drop_aft=break_drop_aft+gdumb(kr)
+    end do
+    break_drop_per=break_drop_aft/break_drop_bef
+    if (break_drop_per > 1.001)then
+      ndiv=ndiv*2
+      GO TO 10
+    else
+      do kr=1,JMAX
+        g1(kr) = gdumb(kr)*1.D3
+      end do
+    end if
+  ! if icol_drop_brk.eq.1
+  end if
+! if icol_drop.eq.1
+end if
+
+11   continue
+ ! +--------------------------------------------------------+
+ ! Negative temperature collisions block (start)
+ ! +---------------------------------------------------------+
+ 	if(tt <= 273.15)then
+ 		if(icol_drop == 1)then
+ 			! ... interactions between drops and snow
+ 			!	    drop - snow = graupel/hail
+ 			!	    snow - drop = snow
+      !          or
+ 			!     snow - drop = graupel/hail
+  		if (icol_snow == 1)then
+ 				rf1 = 1.0
+ 				rf5 = 0.0
+ 				rf4 = 0.0
+ 				if(hail_opt == 1)then
+ 					call coll_xyz_lwf(g1,g3,g5,rf1,rf3,rf5,cwls,xl_mg,xs_mg, &
+             	         	   	      	 chucm,ima,prdkrn1,nkr,0)
+ 				else
+ 					call coll_xyz_lwf(g1,g3,g4,rf1,rf3,rf4,cwls,xl_mg,xs_mg, &
+             	         	   		  	  chucm,ima,prdkrn1,nkr,0)
+ 				endif
+		    rf1 = 1.0
+        rf5 = 0.0
+        rf4 = 0.0
+		    if(alwc < alcr) then
+    			call coll_xyx_lwf(g3,g1,rf3,rf1,cwsl,xs_mg,xl_mg, &
+         	         		      chucm,ima,prdkrn1,nkr,1,dm_rime)
+		    else
+ 					if(hail_opt == 1)then
+ 						call coll_xyz_lwf(g3,g1,g5,rf3,rf1,rf5,cwsl,xs_mg,xl_mg, &
+									           chucm,ima,prdkrn1,nkr,1)
+ 					else
+ 						call coll_xyz_lwf(g3,g1,g4,rf3,rf1,rf4,cwsl,xs_mg,xl_mg, &
+ 										         chucm,ima,prdkrn1,nkr,1)
+ 					endif
+ 				endif
+ 			! in case : icolxz_snow.ne.0
+ 			end if
+
+  		if (icol_graupel == 1) then
+ 			! ... interactions between drops and graupel
+ 			!     drops - graupel = graupel
+ 			!     graupel - drops = graupel
+ 			!     drops - graupel = hail (no transition in FSBM)
+ 			!     graupel - drop = hail (no transition in FSBM)
+    		if(alwc < alcr_g) then
+  		    rf1 = 1.0
+  		    rf4 = 0.0
+  				call coll_xyy_lwf(g1,g4,rf1,rf4,cwlg,xl_mg,xg_mg, &
+    		 	     	         	  chucm,ima,prdkrn1,nkr,0)
+   					! ... for ice multiplication
+   					conc_old = 0.0
+       			conc_new = 0.0
+   					do kr = kr_icempl,nkr
+   						conc_old = conc_old+col*g1(kr)/xl_mg(kr)
+       			end do
+       			rf1 = 1.0
+       			rf4 = 0.0
+   					call coll_xyx_lwf(g4,g1,rf4,rf1,cwgl,xg_mg,xl_mg, &
+   		 							           chucm,ima,prdkrn1,nkr,1,dm_rime)
+  			else
+          rf1 = 1.0
+          rf5 = 0.0
+          rf4 = 0.0
+ 					call coll_xyz_lwf(g1,g4,g5,rf1,rf4,rf5,cwlg,xl_mg,xg_mg, &
+           			      			  chucm,ima,prdkrn1,nkr,1)
+ 					! ... for ice multiplication
+ 					conc_old = 0.0
+   			  conc_new = 0.0
+ 					do kr = kr_icempl,nkr
+				    conc_old = conc_old+col*g1(kr)/xl_mg(kr)
+   				enddo
+          rf1 = 1.0
+          rf5 = 0.0
+          rf4 = 0.0
+ 					call coll_xyz_lwf(g4,g1,g5,rf4,rf1,rf5,cwgl,xg_mg,xl_mg, &
+           			            chucm,ima,prdkrn1,nkr,1)
+    		end if
+ 			! in case icol_graup == 1
+  		endif
+
+  		if(icol_hail == 1) then
+   			! interactions between drops and hail
+   			! drops - hail = hail
+   			! hail - water = hail
+         rf1 = 1.0
+         rf5 = 0.0
+  	     call coll_xyy_lwf(g1,g5,rf1,rf5,cwlh,xl_mg,xh_mg, &
+             		          chucm,ima,prdkrn1,nkr,0)
+  			 ! ... for ice multiplication
+  			 conc_old = 0.0
+       	 conc_new = 0.0
+  			 do kr = kr_icempl,nkr
+  			  conc_old = conc_old+col*g1(kr)/xl_mg(kr)
+  	     enddo
+   			rf1 = 1.0
+   			rf5 = 0.0
+  			call coll_xyx_lwf(g5,g1,rf5,rf1,cwhl,xh_mg,xl_mg, &
+                 			   chucm,ima,prdkrn1,nkr,1,dm_rime)
+   		! in case icol_hail == 1
+  		endif
+
+ 			if((icol_graupel == 1 .or. icol_hail == 1) .and. icempl == 1) then
+ 				if(tt .ge. 265.15 .and. tt .le. tcrit) then
+ 				! ... ice-multiplication (H-M) :
+ 					do kr = kr_icempl,nkr
+ 					   conc_new=conc_new+col*g1(kr)/xl_mg(kr)
+ 					enddo
+ 					dconc = conc_old-conc_new
+ 					if(tt .le. 268.15) then
+ 						conc_icempl=dconc*4.e-3*(265.15-tt)/(265.15-268.15)
+ 					endif
+ 					if(tt .gt. 268.15) then
+ 						conc_icempl=dconc*4.e-3*(tcrit-tt)/(tcrit-268.15)
+ 					endif
+ 					!g2_2(1)=g2_2(1)+conc_icempl*xi2_mg(1)/col
+ 					 g3(1)=g3(1)+conc_icempl*xs_mg(1)/col ! [KSS] >> FAST-sbm has small snow as IC
+ 				! in case t.ge.265.15 :
+ 				endif
+ 			! in case icempl=1
+ 			endif
+ 		! if icol_drop.eq.1
+ 		endif
+
+ 		if(icol_snow == 1) then
+ 		! ... interactions between snowflakes
+			call coll_xxx_lwf(g3,rf3,cwss,xs_mg,chucm,ima,prdkrn,nkr)
+ 		! in case icolxz_snow.ne.0
+ 		endif
+
+ 	  ! in case : t > TTCOAL
+  	endif ! if tt <= 273.15
+ ! Negative temp. collision block (end)
+ ! +-----------------------------------------------+
+
+    cont_fin_drop=0.
+    cont_fin_ice=0.
+    do kr=1,nkr
+      g2(kr,1)=g2_1(kr)
+      g2(kr,2)=g2_2(kr)
+      g2(kr,3)=g2_3(kr)
+      cont_fin_drop=cont_fin_drop+g1(kr)
+      cont_fin_ice=cont_fin_ice+g3(kr)+g4(kr)+g5(kr)
+      do ice=1,icemax
+         cont_fin_ice=cont_fin_ice+g2(kr,ice)
+      enddo
+    enddo
+    cont_fin_drop=col*cont_fin_drop*1.e-3
+    cont_fin_ice=col*cont_fin_ice*1.e-3
+    deldrop=cont_init_drop-cont_fin_drop ! [g/cm**3]
+ ! riming temperature correction (rho in g/cm**3) :
+     if(t_new <= 273.15) then
+       if(deldrop > 0.0) then
+          t_new = t_new + 320.*deldrop/rho
+          ES1N = POLYSVP(t_new,0)
+          ES2N = POLYSVP(t_new,1)
+          EW1N = QQ*PP/(0.622+0.378*QQ)
+          DEL1in = EW1N/ES1N - 1.0
+          DEL2in = EW1N/ES2N - 1.0
+       else
+  	     ! if deldrop < 0
+         if(abs(deldrop).gt.cont_init_drop*0.05) then
+           call wrf_error_fatal("fatal error in module_mp_fast_sbm (abs(deldrop).gt.cont_init_drop), model stop")
+         endif
        endif
-
-61    continue
-! recalculation of density function f1,f2,f3,f4,f5 in 1/(g*cm**3) :  
-        DO 15 KR=1,NKR
-         FF1R(KR)=G1(KR)/(3.*XL(KR)*XL(KR)*1.E3)
-!        FF2R(KR,1)=G2(KR,1)/(3*xi(KR,1)*XI(KR,1)*1.e3)
-!        FF2R(KR,2)=G2(KR,2)/(3.*xi(KR,2)*XI(KR,2)*1.e3)
-!        FF2R(KR,3)=G2(KR,3)/(3.*xi(KR,3)*XI(KR,3)*1.e3)
-         FF3R(KR)=G3(KR)/(3.*xs(kr)*xs(kr)*1.e3)
-         FF4R(KR)=G4(KR)/(3.*xg(kr)*xg(kr)*1.e3)
-!        FF5R(KR)=G5(KR)/(3.*xh(kr)*xh(kr)*1.e3)
-15     CONTINUE 
-      tt=t_new
-      RETURN
-      END SUBROUTINE COAL_BOTT_NEW
-
-      SUBROUTINE MISC1(PP,cwll_1000mb,cwll_750mb,cwll_500mb, &
-     &      cwll,nkr)
-      IMPLICIT NONE
-      INTEGER kr1,kr2,NKR
-      DOUBLE PRECISION PP
-      REAL P_Z
-      double precision cwll(nkr,nkr),cwll_1,cwll_2,cwll_3 &
-     &,cwll_1000mb(nkr,nkr),cwll_750mb(nkr,nkr),cwll_500mb(nkr,nkr)
-      P_Z=PP
-              do 12 kr1=1,nkr
-              do 12 kr2=1,nkr
-               cwll_1=cwll_1000mb(kr1,kr2)
-               cwll_2=cwll_750mb(kr1,kr2)
-               cwll_3=cwll_500mb(kr1,kr2)
-               if(p_z.ge.p1) cwll(kr1,kr2)=cwll_1
-               if(p_z.eq.p2) cwll(kr1,kr2)=cwll_2
-               if(p_z.eq.p3) cwll(kr1,kr2)=cwll_3
-               if(p_z.lt.p1.and.p_z.gt.p2) &
-     &         cwll(kr1,kr2)=cwll_2+ &
-     &         (cwll_1-cwll_2)*(p_z-p2)/(p1-p2) 
-               if(p_z.lt.p2.and.p_z.gt.p3) &
-     &         cwll(kr1,kr2)=cwll_3+ &
-     &         (cwll_2-cwll_3)*(p_z-p3)/(p2-p3)
-               if(p_z.lt.p3) cwll(kr1,kr2)=cwll_3
-12            CONTINUE 
-      RETURN
-      END SUBROUTINE  MISC1
-
-        subroutine coll_xxx (g,ckxx,x,chucm,ima,nkr)
-        implicit double precision (a-h,o-z)
-        dimension g(nkr),ckxx(nkr,nkr),x(0:nkr)
-        dimension chucm(nkr,nkr)
-        double precision ima(nkr,nkr)
-        gmin=1.d-60
-!       gmin=1.d-15
-! lower and upper integration limit ix0,ix1
-        do i=1,nkr-1
-           ix0=i
-           if(g(i).gt.gmin) goto 2000
-        enddo
- 2000   continue
-        if(ix0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           ix1=i
-           if(g(i).gt.gmin) goto 2010
-        enddo
- 2010   continue
-! J. Dudhia gave reasons why this can't be looped with a
-! multiprocessor.
-! BARRY
-!       do i=ix0,ix1
-!          do j=i,ix1
-        do i=ix0,ix1-1
-           do j=i+1,ix1
-
-              k=ima(i,j)
-              kp=k+1
-              x0=ckxx(i,j)*g(i)*g(j)
-              x0=min(x0,g(i)*x(j))
-              if(j.ne.k) then
-                x0=min(x0,g(j)*x(i))
-              endif
-              gsi=x0/x(j)
-              gsj=x0/x(i)
-              gsk=gsi+gsj
-              g(i)=g(i)-gsi
-              if(g(i).lt.0.d0) g(i)=0.d0
-              g(j)=g(j)-gsj
-              gk=g(k)+gsk
-              if(g(j).lt.0.d0.and.gk.lt.gmin) then
-                g(j)=0.d0
-                g(k)=g(k)+gsi
-              endif
-              flux=0.d0
-!
-! BARRY
-              if(gk.gt.gmin) then
-                x1=dlog(g(kp)/gk+1.d-15)
-               if (x1.eq.0)then
-                flux=0  
-               else
-                flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-                flux=min(flux,gsk)
-               end if
-
-! new changes 23.01.01 (end)
-                g(k)=gk-flux
-                if(g(k).lt.0.d0) g(k)=0.d0
-                g(kp)=g(kp)+flux
-! in case gk > gmin :
-              endif
-            end do
-        end do
- 2020   continue
-        return
-        end subroutine coll_xxx
-        subroutine coll_xxx_prd (g,ckxx,x,chucm,ima,prdkrn,nkr)
-        implicit double precision (a-h,o-z)
-        dimension g(nkr),ckxx(nkr,nkr),x(0:nkr)
-        dimension chucm(nkr,nkr)
-        double precision ima(nkr,nkr)
-! this is character values containes adresses of temporary files      
-        gmin=1.d-60
-!       gmin=1.d-15
-! lower and upper integration limit ix0,ix1
-        do i=1,nkr-1
-           ix0=i
-           if(g(i).gt.gmin) goto 2000
-        enddo
- 2000   continue
-        if(ix0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           ix1=i
-           if(g(i).gt.gmin) goto 2010
-        enddo
- 2010   continue
-! J. Dudhia gave reasons why this can't be looped with a
-! multiprocessor.
-! BARRY
-!       do i=ix0,ix1
-!          do j=i,ix1
-        do i=ix0,ix1-1
-           do j=i+1,ix1
-
-              k=ima(i,j)
-              kp=k+1
-              x0=ckxx(i,j)*g(i)*g(j)*prdkrn
-              x0=min(x0,g(i)*x(j))
-              if(j.ne.k) then
-                x0=min(x0,g(j)*x(i))
-              endif
-              gsi=x0/x(j)
-              gsj=x0/x(i)
-              gsk=gsi+gsj
-              g(i)=g(i)-gsi
-              if(g(i).lt.0.d0) g(i)=0.d0
-              g(j)=g(j)-gsj
-              gk=g(k)+gsk
-              if(g(j).lt.0.d0.and.gk.lt.gmin) then
-                g(j)=0.d0
-                g(k)=g(k)+gsi
-              endif
-              flux=0.d0
-!
-! BARRY
-              if(gk.gt.gmin) then
-                x1=dlog(g(kp)/gk+1.d-15)
-               if (x1.eq.0)then
-                flux=0  
-               else
-                flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-                flux=min(flux,gsk)
-               end if
-
-! new changes 23.01.01 (end)
-                g(k)=gk-flux
-                if(g(k).lt.0.d0) g(k)=0.d0
-                g(kp)=g(kp)+flux
-! in case gk > gmin :
-              endif
-            end do
-        end do
- 2020   continue
-        return
-        end subroutine coll_xxx_prd 
-      subroutine modkrn(TT,QQ,PP,PRDKRN,TTCOAL)
-      implicit none
-      real epsf,tc,ttt1,ttt,factor,qs2,qq1,dele,f,factor_t
-      double precision TT,QQ,PP,satq2,t,p
-      double precision prdkrn
-      REAL at,bt,ct,dt,temp,a,b,c,d,tc_min,tc_max
-       real factor_max,factor_min
-      REAL TTCOAL
-	data at,bt,ct,dt/0.88333,0.0931878,0.0034793,4.5185186e-05/
-        satq2(t,p)=3.80e3*(10**(9.76421-2667.1/t))/p
-        temp(a,b,c,d,tc)=d*tc*tc*tc+c*tc*tc+b*tc+a
-        IF (QQ.LE.0)QQ=1.E-12
-        epsf    =.5
-        tc      =tt-273.15
-        factor=0 ! mchen add temporarily
-        if(tc.le.0) then
-! in case tc.le.0
-          ttt1  =temp(at,bt,ct,dt,tc)
-          ttt   =ttt1
-          qs2   =satq2(tt,pp)
-          qq1   =qq*(0.622+0.378*qs2)/(0.622+0.378*qq)/qs2
-          dele  =ttt*qq1
-! new change 27.06.00
-          if(tc.ge.-6.) then
-            factor = dele
-            if(factor.lt.epsf) factor=epsf
-            if(factor.gt.1.) factor=1.
-! in case : tc.ge.-6.
-          endif                        
-          factor_t=factor
-          if(tc.ge.-12.5.and.tc.lt.-6.) factor_t=0.5
-          if(tc.ge.-17.0.and.tc.lt.-12.5) factor_t=1.
-          if(tc.ge.-20.0.and.tc.lt.-17.) factor_t=0.4
-          if(tc.lt.-20.) then
-            tc_min=ttcoal-273.15
-            tc_max=-20.
-            factor_max=0.25
-            factor_min=0.
-            f=factor_min+(tc-tc_min)*(factor_max-factor_min)/  &
-     &                               (tc_max-tc_min)
-            factor_t=f
-          endif
-! BARRY
-          if (factor_t.lt.0)factor_t=0.01
-          prdkrn=factor_t
-      else
-          prdkrn=1.d0
-      end if
-      RETURN
-      END SUBROUTINE modkrn 
-           
-
-
-        subroutine coll_xxy(gx,gy,ckxx,x,chucm,ima,prdkrn,nkr)
-        implicit double precision (a-h,o-z)
-        dimension chucm(nkr,nkr)
-        double precision ima(nkr,nkr)
-        dimension  &
-     &  gx(nkr),gy(nkr),ckxx(nkr,nkr),x(0:nkr)
-        gmin=1.d-60
-! lower and upper integration limit ix0,ix1
-        do i=1,nkr-1
-           ix0=i
-           if(gx(i).gt.gmin) goto 2000
-        enddo
-        if(ix0.eq.nkr-1) goto 2020
- 2000   continue
-        do i=nkr-1,1,-1
-           ix1=i
-           if(gx(i).gt.gmin) goto 2010
-        enddo
- 2010   continue
-! collisions
-        do i=ix0,ix1
-           do j=i,ix1
-              k=ima(i,j)
-              kp=k+1
-              x0=ckxx(i,j)*gx(i)*gx(j)*prdkrn
-              x0=min(x0,gx(i)*x(j))
-              x0=min(x0,gx(j)*x(i))
-              gsi=x0/x(j)
-              gsj=x0/x(i)
-              gsk=gsi+gsj
-              gx(i)=gx(i)-gsi
-              if(gx(i).lt.0.d0) gx(i)=0.d0
-              gx(j)=gx(j)-gsj
-              if(gx(j).lt.0.d0) gx(j)=0.d0
-              gk=gy(k)+gsk
-              flux=0.d0
-! BARRY
-              if(gk.gt.gmin) then
-! new changes 13.01.01 (begin)
-                x1=dlog(gy(kp)/gk+1.d-15)
-! BARRY
-!               flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-! new changes 23.01.01 (begin)
-!               flux=min(flux,gk)
-!               flux=min(flux,gsk)
-! new changes 23.01.01 (end)
-! new changes 13.01.01 (end)
-! BARRY
-               if (x1.eq.0)then
-                flux=0  
-               else
-                flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-                flux=min(flux,gsk)
-               end if
-                gy(k)=gk-flux
-                if(gy(k).lt.0.d0) gy(k)=0.d0
-                gy(kp)=gy(kp)+flux
-! in case gk > gmin :
-              endif
-           enddo
-        enddo
- 2020   continue
-        return
-        end subroutine coll_xxy
-!====================================================================
-        subroutine coll_xyy(gx,gy,ckxy,x,y,chucm,ima, &
-     &     prdkrn,nkr,indc)
-        implicit double precision (a-h,o-z)
-        dimension  &
-     &  gy(nkr),gx(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-        dimension chucm(nkr,nkr)
-        double precision ima(nkr,nkr)
-        gmin=1.d-60
-! lower and upper integration limit ix0,ix1
-        do i=1,nkr-1
-           ix0=i
-           if(gx(i).gt.gmin) go to 2000
-        enddo
- 2000   continue
-        if(ix0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           ix1=i
-           if(gx(i).gt.gmin) go to 2010
-        enddo
- 2010   continue
-! lower and upper integration limit iy0,iy1
-        do i=1,nkr-1
-           iy0=i
-           if(gy(i).gt.gmin) go to 2001
-        enddo
- 2001   continue
-        if(iy0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           iy1=i
-           if(gy(i).gt.gmin) go to 2011
-        enddo
- 2011   continue
-! collisions :
-        do i=iy0,iy1
-           jmin=i
-           if(jmin.eq.(nkr-1)) goto 2020
-           if(i.lt.ix0) jmin=ix0-indc
-	   do j=jmin+indc,ix1         
-              k=ima(i,j)
-              kp=k+1
-              x0=ckxy(j,i)*gy(i)*gx(j)*prdkrn
-              x0=min(x0,gy(i)*x(j))
-              x0=min(x0,gx(j)*y(i))
-              gsi=x0/x(j)
-              gsj=x0/y(i)
-              gsk=gsi+gsj
-              gy(i)=gy(i)-gsi
-              if(gy(i).lt.0.d0) gy(i)=0.d0
-              gx(j)=gx(j)-gsj
-              if(gx(j).lt.0.d0) gx(j)=0.d0
-              gk=gy(k)+gsk
-              flux=0.d0
-! BARRY
-              if(gk.gt.gmin) then
-                x1=dlog(gy(kp)/gk+1.d-15)
-! BARRY
-!               flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-! new changes 23.01.01 (begin)
-!               flux=min(flux,gk)
-!               flux=min(flux,gsk)
-! BARRY
-               if (x1.eq.0)then
-                flux=0  
-               else
-                flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-                flux=min(flux,gsk)
-               end if
-! new changes 23.01.01 (end)
-                gy(k)=gk-flux
-                if(gy(k).lt.0.d0) gy(k)=0.d0
-                gy(kp)=gy(kp)+flux
-! in case gk > gmin :
-              endif
-! in case gk > gmin or gk.le.gmin
-           enddo
-        enddo
- 2020   continue
-        return
-        end subroutine coll_xyy
-!=================================================================
-        subroutine coll_xyx(gx,gy,ckxy,x,y,chucm,ima, &
-     &    prdkrn,nkr,indc)
-        implicit double precision (a-h,o-z)
-        dimension gy(nkr),gx(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-        dimension chucm(nkr,nkr)
-        double precision ima(nkr,nkr)
-        gmin=1.d-60
-! lower and upper integration limit ix0,ix1
-        do i=1,nkr-1
-           ix0=i
-           if(gx(i).gt.gmin) go to 2000
-        enddo
- 2000   continue
-        if(ix0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           ix1=i
-           if(gx(i).gt.gmin) go to 2010
-        enddo
- 2010   continue
-! lower and upper integration limit iy0,iy1
-        do i=1,nkr-1
-           iy0=i
-           if(gy(i).gt.gmin) go to 2001
-        enddo
- 2001   continue
-        if(iy0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           iy1=i
-           if(gy(i).gt.gmin) go to 2011
-        enddo
- 2011   continue
-! collisions :
-        do i=iy0,iy1
-           jmin=i
-           if(jmin.eq.(nkr-1)) goto 2020
-           if(i.lt.ix0) jmin=ix0-indc
-	   do j=jmin+indc,ix1
-              k=ima(i,j)
-              kp=k+1
-              x0=ckxy(j,i)*gy(i)*gx(j)*prdkrn
-              x0=min(x0,gy(i)*x(j))
-              if(j.ne.k) then
-                x0=min(x0,gx(j)*y(i))
-              endif
-              gsi=x0/x(j)
-              gsj=x0/y(i)
-              gsk=gsi+gsj
-              gy(i)=gy(i)-gsi
-              if(gy(i).lt.0.d0) gy(i)=0.d0
-              gx(j)=gx(j)-gsj
-              gk=gx(k)+gsk
-! BARRY
-!             if(gx(j).lt.0.d0)then
-!                gy(i)=gy(i)+gsi
-!                gx(j)=gx(j)+gsj
-!                go to 10
-!             end if
-              if(gx(j).lt.0.d0.and.gk.lt.gmin) then
-                gx(j)=0.d0
-                gx(k)=gx(k)+gsi
-              endif
-              flux=0.d0            
-! BARRY
-              if(gk.gt.gmin) then
-                x1=dlog(gx(kp)/gk+1.d-15)
-! BARRY
-!               flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-! new changes 23.01.01 (begin)
-!               flux=min(flux,gk)
-!               flux=min(flux,gsk)
-! BARRY
-               if (x1.eq.0)then
-                flux=0  
-               else
-                flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-                flux=min(flux,gsk)
-               end if
-! new changes 23.01.01 (end)
-                gx(k)=gk-flux
-                if(gx(k).lt.0.d0) gx(k)=0.d0
-                gx(kp)=gx(kp)+flux
-! in case gk > gmin :
-              endif
-! in case gk > gmin or gk.le.gmin
-! BARRY
-10         continue
-           enddo
-        enddo
- 2020   continue
-        return
-        end subroutine coll_xyx
-!=====================================================================
-        subroutine coll_xyxz(gx,gy,gz,ckxy,x,y,chucm,ima, &
-     &    prdkrn,nkr,indc)
-        implicit double precision (a-h,o-z)
-      dimension gy(nkr),gx(nkr),gz(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-        dimension chucm(nkr,nkr)
-        double precision ima(nkr,nkr)
-        gmin=1.d-60
-! lower and upper integration limit ix0,ix1
-        do i=1,nkr-1
-           ix0=i
-           if(gx(i).gt.gmin) go to 2000
-        enddo
- 2000   continue
-        if(ix0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           ix1=i
-           if(gx(i).gt.gmin) go to 2010
-        enddo
- 2010   continue
-! lower and upper integration limit iy0,iy1
-        do i=1,nkr-1
-           iy0=i
-           if(gy(i).gt.gmin) go to 2001
-        enddo
- 2001   continue
-        if(iy0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           iy1=i
-           if(gy(i).gt.gmin) go to 2011
-        enddo
- 2011   continue
-! collisions :
-        do i=iy0,iy1
-           jmin=i
-           if(jmin.eq.(nkr-1)) goto 2020
-           if(i.lt.ix0) jmin=ix0-indc
-	   do j=jmin+indc,ix1
-              k=ima(i,j)
-              kp=k+1
-              x0=ckxy(j,i)*gy(i)*gx(j)*prdkrn
-              x0=min(x0,gy(i)*x(j))
-              if(j.ne.k) then
-                x0=min(x0,gx(j)*y(i))
-              endif
-              gsi=x0/x(j)
-              gsj=x0/y(i)
-              gsk=gsi+gsj
-              gy(i)=gy(i)-gsi
-              if(gy(i).lt.0.d0) gy(i)=0.d0
-              gx(j)=gx(j)-gsj
-              gk=gx(k)+gsk
-              if(gx(j).lt.0.d0.and.gk.lt.gmin) then
-                gx(j)=0.d0
-                gx(k)=gx(k)+gsi
-              endif
-              flux=0.d0
-! BARRY
-              if(kp.lt.17) gkp=gx(kp)
-              if(kp.ge.17) gkp=gz(kp)
-              if(gk.gt.gmin) then
-                x1=dlog(gkp/gk+1.d-15)
-! BARRY
-!               flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-! new changes 23.01.01 (begin)
-!               flux=min(flux,gk)
-!               flux=min(flux,gsk)
-! BARRY
-               if (x1.eq.0)then
-                flux=0  
-               else
-                flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-                flux=min(flux,gsk)
-               end if
-! new changes 23.01.01 (end)
-                gx(k)=gk-flux
-                if(gx(k).lt.0.d0) gx(k)=0.d0
-                if(kp.lt.17) gx(kp)=gkp+flux
-                if(kp.ge.17) gz(kp)=gkp+flux
-! ALEX 15 11 2005
-!               if(kp.ge.17) gx(kp)=gkp+flux
-! in case gk > gmin :
-              endif
-! in case gk > gmin or gk.le.gmin
-           enddo
-        enddo
- 2020   continue
-        return
-        end subroutine coll_xyxz
-!=====================================================================
-        subroutine coll_xyxz_h(gx,gy,gz,ckxy,x,y,chucm,ima, &
-     &    prdkrn,nkr,indc)
-        implicit double precision (a-h,o-z)
-      dimension gy(nkr),gx(nkr),gz(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-        dimension chucm(nkr,nkr)
-        double precision ima(nkr,nkr)
-        gmin=1.d-60
-! lower and upper integration limit ix0,ix1
-        do i=1,nkr-1
-           ix0=i
-           if(gx(i).gt.gmin) go to 2000
-        enddo
- 2000   continue
-        if(ix0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           ix1=i
-           if(gx(i).gt.gmin) go to 2010
-        enddo
- 2010   continue
-! lower and upper integration limit iy0,iy1
-        do i=1,nkr-1
-           iy0=i
-           if(gy(i).gt.gmin) go to 2001
-        enddo
- 2001   continue
-        if(iy0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           iy1=i
-           if(gy(i).gt.gmin) go to 2011
-        enddo
- 2011   continue
-! collisions :
-        do i=iy0,iy1
-           jmin=i
-           if(jmin.eq.(nkr-1)) goto 2020
-           if(i.lt.ix0) jmin=ix0-indc
-	   do j=jmin+indc,ix1
-              k=ima(i,j)
-              kp=k+1
-              x0=ckxy(j,i)*gy(i)*gx(j)*prdkrn
-              x0=min(x0,gy(i)*x(j))
-              if(j.ne.k) then
-                x0=min(x0,gx(j)*y(i))
-              endif
-              gsi=x0/x(j)
-              gsj=x0/y(i)
-              gsk=gsi+gsj
-              gy(i)=gy(i)-gsi
-              if(gy(i).lt.0.d0) gy(i)=0.d0
-              gx(j)=gx(j)-gsj
-              gk=gx(k)+gsk
-              if(gx(j).lt.0.d0.and.gk.lt.gmin) then
-                gx(j)=0.d0
-                gx(k)=gx(k)+gsi
-              endif
-              flux=0.d0
-! BARRY
-              if(kp.lt.22) gkp=gx(kp)
-              if(kp.ge.22) gkp=gz(kp)
-              if(gk.gt.gmin) then
-                x1=dlog(gkp/gk+1.d-15)
-! BARRY
-!               flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-! new changes 23.01.01 (begin)
-!               flux=min(flux,gk)
-!               flux=min(flux,gsk)
-! BARRY
-               if (x1.eq.0)then
-                flux=0  
-               else
-                flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-                flux=min(flux,gsk)
-               end if
-! new changes 23.01.01 (end)
-                gx(k)=gk-flux
-                if(gx(k).lt.0.d0) gx(k)=0.d0
-                if(kp.lt.22) gx(kp)=gkp+flux
-                if(kp.ge.22) gz(kp)=gkp+flux
-! ALEX 15 11 2005
-!               if(kp.ge.25) gx(kp)=gkp+flux
-! in case gk > gmin :
-              endif
-! in case gk > gmin or gk.le.gmin
-           enddo
-        enddo
- 2020   continue
-        return
-        end subroutine coll_xyxz_h
-!=====================================================================
-        subroutine coll_xyz(gx,gy,gz,ckxy,x,y,chucm,ima, &
-     &                      prdkrn,nkr,indc)
-        implicit double precision (a-h,o-z)
-      dimension gx(nkr),gy(nkr),gz(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-        dimension chucm(nkr,nkr)
-        double precision ima(nkr,nkr)
-        gmin=1.d-60
-! lower and upper integration limit ix0,ix1
-        do i=1,nkr-1
-           ix0=i
-           if(gx(i).gt.gmin) go to 2000
-        enddo
- 2000   continue
-        if(ix0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           ix1=i
-           if(gx(i).gt.gmin) go to 2010
-        enddo
- 2010   continue
-! lower and upper integration limit iy0,iy1
-        do i=1,nkr-1
-           iy0=i
-           if(gy(i).gt.gmin) go to 2001
-        enddo
- 2001   continue
-        if(iy0.eq.nkr-1) goto 2020
-        do i=nkr-1,1,-1
-           iy1=i
-           if(gy(i).gt.gmin) go to 2011
-        enddo
- 2011   continue
-! collisions :
-        do i=iy0,iy1
-           jmin=i
-           if(jmin.eq.(nkr-1)) goto 2020
-           if(i.lt.ix0) jmin=ix0-indc
-	   do j=jmin+indc,ix1         
-              k=ima(i,j)
-              kp=k+1
-              x0=ckxy(j,i)*gy(i)*gx(j)*prdkrn
-              x0=min(x0,gy(i)*x(j))
-              x0=min(x0,gx(j)*y(i))
-              gsi=x0/x(j)
-              gsj=x0/y(i)
-              gsk=gsi+gsj
-              gy(i)=gy(i)-gsi
-              if(gy(i).lt.0.d0) gy(i)=0.d0
-              gx(j)=gx(j)-gsj
-              if(gx(j).lt.0.d0) gx(j)=0.d0
-              gk=gz(k)+gsk
-              flux=0.d0
-! BARRY
-              if(gk.gt.gmin) then
-                x1=dlog(gz(kp)/gk+1.d-15)
-! BARRY
-               if (x1.eq.0)then
-                flux=0  
-               else
-                flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
-                flux=min(flux,gsk)
-               end if
-! new changes 23.01.01 (end)
-                gz(k)=gk-flux
-                if(gz(k).lt.0.d0) gz(k)=0.d0
-                gz(kp)=gz(kp)+flux
-! in case gk > gmin :
-              endif
-           enddo
-        enddo
- 2020   continue
-        return
-        end subroutine coll_xyz
-!===============================================================
-!****************************************************************
-! SEE /include/microhucm.incl for setting of krdrop and krbreak
-!****************************************************************
-      SUBROUTINE BREAKUP(GT_MG,XT_MG,DT,BRKWEIGHT, &
-     &           PKIJ,QKJ,JMAX,JBREAK)
-!     SUBROUTINE BREAKUP(GT_MG,DT,JMAX,JBREAK)
-!     implicit double precision (a-h,o-z)
-
-!.....INPUT VARIABLES
-!
-!     GT    : MASS DISTRIBUTION FUNCTION
-!     XT_MG : MASS OF BIN IN MG
-!     JMAX  : NUMBER OF BINS
-!     DT    : TIMESTEP IN S
-
-      INTEGER JMAX
-
-!.....LOCAL VARIABLES
-
-      LOGICAL LTHAN
-      INTEGER JBREAK,AP,IA,JA,KA,IE,JE,KE
-      DOUBLE PRECISION EPS,NEGSUM
-
-      PARAMETER (AP = 1)
-      PARAMETER (IA = 1)
-      PARAMETER (JA = 1)
-      PARAMETER (KA = 1)
-      PARAMETER (EPS = 1.D-20)
-
-      INTEGER I,J,K,JJ,JDIFF
-      DOUBLE PRECISION GT_MG(JMAX),XT_MG(0:JMAX),DT
-!     xl_mg(0:nkr)
-      DOUBLE PRECISION BRKWEIGHT(JBREAK),PKIJ(JBREAK,JBREAK,JBREAK), &
-     &    QKJ(JBREAK,JBREAK)
-      DOUBLE PRECISION D0,ALM,HLP(JMAX)
-      DOUBLE PRECISION FT(JMAX),FA(JMAX)
-      DOUBLE PRECISION DG(JMAX),DF(JMAX),DBREAK(JBREAK),GAIN,LOSS
-      REAL PI
-      PARAMETER (PI = 3.1415927)
-      INTEGER IP,KP,JP,KQ,JQ
-      IE = JBREAK
-      JE = JBREAK
-      KE = JBREAK
-
-
-
-
-
-
-
-!.....IN CGS
-
-!     DO J=1,JMAX
-!        XT(J) = XT_MG(J) * 1E-3
-!        GT_MG(J) = GT_MG(J)* 1E-3
-!     ENDDO
-
-!.....SHIFT BETWEEN COAGULATION AND BREAKUP GRID
-
-      JDIFF = JMAX - JBREAK
-!       14  =  33  - 19
-
-!.....INITIALIZATION
-
-!.....TRANSFORMATION FROM G(LN X) = X**2 F(X) TO F(X)
-      DO J=1,JMAX
-         FT(J) = GT_MG(J) / XT_MG(J)**2
-      ENDDO
-
-!.....SHIFT TO BREAKUP GRID
-
-      DO K=1,KE
-         FA(K) = FT(K+JDIFF)
-      ENDDO
-
-!.....BREAKUP: BLECK'S FIRST ORDER METHOD
-!
-!     PKIJ: GAIN COEFFICIENTS
-!     QKJ : LOSS COEFFICIENTS
-!
-
-      DO K=1,KE
-         GAIN = 0.0
-         DO I=1,IE
-            DO J=1,I
-               GAIN = GAIN + FA(I)*FA(J)*PKIJ(K,I,J)
-            ENDDO
-         ENDDO
-         LOSS = 0.0
-         DO J=1,JE
-            LOSS = LOSS + FA(J)*QKJ(K,J)
-         ENDDO
-         DBREAK(K) = BRKWEIGHT(K) * (GAIN - FA(K)*LOSS)
-      ENDDO
-
-!.....SHIFT RATE TO COAGULATION GRID
-
-      DO J=1,JDIFF
-         DF(J) = 0.0
-      ENDDO
-      DO J=1,KE
-         DF(J+JDIFF) = DBREAK(J)
-      ENDDO
-!.....TRANSFORMATION TO MASS DISTRIBUTION FUNCTION G(LN X)
-
-      DO J=1,JMAX
-         DG(J) = DF(J) * XT_MG(J)**2
-      ENDDO
-
-!.....TIME INTEGRATION
-
-      DO J=1,JMAX
-      HLP(J) = 0.0
-      NEGSUM = 0.0
-         GT_MG(J) = GT_MG(J) + DG(J) * DT
-         IF (GT_MG(J).LT.0) THEN
-            HLP(J) = MIN(GT_MG(J),HLP(J))
-            GT_MG(J) = EPS
-!           NEGSUM = NEGSUM+GT_MG(J)
-!           GT_MG(J) = 0.D0
-         ENDIF
-      ENDDO
-!     DO J=1,JMAX
-!      IF (HLP(J).LT.0.) THEN
-!        GT_MG(J-1)=GT_MG(J-1)-NEGSUM -EPS
-!      END IF
-!      GO TO 10
-!     END DO
-!10    CONTINUE
-!     IF (HLP.LT.-1E-7) THEN
-! BARRY
-!     LTHAN=.FALSE.
-!     DO J=1,JMAX
-!      IF (HLP(J).LT.0.OR.LTHAN) THEN
-!        WRITE (*,'(1X,A,E10.4)')
-!    F        'COLL_BREAKUP: WARNING! G(J) < 0, MIN = ' 
-!        IF(HLP(J).LT.0.OR.LTHAN)WRITE(6,*)
-!    F      'J,G(J)  = ',J,HLP(J),GT_MG(J)
-!        LTHAN=.TRUE.  C     ENDIF
-!     END DO
-
-!     DO J=1,JMAX
-!        GT_MG(J) = GT_MG(J) * 1E3
-!     ENDDO
-
-!.....THAT'S IT
-      RETURN
-
-      END SUBROUTINE BREAKUP
-
-      SUBROUTINE BOUNDNUM(MASSMM5,FCONC,RHOX,COL,NZERO, &
-     &       RADXX,MASSXX,HYDROSUM, &
-     &       NKR)
-      IMPLICIT NONE
-     
-      INTEGER NKR,NKRI,KRBEG,KREND,IP,IPCNT
-      REAL NZERO,LAMBDAHYD,MASSMM5,RHOX,HYDROMASS,COL
-      REAL RADXX(NKR),MASSXX(NKR)
-      REAL TERM1,TERM2A,TERM2B,TERM2C
-      REAL FCONC(NKR),HYDROSUM 
-      DOUBLE PRECISION D1,D2,D3,D4,D5,D6,D7A,D7B 
-      DOUBLE PRECISION VAR1,VAR2,VAR3,VAR4,VAR5,VAR6
-!     HYDROMASS IN kg/kg
-!     VAR1=NZERO           
-!     VAR2=RHOX            
-!     VAR3=MASSXX(1,IHYDR)
-!     VAR4=RADXX(1,IHYDR)
-!     VAR5=MASSMM5       
-!     VAR6=(6.*VAR1/VAR2)*VAR3/(8.*VAR4**3)*(1./VAR5)
-!     var6 =sqrt(sqrt(var6))
-!     print*,'radxx(1) = ',RADXX(1)
-!     print*,'rhox = ',rhox
-!     print*,'massmm5 = ',massmm5
-!     print*,'nzero = ',nzerO
-!     print*,'massxx = ',MASSXX(1)
-      LAMBDAHYD=(6.*NZERO/RHOX)*MASSXX(1)/(8.*RADXX(1)**3) &
-     &     *(1./MASSMM5)
-      LAMBDAHYD=SQRT(SQRT(LAMBDAHYD))
-      HYDROSUM  =0
-      TERM1=(NZERO/RHOX)*(MASSXX(1)/(8.*RADXX(1)**3))
-      DO NKRI=1,NKR
-       IF(NKRI.EQ.1)THEN
-        D1=LAMBDAHYD*2.*RADXX(NKRI)
-        D2=0
-       ELSE
-        D1=LAMBDAHYD*2.*RADXX(NKRI)
-        D2=LAMBDAHYD*2.*RADXX(NKRI-1)
-       END IF
-       D3=DEXP(-D1)
-       D4=DEXP(-D2)
-       D5 = (1./LAMBDAHYD**4)
-       D6=TERM1
-       IF (NKRI.EQ.1)THEN
-        D7A= -D5*D3*(D1**3+3.*D1**2+6.*D1+6)
-        D7B=-6.*D5
-       ELSE
-        D7A= -D5*D3*(D1**3+3.*D1**2+6.*D1+6)
-        D7B= -D5*D4*(D2**3+3.*D2**2+6.*D2+6)
-       END IF
-       HYDROMASS= D6*(D7A-D7B)
-       HYDROSUM=HYDROSUM+HYDROMASS   
-       FCONC(NKRI)=HYDROMASS*RHOX/(COL  &
-     &          *MASSXX(NKRI)*MASSXX(NKRI)*3)
-        IF (HYDROMASS .LT.0)THEN
-        call wrf_error_fatal("fatal error in module_mp_fast_sbm,(HYDROMASS.LT.0) , model stop")
-        END IF
-      END DO
-!     print*, 'massmm5,hydrosum  =',massmm5,hydrosum  
-      IF (HYDROSUM.LT.MASSMM5)THEN
-       D1=LAMBDAHYD*2.*RADXX(NKR)
-       D2=LAMBDAHYD*2.*RADXX(NKR-1)
-       D3=DEXP(-D1)
-       D4=DEXP(-D2)
-       D5 = (1./LAMBDAHYD**4)
-       D6=TERM1
-       D7A= -D5*D3*(D1**3+3.*D1**2+6.*D1+6)
-       D7B= -D5*D4*(D2**3+3.*D2**2+6.*D2+6)
-       HYDROMASS= D6*(D7A-D7B)+(MASSMM5-HYDROSUM)
-       FCONC(NKR)=HYDROMASS*RHOX/(COL &
-     &          *MASSXX(NKR)*MASSXX(NKR)*3)
-       HYDROSUM=HYDROSUM+(MASSMM5-HYDROSUM)
-      END IF
-!     print*, 'massmm5,hydrosum adj  =',massmm5,hydrosum  
-      RETURN
-      END SUBROUTINE BOUNDNUM
-
-! from module_mp_morr_two_moment.F
-      subroutine refl10cm_hm (qv1d, qr1d, nr1d, qs1d, ns1d, qg1d, ng1d, &
-                      t1d, p1d, dBZ, kts, kte, ii, jj)
-
-      IMPLICIT NONE
-
-!..Sub arguments
-      INTEGER, INTENT(IN):: kts, kte, ii, jj
-      REAL, DIMENSION(kts:kte), INTENT(IN)::                            &
-                      qv1d, qr1d, nr1d, qs1d, ns1d, qg1d, ng1d, t1d, p1d
-      REAL, DIMENSION(kts:kte), INTENT(INOUT):: dBZ
-
-!..Local variables
-      REAL, DIMENSION(kts:kte):: temp, pres, qv, rho
-      REAL, DIMENSION(kts:kte):: rr, nr, rs, ns, rg, ng
-
-      DOUBLE PRECISION, DIMENSION(kts:kte):: ilamr, ilamg, ilams
-      DOUBLE PRECISION, DIMENSION(kts:kte):: N0_r, N0_g, N0_s
-      DOUBLE PRECISION:: lamr, lamg, lams
-      LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
-
-      REAL, DIMENSION(kts:kte):: ze_rain, ze_snow, ze_graupel
-      DOUBLE PRECISION:: fmelt_s, fmelt_g
-      DOUBLE PRECISION:: cback, x, eta, f_d
-
-      INTEGER:: i, k, k_0, kbot, n
-      LOGICAL:: melti
-
-!+---+
-
-      do k = kts, kte
-         dBZ(k) = -35.0
-      enddo
-
-!+---+-----------------------------------------------------------------+
-!..Put column of data into local arrays.
-!+---+-----------------------------------------------------------------+
-      do k = kts, kte
-         temp(k) = t1d(k)
-         qv(k) = MAX(1.E-10, qv1d(k))
-         pres(k) = p1d(k)
-         rho(k) = 0.622*pres(k)/(R_MORR*temp(k)*(qv(k)+0.622))
-
-         if (qr1d(k) .gt. 1.E-9) then
-            rr(k) = qr1d(k)*rho(k)
-            nr(k) = nr1d(k)*rho(k)
-            lamr = (xam_r*xcrg(3)*xorg2*nr(k)/rr(k))**xobmr
-            ilamr(k) = 1./lamr
-            N0_r(k) = nr(k)*xorg2*lamr**xcre(2)
-            L_qr(k) = .true.
-         else
-            rr(k) = 1.E-12
-            nr(k) = 1.E-12
-            L_qr(k) = .false.
-         endif
-
-         if (qs1d(k) .gt. 1.E-9) then
-            rs(k) = qs1d(k)*rho(k)
-            ns(k) = ns1d(k)*rho(k)
-            lams = (xam_s*xcsg(3)*xosg2*ns(k)/rs(k))**xobms
-            ilams(k) = 1./lams
-            N0_s(k) = ns(k)*xosg2*lams**xcse(2)
-            L_qs(k) = .true.
-         else
-            rs(k) = 1.E-12
-            ns(k) = 1.E-12
-            L_qs(k) = .false.
-         endif
-
-         if (qg1d(k) .gt. 1.E-9) then
-            rg(k) = qg1d(k)*rho(k)
-            ng(k) = ng1d(k)*rho(k)
-            lamg = (xam_g*xcgg(3)*xogg2*ng(k)/rg(k))**xobmg
-            ilamg(k) = 1./lamg
-            N0_g(k) = ng(k)*xogg2*lamg**xcge(2)
-            L_qg(k) = .true.
-         else
-            rg(k) = 1.E-12
-            ng(k) = 1.E-12
-            L_qg(k) = .false.
-         endif
-      enddo
-
-!+---+-----------------------------------------------------------------+
-!..Locate K-level of start of melting (k_0 is level above).
-!+---+-----------------------------------------------------------------+
-      melti = .false.
-      k_0 = kts
-      do k = kte-1, kts, -1
-         if ( (temp(k).gt.273.15) .and. L_qr(k)                         &
-                                  .and. (L_qs(k+1).or.L_qg(k+1)) ) then
-            k_0 = MAX(k+1, k_0)
-            melti=.true.
-            goto 195
-         endif
-      enddo
- 195  continue
-
-!+---+-----------------------------------------------------------------+
-!..Assume Rayleigh approximation at 10 cm wavelength. Rain (all temps)
-!.. and non-water-coated snow and graupel when below freezing are
-!.. simple. Integrations of m(D)*m(D)*N(D)*dD.
-!+---+-----------------------------------------------------------------+
-
-      do k = kts, kte
-         ze_rain(k) = 1.e-22
-         ze_snow(k) = 1.e-22
-         ze_graupel(k) = 1.e-22
-         if (L_qr(k)) ze_rain(k) = N0_r(k)*xcrg(4)*ilamr(k)**xcre(4)
-         if (L_qs(k)) ze_snow(k) = (0.176/0.93) * (6.0/PI_MORR)*(6.0/PI_MORR)     &
-                                 * (xam_s/900.0)*(xam_s/900.0)          &
-                                 * N0_s(k)*xcsg(4)*ilams(k)**xcse(4)
-         if (L_qg(k)) ze_graupel(k) = (0.176/0.93) * (6.0/PI_MORR)*(6.0/PI_MORR)  &
-                                    * (xam_g/900.0)*(xam_g/900.0)       &
-                                    * N0_g(k)*xcgg(4)*ilamg(k)**xcge(4)
-      enddo
-
-!+---+-----------------------------------------------------------------+
-!..Special case of melting ice (snow/graupel) particles.  Assume the
-!.. ice is surrounded by the liquid water.  Fraction of meltwater is
-!.. extremely simple based on amount found above the melting level.
-!.. Uses code from Uli Blahak (rayleigh_soak_wetgraupel and supporting
-!.. routines).
-!+---+-----------------------------------------------------------------+
-
-      if (melti .and. k_0.ge.kts+1) then
-       do k = k_0-1, kts, -1
-
-!..Reflectivity contributed by melting snow
-          if (L_qs(k) .and. L_qs(k_0) ) then
-           fmelt_s = MAX(0.005d0, MIN(1.0d0-rs(k)/rs(k_0), 0.99d0))
-           eta = 0.d0
-           lams = 1./ilams(k)
-           do n = 1, nrbins
-              x = xam_s * xxDs(n)**xbm_s
-              call rayleigh_soak_wetgraupel (x,DBLE(xocms),DBLE(xobms), &
-                    fmelt_s, melt_outside_s, m_w_0, m_i_0, lamda_radar, &
-                    CBACK, mixingrulestring_s, matrixstring_s,          &
-                    inclusionstring_s, hoststring_s,                    &
-                    hostmatrixstring_s, hostinclusionstring_s)
-              f_d = N0_s(k)*xxDs(n)**xmu_s * DEXP(-lams*xxDs(n))
-              eta = eta + f_d * CBACK * simpson(n) * xdts(n)
-           enddo
-           ze_snow(k) = SNGL(lamda4 / (pi5 * K_w) * eta)
-          endif
-
-
-!..Reflectivity contributed by melting graupel
-
-          if (L_qg(k) .and. L_qg(k_0) ) then
-           fmelt_g = MAX(0.005d0, MIN(1.0d0-rg(k)/rg(k_0), 0.99d0))
-           eta = 0.d0
-           lamg = 1./ilamg(k)
-           do n = 1, nrbins
-              x = xam_g * xxDg(n)**xbm_g
-              call rayleigh_soak_wetgraupel (x,DBLE(xocmg),DBLE(xobmg), &
-                    fmelt_g, melt_outside_g, m_w_0, m_i_0, lamda_radar, &
-                    CBACK, mixingrulestring_g, matrixstring_g,          &
-                    inclusionstring_g, hoststring_g,                    &
-                    hostmatrixstring_g, hostinclusionstring_g)
-              f_d = N0_g(k)*xxDg(n)**xmu_g * DEXP(-lamg*xxDg(n))
-              eta = eta + f_d * CBACK * simpson(n) * xdtg(n)
-           enddo
-           ze_graupel(k) = SNGL(lamda4 / (pi5 * K_w) * eta)
-          endif
-
-       enddo
       endif
 
-      do k = kte, kts, -1
-         dBZ(k) = 10.*log10((ze_rain(k)+ze_snow(k)+ze_graupel(k))*1.d18)
-      enddo
+ 61   continue
+ ! recalculation of density function f1,f3,f4,f5 in  units [1/(g*cm**3)] :
+     DO KR=1,NKR
+        FF1R(KR)=G1(KR)/(3.*XL(KR)*XL(KR)*1.E3)
+        if((FF1R(kr) .ne. FF1R(kr)) .or. FF1R(kr) < 0.0)then
+	 	       print*,"G1",G1
+ 		 	     call wrf_error_fatal("stop at end coal_bott - FF1R NaN or FF1R < 0.0, model stop")
+	      endif
+        FF3R(KR)=G3(KR)/(3.*xs(kr)*xs(kr)*1.e3)
+          if((FF3R(kr) .ne. FF3R(kr)) .or. FF3R(kr) < 0.0)then
+           call wrf_error_fatal("stop at end coal_bott - FF3R NaN or FF3R < 0.0, model stop")
+          endif
+ 		   if(hail_opt == 0)then
+ 		 	   FF4R(KR)=G4(KR)/(3.*xg(kr)*xg(kr)*1.e3)
+      	 if((FF4R(kr) .ne. FF4R(kr)) .or. FF4R(kr) < 0.0) then
+          call wrf_error_fatal("stop at end coal_bott - FF4R NaN or FF4R < 0.0, model stop")
+         end if
+      else
+ 		 	   FF5R(KR)=G5(KR)/(3.*xh(kr)*xh(kr)*1.e3)
+		     if((FF5R(kr) .ne. FF5R(kr)) .or. FF5R(kr) < 0.0) then
+           call wrf_error_fatal("stop at end coal_bott - FF5R NaN or FF5R < 0.0, model stop")
+         endif
+ 		 endif
+ 		END DO
+ 15   CONTINUE
+
+ 	FLIQFR_S(:) = fl3(:)
+ 	FLIQFR_G(:) = fl4(:)
+ 	FLIQFR_H(:) = fl5(:)
+ 	FRIMFR_S(:) = rf3(:)
+
+ 	if (abs(tt-t_new).gt.5.0) then
+ 		call wrf_error_fatal("fatal error in module_mp_FAST_sbm Del_T 5 K, model stop")
+ 	endif
+
+  tt = t_new
+
+ 	RETURN
+ 	END SUBROUTINE COAL_BOTT_NEW
+ ! ..................................................................................................
+     SUBROUTINE BREAKINIT_KS(PKIJ,QKJ,ECOALMASSM,BRKWEIGHT,XL_r,DROPRADII,BR_MAX,JBREAK,JMAX,NKR,VR1)
+
+     USE module_domain
+     USE module_dm
+
+     IMPLICIT NONE
+
+ ! ... Interface
+     integer,intent(in) :: br_max, JBREAK, NKR, JMAX
+     real(kind=r8size),intent(inout) :: ECOALMASSM(:,:),BRKWEIGHT(:)
+     real,intent(in) :: XL_r(:), DROPRADII(:), VR1(:)
+     real(kind=r4size),intent(inout) :: PKIJ(:,:,:),QKJ(:,:)
+ ! ... Interface
+
+     !REAL :: XL_r(size(NKR))
+     INTEGER :: hujisbm_unit1
+     LOGICAL, PARAMETER :: PRINT_diag=.FALSE.
+     LOGICAL :: opened
+     LOGICAL , EXTERNAL :: wrf_dm_on_monitor
+     CHARACTER*80 errmess
+
+ !.....INPUT VARIABLES
+ !
+ !     GT    : MASS DISTRIBUTION FUNCTION
+ !     XT_MG : MASS OF BIN IN MG
+ !     JMAX  : NUMBER OF BINS
+
+ !.....LOCAL VARIABLES
+
+     DOUBLE PRECISION :: XL_d(NKR), DROPRADII_d(NKR), VR1_d(NKR)
+     INTEGER :: IE,JE,KE
+     INTEGER,PARAMETER :: AP = 1
+     INTEGER :: I,J,K,JDIFF
+     REAL :: RPKIJ(JBREAK,JBREAK,JBREAK),RQKJ(JBREAK,JBREAK)
+     REAL :: PI,D0,HLP
+     DOUBLE PRECISION :: M(0:JBREAK),ALM
+     REAL :: DBREAK(JBREAK),GAIN,LOSS
+
+ !.....DECLARATIONS FOR INIT
+     INTEGER :: IP,KP,JP,KQ,JQ
+     REAL :: XTJ
+
+     CHARACTER*256 FILENAME_P,FILENAME_Q, file_p, file_q
+
+     xl_d = xl_r
+
+     IE = JBREAK
+     JE = JBREAK
+     KE = JBREAK
+
+     if(nkr == 43) file_p = 'SBM_input_43/'//'coeff_p43.dat'
+     if(nkr == 43) file_q = 'SBM_input_43/'//'coeff_q43.dat'
+     if(nkr == 33) file_p = 'SBM_input_33/'//'coeff_p_new_33.dat' ! new Version 33 (taken from 43bins)
+     if(nkr == 33) file_q = 'SBM_input_33/'//'coeff_q_new_33.dat' ! new Version 33   (taken from 43 bins)
+
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+         DO i = 20,99
+             INQUIRE ( i , OPENED = opened )
+             IF ( .NOT. opened ) THEN
+                 hujisbm_unit1 = i
+                 GOTO 2061
+             ENDIF
+         ENDDO
+         2061     CONTINUE
+     ENDIF
+
+     CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
+
+     IF ( hujisbm_unit1 < 0 ) THEN
+       CALL wrf_error_fatal ( 'Can not find unused fortran unit to read in BREAKINIT_KS lookup table, model stop' )
+     ENDIF
+
+     IF ( wrf_dm_on_monitor() ) THEN
+       OPEN(UNIT=hujisbm_unit1,FILE=trim(file_p),         &
+       !OPEN(UNIT=hujisbm_unit1,FILE="coeff_p.asc",       &
+            FORM="FORMATTED",STATUS="OLD",ERR=2070)
+
+         DO K=1,KE
+             DO I=1,IE
+                 DO J=1,I
+                 READ(hujisbm_unit1,'(3I6,1E16.8)') KP,IP,JP,PKIJ(KP,IP,JP) ! PKIJ=[g^3*cm^3/s]
+                 ENDDO
+             ENDDO
+         ENDDO
+         CLOSE(hujisbm_unit1)
+     END IF
+
+     hujisbm_unit1 = -1
+     IF ( wrf_dm_on_monitor() ) THEN
+       DO i = 20,99
+         INQUIRE ( i , OPENED = opened )
+         IF ( .NOT. opened ) THEN
+           hujisbm_unit1 = i
+           GOTO 2062
+         ENDIF
+       ENDDO
+       2062     CONTINUE
+     ENDIF
+
+     CALL wrf_dm_bcast_bytes ( hujisbm_unit1 , IWORDSIZE )
+
+     IF ( hujisbm_unit1 < 0 ) THEN
+       CALL wrf_error_fatal ( 'Can not find unused fortran unit to read in BREAKINIT_KS lookup table, model stop' )
+     ENDIF
+
+     IF ( wrf_dm_on_monitor() ) THEN
+      OPEN(UNIT=hujisbm_unit1,FILE=trim(file_q),    &
+           FORM="FORMATTED",STATUS="OLD",ERR=2070)
+          DO K=1,KE
+             DO J=1,JE
+                READ(hujisbm_unit1,'(2I6,1E16.8)') KQ,JQ,QKJ(KQ,JQ)
+             ENDDO
+          ENDDO
+      CLOSE(hujisbm_unit1)
+     END IF
+
+     DROPRADII_d = DROPRADII
+     vr1_d = vr1
+     DO J=1,NKR
+         DO I=1,NKR
+             ECOALMASSM(I,J)=ECOALMASS(xl_d(I), xl_d(J), DROPRADII_d, vr1_d, NKR)
+          ENDDO
+     ENDDO
+ ! Correction of coalescence efficiencies for drop collision kernels
+
+     DO J=25,31
+         ECOALMASSM(NKR,J)=0.1D-29
+     ENDDO
+
+       RETURN
+ 2070  continue
+       WRITE( errmess , '(A,I4)' )                                          &
+        'module_FAST_SBM: error opening hujisbm_DATA on unit, model stop'  &
+        , hujisbm_unit1
+       CALL wrf_error_fatal(errmess)
+       END SUBROUTINE BREAKINIT_KS
+
+ !coalescence efficiency as function of masses
+ !----------------------------------------------------------------------------+
+     double precision FUNCTION ecoalmass(x1, x2, DROPRADII, VR1_BREAKUP, NKR)
+
+     implicit none
+     integer,intent(in) :: NKR
+     real(kind=r8size),intent(in) :: DROPRADII(NKR), VR1_BREAKUP(NKR), x1, x2
+
+     real(kind=r8size),PARAMETER :: zero=0.0d0,one=1.0d0,eps=1.0d-10
+     real(kind=r8size) :: rho, PI, akPI, Deta, Dksi
+
+     rho=1.0d0             ! [rho]=g/cm^3
+
+     PI=3.1415927d0
+     akPI=6.0d0/PI
+
+     Deta = (akPI*x1/rho)**(1.0d0/3.0d0)
+     Dksi = (akPI*x2/rho)**(1.0d0/3.0d0)
+
+     ecoalmass = ecoaldiam(Deta, Dksi, DROPRADII, VR1_BREAKUP, NKR)
+
+     RETURN
+     END FUNCTION ecoalmass
+ !coalescence efficiency as function of diameters
+ !---------------------------------------------------------------------------+
+     double precision FUNCTION ecoaldiam(Deta,Dksi,DROPRADII,VR1_BREAKUP,NKR)
+
+     implicit none
+     integer,intent(in) :: NKR
+     real(kind=r8size),intent(in) :: DROPRADII(nkr), VR1_BREAKUP(nkr),Deta,Dksi
+
+     real(kind=r8size) :: Dgr, Dkl, Rgr, RKl, q, qmin, qmax, e, x, e1, e2, sin1, cos1
+     real(kind=r8size),PARAMETER :: zero=0.0d0,one=1.0d0,eps=1.0d-30,PI=3.1415927d0
+
+     Dgr=dmax1(Deta,Dksi)
+     Dkl=dmin1(Deta,Dksi)
+
+     Rgr=0.5d0*Dgr
+     Rkl=0.5d0*Dkl
+
+     q=0.5d0*(Rkl+Rgr)
+
+     qmin=250.0d-4
+     qmax=500.0d-4
+
+     if(Dkl<100.0d-4) then
+
+         e=1.0d0
+
+          elseif (q<qmin) then
+
+          e = ecoalOchs(Dgr,Dkl,DROPRADII, VR1_BREAKUP, NKR)
+
+     elseif(q>=qmin.and.q<qmax) then
+
+         x=(q-qmin)/(qmax-qmin)
+
+         sin1=dsin(PI/2.0d0*x)
+         cos1=dcos(PI/2.0d0*x)
+
+         e1=ecoalOchs(Dgr, Dkl, DROPRADII, VR1_BREAKUP, NKR)
+         e2=ecoalLowList(Dgr, Dkl, DROPRADII, VR1_BREAKUP, NKR)
+
+         e=cos1**2*e1+sin1**2*e2
+
+     elseif(q>=qmax) then
+
+         e=ecoalLowList(Dgr, Dkl, DROPRADII, VR1_BREAKUP, NKR)
+
+     else
+
+         e=0.999d0
+
+     endif
+
+     ecoaldiam=dmax1(dmin1(one,e),eps)
+
+ RETURN
+ END FUNCTION ecoaldiam
+ !coalescence efficiency (Low & List)
+ !----------------------------------------------------------------------------+
+     double precision FUNCTION ecoalLowList(Dgr,Dkl,DROPRADII,VR1_BREAKUP,NKR)
+
+     implicit none
+
+     integer,intent(in) :: NKR
+     real(kind=r8size),intent(in) :: DROPRADII(NKR), VR1_BREAKUP(NKR)
+     real(kind=r8size),intent(inout) :: Dgr, Dkl
+
+     real(kind=r8size) :: sigma, aka, akb, dSTSc, ST, Sc, ET, CKE, qq0, qq1, qq2, Ecl, W1, W2, DC
+     real(kind=r8size),PARAMETER :: epsi=1.d-20
+
+ ! 1 J = 10^7 g cm^2/s^2
+
+     sigma=72.8d0    ! Surface Tension,[sigma]=g/s^2 (7.28E-2 N/m)
+     aka=0.778d0      ! Empirical Constant
+     akb=2.61d-4      ! Empirical Constant,[b]=2.61E6 m^2/J^2
+
+     CALL collenergy(Dgr,Dkl,CKE,ST,Sc,W1,W2,Dc,DROPRADII,VR1_BREAKUP,NKR)
+
+     dSTSc=ST-Sc         ! Diff. of Surf. Energies   [dSTSc] = g*cm^2/s^2
+     ET=CKE+dSTSc        ! Coal. Energy,             [ET]    =     "
+
+     IF(ET<50.0d0) THEN    ! ET < 5 uJ (= 50 g*cm^2/s^2)
+
+         qq0=1.0d0+(Dkl/Dgr)
+         qq1=aka/qq0**2
+         qq2=akb*sigma*(ET**2)/(Sc+epsi)
+         Ecl=qq1*dexp(-qq2)
+
+     !if(i_breakup==24.and.j_breakup==25) then
+     !print*, 'IF(ET<50.0d0) THEN'
+     !print*, 'Ecl=qq1*dexp(-qq2)'
+     !print*, 'qq1,qq2,Ecl'
+     !print*,  qq1,qq2,Ecl
+     !endif
+
+     ELSE
+
+         Ecl=0.0d0
+
+     ENDIF
+
+     ecoalLowList=Ecl
+
+     RETURN
+     END FUNCTION ecoalLowList
+
+ !coalescence efficiency (Beard and Ochs)
+ !---------------------------------------------------------------------------+
+     double precision FUNCTION ecoalOchs(D_l,D_s,DROPRADII, VR1_BREAKUP,NKR)
+
+     implicit none
+
+     integer,intent(in) :: NKR
+     real(kind=r8size),intent(in) :: DROPRADII(NKR), VR1_BREAKUP(NKR), D_l, D_s
+
+     real(kind=r8size) :: PI, sigma, R_s, R_l, p, vTl, vTs, dv, Weber_number, pa1, pa2, pa3, g, x, e
+     real(kind=r8size),PARAMETER :: epsf=1.d-30 , FPMIN=1.d-30
+
+     PI=3.1415927d0
+     sigma=72.8d0       ! Surface Tension [sigma] = g/s^2 (7.28E-2 N/m)
+                    ! Alles in CGS (1 J = 10^7 g cm^2/s^2)
+     R_s=0.5d0*D_s
+     R_l=0.5d0*D_l
+     p=R_s/R_l
+
+     vTl=vTBeard(D_l,DROPRADII, VR1_BREAKUP,NKR)
+
+     vTs=vTBeard(D_s,DROPRADII, VR1_BREAKUP,NKR)
+
+     dv=dabs(vTl-vTs)
+
+     if(dv<FPMIN) dv=FPMIN
+
+     Weber_number=R_s*dv**2/sigma
+
+     pa1=1.0d0+p
+     pa2=1.0d0+p**2
+     pa3=1.0d0+p**3
+
+     g=2**(3.0d0/2.0d0)/(6.0d0*PI)*p**4*pa1/(pa2*pa3)
+     x=Weber_number**(0.5d0)*g
+
+     e=0.767d0-10.14d0*x
+
+     ecoalOchs=e
+
+     RETURN
+     END FUNCTION ecoalOchs
+ !ecoalOchs
+ !Calculating the Collision Energy
+ !------------------------------------------------------------------------------+
+     SUBROUTINE COLLENERGY(Dgr,Dkl,CKE,ST,Sc,W1,W2,Dc,DROPRADII,VR1_BREAKUP,NKR)
 
 
-      end subroutine refl10cm_hm
-      END MODULE module_mp_fast_sbm
+     implicit none
+     integer,intent(in) :: NKR
+     real(kind=r8size),intent(in) :: DROPRADII(NKR), VR1_BREAKUP(NKR)
+     real(kind=r8size),intent(inout) :: Dgr, Dkl, CKE, ST, Sc, W1, W2, Dc
+
+     real(kind=r8size) :: PI, rho, sigma, ak10, Dgka2, Dgka3, v1, v2, dv, Dgkb3
+     real(kind=r8size),PARAMETER :: epsf = 1.d-30, FPMIN = 1.d-30
+
+     !EXTERNAL vTBeard
+
+     PI=3.1415927d0
+     rho=1.0d0            ! Water Density,[rho]=g/cm^3
+     sigma=72.8d0         ! Surf. Tension,(H2O,20°C)=7.28d-2 N/m
+                      ! [sigma]=g/s^2
+     ak10=rho*PI/12.0d0
+
+     Dgr=dmax1(Dgr,epsf)
+     Dkl=dmax1(Dkl,epsf)
+
+     Dgka2=(Dgr**2)+(Dkl**2)
+
+     Dgka3=(Dgr**3)+(Dkl**3)
+
+     if(Dgr/=Dkl) then
+
+         v1=vTBeard(Dgr,DROPRADII, VR1_BREAKUP,NKR)
+         v2=vTBeard(Dkl,DROPRADII, VR1_BREAKUP,NKR)
+         dv=(v1-v2)
+         if(dv<FPMIN) dv=FPMIN
+         dv=dv**2
+         if(dv<FPMIN) dv=FPMIN
+         Dgkb3=(Dgr**3)*(Dkl**3)
+         CKE=ak10*dv*Dgkb3/Dgka3            ! Collision Energy [CKE]=g*cm^2/s^2
+
+ !if(i_breakup==24.and.j_breakup==25) then
+ !print*, 'Dgr,Dkl'
+ !print*,  Dgr,Dkl
+ !print*, 'Dgkb3,Dgka2,Dgka3,ak10'
+ !print*,  Dgkb3,Dgka2,Dgka3,ak10
+ !print*, 'v1,v2,dv,CKE'
+ !print*,  v1,v2,dv,CKE
+ !endif
+
+     else
+
+         CKE = 0.0d0
+
+     endif
+
+     ST=PI*sigma*Dgka2                 ! Surf.Energy (Parent Drop)
+     Sc=PI*sigma*Dgka3**(2.0d0/3.0d0)  ! Surf.Energy (coal.System)
+
+     W1=CKE/(Sc+epsf)                  ! Weber Number 1
+     W2=CKE/(ST+epsf)                  ! Weber Number 2
+
+     Dc=Dgka3**(1.0d0/3.0d0)           ! Diam. of coal. System
+
+ !if(i_breakup==24.and.j_breakup==25) then
+ !print*, 'ST,Sc,W1,W2,dc'
+ !print*,  ST,Sc,W1,W2,dc
+ !endif
+
+     RETURN
+     END SUBROUTINE COLLENERGY
+ !COLLENERGY
+ !Calculating Terminal Velocity (Beard-Formula)
+ !------------------------------------------------------------------------+
+ ! new change 23.07.07                                         (start)
+     double precision FUNCTION vTBeard(diam,DROPRADII, VR1_BREAKUP, NKR)
+
+     implicit none
+
+     integer,intent(in) :: NKR
+     real(kind=r8size),intent(in) :: DROPRADII(NKR), VR1_BREAKUP(NKR), diam
+
+     integer :: kr
+     real(kind=r8size) :: aa
+
+     aa   = diam/2.0d0           ! Radius in cm
+
+     IF(aa <= DROPRADII(1)) vTBeard=VR1_BREAKUP(1)
+     IF(aa > DROPRADII(NKR)) vTBeard=VR1_BREAKUP(NKR)
+
+     DO KR=1,NKR-1
+         IF(aa>DROPRADII(KR).and.aa<=DROPRADII(KR+1)) then
+             vTBeard=VR1_BREAKUP(KR+1)
+         ENDIF
+     ENDDO
+
+     RETURN
+     END FUNCTION vTBeard
+     !vTBeard
+ ! new change 23.07.07                                           (end)
+ !........................................................................
+       END MODULE module_mp_fast_sbm
+#endif

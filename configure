@@ -180,12 +180,12 @@ USENETCDF=""
 if [ -n "$NETCDF" ] ; then
   echo "Will use NETCDF in dir: $NETCDF"
 # Oh UNIDATA, why make it so hard ...
-  if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" ] ; then
+  if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" -o -f "$NETCDF/lib/libnetcdff.dll.a" ] ; then
     USENETCDFF="-lnetcdff"
   else
     USENETCDFF=" "
   fi
-  if [ -f "$NETCDF/lib/libnetcdf.a" -o -f "$NETCDF/lib/libnetcdf.so" ] ; then
+  if [ -f "$NETCDF/lib/libnetcdf.a" -o -f "$NETCDF/lib/libnetcdf.so" -o -f "$NETCDF/lib/libnetcdf.dll.a" ] ; then
     USENETCDF="-lnetcdf"
   else
     USENETCDF=" "
@@ -204,16 +204,9 @@ fi
 
 # If the user asked for classic netcdf, acquiesce to the request.
 
-if [ "`uname`" = "Linux" ] ; then
-  ans="`whereis nf-config`"
-elif [ "`uname`" = "Darwin" ] ; then
-  ans="`which nf-config`"
-else
-  ans=""
-# echo "Add in your architecture's uname and the command to find executables in the path"
-# exit 1
-fi
-if [ "$ans" = "nf-config:" -o "$ans" = "" ] ; then
+ans="`which nf-config`"
+status="$?"
+if [ "$ans" = "nf-config:" -o "$ans" = "" -o "$status" != "0" ] ; then
     export NETCDF_classic=1
     unset NETCDF4
 else
@@ -544,6 +537,16 @@ elif command -v time > /dev/null 2>&1; then
   echo "Will use 'time' to report timing information"
 fi
 
+# Is this some type of WRF DA build? If so, it is real*8.
+# Let's go ahead and set a flag internally.
+if test -n "$wrf_core" ; then
+   if [ "$wrf_core" = "DA_CORE" -o \
+        "$wrf_core" = "4D_DA_CORE" -o \
+        "$wrf_core" = "WRF_PLUS_CORE" ] ; then
+      rword="-r8"
+   fi
+fi
+
 # Found perl, so proceed with configuration
 if test -n "$PERL" ; then
    srch=`grep -i "^#ARCH.*$os" arch/configure.defaults | grep -i "$mach"`
@@ -575,6 +578,8 @@ if test -n "$PERL" ; then
        else
          sed -e '/^RWORDSIZE/s/$(NATIVE_RWORDSIZE)/8/' configure.wrf > configure.wrf.edit
        fi
+       /bin/mv configure.wrf.edit configure.wrf
+       sed -e 's/-DBUILD_SBM_FAST=1/-DBUILD_SBM_FAST=0/' configure.wrf > configure.wrf.edit
        /bin/mv configure.wrf.edit configure.wrf
      fi
    else
@@ -979,6 +984,24 @@ if [ $retval -ne 0 ] ; then
   echo "There are some Fortran 2008 features in WRF that your compiler does not recognize"
   echo "The intrinsic gamma function is not available, required by some schemes."
   echo "That code is stubbbed out, and those schemes are unavailable at run-time."
+  echo " "
+  echo "*****************************************************************************"
+fi
+
+# testing for location of rpc/types.h file, used in landuse
+if [ -f /usr/include/rpc/types.h ] ; then
+  sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=1/' configure.wrf > configure.wrf.edit
+  mv configure.wrf.edit configure.wrf
+echo standard location of RPC
+elif [ -f /usr/include/tirpc/rpc/types.h ] ; then
+  sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=2/' configure.wrf > configure.wrf.edit
+  mv configure.wrf.edit configure.wrf
+echo newer location of RPC
+else
+  echo "************************** W A R N I N G ************************************"
+  echo " "
+  echo "The moving nest option is not available due to missing rpc/types.h file."
+  echo "Copy landread.c.dist to landread.c in share directory to bypass compile error."
   echo " "
   echo "*****************************************************************************"
 fi

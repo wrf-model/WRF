@@ -4,9 +4,7 @@ subroutine d1f5kf ( ido, l1, cc, in1, ch, in2, wa1, wa2, wa3, wa4 )
 !
 !! D1F5KF is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

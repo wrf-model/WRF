@@ -1,32 +1,3 @@
-## If you have multiple mpi biulds on a single machine
-## this example may be relevant to you. 
-## Ex: The hydro-c1 machine has mpi and netcdf built against portland 
-##     fortran in the PATH. However mpi and netcd built against intel 
-##     fortran is also available. Here's how I build WRF HYDRO against 
-##     intel
-##     Below, in this file, I make the changes:
-##       COMPILER90 = $(ifortCompiler90)
-##       LDFLAGS    = $(ifortLdFlags)
-##       NETCDFINC  = $(ifortNetcdfInc)
-##       NETCDFLIB  = -L$(ifortNetcdfLib) -lnetcdff -lnetcdf
-##     In my ~/.bashrc I have
-##       ## WRF HYDRO
-##       export NETCDF=/opt/netcdf
-##       export WRF_HYDRO=1
-##       export HYDRO_D=1
-##       ### manage ifort on hydro
-##       export ifortNetcdfLib="/opt/netcdf-4.3.0+ifort-12.1/lib/"
-##       export ifortNetcdfInc="/opt/netcdf-4.3.0+ifort-12.1/include/"
-##       # RPATH for ifort (pgi is already default so no need)
-##       ifortMpiLib="/opt/openmpi-1.10.0-intel/lib/"
-##       export ifortLdFlags="-Wl,-rpath,${ifortNetcdfLib}:${ifortMpiLib} -L${ifortNetcdfLib} -L${ifortMpiLib}"
-##       export ifortCompiler90='/opt/openmpi-1.10.0-intel/bin/mpif90'
-##       # Aliases for invoking ifort
-##       alias impirun='/opt/openmpi-1.10.0-intel/bin/mpirun'
-##       alias iman='man -M/opt/openmpi+intel/man'
-##       # Bonus: Check your wrf hydro environment - up you to maintain to your needs.
-##       alias henv='printenv | egrep -i "(HYDRO|NUDG|PRECIP|CHAN_CONN|^NETCDF|^LDFLAGS|^ifort)" | egrep -v PWD'
-
 .IGNORE:
 
 ifeq ($(SPATIAL_SOIL),1)
@@ -57,11 +28,6 @@ else
 HYDRO_D =  $(WRF_HYDRO)
 endif
 
-ifeq ($(WRFIO_NCD_LARGE_FILE_SUPPORT),1)
-WRFIO_NCD_LARGE_FILE_SUPPORT = -DWRFIO_NCD_LARGE_FILE_SUPPORT
-else
-WRFIO_NCD_LARGE_FILE_SUPPORT = 
-endif
 
 ifeq ($(WRF_HYDRO_NUDGING),1)
 WRF_HYDRO_NUDGING = -DWRF_HYDRO_NUDGING
@@ -81,16 +47,21 @@ else
 PRECIP_DOUBLE = 
 endif
 
+ifeq ($(NCEP_WCOSS),1)
+NCEP_WCOSS = -DNCEP_WCOSS
+else
+NCEP_WCOSS =
+endif
 
-RMD	    = rm -f
+RMD	        = rm -f
 COMPILER90  = mpif90
 FORMAT_FREE = -FR
 BYTESWAPIO  = -convert big_endian
-F90FLAGS    = -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+F90FLAGS    = -O2 -g -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
 MODFLAG	    = -I./ -I ../../MPP -I ../MPP -I ../mod
 LDFLAGS	    =
-CPP	    = cpp
-CPPFLAGS    = -P -traditional -nostdinc -DMPP_LAND -I ../Data_Rec $(HYDRO_D) $(SPATIAL_SOIL) $(WRFIO_NCD_LARGE_FILE_SUPPORT) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE)
+CPPINVOKE   = -fpp
+CPPFLAGS    = -DMPP_LAND -I ../Data_Rec $(HYDRO_D) $(SPATIAL_SOIL) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE) $(NCEP_WCOSS)
 LIBS 	    =	
 NETCDFINC   = $(NETCDF_INC)
 NETCDFLIB   = -L$(NETCDF_LIB) -lnetcdff -lnetcdf

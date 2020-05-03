@@ -38,8 +38,8 @@
  p_top_requested                     = 5000,
  num_metgrid_levels                  = 40
  num_metgrid_soil_levels             = 4,
- dx                                  = 1000,  333.3333, 111.1111,
- dy                                  = 1000,  333.3333, 111.1111,
+ dx                                  = 1000,
+ dy                                  = 1000,
  grid_id                             = 1,     2,     3,
  parent_id                           = 0,     1,     2,
  i_parent_start                      = 1,     31,    30,

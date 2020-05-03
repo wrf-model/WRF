@@ -1,3 +1,12 @@
+#if( BUILD_RRTMK != 1)
+      MODULE module_ra_rrtmg_swk
+      CONTAINS
+      SUBROUTINE rrtmg_sw
+         REAL :: dummy
+         dummy = 1
+      END SUBROUTINE rrtmg_sw
+      END MODULE module_ra_rrtmg_swk
+#else
 !
 !-------------------------------------------------------------------------------
    module parrrsw_k
@@ -2079,11 +2088,11 @@
        endif
 !
 ! Recompute original s.s.a. to test for conservative solution
-! Balwinder.Singh@pnnl.gov: Code added to avoid 'divide by zero' error 
-! in zwo computation
 !
-       denom = max((1._rb-(1._rb-zw)*(zg/(1._rb-zg))**2),1.0e-30_rb)
-       zwo = zw/denom
+       zwo = 0._rb
+       denom = 1._rb
+       if (zg .ne. 1._rb) denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
+       if (zw .gt. 0._rb .and. denom .ne. 0._rb) zwo = zw / denom
 !
        if (zwo >= zwcrit) then
 !
@@ -12063,3 +12072,4 @@ contains
 !-------------------------------------------------------------------------------
    end module module_ra_rrtmg_swk
 !-------------------------------------------------------------------------------
+#endif

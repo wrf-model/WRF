@@ -30,7 +30,9 @@
 
 #define F_PACK
 
-void RSL_LITE_ERROR_DUP1 ( int *me )
+#define ORIG_RSL_CUTOFF 10000
+
+void RSL_LITE_ERROR_DUP1 ( int *me , int *size )
 {
     int newfd,rc ;
     char filename[256] ;
@@ -44,16 +46,29 @@ void RSL_LITE_ERROR_DUP1 ( int *me )
 
 /* redirect standard out*/
 # ifndef RSL0_ONLY
-    sprintf(filename,"rsl.out.%04d",*me) ;
+    if ( *size < ORIG_RSL_CUTOFF ) 
+    {
+      sprintf(filename,"rsl.out.%04d",*me) ;
+    }
+    else 
+    {
+      sprintf(filename,"rsl.out.%08d",*me) ;
+    }
 # else
     if (*me == 0)
-     {
-     sprintf(filename,"rsl.out.%04d",*me) ;
-     }
+    {
+      if ( *size < ORIG_RSL_CUTOFF )
+      {
+        sprintf(filename,"rsl.out.%04d",*me) ;
+      }
+      else {
+        sprintf(filename,"rsl.out.%08d",*me) ;
+      }
+    }
     else
-     {
-     sprintf(filename,"/dev/null") ;
-     }
+    {
+      sprintf(filename,"/dev/null") ;
+    }
 # endif
     if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
     {
@@ -74,16 +89,29 @@ void RSL_LITE_ERROR_DUP1 ( int *me )
     if ( *me != 0 ) {   /* stderr from task 0 should come to screen on windows because it is buffered if redirected */
 #endif
 # ifndef RSL0_ONLY
-    sprintf(filename,"rsl.error.%04d",*me) ;
+    if ( *size < ORIG_RSL_CUTOFF ) 
+    { 
+      sprintf(filename,"rsl.error.%04d",*me) ;
+    }
+    else 
+    { 
+      sprintf(filename,"rsl.error.%08d",*me) ;
+    }
 # else
     if (*me == 0)
-     {
-     sprintf(filename,"rsl.error.%04d",*me) ;
-     }
+    {
+      if ( *size < ORIG_RSL_CUTOFF ) 
+      {
+        sprintf(filename,"rsl.error.%04d",*me) ;
+      }
+      else {
+        sprintf(filename,"rsl.error.%08d",*me) ;
+      }
+    }
     else
-     {
-     sprintf(filename,"/dev/null") ;
-     }
+    {
+      sprintf(filename,"/dev/null") ;
+    }
 # endif
     if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
     {
@@ -134,7 +162,14 @@ void RSL_LITE_ERROR_DUP1 ( int *me )
         
     /* TASKOUTPUT directory exists, continue with task specific directory */
                                                                                                                                               
-    sprintf(dirname, "TASKOUTPUT/%04d", *me);
+    if ( *size < ORIG_RSL_CUTOFF ) 
+    {
+      sprintf(dirname, "TASKOUTPUT/%04d", *me);
+    }
+    else 
+    {
+      sprintf(dirname, "TASKOUTPUT/%08d", *me);
+    }
     rc=mkdir(dirname, 0777);
     if (  rc !=0 && errno!=EEXIST ) {
         perror("mkdir error");
@@ -144,7 +179,14 @@ void RSL_LITE_ERROR_DUP1 ( int *me )
                                                                                                                                               
    /* Each tasks creates/opens its own output and error files */
                                                                                                                                               
-   sprintf(filename, "%s/%04d/rsl.out.%04d","TASKOUTPUT",*me,*me) ;
+    if ( *size < ORIG_RSL_CUTOFF ) 
+    {
+      sprintf(filename, "%s/%04d/rsl.out.%04d","TASKOUTPUT",*me,*me) ;
+    }
+    else 
+    {
+      sprintf(filename, "%s/%08d/rsl.out.%08d","TASKOUTPUT",*me,*me) ;
+    }
         
    if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
    {
@@ -161,7 +203,14 @@ void RSL_LITE_ERROR_DUP1 ( int *me )
         return ;
    }
         
-   sprintf(filename, "%s/%04d/rsl.error.%04d","TASKOUTPUT",*me,*me) ;
+   if ( *size < ORIG_RSL_CUTOFF ) 
+   {
+     sprintf(filename, "%s/%04d/rsl.error.%04d","TASKOUTPUT",*me,*me) ;
+   }
+   else 
+   {
+     sprintf(filename, "%s/%08d/rsl.error.%08d","TASKOUTPUT",*me,*me) ;
+   }
    if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
    {
        perror("error_dup: cannot open ./TASKOUTPUT/nnnn/rsl.error.nnnn") ;

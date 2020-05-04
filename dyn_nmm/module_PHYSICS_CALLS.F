@@ -27,7 +27,7 @@
       USE MODULE_MP_ETANEW
       USE MODULE_MICROPHYSICS_DRIVER
       USE MODULE_MICROPHYSICS_ZERO_OUT
-      USE MODULE_STOCH, ONLY : perturb_mp_tend  !xiaohzhao
+      USE MODULE_STOCH, ONLY : perturb_mp_tend  
 !-----------------------------------------------------------------------
 !
       CONTAINS
@@ -91,9 +91,9 @@
      &                    ,ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC            &
      &                    ,SWVISDIR ,SWVISDIF                           &  !ssib
      &                    ,SWNIRDIR, SWNIRDIF &                            !ssib
-     &                    ,kte_stoch,kme_stoch                          & !xiaohzhao
-     &                    ,isppt_rad,pattern_isppt_rad                  & !xiaohzhao
-     &                    ,stddev_cutoff_isppt_rad,gridpt_stddev_isppt_rad & !xiaohzhao
+     &                    ,kte_stoch,kme_stoch                          & 
+     &                    ,isppt_rad,pattern_isppt_rad                  & 
+     &                    ,stddev_cutoff_isppt_rad,gridpt_stddev_isppt_rad & 
      &                    ,IDS,IDE,JDS,JDE,KDS,KDE                      &
      &                    ,IMS,IME,JMS,JME,KMS,KME                      &
      &                    ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -251,15 +251,12 @@
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 
       REAL :: DXKM, DYKM
-! xiaohzhao for isppt_rad 
     INTEGER,INTENT(IN)  :: kte_stoch,kme_stoch
     INTEGER,INTENT(IN)  :: isppt_rad
     REAL                :: thresh1
     INTEGER             :: kh
     REAL,INTENT(IN)     :: stddev_cutoff_isppt_rad,gridpt_stddev_isppt_rad
-    REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME_STOCH),INTENT(INOUT) :: pattern_isppt_rad !xiaohzhao
-    REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DTHRADT_DIFF
-! xiaohzhao for isppt_rad 
+    REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME_STOCH),INTENT(INOUT) :: pattern_isppt_rad 
 
 !
 !-----------------------------------------------------------------------
@@ -415,7 +412,6 @@
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
     
-      DTHRADT_DIFF(:,:,:)=RTHRATEN(:,:,:) !xiaohzhao
 
       CALL RADIATION_DRIVER(                                            &
      &                  IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
@@ -536,7 +532,6 @@
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
      &                 ,CALC_CLEAN_ATM_DIAG=CONFIG_FLAGS%CALC_CLEAN_ATM_DIAG)
 
-! Start of isppt_rad -- xiaohzhao
     IF (config_flags%isppt_on==1) THEN 
       thresh1=stddev_cutoff_isppt_rad*gridpt_stddev_isppt_rad
 !$omp parallel do                                             &
@@ -558,13 +553,12 @@
        DO k = kts , MIN(kte,kde-1)
          kh = MIN( k, kte_stoch - 1 )
        DO i = MYIS1,MYIE1 
-         RTHRATEN(i,k,j) = RTHRATEN(i,k,j)+pattern_isppt_rad(i,j,kh)*(RTHRATEN(i,k,j)-DTHRADT_DIFF(i,k,j))
+         RTHRATEN(i,k,j) = RTHRATEN(i,k,j)+pattern_isppt_rad(i,j,kh)*RTHRATEN(i,k,j)
        ENDDO
        ENDDO
        ENDDO
      ENDIF
      ENDIF
-! End of isppt_rad -- xiaohzhao
 
 !
 !-----------------------------------------------------------------------
@@ -847,9 +841,9 @@
      &                ,charn, msang                                     &
      &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & 
      &                ,hpbl_hold                                        & 
-     &                ,kte_stoch,kme_stoch                              & !xiaohzhao
-     &                ,isppt_pbl,pattern_isppt_pbl                      & !xiaohzhao
-     &                ,stddev_cutoff_isppt_pbl,gridpt_stddev_isppt_pbl  & !xiaohzhao
+     &                ,kte_stoch,kme_stoch                              & 
+     &                ,isppt_pbl,pattern_isppt_pbl                      & 
+     &                ,stddev_cutoff_isppt_pbl,gridpt_stddev_isppt_pbl  & 
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -1130,15 +1124,12 @@
     INTEGER  :: isurban
     CHARACTER(len=256) :: MMINLU
     REAL :: VAR_RIC,coef_ric_s,coef_ric_l                             !KWON for variable Ric (=1)
-! isppt_pbl -- xiaohzhao 
     INTEGER,INTENT(IN)  :: kte_stoch,kme_stoch
     INTEGER,INTENT(IN)  :: isppt_pbl
     INTEGER             :: kh
     REAL                :: thresh1
     REAL,INTENT(IN)     :: stddev_cutoff_isppt_pbl,gridpt_stddev_isppt_pbl
     REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME_STOCH),INTENT(INOUT) :: pattern_isppt_pbl
-    REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUBLDT_DIFF,DVBLDT_DIFF,DTHBLDT_DIFF,DQVBLDT_DIFF
-! isppt_pbl -- xiaohzhao
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -1752,11 +1743,6 @@
 !      write(0,*) 'var_ric & coef_ric_s l from namelist Kwon  ',var_ric,coef_ric_s,coef_ric_l
 #endif
 !
-     DUBLDT_DIFF(:,:,:) = DUDT_PHY(:,:,:) !xiaohzhao
-     DVBLDT_DIFF(:,:,:) = DVDT_PHY(:,:,:) !xiaohzhao
-     DTHBLDT_DIFF(:,:,:)= RTHBLTEN(:,:,:) !xiaohzhao
-     DQVBLDT_DIFF(:,:,:)= RQVBLTEN(:,:,:) !xiaohzhao
-
       CALL PBL_DRIVER(                                                &
      &                ITIMESTEP=NTSD,DT=DT                            &
      &               ,U_FRAME=U_FRAME,V_FRAME=V_FRAME                 &
@@ -1866,7 +1852,6 @@
      &               ,wstar=wstar_ysu,delta=delta_ysu                 &
      &               ,fasdas=fasdas                                   &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
-!Start of isppt_pbl -- xiaohzhao
     IF (config_flags%isppt_on==1) THEN 
       thresh1=stddev_cutoff_isppt_pbl*gridpt_stddev_isppt_pbl
 !$omp parallel do                                                       &
@@ -1887,7 +1872,7 @@
       DO k = kts, MIN(kte,kde-1)
         kh = MIN( k, kte_stoch - 1 )
       DO i = MYIS,MYIE 
-        DUDT_PHY(i,k,j) = DUDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*(DUDT_PHY(i,k,j)-DUBLDT_DIFF(i,k,j))
+        DUDT_PHY(i,k,j) = DUDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*DUDT_PHY(i,k,j)
       ENDDO
       ENDDO
       ENDDO
@@ -1897,7 +1882,7 @@
       DO k = kts, MIN(kte,kde-1)
         kh = MIN( k, kte_stoch - 1 )
       DO i = MYIS,MYIE 
-        DVDT_PHY(i,k,j) = DVDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*(DVDT_PHY(i,k,j)-DVBLDT_DIFF(i,k,j))
+        DVDT_PHY(i,k,j) = DVDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*DVDT_PHY(i,k,j)
       ENDDO
       ENDDO
       ENDDO
@@ -1907,14 +1892,13 @@
       DO k = kts , MIN(kte,kde-1)
         kh = MIN( k, kte_stoch - 1 )
       DO i = MYIS,MYIE 
-        RTHBLTEN(i,k,j) = RTHBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*(RTHBLTEN(i,k,j)-DTHBLDT_DIFF(i,k,j))
-        RQVBLTEN(i,k,j) = RQVBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*(RQVBLTEN(i,k,j)-DQVBLDT_DIFF(i,k,j))
+        RTHBLTEN(i,k,j) = RTHBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*RTHBLTEN(i,k,j)
+        RQVBLTEN(i,k,j) = RQVBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*RQVBLTEN(i,k,j)
       ENDDO
       ENDDO
       ENDDO
     ENDIF 
     ENDIF 
-!End of isppt_pbl -- xiaohzhao
 !
 
 !
@@ -2492,9 +2476,9 @@
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand              &                  
      &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         & ! added output CU tendency
      &                 ,DQSCUDT                                         & ! added output CU tendency
-     &                 ,kte_stoch,kme_stoch                             & ! xiaohzhao
-     &                 ,isppt_conv,pattern_isppt_conv                   & ! xiaohzhao
-     &                 ,stddev_cutoff_isppt_conv,gridpt_stddev_isppt_conv &!xiaohzhao
+     &                 ,kte_stoch,kme_stoch                             & 
+     &                 ,isppt_conv,pattern_isppt_conv                   & 
+     &                 ,stddev_cutoff_isppt_conv,gridpt_stddev_isppt_conv &
 #endif
      &                 ,HPBL2D,EVAP2D,HEAT2D                            & !Kwon S&P
      &                 ,DX2D,DYNMM                                      & ! Scale-aware sas
@@ -2703,15 +2687,12 @@
       integer :: ens_random_seed         !zhang
       real    :: ens_sasamp         !zhang
 #endif
-!isppt_conv -- xiaohzhao 
     INTEGER,INTENT(IN)  :: kte_stoch,kme_stoch
     INTEGER,INTENT(IN)  :: isppt_conv
     INTEGER             :: kh
     REAL                :: thresh1
     REAL,INTENT(IN)     :: stddev_cutoff_isppt_conv,gridpt_stddev_isppt_conv
     REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME_STOCH),INTENT(INOUT) :: pattern_isppt_conv
-    REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUCUDT_DIFF,DVCUDT_DIFF,DTHCUDT_DIFF,DQVCUDT_DIFF
-!isppt_conv -- xiaohzhao 
 
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -3062,14 +3043,10 @@
            DQCCUDT(i,j,k)=0.0
            DQICUDT(i,j,k)=0.0
            DQSCUDT(i,j,k)=0.0
-           DUCUDT_DIFF(i,k,j)=DUCUDT(i,j,k)   !xiaohzhao
-           DVCUDT_DIFF(i,k,j)=DVCUDT(i,j,k)   !xiaohzhao 
         ENDDO
         ENDDO
         ENDDO
 #endif
-           DTHCUDT_DIFF(:,:,:)=RTHCUTEN(:,:,:)  !xiaohzhao
-           DQVCUDT_DIFF(:,:,:)=RQVCUTEN(:,:,:)  !xiaohzhao
       CALL CUMULUS_DRIVER(GRID                                          &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
@@ -3151,7 +3128,6 @@
      &                 ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI &
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG)
-!Start of isppt_conv --xiaohzhao
     IF (config_flags%isppt_on==1) THEN 
       thresh1=stddev_cutoff_isppt_conv*gridpt_stddev_isppt_conv
 !$omp parallel do                                                       &
@@ -3172,7 +3148,7 @@
       DO k = kts, MIN(kte,kde-1)
         kh = MIN( k, kte_stoch - 1 )
       DO i = MYIS_P1,MYIE_P1 
-        DUCUDT(i,j,k)=DUCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*(DUCUDT(i,j,k)-DUCUDT_DIFF(i,k,j))
+        DUCUDT(i,j,k)=DUCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*DUCUDT(i,j,k)
       ENDDO
       ENDDO
       ENDDO
@@ -3182,7 +3158,7 @@
       DO k = kts, MIN(kte,kde-1)
         kh = MIN( k, kte_stoch - 1 )
       DO i = MYIS_P1,MYIE_P1 
-        DVCUDT(i,j,k)=DVCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*(DVCUDT(i,j,k)-DVCUDT_DIFF(i,k,j))
+        DVCUDT(i,j,k)=DVCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*DVCUDT(i,j,k)
       ENDDO
       ENDDO
       ENDDO
@@ -3192,14 +3168,13 @@
       DO k = kts , min(kte,kde-1)
         kh = min( k, kte_stoch - 1 )
       DO i = MYIS1,MYIE1 
-        RTHCUTEN(i,k,j)=RTHCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*(RTHCUTEN(i,k,j)-DTHCUDT_DIFF(i,k,j))
-        RQVCUTEN(i,k,j)=RQVCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*(RQVCUTEN(i,k,j)-DQVCUDT_DIFF(i,k,j))
+        RTHCUTEN(i,k,j)=RTHCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*RTHCUTEN(i,k,j)
+        RQVCUTEN(i,k,j)=RQVCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*RQVCUTEN(i,k,j)
       ENDDO
       ENDDO
       ENDDO
     ENDIF
     ENDIF
-!End of isppt_conv -- xiaohzhao
 
 
 !
@@ -3431,7 +3406,7 @@
      &                   ,GRID,CONFIG_FLAGS                             &
      &                   ,re_cloud,re_ice,re_snow                       & ! G. Thompson
      &                   ,has_reqc,has_reqi,has_reqs                    & ! G. Thompson
-     &                   ,qv_ins,k_start,k_end                          & ! xiaohzhao
+     &                   ,qv_ins,k_start,k_end                          & 
      &                   ,diag_flag                                     & 
      &                   ,IDS,IDE,JDS,JDE,KDS,KDE                       &
      &                   ,IMS,IME,JMS,JME,KMS,KME                       &
@@ -3507,8 +3482,8 @@
 !
       TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
       INTEGER, INTENT(IN)::k_start, k_end
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: qv_ins !xiaohzhao
-      REAL :: QOLD  !xiaohzhao
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: qv_ins 
+      REAL :: QOLD  
 
 !
 !-----------------------------------------------------------------------
@@ -3749,16 +3724,15 @@
             TNEW=TH_PHY(I,K,J)*PI_PHY(I,K,J)
             TRAIN(I,J,K)=TRAIN(I,J,K)+(TNEW-T(I,J,K))*RDTPHS
             TRAIN_INS(I,J,K)=(TNEW-T(I,J,K))*RDTPHS ! RGF
-            QOLD=Q(I,J,K)!xiaohzhao
+            QOLD=Q(I,J,K)
             T(I,J,K)=TNEW
             Q(I,J,K)=MOIST_TRANS(I,K,J,P_QV)/(1.+MOIST_TRANS(I,K,J,P_QV))
             CWM(I,J,K)=CWM_PHY(I,K,J)
-            qv_ins(I,J,K)=(Q(I,J,K)-QOLD)*RDTPHS!xiaohzhao
+            qv_ins(I,J,K)=(Q(I,J,K)-QOLD)*RDTPHS
           ENDDO
         ENDDO
       ENDDO
 !
-! The start of perturb the mp-physics tendencies -- xiaohzhao
    IF (grid%isppt_mp==1) THEN 
      CALL perturb_mp_tend(grid%isppt_mp,grid%pattern_isppt_mp,                     &
                           grid%stddev_cutoff_isppt_mp,grid%gridpt_stddev_isppt_mp, &
@@ -3771,7 +3745,6 @@
                           k_start, k_end,                                          &
                           grid%num_stoch_levels, grid%num_stoch_levels)        
    ENDIF 
-! The end of perturbing the mp-physics tendencies -- xiaohzhao
 
 !-----------------------------------------------------------------------
 !***  UPDATE PRECIPITATION.

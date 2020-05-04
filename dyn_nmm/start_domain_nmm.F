@@ -101,7 +101,7 @@
       USE MODULE_EXT_INTERNAL
 !
    USE module_tornado_genesis, only: init_tornado_genesis
-   USE MODULE_STOCH, ONLY : setup_rand_perturb, rand_seed, update_stoch!xiaohzhao
+   USE MODULE_STOCH, ONLY : setup_rand_perturb, rand_seed, update_stoch
 !
 !----------------------------------------------------------------------
 !
@@ -133,8 +133,8 @@
   integer(kind=4) :: random_seed
   INTEGER :: parent_id, nestid, max_dom,one
   LOGICAL :: grid_allowed, nestless
-  LOGICAL :: first_trip_for_this_domain !xiaohzhao
-  REAL    :: DXKM,DYKM !xiaohzhao
+  LOGICAL :: first_trip_for_this_domain 
+  REAL    :: DXKM,DYKM 
 
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
@@ -350,7 +350,7 @@
          grid%sbd0 = grid%sbd0var
 !#endif
       endif has_parent
- ! Start of isppt -- xiaohzhao
+ ! Start of isppt -- 
    IF ( grid%itimestep .EQ. 0 ) THEN
       first_trip_for_this_domain = .TRUE.
    ELSE
@@ -473,7 +473,7 @@
                        its, ite, jts, jte, kts, kte                       )
      ENDIF
   ENDIF 
-! End of isppt -- xiaohzhao
+! End of isppt -- 
 
       if(tempdx<1e-5 .or. tempdy<1e-5) then
          ! Should never reach here unless someone adds a bug to NMM.

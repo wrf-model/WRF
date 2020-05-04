@@ -49,7 +49,7 @@
       USE MODULE_STATS_FOR_MOVE,        ONLY: STATS_FOR_MOVE
 #endif
       USE MODULE_DIAG_REFL
-      USE MODULE_STOCH, ONLY : RAND_PERT_UPDATE  !xiaohzhao
+      USE MODULE_STOCH, ONLY : RAND_PERT_UPDATE  
 
 !-----------------------------------------------------------------------
 !
@@ -86,14 +86,12 @@
 !
 !-----------------------------------------------------------------------
 !
-!xiaohzhao
       INTEGER :: k_start, k_end
       INTEGER :: imsx, imex, jmsx, jmex, kmsx, kmex, &
                  ipsx, ipex, jpsx, jpex, kpsx, kpex, &
                  imsy, imey, jmsy, jmey, kmsy, kmey, &
                  ipsy, ipey, jpsy, jpey, kpsy, kpey
       REAL    :: DXKM, DYKM
-!xiaohzhao
 
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                & 
@@ -350,13 +348,13 @@
      &                      ,IDS,IDE,JDS,JDE,KDS,KDE                    &
      &                      ,IMS,IME,JMS,JME,KMS,KME                    &
      &                      ,IPS,IPE,JPS,JPE,KPS,KPE                    & 
-     &                      ,imsx, imex, jmsx, jmex, kmsx, kmex         & !xiaohzhao
-     &                      ,ipsx, ipex, jpsx, jpex, kpsx, kpex         & !xiaohzhao
-     &                      ,imsy, imey, jmsy, jmey, kmsy, kmey         & !xiaohzhao
-     &                      ,ipsy, ipey, jpsy, jpey, kpsy, kpey )         !xiaohzhao
+     &                      ,imsx, imex, jmsx, jmex, kmsx, kmex         & 
+     &                      ,ipsx, ipex, jpsx, jpex, kpsx, kpex         & 
+     &                      ,imsy, imey, jmsy, jmey, kmsy, kmey         &
+     &                      ,ipsy, ipey, jpsy, jpey, kpsy, kpey )       
 
-     k_start  = KPS   !xiaohzhao
-     k_end    = KPE   !xiaohzhao
+     k_start  = KPS   
+     k_end    = KPE   
 
 !-----------------------------------------------------------------------
 !
@@ -1268,7 +1266,7 @@
 !-----------------------------------------------------------------------
 !
       not_euler: IF(.NOT.EULER) THEN ! Lagrangian model tracer advection
-! Start of RAND_PERT_UPDATE--xiaohzhao
+! Start of RAND_PERT_UPDATE
      DXKM=grid%dx*0.01745329*6371200. ! numbers from module_initialize_real.F
      DYKM=grid%dy*0.01745329*6371200.
       IF ((grid%isppt_mp==1).and.(grid%id .EQ. 1 )) THEN 
@@ -1347,7 +1345,7 @@
                            grid%pattern_isppt_conv,&
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
       ENDIF !isppt_conv
-! End of RAND_PERT_UPDATE--xiaohzhao
+! End of RAND_PERT_UPDATE
 !
 !-----------------------------------------------------------------------
 !***  VERTICAL ADVECTION OF grid%q, TKE, AND CLOUD WATER
@@ -1643,9 +1641,9 @@
      &                ,grid%ACLWUPB,grid%ACLWUPBC,grid%ACLWDNB,grid%ACLWDNBC   &
      &                 ,grid%swvisdir ,grid%swvisdif &  !ssib
      &                 ,grid%swnirdir ,grid%swnirdif &  !ssib
-     &                ,grid%num_stoch_levels,grid%num_stoch_levels      &!xiaohzhao
-     &                ,grid%isppt_rad,grid%pattern_isppt_rad            &!xiaohzhao
-     &                ,grid%stddev_cutoff_isppt_rad,grid%gridpt_stddev_isppt_rad&!xiaohzh
+     &                ,grid%num_stoch_levels,grid%num_stoch_levels      &
+     &                ,grid%isppt_rad,grid%pattern_isppt_rad            &
+     &                ,grid%stddev_cutoff_isppt_rad,grid%gridpt_stddev_isppt_rad&
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                         &
      &                ,IMS,IME,JMS,JME,KMS,KME                         &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1797,9 +1795,9 @@
      &            ,grid%charn,grid%msang                               &
      &            ,grid%DUBLDT,grid%DVBLDT,grid%DTHBLDT,grid%DQVBLDT   &!wang added PBL tendency output
      &            ,hpbl_hold                                           & !used by new KSAS
-     &            ,grid%num_stoch_levels,grid%num_stoch_levels         &!xiaohzhao
-     &            ,grid%isppt_pbl,grid%pattern_isppt_pbl               &!xiaohzhao
-     &            ,grid%stddev_cutoff_isppt_pbl,grid%gridpt_stddev_isppt_pbl&!xiaohzhao
+     &            ,grid%num_stoch_levels,grid%num_stoch_levels         &
+     &            ,grid%isppt_pbl,grid%pattern_isppt_pbl               &
+     &            ,grid%stddev_cutoff_isppt_pbl,grid%gridpt_stddev_isppt_pbl&
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
@@ -2029,9 +2027,9 @@
      &             ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random & 
      &             ,grid%DTHCUDT,grid%DQVCUDT,grid%DQRCUDT,grid%DQCCUDT&! wang, output CU tendency 
      &             ,grid%DQICUDT,grid%DQSCUDT                          &
-     &             ,grid%num_stoch_levels,grid%num_stoch_levels        &!xiaohzhao
-     &             ,grid%isppt_conv,grid%pattern_isppt_conv            &!xiaohzhao
-     &             ,grid%stddev_cutoff_isppt_conv,grid%gridpt_stddev_isppt_conv&!xiaohzh
+     &             ,grid%num_stoch_levels,grid%num_stoch_levels        &
+     &             ,grid%isppt_conv,grid%pattern_isppt_conv            &
+     &             ,grid%stddev_cutoff_isppt_conv,grid%gridpt_stddev_isppt_conv&
 #endif
      &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
      &             ,grid%dx_nmm,grid%dy_nmm                            & !wang, dx2d, dy
@@ -2139,7 +2137,7 @@
      &               ,GRID,CONFIG_FLAGS                                &
      &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
      &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
-     &               ,grid%qv_ins,k_start,k_end                        &  ! xiaohzhao
+     &               ,grid%qv_ins,k_start,k_end                        &  
      &               ,diag_flag                                        &  
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &

@@ -447,7 +447,6 @@ IF (grid%sppt_on==1) then
       WRITE(*,'('' Autoregressive parameter Phi ='',E12.5)') phi
       WRITE(*,'('' Length Scale L'',E12.5)') l_rand_perturb
       WRITE(*,'('' Variance in gridpoint space'',E12.5)') gridpt_stddev_rand_perturb
-      WRITE(*,'('' Time step: itime_step='',I10)') itime_step !xiaohzhao
       WRITE(*,'('' =============================================='')')
      endif ! variable 
 

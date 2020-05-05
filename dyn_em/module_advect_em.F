@@ -6106,8 +6106,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field,     &
                                                                       field_old, &
-                                                                      ru,    &
-                                                                      rv,    &
+                                                                      ru,        &
+                                                                      rv,        &
                                                                       rom
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut, mub, mu_old
@@ -8553,17 +8553,17 @@ END SUBROUTINE advect_scalar_weno
 !---------------------------------------------------------------------------------
 
 SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
-                                ru, rv, rom,                   &
-                                c1, c2,                        &
-                                mut, mub, mu_old,              &
-                                time_step, config_flags,       &
-                                msfux, msfuy, msfvx, msfvy,    &
-                                msftx, msfty,                  &
-                                fzm, fzp,                      &
-                                rdx, rdy, rdzw, dt,            &
-                                ids, ide, jds, jde, kds, kde,  &
-                                ims, ime, jms, jme, kms, kme,  &
-                                its, ite, jts, jte, kts, kte  )
+                                  ru, rv, rom,                   &
+                                  c1, c2,                        &
+                                  mut, mub, mu_old,              &
+                                  time_step, config_flags,       &
+                                  msfux, msfuy, msfvx, msfvy,    &
+                                  msftx, msfty,                  &
+                                  fzm, fzp,                      &
+                                  rdx, rdy, rdzw, dt,            &
+                                  ids, ide, jds, jde, kds, kde,  &
+                                  ims, ime, jms, jme, kms, kme,  &
+                                  its, ite, jts, jte, kts, kte  )
 
 !  this is a first cut at a positive definite advection option
 !  for scalars in WRF.  This version is memory intensive ->
@@ -8595,8 +8595,8 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field,     &
                                                                       field_old, &
-                                                                      ru,    &
-                                                                      rv,    &
+                                                                      ru,        &
+                                                                      rv,        &
                                                                       rom
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut, mub, mu_old
@@ -9476,7 +9476,7 @@ END SUBROUTINE advect_scalar_wenopd
 
 SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
                                   h_tendency, z_tendency,        &
-                                  ru, rv, rom,                   &
+                                  ru, rv, rom, romI,             &
                                   c1, c2,                        &
                                   mut, mub, mu_old,              &
                                   config_flags,                  &
@@ -9512,8 +9512,9 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field,     &
                                                                       field_old, &
-                                                                      ru,    &
-                                                                      rv,    &
+                                                                      ru,        &
+                                                                      rv,        &
+                                                                      romI,      &
                                                                       rom
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut, mub, mu_old
@@ -9544,7 +9545,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
    INTEGER :: jmin, jmax, jp, jm, imin, imax
 
-   REAL    :: mrdx, mrdy, ub, vb, uw, vw, mu
+   REAL    :: mrdx, mrdy, ub, vb, uw, vw, mu, ieva_corr
    REAL , DIMENSION(its:ite, kts:kte) :: vflux
 
 
@@ -10344,6 +10345,18 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
    DO k=kts, ktf
    DO i=i_start, i_end
 
+! ----------------------------------------------------------------------------------------------
+! LJW
+! We need to correct for the partial divergence created by the IEVA scheme.
+! If there is no implicit vertical advection, this term == 1.0.  
+! Else, it rescales the qmax & qmin value to reflect the partial divergence present in both the
+! low-order and high-order fluxes because the VV field is partioned.
+! ----------------------------------------------------------------------------------------------
+
+     ieva_corr = (c1(k)*mut(i,j)+c2(k))+dt*msfty(i,j)*rdzw(k)*(romI(i,k+1,j)-romI(i,k,j))
+
+! ----------------------------------------------------------------------------------------------
+
      ph_upwind = ((c1(k)*mub(i,j)+c2(k))+(c1(k)*mu_old(i,j)))*field_old(i,k,j)        &
                    - dt*( msftx(i,j)*msfty(i,j)*(               &
                           rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
@@ -10358,7 +10371,8 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
                +msfty(i,j)*rdzw(k)*(  max(0.,fqz (i,k+1,j))      &
                                      -min(0.,fqz (i,k  ,j)) )   )
 
-     ph_hi = (c1(k)*mut(i,j)+c2(k))*qmax(i,k,j) - ph_upwind
+     ph_hi = ieva_corr*qmax(i,k,j) - ph_upwind
+
      IF( flux_in .gt. ph_hi ) scale_in(i,k,j) = max(0.,ph_hi/(flux_in+eps))
 
 
@@ -10369,8 +10383,9 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
                                       -min(0.,fqy (i,k,j  )) ) )  &
                 +msfty(i,j)*rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
                                       -max(0.,fqz (i,k  ,j)) )   )
+ 
+     ph_low = ph_upwind - ieva_corr*qmin(i,k,j)
 
-     ph_low = ph_upwind - (c1(k)*mut(i,j)+c2(k))*qmin(i,k,j)
      IF( flux_out .gt. ph_low ) scale_out(i,k,j) = max(0.,ph_low/(flux_out+eps))
 
    ENDDO

@@ -2798,7 +2798,8 @@ CONTAINS
          call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
               p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
               coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-              julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+              julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2, &
+              has_reqc, has_reqi, has_reqs)
        enddo
        !$OMP END PARALLEL DO
     end if

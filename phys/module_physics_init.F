@@ -893,6 +893,7 @@ CONTAINS
    has_reqs = 0
    IF ( config_flags%use_mp_re .EQ. 1 ) THEN
    if (( (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME ) .or. &
+         (config_flags%swint_opt .eq. 2 ) .or. &
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST ) .or. &
 #endif
@@ -942,10 +943,7 @@ CONTAINS
 ! for cloud, ice, and snow.
 
    IF ( config_flags%swint_opt .eq. 2 ) THEN
-      IF ( ( has_reqc .EQ. 1 ) .AND. &
-           ( has_reqi .EQ. 1 ) .AND. &
-           ( has_reqs .EQ. 1 ) .AND. &
-           ( f_qc            ) .AND. &
+      IF ( ( f_qc            ) .AND. &
            ( f_qi            ) .AND. &
            ( f_qs            ) ) THEN
          !  everything is A-OK for FARMS

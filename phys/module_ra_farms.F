@@ -27,26 +27,29 @@
     real, parameter :: DE_CLOUD_MIN = 5.0, DE_CLOUD_MAX = 120.0
     real, parameter :: TAU_MIN = 0.0001, TAU_MAX = 300.0
     real, parameter :: AOD550_VAL = 0.12, ANGEXP_VAL = 1.3, AERSSA_VAL = 0.85, AERASY_VAL = 0.9
+    real, parameter :: RE_CLOUD_CLIM = 5.0 * 1.E-6, RE_ICE_CLIM = 10.0 * 1.E-6, RE_SNOW_CLIM = 10.0 * 1.E-6
 
   contains
 
     subroutine Farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte,  &
            p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
            coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-           julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+           julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2, &
+           has_reqc, has_reqi, has_reqs)
 
       implicit None
 
       integer, intent(in) :: ims, ime, jms, jme, its, ite, jts, jte, kms, kme, &
           kts, kte
 
-      integer, intent(in) :: aer_opt
+      integer, intent(in) :: aer_opt, has_reqc, has_reqi, has_reqs
       real,    intent(in) :: julian
 
       real, dimension(ims:ime, jms:jme), intent(in) :: albedo, coszen_loc
 
       real, dimension(ims:ime, kms:kme, jms:jme ), intent(in) :: qv, qi, qs, qc, &
-          p8w, rho, dz8w, re_cloud, re_ice, re_snow 
+          p8w, rho, dz8w
+      real, dimension(ims:ime, kms:kme, jms:jme ), intent(inout) :: re_cloud, re_ice, re_snow 
 
       real, dimension(ims:ime, jms:jme), intent(inout) :: aerssa2d, aerasy2d, aod5502d, angexp2d
       real, dimension(ims:ime,jms:jme), intent(inout) :: swddir2, swdown2, &
@@ -70,6 +73,10 @@
              swdownc2(i, j) = 0.0
              swddnic2(i, j) = 0.0
            else
+             if (has_reqc == 0) re_cloud(i, :, j) = RE_CLOUD_CLIM
+             if (has_reqi == 0) re_ice(i, :, j) = RE_ICE_CLIM
+             if (has_reqs == 0) re_snow(i, :, j) = RE_SNOW_CLIM
+
              rhodz(:) = rho(i, :, j) * dz8w(i, :, j) / (1. + qv(i, :, j))
                ! PMW
              pmw = integrate_1var (rhodz, qv(i, :, j), kms, kme, kts, kte)

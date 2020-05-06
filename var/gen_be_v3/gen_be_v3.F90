@@ -781,6 +781,9 @@ subroutine get_info(nc_list_file)
                      end if
                   else
                      icase = icase + 1
+                     iens  = 1
+                     ilist_file(iens,icase) = ifile
+                     exit find_match_loop_ens
                   end if
                end if
             end do find_match_loop_ens

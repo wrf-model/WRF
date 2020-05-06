@@ -1475,6 +1475,8 @@ The following are for observation nudging:
  w_damping                           = 0,       ! vertical velocity damping flag (for operational use)
                                                   0 = without damping
                                                   1 = with    damping
+ w_crit_cfl                          = 1.2      ! (1.2 default, old behavior) value of vertical CFL where w_damp turns on vert velo damping
+                                                  set to ~2.0 when IEVA is turned on (see below)
  base_temp                           = 290.,    ! real-data, em ONLY, base sea-level temp (K)
  base_pres                           = 10^5     ! real-data, em ONLY, base sea-level pres (Pa), DO NOT CHANGE
  base_lapse                          = 50.,     ! real-data, em ONLY, lapse rate (K), DO NOT CHANGE
@@ -1506,6 +1508,9 @@ The following are for observation nudging:
  h_sca_adv_order (max_dom)           = 5,       ! horizontal scalar advection order
  v_sca_adv_order (max_dom)           = 3,       ! vertical scalar advection order
 
+ zadvect_implicit                    = 0,       ! (default = 0, No IEVA) Turns on implicit-explicit vertical advection enabling stable
+                                                ! integration even when vertical CFLs ~ 3 - 3.5. 
+                                                ! 1 = zadvect_implicit, turn on IEVA 
  momentum_adv_opt(max_dom)           = 1,       ! advection options for momentum variables: 
                                                   1=original, 3 = 5th-order WENO
                                                   advection options for scalar variables: 0=simple, 1=positive definite,

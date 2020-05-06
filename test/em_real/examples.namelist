@@ -728,5 +728,28 @@ To overwrite the cu_physics option for a second nest, set
 /
 
 
+** Using Implicit-Explicit Vertical Advection (IEVA)
 
+The most typical settings (used in the Wicker and Skamarock (MWR, 2021)
+is below in the namelist, setting w_crit_cfl to turn on Rayleigh
+damping at a vertical courant number of 2.0, and turning on the implicit 
+vertical advection for the last RK time step only (zadvect_implicit = 1).  
+The use of IEVA only on the last RK iteration is similiar to how monotonic 
+or pos-definite advection works as those more expensive routines are only 
+called on the last RK iteration.  We could find almost no difference in the 
+solutions or stability using zadvect_implicit = 1 or zadvect_implicit = 3.
+
+w_crit_cfl =     1.2   --> (default value and value previously used in w_damp when Rayleigh damping on)
+w_crit_cfl = 2.0 ~ 2.5 --> (typical values when using IEVA)
+zadvect_implicit = 0   --> turns IEVA off
+zadvect_implicit = 1   --> turns IEVA on, only applied at last RK iteration 
+zadvect_implicit = 2   --> turns IEVA on, only applied at last two RK iterations
+zadvect_implicit = 3   --> turns IEVA on, applied on all RK iterations
+
+&dynamics
+
+  w_crit_cfl = 2.0,
+  zadvect_implicit = 1
+
+/
 

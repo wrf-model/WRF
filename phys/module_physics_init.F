@@ -902,6 +902,7 @@ CONTAINS
 #endif
          (config_flags%ra_lw_physics .eq. goddardlwscheme ) ) .and. &
        ( (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME ) .or. &
+         (config_flags%swint_opt .eq. 2 ) .or. &
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST ) .or. &
 #endif

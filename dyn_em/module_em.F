@@ -16,7 +16,7 @@ MODULE module_em
         sixth_order_diffusion, rk_rayleigh_damp, theta_relaxation, vertical_diffusion_mp, zero_tend, zero_tend2d
   
   USE module_ieva_em, only: advect_u_implicit, advect_v_implicit, advect_w_implicit, advect_s_implicit, advect_ph_implicit, &
-                            chk_ieva, ww_split, w_damp2, calc_mut_new
+                            chk_ieva, ww_split, calc_mut_new
   
   USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme,ntiedtkescheme, heldsuarez, &
         positivedef, gdscheme, g3scheme, gfscheme, kfetascheme, mskfscheme, monotonic, wenopd_scalar, weno_scalar, weno_mom

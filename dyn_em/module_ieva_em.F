@@ -41,215 +41,7 @@ RETURN
 END FUNCTION CHK_IEVA
 
 !-------------------------------------------------------------------------------
-! Is a modified w_damp routine to deal with IEVA capability
-! We may want to change when things are print out versus
-! when they too large (e.g., w-cfl > 2, let me know, w-cfl > 3, turn on w_damp)
-
-SUBROUTINE w_damp2( rw_tend, max_vert_cfl, max_horiz_cfl, &
-                    u, v, ww, w, mut, c1, c2, rdnw,       &
-                    rdx, rdy, msfux, msfuy,               &
-                    msfvx, msfvy, dt,                     &
-                    config_flags,                         &
-                    ids, ide, jds, jde, kds, kde,         &
-                    ims, ime, jms, jme, kms, kme,         &
-                    its, ite, jts, jte, kts, kte     )
-
-   USE module_llxy
-   IMPLICIT NONE
-
-   ! Input data
-
-   TYPE(grid_config_rec_type   ) ,   INTENT(IN   ) :: config_flags
-
-   INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
-                                       ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte
-
-   REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::   u, v, ww, w
-
-   REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(INOUT) ::  rw_tend
-
-   REAL, INTENT(OUT) ::  max_vert_cfl
-   REAL, INTENT(OUT) ::  max_horiz_cfl
-   REAL              ::  horiz_cfl
-
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: mut
-
-   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw
-
-   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1, c2
-
-   REAL, INTENT(IN)    :: dt
-   REAL, INTENT(IN)    :: rdx, rdy
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux, msfuy
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfvx, msfvy
-
-   REAL                :: vert_cfl, cf_n, cf_d, maxdub, maxdeta
-
-   INTEGER :: itf, jtf, i, j, k, maxi, maxj, maxk
-   INTEGER :: some1, some2
-   CHARACTER*512 :: temp
-
-   CHARACTER (LEN=256) :: time_str
-   CHARACTER (LEN=256) :: grid_str
-
-   integer :: total
-   REAL :: msfuxt , msfxffl
-   
-! LJW
-   REAL    :: w_crit_cfl = 1.00
-   REAL    :: w_flag_cfl = 1.50
-   REAL    :: w_alpha2
-   LOGICAL :: print_flag = .true.
-   SAVE    :: print_flag
-! LJW
-   
-!<DESCRIPTION>
-!
-!  w_damp computes a damping term for the vertical velocity when the
-!  vertical Courant number is too large.  This was found to be preferable to 
-!  decreasing the timestep or increasing the diffusion in real-data applications
-!  that produced potentially-unstable large vertical velocities because of
-!  unphysically large heating rates coming from the cumulus parameterization 
-!  schemes run at moderately high resolutions (dx ~ O(10) km).
-!
-!  Additionally, w_damp returns the maximum cfl values due to vertical motion and
-!  horizontal motion.  These values are returned via the max_vert_cfl and 
-!  max_horiz_cfl variables.  (Added by T. Hutchinson, WSI, 3/5/2007)
-!
-!</DESCRIPTION>
-
-   itf=MIN(ite,ide-1)
-   jtf=MIN(jte,jde-1)
-
-   some1 = 0
-   some2 = 0
-   max_vert_cfl = 0.
-   max_horiz_cfl = 0.
-   total = 0
-
-! BEGIN LJW
-
-   w_crit_cfl = config_flags%w_crit_cfl
-   IF( print_flag ) THEN
-     write(wrf_err_message,*) '----------------------------------------'
-     CALL wrf_debug( 0, wrf_err_message )
-     WRITE(temp,*) 'W_DAMP2 BEGINS AT W-COURANT NUMBER = ',w_crit_cfl
-     CALL wrf_debug ( 0 , TRIM(temp) )
-     write(wrf_err_message,*) '----------------------------------------'
-     CALL wrf_debug( 0, wrf_err_message )
-     print_flag = .false.
-   ENDIF
-
-! END LJW
-
-   IF ( config_flags%w_damping == 1 ) THEN
-
-     DO j = jts,jtf
-      DO k = 2, kde-1
-       DO i = its,itf
-       
-        IF(config_flags%polar ) THEN
-           msfuxt = MIN(msfux(i,j), msfxffl)
-        ELSE
-           msfuxt = msfux(i,j)
-        END IF
-        
-        vert_cfl = abs(ww(i,k,j)/(c1(k)*mut(i,j)+c2(k))*rdnw(k)*dt)
-
-        IF ( vert_cfl > max_vert_cfl ) THEN
-           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
-           maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
-        ENDIF
-        
-        horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt), abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
-        
-        IF (horiz_cfl > max_horiz_cfl) THEN
-           max_horiz_cfl = horiz_cfl
-        ENDIF
-
-        IF (vert_cfl > w_flag_cfl .and. vert_cfl <= w_crit_cfl) THEN
-          WRITE(temp,FMT="(3(1x,i5,1x),'W_FLAG: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
-          CALL wrf_debug ( 100 , TRIM(temp) )
-          some2 = some2 + 1
-          rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_crit_cfl)*(c1(k)*mut(i,j)+c2(k))
-        ELSEIF(vert_cfl > w_crit_cfl) THEN
-          WRITE(temp,FMT="(3(1x,i5,1x),'W-CRITICAL: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
-          CALL wrf_debug ( 100 , TRIM(temp) )
-          some1 = some1 + 1
-        ENDIF
-                       
-       ENDDO
-      ENDDO
-     ENDDO
-     
-   ELSE
-
-     DO j = jts,jtf
-      DO k = 2, kde-1
-       DO i = its,itf
-
-        IF(config_flags%polar ) then
-           msfuxt = MIN(msfux(i,j), msfxffl)
-        ELSE
-           msfuxt = msfux(i,j)
-        END IF
-        
-        vert_cfl = abs(ww(i,k,j)/(c1(k)*mut(i,j)+c2(k))*rdnw(k)*dt)
-        
-        IF ( vert_cfl > max_vert_cfl ) THEN
-           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
-           maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
-        ENDIF
-        
-        horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt), abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
-        
-        IF (horiz_cfl > max_horiz_cfl) THEN
-           max_horiz_cfl = horiz_cfl
-        ENDIF
-        
-        IF (vert_cfl > w_flag_cfl .and. vert_cfl <= w_crit_cfl) THEN
-          WRITE(temp,FMT="(3(1x,i5,1x),'W_FLAG: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
-          CALL wrf_debug ( 100 , TRIM(temp) )
-          some2 = some2 + 1
-        ELSEIF(vert_cfl > w_crit_cfl) THEN
-          WRITE(temp,FMT="(3(1x,i5,1x),'W-CRITICAL: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
-          CALL wrf_debug ( 100 , TRIM(temp) )
-          some1 = some1 + 1
-        ENDIF
-
-       ENDDO
-      ENDDO
-     ENDDO
-     
-   ENDIF
-   
-   IF ( some1 .GT. 0 ) THEN
-     CALL get_current_time_string( time_str )
-     CALL get_current_grid_name( grid_str )
-     WRITE(temp,*) some1,                                            &
-            ' points exceeded W_CRITICAL_CFL in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
-     CALL wrf_debug ( 0 , TRIM(temp) )
-     WRITE(temp,FMT="('Max   W: ',3(1x,i5,1x),'W: ',f7.2,2x,'W-CFL: ',f7.2,2x,'dETA: ',f7.2))") & 
-           maxi, maxj, maxk, maxdub, max_vert_cfl, maxdeta
-     CALL wrf_debug ( 0 , TRIM(temp) )
-     WRITE(temp,FMT="('Max U/V: ',3(1x,i5,1x),'U: ',f7.2,2x,'U-CFL: ',f7.2,2x,'V: ',f7.2,2x,'V-CFL: ',f7.2))") & 
-           maxi, maxj, maxk, u(maxi,maxk,maxj), dt*u(maxi,maxk,maxj)*rdx, v(maxi,maxk,maxj), dt*v(maxi,maxk,maxj)*rdy
-     CALL wrf_debug ( 0 , TRIM(temp) )
-   ENDIF
-   
-   IF ( some2 .GT. 0 ) THEN
-     CALL get_current_time_string( time_str )
-     CALL get_current_grid_name( grid_str )
-     WRITE(temp,*) some2,                                            &
-            ' points exceeded W_FLAG_CFL in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
-     CALL wrf_debug ( 0 , TRIM(temp) )
-   ENDIF
-
-END SUBROUTINE w_damp2
-
-!-------------------------------------------------------------------------------
-! LJW - code for splitting vertical velocity for ex/im based on Shchepetkin (2015)
+! IEVA code for splitting vertical velocity for ex/im based on Shchepetkin (2015)
 
 SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
                     u, v, ww, w, mut, rdnw, msfty,    &
@@ -301,7 +93,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 
    LOGICAL         :: ieva
 
-!! Debug declarations
+! Debug declarations
 
    REAL,    PARAMETER :: binfrac = 0.1
    INTEGER, PARAMETER :: binsize = 11
@@ -313,8 +105,8 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
    ieva = CHK_IEVA(config_flags, rk_step)
 
 ! =========================================================================
-! LJW DEBUG
-!     
+! PRINT OUT IEVA INFO
+
      IF( print_flag ) THEN
        write(wrf_err_message,*) '----------------------------------------'
        CALL wrf_debug( 0, wrf_err_message )
@@ -328,8 +120,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
        CALL wrf_debug( 0, wrf_err_message )
        print_flag = .false.     
       ENDIF
-!    
-! LJW
+
 ! =========================================================================
    
    i_start = its-1
@@ -343,7 +134,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
    IF( ieva ) THEN   ! Implicit adaptive advection
    
 !=========================================================================
-! LJW DEBUG CODE BLOCK
+! DEBUG CODE BLOCK
 !        
 !    binavg(:) = 0.0
 !    crs(:)    = 0.0
@@ -367,7 +158,6 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
          DO i = i_start,i_end
          
 !=========================================================================
-! LJW 
 !      
 ! Translating Shchepetkin (2015), all the volumes and surface areas cancel out (not obvious unless you read
 ! the definitions of U, V, and W right after equation 3.7 (they are u*dy*dz, v*dx*dz, w*dx*dy)...
@@ -412,7 +202,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
              wwI(i,k,j) = ww(i,k,j) * (1.0 - wfrac)
 
 !=========================================================================
-! LJW DEBUG CODE BLOCK: compute distribution of wfrac 
+! DEBUG CODE BLOCK: compute distribution of wfrac 
 !             
 !            DO mm = 1, binsize
 !              IF( (mm-1)*binfrac / wfrac <= 1.0 .and. &
@@ -423,13 +213,12 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 !              ENDIF
 !            ENDDO
 !
-! LJW
 !=========================================================================
                 
            ELSE
 
 !=========================================================================
-! LJW DEBUG CODE BLOCK:  write out information when fully implicit
+! DEBUG CODE BLOCK:  write out information when fully implicit
 !        
 !            write(wrf_err_message,*) ' MAX VERTICAL CFL ~ 0: i,j,k, cw_max, dt*(cx+cy) ',i,j,k,cw_max,Ceps*dt*(cx+cy)
 !            CALL wrf_debug(0, wrf_err_message )
@@ -459,7 +248,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
    ENDIF
 
 !=========================================================================
-! LJW DEBUG - print distribution of wfrac 
+! DEBUG - print distribution of wfrac 
 ! 
 !  write(wrf_err_message,*) '----------------------------------------'
 !  CALL wrf_debug( 0, wrf_err_message )
@@ -471,7 +260,6 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 !  write(wrf_err_message,*) '----------------------------------------'
 !  CALL wrf_debug( 0, wrf_err_message )
 !
-! LJW
 !=========================================================================
 
  RETURN
@@ -624,12 +412,8 @@ SUBROUTINE CALC_MUT_NEW( u, v, c1h, c2h,                     &
 
 !<DESCRIPTION>
 !
-!  LJW
-!
 !  The algorithm integrates the continuity equation through the column
 !  to find a new column mass needed for IEVA calculations
-!
-!  LJW
 !
 !</DESCRIPTION>
 
@@ -695,7 +479,7 @@ SUBROUTINE CALC_MUT_NEW( u, v, c1h, c2h,                     &
 
            mut_new(i,j) = mut_old(i,j) - dt*dmdt(i)
 
-! LJW - debug code.           
+! DEBUG code.           
 !          bigerr = (mut_new(i,j) / mut_old(i,j))
 !     
 !          IF( abs(bigerr) > 2.0 .or. mut_old(i,j) < 0.0 ) THEN    

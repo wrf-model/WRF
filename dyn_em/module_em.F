@@ -301,7 +301,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                                     mub,     &
                                                                     muu,     &
                                                                     muv,     &
-                                                                    ht             ! added LJW IEVA
+                                                                    ht             
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnm,     &
                                                                   fnp,     &
@@ -341,7 +341,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    INTEGER :: rk_order
    REAL    :: dt_step
 
- ! LJW IEVA declarations
+! IEVA declarations
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme ) :: wwE, wwI  
    REAL , DIMENSION( ims:ime , jms:jme )         :: mut_old, mut_new                                                              
    LOGICAL                                       :: ieva
@@ -431,7 +431,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    rk_order = config_flags%rk_ord
    dt_step  = dt / (rk_order - rk_step + 1)   ! needed for calculations using sub-rk step
 
-! LJW IEVA
+! IEVA
    
    ieva = CHK_IEVA( config_flags, rk_step ) 
 
@@ -1074,7 +1074,7 @@ END SUBROUTINE rk_addtend_dry
 SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                             tenddec,                         &
                             rk_step, dt_step,                &
-                            ru, rv, ww, u,  v,  w,           &  ! LJW IEVA
+                            ru, rv, ww, u,  v,  w,           &  
                             mut, mub, mu_old,                &
                             c1h, c2h, alt,                   &
                             scalar_old, scalar,              &
@@ -1172,7 +1172,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
    REAL    :: khdq, kvdq, tendency
 
- ! LJW IEVA variables
+! IEVA variables
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: wwE, wwI  
    LOGICAL                                      :: ieva
 
@@ -1189,7 +1189,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
    rk_order = config_flags%rk_ord
    dt       = dt_step * (rk_order - rk_step + 1)    ! need large time step
 
-! LJW IEVA
+! IEVA
                          
    ieva = CHK_IEVA( config_flags, rk_step )
 
@@ -1203,7 +1203,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                  ims, ime, jms, jme, kms, kme,     &
                  its, ite, jts, jte, kts, kte )             
                  
-! END LJW IEVA
+! IEVA
 
    CALL nl_get_time_step ( 1, time_step )
 

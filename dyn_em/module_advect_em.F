@@ -10346,7 +10346,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
    DO i=i_start, i_end
 
 ! ----------------------------------------------------------------------------------------------
-! LJW
+! IEVA
 ! We need to correct for the partial divergence created by the IEVA scheme.
 ! If there is no implicit vertical advection, this term == 1.0.  
 ! Else, it rescales the qmax & qmin value to reflect the partial divergence present in both the

@@ -2531,14 +2531,12 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    integer :: total
    REAL :: msfuxt , msfxffl
    
-! LJW BEGIN
    REAL    :: w_damp_on
    REAL    :: w_crit_cfl = 2.0
    REAL    :: w_flag_cfl = 1.2
    LOGICAL :: print_flag = .true.
    SAVE    :: print_flag
    INTEGER :: some1, some2
-! LJW END
 
 !<DESCRIPTION>
 !
@@ -2594,8 +2592,6 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    max_horiz_cfl = 0.
    total = 0
 
-! LJW BEGIN
-
    w_crit_cfl = config_flags%w_crit_cfl
 
    IF( print_flag ) THEN
@@ -2610,13 +2606,9 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      print_flag = .false.
    ENDIF
 
-! LJW END
-
    IF(config_flags%polar ) then
      msfxffl = 1.0/COS(config_flags%fft_filter_lat*degrad)
    END IF
-
-! LJW BEGIN
 
 ! There is a lot of redundant code due to wanting information whether w_damping is turned on or not.
 ! I decided that instead of multiple blocks of nearly identical code - I would simple have a constant of
@@ -2643,9 +2635,6 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    DO j = jts,jtf
      DO k = 2,kde-1
        DO i = its,itf
-
-! LJW BEGIN COMMENT OUT
-! I doubt whether this old code is needed with newer compilers - so I commented it all out
 
 !#if 1
 !# ifdef OPTIMIZE_CFL_TEST
@@ -2696,9 +2685,6 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 !          rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_beta)*(c1f(k)*mut(i,j)+c2f(k))
 !       endif
 
-! LJW END COMMENT OUT   
-
-! LJW BEGIN
 
         IF(config_flags%polar ) THEN
           msfuxt = MIN(msfux(i,j), msfxffl)

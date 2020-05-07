@@ -57,7 +57,7 @@ program gen_be_v3
       do_pert_calc, do_eof_transform, do_slen_calc, slen_opt, stride, yr_cutoff, &
       verbose, level_start, level_end, aux_file, write_be_dat_r8, pert1_read_opt, &
       vertloc_opt
-   namelist /ens_nml/ nens, write_ep, write_ens_stdv, ep_format, nproc_out
+   namelist /ens_nml/ nens, write_ep, write_ens_stdv, ep_format, nproc_out, time_lag_ens
 
    character(len=filename_len) :: nc_list_file  ! the text file that contains a list of netcdf files to process
    character (len=3)           :: be_method     ! "NMC" or "ENS"
@@ -79,6 +79,7 @@ program gen_be_v3
                                      !  2: all members in one file (full-domain) (real*4)
                                      !  3: all members in one file (sub-domain), need to specify nproc_out (real*4)
    integer :: nproc_out              ! number of processors to decompose for ep_format=3
+   logical :: time_lag_ens           ! if calculating statistics for time lagged ensembles
 
    integer :: level_start, level_end ! for do_slen_calc=true. Can be set to be other than 1 and nvert for quick debugging/testing
    integer :: pert1_read_opt         ! how to access pert1 data for compute_bv_sl
@@ -214,6 +215,7 @@ program gen_be_v3
    write_be_dat_r8 = .true.
    pert1_read_opt = 1
    vertloc_opt = 0
+   time_lag_ens = .false.
 
    ! initialize internal options
    write_pert0 = .false.
@@ -280,6 +282,8 @@ program gen_be_v3
    if ( trim(be_method) == 'NMC' ) then
       ! hard-coded nens=2 for NMC application
       nens = 2
+      ! make sure time_lag_ens is false for NMC method
+      time_lag_ens = .false.
    else if ( trim(be_method) == 'ENS' ) then
       if ( nens == 0 ) then
          call error_handler(-1, &
@@ -617,7 +621,11 @@ subroutine get_info(nc_list_file)
       close(iunit)
       allocate (file_init_dates(nfile))
       allocate (file_valid_dates(nfile))
-      allocate (ilist_file(nens,nfile))
+      if ( .not. time_lag_ens ) then
+         allocate (ilist_file(nens,nfile))
+      else
+         allocate (ilist_file(nfile,nfile))
+      end if
       allocate (valid(nfile))
       file_init_dates(:)  = '0000-00-00_00:00:00'
       file_valid_dates(:) = '0000-00-00_00:00:00'
@@ -769,29 +777,43 @@ subroutine get_info(nc_list_file)
          if ( icount == 1 ) then
             iens = 1
             icase = 1
+            ilist_file(iens,icase) = ifile
          else if ( icount > 1 ) then
-            find_match_loop_ens: do ii = ifile-1, 1, -1
-               if ( valid(ii) ) then
-                  if ( file_init_dates(ifile) == file_init_dates(ii) ) then
-                     if ( file_valid_dates(ifile) == file_valid_dates(ii) ) then
-                        iens = iens + 1
-                        ilist_file(iens,icase)   = ifile
-                        if ( ii == 1 ) ilist_file(iens-1,icase) = ii
+            if ( .not. time_lag_ens ) then
+               find_match_loop_ens: do ii = ifile-1, 1, -1
+                  if ( valid(ii) ) then
+                     if ( file_init_dates(ifile) == file_init_dates(ii) ) then
+                        if ( file_valid_dates(ifile) == file_valid_dates(ii) ) then
+                           iens = iens + 1
+                           ilist_file(iens,icase) = ifile
+                           exit find_match_loop_ens
+                        end if
+                     else
+                        icase = icase + 1
+                        iens  = 1
+                        ilist_file(iens,icase) = ifile
                         exit find_match_loop_ens
-                     end if
-                  else
-                     icase = icase + 1
-                     iens  = 1
-                     ilist_file(iens,icase) = ifile
-                     exit find_match_loop_ens
-                  end if
+                     end if ! if same init_date
+                  end if ! valid file
+               end do find_match_loop_ens
+            else ! time_lag_ens
+               ! only check_valid_date for time_lag_ens
+               if ( file_valid_dates(ifile) == file_valid_dates(ilist_file(iens,icase)) ) then
+                  iens = iens + 1
+                  ilist_file(iens,icase) = ifile
                end if
-            end do find_match_loop_ens
+            end if ! time_lag_ens
          end if
       end if
    end do file_loop1
 
    ncase = icase
+   if ( time_lag_ens ) then
+      nens = iens
+      if ( myproc == root ) then
+         write(stdout,'(a,i4,a)') ' --- Resetting nens = ', nens, ' for time_lag_ens ---'
+      end if
+   end if
 
    if ( ncase > 0 .and. nens > 0 ) then
       if ( .not. allocated(filenames) ) allocate(filenames(1:nens,1:ncase))

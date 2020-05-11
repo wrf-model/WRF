@@ -3403,9 +3403,14 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (SHINHONGSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
+! EAH
+!           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option 1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+! END EAH
            CALL shinhonginit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
+
                         RQCBLTEN,RQIBLTEN,TKE_PBL,P_QI,       &
                         PARAM_FIRST_SCALAR,                   &
                         restart,                              &
@@ -3416,8 +3421,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (MRFSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
+! EAH
+!           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option 1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+! END EAH
            CALL mrfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -3429,8 +3438,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (ACMPBLSCHEME)
            if(isfc .ne. 1 .and. isfc .ne. 7)CALL wrf_error_fatal &
             ( 'module_physics_init: use sfclay or pxsfc scheme for this pbl option' )
+! EAH
+!           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option 1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+! END EAH
            CALL acminit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -3442,8 +3455,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (GFSSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
+! EAH
+!           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option 1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+! END EAH
            CALL gfsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -3456,8 +3473,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (GFSEDMFSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
+! EAH
+!           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option 1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+! END EAH
            CALL gfsedmfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -3490,8 +3511,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (QNSEPBLSCHEME)
            if(isfc .ne. 4)CALL wrf_error_fatal &
             ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
+! EAH
+!           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option 1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+! END EAH
            CALL qnsepblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                         TKE_PBL,EXCH_H,restart,               &
                         allowed_to_read ,                     &
@@ -3522,8 +3547,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
         CASE (CAMUWPBLSCHEME)
+! EAH
+!           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option 1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+! END EAH
            CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,        &
                 restart,TKE_PBL,is_CAMMGMP_used, &
                 ids, ide, jds, jde, kds, kde,                          &
@@ -3538,8 +3567,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
            IF(isfc .NE. 5 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
                 ( 'module_physics_init: use mynnsfc or sfclay or myjsfc scheme for this pbl option')
+!EAH
+!           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option 1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+! END EAH
            
            SELECT CASE(config_flags%bl_pbl_physics)
 
@@ -3565,8 +3598,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (TEMFPBLSCHEME)
            ! if(isfc .ne. 0)CALL wrf_error_fatal &
            !  ( 'module_physics_init: use sfclay scheme = 0 for this pbl option' )
+! EAH
+!           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option 1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+! END EAH
          IF ( PRESENT( te_temf ) .AND. PRESENT( cf3d_temf )) THEN
            CALL temfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &

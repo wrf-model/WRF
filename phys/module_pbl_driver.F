@@ -167,6 +167,9 @@ CONTAINS
    USE module_bl_myjpbl
    USE module_bl_qnsepbl
    USE module_bl_ysu
+!EAH 
+   USE module_bl_ysuurb
+!END EAH
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
@@ -1181,13 +1184,17 @@ CONTAINS
            ENDIF
 
       CASE (YSUSCHEME)
-        CALL wrf_debug(100,'in YSU PBL')
+! EAH
+!        CALL wrf_debug(100,'in YSU PBL')
+! END EAH
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( qi_curr )                            .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 PRESENT( rqiblten )                           .AND. &
                 PRESENT( hol      ) ) THEN
-!
+! EAH
+          IF ( .not.flag_bep .and. idiff.ne.1) THEN
+             CALL wrf_debug(100,'in YSU PBL')
              CALL ysu(                                              &
                U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
@@ -1216,6 +1223,51 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
+          ELSE
+             CALL wrf_debug(100,'in YSU PBL URBAN')
+             CALL ysuurb(IDIFF=idiff,FLAG_BEP=flag_bep              &
+              ,U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
+              ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
+              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy                       &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
+              ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
+              ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
+              ,FLAG_QI=flag_qi                                      &
+              ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
+              ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
+!              ,P_TOP=p_top                                          &
+              ,ZNT=znt,UST=ust,HPBL=pblh                            &
+              ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
+              ,HFX=hfx,QFX=qfx                                      &
+              ,U10=u10,V10=v10                                      &
+              ,UOCE=uoce,VOCE=voce                                  &
+! paj
+              ,CTOPO=ctopo,CTOPO2=ctopo2                            &
+! Multi-layer UCM
+              ,FRC_URB2D=frc_urb2d                                  &
+              ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep      &
+              ,A_Q_BEP=a_q_bep                                      &
+              ,A_E_BEP=a_e_bep,B_U_BEP=b_u_bep,B_V_BEP=b_v_bep      &
+              ,B_T_BEP=b_t_bep,B_Q_BEP=b_q_bep                      &
+              ,B_E_BEP=b_e_bep,DLG_BEP=dlg_bep                      &
+              ,DL_U_BEP=dl_u_bep,SF_BEP=sf_bep,VL_BEP=vl_bep        &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+! end UCM
+              ,YSU_TOPDOWN_PBLMIX=ysu_topdown_pblmix                &
+              ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
+              ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
+              ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime                          &
+              ,RTHRATEN=RTHRATEN                                    &
+! for grims shallow convection with ysupbl
+              ,WSTAR=wstar,DELTA=delta                              &
+                                                                    )
+        ENDIF
+! END EAH
+
+
+
 !
 ! FASDAS
 !

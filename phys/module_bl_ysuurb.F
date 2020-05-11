@@ -1633,10 +1633,14 @@ contains
       ad1(i,k) = ad(i,k)
     end do
   end do
+  do i = its,ite
+    ad(i,1) = ad(i,1) - a_u2d(i,1)*dt2 + (1.0-frc_urbtwod(i))*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd(i)
+    ad1(i,1) = ad1(i,1) - a_v2d(i,1)*dt2 + (1.0-frc_urbtwod(i))*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd(i)
+  enddo
   do k = kts,kte
     do i = its,ite
-      ad(i,k) = ad(i,k) - a_u2d(i,k)*dt2 - (1.0-frc_urbtwod(i))*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd(i)
-      ad1(i,k) = ad1(i,k) - a_v2d(i,k)*dt2 - (1.0-frc_urbtwod(i))*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd(i)
+      ad(i,k) = ad(i,k) - a_u2d(i,k)*dt2 
+      ad1(i,k) = ad1(i,k) - a_v2d(i,k)*dt2 
       f1(i,k) = f1(i,k) + b_u2d(i,k)*dt2
       f2(i,k) = f2(i,k) + b_v2d(i,k)*dt2
     enddo

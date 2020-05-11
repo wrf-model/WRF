@@ -2531,12 +2531,14 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    integer :: total
    REAL :: msfuxt , msfxffl
    
-   REAL    :: w_damp_on
-   REAL    :: w_crit_cfl = 2.0
-   REAL    :: w_flag_cfl = 1.2
-   LOGICAL :: print_flag = .true.
+   REAL    :: w_damp_on     = 1.0
+   REAL    :: w_crit_cfl    = 2.0
+   REAL    :: w_flag_cfl    = 1.2
+   LOGICAL :: wflags_differ = .false.
+   LOGICAL :: print_flag    = .true.
    SAVE    :: print_flag
-   INTEGER :: some1, some2
+   INTEGER :: some1         = 0     ! Now have two catagories of CFL information, hence some1 & some2
+   INTEGER :: some2         = 0
 
 !<DESCRIPTION>
 !
@@ -2586,19 +2588,21 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
 
-   some1 = 0    ! Now have two catagories of CFL information, hence (2) some(s)!
-   some2 = 0
-   max_vert_cfl = 0.
+   max_vert_cfl  = 0.
    max_horiz_cfl = 0.
    total = 0
 
    w_crit_cfl = config_flags%w_crit_cfl
 
+   IF( abs(w_crit_cfl - w_flag_cfl) > 0.1 ) THEN
+     wflags_differ = .true.
+   ELSE
+     wflags_differ = .false.
+   ENDIF
+
    IF( print_flag ) THEN
      write(wrf_err_message,*) '----------------------------------------'
      CALL wrf_debug( 0, wrf_err_message )
-     WRITE(temp,*) 'W-FLAGGING BEGINS AT W-COURANT NUMBER = ',w_flag_cfl
-     CALL wrf_debug ( 0 , TRIM(temp) )
      WRITE(temp,*) 'W-DAMPING  BEGINS AT W-COURANT NUMBER = ',w_crit_cfl
      CALL wrf_debug ( 0 , TRIM(temp) )
      write(wrf_err_message,*) '----------------------------------------'
@@ -2610,115 +2614,87 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      msfxffl = 1.0/COS(config_flags%fft_filter_lat*degrad)
    END IF
 
-! There is a lot of redundant code due to wanting information whether w_damping is turned on or not.
-! I decided that instead of multiple blocks of nearly identical code - I would simple have a constant of
-! (0.0,1.0) if damping was on or off to turn things on and off and then execute the same code.
-! Since w_damping is almost always on for NWP application, the cost would be the same.
+! Routine has been reorganized to hopefully reduce redundant code while maintaining efficiency
 
-   IF ( config_flags%w_damping == 1 ) THEN
-
-     w_damp_on = 1.0
-
-   ELSE
- 
-     w_damp_on = 0.0
-
-   ENDIF
-
-!#ifdef OPTIMIZE_CFL_TEST
+#ifdef OPTIMIZE_CFL_TEST
 ! 20121025, L. Meadows vector optimization does not include special case for Cassini
-!    IF(config_flags%polar ) then
-!      CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support global domains')
-!    END IF
-!endif
+
+   IF(config_flags%polar ) then
+     CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support global domains')
+   END IF
+
+#endif
 
    DO j = jts,jtf
      DO k = 2,kde-1
        DO i = its,itf
 
-!#if 1
-!# ifdef OPTIMIZE_CFL_TEST
+         vert_cfl = abs(ww(i,k,j)/(c1f(k)*mut(i,j)+c2f(k))*rdnw(k)*dt)
+
+# ifdef OPTIMIZE_CFL_TEST
 ! L. Meadows, Intel, MIC optimization, 20121025
-!       msfuxt = msfux(i,j)
-!       vert_cfl = abs(ww(i,k,j)/(c1f(k)*mut(i,j)+c2f(k))*rdnw(k)*dt)
-!       IF ( vert_cfl > max_vert_cfl ) THEN
-!          max_vert_cfl = vert_cfl
-!       ENDIF
-!# else
-!       IF(config_flags%polar ) then
-!          msfuxt = MIN(msfux(i,j), msfxffl)
-!       ELSE
-!          msfuxt = msfux(i,j)
-!       END IF
-!       vert_cfl = abs(ww(i,k,j)/(c1f(k)*mut(i,j)+c2f(k))*rdnw(k)*dt)
-!
-!       IF ( vert_cfl > max_vert_cfl ) THEN
-!          max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k
-!          maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
-!       ENDIF
-!# endif
+
+         msfuxt = msfux(i,j)
+
+         IF ( vert_cfl > max_vert_cfl ) THEN
+            max_vert_cfl = vert_cfl
+         ENDIF
+# else
+         IF(config_flags%polar ) THEN
+            msfuxt = MIN(msfux(i,j), msfxffl)
+         ELSE
+            msfuxt = msfux(i,j)
+         ENDIF
+
+         IF ( vert_cfl > max_vert_cfl ) THEN
+            max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k
+            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
+         ENDIF
+# endif
         
-!       horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
-!            abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
-!       if (horiz_cfl > max_horiz_cfl) then
-!          max_horiz_cfl = horiz_cfl
-!       endif
-!       
-!       if(vert_cfl .gt. w_beta)then
-!#else
-! restructure to get rid of divide
-!
-! This had been used for efficiency, but with the addition of returning the cfl values,
-!   the old version (above) was reinstated.  (T. Hutchinson, 3/5/2007)
-!
-!       cf_n = abs(ww(i,k,j)*rdnw(k)*dt)
-!       cf_d = abs((c1f(k)*mut(i,j)+c2f(k)))
-!       if(cf_n .gt. cf_d*w_beta )then
-!#endif
-!#ifndef OPTIMIZE_CFL_TEST
+         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt     * dt),    &
+                          abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
+
+         IF (horiz_cfl > max_horiz_cfl) THEN
+            max_horiz_cfl = horiz_cfl
+         ENDIF
+
+! Dump out more information without affecting performance
+        
+#ifndef OPTIMIZE_CFL_TEST
 ! This internal write is costly on newer Xeon processors because it breaks
 ! vectorization.  (J. Michalakes for L. Meadows at Intel, 12/13/2012)
-!          WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
-!          CALL wrf_debug ( 100 , TRIM(temp) )
-!#endif
-!          if ( vert_cfl > 2. ) some = some + 1
-!          rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_beta)*(c1f(k)*mut(i,j)+c2f(k))
-!       endif
 
+         IF (vert_cfl .gt. w_crit_cfl) THEN
 
-        IF(config_flags%polar ) THEN
-          msfuxt = MIN(msfux(i,j), msfxffl)
-        ELSE
-          msfuxt = msfux(i,j)
-        END IF
+           some1 = some1 + 1
 
-        vert_cfl = abs(ww(i,k,j)/(c1f(k)*mut(i,j)+c2f(k))*rdnw(k)*dt)
+           WRITE(temp,FMT="(3(1x,i5,1x),'W-CRIT_CFL: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") &
+                                         i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
+           CALL wrf_debug ( 100 , TRIM(temp) )
 
-        IF ( vert_cfl > max_vert_cfl ) THEN
-           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k
-           maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
-        ENDIF
+         ENDIF
 
-        horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt), abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
+         IF ((vert_cfl .gt. w_flag_cfl) .and. wflags_differ) THEN
 
-        IF (horiz_cfl > max_horiz_cfl) THEN
-           max_horiz_cfl = horiz_cfl
-        ENDIF
+           some2 = some2 + 1
 
-        IF (vert_cfl > w_flag_cfl .and. vert_cfl < w_crit_cfl) THEN
-          WRITE(temp,FMT="(3(1x,i5,1x),'W_FLAG: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
-          CALL wrf_debug ( 100 , TRIM(temp) )
-          some2 = some2 + 1
-        ELSEIF(vert_cfl >= w_crit_cfl) THEN
-          WRITE(temp,FMT="(3(1x,i5,1x),'W-CRITICAL: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
-          CALL wrf_debug ( 100 , TRIM(temp) )
-          some1 = some1 + 1
-          rw_tend(i,k,j) = rw_tend(i,k,j)-w_damp_on*sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_crit_cfl)*(c1f(k)*mut(i,j)+c2f(k))
-        ENDIF
+           WRITE(temp,FMT="(3(1x,i5,1x),'W-FLAG_CFL: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") &
+                                         i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
+           CALL wrf_debug ( 100 , TRIM(temp) )
 
-       ENDDO
-     ENDDO
-   ENDDO
+         ENDIF
+#endif
+
+         IF ((vert_cfl .gt. w_crit_cfl) .and. (config_flags%w_damping == 1) ) THEN
+
+           rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_crit_cfl)*(c1f(k)*mut(i,j)+c2f(k))
+
+         ENDIF
+
+       ENDDO   ! end i-loop
+     ENDDO   ! end k-loop
+   ENDDO   ! end j-loop
 
    IF ( some1 .GT. 0 ) THEN
      CALL get_current_time_string( time_str )
@@ -2727,14 +2703,14 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
             ' points exceeded W_CRITICAL_CFL in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
      CALL wrf_debug ( 0 , TRIM(temp) )
      WRITE(temp,FMT="('Max   W: ',3(1x,i5,1x),'W: ',f7.2,2x,'W-CFL: ',f7.2,2x,'dETA: ',f7.2))") &
-           maxi, maxj, maxk, maxdub, max_vert_cfl, maxdeta
+                            maxi, maxj, maxk, maxdub, max_vert_cfl, maxdeta
      CALL wrf_debug ( 0 , TRIM(temp) )
      WRITE(temp,FMT="('Max U/V: ',3(1x,i5,1x),'U: ',f7.2,2x,'U-CFL: ',f7.2,2x,'V: ',f7.2,2x,'V-CFL: ',f7.2))") &
            maxi, maxj, maxk, u(maxi,maxk,maxj), dt*u(maxi,maxk,maxj)*rdx, v(maxi,maxk,maxj), dt*v(maxi,maxk,maxj)*rdy
      CALL wrf_debug ( 0 , TRIM(temp) )
    ENDIF
 
-   IF ( some2 .GT. 0 .and. ((w_crit_cfl - w_flag_cfl) > 0.1) ) THEN   ! if the two flags are the same, some1 is only dumped
+   IF ( some2 .GT. 0 ) THEN   
      CALL get_current_time_string( time_str )
      CALL get_current_grid_name( grid_str )
      WRITE(temp,*) some2,                                            &

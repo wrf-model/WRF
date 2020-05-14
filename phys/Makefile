@@ -33,6 +33,7 @@ MODULES = \
 	module_cam_infnan.o \
 	$(PHYS_PLUS) \
 	module_bl_ysu.o \
+	module_bl_ysuurb.o \
 	module_bl_shinhong.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \

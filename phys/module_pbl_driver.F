@@ -167,9 +167,7 @@ CONTAINS
    USE module_bl_myjpbl
    USE module_bl_qnsepbl
    USE module_bl_ysu
-!EAH 
    USE module_bl_ysuurb
-!END EAH
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
@@ -1184,15 +1182,11 @@ CONTAINS
            ENDIF
 
       CASE (YSUSCHEME)
-! EAH
-!        CALL wrf_debug(100,'in YSU PBL')
-! END EAH
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( qi_curr )                            .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 PRESENT( rqiblten )                           .AND. &
                 PRESENT( hol      ) ) THEN
-! EAH
           IF ( .not.flag_bep .and. idiff.ne.1) THEN
              CALL wrf_debug(100,'in YSU PBL')
              CALL ysu(                                              &
@@ -1258,15 +1252,12 @@ CONTAINS
               ,YSU_TOPDOWN_PBLMIX=ysu_topdown_pblmix                &
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
-              ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime                          &
+              ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime            &
               ,RTHRATEN=RTHRATEN                                    &
-! for grims shallow convection with ysupbl
+! for grims shallow convection with ysupbl urban
               ,WSTAR=wstar,DELTA=delta                              &
                                                                     )
         ENDIF
-! END EAH
-
-
 
 !
 ! FASDAS

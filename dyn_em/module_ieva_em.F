@@ -25,13 +25,13 @@ LOGICAL FUNCTION CHK_IEVA( config_flags, rk_step )
 
    CHK_IEVA = .FALSE.
 
-   IF( zadvect_implicit .eq. 3 ) THEN   ! DO IEVA on all sub-steps of RK integrator
-       CHK_IEVA = .TRUE.
-   ENDIF
+!  IF( zadvect_implicit .eq. 3 ) THEN   ! DO IEVA on all sub-steps of RK integrator
+!      CHK_IEVA = .TRUE.
+!  ENDIF
 
-   IF( zadvect_implicit .eq. 2 .and. rk_step .ge. rk_order-1 ) THEN ! DO IEVA on last two sub-steps of RK integrator
-       CHK_IEVA = .TRUE.
-   ENDIF
+!  IF( zadvect_implicit .eq. 2 .and. rk_step .ge. rk_order-1 ) THEN ! DO IEVA on last two sub-steps of RK integrator
+!      CHK_IEVA = .TRUE.
+!  ENDIF
 
    IF( zadvect_implicit .eq. 1 .and. rk_step .eq. rk_order ) THEN  ! DO IEVA on last sub-step of RK integrator
        CHK_IEVA = .TRUE.
@@ -114,6 +114,10 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
        CALL wrf_debug( 0, wrf_err_message )
        write(wrf_err_message,*) 'WW_SPLIT:  IEVA = ', ieva
        CALL wrf_debug( 0, wrf_err_message )
+       IF( config_flags%zadvect_implicit > 1 ) THEN
+         write(wrf_err_message,*) 'WW_SPLIT:  WARNING: IEVA IS ONLY RUNNING on LAST RK-substep'
+         CALL wrf_debug( 0, wrf_err_message )
+       ENDIF
        write(wrf_err_message,*) 'WW_SPLIT:  dt = ', dt
        CALL wrf_debug( 0, wrf_err_message )
        write(wrf_err_message,*) 'WW_SPLIT:  alpha_max/min = ', alpha_max, alpha_min
@@ -220,8 +224,8 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 !=========================================================================
 ! DEBUG CODE BLOCK:  write out information when fully implicit
 !        
-!            write(wrf_err_message,*) ' MAX VERTICAL CFL ~ 0: i,j,k, cw_max, dt*(cx+cy) ',i,j,k,cw_max,Ceps*dt*(cx+cy)
-!            CALL wrf_debug(0, wrf_err_message )
+! write(wrf_err_message,*) ' MAX VERTICAL CFL ~ 0: i,j,k, cw_max, dt*(cx+cy) ',i,j,k,cw_max,Ceps*dt*(cx+cy)
+! CALL wrf_debug(0, wrf_err_message )
 !
 !=========================================================================
              

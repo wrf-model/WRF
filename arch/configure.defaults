@@ -2123,7 +2123,7 @@ CC_TOOLS        =       $(SCC)
 
 #insert new stanza here
 ###########################################################
-#ARCH    Linux x86_64 gfortran with flang openmpi #serial smpar dmpar dm+sm
+#ARCH    Linux x86_64 flang with clang compiler #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       AOCC ($SFC/$SCC): Open MPI
 DMPARALLEL      =       # 1
@@ -2135,13 +2135,14 @@ SCC             =       clang
 CCOMP           =       clang
 DM_FC           =       mpif90
 DM_CC           =       mpicc
-FC              =       flang
-CC              =       clang
+FC              =       mpif90
+CC              =       mpicc
+CXX             =       mpicc
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DMACOS  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -w -O3 -c
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -2164,6 +2165,9 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC) 
+
+MPI_INC         =      -I/home/virusry/Build_WRF/liba/openmpi/include
+MPI_LIB         =      -I/home/virusry/Build_WRF/liba/openmpi/lib
 
 
 ###########################################################

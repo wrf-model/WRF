@@ -32,7 +32,7 @@
 !      user's manual of BEP, NCAR technical note
 !Hendricks, E. A., J. C. Knievel, and Y. Wang, 2020: Addition of multilayer urban 
 !      canopy models to a nonlocal planetary boundary layer parameterization and
-!      evaluation in ideal and real scenarios, J. Appl. Met. Clim., submitted. 
+!      evaluation using ideal and real cases, J. Appl. Met. Clim., submitted. 
 !=================================================================================================================
 !WRF:model_layer:physics
 !

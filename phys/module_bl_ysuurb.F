@@ -3,18 +3,31 @@
 !functionality in the YSU PBL scheme. The implicit (A) and explicit (B) BEP 
 !and BEP+BEM source terms are added as forcing to the YSU implicit 
 !vertical diffusion equation solvers. Forcing is applied for zonal momentum,
-!meridional momentum, potential temperature, and mixing ratio. Addition
-!of the A sources requires changes to the tridiagonal matrices, and addition
-!of the B sources requires changes to the explicit term vectors. Additionally,
-!the finite differencing is modified by the volume fraction and surface fraction
-!not occupied by buildings. While the implementation has been kept general
-!with implicit and explicit sources, some users may desire to put all BEP
-!and BEP+BEM sources in the explicit source term B, since YSU is nonlocal.
-!If that is done, then set A=0 in this routine. The BEP and BEP+BEM TKE 
+!meridional momentum, potential temperature, and water vapor mixing ratio. 
+!The A sources are added to the tridiagonal matrix and the B sources are added
+!to the explicit term vectors. Additionally, the finite differencing
+!is modified using the BEP volume fraction and surface fraction
+!not occupied by buildings. The BEP and BEP+BEM TKE
 !tendency terms have also been added to the diagnostic TKE in YSU when 
-!topographic drag is turned on. 
+!topographic drag is turned on.
+! 
+!Note 1: While the implementation has been kept general
+!with implicit and explicit sources, some users may desire to put all BEP
+!and BEP+BEM sources in the explicit source term B, since YSU is a nonlocal
+!closure scheme. To do this, modify the BEP and BEP+BEM routines to put
+!all urban sources in the explicit (B) component, and then set all implicit
+!sources (A) there to zero. In that case only explicit urban sources will
+!force the YSU vertical diffusion solvers. 
 !
-!Referencs:
+!Note 2: The urban/rural source weighting is done in module_sf_noahdrv.F and
+!module_sf_noahmpdrv.F. If you change the source
+!terms in those routines, you must adjust this routine accordingly. This is
+!similar to MYJURB and BOULAC which rely on having specific source terms passed
+!in from those modules. The urban fraction is currently not used, but
+!it is passed in case surface drivers change in future. 
+!
+!
+!References:
 !Martilli et al. (2009), description of the modifications made in WRF.3.1 and short 
 !      user's manual of BEP, NCAR technical note
 !Hendricks, E. A., J. C. Knievel, and Y. Wang, 2020: Addition of multilayer urban 
@@ -137,7 +150,7 @@ contains
 !-- kts         start index for k in tile
 !-- kte         end index for k in tile
 !-- IDIFF       BEP/BEM+BEM diffusion flag
-!-- FRC_URB2D   urban fraction    
+!-- FRC_URB2D   urban fraction (not currently used)    
 !-- A_U_BEP     BEP/BEP+BEM implicit component u-mom 
 !-- A_V_BEP     BEP/BEP+BEM implicit component v-mom
 !-- A_T_BEP     BEP/BEP+BEM implicit component pot. temp.
@@ -148,8 +161,8 @@ contains
 !-- B_T_BEP     BEP/BEP+BEM explicit component pot.temp.
 !-- B_Q_BEP     BEP/BEP+BEM explicit component vapor mixing ratio
 !-- B_E_BEP     BEP/BEP+BEM explicit component TKE
-!-- DLG_BEP     lground Martilli et al. 2002 Eq. 24
-!-- DL_U_BEP    modified length scale Martilli et al. Eq. 22
+!-- DLG_BEP     Height above ground Martilli et al. (2002) Eq. 24
+!-- DL_U_BEP    modified length scale Martilli et al. (200) Eq. 22
 !-- SF_BEP      fraction of vertical surface not occupied by buildings
 !-- VL_BEP      volume fraction of grid cell not occupied by buildings
 !-------------------------------------------------------------------------------
@@ -344,7 +357,7 @@ contains
               ,b_e2d=B_E(ims,kms,j), a_e2d=A_E(ims,kms,j)                      &
               ,sfk2d=SFK(ims,kms,j), vlk2d=VLK(ims,kms,j)                      &
               ,dlu2d=DL_U(ims,kms,j), dlg2d=DLG(ims,kms,j)                     &
-              ,frc_urbtwod=FRC_URB2D(ims,j)                                    &   
+              ,frc_urb1d=FRC_URB2D(ims,j)                                      &   
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -383,7 +396,7 @@ contains
                   b_u2d, b_v2d, b_t2d, b_q2d,                                  &
                   b_e2d, a_e2d, sfk2d, vlk2d,                                  &
                   dlu2d, dlg2d,                                                &
-                  frc_urbtwod,                                                 &
+                  frc_urb1d,                                                   &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -544,7 +557,7 @@ contains
                                                                         dlg2d
 
   real,     dimension( ims:ime ),                                         &
-             intent(in)      ::                                    frc_urbtwod
+             intent(in)      ::                                     frc_urb1d
    real,     dimension( ims:ime )                                            , &
              optional                                                        , &
              intent(inout)   ::                                        regime
@@ -1488,11 +1501,10 @@ contains
         *(wspd1(i)/wspd(i))**2
       if(present(ctopo)) then
         vconvnew=0.9*vconvfx(i)+1.5*(max((pblh_ysu(i)-500)/1000.0,0.0))
-!        vconvlim = min(vconvnew,1.0)
-         ad(i,1) = 1. + (1.0-frc_urbtwod(i))*fric(i,1)*&
-                     (vconvlim+ctopo(i)*(1-vconvlim)-1.)
+        vconvlim = min(vconvnew,1.0)
+        ad(i,1) = 1. +fric(i,1)*(vconvlim+ctopo(i)*(1-vconvlim)-1.)
       else
-       ad(i,1) = 1.
+        ad(i,1) = 1.
       endif
      f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
      f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2

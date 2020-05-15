@@ -19,8 +19,8 @@
 !sources (A) there to zero. In that case only explicit urban sources will
 !force the YSU vertical diffusion solvers. 
 !
-!Note 2: The urban/rural source weighting is done in module_sf_noahdrv.F and
-!module_sf_noahmpdrv.F. If you change the source
+!Note 2: The urban/rural surface source weighting is done in 
+!module_sf_noahdrv.F and module_sf_noahmpdrv.F. If you change the source 
 !terms in those routines, you must adjust this routine accordingly. This is
 !similar to MYJURB and BOULAC which rely on having specific source terms passed
 !in from those modules. The urban fraction is currently not used, but

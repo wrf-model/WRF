@@ -2125,7 +2125,7 @@ CC_TOOLS        =       $(SCC)
 ###########################################################
 #ARCH    Linux x86_64 flang with clang compiler #serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       AOCC ($SFC/$SCC): Open MPI
+DESCRIPTION     =       AOCC ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
@@ -2164,7 +2164,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC)
-
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, Intel oneAPI compiler with icx #serial smpar dmpar dm+sm

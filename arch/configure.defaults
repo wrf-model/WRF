@@ -2123,7 +2123,7 @@ CC_TOOLS        =       $(SCC)
 
 #insert new stanza here
 ###########################################################
-#ARCH    Linux x86_64 flang with clang compiler #serial smpar dmpar dm+sm
+#ARCH Linux x86_64 i486 i586 i686, flang with clang compiler #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       AOCC ($SFC/$SCC)
 DMPARALLEL      =       # 1
@@ -2133,10 +2133,10 @@ OMPCC           =       # -fopenmp
 SFC             =       flang
 SCC             =       clang
 CCOMP           =       clang
-DM_FC           =       mpif90
-DM_CC           =       mpicc
-FC              =       mpif90
-CC              =       mpicc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
@@ -2157,13 +2157,14 @@ FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
 TRADFLAG        =      CONFIGURE_TRADFLAG
-CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-RLFLAGS		=	-c
-CC_TOOLS        =      $(SCC)
+RLFLAGS		=
+CC_TOOLS        =      $(SCC) 
+
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, Intel oneAPI compiler with icx #serial smpar dmpar dm+sm

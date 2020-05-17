@@ -14,7 +14,7 @@
 #ifdef MACOS
 #include <sys/malloc.h>
 #else
-#include <stdlib.h>
+#include <malloc.h>
 #endif
 #include <ctype.h>
 #include <string.h>

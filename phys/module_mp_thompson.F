@@ -1304,16 +1304,16 @@
 
          IF (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) THEN
           do k = kts, kte
-             re_qc1d(k) = 2.49E-6
-             re_qi1d(k) = 4.99E-6
-             re_qs1d(k) = 9.99E-6
+             re_qc1d(k) = 0.0
+             re_qi1d(k) = 0.0
+             re_qs1d(k) = 0.0
           enddo
           call calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,  &
                       re_qc1d, re_qi1d, re_qs1d, kts, kte)
           do k = kts, kte
-             re_cloud(i,k,j) = MAX(2.49E-6, MIN(re_qc1d(k), 50.E-6))
-             re_ice(i,k,j)   = MAX(4.99E-6, MIN(re_qi1d(k), 125.E-6))
-             re_snow(i,k,j)  = MAX(9.99E-6, MIN(re_qs1d(k), 999.E-6))
+             if (re_qc1d(k) /= 0.0) re_cloud(i,k,j) = MAX(2.49E-6, MIN(re_qc1d(k), 50.E-6))
+             if (re_qi1d(k) /= 0.0) re_ice(i,k,j)   = MAX(4.99E-6, MIN(re_qi1d(k), 125.E-6))
+             if (re_qs1d(k) /= 0.0) re_snow(i,k,j)  = MAX(9.99E-6, MIN(re_qs1d(k), 999.E-6))
           enddo
          ENDIF
 
@@ -5065,7 +5065,7 @@
 
       if (has_qc) then
       do k = kts, kte
-         re_qc1d(k) = 2.49E-6
+         re_qc1d(k) = 0.0
          if (rc(k).le.R1 .or. nc(k).le.R2) CYCLE
          if (nc(k).lt.100) then
             inu_c = 15
@@ -5081,7 +5081,7 @@
 
       if (has_qi) then
       do k = kts, kte
-         re_qi1d(k) = 2.49E-6
+         re_qi1d(k) = 0.0
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
          re_qi1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
@@ -5090,7 +5090,7 @@
 
       if (has_qs) then
       do k = kts, kte
-         re_qs1d(k) = 4.99E-6
+         re_qs1d(k) = 0.0
          if (rs(k).le.R1) CYCLE
          tc0 = MIN(-0.1, t1d(k)-273.15)
          smob = rs(k)*oams

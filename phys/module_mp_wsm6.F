@@ -237,9 +237,9 @@ CONTAINS
         if (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) then
           do i=its,ite
             do k=kts,kte
-              re_qc(k) = 2.51E-6
-              re_qi(k) = 10.01E-6
-              re_qs(k) = 25.E-6
+              re_qc(k) = 0.0
+              re_qi(k) = 0.0
+              re_qs(k) = 0.0
 
               t1d(k)  = th(i,k,j)*pii(i,k,j)
               den1d(k)= den(i,k,j)
@@ -251,9 +251,9 @@ CONTAINS
                                 qmin, t0c, re_qc, re_qi, re_qs,         &
                                 kts, kte, i, j)
             do k=kts,kte
-              re_cloud(i,k,j) = MAX(2.51E-6,  MIN(re_qc(k),  50.E-6))
-              re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi(k), 125.E-6))
-              re_snow(i,k,j)  = MAX(25.E-6,   MIN(re_qs(k), 999.E-6))
+              if (re_qc(k) /= 0.0) re_cloud(i,k,j) = MAX(2.51E-6,  MIN(re_qc(k),  50.E-6))
+              if (re_qi(k) /= 0.0) re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi(k), 125.E-6))
+              if (re_qs(k) /= 0.0) re_snow(i,k,j)  = MAX(25.E-6,   MIN(re_qs(k), 999.E-6))
             enddo 
           enddo   
         endif     ! has_reqc, etc...
@@ -2644,6 +2644,7 @@ CONTAINS
 
       if (has_qc) then
         do k=kts,kte
+          re_qc(k) = 0.0
           if (rqc(k).le.R1) CYCLE
           lamdac   = (pidnc*nc0/rqc(k))**obmr 
           re_qc(k) =  max(2.51E-6,min(1.5*(1.0/lamdac),50.E-6))
@@ -2652,6 +2653,7 @@ CONTAINS
 
      if (has_qi) then
         do k=kts,kte
+          re_qi(k) = 0.0
           if (rqi(k).le.R1 .or. rni(k).le.R2) CYCLE
           diai = 11.9*sqrt(rqi(k)/ni(k))
           re_qi(k) = max(10.01E-6,min(0.75*0.163*diai,125.E-6))
@@ -2660,6 +2662,7 @@ CONTAINS
 
       if (has_qs) then
         do k=kts,kte
+          re_qs(k) = 0.0
           if (rqs(k).le.R1) CYCLE
           supcol = t0c-t(k)
           n0sfac = max(min(exp(alpha*supcol),n0smax/n0s),1.)

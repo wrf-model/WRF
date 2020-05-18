@@ -942,12 +942,14 @@ CONTAINS
 ! for cloud, ice, and snow.
 
    IF ( config_flags%swint_opt .eq. 2 ) THEN
-      IF ( ( has_reqc .EQ. 1 ) .AND. &
-           ( has_reqi .EQ. 1 ) .AND. &
-           ( has_reqs .EQ. 1 ) .AND. &
-           ( f_qc            ) .AND. &
-           ( f_qi            ) .AND. &
-           ( f_qs            ) ) THEN
+      IF (((( has_reqc .EQ. 1 .AND. has_reqi .EQ. 1 .and. has_reqs .EQ. 1 ) .AND. &
+            ( config_flags%mp_physics == THOMPSON .or.        &
+              config_flags%mp_physics == THOMPSONAERO .or.    &
+              config_flags%mp_physics == WSM6SCHEME )) .or.   &
+            ( has_reqc .EQ. 0 .AND. has_reqi .EQ. 0 .and. has_reqs .EQ. 0 )) .AND. &
+            ( f_qc            ) .AND. &
+            ( f_qi            ) .AND. &
+            ( f_qs            ) ) THEN
          !  everything is A-OK for FARMS
       ELSE
          CALL wrf_error_fatal ('--- ERROR: FARMS (swint_opt==2) requires a different MP scheme')
@@ -1169,7 +1171,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_cloud(i,k,j) = 2.51E-6
+             re_cloud(i,k,j) = 0.0
           end do
           end do
        end do
@@ -1178,7 +1180,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_ice(i,k,j) = 5.01E-6
+             re_ice(i,k,j) = 0.0
           end do
           end do
        end do
@@ -1187,7 +1189,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_snow(i,k,j) = 10.01E-6
+             re_snow(i,k,j) = 0.0
           end do
           end do
        end do

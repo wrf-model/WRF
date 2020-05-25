@@ -101,6 +101,11 @@ program gen_be_v3
    character(len=VarNameLen) :: vartmp
    integer :: nvar_all
 
+   integer, allocatable :: istart_ens(:), iend_ens(:)
+   integer, allocatable :: istart_case(:), iend_case(:)
+   integer :: ens_istart, ens_iend
+   integer :: case_istart, case_iend
+
    logical, allocatable :: do_this_var(:)
    integer, allocatable :: var_dim(:)
 
@@ -334,6 +339,33 @@ program gen_be_v3
 
    ni1 = ni + 1
    nj1 = nj + 1
+
+   ! divide nens among available processors
+   allocate (istart_ens(0:num_procs-1))
+   allocate (iend_ens  (0:num_procs-1))
+   do i = 0, num_procs - 1
+      call para_range(1, nens, num_procs, i, istart_ens(i), iend_ens(i))
+   end do
+
+   ! divide ncase among available processors
+   allocate (istart_case(0:num_procs-1))
+   allocate (iend_case  (0:num_procs-1))
+   do i = 0, num_procs - 1
+      call para_range(1, ncase, num_procs, i, istart_case(i), iend_case(i))
+   end do
+
+   ! loop indices for distributing pert calulcation among processors
+   if ( trim(be_method) == 'ENS' ) then
+      case_istart = 1
+      case_iend   = ncase
+      ens_istart  = istart_ens(myproc)
+      ens_iend    = iend_ens(myproc)
+   else if ( trim(be_method) == 'NMC' ) then
+      case_istart = istart_case(myproc)
+      case_iend   = iend_case(myproc)
+      ens_istart  = 1
+      ens_iend    = 2
+   end if
 
    if ( calc_psi .or. calc_chi ) then
       allocate(mapfac_m(ni,nj))
@@ -572,6 +604,11 @@ program gen_be_v3
       if ( allocated(vertloc_rho) ) deallocate(vertloc_rho)
       if ( allocated(vertloc_kcutoff) ) deallocate(vertloc_kcutoff)
    end if
+
+   deallocate (istart_ens)
+   deallocate (iend_ens  )
+   deallocate (istart_case)
+   deallocate (iend_case  )
 
 if ( myproc == root ) write(stdout,'(a)')' All Done!'
 
@@ -1187,13 +1224,8 @@ subroutine compute_pert
    character(len=DateStrLen)       :: DateStr
    character(len=512)              :: message
 
-   integer, allocatable :: istart_ens(:), iend_ens(:)
-   integer, allocatable :: istart_case(:), iend_case(:)
-   integer, allocatable :: istart_var(:), iend_var(:)
    integer, allocatable :: iproc_var(:)
 
-   integer :: ens_istart, ens_iend
-   integer :: case_istart, case_iend
    integer :: ivs, ive, ie_indx
    integer :: my_nvar, dest_proc
    integer :: this_mpi_real
@@ -1254,32 +1286,6 @@ subroutine compute_pert
    nj1 = nj + 1
    nk1 = nk + 1
    ijk = ni * nj * nk
-
-   ! divide nens among available processors
-   allocate (istart_ens(0:num_procs-1))
-   allocate (iend_ens  (0:num_procs-1))
-   do i = 0, num_procs - 1
-      call para_range(1, nens, num_procs, i, istart_ens(i), iend_ens(i))
-   end do
-
-   ! divide ncase among available processors
-   allocate (istart_case(0:num_procs-1))
-   allocate (iend_case  (0:num_procs-1))
-   do i = 0, num_procs - 1
-      call para_range(1, ncase, num_procs, i, istart_case(i), iend_case(i))
-   end do
-
-   if ( trim(be_method) == 'ENS' ) then
-      case_istart = 1
-      case_iend   = ncase
-      ens_istart  = istart_ens(myproc)
-      ens_iend    = iend_ens(myproc)
-   else if ( trim(be_method) == 'NMC' ) then
-      case_istart = istart_case(myproc)
-      case_iend   = iend_case(myproc)
-      ens_istart  = 1
-      ens_iend    = nens
-   end if
 
    write(stdout,'(a,i4,a,i4,a,i4)') &
       ' Proc ', myproc, ' will read  ens files ', ens_istart, ' - ', ens_iend
@@ -2244,11 +2250,6 @@ subroutine compute_pert
       end if
    end if ! be_method=NMC
 
-   deallocate (istart_ens)
-   deallocate (iend_ens  )
-   deallocate (istart_case)
-   deallocate (iend_case  )
-
    do ic = case_istart, case_iend
       do ie = ens_istart, ens_iend
          do iv = 1, nvar_all
@@ -2302,8 +2303,11 @@ subroutine compute_regcoeff_unbalanced
    real, allocatable   :: regcoeff3(:,:,:)           ! psi/T regression cooefficient
 
    integer :: ic, ie, iv
-   integer :: istart_member, iend_member
+   integer :: istart_member4cov, iend_member4cov  ! index for covariance loop
+   integer :: istart_member4bal, iend_member4bal  ! index for unbalanced loop
    integer :: ounit
+   integer :: this_mpi_real
+   integer :: proc_send
 
    logical :: got_var2_inv
 
@@ -2318,20 +2322,40 @@ subroutine compute_regcoeff_unbalanced
    allocate( bin_pts2d(1:num_bins2d) )
 
    if ( trim(be_method) == 'NMC' ) then
-      istart_member = 1
-      iend_member   = 1
+      istart_member4cov = 1
+      iend_member4cov   = 1
+      istart_member4bal = 1
+      iend_member4bal   = 1
    else if ( trim(be_method) == 'ENS' ) then
-      istart_member = 1
-      iend_member   = nens
+      istart_member4cov = 1
+      iend_member4cov   = nens
+      istart_member4bal = istart_ens(myproc)
+      iend_member4bal   = iend_ens(myproc)
    end if
 
-   var_loop: do iv = 1, nvar
+   allocate( regcoeff1(1:num_bins) )
+   allocate( regcoeff2(1:nk,1:num_bins2d) )
+   allocate( regcoeff3(1:nk,1:nk,1:num_bins2d) )
+   regcoeff1 = 0.0
+   regcoeff2 = 0.0
+   regcoeff3 = 0.0
 
-      if ( .not. do_this_var(iv) ) cycle var_loop
-      if ( myproc /= MOD((iv-1), num_procs) ) cycle var_loop
+#ifdef DM_PARALLEL
+   if ( kind(regcoeff1) == 4 ) then
+      this_mpi_real = mpi_real
+   else
+      this_mpi_real = mpi_real8
+   end if
+#endif
+
+   ! nvar distributed among processors
+   var_loop_regcoef: do iv = 1, nvar
+
+      if ( .not. do_this_var(iv) ) cycle var_loop_regcoef
+      if ( myproc /= MOD((iv-1), num_procs) ) cycle var_loop_regcoef
       if ( trim(varnames(iv)) /= 'CHI_U'  .and. &
            trim(varnames(iv)) /= 'PSFC_U' .and. &
-           trim(varnames(iv)) /= 'T_U'         ) cycle var_loop
+           trim(varnames(iv)) /= 'T_U'         ) cycle var_loop_regcoef
 
       !write(stdout,'(a,i3,2a)') ' Proc', myproc, ' Computing regcoeff for variable ', trim(varnames(iv))
 
@@ -2342,6 +2366,7 @@ subroutine compute_regcoeff_unbalanced
          if ( .not. allocated(chi) )    allocate( chi(1:ni,1:nj,1:nk) )
          if ( .not. allocated(covar1) ) allocate( covar1(1:num_bins) )
          if ( .not. allocated(var1) )   allocate( var1(1:num_bins) )
+         chi(:,:,:) = 0.0
          covar1(:) = 0.0
          var1(:) = 0.0
       end if
@@ -2354,11 +2379,13 @@ subroutine compute_regcoeff_unbalanced
             ! this is needed to make get_pert1_data work for ps
             if ( .not. allocated(ps) )     allocate( ps(1:ni,1:nj,1:nk) )
             if ( .not. allocated(covar2) ) allocate( covar2(1:nk,1:num_bins2d) )
+            ps(:,:,:) = 0.0
             covar2(:,:) = 0.0
          end if
          if ( trim(varnames(iv)) == 'T_U' ) then
             if ( .not. allocated(temp) )   allocate( temp(1:ni,1:nj,1:nk) )
             if ( .not. allocated(covar3) ) allocate( covar3(1:nk,1:nk,1:num_bins2d) )
+            temp(:,:,:) = 0.0
             covar3(:,:,:) = 0.0
          end if
       end if
@@ -2366,7 +2393,7 @@ subroutine compute_regcoeff_unbalanced
       write(stdout,'(a,i3,2a)') ' Proc', myproc, ' Computing psi covariances for variable ', trim(varnames(iv))
 
       do ic = 1, ncase
-         do ie = istart_member, iend_member
+         do ie = istart_member4cov, iend_member4cov
             !write(stdout,'(5a,i4)')'    Processing data for date ', filedates(ie,ic), ', variable ', trim(varnames(iv)), &
             !                  ', member ', ie
 
@@ -2519,7 +2546,6 @@ subroutine compute_regcoeff_unbalanced
       write(stdout,'(a,i3,2a)') ' Proc', myproc, ' Computing regression coefficients for variable ', trim(varnames(iv))
 
       if ( trim(varnames(iv)) == 'CHI_U' ) then
-         allocate( regcoeff1(1:num_bins) )
          ! psi/chi:
          do b = 1, num_bins
             regcoeff1(b) = covar1(b) / var1(b)
@@ -2534,7 +2560,6 @@ subroutine compute_regcoeff_unbalanced
       end if ! chi_u
 
       if ( trim(varnames(iv)) == 'PSFC_U' ) then
-         allocate( regcoeff2(1:nk,1:num_bins2d) )
          ! psi/ps:
          do b = 1, num_bins2d
             do k = 1, nk
@@ -2555,7 +2580,6 @@ subroutine compute_regcoeff_unbalanced
       end if ! ps_u
 
       if ( trim(varnames(iv)) == 'T_U' ) then
-         allocate( regcoeff3(1:nk,1:nk,1:num_bins2d) )
          ! psi/T:
          do b = 1, num_bins2d
             do k = 1, nk
@@ -2597,10 +2621,52 @@ subroutine compute_regcoeff_unbalanced
          deallocate( covar3 )
       end if
 
-      write(stdout,'(a,i3,2a)') ' Proc', myproc, ' Computing unbalanced field for variable ', trim(varnames(iv))
+   end do var_loop_regcoef
 
-      do ic = 1, ncase
-         do ie = istart_member, iend_member
+#ifdef DM_PARALLEL
+      do iv = 1, nvar
+         if ( .not. do_this_var(iv) ) cycle
+         proc_send = MOD((iv-1), num_procs)
+         if ( trim(varnames(iv)) == 'CHI_U' ) then
+            call mpi_bcast(regcoeff1(:), num_bins, this_mpi_real, proc_send, mpi_comm_world, ierr )
+         end if
+         if ( trim(varnames(iv)) == 'PSFC_U' ) then
+            call mpi_bcast(regcoeff2(:,:), nk*num_bins2d, this_mpi_real, proc_send, mpi_comm_world, ierr )
+         end if
+         if ( trim(varnames(iv)) == 'T_U' ) then
+            call mpi_bcast(regcoeff3(:,:,:), nk*nk*num_bins2d, this_mpi_real, proc_send, mpi_comm_world, ierr )
+         end if
+      end do
+#endif
+
+   var_loop_unbal: do iv = 1, nvar
+
+      if ( .not. do_this_var(iv) ) cycle var_loop_unbal
+      if ( trim(varnames(iv)) /= 'CHI_U'  .and. &
+           trim(varnames(iv)) /= 'PSFC_U' .and. &
+           trim(varnames(iv)) /= 'T_U'         ) cycle var_loop_unbal
+
+      if ( myproc == root ) write(stdout,'(2a)') ' Computing unbalanced field for variable ', trim(varnames(iv))
+
+      if ( trim(varnames(iv)) == 'CHI_U' ) then
+         if ( .not. allocated(chi) )   allocate( chi(1:ni,1:nj,1:nk) )
+         chi(:,:,:) = 0.0
+      end if
+      if ( trim(varnames(iv)) == 'PSFC_U' ) then
+         if ( .not. allocated(ps) )    allocate( ps(1:ni,1:nj,1:nk) )
+         ps(:,:,:) = 0.0
+      end if
+      if ( trim(varnames(iv)) == 'T_U' ) then
+         if ( .not. allocated(temp) )  allocate( temp(1:ni,1:nj,1:nk) )
+         temp(:,:,:) = 0.0
+      end if
+
+      ! ncase/nens distributed among processors
+      do ic = case_istart, case_iend
+         do ie = istart_member4bal, iend_member4bal
+
+            !write(stdout,'(a,i3,4a)') ' Proc', myproc, ' Computing unbalanced field for variable ', trim(varnames(iv)), &
+            !                          ' date ', filedates(ie,ic)
 
             ! psi is needed for all variables
             write(ce,'(i3.3)') ie
@@ -2665,6 +2731,10 @@ subroutine compute_regcoeff_unbalanced
          end do ! ens member loop
       end do ! ncase loop
 
+#ifdef DM_PARALLEL
+      call mpi_barrier(mpi_comm_world,ierr)
+#endif
+
       if ( trim(varnames(iv)) == 'CHI_U' ) then
          if ( allocated(chi) ) deallocate( chi )
       end if
@@ -2675,8 +2745,11 @@ subroutine compute_regcoeff_unbalanced
          if ( allocated(temp) ) deallocate( temp )
       end if
 
-   end do var_loop
+   end do var_loop_unbal
 
+   deallocate( regcoeff1 )
+   deallocate( regcoeff2 )
+   deallocate( regcoeff3 )
    deallocate( psi )
    deallocate( bin_pts )
    deallocate( bin_pts2d )
@@ -2692,7 +2765,8 @@ subroutine compute_bv_sl
    character(len=filename_len)  :: output_file
    integer             :: i, j, k, k1, k2, b         ! Loop counters.
    integer             :: ic, ie, iv, m
-   integer :: istart_member, iend_member
+   integer :: istart_member, iend_member             ! loop index for nens
+   integer :: istart_member_p, iend_member_p         ! loop index for projecting to modes
    real                :: inv_nij                    ! 1 / (ni*nj).
    real                :: mean_field                 ! Mean field.
    real                :: coeffa, coeffb             ! Accumulating mean coefficients.
@@ -2748,11 +2822,15 @@ subroutine compute_bv_sl
 #endif
 
    if ( trim(be_method) == 'NMC' ) then
-      istart_member = 1
-      iend_member   = 1
+      istart_member   = 1
+      iend_member     = 1
+      istart_member_p = 1
+      iend_member_p   = 1
    else if ( trim(be_method) == 'ENS' ) then
-      istart_member = 1
-      iend_member   = nens
+      istart_member   = 1
+      iend_member     = nens
+      istart_member_p = istart_ens(myproc)
+      iend_member_p   = iend_ens(myproc)
    end if
 
    if ( pert1_read_opt == 1 ) then
@@ -2807,10 +2885,11 @@ subroutine compute_bv_sl
          allocate( fieldv(1:ni,1:nj,1:nk) )
       end if
 
-      var_loop: do iv = 1, nvar
+      ! nvar distributed among processors
+      var_loop_bv: do iv = 1, nvar
 
-         if ( .not. do_this_var(iv) ) cycle var_loop
-         if ( myproc /= MOD((iv-1), num_procs) ) cycle var_loop
+         if ( .not. do_this_var(iv) ) cycle var_loop_bv
+         if ( myproc /= MOD((iv-1), num_procs) ) cycle var_loop_bv
 
          write(stdout,'(a,i3,2a)') ' Proc', myproc, ' Processing vertical error stats for variable ', trim(varnames(iv))
 
@@ -2953,10 +3032,40 @@ subroutine compute_bv_sl
             end do
          end do
 
+         !  Output eigenvectors, eigenvalues
+         filename = 'EV_'//trim(varnames(iv))//'.dat'
+         open (ounit, file = filename, form='unformatted')
+         write(ounit)varnames(iv)
+         write(ounit)ni, nj, nkk
+         write(ounit)evec(1:nj,1:nkk,1:nkk)
+         write(ounit)eval(1:nj,1:nkk)
+         close(ounit)
+      end do var_loop_bv
+
+#ifdef DM_PARALLEL
+      call mpi_barrier(mpi_comm_world,ierr)
+#endif
+
+      var_loop_proj: do iv = 1, nvar
+
+         if ( .not. do_this_var(iv) ) cycle var_loop_proj
+
          if ( var_dim(iv) == 3 ) then
+
+            ! raed eigenvectors, eigenvalues
+            filename = 'EV_'//trim(varnames(iv))//'.dat'
+            open (iunit, file = filename, form='unformatted')
+            read(iunit) !varnames(iv)
+            read(iunit) !ni, nj, nkk
+            read(iunit) evec(1:nj,1:nk,1:nk)
+            read(iunit) eval(1:nj,1:nk)
+            close(iunit)
+
             if ( myproc == root ) write(stdout,'(a)')' Projecting fields onto vertical modes'
-            do ic = 1, ncase
-               do ie = istart_member, iend_member
+
+            ! ncase/nens distributed among processors
+            do ic = case_istart, case_iend
+               do ie = istart_member_p, iend_member_p
                   !write(stdout,'(5a,i4)')'    Date = ', filedates(ie,ic), ', variable ', trim(varnames(iv)), &
                   !                  ', member ', ie
                   ! Project fields onto vertical modes
@@ -2999,9 +3108,13 @@ subroutine compute_bv_sl
                   close(ounit)
                 end if ! pert1_read_opt
                end do ! End loop over members.
-            end do
-         end if
-      end do var_loop
+            end do ! case loop
+         end if ! var_dim=3
+      end do var_loop_proj
+
+#ifdef DM_PARALLEL
+      call mpi_barrier(mpi_comm_world,ierr)
+#endif
 
       if ( pert1_read_opt == 1 ) then
 #ifdef DM_PARALLEL

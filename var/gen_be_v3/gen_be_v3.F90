@@ -309,6 +309,16 @@ program gen_be_v3
 
    if ( myproc == root ) then
       write(stdout,*) 'ncase, nens = ', ncase, nens
+      if ( trim(be_method) == 'ENS' ) then
+         if ( num_procs > nens ) then
+            call error_handler(-1, 'num_procs must be smaller or equal to nens')
+         end if
+      end if
+      if ( trim(be_method) == 'NMC' ) then
+         if ( num_procs > ncase ) then
+            call error_handler(-1, 'num_procs must be smaller or equal to ncase')
+         end if
+      end if
       if ( verbose ) then
          if ( ncase > 0 .and. nens > 0 ) then
             do i = 1, ncase
@@ -410,10 +420,16 @@ program gen_be_v3
    end if
 
    if ( do_slen_calc ) then
+#ifdef DM_PARALLEL
+      call mpi_barrier(mpi_comm_world,ierr)
+#endif
       call compute_bv_sl
    end if
 
    if ( do_slen_calc ) then
+#ifdef DM_PARALLEL
+      call mpi_barrier(mpi_comm_world,ierr)
+#endif
       allocate(sl_smth(nk))
       if ( write_be_dat_r8 ) then
          allocate(r8tmp1d(1:nk))
@@ -1180,6 +1196,7 @@ subroutine compute_pert
    integer :: case_istart, case_iend
    integer :: ivs, ive, ie_indx
    integer :: my_nvar, dest_proc
+   integer :: this_mpi_real
 
    real(r_single), allocatable :: xfield(:,:,:)
    real(r_single), allocatable :: xfield_u(:,:,:)
@@ -2030,6 +2047,14 @@ subroutine compute_pert
             end if
             allocate (locbuf(ni, nj, nk, nens))
 
+#ifdef DM_PARALLEL
+            if ( kind(locbuf) == 4 ) then
+               this_mpi_real = mpi_real
+            else
+               this_mpi_real = mpi_real8
+            end if
+#endif
+
             my_nvar = 0
             var_loop3: do iv = 1, nvar
                if ( .not. do_this_var(iv) ) cycle var_loop3
@@ -2044,7 +2069,7 @@ subroutine compute_pert
 
 #ifdef DM_PARALLEL
                call mpi_reduce(locbuf,globuf,ijk*nens, &
-                               mpi_real,mpi_sum,root,mpi_comm_world,ierr)
+                               this_mpi_real,mpi_sum,root,mpi_comm_world,ierr)
                if ( ierr /= 0 ) then
                   write(stdout, '(a, i3)') 'Error mpi_reduce on proc', myproc
                   call mpi_abort(mpi_comm_world,1,ierr)
@@ -2278,7 +2303,7 @@ subroutine compute_regcoeff_unbalanced
 
    integer :: ic, ie, iv
    integer :: istart_member, iend_member
-   integer :: iunit, ounit
+   integer :: ounit
 
    logical :: got_var2_inv
 
@@ -2286,7 +2311,6 @@ subroutine compute_regcoeff_unbalanced
       write(stdout,'(a)')' ====== Computing regcoeff and unbalanced fields ======'
    end if
 
-   iunit = 23
    ounit = 24
 
    allocate( psi(1:ni,1:nj,1:nk) )
@@ -2699,6 +2723,7 @@ subroutine compute_bv_sl
    integer :: nn
    integer :: nvar_read, ni_read, nj_read, nk_read, nkk
    integer :: k_start, k_end
+   integer :: this_mpi_real
    integer, allocatable:: nr(:), icount(:)
    real, allocatable   :: cov(:,:)
    real, allocatable   :: ml(:), sl(:)
@@ -2713,6 +2738,14 @@ subroutine compute_bv_sl
 
    inv_nij = 1.0 / real(ni*nj)
    allocate( field(1:ni,1:nj,1:nk) )
+
+#ifdef DM_PARALLEL
+   if ( kind(field) == 4 ) then
+      this_mpi_real = mpi_real
+   else
+      this_mpi_real = mpi_real8
+   end if
+#endif
 
    if ( trim(be_method) == 'NMC' ) then
       istart_member = 1
@@ -2981,7 +3014,7 @@ subroutine compute_bv_sl
                if ( myproc == MOD((iv-1), num_procs) ) then
                   field(:,:,:) = xdata(iv,ie,ic)%value(:,:,:)
                end if
-               call mpi_bcast(field(:,:,:), ijk, mpi_real, proc_send, mpi_comm_world, ierr )
+               call mpi_bcast(field(:,:,:), ijk, this_mpi_real, proc_send, mpi_comm_world, ierr )
                if ( myproc /= MOD((iv-1), num_procs) ) then
                   xdata(iv,ie,ic)%value(:,:,:) = field(:,:,:)
                end if
@@ -3142,12 +3175,12 @@ subroutine compute_bv_sl
                end if
                sl(k) = hl(1) !hcl-num_bins2d=1
                sl(k) = sl(k) / ds ! convert to grid unit
-               write(stdout,'(a,a,i3,f10.3)') 'ScaleLength: ', varnames(iv), k, sl(k)*ds*0.001
+               write(stdout,'(a,a,i3,f10.3,a)') 'ScaleLength: ', varnames(iv), k, sl(k)*ds*0.001, ' km'
                be_data(iv)%scale_length(k) = sl(k)
             end do k_loop_opt2
 #ifdef DM_PARALLEL
             call mpi_allreduce(sl(:),sl_g(:), nk, &
-                               mpi_real, mpi_sum, mpi_comm_world, ierr)
+                               this_mpi_real, mpi_sum, mpi_comm_world, ierr)
 #else
             sl_g(:) = sl(:)
 #endif

@@ -943,9 +943,9 @@ CONTAINS
 
    IF ( config_flags%swint_opt .eq. 2 ) THEN
       IF (((( has_reqc .EQ. 1 .AND. has_reqi .EQ. 1 .and. has_reqs .EQ. 1 ) .AND. &
-            ( config_flags%mp_physics == THOMPSON .or.        &
-              config_flags%mp_physics == THOMPSONAERO .or.    &
-              config_flags%mp_physics == WSM6SCHEME )) .or.   &
+            ( config_flags%mp_physics == THOMPSON .OR.        &
+              config_flags%mp_physics == THOMPSONAERO .OR.    &
+              config_flags%mp_physics == WSM6SCHEME )) .OR.   &
             ( has_reqc .EQ. 0 .AND. has_reqi .EQ. 0 .and. has_reqs .EQ. 0 )) .AND. &
             ( f_qc            ) .AND. &
             ( f_qi            ) .AND. &

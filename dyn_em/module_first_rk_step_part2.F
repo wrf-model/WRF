@@ -1035,7 +1035,7 @@ BENCH_START(hor_diff_tim)
                                       grid%div,                     &
                                       moist, chem, scalar,tracer,               &
                                       grid%msfux,grid%msfuy, grid%msfvx,grid%msfvy, grid%msftx,  &
-                                      grid%msfty, grid%xkmh, grid%xkhh, config_flags%km_opt,     &
+                                      grid%msfty, grid%xkmh, grid%xkmv, grid%xkhh, config_flags%km_opt,     &
                                       grid%rdx, grid%rdy, grid%rdz, grid%rdzw,                   &
                                       grid%fnm, grid%fnp, grid%cf1, grid%cf2, grid%cf3,          &
                                       grid%zx, grid%zy, grid%dn, grid%dnw, grid%rho,             &

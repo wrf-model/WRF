@@ -38,6 +38,7 @@ README.md				@wrf-model/global_owner
 /phys/					@wrf-model/physics
 
 /phys/module_mp_thompson.F		@gthompsnWRF @wrf-model/physics
+/phys/module_diag_nwp.F                 @gthompsnWRF @wrf-model/physics
 /phys/module_mp_jensen_ishmael.F	@graupely @wrf-model/physics
 /phys/module_mp_gsfcgce_4ice_nuwrf.F	@cacruz @wrf-model/physics
 /phys/module_sf_noahmp*.F		@barlage @wrf-model/physics
@@ -47,6 +48,9 @@ README.md				@wrf-model/global_owner
 /phys/module_sf_px*.F 			@coawstwx @wrf-model/physics
 /phys/module_bl_acm.F  			@coawstwx @wrf-model/physics
 /phys/module_sf_ruclsm.F		@tanyasmirnova @wrf-model/physics
+/phys/module_mp_fast_sbm.F		@JS-WRF-SBM @wrf-model/physics
+/phys/module_mp_full_sbm.F		@JS-WRF-SBM @wrf-model/physics
+/phys/module_mp_SBM_polar_radar.F	@JS-WRF-SBM @wrf-model/physics
 
 #	Shared Physics Between MPAS and WRF
 

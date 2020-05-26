@@ -1143,7 +1143,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       #CONFIGURE_TRADFLAG  # causing troubles with xl cpp on AIX, -traditional removed fom default settings
@@ -1192,7 +1192,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       
@@ -1403,7 +1403,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) $(BYTESWAPIO) $(MPI_INC) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO) $(MPI_INC) #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       CONFIGURE_TRADFLAG
@@ -1452,7 +1452,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       CONFIGURE_TRADFLAG
@@ -1497,7 +1497,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=32767 $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=32767 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       CONFIGURE_TRADFLAG

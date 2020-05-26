@@ -982,7 +982,7 @@
 #if ( WRF_CHEM == 1 )
                               rainprod, evapprod, &
 #endif
-                              refl_10cm, diagflag, do_radar_ref,      &
+                              refl_10cm, diagflag, ke_diag, do_radar_ref,      &
                               re_cloud, re_ice, re_snow,              &
                               has_reqc, has_reqi, has_reqs,           &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
@@ -1038,8 +1038,10 @@
       INTEGER:: kmax_qc,kmax_qr,kmax_qi,kmax_qs,kmax_qg,kmax_ni,kmax_nr
       INTEGER:: i_start, j_start, i_end, j_end
       LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
-      INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+      INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref, ke_diag
       CHARACTER*256:: mp_debug
+      
+      integer :: kediagloc
 
 !+---+
 
@@ -1285,8 +1287,15 @@
 
          IF ( PRESENT (diagflag) ) THEN
          if (diagflag .and. do_radar_ref == 1) then
+          
+          IF ( present(ke_diag) ) THEN
+            kediagloc = ke_diag
+          ELSE
+            kediagloc = kte
+          ENDIF
+          
           call calc_refl10cm (qv1d, qc1d, qr1d, nr1d, qs1d, qg1d,       &
-                      t1d, p1d, dBZ, kts, kte, i, j)
+                      t1d, p1d, dBZ, kts, kte, i, j, kediagloc)
           do k = kts, kte
              refl_10cm(i,k,j) = MAX(-35., dBZ(k))
           enddo
@@ -1839,7 +1848,7 @@
 
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = (2.5 + 2.5/7. * (ygra1+7.))
+         zans1 = (3.5 + 2./7. * (ygra1+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
@@ -2900,7 +2909,7 @@
 
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = (2.5 + 2.5/7. * (ygra1+7.))
+         zans1 = (3.5 + 2./7. * (ygra1+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
@@ -5132,12 +5141,12 @@
 !+---+-----------------------------------------------------------------+
 
       subroutine calc_refl10cm (qv1d, qc1d, qr1d, nr1d, qs1d, qg1d,     &
-                          t1d, p1d, dBZ, kts, kte, ii, jj)
+                          t1d, p1d, dBZ, kts, kte, ii, jj, ke_diag)
 
       IMPLICIT NONE
 
 !..Sub arguments
-      INTEGER, INTENT(IN):: kts, kte, ii, jj
+      INTEGER, INTENT(IN):: kts, kte, ii, jj, ke_diag
       REAL, DIMENSION(kts:kte), INTENT(IN)::                            &
                           qv1d, qc1d, qr1d, nr1d, qs1d, qg1d, t1d, p1d
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: dBZ
@@ -5160,12 +5169,13 @@
       REAL:: a_, b_, loga_, tc0
       DOUBLE PRECISION:: fmelt_s, fmelt_g
 
-      INTEGER:: i, k, k_0, kbot, n
+      INTEGER:: i, k, k_0, kbot, n, ktop
       LOGICAL:: melti
       LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
 
       DOUBLE PRECISION:: cback, x, eta, f_d
       REAL:: xslw1, ygra1, zans1
+      INTEGER :: k_0loop
 
 !+---+
 
@@ -5176,6 +5186,7 @@
 !+---+-----------------------------------------------------------------+
 !..Put column of data into local arrays.
 !+---+-----------------------------------------------------------------+
+
       do k = kts, kte
          temp(k) = t1d(k)
          qv(k) = MAX(1.E-10, qv1d(k))
@@ -5222,8 +5233,9 @@
          smoc(k) = 0.
          smoz(k) = 0.
       enddo
-      if (ANY(L_qs .eqv. .true.)) then
-      do k = kts, kte
+      if ( ( ke_diag > kts .and. ANY(L_qs .eqv. .true.) ) .or.  &
+            (ke_diag == kts .and. L_qs(kts) .eqv. .true. ) ) then
+      do k = kts, ke_diag ! kte
          if (.not. L_qs(k)) CYCLE
          tc0 = MIN(-0.1, temp(k)-273.15)
          smob(k) = rs(k)*oams
@@ -5282,7 +5294,7 @@
       if (ANY(L_qg .eqv. .true.)) then
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = (2.5 + 2.5/7. * (ygra1+7.))
+         zans1 = (3.5 + 2./7. * (ygra1+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
@@ -5307,13 +5319,16 @@
       enddo
  195  continue
 
+! Set loop limit for wet ice according to whether the full 3D field is needed or just k=1
+      k_0loop = Min(k_0, ke_diag+1)
+
 !+---+-----------------------------------------------------------------+
 !..Assume Rayleigh approximation at 10 cm wavelength. Rain (all temps)
 !.. and non-water-coated snow and graupel when below freezing are
 !.. simple. Integrations of m(D)*m(D)*N(D)*dD.
 !+---+-----------------------------------------------------------------+
 
-      do k = kts, kte
+      do k = kts, ke_diag ! kte
          ze_rain(k) = 1.e-22
          ze_snow(k) = 1.e-22
          ze_graupel(k) = 1.e-22
@@ -5334,7 +5349,7 @@
 !+---+-----------------------------------------------------------------+
 
       if (.not. iiwarm .and. melti .and. k_0.ge.2) then
-       do k = k_0-1, kts, -1
+       do k = k_0loop-1, kts, -1
 
 !..Reflectivity contributed by melting snow
           if (L_qs(k) .and. L_qs(k_0) ) then
@@ -5381,7 +5396,7 @@
        enddo
       endif
 
-      do k = kte, kts, -1
+      do k = ke_diag, kts, -1
          dBZ(k) = 10.*log10((ze_rain(k)+ze_snow(k)+ze_graupel(k))*1.d18)
       enddo
 

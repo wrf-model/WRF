@@ -136,8 +136,8 @@ SUBROUTINE sprinkler_irrigation(  julian_in                                     
          INTENT(INOUT) ::                                       &
                                                         qr_curr
    REAL, INTENT(IN   ) :: dt
-!
-   constants_irrigation=irr_freq*irr_daily_amount/(irr_num_hours*3600*rho(a,kms,b)*dz8w(a,kms,b)*100)
+   end_hour=irr_start_hour+irr_num_hours
+
    xt24=mod(xtime,1440.)
    tloc=floor(gmt+xt24/60.)
    if(tloc.lt.0) tloc=tloc+24
@@ -146,7 +146,10 @@ SUBROUTINE sprinkler_irrigation(  julian_in                                     
    DO a=its, ite
      DO b=jts,jte
 
-      IF ((tloc.GE.irr_start_hour .AND. tloc.LT.end_hour) .AND. (irrigation(a,b).GE.0.1) .AND. (julian_in.GE.irr_start_julianday .AND. julian_in.LT.irr_end_julianday )) THEN
+      constants_irrigation=irr_freq*irr_daily_amount/(irr_num_hours*3600*rho(a,kms,b)*dz8w(a,kms,b)*100)
+      IF ( (tloc.GE.irr_start_hour .AND. tloc.LT.end_hour) .AND. &
+          (irrigation(a,b).GE.0.1) .AND. &
+          (julian_in.GE.irr_start_julianday .AND. julian_in.LT.irr_end_julianday ) ) THEN
         CALL irr_calc_phase(irr_ph,phase,irr_rand_field_val(a,b),a,b,irrigation(a,b),irr_freq)
         IF(irr_ph.EQ.0) THEN
               qr_curr(a,kms,b)=qr_curr(a,kms,b)+irrigation(a,b)*constants_irrigation*dt

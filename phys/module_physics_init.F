@@ -938,7 +938,23 @@ CONTAINS
       has_reqs = 0
    end if
 
-   ENDIF
+! If using FARMS (swint_opt==2), we need both effective radii and the mass
+! for cloud, ice, and snow.
+
+   IF ( config_flags%swint_opt .eq. 2 ) THEN
+      IF ( ( has_reqc .EQ. 1 ) .AND. &
+           ( has_reqi .EQ. 1 ) .AND. &
+           ( has_reqs .EQ. 1 ) .AND. &
+           ( f_qc            ) .AND. &
+           ( f_qi            ) .AND. &
+           ( f_qs            ) ) THEN
+         !  everything is A-OK for FARMS
+      ELSE
+         CALL wrf_error_fatal ('--- ERROR: FARMS (swint_opt==2) requires a different MP scheme')
+      END IF
+   END IF
+
+   ENDIF ! use_mp_re .EQ. 1
 
 !-- should be from the namelist
 
@@ -5281,12 +5297,21 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
 
      integer :: i, j
 
+#if 0
      do j = jts, min(jde-1,jte)
         do i = its, min(ide-1,ite)
            area2d(i,j) = dx/msftx(i,j) * dy/msfty(i,j)
            dx2d  (i,j) = sqrt ( area2d(i,j) )
         end do
      end do
+#else
+     do j = jts, min(jde-1,jte)
+        do i = its, min(ide-1,ite)
+           area2d(i,j) = dx * dy
+           dx2d  (i,j) = dx
+        end do
+     end do
+#endif
 
   end subroutine compute_2d_dx_area
 

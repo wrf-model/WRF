@@ -345,16 +345,17 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
 
              vd_cor(l) = 2./9.*g0*rho_priv(k)*rwet_priv(k)**2/viscosity  ! Settling velocity, depends on temp
 
-            ! Update mixing ratio; order of delz: top->sfc
-            temp_tc=tc(i,j,l,k)                                          ! temp_tc - for temporal storage [ug/kg]            
-            vd_wk1 = dt_settl(k)*vd_cor(l)/delz(i,j,l2)                  ! fraction to leave level
+             ! Update mixing ratio; order of delz: top->sfc
+             temp_tc=tc(i,j,l,k)                                          ! temp_tc - for temporal storage [ug/kg]            
+             vd_wk1 = dt_settl(k)*vd_cor(l)/delz(i,j,l2)                  ! fraction to leave level
 
-            tc(i,j,l,k)   =  tc(i,j,l,k)*(1.- vd_wk1)+transfer_to_below_level          ! [ug/kg]
-            transfer_to_below_level = (temp_tc*vd_wk1)*((delz(i,j,l2)*airden(i,j,l))/(delz(i,j,l2+1)*airden(i,j,l-1))) ! [ug/kg]
-
+             tc(i,j,l,k)   =  tc(i,j,l,k)*(1.- vd_wk1)+transfer_to_below_level          ! [ug/kg]
+            
              IF (l==1) THEN
                 graset(i,j,k)=graset(i,j,k)+vd_cor(l)*temp_tc/ndt_settl(k) ! [ug/kg][m/s]
                 grasetvel(i,j,k)=vd_cor(l)                                 ! [m/s]
+             ELSE
+                transfer_to_below_level = (temp_tc*vd_wk1)*((delz(i,j,l2)*airden(i,j,l))/(delz(i,j,l2+1)*airden(i,j,l-1))) ! [ug/kg]
              ENDIF
           ENDDO                 !l, height
         ENDDO                   !n, time

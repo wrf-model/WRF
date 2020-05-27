@@ -53,7 +53,11 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
    logical            :: qual_clddet(num_clddet_cats)
    character(len=10)  :: crit_names_clddet(num_clddet_tests)
    integer            :: nrej_clddet(nchan,num_clddet_tests+1)
-   integer*2          :: clddet_tests(num_clddet_tests)
+   integer*2          :: clddet_tests(iv%instid(i)%superob_width, &
+                                      iv%instid(i)%superob_width, &
+                                      num_clddet_tests)
+   integer            :: superob_center
+   integer            :: isuper, jsuper
 
    real, pointer      :: tb_ob(:,:), tb_xb(:,:), tb_inv(:,:), tb_xb_clr(:,:), ca_mean(:,:)
    integer            :: tb_qc(nchan), tb_qc_clddet(nchan)
@@ -132,10 +136,14 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
    nrej_clddet(:,:)= 0  
    num_proc_domain = 0
 
-   tb_ob => ob%instid(i)%tb
+   superob_center = ahi_superob_halfwidth + 1
+
    tb_xb => iv%instid(i)%tb_xb
    tb_inv => iv%instid(i)%tb_inv
-   do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
+   AHIPixelQCLoop: do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
+
+      tb_ob => ob%instid(i)%tb
+
       if (iv%instid(i)%info%proc_domain(1,n)) &
             num_proc_domain = num_proc_domain + 1
 
@@ -214,11 +222,16 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
             iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
             iv%instid(i)%satzen(n), iv%instid(i)%satazi(n), &
             iv%instid(i)%solzen(n), iv%instid(i)%solazi(n), &
-            iv%instid(i)%tropt(n), iv%instid(i)%cld_qc(n)%terr_hgt, &
+            iv%instid(i)%tropt(n), iv%instid(i)%superob(superob_center,superob_center)%cld_qc(n)%terr_hgt, &
             iv%instid(i)%info%date_char(n)
 !JJGDEBUG
 
          clddet_tests = 0
+
+         do jsuper = 1, iv%instid(i)%superob_width
+         do isuper = 1, iv%instid(i)%superob_width
+
+         tb_ob => iv%instid(i)%superob(isuper,jsuper)%tb_obs
 
          if ( tb_xb(ch14,n) .gt. 0. .and. iv%instid(i)%tropt(n) .gt. 0. ) then
             tb_temp1  = tb_ob(ch14,n)
@@ -258,7 +271,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
 
          tb_qc_clddet = tb_qc
 
-         do itest = 1, num_clddet_tests
+         AHICloudTestLoop: do itest = 1, num_clddet_tests
             qual_clddet = .true.
             offset_clddet = 0
             crit_clddet = missing_r
@@ -267,7 +280,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                   !--------------------------------------------------------------------------
                   ! 4.1 Relative Thermal Contrast Test (RTCT)
                   !--------------------------------------------------------------------------
-                  crit_clddet = iv%instid(i)%cld_qc(n)%RTCT
+                  crit_clddet = iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%RTCT
                   qual_clddet(3:4) = .false.			  
                case (2)
                   !--------------------------------------------------------------------------
@@ -284,7 +297,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                   ! See ABI Cloud Mask Description for qual_clddet
                   qual_clddet = (tb_xb(ch14,n).ge.tb_xb(ch15,n))
                   if ( (tb_inv(ch14,n) + tb_xb(ch14,n)).le.310. .and. &
-                       iv%instid(i)%cld_qc(n)%tb_stddev_14.ge.0.3 .and. &
+                       iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%tb_stddev_14.ge.0.3 .and. &
                        tb_ob(ch14,n).gt.0. .and. tb_ob(ch15,n).gt.0. ) &
                         crit_clddet = ( tb_ob(ch14,n) - tb_ob(ch15,n) )
 ! above using ob without VarBC 
@@ -321,18 +334,18 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                   qual_clddet(2)   = qual_clddet(2) .and. tb_ob(ch14,n) .le. 300.
                   qual_clddet(3:4) = .false.
 
-                  crit_clddet = iv%instid(i)%cld_qc(n)%RFMFT
+                  crit_clddet = iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%RFMFT
                case (6)
                   !--------------------------------------------------------------------------
                   ! 4.6 Cirrus Water Vapor Test (CIRH2O)
                   !--------------------------------------------------------------------------
                   ! See ABI Cloud Mask Description for qual_clddet
                   qual_clddet = &
-                           iv%instid(i)%cld_qc(n)%terr_hgt .le. 2000.  &
-                     .and. iv%instid(i)%cld_qc(n)%terr_hgt .ge. 0.  &						   
-                     .and. iv%instid(i)%cld_qc(n)%tb_stddev_10 .gt. 0.5 &
-                     .and. iv%instid(i)%cld_qc(n)%tb_stddev_14 .gt. 0.5
-                     crit_clddet = iv%instid(i)%cld_qc(n)%CIRH2O
+                          iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%terr_hgt .le. 2000.  &
+                     .and. iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%terr_hgt .ge. 0.  &
+                     .and. iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%tb_stddev_10 .gt. 0.5 &
+                     .and. iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%tb_stddev_14 .gt. 0.5
+                     crit_clddet = iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%CIRH2O
                case (7)
                   !--------------------------------------------------------------------------
                   ! 4.7 Modified 4um Emissivity Test (M-4EMISS)
@@ -381,7 +394,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                   !--------------------------------------------------------------------------
                   ! 4.10 Temporal Infrared Test (TEMPIR)
                   !--------------------------------------------------------------------------
-                  crit_clddet = iv%instid(i)%cld_qc(n)%TEMPIR
+                  crit_clddet = iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%TEMPIR
                case default
                   cycle
             end select
@@ -403,9 +416,17 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
         !          write(stdout,"(A,F14.6,A,I4,2D12.4)") trim(crit_names_clddet(itest)), crit_clddet, " isflg", isflg, iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n)
                end if
 
-               clddet_tests(itest) = 1
+               clddet_tests(isuper, jsuper, itest) = 1
             end if
-         end do
+         end do AHICloudTestLoop
+         end do ! isuper
+         end do ! jsuper
+
+         if ( iv%instid(i)%superob_width > 1 ) then
+            iv%instid(i)%cloud_frac(n) = &
+               real( count(sum(clddet_tests,3) > 0),8) / real( iv%instid(i)%superob_width**2,8)
+         end if
+
          if (.not. crtm_cloud ) tb_qc = tb_qc_clddet
 
 !JJGDEBUG
@@ -450,6 +471,9 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
             if (iv%instid(i)%cloud_flag(k,n) == qc_bad) tb_qc(k) = qc_bad
          end do
       end if ahi_clddet  
+
+      tb_ob => ob%instid(i)%tb
+
       ! ---------------------------calculate and save ca_mean for crtm_cloud and crtm_clr
       ! 5.0 assigning obs errors
 	     tb_xb_clr => iv%instid(i)%tb_xb_clr  	 
@@ -477,13 +501,17 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                         nrej_omb_abs(k) = nrej_omb_abs(k) + 1
             end if			
          end do ! nchan
-	     if (use_clddet_zz) then	
-          ! SDob cloud inhomogeneous check
-             if (iv%instid(i)%cld_qc(n)%tb_stddev_13 >= 2) then ! only use abs clear pixel		
-                 tb_qc = qc_bad				 
-                 if (iv%instid(i)%info%proc_domain(1,n)) &			
-				 nrej_clddet(:,11)= nrej_clddet(:,11)+1
-             end if
+         if (use_clddet_zz) then
+            ! SDob cloud inhomogeneous check
+            do isuper = 1, iv%instid(i)%superob_width
+            do jsuper = 1, iv%instid(i)%superob_width
+               if (iv%instid(i)%superob(isuper,jsuper)%cld_qc(n)%tb_stddev_13 >= 2) then ! only use abs clear pixel
+                  tb_qc = qc_bad
+                  if (iv%instid(i)%info%proc_domain(1,n)) &
+                     nrej_clddet(:,11)= nrej_clddet(:,11)+1
+               end if
+            end do
+            end do
          end if		  
       end if
 
@@ -512,7 +540,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                  ngood(k) = ngood(k) + 1
            end if
       end do      ! nchan	  
-   end do ! end loop pixel
+   end do AHIPixelQCLoop
  
    ! Do inter-processor communication to gather statistics.
    call da_proc_sum_int  (num_proc_domain)

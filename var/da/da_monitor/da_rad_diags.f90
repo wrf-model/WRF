@@ -58,8 +58,8 @@ program da_rad_diags
    integer, dimension(:), allocatable     :: landsea_mask, soiltyp, vegtyp
    real*4,  dimension(:), allocatable     :: lat, lon, elv, elev
    real*4,  dimension(:), allocatable     :: ret_clw
-   real*4,  dimension(:), allocatable     :: satzen, satazi, t2m, mr2m, u10, v10, ps, ts
-   real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp
+   real*4,  dimension(:), allocatable     :: satzen, satazi, solzen, solazi, t2m, mr2m, u10, v10, ps, ts
+   real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp, cloud_frac
    integer, dimension(:,:), allocatable   :: tb_qc
    real*4,  dimension(:,:), allocatable   :: tb_obs, tb_bak, tb_inv, tb_oma, tb_err, ems, ems_jac
    real*4,  dimension(:,:), allocatable   :: prf_pfull, prf_phalf, prf_t, prf_q, prf_water
@@ -230,6 +230,8 @@ ntime_loop: do itime = 1, ntime
             allocate (          lon(1:total_npixel) )
             allocate (       satzen(1:total_npixel) )
             allocate (       satazi(1:total_npixel) )
+            allocate (       solzen(1:total_npixel) )
+            allocate (       solazi(1:total_npixel) )
             allocate (      ret_clw(1:total_npixel) ) !obs retrieved clw
             allocate (          t2m(1:total_npixel) )
             allocate (         mr2m(1:total_npixel) )
@@ -246,6 +248,7 @@ ntime_loop: do itime = 1, ntime
             allocate (       vegfra(1:total_npixel) )
             allocate (         elev(1:total_npixel) )
             allocate (         clwp(1:total_npixel) ) !model/guess clwp
+            allocate (   cloud_frac(1:total_npixel) )
             allocate ( tb_obs(1:nchan,1:total_npixel) )
             allocate ( tb_bak(1:nchan,1:total_npixel) )
             allocate ( tb_inv(1:nchan,1:total_npixel) )
@@ -341,14 +344,15 @@ ntime_loop: do itime = 1, ntime
 
          npixel_loop: do ipixel = ips, ipe
 
-            read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i6,i3,f6.0,4f8.2,f8.3)',iostat=ios)  &
+            read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i6,i3,f6.0,6f8.2,f8.3)',iostat=ios)  &
                n, datestr2(ipixel), scanpos(ipixel), landsea_mask(ipixel), elv(ipixel), &
-               lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel), ret_clw(ipixel)
+               lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel), solzen(ipixel), &
+               solazi(ipixel), ret_clw(ipixel)
 
-            read(unit=iunit(iproc),fmt='(14x,9f10.2,3i3,3f10.2)',iostat=ios)  &
+            read(unit=iunit(iproc),fmt='(14x,9f10.2,3i3,3f10.2,f15.5)',iostat=ios)  &
                t2m(ipixel), mr2m(ipixel), u10(ipixel), v10(ipixel), ps(ipixel), ts(ipixel), &
                smois(ipixel), tslb(ipixel), snowh(ipixel), isflg(ipixel), soiltyp(ipixel),  &
-               vegtyp(ipixel), vegfra(ipixel), elev(ipixel), clwp(ipixel)
+               vegtyp(ipixel), vegfra(ipixel), elev(ipixel), clwp(ipixel), cloud_frac(ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! OBS
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_obs(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! BAK
@@ -580,6 +584,8 @@ ntime_loop: do itime = 1, ntime
       ios = NF_DEF_VAR(ncid, 'lon',          NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'satzen',       NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'satazi',       NF_FLOAT, 1, ishape(1), varid)
+      ios = NF_DEF_VAR(ncid, 'solzen',       NF_FLOAT, 1, ishape(1), varid)
+      ios = NF_DEF_VAR(ncid, 'solazi',       NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 't2m',          NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'mr2m',         NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'u10',          NF_FLOAT, 1, ishape(1), varid)
@@ -598,6 +604,7 @@ ntime_loop: do itime = 1, ntime
       if ( amsr2 ) then
          ios = NF_DEF_VAR(ncid, 'ret_clw',   NF_FLOAT, 1, ishape(1), varid)
       end if
+      ios = NF_DEF_VAR(ncid, 'cloud_frac',   NF_FLOAT, 1, ishape(1), varid)
 
       ios = NF_ENDDEF(ncid)
       !
@@ -768,6 +775,10 @@ ntime_loop: do itime = 1, ntime
       ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), satzen)
       ios = NF_INQ_VARID (ncid, 'satazi', varid)
       ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), satazi)
+      ios = NF_INQ_VARID (ncid, 'solzen', varid)
+      ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), solzen)
+      ios = NF_INQ_VARID (ncid, 'solazi', varid)
+      ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), solazi)
       ios = NF_INQ_VARID (ncid, 't2m', varid)
       ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), t2m)
       ios = NF_INQ_VARID (ncid, 'mr2m', varid)
@@ -802,6 +813,8 @@ ntime_loop: do itime = 1, ntime
          ios = NF_INQ_VARID (ncid, 'ret_clw', varid)
          ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), ret_clw)
       end if
+      ios = NF_INQ_VARID (ncid, 'cloud_frac', varid)
+      ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), cloud_frac)
       !
       ios = NF_CLOSE(ncid)
 
@@ -818,6 +831,8 @@ ntime_loop: do itime = 1, ntime
       deallocate ( lon )
       deallocate ( satzen )
       deallocate ( satazi )
+      deallocate ( solzen )
+      deallocate ( solazi )
       deallocate ( t2m )
       deallocate ( mr2m )
       deallocate ( u10 )
@@ -833,6 +848,7 @@ ntime_loop: do itime = 1, ntime
       deallocate ( vegfra )
       deallocate ( elev )
       deallocate ( clwp )
+      deallocate ( cloud_frac )
       deallocate ( ret_clw )
       deallocate ( tb_obs )
       deallocate ( tb_bak )

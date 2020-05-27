@@ -6,7 +6,7 @@ MODULE ESMF_Mod
    USE WRF_ESMF_BaseTimeMod
    USE WRF_ESMF_CalendarMod
    USE WRF_ESMF_ClockMod
-   USE esmf_fractionmod
+   USE WRF_ESMF_FractionMod
    USE WRF_ESMF_TimeIntervalMod
    USE WRF_ESMF_TimeMod
    USE WRF_ESMF_AlarmClockMod

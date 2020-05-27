@@ -3991,11 +3991,12 @@ enddo
       &                      xland,domain_id,ivgtyp,xlat,xlong,          &
       &                      QV,QC,QR,QI,QS,QG,QV_OLD,                   &
       &                      QNC,QNR,QNI,QNS,QNG,QNA,                    &
-      &                      ids,ide, jds,jde, kds,kde,		        	     &
-      &                      ims,ime, jms,jme, kms,kme,		        	     &
+      &                      ids,ide, jds,jde, kds,kde,                  &
+      &                      ims,ime, jms,jme, kms,kme,                  &
       &                      its,ite, jts,jte, kts,kte,                  &
-      &                      diagflag,      	                           &
+      &                      diagflag,                                   &
       &                      sbmradar,num_sbmradar,                      &
+      &                      sbm_diagnostics,                            &
       &                      RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,SR)
  !-----------------------------------------------------------------------
        IMPLICIT NONE
@@ -4005,7 +4006,8 @@ enddo
  	INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
  	&                     ,IMS,IME,JMS,JME,KMS,KME                    &
  	&                     ,ITS,ITE,JTS,JTE,KTS,KTE                    &
- 	&                     ,ITIMESTEP,N_CHEM,NUM_SBMRADAR,domain_id
+ 	&                     ,ITIMESTEP,N_CHEM,NUM_SBMRADAR,domain_id    &
+ 	&                     ,sbm_diagnostics
 
  	REAL, INTENT(IN) 	    :: DT,DX,DY
  	REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), &
@@ -5128,7 +5130,7 @@ enddo
 ! ... Polarimetric Forward Radar Operator
 ! ..........................................
   if ( PRESENT (diagflag) ) then
-    if( diagflag .and. IPolar_HUCM ) then
+    if( diagflag .and. IPolar_HUCM .and. (sbm_diagnostics==1) ) then
 
       dx_dbl = dx
       dy_dbl = dy
@@ -6069,19 +6071,6 @@ enddo
    	DM_BCAST_MACRO_R16 ( FBF5 )
    	DM_BCAST_MACRO_R16 ( FAB5 )
    	DM_BCAST_MACRO_R16 ( FBB5 )
- ! ### (KS) - Broadcating Temperature intervals
-   	CALL wrf_dm_bcast_integer ( temps_water , size ( temps_water ) )
-   	CALL wrf_dm_bcast_integer ( temps_fd , size ( temps_fd ) )
-   	CALL wrf_dm_bcast_integer ( temps_crystals , size ( temps_crystals ) )
-   	CALL wrf_dm_bcast_integer ( temps_snow , size ( temps_snow ) )
-   	CALL wrf_dm_bcast_integer ( temps_graupel , size ( temps_graupel ) )
-   	CALL wrf_dm_bcast_integer ( temps_hail , size ( temps_hail ) )
- ! ### (KS) - Broadcating Liquid fraction intervals
-   	DM_BCAST_MACRO_R4 ( fws_fd )
-   	DM_BCAST_MACRO_R4 ( fws_crystals )
-   	DM_BCAST_MACRO_R4 ( fws_snow )
-   	DM_BCAST_MACRO_R4 ( fws_graupel )
-   	DM_BCAST_MACRO_R4 ( fws_hail )
  ! ### (KS) - Broadcating Usetables array
  	  CALL wrf_dm_bcast_integer ( usetables , size ( usetables ) * IWORDSIZE )
 #endif

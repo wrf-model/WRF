@@ -5,7 +5,7 @@ module da_radiance1
    !---------------------------------------------------------------------------
 
 #if defined(RTTOV) || defined(CRTM)
-   use module_radiance, only : satinfo,q2ppmv,rttov_inst_name
+   use module_radiance, only : satinfo,q2ppmv,rttov_inst_name,deg2rad
 #ifdef CRTM
    use module_radiance, only : CRTM_Planck_Radiance, CRTM_Planck_Temperature
 #endif
@@ -21,10 +21,10 @@ module da_radiance1
       global, gas_constant, gravity, monitor_on,kts,kte,use_rttov_kmatrix, &
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
       use_crtm_kmatrix,use_clddet, use_satcv, cv_size_domain, &
-      cv_size_domain_js, calc_weightfunc, deg_to_rad, rad_to_deg
+      cv_size_domain_js, calc_weightfunc, deg_to_rad, rad_to_deg,use_clddet_zz
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
       iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
-      be_type
+      be_type, clddet_geoir_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
    use da_par_util, only : da_proc_stats_combine
    use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
@@ -47,7 +47,7 @@ module da_radiance1
 
       type (info_type)        :: info
       type (model_loc_type)   :: loc
-
+      type (clddet_geoir_type)    :: cld_qc
       integer   ::  ifgat, landsea_mask, rain_flag
       integer   ::  scanline, scanpos
       real      ::  satzen, satazi, solzen, solazi  !  satellite and solar angles

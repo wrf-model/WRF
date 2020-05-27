@@ -69,6 +69,7 @@ WRFVAR_OBJS = \
    gsi_kinds.o \
    gsi_constants.o \
    gsi_thinning.o \
+   mod_clddet_geoir.o \
    da_wrfvar_io.o \
    da_airsr.o \
    da_wrfvar_top.o \

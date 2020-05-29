@@ -17,7 +17,7 @@ endif
 
 ( cd tools/CodeBase ; make clean )
 
-( cd inc ; /bin/rm -f *.inc namelist.default )
+( cd inc ; /bin/rm -f *.inc namelist.default commit_decl )
 
 find . -name \*.dSYM -exec rm -rf {} \; >& /dev/null
 

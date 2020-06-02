@@ -28,13 +28,15 @@
       SUBROUTINE HDIFF(NTSD,DT,FIS,DY,HDAC,HDACV                        &
      &                ,HBM2,DETA1,SIGMA                                 &
 #if ( HWRF == 1 )
-     &                ,T,Q,U,V,Q2,Z,W,SM,SICE,h_diff                    &
+     !&                ,T,Q,U,V,Q2,Z,W,SM,SICE,h_diff                    &
+     &                ,T,Q,U,V,Q2,Z,W,SM,SICE,h_diff,dx,pint,varlen,hadjust &
 #else
      &                ,T,Q,U,V,Q2,Z,W,SM,SICE                           &
 #endif
      &                ,DEF3D                                            &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,CONFIG_FLAGS                                     &
+     &                ,coac_local                                       &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -105,6 +107,15 @@
       REAL,INTENT(IN) :: DT,DY
 #if ( HWRF == 1 )
       REAL,INTENT(IN) :: H_DIFF  
+!!wang
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX
+      REAL, INTENT(IN) :: PINT(ims:ime,jms:jme,kms:kme)
+      REAL,INTENT(IN) :: coac_local
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT)  :: hadjust
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: VARLEN
+      real :: windmean,newL,newL1,newL2,defu1,defv1,defu2,defv2,dddd,scalef
+      logical :: printout
+!!wang
 #endif
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DETA1
@@ -205,6 +216,51 @@
         DEF3D(I,J,K)=0.
       ENDDO
       ENDDO
+
+!wang, new L     
+      DO J=JMS,JME
+      DO I=IMS,IME
+          hadjust(i,j,k)=1.0
+          VARLEN(i,j,k)=-999.0
+      ENDDO
+      ENDDO
+      ! if coac=10, use varibale L, use vorticity length for new L
+      if ( abs(coac_local-10.0) < 1.e-5 ) then
+        DO J=MYJS_P1,MYJE_P1
+        DO I=MYIS_P1,MYIE_P1
+         defu1= U(I+IHE(J),J,K)-U(I+IHW(J),J,K)
+         defv1= V(I,J+1,K)-V(I,J-1,K)
+
+         defu2=U(I,J+1,K)-U(I,J-1,K)
+         defv2=V(I+IHE(J),J,K)-V(I+IHW(J),J,K)
+
+         windmean=sqrt(u(I,J,K)*u(i,j,k)+v(i,j,k)*v(i,j,k))
+         newL1=windmean/max(0.01*windmean,sqrt(defu1*defu1+defv1*defv1)) &
+     &                *sqrt(dy*dy+dx(i,j)*dx(i,j))
+
+         newL1=windmean/max(0.01*windmean,abs(defv2-defu2)) &   ! use vorticity
+     &                *sqrt(dy*dy+dx(i,j)*dx(i,j))
+
+         newL1=windmean/max(0.01*windmean,sqrt(defu1*defu1+defv1*defv1) ) &   !stretching len scale
+     &                *sqrt(dy*dy+dx(i,j)*dx(i,j))
+         newL2=windmean/max(0.01*windmean,sqrt(defu2*defu2+defv2*defv2) ) &   !shear
+     &                *sqrt(dy*dy+dx(i,j)*dx(i,j))
+
+         scalef=(100.0/sqrt(dy*dy+dx(i,j)*dx(i,j)) )**1.45  ! 
+         dddd=sqrt(dy*dy+dx(i,j)*dx(i,j))
+         newL1=newL1*scalef 
+         newL2=newL2*scalef 
+         newL= 0.5*(newL1 + newL2) 
+         if (dy > 1500.0 .and. dy <= 5000.0 )  scalef=(100.0/sqrt(dx(i,j)*dy) )**1.35 ! Domain 2
+         if (dy > 5000.0 )  scalef=(100.0/sqrt(dx(i,j)*dy) )**1.2  ! Domain 1
+
+         VARLEN(i,j,k)=max( min(newL, sqrt(dy*dy+dx(i,j)*dx(i,j))*0.4 ), 10.0 )
+         !VARLEN(i,j,k) = 750.0   ! force constant
+         hadjust(i,j,k)=VARLEN(i,j,k)*VARLEN(i,j,k)/(dy*dy+dx(i,j)*dx(i,j))
+        ENDDO
+        ENDDO
+!!wang newL vorticity L
+      endif ! end coac_local=10.0
 !
 !-----------------------------------------------------------------------
 !***  SLOPE SWITCHES FOR MOISTURE
@@ -344,16 +400,16 @@
         DO J=MYJS1,MYJE1
         DO I=MYIS1,MYIE
           TDIF (I,J)=(TNE (I,J)-TNE (I+IHW(J),J-1)                      &
-     &               +TSE (I,J)-TSE (I+IHW(J),J+1))*HDAC(I,J)
+     &               +TSE (I,J)-TSE (I+IHW(J),J+1))*HDAC(I,J)*hadjust(i,j,k)
           QDIF (I,J)=(QNE (I,J)-QNE (I+IHW(J),J-1)                      &
-     &               +QSE (I,J)-QSE (I+IHW(J),J+1))*HDAC(I,J)*FCDIF
+     &               +QSE (I,J)-QSE (I+IHW(J),J+1))*HDAC(I,J)*FCDIF*hadjust(i,j,k)
           Q2DIF(I,J)=(Q2NE(I,J)-Q2NE(I+IHW(J),J-1)                      &
-     &               +Q2SE(I,J)-Q2SE(I+IHW(J),J+1))*HDAC(I,J)
+     &               +Q2SE(I,J)-Q2SE(I+IHW(J),J+1))*HDAC(I,J)*hadjust(i,j,k)
 !
           UDIF(I,J)=(UNE(I,J)-UNE(I+IVW(J),J-1)                         &
-     &              +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)
+     &              +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)*hadjust(i,j,k)
           VDIF(I,J)=(VNE(I,J)-VNE(I+IVW(J),J-1)                         &
-     &              +VSE(I,J)-VSE(I+IVW(J),J+1))*HDACV(I,J)
+     &              +VSE(I,J)-VSE(I+IVW(J),J+1))*HDACV(I,J)*hadjust(i,j,k)
         ENDDO
         ENDDO
 !
@@ -413,10 +469,10 @@
           DO J=MYJS2,MYJE2
           DO I=MYIS1,MYIE1
             T(I,J,K)=T(I,J,K)-(TNE(I,J)-TNE(I+IHW(J),J-1)               &
-     &                        +TSE(I,J)-TSE(I+IHW(J),J+1))*HDAC(I,J)
+     &                        +TSE(I,J)-TSE(I+IHW(J),J+1))*HDAC(I,J)*hadjust(i,j,k)
             Q(I,J,K)=Q(I,J,K)-(QNE(I,J)-QNE(I+IHW(J),J-1)               &
      &                        +QSE(I,J)-QSE(I+IHW(J),J+1))*HDAC(I,J)    &
-     &                        *FCDIF
+     &                        *FCDIF*hadjust(i,j,k)
           ENDDO
           ENDDO
           
@@ -426,7 +482,7 @@
             DO I=MYIS1,MYIE1
               Q2(I,J,K)=Q2(I,J,K)-(Q2NE(I,J)-Q2NE(I+IHW(J),J-1)         &
      &                            +Q2SE(I,J)-Q2SE(I+IHW(J),J+1))        &
-     &                            *HDAC(I,J)
+     &                            *HDAC(I,J)*hadjust(i,j,k)
             ENDDO
             ENDDO
           ENDIF
@@ -451,9 +507,9 @@
           DO I=MYIS1,MYIE1
 #if ( HWRF == 1 )
             U(I,J,K)=U(I,J,K)-(UNE(I,J)-UNE(I+IVW(J),J-1)               &
-     &                        +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)*h_diff
+     &                        +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)*h_diff*hadjust(i,j,k)
             V(I,J,K)=V(I,J,K)-(VNE(I,J)-VNE(I+IVW(J),J-1)               &
-     &                        +VSE(I,J)-VSE(I+IVW(J),J+1))*HDACV(I,J)*h_diff
+     &                        +VSE(I,J)-VSE(I+IVW(J),J+1))*HDACV(I,J)*h_diff*hadjust(i,j,k)
 #else
             U(I,J,K)=U(I,J,K)-(UNE(I,J)-UNE(I+IVW(J),J-1)               &
      &                        +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)

@@ -249,7 +249,8 @@ CONTAINS
                                         NTRAC, ntcw
 
       real(kind=kind_phys)xkzm_m, xkzm_h, xkzm_s   !! wang, background diff 
-      real :: VAR_RIC,coef_ric_l,coef_ric_s,alpha
+      real :: VAR_RIC,coef_ric_l,coef_ric_s,alpha,alpha_in
+      real(kind=kind_phys)removedis
       logical lprnt
       integer ipr
 
@@ -274,6 +275,13 @@ CONTAINS
 
  !! note 2015,08-19, if we consider rain water, then ntrac=4, and set q1(i,k,4)=QR
  !! here, we do not consider rain water
+
+   alpha_in=alpha
+   removedis=1.0
+   if (alpha < -9.0) then   ! remove k-discontinuity only for alpha < 0
+      removedis=0.7
+      alpha_in=-1.0
+   endif
 
    DO J=jts,jte
 
@@ -384,7 +392,7 @@ CONTAINS
 #if (HWRF==1)
          pert_pbl, ens_random_seed, ens_pblamp,             &
 #endif
-     &   VAR_RIC,coef_ric_l,coef_ric_s,alpha,xland1)
+     &   VAR_RIC,coef_ric_l,coef_ric_s,alpha_in,xland1,removedis)
 
 
 !============================================================================
@@ -551,7 +559,7 @@ CONTAINS
 #if (HWRF==1)
            pert_pbl, ens_random_seed, ens_pblamp,             &
 #endif
-     &   VAR_RIC,coef_ric_l,coef_ric_s,alpha,xland1)
+     &   VAR_RIC,coef_ric_l,coef_ric_s,alpha,xland1,removedis)
 !
       USE MODULE_GFS_MACHINE, only : kind_phys
 !      USE MODULE_GFS_FUNCPHYS, only : fpvs
@@ -626,6 +634,9 @@ CONTAINS
      &                     au(im,km-1),  a1(im,km),                    &
      &                     a2(im,km*ntrac)
 
+!2019
+       real(kind=kind_phys) dkt1(im,km-1),dku1(im,km-1)      ! wang
+       real(kind=kind_phys) removedis                        !wang
 
 !
       real(kind=kind_phys) tcko(im,km),  qcko(im,km,ntrac),            &
@@ -1483,7 +1494,8 @@ CONTAINS
 !
       do k = 1, km1
          do i=1,im
-            if(k >= kpbl(i)) then
+          !  if(k >= kpbl(i)) then
+            if(k >= int( kpbl(i)*removedis) ) then   ! wang, to remove discounnity upper PBL or near PBL top
                bvf2 = g*bf(i,k)*ti(i,k)
                ri   = max(bvf2/shr2(i,k),rimin)
                zk   = vk*zi(i,k+1)
@@ -1493,8 +1505,10 @@ CONTAINS
                   sri      = sqrt(-ri)
 !                 dku(i,k) = xkzmo(i,k) + dk*(1+8.*(-ri)/(1+1.746*sri))
 !                 dkt(i,k) = xkzo(i,k)  + dk*(1+8.*(-ri)/(1+1.286*sri))
-                  dku(i,k) = dk*(1+8.*(-ri)/(1+1.746*sri))
-                  dkt(i,k) = dk*(1+8.*(-ri)/(1+1.286*sri))
+                !w dku(i,k) = dk*(1+8.*(-ri)/(1+1.746*sri))
+                !w dkt(i,k) = dk*(1+8.*(-ri)/(1+1.286*sri))
+                  dku1(i,k) = dk*(1+8.*(-ri)/(1+1.746*sri))
+                  dkt1(i,k) = dk*(1+8.*(-ri)/(1+1.286*sri))
                else             ! stable regime
                   rl2      = zk*rlam/(rlam+zk)
 !!                tem      = rlam * sqrt(0.01*prsi(i,k))
@@ -1510,14 +1524,27 @@ CONTAINS
                   endif
 !                 dku(i,k) = xkzmo(i,k) + tem1 * prnum
 !                 dkt(i,k) = xkzo(i,k)  + tem1
-                  dku(i,k) = tem1 * prnum
-                  dkt(i,k) = tem1
+                !w dku(i,k) = tem1 * prnum
+                !w dkt(i,k) = tem1
+                  dku1(i,k) = tem1 * prnum
+                  dkt1(i,k) = tem1
                endif
 !
-               dku(i,k) = min(dku(i,k),dkmax)
-               dku(i,k) = max(dku(i,k),xkzmo(i,k))
-               dkt(i,k) = min(dkt(i,k),dkmax)
-               dkt(i,k) = max(dkt(i,k),xkzo(i,k))
+              !w dku(i,k) = min(dku(i,k),dkmax)
+              !w dku(i,k) = max(dku(i,k),xkzmo(i,k))
+              !w dkt(i,k) = min(dkt(i,k),dkmax)
+              !w dkt(i,k) = max(dkt(i,k),xkzo(i,k))
+                dku1(i,k) = min(dku1(i,k),dkmax)
+                dku1(i,k) = max(dku1(i,k),xkzmo(i,k))
+                dkt1(i,k) = min(dkt1(i,k),dkmax)
+                dkt1(i,k) = max(dkt1(i,k),xkzo(i,k))
+                 if ( removedis < 1.0 ) then
+                  dku(i,k)=max(dku1(i,k),dku(i,k))
+                  dkt(i,k)=max(dkt1(i,k),dkt(i,k))
+                 else
+                  dku(i,k)=dku1(i,k)
+                  dkt(i,k)=dkt1(i,k)
+                 endif
 !
             endif
 !

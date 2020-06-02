@@ -143,6 +143,7 @@ real::t1,t2
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
+   CALL  wrf_message ( commit_version )
 
    !  Allocate the space for the mother of all domains.
 

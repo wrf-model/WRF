@@ -156,7 +156,6 @@ CONTAINS
      include "mpif.h"
 #endif
 #include "version_decl"
-#include "commit_decl"
 
 
 !<DESCRIPTION>

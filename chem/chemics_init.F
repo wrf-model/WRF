@@ -158,6 +158,7 @@
 
 call wrf_message("*********************************************************************")
 call wrf_message(program_name)
+call wrf_message(commit_version)
 call wrf_message("*                                                                   *")
 call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF-Chem HELP at                     *")
 call wrf_message("*                                                                   *")

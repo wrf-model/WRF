@@ -212,6 +212,7 @@ PROGRAM convert_emissions
    NULLIFY( null_domain )
    
    CALL  wrf_message ( program_name )
+   CALL  wrf_message ( commit_version )
    write(message,FMT='(A)') ' allocate for wrfinput_d01 '
    CALL alloc_and_configure_domain ( domain_id  = 1           , &
                                      grid       = head_grid   , &

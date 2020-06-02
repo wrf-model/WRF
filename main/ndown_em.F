@@ -243,6 +243,7 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
    NULLIFY( null_domain )
 
    CALL       wrf_message ( program_name )
+   CALL       wrf_message ( commit_version )
    CALL       wrf_debug ( 100 , 'ndown_em: calling alloc_and_configure_domain coarse ' )
    CALL alloc_and_configure_domain ( domain_id  = 1 ,                  &
                                      grid       = head_grid ,          &

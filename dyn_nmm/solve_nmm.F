@@ -119,6 +119,7 @@
 !
       REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC,WP
       REAL :: dwdt_damping_lev
+      REAL :: coac_local
 !
       LOGICAL :: LAST_TIME,OPERATIONAL_PHYSICS,ETAMP_PHYSICS
 !
@@ -327,6 +328,7 @@
       IDTADC=model_config_rec%IDTADC
       WP=model_config_rec%WP(grid%id)
       dwdt_damping_lev=model_config_rec%dwdt_damping_lev(grid%id)
+      coac_local=model_config_rec%coac(grid%id)
 !
 !-----------------------------------------------------------------------
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
@@ -1240,6 +1242,9 @@
      &        ,grid%fns,grid%few,grid%fne,grid%fse                      &
      &        ,grid%t,grid%u,grid%v,grid%w,grid%w_tot,grid%q,grid%cwm   &
      &        ,grid%def3d,grid%hdac,grid%baro                           &
+!wang
+     &        ,grid%hadjust                                             &
+!wang
      &        ,WP,dwdt_damping_lev                                      &
      &        ,grid%ihe,grid%ihw,grid%ive,grid%ivw                      &
      &        ,IDS,IDF,JDS,JDF,KDS,KDE                                  &
@@ -2119,13 +2124,18 @@
       CALL HDIFF(grid%ntsd,GRID%DT,grid%fis,grid%dy_nmm,grid%hdac,grid%hdacv         &
      &          ,grid%hbm2,grid%deta1,GRID%SIGMA                       &
 #if ( HWRF == 1 )
+!     &          ,grid%t,grid%q,grid%u,grid%v,grid%q2,grid%z,grid%w,grid%sm,grid%sice,grid%h_diff    &
      &          ,grid%t,grid%q,grid%u,grid%v,grid%q2,grid%z,grid%w,grid%sm,grid%sice,grid%h_diff    &
+!wang
+     &          ,grid%dx_nmm,grid%pint,grid%varlen,grid%hadjust   &
+!wang
 #else
      &          ,grid%t,grid%q,grid%u,grid%v,grid%q2,grid%z,grid%w,grid%sm,grid%sice                &
 #endif
      &          ,grid%def3d                                              &
      &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                   &
      &          ,CONFIG_FLAGS                                          &
+     &          ,coac_local                                            &  ! wang try new L
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)

@@ -1637,6 +1637,30 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
             END DO
          END DO
 
+!!!     Eventually, fill nmm_tsk for water points with sst
+!!!     and fill sst for land points with nmm_tsk
+!!!     as well as check the range for nmm_tsk and sst
+
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+        if (grid%sm(I,J) .gt. 0.5) then
+            grid%nmm_tsk(I,J)=grid%sst(I,J)
+        else
+            grid%sst(I,J)=grid%nmm_tsk(I,J)
+        endif
+
+        if ( grid%nmm_tsk(i,j) .lt. 200. .or. &
+             grid%nmm_tsk(i,j) .gt. 350. .or. &
+             grid%sst(i,j) .lt. 200. .or.     &
+             grid%sst(i,j) .gt. 350. ) then
+          write(message,*) 'nmm_tsk, sst trouble at : ', i,j
+          call wrf_message(message)
+          write(message,*) 'sm, nmm_tsk,sst ', grid%sm(i,j),grid%nmm_tsk(i,j),grid%sst(i,j)
+          call wrf_message(message)
+        endif
+            END DO
+         END DO
+
 !!      check on grid%stc
 
           DO j = jts, MIN(jde-1,jte)

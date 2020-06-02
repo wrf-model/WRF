@@ -1139,6 +1139,10 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
       DO J = JPS, MIN(JPE,JDE-1)
         DO I = IPS, MIN(IPE,IDE-1)
          nest%fis(I,J)=nest%hres_fis(I,J)
+         nest%sm(I,J)=1-nest%hres_lnd(I,J)
+         nest%lu_mask(I,J)=nest%sm(I,J)
+         nest%landmask(I,J)=nest%hres_lnd(I,J)
+         nest%lu_index(I,J)=nest%hres_lu_index(I,J)
        ENDDO
       ENDDO
 

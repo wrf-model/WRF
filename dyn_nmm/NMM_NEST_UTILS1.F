@@ -3272,7 +3272,7 @@ CONTAINS
   SUBROUTINE CLIENT(IDS,IDE,JDS,JDE)
     IMPLICIT NONE
     integer, intent(in) :: IDS,IDE,JDS,JDE
-    REAL, DIMENSION(1,1) :: avc_nest,lnd_nest
+    REAL, DIMENSION(1,1) :: avc_nest,lnd_nest,lu_index_nest
 
      call wrf_debug(1,'call wrf_global_to_patch_real in nest_terrain')
      call wrf_global_to_patch_real(avc_nest,nest%hres_avc,nest%domdesc,'z','xy', &
@@ -3280,6 +3280,10 @@ CONTAINS
                                    ims,   ime,   jms,   jme,   1, 1, &
                                    its,   ite,   jts,   jte,   1, 1)
      call wrf_global_to_patch_real(lnd_nest,nest%hres_lnd,nest%domdesc,'z','xy', &
+                                   ids,   ide-1, jds,   jde-1, 1, 1, &
+                                   ims,   ime,   jms,   jme,   1, 1, &
+                                   its,   ite,   jts,   jte,   1, 1)
+     call wrf_global_to_patch_real(lu_index_nest,nest%hres_lu_index,nest%domdesc,'z','xy', &
                                    ids,   ide-1, jds,   jde-1, 1, 1, &
                                    ims,   ime,   jms,   jme,   1, 1, &
                                    its,   ite,   jts,   jte,   1, 1)
@@ -3291,12 +3295,13 @@ CONTAINS
   SUBROUTINE MASTER(IDS,IDE,JDS,JDE)
     IMPLICIT NONE
     integer, intent(in) :: IDS,IDE,JDS,JDE
-    REAL, DIMENSION(IDS:IDE,JDS:JDE)     :: avc_nest, lnd_nest
+    REAL, DIMENSION(IDS:IDE,JDS:JDE)     :: avc_nest, lnd_nest, lu_index_nest
     type(nmm_terrain), pointer :: tr
 
     nullify(tr)
     avc_nest = 0.0
     lnd_nest = 0.0
+    lu_index_nest = 0.0
     
     tr=>terrain_for(level,input_type,io_form_auxinput2)
 
@@ -3306,6 +3311,7 @@ CONTAINS
        DO i=ids,ide
           avc_nest(i,j) = tr%avc(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
           lnd_nest(i,j) = tr%lnd(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
+          lu_index_nest(i,j) = tr%lu_index(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
        END DO
     END DO
 
@@ -3343,6 +3349,10 @@ CONTAINS
                                   ims,   ime,   jms,   jme,   1, 1, &
                                   its,   ite,   jts,   jte,   1, 1)
     call wrf_global_to_patch_real(lnd_nest,nest%hres_lnd,nest%domdesc,'z','xy', &
+                                  ids,   ide-1, jds,   jde-1, 1, 1, &
+                                  ims,   ime,   jms,   jme,   1, 1, &
+                                  its,   ite,   jts,   jte,   1, 1)
+    call wrf_global_to_patch_real(lu_index_nest,nest%hres_lu_index,nest%domdesc,'z','xy', &
                                   ids,   ide-1, jds,   jde-1, 1, 1, &
                                   ims,   ime,   jms,   jme,   1, 1, &
                                   its,   ite,   jts,   jte,   1, 1)

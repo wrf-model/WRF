@@ -1237,7 +1237,8 @@ subroutine compute_pert
 
    real, allocatable :: vor(:,:,:)    ! vorticity
    real, allocatable :: div(:,:,:)    ! divergence
-   real, allocatable :: psi(:,:,:)    ! stream function
+   real, allocatable :: psi_s(:,:,:)  ! stream function
+   real, allocatable :: psi(:,:,:)    ! stream function on mass grid
    real, allocatable :: chi(:,:,:)    ! velocity potential
    real, allocatable :: ustag(:,:,:)  ! u on staggered grid
    real, allocatable :: vstag(:,:,:)  ! v on staggered grid
@@ -1626,13 +1627,25 @@ subroutine compute_pert
 
          if ( calc_psi .and. got_u .and. got_v ) then
             if ( .not. allocated(vor) ) allocate (vor(ni+1, nj+1, nk))
-            if ( .not. allocated(psi) ) allocate (psi(ni+1, nj+1, nk))
+            if ( .not. allocated(psi_s) ) allocate (psi_s(ni+1, nj+1, nk))
+            if ( .not. allocated(psi) )   allocate (psi(ni, nj, nk))
             ! Calculate vorticity (in center of mass grid on WRF's Arakawa C-grid)
             call da_uv_to_vor_c(ni, nj, nk, ds, &
                                 mapfac_m, mapfac_u, mapfac_v, ustag, vstag, vor)
             ! Calculate streamfunction
             ! Assumes vor converted to Del**2 psi
-            call da_del2a_to_a(ni+1, nj+1, nk, ds, vor, psi)
+            call da_del2a_to_a(ni+1, nj+1, nk, ds, vor, psi_s)
+
+            ! interpolate psi to mass points
+            do k = 1, nk
+               do j = 1, nj
+                  do i = 1, ni
+                     psi(i,j,k) = 0.25 * ( psi_s(i,j,k) + psi_s(i+1,j,k) +     &
+                                           psi_s(i,j+1,k) + psi_s(i+1,j+1,k) )
+                  end do
+               end do
+            end do
+            if ( allocated(psi_s) ) deallocate (psi_s)
          end if ! calc_psi
 
          if ( calc_chi .and. got_u .and. got_v ) then
@@ -1874,7 +1887,9 @@ subroutine compute_pert
          if ( myproc == root ) write(stdout,'(a)') ' ====== Computing ensemble mean ======'
 
          var_loop2: do iv = 1, nvar_all
-            if ( (iv<=nvar) .and. (.not. do_this_var(iv)) ) cycle var_loop2
+            if ( iv <= nvar ) then
+               if ( .not. do_this_var(iv) ) cycle var_loop2
+            end if
             ens_sum_loc(:,:,:) = 0.0 ! initialize for each variable
             ens_sum    (:,:,:) = 0.0 ! initialize for each variable
             do n = istart_ens(myproc),iend_ens(myproc)
@@ -1906,7 +1921,9 @@ subroutine compute_pert
 
          if ( myproc == root ) write(stdout,'(a)') ' ====== Computing ensemble perturbations ======'
          do iv = 1, nvar_all
-            if ( (iv<=nvar) .and. (.not. do_this_var(iv)) ) cycle
+            if ( iv <= nvar ) then
+               if ( .not. do_this_var(iv) ) cycle
+            end if
             do ie = ens_istart, ens_iend ! each proc loops over a subset of ens
                if ( remove_ens_mean ) then
                   xdata(iv,ie,ic)%value(:,:,:) = xdata(iv,ie,ic)%value(:,:,:) - ens_mean(:,:,:,iv)

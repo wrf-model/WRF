@@ -2041,6 +2041,10 @@ CFLAGS_LOCAL    =       -w -O3 -c -march=armv8.2-a
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+### -march=armv8.2-a ###
+### Specify the name of the target architecture
+### such as: armv8.1-a, armv8.2-a, armv8.3-a, armv8.4-a, etc.
+### If you are not clear about the target architecture, this parameter is not necessary
 FCOPTIM         =       -O3 -ftree-vectorize -funroll-loops -march=armv8.2-a
 FCREDUCEDOPT    =       $(FCOPTIM)
 FCNOOPT         =       -O0

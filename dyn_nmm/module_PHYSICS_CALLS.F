@@ -1279,6 +1279,7 @@
         EXNSFC(I,J)=(1.E5/PSFC)**CAPA
         THS(I,J)=(SST(I,J)*EXNSFC(I,J))*SM(I,J)+THS(I,J)*(1.-SM(I,J))
         TSFC(I,J)=THS(I,J)/EXNSFC(I,J)
+        SST(I,J)=SST(I,J)*SM(I,J)+TSFC(I,J)*(1.-SM(I,J)) ! Fill SST values on land points with TSFC (TSK)
         SFCZ(I,J)=FIS(I,J)*G_INV
 !YL     RAIN(I,J)=PREC(I,J)*RHOWATER
         IF (PCPFLG.AND.DDATA(I,J)<100.)THEN
@@ -2070,6 +2071,7 @@
         TSFC2=TSFC(I,J)*TSFC(I,J)
         RADOT(I,J)=HBM2(I,J)*EPSR(I,J)*STBOLT*TSFC2*TSFC2
         THS(I,J)=TSFC(I,J)*EXNSFC(I,J)
+        SST(I,J)=SST(I,J)*SM(I,J)+TSFC(I,J)*(1.-SM(I,J)) ! Update SST values on land points with TSFC (TSK)
         PREC(I,J)=0.
       ENDDO
       ENDDO
@@ -3838,7 +3840,8 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: CWM,Q
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &   !<--- Used only with physics (IKJ)
+      !REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &   !<--- Used only with physics (IKJ)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: F_ICE       &   !<--- Used only with physics (IKJ)
      &                                                     ,F_RAIN
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST),INTENT(OUT) :: MOIST
@@ -3863,6 +3866,12 @@
         QI=0.
         QR=0.
         QW=0.
+
+!wang  2019 make sure the ice and rain fractions are in the range of 0.0 to 1.0
+        F_ice(I,K,J)=max(0.0,min(1.0,F_ice(I,K,J)))
+        F_rain(I,K,J)=max(0.0,min(1.0,F_rain(I,K,J)))
+!wang
+
         FICE=F_ICE(I,K,J)
         FRAIN=F_RAIN(I,K,J)
 !

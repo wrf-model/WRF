@@ -4,7 +4,7 @@ module module_TERRAIN
 
   type nmm_terrain
      integer :: nx,ny,level,input_type,io_form
-     real, pointer, dimension(:,:) :: avc,lnd,lah,loh
+     real, pointer, dimension(:,:) :: avc,lnd,lah,loh,lu_index
      logical :: initialized
   end type nmm_terrain
 
@@ -37,6 +37,7 @@ contains
           nullify(tr%lnd)
           nullify(tr%lah)
           nullify(tr%loh)
+          nullify(tr%lu_index)
        end do
        initialized=.true.
        call wrf_debug(3,'done with init.')
@@ -127,10 +128,12 @@ contains
        ALLOCATE (tr%lnd(tr%nx,tr%ny))
        ALLOCATE (tr%lah(tr%nx,tr%ny))
        ALLOCATE (tr%loh(tr%nx,tr%ny))
+       ALLOCATE (tr%lu_index(tr%nx,tr%ny))
        CALL get_wrfsi_static_2d(nestpath, 'avc', tr%avc)
        CALL get_wrfsi_static_2d(nestpath, 'lnd', tr%lnd)
        CALL get_wrfsi_static_2d(nestpath, 'lah', tr%lah)
        CALL get_wrfsi_static_2d(nestpath, 'loh', tr%loh)
+       CALL get_wrfsi_static_2d(nestpath, 'lu_index', tr%lu_index)
 
     else if (input_type == 2) then
        !
@@ -238,6 +241,17 @@ contains
                 end do
              end do
              call wrf_debug(10,'tr%avc.')
+          else if (cname(1:10) == "LU_INDEX  ") then
+             call wrf_debug(10,'tr%lu_index...')
+             ALLOCATE (tr%lu_index(tr%nx,tr%ny))
+             call wrf_debug(10,'allocated...')
+             do j=1,tr%ny
+                do i=1,tr%nx
+                   tr%lu_index(i,j) = real_domain(i,j,1)
+                end do
+             end do
+             call wrf_debug(10,'tr%lu_index')
+ 
           end if
 
        end do read_loop
@@ -259,6 +273,7 @@ contains
        if(.not. associated(tr%loh))    call readfail(tr,input_fname,'loh')
        if(.not. associated(tr%lnd))    call readfail(tr,input_fname,'lnd')
        if(.not. associated(tr%avc))    call readfail(tr,input_fname,'avc')
+       if(.not. associated(tr%lu_index))    call readfail(tr,input_fname,'lu_index')
        
     else
        CALL wrf_error_fatal('NEST_TERRAIN wrong input_type')

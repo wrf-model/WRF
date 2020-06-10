@@ -29,6 +29,9 @@
                     ,FNS,FEW,FNE,FSE                                    &
                     ,T,U,V,W,W_TOT,Q,CWM                                      &
                     ,DEF3D,HDAC,BARO                                    &
+!wang variable hor length scale
+                    ,hadjust                                            &
+!wang
                     ,WP,dwdt_damping_lev                                                 &    
                     ,IHE,IHW,IVE,IVW                                    &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                            &
@@ -93,7 +96,8 @@
                                                    ,PDSL,PDSLO          &
                                                    ,HDAC,BARO
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PETDT,DEF3D
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PETDT,DEF3D &
+                                                            ,hadjust
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: CWM         &
                                                            ,FEW,FNE     &
@@ -225,7 +229,8 @@
           DO I=MYIS,MYIE
               DWDT(I,J,K)= DWDT(I,J,K) - ( WNE (I,J)-WNE (I+IHW(J),J-1) +  &
                                            WSE (I,J)-WSE (I+IHW(J),J+1) ) * &
-                                           HDAC(I,J)*HBM2(I,J)*RDT 
+                                           ! HDAC(I,J)*HBM2(I,J)*RDT 
+                                          HDAC(I,J)*HBM2(I,J)*RDT*hadjust(i,j,k) 
           ENDDO 
          ENDDO 
         ENDDO

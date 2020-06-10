@@ -1587,6 +1587,30 @@ CONTAINS
             END DO
          END DO
 
+!!!     Eventually, fill nmm_tsk for water points with sst
+!!!     and fill sst for land points with nmm_tsk
+!!!     as well as check the range for nmm_tsk and sst
+
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+        if (grid%sm(I,J) .gt. 0.5) then
+            grid%nmm_tsk(I,J)=grid%sst(I,J)
+        else
+            grid%sst(I,J)=grid%nmm_tsk(I,J)
+        endif
+
+        if ( grid%nmm_tsk(i,j) .lt. 200. .or. &
+             grid%nmm_tsk(i,j) .gt. 350. .or. &
+             grid%sst(i,j) .lt. 200. .or.     &
+             grid%sst(i,j) .gt. 350. ) then
+          write(message,*) 'nmm_tsk, sst trouble at : ', i,j
+          call wrf_message(message)
+          write(message,*) 'sm, nmm_tsk,sst ', grid%sm(i,j),grid%nmm_tsk(i,j),grid%sst(i,j)
+          call wrf_message(message)
+        endif
+            END DO
+         END DO
+
 !!      check on grid%stc
 
           DO j = jts, MIN(jde-1,jte)
@@ -2104,6 +2128,7 @@ CONTAINS
         NIDE,NJDE,PIFE,PJFE,tph0d,tlm0d)
      use mpi
      use module_dm,only: local_communicator
+     use module_TERRAIN
      implicit none
      type(domain), intent(in) :: grid
      INTEGER,PARAMETER                           :: KNUM=SELECTED_REAL_KIND(13)
@@ -2124,6 +2149,14 @@ CONTAINS
           pims, pime, pjms, pjme, pkms, pkme, &
           pits, pite, pjts, pjte, pkts, pkte
      logical, external :: wrf_dm_on_monitor
+
+     type(nmm_terrain), pointer :: tr
+
+     integer                           :: level
+     integer                           :: input_type
+     integer                           :: io_form_auxinput2
+     character(len=255)                :: input_fname
+     logical                           :: file_exists
 
      CALL get_ijk_from_grid (  grid ,              &
           pids, pide, pjds, pjde, pkds, pkde, &
@@ -2251,7 +2284,27 @@ CONTAINS
         write(message,55) bad
         call wrf_error_fatal(message)
      endif
-     
+
+! If file geo_nmm_nest.l01.nc exists, read in high-resolution landsea masks and
+! reset the above-generated sea land mask (obtained from the nearest point method based on its parent domain)
+     input_fname='geo_nmm_nest.l01.nc'
+     inquire(file=trim(input_fname),exist=file_exists)
+     if (file_exists) then
+        write(message,*) 'File ',trim(input_fname),' exists. Read in high-resolution sea land masks.'
+        call wrf_message(message)
+        nullify(tr)
+        level=1
+        input_type=2
+        io_form_auxinput2=2
+        tr=>terrain_for(level,input_type,io_form_auxinput2)
+        do nj=1,njde
+        do ni=1,nide
+           HRES_SM(ni,nj)=1-tr%lnd(ni,nj)
+        enddo
+        enddo
+        nullify(tr)
+     end if
+
      open(file='fort.65',unit=65,form='UNFORMATTED')
      WRITE(65)NHLAT(1:NIDE,1:NJDE)
      WRITE(65)NHLON(1:NIDE,1:NJDE)

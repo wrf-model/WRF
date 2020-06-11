@@ -186,7 +186,7 @@ CONTAINS
           skintempclmean(i,j)=skintemp(i,j)-t273
           skintempclstd(i,j)=(skintemp(i,j)-t273)*(skintemp(i,j)-t273)
 	  tt2clmin(i,j) = xtime + dt/60.  ! value at end of timestep 
-          tt2clmax(i,j) = xtime + dt/60.
+	  tt2clmax(i,j) = xtime + dt/60.
         ENDDO
       ENDDO
     ENDDO

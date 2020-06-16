@@ -514,6 +514,10 @@ module da_define_structures
      real  :: CIRH2O
      !real, allocatable :: CIRH2O(:,:,:)
    end type clddet_geoir_type   
+   type superob_type
+     real, allocatable :: tb_obs(:,:)
+     type(clddet_geoir_type), allocatable :: cld_qc(:)
+   end type superob_type
    type cv_index_type
       integer              :: ts
       integer              :: nclouds
@@ -549,6 +553,7 @@ module da_define_structures
       integer, pointer     :: cloud_flag(:,:)
       integer, pointer     :: cloudflag(:)
       integer, pointer     :: rain_flag(:)
+      real, allocatable    :: cloud_frac(:)
       real,    pointer     :: satzen(:) 
       real,    pointer     :: satazi(:) 
       real,    pointer     :: solzen(:) 
@@ -629,11 +634,12 @@ module da_define_structures
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
       integer, pointer     :: crtm_climat(:) ! CRTM only
-      type (clddet_geoir_type), pointer :: cld_qc(:)
+      integer              :: superob_width = 1
       type (varbc_info_type)        :: varbc_info
       type (varbc_type),pointer     :: varbc(:)
       type (cv_index_type), pointer :: cv_index(:)
       type (infa_type)              :: info
+      type (superob_type), allocatable :: superob(:,:)
    end type instid_type
 
    type iv_type

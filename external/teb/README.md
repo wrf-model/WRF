@@ -38,9 +38,9 @@ Standard/general [WRF documentation](https://www2.mmm.ucar.edu/wrf/users/docs/us
 
 When using WRF-TEB, please cite the paper and software (with version) as follow:
 
-| Model                                                       | Software and Version*             |
-| ----------------------------------------------------------- | --------------------------------- |
-| [Meyer et al., 2020a](https://doi.org/10.1029/2019MS001961) | [see Zenodo](https://zenodo.org/) |
+| Model                                                       | Software and Version*                                |
+| ----------------------------------------------------------- | ---------------------------------------------------- |
+| [Meyer et al., 2020a](https://doi.org/10.1029/2019MS001961) | [see Zenodo](https://doi.org/10.5281/zenodo.3898327) |
 
 The corresponding reference list should be as follows:
 

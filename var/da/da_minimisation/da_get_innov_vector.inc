@@ -209,6 +209,12 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       if (qc_rad) call da_qc_rad(it, ob, iv)
 
       !------------------------------------------------------------------------
+      ! Compute preconditioning for Variational bias correction
+      !------------------------------------------------------------------------
+      !varbc preconditioning shoud be done after get_innov_vector is done for all time slots
+      if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
+
+      !------------------------------------------------------------------------
       ! Prepare (QCed) bias statistics files
       !------------------------------------------------------------------------
       if (biasprep) then
@@ -219,7 +225,6 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          end do
       end if
 
-      if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
    end if
 #endif
 

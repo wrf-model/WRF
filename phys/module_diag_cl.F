@@ -185,8 +185,16 @@ CONTAINS
           skintempclmax(i,j)=skintemp(i,j)-t273
           skintempclmean(i,j)=skintemp(i,j)-t273
           skintempclstd(i,j)=(skintemp(i,j)-t273)*(skintemp(i,j)-t273)
-	  tt2clmin(i,j) = xtime + dt/60.  ! value at end of timestep 
-          tt2clmax(i,j) = xtime + dt/60.
+          ! reinitialize times
+	  tt2clmin(i,j)       = xtime + dt/60.  ! value at end of timestep 
+          tt2clmax(i,j)       = xtime + dt/60.
+          tq2clmin(i,j)       = xtime + dt/60.
+          tq2clmax(i,j)       = xtime + dt/60.
+          tspduv10clmax(i,j)  = xtime + dt/60.
+          traincclmax(i,j)    = xtime + dt/60.
+          trainncclmax(i,j)   = xtime + dt/60.
+          tskintempclmin(i,j) = xtime + dt/60.
+          tskintempclmax(i,j) = xtime + dt/60.
         ENDDO
       ENDDO
     ENDDO
@@ -206,7 +214,7 @@ CONTAINS
             spduv10clmean,u10clstd,v10clstd,spduv10clstd)
 ! Precipitation flux
           CALL varstatisticsMAX(raincv/dt,xtimep,ime-ims+1,jme-jms+1,         &
-            raincclmax,traincclmax,raincclmean,raincclstd) 
+            raincclmax,traincclmax,raincclmean,raincclstd)
           CALL varstatisticsMAX(rainncv/dt,xtimep,ime-ims+1,jme-jms+1,        &
             rainncclmax,trainncclmax,rainncclmean,rainncclstd)
 ! Skin Temperature 

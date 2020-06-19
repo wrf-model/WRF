@@ -1763,7 +1763,7 @@ state    real   LH_URB2D_mosaic   i{mocat}j     misc        1         -     r   
 state    real   G_URB2D_mosaic    i{mocat}j     misc        1         -     r     "G_URB2D_mosaic"               "GROUND HEAT FLUX  AT THE SURFACE"    "W m-2"
 state    real   RN_URB2D_mosaic   i{mocat}j     misc        1         -     r     "RN_URB2D_mosaic"              "NET RADIATION"                       "W m-2"
 
-state    integer   mosaic_cat_index  iuj        misc        1         Z     i012rd=(interp_fcni:lu_index)u=(copy_fcni)    "mosaic_cat_index"          "  "   ""
+state    integer   mosaic_cat_index  iuj        misc        1         Z     i012rd=(interp_fcni)u=(copy_fcni)    "mosaic_cat_index"          "  "   ""
 state    real      landusef2         iuj        misc        1         Z     i012rdu                                                  "LANDUSEF2"      "sorted landuse fraction"  ""
 
 # State vector for etampnew microphysics. Must be declared state because it is not read-once and is needed for restarting.

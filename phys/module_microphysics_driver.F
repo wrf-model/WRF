@@ -146,6 +146,14 @@ SUBROUTINE microphysics_driver(                                          &
                       ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           &
                       ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,mskf_refl_10cm     &
 # endif
+! Dynamic Lightning
+                      ,light_pe_curr  &
+                      ,light_ne_curr  &
+                      ,light_neu_curr  &
+                      ,f_light_pe  &
+                      ,f_light_ne  &
+                      ,f_light_neu  &
+                      ,lpos,lneg,lneu &
                                                                          )
 
 ! Framework
@@ -200,6 +208,8 @@ SUBROUTINE microphysics_driver(                                          &
 
 ! *** add new modules of schemes here
 
+   USE module_ltng_pe
+   USE module_ltng_strokes
    USE module_mp_kessler
 #if ( WRFPLUS == 1 )
    USE module_mp_mkessler
@@ -568,6 +578,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT)   :: LPOS,LNEG,LNEU
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN), OPTIONAL   :: SNOWH
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(OUT)   :: SR
@@ -614,7 +625,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,kext_ft_qic,kext_ft_qip,kext_ft_qid &
                  ,kext_ft_qs,kext_ft_qg                           &
                  ,qnwfa_curr,qnifa_curr                           & ! Added by G. Thompson
-                 ,qvolg_curr,qvolh_curr, qrimef_curr
+                 ,qvolg_curr,qvolh_curr, qrimef_curr &
+                 ,light_pe_curr,light_ne_curr,light_neu_curr
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -689,7 +701,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                        ,f_qvoli,f_qaoli                                      & ! for Jensen ISHMAEL
                        ,f_qvoli2,f_qaoli2                                    & ! for Jensen ISHMAEL
                        ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                       & ! for Jensen ISHMAEL
-                       ,f_qnwfa, f_qnifa                         ! Added by G. Thompson
+                       ,f_qnwfa, f_qnifa              &          ! Added by G. Thompson
+                       ,f_light_pe,f_light_ne,f_light_neu 
 
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
@@ -2764,6 +2777,44 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          CALL wrf_error_fatal ( wrf_err_message )
 
       END SELECT micro_select
+!           print*,'config_flags%dyn_lightning_option = ',config_flags%dyn_lightning_option
+            if (config_flags%dyn_lightning_option.eq.1)then   
+            CALL   calc_dyn_pe(dx=dx,dy=dy, &
+                     W=w,                              &
+                     PI_PHY=pi_phy, RHO_PHY=rho,             &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                            &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     light_pe=light_pe_curr,                         &
+                     light_ne=light_ne_curr,                         &
+                     light_neu=light_neu_curr,                         &
+                     dt=dt &
+                 ,coul_pos=config_flags%coul_pos  &
+                 ,coul_neg=config_flags%coul_neg  &
+                 ,coul_neu=config_flags%coul_neu  &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+             CALL   calcstroke(dx=dx,dy=dy,&
+                     W=w,                              &
+                     PI_PHY=pi_phy, RHO_PHY=rho,             &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                            &
+                     light_pe=light_pe_curr,                         &
+                     light_ne=light_ne_curr,                         &
+                     light_neu=light_neu_curr,                         &
+                     lpos=lpos,lneg=lneg,lneu=lneu  &
+                 ,j_pos=config_flags%j_pos  &
+                 ,j_neg=config_flags%j_neg  &
+                 ,j_neu=config_flags%j_neu  &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+              END IF
 
    ENDDO
    !$OMP END PARALLEL DO

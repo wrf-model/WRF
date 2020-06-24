@@ -2464,6 +2464,15 @@ rconfig   real    ccn_conc                namelist,physics      1           1.0E
 rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
 rconfig   integer morr_rimed_ice          namelist,physics      1              1       rh    "morr_rimed_ice "          "Hail/Graupel switch for Morrison Scheme (options 10 and 40), 1:hail, 0:graupel"                                        ""
 
+#dynamic lightning
+  rconfig   real     coul_pos            namelist,physics      max_domains  0.25E-4     rh       "Constant for Positive Charging of Clouds"  "Coulombs"      ""
+  rconfig   real     coul_neg            namelist,physics      max_domains  0.25E-4     rh       "Constant for Negative Charging of Clouds"  "Coulombs"      ""
+  rconfig   real     coul_neu            namelist,physics      max_domains  0.25E-4     rh       "Constant for Charging of Intracloud Lightning"  "Coulombs"      ""
+   rconfig   real     j_pos            namelist,physics      max_domains  5.E9     rh       "Threshold for Producing Positive Event"  "J"      ""
+   rconfig   real     j_neg            namelist,physics      max_domains  1.E9     rh       "Threshold for Producing Negative Event"  "J"      ""
+   rconfig   real     j_neu            namelist,physics      max_domains  1.E9     rh       "Threshold for Producing IC Event"  ""      "J"
+#  end dynamic lightning
+
 rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"
 rconfig   integer calc_clean_atm_diag     derived               1              0       -     "calc_clean_atm_diag" "carries decision on using clean sky diagnostics"       "flag"
 
@@ -3111,6 +3120,17 @@ package	ltng_crm_PR92w      lightning_option==1            -       state:ic_flas
 package ltng_crm_PR92z      lightning_option==2            -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package	ltng_cpm_PR92z      lightning_option==11           -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package	ltng_lpi            lightning_option==3           -        state:lpi
+rconfig  integer    dyn_lightning_option         namelist,physics   max_domains    0      h    "dyn_lightning_option"          "Dynamic Lightning CG-IC Stroke Scheme"       ""
+package dyn_lightning      dyn_lightning_option==1   -   scalar:light_pe,light_ne,light_neu;state:lneu,lneg,lpos
+state   real    light_ne            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "LIGHTNING_NE"       "LIGHTNING NEG TOTAL ENERGY " "J"
+state   real    light_pe            ikjftb  scalar      1         -     \
+     i0rhusdf=(bdy_interp:dt)    "LIGHTNING_PE"       "LIGHTNING POS TOTAL ENERGY" "J"
+state   real    light_neu            ikjftb  scalar      1         -     \
+       i0rhusdf=(bdy_interp:dt)    "LIGHTNING_NEU"       "LIGHTNING NEU TOTAL ENERGY" "J"
+state    real   LPOS            ij     misc        1         -     irh05du      "LPOS"                   "Positive Cloud to Ground Lightning Density"       "# time-l"
+state    real   LNEG            ij     misc        1         -     irh05du      "LNEG"                   "Negative Cloud to Ground Lightning Density"       "# time-1"
+state    real   LNEU            ij     misc        1         -     irh05du      "LNEU"                   "Intra-Cloud Lightning Density"  "# time-1"
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -

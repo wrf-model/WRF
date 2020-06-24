@@ -3825,7 +3825,12 @@ BENCH_START(micro_driver_tim)
       &        ,WACT=grid%WACT,CCN1_GS=grid%CCN1_GS,CCN2_GS=grid%CCN2_GS,CCN3_GS=grid%CCN3_GS  &
       &        ,CCN4_GS=grid%CCN4_GS,CCN5_GS=grid%CCN5_GS,CCN6_GS=grid%CCN6_GS &
       &        ,CCN7_GS=grid%CCN7_GS,NR_CU=grid%NR_CU,QR_CU=grid%QR_CU,NS_CU=grid%NS_CU &
-      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm)
+      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm &
+! Dynamic Lightning Scheme
+      &        , light_pe_curr=scalar(ims,kms,jms,P_light_pe), F_light_pe=F_light_pe   &
+      &        , light_ne_curr=scalar(ims,kms,jms,P_light_ne), F_light_ne=F_light_ne   &
+      &        , light_neu_curr=scalar(ims,kms,jms,P_light_neu), F_light_neu=F_light_neu   &
+      &        ,lpos=grid%lpos,lneg=grid%lneg,lneu=grid%lneu   )
                                                                           
 BENCH_END(micro_driver_tim)
 

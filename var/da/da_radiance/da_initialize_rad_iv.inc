@@ -11,6 +11,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    integer,             intent(in)    :: i, n
    type(datalink_type), intent(in)    :: p
    type(iv_type),       intent(inout) :: iv
+   integer                            :: ix, iy
 
    call da_trace_entry("da_initialize_rad_iv")
 
@@ -100,8 +101,26 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%satazi(n)       = p%satazi
    iv%instid(i)%solzen(n)       = p%solzen
    iv%instid(i)%solazi(n)       = p%solazi
+   iv%instid(i)%tropt(n)        = 0.0   
+   iv%instid(i)%cloud_frac(n)   = missing_r
  !  iv%instid(i)%solazi(n)       = 0.0
-
+   if ( use_clddet_zz ) then
+      if ( allocated ( p % superob ) ) then
+         do iy = 1, iv%instid(i)%superob_width
+         do ix = 1, iv%instid(i)%superob_width
+            iv%instid(i)%superob(ix,iy)%tb_obs(:,n) = p % superob(ix,iy) % tb_obs(:,1)
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RTCT = p % superob(ix,iy) % cld_qc(1) % RTCT
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RFMFT = p % superob(ix,iy) % cld_qc(1) % RFMFT
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%TEMPIR = p % superob(ix,iy) % cld_qc(1) % TEMPIR
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_10 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_10
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_13 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_13
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_14 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_14
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%terr_hgt = p % superob(ix,iy) % cld_qc(1) % terr_hgt
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O = p % superob(ix,iy) % cld_qc(1) % CIRH2O
+         end do
+         end do
+      end if
+   end if
    if ( rtm_option == rtm_option_rttov ) then
       iv%instid(i)%surftype(n)     = 0
       iv%instid(i)%snow_frac(n)     = 0.0

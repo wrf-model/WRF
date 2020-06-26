@@ -2777,6 +2777,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          CALL wrf_error_fatal ( wrf_err_message )
 
       END SELECT micro_select
+#if(NMM_CORE==1)
+         print*,'Dynamic Lightning Scheme requires 5 hydrometeors'
+#else
 !           print*,'config_flags%dyn_lightning_option = ',config_flags%dyn_lightning_option
             if (config_flags%dyn_lightning_option.eq.1)then   
             CALL   calc_dyn_pe(dx=dx,dy=dy, &
@@ -2815,6 +2818,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
               END IF
+#endif
 
    ENDDO
    !$OMP END PARALLEL DO

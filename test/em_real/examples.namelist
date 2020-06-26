@@ -705,6 +705,14 @@ To overwrite the cu_physics option for a second nest, set
  flashrate_factor                    = 1.0,
  ltng_temp_upper                    = -45., ; used by lnox_opt=2
  ltng_temp_lower                    = -15., ; used by lnox_opt=2
+* Dynamic Lightning Scheme -- leave lightning_option set to zero unless you want additional output from another scheme.
+ dyn_lightning_option               = 1, 1, 1,        
+ coul_pos                           = 0.000025,0.000025,0.000025 
+ coul_neg                           = 0.000025,0.000025,0.000025
+ coul_neu                           = 0.000025,0.000025,0.000025
+ j_pos                              = 2.5E9,2.5E9,2.5E9,  
+ j_neg                               = 1.E9,1.E9,1.E9,   
+ j_neu                               = 1.E9,1.E9,1.E9,  
  /
  
  &chem

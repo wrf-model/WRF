@@ -1992,6 +1992,11 @@ CONTAINS
                      &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme   &
                      &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte   &
                      &)
+
+                    IF (bl_mynn_tkeadvect) THEN
+                       qke_adv=qke
+                    ENDIF
+
                   ELSE
                      WRITE ( message , FMT = '(A,6(L1,1X))' )           &
                      'present: '//                                      &

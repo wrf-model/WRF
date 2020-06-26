@@ -283,6 +283,7 @@ CONTAINS
 !
 ! ... PAJ ...
 !
+   real, parameter :: CORRECTION_FATOR = 0.25
    INTEGER :: nkind,k,nu,nb
    LOGICAL :: vfound
    REAL :: fac1,fac2
@@ -327,6 +328,7 @@ CONTAINS
   ! tke coefficient calculation 
 
   tkecof=thrcof-powcof
+  tkecof = CORRECTION_FATOR * tkecof
   IF(tkecof .LT. 0.) tkecof=0.
 !
   END SUBROUTINE dragcof

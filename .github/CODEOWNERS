@@ -51,8 +51,8 @@ README.md				@wrf-model/global_owner
 /phys/module_mp_fast_sbm.F		@JS-WRF-SBM @wrf-model/physics
 /phys/module_mp_full_sbm.F		@JS-WRF-SBM @wrf-model/physics
 /phys/module_mp_SBM_polar_radar.F	@JS-WRF-SBM @wrf-model/physics
-/phys/module_ltng_pe.F                  @barryhlynn @wrf-model/physics
-/phys/module_ltng_strokes.F             @barryhlynn @wrf-model/physics
+/phys/module_ltng_pe.F        @barryhlynn @wrf-model/physics
+/phys/module_ltng_strokes.F   @barryhlynn @wrf-model/physics
 
 #	Shared Physics Between MPAS and WRF
 

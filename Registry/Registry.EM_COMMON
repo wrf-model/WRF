@@ -2782,6 +2782,7 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 # Turbine drag physics.
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
+rconfig   real        windfarm_tke_factor namelist,physics      1              0.25    rh       "windfarm_tke_factor"        ""      ""
 #
 # Ideal case selection
 rconfig   integer     ideal_case          namelist,ideal        1              0       rh       "ideal_case"                 ""      ""

@@ -578,7 +578,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT)   :: LPOS,LNEG,LNEU
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL   :: LPOS,LNEG,LNEU
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN), OPTIONAL   :: SNOWH
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(OUT)   :: SR

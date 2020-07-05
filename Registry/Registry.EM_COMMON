@@ -3123,14 +3123,14 @@ package	ltng_lpi            lightning_option==3           -        state:lpi
 rconfig  integer    dyn_lightning_option         namelist,physics   max_domains    0      h    "dyn_lightning_option"          "Dynamic Lightning CG-IC Stroke Scheme"       ""
 package dyn_lightning      dyn_lightning_option==1   -   scalar:light_pe,light_ne,light_neu;state:lneu,lneg,lpos
 state   real    light_ne            ikjftb  scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)    "LIGHTNING_NE"       "LIGHTNING NEG TOTAL ENERGY " "J"
+   i0rhusdf=(bdy_interp:dt)    "LIGHTNING_NE"       "LIGHTNING NEG POTENTIAL ENERGY " "J"
 state   real    light_pe            ikjftb  scalar      1         -     \
-     i0rhusdf=(bdy_interp:dt)    "LIGHTNING_PE"       "LIGHTNING POS TOTAL ENERGY" "J"
+     i0rhusdf=(bdy_interp:dt)    "LIGHTNING_PE"       "LIGHTNING POS POTENTIAL ENERGY" "J"
 state   real    light_neu            ikjftb  scalar      1         -     \
-       i0rhusdf=(bdy_interp:dt)    "LIGHTNING_NEU"       "LIGHTNING NEU TOTAL ENERGY" "J"
-state    real   LPOS            ij     misc        1         -     irh05du      "LPOS"                   "Positive Cloud to Ground Lightning Density"       "# time-l"
-state    real   LNEG            ij     misc        1         -     irh05du      "LNEG"                   "Negative Cloud to Ground Lightning Density"       "# time-1"
-state    real   LNEU            ij     misc        1         -     irh05du      "LNEU"                   "Intra-Cloud Lightning Density"  "# time-1"
+       i0rhusdf=(bdy_interp:dt)    "LIGHTNING_NEU"       "LIGHTNING NEU POTENTIAL ENERGY" "J"
+state    real   LPOS            ij     misc        1         -     irh05du      "LPOS"                   "Positive Cloud to Ground Lightning per grid"       "# time-l"
+state    real   LNEG            ij     misc        1         -     irh05du      "LNEG"                   "Negative Cloud to Ground Lightning per grid"       "# time-1"
+state    real   LNEU            ij     misc        1         -     irh05du      "LNEU"                   "Intra-Cloud Lightning per grid"  "# time-1"
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -

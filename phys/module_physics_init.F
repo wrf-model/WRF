@@ -45,6 +45,7 @@ CONTAINS
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
+                         lpos,lneg,lneu, &
                          z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
@@ -433,7 +434,7 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) ::           &
              RAINNC, RAINC, RAINCV, RAINNCV,  &
-             SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
+             SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV,LPOS,LNEG,LNEU
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: z_at_q            !  G. Thompson
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: inv_dens          !  G. Thompson
    REAL,     DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qnwfa2d                !  G. Thompson
@@ -1078,6 +1079,9 @@ CONTAINS
       SNOWNCV(i,j)=0.
       GRAUPELNCV(i,j)=0.
       ACSNOW(i,j)=0.
+      LPOS(i,j)=0.
+      LNEG(i,j)=0.
+      LNEU(i,j)=0.
       DO k=kms,kme  !wig, 17-May-2006: Added for idealized chem. runs
          EXCH_H(i,k,j) = 0.
       END DO
@@ -1513,7 +1517,7 @@ CONTAINS
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to mp_init' )
 
-   CALL mp_init(RAINNC,SNOWNC,GRAUPELNC,config_flags,restart,warm_rain,          &
+   CALL mp_init(RAINNC,SNOWNC,GRAUPELNC,LPOS,LNEG,LNEU,config_flags,restart,warm_rain,          &
                 adv_moist_cond,                                 &
                 MPDT, DT, DX, DY, LOWLYR,                       &
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
@@ -4069,7 +4073,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    END SUBROUTINE shcu_init
 
 !==================================================================
-   SUBROUTINE mp_init(RAINNC,SNOWNC,GRAUPELNC,config_flags,restart,warm_rain,      &
+   SUBROUTINE mp_init(RAINNC,SNOWNC,GRAUPELNC,LPOS,LNEG,LNEU,config_flags,restart,warm_rain,      &
                       adv_moist_cond,                             &
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
@@ -4140,6 +4144,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
    INTEGER , DIMENSION( ims:ime , jms:jme ) ,INTENT(INOUT)  :: LOWLYR
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RAINNC,SNOWNC,GRAUPELNC
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: LPOS,LNEG,LNEU
    REAL,     DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(INOUT) :: &
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
@@ -4168,6 +4173,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         RAINNC(i,j) = 0.
         SNOWNC(i,j) = 0.
         GRAUPELNC(i,j) = 0.
+        LPOS(i,j) = 0.
+        LNEG(i,j) = 0.
+        LNEU(i,j) = 0.
      ENDDO
      ENDDO
    ENDIF

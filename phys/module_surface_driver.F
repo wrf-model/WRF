@@ -96,6 +96,7 @@ CONTAINS
 #if (EM_CORE==1)
  !    &          ,lakemask,  lakeflag                                  & !lake
      &          ,lakemask                                  & !lake
+                , restart_flag                             & ! restart_flag
 #endif
             !  cyl ocean variable
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
@@ -1350,7 +1351,8 @@ CONTAINS
                                                                                tksatu3d
     real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
 #if (EM_CORE==1)
-    real ,    dimension(ims:ime,jms:jme )  ::  lakemask       
+    real ,    dimension(ims:ime,jms:jme )  ::  lakemask
+    logical , intent(in) :: restart_flag
 !    INTEGER  :: lakeflag
 #endif
 !    logical, dimension(ims:ime,jms:jme ),intent(in)                         :: lake 
@@ -3811,6 +3813,9 @@ CONTAINS
              ids=ids, ide=ide, jds=jds, jde=jde, &
              ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, &
              its=i_start(ij), ite=i_end(ij), jts=j_start(ij), jte=j_end(ij), &
+
+             ! restart flag
+             restart_flag=restart_flag,&
 
              ! general information
              dt             = dt, &

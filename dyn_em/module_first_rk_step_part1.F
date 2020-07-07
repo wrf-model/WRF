@@ -33,6 +33,7 @@ CONTAINS
                              , k_start , k_end                  &
                              , f_flux                           &
                              , aerocu                           &
+                             , restart_flag                     &
                             )
     USE module_state_description
     USE module_model_constants
@@ -116,6 +117,7 @@ CONTAINS
     INTEGER, INTENT(IN)                           ::  k_start, k_end
     LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
 
+    LOGICAL, INTENT(IN)                           :: restart_flag  
 ! Local
     real :: HYDRO_dt
     REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
@@ -558,6 +560,7 @@ BENCH_START(surf_driver_tim)
      &        ,LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev    & !lake  
 #if ( EM_CORE == 1)
      &        ,LakeMask=grid%LakeMask                                               & ! lake
+     &        ,restart_flag=restart_flag                                               & ! is it a restart timestep?
 #endif
 ! CLM Varaibles
      &        ,NUMC=grid%numc,NUMP=grid%nump,SABV=grid%sabv,SABG=grid%sabg,         &

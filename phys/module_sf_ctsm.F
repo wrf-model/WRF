@@ -231,7 +231,8 @@ contains
        ids, ide, jds, jde, &
        ims, ime, jms, jme, &
        its, ite, jts, jte, &
-       dt, xlat, xlong)
+       dt, xlat, xlong,    &
+       atm_restart)
     ! Initialize CTSM via LILAC
 
     use module_wrf_error
@@ -255,6 +256,7 @@ contains
     real, intent(in) :: xlat(ims: , jms: )  ! latitudes (deg)
     real, intent(in) :: xlong(ims: , jms: ) ! longitudes (deg)
 
+    logical, intent(in) :: atm_restart
     integer :: comp_comm
     integer , allocatable :: atm_global_index(:)
     real                  :: xlong_0360(ims:ime, jms:jme)
@@ -331,7 +333,12 @@ contains
     call wrf_message(message)
 
     atm_calendar      = 'GREGORIAN'
+
     atm_starttype     = 'startup'
+    if (atm_restart) then
+        atm_starttype = 'continue'
+    endif
+
 
     ! TODO(wjs, 2019-12-31) Is there a way to directly get dt as an integer, rather than
     ! relying on converting this real-valued dt to an integer?
@@ -373,6 +380,9 @@ contains
        ims, ime, jms, jme, kms, &
        its, ite, jts, jte, &
 
+       ! restart flag
+       restart_flag, &
+
        ! general information
        dt, xland, xice, xice_threshold, &
 
@@ -401,6 +411,9 @@ contains
     integer, intent(in) :: ite
     integer, intent(in) :: jts
     integer, intent(in) :: jte
+
+
+    logical, intent(in) :: restart_flag      ! restart flag sent from WRF to CTSM
 
     real , intent(in) :: dt                  ! timestep [s]
     real , intent(in) :: xland(ims: , jms: ) ! land mask (1 for land, 2 for water)
@@ -547,7 +560,7 @@ contains
 
     ! FIXME(wjs, 2020-01-01) Use correct values for restart and stop alarms
     call lilac_run( &
-         write_restarts_now = .false., &
+         write_restarts_now = restart_flag, &
          stop_now = .false.)
 
     ! ------------------------------------------------------------------------

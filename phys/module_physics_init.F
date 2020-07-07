@@ -3289,7 +3289,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
               ids=ids, ide=ide, jds=jds, jde=jde, &
               ims=ims, ime=ime, jms=jms, jme=jme, &
               its=its, ite=ite, jts=jts, jte=jte, &
-              dt=DT, xlat=XLAT, xlong=XLONG)
+              dt=DT, xlat=XLAT, xlong=XLONG,      &
+              atm_restart = restart)
 #else
          CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting&
               & WRF_CTSM_MKFILE before running configure" )

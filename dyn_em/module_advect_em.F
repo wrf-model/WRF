@@ -2,7 +2,7 @@
 !WRF:MODEL_LAYER:DYNAMICS
 !
 #if ( defined(ADVECT_KERNEL) )
-! cpp -traditional -C -P -DADVECT_KERNEL module_advect_em.F > advection_kernel.f90
+! cpp -traditional-cpp -P -DADVECT_KERNEL module_advect_em.F > advection_kernel.f90
 ! gfortran -ffree-form -ffree-line-length-none advection_kernel.f90
 ! ./a.out
 MODULE advection_kernel

@@ -699,6 +699,18 @@ cat > ${foo}.f <<EOF
           end program test_exit
 EOF
 
+  # check if gfortran > 9
+  grep '^SFC' configure.wrf | grep -i 'gfortran' > /dev/null
+  if [ $? ]
+  then
+    if [ $(${SFC} -dumpversion) -gt 9 ]
+    then
+      echo
+      sed '/^FCBASEOPTS_NO_G/ s/$/ -fallow-argument-mismatch -fallow-invalid-boz/' configure.wrf > configure.wrf.edit
+      mv configure.wrf.edit configure.wrf
+    fi
+  fi
+
   # do not do this test for MIC, which cross compiles
   if [ -z "`grep 'SCC.*mmic' configure.wrf`" ] ; then
     # Detecting whether if mpi compiler wrapper supports -cc/-f90 options

@@ -1077,6 +1077,7 @@ Options for wind turbine drag parameterization:
  windfarm_ij                        = 0         ! whether to use lat-lon or i-j coordinate as wind turbine locations    
                                                 ! 0 = The coordinate of the turbines are defined in terms of lat-lon
                                                 ! 1 = The coordinate of the turbines are defined in terms of grid points
+ windfarm_tke_factor                = 0.25      ! Correction factor applied to the TKE coefficient (deafault is 0.25, Archer et al. 2020)
 
 
 Stochastic parameterization schemes:

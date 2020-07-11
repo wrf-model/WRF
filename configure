@@ -685,6 +685,25 @@ if [ $os = "Linux" -o $os = "Darwin" ]; then
 
   foo=foo_$$
 
+  cat > ${foo}.F << EOF
+      PROGRAM GFORTRAN_VERSION_CHECK
+
+        IF (__GNUC__ .GT. 9) CALL EXIT(1)
+
+      END PROGRAM
+EOF
+
+  grep '^SFC' configure.wrf | grep -i 'gfortran' > /dev/null
+  if [ $? ]
+  then
+    gfortran -o ${foo} ${foo}.F > /dev/null 2>&1 && ./${foo}
+    if [ $? ]
+    then
+      sed '/^FCBASEOPTS_NO_G/ s/$/ -fallow-argument-mismatch -fallow-invalid-boz/' configure.wrf > configure.wrf.edit
+      mv configure.wrf.edit configure.wrf
+    fi
+  fi
+
 cat > ${foo}.c <<EOF 
  int main(int argc, char ** argv)
  {
@@ -698,18 +717,6 @@ cat > ${foo}.f <<EOF
             call EXIT(STATUS)
           end program test_exit
 EOF
-
-  # check if gfortran > 9
-  grep '^SFC' configure.wrf | grep -i 'gfortran' > /dev/null
-  if [ $? ]
-  then
-    if [ $(${SFC} -dumpversion) -gt 9 ]
-    then
-      echo
-      sed '/^FCBASEOPTS_NO_G/ s/$/ -fallow-argument-mismatch -fallow-invalid-boz/' configure.wrf > configure.wrf.edit
-      mv configure.wrf.edit configure.wrf
-    fi
-  fi
 
   # do not do this test for MIC, which cross compiles
   if [ -z "`grep 'SCC.*mmic' configure.wrf`" ] ; then

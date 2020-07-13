@@ -3825,6 +3825,7 @@ CONTAINS
 
              ! atm -> lnd variables
              ! TODO(wjs, 2020-01-01) Confirm correctness of these variables
+             ! (see https://github.com/ESCOMP/CTSM/issues/917)
              dz8w     = dz8w, &
              ht       = ht, &
              u_phy    = u_phy, &

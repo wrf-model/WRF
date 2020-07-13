@@ -280,6 +280,7 @@ contains
     character(len=512) :: message
 
     ! TODO(wjs, 2019-12-31) Is this the correct way to get the communicator?
+    ! (See https://github.com/ESCOMP/CTSM/issues/1078)
     call wrf_get_dm_communicator(comp_comm)
 
     call create_gindex(ide, jde, its, ite, jts, jte, atm_global_index)
@@ -321,6 +322,8 @@ contains
     ! - Is it correct to form the total seconds from hour, minute & second like this?
     ! - I'm using 1 for the first argument; I think this gives the domain id; is this an
     !   okay thing to do for now, or can we somehow determine the actual domain id?
+    !
+    ! (See https://github.com/ESCOMP/CTSM/issues/1078)
     call nl_get_start_year(1, atm_start_year)
     call nl_get_start_month(1, atm_start_mon)
     call nl_get_start_day(1, atm_start_day)
@@ -342,6 +345,7 @@ contains
 
     ! TODO(wjs, 2019-12-31) Is there a way to directly get dt as an integer, rather than
     ! relying on converting this real-valued dt to an integer?
+    ! (See https://github.com/ESCOMP/CTSM/issues/1078)
     atm_timestep      = nint(dt)
     if (abs(atm_timestep - dt) > (1.e-5 * dt)) then
        call wrf_error_fatal('ctsm_init: expect dt representable as integer')
@@ -504,6 +508,7 @@ contains
 
     ! TODO(wjs, 2020-01-01) Is this correct? Or does this give the pressure at the
     ! interface, whereas we may want the pressure at the mid-point???
+    ! (See https://github.com/ESCOMP/CTSM/issues/917)
     pbot(its:ite, jts:jte) = p8w(its:ite, 1, jts:jte)
 
     ! TODO(wjs, 2020-01-01) For now, I'm setting potential temperature equal to
@@ -515,12 +520,14 @@ contains
     ! but it looks like it is using the same WRF variable for both forc_psrf and
     ! forc_pbot, so the adjustment from forc_t to forc_th isn't actually accomplishing
     ! anything. Should we do some sort of adjustment here?
+    ! (See https://github.com/ESCOMP/CTSM/issues/917)
     forc_th(its:ite, jts:jte) = t_phy(its:ite, 1, jts:jte)
 
     forc_t(its:ite, jts:jte) = t_phy(its:ite, 1, jts:jte)
 
     ! Convert from mixing ratio to specific humidity
     ! TODO(wjs, 2020-01-01) Confirm that this is correct
+    ! (See https://github.com/ESCOMP/CTSM/issues/917)
     forc_q(its:ite, jts:jte) = qv_curr(its:ite, 1, jts:jte)/(1.0 + qv_curr(its:ite, 1, jts:jte))
 
     ! Separate total precip into rain and snow. Arbitrarily assign all precipitation to

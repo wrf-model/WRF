@@ -49,7 +49,7 @@
       USE MODULE_STATS_FOR_MOVE,        ONLY: STATS_FOR_MOVE
 #endif
       USE MODULE_DIAG_REFL
-
+      USE MODULE_STOCH, ONLY : RAND_PERT_UPDATE  
 
 !-----------------------------------------------------------------------
 !
@@ -86,6 +86,13 @@
 !
 !-----------------------------------------------------------------------
 !
+      INTEGER :: k_start, k_end
+      INTEGER :: imsx, imex, jmsx, jmex, kmsx, kmex, &
+                 ipsx, ipex, jpsx, jpex, kpsx, kpex, &
+                 imsy, imey, jmsy, jmey, kmsy, kmey, &
+                 ipsy, ipey, jpsy, jpey, kpsy, kpey
+      REAL    :: DXKM, DYKM
+
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                & 
      &          ,IPS,IPE,JPS,JPE,KPS,KPE                                &
@@ -342,7 +349,15 @@
       CALL GET_IJK_FROM_GRID(GRID                                       &
      &                      ,IDS,IDE,JDS,JDE,KDS,KDE                    &
      &                      ,IMS,IME,JMS,JME,KMS,KME                    &
-     &                      ,IPS,IPE,JPS,JPE,KPS,KPE )
+     &                      ,IPS,IPE,JPS,JPE,KPS,KPE                    & 
+     &                      ,imsx, imex, jmsx, jmex, kmsx, kmex         & 
+     &                      ,ipsx, ipex, jpsx, jpex, kpsx, kpex         & 
+     &                      ,imsy, imey, jmsy, jmey, kmsy, kmey         &
+     &                      ,ipsy, ipey, jpsy, jpey, kpsy, kpey )       
+
+     k_start  = KPS   
+     k_end    = KPE   
+
 !-----------------------------------------------------------------------
 !
 !***  COMPUTE THESE STARTING AND STOPPING LOCATIONS FOR EACH TILE AND
@@ -1256,6 +1271,86 @@
 !-----------------------------------------------------------------------
 !
       not_euler: IF(.NOT.EULER) THEN ! Lagrangian model tracer advection
+! Start of RAND_PERT_UPDATE
+     DXKM=grid%dx*0.01745329*6371200. ! numbers from module_initialize_real.F
+     DYKM=grid%dy*0.01745329*6371200.
+      IF ((grid%isppt_mp==1).and.(grid%id .EQ. 1 )) THEN 
+           CALL RAND_PERT_UPDATE(grid,'T',                             &
+                           grid%SPFORCS_isppt_mp,grid%SPFORCC_isppt_mp,&
+                           grid%SP_AMP_isppt_mp,grid%ALPH_isppt_mp,&
+                           ips, ipe, jps, jpe, kps, kpe,&
+                           ids, ide, jds, jde, kds, kde,&
+                           ims, ime, jms, jme, kms, kme,&
+                           k_start, k_end,&
+                           imsx,imex,jmsx,jmex,kmsx,kmex,&
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,&
+                           imsy,imey,jmsy,jmey,kmsy,kmey,&
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,&
+                           grid%num_stoch_levels,grid%num_stoch_levels,&
+                           grid%num_stoch_levels,grid%num_stoch_levels,&
+                           config_flags%restart,grid%iseedarr_isppt_mp,& 
+                           DXKM,DYKM,grid%vertstruc_isppt_mp,&
+                           grid%pattern_isppt_mp,&
+                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
+      ENDIF !isppt_mp
+      IF ((grid%isppt_pbl==1).and.(grid%id .EQ. 1 )) THEN 
+          CALL RAND_PERT_UPDATE(grid,'T',                                &
+                           grid%SPFORCS_isppt_pbl,grid%SPFORCC_isppt_pbl,&
+                           grid%SP_AMP_isppt_pbl,grid%ALPH_isppt_pbl,&
+                           ips, ipe, jps, jpe, kps, kpe,&
+                           ids, ide, jds, jde, kds, kde,&
+                           ims, ime, jms, jme, kms, kme,&
+                           k_start, k_end,&
+                           imsx,imex,jmsx,jmex,kmsx,kmex,&
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,&
+                           imsy,imey,jmsy,jmey,kmsy,kmey,&
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,&
+                           grid%num_stoch_levels,grid%num_stoch_levels,&
+                           grid%num_stoch_levels,grid%num_stoch_levels,&
+                           config_flags%restart,grid%iseedarr_isppt_pbl,&
+                           DXKM,DYKM,grid%vertstruc_isppt_pbl,&
+                           grid%pattern_isppt_pbl,&
+                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
+      ENDIF !isppt_pbl
+      IF ((grid%isppt_rad==1).and.(grid%id .EQ. 1 )) THEN 
+          CALL RAND_PERT_UPDATE(grid,'T',                                &
+                           grid%SPFORCS_isppt_rad,grid%SPFORCC_isppt_rad,&
+                           grid%SP_AMP_isppt_rad,grid%ALPH_isppt_rad,&
+                           ips, ipe, jps, jpe, kps, kpe,&
+                           ids, ide, jds, jde, kds, kde,&
+                           ims, ime, jms, jme, kms, kme,&
+                           k_start, k_end,&
+                           imsx,imex,jmsx,jmex,kmsx,kmex,&
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,&
+                           imsy,imey,jmsy,jmey,kmsy,kmey,&
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,&
+                           grid%num_stoch_levels,grid%num_stoch_levels,&
+                           grid%num_stoch_levels,grid%num_stoch_levels,&
+                           config_flags%restart,grid%iseedarr_isppt_rad,&
+                           DXKM,DYKM,grid%vertstruc_isppt_rad,&
+                           grid%pattern_isppt_rad,&
+                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
+      ENDIF !isppt_rad
+      IF ((grid%isppt_conv==1).and.(grid%id .EQ. 1 )) THEN 
+           CALL RAND_PERT_UPDATE(grid,'T',&
+                           grid%SPFORCS_isppt_conv,grid%SPFORCC_isppt_conv,&
+                           grid%SP_AMP_isppt_conv,grid%ALPH_isppt_conv,&
+                           ips, ipe, jps, jpe, kps, kpe,&
+                           ids, ide, jds, jde, kds, kde,&
+                           ims, ime, jms, jme, kms, kme,&
+                           k_start, k_end,&
+                           imsx,imex,jmsx,jmex,kmsx,kmex,&
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,&
+                           imsy,imey,jmsy,jmey,kmsy,kmey,&
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,&
+                           grid%num_stoch_levels,grid%num_stoch_levels,&
+                           grid%num_stoch_levels,grid%num_stoch_levels,&
+                           config_flags%restart,grid%iseedarr_isppt_conv,&
+                           DXKM,DYKM,grid%vertstruc_isppt_conv,&
+                           grid%pattern_isppt_conv,&
+                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
+      ENDIF !isppt_conv
+! End of RAND_PERT_UPDATE
 !
 !-----------------------------------------------------------------------
 !***  VERTICAL ADVECTION OF grid%q, TKE, AND CLOUD WATER
@@ -1551,6 +1646,9 @@
      &                ,grid%ACLWUPB,grid%ACLWUPBC,grid%ACLWDNB,grid%ACLWDNBC   &
      &                 ,grid%swvisdir ,grid%swvisdif &  !ssib
      &                 ,grid%swnirdir ,grid%swnirdif &  !ssib
+     &                ,grid%num_stoch_levels,grid%num_stoch_levels      &
+     &                ,grid%isppt_rad,grid%pattern_isppt_rad            &
+     &                ,grid%stddev_cutoff_isppt_rad,grid%gridpt_stddev_isppt_rad&
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                         &
      &                ,IMS,IME,JMS,JME,KMS,KME                         &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1702,6 +1800,9 @@
      &            ,grid%charn,grid%msang                               &
      &            ,grid%DUBLDT,grid%DVBLDT,grid%DTHBLDT,grid%DQVBLDT   &!wang added PBL tendency output
      &            ,hpbl_hold                                           & !used by new KSAS
+     &            ,grid%num_stoch_levels,grid%num_stoch_levels         &
+     &            ,grid%isppt_pbl,grid%pattern_isppt_pbl               &
+     &            ,grid%stddev_cutoff_isppt_pbl,grid%gridpt_stddev_isppt_pbl&
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
@@ -1931,6 +2032,9 @@
      &             ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random & 
      &             ,grid%DTHCUDT,grid%DQVCUDT,grid%DQRCUDT,grid%DQCCUDT&! wang, output CU tendency 
      &             ,grid%DQICUDT,grid%DQSCUDT                          &
+     &             ,grid%num_stoch_levels,grid%num_stoch_levels        &
+     &             ,grid%isppt_conv,grid%pattern_isppt_conv            &
+     &             ,grid%stddev_cutoff_isppt_conv,grid%gridpt_stddev_isppt_conv&
 #endif
      &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
      &             ,grid%dx_nmm,grid%dy_nmm                            & !wang, dx2d, dy
@@ -2038,6 +2142,7 @@
      &               ,GRID,CONFIG_FLAGS                                &
      &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
      &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
+     &               ,grid%qv_ins,k_start,k_end                        &  
      &               ,diag_flag                                        &  
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -2048,6 +2153,7 @@
             its,ite,jts,jte,kts,kte)
 !
         gsmdrive_tim=gsmdrive_tim+now_time()-btimx
+
 !
 !-----------------------------------------------------------------------
 !---------PRECIPITATION ASSIMILATION------------------------------------

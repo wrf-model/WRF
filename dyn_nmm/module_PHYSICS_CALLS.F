@@ -27,6 +27,7 @@
       USE MODULE_MP_ETANEW
       USE MODULE_MICROPHYSICS_DRIVER
       USE MODULE_MICROPHYSICS_ZERO_OUT
+      USE MODULE_STOCH, ONLY : perturb_mp_tend  
 !-----------------------------------------------------------------------
 !
       CONTAINS
@@ -90,6 +91,9 @@
      &                    ,ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC            &
      &                    ,SWVISDIR ,SWVISDIF                           &  !ssib
      &                    ,SWNIRDIR, SWNIRDIF &                            !ssib
+     &                    ,kte_stoch,kme_stoch                          & 
+     &                    ,isppt_rad,pattern_isppt_rad                  & 
+     &                    ,stddev_cutoff_isppt_rad,gridpt_stddev_isppt_rad & 
      &                    ,IDS,IDE,JDS,JDE,KDS,KDE                      &
      &                    ,IMS,IME,JMS,JME,KMS,KME                      &
      &                    ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -247,6 +251,12 @@
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 
       REAL :: DXKM, DYKM
+    INTEGER,INTENT(IN)  :: kte_stoch,kme_stoch
+    INTEGER,INTENT(IN)  :: isppt_rad
+    REAL                :: thresh1
+    INTEGER             :: kh
+    REAL,INTENT(IN)     :: stddev_cutoff_isppt_rad,gridpt_stddev_isppt_rad
+    REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME_STOCH),INTENT(INOUT) :: pattern_isppt_rad 
 
 !
 !-----------------------------------------------------------------------
@@ -401,6 +411,7 @@
 !-----------------------------------------------------------------------
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
+    
 
       CALL RADIATION_DRIVER(                                            &
      &                  IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
@@ -521,6 +532,33 @@
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
      &                 ,CALC_CLEAN_ATM_DIAG=CONFIG_FLAGS%CALC_CLEAN_ATM_DIAG)
 
+    IF (config_flags%isppt_on==1) THEN 
+      thresh1=stddev_cutoff_isppt_rad*gridpt_stddev_isppt_rad
+!$omp parallel do                                             &
+!$omp& private(i,j,k)
+      DO j = jts,jte
+      DO k = kts,MIN(kte-1,kte_stoch-1)
+      DO i = its,ite
+        pattern_isppt_rad(i,j,k)=MAX(MIN(pattern_isppt_rad(i,j,k),thresh1),-1.*thresh1)
+      ENDDO
+      ENDDO
+      ENDDO
+     ENDIF
+     IF (config_flags%ra_lw_physics .GT. 0 .OR.                  &
+         config_flags%ra_sw_physics .GT. 0) THEN 
+     IF (config_flags%isppt_rad .GT. 0 ) THEN  
+!$omp parallel do                                             &
+!$omp& private(i,j,k,kh)
+       DO j = MYJS2,MYJE2 
+       DO k = kts , MIN(kte,kde-1)
+         kh = MIN( k, kte_stoch - 1 )
+       DO i = MYIS1,MYIE1 
+         RTHRATEN(i,k,j) = RTHRATEN(i,k,j)+pattern_isppt_rad(i,j,kh)*RTHRATEN(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+     ENDIF
+     ENDIF
 
 !
 !-----------------------------------------------------------------------
@@ -803,6 +841,9 @@
      &                ,charn, msang                                     &
      &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & 
      &                ,hpbl_hold                                        & 
+     &                ,kte_stoch,kme_stoch                              & 
+     &                ,isppt_pbl,pattern_isppt_pbl                      & 
+     &                ,stddev_cutoff_isppt_pbl,gridpt_stddev_isppt_pbl  & 
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -1083,6 +1124,12 @@
     INTEGER  :: isurban
     CHARACTER(len=256) :: MMINLU
     REAL :: VAR_RIC,coef_ric_s,coef_ric_l                             !KWON for variable Ric (=1)
+    INTEGER,INTENT(IN)  :: kte_stoch,kme_stoch
+    INTEGER,INTENT(IN)  :: isppt_pbl
+    INTEGER             :: kh
+    REAL                :: thresh1
+    REAL,INTENT(IN)     :: stddev_cutoff_isppt_pbl,gridpt_stddev_isppt_pbl
+    REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME_STOCH),INTENT(INOUT) :: pattern_isppt_pbl
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -1806,6 +1853,55 @@
      &               ,wstar=wstar_ysu,delta=delta_ysu                 &
      &               ,fasdas=fasdas                                   &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
+    IF (config_flags%isppt_on==1) THEN 
+      thresh1=stddev_cutoff_isppt_pbl*gridpt_stddev_isppt_pbl
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+      DO j = jts,jte
+      DO k = kts,MIN(kte-1,kte_stoch-1)
+      DO i = its,ite
+        pattern_isppt_pbl(i,j,k)=MAX(MIN(pattern_isppt_pbl(i,j,k),thresh1),-1.*thresh1)
+      ENDDO
+      ENDDO
+      ENDDO
+    ENDIF
+    IF (config_flags%bl_pbl_physics .GT. 0) THEN 
+    IF (config_flags%isppt_pbl .GT. 0 ) THEN  
+!$omp parallel do                                                       &
+!$omp& private(i,j,k,kh)
+      DO j = MYJS,MYJE 
+      DO k = kts, MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS,MYIE 
+        DUDT_PHY(i,k,j) = DUDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*DUDT_PHY(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+!$omp parallel do                                                       &
+!$omp& private(i,j,k,kh)
+      DO j = MYJS,MYJE 
+      DO k = kts, MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS,MYIE 
+        DVDT_PHY(i,k,j) = DVDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*DVDT_PHY(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+!$omp parallel do                                                       &
+!$omp& private(i,j,k,kh)
+      DO j = MYJS,MYJE 
+      DO k = kts , MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS,MYIE 
+        RTHBLTEN(i,k,j) = RTHBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*RTHBLTEN(i,k,j)
+        RQVBLTEN(i,k,j) = RQVBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*RQVBLTEN(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+    ENDIF 
+    ENDIF 
+!
+
 !
 !output PBL tendency
 !
@@ -2380,11 +2476,13 @@
 #if (NMM_CORE==1)    
      &                 ,TWBS,QWBS                                       &
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand              &                  
-     &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         &! added output CU tendency
-     &                 ,DQSCUDT                                         &! added output CU tendency
-
+     &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         & ! added output CU tendency
+     &                 ,DQSCUDT                                         & ! added output CU tendency
+     &                 ,kte_stoch,kme_stoch                             & 
+     &                 ,isppt_conv,pattern_isppt_conv                   & 
+     &                 ,stddev_cutoff_isppt_conv,gridpt_stddev_isppt_conv &
 #endif
-     &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
+     &                 ,HPBL2D,EVAP2D,HEAT2D                            & !Kwon S&P
      &                 ,DX2D,DYNMM                                      & ! Scale-aware sas
      &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
      &                 ,SIGMU, SIGMU1                                   & !updraft fraction
@@ -2591,6 +2689,13 @@
       integer :: ens_random_seed         !zhang
       real    :: ens_sasamp         !zhang
 #endif
+    INTEGER,INTENT(IN)  :: kte_stoch,kme_stoch
+    INTEGER,INTENT(IN)  :: isppt_conv
+    INTEGER             :: kh
+    REAL                :: thresh1
+    REAL,INTENT(IN)     :: stddev_cutoff_isppt_conv,gridpt_stddev_isppt_conv
+    REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME_STOCH),INTENT(INOUT) :: pattern_isppt_conv
+
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -3025,6 +3130,55 @@
      &                 ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI &
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG)
+    IF (config_flags%isppt_on==1) THEN 
+      thresh1=stddev_cutoff_isppt_conv*gridpt_stddev_isppt_conv
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+      DO j = jts,jte
+      DO k = kts,MIN(kte-1,kte_stoch-1)
+      DO i = its,ite
+        pattern_isppt_conv(i,j,k)=MAX(MIN(pattern_isppt_conv(i,j,k),thresh1),-1.*thresh1)
+      ENDDO
+      ENDDO
+      ENDDO
+    ENDIF
+    IF (config_flags%cu_physics .GT. 0) THEN 
+    IF (config_flags%isppt_conv .GT. 0 ) THEN  
+!$omp parallel do                                                       &
+!$omp& private(i,j,k,kh)
+      DO j = MYJS1_P1,MYJE1_P1 
+      DO k = kts, MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS_P1,MYIE_P1 
+        DUCUDT(i,j,k)=DUCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*DUCUDT(i,j,k)
+      ENDDO
+      ENDDO
+      ENDDO
+!$omp parallel do                                                       &
+!$omp& private(i,j,k,kh)
+      DO j = MYJS1_P1,MYJE1_P1 
+      DO k = kts, MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS_P1,MYIE_P1 
+        DVCUDT(i,j,k)=DVCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*DVCUDT(i,j,k)
+      ENDDO
+      ENDDO
+      ENDDO
+!$omp parallel do                                                       &
+!$omp& private(i,j,k,kh)
+      DO j = MYJS2,MYJE2 
+      DO k = kts , min(kte,kde-1)
+        kh = min( k, kte_stoch - 1 )
+      DO i = MYIS1,MYIE1 
+        RTHCUTEN(i,k,j)=RTHCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*RTHCUTEN(i,k,j)
+        RQVCUTEN(i,k,j)=RQVCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*RQVCUTEN(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+    ENDIF
+    ENDIF
+
+
 !
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &
@@ -3254,6 +3408,7 @@
      &                   ,GRID,CONFIG_FLAGS                             &
      &                   ,re_cloud,re_ice,re_snow                       & ! G. Thompson
      &                   ,has_reqc,has_reqi,has_reqs                    & ! G. Thompson
+     &                   ,qv_ins,k_start,k_end                          & 
      &                   ,diag_flag                                     & 
      &                   ,IDS,IDE,JDS,JDE,KDS,KDE                       &
      &                   ,IMS,IME,JMS,JME,KMS,KME                       &
@@ -3328,6 +3483,10 @@
       TYPE(DOMAIN),TARGET :: GRID
 !
       TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
+      INTEGER, INTENT(IN)::k_start, k_end
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: qv_ins 
+      REAL :: QOLD  
+
 !
 !-----------------------------------------------------------------------
 !***  LOCAL VARIABLES
@@ -3354,6 +3513,8 @@
 !
       LOGICAL                        :: diag_flag
       LOGICAL :: E_BDY,F_QT,QT_PRESENT,WARM_RAIN, have_tg_tp, have_swath
+
+
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -3556,7 +3717,7 @@
 !***  UPDATE TEMPERATURE, SPECIFIC HUMIDITY, CLOUD WATER, AND HEATING.
 !-----------------------------------------------------------------------
 !$omp parallel do                                                       &
-!$omp& private(i,iendx,j,k,tnew)
+!$omp& private(i,iendx,j,k,tnew,qold)
       DO K=KTS,KTE
         DO J=MYJS2,MYJE2
           IENDX=MYIE1
@@ -3565,13 +3726,28 @@
             TNEW=TH_PHY(I,K,J)*PI_PHY(I,K,J)
             TRAIN(I,J,K)=TRAIN(I,J,K)+(TNEW-T(I,J,K))*RDTPHS
             TRAIN_INS(I,J,K)=(TNEW-T(I,J,K))*RDTPHS ! RGF
+            QOLD=Q(I,J,K)
             T(I,J,K)=TNEW
             Q(I,J,K)=MOIST_TRANS(I,K,J,P_QV)/(1.+MOIST_TRANS(I,K,J,P_QV))
             CWM(I,J,K)=CWM_PHY(I,K,J)
+            qv_ins(I,J,K)=(Q(I,J,K)-QOLD)*RDTPHS
           ENDDO
         ENDDO
       ENDDO
 !
+   IF (grid%isppt_mp==1) THEN 
+     CALL perturb_mp_tend(grid%isppt_mp,grid%pattern_isppt_mp,                     &
+                          grid%stddev_cutoff_isppt_mp,grid%gridpt_stddev_isppt_mp, &
+                          grid%t,grid%train_ins,grid%nphs,grid%dt,                 &
+                          grid%q,grid%qv_ins,                                      &
+                          config_flags,                                            &
+                          ids, ide, jds, jde, kds, kde,                            &
+                          ims, ime, jms, jme, kms, kme,                            &
+                          its, ite, jts, jte,                                      &
+                          k_start, k_end,                                          &
+                          grid%num_stoch_levels, grid%num_stoch_levels)        
+   ENDIF 
+
 !-----------------------------------------------------------------------
 !***  UPDATE PRECIPITATION.
 !***  NOTE: RAINNC IS ACCUMULATED INSIDE MICROPHYSICS BUT NMM ZEROES IT

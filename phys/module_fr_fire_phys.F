@@ -1,3 +1,4 @@
+! 11-May-20, John Collins: Changed end statement at line 756
 !
 module module_fr_fire_phys
 
@@ -6,7 +7,7 @@ use module_fr_fire_util
 
 PRIVATE
 
-! subroutines and functions 
+! subroutines and functions
 PUBLIC:: init_fuel_cats,fire_ros,heat_fluxes,set_nfuel_cat,set_fire_params,write_fuels_m
 PUBLIC:: fuel_moisture,advance_moisture,read_namelist_fire
 
@@ -19,14 +20,14 @@ PUBLIC::fire_params
 ! arrays passed to fire_ros
 type fire_params
 real,pointer,dimension(:,:):: vx,vy                ! wind velocity (m/s)
-real,pointer,dimension(:,:):: zsf                  ! terrain height (m) 
-real,pointer,dimension(:,:):: dzdxf,dzdyf          ! terrain grad (1) 
+real,pointer,dimension(:,:):: zsf                  ! terrain height (m)
+real,pointer,dimension(:,:):: dzdxf,dzdyf          ! terrain grad (1)
 real,pointer,dimension(:,:):: bbb,betafl,phiwc,r_0 ! spread formula coefficients
 real,pointer,dimension(:,:):: fgip                 ! init mass of surface fuel (kg/m^2)
 real,pointer,dimension(:,:):: ischap               ! if fuel is chaparral and want rate of spread treated differently
 real,pointer,dimension(:,:):: iboros               ! fire instensity over rate of spread -> avialable fuel x heat of combustion
-real,pointer,dimension(:,:):: fuel_time            ! time to burn to 1/e (s) 
-real,pointer,dimension(:,:):: fmc_g                ! fuel moisture contents, ground (1) 
+real,pointer,dimension(:,:):: fuel_time            ! time to burn to 1/e (s)
+real,pointer,dimension(:,:):: fmc_g                ! fuel moisture contents, ground (1)
 end type fire_params
 
 ! use as
@@ -55,10 +56,10 @@ end type fire_params
 !  1. change parameter max_moisture_classes below
 !  2. change the default of nfmc to the same value in Registry/registry.fire
 !  3. add the appropriate lines real::fmc_gw<number>= <default values>
-!  4. add default 
+!  4. add default
 
 !*** dimensions
-  INTEGER, PARAMETER :: mfuelcats = 30     ! allowable number of fuel categories 
+  INTEGER, PARAMETER :: mfuelcats = 30     ! allowable number of fuel categories
   INTEGER, PARAMETER ::max_moisture_classes=5
 !***
 
@@ -70,16 +71,16 @@ end type fire_params
    integer::itmp
    CHARACTER (len=80), DIMENSION(max_moisture_classes), save :: moisture_class_name
   REAL, save:: fmc_1h, fmc_10h, fmc_100h, fmc_1000h, fmc_live
-    
+
   data moisture_class_name /'1-h','10-h','100-h','1000-h','Live'/
-  data drying_lag          /1., 10., 100., 1000.,1e9/  ! time lag (h) approaching equilibrium moisture 
+  data drying_lag          /1., 10., 100., 1000.,1e9/  ! time lag (h) approaching equilibrium moisture
   data wetting_lag         /1.4,14., 140., 1400.,1e9/  ! time lag (h) for approaching saturation in rain
   data saturation_moisture /2.5, 2.5, 2.5 ,2.5, 2.5/  ! saturation moisture contents (1) in rain
-  data saturation_rain     /8.0, 8.0, 8.0, 8.0, 8.0/  ! stronger rain matters only in duration (mm/h) 
+  data saturation_rain     /8.0, 8.0, 8.0, 8.0, 8.0/  ! stronger rain matters only in duration (mm/h)
   data rain_threshold      /0.05,0.05,0.05,0.05,0.05/ ! rain intensity this small is same as nothing
-  data drying_model        /1,   1,   1,   1,   1 / ! future proofing 
+  data drying_model        /1,   1,   1,   1,   1 / ! future proofing
   data wetting_model       /1,   1,   1,   1,   1 / ! future proofing
-  data fmc_gc_initialization/2,  2,   2,   2,   3 / ! initialization 0=input, 1=from fuelmc_g, 
+  data fmc_gc_initialization/2,  2,   2,   2,   3 / ! initialization 0=input, 1=from fuelmc_g,
                                                     ! 2=from equilibrium, 3=from fmc_1h,...,fmc_live
   data fmc_gc_initial_value/0.,  0.,  0.,  0.,  0./ ! initial value used in the model, to be the actual value fmc_1h,...,fmc_live or read in
   data fmc_1h /0.08/, fmc_10h/0.08/, fmc_100h/0.08/, fmc_1000h/0.08/, fmc_live/0.3/
@@ -108,7 +109,7 @@ end type fire_params
 !
 !  Data arrays indexed by fuel category:
 !       FGI            INITIAL TOTAL MASS OF SURFACE FUEL (KG/M**2)
-!       FUELDEPTHM     FUEL DEPTH, IN M  (CONVERTED TO FT)              
+!       FUELDEPTHM     FUEL DEPTH, IN M  (CONVERTED TO FT)
 !       SAVR           FUEL PARTICLE SURFACE-AREA-TO-VOLUME RATIO, 1/FT
 !                         GRASS: 3500., 10 hr fuel: 109.,  100 hr fuel: 30.
 !       FUELMCE        MOISTURE CONTENT OF EXTINCTION; 0.30 FOR MANY DEAD FUELS; 0.15 FOR GRASS
@@ -121,7 +122,7 @@ end type fire_params
 !       FCT            BURN OUT TIME FOR CANOPY FUEL, AFTER DRY (S)
 !       ichap          Set=1 if fuel is chaparral and want the rate of spread treated differently, 0 if not
 !D      FCI            INITIAL TOTAL MASS OF CANOPY FUEL
-!D      FCBR           FUEL CANOPY BURN RATE (KG/M**2/S) 
+!D      FCBR           FUEL CANOPY BURN RATE (KG/M**2/S)
 
 ! =============================================================================
 ! Anderson 13 surface fire fuel models, along with some
@@ -133,7 +134,7 @@ end type fire_params
 !  FUEL MODEL 3: Tall grass (2.5 ft)
 !  --- Shrub-dominated fuel models
 !  FUEL MODEL 4: Chaparral (6 ft)
-!  FUEL MODEL 5: Brush (2 ft) 
+!  FUEL MODEL 5: Brush (2 ft)
 !  FUEL MODEL 6: Dormant brush, hardwood slash
 !  FUEL MODEL 7: Southern rough
 !  --- Forest litter-dominated fuel models
@@ -144,7 +145,7 @@ end type fire_params
 !  FUEL MODEL 11: Light logging slash
 !  FUEL MODEL 12: Medium logging slash
 !  FUEL MODEL 13: Heavy logging slash
-!  --- Fuel-free 
+!  --- Fuel-free
 !  FUEL MODEL 14: no fuel
 
 ! scalar fuel coefficients
@@ -166,7 +167,7 @@ end type fire_params
 ! fuel categorytables
    INTEGER, PARAMETER :: nf=14              ! number of fuel categories in data stmts
    INTEGER, SAVE      :: nfuelcats = 13     ! number of fuel categories that are specified
-   INTEGER, PARAMETER :: zf = mfuelcats-nf  ! number of zero fillers in data stmt 
+   INTEGER, PARAMETER :: zf = mfuelcats-nf  ! number of zero fillers in data stmt
    INTEGER, SAVE      :: no_fuel_cat = 14   ! special category outside of 1:nfuelcats
    CHARACTER (len=80), DIMENSION(mfuelcats ), save :: fuel_name
    INTEGER, DIMENSION( mfuelcats ), save :: ichap
@@ -191,14 +192,14 @@ end type fire_params
      '13: Heavy logging slash', &
      '14: no fuel', zf* ' '/
 
-   DATA windrf /0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44, &     
+   DATA windrf /0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44, &
                 0.36, 0.36, 0.36,  0.36,  0.43,  0.46,  1e-7, zf*0 /
    DATA fueldepthm /0.305,  0.305,  0.762, 1.829, 0.61,  0.762,0.762, &
                     0.0610, 0.0610, 0.305, 0.305, 0.701, 0.914, 0.305,zf*0. /
    DATA savr / 3500., 2784., 1500., 1739., 1683., 1564., 1562.,  &
                1889., 2484., 1764., 1182., 1145., 1159., 3500., zf*0. /
    DATA fuelmce / 0.12, 0.15, 0.25, 0.20, 0.20, 0.25, 0.40,  &
-                  0.30, 0.25, 0.25, 0.15, 0.20, 0.25, 0.12 , zf*0. / 
+                  0.30, 0.25, 0.25, 0.15, 0.20, 0.25, 0.12 , zf*0. /
    DATA fueldens / nf * 32., zf*0. /   ! 32 if solid, 19 if rotten.
    DATA st / nf* 0.0555 , zf*0./
    DATA se / nf* 0.010 , zf*0./
@@ -206,7 +207,7 @@ end type fire_params
 !              (5)-(7) could be 60-120; (8)-(10) could be 300-1600;
 !              (11)-(13) could be 300-1600
    DATA weight / 7.,  7.,  7., 180., 100., 100., 100.,  &
-              900., 900., 900., 900., 900., 900., 7. , zf*0./ 
+              900., 900., 900., 900., 900., 900., 7. , zf*0./
 ! ----- 1.12083 is 5 tons/acre.  5-50 tons/acre orig., 100-300 after blowdown
    DATA fci_d / 0., 0., 0., 1.123, 0., 0., 0.,  &
             1.121, 1.121, 1.121, 1.121, 1.121, 1.121, 0., zf*0./
@@ -265,8 +266,8 @@ real,intent(inout),dimension(ims:ime,nfmc,jms:jme):: fmc_gc
 real,intent(out),dimension(ifms:ifme,jfms:jfme):: fmc_g ! fuel data
 
 !**** local
-real, dimension(its-1:ite+1,jts-1:jte+1):: fmc_k  ! copy of fmc_gc(:,k,:) 
-real, dimension(ifts-1:ifte+1,jfts-1:jfte+1):: fmc_f      ! interpolation of fmc_gc(:,k,:) to the fire grid 
+real, dimension(its-1:ite+1,jts-1:jte+1):: fmc_k  ! copy of fmc_gc(:,k,:)
+real, dimension(ifts-1:ifte+1,jfts-1:jfte+1):: fmc_f      ! interpolation of fmc_gc(:,k,:) to the fire grid
 integer::i,j,k,n
 integer::ibs,ibe,jbs,jbe
 character(len=128)::msg
@@ -338,7 +339,7 @@ subroutine advance_moisture(    &
     nfmc,                       & ! dimension of moisture fields
     moisture_dt,                & ! timestep = time step time elapsed from the last call
     fmep_decay_tlag,            & ! moisture extended model assimilated diffs. decay time lag
-    rainc, rainnc,              & ! accumulated rain 
+    rainc, rainnc,              & ! accumulated rain
     t2, q2, psfc,               & ! temperature (K), vapor contents (kg/kg), pressure (Pa) at the surface
     rain_old,                   & ! previous value of accumulated rain
     t2_old, q2_old, psfc_old,   & ! previous values of the atmospheric state at surface
@@ -359,11 +360,11 @@ integer, intent(in)::           &
     nfmc                          ! number of moisture fields
 real, intent(in):: moisture_dt, fmep_decay_tlag
 real, intent(in), dimension(ims:ime,jms:jme):: t2, q2, psfc, rainc, rainnc
-real, intent(inout), dimension(ims:ime,jms:jme):: t2_old, q2_old, psfc_old, rain_old 
+real, intent(inout), dimension(ims:ime,jms:jme):: t2_old, q2_old, psfc_old, rain_old
 real, intent(inout), dimension(ims:ime,nfmc,jms:jme):: fmc_gc
 real, intent(inout), dimension(ims:ime,2,jms:jme):: fmep
 real, intent(out), dimension(ims:ime,nfmc,jms:jme):: fmc_equi, fmc_lag
-real, intent(out), dimension(ims:ime,jms:jme)::rh_fire 
+real, intent(out), dimension(ims:ime,jms:jme)::rh_fire
 
 !*** global
 ! fuel properties moisture set by init_fuel_cats
@@ -372,7 +373,7 @@ real, intent(out), dimension(ims:ime,jms:jme)::rh_fire
 integer:: i,j,k
 real::rain_int, T, P, Q, QRS, ES, RH, tend, EMC_d, EMC_w, EMC, R, rain_diff, fmc, rlag, equi, &
     d, w, rhmax, rhmin, change, rainmax,rainmin, fmc_old, H, deltaS, deltaE
-real, parameter::tol=1e-2 ! relative change larger than that will switch to exponential ode solver 
+real, parameter::tol=1e-2 ! relative change larger than that will switch to exponential ode solver
 character(len=256)::msg
 integer::msglevel=2
 logical, parameter::check_data=.true.,check_rh=.false.
@@ -401,7 +402,7 @@ call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme,t2,'T2')
 call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme,q2,'Q2')
 call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme,psfc,'PSFC')
 
-if(initialize) then 
+if(initialize) then
     call message('advance_moisture: initializing, copying surface variables to old')
     call copy2old
 else
@@ -415,7 +416,7 @@ if(check_data)then
 !$OMP CRITICAL(SFIRE_PHYS_CRIT)
                  write(msg,'(a,2i4,a,3e12.2)')'At i j',i,j,' t2 psfc q2 are ',t2(i,j),psfc(i,j),q2(i,j)
 !$OMP END CRITICAL(SFIRE_PHYS_CRIT)
-                 call message(msg) 
+                 call message(msg)
                  call crash('invalid data passed from WRF, must have t2 psfc>0, q2 >= 0')
             endif
         enddo
@@ -435,7 +436,7 @@ do j=jts,jte
             ! compute the rain intensity from the difference of accumulated rain
             rain_diff = ((rainc(i,j) + rainnc(i,j)) - rain_old(i,j))
             if(moisture_dt > 0.)then
-                rain_int  = 3600. * rain_diff / moisture_dt 
+                rain_int  = 3600. * rain_diff / moisture_dt
             else
                 rain_int  = 0.
             endif
@@ -455,15 +456,15 @@ do j=jts,jte
             ! function rh_from_q from Adam Kochanski following Murphy and Koop, Q.J.R. Meteorol. Soc (2005) 131 1539-1565 eq. (10)
             epsilon = 0.622 ! Molecular weight of water (18.02 g/mol) to molecular weight of dry air (28.97 g/mol)
             ! vapor pressure [Pa]
-            Pw=q*P/(epsilon+(1-epsilon)*q); 
+            Pw=q*P/(epsilon+(1-epsilon)*q);
             ! saturation vapor pressure [Pa]
             Pws= exp( 54.842763 - 6763.22/T - 4.210 * log(T) + 0.000367*T + &
                 tanh(0.0415*(T - 218.8)) * (53.878 - 1331.22/T - 9.44523 * log(T) + 0.014025*T))
             !realtive humidity [1]
             RH = Pw/Pws
             rh_fire(i,j)=RH
-            rhmax=max(RH,rhmax)         
-            rhmin=min(RH,rhmin)         
+            rhmax=max(RH,rhmax)
+            rhmin=min(RH,rhmin)
 
             deltaE = fmep(i,1,j)
             deltaS = fmep(i,2,j)
@@ -475,11 +476,11 @@ do j=jts,jte
 !$OMP CRITICAL(SFIRE_PHYS_CRIT)
                     write(msg,'(a,2i6,5(a,f10.2))')'At i,j ',i,j,' RH=',RH, &
                         ' from T=',T,' P=',P,' Q=',Q
-                    call message(msg) 
+                    call message(msg)
                     call crash('Relative humidity must be between 0 and 1, saturated water contents must be >0')
 !$OMP END CRITICAL(SFIRE_PHYS_CRIT)
                 endif
-            endif 
+            endif
             !print *,'ADV_MOIST i=',i,' j=',j,' T=',T,' P=',P,' Q=',Q,' ES=',ES,' QRS=',QRS,' RH=',RH
 
             if (R > 0.) then
@@ -503,7 +504,7 @@ do j=jts,jte
                     rlag=rec_drying_lag_sec(k)
                 end select
             endif
-            !*** MODELS THAT ARE NOT OF THE EXPONENTIAL TIME LAG KIND 
+            !*** MODELS THAT ARE NOT OF THE EXPONENTIAL TIME LAG KIND
             ! ARE RESPONSIBLE FOR THEIR OWN LOGIC, THESE MODELS
             ! SHOULD COMPUTE fmc_gc(i,k,j) DIRECTLY AND SET TLAG < 0
             !
@@ -520,9 +521,9 @@ do j=jts,jte
                 else
                     call crash('bad value of fmc_gc_initialization(k), must be between 0 and 2')
                 endif
-                equi = max(min(fmc_old, EMC_d),EMC_w) ! take lower or upper equilibrium value 
+                equi = max(min(fmc_old, EMC_d),EMC_w) ! take lower or upper equilibrium value
 
-                change = moisture_dt * rlag 
+                change = moisture_dt * rlag
 
                 if(change  < tol)then
                      if(fire_print_msg.ge.3)call message('midpoint method')
@@ -536,7 +537,7 @@ do j=jts,jte
                 ! diagnostics out
                 fmc_equi(i,k,j)=equi
                 fmc_lag(i,k,j)=1.0/(3600.0*rlag)
-                 
+
                 ! diagnostic prints
                 if(fire_print_msg.ge.3)then
 !$OMP CRITICAL(SFIRE_PHYS_CRIT)
@@ -571,12 +572,12 @@ enddo
 if(fire_print_msg.ge.2)then
 !$OMP CRITICAL(SFIRE_PHYS_CRIT)
     write(msg,2)'Rain intensity    min',rainmin,  ' max',rainmax,' mm/h'
-    call message(msg) 
+    call message(msg)
     if(rainmin <0.)then
         call message('WARNING rain accumulation must increase')
     endif
     write(msg,2)'Relative humidity min',100*rhmin,' max',100*rhmax,'%'
-    call message(msg) 
+    call message(msg)
     if(.not.(rhmax<=1.0 .and. rhmin>=0))then
         call message('WARNING Relative humidity must be between 0 and 100%')
     endif
@@ -615,8 +616,8 @@ end subroutine advance_moisture
 
 subroutine read_namelist_fire(init_fuel_moisture)
 implicit none
-!*** purpose: read namelist.fire 
-!*** arguments: 
+!*** purpose: read namelist.fire
+!*** arguments:
 logical, intent(in)::init_fuel_moisture
 logical, external:: wrf_dm_on_monitor
 #ifdef _OPENMP
@@ -628,7 +629,7 @@ character(len=128):: msg
 real:: rat
 !*** executable
 
-! read 
+! read
 namelist /fuel_scalars/ cmbcnst,hfgl,fuelmc_g,fuelmc_c,nfuelcats,no_fuel_cat
 namelist /fuel_categories/ fuel_name,windrf,fgi,fueldepthm,savr, &
     fuelmce,fueldens,st,se,weight,fci_d,fct,ichap,fgi_1h,fgi_10h,fgi_100h,fgi_1000h,fgi_live
@@ -649,7 +650,7 @@ IF ( wrf_dm_on_monitor() ) THEN
     iounit=open_text_file('namelist.fire','read',allow_fail=.true.)
     if(iounit < 0)then
        call message('File namelist.fire not found, using defaults',level=0)
-    else  
+    else
        read(iounit,fuel_scalars,iostat=io)
        if(io < 0)then
            call message('Namelist fuel_scalars not found, using defaults',level=0)
@@ -690,7 +691,7 @@ IF ( wrf_dm_on_monitor() ) THEN
     endif
 
     ! convert fuel loads in the fuel classes to internal as weights adding up to one
-    ! 
+    !
     ! copy the fuel weights and scale to 1
 
     ! just checking
@@ -749,16 +750,16 @@ IF ( wrf_dm_on_monitor() ) THEN
             enddo
     enddo
 
-    
+
 ENDIF
 
-end subroutine read_namelist_fire
-
+!!! end	John Collins, 11-May-20  end replaced by END SUBROUTINE
+END SUBROUTINE read_namelist_fire
 
 subroutine init_fuel_cats(init_fuel_moisture)
 implicit none
 !*** purpose: initialize fuel tables and variables by constants
-!*** arguments: 
+!*** arguments:
 logical, intent(in)::init_fuel_moisture
 logical, external:: wrf_dm_on_monitor
 #ifdef _OPENMP
@@ -820,7 +821,7 @@ enddo
 
 fuelheat = cmbcnst * 4.30e-04     ! convert J/kg to BTU/lb
 
-! compute derived fuel category coefficients 
+! compute derived fuel category coefficients
 
 DO i = 1,nfuelcats
     fci(i) = (1.+fuelmc_c)*fci_d(i)
@@ -925,13 +926,13 @@ if(init_fuel_moisture)then
         write(msg,7)'fmc_gc_initialization  ',(fmc_gc_initialization(ii),ii=i,k)
         call message(msg)
         write(msg,8)'wetting_lag (h)        ',(wetting_lag(ii),ii=i,k)
-        call message(msg)    
+        call message(msg)
         write(msg,8)'saturation_moisture (1)',(saturation_moisture(ii),ii=i,k)
-        call message(msg)    
+        call message(msg)
         write(msg,8)'saturation_rain (mm/h) ',(saturation_rain(ii),ii=i,k)
-        call message(msg)    
+        call message(msg)
         write(msg,8)'rain_threshold (mm/h)  ',(rain_threshold(ii),ii=i,k)
-        call message(msg)    
+        call message(msg)
     enddo
     call message(' ')
     call message('**********************************************************')
@@ -954,8 +955,8 @@ integer:: iounit,k,j,i
 type(fire_params)::fp
 !type fire_params
 !real,pointer,dimension(:,:):: vx,vy                ! wind velocity (m/s)
-!real,pointer,dimension(:,:):: zsf                  ! terrain height (m) 
-!real,pointer,dimension(:,:):: dzdxf,dzdyf          ! terrain grad (1) 
+!real,pointer,dimension(:,:):: zsf                  ! terrain height (m)
+!real,pointer,dimension(:,:):: dzdxf,dzdyf          ! terrain grad (1)
 !real,pointer,dimension(:,:):: bbb,betafl,phiwc,r_0 ! spread formula coefficients
 !real,pointer,dimension(:,:):: fgip                 ! init mass of surface fuel (kg/m^2)
 !real,pointer,dimension(:,:):: ischap               ! 1 if chapparal
@@ -975,7 +976,7 @@ fp%phiwc=>phiwc
 fp%r_0=>r_0
 fp%fgip=>fgip
 fp%ischap=>ischap
-fp%iboros=>iboros 
+fp%iboros=>iboros
 fp%fmc_g=>fmc_g
 
 iounit = open_text_file('fuels.m','write')
@@ -1002,14 +1003,14 @@ do k=1,nfuelcats
     call write_var(k,'fuelheat',fuelheat,'FUEL PARTICLE LOW HEAT CONTENT, BTU/LB')
     call write_var(k,'fuelmc_g',fuelmc_g,'FUEL PARTICLE (SURFACE) MOISTURE CONTENT')
     call write_var(k,'fuelmc_c',fuelmc_c,'FUEL PARTICLE (CANOPY) MOISTURE CONTENT')
-    ! set up fuel arrays 
+    ! set up fuel arrays
     !subroutine set_fire_params( &
     !                       ifds,ifde,jfds,jfde, &
     !                       ifms,ifme,jfms,jfme, &
     !                       ifts,ifte,jfts,jfte, &
     !                       fdx,fdy,nfuel_cat0,  &
     !                       nfuel_cat,fuel_time, &
-    !                       fp ) 
+    !                       fp )
     nfuel_cat = k
     call set_fire_params( &
                            1,2,1,nsteps, &
@@ -1017,7 +1018,7 @@ do k=1,nfuelcats
                            1,2,1,nsteps, &
                            0.,0.,k,  &
                            nfuel_cat,fuel_time, &
-                           fp ) 
+                           fp )
     ! set up windspeed and slope table
     propx=1.
     propy=0.
@@ -1047,7 +1048,7 @@ do k=1,nfuelcats
     enddo
 enddo
 13 format('fuel(',i3,').',a,'(',i3,')=',g12.5e2,';% ',a)
- 
+
 close(iounit)
 ! stop
 
@@ -1076,7 +1077,7 @@ subroutine set_fire_params( &
                            ifts,ifte,jfts,jfte, &
                            fdx,fdy,nfuel_cat0,  &
                            nfuel_cat,fuel_time, &
-                           fp ) 
+                           fp )
 
 implicit none
 
@@ -1104,12 +1105,12 @@ integer::nerr
 character(len=128)::msg
 
 integer :: kk
-integer,parameter :: nf_sb = 204 ! maximum category on 
+integer,parameter :: nf_sb = 204 ! maximum category on
 integer,dimension(1:nf_sb) :: ksb ! Anderson82 + S&B2005 fuel categories array
 
 !*** executable
 
-!*** Scott & Burgan ***! 
+!*** Scott & Burgan ***!
 ! assign no fuel by default to all the categories
 do kk=1,nf_sb
    ksb(kk)=14
@@ -1188,10 +1189,10 @@ ksb(204)=13
 nerr=0
 do j=jfts,jfte
    do i=ifts,ifte
-     ! fuel category 
+     ! fuel category
      k=ksb(int(nfuel_cat(i,j))) ! DME S&B05
-     if(k.eq.no_fuel_cat)then   ! no fuel 
-        fp%fgip(i,j)=0.            ! no mass 
+     if(k.eq.no_fuel_cat)then   ! no fuel
+        fp%fgip(i,j)=0.            ! no mass
         fp%ischap(i,j)=0.
         fp%betafl(i,j)=1.          ! DME: set to 1.0 to prevent fp%betafl(i,j)**(-0.3) to be Inf in fire_ros
         fp%bbb(i,j)=1.             !
@@ -1205,7 +1206,7 @@ do j=jfts,jfte
             k=nfuel_cat0
             nerr=nerr+1
         endif
-   
+
         if(k.lt.1.or.k.gt.nfuelcats)then
 !$OMP CRITICAL(FIRE_PHYS_CRIT)
             write(msg,'(3(a,i5))')'nfuel_cat(', i ,',',j,')=',k
@@ -1215,10 +1216,10 @@ do j=jfts,jfte
         endif
 
         fuel_time(i,j)=weight(k)/0.85 ! cell based
-        
+
         ! set fuel time constant: weight=1000 => 40% decrease over 10 min
-        ! fuel decreases as exp(-t/fuel_time) 
-        ! exp(-600*0.85/1000) = approx 0.6 
+        ! fuel decreases as exp(-t/fuel_time)
+        ! exp(-600*0.85/1000) = approx 0.6
 
         fp%ischap(i,j)=ichap(k)
         fp%fgip(i,j)=fgi(k)
@@ -1228,7 +1229,7 @@ do j=jfts,jfte
 
         !     ...Settings of fire spread parameters from Rothermel follows. These
         !        don't need to be recalculated later.
-        
+
         bmst     = fp%fmc_g(i,j) / (1.+fp%fmc_g(i,j))
         fuelloadm= (1.-bmst) * fgi(k)  !  fuelload without moisture
         fuelload = fuelloadm * (.3048)**2 * 2.205    ! to lb/ft^2
@@ -1289,13 +1290,13 @@ subroutine heat_fluxes(dt,fp,                     &
         grnhft,grnqft)                              !out
 implicit none
 
-!*** purpose        
+!*** purpose
 ! compute the heat fluxes on the fire grid cells
 
 !*** arguments
 type(fire_params), intent(in)::fp
 real, intent(in)::dt          ! dt  the fire time step (the fire model advances time by this)
-integer, intent(in)::ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,iffs,iffe,jffs,jffe   ! dimensions                   
+integer, intent(in)::ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,iffs,iffe,jffs,jffe   ! dimensions
 real, intent(in),dimension(ifms:ifme,jfms:jfme):: fgip
 real, intent(in),dimension(iffs:iffe,jffs:jffe):: fuel_frac_burnt
 real, intent(out),dimension(ifms:ifme,jfms:jfme):: grnhft,grnqft
@@ -1305,7 +1306,7 @@ integer::i,j
 real:: dmass,bmst
 logical::latent
 
-!*** executable        
+!*** executable
 do j=jfts,jfte
     do i=ifts,ifte
          dmass =                     &     ! surface fuel dry mass burnt this call (kg/m^2)
@@ -1322,7 +1323,7 @@ end subroutine heat_fluxes
 
 !
 !**********************
-!            
+!
 
 
 subroutine set_nfuel_cat(   &
@@ -1334,7 +1335,7 @@ implicit none
 
 ! set fuel distributions for testing
 integer, intent(in)::   ifts,ifte,jfts,jfte,               &
-                        ifms,ifme,jfms,jfme               
+                        ifms,ifme,jfms,jfme
 
 integer, intent(in)::ifuelread,nfuel_cat0
 real, intent(in), dimension(ifms:ifme, jfms:jfme)::zsf
@@ -1348,13 +1349,13 @@ real:: t1
 character(len=128)msg
 
 !$OMP CRITICAL(FIRE_PHYS_CRIT)
-    write(msg,'(a,i3)')'set_nfuel_cat: ifuelread=',ifuelread 
+    write(msg,'(a,i3)')'set_nfuel_cat: ifuelread=',ifuelread
 !$OMP END CRITICAL(FIRE_PHYS_CRIT)
     call message(msg)
 
 if (ifuelread .eq. -1 .or. ifuelread .eq. 2) then
 !$OMP CRITICAL(FIRE_PHYS_CRIT)
-    call message('set_nfuel_cat: assuming nfuel_cat initialized already') 
+    call message('set_nfuel_cat: assuming nfuel_cat initialized already')
     call message(msg)
 !$OMP END CRITICAL(FIRE_PHYS_CRIT)
 else if (ifuelread .eq. 0) then
@@ -1368,7 +1369,7 @@ else if (ifuelread .eq. 0) then
     write(msg,'(a,i3)')'set_nfuel_cat: fuel initialized with category',nfuel_cat0
 !$OMP END CRITICAL(FIRE_PHYS_CRIT)
     call message(msg)
-         
+
 else if (ifuelread .eq. 1) then
 !
 !         make dependent on altitude (co mountains/forest vs. plains)
@@ -1404,20 +1405,20 @@ else
 endif
 !     .............end  load fuel categories (or constant) here.
 
-end subroutine set_nfuel_cat            
+end subroutine set_nfuel_cat
 
 !
 !**********************
-!            
+!
 
 subroutine fire_ros(ros_base,ros_wind,ros_slope, &
 propx,propy,i,j,fp)
 
 implicit none
 
-! copied with the following changes ONLY: 
+! copied with the following changes ONLY:
 !   0.5*(speed + abs(speed)) -> max(speed,0.)
-!   index l -> j 
+!   index l -> j
 !   not using nfuel_cat here - cell info was put into arrays passed as arguments
 !       in include file to avoid transcription errors when used elsewhere
 !   betaop is absorbed in phiwc, see module_fr_fire_model/fire_startup
@@ -1427,10 +1428,10 @@ implicit none
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !     ... calculates fire spread rate with McArthur formula or Rothermel
 !           using fuel type of fuel cell
-!      
+!
 !         m/s =(ft/min) *.3048/60. =(ft/min) * .00508   ! conversion rate
 !         ft/min = m/s * 2.2369 * 88. = m/s *  196.850 ! conversion rate
-!      
+!
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 !*** arguments
@@ -1457,7 +1458,7 @@ scale=1.
 nvx=propx/scale
 nvy=propy/scale
 if (fire_advection.ne.0) then ! from flags in module_fr_fire_util
-    ! wind speed is total speed 
+    ! wind speed is total speed
     speed =  sqrt(fp%vx(i,j)*fp%vx(i,j)+ fp%vy(i,j)*fp%vy(i,j))+tiny(speed)
     ! slope is total slope
     tanphi = sqrt(fp%dzdxf(i,j)*fp%dzdxf(i,j) + fp%dzdyf(i,j)*fp%dzdyf(i,j))+tiny(tanphi)
@@ -1477,7 +1478,7 @@ endif
 if (.not. fp%ischap(i,j) > 0.) then      ! if fuel is not chaparral, calculate rate of spread one of these ways
     if (ibeh .eq. 1) then                ! use Rothermel formula
 !       ... if wind is 0 or into fireline, phiw = 0, &this reduces to backing ros.
-        spdms = max(speed,0.)            ! 
+        spdms = max(speed,0.)            !
         umidm = min(spdms,30.)           ! max input wind spd is 30 m/s   !param!
         umid = umidm * 196.850           ! m/s to ft/min
         !  eqn.: phiw = c * umid**bbb(i,j) * (fp%betafl(i,j)/betaop)**(-e) ! wind coef
@@ -1490,7 +1491,7 @@ if (.not. fp%ischap(i,j) > 0.) then      ! if fuel is not chaparral, calculate r
         ros_base = fp%r_0(i,j) * .00508
         ros_wind = ros_base*phiw
         ros_slope= ros_base*phis
-        
+
 
     else                                   ! McArthur formula (Australian)
         ! rosm = 0.18*exp(0.8424*max(speed,0.))
@@ -1501,10 +1502,10 @@ if (.not. fp%ischap(i,j) > 0.) then      ! if fuel is not chaparral, calculate r
 !
 else   ! chaparral
 !        .... spread rate has no dependency on fuel character, only windspeed.
-    spdms = max(speed,0.)      
+    spdms = max(speed,0.)
     ! rosm = 1.2974 * spdms**1.41       ! spread rate, m/s
     ! note: backing ros is 0 for chaparral without setting nozero value below
-    !sp_n=.03333  
+    !sp_n=.03333
     ! chaparral backing fire spread rate 0.033 m/s   ! param!
     !rosm= max(rosm, sp_n)   ! no less than backing r.o.s.
 
@@ -1540,6 +1541,6 @@ real, intent(in)::u,v
 nrm2=sqrt(u*u+v*v)
 end function nrm2
 
-end subroutine fire_ros 
+end subroutine fire_ros
 
 end module module_fr_fire_phys

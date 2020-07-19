@@ -11215,7 +11215,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !------------------------------------------------------------------
       SUBROUTINE RRTMG_SWRAD_FAST(                                &
                        rthratensw,                                &
-                       rthratenswc,                               & ! JHR
+                       rthratenswc,                               &
                        swupt, swuptc, swdnt, swdntc,              &
                        swupb, swupbc, swdnb, swdnbc,              &
 !                      swupflx, swupflxc, swdnflx, swdnflxc,      &
@@ -11280,8 +11280,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                                            rho3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         INTENT(INOUT)  ::                            RTHRATENSW,& ! JHR
-                                                      RTHRATENSWC ! JHR
+         INTENT(INOUT)  ::                            RTHRATENSW,&
+                                                      RTHRATENSWC
 
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GSW, &
@@ -12516,8 +12516,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
          do k=kts,kte 
             tten1d(k) = swhr(icol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
-            tten1d(k) = swhrc(icol,k)/86400. ! JHR
-            rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j) ! JHR
+            tten1d(k) = swhrc(icol,k)/86400.
+            rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
 
       else

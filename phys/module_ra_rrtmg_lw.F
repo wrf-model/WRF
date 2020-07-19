@@ -11481,7 +11481,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_LWRAD(                                        &
                        rthratenlw,                                &
-                       rthratenlwc,                               & ! JHR
+                       rthratenlwc,                               &
                        lwupt, lwuptc, lwuptcln, lwdnt, lwdntc, lwdntcln, &
                        lwupb, lwupbc, lwupbcln, lwdnb, lwdnbc, lwdnbcln, &
 !                      lwupflx, lwupflxc, lwdnflx, lwdnflxc,      &
@@ -11543,8 +11543,8 @@ CONTAINS
                                                            rho3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         INTENT(INOUT)  ::                            RTHRATENLW, & ! JHR
-                                                      RTHRATENLWC ! JHR
+         INTENT(INOUT)  ::                            RTHRATENLW, &
+                                                      RTHRATENLWC
 
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GLW, &
@@ -12739,8 +12739,8 @@ CONTAINS
          do k=kts,kte
             tten1d(k) = hr(ncol,k)/86400.
             rthratenlw(i,k,j) = tten1d(k)/pi3d(i,k,j)
-            tten1d(k) = hrc(ncol,k)/86400. ! JHR
-            rthratenlwc(i,k,j) = tten1d(k)/pi3d(i,k,j) ! JHR
+            tten1d(k) = hrc(ncol,k)/86400.
+            rthratenlwc(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
 
 !

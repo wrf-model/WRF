@@ -9917,7 +9917,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_SWRAD(                                        &
                        rthratensw,                                &
-                       rthratenswc,                               & ! JHR
+                       rthratenswc,                               &
                        swupt, swuptc, swuptcln, swdnt, swdntc, swdntcln, &
                        swupb, swupbc, swupbcln, swdnb, swdnbc, swdnbcln, &
 !                      swupflx, swupflxc, swdnflx, swdnflxc,      &
@@ -9986,8 +9986,8 @@ CONTAINS
                                                            rho3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         INTENT(INOUT)  ::                            RTHRATENSW, & ! JHR
-                                                      RTHRATENSWC ! JHR
+         INTENT(INOUT)  ::                            RTHRATENSW, &
+                                                      RTHRATENSWC
 
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GSW, &
@@ -11216,8 +11216,8 @@ CONTAINS
          do k=kts,kte 
             tten1d(k) = swhr(ncol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
-            tten1d(k) = swhrc(ncol,k)/86400. ! JHR
-            rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j) ! JHR
+            tten1d(k) = swhrc(ncol,k)/86400.
+            rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
       else
          if (present(swupt)) then 

@@ -29,6 +29,7 @@ CONTAINS
               ,RHO    ,RLWTOA                                             &
               ,RSWTOA ,RTHRATEN                                           &
               ,RTHRATENLW      ,RTHRATENSW                                &
+              ,RTHRATENLWC     ,RTHRATENSWC                               & ! JHR
               ,SNOW   ,STEPRA ,SWDOWN                                     &
               ,SWDOWNC ,SW_PHYSICS                                        &
               ,T8W     ,T ,TAUCLDC                                        &
@@ -350,8 +351,12 @@ CONTAINS
 !                 due to radiation (K/s)
 !-- RTHRATENLW    Theta tendency 
 !                 due to long wave radiation (K/s)
+!-- RTHRATENLWC   Theta tendency 
+!                 due to clear-sky long wave radiation (K/s) ! JHR
 !-- RTHRATENSW    Theta temperature tendency 
 !                 due to short wave radiation (K/s)
+!-- RTHRATENSWC   Theta tendency 
+!                 due to clear-sky short wave radiation (K/s) ! JHR
 !-- dt            time step (s)
 !-- itimestep     number of time steps
 !-- GLW           downward long wave flux at ground surface (W/m^2)
@@ -564,7 +569,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATEN, &
                                                       RTHRATENLW, &
-                                                      RTHRATENSW
+                                                      RTHRATENLWC, & ! JHR
+                                                      RTHRATENSW, &
+                                                      RTHRATENSWC ! JHR
 
 !  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
 !        INTENT(INOUT)  ::                                  SWUP, &
@@ -1585,7 +1592,9 @@ CONTAINS
      DO i=its,ite
         RTHRATEN(I,K,J)=0.
         RTHRATENLW(I,K,J)=0.
+        RTHRATENLWC(I,K,J)=0.
         RTHRATENSW(I,K,J)=0.
+        RTHRATENSWC(I,K,J)=0.
         CEMISS(I,K,J)=0.0
      ENDDO
      ENDDO
@@ -1848,6 +1857,7 @@ CONTAINS
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2).AND. PRESENT(ALSWVISDIR) ) THEN
              CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
+                     RTHRATENLWC=RTHRATENLWC,RTHRATENSWC=RTHRATENSWC,  & ! JHR
                      dolw=.true.,dosw=.false.,                         &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
@@ -1923,6 +1933,7 @@ CONTAINS
 
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
+                  RTHRATENLWC=RTHRATENLWC,                          & ! JHR
                   LWUPT=LWUPT,LWUPTC=LWUPTC,LWUPTCLN=LWUPTCLN,      &
                   LWDNT=LWDNT,LWDNTC=LWDNTC,LWDNTCLN=LWDNTCLN,      &
                   LWUPB=LWUPB,LWUPBC=LWUPBC,LWUPBCLN=LWUPBCLN,      &
@@ -1981,6 +1992,7 @@ CONTAINS
            IF ( PRESENT(F_QNC) .AND. PRESENT(QNC_CURR) ) THEN
              call rad_rrtmg_driver(                                 &
                            RTHRATEN, RTHRATENSW,                    &
+                           RTHRATENLWC, RTHRATENSWC,                & ! JHR
                            lwupflx, lwupflxc, lwdnflx, lwdnflxc,    &
                            swupflx, swupflxc, swdnflx, swdnflxc,    &
                            lwupt, lwuptc, lwdnt, lwdntc,            &
@@ -2012,6 +2024,7 @@ CONTAINS
 
              CALL RRTMG_LWRAD_FAST(                                 &
                   RTHRATENLW=RTHRATEN,                              &
+                  RTHRATENLWC=RTHRATENLWC,                          & ! JHR
                   LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
                   LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
                   LWUPB=LWUPB,LWUPBC=LWUPBC,                        &
@@ -2348,6 +2361,7 @@ CONTAINS
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2) .AND. PRESENT(ALSWVISDIR)) THEN
              CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
+                     RTHRATENLWC=RTHRATENLWC,RTHRATENSWC=RTHRATENSWC,  & ! JHR
                      dolw=.false.,dosw=.true.,                         &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
@@ -2410,6 +2424,7 @@ CONTAINS
 
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
+                     RTHRATENSWC=RTHRATENSWC,                          & ! JHR
                      SWUPT=SWUPT,SWUPTC=SWUPTC,SWUPTCLN=SWUPTCLN,      &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,SWDNTCLN=SWDNTCLN,      &
                      SWUPB=SWUPB,SWUPBC=SWUPBC,SWUPBCLN=SWUPBCLN,      &
@@ -2495,6 +2510,7 @@ CONTAINS
              CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
              CALL RRTMG_SWRAD_FAST(                                    &
                      RTHRATENSW=RTHRATENSW,                            &
+                     RTHRATENSWC=RTHRATENSWC,                          & ! JHR
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
                      SWUPB=SWUPB,SWUPBC=SWUPBC,                        &

@@ -4278,6 +4278,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
   CASE (0,2) ! with fixed surface heat flux given in the namelist
     heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
                                             ! set in namelist.input
+    IF (config_flags%use_theta_m == 1)THEN
+      heat_flux = heat_flux * (1. + rvovrd * moist(i,kts,j,P_QV))
+    ENDIF
+
     DO j = j_start, j_end
     DO i = i_start, i_end
        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
@@ -4297,6 +4301,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 
        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
        heat_flux = hfx(i,j)/cpm
+       IF (config_flags%use_theta_m == 1)THEN
+         heat_flux = heat_flux * (1. + rvovrd * moist(i,kts,j,P_QV))
+       ENDIF
+
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
             -g*heat_flux/dnw(kts)
        if(config_flags%use_theta_m == 1)THEN
@@ -8096,7 +8104,7 @@ END SUBROUTINE phy_bc
           ELSE
              d(k) = var_mix(i,kts,j)                    &
                   - dt*rdz_w*nlflux_rho(i,k+1,j)        &
-                  + dt*rdz_w*(hfx(i,j)/cpm+1.61*theta(i,kts,j)*qfx(i,j))
+                  + dt*rdz_w*((1.+rvovrd*moist(i,kts,j,P_QV))*hfx(i,j)/cpm+1.61*theta(i,kts,j)*qfx(i,j))
           ENDIF
  
           DO  k = kts+1, ktf-1

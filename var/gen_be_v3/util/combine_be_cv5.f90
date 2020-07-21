@@ -21,12 +21,18 @@ program be_readwrite
    !real,    allocatable  :: e_vec_loc(:,:,:)     ! latitudinally varying eigenvectors
    !real,    allocatable  :: e_val_loc(:,:)       ! latitudinally varying eigenvalues
    !real,    allocatable  :: scale_length(:)      ! scale length for regional application
+   !real,    allocatable  :: regcoeff1(:)         ! psi/chi regcoeff
+   !real,    allocatable  :: regcoeff2(:,:)       ! psi/ps regcoeff
+   !real,    allocatable  :: regcoeff3(:,:,:)     ! psi/t regcoeff
 !for be_[PSI|CHI_U|T_U|RH|PSFC_U].dat in real(8) when gen_be_v3 is run with write_be_dat_r8=.true.(default)
    real*8,  allocatable  :: e_vec(:,:)           ! domain-averaged eigenvectors
    real*8,  allocatable  :: e_val(:)             ! domain-averaged eigenvalues
    real*8,  allocatable  :: e_vec_loc(:,:,:)     ! latitudinally varying eigenvectors
    real*8,  allocatable  :: e_val_loc(:,:)       ! latitudinally varying eigenvalues
    real*8,  allocatable  :: scale_length(:)      ! scale length for regional application
+   real*8,  allocatable  :: regcoeff1(:)         ! psi/chi regcoeff
+   real*8,  allocatable  :: regcoeff2(:,:)       ! psi/ps regcoeff
+   real*8,  allocatable  :: regcoeff3(:,:,:)     ! psi/t regcoeff
 
    real*8,  allocatable  :: e_vec_r8(:,:)        ! domain-averaged eigenvectors
    real*8,  allocatable  :: e_val_r8(:)          ! domain-averaged eigenvalues
@@ -34,9 +40,6 @@ program be_readwrite
    real*8,  allocatable  :: e_val_loc_r8(:,:)    ! latitudinally varying eigenvalues
    real*8,  allocatable  :: scale_length_r8(:)   ! scale length for regional application
 
-   real,    allocatable  :: regcoeff1(:)         ! psi/chi regcoeff
-   real,    allocatable  :: regcoeff2(:,:)       ! psi/ps regcoeff
-   real,    allocatable  :: regcoeff3(:,:,:)     ! psi/t regcoeff
    real*8,  allocatable  :: regcoeff1_r8(:)      ! psi/chi regcoeff
    real*8,  allocatable  :: regcoeff2_r8(:,:)    ! psi/ps regcoeff
    real*8,  allocatable  :: regcoeff3_r8(:,:,:)  ! psi/t regcoeff

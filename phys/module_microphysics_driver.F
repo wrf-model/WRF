@@ -165,7 +165,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
                     ,WSM7SCHEME, WDM7SCHEME &
                     ,NUWRF4ICESCHEME & 
-                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL !, P3_2CATEGORY ,MILBRANDT3MOM 
+                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL   !, P3_2CATEGORY ,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
@@ -625,12 +625,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,kext_ft_qic,kext_ft_qip,kext_ft_qid &
                  ,kext_ft_qs,kext_ft_qg                           &
                  ,qnwfa_curr,qnifa_curr                           & ! Added by G. Thompson
-                 ,qvolg_curr,qvolh_curr, qrimef_curr &
-                 ,light_pe_curr,light_ne_curr,light_neu_curr
+                 ,qvolg_curr,qvolh_curr, qrimef_curr  
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
-         INTENT(IN) :: qrcuten, qscuten, qicuten, qccuten
+         INTENT(IN) :: qrcuten, qscuten, qicuten, qccuten  &
+                 ,light_pe_curr,light_ne_curr,light_neu_curr
    INTEGER, INTENT(IN), optional ::     cu_used
 #if ( WRF_CHEM == 1 )
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
@@ -2777,9 +2777,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          CALL wrf_error_fatal ( wrf_err_message )
 
       END SELECT micro_select
-#if(NMM_CORE==1)
-         print*,'Dynamic Lightning Scheme requires 5 hydrometeors'
-#else
+#if (EM_CORE==1)
+            IF (  PRESENT ( QC_CURR )   .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ))Then
 !           print*,'config_flags%dyn_lightning_option = ',config_flags%dyn_lightning_option
             if (config_flags%dyn_lightning_option.eq.1)then   
             CALL   calc_dyn_pe(dx=dx,dy=dy, &
@@ -2818,8 +2819,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
               END IF
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling dynamic lightning scheme' )
+             ENDIF
 #endif
-
    ENDDO
    !$OMP END PARALLEL DO
 

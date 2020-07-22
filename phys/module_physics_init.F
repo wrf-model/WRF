@@ -45,7 +45,6 @@ CONTAINS
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
-                         lpos,lneg,lneu, &
                          z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
@@ -258,6 +257,7 @@ CONTAINS
                          ,alevsiz_cu,num_months,no_src_types_cu,aeromcu,aeropcu   & ! PSH/TWG 06/10/16                         
                          ,EFCG,EFCS,EFIG,EFIS,EFSG,EFSS                           & ! TWG
 #endif
+                         ,lpos,lneg,lneu &
                           )
 
 !-----------------------------------------------------------------
@@ -434,7 +434,9 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) ::           &
              RAINNC, RAINC, RAINCV, RAINNCV,  &
-             SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV,LPOS,LNEG,LNEU
+             SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL ::           &
+             LPOS,LNEG,LNEU
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: z_at_q            !  G. Thompson
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: inv_dens          !  G. Thompson
    REAL,     DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qnwfa2d                !  G. Thompson
@@ -4144,7 +4146,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
    INTEGER , DIMENSION( ims:ime , jms:jme ) ,INTENT(INOUT)  :: LOWLYR
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RAINNC,SNOWNC,GRAUPELNC
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: LPOS,LNEG,LNEU
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: LPOS,LNEG,LNEU
    REAL,     DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(INOUT) :: &
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
@@ -4173,9 +4175,11 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         RAINNC(i,j) = 0.
         SNOWNC(i,j) = 0.
         GRAUPELNC(i,j) = 0.
+#if ( EM_CORE==1)
         LPOS(i,j) = 0.
         LNEG(i,j) = 0.
         LNEU(i,j) = 0.
+#endif
      ENDDO
      ENDDO
    ENDIF

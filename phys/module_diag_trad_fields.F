@@ -17,6 +17,7 @@ CONTAINS
                     qc,rho,dz8w, ht,                                &
                     use_theta_m,                                    &
                     psfc,rainc,rainnc,snownc,graupelnc,hailnc,      &
+                    lpos,lneg,lneu, &
                     sealevelp,                                      &
                     temperature,pressure,geoheight,                 &
                     umet,vmet,speed,dir,                            &
@@ -45,6 +46,7 @@ CONTAINS
 
       REAL   , INTENT(IN   ) , DIMENSION(ims:ime , kms:kme , jms:jme) :: qc, rho, dz8w
       REAL   , INTENT(IN   ) , DIMENSION(ims:ime , jms:jme)           :: psfc, rainc, rainnc, hailnc,graupelnc, snownc
+      REAL   , INTENT(IN   ) , DIMENSION(ims:ime , jms:jme),OPTIONAL     :: lpos,lneg,lneu
    
       !  Output variables
    

@@ -311,6 +311,9 @@ CONTAINS
                ,snownc=grid%snownc                                  &
                ,graupelnc=grid%graupelnc                            &
                ,hailnc=grid%hailnc                                  & 
+               ,lpos=grid%lpos                                  & 
+               ,lneg=grid%lneg                                  & 
+               ,lneu=grid%lneu                                  & 
                !  Terrestrial data                
                ,ht=grid%ht                                          &
                !  Namelist info

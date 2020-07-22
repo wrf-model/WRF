@@ -45,7 +45,7 @@ CONTAINS
                                       ims,ime, jms,jme, kms,kme , &
                                       its,ite, jts,jte, kts,kte
        REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(INOUT) ::                                          &
+        INTENT(INOUT),OPTIONAL ::                                          &
                                                       light_pe,&
                                                       light_ne, &
                                                       light_neu

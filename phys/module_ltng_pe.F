@@ -36,7 +36,7 @@ CONTAINS
                                                               qs, &
                                                               qg
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(INOUT) ::                                          &
+        INTENT(INOUT),OPTIONAL ::                                          &
                                                       light_pe,&
                                                       light_ne, &
                                                       light_neu

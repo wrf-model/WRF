@@ -2,7 +2,7 @@
 !WRF:MODEL_LAYER:DYNAMICS
 !
 #if ( defined(ADVECT_KERNEL) )
-! cpp -traditional -C -P -DADVECT_KERNEL module_advect_em.F > advection_kernel.f90
+! cpp -traditional-cpp -P -DADVECT_KERNEL module_advect_em.F > advection_kernel.f90
 ! gfortran -ffree-form -ffree-line-length-none advection_kernel.f90
 ! ./a.out
 MODULE advection_kernel
@@ -10558,7 +10558,8 @@ PROGRAM feeder
                                             msfty
    REAL , DIMENSION( : ), ALLOCATABLE :: fzm, &
                                   fzp, &
-                                  rdzw, znw,dnw, rdnw, dn, rdn
+                                  rdzw, znw,dnw, rdnw, dn, rdn, &
+                                  c1, c2
    REAL :: rdx, &
            rdy, &
            dt
@@ -10607,6 +10608,8 @@ PROGRAM feeder
    ALLOCATE (rdnw( kms:kme ) )
    ALLOCATE ( dn ( kms:kme ) )
    ALLOCATE (rdn ( kms:kme ) )
+   ALLOCATE ( c1 ( kms:kme ) )
+   ALLOCATE ( c2 ( kms:kme ) )
    PRINT *,'CALL init'
    CALL init ( config_flags)
    CALL tophat ( field , MAX_SCALARS ,&
@@ -10649,6 +10652,10 @@ PROGRAM feeder
     fzp(k) = .5* dnw(k  )/dn(k)
     fzm(k) = .5* dnw(k-1)/dn(k)
    ENDDO
+   DO k = kts,kte
+      c1(k) = 1. ! This is d(B)/d(eta), so assuming no hyb coord
+      c2(k) = 0. ! This (1 - c1)*(p00 - ptop)
+   ENDDO
 
    time_step = 5
    dt = time_step
@@ -10668,8 +10675,8 @@ PROGRAM feeder
          CALL advect_scalar    ( field(ims,kms,jms,im), &
                                  field_old(ims,kms,jms,im), &
                                  tendency(ims,kms,jms), &
-                                 ru, rv, rom,                   &
-                                 mut, time_step/3, config_flags,  &
+                                 ru, rv, rom, c1, c2,           &
+                                 mut, time_step/3, config_flags,&
                                  msfux, msfuy, msfvx, msfvy,    &
                                  msftx, msfty,                  &
                                  fzm, fzp,                      &
@@ -10685,8 +10692,8 @@ PROGRAM feeder
          CALL advect_scalar    ( field(ims,kms,jms,im), &
                                  field_old(ims,kms,jms,im), &
                                  tendency(ims,kms,jms), &
-                                 ru, rv, rom,                   &
-                                 mut, time_step/2, config_flags,  &
+                                 ru, rv, rom, c1, c2,           &
+                                 mut, time_step/2, config_flags,&
                                  msfux, msfuy, msfvx, msfvy,    &
                                  msftx, msfty,                  &
                                  fzm, fzp,                      &
@@ -10703,7 +10710,7 @@ PROGRAM feeder
             CALL advect_scalar    ( field(ims,kms,jms,im), &
                                     field_old(ims,kms,jms,im), &
                                     tendency(ims,kms,jms), &
-                                    ru, rv, rom,                   &
+                                    ru, rv, rom, c1, c2,           &
                                     mut, time_step, config_flags,  &
                                     msfux, msfuy, msfvx, msfvy,    &
                                     msftx, msfty,                  &
@@ -10718,7 +10725,8 @@ PROGRAM feeder
                                     tendency(ims,kms,jms), &
                                     h_tendency(ims,kms,jms), &
                                     z_tendency(ims,kms,jms), &
-                                    ru, rv, rom, mut, mub, mu_old, &
+                                    ru, rv, rom, c1, c2, &
+                                    mut, mub, mu_old, &
                                     time_step, config_flags, tenddec, &
                                     msfux, msfuy, msfvx, msfvy, &
                                     msftx, msfty, fzm, fzp, &
@@ -10732,7 +10740,8 @@ PROGRAM feeder
                                     tendency(ims,kms,jms), &
                                     h_tendency(ims,kms,jms), &
                                     z_tendency(ims,kms,jms), &
-                                    ru, rv, rom, mut, mub, mu_old, &
+                                    ru, rv, rom, c1, c2, &
+                                    mut, mub, mu_old, &
                                     config_flags, tenddec, &
                                     msfux, msfuy, msfvx, msfvy, &
                                     msftx, msfty, fzm, fzp, &
@@ -10744,7 +10753,7 @@ PROGRAM feeder
             CALL advect_scalar_weno ( field(ims,kms,jms,im), &
                                    field_old(ims,kms,jms,im), &
                                    tendency(ims,kms,jms), &
-                             ru, rv, rom,                   &
+                             ru, rv, rom, c1, c2,           &
                              mut, time_step, config_flags,  &
                              msfux, msfuy, msfvx, msfvy,    &
                              msftx, msfty,                  &
@@ -10757,7 +10766,7 @@ PROGRAM feeder
             CALL advect_scalar_wenopd ( field(ims,kms,jms,im), &
                                         field_old(ims,kms,jms,im), &
                                         tendency(ims,kms,jms), &
-                                ru, rv, rom,                   &
+                                ru, rv, rom, c1, c2,           &
                                 mut, mub, mu_old,              &
                                 time_step, config_flags,       &
                                 msfux, msfuy, msfvx, msfvy,    &
@@ -10803,7 +10812,7 @@ PROGRAM feeder
    print *,' '
    print *,'Lines to input to gnuplot'
    print *,' '
-   print *,"set term x11"
+   print *,"set terminal x11"
    IF      (config_flags%scalar_adv_opt .EQ. 0 ) THEN
       print *,'set title "Scalar Advection" font ",20"'
    ELSE IF (config_flags%scalar_adv_opt .EQ. 1 ) THEN
@@ -10812,7 +10821,7 @@ PROGRAM feeder
       print *,'set title "Mono Advection" font ",20"'
    ELSE IF (config_flags%scalar_adv_opt .EQ. 3 ) THEN
       print *,'set title "WENO Advection" font ",20"'
-   ELSE IF (config_flags%scalar_adv_opt .EQ. 3 ) THEN
+   ELSE IF (config_flags%scalar_adv_opt .EQ. 4 ) THEN
       print *,'set title "WENO PD Advection" font ",20"'
    END IF
    print *,"set yrange[-20:120]"

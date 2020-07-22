@@ -10172,7 +10172,7 @@ contains
 !
 !-------------------------------------------------------------------------------
    subroutine rad_rrtmg_driver(                                                &
-                       rthratensw,rthratenlw,                                  &
+                       rthratenlw,rthratensw,                                  &
                        lwupflx, lwupflxc, lwdnflx, lwdnflxc,                   &
                        swupflx, swupflxc, swdnflx, swdnflxc,                   &
                        lwupt, lwuptc, lwdnt, lwdntc,                           &

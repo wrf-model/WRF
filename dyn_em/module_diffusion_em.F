@@ -4165,8 +4165,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                            v_2(i-1,kts,j  )+          &
                            v_2(i-1,kts,j+1))/4)**2))+epsilon
 
-       tao_xz=cd0*V0_u*u_2(i,kts,j)*(rho(i,kts,j)+rho(i-1,kts,j))/2.
-       ru_tendf(i,kts,j)=ru_tendf(i,kts,j) +   g*tao_xz/dnw(kts)
+       tao_xz=cd0*V0_u*u_2(i,kts,j)
+       ru_tendf(i,kts,j)=ru_tendf(i,kts,j) +   g*tao_xz*0.5*(rho(i,kts,j)+rho(i-1,kts,j))/dnw(kts)
        IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
           nba_mij(i,kts,j,P_m13) = -tao_xz
        ENDIF
@@ -4183,8 +4183,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                            u_2(i+1,kts,j  )+          &
                            u_2(i+1,kts,j-1))/4)**2))+epsilon
 
-       tao_yz=cd0*V0_v*v_2(i,kts,j)*(rho(i,kts,j)+rho(i,kts,j-1))/2.
-       rv_tendf(i,kts,j)=rv_tendf(i,kts,j) +   g*tao_yz/dnw(kts)
+       tao_yz=cd0*V0_v*v_2(i,kts,j)
+       rv_tendf(i,kts,j)=rv_tendf(i,kts,j) +   g*tao_yz*0.5*(rho(i,kts,j)+rho(i,kts,j-1))/dnw(kts)
        IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
           nba_mij(i,kts,j,P_m23) = -tao_yz
        ENDIF
@@ -4203,8 +4203,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                            v_2(i-1,kts,j+1))/4)**2))+epsilon
        ustar=0.5*(ust(i,j)+ust(i-1,j))
 
-       tao_xz=ustar*ustar*u_2(i,kts,j)*(rho(i,kts,j)+rho(i-1,kts,j))/(2.*V0_u)
-       ru_tendf(i,kts,j)=ru_tendf(i,kts,j) +   g*tao_xz/dnw(kts)
+       tao_xz=ustar*ustar*u_2(i,kts,j)/V0_u
+       ru_tendf(i,kts,j)=ru_tendf(i,kts,j) +   g*tao_xz*0.5*(rho(i,kts,j)+rho(i-1,kts,j))/dnw(kts)
        IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
           nba_mij(i,kts,j,P_m13) = -tao_xz
        ENDIF
@@ -4222,8 +4222,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                            u_2(i+1,kts,j-1))/4)**2))+epsilon
        ustar=0.5*(ust(i,j)+ust(i,j-1))
 
-       tao_yz=ustar*ustar*v_2(i,kts,j)*(rho(i,kts,j)+rho(i,kts,j-1))/(2.*V0_v)
-       rv_tendf(i,kts,j)=rv_tendf(i,kts,j) +   g*tao_yz/dnw(kts)
+       tao_yz=ustar*ustar*v_2(i,kts,j)/V0_v
+       rv_tendf(i,kts,j)=rv_tendf(i,kts,j) +   g*tao_yz*0.5*(rho(i,kts,j)+rho(i,kts,j-1))/dnw(kts)
        IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
           nba_mij(i,kts,j,P_m23) = -tao_yz
        ENDIF

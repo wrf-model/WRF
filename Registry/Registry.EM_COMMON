@@ -2465,7 +2465,7 @@ rconfig   integer hail_opt                namelist,physics      1              0
 rconfig   integer morr_rimed_ice          namelist,physics      1              1       rh    "morr_rimed_ice "          "Hail/Graupel switch for Morrison Scheme (options 10 and 40), 1:hail, 0:graupel"                                        ""
 
 #dynamic lightning
-  rconfig   real     coul_pos            namelist,physics      max_domains  0.25E-4     rh       "Constant for Positive Charging of Clouds"  "Coulombs"      ""
+ rconfig   real     coul_pos            namelist,physics      max_domains  0.25E-4     rh       "Constant for Positive Charging of Clouds"  "Coulombs"      ""
   rconfig   real     coul_neg            namelist,physics      max_domains  0.25E-4     rh       "Constant for Negative Charging of Clouds"  "Coulombs"      ""
   rconfig   real     coul_neu            namelist,physics      max_domains  0.25E-4     rh       "Constant for Charging of Intracloud Lightning"  "Coulombs"      ""
    rconfig   real     j_pos            namelist,physics      max_domains  5.E9     rh       "Threshold for Producing Positive Event"  "J"      ""

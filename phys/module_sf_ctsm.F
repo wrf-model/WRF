@@ -475,6 +475,8 @@ contains
     real :: albedo_nirdir(ims:ime, jms:jme) ! albedo calculated by CTSM, near IR direct [-]
     real :: albedo_nirdif(ims:ime, jms:jme) ! albedo calculated by CTSM, near IR diffuse [-]
 
+    logical  :: no_negative   = .true.      ! flag for converting negative values to zero
+
     ! ------------------------------------------------------------------------
     ! Calculate landmask and export it to ctsm via lilac.
     !
@@ -556,10 +558,10 @@ contains
     call export_to_lilac(lilac_a2l_Faxa_rainl, rain_largescale_rate)
     call export_to_lilac(lilac_a2l_Faxa_snowc, snow_convective_rate)
     call export_to_lilac(lilac_a2l_Faxa_snowl, snow_largescale_rate)
-    call export_to_lilac(lilac_a2l_Faxa_swndr, swnirdir)
-    call export_to_lilac(lilac_a2l_Faxa_swvdr, swvisdir)
-    call export_to_lilac(lilac_a2l_Faxa_swndf, swnirdif)
-    call export_to_lilac(lilac_a2l_Faxa_swvdf, swvisdif)
+    call export_to_lilac(lilac_a2l_Faxa_swndr, swnirdir, no_negative)
+    call export_to_lilac(lilac_a2l_Faxa_swvdr, swvisdir, no_negative)
+    call export_to_lilac(lilac_a2l_Faxa_swndf, swnirdif, no_negative)
+    call export_to_lilac(lilac_a2l_Faxa_swvdf, swvisdif, no_negative)
 
     ! ------------------------------------------------------------------------
     ! Run ctsm via lilac
@@ -645,7 +647,7 @@ contains
 
   contains
 
-    subroutine export_to_lilac(field_index, var_2d)
+    subroutine export_to_lilac(field_index, var_2d , no_negative)
       ! Reshape var_2d to 1d for LILAC, then set the appropriate atm2lnd variable in LILAC
 
       use ctsm_LilacCouplingFields, only : lilac_atm2lnd
@@ -655,6 +657,8 @@ contains
 
       real(r8), allocatable :: var_1d(:)
 
+      logical , optional, intent(in) :: no_negative  ! convert negative values to zero
+
       call convert_2d_to_1d( &
            ide=ide, jde=jde, &
            ims=ims, ime=ime, &
@@ -662,6 +666,10 @@ contains
            its=its, ite=ite, &
            jts=jts, jte=jte, &
            var_2d=var_2d, var_1d=var_1d)
+
+      if (no_negative) then
+          var_1d = 0.5* (var_1d +abs(var_1d))
+      end if
 
       call lilac_atm2lnd( &
            field_index = field_index, &

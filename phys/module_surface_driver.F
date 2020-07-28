@@ -3828,10 +3828,11 @@ CONTAINS
              ! (see https://github.com/ESCOMP/CTSM/issues/917)
              dz8w     = dz8w, &
              ht       = ht, &
-             u_phy    = u_phy, &
-             v_phy    = v_phy, &
-             p8w      = p8w, &
-             t_phy    = t_phy, &
+             u_phy    = u_phy,  &
+             v_phy    = v_phy,  &
+             p8w      = p_phy,  &
+             t_phy    = t_phy,  &
+             th_phy   = th_phy, &
              qv_curr  = qv_curr, &
              rainbl   = rainbl, &
              sr       = sr, &

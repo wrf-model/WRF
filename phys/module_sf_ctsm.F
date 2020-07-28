@@ -391,8 +391,8 @@ contains
        dt, xland, xice, xice_threshold, &
 
        ! atm -> lnd variables
-       dz8w, ht, u_phy, v_phy, p8w, t_phy, qv_curr, &
-       rainbl, sr, &
+       dz8w, ht, u_phy, v_phy, p8w, t_phy, th_phy, &
+       qv_curr, rainbl, sr, &
        glw, swvisdir, swvisdif, swnirdir, swnirdif, &
 
        ! lnd -> atm variables
@@ -430,6 +430,7 @@ contains
     real, intent(in) :: v_phy(ims: , kms: , jms: ) ! 3D V wind component [m/s]
     real, intent(in) :: p8w(ims: , kms: , jms: ) ! 3D pressure, valid at interface [Pa]
     real, intent(in) :: t_phy(ims: , kms: , jms: ) ! 3D atmospheric temperature valid at mid-levels [K]
+    real, intent(in) :: th_phy(ims: , kms: , jms: ) ! 3D atmospheric temperature valid at mid-levels [K]
     real, intent(in) :: qv_curr(ims: , kms: , jms: ) ! 3D water vapor mixing ratio [kg/kg_dry]
     real, intent(in) :: rainbl(ims: , jms: ) ! total input precipitation [mm]
     real, intent(in) :: sr(ims: , jms: ) ! frozen precipitation ratio [-]
@@ -523,7 +524,7 @@ contains
     ! forc_pbot, so the adjustment from forc_t to forc_th isn't actually accomplishing
     ! anything. Should we do some sort of adjustment here?
     ! (See https://github.com/ESCOMP/CTSM/issues/917)
-    forc_th(its:ite, jts:jte) = t_phy(its:ite, 1, jts:jte)
+    forc_th(its:ite, jts:jte) = th_phy(its:ite, 1, jts:jte)
 
     forc_t(its:ite, jts:jte) = t_phy(its:ite, 1, jts:jte)
 
@@ -667,6 +668,7 @@ contains
            jts=jts, jte=jte, &
            var_2d=var_2d, var_1d=var_1d)
 
+      ! zero-ing out negative value when we no_negative flag.
       if (present (no_negative)) then
         if (no_negative) then
             var_1d = 0.5* (var_1d +abs(var_1d))

@@ -667,8 +667,10 @@ contains
            jts=jts, jte=jte, &
            var_2d=var_2d, var_1d=var_1d)
 
-      if (no_negative) then
-          var_1d = 0.5* (var_1d +abs(var_1d))
+      if (present (no_negative)) then
+        if (no_negative) then
+            var_1d = 0.5* (var_1d +abs(var_1d))
+        end if
       end if
 
       call lilac_atm2lnd( &

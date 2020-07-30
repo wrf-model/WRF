@@ -1932,18 +1932,6 @@ package ltng_none           lightning_option==0            -       -
 package ltng_crm_PR92w      lightning_option==1            -       -
 package ltng_crm_PR92z      lightning_option==2            -       -
 package ltng_cpm_PR92z      lightning_option==11           -       -
-# Dynamic Lightning Scheme
-rconfig  integer    dyn_lightning_option         namelist,physics   max_domains    0      h    "dyn_lightning_option"          "Dynamic Lightning CG-IC Stroke Scheme"       ""
-package dyn_lightning       dyn_lightning_option==1            -       -
-
-#dynamic lightning
-rconfig   real     coul_pos            namelist,physics      max_domains  0.25E-4     rh       "Constant for Positive Charging of Clouds"  "Coulombs"      ""
-rconfig   real     coul_neg            namelist,physics      max_domains  0.25E-4     rh       "Constant for Negative Charging of Clouds"  "Coulombs"      ""
-rconfig   real     coul_neu            namelist,physics      max_domains  0.25E-4     rh       "Constant for Charging of Intracloud Lightning"  "Coulombs"      ""
-rconfig   real     j_pos            namelist,physics      max_domains  5.E9     rh       "Threshold for Producing Positive Event"  "J"      ""
-rconfig   real     j_neg            namelist,physics      max_domains  1.E9     rh       "Threshold for Producing Negative Event"  "J"      ""
-rconfig   real     j_neu            namelist,physics      max_domains  1.E9     rh       "Threshold for Producing IC Event"  ""      "J"
-#end dynamic lightning
 #
 
 #WRF Hydro

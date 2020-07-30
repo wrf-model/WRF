@@ -2466,11 +2466,11 @@ rconfig   integer morr_rimed_ice          namelist,physics      1              1
 
 #dynamic lightning
 rconfig   real     coul_pos            namelist,physics      max_domains  0.25E-4     rh       "Constant for Positive Charging of Clouds"  "Coulombs"      ""
-  rconfig   real     coul_neg            namelist,physics      max_domains  0.25E-4     rh       "Constant for Negative Charging of Clouds"  "Coulombs"      ""
-  rconfig   real     coul_neu            namelist,physics      max_domains  0.25E-4     rh       "Constant for Charging of Intracloud Lightning"  "Coulombs"      ""
-   rconfig   real     j_pos            namelist,physics      max_domains  5.E9     rh       "Threshold for Producing Positive Event"  "J"      ""
-   rconfig   real     j_neg            namelist,physics      max_domains  1.E9     rh       "Threshold for Producing Negative Event"  "J"      ""
-   rconfig   real     j_neu            namelist,physics      max_domains  1.E9     rh       "Threshold for Producing IC Event"  ""      "J"
+rconfig   real     coul_neg            namelist,physics      max_domains  0.25E-4     rh       "Constant for Negative Charging of Clouds"  "Coulombs"      ""
+rconfig   real     coul_neu            namelist,physics      max_domains  0.25E-4     rh       "Constant for Charging of Intracloud Lightning"  "Coulombs" ""
+rconfig   real     j_pos               namelist,physics      max_domains  5.E9     rh       "Threshold for Producing Positive Event"  "J"      ""
+rconfig   real     j_neg               namelist,physics      max_domains  1.E9     rh       "Threshold for Producing Negative Event"  "J"      ""
+rconfig   real     j_neu               namelist,physics      max_domains  1.E9     rh       "Threshold for Producing IC Event"  ""      "J"
 #  end dynamic lightning
 
 rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"

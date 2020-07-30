@@ -629,8 +629,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
-         INTENT(IN) :: qrcuten, qscuten, qicuten, qccuten  &
-                 ,light_pe_curr,light_ne_curr,light_neu_curr
+         INTENT(IN) :: qrcuten, qscuten, qicuten, qccuten  
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT) :: light_pe_curr,light_ne_curr,light_neu_curr
    INTEGER, INTENT(IN), optional ::     cu_used
 #if ( WRF_CHEM == 1 )
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &

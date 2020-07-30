@@ -697,7 +697,7 @@ EOF
   if [ $? ]
   then
     gfortran -o ${foo} ${foo}.F > /dev/null 2>&1 && ./${foo}
-    if [ $? ]
+    if [ $? -eq 1 ]
     then
       sed '/^FCBASEOPTS_NO_G/ s/$/ -fallow-argument-mismatch -fallow-invalid-boz/' configure.wrf > configure.wrf.edit
       mv configure.wrf.edit configure.wrf

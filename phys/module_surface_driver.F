@@ -3808,7 +3808,88 @@ CONTAINS
      CASE (CTSMSCHEME)
 
 #ifdef WRF_USE_CTSM
-        CALL ctsm_run( &
+
+! TODO (NS): Adding errors and warning on compatible PBL schemes, etc. For
+! example:                                                                                                  
+     IF (MYJ) call wrf_error_fatal('CLM is not currently compatible with MYJ.  Please pick a different PBL scheme,')
+
+     IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)        .AND.  &
+       ! PRESENT(emiss)      .AND.  PRESENT(t2)            .AND.    &
+       ! PRESENT(declin) .AND.  PRESENT(coszen)    .AND.            &
+       ! PRESENT(hrang)  .AND. PRESENT( xlat_urb2d)    .AND.        &
+       ! PRESENT(dzr)       .AND.                                   &
+       ! PRESENT( dzb)            .AND. PRESENT(dzg)       .AND.    &
+       ! PRESENT(tr_urb2d) .AND. PRESENT(tb_urb2d)         .AND.    &
+       ! PRESENT(tg_urb2d) .AND. PRESENT(tc_urb2d) .AND.            &
+       ! PRESENT(qc_urb2d) .AND. PRESENT(uc_urb2d) .AND.            &
+       ! PRESENT(xxxr_urb2d) .AND. PRESENT(xxxb_urb2d) .AND.        &
+       ! PRESENT(xxxg_urb2d) .AND.                                  &
+       ! PRESENT(xxxc_urb2d) .AND. PRESENT(trl_urb3d) .AND.         &
+       ! PRESENT(tbl_urb3d)   .AND. PRESENT(tgl_urb3d)  .AND.       &
+       ! PRESENT(sh_urb2d) .AND. PRESENT(lh_urb2d)  .AND.           &
+       ! PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
+       ! PRESENT(ts_urb2d)                          .AND.           &
+       ! PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
+#if (EM_CORE==1)         
+         PRESENT (smcwtdxy)       .AND.                              &
+         PRESENT (rechxy)         .AND.                              &
+         PRESENT (deeprechxy)     .AND.                              &
+         PRESENT (fdepthxy)       .AND.                              &
+         PRESENT (areaxy)         .AND.                              &
+         PRESENT (rivercondxy)    .AND.                              &
+         PRESENT (riverbedxy)     .AND.                              &
+         PRESENT (eqzwt)          .AND.                              &
+         PRESENT (pexpxy)         .AND.                              &
+         PRESENT (qrfxy)          .AND.                              &
+         PRESENT (qspringxy)      .AND.                              &
+         PRESENT (qslatxy)        .AND.                              &
+         PRESENT (qrfsxy)         .AND.                              &
+         PRESENT (qspringsxy)     .AND.                              &
+         PRESENT (smoiseq)        .AND.                              &
+         PRESENT (wtddt)          .AND.                              &
+         PRESENT (stepwtd)        .AND.                              &
+#endif                   
+                                                      .TRUE. ) THEN
+
+
+!------------------------------------------------------------------
+         IF ( FRACTIONAL_SEAICE == 1) THEN
+            ! The fields passed to LSM need to represent the full ice values, not
+            ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+            ! to a value representing only the sea-ice portion.   Albedo over open 
+            ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
+            DO j = j_start(ij) , j_end(ij)
+               DO i = i_start(ij) , i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
+                     ALBEDO(I,J) = (ALBEDO(I,J)-(1.-XICE(I,J))*0.08)/XICE(I,J)
+                     EMISS(I,J) = (EMISS(I,J)-(1.-XICE(I,J))*0.98)/XICE(I,J)
+                  ENDIF  
+               ENDDO 
+            ENDDO
+            IF ( isisfc ) THEN
+               ! Use surface layer routine values from the ice portion of grid point
+            ELSE      
+               !      
+               ! We don't have surface layer routine values at this time, so
+               ! just use what we have.  Use ice component of TSK
+               !      
+               CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
+                                       i_start(ij), i_end(ij),               &
+                                       j_start(ij), j_end(ij),               &
+                                       itimestep, .false., tice2tsk_if2cold, &
+                                       XICE, XICE_THRESHOLD,                 &
+                                       SST, TSK, TSK_SEA, TSK_LOCAL )
+
+               DO j = j_start(ij) , j_end(ij)
+                  DO i = i_start(ij) , i_end(ij)
+                     TSK(i,j) = TSK_LOCAL(i,j)
+                  ENDDO
+               ENDDO                                                                                                                                                                 
+            ENDIF                                                                                                                                                                  
+        ENDIF 
+
+
+         CALL ctsm_run( &
              ! bounds
              ids=ids, ide=ide, jds=jds, jde=jde, &
              ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, &
@@ -3854,6 +3935,62 @@ CONTAINS
              emiss    = emiss, &
              z0       = z0, &
              znt      = znt)
+
+         IF ( FRACTIONAL_SEAICE == 1 ) THEN
+            ! LSM Returns full land/ice values, no fractional values.
+            ! We return to a fractional component here.  SFLX currently hard-wires
+            ! emissivity over sea ice to 0.98, the same value as over open water, so
+            ! the fractional consideration doesn't have any effect for emissivity.
+            DO j=j_start(ij),j_end(ij)
+               DO i=i_start(ij),i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                     albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+                     emiss(i,j) = ( emiss(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
+                  ENDIF
+               ENDDO
+            ENDDO
+
+            IF ( isisfc ) THEN
+               DO j=j_start(ij),j_end(ij)
+                  DO i=i_start(ij),i_end(ij)
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                        !  Weighted average of fields between ice-cover values and open-water values.
+                        flhc(i,j) = ( flhc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flhc_sea(i,j) )
+                        flqc(i,j) = ( flqc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flqc_sea(i,j) )
+                        cpm(i,j)  = ( cpm(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * cpm_sea(i,j)  )
+                        cqs2(i,j) = ( cqs2(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * cqs2_sea(i,j) )
+                        chs2(i,j) = ( chs2(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * chs2_sea(i,j) )
+                        chs(i,j)  = ( chs(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * chs_sea(i,j)  )
+                        qsfc(i,j) = ( qsfc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qsfc_sea(i,j) )
+                        qgh(i,j)  = ( qgh(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qgh_sea(i,j)  )
+                        qz0(i,j)  = ( qz0(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qz0_sea(i,j)  )
+                                                            !  print *,'hfx =',hfx_sea(170,20)
+                                                            !   print *,'XICE =',XICE(170,20)
+                                                            !    print *,'QSFC =',QSFC(170,20)
+                        hfx(i,j)  = ( hfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * hfx_sea(i,j)  )
+                        qfx(i,j)  = ( qfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qfx_sea(i,j)  )
+                        lh(i,j)   = ( lh(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * lh_sea(i,j)   )
+!save old tsk_ice
+                        tsk_save(i,j)  = tsk(i,j)
+                        tsk(i,j)  = ( tsk(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * tsk_sea(i,j)  )
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ELSE
+               DO j = j_start(ij) , j_end(ij)
+                  DO i = i_start(ij) , i_end(ij)
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                        ! Compute TSK as the open-water and ice-cover average
+                        tsk(i,j) = ( tsk(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * tsk_sea(i,j) )
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ENDIF
+         ENDIF
+
+      ENDIF
+
+
 
 #else
         CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting&

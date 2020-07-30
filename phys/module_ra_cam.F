@@ -2022,8 +2022,9 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                        pbr     ,pnm     ,pmln    ,piln    ,          &
                        qm1(1,1,in2o)    ,qm1(1,1,ich4)    ,          &
                        qm1(1,1,if11)    ,qm1(1,1,if12)    ,          &
-                       cld     ,emis    ,pmxrgn  ,nmxrgn  ,qrl     , &
-                       qrlcs, doabsems, abstot, absnxt, emstot,      &
+                       cld     ,emis    ,pmxrgn  ,nmxrgn  ,          &
+		       qrl     ,qrlcs   ,                            &
+		       doabsems, abstot, absnxt, emstot,             &
                        flns    ,flnt    ,flnsc   ,flntc   ,flwds   , &
                        flut    ,flutc   ,                            &
                        flup    ,flupc   ,fldn    ,fldnc   ,          &

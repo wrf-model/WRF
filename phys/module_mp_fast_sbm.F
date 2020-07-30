@@ -6052,25 +6052,25 @@ enddo
 
  ! ... (KS) - Broadcating Liquid drops
 #if (defined(DM_PARALLEL))
-   	DM_BCAST_MACRO_R16 ( FAF1 )
-   	DM_BCAST_MACRO_R16 ( FBF1 )
-   	DM_BCAST_MACRO_R16 ( FAB1 )
-   	DM_BCAST_MACRO_R16 ( FBB1 )
+   	DM_BCAST_MACRO_R16(FAF1)
+   	DM_BCAST_MACRO_R16(FBF1)
+   	DM_BCAST_MACRO_R16(FAB1)
+   	DM_BCAST_MACRO_R16(FBB1)
    ! ... (KS) - Broadcating Snow
-   	DM_BCAST_MACRO_R16 ( FAF3 )
-   	DM_BCAST_MACRO_R16 ( FBF3 )
-   	DM_BCAST_MACRO_R16 ( FAB3 )
-   	DM_BCAST_MACRO_R16 ( FBB3 )
+   	DM_BCAST_MACRO_R16(FAF3)
+   	DM_BCAST_MACRO_R16(FBF3)
+   	DM_BCAST_MACRO_R16(FAB3)
+   	DM_BCAST_MACRO_R16(FBB3)
    ! ... (KS) - Broadcating Graupel
-   	DM_BCAST_MACRO_R16 ( FAF4 )
-   	DM_BCAST_MACRO_R16 ( FBF4 )
-   	DM_BCAST_MACRO_R16 ( FAB4 )
-   	DM_BCAST_MACRO_R16 ( FBB4 )
+   	DM_BCAST_MACRO_R16(FAF4)
+   	DM_BCAST_MACRO_R16(FBF4)
+   	DM_BCAST_MACRO_R16(FAB4)
+   	DM_BCAST_MACRO_R16(FBB4)
    ! ### (KS) - Broadcating Hail
-   	DM_BCAST_MACRO_R16 ( FAF5 )
-   	DM_BCAST_MACRO_R16 ( FBF5 )
-   	DM_BCAST_MACRO_R16 ( FAB5 )
-   	DM_BCAST_MACRO_R16 ( FBB5 )
+   	DM_BCAST_MACRO_R16(FAF5)
+   	DM_BCAST_MACRO_R16(FBF5)
+   	DM_BCAST_MACRO_R16(FAB5)
+   	DM_BCAST_MACRO_R16(FBB5)
  ! ### (KS) - Broadcating Usetables array
  	  CALL wrf_dm_bcast_integer ( usetables , size ( usetables ) * IWORDSIZE )
 #endif

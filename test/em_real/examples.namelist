@@ -169,7 +169,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  guv_sfc                             = 0.0003,     0.0003,     0.0003,
  gt_sfc                              = 0.0003,     0.0003,     0.0003,
  gq_sfc                              = 0.0003,     0.0003,     0.0003,
- rinblw                              = 250.,
+ rinblw                              = 250.,       250.,       250., 
 
 ** Using observation nudging option (note &fdda is a separate namelist record):
 

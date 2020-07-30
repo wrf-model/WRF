@@ -60,6 +60,7 @@ MODULE module_wind_fitch
   REAL, DIMENSION(:), ALLOCATABLE :: hubheight,diameter,stc,stc2,cutin,cutout,npower
 !
   REAL :: turbws(maxvals,maxvals2),turbtc(maxvals,maxvals2),turbpw(maxvals,maxvals2)
+  REAL :: correction_factor
 !
 CONTAINS
 
@@ -327,6 +328,7 @@ CONTAINS
   ! tke coefficient calculation 
 
   tkecof=thrcof-powcof
+  tkecof = correction_factor * tkecof
   IF(tkecof .LT. 0.) tkecof=0.
 !
   END SUBROUTINE dragcof
@@ -350,6 +352,8 @@ CONTAINS
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 !
+
+   correction_factor = config_flags%windfarm_tke_factor
       IF ( wrf_dm_on_monitor() ) THEN
 !
 ! ... PAJ: Opens the file with the location of the wind turbines ...

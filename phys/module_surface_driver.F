@@ -3936,6 +3936,21 @@ CONTAINS
              z0       = z0, &
              znt      = znt)
 
+         call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
+              &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
+              &            SEAICE_SNOWDEPTH_MAX, SEAICE_SNOWDEPTH_MIN,                 &
+              &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
+              &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
+              &            albsi, icedepth, snowsi,                                    &
+              &            tslb, emiss, albedo, z0, tsk, snow, snowc, snowh,           &
+              &            chs, chs2, cqs2,                                            &
+              &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
+              &            acsnom, snopcx, sfcrunoff, noahres,                         &
+              &            sf_urban_physics, b_t_bep, b_q_bep, rho,                    &
+              &            ids,ide, jds,jde, kds,kde,                                  &
+              &            ims,ime, jms,jme, kms,kme,                                  &
+              &            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
             ! LSM Returns full land/ice values, no fractional values.
             ! We return to a fractional component here.  SFLX currently hard-wires

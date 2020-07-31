@@ -197,8 +197,8 @@
                                                         SWNIRDIR, &
                                                         SWNIRDIF
 
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: RTHRATENLWC
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: RTHRATENSWC
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(INOUT) :: RTHRATENLWC
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(INOUT) :: RTHRATENSWC
 !
 !..Additions for coupling cloud physics effective radii and radiation.  G. Thompson
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: re_cloud, re_ice, re_snow

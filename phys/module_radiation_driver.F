@@ -1707,7 +1707,8 @@ CONTAINS
 
              CALL RRTMLWRAD(                                        &
                   P_TOP=p_top_dummy                                 & 
-                 ,RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
+                 ,RTHRATEN=RTHRATEN,RTHRATENC=RTHRATENLWC,GLW=GLW   &
+                 ,OLR=RLWTOA,EMISS=EMISS                            &
                  ,QV3D=QV                                           &
                  ,QC3D=QC                                           &
                  ,QR3D=QR                                           &

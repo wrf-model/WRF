@@ -1,4 +1,4 @@
-!WRF:MODEL_LAYER:CHEMISTRY
+!  WRF:MODEL_LAYER:CHEMISTRY
 !
 ! Calls lightning_nox_driver for calling subroutines that convert lightning
 ! flash rate predictions (2D, #/sec) into NO emission (3D, moles/sec)

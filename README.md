@@ -1,5 +1,9 @@
 ### WRF-ARW Modeling System  ###
 
+This is the WRF feature branch for coupling WRF with CTSM [The Community Terrestrial Systems Model](https://github.com/ESCOMP/CTSM).
+
+For instructions on how to run WRF with CTSM please check [instructions on using CTSM with WRF] (https://escomp.github.io/ctsm-docs/versions/master/html/lilac/specific-atm-models/wrf.html).
+
 We request that all new users of WRF please register. This allows us to better determine how to support and develop the model. Please register using this form:[http://www2.mmm.ucar.edu/wrf/users/download/wrf-regist.php](http://www2.mmm.ucar.edu/wrf/users/download/wrf-regist.php).
 
 For an overview of the WRF modeling system, along with information regarding downloads, user support, documentation, publications, and additional resources, please see the WRF Model Users' Web Site: [http://www2.mmm.ucar.edu/wrf/users/](http://www2.mmm.ucar.edu/wrf/users/).

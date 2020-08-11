@@ -8050,6 +8050,9 @@ END SUBROUTINE phy_bc
      DO i = i_start, i_end
         nlflux_rho(i,k,j) = nlflux(i,k,j) * &
                            (fnm(k)*rho (i,k,j)+fnp(k)*rho (i,k-1,j))
+        IF(config_flags%use_theta_m == 1)THEN
+             nlflux_rho(i,k,j) = nlflux_rho(i,k,j)*(1.+rvovrd*moist(i,k,j,P_QV))
+        ENDIF
      ENDDO
      ENDDO
      ENDDO

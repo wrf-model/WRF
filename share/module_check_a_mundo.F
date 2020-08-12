@@ -1840,7 +1840,7 @@
 !  to be run if the code is not available.
 !-----------------------------------------------------------------------
 
-#if !defined ( WRF_USE_CTSM )
+#if !defined ( WRF_USE_CTSM ) 
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
@@ -2686,9 +2686,11 @@
          model_config_rec % num_soil_layers = 2
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME    ) THEN
          model_config_rec % num_soil_layers = 10
+#if (EM_CORE == 1)
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CTSMSCHEME    ) THEN
          ! Using 4 for the sake of the sea ice scheme
          model_config_rec % num_soil_layers = 4
+#endif
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SSIBSCHEME   ) THEN
          model_config_rec % num_soil_layers = 3
 #if (NMM_CORE == 1)

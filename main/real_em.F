@@ -4,7 +4,7 @@ PROGRAM real_data
 
    USE module_machine
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : wrf_dm_initialize
+   USE module_dm, ONLY : wrf_dm_initialize, mpi_comm_allcompute
 #endif
    USE module_domain, ONLY : domain, alloc_and_configure_domain, &
         domain_clock_set, head_grid, program_name, domain_clockprint, &
@@ -34,7 +34,7 @@ PROGRAM real_data
 #if ( WRF_CHEM == 1 )
   ! interface
    INTERFACE
-     ! mediation-supplied 
+     ! mediation-supplied
      SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags)
        USE module_domain
        TYPE (domain) grid
@@ -56,11 +56,12 @@ PROGRAM real_data
 
    INTEGER :: max_dom, domain_id , grid_id , parent_id , parent_id1 , id
    INTEGER :: e_we , e_sn , i_parent_start , j_parent_start
-   INTEGER :: idum1, idum2 
+   INTEGER :: idum1, idum2
 #ifdef DM_PARALLEL
    INTEGER                 :: nbytes
    INTEGER, PARAMETER      :: configbuflen = 4* CONFIG_BUF_LEN
    INTEGER                 :: configbuf( configbuflen )
+   INTEGER                 :: save_comm, ierr
    LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
 #endif
    LOGICAL found_the_id
@@ -92,7 +93,7 @@ real::t1,t2
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   ! NOTE: share/input_wrf.F tests first 7 chars of this name to decide 
+   ! NOTE: share/input_wrf.F tests first 7 chars of this name to decide
    ! whether to read P_TOP as metadata from the SI (yes, if .eq. REAL_EM)
 
    program_name = "REAL_EM " // TRIM(release_version) // " PREPROCESSOR"
@@ -118,6 +119,8 @@ real::t1,t2
    !  The configuration switches mostly come from the NAMELIST input.
 
 #ifdef DM_PARALLEL
+   CALL wrf_get_dm_communicator( save_comm )
+   CALL wrf_set_dm_communicator( mpi_comm_allcompute )
    IF ( wrf_dm_on_monitor() ) THEN
       CALL initial_config
    END IF
@@ -125,6 +128,8 @@ real::t1,t2
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
    CALL wrf_dm_initialize
+   CALL MPI_BARRIER( mpi_comm_allcompute, ierr )
+   CALL wrf_set_dm_communicator( save_comm )
 #else
    CALL initial_config
 #endif
@@ -235,7 +240,7 @@ real::t1,t2
          CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
          !  Some simple checks.
-         
+
          ok_so_far = .TRUE.
 
          !DJW changed the check below so that instead of always comparing
@@ -269,13 +274,13 @@ real::t1,t2
          CALL set_config_as_buffer( configbuf, configbuflen )
 #endif
 
-         !   No looping in this layer.  
+         !   No looping in this layer.
 
          CALL       wrf_debug ( 100 , 'calling med_sidata_input' )
          CALL med_sidata_input ( grid , config_flags )
          CALL       wrf_debug ( 100 , 'backfrom med_sidata_input' )
 
-      ELSE 
+      ELSE
          CYCLE all_domains
       END IF
 
@@ -315,7 +320,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    IMPLICIT NONE
 
 
-  ! Interface 
+  ! Interface
    INTERFACE
      SUBROUTINE start_domain ( grid , allowed_to_read )  ! comes from module_start in appropriate dyn_ directory
        USE module_domain
@@ -337,7 +342,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
                         prev_date_char
 
    INTEGER :: time_loop_max , loop, rc
-   INTEGER :: julyr , julday 
+   INTEGER :: julyr , julday
    INTEGER :: io_form_auxinput1
    INTEGER, EXTERNAL :: use_package
    LOGICAL :: using_binary_wrfsi
@@ -353,7 +358,7 @@ real::t1,t2,t3,t4
                                    model_config_rec%start_hour  (grid%id) , &
                                    model_config_rec%start_minute(grid%id) , &
                                    model_config_rec%start_second(grid%id) , &
-                                   model_config_rec%  end_year  (grid%id) , & 
+                                   model_config_rec%  end_year  (grid%id) , &
                                    model_config_rec%  end_month (grid%id) , &
                                    model_config_rec%  end_day   (grid%id) , &
                                    model_config_rec%  end_hour  (grid%id) , &
@@ -363,11 +368,11 @@ real::t1,t2,t3,t4
                                    model_config_rec%real_data_init_type   , &
                                    start_date_char , end_date_char , time_loop_max )
 
-   !  Override stop time with value computed above.  
+   !  Override stop time with value computed above.
    CALL domain_clock_set( grid, stop_timestr=end_date_char )
 
    ! TBH:  for now, turn off stop time and let it run data-driven
-   CALL WRFU_ClockStopTimeDisable( grid%domain_clock, rc=rc ) 
+   CALL WRFU_ClockStopTimeDisable( grid%domain_clock, rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'WRFU_ClockStopTimeDisable(grid%domain_clock) FAILED', &
                          __FILE__ , &
@@ -376,7 +381,7 @@ real::t1,t2,t3,t4
           'DEBUG med_sidata_input:  clock after stopTime set,' )
 
    !  Here we define the initial time to process, for later use by the code.
-   
+
    current_date_char = start_date_char
    prev_date_char = start_date_char
    start_date = start_date_char // '.0000'
@@ -552,7 +557,7 @@ real::t1,t2,t3,t4
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               else IF(grid%bio_emiss_opt == 3 ) THEN !shc
                  message = 'READING MEGAN 2 EMISSIONS DATA'
-                 CALL  wrf_message ( message ) 
+                 CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               END IF
               IF(grid%emiss_opt == ECPTEC .or. grid%emiss_opt == GOCART_ECPTEC   &
@@ -662,7 +667,7 @@ SUBROUTINE compute_si_start_and_end (  &
          PRINT '(A,I4,A)','Total analysis times to input = ',time_loop,'.'
          time_loop_max = time_loop
          IF ( ( time_loop_max .EQ. 1 ) .AND. ( start_date_char .NE. end_date_char ) ) THEN
-            PRINT *,'You might have set the end time in the namelist.input for the model'         
+            PRINT *,'You might have set the end time in the namelist.input for the model'
             PRINT *,'Regional domains require more than one time-period to process, for BC generation'
             CALL wrf_error_fatal ( "Make the end time at least one 'interval_seconds' beyond the start time" )
          END IF
@@ -692,7 +697,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max , curren
    INTEGER :: i , j , k , idts
 
    INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
-   INTEGER , SAVE :: id, id2,  id4 
+   INTEGER , SAVE :: id, id2,  id4
    CHARACTER (LEN=256) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
    CHARACTER (LEN=256) :: message
@@ -768,7 +773,7 @@ real::t1,t2
 
          !  This is the space needed to save the current 3d data for use in computing
          !  the lateral boundary tendencies.
-   
+
          IF ( ALLOCATED ( ubdy3dtemp1 ) ) DEALLOCATE ( ubdy3dtemp1 )
          IF ( ALLOCATED ( vbdy3dtemp1 ) ) DEALLOCATE ( vbdy3dtemp1 )
          IF ( ALLOCATED ( tbdy3dtemp1 ) ) DEALLOCATE ( tbdy3dtemp1 )
@@ -839,7 +844,7 @@ real::t1,t2
 
          !  We need to save the 3d data to compute a difference during the next loop.  Couple the
          !  3d fields with total mu (mub + mu_2) and the stagger-specific map scale factor.
-   
+
          !  u, theta, h, scalars coupled with my; v coupled with mx
          CALL couple ( grid%mu_2 , grid%mub , ubdy3dtemp1 , grid%u_2                 , 'u' , grid%msfuy , &
                        grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
@@ -856,7 +861,7 @@ real::t1,t2
          CALL couple ( grid%mu_2 , grid%mub , qbdy3dtemp1 , grid%moist(:,:,:,P_QV)      , 't' , grid%msfty , &
                        grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
-   
+
          DO j = jps , MIN(jde-1,jpe)
             DO i = ips , MIN(ide-1,ipe)
                mbdy2dtemp1(i,1,j) = grid%mu_2(i,j)
@@ -902,10 +907,10 @@ real::t1,t2
          !  No need to build boundary arrays, since no lateral BCs are being generated.
 
       ELSE
-   
+
          !  There are 2 components to the lateral boundaries.  First, there is the starting
          !  point of this time period - just the outer few rows and columns.
-   
+
          CALL stuff_bdy     ( ubdy3dtemp1 , grid%u_bxs, grid%u_bxe, grid%u_bys, grid%u_bye, &
                                                               'U' , spec_bdy_width      , &
                                                                     ids , ide , jds , jde , kds , kde , &
@@ -1015,9 +1020,9 @@ real::t1,t2
          !  No need to couple fields, since no lateral BCs are required.
 
       ELSE
-   
+
          !  Couple this time period's data with total mu, and save it in the *bdy3dtemp2 arrays.
-   
+
          !  u, theta, h, scalars coupled with my; v coupled with mx
          CALL couple ( grid%mu_2 , grid%mub , ubdy3dtemp2 , grid%u_2                 , 'u' , grid%msfuy , &
                        grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
@@ -1034,7 +1039,7 @@ real::t1,t2
          CALL couple ( grid%mu_2 , grid%mub , qbdy3dtemp2 , grid%moist(:,:,:,P_QV)      , 't' , grid%msfty , &
                        grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
-   
+
          DO j = jps , jpe
             DO i = ips , ipe
                mbdy2dtemp2(i,1,j) = grid%mu_2(i,j)
@@ -1082,9 +1087,9 @@ real::t1,t2
       ELSE
 
          !  During all of the loops after the first loop, we first compute the boundary
-         !  tendencies with the current data values (*bdy3dtemp2 arrays) and the previously 
+         !  tendencies with the current data values (*bdy3dtemp2 arrays) and the previously
          !  saved information stored in the *bdy3dtemp1 arrays.
-   
+
          CALL stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , REAL(interval_seconds) ,                 &
                                                                grid%u_btxs, grid%u_btxe,     &
                                                                grid%u_btys, grid%u_btye,     &
@@ -1190,7 +1195,7 @@ real::t1,t2
       ELSE
 
          !  Output boundary file.
-   
+
          IF(grid%id .EQ. 1)THEN
            print *,'LBC valid between these times ',prev_date_char, ' and ',current_date_char
            CALL output_boundary ( id, grid , config_flags , ierr )
@@ -1234,7 +1239,7 @@ real::t1,t2
       IF     ( loop .LT. time_loop_max ) THEN
 
          IF ( config_flags%polar ) THEN
-  
+
             !  No need to swap old for new for the boundary data, it is not required.
 
          ELSE
@@ -1242,7 +1247,7 @@ real::t1,t2
             !  We need to save the 3d data to compute a difference during the next loop.  Couple the
             !  3d fields with total mu (mub + mu_2) and the stagger-specific map scale factor.
             !  We load up the boundary data again for use in the next loop.
-   
+
             DO j = jps , jpe
                DO k = kps , kpe
                   DO i = ips , ipe
@@ -1254,7 +1259,7 @@ real::t1,t2
                   END DO
                END DO
             END DO
-   
+
             DO j = jps , jpe
                DO i = ips , ipe
                   mbdy2dtemp1(i,1,j) = mbdy2dtemp2(i,1,j)
@@ -1305,7 +1310,7 @@ real::t1,t2
 
             !  There are 2 components to the lateral boundaries.  First, there is the starting
             !  point of this time period - just the outer few rows and columns.
-   
+
             CALL stuff_bdy     ( ubdy3dtemp1 , grid%u_bxs, grid%u_bxe, grid%u_bys, grid%u_bye, &
                                                                  'U' , spec_bdy_width      , &
                                                                        ids , ide , jds , jde , kds , kde , &
@@ -1352,7 +1357,7 @@ real::t1,t2
                                                                        ims , ime , jms , jme , kms , kme , &
                                                                        ips , ipe , jps , jpe , kps , kpe )
             END IF
-   
+
          END IF
 
       ELSE IF ( loop .EQ. time_loop_max ) THEN

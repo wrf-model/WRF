@@ -7,7 +7,10 @@
 
 select((select(STDOUT), $|=1)[0]);
 $sw_perl_path = perl ;
-$sw_netcdf_path = "" ;
+$sw_netcdf_inc = "" ;
+$sw_netcdf_lib = "" ;
+$sw_netcdff_inc = "" ;
+$sw_netcdff_lib = "" ;
 $sw_pnetcdf_path = "" ;
 $sw_hdf5_path=""; 
 $sw_phdf5_path=""; 
@@ -59,9 +62,21 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   {
     $sw_perl_path = substr( $ARGV[0], 6 ) ;
   }
-  if ( substr( $ARGV[0], 1, 7 ) eq "netcdf=" )
+  if ( substr( $ARGV[0], 1, 11 ) eq "netcdf_inc=" )
   {
-    $sw_netcdf_path = substr( $ARGV[0], 8 ) ;
+    $sw_netcdf_inc = substr( $ARGV[0], 12 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 11 ) eq "netcdf_lib=" )
+  {
+    $sw_netcdf_lib = substr( $ARGV[0], 12 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 12 ) eq "netcdff_inc=" )
+  {
+    $sw_netcdff_inc = substr( $ARGV[0], 13 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 12 ) eq "netcdff_lib=" )
+  {
+    $sw_netcdff_lib = substr( $ARGV[0], 13 ) ;
   }
   if ( substr( $ARGV[0], 1, 13 ) eq "dep_lib_path=" )
   {
@@ -442,7 +457,10 @@ while ( <CONFIGURE_DEFAULTS> )
   if ( $latchon == 1 )
   {
     $_ =~ s/CONFIGURE_PERL_PATH/$sw_perl_path/g ;
-    $_ =~ s/CONFIGURE_NETCDF_PATH/$sw_netcdf_path/g ;
+    $_ =~ s/CONFIGURE_NETCDF_INC/$sw_netcdf_inc/g ;
+    $_ =~ s/CONFIGURE_NETCDF_LIB/$sw_netcdf_lib/g ;
+    $_ =~ s/CONFIGURE_NETCDF_FORTRAN_INC/$sw_netcdff_inc/g ;
+    $_ =~ s/CONFIGURE_NETCDF_FORTRAN_LIB/$sw_netcdff_lib/g ;
     $_ =~ s/CONFIGURE_PNETCDF_PATH/$sw_pnetcdf_path/g ;
     $_ =~ s/CONFIGURE_HDF5_PATH/$sw_hdf5_path/g ;
     $_ =~ s/CONFIGURE_PHDF5_PATH/$sw_phdf5_path/g ;
@@ -481,15 +499,17 @@ while ( <CONFIGURE_DEFAULTS> )
        $_ =~ s/#// ;
        $_ =~ s/#// ;
     }
-    if ( $sw_netcdf_path ) 
+    if ( $sw_netcdf_lib ) 
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
         if ( $ENV{NETCDF_LDFLAGS} ) {
           $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a $ENV{NETCDF_LDFLAGS} : ;
         } elsif ( $sw_os eq "Interix" ) {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_lib $sw_usenetcdff $sw_usenetcdf : ;
+        } elsif ( $sw_netcdff_lib ) {
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdff_lib $sw_usenetcdff -L$sw_netcdf_lib $sw_usenetcdf : ;
         } else {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_lib $sw_usenetcdff $sw_usenetcdf : ;
         }
 	 }
     else                   
@@ -803,15 +823,17 @@ while ( <ARCH_PREAMBLE> )
     if ( $sw_os ne "CYGWIN_NT" ) {
       $_ =~ s/#NOWIN// ;
     }
-    if ( $sw_netcdf_path )
+    if ( $sw_netcdf_lib )
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
         if ( $ENV{NETCDF_LDFLAGS} ) {
           $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a $ENV{NETCDF_LDFLAGS} : ;
         } elsif ( $sw_os eq "Interix" ) {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_lib $sw_usenetcdff $sw_usenetcdf : ;
+        } elsif ( $sw_netcdff_lib ) {
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdff_lib $sw_usenetcdff -L$sw_netcdf_lib $sw_usenetcdf : ;
         } else {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_lib $sw_usenetcdff $sw_usenetcdf : ;
         }
 	 }
     else

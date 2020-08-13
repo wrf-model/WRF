@@ -128,7 +128,9 @@ real::t1,t2
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
    CALL wrf_dm_initialize
+#ifndef STUBMPI
    CALL MPI_BARRIER( mpi_comm_allcompute, ierr )
+#endif
    CALL wrf_set_dm_communicator( save_comm )
 #else
    CALL initial_config

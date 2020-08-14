@@ -1,5 +1,13 @@
 MODULE module_sf_noah_seaice
-  USE module_model_constants, only : CP, R_D, XLF, XLV, RHOWATER, STBOLT
+#if defined(mpas)
+use mpas_atmphys_constants,only: cp,R_D=>R_d,XLF,XLV,RHOWATER=>rho_w,STBOLT
+use mpas_atmphys_utilities, only: physics_error_fatal
+#define FATAL_ERROR(M) call physics_error_fatal( M )
+#else
+use module_model_constants, only : CP, R_D, XLF, XLV, RHOWATER, STBOLT
+use module_wrf_error
+#define FATAL_ERROR(M) call wrf_error_fatal( M )
+#endif
   use module_sf_noahlsm, only : RD, SIGMA, CPH2O, CPICE, LSUBF, EMISSI_S, &
        &                        HSTEP
 
@@ -281,7 +289,7 @@ CONTAINS
 
       SNDENS = SNEQV / SNOWH
       IF(SNDENS > 1.0) THEN
-         CALL wrf_error_fatal ( 'Physical snow depth is less than snow water equiv.' )
+         FATAL_ERROR( 'Physical snow depth is less than snow water equiv.' )
       ENDIF
       CALL CSNOW (SNCOND,SNDENS)
 

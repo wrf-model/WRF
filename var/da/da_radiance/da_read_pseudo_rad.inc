@@ -51,6 +51,8 @@ subroutine da_read_pseudo_rad (iv)
       nchan = 14
    else if (sensor_id == 22)  then ! goes-imager
       nchan = 4
+   else if (sensor_id == 23)  then ! mwhs2
+      nchan = 15
    else
       call da_error(__FILE__,__LINE__, &
            (/"Error in setting up pseudo radiance, unknown sensor_id."/))

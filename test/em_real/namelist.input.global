@@ -34,8 +34,8 @@
  p_top_requested                     = 5000,
  num_metgrid_levels                  = 32,
  num_metgrid_soil_levels             = 4,
- dx                                  = 156343.322,20000, 4000,
- dy                                  = 156343.322,20000, 4000,
+ dx                                  = 156343.322,
+ dy                                  = 156343.322,
  p_top_requested                     = 5000
  grid_id                             = 1,     2,     3,
  parent_id                           = 0,     1,     2,
@@ -82,7 +82,7 @@
  tke_adv_opt                         = 0,      0,      0,     
  fft_filter_lat                      = 45.,
  w_damping                           = 1,
- gwd_opt                             = 1,
+ gwd_opt                             = 1,      1,      1,
  /
 
  &bdy_control

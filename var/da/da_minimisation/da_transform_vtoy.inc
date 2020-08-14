@@ -210,6 +210,9 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 #if defined(RTTOV) || defined(CRTM)
    if (use_varbc) call da_varbc_tl(cv_size, cv, iv, y)
 #endif
+
+   if (use_varbc_tamdar) call da_varbc_tamdar_tl(cv_size, cv, iv, y)
+
    if (trace_use) call da_trace_exit("da_transform_vtoy")
 
 end subroutine da_transform_vtoy

@@ -86,14 +86,18 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    logical :: calc_tb_clr
    type (CRTM_RTSolution_type), allocatable :: RTSolution_clr(:,:)
 
-   ! Initializations for AIRS (MMR) Cloud Detection
+   ! Initializations for Cloud Detection
    integer           :: ilev, jlev, nclouds
    real, allocatable :: hessian(:,:)
    real*8, allocatable :: eignvec(:,:), eignval(:)
    real              :: rad_clr, rad_ovc_ilev, rad_ovc_jlev
    
    integer           :: Band_Size(5), Bands(AIRS_Max_Channels,5) 
-  
+!For Zhuge and Zou cloud detection
+   real, allocatable :: geoht_full(:,:,:)
+   real              :: geoht_pixel(kts:min(kte,kme-1))
+   real              :: tt_pixel(kts:min(kte,kme-1))
+   real              :: pp_pixel(kts:min(kte,kme-1))  
       Band_Size(1:5) = (/86, 0, 0, 16, 0 /)
       Bands(:,:)     = 0  
       Bands(1:Band_Size(1),1) = &
@@ -195,7 +199,17 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    else if ( n_vegtype == IGBP_n_type ) then
          wrf_to_crtm_mw = igbp_to_crtm_mw
    end if
-
+   if ( use_clddet_zz ) then
+      allocate ( geoht_full(ims:ime,jms:jme,kms:kme-1) )
+      do k = kms, kme-1
+         do j = jms, jme
+            do i = ims, ime
+               geoht_full(i,j,k) = 0.5 * ( grid%ph_2(i,j,k)   + grid%phb(i,j,k) + &
+                                           grid%ph_2(i,j,k+1) + grid%phb(i,j,k+1) ) / gravity
+            end do
+         end do
+      end do
+   end if
    !------------------------------------------------------
    ! [1.0] calculate the background bright temperature
    !-------------------------------------------------------
@@ -416,6 +430,16 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
             end if
          end do
+         if (use_clddet_zz) then
+            ! Find tropopause temperature for Zhuge and Zou Cloud Detection
+            do k = kts, min(kte,kme-1)
+               tt_pixel(k) = Atmosphere(1)%Temperature(kte-k+1)
+               pp_pixel(k) = Atmosphere(1)%Pressure(kte-k+1)
+               call da_interp_2d_partial ( geoht_full(:,:,k), iv%instid(inst)%info, k, n, n, geoht_pixel(k) )
+            end do
+            call da_trop_wmo ( tt_pixel, geoht_pixel, pp_pixel, (min(kte,kme-1)-kts+1), tropt = iv%instid(inst)%tropt(n) )
+         end if
+
 
          call da_interp_2d_partial (grid%xb%u10,  iv%instid(inst)%info, 1, n, n, model_u10(n:n))
          call da_interp_2d_partial (grid%xb%v10,  iv%instid(inst)%info, 1, n, n, model_v10(n:n))
@@ -514,7 +538,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end if
 
          if (Surface(1)%Land_Coverage > 0.0) then
-            Surface(1)%Land_Type       = nint(model_ivgtyp)
+            Surface(1)%Land_Type       = min(11,nint(model_ivgtyp))  
             Surface(1)%Vegetation_Type = max(1,wrf_to_crtm_mw(nint(model_ivgtyp)))
             Surface(1)%Soil_Type       = max(1,wrf_to_crtm_soil(nint(model_isltyp)))
             ! glacial land ice soil type and glacial vegetation type are not valid land types
@@ -616,9 +640,9 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 	    
 	 end if
 
-         ! Compute Overcast Radiances for AIRS Cloud Detection (MMR)
+! Compute Overcast Radiances for MMR in Auligné (2014).or. PF in Xu et al., (2016).or. MW03 ecmwf method in McNally AP and Watts PD (2003) 
          !----------------------------------------------------------------
-         if (use_clddet_mmr .or. use_clddet_ecmwf ) then
+         if (use_clddet==1 .or. use_clddet==2.or. use_clddet==3 ) then
             do i = 1, nchanl
                !crtm_2.2.3 contains Upwelling_Overcast_Radiance
                iv%instid(inst)%rad_ovc(i,kts:kte,n)=RTSolution(i,1)%Upwelling_Overcast_Radiance(:)
@@ -773,7 +797,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             end do
          end if
 
-         if (use_clddet_ecmwf) then  !begin ecmwf cloud detection
+         if (use_clddet==3) then  !begin ecmwf cloud detection
             !kmin_t,kmax_p corresponding tropopause and KBPL
             ! find the k index of tropopause
             t_tropp = 999.0  ! initialize
@@ -920,7 +944,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    end do        ! end loop for sensor
 
    deallocate (wrf_to_crtm_mw)
-
+   if ( use_clddet_zz ) deallocate ( geoht_full )
    call CRTM_Atmosphere_Destroy (Atmosphere)
    IF ( CRTM_Atmosphere_Associated( Atmosphere(1) ) ) &
        call da_error(__FILE__,__LINE__, &

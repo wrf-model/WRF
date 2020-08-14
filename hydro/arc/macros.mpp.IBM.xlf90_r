@@ -22,11 +22,6 @@ else
 HYDRO_D =  $(WRF_HYDRO)
 endif
 
-ifeq ($(WRFIO_NCD_LARGE_FILE_SUPPORT),1)
-WRFIO_NCD_LARGE_FILE_SUPPORT = -DWRFIO_NCD_LARGE_FILE_SUPPORT
-else
-WRFIO_NCD_LARGE_FILE_SUPPORT = 
-endif
 
 RM		=	rm -f 
 RMD		=	rm -f 
@@ -35,9 +30,9 @@ F90FLAGS  =     -O2 -qfree=f90 -c -w -qspill=20000 -qmaxmem=64000
 LDFLAGS  =     -O2 -qfree=f90  -w -qspill=20000 -qmaxmem=64000
 MODFLAG	=	-I./ -I ../MPP -I../../MPP -I ../mod
 LDFLAGS	=	
-CPP	=       cpp
+CPPINVOKE	=   -qpreprocess
 LIBS 	=	
-CPPFLAGS	=	-C -P -traditional -DMPP_LAND -I../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
+CPPFLAGS	=	-DMPP_LAND -I../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
 NETCDFINC	=	$(NETCDF_INC) 
 NETCDFLIB	=	-L$(NETCDF_LIB) -lnetcdff -lnetcdf
 

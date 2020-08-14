@@ -266,9 +266,9 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
 	    
          end do ! chan
 
-         !  k. ecmwf cloud_detection
+         !  k. MW03 ecmwf method in McNally AP and Watts PD (2003)
          !-----------------------------------------------------------
-         if (use_clddet_ecmwf) then
+         if (use_clddet==3) then
             iv%instid(i)%cloud_flag(:,n) = qc_good
             allocate ( k_cloud_flag(1:nchan) )
             call da_error(__FILE__,__LINE__, &
@@ -310,7 +310,7 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
 
       ! Do inter-processor communication to gather statistics.
 
-      if (use_clddet_mmr .and. (.not.use_satcv(2))) then
+      if ((use_clddet==1 .or. use_clddet==2) .and. (.not.use_satcv(2))) then
          do k = 1, nchan
             bias_global(k)   = wrf_dm_sum_real(bias_local(k))
             numrad_global(k) = wrf_dm_sum_integer(numrad_local(k))
@@ -320,9 +320,9 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
 
       do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
 
-         ! 1. Cloud detection scheme (NESDIS or MMR)
+         ! 1. Cloud detection scheme MMR in Auligné (2014).or. PF in Xu et al., (2016)
          !---------------------------------------------
-         if (use_clddet_mmr .and. (.not.use_satcv(2))) then
+         if ((use_clddet==1 .or. use_clddet==2) .and. (.not.use_satcv(2))) then
             iv%instid(i)%cloud_flag(:,n) = qc_good
 
             if (rtm_option == rtm_option_rttov) then
@@ -351,7 +351,7 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
 
             ndim = kte_surf - kts_100hPa(1) + 1
 
-            call da_cloud_detect_airs(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)
+            call da_cloud_detect(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)
          end if
 
          do k = 1, nchan

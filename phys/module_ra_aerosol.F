@@ -256,6 +256,12 @@ subroutine calc_aerosol_goddard_sw(ht,dz8w,p,t3d,qv3d,aer_type,                 
              end do
           end do
 
+          do j = jts, jte
+             do i = its, ite
+                aerssa2d(i, j) = aer_ssa_val
+             end do
+          end do
+
        case(2)
           if (.not.(present(aerssa2d))) then
              write(wrf_err_message,*) &
@@ -327,6 +333,12 @@ subroutine calc_aerosol_goddard_sw(ht,dz8w,p,t3d,qv3d,aer_type,                 
                       asyaer(i,k,j,nb)=aer_asy_val
                    end do
                 end do
+             end do
+          end do
+
+          do j = jts, jte
+             do i = its, ite
+                aerasy2d(i, j) = aer_asy_val
              end do
           end do
 
@@ -551,7 +563,7 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
                    xy=xy+x*log(aod550spc3d(i,k,j,nb)/aod5503d(i,k,j))
                    xx=xx+x*x
                 end do
-                angexp2d(i,j) = angexp2d(i,j) - (xy/(N_BANDS-3-8+1))/(xx/(N_BANDS-3-8+1))
+                angexp2d(i,j) = angexp2d(i,j) - (xy/(N_BANDS-3-8+1))/(xx/(N_BANDS-3-8+1))*(p(i,k,j)-p(i,k+1,j))/(p(i,kts,j)-p(i,kte,j))
               enddo
              enddo
             enddo

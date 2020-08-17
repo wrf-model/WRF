@@ -4478,7 +4478,7 @@ CONTAINS
        IF(IPTB.GE.220 .OR. IPTB.LE.1 .OR. ITHTB.GE.250 .OR. ITHTB.LE.1)THEN
          write(98,'(a,6i5,2f9.2,i3)')'*** OUT OF BOUNDS ***', ktau,i,j,nk,IPTB, ITHTB, &
                     p/100.0, thes, tracker
-         call flush(98)
+         flush(98)
        ENDIF
 !
       t00=ttab(ithtb  ,iptb  )
@@ -4796,7 +4796,7 @@ CONTAINS
       ithtb=int(tth)+1
        IF(IPTB.GE.220 .OR. IPTB.LE.1 .OR. ITHTB.GE.250 .OR. ITHTB.LE.1)THEN
          write(97,'(a,6i5,2f9.2)')'*** OUT OF BOUNDS ***', ktau,i,j,nk,IPTB, ITHTB, p/100., thes
-         call flush(97)
+         flush(97)
        ENDIF
 !
       t00=ttab(ithtb  ,iptb  )

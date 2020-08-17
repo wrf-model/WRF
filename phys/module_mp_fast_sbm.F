@@ -1978,7 +1978,7 @@ enddo
   IRI = 1
   IPI = 1
 
-	IF(AMAX1(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
+	IF(max(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
 
     RW = 0.0
     IRW = 0

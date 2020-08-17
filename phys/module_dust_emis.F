@@ -142,7 +142,7 @@ CONTAINS
 
 ! increase erodability where the surface albedo is high to account better for real deserts
       if (erodin .gt. 1.E-8 .AND. albbck(i,j).gt.0.175 .and. vegfra(i,j).lt.12.5) then
-         erodin = MIN(0.5, erodin + 0.1*albbck(i,j))
+         erodin = min(0.5d0, erodin + 0.1*albbck(i,j))
       endif
 
 !  volumetric soil moisture over porosity
@@ -165,7 +165,7 @@ CONTAINS
       END IF
       srce = frac_s(n)*erodin*dxy  ! (m2)
 !     srce = 1.1*erodin*dxy  ! (m2)
-      dsrc = MAX(0.0, ch_dust(n,month)*srce*w10m*w10m *(w10m - u_ts)*dt) ! (kg)
+      dsrc = max(0.0d0, ch_dust(n,month)*srce*w10m*w10m *(w10m - u_ts)*dt) ! (kg)
 
 ! unit change from kg/timestep/cell to ug/m2/s
 !   totalemis=((dsrc)/dt)*converi/dxy

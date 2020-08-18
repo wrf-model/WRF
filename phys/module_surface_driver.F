@@ -333,7 +333,6 @@ CONTAINS
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
                                        ,CLMSCHEME                 &
-                                       ,CTSMSCHEME                &
                                        ,PXLSMSCHEME               &
                                        ,TEMFSFCSCHEME             &
                                        ,GFDLSFCSCHEME             &
@@ -3870,9 +3869,8 @@ CONTAINS
 ! -------------------------------------------------------------------
 #endif
 
-     CASE (CTSMSCHEME)
-
 #ifdef WRF_USE_CTSM
+     CASE (CTSMSCHEME)
 
 ! TODO (NS): Adding errors and warning on compatible PBL schemes, etc. For
 ! example:                                                                                                  

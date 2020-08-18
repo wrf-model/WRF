@@ -3365,9 +3365,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         CALL wrf_error_fatal ( "SF CLM CURRENTLY ifdef'ed out, set -DWRF_USE_CLM in configure.wrf in ARCH_LOCAL" )
 #endif
 
+#ifdef WRF_USE_CTSM
       CASE (CTSMSCHEME)
 
-#ifdef WRF_USE_CTSM
          CALL ctsm_init( &
               ids=ids, ide=ide, jds=jds, jde=jde, &
               ims=ims, ime=ime, jms=jms, jme=jme, &

@@ -16,7 +16,7 @@ CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
-ARCH_LOCAL      =       -DNEC -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM CONFIGURE_D_CTSM
+ARCH_LOCAL      =       -DNEC -DNONSTANDARD_SYSTEM_SUBR CONFIGURE_D_CTSM
 CFLAGS_LOCAL    =       -c   # -DRSL0_ONLY
 #-DNCARIBM_NOC99 -Xa -Kc99
 LDFLAGS_LOCAL   =       -Wl,-h nodefs
@@ -1934,7 +1934,7 @@ CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR CONFIGURE_D_CTSM
 CFLAGS_LOCAL    =       -w -O3 -c
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       

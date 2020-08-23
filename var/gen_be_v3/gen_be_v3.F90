@@ -49,6 +49,7 @@ program gen_be_v3
    real,    parameter :: cp = 7.0*gas_constant/2.0
    real,    parameter :: kappa = gas_constant/cp
    real,    parameter :: t_kelvin = 273.15
+   real,    parameter :: t_triple = 273.16 ! triple point of water
    real,    parameter :: gas_constant_v = 461.6
    real,    parameter :: rd_over_rv = gas_constant/gas_constant_v
    real,    parameter :: rd_over_rv1 = 1.0 - rd_over_rv
@@ -56,7 +57,7 @@ program gen_be_v3
    namelist /gen_be_nml/ nc_list_file, be_method, varnames, outnames, &
       do_pert_calc, do_eof_transform, do_slen_calc, slen_opt, stride, yr_cutoff, &
       verbose, level_start, level_end, aux_file, write_be_dat_r8, pert1_read_opt, &
-      vertloc_opt
+      vertloc_opt, es_ice
    namelist /ens_nml/ nens, write_ep, write_ens_stdv, ep_format, nproc_out, time_lag_ens
 
    character(len=filename_len) :: nc_list_file  ! the text file that contains a list of netcdf files to process
@@ -71,6 +72,7 @@ program gen_be_v3
    integer :: stride                 ! for slen_opt=1 to skip every stride grid point
    real    :: yr_cutoff(nvar_max)    ! for slen_opt=1
    logical :: verbose
+   logical :: es_ice                 ! whether to consider ice effect or not for saturation vapor pressure
    integer :: nens                   ! set in namelist for ENS method. hard-coded to 2 for NMC method.
    logical :: write_ep               ! if writing out ensemble perturbations
    logical :: write_ens_stdv         ! if writing out stdv of ensemble perturbations
@@ -216,6 +218,7 @@ program gen_be_v3
    ep_format = 2
    nproc_out = 1
    verbose = .false.
+   es_ice = .false.
    aux_file = 'none'
    write_be_dat_r8 = .true.
    pert1_read_opt = 1
@@ -1252,7 +1255,7 @@ subroutine compute_pert
    real, allocatable :: mub(:,:)
    real, allocatable :: znw(:)
    real    :: p_top
-   real    :: tc, es, qs
+   real    :: tk, es, qs
    logical :: got_prs, got_th, got_qv, got_u, got_v, got_psfc
 
    real, allocatable :: time_mean(:,:,:,:)
@@ -1756,9 +1759,11 @@ subroutine compute_pert
                do k = 1, nk
                   do j = 1, nj
                      do i = 1, ni
-                        tc = (theta(i,j,k)*(prs(i,j,k)/p00)**kappa) - t_kelvin
-                        es = 611.2 * exp( 17.67 * tc / (tc + 243.5) )
-                        qs = rd_over_rv * es /( prs(i,j,k) - rd_over_rv1 * es)
+                        !tc = (theta(i,j,k)*(prs(i,j,k)/p00)**kappa) - t_kelvin
+                        !es = 611.2 * exp( 17.67 * tc / (tc + 243.5) )
+                        !qs = rd_over_rv * es /( prs(i,j,k) - rd_over_rv1 * es)
+                        tk = theta(i,j,k)*(prs(i,j,k)/p00)**kappa
+                        call calc_es_qs(tk, prs(i,j,k), es, qs, es_ice)
                         ! get RH is ratio, not percentage
                         xdata(iv,ie,ic)%value(i,j,k) = (q(i,j,k)/(1.0+q(i,j,k))) / qs
                      end do
@@ -3923,6 +3928,71 @@ subroutine get_pert1_data(pert_file, vname, nx, ny, nz, vdata)
    deallocate(field)
 
 end subroutine get_pert1_data
+
+subroutine calc_es_qs (t, p, es, qs, wrt_ice)
+
+! Purpose: calculate saturation vapor pressure and saturation specific humidity
+!          given temperature and pressure
+
+   implicit none
+
+   real, intent(in)  :: t, p
+   real, intent(out) :: es, qs
+   logical, intent(in), optional :: wrt_ice
+
+   real, parameter   :: es_alpha = 611.2
+   real, parameter   :: es_beta  = 17.67
+   real, parameter   :: es_gamma = 243.5
+   real, parameter   :: t_c_ref1 =   0.0   ! C
+   real, parameter   :: t_c_ref2 = -20.0   ! C
+   real, parameter   :: a0 = 6.107799961
+   real, parameter   :: a1 = 4.436518521e-01
+   real, parameter   :: a2 = 1.428945805e-02
+   real, parameter   :: a3 = 2.650648471e-04
+   real, parameter   :: a4 = 3.031240396e-06
+   real, parameter   :: a5 = 2.034080948e-08
+   real, parameter   :: a6 = 6.136820929e-11
+   real, parameter   :: c1 = 9.09718
+   real, parameter   :: c2 = 3.56654
+   real, parameter   :: c3 = 0.876793
+   real, parameter   :: c4 = 6.1071
+   real              :: t_c, t1_c          ! T in degree C
+   logical           :: ice
+
+   ice = .false.
+   if ( present(wrt_ice) ) then
+      if ( wrt_ice ) ice = .true.
+   end if
+
+   t_c  = t - t_kelvin
+   t1_c = t - t_triple
+
+   ! Calculate saturation vapor pressure es
+
+   if ( .not. ice ) then   ! over water only
+
+      es = es_alpha * exp( es_beta * t_c / ( t_c + es_gamma ) )
+
+   else   ! consider ice-water and ice effects
+
+      if ( t1_c > t_c_ref1 ) then   ! vapor pressure over water
+         es = es_alpha * exp( es_beta * t_c / ( t_c + es_gamma ) )
+      else if ( (t1_c <= t_c_ref1) .and. (t1_c >= t_c_ref2) ) then   ! vapor pressure over water below 0C
+         es = a0 + t1_c * (a1 + t1_c * (a2 + t1_c * (a3 + t1_c * (a4 + t1_c * (a5 + t1_c * a6)))))
+         es = es * 100.0  ! to Pa
+      else   ! vapor pressure over ice
+         es = 10.0 ** ( -c1 * (t_triple / t - 1.0) - c2 * alog10(t_triple / t) +  &
+                         c3 * (1.0 - t / t_triple) +      alog10(c4))
+         es = es * 100.0  ! to Pa
+      end if
+
+   end if
+
+   ! Calculate saturation specific humidity qs
+
+   qs = rd_over_rv * es / ( p - rd_over_rv1 * es )
+
+end subroutine calc_es_qs
 
 end program gen_be_v3
 

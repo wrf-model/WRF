@@ -55,7 +55,8 @@ program gen_be_v3
 
    namelist /gen_be_nml/ nc_list_file, be_method, varnames, outnames, &
       do_pert_calc, do_eof_transform, do_slen_calc, slen_opt, stride, yr_cutoff, &
-      verbose, level_start, level_end, aux_file, write_be_dat_r8, pert1_read_opt
+      verbose, level_start, level_end, aux_file, write_be_dat_r8, pert1_read_opt, &
+      vertloc_opt
    namelist /ens_nml/ nens, write_ep, write_ens_stdv, ep_format, nproc_out
 
    character(len=filename_len) :: nc_list_file  ! the text file that contains a list of netcdf files to process
@@ -83,6 +84,8 @@ program gen_be_v3
    integer :: pert1_read_opt         ! how to access pert1 data for compute_bv_sl
                                      ! 1: read and store all cases in memory at once
                                      ! 2: read from pert1 file when need it
+   integer :: vertloc_opt            ! 0: no vertical localization
+                                     ! 1: with vertical localization using log-P algorithm
    logical :: write_pert0
    logical :: write_pert1
    logical :: write_be_dat_r8        ! if writing out be.dat in real*8
@@ -99,6 +102,9 @@ program gen_be_v3
 
    logical, allocatable :: do_this_var(:)
    integer, allocatable :: var_dim(:)
+
+   real, allocatable :: vertloc_rho(:,:)
+   real, allocatable :: vertloc_kcutoff(:)
 
    logical :: read_t
    logical :: read_qv
@@ -207,6 +213,7 @@ program gen_be_v3
    aux_file = 'none'
    write_be_dat_r8 = .true.
    pert1_read_opt = 1
+   vertloc_opt = 0
 
    ! initialize internal options
    write_pert0 = .false.
@@ -333,6 +340,24 @@ program gen_be_v3
          aux_file = filenames(1,1)
       end if
       call read_fixed_fields(trim(aux_file))
+   end if
+
+   if ( vertloc_opt > 0 ) then
+      allocate(vertloc_rho(nk,nk))
+      allocate(vertloc_kcutoff(nk))
+      if ( trim(aux_file) == 'none' ) then
+         ! read vertical level info from file filenames(1,1)
+         aux_file = filenames(1,1)
+      end if
+      call get_vertloc(trim(aux_file), nk, vertloc_rho, vertloc_kcutoff)
+      if ( myproc == root ) then
+         write(stdout,*)
+         do k = 1,nk
+            write(stdout, '(a,i4,2x,f4.1)')   ' vertloc: k, kcutoff   = ', k, vertloc_kcutoff(k)
+            write(stdout, '(a,i4,100(f6.3))') ' vertloc: k, rho(k:nk) = ', k, vertloc_rho(k,k:nk)
+         end do
+         write(stdout,*)
+      end if
    end if
 
    if ( do_pert_calc ) then
@@ -522,6 +547,11 @@ program gen_be_v3
    if ( allocated(filedates) ) deallocate(filedates)
    if ( allocated(do_this_var) ) deallocate(do_this_var)
    if ( allocated(var_dim) ) deallocate(var_dim)
+
+   if ( vertloc_opt > 0 ) then
+      if ( allocated(vertloc_rho) ) deallocate(vertloc_rho)
+      if ( allocated(vertloc_kcutoff) ) deallocate(vertloc_kcutoff)
+   end if
 
 if ( myproc == root ) write(stdout,'(a)')' All Done!'
 
@@ -948,6 +978,151 @@ subroutine read_fixed_fields_mapfac(input_file)
    call ext_ncd_ioclose(fid, ierr)
 
 end subroutine read_fixed_fields_mapfac
+
+subroutine get_vertloc(input_file, kz, rho, kcutoff)
+
+   implicit none
+
+   character(len=*),intent(in) :: input_file
+   integer, intent(in)         :: kz
+   real, intent(inout)         :: rho(kz,kz)
+   real, intent(inout)         :: kcutoff(kz)
+
+   integer                         :: fid, ierr
+   character(len=DateStrLen)       :: DateStr
+   character(len=80), dimension(3) :: dimnames
+   character(len=4)                :: staggering = ' N/A' !dummy
+   character(len=3)                :: ordering
+   integer, dimension(4)           :: start_index, end_index
+   integer                         :: ndim, wrftype
+   character(len=512)              :: message
+   character(len=VarNameLen)       :: varname
+   real(r_single), allocatable     :: xfield(:)
+
+   integer           :: k, k1, i
+   real              :: kscale, kscale_invsq, kdist
+   real              :: cutoff
+   real              :: p_top, base_pres
+   real, allocatable :: znw(:)
+   real, allocatable :: p_w(:)  ! pressure at full levels
+   real, allocatable :: ln_p_w(:)
+   real, allocatable :: dlnp(:,:)
+   real, allocatable :: kcutoff_tmp(:)
+   logical           :: smooth_kcutoff
+
+   call ext_ncd_open_for_read(trim(input_file), 0, 0, "", fid, ierr)
+   write(message,'(a,i3,a,a)') ' Proc ', myproc, ' opening ', trim(input_file)
+   call error_handler(ierr, trim(message))
+
+   call ext_ncd_get_next_time(fid, DateStr, ierr)
+   call error_handler(ierr, 'ext_ncd_get_next_time')
+
+   if ( .not. allocated(xfield) ) allocate (xfield(kz+1))
+   varname = 'P_TOP'
+   call ext_ncd_get_var_info (fid, trim(varname), ndim, ordering, staggering,  &
+                              start_index, end_index, wrftype, ierr)
+   call error_handler(ierr, 'ext_ncd_get_var_info '//trim(varname))
+   call ext_ncd_read_field(fid, DateStr, trim(varname),  &
+                           xfield(1), wrftype,           &
+                           0, 0, 0, ordering,            &
+                           staggering, dimnames,         & !dummy
+                           start_index, end_index,       & !dom
+                           start_index, end_index,       & !mem
+                           start_index, end_index,       & !pat
+                           ierr                   )
+   call error_handler(ierr, 'ext_ncd_read_field '//trim(varname))
+   p_top = xfield(1)
+
+   varname = 'P00'
+   call ext_ncd_get_var_info (fid, trim(varname), ndim, ordering, staggering,  &
+                              start_index, end_index, wrftype, ierr)
+   call error_handler(ierr, 'ext_ncd_get_var_info '//trim(varname))
+   call ext_ncd_read_field(fid, DateStr, trim(varname),  &
+                           xfield(1), wrftype,           &
+                           0, 0, 0, ordering,            &
+                           staggering, dimnames,         & !dummy
+                           start_index, end_index,       & !dom
+                           start_index, end_index,       & !mem
+                           start_index, end_index,       & !pat
+                           ierr                   )
+   call error_handler(ierr, 'ext_ncd_read_field '//trim(varname))
+   base_pres = xfield(1)
+
+   if ( .not. allocated(znw) ) allocate(znw(kz+1))
+   varname = 'ZNW'
+   call ext_ncd_get_var_info (fid, trim(varname), ndim, ordering, staggering,  &
+                              start_index, end_index, wrftype, ierr)
+   call error_handler(ierr, 'ext_ncd_get_var_info '//trim(varname))
+   call ext_ncd_read_field(fid, DateStr, trim(varname),  &
+                           xfield(:), wrftype,           &
+                           0, 0, 0, ordering,            &
+                           staggering, dimnames,         & !dummy
+                           start_index, end_index,       & !dom
+                           start_index, end_index,       & !mem
+                           start_index, end_index,       & !pat
+                           ierr                   )
+   call error_handler(ierr, 'ext_ncd_read_field '//trim(varname))
+   znw(:) = xfield(:)
+
+   call ext_ncd_ioclose(fid, ierr)
+   if ( allocated(xfield) ) deallocate (xfield)
+
+   allocate(p_w(1:kz+1))
+   allocate(ln_p_w(1:kz+1))
+   allocate(dlnp(1:kz,1:kz))
+
+   ! empirical settings
+   cutoff   = 1.0/2.71828 !1/e
+
+   do k = 1, kz+1
+      p_w(k) = znw(k)*(base_pres - p_top) + p_top
+      ln_p_w(k) = log(max(p_w(k),0.0001))
+   end do
+   kcutoff(:) = 1.0  ! initialize
+   do k = 1, kz
+      do k1 = k+1, kz
+         dlnp(k,k1) = abs(ln_p_w(k)-ln_p_w(k1))
+         if ( dlnp(k,k1) <= cutoff ) then
+            kcutoff(k) = k1-k+1
+            !if ( 0.5*(p_w(k)+p_w(k+1)) <= 15000.0 ) then ! 15000.0Pa
+            !   kcutoff(k) = min(kcutoff(k), 1.0)
+            !end if
+         end if
+      end do
+   end do
+
+   ! smoothing
+   !smooth_kcutoff = .false.
+   smooth_kcutoff = .true.
+   if ( smooth_kcutoff ) then
+      allocate(kcutoff_tmp(1:kz))
+      kcutoff_tmp(:) = kcutoff(:)
+      do i = 1, 2 ! two passes
+         do k = 2, kz-1
+            kcutoff_tmp(k)  = kcutoff(k)+ 0.25 * ( kcutoff(k-1) + kcutoff(k+1) -2.0*kcutoff(k) )
+         end do
+         kcutoff(:) = kcutoff_tmp(:)
+      end do
+      deallocate(kcutoff_tmp)
+   end if
+
+   deallocate(dlnp)
+   deallocate(ln_p_w)
+   deallocate(p_w)
+
+   ! specify probability densities:
+   rho(:,:) = 1.0  ! initialize
+   do k = 1, kz
+      kscale = kcutoff(k)
+      kscale_invsq = 1.0 / ( kscale * kscale )
+      do k1 = k, kz
+         kdist = k1 - k
+         rho(k,k1) = exp ( -1.0 * real(kdist * kdist) * kscale_invsq )
+         rho(k1,k) = rho(k,k1)
+      end do
+   end do
+
+end subroutine get_vertloc
 
 subroutine compute_pert
 
@@ -2641,6 +2816,12 @@ subroutine compute_bv_sl
          do b = 1, num_bins2d
             do k1 = 1, nkk
                do k2 = k1+1, nkk ! Symmetry.
+                  if ( vertloc_opt > 0 ) then
+                     bv(k2,k1,b) = bv(k2,k1,b) * vertloc_rho(k2,k1)
+                  end if
+                  !if ( k1 > 40 ) then ! arbitrarily remove negative values near top
+                  !   bv(k2,k1,b) = max(0.0, bv(k2,k1,b))
+                  !end if
                   bv(k1,k2,b) = bv(k2,k1,b)
                end do
             end do

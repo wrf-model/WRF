@@ -4,7 +4,17 @@
 
 1. To compile:
 
-      See the sample compile_cheyenne/compile_casper and the info in gen_be_v3.F90
+   Option 1: use lapack lib compiled in WRFDA
+      (1) need to compile WRFDA first,
+            cd your_WRFDA_dir
+            ./clean -a
+            ./configure wrfda
+            ./compile all_wrfvar
+      (2) cd your_WRFDA_dir/var/gen_be_v3
+          edit makefile
+          make
+
+   Option 2: use general lapack lib (see the desciption in gen_be_v3.F90)
 
 2. To run:
 

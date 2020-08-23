@@ -2780,7 +2780,6 @@ end subroutine compute_regcoeff_unbalanced
 
 subroutine compute_bv_sl
 
-   !use da_lapack, only : dsyev
    implicit none
 
    character(len=filename_len)  :: filename                   ! Input filename.
@@ -3637,6 +3636,9 @@ subroutine da_eof_decomposition (kz, bx, e, l)
    !          BE field.
    !---------------------------------------------------------------------------
 
+#ifdef USE_WRFDA
+   use da_lapack, only : dsyev
+#endif
    implicit none
 
    integer, intent(in)  :: kz               ! Dimension of error matrix.

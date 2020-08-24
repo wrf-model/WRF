@@ -256,7 +256,7 @@ CONTAINS
      CA_RAD(I,K,J)=(1.0-CLDAREAA(I,K,J))*CS+CLDAREAA(I,K,J)
      CLDFRA_SH(I,K,J)= CA_RAD(I,K,J)
 !    CW_RAD(I,K,J)=CLDLIQA(I,K,J)+QC(I,K,J)
-     CW_RAD(I,K,J)=CLDLIQA(I,K,J)*CLDAREAA(I,K,J) + QC(I,K,J)
+     CW_RAD(I,K,J)=CLDLIQA(I,K,J)*CLDAREAA(I,K,J)
   ENDDO
   ENDDO
   ENDDO
@@ -414,12 +414,12 @@ CONTAINS
       ENDIF
 
       IF(CLDDPTHB(I,J) .LE. 0.0) THEN   ! No active updraft
-        IF( CLDAREAB(I,K,J) .LE. 1.0e-3 .OR. CLDLIQB(I,K,J) .LE. 1.0e-17 ) THEN
+  !      IF( CLDAREAB(I,K,J) .LE. 1.0e-3 .OR. CLDLIQB(I,K,J) .LE. 1.0e-17 ) THEN
   !        QC(I,K,J)=QC(I,K,J)+CLDAREAB(I,K,J)*CLDLIQB(I,K,J)
-          RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)+CLDAREAB(I,K,J)*CLDLIQB(I,K,J)/DT
+  !        RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)+CLDAREAB(I,K,J)*CLDLIQB(I,K,J)/DT
           CLDAREAB(I,K,J) = 0.0
           CLDLIQB(I,K,J) = 0.0
-        ENDIF
+  !      ENDIF
       ENDIF
     ENDDO
     ENDDO
@@ -2799,7 +2799,7 @@ CONTAINS
 !
 ! CALCULATE THE CONVECTIVE RAINFALL
 !
-        RAINSHV(I,J)=.1*.5*DT2*PPTFLX/DXSQ
+        RAINSHV(I,J)=.5*DT2*PPTFLX/DXSQ
 
     IF ( wrf_dm_on_monitor()) THEN
       CALL get_wrf_debug_level( dbg_level )

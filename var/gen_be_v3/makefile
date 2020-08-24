@@ -12,8 +12,9 @@ CPPFLAG = -DUSE_WRFDA
 OMP_FLAG = #-fopenmp
 OMP_LIB  = #-L/usr/local/lib -lgfortran -lgomp
 
-#real-4 also works, but real-8 is recommended if memory is not an issue
-PROMOTION  = -fdefault-real-8
+#for write_ep = .true. application, the code should be compiled with real-4
+#for gen_be applications, especially cv_options=5, real-4 works, but real-8 is recommended if memory is not an issue
+PROMOTION  = #-fdefault-real-8
 FCBASEOPTS = -ffree-form -fconvert=big-endian #-ffree-line-length-none
 FCDEBUG    = #-g -O0 -fbacktrace -ggdb -fcheck=bounds,do,mem,pointer -ffpe-trap=invalid,zero,overflow
 FFLAGS     = $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(OMP_FLAG)

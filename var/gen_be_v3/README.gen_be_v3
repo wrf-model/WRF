@@ -16,6 +16,11 @@
 
    Option 2: use general lapack lib (see the desciption in gen_be_v3.F90)
 
+ Note about precision:
+   For write_ep = .true. application, the code should be compiled with real-4.
+   For gen_be applications, especially cv_options=5, real-4 works, but real-8 is recommended if memory is not an issue.
+   Hopefully the gen_be_v3 code will be updated in the future to better handle the variable declaration.
+
 2. To run:
 
       (1) Edit namelist.gen_be_v3 (examples are shown below)

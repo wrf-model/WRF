@@ -12,7 +12,8 @@ CPPFLAG = -DUSE_WRFDA
 OMP_FLAG = #-fopenmp
 OMP_LIB  = #-L/usr/local/lib -lgfortran -lgomp
 
-PROMOTION  = #-fdefault-real-8
+#real-4 also works, but real-8 is recommended if memory is not an issue
+PROMOTION  = -fdefault-real-8
 FCBASEOPTS = -ffree-form -fconvert=big-endian #-ffree-line-length-none
 FCDEBUG    = #-g -O0 -fbacktrace -ggdb -fcheck=bounds,do,mem,pointer -ffpe-trap=invalid,zero,overflow
 FFLAGS     = $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(OMP_FLAG)

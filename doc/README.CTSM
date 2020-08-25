@@ -9,7 +9,7 @@ in the WRF namelist.input file.
 For comprehensive instructions on how to run WRF with CTSM please check: 
 https://escomp.github.io/ctsm-docs/versions/master/html/lilac/specific-atm-models/wrf.html
 
-In summary, he procedure for running WRF-CTSM is similar to the workflow for 
+In summary, the procedure for running WRF-CTSM is similar to the workflow for 
 running WRF real cases, except that it requires additional steps to:
 
 1. Clone the CTSM repository,

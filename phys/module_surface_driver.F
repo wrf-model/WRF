@@ -3893,25 +3893,6 @@ CONTAINS
        ! PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
        ! PRESENT(ts_urb2d)                          .AND.           &
        ! PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
-#if (EM_CORE==1)         
-         PRESENT (smcwtdxy)       .AND.                              &
-         PRESENT (rechxy)         .AND.                              &
-         PRESENT (deeprechxy)     .AND.                              &
-         PRESENT (fdepthxy)       .AND.                              &
-         PRESENT (areaxy)         .AND.                              &
-         PRESENT (rivercondxy)    .AND.                              &
-         PRESENT (riverbedxy)     .AND.                              &
-         PRESENT (eqzwt)          .AND.                              &
-         PRESENT (pexpxy)         .AND.                              &
-         PRESENT (qrfxy)          .AND.                              &
-         PRESENT (qspringxy)      .AND.                              &
-         PRESENT (qslatxy)        .AND.                              &
-         PRESENT (qrfsxy)         .AND.                              &
-         PRESENT (qspringsxy)     .AND.                              &
-         PRESENT (smoiseq)        .AND.                              &
-         PRESENT (wtddt)          .AND.                              &
-         PRESENT (stepwtd)        .AND.                              &
-#endif                   
                                                       .TRUE. ) THEN
 
 

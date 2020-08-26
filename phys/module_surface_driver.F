@@ -4049,17 +4049,6 @@ CONTAINS
 
       ENDIF
 
-#else
-    CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting &
-        & WRF_CTSM_MKFILE before running configure" )
-
-#endif
-
-
-
-
-
-
 #endif
 
      CASE (SSIBSCHEME)

@@ -14,10 +14,13 @@ running WRF real cases, except that it requires additional steps to:
 
 1. Clone the CTSM repository,
 2. Build CTSM libraries and LILAC,
-3. Define namelist options reuired for CTSM,
-4. Choosing sf_surface_physics = 6 in the WRF namelist.input. 
+3. Set environments to build WRF with CTSM and LILAC,
+4. Define namelist options reuired for CTSM,
+5. Choosing sf_surface_physics = 6 in the WRF namelist.input. 
 
-Please note that currently nesting is not available for WRF-CTSM simulations. 
+Currently nesting is not available for WRF-CTSM simulations. 
+
+Please note that if you build WRF with CTSM, the previous WRF CLM option (sf_surface_physics=5) would not be available.
 
 **
 For further assistance please contact Dr. Negin Sobhani (negins@ucar.edu) or Dr. David Lawrence (dlawren@ucar.edu).

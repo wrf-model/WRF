@@ -3874,7 +3874,7 @@ CONTAINS
 
 ! TODO (NS): Adding errors and warning on compatible PBL schemes, etc. For
 ! example:                                                                                                  
-     IF (MYJ) call wrf_error_fatal('CLM is not currently compatible with MYJ.  Please pick a different PBL scheme,')
+     IF (MYJ) call wrf_error_fatal('CTSM is not currently compatible with MYJ.  Please pick a different PBL scheme,')
 
      IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)        .AND.  &
        ! PRESENT(emiss)      .AND.  PRESENT(t2)            .AND.    &
@@ -4068,11 +4068,17 @@ CONTAINS
 
       ENDIF
 
-
-
 #else
-        CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting&
-             & WRF_CTSM_MKFILE before running configure" )
+    CALL wrf_error_fatal( "SF CTSM CURRENTLY ifdef'ed out, set -DWRF_USE_CTSM by setting &
+        & WRF_CTSM_MKFILE before running configure" )
+
+#endif
+
+
+
+
+
+
 #endif
 
      CASE (SSIBSCHEME)

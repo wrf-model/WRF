@@ -128,8 +128,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    ! Flag for producing diagnostic fields (e.g., radar reflectivity)
    LOGICAL                        :: diag_flag
    INTEGER                        :: ke_diag ! tells reflectivity calculation whether to do full depth or only k=1
-   LOGICAL                        :: restart_flag
-   LOGICAL                        :: restart_run
+   LOGICAL                        :: restart_flag !  tells if it is a restart timestep to write restart files. 
    
 #if (WRF_CHEM == 1)
    ! Index cross-referencing array for tendency accumulation
@@ -280,12 +279,6 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
    old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop
 
-! Decide if this is a restart run or not
-   IF ( (config_flags%restart)) THEN
-      restart_run = .TRUE.
-   ELSE
-      restart_run = .FALSE.
-   ENDIF
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  3/5/07
 !   In this call, we do the time-step adaptation and set time-dependent lateral

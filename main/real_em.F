@@ -4,7 +4,7 @@ PROGRAM real_data
 
    USE module_machine
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : wrf_dm_initialize, mpi_comm_allcompute
+   USE module_dm, ONLY : wrf_dm_initialize
 #endif
    USE module_domain, ONLY : domain, alloc_and_configure_domain, &
         domain_clock_set, head_grid, program_name, domain_clockprint, &
@@ -61,7 +61,6 @@ PROGRAM real_data
    INTEGER                 :: nbytes
    INTEGER, PARAMETER      :: configbuflen = 4* CONFIG_BUF_LEN
    INTEGER                 :: configbuf( configbuflen )
-   INTEGER                 :: save_comm, ierr
    LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
 #endif
    LOGICAL found_the_id
@@ -119,8 +118,6 @@ real::t1,t2
    !  The configuration switches mostly come from the NAMELIST input.
 
 #ifdef DM_PARALLEL
-   CALL wrf_get_dm_communicator( save_comm )
-   CALL wrf_set_dm_communicator( mpi_comm_allcompute )
    IF ( wrf_dm_on_monitor() ) THEN
       CALL initial_config
    END IF
@@ -128,10 +125,6 @@ real::t1,t2
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
    CALL wrf_dm_initialize
-#ifndef STUBMPI
-   CALL MPI_BARRIER( mpi_comm_allcompute, ierr )
-#endif
-   CALL wrf_set_dm_communicator( save_comm )
 #else
    CALL initial_config
 #endif
@@ -988,7 +981,7 @@ real::t1,t2
             END IF
          END IF
       ELSE
-         
+
          !  Advance the clock to the next time period.
 
          IF ( .NOT. domain_clockisstoptime(grid) ) THEN
@@ -998,9 +991,9 @@ real::t1,t2
          END IF
       END IF
 
-      !  If the lateral boundary conditions are split, then open the file with a 
+      !  If the lateral boundary conditions are split, then open the file with a
       !  date string. Only single time periods are allowed in a lateral BC file
-      !  when the files are split into multiple pieces. Also, we choose to 
+      !  when the files are split into multiple pieces. Also, we choose to
       !  CLOSE the file just before we need it OPENed.
 
       IF ( config_flags%multi_bdy_files ) THEN

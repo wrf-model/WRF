@@ -37,10 +37,10 @@ MODULE module_dm
    INTEGER, DIMENSION(max_domains) ::  ntasks_stack, ntasks_y_stack          &
                                      , ntasks_x_stack, mytask_stack          &
                                      , mytask_x_stack, mytask_y_stack        &
-                                     , id_stack                            
+                                     , id_stack
    INTEGER, DIMENSION(max_domains) ::  ntasks_store, ntasks_y_store          &
                                      , ntasks_x_store, mytask_store          &
-                                     , mytask_x_store, mytask_y_store      
+                                     , mytask_x_store, mytask_y_store
    INTEGER ntasks, ntasks_y, ntasks_x, mytask, mytask_x, mytask_y
 
    INTEGER, DIMENSION(max_domains) :: local_communicator_stack, local_communicator_periodic_stack &
@@ -228,6 +228,9 @@ CONTAINS
       CALL nl_set_nproc_y ( 1, ntasks_y )
       WRITE( wrf_err_message , * )'Ntasks in X ',ntasks_x,', ntasks in Y ',ntasks_y
       CALL wrf_message( wrf_err_message )
+#ifndef STUBMPI
+      CALL MPI_BARRIER( local_communicator, ierr )
+#endif
       RETURN
    END SUBROUTINE wrf_dm_initialize
 
@@ -644,14 +647,14 @@ CONTAINS
            IF ( mytask_x .EQ. 0 ) THEN
              c_ips = c_ips - shw
 #if (DA_CORE == 1)
-             c_ipsy = c_ipsy - shw  
+             c_ipsy = c_ipsy - shw
 #endif
            END IF
 !           IF ( mytask_x .EQ. ntasks_x-1 ) THEN
            IF ( mytask_x .EQ. nest_pes_x(id)-1 ) THEN
              c_ipe = c_ipe + shw
 #if (DA_CORE == 1)
-             c_ipey = c_ipey + shw  
+             c_ipey = c_ipey + shw
 #endif
            END IF
            c_ims = max( c_ips - max(shw,thisdomain_max_halo_width), c_ids - bdx ) - 1
@@ -668,14 +671,14 @@ CONTAINS
            IF ( mytask_y .EQ. 0 ) THEN
               c_jps = c_jps - shw
 #if (DA_CORE == 1)
-              c_jpsx = c_jpsx - shw  
+              c_jpsx = c_jpsx - shw
 #endif
            END IF
 !           IF ( mytask_y .EQ. ntasks_y-1 ) THEN
            IF ( mytask_y .EQ. nest_pes_y(id)-1 ) THEN
               c_jpe = c_jpe + shw
 #if (DA_CORE == 1)
-              c_jpex = c_jpex + shw  
+              c_jpex = c_jpex + shw
 #endif
            END IF
            c_jms = max( c_jps - max(shw,thisdomain_max_halo_width), c_jds - bdx ) - 1
@@ -700,7 +703,7 @@ CONTAINS
          c_kmsy = c_kpsy
          c_kmey = c_kpey
 
-         IF ( c_kpsx .EQ. 0 .AND. c_kpex .EQ. -1 ) THEN  
+         IF ( c_kpsx .EQ. 0 .AND. c_kpex .EQ. -1 ) THEN
             c_kmsx = 0
             c_kmex = 0
          END IF
@@ -1074,7 +1077,7 @@ CONTAINS
     IF ( ierr .NE. 0 ) THEN
        CALL tfp_message("<stdin>",__LINE__)
     END IF
-    
+
 ! handle case where no levels are assigned to this process
 ! no iterations.  Do same for I and J. Need to handle memory alloc below.
     IF (kpsx .EQ. -1 ) THEN
@@ -1713,7 +1716,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
       INTEGER comm_id
 !
 ! Communicator definition                       Domains
-!                                                       
+!
 !  6 pe Example Comm   PEs                        (1)
 !        COMM_WORLD  0 1 2 3 4 5                  / !               1    0 1 2 3 4 5                (2) (3)
 !               2    0 1                         |
@@ -1733,7 +1736,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 !   comm_start      0    0    2    0
 !   nest_pes_x      2    1    2    1
 !   nest_pes_y      3    2    2    2
-!   
+!
 !! superceded
 !!  Namelist Split Settings (for 3 comms, 4 domains)
 !!   (comm_id)       1    2    3    ...
@@ -1933,10 +1936,10 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 !jm that is unsplit over nest domains.  from now on what we are calling
 !jm local_communicator will be the communicator that is used by the local
 !jm nests. The communicator that spans all the nests will be renamed to
-!jm intercomm_communicator.  
+!jm intercomm_communicator.
 !jm Design note: exploring the idea of using MPI intercommunicators.  They
-!jm only work in pairs so we'd have a lot of intercommunicators to set up 
-!jm and keep around. We'd also have to have additional communicator arguments 
+!jm only work in pairs so we'd have a lot of intercommunicators to set up
+!jm and keep around. We'd also have to have additional communicator arguments
 !jm to all the nesting routines in and around the RSL nesting parts.
         CALL MPI_Comm_rank ( mpi_comm_here, mytask_local, ierr ) ;
         CALL MPI_Comm_rank ( mpi_comm_here, origmytask, ierr ) ;
@@ -2178,13 +2181,13 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
                                    mp_local_uobmask,            &
                                    mp_local_vobmask,            &
                                    mp_local_cobmask, errf )
-      
+
 !------------------------------------------------------------------------------
 !  PURPOSE: Do MPI allgatherv operation across processors to get the
 !           errors at each observation point on all processors.
-!       
+!
 !------------------------------------------------------------------------------
-        
+
     INTEGER, INTENT(IN)   :: nsta                ! Observation index.
     INTEGER, INTENT(IN)   :: nerrf               ! Number of error fields.
     INTEGER, INTENT(IN)   :: niobf               ! Number of observations.
@@ -2194,7 +2197,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
     REAL, INTENT(INOUT)   :: errf(nerrf, niobf)
 
 #ifndef STUBMPI
-        
+
 ! Local declarations
     integer i, n, nlocal_dot, nlocal_crs
     REAL UVT_BUFFER(NIOBF)    ! Buffer for holding U, V, or T
@@ -2721,7 +2724,7 @@ SUBROUTINE wrf_dm_bcast_string( BUF, N1 )
    CHARACTER*256 tstr
    n = n1
    ! Root task is required to have the correct value of N1, other tasks
-   ! might not have the correct value.  
+   ! might not have the correct value.
    CALL wrf_dm_bcast_integer( n , 1 )
    IF (n .GT. 256) n = 256
    IF (n .GT. 0 ) then
@@ -4130,10 +4133,10 @@ END
       REAL, DIMENSION(pgrid%s_vert:pgrid%e_vert) :: alt_w_c
       REAL, DIMENSION(pgrid%s_vert:pgrid%e_vert+1) :: alt_u_c
       REAL, DIMENSION(ngrid%s_vert:ngrid%e_vert) :: alt_w_n
-      REAL, DIMENSION(ngrid%s_vert:ngrid%e_vert+1) :: alt_u_n      
-      
+      REAL, DIMENSION(ngrid%s_vert:ngrid%e_vert+1) :: alt_u_n
+
       REAL, DIMENSION(:,:,:), ALLOCATABLE :: p, al
-      REAL :: pfu, pfd, phm, temp, qvf, qvf1, qvf2    
+      REAL :: pfu, pfd, phm, temp, qvf, qvf1, qvf2
 
       !KAL change this for vertical nesting
       ! force_domain_em_part1 packs up the interpolation onto the coarse (vertical) grid
@@ -4143,8 +4146,8 @@ END
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
-                                
-      !KAL this is the original WRF code                                
+
+      !KAL this is the original WRF code
       !CALL get_ijk_from_grid (  grid ,                   &
       !                          cids, cide, cjds, cjde, ckds, ckde,    &
       !                          cims, cime, cjms, cjme, ckms, ckme,    &
@@ -4162,11 +4165,11 @@ if (ngrid%vert_refine_method .NE. 0) then
 
       !KAL calculating the vertical coordinate for parent and nest grid (code from ndown)
       ! assume that the parent and nest have the same p_top value (as in ndown)
-      
+
 !KAL ckde is equal to e_vert of the coarse grid. There are e_vert-1 u points.  The coarse 1D grid here is e_vert+1,
 !    so it is the e_vert-1 points from the coarse grid, plus a surface point plus a top point.  Extrapolation coefficients
-!    are used to get the surface and top points to fill out the pro_u_c 1D array of u values from the coarse grid.     
-                
+!    are used to get the surface and top points to fill out the pro_u_c 1D array of u values from the coarse grid.
+
       hsca_m = 6.7 !KAL scale height of the atmosphere
       p_top_m = ngrid%p_top
       p_surf_m = 1.e5
@@ -4175,13 +4178,13 @@ if (ngrid%vert_refine_method .NE. 0) then
       do  k = 1,ckde
       pre_c = mu_m * pgrid%c3f(k) + p_top_m + pgrid%c4f(k)
       alt_w_c(k) =  -hsca_m * alog(pre_c/p_surf_m)
-      enddo   
+      enddo
       do  k = 1,ckde-1
       pre_c = mu_m * pgrid%c3h(k) + p_top_m + pgrid%c4h(k)
       alt_u_c(k+1) =  -hsca_m * alog(pre_c/p_surf_m)
       enddo
       alt_u_c(1) =  alt_w_c(1)
-      alt_u_c(ckde+1) =  alt_w_c(ckde)       
+      alt_u_c(ckde+1) =  alt_w_c(ckde)
 !    nest
       do  k = 1,nkde
       pre_n = mu_m * ngrid%c3f(k) + p_top_m + ngrid%c4f(k)
@@ -4193,15 +4196,15 @@ if (ngrid%vert_refine_method .NE. 0) then
       enddo
       alt_u_n(1) =  alt_w_n(1)
       alt_u_n(nkde+1) =  alt_w_n(nkde)
-        
-endif   
+
+endif
 
       !KAL added this call for vertical nesting (return coarse grid dimensions to intended values)
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
-                                                      
+
       CALL get_ijk_from_grid (  grid ,              &
                                 ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
@@ -4210,7 +4213,7 @@ endif
       !  Vertical refinement is turned on.
 
       IF (ngrid%vert_refine_method .NE. 0) THEN
-      
+
 #include "nest_forcedown_interp_vert.inc"
 
          IF ( ngrid%this_is_an_ideal_run ) THEN
@@ -4230,7 +4233,7 @@ endif
          !  resolution of the parent grid, but at this point has been interpolated in the vertical
          !  to the resolution of the nest.  The base state (phb, pb, etc) from the parent grid is
          !  unpacked onto the intermediate grid every time this subroutine is called.  We need the
-         !  base state of the nest, so it is recalculated here.  
+         !  base state of the nest, so it is recalculated here.
 
          !  Additionally, we do not need to vertically interpolate the entire intermediate grid
          !  above, just the points that contribute to the boundary forcing.
@@ -4238,7 +4241,7 @@ endif
          !  Base state potential temperature and inverse density (alpha = 1/rho) from
          !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
          !  from equation of state.  The potential temperature is a perturbation from t0.
-      
+
          !  Uncouple the variables moist and t_2 that are used to calculate ph_2
 
          DO j = MAX(jds,jps),MIN(jde-1,jpe)
@@ -4249,15 +4252,15 @@ endif
                END DO
             END DO
          END DO
-    
+
          DO j = MAX(jds,jps),MIN(jde-1,jpe)
             DO i = MAX(ids,ips),MIN(ide-1,ipe)
 
                DO k = 1, kpe-1
                   grid%pb(i,k,j) = ngrid%c3h(k)*(ngrid%c1h(k)*grid%mub(i,j)+ngrid%c2h(k)) + ngrid%c4h(k) + ngrid%p_top
-             
+
                   !  If this is a real run, recalc t_init.
-   
+
                   IF ( .NOT. ngrid%this_is_an_ideal_run ) THEN
                      temp = MAX ( ngrid%tiso, ngrid%t00 + ngrid%tlp*LOG(grid%pb(i,k,j)/ngrid%p00) )
                      IF ( grid%pb(i,k,j) .LT. ngrid%p_strat ) THEN
@@ -4267,11 +4270,11 @@ endif
                   END IF
                   grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
                END DO
-   
+
                !  Integrate base geopotential, starting at terrain elevation.  This assures that
                !  the base state is in exact hydrostatic balance with respect to the model equations.
                !  This field is on full levels.
-   
+
                grid%phb(i,1,j) = grid%ht(i,j) * g
                IF (grid%hypsometric_opt == 1) THEN
                   DO kk = 2,kpe
@@ -4298,22 +4301,22 @@ endif
                !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
                !  equation) down from the top to get the pressure perturbation.  First get the pressure
                !  perturbation, moisture, and inverse density (total and perturbation) at the top-most level.
-      
+
                kk = kpe-1
                k = kk+1
-      
+
                qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk,j,P_QV))
                qvf2 = 1./(1.+qvf1)
                qvf1 = qvf1*qvf2
-      
+
                p(i,kk,j) = - 0.5*((ngrid%c1f(k)*grid%Mu_2(i,j))+qvf1*(ngrid%c1f(k)*grid%Mub(i,j)+ngrid%c2f(k)))/ngrid%rdnw(kk)/qvf2
                qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
                al(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
                            (((p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm) - grid%alb(i,kk,j)
-      
+
                !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
                !  inverse density fields (total and perturbation).
-      
+
                DO kk=kpe-2,1,-1
                   k = kk + 1
                   qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk+1,j,P_QV))
@@ -4324,10 +4327,10 @@ endif
                   al(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
                               (((p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm) - grid%alb(i,kk,j)
                END DO
-      
+
                !  This is the hydrostatic equation used in the model after the small timesteps.  In
                !  the model, grid%al (inverse density) is computed from the geopotential.
-      
+
                IF (grid%hypsometric_opt == 1) THEN
                   DO kk = 2,kpe
                      k = kk - 1
@@ -4335,13 +4338,13 @@ endif
                                         ngrid%dnw(kk-1) * ( ((ngrid%c1h(k)*grid%mub(i,j)+ngrid%c2h(k))+(ngrid%c1h(k)*grid%mu_2(i,j)))*al(i,kk-1,j) &
                                         + (ngrid%c1h(k)*grid%mu_2(i,j))*grid%alb(i,kk-1,j) )
                   END DO
-      
+
                ! Alternative hydrostatic eq.: dZ = -al*p*dLOG(p), where p is dry pressure.
                ! Note that al*p approximates Rd*T and dLOG(p) does z.
                ! Here T varies mostly linear with z, the first-order integration produces better result.
-      
+
                ELSE IF (grid%hypsometric_opt == 2) THEN
-      
+
                   grid%ph_2(i,1,j) = grid%phb(i,1,j)
                   DO k = 2,kpe
                      pfu = ngrid%c3f(k  )*( grid%MUB(i,j)+grid%MU_2(i,j) ) + ngrid%c4f(k  ) + ngrid%p_top
@@ -4349,11 +4352,11 @@ endif
                      phm = ngrid%c3h(k-1)*( grid%MUB(i,j)+grid%MU_2(i,j) ) + ngrid%c4h(k-1) + ngrid%p_top
                      grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + (grid%alb(i,k-1,j)+al(i,k-1,j))*phm*LOG(pfd/pfu)
                   END DO
-      
+
                   DO k = 1,kpe
                      grid%ph_2(i,k,j) = grid%ph_2(i,k,j) - grid%phb(i,k,j)
                   END DO
-      
+
                END IF
 
             END DO ! i loop
@@ -4361,7 +4364,7 @@ endif
 
          DEALLOCATE(p)
          DEALLOCATE(al)
-      
+
          ! Couple the variables moist and t_2, and the newly calculated ph_2
          DO j = MAX(jds,jps),MIN(jde-1,jpe)
             DO i = MAX(ids,ips),MIN(ide-1,ipe)
@@ -4381,7 +4384,7 @@ endif
 
 
       END IF
-                               
+
 
 #include "HALO_FORCE_DOWN.inc"
 
@@ -4568,11 +4571,11 @@ if (ngrid%vert_refine_method .NE. 0) then
 
       !KAL calculating the vertical coordinate for parent and nest grid (code from ndown)
       ! assume that the parent and nest have the same p_top value (as in ndown)
-      
+
 !KAL ckde is equal to e_vert of the coarse grid. There are e_vert-1 u points.  The coarse 1D grid here is e_vert+1,
 !    so it is the e_vert-1 points from the coarse grid, plus a surface point plus a top point.  Extrapolation coefficients
-!    are used to get the surface and top points to fill out the pro_u_c 1D array of u values from the coarse grid.     
-                
+!    are used to get the surface and top points to fill out the pro_u_c 1D array of u values from the coarse grid.
+
       hsca_m = 6.7 !KAL scale height of the atmosphere
       p_top_m = ngrid%p_top
       p_surf_m = 1.e5
@@ -4581,13 +4584,13 @@ if (ngrid%vert_refine_method .NE. 0) then
       do  k = 1,ckde
       pre_c = mu_m * pgrid%c3f(k) + p_top_m + pgrid%c4f(k)
       alt_w_c(k) =  -hsca_m * alog(pre_c/p_surf_m)
-      enddo   
+      enddo
       do  k = 1,ckde-1
       pre_c = mu_m * pgrid%c3h(k) + p_top_m + pgrid%c4h(k)
       alt_u_c(k+1) =  -hsca_m * alog(pre_c/p_surf_m)
       enddo
       alt_u_c(1) =  alt_w_c(1)
-      alt_u_c(ckde+1) =  alt_w_c(ckde)       
+      alt_u_c(ckde+1) =  alt_w_c(ckde)
 !    nest
       do  k = 1,nkde
       pre_n = mu_m * ngrid%c3f(k) + p_top_m + ngrid%c4f(k)
@@ -4599,7 +4602,7 @@ if (ngrid%vert_refine_method .NE. 0) then
       enddo
       alt_u_n(1) =  alt_w_n(1)
       alt_u_n(nkde+1) =  alt_w_n(nkde)
-endif   
+endif
 
 
 
@@ -4616,13 +4619,13 @@ endif
 
 
 if (ngrid%vert_refine_method .NE. 0) then
-      
+
 !KAL added this code (the include file) for the vertical nesting
 #include "nest_interpdown_interp_vert.inc"
 
 
       !KAL finish off the 1-D variables (t_base, u_base, v_base, qv_base, and z_base) (move this out of here if alt_u_c and alt_u_n are calculated elsewhere)
-      CALL vert_interp_vert_nesting_1d ( &         
+      CALL vert_interp_vert_nesting_1d ( &
                                         ngrid%t_base,                                           &    ! CD field
                                         ids, ide, kds, kde, jds, jde,                           &    ! CD dims
                                         ims, ime, kms, kme, jms, jme,                           &    ! CD dims
@@ -4630,7 +4633,7 @@ if (ngrid%vert_refine_method .NE. 0) then
                                         pgrid%s_vert, pgrid%e_vert,                             &    ! vertical dimension of the parent grid
                                         pgrid%cf1, pgrid%cf2, pgrid%cf3, pgrid%cfn, pgrid%cfn1, &    ! coarse grid extrapolation constants
                                         alt_u_c, alt_u_n)                                            ! coordinates for parent and nest
-      CALL vert_interp_vert_nesting_1d ( &         
+      CALL vert_interp_vert_nesting_1d ( &
                                         ngrid%u_base,                                           &    ! CD field
                                         ids, ide, kds, kde, jds, jde,                           &    ! CD dims
                                         ims, ime, kms, kme, jms, jme,                           &    ! CD dims
@@ -4638,7 +4641,7 @@ if (ngrid%vert_refine_method .NE. 0) then
                                         pgrid%s_vert, pgrid%e_vert,                             &    ! vertical dimension of the parent grid
                                         pgrid%cf1, pgrid%cf2, pgrid%cf3, pgrid%cfn, pgrid%cfn1, &    ! coarse grid extrapolation constants
                                         alt_u_c, alt_u_n)                                            ! coordinates for parent and nest
-      CALL vert_interp_vert_nesting_1d ( &         
+      CALL vert_interp_vert_nesting_1d ( &
                                         ngrid%v_base,                                           &    ! CD field
                                         ids, ide, kds, kde, jds, jde,                           &    ! CD dims
                                         ims, ime, kms, kme, jms, jme,                           &    ! CD dims
@@ -4646,7 +4649,7 @@ if (ngrid%vert_refine_method .NE. 0) then
                                         pgrid%s_vert, pgrid%e_vert,                             &    ! vertical dimension of the parent grid
                                         pgrid%cf1, pgrid%cf2, pgrid%cf3, pgrid%cfn, pgrid%cfn1, &    ! coarse grid extrapolation constants
                                         alt_u_c, alt_u_n)                                            ! coordinates for parent and nest
-      CALL vert_interp_vert_nesting_1d ( &         
+      CALL vert_interp_vert_nesting_1d ( &
                                         ngrid%qv_base,                                          &    ! CD field
                                         ids, ide, kds, kde, jds, jde,                           &    ! CD dims
                                         ims, ime, kms, kme, jms, jme,                           &    ! CD dims
@@ -4654,7 +4657,7 @@ if (ngrid%vert_refine_method .NE. 0) then
                                         pgrid%s_vert, pgrid%e_vert,                             &    ! vertical dimension of the parent grid
                                         pgrid%cf1, pgrid%cf2, pgrid%cf3, pgrid%cfn, pgrid%cfn1, &    ! coarse grid extrapolation constants
                                         alt_u_c, alt_u_n)                                            ! coordinates for parent and nest
-      CALL vert_interp_vert_nesting_1d ( &         
+      CALL vert_interp_vert_nesting_1d ( &
                                         ngrid%z_base,                                           &    ! CD field
                                         ids, ide, kds, kde, jds, jde,                           &    ! CD dims
                                         ims, ime, kms, kme, jms, jme,                           &    ! CD dims
@@ -4664,7 +4667,7 @@ if (ngrid%vert_refine_method .NE. 0) then
                                         alt_u_c, alt_u_n)                                            ! coordinates for parent and nest
 
 endif
-        
+
         CALL push_communicators_for_domain( grid%id )
 
 #include "HALO_INTERP_DOWN.inc"
@@ -4766,9 +4769,9 @@ endif
       !  How many 3d arrays, so far just 3d theta-300 and geopotential perturbation,
       !  and the 2d topo elevation, three max press/temp/height fields, and three
       !  min press/temp/height fields.
-   
+
       msize = ( 2 )* nlev + 7
-   
+
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, calling rsl_lite_to_child')
       CALL rsl_lite_to_child_info( local_communicator, msize*RWORDSIZE     &
                               ,cips,cipe,cjps,cjpe                         &
@@ -4789,7 +4792,7 @@ endif
             END DO
             CALL rsl_lite_to_child_msg(((ckde)-(ckds)+1)*RWORDSIZE,xv)
          END IF
-   
+
          IF ( SIZE(grid%t_2) .GT. 1 ) THEN
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, t_2')
             DO k = ckds,(ckde-1)
@@ -4797,49 +4800,49 @@ endif
             END DO
             CALL rsl_lite_to_child_msg((((ckde-1))-(ckds)+1)*RWORDSIZE,xv)
          END IF
-   
+
          IF ( SIZE(grid%ht) .GT. 1 ) THEN
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, ht')
             xv(1)= grid%ht(pig,pjg)
             CALL rsl_lite_to_child_msg(RWORDSIZE,xv)
          END IF
-   
+
          IF ( SIZE(grid%t_max_p) .GT. 1 ) THEN
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, t_max_p')
             xv(1)= grid%t_max_p(pig,pjg)
             CALL rsl_lite_to_child_msg(RWORDSIZE,xv)
          END IF
-   
+
          IF ( SIZE(grid%ght_max_p) .GT. 1 ) THEN
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, ght_max_p')
             xv(1)= grid%ght_max_p(pig,pjg)
             CALL rsl_lite_to_child_msg(RWORDSIZE,xv)
          END IF
-   
+
          IF ( SIZE(grid%max_p) .GT. 1 ) THEN
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, max_p')
             xv(1)= grid%max_p(pig,pjg)
             CALL rsl_lite_to_child_msg(RWORDSIZE,xv)
          END IF
-   
+
          IF ( SIZE(grid%t_min_p) .GT. 1 ) THEN
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, t_min_p')
             xv(1)= grid%t_min_p(pig,pjg)
             CALL rsl_lite_to_child_msg(RWORDSIZE,xv)
          END IF
-   
+
          IF ( SIZE(grid%ght_min_p) .GT. 1 ) THEN
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, ght_min_p')
             xv(1)= grid%ght_min_p(pig,pjg)
             CALL rsl_lite_to_child_msg(RWORDSIZE,xv)
          END IF
-   
+
          IF ( SIZE(grid%min_p) .GT. 1 ) THEN
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, min_p')
             xv(1)= grid%min_p(pig,pjg)
             CALL rsl_lite_to_child_msg(RWORDSIZE,xv)
          END IF
-   
+
 !call wrf_debug(0,'/external/RSL_LITE/module_dm.F, calling rsl_lite_to_child_info')
          CALL rsl_lite_to_child_info( local_communicator, msize*RWORDSIZE  &
                                      ,cips,cipe,cjps,cjpe                  &
@@ -4924,60 +4927,60 @@ endif
       CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
 
       CALL rsl_lite_from_parent_info(pig,pjg,retval)
-      
+
       DO while ( retval .eq. 1 )
-      
+
          IF ( SIZE(grid%ph_2) .GT. 1 ) THEN
             CALL rsl_lite_from_parent_msg(((ckde)-(ckds)+1)*RWORDSIZE,xv)
             DO k = ckds,ckde
                grid%ph_2(pig,k,pjg) = xv(k)
             END DO
          END IF
-   
+
          IF ( SIZE(grid%t_2) .GT. 1 ) THEN
             CALL rsl_lite_from_parent_msg((((ckde-1))-(ckds)+1)*RWORDSIZE,xv)
             DO k = ckds,(ckde-1)
                grid%t_2(pig,k,pjg) = xv(k)
             END DO
          END IF
-   
+
          IF ( SIZE(grid%ht) .GT. 1 ) THEN
             CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)
             grid%ht(pig,pjg) = xv(1)
          END IF
-   
+
          IF ( SIZE(grid%t_max_p) .GT. 1 ) THEN
             CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)
             grid%t_max_p(pig,pjg) = xv(1)
          END IF
-   
+
          IF ( SIZE(grid%ght_max_p) .GT. 1 ) THEN
             CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)
             grid%ght_max_p(pig,pjg) = xv(1)
          END IF
-   
+
          IF ( SIZE(grid%max_p) .GT. 1 ) THEN
             CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)
             grid%max_p(pig,pjg) = xv(1)
          END IF
-   
+
          IF ( SIZE(grid%t_min_p) .GT. 1 ) THEN
             CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)
             grid%t_min_p(pig,pjg) = xv(1)
          END IF
-   
+
          IF ( SIZE(grid%ght_min_p) .GT. 1 ) THEN
             CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)
             grid%ght_min_p(pig,pjg) = xv(1)
          END IF
-   
+
          IF ( SIZE(grid%min_p) .GT. 1 ) THEN
             CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)
             grid%min_p(pig,pjg) = xv(1)
          END IF
-      
+
          CALL rsl_lite_from_parent_info(pig,pjg,retval)
-         
+
       END DO
 
       CALL get_ijk_from_grid (  grid ,              &
@@ -4987,16 +4990,16 @@ endif
 
 #include "HALO_INTERP_DOWN.inc"
 
-      CALL interp_fcn_bl ( grid%ph_2,                                           &       
-                           cids, cide, ckds, ckde, cjds, cjde,                  &         
-                           cims, cime, ckms, ckme, cjms, cjme,                  &         
-                           cips, cipe, ckps, MIN( ckde, ckpe ), cjps, cjpe,     &         
-                           ngrid%ph_2,                                          &   
-                           nids, nide, nkds, nkde, njds, njde,                  &         
-                           nims, nime, nkms, nkme, njms, njme,                  &         
-                           nips, nipe, nkps, MIN( nkde, nkpe ), njps, njpe,     &         
-                           config_flags%shw, ngrid%imask_nostag,                &         
-                           .FALSE., .FALSE.,                                    &         
+      CALL interp_fcn_bl ( grid%ph_2,                                           &
+                           cids, cide, ckds, ckde, cjds, cjde,                  &
+                           cims, cime, ckms, ckme, cjms, cjme,                  &
+                           cips, cipe, ckps, MIN( ckde, ckpe ), cjps, cjpe,     &
+                           ngrid%ph_2,                                          &
+                           nids, nide, nkds, nkde, njds, njde,                  &
+                           nims, nime, nkms, nkme, njms, njme,                  &
+                           nips, nipe, nkps, MIN( nkde, nkpe ), njps, njpe,     &
+                           config_flags%shw, ngrid%imask_nostag,                &
+                           .FALSE., .FALSE.,                                    &
                            ngrid%i_parent_start, ngrid%j_parent_start,          &
                            ngrid%parent_grid_ratio, ngrid%parent_grid_ratio,    &
                            grid%ht, ngrid%ht,                                   &
@@ -5007,17 +5010,17 @@ endif
                            grid%ght_min_p, ngrid%ght_min_p,                     &
                            grid%min_p, ngrid%min_p,                             &
                            ngrid%znw, ngrid%p_top                               )
-      
-      CALL interp_fcn_bl ( grid%t_2,                                            &       
-                           cids, cide, ckds, ckde, cjds, cjde,                  &         
-                           cims, cime, ckms, ckme, cjms, cjme,                  &         
-                           cips, cipe, ckps, MIN( (ckde-1), ckpe ), cjps, cjpe, &         
-                           ngrid%t_2,                                           &   
-                           nids, nide, nkds, nkde, njds, njde,                  &         
-                           nims, nime, nkms, nkme, njms, njme,                  &         
-                           nips, nipe, nkps, MIN( (nkde-1), nkpe ), njps, njpe, &         
-                           config_flags%shw, ngrid%imask_nostag,                &         
-                           .FALSE., .FALSE.,                                    &         
+
+      CALL interp_fcn_bl ( grid%t_2,                                            &
+                           cids, cide, ckds, ckde, cjds, cjde,                  &
+                           cims, cime, ckms, ckme, cjms, cjme,                  &
+                           cips, cipe, ckps, MIN( (ckde-1), ckpe ), cjps, cjpe, &
+                           ngrid%t_2,                                           &
+                           nids, nide, nkds, nkde, njds, njde,                  &
+                           nims, nime, nkms, nkme, njms, njme,                  &
+                           nips, nipe, nkps, MIN( (nkde-1), nkpe ), njps, njpe, &
+                           config_flags%shw, ngrid%imask_nostag,                &
+                           .FALSE., .FALSE.,                                    &
                            ngrid%i_parent_start, ngrid%j_parent_start,          &
                            ngrid%parent_grid_ratio, ngrid%parent_grid_ratio,    &
                            grid%ht, ngrid%ht,                                   &

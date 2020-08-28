@@ -2125,8 +2125,7 @@
          CALL wrf_debug ( 0, TRIM(wrf_err_message) )
          wrf_err_message = '--- ERROR: However, the WRF CTSM scheme was not compiled in WRF.'
          CALL wrf_debug ( 0, TRIM(wrf_err_message) )
-         wrf_err_message = '--- ERROR: Please set -DWRF_USE_CTSM by setting WRF_CTSM_MKFILE&
-              & before running configure, and then recompile.'
+         wrf_err_message = '--- ERROR: Please read doc/README.CTSM for how to compile WRF with CTSM.'
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF

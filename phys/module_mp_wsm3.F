@@ -162,9 +162,9 @@ CONTAINS
         if (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) then
           do i=its,ite
             do k=kts,kte
-              re_qc(k) = 2.51E-6
-              re_qi(k) = 10.01E-6
-              re_qs(k) = 25.E-6
+              re_qc(k) = 2.49E-6
+              re_qi(k) = 4.99E-6
+              re_qs(k) = 9.99E-6
 
               t1d(k)  = th(i,k,j)*pii(i,k,j)
               den1d(k)= den(i,k,j)
@@ -182,9 +182,9 @@ CONTAINS
                                 qmin, t0c, re_qc, re_qi, re_qs,         &
                                 kts, kte, i, j)
             do k=kts,kte
-              re_cloud(i,k,j) = MAX(2.51E-6,  MIN(re_qc(k),  50.E-6))
-              re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi(k), 125.E-6))
-              re_snow(i,k,j)  = MAX(25.E-6,   MIN(re_qs(k), 999.E-6))
+              re_cloud(i,k,j) = MAX(2.49E-6,  MIN(re_qc(k),  50.E-6))
+              re_ice(i,k,j)   = MAX(4.99E-6, MIN(re_qi(k), 125.E-6))
+              re_snow(i,k,j)  = MAX(9.99E-6,   MIN(re_qs(k), 999.E-6))
             enddo
           enddo
         endif     ! has_reqc, etc...

@@ -5081,16 +5081,16 @@
 
       if (has_qi) then
       do k = kts, kte
-         re_qi1d(k) = 2.49E-6
+         re_qi1d(k) = 4.99E-6
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
-         re_qi1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+         re_qi1d(k) = MAX(5.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
       enddo
       endif
 
       if (has_qs) then
       do k = kts, kte
-         re_qs1d(k) = 4.99E-6
+         re_qs1d(k) = 9.99E-6
          if (rs(k).le.R1) CYCLE
          tc0 = MIN(-0.1, t1d(k)-273.15)
          smob = rs(k)*oams
@@ -5125,7 +5125,7 @@
      &        + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
      &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
          smoc = a_ * smo2**b_
-         re_qs1d(k) = MAX(5.01E-6, MIN(0.5*(smoc/smob), 999.E-6))
+         re_qs1d(k) = MAX(10.01E-6, MIN(0.5*(smoc/smob), 999.E-6))
       enddo
       endif
 

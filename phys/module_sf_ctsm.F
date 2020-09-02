@@ -509,28 +509,13 @@ contains
     forc_u(its:ite, jts:jte) = u_phy(its:ite, 1, jts:jte)
     forc_v(its:ite, jts:jte) = v_phy(its:ite, 1, jts:jte)
 
-    ! TODO(wjs, 2020-01-01) Is this correct? Or does this give the pressure at the
-    ! interface, whereas we may want the pressure at the mid-point???
-    ! (See https://github.com/ESCOMP/CTSM/issues/917)
     pbot(its:ite, jts:jte) = p8w(its:ite, 1, jts:jte)
 
-    ! TODO(wjs, 2020-01-01) For now, I'm setting potential temperature equal to
-    ! temperature. Line 58470 of module_sf_clm has:
-    !
-    !     clm_a2l%forc_th(g)  = clm_a2l%forc_t(g) * (clm_a2l%forc_psrf(g) &
-    !          / clm_a2l%forc_pbot(g))**(rair/cpair)
-    !
-    ! but it looks like it is using the same WRF variable for both forc_psrf and
-    ! forc_pbot, so the adjustment from forc_t to forc_th isn't actually accomplishing
-    ! anything. Should we do some sort of adjustment here?
-    ! (See https://github.com/ESCOMP/CTSM/issues/917)
     forc_th(its:ite, jts:jte) = th_phy(its:ite, 1, jts:jte)
 
     forc_t(its:ite, jts:jte) = t_phy(its:ite, 1, jts:jte)
 
     ! Convert from mixing ratio to specific humidity
-    ! TODO(wjs, 2020-01-01) Confirm that this is correct
-    ! (See https://github.com/ESCOMP/CTSM/issues/917)
     forc_q(its:ite, jts:jte) = qv_curr(its:ite, 1, jts:jte)/(1.0 + qv_curr(its:ite, 1, jts:jte))
 
     ! Separate total precip into rain and snow. Arbitrarily assign all precipitation to

@@ -297,11 +297,11 @@ SUBROUTINE solve_em ( grid , config_flags  &
 !
 ! Set restart flag value history output time
 !-----------------------------------------------------------------------------
-!
-      restart_flag = .false.
+   restart_flag = .false.
    if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(restart_alarm)) ) then
       restart_flag = .true.
    endif
+!
 ! Set diagnostic flag value history output time
 !-----------------------------------------------------------------------------
 

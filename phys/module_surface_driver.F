@@ -3872,8 +3872,6 @@ CONTAINS
 #ifdef WRF_USE_CTSM
      CASE (CTSMSCHEME)
 
-! TODO (NS): Adding errors and warning on compatible PBL schemes, etc. For
-! example:                                                                                                  
      IF (MYJ) call wrf_error_fatal('CTSM is not currently compatible with MYJ.  Please pick a different PBL scheme,')
 
      IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)        .AND.  &

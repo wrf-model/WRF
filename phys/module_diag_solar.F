@@ -39,6 +39,7 @@ CONTAINS
 !----------------------------------------------------------------------
 
      USE module_model_constants, ONLY: G
+     USE module_state_description, ONLY: param_first_scalar, p_qc, p_qi, p_qs
 
      IMPLICIT NONE
 
@@ -101,9 +102,9 @@ CONTAINS
              end if
 
              !!! LIQUID WATER
-             if (f_qc) then
+             if (f_qc .and. p_qc > param_first_scalar) then
                  !!! RESOLVED !!!
-                 ! Calc liquid water pth
+                 ! Calc liquid water path
                q_aux = integrate_1var (rhodz, qc(i, :, j), kms, kme, kts, kte)
                lwp = q_aux
                lwp2d(i, j) = SIGN( MAX( lwp, 0.0 ), 1.0 )
@@ -124,9 +125,6 @@ CONTAINS
                  else
                    tau_qc(i, j) = 0.0
                  end if
-               else
-                 re_cloud_path(i, j) = MISSING
-                 tau_qc(i, j) = MISSING
                end if
 
                  !!! TOTAL (RESOLVED + UNRESOLVED) !!!
@@ -151,14 +149,18 @@ CONTAINS
                  else
                    tau_qc_tot(i, j) = 0.0
                  end if
-               else
-                 re_cloud_path_tot(i, j) = MISSING
-                 tau_qc_tot(i, j) = MISSING
                end if
+             else
+               lwp2d(i, j) = MISSING
+               re_cloud_path(i, j) = MISSING
+               tau_qc(i, j) = MISSING
+               lwp2d_tot(i, j) = MISSING
+               re_cloud_path_tot(i, j) = MISSING
+               tau_qc_tot(i, j) = MISSING
              end if
 
              !!! ICE
-             if (f_qi) then
+             if (f_qi .and. p_qi > param_first_scalar) then
                  !!! RESOLVED !!!
                  ! Calc ice water path
                q_aux = integrate_1var (rhodz, qi(i, :, j), kms, kme, kts, kte)
@@ -186,9 +188,6 @@ CONTAINS
                  else
                    tau_qi(i, j) = 0.0
                  end if
-               else
-                 re_ice_path(i, j) = MISSING
-                 tau_qi(i, j) = MISSING
                end if
 
                  !!! TOTAL (RESOLVED + UNRESOLVED) !!!
@@ -218,14 +217,18 @@ CONTAINS
                  else
                    tau_qi_tot(i, j) = 0.0
                  end if
-               else
-                 re_ice_path_tot(i, j) = MISSING
-                 tau_qi_tot(i, j) = MISSING
                end if
+             else
+               iwp2d(i, j) = MISSING
+               re_ice_path(i, j) = MISSING
+               tau_qi(i, j) = MISSING
+               iwp2d_tot(i, j) = MISSING
+               re_ice_path_tot(i, j) = MISSING
+               tau_qi_tot(i, j) = MISSING
              end if
 
              !!! SNOW
-             if (f_qs) then
+             if (f_qs .and. p_qs > param_first_scalar) then
                  !!! RESOLVED !!!
                  ! Calc effective radius snow
                q_aux = integrate_1var (rhodz, qs(i, :, j), kms, kme, kts, kte)
@@ -252,78 +255,99 @@ CONTAINS
                  else
                    tau_qs(i, j) = 0.0
                  end if
-               else
-                 re_snow_path(i, j) = MISSING
-                 tau_qs(i, j) = MISSING
                end if
+             else  
+               swp2d(i, j) = MISSING
+               re_snow_path(i, j) = MISSING
+               tau_qs(i, j) = MISSING
              end if
 
-             if (f_qc .or. f_qi .or. f_qs) then
+             if ( (f_qc .or. f_qi .or. f_qs) .and. & 
+                  (p_qc > param_first_scalar .or. &
+                   p_qi > param_first_scalar .or. &
+                   p_qs > param_first_scalar) ) then
                  !!! RESOLVED !!!
                  ! Sum water paths (cloud liquid + ice + snow)
-               wp2d_sum(i, j) = lwp2d(i, j) + iwp2d(i, j) + swp2d(i, j)
+               wp2d_sum(i, j) = MAX( lwp2d(i, j), 0.0 ) + MAX( iwp2d(i, j), 0.0 ) + MAX( swp2d(i, j), 0.0 )
 
                  !!! CLOUD BASE & TOP HEIGHTS
                  ! Cloud base first
-               k = kts
-               wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
-               do while ( (wc < WC_MIN) .and. (k < kte) )
-                 k = k + 1
+               if (wp2d_sum(i, j) > Q_MIN) then
+                 k = kts
                  wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
-               end do
+                 do while ( (wc < WC_MIN) .and. (k < kte) )
+                   k = k + 1
+                   wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
+                 end do
 
-               if (k == kte) then
+                 if (k == kte) then
+                   cbase(i, j) = MISSING
+                 else
+                   cbase(i, j) = ( (ph(i, k, j) + phb(i, k, j)) + (ph(i, k + 1, j) + phb(i, k + 1, j)) ) / (2.0 * G)
+                 end if
+
+                   ! Cloud top second
+                 k = kte
+                 wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
+                 do while ( (wc < WC_MIN) .and. (k > kts) )
+                   k = k - 1
+                   wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
+                 end do
+
+                 if (k == kts) then
+                   ctop(i, j) = MISSING
+                 else
+                   ctop(i, j) = ( (ph(i, k, j) + phb(i, k, j)) + (ph(i, k + 1, j) + phb(i, k + 1, j)) ) / (2.0 * G)
+                 end if
+               else
                  cbase(i, j) = MISSING
-               else
-                 cbase(i, j) = ( (ph(i, k, j) + phb(i, k, j)) + (ph(i, k + 1, j) + phb(i, k + 1, j)) ) / (2.0 * G)
-               end if
-
-                 ! Cloud top second
-               k = kte
-               wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
-               do while ( (wc < WC_MIN) .and. (k > kts) )
-                 k = k - 1
-                 wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
-               end do
-
-               if (k == kts) then
                  ctop(i, j) = MISSING
-               else
-                 ctop(i, j) = ( (ph(i, k, j) + phb(i, k, j)) + (ph(i, k + 1, j) + phb(i, k + 1, j)) ) / (2.0 * G)
                end if
 
                  !!! TOTAL (RESOLVED + UNRESOLVED) !!!
                  ! Sum water paths (cloud liquid + ice + snow)
                  ! Note that snow is from resolved only
-               wp2d_tot_sum(i, j) = lwp2d_tot(i, j) + iwp2d_tot(i, j) + swp2d(i, j)
+               wp2d_tot_sum(i, j) = MAX( lwp2d_tot(i, j), 0.0 ) + MAX( iwp2d_tot(i, j), 0.0 ) + MAX( swp2d(i, j), 0.0 )
 
                  ! Cloud base first
-               k = kts
-               wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
-               do while ( (wc < WC_MIN) .and. (k < kte) )
-                 k = k + 1
+               if (wp2d_tot_sum(i, j) > Q_MIN) then
+                 k = kts
                  wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
-               end do
+                 do while ( (wc < WC_MIN) .and. (k < kte) )
+                   k = k + 1
+                   wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
+                 end do
 
-               if (k == kte) then
+                 if (k == kte) then
+                   cbase_tot(i, j) = MISSING
+                 else
+                   cbase_tot(i, j) = ( (ph(i, k, j) + phb(i, k, j)) + (ph(i, k + 1, j) + phb(i, k + 1, j)) ) / (2.0 * G)
+                 end if
+
+                   ! Cloud top second
+                 k = kte
+                 wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
+                 do while ( (wc < WC_MIN) .and. (k > kts) )
+                   k = k - 1
+                   wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
+                 end do
+
+                 if (k == kts) then
+                   ctop_tot(i, j) = MISSING
+                 else
+                   ctop_tot(i, j) = ( (ph(i, k, j) + phb(i, k, j)) + (ph(i, k + 1, j) + phb(i, k + 1, j)) ) / (2.0 * G)
+                 end if
+               else
                  cbase_tot(i, j) = MISSING
-               else
-                 cbase_tot(i, j) = ( (ph(i, k, j) + phb(i, k, j)) + (ph(i, k + 1, j) + phb(i, k + 1, j)) ) / (2.0 * G)
-               end if
-
-                 ! Cloud top second
-               k = kte
-               wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
-               do while ( (wc < WC_MIN) .and. (k > kts) )
-                 k = k - 1
-                 wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
-               end do
-
-               if (k == kts) then
                  ctop_tot(i, j) = MISSING
-               else
-                 ctop_tot(i, j) = ( (ph(i, k, j) + phb(i, k, j)) + (ph(i, k + 1, j) + phb(i, k + 1, j)) ) / (2.0 * G)
                end if
+             else
+               wp2d_sum(i, j) = MISSING
+               cbase(i, j) = MISSING
+               ctop(i, j) = MISSING
+               wp2d_tot_sum(i, j) = MISSING
+               cbase_tot(i, j) = MISSING
+               ctop_tot(i, j) = MISSING
              end if
 
            ENDDO

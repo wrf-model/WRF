@@ -1049,9 +1049,15 @@ CONTAINS
          ENDIF
 ! added coszen subroutine : jararias, 2013/08/10
 !   outputs: coszen, hrang
-         call calc_coszen(ims,ime,jms,jme,its,ite,jts,jte,  &
-                          julian,xtime+radt*0.5,gmt, &
-                          declin,degrad,xlong,xlat,coszen,hrang)
+         if ( solar_opt_local == 1 ) then
+           call calc_coszen(ims,ime,jms,jme,its,ite,jts,jte,  &
+                            julian,xtime,gmt, &
+                            declin,degrad,xlong,xlat,coszen,hrang)
+         else
+           call calc_coszen(ims,ime,jms,jme,its,ite,jts,jte,  &
+                            julian,xtime+radt*0.5,gmt, &
+                            declin,degrad,xlong,xlat,coszen,hrang)
+         end if
 
        ! backup the incoming hydrometeors
 

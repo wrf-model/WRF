@@ -121,6 +121,7 @@ MODULES = \
         module_ra_flg.o \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
+	module_ra_eclipse.o \
 	module_ra_aerosol.o  \
 	module_ra_farms.o  \
 	module_sf_sfclay.o \

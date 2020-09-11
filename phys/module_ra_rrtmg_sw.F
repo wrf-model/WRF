@@ -9960,8 +9960,9 @@ CONTAINS
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,yr,julian                          & ! jararias 2013/08
-                                                                  )
+                       xcoszen,yr,julian,                          & ! jararias 2013/08
+                       obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
+                       )
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -10124,6 +10125,10 @@ CONTAINS
          OPTIONAL, INTENT(OUT) ::                                 &
                                SWUPFLX,SWUPFLXC,                  &
                                SWDNFLX,SWDNFLXC
+
+! amontornes-bcodina 2015/09 solar eclipses
+!  obscur --> degree of obscuration for solar eclipses prediction (2D)
+                               REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: obscur	
 
 !  LOCAL VARS
  
@@ -10636,8 +10641,11 @@ CONTAINS
 
 ! Set cosine of solar zenith angle
          coszen(ncol) = coszrs
-! Set solar constant
-         scon = solcon
+! Set solar constant (original) amontornes-bcodina 2015/09
+!         scon = solcon
+! amontornes-bcodina 2015/09 solar eclipses
+         scon = solcon*(1-obscur(i,j))
+         
 ! For Earth/Sun distance adjustment in RRTMG
 !         dyofyr = julday
 !         adjes = 0.0 

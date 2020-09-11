@@ -31,6 +31,7 @@ CONTAINS
               ,RTHRATENLW      ,RTHRATENSW                                &
               ,SNOW   ,STEPRA ,SWDOWN                                     &
               ,SWDOWNC ,SW_PHYSICS                                        &
+              ,SW_ECLIPSE                                                 & ! amontornes-bcodina 2015/09 solar eclipses
               ,T8W     ,T ,TAUCLDC                                        &
               ,TAUCLDI ,TSK ,VEGFRA                                       &
               ,WARM_RAIN ,XICE ,XLAND                                     &
@@ -166,6 +167,7 @@ CONTAINS
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
               ,cw_rad, shcu_physics                                       &
+              ,obscur,mask,elat_track,elon_track			                 & ! amontornes-bcodina 2015/09 solar eclipses
               ,taod5502d, taod5503d                                       &
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
@@ -248,7 +250,8 @@ CONTAINS
    USE module_ra_aerosol    , ONLY : calc_aerosol_goddard_sw, &
                                      calc_aerosol_rrtmg_sw
    USE module_ra_farms      , ONLY : farms_driver
-
+! amontornes-bcodina 2015/09 solar eclipses
+   USE module_ra_eclipse    , ONLY : solar_eclipse
 
    !  This driver calls subroutines for the radiation parameterizations.
    !
@@ -427,7 +430,7 @@ CONTAINS
                                                          kts,kte, &
                                        num_tiles
 
-   INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics
+   INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics, sw_eclipse
    INTEGER, INTENT(IN)            :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
@@ -879,6 +882,10 @@ CONTAINS
 ! jararias 2013/11 but modified on 2016/2/10
 !  the following three arrays may be dimensioned by (ims,ime,kms,kme,jms,jme,aerosol_vars)
    real, dimension(:,:,:,:), pointer :: tauaer_sw=>null(), ssaaer_sw=>null(), asyaer_sw=>null()
+!
+   real,    dimension(ims:ime,jms:jme), INTENT(OUT) :: obscur
+   integer, dimension(ims:ime,jms:jme), INTENT(OUT) :: mask
+   real,                                INTENT(OUT) :: elat_track, elon_track
 
 ! Trude AOD variables
      INTEGER, PARAMETER:: taer_type = 1                                  !  rural, urban, maritime, ...
@@ -1042,6 +1049,15 @@ CONTAINS
          jte = j_end(ij)
          CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,               &
                        DEGRAD,DPD                                )
+
+! amontornes-bcodina 2015/09 solar eclipses
+!    Solar eclipse prediction based on the Bessel's method
+!    outputs: obscur, mask, elat_track, elon_track
+                       CALL solar_eclipse(ims,ime,jms,jme,its,ite,jts,jte,  &
+                       julian,gmt,YR,xtime,radt,         &
+                       degrad,xlong,xlat,obscur,mask,    &
+                       elat_track,elon_track,sw_eclipse  )
+
          IF(PRESENT(declinx).AND.PRESENT(solconx))THEN
 ! saved to state arrays used in surface driver
            declinx=declin
@@ -1765,6 +1781,7 @@ CONTAINS
                     ,reg3d=re_graupel_gsfc,reh3d=re_hail_gsfc          & !optional 
                     ,erbe_out=erbe_out                                 &
                     ,itimestep=itimestep, dt_in = dt                   &
+                    ,obscur=obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses (useless, is LW)
 #if (WRF_CHEM == 1)
                     ,AERO=aero                                         &
                     ,CHEM_OPT=chem_opt                                 &
@@ -1892,7 +1909,8 @@ CONTAINS
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,coszen=coszen                                     )
+                 ,coszen=coszen                                     &
+                 ,obscur=obscur                                     ) ! amontornes-bcodina 2015/09 solar eclipses
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
@@ -2110,6 +2128,7 @@ CONTAINS
 	      ,DSWBOT=SWDOWN,deltat=RTHRATEN          &
 	      ,dtshort=RTHRATENSW,dtlongwv=RTHRATENLW &
               ,SWDDIR=swddir,SWDDIF=swddif,SWDDNI=swddni &  ! amontornes-bcodina (2014-04-20)
+              ,obscur=obscur                             &  ! amontornes-bcodina 2015/09 solar eclipses
               )
 
           CALL wrf_debug(100, 'a4 Fu_Liou-Gu')
@@ -2237,7 +2256,8 @@ CONTAINS
                     ,QG3D=qg                                           &
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
-                    ,coszen=coszen,julian=julian                       )
+                    ,coszen=coszen,julian=julian                       &
+                    ,obscur=obscur                                     ) ! amontornes-bcodina 2015/09 solar eclipses
 
         CASE (GSFCSWSCHEME)
              CALL wrf_debug(100, 'CALL gsfcswrad')
@@ -2276,6 +2296,7 @@ CONTAINS
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,F_QNDROP=f_qndrop                                 &
                     ,COSZEN=coszen                                     &
+                    ,OBSCUR=obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
                                                                        )
 
         case (goddardswscheme)
@@ -2326,6 +2347,7 @@ CONTAINS
                     ,sflxd=sflxd                                       & !optional
                     ,swddir=swddir,swddni=swddni,swddif=swddif         & !optional 
                     ,coszen=coszen                                     & !optional
+                    ,obscur=obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
                     ,itimestep=itimestep, dt_in = dt                   &
 #if (WRF_CHEM == 1)
                     ,aod2d_out=aod2d_out, atop2d_out=atop2d_out        & ! optional
@@ -2392,7 +2414,7 @@ CONTAINS
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,coszen=coszen                                     )
+                 ,coszen=coszen,obscur=obscur                          ) ! amontornes-bcodina 2015/09 solar eclipses
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
@@ -2468,6 +2490,7 @@ CONTAINS
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
+                     obscur=obscur,                                     &  ! amontornes-bcodina 2015/09 solar eclipses
                      xcoszen=coszen,yr=yr,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
 
              DO j=jts,jte
@@ -2551,7 +2574,8 @@ CONTAINS
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
-                     xcoszen=coszen,yr=yr,julian=julian                 ) ! jararias 2013/08/14
+                     xcoszen=coszen,yr=yr,julian=julian,                & ! jararias 2013/08/14
+                     obscur=obscur                                      ) ! amontornes-bcodina 2015/09 solar eclipses
 
              DO j=jts,jte
              DO k=kts,kte

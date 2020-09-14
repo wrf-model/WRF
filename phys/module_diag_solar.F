@@ -28,7 +28,8 @@ CONTAINS
 !                                                                                        !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE solar_diag (rho, dz8w, ph, phb, cldfrac3d, coszen, swdnb, swdnt, qv, qc, qi, qs, &
+   SUBROUTINE solar_diag (rho, dz8w, ph, phb, cldfrac3d, coszen, swdnb, swdnt, &
+             param_first_scalar, p_qc, p_qi, p_qs, qv, qc, qi, qs, &
              qc_tot, qi_tot, has_reqc, has_reqi, has_reqs, f_qv, f_qc, f_qi, f_qs, &
              re_cloud, re_ice, re_snow, clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, &
              wp2d_sum, lwp2d_tot, iwp2d_tot, wp2d_tot_sum, re_cloud_path, re_ice_path, re_snow_path, &
@@ -39,14 +40,13 @@ CONTAINS
 !----------------------------------------------------------------------
 
      USE module_model_constants, ONLY: G
-     USE module_state_description, ONLY: param_first_scalar, p_qc, p_qi, p_qs
 
      IMPLICIT NONE
 
      REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: coszen, swdnb, swdnt
      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: ph, phb, cldfrac3d, qv, qc, qi, qs, qc_tot, qi_tot, &
           re_cloud, re_ice, re_snow, rho, dz8w
-     INTEGER, INTENT(IN) :: has_reqc, has_reqi, has_reqs
+     INTEGER, INTENT(IN) :: param_first_scalar, p_qc, p_qi, p_qs, has_reqc, has_reqi, has_reqs
      LOGICAL, INTENT(IN) :: f_qv, f_qc, f_qi, f_qs
      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, wp2d_sum, &
           lwp2d_tot, iwp2d_tot, wp2d_tot_sum, re_cloud_path, re_ice_path, re_snow_path, re_cloud_path_tot, re_ice_path_tot, &

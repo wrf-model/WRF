@@ -1049,6 +1049,8 @@ CONTAINS
          ENDIF
 ! added coszen subroutine : jararias, 2013/08/10
 !   outputs: coszen, hrang
+           ! Pass in current time if Solar diagnostics package active
+           ! for more accurate solar-related variable calculations
          if ( solar_opt_local == 1 ) then
            call calc_coszen(ims,ime,jms,jme,its,ite,jts,jte,  &
                             julian,xtime,gmt, &

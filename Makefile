@@ -976,13 +976,13 @@ framework :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) $(J) LLIST="$(LINKLIST)" framework ; \
           cd ../external/io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDF_INC="$(NETCDF_INC)" NETCDF_LIB="$(NETCDF_LIB)" NETCDF_FORTRAN_INC="$(NETCDF_FORTRAN_INC)" NETCDF_FORTRAN_LIB="$(NETCDF_FORTRAN_LIB)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDF_INC="$(NETCDF_INC)" NETCDF_LIB="$(NETCDF_LIB)" NETCDF_FORTRAN_INC="$(NETCDF_FORTRAN_INC)" NETCDF_FORTRAN_LIB="$(NETCDF_FORTRAN_LIB)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
@@ -1005,13 +1005,13 @@ framework_plus :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) $(J) LLIST="$(MODLL)" framework ; \
           cd ../external/io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDF_INC="$(NETCDF_INC)" NETCDF_LIB="$(NETCDF_LIB)" NETCDF_FORTRAN_INC="$(NETCDF_FORTRAN_INC)" NETCDF_FORTRAN_LIB="$(NETCDF_FORTRAN_LIB)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDF_INC="$(NETCDF_INC)" NETCDF_LIB="$(NETCDF_LIB)" NETCDF_FORTRAN_INC="$(NETCDF_FORTRAN_INC)" NETCDF_FORTRAN_LIB="$(NETCDF_FORTRAN_LIB)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
@@ -1106,7 +1106,7 @@ fseek_test :
 
 # rule used by configure to test if this will compile with netcdf4
 nc4_test:
-	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib $(USENETCDF) ; cd ..
+	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF_INC) -L$(NETCDF_LIB) $(USENETCDF) ; cd ..
 
 # rule used by configure to test if Fortran 2003 IEEE signaling is available
 fortran_2003_ieee_test:

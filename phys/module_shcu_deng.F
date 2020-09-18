@@ -2095,6 +2095,7 @@ CONTAINS
 !
       IF(CAPEI(I,J) .LT. 100.0) THEN    ! averaging KF number of clouds
         NT = NINT(15.0*60.0/(0.5*DT))-1 ! for 15 min.
+        NT = MIN(NT, 100)
       ELSE
         NT = 0
       ENDIF

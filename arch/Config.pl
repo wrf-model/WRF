@@ -326,7 +326,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 # to build WRF with the CTSM land surface model (the next generation of
 # the CLM model, coupled via LILAC). The user must set the environment
 # variable WRF_CTSM_MKFILE, which should be a path to a make-formatted
-# file containing settings of CTSM_INCLUDES and CTSM_LIBS. If this
+# file containing settings of CTSM_INCLUDES and CTSM_LIBS. When this
 # environment variable is set, this also triggers adding -DWRF_USE_CTSM;
 # if it is not set, then we instead use -DWRF_USE_CLM, which builds with
 # an old version of CLM that is included in the WRF source code. (We

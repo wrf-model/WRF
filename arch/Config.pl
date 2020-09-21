@@ -328,9 +328,9 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 # variable WRF_CTSM_MKFILE, which should be a path to a make-formatted
 # file containing settings of CTSM_INCLUDES and CTSM_LIBS. When this
 # environment variable is set, this also triggers adding -DWRF_USE_CTSM;
-# if it is not set, then we instead use -DWRF_USE_CLM, which builds with
-# an old version of CLM that is included in the WRF source code. (We
-# currently cannot build with both at once because of namespace
+# when this env var is not set, then we instead use -DWRF_USE_CLM, which
+# builds an old version of CLM that is included in the WRF source code.
+# (We currently cannot build with both at once because of namespace
 # collisions at link time.)
 if ( $ENV{WRF_CTSM_MKFILE} ) {
    $sw_ctsm_mkfile_path = $ENV{WRF_CTSM_MKFILE};

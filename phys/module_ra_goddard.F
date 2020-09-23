@@ -2084,7 +2084,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
       do kt=kts-1,kte !full level ( kts -1 = TOA, kte = BOA )
         DO ic=1,min(CHUNK,ite-ii+1)
         if(lmask(ic) .eqv. .true.) then
-         flx(ic,kt) = flx(ic,kt) * solcon * cosz(ic)* ( 1 - obscur(i,j) )! amontornes-bcodina 2015/09 solar eclipses
+         flx(ic,kt) = flx(ic,kt) * solcon * cosz(ic)* ( 1 - obscur(i,j) ) ! amontornes-bcodina 2015/09 solar eclipses
         endif
         ENDDO
       enddo

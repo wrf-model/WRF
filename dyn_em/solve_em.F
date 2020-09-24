@@ -1,5 +1,5 @@
 !WRF:MEDIATION_LAYER:SOLVER
-!SCALA TEST LINE: 002 Dave Sep 23, 13:46 mtn time  
+!SCALA TEST LINE: 002 Dave Sep 23, 13:46 mtn time
 
 SUBROUTINE solve_em ( grid , config_flags  &
 ! Arguments generated from Registry

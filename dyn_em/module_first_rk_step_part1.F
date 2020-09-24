@@ -33,6 +33,7 @@ CONTAINS
                              , k_start , k_end                  &
                              , f_flux                           &
                              , aerocu                           &
+                             , restart_flag                     &
                             )
     USE module_state_description
     USE module_model_constants
@@ -116,6 +117,7 @@ CONTAINS
     INTEGER, INTENT(IN)                           ::  k_start, k_end
     LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
 
+    LOGICAL, INTENT(IN)                           :: restart_flag  
 ! Local
     real :: HYDRO_dt
     REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
@@ -578,12 +580,13 @@ BENCH_START(surf_driver_tim)
      &        ,tkdry3d=grid%tkdry3d,            tksatu3d=grid%tksatu3d              &   
      &        ,LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev    & !lake  
 #if ( EM_CORE == 1)
-     &        ,LakeMask=grid%LakeMask                                               & ! lake
+     &        ,LakeMask=grid%LakeMask                                               & !lake
+     &        ,restart_flag=restart_flag                                            & !flag showing if is a restart timestep
 #endif
 ! CLM Varaibles
      &        ,NUMC=grid%numc,NUMP=grid%nump,SABV=grid%sabv,SABG=grid%sabg,         &
      &         LWUP=grid%lwup,SNL=grid%snl,                                         &
-     &         HISTORY_INTERVAL=config_flags%history_interval ,                     &!ylu add hist inverval for accumulation T max/min
+     &         HISTORY_INTERVAL=config_flags%history_interval ,                     & !ylu add hist inverval for accumulation T max/min
      &         SNOWDP=grid%snowdp, WTC=grid%wtc,WTP=grid%wtp, H2OSNO=grid%h2osno,   &
      &         T_GRND=grid%t_grnd,T_VEG=grid%t_veg,                                 &
      &         H2OCAN=grid%h2ocan, H2OCAN_COL=grid%h2ocan_col,T2M_MAX=grid%t2m_max, &

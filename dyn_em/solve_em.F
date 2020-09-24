@@ -128,6 +128,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    ! Flag for producing diagnostic fields (e.g., radar reflectivity)
    LOGICAL                        :: diag_flag
    INTEGER                        :: ke_diag ! tells reflectivity calculation whether to do full depth or only k=1
+   LOGICAL                        :: restart_flag !  tells if it is a restart timestep to write restart files. 
    
 #if (WRF_CHEM == 1)
    ! Index cross-referencing array for tendency accumulation
@@ -277,6 +278,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    curr_secs2 = real_time(tmpTimeInterval2)
 
    old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop
+
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  3/5/07
 !   In this call, we do the time-step adaptation and set time-dependent lateral
@@ -292,6 +294,13 @@ SUBROUTINE solve_em ( grid , config_flags  &
    ENDIF
 ! End of adaptive time step modifications
 !-----------------------------------------------------------------------------
+!
+! Set restart flag value history output time
+!-----------------------------------------------------------------------------
+   restart_flag = .false.
+   if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(restart_alarm)) ) then
+      restart_flag = .true.
+   endif
 !
 ! Set diagnostic flag value history output time
 !-----------------------------------------------------------------------------
@@ -756,6 +765,7 @@ BENCH_START(calc_p_rho_tim)
                              , k_start , k_end                  &
                              , f_flux                           &
                              , aerocu                           &
+                             , restart_flag                     &
                             )
 
 #ifdef DM_PARALLEL

@@ -413,6 +413,7 @@ CONTAINS
       ENDIF
 
       IF(CLDDPTHB(I,J) .LE. 0.0) THEN   ! No active updraft
+          RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)+CLDAREAB(I,K,J)*CLDLIQB(I,K,J)/DT
           CLDAREAB(I,K,J) = 0.0
           CLDLIQB(I,K,J) = 0.0
       ENDIF

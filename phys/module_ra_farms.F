@@ -77,7 +77,6 @@
              re_cloud_k(:) = re_cloud(i, :, j)
              re_ice_k(:) = re_ice(i, :, j)
              re_snow_k(:) = re_snow(i, :, j)
-             cldfra_h = maxval(cldfra(i, :, j))
 
              if (has_reqc == 1) then
                do k = kts, kte
@@ -140,6 +139,16 @@
                re_snow_path = re_snow_path / q_aux
              else
                re_snow_path = 0.0
+             end if
+
+               ! Calc horizontal cloud fraction 
+             q_aux = integrate_1var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), kms, kme, kts, kte)
+             if (q_aux > 0.0) then
+               cldfra_h = integrate_2var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), &
+                   cldfra(i, :, j), kms, kme, kts, kte)
+               cldfra_h = cldfra_h / q_aux
+             else
+               cldfra_h = 0.0
              end if
 
                ! optical thickness  water

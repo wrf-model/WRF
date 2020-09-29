@@ -1948,7 +1948,7 @@ ENDIF ghg_block
             CALL wrf_error_fatal("ERROR: numgas = 0, SELECTED CHEM OPT IS &
             &NOT COMPATIBLE WITH WESELY DRY DEPOSITION")
         ENDIF
-        CALL wrf_debug(15, "initializing dry dep (wesely)")
+        CALL wrf_debug(15,'initializing dry dep (wesely)')
 
         call dep_init( id, config_flags, numgas, mminlu_loc, &
                       its, ite, jts, jte, ide, jde )

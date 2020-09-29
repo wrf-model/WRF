@@ -141,7 +141,7 @@
                re_snow_path = 0.0
              end if
 
-             ! Calc horizontal cloud fraction 
+             ! Calculate horizontal cloud fraction 
              q_aux = integrate_1var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), kms, kme, kts, kte)
              if (q_aux > 0.0) then
                cldfra_h = integrate_2var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), &

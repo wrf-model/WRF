@@ -193,6 +193,7 @@ module_initialize_scm_xy.o : \
 module_initialize_real.o :  \
 		nest_init_utils.o	\
 		module_polarfft.o \
+		../phys/module_madwrf.o \
 		../share/module_llxy.o	\
 		../frame/module_domain.o \
 		../frame/module_configure.o  \

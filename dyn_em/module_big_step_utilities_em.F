@@ -6684,4 +6684,51 @@ END SUBROUTINE conv_t_tendf_to_moist
 
 !==============================================================================
 
+  subroutine Cloud_tracer_nudge (dt, dt_relax, dt_nudge, xtime, qc, qi, qs,  &
+      tr_qc, tr_qi, tr_qs, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, &
+      kms, kme, its, ite, jts, jte, kts, kte)
+
+    implicit none
+
+    real, intent(in) :: dt, dt_relax, dt_nudge, xtime
+    real, dimension (ims:ime, kms:kme, jms:jme), intent (inout) :: qc, qi, qs
+    real, dimension (ims:ime, kms:kme, jms:jme), intent(in) :: tr_qc, tr_qi, tr_qs
+    integer, intent(in) :: ids, ide, jds, jde, kds, kde, ims,ime, jms, jme, &
+        kms, kme, its, ite, jts, jte, kts, kte
+
+
+    integer :: i, j, k, i_start, i_end, j_start, j_end, k_start, k_end
+
+!--------------------------------------------------------------------
+
+!<DESCRIPTION>
+!
+!  Cloud_tracer_nudge nudges qc, qi, and qs towards advected tracer values
+!         tr_qc, tr_qi, tr_qs
+!
+!</DESCRIPTION>
+
+      ! Set up loop bounds
+    i_start = its
+    i_end = min (ite, ide - 1)
+    j_start = jts
+    j_end = min (jte, jde - 1)
+    k_start = kts
+    k_end = min (kte, kde - 1)
+
+      ! Nudge
+    if (xtime < dt_nudge) then
+      do j = j_start, j_end
+        do k = k_start, k_end
+          do i = i_start, i_end
+             qc(i, k, j) = qc(i, k, j) + (tr_qc(i, k, j) - qc(i, k, j)) * dt / dt_relax
+             qi(i, k, j) = qi(i, k, j) + (tr_qi(i, k, j) - qi(i, k, j)) * dt / dt_relax
+             qs(i, k, j) = qs(i, k, j) + (tr_qs(i, k, j) - qs(i, k, j)) * dt / dt_relax
+          end do
+        end do
+      end do
+    end if
+
+  end subroutine Cloud_tracer_nudge
+
 END MODULE module_big_step_utilities_em

@@ -1176,7 +1176,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_cloud(i,k,j) = 2.49E-6
+             re_cloud(i,k,j) = RE_QC_BG
           end do
           end do
        end do
@@ -1185,7 +1185,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_ice(i,k,j) = 4.99E-6
+             re_ice(i,k,j) = RE_QI_BG
           end do
           end do
        end do
@@ -1194,7 +1194,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_snow(i,k,j) = 9.99E-6
+             re_snow(i,k,j) = RE_QS_BG
           end do
           end do
        end do

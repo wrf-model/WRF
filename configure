@@ -689,7 +689,7 @@ if [ $os = "Linux" -o $os = "Darwin" ]; then
   if [ $? ]
   then
 
-cat > ${foo}.F << EOF
+  cat > ${foo}.F << EOF
       PROGRAM GFORTRAN_VERSION_CHECK
         IF (__GNUC__ .GT. 9) CALL EXIT(1)
       END PROGRAM

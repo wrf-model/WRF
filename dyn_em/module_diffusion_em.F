@@ -4278,7 +4278,6 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
   CASE (0,2) ! with fixed surface heat flux given in the namelist
     heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
                                             ! set in namelist.input
-
     DO j = j_start, j_end
     DO i = i_start, i_end
        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
@@ -4300,7 +4299,6 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 
        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
        heat_flux = hfx(i,j)/cpm
-
        if(config_flags%use_theta_m == 1)THEN
          rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*heat_flux*(1.+rvovrd*moist(i,kts,j,P_QV))/dnw(kts) &
@@ -7723,7 +7721,7 @@ END SUBROUTINE phy_bc
    INTEGER :: i_start, i_end, j_start, j_end
  
    REAL :: V0_u,V0_v,ustar,beta
-   REAL :: heat_flux, moist_flux
+   REAL :: heat_flux, moist_flux, qfac
    REAL :: cpm,rdz_w,rhoavg_u,rhoavg_v,rdz_z
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -8050,9 +8048,6 @@ END SUBROUTINE phy_bc
      DO i = i_start, i_end
         nlflux_rho(i,k,j) = nlflux(i,k,j) * &
                            (fnm(k)*rho (i,k,j)+fnp(k)*rho (i,k-1,j))
-        IF(config_flags%use_theta_m == 1)THEN
-             nlflux_rho(i,k,j) = nlflux_rho(i,k,j)*(1.+rvovrd*moist(i,k,j,P_QV))
-        ENDIF
      ENDDO
      ENDDO
      ENDDO
@@ -8103,17 +8098,23 @@ END SUBROUTINE phy_bc
                   - dt*rdz_w*nlflux_rho(i,k+1,j)        &
                   + dt*rdz_w*hfx(i,j)/cpm
           ELSE
+             qfac = 1.+rvovrd*moist(i,kts,j,P_QV)
              d(k) = var_mix(i,kts,j)                    &
-                  - dt*rdz_w*nlflux_rho(i,k+1,j)        &
-                  + dt*rdz_w*((1.+rvovrd*moist(i,kts,j,P_QV))*hfx(i,j)/cpm+1.61*theta(i,kts,j)*qfx(i,j))
+                  - dt*rdz_w*nlflux_rho(i,k+1,j)*qfac   &
+                  + dt*rdz_w*(qfac*hfx(i,j)/cpm+1.61*theta(i,kts,j)*qfx(i,j))
           ENDIF
  
           DO  k = kts+1, ktf-1
             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j) + c2h(k))
+            IF(config_flags%use_theta_m == 1)THEN
+                qfac = 1.+rvovrd*moist(i,k,j,P_QV)
+            ELSE
+                qfac = 1.
+            ENDIF
             a(k)  = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
             b(k)  = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
             c(k)  = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
-            d(k)  = -rdz_w*(nlflux_rho(i,k+1,j)-nlflux_rho(i,k,j))*dt + var_mix(i,k,j)
+            d(k)  = -rdz_w*(nlflux_rho(i,k+1,j)-nlflux_rho(i,k,j))*qfac*dt + var_mix(i,k,j)
           ENDDO
  
             a(ktf) = 0.

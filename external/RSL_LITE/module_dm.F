@@ -228,7 +228,7 @@ CONTAINS
       CALL nl_set_nproc_y ( 1, ntasks_y )
       WRITE( wrf_err_message , * )'Ntasks in X ',ntasks_x,', ntasks in Y ',ntasks_y
       CALL wrf_message( wrf_err_message )
-#ifndef STUBMPI
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       CALL MPI_BARRIER( local_communicator, ierr )
 #endif
       RETURN

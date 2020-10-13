@@ -1514,10 +1514,21 @@ endif
 !
        DO j = jts,min(jte,jde-1)
        DO i = its, min(ite,ide-1)
-          im1 = max(i-1,ids)
-          ip1 = min(i+1,ide-1)
-          jm1 = max(j-1,jds)
-          jp1 = min(j+1,jde-1)
+          if (config_flags%periodic_x ) then
+            im1 = i-1
+            ip1 = i+1
+          else
+            im1 = max(i-1,ids)
+            ip1 = min(i+1,ide-1)
+          endif
+
+          if (config_flags%periodic_y ) then
+            jm1 = j-1
+            jp1 = j+1
+          else
+            jm1 = max(j-1,jds)
+            jp1 = min(j+1,jde-1)
+          endif
           grid%toposlpx(i,j)=(grid%ht(ip1,j)-grid%ht(im1,j))*grid%msftx(i,j)*grid%rdx/(ip1-im1)
           grid%toposlpy(i,j)=(grid%ht(i,jp1)-grid%ht(i,jm1))*grid%msfty(i,j)*grid%rdy/(jp1-jm1)
           grid%lap_hgt(i,j)=(grid%ht(ip1,j)+grid%ht(im1,j)+grid%ht(i,jp1)+grid%ht(i,jm1)-grid%ht(i,j)*4.)/4.

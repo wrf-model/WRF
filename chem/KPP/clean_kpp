@@ -9,7 +9,7 @@ echo "# DO NOT EDIT! Placeholder for automatically generated file"  >&   configu
 # remove the traces of KPP
 if (-e ../Makefile_org ) then
 cp  -f ../Makefile_org  ../Makefile
-rm -f ../Makfile_org
+rm -f ../Makefile_org
 endif
 
 

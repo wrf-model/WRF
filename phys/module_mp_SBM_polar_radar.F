@@ -1534,7 +1534,7 @@ public polar_hucm
                     (1.0d0-(1.0d0-fract_volume_water)*ratc))
 ! new change 18.01.09                                         (start)
       if(fract_volume_water.gt.1.0d-10) then
-         t=derf((1.0d0-fract_volume_water)/fract_volume_water-0.2d0)
+         t=erf((1.0d0-fract_volume_water)/fract_volume_water-0.2d0)
       else
          t=1.0d0
       endif

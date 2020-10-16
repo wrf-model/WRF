@@ -127,9 +127,9 @@ contains
     integer,                 intent(out) :: dst
     integer,                 intent(out) :: ierr
 
-    integer(c_int64_t)                  :: offset
-    integer(c_int32_t)                  :: count
-    integer                             :: tmp
+    integer(c_int64_t)                   :: offset
+    integer(c_int32_t)                   :: count
+    integer                              :: tmp
 
     call io_int_loc(varname, records, offset, count, ierr)
     if (ierr .ne. 0) then

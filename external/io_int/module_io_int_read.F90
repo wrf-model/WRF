@@ -87,7 +87,7 @@ end module module_io_int_read
 module module_io_int_read
 
     use module_io_int_idx,           only: io_int_loc, r_info
-    use, intrinsic :: iso_c_binding, only: c_int32_t, c_int64_t
+    use, intrinsic :: iso_c_binding, only: c_int32_t,c_int64_t
 
     implicit none
 

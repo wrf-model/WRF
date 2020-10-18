@@ -1076,7 +1076,7 @@ BENCH_START(pbl_driver_tim)
 #      include "HALO_EM_CHEM_E_5.inc"
          ELSE
               WRITE(message,*)'solve_em: invalid h_sca_adv_order = ',&
-              &  config_flags%h_sca_adv_order
+              & config_flags%h_sca_adv_order
         ENDIF
      ENDIF
 #endif

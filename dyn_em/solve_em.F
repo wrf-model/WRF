@@ -3122,7 +3122,7 @@ BENCH_END(calc_p_rho_tim)
 #    include "HALO_EM_D2_5.inc"
        ELSE 
          WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order or h_sca_adv_order = ', &
-               config_flags%h_mom_adv_order, h_sca_adv_order
+               config_flags%h_mom_adv_order, config_flags%h_sca_adv_order
          CALL wrf_error_fatal(TRIM(wrf_err_message))
        ENDIF
 #  include "PERIOD_BDY_EM_D.inc"
@@ -4271,7 +4271,7 @@ BENCH_END(moist_phys_end_tim)
 #    include "HALO_EM_D3_5.inc"
    ELSE 
       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order or h_sca_adv_order = ', &
-               config_flags%h_mom_adv_order, h_sca_adv_order
+               config_flags%h_mom_adv_order, config_flags%h_sca_adv_order
       CALL wrf_error_fatal(TRIM(wrf_err_message))
    ENDIF
 #  include "PERIOD_BDY_EM_D3.inc"
@@ -4617,7 +4617,7 @@ BENCH_END(bc_2d_tim)
 #    include "HALO_EM_E_5.inc"
    ELSE
      WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order or h_sca_adv_order = ', &
-               config_flags%h_mom_adv_order, h_sca_adv_order
+               config_flags%h_mom_adv_order, config_flags%h_sca_adv_order
      CALL wrf_error_fatal(TRIM(wrf_err_message))
    ENDIF
 #endif

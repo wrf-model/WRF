@@ -9,6 +9,7 @@
 MODULE module_mp_wsm6
 !
    USE module_mp_radar
+   USE module_model_constants, only : RE_QC_BG, RE_QI_BG, RE_QS_BG
 !
    REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
    REAL, PARAMETER, PRIVATE :: n0r = 8.e6         ! intercept parameter rain
@@ -237,9 +238,9 @@ CONTAINS
         if (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) then
           do i=its,ite
             do k=kts,kte
-              re_qc(k) = 2.51E-6
-              re_qi(k) = 10.01E-6
-              re_qs(k) = 25.E-6
+              re_qc(k) = RE_QC_BG
+              re_qi(k) = RE_QI_BG
+              re_qs(k) = RE_QS_BG
 
               t1d(k)  = th(i,k,j)*pii(i,k,j)
               den1d(k)= den(i,k,j)
@@ -251,9 +252,9 @@ CONTAINS
                                 qmin, t0c, re_qc, re_qi, re_qs,         &
                                 kts, kte, i, j)
             do k=kts,kte
-              re_cloud(i,k,j) = MAX(2.51E-6,  MIN(re_qc(k),  50.E-6))
-              re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi(k), 125.E-6))
-              re_snow(i,k,j)  = MAX(25.E-6,   MIN(re_qs(k), 999.E-6))
+              re_cloud(i,k,j) = MAX(RE_QC_BG, MIN(re_qc(k),  50.E-6))
+              re_ice(i,k,j)   = MAX(RE_QI_BG, MIN(re_qi(k), 125.E-6))
+              re_snow(i,k,j)  = MAX(RE_QS_BG, MIN(re_qs(k), 999.E-6))
             enddo 
           enddo   
         endif     ! has_reqc, etc...

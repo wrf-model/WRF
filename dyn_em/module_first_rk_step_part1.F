@@ -1097,8 +1097,8 @@ BENCH_START(pbl_driver_tim)
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #      include "HALO_EM_CHEM_E_5.inc"
          ELSE
-              WRITE(message,*)'solve_em: invalid h_mom_adv_order = ',&
-              & config_flags%h_mom_adv_order
+              WRITE(message,*)'solve_em: invalid h_sca_adv_order = ',&
+              & config_flags%h_sca_adv_order
         ENDIF
      ENDIF
 #endif
@@ -1421,12 +1421,12 @@ BENCH_START(shcu_driver_tim)
 #ifdef DM_PARALLEL
       IF( config_flags%shcu_physics == CAMUWSHCUSCHEME ) THEN
          CALL wrf_debug ( 200 , ' call HALO CHEM AFTER SHALLOW CUMULUS' )
-         IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+         IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #      include "HALO_EM_CHEM_E_3.inc"
-         ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+         ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #      include "HALO_EM_CHEM_E_5.inc"
          ELSE
-            WRITE(message,*)'module_first_rk_step_part1: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+            WRITE(message,*)'module_first_rk_step_part1: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
             CALL wrf_error_fatal(TRIM(message))
          ENDIF
       ENDIF

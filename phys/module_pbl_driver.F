@@ -474,10 +474,10 @@ CONTAINS
                                                       wsedl3d
 
 !For EEPS PBL scheme
-    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
+    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(INOUT   )    ::                        pep
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),        &
-               INTENT(INOUT) :: pek_adv,pep_adv
+               INTENT(INOUT) ::                  pek_adv,pep_adv
 
 !2D Variables required by camuwpbl scheme
     REAL,       DIMENSION( ims:ime , jms:jme ),                   &
@@ -1847,6 +1847,7 @@ CONTAINS
                    PRESENT( qi_curr )                            .AND. &
                    PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                    PRESENT( rqiblten )                           .AND. &
+                   PRESENT( pep )                                .AND. &
                    PRESENT( pek_adv )  .AND. PRESENT( pep_adv ) ) THEN
 
                 CALL wrf_debug(100,'in EEPSPBL')

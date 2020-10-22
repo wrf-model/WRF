@@ -1054,7 +1054,6 @@ endif
                       grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
                       grid%alevsiz, grid%no_src_types,                      &
                       grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_pbl,    &
-                      grid%pep_pbl,                             & ! EEPS
                       grid%exch_h,grid%thc,grid%snowc,grid%mavail,grid%hfx,grid%qfx,grid%rainbl, &
                       grid%tslb,grid%zs,grid%dzs,config_flags%num_soil_layers,grid%warm_rain,  &
                       grid%adv_moist_cond, grid%is_CAMMGMP_used,                               &
@@ -1230,6 +1229,7 @@ endif
                       ,grid%xtime1, grid%PBLHAVG, grid%TKEAVG                            &
                       ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
+                      ,grid%pep_pbl                                           & ! EEPS
                       ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic
                       ,grid%TSK_mosaic,grid%TSLB_mosaic,grid%SMOIS_mosaic,grid%SH2O_mosaic           & ! danli mosaic
                       ,grid%CANWAT_mosaic,grid%SNOW_mosaic,grid%SNOWH_mosaic,grid%SNOWC_mosaic       & ! danli mosaic

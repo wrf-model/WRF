@@ -117,7 +117,7 @@ contains
 !-- kte         end index for k in tile
 !-- IDIFF       BEP/BEM+BEM diffusion flag
 !-- FLAG_BEP    FLAG TO USE BEP AND BEP+BEM
-!-- FRC_URB2D   urban fraction (not currently used)
+!-- FRC_URB2D   urban fraction 
 !-- A_U_BEP     BEP/BEP+BEM implicit component u-mom
 !-- A_V_BEP     BEP/BEP+BEM implicit component v-mom
 !-- A_T_BEP     BEP/BEP+BEM implicit component pot. temp.
@@ -242,8 +242,8 @@ contains
                                                                         dtsfc, &
                                                                         dqsfc
    real,dimension(ims:ime,kms:kme,jms:jme) :: A_U,A_V,A_T,A_E,B_U,B_V,B_T,B_E
-   real,dimension(ims:ime,kms:kme,jms:jme) :: A_Q,B_Q,DLG,DL_U,B_E_FACE,DZ_KFLIP
-   real,dimension(ims:ime,kms:kme,jms:jme) :: SFK, VLK
+   real,dimension(ims:ime,kms:kme,jms:jme) :: A_Q,B_Q,DLG,DL_U,SFK,VLK
+   real,dimension(ims:ime,jms:jme)         :: FRCURB
    real :: bepswitch ! 0 if not using bep or bep+bem, 1 if using
 !
    qv2d(its:ite,:) = 0.0
@@ -263,6 +263,7 @@ contains
    VLK(:,:,:)=1.0
    DL_U(:,:,:)=0.0
    DLG(:,:,:)=0.0
+   FRCURB(:,:)=0.0   
 
    do j = jts,jte
       do k = kts,kte+1
@@ -298,6 +299,7 @@ contains
             VLK(i,k,j)=VL_BEP(i,k,j)
             DL_U(i,k,j)=DL_U_BEP(i,k,j)
             DLG(i,k,j)=DLG_BEP(i,k,j)
+            FRCURB(i,j)=FRC_URB2D(i,j)
           enddo
         enddo
       endif
@@ -337,7 +339,7 @@ contains
               ,b_e2d=B_E(ims,kms,j), a_e2d=A_E(ims,kms,j)                      &
               ,sfk2d=SFK(ims,kms,j), vlk2d=VLK(ims,kms,j)                      &
               ,dlu2d=DL_U(ims,kms,j), dlg2d=DLG(ims,kms,j)                     &
-              ,frc_urb1d=FRC_URB2D(ims,j), bepswitch=bepswitch                 &
+              ,frc_urb1d=FRCURB(ims,j), bepswitch=bepswitch                    &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -1453,7 +1455,6 @@ contains
  !tke is q2
       CALL GET_PBLH(KTS,KTE,pblh_ysu(i),thvx(i,kts:kte),&
       &    tke_ysu(i,kts:kte),zq(i,kts:kte+1),dzq(i,kts:kte),xland(i))
-
 !--- end of paj tke
 ! compute vconv
 !      Use Beljaars over land
@@ -1482,7 +1483,6 @@ contains
      f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
      f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
    enddo
-
 !
    do k = kts,kte-1
      do i = its,ite
@@ -1518,19 +1518,19 @@ contains
        exch_mx(i,k+1) = xkzm(i,k)
      enddo
    enddo
-  do k = kts,kte
-    do i = its,ite
-      ad1(i,k) = ad(i,k)
-    end do
-  end do
-  do k = kts,kte
-    do i = its,ite
-      ad(i,k) = ad(i,k) - a_u2d(i,k)*dt2
-      ad1(i,k) = ad1(i,k) - a_v2d(i,k)*dt2
-      f1(i,k) = f1(i,k) + b_u2d(i,k)*dt2
-      f2(i,k) = f2(i,k) + b_v2d(i,k)*dt2
-    enddo
-  enddo
+   do k = kts,kte
+     do i = its,ite
+       ad1(i,k) = ad(i,k)
+     end do
+   end do
+   do k = kts,kte
+     do i = its,ite
+       ad(i,k) = ad(i,k) - a_u2d(i,k)*dt2
+       ad1(i,k) = ad1(i,k) - a_v2d(i,k)*dt2
+       f1(i,k) = f1(i,k) + b_u2d(i,k)*dt2
+       f2(i,k) = f2(i,k) + b_v2d(i,k)*dt2
+     enddo
+   enddo
 !
 ! copies here to avoid duplicate input args for tridin
 !

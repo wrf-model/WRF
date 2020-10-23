@@ -29,6 +29,13 @@ contains
                   uoce,voce,                                                   &
                   rthraten,ysu_topdown_pblmix,                                 &
                   ctopo,ctopo2,                                                &
+                  IDIFF,FLAG_BEP,FRC_URB2D,                                    &
+                  A_U_BEP,A_V_BEP,A_T_BEP,                                     &
+                  A_Q_BEP,                                                     &
+                  A_E_BEP,B_U_BEP,B_V_BEP,                                     &
+                  B_T_BEP,B_Q_BEP,                                             &
+                  B_E_BEP,DLG_BEP,                                             &
+                  DL_U_BEP,SF_BEP,VL_BEP,                                      &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -108,6 +115,23 @@ contains
 !-- jte         end index for j in tile
 !-- kts         start index for k in tile
 !-- kte         end index for k in tile
+!-- IDIFF       BEP/BEM+BEM diffusion flag
+!-- FLAG_BEP    FLAG TO USE BEP AND BEP+BEM
+!-- FRC_URB2D   urban fraction (not currently used)
+!-- A_U_BEP     BEP/BEP+BEM implicit component u-mom
+!-- A_V_BEP     BEP/BEP+BEM implicit component v-mom
+!-- A_T_BEP     BEP/BEP+BEM implicit component pot. temp.
+!-- A_Q_BEP     BEP/BEP+BEM implicit component vapor mixing ratio
+!-- A_E_BEP     BEP/BEP+BEM implicit component TKE
+!-- B_U_BEP     BEP/BEP+BEM explicit component u-mom
+!-- B_V_BEP     BEP/BEP+BEM explicit component v-mom
+!-- B_T_BEP     BEP/BEP+BEM explicit component pot.temp.
+!-- B_Q_BEP     BEP/BEP+BEM explicit component vapor mixing ratio
+!-- B_E_BEP     BEP/BEP+BEM explicit component TKE
+!-- DLG_BEP     Height above ground Martilli et al. (2002) Eq. 24
+!-- DL_U_BEP    modified length scale Martilli et al. (2002) Eq. 22
+!-- SF_BEP      fraction of vertical surface not occupied by buildings
+!-- VL_BEP      volume fraction of grid cell not occupied by buildings
 !-------------------------------------------------------------------------------
 !
    integer,parameter ::  ndiff = 3
@@ -180,6 +204,17 @@ contains
    integer,  dimension( ims:ime, jms:jme )                                   , &
              intent(out  )   ::                                        kpbl2d
    logical,  intent(in)      ::                                       flag_qi
+   integer, intent(in) :: IDIFF
+   logical, intent(in) ::     FLAG_BEP
+   real,dimension(ims:ime,kms:kme,jms:jme),intent(in) :: A_U_BEP    &
+                                              ,A_V_BEP,A_T_BEP         &
+                                             ,A_E_BEP,B_U_BEP         &
+                                             ,A_Q_BEP,B_Q_BEP         &
+                                             ,B_V_BEP,B_T_BEP         &
+                                             ,B_E_BEP,DLG_BEP         &
+                                             ,DL_U_BEP                &
+                                             ,VL_BEP,SF_BEP
+   real, dimension(ims:ime,jms:jme),intent(in) :: FRC_URB2D
 !
 !optional
 !
@@ -206,10 +241,29 @@ contains
                                                                         dvsfc, &
                                                                         dtsfc, &
                                                                         dqsfc
-
+   real,dimension(ims:ime,kms:kme,jms:jme) :: A_U,A_V,A_T,A_E,B_U,B_V,B_T,B_E
+   real,dimension(ims:ime,kms:kme,jms:jme) :: A_Q,B_Q,DLG,DL_U,B_E_FACE,DZ_KFLIP
+   real,dimension(ims:ime,kms:kme,jms:jme) :: SFK, VLK
+   real :: bepswitch ! 0 if not using bep or bep+bem, 1 if using
 !
    qv2d(its:ite,:) = 0.0
 !
+   bepswitch = 0.0
+   A_U(:,:,:)=0.0
+   A_V(:,:,:)=0.0
+   A_T(:,:,:)=0.0
+   A_Q(:,:,:)=0.0
+   A_E(:,:,:)=0.0
+   B_U(:,:,:)=0.0
+   B_V(:,:,:)=0.0
+   B_T(:,:,:)=0.0
+   B_Q(:,:,:)=0.0
+   B_E(:,:,:)=0.0
+   SFK(:,:,:)=1.0
+   VLK(:,:,:)=1.0
+   DL_U(:,:,:)=0.0
+   DLG(:,:,:)=0.0
+
    do j = jts,jte
       do k = kts,kte+1
         do i = its,ite
@@ -225,6 +279,28 @@ contains
           if(flag_qi) qv2d(i,k+kte+kte) = qi3d(i,k,j)
         enddo
       enddo
+
+      if(flag_bep) then
+        bepswitch=1.0
+        do k=kts,kte
+          do i=its,ite
+            A_U(i,k,j)=A_U_BEP(i,k,j)
+            A_V(i,k,j)=A_V_BEP(i,k,j)
+            A_T(i,k,j)=A_T_BEP(i,k,j)
+            A_Q(i,k,j)=A_Q_BEP(i,k,j)
+            A_E(i,k,j)=A_E_BEP(i,k,j)
+            B_U(i,k,j)=B_U_BEP(i,k,j)
+            B_V(i,k,j)=B_V_BEP(i,k,j)
+            B_T(i,k,j)=B_T_BEP(i,k,j)
+            B_Q(i,k,j)=B_Q_BEP(i,k,j)
+            B_E(i,k,j)=B_E_BEP(i,k,j)
+            SFK(i,k,j)=SF_BEP(i,k,j)
+            VLK(i,k,j)=VL_BEP(i,k,j)
+            DL_U(i,k,j)=DL_U_BEP(i,k,j)
+            DLG(i,k,j)=DLG_BEP(i,k,j)
+          enddo
+        enddo
+      endif
 !
       call ysu2d(J=j,ux=u3d(ims,kms,j),vx=v3d(ims,kms,j)                       &
               ,tx=t3d(ims,kms,j)                                               &
@@ -254,6 +330,14 @@ contains
               ,rthraten=rthraten(ims,kms,j),p2diORG=p3di(ims,kms,j)            &
               ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
+              ,a_u2d=A_U(ims,kms,j), a_v2d=A_V(ims,kms,j)                      &
+              ,a_t2d=A_T(ims,kms,j), a_q2d=A_Q(ims,kms,j)                      &
+              ,b_u2d=B_U(ims,kms,j), b_v2d=B_V(ims,kms,j)                      &
+              ,b_t2d=B_T(ims,kms,j), b_q2d=B_Q(ims,kms,j)                      &
+              ,b_e2d=B_E(ims,kms,j), a_e2d=A_E(ims,kms,j)                      &
+              ,sfk2d=SFK(ims,kms,j), vlk2d=VLK(ims,kms,j)                      &
+              ,dlu2d=DL_U(ims,kms,j), dlg2d=DLG(ims,kms,j)                     &
+              ,frc_urb1d=FRC_URB2D(ims,j), bepswitch=bepswitch                 &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -288,6 +372,11 @@ contains
                   rthraten,p2diORG,                                            &
                   ysu_topdown_pblmix,                                          &
                   ctopo,ctopo2,                                                &
+                  a_u2d, a_v2d, a_t2d, a_q2d,                                  &
+                  b_u2d, b_v2d, b_t2d, b_q2d,                                  &
+                  b_e2d, a_e2d, sfk2d, vlk2d,                                  &
+                  dlu2d, dlg2d,                                                &
+                  frc_urb1d, bepswitch,                                        &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -344,9 +433,11 @@ contains
 !              ==> kzo = 0.1 for momentum and = 0.01 for mass to account for
 !                  internal wave mixing of large et al. (1994), songyou hong, feb 2016
 !              ==> alleviate superious excessive mixing when delz is large
+!              add multilayer urban canopy models of BEP and BEP+BEM, jan 2021
 !
 !     references:
 !
+!        hendricks, knievel, and wang (2020), j. appl. meteor. clim.
 !        hong (2010) quart. j. roy. met. soc
 !        hong, noh, and dudhia (2006), mon. wea. rev.
 !        hong and pan (1996), mon. wea. rev.
@@ -432,6 +523,25 @@ contains
    real,     dimension( ims:ime )                                            , &
              optional                                                        , &
              intent(inout)   ::                                        regime
+ real,     dimension( ims:ime, kms:kme ),                                    &
+             intent(in)      ::                                         a_u2d, &
+                                                                        a_v2d, &
+                                                                        a_t2d, &
+                                                                        a_q2d, &
+                                                                        b_u2d, &
+                                                                        b_v2d, &
+                                                                        b_t2d, &
+                                                                        b_q2d, &
+                                                                        b_e2d, &
+                                                                        a_e2d, &
+                                                                        sfk2d, &
+                                                                        vlk2d, &
+                                                                        dlu2d, &
+                                                                        dlg2d
+
+  real,     dimension( ims:ime ),                                         &
+             intent(in)      ::                                     frc_urb1d
+  real ::                                                            bepswitch
 !
 ! local vars
 !
@@ -469,7 +579,8 @@ contains
                                                                          xkzq, &
                                                                          zfac, &
                                                                         rhox2, &
-                                                                       hgamt2
+                                                                       hgamt2, &
+                                                                     ad1, adm
 !
 !jdf added exch_hx
 !
@@ -1109,13 +1220,13 @@ contains
 !
    do i = its,ite
      ad(i,1) = 1.
-     f1(i,1) = thx(i,1)-300.+hfx(i)/cont/del(i,1)*dt2
+     f1(i,1) = thx(i,1)-300.+(1.0-bepswitch)*hfx(i)/cont/del(i,1)*dt2
    enddo
 !
    do k = kts,kte-1
      do i = its,ite
-       dtodsd = dt2/del(i,k)
-       dtodsu = dt2/del(i,k+1)
+       dtodsd = sfk2d(i,k)*dt2/del(i,k)
+       dtodsu = sfk2d(i,k)*dt2/del(i,k+1)
        dsig   = p2d(i,k)-p2d(i,k+1)
        rdz    = 1./dza(i,k+1)
        tem1   = dsig*xkzh(i,k)*rdz
@@ -1134,13 +1245,20 @@ contains
        endif
        tem1   = dsig*xkzh(i,k)*rdz
        dsdz2     = tem1*rdz
-       au(i,k)   = -dtodsd*dsdz2
-       al(i,k)   = -dtodsu*dsdz2
+       au(i,k)   = -dtodsd*dsdz2/vlk2d(i,k)
+       al(i,k)   = -dtodsu*dsdz2/vlk2d(i,k)
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
        exch_hx(i,k+1) = xkzh(i,k)
      enddo
    enddo
+   do k = kts,kte
+     do i = its,ite
+      ad(i,k) = ad(i,k) - a_t2d(i,k)*dt2
+      f1(i,k) = f1(i,k) + b_t2d(i,k)*dt2
+     enddo
+   enddo
+
 !
 ! copies here to avoid duplicate input args for tridin
 !
@@ -1183,7 +1301,7 @@ contains
 !
    do i = its,ite
      ad(i,1) = 1.
-     f3(i,1,1) = qx(i,1)+qfx(i)*g/del(i,1)*dt2
+     f3(i,1,1) = qx(i,1)+(1.0-bepswitch)*qfx(i)*g/del(i,1)*dt2
    enddo
 !
    if(ndiff.ge.2) then
@@ -1205,8 +1323,8 @@ contains
 !
    do k = kts,kte-1
      do i = its,ite
-       dtodsd = dt2/del(i,k)
-       dtodsu = dt2/del(i,k+1)
+       dtodsd = sfk2d(i,k)*dt2/del(i,k)
+       dtodsu = sfk2d(i,k)*dt2/del(i,k+1)
        dsig   = p2d(i,k)-p2d(i,k+1)
        rdz    = 1./dza(i,k+1)
        tem1   = dsig*xkzq(i,k)*rdz
@@ -1225,8 +1343,8 @@ contains
        endif
        tem1   = dsig*xkzq(i,k)*rdz
        dsdz2     = tem1*rdz
-       au(i,k)   = -dtodsd*dsdz2
-       al(i,k)   = -dtodsu*dsdz2
+       au(i,k)   = -dtodsd*dsdz2/vlk2d(i,k)
+       al(i,k)   = -dtodsu*dsdz2/vlk2d(i,k)
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
 !      exch_hx(i,k+1) = xkzh(i,k)
@@ -1243,6 +1361,13 @@ contains
        enddo
      enddo
    endif
+   do k = kts,kte
+     do i = its,ite
+      ad(i,k) = ad(i,k) - a_q2d(i,k)*dt2
+      f3(i,k,1) = f3(i,k,1) + b_q2d(i,k)*dt2
+     enddo
+   enddo
+
 !
 ! copies here to avoid duplicate input args for tridin
 !
@@ -1316,7 +1441,7 @@ contains
         rlamdz = 150.0
        endif
        el_ysu(i,k) = zk*rlamdz/(rlamdz+zk)
-       tke_ysu(i,k)=16.6*el_ysu(i,k)*(shear_ysu(i,k)-buoy_ysu(i,k))
+       tke_ysu(i,k)=16.6*el_ysu(i,k)*(shear_ysu(i,k)-buoy_ysu(i,k)+b_e2d(i,k))
  !q2 when q3 positive
        if(tke_ysu(i,k).le.0) then
         tke_ysu(i,k)=0.0
@@ -1348,18 +1473,21 @@ contains
       if(present(ctopo)) then
         vconvnew=0.9*vconvfx(i)+1.5*(max((pblh_ysu(i)-500)/1000.0,0.0))
         vconvlim = min(vconvnew,1.0)
-        ad(i,1) = 1.+fric(i,1)*vconvlim+ctopo(i)*fric(i,1)*(1-vconvlim)
+       ad(i,1) = 1.+(1.0-bepswitch*frc_urb1d(i))* &
+                     (fric(i,1)*vconvlim+ctopo(i)*fric(i,1)*(1-vconvlim)) - &
+                     fric(i,1)*bepswitch*(1-frc_urb1d(i))
       else
-       ad(i,1) = 1.+fric(i,1)
+       ad(i,1) = 1.+(1.0-bepswitch)*fric(i,1)
       endif
      f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
      f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
    enddo
+
 !
    do k = kts,kte-1
      do i = its,ite
-       dtodsd = dt2/del(i,k)
-       dtodsu = dt2/del(i,k+1)
+       dtodsd = sfk2d(i,k)*dt2/del(i,k)
+       dtodsu = sfk2d(i,k)*dt2/del(i,k+1)
        dsig   = p2d(i,k)-p2d(i,k+1)
        rdz    = 1./dza(i,k+1)
        tem1   = dsig*xkzm(i,k)*rdz
@@ -1383,13 +1511,26 @@ contains
        endif
        tem1   = dsig*xkzm(i,k)*rdz
        dsdz2     = tem1*rdz
-       au(i,k)   = -dtodsd*dsdz2
-       al(i,k)   = -dtodsu*dsdz2
+       au(i,k)   = -dtodsd*dsdz2/vlk2d(i,k)
+       al(i,k)   = -dtodsu*dsdz2/vlk2d(i,k)
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
        exch_mx(i,k+1) = xkzm(i,k)
      enddo
    enddo
+  do k = kts,kte
+    do i = its,ite
+      ad1(i,k) = ad(i,k)
+    end do
+  end do
+  do k = kts,kte
+    do i = its,ite
+      ad(i,k) = ad(i,k) - a_u2d(i,k)*dt2
+      ad1(i,k) = ad1(i,k) - a_v2d(i,k)*dt2
+      f1(i,k) = f1(i,k) + b_u2d(i,k)*dt2
+      f2(i,k) = f2(i,k) + b_v2d(i,k)*dt2
+    enddo
+  enddo
 !
 ! copies here to avoid duplicate input args for tridin
 !
@@ -1403,7 +1544,7 @@ contains
 !
 !     solve tridiagonal problem for momentum
 !
-   call tridi1n(al,ad,cu,r1,r2,au,f1,f2,its,ite,kts,kte,1)
+    call tridi2n(al,ad,ad1,cu,r1,r2,au,f1,f2,its,ite,kts,kte,1)
 !
 !     recover tendencies of momentum
 !
@@ -1437,7 +1578,7 @@ contains
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------
-   subroutine tridi1n(cl,cm,cu,r1,r2,au,f1,f2,its,ite,kts,kte,nt)
+   subroutine tridi2n(cl,cm,cm1,cu,r1,r2,au,f1,f2,its,ite,kts,kte,nt)
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
@@ -1449,6 +1590,7 @@ contains
 !
    real, dimension( its:ite, kts:kte )                                       , &
          intent(in   )  ::                                                 cm, &
+                                                                          cm1, &
                                                                            r1
    real, dimension( its:ite, kts:kte,nt )                                    , &
          intent(in   )  ::                                                 r2
@@ -1476,11 +1618,11 @@ contains
 !
    do it = 1,nt
      do i = its,l
-       fk = 1./cm(i,1)
+       fk = 1./cm1(i,1)
        f2(i,1,it) = fk*r2(i,1,it)
      enddo
    enddo
-!
+
    do k = kts+1,n-1
      do i = its,l
        fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
@@ -1492,7 +1634,7 @@ contains
    do it = 1,nt
      do k = kts+1,n-1
        do i = its,l
-         fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
+         fk = 1./(cm1(i,k)-cl(i,k)*au(i,k-1))
          f2(i,k,it) = fk*(r2(i,k,it)-cl(i,k)*f2(i,k-1,it))
        enddo
      enddo
@@ -1505,7 +1647,7 @@ contains
 !
    do it = 1,nt
      do i = its,l
-       fk = 1./(cm(i,n)-cl(i,n)*au(i,n-1))
+       fk = 1./(cm1(i,n)-cl(i,n)*au(i,n-1))
        f2(i,n,it) = fk*(r2(i,n,it)-cl(i,n)*f2(i,n-1,it))
      enddo
    enddo
@@ -1524,7 +1666,7 @@ contains
      enddo
    enddo
 !
-   end subroutine tridi1n
+   end subroutine tridi2n
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------

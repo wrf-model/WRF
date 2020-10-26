@@ -1254,13 +1254,15 @@ contains
        exch_hx(i,k+1) = xkzh(i,k)
      enddo
    enddo
+!
+! add bep/bep+bem forcing for heat if flag_bep=.true.
+!
    do k = kts,kte
      do i = its,ite
       ad(i,k) = ad(i,k) - a_t2d(i,k)*dt2
       f1(i,k) = f1(i,k) + b_t2d(i,k)*dt2
      enddo
    enddo
-
 !
 ! copies here to avoid duplicate input args for tridin
 !
@@ -1363,13 +1365,15 @@ contains
        enddo
      enddo
    endif
+!
+! add bep/bep+bem forcing for water vapor if flag_bep=.true.
+!
    do k = kts,kte
      do i = its,ite
       ad(i,k) = ad(i,k) - a_q2d(i,k)*dt2
       f3(i,k,1) = f3(i,k,1) + b_q2d(i,k)*dt2
      enddo
    enddo
-
 !
 ! copies here to avoid duplicate input args for tridin
 !
@@ -1518,6 +1522,9 @@ contains
        exch_mx(i,k+1) = xkzm(i,k)
      enddo
    enddo
+!
+! add bep/bep+bem forcing for momentum if flag_bep=.true.
+!
    do k = kts,kte
      do i = its,ite
        ad1(i,k) = ad(i,k)

@@ -29,13 +29,13 @@ contains
                   uoce,voce,                                                   &
                   rthraten,ysu_topdown_pblmix,                                 &
                   ctopo,ctopo2,                                                &
-                  IDIFF,FLAG_BEP,FRC_URB2D,                                    &
-                  A_U_BEP,A_V_BEP,A_T_BEP,                                     &
-                  A_Q_BEP,                                                     &
-                  A_E_BEP,B_U_BEP,B_V_BEP,                                     &
-                  B_T_BEP,B_Q_BEP,                                             &
-                  B_E_BEP,DLG_BEP,                                             &
-                  DL_U_BEP,SF_BEP,VL_BEP,                                      &
+                  idiff,flag_bep,frc_urb2d,                                    &
+                  a_u_bep,a_v_bep,a_t_bep,                                     &
+                  a_q_bep,                                                     &
+                  a_e_bep,b_u_bep,b_v_bep,                                     &
+                  b_t_bep,b_q_bep,                                             &
+                  b_e_bep,dlg_bep,                                             &
+                  dl_u_bep,sf_bep,vl_bep,                                      &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -115,23 +115,23 @@ contains
 !-- jte         end index for j in tile
 !-- kts         start index for k in tile
 !-- kte         end index for k in tile
-!-- IDIFF       BEP/BEM+BEM diffusion flag
-!-- FLAG_BEP    FLAG TO USE BEP AND BEP+BEM
-!-- FRC_URB2D   urban fraction 
-!-- A_U_BEP     BEP/BEP+BEM implicit component u-mom
-!-- A_V_BEP     BEP/BEP+BEM implicit component v-mom
-!-- A_T_BEP     BEP/BEP+BEM implicit component pot. temp.
-!-- A_Q_BEP     BEP/BEP+BEM implicit component vapor mixing ratio
-!-- A_E_BEP     BEP/BEP+BEM implicit component TKE
-!-- B_U_BEP     BEP/BEP+BEM explicit component u-mom
-!-- B_V_BEP     BEP/BEP+BEM explicit component v-mom
-!-- B_T_BEP     BEP/BEP+BEM explicit component pot.temp.
-!-- B_Q_BEP     BEP/BEP+BEM explicit component vapor mixing ratio
-!-- B_E_BEP     BEP/BEP+BEM explicit component TKE
-!-- DLG_BEP     Height above ground Martilli et al. (2002) Eq. 24
-!-- DL_U_BEP    modified length scale Martilli et al. (2002) Eq. 22
-!-- SF_BEP      fraction of vertical surface not occupied by buildings
-!-- VL_BEP      volume fraction of grid cell not occupied by buildings
+!-- idiff       diff3d BEP/BEM+BEM diffusion flag 
+!-- flag_bep    flag to use BEP/BEP+BEM
+!-- frc_urb2d   urban fraction 
+!-- a_u_bep     BEP/BEP+BEM implicit component u-mom
+!-- a_v_bep     BEP/BEP+BEM implicit component v-mom
+!-- a_t_bep     BEP/BEP+BEM implicit component pot. temp.
+!-- a_q_bep     BEP/BEP+BEM implicit component vapor mixing ratio
+!-- a_e_bep     BEP/BEP+BEM implicit component TKE
+!-- b_u_bep     BEP/BEP+BEM explicit component u-mom
+!-- b_v_bep     BEP/BEP+BEM explicit component v-mom
+!-- b_t_bep     BEP/BEP+BEM explicit component pot.temp.
+!-- b_q_bep     BEP/BEP+BEM explicit component vapor mixing ratio
+!-- b_e_bep     BEP/BEP+BEM explicit component TKE
+!-- dlg_bep     Height above ground Martilli et al. (2002) Eq. 24
+!-- dl_u_bep    modified length scale Martilli et al. (2002) Eq. 22
+!-- sf_bep      fraction of vertical surface not occupied by buildings
+!-- vl_bep      volume fraction of grid cell not occupied by buildings
 !-------------------------------------------------------------------------------
 !
    integer,parameter ::  ndiff = 3
@@ -204,17 +204,17 @@ contains
    integer,  dimension( ims:ime, jms:jme )                                   , &
              intent(out  )   ::                                        kpbl2d
    logical,  intent(in)      ::                                       flag_qi
-   integer, intent(in) :: IDIFF
-   logical, intent(in) ::     FLAG_BEP
-   real,dimension(ims:ime,kms:kme,jms:jme),intent(in) :: A_U_BEP    &
-                                              ,A_V_BEP,A_T_BEP         &
-                                             ,A_E_BEP,B_U_BEP         &
-                                             ,A_Q_BEP,B_Q_BEP         &
-                                             ,B_V_BEP,B_T_BEP         &
-                                             ,B_E_BEP,DLG_BEP         &
-                                             ,DL_U_BEP                &
-                                             ,VL_BEP,SF_BEP
-   real, dimension(ims:ime,jms:jme),intent(in) :: FRC_URB2D
+   integer, intent(in) ::                                               idiff
+   logical, intent(in) ::                                            flag_bep
+   real,dimension(ims:ime,kms:kme,jms:jme),intent(in) ::              a_u_bep, &
+                                                              a_v_bep,a_t_bep, &
+                                                              a_e_bep,b_u_bep, &
+                                                              a_q_bep,b_q_bep, &
+                                                              b_v_bep,b_t_bep, &
+                                                              b_e_bep,dlg_bep, &
+                                                                     dl_u_bep, &
+                                                                vl_bep,sf_bep
+   real, dimension(ims:ime,jms:jme),intent(in) :: frc_urb2d
 !
 !optional
 !
@@ -241,29 +241,29 @@ contains
                                                                         dvsfc, &
                                                                         dtsfc, &
                                                                         dqsfc
-   real,dimension(ims:ime,kms:kme,jms:jme) :: A_U,A_V,A_T,A_E,B_U,B_V,B_T,B_E
-   real,dimension(ims:ime,kms:kme,jms:jme) :: A_Q,B_Q,DLG,DL_U,SFK,VLK
-   real,dimension(ims:ime,jms:jme)         :: FRCURB
+   real,dimension(ims:ime,kms:kme,jms:jme) :: a_u,a_v,a_t,a_e,b_u,b_v,b_t,b_e, &
+                                                     a_q,b_q,dlg,dl_u,sfk,vlk
+   real,dimension(ims:ime,jms:jme)         :: frcurb
    real :: bepswitch ! 0 if not using bep or bep+bem, 1 if using
 !
    qv2d(its:ite,:) = 0.0
 !
    bepswitch = 0.0
-   A_U(:,:,:)=0.0
-   A_V(:,:,:)=0.0
-   A_T(:,:,:)=0.0
-   A_Q(:,:,:)=0.0
-   A_E(:,:,:)=0.0
-   B_U(:,:,:)=0.0
-   B_V(:,:,:)=0.0
-   B_T(:,:,:)=0.0
-   B_Q(:,:,:)=0.0
-   B_E(:,:,:)=0.0
-   SFK(:,:,:)=1.0
-   VLK(:,:,:)=1.0
-   DL_U(:,:,:)=0.0
-   DLG(:,:,:)=0.0
-   FRCURB(:,:)=0.0   
+   a_u(:,:,:)=0.0
+   a_v(:,:,:)=0.0
+   a_t(:,:,:)=0.0
+   a_q(:,:,:)=0.0
+   a_e(:,:,:)=0.0
+   b_u(:,:,:)=0.0
+   b_v(:,:,:)=0.0
+   b_t(:,:,:)=0.0
+   b_q(:,:,:)=0.0
+   b_e(:,:,:)=0.0
+   sfk(:,:,:)=1.0
+   vlk(:,:,:)=1.0
+   dl_u(:,:,:)=0.0
+   dlg(:,:,:)=0.0
+   frcurb(:,:)=0.0   
 
    do j = jts,jte
       do k = kts,kte+1
@@ -285,21 +285,21 @@ contains
         bepswitch=1.0
         do k=kts,kte
           do i=its,ite
-            A_U(i,k,j)=A_U_BEP(i,k,j)
-            A_V(i,k,j)=A_V_BEP(i,k,j)
-            A_T(i,k,j)=A_T_BEP(i,k,j)
-            A_Q(i,k,j)=A_Q_BEP(i,k,j)
-            A_E(i,k,j)=A_E_BEP(i,k,j)
-            B_U(i,k,j)=B_U_BEP(i,k,j)
-            B_V(i,k,j)=B_V_BEP(i,k,j)
-            B_T(i,k,j)=B_T_BEP(i,k,j)
-            B_Q(i,k,j)=B_Q_BEP(i,k,j)
-            B_E(i,k,j)=B_E_BEP(i,k,j)
-            SFK(i,k,j)=SF_BEP(i,k,j)
-            VLK(i,k,j)=VL_BEP(i,k,j)
-            DL_U(i,k,j)=DL_U_BEP(i,k,j)
-            DLG(i,k,j)=DLG_BEP(i,k,j)
-            FRCURB(i,j)=FRC_URB2D(i,j)
+            a_u(i,k,j)=a_u_bep(i,k,j)
+            a_v(i,k,j)=a_v_bep(i,k,j)
+            a_t(i,k,j)=a_t_bep(i,k,j)
+            a_q(i,k,j)=a_q_bep(i,k,j)
+            a_e(i,k,j)=a_e_bep(i,k,j)
+            b_u(i,k,j)=b_u_bep(i,k,j)
+            b_v(i,k,j)=b_v_bep(i,k,j)
+            b_t(i,k,j)=b_t_bep(i,k,j)
+            b_q(i,k,j)=b_q_bep(i,k,j)
+            b_e(i,k,j)=b_e_bep(i,k,j)
+            sfk(i,k,j)=sf_bep(i,k,j)
+            vlk(i,k,j)=vl_bep(i,k,j)
+            dl_u(i,k,j)=dl_u_bep(i,k,j)
+            dlg(i,k,j)=dlg_bep(i,k,j)
+            frcurb(i,j)=frc_urb2d(i,j)
           enddo
         enddo
       endif
@@ -332,13 +332,13 @@ contains
               ,rthraten=rthraten(ims,kms,j),p2diORG=p3di(ims,kms,j)            &
               ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
-              ,a_u2d=A_U(ims,kms,j), a_v2d=A_V(ims,kms,j)                      &
-              ,a_t2d=A_T(ims,kms,j), a_q2d=A_Q(ims,kms,j)                      &
-              ,b_u2d=B_U(ims,kms,j), b_v2d=B_V(ims,kms,j)                      &
-              ,b_t2d=B_T(ims,kms,j), b_q2d=B_Q(ims,kms,j)                      &
-              ,b_e2d=B_E(ims,kms,j), a_e2d=A_E(ims,kms,j)                      &
-              ,sfk2d=SFK(ims,kms,j), vlk2d=VLK(ims,kms,j)                      &
-              ,dlu2d=DL_U(ims,kms,j), dlg2d=DLG(ims,kms,j)                     &
+              ,a_u2d=a_u(ims,kms,j), a_v2d=a_v(ims,kms,j)                      &
+              ,a_t2d=a_t(ims,kms,j), a_q2d=a_q(ims,kms,j)                      &
+              ,b_u2d=b_u(ims,kms,j), b_v2d=b_v(ims,kms,j)                      &
+              ,b_t2d=b_t(ims,kms,j), b_q2d=b_q(ims,kms,j)                      &
+              ,b_e2d=b_e(ims,kms,j), a_e2d=a_e(ims,kms,j)                      &
+              ,sfk2d=sfk(ims,kms,j), vlk2d=vlk(ims,kms,j)                      &
+              ,dlu2d=dl_u(ims,kms,j), dlg2d=dlg(ims,kms,j)                     &
               ,frc_urb1d=FRCURB(ims,j), bepswitch=bepswitch                    &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &

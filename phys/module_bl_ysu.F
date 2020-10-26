@@ -339,7 +339,7 @@ contains
               ,b_e2d=b_e(ims,kms,j), a_e2d=a_e(ims,kms,j)                      &
               ,sfk2d=sfk(ims,kms,j), vlk2d=vlk(ims,kms,j)                      &
               ,dlu2d=dl_u(ims,kms,j), dlg2d=dlg(ims,kms,j)                     &
-              ,frc_urb1d=FRCURB(ims,j), bepswitch=bepswitch                    &
+              ,frc_urb1d=frcurb(ims,j), bepswitch=bepswitch                    &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -525,7 +525,7 @@ contains
    real,     dimension( ims:ime )                                            , &
              optional                                                        , &
              intent(inout)   ::                                        regime
- real,     dimension( ims:ime, kms:kme ),                                    &
+ real,     dimension( ims:ime, kms:kme ),                                      &
              intent(in)      ::                                         a_u2d, &
                                                                         a_v2d, &
                                                                         a_t2d, &
@@ -541,8 +541,8 @@ contains
                                                                         dlu2d, &
                                                                         dlg2d
 
-  real,     dimension( ims:ime ),                                         &
-             intent(in)      ::                                     frc_urb1d
+  real,     dimension( ims:ime ),                                              &
+             intent(in)      ::                                      frc_urb1d
   real ::                                                            bepswitch
 !
 ! local vars

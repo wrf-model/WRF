@@ -71,7 +71,7 @@
  &dynamics
  hybrid_opt                          = 2,			! Hybrid coordinate option (2=Klemp cubic form with etac; default beginning V4.0). DO NOT ADD ADDITIONAL COLUMNS. 
  w_damping                           = 0,			! Vertical velocity damping flag (0=off;1=on). DO NOT ADD ADDITIONAL COLUMNS.
- diff_opt                            = 1,      1,      1,	! Turbulence and mixing option. See Users' Guide for options. 
+ diff_opt                            = 2,      2,      2,	! Turbulence and mixing option. See Users' Guide for options. 
  km_opt                              = 4,      4,      4,	! Eddy coefficient option. See Users' Guide for options.
  diff_6th_opt                        = 0,      0,      0,	! 6th order numerical diffusion option. See Users' Guide for options.
  diff_6th_factor                     = 0.12,   0.12,   0.12,	! 6th order numerical diffusion non-dimensional rate (max 1.0 = complete removal of 2dx wave in 1 timestep). 

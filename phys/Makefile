@@ -89,6 +89,7 @@ MODULES = \
 	module_mp_wsm6.o \
 	module_mp_wsm7.o \
 	module_mp_etanew.o \
+	module_mp_ivanr_micro.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
 	module_mp_SBM_polar_radar.o \
@@ -198,7 +199,7 @@ MODULES = \
 	module_wind_fitch.o \
 	module_sf_lake.o \
 	module_diagnostics_driver.o \
-	module_irrigation.o
+	module_irrigation.o 
 
 FIRE_MODULES = \
         module_fr_fire_driver.o \

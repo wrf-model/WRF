@@ -31,6 +31,7 @@
  e_we                                = 150,    220,   200,
  e_sn                                = 130,    214,   210,
  e_vert                              = 45,     45,     45,
+ dzstretch_s                         = 1.1
  p_top_requested                     = 5000,
  num_metgrid_levels                  = 34,
  num_metgrid_soil_levels             = 4,

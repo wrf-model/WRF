@@ -4367,7 +4367,7 @@ do iz= kts,kte
       enddo
       f4=f4/dzg_tot
 
-      rsveg=min(rsmin/(lai*f1*f2*f3*f4),rsmax)
+      rsveg=min(rsmin/max(lai*f1*f2*f3*f4,1e-9),rsmax)
       resg= rr/(aa*aa*utot*fh)
 
 
@@ -4559,7 +4559,7 @@ do iz= kts,kte
       enddo
       f4=f4/dzgr_tot
 
-      rsveg=min(rsmin/(lai*f1*f2*f3*f4),rsmax)
+      rsveg=min(rsmin/max(lai*f1*f2*f3*f4,1e-9),rsmax)
 
 
       resg= rr/(aa*aa*utot*fh)

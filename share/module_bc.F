@@ -1110,66 +1110,6 @@ CONTAINS
 
       END IF periodicity_y
 
-!  fix corners for doubly periodic domains
-
-      IF ( config_flags%periodic_x .and. config_flags%periodic_y &
-           .and. (ids == ips) .and. (ide == ipe)                 &
-           .and. (jds == jps) .and. (jde == jpe)                   ) THEN
-
-         IF ( (its == ids) .and. (jts == jds) ) THEN  ! lower left corner fill
-           DO j = 0, -(bdyzone-1), -1
-           DO k = kts, k_end
-           DO i = 0, -(bdyzone-1), -1
-             IF (dat(ids+i-1,k,jds+j-1) .ne. dat(ide+i-1,k,jde+j-1)) THEN
-               CALL wrf_debug( 0 , 'lower left corner is wrong' )
-             ENDIF
-             dat(ids+i-1,k,jds+j-1) = dat(ide+i-1,k,jde+j-1)
-           ENDDO
-           ENDDO
-           ENDDO
-         END IF
-
-         IF ( (ite == ide) .and. (jts == jds) ) THEN  ! lower right corner fill
-           DO j = 0, -(bdyzone-1), -1
-           DO k = kts, k_end
-           DO i = 1, bdyzone
-             IF (dat(ide+i+istag,k,jds+j-1) .ne. dat(ids+i+istag,k,jde+j-1)) THEN
-               CALL wrf_debug( 0 , 'lower right corner is wrong' )
-             ENDIF
-             dat(ide+i+istag,k,jds+j-1) = dat(ids+i+istag,k,jde+j-1)
-           ENDDO
-           ENDDO
-           ENDDO
-         END IF
-
-         IF ( (ite == ide) .and. (jte == jde) ) THEN  ! upper right corner fill
-           DO j = 1, bdyzone
-           DO k = kts, k_end
-           DO i = 1, bdyzone
-             IF (dat(ide+i+istag,k,jde+j+jstag) .ne. dat(ids+i+istag,k,jds+j+jstag)) THEN
-               CALL wrf_debug( 0 , 'upper right corner is wrong' )
-             ENDIF
-             dat(ide+i+istag,k,jde+j+jstag) = dat(ids+i+istag,k,jds+j+jstag)
-           ENDDO
-           ENDDO
-           ENDDO
-         END IF
-
-         IF ( (its == ids) .and. (jte == jde) ) THEN  ! upper left corner fill
-           DO j = 1, bdyzone
-           DO k = kts, k_end
-           DO i = 0, -(bdyzone-1), -1
-             IF (dat(ids+i-1,k,jde+j+jstag) .ne. dat(ide+i-1,k,jds+j+jstag)) THEN
-               CALL wrf_debug( 0 , 'upper left corner is wrong' )
-             ENDIF
-             dat(ids+i-1,k,jde+j+jstag) = dat(ide+i-1,k,jds+j+jstag)
-           ENDDO
-           ENDDO
-           ENDDO
-         END IF
-
-       END IF
-
    END SUBROUTINE set_physical_bc3d
 
    SUBROUTINE init_module_bc

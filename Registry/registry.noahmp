@@ -1,5 +1,5 @@
 # For Noah-MP
-state   integer isnowxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "isnow"      "no. of snow layer"                   "m3 m-3"
+state   integer isnowxy    ij      -       1      -     i02rhd=(interp_fcni)u=(copy_fcni)    "isnow"      "no. of snow layer"                   "m3 m-3"
 state    real   tvxy       ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "tv"         "vegetation leaf temperature"         "K"
 state    real   tgxy       ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "tg"         "bulk ground temperature"             "K"
 state    real   canicexy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "canice"     "intercepted ice mass"                "mm"

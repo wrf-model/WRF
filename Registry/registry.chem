@@ -3759,20 +3759,6 @@ rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0
 rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
 rconfig   integer cam_mam_nspec            namelist,chem        1              85      irh     "cam_mam_nspec"                   ""    ""
 rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .true.    irh     "CAM_MP_MAM_cpled"                   ""    ""
-# Lightning
-rconfig   integer     lightning_opt       namelist,chem        max_domains        0       rh      "lightning_opt"     ""      ""
-rconfig   integer     lightning_time_step namelist,chem        max_domains        0       rh     "lightning_time_step"  ""      ""
-rconfig   real        lightning_start_seconds namelist,chem    max_domains        0       rh     "lightning_start_seconds"    ""      ""
-rconfig   real        temp_upper          namelist,chem        max_domains      -45.      rh     "temp_upper"         ""      ""
-rconfig   real        temp_lower          namelist,chem        max_domains      -15.      rh     "temp_lower"         ""      ""
-rconfig   real        N_IC                namelist,chem        max_domains        0.      rh     "N_IC"               ""    ""
-rconfig   real        N_CG                namelist,chem        max_domains        0.      rh     "N_CG"               ""    ""
-rconfig   integer     passive_ltng        namelist,chem        max_domains        1       rh     "passive_ltng"     ""      ""
-rconfig   integer     lflash_data         namelist,chem        1                  1       rh     "lflash_data"     ""      ""
-rconfig   real        flashrate_factor    namelist,chem        max_domains        1.      rh     "flashrate_factor"   ""    ""
-rconfig   integer     flashrate_method    namelist,chem        max_domains        1       rh      "flashrate_method"   ""    ""
-rconfig   integer     iccg_method         namelist,chem        max_domains        1       rh      "iccg_method"        ""    ""
-rconfig   integer     cellcount_method    namelist,chem        max_domains        1       rh      "cellcount_method"   ""    ""            
 
 # GHG chemistry namelist options:
 rconfig   character   vprm_opt            namelist,chem        max_domains   "VPRM_param_US"  -       "the file contains VPRM parameters"  ""      ""
@@ -4172,3 +4158,6 @@ package  lnox_opt_decaria   lnox_opt==2    -   tracer:lnox_ic,lnox_cg
 
 # Integrated Reaction Rate option
 rconfig   integer    irr_opt  namelist,chem     max_domains        0     rh     "IRR_OPT"            "" ""
+
+# Time series of vertical profiles
+state   real   ts_o3_profile   ?!k   misc   -   -   -   "TS_O3_PROFILE"   "O3, vertical profile"

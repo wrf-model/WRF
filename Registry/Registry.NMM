@@ -322,6 +322,7 @@ state    real  dfi_SNOWC        ij      misc        1       -      r  "dfi_SNOWC
 # module_DYNAM
 #
 state  real   dx_nmm    ij     dyn_nmm     1      -      irh023     "DX_NMM"  "East-west distance H-to-V points"              "m"
+state  real   area_nmm  ij     dyn_nmm     1      -      -          "AREA_NMM"  "Grid cell area"                              "m2"
 state  real   wpdar     ij     dyn_nmm     1      -      ir
 state  real   cpgfu     ij     dyn_nmm     1      -      ir
 state  real   curv      ij     dyn_nmm     1      -      ir      "CURV"    "Curvature term= .5*DT*TAN(phi)/RadEarth"       "s m-1"
@@ -447,6 +448,8 @@ state  real   deep      ij    dyn_nmm   1    -     r        "DEEP"     "Deep con
 state  real   rf        ij    dyn_nmm   1    -     r
 state  real   th10      ij    dyn_nmm   1    -     rh023d=(DownCopy)       "TH10"     "10-m potential temperature from MYJ"  "K"
 state  real   q10       ij    dyn_nmm   1    -     rh023d=(DownCopy)       "Q10"      "10-m specific humidity from MYJ"      "kg kg-1"
+state  real   u10e      ij    dyn_nmm   1    -     rhd=(DownCopy)          "U10E"     "Special 10-m U from MYJ"      "m s-1"
+state  real   v10e      ij    dyn_nmm   1    -     rhd=(DownCopy)          "V10E"     "Special 10-m V from MYJ"      "m s-1"
 state  real   pshltr    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "PSHLTR"   "2-m pressure from MYJ"                "Pa"
 state  real   tshltr    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "TSHLTR"   "2-m potential temperature from MYJ"    "K"
 state  real   qshltr    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "QSHLTR"   "2-m specific humidity from MYJ"       "kg kg-1"
@@ -455,6 +458,8 @@ state  real   t_adj     ijk   dyn_nmm   1    -     rd=(DownNear)  "T_ADJ"    "T 
 state  real   t_old     ijk   dyn_nmm   1    -     r        "T_OLD"    "T before last call to precip"         "K"
 state  real   zero_3d   ijk   dyn_nmm   1    -     r
 state  real   W0AVG     ikj   dyn_nmm   1    -     r        "W0AVG" "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"  "m s-1"
+state  real   qcconv    ikj   dyn_nmm   1    -     r        "QCCONV"                "CLOUD MIXING RATIO FOR BMJ CUMULUS SCHEME"        "kg kg-1"
+state  real   qiconv    ikj   dyn_nmm   1    -     r        "QICONV"                "ICE MIXING RATIO FOR BMJ CUMULUS SCHEME"          "kg kg-1"
 state  real   AKHS_OUT  ij    dyn_nmm   1    -     rh023       "AKHS_OUT"  "Output sfc exch coeff for heat"               "m2 s-1"
 state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Output sfc exch coeff for momentum"           "m2 s-1"
 #
@@ -587,7 +592,9 @@ state  real   rrw       ijkb  dyn_nmm   1    -     rh       "RRW"       "Tracer"
 state  real   f_ice     ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_ICE"     "Frozen fraction of CWM"               ""
 state  real   f_rain    ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
 state  real   f_rimef   ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,1.0)u=(UpMassIKJ:@EExtrap,1.0)  "F_RIMEF"   "Rime factor"                          ""
-state  real   cldfra    ijk   dyn_nmm   1    -     rh023       "CLDFRA"    "Cloud fraction"                       ""
+state  real   cldfra    ijk   dyn_nmm   1    -     rh023   "CLDFRA"    "Cloud fraction"                       ""
+state  real   CONVCLD   ij    dyn_nmm   1    -     r      "CONVCLD"    "BMJ CONVECTIVE CLOUD"                 "kg m-2"
+state  real   CCLDFRA   ikj   dyn_nmm   1    -     r      "CCLDFRA"    "CONVECTIVE CLOUD FRACTION"            ""
 state  real   sr        ij    dyn_nmm   1    -     irh023      "SR"        "Timestep mass ratio of snow:precip"   ""
 state  real   cfrach    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "CFRACH"    "High cloud fraction"                  ""
 state  real   cfracl    ij    dyn_nmm   1    -     rh023d=(DownCopy)       "CFRACL"    "Low cloud fraction"                   ""
@@ -1083,7 +1090,7 @@ state    real   rc_mf           ikj     misc        1         -      r        "R
 rconfig   integer dveg        namelist,noah_mp      1            4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
 rconfig   integer opt_crs     namelist,noah_mp      1            1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
 rconfig   integer opt_btr     namelist,noah_mp      1            1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
-rconfig   integer opt_run     namelist,noah_mp      1            1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)"   ""
+rconfig   integer opt_run     namelist,noah_mp      1            1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS; 5->Miguez-Macho & Fan)"   ""
 rconfig   integer opt_sfc     namelist,noah_mp      1            1         h    "opt_sfc"  "surface layer drag coeff (CH & CM) (1->M-O; 2->Chen97)"   ""
 rconfig   integer opt_frz     namelist,noah_mp      1            1         h    "opt_frz"  "supercooled liquid water (1-> NY06; 2->Koren99)"   ""
 rconfig   integer opt_inf     namelist,noah_mp      1            1         h    "opt_inf"  "frozen soil permeability (1-> NY06; 2->Koren99)"   ""
@@ -1426,6 +1433,7 @@ rconfig   integer     ysu_topdown_pblmix  namelist,physics      max_domains    0
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
+rconfig   real        windfarm_tke_factor namelist,physics      1              0.25    rh       "windfarm_tke_factor"        ""      ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1        rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true; 0=false"      ""
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh0123       "cu_physics"            ""      ""
@@ -1492,8 +1500,9 @@ rconfig   real    seaice_snowdepth_max    namelist,physics      1         1.E10 
 rconfig   real    seaice_snowdepth_min    namelist,physics      1         0.001       -     "seaice_snowdepth_min" "Minimum snow depth (m) on sea ice"
 rconfig   integer seaice_thickness_opt    namelist,physics      1            0        -     "seaice_thickness_opt" "Method for setting sea-ice thickness"
 rconfig   real   seaice_thickness_default namelist,physics      1            3.0      -     "seaice_thickness_default" "Default value for sea-ice thickness"
-rconfig   logical tice2tsk_if2cold        namelist,physics      1              .false. -     "tice2tsk_if2cold" "Avoid low ice temps when ice frac and Tsk are inconsistent"
+rconfig   logical tice2tsk_if2cold        namelist,physics      1            .false.  -     "tice2tsk_if2cold" "Avoid low ice temps when ice frac and Tsk are inconsistent"
 rconfig   integer sst_update              namelist,physics      1            0        i01rh    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
+rconfig   logical bmj_rad_feedback        namelist,physics      max_domains  .false.   -    "if true include radiative effects of bmj clouds"  ""
 rconfig   integer sf_urban_physics        namelist,physics      max_domains  0         h    "sf_urban_physics"   "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   logical usemonalb               namelist,physics      1            .true.    h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
 rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
@@ -1682,6 +1691,7 @@ rconfig   logical open_ye                 namelist,bdy_control	max_domains    .f
 rconfig   logical polar                   namelist,bdy_control  max_domains    .false. rh    "polar"                 ""      ""
 rconfig   logical nested                  namelist,bdy_control	max_domains    .false. rh    "nested"                ""      ""
 rconfig   integer real_data_init_type     namelist,bdy_control		1                 1    irh   "real_data_init_type"   "REAL DATA INITIALIZATION OPTIONS: 1=SI, 2=MM5, 3=GENERIC" "PRE-PROCESSOR TYPES"
+rconfig   logical multi_bdy_files         namelist,bdy_control      1    .false. rh    "multi_bdy_files"       ""      ""
 
 rconfig   integer background_proc_id      namelist,grib2 	        1     255    rh    "background_proc_id"    "Background processing id for grib2"  ""
 rconfig   integer forecast_proc_id        namelist,grib2 	        1     255    rh    "forecast_proc_id"      "Analysis and forecast processing id for grib2"  ""
@@ -1819,6 +1829,7 @@ package   gfdlswscheme  ra_sw_physics==99            -             -
 package   hwrfswscheme  ra_sw_physics==98            -             state:o3rad
 package   heldsuarez    ra_lw_physics==31            -             -
 
+package   nosfcscheme    sf_sfclay_physics==0        -             -
 package   sfclayscheme   sf_sfclay_physics==91       -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
@@ -1855,7 +1866,7 @@ package   shinhongscheme bl_pbl_physics==11          -             -
 package   fitchscheme    windfarm_opt==1             -             -
 
 package   kfetascheme    cu_physics==1               -             -
-package   bmjscheme      cu_physics==2               -             -
+package   bmjscheme      cu_physics==2               -             state:qcconv,qiconv,convcld,ccldfra
 package   gdscheme       cu_physics==93              -             -
 package   sasscheme      cu_physics==94              -             state:hpbl2d,heat2d,evap2d
 package   scalesasscheme cu_physics==4               -             state:hpbl2d,heat2d,evap2d

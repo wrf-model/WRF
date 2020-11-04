@@ -157,10 +157,11 @@
       integer, intent(in) :: nw
       real, intent(in)    :: wl(nw)
 
-      integer :: astat, m, n
+      integer :: astat, m, n, debug_level
       character(len=256) :: emsg
 
       call set_initialization( status=.true. )
+      call get_wrf_debug_level( debug_level )
 
       if( .not. allocated( xsqy_tab ) ) then
          allocate( xsqy_tab(kj),stat=astat )
@@ -200,7 +201,9 @@
       npht_tab = 2
       call setup_sub_calls( the_subs,npht_tab )
 
-      call diagnostics
+      IF ( 100 .LE. debug_level ) THEN
+        call diagnostics
+      ENDIF
 
       call rdxs_init( nw, wl )
 

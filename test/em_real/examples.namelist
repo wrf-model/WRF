@@ -169,7 +169,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  guv_sfc                             = 0.0003,     0.0003,     0.0003,
  gt_sfc                              = 0.0003,     0.0003,     0.0003,
  gq_sfc                              = 0.0003,     0.0003,     0.0003,
- rinblw                              = 250.,
+ rinblw                              = 250.,       250.,       250., 
 
 ** Using observation nudging option (note &fdda is a separate namelist record):
 
@@ -322,6 +322,7 @@ Switching off latent heating from a microphysics scheme (must also set cu_physic
     spec_zone is ALWAYS = 1 
     relax_zone is ALWAYS = spec_bdy_width - spec_zone
 
+&bdy_control
  spec_bdy_width                      = 10,
  specified                           = .true.,
  spec_exp                            = 0.33
@@ -330,6 +331,17 @@ For a tropical channel configuration, set the following:
 
  specified                           = .true.,
  periodic_x                          = .true.,
+
+** Using split lateral boundary files
+     The run-time flag multi_bdy_files must be set to TRUE (default is false), and the
+     lateral boundary files must have a date associated. When using the split LBC option,
+     there is ALWAYS and ONLY a single time LBC time in each file.
+
+ multi_bdy_files                     = .true.
+
+Also requires
+&time_control
+ bdy_inname                          = "wrfbdy_d<domain>_<date>"
 
 ** using io quilting option to improve output efficiency for large domain runs
     (note that this is a separate namelist record):
@@ -426,6 +438,17 @@ for z_levels means AGL, so -500 is 500 m AGL, and 10000 is 10 km).
  z_lev_diags                         = 1
  num_z_levels                        = 2
  z_levels                            = -500, 10000
+ /
+
+
+** For solar diagnostics, 2-D fields of variables relevant to solar forecasting are output 
+when option solar_diagnostics is activated in diags section of namelist, as shown below.
+Also, if tslist is present when solar_diagnostics is activated, then these same variables
+are output to the time series files for the location(s) specified in tslist.
+All variables are calculated in phys/module_diag_solar.F and defined in registry.solar_fields
+
+ &diags
+ solar_diagnostics                   =  1
  /
 
 
@@ -658,5 +681,52 @@ To overwrite the cu_physics option for a second nest, set
  dzbot                               = 50.
  dzstretch_s                         = 1.3
  dzstretch_u                         = 1.1
+
+** Using the scale-adaptive SMS-3DTKE subgrid turbulent mixing scheme: 
+ &physics
+   bl_pbl_physics = 0,
+   sf_sfclay_physics = 1(or 5, 91), 
+ /
+ &dynamics
+   diff_opt       = 2,
+   km_opt         = 5, 
+ /
+
+
+** Using lightning option
+ &physics
+ lightning_option                    = 2,
+ iccg_method                         = 1,
+ iccg_prescribed_num                 = 2,
+ iccg_prescribed_den                 = 1,
+ cldtop_adjustment                   = 0,
+ lightning_dt                        = 5,   ; default: time_step
+ lightning_start_seconds             = 600,
+ flashrate_factor                    = 1.0,
+ ltng_temp_upper                    = -45., ; used by lnox_opt=2
+ ltng_temp_lower                    = -15., ; used by lnox_opt=2
+ /
+ 
+ &chem
+ lnox_opt                           = 2,
+ n_ic                               = 200,
+ n_cg                               = 200,
+ lnox_passive                       = .false.,
+ /
+
+
+** Using the irrigation parameterizations:
+&physics
+ sf_surf_irr_scheme                  = 3,
+ irr_daily_amount                    = 5.7,
+ irr_start_hour                      = 2,
+ irr_num_hours                       = 3,
+ irr_start_julianday                 = 135,
+ irr_end_julianday                   = 350,
+ irr_ph                              = 0,
+ irr_freq                            = 1,
+/
+
+
 
 

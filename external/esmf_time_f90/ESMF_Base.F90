@@ -8,10 +8,10 @@
 !------------------------------------------------------------------------------
 ! module definition
 
-      module ESMF_BaseMod
+      module WRF_ESMF_BaseMod
  
 !BOP
-! !MODULE: ESMF_BaseMod - Base class for all ESMF classes
+! !MODULE: WRF_ESMF_BaseMod - Base class for all ESMF classes
 !
 ! !DESCRIPTION:
 !
@@ -1081,4 +1081,4 @@ end function
 !  overridden by higher level more specialized functions.
 !-------------------------------------------------------------------------
 
-      end module ESMF_BaseMod
+      end module WRF_ESMF_BaseMod

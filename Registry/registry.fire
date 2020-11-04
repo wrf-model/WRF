@@ -8,7 +8,10 @@
 #<key>   <package       <associated               <package        <associated 4d scalars>
 #         name>          namelist choice>          state vars>
 # 
-package   fire_sfire    ifire==2                    -             state:nfuel_cat,zsf,tign_g,rthfrten,rqvfrten,grnhfx,grnqfx,canhfx,canqfx,lfn,fuel_frac,fire_area,uf,vf,fgrnhfx,fgrnqfx,fcanhfx,fcanhfx,fcanqfx,ros,fxlong,fxlat,fuel_time,bbb,betafl,phiwc,r_0,fgip,ischap,lfn_hist,lfn_time,avg_fuel_frac,uah,vah
+package   fire_sfire    ifire==2                    -             state:avg_fuel_frac,bbb,betafl,burnt_area_dt,canhfx,canqfx,dzdxf,dzdyf,fcanhfx,fcanqfx,fgip,fgrnhfx,fgrnqfx,fire_area,fire_smoke,flame_length,fmc_equi,fmc_g,fmc_gc,fmep,fmc_lag,fmoist_lasttime,fmoist_nexttime,fuel_frac,fuel_time,fxlat,fxlong,fz0,grnhfx,grnhfx_fu,grnqfx,grnqfx_fu,iboros,ischap,lfn,lfn_0,lfn_1,lfn_2,lfn_hist,lfn_s0,lfn_s1,lfn_s2,lfn_s3,lfn_time,nfuel_cat,phiwc,psfc_old,q2_old,r_0,rain_old,rh_fire,ros,ros_front,rqvfrten,rthfrten,t2_old,tign_g,uah,uf,vah,vf,zsf
+
+package  fire_fmoist_run   fmoisti_run==1           -             state:fmc_gc,fmep,fmc_equi,fmc_lag,rain_old,t2_old,psfc_old,rh_fire
+package  fire_fmoist_interp fmoisti_interp==1       -             state:fmc_gc
 
 # level function history support
 dimspec   ign   2           constant=1      z    i_lfn_history
@@ -66,6 +69,36 @@ state    real     ros       *i*j      fire        1         z    r    "ROS" "rat
 state    real     burnt_area_dt *i*j      fire        1         z    hr    "BURNT_AREA_DT" "fraction of cell area burnt on current dt" "-"
 state    real     flame_length  *i*j      fire        1         z    hr    "FLAME_LENGTH"     "fire flame length" "m"
 state    real     ros_front     *i*j      fire        1         z    hr    "ROS_FRONT"     "rate of spread at fire front" "m/s"
+
+# fuel moisture variables
+state    real     fmc_g     *i*j      fire        1         z   i102hr "FMC_G"     "ground fuel moisture contents" "1"
+
+# fuel moisture model section
+dimspec  num_fmc    -   namelist=nfmc              z      fuel_moisture_classes 
+dimspec  num_fmep    -   constant=2                z      fuel_moisture_extended_parameters
+rconfig  integer  nfmc  namelist,fire  1    5  -   "nfmc" "number of fuel moisture classes"
+state    real     fmc_gc  i{num_fmc}j fire      1           z   ihr   "FMC_GC"  "fuel moisture contents by class" "1"
+state    real     fmep    i{num_fmep}j fire      1         z    ihr   "FMEP"  "fuel moisture extended model parameters" "1"
+state    real     fmc_equi  i{num_fmc}j fire     1         z     hr   "FMC_EQUI"  "fuel moisture contents by class equilibrium (diagnostics only)" "1"
+state    real     fmc_lag  i{num_fmc}j fire     1         z      hr   "FMC_TEND"  "fuel moisture contents by class time lag (diagnostics only)" "h"
+state    real     rain_old  ij       fire        1         z     hr   "RAIN_OLD" "previous value of accumulated rain" "mm"
+state    real     t2_old    ij       fire        1         z     hr   "T2_OLD" "previous value of air temperature at 2m" "K"
+state    real     q2_old    ij       fire        1         z     hr   "Q2_OLD" "previous value of 2m specific humidity" "kg/kg"
+state    real     psfc_old  ij       fire        1         z     hr   "PSFC_OLD" "previous value of surface pressure" "Pa"
+state    real     rh_fire   ij       fire        1         z     hr   "RH_FIRE" "relative humidity at the surface" "1"
+state    real     fmoist_lasttime -  fire        -         -     hr   "FMOIST_LASTTIME" "last time the moisture model was run" "s"
+state    real     fmoist_nexttime -  fire        -         -     hr   "FMOIST_NEXTTIME" "next time the moisture model will run" "s"
+rconfig logical   fmoist_run        namelist,fire  max_domains   .false.       hr   "run moisture model (on the atmospheric grid), output to fmc_gc"
+rconfig logical   fmoist_interp     namelist,fire  max_domains   .false.       hr   "interpolate moisture from the model or the input to fuels on the fire grid"
+rconfig integer   fmoisti_run       derived        max_domains   0             hr   "run moisture model (on the atmospheric grid), output to fmc_gc"
+rconfig integer   fmoisti_interp    derived        max_domains   0             hr   "interpolate moisture from the model or the input to fuels on the fire grid"
+rconfig logical   fmoist_only       namelist,fire  max_domains   .false.       hr   "only run moisture model, skip fire"
+rconfig integer   fmoist_freq       namelist,fire  max_domains    0       hr   "fmoist_freq"    "frequency to run moisture model 0: use fmoist_dt, k>0: every k timesteps" "1"
+rconfig real      fmoist_dt         namelist,fire  max_domains    600     hr   "fmoist_dt  "    "moisture model time step" "s"
+rconfig real      fmep_decay_tlag   namelist,fire  1              999999  hr   "fmep_decay_tlag" "time constant of assimilated adjustments of equilibria decay" "1"
+halo      HALO_FIRE_MFG dyn_em 24:fmc_g
+halo      HALO_FIRE_MAG dyn_em 8:fmc_gc
+
 
 # constant data arrays
 state    real     fxlong    *i*j      fire        1         z   ihr    "FXLONG"    "longitude of midpoints of fire cells" "degrees"
@@ -161,6 +194,7 @@ rconfig   real    fire_wind_height       namelist,fire         max_domains      
 rconfig   integer fire_fuel_read         namelist,fire         max_domains           -1      -      "fire_fuel_read"   "fuel categories are set by: if 0, uniform; if 1, user-presc; if 2, read from file"   ""
 rconfig   integer fire_fuel_cat          namelist,fire         max_domains           1       -      "fire_fuel_cat"     "fuel category if ifuelread=0"              ""
 # sfire switches
+rconfig   integer fire_fmc_read          namelist,fire         max_domains           1       -      "fire_fmc_read"    "ground fuel moisture is set by: if 0, in wrfinput; if 1, user-presc; if 2, read from file"   ""
 rconfig   integer fire_print_msg         namelist,fire         max_domains           0       -      "fire_write_msg"    "write fire statistics, 0 no writes, 1+ for more"  ""
 rconfig   integer fire_print_file        namelist,fire         max_domains           0       -      "fire_write_file"   "write fire output text files, 0 no writes, 1+ for more" ""
 # method selection

@@ -98,7 +98,7 @@ module module_gw_gw2d
                             gw2d(did)%ho, gw2d(did)%convgw, gw2d(did)%excess,  &
                             nlst_rt(did)%geo_finegrid_flnm,nlst_rt(did)%DT,     &
                             RT_DOMAIN(did)%LATVAL,        &
-                            RT_DOMAIN(did)%LONVAL,rt_domain(did)%dist,          &
+                            RT_DOMAIN(did)%LONVAL,rt_domain(did)%overland%properties%distance_to_neighbor,          &
                             nlst_rt(did)%output_gw)
 	   end if
 	  

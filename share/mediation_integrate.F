@@ -40,7 +40,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    USE mediation_pertmod_io , ONLY : save_tl_pert, read_ad_forcing, save_xtraj, read_xtraj, read_xtraj_reverse
    USE module_bc_em, ONLY : rk_phys_bc_dry_2
    USE module_bc, ONLY : set_physical_bc3d
-   USE esmf_timemod, ONLY : ESMF_TimeInc
+   USE wrf_esmf_timemod, ONLY : ESMF_TimeInc
 
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : ntasks_x, ntasks_y, &
@@ -2104,9 +2104,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    Type (WRFU_Time )                      :: startTime, stopTime, currentTime
    Type (WRFU_TimeInterval )              :: stepTime
 integer myproc,i,j,k
-#ifdef _MULTI_BDY_FILES_
    CHARACTER(LEN=80)                      :: timestr
-#endif
 
 #include "wrf_io_flags.h"
 
@@ -2142,14 +2140,16 @@ integer myproc,i,j,k
        CALL WRFU_AlarmRingerOff( grid%alarms( BOUNDARY_ALARM ), rc=rc )
        IF ( wrf_dm_on_monitor() ) CALL start_timing
 
-#ifdef _MULTI_BDY_FILES_
        ! Possibility to have a <date> as part of the bdy_inname.
-       CALL domain_clock_get( grid, current_timestr=timestr )
-       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
-#else
-! typically a <date> wouldn't be part of the bdy_inname, so just pass a dummy
-       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
-#endif
+       IF ( config_flags%multi_bdy_files ) THEN
+         CALL domain_clock_get( grid, current_timestr=timestr )
+         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
+
+       ! typically a <date> wouldn't be part of the bdy_inname, so just pass a dummy
+       ELSE
+         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
+
+       END IF
 
        CALL wrf_inquire_opened(grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
        IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
@@ -2159,11 +2159,11 @@ integer myproc,i,j,k
        ENDIF
        CALL wrf_dm_bcast_bytes ( lbc_opened , LWORDSIZE )
        IF ( .NOT. lbc_opened ) THEN
-#ifdef _MULTI_BDY_FILES_
-         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
-#else
-         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
-#endif
+          IF ( config_flags%multi_bdy_files ) THEN
+           CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
+          ELSE
+           CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
+          END IF
           WRITE(message,*)'Opening: ',TRIM(bdyname)
           CALL wrf_debug(100,TRIM(message))
           CALL open_r_dataset ( grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
@@ -2203,10 +2203,10 @@ integer myproc,i,j,k
          CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
        ENDDO
 #endif
-#ifdef _MULTI_BDY_FILES_
        ! Close the bdy file so that next time around, we'll open it again.
-       CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
-#endif
+       IF ( config_flags%multi_bdy_files ) THEN
+         CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+       END IF
 #if ( WRFPLUS == 1 )
        IF ( config_flags%dyn_opt .NE. dyn_em_ad ) THEN
           CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )

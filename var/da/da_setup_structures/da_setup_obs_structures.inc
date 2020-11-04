@@ -92,7 +92,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_ssmisobs .OR. use_hirs4obs .OR. use_mhsobs .OR. use_pseudo_rad .OR. &
       use_mwtsobs  .OR. use_mwhsobs .OR. use_atmsobs .OR. use_simulated_rad .OR. &
       use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs .OR. use_goesimgobs .OR. &
-      use_ahiobs) then
+      use_ahiobs .OR. use_mwhs2obs) then
       use_rad = .true.
    else
       use_rad = .false.

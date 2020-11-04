@@ -42,13 +42,13 @@ module da_minimisation
       write_filtered_rad,omb_set_rand,use_rad,var_scaling2,var_scaling1, &
       var_scaling4,var_scaling5,var_scaling3, jo_unit, test_gradient, &
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, num_pseudo, cv_options, &
-      cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, cv_size_domain_jl, &
+      cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, cv_size_domain_jl, cv_size_domain_jt, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpseph, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
       use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
-      num_procs, myproc, use_gpspwobs, use_rainobs, use_gpsztdobs, &
-      use_radar_rf, use_radar_rhv,use_radar_rqv,pseudo_var, num_pseudo, &
+      biasprep, qc_rad, num_procs, myproc, use_gpspwobs, use_rainobs, use_gpsztdobs, &
+      use_radar_rf, radar_rf_opt,radar_rf_rscl,radar_rv_rscl,use_radar_rhv,use_radar_rqv,pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, gas_constant, &
       orthonorm_gradient, its, ite, jts, jte, kts, kte, ids, ide, jds, jde, kds, kde, cp, &
       use_satcv, sensitivity_option, print_detail_outerloop, adj_sens, filename_len, &
@@ -57,7 +57,8 @@ module da_minimisation
       write_detail_grad_fn, pseudo_uvtpq, lanczos_ep_filename, use_divc, divc_factor, &
       cloud_cv_options, use_cv_w, var_scaling6, var_scaling7, var_scaling8, var_scaling9, &
       var_scaling10, var_scaling11, &
-      write_gts_omb_oma, write_unpert_obs, write_rej_obs_conv, pseudo_time
+      write_gts_omb_oma, write_unpert_obs, write_rej_obs_conv, pseudo_time, &
+      use_varbc_tamdar, varbc_tamdar_nobsmin, varbc_tamdar_unit
    use da_define_structures, only : iv_type, y_type,  j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type
@@ -112,12 +113,15 @@ module da_minimisation
       da_ao_stats_tamdar_sfc, da_oi_stats_tamdar_sfc,da_oi_stats_tamdar_sfc, &
       da_get_innov_vector_tamdar_sfc, &
       da_jo_and_grady_tamdar_sfc, da_residual_tamdar_sfc
+   use da_varbc_tamdar, only : da_varbc_tamdar_tl,da_varbc_tamdar_adj, &
+                               da_varbc_tamdar_direct,da_varbc_tamdar_precond
 
 #if defined(RTTOV) || defined(CRTM)
    use da_radiance, only : da_calculate_grady_rad, da_write_filtered_rad, &
       da_get_innov_vector_radiance, satinfo
    use da_radiance1, only : da_ao_stats_rad,da_oi_stats_rad, &
-      da_write_iv_rad_ascii,da_residual_rad,da_jo_and_grady_rad
+      da_write_iv_rad_ascii,da_residual_rad,da_jo_and_grady_rad, &
+      da_biasprep, da_qc_rad
 #endif
    use da_radar, only :  da_calculate_grady_radar, da_ao_stats_radar, &
       da_oi_stats_radar, da_get_innov_vector_radar, da_residual_radar, &
@@ -158,7 +162,7 @@ module da_minimisation
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &
       da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj
 #if defined(RTTOV) || defined(CRTM)
-   use da_varbc, only : da_varbc_tl,da_varbc_adj,da_varbc_precond,da_varbc_coldstart
+   use da_varbc, only : da_varbc_tl,da_varbc_adj,da_varbc_precond,da_varbc_coldstart, da_varbc_direct
 #endif
    use da_vtox_transforms, only : da_transform_vtox,da_transform_vtox_adj,da_transform_xtoxa,da_transform_xtoxa_adj
    use da_vtox_transforms, only : da_copy_xa, da_add_xa, da_transform_vpatox, da_transform_vpatox_adj

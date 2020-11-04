@@ -2,7 +2,7 @@
 !==============================================================================
 !
 !     ESMF Alarm Module
-      module ESMF_AlarmMod
+      module WRF_ESMF_AlarmMod
 !
 !==============================================================================
 !
@@ -16,7 +16,7 @@
 !===============================================================================
 !BOPI
 !
-! !MODULE: ESMF_AlarmMod
+! !MODULE: WRF_ESMF_AlarmMod
 !
 ! !DESCRIPTION:
 ! Part of Time Manager F90 API wrapper of C++ implemenation
@@ -29,12 +29,12 @@
 !------------------------------------------------------------------------------
 ! !USES:
       ! inherit from ESMF base class
-      use ESMF_BaseMod
+      use WRF_ESMF_BaseMod
 
       ! associated derived types
-      use ESMF_TimeIntervalMod, only : ESMF_TimeInterval, &
-                                       ESMF_TimeIntervalAbsValue
-      use ESMF_TimeMod,         only : ESMF_Time
+      use WRF_ESMF_TimeIntervalMod, only : ESMF_TimeInterval, &
+                                           ESMF_TimeIntervalAbsValue
+      use WRF_ESMF_TimeMod,         only : ESMF_Time
 
       implicit none
 
@@ -952,4 +952,4 @@
 
 !------------------------------------------------------------------------------
 
-      end module ESMF_AlarmMod
+      end module WRF_ESMF_AlarmMod

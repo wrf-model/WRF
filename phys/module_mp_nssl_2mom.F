@@ -142,7 +142,7 @@ MODULE module_mp_nssl_2mom
   public nssl_2mom_driver
   public nssl_2mom_init
   private gamma_sp,gamxinf,GAML02, GAML02d300, GAML02d500, fqvs, fqis
-  private gamma_dp, gamxinfdp
+  private gamma_dp, gamxinfdp, gamma_dpr
   private delbk, delabk
   private gammadp
   
@@ -675,7 +675,7 @@ MODULE module_mp_nssl_2mom
       real :: ciacrratio(0:nqiacrratio,0:nqiacralpha)
       real :: qiacrratio(0:nqiacrratio,0:nqiacralpha)
       real :: ziacrratio(0:nqiacrratio,0:nqiacralpha)
-      double precision :: gamxinflu(0:nqiacrratio,0:nqiacralpha,10,2) ! last index for graupel (1) or hail (2)
+      double precision :: gamxinflu(0:nqiacrratio,0:nqiacralpha,12,2) ! last index for graupel (1) or hail (2)
 
     integer, parameter :: ngdnmm = 9
     real :: mmgraupvt(ngdnmm,3)  ! Milbrandt and Morrison (2013) fall speed coefficients for graupel/hail
@@ -885,7 +885,8 @@ MODULE module_mp_nssl_2mom
      integer :: isub
      real    :: bxh,bxhl
 
-      real    :: alp,ratio,x,y,y7
+      real    :: alp,ratio !,x,y,y7
+      double precision  :: x,y,y2,y7
       logical :: turn_on_ccna
      
 
@@ -1012,45 +1013,48 @@ MODULE module_mp_nssl_2mom
       
       DO j = 0,nqiacralpha
       alp = float(j)*dqiacralpha
-      y = gamma_sp(1.+alp)
+      y = gamma_dpr(1.+alp)
+      y2 = gamma_dpr(real(2.+alp))
       DO i = 0,nqiacrratio
         ratio = float(i)*dqiacrratio
-        x = gamxinf( 1.+alp, ratio )
+        x = gamxinfdp( 1.+alp, ratio )
 !        write(0,*) 'i, x/y = ',i, x/y
         ciacrratio(i,j) = x/y
 
         ! graupel (.,.,.,1)
         gamxinflu(i,j,1,1) = x/y
-        gamxinflu(i,j,2,1) = gamxinf( 2.0+alp, ratio )/y
-        gamxinflu(i,j,3,1) = gamxinf( 2.5+alp+0.5*bxh, ratio )/y
-        gamxinflu(i,j,5,1) = (gamma_sp(5.0+alp) - gamxinf( 5.0+alp, ratio ))/y
-        gamxinflu(i,j,6,1) = (gamma_sp(5.5+alp+0.5*bxh) - gamxinf( 5.5+alp+0.5*bxh, ratio ))/y
-        gamxinflu(i,j,9,1) = gamxinf( 1.0+alp, ratio )/y
-        gamxinflu(i,j,10,1)= gamxinf( 4.0+alp, ratio )/y
+        gamxinflu(i,j,2,1) = gamxinfdp( 2.0+alp, ratio )/y
+        gamxinflu(i,j,3,1) = gamxinfdp( 2.5+alp+0.5*bxh, ratio )/y
+        gamxinflu(i,j,5,1) = (gamma_dpr(5.0+alp) - gamxinfdp( 5.0+alp, ratio ))/y
+        gamxinflu(i,j,6,1) = (gamma_dpr(5.5+alp+0.5*bxh) - gamxinfdp( 5.5+alp+0.5*bxh, ratio ))/y
+        gamxinflu(i,j,9,1) = gamxinfdp( 1.0+alp, ratio )/y
+        gamxinflu(i,j,10,1)= gamxinfdp( 4.0+alp, ratio )/y
+
+        gamxinflu(i,j,12,1) = gamxinfdp( 2.0+alp, ratio )/y2
        
         ! hail (.,.,.,2)
         gamxinflu(i,j,1,2) = gamxinflu(i,j,1,1)
         gamxinflu(i,j,2,2) = gamxinflu(i,j,2,1)
-        gamxinflu(i,j,3,2) = gamxinf( 2.5+alp+0.5*bxhl, ratio )/y
+        gamxinflu(i,j,3,2) = gamxinfdp( 2.5+alp+0.5*bxhl, ratio )/y
         gamxinflu(i,j,5,2) = gamxinflu(i,j,5,1)
-        gamxinflu(i,j,6,2) = (gamma_sp(5.5+alp+0.5*bxhl) - gamxinf( 5.5+alp+0.5*bxhl, ratio ))/y
+        gamxinflu(i,j,6,2) = (gamma_dpr(5.5+alp+0.5*bxhl) - gamxinfdp( 5.5+alp+0.5*bxhl, ratio ))/y
         gamxinflu(i,j,9,2) = gamxinflu(i,j,9,1)
         gamxinflu(i,j,10,2)= gamxinflu(i,j,10,1)
 
       IF ( alp > 1.1 ) THEN
-!       gamxinflu(i,j,7,1) = gamxinf( alp - 1., ratio )/y
-       gamxinflu(i,j,7,1) = (gamma_sp(alp - 1.) - gamxinf( alp - 1., ratio ))/y
-!       gamxinflu(i,j,8,1) = gamxinf( alp - 0.5 + 0.5*bxh, ratio )/y
-       gamxinflu(i,j,8,1) = (gamma_sp(alp - 0.5 + 0.5*bxh) - gamxinf( alp - 0.5 + 0.5*bxh, ratio ))/y
-!       gamxinflu(i,j,8,2) = gamxinf( alp - 0.5 + 0.5*bxhl, ratio )/y
-       gamxinflu(i,j,8,2) = (gamma_sp(alp - 0.5 + 0.5*bxhl) - gamxinf( alp - 0.5 + 0.5*bxhl, ratio ))/y
+!       gamxinflu(i,j,7,1) = gamxinfdp( alp - 1., ratio )/y
+       gamxinflu(i,j,7,1) = (gamma_dpr(alp - 1.) - gamxinfdp( alp - 1., ratio ))/y
+!       gamxinflu(i,j,8,1) = gamxinfdp( alp - 0.5 + 0.5*bxh, ratio )/y
+       gamxinflu(i,j,8,1) = (gamma_dpr(alp - 0.5 + 0.5*bxh) - gamxinfdp( alp - 0.5 + 0.5*bxh, ratio ))/y
+!       gamxinflu(i,j,8,2) = gamxinfdp( alp - 0.5 + 0.5*bxhl, ratio )/y
+       gamxinflu(i,j,8,2) = (gamma_dpr(alp - 0.5 + 0.5*bxhl) - gamxinfdp( alp - 0.5 + 0.5*bxhl, ratio ))/y
       ELSE
-!       gamxinflu(i,j,7,1) = gamxinf( .1, ratio )/y
-       gamxinflu(i,j,7,1) = (gamma_sp(0.1) - gamxinf( 0.1, ratio ) )/y
-!       gamxinflu(i,j,8,1) = gamxinf( 1.1 - 0.5 + 0.5*bxh, ratio )/y
-!       gamxinflu(i,j,8,2) = gamxinf( 1.1 - 0.5 + 0.5*bxhl, ratio )/y
-       gamxinflu(i,j,8,1) = (gamma_sp(1.1 - 0.5 + 0.5*bxh) - gamxinf( 1.1 - 0.5 + 0.5*bxh, ratio ) )/y
-       gamxinflu(i,j,8,2) = (gamma_sp(1.1 - 0.5 + 0.5*bxhl) - gamxinf( 1.1 - 0.5 + 0.5*bxhl, ratio ) )/y
+!       gamxinflu(i,j,7,1) = gamxinfdp( .1, ratio )/y
+       gamxinflu(i,j,7,1) = (gamma_dpr(0.1) - gamxinfdp( 0.1, ratio ) )/y
+!       gamxinflu(i,j,8,1) = gamxinfdp( 1.1 - 0.5 + 0.5*bxh, ratio )/y
+!       gamxinflu(i,j,8,2) = gamxinfdp( 1.1 - 0.5 + 0.5*bxhl, ratio )/y
+       gamxinflu(i,j,8,1) = (gamma_dpr(1.1 - 0.5 + 0.5*bxh) - gamxinfdp( 1.1 - 0.5 + 0.5*bxh, ratio ) )/y
+       gamxinflu(i,j,8,2) = (gamma_dpr(1.1 - 0.5 + 0.5*bxhl) - gamxinfdp( 1.1 - 0.5 + 0.5*bxhl, ratio ) )/y
       ENDIF
         
         gamxinflu(i,j,7,2) = gamxinflu(i,j,7,1)
@@ -1065,14 +1069,19 @@ MODULE module_mp_nssl_2mom
       y7 = gamma_sp(7.+alp)
       DO i = 0,nqiacrratio
         ratio = float(i)*dqiacrratio
-        x = gamxinf( 4.+alp, ratio )
+        
+        ! mass fraction
+        x = gamxinfdp( 4.+alp, ratio )
 !        write(0,*) 'i, x/y = ',i, x/y
         qiacrratio(i,j) = x/y
         gamxinflu(i,j,4,1) = x/y
         gamxinflu(i,j,4,2) = x/y
 
-        x = gamxinf( 7.+alp, ratio )
+        ! reflectivity fraction
+        x = gamxinfdp( 7.+alp, ratio )
         ziacrratio(i,j) = x/y7
+        gamxinflu(i,j,11,1) = x/y7
+        gamxinflu(i,j,11,2) = x/y7
 
       ENDDO
       ENDDO
@@ -1625,7 +1634,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 !                              re_liquid, re_graupel, re_hail, re_icesnow,               &
 !                              vtcloud, vtrain, vtsnow, vtgraupel, vthail,               &
                               ipelectmp,                                                &
-                              diagflag,                                                 &
+                              diagflag,ke_diag,                                         &
                               nssl_progn,                                              & ! wrf-chem 
 ! 20130903 acd_mb_washout start
                               rainprod, evapprod,                                       & ! wrf-chem 
@@ -1694,7 +1703,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
       real, intent(in)::    dtp
       integer, intent(in):: itimestep !, ccntype
       logical, optional, intent(in) :: diagflag, f_cna, f_cn
-      integer, optional, intent(in) :: ipelectmp
+      integer, optional, intent(in) :: ipelectmp, ke_diag
 
   LOGICAL, INTENT(IN), OPTIONAL ::    nssl_progn   ! flags for wrf-chem 
   
@@ -1753,6 +1762,8 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
       double precision :: timevtcalc,timesetvt
       
       logical :: f_cnatmp
+      
+      integer :: kediagloc
 
 
 
@@ -2241,12 +2252,17 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
    ! calc dbz
       
       IF ( .true. ) THEN
+      IF ( present(ke_diag) ) THEN
+        kediagloc = ke_diag
+      ELSE
+        kediagloc = nz
+      ENDIF
       call radardd02(nx,ny,nz,nor,na,an,t0,         &
-     &    dbz2d,dn1,nz,cnoh,rho_qh,ipconc, 0)
+     &    dbz2d,dn1,nz,cnoh,rho_qh,ipconc,kediagloc, 0)
       ENDIF ! .false.
 
      
-       DO kz = kts,kte
+       DO kz = kts,ke_diag ! kte
         DO ix = its,ite
          dbz(ix,kz,jy) = dbz2d(ix,1,kz)
          IF ( present( vzf ) ) THEN
@@ -2425,6 +2441,24 @@ END SUBROUTINE nssl_2mom_driver
 
 ! #####################################################################
 
+      DOUBLE PRECISION FUNCTION GAMMA_DPR(x)
+      ! dp gamma with real input
+        implicit none
+        real :: x
+        double precision :: xx
+        
+        xx = x
+        
+        gamma_dpr = gamma_dp(xx)
+        
+        return
+        end FUNCTION GAMMA_DPR
+        
+
+
+
+! #####################################################################
+
         real function GAMXINF(A1,X1)
 
 !       ===================================================
@@ -2445,6 +2479,10 @@ END SUBROUTINE nssl_2mom_driver
         
         a = a1
         x = x1
+        IF ( x1 <= 0.0 ) THEN
+           gamxinf = GAMMA_SP(A1)
+           return
+        ENDIF
         XAM=-X+A*DLOG(X)
         IF (XAM.GT.700.0.OR.A.GT.170.0) THEN
            WRITE(*,*)'a and/or x too large'
@@ -2502,6 +2540,10 @@ END SUBROUTINE nssl_2mom_driver
         
         a = a1
         x = x1
+        IF ( x1 <= 0.0 ) THEN
+           gamxinfdp = GAMMA_DP(A)
+           return
+        ENDIF
         XAM=-X+A*DLOG(X)
         IF (XAM.GT.700.0.OR.A.GT.170.0) THEN
            WRITE(*,*)'a and/or x too large'
@@ -6266,7 +6308,7 @@ END SUBROUTINE nssl_2mom_driver
 
 ! ##############################################################################
       subroutine radardd02(nx,ny,nz,nor,na,an,temk,         &
-     &    dbz,db,nzdbz,cnoh0t,hwdn1t,ipconc, iunit)
+     &    dbz,db,nzdbz,cnoh0t,hwdn1t,ipconc,ke_diag, iunit)
 !
 ! 11.13.2005: Changed values of indices for reordering of lip
 !
@@ -6323,6 +6365,7 @@ END SUBROUTINE nssl_2mom_driver
       parameter( ng1 = 1 )
       
       real cnoh0t,hwdn1t
+      integer ke_diag
       integer ipconc
       real vr
 
@@ -6685,7 +6728,7 @@ END SUBROUTINE nssl_2mom_driver
 
       DO jy=1,1
 
-        DO kz = 1,nz
+        DO kz = 1,ke_diag ! nz
          
           DO ix=1,nx
             dbz(ix,jy,kz) = 0.0

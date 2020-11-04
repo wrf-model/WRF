@@ -780,7 +780,7 @@ CONTAINS
         symmetry_xs: IF( ( config_flags%symmetric_xs ) .and.  &
                          ( its == ids )                  )  THEN
 
-          IF ( (variable /= 'u') .and. (variable /= 'x') ) THEN
+          IF ( istag == -1 ) THEN
 
             DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
             DO k = kts, k_end
@@ -824,7 +824,7 @@ CONTAINS
         symmetry_xe: IF( ( config_flags%symmetric_xe ) .and.  &
                          ( ite == ide )                  )  THEN
 
-          IF ( (variable /= 'u') .and. (variable /= 'x') ) THEN
+          IF ( istag == -1 ) THEN
 
             DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
             DO k = kts, k_end
@@ -975,7 +975,7 @@ CONTAINS
         symmetry_ys: IF( ( config_flags%symmetric_ys ) .and.  &
                          ( jts == jds)                   )  THEN
 
-          IF ( (variable /= 'v') .and. (variable /= 'y') ) THEN
+          IF ( jstag == -1 ) THEN
 
             DO j = 1, bdyzone
             DO k = kts, k_end
@@ -1018,7 +1018,7 @@ CONTAINS
         symmetry_ye: IF( ( config_flags%symmetric_ye ) .and.  &
                          ( jte == jde )                  )  THEN
 
-          IF ( (variable /= 'v') .and. (variable /= 'y') ) THEN
+          IF ( jstag == -1 ) THEN
 
             DO j = 1, bdyzone
             DO k = kts, k_end

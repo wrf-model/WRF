@@ -289,11 +289,11 @@ CONTAINS
                                                            GSW, &
                                                         SWDOWN, & !added 10 jan 2007
                                                            GLW, &
-                                                        swddir, & !_gl
-                                                        swddif, & !_gl
                                                         RAINBL, &
                                                         EMBCK,  &
                                                         SR
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(IN   )    ::                         swddir,swddif
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                         ALBBCK, &

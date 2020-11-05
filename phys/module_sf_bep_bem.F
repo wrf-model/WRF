@@ -143,8 +143,8 @@ use module_wrf_error
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::   V
    REAL, DIMENSION( ims:ime , jms:jme )        ::   GLW
    REAL, DIMENSION( ims:ime , jms:jme )        ::   swdown
-   REAL, DIMENSION( ims:ime , jms:jme )        ::   swddif
-   REAL, DIMENSION( ims:ime , jms:jme )        ::   swddir      !_gl
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN ) ::   swddif
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN ) ::   swddir      !_gl
    REAL, DIMENSION( ims:ime, jms:jme )         ::   UST
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   UTYPE_URB2D
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   FRC_URB2D
@@ -2533,6 +2533,7 @@ do iz= kts,kte
 
        do ig=1,ngr_u
         tr_tmp(ig)=trv(id,iz,ig)
+        qr(id,iz,ig) = max(qr(id,iz,ig),1e-6) !cenlin, 11/4/2020
         qr_tmp(ig)=qr(id,iz,ig)
         qr_tmp_old(ig)=qr(id,iz,ig) 
 
@@ -2577,7 +2578,8 @@ do iz= kts,kte
  
      
         do ig=1,ngr_u
-           qr(id,iz,ig)=min(qr_tmp(ig),qrmax(ig))
+          ! qr(id,iz,ig)=min(qr_tmp(ig),qrmax(ig))
+           qr(id,iz,ig)=max(min(qr_tmp(ig),qrmax(ig)),1e-6) !cenlin,11/4/2020
          end do
    
       end do !id

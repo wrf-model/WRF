@@ -1083,7 +1083,7 @@ endif
                       config_flags%urban_map_wd,                            & !multi-layer urban
                       config_flags%urban_map_gbd,                           & !multi-layer urban
                       config_flags%urban_map_fbd,                           & !multi-layer urban
-                      config_flags%urban_map_zgrd,                           & !multi-layer urban
+                      config_flags%urban_map_zgrd,                          & !multi-layer urban
                       config_flags%num_urban_hi,                            & !multi-layer urban
                       grid%raincv_a,grid%raincv_b,                                    &
                       grid%gd_cloud, grid%gd_cloud2,                                  & ! Optional

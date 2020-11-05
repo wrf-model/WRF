@@ -9565,8 +9565,8 @@ CONTAINS
                         LCZ_7_TABLE   = LCZ_7
                         LCZ_8_TABLE   = LCZ_8
                         LCZ_9_TABLE   = LCZ_9
-                        LCZ_10_TABLE   = LCZ_10
-                        LCZ_11_TABLE   = LCZ_11
+                        LCZ_10_TABLE  = LCZ_10
+                        LCZ_11_TABLE  = LCZ_11
      CH2OP_TABLE(1:NVEG)  = CH2OP(1:NVEG)
      DLEAF_TABLE(1:NVEG)  = DLEAF(1:NVEG)
      Z0MVT_TABLE(1:NVEG)  = Z0MVT(1:NVEG)

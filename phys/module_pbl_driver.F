@@ -175,6 +175,7 @@ CONTAINS
 #endif
    USE module_bl_acm
    USE module_bl_gwdo
+   USE module_bl_gwdo_gsl
    USE module_bl_myjurb
    USE module_bl_boulac
 #if ( WRFPLUS == 1 )
@@ -2016,9 +2017,8 @@ CONTAINS
 #endif
 
 
-   
-   IF (PRESENT(dtaux3d)) THEN
-       IF(gwd_opt .EQ. 1)THEN
+   IF (GWD_opt .EQ. 1) THEN
+       IF (PRESENT(dtaux3d)) THEN
              CALL gwdo(                                              &
                U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
               ,QV3D=qv_curr                                         &
@@ -2038,6 +2038,37 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
        ENDIF
+   ELSEIF(gwd_opt .EQ. 3 .OR. gwd_opt .EQ. 33) THEN
+             CALL gwdo_gsl(                                         &
+               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy                  &
+              ,QV3D=qv_curr                                         &
+              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                   &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
+              ,DTAUX3D_ls=dtaux3d_ls,DTAUY3D_ls=dtauy3d_ls          &
+              ,DTAUX3D_bl=dtaux3d_bl,DTAUY3D_bl=dtauy3d_bl          &
+              ,DTAUX3D_ss=dtaux3d_ss,DTAUY3D_ss=dtauy3d_ss          &
+              ,DTAUX3D_fd=dtaux3d_fd,DTAUY3D_fd=dtauy3d_fd          &
+              ,DUSFCG_ls=dusfcg_ls,DVSFCG_ls=dvsfcg_ls              &
+              ,DUSFCG_bl=dusfcg_bl,DVSFCG_bl=dvsfcg_bl              &
+              ,DUSFCG_ss=dusfcg_ss,DVSFCG_ss=dvsfcg_ss              &
+              ,DUSFCG_fd=dusfcg_fd,DVSFCG_fd=dvsfcg_fd              &
+              ,xland=xland,br=br                                    &
+              ,VAR2D=var2d,OC12D=oc12d                              &
+              ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4              &
+              ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4              &
+              ,VAR2Dss=var2dss,OC12Dss=oc12dss                      &
+              ,OA2D1ss=oa1ss,OA2D2ss=oa2ss,OA2D3ss=oa3ss,OA2D4ss=oa4ss  &
+              ,OL2D1ss=ol1ss,OL2D2ss=ol2ss,OL2D3ss=ol3ss,OL2D4ss=ol4ss  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
+              ,DZ=dz8w,PBLH=PBLH                                    &
+              ,CP=cp,G=g,RD=r_d                                     &
+              ,RV=r_v,EP1=ep_1,PI=3.141592653                       &
+              ,DT=dtbl,DX=dx,KPBL2D=kpbl                            &
+              ,ITIMESTEP=itimestep,gwd_opt=gwd_opt                  &
+              ,spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl      &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
    ENDIF
 
 #if (EM_CORE==1)                                                                                                                                                                             

@@ -288,11 +288,11 @@
 
 !..Lookup tables for graupel y-intercept parameter (/m**4).
       REAL, DIMENSION(ntb_g1), PARAMETER, PRIVATE:: &
-      N0g_exp = (/1.e3,2.e3,3.e3,4.e3,5.e3,6.e3,7.e3,8.e3,9.e3, &
+      N0g_exp = (/1.e2,2.e2,3.e2,4.e2,5.e2,6.e2,7.e2,8.e2,9.e2, &
+                  1.e3,2.e3,3.e3,4.e3,5.e3,6.e3,7.e3,8.e3,9.e3, &
                   1.e4,2.e4,3.e4,4.e4,5.e4,6.e4,7.e4,8.e4,9.e4, &
                   1.e5,2.e5,3.e5,4.e5,5.e5,6.e5,7.e5,8.e5,9.e5, &
-                  1.e6,2.e6,3.e6,4.e6,5.e6,6.e6,7.e6,8.e6,9.e6, &
-                  1.e7/)
+                  1.e6/)
 
 !..Lookup tables for ice number concentration (/m**3).
       REAL, DIMENSION(ntb_i1), PARAMETER, PRIVATE:: &
@@ -1848,8 +1848,8 @@
 
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = 2.5 + 2.5/7. * (ygra1+7.)
-         zans1 = MAX(2., MIN(zans1, 7.))
+         zans1 = 3.5 + 0.1*(ygra1+7.)
+         zans1 = MAX(2., MIN(zans1, 6.))
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
@@ -2909,8 +2909,8 @@
 
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = 2.5 + 2.5/7. * (ygra1+7.)
-         zans1 = MAX(2., MIN(zans1, 7.))
+         zans1 = 3.5 + 0.1*(ygra1+7.)
+         zans1 = MAX(2., MIN(zans1, 6.))
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
@@ -3578,10 +3578,10 @@
 
       good = 0
       IF ( wrf_dm_on_monitor() ) THEN
-        INQUIRE(FILE="qr_acr_qgV2.dat",EXIST=lexist)
+        INQUIRE(FILE="qr_acr_qgV3.dat",EXIST=lexist)
         IF ( lexist ) THEN
-          CALL wrf_message("ThompMP: read qr_acr_qgV2.dat instead of computing")
-          OPEN(63,file="qr_acr_qgV2.dat",form="unformatted",err=1234)
+          CALL wrf_message("ThompMP: read qr_acr_qgV3.dat instead of computing")
+          OPEN(63,file="qr_acr_qgV3.dat",form="unformatted",err=1234)
           READ(63,err=1234) tcg_racg
           READ(63,err=1234) tmr_racg
           READ(63,err=1234) tcr_gacr
@@ -3594,12 +3594,12 @@
             INQUIRE(63,opened=lopen)
             IF (lopen) THEN
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error reading qr_acr_qgV2.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error reading qr_acr_qgV3.dat. Aborting because force_read_thompson is .true.")
               ENDIF
               CLOSE(63)
             ELSE
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error opening qr_acr_qgV2.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error opening qr_acr_qgV3.dat. Aborting because force_read_thompson is .true.")
               ENDIF
             ENDIF
           ELSE
@@ -3610,7 +3610,7 @@
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN
-            CALL wrf_error_fatal("Non-existent qr_acr_qgV2.dat. Aborting because force_read_thompson is .true.")
+            CALL wrf_error_fatal("Non-existent qr_acr_qgV3.dat. Aborting because force_read_thompson is .true.")
           ENDIF
         ENDIF
       ENDIF
@@ -3722,8 +3722,8 @@
 #endif
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
-          CALL wrf_message("Writing qr_acr_qgV2.dat in Thompson MP init")
-          OPEN(63,file="qr_acr_qgV2.dat",form="unformatted",err=9234)
+          CALL wrf_message("Writing qr_acr_qgV3.dat in Thompson MP init")
+          OPEN(63,file="qr_acr_qgV3.dat",form="unformatted",err=9234)
           WRITE(63,err=9234) tcg_racg
           WRITE(63,err=9234) tmr_racg
           WRITE(63,err=9234) tcr_gacr
@@ -3733,7 +3733,7 @@
           CLOSE(63)
           RETURN    ! ----- RETURN
  9234     CONTINUE
-          CALL wrf_error_fatal("Error writing qr_acr_qgV2.dat")
+          CALL wrf_error_fatal("Error writing qr_acr_qgV3.dat")
         ENDIF
       ENDIF
 
@@ -5294,8 +5294,8 @@
       if (ANY(L_qg .eqv. .true.)) then
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = 2.5 + 2.5/7. * (ygra1+7.)
-         zans1 = MAX(2., MIN(zans1, 7.))
+         zans1 = 3.5 + 0.1*(ygra1+7.)
+         zans1 = MAX(2., MIN(zans1, 6.))
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg

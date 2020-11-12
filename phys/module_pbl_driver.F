@@ -81,6 +81,18 @@ CONTAINS
                  ,dusfcg,dvsfcg,var2d,oc12d                        &
                  ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
                  ,sina,cosa                                        &
+                 ,dtaux3d_ls,dtauy3d_ls                            &
+                 ,dtaux3d_bl,dtauy3d_bl                            &
+                 ,dtaux3d_ss,dtauy3d_ss                            &
+                 ,dtaux3d_fd,dtauy3d_fd                            &
+                 ,dusfcg_ls,dvsfcg_ls                              &
+                 ,dusfcg_bl,dvsfcg_bl                              &
+                 ,dusfcg_ss,dvsfcg_ss                              &
+                 ,dusfcg_fd,dvsfcg_fd                              &
+                 ,var2dls,oc12dls                                  &
+                 ,oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,ol3ls,ol4ls  &
+                 ,var2dss,oc12dss                                  &
+                 ,oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss  &
              !  Optional moisture tracers
                  ,qv_curr, qc_curr, qr_curr                        &
                  ,qi_curr, qs_curr, qg_curr                        &
@@ -717,13 +729,17 @@ CONTAINS
 !
   real,   dimension( ims:ime, kms:kme, jms:jme )                             , &
           optional                                                           , &
-             intent(inout  )   ::                                     dtaux3d, &
-                                                                      dtauy3d
+             intent(inout  )   :: dtaux3d,dtauy3d,                             &
+                                  dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
+                                  dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
+
 !
   real,   dimension( ims:ime, jms:jme )                                      , &
           optional                                                           , &
-             intent(inout  )   ::                                      dusfcg, &
-                                                                       dvsfcg
+             intent(inout  )   :: dusfcg,dvsfcg,                               &
+                                  dusfcg_ls,dvsfcg_ls,dusfcg_bl,dvsfcg_bl,     &
+                                  dusfcg_ss,dvsfcg_ss,dusfcg_fd,dvsfcg_fd
+
 !
   real,   dimension( ims:ime, jms:jme )                                      , &
           optional                                                           , &
@@ -732,6 +748,17 @@ CONTAINS
                                                               oa1,oa2,oa3,oa4, &
                                                               ol1,ol2,ol3,ol4, &
                                                                     sina,cosa
+
+! Addtional topographic statistics based on 2.5min (large-scale) and 30sec orographic
+! (small-scale) GSL drag schemes
+  real,   dimension( ims:ime, jms:jme )                                      , &
+          optional                                                           , &
+             intent(in  )   ::                                                 &
+                var2dls,oc12dls,                                               &
+                oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,ol3ls,ol4ls,               &
+                var2dss,oc12dss,                                               &
+                oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss
+
 ! paj
    REAL, OPTIONAL,   DIMENSION( ims:ime , jms:jme ),                    &  !mchen
                INTENT(IN   )    ::                        CTOPO, &

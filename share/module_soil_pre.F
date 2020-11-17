@@ -224,7 +224,7 @@ CONTAINS
 
          CASE ( SLABSCHEME )
 
-         CASE ( LSMSCHEME , NOAHMPSCHEME , CLMSCHEME, SSIBSCHEME )   !mchen add for ssib
+         CASE ( LSMSCHEME , NOAHMPSCHEME , CLMSCHEME, CTSMSCHEME, SSIBSCHEME )   !mchen add for ssib
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -3216,6 +3216,7 @@ CONTAINS
 
          CASE ( LSMSCHEME )
          CASE ( RUCLSMSCHEME )
+         CASE ( CTSMSCHEME )
 
       END SELECT fix_seaice
 

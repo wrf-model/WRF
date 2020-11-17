@@ -1947,7 +1947,7 @@ ENDIF
 !
 !===============================================================================
    SUBROUTINE urban_param_init(DZR,DZB,DZG,num_soil_layers, &
-                               sf_urban_physics)
+                               sf_urban_physics,use_wudapt_lcz)    !new LCZ
 !                              num_roof_layers,num_wall_layers,num_road_layers)
 
    IMPLICIT NONE
@@ -1961,7 +1961,7 @@ ENDIF
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZB
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZG
    INTEGER,                            INTENT(IN)    :: SF_URBAN_PHYSICS
-
+   INTEGER,                            INTENT(IN)    :: USE_WUDAPT_LCZ !new LCZ
    INTEGER :: LC, K
    INTEGER :: IOSTATUS, ALLOCATE_STATUS
    INTEGER :: num_roof_layers
@@ -1998,13 +1998,23 @@ ENDIF
 
    ICATE=0
 
-   OPEN (UNIT=11,                &
+  if(USE_WUDAPT_LCZ.eq.0)then   
+     OPEN (UNIT=11,                &
          FILE='URBPARM.TBL', &
          ACCESS='SEQUENTIAL',    &
          STATUS='OLD',           &
          ACTION='READ',          &
          POSITION='REWIND',      &
          IOSTAT=IOSTATUS)
+   else    ! new LCZ
+     OPEN (UNIT=11,                &
+         FILE='URBPARM_LCZ.TBL', &
+         ACCESS='SEQUENTIAL',    &
+         STATUS='OLD',           &
+         ACTION='READ',          &
+         POSITION='REWIND',      &
+         IOSTAT=IOSTATUS)
+   endif
 
    IF (IOSTATUS > 0) THEN
    FATAL_ERROR('ERROR OPEN URBPARM.TBL')

@@ -3126,7 +3126,7 @@ CONTAINS
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics)
+                                sf_urban_physics,config_flags%use_wudapt_lcz)    !new LCZ
 !                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
                                
                 
@@ -3176,6 +3176,15 @@ CONTAINS
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
                               FRC_URB2D, UTYPE_URB2D)                            !urban
+
+               IF(config_flags%use_wudapt_lcz.eq.0.and.(maxval(UTYPE_URB2D)).gt.3)THEN  !new LCZ
+                    wrf_error_fatal('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. PLEASE SET USE_WUDAPT_LCZ=1')
+               ENDIF
+
+               IF(config_flags%use_wudapt_lcz.eq.1.and.(maxval(UTYPE_URB2D)).le.3)THEN  ! new LCZ
+                    wrf_error_fatal('USING URBPARM_LCZ.TBL WITH TRADITIONAL 3 URBAN CLASSES. PLEASE SET USE_WUDAPT_LCZ=0')
+               ENDIF
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
@@ -3251,7 +3260,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics)
+                                sf_urban_physics,config_flags%use_wudapt_lcz)     !new LCZ
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,         & !urban
                               LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE, &
@@ -3298,6 +3307,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
                               FRC_URB2D, UTYPE_URB2D)                            !urban
+
+                IF(config_flags%use_wudapt_lcz.eq.0..and.maxval((UTYPE_URB2D)).gt.3)THEN  !new LCZ
+                   wrf_error_fatal('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. PLEASE SET USE_WUDAPT_LCZ=1')
+                ENDIF
+
+                IF(config_flags%use_wudapt_lcz.eq.1..and.maxval((UTYPE_URB2D)).le.3)THEN  !new LCZ
+                   wrf_error_fatal('USING URBPARM_LCZ.TBL WITH TRADITIONAL 3 URBAN CLASSES. PLEASE SET USE_WUDAPT_LCZ=0')
+                ENDIF
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF

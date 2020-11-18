@@ -87,11 +87,11 @@ MODULES = \
 	module_mp_fer_hires.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
+	module_mp_SBM_polar_radar.o \
 	module_mp_full_sbm.o \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
-	module_mp_gsfcgce_3ice_nuwrf.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
 	module_mp_morr_two_moment.o \
         module_mp_p3.o \
@@ -122,6 +122,7 @@ MODULES = \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_ra_aerosol.o  \
+	module_ra_farms.o  \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
 	module_sf_gfs.o \
@@ -131,6 +132,7 @@ MODULES = \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
 	module_sf_clm.o  \
+	module_sf_ctsm.o \
         module_sf_ssib.o  \
 	module_sf_noah_seaice.o \
 	module_sf_noah_seaice_drv.o \
@@ -190,7 +192,8 @@ MODULES = \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
 	module_sf_lake.o \
-	module_diagnostics_driver.o
+	module_diagnostics_driver.o \
+	module_irrigation.o
 
 FIRE_MODULES = \
         module_fr_fire_driver.o \
@@ -207,10 +210,12 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_functions.o \
         module_diag_hailcast.o \
 	module_diag_misc.o \
+	module_diag_nwp.o \
         module_diag_rasm.o \
 	module_diag_pld.o \
 	module_diag_zld.o \
-	module_diag_trad_fields.o
+	module_diag_trad_fields.o \
+        module_diag_solar.o
   
 DIAGNOSTIC_MODULES_NMM = \
 	module_diag_refl.o

@@ -9,8 +9,6 @@
 !Including inline expansion statistical function 
 MODULE module_mp_wdm5
 !
-   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
-   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
    USE module_mp_radar
 !
    REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
@@ -1565,8 +1563,8 @@ CONTAINS
 ! (NC->NCCN)
 !----------------------------------------------------------------------
           if(pcond(i,k).eq.-qci(i,k,1)/dtcld) then
-            ncr(i,k,2) = 0.
             ncr(i,k,1) = ncr(i,k,1)+ncr(i,k,2)
+            ncr(i,k,2) = 0.
           endif
 !
           q(i,k) = q(i,k)-pcond(i,k)*dtcld

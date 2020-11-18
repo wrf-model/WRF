@@ -21,10 +21,10 @@ subroutine da_radar_rf (ra,rs,rg,tc1,ro1,rze)
    zds = 9.80*1.00e+8  ! dry snow
    zgr = 4.33*1.00e+10 ! graupel
 
-   zerr = zrr*(ro1*ra)**1.75
-   zews = zws*(ro1*rs)**1.75
-   zeds = zds*(ro1*rs)**1.75
-   zegr = zgr*(ro1*rg)**1.75
+   zerr = zrr*(ro1*max(0.0,ra))**1.75
+   zews = zws*(ro1*max(0.0,rs))**1.75
+   zeds = zds*(ro1*max(0.0,rs))**1.75
+   zegr = zgr*(ro1*max(0.0,rg))**1.75
 
    if (tc1.lt.0.0) then
       rze = zerr + zeds + zegr
@@ -37,4 +37,5 @@ subroutine da_radar_rf (ra,rs,rg,tc1,ro1,rze)
    if (trace_use) call da_trace_exit("da_radar_rf")
 
 end subroutine da_radar_rf
+
 

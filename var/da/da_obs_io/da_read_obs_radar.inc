@@ -287,17 +287,25 @@ subroutine da_read_obs_radar (iv, filename, grid)
                   allocate (iv % radar (ilocal) % model_p  (1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % model_rho(1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % model_qrn(1:iv%info(radar)%max_lev))
+                  allocate (iv % radar (ilocal) % model_qcl(1:iv%info(radar)%max_lev))
+                  allocate (iv % radar (ilocal) % model_qci(1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % model_qsn(1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % model_qgr(1:iv%info(radar)%max_lev))
+                  allocate (iv % radar (ilocal) % model_zmm(1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % height   (1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % height_qc(1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % rv       (1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % rf       (1:iv%info(radar)%max_lev))
+                  allocate (iv % radar (ilocal) % zmm      (1:iv%info(radar)%max_lev))
                   if ( use_radar_rhv ) then
                      allocate (iv % radar (ilocal) % rrn      (1:iv%info(radar)%max_lev))
+                     allocate (iv % radar (ilocal) % rcl      (1:iv%info(radar)%max_lev))
+                     allocate (iv % radar (ilocal) % rci      (1:iv%info(radar)%max_lev))
                      allocate (iv % radar (ilocal) % rsn      (1:iv%info(radar)%max_lev))
                      allocate (iv % radar (ilocal) % rgr      (1:iv%info(radar)%max_lev))
                      allocate (iv % radar (ilocal) % rrno     (1:iv%info(radar)%max_lev))
+                     allocate (iv % radar (ilocal) % rclo     (1:iv%info(radar)%max_lev))
+                     allocate (iv % radar (ilocal) % rcio     (1:iv%info(radar)%max_lev))
                      allocate (iv % radar (ilocal) % rsno     (1:iv%info(radar)%max_lev))
                      allocate (iv % radar (ilocal) % rgro     (1:iv%info(radar)%max_lev))
                   end if
@@ -317,6 +325,16 @@ subroutine da_read_obs_radar (iv, filename, grid)
                      iv % radar (ilocal) % rrn(i) % qc    = missing_data
                      iv % radar (ilocal) % rrn(i) % error = missing_r
                      iv % radar (ilocal) % rrno(i)        = missing_r
+
+                     iv % radar (ilocal) % rcl(i) % inv   = missing_r
+                     iv % radar (ilocal) % rcl(i) % qc    = missing_data
+                     iv % radar (ilocal) % rcl(i) % error = missing_r
+                     iv % radar (ilocal) % rclo(i)        = missing_r
+
+                     iv % radar (ilocal) % rci(i) % inv   = missing_r
+                     iv % radar (ilocal) % rci(i) % qc    = missing_data
+                     iv % radar (ilocal) % rci(i) % error = missing_r
+                     iv % radar (ilocal) % rcio(i)        = missing_r
 
                      iv % radar (ilocal) % rsn(i) % inv   = missing_r
                      iv % radar (ilocal) % rsn(i) % qc    = missing_data

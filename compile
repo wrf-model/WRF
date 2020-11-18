@@ -73,7 +73,6 @@ foreach a ( $argv )
     set ZAP = ( main/wrfplus.exe )
     setenv WRF_EM_CORE   1
     setenv WRF_PLUS_CORE 1
-    echo not sure what to do, but this seems to be legit so far
   else if   ( "$a" ==  "wrf" ) then
     set arglist = ( $arglist $a )
     set ZAP = ( main/wrf.exe )
@@ -464,7 +463,7 @@ else
   echo " "
   echo "============================================================================================== "
   echo " "
-  cat inc/version_decl | cut -c 45-54
+  cat inc/version_decl | cut -d"'" -f2
   echo " "
   echo -n "Compiling: "
   if ( $WRF_DA_CORE ) echo -n "WRF_DA_CORE "

@@ -1,12 +1,5 @@
 !=================================================================================================================
-!module_bl_ysu.F was originally copied from ./phys/module_bl_ysu.F from WRF version 3.8.1.
-!Laura D. Fowler (laura@ucar.edu) / 2016-10-26.
-
-!modifications to sourcecode for MPAS:
-!   * calculated the dry hydrostatic pressure using the dry air density.
-!   * added outputs of the vertical diffusivity coefficients.
-!     Laura D. Fowler (laura@ucar.edu) / 2016-10-26.
-
+!module_bl_ysu.F was modified to accomodate both the WRF and MPAS models / 2018-12-7 
 !=================================================================================================================
 !WRF:model_layer:physics
 !
@@ -229,7 +222,7 @@ contains
         do i = its,ite
           qv2d(i,k) = qv3d(i,k,j)
           qv2d(i,k+kte) = qc3d(i,k,j)
-          if(present(rqiblten)) qv2d(i,k+kte+kte) = qi3d(i,k,j)
+          if(flag_qi) qv2d(i,k+kte+kte) = qi3d(i,k,j)
         enddo
       enddo
 !
@@ -270,7 +263,7 @@ contains
          rthblten(i,k,j) = rthblten(i,k,j)/pi3d(i,k,j)
          rqvblten(i,k,j) = rqvbl2dt(i,k)
          rqcblten(i,k,j) = rqvbl2dt(i,k+kte)
-         if(present(rqiblten)) rqiblten(i,k,j) = rqvbl2dt(i,k+kte+kte)
+         if(flag_qi) rqiblten(i,k,j) = rqvbl2dt(i,k+kte+kte)
        enddo
      enddo
 !
@@ -369,7 +362,7 @@ contains
    real,parameter    ::  afac = 6.8,bfac = 6.8,pfac = 2.0,pfac_q = 2.0
    real,parameter    ::  phifac = 8.,sfcfrac = 0.1
    real,parameter    ::  d1 = 0.02, d2 = 0.05, d3 = 0.001
-   real,parameter    ::  h1 = 0.33333335, h2 = 0.6666667
+   real,parameter    ::  h1 = 0.33333333, h2 = 0.6666667
    real,parameter    ::  zfmin = 1.e-8,aphi5 = 5.,aphi16 = 16.
    real,parameter    ::  tmin=1.e-2
    real,parameter    ::  gamcrt = 3.,gamcrq = 2.e-3

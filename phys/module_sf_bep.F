@@ -1,6 +1,12 @@
 MODULE module_sf_bep
-
+#if defined(mpas)
+use mpas_atmphys_utilities, only: physics_error_fatal
+#define FATAL_ERROR(M) call physics_error_fatal( M )
+#else
+use module_wrf_error
+#define FATAL_ERROR(M) call wrf_error_fatal( M)
 !USE module_model_constants
+#endif
  USE module_sf_urban
 
 ! SGClarke 09/11/2008
@@ -2257,7 +2263,7 @@ MODULE module_sf_bep
                         icol=k
                      endif
                   elseif(ipiv(k).gt.1)then
-                     CALL wrf_error_fatal('singular matrix in gaussj')
+                     FATAL_ERROR('singular matrix in gaussj')
                   endif
                enddo
             endif
@@ -2278,7 +2284,7 @@ MODULE module_sf_bep
           
          endif
          
-         if(a(icol,icol).eq.0) CALL wrf_error_fatal('singular matrix in gaussj')
+         if(a(icol,icol).eq.0) FATAL_ERROR('singular matrix in gaussj')
          
          pivinv=1./a(icol,icol)
          a(icol,icol)=1
@@ -3492,3 +3498,39 @@ MODULE module_sf_bep
 ! ===6=8===============================================================72
 ! ===6=8===============================================================72
 END MODULE module_sf_bep
+
+      FUNCTION bep_nurbm () RESULT (bep_val_nurbm)
+         USE module_sf_bep
+         IMPLICIT NONE
+         INTEGER :: bep_val_nurbm
+         bep_val_nurbm = nurbm
+      END FUNCTION bep_nurbm
+      
+      FUNCTION bep_ndm () RESULT (bep_val_ndm)
+         USE module_sf_bep
+         IMPLICIT NONE
+         INTEGER :: bep_val_ndm
+         bep_val_ndm = ndm
+      END FUNCTION bep_ndm
+      
+      FUNCTION bep_nz_um () RESULT (bep_val_nz_um)
+         USE module_sf_bep
+         IMPLICIT NONE
+         INTEGER :: bep_val_nz_um
+         bep_val_nz_um = nz_um
+      END FUNCTION bep_nz_um
+      
+      FUNCTION bep_ng_u () RESULT (bep_val_ng_u)
+         USE module_sf_bep
+         IMPLICIT NONE
+         INTEGER :: bep_val_ng_u
+         bep_val_ng_u = ng_u
+      END FUNCTION bep_ng_u
+      
+      FUNCTION bep_nwr_u () RESULT (bep_val_nwr_u)
+         USE module_sf_bep
+         IMPLICIT NONE
+         INTEGER :: bep_val_nwr_u
+         bep_val_nwr_u = nwr_u
+      END FUNCTION bep_nwr_u
+      

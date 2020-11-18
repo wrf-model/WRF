@@ -21,6 +21,7 @@ module da_define_structures
       trace_use_dull,comm, num_pseudo
    use da_control, only : cloud_cv_options, use_cv_w
    use da_control, only : pseudo_uvtpq
+   use da_control, only : use_radar_rhv, use_radar_rqv
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -215,8 +216,11 @@ module da_define_structures
       real, pointer           :: model_t(:)
       real, pointer           :: model_rho(:)
       real, pointer           :: model_qrn(:)
+      real, pointer           :: model_qcl(:)
+      real, pointer           :: model_qci(:)
       real, pointer           :: model_qsn(:)
       real, pointer           :: model_qgr(:)
+      real, pointer           :: model_zmm(:)  ! reflectivity in mm^6 mm^-3
       real                    :: model_ps
 
       real                  , pointer :: height   (:) ! Height in m
@@ -224,14 +228,19 @@ module da_define_structures
 
       type (field_type)     , pointer :: rv       (:) ! Radial Velocity
       type (field_type)     , pointer :: rf       (:) ! Reflectivity
-      type (field_type)     , pointer :: rrn      (:) ! qrain
-      type (field_type)     , pointer :: rsn      (:) ! qsnow
-      type (field_type)     , pointer :: rgr      (:) ! qgraupel
-      type (field_type)     , pointer :: rqv      (:)
-      real                  , pointer :: rrno     (:)
-      real                  , pointer :: rsno     (:)
-      real                  , pointer :: rgro     (:)
-      real                  , pointer :: rqvo     (:)
+      type (field_type)     , pointer :: zmm      (:) ! Reflectivity (mm^6 mm^-3)
+      type (field_type)     , pointer :: rcl      (:) !
+      type (field_type)     , pointer :: rci      (:) !
+      real                  , pointer :: rclo     (:)
+      real                  , pointer :: rcio     (:)
+      type (field_type)     , pointer :: rrn      (:) => null() ! qrain
+      type (field_type)     , pointer :: rsn      (:) => null() ! qsnow
+      type (field_type)     , pointer :: rgr      (:) => null() ! qgraupel
+      type (field_type)     , pointer :: rqv      (:) => null()
+      real                  , pointer :: rrno     (:) => null()
+      real                  , pointer :: rsno     (:) => null()
+      real                  , pointer :: rgro     (:) => null()
+      real                  , pointer :: rqvo     (:) => null()
    end type radar_type
 
    type multi_level_type
@@ -405,6 +414,25 @@ module da_define_structures
       type (field_type)     , pointer :: q        (:) ! q.
    end type tamdar_type
 
+   type varbc_tamdar_type
+      character(len=40)               :: fmt_param    ! Format of parameter table
+      integer                         :: nmaxpred     ! Max. No. of predictors
+      integer                         :: nphase       ! No. of flight phases
+      integer                         :: nair         ! No. of aircrafts in table
+      integer                         :: npred        ! No. of predictors
+      integer                         :: nmaxobs      ! Max Obs No.
+      integer               , pointer :: nobs    (:,:)! Obs No. in proc
+      integer               , pointer :: nobs_sum(:,:)! Total Obs No.
+      integer               , pointer :: tail_id   (:)! Tail ID of aircrafts
+      integer               , pointer :: obs_sn(:,:,:)! Serial No. of Obs in proc
+      integer               , pointer :: ifuse   (:,:)! run varbc or not
+      integer               , pointer :: index (:,:,:)! Index in CV
+      real                  , pointer :: pred  (:,:,:)! Predictors
+      real                  , pointer :: param (:,:,:)! Parameters
+      real                  , pointer :: bgerr (:,:,:)! Bkg err in Hessian
+      real                  , pointer :: vtox(:,:,:,:)! Transformation of CV
+   end type varbc_tamdar_type
+
    type airsr_type
       real                  , pointer :: h        (:) ! Height in m
       real                  , pointer :: p        (:) ! pressure.
@@ -480,7 +508,16 @@ module da_define_structures
       real,    pointer     :: bgerr(:) 
       real,    pointer     :: vtox(:,:)
    end type varbc_type
-   
+   type clddet_geoir_type
+     real  :: RTCT, RFMFT, TEMPIR, terr_hgt
+     real  :: tb_stddev_10, tb_stddev_13,tb_stddev_14
+     real  :: CIRH2O
+     !real, allocatable :: CIRH2O(:,:,:)
+   end type clddet_geoir_type   
+   type superob_type
+     real, allocatable :: tb_obs(:,:)
+     type(clddet_geoir_type), allocatable :: cld_qc(:)
+   end type superob_type
    type cv_index_type
       integer              :: ts
       integer              :: nclouds
@@ -517,10 +554,12 @@ module da_define_structures
       integer, pointer     :: cloud_flag(:,:)
       integer, pointer     :: cloudflag(:)
       integer, pointer     :: rain_flag(:)
+      real, allocatable    :: cloud_frac(:)
       real,    pointer     :: satzen(:) 
       real,    pointer     :: satazi(:) 
       real,    pointer     :: solzen(:) 
       real,    pointer     :: solazi(:) 
+      real,    pointer     :: tropt(:)  !! Tropopause temperature, K.
       real,    pointer     :: t(:,:)
       real,    pointer     :: q(:,:)
       real,    pointer     :: mr(:,:)
@@ -598,11 +637,12 @@ module da_define_structures
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
       integer, pointer     :: crtm_climat(:) ! CRTM only
-
+      integer              :: superob_width = 1
       type (varbc_info_type)        :: varbc_info
       type (varbc_type),pointer     :: varbc(:)
       type (cv_index_type), pointer :: cv_index(:)
       type (infa_type)              :: info
+      type (superob_type), allocatable :: superob(:,:)
    end type instid_type
 
    type iv_type
@@ -668,6 +708,8 @@ module da_define_structures
       type (synop_type)    , pointer :: tamdar_sfc(:)
       type (rain_type)     , pointer :: rain(:)
 
+      type (varbc_tamdar_type) :: varbc_tamdar
+
       real :: missing
       real :: ptop
    end type iv_type
@@ -701,6 +743,8 @@ module da_define_structures
       type (bad_info_type)       :: rrn
       type (bad_info_type)       :: rsn
       type (bad_info_type)       :: rgr
+      type (bad_info_type)       :: rcl
+      type (bad_info_type)       :: rci
       type (bad_info_type)       :: rqv
       type (bad_info_type)       :: slp
       type (bad_info_type)       :: rad
@@ -840,10 +884,12 @@ module da_define_structures
    type residual_radar_type
       real, pointer :: rv(:)                    ! rv
       real, pointer :: rf(:)                    ! rf
-      real, pointer :: rrn(:)                   ! rrain
-      real, pointer :: rsn(:)                   ! rsnow
-      real, pointer :: rgr(:)                   ! rgraupel
-      real, pointer :: rqv(:) 
+      real, pointer :: rcl(:)                   ! 
+      real, pointer :: rci(:)                   !
+      real, pointer :: rrn(:) => null()         ! rrain
+      real, pointer :: rsn(:) => null()         ! rsnow
+      real, pointer :: rgr(:) => null()         ! rgraupel
+      real, pointer :: rqv(:) => null()
    end type residual_radar_type
 
    type residual_instid_type
@@ -939,7 +985,7 @@ module da_define_structures
       real                :: qscat_u, qscat_v
       real                :: profiler_u, profiler_v
       real                :: buoy_u, buoy_v, buoy_t, buoy_p, buoy_q
-      real                :: radar_rv, radar_rf, radar_rrn,radar_rsn,radar_rgr,radar_rqv
+      real                :: radar_rv, radar_rf, radar_rrn,radar_rsn,radar_rgr,radar_rcl,radar_rci,radar_rqv
       real                :: bogus_u, bogus_v, bogus_t, bogus_q, bogus_slp
       real                :: airsr_t, airsr_q
       real                :: rain_r
@@ -956,6 +1002,7 @@ module da_define_structures
       real             :: jl
       real             :: jd
       real             :: jm
+      real             :: jt
       type (jo_type)   :: jo
    end type j_type
 
@@ -966,6 +1013,7 @@ module da_define_structures
       integer :: size_jp     ! Size of CV array for Jp term.
       integer :: size_js     ! Size of CV array for Js term.
       integer :: size_jl     ! Size of CV array for Jl term.
+      integer :: size_jt     ! Size of CV array for Jt term.
       integer :: size1c      ! Complex size of CV array of 1st variable error.
       integer :: size2c      ! Complex size of CV array of 2nd variable error.
       integer :: size3c      ! Complex size of CV array of 3rd variable error.

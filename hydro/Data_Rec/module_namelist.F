@@ -49,6 +49,7 @@ CONTAINS
           character(len=256) :: route_topo_f=""
           character(len=256) :: route_chan_f=""
           character(len=256) :: route_link_f=""
+          logical            :: compound_channel
           character(len=256) :: route_lake_f=""
           character(len=256) :: route_direction_f=""
           character(len=256) :: route_order_f=""
@@ -57,6 +58,7 @@ CONTAINS
           character(len=256) :: geo_finegrid_flnm =""
           character(len=256) :: udmap_file =""
           character(len=256) :: GWBUCKPARM_file = ""
+          integer :: reservoir_data_ingest ! STUB FOR USE OF REALTIME RESERVOIR DISCHARGE DATA. CURRENTLY NOT IN USE. 
        integer :: SOLVEG_INITSWC
        real*8 :: out_dt, rst_dt
        character(len=256)  :: RESTART_FILE = ""
@@ -86,6 +88,7 @@ CONTAINS
        real :: ZSOIL8(8)
 
        logical            :: dir_e
+       character(len=1024) :: reservoir_obs_dir
 #ifdef WRF_HYDRO_NUDGING
        character(len=256) :: nudgingParamFile
        character(len=256) :: netwkReExFile
@@ -112,7 +115,7 @@ CONTAINS
                     SUBRTSWCRT,OVRTSWCRT,AGGFACTRT, dtrt_ter,dtrt_ch,dxrt,&
                     GwSpinCycles, GwPreCycles, GwSpinUp, GwPreDiag, GwPreDiagInterval, gwIhShift, &
                     GWBASESWCRT, gwChanCondSw, gwChanCondConstIn, gwChanCondConstOut , &
-                    route_topo_f,route_chan_f,route_link_f,route_lake_f, &
+                    route_topo_f,route_chan_f,route_link_f, compound_channel, route_lake_f, &
                     route_direction_f,route_order_f,gwbasmskfil, geo_finegrid_flnm,&
                     gwstrmfil,GW_RESTART,RSTRT_SWC,TERADJ_SOLAR, sys_cpl, &
                     order_to_write , rst_typ, rst_bi_in, rst_bi_out, gwsoilcpl, &
@@ -144,7 +147,9 @@ CONTAINS
    t0OutputFlag = 1
    output_channelBucket_influx = 0
    TERADJ_SOLAR = 0
-
+   reservoir_data_ingest = 0 ! STUB FOR USE OF REALTIME RESERVOIR DISCHARGE DATA. CURRENTLY NOT IN USE.  
+   compound_channel = .FALSE.
+   
 #ifdef WRF_HYDRO_NUDGING
    ! Default values for NUDGING_nlist
    nudgingParamFile = "DOMAIN/nudgingParams.nc"
@@ -185,18 +190,14 @@ CONTAINS
        endif
 #endif
 
-   if ( int(mod(out_dt*60, nlst%dt))  .ne. 0) then
-      call hydro_stop("read_rt_nlst:: out_dt must be a multiple of the NOAH_TIMESTEP")
-   end if
-
 ! ADCHANGE: move these checks to more universal namelist checks...
    if ( io_config_outputs .eq. 4 ) RTOUT_DOMAIN = 0
 
    if(output_channelBucket_influx .ne. 0) then
       if(nlst%dt .ne. out_dt*60) &
            call hydro_stop("read_rt_nlst:: output_channelBucket_influx =! 0 inconsistent with out_dt and NOAH_TIMESTEP choices.")
-      if(output_channelBucket_influx .eq. 2 .and. GWBASESWCRT .ne. 1) &
-           call hydro_stop("read_rt_nlst:: output_channelBucket_influx = 2 but GWBASESWCRT != 1.")
+      if(output_channelBucket_influx .eq. 2 .and. GWBASESWCRT .ne. 1 .and. GWBASESWCRT .ne. 2) &
+           call hydro_stop("read_rt_nlst:: output_channelBucket_influx = 2 but GWBASESWCRT != 1 or 2.")
    end if
 
    if(CHANRTSWCRT .eq. 0 .and. channel_option .lt. 3) channel_option = 3
@@ -243,10 +244,12 @@ CONTAINS
   nlst%rst_dt = rst_dt
   nlst%DEEPGWSPIN = DEEPGWSPIN
   nlst%SOLVEG_INITSWC = SOLVEG_INITSWC
+  nlst%reservoir_obs_dir = "testDirectory"
 
 #ifdef MPP_LAND
   call mpp_land_bcast_char(256,nlst%RESTART_FILE)
   call mpp_land_bcast_char(256,nlst%hydrotbl_f)
+  call mpp_land_bcast_char(1024,nlst%reservoir_obs_dir)
 #endif
 
   write(nlst%hgrid,'(I1)') igrid
@@ -303,6 +306,7 @@ CONTAINS
   call mpp_land_bcast_int1(LSMOUT_DOMAIN)
   call mpp_land_bcast_int1(RTOUT_DOMAIN)
   call mpp_land_bcast_int1(UDMP_OPT)
+  call mpp_land_bcast_int1(reservoir_data_ingest)
 #ifdef WRF_HYDRO_NUDGING
   call mpp_land_bcast_char(256, nudgingParamFile  )
   call mpp_land_bcast_char(256, netwkReExFile     )
@@ -392,6 +396,8 @@ CONTAINS
     nlst%rst_bi_in = rst_bi_in
     nlst%rst_bi_out = rst_bi_out
     nlst%order_to_write = order_to_write
+    nlst%compound_channel = compound_channel
+
 ! files
     nlst%route_topo_f   =  route_topo_f
     nlst%route_chan_f = route_chan_f 
@@ -405,6 +411,8 @@ CONTAINS
     nlst%udmap_file =  udmap_file
     nlst%UDMP_OPT = UDMP_OPT
     nlst%GWBUCKPARM_file =  GWBUCKPARM_file
+    nlst%reservoir_data_ingest = 0 ! STUB FOR USE OF REALTIME RESERVOIR DISCHARGE DATA. CURRENTLY NOT IN USE.
+    nlst%reservoir_obs_dir = 'testDirectory'
 #ifdef WRF_HYDRO_NUDGING
     nlst%nudgingParamFile       = nudgingParamFile
     nlst%netWkReExFile          = netWkReExFile
@@ -455,12 +463,14 @@ CONTAINS
     write(6,*) " nlst%route_topo_f   ",  route_topo_f
     write(6,*) " nlst%route_chan_f ", route_chan_f 
     write(6,*) " nlst%route_link_f ", route_link_f
+    write(6,*) " nlst%compound_channel ", compound_channel
     write(6,*) " nlst%route_lake_f ",route_lake_f
     write(6,*) " nlst%route_direction_f ",  route_direction_f
     write(6,*) " nlst%route_order_f ",  route_order_f
     write(6,*) " nlst%gwbasmskfil ",  gwbasmskfil
     write(6,*) " nlst%gwstrmfil ",  gwstrmfil
     write(6,*) " nlst%geo_finegrid_flnm ",  geo_finegrid_flnm
+    write(6,*) " nlst%reservoir_data_ingest ", reservoir_data_ingest
 #ifdef WRF_HYDRO_NUDGING
     write(6,*) " nlst%nudgingParamFile      ",  trim(nudgingParamFile)
     write(6,*) " nlst%netWkReExFile         ",  trim(netWkReExFile)
@@ -603,7 +613,10 @@ subroutine rt_nlst_check(nlst)
    if(nlst%TERADJ_SOLAR .ne. 0) then
       call hydro_stop('hydro.namelist ERROR: Invalid TERADJ_SOLAR specified')
    endif
-   if(nlst%NSOIL .le. 0) then
+
+   ! The default value of nsoil == -999. When channel-only is used,
+   ! nsoil ==  -999999. In the case of channel-only, skip following block of code.
+   if(nlst%NSOIL .le. 0 .and. nlst%NSOIL .ne. -999999) then
       call hydro_stop('hydro.namelist ERROR: Invalid NSOIL specified.')
    endif
    do i = 1,nlst%NSOIL
@@ -616,6 +629,7 @@ subroutine rt_nlst_check(nlst)
          endif
       endif
    end do
+   
    if(nlst%dxrt0 .le. 0) then
       call hydro_stop('hydro.namelist ERROR: Invalid DXRT specified.')
    endif
@@ -699,14 +713,19 @@ subroutine rt_nlst_check(nlst)
       if (.not. fileExists) call hydro_stop('hydro.namelist ERROR: route_lake_f not found.')
    endif
    ! Only allow lakes to be ran with gridded routing or NWM routing
-   if(len(trim(nlst%route_lake_f)) .ne. 0) then
-      if(nlst%channel_option .ne. 3) then
-         if(nlst%UDMP_OPT .ne. 1) then 
-            call hydro_stop('hydro.namelist ERROR: Currently lakes only work with gridded channel routing or UDMP=1. Please change your namelist settings.')
-         endif
-      endif
-   endif
+!  if(len(trim(nlst%route_lake_f)) .ne. 0) then
+!     if(nlst%channel_option .ne. 3) then
+!        if(nlst%UDMP_OPT .ne. 1) then 
+!           call hydro_stop('hydro.namelist ERROR: Currently lakes only work with gridded channel routing or UDMP=1. Please change your namelist settings.')
+!        endif
+!     endif
+!  endif
 
+   if((nlst%channel_option .eq. 3) .and. (nlst%compound_channel)) then
+      call hydro_stop("Compound channel option not available for diffusive wave routing. ")
+   end if
+
+   
 end subroutine rt_nlst_check
 
 end module module_namelist

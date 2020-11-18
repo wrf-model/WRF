@@ -97,8 +97,17 @@ subroutine da_wrfvar_init2
    if ( use_cv_w ) then
       model_config_rec%cv_w_used = 1
    end if
+   model_config_rec%alloc_ep = 0
+   ! ep will be allocated in da_solve_init (not hybrid_dual_res) or
+   ! reallocate_analysis_grid (hybrid_dual_res)
    if ( ensdim_alpha > 0 ) then
       model_config_rec%ens_used = 1
+      if ( anal_type_hybrid_dual_res ) then
+         ! vp%alpha and vv%alpha will be allocated in reallocate_analysis_grid
+         model_config_rec%alloc_alphacv = 0
+      else
+         model_config_rec%alloc_alphacv = 1
+      end if
    end if
    if ( alpha_hydrometeors ) then
       model_config_rec%cloud_ens_used = 1
@@ -275,6 +284,10 @@ subroutine da_wrfvar_init2
       open(unit=jo_unit,file="jo",status="replace")
       open(unit=check_max_iv_unit,file="check_max_iv",status="replace")
       open(unit=check_buddy_unit ,file="buddy_check" ,status="replace")
+      if (use_varbc_tamdar) then
+          call da_get_unit (varbc_tamdar_unit)
+          open(unit=varbc_tamdar_unit,file="varbc_tamdar_detail.log",status="replace")
+      end if
    end if
 
    if (trace_use) call da_trace_exit("da_wrfvar_init2")

@@ -52,14 +52,7 @@ subroutine da_get_innov_vector_radiance (it,grid, ob, iv)
       call da_varbc_pred(iv)
 	  
       !varbc coldstart can not be done here when num_fgat_time>1
-      if ( num_fgat_time == 1 ) then
-         call da_varbc_coldstart(iv)  
-         call da_varbc_direct(iv)   
-         if (qc_rad) then
-            call da_qc_rad(it, ob, iv)
-         end if
-      end if
-
+      !because da_varbc_coldstart uses all obs from all time slots
    else if (biascorr) then
       do inst = 1, iv%num_inst                 ! loop for sensor
          write(unit=stdout,fmt='(A,A)') 'Performing bias correction for ', &
@@ -67,28 +60,7 @@ subroutine da_get_innov_vector_radiance (it,grid, ob, iv)
          call da_biascorr(inst,ob,iv)
       end do                                   ! end loop for sensor
    end if
-!wuyl !------------------------------------------------------------------------
-!   ! [3.0] Perform QC check
-!   !------------------------------------------------------------------------
-!   if (qc_rad) then
-!      call da_qc_rad(it, ob, iv)
-!   end if
-   !------------------------------------------------------------------------
-   ! [4.0] Compute preconditioning for Variational bias correction
-   !------------------------------------------------------------------------
-   !varbc preconditioning shoud be done after get_innov_vector is done for all time slots
-   !if (use_varbc .and. it == 1) call da_varbc_precond(iv)  !moved to da_get_innov_vector.inc
-   
-   !------------------------------------------------------------------------
-   ! [5.0] Prepare (QCed) bias statistics files
-   !------------------------------------------------------------------------
-   if (biasprep) then
-      do inst = 1, iv%num_inst
-         write(unit=stdout,fmt='(A,A)') 'Preparing bias statistics files for ', &
-            trim(iv%instid(inst)%rttovid_string)
-         call da_biasprep(inst,ob,iv)
-      end do
-   end if
+
    if(trace_use) call  da_trace_exit("da_get_innov_vector_radiance")
 
 end subroutine da_get_innov_vector_radiance

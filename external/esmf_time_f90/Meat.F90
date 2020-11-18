@@ -5,8 +5,8 @@
 ! YR and MM fields are ignored.  
 
 SUBROUTINE normalize_basetime( basetime )
-  USE esmf_basemod
-  USE esmf_basetimemod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
   IMPLICIT NONE
   TYPE(ESMF_BaseTime), INTENT(INOUT) :: basetime
   !BPR BEGIN
@@ -78,9 +78,9 @@ END SUBROUTINE normalize_basetime
 ! A normalized time has time%basetime >= 0, time%basetime less than the current 
 ! year expressed as a timeInterval, and time%YR can take any value
 SUBROUTINE normalize_time( time )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timemod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeMod
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(INOUT) :: time
   INTEGER(ESMF_KIND_I8) :: nsecondsinyear
@@ -129,8 +129,8 @@ END SUBROUTINE normalize_time
 
 
 SUBROUTINE normalize_timeint( timeInt )
-  USE esmf_basetimemod
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   TYPE(ESMF_TimeInterval), INTENT(INOUT) :: timeInt
 
@@ -147,9 +147,9 @@ FUNCTION signnormtimeint ( timeInt )
   ! Compute the sign of a time interval.  
   ! YR and MM fields are *IGNORED*.  
   ! returns 1, 0, or -1 or exits if timeInt fields have inconsistent signs.
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeInt
   INTEGER :: signnormtimeint
@@ -183,7 +183,7 @@ END FUNCTION signnormtimeint
 
 ! Exits with error message if timeInt is not normalized.  
 SUBROUTINE timeintchecknormalized( timeInt, msgstr )
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeInt
   CHARACTER(LEN=*), INTENT(IN) :: msgstr
@@ -245,7 +245,7 @@ END FUNCTION ndaysinyear
 
 FUNCTION nsecondsinyear ( year ) RESULT (numseconds)
   ! Compute the number of seconds in the given year
-  USE esmf_basemod
+  USE WRF_ESMF_BaseMod
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: year
   INTEGER(ESMF_KIND_I8) :: numseconds
@@ -256,9 +256,9 @@ END FUNCTION nsecondsinyear
 
 
 SUBROUTINE initdaym 
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE ESMF_CalendarMod, only : months_per_year, mday, daym, mdaycum, monthbdys, &
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_CalendarMod, only : months_per_year, mday, daym, mdaycum, monthbdys, &
                                mdayleap, mdayleapcum, monthbdysleap, daymleap
   IMPLICIT NONE
   INTEGER i,j,m
@@ -301,7 +301,7 @@ END SUBROUTINE initdaym
 
 !$$$ useful, but not used at the moment...  
 SUBROUTINE compute_dayinyear(YR,MM,DD,dayinyear)
-  use ESMF_CalendarMod, only : mday
+  use WRF_ESMF_CalendarMod, only : mday
 IMPLICIT NONE
       INTEGER, INTENT(IN)  :: YR,MM,DD   ! DD is day of month
       INTEGER, INTENT(OUT) :: dayinyear
@@ -326,10 +326,10 @@ END SUBROUTINE compute_dayinyear
 
 
 SUBROUTINE timegetmonth( time, MM )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timemod
-  USE ESMF_CalendarMod, only : MONTHS_PER_YEAR, monthbdys, monthbdysleap
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeMod
+  USE WRF_ESMF_CalendarMod, only : MONTHS_PER_YEAR, monthbdys, monthbdysleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(IN) :: time
   INTEGER, INTENT(OUT) :: MM
@@ -365,10 +365,10 @@ END SUBROUTINE timegetmonth
 !$$$ may need to change dependencies in Makefile...  
 
 SUBROUTINE timegetdayofmonth( time, DD )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timemod
-  USE esmf_calendarmod, only : monthbdys, monthbdysleap
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeMod
+  USE WRF_ESMF_CalendarMod, only : monthbdys, monthbdysleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(IN) :: time
   INTEGER, INTENT(OUT) :: DD
@@ -395,10 +395,10 @@ END SUBROUTINE timegetdayofmonth
 ! 1 <= MM <= 12
 ! Time is NOT normalized.  
 SUBROUTINE timeaddmonths( time, MM, ierr )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timemod
-  USE esmf_calendarmod, only : MONTHS_PER_YEAR, monthbdys, monthbdysleap
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeMod
+  USE WRF_ESMF_CalendarMod, only : MONTHS_PER_YEAR, monthbdys, monthbdysleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(INOUT) :: time
   INTEGER, INTENT(IN) :: MM
@@ -426,10 +426,10 @@ END SUBROUTINE timeaddmonths
 ! Increment Time by number of seconds in the current month.  
 ! Time is NOT normalized.  
 SUBROUTINE timeincmonth( time )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timemod
-  USE esmf_calendarmod, only : mday, mdayleap
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeMod
+  USE WRF_ESMF_CalendarMod, only : mday, mdayleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(INOUT) :: time
   ! locals
@@ -454,10 +454,10 @@ END SUBROUTINE timeincmonth
 ! Decrement Time by number of seconds in the previous month.  
 ! Time is NOT normalized.  
 SUBROUTINE timedecmonth( time )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timemod
-  USE esmf_calendarmod, only : mday, months_per_year, mdayleap
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeMod
+  USE WRF_ESMF_CalendarMod, only : mday, months_per_year, mdayleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(INOUT) :: time
   ! locals
@@ -487,9 +487,9 @@ END SUBROUTINE timedecmonth
 
 ! spaceship operator for Times
 SUBROUTINE timecmp(time1, time2, retval )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timemod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeMod
   IMPLICIT NONE
   INTEGER, INTENT(OUT) :: retval
 !
@@ -507,9 +507,9 @@ END SUBROUTINE timecmp
 
 ! spaceship operator for TimeIntervals
 SUBROUTINE timeintcmp(timeint1, timeint2, retval )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   INTEGER, INTENT(OUT) :: retval
 !
@@ -528,7 +528,7 @@ END SUBROUTINE timeintcmp
 
 ! spaceship operator for seconds + Sn/Sd
 SUBROUTINE seccmp(S1, Sn1, Sd1, S2, Sn2, Sd2, retval )
-  USE esmf_basemod
+  USE WRF_ESMF_BaseMod
   IMPLICIT NONE
   INTEGER, INTENT(OUT) :: retval
 !
@@ -557,14 +557,14 @@ END SUBROUTINE seccmp
 
 
 SUBROUTINE c_esmc_basetimeeq (time1, time2, outflag)
-  USE esmf_alarmmod
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
+  USE WRF_ESMF_AlarmMod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_CalendarMod
+  USE WRF_ESMF_ClockMod
+  USE WRF_ESMF_FractionMod
+  USE WRF_ESMF_TimeIntervalMod
+  USE WRF_ESMF_TimeMod
 IMPLICIT NONE
       logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
@@ -574,14 +574,14 @@ IMPLICIT NONE
       outflag = (res .EQ. 0)
 END SUBROUTINE c_esmc_basetimeeq
 SUBROUTINE c_esmc_basetimege(time1, time2, outflag)
-  USE esmf_alarmmod
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
+  USE WRF_ESMF_AlarmMod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_CalendarMod
+  USE WRF_ESMF_ClockMod
+  USE WRF_ESMF_FractionMod
+  USE WRF_ESMF_TimeIntervalMod
+  USE WRF_ESMF_TimeMod
       logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
       type(ESMF_Time), intent(in) :: time2
@@ -590,14 +590,14 @@ SUBROUTINE c_esmc_basetimege(time1, time2, outflag)
       outflag = (res .EQ. 1 .OR. res .EQ. 0)
 END SUBROUTINE c_esmc_basetimege
 SUBROUTINE c_esmc_basetimegt(time1, time2, outflag)
-  USE esmf_alarmmod
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
+  USE WRF_ESMF_AlarmMod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_CalendarMod
+  USE WRF_ESMF_ClockMod
+  USE WRF_ESMF_FractionMod
+  USE WRF_ESMF_TimeIntervalMod
+  USE WRF_ESMF_TimeMod
 IMPLICIT NONE
       logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
@@ -607,14 +607,14 @@ IMPLICIT NONE
       outflag = (res .EQ. 1)
 END SUBROUTINE c_esmc_basetimegt
 SUBROUTINE c_esmc_basetimele(time1, time2, outflag)
-  USE esmf_alarmmod
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
+  USE WRF_ESMF_AlarmMod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_CalendarMod
+  USE WRF_ESMF_ClockMod
+  USE WRF_ESMF_FractionMod
+  USE WRF_ESMF_TimeIntervalMod
+  USE WRF_ESMF_TimeMod
 IMPLICIT NONE
       logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
@@ -624,14 +624,14 @@ IMPLICIT NONE
       outflag = (res .EQ. -1 .OR. res .EQ. 0)
 END SUBROUTINE c_esmc_basetimele
 SUBROUTINE c_esmc_basetimelt(time1, time2, outflag)
-  USE esmf_alarmmod
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
+  USE WRF_ESMF_AlarmMod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_CalendarMod
+  USE WRF_ESMF_ClockMod
+  USE WRF_ESMF_FractionMod
+  USE WRF_ESMF_TimeIntervalMod
+  USE WRF_ESMF_TimeMod
 IMPLICIT NONE
       logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
@@ -641,14 +641,14 @@ IMPLICIT NONE
       outflag = (res .EQ. -1)
 END SUBROUTINE c_esmc_basetimelt
 SUBROUTINE c_esmc_basetimene(time1, time2, outflag)
-  USE esmf_alarmmod
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_calendarmod
-  USE esmf_clockmod
-  USE esmf_fractionmod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
+  USE WRF_ESMF_AlarmMod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_CalendarMod
+  USE WRF_ESMF_ClockMod
+  USE WRF_ESMF_FractionMod
+  USE WRF_ESMF_TimeIntervalMod
+  USE WRF_ESMF_TimeMod
 IMPLICIT NONE
       logical, intent(OUT) :: outflag
       type(ESMF_Time), intent(in) :: time1
@@ -659,7 +659,7 @@ IMPLICIT NONE
 END SUBROUTINE c_esmc_basetimene
 
 SUBROUTINE c_esmc_basetimeinteq(timeint1, timeint2, outflag)
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   LOGICAL, INTENT(OUT) :: outflag
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
@@ -669,7 +669,7 @@ SUBROUTINE c_esmc_basetimeinteq(timeint1, timeint2, outflag)
   outflag = (res .EQ. 0)
 END SUBROUTINE c_esmc_basetimeinteq
 SUBROUTINE c_esmc_basetimeintne(timeint1, timeint2, outflag)
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   LOGICAL, INTENT(OUT) :: outflag
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
@@ -679,7 +679,7 @@ SUBROUTINE c_esmc_basetimeintne(timeint1, timeint2, outflag)
   outflag = (res .NE. 0)
 END SUBROUTINE c_esmc_basetimeintne
 SUBROUTINE c_esmc_basetimeintlt(timeint1, timeint2, outflag)
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   LOGICAL, INTENT(OUT) :: outflag
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
@@ -689,7 +689,7 @@ SUBROUTINE c_esmc_basetimeintlt(timeint1, timeint2, outflag)
   outflag = (res .LT. 0)
 END SUBROUTINE c_esmc_basetimeintlt
 SUBROUTINE c_esmc_basetimeintgt(timeint1, timeint2, outflag)
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   LOGICAL, INTENT(OUT) :: outflag
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
@@ -699,7 +699,7 @@ SUBROUTINE c_esmc_basetimeintgt(timeint1, timeint2, outflag)
   outflag = (res .GT. 0)
 END SUBROUTINE c_esmc_basetimeintgt
 SUBROUTINE c_esmc_basetimeintle(timeint1, timeint2, outflag)
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   LOGICAL, INTENT(OUT) :: outflag
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
@@ -709,7 +709,7 @@ SUBROUTINE c_esmc_basetimeintle(timeint1, timeint2, outflag)
   outflag = (res .LE. 0)
 END SUBROUTINE c_esmc_basetimeintle
 SUBROUTINE c_esmc_basetimeintge(timeint1, timeint2, outflag)
-  USE esmf_timeintervalmod
+  USE WRF_ESMF_TimeIntervalMod
   IMPLICIT NONE
   LOGICAL, INTENT(OUT) :: outflag
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeint1
@@ -720,7 +720,7 @@ SUBROUTINE c_esmc_basetimeintge(timeint1, timeint2, outflag)
 END SUBROUTINE c_esmc_basetimeintge
 
 SUBROUTINE compute_lcd( e1, e2, lcd )
-  USE esmf_basemod
+  USE WRF_ESMF_BaseMod
       IMPLICIT NONE
       INTEGER(ESMF_KIND_I8), INTENT(IN) :: e1, e2
       INTEGER(ESMF_KIND_I8), INTENT(OUT) :: lcd
@@ -745,7 +745,7 @@ SUBROUTINE compute_lcd( e1, e2, lcd )
 END SUBROUTINE compute_lcd
 
 SUBROUTINE simplify( ni, di, no, do ) 
-  USE esmf_basemod
+  USE WRF_ESMF_BaseMod
     IMPLICIT NONE
     INTEGER(ESMF_KIND_I8), INTENT(IN)  :: ni, di
     INTEGER(ESMF_KIND_I8), INTENT(OUT) :: no, do
@@ -786,7 +786,7 @@ END SUBROUTINE simplify
 !BPR BEGIN
 ! Same as simplify above, but allows user to choose the number of primes to check
 SUBROUTINE simplify_numprimes( ni, di, no, do, num_primes_to_check )
-  USE esmf_basemod
+  USE WRF_ESMF_BaseMod
     IMPLICIT NONE
     INTEGER(ESMF_KIND_I8), INTENT(IN)  :: ni, di
     INTEGER(ESMF_KIND_I8), INTENT(OUT) :: no, do
@@ -839,10 +839,10 @@ END SUBROUTINE simplify_numprimes
 
 !$$$ this should be named "c_esmc_timesum" or something less misleading
 SUBROUTINE c_esmc_basetimesum( time1, timeinterval, timeOut )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeIntervalMod
+  USE WRF_ESMF_TimeMod
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(IN) :: time1
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeinterval
@@ -872,10 +872,10 @@ END SUBROUTINE c_esmc_basetimesum
 
 !$$$ this should be named "c_esmc_timedec" or something less misleading
 SUBROUTINE c_esmc_basetimedec( time1, timeinterval, timeOut )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeIntervalMod
+  USE WRF_ESMF_TimeMod
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(IN) :: time1
   TYPE(ESMF_TimeInterval), INTENT(IN) :: timeinterval
@@ -899,10 +899,10 @@ END SUBROUTINE c_esmc_basetimedec
 
 !$$$ this should be named "c_esmc_timediff" or something less misleading
 SUBROUTINE c_esmc_basetimediff( time1, time2, timeIntOut )
-  USE esmf_basemod
-  USE esmf_basetimemod
-  USE esmf_timeintervalmod
-  USE esmf_timemod
+  USE WRF_ESMF_BaseMod
+  USE WRF_ESMF_BaseTimeMod
+  USE WRF_ESMF_TimeIntervalMod
+  USE WRF_ESMF_TimeMod
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(IN) :: time1
   TYPE(ESMF_Time), INTENT(IN) :: time2
@@ -935,7 +935,7 @@ END SUBROUTINE c_esmc_basetimediff
 ! denominator is zero, return empty string.
 ! INTEGER*8 interface.  
 SUBROUTINE fraction_to_stringi8( numerator, denominator, frac_str )
-  USE ESMF_basemod
+  USE WRF_ESMF_BaseMod
   IMPLICIT NONE
   INTEGER(ESMF_KIND_I8), INTENT(IN) :: numerator
   INTEGER(ESMF_KIND_I8), INTENT(IN) :: denominator
@@ -961,7 +961,7 @@ END SUBROUTINE fraction_to_stringi8
 ! denominator is zero, return empty string.
 ! INTEGER interface.  
 SUBROUTINE fraction_to_string( numerator, denominator, frac_str )
-  USE ESMF_basemod
+  USE WRF_ESMF_BaseMod
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: numerator
   INTEGER, INTENT(IN) :: denominator
@@ -975,8 +975,8 @@ END SUBROUTINE fraction_to_string
 
 
 SUBROUTINE print_a_time( time )
-   use ESMF_basemod
-   use ESMF_Timemod
+   use WRF_ESMF_BaseMod
+   use WRF_ESMF_TimeMod
    IMPLICIT NONE
    type(ESMF_Time) time
    character*128 :: s
@@ -987,8 +987,8 @@ SUBROUTINE print_a_time( time )
 END SUBROUTINE print_a_time
 
 SUBROUTINE print_a_timeinterval( time )
-   use ESMF_basemod
-   use ESMF_TimeIntervalmod
+   use WRF_ESMF_BaseMod
+   use WRF_ESMF_TimeIntervalMod
    IMPLICIT NONE
    type(ESMF_TimeInterval) time
    character*128 :: s

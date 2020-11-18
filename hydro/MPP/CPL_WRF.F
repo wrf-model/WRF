@@ -21,11 +21,12 @@
 !   This is used as a coupler with the WRF model.
 MODULE MODULE_CPL_LAND
 
-  !use module_mpp_land, only: HYDRO_COMM_WORLD
+    use mpi
+    use, intrinsic :: iso_fortran_env, only: error_unit
 
   IMPLICIT NONE
 
-  integer, public :: HYDRO_COMM_WORLD = -1
+  integer, public :: HYDRO_COMM_WORLD = MPI_COMM_NULL
   integer my_global_id
  
   integer total_pe_num
@@ -56,7 +57,6 @@ MODULE MODULE_CPL_LAND
 
   subroutine CPL_LAND_INIT(istart,iend,jstart,jend)
       implicit none
-   include "mpif.h"
       integer ierr
       logical mpi_inited
       integer istart,iend,jstart,jend
@@ -69,12 +69,17 @@ MODULE MODULE_CPL_LAND
 
       CALL mpi_initialized( mpi_inited, ierr )
       if ( .NOT. mpi_inited ) then
-          call mpi_init(ierr)
-          HYDRO_COMM_WORLD = MPI_COMM_WORLD
+        call mpi_init(ierr)
+        if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_INIT failed")
+      endif
+      if (HYDRO_COMM_WORLD == MPI_COMM_NULL) then
+        call MPI_COMM_DUP(MPI_COMM_WORLD, HYDRO_COMM_WORLD, ierr)
+        if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_COMM_DUP failed")
       endif
 
       call MPI_COMM_RANK( HYDRO_COMM_WORLD, my_global_id, ierr )
       call MPI_COMM_SIZE( HYDRO_COMM_WORLD, total_pe_num, ierr )
+      if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_COMM_RANK and/or MPI_COMM_SIZE failed")
 
       allocate(node_info(9,total_pe_num))
 
@@ -126,7 +131,6 @@ MODULE MODULE_CPL_LAND
 
      subroutine send_info()
         implicit none
-   include "mpif.h"
         integer,allocatable,dimension(:,:) :: tmp_info
         integer  ierr, i,size, tag
         integer mpp_status(MPI_STATUS_SIZE)
@@ -222,4 +226,14 @@ MODULE MODULE_CPL_LAND
      return
      end subroutine find_down
 
+    ! stop the job due to the fatal error.
+    subroutine fatal_error_stop(msg)
+        character(len=*) :: msg
+        integer :: ierr
+        write(error_unit,*) "The job is stoped due to the fatal error. ", trim(msg)
+        call flush(error_unit)
+        CALL MPI_Abort(HYDRO_COMM_WORLD, 1, ierr)
+        call MPI_Finalize(ierr)
+        return
+    end  subroutine fatal_error_stop
 END MODULE MODULE_CPL_LAND

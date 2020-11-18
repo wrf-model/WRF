@@ -255,14 +255,14 @@ subroutine da_setup_be_regional(xb, be, grid)
    print *, 'bin = ',   bin(1:1,1:1,1:1)
    print *, 'bin2d = ', bin2d(1:1,1:1)
 
-   num_cv_3d_basic = 4
-   num_cv_3d_extra = 0
-   num_cv_2d       = 1
+   num_cv_3d_basic = 4 ! (Psi, Chi_u, T_u, Pseudo RH) or (U,V,T,Pseudo RH)
+   num_cv_3d_extra = 0 ! default: no cloud and w
+   num_cv_2d       = 1 ! Ps_u
    if ( cloud_cv_options >= 2 ) then
-      num_cv_3d_extra = 5
+      num_cv_3d_extra = 5 ! 5 hydrometeors, qc,qr,qi,qs,qg
    end if
    if ( use_cv_w ) then
-      num_cv_3d_extra = num_cv_3d_extra + 1
+      num_cv_3d_extra = num_cv_3d_extra + 1 ! clouds+w
    end if
 
 !-----------for interpolating CV5--------------------------------------------------------------
@@ -797,8 +797,9 @@ subroutine da_setup_be_regional(xb, be, grid)
       end select
 
    end do !1-num_cv_3d_basic
-
-   if ( cloud_cv_options == 2 .and. ccv_be_inp_opt == 2 ) then
+   
+   if ( cloud_cv_options == 2 ) then
+      print*,"cloud_cv_options == 2 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra
       do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
 
          read (be_unit) variable
@@ -892,7 +893,7 @@ subroutine da_setup_be_regional(xb, be, grid)
          end select
 
       end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra-1
-
+      print*,"reading variables for cloud_cv_options=2 is done"
    end if ! cloud_cv_options=2
 
    deallocate (evec_loc)
@@ -1986,17 +1987,13 @@ subroutine da_setup_be_regional(xb, be, grid)
       allocate (alpha_val(1:nk)) ! Not using jy dimension yet.
       allocate (alpha_evec(1:nk,1:nk)) ! Not using jy dimension yet.
 
-      if ( alpha_vertloc ) then ! Use vertical localization:
-         call da_get_unit(be_unit)
-         open(unit=be_unit,file='be.vertloc.dat', status='old', form='unformatted')
-
-         read (be_unit)nk
-         read (be_unit)alpha_val(1:nk)
-         read (be_unit)alpha_evec(1:nk,1:nk)
-         close(be_unit)
-         call da_free_unit(be_unit)
+      if ( alpha_vertloc_opt > 0 ) then ! Use vertical localization:
+         if ( rootproc ) then
+            call da_get_alpha_vertloc(xb, alpha_val, alpha_evec)
+         end if
+         call wrf_dm_bcast_real(alpha_val,  nk)
+         call wrf_dm_bcast_real(alpha_evec, nk*nk)
          be % alpha % mz = nk
-
          call da_get_vertical_truncation(max_vert_var_alpha, alpha_val, be % alpha)
       else
          be % alpha % mz = 1 ! No vertical localization.

@@ -149,6 +149,6 @@
 
       CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
 
-# include <allocs.inc>
+# include "allocs.inc"
 
    END SUBROUTINE ROUTINENAME

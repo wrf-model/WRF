@@ -614,8 +614,8 @@ CONTAINS
 !
       CALL get_wrf_debug_level( dbg_level )
 
-      ISTOP=0  !mchen
-      NT=0  !mchen
+      ISTOP= 0
+      NT   = 0
       ALIQ = SVP1*1000.
       BLIQ = SVP2
       CLIQ = SVP2*SVPT0
@@ -679,6 +679,7 @@ CONTAINS
       DCLDTOP(I,J)=0.0
       DCLDBASE(I,J)=0.0
       CLDBMFLX(I,J)=0.0
+      RADIUSC(I,J)=0.0
 #endif
 !
 !...INPUT A VERTICAL SOUNDING ... NOTE THAT MODEL LAYERS ARE NUMBERED FROM THE
@@ -2095,14 +2096,12 @@ CONTAINS
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 !     BEGINING OF CLOSURE ASSUMPTION SELECTIONS
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-!      print*, 'mchen, 2097 i,j==', i,j, ktau, NT, capei(i,j)
 !
       IF(CAPEI(I,J) .LT. 100.0) THEN    ! averaging KF number of clouds
         NT = NINT(15.0*60.0/(0.5*DT))-1 ! for 15 min.
       ELSE
         NT = 0
       ENDIF
-  !    if(i.eq.121.and.j.eq.75) print*, 'mchen, 2104, NT=', ktau, NT, capei(i,j)
 
   175 NCOUNT=NCOUNT+1
 !
@@ -2125,13 +2124,11 @@ CONTAINS
 !       KFLAG=3: CLOUD TOP HIGHER THAN LFC BUT LOWER THAN 4 KM
 !       KFLAG=4: CLOUD TOP HIGHER THAN 4 KM
 !
-  !    if(i.eq.121.and.j.eq.75) print*, 'mchen, 2127, KFLAG=', ktau, NT, KFLAG
       IF(KFLAG .EQ. 2) GO TO 176
 
       IF((CLDDPTH+ZLCL) .LE. ZLFC) THEN
         AINC=AINC2
         KFLAG=2
-    !  if(i.eq.121.and.j.eq.75) print*, 'mchen, 2130, KFLAG=', ktau, NT, KFLAG
         GO TO 255
       ENDIF
 
@@ -2248,15 +2245,27 @@ CONTAINS
       ENDDO
 !
 !...CHECK TO SEE IF MIXING RATIO DIPS BELOW ZERO ANYWHERE;  IF SO, BORROW
-!...MOISTURE FROM ADJACENT LAYERS TO BRING IT BACK UP ABOVE ZERO...
+!...MOISTURE FROM ADJACENT LAYERS TO BRING IT BACK UP ABOVE ZERO; WITH
+!...INDEX NK-1, MINIMUM VALUE FOR NK=2...
 !
-      DO NK = 1,LTOP
+      DO NK = 2,LTOP
         IF(QQG(NK).LT.0.)THEN
           TMA = QQG(NK+1)*EMS(NK+1)
           TMB = QQG(NK-1)*EMS(NK-1)
           TMM = (QQG(NK)-1.E-9)*EMS(NK  )
-          BCOEFF = -TMM/((TMA*TMA)/TMB+TMB)
-          ACOEFF = BCOEFF*TMA/TMB
+          IF(TMA .NE. 0.0 .AND. TMB .NE. 0.0)THEN
+            BCOEFF = -TMM/((TMA*TMA)/TMB+TMB)
+            ACOEFF = BCOEFF*TMA/TMB
+          ELSE IF(TMA .EQ. 0.0 .AND. TMB .EQ. 0.0) THEN
+            BCOEFF = 0.0
+            ACOEFF = 0.0
+          ELSE IF(TMA .EQ. 0.0) THEN
+            BCOEFF = -TMM/TMB
+            ACOEFF = 0.0
+          ELSE IF(TMB .EQ. 0.0) THEN
+            BCOEFF = 0.0
+            ACOEFF = -TMM/TMA
+          ENDIF
           TMB = TMB*(1.-BCOEFF)
           TMA = TMA*(1.-ACOEFF)
           QQG(NK) = 1.E-9
@@ -2425,9 +2434,6 @@ CONTAINS
             IF( ABS(C2) < 0.001 ) STOP 901
             C3=C1/C2
             VAL = 0.0
-    !  if(i.eq.121.and.j.eq.75) print*, 'mchen, 2423, before NT is used 1'
-    !  if(i.eq.121.and.j.eq.75) print*, 'mchen, 2424, NT=', ktau, NT
-       print*, 'mchen, 2423, before NT is used i,j=', i,j, ktau, NT
             DO II = 1, NT
               VAL = VAL + AINCKFSA(I,II,J)
             ENDDO
@@ -2454,7 +2460,6 @@ CONTAINS
           IF( ABS(C2) < 0.001 ) STOP 902
           C3=C1/C2
             VAL = 0.0
-       print*, 'mchen, 2451, before NT is used i,j=', i,j, ktau, NT
             DO II = 1, NT
               VAL = VAL + AINCKFSA(I,II,J)
             ENDDO

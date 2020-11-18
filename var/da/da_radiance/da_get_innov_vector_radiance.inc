@@ -60,7 +60,6 @@ subroutine da_get_innov_vector_radiance (it,grid, ob, iv)
          end if
       end if
 
-
    else if (biascorr) then
       do inst = 1, iv%num_inst                 ! loop for sensor
          write(unit=stdout,fmt='(A,A)') 'Performing bias correction for ', &

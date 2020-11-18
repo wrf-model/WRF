@@ -84,10 +84,10 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    endif
 
    do n= num_fgat_time , 1, -1
+print*,"jban check timeslot=",n,iv%time
       iv%time = n
       iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
       iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
-
       if (num_fgat_time > 1) then
          if (var4d) then
             call domain_clock_get( grid, current_timestr=timestr )
@@ -106,6 +106,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_sound     (it, num_qcstat_conv, grid, ob, iv)
          call da_get_innov_vector_sonde_sfc (it, num_qcstat_conv, grid, ob, iv)
       end if
+
       if (iv%info(mtgirs)%nlocal    > 0) &
          call da_get_innov_vector_mtgirs    (it, num_qcstat_conv, grid, ob, iv)
       if (iv%info(tamdar)%nlocal    > 0) &
@@ -176,7 +177,6 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    !----------------------------------------------
    ! [5]  write out iv in ascii format
    !-----------------------------------------------
-
       if ( multi_inc == 1 ) then
 
          if ( multi_inc_io_opt == 1 ) then
@@ -194,12 +194,9 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          end if
 
       endif
-
       if (n > 1 .and. var4d) call domain_clockadvance (grid)
       call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
-
    end do
-
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
        if ( use_varbc .or. freeze_varbc ) then
@@ -224,7 +221,6 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
        if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)   !fixed by wuyl
    end if
 #endif
-
    if ( use_rainobs .and. num_fgat_time > 1 .and. var4d) then
       deallocate (hr_rainc )
       deallocate (hr_rainnc)
@@ -242,13 +238,11 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       write(unit=stdout,fmt='(A,A)') 'Restore to first guess :fg at ',trim(analysis_date(1:19))
       call da_read_basicstates ( xbx, grid, config_flags, timestr, filename1)
    end if
-
    if (num_fgat_time > 1) then
       call nl_get_time_step ( grid%id, time_step_seconds)
       call domain_clock_set (grid, time_step_seconds=time_step_seconds)
       call domain_clockprint(150, grid, 'get CurrTime from clock,')
    end if
-
 #if defined(CRTM) || defined(RTTOV)
    !----------------------------------------------
    ! write out or read in radiance iv for multi in binary format

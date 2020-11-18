@@ -195,7 +195,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    else if ( n_vegtype == IGBP_n_type ) then
          wrf_to_crtm_mw = igbp_to_crtm_mw
    end if
-
    !------------------------------------------------------
    ! [1.0] calculate the background bright temperature
    !-------------------------------------------------------
@@ -918,7 +917,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       endif
 
    end do        ! end loop for sensor
-
    deallocate (wrf_to_crtm_mw)
 
    call CRTM_Atmosphere_Destroy (Atmosphere)

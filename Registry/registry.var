@@ -189,7 +189,6 @@ rconfig   logical   use_hsbobs              namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_ssmisobs            namelist,wrfvar4  1  .false.  - "use_ssmisobs"             ""  ""
 rconfig   logical   use_iasiobs             namelist,wrfvar4  1  .false.  - "use_iasiobs"              ""  ""
 rconfig   logical   use_ahiobs              namelist,wrfvar4  1  .false.  - "use_ahiobs"               ""  "" 
-#wuyl
 rconfig   logical   use_seviriobs           namelist,wrfvar4  1  .false.  - "use_seviriobs"            ""  ""
 rconfig   logical   use_amsr2obs            namelist,wrfvar4  1  .false.  - "use_amsr2obs"             ""  ""
 rconfig   logical   use_ahiobs              namelist,wrfvar4  1  .false.  - "use_ahiobs"               ""  ""
@@ -269,7 +268,7 @@ rconfig   integer   tovs_end                namelist,wrfvar5  1  10000000 - "tov
 rconfig   logical   gpsref_thinning         namelist,wrfvar5  1  .false.  - "gpsref_thinning"          ""  ""
 rconfig   logical   outer_loop_restart      namelist,wrfvar6  1  .false.  - "outer_loop_restart"       ""  ""
 rconfig   integer   max_ext_its             namelist,wrfvar6  1  1        - "max_ext_its"              ""  ""
-rconfig   integer   ntmax                   namelist,wrfvar6  max_outer_iterations  200      - "ntmax"                    ""  ""
+rconfig   integer   ntmax                   namelist,wrfvar6  max_outer_iterations  75      - "ntmax"                    ""  ""
 rconfig   logical   use_inverse_squarerootb namelist,wrfvar6  1  .false.  - "use_inverse_squarerootb"       ""  ""
 rconfig   logical   use_interpolate_cvt     namelist,wrfvar6  1  .false.  - "use_interpolate_cvt"       ""  ""
 rconfig   integer   nsave                   namelist,wrfvar6  1  4        - "nsave"                    ""  ""
@@ -435,7 +434,6 @@ rconfig   integer   tovs_min_transfer       namelist,wrfvar14  1  10       - "to
 rconfig   logical   tovs_batch              namelist,wrfvar14  1  .false.  - "tovs_batch"              ""  "" 
 rconfig   integer   rtm_option              namelist,wrfvar14  1  1        - "rtm_option"              ""  ""
 rconfig   integer   varbc_scan              namelist,wrfvar14  1  1        - "varbc_scan"              ""  ""
-#wuyl
 rconfig   logical   use_crtm_kmatrix        namelist,wrfvar14  1  .true.   - "use_crtm_kmatrix"        ""  ""
 rconfig   logical   use_rttov_kmatrix       namelist,wrfvar14  1  .false.  - "use_rttov_kmatrix"       ""  ""
 rconfig   logical   crtm_cloud              namelist,wrfvar14  1  .false.  - "crtm_cloud"              ""  ""

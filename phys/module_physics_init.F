@@ -3177,12 +3177,14 @@ CONTAINS
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
                               FRC_URB2D, UTYPE_URB2D)                            !urban
 
-               IF(config_flags%use_wudapt_lcz.eq.0.and.(maxval(UTYPE_URB2D)).gt.3)THEN  !new LCZ
-                    wrf_error_fatal('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. PLEASE SET USE_WUDAPT_LCZ=1')
+               IF (config_flags%use_wudapt_lcz.eq.0 .and. (maxval(UTYPE_URB2D)).gt.3) THEN  !new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. SET USE_WUDAPT_LCZ=1')
                ENDIF
 
-               IF(config_flags%use_wudapt_lcz.eq.1.and.(maxval(UTYPE_URB2D)).le.3)THEN  ! new LCZ
-                    wrf_error_fatal('USING URBPARM_LCZ.TBL WITH TRADITIONAL 3 URBAN CLASSES. PLEASE SET USE_WUDAPT_LCZ=0')
+               IF (config_flags%use_wudapt_lcz.eq.1 .and. (maxval(UTYPE_URB2D)).le.3) THEN  ! new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING URBPARM_LCZ.TBL WITH OLD 3 URBAN CLASSES. SET USE_WUDAPT_LCZ=0')
                ENDIF
 
              ELSE
@@ -3308,13 +3310,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
                               FRC_URB2D, UTYPE_URB2D)                            !urban
 
-                IF(config_flags%use_wudapt_lcz.eq.0..and.maxval((UTYPE_URB2D)).gt.3)THEN  !new LCZ
-                   wrf_error_fatal('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. PLEASE SET USE_WUDAPT_LCZ=1')
-                ENDIF
+               IF (config_flags%use_wudapt_lcz.eq.0 .and. (maxval(UTYPE_URB2D)).gt.3) THEN  !new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. SET USE_WUDAPT_LCZ=1')
+               ENDIF
 
-                IF(config_flags%use_wudapt_lcz.eq.1..and.maxval((UTYPE_URB2D)).le.3)THEN  !new LCZ
-                   wrf_error_fatal('USING URBPARM_LCZ.TBL WITH TRADITIONAL 3 URBAN CLASSES. PLEASE SET USE_WUDAPT_LCZ=0')
-                ENDIF
+               IF (config_flags%use_wudapt_lcz.eq.1 .and. (maxval(UTYPE_URB2D)).le.3) THEN  ! new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING URBPARM_LCZ.TBL WITH OLD 3 URBAN CLASSES. SET USE_WUDAPT_LCZ=0')
+               ENDIF
 
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )

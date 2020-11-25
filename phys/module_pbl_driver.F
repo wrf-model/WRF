@@ -2086,6 +2086,7 @@ CONTAINS
               ,VAR2Dss=var2dss,OC12Dss=oc12dss                      &
               ,OA2D1ss=oa1ss,OA2D2ss=oa2ss,OA2D3ss=oa3ss,OA2D4ss=oa4ss  &
               ,OL2D1ss=ol1ss,OL2D2ss=ol2ss,OL2D3ss=ol3ss,OL2D4ss=ol4ss  &
+              ,SINA=sina,COSA=cosa                                  &
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,DZ=dz8w,PBLH=PBLH                                    &
               ,CP=cp,G=g,RD=r_d                                     &

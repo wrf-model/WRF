@@ -16,7 +16,7 @@ contains
                   var2dss,oc12dss,                                             &
                   oa2d1ss,oa2d2ss,oa2d3ss,oa2d4ss,                             &
                   ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,                             &
-                  znu,znw,p_top,dz,pblh,                                       &
+                  sina,cosa,znu,znw,p_top,dz,pblh,                             &
                   cp,g,rd,rv,ep1,pi,                                           &
                   dt,dx,kpbl2d,itimestep,gwd_opt,                              &
                   spp_pbl,pattern_spp_pbl,                                     &
@@ -37,6 +37,8 @@ contains
 !-- rublten     u tendency due to pbl parameterization (m/s/s) 
 !-- rvblten     v tendency due to pbl parameterization (m/s/s)
 !-- rthblten    theta tendency due to pbl parameterization (K/s)
+!-- sina        sine rotation angle
+!-- cosa        cosine rotation angle
 !-- znu         eta values (sigma values)
 !-- cp          heat capacity at constant pressure for dry air (j/kg/k)
 !-- g           acceleration due to gravity (m/s^2)
@@ -127,7 +129,9 @@ contains
            ! for small-scale orographic drag schemes
                     var2dss,oc12dss,                                           &
                     oa2d1ss,oa2d2ss,oa2d3ss,oa2d4ss,                           &
-                    ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss
+                    ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,                           &
+           ! info for converting velocities to/from zonal and meridional components
+                    sina,cosa
 !
   real,     dimension( kms:kme )                                             , &
             optional                                                         , &
@@ -151,6 +155,8 @@ contains
                                                                           ol4, &
                                                                           oa4ss, &
                                                                           ol4ss
+  real,   dimension( its:ite, kts:kte ) :: ugeo, vgeo, dudt, dvdt
+               
   integer ::  i,j,k,kdt,kpblmax
 !
    do k = kts,kte
@@ -158,6 +164,7 @@ contains
    enddo
 !
    do j = jts,jte
+
       do k = kts,kte+1
          do i = its,ite
             if(k.le.kte)pdh(i,k) = p3d(i,k,j)
@@ -168,6 +175,11 @@ contains
       do k = kts,kte
         do i = its,ite
           delprsi(i,k) = pdhi(i,k)-pdhi(i,k+1)
+! rotate winds to zonal/meridional
+          ugeo(i,k) = u3d(i,k,j)*cosa(i,j) - v3d(i,k,j)*sina(i,j)
+          vgeo(i,k) = u3d(i,k,j)*sina(i,j) + v3d(i,k,j)*cosa(i,j)
+          dudt(i,k) = 0.0
+          dvdt(i,k) = 0.0
         enddo
       enddo
 
@@ -182,31 +194,31 @@ contains
          enddo
       endif
 !end SPP
-        do i = its,ite
-            oa4(i,1) = oa2d1(i,j)
-            oa4(i,2) = oa2d2(i,j)
-            oa4(i,3) = oa2d3(i,j)
-            oa4(i,4) = oa2d4(i,j)
-            ol4(i,1) = ol2d1(i,j)
-            ol4(i,2) = ol2d2(i,j)
-            ol4(i,3) = ol2d3(i,j)
-            ol4(i,4) = ol2d4(i,j)
-            oa4ss(i,1) = oa2d1ss(i,j)
-            oa4ss(i,2) = oa2d2ss(i,j)
-            oa4ss(i,3) = oa2d3ss(i,j)
-            oa4ss(i,4) = oa2d4ss(i,j)
-            ol4ss(i,1) = ol2d1ss(i,j)
-            ol4ss(i,2) = ol2d2ss(i,j)
-            ol4ss(i,3) = ol2d3ss(i,j)
-            ol4ss(i,4) = ol2d4ss(i,j)
-        enddo
-      call gwdo2d(dudt=rublten(ims,kms,j),dvdt=rvblten(ims,kms,j)              &
+      do i = its,ite
+          oa4(i,1) = oa2d1(i,j)
+          oa4(i,2) = oa2d2(i,j)
+          oa4(i,3) = oa2d3(i,j)
+          oa4(i,4) = oa2d4(i,j)
+          ol4(i,1) = ol2d1(i,j)
+          ol4(i,2) = ol2d2(i,j)
+          ol4(i,3) = ol2d3(i,j)
+          ol4(i,4) = ol2d4(i,j)
+          oa4ss(i,1) = oa2d1ss(i,j)
+          oa4ss(i,2) = oa2d2ss(i,j)
+          oa4ss(i,3) = oa2d3ss(i,j)
+          oa4ss(i,4) = oa2d4ss(i,j)
+          ol4ss(i,1) = ol2d1ss(i,j)
+          ol4ss(i,2) = ol2d2ss(i,j)
+          ol4ss(i,3) = ol2d3ss(i,j)
+          ol4ss(i,4) = ol2d4ss(i,j)
+      enddo
+      call gwdo2d(dudt=dudt(its,kts),dvdt=dvdt(its,kts)                        &
               ,dthdt=rthblten(ims,kms,j)                                       &
               ,dtaux2d_ls=dtaux2d_ls,dtauy2d_ls=dtauy2d_ls                     &
               ,dtaux2d_bl=dtaux2d_bl,dtauy2d_bl=dtauy2d_bl                     &
               ,dtaux2d_ss=dtaux2d_ss,dtauy2d_ss=dtauy2d_ss                     &
               ,dtaux2d_fd=dtaux2d_fd,dtauy2d_fd=dtauy2d_fd                     &
-              ,u1=u3d(ims,kms,j),v1=v3d(ims,kms,j)                             &
+              ,u1=ugeo(its,kts),v1=vgeo(its,kts)                               &
               ,t1=t3d(ims,kms,j),q1=qv3d(ims,kms,j)                            &
               ,del=delprsi(its,kts)                                            &
               ,prsi=pdhi(its,kts)                                              &
@@ -231,28 +243,39 @@ contains
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
 
+      do k = kts,kte
+         do i = its,ite
+! rotate tendencies from zonal/meridional to model grid
+           rublten(i,k,j) = rublten(i,k,j)+dudt(i,k)*cosa(i,j) + dvdt(i,k)*sina(i,j)
+           rvblten(i,k,j) = rvblten(i,k,j)-dudt(i,k)*sina(i,j) + dvdt(i,k)*cosa(i,j)
+         end do
+      end do
+
+
       IF (gwd_opt == 33) then !research mode
         do k = kts,kte
           do i = its,ite
-             dtaux3d_ls(i,k,j)=dtaux2d_ls(i,k)
-             dtaux3d_bl(i,k,j)=dtaux2d_bl(i,k)
-             dtaux3d_ss(i,k,j)=dtaux2d_ss(i,k)
-             dtaux3d_fd(i,k,j)=dtaux2d_fd(i,k)
-             dtauy3d_ls(i,k,j)=dtauy2d_ls(i,k)
-             dtauy3d_bl(i,k,j)=dtauy2d_bl(i,k)
-             dtauy3d_ss(i,k,j)=dtauy2d_ss(i,k)
-             dtauy3d_fd(i,k,j)=dtauy2d_fd(i,k)
+! rotate tendencies from zonal/meridional to model grid
+             dtaux3d_ls(i,k,j)=dtaux2d_ls(i,k)*cosa(i,j)+dtauy2d_ls(i,k)*sina(i,j)
+             dtaux3d_bl(i,k,j)=dtaux2d_bl(i,k)*cosa(i,j)+dtauy2d_bl(i,k)*sina(i,j)
+             dtaux3d_ss(i,k,j)=dtaux2d_ss(i,k)*cosa(i,j)+dtauy2d_ss(i,k)*sina(i,j)
+             dtaux3d_fd(i,k,j)=dtaux2d_fd(i,k)*cosa(i,j)+dtauy2d_fd(i,k)*sina(i,j)
+             dtauy3d_ls(i,k,j)=-dtaux2d_ls(i,k)*sina(i,j)+dtauy2d_ls(i,k)*cosa(i,j)
+             dtauy3d_bl(i,k,j)=-dtaux2d_bl(i,k)*sina(i,j)+dtauy2d_bl(i,k)*cosa(i,j)
+             dtauy3d_ss(i,k,j)=-dtaux2d_ss(i,k)*sina(i,j)+dtauy2d_ss(i,k)*cosa(i,j)
+             dtauy3d_fd(i,k,j)=-dtaux2d_fd(i,k)*sina(i,j)+dtauy2d_fd(i,k)*cosa(i,j)
           enddo
         enddo
         do i = its,ite
-             dusfcg_ls(i,j)=dusfc_ls(i)
-             dusfcg_bl(i,j)=dusfc_bl(i)
-             dusfcg_ss(i,j)=dusfc_ss(i)
-             dusfcg_fd(i,j)=dusfc_fd(i)
-             dvsfcg_ls(i,j)=dvsfc_ls(i)
-             dvsfcg_bl(i,j)=dvsfc_bl(i)
-             dvsfcg_ss(i,j)=dvsfc_ss(i)
-             dvsfcg_fd(i,j)=dvsfc_fd(i)
+! rotate tendencies from zonal/meridional to model grid
+           dusfcg_ls(i,j)=dusfc_ls(i)*cosa(i,j)+dvsfc_ls(i)*sina(i,j)
+           dusfcg_bl(i,j)=dusfc_bl(i)*cosa(i,j)+dvsfc_bl(i)*sina(i,j)
+           dusfcg_ss(i,j)=dusfc_ss(i)*cosa(i,j)+dvsfc_ss(i)*sina(i,j)
+           dusfcg_fd(i,j)=dusfc_fd(i)*cosa(i,j)+dvsfc_fd(i)*sina(i,j)
+           dvsfcg_ls(i,j)=-dusfc_ls(i)*sina(i,j)+dvsfc_ls(i)*cosa(i,j)
+           dvsfcg_bl(i,j)=-dusfc_bl(i)*sina(i,j)+dvsfc_bl(i)*cosa(i,j)
+           dvsfcg_ss(i,j)=-dusfc_ss(i)*sina(i,j)+dvsfc_ss(i)*cosa(i,j)
+           dvsfcg_fd(i,j)=-dusfc_fd(i)*sina(i,j)+dvsfc_fd(i)*cosa(i,j)
         enddo
       ENDIF
 
@@ -321,10 +344,10 @@ contains
 !-------------------------------------------------------------------------------
 !
 !  input                                                                
-!        dudt (ims:ime,kms:kme)  non-lin tendency for u wind component
-!        dvdt (ims:ime,kms:kme)  non-lin tendency for v wind component
-!        u1(ims:ime,kms:kme) zonal wind / sqrt(rcl)  m/sec  at t0-dt
-!        v1(ims:ime,kms:kme) meridional wind / sqrt(rcl) m/sec at t0-dt
+!        dudt (its:ite,kts:kte)  non-lin tendency for u wind component
+!        dvdt (its:ite,kts:kte)  non-lin tendency for v wind component
+!        u1(its:ite,kts:kte) zonal wind / sqrt(rcl)  m/sec  at t0-dt
+!        v1(its:ite,kts:kte) meridional wind / sqrt(rcl) m/sec at t0-dt
 !        t1(ims:ime,kms:kme) temperature deg k at t0-dt
 !        q1(ims:ime,kms:kme) specific humidity at t0-dt
 !
@@ -345,16 +368,16 @@ contains
                             its,ite, jts,jte, kts,kte
 !
    real                 ::  g,rd,rv,fv,cp,pi,dxmeter,deltim,rcl
-   real                 ::  dudt(ims:ime,kms:kme),dvdt(ims:ime,kms:kme),       &
+   real                 ::  dudt(its:ite,kts:kte),dvdt(its:ite,kts:kte),       &
                             dthdt(ims:ime,kms:kme),                            &
                             dtaux2d_ls(ims:ime,kms:kme),dtauy2d_ls(ims:ime,kms:kme), &
                             dtaux2d_bl(ims:ime,kms:kme),dtauy2d_bl(ims:ime,kms:kme), &
                             dtaux2d_ss(ims:ime,kms:kme),dtauy2d_ss(ims:ime,kms:kme), &
                             dtaux2d_fd(ims:ime,kms:kme),dtauy2d_fd(ims:ime,kms:kme), &
-                            u1(ims:ime,kms:kme),v1(ims:ime,kms:kme),           & 
                             t1(ims:ime,kms:kme),q1(ims:ime,kms:kme),           &
                             zl(ims:ime,kms:kme),prsl(its:ite,kts:kte),         &
                             prslk(ims:ime,kms:kme)
+   real                 ::  u1(its:ite,kts:kte),v1(its:ite,kts:kte)
    real                 ::  prsi(its:ite,kts:kte+1),del(its:ite,kts:kte)
    real                 ::  oa4(its:ite,4),ol4(its:ite,4),                     &
                             oa4ss(its:ite,4),ol4ss(its:ite,4)
@@ -487,11 +510,16 @@ integer, parameter ::                                                          &
    real                 :: taufb(its:ite,kts:kte+1)
 
 !
-!  coefficients for scale-aware aspects of orographic drag
+! misc. coefficients
 !
    real, parameter ::      &
-       clf_coeff = 3.4E+07  ! "effective length" coeff or large-scale GWD
-                            ! Note:  Can be used as "tuning knob"
+      clf_coeff = 3.4E+07, &  ! "effective length" coeff or large-scale GWD
+                              ! Note:  Can be used as "tuning knob"
+      clf_coeff_ss = 0.1, &        ! Adjustment for small-scale GWD
+      a1_coeff = 0.00026615161, &  ! Coefficient for TOFD from Beljaars et al. (2004)
+      a2_coeff = 0.005363, &       !  ""
+      TOFD_coeff = 0.0759, &       !  ""
+      Hefold_nom = 1500.           ! Nominal TOFD e-folding height (m)
 
 
 !
@@ -894,10 +922,8 @@ ENDIF   ! (gsl_gwd_ls .EQ. 1).or.(gsl_gwd_bl .EQ. 1)
     do i=its,ite
        hpbl2 = hpbl(i)+10.
        kpbl2 = kpbl(i)
-       !kvar = MIN(kpbl, k-level of var)
        kvar = 1
        do k=kts+1,MAX(kpbl(i),kts+1)
-!          IF (za(i,k)>2.*varss_stoch(i) .or. za(i,k)>2*varmax_ss) then
           IF (za(i,k)>300.) then
              kpbl2 = k
              IF (k == kpbl(i)) then
@@ -908,25 +934,16 @@ ENDIF   ! (gsl_gwd_ls .EQ. 1).or.(gsl_gwd_bl .EQ. 1)
              exit
           ENDIF
        enddo
-       !kpbl2 = MAX(MIN(kpbl(i),8),kts+1)
        if((xland1(i)-1.5).le.0. .and. 2.*varss_stoch(i).le.hpbl(i))then
           if(br1(i).gt.0. .and. thvx(i,kpbl2)-thvx(i,kts) > 0.)then
             cleff_ss    = sqrt(dxy(i)**2 + dxyp(i)**2)
-!            cleff_ss    = 3. * max(dxmeter,cleff_ss)
-!            cleff_ss    = 10. * max(dxmax_ss,cleff_ss)  _1=10, _2=1, _3=0.5, _4=0.25, _5=0.125
-            cleff_ss    = 0.1 * max(dxmax_ss,cleff_ss)
+            cleff_ss    = clf_coeff_ss * max(dxmax_ss,cleff_ss)
             coefm_ss(i) = (1. + olss(i)) ** (oass(i)+1.)
             xlinv(i) = coefm_ss(i) / cleff_ss
-            !govrth(i)=g/(0.5*(thvx(i,kpbl(i))+thvx(i,kts)))
             govrth(i)=g/(0.5*(thvx(i,kpbl2)+thvx(i,kts)))
-            !XNBV=sqrt(govrth(i)*(thvx(i,kpbl(i))-thvx(i,kts))/hpbl(i))
             XNBV=sqrt(govrth(i)*(thvx(i,kpbl2)-thvx(i,kts))/hpbl2)
 !
-            !if(abs(XNBV/u1(i,kpbl(i))).gt.xlinv(i))then
             if(abs(XNBV/u1(i,kpbl2)).gt.xlinv(i))then
-              !tauwavex0=0.5*XNBV*xlinv(i)*(2*MIN(varss_stoch(i),75.))**2*ro(i,kts)*u1(i,kpbl(i))
-              !tauwavex0=0.5*XNBV*xlinv(i)*(2.*MIN(varss_stoch(i),40.))**2*ro(i,kts)*u1(i,kpbl2)
-              !tauwavex0=0.5*XNBV*xlinv(i)*(2.*MIN(varss_stoch(i),40.))**2*ro(i,kts)*u1(i,3)
               var_temp = MIN(varss_stoch(i),varmax_ss_stoch(i)) +                       &
                             MAX(0.,beta_ss*(varss_stoch(i)-varmax_ss_stoch(i)))
               tauwavex0=0.5*XNBV*xlinv(i)*(2.*var_temp)**2*ro(i,kvar)*u1(i,kvar)
@@ -935,11 +952,7 @@ ENDIF   ! (gsl_gwd_ls .EQ. 1).or.(gsl_gwd_bl .EQ. 1)
               tauwavex0=0.
             endif
 !
-            !if(abs(XNBV/v1(i,kpbl(i))).gt.xlinv(i))then
             if(abs(XNBV/v1(i,kpbl2)).gt.xlinv(i))then
-              !tauwavey0=0.5*XNBV*xlinv(i)*(2*MIN(varss_stoch(i),75.))**2*ro(i,kts)*v1(i,kpbl(i))
-              !tauwavey0=0.5*XNBV*xlinv(i)*(2.*MIN(varss_stoch(i),40.))**2*ro(i,kts)*v1(i,kpbl2)
-              !tauwavey0=0.5*XNBV*xlinv(i)*(2.*MIN(varss_stoch(i),40.))**2*ro(i,kts)*v1(i,3)
               var_temp = MIN(varss_stoch(i),varmax_ss_stoch(i)) +                       &
                             MAX(0.,beta_ss*(varss_stoch(i)-varmax_ss_stoch(i)))
               tauwavey0=0.5*XNBV*xlinv(i)*(2.*var_temp)**2*ro(i,kvar)*v1(i,kvar)
@@ -949,15 +962,8 @@ ENDIF   ! (gsl_gwd_ls .EQ. 1).or.(gsl_gwd_bl .EQ. 1)
             endif
 !
             do k=kts,kpbl(i) !MIN(kpbl2+1,kte-1)
-!original
-              !utendwave(i,k)=-1.*tauwavex0*2.*max((1.-za(i,k)/hpbl(i)),0.)/hpbl(i)
-              !vtendwave(i,k)=-1.*tauwavey0*2.*max((1.-za(i,k)/hpbl(i)),0.)/hpbl(i)
-!new
               utendwave(i,k)=-1.*tauwavex0*2.*max((1.-za(i,k)/hpbl2),0.)/hpbl2
               vtendwave(i,k)=-1.*tauwavey0*2.*max((1.-za(i,k)/hpbl2),0.)/hpbl2
-!mod-to be used in HRRRv3/RAPv4
-              !utendwave(i,k)=-1.*tauwavex0 * max((1.-za(i,k)/hpbl2),0.)**2
-              !vtendwave(i,k)=-1.*tauwavey0 * max((1.-za(i,k)/hpbl2),0.)**2
             enddo
           endif
        endif
@@ -1001,25 +1007,20 @@ IF ( (gsl_gwd_fd .EQ. 1).and.(ss_taper.GT.1.E-02) ) THEN
 
    DO i=its,ite
       IF ((xland1(i)-1.5) .le. 0.) then
-         !(IH*kflt**n1)**-1 = (0.00102*0.00035**-1.9)**-1 = 0.00026615161
           var_temp = MIN(varss_stoch(i),varmax_fd_stoch(i)) +                                   &
                         MAX(0.,beta_fd*(varss_stoch(i)-varmax_fd_stoch(i)))
-          a1=0.00026615161*var_temp**2
-!         a1=0.00026615161*MIN(varss_stoch(i),varmax_fd)**2
-!         a1=0.00026615161*(0.5*varss_stoch(i))**2
-         ! k1**(n1-n2) = 0.003**(-1.9 - -2.8) = 0.003**0.9 = 0.005363
-         a2=a1*0.005363
+         a1=a1_coeff*var_temp**2
+         a2=a1*a2_coeff
          ! Revise e-folding height based on PBL height and topographic std. dev. -- M. Toy 3/12/2018
          H_efold = max(2*varss_stoch(i),hpbl(i))
-         H_efold = min(H_efold,1500.)
+         H_efold = min(H_efold,Hefold_nom)
          DO k=kts,kte
             wsp=SQRT(u1(i,k)**2 + v1(i,k)**2)
-            ! alpha*beta*Cmd*Ccorr*2.109 = 12.*1.*0.005*0.6*2.109 = 0.0759 
-            utendform(i,k)=-0.0759*wsp*u1(i,k)* &
+            ! Eqn. (16) of Beljaars et al. (2004)
+            utendform(i,k)=-TOFD_coeff*wsp*u1(i,k)* &
                            EXP(-(za(i,k)/H_efold)**1.5)*a2*za(i,k)**(-1.2)*ss_taper
-            vtendform(i,k)=-0.0759*wsp*v1(i,k)* &
+            vtendform(i,k)=-TOFD_coeff*wsp*v1(i,k)* &
                            EXP(-(za(i,k)/H_efold)**1.5)*a2*za(i,k)**(-1.2)*ss_taper
-            !IF(za(i,k) > 4000.) exit
          ENDDO
       ENDIF
    ENDDO

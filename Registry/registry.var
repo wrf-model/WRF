@@ -431,7 +431,6 @@ rconfig   integer   mw_emis_sea             namelist,wrfvar14  1  1        - "mw
 rconfig   integer   tovs_min_transfer       namelist,wrfvar14  1  10       - "tovs_min_transfer"       ""  ""     
 rconfig   logical   tovs_batch              namelist,wrfvar14  1  .false.  - "tovs_batch"              ""  "" 
 rconfig   integer   rtm_option              namelist,wrfvar14  1  1        - "rtm_option"              ""  ""
-rconfig   integer   varbc_scan              namelist,wrfvar14  1  1        - "varbc_scan"              ""  ""
 rconfig   logical   use_crtm_kmatrix        namelist,wrfvar14  1  .true.   - "use_crtm_kmatrix"        ""  ""
 rconfig   logical   use_rttov_kmatrix       namelist,wrfvar14  1  .false.  - "use_rttov_kmatrix"       ""  ""
 rconfig   logical   crtm_cloud              namelist,wrfvar14  1  .false.  - "crtm_cloud"              ""  ""

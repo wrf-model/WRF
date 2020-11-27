@@ -5,8 +5,6 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    ! Purpose: driver routine for getting innovation vectors
    ! History:$
    !    10/22/2008 - Updated for Analysis on Arakawa-C grid (Syed RH Rizvi, NCAR)
-   !    03/2017 - Radar neighborhood no-rain scheme (radar_non_precip_opt=2)
-   !              requires all processors to call da_get_innov_vector_radar
    !-----------------------------------------------------------------------
 
    implicit none
@@ -85,10 +83,10 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    endif
 
    do n= num_fgat_time , 1, -1
-print*,"jban check timeslot=",n,iv%time
       iv%time = n
       iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
       iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
+
       if (num_fgat_time > 1) then
          if (var4d) then
             call domain_clock_get( grid, current_timestr=timestr )
@@ -100,14 +98,11 @@ print*,"jban check timeslot=",n,iv%time
          endif 
       end if
 
-!    if ( multi_inc == 0 .or. multi_inc == 1) then
-! eof_decomposition error if uesed
       ! Radiosonde:
       if (iv%info(sound)%nlocal > 0) then
          call da_get_innov_vector_sound     (it, num_qcstat_conv, grid, ob, iv)
          call da_get_innov_vector_sonde_sfc (it, num_qcstat_conv, grid, ob, iv)
       end if
-
       if (iv%info(mtgirs)%nlocal    > 0) &
          call da_get_innov_vector_mtgirs    (it, num_qcstat_conv, grid, ob, iv)
       if (iv%info(tamdar)%nlocal    > 0) &
@@ -174,7 +169,6 @@ print*,"jban check timeslot=",n,iv%time
       if (iv%info(airsr)%nlocal     > 0) &
       call da_get_innov_vector_airsr    (it,num_qcstat_conv, grid, ob, iv)
  
-!   end if
    !----------------------------------------------
    ! [5]  write out iv in ascii format
    !-----------------------------------------------
@@ -195,33 +189,14 @@ print*,"jban check timeslot=",n,iv%time
          end if
 
       endif
+
       if (n > 1 .and. var4d) call domain_clockadvance (grid)
       call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
+
    end do
+
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
-       if ( use_varbc .or. freeze_varbc ) then
-!         if ( num_fgat_time > 1 ) call da_varbc_coldstart(iv)
-!      end if
-!      if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
-          if ( num_fgat_time > 1 ) then
-             iv%instid(:)%info%n1 = 1
-             iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(num_fgat_time)
-             call da_varbc_coldstart(iv)
-             do n= num_fgat_time , 1, -1
-                iv%time = n 
-                iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1 
-                iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time) 
-                call da_varbc_direct(iv)
-                if (qc_rad) then
-                   call da_qc_rad(it, ob, iv) 
-                end if     ! qc is conducted inside n1-n2
-             end do
-          end if
-       end if
-       if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)   !fixed by wuyl
-   end if
-#endif
       iv%time = num_fgat_time
       iv%instid(:)%info%n1 = 1
       iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(num_fgat_time)
@@ -281,6 +256,7 @@ print*,"jban check timeslot=",n,iv%time
       write(unit=stdout,fmt='(A,A)') 'Restore to first guess :fg at ',trim(analysis_date(1:19))
       call da_read_basicstates ( xbx, grid, config_flags, timestr, filename1)
    end if
+
    if (num_fgat_time > 1) then
       call nl_get_time_step ( grid%id, time_step_seconds)
       call domain_clock_set (grid, time_step_seconds=time_step_seconds)
@@ -351,7 +327,6 @@ print*,"jban check timeslot=",n,iv%time
       call da_write_iv_rad_ascii(it,ob,iv)
    end if
 #endif
-
 
    !----------------------------------------------------------
    ! [6]  write out filtered radiance obs in binary format

@@ -137,7 +137,6 @@
             deallocate (iv%instid(i)%scanline)
             deallocate (iv%instid(i)%ifgat)
             deallocate (iv%instid(i)%cloud_flag)
-            deallocate (iv%instid(i)%tropt)
             deallocate (iv%instid(i)%rain_flag)
             deallocate (iv%instid(i)%satzen)
             deallocate (iv%instid(i)%satazi)

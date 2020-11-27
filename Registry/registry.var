@@ -188,7 +188,6 @@ rconfig   logical   use_eos_amsuaobs        namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_hsbobs              namelist,wrfvar4  1  .false.  - "use_hsbobs"               ""  ""
 rconfig   logical   use_ssmisobs            namelist,wrfvar4  1  .false.  - "use_ssmisobs"             ""  ""
 rconfig   logical   use_iasiobs             namelist,wrfvar4  1  .false.  - "use_iasiobs"              ""  ""
-rconfig   logical   use_ahiobs              namelist,wrfvar4  1  .false.  - "use_ahiobs"               ""  "" 
 rconfig   logical   use_seviriobs           namelist,wrfvar4  1  .false.  - "use_seviriobs"            ""  ""
 rconfig   logical   use_amsr2obs            namelist,wrfvar4  1  .false.  - "use_amsr2obs"             ""  ""
 rconfig   logical   use_ahiobs              namelist,wrfvar4  1  .false.  - "use_ahiobs"               ""  ""

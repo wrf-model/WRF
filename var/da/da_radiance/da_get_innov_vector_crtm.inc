@@ -942,6 +942,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       endif
 
    end do        ! end loop for sensor
+
    deallocate (wrf_to_crtm_mw)
    if ( use_clddet_zz ) deallocate ( geoht_full )
    call CRTM_Atmosphere_Destroy (Atmosphere)

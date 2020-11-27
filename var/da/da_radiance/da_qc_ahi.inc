@@ -493,7 +493,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
       if (.not. crtm_cloud ) then
          ! absolute departure check
          do k = 1, nchan
-            inv_grosscheck = 15.0
+            inv_grosscheck = 8.0
             if (use_satcv(2)) inv_grosscheck = 100.0
             if (abs(iv%instid(i)%tb_inv(k,n)) > inv_grosscheck) then
                 tb_qc(k)  = qc_bad

@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_radiance (it,grid, ob, iv)
+subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
 
    !---------------------------------------------------------------------------
    !  PURPOSE: Calculate innovation vector for radiance data.
@@ -24,6 +24,7 @@ subroutine da_get_innov_vector_radiance (it,grid, ob, iv)
 
    iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
    iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
+
    !------------------------------------------------------------------------
    ! [1.0] calculate components of innovation vector
    !------------------------------------------------------------------------
@@ -45,12 +46,12 @@ subroutine da_get_innov_vector_radiance (it,grid, ob, iv)
    else
       call da_warning(__FILE__,__LINE__,(/"Unknown Radiative Transfer Model"/))
    endif
+
    !------------------------------------------------------------------------
    ! [2.0] Perform (Variational) bias correction
    !------------------------------------------------------------------------
    if (use_varbc .or. freeze_varbc) then
       call da_varbc_pred(iv)
-	  
       !varbc coldstart can not be done here when num_fgat_time>1
       !because da_varbc_coldstart uses all obs from all time slots
    else if (biascorr) then

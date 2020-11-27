@@ -65,7 +65,8 @@ subroutine da_qc_rad (it, ob, iv)
       seviri = trim(rttov_inst_name(rtminit_sensor(i))) == 'seviri'
       amsr2 = trim(rttov_inst_name(rtminit_sensor(i))) == 'amsr2'
       imager = trim(rttov_inst_name(rtminit_sensor(i))) == 'imager'
-      ahi = trim(rttov_inst_name(rtminit_sensor(i))) == 'ahi'
+         ahi = trim(rttov_inst_name(rtminit_sensor(i))) == 'ahi'
+
       if (hirs) then
          ! 1.0 QC for HIRS
          call da_qc_hirs(it, i,nchan,ob,iv)
@@ -103,8 +104,6 @@ subroutine da_qc_rad (it, ob, iv)
          call da_qc_ahi(it,i,nchan,ob,iv)
       else if (imager) then
          call da_qc_goesimg(it,i,nchan,ob,iv)
-      else if (ahi) then
-         call da_qc_ahi(it,i,nchan,ob,iv)
       else
          write(unit=message(1),fmt='(A,A)') &
             "Unrecognized instrument",trim(rttov_inst_name(rtminit_sensor(i)))

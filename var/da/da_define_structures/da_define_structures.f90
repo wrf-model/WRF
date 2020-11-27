@@ -609,7 +609,6 @@ module da_define_structures
       real,    pointer     :: vegfra(:)
       real,    pointer     :: clwp(:) ! model/guess clwp
       real,    pointer     :: clw(:)  ! currently AMSR2 only
-      real,    pointer     :: tropt(:)  !(Zhuge and Zou, 2016, JAMC, cloud check),rewritted by wuyl
       real,    pointer     :: SDob(:)   !(Okamoto, 2017, AHI allsky QC) ,rewritted by wuyl
       real,    pointer     :: ps_jacobian(:,:) ! only RTTOV
       real,    pointer     :: ts_jacobian(:,:) ! only over water CRTM

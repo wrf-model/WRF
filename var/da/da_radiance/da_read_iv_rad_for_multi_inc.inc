@@ -29,7 +29,7 @@ subroutine da_read_iv_rad_for_multi_inc (it,ob, iv )
 
    real, allocatable :: lat(:),lon(:)
 
-   if (trace_use) call da_trace_entry("da_read_iv_rad_ascii")
+   if (trace_use) call da_trace_entry("da_read_iv_rad_for_multi_inc")
 
    write(unit=message(1),fmt='(A)') 'Reading radiance OMB for multi_inc'
    call da_message(message(1:1))
@@ -128,7 +128,7 @@ subroutine da_read_iv_rad_for_multi_inc (it,ob, iv )
       end do !num_fgat
    end do ! end do instruments
 
-if (trace_use) call da_trace_exit("da_read_iv_rad_ascii")
+if (trace_use) call da_trace_exit("da_read_iv_rad_for_multi_inc")
 
 end subroutine da_read_iv_rad_for_multi_inc 
 

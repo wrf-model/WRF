@@ -10,10 +10,10 @@ module da_radiance1
    use module_radiance, only : CRTM_Planck_Radiance, CRTM_Planck_Temperature
 #endif
 #ifdef RTTOV
-   use module_radiance, only : coefs, coef_scatt
+   use module_radiance, only : coefs
 #endif
 
-   use da_control, only : trace_use,missing_r, rootproc, ierr,comm,root,&
+   use da_control, only : trace_use,missing_r, rootproc, &
       stdout,myproc,qc_good,num_fgat_time,qc_bad, &
       use_error_factor_rad,biasprep_unit,obs_qc_pointer, filename_len, &
       print_detail_rad, rtm_option, trace_use_dull, &
@@ -28,7 +28,7 @@ module da_radiance1
       be_type, clddet_geoir_type, superob_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
    use da_par_util, only : da_proc_stats_combine
-   use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints,true_mpi_real
+   use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
    use da_reporting, only : da_error, message
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual_new, da_eof_decomposition
@@ -62,7 +62,6 @@ module da_radiance1
       real               ::   ps,ts,t2m,mr2m,u10,v10, clwp
       real               ::   smois, tslb, snowh, elevation,soiltyp,vegtyp,vegfra
       real               ::   clw
-      real               ::   tropt
       integer            ::   isflg
       integer            ::   cloudflag
 
@@ -83,14 +82,6 @@ module da_radiance1
       real   ,  pointer  ::  t_jac(:,:) => null()
       real   ,  pointer  ::  q_jac(:,:) => null()
       real   ,  pointer  ::  ps_jac(:)  => null()
-
-      real   ,  pointer  ::  ph(:)
-      real   ,  pointer  ::  cc(:)
-      real   ,  pointer  ::  clw(:)   ! kg/kg
-      real   ,  pointer  ::  ciw(:)   ! kg/kg
-      real   ,  pointer  ::  rain(:)  ! kg/kg
-      real   ,  pointer  ::  sp(:)    ! kg/kg
-
    end type con_vars_type
 
    type con_cld_vars_type
@@ -192,6 +183,7 @@ module da_radiance1
       real,    pointer   :: clw(:)        ! cloud liquid water (kg/kg)
       real,    pointer   :: ciw(:)        ! cloud ice water    (kg/kg)
       integer, pointer   :: cloudflag(:)  ! cloud flag
+
    end type rad_data_type
 
    type bias_type
@@ -218,7 +210,6 @@ module da_radiance1
    integer, allocatable :: tovs_recv_start(:,:)
    integer, allocatable :: tovs_copy_count(:)
 
-include 'mpif.h'
 contains
 
 #include "da_jo_and_grady_rad.inc"

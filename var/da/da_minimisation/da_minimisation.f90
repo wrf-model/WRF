@@ -33,7 +33,7 @@ module da_minimisation
    use da_buoy , only : da_calculate_grady_buoy, da_ao_stats_buoy, &
       da_oi_stats_buoy,da_get_innov_vector_buoy, da_residual_buoy, &
       da_jo_and_grady_buoy
-   use da_control, only : trace_use, var4d_bin, trajectory_io, analysis_date, qc_rad, &
+   use da_control, only : trace_use, var4d_bin, trajectory_io, analysis_date, &
       var4d, rootproc,jcdfi_use,jcdfi_diag,ierr,comm,num_fgat_time, &
       var4d_lbc, stdout, eps, stats_unit, test_dm_exact, global, multi_inc, &
       calculate_cg_cost_fn,anal_type_randomcv,cv_size_domain,je_factor, &
@@ -165,7 +165,7 @@ module da_minimisation
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &
       da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj
 #if defined(RTTOV) || defined(CRTM)
-   use da_varbc, only : da_varbc_tl,da_varbc_adj,da_varbc_precond,da_varbc_coldstart,da_varbc_direct
+   use da_varbc, only : da_varbc_tl,da_varbc_adj,da_varbc_precond,da_varbc_coldstart, da_varbc_direct
 #endif
    use da_vtox_transforms, only : da_transform_vtox,da_transform_vtox_adj,da_transform_xtoxa,da_transform_xtoxa_adj
    use da_vtox_transforms, only : da_copy_xa, da_add_xa, da_transform_vpatox, da_transform_vpatox_adj

@@ -219,7 +219,7 @@ bufrfile:  do ibufr=1,numbufr
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
-         (/"Cannot open file "//infile/))
+         (/"Cannot open file "//filename/))
       if (trace_use) call da_trace_exit("da_read_obs_fy3")
       return
    end if

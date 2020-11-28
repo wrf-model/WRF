@@ -1,4 +1,4 @@
-subroutine da_write_iv_rad_ascii (it,ob, iv )
+subroutine da_write_iv_rad_ascii (it, ob, iv )
 
    !---------------------------------------------------------------------------
    ! Purpose: write out innovation vector structure for radiance data.
@@ -320,7 +320,7 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
             end if !  end if write_jacobian
 
          end if ! end if proc_domain
-      end do ! end do pixels 
+      end do ! end do pixels
       if (rtm_option==rtm_option_crtm .and. write_jacobian ) then
          deallocate ( dtransmt )
          deallocate ( transmt_jac )

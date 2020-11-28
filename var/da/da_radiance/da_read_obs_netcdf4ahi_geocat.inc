@@ -214,7 +214,7 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
 
      ! iret = nf90_inq_dimid(ncid, "elements", LonDimID)
      ! iret = nf90_inquire_dimension(ncid, LonDimID, len=nlongitude)
-
+  
      ! write(unit=stdout,fmt=*) nlongitude,nlatitude
 	   
    ! read array: time

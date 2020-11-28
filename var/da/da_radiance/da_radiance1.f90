@@ -61,17 +61,15 @@ module da_radiance1
       real,    pointer   ::   pm(:), tm(:), qm(:), qrn(:), qcw(:),qci(:),qsn(:),qgr(:)
       real               ::   ps,ts,t2m,mr2m,u10,v10, clwp
       real               ::   smois, tslb, snowh, elevation,soiltyp,vegtyp,vegfra
-      real               ::   clw 
+      real               ::   clw
       real               ::   tropt
       integer            ::   isflg
       integer            ::   cloudflag
-      real               ::   SDob
 
 !      real,    pointer   ::   tb_xb(:)
       real, pointer             :: tb_ob(:)
       real, pointer             :: tb_inv(:)
       real, pointer             :: tb_qc(:)
-      real, pointer             :: ca_mean(:)
       real, pointer             :: tb_error(:)
       integer                   :: sensor_index
       type (datalink_type), pointer  :: next ! pointer to next data

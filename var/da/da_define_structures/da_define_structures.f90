@@ -538,7 +538,6 @@ module da_define_structures
       integer              :: num_rad, nchan, nlevels
       integer              :: num_rad_glo
       integer, pointer     :: ichan(:)
-      real,    pointer     :: ca_mean(:,:)      ! IR allsky control variable
       real,    pointer     :: tb_inv(:,:)
       integer, pointer     :: tb_qc(:,:)
       real,    pointer     :: tb_error(:,:)
@@ -609,7 +608,6 @@ module da_define_structures
       real,    pointer     :: vegfra(:)
       real,    pointer     :: clwp(:) ! model/guess clwp
       real,    pointer     :: clw(:)  ! currently AMSR2 only
-      real,    pointer     :: SDob(:)   !(Okamoto, 2017, AHI allsky QC) ,rewritted by wuyl
       real,    pointer     :: ps_jacobian(:,:) ! only RTTOV
       real,    pointer     :: ts_jacobian(:,:) ! only over water CRTM
       real,    pointer     :: windspeed_jacobian(:,:) ! only MV and over water CRTM

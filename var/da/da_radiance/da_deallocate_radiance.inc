@@ -123,8 +123,6 @@
                deallocate (iv%instid(i)%tb_xb_clr)
             end if
             deallocate (iv%instid(i)%tb_qc)
-            deallocate (iv%instid(i)%ca_mean)
-            deallocate (iv%instid(i)%SDob)
             deallocate (iv%instid(i)%tb_inv)
             deallocate (iv%instid(i)%tb_error)
             deallocate (iv%instid(i)%tb_sens)

@@ -80,7 +80,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       end if
       if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
          allocate (iv%instid(i)%cloudflag(iv%instid(i)%num_rad))
-      end if     
+      end if	  
       allocate (iv%instid(i)%ps(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_xb(nchan,iv%instid(i)%num_rad))
       if ( crtm_cloud ) then

@@ -93,13 +93,13 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
    data tbb_name/'himawari_8_ahi_channel_7_brightness_temperature',&
                  'himawari_8_ahi_channel_8_brightness_temperature',&
                  'himawari_8_ahi_channel_9_brightness_temperature',&
-				 'himawari_8_ahi_channel_10_brightness_temperature',&
-				 'himawari_8_ahi_channel_11_brightness_temperature',&
-				 'himawari_8_ahi_channel_12_brightness_temperature',&
-				 'himawari_8_ahi_channel_13_brightness_temperature',&
-				 'himawari_8_ahi_channel_14_brightness_temperature',&
-				 'himawari_8_ahi_channel_15_brightness_temperature',&
-				 'himawari_8_ahi_channel_16_brightness_temperature'/   
+                 'himawari_8_ahi_channel_10_brightness_temperature',&
+                 'himawari_8_ahi_channel_11_brightness_temperature',&
+                 'himawari_8_ahi_channel_12_brightness_temperature',&
+                 'himawari_8_ahi_channel_13_brightness_temperature',&
+                 'himawari_8_ahi_channel_14_brightness_temperature',&
+                 'himawari_8_ahi_channel_15_brightness_temperature',&
+                 'himawari_8_ahi_channel_16_brightness_temperature'/   
 
    if (trace_use) call da_trace_entry("da_read_obs_netcdf4ahi_geocat")
 
@@ -178,20 +178,12 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
  
  
   !open the data area info file 
-!   open(unit=1990,file='ahi_info',status='old',iostat=iret)
    call da_get_unit(ahi_info_unit)
    open(unit=ahi_info_unit,file='ahi_info',status='old',iostat=iret)
    if(iret /= 0)then
        call da_warning(__FILE__,__LINE__,(/"area_info file read error"/))
    endif	  
   !read date information
-!   read(1990,*) 
-!   read(1990,*) 
-!   read(1990,*) 
-!   read(1990,*) 
-!   read(1990,*) 
-!   read(1990,*) lonstart,latstart,nlongitude,nlatitude 
-!   close(1990)
    read(ahi_info_unit,*) 
    read(ahi_info_unit,*) 
    read(ahi_info_unit,*) 
@@ -219,8 +211,10 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
    ! read dimensions: 	latitude and longitude
      ! iret = nf90_inq_dimid(ncid, "lines", LatDimID)
      ! iret = nf90_inquire_dimension(ncid, LatDimID, len=nlatitude)
+
      ! iret = nf90_inq_dimid(ncid, "elements", LonDimID)
      ! iret = nf90_inquire_dimension(ncid, LonDimID, len=nlongitude)
+
      ! write(unit=stdout,fmt=*) nlongitude,nlatitude
 	   
    ! read array: time
@@ -318,6 +312,7 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
  
    ! close infile_tb file 		 
       iret = nf90_close(ncid)
+
      !open infile_clp file 
       got_clp_file = .false.
       iret = nf90_open(fname_clp(ifile), nf90_NOWRITE, ncid)

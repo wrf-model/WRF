@@ -65,5 +65,6 @@ MRI-4DVAR run only needs be.dat files at different inner loop resolutions.
 wraper_mri3d4dvar.csh  : wrapper script to configure MRI-4DVar
 run_mri3d4dvar.csh_pbs : run 3-step MRI-4DVar with PBS job scheduler
 run_mri3d4dvar.csh_lsf : run 3-step MRI-4DVar with LSF job scheduler
+*.ncl: NCL scripts only for debugging purposes.
 
 No support can be provided for MRI-4DVar.

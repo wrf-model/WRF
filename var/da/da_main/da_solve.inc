@@ -58,9 +58,6 @@
    integer   :: vp_unit, iost
    character(len=13) :: vpfile ! vp_input.0001
    integer   :: i1,i2,i3,i4,i5,i6
-   !integer   :: i11,i22,i33,i44,i55,i66
-   !integer   :: dim1, dim2, dim3
-   !integer   :: mz1, mz2, mz3, mz4, mz5
    logical :: ex
 
    character(len=10) :: this_time

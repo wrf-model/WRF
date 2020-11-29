@@ -13,7 +13,7 @@ module da_radiance1
    use module_radiance, only : coefs
 #endif
 
-   use da_control, only : trace_use,missing_r, rootproc, &
+   use da_control, only : trace_use,missing_r, rootproc, ierr,comm,root,&
       stdout,myproc,qc_good,num_fgat_time,qc_bad, &
       use_error_factor_rad,biasprep_unit,obs_qc_pointer, filename_len, &
       print_detail_rad, rtm_option, trace_use_dull, &
@@ -28,7 +28,7 @@ module da_radiance1
       be_type, clddet_geoir_type, superob_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
    use da_par_util, only : da_proc_stats_combine
-   use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
+   use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints,true_mpi_real,mpi_sum,mpi_integer
    use da_reporting, only : da_error, message
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual_new, da_eof_decomposition

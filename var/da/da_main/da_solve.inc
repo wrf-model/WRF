@@ -518,19 +518,6 @@
        cv_size_domain_je = (ide_int - ids_int + 1) * (jde_int - jds_int + 1) * be % alpha % mz * be % ne
     endif
    
-    !write (*,*) "--------- Debug ---------------"
-    !write (*,*) "ids,ide,jds,jde,kds,kde= ", ids,ide,jds,jde,kds,kde
-    !write (*,*) "ips,ipe,jps,jpe,kps,kpe= ", ips,ipe,jps,jpe,kps,kpe
-    !write (*,*) "its,ite,jts,jte,kts,kte= ", its,ite,jts,jte,kts,kte
-    !write (*,*) "ims,ime,jms,jme,kms,kme= ", ims,ime,jms,jme,kms,kme
-    !write (*,*) "mz 1-5= ",be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz
-    !write (*,*) "be % cv % size_jb = ", be % cv % size_jb
-    !write (*,*) "be % cv % size_jp = ", be % cv % size_jp
-    !write (*,*) "be % cv % size_js = ", be % cv % size_js
-    !write (*,*) "be % cv % size_jl = ", be % cv % size_jl
-    !write (*,*) "be % cv % size_je = ", be % cv % size_je
-    !write (*,*) "--------- Debug ---------------"
-
    !---------------------------------------------------------------------------
    ! [5.2] Set up observation bias correction (VarBC):
    !---------------------------------------------------------------------------
@@ -623,13 +610,6 @@
 !        allocate (full_eignvec(cv_size))
 !      end if
 
-! liuz: if multi_inc == 0: run normal 3D/4D-Var
-!------------------------------------------------------------------------
-      call da_initialize_cv (cv_size, cvt)
-      call da_zero_vp_type (grid%vp)
-      call da_zero_vp_type (grid%vv)
-
-      if ( multi_inc == 2 ) then
       !------------------------------------------------------
       ! set CV to random noise ("RANDOMCV")
       !------------------------------------------------------
@@ -656,12 +636,15 @@
          ! Done with randomcv.
          ! Set the following to skip some code to get to the deallocation part.
          max_ext_its = 0
-         outer_loop_restart = .false.
       end if  !anal_type_randomcv
 
-      if ( outer_loop_restart ) then
-         !call da_get_unit(cvt_unit)
-         cvt_unit=600
+! mri-4dvar: if multi_inc == 0: run normal 3D/4D-Var
+!------------------------------------------------------------------------
+      call da_initialize_cv (cv_size, cvt)
+      call da_zero_vp_type (grid%vp)
+      call da_zero_vp_type (grid%vv)
+
+      if ( multi_inc == 2 ) then
          if ( max_ext_its > 1 ) then
            max_ext_its=1
            write(unit=message(1),fmt='(a)') "Re-set max_ext_its = 1 for multi_inc==2"
@@ -686,17 +669,7 @@
                write(unit=message(1),fmt='(a)') 'Reading vp from : '//trim(vpfile)
            end if 
            call da_message(message(1:1))
-           !read(vp_unit) mz1, mz2, mz3, mz4, mz5
-           !print *, 'mz1-5=',mz1, mz2, mz3, mz4, mz5
            read(vp_unit) i1, i2, i3, i4, i5, i6 ! read dimension of patch for current processor
-           !               i11, i22, i33, i44, i55, i66, &
-           !               dim1, dim2, dim3
-           !if ( i1 /= ips ) print *, "task=", myproc, "i1=",i1, "ips=",ips
-           !if ( i2 /= ipe ) print *, "task=", myproc, "i2=",i2, "ipe=",ipe
-           !if ( i3 /= jps ) print *, "task=", myproc, "i3=",i3, "jps=",jps
-           !if ( i4 /= jpe ) print *, "task=", myproc, "i4=",i4, "jpe=",jpe
-           !if ( i5 /= kps ) print *, "task=", myproc, "i5=",i5, "kps=",kps
-           !if ( i6 /= kpe ) print *, "task=", myproc, "i6=",i6, "kpe=",kpe
            allocate( v1(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
            allocate( v2(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
            allocate( v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
@@ -781,7 +754,7 @@
            call da_initialize_cv (cv_size, cvt)
          end if
       end if
-! liuz: -------------------------------------------
+! mri-4dvar -------------------------------------------
 
       call da_zero_vp_type (grid%vv)
       call da_zero_vp_type (grid%vp)
@@ -818,7 +791,7 @@
 
       call da_initialize_cv (cv_size, xhat)
 
-! liuz:----------------------
+! mri-4dvar----------------------
 ! Apply inverse transform of squareroot(B) for full-resolution non-stop Var
 ! from 2nd outer loop, this is to check correctness of inverse U transform
 ! does not apply this setting for real world application
@@ -829,12 +802,12 @@
       endif
 
 ! Reinitialize cvt=0 for full-resolution non-stop Var for each loop
-!------------------------------
+!------another option not tested --------------
       if (multi_inc == 0 .and. it > 1 .and. use_interpolate_cvt) then
          print '(/10X,"===> Reinitialize cvt as zeros for outer loop ",i2)', it
          call da_initialize_cv (cv_size, cvt)
       endif
-! liuz:------------------------
+! mri-4dvar------------------------
 
       ! [8.1] Calculate nonlinear model trajectory 
 
@@ -1007,7 +980,7 @@
  
       ! Update outer-loop control variable
       cvt = cvt + xhat
-      if ( multi_inc == 2 .and. use_interpolate_cvt ) then
+      if ( multi_inc == 2 .and. use_interpolate_cvt ) then ! obsolete option
         call da_cv_to_vv( cv_size, cvt, be%cv_mz, be%ncv_mz, grid%vv )
         call da_write_vp(grid,grid%vv,'vp_output.global') ! wrtie vv to vp file
       end if
@@ -1035,11 +1008,11 @@
          call da_transform_vpatox (grid,be,grid%ep,grid%vp)
       endif
 
-! liuz:------------------------
+! mri-4dvar--------------------------
       if (multi_inc == 2 .and. use_inverse_squarerootb) then
          call da_write_vp(grid,grid%vp,'vp_output.global') ! write vp to vp file
       end if
-! liuz:--------------------------
+! mri-4dvar--------------------------
 
       call da_transform_xtoxa (grid)
 
@@ -1240,12 +1213,6 @@
 #endif
 
    if (trace_use) call da_trace_exit ("da_solve")
-
-
-contains
-
-#include "da_solve_init.inc"
-#include "da_solve_dual_res_init.inc"
 
 end subroutine da_solve
 

@@ -152,5 +152,7 @@ contains
 #include "da_wrfvar_interface.inc"
 #include "da_wrfvar_finalize.inc"
 #include "da_solve.inc"
+#include "da_solve_init.inc"
+#include "da_solve_dual_res_init.inc"
 
 end module da_wrfvar_top

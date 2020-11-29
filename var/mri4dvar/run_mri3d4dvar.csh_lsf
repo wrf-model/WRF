@@ -4,7 +4,7 @@
 set nonomatch
 set TOP_DIR=/glade/p/mmm/liuz/cwb2016
 set JOB='LSF'
-set PROJID='P64000471'
+set PROJID='NMMM0015'
 set QUEUE='regular'
 set OS=`uname -s`
 set WRFDA_DIR=$TOP_DIR/liuz_newcode/WRFDA_V38

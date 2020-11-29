@@ -19,13 +19,14 @@ da_vp_split.f90  : scatter global hires. control variables to different PEs
 
 1. To compile:
 ----------------
-      (1) need to compile WRFDA first in 4DVAR mode,
-            cd your_WRFDA_dir
-            ./clean -a
-            ./configure 4dvar
-            ./compile all_wrfvar
-      (2) cd your_WRFDA_dir/var/mri4dvar
-          make
+  (1) need to compile WRFDA first in 4DVAR mode,
+       cd your_WRFDA_dir
+       ./clean -a
+       ./configure 4dvar
+       ./compile all_wrfvar
+  (2) cd your_WRFDA_dir/var/mri4dvar
+      make
+  (3) make clean (to remove *.exe *.o files)
 
 da_bdy.exe
 da_bilin.exe
@@ -59,38 +60,10 @@ if boundary interval is less then analysis time window
 --------
 MRI-4DVAR run only needs be.dat files at different inner loop resolutions.
 
-5. How the wrapper script works
--------------------------------------
+5. sample script for running 3-stage MRI-4DVar
+----------------------------------------------
+wraper_mri3d4dvar.csh  : wrapper script to configure MRI-4DVar
+run_mri3d4dvar.csh_pbs : run 3-step MRI-4DVar with PBS job scheduler
+run_mri3d4dvar.csh_lsf : run 3-step MRI-4DVar with LSF job scheduler
 
-What does this wrapper script CAN NOT DO?
-
-   This wrapper script DOES NOT DO these
-
-     link/copy any run-time files which needed by 4DVAR run
-     generate/prepare namelist.input for 4DVAR run
-     update boundary condition
-
-What does this wrapper CAN DO?
-
-   This wrapper script DOES these
-
-     generate low resolution fg & bdy by using the high resolution fg & fg02
-     switch da_wrfvar.exe between stage1 & stage2
-     amend namelist.input for appropriate stage
-     interpolate low resolution incremental to high resolution 
-
-This wrapper script supposes these are done
- 
-1) EVERYTHING IS OK FOR A STANDARD 4DVAR RUN under the run direcotry, 
-such as be.dat, namelist.input, *.tbl, fg, fg02, wrfbdy_d01, da_wrfvar.exe, 
-da_update_bc, ob*, etc. 
-
-3) Environment variables 'RUN_CMD' is already set to specific job submit command 
-instead of the default "mpirun -np 16 " 
-
-4) namelist.input is already for a standard 4DVAR RUN (in high resolution)
-
-If everything is ready to go, just link/copy the wrapper script to the run 
-directory, call this wrapper script instead of da_wrfvar.exe for the 
-Multi-incremental 4DVAR run. 
-
+No support can be provided for MRI-4DVar.

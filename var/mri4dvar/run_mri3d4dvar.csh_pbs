@@ -4,7 +4,7 @@
 set nonomatch
 set TOP_DIR=/glade/p/mmm/liuz/cy_code/cwb2017
 set JOB='PBS' # LSF or PBS
-set PROJID='P64000471'
+set PROJID='NMMM0015'
 set QUEUE='economy'
 set OS=`uname -s`
 set WRFDA_DIR=$TOP_DIR/../WRF_Github/wrf_myfork

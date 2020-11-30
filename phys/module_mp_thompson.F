@@ -1577,7 +1577,7 @@
       enddo
 #endif
 
-!..Bug fix (2016Jun15), prevent use of uninitialized value(s) of snow moments.
+!..Bug fix (2016Jun15 and 2020Nov30), prevent use of uninitialized value(s).
       do k = kts, kte
          smo0(k) = 0.
          smo1(k) = 0.
@@ -1587,6 +1587,8 @@
          smod(k) = 0.
          smoe(k) = 0.
          smof(k) = 0.
+         mvd_r(k) = 0.
+         mvd_c(k) = 0.
       enddo
 
 !+---+-----------------------------------------------------------------+

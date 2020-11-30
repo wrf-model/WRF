@@ -2044,7 +2044,8 @@ CONTAINS
 #endif
 
 
-   IF (GWD_opt .EQ. 1) THEN
+   IF (PRESENT(GWD_opt)) THEN
+     IF (GWD_opt .EQ. 1) THEN
        IF (PRESENT(dtaux3d)) THEN
              CALL gwdo(                                              &
                U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
@@ -2065,7 +2066,7 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
        ENDIF
-   ELSEIF(gwd_opt .EQ. 3 .OR. gwd_opt .EQ. 33) THEN
+     ELSEIF(gwd_opt .EQ. 3 .OR. gwd_opt .EQ. 33) THEN
              CALL gwdo_gsl(                                         &
                U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
               ,QV3D=qv_curr                                         &
@@ -2097,6 +2098,7 @@ CONTAINS
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
+     ENDIF
    ENDIF
 
 #if (EM_CORE==1)                                                                                                                                                                             

@@ -76,7 +76,7 @@ CONTAINS
              ! Optional
                  ,hol, mol, regime                                 &
              ! Optional gravity-wave drag             
-                 ,gwd_opt                                          &
+                 ,gwd_opt,gwd_diagnostics                          &
                  ,dtaux3d,dtauy3d                                  &
                  ,dusfcg,dvsfcg,var2d,oc12d                        &
                  ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
@@ -724,7 +724,7 @@ CONTAINS
                OPTIONAL                                         , &
                INTENT(IN)    ::                           mut
 !
-   INTEGER,    OPTIONAL, INTENT(IN)    ::               gwd_opt
+   INTEGER,    OPTIONAL, INTENT(IN)    ::               gwd_opt,gwd_diagnostics
    REAL,       OPTIONAL, INTENT(IN)    ::               p_top
 !
   real,   dimension( ims:ime, kms:kme, jms:jme )                             , &
@@ -2066,7 +2066,7 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
        ENDIF
-     ELSEIF(gwd_opt .EQ. 3 .OR. gwd_opt .EQ. 33) THEN
+     ELSEIF(gwd_opt .EQ. 3) THEN
              CALL gwdo_gsl(                                         &
                U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
               ,QV3D=qv_curr                                         &
@@ -2094,6 +2094,7 @@ CONTAINS
               ,RV=r_v,EP1=ep_1,PI=3.141592653                       &
               ,DT=dtbl,DX=dx,KPBL2D=kpbl                            &
               ,ITIMESTEP=itimestep,gwd_opt=gwd_opt                  &
+              ,gwd_diagnostics=gwd_diagnostics                      &
               ,spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl      &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &

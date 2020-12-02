@@ -18,7 +18,7 @@ contains
                   ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,                             &
                   sina,cosa,znu,znw,p_top,dz,pblh,                             &
                   cp,g,rd,rv,ep1,pi,                                           &
-                  dt,dx,kpbl2d,itimestep,gwd_opt,                              &
+                  dt,dx,kpbl2d,itimestep,gwd_opt,gwd_diagnostics,              &
                   spp_pbl,pattern_spp_pbl,                                     &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
@@ -252,7 +252,7 @@ contains
       end do
 
 
-      IF (gwd_opt == 33) then !research mode
+      IF (gwd_diagnostics == 1) then !research mode
         do k = kts,kte
           do i = its,ite
 ! rotate tendencies from zonal/meridional to model grid

@@ -1045,6 +1045,7 @@ BENCH_START(pbl_driver_tim)
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
+     &        ,gwd_diagnostics=config_flags%gwd_diagnostics &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
      &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &

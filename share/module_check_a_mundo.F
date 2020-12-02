@@ -1650,13 +1650,13 @@
             model_config_rec%gwd_gsl_used = 1
          END IF
       ENDDO
-      model_config_rec%gwd_used_33 = 0
-      DO i = 1, model_config_rec % max_dom
-         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%gwd_opt(i) .EQ. 33 ) THEN
-            model_config_rec%gwd_used_33 = 1
-         END IF
-      ENDDO
+      ! Check if user is requesting extra gravity-wave-drag diagnostics
+      ! for GSL GWD scheme
+      model_config_rec%gwd_gsl_diags_used = 0
+      IF ( model_config_rec%gwd_gsl_used .EQ. 1 .AND.     &
+           model_config_rec%gwd_gsl_diags .EQ. 1 ) THEN
+         model_config_rec%gwd_gsl_diags_used = 1
+      END IF
 
 !-----------------------------------------------------------------------
 ! Make sure microphysics option without QICE array cannot be used with icloud=3

@@ -18,7 +18,7 @@ contains
                   ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,                             &
                   sina,cosa,znu,znw,p_top,dz,pblh,                             &
                   cp,g,rd,rv,ep1,pi,                                           &
-                  dt,dx,kpbl2d,itimestep,gwd_opt,gwd_diagnostics,              &
+                  dt,dx,kpbl2d,itimestep,gwd_opt,gwd_gsl_diags,                &
                   spp_pbl,pattern_spp_pbl,                                     &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
@@ -75,7 +75,7 @@ contains
   integer,  intent(in   )   ::      ids,ide, jds,jde, kds,kde,                 &
                                      ims,ime, jms,jme, kms,kme,                &
                                      its,ite, jts,jte, kts,kte
-  integer,  intent(in   )   ::      itimestep,gwd_opt
+  integer,  intent(in   )   ::      itimestep,gwd_opt,gwd_gsl_diags
 !
   real,     intent(in   )   ::      dt,dx,cp,g,rd,rv,ep1,pi
 !
@@ -252,7 +252,7 @@ contains
       end do
 
 
-      IF (gwd_diagnostics == 1) then !research mode
+      IF (gwd_gsl_diags == 1) then !research mode
         do k = kts,kte
           do i = its,ite
 ! rotate tendencies from zonal/meridional to model grid

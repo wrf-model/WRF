@@ -1643,11 +1643,11 @@
             model_config_rec%gwd_used_1 = 1
          END IF
       ENDDO
-      model_config_rec%gwd_used_3 = 0
+      model_config_rec%gwd_gsl_used = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%gwd_opt(i) .EQ. 3 ) THEN
-            model_config_rec%gwd_used_3 = 1
+            model_config_rec%gwd_gsl_used = 1
          END IF
       ENDDO
       model_config_rec%gwd_used_33 = 0

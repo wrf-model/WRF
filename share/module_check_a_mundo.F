@@ -1636,26 +1636,26 @@
 !  are active on any domains. This allows the model to allocate space.
 !-----------------------------------------------------------------------
 
-      model_config_rec%gwd_used_1 = 0
+      model_config_rec%gwd_used = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%gwd_opt(i) .EQ. 1 ) THEN
-            model_config_rec%gwd_used_1 = 1
+            model_config_rec%gwd_used = 1
          END IF
       ENDDO
-      model_config_rec%gwd_gsl_used = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%gwd_opt(i) .EQ. 3 ) THEN
-            model_config_rec%gwd_gsl_used = 1
+            model_config_rec%gwd_used = 3
          END IF
       ENDDO
       ! Check if user is requesting extra gravity-wave-drag diagnostics
-      ! for GSL GWD scheme
-      model_config_rec%gwd_gsl_diags_used = 0
-      IF ( model_config_rec%gwd_gsl_used .EQ. 1 .AND.     &
-           model_config_rec%gwd_gsl_diags .EQ. 1 ) THEN
-         model_config_rec%gwd_gsl_diags_used = 1
+      ! for a given GWD scheme
+      ! Only assigned to gwd_opts that have diagnostics available
+      model_config_rec%gwd_diags_used = 0
+      IF ( model_config_rec%gwd_used .EQ. 3 .AND.     &
+           model_config_rec%gwd_diags .EQ. 1 ) THEN
+         model_config_rec%gwd_diags_used = 3
       END IF
 
 !-----------------------------------------------------------------------

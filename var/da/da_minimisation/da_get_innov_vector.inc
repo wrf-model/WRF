@@ -172,10 +172,15 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    !----------------------------------------------
    ! [5]  write out iv in ascii format
    !-----------------------------------------------
+
       if ( multi_inc == 1 ) then
-         call da_write_iv_for_multi_inc(n, iv)
+
+          call da_write_iv_for_multi_inc(n, iv)
+
       elseif ( multi_inc == 2 ) then
-         call da_read_iv_for_multi_inc(n, iv)
+
+          call da_read_iv_for_multi_inc(n, iv)
+
       endif
 
       if (n > 1 .and. var4d) call domain_clockadvance (grid)

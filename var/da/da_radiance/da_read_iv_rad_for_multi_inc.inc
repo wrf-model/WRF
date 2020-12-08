@@ -1,7 +1,7 @@
-subroutine da_read_iv_rad_for_multi_inc (it,ob, iv )
+subroutine da_read_iv_rad_for_multi_inc (it, ob, iv )
 
    !---------------------------------------------------------------------------
-   ! Purpose: read out innovation vector structure for radiance data.
+   ! Purpose: read in innovation vector structure for radiance data.
    !---------------------------------------------------------------------------
 
    implicit none

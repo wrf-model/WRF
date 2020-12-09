@@ -487,7 +487,7 @@ CONTAINS
         V10(i,j)=V10M(i)
         BR(i,j)=rib(i)
         CHS(I,J)=CH(I)*wspd (i,j)
-        CHS2(I,J)=USTAR(I)*KARMAN/FH2(I)
+        CHS2(I,J)=karman*karman*wspd(i,j)/(fm(i)*FH2(I))
 
 !!!2014-0922  cap CHS over land points
           if (xland(i,j) .lt. 1.9) then
@@ -1447,9 +1447,9 @@ CONTAINS
 !   obtain 2m values for diagnostics...
 
 
-          ugz2    = ALOG(z2   (iutb(i))/ABS(zoc(iutb(i))))
+          ugz2    = ALOG(z2   (iutb(i))/ABS(zot(iutb(i))))
           uzet1o  = ABS(z2 (iutb(i)))/zkmax(iutb(i))*uzeta(i)
-          uzetao  = ABS(zoc(iutb(i)))/zkmax(iutb(i))*uzeta(i)
+          uzetao  = ABS(zot(iutb(i)))/zkmax(iutb(i))*uzeta(i)
           ux11    = 1. - 16.*uzet1o   
           ux12    = 1. - 16.*uzetao
           y       = SQRT(ux11)

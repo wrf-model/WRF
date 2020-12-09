@@ -1291,7 +1291,8 @@ CONTAINS
          DO K = 1, KMPBL ! kmpbl is like a max possible pbl height
           if(zi(i,k).le.500.and.zi(i,k+1).gt.500.)then ! find level bracketing 500 m
            SPDK2 = SQRT(U1(i,k)*U1(i,k)+V1(i,k)*V1(i,k)) ! wspd near 500 m
-           WSPM(i,1) = SPDK2/0.6  ! now the Km limit for 500 m.  just store in K=1
+           !!WSPM(i,1) = SPDK2/0.6  ! now the Km limit for 500 m.  just store in K=1
+           WSPM(i,1) = SPDK2/0.5  ! now the Km limit for 500 m.  just store in K=1
             !wang test , limit Kmax<100
            !  WSPM(i,1)=amin1(SPDK2/0.6, 100.0)
             !

@@ -453,7 +453,7 @@ CONTAINS
        if (usenew) then
 !   2016-03-22  near final version of scale-aware convection
        call mfdeepcnv(im,im,kx,delt,del,prsl,ps,phil,ql,       & 
-     &     q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,nint(slimsk),garea,         &
+     &     q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,nint(slimsk),garea,pgcon_use,   &
      &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc, SIGMU_out,SCALEFUN_out,  &
            pert_sas, ens_random_seed, ens_sasamp)
        else
@@ -490,7 +490,7 @@ CONTAINS
         if(usenew) then
 !   2016-03-22  near final version of scale-aware convection
        call mfshalcnv(im,im,kx,delt,del,prsl,ps,phil,ql,        &
-     &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,nint(slimsk),garea,                  &
+     &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,nint(slimsk),garea,pgcon_use,        &
      &     dot,ncloud,hpbl,ud_mf,dt_mf,cnvw,cnvc,SIGMU1_out,SCALEFUN1_out,    &
            pert_sas, ens_random_seed, ens_sasamp)
         else
@@ -672,7 +672,7 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine mfdeepcnv(im,ix,km,delt,delp,prslp,psp,phil,ql,       & 
-     &     q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,islimsk,garea,         &
+     &     q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,islimsk,garea,pgcon,   &
      &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc, sigmuout,scaldfunc, &
            pert_sas, ens_random_seed, ens_sasamp)
 !
@@ -1003,7 +1003,7 @@ CONTAINS
       xlamdd  = 1.0e-4
 !
 !     pgcon   = 0.7     ! Gregory et al. (1997, QJRMS)
-      pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
+!     pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
 !
       w1l     = -8.e-3 
       w2l     = -4.e-2
@@ -2999,7 +2999,7 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       subroutine mfshalcnv(im,ix,km,delt,delp,prslp,psp,phil,ql,        &
-     &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,islimsk,garea,                  &
+     &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,islimsk,garea,pgcon,           &
 !     &     dot,ncloud,hpbl,ud_mf,dt_mf,cnvw,cnvc)
      &     dot,ncloud,hpbl,ud_mf,dt_mf,cnvw,cnvc,sigmagfm,scaldfunc,    &
            pert_sas, ens_random_seed, ens_sasamp)
@@ -3268,7 +3268,7 @@ CONTAINS
       evfactl = 0.3
 !
 !     pgcon   = 0.7     ! Gregory et al. (1997, QJRMS)
-      pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
+!     pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
       w1l     = -8.e-3 
       w2l     = -4.e-2
       w3l     = -5.e-3 

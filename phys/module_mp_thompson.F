@@ -1850,7 +1850,7 @@
 
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = 3.0 + 2./7.*(ygra1+7.)
+         zans1 = 3.0 + 2./7.*(ygra1+8.)
          zans1 = MAX(2., MIN(zans1, 6.))
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
@@ -2911,7 +2911,7 @@
 
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = 3.0 + 2./7.*(ygra1+7.)
+         zans1 = 3.0 + 2./7.*(ygra1+8.)
          zans1 = MAX(2., MIN(zans1, 6.))
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
@@ -5296,7 +5296,7 @@
       if (ANY(L_qg .eqv. .true.)) then
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = 3.0 + 2./7.*(ygra1+7.)
+         zans1 = 3.0 + 2./7.*(ygra1+8.)
          zans1 = MAX(2., MIN(zans1, 6.))
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1

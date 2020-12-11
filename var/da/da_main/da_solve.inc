@@ -635,8 +635,13 @@
          max_ext_its = 0
       end if  !anal_type_randomcv
 
-! mri-4dvar: if multi_inc == 0: run normal 3D/4D-Var
+! mri-4dvar: if multi_inc /= 2: run normal 3D/4D-Var
 !------------------------------------------------------------------------
+    ! cvt is outer loop control variable, it is zero for the first outer loop,
+    ! but non-zero from the second outer loop in normal 3d/4dvar.
+    ! for MRI-4DVar, vp from the previous outer loop needs to be read in, 
+    ! then perform the inverse transform to derive cvt
+    !-----------------------------------------------------
       call da_initialize_cv (cv_size, cvt)
       call da_zero_vp_type (grid%vp)
       call da_zero_vp_type (grid%vv)
@@ -748,14 +753,15 @@
          else
            write(unit=message(1),fmt='(a)') "vp files '"//trim(vpfile)//"' does not exists, initiallizing cvt."
            call da_message(message(1:1))
-           call da_initialize_cv (cv_size, cvt)
+           call da_initialize_cv (cv_size, cvt) ! perhaps better use da_error
          end if
+
+         call da_zero_vp_type (grid%vv)
+         call da_zero_vp_type (grid%vp)
+
       end if
 ! mri-4dvar -------------------------------------------
 
-      call da_zero_vp_type (grid%vv)
-      call da_zero_vp_type (grid%vp)
-  
       if ( var4d ) then
 #ifdef VAR4D
          call da_zero_vp_type (grid%vv6)

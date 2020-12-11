@@ -1506,7 +1506,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    jtf=MIN(jte,jde-1)
 
    IF ( (config_flags%open_ys .or. specified) .and. jts == jds ) j_start = jts+1
-   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jtf-2
+   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jte-2
 
    DO j = j_start, jtf
 
@@ -1539,7 +1539,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    jtf=MIN(jte,jde-1)
 
    IF ( (config_flags%open_xs .or. specified) .and. its == ids ) i_start = its+1
-   IF ( (config_flags%open_xe .or. specified) .and. ite == ide ) itf = itf-2
+   IF ( (config_flags%open_xe .or. specified) .and. ite == ide ) itf = ite-2
 
    DO j = j_start, jtf
 
@@ -1574,7 +1574,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    jtf=MIN(jte,jde-1)
 
    IF ( (config_flags%open_ys .or. specified) .and. jts == jds ) j_start = jts+2
-   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jtf-3
+   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jte-3
 
    DO j = j_start, jtf
 
@@ -1664,7 +1664,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    jtf=MIN(jte,jde-1)
 
    IF ( (config_flags%open_xs) .and. its == ids ) i_start = its+2
-   IF ( (config_flags%open_xe) .and. ite == ide ) itf = itf-3
+   IF ( (config_flags%open_xe) .and. ite == ide ) itf = ite-3
 
    DO j = j_start, jtf
 

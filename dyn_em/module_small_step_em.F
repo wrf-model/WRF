@@ -1315,8 +1315,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                     +(1.-epssm)*t_2ave(i,k,j))
       t_2ave(i,k,j)=(t_2ave(i,k,j) + (c1h(k)*Muave(i,j))*t0) &
                     /((c1h(k)*Muts(i,j)+c2h(k))*(t0+t_1(i,k,j)))
-      wdwn(i,k+1)=.5*(ww(i,k+1,j)+ww(i,k,j))*rdnw(k)    &
-           *(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
+      wdwn(i,k+1)=rdnw(k)*(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
       rhs(i,k+1) = dts*(ph_tend(i,k+1,j) + .5*g*(1.-epssm)*w(i,k+1,j))
     ENDDO
     ENDDO
@@ -1325,8 +1324,8 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 !   here rhs = delta t [ph_tend + ~g*w/2 - ~ww * partial d phi/dz]
     DO k=2,k_end
     DO i=i_start, i_end
-       rhs(i,k) = rhs(i,k)-dts*( fnm(k)*wdwn(i,k+1)  &
-                                +fnp(k)*wdwn(i,k  ) )
+       rhs(i,k) = rhs(i,k)-dts*ww(i,k,j)*( fnm(k)*wdwn(i,k+1)  &
+                                          +fnp(k)*wdwn(i,k  ) )
     ENDDO
     ENDDO
 !  NOTE:  phi'' is not coupled with the map-scale factor  (1/m),

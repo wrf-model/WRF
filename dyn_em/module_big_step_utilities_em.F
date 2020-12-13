@@ -1458,8 +1458,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      DO k = 2, kte
      DO i = its, itf
-          wdwn(i,k) = .5*(ww(i,k,j)+ww(i,k-1,j))*rdnw(k-1)               &
-                        *(ph(i,k,j)-ph(i,k-1,j)+phb(i,k,j)-phb(i,k-1,j))
+          wdwn(i,k) = rdnw(k-1)*(ph(i,k,j)-ph(i,k-1,j)+phb(i,k,j)-phb(i,k-1,j))
      ENDDO
      ENDDO
 
@@ -1468,7 +1467,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = its, itf
            ph_tend(i,k,j) = ph_tend(i,k,j)                           &
-                             - (fnm(k)*wdwn(i,k+1)+fnp(k)*wdwn(i,k))
+                             - ww(i,k,j)*(fnm(k)*wdwn(i,k+1)+fnp(k)*wdwn(i,k))
      ENDDO
      ENDDO
 

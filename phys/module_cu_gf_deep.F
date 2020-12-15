@@ -1,9 +1,8 @@
 MODULE module_cu_gf_deep
-!++ GF CTRAN ++ lyy 01/2020
+
 #if ( WRF_CHEM == 1 )
      USE module_cu_gf_ctrans,only: ctrans_gf
 #endif
-!-- GF CTRAN --
      real, parameter::g=9.81
      real, parameter:: cp=1004.
      real, parameter:: xlv=2.5e6
@@ -184,7 +183,7 @@ contains
        real                                                            &
         ,intent (in   )                   ::                           &
         dtime
-!++ GF CTRAN ++ lyy 01/2020
+
 #if ( WRF_CHEM == 1 )
        INTEGER,INTENT(IN   ) ::                                        &
               num_chem,num_tracer,numgas,chemopt,traceropt,            &
@@ -201,7 +200,6 @@ contains
        real,dimension(its:ite,kts:kte) ::  tempco
 
 #endif
-!-- GF CTRAN --
 
 !
 !  local ensemble dependent variables in this routine
@@ -3521,8 +3519,7 @@ contains
 !
             DO k=kbcon(i)+1,ktop(i)
                c0=.004
-!               if(t(i,k).lt.270.)c0=.002
-               if (t(i,k).lt.273.15) c0=c0*exp(0.07*(t(i,k)-273.15))  ! Han et al. (2016); Li et al. (2019) --lyy
+               if (t(i,k).lt.273.15) c0=c0*exp(0.07*(t(i,k)-273.15))  ! Han et al. (2016); Li et al. (2019)
                denom=zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1)
                if(denom.lt.1.e-8)then
                      ierr(i)=51

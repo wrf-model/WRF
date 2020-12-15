@@ -52,9 +52,8 @@ MODULE module_input_chem_data
    USE module_data_sorgam, ONLY : conmin, rgasuniv, epsilc, grav
    USE module_get_file_names, ONLY : eligible_file_name, number_of_eligible_files, unix_ls
    USE module_model_constants
-!++ move get_last_gas to share lyy 01/2020
    USE module_chem_share, only:      get_last_gas
-!-- lyy 01/2020 --
+
    IMPLICIT NONE
 
 !  REAL :: grav = 9.8104

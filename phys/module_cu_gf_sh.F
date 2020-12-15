@@ -63,8 +63,7 @@ contains
 ! turning off shallow convection for grid points
                          zuo,xmb_out,kbcon,ktop,k22,ierr,ierrc,    &
 ! output tendencies
-                         OUTT,OUTQ,OUTQC,cnvwt,pre,cupclw,             &
-                         
+                         OUTT,OUTQ,OUTQC,cnvwt,pre,cupclw,             &                       
 #if ( WRF_CHEM == 1 )
                          num_chem,chem2d,outchemt, &
                          num_tracer,tracer2d,outtracert, &

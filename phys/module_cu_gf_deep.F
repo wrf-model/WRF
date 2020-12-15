@@ -101,7 +101,6 @@ contains
 #if ( WRF_DFI_RADAR == 1 )
               ,do_capsuppress,cap_suppress_j    &             
 #endif
-!++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )
               ,num_chem,chem2d,outchemt &
               ,num_tracer,tracer2d,outtracert &
@@ -109,7 +108,6 @@ contains
               ,conv_tr_wetscav,conv_tr_aqchem  &
               ,chem_conv_tr                   &
 #endif
-!-- GF CTRAN --
               ,k22                              &
               ,jmin)
 
@@ -1821,7 +1819,7 @@ contains
              endif
           endif
       enddo
-!++ GF CTRAN ++ lyy 01/2020
+
 #if ( WRF_CHEM == 1 )
 !--- calculate in-cloud/updraft air temperature
     do i=its,itf
@@ -1862,7 +1860,6 @@ contains
                      ,0)
     endif
 #endif
-!-- GF CTRAN --
 
 !
 !---------------------------done------------------------------
@@ -3444,7 +3441,7 @@ contains
 !
         prop_b(kts:kte)=0
         iall=0
-        c0=.004   ! Han et al. (2016); Li et al. (2019); lyy
+        c0=.004   ! Han et al. (2016); Li et al. (2019);
         bdsp=BDISPM
 !
 !--- no precip for small clouds
@@ -3497,7 +3494,7 @@ contains
 !
 !            if(name == "deep" )then
             DO k=k22(i)+1,kbcon(i)
-              if (t(i,k).lt.273.15) c0=c0*exp(0.07*(t(i,k)-273.15))  ! Han et al. (2016); Li et al. (2019) --lyy
+              if (t(i,k).lt.273.15) c0=c0*exp(0.07*(t(i,k)-273.15))  ! Han et al. (2016); Li et al. (2019)
               qc(i,k)=   (qc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)* qc(i,k-1)+ &
                          up_massentr(i,k-1)*q(i,k-1))   /                       &
                          (zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))

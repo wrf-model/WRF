@@ -129,12 +129,10 @@ CONTAINS
                  ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,do_capsuppress                                  &
 #endif 
-
 #if ( WRF_CHEM == 1 )
                    ,traceropt,conv_tr_wetscav                         &
                    ,conv_tr_aqchem,chem_conv_tr                       &
 #endif
-
 #if (EM_CORE == 1)                               
           ,QR_CU,QS_CU,NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU,CU_UAF          &
           ,alevsiz_cu,num_months,no_src_types_cu,aercu_opt,aercu_fct  &

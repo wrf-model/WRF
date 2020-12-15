@@ -4930,6 +4930,8 @@ endif
 
 #ifdef VERT_UNIT
 
+!gfortran -DVERT_UNIT -ffree-form -ffree-line-length-none module_initialize_real.F -o vert.exe
+
 !This is a main program for a small unit test for the vertical interpolation.
 
 program vint
@@ -4961,6 +4963,7 @@ program vint
    logical, parameter :: use_surface             = .TRUE. ! .FALSE. ! .TRUE.
    real   , parameter :: zap_close_levels        = 500. ! 100.
    integer, parameter :: force_sfc_in_vinterp    = 6 ! 0 ! 6
+   integer, parameter :: id                      = 1
 
    integer :: k
 
@@ -4975,7 +4978,7 @@ program vint
    print *,'UNIT TEST FOR VERTICAL INTERPOLATION'
    print *,'------------------------------------'
    print *,' '
-   do lagrange_order = 1 , 9 , 8
+   do lagrange_order = 1 , 1
       print *,' '
       print *,'------------------------------------'
       print *,'Lagrange Order = ',lagrange_order
@@ -5006,7 +5009,7 @@ program vint
                          generic , 'T' , &
                          interp_type , lagrange_order , extrap_type , &
                          lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                         zap_close_levels , force_sfc_in_vinterp , &
+                         zap_close_levels , force_sfc_in_vinterp , id , &
                          ids , ide , jds , jde , kds , kde , &
                          ims , ime , jms , jme , kms , kme , &
                          its , ite , jts , jte , kts , kte )
@@ -5052,8 +5055,6 @@ subroutine fillitup ( fo , po , fn , pn , &
 
    integer :: i , j , k
 
-   real , parameter :: piov2 = 3.14159265358 / 2.
-
    k = 1
    do j = jts , jte
    do i = its , ite
@@ -5065,6 +5066,7 @@ subroutine fillitup ( fo , po , fn , pn , &
    do j = jts , jte
    do i = its , ite
       po(i,k,j) = ( 5000. * ( 1 - (k-1) ) + 100000. * ( (k-1) - (generic-1) ) ) / (1. - real(generic-1) )
+!     po(i,k,j) = FILL IN YOUR INPUT PRESSURE LEVELS
    end do
    end do
    end do
@@ -5074,7 +5076,7 @@ subroutine fillitup ( fo , po , fn , pn , &
       do j = jts , jte
       do i = its , ite
          fo(i,k,j) = po(i,k,j)
-!        fo(i,k,j) = sin(po(i,k,j) * piov2 / 102000. )
+!        fo(i,k,j) = FILL IN YOUR COLUMN OF PRESS_LEVEL FIELD
       end do
       end do
       end do
@@ -5083,7 +5085,6 @@ subroutine fillitup ( fo , po , fn , pn , &
       do j = jts , jte
       do i = its , ite
          fo(i,k,j) = (((po(i,k,j)-5000.)/102000.)*((102000.-po(i,k,j))/102000.))*102000.
-!        fo(i,k,j) = sin(po(i,k,j) * piov2 / 102000. )
       end do
       end do
       end do
@@ -5095,6 +5096,7 @@ subroutine fillitup ( fo , po , fn , pn , &
    do j = jts , jte
    do i = its , ite
       pn(i,k,j) = ( 5000. * ( 0 - (k-1) ) + 102000. * ( (k-1) - (kte-1) ) ) / (-1. *  real(kte-1) )
+!     pn(i,k,j) = FILL IN A COLUMN OF KNOWN FULL-LEVEL PRESSURES ON ETA SURFACES
    end do
    end do
    end do
@@ -5113,7 +5115,7 @@ subroutine fillitup ( fo , po , fn , pn , &
       do j = jts , jte
       do i = its , ite
          fn(i,k,j) = pn(i,k,j)
-!        fn(i,k,j) = sin(pn(i,k,j) * piov2 / 102000. )
+!        fn(i,k,j) = FILL IN COLUMN OF HALF LEVEL FIELD
       end do
       end do
       end do
@@ -5136,6 +5138,12 @@ function skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_
    logical :: hold_ups
    skip_middle_points_t = .false.
 end function skip_middle_points_t
+
+subroutine wrf_message(level,message)
+   character(len=*), intent(in) :: message
+   integer, intent(in) :: level
+   print *,trim(message)
+end subroutine wrf_message
 
 #endif
 

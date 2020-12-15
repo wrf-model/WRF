@@ -40,11 +40,11 @@
 !    itf,ktf,its,ite, kts,kte are dimensions
 !    ztexec,zqexec    excess temperature and moisture for updraft
 MODULE module_cu_gf_sh
-!++ GF CTRAN ++ lyy 01/2020
+
 #if ( WRF_CHEM == 1 )
      USE module_cu_gf_ctrans,only: ctrans_gf
 #endif
-!-- GF CTRAN --
+
     real, parameter:: c1_shal=0.! .0005
     real, parameter:: g  =9.81
     real, parameter:: cp =1004.
@@ -64,7 +64,7 @@ contains
                          zuo,xmb_out,kbcon,ktop,k22,ierr,ierrc,    &
 ! output tendencies
                          OUTT,OUTQ,OUTQC,cnvwt,pre,cupclw,             &
-!++ GF CTRAN ++ lyy 01/2020
+                         
 #if ( WRF_CHEM == 1 )
                          num_chem,chem2d,outchemt, &
                          num_tracer,tracer2d,outtracert, &
@@ -72,7 +72,7 @@ contains
                          conv_tr_wetscav,conv_tr_aqchem,  &
                          chem_conv_tr, &
 #endif
-!-- GF CTRAN --
+
 ! dimesnional variables
                          itf,ktf,its,ite, kts,kte,ipr)
 !
@@ -128,7 +128,7 @@ contains
        real                                                            &
         ,intent (in   )                   ::                           &
         dtime,tcrit
-!++ GF CTRAN ++ lyy 01/2020
+
 #if ( WRF_CHEM == 1 )
        INTEGER,INTENT(IN   ) ::                                        &
               num_chem,num_tracer,numgas,chemopt,traceropt,            &
@@ -150,7 +150,7 @@ contains
        integer,dimension(its:ite)::                            &
                      jmin
 #endif
-!-- GF CTRAN --
+
 
 
   !
@@ -876,7 +876,7 @@ contains
           enddo
         endif
        enddo
-!++ GF CTRAN ++ lyy 01/2020
+
 #if ( WRF_CHEM == 1 )
 !--- calculate in-cloud/updraft air temperature
     do i=its,itf
@@ -931,7 +931,6 @@ contains
                      ,1)
     endif
 #endif
-!-- GF CTRAN --
 !      
 ! done shallow
 !--------------------------done------------------------------

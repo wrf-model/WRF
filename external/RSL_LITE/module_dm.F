@@ -1298,7 +1298,7 @@ CONTAINS
       RETURN
    END FUNCTION getrealmpitype
 
-   REAL FUNCTION wrf_dm_max_int ( inval )
+   INTEGER FUNCTION wrf_dm_max_int ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
       INTEGER, intent(in) :: inval

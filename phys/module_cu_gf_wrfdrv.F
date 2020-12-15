@@ -8,11 +8,9 @@ use module_gfs_physcons, g => con_g,                           &
                          r_v => con_rv
 use module_cu_gf_deep, only: cup_gf,neg_check,autoconv,aeroevap
 use module_cu_gf_sh, only: cup_gf_sh
-!++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )
 use module_cu_gf_ctrans, only: neg_check_chem
 #endif
-!-- GF CTRAN --
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     This convective parameterization is build to attempt     !
@@ -59,13 +57,11 @@ CONTAINS
                  ! Optional CAP suppress option
               ,do_capsuppress,cap_suppress_loc                  &
 #endif                                 
-!++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )
               ,chem,tracer,numgas                               &
               ,num_chem,chemopt,num_tracer,traceropt            &
               ,conv_tr_wetscav,conv_tr_aqchem,chem_conv_tr      &
-#endif
-!-- GF CTRAN --                                 
+#endif        
                                                                 )
 !-------------------------------------------------------------
    IMPLICIT NONE
@@ -145,7 +141,6 @@ CONTAINS
          OPTIONAL,                                              &
          INTENT(INOUT) ::                          DUDT_PHY,    &
                                                    DVDT_PHY
-!++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )
    INTEGER,INTENT(IN   ) ::                                     &
                                  numgas,chemopt,traceropt,      &
@@ -168,7 +163,6 @@ CONTAINS
    INTEGER :: nv,iopt
    REAL:: epsilc
 #endif
-!-- GF CTRAN --
 
 !  Stochastic
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),OPTIONAL  ::pattern_spp_conv,field_conv
@@ -254,12 +248,11 @@ CONTAINS
 
      integer, dimension (its:ite) :: cactiv
      real,    dimension (its:ite,kts:kte) ::  qcheck
-!++ GF CTRAN ++ lyy 01/2020
+     
 #if ( WRF_CHEM == 1 )
    epsilc=1.e-30
    iopt=0
 #endif
-!-- GF CTRAN --
 
    tcrit=258.
    ipr=0 !639
@@ -443,7 +436,6 @@ CONTAINS
          cupclw(i,k) = 0.
          cupclwm(i,k) = 0.
          qcheck(i,k) = 0.
-!++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )
          do nv=2,num_chem
            outchemts(I,K,nv)=0.
@@ -458,7 +450,6 @@ CONTAINS
            tracer2d(I,K,nv)=max(epsilc,tracer(i,k,j,nv))
          enddo
 #endif
-!-- GF CTRAN --
      ENDDO
      ENDDO
 #if (NMM_CORE==1)
@@ -521,7 +512,6 @@ CONTAINS
               zus,xmbs,kbcons,ktops,k22s,ierrs,ierrcs,    &
 ! output tendencies
               outts,outqs,outqcs,cnvwt,prets,cupclws,             &
-!++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )
               num_chem,chem2d,outchemts, &
               num_tracer,tracer2d,outtracerts, &
@@ -529,7 +519,6 @@ CONTAINS
               conv_tr_wetscav,conv_tr_aqchem,  &
               chem_conv_tr,                &
 #endif
-!-- GF CTRAN --
 ! dimesnional variables
               itf,ktf,its,ite, kts,kte,ipr)
           do i=its,itf
@@ -608,7 +597,6 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
               ,do_capsuppress,cap_suppress_j &
 #endif
-!++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )
               ,num_chem,chem2d,outchemtm &
               ,num_tracer,tracer2d,outtracertm &
@@ -616,7 +604,6 @@ CONTAINS
               ,conv_tr_wetscav,conv_tr_aqchem  &
               ,chem_conv_tr                &
 #endif
-!-- GF CTRAN --
               ,k22m          &
               ,jminm)
 
@@ -702,7 +689,6 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
               ,do_capsuppress,cap_suppress_j &
 #endif
-!++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )
               ,num_chem,chem2d,outchemt &
               ,num_tracer,tracer2d,outtracert &
@@ -710,7 +696,6 @@ CONTAINS
               ,conv_tr_wetscav,conv_tr_aqchem  &
               ,chem_conv_tr                &
 #endif
-!-- GF CTRAN --
               ,k22          &
               ,jmin)
         jpr=0
@@ -767,7 +752,6 @@ CONTAINS
                DVDT_PHY(I,K,J)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i)
             ENDDO
             ENDDO
-!++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )
             DO I=ibegc,iendc
             DO K=kts,ktf
@@ -811,7 +795,6 @@ CONTAINS
               ENDDO
             endif ! tracer_opt
 #endif
-!-- GF CTRAN --
 
             DO I=ibegc,iendc
               if(pret(i).gt.0. .or. pretm(i).gt.0. .or. prets(i).gt.0.)then

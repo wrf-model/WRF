@@ -104,6 +104,7 @@ CONTAINS
                      ,DYNMM                                           & ! For scale-aware SAS
                      ,SCALEFUN,SCALEFUN1                              & !    scale functions 
                      ,SIGMU,SIGMU1                                    & !    updraft fraction
+                 
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
                      ,hpbl_hold                                       &

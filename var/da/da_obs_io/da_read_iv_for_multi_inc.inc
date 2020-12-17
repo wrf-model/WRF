@@ -21,6 +21,12 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
    integer      :: n, gn
    logical      :: found_flag
 
+   integer :: nobs_tot, nlev_max, k , iobs
+   integer :: nobs_in, nlev_in
+   logical :: has_rv, has_rf, has_rhv, has_rqv
+   real, allocatable :: data2d(:,:)
+   real, allocatable :: data3d(:,:,:)
+
    if (trace_use) call da_trace_entry("da_read_iv_for_multi_inc")
 
    !-------------------------------------------------------------------------
@@ -63,7 +69,6 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
    ! [2] metar obs:
 
    if (iv%info(metar)%plocal(iv%time)-iv%info(metar)%plocal(iv%time-1) > 0) then
-
        open(unit=unit_in,file=trim(filename)//'.metar',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -266,7 +271,6 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
    ! [9] buoy obs:
 
    if (iv%info(buoy)%plocal(iv%time)-iv%info(buoy)%plocal(iv%time-1) > 0) then
-
        open(unit=unit_in,file=trim(filename)//'.buoy',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -499,7 +503,6 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
    ! [17] satem obs:
 
    if (iv%info(satem)%plocal(iv%time)-iv%info(satem)%plocal(iv%time-1) > 0) then
-
        open(unit=unit_in,file=trim(filename)//'.satem',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -586,7 +589,6 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
    ! [20] scatterometer obs:
 
    if (iv%info(qscat)%plocal(iv%time)-iv%info(qscat)%plocal(iv%time-1) > 0) then
-
        open(unit=unit_in,file=trim(filename)//'.qscat',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -731,33 +733,96 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
 
    ! [25] radar obs:
 
-   if (iv%info(radar)%plocal(iv%time)-iv%info(radar)%plocal(iv%time-1) > 0) then
+   nobs_tot = iv%info(radar)%ptotal(num_fgat_time) - iv%info(radar)%ptotal(0)
+   nlev_max = iv%info(radar)%max_lev
 
-       open(unit=unit_in,file=trim(filename)//'.radar',form='formatted',status='old',iostat=ios)
-       if (ios /= 0) Then
-          call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//filename/))
-       end if
+   if ( nobs_tot > 0 ) then
 
-       read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
-       if ( trim(adjustl(ob_type_string)) .ne. 'radar' ) &
-           call da_error(__FILE__,__LINE__, &
-                           (/"Cannot find radar marker. "/))
-       gn = 0
-       do n = iv%info(radar)%plocal(iv%time-1) + 1, &
-              iv%info(radar)%plocal(iv%time)
-          call da_search_obs (ob_type_string, unit_in, num_obs, n, iv, found_flag)
-          if (found_flag .eqv. .false.) &
-              call da_error(__FILE__,__LINE__, &
-                           (/"Cannot find radar obs. "/))
-          gn = gn + 1
-       end do
-       if (gn /= iv%info(radar)%plocal(iv%time)-iv%info(radar)%plocal(iv%time-1)) &
-           call da_error(__FILE__,__LINE__, &
-                        (/"Unequal obs. found "/))
-       close (unit_in)
-   end if
+      write(unit=filename, fmt='(a,i3.3)') 'radar_innov_t', file_index
+      open(unit=unit_in,file=trim(filename),form='unformatted',status='old',iostat=ios)
+      if (ios /= 0) Then
+         call da_error(__FILE__,__LINE__, &
+            (/"Cannot open file "//trim(filename)/))
+      end if
 
+      read(unit_in) nobs_in, nlev_in, has_rv, has_rf, has_rhv, has_rqv
+      if ( nobs_in /= nobs_tot .or. nlev_in /= nlev_max ) then
+         call da_error(__FILE__,__LINE__, &
+            (/"Dimensions (nobs_tot or nlev_max) mismatch "/))
+      end if
+      allocate ( data2d(nobs_tot, 2) )
+      read(unit_in) data2d
+      do n = iv%info(radar)%n1, iv%info(radar)%n2
+         iobs = iv%info(radar)%obs_global_index(n)
+!         iv%info(radar)%lat(1,n) = data2d(iobs, 1)
+!         iv%info(radar)%lon(1,n) = data2d(iobs, 2)
+      end do
+      deallocate ( data2d )
+
+      if ( use_radar_rv .and. has_rv ) then
+         allocate( data3d(nobs_tot, nlev_max, 3) )
+         read(unit_in) data3d
+         do n = iv%info(radar)%n1, iv%info(radar)%n2
+            iobs = iv%info(radar)%obs_global_index(n)
+            do k = 1 , iv%info(radar)%levels(n)
+               iv%radar(n)%rv(k)%inv   =     data3d(iobs, k, 1)
+               iv%radar(n)%rv(k)%qc    = int(data3d(iobs, k, 2))
+               iv%radar(n)%rv(k)%error =     data3d(iobs, k, 3)
+            end do
+         end do
+         deallocate( data3d )
+      end if
+
+      if ( use_radar_rf .and. has_rf ) then
+         allocate( data3d(nobs_tot, nlev_max, 3) )
+         read(unit_in) data3d
+         do n = iv%info(radar)%n1, iv%info(radar)%n2
+            iobs = iv%info(radar)%obs_global_index(n)
+            do k = 1 , iv%info(radar)%levels(n)
+               iv%radar(n)%rf(k)%inv   =     data3d(iobs, k, 1)
+               iv%radar(n)%rf(k)%qc    = int(data3d(iobs, k, 2))
+               iv%radar(n)%rf(k)%error =     data3d(iobs, k, 3)
+            end do
+         end do
+         deallocate( data3d )
+      end if
+
+      if ( use_radar_rhv .and. has_rhv ) then
+         allocate( data3d(nobs_tot, nlev_max, 9) )
+         read(unit_in) data3d
+         do n = iv%info(radar)%n1, iv%info(radar)%n2
+            iobs = iv%info(radar)%obs_global_index(n)
+            do k = 1 , iv%info(radar)%levels(n)
+               iv%radar(n)%rrn(k)%inv   =     data3d(iobs, k, 1)
+               iv%radar(n)%rrn(k)%qc    = int(data3d(iobs, k, 2))
+               iv%radar(n)%rrn(k)%error =     data3d(iobs, k, 3)
+               iv%radar(n)%rsn(k)%inv   =     data3d(iobs, k, 4)
+               iv%radar(n)%rsn(k)%qc    = int(data3d(iobs, k, 5))
+               iv%radar(n)%rsn(k)%error =     data3d(iobs, k, 6)
+               iv%radar(n)%rgr(k)%inv   =     data3d(iobs, k, 7)
+               iv%radar(n)%rgr(k)%qc    = int(data3d(iobs, k, 8))
+               iv%radar(n)%rgr(k)%error =     data3d(iobs, k, 9)
+            end do
+         end do
+         deallocate( data3d )
+      end if
+
+      if ( use_radar_rqv .and. has_rqv ) then
+         allocate( data3d(nobs_tot, nlev_max, 3) )
+         read(unit_in) data3d
+         do n = iv%info(radar)%n1, iv%info(radar)%n2
+            iobs = iv%info(radar)%obs_global_index(n)
+            do k = 1 , iv%info(radar)%levels(n)
+               iv%radar(n)%rqv(k)%inv   =     data3d(iobs, k, 1)
+               iv%radar(n)%rqv(k)%qc    = int(data3d(iobs, k, 2))
+               iv%radar(n)%rqv(k)%error =     data3d(iobs, k, 3)
+            end do
+         end do
+         deallocate( data3d )
+      end if
+
+      close (unit_in)
+   end if ! nobs_tot > 0
 
 999 continue
    close (unit_in)

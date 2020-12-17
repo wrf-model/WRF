@@ -359,7 +359,9 @@ subroutine da_search_obs (ob_type_string, unit_in, num_obs, nth, iv, found_flag)
          if (trace_use) call da_trace_exit("da_search_obs")
          return
       else
-         read(unit_in,*)
+         do k = 1, levels
+           read(unit_in,*)
+         enddo
       endif
    enddo
    !found_flag = .false.

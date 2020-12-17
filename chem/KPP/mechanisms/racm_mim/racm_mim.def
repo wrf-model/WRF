@@ -1,0 +1,21 @@
+#include atoms_red
+#include ./racm_mim.spc
+#include ./racm_mim.eqn
+
+
+
+
+#INLINE F90_RATES
+REAL(KIND=dp) FUNCTION k46( TEMP, C_M )
+    REAL(KIND=dp), INTENT(IN) :: temp, c_m
+    REAL(KIND=dp) :: k0, k2, k3 
+
+   k0=7.2E-15_dp * EXP(785._dp/TEMP)
+   k2=4.1E-16_dp * EXP(1440._dp/TEMP)
+   k3=1.9E-33_dp * EXP(725._dp/TEMP)
+
+   k46=k0+k3/(1+k3/k2)
+
+
+END FUNCTION k46
+#ENDINLINE 

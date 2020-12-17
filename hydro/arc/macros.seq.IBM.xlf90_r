@@ -1,0 +1,38 @@
+.IGNORE:
+
+ifeq ($(HYDRO_REALTIME),1)
+HYDRO_REALTIME = -DHYDRO_REALTIME
+else
+HYDRO_REALTIME =
+endif
+
+ifeq ($(WRF_HYDRO),1)
+WRF_HYDRO = -DWRF_HYDRO $(HYDRO_REALTIME)
+else
+WRF_HYDRO =
+endif
+
+ifeq ($(WRF_HYDRO_RAPID),1)
+WRF_HYDRO = -DWRF_HYDRO -DWRF_HYDRO_RAPID $(HYDRO_REALTIME)
+endif
+
+ifeq ($(HYDRO_D),1)
+HYDRO_D = -DHYDRO_D $(WRF_HYDRO)
+else
+HYDRO_D =  $(WRF_HYDRO)
+endif
+
+
+
+
+RM		=	rm -f
+RMD		=	rm -f
+COMPILER90=	xlf90_r
+F90FLAGS  =       -c -O2 -qfree=f90 -qmaxmem=819200
+MODFLAG	=	-I./ -I ../../MPP -I ../MPP -I ../mod
+LDFLAGS	=	
+CPP	=       cpp -C -P
+CPPFLAGS	=       -I../Data_Rec $(HYDRO_D) 
+LIBS 	=	
+NETCDFINC       =       $(NETCDF_INC)
+NETCDFLIB       =       -L$(NETCDF_LIB) -lnetcdf

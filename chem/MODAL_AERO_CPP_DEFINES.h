@@ -1,0 +1,2 @@
+#define MODAL_AERO
+#define MODAL_AERO_3MODE

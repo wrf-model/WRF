@@ -1,0 +1,87 @@
+      SUBROUTINE PKB(NVAL,NBITS,IBAY,IBIT)
+
+C$$$  SUBPROGRAM DOCUMENTATION BLOCK
+C
+C SUBPROGRAM:    PKB
+C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
+C
+C ABSTRACT: THIS SUBROUTINE PACKS AN INTEGER VALUE (NVAL) INTO NBITS
+C   BITS OF AN INTEGER ARRAY (IBAY), STARTING WITH BIT (IBIT+1).  ON
+C   OUTPUT, IBIT IS UPDATED TO POINT TO THE LAST BIT THAT WAS PACKED.
+C
+C PROGRAM HISTORY LOG:
+C 1994-01-06  J. WOOLLEN -- ORIGINAL AUTHOR
+C 2003-11-04  J. ATOR    -- ADDED DOCUMENTATION
+C 2003-11-04  J. WOOLLEN -- BIG-ENDIAN/LITTLE-ENDIAN INDEPENDENT (WAS
+C                           IN DECODER VERSION)
+C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
+C                           INTERDEPENDENCIES
+C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
+C                           DOCUMENTATION
+C
+C USAGE:    CALL PKB (NVAL, NBITS, IBAY, IBIT)
+C   INPUT ARGUMENT LIST:
+C     NVAL     - INTEGER: INTEGER TO BE PACKED
+C     NBITS    - INTEGER: NUMBER OF BITS OF IBAY WITHIN WHICH TO PACK
+C                NVAL
+C     IBAY     - INTEGER: *-WORD PACKED BINARY ARRAY NOT YET CONTAINING
+C                PACKED NVAL
+C     IBIT     - INTEGER: BIT POINTER WITHIN IBAY INDICATING BIT AFTER
+C                WHICH TO START PACKING
+C
+C   OUTPUT ARGUMENT LIST:
+C     IBAY     - INTEGER: *-WORD PACKED BINARY ARRAY NOW CONTAINING
+C                PACKED NVAL
+C     IBIT     - INTEGER: BIT POINTER WITHIN IBAY INDICATING LAST BIT
+C                THAT WAS PACKED
+C
+C REMARKS:
+C    THIS SUBROUTINE IS THE INVERSE OF BUFR ARCHIVE LIBRARY ROUTINE
+C    UPB.
+C
+C    THIS ROUTINE CALLS:        IREV
+C    THIS ROUTINE IS CALLED BY: ATRCPT   CMSGINI  CNVED4   CPYUPD
+C                               DXMINI   MSGINI   MSGUPD   MSGWRT
+C                               MVB      PAD      PADMSG   PKBS1
+C                               STNDRD   WRCMPS   WRDXTB   WRTREE
+C                               Normally not called by any application
+C                               programs.
+C
+C ATTRIBUTES:
+C   LANGUAGE: FORTRAN 77
+C   MACHINE:  PORTABLE TO ALL PLATFORMS
+C
+C$$$
+
+      COMMON /HRDWRD/ NBYTW,NBITW,IORD(8)
+
+      DIMENSION IBAY(*)
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+      NWD  = IBIT/NBITW + 1
+      NBT  = MOD(IBIT,NBITW)
+      IVAL = NVAL
+      IF(ISHFT(IVAL,-NBITS).GT.0) IVAL = -1
+      INT = ISHFT(IVAL,NBITW-NBITS)
+      INT = ISHFT(INT,-NBT)
+      MSK = ISHFT(  -1,NBITW-NBITS)
+      MSK = ISHFT(MSK,-NBT)
+      IBAY(NWD) = IREV(IOR(IAND(IREV(IBAY(NWD)),NOT(MSK)),INT))
+      IF(NBT+NBITS.GT.NBITW) THEN
+
+C        There are less than NBITS bits remaining within the current
+C        word (i.e. array member) of IBAY, so store as many bits as
+C        will fit within the current word and then store the remaining
+C        bits within the next word.
+
+         INT = ISHFT(IVAL,2*NBITW-(NBT+NBITS))
+         MSK = ISHFT(  -1,2*NBITW-(NBT+NBITS))
+         IBAY(NWD+1) = IREV(IOR(IAND(IREV(IBAY(NWD+1)),NOT(MSK)),INT))
+      ENDIF
+
+      IBIT = IBIT + NBITS
+
+      RETURN
+      END

@@ -1,0 +1,63 @@
+###############################################################################
+#	This is an example registry.
+#	It has the necessary pieces to allow a set of input fields to come
+#	into the real program from metgrid.  These fields are assumed to
+#	be on a separate vertical coordinate from the standard metgrid
+#	atmospheric fields.  The usual purpose for this would be for 
+#	bringing in aerosols.
+###############################################################################
+
+###   G C A
+### GOCART AEROSOL
+
+dimspec  gca     2     namelist=num_gca_levels           z     num_gca_levels
+
+rconfig   integer num_gca_levels     namelist,domains	   1              27      irh    "num_gca_levels" "number of levels in the GOcart Aerosol input"      ""
+
+state    real       p_gca          i{gca}j      dyn_em      1        Z     i1          "P_GCA"   "Pressure for using  Aerosol-GOcart option"       "Pa"
+
+state    real      oh_gca_now      i{gca}j      dyn_em      1        Z     -          "OH_NOW"   "Background   OH for Aerosol-GOcart option Now"   "kg kg-1"
+state    real      oh_gca_jan      i{gca}j      dyn_em      1        Z     i1         "OH_JAN"   "Background   OH for Aerosol-GOcart option Jan"   "kg kg-1"
+state    real      oh_gca_feb      i{gca}j      dyn_em      1        Z     i1         "OH_FEB"   "Background   OH for Aerosol-GOcart option Feb"   "kg kg-1"
+state    real      oh_gca_mar      i{gca}j      dyn_em      1        Z     i1         "OH_MAR"   "Background   OH for Aerosol-GOcart option Mar"   "kg kg-1"
+state    real      oh_gca_apr      i{gca}j      dyn_em      1        Z     i1         "OH_APR"   "Background   OH for Aerosol-GOcart option Apr"   "kg kg-1"
+state    real      oh_gca_may      i{gca}j      dyn_em      1        Z     i1         "OH_MAY"   "Background   OH for Aerosol-GOcart option May"   "kg kg-1"
+state    real      oh_gca_jun      i{gca}j      dyn_em      1        Z     i1         "OH_JUN"   "Background   OH for Aerosol-GOcart option Jun"   "kg kg-1"
+state    real      oh_gca_jul      i{gca}j      dyn_em      1        Z     i1         "OH_JUL"   "Background   OH for Aerosol-GOcart option Jul"   "kg kg-1"
+state    real      oh_gca_aug      i{gca}j      dyn_em      1        Z     i1         "OH_AUG"   "Background   OH for Aerosol-GOcart option Aug"   "kg kg-1"
+state    real      oh_gca_sep      i{gca}j      dyn_em      1        Z     i1         "OH_SEP"   "Background   OH for Aerosol-GOcart option Sep"   "kg kg-1"
+state    real      oh_gca_oct      i{gca}j      dyn_em      1        Z     i1         "OH_OCT"   "Background   OH for Aerosol-GOcart option Oct"   "kg kg-1"
+state    real      oh_gca_nov      i{gca}j      dyn_em      1        Z     i1         "OH_NOV"   "Background   OH for Aerosol-GOcart option Nov"   "kg kg-1"
+state    real      oh_gca_dec      i{gca}j      dyn_em      1        Z     i1         "OH_DEC"   "Background   OH for Aerosol-GOcart option Dec"   "kg kg-1"
+
+state    real    h2o2_gca_now      i{gca}j      dyn_em      1        Z     -        "H2O2_NOW"   "Background H2O2 for Aerosol-GOcart option Now"   "kg kg-1"
+state    real    h2o2_gca_jan      i{gca}j      dyn_em      1        Z     i1       "H2O2_JAN"   "Background H2O2 for Aerosol-GOcart option Jan"   "kg kg-1"
+state    real    h2o2_gca_feb      i{gca}j      dyn_em      1        Z     i1       "H2O2_FEB"   "Background H2O2 for Aerosol-GOcart option Feb"   "kg kg-1"
+state    real    h2o2_gca_mar      i{gca}j      dyn_em      1        Z     i1       "H2O2_MAR"   "Background H2O2 for Aerosol-GOcart option Mar"   "kg kg-1"
+state    real    h2o2_gca_apr      i{gca}j      dyn_em      1        Z     i1       "H2O2_APR"   "Background H2O2 for Aerosol-GOcart option Apr"   "kg kg-1"
+state    real    h2o2_gca_may      i{gca}j      dyn_em      1        Z     i1       "H2O2_MAY"   "Background H2O2 for Aerosol-GOcart option May"   "kg kg-1"
+state    real    h2o2_gca_jun      i{gca}j      dyn_em      1        Z     i1       "H2O2_JUN"   "Background H2O2 for Aerosol-GOcart option Jun"   "kg kg-1"
+state    real    h2o2_gca_jul      i{gca}j      dyn_em      1        Z     i1       "H2O2_JUL"   "Background H2O2 for Aerosol-GOcart option Jul"   "kg kg-1"
+state    real    h2o2_gca_aug      i{gca}j      dyn_em      1        Z     i1       "H2O2_AUG"   "Background H2O2 for Aerosol-GOcart option Aug"   "kg kg-1"
+state    real    h2o2_gca_sep      i{gca}j      dyn_em      1        Z     i1       "H2O2_SEP"   "Background H2O2 for Aerosol-GOcart option Sep"   "kg kg-1"
+state    real    h2o2_gca_oct      i{gca}j      dyn_em      1        Z     i1       "H2O2_OCT"   "Background H2O2 for Aerosol-GOcart option Oct"   "kg kg-1"
+state    real    h2o2_gca_nov      i{gca}j      dyn_em      1        Z     i1       "H2O2_NOV"   "Background H2O2 for Aerosol-GOcart option Nov"   "kg kg-1"
+state    real    h2o2_gca_dec      i{gca}j      dyn_em      1        Z     i1       "H2O2_DEC"   "Background H2O2 for Aerosol-GOcart option Dec"   "kg kg-1"
+
+state    real     no3_gca_now      i{gca}j      dyn_em      1        Z     -         "NO3_NOW"   "Background  NO3 for Aerosol-GOcart option Now"   "kg kg-1"
+state    real     no3_gca_jan      i{gca}j      dyn_em      1        Z     i1        "NO3_JAN"   "Background  NO3 for Aerosol-GOcart option Jan"   "kg kg-1"
+state    real     no3_gca_feb      i{gca}j      dyn_em      1        Z     i1        "NO3_FEB"   "Background  NO3 for Aerosol-GOcart option Feb"   "kg kg-1"
+state    real     no3_gca_mar      i{gca}j      dyn_em      1        Z     i1        "NO3_MAR"   "Background  NO3 for Aerosol-GOcart option Mar"   "kg kg-1"
+state    real     no3_gca_apr      i{gca}j      dyn_em      1        Z     i1        "NO3_APR"   "Background  NO3 for Aerosol-GOcart option Apr"   "kg kg-1"
+state    real     no3_gca_may      i{gca}j      dyn_em      1        Z     i1        "NO3_MAY"   "Background  NO3 for Aerosol-GOcart option May"   "kg kg-1"
+state    real     no3_gca_jun      i{gca}j      dyn_em      1        Z     i1        "NO3_JUN"   "Background  NO3 for Aerosol-GOcart option Jun"   "kg kg-1"
+state    real     no3_gca_jul      i{gca}j      dyn_em      1        Z     i1        "NO3_JUL"   "Background  NO3 for Aerosol-GOcart option Jul"   "kg kg-1"
+state    real     no3_gca_aug      i{gca}j      dyn_em      1        Z     i1        "NO3_AUG"   "Background  NO3 for Aerosol-GOcart option Aug"   "kg kg-1"
+state    real     no3_gca_sep      i{gca}j      dyn_em      1        Z     i1        "NO3_SEP"   "Background  NO3 for Aerosol-GOcart option Sep"   "kg kg-1"
+state    real     no3_gca_oct      i{gca}j      dyn_em      1        Z     i1        "NO3_OCT"   "Background  NO3 for Aerosol-GOcart option Oct"   "kg kg-1"
+state    real     no3_gca_nov      i{gca}j      dyn_em      1        Z     i1        "NO3_NOV"   "Background  NO3 for Aerosol-GOcart option Nov"   "kg kg-1"
+state    real     no3_gca_dec      i{gca}j      dyn_em      1        Z     i1        "NO3_DEC"   "Background  NO3 for Aerosol-GOcart option Dec"   "kg kg-1"
+
+rconfig   integer gca_input_opt      namelist,domains      1              0       irh    "gca_input_opt" "0=do not process the GOcart Aerosol input from metgrid"
+
+package   use_gca_input       gca_input_opt==1             -             state:p_gca,oh_gca_now,oh_gca_jan,oh_gca_feb,oh_gca_mar,oh_gca_apr,oh_gca_may,oh_gca_jun,oh_gca_jul,oh_gca_aug,oh_gca_sep,oh_gca_oct,oh_gca_nov,oh_gca_dec,h2o2_gca_now,h2o2_gca_jan,h2o2_gca_feb,h2o2_gca_mar,h2o2_gca_apr,h2o2_gca_may,h2o2_gca_jun,h2o2_gca_jul,h2o2_gca_aug,h2o2_gca_sep,h2o2_gca_oct,h2o2_gca_nov,h2o2_gca_dec,no3_gca_now,no3_gca_jan,no3_gca_feb,no3_gca_mar,no3_gca_apr,no3_gca_may,no3_gca_jun,no3_gca_jul,no3_gca_aug,no3_gca_sep,no3_gca_oct,no3_gca_nov,no3_gca_dec

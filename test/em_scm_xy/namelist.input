@@ -1,0 +1,114 @@
+ &time_control
+ run_days                            = 0,
+ run_hours                           = 59,
+ run_minutes                         = 0,
+ run_seconds                         = 0,
+ start_year                          = 1999,
+ start_month                         = 10,
+ start_day                           = 22,
+ start_hour                          = 19,
+ start_minute                        = 00,
+ start_second                        = 00,
+ end_year                            = 1999,
+ end_month                           = 10,
+ end_day                             = 25,
+ end_hour                            = 06,
+ end_minute                          = 00,
+ end_second                          = 00,
+ history_interval                    = 60,
+ frames_per_outfile                  = 10000,
+ restart                             = .false.,
+ restart_interval                    = 1440000,
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_input                       = 2
+ io_form_boundary                    = 2
+ auxinput3_inname                    = "force_ideal.nc"
+ auxinput3_interval_h                = 59
+ io_form_auxinput3                   = 2
+ /
+
+ &domains
+ time_step                           = 60,
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
+ max_dom                             = 1,
+ s_we                                = 1,
+ e_we                                = 3,
+ s_sn                                = 1,
+ e_sn                                = 3,
+ s_vert                              = 1,
+ e_vert                              = 60,
+ dx                                  = 4000,
+ dy                                  = 4000,
+ ztop                                = 12000.,
+ /
+
+ &scm
+ scm_force                           = 0
+ scm_force_dx                        = 10000
+ num_force_layers                    = 8
+ scm_lu_index                        = 2
+ scm_isltyp                          = 4
+ scm_vegfra                          = 50. 
+ scm_lat                             = 37.600
+ scm_lon                             = -96.700
+ scm_th_adv                          = .false.
+ scm_wind_adv                        = .false.
+ scm_qv_adv                          = .false.
+ scm_vert_adv                        = .false.
+ /
+
+ &physics
+ mp_physics                          = 2,
+ ra_lw_physics                       = 1,
+ ra_sw_physics                       = 1,
+ radt                                = 0,
+ sf_sfclay_physics                   = 1,
+ sf_surface_physics                  = 2,
+ bl_pbl_physics                      = 1,
+ bldt                                = 0,
+ cu_physics                          = 0,
+ cudt                                = 0,
+ /
+
+ &dynamics
+ hybrid_opt                          = 0, 
+ rk_ord                              = 3,
+ diff_opt                            = 2,      2,      2,
+ km_opt                              = 2,      2,      2,
+ damp_opt                            = 2,
+ dampcoef                            = .003,
+ zdamp                               = 5000.,
+ khdif                               = 300,
+ kvdif                               = 1,
+ smdiv                               = 0.1,
+ emdiv                               = 0.01,
+ epssm                               = 0.1,
+ time_step_sound                     = 6,
+ h_mom_adv_order                     = 5,
+ v_mom_adv_order                     = 3,
+ h_sca_adv_order                     = 5,
+ v_sca_adv_order                     = 3,
+ pert_coriolis                       = .true.,
+ mix_full_fields                     = .true.,
+ non_hydrostatic                     = .true.,
+ /
+
+ &bdy_control
+ periodic_x                          = .true.,
+ symmetric_xs                        = .false.,
+ symmetric_xe                        = .false.,
+ open_xs                             = .false., 
+ open_xe                             = .false.,
+ periodic_y                          = .true.,
+ symmetric_ys                        = .false.,
+ symmetric_ye                        = .false.,
+ open_ys                             = .false.,
+ open_ye                             = .false.,
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /

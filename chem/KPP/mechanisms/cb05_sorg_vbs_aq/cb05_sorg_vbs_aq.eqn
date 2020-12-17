@@ -1,0 +1,382 @@
+#EQUATIONS { CB05 MADE/SORG VBS Extension, Implemented by NCSU, Sep 2014 }
+//*********************************************************************
+//The former rate constant corresponds that for the following reaction in original version of CB05 in CMAQ:
+//< R34>  HO2  + HO2         = H2O2. But CMAQ uses an older rate constant of (EP3(2.3D-13, 600.0, 1.7D-33, 1000.0, TEMP, C_M).
+//An updated rate constant of (EP3(2.3D-13, 600.0, 1.7D-33, 1000.0, TEMP, C_M) * ARR2(1.4D-21, 2200.0_dp, TEMP) comes from
+//Jacobson's book (2005), Table B.4, reaction 33: HO2  + HO2         = H2O2 + O2.
+//Additions of Cl equations from CMAQ's CB05 with Cl extension, and also Hg reactions taken from GU-WRF/Chem
+//SO2 heteorogenous chemistry is also added here
+//*********************************************************************
+<  R1>  NO2  + hv          = NO        + O            : j(Pj_no2);
+<  R2>  O   {+ O2    + M}  = O3       {+ M}           : 0.21*C_M*C_M*ARR(6.0D-34, 0.0_dp, -2.4_dp, TEMP);
+<  R3>  O3   + NO          = NO2      {+ O2}          : ARR2(3.0D-12, 1500.0_dp, TEMP);
+<  R4>  O    + NO2         = NO       {+ O2}          : ARR2(5.6D-12, -180.0_dp, TEMP);
+<  R5>  O    + NO2  {+ M}  = NO3      {+ M}           : TROE(2.5D-31, 1.8_dp, 2.2D-11, 0.7_dp, TEMP, C_M);
+<  R6>  O    + NO   {+ M}  = NO2      {+ M}           : TROE(9.0D-32, 1.5_dp, 3.0D-11, 0.0_dp, TEMP, C_M);
+<  R7>  NO2  + O3          = NO3      {+ O2}          : ARR2(1.2D-13, 2450.0_dp, TEMP);
+<  R8>  O3   + hv          = O        {+ O2}          : j(Pj_o33p);
+<  R9>  O3   + hv          = O1D      {+ O2}          : j(Pj_o31d);
+< R10>  O1D  + M           = O         + M            : ARR2(2.1D-11, -102.0_dp, TEMP);
+< R11>  O1D  + H2O         = 2 OH                     : 2.2D-10;
+< R12>  O3   + OH          = HO2      {+ O2}          : ARR2(1.7D-12, 940.0_dp, TEMP);
+< R13>  O3   + HO2         = OH       {+ 2 O2}        : ARR2(1.0D-14, 490.0_dp, TEMP);
+< R14>  NO3  + hv          = NO2       + O            : j(Pj_no3o);
+< R15>  NO3  + hv          = NO       {+ O2}          : j(Pj_no3o2);
+< R16>  NO3  + NO          = 2 NO2                    : ARR2(1.5D-11, -170.0_dp, TEMP);
+< R17>  NO3  + NO2         = NO        + NO2   {+ O2} : ARR2(4.5D-14, 1260.0_dp, TEMP);
+< R18>  NO3  + NO2  {+ M}  = N2O5     {+ M}           : TROE(2.0D-30, 4.4_dp, 1.4D-12, 0.7_dp, TEMP, C_M);
+< R19>  N2O5 + H2O         = 2 HNO3                   : 2.5D-22;
+< R20>  N2O5 + H2O   + H2O = 2 HNO3                   : 1.8D-39;
+< R21>  N2O5               = NO3       + NO2          : FALL(1.0D-03, 11000.0_dp, -3.5_dp, 9.7D14, 11080.0_dp, 0.1_dp, 0.45_dp, TEMP, C_M);
+< R22>  NO   + NO {+0.21M} = 2 NO2                    : ARR2(3.3D-39, -530.0_dp, TEMP)*0.21*C_M; 
+< R23>  NO   + NO2   + H2O = 2 HONO                   : 5.0D-40;
+< R24>  NO   + OH          = HONO                     : TROE(7.0D-31, 2.6_dp, 3.6D-11, 0.1_dp, TEMP, C_M);
+< R25>  HONO + hv          = NO        + OH           : j(Pj_hno2);
+< R26>  OH   + HONO        = NO2      {+ H2O}         : ARR2(1.8D-11, 390.0_dp, TEMP);
+< R27>  HONO + HONO        = NO        + NO2          : 1.0D-20;
+< R28>  NO2  + OH          = HNO3                     : TROE(2.0D-30, 3.0_dp, 2.5D-11, 0.0_dp, TEMP, C_M);
+< R29>  OH   + HNO3        = NO3                      : EP2(2.4D-14, -460.0_dp, 2.7D-17, -2199.0_dp, 6.5D-34, -1335.0_dp, TEMP, C_M);
+< R30>  HO2  + NO          = OH        + NO2          : ARR2(3.5D-12, -250.0_dp, TEMP);
+< R31>  HO2  + NO2         = PNA                      : TROE(1.8D-31, 3.2_dp, 4.7D-12, 0.0_dp, TEMP, C_M);
+< R32>  PNA                = HO2       + NO2          : FALL(4.1D-05, 10650.0_dp, 0.0_dp, 4.8D15, 11170.0_dp, 0.0_dp, 0.6_dp, TEMP, C_M);
+< R33>  OH   + PNA         = NO2                      : ARR2(1.3D-12, -380.0_dp, TEMP);
+< R34>  HO2  + HO2         = H2O2                     : EP3(2.3D-13, -600.0_dp, 1.7D-33, -1000.0_dp, TEMP, C_M);
+< R35>  HO2  + HO2  + H2O  = H2O2                     : EP3(3.22D-34, -2800.0_dp, 2.38D-54, -3200.0_dp, TEMP, C_M);
+< R36>  H2O2 + hv          = 2 OH                     : j(Pj_h2o2);
+< R37>  OH   + H2O2        = HO2      {+ H2O}         : ARR2(2.9D-12, 160.0_dp, TEMP);
+< R38>  O1D  + H2          = OH        + HO2          : 1.1D-10;
+< R39>  OH   + H2          = HO2                      : ARR2(5.5D-12, 2000.0_dp, TEMP);
+< R40>  OH   + O           = HO2                      : ARR2(2.2D-11, -120.0_dp, TEMP);
+< R41>  OH   + OH          = O                        : ARR2(4.2D-12, 240.0_dp, TEMP);
+< R42>  OH   + OH          = H2O2                     : TROE(6.9D-31, 1.0_dp, 2.6D-11, 0.0_dp, TEMP, C_M);
+< R43>  OH   + HO2         = H2O      {+ O2}          : ARR2(4.8D-11, -250.0_dp, TEMP);
+< R44>  HO2  + O           = OH       {+ O2}          : ARR2(3.0D-11, -200.0_dp, TEMP);
+< R45>  H2O2 + O           = OH        + HO2          : ARR2(1.4D-12, 2000.0_dp, TEMP);
+< R46>  NO3  + O           = NO2      {+ O2}          : 1.0D-11;
+< R47>  NO3  + OH          = HO2       + NO2          : 2.2D-11;
+< R48>  NO3  + HO2         = HNO3     {+ O2}          : 3.5D-12;
+< R49>  NO3  + O3          = NO2      {+ 2 O2}        : 1.0D-17;
+< R50>  NO3  + NO3         = 2 NO2    {+ O2}          : ARR2(8.5D-13, 2450.0_dp, TEMP);
+< R51>  PNA  + hv          = 0.61 HO2  + 0.61 NO2
+                           + 0.39 OH   + 0.39 NO3     : j(Pj_hno4);
+< R52>  HNO3 + hv          = OH        + NO2          : j(Pj_hno3);
+< R53>  N2O5 + hv          = NO2       + NO3          : j(Pj_n2o5);
+< R54>  XO2  + NO          = NO2      {+ XO}          : ARR2(2.6D-12, -365.0_dp, TEMP);
+< R55>  XO2N + NO          = NTR                      : ARR2(2.6D-12, -365.0_dp, TEMP);
+< R56>  XO2  + HO2         = ROOH                     : ARR2(7.5D-13, -700.0_dp, TEMP);
+< R57>  XO2N + HO2         = ROOH                     : ARR2(7.5D-13, -700.0_dp, TEMP);
+< R58>  XO2  + XO2         = 0.21 M                   : 6.8D-14;
+< R59>  XO2N + XO2N        = 0.21 M                   : 6.8D-14;
+< R60>  XO2  + XO2N        = 0.21 M                   : 6.8D-14;
+< R61>  NTR  + OH          = HNO3      + HO2
+                           + 0.33 FORM + 0.33 ALD2
+                           + 0.33 ALDX - 0.66 PAR     : ARR2(5.9D-13, 360.0_dp, TEMP);
+< R62>  NTR  + hv          = NO2       + HO2
+                           + 0.33 FORM + 0.33 ALD2
+                           + 0.33 ALDX - 0.66 PAR     : 1.0D-4*j(Pj_no2);
+< R63>  ROOH + OH          = XO2       + 0.50 ALD2
+                           + 0.50 ALDX                : ARR2(3.01D-12, -190.0_dp, TEMP);
+< R64>  ROOH + hv          = OH        + HO2
+                           + 0.50 ALD2 + 0.50 ALDX    : 0.7   *j(Pj_h2o2); 
+< R65>  OH   + CO          = HO2                      : EP3(1.44D-13, 0.0_dp, 3.43D-33, 0.0_dp, TEMP, C_M);
+< R66>  OH   + CH4         = MEO2                     : ARR2(2.45D-12, 1775.0_dp, TEMP);
+< R67>  MEO2 + NO          = FORM      + HO2    + NO2 : ARR2(2.8D-12, -300.0_dp, TEMP);
+< R68>  MEO2 + HO2         = MEPX                     : ARR2(4.1D-13, -750.0_dp, TEMP);
+< R69>  MEO2 + MEO2        = 1.37 FORM + 0.74 HO2
+                           + 0.63 MEOH                : ARR2(9.5D-14, -390.0_dp, TEMP);
+< R70>  MEPX + OH          = 0.70 MEO2 + 0.30 XO2
+                           + 0.30 HO2                 : ARR2(3.8D-12, -200.0_dp, TEMP);
+< R71>  MEPX + hv          = FORM      + HO2    + OH  : 0.7   *j(Pj_h2o2);
+< R72>  MEOH + OH          = FORM      + HO2          : ARR2(7.3D-12, 620.0_dp, TEMP);
+< R73>  FORM + OH          = HO2       + CO           : 9.0D-12;
+< R74>  FORM + hv          = 2.000 HO2 + CO           : j(Pj_ch2or);
+< R75>  FORM + hv          = CO                       : j(Pj_ch2om);
+< R76>  FORM + O           = OH        + HO2    + CO  : ARR2(3.4D-11, 1600.0_dp, TEMP);
+< R77>  FORM + NO3         = HNO3      + HO2    + CO  : 5.8D-16;
+< R78>  FORM + HO2         = HCO3                     : ARR2(9.7D-15, -625.0_dp, TEMP);
+< R79>  HCO3               = FORM      + HO2          : ARR2(2.4D+12, 7000.0_dp, TEMP);
+< R80>  HCO3 + NO          = FACD      + NO2 + HO2    : 5.6D-12;
+< R81>  HCO3 + HO2         = MEPX                     : ARR2(5.6D-15, -2300.0_dp, TEMP);
+< R82>  FACD + OH          = HO2                      : 4.0D-13;
+< R83>  ALD2 + O           = C2O3      + OH           : ARR2(1.8D-11, 1100.0_dp, TEMP);
+< R84>  ALD2 + OH          = C2O3                     : ARR2(5.6D-12, -270.0_dp, TEMP);
+< R85>  ALD2 + NO3         = C2O3      + HNO3         : ARR2(1.4D-12, 1900.0_dp, TEMP);
+< R86>  ALD2 + hv          = MEO2      + CO  + HO2    : 4.6D-4*j(Pj_no2);
+< R87>  C2O3 + NO          = MEO2      + NO2          : ARR2(8.1D-12, -270.0_dp, TEMP);
+< R88>  C2O3 + NO2         = PAN          : FALL(2.7D-28, 0.0_dp, -7.1_dp, 1.2D-11, 0.0_dp, -0.9_dp, 0.3_dp, TEMP, C_M);
+< R89>  PAN                = C2O3      + NO2          : FALL(4.9D-03, 12100.0_dp, 0.0_dp, 5.4D16, 13830.0_dp, 0.0_dp, 0.3_dp, TEMP, C_M);
+< R90>  PAN  + hv          = C2O3      + NO2          : j(Pj_pan);
+< R91>  C2O3 + HO2         = 0.80 PACD + 0.20 AACD
+                           + 0.20 O3                  : ARR2(4.3D-13, -1040.0_dp, TEMP);
+< R92>  C2O3 + MEO2        = 0.90 MEO2 + 0.90 HO2
+                           + FORM      + 0.10 AACD    : ARR2(2.0D-12, -500.0_dp, TEMP);
+< R93>  C2O3 + XO2         = 0.90 MEO2 + 0.10 AACD    : ARR2(4.4D-13, -1070.0_dp, TEMP);
+< R94>  C2O3 + C2O3        = 2.00 MEO2                : ARR2(2.9D-12, -500.0_dp, TEMP);
+< R95>  PACD + OH          = C2O3                     : ARR2(4.0D-13, -200.0_dp, TEMP);
+< R96>  PACD + hv          = MEO2      + OH           : 0.0*0.7   *j(Pj_h2o2);
+< R97>  AACD + OH          = MEO2                     : ARR2(4.0D-13, -200.0_dp, TEMP);
+< R98>  ALDX + O           = CXO3      + OH           : ARR2(1.3D-11, 870.0_dp, TEMP);
+< R99>  ALDX + OH          = CXO3                     : ARR2(5.1D-12, -405.0_dp, TEMP);
+<R100>  ALDX + NO3         = CXO3      + HNO3         : 6.5D-15;
+<R101>  ALDX + hv          = MEO2      + CO     + HO2 : j(Pj_ch3cho);
+<R102>  CXO3 + NO          = ALD2      + NO2
+                           + HO2       + XO2          : ARR2(6.7D-12, -340.0_dp, TEMP);
+<R103>  CXO3 + NO2         = PANX                     : FALL(2.7D-28, 0.0_dp, -7.1_dp, 1.2D-11, 0.0_dp, -0.9_dp, 0.3_dp, TEMP, C_M);
+<R104>  PANX               = CXO3      + NO2          : FALL(4.9D-03, 12100.0_dp, 0.0_dp, 5.4D16, 13830.0_dp, 0.0_dp, 0.3_dp, TEMP, C_M);
+<R105>  PANX + hv          = CXO3      + NO2          : j(Pj_pan);
+<R106>  PANX + OH          = ALD2      + NO2          : 3.0D-13;
+<R107>  CXO3 + HO2         = 0.80 PACD + 0.20 AACD
+                           + 0.20 O3                  : ARR2(4.3D-13, -1040.0_dp, TEMP);
+<R108>  CXO3 + MEO2        = 0.90 ALD2 + 0.90 XO2
+                           + HO2       + 0.10 AACD
+                           + 0.10 FORM                : ARR2(2.0D-12, -500.0_dp, TEMP);
+<R109>  CXO3 + XO2         = 0.90 ALD2 + 0.10 AACD    : ARR2(4.4D-13, -1070.0_dp, TEMP);
+<R110>  CXO3 + CXO3        = 2.00 ALD2 + 2.00 XO2
+                           + 2.00 HO2                 : ARR2(2.9D-12, -500.0_dp, TEMP);
+<R111>  CXO3 + C2O3        = MEO2      + XO2
+                           + HO2       + ALD2         : ARR2(2.9D-12, -500.0_dp, TEMP);
+<R112>  PAR  + OH          = 0.87 XO2  + 0.13 XO2N
+                           + 0.11 HO2  + 0.06 ALD2
+                           - 0.11 PAR  + 0.76 ROR
+                           + 0.05 ALDX                : 8.1D-13;
+<R113>  ROR                = 0.96 XO2  + 0.60 ALD2
+                           + 0.94 HO2  - 2.10 PAR
+                           + 0.04 XO2N + 0.02 ROR
+                           + 0.50 ALDX                : ARR2(1.0D15, 8000.0_dp, TEMP);
+<R114>  ROR                = HO2                      : 1.6E+03;
+<R115>  ROR  + NO2         = NTR                      : 1.5D-11;
+<R116>  O    + OLE         = 0.20 ALD2 + 0.30 ALDX
+                           + 0.30 HO2  + 0.20 XO2
+                           + 0.20 CO   + 0.20 FORM
+                           + 0.01 XO2N + 0.20 PAR
+                           + 0.10 OH                  : ARR2(1.0D-11, 280.0_dp, TEMP);
+<R117>  OH   + OLE         = 0.80 FORM + 0.33 ALD2
+                           + 0.62 ALDX + 0.80 XO2
+                           + 0.95 HO2  - 0.70 PAR     : 3.2D-11;
+<R118>  O3   + OLE         = 0.18 ALD2 + 0.74 FORM
+                           + 0.32 ALDX + 0.22 XO2
+                           + 0.10 OH   + 0.33 CO
+                           + 0.44 HO2  - 1.00 PAR     : ARR2(6.5D-15, 1900.0_dp, TEMP);
+<R119>  NO3  + OLE         = NO2       + FORM
+                           + 0.91 XO2  + 0.09 XO2N
+                           + 0.56 ALDX + 0.35 ALD2
+                           - 1.00 PAR                 : ARR2(7.0D-13, 2160.0_dp, TEMP);
+<R120>  O    + ETH         = FORM      + 1.70 HO2
+                           + CO        + 0.70 XO2
+                           + 0.30 OH                  : ARR2(1.04D-11, 792.0_dp, TEMP);
+<R121>  OH   + ETH         = XO2       + 1.56 FORM
+                           + 0.22 ALDX + HO2          : TROE(1.0D-28, 0.8_dp, 8.8D-12, 0.0_dp, TEMP, C_M);
+<R122>  O3   + ETH         = FORM      + 0.63 CO
+                           + 0.13 HO2  + 0.13 OH
+                           + 0.37 FACD                : ARR2(1.2D-14, 2630.0_dp, TEMP);
+<R123>  NO3  + ETH         = NO2       + XO2
+                           + 2.0 FORM                 : ARR2(3.3D-12, 2880.0_dp, TEMP);
+<R124>  IOLE + O           = 1.24 ALD2 + 0.66 ALDX
+                           + 0.10 HO2  + 0.10 XO2
+                           + 0.10 CO   + 0.10 PAR     : 2.3D-11;
+<R125>  IOLE + OH          = 1.30 ALD2 + 0.70 ALDX
+                           + HO2       + XO2          : ARR2(1.0D-11, -550.0_dp, TEMP);
+<R126>  IOLE + O3          = 0.65 ALD2 + 0.35 ALDX
+                           + 0.25 FORM + 0.25 CO
+                           + 0.50 O    + 0.50 OH
+                           + 0.50 HO2                 : ARR2(8.4D-15, 1100.0_dp, TEMP);
+<R127>  IOLE + NO3         = 1.18 ALD2 + 0.64 ALDX
+                           + HO2       + NO2          : ARR2(9.6D-13, 270.0_dp, TEMP);
+<R128>  TOL  + OH          = 0.44 HO2  + 0.08 XO2
+                           + 0.36 CRES + 0.56 TO2
+                           + 0.071 TOLAER1
+                           + 0.138 TOLAER2            : ARR2(1.8D-12, -355.0_dp, TEMP);
+<R129>  TO2  + NO          = 0.90 NO2  + 0.90 HO2
+                           + 0.90 OPEN + 0.10 NTR     : 8.1D-12;
+<R130>  TO2                = CRES      + HO2          : 4.2;
+<R131>  OH   + CRES        = 0.40 CRO  + 0.60 XO2
+                           + 0.60 HO2  + 0.30 OPEN
+                           + CSLAER                   : 4.1D-11;
+<R132>  CRES + NO3         = CRO + HNO3 + CSLAER      : 2.2D-11;
+<R133>  CRO  + NO2         = NTR                      : 1.4D-11;
+<R134>  CRO  + HO2         = CRES                     : 5.5D-12;
+<R135>  OPEN + hv          = C2O3       + HO2   + CO  : 9.0    *j(Pj_ch2or);
+<R136>  OPEN + OH          = XO2        + 2.0 CO
+                           + 2.00 HO2   + C2O3 + FORM : 3.0D-11;
+<R137>  OPEN + O3          = 0.03 ALDX  + 0.62 C2O3
+                           + 0.70 FORM  + 0.03 XO2
+                           + 0.69 CO    + 0.08 OH
+                           + 0.76 HO2   + 0.20 MGLY   : ARR2(5.4D-17, 500.0_dp, TEMP);
+<R138>  OH   + XYL         = 0.70 HO2   + 0.50 XO2
+                           + 0.20 CRES  + 0.80 MGLY
+                           + 1.10 PAR   + 0.30 TO2
+                           + 0.038 XYLAER1
+                           + 0.167 XYLAER2            : ARR2(1.7D-11, -116.0_dp, TEMP);
+<R139>  OH   + MGLY        = XO2        + C2O3        : 1.7D-11;
+
+<R140>  MGLY + hv          = C2O3       + HO2   + CO  : 9.64  *j(Pj_ch2or);
+<R141>  O    + ISOP        = 0.75 ISPD  + 0.50 FORM
+                           + 0.25 XO2   + 0.25 HO2
+                           + 0.25 CXO3
+                           + 0.232 ISOAER1
+                           + 0.0228 ISOAER2           : 3.6D-11;
+<R142>  OH   + ISOP        = 0.912 ISPD + 0.629 FORM
+                           + 0.991 XO2  + 0.912 HO2
+                           + 0.088 XO2N
+                           + 0.232 ISOAER1
+                           + 0.0288 ISOAER2           : ARR2(2.54D-11, -407.6_dp, TEMP);
+<R143>  O3   + ISOP        = 0.650 ISPD + 0.600 FORM
+                           + 0.200 XO2  + 0.066 HO2
+                           + 0.266 OH   + 0.200 CXO3
+                           + 0.150 ALDX + 0.350 PAR
+                           + 0.066 CO
+                           + 0.232 ISOAER1
+                           + 0.0288 ISOAER2           : ARR2(7.86D-15, 1912.0_dp, TEMP);
+<R144>  NO3  + ISOP        = 0.200 ISPD + 0.800 NTR
+                           + XO2        + 0.800 HO2
+                           + 0.200 NO2  + 0.800 ALDX
+                           + 0.232 ISOAER1
+                           + 0.0288 ISOAER2           : ARR2(3.03D-12, 448.0_dp, TEMP);
+<R145>  OH   + ISPD        = 1.565 PAR  + 0.167 FORM
+                           + 0.713 XO2  + 0.503 HO2
+                           + 0.334 CO   + 0.168 MGLY
+                           + 0.252 ALD2 + 0.210 C2O3
+                           + 0.250 CXO3 + 0.120 ALDX  : 3.36D-11;
+<R146>  O3   + ISPD        = 0.114 C2O3 + 0.150 FORM
+                           + 0.850 MGLY + 0.154 HO2
+                           + 0.268 OH   + 0.064 XO2
+                           + 0.020 ALD2 + 0.360 PAR
+                           + 0.225 CO                 : 7.1D-18;
+<R147>  NO3  + ISPD        = 0.357 ALDX + 0.282 FORM
+                           + 1.282 PAR  + 0.925 HO2
+                           + 0.643 CO   + 0.850 NTR
+                           + 0.075 CXO3 + 0.075 XO2
+                           + 0.150 HNO3               : 1.0D-15;
+<R148>  ISPD + hv          = 0.333 CO   + 0.067 ALD2
+                           + 0.900 FORM + 0.832 PAR
+                           + 1.033 HO2  + 0.700 XO2
+                           + 0.967 C2O3               : 0.0036*0.025 *j(Pj_ch2om);
+<R149>  TERP + O           = 0.150 OH   + 5.12  PAR
+                           + TERPAER                  : 3.6D-11;
+<R150>  TERP + OH          = 0.750 HO2  + 1.250 XO2
+                           + 0.250 XO2N + 0.280 FORM
+                           + 1.66  PAR  + 0.470 ALDX
+                           + TERPAER                  : ARR2(1.5D-11, -449.0_dp, TEMP);
+<R151>  TERP + O3          = 0.570 OH   + 0.070 HO2
+                           + 0.760 XO2  + 0.180 XO2N
+                           + 0.240 FORM + 0.001 CO
+                           + 7.000 PAR  + 0.210 ALDX
+                           + 0.390 CXO3
+                           + TERPAER                  : ARR2(1.2D-15, 821.0_dp, TEMP);
+<R152>  TERP + NO3         = 0.470 NO2  + 0.280 HO2
+                           + 1.030 XO2  + 0.250 XO2N
+                           + 0.470 ALDX + 0.530 NTR
+                           + TERPAER                  : ARR2(3.7D-12, -175.0_dp, TEMP);
+<R153>  SO2  + OH          = SULF + HO2 + SULAER      : TROE(3.3D-31, 4.3_dp, 1.6D-12, 0.0_dp, TEMP, C_M);
+<R154>  OH   + ETOH        = HO2        + 0.900 ALD2
+                           + 0.050 ALDX + 0.100 FORM
+                           + 0.100 XO2                : ARR2(6.9D-12, 230.0_dp, TEMP);
+<R155>  OH   + ETHA        = 0.991 ALD2 + 0.991 XO2
+                           + 0.009 XO2N + HO2         : ARR2(8.7D-12, 1070.0_dp, TEMP);
+<R156>  NO2  + ISOP        = 0.200 ISPD + 0.800 NTR
+                           + XO2        + 0.800 HO2
+                           + 0.200 NO   + 0.800 ALDX
+                           + 2.400 PAR                : 1.5D-19;
+<R157>  CL2  + hv          = 2.000 CL                 : j(Pj_cl2);
+<R158>  HOCL + hv          = OH        + CL           : j(Pj_hocl);
+<R159>  CL   + O3          = CLO                      : ARR2(2.3D-11, 200.0_dp, TEMP);
+<R160>  CLO  + CLO         = 0.300 CL2 + 1.400 CL     : 1.63D-14;
+<R161>  CLO  + NO          = CL        + NO2          : ARR2(6.4D-12, -290.0_dp, TEMP);
+<R162>  CLO  + HO2         = HOCL                     : ARR2(2.7D-12, -220.0_dp, TEMP);
+<R163>  OH   + FMCL        = CL        + CO           : 5.0D-13;
+<R164>  FMCL + hv          = CL        + CO + HO2     : j(Pj_fmcl);
+<R165>  CL   + CH4         = HCL       + MEO2         : ARR2(6.6D-12, 1240.0_dp, TEMP);
+<R166>  CL   + PAR         = HCL
+                             + 0.870 XO2
+                             + 0.130 XO2N
+                             + 0.110 HO2
+                             + 0.060 ALD2
+                             - 0.110 PAR
+                             + 0.760 ROR
+                             + 0.050 ALDX             : 5.0D-11;
+<R167>  CL   + ETHA       = HCL
+                             + 0.991 ALD2
+                             + 0.991 XO2
+                             + 0.009 XO2N
+                             + HO2                    : ARR2(8.3D-11, 100.0_dp, TEMP);
+<R168>  CL   + ETH         = FMCL
+                             + 2.000 XO2
+                             + 1.000 HO2
+                             + 1.000 FORM             : 1.07D-10;
+<R169>  CL   + OLE         = FMCL
+                             + 0.330 ALD2
+                             + 0.670 ALDX
+                             + 2.000 XO2
+                             + 1.000 HO2
+                             - 1.000 PAR              : 2.5D-10;
+<R170>  CL   + IOLE        = 0.300 HCL
+                             + 0.700 FMCL
+                             + 0.450 ALD2
+                             + 0.550 ALDX
+                             + 0.300 OLE
+                             + 0.300 PAR
+                             + 1.700 XO2
+                             + 1.000 HO2              : 3.5D-10;
+<R171>  CL   + ISOP        = 0.15 HCL
+                             + 1.000 XO2
+                             + 1.000 HO2
+                             + 0.850 FMCL
+                             + 1.000 ISPD             : 4.3D-10;
+<R172>  CL   + FORM       = HCL
+                             + 1.000 HO2
+                             + 1.000 CO               : ARR2(8.2D-11, 34.0_dp, TEMP);
+<R173>  CL   + ALD2       = HCL
+                             + 1.000 C2O3             : 7.9D-11;
+<R174>  CL   + ALDX       = HCL
+                             + 1.000 CXO3             : 1.3D-10;
+<R175>  CL   + MEOH       = HCL
+                             + 1.000 HO2
+                             + 1.000 FORM             : 5.5D-11;
+<R176>  CL   + ETOH       = HCL
+                             + 1.000 HO2
+                             + 1.000 ALD2             : ARR2(8.2D-11, -45.0_dp, TEMP);
+<R177>  HCL  + OH         = CL                        : ARR(6.58D-13, -58.0_dp, 1.16_dp, TEMP);
+<R178>  HG0  + O3          = HG2                      : 3.0D-20;
+<R179>  HG0  + OH          = HG2                      : 8.7D-14;
+<R180>  HG0  + H2O2        = HG2                      : 8.5D-19;
+<R181>  HUM  + OH          = HUMAER     + OH          : 2.93D-10;
+<R182>  LIM  + OH          = 0.239 LIMAER1
+                           + 0.363 LIMAER2
+                           + OH                       : 1.71D-10;
+<R183>  OCI  + OH          = 0.045 OCIAER1
+                           + 0.149 OCIAER2
+                           + OH                       : 2.52D-10;
+<R184>  APIN + OH          = 0.038 APINAER1
+                           + 0.326 APINAER2
+                           + OH                       : 5.37D-11;
+<R185>  APIN + O3          = 0.125 APINAER3
+                           + 0.102 APINAER4
+                           + O3                       : 8.66D-17;
+<R186>  BPIN + OH          = 0.13  BPINAER1
+                           + 0.0406 BPINAER2
+                           + OH                       : 7.89D-11;
+<R187>  BPIN + O3          = 0.026 BPINAER3
+                           + 0.485 BPINAER4
+                           + O3                       : 1.36D-17;
+<R188>  BPIN + NO3         = BPINAER5   + NO3         : 2.31D-12;
+<R189>  TER  + OH          = 0.091 TERAER1
+                           + 0.367 TERAER2
+                           + OH                       : 2.7D-10;
+<R190>  ALKH + OH          = 1.173 ALKHAER1
+                           + OH                       : 1.97D-11;
+<R191>  PAH  + OH          = 0.156 PAHAER1
+                           + 0.777 PAHAER2
+                           + OH                       : 7.7D-11;
+<R192> CVASOA4 + OH        = 1.075 CVASOA3
+                           + OH                       : ARR2(1.0D-11, 0.0_dp, TEMP);
+<R193> CVASOA3 + OH        = 1.075 CVASOA2
+                           + OH                       : ARR2(1.0D-11, 0.0_dp, TEMP);
+<R194> CVASOA2 + OH        = 1.075 CVASOA1
+                           + OH                       : ARR2(1.0D-11, 0.0_dp, TEMP);
+<R195> CVBSOA4 + OH        = 1.075 CVBSOA3
+                           + OH                       : ARR2(1.0D-11, 0.0_dp, TEMP);
+<R196> CVBSOA3 + OH        = 1.075 CVBSOA2
+                           + OH                       : ARR2(1.0D-11, 0.0_dp, TEMP);
+<R197> CVBSOA2 + OH        = 1.075 CVBSOA1
+                           + OH                       : ARR2(1.0D-11, 0.0_dp, TEMP);
+<R198> SO2                 = SULF                     : rtdat_ae_so2;

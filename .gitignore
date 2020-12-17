@@ -1,0 +1,19 @@
+##############################################################################
+# This is the top-level .gitignore file for the WRF model                    #
+#                                                                            #
+# Filenames and wildcards added below will not be tracked by git in any      #
+# directory in the repository                                                #
+#                                                                            #
+# Ignored file types should include executables, build-time temporary files, #
+# and other files which should not ever be added to the code repository.     #
+#                                                                            #
+# USE CAUTION WHEN ADDING WILDCARDS, as some builds use different filename   #
+# conventions than others                                                    #
+##############################################################################
+*.exe
+*.o
+*.mod
+*.a
+configure.wrf*
+*.backup
+*.f90

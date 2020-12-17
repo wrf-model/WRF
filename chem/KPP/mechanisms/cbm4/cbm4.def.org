@@ -1,0 +1,51 @@
+#include atoms
+#include ./cbm4.spc
+#include ./cbm4.eqn
+
+#LANGUAGE FORTRAN
+
+#INTEGRATOR rodas3
+#DRIVER general
+
+#LOOKATALL
+
+#MONITOR O3;
+
+#INITVALUES
+  CFACTOR = 2.55E+10; {ppb-to-mcm}
+  ALL_SPEC = 1.0E-8;
+{Variable species}
+  NO   = 50.0;
+  NO2  = 20.0;
+  HONO = 1.0;
+  O3   = 100.0;
+  HCHO = 10.0;
+  ALD2 = 10;
+  PAN  = 1.0;
+  PAR  = 50.0;
+  OLE  = 10.0;
+  ETH  = 10.0;
+  TOL  = 10.0;
+  XYL  = 10.0;
+  ISOP = 10.0;
+  CO   = 300.0;
+{Fixed species}
+  H2O  = 1.25E+8; {30 %}
+
+
+#INLINE F_INIT
+        TSTART = 12.D0*3600.D0
+        TEND = TSTART + 24.D0*3600.D0 * 5
+        DT = 3600.D0
+        TEMP = 288.15
+#ENDINLINE
+
+
+#INLINE C_INIT
+        TSTART = 12.0*3600.0;
+        TEND = TSTART + 24.0*3600.0*5;
+        DT = 3600.0;
+        TEMP = 288.15;
+#ENDINLINE
+
+

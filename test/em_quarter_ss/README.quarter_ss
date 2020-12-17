@@ -1,0 +1,38 @@
+em_quarter_ss test case:
+
+This test case produces a simulation of a supercell
+thunderstorm.  The environmental wind makes a
+"quarter circle" when plotted on a hodograph, and
+is commonly referred to as "quarter circle shear".
+"ss" refers to "super-cell".
+
+The default version of this test case uses a constant
+eddy viscosity for turbulent mixing -> 
+diff_opt=1 and km_opt = 1 in namelist.input.
+The Coriolis terms in the model are off (f = 0)
+
+The prognostic TKE can be activated by setting
+diff_opt=2 and km_opt = 2 (see README.namelist).
+
+In idealized cloud model simulations, it is common practice
+to use Coriolis forcing calculated from wind fields defined
+as perturbations from the initial sounding.  This option
+can be activated by setting the "dynamics" namelist option
+"pert_coriolis = .true."  (the default is false).
+Additionally, the value of the Coriolis parameter "f"
+will need to be reset (from zero to the desired value)
+in WRFV1/dyn_em/module_initialize_quarter_ss.F, and
+the initial state recomputed.
+
+Also, a constant surface drag and heat flux can be specified
+in the TKE formulation by setting the "dynamics" namelist option
+"tke_drag_coefficient = Cd",
+"tke_heat_flux = S".
+The default values are zero.  Please note that these are 
+specified constants; the formulations do not make use of
+similarity theory.  These momentum and heat fluxes will 
+not be active if surface and boundary layer formulations are
+activated in the model physics.
+
+The sounding used in this case is from Weisman and Klemp, MWR 1982, 504-520,
+with subtle different in mixing ratio above troposphere.

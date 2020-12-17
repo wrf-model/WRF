@@ -1,0 +1,25 @@
+The first line should be a single-line "purpose" for this change
+
+TYPE: choose one of [bug fix, enhancement, new feature, feature removed, no impact, text only]
+
+KEYWORDS: 5 to 10 words related to commit, separated by commas
+
+SOURCE: Either "developer's name (affiliation)" .XOR. "internal" for a WRF Dev committee member
+
+DESCRIPTION OF CHANGES:
+Problem:
+Generally or specifically, what was wrong and needed to be addressed?
+
+Solution:
+What was down algorithmically and in the source code to address the problem?
+
+ISSUE: For use when this PR closes an issue.
+Fixes #123
+
+LIST OF MODIFIED FILES: list of changed files (use `git diff --name-status master` to get formatted list)
+
+TESTS CONDUCTED: 
+1. Do mods fix problem? How can that be demonstrated, and was that test conducted?
+2. Are the Jenkins tests all passing?
+
+RELEASE NOTE: Include a stand-alone message suitable for the inclusion in the minor and annual releases. A publication citation is appropriate.

@@ -1,0 +1,92 @@
+#	Registry file specifically for additional RASM diagnostic climate output.
+# -Created by Jose Renteria, Amy Solomon, Mark Seefeldt
+
+# New dimspec. Set the number of periods per day for monthly diurnal averaging
+
+dimspec    dc      2     constant=8                        z     diurnal_cycles
+
+# Namelist parameters
+
+rconfig   integer  mean_diag              namelist,time_control   1              0      -    "mean diagnostics flag"
+rconfig   integer  mean_freq              namelist,time_control   1              0      -    "mean output frequency"
+rconfig   integer  mean_interval          namelist,time_control   max_domains    0      -    "mean output interval"
+rconfig   integer  mean_diag_interval     namelist,time_control   max_domains    0      -    "mean output interval m"
+rconfig   integer  mean_diag_interval_s   namelist,time_control   max_domains    0      -    "mean output interval s"
+rconfig   integer  mean_diag_interval_m   namelist,time_control   max_domains    0      -    "mean output interval m"
+rconfig   integer  mean_diag_interval_h   namelist,time_control   max_domains    0      -    "mean output interval h"
+rconfig   integer  mean_diag_interval_d   namelist,time_control   max_domains    0      -    "mean output interval d"
+rconfig   integer  mean_diag_interval_mo  namelist,time_control   max_domains    0      -    "mean output interval mo"
+rconfig   integer  diurnal_diag           namelist,time_control   1              0      -    "diurnal diagnostics flag"
+
+# Climate: Mean - output arrays of averages
+state    real  PSFC_MEAN       ij      misc        1         -     rh5        "PSFC_M"         "AVERAGE SURFACE PRESSURE"                                     "Pa"
+state    real  TSK_MEAN        ij      misc        1         -     rh5        "TSK_M"          "AVERAGE SURFACE SKIN TEMPERATURE"                             "K"
+state    real  PMSL_MEAN       ij      misc        1         -     rh5        "PMSL_M"         "AVERAGE SEA LEVEL PRESSURE"                                   "Pa"
+state    real  T2_MEAN         ij      misc        1         -     rh5        "T2_M"           "AVERAGE TEMPERATURE AT 2M"                                    "K"
+state    real  TH2_MEAN        ij      misc        1         -     rh5        "TH2_M"          "AVERAGE POTENTIAL TEMPERATURE AT 2M"                          "K"
+state    real  Q2_MEAN         ij      misc        1         -     rh5        "Q2_M"           "AVERAGE WATER VAPOR MIXING RATIO AT 2M"                       "kg kg-1"
+state    real  U10_MEAN        ij      misc        1         -     rh5        "U10_M"          "AVERAGE U-COMPONENT OF WIND AT 10M"                           "m s-1"
+state    real  V10_MEAN        ij      misc        1         -     rh5        "V10_M"          "AVERAGE V-COMPONENT OF WIND AT 10M"                           "m s-1"
+state    real  HFX_MEAN        ij      misc        1         -     rh5        "HFX_M"          "AVERAGE SENSIBLE HEAT FLUX AT THE SURFACE"                    "W m-2"
+state    real  LH_MEAN         ij      misc        1         -     rh5        "LH_M"           "AVERAGE LATENT HEAT FLUX AT THE SURFACE"                      "W m-2"
+state    real  SWDNB_MEAN      ij      misc        1         -     rh5        "SWDNB_M"        "AVERAGE DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"
+state    real  GLW_MEAN        ij      misc        1         -     rh5        "GLW_M"          "AVERAGE DOWNWARD LONGWAVE FLUX AT GROUND SURFACE"             "W m-2"
+state    real  LWUPB_MEAN      ij      misc        1         -     rh5        "LWUPB_M"        "AVERAGE UPWELLING LONGWAVE FLUX AT BOTTOM"                    "W m-2"
+state    real  SWUPB_MEAN      ij      misc        1         -     rh5        "SWUPB_M"        "AVERAGE UPWELLING SHORTWAVE FLUX AT BOTTOM"                   "W m-2"
+state    real  SWUPT_MEAN      ij      misc        1         -     rh5        "SWUPT_M"        "AVERAGE UPWELLING SHORTWAVE FLUX AT TOP"                      "W m-2"
+state    real  SWDNT_MEAN      ij      misc        1         -     rh5        "SWDNT_M"        "AVERAGE DOWNWELLING SHORTWAVE FLUX AT TOP"                    "W m-2"
+state    real  LWUPT_MEAN      ij      misc        1         -     rh5        "LWUPT_M"        "AVERAGE UPWELLING LONGWAVE FLUX AT TOP"                       "W m-2"
+state    real  LWDNT_MEAN      ij      misc        1         -     rh5        "LWDNT_M"        "AVERAGE DOWNWELLING LONGWAVE FLUX AT TOP"                     "W m-2"
+state  character OUTDATE_MEAN  -       misc        -         -     -          ""               ""
+state  integer NSTEPS_MEAN     -       misc        -         -     r          "NSTEP_M"        "NUMBER OF MEAN STEPS ACCUMULATED"
+
+# Climate: Diurnal - output arrays of averages for each cycle
+state    real  PSFC_DIURN      i{dc}j  misc        1         -     rh6        "PSFC_D"         "DIURNAL AVERAGE SURFACE PRESSURE"                              "Pa"
+state    real  TSK_DIURN       i{dc}j  misc        1         -     rh6        "TSK_D"          "DIURNAL AVERAGE SURFACE SKIN TEMPERATURE"                      "K"
+state    real  T2_DIURN        i{dc}j  misc        1         -     rh6        "T2_D"           "DIURNAL AVERAGE TEMPERATURE AT 2M"                             "K"
+state    real  TH2_DIURN       i{dc}j  misc        1         -     rh6        "TH2_D"          "DIURNAL AVERAGE POTENTIAL TEMPERATURE AT 2M"                   "K"
+state    real  Q2_DIURN        i{dc}j  misc        1         -     rh6        "Q2_D"           "DIURNAL AVERAGE WATER VAPOR MIXING RATIO AT 2M"                "kg kg-1"
+state    real  U10_DIURN       i{dc}j  misc        1         -     rh6        "U10_D"          "DIURNAL AVERAGE U-COMPONENT OF WIND AT 10M"                    "m s-1"
+state    real  V10_DIURN       i{dc}j  misc        1         -     rh6        "V10_D"          "DIURNAL AVERAGE V-COMPONENT OF WIND AT 10M"                    "m s-1"
+state    real  HFX_DIURN       i{dc}j  misc        1         -     rh6        "HFX_D"          "DIURNAL AVERAGE SENSIBLE HEAT FLUX AT THE SURFACE"             "W m-2"
+state    real  LH_DIURN        i{dc}j  misc        1         -     rh6        "LH_D"           "DIURNAL AVERAGE LATENT HEAT FLUX AT THE SURFACE"               "W m-2"
+state    real  SWDNB_DIURN     i{dc}j  misc        1         -     rh6        "SWDNB_D"        "DIURNAL AVERAGE DOWNWARD SHORTWAVE FLUX AT GROUND SURFACE"     "W m-2"
+state    real  GLW_DIURN       i{dc}j  misc        1         -     rh6        "GLW_D"          "DIURNAL AVERAGE DOWNWARD LONGWAVE FLUX AT GROUND SURFACE"      "W m-2"
+state    real  LWUPB_DIURN     i{dc}j  misc        1         -     rh6        "LWUPB_D"        "DIURNAL AVERAGE UPWELLING LONGWAVE FLUX AT BOTTOM"             "W m-2"
+state    real  SWUPB_DIURN     i{dc}j  misc        1         -     rh6        "SWUPB_D"        "DIURNAL AVERAGE UPWELLING SHORTWAVE FLUX AT BOTTOM"            "W m-2"
+state    real  SWUPT_DIURN     i{dc}j  misc        1         -     rh6        "SWUPT_D"        "DIURNAL AVERAGE UPWELLING SHORTWAVE FLUX AT TOP"               "W m-2"
+state    real  SWDNT_DIURN     i{dc}j  misc        1         -     rh6        "SWDNT_D"        "DIURNAL AVERAGE DOWNWELLING SHORTWAVE FLUX AT TOP"             "W m-2"
+state    real  LWUPT_DIURN     i{dc}j  misc        1         -     rh6        "LWUPT_D"        "DIURNAL AVERAGE UPWELLING LONGWAVE FLUX AT TOP"                "W m-2"
+state    real  LWDNT_DIURN     i{dc}j  misc        1         -     rh6        "LWDNT_D"        "DIURNAL AVERAGE DOWNWELLING LONGWAVE FLUX AT TOP"              "W m-2"
+state  character OUTDATE_DIURN -       misc        -         -     -          ""               ""
+state  integer NSTEPS_DIURN    -       misc        -         -     r          "NSTEP_D"        "NUMBER OF DIURNAL STEPS ACCUMULATED"
+
+# Climate: Diurnal variables to computer intermediate avereges
+state    real  PSFC_DTMP       ij      misc        1         -     r          "PSFC_DTM"       "DIURNAL TEMP AVERAGE SURFACE PRESSURE"                            "Pa"
+state    real  TSK_DTMP        ij      misc        1         -     r          "TSK_DTM"        "DIURNAL TEMP AVERAGE SURFACE SKIN TEMPERATURE"                    "K"
+state    real  T2_DTMP         ij      misc        1         -     r          "T2_DTM"         "DIURNAL TEMP AVERAGE TEMPERATURE AT 2M"                           "K"
+state    real  TH2_DTMP        ij      misc        1         -     r          "TH2_DTM"        "DIURNAL TEMP AVERAGE POTENTIAL TEMPERATURE AT 2M"                 "K"
+state    real  Q2_DTMP         ij      misc        1         -     r          "Q2_DTM"         "DIURNAL TEMP WATER VAPOR MIXING RATIO AT 2M"                      "kg kg-1"
+state    real  U10_DTMP        ij      misc        1         -     r          "U10_DTM"        "DIURNAL TEMP U-COMPONENT OF WIND AT 10M"                          "m s-1"
+state    real  V10_DTMP        ij      misc        1         -     r          "V10_DTM"        "DIURNAL TEMP V-COMPONENT OF WIND AT 10M"                          "m s-1"
+state    real  HFX_DTMP        ij      misc        1         -     r          "HFX_DTM"        "DIURNAL TEMP AVERAGE SENSIBLE HEAT FLUX AT THE SURFACE"           "W m-2"
+state    real  LH_DTMP         ij      misc        1         -     r          "LH_DTM"         "DIURNAL TEMP AVERAGE LATENT HEAT FLUX AT THE SURFACE"             "W m-2"
+state    real  SWDNB_DTMP      ij      misc        1         -     r          "SWDNB_DTM"      "DIURNAL TEMP AVERAGE DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"  "W m-2"
+state    real  GLW_DTMP        ij      misc        1         -     r          "GLW_DTM"        "DIURNAL TEMP AVERAGE DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"   "W m-2"
+state    real  LWUPB_DTMP      ij      misc        1         -     r          "LWUPB_DTM"      "DIURNAL TEMP AVERAGE UPWELLING LONGWAVE FLUX AT BOTTOM"           "W m-2"
+state    real  SWUPB_DTMP      ij      misc        1         -     r          "SWUPB_DTM"      "DIURNAL TEMP AVERAGE UPWELLING SHORTWAVE FLUX AT BOTTOM"          "W m-2"
+state    real  SWUPT_DTMP      ij      misc        1         -     r          "SWUPT_DTM"      "DIURNAL TEMP AVERAGE UPWELLING SHORTWAVE FLUX AT TOP"             "W m-2"
+state    real  SWDNT_DTMP      ij      misc        1         -     r          "SWDNT_DTM"      "DIURNAL TEMP AVERAGE DOWNWELLING SHORTWAVE FLUX AT TOP"           "W m-2"
+state    real  LWUPT_DTMP      ij      misc        1         -     r          "LWUPT_DTM"      "DIURNAL TEMP AVERAGE UPWELLING LONGWAVE FLUX AT TOP"              "W m-2"
+state    real  LWDNT_DTMP      ij      misc        1         -     r          "LWDNT_DTM"      "DIURNAL TEMP AVERAGE DOWNWELLING LONGWAVE FLUX AT TOP"            "W m-2"
+state  integer NSTEPSMEAN_DIURN  -     misc        -         -     r          "NSTEP_DTM"      "NUMBER OF MEAN STEPS ACCUMULATED IN DIURNAL Calculation"
+
+# Package declaration for RASM diagnostic output
+
+# -RASM_DIAG: Mean
+package   mean_diag_off      mean_diag==0                  -    -
+package   mean_diag_on       mean_diag==1                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
+
+# -RASM_DIAG: Diurnal
+package   diurnal_diag_off   diurnal_diag==0               -    -
+package   diurnal_diag_on    diurnal_diag==1               -    state:psfc_diurn,tsk_diurn,t2_diurn,th2_diurn,q2_diurn,u10_diurn,v10_diurn,hfx_diurn,lh_diurn,swdnb_diurn,glw_diurn,lwupb_diurn,swupb_diurn,swupt_diurn,swdnt_diurn,lwupt_diurn,lwdnt_diurn

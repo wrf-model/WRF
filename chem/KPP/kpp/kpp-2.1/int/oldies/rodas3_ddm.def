@@ -1,0 +1,52 @@
+ 
+#FUNCTION AGGREGATE
+#JACOBIAN SPARSE_LU_ROW
+
+#DOUBLE ON 
+#INTFILE rodas3_ddm
+#HESSIAN ON 
+
+#INLINE F77_DECL_INT
+      INTEGER Autonomous
+      COMMON /INTGDATA/ Autonomous
+      REAL*8 STEPSTART
+      COMMON /GDATA/ STEPSTART
+#ENDINLINE
+
+#INLINE F77_INIT_INT
+        STEPMIN=1.0E-4
+        STEPMAX=3600.
+        Autonomous = 0
+        STEPSTART=STEPMIN
+#ENDINLINE
+
+
+#INLINE F90_DECL_INT
+      INTEGER :: Autonomous
+      DOUBLE PRECISION :: STEPSTART
+#ENDINLINE
+
+#INLINE F90_INIT_INT
+        STEPMIN=1.e-4
+        STEPMAX=3600.
+        Autonomous = 0
+        STEPSTART=STEPMIN
+#ENDINLINE
+
+
+#INLINE C_DECL_INT
+    extern int Autonomous;
+    extern double STEPSTART;
+#ENDINLINE
+ 
+#INLINE C_DATA_INT
+    int Autonomous;
+    double STEPSTART;
+#ENDINLINE
+
+#INLINE C_INIT_INT
+        STEPMIN = 0.0001;
+        STEPMAX = 3600.0;
+        Autonomous = 0;
+        STEPSTART = STEPMIN;
+#ENDINLINE                                                                     

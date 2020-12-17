@@ -1,0 +1,12 @@
+#!/bin/csh -f
+
+
+setenv KPP_HOME  `pwd`
+set path=( `pwd`/bin  $path )
+
+echo $KPP_HOME
+echo $path
+
+make 
+
+exit 0

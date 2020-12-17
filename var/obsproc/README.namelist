@@ -1,0 +1,225 @@
+
+;-----------------------------------------------------------------------------
+; README for the namelist of the 3/4DVAR observation processor (obsproc).
+; Users can create namelist.obsproc by editing sample namelist.obsproc.wrfvar-tut
+;
+; The meanings of the namelist records are explained below.
+;
+;-----------------------------------------------------------------------------
+
+&record1
+;obs_gts_filename: name and path of decoded observation file
+;fg_format       : 'MM5' for MM5 application, 'WRF' for WRF application
+;obserr.txt      : name and path of observational error file
+;first_guess_file: name and path of the first guess file, for MM5 application only
+;gts_from_mmm_archive:  set to .true. if decoded observation file is from
+;                       NCAR/MMM hsi:/BRESCH/RT/DATA/ccyymm/obs.ccyymmddhh.gz
+/
+
+&record2
+;time_window_min = '2007-01-01_23:00:00',: The earliest time edge as ccyy-mm-dd_hh:mn:ss
+;time_analysis = '2007-01-02_00:00:00', : The analysis time as ccyy-mm-dd_hh:mn:ss
+;time_window_max = '2007-01-02_11:00:00',: The latest time edge as ccyy-mm-dd_hh:mn:ss
+; Only observations between 
+;       [time_window_min,time_window_max] will be kept.
+; 
+; When no first guess as input file:
+; time_window_min: Beginning of time window (included) as ccyy-mm-dd_hh:mn:ss
+; time_window_max: End of time window (included) as ccyy-mm-dd_hh:mn:ss
+; Only observations between [time_window_min, time_window_max] will be kept.
+/
+
+&record3
+; max_number_of_obs: Maximum number of observations to be loaded, 
+;                    ie in domain and time window, this is independant of 
+;                    the number of obs actually read.
+; fatal_if_exceed_max_obs: .TRUE.  will stop when more than max_number_of_obs 
+;                                  are loaded
+;                          .FALSE. will process the first max_number_of_obs
+;                                  loaded observations.
+/
+
+&record4
+; qc_test_vert_consistency: .TRUE. will perform a vertical consistency
+;                                  quality control check on sounding 
+; qc_test_convective_adj:   .TRUE. will perform a convective adjustement
+;                                  quality control check on sounding 
+; qc_test_above_lid:        .TRUE. will flag the observation above model lid
+; remove_above_lid :        .TRUE. will remove the observation above model lid
+; domain_check_h   : .TRUE. will discard the observations outside the domain
+; Thining_SATOB    : .FALSE. no thining for SATOB data,
+;                    .TRUE. thining procedure applied to SATOB data.
+; Thining_SSMI     : .FALSE. no thining for SSMI data,
+;                    .TRUE. thining procedure applied to SSMI data.
+; Thining_QSCAT    : .FALSE. no thining for QSCAT data,
+;                    .TRUE. thining procedure applied to QSCAT data.
+; calc_psfc_from_QNH: valid for gts_from_mmm_archive=.true. only.
+;                     set to .true. for calculating surface pressure from METAR
+;                     QNH value. QNH value is stored in psfc field in the 
+;                     NCAR/MMM decoded observation file.
+/
+
+&record5
+;print_gts_read:     .TRUE. will write diagnostic on the decoded obs reading
+;                     in file obs_gts_read.diag
+;print_gpspw_read:   .TRUE. will write diagnostic on the gpsppw obs reading
+;                     in file obs_gpspw_read.diag
+;print_recoverp:     .TRUE. will write diagnostic on the obs pressure recovery
+;                     in file obs_recover_pressure.diag
+;print_duplicate_loc :.TRUE. will  write diagnostic on space duplicate removal
+;                      in file obs_duplicate_loc.diag
+;print_duplicate_time:.TRUE. will  write diagnostic on time duplicate removal
+;                      in file obs_duplicate_time.diag
+;print_recoverh: .TRUE will write diagnostic on the obs height recovery
+;                 in file obs_recover_height.diag
+; print_qc_vert: .TRUE will write diagnostic on the vertical consistency check
+;                 in file obs_qc1.diag
+; print_qc_conv: .TRUE will write diagnostic on the convective adjustement 
+;                 check in file obs_qc1.diag
+; print_qc_lid : .TRUE. will write diagnostic on the above model lid height 
+;                 check in file obs_qc2.diag
+; print_uncomplete: .TRUE. will write diagnostic on the uncomplete obs removal
+;                    in file obs_uncomplete.diag
+; user_defined_area: .TRUE. read in the record6: x_left, x_right, 
+;                           y_top, y_bottom,
+;                    .FALSE. not read in the record6. 
+/
+
+&record6
+; x_left   : West border of sub-domain
+; x_right  : East border of sub-domain
+; y_bottom : South border of sub-domain
+; y_top    : North border of sub-domain
+;   In current implementation, these values are not used at all.
+;
+; When no first guess as input file:
+; 
+; Ptop: Reference pressure at model top
+; ps0:  Reference sea level pressure
+; base_pres: same as ps0. User must set either ps0 or base_pres. 
+; ts0:  Mean sea level temperature
+; base_temp: same as ts0. User must set either ts0 or base_temp.
+; tlp:  Temperature lapse rate 
+;
+; base_lapse: same as tlp. User must set either tlp or base_lapse.
+; pis0: Tropopause pressure, the default = 20000.0 Pa
+; base_tropo_pres: same as pis0. User must set either pis0 or base_tropo_pres
+; tis0: Isothermal temperature above tropopause (K), the default = 215 K.
+; base_start_temp: same as tis0. User must set either tis0 or base_start_temp.
+;
+; Note: In general, users do not need to set pis0 and tis0 or base_tropo_pres
+;       and base_start_temp. In most cases, their default values are OK. Here
+;       just provides a chance to change them under necessary situation.
+;
+; All these parameters can be found in the MM5 INTERPF namelist
+;
+; For WRF application, user may set the constants: ps0 = 100000, ts0 = 300, 
+;      tlp = 50., and ptop from wrfsi namelist file: wrfsi.nl
+/
+
+&record7
+; When no first guess as input file:
+; IPROJ:  Map projection (0 = Cylindrical Equidistance, 1 = Lambert Conformal,
+;                          2 = Polar stereographic,      3 = Mercator)
+; PHIC:   Central latitude of the doamin
+; XLONC:  Central longitude of the domain
+;         For MM5 application, PHIC and XLONC are the central Lat/Lon of the
+;         coarse domain.
+;         For WRF application, PHIC and XLONC area the central Lat/Lon of the
+;         working domain. 
+;
+; TRUELAT1: True latitude 1
+; TRUELAT2: True latitude 2
+;
+; MOAD_CEN_LAT: the cetral latitude for the Mother Of All Domains,
+; STANDARD_LON: the standard longitude (Y-direction) of the working domain.
+;         These two variables (MOAD_CEN_LAT, STANDARD_LON) are only used
+;         for WRF application, ignored them for the MM5 application.
+; 
+; For MM5 application, all these parameters can be found in MM5 TERRAIN 
+;         namelist
+; 
+; For WRF application, these can be found from WRFSI namelist file: wrfsi.nl
+/
+
+&record8
+; For MM5 application, all these parameters, except IDD which is set by user, 
+;     can be found in MM5 TERRAIN namelist
+; For WRF application, these parameters can be found from WRFSI namelist 
+;     file: wrfsi.nl (see note below).
+;
+; IDD:    Domain ID (1=< ID =< MAXNES), Only the observations 
+;         geographically located on that domain will be processed.
+;         For WRF application with XLONC /= STANDARD_LON, set IDD=2,
+;         otherwise set 1.
+; MAXNES: Maximum numbe of domains as needed. 
+; NESTIX: The I(y)-direction dimension for each of the domains
+; NESTJX: The J(x)-direction dimension for each of the domains
+; DIS:    The grid size for each of the domains
+;         For WRF application, always set NESTIX(1),NESTJX(1), and DIS(1)
+;         based on the infomation in wrfinput.
+; NUMC:   The mother domain ID number for each of the domains
+; NESTI:  The I location in its mother domain of the nest domain's low left
+;          corner -- point (1,1)
+; NESTI:  The J location in its mother domain of the nest domain's low left
+;         corner -- point (1,1)
+;         For WRF application, NUMC(1), NESTI(1), and NESTJ(1) are always set
+;         to be 1.
+ /
+
+&record9
+  prepbufr_output_filename ; Name of the prebufr OBS file.
+  prepbufr_table_filename='prepbufr_table_filename' ; not change
+  output_ob_format=3 ; output 1, prebufr OBS file only;
+                     ;        2, ASCII OBS file only;
+                     ;        3, Both prebufr and ASCII OBS files.
+;    Select the obs_gts (ASCII) files used for 3DVAR, FGAT, and 4DVAR:
+ use_for          = '3DVAR',  ; '3DVAR' obs file, same as before, default 
+                              ; 'FGAT ' obs files for FGAT
+                              ; '4DVAR' obs files for 4DVAR
+;     num_slots_past and num_slots_ahead are used ONLY for FGAT and 4DVAR: 
+ num_slots_past   = 3, ; the number of time slots before time_analysis
+ num_slots_ahead  = 3, ; the number of time slots after time_analysis
+;     Select the specific type of obs in obs_gts (ASCII) files. 
+;     .true. is default
+;     .false. to remove that type of obs in obs_gts (ASCII) files. 
+ write_synop = .true., 
+ write_ship  = .true.,
+ write_metar = .true.,
+ write_buoy  = .true., 
+ write_pilot = .true.,
+ write_sound = .true.,
+ write_amdar = .true.,
+ write_satem = .true.,
+ write_satob = .true.,
+ write_airep = .true.,
+ write_gpspw = .true.,
+ write_gpsztd= .true.,
+ write_gpsref= .true.,
+ write_gpseph= .true.,
+ write_ssmt1 = .true.,
+ write_ssmt2 = .true.,
+ write_ssmi  = .true.,
+ write_tovs  = .true.,
+ write_qscat = .true.,
+ write_profl = .true.,
+ write_bogus = .true.,
+ write_airs  = .true.,
+/
+
+&record10
+ wind_sd        = .false.  ; .false., default to use wind_uv; 
+                          ;          still can use wind_sd by setting wind_sd_${type} true
+                          ; .true.,  using wind_sd for all wind types.
+ wind_sd_buoy   = .false.
+ wind_sd_synop  = .false.
+ wind_sd_ships  = .false.
+ wind_sd_metar  = .false.
+ wind_sd_sound  = .false.
+ wind_sd_pilot  = .false.
+ wind_sd_airep  = .false.
+ wind_sd_qscat  = .false.
+ wind_sd_tamdar = .false.
+ wind_sd_geoamv = .false.
+ wind_sd_profiler = .false.
+/

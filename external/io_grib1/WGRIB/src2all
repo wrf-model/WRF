@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# combine source code into one module
+# easier to compile -- no make file needed
+#
+# pretty generic script -- just echos, cats and greps.
+# 
+
+echo "combining source code into one module"
+echo "output is wgrib.c"
+set -x
+
+h="bds.h bms.h cnames.h gds.h grib.h pds4.h"
+c="wgrib_main.c seekgrib.c ibm2flt.c readgrib.c intpower.c cnames.c \
+	BDSunpk.c flt2ieee.c wrtieee.c levels.c PDStimes.c missing.c \
+        nceptable_opn.c nceptable_reanal.c  nceptab_131.c nceptab_130.c \
+        ectable_128.c ectable_129.c ectable_130.c ectable_131.c \
+        ectable_140.c ectable_150.c ectable_151.c ectable_160.c ectable_170.c \
+        ectable_180.c nceptab_129.c \
+        ombtable.c ec_ext.c gds_grid.c gribtable.c PDS_date.c ensemble.c \
+	dwdtable_002.c dwdtable_201.c dwdtable_202.c dwdtable_203.c cptectable_254.c"
+
+echo >wgrib.c "#include <stdio.h>"
+echo >>wgrib.c "#include <stdlib.h>"
+echo >>wgrib.c "#include <string.h>"
+echo >>wgrib.c "#include <stddef.h>"
+echo >>wgrib.c "#include <math.h>"
+echo >>wgrib.c "#include <float.h>"
+
+
+cat $h >>wgrib.c
+
+cat $c | grep -v '#include' >> wgrib.c
+
+tar -cvf wgrib.tar $h $c src2all makefile Changes

@@ -1,0 +1,12 @@
+      SUBROUTINE g_start_domain_em ( grid, allowed_to_read  &
+!
+#          include <dummy_new_args.inc>
+!
+                                 )
+         USE module_domain
+         USE module_driver_constants
+         TYPE(domain) , INTENT(INOUT)  :: grid
+         LOGICAL      , INTENT(IN)     :: allowed_to_read
+#include <dummy_new_decl.inc>
+      END SUBROUTINE g_start_domain_em
+

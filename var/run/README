@@ -1,0 +1,38 @@
+NCEP BUFR tables used in reading AIRS radiance data.
+  gmao_airs_bufr.tbl:     
+     used for reading NCEP center/warmest/every-FOV AIRS BUFR files
+
+radiance_info/*.info
+  Used for (1) switching on/off certain channels (2) assigning obs errors
+  Currently, only the 4th and 6th columns in each file are actually used.
+  4th column info: 1: use
+                  -1: not use
+  6th column info: observation errors in K
+
+VARBC.in
+  Template input file for radiance Variational Bias Correction.
+
+be.dat.cv3
+  Background error covariance file for cv_options=3.
+
+crtm_coeffs
+   This folder shall be linked to the directory of CRTM coefficients files.
+   A subset of coefficient files can be downloaded from 
+   http://www2.mmm.ucar.edu/wrf/users/wrfda/download/crtm_coeffs.html.
+   The full set of coefficient files can be downloaded from
+   ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.3.0/crtm_v2.3.0.tar.gz
+   Some CRTM algorithms (Multiple transmittance algorithm, infrared sea surface 
+   emissivity model) are selectable by users via the coefficient files used to
+   initialize CRTM. Users should gather the coefficient files that are suitable 
+   for their applications. Please read the CRTM USers Guide
+   ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/CRTM_User_Guide.pdf
+   for more detailed information.
+
+fso.io_config and plus.io_config
+   input file for WRF FSO runtime config of I/O streams
+
+leapsec.dat
+   The file is used by AMSR2 data assimilation.
+   It is taken from
+   ftp://suzaku.eorc.jaxa.jp/pub/AMSR2/public/AMTK/leapsec.dat
+   plus an added entry for year 2017.

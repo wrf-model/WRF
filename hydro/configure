@@ -1,0 +1,130 @@
+#!/bin/bash
+
+theArgument=$1
+
+###################################
+## Setup the NetCDF include and LIB variables.
+## If Neither is set and $NETCDF is not set,
+## then try nc-config. If that fails, all fails.
+
+if [[ -z $NETCDF_INC ]]; then
+    if [[ -z $NETCDF ]]; then
+	NETCDF_INC=`nc-config --includedir 2> /dev/null`
+    else
+	NETCDF_INC=${NETCDF}/include
+    fi
+    if [[ -z $NETCDF_INC ]]; then
+	echo "Error: environment variable NETCDF_INC not defined."
+	exit 1
+    fi
+    echo "NETCDF_INC = ${NETCDF_INC}" > macros.tmp
+fi
+
+if [[ -z $NETCDF_LIB ]]; then
+    if [[ -z $NETCDF ]]; then
+	NETCDF_LIB=`nc-config --libs | cut -c3- | cut -d' ' -f1`
+    else
+	NETCDF_LIB=${NETCDF}/lib
+    fi
+    if [[ -z $NETCDF_LIB ]]; then
+	echo "Error: environment variable NETCDF_LIB not defined."
+	exit 1
+     fi
+    echo "NETCDF_LIB = ${NETCDF_LIB}" >> macros.tmp
+fi
+
+if [[ ! -e ${NETCDF_LIB}/libnetcdff.a ]]; then
+    echo "NETCDFLIB       =       -L${NETCDF_LIB} -lnetcdf" >> macros.tmp 
+fi
+ 
+###################################
+## File/dir setups
+if [[ -e macros ]]; then rm -f macros; fi
+if [[ ! -e lib ]]; then mkdir lib; fi
+if [[ ! -e mod ]]; then mkdir mod; fi
+
+
+###################################
+## If no argument was supplied, get all interactive.
+if [[ -z $theArgument ]]; then
+    echo "Please select from following supported linux compilers"
+    echo "using either the number or key (not case sensitive):"
+    echo 
+    echo "Number    Key  Description"
+    echo "--------------------------------------------"
+    echo "     1    pgi  PGI parallel"
+    echo "     2  gfort  gfortran parallel"
+    echo "     3  ifort  intel parallel (incl. Theia)"
+    echo "     4   luna  ifort parallel (WCOSS Luna)"
+    echo "     0   exit  exit"
+    echo 
+    read -p "Enter selection: " theArgument
+    echo
+fi
+
+## remove case sensitivity
+theArgument=`echo $theArgument | tr '[:upper:]' '[:lower:]'`
+
+
+###################################
+## What to do with the choice
+
+if [[ $theArgument -eq 1 ]] || [[ $theArgument == pgi ]]; then
+    cp arc/macros.mpp.linux macros 
+    cp arc/Makefile.mpp Makefile.comm 
+    echo "Configured: PGI"
+fi
+
+if [[ $theArgument -eq 2 ]] || [[ $theArgument == gfort ]]; then
+    cp arc/macros.mpp.gfort macros 
+    cp arc/Makefile.mpp Makefile.comm
+    echo "Configured: gfort"
+fi
+
+if [[ $theArgument -eq 3 ]] || [[ $theArgument == ifort ]]; then
+    ## theia login machines self identify as "tfe" and have
+    ## their own intel macros. We handle luna more explicitly... 
+    if [[ $HOSTNAME != *tfe* ]]; then
+	cp arc/macros.mpp.ifort macros 
+	echo "Configured: ifort"
+    else
+	cp arc/macros.mpp.ifort.theia macros
+	echo "Configured: ifort on Theia"
+    fi
+    cp arc/Makefile.mpp Makefile.comm
+fi
+
+if [[ $theArgument -eq 4 ]] || [[ $theArgument == luna ]]; then
+    cp arc/macros.mpp.ifort.luna macros 
+    cp arc/Makefile.mpp Makefile.comm
+    echo "Configured: ifort on Luna"
+fi
+
+## The above result in a new macros file which was
+## previously deleted. If it does not exist, none
+## were chosen.
+if [[ ! -e macros ]]; then
+    echo "No compiler selected. Exiting"
+    if [[ -e macros.tmp ]]; then rm -f macros.tmp; fi
+    # failure
+    exit 1
+fi
+
+# PGI sequential
+# cp arc/macros.seq.linux macros
+# cp arc/Makefile.seq Makefile.comm
+# gfortran sequential                         
+#zystem "cp arc/macros.seq.gfort macros 
+#cp arc/Makefile.seq Makefile.comm 
+# ifort sequential                            
+#cp arc/macros.seq.ifort macros 
+#cp arc/Makefile.seq Makefile.comm
+
+if [[ -e macros.tmp ]]; then
+    cat macros macros.tmp > macros.a
+    rm -f macros.tmp
+    mv macros.a macros
+fi
+
+## success
+exit 0

@@ -1,0 +1,49 @@
+#include smog.spc
+#include smog.eqn
+
+{#LANGUAGE Fortran77
+#INTEGRATOR rodas3
+#DRIVER general}
+
+#LOOKATALL
+#MONITOR O3;
+
+#INITVALUES
+
+CFACTOR = 1.;
+ALL_SPEC = 1.0E-8;
+RH   = 2.0 ;
+RCHO = 2.0 ;
+NO   = 0.5 ;
+NO2  = 0.1 ;
+H2O  = 1.3E+4 ;
+O2   = 2.0E+5 ;
+
+#INLINE F77_INIT
+	TSTART = 0
+	TEND = TSTART + 600
+	DT = 60.0
+        TEMP = 298
+#ENDINLINE
+
+#INLINE F90_INIT
+	TSTART = 0
+	TEND = TSTART + 600
+	DT = 60.0
+        TEMP = 298
+#ENDINLINE
+
+#INLINE MATLAB_INIT
+   global TSTART TEND DT TEMP
+   TSTART = 0;
+   TEND = TSTART + 600;
+   DT = 60.0;
+   TEMP = 298;
+#ENDINLINE
+
+#INLINE C_INIT
+   TSTART = 0;
+   TEND = TSTART + 600;
+   DT = 60.0;
+   TEMP = 298;
+#ENDINLINE

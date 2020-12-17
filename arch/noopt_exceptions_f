@@ -1,0 +1,168 @@
+# A little more adventurous.  Allow full opt on 
+# mediation_integrate.o \
+# shift_domain_em.o \
+# solve_em.o  <-- gets a little kick from SOLVE_EM_SPECIAL too, if defined
+# mediation_feedback_domain.o : mediation_feedback_domain.F
+# mediation_force_domain.o : mediation_force_domain.F
+# mediation_interp_domain.o : mediation_interp_domain.F
+
+# compile these without high optimization to speed compile
+track_driver.o : track_driver.F
+convert_nmm.o : convert_nmm.F
+init_modules_em.o : init_modules_em.F
+input_wrf.o : input_wrf.F
+module_io.o : module_io.F
+module_comm_dm.o : module_comm_dm.F
+module_comm_dm_0.o : module_comm_dm_0.F
+module_comm_dm_1.o : module_comm_dm_1.F
+module_comm_dm_2.o : module_comm_dm_2.F
+module_comm_dm_3.o : module_comm_dm_3.F
+module_comm_nesting_dm.o : module_comm_nesting_dm.F
+module_configure.o : module_configure.F
+module_domain.o : module_domain.F
+module_domain_type.o : module_domain_type.F
+module_alloc_space_0.o : module_alloc_space_0.F
+module_alloc_space_1.o : module_alloc_space_1.F
+module_alloc_space_2.o : module_alloc_space_2.F
+module_alloc_space_3.o : module_alloc_space_3.F
+module_alloc_space_4.o : module_alloc_space_4.F
+module_alloc_space_5.o : module_alloc_space_5.F
+module_alloc_space_6.o : module_alloc_space_6.F
+module_alloc_space_7.o : module_alloc_space_7.F
+module_alloc_space_8.o : module_alloc_space_8.F
+module_alloc_space_9.o : module_alloc_space_9.F
+module_tiles.o : module_tiles.F
+module_initialize.o : module_initialize.F
+module_physics_init.o : module_physics_init.F 
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_scm_xy.o : module_initialize_scm_xy.F
+module_integrate.o : module_integrate.F
+module_io_mm5.o : module_io_mm5.F
+module_io_wrf.o : module_io_wrf.F
+module_si_io.o : module_si_io.F
+module_wps_io_arw.o : module_wps_io_arw.F
+module_state_description.o : module_state_description.F 
+output_wrf.o : output_wrf.F
+solve_interface.o : solve_interface.F
+start_domain.o : start_domain.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_bdyout.o : wrf_bdyout.F
+wrf_ext_read_field.o : wrf_ext_read_field.F
+wrf_ext_write_field.o : wrf_ext_write_field.F
+wrf_fddaobs_in.o : wrf_fddaobs_in.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_tsin.o : wrf_tsin.F
+nl_get_0_routines.o : nl_get_0_routines.F
+nl_get_1_routines.o : nl_get_1_routines.F
+nl_set_0_routines.o : nl_set_0_routines.F
+nl_set_1_routines.o : nl_set_1_routines.F
+
+track_driver.o \
+convert_nmm.o \
+init_modules_em.o \
+module_initialize.o \
+module_initialize_squall2d_x.o \
+module_initialize_squall2d_y.o \
+module_initialize_scm_xy.o \
+module_integrate.o \
+module_io_mm5.o \
+module_io_wrf.o \
+module_si_io.o \
+module_wps_io_arw.o \
+module_tiles.o \
+output_wrf.o \
+solve_interface.o \
+start_domain.o \
+wrf_fddaobs_in.o \
+wrf_tsin.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
+	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+          mv $*.f90.tmp $*.f90 ; \
+        fi
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
+        fi
+
+#solve_em.o :
+#	$(RM) $@
+#	$(SED_FTN) $*.F > $*.b 
+#	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
+#	$(RM) $*.b
+#	$(FC) -o $@ -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $(SOLVE_EM_SPECIAL) $(OMP) $*.f90
+
+module_sf_ruclsm.o : module_sf_ruclsm.F
+
+module_sf_ruclsm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
+	$(RM) $*.b
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
+          echo COMPILING $*.F WITH OMP ; \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
+        fi
+
+# compile without OMP
+input_wrf.o \
+module_domain.o \
+module_domain_type.o \
+module_physics_init.o \
+module_io.o \
+wrf_bdyin.o \
+wrf_bdyout.o \
+wrf_ext_read_field.o \
+wrf_ext_write_field.o \
+wrf_histin.o \
+wrf_histout.o \
+wrf_inputin.o \
+wrf_inputout.o \
+wrf_restartin.o \
+wrf_restartout.o \
+module_state_description.o \
+module_alloc_space.o \
+module_alloc_space_0.o \
+module_alloc_space_1.o \
+module_alloc_space_2.o \
+module_alloc_space_3.o \
+module_alloc_space_4.o \
+module_alloc_space_5.o \
+module_alloc_space_6.o \
+module_alloc_space_7.o \
+module_alloc_space_8.o \
+module_alloc_space_9.o \
+module_comm_dm.o \
+module_comm_dm_0.o \
+module_comm_dm_1.o \
+module_comm_dm_2.o \
+module_comm_dm_3.o \
+module_comm_nesting_dm.o \
+module_configure.o :
+	$(RM) $@
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+          mv $*.f90.tmp $*.f90 ; \
+        fi
+	$(RM) $*.b $*.bb
+	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90

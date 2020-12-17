@@ -1,0 +1,453 @@
+// User-given Tag Name: T1mozcart for WRF-Chem
+// Tag database identifier : MZ148_T1mozcart_20170323
+// Tag created by : lke
+// Tag created from branch : T1mozcart
+// Tag created on : 2017-03-23 13:43:13.48261-06
+// Comments for this tag follow:
+//     lke : 2017-03-23 : corrected CO+OH, removed CB, OC aerosols
+# EQUATIONS 
+// photorates
+//
+// unassigned
+//
+//
+// odd-oxygen
+//
+{1:J5779} H2O2+hv=2 OH                                                                    : j(Pj_h2o2)  ;
+{2:J5757} O2+hv=2 O                                                                       : j(Pj_o2)  ;
+{3:J5758} O3+hv=O+O2                                                                      : j(Pj_o33p)  ;
+{4:J5759} O3+hv=O1D+O2                                                                    : j(Pj_o31d)  ;
+//
+// odd-nitrogen
+//
+{5:J5780} HNO3+hv=NO2+OH                                                                  : j(Pj_hno3)  ;
+{6:J5781} HO2NO2+hv=0.66 HO2+0.66 NO2+0.33 OH+0.33 NO3                                    : j(Pj_hno4)  ;
+{7:J5782} N2O+hv=O1D+N2                                                                   : j(Pj_n2o)  ;
+{8:J5783} N2O5+hv=NO2+NO3                                                                 : j(Pj_n2o5)  ;
+{9:J5784} NO2+hv=NO+O                                                                     : j(Pj_no2)  ;
+{10:J5786} NO3+hv=0.89 NO2+0.11 NO+0.89 O3                                                 : j(Pj_no3o)  ;
+//
+// organics
+//
+{11:J5787} ALKNIT+hv=NO2+0.4 CH3CHO+0.1 CH2O+0.25 CH3COCH3+HO2+0.8 MEK                     : j(Pj_ch3o2h)  ;
+{12:J5760} ALKOOH+hv=0.4 CH3CHO+0.1 CH2O+0.25 CH3COCH3+0.9 HO2+0.8 MEK+OH                  : j(Pj_ch3o2h)  ;
+{13:J5788} BENZOOH+hv=OH+GLYOXAL+0.5 BIGALD1+HO2                                           : j(Pj_ch3o2h)  ;
+{14:J5789} BEPOMUC+hv=BIGALD1+1.5 HO2+1.5 CO                                               : 0.1_dp*j(Pj_no2)  ;
+{15:J5790} BIGALD+hv=0.45 CO+0.13 GLYOXAL+0.56 HO2+0.13 CH3CO3+0.18 CH3COCHO               : 0.2_dp*j(Pj_no2)  ;
+{16:J5791} BIGALD1+hv=0.6 MALO2+HO2                                                        : 0.14_dp*j(Pj_no2)  ;
+{17:J5792} BIGALD2+hv=0.6 HO2+0.6 DICARBO2                                                 : 0.2_dp*j(Pj_no2)  ;
+{18:J5793} BIGALD3+hv=0.6 HO2+0.6 CO+0.6 MDIALO2                                           : 0.2_dp*j(Pj_no2)  ;
+{19:J5794} BIGALD4+hv=HO2+CO+CH3COCHO+CH3CO3                                               : 0.006_dp*j(Pj_no2)  ;
+{20:J5795} BZOOH+hv=BZALD+OH+HO2                                                           : j(Pj_ch3o2h)  ;
+{21:J5761} C2H5OOH+hv=CH3CHO+HO2+OH                                                        : j(Pj_ch3o2h)  ;
+{22:J5762} C3H7OOH+hv=0.82 CH3COCH3+OH+HO2                                                 : j(Pj_ch3o2h)  ;
+{23:J5796} C6H5OOH+hv=PHENO+OH                                                             : j(Pj_ch3o2h)  ;
+{24:J5763} CH2O+hv=CO+2 HO2                                                                : j(Pj_ch2or)  ;
+{25:J5764} CH2O+hv=CO+H2                                                                   : j(Pj_ch2om)  ;
+{26:J5797} CH3CHO+hv=CH3O2+CO+HO2                                                          : j(Pj_ch3cho)  ;
+{27:J5765} CH3COCH3+hv=CH3CO3+CH3O2                                                        : j(Pj_ch3coch3)  ;
+{28:J5766} CH3COCHO+hv=CH3CO3+CO+HO2                                                       : j(Pj_ch3cocho)  ;
+{29:J5785} CH3COOOH+hv=CH3O2+OH+CO2                                                        : 0.28_dp*j(Pj_h2o2)  ;
+{30:J5767} CH3OOH+hv=CH2O+HO2+OH                                                           : j(Pj_ch3o2h)  ;
+{31:J5798} EOOH+hv=EO+OH                                                                   : j(Pj_ch3o2h)  ;
+{32:J5799} GLYALD+hv=2 HO2+CO+CH2O                                                         : j(Pj_glyald)  ;
+{33:J5768} GLYOXAL+hv=2 CO+2 HO2                                                           : j(Pj_gly)  ;
+{34:J5800} HMPROP+hv=2 HO2+CO+CH3COCH3                                                     : j(Pj_glyald)  ;
+{35:J5801} HONITR+hv=NO2+0.67 HO2+0.33 CH3CHO+0.33 CH2O+0.33 CO+0.33 GLYALD+0.33 CH3CO3+0.17 HYAC+0.17 CH3COCH3: j(Pj_ch2or)  ;
+{36:J5802} HPALD+hv=BIGALD3+OH+HO2                                                         : 0.006_dp*j(Pj_no2)  ;
+{37:J5803} HYAC+hv=CH3CO3+HO2+CH2O                                                         : j(Pj_hyac)  ;
+{38:J5804} ISOPNOOH+hv=NO2+HO2+ISOPOOH                                                     : j(Pj_ch3o2h)  ;
+{39:J5769} ISOPOOH+hv=0.402 MVK+0.288 MACR+0.69 CH2O+HO2                                   : j(Pj_ch3o2h)  ;
+{40:J5805} MACR+hv=0.67 HO2+0.33 MCO3+0.67 CH2O+0.67 CH3CO3+0.33 OH+0.67 CO                : j(Pj_macr)  ;
+{41:J5770} MBOOOH+hv=OH+HO2+0.67 GLYALD+0.67 CH3COCH3+0.33 HMPROP+0.33 CH2O                : j(Pj_ch3o2h)  ;
+{42:J5771} MEK+hv=CH3CO3+C2H5O2                                                            : j(Pj_ch3coch3)  ;
+{43:J5772} MEKOOH+hv=OH+CH3CO3+CH3CHO                                                      : j(Pj_ch3o2h)  ;
+{44:J5820} MPAN+hv=MCO3+NO2                                                                : j(Pj_pan)  ;
+{45:J5819} MVK+hv=0.7 C3H6+0.7 CO+0.3 CH3O2+0.3 CH3CO3                                     : j(Pj_mvk)  ;
+{46:J5818} NC4CHO+hv=BIGALD3+NO2+HO2                                                       : j(Pj_ch2or)  ;
+{47:J5886} NOA+hv=NO2+CH2O+CH3CO3                                                          : j(Pj_ch2or)  ;
+{48:J5816} NTERPOOH+hv=TERPROD1+NO2+OH                                                     : j(Pj_ch3o2h)  ;
+{49:J5815} ONITR+hv=NO2                                                                    : j(Pj_ch3cho)  ;
+{50:J5814} PAN+hv=0.6 CH3CO3+0.6 NO2+0.4 CH3O2+0.4 NO3+0.4 CO2                             : j(Pj_pan)  ;
+{51:J5813} PHENOOH+hv=OH+HO2+0.7 GLYOXAL                                                   : j(Pj_ch3o2h)  ;
+{52:J5773} POOH+hv=CH3CHO+CH2O+HO2+OH                                                      : j(Pj_ch3o2h)  ;
+{53:J5774} ROOH+hv=CH3CO3+CH2O+OH                                                          : j(Pj_ch3o2h)  ;
+{54:J5812} TEPOMUC+hv=0.5 CH3CO3+HO2+1.5 CO                                                : 0.1_dp*j(Pj_no2)  ;
+{55:J5775} TERP2OOH+hv=OH+0.375 CH2O+0.3 CH3COCH3+0.25 CO+CO2+TERPROD2+HO2+0.25 GLYALD     : j(Pj_ch3o2h)  ;
+{56:J5811} TERPNIT+hv=TERPROD1+NO2+HO2                                                     : j(Pj_ch3o2h)  ;
+{57:J5776} TERPOOH+hv=0.4 CH2O+0.05 CH3COCH3+TERPROD1+HO2+OH                               : j(Pj_ch3o2h)  ;
+{58:J5810} TERPROD1+hv=HO2+CO+TERPROD2                                                     : j(Pj_ch3cho)  ;
+{59:J5809} TERPROD2+hv=0.15 RO2+0.68 CH2O+0.8 CO2+0.5 CH3COCH3+0.65 CH3CO3+1.2 HO2+1.7 CO  : j(Pj_ch3cho)  ;
+{60:J5808} TOLOOH+hv=OH+0.6 GLYOXAL+0.4 CH3COCHO+HO2+0.2 BIGALD1+0.2 BIGALD2+0.2 BIGALD3   : j(Pj_ch3o2h)  ;
+{61:J5778} XOOH+hv=OH                                                                      : j(Pj_ch3o2h)  ;
+{62:J5807} XYLENOOH+hv=OH+HO2+0.34 GLYOXAL+0.54 CH3COCHO+0.06 BIGALD1+0.2 BIGALD2+0.15 BIGALD3+0.21 BIGALD4: j(Pj_ch3o2h)  ;
+{63:J5806} XYLOLOOH+hv=OH+0.17 GLYOXAL+0.51 CH3COCHO+HO2                                   : j(Pj_ch3o2h)  ;
+//
+// halogens
+//
+//
+// ions
+//
+//
+// sulfur
+//
+//
+// O3S tracer
+//
+//
+// soa
+//
+// gas phase reactions
+// 
+// Not Assigned to a Section
+// 
+// 
+// odd-oxygen
+// 
+{64:8184} O1D+CH4=0.75 CH3O2+0.75 OH+0.25 CH2O+0.4 HO2+0.05 H2                  : 1.500000e-10_dp;
+{65:8170} O1D+H2=HO2+OH                                                         : 1.200000e-10_dp;
+{66:7670} O1D+H2O=2 OH                                                          : ARR2(1.630000e-10_dp, -60.00_dp, TEMP) ;
+{67:7667} O1D+N2=O+N2                                                           : ARR2(2.150000e-11_dp, -110.00_dp, TEMP) ;
+{68:8014} O1D+O2=O+O2                                                           : ARR2(3.300000e-11_dp, -55.00_dp, TEMP) ;
+{69:7673} O1D+O3=O2+O2                                                          : 1.200000e-10_dp;
+{70:7655} O+O3=2 O2                                                             : ARR2(8.000000e-12_dp, 2060.00_dp, TEMP) ;
+{71:7656} O+O+M=O2+M                                                            : usr_O_O_M( temp );
+{72:7654} O+O2+M=O3+M                                                           : usr_O_O2( temp );
+// 
+// odd-hydrogen
+// 
+{73:8182} H2+O=OH+HO2                                                           : ARR2(1.600000e-11_dp, 4570.00_dp, TEMP) ;
+{74:7715} H2O2+O=OH+HO2                                                         : ARR2(1.400000e-12_dp, 2000.00_dp, TEMP) ;
+{75:7712} HO2+O=OH+O2                                                           : ARR2(3.000000e-11_dp, -200.00_dp, TEMP) ;
+{76:7713} HO2+O3=OH+2 O2                                                        : ARR2(1.000000e-14_dp, 490.00_dp, TEMP) ;
+{77:8173} OH+H2=H2O+HO2                                                         : ARR2(2.800000e-12_dp, 1800.00_dp, TEMP) ;
+{78:7710} OH+H2O2=H2O+HO2                                                       : 1.800000e-12_dp;
+{79:7706} OH+HO2=H2O+O2                                                         : ARR2(4.800000e-11_dp, -250.00_dp, TEMP) ;
+{80:8172} OH+O=HO2+O2                                                           : ARR2(1.800000e-11_dp, -180.00_dp, TEMP) ;
+{81:7705} OH+O3=HO2+O2                                                          : ARR2(1.700000e-12_dp, 940.00_dp, TEMP) ;
+{82:7707} OH+OH=H2O+O                                                           : 1.800000e-12_dp;
+{83:8167} OH+OH=H2O2                                                            : JPL_TROE(6.900000e-31_dp, 1.00_dp, 2.600000e-11_dp, 0.00_dp, 0.60_dp, TEMP, C_M) ;
+{84:7714} HO2+HO2=H2O2+O2                                                       : usr_HO2_HO2( temp, c_m, c_h2o );
+// 
+// odd-nitrogen
+// 
+{85:7741} HO2NO2+OH=H2O+NO2+O2                                                  : ARR2(1.300000e-12_dp, -380.00_dp, TEMP) ;
+{86:7729} NO2+O=NO+O2                                                           : ARR2(5.100000e-12_dp, -210.00_dp, TEMP) ;
+{87:7731} NO2+O3=NO3+O2                                                         : ARR2(1.200000e-13_dp, 2450.00_dp, TEMP) ;
+{88:7730} NO2+O=NO3                                                             : JPL_TROE(2.500000e-31_dp, 1.80_dp, 2.200000e-11_dp, 0.70_dp, 0.60_dp, TEMP, C_M) ;
+{89:7739} NO3+HO2=OH+NO2+O2                                                     : 3.500000e-12_dp;
+{90:8274} NO3+NO=2 NO2                                                          : ARR2(1.500000e-11_dp, -170.00_dp, TEMP) ;
+{91:7737} NO3+O=NO2+O2                                                          : 1.000000e-11_dp;
+{92:7738} NO3+OH=HO2+NO2                                                        : 2.200000e-11_dp;
+{93:7727} NO+HO2=NO2+OH                                                         : ARR2(3.300000e-12_dp, -270.00_dp, TEMP) ;
+{94:7728} NO+O3=NO2+O2                                                          : ARR2(3.000000e-12_dp, 1500.00_dp, TEMP) ;
+{95:7726} NO+O=NO2                                                              : JPL_TROE(9.000000e-32_dp, 1.50_dp, 3.000000e-11_dp, 0.00_dp, 0.60_dp, TEMP, C_M) ;
+{96:8206} O1D+N2O=2 NO                                                          : ARR2(7.260000e-11_dp, -20.00_dp, TEMP) ;
+{97:8207} O1D+N2O=N2+O2                                                         : ARR2(4.640000e-11_dp, -20.00_dp, TEMP) ;
+{98:8252} NO2+HO2=HO2NO2                                                        : JPL_TROE(1.900000e-31_dp, 3.40_dp, 4.000000e-12_dp, 0.30_dp, 0.60_dp, TEMP, C_M) ;
+{99:8251} NO2+NO3=N2O5                                                          : JPL_TROE(2.400000e-30_dp, 3.00_dp, 1.600000e-12_dp, -0.10_dp, 0.60_dp, TEMP, C_M) ;
+{100:7734} NO2+OH=HNO3                                                          : JPL_TROE(1.800000e-30_dp, 3.00_dp, 2.800000e-11_dp, 0.00_dp, 0.60_dp, TEMP, C_M) ;
+{101:7735} HNO3+OH=NO3+H2O                                                      : usr_HNO3_OH( temp, c_m );
+{102:7742} HO2NO2+M=HO2+NO2+M                                                   : usr_HO2NO2_M( temp, c_m );
+{103:8254} N2O5+M=NO2+NO3+M                                                     : usr_N2O5_M( temp, c_m );
+// 
+// odd-chlorine
+// 
+// 
+// odd-bromine
+// 
+// 
+// odd-iodine
+// 
+// 
+// odd-fluorine
+// 
+// 
+// organic-halogens
+// 
+// 
+// C1
+// 
+{104:7808} CH2O+HO2=HOCH2OO                                                     : ARR2(9.700000e-15_dp, -625.00_dp, TEMP) ;
+{105:7805} CH2O+NO3=CO+HO2+HNO3                                                 : ARR2(6.000000e-13_dp, 2058.00_dp, TEMP) ;
+{106:7807} CH2O+O=HO2+OH+CO                                                     : ARR2(3.400000e-11_dp, 1600.00_dp, TEMP) ;
+{107:8189} CH2O+OH=CO+H2O+HO2                                                   : ARR2(5.500000e-12_dp, -125.00_dp, TEMP) ;
+{108:7811} CH3O2+CH3O2=2 CH2O+2 HO2                                             : ARR2(5.000000e-13_dp, 424.00_dp, TEMP) ;
+{109:7812} CH3O2+CH3O2=CH2O+CH3OH                                               : ARR2(1.900000e-14_dp, -706.00_dp, TEMP) ;
+{110:7810} CH3O2+HO2=CH3OOH+O2                                                  : ARR2(4.100000e-13_dp, -750.00_dp, TEMP) ;
+{111:7809} CH3O2+NO=CH2O+NO2+HO2                                                : ARR2(2.800000e-12_dp, -300.00_dp, TEMP) ;
+{112:7813} CH3OH+OH=HO2+CH2O                                                    : ARR2(2.900000e-12_dp, 345.00_dp, TEMP) ;
+{113:7814} CH3OOH+OH=0.7 CH3O2+0.3 OH+0.3 CH2O+H2O                              : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{114:7802} CH4+OH=CH3O2+H2O                                                     : ARR2(2.450000e-12_dp, 1775.00_dp, TEMP) ;
+{115:7716} HCN+OH=HO2                                                           : JPL_TROE(4.280000e-33_dp, 0.00_dp, 9.300000e-15_dp, -4.42_dp, 0.80_dp, TEMP, C_M) ;
+{116:8257} HCOOH+OH=HO2+CO2+H2O                                                 : 4.000000e-13_dp;
+{117:7818} HOCH2OO+HO2=HCOOH                                                    : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{118:7816} HOCH2OO=CH2O+HO2                                                     : ARR2(2.400000e+12_dp, 7000.00_dp, TEMP) ;
+{119:7817} HOCH2OO+NO=HCOOH+NO2+HO2                                             : ARR2(2.600000e-12_dp, -265.00_dp, TEMP) ;
+{120:8229} O1D+HCN=OH                                                           : ARR2(1.080000e-10_dp, -105.00_dp, TEMP) ;
+{121:8183} CO+OH=CO2+HO2                                                        : usr_CO_OH_a( temp, c_m );
+// 
+// C2
+// 
+{122:7822} C2H2+OH=0.65 GLYOXAL+0.65 OH+0.35 HCOOH+0.35 HO2+0.35 CO             : JPL_TROE(5.500000e-30_dp, 0.00_dp, 8.300000e-13_dp, -2.00_dp, 0.60_dp, TEMP, C_M) ;
+{123:8016} C2H4+O3=0.63 CO+0.13 OH+0.13 HO2+0.37 HCOOH+CH2O                     : ARR2(1.200000e-14_dp, 2630.00_dp, TEMP) ;
+{124:7834} C2H5O2+C2H5O2=1.6 CH3CHO+1.2 HO2+0.4 C2H5OH                          : 6.800000e-14_dp;
+{125:7833} C2H5O2+CH3O2=0.7 CH2O+0.8 CH3CHO+HO2+0.3 CH3OH+0.2 C2H5OH            : 2.000000e-13_dp;
+{126:7832} C2H5O2+HO2=C2H5OOH+O2                                                : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{127:7831} C2H5O2+NO=CH3CHO+HO2+NO2                                             : ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{128:7846} C2H5OH+OH=HO2+CH3CHO                                                 : ARR2(6.900000e-12_dp, 230.00_dp, TEMP) ;
+{129:7835} C2H5OOH+OH=0.5 C2H5O2+0.5 CH3CHO+0.5 OH                              : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{130:7823} C2H6+OH=C2H5O2+H2O                                                   : ARR2(7.660000e-12_dp, 1020.00_dp, TEMP) ;
+{131:7837} CH3CHO+NO3=CH3CO3+HNO3                                               : ARR2(1.400000e-12_dp, 1900.00_dp, TEMP) ;
+{132:7836} CH3CHO+OH=CH3CO3+H2O                                                 : ARR2(4.630000e-12_dp, -350.00_dp, TEMP) ;
+{133:7717} CH3CN+OH=HO2                                                         : ARR2(7.800000e-13_dp, 1050.00_dp, TEMP) ;
+{134:8258} CH3CO3+CH3CO3=2 CH3O2+2 CO2                                          : ARR2(2.900000e-12_dp, -500.00_dp, TEMP) ;
+{135:7841} CH3CO3+CH3O2=0.9 CH3O2+CH2O+0.9 HO2+0.9 CO2+0.1 CH3COOH              : ARR2(2.000000e-12_dp, -500.00_dp, TEMP) ;
+{136:8021} CH3CO3+HO2=0.4 CH3COOOH+0.15 CH3COOH+0.15 O3+0.45 OH+0.45 CH3O2      : ARR2(4.300000e-13_dp, -1040.00_dp, TEMP) ;
+{137:7838} CH3CO3+NO=CH3O2+CO2+NO2                                              : ARR2(8.100000e-12_dp, -270.00_dp, TEMP) ;
+{138:7830} CH3COOH+OH=CH3O2+CO2+H2O                                             : 7.000000e-13_dp;
+{139:7843} CH3COOOH+OH=0.5 CH3CO3+0.5 CH2O+0.5 CO2+H2O                          : 1.000000e-12_dp;
+{140:7826} EO2+HO2=EOOH                                                         : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{141:7825} EO2+NO=0.5 CH2O+0.25 HO2+0.75 EO+NO2                                 : ARR2(4.200000e-12_dp, -180.00_dp, TEMP) ;
+{142:7828} EO=2 CH2O+HO2                                                        : ARR2(1.600000e+11_dp, 4150.00_dp, TEMP) ;
+{143:7827} EO+O2=GLYALD+HO2                                                     : 1.000000e-14_dp;
+{144:7844} GLYALD+OH=HO2+0.2 GLYOXAL+0.8 CH2O+0.8 CO2                           : 1.000000e-11_dp;
+{145:7845} GLYOXAL+OH=HO2+CO+CO2                                                : 1.150000e-11_dp;
+{146:7848} PAN+OH=CH2O+NO3                                                      : 4.000000e-14_dp;
+{147:7824} C2H4+OH=EO2                                                          : JPL_TROE(8.600000e-29_dp, 3.10_dp, 9.000000e-12_dp, 0.85_dp, 0.48_dp, TEMP, C_M) ;
+{148:7839} CH3CO3+NO2=PAN                                                       : JPL_TROE(9.700000e-29_dp, 5.60_dp, 9.300000e-12_dp, 1.50_dp, 0.60_dp, TEMP, C_M) ;
+{149:7847} PAN+M=CH3CO3+NO2+M                                                   : usr_PAN_M( temp, c_m );
+// 
+// C3
+// 
+{150:8025} C3H6+NO3=NOA                                                         : ARR2(4.600000e-13_dp, 1156.00_dp, TEMP) ;
+{151:8017} C3H6+O3=0.5 CH2O+0.12 HCOOH+0.12 CH3COOH+0.5 CH3CHO+0.56 CO+0.28 CH3O2+0.1 CH4+0.2 CO2+0.28 HO2+0.36 OH: ARR2(6.500000e-15_dp, 1900.00_dp, TEMP) ;
+{152:8176} C3H7O2+CH3O2=CH2O+HO2+0.82 CH3COCH3                                  : ARR2(3.750000e-13_dp, 40.00_dp, TEMP) ;
+{153:7853} C3H7O2+HO2=C3H7OOH+O2                                                : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{154:7852} C3H7O2+NO=0.82 CH3COCH3+NO2+HO2+0.27 CH3CHO                          : ARR2(4.200000e-12_dp, -180.00_dp, TEMP) ;
+{155:8177} C3H7OOH+OH=H2O+C3H7O2                                                : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{156:7856} C3H8+OH=C3H7O2+H2O                                                   : ARR2(8.700000e-12_dp, 615.00_dp, TEMP) ;
+{157:7867} CH3COCHO+NO3=HNO3+CO+CH3CO3                                          : ARR2(1.400000e-12_dp, 1860.00_dp, TEMP) ;
+{158:7866} CH3COCHO+OH=CH3CO3+CO+H2O                                            : ARR2(8.400000e-13_dp, -830.00_dp, TEMP) ;
+{159:7865} HYAC+OH=CH3COCHO+HO2                                                 : 3.000000e-12_dp;
+{160:8026} NOA+OH=NO2+CH3COCHO                                                  : 6.700000e-13_dp;
+{161:7858} PO2+HO2=POOH+O2                                                      : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{162:7857} PO2+NO=CH3CHO+CH2O+HO2+NO2                                           : ARR2(4.200000e-12_dp, -180.00_dp, TEMP) ;
+{163:7859} POOH+OH=0.5 PO2+0.5 OH+0.5 HYAC+H2O                                  : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{164:7863} RO2+CH3O2=0.3 CH3CO3+0.8 CH2O+0.3 HO2+0.2 HYAC+0.5 CH3COCHO+0.5 CH3OH: ARR2(7.100000e-13_dp, -500.00_dp, TEMP) ;
+{165:8022} RO2+HO2=0.85 ROOH+0.15 OH+0.15 CH2O+0.15 CH3CO3                      : ARR2(8.600000e-13_dp, -700.00_dp, TEMP) ;
+{166:7861} RO2+NO=CH3CO3+CH2O+NO2                                               : ARR2(2.900000e-12_dp, -300.00_dp, TEMP) ;
+{167:7864} ROOH+OH=RO2+H2O                                                      : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{168:7849} C3H6+OH=PO2                                                          : JPL_TROE(8.000000e-27_dp, 3.50_dp, 3.000000e-11_dp, 0.00_dp, 0.50_dp, TEMP, C_M) ;
+{169:7860} CH3COCH3+OH=RO2+H2O                                                  : usr_CH3COCH3_OH( temp );
+// 
+// C4
+// 
+{170:8029} BIGENE+NO3=NO2+CH3CHO+0.5 CH2O+0.5 CH3COCH3                          : 3.500000e-13_dp;
+{171:7869} BIGENE+OH=ENEO2                                                      : 5.400000e-11_dp;
+{172:8027} ENEO2+NO=CH3CHO+0.5 CH2O+0.5 CH3COCH3+HO2+NO2                        : ARR2(4.800000e-12_dp, -120.00_dp, TEMP) ;
+{173:8028} ENEO2+NO=HONITR                                                      : ARR2(5.100000e-14_dp, -693.00_dp, TEMP) ;
+{174:8031} HONITR+OH=ONITR+HO2                                                  : 2.000000e-12_dp;
+{175:7884} MACRO2+CH3CO3=0.25 CH3COCHO+CH3O2+0.22 CO+0.47 HO2+0.53 GLYALD+0.22 HYAC+0.25 CH2O+0.53 CH3CO3: 1.400000e-11_dp;
+{176:7883} MACRO2+CH3O2=0.73 HO2+0.88 CH2O+0.11 CO+0.24 CH3COCHO+0.26 GLYALD+0.26 CH3CO3+0.25 CH3OH+0.23 HYAC: ARR2(5.000000e-13_dp, -400.00_dp, TEMP) ;
+{177:7882} MACRO2+HO2=MACROOH                                                   : ARR2(8.000000e-13_dp, -700.00_dp, TEMP) ;
+{178:7881} MACRO2+NO3=NO2+0.47 HO2+0.25 CH2O+0.25 CH3COCHO+0.22 CO+0.53 GLYALD+0.22 HYAC+0.53 CH3CO3: 2.400000e-12_dp;
+{179:7879} MACRO2+NO=NO2+0.47 HO2+0.25 CH2O+0.53 GLYALD+0.25 CH3COCHO+0.53 CH3CO3+0.22 HYAC+0.22 CO: ARR2(2.700000e-12_dp, -360.00_dp, TEMP) ;
+{180:8030} MACRO2+NO=HONITR                                                     : ARR2(1.300000e-13_dp, -360.00_dp, TEMP) ;
+{181:8261} MACR+O3=0.12 CH2O+0.24 OH+0.65 CO+0.1 CH3CO3+0.88 CH3COCHO+0.33 HCOOH+0.14 HO2: ARR2(1.500000e-15_dp, 2100.00_dp, TEMP) ;
+{182:8260} MACR+OH=0.5 MACRO2+0.5 H2O+0.5 MCO3                                  : ARR2(9.600000e-12_dp, -360.00_dp, TEMP) ;
+{183:7885} MACROOH+OH=0.5 MCO3+0.2 MACRO2+0.1 OH+0.2 HO2                        : ARR2(2.300000e-11_dp, -200.00_dp, TEMP) ;
+{184:7890} MCO3+CH3CO3=2 CO2+CH3O2+CH2O+CH3CO3                                  : ARR2(4.600000e-12_dp, -530.00_dp, TEMP) ;
+{185:7889} MCO3+CH3O2=2 CH2O+HO2+CO2+CH3CO3                                     : ARR2(2.000000e-12_dp, -500.00_dp, TEMP) ;
+{186:8024} MCO3+HO2=0.15 O3+0.15 CH3COOH+0.4 CH3COOOH+0.45 OH+0.45 CO2+0.45 CH2O+0.45 CH3CO3: ARR2(4.300000e-13_dp, -1040.00_dp, TEMP) ;
+{187:7891} MCO3+MCO3=2 CO2+2 CH2O+2 CH3CO3                                      : ARR2(2.300000e-12_dp, -530.00_dp, TEMP) ;
+{188:7886} MCO3+NO=NO2+CH2O+CH3CO3                                              : ARR2(5.300000e-12_dp, -360.00_dp, TEMP) ;
+{189:7887} MCO3+NO3=NO2+CH2O+CH3CO3                                             : 5.000000e-12_dp;
+{190:8023} MEKO2+HO2=0.8 MEKOOH+0.2 OH+0.2 CH3CHO+0.2 CH3CO3                    : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{191:7874} MEKO2+NO=CH3CO3+CH3CHO+NO2                                           : ARR2(4.200000e-12_dp, -180.00_dp, TEMP) ;
+{192:7873} MEK+OH=MEKO2                                                         : ARR2(2.300000e-12_dp, 170.00_dp, TEMP) ;
+{193:7876} MEKOOH+OH=MEKO2                                                      : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{194:7894} MPAN+OH=0.5 HYAC+0.5 NO3+0.5 CH2O+0.5 HO2+0.5 CO2                    : JPL_TROE(8.000000e-27_dp, 3.50_dp, 3.000000e-11_dp, 0.00_dp, 0.50_dp, TEMP, C_M) ;
+{195:8259} MVK+O3=0.6 CH2O+0.56 CO+0.1 CH3CHO+0.1 CO2+0.28 CH3CO3+0.5 CH3COCHO+0.28 HO2+0.36 OH+0.12 HCOOH: ARR2(8.500000e-16_dp, 1520.00_dp, TEMP) ;
+{196:7871} MVK+OH=MACRO2                                                        : ARR2(4.130000e-12_dp, -452.00_dp, TEMP) ;
+{197:7892} MCO3+NO2+M=MPAN+M                                                    : usr_MCO3_NO2( temp, c_m );
+{198:7893} MPAN+M=MCO3+NO2+M                                                    : usr_MPAN_M( temp, c_m );
+// 
+// C5
+// 
+{199:8059} ALKNIT+OH=0.4 CH2O+0.8 CH3CHO+0.8 CH3COCH3+NO2                       : 1.600000e-12_dp;
+{200:7912} ALKO2+HO2=ALKOOH                                                     : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{201:8057} ALKO2+NO=0.4 CH3CHO+0.1 CH2O+0.25 CH3COCH3+HO2+0.8 MEK+NO2           : 6.700000e-12_dp;
+{202:8058} ALKO2+NO=ALKNIT                                                      : ARR2(5.400000e-14_dp, -870.00_dp, TEMP) ;
+{203:7913} ALKOOH+OH=ALKO2                                                      : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{204:7907} BIGALK+OH=ALKO2                                                      : 3.500000e-12_dp;
+{205:8048} HPALD+OH=XO2                                                         : ARR2(1.860000e-11_dp, -175.00_dp, TEMP) ;
+{206:7910} HYDRALD+OH=XO2                                                       : ARR2(1.860000e-11_dp, -175.00_dp, TEMP) ;
+{207:8042} IEPOX+OH=XO2                                                         : 1.300000e-11_dp;
+{208:8045} ISOPAO2+CH3CO3=CH3O2+HO2+CH2O+0.39 MACR+0.61 MVK+CO2                 : 1.400000e-11_dp;
+{209:8043} ISOPAO2+CH3O2=0.25 CH3OH+HO2+1.5 CH2O+0.31 MACR+0.44 MVK             : ARR2(5.000000e-13_dp, -400.00_dp, TEMP) ;
+{210:8039} ISOPAO2+HO2=ISOPOOH                                                  : ARR2(8.000000e-13_dp, -700.00_dp, TEMP) ;
+{211:8033} ISOPAO2+NO=0.08 ISOPNITA+0.92 NO2+0.36 MACR+0.56 MVK+0.92 CH2O+0.92 HO2: ARR2(4.400000e-12_dp, -180.00_dp, TEMP) ;
+{212:8037} ISOPAO2+NO3=NO2+0.4 MACR+0.6 MVK+CH2O+HO2                            : 2.400000e-12_dp;
+{213:8046} ISOPBO2+CH3CO3=HYDRALD+CH3O2+HO2                                     : 1.400000e-11_dp;
+{214:8044} ISOPBO2+CH3O2=0.25 CH3OH+HO2+0.75 CH2O+0.75 HYDRALD                  : ARR2(5.000000e-13_dp, -400.00_dp, TEMP) ;
+{215:8040} ISOPBO2+HO2=ISOPOOH                                                  : ARR2(8.000000e-13_dp, -700.00_dp, TEMP) ;
+{216:8047} ISOPBO2=HPALD+HO2                                                    : ARR2(1.600000e+9_dp, 8300.00_dp, TEMP) ;
+{217:8034} ISOPBO2+NO=0.87 HYDRALD+0.08 ISOPNITB+0.92 NO2+0.92 HO2+0.05 GLYOXAL+0.05 GLYALD+0.05 CH3COCHO+0.05 HYAC: ARR2(4.400000e-12_dp, -180.00_dp, TEMP) ;
+{218:8038} ISOPBO2+NO3=NO2+0.95 HYDRALD+HO2+0.05 GLYOXAL+0.05 GLYALD+0.05 CH3COCHO+0.05 HYAC: 2.400000e-12_dp;
+{219:8035} ISOPNITA+OH=0.7 HYAC+0.7 GLYALD+0.7 NO2+0.3 CH2O+0.3 HONITR+0.3 HO2  : 4.000000e-11_dp;
+{220:8036} ISOPNITB+OH=0.5 HYAC+0.5 GLYALD+0.5 NOA+HO2+0.5 HONITR               : 4.000000e-11_dp;
+{221:7897} ISOP+NO3=ISOPNO3                                                     : ARR2(3.030000e-12_dp, 446.00_dp, TEMP) ;
+{222:8052} ISOPNO3+CH3CO3=NC4CHO+CH3O2+HO2                                      : 1.400000e-11_dp;
+{223:8053} ISOPNO3+CH3O2=0.8 NC4CHO+1.2 HO2+0.8 CH2O+0.2 CH3OH+0.2 NC4CH2OH     : ARR2(5.000000e-13_dp, -400.00_dp, TEMP) ;
+{224:8051} ISOPNO3+HO2=ISOPNOOH                                                 : ARR2(8.000000e-13_dp, -700.00_dp, TEMP) ;
+{225:8049} ISOPNO3+NO=NC4CHO+NO2+HO2                                            : ARR2(2.700000e-12_dp, -360.00_dp, TEMP) ;
+{226:8050} ISOPNO3+NO3=NC4CHO+NO2+HO2                                           : 2.400000e-12_dp;
+{227:8054} ISOPNOOH+OH=NOA+HO2                                                  : 4.000000e-11_dp;
+{228:8020} ISOP+O3=0.3 MACR+0.2 MVK+0.11 HCOOH+0.62 CO+0.32 OH+0.37 HO2+0.91 CH2O+0.08 CH3CO3+0.13 C3H6+0.05 CH3O2: ARR2(1.050000e-14_dp, 2000.00_dp, TEMP) ;
+{229:8032} ISOP+OH=0.6 ISOPAO2+0.4 ISOPBO2                                      : ARR2(2.540000e-11_dp, -410.00_dp, TEMP) ;
+{230:8041} ISOPOOH+OH=0.4 XO2+0.6 IEPOX+0.6 OH                                  : ARR2(1.520000e-11_dp, -200.00_dp, TEMP) ;
+{231:8055} NC4CH2OH+OH=GLYALD+NOA+HO2                                           : 7.000000e-11_dp;
+{232:8056} NC4CHO+OH=GLYOXAL+NOA+HO2                                            : 1.000000e-10_dp;
+{233:7918} XO2+CH3CO3=0.25 CO+0.25 CH2O+0.25 GLYOXAL+CH3O2+HO2+0.25 CH3COCHO+0.25 HYAC+0.25 GLYALD+CO2: ARR2(1.300000e-12_dp, -640.00_dp, TEMP) ;
+{234:7917} XO2+CH3O2=0.3 CH3OH+0.8 HO2+0.8 CH2O+0.2 CO+0.1 GLYOXAL+0.1 CH3COCHO+0.1 HYAC+0.1 GLYALD: ARR2(5.000000e-13_dp, -400.00_dp, TEMP) ;
+{235:7916} XO2+HO2=XOOH                                                         : ARR2(8.000000e-13_dp, -700.00_dp, TEMP) ;
+{236:7914} XO2+NO=NO2+HO2+0.25 CO+0.25 CH2O+0.25 GLYOXAL+0.25 CH3COCHO+0.25 HYAC+0.25 GLYALD: ARR2(2.700000e-12_dp, -360.00_dp, TEMP) ;
+{237:7915} XO2+NO3=NO2+HO2+0.5 CO+0.25 HYAC+0.25 GLYOXAL+0.25 CH3COCHO+0.25 GLYALD: 2.400000e-12_dp;
+{238:8446} XOOH+OH=0.5 XO2+0.5 OH                                               : ARR2(1.520000e-12_dp, -200.00_dp, TEMP) ;
+// 
+// MBO
+// 
+{239:8065} HMPROPO2+HO2=0.4 OH+0.4 HO2+0.4 CH3COCH3+0.4 CO2                     : ARR2(4.300000e-13_dp, -1040.00_dp, TEMP) ;
+{240:8064} HMPROPO2+NO=NO2+CO2+HO2+CH3COCH3                                     : ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{241:8063} HMPROP+OH=HMPROPO2                                                   : 1.400000e-11_dp;
+{242:8069} MBO+NO3=MBONO3O2                                                     : ARR2(4.600000e-14_dp, 400.00_dp, TEMP) ;
+{243:8186} MBONO3O2+HO2=M                                                       : ARR2(4.300000e-13_dp, -1040.00_dp, TEMP) ;
+{244:8071} MBONO3O2+NO=0.25 HMPROP+0.25 CH2O+1.25 NO2+0.75 HONITR+0.75 CH3COCH3+0.75 HO2: ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{245:8072} MBONO3O2+NO3=0.25 HMPROP+0.25 CH2O+1.25 NO2+0.75 HONITR+0.75 CH3COCH3+0.75 HO2: 2.400000e-12_dp;
+{246:8062} MBOO2+CH3O2=0.917 CH2O+HO2+0.25 CH3OH+0.333 GLYALD+0.333 CH3COCH3+0.167 HMPROP: ARR2(3.750000e-13_dp, 40.00_dp, TEMP) ;
+{247:8066} MBOO2+HO2=MBOOOH                                                     : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{248:8061} MBOO2+NO=HO2+0.67 GLYALD+0.67 CH3COCH3+0.33 HMPROP+0.33 CH2O+NO2     : ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{249:8068} MBO+O3=0.7 HMPROP+0.64 CO+0.36 OH+0.48 HO2+0.17 HCOOH+0.3 CH2O+0.23 CH3COCH3: 1.000000e-17_dp;
+{250:8060} MBO+OH=MBOO2                                                         : ARR2(8.100000e-12_dp, -610.00_dp, TEMP) ;
+{251:8187} MBOOOH+OH=0.5 MBOO2+0.5 OH                                           : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+// 
+// C7
+// 
+{252:8097} ACBZO2+HO2=0.4 C6H5O2+0.4 OH                                         : ARR2(4.300000e-13_dp, -1040.00_dp, TEMP) ;
+{253:8096} ACBZO2+NO=C6H5O2+NO2                                                 : ARR2(7.500000e-12_dp, -290.00_dp, TEMP) ;
+{254:8073} BENZENE+OH=0.53 PHENOL+0.12 BEPOMUC+0.65 HO2+0.35 BENZO2             : ARR2(2.300000e-12_dp, 193.00_dp, TEMP) ;
+{255:8084} BENZO2+HO2=BENZOOH                                                   : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{256:8083} BENZO2+NO=NO2+GLYOXAL+0.5 BIGALD1+HO2                                : ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{257:8085} BENZOOH+OH=BENZO2                                                    : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{258:8094} BZALD+OH=ACBZO2                                                      : ARR2(5.900000e-12_dp, -225.00_dp, TEMP) ;
+{259:8091} BZOO+HO2=BZOOH                                                       : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{260:8092} BZOOH+OH=BZOO                                                        : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{261:8093} BZOO+NO=BZALD+NO2+HO2                                                : ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{262:8081} C6H5O2+HO2=C6H5OOH                                                   : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{263:8080} C6H5O2+NO=PHENO+NO2                                                  : ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{264:8082} C6H5OOH+OH=C6H5O2                                                    : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{265:8090} CRESOL+OH=0.2 PHENO2+0.73 HO2+0.07 PHENO                             : 4.700000e-11_dp;
+{266:8099} DICARBO2+HO2=0.4 OH+0.07 HO2+0.07 CH3COCHO+0.07 CO+0.33 CH3O2        : ARR2(4.300000e-13_dp, -1040.00_dp, TEMP) ;
+{267:8100} DICARBO2+NO=NO2+0.17 HO2+0.17 CH3COCHO+0.17 CO+0.83 CH3O2            : ARR2(7.500000e-12_dp, -290.00_dp, TEMP) ;
+{268:8103} DICARBO2+NO2=M                                                       : JPL_TROE(9.700000e-29_dp, 5.60_dp, 9.300000e-12_dp, 1.50_dp, 0.60_dp, TEMP, C_M) ;
+{269:8088} MALO2+HO2=0.16 GLYOXAL+0.16 HO2+0.16 CO                              : ARR2(4.300000e-13_dp, -1040.00_dp, TEMP) ;
+{270:8087} MALO2+NO=0.4 GLYOXAL+0.4 HO2+0.4 CO+NO2                              : ARR2(7.500000e-12_dp, -290.00_dp, TEMP) ;
+{271:8185} MALO2+NO2=M                                                          : JPL_TROE(9.700000e-29_dp, 5.60_dp, 9.300000e-12_dp, 1.50_dp, 0.60_dp, TEMP, C_M) ;
+{272:8101} MDIALO2+HO2=0.4 OH+0.33 HO2+0.07 CH3COCHO+0.14 CO+0.07 CH3O2+0.07 GLYOXAL: ARR2(4.300000e-13_dp, -1040.00_dp, TEMP) ;
+{273:8102} MDIALO2+NO=NO2+0.83 HO2+0.17 CH3COCHO+0.35 CO+0.17 CH3O2+0.17 GLYOXAL: ARR2(7.500000e-12_dp, -290.00_dp, TEMP) ;
+{274:8104} MDIALO2+NO2=M                                                        : JPL_TROE(9.700000e-29_dp, 5.60_dp, 9.300000e-12_dp, 1.50_dp, 0.60_dp, TEMP, C_M) ;
+{275:8076} PHENO2+HO2=PHENOOH                                                   : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{276:8075} PHENO2+NO=HO2+0.7 GLYOXAL+NO2                                        : ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{277:8074} PHENOL+OH=0.14 PHENO2+0.8 HO2+0.06 PHENO                             : ARR2(4.700000e-13_dp, -1220.00_dp, TEMP) ;
+{278:8471} PHENO+NO2=M                                                          : 2.100000e-12_dp;
+{279:8079} PHENO+O3=C6H5O2                                                      : 2.800000e-13_dp;
+{280:8077} PHENOOH+OH=PHENO2                                                    : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{281:8095} ACBZO2+NO2=PBZNIT                                                    : JPL_TROE(9.700000e-29_dp, 5.60_dp, 9.300000e-12_dp, 1.50_dp, 0.60_dp, TEMP, C_M) ;
+{282:7923} TOLO2+HO2=TOLOOH                                                     : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{283:8098} TOLO2+NO=NO2+0.6 GLYOXAL+0.4 CH3COCHO+HO2+0.2 BIGALD1+0.2 BIGALD2+0.2 BIGALD3: ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{284:8175} TOLOOH+OH=TOLO2                                                      : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{285:8089} TOLUENE+OH=0.18 CRESOL+0.1 TEPOMUC+0.07 BZOO+0.65 TOLO2+0.28 HO2     : ARR2(1.700000e-12_dp, -352.00_dp, TEMP) ;
+{286:8150} PBZNIT+M=ACBZO2+NO2+M                                                : usr_PBZNIT_M( temp, c_m );
+{287:8105} XYLENES+OH=0.15 XYLOL+0.23 TEPOMUC+0.06 BZOO+0.56 XYLENO2+0.38 HO2   : 1.700000e-11_dp;
+{288:8110} XYLENO2+HO2=XYLENOOH                                                 : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{289:8112} XYLENO2+NO=NO2+HO2+0.34 GLYOXAL+0.54 CH3COCHO+0.06 BIGALD1+0.2 BIGALD2+0.15 BIGALD3+0.21 BIGALD4: ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{290:8111} XYLENOOH+OH=XYLENO2                                                  : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+{291:8108} XYLOLO2+HO2=XYLOLOOH                                                 : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{292:8107} XYLOLO2+NO=HO2+NO2+0.17 GLYOXAL+0.51 CH3COCHO                        : ARR2(2.600000e-12_dp, -365.00_dp, TEMP) ;
+{293:8106} XYLOL+OH=0.3 XYLOLO2+0.63 HO2+0.07 PHENO                             : 8.400000e-11_dp;
+{294:8109} XYLOLOOH+OH=XYLOLO2                                                  : ARR2(3.800000e-12_dp, -200.00_dp, TEMP) ;
+// 
+// C10
+// 
+{295:8123} APIN+NO3=NTERPO2                                                     : ARR2(1.200000e-12_dp, -490.00_dp, TEMP) ;
+{296:8118} APIN+O3=0.33 TERPROD1+0.3 TERPROD2+0.63 OH+0.57 HO2+0.23 CO+0.27 CO2+0.52 CH3COCH3+0.34 CH2O+0.1 BIGALD+0.05 HCOOH+0.05 BIGALK+0.06 CH3CO3+0.06 RO2: ARR2(6.300000e-16_dp, 580.00_dp, TEMP) ;
+{297:8113} APIN+OH=TERPO2                                                       : ARR2(1.200000e-11_dp, -440.00_dp, TEMP) ;
+{298:8127} BCARY+NO3=NTERPO2                                                    : 1.900000e-11_dp;
+{299:8122} BCARY+O3=0.33 TERPROD1+0.3 TERPROD2+0.63 OH+0.57 HO2+0.23 CO+0.27 CO2+0.52 CH3COCH3+0.34 CH2O+0.1 BIGALD+0.05 HCOOH+0.05 BIGALK+0.06 CH3CO3+0.06 RO2: 1.200000e-14_dp;
+{300:8117} BCARY+OH=TERPO2                                                      : 2.000000e-10_dp;
+{301:8124} BPIN+NO3=NTERPO2                                                     : 2.500000e-12_dp;
+{302:8119} BPIN+O3=0.33 TERPROD1+0.3 TERPROD2+0.63 OH+0.57 HO2+0.23 CO+0.27 CO2+0.52 CH3COCH3+0.34 CH2O+0.1 BIGALD+0.05 HCOOH+0.05 BIGALK+0.06 CH3CO3+0.06 RO2: ARR2(1.700000e-15_dp, 1300.00_dp, TEMP) ;
+{303:8114} BPIN+OH=TERPO2                                                       : ARR2(1.600000e-11_dp, -470.00_dp, TEMP) ;
+{304:8125} LIMON+NO3=NTERPO2                                                    : 1.100000e-11_dp;
+{305:8120} LIMON+O3=0.33 TERPROD1+0.3 TERPROD2+0.63 OH+0.57 HO2+0.23 CO+0.27 CO2+0.52 CH3COCH3+0.34 CH2O+0.1 BIGALD+0.05 HCOOH+0.05 BIGALK+0.06 CH3CO3+0.06 RO2: ARR2(3.000000e-15_dp, 780.00_dp, TEMP) ;
+{306:8115} LIMON+OH=TERPO2                                                      : ARR2(4.200000e-11_dp, -400.00_dp, TEMP) ;
+{307:8126} MYRC+NO3=NTERPO2                                                     : 1.200000e-11_dp;
+{308:8121} MYRC+O3=0.33 TERPROD1+0.3 TERPROD2+0.63 OH+0.57 HO2+0.23 CO+0.27 CO2+0.52 CH3COCH3+0.34 CH2O+0.1 BIGALD+0.05 HCOOH+0.05 BIGALK+0.06 CH3CO3+0.06 RO2: 4.700000e-16_dp;
+{309:8116} MYRC+OH=TERPO2                                                       : 2.100000e-10_dp;
+{310:8140} NTERPO2+CH3O2=0.5 TERPNIT+0.75 CH2O+0.25 CH3OH+0.5 HO2+0.5 TERPROD1+0.5 NO2: ARR2(2.000000e-12_dp, -500.00_dp, TEMP) ;
+{311:8139} NTERPO2+HO2=NTERPOOH                                                 : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{312:8408} NTERPO2+NO=0.2 TERPNIT+1.6 NO2+0.8 TERPROD1                          : ARR2(4.200000e-12_dp, -180.00_dp, TEMP) ;
+{313:8141} NTERPO2+NO3=2 NO2+TERPROD1                                           : 2.400000e-12_dp;
+{314:8143} NTERPOOH+OH=NTERPO2                                                  : 2.000000e-11_dp;
+{315:8136} TERP2O2+CH3O2=TERPROD2+0.93 CH2O+0.25 CH3OH+HO2+0.5 CO2+0.125 CO+0.125 GLYALD+0.15 CH3COCH3: ARR2(2.000000e-12_dp, -500.00_dp, TEMP) ;
+{316:8135} TERP2O2+HO2=TERP2OOH                                                 : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{317:8134} TERP2O2+NO=0.1 ONITR+0.9 NO2+0.34 CH2O+0.27 CH3COCH3+0.225 CO+0.9 CO2+0.9 TERPROD2+0.9 HO2+0.225 GLYALD: ARR2(4.200000e-12_dp, -180.00_dp, TEMP) ;
+{318:8131} TERP2OOH+OH=TERP2O2                                                  : 2.300000e-11_dp;
+{319:8142} TERPNIT+OH=NO2+TERPROD1                                              : 2.000000e-11_dp;
+{320:8130} TERPO2+CH3O2=TERPROD1+0.95 CH2O+0.25 CH3OH+HO2+0.025 CH3COCH3        : ARR2(2.000000e-12_dp, -500.00_dp, TEMP) ;
+{321:7937} TERPO2+HO2=TERPOOH                                                   : ARR2(7.500000e-13_dp, -700.00_dp, TEMP) ;
+{322:8128} TERPO2+NO=0.2 TERPNIT+0.8 NO2+0.32 CH2O+0.04 CH3COCH3+0.8 TERPROD1+0.8 HO2: ARR2(4.200000e-12_dp, -180.00_dp, TEMP) ;
+{323:8407} TERPOOH+OH=TERPO2                                                    : 3.300000e-11_dp;
+{324:8133} TERPROD1+NO3=0.5 TERP2O2+0.5 NTERPO2                                 : 1.000000e-12_dp;
+{325:8132} TERPROD1+OH=TERP2O2                                                  : 5.700000e-11_dp;
+{326:8137} TERPROD2+OH=0.15 RO2+0.68 CH2O+1.8 CO2+0.5 CH3COCH3+0.65 CH3CO3+0.2 HO2+0.7 CO: 3.400000e-11_dp;
+// 
+// Sulfur
+// 
+// 
+// Tropospheric Aerosol
+// 
+{327:7946} DMS+NO3=SO2+HNO3                                                     : ARR2(1.900000e-13_dp, -520.00_dp, TEMP) ;
+{328:7944} DMS+OH=SO2                                                           : ARR2(9.600000e-12_dp, 234.00_dp, TEMP) ;
+{329:7947} NH3+OH=H2O                                                           : ARR2(1.700000e-12_dp, 710.00_dp, TEMP) ;
+{330:7945} DMS+OH=0.5 SO2+0.5 HO2                                               : usr_DMS_OH( temp, c_m );
+{331:7949} HO2=0.5 H2O2                                                         : usr_HO2_aer( aer_srf_area, aer_diam, temp );
+{332:7939} N2O5=2 HNO3                                                          : usr_N2O5_aer( aer_srf_area, aer_diam, temp );
+{333:7941} NO2=0.5 OH+0.5 NO+0.5 HNO3                                           : usr_NO2_aer( aer_srf_area, aer_diam, temp );
+{334:7940} NO3=HNO3                                                             : usr_NO3_aer( aer_srf_area, aer_diam, temp );
+{336:7940} HONITR=HNO3                                                          : usr_HONITR_aer( aer_srf_area, aer_diam, temp );
+{337:7940} ISOPNITA=HNO3                                                        : usr_ISOPNIT_aer( aer_srf_area, aer_diam, temp );
+{338:7940} ISOPNITB=HNO3                                                        : usr_ISOPNIT_aer( aer_srf_area, aer_diam, temp );
+{339:7940} NC4CH2OH=HNO3                                                        : usr_NC4CH2OH_aer( aer_srf_area, aer_diam, temp );
+{340:7940} NC4CHO=HNO3                                                          : usr_NC4CHO_aer( aer_srf_area, aer_diam, temp );
+{341:7940} NTERPOOH=HNO3                                                        : usr_NTERPOOH_aer( aer_srf_area, aer_diam, temp );
+{342:7940} ONITR=HNO3                                                           : usr_ONITR_aer( aer_srf_area, aer_diam, temp );
+{343:7940} TERPNIT=HNO3                                                         : usr_TERPNIT_aer( aer_srf_area, aer_diam, temp );
+{344:7940} GLYOXAL=CO2                                                          : usr_GLYOXAL_aer( aer_srf_area, temp );
+{345:7943} SO2+OH=SO4                                                           : usr_SO2_OH( temp, c_m );
+// 
+// Sea Salt Aerosol
+// 
+// 
+// SOA
+// 
+// 
+// Stratospheric Aerosol
+// 
+// 
+// Ions
+// 
+// 
+// O3S tracer
+// 

@@ -1,0 +1,230 @@
+#EQUATIONS
+                
+{----NEXT KR APPROXIMATED BY ADRIAN---}
+{1} NO2 + hv = NO + O3 :                              1.765E-2*SUN ;
+{2} NO + O3 = NO2 + O2 :                              ARR2(2.2E-12,-1430.0) ;
+{3} NO2 + O3 = NO3 + O2 :                             ARR2(1.2E-13,-2450.0) ;
+{4} NO + NO3 = 2NO2 :                                 ARR2(1.7E-11,150.0) ;
+{----NEXT KR CORRECTED FROM LILING'S STEM----}
+{5} NO2 + NO3 = N2O5 :                                1.45E-12 ;
+{----NEXT KR CORRECTED FROM LILING'S STEM----}
+{6} N2O5 = NO2 + NO3 :                                5.00E-6 ;
+{7} NO2 + NO3 = NO + NO2 + O2 :                       ARR2(2.5E-14,-1230.0) ;
+{8} NO3 + hv = 0.15NO + 0.85NO2 + 0.85O3 + O2 :       3.29*RCONST(1) ;
+{9} NO3 + HO2 = HNO3 + O2 :                           2.50E-12 ;
+{---- NEXT KR APPROXIMATED BY ADRIAN ----}
+{10} O3 + hv = 2OH :                                  1.5796E-7*SUN ;
+{----NEXT KR CORRECTED FROM LILING'S STEM----}
+{11} NO + OH = HONO :                                 7.218E-12 ;
+{12} HONO + hv = NO + OH :                            0.205*RCONST(1) ;
+{----NEXT KR CORRECTED FROM LILING'S STEM----}
+{13} NO2 + OH = HNO3 :                                1.2794E-11 ;
+{---- NEXT KR APPROXIMATED BY ADRIAN ----}
+{14} HNO3 + hv = NO2 + OH :                           7.8E-7*SUN ;
+{15} HNO3 + OH = NO3 + H2O :                          ARR2(9.4E-15,778.0) ;
+{16} N2O5 + H2O = 2HNO3 :                             1.30E-21 ;
+{----NEXT KR CORRECTED FROM LILING'S STEM----}
+{17} CO + OH = HO2 + CO2 :                            1.7823E-13 ;
+{18} O3 + OH = HO2 + O2 :                             ARR2(1.6E-12,-1000.0) ;
+{19} NO + HO2 = NO2 + OH :                            ARR2(3.7E-12,240.0) ;
+{----NEXT KR CORRECTED FROM LILING'S STEM----}
+{20} NO2 + HO2 = HNO4 :                               1.7851E-12 ;
+{----NEXT KR CORRECTED FROM LILING'S STEM----}
+{21} HNO4 = NO2 + HO2 :                               6.8868E-6 ;
+{22} O3 + HO2 = OH + 2O2 :                            ARR2(1.4E-14,-600.0) ;
+{----NEXT KR CORRECTED FROM LILING'S STEM----}
+{23} HO2 + HO2 = H2O2 + O2 :                          4.7165E-12 ;
+{---- NEXT KR APPROXIMATED BY ADRIAN---- }
+{24} H2O2 + hv = 2OH :                                1.366E-5*SUN ;
+{25} H2O2 + OH = HO2 + H2O :                          ARR2(3.3E-12,-200.0) ;
+{26} NO2 + H2O = HONO + HNO3 - NO2 :                  4.00E-24 ;
+{27} HNO4 + hv = NO2 + HO2 :                          1E-4*RCONST(1) ;
+{28} HNO4 + OH = NO2 + H2O + O2 :                     ARR2(1.3E-12,380.0) ;
+{----NEXT KR CORRECTED FROM LILING'S STEM----}
+{29} SO2 + OH = SO4 + HO2 :                           1.E-20 ;
+{ NEXT KR APPROXIMATED BY ADRIAN }
+{30} HCHO + hv = 2HO2 + CO :                          2.7E-5*SUN ;
+{---- NEXT KR APPROXIMATED BY ADRIAN ----}
+{31} HCHO + hv = CO + H2 :                            1.1182E-4*SUN ;
+{32} HCHO + OH = HO2 + CO + H2O :                     1.00E-11 ;
+{33} HCHO + HO2 = AHO2 :                              1.00E-14 ;
+{34} AHO2 + NO = ACO2 + HO2 + NO2 :                   ARR2(4.2E-12,180.0) ;
+{35} AHO2 + HO2 = ACO2 + H2O + O2 :                   2.00E-12 ;
+{36} 2AHO2 = ACO2 + 2HO2 + 2O2 :                      1.00E-13 ;
+{37} ACO2 + OH = HO2 + H2O + CO2 :                    3.20E-13 ;
+{38} NO3 + HCHO = HNO3 + HO2 +CO :                    6.00E-16 ;
+{39} ALD2 + OH = MCO3 + H2O :                         ARR2(6.9E-12,250.0) ;
+{40} ALD2 + NO3 = HNO3 + MCO3 :                       2.70E-15 ;
+{---- NEXT KR APPROXIMATED BY ADRIAN ----}
+{41} ALD2 + hv = MO2 + HO2 + CO :                     4.556E-6*SUN ;
+{---- NEXT KR APPROXIMATED BY ADRIAN ----}
+{42} ALD2 + hv = CH4 + CO :                           1.118E-4*SUN ;
+{43} MCO3 + NO2 = PAN :                               4.70E-12 ;
+{44} PAN = MCO3 + NO2 :                               ARR2(2.2E16,-13435.0) ;
+{45} MCO3 + NO = MO2 + NO2 + CO2 :                    ARR2(4.2E-12,180.0) ;
+{46} MO2 + NO = HCHO + NO2 + HO2 :                    ARR2(4.2E-12,180.0);
+{47} CH4 + OH = MO2 + H2O :                           ARR2(2.4E-12,1710.0) ;
+{48} C2H6 + OH = ETO2 + H2O :                         ARR2(1.7E-11,-1232.0) ;
+{49} ETO2 + NO = ALD2 + HO2 + NO2 :                   ARR2(4.2E-12,180.0) ;
+{50} C3H8 + OH = R3O2 :                               ARR2(1.18E-11,-679.0) ;
+{51} R3O2 + NO = 0.03R3N2 + 0.46ALD2 + 0.97NO2 +
+            0.97HO2 + 0.49KET :                       ARR2(4.2E-12,180.0) ;
+{52} ALKA + OH = RAO2 :                                    ARR2(2E-11,-500.0) ;
+{---- IN THE NEXT REACTION
+  BETA 1...9 WHERE REPLACED BY NUMBERS,
+  AS READ FROM LILING STEM CODE ----}
+{53} RAO2 + NO = 0.9261NO2 - 0.1892NO + 0.263RAN2 +
+            1.0482ALD2 + 0.3KET +
+            0.1879ETO2 + 0.1116MO2 + 
+            0.28HO2 + 0.1057R3O2 + 0.06RAO2 :         ARR2(4.2E-12,180.0) ;
+{54} ALKA + NO3 = HNO3 + RAO2 :                       4.00E-17 ;
+{55} RAN2 + OH = RAN1 + H2O :                         2.00E-12 ;
+{56} RAN1 + NO = 2.5NO2  - 0.5NO + 0.8HCHO + 2.1ALD2 :ARR2(4.2E-12,180.0) ;
+{57} MO2 + MO2 = 1.4HCHO + 0.8HO2 + O2 :              ARR2(1.5E-13,220.0) ;
+{58} 2ETO2 = 1.6ALD2 + 1.2HO2 :                       5.00E-14 ;
+{59} R3O2 + R3O2 = 1.9ALD2 + 0.28KET + 0.37HO2 :      5.00E-14 ;
+{60} HO2 + MO2 = ROOH + O2 :                          3.00E-12 ;
+{61} HO2 + ETO2 = ROOH + O2 :                         3.00E-12 ;
+{62} HO2 + R3O2 = ROOH + O2 :                         3.00E-12 ;
+{63} HO2 + RAO2 = ROOH + O2 :                         3.00E-12 ;
+{64} HO2 + MCO3 = ROOH + O2 :                         3.00E-12 ;
+{65} KET + OH = KO2 :                                 ARR2(1.2E-11,-890.0) ;
+{66} KO2 + NO = 0.05RAN2 + 0.95NO2 + 0.94ALD2 +
+           0.94MCO3 :                                 ARR2(4.2E-12,180.0) ;
+{67} KET + hv = MCO3 + ETO2 + H2O :                   2.6E-4*RCONST(1) ;
+{68} KET + NO3 = HNO3 + KO2 :                         7.00E-16 ;
+{69} KO2 + HO2 = MGLY + MO2 + H2O :                   3.00E-12 ;
+{70} ETHE + OH = EO2 :                                ARR2(1.66E-12,474.0) ;
+{71} EO2 + NO = NO2 + 2.0HCHO + HO2 :                 ARR2(4.2E-12,180.0) ;
+{72} ALKE + OH = PO2 :                                ARR2(4.1E-12,537.0) ;
+{73} PO2 + NO = NO2 + ALD2 + HCHO + HO2 :             ARR2(4.2E-12,180.0) ;
+{74} ETHE + O3 = HCHO + 0.4CHO2 + 0.12HO2 + 0.42CO +
+            0.06CH4 :                                 ARR2(1.2E-14,-2633.0) ;
+{75} ALKE + O3 = 0.525HCHO + 0.5ALD2 + 0.2CHO2 +
+            0.2CRO2 + 0.23HO2 + 0.215MO2 :            ARR2(7.8E-14,-2105.0) ;
+{76} CHO2 + NO = HCHO + NO2 :                         7.00E-12 ;
+{77} CHO2 + NO2 = HCHO+ NO3 :                         7.00E-13 ;
+{78} CHO2 + H2O = ACO2 :                              4.00E-18 ;
+{79} CRO2 + NO = ALD2 + NO2 :                         7.00E-12 ;
+{80} CRO2 + NO2 = ALD2 + NO3 :                        7.00E-13 ;
+{81} CRO2 + H2O = ACTA :                              4.00E-18 ;
+{82} EO2 + EO2 = 2.4HCHO + 1.2HO2 + 0.4ALD2 :         5.00E-14 ;
+{83} PO2 + PO2 = 2.2ALD2 + 1.2HO2 :                   5.00E-14 ;
+{84} HO2 + EO2 = ROOH + O2 :                          3.00E-12 ;
+{85} HO2 + PO2 = ROOH + O2 :                          3.00E-12 ;
+{86} SO2 + CHO2 = SO4 + HCHO :                        7.00E-14 ;
+{87} SO2 + CRO2 = SO4 + ALD2 :                        7.00E-14 ;
+{88} ALKE + NO3 = PRN1 :                              1.26E-13 ;
+{89} PRN1 + NO2 = PRN2 :                              6.80E-12 ;
+{90} PRN1 + HO2 = PRPN + O2 :                         3.00E-12 ;
+{91} PRN1 + NO = 2NO2 + HCHO + ALD2 :                 ARR2(4.2E-12,180.0) ;
+{92} CHO2 + HCHO = OZID :                             1.36E-14 ;
+{93} CHO2 + ALD2 = OZID :                             1.36E-14 ;
+{94} CRO2 + HCHO = OZID :                             1.36E-14 ;
+{95} CRO2 + ALD2 = OZID :                             1.36E-14 ;
+{96} AROM + OH = 0.84TO2 + 0.16CRES + 0.16HO2 :       1.52E-11 ;
+{97} TO2 + NO = NO2 + HO2 + 0.72MGLY + 0.18GLYX + DIAL : ARR2(4.2E-12,180.0) ;
+{98} GLYX + hv = PROD :                               8.0E-3*RCONST(1) ;
+{99} GLYX + OH = HO2 + 2CO + H2O :                    1.15E-11 ;
+{100} MGLY + hv = MCO3 + HO2 + CO :                   1.9E-2*RCONST(1) ;
+{101} MGLY + OH = MCO3 + CO + H2O :                   1.73E-11 ;
+{---- IN THE NEXT REACTION
+  BETA 12, 13 WHERE REPLACED BY NUMBERS
+  AS GIVEN IN LILING'S STEM CODE ----}
+{102} CRES + OH = 0.83HO2 + 0.9ZO2 + 0.9TCO3 
+            -0.9OH - 0.0315NO2 :                      4.25E-11 ;
+{103} NO3 + CRES = HNO3 :                             1.00E-11 ;
+{104} OH + DIAL = TCO3 :                              2.80E-11 ;
+{105} TCO3 + NO2 = TPAN :                             4.70E-12 ;
+{106} TPAN = TCO3 + NO2:                              ARR2(2.2E16,-13435.0) ;
+{107} TCO3 + NO = NO2 + 0.92HO2 + 0.89GLYX + 0.11MGLY +
+            0.05MCO3 :                                ARR2(4.2E-12,180.0) ;
+{108} ZO2 + NO = NO2 :                                ARR2(4.2E-12,180.0) ;
+{109} DIAL + hv = 0.98HO2 + 0.02MCO3 + TCO3 :         1E-2*RCONST(1) ;
+{110} HO2 + TO2 = ROOH + O2 :                         4.00E-12 ;
+{111} HO2 + TCO3 = ROOH + O2 :                        4.00E-12 ;
+{112} HO2 + ZO2 = ROOH + O2 :                         1.00E-12 ;
+{---- HERE COMES AEROSOL PART ----}
+{113} AHO2 = HCHO + HO2 :                             1.5*1. ;
+{114} ISOP + OH = RIO2 :                              ARR2(2.5E-11,409.0) ;
+{115} RIO2 + NO = 0.9NO2 + 0.45MVK + 0.45MACR + 
+            0.9HO2 + 0.9HCHO :                        ARR2(4.2E-12,180.0) ;
+{116} RIO2 + HO2 = ROOH :                             3.00E-12 ;
+{117} MVK + OH = VRO2 :                               ARR2(3.0E-12,500.0) ;
+{118} VRO2 + NO = 0.9NO2 + 0.6MCO3 + 0.6HAC +
+            0.3HO2 + 0.3HCHO + 0.3MGGY :              ARR2(4.2E-12,180.0) ;
+{119} VRO2 + HO2 = ROOH :                             3.0E-12 ;
+{120} OH + MACR = MAO3 :                              1.02E-11 ;
+{121} MAO3 + NO2 = MPAN :                             4.7E-12 ;
+{122} MPAN = MAO3 + NO2 :                             ARR2(2.2E+16,-13435.0) ;
+{123} MAO3 + NO = 3NO3 - 2NO + HO2 + MGGY :           ARR2(4.2E-12,180.0) ;
+{124} MAO3 + HO2 = ROOH :                             3.00E-12 ;
+{125} MACR + OH = MRO2 :                              ARR2(3.86E-12,500.0) ;
+{126} MRO2 + NO = 0.9NO2 + 0.9HO2 +
+            0.9HCHO + 0.9MGGY :                       ARR2(4.2E-12,180.0) ;
+{127} MRO2 + HO2 = ROOH :                             3.00E-12 ;
+{128} HAC + OH = HACO :                               1.5E-11 ;
+{129} HACO + NO2 = IPAN :                             4.7E-12 ;
+{130} IPAN = HACO + NO2 :                             ARR2(2.2E+16,-13435.0) ;
+{131} HACO + NO = NO2 + HO2 + HCHO :                  ARR2(4.2E-12,180.0) ;
+{132} HACO + HO2 = ROOH :                             3.00E-12 ;
+{133} ISOP + O3 = 0.5HCHO + 0.2MVK + 0.3MACR + 0.2CHO2 +
+            0.06HO2 + 0.2MVKO + 0.3MAOO :             ARR2(7.0E-15,-1900.0) ;
+{134} MVK + O3  = 0.5HCHO + 0.2CHO2 + 0.21HO2 + 0.2MCRG +
+            0.15ALD2 + 0.5MGGY + 0.15MCO3 :           ARR2(4.0E-15,-2000.0) ;
+{135} MACR + O3 = 0.65HCHO + 0.2CHO2 + 0.36HO2 +
+            0.15NO2 - 0.15NO + 0.5MGGY + 0.2MCRG :    ARR2(4.4E-15,-2500.0) ;
+{136} MVKO + NO = MVK + NO2 :                         ARR2(4.2E-12,180.0) ;
+{137} MVKO + NO2 = MVK + NO3 :                        ARR2(4.2E-13,180.0) ;
+{138} MVKO + H2O = PROD :                             3.4E-18 ;
+{139} MAOO + NO = MACR + NO2 :                        ARR2(4.2E-12,180.0) ;
+{140} MAOO + NO2 = MACR + NO3 :                       ARR2(4.2E-13,180.0) ;
+{141} MAOO + H2O = MACA :                             3.4E-18 ;
+{142} MCRG + NO = MGGY + NO2 :                        ARR2(4.2E-12,180.0) ;
+{143} MCRG + NO2 = MGGY + NO3 :                       ARR2(4.2E-13,180.0) ;
+{144} MCRG + H2O = PYVA :                             3.4E-18 ;
+{145} HAC + hv = HCHO + 2HO2 :                        5E-4*RCONST(1) ;
+{146} MGGY + hv = MCO3 + HO2 :                        0.15*RCONST(1) ;
+{147} MGGY + OH = MCO3 :                              1.7E-11 ;
+{148} ISOP + NO3 = INO2 :                             ARR2(3.00E-12,-450.0) ;
+{149} INO2 + NO = 2NO2 + HCHO + 0.5MVK + 0.5MACR :    ARR2(4.2E-12,180.0) ;
+{150} INO2 + NO2 = PROD :                             ARR2(4.2E-13,180.0) ;
+{151} INO2 + HO2 = PROD :                             3.00E-12 ;
+{152} MVK + NO3 = MVN2 :                              6.00E-14 ;
+{153} MVN2 + NO = 2NO2 + HCHO + 0.5MCO3 +
+            0.5MGGY + 0.5HO2 :                        ARR2(4.2E-12,180.0) ;
+{154} MVN2 + HO2 = PROD :                             3.0E-12 ;
+{155} MACR + NO3 = MAO3 + HNO3 :                      3.3E-15 ;
+{156} MACR + NO3 = MAN2 :                             6.7E-15 ;
+{157} MAN2 + NO = 2NO2 + HCHO + MGGY :                ARR2(4.2E-12,180.0) ;
+{157} MAN2 + HO2 = PROD :                             3.00E-12 ;
+{159} HAC + NO3 = HNO3 + HACO :                       5.2E-16 ;
+{160} MAOO + HO2 = ROOH :                             3.00E-12 ;
+{161} MVKO + HO2 = ROOH :                             3.00E-12 ;
+{162} MVKO + SO2 = SO4 + MVK :                        7.00E-14 ;
+{163} MAOO + SO2 = SO4 + MACR :                       7.00E-14 ;
+{164} MCRG + SO2 = SO4 + MVK :                        7.00E-14 ;
+{165} MACA + OH = PROD :                              ARR2(1.2E-11,500.0) ;
+{166} PYVA + OH = PROD :                              5.00E-14 ;
+{167} DOL6 + O3 = 0.11SUCA :                          5.44E-17 ;
+{168} DOL7 + O3 = 0.19GLUA :                          3.46E-17 ;
+{169} DOL8 + O3 = 0.15ADIA :                          2.21E-17 ;
+{170} CPET + O3 = 0.39GLUA :                          1.03E-15 ;
+{171} CHEX + O3 = 0.15ADIA :                          2.16E-16 ;
+{172} OH + HO2 = H2O + O2 :                           ARR2(4.6E-11,230.0) ;
+{173} ROOH + hv = HCHO + OH + HO2 :                   5.00E-4*RCONST(1) ;
+{174} ROOH + OH = 0.5MO2 + 0.5OH + 0.5HCHO :          1.00E-11;
+{175} DMS + OH = SO2 + MSA :                          8.3E-12 ;
+{176} NO3 + NO3 = 2NO2 + O2 :                         ARR2(8.5E-13,-2450.0) ;
+{177} OH + PAN = PROD :                               ARR2(1.23E-12,-651.0) ;
+{178} NO3 + HO2 = 0.6OH + 0.6NO2 + 0.4HNO3 :          ARR2(2.3E-12,170.0) ;  
+ 
+ 
+    
+                                                  
+
+
+                       
+
+
+

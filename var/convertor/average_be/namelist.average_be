@@ -1,0 +1,4 @@
+&nl_average_be
+  nbins = 6,
+  fg_file_name = 'wrfinput_d01'
+/

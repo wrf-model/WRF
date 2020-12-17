@@ -1,0 +1,29 @@
+state	real	-	ikjf	nba_mij		1       -       -       -
+state   real    m11     ikjf    nba_mij		1       -	h	"m11"   	"11 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    m22     ikjf    nba_mij		1       -       h       "m22"   	"22 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    m33     ikjf    nba_mij		1       -       h       "m33"   	"33 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    m12     ikjf    nba_mij		1       -       h       "m12"   	"12 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    m13     ikjf    nba_mij		1       -       h       "m13"   	"13 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    m23     ikjf    nba_mij		1       -       h       "m23"  		"23 component of NBA subgrid stress tensor"     "m2 s-2"
+
+state   real    -       ikjf    nba_rij		1       -       -       -	
+state   real    r12     ikjf    nba_rij		1       -       -       "r12"   	"12 component of rotation tensor"               "s-1"
+state   real    r13     ikjf    nba_rij		1       -       -       "r13"   	"13 component of rotation tensor"               "s-1"
+state   real    r23     ikjf    nba_rij		1       -       -       "r23"   	"23 component of rotation tensor"               "s-1"
+state   real    smnsmn  ikjf    nba_rij		1       -       -       "smnsmn"   	"Smn*Smn"               			"s-2"
+
+rconfig	integer sfs_opt 	namelist,dynamics	max_domains     0       -	"1 or 2 to use NBA models"
+rconfig	integer m_opt    	namelist,dynamics       max_domains     0       -       "1 to output sgs stresses if not using NBA"
+
+package	nosfs	sfs_opt==0      	-       -
+package	nba1	sfs_opt==1      	-       nba_mij:m11,m22,m33,m12,m13,m23;nba_rij:r12,r13,r23,smnsmn
+package	nba2	sfs_opt==2      	-       nba_mij:m11,m22,m33,m12,m13,m23;nba_rij:r12,r13,r23,smnsmn
+
+package mout	m_opt==1		-	nba_mij:m11,m22,m33,m12,m13,m23
+
+halo      HALO_EM_NBA_MIJ	dyn_em 8:nba_mij
+period    PERIOD_EM_NBA_MIJ   	dyn_em 3:nba_mij
+
+halo      HALO_EM_NBA_RIJ       dyn_em 8:nba_rij
+period    PERIOD_EM_NBA_RIJ     dyn_em 3:nba_rij
+

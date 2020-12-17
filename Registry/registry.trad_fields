@@ -1,0 +1,28 @@
+#	Registry file specifically for the output of traditional fields.
+
+#  Namelist parameter to activate the output of traditional fields.
+
+rconfig   integer     diag_nwp2           namelist,diags   1            0   -    "traditional fields: 0=no, 1=yes"
+
+#  Arrays that will be filled with diagnosed quantities.
+
+state    real   sealevelp     ij    dyn_em    1  -   h1  "SEALEVELP"    "sea level pressure"                       "Pa"
+state    real   temperature   ikj   dyn_em    1  -   h1  "TEMPERATURE"  "sensible temperature"                     "K"
+state    real   geoheight     ikj   dyn_em    1  -   h1  "GEOHEIGHT"    "geopotential height"                      "m"
+state    real   pressure      ikj   dyn_em    1  -   h1  "PRESSURE"     "atmospheric pressure"                     "Pa"
+state    real   umet          ikj   dyn_em    1  -   h1  "UMET"         "earth relative U at mass points"          "m/s"
+state    real   vmet          ikj   dyn_em    1  -   h1  "VMET"         "earth relative V at mass points"          "m/s"
+state    real   speed         ikj   dyn_em    1  -   h1  "SPEED"        "horizontal wind speed"                    "m/s"
+state    real   dir           ikj   dyn_em    1  -   h1  "DIR"          "wind direction, 0=northly, 270=westerly"  "degrees"
+
+state    real   rain          ij    dyn_em    1  -   h1  "RAIN"         "total rainfall"                            "mm"
+state    real   liqrain       ij    dyn_em    1  -   h1  "LIQRAIN"      "total liquid rainfall"                     "mm"
+# LIQRAIN=RAIN-SNOWNC-GRAUPELNC-HAILNC
+state    real   tpw           ij    dyn_em    1  -   h1  "TPW"          "total precipitable water"                  "mm"
+state    real   potential_t   ikj   dyn_em    1  -   h1  "potential_t"  "potential temperature"                     "K"
+state    real   rh            ikj   dyn_em    1  -   h1  "RH"           "relative humidity"                         "%"
+
+#  Package declarations
+
+package   skip_trad_fields   diag_nwp2==0  -   -
+package     do_trad_fields   diag_nwp2==1  -   state:sealevelp,temperature,pressure,geoheight,umet,vmet,speed,dir,rain,liqrain,tpw,potential_t,rh

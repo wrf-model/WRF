@@ -1,0 +1,103 @@
+#	Registry file specifically for some additional diagnostic output
+#	from WRF (AFWA contributed code)
+
+#  The new dimspec.  We need to have the number of pressure levels to interpolate to.
+
+dimspec    nt      2     constant=7                        z     num_turb_layers 
+
+# AFWA Diagnostics package namelist options
+
+rconfig   integer afwa_diag_opt           namelist,afwa         max_domains    0       rh    "afwa_diag_opt"            "AFWA Diagnostic option, 1: on"                                                 ""
+rconfig   integer afwa_ptype_opt          namelist,afwa         max_domains    0       rh    "afwa_ptype_opt"           "AFWA Diagnostic: Precip type option, 1: on"                                    ""
+rconfig   integer afwa_vil_opt            namelist,afwa         max_domains    0       rh    "afwa_vil_opt"             "AFWA Diagnostic: Vert Int Liquid option, 1: on"                                ""
+rconfig   integer afwa_radar_opt          namelist,afwa         max_domains    0       rh    "afwa_radar_opt"           "AFWA Diagnostic: Radar option, 1: on"                                          ""
+rconfig   integer afwa_severe_opt         namelist,afwa         max_domains    0       rh    "afwa_severe_opt"          "AFWA Diagnostic: Severe Wx option, 1: on"                                      ""
+rconfig   integer afwa_icing_opt          namelist,afwa         max_domains    0       rh    "afwa_icing_opt"           "AFWA Diagnostic: Icing option, 1: on"                                          ""
+rconfig   integer afwa_vis_opt            namelist,afwa         max_domains    0       rh    "afwa_vis_opt"             "AFWA Diagnostic: Visibility option, 1: on"                                     ""
+rconfig   integer afwa_cloud_opt          namelist,afwa         max_domains    0       rh    "afwa_cloud_opt"           "AFWA Diagnostic: Cloud option, 1: on"                                          ""
+rconfig   integer afwa_therm_opt          namelist,afwa         max_domains    0       rh    "afwa_therm_opt"           "AFWA Diagnostic: Thermal indices option, 1: on"                                ""
+rconfig   integer afwa_turb_opt           namelist,afwa         max_domains    0       rh    "afwa_turb_opt"            "AFWA Diagnostic: Turbulence option, 1: on"                                     ""
+rconfig   integer afwa_buoy_opt           namelist,afwa         max_domains    0       rh    "afwa_buoy_opt"            "AFWA Diagnostic: Buoyancy option, 1: on"                                       ""
+rconfig   real    afwa_ptype_ccn_tmp      namelist,afwa         1          264.15      h     "afwa_ptype_ccn_tmp"       "AFWA Diagnostic: CCN temperature for precipitation type calculation"           "K"
+rconfig   real    afwa_ptype_tot_melt     namelist,afwa         1            50.0      h     "afwa_ptype_tot_melt"      "AFWA Diagnostic: Total melting energy for precipitation type calculation"      "J kg-1"
+rconfig   integer afwa_bad_data_check     namelist,afwa         1              0       r     "afwa_bad_data_check"      "AFWA Diagnostic: Stop model when bogus data is found (eg U>300m/s), 1: on"    ""
+
+#  These variables are for the AFWA diagnostics package.
+
+#state    real   WSPD10MAX        ij     misc        1         -      rh          "WSPD10MAX"      "WIND SPD MAX 10 M"                             "m s-1"
+#state    real   W_UP_MAX         ij     misc        1         -      rh          "W_UP_MAX"       "MAX Z-WIND UPDRAFT"                            "m s-1"
+#state    real   W_DN_MAX         ij     misc        1         -      rh          "W_DN_MAX"       "MAX Z-WIND DOWNDRAFT"                          "m s-1"
+#state    real   REFD_MAX         ij     misc        1         -      rh02       "REFD_MAX"       "MAX DERIVED RADAR REFL"                        "dbZ"
+#state    real   UP_HELI_MAX      ij     misc        1         -      rh          "UP_HELI_MAX"    "MAX UPDRAFT HELICITY"                          "m2 s-2"
+#state    real   UH               ij     misc        1         -      r          "UH"             "UPDRAFT HELICITY"                              "m2 s-2"
+state    real   TCOLI_MAX        ij     misc        1         -      rh02       "TCOLI_MAX"       "MAX TOTAL COLUMN INTEGRATED ICE"               "kg m-2"
+state    real   GRPL_FLX_MAX     ij     misc        1         -      rh02       "GRPL_FLX_MAX"    "MAX PSEUDO GRAUPEL FLUX"                       "g kg-1 m s-1"
+state    real   REFD_COM         ij     misc        1         -      rh02       "REFD_COM"        "DERIVED COMPOSITE RADAR REFL"                  "dbZ"
+state    real   REFD             ij     misc        1         -      rh02       "REFD"            "DERIVED RADAR REFL"                            "dbZ"
+state    real   VIL              ij     misc        1         -      rh02       "VIL"             "VERTICALLY INTEGRATED LIQUID WATER"            "kg m-2"
+state    real   RADARVIL         ij     misc        1         -      rh02       "RADARVIL"        "VERTICALLY INTEGRATED LIQUID WATER FROM Ze"    "kg m-2"
+state    real   ECHOTOP          ij     misc        1         -      rh02       "ECHOTOP"         "ECHO TOP HEIGHT FROM Ze"                       "m"
+state    real   FZLEV            ij     misc        1         -      rh02       "FZLEV"           "FREEZING LEVEL"                                "m"
+state    real   ICINGTOP         ij     misc        1         -      rh02       "ICINGTOP"        "TOPMOST ICING LEVEL"                           "m"
+state    real   ICINGBOT         ij     misc        1         -      rh02       "ICINGBOT"        "BOTTOMMOST ICING LEVEL"                        "m"
+state    real   QICING_LG        ikj    misc        1         -      r          "QICING_LG"       "SUPERCOOLED WATER MIXING RATIO (>50 um)"       "kg kg-1"
+state    real   QICING_SM        ikj    misc        1         -      r          "QICING_SM"       "SUPERCOOLED WATER MIXING RATIO (<50 um)"       "kg kg-1"
+state    real   QICING_LG_MAX    ij     misc        1         -      rh02       "QICING_LG_MAX"   "COLUMN MAX ICING MIXING RATIO (>50 um)"        "kg kg-1"
+state    real   QICING_SM_MAX    ij     misc        1         -      rh02       "QICING_SM_MAX"   "COLUMN MAX ICING MIXING RATIO (<50 um)"        "kg kg-1"
+state    real   ICING_LG         ij     misc        1         -      rh02       "ICING_LG"        "TOTAL COLUMN INTEGRATED ICING (>50 um)"        "kg m-2"
+state    real   ICING_SM         ij     misc        1         -      rh02       "ICING_SM"        "TOTAL COLUMN INTEGRATED ICING (<50 um)"        "kg m-2"
+state    real   AFWA_MSLP        ij     misc        1         -      rh02       "AFWA_MSLP"       "AFWA Diagnostic: Mean sea level pressure"      "Pa"
+state    real   AFWA_HEATIDX     ij     misc        1         -      rh02       "AFWA_HEATIDX"    "AFWA Diagnostic: Heat index"                   "K"
+state    real   AFWA_WCHILL      ij     misc        1         -      rh02       "AFWA_WCHILL"     "AFWA Diagnostic: Wind chill"                   "K"
+state    real   AFWA_FITS        ij     misc        1         -      rh02       "AFWA_FITS"       "AFWA Diagnostic: Fighter Index of Thermal Stress" "K"
+state    real   AFWA_TLYRBOT     {nt}   misc        1         -      rh02       "AFWA_TLYRBOT"    "AFWA Diagnostic: Turbulence layer AGL bottom"  "m"
+state    real   AFWA_TLYRTOP     {nt}   misc        1         -      rh02       "AFWA_TLYRTOP"    "AFWA Diagnostic: Turbulence layer AGL top"     "m"
+state    real   AFWA_TURB        i{nt}j misc        1         -      rh02       "AFWA_TURB"       "AFWA Diagnostic: Turbulence index"             "dimensionless"
+state    real   AFWA_LLTURB      ij misc            1         -      rh02       "AFWA_LLTURB"     "AFWA Diagnostic: Low Level Turbulence index"   "dimensionless"
+state    real   AFWA_LLTURBLGT   ij     misc        1         -      rh02       "AFWA_LLTURBLGT"  "AFWA Diagnostic: Prob of LGT Low-level Turb"   "%"
+state    real   AFWA_LLTURBMDT   ij     misc        1         -      rh02       "AFWA_LLTURBMDT"  "AFWA Diagnostic: Prob of MDT Low-level Turb"   "%"
+state    real   AFWA_LLTURBSVR   ij     misc        1         -      rh02       "AFWA_LLTURBSVR"  "AFWA Diagnostic: Prob of SVR Low-level Turb"   "%"
+state    real   AFWA_PRECIP      ij     misc        1         -      r          "AFWA_PRECIP"     "AFWA Diagnostic: Precipitation bucket"         "mm"
+state    real   AFWA_TOTPRECIP  ij      misc        1         -      rh02       "AFWA_TOTPRECIP"  "AFWA Diagnostic: Total simulation precip"      "mm" 
+state    real   AFWA_RAIN        ij     misc        1         -      rh02       "AFWA_RAIN"       "AFWA Diagnostic: Rain fall"                    "mm"
+state    real   AFWA_SNOW        ij     misc        1         -      rh02       "AFWA_SNOW"       "AFWA Diagnostic: Liq Equiv Snow fall"          "mm"
+state    real   AFWA_ICE         ij     misc        1         -      rh02       "AFWA_ICE"        "AFWA Diagnostic: Ice fall"                     "mm"
+state    real   AFWA_FZRA        ij     misc        1         -      rh02       "AFWA_FZRA"       "AFWA Diagnostic: Freezing rain fall"           "mm"
+state    real   AFWA_SNOWFALL    ij     misc        1         -      rh02       "AFWA_SNOWFALL"   "AFWA Diagnostic: Snow fall"                    "mm"
+state    real   AFWA_VIS         ij     misc        1         -      rh02       "AFWA_VIS"        "AFWA Diagnostic: Visibility"                   "m"
+state    real   AFWA_VIS_ALPHA   ij     misc        1         -      rh02       "AFWA_VIS_ALPHA"  "AFWA Diagnostic: Vis alpha Weibull term"       "dimensionless"
+state    real   AFWA_VIS_DUST    ij     misc        1         -      rh02       "AFWA_VIS_DUST"   "AFWA Diagnostic: Visibility due to dust"       "m"
+state    real   AFWA_CLOUD       ij     misc        1         -      rh02       "AFWA_CLOUD"      "AFWA Diagnostic: Cloud cover fraction"         "fraction"
+state    real   AFWA_CLOUD_CEIL  ij     misc        1         -      rh02       "AFWA_CLOUD_CEIL" "AFWA Diagnostic: Cloud ceiling"                "m"
+state    real   AFWA_CAPE        ij     misc        1         -      rh02       "AFWA_CAPE"       "AFWA Diagnostic: Convective Avail Pot Energy"  "J kg-1"
+state    real   AFWA_CIN         ij     misc        1         -      rh02       "AFWA_CIN"        "AFWA Diagnostic: Convective Inhibition"        "J kg-1"
+state    real   AFWA_CAPE_MU     ij     misc        1         -      rh02       "AFWA_CAPE_MU"    "AFWA Diagnostic: Most unstable CAPE 0-180mb"   "J kg-1"
+state    real   AFWA_CIN_MU      ij     misc        1         -      rh02       "AFWA_CIN_MU"     "AFWA Diagnostic: Most unstable CIN 0-180mb"    "J kg-1"
+state    real   AFWA_ZLFC        ij     misc        1         -      rh02       "AFWA_ZLFC"       "AFWA Diagnostic: Level of Free Convection"     "m"
+state    real   AFWA_PLFC        ij     misc        1         -      rh02       "AFWA_PLFC"       "AFWA Diagnostic: Pressure of LFC"              "Pa"
+state    real   AFWA_LIDX        ij     misc        1         -      rh02       "AFWA_LIDX"       "AFWA Diagnostic: Surface Lifted Index"         "K"
+state    real   AFWA_PWAT        ij     misc        1         -      rh02       "AFWA_PWAT"       "AFWA Diagnostic: Precipitable Water"           "kg m-2"
+state    real   MIDRH_MIN        ij     misc        1         -      -          "MIDRH_MIN"       "Min Mid-level relative humidity"               "%"
+state    real   MIDRH_MIN_OLD    ij     misc        1         -      r          "MIDRH_MIN_OLD"   "Previous Min Mid-level relative humidity"      "%"
+state    real   AFWA_HAIL        ij     misc        1         -      rh02       "AFWA_HAIL"       "AFWA Diagnostic: Hail Diameter (Weibull)"      "mm"
+state    real   AFWA_LLWS        ij     misc        1         -      rh02       "AFWA_LLWS"       "AFWA Diagnostic: 0-2000 ft wind shear"         "m s-1"
+state    real   AFWA_TORNADO     ij     misc        1         -      rh02       "AFWA_TORNADO"    "AFWA Diagnostic: Tornado wind speed (Weibull)" "m s-1"
+state    real   TORNADO_MASK     ij     misc        1         -      r          "TORNADO_MASK"       "Tornado mask, 1 if AFWA tornado > 0"                    ""
+state    real   TORNADO_DUR      ij     misc        1         -      r          "TORNADO_DUR"        "Tornado duration"                                       "sec"
+
+#  Package declaration for AFWA diagnostics
+
+package   afwa_diag      afwa_diag_opt==1            -             state:afwa_mslp,afwa_pwat,afwa_precip,afwa_totprecip
+package   afwa_ptype     afwa_ptype_opt==1           -             state:afwa_rain,afwa_snow,afwa_ice,afwa_fzra,afwa_snowfall
+package   afwa_vil       afwa_vil_opt==1             -             state:vil,radarvil
+package   afwa_radar     afwa_radar_opt==1           -             state:echotop,refd_com,refd
+package   afwa_severe    afwa_severe_opt==1          -             state:w_up_max,w_dn_max,tcoli_max,up_heli_max,grpl_flx_max,w_mean,afwa_hail,afwa_cape,afwa_zlfc,afwa_plfc,tornado_mask,tornado_dur,midrh_min,midrh_min_old,afwa_lidx,afwa_cin,afwa_tornado,afwa_llws,wspd10max
+package   afwa_icing     afwa_icing_opt==1           -             state:fzlev,icingtop,icingbot,qicing_lg,qicing_sm,icing_lg,icing_sm,qicing_lg_max,qicing_sm_max
+package   afwa_cloud     afwa_cloud_opt==1           -             state:afwa_cloud,afwa_cloud_ceil
+package   afwa_vis       afwa_vis_opt==1             -             state:afwa_vis,afwa_vis_dust,afwa_vis_alpha
+package   afwa_therm     afwa_therm_opt==1           -             state:afwa_heatidx,afwa_wchill,afwa_fits
+package   afwa_turb      afwa_turb_opt==1            -             state:afwa_turb,afwa_llturb,afwa_llturblgt,afwa_llturbmdt,afwa_llturbsvr,afwa_tlyrbot,afwa_tlyrtop
+package   afwa_buoy      afwa_buoy_opt==1            -             state:afwa_cape,afwa_zlfc,afwa_plfc,afwa_lidx,afwa_cape_mu,afwa_cin,afwa_cin_mu
+
+# For AFWA Diagnostics 
+halo      HALO_EM_PHYS_W   dyn_em 8:tornado_mask, tornado_dur

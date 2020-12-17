@@ -1,0 +1,134 @@
+file TEST_RESULTS
+Tom Henderson
+
+A series of tests were run on AIX and OSF1 machines prior to committing 
+Todd Hutchinson's grib1 and grib2 packages to the repository.  These are 
+described in detail below.  
+
+In addition, Todd ran many tests on his Linux systems, including a pass 
+through vgrind for memory checking.  
+
+
+NOTE ONE KNOWN BUG:  
+  RUC LSM fails in lsmrucinit() when grib1 input is used (divide-by-zero 
+  error).  Not sure if this is due to compression (accuracy -- sure hope 
+  not!) or due to some mis-configuration of gribmap.txt, or something 
+  else.  
+
+
++------------------+
+| TEST DEFINITIONS |
++------------------+
+ALL TESTS were run with the jan00 test case using default settings from 
+test/em_real/namelist.input.jan01 unless otherwise indicated below.  
+
+TESTan:  Read netCDF, write netCDF, 1 MPI task
+TESTbn:  Read netCDF, write netCDF, 4 MPI tasks
+TESTcn:  Read netCDF, write netCDF bitwise identical, 1 vs. 4 MPI tasks
+TESTdn:  Write netCDF from real
+TESTqn:  Read netCDF, write netCDF, 4 MPI tasks + 2 MPI quilt tasks
+TESTrn:  TESTqn wrfout file vs. TESTan, bitwise identical
+TESTa1:  Read netCDF, write grib1, 1 MPI task
+TESTb1:  Read netCDF, write grib1, 4 MPI tasks
+TESTc1:  Read netCDF, write grib1 bitwise identical, 1 vs. 4 MPI tasks
+TESTd1:  Write grib1 from real
+TESTe1:  Read grib1, write netCDF, 1 MPI task
+TESTf1:  Read grib1, write netCDF, 4 MPI tasks
+TESTg1:  Read grib1, write netCDF bitwise identical, 1 vs. 4 MPI tasks 
+TESTh1:  TESTe1 wrfout file vs. TESTan, bitwise identical
+TESTq1:  Read netCDF, write grib1, 4 MPI tasks + 2 MPI quilt tasks
+TESTr1:  TESTq1 wrfout file vs. TESTa1, bitwise identical
+TESTa2:  Read netCDF, write grib2, 1 MPI task
+TESTb2:  Read netCDF, write grib2, 4 MPI tasks
+TESTc2:  Read netCDF, write grib2 bitwise identical, 1 vs. 4 MPI tasks
+TESTd2:  Write grib2 from real
+TESTe2:  Read grib2, write netCDF, 1 MPI task
+TESTf2:  Read grib2, write netCDF, 4 MPI tasks
+TESTg2:  Read grib2, write netCDF bitwise identical, 1 vs. 4 MPI tasks
+TESTh2:  TESTe2 wrfout file vs. TESTan, bitwise identical
+TESTq2:  Read netCDF, write grib2, 4 MPI tasks + 2 MPI quilt tasks
+TESTr2:  TESTq2 wrfout file vs. TESTa2, bitwise identical
+TESTab:  Read netCDF, write binary, 1 MPI task
+TESTbb:  Read netCDF, write binary, 4 MPI tasks
+TESTcb:  Read netCDF, write binary bitwise identical, 1 vs. 4 MPI tasks
+TESTdb:  Write binary from real
+TESTeb:  Read binary, write netCDF, 1 MPI task
+TESTfb:  Read binary, write netCDF, 4 MPI tasks
+TESTgb:  Read binary, write netCDF bitwise identical, 1 vs. 4 MPI tasks
+TESThb:  TESTeb wrfout file vs. TESTan, bitwise identical
+TESTib:  Read binary, write binary, 4 MPI tasks
+TESTjb:  TESTbb wrfout file vs. TESTib, bitwise identical
+TESTqb:  Read netCDF, write binary, 4 MPI tasks + 2 MPI quilt tasks
+TESTrb:  TESTqb wrfout file vs. TESTab, bitwise identical
+
+
++-------------------+
+| TEST RESULT TABLE |
++-------------------+
+TEST RESULT TABLE KEYS:  
+Tested Configurations:
+  v6j  bluevista, config=3, OBJECT_MODE=64,  built with    jasper
+  v6   bluevista, config=3, OBJECT_MODE=64,  built without jasper
+  s3j  bluesky,   config=3, OBJECT_MODE=32,  built with    jasper
+  s3   bluesky,   config=3, OBJECT_MODE=32,  built without jasper
+  s6j  bluesky,   config=3, OBJECT_MODE=64,  built with    jasper
+  j    joshua,    config=5, no optimization, built without jasper
+Test Results:
+  'P'  PASS
+  'P1' PASS, but see note "1"
+  'F'  FAIL
+  'X'  Skip test.  (For example, grib2 tests cannot be done without jasper).  
+  ' '  To Be Done
++------------------------------------------+---+---+---+---+---+---+
+| VERSION:   trunk_r1718_WORK       Config |v6j|v6 |s3j|s3 |s6j| j |
++------------------------------------------+---+---+---+---+---+---+
+| TESTan:  RnetCDF WnetCDF 1 MPI           | P | P | P | P | P | P |
+| TESTbn:  RnetCDF WnetCDF 4 MPI           | P | P | P | P | P | P |
+| TESTcn:  RnetCDF WnetCDF 1 vs. 4 MPI     | P | P | P | P | P | P |
+| TESTdn:  WnetCDF from real               | P | P | P | P | P | P |
+| TESTqn:  RnetCDF WnetCDF 4 MPI + 2 quilt | P | P | P | P | P | P |
+| TESTrn:  TESTan vs. TESTqn               | P | P | P | P | P | P |
+| TESTa1:  RnetCDF Wgrib1 1 MPI            | P | P | P | P | P | P |
+| TESTb1:  RnetCDF Wgrib1 4 MPI            | P | P | P | P | P | P |
+| TESTc1:  RnetCDF Wgrib1 1 vs. 4 MPI      | P | P | P | P | P | P |
+| TESTd1:  Wgrib1 from real                | P | P | P | P | P | P |
+| TESTe1:  Rgrib1 WnetCDF 1 MPI            | P | P | P | P | P | P |
+| TESTf1:  Rgrib1 WnetCDF 4 MPI            | P | P | P | P | P | P |
+| TESTg1:  Rgrib1 WnetCDF 1 vs. 4 MPI      | P | P | P | P | P | P |
+| TESTh1:  TESTe1 vs. all-netCDF           | P*| P*| P*| P*| P*|   |
+| TESTq1:  RnetCDF Wgrib1 4 MPI + 2 quilt  | P | P | P | P | P | P |
+| TESTr1:  TESTa1 vs. TESTq1               | P1| P1| P1| P1| P1| P1|
+| TESTa2:  RnetCDF Wgrib2 1 MPI            | P | X | P | X | P | X |
+| TESTb2:  RnetCDF Wgrib2 4 MPI            | P | X | P | X | P | X |
+| TESTc2:  RnetCDF Wgrib2 1 vs. 4 MPI      | P | X | P | X | P | X |
+| TESTd2:  Wgrib2 from real                | P | X | P | X | P | X |
+| TESTe2:  Rgrib2 WnetCDF 1 MPI            | P | X | P | X | P | X |
+| TESTf2:  Rgrib2 WnetCDF 4 MPI            | P | X | P | X | P | X |
+| TESTg2:  Rgrib2 WnetCDF 1 vs. 4 MPI      | P | X | P | X | P | X |
+| TESTh2:  TESTe2 vs. all-netCDF           |   | X |   | X |   | X |
+| TESTq2:  RnetCDF Wgrib2 4 MPI + 2 quilt  | P | X | P | X | P | X |
+| TESTr2:  TESTa2 vs. TESTq2               | P3| X | P3| X | P3| X |
+| TESTab:  RnetCDF Wbinary 1 MPI           | P | P | P | P | P | P |
+| TESTbb:  RnetCDF Wbinary 4 MPI           | P | P | P | P | P | P |
+| TESTcb:  RnetCDF Wbinary 1 vs. 4 MPI     | P | P | P | P | P | P2|
+| TESTdb:  Wbinary from real               | P | P | P | P | P | P |
+| TESTeb:  Rbinary WnetCDF 1 MPI           | P | P | P | P | P | P |
+| TESTfb:  Rbinary WnetCDF 4 MPI           | P | P | P | P | P | P |
+| TESTgb:  Rbinary WnetCDF 1 vs. 4 MPI     | P | P | P | P | P | P |
+| TESThb:  TESTeb vs. all-netCDF           | P | P | P | P | P | P |
+| TESTib:  Rbinary Wbinary 4 MPI           | P | P | P | P | P | P |
+| TESTjb:  TESTbb vs. TESTib               | P2| P2| P2| P2| P2| P2|
+| TESTqb:  RnetCDF Wbinary 4 MPI + 2 quilt | P | P | P | P | P | P |
+| TESTrb:  TESTab vs. TESTqb               | P2| P2| P2| P2| P2| P2|
++------------------------------------------+---+---+---+---+---+---+
+| NOTES:                                                       |
+|   * Jimy says this looks OK but someone should compare       |
+|     plots...                                                 |
+|   1 For TESTr1, some bytes differ but                        |
+|     external/io_grib1/diffwrf says files match.              |
+|   2 For TESTjb and TESTrb, some bytes differ but             |
+|     external/io_int/diffwrf says files match.                |
+|   3 For TESTr2, some bytes differ, need to test with grib2   |
+|     version of diffwrf.                                      |
++--------------------------------------------------------------+
+

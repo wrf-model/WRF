@@ -1,0 +1,72 @@
+/##############################################################################
+#	This is an example registry.  
+#	It has the necessary pieces to allow a set of input fields to come
+#	into the real program from metgrid.  These fields are assumed to
+#	be on a separate vertical coordinate from the standard metgrid
+#	atmospheric fields.  The usual purpose for this would be for 
+#	bringing in aerosols.
+#		A different pressure for each month.
+#		The output from real is placed into the scalar arrays.
+###############################################################################
+
+###   Thompson Water Ice Friendly Aerosols WIF
+
+dimspec  wif    2     namelist=num_wif_levels          z     num_wif_levels
+
+rconfig   integer num_wif_levels    namelist,domains	   1              27      irh    "num_wif_levels" "number of levels in the Thompson Water Ice Friendly Aerosols" ""
+rconfig   integer wif_input_opt     namelist,domains       1              0       irh    "wif_input_opt"  "0=do not process the Water Ice Friendly Aerosol input from metgrid"
+
+state    real       p_wif_now      i{wif}j      dyn_em      1        Z     -          "P_WIF_NOW"   "Pressure for Water Ice Friendly Aerosols Now"   "Pa"
+state    real       p_wif_jan      i{wif}j      dyn_em      1        Z     i1         "P_WIF_JAN"   "Pressure for Water Ice Friendly Aerosols Jan"   "Pa"
+state    real       p_wif_feb      i{wif}j      dyn_em      1        Z     i1         "P_WIF_FEB"   "Pressure for Water Ice Friendly Aerosols Feb"   "Pa"
+state    real       p_wif_mar      i{wif}j      dyn_em      1        Z     i1         "P_WIF_MAR"   "Pressure for Water Ice Friendly Aerosols Mar"   "Pa"
+state    real       p_wif_apr      i{wif}j      dyn_em      1        Z     i1         "P_WIF_APR"   "Pressure for Water Ice Friendly Aerosols Apr"   "Pa"
+state    real       p_wif_may      i{wif}j      dyn_em      1        Z     i1         "P_WIF_MAY"   "Pressure for Water Ice Friendly Aerosols May"   "Pa"
+state    real       p_wif_jun      i{wif}j      dyn_em      1        Z     i1         "P_WIF_JUN"   "Pressure for Water Ice Friendly Aerosols Jun"   "Pa"
+state    real       p_wif_jul      i{wif}j      dyn_em      1        Z     i1         "P_WIF_JUL"   "Pressure for Water Ice Friendly Aerosols Jul"   "Pa"
+state    real       p_wif_aug      i{wif}j      dyn_em      1        Z     i1         "P_WIF_AUG"   "Pressure for Water Ice Friendly Aerosols Aug"   "Pa"
+state    real       p_wif_sep      i{wif}j      dyn_em      1        Z     i1         "P_WIF_SEP"   "Pressure for Water Ice Friendly Aerosols Sep"   "Pa"
+state    real       p_wif_oct      i{wif}j      dyn_em      1        Z     i1         "P_WIF_OCT"   "Pressure for Water Ice Friendly Aerosols Oct"   "Pa"
+state    real       p_wif_nov      i{wif}j      dyn_em      1        Z     i1         "P_WIF_NOV"   "Pressure for Water Ice Friendly Aerosols Nov"   "Pa"
+state    real       p_wif_dec      i{wif}j      dyn_em      1        Z     i1         "P_WIF_DEC"   "Pressure for Water Ice Friendly Aerosols Dec"   "Pa"
+
+state    real       w_wif_now      i{wif}j      dyn_em      1        Z     -          "W_WIF_NOW"   "Background Water Friendly Aerosol option Now"   "# kg-1"
+state    real       w_wif_jan      i{wif}j      dyn_em      1        Z     i1         "W_WIF_JAN"   "Background Water Friendly Aerosol option Jan"   "# kg-1"
+state    real       w_wif_feb      i{wif}j      dyn_em      1        Z     i1         "W_WIF_FEB"   "Background Water Friendly Aerosol option Feb"   "# kg-1"
+state    real       w_wif_mar      i{wif}j      dyn_em      1        Z     i1         "W_WIF_MAR"   "Background Water Friendly Aerosol option Mar"   "# kg-1"
+state    real       w_wif_apr      i{wif}j      dyn_em      1        Z     i1         "W_WIF_APR"   "Background Water Friendly Aerosol option Apr"   "# kg-1"
+state    real       w_wif_may      i{wif}j      dyn_em      1        Z     i1         "W_WIF_MAY"   "Background Water Friendly Aerosol option May"   "# kg-1"
+state    real       w_wif_jun      i{wif}j      dyn_em      1        Z     i1         "W_WIF_JUN"   "Background Water Friendly Aerosol option Jun"   "# kg-1"
+state    real       w_wif_jul      i{wif}j      dyn_em      1        Z     i1         "W_WIF_JUL"   "Background Water Friendly Aerosol option Jul"   "# kg-1"
+state    real       w_wif_aug      i{wif}j      dyn_em      1        Z     i1         "W_WIF_AUG"   "Background Water Friendly Aerosol option Aug"   "# kg-1"
+state    real       w_wif_sep      i{wif}j      dyn_em      1        Z     i1         "W_WIF_SEP"   "Background Water Friendly Aerosol option Sep"   "# kg-1"
+state    real       w_wif_oct      i{wif}j      dyn_em      1        Z     i1         "W_WIF_OCT"   "Background Water Friendly Aerosol option Oct"   "# kg-1"
+state    real       w_wif_nov      i{wif}j      dyn_em      1        Z     i1         "W_WIF_NOV"   "Background Water Friendly Aerosol option Nov"   "# kg-1"
+state    real       w_wif_dec      i{wif}j      dyn_em      1        Z     i1         "W_WIF_DEC"   "Background Water Friendly Aerosol option Dec"   "# kg-1"
+
+state    real       i_wif_now      i{wif}j      dyn_em      1        Z     -          "I_WIF_NOW"   "Background Ice   Friendly Aerosol option Now"   "# kg-1"
+state    real       i_wif_jan      i{wif}j      dyn_em      1        Z     i1         "I_WIF_JAN"   "Background Ice   Friendly Aerosol option Jan"   "# kg-1"
+state    real       i_wif_feb      i{wif}j      dyn_em      1        Z     i1         "I_WIF_FEB"   "Background Ice   Friendly Aerosol option Feb"   "# kg-1"
+state    real       i_wif_mar      i{wif}j      dyn_em      1        Z     i1         "I_WIF_MAR"   "Background Ice   Friendly Aerosol option Mar"   "# kg-1"
+state    real       i_wif_apr      i{wif}j      dyn_em      1        Z     i1         "I_WIF_APR"   "Background Ice   Friendly Aerosol option Apr"   "# kg-1"
+state    real       i_wif_may      i{wif}j      dyn_em      1        Z     i1         "I_WIF_MAY"   "Background Ice   Friendly Aerosol option May"   "# kg-1"
+state    real       i_wif_jun      i{wif}j      dyn_em      1        Z     i1         "I_WIF_JUN"   "Background Ice   Friendly Aerosol option Jun"   "# kg-1"
+state    real       i_wif_jul      i{wif}j      dyn_em      1        Z     i1         "I_WIF_JUL"   "Background Ice   Friendly Aerosol option Jul"   "# kg-1"
+state    real       i_wif_aug      i{wif}j      dyn_em      1        Z     i1         "I_WIF_AUG"   "Background Ice   Friendly Aerosol option Aug"   "# kg-1"
+state    real       i_wif_sep      i{wif}j      dyn_em      1        Z     i1         "I_WIF_SEP"   "Background Ice   Friendly Aerosol option Sep"   "# kg-1"
+state    real       i_wif_oct      i{wif}j      dyn_em      1        Z     i1         "I_WIF_OCT"   "Background Ice   Friendly Aerosol option Oct"   "# kg-1"
+state    real       i_wif_nov      i{wif}j      dyn_em      1        Z     i1         "I_WIF_NOV"   "Background Ice   Friendly Aerosol option Nov"   "# kg-1"
+state    real       i_wif_dec      i{wif}j      dyn_em      1        Z     i1         "I_WIF_DEC"   "Background Ice   Friendly Aerosol option Dec"   "# kg-1"
+
+package   use_wif_input       wif_input_opt==1             -             state:p_wif_now,p_wif_jan,p_wif_feb,p_wif_mar,p_wif_apr,p_wif_may,p_wif_jun,p_wif_jul,p_wif_aug,p_wif_sep,p_wif_oct,p_wif_nov,p_wif_dec,w_wif_now,w_wif_jan,w_wif_feb,w_wif_mar,w_wif_apr,w_wif_may,w_wif_jun,w_wif_jul,w_wif_aug,w_wif_sep,w_wif_oct,w_wif_nov,w_wif_dec,i_wif_now,i_wif_jan,i_wif_feb,i_wif_mar,i_wif_apr,i_wif_may,i_wif_jun,i_wif_jul,i_wif_aug,i_wif_sep,i_wif_oct,i_wif_nov,i_wif_dec
+
+state   real    qnwfa          ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNWFA"         "water-friendly aerosol number con" "# kg(-1)"
+state   real    qnifa          ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNIFA"         "ice-friendly aerosol number con"   "# kg(-1)"
+
+state   real    dfi_qnwfa      ikjftb  dfi_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt) "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
+state   real    dfi_qnifa      ikjftb  dfi_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt) "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
+

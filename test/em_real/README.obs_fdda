@@ -1,0 +1,243 @@
+General description
+-------------------
+Features and advantages of observational nudging are discussed in (*) below. 
+The method uses relaxation terms based on the model error at observational 
+stations, and the relaxation is such as to reduce this error.
+Each observation has a radius of influence, a time window, and a relaxation 
+time scale determined by user-specified input. These determine where, when, 
+and how much it affects the model solution.  Typical model grid points may 
+be within the radius of influence of several observations, and their 
+contributions are weighted according to the distance from the observation(s). 
+Before performing obs-nudging, you will need to generate an observation 
+input file for each WRF domain. The observation file(s) contain chronological 
+lists of the 3D positions and values of each observation, in a specific format.
+It is critical that your observations be listed in chronological time order!
+
+*  Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and J. Hacker, 2005: An
+  implementation of obs-nudging-based FDDA into WRF for supporting
+  ATEC test operations. 2005 WRF user workshop. Paper 10.7.
+
+
+How to use the obs-data converter
+-------------------------------------
+A utility program for converting observation data to the format required by 
+WRF has been provided (RT_fdda_reformat_obsnud.pl). The converter assumes 
+that your observation data is in standard LITTLE_R format. 
+
+To convert your data that is in LITTLE_R format:
+
+  RT_fdda_reformat_obsnud.pl yourfilename
+
+where "yourfilename" is the obs-data in LITTLE_R format. The converter will 
+produce a file named yourfilename.obsnud, in the format required by the WRF
+model.
+
+Note that during the conversion process:
+
+  1). P,T,U,V and RH fields are extracted.
+
+  2). U and V are assumed to be the wind components rotated to
+      the model map-projection (see 3DVAR and MM5 Little_R).
+
+  3). SPD, DIR and Td fields are ignored.
+
+  4). For upper-air data, currently WRF nudging only takes
+      those data with valid pressure records. For obs with
+      height levels (e.g. wind profilers data), users need to
+      calculate or estimate the pressure value. Inaccurate
+      estimate of pressure will lead to bad data assimilation.
+
+
+Naming your obs-nudge input files
+---------------------------------
+After you have converted your obs data file to the proper format for WRF, 
+you will need to rename it according to the naming convention for the WRF
+domain on which the obs-nudging is to be performed. For example, for
+observations to be used in Domain 1, use the naming convention OBS_DOMAIN101,
+for Domain 2, OBS_DOMAIN201, etc. 
+
+These files must be present in your WRF run directory, along with the usual
+WRF input and boundary files.
+
+
+
+How to activate obs-nudging
+---------------------------
+To activate the observational nudging option in WRF, you will need to set
+the obs_nudge_opt flag(s) in the WRF "fdda" namelist. Note that there is
+a unique flag for each WRF domain in which you want to activate obs-nudging.
+
+To activate the print statements within the obs-nudging subroutines ERROB,
+NUDOB, and IN4DOB, set the respective print flags obs_ipf_errob, 
+obs_ipf_nudob, and obs_ipf_in4dob to ".true." You can then easily verify that 
+you have activated observational nudging by observing text in your WRF
+"standard out" that tell you how many obs stations are being processed at
+given model timesteps. This information will look something like:
+
+0****** CALL IN4DOB AT KTAU =     8 AND XTIME =      24.00:  NSTA =   11040 ******
+++++++CALL ERROB AT KTAU =     8 AND INEST =  1:  NSTA = 11040 ++++++
+
+These lines will print out for each nest in which you have activated nudging, 
+while nudging is active on that domain.
+
+Below is an example of a namelist set up to activate obs-nudging on domains
+1, 2, and 3:
+
+&fdda
+obs_nudge_opt                       = 1,1,1,0,0   
+max_obs                             = 150000,
+fdda_start                          =     0.,     0.,     0.,     0.,     0.
+fdda_end                            = 99999., 99999., 99999., 99999., 99999.
+obs_nudge_wind                      = 1,1,1,1,1
+obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+obs_nudge_temp                      = 1,1,1,1,1
+obs_coef_temp                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+obs_nudge_mois                      = 1,1,1,1,1
+obs_coef_mois                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+obs_rinxy                           = 240.,240.,180.,180,180
+obs_rinsig                          = 0.1,
+obs_twindo                          = 0.6666667,0.6666667,0.6666667,0.6666667,0.6666667,
+obs_npfi                            = 10,
+obs_ionf                            = 2, 2, 2, 2, 2,
+obs_idynin                          = 0,
+obs_dtramp                          = 40.,
+obs_prt_freq                        = 10, 10, 10, 10, 10,
+obs_prt_max                         = 10
+obs_ipf_errob                       = .true.
+obs_ipf_nudob                       = .true.
+obs_ipf_in4dob                      = .true.
+obs_ipf_init                        = .true.
+
+In addition, add the following in &time_control:
+
+auxinput11_interval_s               = 180, 180, 180, 180, 180,
+auxinput11_end_h                    = 6, 6, 6, 6, 6,
+
+
+*********************
+    NEW FOR V3.1
+*********************
+
+1) Enhanced diagnostics
+  --------------------
+  For version 3.1, diagnostics have been enhanced to allow the user to verify
+  grid placement for observations throughout the model run. For v3.1, the fdda namelist
+  variable "nobs_obs_prt" is obsolete, and has been replaced by the two namelist
+  variables:
+
+  obs_prt_max  - maximum allowed obs entries in diagnostic printout (integer)
+  obs_prt_freq - frequency in obs index for diagnostic printout (max_domains integer)
+
+  For example, specifying:
+
+  obs_prt_max         = 5,
+  obs_prt_freq        = 1000, 500, 100,
+
+  allows up to 5 observations and their locations to be reported for each model timestep
+  at which the obs are read and weights calculated (see obs_ionf). For this example, the
+  obs are reported for domain 1 with an obs-index frequency of 1000, on domain 2 with a
+  frequency of 500, and on domain 3 with a frequency of 100. Below is an example of the
+  initial obs diagnostic report produced for each nest, using the namelist values above.
+
+  ++++++CALL ERROB AT KTAU =     0 AND INEST =  1:  NSTA = 17090 ++++++
+
+  REPORTING OBS MASS-PT LOCS FOR NEST    1 AT XTIME=     0.0 MINUTES
+  FREQ=1000, MAX=    5 LOCS, NEWLY READ OBS ONLY, -999 => OBS OFF PROC
+
+      OBS#     I       J       K     OBS LAT  OBS LON   XLAT(I,J)  XLONG(I,J)  TIME(hrs)
+          1   5.282   2.658   1.000   27.580  -97.220     27.580    -97.220     0.00
+       1001  47.851   9.468  32.377   30.380  -84.360     30.380    -84.360     0.00
+       2001  40.728  19.834  26.618   33.160  -86.700     33.160    -86.700     0.00
+       3001  60.866  30.631 -99.000   36.080  -79.950   -999.000   -999.000     0.00
+       4001  73.216  38.315 -99.000   37.930  -75.480   -999.000   -999.000     0.00
+ ...
+
+  ++++++CALL ERROB AT KTAU =     0 AND INEST =  2:  NSTA =  3504 ++++++
+
+  REPORTING OBS MASS-PT LOCS FOR NEST    2 AT XTIME=     0.0 MINUTES
+  FREQ= 500, MAX=    5 LOCS, NEWLY READ OBS ONLY, -999 => OBS OFF PROC
+
+      OBS#     I       J       K     OBS LAT  OBS LON   XLAT(I,J)  XLONG(I,J)  TIME(hrs)
+          1  62.717   3.505   1.000   34.600  -78.580   -999.000   -999.000     0.00
+        501  45.014  30.857  32.102   37.200  -80.410     37.200    -80.410     0.00
+       1001  15.585  54.082 -99.000   39.410  -83.810   -999.000   -999.000     0.00
+       1501  18.822  78.673   1.000   41.690  -83.400   -999.000   -999.000     0.00
+       2001  67.015 103.930   1.000   43.830  -77.150   -999.000   -999.000     0.00
+ ...
+
+  ++++++CALL ERROB AT KTAU =     0 AND INEST =  3:  NSTA =   606 ++++++
+
+  REPORTING OBS MASS-PT LOCS FOR NEST    3 AT XTIME=     0.0 MINUTES
+  FREQ= 100, MAX=    5 LOCS, NEWLY READ OBS ONLY, -999 => OBS OFF PROC
+
+      OBS#     I       J       K     OBS LAT  OBS LON   XLAT(I,J)  XLONG(I,J)  TIME(hrs)
+          1  48.735   3.730   1.000   38.220  -76.040   -999.000   -999.000     0.00
+        101  10.646  25.032  34.295   38.980  -77.460     38.980    -77.460     0.00
+        201  25.010  28.538   9.296   39.050  -76.880     39.050    -76.880     0.00
+        301  28.675  46.438   1.000   39.590  -76.670   -999.000   -999.000     0.15
+        401  12.030  38.804   1.000   39.400  -77.360     39.400    -77.360     0.30
+
+
+  With this report, the user can verify the WRF mapping of each reported observation.
+  The report shows:
+
+  (1) the real-valued WRF grid (I,J,K) location to which the obs is mapped,
+  (2) the input obs latitude and longitude coordinate (OBS LAT, OBS LON), and
+  (3) the corresponding model lat, lon coordinate (XLAT(I,J), XLONG(I,J)) for (I,J,K) 
+  (4) the input obs time in hours into the run
+
+  Note that each processor produces a report (rsl.out.0000, rsl.out.0001, etc) for the
+  same set of observations, but that full information for an individual observation is
+  only available in the report from the processor whose grid "patch" contains that
+  observation. A -999.000 entry in the XLAT and XLONG columns indicates that the
+  observation is not located on the processor producing the report. In the example
+  above, the rsl.out.0000 file indicates that OBS#1 for nest 3 is not located on the
+  WRF patch handled by process 0. OBS#1 falls on the patch for process 1, and the
+  report for nest 3 from the rsl.out.0001 file looks like:
+
+  ++++++CALL ERROB AT KTAU =     0 AND INEST =  3:  NSTA =   606 ++++++
+
+  REPORTING OBS MASS-PT LOCS FOR NEST    3 AT XTIME=     0.0 MINUTES
+  FREQ= 100, MAX=    5 LOCS, NEWLY READ OBS ONLY, -999 => OBS OFF PROC
+
+      OBS#     I       J       K     OBS LAT  OBS LON   XLAT(I,J)  XLONG(I,J)  TIME(hrs)
+          1  48.735   3.730   1.000   38.220  -76.040     38.220    -76.040     0.00
+        101  10.646  25.032 -99.000   38.980  -77.460   -999.000   -999.000     0.00
+        201  25.010  28.538 -99.000   39.050  -76.880   -999.000   -999.000     0.00
+        301  28.675  46.438   1.000   39.590  -76.670   -999.000   -999.000     0.15
+        401  12.030  38.804   1.000   39.400  -77.360   -999.000   -999.000     0.30
+
+  which confirms this.
+
+  Note that the namelist variable obs_prt_max can be declared as large as desired, but
+  a value larger than 10^4 might significantly affect performance.
+
+  CAUTION! Depending on how many observations are in your obs-nudge input file, be
+  aware that your diagnostic output can potentially produce obs_prt_max/obs_prt_freq
+  lines of output for each domain, for each obs input step!
+
+2) Option to input wind vectors in Earth coordinates
+
+  In previous WRF versions, input wind vectors were required to be in WRF grid-relative 
+  coordinates (that is, already rotated from Earth coordinates to the WRF grid). In
+  WRFV3.1, the user may specify winds in Earth coordinates and have the WRF model
+  internally rotate them to the WRF grid. To activate this capability, the user must
+  specify a u- and v-component QC flag value of 129 for each wind vector that is to be
+  rotated. Otherwise, the model assumes the wind vector to be WRF grid-relative. For
+  future releases, this option will possibly be activated by a namelist variable.
+
+3) Option for Obs-in-height
+
+  I previous WRF versions, the vertical model coordinate for an upper air observation
+  is determined by its input pressure field. In WRFV3.1, the obs height field may be
+  used instead. In the new implementation, if the obs pressure field contains "missing
+  value" -888888 and the obs height field good, the vertical model coordinate for the 
+  obs is determined using a geopotential height calculation.
+
+4) U-, V-, and T-ratios are calculated in all surface schemes
+
+  In previous WRF versions, calculations for u-,v-, and t- ratios (from 10 meter winds
+  and 2 meter temperatures) are only done in the SFCLAY surface scheme. These ratios
+  are now calculated for all surface scheme options. (The ratios are used in the
+  obs-nudging routine to correct obs to model sigma level using reverse similarity
+  theory.)

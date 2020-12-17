@@ -1,0 +1,17 @@
+# Perturb boundary condition option
+
+# 3D arrays
+state real field_u_tend_perturb i{stoclev}j dyn_em 1 X rhdf=(p2c) "field_u_tend_perturb" "field used to perturb u in the boundaries" ""
+state real field_v_tend_perturb i{stoclev}j dyn_em 1 Y rhdf=(p2c) "field_v_tend_perturb" "field used to perturb v in the boundaries" ""
+state real field_t_tend_perturb i{stoclev}j dyn_em 1 - rhdf=(p2c) "field_t_tend_perturb" "field used to perturb t in the boundaries" ""
+
+# Namelist parameter
+rconfig   integer     perturb_bdy         namelist,stoch   1              0   -       "perturb lateral boundaries of fields U,V,T: 0=off, 1=on with SKEBS pattern, 2=on with user provided pattern"
+rconfig   integer     perturb_chem_bdy    namelist,stoch   1              0   -       "perturb lateral boundaries of chemical tracers: 0=off, 1=on with RAND_PERTURB patter"
+
+# Package declarations
+package   no_perturb_bdy              perturb_bdy==0                  -             -
+package   perturb_bdy_with_skebs      perturb_bdy==1                  -             - 
+package   perturb_bdy_user_patrn      perturb_bdy==2                  -             state:field_u_tend_perturb,field_v_tend_perturb,field_t_tend_perturb
+
+package   perturb_chem_bdy_with_rand  perturb_chem_bdy==1             -             -      

@@ -1,0 +1,24 @@
+The FFTPACK5 is an open source library of Fast Fourier
+Transforms.  The download and reference pages are
+available at:
+http://www2.cisl.ucar.edu/docs/fftpack5
+
+
+1) What does WRF use from the package
+
+The WRF code makes use of only of a few of the routines:
+
+The Stochastic Backscatter scheme:
+CFFT1I
+CFFT1B
+
+The Spectral Nudging option:
+RFFTMI
+RFFTMF
+RFFTMB
+
+The polar filtering capabaility for a global domain:
+DFFT1I
+DFFT1F
+DFFT1B
+

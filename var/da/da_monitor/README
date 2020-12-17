@@ -1,0 +1,64 @@
+
+(1) Outputing radiance diagnostics from WRF-Var
+
+   Run WRF-Var with the following namelist variables in record wrfvar14 in namelist.input
+
+      write_iv_rad_ascii=.true.  ; to write out (observation-background) and other diagnostics
+                                 ; information in plain-text files with prefix inv followed by 
+                                 ; instrument name and processor id. For example, 
+                                 ; inv_noaa-17-amsub.00
+      write_oa_rad_ascii=.true.  ; to write out (observation-background), (observation-analysis)
+                                 ; and other diagnostics information in plain-text files with 
+                                 ; prefix oma followed by instrument name and processor id. 
+                                 ; For example, oma_noaa-18-mhs.01
+
+      Each processor writes out information of one instrument in one file
+      in the WRF-var working directory
+
+(2) Radiance diagnotics data processing
+
+      A Fortran90 program is used to collect the inv* or oma* files (specified in namelist)
+      and write out in netCDF format (one instrument in one file with prefix diags followed 
+      by instrument name, analysis date, and suffix .nc)) for easier data viewing, handling 
+      and plotting with netCDF utilities and NCL scripts.
+
+(3) Radiance diagnotics plotting
+
+      NCL scripts are used for plotting. The NCL script can be run from a shell script, 
+      or run stand-alone with interactive ncl command (need to edit the NCL script and 
+      set the plot options. Also the path of advance_cymdh.ncl, a date advancing script
+      loaded in the main NCL plotting script, may need to be modified).
+
+Step (2) and (3) can be done by running a single ksh with proper settings (directories,
+plotting options, and mapping information). The ksh provided is quite self-explanatory.
+
+#########################################################################
+# Script: da_rad_diags.ksh  (radiance diagnostics)
+#
+# Purpose: run inv*/oma* data processing program (da_rad_diags.f90)
+# to generate files in netcdf format and use NCL plotting script
+# (plot_rad_diags.ncl and advance_cymdh.ncl) to make plots.
+#
+# Description:
+#
+### Data processing:
+#
+# input files: (1)  namelist.da_rad_diags
+#                   &record1
+#                    nproc = 16   (the proc numbers WRF-Var used)
+#                    instid = 'noaa-17-amsub', 'dmsp-16-ssmis'  (inst names)
+#                    file_prefix = "inv"       (either "inv", or "oma")
+#                    start_date = '2005082000'
+#                    end_date   = '2005083018'
+#                    cycle_period  = 6
+#                   /
+#              (2) inv_* or oma_* from WRF-Var
+#                  (note: da_rad_diags.f90 expects the files are in the date directory
+#                   in the program working directory, therefore, it's necessary to link
+#                   or copy inv_* or oma_* to the required dirctory structure.)
+#
+### plotting                   
+#
+# plot_rad_diags.ncl is the main NCL script.
+# A date advancing NCL script, advance_cymdh.ncl, is loaded in plot_rad_diags.ncl.
+

@@ -1,0 +1,38 @@
+This is a tar file of the WRF NetCDF I/O library.
+
+The tar file contains these files:
+
+-rw-r--r--   1 jacquesm ad           1968 Nov 27 13:43 README
+-rw-r--r--   1 jacquesm ad          15121 Nov 27 11:44 WRFIO.doc
+-rw-r--r--   1 jacquesm ad           4447 Nov 14 16:26 ext_get_glb_md.code
+-rw-r--r--   1 jacquesm ad           5068 Nov 17 14:56 ext_get_var_md.code
+-rw-r--r--   1 jacquesm ad           6766 Nov 17 15:12 ext_get_vartime_md.code
+-rw-r--r--   1 jacquesm ad           4106 Nov 14 15:04 ext_put_glb_md.code
+-rw-r--r--   1 jacquesm ad           4124 Nov 14 15:04 ext_put_var_md.code
+-rw-r--r--   1 jacquesm ad           7147 Nov 14 15:04 ext_put_vartime_md.code
+-rw-r--r--   1 jacquesm ad           6222 Nov 27 11:30 field_routines.F90
+-rw-r--r--   1 jacquesm ad             47 Oct 18 11:59 howto.ncdump
+-rw-r--r--   1 jacquesm ad           1218 Oct 26 15:16 makefile
+-rw-r--r--   1 jacquesm ad           2546 Nov 16 12:53 testWRFReadXYZ.F90
+-rw-r--r--   1 jacquesm ad           9555 Nov 27 11:25 testWRFReadfoo2.F90
+-rw-r--r--   1 jacquesm ad           7354 Nov 27 11:23 testWRFReadjfm.F90
+-rw-r--r--   1 jacquesm ad           2994 Nov 16 12:53 testWRFWriteXYZ.F90
+-rw-r--r--   1 jacquesm ad          16391 Nov 27 11:25 testWRFWritefoo2.F90
+-rw-r--r--   1 jacquesm ad           8896 Nov 27 11:25 testWRFWritejfm.F90
+-rw-r--r--   1 jacquesm ad            462 Oct 27 16:44 transpose.code
+-rw-r--r--   1 jacquesm ad          78533 Nov 27 11:22 wrf_io.F90
+-rw-r--r--   1 jacquesm ad           2715 Nov 21 12:06 wrf_status_codes.h
+
+The test* routines are test programs and one pair must be copied to
+testWRFWrite.F90 and testWRFRead.F90.  The other files comprise the WRF
+NetCDF I/O library.  In the makefile, you may need to redefine the path to
+NetCDF.  To run the test files, do:
+
+     make
+     testWRFWrite
+     testWRFRead
+
+testWRFWrite will create a NetCDF file called foo.nc and testWRFRead will
+read it.  Status codes and some values will be printed.
+
+

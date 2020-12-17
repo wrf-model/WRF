@@ -1,0 +1,17 @@
+# sample input file for runtime config of I/O streams
+
+# This toy example adds the state variables u,v,w,and julian
+# to the set of variables that are output with auxiliary
+# history stream auxhist21. 
++:h:21:u,v,w,julian
+
+# At the same time different the same and different variables
+# may be removed from the standard output stream.
+-:h:0:W,P,PB,PH,PHB,T,U,V
+
+As many of the extra streams as wanted may be used.  The largest
+is currently set to 24.  It is usually safe to use a large 
+stream number and then start working your way down.
++:h:24:RAINC,RAINNC
+
+# For additional information see README.io_config in top-level directory

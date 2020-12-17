@@ -1,0 +1,152 @@
+! This is the new unified namelist, which includes settings for all
+! wrf.exe and real_nmm.exe invocations, including 27:9, 27:9:3, ghost,
+! analysis, 12hr, and 126hr.  This is accomplished by using the 
+! HWRF stream parser to insert environment variables into the namelist.
+
+! Some of these settings require that the HWRF preprocessing
+! system is used to generate additional input files (D2/D3 analysis)
+! Please refer to the HWRF users guide at:
+!
+! http://www.dtcenter.org/HurrWRF/users/overview/hwrf_overview.php
+!
+!27:9:3non-ghostconfig
+
+
+
+ &time_control
+ start_year                          = 2012, 2012, 2012,
+ start_month                         = 10, 10, 10,
+ start_day                           = 28, 28, 28,
+ start_hour                          = 06, 06, 06,
+ start_minute                        = 00,      00,	00,
+ start_second                        = 00,      00,     00,
+ end_year                            = 2012, 2012, 2012,
+ end_month                           = 10, 10, 10,
+ end_day                             = 28, 28, 28,
+ end_hour                            = 12, 12, 12,
+ end_minute                          = 00, 00, 00,
+ end_second                          = 00,      00,     00,
+ interval_seconds                    = 21600,
+ history_interval                    = 360,         360,        360,
+ auxhist1_interval                   = 360,          360,        360
+ frames_per_outfile                  = 2,2,2
+ frames_per_auxhist1                 = 1,1,1
+ analysis                            = F,  T,T,
+
+ restart                             = .false.,
+ restart_interval                    = 36000,
+ reset_simulation_start              = F,
+ io_form_input                       = 2
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_boundary                    = 2
+ io_form_auxinput1                   = 2
+ io_form_auxhist1                    =  2
+ auxinput1_inname                    = "met_nmm.d<domain>.<date>"
+ debug_level                         = 1
+ override_restart_timers             = T
+ 
+ /
+
+ &fdda
+ /
+
+ &domains
+ time_step                           = 45,
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
+ max_dom                             = 3,
+ s_we                                = 1,             1,	1,
+ e_we                                = 216,       88,	180,
+ s_sn                                = 1,             1,	1,
+ e_sn                                = 432,       170,	324,
+ s_vert                              = 1,             1,	1,
+ e_vert                              = 43,   43,    43,
+ dx                                  = 0.18,      0.06,   0.02,
+ dy                                  = 0.18,      0.06,   0.02,
+ grid_id                             = 1,             2,	3,
+ 
+ tile_sz_x                           = 0,
+ tile_sz_y                           = 0,
+ numtiles                            = 1,
+ nproc_x                             = -1, ! must be on its own line
+ nproc_y                             = -1, ! must be on its own line
+ parent_id                           = 0,              1,	2,
+ parent_grid_ratio                   = 1,              3,	3,
+ parent_time_step_ratio              = 1,              3,	3,
+ i_parent_start                      = 0,             00099,	14,
+ j_parent_start                      = 0,             00225,	33,
+ feedback                            = 1,
+ num_moves                           = -99
+ num_metgrid_levels                  =  27,
+ num_metgrid_soil_levels             =  4,
+ p_top_requested                     = 5000,
+ ptsgm                               = 42000
+eta_levels=1.0,.9919699,.9827400,.9710800,.9600599,.9462600,.9306099,.9129300,.8930600,.8708600,.8462000,.8190300,.7893100,.7570800,.7224600,.6856500,.6469100,.6066099,.5651600,.5230500,.4807700,.4388600,.3978000,.3580500,.3200099,.2840100,.2502900,.2190100,.1902600,.1640600,.1403600,.1190600,.1000500,.0831600,.0682400,.0551200,.0436200,.0335700,.0248200,.0172200,.0106300,.0049200,.0000000,
+
+/
+ &physics
+ num_soil_layers                     = 4,
+ mp_physics                          = 85,           85,	85,
+ ra_lw_physics                       = 98,          98,		98,
+ ra_sw_physics                       = 98,          98,		98,
+ sf_sfclay_physics                   = 88,          88,    	88,
+ sf_surface_physics                  = 88,          88,		88,
+ bl_pbl_physics                      = 3,          3,		3,
+ cu_physics                          = 84,         84,		0,
+ mommix                              = 1.0,       1.0,		1.0,
+ var_ric                             = 1.0,
+ coef_ric_l                          = 0.16,
+ coef_ric_s                          = 0.25,
+ h_diff                              = 1.0,        1.0,		1.0,
+ gwd_opt                             = 2, 0,		0,
+ sfenth                              = 0.0,        0.0,		0.0,
+ nrads                               = 80,240,720,
+ nradl                               = 80,240,720,
+ nphs                                = 2,6,6,
+ ncnvc                               = 2,6,6,
+
+ ntrack                             = 3,6,18,
+
+! IMPORTANT: dt*nphs*ntrack for domain 2 and 3 must be 540 and 180, respectively
+!            AND the history output times (10800, 10800, 3600) must be
+!            divisible by dt*nphs*ntrack for domains 1, 2 and 3
+
+ gfs_alpha                           = 0.7,0.7,0.7,
+ sas_pgcon                           = 0.55,0.2,0.2,
+sas_mass_flux=0.5,0.5,0.5,
+ co2tf                               = 1,
+vortex_tracker=2,6,6,
+
+! Disable nest movement at certain intervals to prevent junk in the output files:
+ nomove_freq                         = 0.0,      6.0,      6.0, ! hours
+/
+
+ &dynamics
+ non_hydrostatic                     = .true.,    .true,        .true,
+ euler_adv                           = .false.
+ wp                                  = 0,         0,            0,
+ coac                                = 0.75,3.0,4.0,
+ codamp                              = 6.4,       6.4,          6.4,
+ terrain_smoothing                   = 2,
+/
+
+ &bdy_control
+ spec_bdy_width                      = 1,
+ specified                           = .true. /
+
+ &namelist_quilt 
+poll_servers=.true.
+ nio_tasks_per_group                 = 4,
+ nio_groups                          = 4 /
+
+ &logging
+  compute_tasks_silent=.true.
+  io_servers_silent=.true.
+  stderr_logging=1
+ /
+
+LSF_TIME=1:30
+NQS_TIME=0:10:00
+NUM_PROCESSORS=16
+

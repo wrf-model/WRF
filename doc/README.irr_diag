@@ -1,0 +1,108 @@
+
+What is IRR?
+============
+
+Starting with WRF version 4.0 users may output Integrated Reaction Rate diagnostics
+for the MOZART_KPP, or MOZART_MOSAIC_4BIN_KPP, or MOZART_MOSAIC_4BIN_AQ_KPP chemical
+schemes.
+
+Integrated Reaction Rate diagnostics are the time integrated value of specified
+gas phase reaction rates in one of the above listed chemical schemes.  As an example
+suppose that we have the following chemical reaction in the MOZCART chemical scheme:
+
+        k
+OH + O3 = HO2
+
+where k is the reaction rate constant.  
+
+To better understand chemical kinetics one often needs to know the value of the expression k * OH * O3
+
+where OH, HO2 are the concentrations of gas phase compounds OH, HO2.
+
+The IRR, Integrated Reaction Rate, enhancement to WRF allows a user to output the time
+integrated value of k * A * B at regular time intervals in units of ppmv, parts per million
+volumetric mixing ratio.
+
+How do I use IRR?
+=================
+
+First, remember that the IRR diagnostics can only be used for chemistry simulations
+for the MOZART_KPP, or MOZART_MOSAIC_4BIN_KPP, or MOZART_MOSAIC_4BIN_AQ_KPP chemical
+schemes. This means your executable must be compiled with the following environment
+variable settings:
+
+setenv WRF_CHEM 1            ( shell = csh, tcsh )
+setenv WRF_KPP  1
+
+export WRF_CHEM=1            ( shell = sh,bash,ksh )
+export WRF_KPP =1
+
+IRR code is in no way included in non-chemistry WRF executables.
+
+To produce IRR diagnostics one needs:
+
+(1)   the chem namelist group variable irr_opt must be set to 1 on a per simulation
+      domain basis; the default value is 0 which produces no IRR diagnostics
+
+(2)   per simulation domain a simple ascii file named wrfchem_irr_diag_d<domain> must exist
+
+For example, suppose you want have a two domain WRF simulation and you want to IRR
+diagnostics for the first domain but none for second domain.  You would need to have
+the following chem namelist group in the namelist.input file:
+
+&chem
+.
+.
+irr_opt = 1, 0,
+.
+.
+/      
+
+Additionally, if you wanted output for the reaction listed above you would need
+to create a file wrfchem_irr_diag_d01 that at the least contained the following line
+
+OH+O3
+
+The wrfchem_irr_diag_d<domain> files are ascii files with one reaction per line.
+If there are two reactions with the same reactants, differing products,  then
+the second reaction is referenced by appending an _a to the reaction.  Thus if
+there were a second reaction, OH + O3 = H + O2 + O2, then this reaction would
+be added with the line:
+
+OH+O3_a
+
+in the wrfchem_irr_diag_d<domain> file.
+
+Finally you can include all gas phase reactions in the IRR output by simply
+including the line:
+
+all
+
+in the wrfchem_irr_diag_d<domain> file.  The entry "all" may be any mix of lower,upper case.
+
+*** The wrfchem_irr_diag_d<domain> files must be in the simulation run directory. ***
+
+Now you are almost ready to start using the IRR diagnostics.
+
+The IRR diagnostics are bound to the auxhist9 output stream.  As such you need to include
+the following time_control group namelist variable settings for a two domain simulation:
+
+auxhist9_outname  = "IRR_DIAG_d<domain>_<date>"
+auxhist9_interval = 60, 60
+frames_per_auxhist9 = 1, 1
+io_form_auxhist9    = 2
+
+You may change the prefix "IRR_DIAG" in the auxhist9_outname to your own preferences.
+Similarly the auxhist9_interval, frames_per_auxhist9, and io_form_auxhist9 settings
+may be altered.  The above setting will produce IRR output files with the names
+IRR_DIAG_d01_<date> and IRR_DIAG_d02_<date> with one time point per file.  The output
+files will be produced every 60 simulation minutes and each output file will be netcdf
+conforming.
+
+Remember - quick check list
+===========================
+
+(1) - set the chem group namelist variable irr_opt to 1 to enable IRR output on a per domain basis
+      (irr_opt defaults to 0 => IRR disabled)
+(2) - have a wrfchem_irr_diag_d<domain> file in the run directory on a per domain basis
+(3) - set the time_control group namelist variables related to auxhist9 

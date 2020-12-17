@@ -1,0 +1,160 @@
+Hybrid Vertical Coordinate
+--------------------------
+
+v3.9
+Starting with the WRF v3.9 release (Spring 2017), the option for a Hybrid 
+Vertical Coordinate (HVC) has been added to the existing Terrain Following 
+(TF) vertical coordinate in the WRF model. With v3.9, the HVC option 
+requires that a user activate both a compile-time and a run-time flag. 
+
+v4.0
+With the release of WRF v4.0 (Summer 2018), the Hybrid Vertical Coordinate 
+(HVC) and the original Terrain Following Coordinate (TFC) are both available 
+via namelist settings. The code for both options is compiled into the model.
+
+Users are STRONGLY cautioned about adding any code into the WRF model that
+directly uses the column pressure (for example, mu, mub, etc). 
+
+HVC: What is it, what's available
+---------------------------------
+
+The HVC option is a "hybrid" vertical coordinate, in that the eta levels are 
+terrain following near the surface, and then relax towards an isobaric surface
+aloft.  The purpose of this coordinate option is to reduce the artificial 
+influence of topography towards the top of the model.
+
+The real program and the WRF model need to consistently use the same run-time 
+setting for either TFC or HVC. The code will stop if the user mixes the vertical 
+coordinate run-time settings between real and WRF (or between ideal and WRF). 
+The v4.0 WRF code has been modified to use pre-v4.0 input and lateral boundary 
+files, but only for the run-time choice of the TF (terrain following) 
+coordinate option.
+
+All of the ARW WRF atmosphere test cases are able to use the HVC option. The 
+work to supply an initialization for all of the ideal cases has been completed 
+since the first release of the HVC option. With v4.0, now all of the ideal and 
+real cases are eligible to use hybrid_opt=2.
+
+Choosing the TF vs the HVC Option
+---------------------------------
+
+To turn on the HVC run-time option, a switch is set in the namelist.input file:
+&dynamics
+ hybrid_opt = 2
+/
+
+This is a single entry value, which is set to "2" (activating the hybrid 
+coordinate option) by default through the Registry. For completeness, to 
+explicitly turn off the HVC option (turn on the TFC option) in the 
+namelist.input file:
+&dynamics
+ hybrid_opt = 0
+/
+
+A second run-time option is available for the HVC capability, which allows the 
+user to select the eta level at which the WRF model surfaces become completely 
+isobaric. Setting this value is not intuitive, and a reasonable value that 
+should work globally has been set as the default. For sensitivity testing of 
+the model results to the level at which the model eta coordinates become 
+isobaric, the user may modify the critical eta level defined in the 
+namelist.input file.
+&dynamics
+ etac = 0.2
+/
+
+As the value of etac increases (from 0 towards 1), more eta levels are impacted 
+as increasing numbers of levels (downward from the model top) are flattened 
+out. On the one hand, that is a good thing, and this "flattening of the 
+coordinate surfaces" is the entire purpose of the HVC option. However, over 
+areas of high topography (not necessarily steep or complex), the vertical eta 
+levels get too compressed when etac values get larger than about etac = 0.22. 
+Over the Himalayan Plateau with a 10 hPa model lid, a value of etac = 0.25 
+causes model failures. Globally then, a value of 0.2 is considered "safe".
+The east-coast of the US would be able to use etac = 0.30, and pure oceanic
+domains could probably use etac = 0.40.
+
+How the code has been modified
+------------------------------
+
+For the v3.9 release, the largest block of modifications required to the source 
+code for the HVC capability is with the variable defined as the column pressure 
+in the TF coordinate (referred to generally as "mu").  This is one of the 
+variables that has both a perturbation and a base-state value, also staggerings 
+for different variables, and even different time levels. All together, nearly 
+thirty "mu" variables needed to be processed. For the HVC modification, the 2d 
+"mu" fields still retain the meaning of column pressure, but the definition of 
+d(p_dry))/d(eta) has been generalized, and is now 3d.
+
+Almost all instances of a 2d "mu" field have been transformed into a 3d field 
+with the application of two 1d arrays (a multiplication and an addition).  For 
+the base-state "mu" and total "mu" fields, functionally this new field is 
+defined as:
+mu_new_3d(i,k,j) = c1(k) * mu(i,j) + c2(k)
+
+For perturbation "mu" fields, only the multiplicative scaling is applied:
+mu_new_3d(i,k,j) = c1(k) * mu(i,j)
+
+Even with each instance of "mu" being scaled and most instances of "mu" getting 
+an offset applied, the elapsed time to run the v3.9 TFC vs the v3.9 HVC was
+quite small. With better simulation fidelity and no timing penalty, the decision
+was made to incorporate the HVC code entirely into v4.0, and to have the default
+behavior be HVC. Note that with v4.0, the code still reflects the explicit
+multiplication and addition by the respective 1d arrays to reduce the need to 
+have so many new 3d "mu" arrays.
+
+Cautionary note
+---------------
+
+Users are also warned that the original definitions of base-state and 
+dry pressure are no longer generally valid. Most users will find either p'+pb 
+or p_hyd as satisfactory pressure substitutes.
+
+What to Notice on Output
+------------------------
+
+There are a couple of ways to determine if the model output (and as stated 
+previously, mandatorially the model IC and BC files also) was run with the 
+HVC option.
+
+Visually, with a simple netcdf viewer (such as ncview), look at the horizontal 
+levels of the field "PB" in an area of topography. For a few consecutive levels 
+downward from the model lid, each value on a specific level should be 
+nearly identical (i.e. nearly isobaric). For the TF option, the signature of 
+the topography is evident even at the penultimate level.
+
+The netcdf files also have metadata included to indicate if the hybrid 
+vertical coordinate option was used.
+
+For code that used the TFC run-time option:
+>ncdump -h wrfinput_d01 | grep HYBRID
+		:HYBRID_OPT = 0 ;
+
+For code that used the HVC run-time option:
+>ncdump -h wrfinput_d01 | grep HYBRID
+		:HYBRID_OPT = 2 ;
+
+What WRF capabilities are OK with HVC
+-------------------------------------
+
+Tests have been conducted with a number of the WRF system's other signature 
+features: FDDA, adaptive time stepping, DFI, global domains, nesting, moving nests, 
+and ndown. All physical parameterization schemes fully support the HVC option.  
+
+The WRF developers have worked in conjunction with the developers of the other 
+major WRF system components. Both WRF DA 3dVAR and WRF Chem fully function with the 
+hybrid coordinate. With the introduction of the HVC option, the standard WRF 
+post-processing tools are also fully supported: NCL, UPP, and RIP.
+
+What WRF capabilities are NOT supported with HVC
+------------------------------------------------
+
+The one capability that is not functioning with the HVC option is vertical 
+refinement. 
+
+Registry information
+--------------------
+
+The Registry file that contains all of the information for the hybrid 
+coordinate is Registry/registry.hybrid. In the comments at the top of this file 
+is a brief description of the component pieces that constitute new 3d "mu": 
+d(p_dry)/d(eta).

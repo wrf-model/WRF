@@ -1,0 +1,20 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------#
+# DEBUG build settings for Linux ifort compiler
+#-------------------------------------------------------------------------------#
+
+export FC="ifort"
+
+export FCFLAGS="\
+-g \
+-check bounds \
+-e08 \
+-traceback \
+-free \
+-assume byterecl,realloc_lhs \
+-fp-stack-check \
+-mieee-fp"
+
+export LDFLAGS=""
+
+export LIBS=""

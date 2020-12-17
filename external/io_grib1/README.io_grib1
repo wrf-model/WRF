@@ -1,0 +1,159 @@
+io_grib1
+
+Author: Todd Hutchinson
+        WSI
+        thutchinson@wsi.com
+
+5 August 2004
+8 February 2005 - Updated by Todd Hutchinson.  Section V was updated to 
+                  clarify the description of the decimal scale factor field 
+                  in the gribmap file.
+12 July 2005    - Updated by Todd Hutchinson.  GRIB version 1 input capability 
+                  was added to WRF. All sections in this README were updated to
+                  add information relevant for grib input capability.
+
+
+I. Introduction
+
+io_grib1 is a WRF module that allows for input and output of WRF data in GRIB 
+   version 1 format.
+
+Why would anyone use GRIB output?  
+  GRIB stores data in a compressed format so output files are much smaller 
+    than in other formats such as netCDF.  In addition, encoding in GRIB format
+    is very efficient and can be faster than writing out netCDF formatted 
+    data, especially for large grids.  (See Section V for more on performance).
+
+II. Running WRF
+  1. Set namelist entry or entries io_form_<x> to 5
+  2. Run WRF as you normally would, for example:
+     cd test/em_real
+     ./wrf.exe
+
+IV. Examining GRIB output with wgrib
+  1. wgrib is installed within external/io_grib1 
+     (See http://wesley.wwb.noaa.gov/wgrib.html for more information.)
+  2. Define the GRIBTAB environment variable:
+        For bourne shell users:
+          export GRIBTAB=<your WRF dir>/run/gribmap.txt
+        For csh users
+          setenv GRIBTAB <your WRF dir>/run/gribmap.txt
+  3. To get a listing of the records in the GRIB data:
+        <your WRF dir>/external/io_grib1/wgrib wrfout_d01_000000
+
+IV. Quilting
+  If you are running WRF using MPI, you may use a seperate processor for
+    quilting just as is done with netCDF.  Simply set the namelist variable
+    nio_tasks_per_group to 1 (or more).
+
+V. Details
+  1. gribmap.txt file
+     io_grib1 makes use of a GRIB table for encoding the WRF data into GRIB 
+        format.  The GRIB table that io_grib1 uses is contained in the 
+        WRF run directory, and is called gribmap.txt.  This file is read at
+        run-time by io_grib1.  Settings in this file are used to encode the 
+	corresponding parameters in the GRIB output files.  You may modify 
+	this file to suit your needs.
+
+      The file has the following format:
+
+      the first line of a table (note: there may be several tables in a 
+                                 gribmap.txt file)
+      -1:CENTER:SUBCENTER:PARAMETER_TABLE_VERSION
+          "-1" is an indicator for the start of a table
+          "CENTER" is generating center (PDS 5, i.e., for NCEP, this is 7)
+          "SUBCENTER" is the generating sub-center (PDS 26)
+          "PARAMETER_TABLE_VERSION" is the parameter table version (PDS 4)
+
+      Subsequent lines:
+      GRIBID:<PARAMETER>:<DESCRIPTION>:<WRF VAR>:<DECSCL>
+          "GRIBID" is the GRIB parameter id (PDS 9).
+          "PARAMETER" is the abbreviated parameter name.   
+          "DESCRIPTION" is a description of the parameter.
+          "WRF VAR" is a comma-seperated list of WRF variables that will be
+                    encoded as with PARAMETER described in the line and with 
+                    the CENTER, SUBCENTER and PARAMETER_TABLE_VERSION listed 
+                    at the beginning of the table.  WRF VAR must use 
+                    the WRF variable names that are defined in the "DNAME" 
+                    column in the WRF Registry.
+          "DECSCL" is the decimal scale factor.  It is the number of digits
+                    to the right of the decimal point that will be saved in
+                    the output data.  This number may be less than zero, in 
+                    which case, the precision of data will be truncated the 
+                    specified number of digits to the left of the decimal 
+                    point. 
+                       Examples:
+                         -2 : Data will be encoded at the hundreds level, 
+	                      i.e., 102425.231 will be encoded as 102400
+                          3 : Data will be encoded at the thousandths level, 
+			      i.e., 102425.231243 will be encoded as 1024.231
+      Example:
+           1:PRES:Pressure [Pa]:P,PSFC:1
+             In this example, GRIB parameter 1, abbreviated PRES, is 
+                pressure in pascals.  WRF variables P and PSFC (as listed in
+                the WRF Registry) will be encoded as PRES.  The data will have
+                one decimals of precision, i.e., 101323.1 Pa.
+           62:NCPCP:Large scale precipitation [kg/m^2]:NCPCP:2
+             In this example, GRIB parameter 62, abbreviated NCPCP, is 
+                Large-scale precipitation.  The WRF variables NCPCP (as listed 
+                in the WRF Registry) will be encoded as NCPCP.  The data will 
+                have two decimals of precision, i.e., 1.23 kg/m^2 (i.e., 
+                1.23 mm).
+
+      Note:
+          For GRIB encoding, parameters 1-127 are the standard parameters
+            described by the WMO GRIB convention.  Interpretation of parameters
+            128-254 vary depending on the setting of the CENTER, SUBCENTER, 
+            and PARAMETER_TABLE_VERSION.  In the default gribmap.txt file,
+            the CENTER and SUBCENTER are both set to be 255.  Five tables
+            with PARAMETER_TABLE_VERSION's varying between 2 and 6 are 
+            specified in the default gribmap.txt file.
+
+  2. Variable dimensions.
+      A GRIB file is a set of records of data.  Each record is a 2-dimensional,
+        horizontal field, i.e., temperature on a pressure surface,
+        In the case of the WRF Eulerian mass model, we have variables on Eta 
+        coordinates, so, we have, i.e., temperature on the 0.995 Eta level.
+      WRF outputs 3, 2 and 1-dimensional fields and point data.  3-dimensional 
+        (i.e., u-component of wind) fields are stored in GRIB as a series of 
+        horizontal 2-dimensional fields.  WRF horizontal 2-d fields are stored 
+        simply as horizontal 2-d fields (i.e., surface pressure).  
+        One-dimensional fields with dimension varying in the vertical (i.e., 
+        the vertical coordinate ZN), are stored as a set of 1x1 grids valid
+        at the center of the grid.  So, the third vertical level (ZN) is 
+        encoded as a 1x1 grid, valid at the center of the grid.  Point data
+        is also stored as a 1x1 grid valid at the center of the grid.
+      
+VI. Performance
+   GRIB output has proven to be very fast, as compared to netcdf output.
+
+   Listed below is a comparison of file size and run-time for io_grib1 and
+   io_netcdf.  WRF was run twice, once with GRIB output and once with netcdf
+   output.  In both cases, 32 CPUS (on 16 machines) were dedicated to 
+   model integration, and one was CPU dedicated to I/O and quilting (using 
+   nio_tasks_per_group = 1).  The run had a domain with 360x485 grid points 
+  (12 km spacing) and 10-minute output.  The model was run out to 3 hours.
+
+   Shown is the file size for one-output time, the total model run-time 
+   and the time for I/O as listed in the WRF output.  In addition, the 
+   additional time that is required for a time-step just after model output
+   is listed.
+
+   Format    File Size    Run time     I/O time   additional time after output
+   netCDF     368 MB       719 s         1.26 s            3.3 s
+   GRIB v1    109 MB       519 s         0.28 s            1.9 s
+
+
+VII. Testing
+   We (at WSI) have tested io_grib1 with WRF running on linux (redhat v 9.0).  
+   We typically use the intel fortran compiler (v8.0) and the gnu C compiler, 
+   so, that configuration has the most testing.  We have also done limited
+   testing with the Portland Group Compiler on linux.  We have not tested any
+   other platforms or compilers.
+
+io_grib1
+
+Author: Todd Hutchinson
+        WSI
+        thutchinson@wsi.com
+

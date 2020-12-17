@@ -1,0 +1,6 @@
+#MODEL      saprc99
+#INTEGRATOR kpp_ros4 
+#LANGUAGE   Fortran77 
+#DRIVER     general 
+#HESSIAN    on
+#STOICMAT   on

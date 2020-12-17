@@ -1,0 +1,63 @@
+#	Dry pressure, Pd
+#	Dry surface pressure = Pds
+#	Model top pressure = Pt
+#	Dry mass in column (base + perturbation), Pcb + Pc = Pds - Pt
+#	1d column weighting term, B: BF is full levels, BH is half levels
+
+#	Total dry pressure
+#	Pd = BF ( Pds - Pt ) + ( eta - BF ) ( P0 - Pt ) + Pt
+
+#	Note that when B (full levels, BF) is identically eta (full levels, ZNW),
+#	the dry pressure, Pd = the terrain following coordinate.
+#	Pd = eta ( Pds - Pt ) + Pt
+
+#	Note that when B (full levels, BF) is zero,
+#	the dry pressure, Pd = isobaric.
+#	Pd = eta ( P0 - Pt ) + Pt
+
+#	Hybrid coordinate: mu is still d(Pd)/d(eta)
+#	new MUT = d Pd / d eta = d BF / d eta * ( Pcb + Pc ) + ( 1 - d BF / d eta ) * ( P0 - Pt )
+
+#	Define two columnar constants, function only of eta and other constants, specifically for the "mu" replacements.
+#	C1 = d BF / d eta
+#	C2 = ( 1 - d BF / d eta ) * ( P0 - Pt )
+
+#	Total field
+#	new              MUT(i,k,j) = C1(k) * ( Pcb(i,j) + Pc(i,j) ) + C2(k)
+
+#	Base-state, background field
+#	new              MUB(i,k,j) = C1(k) *   Pcb(i,j)             + C2(k)
+
+#	Perturbation field
+#	new              MU(i,k,j)  = C1(k) *              Pc(i,j)
+
+#	Define two columnar constants, function only of eta and other constants, specifically for the "pressure" replacements.
+#	C3 = BF
+#	C4 = ( eta - BF ) * ( P0 - Pt )
+
+#	new dry pressure Pd(i,k,j)  = C3(k) * ( Pds(i,j) - Pt      ) + C4(k) + Pt
+ 
+
+#<Table> <Type>   <Sym>         <Dims>   <Use>           <NumTLev> <Stagger>        <IO>            <DNAME>                        <DESCRIP>                            <UNITS>
+
+state    real      c1h             k     misc                1         -     i02rh0{22}{23}{24}      "C1H"       "half levels, c1h = d bf / d eta, using znw"        "Dimensionless"
+state    real      c2h             k     misc                1         -     i02rh0{22}{23}{24}      "C2H"       "half levels, c2h = (1-c1h)*(p0-pt)"                "Pa"
+
+state    real      c1f             k     misc                1         Z     i02rh0{22}{23}{24}      "C1F"       "full levels, c1f = d bf / d eta, using znu"        "Dimensionless"
+state    real      c2f             k     misc                1         Z     i02rh0{22}{23}{24}      "C2F"       "full levels, c2f = (1-c1f)*(p0-pt)"                "Pa"
+
+state    real      c3h             k     misc                1         -     i02rh0{22}{23}{24}      "C3H"       "half levels, c3h = bh"                             "Dimensionless"
+state    real      c4h             k     misc                1         -     i02rh0{22}{23}{24}      "C4H"       "half levels, c4h = (eta-bh)*(p0-pt), using znu"    "Pa"
+
+state    real      c3f             k     misc                1         Z     i02rh0{22}{23}{24}      "C3F"       "full levels, c3f = bf"                             "Dimensionless"
+state    real      c4f             k     misc                1         Z     i02rh0{22}{23}{24}      "C4F"       "full levels, c4f = (eta-bf)*(p0-pt), using znw"    "Pa"
+
+state    real      pcb            ij    dyn_em               1         -     irhdus                  "PCB"       "base state dry air mass in column"                 "Pa"
+state    real      pc             ijb   dyn_em               2         -     irhusdf=(bdy_interp:dt) "PC"        "perturbation dry air mass in column"               "Pa"
+
+
+
+
+#<Table> <Type>   <Sym>         <Nml>                    <NumEntry> <Default>                                                     <DESCRIP>                             <UNITS>
+rconfig  integer  hybrid_opt    namelist,dynamics            1          2     i0                  "HYBRID_OPT"   "0=Original WRF coordinate, 1=Terrain Following using hybrid formulation, 2=Klemp cubic form with etac"         "Flag"
+rconfig  real     etac          namelist,dynamics            1         0.2    i0                  "ETAC"         "znw(k) < etac, eta surfaces are isobaric, 0.2 is a good default"          "Pa/Pa"

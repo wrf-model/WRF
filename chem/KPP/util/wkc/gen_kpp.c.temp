@@ -1,0 +1,346 @@
+/*
+...
+ assumed directory name in KPP corresponds to WRF package name
+..
+
+missuse next4d
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <dirent.h> 
+#include <unistd.h> 
+#include <sys/stat.h>           
+
+
+#include "protos.h"
+#include "registry.h"
+#include "data.h"
+#include "kpp_data.h"
+
+
+#define DEBUGR 0
+
+
+
+
+/* store chemistry packages from WRF in linked list rooted at WRFC_packs  
+   - species variables will be stored as members of each package */
+knode_t * WRFC_packs ;
+
+/* store chemistry packages from KPP */
+knode_t * KPP_packs ;
+
+
+
+
+/* cd tools;  make -i -r CC="gcc"; cd .."   
+  in ~WRF:  tools/registry -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF -DGRIB1 -DTRIEDNTRUE -DLIMIT_ARGS Registry/Registry )                  */
+
+
+int
+gen_kpp ( char * inc_dirname, char * kpp_dirname )
+{
+
+
+  /* put chem compound names defined in Registry into linked list WRFC_packs */
+
+     get_wrf_chem_specs () ;
+
+
+
+  /* read KPP species files and put compound names into linked list KPP_packs */     
+     
+     get_kpp_chem_specs ( kpp_dirname ) ; 
+
+
+
+  /* define pointer from each KPP package to corresponding WRF-Chem chemistry package 
+     and check whether variable names are consistent */
+ 
+     compare_kpp_to_species ();
+
+
+     if (  DEBUGR == 1 ) { 
+     write_list_to_screen( WRFC_packs ) ; 
+     write_list_to_screen( KPP_packs );
+     }
+
+
+
+
+
+
+
+
+  return(0) ;
+}
+
+/*---------------------------------------------------------------*/
+int
+get_wrf_chem_specs ( )
+{
+  node_t * pkg;
+  char assoc_namelist_var[NAMELEN];
+  char scalars_str[NAMELEN] ;
+  char * scalar ;
+
+  knode_t * q , * member  ;
+
+
+  for ( pkg = Packages ; pkg != NULL ; pkg = pkg->next )
+  {
+
+
+      if ( !strncmp(  pkg->pkg_assoc ,"chem_opt", 8) )
+	{
+
+
+         q = new_knode( );
+         q->next = NULL ;
+         strcpy( q->name,  pkg->name );	
+         add_knode_to_end( q , &(WRFC_packs) ) ;
+
+
+         strcpy(scalars_str,pkg->pkg_4dscalars) ; 
+
+
+          scalar=strtok(scalars_str, ":");
+          scalar=strtok(NULL, ",");
+
+
+        while (scalar != NULL)
+          { 
+
+           member = new_knode( ) ;
+           strcpy( member->name , scalar ) ;
+           member->next = NULL ;
+	   add_knode_to_end( member , &(q->members) ) ;
+
+
+               scalar = strtok(NULL, ",");
+    
+           }
+ 
+
+        }  
+   } 
+  return(0) ;
+}
+
+/*---------------------------------------------------------------*/
+int
+get_kpp_chem_specs ( char* kpp_dirname )
+{
+
+
+knode_t * q , * member  ;
+DIR * dir;		
+struct dirent * entry;          
+struct stat dir_stat;
+char fulldirname[NAMELEN], spcfilename[NAMELEN];
+char inln[NAMELEN], kpp_spec[NAMELEN];
+FILE * spcFile;
+int   in_comment, got_it;
+
+
+
+  /* http://users.actcom.co.il/~choo/lupg/tutorials/handling-files/handling-files.html#directory_struct */
+
+
+ 
+    dir = opendir(kpp_dirname);
+    if (!dir) {
+	fprintf(stderr, "WARNING from gen_kpp: Cannot read directory: %s \n", kpp_dirname);
+	perror("");
+	return;
+    }
+
+
+    /* loop through sub directories in KPP directory */
+
+ while ((entry = readdir(dir))) {
+   if (entry->d_name ) {
+
+	 if ( strcmp(entry->d_name, ".") == 0) 
+          continue;
+	 if ( strcmp(entry->d_name, "..") == 0) 
+           continue;
+ 
+
+      sprintf(  fulldirname, "%s/%s", kpp_dirname, entry->d_name);
+	
+      printf("%s \n", fulldirname );
+
+       /* check if the given entry is a directory. */
+        if (stat(fulldirname, &dir_stat) == -1) {
+	    perror("WARNING from gen_kpp: ");
+	    continue;
+        }
+	    
+
+        /* check if KPP species file is present. */
+
+         sprintf(  spcfilename, "%s/%s/%s.spc", kpp_dirname, entry->d_name, entry->d_name);
+
+    
+      spcFile = fopen (spcfilename, "r" );
+       
+        if ( spcFile == NULL ) {
+	  fprintf(stderr,"WARNING from gen_kpp: File %s not found. Skipping. \n", spcfilename);
+           continue;
+	}
+        
+   printf(" Using %s  \n", spcfilename );
+
+
+        /* put KPP packagename into linked list */
+ 
+         q = new_knode( );
+         q->next = NULL ;
+         strcpy( q->name, entry->d_name  );	
+         add_node_to_end( q , &(KPP_packs) ) ;
+
+	 /* loop over lines in KPP species file */
+	 while ( fgets ( inln , NAMELEN , spcFile ) != NULL ){
+	      if ( DEBUGR == 1 ){    printf("%s  ", inln); } 
+         /* strip from comments (loop through letters) */
+	 int n=0;
+         int nn = 0;
+         int j;
+         in_comment = 0;
+         got_it = 0;
+
+            for(j = 0; j < NAMELEN ; j++) kpp_spec[j]='\0';
+	  while ( inln[n] !=  '\0' ){ 
+	   if ( inln[n] == '{') in_comment=1;
+	    if ( in_comment == 0 ) {
+                    if (inln[n] == '=' || inln[n] == '#') {
+                        got_it=1;
+		    }
+                      if ( got_it == 0  && inln[n] !=  ' '){
+		    /* printf("%c %i \n ", inln[n], in_comment ); */
+
+                       kpp_spec[nn]=inln[n];
+                       nn++;
+
+		      }
+          }    
+
+          if (inln[n] == '}') in_comment=0; 
+	  n++;
+
+          }
+
+	  /* printf("spec: %s \n ", kpp_spec);  */
+          
+	  if (kpp_spec[0] != '\0'  && got_it == 1 )  {
+
+            if ( DEBUGR == 1 ){
+                  printf("spec: %s \n ", kpp_spec);
+                  fprintf(stderr," p, name   %s %s \n", q->name, kpp_spec ); 
+               }
+
+           member = new_knode( ) ;
+           strcpy( member->name , kpp_spec )   ;
+           member->next = NULL ;
+	   add_node_to_end( member , &(q->members) ) ;
+	  
+	  }
+         } 
+
+	 
+
+	 fclose(spcFile);
+  
+    }
+
+ }
+
+  return(0) ;
+}
+
+
+/*---------------------------------------------------------------------*/
+
+
+int
+compare_kpp_to_species  ()
+{
+  node_t * p1, *p2, * p, * pm1, * pm2;
+  char name1[NAMELEN], name2[NAMELEN] ;
+
+  
+
+
+  for ( p1 =   KPP_packs  ; p1 != NULL ; p1 = p1->next ) {
+    for ( p2 =   WRFC_packs  ; p2 != NULL ; p2 = p2->next ) {
+       if ( strcmp (p1->name, p2->name) == 0) {
+      
+
+     /* here next4d is used to point from a KPP-pack to the corresponding WRFC_pack */ 
+	  p1->next4d = p2;         
+
+       }
+       
+    }
+  } 
+
+
+   for ( p1 =   KPP_packs  ; p1 != NULL ; p1 = p1->next ) {
+     p2 = p1->next4d;
+     if ( p2 ) {
+     fprintf(stderr, "FOUND match between WRF-Chem/KPP for mechanism:  %s \n", p2->name);
+
+
+     /* compare compound  names, use variable "mark" from data.h here */
+     for ( pm1 = p1 -> members;  pm1 != NULL ; pm1 = pm1->next ) {
+       for ( pm2 = p2 -> members;  pm2 != NULL ; pm2 = pm2->next ) {
+	 strcpy( name1, pm1->name );
+         strcpy( name2, pm2->name );
+         make_upper_case(name1);
+         make_upper_case(name2);
+         if ( strcmp (name1, name2) == 0) {
+	  /* use "dname" to store matching name of WRF var in members of KPP_packs */
+	  strcpy( pm1->dname,  pm2->name); 
+          pm1->mark = 1; 
+          pm2->mark = 1;
+          fprintf(stderr, " matching names:  %s %s \n", pm1->name,  pm1->dname);
+         }
+         else {
+	   /* if a KPP species is not found registry package check */
+ 
+         }
+
+       }
+     }
+
+
+
+
+
+
+     } 
+   }
+
+
+  return(0) ;
+
+}
+/*---------------------------------------------------------------------*/
+int
+write_list_to_screen ( node_t * starting_point )
+{
+node_t * l1, *l2;
+ for ( l1 = starting_point  ; l1 != NULL ; l1 = l1->next )
+  {
+    fprintf(stderr,"-- Mechanism  %s   ----- \n", l1->name);
+         for ( l2 =  l1->members ; l2 != NULL ; l2 = l2->next )
+     {
+       fprintf(stderr,"%s ", l2->name);
+       } 
+  fprintf(stderr," \n \n ");
+  }
+}

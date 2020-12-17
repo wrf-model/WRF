@@ -1,0 +1,10 @@
+# input file for WRF FSO runtime config of I/O streams
+# For additional information see README.io_config in top-level directory
+# Creator : Tom Auligne, MMM/NCAR, 2011-05-03
+#
+# adjoint forcing input for adjoint integration
++:i:7:g_u,g_v,g_t,g_mu,g_ph,g_qvapor
+#
+# gradient output from adjoint integration at the beginning of the window
++:i:17:a_u,a_v,a_t,a_mu,a_ph,a_w,a_qvapor
+#

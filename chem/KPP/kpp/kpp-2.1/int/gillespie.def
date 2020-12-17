@@ -1,0 +1,10 @@
+ 
+#FUNCTION   aggregate
+#JACOBIAN   SPARSE_LU_ROW
+#DOUBLE     on 
+#STOCHASTIC on 
+#INTFILE    gillespie
+
+
+
+

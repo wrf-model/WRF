@@ -1,0 +1,114 @@
+&wrfvar1
+ print_detail_grad=.false.,
+/
+&wrfvar2
+/
+&wrfvar3
+/
+&wrfvar4
+ use_amsuaobs=.true.
+ use_amsubobs=.true.
+/
+&wrfvar5
+/
+&wrfvar6
+/
+&wrfvar7
+/
+&wrfvar8
+/
+&wrfvar9
+/
+&wrfvar10
+/
+&wrfvar11
+/
+&wrfvar12
+/
+&wrfvar13
+/
+&wrfvar14
+ rtminit_nsensor=6,
+ rtminit_platform=1,1,1,1,1,1,
+ rtminit_satid=15,16,18,15,16,17,
+ rtminit_sensor=3,3,3,4,4,4,
+ thinning_mesh=120.0,120.0,120.0,120.0,120.0,120.0,
+ thinning=true,
+ qc_rad=true,
+ write_iv_rad_ascii=false,
+ write_oa_rad_ascii=true,
+ rtm_option=2,
+ only_sea_rad=false,
+ use_varbc=true,
+ crtm_coef_path="../../run/crtm_coeffs_2.1.3"
+/
+&wrfvar15
+/
+&wrfvar16
+/
+&wrfvar17
+/
+&wrfvar18
+ analysis_date="2008-02-05_12:00:00.0000",
+/
+&wrfvar19
+/
+&wrfvar20
+/
+&wrfvar21
+ time_window_min="2008-02-05_11:00:00.0000",
+/
+&wrfvar22
+ time_window_max="2008-02-05_13:00:00.0000",
+/
+&time_control
+ start_year=2008,
+ start_month=02,
+ start_day=05,
+ start_hour=12,
+ end_year=2008,
+ end_month=02,
+ end_day=05,
+ end_hour=12,
+/
+&fdda
+/
+&domains
+ e_we=90,
+ e_sn=60,
+ e_vert=41,
+ dx=60000,
+ dy=60000,
+/
+&dfi_control
+/
+&tc
+/
+&physics
+ mp_physics=3,
+ ra_lw_physics=1,
+ ra_sw_physics=1,
+ radt=60,
+ sf_sfclay_physics=1,
+ sf_surface_physics=1,
+ bl_pbl_physics=1,
+ cu_physics=1,
+ cudt=5,
+ num_soil_layers=5,
+ mp_zero_out=2,
+ co2tf=0,
+/
+&scm
+/
+&dynamics
+/
+&bdy_control
+/
+&grib2
+/
+&fire
+/
+&namelist_quilt
+/
+&perturbation
+/

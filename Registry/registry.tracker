@@ -1,0 +1,154 @@
+# This is the list of registry entries needed by the Inlined GFDL/NCEP
+# Tracker and associated wind/precip swath generator.  These entries
+# were moved to the registry.tracker file to improve readability and
+# maintainability of the main Registry files.
+
+# Note that the {otrak} dimension is declared in registry.dimspec
+
+state  integer interesting     ij dyn_nmm    1     -    rh01  "interesting" "Bitmask for area of interest flags (0=not in area of interest)" ""
+state  integer nest_imid       {maxkid} dyn_nmm 1  -    r   "nest_imid"   "Last X-dir. middle point for each child domains"
+state  integer nest_jmid       {maxkid} dyn_nmm 1  -    r   "nest_jmid"   "Last Y-dir. middle point for each child domains"
+state  real    cuprecip_swath  ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "cuprecip_swath" "Accumulated convective precip in area of interest" "m"
+state  real    precip_swath    ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "precip_swath" "Accumulated total precip in area of interest" "m"
+state  real    windsq_swath    ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "windsq_swath" "Accumulated maximum square of wind magnitude in area of interest" "m2 s-2"
+state  real    suswind_time    -  dyn_nmm    1     -    r                          "suswind_time"  "Time over which suswind has been accumulated so far." "s"
+state  real    suswind         ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "suswind" "Sustained wind over sustainment interval" "m s-1"
+state  real    wind10_ratio    ij dyn_nmm    1     -    rd=(DownCopy)              "wind10_ratio" "Ratio of lowest model level wind to 10m wind" ""
+state  real    suswind_swath   ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "suswind_swath" "Maximum sustained wind over accumulation interval" "m s-1"
+state  logical update_interest  - dyn_nmm .false.  -    r     "update_interest" ".true. = need to update area of interest" ""
+
+rconfig real   interest_rad_storm  namelist,physics max_domains 500 irh01 "interest_rad_storm"    "Storm radius of interest for swaths." "km"
+rconfig real   interest_rad_parent namelist,physics max_domains 500 irh01 "interest_rad_parent"   "Nest domain radius of interest in parent, for swaths." "km"
+rconfig real   interest_rad_self   namelist,physics max_domains 500 irh01 "interest_rad_self"     "Self-center radius of interest for swaths." "km"
+
+rconfig integer interest_kids      namelist,physics max_domains   1 irh01 "interest_kids" "Flag for enabling area of interest around nest domain centers." ""
+rconfig integer interest_self      namelist,physics max_domains   0 irh01 "interest_kids" "Flag for enabling area of interest around domain center." ""
+rconfig integer interest_storms    namelist,physics max_domains   1 irh01 "interest_kids" "Flag for enabling area of interest around storm center." ""
+
+# Swath mode.  Note there is only one of these: it is NOT per domain:
+rconfig integer swath_mode         namelist,physics -   2 irh01 "swath_mode"    "2=2016 HWRF, 1=2015 HWRF, 0=disable" ""
+
+package   vt_swath swath_mode==1  -  state:interesting,precip_swath,windsq_swath
+package   vt_swath_2016 swath_mode==2  -  state:interesting,precip_swath,windsq_swath,suswind_swath,suswind,wind10_ratio,cuprecip_swath
+
+halo HALO_NMM_SWATH dyn_nmm 24:precip_swath,windsq_swath
+
+# ----------------------------------------------------------------------
+
+state  logical track_have_guess - dyn_nmm    1     -    rh01  "track_have_guess" "Is a first guess available?" ""
+state  real    track_guess_lat  - dyn_nmm    1     -    rh01  "track_guess_lat" "First guess latitude" "degrees"
+state  real    track_guess_lon  - dyn_nmm    1     -    rh01  "track_guess_lat" "First guess longitude" "degrees"
+
+state  real   tracker_distsq ij dyn_nmm     1      -    r   "TRACKER_DISTSQ" "Square of distance from tracker fix location" "m2"
+state  real   tracker_edge_dist - dyn_nmm   1      -    r   "tracker_edge_dist" "Distance from storm center to domain edge" "km"
+state  real   tracker_angle   ij dyn_nmm    1      -    r   "tracker_angle" "Angle to storm center (East=0, North=pi/2, etc.)" "radians"
+
+state real    track_old_lon   {otrak} dyn_nmm  1   -    rh  "track_old_lon" "Old tracker longitudes" "degrees"
+state real    track_old_lat   {otrak} dyn_nmm  1   -    rh  "track_old_lat" "Old tracker latitudes" "degrees"
+state integer track_old_ntsd  {otrak} dyn_nmm  1   -    rh  "track_old_ntsd" "Old tracker times" ""
+state integer track_n_old     -       dyn_nmm  1   -    rh  "track_n_old" "Number of old tracker latitudes" ""
+
+state real    track_stderr_m1 - dyn_nmm     1      -    rh01  "track_stderr_m1" "Standard deviation of tracker centers one hour ago" "km"
+state real    track_stderr_m2 - dyn_nmm     1      -    rh01  "track_stderr_m2" "Standard deviation of tracker centers two hours ago" "km"
+state real    track_stderr_m3 - dyn_nmm     1      -    rh01  "track_stderr_m3" "Standard deviation of tracker centers three hours ago" "km"
+state integer track_last_hour - dyn_nmm     1      -    rh01  "track_last_hour" "Last completed forecast hour" "hours"
+state integer tracker_fixes  ij dyn_nmm     1      -    rh  "tracker_fixes"   "Tracker fix information for debugging" ""
+state real    tracker_fixlon  - dyn_nmm     1      -    rh01  "tracker_fixlon"  "Storm fix longitude according to inline NCEP tracker" "degrees"
+state real    tracker_fixlat  - dyn_nmm     1      -    rh01  "tracker_fixlat"  "Storm fix latitude according to inline NCEP tracker" "degrees"
+state integer tracker_ifix    - dyn_nmm     1      -    rh01  "tracker_ifix"    "Storm fix i location (H grid)" ""
+state integer tracker_jfix    - dyn_nmm     1      -    rh01  "tracker_jfix"    "Storm fix j location (H grid)" ""
+state real    tracker_rmw     - dyn_nmm     1      -    rh01  "tracker_rmw"     "Storm RMW according to inline NCEP tracker" "km"
+state real    tracker_pmin    - dyn_nmm     1      -    rh01  "tracker_pmin"    "Storm min MSLP according to inline NCEP tracker" "Pa"
+state real    tracker_vmax    - dyn_nmm     1      -    rh01  "tracker_vmax"    "Storm max 10m wind according to inline NCEP tracker" "m s-1"
+state logical tracker_havefix - dyn_nmm     1      -    rh01  "tracker_havefix" "True = storm fix locations are valid" ""
+state logical tracker_gave_up - dyn_nmm     1      -    rh01  "tracker_gave_up" "True = inline tracker gave up on tracking the storm" ""
+
+state real membrane_mslp ij     dyn_nmm     1      -    rhd=(DownCopy)  "membrane_mslp" "Mean Sea Level Pressure using UPP Membrane MSLP method" "Pa"
+
+state  real   p850rv     ij     dyn_nmm     1      -    rh  "P850rv" "Relative vorticity at 850mbar mass points" "s^-1"
+state  real   p700rv     ij     dyn_nmm     1      -    rh  "P700rv" "Relative vorticity at 700mbar mass points" "s^-1"
+state  real   p850wind   ij     dyn_nmm     1      -    rh  "P850wind" "Wind magnitude at 850mbar mass points" "m/s"
+state  real   p700wind   ij     dyn_nmm     1      -    rh  "P700wind" "Wind magnitude at 700mbar mass points" "m/s"
+state  real   p500u      ij     dyn_nmm     1      -    rh  "P500u" "Grid +X wind at 500mbar mass points" "m/s"
+state  real   p500v      ij     dyn_nmm     1      -    rh  "P500v" "Grid +Y wind at 500mbar mass points" "m/s"
+state  real   p700u      ij     dyn_nmm     1      -    rh  "P700u" "Grid +X wind at 700mbar mass points" "m/s"
+state  real   p700v      ij     dyn_nmm     1      -    rh  "P700v" "Grid +Y wind at 700mbar mass points" "m/s"
+state  real   p850u      ij     dyn_nmm     1      -    rh  "P850u" "Grid +X wind at 850mbar mass points" "m/s"
+state  real   p850v      ij     dyn_nmm     1      -    rh  "P850v" "Grid +Y wind at 850mbar mass points" "m/s"
+state  real   p850z      ij     dyn_nmm     1      -    rh  "P850z" "Height at 850mbar mass points" "m"
+state  real   p700z      ij     dyn_nmm     1      -    rh  "P700z" "Height at 700mbar mass points" "m"
+state  real   m10wind    ij     dyn_nmm     1      -    rh  "m10wind" "Wind magnitude at 10m mass points" "m/s"
+state  real   m10rv      ij     dyn_nmm     1      -    rh  "m10rv" "Relative vorticity at 10m mass points" "m/s"
+
+state  real   sp850rv     ij     dyn_nmm     1      -    rh  "sP850rv" "Smoothed relative vorticity at 850mbar mass points" "s^-1"
+state  real   sp700rv     ij     dyn_nmm     1      -    rh  "sP700rv" "Smoothed relative vorticity at 700mbar mass points" "s^-1"
+state  real   sp850wind   ij     dyn_nmm     1      -    rh  "sP850wind" "Smoothed wind magnitude at 850mbar mass points" "m/s"
+state  real   sp700wind   ij     dyn_nmm     1      -    rh  "sP700wind" "Smoothed wind magnitude at 700mbar mass points" "m/s"
+state  real   sp850z      ij     dyn_nmm     1      -    rh  "sP850z" "Smoothed height at 850mbar mass points" "m"
+state  real   sp700z      ij     dyn_nmm     1      -    rh  "sP700z" "Smoothed height at 700mbar mass points" "m"
+state  real   sm10wind    ij     dyn_nmm     1      -    rh  "sm10wind" "Smoothed wind magnitude at 10m mass points" "m/s"
+state  real   sm10rv      ij     dyn_nmm     1      -    rh  "sm10rv" "Smoothed relative vorticity at 10m mass points" "m/s"
+
+state  real   smslp       ij     dyn_nmm     1      -    rh  "smslp" "Smoothed membrane_mslp" "Pa"
+
+#---------------------------------------------------------------
+# Vortex tracker options
+
+# NOTE: ALL methods except #1 must use pdyn_parent and pdyn_smooth,
+#       if ANY domains use option #5
+
+package   vt_old_hwrf   vortex_tracker==1            -             -
+package   vt_track_nest vortex_tracker==2            -             state:pdyn_parent,pdyn_smooth
+package   vt_centroid   vortex_tracker==3            -             state:pdyn_parent,pdyn_smooth
+package   vt_rev_centr  vortex_tracker==4            -             state:weightout,mslp_noisy,pdyn_parent,pdyn_smooth,distsq
+package   vt_pdyn       vortex_tracker==5            -             state:pdyn_parent,pdyn_smooth,distsq
+package   vt_ncep_2013  vortex_tracker==6            -             state:pdyn_parent,pdyn_smooth,p850rv,p700rv,p850wind,p700wind,p850z,p700z,m10wind,m10rv,sp850rv,sp700rv,sp850wind,sp700wind,sp850z,sp700z,sm10wind,sm10rv,smslp,tracker_fixes,distsq,tracker_distsq
+package   vt_ncep_2014  vortex_tracker==7            -             state:pdyn_parent,pdyn_smooth,p850rv,p700rv,p850wind,p700wind,p850z,p700z,m10wind,m10rv,sp850rv,sp700rv,sp850z,sp700z,sm10rv,smslp,tracker_fixes,distsq,p500u,p500v,p700u,p700v,p850u,p850v,tracker_distsq
+#---------------------------------------------------------------
+# Vortex Tracker Variables
+
+state  real   distsq    ij     dyn_nmm     1      -      rh       "DISTSQ"  "Approximate square of distance from nest center for vortex tracker #4" "m2"
+
+# Revised Centroid Method (tracker #4)
+state  real   weightout ij     dyn_nmm     1      -      rh       "WEIGHTOUT"  "Vortex center finder weight array for vortex tracker #4" ""
+state integer mslp_noisy ij    dyn_nmm     1      -      rh       "MSLP_NOISY"  "0=okay, 1=noisy MSLP, 2=outside search radius, 3=boundary (vortex tracker #4)" ""
+
+# Dynamic Pressure Method (tracker #5)
+state  real    vt5searchrad     -      dyn_nmm     1      -    rh  "vt5searchrad" "Search radius from domain center" "m"
+
+# Smoothed Dynamic Pressure (needed for #5, must be passed down by all)
+
+state  integer pdyn_parent_age  -      dyn_nmm     1      -    rh  "PDYN_PARENT_AGE" "Last update of parent pdyn_parent propagated to this nest" ""
+state  integer pdyn_smooth_age  -      dyn_nmm     1      -    rh  "PDYN_SMOOTH_AGE" "Counter of updates of pdyn_smooth" ""
+state  real   pdyn_smooth ij    dyn_nmm     1      -    rhd=(NoInterp)f=(NoInterp)u=(NoInterp)  "PDYN_SMOOTH" "Average of PDYN and PDYN_PARENT" "Pa"
+state  real   pdyn_parent ij    dyn_nmm     1      -   rhu=(NoInterp)\
+d=(DownAged2D:0,n%pdyn_parent_age,c%pdyn_smooth)\
+f=(DownAged2D:c%pdyn_smooth_age,n%pdyn_parent_age,c%pdyn_smooth)\
+                  "PDYN_PARENT" "Parent PDYN_SMOOTH for tracking grid motion" "Pa"
+
+#################################################################
+# HWRF nest movement variables
+#################################################################
+
+# Duplicate of nomove_freq for overriding nest movement at certain times
+state    real nomove_freq_hr          -       dyn_nmm  -     -    rh    "nomove_freq" "nest will not move at analysis time or multiples of this hour (if positive)"
+state     integer move_countdown          -      dyn_nmm        1         -      rh       "MOVE_COUNTDOWN"                "Timesteps left with extra CODAMP"           ""
+
+# Choice of vortex tracking method
+rconfig   integer vortex_tracker          namelist,physics      max_domains    6      h0123      "vortex_tracker" "Vortex Tracking Algorithm" ""
+
+rconfig   integer num_old_fixes           namelist,physics      1              5      h      "num_old_fixes"  "Number of old tracker fixes to store." ""
+
+# Vortex Tracking (physics namelist)
+# Only for algorithm 4:
+rconfig   real    vt4_radius              namelist,physics      max_domains  150000.  -      "vt4_radius"     "Vortex Search Radius for vortex tracker #4" "m"
+rconfig   real    vt4_weightexp           namelist,physics      max_domains  1.       -      "vt4_weightexp"  "Vortex Search Weight Exponent for vortex tracker #4" ""
+rconfig   real    vt4_pmax                namelist,physics      max_domains  -1.      -      "vt4_pmax"       "Vortex Search Max Pressure for vortex tracker #4 (<0 = actual max pressure in search radius)" "Pa"
+
+rconfig   real    vt4_noise_pmax          namelist,physics      max_domains  103000.  -      "vt4_noise_pmax" "Noise Removal: Maximum Realistic MSLP" "Pa"
+rconfig   real    vt4_noise_pmin          namelist,physics      max_domains  85000.   -      "vt4_noise_pmin" "Noise Removal: Minimum Realistic MSLP" "Pa"
+rconfig   real    vt4_noise_dpdr          namelist,physics      max_domains  0.6      -      "vt4_noise_dpdr" "Noise Removal: Maximum Realistic dMSLP/dr" "Pa/m"
+rconfig   integer vt4_noise_iter          namelist,physics      max_domains  2        -      "vt4_noise_iter" "Noise Removal: number of iterations" ""
+
+
+rconfig   real    nomove_freq             namelist,physics      max_domains  -1.0     irh    "nomove_freq" "nest will not move at analysis time or multiples of this hour (if positive)"

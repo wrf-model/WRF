@@ -1,0 +1,6 @@
+#MODEL      small_strato
+#INTEGRATOR rosenbrock 
+#LANGUAGE   Fortran90
+#DRIVER     general
+#HESSIAN    on
+#STOICMAT   on

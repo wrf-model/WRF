@@ -1,0 +1,85 @@
+#include atoms_red
+#include ./nmhc9.spc
+#include ./nmhc9.eqn
+
+
+
+
+#INLINE F90_RATES
+
+!************** SPECIAL RATE FUNCTIONS **********************
+
+      REAL(KIND=dp) FUNCTION RJPL( K0300, Q, KU300, R, M, T )
+      REAL(KIND=dp) :: k0300,q,ku300,r,m,t
+      REAL(KIND=dp) :: tt,k0,ku,k0m,kk,lgkk,e,f
+! JPL standard three body reaction rate format extended
+      TT= T / 3.D2
+      K0= K0300 * exp(-1._dp*Q*log(TT))
+      KU= KU300 * exp(-1._dp*R*log(TT))
+      K0M= K0 * M
+      KK= K0M / KU
+      LGKK=0.43429448190324926_dp * LOG(KK) ! = log10(KK)
+      E=1.D0 / ( 1.D0 + LGKK*LGKK )
+      F=exp(-0.5108256237659887_dp*E)       ! -0.51=log(0.6)
+      RJPL = F * K0M / ( 1.D0 + KK )
+      END FUNCTION
+!---------------------------------------------------------------------
+      REAL(KIND=dp) FUNCTION RALKE( K0300, Q, KU, Fc, M, T )
+      REAL(KIND=dp) :: k0300,q,m,t,Fc
+      real(KIND=dp) :: tt,k0,ku,k0m,kk,lgkk,e,f
+! special function for alkene+OH reactions
+      TT= T / 3.D2
+      K0= K0300 * exp(-1._dp*Q*log(TT))
+      K0M= K0 * M
+      KK= K0M / KU
+      LGKK=0.43429448190324926_dp * LOG(KK) ! = log10(KK)
+      E=1.D0 / ( 1.D0 + LGKK*LGKK )
+      F=exp(log(Fc)*E)
+      RALKE = F * K0M / ( 1.D0 + KK )
+      END FUNCTION
+!---------------------------------------------------------------------  
+!TROE(FIX(I_M),TEMP,.933,2.85D-30,-2.67,3.13D-11,363.)
+!Dransfield et al.'99(GRL) this call in XYZ.eqn
+!---------------------------------------------------------------------
+      REAL(KIND=dp) FUNCTION TROE2(M,T,beta,k0,k0e,kinf,Tc)
+      REAL(KIND=dp) :: M,T,beta,k0,k0e,kinf,Tc
+      REAL(KIND=dp) :: k0t,bcrit,Trat,dN,N,Bx,F
+!  real Troe rate constants: for OH + NO2 -> HNO3, Dransfield et al. 1999 (GRL)
+      k0t = k0 * exp(k0e*log(T/3.D2))
+      bcrit = beta*M*k0t/kinf
+      Trat = T/Tc
+      dN=sign(0.1_dp-0.2605766891419492_dp*Trat,1.-bcrit) ! 0.26=0.6*.434;log-->log10
+      N = 0.75_dp + 0.5515539920171264_dp*Trat           ! 0.55=1.27*.434;log-->log10
+      Bx = (0.43429448190324926_dp*log(bcrit)-0.12_dp) / (N+dN)
+      F = exp(-1._dp *Trat/(1._dp + Bx*Bx))
+      TROE2 = k0t * (beta*M/(1.+bcrit)) * F
+      END FUNCTION
+!---------------------------------------------------------------------
+      REAL(KIND=dp) FUNCTION RHNO3(M,T)
+      REAL(KIND=dp) :: M,T
+      REAL(KIND=dp) :: K0,K2,K3
+!     SPECIAL RATE CONSTANTS:    OH + HNO3 {+M} -->  NO3
+!     taken from S. Brown et al. 1999 GRL, JPL 2000
+      K0=2.4D-14*EXP(460._dp/T)
+      K2=2.7D-17*EXP(2199._dp/T)
+      K3=M*6.5D-34*EXP(1335._dp/T)
+      RHNO3 = K0 + K2 / ( 1._dp + K2/K3 )
+      END FUNCTION
+!---------------------------------------------------------------------  
+      REAL(KIND=dp) FUNCTION RHO2HO2(M,H2O,T)
+      REAL(KIND=dp) :: M,H2O,T
+      REAL(KIND=dp) :: RX1,RX2,RX3
+! rate constant of the HO2 + HO2 --> H2O2 + O2 reaction
+!old      RX1= 2.3D-13 *EXP(600._dp/T)
+      RX1= 1.5D-12 *EXP(19._dp/T)         ! new: Christensen etal. 2002 (GRL,29(9))
+      RX2= 1.7D-33 *EXP(1000._dp/T) * M
+      RX3= 1.4D-21 *EXP(2200._dp/T) * H2O
+      RHO2HO2 = (RX1 + RX2)*(1._dp + RX3)
+      END FUNCTION
+!---------------------------------------------------------------------  
+      REAL(KIND=dp)  FUNCTION RCH3OOHOH(T) ! rate of CH3OOH + OH (reused often)
+      REAL(KIND=dp) :: T
+      RCH3OOHOH = 3.8D-12*exp(200._dp/T)
+      END FUNCTION
+
+#ENDINLINE 

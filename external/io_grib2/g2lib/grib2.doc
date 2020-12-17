@@ -1,0 +1,1220 @@
+                             GRIB2 USERS GUIDE (FORTRAN 90)
+
+Contents:
+
+- Introduction
+- GRIB2 Encoding Routines
+- GRIB2 Decoding Routines
+- Extracting GRIB2 Fields from a GRIB2 file
+- GRIB2 Tables/Templates
+- GRIB2 Routine Docblocks
+
+===============================================================================
+ 
+                                Introduction
+
+This document briefly describes the routines available for encoding/decoding
+GRIB Edition 2 (GRIB2) messages.  A basic familiarity with GRIB is assumed.
+
+A GRIB Edition 2 message is a machine independent format for storing
+one or more gridded data fields.  Each GRIB2 message consists of the 
+following sections:
+
+SECTION 0 - Indicator Section
+SECTION 1 - Identification Section
+SECTION 2 - (Local Use Section) - optional                           }
+SECTION 3 - Grid Definition Section                     }            }
+SECTION 4 - Product Definition Section    }             }            }(repeated)
+SECTION 5 - Data Representation Section   }             }(repeated)  }
+SECTION 6 - Bit-map Section               }(repeated)   }            }
+SECTION 7 - Data Section                  }             }            }
+SECTION 8 - End Section                   }             }            }
+
+Sequences of GRIB sections 2 to 7, 3 to 7, or sections 4 to 7 may be repeated
+within a single GRIB message.  All sections within such repeated sequences
+must be present and shall appear in the numerical order noted above.
+Unrepeated sections remain in effect until redefined.
+
+The above overview was taken from WMO's FM 92-XII GRIB description
+of the experimental GRIB Edition 2 form.
+
+===============================================================================
+
+                       GRIB2 Encoding Routines
+
+Since a GRIB2 message can contain gridded fields for many parameters on
+a number of different grids, several routines are used to encode a message.
+This should give users more flexibility in how to organize data
+within one or more GRIB2 messages.
+
+To start a new GRIB2 message, call subroutine GRIBCREATE.  GRIBCREATE 
+encodes Sections 0 and 1 at the beginning of the message.  This routine 
+must be used to create each message.
+
+Subroutine ADDLOCAL can be used to add a Local Use Section ( Section 2 ).
+Note that section is optional and need not appear in a GRIB2 message.
+
+Subroutine ADDGRID is used to encode a grid definition into Section 3.
+This grid definition defines the geometry of the the data values in the
+fields that follow it.  ADDGRID can be called again to change the grid 
+definition describing subsequent data fields.
+
+Each data field is added to the GRIB2 message using routine ADDFIELD,
+which adds Sections 4, 5, 6, and 7 to the message.
+
+After all desired data fields have been added to the GRIB2 message, a
+call to routine GRIBEND is needed to add the final section 8 to the
+message and to update the length of the message.  A call to GRIBEND
+is required for each GRIB2 message.
+
+Please see the "GRIB2 Routine Docblocks" section below for subroutine
+argument usage for the routines mentioned above.
+
+===============================================================================
+
+                      GRIB2 Decoding Routines
+
+Subroutine GB_INFO can be used to find out how many Local Use sections
+and data fields are contained in a given GRIB2 message.  In addition,
+this routine also returns the number of octets of the largest Local Use 
+section in the message.  This value can be used to ensure that the 
+output array of subroutine GETLOCAL ( described below ) is dimensioned
+large enough.
+
+Subroutine GETLOCAL will return the requested occurrence of Section 2
+from a given GRIB2 message.  
+
+GF_GETFLD can be used to get all information pertaining to the nth 
+data field in the message.  The subroutine returns all the unpacked values
+for each Section and Template in a Fortran 90 derived type gribfield,
+which is defined in module GRIB_MOD.  An option exists that lets the
+user decide if the subroutine should unpack the Bit-map ( if
+applicable ) and the data values or just return the field description
+information.
+Note that derived type gribfield contains pointers to dynamically
+allocated space that holds the contents of all arrays, and users are encouraged 
+to free up this memory, when it is no longer needed, by an explicit call
+to subroutine GF_FREE.
+
+Please see the "GRIB2 Routine Docblocks" section below for subroutine
+argument usage for the routines mentioned above.
+
+===============================================================================
+
+                Extracting GRIB2 Fields from a GRIB2 file
+
+Subroutine GETGB2 can be used to extract a specified field from a file
+containing many GRIB2 messages.  GETGB2 searches an index to find the 
+location of the user specified field.  The index can be supplied from a
+seperate GRIB2 index file, or it can be generated internally.
+
+The GRIB2 file ( and the index file, if supplied ) must be opened with
+a call to subroutine BAOPEN prior to the call to GETGB2.
+
+The decoded information for the selected GRIB field is returned in a 
+derived type variable, gfld.  Gfld is of type gribfield, which is defined
+in module grib_mod, so users of this routine will need to include
+the line "USE GRIB_MOD" in their calling routine.  Each component of the
+gribfield type is described in the OUTPUT ARGUMENT LIST in the docblock
+for subroutine GETGB2 below.
+
+Note that derived type gribfield contains pointers to many arrays of data.  
+The memory for these arrays is allocated when the values in the arrays 
+are set, to help minimize problems with array overloading.  Because of this,
+users are encouraged to free up this memory, when it is no longer
+needed, by an explicit call to subroutine GF_FREE.
+
+Example usage:
+
+      use grib_mod
+      type(gribfield) :: gfld
+      integer,dimension(200) :: jids,jpdt,jgdt
+      logical :: unpack=.true.
+      ifile=10
+  ! Open GRIB2 file 
+      call baopenr(ifile,"filename",iret)
+      .
+  ! Set GRIB2 field identification values to search for
+      jdisc=
+      jids(?)=
+      jpdtn=
+      jpdt(?)=
+      jgdtn=
+      jgdt(?)=
+
+  ! Get field from file
+      call getgb2(ifile,0,j,jdisc,jids,jpdtn,jpdt,jgdtn,jgdt,
+     &            unpack,j,gfld,iret)
+
+  ! Process field ...
+      firstval=gfld%fld(1)
+      lastval=gfld%fld(gfld%ndpts)
+      fldmax=maxval(gfld%fld)
+      fldmin=minval(gfld%fld)
+      
+  ! Free memory when done with field
+      call gf_free(gfld)
+
+      stop
+      end
+      
+Please see the "GRIB2 Routine Docblocks" section below for subroutine
+argument usage for the routines mentioned above.
+
+===============================================================================
+
+                         GRIB2 Tables/Templates
+
+WMO's GRIB2 specification "FM 92-XII GRIB - General Regularly-distributed
+Information in Binary Form" contains descriptions of each template
+and code table information.  This document can be found at
+http://www.wmo.ch/web/www/WMOCodes.html
+(PDF and MSWord formats are available)
+
+MDL has made an HTML version of the document available at
+http://www.nws.noaa.gov/tdl/iwt/grib2/frameset_grib2.htm.
+
+===============================================================================
+
+                       GRIB2 Routine Docblocks
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .                                       .
+! SUBPROGRAM:    gribcreate 
+!   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-04-28
+!
+! ABSTRACT: This subroutine initializes a new GRIB2 message and packs
+!   GRIB2 sections 0 (Indicator Section) and 1 (Identification Section).
+!   This routine is used with routines "addlocal", "addgrid", "addfield",
+!   and "gribend" to create a complete GRIB2 message.  Subroutine
+!   gribcreate must be called first to initialize a new GRIB2 message.
+!   Also, a call to gribend is required to complete GRIB2 message
+!   after all fields have been added.
+!
+! PROGRAM HISTORY LOG:
+! 2000-04-28  Gilbert
+!
+! USAGE:    CALL gribcreate(cgrib,lcgrib,listsec0,listsec1,ierr)
+!   INPUT ARGUMENT LIST:
+!     cgrib    - Character array to contain the GRIB2 message
+!     lcgrib   - Maximum length (bytes) of array cgrib.
+!     listsec0 - Contains information needed for GRIB Indicator Section 0.
+!                Must be dimensioned >= 2.
+!                listsec0(1)=Discipline-GRIB Master Table Number
+!                            (see Code Table 0.0)
+!                listsec0(2)=GRIB Edition Number (currently 2)
+!     listsec1 - Contains information needed for GRIB Identification Section 1.
+!                Must be dimensioned >= 13.
+!                listsec1(1)=Id of orginating centre (Common Code Table C-1)
+!                listsec1(2)=Id of orginating sub-centre (local table)
+!                listsec1(3)=GRIB Master Tables Version Number (Code Table 1.0)
+!                listsec1(4)=GRIB Local Tables Version Number (Code Table 1.1)
+!                listsec1(5)=Significance of Reference Time (Code Table 1.2)
+!                listsec1(6)=Reference Time - Year (4 digits)
+!                listsec1(7)=Reference Time - Month
+!                listsec1(8)=Reference Time - Day
+!                listsec1(9)=Reference Time - Hour
+!                listsec1(10)=Reference Time - Minute
+!                listsec1(11)=Reference Time - Second
+!                listsec1(12)=Production status of data (Code Table 1.3)
+!                listsec1(13)=Type of processed data (Code Table 1.4)
+!
+!   OUTPUT ARGUMENT LIST:      
+!     cgrib    - Character array to contain the GRIB2 message
+!     ierr     - Error return code.
+!                0 = no error
+!                1 = Tried to use for version other than GRIB Edition 2
+!
+! REMARKS: This routine is intended for use with routines "addlocal", 
+!          "addgrid", "addfield", and "gribend" to create a complete 
+!          GRIB2 message.
+!
+! ATTRIBUTES:
+!   LANGUAGE: Fortran 90
+!   MACHINE:  IBM SP
+!
+!$$$
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .                                       .
+! SUBPROGRAM:    addlocal 
+!   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-01
+!
+! ABSTRACT: This subroutine adds a Local Use Section (Section 2) to 
+!   a GRIB2 message.
+!   This routine is used with routines "gribcreate", "addgrid", "addfield",
+!   and "gribend" to create a complete GRIB2 message.  Subroutine
+!   gribcreate must be called first to initialize a new GRIB2 message.
+!
+! PROGRAM HISTORY LOG:
+! 2000-05-01  Gilbert
+!
+! USAGE:    CALL addlocal(cgrib,lcgrib,csec2,lcsec2,ierr)
+!   INPUT ARGUMENT LIST:
+!     cgrib    - Character array to contain the GRIB2 message
+!     lcgrib   - Maximum length (bytes) of array cgrib.
+!     csec2    - Character array containing information to be added to
+!                Section 2.
+!     lcsec2   - Number of bytes of character array csec2 to be added to
+!                Section 2.
+!
+!   OUTPUT ARGUMENT LIST:      
+!     cgrib    - Character array to contain the GRIB2 message
+!     ierr     - Error return code.
+!                0 = no error
+!                1 = GRIB message was not initialized.  Need to call
+!                    routine gribcreate first.
+!                2 = GRIB message already complete.  Cannot add new section.
+!                3 = Sum of Section byte counts doesn't add to total byte count.
+!                4 = Previous Section was not 1 or 7.
+!
+! REMARKS: Note that the Local Use Section ( Section 2 ) can only follow
+!          Section 1 or Section 7 in a GRIB2 message.
+!
+! ATTRIBUTES:
+!   LANGUAGE: Fortran 90
+!   MACHINE:  IBM SP
+!
+!$$$
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .                                       .
+! SUBPROGRAM:    addgrid 
+!   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-01
+!
+! ABSTRACT: This subroutine packs up a Grid Definition Section (Section 3) 
+!   and adds it to a GRIB2 message.
+!   This routine is used with routines "gribcreate", "addlocal", "addfield",
+!   and "gribend" to create a complete GRIB2 message.  Subroutine
+!   gribcreate must be called first to initialize a new GRIB2 message.
+!
+! PROGRAM HISTORY LOG:
+! 2000-05-01  Gilbert
+!
+! USAGE:    CALL addgrid(cgrib,lcgrib,igds,igdstmpl,igdstmplen,
+!                        ideflist,idefnum,ierr)
+!   INPUT ARGUMENT LIST:
+!     cgrib    - Character array to contain the GRIB2 message
+!     lcgrib   - Maximum length (bytes) of array cgrib.
+!     igds     - Contains information needed for GRIB Grid Definition Section 3.
+!                Must be dimensioned >= 5.
+!                igds(1)=Source of grid definition (see Code Table 3.0)
+!                igds(2)=Number of grid points in the defined grid.
+!                igds(3)=Number of octets needed for each 
+!                            additional grid points definition.  
+!                            Used to define number of
+!                            points in each row ( or column ) for
+!                            non-regular grids.  
+!                            = 0, if using regular grid.
+!                igds(4)=Interpretation of list for optional points 
+!                            definition.  (Code Table 3.11)
+!                igds(5)=Grid Definition Template Number (Code Table 3.1)
+!     igdstmpl - Contains the data values for the specified Grid Definition
+!                Template ( NN=igds(5) ).  Each element of this integer 
+!                array contains an entry (in the order specified) of Grid
+!                Defintion Template 3.NN
+!   igdstmplen - Max dimension of igdstmpl()
+!     ideflist - (Used if igds(3) .ne. 0)  This array contains the
+!                number of grid points contained in each row ( or column )
+!      idefnum - (Used if igds(3) .ne. 0)  The number of entries
+!                in array ideflist.  i.e. number of rows ( or columns )
+!                for which optional grid points are defined.
+!
+!   OUTPUT ARGUMENT LIST:      
+!     cgrib    - Character array to contain the GRIB2 message
+!     ierr     - Error return code.
+!                0 = no error
+!                1 = GRIB message was not initialized.  Need to call
+!                    routine gribcreate first.
+!                2 = GRIB message already complete.  Cannot add new section.
+!                3 = Sum of Section byte counts doesn't add to total byte count.
+!                4 = Previous Section was not 1, 2 or 7.
+!                5 = Could not find requested Grid Definition Template.
+!
+! REMARKS: Note that the Local Use Section ( Section 2 ) can only follow
+!          Section 1 or Section 7 in a GRIB2 message.
+!
+! ATTRIBUTES:
+!   LANGUAGE: Fortran 90
+!   MACHINE:  IBM SP
+!
+!$$$
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .                                       .
+! SUBPROGRAM:    addfield 
+!   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-02
+!
+! ABSTRACT: This subroutine packs up Sections 4 through 7 for a given field
+!   and adds them to a GRIB2 message.  They are Product Definition Section,
+!   Data Representation Section, Bit-Map Section and Data Section, 
+!   respectively.
+!   This routine is used with routines "gribcreate", "addlocal", "addgrid",
+!   and "gribend" to create a complete GRIB2 message.  Subroutine
+!   gribcreate must be called first to initialize a new GRIB2 message.
+!   Also, subroutine addgrid must be called after gribcreate and
+!   before this routine to add the appropriate grid description to
+!   the GRIB2 message.   Also, a call to gribend is required to complete 
+!   GRIB2 message after all fields have been added.
+!
+! PROGRAM HISTORY LOG:
+! 2000-05-02  Gilbert
+! 2002-12-17  Gilbert  - Added support for new templates using
+!                        PNG and JPEG2000 algorithms/templates.
+! 2004-06-22  Gilbert  - Added check to determine if packing algorithm failed.
+!
+! USAGE:    CALL addfield(cgrib,lcgrib,ipdsnum,ipdstmpl,ipdstmplen,
+!                         coordlist,numcoord,idrsnum,idrstmpl,
+!                         idrstmplen,fld,ngrdpts,ibmap,bmap,ierr)
+!   INPUT ARGUMENT LIST:
+!     cgrib    - Character array to contain the GRIB2 message
+!     lcgrib   - Maximum length (bytes) of array cgrib.
+!     ipdsnum  - Product Definition Template Number ( see Code Table 4.0)
+!     ipdstmpl - Contains the data values for the specified Product Definition
+!                Template ( N=ipdsnum ).  Each element of this integer 
+!                array contains an entry (in the order specified) of Product
+!                Defintion Template 4.N
+!   ipdstmplen - Max dimension of ipdstmpl()
+!     coordlist- Array containg floating point values intended to document
+!                the vertical discretisation associated to model data
+!                on hybrid coordinate vertical levels.
+!     numcoord - number of values in array coordlist.
+!     idrsnum  - Data Representation Template Number ( see Code Table 5.0 )
+!     idrstmpl - Contains the data values for the specified Data Representation
+!                Template ( N=idrsnum ).  Each element of this integer 
+!                array contains an entry (in the order specified) of Data
+!                Representation Template 5.N
+!                Note that some values in this template (eg. reference
+!                values, number of bits, etc...) may be changed by the
+!                data packing algorithms.
+!                Use this to specify scaling factors and order of
+!                spatial differencing, if desired.
+!   idrstmplen - Max dimension of idrstmpl()
+!     fld()    - Array of data points to pack.
+!     ngrdpts  - Number of data points in grid.
+!                i.e.  size of fld and bmap.
+!     ibmap    - Bitmap indicator ( see Code Table 6.0 )
+!                0 = bitmap applies and is included in Section 6.
+!                1-253 = Predefined bitmap applies
+!                254 = Previously defined bitmap applies to this field
+!                255 = Bit map does not apply to this product.
+!     bmap()   - Logical*1 array containing bitmap to be added. 
+!                ( if ibmap=0 or ibmap=254)
+!
+!   OUTPUT ARGUMENT LIST:      
+!     cgrib    - Character array to contain the GRIB2 message
+!     ierr     - Error return code.
+!                0 = no error
+!                1 = GRIB message was not initialized.  Need to call
+!                    routine gribcreate first.
+!                2 = GRIB message already complete.  Cannot add new section.
+!                3 = Sum of Section byte counts doesn't add to total byte count.
+!                4 = Previous Section was not 3 or 7.
+!                5 = Could not find requested Product Definition Template.
+!                6 = Section 3 (GDS) not previously defined in message
+!                7 = Tried to use unsupported Data Representationi Template
+!                8 = Specified use of a previously defined bitmap, but one
+!                    does not exist in the GRIB message.
+!                9 = GDT of one of 5.50 through 5.53 required to pack
+!                    using DRT 5.51
+!               10 = Error packing data field.
+!
+! REMARKS: Note that the Local Use Section ( Section 2 ) can only follow
+!          Section 1 or Section 7 in a GRIB2 message.
+!
+! ATTRIBUTES:
+!   LANGUAGE: Fortran 90
+!   MACHINE:  IBM SP
+!
+!$$$
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .                                       .
+! SUBPROGRAM:    gribend 
+!   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-02
+!
+! ABSTRACT: This subroutine finalizes a GRIB message after all grids
+!   and fields have been added.  It adds the End Section ( "7777" )
+!   to the end of the GRIB message and calculates the length and stores
+!   it in the appropriate place in Section 0.
+!   This routine is used with routines "gribcreate", "addlocal", "addgrid",
+!   and "addfield" to create a complete GRIB2 message.  Subroutine
+!   gribcreate must be called first to initialize a new GRIB2 message.
+!
+! PROGRAM HISTORY LOG:
+! 2000-05-02  Gilbert
+!
+! USAGE:    CALL gribend(cgrib,lcgrib,lengrib,ierr)
+!   INPUT ARGUMENT LIST:
+!     cgrib    - Character array to contain the GRIB2 message
+!     lcgrib   - Maximum length (bytes) of array cgrib.
+!
+!   OUTPUT ARGUMENT LIST:      
+!     cgrib    - Character array to contain the GRIB2 message
+!     lengrib  - Length of the final GRIB2 message in octets (bytes)
+!     ierr     - Error return code.
+!                0 = no error
+!                1 = GRIB message was not initialized.  Need to call
+!                    routine gribcreate first.
+!                2 = GRIB message already complete.  
+!                3 = Sum of Section byte counts doesn't add to total byte count.
+!                4 = Previous Section was not 7.
+!
+! REMARKS: This routine is intended for use with routines "gribcreate", 
+!          "addlocal", "addgrid", and "addfield" to create a complete 
+!          GRIB2 message.
+!
+! ATTRIBUTES:
+!   LANGUAGE: Fortran 90
+!   MACHINE:  IBM SP
+!
+!$$$
+
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .                                       .
+! SUBPROGRAM:    gb_info 
+!   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-25
+!
+! ABSTRACT: This subroutine searches through a GRIB2 message and
+!   returns the number of gridded fields found in the message and
+!   the number (and maximum size) of Local Use Sections.
+!   Also various checks  are performed
+!   to see if the message is a valid GRIB2 message.
+!
+! PROGRAM HISTORY LOG:
+! 2000-05-25  Gilbert
+!
+! USAGE:    CALL gb_info(cgrib,lcgrib,listsec0,listsec1,
+!     &                    numfields,numlocal,maxlocal,ierr)
+!   INPUT ARGUMENT LIST:
+!     cgrib    - Character array that contains the GRIB2 message
+!     lcgrib   - Length (in bytes) of GRIB message in array cgrib.
+!
+!   OUTPUT ARGUMENT LIST:      
+!     listsec0 - Contains information decoded from GRIB Indicator Section 0.
+!                Must be dimensioned >= 2.
+!                listsec0(1)=Discipline-GRIB Master Table Number
+!                            (see Code Table 0.0)
+!                listsec0(2)=GRIB Edition Number (currently 2)
+!                listsec0(3)=Length of GRIB message
+!     listsec1 - Contains information read from GRIB Identification Section 1.
+!                Must be dimensioned >= 13.
+!                listsec1(1)=Id of orginating centre (Common Code Table C-1)
+!                listsec1(2)=Id of orginating sub-centre (local table)
+!                listsec1(3)=GRIB Master Tables Version Number (Code Table 1.0)
+!                listsec1(4)=GRIB Local Tables Version Number 
+!                listsec1(5)=Significance of Reference Time (Code Table 1.1)
+!                listsec1(6)=Reference Time - Year (4 digits)
+!                listsec1(7)=Reference Time - Month
+!                listsec1(8)=Reference Time - Day
+!                listsec1(9)=Reference Time - Hour
+!                listsec1(10)=Reference Time - Minute
+!                listsec1(11)=Reference Time - Second
+!                listsec1(12)=Production status of data (Code Table 1.2)
+!                listsec1(13)=Type of processed data (Code Table 1.3)
+!     numfields- The number of gridded fields found in the GRIB message.
+!     numlocal - The number of Local Use Sections ( Section 2 ) found in 
+!                the GRIB message.
+!     maxlocal-  The size of the largest Local Use Section ( Section 2 ).
+!                Can be used to ensure that the return array passed
+!                to subroutine getlocal is dimensioned large enough.
+!     ierr     - Error return code.
+!                0 = no error
+!                1 = Beginning characters "GRIB" not found.
+!                2 = GRIB message is not Edition 2.
+!                3 = Could not find Section 1, where expected.
+!                4 = End string "7777" found, but not where expected.
+!                5 = End string "7777" not found at end of message.
+!                6 = Invalid section number found.
+!
+! REMARKS: None
+!
+! ATTRIBUTES:
+!   LANGUAGE: Fortran 90
+!   MACHINE:  IBM SP
+!
+!$$$
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .                                       .
+! SUBPROGRAM:    getlocal 
+!   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-25
+!
+! ABSTRACT: This subroutine returns the contents of Section 2 ( Local 
+!   Use Section ) from a GRIB2 message.  Since there can be multiple
+!   occurrences of Section 2 within a GRIB message, the calling routine
+!   indicates which occurrence is being requested with the localnum argument.
+!
+! PROGRAM HISTORY LOG:
+! 2000-05-25  Gilbert
+!
+! USAGE:    CALL getlocal(cgrib,lcgrib,localnum,csec2,lcsec2,ierr)
+!   INPUT ARGUMENT LIST:
+!     cgrib    - Character array that contains the GRIB2 message
+!     lcgrib   - Length (in bytes) of GRIB message in array cgrib.
+!     localnum - The nth occurrence of Section 2 requested.
+!
+!   OUTPUT ARGUMENT LIST:      
+!     csec2    - Character array containing information read from 
+!                Section 2.
+!                The dimension of this array can be obtained in advance
+!                from argument maxlocal, which is returned from subroutine 
+!                gb_info.
+!     lcsec2   - Number of bytes of character array csec2 read from
+!                Section 2.
+!     ierr     - Error return code.
+!                0 = no error
+!                1 = Beginning characters "GRIB" not found.
+!                2 = GRIB message is not Edition 2.
+!                3 = The section 2 request number was not positive.
+!                4 = End string "7777" found, but not where expected.
+!                5 = End string "7777" not found at end of message.
+!                6 = GRIB message did not contain the requested number of
+!                    Local Use Sections.
+!
+! REMARKS: Note that subroutine gribinfo can be used to first determine
+!          how many Local Use sections exist in a given GRIB message.
+!
+! ATTRIBUTES:
+!   LANGUAGE: Fortran 90
+!   MACHINE:  IBM SP
+!
+!$$$
+
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .                                       .
+! SUBPROGRAM:    gf_getfld 
+!   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
+!
+! ABSTRACT: This subroutine returns the Grid Definition, Product Definition,
+!   Bit-map ( if applicable ), and the unpacked data for a given data
+!   field.  All of the information returned is stored in a derived
+!   type variable, gfld.  Gfld is of type gribfield, which is defined
+!   in module grib_mod, so users of this routine will need to include
+!   the line "USE GRIB_MOD" in their calling routine.  Each component of the 
+!   gribfield type is described in the OUTPUT ARGUMENT LIST section below.
+!
+!   Since there can be multiple data fields packed into a GRIB2
+!   message, the calling routine indicates which field is being requested
+!   with the ifldnum argument.
+!
+! PROGRAM HISTORY LOG:
+! 2000-05-26  Gilbert
+! 2002-01-24  Gilbert  - Changed to pass back derived type gribfield
+!                        variable through argument list, instead of
+!                        having many different arguments.
+!
+! USAGE:    CALL gf_getfld(cgrib,lcgrib,ifldnum,unpack,expand,gfld,ierr)
+!   INPUT ARGUMENT LIST:
+!     cgrib    - Character array that contains the GRIB2 message
+!     lcgrib   - Length (in bytes) of GRIB message array cgrib.
+!     ifldnum  - Specifies which field in the GRIB2 message to return.
+!     unpack   - Logical value indicating whether to unpack bitmap/data
+!                .true. = unpack bitmap and data values
+!                .false. = do not unpack bitmap and data values
+!     expand   - Boolean value indicating whether the data points should be
+!                expanded to the correspond grid, if a bit-map is present.
+!                1 = if possible, expand data field to grid, inserting zero
+!                    values at gridpoints that are bitmapped out.
+!                    (SEE REMARKS2)
+!                0 = do not expand data field, leaving it an array of
+!                    consecutive data points for each "1" in the bitmap.
+!                This argument is ignored if unpack == 0 OR if the
+!                returned field does not contain a bit-map.
+!
+!   OUTPUT ARGUMENT LIST:      
+!     gfld - derived type gribfield ( defined in module grib_mod )
+!            ( NOTE: See Remarks Section )
+!        gfld%version = GRIB edition number ( currently 2 )
+!        gfld%discipline = Message Discipline ( see Code Table 0.0 )
+!        gfld%idsect() = Contains the entries in the Identification
+!                        Section ( Section 1 )
+!                        This element is actually a pointer to an array
+!                        that holds the data.
+!            gfld%idsect(1)  = Identification of originating Centre 
+!                                    ( see Common Code Table C-1 )
+!                             7 - US National Weather Service
+!            gfld%idsect(2)  = Identification of originating Sub-centre
+!            gfld%idsect(3)  = GRIB Master Tables Version Number
+!                                    ( see Code Table 1.0 )
+!                             0 - Experimental
+!                             1 - Initial operational version number
+!            gfld%idsect(4)  = GRIB Local Tables Version Number
+!                                    ( see Code Table 1.1 )
+!                             0     - Local tables not used
+!                             1-254 - Number of local tables version used
+!            gfld%idsect(5)  = Significance of Reference Time (Code Table 1.2)
+!                             0 - Analysis
+!                             1 - Start of forecast
+!                             2 - Verifying time of forecast
+!                             3 - Observation time
+!            gfld%idsect(6)  = Year ( 4 digits )
+!            gfld%idsect(7)  = Month
+!            gfld%idsect(8)  = Day
+!            gfld%idsect(9)  = Hour
+!            gfld%idsect(10)  = Minute
+!            gfld%idsect(11)  = Second
+!            gfld%idsect(12)  = Production status of processed data
+!                                    ( see Code Table 1.3 )
+!                              0 - Operational products
+!                              1 - Operational test products
+!                              2 - Research products
+!                              3 - Re-analysis products
+!            gfld%idsect(13)  = Type of processed data ( see Code Table 1.4 )
+!                              0  - Analysis products
+!                              1  - Forecast products
+!                              2  - Analysis and forecast products
+!                              3  - Control forecast products
+!                              4  - Perturbed forecast products
+!                              5  - Control and perturbed forecast products
+!                              6  - Processed satellite observations
+!                              7  - Processed radar observations
+!        gfld%idsectlen = Number of elements in gfld%idsect().
+!        gfld%ifldnum = field number within GRIB message
+!        gfld%griddef = Source of grid definition (see Code Table 3.0)
+!                      0 - Specified in Code table 3.1
+!                      1 - Predetermined grid Defined by originating centre
+!        gfld%ngrdpts = Number of grid points in the defined grid.
+!        gfld%numoct_opt = Number of octets needed for each 
+!                          additional grid points definition.  
+!                          Used to define number of
+!                          points in each row ( or column ) for
+!                          non-regular grids.  
+!                          = 0, if using regular grid.
+!        gfld%interp_opt = Interpretation of list for optional points 
+!                          definition.  (Code Table 3.11)
+!        gfld%igdtnum = Grid Definition Template Number (Code Table 3.1)
+!        gfld%igdtmpl() = Contains the data values for the specified Grid 
+!                         Definition Template ( NN=gfld%igdtnum ).  Each 
+!                         element of this integer array contains an entry (in 
+!                         the order specified) of Grid Defintion Template 3.NN
+!                         This element is actually a pointer to an array
+!                         that holds the data.
+!        gfld%igdtlen = Number of elements in gfld%igdtmpl().  i.e. number of
+!                       entries in Grid Defintion Template 3.NN  
+!                       ( NN=gfld%igdtnum ).
+!        gfld%list_opt() = (Used if gfld%numoct_opt .ne. 0)  This array 
+!                          contains the number of grid points contained in 
+!                          each row ( or column ).  (part of Section 3)
+!                          This element is actually a pointer to an array
+!                          that holds the data.  This pointer is nullified
+!                          if gfld%numoct_opt=0.
+!        gfld%num_opt = (Used if gfld%numoct_opt .ne. 0)  The number of entries
+!                       in array ideflist.  i.e. number of rows ( or columns )
+!                       for which optional grid points are defined.  This value
+!                       is set to zero, if gfld%numoct_opt=0.
+!        gfdl%ipdtnum = Product Definition Template Number (see Code Table 4.0)
+!        gfld%ipdtmpl() = Contains the data values for the specified Product 
+!                         Definition Template ( N=gfdl%ipdtnum ).  Each element
+!                         of this integer array contains an entry (in the 
+!                         order specified) of Product Defintion Template 4.N.
+!                         This element is actually a pointer to an array
+!                         that holds the data.
+!        gfld%ipdtlen = Number of elements in gfld%ipdtmpl().  i.e. number of
+!                       entries in Product Defintion Template 4.N  
+!                       ( N=gfdl%ipdtnum ).
+!        gfld%coord_list() = Real array containing floating point values 
+!                            intended to document the vertical discretisation
+!                            associated to model data on hybrid coordinate
+!                            vertical levels.  (part of Section 4)
+!                            This element is actually a pointer to an array
+!                            that holds the data.
+!        gfld%num_coord = number of values in array gfld%coord_list().
+!        gfld%ndpts = Number of data points unpacked and returned.
+!        gfld%idrtnum = Data Representation Template Number 
+!                       ( see Code Table 5.0)
+!        gfld%idrtmpl() = Contains the data values for the specified Data 
+!                         Representation Template ( N=gfld%idrtnum ).  Each 
+!                         element of this integer array contains an entry 
+!                         (in the order specified) of Product Defintion 
+!                         Template 5.N.
+!                         This element is actually a pointer to an array
+!                         that holds the data.
+!        gfld%idrtlen = Number of elements in gfld%idrtmpl().  i.e. number 
+!                       of entries in Data Representation Template 5.N 
+!                       ( N=gfld%idrtnum ).
+!        gfld%unpacked = logical value indicating whether the bitmap and
+!                        data values were unpacked.  If false, 
+!                        gfld%bmap and gfld%fld pointers are nullified.
+!        gfld%expanded = Logical value indicating whether the data field
+!                         was expanded to the grid in the case where a
+!                         bit-map is present.  If true, the data points in
+!                         gfld%fld match the grid points and zeros were
+!                         inserted at grid points where data was bit-mapped
+!                         out.  If false, the data values in gfld%fld were
+!                         not expanded to the grid and are just a consecutive
+!                         array of data points corresponding to each value of
+!                         "1" in gfld%bmap.
+!        gfld%ibmap = Bitmap indicator ( see Code Table 6.0 )
+!                     0 = bitmap applies and is included in Section 6.
+!                     1-253 = Predefined bitmap applies
+!                     254 = Previously defined bitmap applies to this field
+!                     255 = Bit map does not apply to this product.
+!        gfld%bmap() = Logical*1 array containing decoded bitmap, 
+!                      if ibmap=0 or ibap=254.  Otherwise nullified.
+!                      This element is actually a pointer to an array
+!                      that holds the data.
+!        gfld%fld() = Array of gfld%ndpts unpacked data points.
+!                     This element is actually a pointer to an array
+!                     that holds the data.
+!     ierr     - Error return code.
+!                0 = no error
+!                1 = Beginning characters "GRIB" not found.
+!                2 = GRIB message is not Edition 2.
+!                3 = The data field request number was not positive.
+!                4 = End string "7777" found, but not where expected.
+!                6 = GRIB message did not contain the requested number of
+!                    data fields.
+!                7 = End string "7777" not found at end of message.
+!                8 = Unrecognized Section encountered.
+!                9 = Data Representation Template 5.NN not yet implemented.
+!               15 = Error unpacking Section 1.
+!               10 = Error unpacking Section 3.
+!               11 = Error unpacking Section 4.
+!               12 = Error unpacking Section 5.
+!               13 = Error unpacking Section 6.
+!               14 = Error unpacking Section 7.
+!
+! REMARKS: Note that derived type gribfield contains pointers to many
+!          arrays of data.  The memory for these arrays is allocated
+!          when the values in the arrays are set, to help minimize
+!          problems with array overloading.  Because of this users
+!          are encouraged to free up this memory, when it is no longer
+!          needed, by an explicit call to subroutine gf_free.
+!          ( i.e.   CALL GF_FREE(GFLD) )
+!
+!          Subroutine gb_info can be used to first determine
+!          how many data fields exist in a given GRIB message.
+!
+! REMARKS2: It may not always be possible to expand a bit-mapped data field.
+!           If a pre-defined bit-map is used and not included in the GRIB2
+!           message itself, this routine would not have the necessary
+!           information to expand the data.  In this case, gfld%expanded would
+!           would be set to 0 (false), regardless of the value of input
+!           argument expand.
+!
+! ATTRIBUTES:
+!   LANGUAGE: Fortran 90
+!   MACHINE:  IBM SP
+!
+!$$$
+
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .                                       .
+! SUBPROGRAM:    gf_free 
+!   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
+!
+! ABSTRACT: This subroutine frees up memory that was used to store
+!   array values in derived type gribfield.
+!
+! PROGRAM HISTORY LOG:
+! 2000-05-26  Gilbert
+!
+! USAGE:    CALL gf_free(gfld)
+!   INPUT ARGUMENT LIST:
+!     gfld - derived type gribfield ( defined in module grib_mod )
+!
+!   OUTPUT ARGUMENT LIST:      
+!     gfld - derived type gribfield ( defined in module grib_mod )
+!        gfld%version = GRIB edition number
+!        gfld%discipline = Message Discipline ( see Code Table 0.0 )
+!        gfld%idsect() = Contains the entries in the Identification
+!                        Section ( Section 1 )
+!                        This element is actually a pointer to an array
+!                        that holds the data.
+!            gfld%idsect(1)  = Identification of originating Centre
+!                                    ( see Common Code Table C-1 )
+!            gfld%idsect(2)  = Identification of originating Sub-centre
+!            gfld%idsect(3)  = GRIB Master Tables Version Number
+!                                    ( see Code Table 1.0 )
+!            gfld%idsect(4)  = GRIB Local Tables Version Number
+!                                    ( see Code Table 1.1 )
+!            gfld%idsect(5)  = Significance of Reference Time (Code Table 1.2)
+!            gfld%idsect(6)  = Year ( 4 digits )
+!            gfld%idsect(7)  = Month
+!            gfld%idsect(8)  = Day
+!            gfld%idsect(9)  = Hour
+!            gfld%idsect(10)  = Minute
+!            gfld%idsect(11)  = Second
+!            gfld%idsect(12)  = Production status of processed data
+!                                    ( see Code Table 1.3 )
+!            gfld%idsect(13)  = Type of processed data ( see Code Table 1.4 )
+!        gfld%idsectlen = Number of elements in gfld%idsect().
+!        gfld%ifldnum = field number within GRIB message
+!        gfld%griddef = Source of grid definition (see Code Table 3.0)
+!        gfld%ngrdpts = Number of grid points in the defined grid.
+!        gfld%numoct_opt = Number of octets needed for each 
+!                          additional grid points definition.  
+!                          Used to define number of
+!                          points in each row ( or column ) for
+!                          non-regular grids.  
+!                          = 0, if using regular grid.
+!        gfld%interp_opt = Interpretation of list for optional points 
+!                          definition.  (Code Table 3.11)
+!        gfld%igdtnum = Grid Definition Template Number (Code Table 3.1)
+!        gfld%igdtmpl() = Contains the data values for the specified Grid 
+!                         Definition Template ( NN=gfld%igdtnum ).  Each 
+!                         element of this integer array contains an entry (in 
+!                         the order specified) of Grid Defintion Template 3.NN
+!                         This element is actually a pointer to an array
+!                         that holds the data.
+!        gfld%igdtlen = Number of elements in gfld%igdtmpl().  i.e. number of
+!                       entries in Grid Defintion Template 3.NN  
+!                       ( NN=gfld%igdtnum ).
+!        gfld%list_opt() = (Used if gfld%numoct_opt .ne. 0)  This array 
+!                          contains the number of grid points contained in 
+!                          each row ( or column ).  (part of Section 3)
+!                          This element is actually a pointer to an array
+!                          that holds the data.  This pointer is nullified
+!                          if gfld%numoct_opt=0.
+!        gfld%num_opt = (Used if gfld%numoct_opt .ne. 0)  The number of entries
+!                       in array ideflist.  i.e. number of rows ( or columns )
+!                       for which optional grid points are defined.  This value
+!                       is set to zero, if gfld%numoct_opt=0.
+!        gfdl%ipdtnum = Product Definition Template Number (see Code Table 4.0)
+!        gfld%ipdtmpl() = Contains the data values for the specified Product 
+!                         Definition Template ( N=gfdl%ipdtnum ).  Each element
+!                         of this integer array contains an entry (in the 
+!                         order specified) of Product Defintion Template 4.N.
+!                         This element is actually a pointer to an array
+!                         that holds the data.
+!        gfld%ipdtlen = Number of elements in gfld%ipdtmpl().  i.e. number of
+!                       entries in Product Defintion Template 4.N  
+!                       ( N=gfdl%ipdtnum ).
+!        gfld%coord_list() = Real array containing floating point values 
+!                            intended to document the vertical discretisation
+!                            associated to model data on hybrid coordinate
+!                            vertical levels.  (part of Section 4)
+!                            This element is actually a pointer to an array
+!                            that holds the data.
+!        gfld%num_coord = number of values in array gfld%coord_list().
+!        gfld%ndpts = Number of data points unpacked and returned.
+!        gfld%idrtnum = Data Representation Template Number 
+!                       ( see Code Table 5.0)
+!        gfld%idrtmpl() = Contains the data values for the specified Data 
+!                         Representation Template ( N=gfld%idrtnum ).  Each 
+!                         element of this integer array contains an entry 
+!                         (in the order specified) of Product Defintion 
+!                         Template 5.N.
+!                         This element is actually a pointer to an array
+!                         that holds the data.
+!        gfld%idrtlen = Number of elements in gfld%idrtmpl().  i.e. number 
+!                       of entries in Data Representation Template 5.N 
+!                       ( N=gfld%idrtnum ).
+!        gfld%unpacked = logical value indicating whether the bitmap and
+!                        data values were unpacked.  If false, gfld%ndpts
+!                        is set to zero, and gfld%bmap and gfld%fld 
+!                        pointers are nullified.
+!        gfld%expanded = Logical value indicating whether the data field
+!                         was expanded to the grid in the case where a
+!                         bit-map is present.  If true, the data points in
+!                         gfld%fld match the grid points and zeros were
+!                         inserted at grid points where data was bit-mapped
+!                         out.  If false, the data values in gfld%fld were
+!                         not expanded to the grid and are just a consecutive
+!                         array of data points corresponding to each value of
+!                         "1" in gfld%bmap.
+!        gfld%ibmap = Bitmap indicator ( see Code Table 6.0 )
+!                     0 = bitmap applies and is included in Section 6.
+!                     1-253 = Predefined bitmap applies
+!                     254 = Previously defined bitmap applies to this field
+!                     255 = Bit map does not apply to this product.
+!        gfld%bmap() - Logical*1 array containing decoded bitmap, 
+!                      if ibmap=0 or ibap=254.  Otherwise nullified.
+!                      This element is actually a pointer to an array
+!                      that holds the data.
+!        gfld%fld() = Array of gfld%ndpts unpacked data points.
+!                     This element is actually a pointer to an array
+!                     that holds the data.
+!
+! REMARKS: 
+!
+! ATTRIBUTES:
+!   LANGUAGE: Fortran 90
+!   MACHINE:  IBM SP
+!
+!$$$
+
+
+
+C$$$  SUBPROGRAM DOCUMENTATION BLOCK
+C
+C SUBPROGRAM: GETGB2         FINDS AND UNPACKS A GRIB MESSAGE
+C   PRGMMR: IREDELL          ORG: W/NMC23     DATE: 94-04-01
+C
+C ABSTRACT: FIND AND UNPACK A GRIB MESSAGE.
+C   READ A GRIB INDEX FILE (OR OPTIONALLY THE GRIB FILE ITSELF)
+C   TO GET THE INDEX BUFFER (I.E. TABLE OF CONTENTS) FOR THE GRIB FILE.
+C   FIND IN THE INDEX BUFFER A REFERENCE TO THE GRIB FIELD REQUESTED.
+C   THE GRIB FIELD REQUEST SPECIFIES THE NUMBER OF FIELDS TO SKIP
+C   AND THE UNPACKED IDENTIFICATION SECTION, GRID DEFINITION TEMPLATE AND
+C   PRODUCT DEFINTION SECTION PARAMETERS.  (A REQUESTED PARAMETER
+C   OF -9999 MEANS TO ALLOW ANY VALUE OF THIS PARAMETER TO BE FOUND.)
+C   IF THE REQUESTED GRIB FIELD IS FOUND, THEN IT IS READ FROM THE
+C   GRIB FILE AND UNPACKED.  ITS NUMBER IS RETURNED ALONG WITH
+C   THE ASSOCIATED UNPACKED PARAMETERS.  THE BITMAP (IF ANY),
+C   AND THE DATA VALUES ARE UNPACKED ONLY IF ARGUMENT "UNPACK" IS SET TO
+C   TRUE.  IF THE GRIB FIELD IS NOT FOUND, THEN THE
+C   RETURN CODE WILL BE NONZERO.
+C
+C   The decoded information for the selected GRIB field
+C   is returned in a derived type variable, gfld.
+C   Gfld is of type gribfield, which is defined
+C   in module grib_mod, so users of this routine will need to include
+C   the line "USE GRIB_MOD" in their calling routine.  Each component of the
+C   gribfield type is described in the OUTPUT ARGUMENT LIST section below.
+C
+C PROGRAM HISTORY LOG:
+C   94-04-01  IREDELL
+C   95-10-31  IREDELL     MODULARIZED PORTIONS OF CODE INTO SUBPROGRAMS
+C                         AND ALLOWED FOR UNSPECIFIED INDEX FILE
+C 2002-01-11  GILBERT     MODIFIED FROM GETGB AND GETGBM TO WORK WITH GRIB2
+C
+C USAGE:    CALL GETGB2(LUGB,LUGI,J,JDISC,JIDS,JPDTN,JPDT,JGDTN,JGDT,
+C    &                  UNPACK,K,GFLD,IRET)
+C   INPUT ARGUMENTS:
+C     LUGB         INTEGER UNIT OF THE UNBLOCKED GRIB DATA FILE.
+C                  FILE MUST BE OPENED WITH BAOPEN OR BAOPENR BEFORE CALLING 
+C                  THIS ROUTINE.
+C     LUGI         INTEGER UNIT OF THE UNBLOCKED GRIB INDEX FILE.
+C                  IF NONZERO, FILE MUST BE OPENED WITH BAOPEN BAOPENR BEFORE 
+C                  CALLING THIS ROUTINE.
+C                  >0 - READ INDEX FROM INDEX FILE LUGI, IF INDEX DOESN"T
+C                       ALREADY EXIST.
+C                  =0 - TO GET INDEX BUFFER FROM THE GRIB FILE, IF INDEX
+C                       DOESN"T ALREADY EXIST.
+C                  <0 - FORCE REREAD OF INDEX FROM INDEX FILE ABS(LUGI).
+C                  =LUGB - FORCE REGENERATION OF INDEX FROM GRIB2 FILE LUGB.
+C     J            INTEGER NUMBER OF FIELDS TO SKIP
+C                  (=0 TO SEARCH FROM BEGINNING)
+C     JDISC        GRIB2 DISCIPLINE NUMBER OF REQUESTED FIELD
+C                  ( IF = -1, ACCEPT ANY DISCIPLINE)
+C                  ( SEE CODE TABLE 0.0 )
+C                  0 - Meteorological products
+C                  1 - Hydrological products
+C                  2 - Land surface products
+C                  3 - Space products
+C                  10 - Oceanographic products
+C     JIDS()       INTEGER ARRAY OF VALUES IN THE IDENTIFICATION SECTION
+C                  (=-9999 FOR WILDCARD)
+C            JIDS(1)   = IDENTIFICATION OF ORIGINATING CENTRE
+C                         ( SEE COMMON CODE TABLE C-1 )
+C            JIDS(2)   = IDENTIFICATION OF ORIGINATING SUB-CENTRE
+C            JIDS(3)   = GRIB MASTER TABLES VERSION NUMBER
+C                         ( SEE CODE TABLE 1.0 )
+C                       0 - Experimental
+C                       1 - Initial operational version number
+C            JIDS(4)   = GRIB LOCAL TABLES VERSION NUMBER
+C                         ( SEE CODE TABLE 1.1 )
+C                       0     - Local tables not used
+C                       1-254 - Number of local tables version used
+C            JIDS(5)   = SIGNIFICANCE OF REFERENCE TIME (CODE TABLE 1.2)
+C                       0 - Analysis
+C                       1 - Start of forecast
+C                       2 - Verifying time of forecast
+C                       3 - Observation time
+C            JIDS(6)   = YEAR ( 4 DIGITS )
+C            JIDS(7)   = MONTH
+C            JIDS(8)   = DAY
+C            JIDS(9)   = HOUR
+C            JIDS(10)  = MINUTE
+C            JIDS(11)  = SECOND
+C            JIDS(12)  = PRODUCTION STATUS OF PROCESSED DATA
+C                         ( SEE CODE TABLE 1.3 )
+C                       0 - Operational products
+C                       1 - Operational test products
+C                       2 - Research products
+C                       3 - Re-analysis products
+C            JIDS(13)  = TYPE OF PROCESSED DATA ( SEE CODE TABLE 1.4 )
+C                       0  - Analysis products
+C                       1  - Forecast products
+C                       2  - Analysis and forecast products
+C                       3  - Control forecast products
+C                       4  - Perturbed forecast products
+C                       5  - Control and perturbed forecast products
+C                       6  - Processed satellite observations
+C                       7  - Processed radar observations
+C     JPDTN        INTEGER PRODUCT DEFINITION TEMPLATE NUMBER (N)
+C                  ( IF = -1, DON'T BOTHER MATCHING PDT - ACCEPT ANY )
+C     JPDT()       INTEGER ARRAY OF VALUES DEFINING THE PRODUCT DEFINITION
+C                  TEMPLATE 4.N OF THE FIELD FOR WHICH TO SEARCH
+C                  (=-9999 FOR WILDCARD)
+C     JGDTN        INTEGER GRID DEFINITION TEMPLATE NUMBER (M)
+C                  ( IF = -1, DON'T BOTHER MATCHING GDT - ACCEPT ANY )
+C     JGDT()       INTEGER ARRAY OF VALUES DEFINING THE GRID DEFINITION
+C                  TEMPLATE 3.M OF THE FIELD FOR WHICH TO SEARCH
+C                  (=-9999 FOR WILDCARD)
+C     UNPACK       LOGICAL VALUE INDICATING WHETHER TO UNPACK BITMAP/DATA
+C                  .TRUE. = UNPACK BITMAP AND DATA VALUES
+C                  .FALSE. = DO NOT UNPACK BITMAP AND DATA VALUES
+C
+C   OUTPUT ARGUMENTS:
+C     K            INTEGER FIELD NUMBER UNPACKED
+C     gfld - derived type gribfield ( defined in module grib_mod )
+C            ( NOTE: See Remarks Section )
+C        gfld%version = GRIB edition number ( currently 2 )
+C        gfld%discipline = Message Discipline ( see Code Table 0.0 )
+C        gfld%idsect() = Contains the entries in the Identification
+C                        Section ( Section 1 )
+C                        This element is actually a pointer to an array
+C                        that holds the data.
+C            gfld%idsect(1)  = Identification of originating Centre
+C                                    ( see Common Code Table C-1 )
+C                             7 - US National Weather Service
+C            gfld%idsect(2)  = Identification of originating Sub-centre
+C            gfld%idsect(3)  = GRIB Master Tables Version Number
+C                                    ( see Code Table 1.0 )
+C                             0 - Experimental
+C                             1 - Initial operational version number
+C            gfld%idsect(4)  = GRIB Local Tables Version Number
+C                                    ( see Code Table 1.1 )
+C                             0     - Local tables not used
+C                             1-254 - Number of local tables version used
+C            gfld%idsect(5)  = Significance of Reference Time (Code Table 1.2)
+C                             0 - Analysis
+C                             1 - Start of forecast
+C                             2 - Verifying time of forecast
+C                             3 - Observation time
+C            gfld%idsect(6)  = Year ( 4 digits )
+C            gfld%idsect(7)  = Month
+C            gfld%idsect(8)  = Day
+C            gfld%idsect(9)  = Hour
+C            gfld%idsect(10)  = Minute
+C            gfld%idsect(11)  = Second
+C            gfld%idsect(12)  = Production status of processed data
+C                                    ( see Code Table 1.3 )
+C                              0 - Operational products
+C                              1 - Operational test products
+C                              2 - Research products
+C                              3 - Re-analysis products
+C            gfld%idsect(13)  = Type of processed data ( see Code Table 1.4 )
+C                              0  - Analysis products
+C                              1  - Forecast products
+C                              2  - Analysis and forecast products
+C                              3  - Control forecast products
+C                              4  - Perturbed forecast products
+C                              5  - Control and perturbed forecast products
+C                              6  - Processed satellite observations
+C                              7  - Processed radar observations
+C        gfld%idsectlen = Number of elements in gfld%idsect().
+C        gfld%local() = Pointer to character array containing contents
+C                       of Local Section 2, if included
+C        gfld%locallen = length of array gfld%local()
+C        gfld%ifldnum = field number within GRIB message
+C        gfld%griddef = Source of grid definition (see Code Table 3.0)
+C                      0 - Specified in Code table 3.1
+C                      1 - Predetermined grid Defined by originating centre
+C        gfld%ngrdpts = Number of grid points in the defined grid.
+C        gfld%numoct_opt = Number of octets needed for each
+C                          additional grid points definition.
+C                          Used to define number of
+C                          points in each row ( or column ) for
+C                          non-regular grids.
+C                          = 0, if using regular grid.
+C        gfld%interp_opt = Interpretation of list for optional points
+C                          definition.  (Code Table 3.11)
+C        gfld%igdtnum = Grid Definition Template Number (Code Table 3.1)
+C        gfld%igdtmpl() = Contains the data values for the specified Grid
+C                         Definition Template ( NN=gfld%igdtnum ).  Each
+C                         element of this integer array contains an entry (in
+C                         the order specified) of Grid Defintion Template 3.NN
+C                         This element is actually a pointer to an array
+C                         that holds the data.
+C        gfld%igdtlen = Number of elements in gfld%igdtmpl().  i.e. number of
+C                       entries in Grid Defintion Template 3.NN
+C                       ( NN=gfld%igdtnum ).
+C        gfld%list_opt() = (Used if gfld%numoct_opt .ne. 0)  This array
+C                          contains the number of grid points contained in
+C                          each row ( or column ).  (part of Section 3)
+C                          This element is actually a pointer to an array
+C                          that holds the data.  This pointer is nullified
+C                          if gfld%numoct_opt=0.
+C        gfld%num_opt = (Used if gfld%numoct_opt .ne. 0)  The number of entries
+C                       in array ideflist.  i.e. number of rows ( or columns )
+C                       for which optional grid points are defined.  This value
+C                       is set to zero, if gfld%numoct_opt=0.
+C        gfdl%ipdtnum = Product Definition Template Number (see Code Table 4.0)
+C        gfld%ipdtmpl() = Contains the data values for the specified Product
+C                         Definition Template ( N=gfdl%ipdtnum ).  Each element
+C                         of this integer array contains an entry (in the
+C                         order specified) of Product Defintion Template 4.N.
+C                         This element is actually a pointer to an array
+C                         that holds the data.
+C        gfld%ipdtlen = Number of elements in gfld%ipdtmpl().  i.e. number of
+C                       entries in Product Defintion Template 4.N
+C                       ( N=gfdl%ipdtnum ).
+C        gfld%coord_list() = Real array containing floating point values
+C                            intended to document the vertical discretisation
+C                            associated to model data on hybrid coordinate
+C                            vertical levels.  (part of Section 4)
+C                            This element is actually a pointer to an array
+C                            that holds the data.
+C        gfld%num_coord = number of values in array gfld%coord_list().
+C        gfld%ndpts = Number of data points unpacked and returned.
+C        gfld%idrtnum = Data Representation Template Number
+C                       ( see Code Table 5.0)
+C        gfld%idrtmpl() = Contains the data values for the specified Data
+C                         Representation Template ( N=gfld%idrtnum ).  Each
+C                         element of this integer array contains an entry
+C                         (in the order specified) of Product Defintion
+C                         Template 5.N.
+C                         This element is actually a pointer to an array
+C                         that holds the data.
+C        gfld%idrtlen = Number of elements in gfld%idrtmpl().  i.e. number
+C                       of entries in Data Representation Template 5.N
+C                       ( N=gfld%idrtnum ).
+C        gfld%unpacked = logical value indicating whether the bitmap and
+C                        data values were unpacked.  If false,
+C                        gfld%bmap and gfld%fld pointers are nullified.
+C        gfld%expanded = Logical value indicating whether the data field
+C                         was expanded to the grid in the case where a
+C                         bit-map is present.  If true, the data points in
+C                         gfld%fld match the grid points and zeros were
+C                         inserted at grid points where data was bit-mapped
+C                         out.  If false, the data values in gfld%fld were
+C                         not expanded to the grid and are just a consecutive
+C                         array of data points corresponding to each value of
+C                         "1" in gfld%bmap.
+C        gfld%ibmap = Bitmap indicator ( see Code Table 6.0 )
+C                     0 = bitmap applies and is included in Section 6.
+C                     1-253 = Predefined bitmap applies
+C                     254 = Previously defined bitmap applies to this field
+C                     255 = Bit map does not apply to this product.
+C        gfld%bmap() = Logical*1 array containing decoded bitmap,
+C                      if ibmap=0 or ibap=254.  Otherwise nullified.
+C                      This element is actually a pointer to an array
+C                      that holds the data.
+C        gfld%fld() = Array of gfld%ndpts unpacked data points.
+C                     This element is actually a pointer to an array
+C                     that holds the data.
+C     IRET         INTEGER RETURN CODE
+C                    0      ALL OK
+C                    96     ERROR READING INDEX
+C                    97     ERROR READING GRIB FILE
+C                    99     REQUEST NOT FOUND
+C                    OTHER  GF_GETFLD GRIB2 UNPACKER RETURN CODE
+C
+C SUBPROGRAMS CALLED:
+C   GETIDX         GET INDEX
+C   GETGB2S        SEARCH INDEX RECORDS
+C   GETGB2R        READ AND UNPACK GRIB RECORD
+C   GF_FREE        FREES MEMORY USED BY GFLD  ( SEE REMARKS )
+C
+C REMARKS: SPECIFY AN INDEX FILE IF FEASIBLE TO INCREASE SPEED.
+C   DO NOT ENGAGE THE SAME LOGICAL UNIT FROM MORE THAN ONE PROCESSOR.
+C
+C   Note that derived type gribfield contains pointers to many
+C   arrays of data.  The memory for these arrays is allocated
+C   when the values in the arrays are set, to help minimize
+C   problems with array overloading.  Because of this users
+C   are encouraged to free up this memory, when it is no longer
+C   needed, by an explicit call to subroutine gf_free.
+C   ( i.e.   CALL GF_FREE(GFLD) )
+C
+C ATTRIBUTES:
+C   LANGUAGE: FORTRAN 90
+C
+C$$$

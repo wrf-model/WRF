@@ -1,0 +1,74 @@
+
+  read_bufr.F will convert KMA bufr conventional observation
+  files to little_r format for ingest to OBSPROC.
+
+  The reasons for keeping the little_r format are
+  1) OBSPROC uses the little_r memory structure to store the data.
+  2) OBSPROC uses the NCEP bufrlib (for creation of prepbufr files
+     for ingest into wrfvar), while the KMA bufr files are based
+     on the ECMWF bufr library. It's better to keep the libraries
+     separate.
+  3) The ECMWF bufr library, while freeware, is licensed and 
+     cannot be distributed with OBSPROC. The ECMWF library is
+     designed and built differently than OBSPROC and cannot be
+     merged easily. Since KMA already has the bufr library, it's
+     unnecessary to distribute it with the OBSPROC code.
+  4) Only KMA needs this converter. There is no need to include
+     it in the released OBSPROC code.
+  5) The extra step of converting to little_r is not very time-consuming
+     since conventional datasets are rather small. Large datasets
+     (radiances, reflectivity, etc.) are not converted to little_r
+     format.
+
+     The decoder uses the ECMWF bufr library and tables.
+
+To use:
+
+   Put read_bufr.F in the example directory of the ECMWF library
+   distribution.
+
+   Add the following lines to the Makefile:
+
+   EXECS    = decode_bufr read_bufr
+
+   read_bufr: read_bufr.o 
+	   $(FC) $(FFLAGS) -o $@ read_bufr.o -L$(PLACE) -lbufr$(R64)
+
+   make.
+
+   Create a file called 'flist' containing a list of bufr files
+   to be decoded. These must be the file names only, not the full
+   path. Use ln -s to create a soft link to the files if they reside
+   in a different directory from where the decoder will be run. 
+   The reason for this is that the bufr files contain no indication
+   of what type of data are in the files. This information is
+   gleaned from the first part of the file name.
+
+   Then simply run the executable 'read_bufr'. An ascii file called
+   littler will be created.
+
+
+Known bugs as of 2/16/2006
+
+For ship and synop files, pressure and sea level pressure are encoded
+as mb or hPa, when the units are supposed to be Pa. read_bufr will need 
+to be corrected if the bufr files are corrected.
+
+For both pilot and temp ttbb and ttdd files, pressure and height are 
+missing. This renders the data useless.
+Pressure is available in the gts-coded message, so it should be available
+in this data file.
+
+(ttaa and ttcc files seem to be OK)
+
+For acars and aireps, the minute value is not encoded (it's always zero).
+
+For satobs, the satellite ID is not encoded (value is zero). The pressure
+is not encoded properly. The table entry 7004 (pressure) should be used
+rather than 10004. In the sample file, all pressures are zero, making the
+data unusable.
+
+
+Jim Bresch
+NCAR/MMM
+16 February 2006

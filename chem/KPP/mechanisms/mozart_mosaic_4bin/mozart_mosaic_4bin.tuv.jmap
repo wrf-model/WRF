@@ -1,0 +1,25 @@
+o2 : j_o2
+o31d : j_o1d
+o33p : j_o3p
+no2 : j_no2
+n2o5 : j_n2o5_b
+n2o : j_n2o
+hno3 : j_hno3
+no3o : j_no3_a
+hno4 : j_hno4
+h2o2 : j_h2o2
+ch3o2h : j_ch3ooh
+ch2or : j_ch2o_r
+ch2om : j_ch2o_m
+ch3cho : j_ch3cho_a + j_ch3cho_b + j_ch3cho_c
+pooh : j_hoch2ooh
+pan : j_pan_a + j_pan_b
+macr : j_macr
+mvk : j_mvk
+ch3coch3 : j_ch3coch3
+ch3cocho : j_mgly
+hyac : j_hyac_a + j_hyac_b
+glyald : j_glyald_a + j_glyald_b + j_glyald_c
+mek : j_mek
+gly : j_gly_a + j_gly_b + j_gly_c
+hno2 : j_hno2

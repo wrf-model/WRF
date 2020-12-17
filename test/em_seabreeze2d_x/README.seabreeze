@@ -1,0 +1,26 @@
+
+The purpose of this case is to demonstrate how one can set up all land variables
+in order to use a full-physics set-up in an idealized case. 
+
+This test case is an attempt to produce a two dimensional sea breeze simulation.
+Configuration needs tuning to produce desirable results, as the current
+settings give a very shallow sea breeze. As of V3.6 the eta_levels are listed
+in the namelist and used instead of the idealized eta levels. This gives
+more levels in the sea breeeze layer.
+
+The input sounding has no wind.
+
+There is no Coriolis [grid%f(i,j)=0.]. 
+There is a diurnal cycle and the latitude and longitude are set for radiation to work.
+Note that since the longitude is set to zero, start_hour in the namelist
+is the local time as well as the UTC time (5Z  in the namelist).
+For other longitudes the start_hour refers to UTC time.
+The land-surface fields are filled so that the slab, Noah or RUC LSMs can be used.
+
+This setup is for a 2D case with 202 grid points in x and 35 eta levels. The land occupies 50 grid
+points in the middle of the domain. The width of the land can be changed
+by modifying variable lm (half width for land points) in 
+dyn_em/module_initialize_ideal.F.
+
+As of V3.6 an example of 8 tracers are initialized in this case and mixed with
+the PBL option. These are set up in the initialize module.

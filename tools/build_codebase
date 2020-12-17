@@ -1,0 +1,112 @@
+#!/bin/csh
+
+
+set db=tools/code_dbase
+
+#goto skippy
+#goto sk1
+# set this to a value to speed up the subinfo calls; set with no value for normal
+set gofast       # default is not fast (no value given, but set)
+
+if ( $#argv == 1 ) then
+   if (  $argv[1] == "fast" ) then
+      set gofast=yes
+   endif
+endif
+
+if ( ! -d tools ) then
+  echo run $0 in top level WRF directory
+endif
+if ( ! -x tools/deftab || ! -x tools/nocontf90 || ! -x tools/subinfo_calls || ! -x tools/callgraph ) then
+  ( cd tools/CodeBase ; make )
+  if ( ! -x tools/deftab || ! -x tools/nocontf90 || ! -x tools/subinfo_calls || ! -x tools/callgraph ) then
+    echo some error building the tools in tools/CodeBase. Cannot continue.
+    exit(2)
+  endif
+endif
+
+/bin/rm -fr $db
+mkdir $db
+
+if ( ! -f frame/module_state_description.f ) then
+  echo
+  echo '*** ' code must be compiled first before code database can be built
+  echo '*** ' because it is based on the .f files 
+  echo
+  exit(99)
+endif
+set dirs=( dyn_em frame main phys share )
+#set dirs=( dyn_nmm frame main phys share )
+#set dirs=( phys )
+#set dirs=( main )
+foreach d ( $dirs )
+  foreach f ( $d/*.f )
+    set ff=$f:t
+    echo $f
+    tools/nocontf90 < $f | expand |  \
+           sed                       \
+               -e 's/  */ /g'        \
+               -e 's/^ //'           \
+               -e '/^$/d'            \
+               -e 's/^real,/real ,/' \
+               -e 's/^integer,/integer ,/' \
+               -e 's/^type(/type (/' \
+               -e 's/^logical,/logical ,/' \
+               > $db/lm_${f:t}_1
+    tools/deftab $f < $db/lm_${f:t}_1
+    /bin/rm -f $db/lm_${f:t}_1
+  end
+end
+
+cat -n $db/calls | sort -u +1  > xxx
+sort -n +0 -1 xxx | awk '{print $2 " " $3 " " $4}'  > $db/calls
+
+############ pre-compute the subinfo html entries ##########
+
+skippy:
+
+foreach f ( `/bin/ls -1 $db | grep -v '\.html' | grep -v calls | grep -v '^lm_' | grep -v '^vv_' | grep -v '_descrip$'` )
+  echo creating html file for $f
+  tools/subinfo $f $gofast > $db/$f.html
+end
+
+#foreach f ( `/bin/ls -1 $db/[a-f]* | grep -v '\.html' | grep -v calls | grep -v '^lm_'` )
+#  echo creating html file for $f
+#  tools/subinfo $f:t > $f.html
+#end
+#foreach f ( `/bin/ls -1 $db/[g-m]* | grep -v '\.html' | grep -v calls | grep -v '^lm_'` )
+#  echo creating html file for $f
+#  tools/subinfo $f:t > $f.html
+#end
+#foreach f ( `/bin/ls -1 $db/[n-t]* | grep -v '\.html' | grep -v calls | grep -v '^lm_'` )
+#  echo creating html file for $f
+#  tools/subinfo $f:t > $f.html
+#end
+#foreach f ( `/bin/ls -1 $db/[u-z]* | grep -v '\.html' | grep -v calls | grep -v '^lm_'` )
+#  echo creating html file for $f
+#  tools/subinfo $f:t > $f.html
+#end
+
+echo "Creating $db/index.html"
+
+/bin/cp tools/callgraph.page1      $db/callgraph.html
+tools/callgraph wrf 7           >> $db/callgraph.html
+cat      tools/callgraph.page2  >> $db/callgraph.html
+/bin/cp tools/index.page           $db/index.html
+/bin/cp tools/collapsd.gif tools/daughter.gif tools/exploded.gif $db 
+
+sk1:
+#tools/callgraph wrf 0                 > $db/index.html
+#echo ct2.html
+#tools/callgraph wrf 1                 > $db/ct2.html
+#echo ct3.html
+#tools/callgraph wrf 2                 > $db/ct3.html
+#echo ct4.html
+#tools/callgraph wrf 3                 > $db/ct4.html
+#echo ct5.html
+#tools/callgraph wrf 4                 > $db/ct5.html
+#echo ctall.html
+#tools/callgraph wrf                   > $db/ctall.html
+
+echo "Done"
+

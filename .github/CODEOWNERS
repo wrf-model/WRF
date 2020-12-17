@@ -1,0 +1,113 @@
+#	This file sets up default notification for reviews based on who "owns" code.
+
+#	Default
+
+*					@wrf-model/global_owner
+
+#	Generic top-level build files
+
+/configure				@wrf-model/infrastructure
+/compile				@wrf-model/infrastructure
+/clean					@wrf-model/infrastructure
+/Makefile				@wrf-model/infrastructure
+
+#	General use top-level files
+
+LICENSE.txt				@wrf-model/global_owner
+README					@wrf-model/global_owner
+README.md				@wrf-model/global_owner
+
+#	Architecture directories
+
+/arch/					@wrf-model/infrastructure
+/tools/					@wrf-model/infrastructure
+
+#	Common directories
+
+/doc/					@wrf-model/arw_dev @wrf-model/hwrf_dev @wrf-model/physics @wrf-model/infrastructure
+/frame/					@wrf-model/infrastructure
+/run/					@wrf-model/infrastructure
+/share/					@wrf-model/infrastructure @wrf-model/physics
+
+#	Chemistry
+
+/chem/					@wrf-model/chem
+
+#	Physics
+
+/phys/					@wrf-model/physics
+
+/phys/module_mp_thompson.F		@gthompsnWRF @wrf-model/physics
+/phys/module_diag_nwp.F                 @gthompsnWRF @wrf-model/physics
+/phys/module_mp_jensen_ishmael.F	@graupely @wrf-model/physics
+/phys/module_mp_gsfcgce_4ice_nuwrf.F	@cacruz @wrf-model/physics
+/phys/module_sf_noahmp*.F		@barlage @wrf-model/physics
+/phys/module_fr_*			@pedro-jm @brankokosovic @domingom @wrf-model/physics
+/phys/module_bl_mynn.F			@joeolson42 @wrf-model/physics
+/phys/module_sf_mynn.F			@joeolson42 @wrf-model/physics
+/phys/module_sf_px*.F 			@coawstwx @wrf-model/physics
+/phys/module_bl_acm.F  			@coawstwx @wrf-model/physics
+/phys/module_sf_ruclsm.F		@tanyasmirnova @wrf-model/physics
+/phys/module_mp_fast_sbm.F		@JS-WRF-SBM @wrf-model/physics
+/phys/module_mp_full_sbm.F		@JS-WRF-SBM @wrf-model/physics
+/phys/module_mp_SBM_polar_radar.F	@JS-WRF-SBM @wrf-model/physics
+
+#	Shared Physics Between MPAS and WRF
+
+/phys/module_mp_wsm6.F			@wrf-model/shared_physics
+/phys/module_cu_ntiedtke.F		@wrf-model/shared_physics
+/phys/module_ra_rrtmg_lw.F		@wrf-model/shared_physics
+/phys/module_ra_rrtmg_sw.F		@wrf-model/shared_physics
+/phys/module_bl_ysu.F 			@wrf-model/shared_physics
+/phys/module_sf_sfclay.F		@wrf-model/shared_physics
+/phys/module_sf_noah_seaice.F		@wrf-model/shared_physics
+/phys/module_sf_noah_seaice_drv.F	@wrf-model/shared_physics
+/phys/module_sf_noahdrv.F		@wrf-model/shared_physics
+/phys/module_sf_noahlsm.F		@wrf-model/shared_physics
+/phys/module_sf_noahlsm_glacial_only.F	@wrf-model/shared_physics
+
+#	Data Assimilation
+
+/wrftladj/				@wrf-model/da
+/var/					@wrf-model/da
+
+#	Dynamics
+
+/dyn_em/				@wrf-model/arw_dev
+/dyn_nmm/				@wrf-model/hwrf_dev
+
+#       WRF-Hydro
+
+/hydro/                                 @wrf-model/hydro
+/doc/README.hydro                       @wrf-model/hydro
+
+#	Registry
+
+/Registry/				@wrf-model/infrastructure
+
+/Registry/Registry.NMM			@wrf-model/hwrf_dev
+/Registry/registry.tracker		@wrf-model/hwrf_dev
+/Registry/registry.tornado		@wrf-model/hwrf_dev
+
+/Registry/Registry.EM_CHEM		@wrf-model/chem
+/Registry/registry.chem			@wrf-model/chem
+
+/Registry/registry.var 			@wrf-model/da
+/Registry/registry.var_chem		@wrf-model/da
+/Registry/registry.wrfplus		@wrf-model/da
+/Registry/Registry.wrfvar		@wrf-model/da
+/Registry/Registry.tladj		@wrf-model/da
+
+#	Test directories
+
+/test/em_*				@wrf-model/arw_dev
+/test/nmm_*				@wrf-model/hwrf_dev
+/test/em_fire/				@wrf-model/fire
+
+#	Executable directory
+
+/main/					@wrf-model/arw_dev @wrf-model/hwrf_dev @wrf-model/infrastructure
+
+#	Externals directory structure
+
+/external/ 				@wrf-model/infrastructure

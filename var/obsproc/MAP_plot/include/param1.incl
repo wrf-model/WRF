@@ -1,0 +1,3 @@
+C .. set the maximum dimensions to open the working arrays:
+C
+      PARAMETER (IIMAX = 500, JJMAX= 500)

@@ -1,0 +1,91 @@
+.IGNORE:
+
+ifeq ($(HYDRO_REALTIME),1)
+HYDRO_REALTIME = -DHYDRO_REALTIME
+else
+HYDRO_REALTIME =
+endif
+
+ifeq ($(WRF_HYDRO),1)
+WRF_HYDRO = -DWRF_HYDRO $(HYDRO_REALTIME)
+else
+WRF_HYDRO =
+endif
+
+ifeq ($(WRF_HYDRO_RAPID),1)
+WRF_HYDRO = -DWRF_HYDRO -DWRF_HYDRO_RAPID $(HYDRO_REALTIME)
+endif
+
+ifeq ($(HYDRO_D),1)
+HYDRO_D = -DHYDRO_D $(WRF_HYDRO)
+else
+HYDRO_D =  $(WRF_HYDRO)
+endif
+
+
+ifneq ($(origin ESMFMKFILE), environment)
+$(error Environment variable ESMFMKFILE was not set.)
+endif
+include $(ESMFMKFILE)
+
+RMD             = rm -f
+COMPILER90      = $(ESMF_F90COMPILER)
+FORMAT_FREE     = -FR
+BYTESWAPIO      = -convert big_endian
+F90FLAGS        = -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+# -w                    Disables all warning messages
+# -c                    Prevents linking.
+# -g                    Produces symbolic debug information in the object
+#                        file.
+# -ftz                  Flushes denormal results to zero when the application
+#                        is in the gradual underflow mode.
+# -align all            Tells the compiler to add padding bytes whenever
+#                        possible to obtain the natural alignment of data
+#                        items in common blocks, derived types, and record
+#                        structures.
+# -fno-alias            Specifies that aliasing should not be assumed in
+#                        the program.
+# -fp-model precise     Enables value-safe optimizations on floating-
+#                        point data and rounds intermediate results to
+#                        source-defined precision.
+# -FR                   Specifies source files are in free format
+# -convert big_endian   Specifies that the format will be big endian for
+#                        INTEGER*1, INTEGER*2, INTEGER*4, or INTEGER*8,
+#                        and big endian IEEE floating-point for REAL*4,
+#                        REAL*8, REAL*16, COMPLEX*8, COMPLEX*16, or COM-
+#                        PLEX*32.
+# -u                    Sets the default type of a variable to undefined
+#                        (IMPLICIT NONE)
+# -traceback            Tells the compiler to generate extra information in
+#                        the object file to allow the display of source file
+#                        traceback information at run time when a severe
+#                        error occurs.
+# -fpe0                 Floating-point invalid, divide-by-zero, and
+#                        overflow exceptions are enabled
+# -nomixed_str_len_arg  The hidden length passed for a character argument 
+#                        is to be placed in sequential order at the end of 
+#                        the argument list. [default]
+# -names lowercase      Causes the compiler to ignore case differences in
+#                        identifiers and to convert external names to 
+#                        lowercase. [default]
+# -convert big_endian   Specifies that the format will be big endian for
+#                        INTEGER*1, INTEGER*2, INTEGER*4, or INTEGER*8,
+#                        and big endian IEEE floating-point for REAL*4,
+#                        REAL*8, REAL*16, COMPLEX*8, COMPLEX*16, or COM-
+#                        PLEX*32.
+# -assume byterecl      Specifies that the units for the OPEN statement
+#                        RECL specifier (record length) value are in bytes
+#                        for unformatted data files, not longwords (four-
+#                        byte units)
+MODFLAG         = -I./ -I../../MPP -I../MPP -I../mod
+LDFLAGS         = 
+CPP             = cpp
+CPPFLAGS        = -P -traditional -DMPP_LAND -I../Data_Rec $(HYDRO_D) 
+# -C:                  Do not discard comments.
+# -P:                  Inhibit generation of linemarkers in the output 
+#                       from the preprocessor.
+# -traditional:        Try to imitate the behavior of old-fashioned C 
+#                       preprocessors, as opposed to ISO C preprocessors.
+LIBS            = 
+NETCDFINC       = $(NETCDF)/include
+NETCDFLIB       = -L$(NETCDF)/lib -lnetcdff -lnetcdf

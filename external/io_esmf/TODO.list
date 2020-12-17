@@ -1,0 +1,141 @@
+TODO.list
+Tom Henderson                                                           5/19/06
+
+WRF-ESMF TODO LIST:  
+
+
+WRF-ESMF is still new and experimental and has many limitations.  Many of 
+these are mentioned in the task list that follows.  
+
+
+"X" == "DONE"  
+
+The "ESMF" referred to below is version 2.2.0rp1.  
+
++ Design and Implementation:
+   - Modify WRF so the "output" calls that set the WRF ExportState can 
+     occur in subroutine med_after_solve_io in file 
+     share/mediation_integrate.F.  We plan to make this modification in a 
+     future revision of WRF and allow users to control where the WRF 
+     ExportState is set at run-time via a namelist variable.  Or we may make 
+     the new behavior the default since it is more natural for sequential 
+     coupling.  
+   X Get rid of masses of "DEBUG" code.  
+   X Clean up/correct comments.  
+   X Fix ESMF+RSL_LITE.  Currently, only ESMF+RSL works.  
+       Patch and memory extents differ between RSL and RSL_LITE, see
+       /users/hender/Tasks/WRF_ESMF/RSL_LITE_broken/README for details.  
+   X Finish sequence diagram for the coupling interactions in
+     /users/hender/Tasks/WRF_ESMF/SequenceDiagram.txt ...
+     X OR, use more recent ppt slides...  
+   - Upgrade SST component so it can run on a subset of processors.  
+       This requires breaking the domdesc dependence for SST so SST can be 
+       run on fewer processes.  SST will need to call wrf_dm_patch_domain(), 
+       probably modified to avoid dependence on TYPE(domain) and certainly 
+       modified to avoid dependence on head_grid.  
+   - Upgrade external/io_esmf/ so more data types are supported.  
+   - Upgrade external/io_esmf/ so 3D arrays are supported (just loop over "K" 
+     at first with hard-coded names like "U_k_1", "U_k_2", etc.).  Then 
+     switch to ESMF for this once it can do it.  (Can ESMF do this yet?  
+     Check.)  
+   - Extend external/io_esmf/ (etc.) so more than one I/O stream can be used 
+     for ESMF coupling.  This would involve nested import and export states.  
+   - Exchange staggered 2D grids and test-validate (x, y, and z staggerings).  
+     Current hacked implementation should be able to handle this for 
+     horizontal staggerings, but need to test in case bugs are lurking...  
+     Better yet, move to ESMF 3.0 and use its new features to correctly 
+     implement staggering.  
+   - Upgrade external/io_esmf/ so metadata is exchanged correctly.  Right now, 
+     metadata is ignored.  This would allow sharing of metadata and simplify 
+     implementation of components that were aware of WRF metadata.  Ultimately, 
+     CF is the right thing here...  
+   - Fix output formatting so DOMAIN_TIME_TEST works the same way 
+     both with and without ESMF.  
+   - Fix ext_esmf_ioclose so it actually destroys ESMF objects again.  This
+     is #ifdef'd out at the moment due to difficulties with destruction.  (At 
+     present, ESMF requires users to deallocate anything they allocate, but 
+     provides no introspection so a user can figure out if who allocated 
+     something.  This leads to obfuscation of implementations...)  
+   X Make WRF-ESMF build recognize ESMF environment variables?
+     Could remove stanzas from arch/configure.defaults and avoid lots
+     of duplication and documentation.
+   X If possible, upgrade WRF ESMF component to get number of MPI tasks from 
+     VM instead of from MPI.  This may be tricky or even impractical due to 
+     startup issues...  
+   - CF conventions:  
+     * Numerous tasks here, not really a "WRF-ESMF" issue, but related...  
+         Will there be CF conventions for startTime, stopTime, timeStep, 
+         couplingInterval?
+   - Other ESMF bugs/issues:  
+     * Rip out the current hacks for grid creation in external/io_esmf/ once 
+       ESMF can support WRF map projections.  Use the "sieve" method of 
+       io_mcel.  This will take a bit of work...  
+     * Restore ESMF_LogErr calls once ESMF fixes them so they no longer 
+       truncate all of our messages (trivial for us...).  
+        * Ask when ESMF_LogErr will allow us to specify LUN.  This will
+          make it easier for us to use this utility.  
+     * Upgrade external/io_esmf/ to avoid manual CICO once ESMF can mimic WRF 
+       memory layouts.  
+     * Index ordering is hard-coded.  Fix this once ESMF supports it and 
+       connect to "MemoryOrder" argument.  
+     * Take a look at my list of reported ESMF bugs and add any I haven't 
+       reported.  
+     * Calls to ESMF_ArraySpecSet() in external/io_esmf/ quietly do the wrong 
+       thing.  Why?  Once they work, uncomment this code to avoid 
+       per-data-type duplication of hard-coded alternative (gaaak).  See 
+       string DOESNOTWORK.  
+     * ESMF cannot handle "extra" rows-columns implied by horizontal
+       staggering for regional models like WRF.  Upgrade once ESMF supports 
+       this.  
+       * Re-connect "Stagger" argument to ESMF "horzrelloc" argument.  
+         Uncomment this code in external/io_esmf/.  
+     * Why can I specify start indices in the call to 
+       ESMF_GridDistribute[Vector]() but not in the call to ESMF_GridSet() ?
+     * Remove implementation of WRFU_TimeIntervalDIVQuot in 
+       external/io_esmf/module_esmf_extensions.F90 once ESMF supports this 
+       directly.  
+     * Lack of sane (or any) iterators for ESMF_State and other container 
+       classes leads to nasty user code...  
+     * Lack of adherence to Orthodox Canonical Form leads to really nasty 
+       user code.  Probably not worth tilting at this windmill again...  
+     * Many others...  
+   - Misc. bugs/issues:
+     * Investigate odd debug prints from med_hist_out, output_wrf, input_wrf
+        med_hist_out : opening sstout_d01_000000 for writing.  86
+          I think the "86" should be "0"
+        output_wrf: fid,filestate =  2 65
+          I think the "65" should be "0"
+        input_wrf: fid,filestate =  3 804370368
+          I think the "804370368" should be something else...
+     * Find out why one new message now appears in stdout (weird).  
+         This happens with a "no-esmf" build and with an "esmf" build.  
+           INPUT LANDUSE = USGS
+           LANDUSE TYPE = USGS FOUND 24  CATEGORIES 2  SEASONS WATER CATEGORY =  16  SNOW CATEGORY =  24
+     * Replace hand-coded checks of "rc" with use of new ESMF error handler to 
+       streamline code.  
+         See /loquat2/hender/Tasks/WRF_ESMF/ESMF_FieldFromUserEx.F90
+         See /loquat2/hender/Tasks/WRF_ESMF/UserCodeMod.F90
+     X See if "#ifndef ESMFIO" hack can be removed from share/input_wrf.F.  
+     * Get rid of module_symbols.F90.  Encapsulate any remaining "WRFU" calls 
+       via module_domain.  
+     * Rip out WRF_CHEM from set_timekeeping.F and test...
++ Upgrade to ESMF 2.2.2r+
+   - Add an ESMF_LOG_NONE option to the "defaultLogType" argument 
+     of ESMF_Initialize() to turn off ESMF's default error logging.  
+   - Add an ESMF_KEEPMPI option to the "terminationflag" argument 
+     of ESMF_Finalize() to allow ESMF finalization without MPI 
+     shutdown.  Then clean up the current shutdown mess.  
++ Documentation:
+   - General description of and guidelines for coupling WRF with another
+     ESMF component.
+   X Description of WRF-CPL-SST "demo"
+     X Description of SST and CPL demo components
+     X Sequence diagram of component interactions (see ppt)
+     X Limitations of demo
+     * How to extend the demo
++ Testing
+   - Add WRF-CPL-SST tests to regtest.csh.  
+     * Generate jun01 sst warming data set and work with Dave to add new 
+       "ESMF_SST" tests to regtest.csh.  
+     * Debug (it's there but doesn't work yet).  
+

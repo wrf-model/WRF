@@ -1,0 +1,2 @@
+A technical description and user's guide can be found at:
+https://ral.ucar.edu/projects/wrf_hydro

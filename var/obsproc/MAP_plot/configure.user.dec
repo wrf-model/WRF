@@ -1,0 +1,81 @@
+SHELL=/bin/sh
+
+.SUFFIXES:  .F90 .F .i .o .f .f90
+#
+# Tunable parameters
+#
+# CF		Name of the fortran compiling system to use
+# LDFLAGS	Flags to the loader
+# LIBS		List of libraries
+#
+#
+#-----------------------------------------------------------------------------
+# Fortran options
+#-----------------------------------------------------------------------------
+LIBINCLUDE = $(DEVTOP)/include
+#-----------------------------------------------------------------------------
+#    3c. IRIX.3.2 (SGI_R4400/SGI_R4000)
+#-----------------------------------------------------------------------------
+#FC = f77
+#FCFLAGS = -I$(LIBINCLUDE) -32
+#FCFLAGS = -I$(LIBINCLUDE) -mips2 -32 -O0 \
+# -sopt,-r=3,-so=3,-include=$(LIBINCLUDE) -Nn30000 -Olimit 1500
+#LDFLAGS = -32
+#FDVARLIB = libfdvar.a 
+#LIBS = \
+#           /usr/local/lib/libnetcdf.a \
+#           -L/usr/local/ncarg/lib -L/usr/local/lib \
+#           -lncarg -lncarg_gks -lncarg_c -lX11 -lm  
+#LIBDIR   = ${DEVTOP}/
+#CPP = /usr/lib/cpp
+#CPPFLAGS = -P -I$(LIBINCLUDE)
+#-----------------------------------------------------------------------------
+#    3e. DEC_ALPHA (OSF/1)
+#-----------------------------------------------------------------------------
+FC = f90
+FCFLAGS = -I$(LIBINCLUDE) -convert big_endian
+CFLAGS = 
+CPP = /usr/lib/cpp
+# Map Background is WHITE:
+CPPFLAGS = -I$(LIBINCLUDE) -C -P
+# Map Background is BLACK:
+#CPPFLAGS = -I$(LIBINCLUDE) -C -P -DBBKG
+LDFLAGS = 
+LIBDIR   = ${DEVTOP}/
+FDVARLIB = libfdvar.a 
+LIBS = -L/usr/local/ncarg/lib -L/usr/local/lib  \
+       -lncarg -lncarg_gks -lncarg_c -lX11 -lm
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+# General commands
+#-----------------------------------------------------------------------------
+MAKE = make -i
+AR = ar ru
+RM = rm -f
+RM_CMD = $(RM) *.CKP *.ln *.BAK *.bak *.o *.i core errs ,* *~ *.a \
+.emacs_* tags TAGS make.log MakeOut *.f *.mod
+#-----------------------------------------------------------------------------
+# Lines from here on down should not need to be changed.  They are the
+# inference rules to compile the code
+#----------------------------------------------------------------------------
+.F.i:
+	$(RM) $@
+	$(CPP) $(CPPFLAGS) $*.F > $@
+.F.o:
+	$(RM) $@
+	$(CPP) $(CPPFLAGS) $*.F > $*.f
+	$(FC) -c -cpp $(FCFLAGS) $*.f
+	$(RM) $*.f
+.F90.o:
+	$(RM) $@
+	$(FC) -c -cpp $(FCFLAGS) $*.F90
+.f90.o:
+	$(RM) $@
+	$(FC) -c -free $(FCFLAGS) $*.f90
+.F.f:
+	$(RM) $@
+	$(CPP) $(CPPFLAGS) $*.F > $@
+
+.f.o:
+	$(RM) $@ 
+	$(FC) -c $(FCFLAGS) $*.f

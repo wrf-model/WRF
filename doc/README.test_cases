@@ -1,0 +1,126 @@
+WRFV3 (Weather Research and Forecast) model.   
+
+Contents:
+
+A) Directions for running a test case.
+B) List of available test cases
+
+---------------------------------------
+
+(A)  Directions for running a test case
+
+A suite of tests for the WRF model ARW (Advanced Research WRF) core 
+can be found in the directory "test".  Each subdirectory in /test 
+contains the necessary data (except for the real data case) and 
+input files to run the test specific to that directory.  
+To run specific test, builld the WRF model
+and the necessary initialization routine by typing
+
+-> compile "test_name"
+
+in the top directory (the directory containing this README file).
+For example, to build the executables for the 2D (x,z) squall line
+example for Eulerian mass coordinate model, you would type the command 
+"compile em_squall2d_x".
+
+after a successful build, go the the specific test directory:
+
+-> cd test/"test_name"
+
+run the initialization code
+
+-> ideal.exe
+
+and then run the simulation
+
+-> wrf.exe
+
+---------------------------------------
+
+(B) Available Test Cases
+
+The available test cases are
+
+1) squall2d_x (test/em_squall2d_x)
+
+   2D squall line (x,z) using Kessler microphysics
+   and a fixed 300 m^2/s viscosity.  periodicity 
+   condition used in y so that 3D model produces
+   2D simulation.  v velocity  should be zero and there 
+   should be no variation in y in the results.
+
+2) squall2d_y (test/em_squall2d_y)
+
+   Same as squall2d_x, except with (x) rotated to (y).
+   u velocity  should be zero and there 
+   should be no variation in x in the results.
+
+3) 3D quarter-circle shear supercell simulation 
+   (test/em_quarter_ss).
+
+   Left and right moving supercells are produced.
+   See the README.quarter_ss file in the test directory
+   for more information.
+
+4) 2D flow over a bell-shaped hill (x,z) (test/em_hill2d_x) 
+
+   10 km half-width, 2 km grid-length, 100 m high hill, 
+   10 m/s flow, N=0.01/s, 30 km high domain, 80 levels,
+   open radiative boundaries, absorbing upper boundary. 
+   Case is in linear hydrostatic regime, so vertical tilted 
+   waves with ~6km vertical wavelength.
+
+5) 3D baroclinic waves (test/em_b_wave)
+
+   Baroclinically unstable jet u(y,z) on an
+   f-plane.  Symmetric north and south, periodic east and west 
+   boundaries.  100 km grid size 16 km top with 4 km damping layer. 
+   41x81 points in (x,y), 64 layers.
+
+6) 2D gravity current (test/em_grav2d_x)
+
+   Test case is described in Straka et al,
+   INT J NUMER METH FL 17 (1): 1-22 JUL 15 1993.
+   See the README.grav2d_x file in the test directory.
+
+7) 3D large-eddy simulation (test/em_les)
+
+   A large-eddy simulation (LES) of a free convective boundary 
+   layer (CBL) with 0 environmental wind at the initial time, and
+   the turbulence of the free CBL driven/maintained by the 
+   specified surface heat flux.
+
+8) 2D full physics seabreeze (test/em_seabreeze2d_x)
+
+   The case is more set up now to demonstrate how to set all land
+   variables so that full physics options may be used. Tuning is
+   needed to produce real sea-breeze simulation at this point.
+
+9) 3D global case (test/em_heldsuarez)
+
+   A coarse-resolution global forecast case that is described in
+   "A proposal for the intercomparison of the dynamical cores of 
+   atmospheric general circulation models" by Held and Suarez 
+   (Bulletin of the American Meteorological Society; 1994, Vol 
+   75, 1825-1830).  This test of the global solver is dry, and
+   produces  midlatitude jets, breaking midlatitude baroclinic 
+   waves, etc.
+
+10) Single column model (test/em_scm_xy)
+
+11) 3D tropical cyclone (test/em_tropical_cyclone)
+
+   Idealized tropical cyclone on an f-plane with constant SST in a 
+   specified environment.  Uses capped Newtonian relaxation to mimic 
+   longwave radiation.  The default setup uses the Jordan (1958) mean 
+   hurricane sounding with 28 C SST and no background winds.  The 
+   analytic initial vortex is from Rotunno and Emanuel (1987).  This 
+   case is useful for testing the effects of new model code (e.g., 
+   new physics options) on tropical cyclones in an idealized framework. 
+
+12) Convective-radiative equilibrium test (test/em_convrad)
+
+   Idealized 3d convective-radiative equilibrium test with constant SST
+   and full physics at cloud-resolving 1 km grid size. Periodic b.c.s.
+   Tropical conditions, small f and weak wind.
+

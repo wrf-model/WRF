@@ -1,0 +1,62 @@
+{Decaying-dimerizing reaction set
+ (Gillespie, J. Chem. Phys. 115(4), p. 1716, 2001)}
+
+#DEFVAR
+S1  = ignore; {}
+S2  = ignore; {}
+S3  = ignore; {}
+
+#EQUATIONS
+S1 	  = PROD	: (1);    {c1}
+S1 + S1   = S2		: (0.004);{2*c2}
+S2 	  = S1 + S1	: (0.5);  {c3}
+S2 	  = S3	 	: (0.04); {c4}
+
+#LOOKATALL
+
+#INITVALUES
+  CFACTOR = 1.0;
+  S1   = 1.0e+5;
+  S2   = 0.0;
+  S3   = 0.0;
+
+#INLINE F77_INIT
+      TSTART = 0.d0
+      TEND   = 30.0d0
+      DT     = 0.5d0;
+      DO i=1,NVAR
+        RTOL(i) = 1.0e-4
+        ATOL(i) = 1.0e-8
+      END DO 
+      Volume = 1.0d0
+#ENDINLINE
+
+#INLINE F90_INIT
+  TSTART = 0.d0
+  TEND   = 30.0d0
+  DT     = 0.5d0
+  RTOL(1:NVAR) = 1.0e-4
+  ATOL(1:NVAR) = 1.0e-8
+  Volume = 1.0d0
+#ENDINLINE
+
+#INLINE MATLAB_INIT
+  global TSTART TEND DT TEMP
+  TSTART = 0;
+  TEND   = 30;
+  DT     = 0.5;
+  RTOL(1:NVAR) = 1.0e-4;
+  ATOL(1:NVAR) = 1.0e-8;
+  Volume = 1;
+#ENDINLINE
+
+#INLINE C_INIT
+  TSTART = 0.0;
+  TEND   = 30.0;
+  DT     = 0.5;
+  for(i=0; i<NVAR; i++) {
+      RTOL[i] = 1.0e-4;
+      ATOL[i] = 1.0e-8;
+  } 
+  Volume = 1.0;
+#ENDINLINE

@@ -1,0 +1,13 @@
+# This directory is used to link files from the top-level inc/ directory  #
+# that are used for the WRFDA build. They are put in this subdirectory to #
+# avoid namespace collisions with WRFDA's .inc files and reduce clutter.  #
+#
+# This gitignore file is to avoid tracking these compile-time linked      #
+# files, as well as to avoid this being an empty directory which can not  #
+# be tracked by git.                                                      #
+###########################################################################
+*.inc
+*.h
+dm_comm_cpp_flags
+rsl_cpp_flags
+version_decl

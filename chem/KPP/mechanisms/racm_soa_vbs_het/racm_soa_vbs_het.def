@@ -1,0 +1,70 @@
+#include atoms_red
+#include ./racm_soa_vbs_het.spc
+#include ./racm_soa_vbs_het.eqn
+
+#INLINE F90_RATES
+REAL(KIND=dp) FUNCTION k50( TEMP, C_M )
+    REAL(KIND=dp), INTENT(IN) :: temp, c_m
+    REAL(KIND=dp) :: k0, k2, k3 
+
+   k0=2.4E-14_dp * EXP(460._dp/TEMP)
+   k2=2.7E-17_dp * EXP(2199._dp/TEMP)
+   k3=6.5E-34_dp * EXP(1335._dp/TEMP) * c_m
+
+   k50=k0+k3/(1+k3/k2)
+
+END FUNCTION k50
+
+REAL(kind=dp) FUNCTION k63( TEMP, C_M )
+
+    INTRINSIC LOG10
+
+    REAL(KIND=dp), INTENT(IN) :: temp      ! temperature [K]
+    REAL(KIND=dp), INTENT(IN) :: c_m       ! air concentration [molecules/cm3]
+    REAL(KIND=dp) :: k0_300Kn   ! low pressure limit at 300 K
+    REAL(KIND=dp) :: nn         ! exponent for low pressure limit
+    REAL(KIND=dp) :: kinf_300Kn ! high pressure limit at 300 K
+    REAL(KIND=dp) :: mn         ! exponent for high pressure limit
+    REAL(KIND=dp) :: zt_help, k0_T, kinf_T, k_ratio
+    REAL(KIND=dp) :: k63troe, k63cact
+
+    k0_300Kn = 5.9e-33_dp
+    nn = 1.4_dp
+    kinf_300Kn = 1.1e-12_dp
+    mn = -1.3_dp
+
+    zt_help = 300._dp/temp
+    k0_T    = k0_300Kn   * zt_help**(nn) * c_m ! k_0   at current T
+    kinf_T  = kinf_300Kn * zt_help**(mn)       ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    k63troe   = k0_T/(1._dp+k_ratio)*0.6_dp**(1._dp/(1._dp+LOG10(k_ratio)**2))
+
+    k0_300Kn = 1.5e-13_dp
+    nn = -0.6_dp
+    kinf_300Kn = 2.9e9_dp
+    mn = -6.1_dp
+
+    k0_T    = k0_300Kn   * zt_help**(nn)! k_0   at current T
+    kinf_T  = kinf_300Kn * zt_help**(mn) / c_m ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    k63cact = k0_T/(1._dp+k_ratio)*0.6_dp**(1._dp/(1._dp+LOG10(k_ratio)**2))
+
+    k63 = k63troe + k63cact 
+
+END FUNCTION k63
+
+REAL (KIND=dp) FUNCTION k268(TEMP,C_M)
+
+     INTRINSIC LOG10
+
+     REAL (KIND=dp), INTENT(IN) :: temp, c_m
+     REAL (KIND=dp) :: k00, k11, z
+  
+     k00=1.8E-31_dp*(TEMP/300._dp)**(-2._dp)
+     k11=1.0E-10_dp*(TEMP/300._dp)**(-1._dp)
+     z=1._dp/(1._dp+LOG10(k00*C_M/k11)**2._dp)
+     k268=(k00*C_M/(1._dp+k00*C_M/k11))*0.6_dp**z
+END FUNCTION k268
+
+#ENDINLINE 
+

@@ -1,0 +1,19 @@
+# This is the .gitignore file for the WRFDA build directory                  #
+#                                                                            #
+# Filenames and wildcards added below will not be tracked by git anywhere in #
+# this directory or any of its subdirectories. Note that these rules will be #
+# supplemented by rules in the top-level .gitignore file                     #
+#                                                                            #
+# Ignored file types should include executables, build-time temporary files, #
+# and other files which should not ever be added to the code repository.     #
+##############################################################################
+*.f
+*.f90
+*.F
+*.F90
+*.inc
+*.c
+*.h
+*.m4
+*.sed
+*.int

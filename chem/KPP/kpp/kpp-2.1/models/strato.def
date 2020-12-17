@@ -1,0 +1,84 @@
+#include strato.spc
+#include strato.eqn
+
+{#LANGUAGE Fortran77
+#INTEGRATOR rodas3
+#DRIVER general}
+
+#LOOKATALL
+
+#MONITOR O;
+
+#INITVALUES
+
+CFACTOR =   8.12E+16 ;
+
+O       =    8.158574E-09 ;  
+O1D     =    2.773328E-15 ;  
+O3      =    6.560000E-06 ;  
+NO      =    1.074516E-08 ;  
+NO2     =    2.758840E-09 ;
+NO3     =    5.667175E-14 ;  
+N2O5    =    6.905712E-12 ;  
+HNO3    =    3.486344E-10 ;  
+HNO4    =    3.827485E-12 ;  
+H2O     =    6.100000E-06 ;
+H       =    4.190815E-14 ;  
+OH      =    2.041165E-10 ;  
+HO2     =    1.439703E-10 ;  
+H2O2    =    7.227409E-11 ;  
+H2      =    3.700000E-07 ;
+CH4     =    4.900000E-07 ;  
+CH3     =    3.984427E-17 ;  
+CH3O    =    2.496504E-15 ;  
+CH3O2   =    5.130799E-12 ;  
+CH3OOH  =    4.587317E-12 ;
+HCO     =    3.010774E-19 ;  
+CH2O    =    9.913988E-11 ;  
+CO      =    2.000000E-08 ;  
+Cl      =    8.756027E-12 ;  
+Cl2     =    8.665679E-14 ;
+ClO     =    1.011874E-09 ;  
+ClOO    =    2.659306E-15 ;  
+OClO    =    7.193558E-14 ;  
+Cl2O2   =    7.103997E-14 ;  
+HCl     =    2.157657E-09 ;
+HOCl    =    2.196369E-10 ;  
+ClONO2  =    2.166934E-11 ;  
+Br      =    4.025093E-12 ;  
+BrCl    =    5.843046E-14 ;  
+BrO     =    1.132088E-11 ;
+HBr     =    4.349534E-13 ; 
+HOBr    =    5.066596E-12 ;  
+BrONO2  =    9.405408E-14 ;
+O2      =    0.209;
+N2      =    0.781;
+
+#INLINE F77_INIT
+        TSTART = 12.D0*3600.D0
+        TEND = TSTART + 24.D0*3600.D0 * 3
+        DT = 3600.D0
+        TEMP = 241.42
+#ENDINLINE
+
+#INLINE F90_INIT
+        TSTART = 12.D0*3600.D0
+        TEND = TSTART + 24.D0*3600.D0 * 3
+        DT = 3600.D0
+        TEMP = 241.42
+#ENDINLINE
+
+#INLINE MATLAB_INIT
+   global TSTART TEND DT TEMP
+   TSTART = 12.0*3600.0;
+   TEND = TSTART + 24.0*3600.0 * 3;
+   DT = 3600.0;
+   TEMP = 241.42;
+#ENDINLINE
+
+#INLINE C_INIT
+   TSTART = 12.0*3600.0;
+   TEND = TSTART + 24.0*3600.0 * 3;
+   DT = 3600.0;
+   TEMP = 241.42;
+#ENDINLINE

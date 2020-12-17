@@ -1,0 +1,60 @@
+#include tropo.spc
+#include tropo.eqn
+
+
+{#LANGUAGE Fortran77
+#INTEGRATOR rodas3
+#DRIVER matlab
+#HESSIAN ON}
+
+
+#LOOKATALL
+
+#MONITOR O3;
+
+#INITVALUES
+  ALL_SPEC = 1.0E-8;
+  O3   = 100.0;
+  NO   = 0.05;
+  NO2  = 0.05;
+  H2O  = 500.0;
+  CO   = 100.0;
+  NO3  = 0.1;
+  SO2  = 5.0;
+  SO4  = 1.0;
+  CH4  = 1700;
+  H2O2 = 2.0;
+  HNO4 = 1E-8;
+  O2   = 2.E+8;
+  CO2  = 5.E+7;
+  H2   = 500;  
+
+
+#INLINE F77_INIT
+	TSTART = 12.D0*3600.D0
+	TEND = TSTART + 24.D0*3600.D0 * 5
+	DT = 3600.D0
+        TEMP = 288.15
+#ENDINLINE
+
+#INLINE F90_INIT
+	TSTART = 12.D0*3600.D0
+	TEND = TSTART + 24.D0*3600.D0 * 5
+	DT = 3600.D0
+        TEMP = 288.15
+#ENDINLINE
+
+#INLINE MATLAB_INIT
+   global TSTART TEND DT TEMP
+   TSTART = 12.D0*3600.0;
+   TEND = TSTART + 24.0*3600.0 * 5;
+   DT = 3600.0;
+   TEMP = 288.15;
+#ENDINLINE
+
+#INLINE C_INIT
+   TSTART = 12.D0*3600.0;
+   TEND = TSTART + 24.0*3600.0 * 5;
+   DT = 3600.0;
+   TEMP = 288.15;
+#ENDINLINE

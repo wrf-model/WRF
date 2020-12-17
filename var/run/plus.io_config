@@ -1,0 +1,23 @@
+# input file for WRFPLUS runtime config of I/O streams
+# For additional information see README.io_config in top-level directory
+# Creator : Xin Zhang, MMM/NCAR, 2010-04-29
+#
+# basic states output from non-linear integration
+#
++:h:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,rainnc,rainncv,rainc,raincv,qvapor,qrain,qcloud,qice,qsnow,qgraup
+#
+# basic states input for adjoint and tangent linear integration
+#
++:i:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,rainnc,rainncv,rainc,raincv,qvapor,qrain,qcloud,qice,qsnow,qgraup
+#
+# adjoint forcing input for adjoint integration
+#
++:i:7:a_u,a_v,a_t,a_mu,a_ph,a_w,a_qvapor,a_p
+#
+# perturbation output for tangent linear integration
+#
++:h:8:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_p
+#
+# gradient output from adjoint integration at the beginning of the window
+#
++:h:7:a_u,a_v,a_t,a_mu,a_ph,a_w,a_qvapor,a_p

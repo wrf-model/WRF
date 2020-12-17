@@ -174,7 +174,6 @@
          INTENT(OUT) ::                            ph_cw                !   ph_cw - pH of cloud water
 
 
-
 ! LOCAL  VAR
      integer :: ii,jj,kk
 

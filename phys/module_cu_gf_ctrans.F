@@ -1,6 +1,6 @@
 MODULE module_cu_gf_ctrans
   real, parameter::g=9.81
-
+#if ( WRF_CHEM == 1 )
   contains
 
   SUBROUTINE ctrans_gf(numgas,num_chem,tracer,chemopt,traceropt  &
@@ -1023,5 +1023,5 @@ MODULE module_cu_gf_ctrans
     if(present(add)) x_aver = x_aver + add
 
  end SUBROUTINE get_cloud_bc_chem
-
+#endif
 END MODULE module_cu_gf_ctrans

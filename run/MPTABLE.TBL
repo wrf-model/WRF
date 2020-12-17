@@ -327,6 +327,7 @@
 
   Z0SNO  = 0.002        !snow surface roughness length (m) (0.002)
   SSI    = 0.03         !liquid water holding capacity for snowpack (m3/m3) (0.03)
+  SNOW_RET_FAC  = 5.e-5 !snowpack water release timescale factor (1/s)
   SWEMX  = 1.00         !new snow mass to fully cover old snow (mm)
                         !equivalent to 10mm depth (density = 100 kg/m3)
   TAU0          = 1.e6  !tau0 from Yang97 eqn. 10a

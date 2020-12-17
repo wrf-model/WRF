@@ -1,6 +1,6 @@
 MODULE module_chem_share
 USE module_state_description
-
+#if ( WRF_CHEM == 1 )
 CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -86,4 +86,5 @@ CONTAINS
 
    END FUNCTION get_last_gas
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#endif
 END MODULE module_chem_share

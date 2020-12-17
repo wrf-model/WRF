@@ -1,5 +1,5 @@
 MODULE module_ctrans_aqchem
-
+#if ( WRF_CHEM == 1 )
 CONTAINS
 
 !***********************************************************************
@@ -2456,5 +2456,5 @@ END FUNCTION TRIMLEN
       RETURN
 
 END FUNCTION INDEX1
-
+#endif
 END MODULE module_ctrans_aqchem

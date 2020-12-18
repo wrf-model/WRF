@@ -73,6 +73,13 @@ CONTAINS
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
+                 ,AHE0, AHE1, AHE2, AHE3, AHE4, AHE5, AHE6, AHE7   &
+                 ,AHE8, AHE9, AHE10,AHE11,AHE12,AHE13,AHE14,AHE15  &
+                 ,AHE16,AHE17,AHE18,AHE19,AHE20,AHE21,AHE22,AHE23  &
+                 ,AME0, AME1, AME2, AME3, AME4, AME5, AME6, AME7   &
+                 ,AME8, AME9, AME10,AME11,AME12,AME13,AME14,AME15  &
+                 ,AME16,AME17,AME18,AME19,AME20,AME21,AME22,AME23  &
+                 ,AHE,AME,gmt,xtime                                &
              ! Optional
                  ,hol, mol, regime                                 &
              ! Optional gravity-wave drag             
@@ -624,6 +631,20 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(IN)    :: XICE, SNOW, LH
+   
+   ! Parameters for AHE consideration
+   REAL,    DIMENSION( 0:23 , 0:23 )        :: FLG_GMT
+   INTEGER                                     :: iii,jjj,kkk,IGMT
+   REAL,       DIMENSION( ims:ime , jms:jme ),INTENT(IN)  ::      &
+                 AHE0, AHE1, AHE2, AHE3, AHE4, AHE5, AHE6, AHE7,  &
+                 AHE8, AHE9, AHE10,AHE11,AHE12,AHE13,AHE14,AHE15, &
+                 AHE16,AHE17,AHE18,AHE19,AHE20,AHE21,AHE22,AHE23, &
+                 AME0, AME1, AME2, AME3, AME4, AME5, AME6, AME7,  &
+                 AME8, AME9, AME10,AME11,AME12,AME13,AME14,AME15, &
+                 AME16,AME17,AME18,AME19,AME20,AME21,AME22,AME23
+   REAL,       DIMENSION( ims:ime , jms:jme ),                    &
+               INTENT(OUT)                     :: AHE,  AME
+   REAL,       INTENT(IN)                      :: gmt,xtime
 
    ! Stochastic parameter perturbations
    INTEGER,    INTENT(IN), OPTIONAL              ::             spp_pbl
@@ -1121,6 +1142,21 @@ CONTAINS
    ENDDO
    !$OMP END PARALLEL DO
 !
+! Adding Anthropogenic Heat and Mositure emissions onto tendencies as sources
+!       by M.Kanda, 19 June 2007 
+! AHE and AME makes no direct effect on MOST, but just on Ta above the ground
+!   
+        DO iii=0,23 
+        DO jjj=0,23 
+    FLG_GMT(iii,jjj)=0.0
+        ENDDO
+        ENDDO
+!
+        DO iii=0,23 
+    FLG_GMT(iii,iii)=1.0
+        ENDDO
+!
+    IGMT = MOD(INT(gmt+xtime/60.0),24)
   !$OMP PARALLEL DO   &
   !$OMP PRIVATE ( ij, i,j,k, its, ite, jts, jte, z0, z1, z2, w1, w2, message, initflag )
   DO ij = 1 , num_tiles
@@ -2122,6 +2158,50 @@ CONTAINS
           ENDIF
 
 #endif
+! Adding Anthropogenic Heat and Mositure emissions onto tendencies as sources
+!       by M.Kanda, 19 June 2007 
+! AHE and AME makes no direct effect on MOST, but just on Ta above the ground
+!
+       DO j=jts,jte
+       DO i=its,ite
+! 
+  AHE(i,j) =(FLG_GMT(0,IGMT)* AHE0(i,j) +FLG_GMT(1,IGMT)* AHE1(i,j)      &
+            +FLG_GMT(2,IGMT)* AHE2(i,j) +FLG_GMT(3,IGMT)* AHE3(i,j)      &
+            +FLG_GMT(4,IGMT)* AHE4(i,j) +FLG_GMT(5,IGMT)* AHE5(i,j)      &
+            +FLG_GMT(6,IGMT)* AHE6(i,j) +FLG_GMT(7,IGMT)* AHE7(i,j)      &
+            +FLG_GMT(8,IGMT)* AHE8(i,j) +FLG_GMT(9,IGMT)* AHE9(i,j)      &
+            +FLG_GMT(10,IGMT)*AHE10(i,j)+FLG_GMT(11,IGMT)*AHE11(i,j)     &
+            +FLG_GMT(12,IGMT)*AHE12(i,j)+FLG_GMT(13,IGMT)*AHE13(i,j)     &
+            +FLG_GMT(14,IGMT)*AHE14(i,j)+FLG_GMT(15,IGMT)*AHE15(i,j)     &
+            +FLG_GMT(16,IGMT)*AHE16(i,j)+FLG_GMT(17,IGMT)*AHE17(i,j)     &
+            +FLG_GMT(18,IGMT)*AHE18(i,j)+FLG_GMT(19,IGMT)*AHE19(i,j)     &
+            +FLG_GMT(20,IGMT)*AHE20(i,j)+FLG_GMT(21,IGMT)*AHE21(i,j)     &
+            +FLG_GMT(22,IGMT)*AHE22(i,j)+FLG_GMT(23,IGMT)*AHE23(i,j))    &
+            /1200.0
+!
+  AME(i,j) =(FLG_GMT(0,IGMT)* AME0(i,j) +FLG_GMT(1,IGMT)* AME1(i,j)      &
+            +FLG_GMT(2,IGMT)* AME2(i,j) +FLG_GMT(3,IGMT)* AME3(i,j)      &
+            +FLG_GMT(4,IGMT)* AME4(i,j) +FLG_GMT(5,IGMT)* AME5(i,j)      &
+            +FLG_GMT(6,IGMT)* AME6(i,j) +FLG_GMT(7,IGMT)* AME7(i,j)      &
+            +FLG_GMT(8,IGMT)* AME8(i,j) +FLG_GMT(9,IGMT)* AME9(i,j)      &
+            +FLG_GMT(10,IGMT)*AME10(i,j)+FLG_GMT(11,IGMT)*AME11(i,j)     &
+            +FLG_GMT(12,IGMT)*AME12(i,j)+FLG_GMT(13,IGMT)*AME13(i,j)     &
+            +FLG_GMT(14,IGMT)*AME14(i,j)+FLG_GMT(15,IGMT)*AME15(i,j)     &
+            +FLG_GMT(16,IGMT)*AME16(i,j)+FLG_GMT(17,IGMT)*AME17(i,j)     &
+            +FLG_GMT(18,IGMT)*AME18(i,j)+FLG_GMT(19,IGMT)*AME19(i,j)     &
+            +FLG_GMT(20,IGMT)*AME20(i,j)+FLG_GMT(21,IGMT)*AME21(i,j)     &
+            +FLG_GMT(22,IGMT)*AME22(i,j)+FLG_GMT(23,IGMT)*AME23(i,j))    &
+            /(2.45*1000000.0)
+      ENDDO
+      ENDDO
+!
+   kkk=1
+      DO j=jts,jte
+      DO i=its,ite   
+    rthblten(i,kkk,j)=rthblten(i,kkk,j)+(AHE(i,j)/dz8w(i,kkk,j))
+    rqvblten(i,kkk,j)=rqvblten(i,kkk,j)+(AME(i,j)/dz8w(i,kkk,j))
+      ENDDO
+      ENDDO
       
    ENDDO
    !$OMP END PARALLEL DO

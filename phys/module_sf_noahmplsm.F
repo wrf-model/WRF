@@ -219,7 +219,7 @@ MODULE MODULE_SF_NOAHMPLSM
     REAL :: DEN                !tree density (no. of trunks per m2)
     REAL :: RC                 !tree crown radius (m)
     REAL :: MFSNO              !snowmelt m parameter ()
-    REAL :: SCFFAC             !snow cover factor (originally hard-coded 2.5*z0 in SCF formulation)
+    REAL :: SCFFAC             !snow cover factor (m) (originally hard-coded 2.5*z0 in SCF formulation)
     REAL :: SAIM(12)           !monthly stem area index, one-sided
     REAL :: LAIM(12)           !monthly leaf area index, one-sided
     REAL :: SLA                !single-side leaf area per Kg [m2/kg]
@@ -9199,7 +9199,7 @@ MODULE NOAHMP_TABLES
     REAL :: DEN_TABLE(MVT)         !tree density (no. of trunks per m2)
     REAL :: RC_TABLE(MVT)          !tree crown radius (m)
     REAL :: MFSNO_TABLE(MVT)       !snowmelt curve parameter ()
-    REAL :: SCFFAC_TABLE(MVT)      !snow cover factor (replace original hard-coded 2.5*z0 in SCF formulation)
+    REAL :: SCFFAC_TABLE(MVT)      !snow cover factor (m) (replace original hard-coded 2.5*z0 in SCF formulation)
     REAL :: SAIM_TABLE(MVT,12)     !monthly stem area index, one-sided
     REAL :: LAIM_TABLE(MVT,12)     !monthly leaf area index, one-sided
     REAL :: SLA_TABLE(MVT)         !single-side leaf area per Kg [m2/kg]

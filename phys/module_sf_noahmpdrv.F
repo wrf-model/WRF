@@ -1201,6 +1201,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%Z0SNO      =       Z0SNO_TABLE
    parameters%SSI        =         SSI_TABLE
    parameters%SNOW_RET_FAC = SNOW_RET_FAC_TABLE
+   parameters%SNOW_EMIS  =   SNOW_EMIS_TABLE
    parameters%SWEMX        =     SWEMX_TABLE
    parameters%TAU0         =      TAU0_TABLE
    parameters%GRAIN_GROWTH = GRAIN_GROWTH_TABLE

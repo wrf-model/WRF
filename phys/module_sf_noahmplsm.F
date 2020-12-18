@@ -219,6 +219,7 @@ MODULE MODULE_SF_NOAHMPLSM
     REAL :: DEN                !tree density (no. of trunks per m2)
     REAL :: RC                 !tree crown radius (m)
     REAL :: MFSNO              !snowmelt m parameter ()
+    REAL :: SCFFAC             !snow cover factor (originally hard-coded 2.5*z0 in SCF formulation)
     REAL :: SAIM(12)           !monthly stem area index, one-sided
     REAL :: LAIM(12)           !monthly leaf area index, one-sided
     REAL :: SLA                !single-side leaf area per Kg [m2/kg]
@@ -1833,7 +1834,8 @@ ENDIF   ! CROPTYPE == 0
      IF(SNOWH.GT.0.)  THEN
          BDSNO    = SNEQV / SNOWH
          FMELT    = (BDSNO/100.)**parameters%MFSNO
-         FSNO     = TANH( SNOWH /(2.5* Z0 * FMELT))
+         !FSNO     = TANH( SNOWH /(2.5* Z0 * FMELT))
+         FSNO     = TANH( SNOWH /(parameters%SCFFAC * FMELT)) ! C.He: bring hard-coded 2.5*z0 to MPTABLE tunable parameter SCFFAC
      ENDIF
 
 ! ground roughness length
@@ -9197,6 +9199,7 @@ MODULE NOAHMP_TABLES
     REAL :: DEN_TABLE(MVT)         !tree density (no. of trunks per m2)
     REAL :: RC_TABLE(MVT)          !tree crown radius (m)
     REAL :: MFSNO_TABLE(MVT)       !snowmelt curve parameter ()
+    REAL :: SCFFAC_TABLE(MVT)      !snow cover factor (replace original hard-coded 2.5*z0 in SCF formulation)
     REAL :: SAIM_TABLE(MVT,12)     !monthly stem area index, one-sided
     REAL :: LAIM_TABLE(MVT,12)     !monthly leaf area index, one-sided
     REAL :: SLA_TABLE(MVT)         !single-side leaf area per Kg [m2/kg]
@@ -9433,7 +9436,7 @@ CONTAINS
                                      LAI_JUL,LAI_AUG,LAI_SEP,LAI_OCT,LAI_NOV,LAI_DEC
     REAL, DIMENSION(MVT) :: RHOL_VIS, RHOL_NIR, RHOS_VIS, RHOS_NIR, &
                                      TAUL_VIS, TAUL_NIR, TAUS_VIS, TAUS_NIR
-    REAL, DIMENSION(MVT) :: CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, &
+    REAL, DIMENSION(MVT) :: CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, SCFFAC, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, &
                      AVCMX, AQE, LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  &
                      BP, MP, QE25, RMS25, RMR25, ARM, FOLNMX, WDPOOL, WRRAT, MRP, NROOT, RGL, RS, HS, TOPT, RSMAX, &
 		     SLAREA, EPS1, EPS2, EPS3, EPS4, EPS5
@@ -9441,7 +9444,7 @@ CONTAINS
     NAMELIST / noahmp_usgs_veg_categories / VEG_DATASET_DESCRIPTION, NVEG
     NAMELIST / noahmp_usgs_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, ISCROP, EBLFOREST, NATURAL, &
          LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL, &
-         CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
+         CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, SCFFAC, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
          LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  BP, MP, QE25, RMS25, RMR25, ARM, &
          FOLNMX, WDPOOL, WRRAT, MRP, NROOT, RGL, RS, HS, TOPT, RSMAX, &
          SAI_JAN, SAI_FEB, SAI_MAR, SAI_APR, SAI_MAY, SAI_JUN,SAI_JUL,SAI_AUG,SAI_SEP,SAI_OCT,SAI_NOV,SAI_DEC, &
@@ -9451,7 +9454,7 @@ CONTAINS
     NAMELIST / noahmp_modis_veg_categories / VEG_DATASET_DESCRIPTION, NVEG
     NAMELIST / noahmp_modis_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, ISCROP, EBLFOREST, NATURAL, &
          LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL, &
-         CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
+         CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, SCFFAC, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
          LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  BP, MP, QE25, RMS25, RMR25, ARM, &
          FOLNMX, WDPOOL, WRRAT, MRP, NROOT, RGL, RS, HS, TOPT, RSMAX, &
          SAI_JAN, SAI_FEB, SAI_MAR, SAI_APR, SAI_MAY, SAI_JUN,SAI_JUL,SAI_AUG,SAI_SEP,SAI_OCT,SAI_NOV,SAI_DEC, &
@@ -9467,6 +9470,7 @@ CONTAINS
     DEN_TABLE    = -1.E36
     RC_TABLE     = -1.E36
     MFSNO_TABLE  = -1.E36
+    SCFFAC_TABLE = -1.E36
     RHOL_TABLE   = -1.E36
     RHOS_TABLE   = -1.E36
     TAUL_TABLE   = -1.E36
@@ -9562,6 +9566,7 @@ CONTAINS
        DEN_TABLE(1:NVEG)  = DEN(1:NVEG)
         RC_TABLE(1:NVEG)  = RC(1:NVEG)
      MFSNO_TABLE(1:NVEG)  = MFSNO(1:NVEG)
+    SCFFAC_TABLE(1:NVEG)  = SCFFAC(1:NVEG)
         XL_TABLE(1:NVEG)  = XL(1:NVEG)
      CWPVT_TABLE(1:NVEG)  = CWPVT(1:NVEG)
      C3PSN_TABLE(1:NVEG)  = C3PSN(1:NVEG)

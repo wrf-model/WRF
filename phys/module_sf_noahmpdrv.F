@@ -1086,6 +1086,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
   parameters%DEN    =    DEN_TABLE(VEGTYPE)       !tree density (no. of trunks per m2)
   parameters%RC     =     RC_TABLE(VEGTYPE)       !tree crown radius (m)
   parameters%MFSNO  =  MFSNO_TABLE(VEGTYPE)       !snowmelt m parameter ()
+  parameters%SCFFAC = SCFFAC_TABLE(VEGTYPE)       !snow cover factor (originally hard-coded 2.5*z0 in SCF formulation)
   parameters%SAIM   =   SAIM_TABLE(VEGTYPE,:)     !monthly stem area index, one-sided
   parameters%LAIM   =   LAIM_TABLE(VEGTYPE,:)     !monthly leaf area index, one-sided
   parameters%SLA    =    SLA_TABLE(VEGTYPE)       !single-side leaf area per Kg [m2/kg]

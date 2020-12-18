@@ -142,7 +142,8 @@ MODULE MODULE_SF_NOAHMPLSM
 		      !   2 -> BATS: when SFCTMP<TFRZ+2.2 
 		      !   3 -> SFCTMP < TFRZ
 		      !   4 -> Use WRF microphysics output
-
+                      !   5 -> Use wetbulb temperature (Wang et al., 2019 GRL) C.He, 12/18/2020
+ 
   INTEGER :: OPT_TBOT ! options for lower boundary condition of soil temperature
                       !   1 -> zero heat flux from bottom (ZBOT and TBOT not used)
                       ! **2 -> TBOT at ZBOT (8m) read from a file (original Noah)
@@ -928,6 +929,15 @@ contains
   REAL                                        :: PRCP_FROZEN   !total frozen precipitation [mm/s] ! MB/AN : v3.7
   REAL, PARAMETER                             :: RHO_GRPL = 500.0  ! graupel bulk density [kg/m3] ! MB/AN : v3.7
   REAL, PARAMETER                             :: RHO_HAIL = 917.0  ! hail bulk density [kg/m3]    ! MB/AN : v3.7
+! wet-bulb scheme Wang et al., 2019 GRL, C.He, 12/18/2020
+  REAL               :: ESATAIR    ! saturated vapor pressure of air
+  REAL               :: LATHEA     ! latent heat of vapor/sublimation
+  REAL               :: GAMMA_b      ! (cp*p)/(eps*L)
+  REAL               :: TDC        ! air temperature [C]
+  REAL               :: TWET       ! wetbulb temperature
+  INTEGER            :: ITER
+  INTEGER, PARAMETER :: NITER = 10 ! iterations for Twet calculation
+
 ! --------------------------------------------------------------------------------------------------
 
 !jref: seems like PAIR should be P1000mb??
@@ -1015,6 +1025,23 @@ contains
 	  FPICE = 0.0
         ENDIF
 	
+     ENDIF
+
+! wet-bulb scheme (Wang et al., 2019 GRL), C.He, 12/18/2020
+     IF(OPT_SNF == 5) THEN
+       TDC   = MIN( 50., MAX(-50.,(SFCTMP-TFRZ)) ) !Kelvin to degree Celsius with limit -50 to +50
+       IF (SFCTMP > TFRZ) THEN
+          LATHEA = HVAP
+       ELSE
+          LATHEA = HSUB
+       END IF
+       GAMMA_b = CPAIR*SFCPRS/(0.622*LATHEA)
+       TWET    = TDC - 5.  ! first guess wetbulb temperature
+       DO ITER = 1, NITER
+          ESATAIR = 610.8 * EXP((17.27*TWET)/(237.3+TWET))
+          TWET    = TWET - (ESATAIR-EAIR)/ GAMMA_b  ! Wang et al., 2019 GRL Eq.2
+       END DO
+       FPICE = 1.0/(1.0+6.99E-5*exp(2.0*(TWET+3.97))) ! Wang et al., 2019 GRL Eq. 1
      ENDIF
 
      RAIN   = PRCP * (1.-FPICE)

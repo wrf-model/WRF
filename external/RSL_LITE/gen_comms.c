@@ -170,7 +170,7 @@ if ( nta == 1 ) {
 }
 if ( nta == 2 ) fprintf(fp,"  a_%s, &\n",varref) ;
 #else
- fprintf(fp,"  %s, &\n",varref) ;
+fprintf(fp,"  %s, &\n",varref) ;
 #endif
               }
               else

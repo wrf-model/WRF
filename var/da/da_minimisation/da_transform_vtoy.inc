@@ -1,5 +1,9 @@
 subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
-                              y, grid, config_flags, vp6, vv6)
+                              y, grid, config_flags, vp6, vv6 &
+#if (WRF_CHEM == 1)
+                        ,vch, vchem &
+#endif
+                        )
 
    !----------------------------------------------------------------------
    ! Purpose:  Does transform of control variable (V) to Obs-space (Y)
@@ -14,6 +18,10 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
+#if (WRF_CHEM == 1)
+   type(xch_type), optional, intent(out) :: vch   ! CHEM CV
+   type(xchem_type), optional, intent(out) :: vchem   ! CHEM CV
+#endif
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
@@ -36,7 +44,15 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
    if (var4d) then
 #ifdef VAR4D
-      call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
+#if (WRF_CHEM == 1)
+      if (present(vch)) then
+         call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp, vch)
+      else
+#endif
+         call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
+#if (WRF_CHEM == 1)
+      end if
+#endif
       if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
          call da_transform_vpatox(grid, be, ep, vp)
          call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
@@ -70,6 +86,10 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
       call da_tl_model
 
+#if (WRF_CHEM == 1) 
+      call da_transfer_wrftltoy_chem(grid, iv, y)
+#endif
+
       if (num_fgat_time > 1 .and. use_rainobs) then
          ! Buffer to save var4d_bin_rain rainfall
          allocate (hr_rainc (ims:ime,jms:jme,1:num_fgat_time))
@@ -90,6 +110,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
          call domain_clockprint(150, grid, 'get CurrTime from clock,')
       endif
 
+      if (checkpoint_interval .eq. 0 ) then
       do nobwin= num_fgat_time, 1 , -1
 
          call domain_clock_get( grid, current_timestr=timestr )
@@ -116,7 +137,8 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
          call domain_clockprint(150, grid, 'DEBUG :  get CurrTime from clock,')
 
       end do
-      
+      endif
+
       ! Caculate var4d_bin_rain rainfall
       if (num_fgat_time > 1 .and. use_rainobs) then
          do nobwin=num_fgat_time, 1, -1
@@ -160,7 +182,21 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
       ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation
       ! here grid%xa contains only the static increment
-      call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
+#if (WRF_CHEM == 1)
+!      if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
+      if (present(vchem)) then
+
+        call da_zero_x (grid%xa)
+        call da_zero_xchem_type (grid%xachem)
+!       call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp, vchem=vchem)
+        call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp, vchem=vchem)
+
+      else
+#endif
+         call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
+#if (WRF_CHEM == 1)
+      end if
+#endif
 
       if ( use_4denvar ) then
          num_subtwindow = num_fgat_time

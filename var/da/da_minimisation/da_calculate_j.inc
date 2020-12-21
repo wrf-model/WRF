@@ -32,6 +32,9 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    integer          :: jl_start, jl_end             ! Start/end indices of Je.
    integer          :: jt_start, jt_end, iphase
    real             :: jo_partial                   ! jo for this processor
+#if (WRF_CHEM == 1)
+   real             :: joc_partial                  ! jo for cross-validation for this processor
+#endif
    type (y_type)    :: jo_grad_y ! Grad_y(jo)
    real             :: cv_xhat_jb(cv_size_jb), cv_xhat_je(cv_size_je), cv_xhat_jl(cv_size_jl), &
                        cv_xhat_jt(cv_size_jt)
@@ -73,6 +76,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    inc_div = 0.0
 
    call da_allocate_y(iv, jo_grad_y)
+#if (WRF_CHEM == 1)
+   call da_allocate_y_chem(iv, jo_grad_y)
+   call da_allocate_y_chem_sfc(iv, jo_grad_y)
+   call da_allocate_y_chem_sfc(iv, y)
+#endif
 
    !-------------------------------------------------------------------------
    ! [1.0] calculate jo:
@@ -84,11 +92,22 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 #ifdef VAR4D
       call da_transform_vtoy(cv_size, be, grid%ep, xhat, iv, grid%vp, grid%vv,&
                               xbx, y,                                         &
-                              grid, config_flags, grid%vp6, grid%vv6)
+                              grid, config_flags, grid%vp6, grid%vv6 &
+#if (WRF_CHEM == 1)
+                              , grid%vch &
+#endif
+                              )
+
 #else
       call da_transform_vtoy(cv_size, be, grid%ep, xhat, iv, grid%vp, grid%vv,&
                               xbx, y,                                         &
-                              grid, config_flags)
+                              grid, config_flags &
+!!When vch includes initial conditions, need to add vch=grid%vch at end of this call
+#if (WRF_CHEM == 1)
+              , vchem=grid%vchem &
+#endif
+              )
+
 #endif
    end if
 
@@ -98,14 +117,22 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 
    ! [1.3] calculate jo:
 
-   call da_jo_and_grady(iv, re, jo_partial, j % jo, jo_grad_y)
-
+	jo_partial = 0.0
+   call da_jo_and_grady(iv, re, jo_partial, j % jo, jo_grad_y &
+#if (WRF_CHEM == 1)
+                        , joc_partial &
+#endif
+                        )
    if (test_dm_exact) then
       ! jo_partial has been already summed at lower level
       j % jo % total = jo_partial
    else
       j % jo % total = wrf_dm_sum_real(jo_partial)
    end if
+
+#if (WRF_CHEM == 1)
+      j % jo % crossval = wrf_dm_sum_real(joc_partial)
+#endif
 
    ! [1.4] calculate jc-dfi:
 
@@ -149,7 +176,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    j % jb = 0.0
    if (cv_size_jb > 0) then
       cv_xhat_jb(1:cv_size_jb) = cv(1:cv_size_jb) + xhat(1:cv_size_jb)
-      j % jb = jb_factor * 0.5 * da_dot_cv(cv_size_jb,  cv_xhat_jb, cv_xhat_jb, grid, be%cv_mz, be%ncv_mz)
+      j % jb = jb_factor * 0.5 * da_dot_cv(cv_size_jb,  cv_xhat_jb, cv_xhat_jb, grid, be%cv_mz, be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chem &
+#endif
+               )
    end if
 
    !-------------------------------------------------------------------------
@@ -159,9 +190,12 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    j % je = 0.0
    if (be % ne > 0) then
       cv_xhat_je(1:cv_size_je) = cv(je_start:je_end) + xhat(je_start:je_end)
-      j % je = je_factor * 0.5 * da_dot_cv(cv_size_je, cv_xhat_je, cv_xhat_je, grid, be%cv_mz, be%ncv_mz)
+      j % je = je_factor * 0.5 * da_dot_cv(cv_size_je, cv_xhat_je, cv_xhat_je, grid, be%cv_mz, be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chem &
+#endif
+               )
    end if
-
 
    !----------------------------------------------------------------------
    ![1.0.1] calculate grad_v (jd):
@@ -201,7 +235,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    if ( var4d ) then
       cv_xhat_jl(1:cv_size_jl) = cv (jl_start:jl_end) + xhat(jl_start:jl_end)
 
-      j % jl = 0.5 * da_dot_cv(cv_size_jl, cv_xhat_jl, cv_xhat_jl, grid, be%cv_mz, be%ncv_mz)
+      j % jl = 0.5 * da_dot_cv(cv_size_jl, cv_xhat_jl, cv_xhat_jl, grid, be%cv_mz, be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chem &
+#endif
+               )
 
    endif
 
@@ -311,7 +349,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
          call da_transform_vpatox(grid, be, grid%ep, grid%vp)
          call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
       end if
-      call da_transform_xtoxa(grid)
+!!!      call da_transform_xtoxa(grid)
       call da_divergence_constraint(grid%xb, grid%xa%u, grid%xa%v, inc_div)
       j % jm   = 0.5* SUM(inc_div(its:ite, jts:jte, kts:kte)* &
                           inc_div(its:ite, jts:jte, kts:kte))/divc_factor

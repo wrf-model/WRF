@@ -39,6 +39,24 @@ subroutine da_swap_xtraj ( grid )
       call kj_swap_reverse (model_grid%moist(:,:,:,i), grid%moist(:,:,:,i), &
                     grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    enddo
+!   do i = PARAM_FIRST_SCALAR, num_tracer
+!      call kj_swap_reverse (model_grid%tracer(:,:,:,i), grid%tracer(:,:,:,i), &
+!                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+!   enddo
+#if (WRF_CHEM == 1)
+   do i = PARAM_FIRST_SCALAR, num_chem
+      call kj_swap_reverse (model_grid%chem(:,:,:,i), grid%chem(:,:,:,i), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   enddo
+   do i = PARAM_FIRST_SCALAR, num_scaleant
+      call kj_swap_reverse (model_grid%scaleant(:,:,:,i), grid%scaleant(:,:,:,i), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, grid%num_ant_steps)
+   enddo
+   do i = PARAM_FIRST_SCALAR, num_scalebb
+      call kj_swap_reverse (model_grid%scalebb(:,:,:,i), grid%scalebb(:,:,:,i), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, grid%num_bb_steps)
+   enddo
+#endif
    grid%mu_2 = model_grid%mu_2
    grid%psfc = model_grid%psfc
    grid%tsk = model_grid%tsk
@@ -54,6 +72,15 @@ subroutine da_swap_xtraj ( grid )
    grid%rainncv = model_grid%rainncv
    grid%rainc = model_grid%rainc
    grid%raincv = model_grid%raincv
+
+   grid%hfx = model_grid%hfx
+   grid%qfx = model_grid%qfx
+   grid%pblh = model_grid%pblh
+   grid%ust = model_grid%ust
+   grid%mol = model_grid%mol
+   grid%znt = model_grid%znt
+!   grid%tslb = model_grid%tslb
+!   grid%smois = model_grid%smois
 
 !  grid%mub = model_grid%mub
 !  grid%dx = model_grid%dx

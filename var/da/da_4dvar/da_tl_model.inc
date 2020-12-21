@@ -10,28 +10,31 @@ subroutine da_tl_model ()
    integer :: time_step, fid, ierr, i, j, alarmid, gwd_opt
    character (len=80)     :: inpname 
 
+   integer :: end_year0, end_month0, end_day0, end_hour0
+
    if (trace_use_dull) call da_trace_entry("da_tl_model")
 
 #ifdef _OPENMP
    call setfeenv()
 #endif
 
-   ! Set up perturbation output at each slots
-   model_config_rec%auxhist8_outname = "tl_d<domain>_<date>"
-   call nl_set_auxhist8_interval_s ( head_grid%id, var4d_bin ) 
-   call nl_set_auxhist8_begin_s ( head_grid%id, 0 )
-   call nl_set_auxhist8_end_h ( head_grid%id, 999 )
-   call nl_set_io_form_auxhist8 ( head_grid%id, 2 )
-   call nl_set_frames_per_auxhist8 ( head_grid%id, 1 )
+   IF ( checkpoint_interval .LE. 0 ) THEN
+      ! Set up perturbation output at each slots
+      model_config_rec%auxhist18_outname = "tl_d<domain>_<date>"
+      call nl_set_auxhist18_interval_s ( head_grid%id, var4d_bin ) 
+      call nl_set_auxhist18_begin_s ( head_grid%id, 0 )
+      call nl_set_auxhist18_end_h ( head_grid%id, 999 )
+      call nl_set_io_form_auxhist18 ( head_grid%id, 2 )
+      call nl_set_frames_per_auxhist18 ( head_grid%id, 1 )
 
-
-   ! Set up basic states reading
-   model_config_rec%auxinput6_inname = "auxhist6_d<domain>_<date>"
-   call nl_get_time_step ( head_grid%id, time_step )
-   call nl_set_auxinput6_interval_s (head_grid%id, time_step )
-   call nl_set_io_form_auxinput6 ( head_grid%id, 2 )
-   call nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
-   call nl_get_gwd_opt ( head_grid%id, gwd_opt )
+      ! Set up basic states reading
+      model_config_rec%auxinput6_inname = "auxhist6_d<domain>_<date>"
+      call nl_get_time_step ( head_grid%id, time_step )
+      call nl_set_auxinput6_interval_s (head_grid%id, time_step )
+      call nl_set_io_form_auxinput6 ( head_grid%id, 2 )
+      call nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
+      call nl_get_gwd_opt ( head_grid%id, gwd_opt )
+   ENDIF
 
    ! Set all perturbation to ZERO
 
@@ -114,10 +117,16 @@ subroutine da_tl_model ()
    ! Set the physics options to what they are in TL and AD
    if (original_mp_physics .NE. 0 .and. original_mp_physics .NE. 98 .and. original_mp_physics .NE. 99) &
       call nl_set_mp_physics (head_grid%id, original_mp_physics_ad) 
-   call nl_set_ra_lw_physics (head_grid%id, 0)
-   call nl_set_ra_sw_physics (head_grid%id, 0)
-   call nl_set_sf_sfclay_physics (head_grid%id, 0)
-   if (original_bl_pbl_physics .gt. 0) &
+   if ( original_sf_surface_physics .ne. 1 .AND. &
+        original_sf_surface_physics .ne. 7 ) then
+      call nl_set_ra_lw_physics (head_grid%id, 0)
+      call nl_set_ra_sw_physics (head_grid%id, 0)
+   end if
+   if ( original_sf_sfclay_physics .gt. 0 .and. &
+        original_sf_sfclay_physics .ne. 7 .and. &
+        original_sf_sfclay_physics .ne. 91 ) &
+      call nl_set_sf_sfclay_physics (head_grid%id, 0)
+   if ( original_bl_pbl_physics .gt. 0 .and. original_bl_pbl_physics .ne. 7) &
       call nl_set_bl_pbl_physics (head_grid%id, 98)
    if (original_cu_physics .gt. 0) then
       call nl_set_cu_physics (head_grid%id, 98) 
@@ -129,10 +138,49 @@ subroutine da_tl_model ()
    call nl_set_icloud (head_grid%id, 0)
    !call nl_set_isfflx (head_grid%id, 0)
 
-   ! WRF model time-stepping.  Calls integrate().
    call nl_set_var4d_run (head_grid%id, .true.)
-   call wrf_run_tl
-	
+
+   ! WRF model time-stepping.  Calls integrate().
+   IF ( checkpoint_interval .GT. 0 ) THEN
+      end_year0 = model_config_rec%end_year(head_grid%id)
+      end_month0 = model_config_rec%end_month(head_grid%id)
+      end_day0 = model_config_rec%end_day(head_grid%id)
+      end_hour0 = model_config_rec%end_hour(head_grid%id)
+
+      call da_set_run_hours ()
+
+      call wrf_run_tl_checkpt
+
+      if ( run_hours .gt. adtl_run_hours .and. run_days .eq. 0 ) then
+         model_config_rec%run_hours = run_hours
+
+         model_config_rec%end_year(head_grid%id) = end_year0
+         model_config_rec%end_month(head_grid%id) = end_month0
+         model_config_rec%end_day(head_grid%id) = end_day0
+         model_config_rec%end_hour(head_grid%id) = end_hour0
+
+         IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+           IF ( head_grid%domain_clock_created ) THEN
+             CALL WRFU_ClockDestroy( head_grid%domain_clock )
+             head_grid%domain_clock_created = .FALSE.
+           ENDIF
+         ENDIF
+         IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+              ASSOCIATED( head_grid%alarms_created ) ) THEN
+           DO alarmid = 1, MAX_WRF_ALARMS
+             IF ( head_grid%alarms_created( alarmid ) ) THEN
+               CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+               head_grid%alarms_created( alarmid ) = .FALSE.
+             ENDIF
+           ENDDO
+         ENDIF
+         call Setup_Timekeeping ( head_grid )
+
+      end if
+   ELSE
+      call wrf_run_tl
+   ENDIF
+
    ! restore the physics options to the originals
    call nl_set_mp_physics (head_grid%id, original_mp_physics) 
    call nl_set_ra_lw_physics (head_grid%id, original_ra_lw_physics)
@@ -147,10 +195,10 @@ subroutine da_tl_model ()
    call nl_set_icloud (head_grid%id, original_icloud)
    !call nl_set_isfflx (head_grid%id, original_isfflx)
 
-   ! Turn off auxinput2 reading and auxhist8 output
+   ! Turn off auxinput2 reading and auxhist18 output
 
    call nl_set_auxinput6_interval_s (head_grid%id, 0 )
-   call nl_set_auxhist8_interval_s ( head_grid%id, 0 )
+   call nl_set_auxhist18_interval_s ( head_grid%id, 0 )
 
    IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
      IF ( head_grid%domain_clock_created ) THEN

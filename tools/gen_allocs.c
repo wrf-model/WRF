@@ -646,6 +646,13 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
             }
           }
         } else {
+
+  if (strcmp(fname,"alpha_ant")==0||strcmp(fname,"alpha_bb")==0)   continue ;  /* !!! add !!! */
+  if (strcmp(fname,"a_scalar")==0||strcmp(fname,"g_scalar")==0)   continue ;  /* !!! add !!! */
+  if (strcmp(fname,"chem_ic")==0)   continue ;  /* !!! add !!! */
+
+  if (strcmp(fname,"field_u_tend_perturb")==0||strcmp(fname,"field_v_tend_perturb")==0||strcmp(fname,"field_t_tend_perturb")==0)   continue ;  /* !!! add !!! */
+
 #ifdef USE_ALLOCATABLES
         fprintf(fp,
 "IF ( ALLOCATED( %s%s ) ) THEN \n", structname, fname ) ;

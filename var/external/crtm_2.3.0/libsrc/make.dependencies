@@ -117,8 +117,8 @@ NESDIS_SSMI_SIceEM_Module.o : NESDIS_SSMI_SIceEM_Module.f90 NESDIS_LandEM_Module
 NESDIS_SSMI_SnowEM_Module.o : NESDIS_SSMI_SnowEM_Module.f90 NESDIS_LandEM_Module.o Type_Kinds.o 
 NESDIS_SnowEM_ATMS_Parameters.o : NESDIS_SnowEM_ATMS_Parameters.f90 Type_Kinds.o NESDIS_SnowEM_Parameters.o 
 NESDIS_SnowEM_Parameters.o : NESDIS_SnowEM_Parameters.f90 Type_Kinds.o 
-NESDIS_ATMS_SeaIce_LIB.o : NESDIS_ATMS_SeaIce_LIB.f90 Type_Kinds.o
-NESDIS_ATMS_SeaICE_Module.o : NESDIS_ATMS_SeaICE_Module.f90 Type_Kinds.o NESDIS_LandEM_Module.o NESDIS_ATMS_SeaICE_LIB.o
+NESDIS_ATMS_SeaIce_LIB.o : NESDIS_ATMS_SeaICE_LIB.f90 Type_Kinds.o
+NESDIS_ATMS_SeaICE_Module.o : NESDIS_ATMS_SeaICE_Module.f90 Type_Kinds.o NESDIS_LandEM_Module.o NESDIS_ATMS_SeaIce_LIB.o
 NLTECoeff_Binary_IO.o : NLTECoeff_Binary_IO.f90 NLTECoeff_Define.o Binary_File_Utility.o Message_Handler.o File_Utility.o Type_Kinds.o 
 NLTECoeff_Define.o : NLTECoeff_Define.f90 SensorInfo_Parameters.o Subset_Define.o Compare_Float_Numbers.o Message_Handler.o Type_Kinds.o 
 NLTE_Parameters.o : NLTE_Parameters.f90 Type_Kinds.o 

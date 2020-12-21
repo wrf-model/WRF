@@ -40,7 +40,6 @@ subroutine da_llxy (info, loc, outside, outside_all)
    call da_togrid (loc%y, jts-3, jte+3, loc%j, loc%dy, loc%dym)
 #else
    call da_togrid (loc%x, its-2, ite+2, loc%i, loc%dx, loc%dxm)!
-
    call da_togrid (loc%y, jts-2, jte+2, loc%j, loc%dy, loc%dym)
 
 #endif
@@ -98,6 +97,8 @@ subroutine da_llxy (info, loc, outside, outside_all)
 #else
    if ((loc%i < its-1) .or. (loc%i > ite) .or. &
       (loc%j < jts-1) .or. (loc%j > jte)) then
+!!!   if ((loc%i < its) .or. (loc%i > ite) .or. &
+!!!      (loc%j < jts) .or. (loc%j > jte)) then
 #endif
    ! if ((loc%i < its-1) .or. (loc%i >= ite) .or. &
    !     (loc%j < jts-1) .or. (loc%j >= jte)) then

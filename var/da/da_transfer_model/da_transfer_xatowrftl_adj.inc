@@ -17,6 +17,9 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    integer :: i, j, k, bid, ierr, ii, jj, spec_bdy_width
    real    :: sdmd, s1md
    real    :: rho_cgrid
+#if (WRF_CHEM == 1)
+   integer :: ic
+#endif
 
    real, dimension(ims:ime,jms:jme,kms:kme) :: a_press
 #ifndef A2C
@@ -63,15 +66,28 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
                     grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    enddo
 
+#if (WRF_CHEM == 1)
+   do ic = PARAM_FIRST_SCALAR, num_scaleant
+      call kj_swap_reverse (model_grid%a_scaleant(:,:,:,ic), grid%a_scaleant(:,:,:,ic), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_ant_steps)
+   end do
+
+   do ic = PARAM_FIRST_SCALAR, num_scalebb
+      call kj_swap_reverse (model_grid%a_scalebb(:,:,:,ic), grid%a_scalebb(:,:,:,ic), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_bb_steps)
+   end do
+
+#endif
+
    call da_transfer_wrftl_lbc_t0_adj ( grid )
 
    ! output gradient here, without LBC control 
    if ( .not. trajectory_io .or. var4d_detail_out ) then
-      config_flags%auxhist7_outname = "gradient_d<domain>_<date>"
-      call  med_hist_out ( grid , AUXHIST7_ALARM , config_flags )
+      config_flags%auxhist17_outname = "gradient_d<domain>_<date>"
+      call  med_hist_out ( grid , AUXHIST17_ALARM , config_flags )
       WRITE(message(1), FMT='(A)') 'Output gradient at 0h (including LBC gradient)'
       CALL da_message ( message(1:1) )
-      config_flags%auxhist7_outname = "auxhist7_d<domain>_<date>"
+      config_flags%auxhist17_outname = "auxhist17_d<domain>_<date>"
    endif
 
 #endif
@@ -109,6 +125,35 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    end do
 
    grid%a_w_2 = 0.0
+
+#if (WRF_CHEM == 1)
+   !---------------------------------------------------------------------------
+   ! [5.5] compute chem increments
+   !---------------------------------------------------------------------------
+
+   do ic = PARAM_FIRST_SCALAR, num_scaleant
+      do k = 1, num_ant_steps
+         do j=jts,jte
+            do i=its,ite
+               grid%xach%alpha_ant(i,j,k,ic) = exp ( grid%xbch%alpha_ant(i,j,k,ic) ) * &
+                                               grid%a_scaleant(i,j,k,ic)
+            end do
+         end do
+      end do
+   end do
+
+   do ic = PARAM_FIRST_SCALAR, num_scalebb
+      do k = 1, num_bb_steps
+         do j=jts,jte
+            do i=its,ite
+               grid%xach%alpha_bb(i,j,k,ic) = exp ( grid%xbch%alpha_bb(i,j,k,ic) ) * &
+                                              grid%a_scalebb(i,j,k,ic)
+            end do
+      end do
+      end do
+   end do
+#endif
+
 
 #ifndef A2C
    !---------------------------------------------------------------------------

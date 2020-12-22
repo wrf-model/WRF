@@ -52,8 +52,8 @@ contains
 
 #if (WRF_CHEM == 1)
 
-#include "da_init_model_input.inc"  !!! add !!!
-#include "kj_swap_test.inc"   !!! add !!!
+!!#include "da_init_model_input.inc"  !!! add !!!
+!!!!#include "kj_swap_test.inc"   !!! add !!!
 #include "da_hdgn.inc"
 #include "da_dgn.inc"
 #include "da_evaluate_j.inc"

@@ -79,7 +79,7 @@ subroutine da_evaluate_j(grid, config_flags, cv_size, cv_size_jb, xbx, be, iv, x
 
 !   if ( .not. use_nonchemobs ) then
       ! Reset MET variables in model_grid to their initial values
-      call da_init_model_input
+      !call da_init_model_input
 !   else
 !      ! Set MET variables in model_grid to their posterior values
 !      ! This functionality is not available yet, since grid%XX is not updated for MET.
@@ -113,21 +113,21 @@ subroutine da_evaluate_j(grid, config_flags, cv_size, cv_size_jb, xbx, be, iv, x
 
    ! Transferring chem from grid to model_grid gives same result as da_init_model_input, unless
    ! chem is added as a control variable.
-   do i = PARAM_FIRST_SCALAR, num_chem
+   !do i = PARAM_FIRST_SCALAR, num_chem
 !   do i = 1, num_chem-1
-      call kj_swap (grid%chem(:,:,:,i), model_grid%chem(:,:,:,i), &
-                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   enddo
+      !call kj_swap (grid%chem(:,:,:,i), model_grid%chem(:,:,:,i), &
+      !              grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   !enddo
 
    ! Transfer posterior scaling factors to model_grid
-   do i = PARAM_FIRST_SCALAR, num_scaleant
-      call kj_swap (grid%scaleant(:,:,:,i), model_grid%scaleant(:,:,:,i), &
-                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_ant_steps)
-   enddo
-   do i = PARAM_FIRST_SCALAR, num_scalebb
-      call kj_swap (grid%scalebb(:,:,:,i), model_grid%scalebb(:,:,:,i), &
-                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_bb_steps)
-   enddo
+   !do i = PARAM_FIRST_SCALAR, num_scaleant
+      !call kj_swap (grid%scaleant(:,:,:,i), model_grid%scaleant(:,:,:,i), &
+      !              grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_ant_steps)
+   !enddo
+   !do i = PARAM_FIRST_SCALAR, num_scalebb
+   !   call kj_swap (grid%scalebb(:,:,:,i), model_grid%scalebb(:,:,:,i), &
+   !                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_bb_steps)
+   !enddo
 
    ! Relinearize
    if ( checkpoint_interval .gt. 0 ) write_checkpoints = 2

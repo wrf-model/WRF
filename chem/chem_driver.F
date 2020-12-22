@@ -1548,6 +1548,7 @@ if ( cam_mam_aerosols ) &
                grid%f_ice_phy,grid%f_rain_phy,grid%cldfrai, grid%cldfral,             &
                moist, grid%cldfra, grid%cldfra_mp_all, grid%ph_no2,                   &
                chem, gas_aqfrac, numgas_mam,grid%is_CAMMGMP_used,                     &
+               grid%ph_cw,                                                            &
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts,kte                                              )
@@ -1572,6 +1573,7 @@ if ( cam_mam_aerosols ) &
               vdrog3,vdrog3_vbs,grid%br_rto,grid%dgnum4d,grid%dgnumwet4d,wetdens_ap,  &
               del_h2so4_gasprod,grid%dvmrdt_sv13d,grid%dvmrcwdt_sv13d,                &
               grid%is_CAMMGMP_used,                                                   &
+              grid%ph_aer01, grid%ph_aer02, grid%ph_aer03, grid%ph_aer04,             &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite,jts,jte,kts,kte                                                 )

@@ -108,5 +108,3 @@ state    real   season_gdd ij      -       1      -     i012rd=(interp_mask_fiel
 state integer   cropcat    ij      -       1      -     rh                                                        "cropcat"      "dominant crop category"              "category"
 state integer   pgsxy      ij      -       1      -     rh                                                        "pgs"          "pgs"                                 ""
 
-# Gecros crop model only
-state    real    gecros_state i{gecros}j  -       1      Z     rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "gecros"      "gecros state array"         "-"

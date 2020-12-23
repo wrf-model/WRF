@@ -1256,7 +1256,6 @@ Options for use with the Noah-MP Land Surface Model:
                                                            geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                      0 -> No crop model, will run default dynamic vegetation
                                                      1 -> Liu, et al. 2016
-                                                     2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
  /
 
  &fdda

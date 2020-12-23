@@ -1592,7 +1592,6 @@
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
-     &        ,gecros_state=grid%gecros_state                                        &   ! Optional gecros crop
      &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
      &        ,rs=rs,xlaidyn=xlaidyn                                                 &
 ! mosaic tiling for Noah

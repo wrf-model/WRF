@@ -20,8 +20,6 @@
 
 MODULE MODULE_SF_NOAHMPLSM
 
-  use module_sf_gecros, only : gecros
-
   IMPLICIT NONE
 
   public  :: noahmp_options
@@ -170,7 +168,6 @@ MODULE MODULE_SF_NOAHMPLSM
   INTEGER :: OPT_CROP ! options for crop model
                       ! **0 -> No crop model, will run default dynamic vegetation
                       !   1 -> Liu, et al. 2016
-		      !   2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
 
 !------------------------------------------------------------------------------------------!
 ! Physical Constants:                                                                      !
@@ -400,7 +397,6 @@ contains
                    CM      , CH      , TAUSS   ,                               & ! IN/OUT : 
                    GRAIN   , GDD     , PGS     ,                               & ! IN/OUT 
                    SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
-                   GECROS1D,                                                   & ! IN/OUT :
 		   Z0WRF   , &
                    FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
                    FGEV    , FCTR    , ECAN    , ETRAN   , EDIR    , TRAD    , & ! OUT :
@@ -508,8 +504,6 @@ contains
   REAL,                            INTENT(INOUT) :: DEEPRECH !recharge to or from the water table when deep [m]
   REAL,                            INTENT(INOUT) :: RECH !recharge to or from the water table when shallow [m] (diagnostic)
 
-  REAL, DIMENSION(1:60)          , INTENT(INOUT) :: gecros1d !  gecros crop
-  
 ! output
   REAL                           , INTENT(OUT)   :: Z0WRF  !combined z0 sent to coupled model
   REAL                           , INTENT(OUT)   :: FSA    !total absorbed solar radiation (w/m2)
@@ -674,8 +668,6 @@ contains
   LOGICAL                             :: dveg_active ! flag to run dynamic vegetation
   LOGICAL                             :: crop_active ! flag to run crop model
   
-  REAL :: FB
-  
   ! INTENT (OUT) variables need to be assigned a value.  These normally get assigned values
   ! only if DVEG == 2.
   nee = 0.0
@@ -781,8 +773,7 @@ contains
                  FSRG   ,RSSUN   ,RSSHA ,ALBSND  ,ALBSNI, BGAP   ,WGAP,TGV,TGB,&
                  Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV   ,CHB     , & !out
                  EMISSI ,PAH    ,                                 &
-		 SHG,SHC,SHB,EVG,EVB,GHV,GHB,IRG,IRC,IRB,TR,EVC,CHLEAF,CHUC,CHV2,CHB2,&
-                 JULIAN, SWDOWN, PRCP, FB, GECROS1D )        
+		 SHG,SHC,SHB,EVG,EVB,GHV,GHB,IRG,IRC,IRB,TR,EVC,CHLEAF,CHUC,CHV2,CHB2 )        
 !jref:end
 
     SICE(:) = MAX(0.0, SMC(:) - SH2O(:))   
@@ -1532,8 +1523,7 @@ ENDIF   ! CROPTYPE == 0
                      T2MV   ,T2MB   ,FSRV   , &
                      FSRG   ,RSSUN  ,RSSHA  ,ALBSND  ,ALBSNI,BGAP   ,WGAP,TGV,TGB,&
                      Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV  ,CHB, EMISSI,PAH  ,&
-		     SHG,SHC,SHB,EVG,EVB,GHV,GHB,IRG,IRC,IRB,TR,EVC,CHLEAF,CHUC,CHV2,CHB2, &
-                     JULIAN, SWDOWN, PRCP, FB, GECROS1D )        
+		     SHG,SHC,SHB,EVG,EVB,GHV,GHB,IRG,IRC,IRB,TR,EVC,CHLEAF,CHUC,CHV2,CHB2 )        
 !jref:end                            
 
 ! --------------------------------------------------------------------------------------------------
@@ -1783,9 +1773,6 @@ ENDIF   ! CROPTYPE == 0
   REAL,INTENT(OUT)                                  :: CHB2    !sensible heat conductance, canopy air to ZLVL air (m/s)
   REAL                                  :: noahmpres
 
-  REAL,                INTENT(IN)    :: JULIAN, SWDOWN, PRCP, FB
-  REAL,DIMENSION(1:60),INTENT(INOUT) :: GECROS1D
-
 !jref:end  
 
   REAL, PARAMETER                   :: MPE    = 1.E-6
@@ -2018,8 +2005,7 @@ ENDIF   ! CROPTYPE == 0
                     T2MV    ,PSNSUN  ,PSNSHA  ,                   & !out
 !jref:start
                     QC      ,QSFC    ,PSFC    , & !in
-                    Q2V     ,CHV2, CHLEAF, CHUC, &
-                    SH2O,JULIAN, SWDOWN, PRCP, FB, FSR, GECROS1D)      ! Gecros 
+                    Q2V     ,CHV2, CHLEAF, CHUC )
 !jref:end                            
     END IF
 
@@ -3355,8 +3341,7 @@ ENDIF   ! CROPTYPE == 0
                        SHC     ,EVG     ,EVC     ,TR      ,GH      , & !out
                        T2MV    ,PSNSUN  ,PSNSHA  ,                   & !out
                        QC      ,QSFC    ,PSFC    ,                   & !in
-                       Q2V     ,CAH2    ,CHLEAF  ,CHUC,              & !inout 
-                       SH2O,JULIAN, SWDOWN, PRCP, FB, FSR, GECROS1D)      ! Gecros 
+                       Q2V     ,CAH2    ,CHLEAF  ,CHUC ) !inout 
 
 ! --------------------------------------------------------------------------------------------------
 ! use newton-raphson iteration to solve for vegetation (tv) and
@@ -3378,8 +3363,8 @@ ENDIF   ! CROPTYPE == 0
   INTEGER,                         INTENT(IN) :: ISNOW  !actual no. of snow layers
   INTEGER,                         INTENT(IN) :: VEGTYP !vegetation physiology type
   REAL,                            INTENT(IN) :: FVEG   !greeness vegetation fraction (-)
-  REAL,                            INTENT(INOUT) :: SAV    !solar rad absorbed by veg (w/m2)
-  REAL,                            INTENT(INOUT) :: SAG    !solar rad absorbed by ground (w/m2)
+  REAL,                            INTENT(IN) :: SAV    !solar rad absorbed by veg (w/m2)
+  REAL,                            INTENT(IN) :: SAG    !solar rad absorbed by ground (w/m2)
   REAL,                            INTENT(IN) :: LWDN   !atmospheric longwave radiation (w/m2)
   REAL,                            INTENT(IN) :: UR     !wind speed at height zlvl (m/s)
   REAL,                            INTENT(IN) :: UU     !wind speed in eastward dir (m/s)
@@ -3560,15 +3545,6 @@ ENDIF   ! CROPTYPE == 0
 
   INTEGER :: LITER     !Last iteration
 
-  REAL, INTENT(IN)                    :: JULIAN, SWDOWN, PRCP, FB
-  REAL, INTENT(INOUT)                 :: FSR
-  REAL,DIMENSION(1:60), INTENT(INOUT) :: GECROS1D 
-  REAL, DIMENSION(1:NSOIL), INTENT(IN) :: SH2O    !soil liquid water
-  
-  REAL :: ROOTD, WUL, WLL, Thickness, TLAIE, GLAIE, TLAI, GLAI, FRSU
-  INTEGER :: NROOT, J
-
-
   REAL :: T, TDC       !Kelvin to degree Celsius with limit -50 to +50
 
   character(len=80) ::  message
@@ -3716,56 +3692,6 @@ ENDIF   ! CROPTYPE == 0
                        RSSHA ,PSNSHA,ILOC  ,JLOC   )          !out
         END IF
 
-     ! Call Gecros
-       IF (opt_crop == 2) then
-         IF ((GECROS1D(41).GT.0).and.(GECROS1D(42).LT.0.)) then   !Gecros
-           Thickness = 0.
-           NROOT = 0
-           ROOTD = GECROS1D(33)
-           WUL = 0.
-           WLL = 0.
-
-           DO J = 1,NSOIL
-            Thickness = Thickness + DZSNSO (J)
-            if (Thickness.lt.ROOTD/100.) then
-              NROOT = NROOT + 1
-            endif
-           ENDDO
-          
-           NROOT = NROOT + 1
-           NROOT = MAX(1,NROOT)
-        
-           Thickness = 0.
-       
-           DO J = 1,NROOT
-             Thickness = Thickness + DZSNSO (J) 
-             if (Thickness.gt.ROOTD/100.) then
-                WUL = WUL + ((ROOTD/100.-Thickness+DZSNSO(J))*1000.*(SH2O(J)-parameters%SMCWLT(J)))
-             else
-                WUL = WUL + (DZSNSO(J)*1000.*(SH2O(J)-parameters%SMCWLT(J)))
-             endif
-           ENDDO
-       
-           DO J = 1,NSOIL
-             WLL = WLL + (DZSNSO(J)*1000.*(SH2O(J)-parameters%SMCWLT(J)))
-           ENDDO
-           WLL = WLL - WUL
-         
-           CALL gecros (JULIAN, DT, 1, RB, RAHC, RAHG+RSURF, FB, SNOWH        , & !I
-               UR, SFCTMP, EAIR, SWDOWN, LWDN, PRCP, WUL, WLL                      , & !I
-               parameters%SMCWLT(1), parameters%DLEAF                              , & !I
-               GECROS1D                                                        , & !H                                    
-               SAV, SAG, FSR, FRSU, RSSUN, RSSHA)                    !O
-           
-               GLAI = GECROS1D(49)
-               TLAI = GECROS1D(50)
-
-               ! effective LAIs
-               TLAIE    = MIN(6.,TLAI    / FVEG)
-               GLAIE    = MIN(6.,GLAI    / FVEG) 
-         ENDIF     
-       ENDIF     
-       
      END IF
 
 ! prepare for sensible heat flux above veg.
@@ -3783,12 +3709,7 @@ ENDIF   ! CROPTYPE == 0
         CAW  = 1./RAWC
         CEW  = FWET*VAIE/RB
 
-        IF (OPT_CROP /= 2) THEN
-          CTW  = (1.-FWET)*(LAISUNE/(RB+RSSUN) + LAISHAE/(RB+RSSHA))
-        ELSE
-           !RSSUN and RSSHA are in resistance per unit LAI in the Jarvis and Ball-Berry!. RSSUN and RSSHA of Gecros are in s/m
-          CTW  = (1.-FWET)*(1./(RB/(FRSU*GLAIE)+RSSUN) + 1./(RB/((1.-FRSU)*GLAIE)+RSSHA)) !transpiration conductance leaf to canopy air
-        ENDIF
+        CTW  = (1.-FWET)*(LAISUNE/(RB+RSSUN) + LAISHAE/(RB+RSSHA))
         CGW  = 1./(RAWG+RSURF)
         COND = CAW + CEW + CTW + CGW
         AEA  = (EAIR*CAW + ESTG*CGW) / COND
@@ -9044,53 +8965,6 @@ END SUBROUTINE PSN_CROP
 !   end subroutine bvocflux
 ! ==================================================================================================
 
-!***************** SUBROUTINES FOR GECROS CROP SIMULATION ***************
-!*----------------------------------------------------------------------*
-!*  SUBROUTINE EMERG                                                    *
-!*  Purpose: This subroutine calculates germination and emergence of    *
-!*  the crop                                                            *
-!*                                                                      *
-!*  FORMAL PARAMETERS:  (I=input,O=output,C=control,IN=init,T=time)     *
-!*                                                                      *
-!*  name   type meaning                                    units  class *
-!*  ----   ---- -------                                    -----  ----- *
-!*  nowdate C12 Actual date                                dd.mm.yy  I  *
-!*  DT      R4  Time step of integration                     s       I  *
-!*  DD      R4  Drilling depth                               cm      I  *
-!*  TSOIL   R4  Soil temperature in first layer              K       I  *
-!*  TBEM    R4  Temperature threshold                        oC      I  *
-!*  EMA     R4  Intercept of function for emergence          oC      I  *
-!*  EMB     R4  Slope of function for emergence              oC      I  *
-!*  TTEM    R4  Cumulative temperature sum for emergence     oC     I/O *
-!*  EMERGENCE LOG Flag for emergence                          -     I/O *  
-!*  STATE_GECROS(41) = emerged yes/no                                   *
-!*  STATE_GECROS(43) = TTEM                                             *
-!*----------------------------------------------------------------------*
-
-SUBROUTINE EMERG(DT, TSOIL, DD, TBEM, EMA, EMB, STATE_GECROS)
-      IMPLICIT NONE
-      REAL, INTENT(IN) :: DT, TSOIL, DD, TBEM, EMA, EMB
-      REAL, DIMENSION(1:60), INTENT(INOUT) :: STATE_GECROS
-      REAL :: EMTH, TINT
-      SAVE
-      
-      IF ((TSOIL-273.15).LT.TBEM) THEN
-      ELSE
-           STATE_GECROS(43) = STATE_GECROS(43) + (TSOIL-273.15-TBEM)/(86400./DT)
-      ENDIF
-      
-      EMTH = EMA + EMB*DD
-           
-      IF (STATE_GECROS(43).GT.EMTH) THEN
-         STATE_GECROS(41)=1.
-!         write(*,*) 'Crop emerged on ', nowdate
-!		 read(*,*)
-      ELSE
-         STATE_GECROS(41)=-1.
-      ENDIF
-      
-      RETURN
-END SUBROUTINE EMERG
 
 ! ********************************* end of carbon subroutines *****************************
 ! ==================================================================================================
@@ -9120,7 +8994,7 @@ END SUBROUTINE EMERG
   INTEGER,  INTENT(IN) :: iopt_rsf  !surface resistance (1->Sakaguchi/Zeng; 2->Seller; 3->mod Sellers; 4->1+snow)
   INTEGER,  INTENT(IN) :: iopt_soil !soil parameters set-up option
   INTEGER,  INTENT(IN) :: iopt_pedo !pedo-transfer function
-  INTEGER,  INTENT(IN) :: iopt_crop !crop model option (0->none; 1->Liu et al.; 2->Gecros)
+  INTEGER,  INTENT(IN) :: iopt_crop !crop model option (0->none; 1->Liu et al. 2016)
 
 ! -------------------------------------------------------------------------------------------------
 

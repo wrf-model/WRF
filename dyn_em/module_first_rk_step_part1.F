@@ -821,7 +821,6 @@ BENCH_START(surf_driver_tim)
      &        ,riverbedxy=grid%riverbedxy, eqzwt=grid%eqzwt, pexpxy=grid%pexpxy &
      &        ,qrfxy=grid%qrfxy, qspringxy=grid%qspringxy, qslatxy=grid%qslatxy, qrfsxy=grid%qrfsxy &
      &        ,qspringsxy=grid%qspringsxy, smoiseq=grid%smoiseq, wtddt=config_flags%wtddt, stepwtd=grid%stepwtd &
-     &        ,gecros_state=grid%gecros_state                                   &   ! Optional gecros crop
            ! Noah UA changes
      &        ,ua_phys=config_flags%ua_phys,flx4=grid%flx4,fvb=grid%fvb       &
      &        ,fbur=grid%fbur,fgsn=grid%fgsn                                  &

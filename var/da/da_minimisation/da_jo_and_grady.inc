@@ -631,11 +631,9 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
          '   jo_tamdar       ', jo_tamdar, &
          '   jo_tamdar_sfc   ', jo_tamdar_sfc, &
 #if (WRF_CHEM == 1)
-         '   jo_rain         ', jo_rain, &
-         '   jo_chemic_surf  ', jo_chemic_surf
-#else
-         '   jo_rain         ', jo_rain
+         '   jo_chemic_surf  ', jo_chemic_surf, &
 #endif
+         '   jo_rain         ', jo_rain
 
    end if
 

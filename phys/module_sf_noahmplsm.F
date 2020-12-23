@@ -4364,7 +4364,8 @@ ENDIF   ! CROPTYPE == 0
 
        TMPRB  = CWPC*50. / (1. - EXP(-CWPC/2.))
        RB     = TMPRB * SQRT(parameters%DLEAF/UC)
-       RB     = MAX(RB,100.0)
+       RB     = MIN(MAX(RB, 5.0),50.0) ! limit RB to 5~50
+!       RB     = MAX(RB,100.0)  ! typically RB<50,so this leads to constant RB of 100
 !       RB = 200
 
   END SUBROUTINE RAGRB

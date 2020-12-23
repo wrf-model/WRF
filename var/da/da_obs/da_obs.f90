@@ -2,13 +2,13 @@ module da_obs
 
    use da_define_structures, only : multi_level_type, y_type, iv_type, infa_type, &
 #if (WRF_CHEM == 1)
-      da_allocate_y_chem, &
       da_allocate_y_chem_sfc, da_deallocate_y_chem_sfc, &
 #endif
       field_type, each_level_type,da_allocate_y, da_random_seed,da_allocate_y_rain, &
       da_allocate_y_radar
-   use module_domain, only : domain, x_type, xchem_type
+   use module_domain, only : domain, x_type
 #if (WRF_CHEM == 1)
+                           , xchem_type
    use da_chem_sfc, only : da_transform_xtoy_chem_sfc, da_transform_xtoy_chem_sfc_adj
 #endif
    use da_airep, only : da_transform_xtoy_airep, da_transform_xtoy_airep_adj 
@@ -30,7 +30,7 @@ module da_obs
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, sonde_sfc,rain, &
       bogus, buoy, qscat, tamdar, tamdar_sfc, pseudo, num_ob_indexes, its,ite,jds,jts,jte,ids, &
 #if (WRF_CHEM == 1)
-      num_platform, chem_surf, chem_acft, chemic_surf, &
+      num_platform, chemic_surf, &
 #endif
       write_mod_filtered_obs, radiance, use_varbc, obs_names, q_error_options,radar_rf_rscl,radar_rv_rscl, kts,kte,kds,kde, &
       use_gpsephobs
@@ -38,8 +38,7 @@ module da_obs
    use da_control, only : pseudo_tpw, pseudo_ztd, pseudo_ref, pseudo_uvtpq
    use da_define_structures, only : da_allocate_obs_info
 #if (WRF_CHEM == 1)
-   use module_state_description, only : num_chem_surf, num_chem_acft, &
-       num_chemic_surf, PARAM_FIRST_SCALAR
+   use module_state_description, only : num_chemic_surf, PARAM_FIRST_SCALAR
 #endif
 
 #ifdef CRTM
@@ -97,15 +96,11 @@ contains
 #include "da_fill_obs_structures_radar.inc"
 #include "da_fill_obs_structures_rain.inc"
 #if (WRF_CHEM == 1)
-#include "da_fill_obs_structures_chem.inc"
 #include "da_fill_obs_structures_chem_sfc.inc"
 #endif
 #include "da_random_omb_all.inc"
 #include "da_store_obs_grid_info.inc"
 #include "da_store_obs_grid_info_rad.inc"
-#if (WRF_CHEM == 1)
-#include "da_store_obs_grid_info_acft.inc"
-#endif
 #include "da_count_filtered_obs.inc"
 #include "da_obs_sensitivity.inc"
 #include "da_set_obs_missing.inc"

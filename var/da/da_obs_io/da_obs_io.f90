@@ -37,10 +37,10 @@ module da_obs_io
    use da_wrf_interfaces, only : wrf_dm_bcast_integer, wrf_dm_bcast_real
 
 #if (WRF_CHEM == 1)
-   use da_control, only : num_ts, num_surf_obs, num_acft_obs, num_platform, chem_surf, chem_acft, &
-      use_chem_surfobs, use_chem_acftobs, time_step, chemic_surf, use_chemic_surfobs, chem_cv_options, chemicda_opt 
-   use module_state_description, only : num_chem_surf, num_chem_acft, num_chemic_surf, param_first_scalar, &
-             num_chem, num_chem_ic 
+   use da_control, only : num_ts, num_surf_obs, num_acft_obs, num_platform, &
+      time_step, chemic_surf, use_chemic_surfobs, chem_cv_options, chemicda_opt 
+   use module_state_description, only : num_chemic_surf, param_first_scalar, &
+             num_chem_ic 
    use module_dm, only : wrf_dm_sum_reals
    use da_define_structures, only : singl_level_type, chemic_surf_type
    use module_state_description, only : p_chemsi_pm25, p_chemsi_pm10, &
@@ -95,7 +95,6 @@ contains
 #include "da_scan_obs_rain.inc" 
 #include "da_read_obs_rain.inc"
 #if (WRF_CHEM == 1)
-#include "da_read_obs_chem.inc"
 #include "da_read_obs_chem_sfc.inc"
 #include "da_scan_obs_chem_sfc.inc"
 #include "da_write_obs_chem_sfc.inc"

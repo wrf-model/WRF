@@ -18,32 +18,7 @@ subroutine da_deallocate_background_errors (be)
    
    if (trace_use) call da_trace_entry("da_deallocate_background_errors")
 
-#if (WRF_CHEM == 1)
-   if (cv_options == 10) then
-      !! Anthropogenic
-      do ic = PARAM_FIRST_SCALAR, num_scaleant
-         if ( be % alpha_ant_chem(ic) % mz > 0 ) then
-            deallocate( be % alpha_ant_chem(ic) % val )
-            deallocate( be % alpha_ant_chem(ic) % evec )
-            deallocate( be % alpha_ant_chem(ic) % rf_alpha )
-         end if
-      end do
-      deallocate ( be % alpha_ant_chem )
-
-      !! Biomass Burning
-      do ic = PARAM_FIRST_SCALAR, num_scalebb
-         if ( be % alpha_bb_chem(ic) % mz > 0 ) then
-            deallocate( be % alpha_bb_chem(ic) % val )
-            deallocate( be % alpha_bb_chem(ic) % evec )
-            deallocate( be % alpha_bb_chem(ic) % rf_alpha )
-         end if
-      end do
-      deallocate ( be % alpha_bb_chem )
-
-   elseif (cv_options /= 3) then
-#else
    if (cv_options /= 3) then
-#endif
 
 #if (WRF_CHEM == 1)
      if (chem_cv_options >=10 ) then

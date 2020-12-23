@@ -147,35 +147,12 @@ subroutine da_setup_cv(be)
 
       ij = iy * jx              ! cv space size same as state space size
 
-!      be % cv % sizechem (:) = 0
-!      do ic = PARAM_FIRST_SCALAR, num_scalechem
-!         be % cv % sizechem (ic) = ij * be % alpha_chem(ic) % mz
-!      end do
-!      be % cv % size_jb = be % cv % size_jb + sum( be % cv % sizechem (:) )
-
       be % cv % sizechemic (:) = 0
       do ic = PARAM_FIRST_SCALAR, num_chem
          be % cv % sizechemic (ic) = ij * be % v12(ic-1) % mz
       end do
       be % cv % size_jb = be % cv % size_jb + sum (be % cv % sizechemic (:))
 
-      be % cv % sizeant (:) = 0
-      do ic = PARAM_FIRST_SCALAR, num_scaleant
-         be % cv % sizeant (ic) = ij * be % alpha_ant_chem(ic) % mz
-      end do
-      be % cv % size_jb = be % cv % size_jb + sum (be % cv % sizeant (:))
-
-      be % cv % sizebb (:) = 0
-      do ic = PARAM_FIRST_SCALAR, num_scalebb
-         be % cv % sizebb (ic) = ij * be % alpha_bb_chem(ic) % mz
-      end do
-      be % cv % size_jb = be % cv % size_jb + sum( be % cv % sizebb (:) )
-
-!      be % cv % sizebio (:) = 0
-!      do ic = PARAM_FIRST_SCALAR, num_scalebio
-!         be % cv % sizebio (ic) = ij * be % alpha_bio_chem(ic) % mz
-!      end do
-!      be % cv % size_jb = be % cv % size_jb + sum( be % cv % sizebio (:) )
 #endif
 
    if (trace_use) call da_trace_exit("da_setup_cv")

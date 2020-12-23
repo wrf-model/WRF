@@ -22,7 +22,6 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs &
    integer,          intent(in) :: nmzs              ! number of mz
    integer,          intent(in) :: mzs(nmzs)         ! mz for each variable
 #if (WRF_CHEM == 1)
-!!!   integer,          intent(in) :: mzs_chem(:) ! mz for each chem variable
    integer, optional,   intent(in) :: mzs_chem(:) ! mz for each chem variable
 #endif
                                                    ! (to identify 2D arrays)
@@ -89,6 +88,7 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs &
    else
 
       dtemp1(1) = da_dot(cv_size, xx, yy)
+
       !if (.not. global) then
          dtmp = dtemp1(1)
          ! summation across processors:

@@ -1,6 +1,6 @@
 subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv &
 #if (WRF_CHEM == 1)
-                        ,vch, vchem &
+                        , vchem &
 #endif
                         )
 
@@ -17,7 +17,6 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv &
    type(vp_type), intent(inout) :: vv   ! Grid point/EOF control var.
 
 #if (WRF_CHEM == 1)
-   type(xch_type), optional, intent(inout) :: vch   ! Grid point/EOF equivalent.
    type(xchem_type), optional, intent(inout) :: vchem   ! Grid point/EOF equivalent.
    integer :: ic
 #endif
@@ -225,30 +224,6 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv &
    endif
 
 #if (WRF_CHEM == 1)
-   ! [2.9] Transform emission control variables
-
-   do ic = PARAM_FIRST_SCALAR, num_scaleant
-      mz = be % alpha_ant_chem (ic) % mz
-      if( use_rf .and. mz > 0 ) then
-         call da_transform_through_rf_adj(grid, mz, be % alpha_ant_chem (ic) % rf_alpha, &
-                                                be % alpha_ant_chem (ic) % val, &
-                                                vch % alpha_ant (:,:,:,ic) )
-      elseif( .not. use_rf ) then
-         call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for alpha_ant"/))
-      endif
-   end do
-
-   do ic = PARAM_FIRST_SCALAR, num_scalebb
-      mz = be % alpha_bb_chem (ic) % mz
-      if( use_rf .and. mz > 0 ) then
-         call da_transform_through_rf_adj(grid, mz, be % alpha_bb_chem (ic) % rf_alpha, &
-                                                be % alpha_bb_chem (ic) % val, &
-                                                vch % alpha_bb (:,:,:,ic) )
-      elseif( .not. use_rf ) then
-         call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for alpha_bb"/))
-      endif
-   end do
-
 !  if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
   if (present(vchem)) then
 !!!   do ic = 1, num_chem-1
@@ -272,8 +247,6 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv &
 #if (WRF_CHEM == 1)
       if (present(vchem)) then
          call da_vv_to_cv_chem( vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv, be%cv_mz_chemic, vchem)
-      else if (present(vch)) then
-        call da_vv_to_cv( vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv, be%cv_mz_chem, vch)
       else
 #endif
          call da_vv_to_cv( vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv)

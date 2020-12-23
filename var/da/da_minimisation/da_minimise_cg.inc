@@ -156,7 +156,6 @@ subroutine da_minimise_cg(grid, config_flags,            &
       apdotp = da_dot_cv(cv_size, fhat, phat, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
                ,be%cv_mz_chemic &
-!!!               ,be%cv_mz_chem &
 #endif
                , jp_start, jp_end)
 
@@ -205,13 +204,11 @@ subroutine da_minimise_cg(grid, config_flags,            &
                              be%cv%size_jl, be%cv%size_jt, xbx, be, iv, xhat, cv, re, y, j_cost, grid, config_flags)
          j_total = j_cost%total
       else
-
          j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,be%cv_mz,be%ncv_mz &
 #if (WRF_CHEM == 1)
                ,be%cv_mz_chemic &
 #endif
                ,jp_start,jp_end)
-
       endif
 
       if ( write_detail_grad_fn ) then
@@ -256,7 +253,6 @@ subroutine da_minimise_cg(grid, config_flags,            &
    rrmnew_norm = SQRT(da_dot_cv(cv_size,ghat,ghat,grid,be%cv_mz,be%ncv_mz &
 #if (WRF_CHEM == 1)
                ,be%cv_mz_chemic &
-!!!               ,be%cv_mz_chem &
 #endif
                ,jp_start,jp_end))
 

@@ -17,8 +17,8 @@ module da_transfer_model
       f_a_qc, f_a_qr, f_a_qi, f_a_qs, f_a_qg, warmrain_ad
 
 #if (WRF_CHEM == 1)
-   use module_state_description, only : num_chem_surf, num_chem_acft, num_scaleant, &
-      num_scalebb, PARAM_FIRST_SCALAR, num_chem, p_bc2, p_oc2, p_co, p_no2, p_o3, p_so2, &
+   use module_state_description, only : &
+      PARAM_FIRST_SCALAR, num_chem, p_bc2, p_oc2, p_co, p_no2, p_o3, p_so2, &
       p_p10, p_p25, p_sulf, &
       p_chem_ic_bc2, p_chem_ic_oc2, p_chem_ic_co, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_so2, &
       p_chem_ic_p10, p_chem_ic_p25, p_chem_ic_sulf , &
@@ -62,8 +62,8 @@ module da_transfer_model
       t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, trajectory_io, &
       cv_options, &
 #if (WRF_CHEM == 1)
-      chem_surf, chem_acft, num_platform, num_ant_steps, num_bb_steps, &
-      init_scale, num_ts, crossval_chem_surfobs, crossval_chem_acftobs, &
+      num_platform, &
+      init_scale, num_ts, &
 #endif
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, num_fft_factors, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, qlimit, &
@@ -103,7 +103,7 @@ module da_transfer_model
    use module_big_step_utilities_em, only : calc_mu_uv
    use g_module_big_step_utilities_em, only : g_calc_mu_uv
    use a_module_big_step_utilities_em, only : a_calc_mu_uv
-   USE module_io_wrf, only : auxinput8_alarm, auxhist8_alarm, auxhist17_alarm
+   USE module_io_wrf, only : auxinput8_alarm, auxhist8_alarm, auxhist7_alarm
 #ifdef DM_PARALLEL
    use mediation_pertmod_io, only : da_halo_em_e_ad
 #endif
@@ -116,7 +116,6 @@ module da_transfer_model
 
 #include "da_transfer_wrftoxb.inc"
 #if (WRF_CHEM == 1)
-#include "da_transfer_wrftoxb_chem.inc"
 #include "da_transfer_wrftoxb_gocart.inc"
 #endif
 #include "da_transfer_wrf_nmm_regional_toxb.inc"
@@ -139,9 +138,4 @@ module da_transfer_model
 #include "da_setup_firstguess_kma.inc"
 #include "da_get_2nd_firstguess.inc"
 
-#if (WRF_CHEM == 1)
-#include "da_transfer_wrftltoy_chem.inc"
-#include "da_transfer_wrftltoy_chem_adj.inc"
-#include "da_transfer_xatowrf_temp.inc"
-#endif
 end module da_transfer_model

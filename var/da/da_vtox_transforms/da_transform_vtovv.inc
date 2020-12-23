@@ -1,6 +1,6 @@
 subroutine da_transform_vtovv(grid, cv_size, be, cv, vv &
 #if (WRF_CHEM == 1)
-                        ,vch, vchem &
+                        , vchem &
 #endif
                         )
 
@@ -17,7 +17,6 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv &
    type(vp_type), intent(inout) :: vv   ! Grid point/EOF equivalent.
 
 #if (WRF_CHEM == 1) 
-   type(xch_type), optional, intent(inout) :: vch   ! Grid point/EOF equivalent.
    type(xchem_type), optional, intent(inout) :: vchem   ! Grid point/EOF equivalent.
    integer :: ic
 #endif
@@ -38,14 +37,11 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv &
       ! [1.0] Fill vv arrays from 1-dimensional cv array.
       !-------------------------------------------------------------------------
 #if (WRF_CHEM == 1)
-      if (present(vch)) then
-         call da_cv_to_vv(cv_size, cv, be%cv_mz, be%ncv_mz, vv, be%cv_mz_chem, vch=vch)
-      else if (present(vchem)) then
+      if (present(vchem)) then
          call da_cv_to_vv_chem(cv_size, cv, be%cv_mz, be%ncv_mz, vv, be%cv_mz_chemic, vchem=vchem)
       else
 #endif
          call da_cv_to_vv(cv_size, cv, be%cv_mz, be%ncv_mz, vv)
-
 #if (WRF_CHEM == 1)
       end if
 #endif
@@ -247,33 +243,6 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv &
    endif
 
 #if (WRF_CHEM == 1)
-   ! [2.9] Transform emission control variables
-
-   do ic = PARAM_FIRST_SCALAR, num_scaleant
-      mz = be % alpha_ant_chem (ic) % mz
-      if( use_rf .and. mz > 0 ) then
-
-         call da_transform_through_rf(grid, mz, be % alpha_ant_chem (ic) % rf_alpha, &
-                                                be % alpha_ant_chem (ic) % val, &
-                                                vch % alpha_ant (:,:,:,ic) )
-      elseif( .not. use_rf ) then
-         call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for alpha_ant"/))
-      endif
-   end do
-
-   do ic = PARAM_FIRST_SCALAR, num_scalebb
-      mz = be % alpha_bb_chem (ic) % mz
-
-      if( use_rf .and. mz > 0 ) then
-
-         call da_transform_through_rf(grid, mz, be % alpha_bb_chem (ic) % rf_alpha, &
-                                                be % alpha_bb_chem (ic) % val, &
-                                                vch % alpha_bb (:,:,:,ic) )
-      elseif( .not. use_rf ) then
-         call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for alpha_bb"/))
-      endif
-   end do
-
    ! [2.10] Transform chem_ic control variables
 
    if (present(vchem)) then

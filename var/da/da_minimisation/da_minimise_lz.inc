@@ -55,11 +55,6 @@ subroutine da_minimise_lz(grid, config_flags,            &
    real                              :: adj_rhs, adj_sum_rhs ! < cv, cv >
    real                              :: j_total, j0_total
    real                              :: dfs, dfsmax
-#if (WRF_CHEM == 1)
-   character(len=2) :: iterc,itc
-   character(len=3) :: dummychar=""
-   integer          :: ii
-#endif
 
    if (trace_use) call da_trace_entry("da_minimise_lz")
 
@@ -86,7 +81,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
    ghat      = - ghat0
    beta(0)   = SQRT(da_dot_cv(cv_size, ghat, ghat, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                , jp_start, jp_end))
    qhat(:,0) = 0.0
@@ -113,7 +108,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
     !----------------------------------------------------------------------------------------
       alpha(iter) = da_dot_cv(cv_size, qhat(:,iter), fhat, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                , jp_start, jp_end)
 
@@ -121,7 +116,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
       do i = iter, 1, -1
          gdot = da_dot_cv(cv_size, ghat, qhat(:,i), grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                , jp_start, jp_end)
          ghat = ghat - gdot * qhat(:,i)
@@ -129,7 +124,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
 
       beta(iter)  = SQRT(da_dot_cv (cv_size, ghat, ghat, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                , jp_start, jp_end))
       
@@ -142,7 +137,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
 	 xhat = rho * qhat(:,1)
          dfs  = da_dot_cv(cv_size, xhat, xhat, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                , jp_start, jp_end)
          dfsmax = dfs
@@ -154,7 +149,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
 	 xhat    = xhat + rho*c
          dfs     = da_dot_cv(cv_size, rho*c, rho*c, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                , jp_start, jp_end)
          if (dfs > dfsmax) dfsmax = dfs
@@ -180,7 +175,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
     !-----------------------------------
       j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,be%cv_mz,be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                ,jp_start,jp_end)
       write(unit=stdout,fmt='(A)') 'Iter     Cost Function       Info Content'
@@ -189,7 +184,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
 
     ! Stop minimization based on Information Content
     ! ----------------------------------------------
-      if (sqrt(dfs) < eps(it) * sqrt(dfsmax) .and. info_stop) exit
+      if (sqrt(dfs) < eps(it) * sqrt(dfsmax)) exit
 
     ! Option to calculate J Cost Function explicitly
     ! ----------------------------------------------
@@ -201,16 +196,6 @@ subroutine da_minimise_lz(grid, config_flags,            &
          call da_calculate_gradj(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
                                  be%cv%size_jl, be%cv%size_jt, xbx, be, iv, xhat+cv, y, fhat, grid, config_flags, re)
       end if
-
-    ! Print current eigenvalues
-    ! ----------------------------------------------
-      write(unit=stdout,fmt='(A,2I5)') 'it, iter = ',it,iter
-      write(dummychar,fmt='(I0)') iter
-      write(unit=stdout,fmt='(A,'//trim(dummychar)//'D23.12)') 'Ritz eigenvalues: ',eignval(1:iter)     
-      do ii = 1,iter
-         write(unit=stdout,fmt='(A,I3,A,'//trim(dummychar)//'D23.12)') 'EIGENVECTOR',ii,': ',eignvec(ii,1:iter) 
-      end do
-      write(unit=stdout,fmt='(A,I5)') 'Number of converged eigenpairs: ', neign
 
    end do
 
@@ -234,7 +219,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
    write(unit=stdout,fmt=15) iter, j_cost%total , &
                              SQRT(da_dot_cv(cv_size, ghat, ghat, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                , jp_start, jp_end))
 15  format('Final: ',I3,' iter, J=',1PD15.8,', g=',1PD15.8)

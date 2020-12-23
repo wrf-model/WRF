@@ -6,7 +6,7 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
 
    USE module_state_description, ONLY :                                 &
                      num_chem                                           & !inline gocart
-                    ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2                         & !inline gocart
+                    ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2    & !inline gocart
                     ,p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co      &
                     ,p_chem_ic_p10,  p_chem_ic_p25,  p_chem_ic_sulf  
 
@@ -15,7 +15,6 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
    integer,         intent(in)    :: it    ! outer-loop index
    type (xbx_type), intent(out)   :: xbx    ! Header & non-gridded vars.
    type(domain),    intent(inout) :: grid
-  
    type (grid_config_rec_type), intent(inout) :: config_flags
 
    character*4 filnam
@@ -42,7 +41,6 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
       if (it < max_ext_its) then
          call da_transfer_wrftoxb(xbx, grid, config_flags)
 #if (WRF_CHEM == 1)
-         call da_transfer_wrftoxb_chem(grid)
          call da_transfer_wrftoxb_gocart(grid)
 #endif
       end if

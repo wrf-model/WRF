@@ -72,8 +72,6 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_radar_rv         = .false.
       use_radar_rf         = .false.
 #if (WRF_CHEM == 1)
-      use_chem_surfobs     = .false.
-      use_chem_acftobs     = .false.
       use_chemic_surfobs     = .false.
 #endif
       ob_format = ob_format_ascii
@@ -157,8 +155,6 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_radar_rv         = .false.
       use_radar_rf         = .false.
 #if (WRF_CHEM == 1)
-      use_chem_surfobs     = .false.
-      use_chem_acftobs     = .false.
       use_chemic_surfobs     = .false.
 #endif
    end if
@@ -300,16 +296,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    end if
 
 #if (WRF_CHEM == 1)
-   if ( (use_chem_surfobs .or. use_chem_acftobs) .and. var4d ) then
-      call da_message((/'Using ASCII format chem observation input'/))
-      call da_setup_obs_structures_chem (grid, ob, iv) 
-   end if
-
    if ( (use_chemic_surfobs) ) then
       call da_message((/'Using ASCII format chem IC observation input'/))
       call da_setup_obs_structures_chem_sfc (ob, iv, grid)
    end if
-
 #endif
 
    if (use_rad) then

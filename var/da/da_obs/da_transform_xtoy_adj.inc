@@ -1,4 +1,8 @@
-subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x, jo_grad_xchem)
+subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x &
+#if (WRF_CHEM == 1)
+           , jo_grad_xchem
+#endif
+)
 
    !--------------------------------------------------------------------------
    ! Purpose: TBD
@@ -15,7 +19,9 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x, jo
    type (y_type),  intent(inout) :: jo_grad_y   ! grad_y(jo)
    type (x_type),  intent(inout) :: jo_grad_x   ! grad_x(jo)
 
+#if (WRF_CHEM == 1)
    type (xchem_type),  optional, intent(inout) :: jo_grad_xchem   ! grad_x(jo)
+#endif
 
    integer :: i,j,k
    real, dimension(:), allocatable :: adj_ref
@@ -61,8 +67,6 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x, jo
    if( present(jo_grad_xchem) ) then
      if (iv%info(chemic_surf)%nlocal      > 0) then
          call da_transform_xtoy_chem_sfc_adj (grid, iv, jo_grad_y, jo_grad_xchem)
-!     else
-!	jo_grad_xchem%chem_ic = 0.0
      end if
    end if
 #endif

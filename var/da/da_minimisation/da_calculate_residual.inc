@@ -113,12 +113,6 @@ subroutine da_calculate_residual(iv, y, re)
       call da_residual_airsr(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 
 #if (WRF_CHEM == 1)
-    if (iv%info(chem_surf)%nlocal > 0) &
-      call da_residual_chem_surf(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
-
-    if (iv%info(chem_acft)%nlocal > 0) &
-      call da_residual_chem_acft(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
-
     if (iv%info(chemic_surf)%nlocal > 0) &
       call da_residual_chem_sfc(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 #endif

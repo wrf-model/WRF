@@ -20,8 +20,8 @@ module da_vtox_transforms
    use module_domain, only : xb_type, xpose_type, ep_type, vp_type, x_type, domain, get_ijk_from_grid
    use module_domain, only : x_subtype
 #if (WRF_CHEM == 1)
-   use module_domain, only : xch_type, xchem_type
-   use module_state_description, only : num_scaleant, num_scalebb, PARAM_FIRST_SCALAR, num_chem
+   use module_domain, only : xchem_type
+   use module_state_description, only : PARAM_FIRST_SCALAR, num_chem
 #endif
 #ifdef A2C
    use da_control, only : trace_use, var4d, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
@@ -35,7 +35,6 @@ module da_vtox_transforms
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, cv_options_hum, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, &
 #if (WRF_CHEM == 1)
-      num_ant_steps, num_bb_steps, temporal_corr, &
       num_chem_steps, chem_cv_options, &
 #endif
       use_background_errors
@@ -51,7 +50,7 @@ module da_vtox_transforms
       alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull, &
       ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, cv_options_hum, cloud_cv_options, &
 #if (WRF_CHEM == 1)
-      num_ant_steps, num_bb_steps, temporal_corr, len_scaling12, &
+      len_scaling12, &
       num_chem_steps, chem_cv_options, &
 #endif
       use_background_errors,do_normalize,use_rf,len_scaling1, len_scaling2, len_scaling3, len_scaling4, &
@@ -69,7 +68,7 @@ module da_vtox_transforms
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x
 
 #if (WRF_CHEM == 1)
-   use da_define_structures, only : da_zero_xch_type, da_zero_xchem_type
+   use da_define_structures, only : da_zero_xchem_type
 #endif
 
    use da_dynamics, only : da_psichi_to_uv,da_psichi_to_uv_adj
@@ -121,8 +120,6 @@ module da_vtox_transforms
 #include "da_transform_vpatox.inc"
 #include "da_transform_vpatox_adj.inc"
 #if (WRF_CHEM == 1)
-#include "da_transform_vchtox.inc"
-#include "da_transform_vchtox_adj.inc"
 #include "da_transform_vchemtox.inc"
 #include "da_transform_vchemtox_adj.inc"
 #endif

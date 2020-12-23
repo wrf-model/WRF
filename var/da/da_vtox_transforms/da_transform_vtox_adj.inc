@@ -1,6 +1,6 @@
 subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
 #if (WRF_CHEM == 1)
-                        ,vch, vchem &
+                        , vchem &
 #endif
                         )
 
@@ -20,7 +20,6 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
    real,           intent(inout) :: cv(1:cv_size) ! control variables.
 
 #if (WRF_CHEM == 1)
-   type(xch_type), optional, intent(out) :: vch   ! Grid point/EOF equivalent.
    type(xchem_type), optional, intent(out) :: vchem   ! Grid point/EOF equivalent.
 #endif
 
@@ -36,17 +35,6 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
       call da_apply_be_adj( be, cv, vp, grid)
 
    else
-
-#if (WRF_CHEM == 1)
-   if ( cv_options == 10 .and. present(vch) ) then
-   !----------------------------------------------------------------------
-   ! [2.0c]: Perform x = u_ch vch transform:
-   !----------------------------------------------------------------------
-
-    call da_zero_xch_type (vch)
-    call da_transform_vchtox_adj(grid, vch, be)
-   else
-#endif
 
 #if (WRF_CHEM == 1)
    if ( chem_cv_options >= 10 .and. present(vchem) ) then
@@ -71,14 +59,12 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
    if (vert_corr == 2) then      
       call da_vertical_transform(grid, 'u_adj', be, &
          grid%xb % vertical_inner_product, vv, vp)
-
    else
       vv % v1(its:ite,jts:jte,kts:kte) = vp % v1(its:ite,jts:jte,kts:kte)
       vv % v2(its:ite,jts:jte,kts:kte) = vp % v2(its:ite,jts:jte,kts:kte)
       vv % v3(its:ite,jts:jte,kts:kte) = vp % v3(its:ite,jts:jte,kts:kte)
       vv % v4(its:ite,jts:jte,kts:kte) = vp % v4(its:ite,jts:jte,kts:kte)
       vv % v5(its:ite,jts:jte,kts:kte) = vp % v5(its:ite,jts:jte,kts:kte)
-
 
       if ( cloud_cv_options >= 2 ) then
          vv % v6(its:ite,jts:jte,kts:kte)  = vp % v6(its:ite,jts:jte,kts:kte)
@@ -100,10 +86,6 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
       end if
    end if
 
-#if (WRF_CHEM == 1)
-   end if
-#endif
-
    end if
 
    !-------------------------------------------------------------------------
@@ -117,10 +99,8 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
               (.not. cv_options == 3) ) then
 #if (WRF_CHEM == 1)
 !        if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
-        if (present(vchem)) then
+      if (present(vchem)) then
          call da_transform_vtovv_adj(grid, cv_size, be, cv, vv, vchem=vchem)
-        else if (present(vch)) then
-         call da_transform_vtovv_adj(grid, cv_size, be, cv, vv, vch=vch)
       else
 #endif
          call da_transform_vtovv_adj(grid, cv_size, be, cv, vv)

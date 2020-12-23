@@ -63,8 +63,7 @@ use da_control, only : stats_unit2
    if (iv%info(rain)%ntotal     > 0) call da_oi_stats_rain     (stats_unit, iv)
 
 #if (WRF_CHEM == 1)
-   if (iv%info(chemic_surf)%ntotal > 0) call da_oi_stats_chem_sfc    (stats_unit2, iv)
-!!   call da_oi_stats_chem_sfc    (stats_unit2, iv)
+   if (iv%info(chemic_surf)%ntotal > 0) call da_oi_stats_chem_sfc (stats_unit2, iv)
 #endif
 
 #if defined(RTTOV) || defined(CRTM)
@@ -107,7 +106,7 @@ if (.not. anal_type_verify) then
    if (iv%info(rain)%ntotal     > 0) call da_ao_stats_rain     (stats_unit, iv, re)  
 
 #if (WRF_CHEM == 1)
-   if (iv%info(chemic_surf)%ntotal    > 0) call da_ao_stats_chem_sfc    (stats_unit2, iv, re, ob)
+   if (iv%info(chemic_surf)%ntotal > 0) call da_ao_stats_chem_sfc (stats_unit2, iv, re, ob)
 #endif
 
 #if defined(CRTM) || defined(RTTOV)

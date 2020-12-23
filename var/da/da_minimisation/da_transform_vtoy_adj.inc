@@ -1,7 +1,7 @@
 subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
    grid, config_flags, jcdf_flag, vp6, vv6 &
 #if (WRF_CHEM == 1)
-                        , vch, vchem &
+                        , vchem &
 #endif
                         )
    !-------------------------------------------------------------------------
@@ -18,7 +18,6 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
 #if (WRF_CHEM == 1)
-   type(xch_type), optional, intent(out) :: vch   ! CHEM CV
    type(xchem_type), optional, intent(out) :: vchem   ! CHEM_IC CV
 #endif
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
@@ -131,7 +130,6 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
          end do
       endif
 
-      if ( checkpoint_interval .eq. 0 ) then
       do nobwin=num_fgat_time, 1, -1
 
          call domain_clock_get( grid, current_timestr=timestr )
@@ -164,7 +162,6 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
          call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
 
       end do
-      endif
 
       if (num_fgat_time > 1) then
          call nl_get_time_step ( grid%id, time_step_seconds)
@@ -172,17 +169,10 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
          call domain_clockprint(150, grid, 'get CurrTime from clock,')
       endif
 
-      if ( trajectory_io .and. checkpoint_interval .eq. 0 ) then
+      if ( trajectory_io ) then
          ! for memory io, we need to up-side-down the adjoint forcing linked list generated in previous step.
           call upsidedown_ad_forcing
       endif
-
-#if (WRF_CHEM == 1)
-      ! Now the same for in-situ chemical observations.  Online obs operators eliminate need for window bins and
-      ! offline interpolation.  da_transform_xtoy_chem_adj and da_transfer_wrftltoy_chem_adj combined into one sub.
-      ! -JJG
-      call da_transfer_wrftltoy_chem_adj(grid, iv, y)
-#endif
 
       call da_ad_model
 
@@ -211,29 +201,11 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
       end if
 
       call da_zero_x(grid%xa)
-#if (WRF_CHEM == 1)
-#ifdef VAR4D
-      call da_zero_xch_type (grid%xach)
-#else
-      grid%xach%alpha_ant = 0.0
-      grid%xach%alpha_bb = 0.0
-      call da_zero_xchem_type (grid%xachem)
-#endif
-#endif
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
       !as of V3.9, da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
       call da_zero_vp_type (vp) !as of V3.9, zero out vp here
       call da_transform_vpatox_adj(grid, be, ep, vp)
-
-#if (WRF_CHEM == 1)
-      if (present(vch)) then
-         call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb), vch)
-      else
-#endif
-         call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
-#if (WRF_CHEM == 1)
-      end if
-#endif
+      call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
 
       if (num_fgat_time > 1 .and. use_rainobs) then
          deallocate (a_hr_rainc )
@@ -270,8 +242,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
             end if
          end if !4denvar
          call da_zero_x(grid%xa)
-         call da_zero_xchem_type(grid%xachem)
 #if (WRF_CHEM == 1)
+         call da_zero_xchem_type(grid%xachem)
          call da_transform_xtoy_adj(cv_size, cv_local, grid, iv, y, grid%xa, grid%xachem)
 #else
          call da_transform_xtoy_adj(cv_size, cv_local, grid, iv, y, grid%xa)
@@ -285,8 +257,6 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
 
 #if (WRF_CHEM == 1)
       if (present(vchem)) then
-!         call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb), vchem=vchem)
-!         call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv, vchem=vchem)
          call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv_local, vchem=vchem)
          cv = cv + cv_local
       else

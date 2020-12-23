@@ -81,7 +81,6 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
    ! [4.0] Calculate RHS of adjoint test equation:
    !----------------------------------------------------------------------
 
-
    if (global) then
       call da_transform_vtovv_global_adj(cv_size, xbx, be, cv2, vv)
    else

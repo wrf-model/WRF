@@ -10,9 +10,9 @@ subroutine da_setup_background_errors(grid, be)
    type (domain), intent(in)   :: grid
 !  type (xb_type), intent(in)  :: xb       ! First guess structure.
    type (be_type), intent(out) :: be       ! Back. errors structure.
-#if (WRF_CHEM == 1)
-   integer :: ic
-#endif
+!#if (WRF_CHEM == 1)
+!   integer :: ic
+!#endif
 
    integer :: num_cv_3d_basic, num_cv_3d_extra, num_cv_2d
 
@@ -39,7 +39,6 @@ subroutine da_setup_background_errors(grid, be)
             max_vert_var9 = 0
             max_vert_var10 = 0
             max_vert_var11 = 0
-!#endif
 !#ifdef CHEM_CV
             max_vert_var12 = 0
 !#endif
@@ -86,15 +85,6 @@ subroutine da_setup_background_errors(grid, be)
    num_cv_3d_extra = 0
    num_cv_2d = 0
 
-!   if (num_scalechem >= PARAM_FIRST_SCALAR) then
-!      num_cv_3d_basic = num_cv_3d_basic + 1
-!      allocate (be%alpha_chem (num_scalechem) )
-!      do ic = 1, num_scalechem
-!         be % alpha_chem(ic) % mz = 0
-!      end do
-!      allocate (be%cv%sizechem (num_scalechem) )
-!   end if
-
    if (num_chem >= PARAM_FIRST_SCALAR) then
 !      allocate (be%v12 (num_chem) )
 !      do ic = 1, num_chem
@@ -102,33 +92,6 @@ subroutine da_setup_background_errors(grid, be)
 !      end do
       allocate (be%cv%sizechemic (num_chem) )
    end if
-
-   if (num_scaleant >= PARAM_FIRST_SCALAR) then
-      num_cv_3d_extra = num_cv_3d_extra + 1
-      allocate (be%alpha_ant_chem (num_scaleant) )
-      do ic = 1, num_scaleant
-         be % alpha_ant_chem(ic) % mz = 0
-         num_cv_3d_extra = num_cv_3d_extra + 1
-      end do
-      allocate (be%cv%sizeant (num_scaleant) )
-   end if
-
-   if (num_scalebb >= PARAM_FIRST_SCALAR) then
-      allocate (be%alpha_bb_chem (num_scalebb) )
-      do ic = 1, num_scalebb
-         be % alpha_bb_chem(ic) % mz = 0
-      end do
-      allocate (be%cv%sizebb (num_scalebb) )
-   end if
-
-!   if (num_scalebio >= PARAM_FIRST_SCALAR) then
-!      num_cv_3d_extra = num_cv_3d_extra + 1
-!      allocate (be%alpha_bio_chem (num_scalebio) )
-!      do ic = 1, num_scalebio
-!         be % alpha_bio_chem(ic) % mz = 0
-!      end do
-!      allocate (be%cv%sizebio (num_scalebb) )
-!   end if
 
    be % ncv_mz_chem  = num_cv_3d_basic + num_cv_3d_extra + num_cv_2d
    allocate ( be%cv_mz_chem(1:be%ncv_mz_chem) )
@@ -143,12 +106,6 @@ subroutine da_setup_background_errors(grid, be)
          call da_setup_be_regional (grid%xb, be, grid)
       else if(cv_options == 3 ) then
          call da_setup_be_ncep_gfs (grid, be)
-#if (WRF_CHEM == 1)
-      else if(cv_options == 10 ) then
-            call da_setup_be_chem (grid, be)
-!      else if(cv_options == 11 ) then
-!            call da_setup_be_chem_conc (grid%xb, be, grid)
-#endif
       else 
          write(unit=message(1),fmt='(A,I4)') &
              'Invalid CV option chosen:  cv_options = ', cv_options

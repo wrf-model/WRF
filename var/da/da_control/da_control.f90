@@ -520,9 +520,7 @@ module da_control
    integer, parameter :: rain      = 28
    integer, parameter :: gpseph    = 29
 #if (WRF_CHEM == 1)
-   integer, parameter :: chem_surf = 30
-   integer, parameter :: chem_acft = 31
-   integer, parameter :: chemic_surf = 32
+   integer, parameter :: chemic_surf = 30
 #endif
 
    character(len=14), parameter :: obs_names(num_ob_indexes) = (/ &
@@ -556,8 +554,6 @@ module da_control
       "rain          ", &
       "gpseph        "  &
 #if (WRF_CHEM == 1)
-     ,"chem_surf     " &
-     ,"chem_acft     " &
      ,"chemic_surf   " &
 #endif
    /)

@@ -135,7 +135,7 @@
 		id, curr_secs, ktau, dtstep, ktauc, dtstepc, config_flags, &
 		t_phy, rho_phy, p_phy,                            &
 		moist, chem, vbs_nbin,                            &
-                ph_aer01, ph_aer02, ph_aer03, ph_aer04,           &
+               ph_aer01, ph_aer02, ph_aer03, ph_aer04,           &
 		ids,ide, jds,jde, kds,kde,                        &
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )

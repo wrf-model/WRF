@@ -171,7 +171,7 @@
          INTENT(INOUT ) ::                                gas_aqfrac
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
-         INTENT(OUT) ::                            ph_cw                ! ph_cw - pH of cloud water
+         INTENT(OUT) ::                            ph_cw            ! ph_cw - pH of cloud water
 
 ! LOCAL  VAR
      integer :: ii,jj,kk

@@ -24,7 +24,7 @@ use da_control, only : rootproc,ierr,comm,num_surf_obs,num_acft_obs,num_ts, &
       chem_cv_options, &
       chemicda_opt, &
       use_chemic_surfobs, chemic_surf, &
-      missing_r, stdout, adtl_run_hours, &
+      missing_r, stdout, &
       its, ite, jts, jte, kts, kte, &
       ims, ime, jms, jme, kms, kme, &
       ids, ide, jds, jde, kds, kde

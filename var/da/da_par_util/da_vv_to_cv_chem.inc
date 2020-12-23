@@ -300,28 +300,6 @@ subroutine da_vv_to_cv_chem(vv, xp, mzs, nmzs, cv_size, rcv &
       jy = je-js+1
       offset = 1
 
-!      if ( num_scalechem >= PARAM_FIRST_SCALAR ) then
-!         mz = mzs_chem(offset)
-!         do ic = PARAM_FIRST_SCALAR, num_scalechem
-!            ijm = ix * jy * mz
-!            cv_s = cv_e + 1
-!            cv_e = cv_s + ijm - 1
-!#ifdef NORESHAPE
-!            do k=1,mz
-!               do j=js,je
-!                  do i=is,ie
-!                     ijk = ijk + 1
-!                     rcv(ijk) = vch % alpha_chem(i,j,k,ic)
-!                  end do
-!               end do
-!            end do
-!#else
-!            rcv(cv_s:cv_e) = RESHAPE(vch % alpha_chem(is:ie,js:je,1:mz,ic))
-!#endif
-!         end do
-!         offset = offset + 1
-!      end if
-
       if ( num_chem >= PARAM_FIRST_SCALAR ) then
 !!!         do ic = 1, num_chem-1
          do ic = PARAM_FIRST_SCALAR, num_chem
@@ -344,29 +322,6 @@ subroutine da_vv_to_cv_chem(vv, xp, mzs, nmzs, cv_size, rcv &
 #endif
          end do
       end if
-
-!      if ( num_scalebio >= PARAM_FIRST_SCALAR ) then
-!         mz = mzs_chem(offset)
-!         do ic = PARAM_FIRST_SCALAR, num_scalebio
-!            ijm = ix * jy * mz
-!            cv_s = cv_e + 1
-!            cv_e = cv_s + ijm - 1
-!#ifdef NORESHAPE
-!            do k=1,mz
-!               do j=js,je
-!                  do i=is,ie
-!                     ijk = ijk + 1
-!                     rcv(ijk) = vch % alpha_bio(i,j,k,ic)
-!                  end do
-!               end do
-!            end do
-!#else
-!            rcv(cv_s:cv_e) = RESHAPE(vch % alpha_bio(is:ie,js:je,1:mz,ic))
-!#endif
-!         end do
-!         offset = offset + 1
-!      end if
-
 
    end if
 

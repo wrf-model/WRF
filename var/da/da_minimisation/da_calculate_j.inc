@@ -107,7 +107,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 
    ! [1.3] calculate jo:
 
-   call da_jo_and_grady(iv, re, jo_partial, j % jo, jo_grad_y &
+   call da_jo_and_grady(iv, re, jo_partial, j % jo, jo_grad_y)
 
    if (test_dm_exact) then
       ! jo_partial has been already summed at lower level

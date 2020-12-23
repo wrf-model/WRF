@@ -25,7 +25,7 @@ module da_par_util
 #endif
 
 #if (WRF_CHEM == 1)
-   use module_state_description, only :  PARAM_FIRST_SCALAR
+   use module_state_description, only :  num_chem, PARAM_FIRST_SCALAR
 #endif
 
    use da_define_structures, only : be_subtype, &

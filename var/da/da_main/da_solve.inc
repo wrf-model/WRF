@@ -807,9 +807,6 @@
 #ifdef VAR4D
          call da_zero_vp_type (grid%vv6)
          call da_zero_vp_type (grid%vp6)
-#if (WRF_CHEM == 1)
-!!!         call da_zero_xch_type (grid%vch)
-#endif
 #endif
 
       end if
@@ -817,10 +814,6 @@
    !---------------------------------------------------------------------------
    ! [8] Outerloop and chem Sensitivity
    !---------------------------------------------------------------------------
-#if (WRF_CHEM == 1)
-   if (.not. chem_sens) then
-#endif
-
    j_grad_norm_target = 1.0
    do it = 1, max_ext_its
 
@@ -866,39 +859,6 @@
       if (var4d) then
 #ifdef VAR4D
          if (it > 1) then
-#if (WRF_CHEM == 1)
-            if ( .not. use_nonchemobs ) then
-               ! Ensures bit-for-bit consistency across outer loops for MET variables -JJG
-               call da_init_model_input
-            else
-               call kj_swap (grid%u_2, model_grid%u_2, &
-                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-               call kj_swap (grid%v_2, model_grid%v_2, &
-                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-               call kj_swap (grid%w_2, model_grid%w_2, &
-                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-               call kj_swap (grid%t_2, model_grid%t_2, &
-                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-               call kj_swap (grid%ph_2, model_grid%ph_2, &
-                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-               call kj_swap (grid%p, model_grid%p, &
-                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-
-               model_grid%mu_2 = grid%mu_2
-               model_grid%t2 = grid%t2
-               model_grid%th2 = grid%th2
-               model_grid%q2 = grid%q2
-               model_grid%u10 = grid%u10
-               model_grid%v10 = grid%v10
-               model_grid%tsk = grid%tsk
-               model_grid%psfc = grid%psfc
-
-               do i = PARAM_FIRST_SCALAR, num_moist
-                  call kj_swap (grid%moist(:,:,:,i), model_grid%moist(:,:,:,i), &
-                                grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-               enddo
-            end if
-#else
             call kj_swap (grid%u_2, model_grid%u_2, &
                           grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
             call kj_swap (grid%v_2, model_grid%v_2, &
@@ -924,26 +884,7 @@
                call kj_swap (grid%moist(:,:,:,i), model_grid%moist(:,:,:,i), &
                              grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
             enddo
-#endif
 
-#if (WRF_CHEM == 1)
-            ! Transferring chem from grid to model_grid gives same result as da_init_model_input, unless
-            ! chem is added as a control variable.
-            do i = PARAM_FIRST_SCALAR, num_chem
-!            do i = 1, num_chem-1
-               call kj_swap (grid%chem(:,:,:,i), model_grid%chem(:,:,:,i), &
-                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-            enddo
-            do i = PARAM_FIRST_SCALAR, num_scaleant
-               call kj_swap (grid%scaleant(:,:,:,i), model_grid%scaleant(:,:,:,i), &
-                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_ant_steps)
-            enddo
-            do i = PARAM_FIRST_SCALAR, num_scalebb
-               call kj_swap (grid%scalebb(:,:,:,i), model_grid%scalebb(:,:,:,i), &
-                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_bb_steps)
-            enddo
-#endif
- 
             ! Update boundary condition of model
 
             model_grid%u_bxs = grid%u_bxs
@@ -974,12 +915,6 @@
             model_grid%moist_bxe = grid%moist_bxe
             model_grid%moist_bys = grid%moist_bys
             model_grid%moist_bye = grid%moist_bye
-#if (WRF_CHEM == 1)
-            model_grid%chem_bxs = grid%chem_bxs
-            model_grid%chem_bxe = grid%chem_bxe
-            model_grid%chem_bys = grid%chem_bys
-            model_grid%chem_bye = grid%chem_bye
-#endif
 
             model_grid%u_btxs = grid%u_btxs
             model_grid%u_btxe = grid%u_btxe
@@ -1009,12 +944,6 @@
             model_grid%moist_btxe = grid%moist_btxe
             model_grid%moist_btys = grid%moist_btys
             model_grid%moist_btye = grid%moist_btye
-#if (WRF_CHEM == 1)
-            model_grid%chem_btxs = grid%chem_btxs
-            model_grid%chem_btxe = grid%chem_btxe
-            model_grid%chem_btys = grid%chem_btys
-            model_grid%chem_btye = grid%chem_btye
-#endif
 
             ! Turn off model boundary reading as we already provide a new one.
             if ( checkpoint_interval .eq. 0 ) call da_model_lbc_off
@@ -1024,31 +953,6 @@
          if ( checkpoint_interval .gt. 0 ) write_checkpoints = 1
          call da_nl_model(it)
          if ( checkpoint_interval .gt. 0 ) write_checkpoints = 0
-
-#if (WRF_CHEM == 1)
-         call da_retrieve_chem_hx( model_grid, iv )
-         call da_write_obs_chem( iv, ob, it )
-
-         ! Use this to exit after writing chem hx values
-         if( config_flags%calc_hx_only) then
-            call da_deallocate_observations (iv)
-            call da_deallocate_y (ob)
-            if (use_background_errors) call da_deallocate_background_errors (be)
-
-            call da_wrfvar_finalize
-#ifdef VAR4D
-            if (var4d) call da_finalize_model
-#endif
-            call wrf_message("*** WRF-Var generaed chem_hx successfully ***")
-            if (trace_use) call da_trace_exit("da_wrfvar_main")
-            if (trace_use) call da_trace_report
-
-            call wrfu_finalize
-            call wrf_shutdown
-            stop
-
-         end if
-#endif
 
 !      elseif (var4d .and. multi_inc == 2 ) then
 #else
@@ -1091,10 +995,10 @@
 
       call da_allocate_y (iv, re)
       call da_allocate_y (iv, y)
-#if (WRF_CHEM == 1)
-      call da_allocate_y_chem (iv, re)
-      call da_allocate_y_chem (iv, y)
-#endif
+!#if (WRF_CHEM == 1)
+!      call da_allocate_y_chem (iv, re)
+!      call da_allocate_y_chem (iv, y)
+!#endif
 
 
       if (use_lanczos) then
@@ -1110,10 +1014,6 @@
          else
             call da_minimise_lz(grid, config_flags, it, cv_size, xbx,& 
                              be, iv, j_grad_norm_target, xhat, qhat, cvt, re, y, j, eignvec, eignval, neign )
-#if (WRF_CHEM == 1)
-            if (calc_aminusb) call da_calculate_aminusb(grid,config_flags,it,cv_size,xbx, &
-                                be,qhat,eignvec,eignval,neign)
-#endif
 
          end if
 
@@ -1129,16 +1029,6 @@
       end if
  
  
-#if (WRF_CHEM == 1)
-   if (cv_options .eq. 10) then
-      if ( dgn_emiss .eq. 1 .and. eta_emiss .lt. 1.D0 .and. eta_emiss .gt. 0.D0 ) &
-         call da_hdgn(it, cv_size, be, xhat )
-
-      if (dgn_emiss .eq. 2) &
-         call da_dgn(grid, cv_size, xbx, be, iv, xhat, cvt, ob, config_flags, j % total )
-   end if
-#endif
-
       ! Update outer-loop control variable
       cvt = cvt + xhat
       if ( multi_inc == 2 .and. use_interpolate_cvt ) then ! obsolete option
@@ -1155,11 +1045,9 @@
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
 
 #if (WRF_CHEM == 1)
-   if (cv_options == 10 ) then
-            call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,grid%vch)
-   else if (cv_options == 7 .and. chem_cv_options>=10) then
-!            call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp,grid%vch,grid%vchem)
-            call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,vchem=grid%vchem)
+   if (cv_options == 7 .and. chem_cv_options>=10) then
+!        call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp,grid%vch,grid%vchem)
+         call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,vchem=grid%vchem)
    end if
 #else
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
@@ -1177,11 +1065,7 @@
             call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
          end if !ne>0
       else
-         call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp &
-#if (WRF_CHEM == 1)
-         , grid%vch &
-#endif
-         )
+         call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
          call da_transform_vpatox (grid,be,grid%ep,grid%vp)
       endif
 
@@ -1302,40 +1186,6 @@
 #endif
       call med_shutdown_io (input_grid, config_flags)
    end if
-
-#if (WRF_CHEM == 1)
-   else
-      if(checkpoint_interval .gt.0 .and. mod(60*run_hours,checkpoint_interval) /= 0) then
-         CALL wrf_error_fatal('In checkpoint sensitivity runs, mod(60*run_hours,checkpoint_interval) must be zero.')
-      end if
-
-      ! Read chem observations for use in online forcing
-
-      ! Write nonlinear model checkpoint trajectories to disk and evaluate online
-      ! observation operators
-      if(checkpoint_interval .gt.0 ) write_checkpoints = 1
-
-!!! add !!!      call da_nl_model(1)
-      if(checkpoint_interval .gt.0 ) write_checkpoints = 0
-
-     if (config_flags%chem_obs_cost) then
-        call da_retrieve_chem_hx( model_grid, iv )
-
-        call da_write_obs_chem( iv, ob, 0 )
-     end if
-
-      ! Carry out checkpointed adjoint sensitivity
-      if( .not. config_flags%calc_hx_only) then
-         !Calculate forcing for a cost function (does not have to be chem-specific)
-         ! Chemical 4D-Var cost function
-         if (config_flags%chem_obs_cost) then
-            call da_calculate_chem_forcing_ad ( 1, model_grid, iv )
-         end if
-!!! add !!!         call da_ad_model
-      end if
-
-   end if
-#endif
 
    !---------------------------------------------------------------------------
    ! [9.0] Tidy up:

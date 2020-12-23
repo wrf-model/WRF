@@ -67,14 +67,14 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs &
       end if
 
       call da_cv_to_global(cv_size, cv_size_domain, xx, grid, mzs, nmzs, xg &
-#if (WRF_CHEM == 1)
-                           , mzs_chem &
-#endif
+!#if (WRF_CHEM == 1)
+!                           , mzs_chem &
+!#endif
                           )
       call da_cv_to_global(cv_size, cv_size_domain, yy, grid, mzs, nmzs, yg &
-#if (WRF_CHEM == 1)       
-                           , mzs_chem &
-#endif                    
+!#if (WRF_CHEM == 1)       
+!                           , mzs_chem &
+!#endif                    
                           )
 
       if (rootproc) then

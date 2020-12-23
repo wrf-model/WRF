@@ -1,6 +1,6 @@
 subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x &
 #if (WRF_CHEM == 1)
-           , jo_grad_xchem
+           , jo_grad_xchem &
 #endif
 )
 

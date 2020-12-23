@@ -6,10 +6,11 @@ module da_obs
 #endif
       field_type, each_level_type,da_allocate_y, da_random_seed,da_allocate_y_rain, &
       da_allocate_y_radar
-   use module_domain, only : domain, x_type
 #if (WRF_CHEM == 1)
-                           , xchem_type
+   use module_domain, only : domain, x_type, xchem_type
    use da_chem_sfc, only : da_transform_xtoy_chem_sfc, da_transform_xtoy_chem_sfc_adj
+#else
+   use module_domain, only : domain, x_type
 #endif
    use da_airep, only : da_transform_xtoy_airep, da_transform_xtoy_airep_adj 
    use da_airsr, only : da_transform_xtoy_airsr, da_transform_xtoy_airsr_adj 

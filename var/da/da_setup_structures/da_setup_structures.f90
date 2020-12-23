@@ -10,7 +10,6 @@ module da_setup_structures
    use da_define_structures, only : xbx_type,be_subtype, be_type, y_type, j_type, &
       iv_type,da_allocate_background_errors,da_allocate_observations, &
 #if (WRF_CHEM == 1)
-      da_allocate_background_errors_chem, &
       da_allocate_observations_chem_sfc, &
 #endif
       multi_level_type,each_level_type, da_allocate_observations_rain

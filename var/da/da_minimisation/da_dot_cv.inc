@@ -88,7 +88,7 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs &
    else
 
       dtemp1(1) = da_dot(cv_size, xx, yy)
-
+      
       !if (.not. global) then
          dtmp = dtemp1(1)
          ! summation across processors:

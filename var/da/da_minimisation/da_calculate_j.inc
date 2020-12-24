@@ -160,7 +160,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
       cv_xhat_jb(1:cv_size_jb) = cv(1:cv_size_jb) + xhat(1:cv_size_jb)
       j % jb = jb_factor * 0.5 * da_dot_cv(cv_size_jb,  cv_xhat_jb, cv_xhat_jb, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                )
    end if
@@ -174,7 +174,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
       cv_xhat_je(1:cv_size_je) = cv(je_start:je_end) + xhat(je_start:je_end)
       j % je = je_factor * 0.5 * da_dot_cv(cv_size_je, cv_xhat_je, cv_xhat_je, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                )
    end if

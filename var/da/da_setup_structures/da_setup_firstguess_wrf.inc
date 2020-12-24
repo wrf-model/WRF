@@ -6,7 +6,7 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
 
    USE module_state_description, ONLY :                                 &
                      num_chem                                           & !inline gocart
-                    ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2                         & !inline gocart
+                    ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2    & !inline gocart
                     ,p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co      &
                     ,p_chem_ic_p10,  p_chem_ic_p25,  p_chem_ic_sulf
 

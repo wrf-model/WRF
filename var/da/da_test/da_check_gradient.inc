@@ -83,7 +83,7 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
    zf0=zfy
    zdf0=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                ,jp_start,jp_end)
    if (rootproc) write(6,*)'grtest: F(0)=',zf0,' DF(0)=',zdf0
@@ -124,7 +124,7 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
       zfa=zfy
       zdfa=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz &
 #if (WRF_CHEM == 1)
-               ,be%cv_mz_chem &
+               ,be%cv_mz_chemic &
 #endif
                ,jp_start,jp_end)
 

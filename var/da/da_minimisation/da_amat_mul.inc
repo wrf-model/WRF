@@ -35,7 +35,7 @@ subroutine da_amat_mul(be, grid, cv_size, ntmaxit, neign, eignval, eignvec, qhat
    do j = 1, neign
       dot_cv = da_dot_cv(cv_size, qhat(:,j), shat, grid, be%cv_mz, be%ncv_mz, &
 #if (WRF_CHEM == 1)
-                be%cv_mz_chem, &
+                be%cv_mz_chemic, &
 #endif
                 jp_start, jp_end)
       do i = 1, neign

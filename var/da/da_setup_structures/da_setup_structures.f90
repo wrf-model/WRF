@@ -26,7 +26,6 @@ module da_setup_structures
       max_fgat_time, num_fgat_time, dt_cloud_model, &
       use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, use_rainobs, &
 #if (WRF_CHEM == 1)
-      num_ts, &
       use_chemic_surfobs, chemic_surf, &
       chem_cv_options, max_vert_var12, var_scaling12, len_scaling12, &
 #endif

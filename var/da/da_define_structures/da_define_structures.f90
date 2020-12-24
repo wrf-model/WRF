@@ -23,7 +23,7 @@ module da_define_structures
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
       mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, rain, &
 #if (WRF_CHEM == 1)
-      num_platform, chemic_surf, chem_cv_options, &
+      chemic_surf, chem_cv_options, &
 #endif
       trace_use_dull,comm, num_pseudo
    use da_control, only : cloud_cv_options, use_cv_w
@@ -1146,8 +1146,8 @@ module da_define_structures
       type (be_subtype) :: alpha
       real*8, pointer     :: pb_vert_reg(:,:,:)
 #if (WRF_CHEM == 1)
-      integer           :: ncv_mz_chem      ! number of variables for cv_mz
-      integer, pointer  :: cv_mz_chem(:)    ! array to hold mz of each cv
+      !integer           :: ncv_mz_chem      ! number of variables for cv_mz
+      !integer, pointer  :: cv_mz_chem(:)    ! array to hold mz of each cv
 
       type (be_subtype),allocatable :: v12(:)     ! Chem initial condition scaling factor CVs
       integer           :: ncv_mz_chemic      ! number of variables for cv_mz

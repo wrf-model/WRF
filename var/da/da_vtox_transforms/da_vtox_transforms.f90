@@ -35,7 +35,7 @@ module da_vtox_transforms
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, cv_options_hum, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, &
 #if (WRF_CHEM == 1)
-      num_chem_steps, chem_cv_options, &
+      chem_cv_options, &
 #endif
       use_background_errors
 #else
@@ -51,7 +51,7 @@ module da_vtox_transforms
       ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, cv_options_hum, cloud_cv_options, &
 #if (WRF_CHEM == 1)
       len_scaling12, &
-      num_chem_steps, chem_cv_options, &
+      chem_cv_options, &
 #endif
       use_background_errors,do_normalize,use_rf,len_scaling1, len_scaling2, len_scaling3, len_scaling4, &
       len_scaling5, len_scaling6, len_scaling7, len_scaling8, len_scaling9, len_scaling10, len_scaling11

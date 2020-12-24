@@ -93,9 +93,9 @@ subroutine da_setup_background_errors(grid, be)
       allocate (be%cv%sizechemic (num_chem) )
    end if
 
-   be % ncv_mz_chem  = num_cv_3d_basic + num_cv_3d_extra + num_cv_2d
-   allocate ( be%cv_mz_chem(1:be%ncv_mz_chem) )
-   be%cv_mz_chem(:) = 0 ! initialize
+   be % ncv_mz_chemic  = num_cv_3d_basic + num_cv_3d_extra + num_cv_2d
+   allocate ( be%cv_mz_chemic(1:be%ncv_mz_chemic) )
+   be%cv_mz_chemic(:) = 0 ! initialize
 
 #endif
 

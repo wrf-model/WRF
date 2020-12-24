@@ -63,11 +63,11 @@
    character(len=10) :: this_time
    character(len=8)  :: this_date
 
-#if (WRF_CHEM == 1)
-   character(len=2) :: itc
-   real             :: eta
-   integer          :: cv_s, cv_e, cv_s_ant, cv_e_ant, cv_s_bb, cv_e_bb
-#endif
+!#if (WRF_CHEM == 1)
+!   character(len=2) :: itc
+!   real             :: eta
+!   integer          :: cv_s, cv_e, cv_s_ant, cv_e_ant, cv_s_bb, cv_e_bb
+!#endif
 
    if (trace_use) call da_trace_entry("da_solve")
 
@@ -139,23 +139,8 @@
        call da_get_julian_time(max_yyyy,max_mm,max_dd,max_hh,max_mn,time_max)
        if ( var4d_bin < time_step ) call nl_set_var4d_bin (1, time_step)
        time_max = (time_max - time_min) * 60   ! unit is : seconds
-!       num_fgat_time = NINT(time_max/var4d_bin)
-!       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) ) then
-#if (WRF_CHEM == 1)
-       if ( var4d_bin .eq. time_step .and. use_nonchemobs ) then
-
-          num_fgat_time = 0
-       else
-#endif
-          num_fgat_time = NINT(time_max/var4d_bin)
-#if (WRF_CHEM == 1)
-       end if
-#endif
-       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) &
-#if (WRF_CHEM == 1)
-            .and. use_nonchemobs &
-#endif
-          ) then
+       num_fgat_time = NINT(time_max/var4d_bin)
+       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) ) then
           write(unit=message(1),fmt='(A)') &
           '4DVAR assimilation window must be evenly divisible by var4d_bin!'
           write(unit=message(2),fmt='(A,I7)') &
@@ -169,11 +154,7 @@
           write(unit=message(6),fmt='(A)')'Change var4d_bin, time_window_max, or time_window_min in namelist and rerun'
           call da_error(__FILE__,__LINE__,message(1:6))
        endif
-       if ( var4d_bin/time_step*time_step .ne. var4d_bin  &
-#if (WRF_CHEM == 1)
-            .and. use_nonchemobs &
-#endif
-          ) then
+       if ( var4d_bin/time_step*time_step .ne. var4d_bin ) then 
           write(unit=message(1),fmt='(A)') &
           'var4d_bin must be evenly divisible by time_step!'
           write(unit=message(2),fmt='(A,I7)') &
@@ -812,8 +793,9 @@
       end if
 
    !---------------------------------------------------------------------------
-   ! [8] Outerloop and chem Sensitivity
+   ! [8] Outerloop
    !---------------------------------------------------------------------------
+
    j_grad_norm_target = 1.0
    do it = 1, max_ext_its
 
@@ -884,7 +866,7 @@
                call kj_swap (grid%moist(:,:,:,i), model_grid%moist(:,:,:,i), &
                              grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
             enddo
-
+            
             ! Update boundary condition of model
 
             model_grid%u_bxs = grid%u_bxs
@@ -946,14 +928,11 @@
             model_grid%moist_btye = grid%moist_btye
 
             ! Turn off model boundary reading as we already provide a new one.
-            if ( checkpoint_interval .eq. 0 ) call da_model_lbc_off
+            call da_model_lbc_off
          endif
 
          call nl_set_var4d_run (head_grid%id, .true.)
-         if ( checkpoint_interval .gt. 0 ) write_checkpoints = 1
          call da_nl_model(it)
-         if ( checkpoint_interval .gt. 0 ) write_checkpoints = 0
-
 !      elseif (var4d .and. multi_inc == 2 ) then
 #else
          write(unit=message(1),fmt='(A)')'Please re-compile the code with 4dvar option'
@@ -995,11 +974,6 @@
 
       call da_allocate_y (iv, re)
       call da_allocate_y (iv, y)
-!#if (WRF_CHEM == 1)
-!      call da_allocate_y_chem (iv, re)
-!      call da_allocate_y_chem (iv, y)
-!#endif
-
 
       if (use_lanczos) then
          if (read_lanczos) then
@@ -1015,6 +989,7 @@
             call da_minimise_lz(grid, config_flags, it, cv_size, xbx,& 
                              be, iv, j_grad_norm_target, xhat, qhat, cvt, re, y, j, eignvec, eignval, neign )
 
+
          end if
 
          if (write_lanczos) call da_lanczos_io('w',cv_size,ntmax(it),neign,eignvec,eignval,qhat)
@@ -1022,12 +997,12 @@
          if (adj_sens) call da_sensitivity(grid,config_flags,it,cv_size,xbx, &
                                            be,iv,xhat,qhat,cvt,y,eignvec,eignval,neign )
 
+
       else
 
          call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
               xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)
       end if
- 
  
       ! Update outer-loop control variable
       cvt = cvt + xhat
@@ -1046,12 +1021,10 @@
 
 #if (WRF_CHEM == 1)
    if (cv_options == 7 .and. chem_cv_options>=10) then
-!        call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp,grid%vch,grid%vchem)
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,vchem=grid%vchem)
    end if
 #else
-         call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
-
+         call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp) ! ??? duplicate?
 #endif
 
          ! adding the ensemble contribution

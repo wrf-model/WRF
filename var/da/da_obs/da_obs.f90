@@ -31,7 +31,7 @@ module da_obs
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, sonde_sfc,rain, &
       bogus, buoy, qscat, tamdar, tamdar_sfc, pseudo, num_ob_indexes, its,ite,jds,jts,jte,ids, &
 #if (WRF_CHEM == 1)
-      num_platform, chemic_surf, &
+      chemic_surf, &
 #endif
       write_mod_filtered_obs, radiance, use_varbc, obs_names, q_error_options,radar_rf_rscl,radar_rv_rscl, kts,kte,kds,kde, &
       use_gpsephobs

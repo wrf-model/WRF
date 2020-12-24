@@ -51,7 +51,7 @@ module da_minimisation
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, num_pseudo, cv_options, &
       cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, cv_size_domain_jl, cv_size_domain_jt, &
 #if (WRF_CHEM == 1)
-      num_platform, chemic_surf, chemicda_opt, &
+      chemic_surf, chemicda_opt, &
 #endif
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpseph, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
@@ -204,6 +204,7 @@ module da_minimisation
 #endif
 
    implicit none
+
 #ifdef DM_PARALLEL
     include 'mpif.h'
 #endif

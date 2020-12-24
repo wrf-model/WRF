@@ -16,9 +16,9 @@ module da_wrfvar_top
    use module_io_domain, only : close_dataset
 #ifdef VAR4D
    use da_4dvar, only : da_nl_model, model_grid, u6_2, v6_2, w6_2, t6_2, ph6_2, p6, &
-#if (WRF_CHEM == 1)
-      da_ad_model, &
-#endif
+!#if (WRF_CHEM == 1)
+!      da_ad_model, &
+!#endif
       mu6_2, psfc6, moist6, kj_swap, da_finalize_model, da_model_lbc_off
    !use da_wrfvar_io, only : da_med_initialdata_output_lbc
 #endif
@@ -150,7 +150,7 @@ module da_wrfvar_top
 
    use da_netcdf_interface, only : da_get_var_2d_real_cdf
 
-   use module_streams, only : MAX_WRF_ALARMS  !!! add !!!
+   !use module_streams, only : MAX_WRF_ALARMS  !!! add !!!
    implicit none
 
    integer :: loop, levels_to_process
@@ -163,8 +163,8 @@ module da_wrfvar_top
 
    integer :: domain_id , fid , oid , idum1 , idum2
 
-   type (domain), pointer :: model_grid !!! add !!!
-   integer :: original_restart_interval !!! add !!!
+   !type (domain), pointer :: model_grid !!! add !!!
+   !integer :: original_restart_interval !!! add !!!
 #ifdef DM_PARALLEL
    integer                 :: nbytes
    integer, parameter      :: configbuflen = 4* CONFIG_BUF_LEN
@@ -179,7 +179,6 @@ module da_wrfvar_top
 
 contains
 
-!!! #include "da_nl_model.inc"  !!! add !!!
 #include "da_wrfvar_init1.inc"
 #include "da_wrfvar_init2.inc"
 #include "da_wrfvar_run.inc"

@@ -51,7 +51,7 @@ subroutine da_sensitivity(grid, config_flags, it, cv_size, xbx, be, iv, xhat, qh
             amat      = amat + qhat(:,i) * ritz(i,j) * &
                         da_dot_cv(cv_size, qhat(:,j), shat, grid, be%cv_mz, be%ncv_mz, &
 #if (WRF_CHEM == 1)
-                                   be%cv_mz_chem, &
+                                   be%cv_mz_chemic, &
 #endif
                                    jp_start, jp_end)
          end do

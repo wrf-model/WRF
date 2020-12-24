@@ -61,10 +61,6 @@ module da_transfer_model
       vertical_ip_sqrt_delta_p, vertical_ip_delta_p,check_rh_simple, check_rh_tpw, &
       t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, trajectory_io, &
       cv_options, &
-#if (WRF_CHEM == 1)
-      num_platform, &
-      init_scale, num_ts, &
-#endif
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, num_fft_factors, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, qlimit, &
       update_sfcdiags, use_wrf_sfcinfo, use_radar_rqv, cloudbase_calc_opt, use_gpsephobs, &

@@ -390,7 +390,6 @@ rconfig   real      max_vert_var8           namelist,wrfvar13  1  99.0     - "ma
 rconfig   real      max_vert_var9           namelist,wrfvar13  1  99.0     - "max_vert_var9"           ""  ""
 rconfig   real      max_vert_var10          namelist,wrfvar13  1  99.0     - "max_vert_var10"          ""  ""
 rconfig   real      max_vert_var11          namelist,wrfvar13  1  99.0     - "max_vert_var11"          ""  ""
-rconfig   real      max_vert_var12          namelist,wrfvar13 32*1  99.0   - "max_vert_var12"          ""  ""
 rconfig   real      max_vert_var_alpha      namelist,wrfvar13  1  99.0     - "max_vert_var_alpha"      ""  ""
 rconfig   real      psi_chi_factor          namelist,wrfvar13  1  1.0      - "psi_chi_factor"          ""  ""
 rconfig   real      psi_t_factor            namelist,wrfvar13  1  1.0      - "psi_t_factor"            ""  ""

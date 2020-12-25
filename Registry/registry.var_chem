@@ -23,6 +23,11 @@
 
 
 # Namelist variables specific to DA-Chem
+rconfig   integer   chem_cv_options         namelist,wrfvarchem  1  0        - "chem_cv_options"          "0:off, 10:gocart, 20:mosaic "  ""
+rconfig   integer   chemicda_opt            namelist,wrfvarchem  1  1        - "chemicda_opt"             " "   " "
+rconfig   real      var_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "var_scaling12"            ""  ""
+rconfig   real      len_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "len_scaling12"            ""  ""
+rconfig   logical   test_transformsch       namelist,wrfvarchem  1  .false.  - "test_transformsch"       ""  ""
 rconfig   logical   use_chemic_surfobs      namelist,wrfvarchem  1  .true.   - "use_chemic_surfobs"      ""  ""
 rconfig   logical   use_nonchemobs          namelist,wrfvarchem  1  .false.  - "use_nonchemobs"          ""  ""
 rconfig   real      max_error_chemic_surf   namelist,wrfvarchem  1  500.0    - "max_error_chemic_surf"     ""  ""
@@ -2487,8 +2492,6 @@ package    gocart_test       chem_cv_options==10     -           chem:sulf,p10,p
 #package    mosaic_test       chem_cv_options==20     -           chem:bc_a01,bc_a02,bc_a03,oc_a01,oc_a02,oc_a03,so4_a01,so4_a02,so4_a03,no3_a01,no3_a02,no3_a03,nh4_a01,nh4_a02,nh4_a03,cl_a01,cl_a02,cl_a03,na_a01,na_a02,na_a03,oin_a01,oin_a02,oin_a03;chem_ic:chem_ic_bc_a01,chem_ic_bc_a02,chem_ic_bc_a03,chem_ic_oc_a01,chem_ic_oc_a02,chem_ic_oc_a03,chem_ic_so4_a01,chem_ic_so4_a02,chem_ic_so4_a03,chem_ic_no3_a01,chem_ic_no3_a02,chem_ic_no3_a03,chem_ic_nh4_a01,chem_ic_nh4_a02,chem_ic_nh4_a03,chem_ic_cl_a01,chem_ic_cl_a02,chem_ic_cl_a03,chem_ic_na_a01,chem_ic_na_a02,chem_ic_na_a03,chem_ic_oin_a01,chem_ic_oin_a02,chem_ic_oin_a03
 #package    mosaic_test       chem_cv_options==20     -           chem:bc_a01,bc_a02,bc_a03,bc_a04,oc_a01,oc_a02,oc_a03,oc_a04,so4_a01,so4_a02,so4_a03,so4_a04,no3_a01,no3_a02,no3_a03,no3_a04,nh4_a01,nh4_a02,nh4_a03,nh4_a04,cl_a01,cl_a02,cl_a03,cl_a04,na_a01,na_a02,na_a03,na_a04,oin_a01,oin_a02,oin_a03,oin_a04;chem_ic:chem_ic_bc_a01,chem_ic_bc_a02,chem_ic_bc_a03,chem_ic_bc_a04,chem_ic_oc_a01,chem_ic_oc_a02,chem_ic_oc_a03,chem_ic_oc_a04,chem_ic_so4_a01,chem_ic_so4_a02,chem_ic_so4_a03,chem_ic_so4_a04,chem_ic_no3_a01,chem_ic_no3_a02,chem_ic_no3_a03,chem_ic_no3_a04,chem_ic_nh4_a01,chem_ic_nh4_a02,chem_ic_nh4_a03,chem_ic_nh4_a04,chem_ic_cl_a01,chem_ic_cl_a02,chem_ic_cl_a03,chem_ic_cl_a04,chem_ic_na_a01,chem_ic_na_a02,chem_ic_na_a03,chem_ic_na_a04,chem_ic_oin_a01,chem_ic_oin_a02,chem_ic_oin_a03,chem_ic_oin_a04
 package    mosaic_test       chem_cv_options==20     -           chem:bc_a01,bc_a02,bc_a03,bc_a04,oc_a01,oc_a02,oc_a03,oc_a04,so4_a01,so4_a02,so4_a03,so4_a04,no3_a01,no3_a02,no3_a03,no3_a04,nh4_a01,nh4_a02,nh4_a03,nh4_a04,cl_a01,cl_a02,cl_a03,cl_a04,na_a01,na_a02,na_a03,na_a04,oin_a01,oin_a02,oin_a03,oin_a04,so2,no2,o3,co;chem_ic:chem_ic_bc_a01,chem_ic_bc_a02,chem_ic_bc_a03,chem_ic_bc_a04,chem_ic_oc_a01,chem_ic_oc_a02,chem_ic_oc_a03,chem_ic_oc_a04,chem_ic_so4_a01,chem_ic_so4_a02,chem_ic_so4_a03,chem_ic_so4_a04,chem_ic_no3_a01,chem_ic_no3_a02,chem_ic_no3_a03,chem_ic_no3_a04,chem_ic_nh4_a01,chem_ic_nh4_a02,chem_ic_nh4_a03,chem_ic_nh4_a04,chem_ic_cl_a01,chem_ic_cl_a02,chem_ic_cl_a03,chem_ic_cl_a04,chem_ic_na_a01,chem_ic_na_a02,chem_ic_na_a03,chem_ic_na_a04,chem_ic_oin_a01,chem_ic_oin_a02,chem_ic_oin_a03,chem_ic_oin_a04,chem_ic_so2,chem_ic_no2,chem_ic_o3,chem_ic_co
-
-rconfig integer  chemicda_opt      namelist,chem     1           1   rh  "chemicda_opt"   ""   ""
 
 ### surface chem obs ###
 state    real   -                   f  chemic_surf               -         -      -       -   "Chem IC Surface Obs."  ""

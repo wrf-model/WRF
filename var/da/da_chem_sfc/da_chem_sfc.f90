@@ -12,15 +12,13 @@ use da_reporting, only : da_message,da_warning,message
 
 use module_domain_type, only : domain  !!! add !!!
 #if (WRF_CHEM == 1)
-use da_control, only : rootproc,ierr,comm,num_surf_obs,num_acft_obs,num_ts, &
+use da_control, only : rootproc,ierr,comm, &
       fails_error_max, trace_use, trace_use_dull, &
-      num_platform, chemic_surf, test_dm_exact, &
+      chemic_surf, test_dm_exact, &
       sfc_assi_options, sfc_assi_options_1,sfc_assi_options_2, &
       obs_qc_pointer,missing_r, qcstat_conv_unit, &
       check_max_iv_print, check_max_iv, missing, rootproc, &
       max_error_chemic_surf, &
-      sigma_r_surf, sigma_r_acft, sigma_c_surf, sigma_c_acft, &
-      pinterp_option, &
       chem_cv_options, &
       chemicda_opt, &
       use_chemic_surfobs, chemic_surf, &

@@ -16,9 +16,6 @@ module da_wrfvar_top
    use module_io_domain, only : close_dataset
 #ifdef VAR4D
    use da_4dvar, only : da_nl_model, model_grid, u6_2, v6_2, w6_2, t6_2, ph6_2, p6, &
-!#if (WRF_CHEM == 1)
-!      da_ad_model, &
-!#endif
       mu6_2, psfc6, moist6, kj_swap, da_finalize_model, da_model_lbc_off
    !use da_wrfvar_io, only : da_med_initialdata_output_lbc
 #endif
@@ -32,22 +29,11 @@ module da_wrfvar_top
 
    use module_state_description, only : num_moist, num_a_moist, num_g_moist, &
       num_scalar, num_a_scalar, num_g_scalar, &
-      !num_chem, PARAM_FIRST_SCALAR, num_tracer 
-      num_tracer, num_a_tracer, num_g_tracer, &
 #if (WRF_CHEM == 1)
-      num_chem, num_a_chem, num_g_chem, &
-      num_emis_ant, num_scaleant, num_a_scaleant, num_g_scaleant, &
-      num_ebu, num_ebu_in, num_scalebb, num_a_scalebb, num_g_scalebb, &
-      num_ext_coef, & !num_a_ext_coef, num_g_ext_coef, &
-      num_bscat_coef, & !num_a_bscat_coef, num_g_bscat_coef, &
-      num_asym_par, & !num_a_asym_par, num_g_asym_par, &
-      !num_eghg_bio,num_emis_dust,num_emis_seas,num_emis_vol
-      num_chem_surf, num_chem_acft, &
-      num_surf_hx, num_g_surf_hx, num_a_surf_hx, &
-      num_acft_hx, num_g_acft_hx, num_a_acft_hx, &
-      num_chem, &
+      num_chem, PARAM_FIRST_SCALAR
+#else
+      num_chem, PARAM_FIRST_SCALAR, num_tracer
 #endif
-      PARAM_FIRST_SCALAR
    use module_tiles, only : set_tiles
 
 

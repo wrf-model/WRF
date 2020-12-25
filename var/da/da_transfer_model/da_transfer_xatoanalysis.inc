@@ -43,7 +43,7 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
       if (it < max_ext_its) then
          call da_transfer_wrftoxb(xbx, grid, config_flags)
 #if (WRF_CHEM == 1)
-         call da_transfer_wrftoxb_gocart(grid)
+         call da_transfer_wrftoxb_chem(grid)
 #endif
       end if
    else if (fg_format == fg_format_wrf_arw_global) then

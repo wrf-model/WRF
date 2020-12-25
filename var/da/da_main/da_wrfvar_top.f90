@@ -89,7 +89,7 @@ module da_wrfvar_top
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, da_trace_report
    use da_transfer_model, only : da_transfer_xatoanalysis,da_setup_firstguess, &
 #if (WRF_CHEM == 1)
-       da_transfer_wrftoxb_gocart, &
+       da_transfer_wrftoxb_chem, &
 #endif
        da_transfer_wrftltoxa_adj
    use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa, &

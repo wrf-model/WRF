@@ -1,11 +1,11 @@
-subroutine da_transfer_wrftoxb_gocart(grid)
+subroutine da_transfer_wrftoxb_chem(grid)
 
    !---------------------------------------------------------------------------
    ! Purpose: Transfers fields from WRF to first guess structure.
    !    Updated for Analysis on Arakawa-C grid
    !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !
-   ! Purpose: Transfers GOCART Chem fields from WRF to first guess structure.
+   ! Purpose: Transfers Chem fields from WRF to first guess structure.
    !    Author: Wei Sun,  MMM/NCAR,  Date: 02/11/2019
    !---------------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ subroutine da_transfer_wrftoxb_gocart(grid)
 
    integer :: ic, i, j, k, ij
 
-   if (trace_use) call da_trace_entry("da_transfer_wrftoxb_gocart")
+   if (trace_use) call da_trace_entry("da_transfer_wrftoxb_chem")
 
    !$OMP PARALLEL DO &
    !$OMP PRIVATE ( ic, ij, i, j, k )
@@ -39,7 +39,7 @@ subroutine da_transfer_wrftoxb_gocart(grid)
 #include "HALO_CHEM_XB.inc"
 #endif
 
-   if (trace_use) call da_trace_exit("da_transfer_wrftoxb_gocart")
+   if (trace_use) call da_trace_exit("da_transfer_wrftoxb_chem")
 
-end subroutine da_transfer_wrftoxb_gocart
+end subroutine da_transfer_wrftoxb_chem
 

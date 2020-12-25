@@ -112,7 +112,7 @@ module da_transfer_model
 
 #include "da_transfer_wrftoxb.inc"
 #if (WRF_CHEM == 1)
-#include "da_transfer_wrftoxb_gocart.inc"
+#include "da_transfer_wrftoxb_chem.inc"
 #endif
 #include "da_transfer_wrf_nmm_regional_toxb.inc"
 #include "da_transfer_kmatoxb.inc"

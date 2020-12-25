@@ -246,7 +246,7 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv &
       !-------------------------------------------------------------------------
 #if (WRF_CHEM == 1)
       if (present(vchem)) then
-         call da_vv_to_cv_chem( vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv, be%cv_mz_chemic, vchem)
+         call da_vv_to_cv( vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv, be%cv_mz_chemic, vchem)
       else
 #endif
          call da_vv_to_cv( vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv)

@@ -107,11 +107,13 @@ contains
 
 #include "da_check_balance.inc"
 #include "da_check_cvtovv_adjoint.inc"
-#include "da_check_cvtovv_adjoint_chem.inc"
 #include "da_check_vtox_adjoint.inc"
-#include "da_check_vtox_adjoint_chem.inc"
 #include "da_check_vptox_adjoint.inc"
+#if (WRF_CHEM == 1)
+#include "da_check_cvtovv_adjoint_chem.inc"
+#include "da_check_vtox_adjoint_chem.inc"
 #include "da_check_vchemtox_adjoint.inc"
+#endif
 #include "da_check_vp_errors.inc"
 #include "da_check_vvtovp_adjoint.inc"
 #include "da_check_xtovptox_errors.inc"

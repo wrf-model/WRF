@@ -9,6 +9,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    !       Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 02/01/2010
    !---------------------------------------------------------------------------
 
+#if (WRF_CHEM == 1)
    USE module_state_description, ONLY :  p_bc1, p_bc2, p_oc1, p_oc2                         & !inline gocart
                                         ,p_dust_1, p_dust_2, p_dust_3 ,p_dust_4             & 
                                         ,p_seas_1, p_seas_2, p_seas_3 ,p_seas_4             &
@@ -23,6 +24,7 @@ subroutine da_setup_be_regional(xb, be, grid)
                                         ,p_cl_a01, p_cl_a02, p_cl_a03, p_cl_a04                       &
                                         ,p_na_a01, p_na_a02, p_na_a03, p_na_a04                       &
                                         ,p_oin_a01, p_oin_a02, p_oin_a03, p_oin_a04                  
+#endif
 
    implicit none
 
@@ -180,10 +182,12 @@ subroutine da_setup_be_regional(xb, be, grid)
          write (unit=message(1),fmt='(A,I3)') 'interpolate_stats is not implemented for cloud_cv_options=',cloud_cv_options
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
+#if (WRF_CHEM == 1)
       if ( ( chem_cv_options >=10 ) .and. interpolate_stats ) then
          write (unit=message(1),fmt='(A,I3)') 'interpolate_stats is not implemented for chem_cv_options=',chem_cv_options
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
+#endif
    else 
       write (unit=message(1),fmt='(a)') 'cv_options should be 5, 6, or 7'
       call da_error(__FILE__,__LINE__,message(1:1))
@@ -281,6 +285,8 @@ subroutine da_setup_be_regional(xb, be, grid)
    if ( cloud_cv_options >= 2 ) then
       num_cv_3d_extra = 5 ! 5 hydrometeors, qc,qr,qi,qs,qg
    end if
+
+#if (WRF_CHEM == 1)
    if ( chem_cv_options == 10 ) then
       num_cv_3d_extra = 19
       num_cv_3d_chem = num_cv_3d_extra
@@ -294,6 +300,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       num_cv_3d_chem = num_cv_3d_extra
       allocate (be % v12 (num_cv_3d_chem) )
    end if
+#endif
 
    if ( use_cv_w ) then
       num_cv_3d_extra = num_cv_3d_extra + 1 ! clouds+w
@@ -556,9 +563,11 @@ subroutine da_setup_be_regional(xb, be, grid)
       allocate (be10_eval_loc (1:nj,1:nk))
    end if
 
+#if (WRF_CHEM == 1)
    if ( chem_cv_options >= 10 ) then
       allocate (be12_eval_loc  (num_cv_3d_chem,1:nj,1:nk))
    end if
+#endif
 
    if ( use_cv_w ) then
       allocate (be11_eval_loc (1:nj,1:nk))
@@ -580,9 +589,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate (be10_eval_glo(1:nk))
       end if
 
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          allocate (be12_eval_glo(num_cv_3d_chem,1:nk))
       end if
+#endif
 
       if ( use_cv_w ) then
          allocate (be11_eval_glo(1:nk))
@@ -602,9 +613,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate (be10_evec_loc(1:nj,1:nk,1:nk))
       end if
 
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          allocate (be12_evec_loc (num_cv_3d_chem,1:nj,1:nk,1:nk))
       end if
+#endif
 
       if ( use_cv_w ) then
          allocate (be11_evec_loc(1:nj,1:nk,1:nk))
@@ -624,9 +637,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate (be10_evec_glo(1:nk,1:nk))
       end if
 
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          allocate (be12_evec_glo(num_cv_3d_chem,1:nk,1:nk))
       end if
+#endif
 
       if ( use_cv_w ) then
          allocate (be11_evec_glo(1:nk,1:nk))
@@ -643,9 +658,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate (be10_rf_lengthscale(1:kz))
       end if
 
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          allocate (be12_rf_lengthscale(num_cv_3d_chem,1:kz))
       end if
+#endif
 
       if ( use_cv_w ) then
          allocate (be11_rf_lengthscale(1:kz))
@@ -847,6 +864,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       print*,"reading variables for cloud_cv_options=2 is done"
    end if ! cloud_cv_options=2
 
+#if (WRF_CHEM == 1)
    if ( chem_cv_options == 10 ) then
       print*,"chem_cv_options == 10 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra
       do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
@@ -1632,6 +1650,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra-1
       print*,"reading variables for chem_cv_options=20 is done"
    end if ! chem_cv_options=20
+#endif
 
    deallocate (evec_loc)
    deallocate (eval_loc)
@@ -1677,7 +1696,9 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    message(1:5) = ''
    write (unit=message(1),fmt='(3x,A,i2)') 'cloud_cv_options = ', cloud_cv_options
+#if (WRF_CHEM == 1)
    write (unit=message(1),fmt='(3x,A,i2)') 'chem_cv_options = ', chem_cv_options
+#endif
    write (unit=message(2),fmt='(3x,A,7A)') 'WRFDA dry control variables are: ', &
       trim(be % v1 % name), ', ', trim(be % v2 % name), ', ', &
       trim(be % v3 % name), ' and ', trim(be % v5 % name)
@@ -1689,6 +1710,8 @@ subroutine da_setup_be_regional(xb, be, grid)
          trim(be % v8 % name), ', ', trim(be % v9 % name), ', and ', &
          trim(be % v10 % name)
    end if
+
+#if (WRF_CHEM == 1)
    if ( chem_cv_options == 10 ) then
       write (unit=message(4),fmt='(3x,A,38A)') 'WRFDA chem control variables are: ', &
          trim(be % v12(1) % name), ', ', trim(be % v12(2) % name), ', ', &
@@ -1702,6 +1725,8 @@ subroutine da_setup_be_regional(xb, be, grid)
          trim(be % v12(17) % name), ', ', trim(be % v12(18) % name), ', ', &
          trim(be % v12(19) % name)
    end if
+#endif
+
    if ( use_cv_w ) then
       write (unit=message(5),fmt='(3x,A)') &
          'w control variable is activated'
@@ -1792,6 +1817,7 @@ subroutine da_setup_be_regional(xb, be, grid)
          end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra
       end if
 
+#if (WRF_CHEM == 1)
       if ( chem_cv_options == 10 ) then
          do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
             read (be_unit) variable
@@ -2005,6 +2031,7 @@ subroutine da_setup_be_regional(xb, be, grid)
             end select
          end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra
       end if
+#endif
 
       ! Read in lengthscale of 2D Control variable ps_u
 
@@ -2054,12 +2081,14 @@ subroutine da_setup_be_regional(xb, be, grid)
             call da_message(message(7:11))
          end if
 
+#if (WRF_CHEM == 1)
          if ( chem_cv_options >= 10 ) then
 	    do i=1,num_cv_3d_chem
 !                write(unit=message(i+6),fmt=write_fmt) 'be',(i+5),'= ',be12_rf_lengthscale(i,:)
             end do
             call da_message(message(i+6:num_cv_3d_chem+6))
          end if
+#endif
 
          if ( use_cv_w ) then
             write(unit=message(12),fmt=write_fmt) 'be11= ',be11_rf_lengthscale
@@ -2325,6 +2354,7 @@ subroutine da_setup_be_regional(xb, be, grid)
             end if
          end if
 
+#if (WRF_CHEM == 1)
 !!!         if ( chem_cv_options == 10 ) then
          if ( chem_cv_options >= 10 ) then
             do i=1,num_cv_3d_chem
@@ -2334,6 +2364,7 @@ subroutine da_setup_be_regional(xb, be, grid)
                call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
             end if
          end if
+#endif
 
       end if
 
@@ -2353,11 +2384,13 @@ subroutine da_setup_be_regional(xb, be, grid)
          if ( use_cv_w ) then
             call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
          end if
+#if (WRF_CHEM == 1)
 !!!      else if ( chem_cv_options == 10 ) then
       else if ( chem_cv_options >= 10 ) then
          do i=1,num_cv_3d_chem
             call da_get_vertical_truncation(max_vert_var12(i), be12_eval_glo(i,:), be % v12(i))
          end do
+#endif
          if ( use_cv_w ) then
             call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
          end if
@@ -2445,12 +2478,14 @@ subroutine da_setup_be_regional(xb, be, grid)
                                          be10_evec_loc, be % v10)
    end if
 
+#if (WRF_CHEM == 1)
    if ( chem_cv_options >=10 ) then
       do i=1,num_cv_3d_chem
          call da_allocate_background_errors(jy, kz, be12_eval_glo(i,:), be12_evec_glo(i,:,:), be12_eval_loc(i,:,:), &
                                          be12_evec_loc(i,:,:,:), be % v12(i))
       end do
    end if
+#endif
 
    if ( use_cv_w ) then
       call da_allocate_background_errors(jy, kz, be11_eval_glo, be11_evec_glo, be11_eval_loc, &
@@ -2479,11 +2514,13 @@ subroutine da_setup_be_regional(xb, be, grid)
          be10_rf_lengthscale(1:kz)= be10_rf_lengthscale(1:kz) * xb%ds
       end if
 
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          do i=1,num_cv_3d_chem
             be12_rf_lengthscale(i,1:kz) =  be12_rf_lengthscale(i,1:kz) * xb%ds
          end do
       end if
+#endif
 
       if ( use_cv_w ) then
          be11_rf_lengthscale(1:kz)= be11_rf_lengthscale(1:kz) * xb%ds
@@ -2574,12 +2611,14 @@ subroutine da_setup_be_regional(xb, be, grid)
                                          be%v10%name)
       end if
 
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          do i=1,num_cv_3d_chem
             call da_check_eof_decomposition(be%v12(i)%val_g(:), be%v12(i)%evec_g(:,:),&
                                          be%v12(i)%name)
          end do
       end if
+#endif
 
       if ( use_cv_w ) then
          call da_check_eof_decomposition(be%v11%val_g(:), be%v11%evec_g(:,:),&
@@ -2615,6 +2654,7 @@ subroutine da_setup_be_regional(xb, be, grid)
                                      be4_rf_lengthscale, be5_rf_lengthscale,                     &
                                      be6_rf_lengthscale, be7_rf_lengthscale, be8_rf_lengthscale, &
                                      be9_rf_lengthscale, be10_rf_lengthscale,be11_rf_lengthscale
+#if (WRF_CHEM == 1)
           else if ( chem_cv_options == 10 ) then
              write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
                                      be % v4 % mz, be % v5 % mz,                  &
@@ -2676,6 +2716,7 @@ subroutine da_setup_be_regional(xb, be, grid)
                                      be12_rf_lengthscale(25,:), be12_rf_lengthscale(26,:), be12_rf_lengthscale(27,:), be12_rf_lengthscale(28,:), &
                                      be12_rf_lengthscale(29,:), be12_rf_lengthscale(30,:), be12_rf_lengthscale(31,:), be12_rf_lengthscale(32,:), &
                                      be11_rf_lengthscale
+#endif
           else
              write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
                                      be % v4 % mz, be % v5 % mz,                  &
@@ -2736,12 +2777,14 @@ subroutine da_setup_be_regional(xb, be, grid)
          call da_rescale_background_errors(var_scaling10(1), len_scaling10(1), &
                                            xb % ds, be10_rf_lengthscale, be % v10)
       end if
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
       do i=1,num_cv_3d_chem
          call da_rescale_background_errors(var_scaling12(i), len_scaling12(i), &
                                            xb % ds, be12_rf_lengthscale(i,:), be % v12(i))
       end do
       end if
+#endif
       if ( use_cv_w ) then
          call da_rescale_background_errors(var_scaling11(1), len_scaling11(1), &
                                            xb % ds, be11_rf_lengthscale, be % v11)
@@ -2775,11 +2818,13 @@ subroutine da_setup_be_regional(xb, be, grid)
           write(be_print_unit,'("mz=",i3,2x,"be%v10%val:"/(10e12.5))') be%v10%mz, be%v10%val(1,:)
        end if
 
+#if (WRF_CHEM == 1)
        if ( chem_cv_options >= 10 ) then
        do i=1,num_cv_3d_chem
           write(be_print_unit,'("mz=",i3,2x,"be%v12%val:"/(10e12.5))') be%v12(i)%mz, be%v12(i)%val(1,:)
        end do
        end if
+#endif
 
        if ( use_cv_w ) then
           write(be_print_unit,'("mz=",i3,2x,"be%v11%val:"/(10e12.5))') be%v11%mz, be%v11%val(1,:)
@@ -2800,11 +2845,13 @@ subroutine da_setup_be_regional(xb, be, grid)
           write(be_print_unit,'("be%v10%rf_alpha:"/(10e12.5))') be % v10 % rf_alpha(:)
        end if
 
+#if (WRF_CHEM == 1)
        if ( chem_cv_options >= 10 ) then
        do i=1,num_cv_3d_chem
           write(be_print_unit,'("be%v12%rf_alpha:"/(10e12.5))')  be % v12(i) % rf_alpha(:)
        end do
        end if
+#endif
 
        if ( use_cv_w ) then
           write(be_print_unit,'("be%v11%rf_alpha:"/(10e12.5))') be % v11 % rf_alpha(:)
@@ -2823,6 +2870,7 @@ subroutine da_setup_be_regional(xb, be, grid)
                    be8_rf_lengthscale(i), be9_rf_lengthscale(i), be10_rf_lengthscale(i)
              endif
           enddo
+#if (WRF_CHEM == 1)
        else if ( chem_cv_options == 10 ) then
           do i = 1,kz
              if (i == 1) then
@@ -2843,6 +2891,7 @@ subroutine da_setup_be_regional(xb, be, grid)
                    be11_rf_lengthscale(i)
              endif
           enddo
+#endif
        else
           do i = 1,kz
              if (i == 1) then
@@ -2873,9 +2922,11 @@ subroutine da_setup_be_regional(xb, be, grid)
       deallocate (be9_eval_loc)
       deallocate (be10_eval_loc)
    end if
+#if (WRF_CHEM == 1)
    if ( chem_cv_options >= 10 ) then
       deallocate (be12_eval_loc)
    end if
+#endif
    if ( use_cv_w ) then
       deallocate (be11_eval_loc)
    end if
@@ -2894,11 +2945,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          deallocate (be9_rf_lengthscale)
          deallocate (be10_rf_lengthscale)
       end if
-
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          deallocate (be12_rf_lengthscale)
       end if
-
+#endif
       if ( use_cv_w ) then
          deallocate (be11_rf_lengthscale)
       end if
@@ -2918,11 +2969,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          deallocate (be9_eval_glo)
          deallocate (be10_eval_glo)
       end if
-
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          deallocate (be12_eval_glo)
       end if
-
+#endif
       if ( use_cv_w ) then
         deallocate (be11_eval_glo)
       end if
@@ -2940,11 +2991,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          deallocate (be9_evec_loc)
          deallocate (be10_evec_loc)
       end if
-
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          deallocate (be12_evec_loc)
       end if
-
+#endif
       if ( use_cv_w ) then
          deallocate (be11_evec_loc)
       end if
@@ -2962,11 +3013,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          deallocate (be9_evec_glo)
          deallocate (be10_evec_glo)
       end if
-
+#if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          deallocate (be12_evec_glo)
       end if
-
+#endif
       if ( use_cv_w ) then
          deallocate (be11_evec_glo)
       end if
@@ -3064,7 +3115,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       be%cv_mz(9)  = be%v9%mz
       be%cv_mz(10) = be%v10%mz
    end if
-
+#if (WRF_CHEM == 1)
    if ( chem_cv_options >= 10 ) then
      be % ncv_mz_chemic  = num_cv_3d_chem
      allocate ( be%cv_mz_chemic(1:be%ncv_mz_chemic) )
@@ -3074,7 +3125,7 @@ subroutine da_setup_be_regional(xb, be, grid)
         be%cv_mz_chemic(i)  = be%v12(i)%mz
      end do
    end if
-
+#endif
    if ( use_cv_w ) then
       if (be%ncv_mz ==8 .or. be%ncv_mz ==13 ) then
         be%cv_mz(be%ncv_mz-2) = be%v11%mz

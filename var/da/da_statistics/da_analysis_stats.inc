@@ -22,7 +22,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    type (domain), intent (in) :: grid
    integer,       intent (in) :: stats_unit ! Output unit for stats.
-   integer,       intent (in) :: stats_unit2 ! Output unit for chem stats.
+   integer, optional,  intent (in) :: stats_unit2 ! Output unit for chem stats.
    
    integer :: i, j, k
    integer :: ij_g, ijk_g   ! ij, ijk for global domain. 
@@ -274,7 +274,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 #if (WRF_CHEM == 1)
       write(unit=stats_unit2, fmt='(/a/)') ' Maximum of gridded analysis increments'
       select case ( chem_cv_options )
-       case ( 1 )
+       case ( 10 )
           write(unit=stats_unit2, fmt='(11a/)') &
                ' Lvl         ', &
                'p25      i    j          ', &
@@ -422,7 +422,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 #if (WRF_CHEM == 1)
       write(unit=stats_unit2, fmt='(/a/)') ' Mean of gridded analysis increments'
       select case ( chem_cv_options )
-       case ( 1 )
+       case ( 10 )
           write(unit=stats_unit2, fmt='(a/)') &
             ' Lvl        p25           sulf           bc1           bc2           oc1           oc2         dust_1         dust_2         seas_1         seas_2'
       end select
@@ -597,7 +597,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 #if (WRF_CHEM == 1)
       write(unit=stats_unit2, fmt='(/a/)') ' RMSE of gridded analysis increments'
       select case ( chem_cv_options )
-       case ( 1 )
+       case ( 10 )
           write(unit=stats_unit2, fmt='(a/)') &
             ' Lvl        p25           sulf           bc1           bc2           oc1           oc2         dust_1         dust_2         seas_1         seas_2'
       end select

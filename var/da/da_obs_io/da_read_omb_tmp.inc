@@ -436,6 +436,7 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          if (if_write) exit reports
          cycle reports
 
+#if (WRF_CHEM == 1)
       case ('chem' )
          if (num_obs > 0) then
             do n = 1, num_obs
@@ -510,6 +511,7 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          end if
          if (if_write) exit reports
          cycle reports
+#endif
 
       case default;
 

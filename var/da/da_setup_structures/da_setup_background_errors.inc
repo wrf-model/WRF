@@ -39,9 +39,9 @@ subroutine da_setup_background_errors(grid, be)
             max_vert_var9 = 0
             max_vert_var10 = 0
             max_vert_var11 = 0
-!#ifdef CHEM_CV
+#if (WRF_CHEM == 1)
             max_vert_var12 = 0
-!#endif
+#endif
       end if
       sigma_alpha = alpha_std_dev
       write(6,'(a,4f15.5)')' jb_factor, je_factor, alpha_std_dev, sigma_alpha = ', &

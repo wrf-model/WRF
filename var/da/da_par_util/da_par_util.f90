@@ -68,10 +68,6 @@ module da_par_util
 
 #include "da_cv_to_vv.inc"
 #include "da_vv_to_cv.inc"
-#if (WRF_CHEM == 1)
-#include "da_cv_to_vv_chem.inc"
-#include "da_vv_to_cv_chem.inc"
-#endif
 #include "da_alloc_and_copy_be_arrays.inc"
 #include "da_copy_dims.inc"
 #include "da_copy_tile_dims.inc"

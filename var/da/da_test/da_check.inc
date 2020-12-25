@@ -58,9 +58,11 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y  &
 
    call da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cvtest, vv)
 
+#if (WRF_CHEM == 1)
    if (test_transformsch) then
      call da_check_cvtovv_adjoint_chem(grid, cv_size, xbx, be, cvtest, vv, vchem=grid%vchem)
    end if
+#endif
 
    !-------------------------------------------------------------------------
    ! vv_to_vp adjoint test:
@@ -80,11 +82,12 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y  &
 
    call da_check_vtox_adjoint(grid, cv_size, xbx, be, ep, cvtest, vv, vp)
 
+#if (WRF_CHEM == 1)
    if (test_transformsch) then
       call da_check_vchemtox_adjoint(grid, grid%vchem, be, grid%vchem2)
       call da_check_vtox_adjoint_chem(grid, cv_size, xbx, be, ep, cvtest, vv, vp)
    end if
-
+#endif
 
    !----------------------------------------------------------------------------
    ! [2] Perform xtoy adjoint tests:

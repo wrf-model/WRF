@@ -343,11 +343,17 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
                iv%info(j)%thin_ptotal(i) - iv%info(j)%thin_ptotal(i-1), ' global (post-thinning), ', &
                iv%info(j)%thin_plocal(i) - iv%info(j)%thin_plocal(i-1), ' local (post-thinning)'
          else
+#if (WRF_CHEM == 1)
 !!!            write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
             write(unit=stdout, fmt='(6x,a,i10,a,i8,a,i8,a,i8,a)') &
                ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
                iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local', &
                iv%info(chemic_surf)%ntotal, 'chem total', iv%info(chemic_surf)%nlocal, 'chem local'
+#else
+            write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
+               ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
+               iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local'
+#endif
          end if ! thin_conv_ascii
          end if
       end do

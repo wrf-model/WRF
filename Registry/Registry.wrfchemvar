@@ -8,7 +8,6 @@ include registry.var
 include registry.hyb_coord
 
 include registry.var_chem
-#include registry.var_chemplus
 
 include registry.bdy_perturb
 

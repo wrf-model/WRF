@@ -153,7 +153,7 @@ module da_wrfvar_top
    !integer :: original_restart_interval !!! add !!!
 #ifdef DM_PARALLEL
    integer                 :: nbytes
-   integer, parameter      :: configbuflen = 4* CONFIG_BUF_LEN
+   integer, parameter      :: configbuflen = 6* CONFIG_BUF_LEN
    integer                 :: configbuf( configbuflen )
 #endif
 

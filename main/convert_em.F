@@ -1,7 +1,7 @@
 !This is a data converter program. Its actions are controlled by
 !the registry and the namelist.  It will read variables on the
 !'i' stream output and output variables on the 'o' stream as
-!indicated in the registry. The input and output forms are 
+!indicated in the registry. The input and output forms are  
 !controlled by io_form_input and io_form_history in the namelist.input.
 
 

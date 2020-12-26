@@ -16,118 +16,6 @@ rconfig   real      max_error_chemic_surf   namelist,wrfvarchem  1  500.0    - "
 rconfig   character  auxinput12_inname   namelist,time_control   1  "wrf_chem_input"   -     "name of auxinput12 infile" ""      ""
 rconfig   integer    io_form_auxinput12  namelist,time_control   1  2
 
-state    real    erod            ij.    misc        1         -      i012rhdu "EROD"                "fraction of erodible surface in each grid cell (0-1)"       "none"
-state    real    CLDFRA2         ijk    misc        1         -      h        "CLDFRA2"             "CLOUD FRACTION"
-state    real    RAINPROD        ijk    misc        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
-state    real    EVAPPROD        ijk    misc        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
-state    real    QV_B4MP         ijk    misc        1         -      -        "QV_B4MP"             "WATER VAPOR BEFORE MICROPHYSICS"  "kg kg-1"
-state    real    QC_B4MP         ijk    misc        1         -      -        "QC_B4MP"             "CLOUD WATER BEFORE MICROPHYSICS"  "kg kg-1"
-state    real    QI_B4MP         ijk    misc        1         -      -        "QI_B4MP"             "CLOUD ICE BEFORE MICROPHYSICS"    "kg kg-1"
-state    real    QS_B4MP         ijk    misc        1         -      -        "QS_B4MP"             "SNOW BEFORE MICROPHYSICS"         "kg kg-1"
-
-state    real    ccn1            ijk    misc        1         -      r        "ccn1"                "CCN concentration at S=0.02%"  "#/cm3"
-state    real    ccn2            ijk    misc        1         -      r        "ccn2"                "CCN concentration at S=0.05%"  "#/cm3"
-state    real    ccn3            ijk    misc        1         -      r        "ccn3"                "CCN concentration at S=0.1%"   "#/cm3"
-state    real    ccn4            ijk    misc        1         -      r        "ccn4"                "CCN concentration at S=0.2%"   "#/cm3"
-state    real    ccn5            ijk    misc        1         -      r        "ccn5"                "CCN concentration at S=0.5%"   "#/cm3"
-state    real    ccn6            ijk    misc        1         -      r        "ccn6"                "CCN concentration at S=1.0%"   "#/cm3"
-
-# cloud water fractional removal rate needed for wet scavenging
-state    real    qlsink          ijk    misc        1         -      rdu      "qlsink"              "CLOUD WATER SINK"               "/S"
-state    real    precr           ijk    misc        1         -      rdu      "precr"               "RAIN PRECIPITATION RATE"        "KG/M2/S"
-state    real    preci           ijk    misc        1         -      rdu      "preci"               "ICE PRECIPITATION RATE"         "KG/M2/S"
-state    real    precs           ijk    misc        1         -      rdu      "precs"               "SNOW PRECIPITATION RATE"        "KG/M2/S"
-state    real    precg           ijk    misc        1         -      rdu      "precg"               "GRAUPEL PRECIPITATION RATE"     "KG/M2/S"
-
-#
-# Timing variables for chemistry
-#
-state   integer ktauc                    -  misc    -         -      r       "ktauc"                 "Number of chemistry time steps"               ""
-state   integer last_chem_time_year      -  misc    -         -      r       "last_chem_time_year"   "last call to chem mechanism through restarts" "4-digit year"
-state   integer last_chem_time_month     -  misc    -         -      r       "last_chem_time_month"  "last call to chem mechanism through restarts" "2-digit month"
-state   integer last_chem_time_day       -  misc    -         -      r       "last_chem_time_day"    "last call to chem mechanism through restarts" "2-digit day"
-state   integer last_chem_time_hour      -  misc    -         -      r       "last_chem_time_hour"   "last call to chem mechanism through restarts" "2-digit hour"
-state   integer last_chem_time_minute    -  misc    -         -      r       "last_chem_time_minute" "last call to chem mechanism through restarts" "2-digit minute"
-state   integer last_chem_time_second    -  misc    -         -      r       "last_chem_time_second" "last call to chem mechanism through restarts" "2-digit second"
-#
-# Emissions variables
-#
-state   integer emissframes      -          -          -         -      -       "emissframes"           ""         ""
-state   integer fireemissframes  -        -          -        -        -      "fireemissframes"       ""         ""
-#
-# Anthropogenic emissions
-#
-state    real  dustload_1    ij       misc         1         -      rh      "dustload_1"     "dust loading for size 1"        "ug/m2"
-state    real  dustload_2    ij       misc         1         -      rh      "dustload_2"     "dust loading for size 2"        "ug/m2"
-state    real  dustload_3    ij       misc         1         -      rh      "dustload_3"     "dust loading for size 3"        "ug/m2"
-state    real  dustload_4    ij       misc         1         -      rh      "dustload_4"     "dust loading for size 4"        "ug/m2"
-state    real  dustload_5    ij       misc         1         -      rh      "dustload_5"     "total dust loading"             "ug/m2"
-
-
-#
-state    real  mean_fct_agtf      ij      misc      1         -        i07h       "mean_fct_agtf"         "mean fraction of tropical forest"  "?"
-state    real  mean_fct_agef      ij      misc      1         -        i07h       "mean_fct_agef"         "mean fraction of extra tropical forest"  "?"
-state    real  mean_fct_agsv      ij      misc      1         -        i07h       "mean_fct_agsv"         "mean fraction of savanna"  "?"
-state    real  mean_fct_aggr      ij      misc      1         -        i07h       "mean_fct_aggr"         "mean fraction of grassland"  "?"
-state    real  firesize_agtf      ij      misc      1         -        i07h       "firesize_agtf"         "mean firesize for tropical forest"  "?"
-state    real  firesize_agef      ij      misc      1         -        i07h       "firesize_agef"         "mean firesize for extratropical forest"  "?"
-state    real  firesize_agsv      ij      misc      1         -        i07h       "firesize_agsv"         "mean firesize for savanna"  "?"
-state    real  firesize_aggr      ij      misc      1         -        i07h       "firesize_aggr"         "mean firesize for grassland"  "?"
-
-# Tropopause
-state    real  tropo_p        ij      misc        1         -      r       "tropo_p"               "Tropopause pressure"                 "Pa"
-state    real  tropo_z        ij      misc        1         -      r       "tropo_z"               "Tropopause height"                   "meters"
-state integer  tropo_lev      ij      misc        1         -      r       "tropo_lev"             "Tropopause level"                    ""
-# wetdep diagnostics
-state    real  hno3_col_mdel  ij      misc        1         -       -      "HNO3_COL_MDEL"         "hno3 column mass change"             "kg"
-#
-##
-#state    real  e_bio          ijo     misc        1         Z      r        "E_BIO"             "EMISSIONS"             "ppm m/min"
-state    real  sebio_iso      ij      misc        1         -      i06r     "sebio_iso"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_oli      ij      misc        1         -      i06r     "sebio_oli"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_api      ij      misc        1         -      i06r     "sebio_api"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_lim      ij      misc        1         -      i06r     "sebio_lim"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_xyl      ij      misc        1         -      i06r     "sebio_xyl"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_hc3      ij      misc        1         -      i06r     "sebio_hc3"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_ete      ij      misc        1         -      i06r     "sebio_ete"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_olt      ij      misc        1         -      i06r     "sebio_olt"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_ket      ij      misc        1         -      i06r     "sebio_ket"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_ald      ij      misc        1         -      i06r     "sebio_ald"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_hcho     ij      misc        1         -      i06r     "sebio_hcho"        "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_eth      ij      misc        1         -      i06r     "sebio_eth"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_ora2     ij      misc        1         -      i06r     "sebio_ora2"        "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_co       ij      misc        1         -      i06r     "sebio_co"          "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_nr       ij      misc        1         -      i06r     "sebio_nr"          "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  noag_grow      ij      misc        1         -      i06r     "noag_grow"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  noag_nongrow   ij      misc        1         -      i06r     "noag_nongrow"      "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  nononag        ij      misc        1         -      i06r     "nononag"           "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  slai           ij      misc        1         -      i06r     "slai"              "Leaf area index isop"  ""
-# Input for biogenic emissions model MEGAN v2
-state    real  msebio_isop    ij      misc        1         -      i06r     "msebio_isop"      "MEGAN2 isoprone emis fac"  "mol km^-2 hr^-1"
-state    real  mlai           ijm     misc        1         Z      i06r     "mlai"             "Monthly Leaf area index for MEGAN2"  ""
-state    real  pftp_bt        ij      misc        1         -      i06r     "pftp_bt"          "MEGAN2 PFT Broadleaf %"  "%"
-state    real  pftp_nt        ij      misc        1         -      i06r     "pftp_nt"          "MEGAN2 PFT Needleleaf %"  "%"
-state    real  pftp_sb        ij      misc        1         -      i06r     "pftp_sb"          "MEGAN2 PFT Shrub and Bush %"  "%"
-state    real  pftp_hb        ij      misc        1         -      i06r     "pftp_hb"          "MEGAN2 PFT Herbs %"  "%"
-state    real  mtsa           ijm     misc        1         Z      i06r     "mtsa"             "Monthly surface air temp"  "K"
-state    real  mswdown        ijm     misc        1         Z      i06r     "mswdown"          "Monthly SWdown"  "W/m2"
-state    real  EFmegan        ij{nm}     misc        1         -      -        "EFmegan"          "MEGAN2 Emis Factor"       "ug m^-2 hr^-1"
-state    real  backg_oh       ikj     misc        1         -      i08rh    "BACKG_OH"       "Background OH for Aerosol-GOcart option"       "ppmv"
-state    real  backg_h2o2     ikj     misc        1         -      i08rh    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"       "ppmv"
-state    real  backg_no3      ikj     misc        1         -      i08rh    "BACKG_NO3"      "Background NO3 for Aerosol-GOcart option"       "ppmv"
-
-state    real  clayfrac       ij      misc        1         -      i01r    "CLAYFRAC"       "Clay fraction in each grid cell (0-1)"      "none"
-state    real  sandfrac       ij      misc        1         -      i01r    "SANDFRAC"       "Sand fraction in each grid cell (0-1)"      "none"
-
-# These 3D arrays are output from the SOA module for different purposes
-state    real  br_rto         ijk     misc        1         -      r        "BRNCH_RTO"      "branching ratio to determine NOx condition"  ""            "ug m^-3"
-
-# deposition velocities for diagnostic package, feel free to add if you like!
-#
-state    real  dep_vel   ij{kdv}{ndv}  misc           1         Z      r      "DEP_VEL"        "deposition velocity"             "cm/s"
-state   integer num_vert_mix     -     misc           -         -      r      "num_vert_mix"   "Number of chemical species used in deposition; num_gas or num_chem"               ""
-
-##
 ## aerosol stuff
 state    real  pm2_5_dry      ijk     misc        1         -      rh       "PM2_5_DRY"             "pm2.5 aerosol dry mass"              "ug m^-3"
 state    real  pm2_5_dry_ec   ijk     misc        1         -      -        "PM2_5_EC_DRY"          "dry ec aerosol mass"                 "ug m^-3"
@@ -296,14 +184,6 @@ state   real   seas_2       ijkftb   chem       1         -   i0{12}rh0{17}usdf=
 state   real   seas_3       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_3"    "sea-salt size bin 3: 3.2um effective radius"     "ug/kg-dryair"
 state   real   seas_4       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_4"    "sea-salt size bin 4: 7.5um effective radius"     "ug/kg-dryair"
 
-#Additional CAM modal aerosol variables inside the chem array...
-
-state integer  STEPBIOE          -        misc        1         -      r      "STEPBIOE"             "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN BIOGENIC EMIS CALLS"             "NA"
-state integer  STEPPHOT          -        misc     1         -      r        "STEPPHOT"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN PHOTOLYSIS CALLS"             "NA"
-state integer  STEPCHEM          -        misc     1         -      r        "STEPCHEM"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CHEM MECH CALLS"             "NA"
-state integer  STEPFIREPL        -        misc     1         -      r        "STEPFIREPL"            "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CALLSTO PLUMERISE FIRE ROUTINE"             "NA"
-
-                                                
 #
 rconfig   character  emi_inname            namelist,chem        1       "wrfchemi_d<domain>_<date>"   -     "name of chem emissions infile"  ""    ""
 rconfig   character  fireemi_inname        namelist,chem        1       "wrffirechemi_d<domain>_<date>"   -     "name of chem fire emissions infile"  ""    ""
@@ -326,34 +206,6 @@ rconfig   integer ndepvel                  namelist,chem        1              1
 rconfig   integer kdepvel                  namelist,chem        1              1       r       "kdepvel"
 rconfig   integer erosion_dim              namelist,chem        1              3       -       "erosion_dim"          ""      ""
 rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
-rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
-rconfig   integer cam_mam_nspec            namelist,chem        1              74      irh     "cam_mam_nspec"                   ""    ""
-rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .true.    irh     "CAM_MP_MAM_cpled"                   ""    ""
-# Lightning
-rconfig   integer     lightning_opt       namelist,chem        max_domains        0       rh      "lightning_opt"     ""      ""
-rconfig   integer     lightning_time_step namelist,chem        max_domains        0       rh     "lightning_time_step"  ""      ""
-rconfig   integer     lightning_start_seconds namelist,chem    max_domains        0       rh     "lightning_start_seconds"    ""      ""
-rconfig   real        temp_upper          namelist,chem        max_domains      -45.      rh     "temp_upper"         ""      ""
-rconfig   real        temp_lower          namelist,chem        max_domains      -15.      rh     "temp_lower"         ""      ""
-rconfig   real        N_IC                namelist,chem        max_domains        0.      rh     "N_IC"               ""    ""
-rconfig   real        N_CG                namelist,chem        max_domains        0.      rh     "N_CG"               ""    ""
-rconfig   integer     passive_ltng        namelist,chem        max_domains        1       rh     "passive_ltng"     ""      ""
-rconfig   integer     lflash_data         namelist,chem        1                  1       rh     "lflash_data"     ""      ""
-rconfig   real        flashrate_factor    namelist,chem        max_domains        1.      rh     "flashrate_factor"   ""    ""
-rconfig   integer     flashrate_method    namelist,chem        max_domains        1       rh      "flashrate_method"   ""    ""
-rconfig   integer     iccg_method         namelist,chem        max_domains        1       rh      "iccg_method"        ""    ""
-rconfig   integer     cellcount_method    namelist,chem        max_domains        1       rh      "cellcount_method"   ""    ""            
-
-# GHG chemistry namelist options:
-rconfig   character   vprm_opt            namelist,chem        max_domains   "VPRM_param_US"  -       "the file contains VPRM parameters"  ""      ""
-
-# wetland option for namelist
-rconfig   real        wpeat               namelist,chem        1            0.05         -     "tuning factor for peatland emissions"  ""     ""
-rconfig   real        wflood              namelist,chem        1            0.19         -     "tuning factor for floodplain emissions"  ""     ""
-
-# termite options for namelist
-rconfig   character   term_opt            namelist,chem        max_domains   "CH4_termite_NW"  -   "the option to choose the termite emission parameters for ch4 and co2"  ""     ""
-
 # Default chemistry settings are: passive/prescribed aerosols (chem_opt=0)
 #                                 gas and aerosol calculations turned on (gaschem_onoff=1 and aerchem_onoff=1), these can be turned off for debugging, etc.
 #                                 wet scavenging and cloud chemistry turned off (wetscav_onoff=0 and cldchem_onoff=0) since these only work with a subset of chemistry options
@@ -392,31 +244,8 @@ rconfig   logical     scale_fire_emiss    namelist,chem          max_domains    
 rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    0       rh    "aer_ra_feedback"     ""      ""
 rconfig   integer     aer_op_opt          namelist,chem          max_domains    1       rh    "aer_op_opt"          ""      ""
 rconfig   integer     opt_pars_out        namelist,chem          1    0       h    "opt_pars_out"          ""      ""
-# aircraft emissions
-rconfig   integer    aircraft_emiss_opt           namelist,chem    max_domains  0                                     rh    "aircraft_emiss_opt"                      ""    ""
-rconfig   integer    kemit_aircraft               namelist,chem       1         1                                     irh   "kemit_aircraft"                          ""    ""
-# upper boundary condition
-rconfig   logical     have_bcs_upper      namelist,chem          max_domains    .false. rh    "have_bcs_upper"      ""      ""
-rconfig   real        fixed_ubc_press     namelist,chem          max_domains    50.     rh    "fixed_upper_bc"      "fixed upper bc above this level"   "mb"
-rconfig   character   fixed_ubc_inname    namelist,chem          1              " "      h    "name of ubc infile"  ""      ""
-rconfig   character   trop_lev_inname     namelist,chem          1              "clim_p_trop.nc"      h    "name of trop lev infile"  ""      ""
-# ftuv exo column density files
-rconfig   character   exo_coldens_inname  namelist,chem          max_domains    "exo_coldens_<domain>"      h    "name of exo coldens infile"  ""      ""
-# wesely seasonal veg cover for dry dep
-rconfig   character   wes_seasonal_inname namelist,chem          max_domains    "wrf_season_wes_usgs_<domain>.nc"      h    "name of wesely seasonal infile"  ""      ""
 
 rconfig   integer        chemdiag        namelist,chem        max_domains        0      -     "Chemical tendency diagnostics"   ""    ""
-
-# Dust tuning constant for AFWA GOCART (dust_opt=3)
-rconfig   real        dust_alpha          namelist,chem          1    1.      rh    "dust_alpha"    "dust tuning constant"    "m^-1"
-rconfig   real        dust_gamma          namelist,chem          1    1.      rh    "dust_gamma"    "erodibility exponential tuning const"    ""
-rconfig   real        dust_smtune         namelist,chem          1    1.      rh    "dust_smtune"   "soil moisture tuning constant"    ""
-
-# Volcanic ash height
-rconfig   real        emiss_ash_hgt       namelist,chem          1      0.      rh    "emiss_ash_hgt"       "Volcanic ash cloud top elevation (AGL)"      ""
-
-# additional namelist variables to control deposition of the organic condensable vapors
-rconfig   real        depo_fact           namelist,chem          max_domains    0.25       rh    "deposition factor for SOA vapors"      ""      ""
 
 # track input
 rconfig   integer    track_chem_num       namelist,chem       1               0       -    "number of track chem requested"    ""    ""
@@ -445,40 +274,6 @@ package   volume_exact     aer_op_opt==3                -             -
 package   maxwell_exact    aer_op_opt==4                -             -
 package   shell_exact      aer_op_opt==5                -             -
 
-package   emiss_inpt_default          emiss_inpt_opt==1            -             -
-package   emiss_inpt_cptec            emiss_inpt_opt==3            -             -
-package   emiss_inpt_ghg              emiss_inpt_opt==16           -             -
-package   emiss_inpt_pnnl_cm          emiss_inpt_opt==101          -             -
-package   emiss_inpt_pnnl_rs          emiss_inpt_opt==102          -             -
-package   emiss_inpt_cb4              emiss_inpt_opt==103          -             -
-package   emiss_inpt_pnnl_mam         emiss_inpt_opt==104          -             -
-package   emiss_inpt_mozcem           emiss_inpt_opt==111          -             -
-package   emiss_inpt_mozmem           emiss_inpt_opt==112          -             -
-
-# gas/aer_bc/ic_default     = bc/ic in "standard(=grell)" wrf-chem for radm2-sorgam species,
-#                                   and first-cut implementation for cbmz-mosaic species
-# gas/aer_bc/ic_pnnl        = bc/ic for PNNL simulations
-package   gas_bc_default              gas_bc_opt==1                -             -
-package   gas_bc_ghg                  gas_bc_opt==16               -             -
-package   gas_bc_pnnl                 gas_bc_opt==101              -             -
-package   gas_bc_cbm4                 gas_bc_opt==102              -             -
-package   gas_ic_default              gas_ic_opt==1                -             -
-package   gas_ic_ghg                  gas_ic_opt==16                -             -
-package   gas_ic_pnnl                 gas_ic_opt==101              -             -
-package   gas_ic_cbm4                 gas_ic_opt==102              -             -
-package   aer_bc_default              aer_bc_opt==1                -             -
-package   aer_bc_pnnl                 aer_bc_opt==101              -             -
-package   aer_ic_default              aer_ic_opt==1                -             -
-package   aer_ic_pnnl                 aer_ic_opt==101              -             -
-#
-#
-rconfig   real      N_IC            namelist,chem     max_domains        500.     rh     "N_IC"               "IC emission factor"                "moles/flash"
-rconfig   real      N_CG            namelist,chem     max_domains        500.     rh     "N_CG"               "CG emission factor"                "moles/flash"
-rconfig   integer   lnox_opt        namelist,chem     max_domains        0        rh     "lnox_opt"           "Method for vertical distribution"   ""
-rconfig   logical   lnox_passive    namelist,chem     max_domains        .false.  rh     "lnox_passive"       "true = tracer only (no emission)"   ""
-rconfig  real       ltng_temp_upper          namelist,physics   max_domains    -45.    -   "ltng_temp_upper"           "Upper isotherm for lightning modes"         "C"
-rconfig  real       ltng_temp_lower          namelist,physics   max_domains    -15.    -   "ltng_temp_lower"           "Lower isotherm for lightning modes"         "C"
-#
 #Use chem portion of xch when initial conditions are added as control variables
 typedef xchem_type real -                       ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_so2             ijkf          chem_ic     1   -   -

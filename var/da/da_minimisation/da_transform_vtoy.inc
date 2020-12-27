@@ -123,7 +123,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
          call domain_clockprint(150, grid, 'DEBUG :  get CurrTime from clock,')
 
       end do
-
+      
       ! Caculate var4d_bin_rain rainfall
       if (num_fgat_time > 1 .and. use_rainobs) then
          do nobwin=num_fgat_time, 1, -1
@@ -173,12 +173,11 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
         call da_zero_x (grid%xa)
         call da_zero_xchem_type (grid%xachem)
-!       call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp, vchem=vchem)
         call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp, vchem=vchem)
 
       else
 #endif
-         call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
+        call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
 #if (WRF_CHEM == 1)
       end if
 #endif

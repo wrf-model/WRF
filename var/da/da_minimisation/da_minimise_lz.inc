@@ -55,7 +55,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
    real                              :: adj_rhs, adj_sum_rhs ! < cv, cv >
    real                              :: j_total, j0_total
    real                              :: dfs, dfsmax
-
+    
    if (trace_use) call da_trace_entry("da_minimise_lz")
 
    write(unit=stdout,fmt='(A)') 'Minimize cost function using Lanczos method'

@@ -327,7 +327,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
          call da_transform_vpatox(grid, be, grid%ep, grid%vp)
          call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
       end if
-!!!      call da_transform_xtoxa(grid)
+      call da_transform_xtoxa(grid)
       call da_divergence_constraint(grid%xb, grid%xa%u, grid%xa%v, inc_div)
       j % jm   = 0.5* SUM(inc_div(its:ite, jts:jte, kts:kte)* &
                           inc_div(its:ite, jts:jte, kts:kte))/divc_factor

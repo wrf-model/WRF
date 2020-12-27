@@ -62,7 +62,6 @@ subroutine da_setup_cv(be)
 
    end if
 
-
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5
 

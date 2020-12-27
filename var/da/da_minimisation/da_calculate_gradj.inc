@@ -225,12 +225,12 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
          call da_transform_vpatox(grid, be, grid%ep, grid%vp)
          call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
       end if
-!!!      call da_transform_xtoxa(grid)
+      call da_transform_xtoxa(grid)
       call da_divergence_constraint(grid%xb, grid%xa%u, grid%xa%v, inc_div)
       inc_div = inc_div/divc_factor
       call da_zero_x(grid%xa)
       call da_divergence_constraint_adj(grid, grid%xa%u, grid%xa%v, inc_div)
-!!!      call da_transform_xtoxa_adj(grid)
+      call da_transform_xtoxa_adj(grid)
       if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
          call da_transform_vpatox_adj(grid, be, grid%ep, grid%vp)
       end if

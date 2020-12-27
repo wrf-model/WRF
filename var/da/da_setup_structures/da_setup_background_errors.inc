@@ -10,9 +10,6 @@ subroutine da_setup_background_errors(grid, be)
    type (domain), intent(in)   :: grid
 !  type (xb_type), intent(in)  :: xb       ! First guess structure.
    type (be_type), intent(out) :: be       ! Back. errors structure.
-!#if (WRF_CHEM == 1)
-!   integer :: ic
-!#endif
 
    integer :: num_cv_3d_basic, num_cv_3d_extra, num_cv_2d
 
@@ -32,7 +29,6 @@ subroutine da_setup_background_errors(grid, be)
             max_vert_var3 = 0
             max_vert_var4 = 0
             max_vert_var5 = 0
-!#ifdef CLOUD_CV
             max_vert_var6 = 0
             max_vert_var7 = 0
             max_vert_var8 = 0

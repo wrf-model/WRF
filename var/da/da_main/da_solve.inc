@@ -63,12 +63,6 @@
    character(len=10) :: this_time
    character(len=8)  :: this_date
 
-!#if (WRF_CHEM == 1)
-!   character(len=2) :: itc
-!   real             :: eta
-!   integer          :: cv_s, cv_e, cv_s_ant, cv_e_ant, cv_s_bb, cv_e_bb
-!#endif
-
    if (trace_use) call da_trace_entry("da_solve")
 
 #ifdef DM_PARALLEL
@@ -110,22 +104,6 @@
       end if
    end if
 
-#if (WRF_CHEM == 1)
-   if (use_nonchemobs) then
-      use_nonchemobs =  (use_synopobs .or. use_shipsobs .or. use_metarobs .or. use_soundobs .or. &
-              use_mtgirsobs .or. use_tamdarobs .or. use_bogusobs .or. use_pilotobs .or. &
-              use_airepobs .or. use_geoamvobs .or. use_polaramvobs .or. use_buoyobs .or. &
-              use_profilerobs .or. use_satemobs .or. use_gpspwobs .or. use_gpsztdobs .or. &
-              use_gpsrefobs .or. use_ssmiretrievalobs .or. use_ssmitbobs .or. &
-              use_ssmt1obs .or. use_ssmt2obs .or. use_qscatobs .or. use_hirs2obs .or. &
-              use_hirs3obs .or. use_hirs4obs .or. use_mhsobs .or. use_msuobs .or. &
-              use_amsuaobs .or. use_amsubobs .or. use_mwtsobs .or. use_mwhsobs .or. &
-              use_atmsobs .or. use_airsobs .or. use_eos_amsuaobs .or. use_hsbobs .or. &
-              use_airsretobs .or. use_rainobs .or. &
-              use_iasiobs .or. use_radarobs .or. use_radar_rv .or. use_radar_rf)
-   end if
-#endif
-
    ! Calculate the num_fgat_time based on time_window_min, time_window_max
     if ( var4d ) then
        if (time_step == 0) then
@@ -154,7 +132,7 @@
           write(unit=message(6),fmt='(A)')'Change var4d_bin, time_window_max, or time_window_min in namelist and rerun'
           call da_error(__FILE__,__LINE__,message(1:6))
        endif
-       if ( var4d_bin/time_step*time_step .ne. var4d_bin ) then 
+       if ( var4d_bin/time_step*time_step .ne. var4d_bin ) then
           write(unit=message(1),fmt='(A)') &
           'var4d_bin must be evenly divisible by time_step!'
           write(unit=message(2),fmt='(A,I7)') &
@@ -789,7 +767,6 @@
          call da_zero_vp_type (grid%vv6)
          call da_zero_vp_type (grid%vp6)
 #endif
-
       end if
 
    !---------------------------------------------------------------------------
@@ -997,7 +974,7 @@
          if (adj_sens) call da_sensitivity(grid,config_flags,it,cv_size,xbx, &
                                            be,iv,xhat,qhat,cvt,y,eignvec,eignval,neign )
 
-
+       
       else
 
          call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
@@ -1017,14 +994,13 @@
       if (.not. var4d) then
          ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation,
          ! here grid%xa contains only the static increment
-         call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
 
 #if (WRF_CHEM == 1)
    if (cv_options == 7 .and. chem_cv_options>=10) then
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,vchem=grid%vchem)
    end if
 #else
-         call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp) ! ??? duplicate?
+         call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
 #endif
 
          ! adding the ensemble contribution
@@ -1049,7 +1025,6 @@
 ! mri-4dvar--------------------------
 
       call da_transform_xtoxa (grid)
-!!!      call da_transform_xtoxa (grid) ! commented out for ChemDA?
 
       ! [8.6] Only when use_radarobs = .false. and calc_w_increment =.true.,
       !       the w_increment need to be diagnosed:

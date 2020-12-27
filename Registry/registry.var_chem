@@ -134,7 +134,6 @@ rconfig   real      len_scaling12           namelist,wrfvarchem  36*max_outer_it
 rconfig   real      max_vert_var12          namelist,wrfvarchem  32*1  99.0  - "max_vert_var12"          ""  ""
 rconfig   logical   test_transformsch       namelist,wrfvarchem  1  .false.  - "test_transformsch"       ""  ""
 rconfig   logical   use_chemic_surfobs      namelist,wrfvarchem  1  .true.   - "use_chemic_surfobs"      ""  ""
-rconfig   logical   use_nonchemobs          namelist,wrfvarchem  1  .false.  - "use_nonchemobs"          ""  ""
 rconfig   real      max_error_chemic_surf   namelist,wrfvarchem  1  500.0    - "max_error_chemic_surf"     ""  ""
 
 #Use chem portion of xch when initial conditions are added as control variables

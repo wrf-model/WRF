@@ -715,6 +715,7 @@ subroutine da_transfer_xatowrf(grid, config_flags)
       grid%moist_btys = grid%moist_btys + model_grid%g_moist_btys
       grid%moist_btye = grid%moist_btye + model_grid%g_moist_btye
 
+   ENDIF
 #else !! not var4d !!
 
 #if (WRF_CHEM == 1)

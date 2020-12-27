@@ -30,15 +30,17 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                    spd_obs, spd_inv, spd_err, spd_inc,   &
                    ref_obs, ref_inv, ref_error, ref_inc, &
                    eph_obs, eph_inv, eph_error, eph_inc, &
-                   rain_obs, rain_inv, rain_error, rain_inc, zk, &
-                   chem_obs, chem_inv, chem_err, chem_inc, &
+                   rain_obs, rain_inv, rain_error, rain_inc, zk
+   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc
+#if (WRF_CHEM == 1)
+   real         :: chem_obs, chem_inv, chem_err, chem_inc, &
                    chem_obs2, chem_inv2, chem_err2, chem_inc2, &
                    chem_obs3, chem_inv3, chem_err3, chem_inc3, &
                    chem_obs4, chem_inv4, chem_err4, chem_inc4, &
                    chem_obs5, chem_inv5, chem_err5, chem_inc5, &
                    chem_obs6, chem_inv6, chem_err6, chem_inc6
-   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc, &
-                  chem_qc, chem_qc2, chem_qc3, chem_qc4, chem_qc5, chem_qc6
+   integer     :: chem_qc, chem_qc2, chem_qc3, chem_qc4, chem_qc5, chem_qc6
+#endif
    integer     :: eph_qc
    integer     :: ifgat
 

@@ -107,7 +107,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 #if (WRF_CHEM == 1)
       write(unit=stats_unit2, fmt='(/a/)') ' Minimum of gridded analysis increments'
       select case ( chem_cv_options )
-       case ( 1 )
+       case ( 10 )
           write(unit=stats_unit2, fmt='(11a/)') &
                ' Lvl         ', &
                'p25      i    j          ', &

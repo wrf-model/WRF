@@ -139,7 +139,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
 
    if ( nmzs == 8 .or. nmzs == 13 ) then
       ! Fill v11
-!      mz = mzs(nmzs-2)
       mz = mzs(nmzs-2)
       if (mz > 0) then
          ijm = ix * jy * mz

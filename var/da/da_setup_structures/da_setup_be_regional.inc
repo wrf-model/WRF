@@ -2777,51 +2777,28 @@ subroutine da_setup_be_regional(xb, be, grid)
        end if
 
        write(be_print_unit,'(/"scale-length: kz=",i3)') kz
+       do i = 1,kz
+          if (i == 1) then
+             write(be_print_unit,'(i3,2x,5e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
+                               be3_rf_lengthscale(i), be4_rf_lengthscale(i), be5_rf_lengthscale(i)
+          else
+             write(be_print_unit,'(i3,2x,4e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
+                               be3_rf_lengthscale(i), be4_rf_lengthscale(i)
+          end if
+       enddo
        if ( cloud_cv_options >= 2 ) then
           do i = 1,kz
-             if (i == 1) then
-                write(be_print_unit,'(i3,2x,10e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
-                   be3_rf_lengthscale(i), be4_rf_lengthscale(i), be5_rf_lengthscale(i), be6_rf_lengthscale(i), &
-                   be7_rf_lengthscale(i), be8_rf_lengthscale(i), be9_rf_lengthscale(i), be10_rf_lengthscale(i)
-             else
-                write(be_print_unit,'(i3,2x,4e15.5,15x,5e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
-                   be3_rf_lengthscale(i), be4_rf_lengthscale(i), be6_rf_lengthscale(i), be7_rf_lengthscale(i), &
-                   be8_rf_lengthscale(i), be9_rf_lengthscale(i), be10_rf_lengthscale(i)
-             endif
-          enddo
-#if (WRF_CHEM == 1)
-       else if ( chem_cv_options == 10 ) then
-          do i = 1,kz
-             if (i == 1) then
-                write(be_print_unit,'(i3,2x,22e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
-                   be3_rf_lengthscale(i), be4_rf_lengthscale(i), be5_rf_lengthscale(i), &
-                   be12_rf_lengthscale(1,i), be12_rf_lengthscale(2,i), be12_rf_lengthscale(3,i), be12_rf_lengthscale(4,i) , &
-                   be12_rf_lengthscale(5,i), be12_rf_lengthscale(6,i), be12_rf_lengthscale(7,i), be12_rf_lengthscale(8,i) , &
-                   be12_rf_lengthscale(9,i), be12_rf_lengthscale(10,i), be12_rf_lengthscale(11,i), be12_rf_lengthscale(12,i) , &
-                   be12_rf_lengthscale(13,i), be12_rf_lengthscale(14,i), be12_rf_lengthscale(15,i), be12_rf_lengthscale(16,i), &
-                   be11_rf_lengthscale(i)
-             else
-                write(be_print_unit,'(i3,2x,4e15.5,15x,16e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
-                   be3_rf_lengthscale(i), be4_rf_lengthscale(i),  &
-                   be12_rf_lengthscale(1,i), be12_rf_lengthscale(2,i), be12_rf_lengthscale(3,i), be12_rf_lengthscale(4,i) , &
-                   be12_rf_lengthscale(5,i), be12_rf_lengthscale(6,i), be12_rf_lengthscale(7,i), be12_rf_lengthscale(8,i) , &
-                   be12_rf_lengthscale(9,i), be12_rf_lengthscale(10,i), be12_rf_lengthscale(11,i), be12_rf_lengthscale(12,i) , &
-                   be12_rf_lengthscale(13,i), be12_rf_lengthscale(14,i), be12_rf_lengthscale(15,i), be12_rf_lengthscale(16,i), &
-                   be11_rf_lengthscale(i)
-             endif
-          enddo
-#endif
-       else
-          do i = 1,kz
-             if (i == 1) then
-                write(be_print_unit,'(i3,2x,5e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
-                   be3_rf_lengthscale(i), be4_rf_lengthscale(i), be5_rf_lengthscale(i)
-             else
-                write(be_print_unit,'(i3,2x,4e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
-                   be3_rf_lengthscale(i), be4_rf_lengthscale(i)
-             endif
+             write(be_print_unit,'(i3,2x,5e15.5)') i, be6_rf_lengthscale(i), be7_rf_lengthscale(i), &
+                               be8_rf_lengthscale(i), be9_rf_lengthscale(i), be10_rf_lengthscale(i)
           enddo
        end if
+!#if (WRF_CHEM == 1)
+!       if ( chem_cv_options >= 10 ) then
+!          do i = 1,kz
+!             write(be_print_unit,'(i3,2x,22e15.5)') i, be12_rf_lengthscale(ic,i)
+!          enddo
+!       end if
+!#endif
 
    endif ! print_detail_be
 

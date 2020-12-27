@@ -5478,7 +5478,7 @@ END SUBROUTINE nonlocal_flux
     :: i, j, k, ktf, i_start, i_end, j_start, j_end
 
     REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 )  &
-    :: xkxavg, rhoavg
+    :: xkxavg,rhoavg
 
 ! End declarations.
 !-----------------------------------------------------------------------

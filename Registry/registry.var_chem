@@ -1,51 +1,7 @@
 # Chem Registry file for WRFDA
 
-# Namelist variables specific to DA-Chem
-rconfig   integer   chem_cv_options         namelist,wrfvarchem  1  0        - "chem_cv_options"          "0:off, 10:gocart, 20:mosaic "  ""
-rconfig   integer   chemicda_opt            namelist,wrfvarchem  1  1        - "chemicda_opt"             " "   " "
-rconfig   real      var_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "var_scaling12"            ""  ""
-rconfig   real      len_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "len_scaling12"            ""  ""
-rconfig   real      max_vert_var12          namelist,wrfvarchem  32*1  99.0  - "max_vert_var12"          ""  ""
-rconfig   logical   test_transformsch       namelist,wrfvarchem  1  .false.  - "test_transformsch"       ""  ""
-rconfig   logical   use_chemic_surfobs      namelist,wrfvarchem  1  .true.   - "use_chemic_surfobs"      ""  ""
-rconfig   logical   use_nonchemobs          namelist,wrfvarchem  1  .false.  - "use_nonchemobs"          ""  ""
-rconfig   real      max_error_chemic_surf   namelist,wrfvarchem  1  500.0    - "max_error_chemic_surf"     ""  ""
-
-# Chemistry Variables  (all shared at this point)
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-rconfig   character  auxinput12_inname   namelist,time_control   1  "wrf_chem_input"   -     "name of auxinput12 infile" ""      ""
-rconfig   integer    io_form_auxinput12  namelist,time_control   1  2
-
-## aerosol stuff
-state    real  pm2_5_dry      ijk     misc        1         -      rh       "PM2_5_DRY"             "pm2.5 aerosol dry mass"              "ug m^-3"
-state    real  pm2_5_dry_ec   ijk     misc        1         -      -        "PM2_5_EC_DRY"          "dry ec aerosol mass"                 "ug m^-3"
-state    real  pm2_5_water    ijk     misc        1         -      -        "PM2_5_WATER"           "pm2.5 aerosol liquid water content"  "ug m^-3"
-state    real  pm10           ijk     misc        1         -      h        "pm10 "                 "pm10 dry mass"                       "ug m^-3"
-state    real  uvrad          ij      misc        1         -      -        "uv_rad "               "uvb net-radiation"                   "W m^-2"
-state    real  tcosz          ij      misc        1         -      -        "TCOSZ "               "daily average cossza"                   "?"
-state    real  ttday          ij      misc        1         -      -        "TTDAY "               ""                   "?"
-# dms_0 is the dms concentration in the ocean (aqueous phase) and it should be in the unit of nM/L (1.e-9mol/L) 
-state    real  dms_0          ij      misc        1         -      i08rh    "DMS_0 "               "dms oceanic concentrations"           "nM/L"
-
-# non-transported aerosol variables
-state    real  h2oaj           ijk     misc        1         -      r        "h2oaj"                 "Aerosol water conc. Acc.mode"         "?"
-state    real  h2oai           ijk     misc        1         -      r        "h2oai"                 "Aerosol water conc. Aitken mode"      "?"
-state    real  nu3             ijk     misc        1         -      r        "nu3"                   "3rd moment Aitken mode"               "?"
-state    real  ac3             ijk     misc        1         -      r        "ac3"                   "3rd moment Acc. mode"                 "?"
-state    real  cor3            ijk     misc        1         -      r        "cor3"                  "3rd moment coarse mode"               "?"
-state    real  asulf           ijk     misc        1         -      r        "asulf"                 "sulfuric acid vapor deposition"       "?"
-state    real  ahno3           ijk     misc        1         -      r        "ahno3"                 "nitric acid vapor deposition"         "?"
-state    real  anh3            ijk     misc        1         -      r        "anh3"                  "amonia gas concentration"             "?"
-state    real  cvaro1          ijk     misc        1         -      r        "cvaro1"                "cond.vapor from aromatics"            "?"
-state    real  cvaro2          ijk     misc        1         -      r        "cvaro2"                "cond.vapor from aromatics"            "?"
-state    real  cvalk1          ijk     misc        1         -      r        "cvalk1"                "cond.vapor from alkanes"              "?"
-state    real  cvole1          ijk     misc        1         -      r        "cvole1"                "cond.vapor from olefines"             "?"
-state    real  cvapi1          ijk     misc        1         -      r        "cvapi1"                "cond.vapor from biogenics"            "?"
-state    real  cvapi2          ijk     misc        1         -      r        "cvapi2"                "cond.vapor from biogenics"            "?"
-state    real  cvlim1          ijk     misc        1         -      r        "cvlim1"                "cond.vapor from biogenics"            "?"
-state    real  cvlim2          ijk     misc        1         -      r        "cvlim2"                "cond.vapor from biogenics"            "?"
 # Chem Scalars
-state   real    -              ijkftb   chem        1         -     -    -                                       
+state   real    -          ijkftb   chem        1         -     -    -                                       
 state   real   so2         ijkftb   chem        1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "so2"           "SO2 mixing ratio"         "ppmv"
 state   real   sulf        ijkftb   chem        1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "sulf"          "SULF mixing ratio"        "ppmv"
 state   real   no2         ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "no2"           "NO2 mixing ratio"         "ppmv"
@@ -89,22 +45,23 @@ state   real   hcl         ijkftb   chem        1         -   i0{12}rhusdf=(bdy_
 state   real   ho          ijkftb   chem        1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "ho"            "HO mixing ratio"          "ppmv"
 state   real   ho2         ijkftb   chem        1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "ho2"           "HO2 mixing ratio"         "ppmv"
 #
-##RACM has a few more variables to those of RADM2 (ETE is equivilant to OL2 from RADM2)
-#
-state   real   ete         ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "ete"           "ETE mixing ratio"         "ppmv"
-state   real   co2         ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "co2"           "CO2 mixing ratio"         "ppmv"
-state   real   ch4         ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "ch4"           "CH4 mixing ratio"         "ppmv"
-state   real   udd         ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "udd"           "UDD mixing ratio"         "ppmv"
-state   real   hket        ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "hket"          "HKET mixing ratio"        "ppmv"
-state   real   api         ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "api"           "API mixing ratio"         "ppmv"
-state   real   lim         ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "lim"           "LIM mixing ratio"         "ppmv"
-state   real   dien        ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "dien"          "DIEN mixing ratio"        "ppmv"
-state   real   macr        ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "macr"          "MACR mixing ratio"        "ppmv"
-#
-## MBO is a separate species in the RACM_SOA_VBS_KPP mechanism:
-state   real   dms         ijkftb   chem        1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "dms"           "DMS mixing ratio"         "ppmv"
-state   real   msa         ijkftb   chem        1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "msa"           "MSA mixing ratio"         "ppmv"
-#
+## GOCART Aerosols
+state   real   bc1          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "BC1"       "Hydrophobic Black Carbon"     "ug/kg-dryair"
+state   real   bc2          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "BC2"       "Hydrophilic Black Carbon"     "ug/kg-dryair"
+state   real   oc1          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "OC1"       "Hydrophobic Black Carbon"     "ug/kg-dryair"
+state   real   oc2          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "OC2"       "Hydrophilic Black Carbon"     "ug/kg-dryair"
+state   real   p25          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "P25"       "other gocart primary pm25"     "ug/kg-dryair"
+state   real   p10          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "P10"       "other gocart primary pm10"     "ug/kg-dryair"
+state   real   dust_1       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_1"    "dust size bin 1: 0.5um effective radius"     "ug/kg-dryair"
+state   real   dust_2       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_2"    "dust size bin 2: 1.4um effective radius"     "ug/kg-dryair "
+state   real   dust_3       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_3"    "dust size bin 3: 2.4um effective radius"     "ug/kg-dryair "
+state   real   dust_4       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_4"    "dust size bin 4: 4.5um effective radius"     "ug/kg-dryair "
+state   real   dust_5       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_5"    "dust size bin 5: 8.0um effective radius"     "ug/kg-dryair"
+state   real   seas_1       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_1"    "sea-salt size bin 1: 0.3um effective radius"     "ug/kg-dryair"
+state   real   seas_2       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_2"    "sea-salt size bin 2: 1.0um effective radius"     "ug/kg-dryair"
+state   real   seas_3       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_3"    "sea-salt size bin 3: 3.2um effective radius"     "ug/kg-dryair"
+state   real   seas_4       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_4"    "sea-salt size bin 4: 7.5um effective radius"     "ug/kg-dryair"
+
 ##Additional MOSAIC aerosol variables inside the chem array...
 #
 state   real   so4_a01     ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4_a01"       "Sulfate, aerosol bin 01"     "ug/kg-dryair"
@@ -167,112 +124,18 @@ state   real   oc_a04      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_
 state   real   bc_a04      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bc_a04"        "Black carbon, aerosol bin 04"      "ug/kg-dryair"
 #state   real   hysw_a04    ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hysw_a04"      "Hysteresis water, aerosol bin 04"    "ug/kg-dryair"
 #
-## GOCART Aerosols
-state   real   bc1          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "BC1"       "Hydrophobic Black Carbon"     "ug/kg-dryair"
-state   real   bc2          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "BC2"       "Hydrophilic Black Carbon"     "ug/kg-dryair"
-state   real   oc1          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "OC1"       "Hydrophobic Black Carbon"     "ug/kg-dryair"
-state   real   oc2          ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "OC2"       "Hydrophilic Black Carbon"     "ug/kg-dryair"
-state   real   p25        ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "P25"       "other gocart primary pm25"     "ug/kg-dryair"
-state   real   p10        ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "P10"       "other gocart primary pm10"     "ug/kg-dryair"
-state   real   dust_1       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_1"    "dust size bin 1: 0.5um effective radius"     "ug/kg-dryair"
-state   real   dust_2       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_2"    "dust size bin 2: 1.4um effective radius"     "ug/kg-dryair "
-state   real   dust_3       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_3"    "dust size bin 3: 2.4um effective radius"     "ug/kg-dryair "
-state   real   dust_4       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_4"    "dust size bin 4: 4.5um effective radius"     "ug/kg-dryair "
-state   real   dust_5       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "DUST_5"    "dust size bin 5: 8.0um effective radius"     "ug/kg-dryair"
-state   real   seas_1       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_1"    "sea-salt size bin 1: 0.3um effective radius"     "ug/kg-dryair"
-state   real   seas_2       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_2"    "sea-salt size bin 2: 1.0um effective radius"     "ug/kg-dryair"
-state   real   seas_3       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_3"    "sea-salt size bin 3: 3.2um effective radius"     "ug/kg-dryair"
-state   real   seas_4       ijkftb   chem       1         -   i0{12}rh0{17}usdf=(bdy_interp:dt)  "SEAS_4"    "sea-salt size bin 4: 7.5um effective radius"     "ug/kg-dryair"
+rconfig   integer   io_style_emissions      namelist,chem        1              1       r       "io_style_emissions"    ""      ""
 
-#
-rconfig   character  emi_inname            namelist,chem        1       "wrfchemi_d<domain>_<date>"   -     "name of chem emissions infile"  ""    ""
-rconfig   character  fireemi_inname        namelist,chem        1       "wrffirechemi_d<domain>_<date>"   -     "name of chem fire emissions infile"  ""    ""
-rconfig   character  input_chem_inname     namelist,chem        1       "wrf_chem_input_d<domain>_<date>"   -     "name of chem infile"  ""    ""
-rconfig   character  emi_outname           namelist,chem        1       "wrfchemi_d<domain>_<date>"   -     "name of chem emissions outfile" ""    ""
-rconfig   character  fireemi_outname       namelist,chem        1       "wrffirechemi_out_d<domain>_<date>"   -     "name of chem fire emissions outfile" ""    ""
-rconfig   character  input_chem_outname    namelist,chem        1       "wrf_chem_input_d<domain>_<date>"   -     "name of chem outfile" ""    ""
-rconfig   integer   io_style_emissions     namelist,chem        1              1       r       "io_style_emissions"    ""      ""
-rconfig   real    BIOEMDT                  namelist,chem        max_domains    0       h       "BIOEMDT"          "" ""
-rconfig   real    PHOTDT                   namelist,chem        max_domains    0       h       "PHOTDT"          ""  ""
-rconfig   real    CHEMDT                   namelist,chem        max_domains    0       h       "CHEMDT"          ""  ""
-rconfig   integer ne_area                  namelist,chem        1              41      irh     "ne_area"               ""      ""
-rconfig   integer kemit                    namelist,chem        1              9       irh     "kemit"                 ""      ""
-rconfig   integer nmegan                   namelist,chem        1              138     irh     "nmegan"                ""      ""
-rconfig   integer kfuture                  namelist,chem        1              1       -       "kfuture"                ""      ""
-rconfig   integer kfire                    namelist,chem        1              1       -       "kfire"                ""      ""
-rconfig   integer kemit_aircraft           namelist,chem        1              1       -       "kemit_aircraft"                ""      ""
-rconfig   integer kdvel                    namelist,chem        1              1       r       "kdvel"                ""      ""
-rconfig   integer ndepvel                  namelist,chem        1              140     r       "ndepvel"                ""      ""
-rconfig   integer kdepvel                  namelist,chem        1              1       r       "kdepvel"
-rconfig   integer erosion_dim              namelist,chem        1              3       -       "erosion_dim"          ""      ""
-rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
-# Default chemistry settings are: passive/prescribed aerosols (chem_opt=0)
-#                                 gas and aerosol calculations turned on (gaschem_onoff=1 and aerchem_onoff=1), these can be turned off for debugging, etc.
-#                                 wet scavenging and cloud chemistry turned off (wetscav_onoff=0 and cldchem_onoff=0) since these only work with a subset of chemistry options
-#                                 vertical mixing turned on (vertmix_onoff=1) since this is done via the dry deposition routine and works with all chem options
-rconfig   integer     chem_conv_tr        namelist,chem          max_domains    1       rh    "chem_conv_opt"       ""      ""
-rconfig   integer     conv_tr_wetscav     namelist,chem          max_domains    1       rh    "conv_tr_wetscav_opt"       ""      ""
-rconfig   integer     conv_tr_aqchem      namelist,chem          max_domains    1       rh    "conv_tr_aqchem_opt"       ""      ""
-rconfig   integer     chem_opt            namelist,chem          max_domains    0       rh    "chem_opt"            ""      ""
-rconfig   integer     gaschem_onoff       namelist,chem          max_domains    1       rh    "gaschem_onoff"       ""      ""
-rconfig   integer     aerchem_onoff       namelist,chem          max_domains    1       rh    "aerchem_onoff"       ""      ""
-rconfig   integer     wetscav_onoff       namelist,chem          max_domains    0       rh    "wetscav_onoff"       ""      ""
-rconfig   integer     cldchem_onoff       namelist,chem          max_domains    0       rh    "cldchem_onoff"       ""      ""
-rconfig   integer     vertmix_onoff       namelist,chem          max_domains    1       rh    "vertmix_onoff"       ""      ""
-rconfig   integer     chem_in_opt         namelist,chem          max_domains    0       rh    "chem_in_opt"         ""      ""
-rconfig   integer     phot_opt            namelist,chem          max_domains    0       rh    "phot_opt"            ""      ""
-rconfig   integer     gas_drydep_opt      namelist,chem          max_domains    1       rh    "gas_drydep_opt"      ""      ""
-rconfig   integer     aer_drydep_opt      namelist,chem          max_domains    1       rh    "aer_drydep_opt"      ""      ""
-rconfig   integer     diagnostic_chem     namelist,chem          max_domains    1       rh    "diagnostic_chem"     ""      ""
-rconfig   integer     aer_aerodynres_opt  namelist,chem          max_domains    1       rh    "aer_aerodynres_opt"  ""      ""
-rconfig   integer     emiss_opt           namelist,chem          max_domains    4       rh    "emiss_opt"           ""      ""
-rconfig   integer     emiss_opt_vol       namelist,chem          max_domains    0       rh    "emiss_opt_vol"       ""      ""
-rconfig   integer     dust_opt            namelist,chem          1              0       rh    "dust_opt"            ""      ""
-rconfig   integer     dmsemis_opt         namelist,chem          1              0       rh    "dmsemis_opt"         ""      ""
-rconfig   integer     seas_opt            namelist,chem          1              0       rh    "seas_opt"            ""      ""
-rconfig   integer     bio_emiss_opt       namelist,chem          max_domains    0       rh    "bio_emiss_opt"       ""      ""
-rconfig   integer     biomass_burn_opt    namelist,chem          max_domains    0       rh    "biomass_burn_opt"    ""      ""
-rconfig   integer     plumerisefire_frq   namelist,chem          max_domains    180     rh    "plumerisefire_frq"   ""      ""
-rconfig   integer     emiss_inpt_opt      namelist,chem          max_domains    1       rh    "emiss_inpt_opt"      ""      ""
-rconfig   integer     gas_bc_opt          namelist,chem          max_domains    1       rh    "gas_bc_opt"          ""      ""
-rconfig   integer     gas_ic_opt          namelist,chem          max_domains    1       rh    "gas_ic_opt"          ""      ""
-rconfig   integer     aer_bc_opt          namelist,chem          max_domains    1       rh    "aer_bc_opt"          ""      ""
-rconfig   integer     aer_ic_opt          namelist,chem          max_domains    1       rh    "aer_ic_opt"          ""      ""
-rconfig   logical     have_bcs_chem       namelist,chem          max_domains    .false. rh    "have_bcs_chem"       ""      ""
-rconfig   logical     have_bcs_tracer     namelist,chem          max_domains    .false. rh    "have_bcs_tracer"     ""      ""
-rconfig   logical     scale_fire_emiss    namelist,chem          max_domains    .false. rh    "scale_fire_emiss"    ""      ""
-rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    0       rh    "aer_ra_feedback"     ""      ""
-rconfig   integer     aer_op_opt          namelist,chem          max_domains    1       rh    "aer_op_opt"          ""      ""
-rconfig   integer     opt_pars_out        namelist,chem          1    0       h    "opt_pars_out"          ""      ""
-
-rconfig   integer        chemdiag        namelist,chem        max_domains        0      -     "Chemical tendency diagnostics"   ""    ""
-
-# track input
-rconfig   integer    track_chem_num       namelist,chem       1               0       -    "number of track chem requested"    ""    ""
-rconfig   character  track_chem_name      namelist,chem       max_trackchem   " "      -    "name of track chem requested"      ""    ""
-rconfig   integer    track_rad_num        namelist,chem       1               17      -    "nw-1 in module_wave_data"          ""    ""
-rconfig   integer    track_tuv_num        namelist,chem       1               30      -    "tuv_jmax in module_wave_data"      ""    ""
-rconfig   integer    track_tuv_lev        namelist,chem       1               51      -    "nref in module_ftuv_driver"        ""    ""
-
-
-# CHEMISTRY PACKAGE DEFINITIONS
-#
-package   passivec1     chem_opt==0         -             -
-## GOCART Packages (no Ozone chemistry in this choice)
-package   gocart_simple     chem_opt==300                   -             chem:so2,sulf,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
-
-package   gocartracm_kpp     chem_opt==301                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
-
-package   gocartradm2_kpp     chem_opt==302                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
-#
-package   wesely        gas_drydep_opt==1            -             -
-#
-package   dmsgocart    dmsemis_opt==1                  -              -
-package   volume_approx    aer_op_opt==1                -             -
-package   maxwell_approx   aer_op_opt==2                -             -
-package   volume_exact     aer_op_opt==3                -             -
-package   maxwell_exact    aer_op_opt==4                -             -
-package   shell_exact      aer_op_opt==5                -             -
+# Namelist variables specific to DA-Chem
+rconfig   integer   chem_cv_options         namelist,wrfvarchem  1  0        - "chem_cv_options"          "0:off, 10:gocart, 20:mosaic "  ""
+rconfig   integer   chemicda_opt            namelist,wrfvarchem  1  1        - "chemicda_opt"             " "   " "
+rconfig   real      var_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "var_scaling12"            ""  ""
+rconfig   real      len_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "len_scaling12"            ""  ""
+rconfig   real      max_vert_var12          namelist,wrfvarchem  32*1  99.0  - "max_vert_var12"          ""  ""
+rconfig   logical   test_transformsch       namelist,wrfvarchem  1  .false.  - "test_transformsch"       ""  ""
+rconfig   logical   use_chemic_surfobs      namelist,wrfvarchem  1  .true.   - "use_chemic_surfobs"      ""  ""
+rconfig   logical   use_nonchemobs          namelist,wrfvarchem  1  .false.  - "use_nonchemobs"          ""  ""
+rconfig   real      max_error_chemic_surf   namelist,wrfvarchem  1  500.0    - "max_error_chemic_surf"     ""  ""
 
 #Use chem portion of xch when initial conditions are added as control variables
 typedef xchem_type real -                       ijkf          chem_ic     1   -   -
@@ -303,18 +166,18 @@ typedef xchem_type real chem_ic_oc_a01          ijkf          chem_ic     1   - 
 typedef xchem_type real chem_ic_oc_a02          ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_oc_a03          ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_oc_a04          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_so4_a01          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_so4_a02          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_so4_a03          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_so4_a04          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_no3_a01          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_no3_a02          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_no3_a03          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_no3_a04          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_nh4_a01          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_nh4_a02          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_nh4_a03          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_nh4_a04          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4_a01         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4_a02         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4_a03         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4_a04         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3_a01         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3_a02         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3_a03         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3_a04         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4_a01         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4_a02         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4_a03         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4_a04         ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_cl_a01          ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_cl_a02          ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_cl_a03          ijkf          chem_ic     1   -   -
@@ -323,10 +186,10 @@ typedef xchem_type real chem_ic_na_a01          ijkf          chem_ic     1   - 
 typedef xchem_type real chem_ic_na_a02          ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_na_a03          ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_na_a04          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_oin_a01          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_oin_a02          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_oin_a03          ijkf          chem_ic     1   -   -
-typedef xchem_type real chem_ic_oin_a04          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oin_a01         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oin_a02         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oin_a03         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_oin_a04         ijkf          chem_ic     1   -   -
 
 ##END XCHEM_TYPE DEFINITION
 

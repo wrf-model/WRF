@@ -3277,7 +3277,7 @@ dndraft_mixratio_k_loop: &
             grid_id, ktau, ktau, dt_aqchem_sp, config_flags,   &
             tmp_p_sp, tmp_t_sp, tmp_rho_sp, tmp_alt_sp,   &
             tmp_cldfra_sp, tmp_ph_no2_sp,   &
-            tmp_moist_sp, tmp_chem_sp, tmp_ph_cw,  &
+            tmp_moist_sp, tmp_chem_sp, tmp_ph_cw,   &
             tmp_gas_aqfrac_sp, num_chem,   &
             1,1,  1,1,  kts,kte,  &
             1,1,  1,1,  kts,kte,  &

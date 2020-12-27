@@ -853,7 +853,7 @@ subroutine da_setup_be_regional(xb, be, grid)
 
 #if (WRF_CHEM == 1)
    if ( chem_cv_options == 10 ) then
-      print*,"chem_cv_options == 10 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra-1
+      print*,"chem_cv_options == 10 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra
       do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
 
          read (be_unit) variable
@@ -1138,7 +1138,7 @@ subroutine da_setup_be_regional(xb, be, grid)
 
 
    if ( chem_cv_options == 20 ) then
-      print*,"chem_cv_options == 20 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra-1
+      print*,"chem_cv_options == 20 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra
       do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
          read (be_unit) variable
          read (be_unit) nk, num_bins2d

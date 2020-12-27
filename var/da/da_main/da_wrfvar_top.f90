@@ -150,7 +150,11 @@ module da_wrfvar_top
 
 #ifdef DM_PARALLEL
    integer                 :: nbytes
+#if (WRF_CHEM == 1)
    integer, parameter      :: configbuflen = 6* CONFIG_BUF_LEN
+#else
+   integer, parameter      :: configbuflen = 4* CONFIG_BUF_LEN
+#endif
    integer                 :: configbuf( configbuflen )
 #endif
 

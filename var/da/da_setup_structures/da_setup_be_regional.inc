@@ -2703,7 +2703,7 @@ subroutine da_setup_be_regional(xb, be, grid)
 #if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
        do i=1,num_cv_3d_chem
-         call da_rescale_background_errors(var_scaling12(i), len_scaling12(i), &  ! namelist?
+         call da_rescale_background_errors(var_scaling12(i), len_scaling12(i), & 
                                            xb % ds, be12_rf_lengthscale(i,:), be % v12(i))
        end do
       end if

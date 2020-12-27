@@ -155,7 +155,7 @@ subroutine da_scale_background_errors ( be, it )
      end do
 
      do ic=PARAM_FIRST_SCALAR, num_chem
-        call da_rescale_background_errors( var_scaling12(it), len_scaling12(it), &  ! change to it*num_chem
+        call da_rescale_background_errors( var_scaling12((it-1)*(num_chem-1)+ic-1), len_scaling12((it-1)*(num_chem-1)+ic-1), & 
                                            ds, rf_len12(ic-1,:), be % v12(ic-1) )
      end do
 

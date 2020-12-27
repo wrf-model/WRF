@@ -131,10 +131,10 @@ rconfig   integer   chem_cv_options         namelist,wrfvarchem  1  0        - "
 rconfig   integer   chemicda_opt            namelist,wrfvarchem  1  1        - "chemicda_opt"             " "   " "
 rconfig   real      var_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "var_scaling12"            ""  ""
 rconfig   real      len_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "len_scaling12"            ""  ""
-rconfig   real      max_vert_var12          namelist,wrfvarchem  32*1  99.0  - "max_vert_var12"          ""  ""
+rconfig   real      max_vert_var12          namelist,wrfvarchem  36*1                     99.0  - "max_vert_var12"          ""  ""
 rconfig   logical   test_transformsch       namelist,wrfvarchem  1  .false.  - "test_transformsch"       ""  ""
 rconfig   logical   use_chemic_surfobs      namelist,wrfvarchem  1  .true.   - "use_chemic_surfobs"      ""  ""
-rconfig   real      max_error_chemic_surf   namelist,wrfvarchem  1  500.0    - "max_error_chemic_surf"     ""  ""
+rconfig   real      max_error_chemic_surf   namelist,wrfvarchem  1  500.0    - "max_error_chemic_surf"   ""  ""
 
 #Use chem portion of xch when initial conditions are added as control variables
 typedef xchem_type real -                       ijkf          chem_ic     1   -   -

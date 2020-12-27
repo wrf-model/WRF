@@ -16,13 +16,13 @@ subroutine da_setup_be_regional(xb, be, grid)
                                         ,p_co, p_o3, p_no2, p_so2                           &
                                         ,p_p25, p_p10, p_sulf  
 
-   USE module_state_description, ONLY :  p_bc_a01, p_bc_a02, p_bc_a03, p_bc_a04                       & !inline mosaic
-                                        ,p_oc_a01, p_oc_a02, p_oc_a03, p_oc_a04                       &
-                                        ,p_so4_a01, p_so4_a02, p_so4_a03, p_so4_a04                   &
-                                        ,p_no3_a01, p_no3_a02, p_no3_a03, p_no3_a04                   &
-                                        ,p_nh4_a01, p_nh4_a02, p_nh4_a03, p_nh4_a04                   &
-                                        ,p_cl_a01, p_cl_a02, p_cl_a03, p_cl_a04                       &
-                                        ,p_na_a01, p_na_a02, p_na_a03, p_na_a04                       &
+   USE module_state_description, ONLY :  p_bc_a01, p_bc_a02, p_bc_a03, p_bc_a04             & !inline mosaic
+                                        ,p_oc_a01, p_oc_a02, p_oc_a03, p_oc_a04             &
+                                        ,p_so4_a01, p_so4_a02, p_so4_a03, p_so4_a04         &
+                                        ,p_no3_a01, p_no3_a02, p_no3_a03, p_no3_a04         &
+                                        ,p_nh4_a01, p_nh4_a02, p_nh4_a03, p_nh4_a04         &
+                                        ,p_cl_a01, p_cl_a02, p_cl_a03, p_cl_a04             &
+                                        ,p_na_a01, p_na_a02, p_na_a03, p_na_a04             &
                                         ,p_oin_a01, p_oin_a02, p_oin_a03, p_oin_a04                  
 #endif
 
@@ -34,7 +34,6 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    logical                do_normalize1      ! Test do_normalize.
    integer             :: i, j, k, m         ! Loop counters.
-   integer             :: ispcc              ! chem species index.
    integer, allocatable:: bin(:,:,:)         ! Bin assigned to each 3D point
    integer, allocatable:: bin2d(:,:)         ! Bin assigned to each 2D point
    integer             :: bin_type           ! Type of bin to average over.
@@ -47,7 +46,6 @@ subroutine da_setup_be_regional(xb, be, grid)
    integer :: num_cv_3d_basic  ! number of 3D mandatory control variables
    integer :: num_cv_3d_extra  ! number of 3D optional control variables
    integer :: num_cv_2d        ! number of 2D control variables
-   integer :: num_cv_3d_chem   ! number of 3D chem control variables
 
    real*8, allocatable           :: be1_eval_loc(:,:)     ! Temp arrays.
    real*8, allocatable           :: be2_eval_loc(:,:)     ! Temp arrays.
@@ -62,8 +60,6 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be10_eval_loc(:,:)    ! Temp arrays.
    real*8, allocatable           :: be11_eval_loc(:,:)    ! Temp arrays.
 
-   real*8, allocatable           :: be12_eval_loc(:,:,:)    ! Temp arrays for chem.
-
    real*8, allocatable           :: be1_eval_glo(:)       ! Global Eigenvalues.
    real*8, allocatable           :: be2_eval_glo(:)       ! Global Eigenvalues.
    real*8, allocatable           :: be3_eval_glo(:)       ! Global Eigenvalues.
@@ -76,8 +72,6 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be9_eval_glo(:)       ! Global Eigenvalues.
    real*8, allocatable           :: be10_eval_glo(:)      ! Global Eigenvalues.
    real*8, allocatable           :: be11_eval_glo(:)      ! Global Eigenvalues.
-
-   real*8, allocatable           :: be12_eval_glo(:,:)      ! Global Eigenvalues for chem.
 
    real*8, allocatable           :: alpha_val(:)          ! Global Eigenvalues.
 
@@ -94,8 +88,6 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be10_evec_loc(:,:,:)  ! Local Eigenvectors.
    real*8, allocatable           :: be11_evec_loc(:,:,:)  ! Local Eigenvectors.
 
-   real*8, allocatable           :: be12_evec_loc(:,:,:,:)  ! Local Eigenvectors for chem.
-
    real*8, allocatable           :: be1_evec_glo(:,:)     ! Global Eigenvectors.
    real*8, allocatable           :: be2_evec_glo(:,:)     ! Global Eigenvectors.
    real*8, allocatable           :: be3_evec_glo(:,:)     ! Global Eigenvectors.
@@ -109,7 +101,6 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be10_evec_glo(:,:)    ! Global Eigenvectors.
    real*8, allocatable           :: be11_evec_glo(:,:)    ! Global Eigenvectors.
 
-   real*8, allocatable           :: be12_evec_glo(:,:,:)    ! Global Eigenvectors for chem.
 
    real*8, allocatable           :: alpha_evec(:,:)       ! Global Eigenvectors.
 
@@ -126,13 +117,21 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be10_rf_lengthscale(:)
    real*8, allocatable           :: be11_rf_lengthscale(:)
 
-   real*8, allocatable           :: be12_rf_lengthscale(:,:) ! for chem
-
    real*8, allocatable           :: alpha_rf_lengthscale(:)
    real*8, allocatable           :: alpha_rf_scale_factor(:)
 
    real*8, allocatable           :: evec_loc(:,:,:)        ! Latitudinally varying eigenvectors.
    real*8, allocatable           :: eval_loc(:,:)          ! Latitudinally varying eigenvalues.
+
+#if (WRF_CHEM == 1)
+  integer               :: ispcc              ! chem species index.
+  integer               :: num_cv_3d_chem     ! number of 3D chem control variables
+  real*8, allocatable   :: be12_eval_loc(:,:,:)    ! Temp arrays for chem.
+  real*8, allocatable   :: be12_eval_glo(:,:)      ! Global Eigenvalues for chem.
+  real*8, allocatable   :: be12_evec_loc(:,:,:,:)  ! Local Eigenvectors for chem.
+  real*8, allocatable   :: be12_evec_glo(:,:,:)    ! Global Eigenvectors for chem.
+  real*8, allocatable   :: be12_rf_lengthscale(:,:) ! for chem
+#endif
 
    character*5                 :: namv(5)=(/"psi  ","chi_u","t_u  ","rh   ","ps_u "/)
    character*10                :: variable
@@ -285,23 +284,17 @@ subroutine da_setup_be_regional(xb, be, grid)
    if ( cloud_cv_options >= 2 ) then
       num_cv_3d_extra = 5 ! 5 hydrometeors, qc,qr,qi,qs,qg
    end if
-
 #if (WRF_CHEM == 1)
    if ( chem_cv_options == 10 ) then
-      num_cv_3d_extra = 19
-      num_cv_3d_chem = num_cv_3d_extra
-      allocate (be % v12 (num_cv_3d_chem) )
+      num_cv_3d_extra = num_cv_3d_extra + 19
+      num_cv_3d_chem = 19
    end if
-
-   if ( chem_cv_options == 20 ) then                                                                                                  
-!      num_cv_3d_extra = 24
-!      num_cv_3d_extra = 32
-      num_cv_3d_extra = 36
-      num_cv_3d_chem = num_cv_3d_extra
-      allocate (be % v12 (num_cv_3d_chem) )
+   if ( chem_cv_options == 20 ) then
+      num_cv_3d_extra = num_cv_3d_extra + 36
+      num_cv_3d_chem = 36
    end if
+   allocate (be % v12 (num_cv_3d_chem) )
 #endif
-
    if ( use_cv_w ) then
       num_cv_3d_extra = num_cv_3d_extra + 1 ! clouds+w
    end if
@@ -562,13 +555,11 @@ subroutine da_setup_be_regional(xb, be, grid)
       allocate (be9_eval_loc  (1:nj,1:nk))
       allocate (be10_eval_loc (1:nj,1:nk))
    end if
-
 #if (WRF_CHEM == 1)
    if ( chem_cv_options >= 10 ) then
       allocate (be12_eval_loc  (num_cv_3d_chem,1:nj,1:nk))
    end if
 #endif
-
    if ( use_cv_w ) then
       allocate (be11_eval_loc (1:nj,1:nk))
    end if
@@ -612,13 +603,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate (be9_evec_loc (1:nj,1:nk,1:nk))
          allocate (be10_evec_loc(1:nj,1:nk,1:nk))
       end if
-
 #if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          allocate (be12_evec_loc (num_cv_3d_chem,1:nj,1:nk,1:nk))
       end if
 #endif
-
       if ( use_cv_w ) then
          allocate (be11_evec_loc(1:nj,1:nk,1:nk))
       end if
@@ -657,13 +646,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate ( be9_rf_lengthscale(1:kz))
          allocate (be10_rf_lengthscale(1:kz))
       end if
-
 #if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          allocate (be12_rf_lengthscale(num_cv_3d_chem,1:kz))
       end if
 #endif
-
       if ( use_cv_w ) then
          allocate (be11_rf_lengthscale(1:kz))
       end if
@@ -866,7 +853,7 @@ subroutine da_setup_be_regional(xb, be, grid)
 
 #if (WRF_CHEM == 1)
    if ( chem_cv_options == 10 ) then
-      print*,"chem_cv_options == 10 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra
+      print*,"chem_cv_options == 10 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra-1
       do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
 
          read (be_unit) variable
@@ -1151,13 +1138,13 @@ subroutine da_setup_be_regional(xb, be, grid)
 
 
    if ( chem_cv_options == 20 ) then
-      print*,"chem_cv_options == 20 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra
+      print*,"chem_cv_options == 20 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra-1
       do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
          read (be_unit) variable
          read (be_unit) nk, num_bins2d
          print *, trim(adjustl(variable)), nk, num_bins2d
          select case( trim(adjustl(variable)) )
-  
+
          case ('bc_1' )
             ispcc=p_bc_a01-1
             be % v12(ispcc) % name = trim(adjustl(variable))
@@ -1710,23 +1697,12 @@ subroutine da_setup_be_regional(xb, be, grid)
          trim(be % v8 % name), ', ', trim(be % v9 % name), ', and ', &
          trim(be % v10 % name)
    end if
-
-#if (WRF_CHEM == 1)
-   if ( chem_cv_options == 10 ) then
-      write (unit=message(4),fmt='(3x,A,38A)') 'WRFDA chem control variables are: ', &
-         trim(be % v12(1) % name), ', ', trim(be % v12(2) % name), ', ', &
-         trim(be % v12(3) % name), ', ', trim(be % v12(4) % name), ', ', &
-         trim(be % v12(5) % name), ', ', trim(be % v12(6) % name), ', ', &
-         trim(be % v12(7) % name), ', ', trim(be % v12(7) % name), ', ', &
-         trim(be % v12(9) % name), ', ', trim(be % v12(10) % name), ', ', &
-         trim(be % v12(11) % name), ', ', trim(be % v12(12) % name), ', ', &
-         trim(be % v12(13) % name), ', ', trim(be % v12(14) % name), ', ', &
-         trim(be % v12(15) % name), ', ', trim(be % v12(16) % name), ', ', &
-         trim(be % v12(17) % name), ', ', trim(be % v12(18) % name), ', ', &
-         trim(be % v12(19) % name)
-   end if
-#endif
-
+!#if (WRF_CHEM == 1)
+!   if ( chem_cv_options >= 10 ) then
+!      write (unit=message(4),fmt='(3x,A,10A)') 'WRFDA chem control variables are: ', &
+!                                                be % v12(:) % name
+!   end if
+!#endif
    if ( use_cv_w ) then
       write (unit=message(5),fmt='(3x,A)') &
          'w control variable is activated'
@@ -2080,16 +2056,14 @@ subroutine da_setup_be_regional(xb, be, grid)
             write(unit=message(11),fmt=write_fmt) 'be10= ',be10_rf_lengthscale
             call da_message(message(7:11))
          end if
-
-#if (WRF_CHEM == 1)
-         if ( chem_cv_options >= 10 ) then
-	    do i=1,num_cv_3d_chem
+!#if (WRF_CHEM == 1)
+!         if ( chem_cv_options >= 10 ) then
+!            do i=1,num_cv_3d_chem
 !                write(unit=message(i+6),fmt=write_fmt) 'be',(i+5),'= ',be12_rf_lengthscale(i,:)
-            end do
-            call da_message(message(i+6:num_cv_3d_chem+6))
-         end if
-#endif
-
+!            end do
+!            call da_message(message(i+6:num_cv_3d_chem+6))
+!         end if
+!#endif
          if ( use_cv_w ) then
             write(unit=message(12),fmt=write_fmt) 'be11= ',be11_rf_lengthscale
             call da_message(message(12:12))
@@ -2349,22 +2323,19 @@ subroutine da_setup_be_regional(xb, be, grid)
             call da_check_eof_decomposition(be8_eval_glo(:),  be8_evec_glo(:,:),  be % v8 % name)
             call da_check_eof_decomposition(be9_eval_glo(:),  be9_evec_glo(:,:),  be % v9 % name)
             call da_check_eof_decomposition(be10_eval_glo(:), be10_evec_glo(:,:), be % v10 % name)
-            if ( use_cv_w ) then
-               call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
-            end if
          end if
 
 #if (WRF_CHEM == 1)
-!!!         if ( chem_cv_options == 10 ) then
          if ( chem_cv_options >= 10 ) then
             do i=1,num_cv_3d_chem
                 call da_check_eof_decomposition(be12_eval_glo(i,:),  be12_evec_glo(i,:,:),  be % v12(i) % name)
             end do
-            if ( use_cv_w ) then
-               call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
-            end if
          end if
 #endif
+
+         if ( use_cv_w ) then
+            call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
+         end if
 
       end if
 
@@ -2381,19 +2352,6 @@ subroutine da_setup_be_regional(xb, be, grid)
          call da_get_vertical_truncation(max_vert_var8, be8_eval_glo(:), be % v8)
          call da_get_vertical_truncation(max_vert_var9, be9_eval_glo(:), be % v9)
          call da_get_vertical_truncation(max_vert_var10,be10_eval_glo(:),be % v10)
-         if ( use_cv_w ) then
-            call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
-         end if
-#if (WRF_CHEM == 1)
-!!!      else if ( chem_cv_options == 10 ) then
-      else if ( chem_cv_options >= 10 ) then
-         do i=1,num_cv_3d_chem
-            call da_get_vertical_truncation(max_vert_var12(i), be12_eval_glo(i,:), be % v12(i))
-         end do
-#endif
-         if ( use_cv_w ) then
-            call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
-         end if
       else
          if ( jb_factor > 0.0 ) then
             be % v6  % mz = xb % mkz
@@ -2401,18 +2359,39 @@ subroutine da_setup_be_regional(xb, be, grid)
             be % v8  % mz = xb % mkz
             be % v9  % mz = xb % mkz
             be % v10 % mz = xb % mkz
-            if ( use_cv_w ) then
-               be % v11 % mz = xb % mkz
-            end if
          else
             be % v6  % mz = 0
             be % v7  % mz = 0
             be % v8  % mz = 0
             be % v9  % mz = 0
             be % v10 % mz = 0
+         end if
+      end if
+
+#if (WRF_CHEM == 1)
+      if ( chem_cv_options >= 10 ) then
+         do i=1,num_cv_3d_chem
+            call da_get_vertical_truncation(max_vert_var12(i), be12_eval_glo(i,:), be % v12(i))
+         end do
+      else
+         if ( jb_factor > 0.0 ) then
+            be % v12(:) % mz = xb % mkz
+         else
+            be % v12(:) % mz = 0
+         end if
+      end if
+#endif
+
+      if ( use_cv_w ) then
+         call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
+      else
+         if ( jb_factor > 0.0 ) then
+            be % v11 % mz = xb % mkz
+         else
             be % v11 % mz = 0
          end if
       end if
+
 
       if (max_vert_var5 == 0.0) then
          be % v5 % mz = 0
@@ -2438,6 +2417,12 @@ subroutine da_setup_be_regional(xb, be, grid)
       be % v9 % mz = xb % mkz
       be % v10% mz = xb % mkz
       be % v11% mz = xb % mkz
+
+#if (WRF_CHEM == 1)
+   if ( chem_cv_options >= 10 ) then
+      be % v12(:) % mz = xb % mkz
+   end if
+#endif
 
    end if
 
@@ -2477,16 +2462,14 @@ subroutine da_setup_be_regional(xb, be, grid)
       call da_allocate_background_errors(jy, kz, be10_eval_glo, be10_evec_glo, be10_eval_loc, &
                                          be10_evec_loc, be % v10)
    end if
-
 #if (WRF_CHEM == 1)
    if ( chem_cv_options >=10 ) then
       do i=1,num_cv_3d_chem
          call da_allocate_background_errors(jy, kz, be12_eval_glo(i,:), be12_evec_glo(i,:,:), be12_eval_loc(i,:,:), &
-                                         be12_evec_loc(i,:,:,:), be % v12(i))
+                                            be12_evec_loc(i,:,:,:), be % v12(i))
       end do
    end if
 #endif
-
    if ( use_cv_w ) then
       call da_allocate_background_errors(jy, kz, be11_eval_glo, be11_evec_glo, be11_eval_loc, &
                                          be11_evec_loc, be % v11)
@@ -2513,7 +2496,6 @@ subroutine da_setup_be_regional(xb, be, grid)
          be9_rf_lengthscale(1:kz) =  be9_rf_lengthscale(1:kz) * xb%ds
          be10_rf_lengthscale(1:kz)= be10_rf_lengthscale(1:kz) * xb%ds
       end if
-
 #if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          do i=1,num_cv_3d_chem
@@ -2521,7 +2503,6 @@ subroutine da_setup_be_regional(xb, be, grid)
          end do
       end if
 #endif
-
       if ( use_cv_w ) then
          be11_rf_lengthscale(1:kz)= be11_rf_lengthscale(1:kz) * xb%ds
       end if
@@ -2610,7 +2591,6 @@ subroutine da_setup_be_regional(xb, be, grid)
          call da_check_eof_decomposition(be%v10%val_g(:), be%v10%evec_g(:,:),&
                                          be%v10%name)
       end if
-
 #if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
          do i=1,num_cv_3d_chem
@@ -2619,7 +2599,6 @@ subroutine da_setup_be_regional(xb, be, grid)
          end do
       end if
 #endif
-
       if ( use_cv_w ) then
          call da_check_eof_decomposition(be%v11%val_g(:), be%v11%evec_g(:,:),&
                                          be%v11%name)
@@ -2640,92 +2619,36 @@ subroutine da_setup_be_regional(xb, be, grid)
 
       if (max_ext_its > 1 .and. jb_factor > 0.0) then
 
+        if ( rootproc ) then
           write(unit=message(1),fmt='(A,I4)') '>>> Save the variances and scale-lengths in outer-loop', it
           call da_message(message(1:1))
-          if ( cloud_cv_options >= 2.and. cloud_cv_options.ne.3 ) then
-             write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
-                                     be % v4 % mz, be % v5 % mz,                  &
-                                     be % v6 % mz, be % v7 % mz, be% v8 % mz,be % v9 % mz, be % v10 % mz, be% v11 % mz, &
-                                     xb % ds
-             write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
+          write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
+                                     be % v4 % mz, be % v5 % mz, xb % ds
+          write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
                                      be % v4 % val, be % v5 % val, &
-                                     be % v6 % val, be % v7 % val, be% v8 % val,be % v9 % val, be % v10 % val, be% v11 % val, &
-                                     be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
-                                     be4_rf_lengthscale, be5_rf_lengthscale,                     &
-                                     be6_rf_lengthscale, be7_rf_lengthscale, be8_rf_lengthscale, &
-                                     be9_rf_lengthscale, be10_rf_lengthscale,be11_rf_lengthscale
+             be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
+             be4_rf_lengthscale, be5_rf_lengthscale
+          if ( cloud_cv_options >= 2 ) then
+             write(be_rf_unit) be%v6%val, be%v7%val, be%v8%val, be%v9%val, be%v10%val
+             write(be_rf_unit) be6_rf_lengthscale, be7_rf_lengthscale, be8_rf_lengthscale, &
+                               be9_rf_lengthscale, be10_rf_lengthscale
+          end if
 #if (WRF_CHEM == 1)
-          else if ( chem_cv_options == 10 ) then
-             write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
-                                     be % v4 % mz, be % v5 % mz,                  &
-                                     be % v12(1) % mz, be % v12(2) % mz, be% v12(3) % mz,be % v12(4) % mz, &
-                                     be % v12(5) % mz, be % v12(6) % mz, be% v12(7) % mz,be % v12(8) % mz, &
-                                     be % v12(9) % mz, be % v12(10) % mz, be% v12(11) % mz,be % v12(12) % mz, &
-                                     be % v12(13) % mz, be % v12(14) % mz, be% v12(15) % mz,be % v12(16) % mz, &
-                                     be % v12(17) % mz, be % v12(18) % mz, be% v12(19) % mz, &
-                                     be% v11 % mz, xb % ds
-             write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
-                                     be % v4 % val, be % v5 % val, &
-                                     be % v12(1) % val, be % v12(2) % val, be% v12(3) % val,be % v12(4) % val, &
-                                     be % v12(5) % val, be % v12(6) % val, be% v12(7) % val,be % v12(8) % val, &
-                                     be % v12(9) % val, be % v12(10) % val, be% v12(11) % val,be % v12(12) % val, &
-                                     be % v12(13) % val, be % v12(14) % val, be% v12(15) % val,be % v12(16) % val, &
-                                     be % v12(17) % val, be % v12(18) % val, be% v12(19) % val, &
-                                     be % v11 % val, &
-                                     be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
-                                     be4_rf_lengthscale, be5_rf_lengthscale,                     &
-                                     be12_rf_lengthscale(1,:), be12_rf_lengthscale(2,:), be12_rf_lengthscale(3,:), &
-                                     be12_rf_lengthscale(4,:), be12_rf_lengthscale(5,:), be12_rf_lengthscale(6,:), &
-                                     be12_rf_lengthscale(7,:), be12_rf_lengthscale(8,:), be12_rf_lengthscale(9,:), &
-                                     be12_rf_lengthscale(10,:), be12_rf_lengthscale(11,:), be12_rf_lengthscale(12,:), &
-                                     be12_rf_lengthscale(13,:), be12_rf_lengthscale(14,:), be12_rf_lengthscale(15,:), &
-                                     be12_rf_lengthscale(16,:), be12_rf_lengthscale(17,:), be12_rf_lengthscale(18,:), &
-                                     be12_rf_lengthscale(19,:), &
-                                     be11_rf_lengthscale
-          else if ( chem_cv_options == 20 ) then
-             write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
-                                     be % v4 % mz, be % v5 % mz,                  &
-                                     be % v12(1) % mz, be % v12(2) % mz, be% v12(3) % mz,be % v12(4) % mz, &
-                                     be % v12(5) % mz, be % v12(6) % mz, be% v12(7) % mz,be % v12(8) % mz, &
-                                     be % v12(9) % mz, be % v12(10) % mz, be% v12(11) % mz,be % v12(12) % mz, &
-                                     be % v12(13) % mz, be % v12(14) % mz, be% v12(15) % mz,be % v12(16) % mz, &
-                                     be % v12(17) % mz, be % v12(18) % mz, be% v12(19) % mz, be% v12(20) % mz, &
-                                     be % v12(21) % mz, be % v12(22) % mz, be% v12(23) % mz, be% v12(24) % mz, &
-                                     be % v12(25) % mz, be % v12(26) % mz, be% v12(27) % mz, be% v12(28) % mz, &
-                                     be % v12(29) % mz, be % v12(30) % mz, be% v12(31) % mz, be% v12(32) % mz, &
-                                     be% v11 % mz, xb % ds
-             write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
-                                     be % v4 % val, be % v5 % val, &
-                                     be % v12(1) % val, be % v12(2) % val, be% v12(3) % val,be % v12(4) % val, &
-                                     be % v12(5) % val, be % v12(6) % val, be% v12(7) % val,be % v12(8) % val, &
-                                     be % v12(9) % val, be % v12(10) % val, be% v12(11) % val,be % v12(12) % val, &
-                                     be % v12(13) % val, be % v12(14) % val, be% v12(15) % val,be % v12(16) % val, &
-                                     be % v12(17) % val, be % v12(18) % val, be% v12(19) % val, be% v12(20) % val, &
-                                     be % v12(21) % val, be % v12(22) % val, be% v12(23) % val, be% v12(24) % val, &
-                                     be % v12(25) % val, be % v12(26) % val, be% v12(27) % val, be% v12(28) % val, &
-                                     be % v12(29) % val, be % v12(30) % val, be% v12(31) % val, be% v12(32) % val, &
-                                     be % v11 % val, &
-                                     be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
-                                     be4_rf_lengthscale, be5_rf_lengthscale,                     &
-                                     be12_rf_lengthscale(1,:), be12_rf_lengthscale(2,:), be12_rf_lengthscale(3,:), be12_rf_lengthscale(4,:), &
-                                     be12_rf_lengthscale(5,:), be12_rf_lengthscale(6,:), be12_rf_lengthscale(7,:), be12_rf_lengthscale(8,:), &
-                                     be12_rf_lengthscale(9,:), be12_rf_lengthscale(10,:), be12_rf_lengthscale(11,:), be12_rf_lengthscale(12,:), &
-                                     be12_rf_lengthscale(13,:), be12_rf_lengthscale(14,:), be12_rf_lengthscale(15,:), be12_rf_lengthscale(16,:), &
-                                     be12_rf_lengthscale(17,:), be12_rf_lengthscale(18,:), be12_rf_lengthscale(19,:), be12_rf_lengthscale(20,:), &
-                                     be12_rf_lengthscale(21,:), be12_rf_lengthscale(22,:), be12_rf_lengthscale(23,:), be12_rf_lengthscale(24,:), &
-                                     be12_rf_lengthscale(25,:), be12_rf_lengthscale(26,:), be12_rf_lengthscale(27,:), be12_rf_lengthscale(28,:), &
-                                     be12_rf_lengthscale(29,:), be12_rf_lengthscale(30,:), be12_rf_lengthscale(31,:), be12_rf_lengthscale(32,:), &
-                                     be11_rf_lengthscale
+          if ( chem_cv_options >= 10 ) then
+            do i=1, num_cv_3d_chem
+               write(be_rf_unit) be % v12(i) % val
+            end do
+            do i=1, num_cv_3d_chem
+               write(be_rf_unit) be12_rf_lengthscale(i,:)
+            end do
+          end if
 #endif
-          else
-             write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
-                                     be % v4 % mz, be % v5 % mz,                  &
-                                     xb % ds
-             write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
-                                     be % v4 % val, be % v5 % val, &
-                                     be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
-                                     be4_rf_lengthscale, be5_rf_lengthscale
-          endif
+          if ( use_cv_w ) then
+             write(be_rf_unit) be%v11%val
+             write(be_rf_unit) be11_rf_lengthscale
+          end if
+        end if ! rootproc
+
           if (print_detail_be ) then
              write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
                                                it, kz, jy, ix, xb % ds
@@ -2779,10 +2702,10 @@ subroutine da_setup_be_regional(xb, be, grid)
       end if
 #if (WRF_CHEM == 1)
       if ( chem_cv_options >= 10 ) then
-      do i=1,num_cv_3d_chem
-         call da_rescale_background_errors(var_scaling12(i), len_scaling12(i), &
+       do i=1,num_cv_3d_chem
+         call da_rescale_background_errors(var_scaling12(i), len_scaling12(i), &  ! namelist?
                                            xb % ds, be12_rf_lengthscale(i,:), be % v12(i))
-      end do
+       end do
       end if
 #endif
       if ( use_cv_w ) then
@@ -2817,15 +2740,13 @@ subroutine da_setup_be_regional(xb, be, grid)
           write(be_print_unit,'("mz=",i3,2x,"be%v9%val:"/(10e12.5))') be%v9%mz, be%v9%val(1,:)
           write(be_print_unit,'("mz=",i3,2x,"be%v10%val:"/(10e12.5))') be%v10%mz, be%v10%val(1,:)
        end if
-
 #if (WRF_CHEM == 1)
        if ( chem_cv_options >= 10 ) then
-       do i=1,num_cv_3d_chem
+        do i=1,num_cv_3d_chem
           write(be_print_unit,'("mz=",i3,2x,"be%v12%val:"/(10e12.5))') be%v12(i)%mz, be%v12(i)%val(1,:)
-       end do
+        end do
        end if
 #endif
-
        if ( use_cv_w ) then
           write(be_print_unit,'("mz=",i3,2x,"be%v11%val:"/(10e12.5))') be%v11%mz, be%v11%val(1,:)
        end if
@@ -2844,15 +2765,13 @@ subroutine da_setup_be_regional(xb, be, grid)
           write(be_print_unit,'("be%v9%rf_alpha:"/(10e12.5))')  be % v9 % rf_alpha(:)
           write(be_print_unit,'("be%v10%rf_alpha:"/(10e12.5))') be % v10 % rf_alpha(:)
        end if
-
 #if (WRF_CHEM == 1)
        if ( chem_cv_options >= 10 ) then
-       do i=1,num_cv_3d_chem
+        do i=1,num_cv_3d_chem
           write(be_print_unit,'("be%v12%rf_alpha:"/(10e12.5))')  be % v12(i) % rf_alpha(:)
-       end do
+        end do
        end if
 #endif
-
        if ( use_cv_w ) then
           write(be_print_unit,'("be%v11%rf_alpha:"/(10e12.5))') be % v11 % rf_alpha(:)
        end if
@@ -3127,11 +3046,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    end if
 #endif
    if ( use_cv_w ) then
-      if (be%ncv_mz ==8 .or. be%ncv_mz ==13 ) then
-        be%cv_mz(be%ncv_mz-2) = be%v11%mz
-      else
-        be%cv_mz(num_cv_3d_basic+num_cv_3d_extra+num_cv_2d) = be%v11%mz
-      end if
+      be%cv_mz(num_cv_3d_basic+num_cv_3d_extra+num_cv_2d) = be%v11%mz
    end if
    be%cv_mz(be%ncv_mz-1) = be%alpha%mz
    be%cv_mz(be%ncv_mz)   = be%ne

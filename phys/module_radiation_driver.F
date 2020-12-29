@@ -1984,10 +1984,10 @@ CONTAINS
                            lwupflx, lwupflxc, lwdnflx, lwdnflxc,    &
                            swupflx, swupflxc, swdnflx, swdnflxc,    &
                            lwupt, lwuptc, lwdnt, lwdntc,            &
-                           lwupb, lwupbc, lwdnb, lwdnb,             &
+                           lwupb, lwupbc, lwdnb, lwdnbc,            &
                            glw, olr, lwcf,                          &
                            swupt, swuptc, swdnt, swdntc,            &
-                           swupb, swupbc, swdnb, swdnb,             &
+                           swupb, swupbc, swdnb, swdnbc,            &
                            gsw, swcf,                               &
                            coszen, solcon, albedo, emiss,           &
                            t,t8w, tsk, rho, p, p8w, cldfra,         &

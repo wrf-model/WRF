@@ -294,21 +294,18 @@ subroutine da_vv_to_cv(vv, xp, mzs, nmzs, cv_size, rcv &
    end if
 
 #if (WRF_CHEM == 1)
-!   if (present(mzs_chem) .and. present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
    if (present(mzs_chem) .and. present(vchem)) then
       ix = ie-is+1
       jy = je-js+1
       offset = 1
 
       if ( num_chem >= PARAM_FIRST_SCALAR ) then
-!!!         do ic = 1, num_chem-1
          do ic = PARAM_FIRST_SCALAR, num_chem
             mz = mzs_chem(ic-1)
             ijm = ix * jy * mz
             cv_s = cv_e + 1
             cv_e = cv_s + ijm - 1
 #ifdef NORESHAPE
-!!!            do k=1,1
             do k=1,mz
                do j=js,je
                   do i=is,ie

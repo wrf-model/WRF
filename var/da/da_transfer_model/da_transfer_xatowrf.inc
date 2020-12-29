@@ -20,11 +20,7 @@ subroutine da_transfer_xatowrf(grid, config_flags)
    !---------------------------------------------------------------------------
 
 #if (WRF_CHEM == 1)
-   USE module_state_description, ONLY :                                 &
-                     num_chem                                           & !inline gocart
-                    ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2    & !inline gocart
-                    ,p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co      &
-                    ,p_chem_ic_p10,  p_chem_ic_p25,  p_chem_ic_sulf
+   USE module_state_description, ONLY : num_chem
 #endif
 
    implicit none
@@ -723,8 +719,6 @@ subroutine da_transfer_xatowrf(grid, config_flags)
          do j=jts,jte
             do i=its,ite
                do k=kts, kte
-!!!             grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic)
-!!!             grid%chem(i,j,k,ic) = max(grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic), 0.0)
 		if (grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic).lt.0.0) then
                   grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic)
 		else

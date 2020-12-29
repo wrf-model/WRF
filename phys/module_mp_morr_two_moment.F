@@ -76,6 +76,8 @@
 ! 1) changes and cleanup of code comments
 ! 2) correction to universal gas constant (very small change)
 
+! CHANGES FOR WRFV4.3
+! 1) fix to saturation vapor pressure polysvp to work at T < -80 C
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
@@ -1287,6 +1289,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! SATURATION VAPOR PRESSURE AND MIXING RATIO
 
 ! hm, add fix for low pressure, 5/12/10
+
             EVS(K) = min(0.99*pres(k),POLYSVP(T3D(K),0))   ! PA
             EIS(K) = min(0.99*pres(k),POLYSVP(T3D(K),1))   ! PA
 
@@ -4080,11 +4083,18 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 !         POLYSVP = 10.**(-9.09718*(273.16/T-1.)-3.56654*                &
 !          LOG10(273.16/T)+0.876793*(1.-T/273.16)+						&
 !          LOG10(6.1071))*100.
+! hm 11/16/20, use Goff-Gratch for T < 195.8 K and Flatau et al. equal or above 195.8 K
+      if (t.ge.195.8) then
+         dt=t-273.15
+         polysvp = a0i + dt*(a1i+dt*(a2i+dt*(a3i+dt*(a4i+dt*(a5i+dt*(a6i+dt*(a7i+a8i*dt))))))) 
+         polysvp = polysvp*100.
+      else
 
+         polysvp = 10.**(-9.09718*(273.16/t-1.)-3.56654* &
+          alog10(273.16/t)+0.876793*(1.-t/273.16)+ &
+          alog10(6.1071))*100.
 
-      dt = max(-80.,t-273.16)
-      polysvp = a0i + dt*(a1i+dt*(a2i+dt*(a3i+dt*(a4i+dt*(a5i+dt*(a6i+dt*(a7i+a8i*dt))))))) 
-      polysvp = polysvp*100.
+      end if
 
       END IF
 
@@ -4092,17 +4102,27 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
       IF (TYPE.EQ.0) THEN
 
-       dt = max(-80.,t-273.16)
-       polysvp = a0 + dt*(a1+dt*(a2+dt*(a3+dt*(a4+dt*(a5+dt*(a6+dt*(a7+a8*dt)))))))
-       polysvp = polysvp*100.
-
 !         POLYSVP = 10.**(-7.90298*(373.16/T-1.)+                        &
 !             5.02808*LOG10(373.16/T)-									&
 !             1.3816E-7*(10**(11.344*(1.-T/373.16))-1.)+				&
 !             8.1328E-3*(10**(-3.49149*(373.16/T-1.))-1.)+				&
 !             LOG10(1013.246))*100.
+! hm 11/16/20, use Goff-Gratch for T < 202.0 K and Flatau et al. equal or above 202.0 K
+      if (t.ge.202.0) then
+         dt = t-273.15
+         polysvp = a0 + dt*(a1+dt*(a2+dt*(a3+dt*(a4+dt*(a5+dt*(a6+dt*(a7+a8*dt)))))))
+         polysvp = polysvp*100.
+      else
 
-         END IF
+! note: uncertain below -70 C, but produces physical values (non-negative) unlike flatau
+         polysvp = 10.**(-7.90298*(373.16/t-1.)+ &
+             5.02808*alog10(373.16/t)- &
+             1.3816e-7*(10**(11.344*(1.-t/373.16))-1.)+ &
+             8.1328e-3*(10**(-3.49149*(373.16/t-1.))-1.)+ &
+             alog10(1013.246))*100.                      
+      end if
+
+      END IF
 
 
       END FUNCTION POLYSVP

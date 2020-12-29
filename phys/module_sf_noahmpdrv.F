@@ -3206,8 +3206,7 @@ IF((SF_URBAN_PHYSICS == 2).OR.(SF_URBAN_PHYSICS == 3))THEN
     qfx(i,j)      = (1.-frc_urb2d(i,j))*qfx_rural(i,j)   + qfx_urb(i,j)
     lh(i,j)       = qfx(i,j)*xlv
     hfx(i,j)      = hfx_urb(i,j)                         + (1-frc_urb2d(i,j))*hfx_rural(i,j)      ![W/m/m]
-!   sh_urb2d(i,j) = hfx_urb(i,j)/frc_urb2d(i,j)
-    sh_urb2d(i,j) = hfx_urb(i,j)
+    sh_urb2d(i,j) = hfx_urb(i,j)/frc_urb2d(i,j)
     lh_urb2d(i,j) = qfx_urb(i,j)*xlv
     g_urb2d(i,j)  = grdflx_urb(i,j)
     rn_urb2d(i,j) = rs_abs_urb(i,j)+emiss_urb(i,j)*glw(i,j)-rl_up_urb(i,j)

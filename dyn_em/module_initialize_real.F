@@ -4387,7 +4387,8 @@ endif
 !+---+-----------------------------------------------------------------+
 
       if (config_flags%insert_init_cloud .AND.                          &
-                    (P_QC .gt. 1 .AND. P_QI .gt. 1)) then
+                    (P_QC .gt. PARAM_FIRST_SCALAR .AND.                 &
+                     P_QI .gt. PARAM_FIRST_SCALAR)) then
 
          ALLOCATE(temp_P(kts:kte-1))
          ALLOCATE(temp_Dz(kts:kte-1))

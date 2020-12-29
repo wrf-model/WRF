@@ -188,6 +188,11 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    end do
 
+#if (WRF_CHEM == 1)
+   if (iv%info(chemic_surf)%nlocal      > 0) &
+         call da_get_innov_vector_chem_sfc (it,num_qcstat_conv, grid, ob, iv)
+#endif
+
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
       iv%time = num_fgat_time

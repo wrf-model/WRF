@@ -607,7 +607,7 @@ endif
 #endif
 
 ! added by SYHA (09-19-2014)
-#if ((WRF_CHEM == 1) &&  (EM_CORE == 1))
+#if ((WRF_CHEM == 1) &&  (EM_CORE == 1) && (DA_CORE != 1))
      IF ( config_flags%perturb_chem_bdy .NE. 0 ) THEN
           CALL wrf_put_dom_ti_integer( fid, 'PERTURB_CHEM_BDY', config_flags%perturb_chem_bdy, 1, ierr )
      END IF

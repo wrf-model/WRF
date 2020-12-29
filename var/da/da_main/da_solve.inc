@@ -974,7 +974,7 @@
          if (adj_sens) call da_sensitivity(grid,config_flags,it,cv_size,xbx, &
                                            be,iv,xhat,qhat,cvt,y,eignvec,eignval,neign )
 
-	 
+       
       else
 
          call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
@@ -994,7 +994,14 @@
       if (.not. var4d) then
          ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation,
          ! here grid%xa contains only the static increment
+
+#if (WRF_CHEM == 1)
+   if (cv_options == 7 .and. chem_cv_options>=10) then
+         call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,vchem=grid%vchem)
+   end if
+#else
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
+#endif
 
          ! adding the ensemble contribution
          if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then

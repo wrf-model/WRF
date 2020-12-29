@@ -1,4 +1,13 @@
-subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
+subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y  &
+#if (WRF_CHEM == 1)
+                        , vchem &
+#endif
+                        )
+
+#if (WRF_CHEM == 1)
+   use module_domain, only : xchem_type
+   use da_control, only : test_transformsch
+#endif
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -17,6 +26,10 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
    type (vp_type),    intent(inout) :: vv    ! Grdipt/EOF CV.
    type (vp_type),    intent(inout) :: vp    ! Grdipt/level CV.
    type (y_type),     intent(inout) :: y             ! y = h (xa)
+
+#if (WRF_CHEM == 1)
+   type(xchem_type), optional, intent(out) :: vchem   ! CHEM_IC CV                                                                                        
+#endif
 
    integer :: sizec
    real    :: cvtest(1:cv_size)    ! background error structure.
@@ -45,6 +58,12 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
 
    call da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cvtest, vv)
 
+#if (WRF_CHEM == 1)
+   if (test_transformsch) then
+     call da_check_cvtovv_adjoint_chem(grid, cv_size, xbx, be, cvtest, vv, vchem=grid%vchem)
+   end if
+#endif
+
    !-------------------------------------------------------------------------
    ! vv_to_vp adjoint test:
    !-------------------------------------------------------------------------
@@ -62,6 +81,13 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
    !-------------------------------------------------------------------------
 
    call da_check_vtox_adjoint(grid, cv_size, xbx, be, ep, cvtest, vv, vp)
+
+#if (WRF_CHEM == 1)
+   if (test_transformsch) then
+      call da_check_vchemtox_adjoint(grid, grid%vchem, be, grid%vchem2)
+      call da_check_vtox_adjoint_chem(grid, cv_size, xbx, be, ep, cvtest, vv, vp)
+   end if
+#endif
 
    !----------------------------------------------------------------------------
    ! [2] Perform xtoy adjoint tests:

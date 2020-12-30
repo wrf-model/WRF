@@ -44,7 +44,7 @@ RLFLAGS		=
 CC_TOOLS        =      cc 
 
 ###########################################################
-#ARCH    Linux i486 i586 i686, gfortran compiler with gcc #serial smpar dmpar dm+sm
+#ARCH    Linux i486 i586 i686 armv7l aarch64, gfortran compiler with gcc #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1

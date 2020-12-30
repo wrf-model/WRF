@@ -7020,6 +7020,33 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 ! For grid cells with a fractional ice area, derive the ice surface 
 ! temperature from the area-averaged surface temperature (the blended
 ! result of the open-water values (SST) and the ice-covered value).
+!
+!</DESCRIPTION>
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ims, ime, jms, jme    !-- start/end index for i/j in memory
+      INTEGER, INTENT(IN) :: its, ite, jts, jte    !-- start/end index for i/j in tile
+      INTEGER, INTENT(IN) :: itimestep             !-- timestep
+      LOGICAL, INTENT(IN) :: sfc_layer_values      !-- True if there are surface layer routine values
+                                                   !-- available from the ice portion of the grid point
+                                                   !-- (i.e. called from a seaice_wrapper subroutine)
+      LOGICAL, INTENT(IN) :: tice2tsk_if2cold      !-- True to set TSK_ICE to TSK.  This may be
+                                                   !-- necessary to avoid unphysically low ice
+                                                   !-- temperatures is there is a mis-match between
+                                                   !-- ice fraction and surface temperature.
+
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)    :: XICE        ! Ice fraction
+      REAL                                , INTENT(IN)    :: XICE_THRESHOLD 
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)    :: TSK         ! Surface temperature (K)
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: SST         ! Sea surface temperature (K)
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT)   :: TSK_SEA     ! Sfc temp of open water portion of grid cell 
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT)   :: TSK_ICE     ! Sfc temp of ice oprtion of grid cell
+
+! Local
+      INTEGER :: i,j
+      REAL    :: TICE_MIN
+
       TICE_MIN = 221.4
 
       DO j = JTS , JTE

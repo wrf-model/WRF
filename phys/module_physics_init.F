@@ -924,7 +924,8 @@ CONTAINS
          config_flags%mp_physics  .eq. JENSEN_ISHMAEL .or.  &
          config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
          config_flags%mp_physics  .eq. P3_1CATEGORY_NC .or. &
-         config_flags%mp_physics  .eq. P3_2CATEGORY    ) ) then    ! P3
+         config_flags%mp_physics  .eq. P3_2CATEGORY .or.    &    
+         config_flags%mp_physics  .eq. P3_1CAT_3MOM   ) ) then    ! P3
       has_reqc = 1
       has_reqi = 1
       has_reqs = 1
@@ -934,6 +935,7 @@ CONTAINS
    if (config_flags%mp_physics .eq. P3_1CATEGORY .or.       &
        config_flags%mp_physics .eq. P3_1CATEGORY_NC .or.    &
        config_flags%mp_physics .eq. JENSEN_ISHMAEL .or.    &
+       config_flags%mp_physics .eq. P3_1CAT_3MOM .or.      &
        config_flags%mp_physics .eq. P3_2CATEGORY      ) then
       has_reqs = 0
    end if
@@ -4272,11 +4274,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         CALL jensen_ishmael_init()
 
      CASE (P3_1CATEGORY)
-         CALL p3_init('.',1,'WRF',i_err,.false.)
+         CALL p3_init('.',1,.false.,'WRF',i_err,.false.)
      CASE (P3_1CATEGORY_NC)
-         CALL p3_init('.',1,'WRF',i_err,.false.)
+         CALL p3_init('.',1,.false.,'WRF',i_err,.false.)
      CASE (P3_2CATEGORY)
-         CALL p3_init('.',2,'WRF',i_err,.false.)
+         CALL p3_init('.',2,.false.,'WRF',i_err,.false.)
+     CASE (P3_1CAT_3MOM)
+         CALL p3_init('.',1,.true.,'WRF',i_err,.false.)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)

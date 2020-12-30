@@ -3895,24 +3895,16 @@ CONTAINS
 
 
 !------------------------------------------------------------------
-           DO j=j_start(ij),j_end(ij)
-           DO i=i_start(ij),i_end(ij)
+         DO j=j_start(ij),j_end(ij)
+            DO i=i_start(ij),i_end(ij)
+                IF (xland(i,j) .GT. 1.5.and.ht(i,j).gt.lake_min_elev) then
+                    WRITE( message,* ) 'for large lakes  xland ==1'
+                    CALL wrf_message ( message )
+                    xland (i,j)  = 1  
+                ENDIF
+            ENDDO
+         ENDDO
 
-           ! if(lakemask(i,j).eq.1.) then
-           !     WRITE( message,* ) 'lakemask was 1 so xland ==1'
-           !     CALL wrf_message ( message )
-           !     xland (i,j)  = 1  
-           ! end if
-           ! the way for handles xland for other lsms
-            if (xland(i,j) .GT. 1.5.and.ht(i,j).gt.lake_min_elev) then
-                WRITE( message,* ) 'for large lakes  xland ==1'
-                CALL wrf_message ( message )
-                xland (i,j)  = 1  
-            end if
-           ENDDO
-           ENDDO
-
-           !------------------------------------------------------------------
          IF ( FRACTIONAL_SEAICE == 1) THEN
             ! The fields passed to LSM need to represent the full ice values, not
             ! the fractional values.  Convert ALBEDO and EMISS from the blended value 

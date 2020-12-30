@@ -1294,6 +1294,10 @@ BENCH_START(cu_driver_tim)
      &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2       &
 #if (WRF_CHEM == 1)
      &             ,CHEM_OPT=config_flags%chem_opt                             & !CuP, rce 22-aug-2011 !BSINGH - For WRFCuP scheme
+     &             ,CONV_TR_WETSCAV=config_flags%conv_tr_wetscav          &
+     &             ,CONV_TR_AQCHEM=config_flags%conv_tr_aqchem            &
+     &             ,CHEM_CONV_TR=config_flags%chem_conv_tr                &
+     &             ,TRACEROPT=config_flags%tracer_opt                     &
 #endif
 
 #if ( WRF_DFI_RADAR == 1 )

@@ -68,6 +68,7 @@ CONTAINS
 #if (EM_CORE == 1)
                      !BSINGH - For WRFCuP Scheme
                      ,shcu_aerosols_opt                               & !CuP, rce 10-may-2012
+                     ,chem_opt                                        & !CuP, rce 10-may-2012
                      !BSINGH - ENDS
 #endif
                  ! Optional moisture tracers 
@@ -129,7 +130,6 @@ CONTAINS
                      ,do_capsuppress                                  &
 #endif 
 #if ( WRF_CHEM == 1 )
-                   ,chem_opt                                          & !CuP, rce 10-may-2012, 12/2020 mv to WRF_CHEM  EM_CORE
                    ,traceropt,conv_tr_wetscav                         &
                    ,conv_tr_aqchem,chem_conv_tr                       &
 #endif

@@ -19,8 +19,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       4.0.7                                                                     !
-! Last updated:  2020-12-10                                                                !
+! Version:       4.0.7-HM                                                                  !
+! Last updated:  2020-12-31                                                                !
 !__________________________________________________________________________________________!
 
  MODULE MODULE_MP_P3
@@ -138,6 +138,7 @@
  real                           :: lamr,mu_r,dum,dm,dum1,dum2,dum3,dum4,dum5,  &
                                    dd,amg,vt,dia
  logical                        :: err_abort
+ integer                        :: ierr
 
 !------------------------------------------------------------------------------------------!
 
@@ -395,7 +396,14 @@
 
     print*, '     Reading table 1 [',trim(version_intended_table_1_3mom),'] ...'
             
-    open(unit=10,file=lookup_file_1, status='old')
+    open(unit=10,file=lookup_file_1,status='old',iostat=ierr,err=101)
+ 101  if (ierr.ne.0) then
+         print*,'Error opening 3-moment lookup table file '//lookup_file_1
+         print*,'Make sure this file is unzipped and then rerun the model.'
+         print*,' '
+         flush(6)
+         stop
+      end if
 
     !-- check that table version is correct:
     !   note:  to override and use a different lookup table, simply comment out the 'return' below

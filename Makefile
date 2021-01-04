@@ -1,4 +1,4 @@
-#	Top level Makefile for wrf system
+#	fop level Makefile for wrf system
 
 LN      =       ln -s
 MAKE    =       make -i -r
@@ -120,6 +120,9 @@ wrf : framework_only
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
+	fi
+	if [ ! -f run/p3_lookupTable_1.dat-3momI_v5.1.6 ] ; then \
+	  ( cd run ; gunzip --keep p3_lookupTable_1.dat-3momI_v5.1.6.gz ) ; \
 	fi
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -556,7 +559,8 @@ em_real : wrf
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-               ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;         \
+               ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
+               ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
                ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;         \
                ln -sf ../../run/HLC.TBL . ;                            \
                ln -sf ../../run/wind-turbine-1.tbl . ;                 \
@@ -627,7 +631,8 @@ em_real : wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
-             ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;        \
+             ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
+             ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
              ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;        \
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
@@ -921,7 +926,8 @@ nmm_real : nmm_wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
-             ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;        \
+             ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
+             ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
              ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;        \
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \

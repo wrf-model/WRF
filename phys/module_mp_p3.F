@@ -20,7 +20,7 @@
 !__________________________________________________________________________________________!
 !                                                                                          !
 ! Version:       4.0.7-HM                                                                  !
-! Last updated:  2020-12-31                                                                !
+! Last updated:  2021-01-02                                                                !
 !__________________________________________________________________________________________!
 
  MODULE MODULE_MP_P3
@@ -126,7 +126,7 @@
  character(len=1024), parameter :: version_p3                    = '4.0.7'
  character(len=1024), parameter :: version_intended_table_1_2mom = '2momI_v5.1.6_oldDimax'
  character(len=1024), parameter :: version_intended_table_1_3mom = '3momI_v5.1.6'
- character(len=1024), parameter :: version_intended_table_2      = '4'
+ character(len=1024), parameter :: version_intended_table_2      = '4.1'
 
  character(len=1024)            :: version_header_table_1_2mom
  character(len=1024)            :: version_header_table_1_3mom

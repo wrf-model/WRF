@@ -563,7 +563,7 @@ em_real : wrf
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
                ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
                ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
-               ln -sf ../../run/p3_lookupTable_2.dat-v4.1 . ;         \
+               ln -sf ../../run/p3_lookupTable_2.dat-4.1 . ;         \
                ln -sf ../../run/HLC.TBL . ;                            \
                ln -sf ../../run/wind-turbine-1.tbl . ;                 \
                ln -sf ../../run/ishmael-gamma-tab.bin . ;              \
@@ -635,7 +635,7 @@ em_real : wrf
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
              ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
              ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
-             ln -sf ../../run/p3_lookupTable_2.dat-v4.1 . ;         \
+             ln -sf ../../run/p3_lookupTable_2.dat-4.1 . ;         \
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
              ln -sf ../../run/ishmael-gamma-tab.bin . ;             \
@@ -930,7 +930,7 @@ nmm_real : nmm_wrf
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
              ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
              ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
-             ln -sf ../../run/p3_lookupTable_2.dat-v4.1 . ;         \
+             ln -sf ../../run/p3_lookupTable_2.dat-4.1 . ;         \
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
              ln -sf ../../run/ishmael-gamma-tab.bin . ;             \

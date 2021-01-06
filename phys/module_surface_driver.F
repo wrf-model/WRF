@@ -3264,7 +3264,7 @@ CONTAINS
                IF(PRESENT(ACGRDFLX))ACGRDFLX(I,J)=ACGRDFLX(I,J) + GRDFLX(I,J)*DT
 
                ! Check that SFCDIAGS can declare these as intent(out)
-               T(I,J)  = -1.E36
+               T2(I,J)  = -1.E36
                TH2(I,J) = -1.E36
                Q2(I,J)  = -1.E36
            ENDDO

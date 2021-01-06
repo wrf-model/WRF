@@ -86,7 +86,7 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
    USE     module_wrf_error
    USE module_mp_radar
 
-! USE WRF PHYSICS CONSTANTS
+!  USE WRF PHYSICS CONSTANTS
   use module_model_constants, ONLY: CP, G, R => r_d, RV => r_v, EP_2
 
 !  USE module_state_description

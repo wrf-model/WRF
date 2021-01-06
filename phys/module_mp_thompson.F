@@ -980,7 +980,7 @@
                               SNOWNC, SNOWNCV, &
                               GRAUPELNC, GRAUPELNCV, SR, &
 #if ( WRF_CHEM == 1 )
-                              rainprod, evapprod, &
+                              wetscav_on, rainprod, evapprod, &
 #endif
                               refl_10cm, diagflag, ke_diag, do_radar_ref,      &
                               re_cloud, re_ice, re_snow,              &
@@ -1017,6 +1017,9 @@
                           refl_10cm
       REAL, INTENT(IN):: dt_in
       INTEGER, INTENT(IN):: itimestep
+#if ( WRF_CHEM == 1 )
+      LOGICAL, INTENT(in) :: wetscav_on
+#endif
 
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
@@ -1150,7 +1153,7 @@
                       nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dz1d,  &
                       pptrain, pptsnow, pptgraul, pptice, &
 #if ( WRF_CHEM == 1 )
-                      rainprod1d, evapprod1d, &
+                      wetscav_on, rainprod1d, evapprod1d, &
 #endif
                       kts, kte, dt, i, j)
 
@@ -1198,8 +1201,10 @@
             nr(i,k,j) = nr1d(k)
             th(i,k,j) = t1d(k)/pii(i,k,j)
 #if ( WRF_CHEM == 1 )
+          IF ( wetscav_on ) THEN
             rainprod(i,k,j) = rainprod1d(k)
             evapprod(i,k,j) = evapprod1d(k)
+          ENDIF
 #endif
             if (qc1d(k) .gt. qc_max) then
              imax_qc = i
@@ -1353,7 +1358,7 @@
                           nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dzq, &
                           pptrain, pptsnow, pptgraul, pptice, &
 #if ( WRF_CHEM == 1 )
-                          rainprod, evapprod, &
+                          wetscav_on, rainprod, evapprod, &
 #endif
                           kts, kte, dt, ii, jj)
 
@@ -1370,6 +1375,7 @@
 #if ( WRF_CHEM == 1 )
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           rainprod, evapprod
+      LOGICAL, INTENT(IN) :: wetscav_on
 #endif
 
 !..Local variables
@@ -1571,10 +1577,12 @@
          pnd_gcd(k) = 0.
       enddo
 #if ( WRF_CHEM == 1 )
+    if ( wetscav_on ) then
       do k = kts, kte
          rainprod(k) = 0.
          evapprod(k) = 0.
       enddo
+    endif
 #endif
 
 !..Bug fix (2016Jun15), prevent use of uninitialized value(s) of snow moments.
@@ -3115,14 +3123,16 @@
          endif
       enddo
 #if ( WRF_CHEM == 1 )
-      do k = kts, kte
-         evapprod(k) = prv_rev(k) - (min(zeroD0,prs_sde(k)) + &
-                                     min(zeroD0,prg_gde(k)))
-         rainprod(k) = prr_wau(k) + prr_rcw(k) + prs_scw(k) + &
-                                    prg_scw(k) + prs_iau(k) + &
-                                    prg_gcw(k) + prs_sci(k) + &
-                                    pri_rci(k)
-      enddo
+      if( wetscav_on ) then
+        do k = kts, kte
+          evapprod(k) = prv_rev(k) - (min(zeroD0,prs_sde(k)) + &
+                                      min(zeroD0,prg_gde(k)))
+          rainprod(k) = prr_wau(k) + prr_rcw(k) + prs_scw(k) + &
+                                     prg_scw(k) + prs_iau(k) + &
+                                     prg_gcw(k) + prs_sci(k) + &
+                                     pri_rci(k)
+        enddo
+      endif
 #endif
 
 !+---+-----------------------------------------------------------------+

@@ -451,7 +451,7 @@ call wrf_message("**************************************************************
             (config_flags%chem_opt >= 31  .AND. config_flags%chem_opt <= 34)  .OR. &
              config_flags%chem_opt == 170 .OR.  config_flags%chem_opt == 198  .OR. &
              config_flags%chem_opt == 199 .OR.  config_flags%chem_opt == 201  .OR. &
-             config_flags%chem_opt == 203 .OR.                                     &
+             config_flags%chem_opt == 203 .OR.  config_flags%chem_opt == 202  .OR. &
              config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611 ) then
             call wrf_debug( 15, 'using N2O5 heterogeneous chemistry without Cl- pathway')
         else

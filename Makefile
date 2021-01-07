@@ -122,7 +122,7 @@ wrf : framework_only
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
 	if [ ! -f run/p3_lookupTable_1.dat-3momI_v5.1.6 ] ; then \
-	  #( cd run ; gunzip --keep p3_lookupTable_1.dat-3momI_v5.1.6.gz ) ; \
+	  # ( cd run ; gunzip --keep p3_lookupTable_1.dat-3momI_v5.1.6.gz ) ; \
 	  ( cd run ; cp p3_lookupTable_1.dat-3momI_v5.1.6.gz hold.gz ; \
 	    gunzip hold.gz ; mv hold p3_lookupTable_1.dat-3momI_v5.1.6 ) ; \
 	fi

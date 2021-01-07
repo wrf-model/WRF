@@ -3081,7 +3081,7 @@ integer::oops1,oops2
 
       fix_tsk_tmn : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME,CLMSCHEME, SSIBSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME,CLMSCHEME, CTSMSCHEME, SSIBSCHEME )
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
@@ -3359,6 +3359,7 @@ integer::oops1,oops2
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. RUCLSMSCHEME ).AND. &
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. SSIBSCHEME ).AND. & !fds
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. CLMSCHEME ).AND. &
+                          ( model_config_rec%sf_surface_physics(grid%id) .NE. CTSMSCHEME ).AND. &
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. PXLSMSCHEME ) ) THEN
                         print *,'error in the grid%tslb'
                         print *,'i,j=',i,j
@@ -3380,7 +3381,7 @@ integer::oops1,oops2
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
                                                        grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
                               END DO
-                           CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME,CLMSCHEME,SSIBSCHEME )
+                           CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME,CLMSCHEME, CTSMSCHEME, SSIBSCHEME )
 !                             CALL wrf_error_fatal ( 'Assigned constant soil moisture to 0.3, stopping')
                               DO ns = 1 , model_config_rec%num_soil_layers
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &

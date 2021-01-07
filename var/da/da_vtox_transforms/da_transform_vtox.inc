@@ -1,4 +1,8 @@
-subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
+subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp &
+#if (WRF_CHEM == 1)
+                        , vchem &
+#endif
+                        )
 
    !--------------------------------------------------------------------------
    ! Purpose: Control variable transform x' = Uv. 
@@ -15,10 +19,18 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
    type(vp_type),  intent(out)   :: vv   ! grdipt/eof cv (local).
    type(vp_type),  intent(inout) :: vp   ! grdipt/level cv (local).
 
+#if (WRF_CHEM == 1)
+   type(xchem_type), optional, intent(out) :: vchem   ! Grid point/EOF equivalent.
+#endif
+
    if (trace_use) call da_trace_entry("da_transform_vtox")
 
    call da_zero_x (grid%xa)
    
+#if (WRF_CHEM == 1)
+   call da_zero_xchem_type (grid%xachem)
+#endif
+
    if (.not. use_background_errors) then
       if (trace_use) call da_trace_exit("da_transform_vtox")
       return
@@ -33,12 +45,26 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
    else if ( (fg_format == fg_format_wrf_arw_regional .or.   &
               fg_format == fg_format_wrf_nmm_regional) .and. &
               (.not. cv_options == 3) )then
-      call da_transform_vtovv(grid, cv_size, be, cv, vv)
+#if (WRF_CHEM == 1)
+      if (present(vchem)) then
+         call da_transform_vtovv(grid, cv_size, be, cv, vv, vchem=vchem)
+      else
+#endif
+         call da_transform_vtovv(grid, cv_size, be, cv, vv)
+#if (WRF_CHEM == 1)
+      end if
+#endif
    end if
-   
+
    !----------------------------------------------------------------------
    ! [2.0]: Perform vp = u_v vv transform:
    !----------------------------------------------------------------------
+
+#if (WRF_CHEM == 1)
+   if (chem_cv_options >= 10 .and. present(vchem)) then
+      call da_transform_vchemtox(grid, vchem, be)
+   end if
+#endif
 
    if (  cv_options == 3 ) then
 

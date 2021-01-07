@@ -47,5 +47,5 @@ To run an fdda job
  guv_sfc (max_dom)                   = 0.0003   ; nudging coefficient for sfc u and v (sec-1)
  gt_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc temp (sec-1)
  gq_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc qvapor (sec-1)
- rinblw                              = 250.0    ; radius
+ rinblw (max_dom)                    = 250.0    ; radius
 

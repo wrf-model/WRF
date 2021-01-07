@@ -45,6 +45,8 @@
    type(x_type) :: shuffle
 
    real, allocatable :: grid_box_area(:,:), mapfac(:,:)
+   real, allocatable :: v1(:,:,:),v2(:,:,:),v3(:,:,:),v4(:,:,:),v5(:,:,:)
+   real, allocatable :: v6(:,:,:),v7(:,:,:),v8(:,:,:),v9(:,:,:),v10(:,:,:),v11(:,:,:)
    character (len=10)    :: variable_name
 
    integer :: iwin, num_subtwindow
@@ -53,8 +55,9 @@
    real,    external :: nest_loc_of_cg  ! from share/interp_fcn.F
    integer, external :: compute_CGLL    ! from share/interp_fcn.F
 
-   integer   :: cvt_unit, iost
-   character(len=8) :: cvtfile
+   integer   :: vp_unit, iost
+   character(len=13) :: vpfile ! vp_input.0001
+   integer   :: i1,i2,i3,i4,i5,i6
    logical :: ex
 
    character(len=10) :: this_time
@@ -630,42 +633,135 @@
          ! Done with randomcv.
          ! Set the following to skip some code to get to the deallocation part.
          max_ext_its = 0
-         outer_loop_restart = .false.
       end if  !anal_type_randomcv
 
-      if ( outer_loop_restart ) then
-         !call da_get_unit(cvt_unit)
-         cvt_unit=600
+! mri-4dvar: if multi_inc /= 2: run normal 3D/4D-Var
+!------------------------------------------------------------------------
+    ! cvt is outer loop control variable, it is zero for the first outer loop,
+    ! but non-zero from the second outer loop in normal 3d/4dvar.
+    ! for MRI-4DVar, vp from the previous outer loop needs to be read in, 
+    ! then perform the inverse transform to derive cvt
+    !-----------------------------------------------------
+      call da_initialize_cv (cv_size, cvt)
+      call da_zero_vp_type (grid%vp)
+      call da_zero_vp_type (grid%vv)
+
+      if ( multi_inc == 2 ) then
          if ( max_ext_its > 1 ) then
            max_ext_its=1
-           write(unit=message(1),fmt='(a)') "Re-set max_ext_its = 1 for outer_loop_restart"
+           write(unit=message(1),fmt='(a)') "Re-set max_ext_its = 1 for multi_inc==2"
            call da_message(message(1:1))
          end if
-         write(unit=cvtfile,fmt='(a,i4.4)') 'cvt_',myproc
-         inquire(file=trim(cvtfile), exist=ex)
+
+      ! read vp files for different PEs
+      !----------------------------------
+         write(unit=vpfile,fmt='(a,i4.4)') 'vp_input.',myproc
+         inquire(file=trim(vpfile), exist=ex)
          if ( ex ) then
-           open(unit=cvt_unit,file=trim(cvtfile),iostat=iost,form='UNFORMATTED',status='OLD')
+           call da_get_unit(vp_unit)
+           open(unit=vp_unit,file=trim(vpfile),iostat=iost,form='UNFORMATTED',status='OLD')
            if (iost /= 0) then
              write(unit=message(1),fmt='(A,I5,A)') &
-                "Error ",iost," opening cvt file "//trim(cvtfile)
+                "Error ",iost," opening vp file "//trim(vpfile)
              call da_error(__FILE__,__LINE__,message(1:1))
            end if
-           write(unit=message(1),fmt='(a)') 'Reading cvt from : '//trim(cvtfile) 
+           if ( use_interpolate_cvt ) then         ! works for CV3?, 3D RF
+               write(unit=message(1),fmt='(a)') 'Reading vv from : '//trim(vpfile) 
+           elseif ( use_inverse_squarerootb ) then ! works for CV5,6,7, vertical EOF
+               write(unit=message(1),fmt='(a)') 'Reading vp from : '//trim(vpfile)
+           end if 
            call da_message(message(1:1))
-           read(cvt_unit) cvt
-           close(cvt_unit)
-         else
-           write(unit=message(1),fmt='(a)') "cvt file '"//trim(cvtfile)//"' does not exists, initializing cvt."
-           call da_message(message(1:1))
-           call da_initialize_cv (cv_size, cvt)
-         end if
-      else
-         call da_initialize_cv (cv_size, cvt)
-      end if
+           read(vp_unit) i1, i2, i3, i4, i5, i6 ! read dimension of patch for current processor
+           allocate( v1(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           allocate( v2(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           allocate( v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           allocate( v4(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           allocate( v5(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           if ( cloud_cv_options >= 2 ) then
+             allocate( v6(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v7(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v8(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v9(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v10(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           end if
+           if ( use_cv_w ) allocate( v11(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
 
-      call da_zero_vp_type (grid%vv)
-      call da_zero_vp_type (grid%vp)
-  
+           read(vp_unit) v1, v2, v3, v4, v5
+           if ( cloud_cv_options >= 2 ) read(vp_unit) v6, v7, v8, v9, v10
+           if ( use_cv_w ) read(vp_unit) v11
+
+           if ( use_interpolate_cvt ) then
+             grid%vv%v1(ips:ipe,jps:jpe,kps:kpe) = v1(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vv%v2(ips:ipe,jps:jpe,kps:kpe) = v2(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vv%v3(ips:ipe,jps:jpe,kps:kpe) = v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vv%v4(ips:ipe,jps:jpe,kps:kpe) = v4(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vv%v5(ips:ipe,jps:jpe,kps:kpe) = v5(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             if ( cloud_cv_options >= 2 ) then
+               grid%vv%v6(ips:ipe,jps:jpe,kps:kpe) = v6(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v7(ips:ipe,jps:jpe,kps:kpe) = v7(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v8(ips:ipe,jps:jpe,kps:kpe) = v8(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v9(ips:ipe,jps:jpe,kps:kpe) = v9(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v10(ips:ipe,jps:jpe,kps:kpe) = v10(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             if ( use_cv_w ) then
+               grid%vv%v11(ips:ipe,jps:jpe,kps:kpe) = v11(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             call da_vv_to_cv( grid%vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cvt ) 
+           elseif ( use_inverse_squarerootb ) then
+             grid%vp%v1(ips:ipe,jps:jpe,kps:kpe) = v1(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vp%v2(ips:ipe,jps:jpe,kps:kpe) = v2(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vp%v3(ips:ipe,jps:jpe,kps:kpe) = v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vp%v4(ips:ipe,jps:jpe,kps:kpe) = v4(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vp%v5(ips:ipe,jps:jpe,kps:kpe) = v5(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             if ( cloud_cv_options >= 2 ) then
+               grid%vp%v6(ips:ipe,jps:jpe,kps:kpe) = v6(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v7(ips:ipe,jps:jpe,kps:kpe) = v7(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v8(ips:ipe,jps:jpe,kps:kpe) = v8(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v9(ips:ipe,jps:jpe,kps:kpe) = v9(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v10(ips:ipe,jps:jpe,kps:kpe) = v10(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             if ( use_cv_w ) then ! vertical stagging +1?
+               grid%vp%v11(ips:ipe,jps:jpe,kps:kpe) = v11(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             !call da_write_vp(grid,grid%vp,'vp_input.global ') ! to verify correctness
+             print '(/10X,"===> Use inverse transform of square-root B for outer-loop=",i2)', it
+             if ( cv_options == 3 ) then
+                write(unit=message(1),fmt='(A,I5,A)') &
+                   "Error: inverse U transform not for cv_options = 3"
+                call da_error(__FILE__,__LINE__,message(1:1))
+             end if
+             call da_transform_vtox_inv (grid,be%cv%size_jb,xbx,be,grid%ep,cvt(1:be%cv%size_jb),grid%vv,grid%vp)
+           end if
+
+           deallocate( v1 )
+           deallocate( v2 )
+           deallocate( v3 )
+           deallocate( v4 )
+           deallocate( v5 )
+           if ( cloud_cv_options >= 2 ) then
+             deallocate( v6 )
+             deallocate( v7 )
+             deallocate( v8 )
+             deallocate( v9 )
+             deallocate( v10 )
+           end if
+           if ( use_cv_w ) deallocate( v11 )
+
+           close(vp_unit)
+           call da_free_unit(vp_unit)
+
+         else
+           write(unit=message(1),fmt='(a)') "vp files '"//trim(vpfile)//"' does not exists, initiallizing cvt."
+           call da_message(message(1:1))
+           call da_initialize_cv (cv_size, cvt) ! perhaps better use da_error
+         end if
+
+         call da_zero_vp_type (grid%vv)
+         call da_zero_vp_type (grid%vp)
+
+      end if
+! mri-4dvar -------------------------------------------
+
       if ( var4d ) then
 #ifdef VAR4D
          call da_zero_vp_type (grid%vv6)
@@ -697,6 +793,24 @@
       endif
 
       call da_initialize_cv (cv_size, xhat)
+
+! mri-4dvar----------------------
+! Apply inverse transform of squareroot(B) for full-resolution non-stop Var
+! from 2nd outer loop, this is to check correctness of inverse U transform
+! does not apply this setting for real world application
+!-----------------------------
+      if (multi_inc == 0 .and. it > 1 .and. use_inverse_squarerootb .and. cv_options /= 3) then
+         print '(/10X,"===> Use inverse transform of square-root B for outer-loop=",i2)', it
+         call da_transform_vtox_inv (grid,be%cv%size_jb,xbx,be,grid%ep,cvt(1:be%cv%size_jb),grid%vv,grid%vp)
+      endif
+
+! Reinitialize cvt=0 for full-resolution non-stop Var for each loop
+!------another option not tested --------------
+      if (multi_inc == 0 .and. it > 1 .and. use_interpolate_cvt) then
+         print '(/10X,"===> Reinitialize cvt as zeros for outer loop ",i2)', it
+         call da_initialize_cv (cv_size, cvt)
+      endif
+! mri-4dvar------------------------
 
       ! [8.1] Calculate nonlinear model trajectory 
 
@@ -860,7 +974,7 @@
          if (adj_sens) call da_sensitivity(grid,config_flags,it,cv_size,xbx, &
                                            be,iv,xhat,qhat,cvt,y,eignvec,eignval,neign )
 
-	 
+       
       else
 
          call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
@@ -869,18 +983,9 @@
  
       ! Update outer-loop control variable
       cvt = cvt + xhat
-      if ( outer_loop_restart ) then
-        open(unit=cvt_unit,status='unknown',file=trim(cvtfile),iostat=iost,form='UNFORMATTED')
-        if (iost /= 0) then
-           write(unit=message(1),fmt='(A,I5,A)') &
-             "Error ",iost," opening cvt file "//trim(cvtfile)
-          call da_error(__FILE__,__LINE__,message(1:1))
-        end if
-        write(unit=message(1),fmt='(a)') 'Writing cvt to : '//trim(cvtfile) 
-        call da_message(message(1:1))
-        write(cvt_unit) cvt
-        close(cvt_unit)
-        !call da_free_unit(cvt_unit)
+      if ( multi_inc == 2 .and. use_interpolate_cvt ) then ! obsolete option
+        call da_cv_to_vv( cv_size, cvt, be%cv_mz, be%ncv_mz, grid%vv )
+        call da_write_vp(grid,grid%vv,'vp_output.global') ! wrtie vv to vp file
       end if
       !------------------------------------------------------------------------
 
@@ -889,7 +994,14 @@
       if (.not. var4d) then
          ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation,
          ! here grid%xa contains only the static increment
+
+#if (WRF_CHEM == 1)
+   if (cv_options == 7 .and. chem_cv_options>=10) then
+         call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,vchem=grid%vchem)
+   end if
+#else
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
+#endif
 
          ! adding the ensemble contribution
          if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
@@ -905,6 +1017,13 @@
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
          call da_transform_vpatox (grid,be,grid%ep,grid%vp)
       endif
+
+! mri-4dvar--------------------------
+      if (multi_inc == 2 .and. use_inverse_squarerootb) then
+         call da_write_vp(grid,grid%vp,'vp_output.global') ! write vp to vp file
+      end if
+! mri-4dvar--------------------------
+
       call da_transform_xtoxa (grid)
 
       ! [8.6] Only when use_radarobs = .false. and calc_w_increment =.true.,
@@ -1104,12 +1223,6 @@
 #endif
 
    if (trace_use) call da_trace_exit ("da_solve")
-
-
-contains
-
-#include "da_solve_init.inc"
-#include "da_solve_dual_res_init.inc"
 
 end subroutine da_solve
 

@@ -872,7 +872,7 @@ state    real   G_URB2D         ij    misc        1         -       rd=(interp_f
 state    real   RN_URB2D        ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)       "RN_URB"  "NET RADIATION ON URBAN SFC"         "W m{-2}"
 state    real   TS_URB2D        ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)       "TS_URB"  "SKIN TEMPERATURE"          "K"
 state    real   FRC_URB2D       ij    misc        1         -     i012rd=(interp_fcnm)u=(copy_fcnm)      "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
-state    integer   UTYPE_URB2D  ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
+state    integer   UTYPE_URB2D  ij    misc        1         -     rd=(interp_fcni)u=(copy_fcni)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
 state    real   TRB_URB4D       i{umap1}j   misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
 state    real   TW1_URB4D       i{umap2}j   misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
 state    real   TW2_URB4D       i{umap2}j   misc       1         Z     r      "TW2_URB4D" "WALL LAYER TEMPERATURE"          "K"
@@ -1763,7 +1763,7 @@ state    real   LH_URB2D_mosaic   i{mocat}j     misc        1         -     r   
 state    real   G_URB2D_mosaic    i{mocat}j     misc        1         -     r     "G_URB2D_mosaic"               "GROUND HEAT FLUX  AT THE SURFACE"    "W m-2"
 state    real   RN_URB2D_mosaic   i{mocat}j     misc        1         -     r     "RN_URB2D_mosaic"              "NET RADIATION"                       "W m-2"
 
-state    integer   mosaic_cat_index  iuj        misc        1         Z     i012rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "mosaic_cat_index"          "  "   ""
+state    integer   mosaic_cat_index  iuj        misc        1         Z     i012rd=(interp_fcni)u=(copy_fcni)    "mosaic_cat_index"          "  "   ""
 state    real      landusef2         iuj        misc        1         Z     i012rdu                                                  "LANDUSEF2"      "sorted landuse fraction"  ""
 
 # State vector for etampnew microphysics. Must be declared state because it is not read-once and is needed for restarting.
@@ -2782,6 +2782,7 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 # Turbine drag physics.
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
+rconfig   real        windfarm_tke_factor namelist,physics      1              0.25    rh       "windfarm_tke_factor"        ""      ""
 #
 # Ideal case selection
 rconfig   integer     ideal_case          namelist,ideal        1              0       rh       "ideal_case"                 ""      ""
@@ -2908,6 +2909,7 @@ package   lsmscheme      sf_surface_physics==2       -             state:flx4,fv
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
 package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4
 package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
+package   ctsmscheme     sf_surface_physics==6       -             - 
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,t2obs,q2obs,vegf_px,imperv,canfra,lai_px,wwlt_px,wfc_px,wsat_px,clay_px,csand_px,fmsand_px
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
 
@@ -3062,7 +3064,7 @@ package   icedepth_one   seaice_thickness_opt==1     -             state:icedept
 #Time series options for text output
 package   notseries             process_time_series==0                 -             -
 package   tseries               process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_p_profile,ts_w_profile
-package   tseries_add_solar     process_time_series==2                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_cldfrac2d,ts_wvp,ts_lwp,ts_iwp,ts_swp,ts_lwp_tot,ts_iwp_tot,ts_swp_tot,ts_re_qc,ts_re_qi,ts_re_qs,ts_re_qc_tot,ts_re_qi_tot,ts_re_qs_tot,ts_tau_qc,ts_tau_qi,ts_tau_qs,ts_tau_qc_tot,ts_tau_qi_tot,ts_tau_qs_tot,ts_cbaseht,ts_ctopht,ts_cbaseht_tot,ts_ctopht_tot,ts_clrnidx
+package   tseries_add_solar     process_time_series==2                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_cldfrac2d,ts_wvp,ts_lwp,ts_iwp,ts_swp,ts_lwp_tot,ts_iwp_tot,ts_swp_tot,ts_re_qc,ts_re_qi,ts_re_qs,ts_re_qc_tot,ts_re_qi_tot,ts_re_qs_tot,ts_tau_qc,ts_tau_qi,ts_tau_qs,ts_tau_qc_tot,ts_tau_qi_tot,ts_tau_qs_tot,ts_cbaseht,ts_ctopht,ts_cbaseht_tot,ts_ctopht_tot,ts_clrnidx,ts_p_profile,ts_w_profile
 
 # WRF-HAILCAST
 state    real   HAILCAST_DHAIL1   ij     misc        1         -      r          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"

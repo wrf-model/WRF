@@ -32,9 +32,23 @@ module da_obs_io
       thin_conv, thin_conv_ascii, lsac_nh_step, lsac_nv_step, lsac_nv_start, lsac_print_details, &
       lsac_use_u, lsac_use_v, lsac_use_t, lsac_use_q, lsac_u_error, lsac_v_error, lsac_t_error, lsac_q_error, &
       gpsro_drift, max_gpseph_input, use_gpsephobs, gpseph, gpseph_loadbalance, kds, kde, kts, kte, &
-      use_radar_rhv, use_radar_rqv
+      use_radar_rhv, use_radar_rqv, use_radar_rf, use_radar_rv, multi_inc
 
    use da_wrf_interfaces, only : wrf_dm_bcast_integer, wrf_dm_bcast_real
+
+#if (WRF_CHEM == 1)
+   use da_control, only : chemic_surf, use_chemic_surfobs, chem_cv_options, chemicda_opt
+   use module_state_description, only : num_chemic_surf, param_first_scalar, &
+             num_chem_ic 
+   use module_dm, only : wrf_dm_sum_reals
+   use da_define_structures, only : singl_level_type, chemic_surf_type
+   use module_state_description, only : p_chemsi_pm25, p_chemsi_pm10, &
+      p_chemsi_so2, p_chemsi_no2, p_chemsi_o3, p_chemsi_co, &
+      p_chem_ic_p25, p_chem_ic_p10, p_chem_ic_sulf, p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2, &
+      p_chem_ic_dust_1, p_chem_ic_dust_2, p_chem_ic_dust_3, p_chem_ic_dust_4, &
+      p_chem_ic_seas_1, p_chem_ic_seas_2, p_chem_ic_seas_3, p_chem_ic_seas_4
+#endif
+
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
       radar_each_level_type, info_type, model_loc_type,gpsref_type, rain_single_level_type, rain_each_type, &
@@ -79,6 +93,13 @@ contains
 #include "da_scan_obs_radar.inc"
 #include "da_scan_obs_rain.inc" 
 #include "da_read_obs_rain.inc"
+#if (WRF_CHEM == 1)
+#include "da_read_obs_chem_sfc.inc"
+#include "da_scan_obs_chem_sfc.inc"
+#include "da_write_obs_chem_sfc.inc"
+#include "da_final_write_obs_chem_sfc.inc"
+#include "da_final_write_obs_gas_sfc.inc"
+#endif
 #include "da_read_errfac.inc"
 #include "da_use_obs_errfac.inc"
 #include "da_write_obs.inc"

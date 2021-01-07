@@ -1,0 +1,862 @@
+#!/bin/tcsh -f
+
+#set echo
+set nonomatch
+set TOP_DIR=/glade/p/mmm/liuz/cy_code/cwb2017
+set JOB='PBS' # LSF or PBS
+set PROJID='NMMM0015'
+set QUEUE='economy'
+set OS=`uname -s`
+set WRFDA_DIR=$TOP_DIR/../WRF_Github/wrf_myfork
+set MULTI_INC_TOOLS=$WRFDA_DIR/var/mri4dvar
+set DATA_DIR=$TOP_DIR/case_2015061400/2015061400_ztd30min_cloud_radar
+
+set RUN_STAGE1=true
+set RUN_STAGE2=true
+set RUN_STAGE3=true
+
+#---------------- User Configuration --------------
+set VAR4D=$1 # false if 3DVAR
+set VAR4D_LBC=false
+set MULTI_INC=$2
+set use_cvt=$3
+set use_vp=$4
+set observerclocktime=00:10:00
+set minimizeclocktime=00:35:00
+set WORK_DIR=$TOP_DIR/case_2015061400/$5
+set THIN_FACTOR=($6 $7)
+set BE1=$TOP_DIR/2km_domain/be.dat_$8
+set BE2=$TOP_DIR/2km_domain/be.dat_$9
+set BE3=$TOP_DIR/2km_domain/be.dat_2km
+#----------------- User Configuration -------------
+
+mkdir -p $WORK_DIR; cd $WORK_DIR
+
+if ( $VAR4D == true ) then
+ ln -sf ${WRFDA_DIR}/run/RRTM_DATA_DBL      RRTM_DATA
+ ln -sf ${WRFDA_DIR}/run/RRTMG_LW_DATA_DBL  RRTMG_LW_DATA
+ ln -sf ${WRFDA_DIR}/run/RRTMG_SW_DATA_DBL  RRTMG_SW_DATA
+ ln -sf ${WRFDA_DIR}/run/SOILPARM.TBL       .
+ ln -sf ${WRFDA_DIR}/run/VEGPARM.TBL        .
+ ln -sf ${WRFDA_DIR}/run/GENPARM.TBL        .
+endif
+ln -sf ${WRFDA_DIR}/run/LANDUSE.TBL        .
+ln -sf ${WRFDA_DIR}/var/da/da_wrfvar.exe   .
+
+cp ${DATA_DIR}/wrfinput_d01                 orig_fg
+if ( $VAR4D == true ) then
+ cp ${DATA_DIR}/wrfinput_d01                orig_wrfinput_d01
+ cp ${DATA_DIR}/wrfbdy_d01                  orig_wrfbdy_d01
+ cp ${DATA_DIR}/fg02                        orig_fg02
+endif
+
+if ( $VAR4D == true ) then
+ cp ${DATA_DIR}/namelist.input_cv7_4dvar orig_namelist.input
+ ln -sf ${DATA_DIR}/ob*.ascii           .
+ ln -sf ${DATA_DIR}/ob*.radar           .
+else
+ cp ${DATA_DIR}/namelist.input_cv7_3dvar orig_namelist.input
+ ln -sf ${DATA_DIR}/ob01.ascii           ./ob.ascii
+endif
+
+#=============================================================================;
+# Purpose     : Script for running WRF-3D/4DVAR with Multi-resolution
+#
+# Assuming    : 1. All the necessary files required by 4DVAR run are 
+#                  already under $RUN_DIR, such as be.dat, namelist.input, *.tbl, 
+#                  fg, fg02, wrfbdy_d01, da_wrfvar.exe, da_update_bc, etc.
+#
+#               2. da_bilin.exe, da_bdy.exe, da_thin.exe, da_vp_bilin.exe
+#                   da_vp_split.exe located under ${MULTI_INC_TOOLS}
+#
+# How to run  : When everything is ready to go, call this script instead of 
+#               da_wrfvar.exe for a Multi-incremental run
+#
+#               run_mri3d4dvar.csh
+#
+# Limitation  : Grids need to match
+#                         ( n - 1 ) mod m = 0
+#               where n is the x/y grid number of high resolution, m is the
+#               x/y grid number of low resolution. Default ratio is 1:3.
+#
+# Platform    : All the commands involved by this script are GNU/Linux 
+#               commands on CentOS box. If involved this script other than 
+#               CentOS, commands may not run as your expect, double check 
+#               it before using.
+#
+#               Not fullly test with all platforms, use it at your own risk
+#
+# jliu@ucar.edu, MMM/NCAR, 01/13/2012
+#
+# Remove RUN_STAGE
+# Add the capability of different resolutions for different outer-loops
+# xinzhang@ucar.edu, MMM/NCAR, 11/25/2013
+#
+# Re-write script and add more comments to ease understanding
+# Unify Multi-Resolution Incremental 3DVAR and 4DVAR, i.e., MRI-3D/4DVAR
+# Zhiquan (Jake) Liu, liuz@ucar.edu, NCAR/MMM, August 2016
+#=============================================================================;
+
+
+#----------------------------User settings------------------------------------;
+#
+# Use these environment variables to override the default settings
+#
+# Variable Names     Default Value                 Description
+#
+# RUN_CMD            mpirun -np 16   Job submit command, "" for serial and OpenMP
+#
+# TIME_STEP_STAGE2   auto detect     Stage2 Time step for integration in integer
+#                                    seconds as large as 6*DX (in km) and must be 
+#                                    exactly divisible by VAR4D_bin exactly.
+#
+# RADT_STAGE2        auto detect     Minutes between radiation physics calls for 
+#                                    Multi_inc stage2. 1 minute per km of dx.
+#
+# THIN_FACTOR        3               Thinning ratio
+#
+# MULTI_INC          TRUE            TRUE/FALSE - Multi-incremental/full resolution
+#
+# MAX_OUTERLOOP      1               outerloop number for Multi-incremental run
+#
+if ( ! $?RUN_CMD          ) set  RUN_CMD="mpiexec -n "    # "" - Serial/OpenMP
+if ( ! $?NPROCS_NL        ) set  NPROCS_NL=512           # Number of processing cores
+if ( ! $?NNODES_NL        ) set  NNODES_NL=16       # Number of nodes
+if ( ! $?NPROCS           ) set  NPROCS=(512 512)       # Number of processing cores
+if ( ! $?NNODES           ) set  NNODES=(16 16)       # Number of nodes
+if ( ! $?MAX_OUTERLOOP    ) set  MAX_OUTERLOOP=2          # Only available for Multi-incremental run
+if ( ! $?THIN_FACTOR      ) set  THIN_FACTOR=(1 1)        # default decimation factor
+   @ n1 = $MAX_OUTERLOOP
+   @ n2 = $#THIN_FACTOR
+   @ n3 = $#NPROCS
+   if ( $n1 > $n2 || $n1 > $n3 ) then
+      echo "The dimension of THIN_FACTOR ($#THIN_FACTOR) should be equal to MAX_OUTERLOOP ($MAX_OUTERLOOP) "
+      exit -1
+   endif
+
+#----------------------------End of User settings-----------------------------;
+
+if ( ! $?MULTI_INC_TOOLS ) then
+  if ( ${#argv} > 0 ) then
+    set MULTI_INC_TOOLS=$1
+  else
+    set appname=${0:t}
+    set  MULTI_INC_TOOLS=${0:h}
+    if ( "$MULTI_INC_TOOLS" == "$appname" ) set MULTI_INC_TOOLS="."
+  endif
+endif
+
+if ( $MULTI_INC == true ) then
+
+    foreach f (da_thin.exe da_bilin.exe da_bdy.exe  \
+               da_vp_bilin.exe da_vp_split.exe \
+              nc_vpglobal.ncl nc_vphires.ncl nc_increment.ncl )
+      if ( -e ${MULTI_INC_TOOLS}/$f ) then 
+        if ( "$MULTI_INC_TOOLS" != "." ) then
+          ln -sf ${MULTI_INC_TOOLS}/$f .
+        endif
+      else
+        echo "$f NOT exists" > FAIL
+        exit -1
+      endif
+    end
+
+    set FILES_TO_CLEAN=(ana02 ana02_hires ana02_lores \
+                        wrfvar_output wrfvar_output_hires wrfvar_output_lores \
+                        FAIL .current_stage .last_stage .final_stage \
+                        namelist.input \
+                        rsl* gts* vp_* outerloop_*)
+
+    #rm -rf $FILES_TO_CLEAN
+
+    touch .current_stage .last_stage .final_stage
+
+    set N=1
+    #if  ( $VAR4D == true ) then
+      @ nloop = $MAX_OUTERLOOP + 1
+    #else
+    #  @ nloop = $MAX_OUTERLOOP
+    #endif
+
+  while ( $N <= $nloop )
+
+   if ( $N == $nloop ) then 
+      set RUN_STAGE1=true   # only run omb for the last loop
+      set RUN_STAGE2=false
+      set RUN_STAGE3=false
+      set istage=1  # 1 for observer; 0 for normal 3dvar mode
+      set nouterloop=1
+      set ninnerloop=0
+   else
+      set RUN_STAGE1=true
+      set RUN_STAGE2=true
+      set RUN_STAGE3=true
+      set istage=1
+      set nouterloop=1
+      set ninnerloop=30
+   endif
+
+#---------------- User Configuration --------------
+   if ( $N == 1 ) ln -sf ${BE1} be.dat
+   if ( $N == 2 ) ln -sf ${BE2} be.dat
+   if ( $N == 3 ) ln -sf ${BE3} be.dat
+#---------------- User Configuration --------------
+
+   if ( $N == 1 ) then
+      cp orig_fg     o${N}s1_fg # stage1 for observer step
+     if ( $VAR4D == true ) then
+      cp orig_fg02   o${N}s1_fg02
+     endif
+   else # from 2nd loop, use previous loop's analysis
+      @ NM1 = $N - 1
+      cp ./o${NM1}s3/wrfvar_output_hires o${N}s1_fg
+     if ( $VAR4D == true ) then
+      cp orig_fg02   o${N}s1_fg02
+     endif
+   endif
+
+    if ( $RUN_STAGE1 == "true" ) then
+
+    echo "--------------------------------------"
+    echo "| Run outerloop-$N : Stage1-Observer |"
+    echo "--------------------------------------"
+
+      echo "--------------------------------------"
+      echo "| 1.0 Set up namlist.input for stage1 |"
+      echo "--------------------------------------"
+    #-----------------------------------
+    #   &wrfvar1
+    #     multi_inc=1, # stage1 for omb only
+    #---------------------------------------
+    if ( $OS == "Darwin" ) then
+       sed -e "/[Mm][Uu][Ll][Tt][Ii]_[Ii][Nn][Cc][ \t]*=/ c\ \
+           multi_inc=${istage}," \
+           -e "/[m][a][x]_[e][x][t]_[i][t][s][ \t]*=/ c\ \
+           max_ext_its=${nouterloop}," \
+           -e "/[n][t][m][a][x][ \t]*=/ c\ \
+           ntmax=${ninnerloop}," \
+           orig_namelist.input > o${N}s1_namelist.input
+    else
+       sed -e "/[Mm][Uu][Ll][Tt][Ii]_[Ii][Nn][Cc][ \t]*=/ c\multi_inc=${istage}," \
+	   -e "/[m][a][x]_[e][x][t]_[i][t][s][ \t]*=/ c\max_ext_its=${nouterloop}," \
+	   -e "/[n][t][m][a][x][ \t]*=/ c\ntmax=${ninnerloop}," \
+           orig_namelist.input > o${N}s1_namelist.input
+    endif
+
+
+        if ( $VAR4D == true ) then
+         echo "--------------------------------------------"
+         echo "| 1.1 Generating boundary file for stage1 |"
+         echo "--------------------------------------------" 
+
+         da_bdy.exe -fg   o${N}s1_fg         \
+                    -fg02 o${N}s1_fg02       \
+                    -bdy  orig_wrfbdy_d01    \
+                    -o    o${N}s1_wrfbdy_d01 \
+                    >&    o${N}s1_da_bdy.log
+         if ( ! -e o${N}s1_wrfbdy_d01 ) then
+           echo "generating bdy file for outloop1 stage1 failed" > FAIL
+           exit -1
+         endif
+        endif
+
+      echo "--------------------------------------------"
+      echo "| 1.2 run WRF-VAR in observer mode |"
+      echo "--------------------------------------------"
+
+        if ( -e namelist.input ) rm namelist.input
+        ln -sf o${N}s1_namelist.input  namelist.input
+        ln -sf o${N}s1_fg          fg
+        if ( $VAR4D == true ) then
+         ln -sf o${N}s1_fg02        fg02
+         ln -sf o${N}s1_fg          wrfinput_d01
+         ln -sf o${N}s1_wrfbdy_d01  wrfbdy_d01
+        endif
+
+        echo "outerloop${N}_stage1" > .current_stage
+        echo "outerloop${N}_stage1" > .final_stage
+
+#--------------------------------------
+        if ( $JOB == 'LSF' ) then
+           if ( -e submit_lsf.csh ) rm -f submit_lsf.csh
+cat > submit_lsf.csh <<EOF
+#!/bin/csh
+#
+### LSF batch script to run an MPI application
+#
+#BSUB -P $PROJID             # project code
+#BSUB -W $observerclocktime       # wall-clock time (hrs:mins)
+#BSUB -n $NPROCS_NL          # number of tasks in job
+#BSUB -R "span[ptile=16]"    # run 16 MPI tasks per node
+#BSUB -J o${N}s1           # job name
+#BSUB -o o${N}s1.%J.out    # output file name in which %J is replaced by the job ID
+#BSUB -e o${N}s1.%J.err    # error file name in which %J is replaced by the job ID
+#BSUB -q $QUEUE              # queue
+
+#run the executable
+mpirun.lsf ./da_wrfvar.exe
+EOF
+           bsub -K < submit_lsf.csh
+
+        else #if ( $JOB == 'PBS' )
+           if ( -e submit_pbs.csh ) rm -f submit_pbs.csh
+cat > submit_pbs.csh <<EOF
+#!/bin/csh
+#
+### PBS batch script to run an MPI application
+#
+#PBS -A $PROJID
+#PBS -l walltime=$observerclocktime
+#PBS -l select=16:ncpus=36:mpiprocs=36:mem=110G
+#PBS -N o${N}s1
+#PBS -j oe
+#PBS -q $QUEUE
+
+#run the executable
+mpirun ./da_wrfvar.exe
+EOF
+        set jobid = `qsub  submit_pbs.csh`
+
+        #else
+        #   $RUN_CMD $NPROCS_NL ${PWD}/da_wrfvar.exe < /dev/null
+        endif
+#------------------------------------------
+
+    set i = 1
+    while ( $i <= 1000 )
+      sleep 30
+      echo "sleep 30" >> log
+      if ( "`qstat | grep -o -m 1 $jobid`" != $jobid ) then
+        if ( "`tail  rsl.out.0000 | grep -o -m 1 successfully`" != "successfully" ) then
+          echo "da_wrfvar stage1 failed " > FAIL
+          exit -1
+        else
+          break
+        endif
+      else
+        @ i++
+      endif
+    end
+    echo "done" >> log
+
+      echo "------------------------------"
+      echo "| 1.3 Save and clean output |"
+      echo "------------------------------"
+
+        set out_storage=o${N}s1
+        if ( ! -d $out_storage ) mkdir $out_storage
+        mkdir $out_storage/RSL
+        mv submit_pbs.csh fort.140 namelist.input namelist.output* $out_storage
+        mv rsl.* $out_storage/RSL
+        #mv o${N}s1.*.out o${N}s1.*.err $out_storage
+        rm rej_obs_conv* 
+        mv gts_omb.* $out_storage # to be used in stage2
+        mv buddy_check check_max_iv jo cost_fn grad_fn statistics $out_storage
+
+        echo "outerloop${N}_stage1" > .last_stage
+
+      if ( "`cat .current_stage`" != "outerloop${N}_stage1" && \
+           "`cat .last_stage`"    != "outerloop${N}_stage1"  ) then
+        echo "outerloop${N}_stage1 was NOT done, aborted Stage2"
+        exit -1
+      endif
+  endif # end if RUN_STAGE1
+
+#---------------------------------
+  if ( $RUN_STAGE2 == "true" ) then
+
+      echo "--------------------------------------"
+      echo "| Run outerloop-$N : Stage2-Minimizer |"
+      echo "--------------------------------------"
+
+      echo "--------------------------------------------"
+      echo "| 2.0 Set up namelist.input for stage2 |"
+      echo "--------------------------------------------"
+
+    #---------------------------------------
+    #   &wrfvar1
+    #    multi_inc=2, # stage2 for minimization
+    #    dx=
+    #    dy=${NL_DY}.0,
+    #    e_we=$NL_E_WE,
+    #    e_sn=$NL_E_SN,
+    #    time_step=$TIME_STEP_STAGE2,
+    #    var4d_bin=
+    #------------------------------------------
+    set   NL_DX=`grep -i -E "dx[ \t]*="   orig_namelist.input | sed -e 's/\t/ /g' -e 's/  *//g' -e 's/,//' -e 's/\r//g'| cut -c4-`
+    set   NL_DY=`grep -i -E "dy[ \t]*="   orig_namelist.input | sed -e 's/\t/ /g' -e 's/  *//g' -e 's/,//' -e 's/\r//g'| cut -c4-`
+    set NL_E_WE=`grep -i -E "e_we[ \t]*=" orig_namelist.input | sed -e 's/\t/ /g' -e 's/  *//g' -e 's/,//' -e 's/\r//g'| cut -c6-`
+    set NL_E_SN=`grep -i -E "e_sn[ \t]*=" orig_namelist.input | sed -e 's/\t/ /g' -e 's/  *//g' -e 's/,//' -e 's/\r//g'| cut -c6-`
+
+    set   NL_DX=`echo $NL_DX | sed 's/\.[0-9]*//g'`
+    set   NL_DY=`echo $NL_DY | sed 's/\.[0-9]*//g'`
+    set NL_E_WE=`echo $NL_E_WE | sed 's/\.[0-9]*//g'`
+    set NL_E_SN=`echo $NL_E_SN | sed 's/\.[0-9]*//g'`
+
+    @   NL_DX = $NL_DX * $THIN_FACTOR[$N]
+    @   NL_DY = $NL_DY * $THIN_FACTOR[$N]
+    @ NL_E_WE = ($NL_E_WE - 1) / $THIN_FACTOR[$N] + 1
+    @ NL_E_SN = ($NL_E_SN - 1) / $THIN_FACTOR[$N] + 1
+
+    @   RADT_STAGE2 = $NL_DX / 1000
+
+    set NL_VAR4D_BIN=`grep -i -E "var4d_bin[ \t]*=" orig_namelist.input | \
+                      sed -e 's/\t/ /g' -e 's/  *//g' \
+                          -e 's/\.[0-9]*//g' -e 's/,//' \
+                          -e 's/\r//g' | \
+                      cut -c11-`
+    @ TIME_STEP_STAGE2 = ( $NL_DX / 1000 ) * 6
+    set i=$TIME_STEP_STAGE2
+    while ( $i != 0 )
+      @ i = $NL_VAR4D_BIN % $TIME_STEP_STAGE2
+      @ TIME_STEP_STAGE2--
+    end
+    @ TIME_STEP_STAGE2++
+
+    if ( $OS == "Darwin" ) then
+       sed -e '/[Mm][Uu][Ll][Tt][Ii]_[Ii][Nn][Cc]/d' \
+           -e '/&[Ww][Rr][Ff][Vv][Aa][Rr]1$/ a\ \
+           multi_inc=2,' \
+           -e "/[Dd][Xx][ \t]*=/ c\ \
+           dx=${NL_DX}.0," \
+           -e "/[Dd][Yy][ \t]*=/ c\ \
+           dy=${NL_DY}.0," \
+           -e "/[Ee]_[Ww][Ee][ \t]*=/ c\ \
+           e_we=$NL_E_WE,"\
+           -e "/[Ee]_[Ss][Nn][ \t]*=/ c\ \
+           e_sn=$NL_E_SN," \
+           -e "/[Tt][Ii][Mm][Ee]_[Ss][Tt][Ee][Pp][ \t]*=/ c\ \
+           time_step=$TIME_STEP_STAGE2," \
+           -e "/[u][s][e]_[i][n][v][e][r][s][e]_[s][q][u][a][r][e][r][o][o][t][b][ \t]*=/ c\ \
+           use_inverse_squarerootb=$use_vp," \
+           -e "/[u][s][e]_[i][n][t][e][r][p][o][l][a][t][e]_[c][v][t][ \t]*=/ c\ \
+           use_interpolate_cvt=$use_cvt," \
+           orig_namelist.input > o${N}s2_namelist.input
+    else
+       sed -e '/[Mm][Uu][Ll][Tt][Ii]_[Ii][Nn][Cc]/d' \
+           -e '/&[Ww][Rr][Ff][Vv][Aa][Rr]1$/ a\multi_inc=2,' \
+           -e "/[Dd][Xx][ \t]*=/ c\dx=${NL_DX}.0," \
+           -e "/[Dd][Yy][ \t]*=/ c\dy=${NL_DY}.0," \
+           -e "/[Ee]_[Ww][Ee][ \t]*=/ c\e_we=$NL_E_WE," \
+           -e "/[Ee]_[Ss][Nn][ \t]*=/ c\e_sn=$NL_E_SN," \
+           -e "/[Tt][Ii][Mm][Ee]_[Ss][Tt][Ee][Pp][ \t]*=/ c\time_step=$TIME_STEP_STAGE2," \
+           -e "/[u][s][e]_[i][n][v][e][r][s][e]_[s][q][u][a][r][e][r][o][o][t][b][ \t]*=/ c\use_inverse_squarerootb=$use_vp," \
+           -e "/[u][s][e]_[i][n][t][e][r][p][o][l][a][t][e]_[c][v][t][ \t]*=/ c\use_interpolate_cvt=$use_cvt," \
+           orig_namelist.input > o${N}s2_namelist.input
+    endif
+
+      if ( $N > 1 ) then  # only do this step from outer loop 2
+
+         @ NM1 = $N - 1
+
+          if ( $use_vp == true || $use_cvt == true ) then
+      echo "--------------------------------------------"
+      echo "| 2.1 Scatter the global cvt or vp to PEs |"
+      echo "--------------------------------------------"
+
+            ln -sf ./o${NM1}s3/vp_output.global_hires  .
+            if ( ! -e vp_output.global_hires ) then
+               echo "vp_output.global_hires is not found"
+               exit -1
+            endif
+
+#-------------------------------------------
+            if ( $JOB == 'LSF' ) then
+               if ( -e submit_lsf.csh ) rm -f submit_lsf.csh
+cat > submit_lsf.csh <<EOF
+#!/bin/csh
+#
+## LSF batch script to run an MPI application
+#
+#BSUB -P $PROJID             # project code
+#BSUB -W 00:05               # wall-clock time (hrs:mins)
+#BSUB -n $NPROCS[$N]         # number of tasks in job
+#BSUB -R "span[ptile=16]"    # run 16 MPI tasks per node
+#BSUB -J o${N}s2_split   # job name
+#BSUB -o o${N}s2_split.%J.out # output file name in which %J is replaced by the job ID
+#BSUB -e o${N}s2_split.%J.err # error file name in which %J is replaced by the job ID
+#BSUB -q $QUEUE              # queue
+
+#run the executable
+mpirun.lsf ./da_vp_split.exe
+EOF
+               bsub -K < submit_lsf.csh
+
+        else #if ( $JOB == 'PBS' )
+           if ( -e submit_pbs.csh ) rm -f submit_pbs.csh
+cat > submit_pbs.csh <<EOF
+#!/bin/csh
+#
+### PBS batch script to run an MPI application
+#
+#PBS -A $PROJID
+#PBS -l walltime=00:05:00
+#PBS -l select=16:ncpus=36:mpiprocs=36:mem=110G
+#PBS -N o${N}s2_split
+#PBS -j oe
+#PBS -q $QUEUE
+
+#run the executable
+mpirun ./da_vp_split.exe -cloud_cv_options 3 -use_cv_w 1
+EOF
+           set jobid = `qsub  submit_pbs.csh`
+
+            #else
+            #   $RUN_CMD $NPROCS[$N] ${PWD}/da_vp_split.exe < /dev/null
+            endif
+#---------------------------------------------
+           endif # end if ( $use_vp == true || $use_cvt == true )
+
+    set i = 1
+    while ( $i <= 1000 )
+      sleep 20
+      echo "sleep 20" >> log
+      if ( "`qstat | grep -o -m 1 $jobid`" != $jobid ) then # if job finish
+        if ( $use_vp == true || $use_cvt == true ) then
+            foreach f ( vp_input.0* )
+              if ( ! -e $f ) then
+                echo "$f NOT exists" > FAIL
+                exit -1
+              endif
+            end
+            break
+        endif
+      else
+        @ i++
+      endif
+    end
+    echo "done" >> log
+
+      endif     # end if N > 1
+
+     if ( $THIN_FACTOR[$N] > 1 ) then
+      echo "--------------------------------------------"
+      echo "| 2.2 Thin high-res guess to low-res |"
+      echo "--------------------------------------------"
+
+        ./da_thin.exe -i o${N}s1_fg      \
+                      -o o${N}s2_fg      \
+                      -thin $THIN_FACTOR[$N] \
+                      >& o${N}s2_thin_fg.log
+        if ( ! -e o${N}s2_fg ) then
+          echo "thinning fg failed" > FAIL
+          exit -1
+        endif
+
+        if ( $VAR4D == true ) then # 2nd level fg only for 4DVAR
+         ./da_thin.exe -i o${N}s1_fg02    \
+                       -o o${N}s2_fg02    \
+                       -thin $THIN_FACTOR[$N] \
+                       >>& o${N}s2_thin_fg02.log
+         if ( ! -e o${N}s2_fg02 ) then
+           echo "thinning fg02 failed" > FAIL
+           exit -1
+         endif
+        endif
+     else
+        cp o${N}s1_fg   o${N}s2_fg
+        if ( $VAR4D == true ) cp o${N}s1_fg02 o${N}s2_fg02
+     endif
+
+     if ( $VAR4D == true ) then
+      echo "--------------------------------------------"
+      echo "| 2.3 Generating boundary file for stage2 |"
+      echo "--------------------------------------------"
+      da_bdy.exe -fg   o${N}s2_fg         \
+                 -fg02 o${N}s2_fg02         \
+                 -bdy  orig_wrfbdy_d01     \
+                 -o    o${N}s2_wrfbdy_d01   \
+                 >&    o${N}s2_bdy.log
+      if ( ! -e o${N}s2_wrfbdy_d01 ) then
+        echo "generating bdy file for outerloop$N stage2 failed" > FAIL
+        exit -1
+      endif
+     endif
+
+      echo "--------------------------------------------"
+      echo "| 2.4 Run WRF-VAR minimization at low-res |"
+      echo "--------------------------------------------"
+
+      if ( -e namelist.input ) rm -f  namelist.input
+      ln -sf  o${N}s2_namelist.input  namelist.input
+      ln -sf  ./o${N}s1/gts_omb.*  .
+      ln -sf  o${N}s2_fg          fg
+      if ( $VAR4D == true ) then
+       ln -sf  o${N}s2_fg02        fg02
+       ln -sf  o${N}s2_fg          wrfinput_d01
+       ln -sf  o${N}s2_wrfbdy_d01  wrfbdy_d01
+      endif
+
+      echo "outerloop${N}_stage2" > .current_stage
+      echo "outerloop${N}_stage2" > .last_stage
+
+#---------------------------------
+      if ( $JOB == 'LSF' ) then
+         if ( -e submit_lsf.csh ) rm -f submit_lsf.csh
+cat > submit_lsf.csh <<EOF
+#!/bin/csh
+#
+### LSF batch script to run an MPI application
+#
+#BSUB -P $PROJID             # project code
+#BSUB -W $minimizeclocktime  # wall-clock time (hrs:mins)
+#BSUB -n $NPROCS[$N]         # number of tasks in job
+#BSUB -R "span[ptile=16]"    # run 16 MPI tasks per node
+#BSUB -J o${N}s2           # job name
+#BSUB -o o${N}s2.%J.out    # output file name in which %J is replaced by the job ID
+#BSUB -e o${N}s2.%J.err    # error file name in which %J is replaced by the job ID
+#BSUB -q  $QUEUE             # queue
+
+#run the executable
+mpirun.lsf ./da_wrfvar.exe
+EOF
+         bsub -K < submit_lsf.csh
+
+        else #if ( $JOB == 'PBS' )
+           if ( -e submit_pbs.csh ) rm -f submit_pbs.csh
+cat > submit_pbs.csh <<EOF
+#!/bin/csh
+#
+### PBS batch script to run an MPI application
+#
+#PBS -A $PROJID
+#PBS -l walltime=$minimizeclocktime
+#PBS -l select=16:ncpus=36:mpiprocs=36:mem=110G
+#PBS -N o${N}s2
+#PBS -j oe
+#PBS -q $QUEUE
+
+#run the executable
+mpirun ./da_wrfvar.exe
+EOF
+         set jobid = `qsub  submit_pbs.csh`
+
+      #else
+      #   $RUN_CMD $NPROCS[$N] ${PWD}/da_wrfvar.exe < /dev/null
+      endif
+#------------------------------------
+
+    set i = 1
+    while ( $i <= 1000 )
+      sleep 30
+      echo "sleep 30" >> log
+     if ( "`qstat | grep -o -m 1 $jobid`" != $jobid ) then # if job finish
+      if ( "`tail  rsl.out.0000 | grep -o -m 1 successfully`" != "successfully" ) then
+        echo "da_wrfvar stage2_$N failed " > FAIL
+        exit -1
+      else
+        break
+      endif
+     else
+      @ i++
+     endif
+    end
+    echo "done" >> log
+
+      echo "------------------------------"
+      echo "| 2.5 Save and clean output |"
+      echo "------------------------------"
+
+      #if ( $use_vp == true ) ncl nc_vpglobal.ncl
+      #ncl nc_increment.ncl
+
+      set out_storage=o${N}s2
+      if ( ! -d $out_storage ) mkdir $out_storage; mkdir $out_storage/RSL
+      rm unpert* gts_omb.* gts_omb_oma_*.* radar_omb_oma_*.* filtered_obs.* rej_obs*
+      mv buddy_check check_max_iv qcstat_conv_01 $out_storage
+      mv rsl.*  $out_storage/RSL
+      mv cost_fn grad_fn jo fort.* statistics $out_storage
+      mv wrfvar_output namelist.output* $out_storage
+      mv gts_omb_oma_*  radar_omb_oma_* filtered_obs_* submit_pbs.csh $out_storage
+      mv analysis_increments*  $out_storage
+      if ( $use_vp == true || $use_cvt == true ) then
+        if ( $N > 1 ) rm vp_output.global_hires
+        mv vp_input.* vv_input.* vv_after* vp_output.global* $out_storage 
+      endif
+
+  endif # end if RUN_STAGE2
+
+#-----------------------------------
+  if ( $RUN_STAGE3 == "true" ) then
+
+      echo "--------------------------------------"
+      echo "| Run outerloop${N} : Stage3-Regrid |"
+      echo "--------------------------------------"
+
+    @ NP1 = $N + 1
+
+    if ( "$VAR4D_LBC" == "t" || "$VAR4D_LBC" == "T" ) then
+      # this is not well tested yet. turned it off
+      echo "------------------------------------------------------------"
+      echo "| 3.1 regridding in model space for 2nd time level (fg02) |"
+      echo "------------------------------------------------------------"
+      #  only if var4d_lbc=true. 
+      #  NOTE: interpolate to original resolution in model space 
+
+        ./da_bilin.exe  -fg_lores o${N}s2_fg02 \
+                        -fg_hires o${N}s1_fg02 \
+                        -an_lores ana02       \
+                        -ns       $THIN_FACTOR[$N]   \
+                        -o        ana02_hires >& o${N}s2_bilin_fg02.log
+        if ( ! -e ana02_hires ) then
+          echo "regridding increment failed" > FAIL
+          exit -1
+        endif
+        mv ana02  ana02_lores
+    else
+      echo "# Skipped, VAR4D_LBC=$VAR4D_LBC \n"
+    endif
+
+      echo "------------------------------------------------------------"
+      echo "| 3.1 regridding in model space for 1st time level (fg) |"
+      echo "------------------------------------------------------------"
+    #  wrfvar_output_hires = fg_stage1 + S (wrfvar_output_lores - fg_stage2)
+    #----------------------------------------------------------------------------
+    if ( $THIN_FACTOR[$N] > 1 ) then # regrid to model resolution
+      ./da_bilin.exe  -fg_lores o${N}s2_fg          \
+                      -fg_hires o${N}s1_fg          \
+                      -an_lores ./o${N}s2/wrfvar_output    \
+                      -ns       $THIN_FACTOR[$N] \
+                      -o        wrfvar_output_hires >& o${N}s3_da_bilin.log
+      if ( ! -e wrfvar_output_hires ) then
+        echo "regridding increment failed" > FAIL
+        exit -1
+      endif
+     else    # if DA res. is same as model res., no need for interpolation
+      cp ./o${N}s2/wrfvar_output wrfvar_output_hires
+     endif
+
+    if ( $N < $MAX_OUTERLOOP ) then # no need to do this for the last loop
+    #------------------------------------------------------
+    # interpolate vp to next outer loop's resolution
+    #-------------------------------------------------------------
+     if ( $use_vp == true || $use_cvt == true ) then
+        if ( $THIN_FACTOR[$N] != $THIN_FACTOR[$NP1] ) then # only do this if res diff for two loops
+           echo "---------------------------------------------"
+           echo "| 3.2 regridding in control variable space  |"
+           echo "---------------------------------------------"
+           if ( $N < $MAX_OUTERLOOP ) then    
+               @ ratio = $THIN_FACTOR[$N] / $THIN_FACTOR[$NP1]
+           else
+               @ ratio = $THIN_FACTOR[$N] # / 1 
+           endif
+
+           if ( -e vp_output.global )  rm -f vp_output.global
+           ln -sf ./o${N}s2/vp_output.global .
+           ./da_vp_bilin.exe -ratio $ratio  \
+                             -cloud_cv_options 3  \
+                             -use_cv_w 1  >& o${N}s3_vp_bilin.log
+           if ( ! -e vp_output.global_hires ) then
+              echo "vp_output.global_hires is not generated" > FAIL
+              exit -1
+           endif
+        else # if resolution same, no interpolation needed.
+           cp ./o${N}s2/vp_output.global vp_output.global_hires
+        endif 
+        #ncl nc_vphires.ncl
+     endif
+
+      echo "---------------------------------"
+      echo "| 3.3 Save and Clean results  |"
+      echo "---------------------------------"
+
+      set out_storage=o${N}s3
+      if ( ! -d $out_storage ) mkdir $out_storage
+
+      mv  wrfvar_output_hires $out_storage
+      rm  namelist.input
+
+      if ( $use_vp == true || $use_cvt == true ) then
+        mv vp_output.global_hires* $out_storage
+        rm vp_output.global
+      endif
+
+   endif # $N < $MAX_OUTERLOOP
+
+  endif ## end if RUN_STAGE3=true
+
+    @ N++
+
+  end # End of outerloop
+
+  rm fg fg02 wrfinput_d01 wrfbdy_d01
+
+else  ## if NOT multi-resolution incremental 3D/4DVAR, no stop outer loop
+###########################################################################
+
+        ln -sf ${BE3}     be.dat
+        ln -sf orig_fg    fg
+        if ( $VAR4D == true ) then
+          ln -sf     orig_wrfinput_d01  wrfinput_d01
+          ln -sf     orig_wrfbdy_d01    wrfbdy_d01
+        endif
+
+    if ( $OS == "Darwin" ) then
+       sed -e "/[u][s][e]_[i][n][v][e][r][s][e]_[s][q][u][a][r][e][r][o][o][t][b][ \t]*=/ c\ \
+           use_inverse_squarerootb=$use_vp," \
+           -e "/[u][s][e]_[i][n][t][e][r][p][o][l][a][t][e]_[c][v][t][ \t]*=/ c\ \
+           use_interpolate_cvt=$use_cvt," \
+           orig_namelist.input > namelist.input
+    else
+       sed -e "/[u][s][e]_[i][n][v][e][r][s][e]_[s][q][u][a][r][e][r][o][o][t][b][ \t]*=/ c\use_inverse_squarerootb=$use_vp," \
+           -e "/[u][s][e]_[i][n][t][e][r][p][o][l][a][t][e]_[c][v][t][ \t]*=/ c\use_interpolate_cvt=$use_cvt," \
+           orig_namelist.input > namelist.input
+    endif
+
+#---------------------------------
+    if ( $JOB == 'LSF' ) then
+       if ( -e submit_lsf.csh ) rm -f submit_lsf.csh
+cat > submit_lsf.csh <<EOF
+#!/bin/csh
+#
+### LSF batch script to run an MPI application
+#
+#BSUB -P $PROJID             # project code
+#BSUB -W 5:00 # ban  00:20                 # wall-clock time (hrs:mins)
+#BSUB -n 1024          # number of tasks in job
+#BSUB -R "span[ptile=16]"    # run 16 MPI tasks per node
+#BSUB -J wrfvar               # job name
+#BSUB -o wrfvar.%J.out        # output file name in which %J is replaced by the job ID
+#BSUB -e wrfvar.%J.err        # error file name in which %J is replaced by the job ID
+#BSUB -q premium  # regular               # queue
+
+#run the executable
+mpirun.lsf ./da_wrfvar.exe
+EOF
+       bsub -K < submit_lsf.csh
+
+    else #if ( $JOB == 'PBS' )
+        if ( -e submit_pbs.csh ) rm -f submit_pbs.csh
+cat > submit_pbs.csh <<EOF
+#!/bin/csh
+#
+### PBS batch script to run an MPI application
+#
+#PBS -A $PROJID
+#PBS -l walltime=5:00:00
+#PBS -l select=16:ncpus=36:mpiprocs=36:mem=110G
+#PBS -N wrf4dvar
+#PBS -j oe
+#PBS -q $QUEUE
+
+#run the executable
+mpirun ./da_wrfvar.exe
+EOF
+           qsub  submit_pbs.csh
+
+    #else
+    #   set N=1
+    #   $RUN_CMD $NPROCS[$N] ${PWD}/da_wrfvar.exe < /dev/null
+    endif
+#-----------------------------------
+
+      ln -sf $MULTI_INC_TOOLS/nc_increment.ncl .
+      ncl nc_increment.ncl
+
+      set out_storage=$WORK_DIR
+      if ( ! -d $out_storage ) mkdir $out_storage; mkdir $out_storage/RSL
+      rm unpert* gts_omb_oma_*.* filtered_obs.*
+      mv rsl.* rej_obs* qcstat_conv_01 $out_storage/RSL
+
+endif
+

@@ -1340,7 +1340,7 @@ CONTAINS
                 QKE,                                            &
                 SFCEVP,GRDFLX,                                  &
                 TRIM (MMINLU_LOC),                              &
-                XLAT,                                           &
+                XLAT, XLONG,                                    &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
@@ -2347,7 +2347,7 @@ CONTAINS
 #endif
                 QKE, SFCEVP,GRDFLX,                             &
                 MMINLU,                                         &
-                XLAT,                                           &
+                XLAT, XLONG,                                    &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
@@ -2498,6 +2498,9 @@ CONTAINS
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
 #endif
+#ifdef WRF_USE_CTSM
+   USE module_sf_ctsm, only : ctsm_init
+#endif
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
    USE module_sf_bep_bem
@@ -2625,6 +2628,7 @@ CONTAINS
 !Noah-MP
 
    REAL,    DIMENSION(ims:ime, jms:jme) :: XLAT
+   REAL,    DIMENSION(ims:ime, jms:jme) :: XLONG
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: TSNOXY
@@ -3359,6 +3363,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         ENDIF
 #else
         CALL wrf_error_fatal ( "SF CLM CURRENTLY ifdef'ed out, set -DWRF_USE_CLM in configure.wrf in ARCH_LOCAL" )
+#endif
+
+#ifdef WRF_USE_CTSM
+      CASE (CTSMSCHEME)
+
+         CALL ctsm_init( &
+              ids=ids, ide=ide, jds=jds, jde=jde, &
+              ims=ims, ime=ime, jms=jms, jme=jme, &
+              its=its, ite=ite, jts=jts, jte=jte, &
+              dt=DT, xlat=XLAT, xlong=XLONG,      &
+              atm_restart = restart)
 #endif
 
       CASE DEFAULT

@@ -1834,7 +1834,7 @@ RLFLAGS		=
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    Linux x86_64 ppc64le i486 i586 i686 #serial smpar dmpar dm+sm
+#ARCH    Linux x86_64 ppc64le i486 i586 i686, ifort compiler with icc #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       INTEL ($SFC/$SCC): HSW/BDW
 DMPARALLEL      =       # 1
@@ -1878,7 +1878,7 @@ RLFLAGS		=
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    Linux KNL x86_64 ppc64le i486 i586 i686 #serial smpar dmpar dm+sm
+#ARCH    Linux KNL x86_64 ppc64le i486 i586 i686, ifort compiler with icc #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       INTEL ($SFC/$SCC): KNL MIC
 DMPARALLEL      =       # 1

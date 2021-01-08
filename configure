@@ -685,6 +685,25 @@ if [ $os = "Linux" -o $os = "Darwin" ]; then
 
   foo=foo_$$
 
+  grep '^SFC' configure.wrf | grep -i 'gfortran' > /dev/null
+  if [ $? ]
+  then
+
+    cat > ${foo}.F << EOF
+      PROGRAM GFORTRAN_VERSION_CHECK
+        IF (__GNUC__ .GT. 9) CALL EXIT(1)
+      END PROGRAM
+EOF
+
+    gfortran -o ${foo} ${foo}.F > /dev/null 2>&1 && ./${foo}
+    if [ $? -eq 1 ]
+    then
+      sed '/^FCCOMPAT/ s/$/ -fallow-argument-mismatch -fallow-invalid-boz/' configure.wrf > configure.wrf.edit
+      mv configure.wrf.edit configure.wrf
+    fi
+    rm ${foo} ${foo}.F 2> /dev/null
+  fi
+
 cat > ${foo}.c <<EOF 
  int main(int argc, char ** argv)
  {

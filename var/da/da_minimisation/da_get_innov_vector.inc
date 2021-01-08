@@ -285,7 +285,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    ! [3] Optionally rescale observation errors:
    !------------------------------------------------------------------------ 
    
-   if (use_obs_errfac) call da_use_obs_errfac( iv)
+   if (use_obs_errfac .and. it == 1) call da_use_obs_errfac(iv)
 
    !------------------------------------------------------------------------  
    ! [4] Optionally add Gaussian noise to O, O-B:

@@ -1169,7 +1169,6 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
            do l=1,ncomp(n)
               lmass=massptr_aer(l,m,n,ai_phase)
               lmasscw=massptr_aer(l,m,n,cw_phase)
-              !          scale = mwdry/mw_aer(l,n)
               scale = 1.e9
               chem(i,kts:kte,j,lmasscw)=raercol(kts:kte,lmasscw,nnew)*scale ! ug/kg
               chem(i,kts:kte,j,lmass)=raercol(kts:kte,lmass,nnew)*scale ! ug/kg

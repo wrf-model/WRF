@@ -274,10 +274,16 @@ CONTAINS
                  ! Cloud base first
                if (wp2d_sum(i, j) > Q_MIN) then
                  k = kts
-                 wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
+                 wc = 0.0
+                 if (f_qc .and. p_qc > param_first_scalar) wc = wc + qc(i, k, j)
+                 if (f_qi .and. p_qi > param_first_scalar) wc = wc + qi(i, k, j)
+                 if (f_qs .and. p_qs > param_first_scalar) wc = wc + qs(i, k, j)
                  do while ( (wc < WC_MIN) .and. (k < kte) )
                    k = k + 1
-                   wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
+                   wc = 0.0
+                   if (f_qc .and. p_qc > param_first_scalar) wc = wc + qc(i, k, j)
+                   if (f_qi .and. p_qi > param_first_scalar) wc = wc + qi(i, k, j)
+                   if (f_qs .and. p_qs > param_first_scalar) wc = wc + qs(i, k, j)
                  end do
 
                  if (k == kte) then
@@ -288,10 +294,16 @@ CONTAINS
 
                    ! Cloud top second
                  k = kte
-                 wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
+                 wc = 0.0
+                 if (f_qc .and. p_qc > param_first_scalar) wc = wc + qc(i, k, j)
+                 if (f_qi .and. p_qi > param_first_scalar) wc = wc + qi(i, k, j)
+                 if (f_qs .and. p_qs > param_first_scalar) wc = wc + qs(i, k, j)
                  do while ( (wc < WC_MIN) .and. (k > kts) )
                    k = k - 1
-                   wc = qc(i, k, j) + qi(i, k, j) + qs(i, k, j)
+                   wc = 0.0
+                   if (f_qc .and. p_qc > param_first_scalar) wc = wc + qc(i, k, j)
+                   if (f_qi .and. p_qi > param_first_scalar) wc = wc + qi(i, k, j)
+                   if (f_qs .and. p_qs > param_first_scalar) wc = wc + qs(i, k, j)
                  end do
 
                  if (k == kts) then
@@ -312,10 +324,16 @@ CONTAINS
                  ! Cloud base first
                if (wp2d_tot_sum(i, j) > Q_MIN) then
                  k = kts
-                 wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
+                 wc = 0.0
+                 if (f_qc .and. p_qc > param_first_scalar) wc = wc + qc_tot(i, k, j)
+                 if (f_qi .and. p_qi > param_first_scalar) wc = wc + qi_tot(i, k, j)
+                 if (f_qs .and. p_qs > param_first_scalar) wc = wc + qs(i, k, j)
                  do while ( (wc < WC_MIN) .and. (k < kte) )
                    k = k + 1
-                   wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
+                   wc = 0.0
+                   if (f_qc .and. p_qc > param_first_scalar) wc = wc + qc_tot(i, k, j)
+                   if (f_qi .and. p_qi > param_first_scalar) wc = wc + qi_tot(i, k, j)
+                   if (f_qs .and. p_qs > param_first_scalar) wc = wc + qs(i, k, j)
                  end do
 
                  if (k == kte) then
@@ -326,10 +344,16 @@ CONTAINS
 
                    ! Cloud top second
                  k = kte
-                 wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
+                 wc = 0.0
+                 if (f_qc .and. p_qc > param_first_scalar) wc = wc + qc_tot(i, k, j)
+                 if (f_qi .and. p_qi > param_first_scalar) wc = wc + qi_tot(i, k, j)
+                 if (f_qs .and. p_qs > param_first_scalar) wc = wc + qs(i, k, j)
                  do while ( (wc < WC_MIN) .and. (k > kts) )
                    k = k - 1
-                   wc = qc_tot(i, k, j) + qi_tot(i, k, j) + qs(i, k, j)
+                   wc = 0.0
+                   if (f_qc .and. p_qc > param_first_scalar) wc = wc + qc_tot(i, k, j)
+                   if (f_qi .and. p_qi > param_first_scalar) wc = wc + qi_tot(i, k, j)
+                   if (f_qs .and. p_qs > param_first_scalar) wc = wc + qs(i, k, j)
                  end do
 
                  if (k == kts) then

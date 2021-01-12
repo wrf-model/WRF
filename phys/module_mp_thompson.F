@@ -3009,7 +3009,7 @@
            !           -tpc_wev(idx_d, idx_c, idx_n)*orho*odt)
             prw_vcd(k) = MAX(DBLE(-rc(k)*0.99*orho*odt), prw_vcd(k))
             pnc_wcd(k) = MAX(DBLE(-nc(k)*0.99*orho*odt),                &
-                       -tnc_wev(idx_d, idx_c, idx_n)*orho*odt)
+                         DBLE(-tnc_wev(idx_d, idx_c, idx_n)*orho*odt))
 
            endif
           else

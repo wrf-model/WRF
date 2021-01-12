@@ -3248,6 +3248,7 @@ CONTAINS
              xxlat=xlat(i,j)*degrad
              coszen(i,j)=sin(xxlat)*sin(declin) &
                         +cos(xxlat)*cos(declin) *cos(hrang(i,j))
+             coszen(i, j) = min (max (coszen(i, j), -1.0), 1.0)
           enddo
        enddo
    END SUBROUTINE calc_coszen

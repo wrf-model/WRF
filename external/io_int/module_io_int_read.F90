@@ -87,7 +87,7 @@ end module module_io_int_read
 module module_io_int_read
 
     use module_io_int_idx,           only: io_int_loc, r_info
-    use, intrinsic :: iso_c_binding, only: c_int32_t
+    use, intrinsic :: iso_c_binding, only: c_int32_t, c_int64_t
 
     implicit none
 
@@ -127,9 +127,9 @@ contains
     integer,                 intent(out) :: dst
     integer,                 intent(out) :: ierr
 
-    integer(kind=mpi_offset_kind)       :: offset
-    integer                             :: count
-    integer                             :: tmp
+    integer(c_int64_t)                   :: offset
+    integer(c_int32_t)                   :: count
+    integer                              :: tmp
 
     call io_int_loc(varname, records, offset, count, ierr)
     if (ierr .ne. 0) then
@@ -161,8 +161,8 @@ contains
     integer,                 intent(inout) :: dst(:)
     integer,                 intent(out)   :: ierr
 
-    integer(kind=mpi_offset_kind)          :: offset
-    integer                                :: count
+    integer(c_int64_t)                     :: offset
+    integer(c_int32_t)                     :: count
     integer                                :: num
     integer                                :: i
     integer                                :: its, ite
@@ -219,8 +219,8 @@ contains
     integer,                 intent(inout) :: dst(:,:)
     integer,                 intent(out)   :: ierr
 
-    integer(kind=mpi_offset_kind)          :: offset
-    integer                                :: count
+    integer(c_int64_t)                     :: offset
+    integer(c_int32_t)                     :: count
     integer                                :: num
     integer                                :: i, j
     integer                                :: its, ite, jts, jte
@@ -279,8 +279,8 @@ contains
     integer,                 intent(inout) :: dst(:,:,:)
     integer,                 intent(out)   :: ierr
 
-    integer(kind=mpi_offset_kind)          :: offset
-    integer                                :: count
+    integer(c_int64_t)                     :: offset
+    integer(c_int32_t)                     :: count
     integer                                :: num
     integer                                :: i, j, k
     integer                                :: its, ite, jts, jte, kts, kte
@@ -343,8 +343,8 @@ contains
     real,                    intent(out) :: dst
     integer,                 intent(out) :: ierr
 
-    integer(kind=mpi_offset_kind)        :: offset
-    integer                              :: count
+    integer(c_int64_t)                   :: offset
+    integer(c_int32_t)                   :: count
     integer                              :: tmp
 
     call io_int_loc(varname, records, offset, count, ierr)
@@ -377,8 +377,8 @@ contains
     real,                    intent(inout) :: dst(:)
     integer,                 intent(out)   :: ierr
 
-    integer(kind=mpi_offset_kind)          :: offset
-    integer                                :: count
+    integer(c_int64_t)                     :: offset
+    integer(c_int32_t)                     :: count
     integer                                :: num
     integer                                :: i
     integer                                :: its, ite
@@ -435,8 +435,8 @@ contains
     real,                    intent(inout) :: dst(:,:)
     integer,                 intent(out)   :: ierr
 
-    integer(kind=mpi_offset_kind)          :: offset
-    integer                                :: count
+    integer(c_int64_t)                     :: offset
+    integer(c_int32_t)                     :: count
     integer                                :: num
     integer                                :: i, j
     integer                                :: its, ite, jts, jte
@@ -495,8 +495,8 @@ contains
     real,                    intent(inout) :: dst(:,:,:)
     integer,                 intent(out)   :: ierr
 
-    integer(kind=mpi_offset_kind)          :: offset
-    integer                                :: count
+    integer(c_int64_t)                     :: offset
+    integer(c_int32_t)                     :: count
     integer                                :: num
     integer                                :: i, j, k
     integer                                :: its, ite, jts, jte, kts, kte
@@ -559,8 +559,8 @@ contains
     character(len=*),        intent(inout) :: dst
     integer,                 intent(out)   :: ierr
 
-    integer(kind=mpi_offset_kind)          :: offset
-    integer                                :: count
+    integer(c_int64_t)                     :: offset
+    integer(c_int32_t)                     :: count
     integer                                :: num
     integer                                :: i
     integer, allocatable, dimension(:)     :: tmp

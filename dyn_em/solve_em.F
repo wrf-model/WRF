@@ -810,9 +810,9 @@ BENCH_START(rk_tend_tim)
                          ,grid%u_2, grid%v_2, grid%w_2, grid%t_2, grid%ph_2                                    &
                          ,grid%u_1, grid%v_1, grid%w_1, grid%t_1, grid%ph_1                                    &
                          ,grid%h_diabatic, grid%phb, grid%t_init                                               &
-                         ,grid%mu_2, grid%mut, grid%muu, grid%muv, grid%mub                                    &
+                         ,grid%mu_1, grid%mu_2, grid%mut, grid%muu, grid%muv, grid%mub                         & 
                          ,grid%c1h, grid%c2h, grid%c1f, grid%c2f                                               &
-                         ,grid%al, grid%alt, grid%p, grid%pb, grid%php, cqu, cqv, cqw                          &
+                         ,grid%al, grid%ht, grid%alt, grid%p, grid%pb, grid%php, cqu, cqv, cqw                 & 
                          ,grid%u_base, grid%v_base, grid%t_base, grid%qv_base, grid%z_base                     &
                          ,grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv                                    &
                          ,grid%msfvy, grid%msftx,grid%msfty, grid%clat, grid%f, grid%e, grid%sina, grid%cosa   &
@@ -2138,6 +2138,7 @@ BENCH_START(rk_scalar_tend_tim)
                CALL rk_scalar_tend (  im, im, config_flags, tenddec,         & 
                            rk_step, dt_rk,                                   &
                            grid%ru_m, grid%rv_m, grid%ww_m,                  &
+                           grid%u_2, grid%v_2,  grid%w_2,                    &  
                            grid%muts, grid%mub, grid%mu_1,                   &
                            grid%c1h, grid%c2h,                               &
                            grid%alt,                                         &
@@ -2306,6 +2307,7 @@ BENCH_START(tke_adv_tim)
            CALL rk_scalar_tend ( 1, 1, config_flags, tenddec,                      & 
                             rk_step, dt_rk,                                        &
                             grid%ru_m, grid%rv_m, grid%ww_m,                       &
+                            grid%u_2, grid%v_2,  grid%w_2,                         &  
                             grid%muts, grid%mub, grid%mu_1,                        &
                             grid%c1h, grid%c2h,                                    &
                             grid%alt,                                              &
@@ -2398,6 +2400,7 @@ BENCH_START(chem_adv_tim)
              CALL rk_scalar_tend ( ic, ic, config_flags, tenddec,                & 
                               rk_step, dt_rk,                                    &
                               grid%ru_m, grid%rv_m, grid%ww_m,                   &
+                              grid%u_2, grid%v_2,  grid%w_2,                     &  
                               grid%muts, grid%mub, grid%mu_1,                    &
                               grid%c1h, grid%c2h,                                &
                               grid%alt,                                          &
@@ -2559,6 +2562,7 @@ BENCH_START(tracer_adv_tim)
              CALL rk_scalar_tend ( ic, ic, config_flags, tenddec,                & 
                               rk_step, dt_rk,                                    &
                               grid%ru_m, grid%rv_m, grid%ww_m,                   &
+                              grid%u_2, grid%v_2,  grid%w_2,                     &  
                               grid%muts, grid%mub, grid%mu_1,                    &
                               grid%c1h, grid%c2h,                                &
                               grid%alt,                                          &
@@ -2700,6 +2704,7 @@ BENCH_END(tracer_adv_tim)
            CALL rk_scalar_tend ( is, is, config_flags, tenddec,                   & 
                                  rk_step, dt_rk,                                  &
                                  grid%ru_m, grid%rv_m, grid%ww_m,                 &
+                                 grid%u_2, grid%v_2,  grid%w_2,                   &  
                                  grid%muts, grid%mub, grid%mu_1,                  &
                                  grid%c1h, grid%c2h,                              &
                                  grid%alt,                                        &

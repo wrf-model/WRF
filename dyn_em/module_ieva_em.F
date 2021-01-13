@@ -128,9 +128,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
    j_start = jts - 1
    j_end   = MIN(jte,jde-1) + 1
    
-   wwE(:,:,:) = 0.0
-   wwI(:,:,:) = 0.0
-
+  
    IF( ieva ) THEN   ! Implicit adaptive advection
    
 !=========================================================================
@@ -141,20 +139,22 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 !    count(:)  = 0
 !
 !=========================================================================
-                                                        
+
+     DO j = j_start, j_end
+       DO i = i_start,i_end
+       
+         wwE(i,1,j) = ww(i,    1,j)
+         wwI(i,1,j) = 0.0
+         
+         wwE(i,kde,j) = ww(i,kde,j)
+         wwI(i,kde,j) = 0.0
+
+       ENDDO
+     ENDDO
+       
      DO j = j_start, j_end
        DO k = 2, kde-1
-       
-         IF( k == 2 ) THEN               ! Dont do implicit at lower boundary
-           wwE(i_start:i_end,1,j) = 0.0
-           wwI(i_start:i_end,1,j) = 0.0
-         ENDIF
-         
-         IF( k == kde-1 ) THEN           ! Dont do implicit at upper boundary
-           wwE(i_start:i_end,kde,j) = ww(i_start:i_end,kde,j)
-           wwI(i_start:i_end,kde,j) = 0.0
-         ENDIF
-       
+
          DO i = i_start,i_end
          
 !=========================================================================

@@ -431,10 +431,6 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    rk_order = config_flags%rk_ord
    dt_step  = dt / (rk_order - rk_step + 1)   ! needed for calculations using sub-rk step
 
-! IEVA
-   
-   ieva = CHK_IEVA( config_flags, rk_step ) 
-
 ! Need an estimate of the mut at the n time level...
 
    CALL calculate_full( mut_old, mub, mu_old,     &
@@ -442,17 +438,6 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                         ims, ime, jms, jme, 1, 1, &
                         its, ite, jts, jte, 1, 1 )
                         
-! Estimate new temporary column mass
-                        
-   CALL calc_mut_new ( u, v, c1h, c2h,                      &
-                       mut_old, muu, muv, mut_new,          &
-                       dt, rdx, rdy, msftx, msfty,          &
-                       msfux, msfuy, msfvx, msfvx_inv,      &
-                       msfvy, rdnw,                         &
-                       ids, ide, jds, jde, kds, kde,        &
-                       ims, ime, jms, jme, kms, kme,        &
-                       its, ite, jts, jte, kts, kte    )
-                         
 ! Code for splitting vertical velocity into ex/im parts
 
    CALL WW_SPLIT(wwE, wwI, ph, phb,                &
@@ -464,6 +449,26 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                  ids, ide, jds, jde, kds, kde,     &
                  ims, ime, jms, jme, kms, kme,     &
                  its, ite, jts, jte, kts, kte )              
+
+! IEVA ON/OFF
+   
+   ieva = CHK_IEVA( config_flags, rk_step ) 
+
+   IF( ieva ) THEN
+
+! Estimate new temporary column mass
+                        
+   CALL calc_mut_new ( u, v, c1h, c2h,                      &
+                       mut_old, muu, muv, mut_new,          &
+                       dt, rdx, rdy, msftx, msfty,          &
+                       msfux, msfuy, msfvx, msfvx_inv,      &
+                       msfvy, rdnw,                         &
+                       ids, ide, jds, jde, kds, kde,        &
+                       ims, ime, jms, jme, kms, kme,        &
+                       its, ite, jts, jte, kts, kte    )
+                         
+
+   ENDIF
 
 ! Okay do normal advection now....using the wwE array
 

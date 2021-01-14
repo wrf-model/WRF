@@ -871,7 +871,13 @@ state   real    qnwfa          ikjftb  scalar      1         m     i01h023ru=(Up
 state   real    qnifa          ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
 state   real    qndrop         ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
 state   real    qrimef         ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QRIMEF"           "rime factor * qi" "kg kg-1"
-
+#---------------------------------ntu3m-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+state   real    qdcn           ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QDCN"     "Mass mixing ratio for dry CN" "kg kg(-1)"
+state   real    qtcn           ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QTCN"     "Mass mixing ratio for total CN" "kg kg(-1)"
+state   real    qccn           ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QCCN"     "Mass mixing ratio for cloud CN" "kg kg(-1)"
+state   real    qrcn           ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QRCN"     "Mass mixing ratio for rain CN" "kg kg(-1)"
+state   real    qnin           ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNIN"     "Potential ice nuclei number mixing ratio" "# kg(-1)"
+#---------------------------------ntu3m--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 state   real    -              ijkftb  dfi_scalar      1         m     -   -
 state   real    dfi_qndrop     ijkftb  dfi_scalar      1         m     \
@@ -1775,6 +1781,9 @@ package   wdm7scheme    mp_physics==26               -             moist:qv,qc,q
 package   p3_1category    mp_physics==50               -             moist:qv
 package   p3_1category_nc mp_physics==51               -             moist:qv
 package   p3_2category    mp_physics==52               -             moist:qv
+#--------------------------------------ntu3m------------------------------------------------------------------------------------------------------------------------------------------
+package   ntu             mp_physics==56               -             moist:qv
+#--------------------------------------ntu3m------------------------------------------------------------------------------------------------------------------------------------------
 package   jensen_ishmael    mp_physics==86               -             moist:qv
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   etampnew      mp_physics==95               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef

@@ -103,6 +103,7 @@ MODULES = \
 	module_mp_wdm6.o \
 	module_mp_wdm7.o \
 	module_mp_cammgmp_driver.o \
+        module_mp_ntu.o \
 	module_ra_sw.o  \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \

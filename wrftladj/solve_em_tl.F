@@ -2747,28 +2747,64 @@ BENCH_END(g_tracer_adv_tim)
                                   kts=k_start    , kte=k_end                              )
 
            IF( config_flags%specified ) THEN
-
-             IF(is .ne. P_QNN)THEN
-               CALL g_flow_dep_bdy  ( scalar(ims,kms,jms,is),g_scalar(ims,kms,jms,is), &
-                                  grid%ru_m, grid%rv_m, config_flags,   &
-                                  grid%spec_zone,             &
-                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                  grid%i_start(ij), grid%i_end(ij),  &
-                                  grid%j_start(ij), grid%j_end(ij),  &
-                                  k_start, k_end                    )
-             ELSE
-               CALL g_flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is), g_scalar(ims,kms,jms,is), &
-                                  grid%ru_m, grid%rv_m, config_flags,   &
-                                  grid%spec_zone,                  &
-                                  grid%ccn_conc,              & ! RAS
-                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                  grid%i_start(ij), grid%i_end(ij),  &
-                                  grid%j_start(ij), grid%j_end(ij),  &
-                                  k_start, k_end                    )
+!---------------------------for ntu3m-----------------------------------
+              IF (is.EQ.P_QDCN.OR.is.EQ.P_QTCN.OR.is.EQ.P_QNIN) THEN
+                 CALL g_flow_dep_bdy_ntu(scalar(ims,kms,jms,is),       &
+                                         g_scalar(ims,kms,jms,is),     &
+                                         grid%ru_m,grid%rv_m,          &
+                                         config_flags,grid%spec_zone,  &
+                                         ids,ide,jds,jde,kds,kde,ims,  &
+                                         ime,jms,jme,kms,kme,ips,ipe,  &
+                                         jps,jpe,kps,kpe,              &
+                                         grid%i_start(ij),             &
+                                         grid%i_end(ij),               &
+                                         grid%j_start(ij),             &
+                                         grid%j_end(ij),               &
+                                         k_start,k_end)
+              ELSEIF (is.EQ.P_QNN) THEN
+                 CALL g_flow_dep_bdy_qnn(scalar(ims,kms,jms,is),       &
+                                         g_scalar(ims,kms,jms,is),     &
+                                         grid%ru_m,grid%rv_m,          &
+                                         config_flags,grid%spec_zone,  &
+                                         grid%ccn_conc,ids,ide,jds,jde,&
+                                         kds,kde,ims,ime,jms,jme,kms,  &
+                                         kme,ips,ipe,jps,jpe,kps,kpe,  &
+                                         grid%i_start(ij),             &
+                                         grid%i_end(ij),               &
+                                         grid%j_start(ij),             &
+                                         grid%j_end(ij),k_start,k_end)
+              ELSE
+                 CALL g_flow_dep_bdy(scalar(ims,kms,jms,is),           &
+                                     g_scalar(ims,kms,jms,is),         &
+                                     grid%ru_m,grid%rv_m,config_flags, &
+                                     grid%spec_zone,ids,ide,jds,jde,   &
+                                     kds,kde,ims,ime,jms,jme,kms,kme,  &
+                                     ips,ipe,jps,jpe,kps,kpe,          &
+                                     grid%i_start(ij),grid%i_end(ij),  &
+                                     grid%j_start(ij),grid%j_end(ij),  &
+                                     k_start,k_end)
+!             IF(is .ne. P_QNN)THEN
+!               CALL g_flow_dep_bdy  ( scalar(ims,kms,jms,is),g_scalar(ims,kms,jms,is), &
+!                                  grid%ru_m, grid%rv_m, config_flags,   &
+!                                  grid%spec_zone,             &
+!                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
+!                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
+!                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+!                                  grid%i_start(ij), grid%i_end(ij),  &
+!                                  grid%j_start(ij), grid%j_end(ij),  &
+!                                  k_start, k_end                    )
+!             ELSE
+!               CALL g_flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is), g_scalar(ims,kms,jms,is), &
+!                                  grid%ru_m, grid%rv_m, config_flags,   &
+!                                  grid%spec_zone,                  &
+!                                  grid%ccn_conc,              & ! RAS
+!                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
+!                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
+!                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+!                                  grid%i_start(ij), grid%i_end(ij),  &
+!                                  grid%j_start(ij), grid%j_end(ij),  &
+!                                  k_start, k_end                    )
+!----------------------------for ntu3m---------------------------------
              ENDIF
 
            ENDIF
@@ -3565,6 +3601,23 @@ BENCH_START(g_micro_driver_tim)
 !       &        , QZH_CURR=scalar(ims,kms,jms,P_QZH), F_QZH=F_QZH          & ! "
       &        , QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG    & ! for nssl_2mom
       &        , QVOLH_CURR=scalar(ims,kms,jms,P_QVOLH), F_QVOLH=F_QVOLH    & ! for nssl_2mom
+!----------------------------------for ntu3m-------------------------------
+      &        , QDCN_CURR=scalar(ims,kms,jms,P_QDCN), F_QDCN=F_QDCN      &
+      &        , QTCN_CURR=scalar(ims,kms,jms,P_QTCN), F_QTCN=F_QTCN      &
+      &        , QCCN_CURR=scalar(ims,kms,jms,P_QCCN), F_QCCN=F_QCCN      &
+      &        , QRCN_CURR=scalar(ims,kms,jms,P_QRCN), F_QRCN=F_QRCN      &
+      &        , QNIN_CURR=scalar(ims,kms,jms,P_QNIN), F_QNIN=F_QNIN      &
+      &        , FI_CURR=scalar(ims,kms,jms,P_FI), F_FI=F_FI              &
+      &        , FS_CURR=scalar(ims,kms,jms,P_FS), F_FS=F_FS              &
+      &        , VI_CURR=scalar(ims,kms,jms,P_VI), F_VI=F_VI              &
+      &        , VS_CURR=scalar(ims,kms,jms,P_VS), F_VS=F_VS              &
+      &        , VG_CURR=scalar(ims,kms,jms,P_VG), F_VG=F_VG              &
+      &        , AI_CURR=scalar(ims,kms,jms,P_AI), F_AI=F_AI              &
+      &        , AS_CURR=scalar(ims,kms,jms,P_AS), F_AS=F_AS              &
+      &        , AG_CURR=scalar(ims,kms,jms,P_AG), F_AG=F_AG              &
+      &        , AH_CURR=scalar(ims,kms,jms,P_AH), F_AH=F_AH              &
+      &        , I3M_CURR=scalar(ims,kms,jms,P_I3M), F_I3M=F_I3m          &
+!---------------------------------for ntu3m--------------------------------
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
       &        , qicuten=grid%rqicuten                                    &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce

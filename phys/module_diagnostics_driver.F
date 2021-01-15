@@ -39,6 +39,7 @@ CONTAINS
                                           SKIP_PRESS_DIAGS, SKIP_Z_DIAGS,              &
                                           DO_TRAD_FIELDS,                              &
                                           DO_SOLAR_OUTPUT,                             &
+                                          PARAM_FIRST_SCALAR,                          &
                                           P_QG, P_QH, P_QV, P_QC, P_QI, P_QS,          &
                                           P_QNG, P_QH, P_QNH, P_QR, P_QNR,             &
                                           F_QV, F_QC, F_QI, F_QS,                      &
@@ -1084,7 +1085,8 @@ CONTAINS
           CALL solar_diag (                                                 &
               rho=grid%rho, dz8w=dz8w, ph=grid%ph_2, phb=grid%phb,          &
               cldfrac3d=grid%cldfra, coszen=grid%coszen, swdnb=grid%swdnb,  &
-              swdnt=grid%swdnt, qv=moist(ims,kms,jms,P_QV),                 &
+              swdnt=grid%swdnt, param_first_scalar=param_first_scalar,      &
+              p_qc=p_qc, p_qi=p_qi, p_qs=p_qs, qv=moist(ims,kms,jms,P_QV),  &
               qc=moist(ims,kms,jms,P_QC), qi=moist(ims,kms,jms,P_QI),       &
               qs=moist(ims,kms,jms,P_QS), qc_tot=grid%qc_tot,               &
               qi_tot=grid%qi_tot,                                           &

@@ -27,26 +27,29 @@
     real, parameter :: DE_CLOUD_MIN = 5.0, DE_CLOUD_MAX = 120.0
     real, parameter :: TAU_MIN = 0.0001, TAU_MAX = 300.0
     real, parameter :: AOD550_VAL = 0.12, ANGEXP_VAL = 1.3, AERSSA_VAL = 0.85, AERASY_VAL = 0.9
+    real, parameter :: RE_CLOUD_CLIM = 8.E-6, RE_ICE_CLIM = 24.E-6, RE_SNOW_CLIM = 24.E-6
 
   contains
 
     subroutine Farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte,  &
            p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
            coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-           julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+           julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2, &
+           has_reqc, has_reqi, has_reqs, cldfra)
 
       implicit None
 
       integer, intent(in) :: ims, ime, jms, jme, its, ite, jts, jte, kms, kme, &
           kts, kte
 
-      integer, intent(in) :: aer_opt
+      integer, intent(in) :: aer_opt, has_reqc, has_reqi, has_reqs
       real,    intent(in) :: julian
 
       real, dimension(ims:ime, jms:jme), intent(in) :: albedo, coszen_loc
 
       real, dimension(ims:ime, kms:kme, jms:jme ), intent(in) :: qv, qi, qs, qc, &
-          p8w, rho, dz8w, re_cloud, re_ice, re_snow 
+          p8w, rho, dz8w, cldfra
+      real, dimension(ims:ime, kms:kme, jms:jme ), intent(in) :: re_cloud, re_ice, re_snow
 
       real, dimension(ims:ime, jms:jme), intent(inout) :: aerssa2d, aerasy2d, aod5502d, angexp2d
       real, dimension(ims:ime,jms:jme), intent(inout) :: swddir2, swdown2, &
@@ -54,10 +57,10 @@
                                                          swdownc2, swddnic2
 
         ! Local
-      integer :: i, j
+      integer :: i, j, k
       real    :: tau_qv, tau_qi, tau_qs, pmw, swp, iwp, lwp, beta
-      real    :: re_cloud_path, re_ice_path, re_snow_path, q_aux
-      real, dimension(kms:kme) :: rhodz
+      real    :: re_cloud_path, re_ice_path, re_snow_path, q_aux, cldfra_h
+      real, dimension(kms:kme) :: rhodz, re_cloud_k, re_ice_k, re_snow_k
 
 
       j_loop: do j = jts, jte
@@ -71,6 +74,34 @@
              swddnic2(i, j) = 0.0
            else
              rhodz(:) = rho(i, :, j) * dz8w(i, :, j) / (1. + qv(i, :, j))
+             re_cloud_k(:) = re_cloud(i, :, j)
+             re_ice_k(:) = re_ice(i, :, j)
+             re_snow_k(:) = re_snow(i, :, j)
+
+             if (has_reqc == 1) then
+               do k = kts, kte
+                 if (CLDFRA (i, k, j) > 0.0 .and. re_cloud_k(k) < 2.5E-6) re_cloud_k(k) = RE_CLOUD_CLIM
+               end do
+             else
+               re_cloud_k(:) = RE_CLOUD_CLIM
+             end if
+
+             if (has_reqi == 1) then
+               do k = kts, kte
+                 if (cldfra(i, k, j) > 0.0 .and. re_ice_k(k) < 5.0E-6) re_ice_k(k) = RE_ICE_CLIM
+               end do
+             else
+               re_ice_k(:) = RE_ICE_CLIM
+             end if
+
+             if (has_reqs == 1) then
+               do k = kts, kte
+                 if (cldfra(i, k, j) > 0.0 .and. re_snow_k(k) < 10.0E-6) re_snow_k(k) = RE_SNOW_CLIM
+               end do
+             else
+               re_snow_k(:) = RE_SNOW_CLIM
+             end if
+
                ! PMW
              pmw = integrate_1var (rhodz, qv(i, :, j), kms, kme, kts, kte)
 
@@ -80,7 +111,7 @@
 
              if (q_aux > 0.0) then
                re_cloud_path = integrate_2var (rhodz, qc(i, :, j), &
-                   re_cloud(i, :, j), kms, kme, kts, kte)
+                   re_cloud_k, kms, kme, kts, kte)
                re_cloud_path = re_cloud_path / q_aux
              else
                re_cloud_path = 0.0
@@ -92,7 +123,7 @@
 
              if (q_aux > 0.0) then
                re_ice_path = integrate_2var (rhodz, qi(i, :, j), &
-                   re_ice(i, :, j), kms, kme, kts, kte)
+                   re_ice_k, kms, kme, kts, kte)
                re_ice_path = re_ice_path / q_aux
              else
                re_ice_path = 0.0
@@ -104,10 +135,20 @@
 
              if (q_aux > 0.0) then
                re_snow_path = integrate_2var (rhodz, qs(i, :, j), &
-                   re_snow(i, :, j), kms, kme, kts, kte)
+                   re_snow_k, kms, kme, kts, kte)
                re_snow_path = re_snow_path / q_aux
              else
                re_snow_path = 0.0
+             end if
+
+             ! Calculate horizontal cloud fraction 
+             q_aux = integrate_1var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), kms, kme, kts, kte)
+             if (q_aux > 0.0) then
+               cldfra_h = integrate_2var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), &
+                   cldfra(i, :, j), kms, kme, kts, kte)
+               cldfra_h = cldfra_h / q_aux
+             else
+               cldfra_h = 0.0
              end if
 
                ! optical thickness  water
@@ -154,11 +195,11 @@
              end if
 
              beta = aod5502d(i, j) * (1000.0/ 550.0) ** (- angexp2d(i, j))
-              
-             Call Farms (p8w(i, 1, j), albedo(i, j), aerssa2d(i, j), &
-                 aerasy2d(i, j), coszen_loc(i, j), beta,   &
-                 angexp2d(i, j), pmw, tau_qv, tau_qi, tau_qs,        &
-                 re_cloud_path, re_ice_path, re_snow_path, int(julian),   &
+
+             Call Farms (p8w(i, 1, j), albedo(i, j), aerssa2d(i, j),         &
+                 aerasy2d(i, j), coszen_loc(i, j), beta,                     &
+                 angexp2d(i, j), pmw, tau_qv, tau_qi, tau_qs, cldfra_h,      &
+                 re_cloud_path, re_ice_path, re_snow_path, int(julian),      &
                  swdown2(i, j), swddni2(i, j), swddif2(i, j), swddir2(i, j), &
                  swdownc2(i, j), swddnic2(i, j))
 
@@ -210,7 +251,7 @@
 
 
     subroutine FARMS (p_pa, albdo, ssa, g, solarangle, beta, alpha, w_mm, &
-        tau_qv, tau_qi, tau_qs, re_cloud_path_m, re_ice_path_m, re_snow_path_m, &
+        tau_qv, tau_qi, tau_qs, cldfra_h, re_cloud_path_m, re_ice_path_m, re_snow_path_m, &
         juday, ghi, dni, dif, dir, ghi_clear, dni_clear)
 
         !!!!!! This Fast All-sky Radiation Model for Solar applications (FARMS) was developed by
@@ -248,7 +289,7 @@
       implicit none
   
       real, intent(in) :: p_pa, albdo, ssa, g, solarangle, beta, alpha, w_mm, &
-          tau_qv, tau_qi, tau_qs, re_cloud_path_m, re_ice_path_m, re_snow_path_m
+          tau_qv, tau_qi, tau_qs, re_cloud_path_m, re_ice_path_m, re_snow_path_m, cldfra_h
       integer, intent(in) :: juday
       real, intent(out) :: ghi, dni, dir, dif, ghi_clear, dni_clear
 
@@ -354,6 +395,9 @@
       Ftotal = F1/(1.0-albdo*(Ruuclr + Ruucld*Tuuclr*Tuuclr))
       ghi = Ftotal
       ghi_clear =  solarangle * F0 * ((Tddclr + Tduclr) / (1.0 - albdo * Ruuclr))
+
+      ghi = cldfra_h * ghi + (1.0 - cldfra_h) * ghi_clear
+      dni = cldfra_h * dni + (1.0 - cldfra_h) * dni_clear
 
       dif = ghi - dir
 

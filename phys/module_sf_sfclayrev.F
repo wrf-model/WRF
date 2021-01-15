@@ -1202,7 +1202,7 @@ CONTAINS
       real    :: rzol
         nzol = int(zolf*100.)
         rzol = zolf*100. - nzol
-        if(nzol+1 .le. 1000)then
+        if(nzol+1 .lt. 1000)then
            psim_stable = psim_stab(nzol) + rzol*(psim_stab(nzol+1)-psim_stab(nzol))
         else
            psim_stable = psim_stable_full(zolf)
@@ -1215,7 +1215,7 @@ CONTAINS
       real    :: rzol
         nzol = int(zolf*100.)
         rzol = zolf*100. - nzol
-        if(nzol+1 .le. 1000)then
+        if(nzol+1 .lt. 1000)then
            psih_stable = psih_stab(nzol) + rzol*(psih_stab(nzol+1)-psih_stab(nzol))
         else
            psih_stable = psih_stable_full(zolf)
@@ -1228,7 +1228,7 @@ CONTAINS
       real    :: rzol
         nzol = int(-zolf*100.)
         rzol = -zolf*100. - nzol
-        if(nzol+1 .le. 1000)then
+        if(nzol+1 .lt. 1000)then
            psim_unstable = psim_unstab(nzol) + rzol*(psim_unstab(nzol+1)-psim_unstab(nzol))
         else
            psim_unstable = psim_unstable_full(zolf)
@@ -1241,7 +1241,7 @@ CONTAINS
       real    :: rzol
         nzol = int(-zolf*100.)
         rzol = -zolf*100. - nzol
-        if(nzol+1 .le. 1000)then
+        if(nzol+1 .lt. 1000)then
            psih_unstable = psih_unstab(nzol) + rzol*(psih_unstab(nzol+1)-psih_unstab(nzol))
         else
            psih_unstable = psih_unstable_full(zolf)

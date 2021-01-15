@@ -1984,10 +1984,10 @@ CONTAINS
                            lwupflx, lwupflxc, lwdnflx, lwdnflxc,    &
                            swupflx, swupflxc, swdnflx, swdnflxc,    &
                            lwupt, lwuptc, lwdnt, lwdntc,            &
-                           lwupb, lwupbc, lwdnb, lwdnb,             &
+                           lwupb, lwupbc, lwdnb, lwdnbc,            &
                            glw, olr, lwcf,                          &
                            swupt, swuptc, swdnt, swdntc,            &
-                           swupb, swupbc, swdnb, swdnb,             &
+                           swupb, swupbc, swdnb, swdnbc,            &
                            gsw, swcf,                               &
                            coszen, solcon, albedo, emiss,           &
                            t,t8w, tsk, rho, p, p8w, cldfra,         &
@@ -2797,8 +2797,9 @@ CONTAINS
          jte = j_end(ij)
          call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
               p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
-              coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-              julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+              coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,                    &
+              julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2,           &
+              has_reqc, has_reqi, has_reqs, CLDFRA)
        enddo
        !$OMP END PARALLEL DO
     end if
@@ -3247,6 +3248,7 @@ CONTAINS
              xxlat=xlat(i,j)*degrad
              coszen(i,j)=sin(xxlat)*sin(declin) &
                         +cos(xxlat)*cos(declin) *cos(hrang(i,j))
+             coszen(i, j) = min (max (coszen(i, j), -1.0), 1.0)
           enddo
        enddo
    END SUBROUTINE calc_coszen

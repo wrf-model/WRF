@@ -178,6 +178,12 @@ MODULE MODULE_SF_NOAHMPLSM
                       !   2 -> irrigation trigger based on crop season Planting and harvesting dates
                       !  *3 -> irrigation trigger based on LAI threshold
 
+  INTEGER :: OPT_IRRM ! options for irrigation method
+                      ! **0 -> method based on geo_em fractions
+                      !   1 -> sprinkler method
+                      !   2 -> micro/drip irrigation
+                      !   3 -> surface flooding
+
 !------------------------------------------------------------------------------------------!
 ! Physical Constants:                                                                      !
 !------------------------------------------------------------------------------------------!
@@ -408,9 +414,9 @@ contains
                    SMCEQ   ,                                                   & ! IN : Vegetation/Soil characteristics
                    SFCTMP  , SFCPRS  , PSFC    , UU      , VV      , Q2      , & ! IN : Forcing
                    QC      , SOLDN   , LWDN    ,                               & ! IN : Forcing
-                   IRRFRA  , SIFAC   , MIFAC   , FIFAC   , LLANDUSE,           & ! IN : Irrigation: fractions
 	           PRCPCONV, PRCPNONC, PRCPSHCV, PRCPSNOW, PRCPGRPL, PRCPHAIL, & ! IN : Forcing
                    TBOT    , CO2AIR  , O2AIR   , FOLN    , FICEOLD , ZLVL    , & ! IN : Forcing
+                   IRRFRA  , SIFAC   , MIFAC   , FIFAC   , LLANDUSE,           & ! IN : Irrigation: fractions
                    ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
                    STC     , SH2O    , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 
                    CANLIQ  , CANICE  , TV      , TG      , QSFC    , QSNOW   , & ! IN/OUT : 
@@ -809,14 +815,14 @@ contains
         IRAMTFI = 0.
      END IF
 ! call sprinkler irrigation before CANWAT/PRECIP_HEAT to have canopy interception
-     IF((CROPLU == .TRUE.) .AND. (IRAMTSI .GT. 0.0))THEN
+     IF((CROPLU == .TRUE.) .AND. (IRAMTSI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 1)))THEN
         CALL SPRINKLER_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,& !in
                                   SFCTMP,UU,VV,EAIR,SIFAC,          & !in
                                   IRAMTSI,IREVPLOS,IRSIRATE)          !inout
         RAIN = RAIN + (IRSIRATE*1000./DT) ![mm/s]
         ! cooling and humidification due to sprinkler evaporation, per m^2 calculation 
         FIRR     = IREVPLOS*1000.*HVAP/DT                              ! heat used for evaporation (W/m2)
-        EIRR     = IREVPLOS*1000./DT                                   ! sprinklerevaporation (mm/s)
+        EIRR     = IREVPLOS*1000./DT                                   ! sprinkler evaporation (mm/s)
      END IF
 ! call for micro irrigation and flood irrigation are implemented in WATER subroutine
 ! end irrigation call
@@ -5995,14 +6001,14 @@ ENDIF   ! CROPTYPE == 0
 #endif
 
 ! irrigation: call flood irrigation-pvk
-    IF((CROPLU == .TRUE. ) .AND. (IRAMTFI .GT. 0.0))THEN
+    IF((CROPLU == .TRUE.) .AND. (IRAMTFI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 3)))THEN
        ! call flood irrigation and add to QINSUR
        CALL FLOOD_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,FIFAC,& !in
                              IRAMTFI,IRFIRATE)                         !inout
        QINSUR = QINSUR + (IRFIRATE/DT)                                ![m/s]
     END IF
 ! irrigation: call micro irrigation-pvk
-    IF((CROPLU == .TRUE.) .AND. (IRAMTMI .GT. 0.0))THEN
+    IF((CROPLU == .TRUE.) .AND. (IRAMTMI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 2)))THEN
        ! call micro irrigation, assuming we implement drip in first layer 
        ! of the Noah-MP. Change layer 1 moisture wrt to MI rate-pvk
        CALL MICRO_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,MIFAC, & !in
@@ -7828,6 +7834,7 @@ ENDIF   ! CROPTYPE == 0
     ELSE IF ( (OPT_IRR .GT. 3) .OR. (OPT_IRR .LT. 1)) THEN
       IRR_ACTIVE = .FALSE.
     END IF
+
     IF(IRR_ACTIVE)THEN
       SMCAVL = 0.0
       SMCLIM = 0.0
@@ -7846,19 +7853,19 @@ ENDIF   ! CROPTYPE == 0
          ! field capacity, i.e., irrigation water amount (m)
          IRRWATAMT = (SMCLIM - SMCAVL)*IRRFRA*FVEG  
          ! sprinkler irrigation amount (m)
-         IF((IRAMTSI .EQ. 0.0) .AND. (SIFAC .GT. 0.0))THEN
+         IF((IRAMTSI .EQ. 0.0) .AND. (SIFAC .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 1)))THEN
             IRAMTSI = SIFAC*IRRWATAMT 
             IRCNTSI = IRCNTSI + 1
          END IF
          ! micro irrigation amount (m)
-         IF((IRAMTMI .EQ. 0.0) .AND. (MIFAC .GT. 0.0))THEN
+         IF((IRAMTMI .EQ. 0.0) .AND. (MIFAC .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 2)))THEN
             IRAMTMI = MIFAC*IRRWATAMT 
             IRCNTMI = IRCNTMI + 1
          END IF
          ! flood irrigation amount (m): Assumed to saturate top two layers and 
          ! third layer to FC. As water moves from one end of the field to
          ! another, surface layers will be saturated
-         IF((IRAMTFI .EQ. 0.0) .AND. (FIFAC .GT. 0.0))THEN
+         IF((IRAMTFI .EQ. 0.0) .AND. (FIFAC .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 3)))THEN
             IRAMTFI = FIFAC*(IRRWATAMT)*(parameters%FILOSS+1)
             IRCNTFI = IRCNTFI + 1
          END IF   
@@ -9533,7 +9540,7 @@ END SUBROUTINE EMERG
 
   subroutine noahmp_options(idveg     ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz , & 
                              iopt_inf  ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot, iopt_stc, &
-			     iopt_rsf , iopt_soil, iopt_pedo, iopt_crop, iopt_irr)
+			     iopt_rsf , iopt_soil, iopt_pedo, iopt_crop, iopt_irr, iopt_irrm)
 
   implicit none
 
@@ -9559,6 +9566,10 @@ END SUBROUTINE EMERG
                                     ! 1 -> Irrigation ON;
                                     ! 2 -> irrigation trigger based on crop season Planting and harvesting dates; 
                                     ! 3 -> irrigation trigger based on LAI threshold
+  INTEGER,  INTENT(IN) :: iopt_irr  ! 0 -> all methods ON based on geo_em inputs
+                                    ! 1 -> sprinkler ON
+                                    ! 2 -> micro/drip ON
+                                    ! 3 -> flood irrigation ON
 ! -------------------------------------------------------------------------------------------------
 
   dveg = idveg
@@ -9579,6 +9590,7 @@ END SUBROUTINE EMERG
   opt_pedo = iopt_pedo
   opt_crop = iopt_crop
   opt_irr  = iopt_irr
+  opt_irrm = iopt_irrm
   
   end subroutine noahmp_options
  

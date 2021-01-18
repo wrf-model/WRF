@@ -129,6 +129,10 @@ state    real   vlon_gc        ij       dyn_nmm      1     -     i1      "XLONG_
 state    real   vlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_V" "latitude, positive north" "degrees"
 state    real   hlon_gc        ij       dyn_nmm      1     -     i1      "XLONG_M" "longitude, positive east" "degrees"
 state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M" "latitude, positive north" "degrees"
+state    real   irfract        ij       dyn_nmm      1     -     i01r    "IRFRACT"   "Irrigation fraction"            ""
+state    real   sifract        ij       dyn_nmm      1     -     i01r    "SIFRACT"   "Sprinkler Irrigation fraction"            ""
+state    real   mifract        ij       dyn_nmm      1     -     i01r    "MIFRACT"   "Micro Irrigation fraction"            ""
+state    real   fifract        ij       dyn_nmm      1     -     i01r    "FIFRACT"   "Flood Irrigation fraction"            ""
 
 ##############################################################
 # Variables for coupling
@@ -1015,6 +1019,19 @@ state    real   WEASD            ij     misc        1         -     i01rh023d=(D
 state    real  ZNT              ij      misc        1         -     irh023        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
+#Noah-MP Irrigation-PVK
+state  integer  IRNUMSI          ij     misc        1         -     rh        "IRNUMSI"           "Sprinkler Irrigation Event Count" ""
+state  integer  IRNUMSI          ij     misc        1         -     rh        "IRNUMMI"           "Micro Irrigation Event Count" ""
+state  integer  IRNUMSI          ij     misc        1         -     rh        "IRNUMFI"           "Flood Irrigation Event Count" ""
+state    real   IRWATSI          ij     misc        1         -     r         "IRWATSI"           "Sprinkler Irrigation Amount for the Event"     "m"
+state    real   IRWATMI          ij     misc        1         -     r         "IRWATMI"           "Micro Irrigation Amount for the Event"     "m"
+state    real   IRWATFI          ij     misc        1         -     r         "IRWATFI"           "Flood Irrigation Amount for the Event"     "m"
+state    real   IRSIVOL          ij     misc        1         -     rh        "IRSIVOL"           "Sprinkler Irrigation Water Accumulated"     "mm"
+state    real   IRMIVOL          ij     misc        1         -     rh        "IRMIVOL"           "Micro Irrigation Water Accumulated"     "mm"
+state    real   IRFIVOL          ij     misc        1         -     rh        "IRFIVOL"           "Flood Irrigation Water Accumulated"     "mm"
+state    real   IRELOSS          ij     misc        1         -     rh        "IRELOSS"           "Sprinkler Evaporation Loss Accumulated"     "mm"
+state    real   IRRSPLH          ij     misc        1         -     rh        "IRRSPLH"           "Sprinkler Evaporation Loss Accumulated"     "Joules m^-2"
+#Noah-MP Irrigation-PVK Ends
 
 state    real   tke_pbl         ijk     misc        1         Z     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
 state    real   el_pbl          ikj     misc        1         Z     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"

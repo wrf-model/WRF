@@ -927,7 +927,7 @@ contains
    END IF
    
 ! before waterbalance check add irrigation water to precipitation
-IF((VEGTYP == parameters%ISCROP) .AND. (IRRFRA .GE. parameters%IRR_FRAC))THEN
+IF((CROPLU == .TRUE.) .AND. (IRRFRA .GE. parameters%IRR_FRAC))THEN
    PRCP = PRCP + ((IRSIRATE+IRMIRATE+IRFIRATE)*1000./DT)  ! irrigation
    FSH  = FSH - FIRR                                      ! (W/m2)
 END IF

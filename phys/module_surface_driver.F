@@ -58,7 +58,7 @@ CONTAINS
      &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz     &
      &          ,iopt_inf ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot ,iopt_stc     &
      &          ,iopt_gla ,iopt_rsf  ,iopt_soil ,iopt_pedo ,iopt_crop ,iopt_irr     &
-     &          ,iopt_irrm,                                                         &
+     &          ,iopt_irrm                                                          &
      &          ,soilcomp  , soilcl1, soilcl2, soilcl3, soilcl4                     &
      &          ,isnowxy  ,tvxy      ,tgxy      ,canicexy  ,canliqxy  ,eahxy        &
      &          ,tahxy    ,cmxy      ,chxy      ,fwetxy    ,sneqvoxy  ,alboldxy     &
@@ -632,7 +632,7 @@ CONTAINS
    INTEGER, INTENT(IN )::   ISICE
    INTEGER, INTENT(IN )::   ISWATER
    INTEGER, INTENT(IN ), OPTIONAL :: ISURBAN
-   CHARACTER(LEN=*), INTENT(IN ), OPTIONAL :: MMINLU, LLANDUSE
+   CHARACTER(LEN=*), INTENT(IN ), OPTIONAL :: MMINLU
    LOGICAL, INTENT(IN )::   WARM_RAIN
    LOGICAL, INTENT(IN)::   tice2tsk_if2cold
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NYEAR
@@ -1369,7 +1369,7 @@ CONTAINS
  
 !
    REAL   :: xice_threshold
-
+   CHARACTER(LEN=256) :: LLANDUSE
 ! cyl 3d ocean variable 
    integer :: okms, okme
    real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(INOUT):: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH

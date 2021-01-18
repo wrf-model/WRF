@@ -106,7 +106,7 @@ CONTAINS
     INTEGER,                                         INTENT(IN   ) ::  IOPT_RSF  ! surface resistance (1->Sakaguchi/Zeng; 2->Seller; 3->mod Sellers; 4->1+snow)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_SOIL ! soil configuration option
     INTEGER,                                         INTENT(IN   ) ::  IOPT_PEDO ! soil pedotransfer function option
-    INTEGER,                                         INTENT(IN   ) ::  IOPT_CROiP ! crop model option (0->none; 1->Liu et al.; 2->Gecros)
+    INTEGER,                                         INTENT(IN   ) ::  IOPT_CROP ! crop model option (0->none; 1->Liu et al.; 2->Gecros)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_IRR  ! irrigation scheme (0->none; >1 irrigation scheme ON)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_IRRM ! irrigation method
     INTEGER,                                         INTENT(IN   ) ::  IZ0TLND   ! option of Chen adjustment of Czil (not used)

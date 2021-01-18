@@ -691,6 +691,7 @@ contains
   REAL                        , INTENT(INOUT)    :: FIRR           ! irrigation:latent heating due to sprinkler evaporation [w/m2]
   REAL                        , INTENT(INOUT)    :: EIRR           ! evaporation of irrigation water to evaporation,sprinkler [mm/s]
   CHARACTER(LEN=256)          , INTENT(IN)       :: LLANDUSE       ! landuse data name (USGS or MODIS_IGBP)
+  REAL                                           :: IREVPLOS ! loss of irrigation water to evaporation,sprinkler [m/timestep]
 
 ! outputs
   REAL                          , INTENT(OUT)    :: NEE    !net ecosys exchange (g/m2/s CO2)
@@ -9566,7 +9567,7 @@ END SUBROUTINE EMERG
                                     ! 1 -> Irrigation ON;
                                     ! 2 -> irrigation trigger based on crop season Planting and harvesting dates; 
                                     ! 3 -> irrigation trigger based on LAI threshold
-  INTEGER,  INTENT(IN) :: iopt_irr  ! 0 -> all methods ON based on geo_em inputs
+  INTEGER,  INTENT(IN) :: iopt_irrm ! 0 -> all methods ON based on geo_em inputs
                                     ! 1 -> sprinkler ON
                                     ! 2 -> micro/drip ON
                                     ! 3 -> flood irrigation ON

@@ -123,7 +123,7 @@ CONTAINS
                          iopt_irr, iopt_irrm,                             &   
                          IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,     &   ! Optional Noah-MP
                          IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,     &   ! Optional Noah-MP
-                         IRRSPLH, 
+                         IRRSPLH,                                         &
                          gecros_state,                                    & ! Optional gecros crop
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP

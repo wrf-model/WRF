@@ -9,7 +9,9 @@
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     use module_model_constants, only : G, T0, RCP
+#if ( ! NMM_CORE == 1 )
     use module_soil_pre, only : Skip_middle_points_t
+#endif
 
     implicit none
 
@@ -113,7 +115,9 @@
 
       Loop_j: do j = jts, min (jte, jde - 1)
         Loop_i: do i = its, min (ite, ide - 1)
+#if ( ! NMM_CORE == 1 )
           if (Skip_middle_points_t (ids, ide, jds, jde, i, j, em_width, hold_ups)) cycle
+#endif
 
           if (LOCAL_DEBUG) print *, 'Calculations for i, j = ', i, j
 

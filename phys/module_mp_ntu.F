@@ -30,8 +30,6 @@
 
       MODULE module_mp_ntu
       USE    module_wrf_error
-      USE    module_state_description, ONLY : P_QDCN,P_QTCN,P_QCCN,    &
-                                              P_QRCN,P_QNIN
 
       IMPLICIT NONE
       PUBLIC  :: MP_NTU
@@ -255,19 +253,19 @@
 
       CONTAINS
 !======================================================================
-      SUBROUTINE NTU_INIT(PRES,z_at_q,RHOA,SCALAR,NSCAR,XLAND,CCNTY,   &
-                 RESTART,IDS,IDE,JDS,JDE,KDS,KDE,IMS,IME,JMS,JME,KMS,  &
-                 KME,ITS,ITE,JTS,JTE,KTS,KTE)
+      SUBROUTINE NTU_INIT(PRES,z_at_q,RHOA,QDCN,QTCN,QCCN,QRCN,QNIN,   &
+                 XLAND,CCNTY,RESTART,IDS,IDE,JDS,JDE,KDS,KDE,IMS,IME,  &
+                 JMS,JME,KMS,KME,ITS,ITE,JTS,JTE,KTS,KTE)
 !======================================================================
       IMPLICIT NONE
       LOGICAL, INTENT(IN) :: RESTART
       INTEGER, INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,IMS,IME,JMS,JME,  &
-                             KMS,KME,ITS,ITE,JTS,JTE,KTS,KTE,CCNTY,NSCAR
+                             KMS,KME,ITS,ITE,JTS,JTE,KTS,KTE,CCNTY
       REAL, INTENT(IN), DIMENSION(IMS:IME,JMS:JME) :: XLAND             ! 1:land ; 2:ocean
       REAL, INTENT(IN), DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: PRES,    &
                         z_at_q,RHOA
-      REAL, INTENT(INOUT), DIMENSION(IMS:IME,KMS:KME,JMS:JME,NSCAR) :: &
-                           SCALAR
+      REAL, INTENT(INOUT), DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: QDCN, &
+                           QTCN,QCCN,QRCN,QNIN
       REAL, DIMENSION(ITS:ITE,KTS:KTE,JTS:JTE) :: ZATQ1,RHOA1,PRES1,   &
                                                   RHO,DZ8W,P_PHY
       REAL, DIMENSION(ITS:ITE,KTS:KTE,JTS:JTE,NAERT) :: QAERO
@@ -298,11 +296,11 @@
                DZ8W(I,K,J) = ZATQ1(I,NK,J)
                RHO(I,K,J) = RHOA1(I,NK,J)
                P_PHY(I,K,J) = PRES1(I,NK,J)
-               QAERO(I,K,J,1) = SCALAR(I,NK,J,P_QDCN)
-               QAERO(I,K,J,2) = SCALAR(I,NK,J,P_QTCN)
-               QAERO(I,K,J,3) = SCALAR(I,NK,J,P_QCCN)
-               QAERO(I,K,J,4) = SCALAR(I,NK,J,P_QRCN)
-               QAERO(I,K,J,5) = SCALAR(I,NK,J,P_QNIN)
+               QAERO(I,K,J,1) = QDCN(I,NK,J)
+               QAERO(I,K,J,2) = QTCN(I,NK,J)
+               QAERO(I,K,J,3) = QCCN(I,NK,J)
+               QAERO(I,K,J,4) = QRCN(I,NK,J)
+               QAERO(I,K,J,5) = QNIN(I,NK,J)
             ENDDO
          ENDDO
       ENDDO
@@ -314,11 +312,11 @@
          DO K = KTS,KTE
             DO I = ITS,ITF
                NK = KME-K+1
-               SCALAR(I,NK,J,P_QDCN) = QAERO(I,K,J,1)
-               SCALAR(I,NK,J,P_QTCN) = QAERO(I,K,J,2)
-               SCALAR(I,NK,J,P_QCCN) = QAERO(I,K,J,3)
-               SCALAR(I,NK,J,P_QRCN) = QAERO(I,K,J,4)
-               SCALAR(I,NK,J,P_QNIN) = QAERO(I,K,J,5)
+               QDCN(I,NK,J) = QAERO(I,K,J,1)
+               QTCN(I,NK,J) = QAERO(I,K,J,2)
+               QCCN(I,NK,J) = QAERO(I,K,J,3)
+               QRCN(I,NK,J) = QAERO(I,K,J,4)
+               QNIN(I,NK,J) = QAERO(I,K,J,5)
             ENDDO
          ENDDO
       ENDDO

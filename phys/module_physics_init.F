@@ -49,7 +49,7 @@ CONTAINS
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
 #if ( EM_CORE == 1 )
-                         PRES,RHOA,CCNTY,                        & ! for ntu3m
+                         PRES,RHOA,CCNTY,QDCN,QTCN,QCCN,QRCN,QNIN,& ! for ntu3m
                          re_cloud_gsfc, re_ice_gsfc,             & 
                          re_snow_gsfc,                           & ! Goddard
                          re_graupel_gsfc, re_hail_gsfc,          &
@@ -680,6 +680,7 @@ CONTAINS
 #if ( EM_CORE == 1 )
    INTEGER, OPTIONAL, INTENT(IN) :: CCNTY
    REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA
+   REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN
 #endif
 !----------------------------------------for ntu3m------------------------------------------
 ! lake varibles:
@@ -1526,7 +1527,7 @@ CONTAINS
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
 !-------------------for ntu3m------------------------------------
 #if ( EM_CORE == 1 )
-                PRES,RHOA,XLAND,CCNTY,                          &
+                PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,QNIN, &
 #endif
 !-------------------for ntu3m------------------------------------
                 mp_restart_state,tbpvs_state,tbpvs0_state,      &
@@ -4102,7 +4103,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
 !---------------------for ntu3m------------------------------------
 #if ( EM_CORE == 1 )
-                      PRES,RHOA,XLAND,CCNTY,                      &
+                      PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,QNIN,&
 #endif
 !---------------------for ntu3m------------------------------------
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
@@ -4180,6 +4181,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    INTEGER, OPTIONAL, INTENT(IN) :: CCNTY
    REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XLAND
    REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA
+   REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN
 #endif
 !----------------------for ntu3m---------------------------------------
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
@@ -4331,9 +4333,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !-----------------------------for ntu3m---------------------------------------
 #if (EM_CORE==1)
      CASE (NTU)
-          CALL ntu_init(PRES,z_at_q,RHOA,scalar,num_sc,XLAND,CCNTY,restart,   &
-                        ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &
-                        ite,jts,jte,kts,kte)
+          CALL ntu_init(PRES,z_at_q,RHOA,QDCN,QTCN,QCCN,QRCN,QNIN,XLAND,&
+                        CCNTY,restart,ids,ide,jds,jde,kds,kde,ims,ime,  &
+                        jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 #endif
 !-----------------------------for ntu3m----------------------------------------
 #if (EM_CORE==1)

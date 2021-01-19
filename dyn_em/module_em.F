@@ -441,7 +441,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 ! Code for splitting vertical velocity into ex/im parts
 
    CALL WW_SPLIT(wwE, wwI, ph, phb,                &
-                 u, v, ww, w, mut, rdnw, msfty,    &
+                 u_old, v_old, ww, w, mut, rdnw, msfty,    &
                  c1f, c2f,                         &
                  rdx, rdy, msfux, msfuy,           &
                  msfvx, msfvy, dt,                 &
@@ -590,7 +590,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    IF(  ( config_flags%scalar_adv_opt == WENO_SCALAR      &
      .or. config_flags%scalar_adv_opt == WENOPD_SCALAR    &
      .or. config_flags%moist_adv_opt == WENO_SCALAR       &
-     .or. config_flags%moist_adv_opt == WENOPD_SCALAR )    &
+     .or. config_flags%moist_adv_opt == WENOPD_SCALAR )   &
      .and. (rk_step == rk_order) ) THEN
      
 ! also use weno for monotonic scalar option so that the h_ and z_tendency arrays are not needed
@@ -1080,8 +1080,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                             tenddec,                         &
                             rk_step, dt_step,                &
                             ru, rv, ww, u,  v,  w,           &  
+                            u_old,  v_old,                   &  
                             mut, mub, mu_old,                &
-                            c1h, c2h, alt,                   &
+                            c1h, c2h, c1f, c2f, alt,         &
                             scalar_old, scalar,              &
                             scalar_tends, advect_tend,       &
                             h_tendency, z_tendency,          &
@@ -1125,12 +1126,14 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(OUT  ) :: RQVFTEN
 
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(IN   ) ::     ru,  &
-                                                                      rv,  &
-                                                                      ww,  &
-                                                                      u,   &
-                                                                      v,   &
-                                                                      w,   &
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(IN   ) ::     ru,     &
+                                                                      rv,     &
+                                                                      ww,     &
+                                                                      u,      &
+                                                                      v,      &
+                                                                      w,      &
+                                                                      u_old,  &
+                                                                      v_old,  &
                                                                       xkmhd,  &
                                                                       alt,    &
                                                                       phb,    &
@@ -1143,6 +1146,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                                                   base
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1h, c2h
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1f, c2f
 
    REAL , DIMENSION( ims:ime , jms:jme ) ,       INTENT(IN   ) :: msfux,    &
                                                                   msfuy,    &
@@ -1198,18 +1202,17 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                          
    ieva = CHK_IEVA( config_flags, rk_step )
 
+! Code for splitting vertical velocity into ex/im parts
+
    CALL WW_SPLIT(wwE, wwI, ph, phb,                &
-                 u, v, ww, w, mut, rdnw, msfty,    &
-                 c1h, c2h,                         &
+                 u_old, v_old, ww, w, mut, rdnw, msfty,    &
+                 c1f, c2f,                         &
                  rdx, rdy, msfux, msfuy,           &
                  msfvx, msfvy, dt,                 &
-                 config_flags, rk_step,            & 
+                 config_flags, rk_step,            &
                  ids, ide, jds, jde, kds, kde,     &
                  ims, ime, jms, jme, kms, kme,     &
-                 its, ite, jts, jte, kts, kte )             
-                 
-! IEVA
-
+                 its, ite, jts, jte, kts, kte )
    CALL nl_get_time_step ( 1, time_step )
 
    scalar_loop : DO im = scs, sce

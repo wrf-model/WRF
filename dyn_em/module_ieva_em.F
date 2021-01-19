@@ -6,7 +6,7 @@ MODULE module_ieva_em
   
   REAL(KIND=8), PARAMETER :: eps        = 1.0d-08
   REAL,         PARAMETER :: alpha_max  = 1.1
-  REAL,         PARAMETER :: alpha_min  = 0.9
+  REAL,         PARAMETER :: alpha_min  = 0.8
 
 CONTAINS
 
@@ -25,15 +25,17 @@ LOGICAL FUNCTION CHK_IEVA( config_flags, rk_step )
 
    CHK_IEVA = .FALSE.
 
-   IF( zadvect_implicit .eq. 3 ) THEN   ! DO IEVA on all sub-steps of RK integrator
-       CHK_IEVA = .TRUE.
-   ENDIF
+! These option to run on the sub-steps are off - they dont make much of a difference
 
-   IF( zadvect_implicit .eq. 2 .and. rk_step .ge. rk_order-1 ) THEN ! DO IEVA on last two sub-steps of RK integrator
-       CHK_IEVA = .TRUE.
-   ENDIF
-
-   IF( zadvect_implicit .eq. 1 .and. rk_step .eq. rk_order ) THEN  ! DO IEVA on last sub-step of RK integrator
+!  IF( zadvect_implicit .eq. 3 ) THEN   ! DO IEVA on all sub-steps of RK integrator
+!      CHK_IEVA = .TRUE.
+!  ENDIF
+!
+!  IF( zadvect_implicit .eq. 2 .and. rk_step .ge. rk_order-1 ) THEN ! DO IEVA on last two sub-steps of RK integrator
+!      CHK_IEVA = .TRUE.
+!  ENDIF
+ 
+   IF( zadvect_implicit .gt. 0 .and. rk_step .eq. rk_order ) THEN  ! DO IEVA on last sub-step of RK integrator
        CHK_IEVA = .TRUE.
    ENDIF
 
@@ -41,11 +43,12 @@ RETURN
 END FUNCTION CHK_IEVA
 
 !-------------------------------------------------------------------------------
-! IEVA code for splitting vertical velocity for ex/im based on Shchepetkin (2015)
+! IEVA code for splitting vertical velocity into pieces for explicit and implicit
+! advection by the routines based on Shchepetkin (2015)
 
 SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
                     u, v, ww, w, mut, rdnw, msfty,    &
-                    c1, c2,                           &
+                    c1f, c2f,                         &
                     rdx, rdy, msfux, msfuy,           &
                     msfvx, msfvy, dt,                 &
                     config_flags, rk_step,            &
@@ -67,7 +70,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: mut
 
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw 
-   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1, c2
+   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1f, c2f
 
    REAL, INTENT(IN)    :: dt
    REAL, INTENT(IN)    :: rdx, rdy
@@ -77,7 +80,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 ! Local variables
 
    REAL(KIND=4)    :: cr, cx, cy, c0, c2d, cw_max2, cw_min, cw, cff, rdz
-   INTEGER         :: i, j, k, ii, jj, i_start, i_end, j_start, j_end
+   INTEGER         :: i, j, k, ii, jj, i_start, i_end, j_start, j_end, ktf
    LOGICAL         :: print_flag = .true.
    SAVE            :: print_flag
    
@@ -105,30 +108,59 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
    ieva = CHK_IEVA(config_flags, rk_step)
 
 ! =========================================================================
-! PRINT OUT IEVA INFO
+! Loop limits
 
-     IF( print_flag ) THEN
-       write(wrf_err_message,*) '----------------------------------------'
-       CALL wrf_debug( 0, wrf_err_message )
-       write(wrf_err_message,*) 'WW_SPLIT:  ZADVECT_IMPLICT = ', config_flags%zadvect_implicit
-       CALL wrf_debug( 0, wrf_err_message )
-       write(wrf_err_message,*) 'WW_SPLIT:  IEVA = ', ieva
-       CALL wrf_debug( 0, wrf_err_message )
-       write(wrf_err_message,*) 'WW_SPLIT:  dt = ', dt
-       CALL wrf_debug( 0, wrf_err_message )
-       write(wrf_err_message,*) 'WW_SPLIT:  alpha_max/min = ', alpha_max, alpha_min
-       CALL wrf_debug( 0, wrf_err_message )
-       print_flag = .false.     
-      ENDIF
+   ktf     = kte
+   i_start = its - 1
+   i_end   = MIN(ite+1,ide) 
+   j_start = jts - 1
+   j_end   = MIN(jte+1,jde)
 
 ! =========================================================================
-   
-   i_start = its-1
-   i_end   = MIN(ite,ide-1) + 1
-   j_start = jts - 1
-   j_end   = MIN(jte,jde-1) + 1
-   
-  
+! PRINT OUT IEVA INFO
+
+   IF( print_flag ) THEN
+     write(wrf_err_message,*) '-- BEGIN WW_SPLIT INFO ----------------------------------------'
+     CALL wrf_debug( 10, wrf_err_message )
+     write(wrf_err_message,*) 'RK_STEP ##', rk_step
+     CALL wrf_debug( 10, wrf_err_message )
+     write(wrf_err_message,*) 'IMS:IME     /  JME:JME     ', ims, ime, jms, jme
+     CALL wrf_debug( 10, wrf_err_message )
+     write(wrf_err_message,*) 'ISTART:IEND / JSTART:JEND  ', i_start,i_end,j_start,j_end
+     CALL wrf_debug( 10, wrf_err_message )
+     write(wrf_err_message,*) 'KMS:KME     /   KDS:KDE    KTS:KTE   ', kms,kme,kds,kde,kts,kte
+     CALL wrf_debug( 10, wrf_err_message )
+     write(wrf_err_message,*) '----------------------------------------'
+     CALL wrf_debug( 10, wrf_err_message )
+     write(wrf_err_message,*) 'WW_SPLIT:  ZADVECT_IMPLICT = ', config_flags%zadvect_implicit
+     CALL wrf_debug( 10, wrf_err_message )
+     write(wrf_err_message,*) 'WW_SPLIT:  IEVA = ', ieva
+     CALL wrf_debug( 10, wrf_err_message )
+     IF( config_flags%zadvect_implicit > 1 ) THEN
+       write(wrf_err_message,*) 'WW_SPLIT:  WARNING: IEVA IS CONFIG TO ONLY RUN ON LAST RK-substep'
+       CALL wrf_debug( 10, wrf_err_message )
+     ENDIF
+     write(wrf_err_message,*) 'WW_SPLIT:  dt = ', dt
+     CALL wrf_debug( 10, wrf_err_message )
+     write(wrf_err_message,*) 'WW_SPLIT:  alpha_max/min = ', alpha_max, alpha_min
+     CALL wrf_debug( 10, wrf_err_message )
+     write(wrf_err_message,*) '-- END WW_SPLIT INFO ----------------------------------------'
+     CALL wrf_debug( 10, wrf_err_message )
+     print_flag = .false.
+   ENDIF
+
+   DO j = jms, jme
+   DO k = kms, kme
+   DO i = ims, ime
+     wwE(i,k,j) = 0.
+     wwI(i,k,j) = 0.
+   ENDDO
+   ENDDO
+   ENDDO
+
+! =========================================================================
+! Loop limits
+
    IF( ieva ) THEN   ! Implicit adaptive advection
    
 !=========================================================================
@@ -140,46 +172,52 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 !
 !=========================================================================
 
+! Set upper and lower boundary values
+
      DO j = j_start, j_end
        DO i = i_start,i_end
        
          wwE(i,1,j) = ww(i,    1,j)
          wwI(i,1,j) = 0.0
          
-         wwE(i,kde,j) = ww(i,kde,j)
-         wwI(i,kde,j) = 0.0
+         wwE(i,ktf,j) = ww(i,ktf,j)
+         wwI(i,ktf,j) = 0.0
 
        ENDDO
      ENDDO
        
      DO j = j_start, j_end
-       DO k = 2, kde-1
+       DO k = 2, ktf-1
 
          DO i = i_start,i_end
          
-!=========================================================================
+!===================================================================================================
 !      
 ! Translating Shchepetkin (2015), all the volumes and surface areas cancel out (not obvious unless you read
 ! the definitions of U, V, and W right after equation 3.7 (they are u*dy*dz, v*dx*dz, w*dx*dy)...
 ! You can write the algorithm using the adjusted maximum vertical courant number (alpha_max - eps*hor_div)
 ! versus the actual vertical courant number.  This code is based on the appendix C of Shchepetkin (2015).
-! The CX and CY measure the maximum possible divergence for a zone, e.g., the Lipschlitz number.  If this number ~O(1), 
-! then you want to reduce the maximum allowed vertical courant number for the explicit advection.  Ceps is a fudge
-! factor - so when the 2D Lipschlitz number is larger than O(1), the scheme switches to fully implicit.
+! The CX and CY measure the maximum possible divergence for a zone, e.g., the Lipschlitz number.  If 
+! this number ~O(1), then the maximum allowed vertical courant number for the explicit advection is close 
+! to zeros, the scheme switches to fully implicit.  Ceps is a fudge factor for when the vertical and 
+! horizontal discretizations are of different order.  It is set to 0.9, which allows the some headroom for 
+! the maximum horizontal Courant number since we are using an RK3 integrator which has a larger stability 
+! region than the integrators used in Shchepetkin (2015).
 !
-!=========================================================================
+!===================================================================================================
            wfrac = 1.0
             
            IF( ww(i,k,j) < 0.0 ) THEN    !! Omega has opposite sign of W
-             cx = msfty(i,j)*rdx*(max(u(i+1,k,j), 0.0) - min(u(i,k,j), 0.0)) 
-             cy = msfty(i,j)*rdy*(max(v(i,k,j+1), 0.0) - min(v(i,k,j), 0.0)) 
+             cx = rdx*(max(u(i+1,k,j  ), 0.0) - min(u(i,k,j), 0.0)) 
+             cy = rdy*(max(v(i,  k,j+1), 0.0) - min(v(i,k,j), 0.0)) 
            ELSE
-             cx = msfty(i,j)*rdx*(max(u(i+1,k-1,j), 0.0) - min(u(i,k-1,j), 0.0)) 
-             cy = msfty(i,j)*rdy*(max(v(i,k-1,j+1), 0.0) - min(v(i,k-1,j), 0.0))
+             cx = rdx*(max(u(i+1,k-1,j  ), 0.0) - min(u(i,k-1,j), 0.0)) 
+             cy = rdy*(max(v(i,  k-1,j+1), 0.0) - min(v(i,k-1,j), 0.0))
            ENDIF
 
            cw_max = max(alpha_max - dt*Ceps*(cx + cy),0.0)                 ! adjusted max vertical courant
-           cr     = ww(i,k,j) * dt * rdnw(k) / (c1(k)*mut(i,j)+c2(k))      ! vertical courant number
+
+           cr     = ww(i,k,j) * dt * rdnw(k) / (c1f(k)*mut(i,j)+c2f(k))    ! vertical courant number
          
            IF( cw_max > 0.0 ) THEN
       
@@ -220,8 +258,12 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 !=========================================================================
 ! DEBUG CODE BLOCK:  write out information when fully implicit
 !        
+!            write(wrf_err_message,*) '-- BEGIN WW_SPLIT ----------------------------------------'
+!            CALL wrf_debug(100, wrf_err_message )
 !            write(wrf_err_message,*) ' MAX VERTICAL CFL ~ 0: i,j,k, cw_max, dt*(cx+cy) ',i,j,k,cw_max,Ceps*dt*(cx+cy)
-!            CALL wrf_debug(0, wrf_err_message )
+!            CALL wrf_debug(100, wrf_err_message )
+!            write(wrf_err_message,*) '-- END WW_SPLIT ----------------------------------------'
+!            CALL wrf_debug( 100, wrf_err_message )
 !
 !=========================================================================
              
@@ -237,7 +279,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
    ELSE  ! NOT doing IEVA, pure explicit advection
 
      DO j = j_start, j_end
-       DO k = kds, kde
+       DO k = kts, ktf
          DO i = i_start,i_end
            wwE(i,k,j) = ww(i,k,j)
            wwI(i,k,j) = 0.0
@@ -250,20 +292,20 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 !=========================================================================
 ! DEBUG - print distribution of wfrac 
 ! 
-!  write(wrf_err_message,*) '----------------------------------------'
-!  CALL wrf_debug( 0, wrf_err_message )
+!  write(wrf_err_message,*) '-- BEGIN WW_SPLIT ----------------------------------------'
+!  CALL wrf_debug( 100, wrf_err_message )
 !  DO mm = 1,11 
 !    write(wrf_err_message,FMT='(a, 2(2x,f4.2),2x,i9,2(2x,f6.4))' ) &
 !     'WW_SPLIT: BIN #, count', (mm-1)*binfrac, mm*binfrac, count(mm), binavg(mm)/(count(mm)+1), crs(mm)/(count(mm)+1)
-!    CALL wrf_debug( 0, wrf_err_message )
+!    CALL wrf_debug( 100, wrf_err_message )
 !  ENDDO
-!  write(wrf_err_message,*) '----------------------------------------'
-!  CALL wrf_debug( 0, wrf_err_message )
+!  write(wrf_err_message,*) '-- END WW_SPLIT ----------------------------------------'
+!  CALL wrf_debug( 100, wrf_err_message )
 !
 !=========================================================================
 
- RETURN
- END SUBROUTINE WW_SPLIT
+RETURN
+END SUBROUTINE WW_SPLIT
  
  
  SUBROUTINE TRIDIAG2D(a, b, c, r, bb, is, ie, istart, iend, ks, ke, kstart, kend)
@@ -278,25 +320,21 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
     integer,                              intent(in)    :: is, ie, ks, ke, istart, iend, kstart, kend
     real(kind=8), dimension(is:ie,ks:ke), intent(in)    :: a, b, c, r
     real(kind=8), dimension(is:ie,ks:ke), intent(inout) :: bb
-    
-    !
-    ! Local Variables
-    ! 
-      
+!
+! Local Variables
+! 
     real(kind=8), dimension(ks:ke) :: gam
     real(kind=8), dimension(is:ie) :: bet
     integer                        :: i, k
-
+!
 ! Copy into temp storage...
-    
+!   
     DO i = istart, iend   
      
       bet(i) = b(i,kstart)  
            
     ENDDO
 
-! I did this in this manner so I wont break vectorization
-  
 !   IF ( ANY( bet < 1.0e-15 ) ) THEN      
 !     write(wrf_err_message,*) '----------------------------------------'
 !     CALL wrf_debug( 0, wrf_err_message )
@@ -313,8 +351,8 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
     
        DO k = kstart+1, kend
        
-         gam(k) = c(i,k-1) / bet(i)
-         bet(i) = b(i,k) - a(i,k) * gam(k)
+         gam(k)  = c(i,k-1) / bet(i)
+         bet(i)  = b(i,k) - a(i,k) * gam(k)
       
          bb(i,k) = ( r(i,k) - a(i,k) * bb(i,k-1) ) / bet(i)
       
@@ -494,6 +532,7 @@ SUBROUTINE CALC_MUT_NEW( u, v, c1h, c2h,                     &
     ENDDO     ! END J
 
 
+RETURN
 END SUBROUTINE CALC_MUT_NEW
 !-------------------------------------------------------------------------------
 !
@@ -563,10 +602,7 @@ SUBROUTINE advect_ph_implicit( ph, pho, tendency, phb,        &
    LOGICAL :: specified
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1, valid_ik
 
-   specified = .false.
-   if(config_flags%specified .or. config_flags%nested) specified = .true.
-
-   ktf     = kde-1
+   ktf     = kte-1
    i_start = its
    i_end   = MIN(ite,ide-1)
    j_start = jts
@@ -646,6 +682,8 @@ SUBROUTINE advect_ph_implicit( ph, pho, tendency, phb,        &
    
    ENDDO
     
+   
+RETURN
 END SUBROUTINE advect_ph_implicit
 !-------------------------------------------------------------------------------
 !
@@ -723,37 +761,39 @@ SUBROUTINE advect_s_implicit( s, s_old, tendency,            &
    REAL(KIND=8), DIMENSION(ims:ime,kts:kte) :: at, bt, ct, rt, bb   
    REAL(KIND=8), DIMENSION(ims:ime)         :: btmp
    
-   LOGICAL :: specified
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1
    INTEGER :: valid_ik, skip
    CHARACTER*512 :: temp
 
-   specified = .false.
-   if(config_flags%specified .or. config_flags%nested) specified = .true.
+   LOGICAL         :: print_flag = .true.
+   SAVE            :: print_flag
+
+!-- loop bounds 
 
    ktf     = MIN(kte,kde-1)
-   i_start = its
+   i_start = its-1
    i_end   = MIN(ite,ide-1)
-   j_start = jts
+   j_start = jts-1
    j_end   = MIN(jte,jde-1)
-   
-! Vertical loop to do implicit advection.....
+
+! J outer loop to do implicit advection.....
 
    DO j = j_start, j_end
- 
+     
      at(:,:) = 0.0
      bt(:,:) = 1.0
      ct(:,:) = 0.0
      rt(:,:) = 0.0
-     bb(:,:) = 0.0
-     
+     bb(:,:) = 0.0    
+           
      DO k = kts, ktf
-       DO i = i_start, i_end
 
-         km1 = k - 1
-         kp1 = k + 1
-         IF( k .eq. ktf ) kp1 = ktf
-         IF( k .eq. kts ) km1 = kts
+       km1 = k - 1
+       kp1 = k + 1
+       IF( k .eq. ktf ) kp1 = ktf
+       IF( k .eq. kts ) km1 = kts
+
+       DO i = i_start, i_end
 
          ! Redefine mass fluxes with new temporary column mass
        
@@ -783,6 +823,7 @@ SUBROUTINE advect_s_implicit( s, s_old, tendency,            &
        
    ENDDO  ! J-LOOP
 
+RETURN
 END SUBROUTINE advect_s_implicit
 !-------------------------------------------------------------------------------
 !
@@ -867,17 +908,7 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1
    INTEGER :: valid_ik
 
-   specified = .false.
-   if(config_flags%specified .or. config_flags%nested) specified = .true.
-
-!-------------------- vertical advection
-!  ADT eqn 44 has 3rd term on RHS = -(1/my) partial d/dz (rho u w)
-!  Here we have:  - partial d/dz (u*rom) = - partial d/dz (u rho w / my)
-!  Since 'my' (map scale factor in y-direction) isn't a function of z,
-!  this is what we need, so leave unchanged in advect_u
-
    ktf     = MIN(kte,kde-1)
-
    i_start = its
    i_end   = ite
    j_start = jts
@@ -886,7 +917,7 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
 ! Compute column masses for u-staggering...
 
    DO j = j_start, j_end
-    DO i = its,min(ite+1,ide)
+    DO i = i_start, i_end
 
       muu(i,j)     = 0.5*(mut(i,j)    +mut(i-1,j))
       muu_old(i,j) = 0.5*(mut_old(i,j)+mut_old(i-1,j))
@@ -939,6 +970,7 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
         
    ENDDO ! J-LOOP
     
+RETURN
 END SUBROUTINE advect_u_implicit
 !-------------------------------------------------------------------------------
 !
@@ -1023,26 +1055,15 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1
    INTEGER :: valid_ik
    
-   specified = .false.
-   if(config_flags%specified .or. config_flags%nested) specified = .true.
-
-!-------------------- vertical advection
-!  ADT eqn 44 has 3rd term on RHS = -(1/my) partial d/dz (rho u w)
-!  Here we have:  - partial d/dz (u*rom) = - partial d/dz (u rho w / my)
-!  Since 'my' (map scale factor in y-direction) isn't a function of z,
-!  this is what we need, so leave unchanged in advect_u
-
-
    ktf     = MIN(kte,kde-1)
-   
    i_start = its
    i_end   = MIN(ite,ide-1)
    j_start = jts
    j_end   = jte
-   
-! Compute column masses for u-staggering...
 
-   DO j = jts,min(jte+1,jde)
+! Compute column masses for v-staggering...
+
+   DO j = j_start,j_end
     DO i = i_start, i_end
 
       muv(i,j)     = 0.5*(mut(i,j)    +mut(i,j-1))
@@ -1096,6 +1117,7 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
           
    ENDDO
     
+RETURN
 END SUBROUTINE advect_v_implicit
 
 !-------------------------------------------------------------------------------
@@ -1184,15 +1206,6 @@ SUBROUTINE advect_w_implicit( w, w_old, tendency,            &
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1
    INTEGER :: valid_ik
    
-   specified = .false.
-   IF(config_flags%specified .or. config_flags%nested) specified = .true.
-
-!-------------------- vertical advection
-!  ADT eqn 44 has 3rd term on RHS = -(1/my) partial d/dz (rho u w)
-!  Here we have:  - partial d/dz (u*rom) = - partial d/dz (u rho w / my)
-!  Since 'my' (map scale factor in y-direction) isn't a function of z,
-!  this is what we need, so leave unchanged in advect_u
-
    ktf     = MIN(kte,kde-1)
    i_start = its
    i_end   = MIN(ite,ide-1)
@@ -1265,6 +1278,7 @@ SUBROUTINE advect_w_implicit( w, w_old, tendency,            &
      
    ENDDO
     
+RETURN
 END SUBROUTINE advect_w_implicit
 
 END MODULE module_ieva_em

@@ -3,7 +3,7 @@ The MAD-WRF model is designed to improve the solar irradiance nowcast
 There are two options to run MAD-WRF:
 
  1. madwrf_opt = 1: The initial hydrometeos are advected and diffused with the model dynamics without accounting for any microphysical processes. 
-                    The user should set mp_physics = 99 and use_mp_re = 0 in the physics block of the WRF namelist.
+                    The user should set mp_physics = 96 and use_mp_re = 0 in the physics block of the WRF namelist.
 
  2. madwrf_opt = 2: There is a set of hydrometeor tracers that are advected and diffused with the model dynamics. 
                     At initial time the tracers are equal to the standard hydrometeors.

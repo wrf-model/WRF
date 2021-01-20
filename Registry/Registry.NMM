@@ -1797,7 +1797,7 @@ package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,q
 package   etampnew      mp_physics==95               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
 package   gsfcgcescheme mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 package   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_max
-package   madwrf_mp       mp_physics==99               -             moist:qv,qc,qi,qs
+package   madwrf_mp       mp_physics==96               -             moist:qv,qc,qi,qs
 
 
 # MAD-WRF

@@ -372,9 +372,9 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % madwrf_opt .EQ. 1 .AND.     &
-             (model_config_rec % mp_physics(i) .NE. 99 .or. &
+             (model_config_rec % mp_physics(i) .NE. 96 .or. &
               model_config_rec % use_mp_re /= 0)) THEN
-            wrf_err_message = '--- ERROR: madwrf_opt = 1 requires mp_physics=99 and use_mp_re=0'
+            wrf_err_message = '--- ERROR: madwrf_opt = 1 requires mp_physics=96 and use_mp_re=0'
             CALL wrf_message ( wrf_err_message )
             count_fatal_error = count_fatal_error + 1
          END IF

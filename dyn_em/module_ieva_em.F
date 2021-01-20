@@ -119,33 +119,33 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 ! =========================================================================
 ! PRINT OUT IEVA INFO
 
-   IF( print_flag ) THEN
+   IF( print_flag .and. ieva ) THEN
      write(wrf_err_message,*) '-- BEGIN WW_SPLIT INFO ----------------------------------------'
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      write(wrf_err_message,*) 'RK_STEP ##', rk_step
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      write(wrf_err_message,*) 'IMS:IME     /  JME:JME     ', ims, ime, jms, jme
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      write(wrf_err_message,*) 'ISTART:IEND / JSTART:JEND  ', i_start,i_end,j_start,j_end
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      write(wrf_err_message,*) 'KMS:KME     /   KDS:KDE    KTS:KTE   ', kms,kme,kds,kde,kts,kte
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      write(wrf_err_message,*) '----------------------------------------'
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      write(wrf_err_message,*) 'WW_SPLIT:  ZADVECT_IMPLICT = ', config_flags%zadvect_implicit
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      write(wrf_err_message,*) 'WW_SPLIT:  IEVA = ', ieva
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      IF( config_flags%zadvect_implicit > 1 ) THEN
        write(wrf_err_message,*) 'WW_SPLIT:  WARNING: IEVA IS CONFIG TO ONLY RUN ON LAST RK-substep'
-       CALL wrf_debug( 10, wrf_err_message )
+       CALL wrf_debug( 0, wrf_err_message )
      ENDIF
      write(wrf_err_message,*) 'WW_SPLIT:  dt = ', dt
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      write(wrf_err_message,*) 'WW_SPLIT:  alpha_max/min = ', alpha_max, alpha_min
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      write(wrf_err_message,*) '-- END WW_SPLIT INFO ----------------------------------------'
-     CALL wrf_debug( 10, wrf_err_message )
+     CALL wrf_debug( 0, wrf_err_message )
      print_flag = .false.
    ENDIF
 
@@ -323,6 +323,8 @@ END SUBROUTINE WW_SPLIT
 !
 ! Local Variables
 ! 
+!   real(kind=8), dimension(ks:ke) :: gam
+!   real(kind=8), dimension(is:ie) :: bet
     real(kind=8), dimension(ks:ke) :: gam
     real(kind=8), dimension(is:ie) :: bet
     integer                        :: i, k
@@ -346,26 +348,26 @@ END SUBROUTINE WW_SPLIT
 !   ENDIF
 
     DO i = istart, iend
-        
+
        bb(i,kstart) = r(i,kstart)/bet(i)
-    
+
        DO k = kstart+1, kend
-       
-         gam(k)  = c(i,k-1) / bet(i)
-         bet(i)  = b(i,k) - a(i,k) * gam(k)
-      
+
+         gam(k) = c(i,k-1) / bet(i)
+         bet(i) = b(i,k) - a(i,k) * gam(k)
+
          bb(i,k) = ( r(i,k) - a(i,k) * bb(i,k-1) ) / bet(i)
-      
+
        ENDDO
- 
+
        DO k = kend-1, kstart, -1
-       
+
          bb(i,k) = bb(i,k) - gam(k+1) * bb(i,k+1)
-         
+
        ENDDO
-       
+
      ENDDO
- 
+
  END SUBROUTINE TRIDIAG2D
 !--------------------------------------------------------------------------------------------------
  SUBROUTINE TRIDIAG(a, b, c, r, bb, ks, ke, kstart, kend)
@@ -1034,7 +1036,7 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
                                                                   rdy
    REAL ,                                        INTENT(IN   ) :: dt_rk
 
-   ! Local data
+! Local data
    
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end

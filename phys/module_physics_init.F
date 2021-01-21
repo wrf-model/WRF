@@ -100,6 +100,7 @@ CONTAINS
                          urban_map_wd,                           &
                          urban_map_gbd,                          &
                          urban_map_fbd,                          &
+                         urban_map_zgrd,                         &
                          NUM_URBAN_HI,                           &
                          raincv_a,raincv_b,                      &
                          gd_cloud,gd_cloud2,                     & 
@@ -154,6 +155,10 @@ CONTAINS
                          SFWIN1_URB3D,SFWIN2_URB3D,              & !Optional multi-layer urban
                          SFW1_URB3D,SFW2_URB3D,                  & !Optional multi-layer urban
                          SFR_URB3D,SFG_URB3D,                    & !Optional multi-layer urban
+                         EP_PV_URB3D,T_PV_URB3D,                         & !GRZ
+                         TRV_URB4D,QR_URB4D,QGR_URB3D,TGR_URB3D,         & !GRZ
+                         DRAIN_URB4D,DRAINGR_URB3D,SFRV_URB3D,           & !GRZ
+                         LFRV_URB3D,DGR_URB3D,DG_URB3D,LFR_URB3D,LFG_URB3D,&!GRZ
                          LP_URB2D,HI_URB2D,LB_URB2D,             & !Optional multi-layer urban
                          HGT_URB2D,MH_URB2D,STDH_URB2D,          & !Optional multi-layer urban
                          LF_URB2D,                               & !Optional multi-layer urban
@@ -636,6 +641,7 @@ CONTAINS
    INTEGER , INTENT(IN)        :: urban_map_wd
    INTEGER , INTENT(IN)        :: urban_map_gbd
    INTEGER , INTENT(IN)        :: urban_map_fbd
+   INTEGER , INTENT(IN)        :: urban_map_zgrd
    INTEGER , INTENT(IN)        :: num_urban_hi
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: TRB_URB4D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ), INTENT(INOUT) :: TW1_URB4D ! multi-layer UCM
@@ -658,6 +664,20 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: SFR_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ), INTENT(INOUT) :: SFW1_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ), INTENT(INOUT) :: SFW2_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: EP_PV_URB3D!GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf,jms:jme ), INTENT(INOUT) :: T_PV_URB3D!GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme),INTENT(INOUT) :: TRV_URB4D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme),INTENT(INOUT) :: QR_URB4D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime,jms:jme), INTENT(INOUT) :: QGR_URB3D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime,jms:jme), INTENT(INOUT) :: TGR_URB3D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme),INTENT(INOUT) :: DRAIN_URB4D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRAINGR_URB3D   !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme),INTENT(INOUT) :: SFRV_URB3D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme),INTENT(INOUT) :: LFRV_URB3D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: DGR_URB3D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: DG_URB3D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: LFR_URB3D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: LFG_URB3D !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme), INTENT(INOUT) :: HI_URB2D  !multi-layer UCM
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D  !multi-layer UCM
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D  !multi-layer UCM
@@ -1404,6 +1424,7 @@ CONTAINS
                 urban_map_wd ,                                  & !Optional multi-layer urban
                 urban_map_gbd,                                  & !Optional multi-layer urban
                 urban_map_fbd,                                  & !Optional multi-layer urban
+                urban_map_zgrd,                                 & !Optional multi-layer urban
                 NUM_URBAN_HI,                                   & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
                 TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
@@ -1414,6 +1435,10 @@ CONTAINS
                 SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
                 SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
+                EP_PV_URB3D,T_PV_URB3D,                         & !GRZ
+                TRV_URB4D,QR_URB4D,QGR_URB3D,TGR_URB3D,         & !GRZ
+                DRAIN_URB4D,DRAINGR_URB3D,SFRV_URB3D,           & !GRZ
+                LFRV_URB3D,DGR_URB3D,DG_URB3D,LFR_URB3D,LFG_URB3D,&!GRZ
                 LP_URB2D,HI_URB2D,LB_URB2D,                     & !Optional multi-layer urban
                 HGT_URB2D,MH_URB2D,STDH_URB2D,                  & !Optional multi-layer urban
                 LF_URB2D,                                       & !Optional multi-layer urban
@@ -2412,6 +2437,7 @@ CONTAINS
                 urban_map_wd,                                   & !Optional multi-layer urban
                 urban_map_gbd,                                  & !Optional multi-layer urban
                 urban_map_fbd,                                  & !Optional multi-layer urban
+                urban_map_zgrd,                                 & !Optional multi-layer urban
                 NUM_URBAN_HI,                                   & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
                 TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
@@ -2422,6 +2448,10 @@ CONTAINS
                 SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
                 SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
+                EP_PV_URB3D,T_PV_URB3D,                         & !GRZ
+                TRV_URB4D,QR_URB4D,QGR_URB3D,TGR_URB3D,         & !GRZ
+                DRAIN_URB4D,DRAINGR_URB3D,SFRV_URB3D,           & !GRZ
+                LFRV_URB3D,DGR_URB3D,DG_URB3D,LFR_URB3D,LFG_URB3D,&!GRZ
                 LP_URB2D,HI_URB2D,LB_URB2D,                     & !Optional multi-layer urban
                 HGT_URB2D,MH_URB2D,STDH_URB2D,                  & !Optional multi-layer urban
                 LF_URB2D,                                       & !Optional multi-layer urban
@@ -2743,6 +2773,7 @@ CONTAINS
     INTEGER , INTENT(IN)        ::     urban_map_wd
     INTEGER , INTENT(IN)        ::     urban_map_gbd
     INTEGER , INTENT(IN)        ::     urban_map_fbd
+    INTEGER , INTENT(IN)        ::     urban_map_zgrd
     INTEGER , INTENT(IN)        ::     num_urban_hi
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: TRB_URB4D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ), INTENT(INOUT) :: TW1_URB4D !Optional UCM
@@ -2765,6 +2796,20 @@ CONTAINS
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ), INTENT(INOUT) :: SFW2_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: SFR_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: SFG_URB3D !Optional UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: EP_PV_URB3D!GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf,jms:jme ), INTENT(INOUT) :: T_PV_URB3D!GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme),INTENT(INOUT) :: TRV_URB4D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme),INTENT(INOUT) :: QR_URB4D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime,jms:jme), INTENT(INOUT) :: QGR_URB3D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime,jms:jme), INTENT(INOUT) :: TGR_URB3D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme),INTENT(INOUT) :: DRAIN_URB4D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRAINGR_URB3D   !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme),INTENT(INOUT) :: SFRV_URB3D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme),INTENT(INOUT) :: LFRV_URB3D ! GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: DGR_URB3D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: DG_URB3D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: LFR_URB3D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: LFG_URB3D !GRZ
     REAL, OPTIONAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme ), INTENT(INOUT) :: HI_URB2D  !multi-layer UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D  !multi-layer UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D  !multi-layer UCM
@@ -3117,6 +3162,7 @@ CONTAINS
                               urban_map_wd,                                    & !urban
                               urban_map_gbd,                                   & !urban
                               urban_map_fbd,                                   & !urban
+                              urban_map_zgrd,                                  & !urban
                               num_urban_hi,                                    & !urban
                               TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,         & !urban
                               TLEV_URB3D,QLEV_URB3D,                           & !urban
@@ -3126,6 +3172,11 @@ CONTAINS
                               SFVENT_URB3D,LFVENT_URB3D,                       & !urban
                               SFWIN1_URB3D,SFWIN2_URB3D,                       & !urban
                               SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,       & !urban
+                              EP_PV_URB3D,T_PV_URB3D,                         & !GRZ
+                              TRV_URB4D,QR_URB4D,QGR_URB3D,TGR_URB3D,         & !GRZ
+                              DRAIN_URB4D,DRAINGR_URB3D,SFRV_URB3D,           & !GRZ
+                              LFRV_URB3D,DGR_URB3D,DG_URB3D,LFR_URB3D,LFG_URB3D,&!GRZ
+                              SMOIS,                                           & !GRZ
                               LP_URB2D,HI_URB2D,LB_URB2D,                      & !urban
                               HGT_URB2D,MH_URB2D,STDH_URB2D,                   & !urban
                               LF_URB2D,                                        & !urban
@@ -3249,6 +3300,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                               urban_map_wd,                                    & !urban
                               urban_map_gbd,                                   & !urban
                               urban_map_fbd,                                   & !urban
+                              urban_map_zgrd,                                  & !urban
                               num_urban_hi,                                    & !urban
                               TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,         & !urban
                               TLEV_URB3D,QLEV_URB3D,                           & !urban
@@ -3258,6 +3310,11 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                               SFVENT_URB3D,LFVENT_URB3D,                       & !urban
                               SFWIN1_URB3D,SFWIN2_URB3D,                       & !urban
                               SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,       & !urban
+                              EP_PV_URB3D,T_PV_URB3D,                         & !GRZ
+                              TRV_URB4D,QR_URB4D,QGR_URB3D,TGR_URB3D,         & !GRZ
+                              DRAIN_URB4D,DRAINGR_URB3D,SFRV_URB3D,           & !GRZ
+                              LFRV_URB3D,DGR_URB3D,DG_URB3D,LFR_URB3D,LFG_URB3D,&!GRZ
+                              SMOIS,                                           & 
                               LP_URB2D,HI_URB2D,LB_URB2D,                      & !urban
                               HGT_URB2D,MH_URB2D,STDH_URB2D,                   & !urban
                               LF_URB2D,                                        & !urban

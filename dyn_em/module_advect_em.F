@@ -7870,7 +7870,6 @@ END SUBROUTINE advect_scalar_pd
 
 SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
                              ru, rv, rom,                   &
-                             c1, c2,                        &
                              mut, time_step, config_flags,  &
                              msfux, msfuy, msfvx, msfvy,    &
                              msftx, msfty,                  &
@@ -10818,7 +10817,7 @@ PROGRAM feeder
    print *,' '
    print *,'Lines to input to gnuplot'
    print *,' '
-   print *,"set term x11"
+   print *,"set terminal x11"
    IF      (config_flags%scalar_adv_opt .EQ. 0 ) THEN
       print *,'set title "Scalar Advection" font ",20"'
    ELSE IF (config_flags%scalar_adv_opt .EQ. 1 ) THEN
@@ -10827,7 +10826,7 @@ PROGRAM feeder
       print *,'set title "Mono Advection" font ",20"'
    ELSE IF (config_flags%scalar_adv_opt .EQ. 3 ) THEN
       print *,'set title "WENO Advection" font ",20"'
-   ELSE IF (config_flags%scalar_adv_opt .EQ. 3 ) THEN
+   ELSE IF (config_flags%scalar_adv_opt .EQ. 4 ) THEN
       print *,'set title "WENO PD Advection" font ",20"'
    END IF
    print *,"set yrange[-20:120]"

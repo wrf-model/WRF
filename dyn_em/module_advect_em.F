@@ -7869,16 +7869,16 @@ END SUBROUTINE advect_scalar_pd
 !----------------------------------------------------------------
 
 SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
-                             ru, rv, rom,                   &
-                             c1, c2,                        &
-                             mut, time_step, config_flags,  &
-                             msfux, msfuy, msfvx, msfvy,    &
-                             msftx, msfty,                  &
-                             fzm, fzp,                      &
-                             rdx, rdy, rdzw,                &
-                             ids, ide, jds, jde, kds, kde,  &
-                             ims, ime, jms, jme, kms, kme,  &
-                             its, ite, jts, jte, kts, kte  )
+                                ru, rv, rom,                   &
+                                c1, c2,                        &
+                                mut, time_step, config_flags,  &
+                                msfux, msfuy, msfvx, msfvy,    &
+                                msftx, msfty,                  &
+                                fzm, fzp,                      &
+                                rdx, rdy, rdzw,                &
+                                ids, ide, jds, jde, kds, kde,  &
+                                ims, ime, jms, jme, kms, kme,  &
+                                its, ite, jts, jte, kts, kte  )
 !
 ! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
 ! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223;

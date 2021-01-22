@@ -2537,8 +2537,8 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    LOGICAL :: wflags_differ = .false.
    LOGICAL :: print_flag    = .true.
    SAVE    :: print_flag
-   INTEGER :: some1         = 0     ! Now have two catagories of CFL information, hence some1 & some2
-   INTEGER :: some2         = 0
+   INTEGER :: some1       ! Now have two catagories of CFL information, hence some1 & some2
+   INTEGER :: some2        
 
 !<DESCRIPTION>
 !
@@ -2587,6 +2587,9 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
+
+   some1 = 0
+   some2 = 0
 
    max_vert_cfl  = 0.
    max_horiz_cfl = 0.

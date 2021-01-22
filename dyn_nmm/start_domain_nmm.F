@@ -246,7 +246,7 @@
       integer :: num_urban_hi, &
                  num_urban_ndm,urban_map_zrd,urban_map_zwd,urban_map_gd,  &
                  urban_map_zd ,urban_map_zdf,urban_map_bd ,urban_map_wd,  &
-                 urban_map_gbd,urban_map_fbd
+                 urban_map_gbd,urban_map_fbd,urban_map_zgrd
 !Rogers GMT
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
@@ -2178,7 +2178,7 @@
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
      &             ,num_urban_ndm,urban_map_zrd,urban_map_zwd,urban_map_gd  &
      &             ,urban_map_zd ,urban_map_zdf,urban_map_bd ,urban_map_wd  &
-     &             ,urban_map_gbd,urban_map_fbd                             &
+     &             ,urban_map_gbd,urban_map_fbd,urban_map_zgrd              &
      &             ,NUM_URBAN_HI                                            &
      &             ,GRID%RAINCV_A,GRID%RAINCV_B                         &
      &               ,ISNOWXY=grid%ISNOWXY, ZSNSOXY=grid%ZSNSOXY, TSNOXY=grid%TSNOXY,    & ! Optional Noah-MP

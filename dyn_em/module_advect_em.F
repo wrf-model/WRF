@@ -10738,41 +10738,42 @@ PROGRAM feeder
                                     ims, ime, jms, jme, kms, kme,  &
                                     its, ite, jts, jte, kts, kte  )
          ELSE IF (config_flags%scalar_adv_opt .EQ. 1 ) THEN
-            CALL advect_scalar_pd ( field(ims,kms,jms,im), &
-                                    field_old(ims,kms,jms,im), &
-                                    tendency(ims,kms,jms), &
-                                    h_tendency(ims,kms,jms), &
-                                    z_tendency(ims,kms,jms), &
-                                    ru, rv, rom, c1, c2, &
-                                    mut, mub, mu_old, &
+            CALL advect_scalar_pd ( field(ims,kms,jms,im),            &
+                                    field_old(ims,kms,jms,im),        &
+                                    tendency(ims,kms,jms),            &
+                                    h_tendency(ims,kms,jms),          &
+                                    z_tendency(ims,kms,jms),          &
+                                    ru, rv, rom, c1, c2,              &
+                                    mut, mub, mu_old,                 &
                                     time_step, config_flags, tenddec, &
-                                    msfux, msfuy, msfvx, msfvy, &
-                                    msftx, msfty, fzm, fzp, &
-                                    rdx, rdy, rdzw,dt, &
-                                    ids, ide, jds, jde, kds, kde, &
-                                    ims, ime, jms, jme, kms, kme, &
+                                    msfux, msfuy, msfvx, msfvy,       &
+                                    msftx, msfty, fzm, fzp,           &
+                                    rdx, rdy, rdzw,dt,                &
+                                    ids, ide, jds, jde, kds, kde,     &
+                                    ims, ime, jms, jme, kms, kme,     &
                                     its, ite, jts, jte, kts, kte )
          ELSE IF (config_flags%scalar_adv_opt .EQ. 2 ) THEN
-            CALL advect_scalar_mono ( field(ims,kms,jms,im), &
-                                    field_old(ims,kms,jms,im), &
-                                    tendency(ims,kms,jms), &
-                                    h_tendency(ims,kms,jms), &
-                                    z_tendency(ims,kms,jms), &
-                                    ru, rv, rom, romI,       &
-                                    c1, c2,                  & 
-                                    mut, mub, mu_old,        &
-                                    config_flags, tenddec,   &
-                                    msfux, msfuy, msfvx, msfvy, &
-                                    msftx, msfty, fzm, fzp, &
-                                    rdx, rdy, rdzw,dt, &
-                                    ids, ide, jds, jde, kds, kde, &
-                                    ims, ime, jms, jme, kms, kme, &
-                                    its, ite, jts, jte, kts, kte )
+            CALL advect_scalar_mono ( field(ims,kms,jms,im),        &
+                                      field_old(ims,kms,jms,im),    &
+                                      tendency(ims,kms,jms),        &
+                                      h_tendency(ims,kms,jms),      &
+                                      z_tendency(ims,kms,jms),      &
+                                      ru, rv, rom, romI,            &
+                                      c1, c2,                       & 
+                                      mut, mub, mu_old,             &
+                                      config_flags, tenddec,        &
+                                      msfux, msfuy, msfvx, msfvy,   &
+                                      msftx, msfty, fzm, fzp,       &
+                                      rdx, rdy, rdzw,dt,            &
+                                      ids, ide, jds, jde, kds, kde, &
+                                      ims, ime, jms, jme, kms, kme, &
+                                      its, ite, jts, jte, kts, kte )
          ELSE IF (config_flags%scalar_adv_opt .EQ. 3 ) THEN
-            CALL advect_scalar_weno ( field(ims,kms,jms,im), &
-                                      field_old(ims,kms,jms,im), &
-                                      tendency(ims,kms,jms), &
+            CALL advect_scalar_weno ( field(ims,kms,jms,im),         &
+                                      field_old(ims,kms,jms,im),     &
+                                      tendency(ims,kms,jms),         &
                                       ru, rv, rom,                   &
+                                      c1, c2,                        & 
                                       mut, time_step, config_flags,  &
                                       msfux, msfuy, msfvx, msfvy,    &
                                       msftx, msfty,                  &

@@ -440,7 +440,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 ! Code for splitting vertical velocity into ex/im parts
 
    CALL WW_SPLIT(wwE, wwI, ph, phb,                &
-                 u_old, v_old, ww, w, mut, rdnw, msfty,    &
+                 u_old, v_old, ww,                 &
+                 mut, rdnw, msfty,                 &
                  c1f, c2f,                         &
                  rdx, rdy, msfux, msfuy,           &
                  msfvx, msfvy, dt,                 &
@@ -1157,7 +1158,8 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 ! Code for splitting vertical velocity into ex/im parts
 
    CALL WW_SPLIT(wwE, wwI, ph, phb,                &
-                 u_old, v_old, ww, w, mut, rdnw, msfty,    &
+                 u_old, v_old, ww,                 &
+                 mut, rdnw, msfty,                 &
                  c1f, c2f,                         &
                  rdx, rdy, msfux, msfuy,           &
                  msfvx, msfvy, dt,                 &
@@ -1223,18 +1225,18 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
       ELSE IF( (rk_step == rk_order) .and. (adv_opt == WENO_SCALAR) ) THEN
 
-        CALL advect_scalar_weno ( scalar(ims,kms,jms,im),       &
-                                 scalar(ims,kms,jms,im),        &
-                                 advect_tend(ims,kms,jms),      &
-                                 ru, rv, wwE,                   &
-                                 mut, time_step,                &
-                                 config_flags,                  &
-                                 msfux, msfuy, msfvx, msfvy,    &
-                                 msftx, msfty, fnm, fnp,        &
-                                 rdx, rdy, rdnw,                &
-                                 ids, ide, jds, jde, kds, kde,  &
-                                 ims, ime, jms, jme, kms, kme,  &
-                                 its, ite, jts, jte, kts, kte  )
+        CALL advect_scalar_weno ( scalar(ims,kms,jms,im),        &
+                                  scalar(ims,kms,jms,im),        &
+                                  advect_tend(ims,kms,jms),      &
+                                  ru, rv, wwE, c1h, c2h,         &
+                                  mut, time_step,                &
+                                  config_flags,                  &
+                                  msfux, msfuy, msfvx, msfvy,    &
+                                  msftx, msfty, fnm, fnp,        &
+                                  rdx, rdy, rdnw,                &
+                                  ids, ide, jds, jde, kds, kde,  &
+                                  ims, ime, jms, jme, kms, kme,  &
+                                  its, ite, jts, jte, kts, kte  )
 
       ELSEIF( (rk_step == rk_order) .and. (adv_opt == WENOPD_SCALAR) ) THEN
 

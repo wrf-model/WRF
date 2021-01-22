@@ -47,7 +47,8 @@ END FUNCTION CHK_IEVA
 ! advection by the routines based on Shchepetkin (2015)
 
 SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
-                    u, v, ww, w, mut, rdnw, msfty,    &
+                    u, v, ww,                         &
+                    mut, rdnw, msfty,                 &
                     c1f, c2f,                         &
                     rdx, rdy, msfux, msfuy,           &
                     msfvx, msfvy, dt,                 &
@@ -63,7 +64,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
                                        its, ite, jts, jte, kts, kte, &
                                        rk_step
 
-   REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::   u, v, ww, w, ph, phb
+   REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::   u, v, ww, ph, phb
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(INOUT) ::  wwE, wwI
 

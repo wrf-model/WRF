@@ -661,7 +661,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(OUT)  ::   SMCREL
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GLW
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN ):: SWDDIR,SWDDIF
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   GSW,SWDOWN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   HT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
@@ -956,6 +955,7 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: cm_ac_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sfvent_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lfvent_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN ):: SWDDIR,SWDDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_wd,  jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_wd,  jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd,  jms:jme ), INTENT(INOUT) :: sfw1_urb3d

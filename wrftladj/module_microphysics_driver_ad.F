@@ -319,14 +319,12 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 &  qi_curr, qs_curr, qg_curr, qt_curr, qndrop_curr, qni_curr, qh_curr, &
 &  qnh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qzr_curr, &
 &  qzi_curr, qzs_curr, qzg_curr, qzh_curr, qvolg_curr, qvolh_curr
-!-----------------------------ntu3m----------------------------------------------
-   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: &
-&        qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,fi_curr,     &
-&        fs_curr,vi_curr,vs_curr,vg_curr,ai_curr,as_curr,ag_curr,       &
-&        ah_curr,i3m_curr
-   LOGICAL, OPTIONAL :: f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,   &
-&                       f_vi,f_vs,f_vg,f_ai,f_as,f_ag,f_ah,f_i3m
-!-----------------------------ntu3m----------------------------------------------
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: & ! for ntu3m
+&        qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,fi_curr,     & ! for ntu3m
+&        fs_curr,vi_curr,vs_curr,vg_curr,ai_curr,as_curr,ag_curr,       & ! for ntu3m
+&        ah_curr,i3m_curr                                                 ! for ntu3m
+   LOGICAL, OPTIONAL :: f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,   & ! for ntu3m
+&                       f_vi,f_vs,f_vg,f_ai,f_as,f_ag,f_ah,f_i3m          ! for ntu3m
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL :: qv_currb, qc_currb, qr_currb
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN) :: &
 &  qrcuten, qscuten, qicuten

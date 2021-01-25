@@ -2801,8 +2801,7 @@ BENCH_END(tracer_adv_tim)
                                   kts=k_start    , kte=k_end                              )
 
            IF ( config_flags%specified ) THEN
-!---------------------------for ntu3m-------------------------------------------------
-              IF (is.EQ.P_QDCN.OR.is.EQ.P_QTCN.OR.is.EQ.P_QNIN) THEN
+              IF (is.EQ.P_QDCN.OR.is.EQ.P_QTCN.OR.is.EQ.P_QNIN) THEN       ! for ntu3m
                  CALL flow_dep_bdy_ntu(scalar(ims,kms,jms,is),grid%ru_m,&
                                        grid%rv_m,config_flags,          &
                                        grid%spec_zone,ids,ide,jds,jde,  &
@@ -2811,8 +2810,7 @@ BENCH_END(tracer_adv_tim)
                                        grid%i_start(ij),grid%i_end(ij), &
                                        grid%j_start(ij),grid%j_end(ij), &
                                        k_start,k_end)
-              ELSEIF (is.EQ.P_QNN) THEN
-!----------------------------for ntu3m--------------------------------------------------
+              ELSEIF (is.EQ.P_QNN) THEN                                    ! for ntu3m
 ! ntu3m             IF ( is .EQ. P_QNN ) THEN
                CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
@@ -3765,23 +3763,21 @@ BENCH_START(micro_driver_tim)
 !       &        , QZH_CURR=scalar(ims,kms,jms,P_QZH), F_QZH=F_QZH          & ! "
       &        , QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG    & ! for nssl_2mom
       &        , QVOLH_CURR=scalar(ims,kms,jms,P_QVOLH), F_QVOLH=F_QVOLH    & ! for nssl_2mom
-!----------------------------------for ntu3m--------------------------------------------------
-      &        , QDCN_CURR=scalar(ims,kms,jms,P_QDCN), F_QDCN=F_QDCN      &
-      &        , QTCN_CURR=scalar(ims,kms,jms,P_QTCN), F_QTCN=F_QTCN      &
-      &        , QCCN_CURR=scalar(ims,kms,jms,P_QCCN), F_QCCN=F_QCCN      &
-      &        , QRCN_CURR=scalar(ims,kms,jms,P_QRCN), F_QRCN=F_QRCN      &
-      &        , QNIN_CURR=scalar(ims,kms,jms,P_QNIN), F_QNIN=F_QNIN      &
-      &        , FI_CURR=scalar(ims,kms,jms,P_FI), F_FI=F_FI              &
-      &        , FS_CURR=scalar(ims,kms,jms,P_FS), F_FS=F_FS              &
-      &        , VI_CURR=scalar(ims,kms,jms,P_VI), F_VI=F_VI              &
-      &        , VS_CURR=scalar(ims,kms,jms,P_VS), F_VS=F_VS              &
-      &        , VG_CURR=scalar(ims,kms,jms,P_VG), F_VG=F_VG              &
-      &        , AI_CURR=scalar(ims,kms,jms,P_AI), F_AI=F_AI              &
-      &        , AS_CURR=scalar(ims,kms,jms,P_AS), F_AS=F_AS              &
-      &        , AG_CURR=scalar(ims,kms,jms,P_AG), F_AG=F_AG              &
-      &        , AH_CURR=scalar(ims,kms,jms,P_AH), F_AH=F_AH              &
-      &        , I3M_CURR=scalar(ims,kms,jms,P_I3M), F_I3M=F_I3m          &
-!---------------------------------for ntu3m---------------------------------------------------
+      &        , QDCN_CURR=scalar(ims,kms,jms,P_QDCN), F_QDCN=F_QDCN      & ! for ntu3m
+      &        , QTCN_CURR=scalar(ims,kms,jms,P_QTCN), F_QTCN=F_QTCN      & ! for ntu3m
+      &        , QCCN_CURR=scalar(ims,kms,jms,P_QCCN), F_QCCN=F_QCCN      & ! for ntu3m
+      &        , QRCN_CURR=scalar(ims,kms,jms,P_QRCN), F_QRCN=F_QRCN      & ! for ntu3m
+      &        , QNIN_CURR=scalar(ims,kms,jms,P_QNIN), F_QNIN=F_QNIN      & ! for ntu3m
+      &        , FI_CURR=scalar(ims,kms,jms,P_FI), F_FI=F_FI              & ! for ntu3m
+      &        , FS_CURR=scalar(ims,kms,jms,P_FS), F_FS=F_FS              & ! for ntu3m
+      &        , VI_CURR=scalar(ims,kms,jms,P_VI), F_VI=F_VI              & ! for ntu3m
+      &        , VS_CURR=scalar(ims,kms,jms,P_VS), F_VS=F_VS              & ! for ntu3m
+      &        , VG_CURR=scalar(ims,kms,jms,P_VG), F_VG=F_VG              & ! for ntu3m
+      &        , AI_CURR=scalar(ims,kms,jms,P_AI), F_AI=F_AI              & ! for ntu3m
+      &        , AS_CURR=scalar(ims,kms,jms,P_AS), F_AS=F_AS              & ! for ntu3m
+      &        , AG_CURR=scalar(ims,kms,jms,P_AG), F_AG=F_AG              & ! for ntu3m
+      &        , AH_CURR=scalar(ims,kms,jms,P_AH), F_AH=F_AH              & ! for ntu3m
+      &        , I3M_CURR=scalar(ims,kms,jms,P_I3M), F_I3M=F_I3m          & ! for ntu3m
       &        , cu_used=config_flags%cu_used                             &
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
       &        , qicuten=grid%rqicuten, qccuten=grid%rqccuten             &

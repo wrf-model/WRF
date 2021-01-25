@@ -52,11 +52,11 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qnwfa_curr,qnifa_curr                             & ! for water/ice-friendly aerosols
                       ,f_qnwfa,f_qnifa                                   & ! for water/ice-friendly aerosols
                       ,qvolg_curr,qvolh_curr                             &
-                      ,qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr & ! for ntu3m
-                      ,fi_curr,fs_curr,vi_curr,vs_curr,vg_curr,ai_curr   & ! for ntu3m
-                      ,as_curr,ag_curr,ah_curr,i3m_curr,f_qdcn,f_qtcn    & ! for ntu3m
-                      ,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,f_vi,f_vs,f_vg     & ! for ntu3m
-                      ,f_ai,f_as,f_ag,f_ah,f_i3m                         & ! for ntu3m
+                      ,qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr           & ! for ntu3m
+                      ,qnin_curr,fi_curr,fs_curr,vi_curr,vs_curr         & ! for ntu3m
+                      ,vg_curr,ai_curr,as_curr,ag_curr,ah_curr,i3m_curr  & ! for ntu3m
+                      ,f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs      & ! for ntu3m
+                      ,f_vi,f_vs,f_vg,f_ai,f_as,f_ag,f_ah,f_i3m          & ! for ntu3m
                       ,qir_curr,qib_curr                                 & ! for P3
                       ,qi2_curr,qni2_curr,qir2_curr,qib2_curr            & ! for P3
                       ,qvoli_curr,qaoli_curr                             & ! for Jensen ISHMAEL
@@ -230,7 +230,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_jensen_ishmael
 # if (EM_CORE == 1)
    USE module_mp_morr_two_moment_aero
-   USE module_mp_ntu                                           ! for ntu3m
+   USE module_mp_ntu
 # endif
    USE module_mp_wdm5
    USE module_mp_wdm6
@@ -586,14 +586,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 ! Optional
 !
    REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: refl_10cm
-!---------------------------------for ntu3m---------------------------------------------------
-   REAL, OPTIONAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: &
-                   qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,   &
-                   fi_curr,fs_curr,vi_curr,vs_curr,vg_curr,ai_curr,     &
-                   as_curr,ag_curr,ah_curr,i3m_curr
-   LOGICAL, OPTIONAL :: f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,   &
-                        f_vi,f_vs,f_vg,f_ai,f_as,f_ag,f_ah,f_i3m
-!---------------------------------for ntu3m---------------------------------------------------
+   REAL, OPTIONAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: &  ! for ntu3m
+                   qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,   &  ! for ntu3m
+                   fi_curr,fs_curr,vi_curr,vs_curr,vg_curr,ai_curr,     &  ! for ntu3m
+                   as_curr,ag_curr,ah_curr,i3m_curr                        ! for ntu3m
+   LOGICAL, OPTIONAL :: f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,   &  ! for ntu3m
+                        f_vi,f_vs,f_vg,f_ai,f_as,f_ag,f_ah,f_i3m           ! for ntu3m
    REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: vmi3d,di3d,rhopo3d,    & ! for P3
                                                                          vmi3d_2,di3d_2,rhopo3d_2,  & ! for P3
                                                                          phii3d,         & ! for Jensen ISHMAEL
@@ -1126,34 +1124,33 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
-!------------------------------------------for ntu3m--------------------------------
 #if (EM_CORE==1)
         CASE (NTU)
              CALL wrf_debug(100, 'microphysics_driver: calling ntu')
-             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
-                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.    &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.    &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.    &
                   PRESENT( RAINNC )  .AND. PRESENT ( RAINNCV )) THEN   ! ....
-                CALL mp_ntu(ITIMESTEP=itimestep,TH=th,P=p,DZ=dz8w,W=w,&
-                     PII=pi_phy,DT_MP=dt,SR=sr,QV=qv_curr,QC=qc_curr, &
-                     QR=qr_curr,QI=qi_curr,QS=qs_curr,QG=qg_curr,     &
-                     QH=qh_curr,NC=qnc_curr,NR=qnr_curr,NI=qni_curr,  &
-                     NS=qns_curr,NG=qng_curr,NH=qnh_curr,             &
-                     QDCN=qdcn_curr,QTCN=qtcn_curr,QCCN=qccn_curr,    &
-                     QRCN=qrcn_curr,QNIN=qnin_curr,FI=fi_curr,        &
-                     FS=fs_curr,VI=vi_curr,VS=vs_curr,VG=vg_curr,     &
-                     AI=ai_curr,AS=as_curr,AG=ag_curr,AH=ah_curr,     &
-                     I3M=i3m_curr,RAINNC=rainnc,RAINNCV=rainncv,      &
-                     SNOWNC=snownc,SNOWNCV=snowncv,GRAPNC=graupelnc,  &
-                     GRAPNCV=graupelncv,HAILNC=hailnc,HAILNCV=hailncv,&
-                     IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde, &
-                     IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme, &
+                CALL mp_ntu(ITIMESTEP=itimestep,TH=th,P=p,DZ=dz8w,      &
+                     W=w,PII=pi_phy,DT_MP=dt,SR=sr,QV=qv_curr,          &
+                     QC=qc_curr,QR=qr_curr,QI=qi_curr,QS=qs_curr,       &
+                     QG=qg_curr,QH=qh_curr,NC=qnc_curr,NR=qnr_curr,     &
+                     NI=qni_curr,NS=qns_curr,NG=qng_curr,               &
+                     NH=qnh_curr,QDCN=qdcn_curr,QTCN=qtcn_curr,         &
+                     QCCN=qccn_curr,QRCN=qrcn_curr,QNIN=qnin_curr,      &
+                     FI=fi_curr,FS=fs_curr,VI=vi_curr,VS=vs_curr,       &
+                     VG=vg_curr,AI=ai_curr,AS=as_curr,AG=ag_curr,       &
+                     AH=ah_curr,I3M=i3m_curr,RAINNC=rainnc,             &
+                     RAINNCV=rainncv,SNOWNC=snownc,SNOWNCV=snowncv,     &
+                     GRAPNC=graupelnc,GRAPNCV=graupelncv,               &
+                     HAILNC=hailnc,HAILNCV=hailncv,                     &
+                     IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde,   &
+                     IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme,   &
                      ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
              ELSE
                 Call wrf_error_fatal( 'arguments not present for calling ntu')
              ENDIF
 #endif
-!------------------------------------------for ntu3m-------------------------------
 #if (EM_CORE==1)
 # if ( BUILD_SBM_FAST == 1 )
        CASE (FAST_KHAIN_LYNN_SHPUND)

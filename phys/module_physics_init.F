@@ -49,7 +49,8 @@ CONTAINS
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
 #if ( EM_CORE == 1 )
-                         PRES,RHOA,CCNTY,QDCN,QTCN,QCCN,QRCN,QNIN,& ! for ntu3m
+                         PRES,RHOA,CCNTY,QDCN,QTCN,QCCN,QRCN,    & ! for ntu3m
+                         QNIN,                                   & ! for ntu3m
                          re_cloud_gsfc, re_ice_gsfc,             & 
                          re_snow_gsfc,                           & ! Goddard
                          re_graupel_gsfc, re_hail_gsfc,          &
@@ -676,13 +677,11 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme), INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
-!----------------------------------------for ntu3m------------------------------------------
 #if ( EM_CORE == 1 )
-   INTEGER, OPTIONAL, INTENT(IN) :: CCNTY
-   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA
-   REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN
+   INTEGER, OPTIONAL, INTENT(IN) :: CCNTY                                               ! for ntu3m
+   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA          ! for ntu3m
+   REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN  ! for ntu3m
 #endif
-!----------------------------------------for ntu3m------------------------------------------
 ! lake varibles:
   real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
                                                                              savedtke12d
@@ -1525,11 +1524,10 @@ CONTAINS
                 adv_moist_cond,                                 &
                 MPDT, DT, DX, DY, LOWLYR,                       &
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
-!-------------------for ntu3m------------------------------------
 #if ( EM_CORE == 1 )
-                PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,QNIN, &
+                PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,      & ! for ntu3m
+                QNIN,                                           & ! for ntu3m
 #endif
-!-------------------for ntu3m------------------------------------
                 mp_restart_state,tbpvs_state,tbpvs0_state,      &
                 allowed_to_read, start_of_simulation,           &
 !CAMMGMP specific variables
@@ -4101,11 +4099,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       adv_moist_cond,                             &
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
-!---------------------for ntu3m------------------------------------
 #if ( EM_CORE == 1 )
-                      PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,QNIN,&
+                      PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,  & ! for ntu3m
+                      QNIN,                                       & ! for ntu3m
 #endif
-!---------------------for ntu3m------------------------------------
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
                       allowed_to_read, start_of_simulation,       &
 !CAMMGMP specific variables
@@ -4148,7 +4145,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 #if (EM_CORE==1)
    USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
    USE module_mp_morr_two_moment_aero              !TWG2017
-   USE module_mp_ntu                               ! for ntu3m
+   USE module_mp_ntu
 #endif
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -4176,14 +4173,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RAINNC,SNOWNC,GRAUPELNC
    REAL,     DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(INOUT) :: &
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
-!----------------------for ntu3m----------------------------------------
 #if ( EM_CORE == 1 )
-   INTEGER, OPTIONAL, INTENT(IN) :: CCNTY
-   REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XLAND
-   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA
-   REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN
+   INTEGER, OPTIONAL, INTENT(IN) :: CCNTY                                              ! for ntu3m
+   REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XLAND                     ! for ntu3m
+   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA         ! for ntu3m
+   REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN ! for ntu3m
 #endif
-!----------------------for ntu3m---------------------------------------
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL , INTENT(IN)  :: allowed_to_read
    REAL, INTENT(INOUT) :: ccn_conc ! RAS
@@ -4330,14 +4325,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         config_flags%hail_opt, allowed_to_read )
      CASE (WDM7SCHEME)
           CALL wdm7init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
-!-----------------------------for ntu3m---------------------------------------
 #if (EM_CORE==1)
      CASE (NTU)
-          CALL ntu_init(PRES,z_at_q,RHOA,QDCN,QTCN,QCCN,QRCN,QNIN,XLAND,&
-                        CCNTY,restart,ids,ide,jds,jde,kds,kde,ims,ime,  &
-                        jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+          CALL ntu_init(PRES,z_at_q,RHOA,QDCN,QTCN,QCCN,QRCN,QNIN,      &
+                        XLAND,CCNTY,restart,ids,ide,jds,jde,kds,kde,    &
+                        ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 #endif
-!-----------------------------for ntu3m----------------------------------------
 #if (EM_CORE==1)
     CASE (FULL_KHAIN_LYNN)
      IF(start_of_simulation.or.restart)THEN

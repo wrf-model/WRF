@@ -884,9 +884,7 @@ package   p3_1category_plus     mp_physics_plus==50     -          g_moist:g_qv,
 package   p3_1category_nc_plus  mp_physics_plus==51     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   p3_2category_4dvar    mp_physics_plus==52     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qi2;a_moist:a_qv,a_qc,a_qr,a_qi,a_qi2
 package   morr_tm_aero_4dvar    mp_physics_plus==40     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-#---------------------------------------ntu3m-------------------------------------------------------------------------------------------------------------
 package   ntu_plus              mp_physics_plus==56     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
-#---------------------------------------ntu3m-------------------------------------------------------------------------------------------------------------
 package   etampnew_plus         mp_physics_plus==95     -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
 package   lscond_plus           mp_physics_plus==98     -          g_moist:g_qv;a_moist:a_qv
 package   mkessler_plus         mp_physics_plus==99     -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr

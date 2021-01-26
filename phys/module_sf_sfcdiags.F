@@ -51,7 +51,7 @@ CONTAINS
                   Q2(I,J) = QSFC(I,J) - CHS(I,J)/CQS2(I,J)*(QSFC(I,J) - QV3D(i,1,j))
               ELSE
 #if (HWRF==1)
-                  Q2(I,J) = QSFC(I,J) - amax1(amin1(CHS(I,J)/CQS2(I,J),0.0),2.0)*(QSFC(I,J) - QV3D(i,1,j))
+                  Q2(I,J) = QSFC(I,J) - CHS(I,J)/CQS2(I,J)*(QSFC(I,J) - QV3D(i,1,j))
 #else
                   Q2(I,J) = QSFC(I,J) - QFX(I,J)/(RHO*CQS2(I,J))
 #endif
@@ -64,7 +64,7 @@ CONTAINS
                   T2(I,J) = TSK(I,J) - CHS(I,J)/CHS2(I,J)*(TSK(I,J) - T3D(i,1,j))
               ELSE
 #if (HWRF==1)
-                  T2(I,J) = TSK(I,J) - amax1(amin1(CHS(I,J)/CHS2(I,J),0.0),2.0)*(TSK(I,J) - T3D(i,1,j))
+                  T2(I,J) = TSK(I,J) - CHS(I,J)/CHS2(I,J)*(TSK(I,J) - T3D(i,1,j))
 #else
                   T2(I,J) = TSK(I,J) - HFX(I,J)/(RHO*CP*CHS2(I,J))
 #endif

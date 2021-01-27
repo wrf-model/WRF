@@ -2782,7 +2782,7 @@ BENCH_END(g_tracer_adv_tim)
                                      grid%i_start(ij),grid%i_end(ij),  &
                                      grid%j_start(ij),grid%j_end(ij),  &
                                      k_start,k_end)                      ! for ntu3m
-!ntu3m             IF(is .ne. P_QNN)THEN
+!             IF(is .ne. P_QNN)THEN                                      ! for ntu3m
 !               CALL g_flow_dep_bdy  ( scalar(ims,kms,jms,is),g_scalar(ims,kms,jms,is), &
 !                                  grid%ru_m, grid%rv_m, config_flags,   &
 !                                  grid%spec_zone,             &
@@ -2802,7 +2802,7 @@ BENCH_END(g_tracer_adv_tim)
 !                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
 !                                  grid%i_start(ij), grid%i_end(ij),  &
 !                                  grid%j_start(ij), grid%j_end(ij),  &
-!ntu3m                                  k_start, k_end                    )
+!                                  k_start, k_end                    )   ! for ntu3m
              ENDIF
 
            ENDIF

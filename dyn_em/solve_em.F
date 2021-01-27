@@ -2811,7 +2811,7 @@ BENCH_END(tracer_adv_tim)
                                        grid%j_start(ij),grid%j_end(ij), &
                                        k_start,k_end)
               ELSEIF (is.EQ.P_QNN) THEN                                    ! for ntu3m
-! ntu3m             IF ( is .EQ. P_QNN ) THEN
+!             IF ( is .EQ. P_QNN ) THEN                                    ! for ntu3m
                CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &

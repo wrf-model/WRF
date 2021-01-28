@@ -69,7 +69,7 @@ CONTAINS
    )
 
       USE module_optional_input
-      USE module_radiation_driver
+      USE module_radiation_driver, ONLY: cal_cldfra3
       USE module_dm, ONLY : wrf_dm_max_real
       IMPLICIT NONE
 

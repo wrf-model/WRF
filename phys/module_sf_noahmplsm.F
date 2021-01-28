@@ -802,7 +802,7 @@ contains
      ELSE IF ( TRIM(LLANDUSE) == "MODIFIED_IGBP_MODIS_NOAH") THEN
          IF(VEGTYP == 13 .OR. VEGTYP == 14) CROPLU = .TRUE.
      END IF
-     IF((CROPLU == .TRUE.) .AND. (IRRFRA .GE. parameters%IRR_FRAC) .AND. &
+     IF((CROPLU .EQV. .TRUE.) .AND. (IRRFRA .GE. parameters%IRR_FRAC) .AND. &
        (RAIN .LT. (parameters%IR_RAIN/3600.)) .AND. ((IRAMTSI+IRAMTMI+IRAMTFI) .EQ. 0.0) )THEN
         CALL TRIGGER_IRRIGATION(parameters,NSOIL,ZSOIL,SH2O,FVEG,JULIAN,IRRFRA,LAI, & !in
                                   SIFAC,MIFAC,FIFAC,                                & !in
@@ -816,7 +816,7 @@ contains
         IRAMTFI = 0.
      END IF
 ! call sprinkler irrigation before CANWAT/PRECIP_HEAT to have canopy interception
-     IF((CROPLU == .TRUE.) .AND. (IRAMTSI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 1)))THEN
+     IF((CROPLU .EQV. .TRUE.) .AND. (IRAMTSI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 1)))THEN
         CALL SPRINKLER_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,& !in
                                   SFCTMP,UU,VV,EAIR,SIFAC,          & !in
                                   IRAMTSI,IREVPLOS,IRSIRATE)          !inout
@@ -927,7 +927,7 @@ contains
    END IF
    
 ! before waterbalance check add irrigation water to precipitation
-IF((CROPLU == .TRUE.) .AND. (IRRFRA .GE. parameters%IRR_FRAC))THEN
+IF((CROPLU .EQV. .TRUE.) .AND. (IRRFRA .GE. parameters%IRR_FRAC))THEN
    PRCP = PRCP + ((IRSIRATE+IRMIRATE+IRFIRATE)*1000./DT)  ! irrigation
    FSH  = FSH - FIRR                                      ! (W/m2)
 END IF
@@ -6002,14 +6002,14 @@ ENDIF   ! CROPTYPE == 0
 #endif
 
 ! irrigation: call flood irrigation-pvk
-    IF((CROPLU == .TRUE.) .AND. (IRAMTFI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 3)))THEN
+    IF((CROPLU .EQV. .TRUE.) .AND. (IRAMTFI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 3)))THEN
        ! call flood irrigation and add to QINSUR
        CALL FLOOD_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,FIFAC,& !in
                              IRAMTFI,IRFIRATE)                         !inout
        QINSUR = QINSUR + (IRFIRATE/DT)                                ![m/s]
     END IF
 ! irrigation: call micro irrigation-pvk
-    IF((CROPLU == .TRUE.) .AND. (IRAMTMI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 2)))THEN
+    IF((CROPLU .EQV. .TRUE.) .AND. (IRAMTMI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 2)))THEN
        ! call micro irrigation, assuming we implement drip in first layer 
        ! of the Noah-MP. Change layer 1 moisture wrt to MI rate-pvk
        CALL MICRO_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,MIFAC, & !in

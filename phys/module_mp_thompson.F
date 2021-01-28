@@ -3726,7 +3726,7 @@
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
           CALL wrf_message("Writing qr_acr_qgV3.dat in Thompson MP init")
-          OPEN(63,file="qr_acr_qgV2.dat",form="unformatted",err=9234)
+          OPEN(63,file="qr_acr_qgV3.dat",form="unformatted",err=9234)
           WRITE(63,err=9234) tcg_racg
           WRITE(63,err=9234) tmr_racg
           WRITE(63,err=9234) tcr_gacr

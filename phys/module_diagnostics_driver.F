@@ -911,6 +911,7 @@ CONTAINS
                       ,s_zl  = grid%s_zl                                    &
                       ,td_zl = grid%td_zl                                   &
                       ,q_zl = grid%q_zl                                     &
+                      ,p_zl = grid%p_zl                                     &
                !  Dimension arguments
                       ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &

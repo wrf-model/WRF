@@ -4474,13 +4474,11 @@ endif
             enddo
             endif
 
-            if (config_flags%insert_init_cloud) then
-               do k = kts, kte-1
-                  moist(i,k,j,P_QV) = MAX(temp_Qv(k), moist(i,k,j,P_QV)) 
-                  moist(i,k,j,P_QC) = temp_Qc(k)
-                  moist(i,k,j,P_QI) = temp_Qi(k)
-               enddo
-            endif
+            do k = kts, kte-1
+               moist(i,k,j,P_QV) = MAX(temp_Qv(k), moist(i,k,j,P_QV)) 
+               moist(i,k,j,P_QC) = temp_Qc(k)
+               moist(i,k,j,P_QI) = temp_Qi(k)
+            enddo
 
          enddo
          enddo

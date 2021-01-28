@@ -2497,10 +2497,10 @@ ENDIF
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
                              B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,              & ! inout multi-layer urban
                              DL_U_BEP,SF_BEP,VL_BEP,                       & ! inout multi-layer urban
-                             FRC_URB2D, UTYPE_URB2D)                         ! inout
+                             FRC_URB2D, UTYPE_URB2D,USE_WUDAPT_LCZ)                         ! inout
    IMPLICIT NONE
 
-   INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics
+   INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics,use_wudapt_lcz
    INTEGER, INTENT(IN) :: LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
    INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme,num_soil_layers
    INTEGER, INTENT(IN) :: num_urban_ndm
@@ -2645,7 +2645,12 @@ ENDIF
       SWITCH_URB=0
 
             IF( IVGTYP(I,J) == ISURBAN)  THEN
+               print*,'USE_WUDAPT_LCZ',use_wudapt_lcz
+               IF(use_wudapt_lcz==0) THEN
+                 UTYPE_URB2D(I,J) = 2  ! for default. high-intensity
+               ELSE             
                UTYPE_URB2D(I,J) = 5  ! for default. high-intensity
+               ENDIF
                UTYPE_URB = UTYPE_URB2D(I,J)  ! for default. high-intensity
                IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE

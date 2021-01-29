@@ -691,8 +691,8 @@
       ENDDO
       ENDDO
       ENDDO
-      IF ( ( config_flags%rebalance .EQ. 1 ) .OR. &
-           ( ( config_flags%rebalance .EQ. 2 ) .AND. ( config_flags%vert_refine_method .EQ. 2 ) ) ) THEN
+      !RSA rebalance must be set to 1 for vertical nesting
+      IF ( config_flags%rebalance .EQ. 1 ) THEN
         !  Integrate base geopotential, starting at terrain elevation.  This assures that
         !  the base state is in exact hydrostatic balance with respect to the model equations.
         !  This field is on full levels.
@@ -773,9 +773,9 @@
   !  it is an easy decision.
   ELSE
      ! We request rebalancing for vertical grid nesting, or when the user asks for rebalancing.
+     ! RSA rebalance now must be set to 1 for vertical nesting
      ! Rebalance recomputes 1/rho, p, ph_2, ph0, p_hyd
-     IF ( ( config_flags%rebalance .EQ. 1 ) .OR. &
-        ( ( config_flags%rebalance .EQ. 2 ) .AND. ( config_flags%vert_refine_method .EQ. 2 ) ) ) THEN
+     IF ( config_flags%rebalance .EQ. 1 ) THEN
        call rebalance_driver_cycl (grid )
        DO j = jts,min(jte,jde-1)
        DO k = kts,kte

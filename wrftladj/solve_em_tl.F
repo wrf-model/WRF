@@ -4392,7 +4392,7 @@ BENCH_END(g_bc_2d_tim)
 
   CALL after_all_rk_steps ( grid, config_flags,                  &
                             moist, chem, tracer, scalar,         &
-                            th_phy, pi_phy, p_phy, rho_phy,      &   
+                            th_phy, pi_phy, p_phy,               &   
                             p8w, t8w, dz8w,                      &
                             REAL(curr_secs,8), curr_secs2,       &
                             diag_flag,                           &

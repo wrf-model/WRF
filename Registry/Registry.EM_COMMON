@@ -1788,7 +1788,6 @@ state    real  v_phy           ikj      misc        1         -      r      "V_P
 i1       real  dz8w            ikj      misc        1         Z
 i1       real  p8w             ikj      misc        1         Z
 i1       real  t8w             ikj      misc        1         Z
-i1       real  rho_phy         ikj      misc        1         -
 i1    logical  CU_ACT_FLAG     ij       misc        1         -
 
                                                 

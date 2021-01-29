@@ -117,7 +117,6 @@ CONTAINS
 
                      pu = pp(i,ke+1,j)+pb(i,ke+1,j) 
                      pd = pp(i,ke  ,j)+pb(i,ke  ,j)
-                     !pm = ( pu * (zm-zd) + pd * (zu-zm) ) / (zu-zd)
    
                      !  Found trapping height: up, middle, down.
                      !  We are doing first order interpolation.  
@@ -125,6 +124,7 @@ CONTAINS
 
                      !  0. Pressure (Pa)
                      !  Note that it is ln(p) that varies linearly with height, not p itself
+                     
                      pm = exp( ( log(pu) * (zm-zd) + log(pd) * (zu-zm) ) / (zu-zd) )
                      p_zl(i,kz,j) = pm
    

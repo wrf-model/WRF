@@ -2272,7 +2272,6 @@ rconfig   integer     do_radar_ref        namelist,physics      1              0
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
-amontornes-bcodina 2015/09
 rconfig   integer     ra_sw_eclipse       namelist,physics	1              0       rh       "ra_sw_eclipse"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   real    naer                    namelist,physics      max_domains    1e9     rh   "NAER"          ""      ""

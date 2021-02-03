@@ -215,7 +215,8 @@ CONTAINS
 #endif
 #endif
                                        ,KFCUPSCHEME, BMJSCHEME      & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
-                                       ,FLGLWSCHEME, FLGSWSCHEME
+                                       ,FLGLWSCHEME, FLGSWSCHEME    &
+                                       ,ECLIPSESCHEME
 
    USE module_model_constants
 #ifndef HWRF
@@ -2760,7 +2761,7 @@ CONTAINS
       ENDIF
 
      IF ( PRESENT( obscur ) ) THEN
-        IF ( sw_eclipse .eq. 1 ) THEN
+        IF ( sw_eclipse == eclipsescheme ) THEN
            DO j=jts,jte
            DO i=its,ite
               obscur(i,j) = obscur_loc(i,j)

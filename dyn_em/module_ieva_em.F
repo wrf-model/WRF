@@ -446,9 +446,9 @@ SUBROUTINE CALC_MUT_NEW( u, v, c1h, c2h,                     &
    
    ! Local data
    
-   INTEGER :: i, j, k, itf, jtf, ktf
-   REAL , DIMENSION( its:ite ) :: dmdt
-   REAL , DIMENSION( its:ite, kts:kte ) :: divv
+   INTEGER :: i, j, k, ktf, i_start, i_end, j_start, j_end
+   REAL , DIMENSION( its-1:ite ) :: dmdt
+   REAL , DIMENSION( its-1:ite, kts:kte ) :: divv
    REAL :: bigerr
 
 !<DESCRIPTION>
@@ -459,14 +459,17 @@ SUBROUTINE CALC_MUT_NEW( u, v, c1h, c2h,                     &
 !</DESCRIPTION>
 
 
-    jtf=MIN(jte,jde-1)
     ktf=MIN(kte,kde-1)  
-    itf=MIN(ite,ide-1)
+
+    i_start = its-1
+    i_end   = MIN(ite,ide-1)
+    j_start = jts-1
+    j_end   = MIN(jte,jde-1)
 
 
-    DO j=jts,jtf
+    DO j = j_start, j_end
 
-      DO i=its,ite
+      DO i = i_start, i_end
         dmdt(i) = 0.
       ENDDO
 
@@ -497,7 +500,7 @@ SUBROUTINE CALC_MUT_NEW( u, v, c1h, c2h,                     &
 !         divv=mx*[partial d/dx(mu u/my) + partial d/dy(mu v/mx)]*delta nu
 
       DO k=kts,ktf
-       DO i=its,itf
+        DO i = i_start, i_end
 
         divv(i,k) = (msftx(i,j) / rdnw(k)) *                                                                        &
             (rdx*((c1h(k)*muu(i+1,j)+c2h(k))*u(i+1,k,j)/msfuy(i+1,j)-(c1h(k)*muu(i,j)+c2h(k))*u(i,k,j)/msfuy(i,j))  &
@@ -516,9 +519,10 @@ SUBROUTINE CALC_MUT_NEW( u, v, c1h, c2h,                     &
 !       ww [k+1] = ww [k] -(1/my) partial d mu/dt * dnu[k->k+1] - divv[k]
 !                = ww [k] -dmdt * dnw[k] - divv[k]
 
-      DO i=its,itf
 
-           mut_new(i,j) = mut_old(i,j) - dt*dmdt(i)
+      DO i = i_start, i_end
+
+         mut_new(i,j) = mut_old(i,j) - dt*dmdt(i)
 
 ! DEBUG code.           
 !          bigerr = (mut_new(i,j) / mut_old(i,j))
@@ -616,12 +620,6 @@ SUBROUTINE advect_ph_implicit( ph, pho, tendency, phb,        &
 
    DO j = j_start, j_end
  
-     at(:,:) = 0.0
-     bt(:,:) = 1.0
-     ct(:,:) = 0.0
-     rt(:,:) = 0.0
-     bb(:,:) = 0.0
-     
      DO k = kts+1, ktf
        DO i = i_start, i_end
 
@@ -774,21 +772,15 @@ SUBROUTINE advect_s_implicit( s, s_old, tendency,            &
 !-- loop bounds 
 
    ktf     = MIN(kte,kde-1)
-   i_start = its-1
+   i_start = its
    i_end   = MIN(ite,ide-1)
-   j_start = jts-1
+   j_start = jts
    j_end   = MIN(jte,jde-1)
 
 ! J outer loop to do implicit advection.....
 
    DO j = j_start, j_end
      
-     at(:,:) = 0.0
-     bt(:,:) = 1.0
-     ct(:,:) = 0.0
-     rt(:,:) = 0.0
-     bb(:,:) = 0.0    
-           
      DO k = kts, ktf
 
        km1 = k - 1
@@ -933,12 +925,6 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
 
    DO j = j_start, j_end
    
-     at(:,:) = 0.0
-     bt(:,:) = 1.0
-     ct(:,:) = 0.0
-     rt(:,:) = 0.0
-     bb(:,:) = 0.0    
-     
      DO k = kts, ktf
        DO i = i_start, i_end
      
@@ -1080,13 +1066,6 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
 
    DO j = j_start, j_end
    
-     at(:,:) = 0.0
-     bt(:,:) = 1.0
-     ct(:,:) = 0.0
-     rt(:,:) = 0.0
-     bb(:,:) = 0.0 
-     
-      
      DO k = kts, ktf
        DO i = i_start, i_end
      
@@ -1219,12 +1198,6 @@ SUBROUTINE advect_w_implicit( w, w_old, tendency,            &
 
    DO j = j_start, j_end
    
-     at(:,:) = 0.0
-     bt(:,:) = 1.0
-     ct(:,:) = 0.0
-     rt(:,:) = 0.0
-     bb(:,:) = 0.0    
-           
      DO k = kts+1, ktf
        DO i = i_start, i_end
 

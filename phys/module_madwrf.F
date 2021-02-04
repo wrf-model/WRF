@@ -45,23 +45,24 @@
       integer, intent (in) :: kts, kte
       real, dimension (kts:kte), intent (in) :: ts, dzs
 
-      real, parameter :: MISSING_CLDTOPZ = -999.9
+      real, parameter :: MISSING_CLDTOPZ = -999.9, MISSING_BRTEMP = -999.9
       real :: this_height
       integer :: k
 
 
       return_value = MISSING_CLDTOPZ
+      if (brtemp == MISSING_BRTEMP) return
       if (cldmask > 0.0) then
-        this_height = sum (dzs(kts:kte-1)) + ht
+        this_height = sum (dzs(kts:kte - 1)) + ht
         do k = kte - 2, kts, -1
-           this_height = this_height - dzs(k + 1)
-           if (this_height > tropoz) cycle
-           if (ts(k) > brtemp) then
-             return_value = this_height + dzs(k) * (brtemp - ts(k)) / (ts(k + 1) - ts(k))
-             if ((return_value < this_height) .or. (return_value > this_height + dzs(k))) &
-                 return_value = tropoz
-             exit
-           end if
+          this_height = this_height - dzs(k + 1)
+          if (this_height > tropoz) cycle
+          if (ts(k) > brtemp) then
+            return_value = this_height + dzs(k) * (brtemp - ts(k)) / (ts(k + 1) - ts(k))
+            if ((return_value < this_height) .or. (return_value > this_height + dzs(k))) &
+                return_value = tropoz
+            exit
+          end if
         end do
       end if
 

@@ -157,13 +157,13 @@
           select_cld_impro: select case (insert_clouds)
             case (0)
                 ! Use the analysis field
-              call cal_cldfra3 (cldfra(i, :, j), moist(i, :, j, p_qv), moist(i, :, j, p_qc), &
+              call cal_cldfra3_madwrf (cldfra(i, :, j), moist(i, :, j, p_qv), moist(i, :, j, p_qc), &
                   moist(i, :, j, p_qi), moist(i, :, j, p_qs), dzs, p(i, :, j), ts(:),   &
                   xland(i, j), gridkm, .true., 1.5, tropoz, kts, kte, .false.)
 
             case (1)
                 ! Remove clouds if clear (cldmask = 0)
-              call cal_cldfra3 (cldfra(i, :, j), moist(i, :, j, p_qv), moist(i, :, j, p_qc), &
+              call cal_cldfra3_madwrf (cldfra(i, :, j), moist(i, :, j, p_qv), moist(i, :, j, p_qc), &
                   moist(i, :, j, p_qi), moist(i, :, j, p_qs), dzs, p(i, :, j), ts(:),   &
                   xland(i, j), gridkm, .true., 1.5, tropoz, kts, kte, .false., &
                   cldmask = cldmask(i, j))
@@ -172,7 +172,7 @@
                 ! Remove clouds if clear (cldmask = 0)
                 ! Reduce / extend cloud top heights to match observations
                 ! Add clouds over clear sky regions (cldmask = 1)
-              call cal_cldfra3 (cldfra(i, :, j), moist(i, :, j, p_qv), moist(i, :, j, p_qc), &
+              call cal_cldfra3_madwrf (cldfra(i, :, j), moist(i, :, j, p_qv), moist(i, :, j, p_qc), &
                   moist(i, :, j, p_qi), moist(i, :, j, p_qs), dzs, p(i, :, j), ts(:),   &
                   xland(i, j), gridkm, .true., 1.5, tropoz, kts, kte, .false., &
                   cldmask = cldmask(i, j), cldtopz = cldtopz_agl)
@@ -180,7 +180,7 @@
             case (3)
                 ! Remove clouds if clear (cldmask = 0)
                 ! Reduce / extend cloud top / base heights to match observations
-              call cal_cldfra3 (cldfra(i, :, j), moist(i, :, j, p_qv), moist(i, :, j, p_qc), &
+              call cal_cldfra3_madwrf (cldfra(i, :, j), moist(i, :, j, p_qv), moist(i, :, j, p_qc), &
                   moist(i, :, j, p_qi), moist(i, :, j, p_qs), dzs, p(i, :, j), ts(:),   &
                   xland(i, j), gridkm, .true., 1.5, tropoz, kts, kte, .false.,  &
                   cldmask = cldmask(i, j), cldtopz = cldtopz_agl, cldbasez = cldbasez(i, j))
@@ -238,7 +238,7 @@
 
 !+---+-----------------------------------------------------------------+
 
-      SUBROUTINE cal_cldfra3(CLDFRA, qv, qc, qi, qs, dz,                &
+      SUBROUTINE cal_cldfra3_madwrf(CLDFRA, qv, qc, qi, qs, dz,                &
      &                 p, t, XLAND, gridkm,                             &
      &                 modify_qvapor, max_relh,                         &
      &                 tropo_z, kts,kte, debug_flag, k_tropo, cldmask,  &
@@ -555,7 +555,7 @@
          ENDDO
       endif
 
-      END SUBROUTINE cal_cldfra3
+      END SUBROUTINE cal_cldfra3_madwrf
 
       SUBROUTINE find_k_from_z_agl(z_agl, k_lev, dz, kts, kte)
 

@@ -241,9 +241,9 @@ contains
                                                                         dvsfc, &
                                                                         dtsfc, &
                                                                         dqsfc
-   real,dimension(ims:ime,kms:kme,jms:jme) :: a_u,a_v,a_t,a_e,b_u,b_v,b_t,b_e, &
+   real,dimension(its:ite,kts:kte,jts:jte) :: a_u,a_v,a_t,a_e,b_u,b_v,b_t,b_e, &
                                                      a_q,b_q,dlg,dl_u,sfk,vlk
-   real,dimension(ims:ime,jms:jme)         :: frcurb
+   real,dimension(its:ite,jts:jte)         :: frcurb
    real :: bepswitch ! 0 if not using bep or bep+bem, 1 if using
 !
    qv2d(its:ite,:) = 0.0
@@ -332,14 +332,14 @@ contains
               ,rthraten=rthraten(ims,kms,j),p2diORG=p3di(ims,kms,j)            &
               ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
-              ,a_u2d=a_u(ims,kms,j), a_v2d=a_v(ims,kms,j)                      &
-              ,a_t2d=a_t(ims,kms,j), a_q2d=a_q(ims,kms,j)                      &
-              ,b_u2d=b_u(ims,kms,j), b_v2d=b_v(ims,kms,j)                      &
-              ,b_t2d=b_t(ims,kms,j), b_q2d=b_q(ims,kms,j)                      &
-              ,b_e2d=b_e(ims,kms,j), a_e2d=a_e(ims,kms,j)                      &
-              ,sfk2d=sfk(ims,kms,j), vlk2d=vlk(ims,kms,j)                      &
-              ,dlu2d=dl_u(ims,kms,j), dlg2d=dlg(ims,kms,j)                     &
-              ,frc_urb1d=frcurb(ims,j), bepswitch=bepswitch                    &
+              ,a_u2d=a_u(its,kts,j), a_v2d=a_v(its,kts,j)                      &
+              ,a_t2d=a_t(its,kts,j), a_q2d=a_q(its,kts,j)                      &
+              ,b_u2d=b_u(its,kts,j), b_v2d=b_v(its,kts,j)                      &
+              ,b_t2d=b_t(its,kts,j), b_q2d=b_q(its,kts,j)                      &
+              ,b_e2d=b_e(its,kts,j), a_e2d=a_e(its,kts,j)                      &
+              ,sfk2d=sfk(its,kts,j), vlk2d=vlk(its,kts,j)                      &
+              ,dlu2d=dl_u(its,kts,j), dlg2d=dlg(its,kts,j)                     &
+              ,frc_urb1d=frcurb(its,j), bepswitch=bepswitch                    &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -525,7 +525,10 @@ contains
    real,     dimension( ims:ime )                                            , &
              optional                                                        , &
              intent(inout)   ::                                        regime
- real,     dimension( ims:ime, kms:kme ),                                      &
+! 
+! local vars
+!
+   real,     dimension( its:ite, kts:kte ),                                    &
              intent(in)      ::                                         a_u2d, &
                                                                         a_v2d, &
                                                                         a_t2d, &
@@ -541,12 +544,9 @@ contains
                                                                         dlu2d, &
                                                                         dlg2d
 
-  real,     dimension( ims:ime ),                                              &
+   real,     dimension( its:ite ),                                             &
              intent(in)      ::                                      frc_urb1d
-  real ::                                                            bepswitch
-!
-! local vars
-!
+   real ::                                                           bepswitch
    real,     dimension( its:ite )            ::                           hol
    real,     dimension( its:ite, kts:kte+1 ) ::                            zq
 !

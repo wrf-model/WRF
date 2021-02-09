@@ -3901,8 +3901,8 @@ CONTAINS
         ! CTSM can handle it. 
          DO j=j_start(ij),j_end(ij)
             DO i=i_start(ij),i_end(ij)
-                IF (xland(i,j) .GT. 1.5.and.ht(i,j).gt.lake_min_elev) then
-                    WRITE( message,* ) 'WRF-CTSM: for large lakes  xland ==1'
+                IF (lakemask(i,j).eq.1. .and. xland(i,j).gt.1.5 .and. ht(i,j).gt.lake_min_elev) then
+                    WRITE( message,* ) 'WRF-CTSM: for great lakes  xland ==1'
                     CALL wrf_message ( message )
                     xland (i,j)  = 1  
                 ENDIF

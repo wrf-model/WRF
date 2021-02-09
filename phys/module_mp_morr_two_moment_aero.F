@@ -76,6 +76,10 @@
 ! 1) changes and cleanup of code comments
 ! 2) correction to universal gas constant (very small change)
 
+! CHANGES FOR WRFV4.3
+! 1) fix to saturation vapor pressure polysvp to work at T < -80 C
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 ! TWG 2017
 ! TWG = Timothy Glotfelty, EPA
 ! Adapted from WRFV3.8.1 Morrison Double Moment Scheme
@@ -719,7 +723,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                ,CCN5_GS, CCN6_GS, CCN7_GS, NR_CU        & ! TWG add
                ,QR_CU, NS_CU, QS_CU, CU_UAF             & ! TWG add
 !jdf           ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
-               ,rainprod, evapprod                      &
+               ,wetscav_on, rainprod, evapprod                      &
                ,QLSINK,PRECR,PRECI,PRECS,PRECG          & ! HM ADD, WRF-CHEM
                                            )
  
@@ -830,6 +834,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                           EFCG, EFIG, EFSG, WACT, CCN1_GS,  &
         CCN2_GS, CCN3_GS, CCN4_GS, CCN5_GS, CCN6_GS, CCN7_GS
 
+   LOGICAL, optional, INTENT(IN) :: wetscav_on
 
    ! LOCAL VARIABLES
 
@@ -891,12 +896,20 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
   REAL, DIMENSION(kts:kte, no_src_types_cu) :: maerosol, naer
 ! TWG END
 
+  LOGICAL :: has_wetscav
+
 ! below for wrf-chem
    flag_qndrop = .false.
    IF ( PRESENT ( f_qndrop ) ) flag_qndrop = f_qndrop
 !!!!!!!!!!!!!!!!!!!!!!
 
-   ! Initialize tendencies (all set to 0) and transfer
+   IF ( PRESENT ( wetscav_on ) ) THEN
+     has_wetscav = wetscav_on
+   ELSE
+     has_wetscav = .false.
+   ENDIF
+   
+! Initialize tendencies (all set to 0) and transfer
    ! array to local variables
    DT = DT_IN   
 
@@ -1082,7 +1095,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                                  nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
                                  ,no_src_types_cu,maerosol,naer                          & !TWG add prescribed aerosol
 #if (WRF_CHEM == 1)
-                                 ,rainprod1d, evapprod1d                                 & !wrf-chem
+                                 ,has_wetscav, rainprod1d, evapprod1d                    & !wrf-chem
 #endif
                        )
    !
@@ -1150,8 +1163,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 !          EFFIS(I,K,J)     = MAX(EFFIS(I,K,J),13.)
 
 #if ( WRF_CHEM == 1)
+         IF ( has_wetscav ) THEN
            IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
            IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
+         ENDIF
 #endif
 
       end do
@@ -1209,7 +1224,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
                         ,no_src_types_cu,maerosol,naer & ! TWG add
 
 #if (WRF_CHEM == 1)
-        ,rainprod, evapprod &
+        ,has_wetscav,rainprod, evapprod &
 #endif
                         )
 
@@ -1537,6 +1552,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 	REAL, DIMENSION(KTS:KTE)::C2PREC,CSED,ISED,SSED,GSED,RSED
 #if (WRF_CHEM == 1)
     REAL, DIMENSION(KTS:KTE), INTENT(INOUT) :: rainprod, evapprod
+    LOGICAL, INTENT(IN)                     :: has_wetscav
 #endif
     REAL, DIMENSION(KTS:KTE)                :: tqimelt ! melting of cloud ice (tendency)
 
@@ -2358,8 +2374,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
       QC3DTEN(K) = QC3DTEN(K)+PCC(K)
 
 #if (WRF_CHEM == 1)
+       IF ( has_wetscav ) THEN
          evapprod(k) = - PRE(K) - EVPMS(K) - EVPMG(K)
          rainprod(k) = PRA(K) + PRC(K) + tqimelt(K)
+       ENDIF
 #endif
 
 !.......................................................................
@@ -4242,10 +4260,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
          NR3DTEN(K) = NR3DTEN(K)+NSUBR(K)
 
 #if (WRF_CHEM == 1)
+       IF ( has_wetscav ) THEN
          evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
          rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
                        + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K) + &
                        + PRDS(K) + PRDG(K)
+       ENDIF
 #endif
 
          END IF !!!!!! TEMPERATURE
@@ -5031,11 +5051,18 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 !         POLYSVP = 10.**(-9.09718*(273.16/T-1.)-3.56654*                &
 !          LOG10(273.16/T)+0.876793*(1.-T/273.16)+						&
 !          LOG10(6.1071))*100.
+! hm 11/16/20, use Goff-Gratch for T < 195.8 K and Flatau et al. equal or above 195.8 K 
+      if (t.ge.195.8) then
+         dt=t-273.15
+         polysvp = a0i + dt*(a1i+dt*(a2i+dt*(a3i+dt*(a4i+dt*(a5i+dt*(a6i+dt*(a7i+a8i*dt)))))))                                                                                                 
+         polysvp = polysvp*100.
+      else
 
+         polysvp = 10.**(-9.09718*(273.16/t-1.)-3.56654* &
+          alog10(273.16/t)+0.876793*(1.-t/273.16)+ &
+          alog10(6.1071))*100.
 
-      dt = max(-80.,t-273.16)
-      polysvp = a0i + dt*(a1i+dt*(a2i+dt*(a3i+dt*(a4i+dt*(a5i+dt*(a6i+dt*(a7i+a8i*dt))))))) 
-      polysvp = polysvp*100.
+      end if
 
       END IF
 
@@ -5043,17 +5070,27 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 
       IF (TYPE.EQ.0) THEN
 
-       dt = max(-80.,t-273.16)
-       polysvp = a0 + dt*(a1+dt*(a2+dt*(a3+dt*(a4+dt*(a5+dt*(a6+dt*(a7+a8*dt)))))))
-       polysvp = polysvp*100.
-
 !         POLYSVP = 10.**(-7.90298*(373.16/T-1.)+                        &
 !             5.02808*LOG10(373.16/T)-									&
 !             1.3816E-7*(10**(11.344*(1.-T/373.16))-1.)+				&
 !             8.1328E-3*(10**(-3.49149*(373.16/T-1.))-1.)+				&
 !             LOG10(1013.246))*100.
+! hm 11/16/20, use Goff-Gratch for T < 202.0 K and Flatau et al. equal or above 202.0 K
+      if (t.ge.202.0) then
+         dt = t-273.15
+         polysvp = a0 + dt*(a1+dt*(a2+dt*(a3+dt*(a4+dt*(a5+dt*(a6+dt*(a7+a8*dt)))))))                                                                                                          
+         polysvp = polysvp*100.
+      else
 
-         END IF
+! note: uncertain below -70 C, but produces physical values (non-negative) unlike flatau                                                                                                       
+         polysvp = 10.**(-7.90298*(373.16/t-1.)+ &
+             5.02808*alog10(373.16/t)- &
+             1.3816e-7*(10**(11.344*(1.-t/373.16))-1.)+ &
+             8.1328e-3*(10**(-3.49149*(373.16/t-1.))-1.)+ &
+             alog10(1013.246))*100.
+      end if
+
+      END IF
 
 
       END FUNCTION POLYSVP

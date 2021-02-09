@@ -63,6 +63,10 @@
    REAL    , PARAMETER :: rhowater     = 1000.       ! density of liquid water at 0^oC (kg m^-3)
    REAL    , PARAMETER :: rhosnow      = 100.        ! density of snow (kg m^-3)
    REAL    , PARAMETER :: rhoair0      = 1.28        ! density of dry air at 0^oC and 1000mb pressure (kg m^-3)
+
+   REAL    , PARAMETER :: RE_QC_BG     = 2.49E-6     ! effective radius of cloud for background (m)
+   REAL    , PARAMETER :: RE_QI_BG     = 4.99E-6     ! effective radius of ice for background (m)
+   REAL    , PARAMETER :: RE_QS_BG     = 9.99E-6     ! effective radius of snow for background (m)
 !
 ! Now namelist-specified parameter: ccn_conc - RAS
 !   REAL    , PARAMETER :: n_ccn0       = 1.0E8

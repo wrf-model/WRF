@@ -4252,44 +4252,6 @@ endif
           END DO
       END IF
 
-      !  Template for initializing trajectories.  The i, j, and k starting locations
-      !  are specified.  Right now, a small plane in the middle of the domain is
-      !  selected.
-      
-      grid%traj_i    = -9999
-      grid%traj_j    = -9999
-      grid%traj_k    = -9999
-      grid%traj_lat  = -9999
-      grid%traj_long = -9999
-    
-      IF (config_flags%num_traj .gt. 0 .and. config_flags%traj_opt .gt. 0) THEN
-         icount = 1
-         DO j = (jde + jds)/2 - 2, (jde + jds)/2 + 2, 1
-            DO i = (ide + ids)/2 - 2, (ide + ids)/2 + 2, 1
-               IF ( its .LE. i    .and. ite .GE. i   .and.  jts .LE. j    .and. jte .GE. j ) THEN
-                  grid%traj_i   (icount) = i
-                  grid%traj_j   (icount) = j
-                  grid%traj_k   (icount) = 10
-                  grid%traj_lat (icount) = grid%xlat(i,j)
-                  grid%traj_long(icount) = grid%xlong(i,j)
-               END IF
-         
-#ifdef DM_PARALLEL
-               grid%traj_i   (icount) = wrf_dm_max_real ( grid%traj_i   (icount) )
-               grid%traj_j   (icount) = wrf_dm_max_real ( grid%traj_j   (icount) )
-               grid%traj_k   (icount) = wrf_dm_max_real ( grid%traj_k   (icount) )
-               grid%traj_lat (icount) = wrf_dm_max_real ( grid%traj_lat (icount) )
-               grid%traj_long(icount) = wrf_dm_max_real ( grid%traj_long(icount) )
-#endif
-                
-               icount = icount + 1
-               IF (icount .GT. config_flags%num_traj) THEN
-                  EXIT
-               END IF
-            END DO
-         END DO  
-      END IF
-
       !  Simple initialization for 3d ocean.  
 
       IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
@@ -4931,6 +4893,8 @@ endif
 
 #ifdef VERT_UNIT
 
+!gfortran -DVERT_UNIT -ffree-form -ffree-line-length-none module_initialize_real.F -o vert.exe
+
 !This is a main program for a small unit test for the vertical interpolation.
 
 program vint
@@ -4962,6 +4926,7 @@ program vint
    logical, parameter :: use_surface             = .TRUE. ! .FALSE. ! .TRUE.
    real   , parameter :: zap_close_levels        = 500. ! 100.
    integer, parameter :: force_sfc_in_vinterp    = 6 ! 0 ! 6
+   integer, parameter :: id                      = 1
 
    integer :: k
 
@@ -4976,7 +4941,7 @@ program vint
    print *,'UNIT TEST FOR VERTICAL INTERPOLATION'
    print *,'------------------------------------'
    print *,' '
-   do lagrange_order = 1 , 9 , 8
+   do lagrange_order = 1 , 1
       print *,' '
       print *,'------------------------------------'
       print *,'Lagrange Order = ',lagrange_order
@@ -5007,7 +4972,7 @@ program vint
                          generic , 'T' , &
                          interp_type , lagrange_order , extrap_type , &
                          lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                         zap_close_levels , force_sfc_in_vinterp , &
+                         zap_close_levels , force_sfc_in_vinterp , id , &
                          ids , ide , jds , jde , kds , kde , &
                          ims , ime , jms , jme , kms , kme , &
                          its , ite , jts , jte , kts , kte )
@@ -5053,8 +5018,6 @@ subroutine fillitup ( fo , po , fn , pn , &
 
    integer :: i , j , k
 
-   real , parameter :: piov2 = 3.14159265358 / 2.
-
    k = 1
    do j = jts , jte
    do i = its , ite
@@ -5066,6 +5029,7 @@ subroutine fillitup ( fo , po , fn , pn , &
    do j = jts , jte
    do i = its , ite
       po(i,k,j) = ( 5000. * ( 1 - (k-1) ) + 100000. * ( (k-1) - (generic-1) ) ) / (1. - real(generic-1) )
+!     po(i,k,j) = FILL IN YOUR INPUT PRESSURE LEVELS
    end do
    end do
    end do
@@ -5075,7 +5039,7 @@ subroutine fillitup ( fo , po , fn , pn , &
       do j = jts , jte
       do i = its , ite
          fo(i,k,j) = po(i,k,j)
-!        fo(i,k,j) = sin(po(i,k,j) * piov2 / 102000. )
+!        fo(i,k,j) = FILL IN YOUR COLUMN OF PRESS_LEVEL FIELD
       end do
       end do
       end do
@@ -5084,7 +5048,6 @@ subroutine fillitup ( fo , po , fn , pn , &
       do j = jts , jte
       do i = its , ite
          fo(i,k,j) = (((po(i,k,j)-5000.)/102000.)*((102000.-po(i,k,j))/102000.))*102000.
-!        fo(i,k,j) = sin(po(i,k,j) * piov2 / 102000. )
       end do
       end do
       end do
@@ -5096,6 +5059,7 @@ subroutine fillitup ( fo , po , fn , pn , &
    do j = jts , jte
    do i = its , ite
       pn(i,k,j) = ( 5000. * ( 0 - (k-1) ) + 102000. * ( (k-1) - (kte-1) ) ) / (-1. *  real(kte-1) )
+!     pn(i,k,j) = FILL IN A COLUMN OF KNOWN FULL-LEVEL PRESSURES ON ETA SURFACES
    end do
    end do
    end do
@@ -5114,7 +5078,7 @@ subroutine fillitup ( fo , po , fn , pn , &
       do j = jts , jte
       do i = its , ite
          fn(i,k,j) = pn(i,k,j)
-!        fn(i,k,j) = sin(pn(i,k,j) * piov2 / 102000. )
+!        fn(i,k,j) = FILL IN COLUMN OF HALF LEVEL FIELD
       end do
       end do
       end do
@@ -5137,6 +5101,12 @@ function skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_
    logical :: hold_ups
    skip_middle_points_t = .false.
 end function skip_middle_points_t
+
+subroutine wrf_message(level,message)
+   character(len=*), intent(in) :: message
+   integer, intent(in) :: level
+   print *,trim(message)
+end subroutine wrf_message
 
 #endif
 

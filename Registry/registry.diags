@@ -69,8 +69,9 @@ state    real   ght_zl i{nz}j   misc    1  Z   h{22}  "GHT_ZL"  "Height level da
 state    real   s_zl   i{nz}j   misc    1  Z   h{22}  "S_ZL"    "Height level data, Speed"                 "m s-1"
 state    real   td_zl  i{nz}j   misc    1  Z   h{22}  "TD_ZL"   "Height level data, Dew point temperature" "K"
 state    real   q_zl   i{nz}j   misc    1  Z   h{22}  "Q_ZL"    "Height level data, Mixing ratio"          "kg/kg"
+state    real   p_zl   i{nz}j   misc    1  Z   h{22}  "P_ZL"    "Height level data, Air Pressure"          "Pa"
 
 #  Package declarations
 
 package   skip_z_diags      z_lev_diags==0     -        -
-package        z_diags      z_lev_diags==1     -        state:z_zl,u_zl,v_zl,t_zl,rh_zl,ght_zl,s_zl,td_zl,q_zl
+package        z_diags      z_lev_diags==1     -        state:z_zl,u_zl,v_zl,t_zl,rh_zl,ght_zl,s_zl,td_zl,q_zl,p_zl

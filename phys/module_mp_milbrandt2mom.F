@@ -190,7 +190,7 @@ MODULE my2_mod
   gammadp= exp(gammadp)
 
 !!GEM:
-  gamma  = sngl(gammadp)
+  gamma = gammadp
 
  END FUNCTION gamma
 !======================================================================!
@@ -260,7 +260,7 @@ END SUBROUTINE gser
   enddo
 
 !! GEM:
-  gammln= sngl( tmp+log(stp*ser/x)  )
+  gammln=tmp+log(stp*ser/x)
 
  END FUNCTION gammln
 !======================================================================!
@@ -3051,7 +3051,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
            LAMr     = 1./iLAMr
           !note: The following coding of 'No_r=...' prevents overflow:
           !No_r     = NR(i,k)*LAMr**(1.+alpha_r))*iGR31
-           No_r     = sngl(dble(NR(i,k))*dble(LAMr)**dble(1.+alpha_r))*iGR31
+           No_r     = dble(NR(i,k))*dble(LAMr)**dble(1.+alpha_r)*iGR31
           !note: There is an error in MY05a_eq(8) for VENTx (corrected in code)
            VENTr    = Avx*GR32*iLAMr**cexr5 + Bvx*ScTHRD*sqrt(gam*afr*iMUkin)*GR17*iLAMr**cexr6
            ABw      = CHLC**2/(Ka*RGASV*T(i,k)**2)+1./(DE(i,k)*(QSW(i,k))*Cdiff)

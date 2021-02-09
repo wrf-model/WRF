@@ -1133,7 +1133,7 @@
 !
       if( config_flags%cu_physics>0 .and. config_flags%chem_conv_tr>0 &
            .and. config_flags%cu_physics/=kfcupscheme                 &
-           .and. config_flags%cu_physics/=gfscheme ) then            !BSINGH - For WRFCuP scheme
+           .and. config_flags%cu_physics/=gfscheme ) then                !BSINGH - For WRFCuP scheme
         call wrf_debug(15,'calling conv transport for chemical species')
         if(config_flags%chem_opt >0 )then
         ! save old concentrations for convective tendencies

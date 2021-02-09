@@ -90,8 +90,9 @@
 ! author: rahul a. zaveri
 ! update: jan 2005
 !-----------------------------------------------------------------------
-      subroutine aerchemistry( iclm, jclm, kclm_calcbgn, kclm_calcend,   &
-                               dtchem_sngl, idiagaa,vbs_nbin )
+      subroutine aerchemistry( iclm, jclm, kclm_calcbgn, kclm_calcend,    &
+                               dtchem_sngl, idiagaa,vbs_nbin,             &
+                               ph_aer1, ph_aer2, ph_aer3, ph_aer4,kms,kme )
 
       use module_data_mosaic_asect
       use module_data_mosaic_other
@@ -105,6 +106,9 @@
 !   subr arguments
       integer iclm, jclm, kclm_calcbgn, kclm_calcend, idiagaa,vbs_nbin(1)
       real dtchem_sngl
+      integer kms, kme
+      real, intent(out), dimension(kms:kme) ::                       &
+            ph_aer1, ph_aer2, ph_aer3, ph_aer4       ! pH of the aerosols
 !   local variables
       real(kind=8) :: dtchem
       integer k, m
@@ -153,6 +157,11 @@
           call specialoutaa( iclm, jclm, k, m, 'befor_movesect' )
           call move_sections( 1, iclm, jclm, k, m)
           call specialoutaa( iclm, jclm, k, m, 'after_movesect' )
+
+          ph_aer1(k) = mc(1,1)
+          ph_aer2(k) = mc(1,2)
+          ph_aer3(k) = mc(1,3)
+          ph_aer4(k) = mc(1,4)
 
 100     continue	! k levels
 

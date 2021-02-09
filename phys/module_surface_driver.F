@@ -4070,16 +4070,6 @@ CONTAINS
          ENDDO
       ENDDO
 
-        !CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
-        !           PSFC,CP,R_d,RCP,CHS,t_phy,qv_curr,ua_phys,    &
-        !           ids,ide, jds,jde, kds,kde,                    &
-        !           ims,ime, jms,jme, kms,kme,                    &
-        !            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
-
-
-
-
-
 #endif
 
      CASE (SSIBSCHEME)

@@ -151,6 +151,7 @@
    real :: xtime,xhour,xmin,gmtp,xlonn,rlat
    logical :: is_moz_chm
 #include "version_decl"
+#include "commit_decl"
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
 #endif

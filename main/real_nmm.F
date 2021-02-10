@@ -67,6 +67,7 @@ PROGRAM real_data
    REAL    :: t1,t2
 
 #include "version_decl"
+#include "commit_decl"
 
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )

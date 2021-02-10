@@ -132,6 +132,7 @@ character(len=24) :: start_date_hold
 integer :: ii
 
 #include "version_decl"
+#include "commit_decl"
 
 !!!!!!!!!!!!!!!!!!!!!    mousta   
     integer ::  n_ref_m,k_dim_c,k_dim_n

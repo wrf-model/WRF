@@ -1905,6 +1905,7 @@
     INTEGER :: ierr
 
 #include "version_decl"
+#include "commit_decl"
 
     !  Make sure that the input data is consistent with the current code.
 

@@ -165,6 +165,7 @@ PROGRAM convert_emissions
 #endif
 
 #include "version_decl"
+#include "commit_decl"
 
 #define DM_BCAST_MACRO(A) CALL wrf_dm_bcast_bytes ( A , size ( A ) * rnum8 )
 

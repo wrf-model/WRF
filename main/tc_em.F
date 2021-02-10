@@ -73,6 +73,7 @@ PROGRAM tc_data
    END INTERFACE
 
 #include "version_decl"
+#include "commit_decl"
 
    !  Define the name of this program (program_name defined in module_domain)
 

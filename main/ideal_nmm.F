@@ -66,6 +66,7 @@ PROGRAM ideal_nmm
    REAL    :: t1,t2
 
 #include "version_decl"
+#include "commit_decl"
 
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )

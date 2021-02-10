@@ -54,6 +54,7 @@ PROGRAM ideal
    END INTERFACE
 
 #include "version_decl"
+#include "commit_decl"
 
 
 #ifdef DM_PARALLEL

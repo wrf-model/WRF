@@ -356,6 +356,7 @@
 !
       IF (CONFIG_FLAGS%MP_PHYSICS == ETAMPNEW .OR.                 &
      &    CONFIG_FLAGS%MP_PHYSICS == FER_MP_HIRES .OR.                 &
+     &    CONFIG_FLAGS%MP_PHYSICS == IVANR_MICRO .OR.              & ! w2id
      &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HWRF ) THEN
 !
          ETAMP_PHYSICS=.TRUE.

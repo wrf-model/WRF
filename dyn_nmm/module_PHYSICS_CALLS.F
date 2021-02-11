@@ -3423,6 +3423,11 @@
      &                 ,ID=grid%id                                      &
      &                 ,num_scalar=1                                      &  !mchen temporary
      &                 ,refl_10cm=grid%refl_10cm & ! to calc. radar reflectivity
+     &                 ,cld=grid%cld                                    & ! w2id
+     &                 ,tw2=grid%tw2                                    & ! w2id
+     &                 ,pw2=grid%pw2                                    & ! w2id
+     &                 ,qw2=grid%qw2                                    & ! w2id
+     &                 ,f_snow=grid%f_snow                              & ! w2id
      &                 ,re_cloud=grid%re_cloud                          & ! G. Thompson
      &                 ,re_ice=grid%re_ice                              & ! G. Thompson
      &                 ,re_snow=grid%re_snow                            & ! G. Thompson

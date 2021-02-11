@@ -2047,21 +2047,21 @@ CONTAINS
    IF (PRESENT(GWD_opt)) THEN
      IF (GWD_opt .EQ. 1) THEN
        IF (PRESENT(dtaux3d)) THEN
-             CALL gwdo(                                              &
+             CALL gwdo(                                             &
                U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
               ,QV3D=qv_curr                                         &
-              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
+              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                   &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
               ,DTAUX3D=dtaux3d,DTAUY3D=dtauy3d                      &
-              ,DUSFCG=dusfcg,DVSFCG=dvsfcg &
-              ,VAR2D=var2d,OC12D=oc12d     &
-              ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
-              ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
-              ,SINA=sina,COSA=cosa                      &
-              ,ZNU=znu,ZNW=znw,P_TOP=p_top                &
-              ,CP=cp,G=g,RD=r_d                           &
-              ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
-              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &
+              ,DUSFCG=dusfcg,DVSFCG=dvsfcg                          &
+              ,VAR2D=var2d,OC12D=oc12d                              &
+              ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4              &
+              ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4              &
+              ,SINA=sina,COSA=cosa                                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
+              ,CP=cp,G=g,RD=r_d                                     &
+              ,RV=r_v,EP1=ep_1,PI=3.141592653                       &
+              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep        &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
@@ -2081,12 +2081,13 @@ CONTAINS
               ,DUSFCG_ss=dusfcg_ss,DVSFCG_ss=dvsfcg_ss              &
               ,DUSFCG_fd=dusfcg_fd,DVSFCG_fd=dvsfcg_fd              &
               ,xland=xland,br=br                                    &
-              ,VAR2D=var2dls,OC12D=oc12dls                              &
-              ,OA2D1=oa1ls,OA2D2=oa2ls,OA2D3=oa3ls,OA2D4=oa4ls              &
-              ,OL2D1=ol1ls,OL2D2=ol2ls,OL2D3=ol3ls,OL2D4=ol4ls              &
+              ,VAR2D=var2dls,OC12D=oc12dls                          &
+              ,OA2D1=oa1ls,OA2D2=oa2ls,OA2D3=oa3ls,OA2D4=oa4ls      &
+              ,OL2D1=ol1ls,OL2D2=ol2ls,OL2D3=ol3ls,OL2D4=ol4ls      &
               ,VAR2Dss=var2dss,OC12Dss=oc12dss                      &
-              ,OA2D1ss=oa1ss,OA2D2ss=oa2ss,OA2D3ss=oa3ss,OA2D4ss=oa4ss  &
-              ,OL2D1ss=ol1ss,OL2D2ss=ol2ss,OL2D3ss=ol3ss,OL2D4ss=ol4ss  &
+              ,OA2D1ss=oa1ss,OA2D2ss=oa2ss,OA2D3ss=oa3ss            &
+              ,OA2D4ss=oa4ss,OL2D1ss=ol1ss,OL2D2ss=ol2ss            &
+              ,OL2D3ss=ol3ss,OL2D4ss=ol4ss                          &
               ,SINA=sina,COSA=cosa                                  &
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,DZ=dz8w,PBLH=PBLH                                    &

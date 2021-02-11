@@ -228,6 +228,9 @@ CONTAINS
       CALL nl_set_nproc_y ( 1, ntasks_y )
       WRITE( wrf_err_message , * )'Ntasks in X ',ntasks_x,', ntasks in Y ',ntasks_y
       CALL wrf_message( wrf_err_message )
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+      CALL MPI_BARRIER( local_communicator, ierr )
+#endif
       RETURN
    END SUBROUTINE wrf_dm_initialize
 
@@ -1295,7 +1298,7 @@ CONTAINS
       RETURN
    END FUNCTION getrealmpitype
 
-   REAL FUNCTION wrf_dm_max_int ( inval )
+   INTEGER FUNCTION wrf_dm_max_int ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
       INTEGER, intent(in) :: inval

@@ -82,6 +82,11 @@ else
 NCEP_WCOSS =
 endif
 
+ifeq ($(NWM_META),1)
+NWM_META = -DNWM_META
+else
+NWM_META =
+endif
 
 RMD	    = rm -f
 COMPILER90  = ftn
@@ -91,7 +96,7 @@ F90FLAGS    = -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) 
 MODFLAG	    = -I./ -I ../../MPP -I ../MPP -I ../mod
 LDFLAGS	    = $(HDF5_LDFLAGS)
 CPPINVOKE	= -fpp
-CPPFLAGS    = -DMPP_LAND -I ../Data_Rec $(HYDRO_D) $(SPATIAL_SOIL) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE) $(NCEP_WCOSS)
+CPPFLAGS    = -DMPP_LAND -I ../Data_Rec $(HYDRO_D) $(SPATIAL_SOIL) $(NWM_META) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE) $(NCEP_WCOSS)
 LIBS 	    =$(Z_LIB)	
 NETCDFINC   = $(NETCDF_INC)
 NETCDFLIB   = -L$(NETCDF_LIB) -lnetcdff -lnetcdf

@@ -360,21 +360,31 @@ DEFAULT_CROP = 0                                      ! The default crop type(1-
 !                1       2       3       4       5
 !----------------------------------------------------------
  
-PLTDAY     =    130,    111,    111,    111,    111,  ! Planting date
-HSDAY      =    280,    300,    300,    300,    300,  ! Harvest date
+PLTDAY     =    111,    131,    111,    111,    111,  ! Planting date
+HSDAY      =    300,    280,    300,    300,    300,  ! Harvest date
 PLANTPOP   =   78.0,   78.0,   78.0,   78.0,   78.0,  ! Plant density [per ha] - used?
 IRRI       =    0.0,    0.0,    0.0,    0.0,    0.0,  ! Irrigation strategy 0= non-irrigation 1=irrigation (no water-stress)
 
 GDDTBASE   =   10.0,   10.0,   10.0,   10.0,   10.0,  ! Base temperature for GDD accumulation [C]
 GDDTCUT    =   30.0,   30.0,   30.0,   30.0,   30.0,  ! Upper temperature for GDD accumulation [C]
-GDDS1      =   60.0,   50.0,   50.0,   50.0,   50.0,  ! GDD from seeding to emergence
-GDDS2      =  675.0,  718.0,  718.0,  718.0,  718.0,  ! GDD from seeding to initial vegetative 
-GDDS3      = 1183.0,  933.0,  933.0,  933.0,  933.0,  ! GDD from seeding to post vegetative 
-GDDS4      = 1253.0, 1103.0, 1103.0, 1103.0, 1103.0,  ! GDD from seeding to intial reproductive
-GDDS5      = 1605.0, 1555.0, 1555.0, 1555.0, 1555.0,  ! GDD from seeding to pysical maturity 
-
+GDDS1      =   50.0,   60.0,   50.0,   50.0,   50.0,  ! GDD from seeding to emergence
+GDDS2      =  625.0,  675.0,  718.0,  718.0,  718.0,  ! GDD from seeding to initial vegetative
+GDDS3      =  933.0, 1183.0,  933.0,  933.0,  933.0,  ! GDD from seeding to post vegetative
+GDDS4      = 1103.0, 1253.0, 1103.0, 1103.0, 1103.0,  ! GDD from seeding to intial reproductive
+GDDS5      = 1555.0, 1605.0, 1555.0, 1555.0, 1555.0,  ! GDD from seeding to pysical maturity
+C3PSN      =    0.0,    1.0,    1.0,    1.0,    1.0,  ! transfer crop-specific photosynthetic parameters
+KC25       =   30.0,   30.0,   30.0,   30.0,   30.0,  ! Zhe Zhang
+AKC        =    2.1,    2.1,    2.1,    2.1,    2.1,  ! 2020-02-05
+KO25       =   3.E4,   3.E4,   3.E4,   3.E4,   3.E4,  !
+AKO        =    1.2,    1.2,    1.2,    1.2,    1.2,  !
+AVCMX      =    2.4,    2.4,    2.4,    2.4,    2.4,  !
+VCMX25     =   60.0,   80.0,   60.0,   60.0,   55.0,  !
+BP         =   4.E4,   1.E4,   2.E3,   2.E3,   2.E3,  !
+MP         =     4.,     9.,     6.,     9.,     9.,  !
+FOLNMX     =    1.5,    1.5,    1.5,    1.5,    1.5,  !
+QE25       =   0.05,   0.06,   0.06,   0.06,   0.06,  !
 C3C4       =      2,      1,      2,      2,      2,  ! photosynthetic pathway:  1. = c3 2. = c4
-Aref       =    7.0,    7.0,    7.0,    7.0,    7.0,  ! reference maximum CO2 assimulation rate 
+Aref       =    7.0,    7.0,    7.0,    7.0,    7.0,  ! reference maximum CO2 assimulation rate
 PSNRF      =   0.85,   0.85,   0.85,   0.85,   0.85,  ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
 I2PAR      =    0.5,    0.5,    0.5,    0.5,    0.5,  ! Fraction of incoming solar radiation to photosynthetically active radiation
 TASSIM0    =    8.0,    8.0,    8.0,    8.0,    8.0,  ! Minimum temperature for CO2 assimulation [C]
@@ -390,7 +400,7 @@ LEFREEZ    =    268,    268,    268,    268,    268,  ! characteristic T for lea
 DILE_FC_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! coeficient for temperature leaf stress death [1/s]
 DILE_FC_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 DILE_FC_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
-DILE_FC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0, 
+DILE_FC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
 DILE_FC_S5 =    0.5,    0.5,    0.5,    0.5,    0.5,
 DILE_FC_S6 =    0.5,    0.5,    0.5,    0.5,    0.5,
 DILE_FC_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
@@ -411,8 +421,8 @@ LF_OVRC_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of leaf turnove
 LF_OVRC_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 LF_OVRC_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 LF_OVRC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-LF_OVRC_S5 =    0.2,   0.48,   0.48,   0.48,   0.48,
-LF_OVRC_S6 =    0.3,   0.48,   0.48,   0.48,   0.48,
+LF_OVRC_S5 =    0.2,    0.2,   0.48,   0.48,   0.48,
+LF_OVRC_S6 =    0.3,    0.3,   0.48,   0.48,   0.48,
 LF_OVRC_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 LF_OVRC_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
@@ -420,8 +430,8 @@ ST_OVRC_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of stem turnove
 ST_OVRC_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 ST_OVRC_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 ST_OVRC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-ST_OVRC_S5 =   0.12,   0.12,   0.12,   0.12,   0.12,
-ST_OVRC_S6 =   0.06,   0.06,   0.06,   0.06,   0.06,
+ST_OVRC_S5 =    0.2,   0.12,   0.12,   0.12,   0.12,
+ST_OVRC_S6 =    0.3,   0.06,   0.06,   0.06,   0.06,
 ST_OVRC_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 ST_OVRC_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
@@ -429,21 +439,20 @@ RT_OVRC_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of root tunrove
 RT_OVRC_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 RT_OVRC_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 RT_OVRC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-RT_OVRC_S5 =   0.12,   0.12,   0.12,   0.12,   0.12,
-RT_OVRC_S6 =   0.06,   0.06,   0.06,   0.06,   0.06,
+RT_OVRC_S5 =    0.12,   0.12,   0.12,   0.12,   0.12,
+RT_OVRC_S6 =    0.06,   0.06,   0.06,   0.06,   0.06,
 RT_OVRC_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 RT_OVRC_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
-             
-LFMR25     =    1.0,    1.0,    1.0,    1.0,    1.0,  !  leaf maintenance respiration at 25C [umol CO2/m**2  /s]
-STMR25     =   0.05,    0.1,    0.1,    0.1,    0.1,  !  stem maintenance respiration at 25C [umol CO2/kg bio/s]
-RTMR25     =   0.05,    0.0,    0.0,    0.0,    0.0,  !  root maintenance respiration at 25C [umol CO2/kg bio/s]
-GRAINMR25  =    0.0,    0.1,    0.1,    0.1,    0.1,  ! grain maintenance respiration at 25C [umol CO2/kg bio/s]
+LFMR25     =    0.8,    1.0,    1.0,    1.0,    1.0,  !  leaf maintenance respiration at 25C [umol CO2/m**2  /s]
+STMR25     =   0.05,    0.05,    0.1,    0.1,    0.1,  !  stem maintenance respiration at 25C [umol CO2/kg bio/s]
+RTMR25     =   0.05,    0.05,    0.0,    0.0,    0.0,  !  root maintenance respiration at 25C [umol CO2/kg bio/s]
+GRAINMR25  =    0.0,    0.0,    0.1,    0.1,    0.1,  ! grain maintenance respiration at 25C [umol CO2/kg bio/s]
 
 LFPT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to leaf
 LFPT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
-LFPT_S3    =    0.4,    0.4,    0.4,    0.4,    0.4,
-LFPT_S4    =    0.2,    0.2,    0.2,    0.2,    0.2,
+LFPT_S3    =    0.36,   0.4,    0.4,    0.4,    0.4,
+LFPT_S4    =    0.1,    0.2,    0.2,    0.2,    0.2,
 LFPT_S5    =    0.0,    0.0,    0.0,    0.0,    0.0,
 LFPT_S6    =    0.0,    0.0,    0.0,    0.0,    0.0,
 LFPT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
@@ -451,33 +460,60 @@ LFPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 STPT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to stem
 STPT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
-STPT_S3    =    0.2,    0.2,    0.2,    0.2,    0.2,
-STPT_S4    =    0.5,    0.5,    0.5,    0.5,    0.5,
-STPT_S5    =    0.0,   0.15,   0.15,   0.15,   0.15,
-STPT_S6    =    0.0,   0.05,   0.05,   0.05,   0.05,
+STPT_S3    =    0.24,   0.2,    0.2,    0.2,    0.2,
+STPT_S4    =    0.6,    0.5,    0.5,    0.5,    0.5,
+STPT_S5    =    0.0,    0.0,   0.15,   0.15,   0.15,
+STPT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
 STPT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
-STPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0, 
+STPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 RTPT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to root
 RTPT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
-RTPT_S3    =   0.34,    0.4,    0.4,    0.4,    0.4,
+RTPT_S3    =    0.4,    0.4,    0.4,    0.4,    0.4,
 RTPT_S4    =    0.3,    0.3,    0.3,    0.3,    0.3,
-RTPT_S5    =   0.05,   0.05,   0.05,   0.05,   0.05,
-RTPT_S6    =    0.0,   0.05,   0.05,   0.05,   0.05,
+RTPT_S5    =    0.05,   0.05,   0.05,   0.05,   0.05,
+RTPT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
 RTPT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
 RTPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
-   
+
 GRAINPT_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to grain
 GRAINPT_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 GRAINPT_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 GRAINPT_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-GRAINPT_S5 =   0.95,    0.8,    0.8,    0.8,    0.8,
-GRAINPT_S6 =    1.0,    0.9,    0.9,    0.9,    0.9,
+GRAINPT_S5 =    0.95,   0.95,    0.8,    0.8,    0.8,
+GRAINPT_S6 =    1.0,    1.0,    0.9,    0.9,    0.9,
 GRAINPT_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 GRAINPT_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
+LFCT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! carbohydrate translocation
+LFCT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,
+LFCT_S3    =    0.0,    0.,    0.4,    0.4,    0.4,
+LFCT_S4    =    0.0,    0.,    0.3,    0.3,    0.3,
+LFCT_S5    =    0.0,    0.0,   0.05,   0.05,   0.05,
+LFCT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
+LFCT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
+LFCT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
-BIO2LAI   =  0.035,  0.015,  0.015,  0.015,  0.015,  ! leaf are per living leaf biomass [m^2/kg]
+STCT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! carbohydrate translocation
+STCT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,
+STCT_S3    =    0.0,    0.,    0.4,    0.4,    0.4,
+STCT_S4    =    0.0,    0.,    0.3,    0.3,    0.3,
+STCT_S5    =    0.0,    0.,   0.05,   0.05,   0.05,
+STCT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
+STCT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
+STCT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
+
+RTCT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! carbohydrate translocation
+RTCT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,
+RTCT_S3    =    0.0,    0.,    0.4,    0.4,    0.4,
+RTCT_S4    =    0.0,    0.,    0.3,    0.3,    0.3,
+RTCT_S5    =    0.0,    0.,   0.05,   0.05,   0.05,
+RTCT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
+RTCT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
+RTCT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
+
+BIO2LAI    =  0.015,  0.030,  0.015,  0.015,  0.015,  ! leaf are per living leaf biomass [m^2/kg]
+
 
 /
  

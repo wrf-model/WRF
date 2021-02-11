@@ -135,6 +135,7 @@
 		id, curr_secs, ktau, dtstep, ktauc, dtstepc, config_flags, &
 		t_phy, rho_phy, p_phy,                            &
 		moist, chem, vbs_nbin,                            &
+               ph_aer01, ph_aer02, ph_aer03, ph_aer04,           &
 		ids,ide, jds,jde, kds,kde,                        &
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
@@ -234,6 +235,10 @@
 		chem
 !   chem - mixing ratios of trace gase (ppm) and aerosol species
 !	(ug/kg for mass species, #/kg for number species)
+
+        real, intent(out),   &
+                dimension( ims:ime, kms:kme, jms:jme ) :: &
+                ph_aer01, ph_aer02, ph_aer03, ph_aer04
 
 	type(grid_config_rec_type), intent(in) :: config_flags
 !   config_flags - configuration and control parameters
@@ -449,7 +454,9 @@
  	print 93010, 'calling aerchem - it,jt,maerchem =', it, jt, maerchem
 !	print 93010, 'calling aerchem - it,jt,maerchem =', it, jt, maerchem
 	call aerchemistry( it, jt, kclm_calcbgn, kclm_calcend,   &
-                           dtchem, idiagaa_dum, vbs_nbin )
+                           dtchem, idiagaa_dum, vbs_nbin,        &
+                           ph_aer01(it,kms:kme,jt), ph_aer02(it,kms:kme,jt), &
+                           ph_aer03(it,kms:kme,jt), ph_aer04(it,kms:kme,jt), kms,kme  )
 
 !  note units for aerosol is now ug/m3
 

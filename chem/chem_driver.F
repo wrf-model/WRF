@@ -1548,6 +1548,7 @@ if ( cam_mam_aerosols ) &
                grid%f_ice_phy,grid%f_rain_phy,grid%cldfrai, grid%cldfral,             &
                moist, grid%cldfra, grid%cldfra_mp_all, grid%ph_no2,                   &
                chem, gas_aqfrac, numgas_mam,grid%is_CAMMGMP_used,                     &
+               grid%ph_cw,                                                            &
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts,kte                                              )
@@ -1572,6 +1573,7 @@ if ( cam_mam_aerosols ) &
               vdrog3,vdrog3_vbs,grid%br_rto,grid%dgnum4d,grid%dgnumwet4d,wetdens_ap,  &
               del_h2so4_gasprod,grid%dvmrdt_sv13d,grid%dvmrcwdt_sv13d,                &
               grid%is_CAMMGMP_used,                                                   &
+              grid%ph_aer01, grid%ph_aer02, grid%ph_aer03, grid%ph_aer04,             &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite,jts,jte,kts,kte                                                 )
@@ -1606,9 +1608,11 @@ if ( cam_mam_aerosols ) &
               rri,t_phy,moist,p8w,t8w,                                                &
               grid%dx, grid%dy,                                                       &
               p_phy,chem,rho,grid%cldfra,grid%cldfra2,                                &
-              grid%rainprod,grid%evapprod,grid%hno3_col_mdel,                         &
+              wetscav_frcing(ims,kms,jms,p_rainprod),                                 &
+              wetscav_frcing(ims,kms,jms,p_evapprod),                                 &
+              grid%hno3_col_mdel,                                                     &                
               grid%qlsink,grid%precr,grid%preci,grid%precs,grid%precg,                &
-              grid%wdflx, &
+              grid%wdflx,                                                             &
               gas_aqfrac, numgas_mam,dz8w,                                            &
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,                      &
               grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,                &

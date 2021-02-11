@@ -354,7 +354,7 @@
  if (global_status == STATUS_ERROR) then
     if (err_abort) then
        print*,'Stopping in P3 init'
-       call flush(6)
+       flush(6)
        stop
     endif
     return
@@ -430,7 +430,7 @@
    if (global_status == STATUS_ERROR) then
       if (err_abort) then
          print*,'Stopping in P3 init'
-         call flush(6)
+         flush(6)
          stop
       endif
       return

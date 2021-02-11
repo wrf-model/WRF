@@ -1161,6 +1161,17 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%GDDS3     =     GDDS3_TABLE(CROPTYPE)    ! GDD from seeding to post vegetative 
    parameters%GDDS4     =     GDDS4_TABLE(CROPTYPE)    ! GDD from seeding to intial reproductive
    parameters%GDDS5     =     GDDS5_TABLE(CROPTYPE)    ! GDD from seeding to pysical maturity 
+   parameters%C3PSN     =     C3PSNI_TABLE(CROPTYPE)   ! parameters from stomata ! Zhe Zhang 2020-07-13
+   parameters%KC25      =      KC25I_TABLE(CROPTYPE)
+   parameters%AKC       =       AKCI_TABLE(CROPTYPE)
+   parameters%KO25      =      KO25I_TABLE(CROPTYPE)
+   parameters%AKO       =       AKOI_TABLE(CROPTYPE)
+   parameters%AVCMX     =     AVCMXI_TABLE(CROPTYPE)
+   parameters%VCMX25    =    VCMX25I_TABLE(CROPTYPE)
+   parameters%BP        =        BPI_TABLE(CROPTYPE)
+   parameters%MP        =        MPI_TABLE(CROPTYPE)
+   parameters%FOLNMX    =    FOLNMXI_TABLE(CROPTYPE)
+   parameters%QE25      =      QE25I_TABLE(CROPTYPE)   ! ends here
    parameters%C3C4      =      C3C4_TABLE(CROPTYPE)    ! photosynthetic pathway:  1. = c3 2. = c4
    parameters%AREF      =      AREF_TABLE(CROPTYPE)    ! reference maximum CO2 assimulation rate 
    parameters%PSNRF     =     PSNRF_TABLE(CROPTYPE)    ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
@@ -1187,6 +1198,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%STPT      =      STPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to stem
    parameters%RTPT      =      RTPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to root
    parameters%GRAINPT   =   GRAINPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to grain
+   parameters%LFCT      =      LFCT_TABLE(CROPTYPE,:)  ! fraction of translocation to grain ! Zhe Zhang 2020-07-13
+   parameters%STCT      =      STCT_TABLE(CROPTYPE,:)  ! fraction of translocation to grain
+   parameters%RTCT      =      RTCT_TABLE(CROPTYPE,:)  ! fraction of translocation to grain
    parameters%BIO2LAI   =   BIO2LAI_TABLE(CROPTYPE)    ! leaf are per living leaf biomass [m^2/kg]
   END IF
 
@@ -1728,7 +1742,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 		        croptype(i,1,j) > croptype(i,4,j) ) then   ! choose corn
 
 		   cropcat (i,j) = 1
-                   lfmassxy(i,j) =    lai(i,j)/0.035
+                   lfmassxy(i,j) =    lai(i,j)/0.015               ! Initialize lfmass Zhe Zhang 2020-07-13
                    stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	         elseif(croptype(i,2,j) > croptype(i,1,j) .and. &
@@ -1736,7 +1750,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 		        croptype(i,2,j) > croptype(i,4,j) ) then   ! choose soybean
 
 		   cropcat (i,j) = 2
-                   lfmassxy(i,j) =    lai(i,j)/0.015
+                   lfmassxy(i,j) =    lai(i,j)/0.030               ! Initialize lfmass Zhe Zhang 2020-07-13
                    stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	         else
@@ -3193,7 +3207,7 @@ IF((SF_URBAN_PHYSICS == 2).OR.(SF_URBAN_PHYSICS == 3))THEN
     lh(i,j)       = qfx(i,j)*xlv
     hfx(i,j)      = hfx_urb(i,j)                         + (1-frc_urb2d(i,j))*hfx_rural(i,j)      ![W/m/m]
     sh_urb2d(i,j) = hfx_urb(i,j)/frc_urb2d(i,j)
-    lh_urb2d(i,j) = qfx_urb(i,j)*xlv
+    lh_urb2d(i,j) = qfx_urb(i,j)*xlv/frc_urb2d(i,j)
     g_urb2d(i,j)  = grdflx_urb(i,j)
     rn_urb2d(i,j) = rs_abs_urb(i,j)+emiss_urb(i,j)*glw(i,j)-rl_up_urb(i,j)
     ust(i,j)      = (umom**2.+vmom**2.)**.25

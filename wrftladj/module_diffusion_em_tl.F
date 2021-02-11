@@ -2645,10 +2645,19 @@ END SUBROUTINE G_SMAG2D_KM
  g_c_k =0.0
  c_k =config_flags%c_k
 
- tke_seed =tke_seed_value
+ tke_seed = 0.
 
- if( (config_flags%tke_drag_coefficient .gt. epsilon) .or.    &
-        (config_flags%tke_heat_flux .gt. epsilon)  ) tke_seed =0.
+ IF (config_flags%isfflx .eq. 0) THEN
+   IF ((config_flags%diff_opt .eq. 2) .and. (config_flags%bl_pbl_physics .eq. 0)) THEN
+     IF( (config_flags%tke_drag_coefficient .lt. epsilon) .and.  &
+         (config_flags%tke_heat_flux .lt. epsilon)  )  THEN
+       tke_seed = tke_seed_value
+     ENDIF
+   ELSE
+     !tke_drag_coefficient and tke_heat_flux are irrelevant here
+     tke_seed = tke_seed_value
+   ENDIF
+ ENDIF
 
  DO j =j_start,j_end
  DO k =kts+1,ktf-1

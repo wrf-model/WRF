@@ -71,8 +71,6 @@ MODULE MODULE_CPL_LAND
       if ( .NOT. mpi_inited ) then
         call mpi_init(ierr)
         if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_INIT failed")
-      endif
-      if (HYDRO_COMM_WORLD == MPI_COMM_NULL) then
         call MPI_COMM_DUP(MPI_COMM_WORLD, HYDRO_COMM_WORLD, ierr)
         if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_COMM_DUP failed")
       endif

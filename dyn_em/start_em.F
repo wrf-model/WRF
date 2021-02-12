@@ -2301,7 +2301,7 @@ endif
                qvf1 = qtot*qvf2
 
                grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_2(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
-               IF ( config_flags%use_theta_m == 0) THEN
+               IF ( grid%use_theta_m == 0) THEN
                   qvf = 1.+rvovrd*moist(i,kk,j,P_QV)
                ELSE
                   qvf = 1.
@@ -2326,7 +2326,7 @@ endif
                qvf1 = qtot*qvf2
                grid%p(i,kk,j) = grid%p(i,kk+1,j) - ((grid%c1f(k)*grid%Mu_2(i,j)) +       &
                                qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/qvf2/grid%rdn(kk+1)
-               IF ( config_flags%use_theta_m == 0) THEN
+               IF ( grid%use_theta_m == 0) THEN
                   qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
                ELSE
                   qvf = 1.
@@ -2378,7 +2378,7 @@ endif
                qvf2 = 1./(1.+qvf1)
                qvf1 = qvf1*qvf2
                grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_2(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
-               IF ( config_flags%use_theta_m == 0) THEN
+               IF ( grid%use_theta_m == 0) THEN
                   qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
                ELSE
                   qvf = 1.
@@ -2395,7 +2395,7 @@ endif
                qvf2 = 1./(1.+qvf1)
                qvf1 = qvf1*qvf2
                grid%p(i,kk,j) = grid%p(i,kk+1,j) - ((grid%c1f(k)*grid%Mu_2(i,j)) + qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/qvf2/grid%rdn(kk+1)
-               IF ( config_flags%use_theta_m == 0) THEN
+               IF ( grid%use_theta_m == 0) THEN
                   qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
                ELSE
                   qvf = 1.

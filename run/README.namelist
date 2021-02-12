@@ -1517,6 +1517,7 @@ The following are for observation nudging:
  chem_adv_opt (max_dom)              = 1        ! for chem variables
  tracer_adv_opt (max_dom)            = 1        ! for tracer variables (WRF-Chem activated)
  tke_adv_opt (max_dom)               = 1        ! for tke
+ phi_adv_z (max_dom)                 = 1        ! vertical advection option for geopotential; 1: original (default) 2: avoid double staggering of omega
  moist_mix2_off (max_dom)            = .false.  ! if set to T, deactivate 2nd-order horizontal mixing for moisture. default is F.
  chem_mix2_off (max_dom)             = .false.  ! if set to T, deactivate 2nd-order horizontal mixing for chem species. default is F.
  tracer_mix2_off (max_dom)           = .false.  ! if set to T, deactivate 2nd-order horizontal mixing for tracers. default is F. 

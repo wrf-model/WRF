@@ -1562,7 +1562,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
        ENDIF
 
 
-       ! Check if snow/snowh are consistent and cap SWE at 2000mm;
+       ! Check if snow/snowh are consistent and cap SWE at 5000mm;
        !  the Noah-MP code does it internally but if we don't do it here, problems ensue
        DO J = jts,jtf
           DO I = its,itf
@@ -1571,9 +1571,9 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                                      ,i,j,snow(i,j),snowh(i,j)
                CALL wrf_message(err_message)
              ENDIF
-             IF ( SNOW( i,j ) > 2000. ) THEN
-               SNOWH(I,J) = SNOWH(I,J) * 2000. / SNOW(I,J)      ! SNOW in mm and SNOWH in m
-               SNOW (I,J) = 2000.                               ! cap SNOW at 2000, maintain density
+             IF ( SNOW( i,j ) > 5000. ) THEN
+               SNOWH(I,J) = SNOWH(I,J) * 5000. / SNOW(I,J)      ! SNOW in mm and SNOWH in m
+               SNOW (I,J) = 5000.                               ! cap SNOW at 5000, maintain density
              ENDIF
           ENDDO
        ENDDO

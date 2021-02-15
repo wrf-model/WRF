@@ -12,6 +12,7 @@ state    real   fwetxy     ij      -       1      -     i02rhd=(interp_mask_fiel
 state    real   sneqvoxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "sneqvo"     "snow mass at last time step"         "mm"
 state    real   alboldxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "albold"     "snow albedo at last timestep"        "-"
 state    real   qsnowxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "qsnowxy"    "snowfall on the ground"              "mm/s"
+state    real   qrainxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "qrainxy"    "rainfall on the ground"              "mm/s"
 state    real   wslakexy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wslake"     "lake water storage"                  "mm"
 state    real   zwtxy      ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "zwt"        "water table depth"                   "m"
 state    real   waxy       ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wa"         "water in the acquifer"               "mm"

@@ -393,7 +393,8 @@ contains
                    TBOT    , CO2AIR  , O2AIR   , FOLN    , FICEOLD , ZLVL    , & ! IN : Forcing
                    ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
                    STC     , SH2O    , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 
-                   CANLIQ  , CANICE  , TV      , TG      , QSFC    , QSNOW   , & ! IN/OUT : 
+                   CANLIQ  , CANICE  , TV      , TG      , QSFC    , QSNOW   , & ! IN/OUT :
+                   QRAIN   ,                                                   & ! IN/OUT : 
                    ISNOW   , ZSNSO   , SNOWH   , SNEQV   , SNICE   , SNLIQ   , & ! IN/OUT : 
                    ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
                    STMASS  , WOOD    , STBLCP  , FASTCP  , LAI     , SAI     , & ! IN/OUT : 
@@ -477,6 +478,7 @@ contains
 
 ! input/output : need arbitary intial values
   REAL                           , INTENT(INOUT) :: QSNOW  !snowfall [mm/s]
+  REAL                           , INTENT(INOUT) :: QRAIN  !rain at ground srf (mm/s)
   REAL                           , INTENT(INOUT) :: FWET   !wetted or snowed fraction of canopy (-)
   REAL                           , INTENT(INOUT) :: SNEQVO !snow mass at last time step (mm)
   REAL                           , INTENT(INOUT) :: EAH    !canopy air vapor pressure (pa)
@@ -665,7 +667,6 @@ contains
   REAL                                           :: QINTS   !interception (loading) rate for snowfall (mm/s)
   REAL                                           :: QDRIPS  !drip (unloading) rate for intercepted snow (mm/s)
   REAL                                           :: QTHROS  !throughfall of snowfall (mm/s)
-  REAL                                           :: QRAIN   !rain at ground srf (mm/s) [+]
   REAL                                           :: SNOWHIN !snow depth increasing rate (m/s)
   REAL                                 :: LATHEAV !latent heat vap./sublimation (j/kg)
   REAL                                 :: LATHEAG !latent heat vap./sublimation (j/kg)

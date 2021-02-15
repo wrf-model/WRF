@@ -151,6 +151,7 @@
    real :: xtime,xhour,xmin,gmtp,xlonn,rlat
    logical :: is_moz_chm
 #include "version_decl"
+#include "commit_decl"
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
 #endif
@@ -158,6 +159,7 @@
 
 call wrf_message("*********************************************************************")
 call wrf_message(program_name)
+call wrf_message(commit_version)
 call wrf_message("*                                                                   *")
 call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF-Chem HELP at                     *")
 call wrf_message("*                                                                   *")

@@ -1904,8 +1904,6 @@
     LOGICAL :: skip_rigorous_and_return_right_away
     INTEGER :: ierr
 
-#include "version_decl"
-
     !  Make sure that the input data is consistent with the current code.
 
     input_title_char = ' '

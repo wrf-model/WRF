@@ -132,6 +132,7 @@ MODULES = \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
 	module_sf_clm.o  \
+	module_sf_ctsm.o \
         module_sf_ssib.o  \
 	module_sf_noah_seaice.o \
 	module_sf_noah_seaice_drv.o \

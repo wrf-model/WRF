@@ -1,0 +1,102 @@
+ &time_control
+ run_days                            = 0,			! Number of simulation days. DO NOT ADD ADDITIONAL COLUMNS.
+ run_hours                           = 36,			! Number of simulation hours. DO NOT ADD ADDITIONAL COLUMNS.
+ run_minutes                         = 0,			! Number of simulation minutes. DO NOT ADD ADDITIONAL COLUMNS.
+ run_seconds                         = 0,			! Number of simulation seconds. DO NOT ADD ADDITIONAL COLUMNS.
+								! *NOTE: real.exe does not read run_days/hours/minutes/seconds. Only read by wrf.exe
+									! real.exe only reads start_* and end_* parameters.
+ start_year                          = 2019, 2019, 2019,	! Starting year of the simulation.
+ start_month                         = 09,   09,   09,		! Starting month of the simulation.
+ start_day                           = 04,   04,   24,		! Starting day of the simulation.
+ start_hour                          = 12,   12,   12,		! Starting hour of the simulation.
+ end_year                            = 2019, 2019, 2019,	! Ending year of the simulation.
+ end_month                           = 09,   09,   09,		! Ending month of the simulation.
+ end_day                             = 06,   06,   06,		! Ending day of the simulation.
+ end_hour                            = 00,   00,   00,		! Ending hour of the simulation.
+ interval_seconds                    = 21600			! Time interval (s) between input data. DO NOT ADD ADDITIONAL COLUMNS.
+ input_from_file                     = .true.,.true.,.true.,	! Logical - whether input files (e.g., met_em*) will be used.
+ history_interval                    = 180,  60,   60,		! Interval between history output (mins). *Note: to change the units of history_interval, add _s (secs), _h (hours)
+ frames_per_outfile                  = 1000, 1000, 1000,	! Number of history output times printed to each wrf output (wrfout) file.
+ restart                             = .false.,			! Logical - whether the run is a "restart" simulation. DO NOT ADD ADDITIONAL COLUMNS.
+ restart_interval                    = 7200,			! Interval between restart (wrfrst) files (min). DO NOT ADD ADDITIONAL COLUMNS.
+ io_form_history                     = 2			! File format for history (wrfout) files. See Users' Guide for options. DO NOT ADD ADDITIONAL COLUMNS.
+ io_form_restart                     = 2			! File format for restart (wrfrst) files. See Users' Guide for options. DO NOT ADD ADDITIONAL COLUMNS.
+ io_form_input                       = 2			! File format for the input (wrfinput) files. See Users' Guide for options. DO NOT ADD ADDITIONAL COLUMNS.
+ io_form_boundary                    = 2			! File format for the boundary (wrfbdy) file. See Users' Guide for options. DO NOT ADD ADDITIONAL COLUMNS.
+ /
+
+ &domains
+ time_step                           = 90,			! Time step for model integration (s). Must use 6xDX (or less). DO NOT ADD ADDITIONAL COLUMNS.
+ time_step_fract_num                 = 0,			! Numerator if using fractional time step. DO NOT ADD ADDITIONAL COLUMNS.
+ time_step_fract_den                 = 1,			! Denomenator if using fractional time step. DO NOT ADD ADDITIONAL COLUMNS.
+ max_dom                             = 1,			! Total number of domains for the simulation. DO NOT ADD ADDITIONAL COLUMNS.
+ e_we                                = 150,    220,   200,	! Number of grid spaces in the x direction (west-east).
+ e_sn                                = 130,    214,   210,	! Number of grid spaces in the y direction (south-north).
+ e_vert                              = 45,     45,    45,	! Number of full vertical levels. must be the same for all domains.
+ dzstretch_s                         = 1.1			! Surface stretch factor when auto_levels_opt = 2 (which is default). DO NOT ADD ADDITIONAL COLUMNS.
+ p_top_requested                     = 5000,			! Pressure top (in Pa) to use for the simulation. The input data must go up to this value. DO NOT ADD ADDITIONAL COLUMNS.
+ num_metgrid_levels                  = 34,			! Number of vertical levels in the WPS output. DO NOT ADD ADDITIONAL COLUMNS.
+ num_metgrid_soil_levels             = 4,			! Number of soil levels in the WPS output. DO NOT ADD ADDITIONAL COLUMNS.
+ dx                                  = 15000,			! Length (m) of each grid in the x (west-east) direction (resolution). DO NOT ADD ADDITIONAL COLUMNS. 
+ dy                                  = 15000,			! Length (m) of each grid in the y (south-north) direction (resolution). DO NOT ADD ADDITIONAL COLUMNS.  
+ grid_id                             = 1,     2,     3,		! Identifier number of each domain.
+ parent_id                           = 0,     1,     2,		! The ID of the parent of each domain.
+ i_parent_start                      = 1,     53,    30,	! Starting location of the lower left corner i-indice within the parent domain.
+ j_parent_start                      = 1,     25,    30,	! Starting location of the lower left corner j-indice within the parent domain.
+ parent_grid_ratio                   = 1,     3,     3,		! Ratio of the parent to nest grid size (resolution).
+ parent_time_step_ratio              = 1,     3,     3,		! Time_step ratio of the parent to nest.
+ feedback                            = 1,			! Switch for feedback from the nest to it's parent at corresponding grid points (1=on;0=off). DO NOT ADD ADDITIONAL COLUMNS.
+ smooth_option                       = 0			! Smoothing option for the boundary between parent and nest domains (when feedback=1). DO NOT ADD ADDITIONAL COLUMNS.
+ /
+
+ &physics
+ physics_suite                       = 'CONUS'			! Physics suite option (CONUS or tropical). See Users' Guide for details. DO NOT ADD ADDITIONAL COLUMNS.
+ mp_physics                          = -1,    -1,    -1,	! Microphysics scheme. See Users' Guide for options (-1=option from suite). Every domain must be the same.
+ cu_physics                          = -1,    -1,     0,	! Cumulus scheme. See Users' Guide for options (-1=option from suite).
+ ra_lw_physics                       = -1,    -1,    -1,	! Longwave radiation scheme. See Users' Guide for options (-1=option from suite). Every domain must be the same.
+ ra_sw_physics                       = -1,    -1,    -1,	! Shortwave radiation scheme. See Users' Guide for options (-1=option from suite). Every domain must be the same.
+ bl_pbl_physics                      = -1,    -1,    -1,	! PBL scheme. See Users' Guide for options (-1=option from suite).
+ sf_sfclay_physics                   = -1,    -1,    -1,	! Surface layer scheme. See Users' Guide for options (-1=option from suite). Every domain must be the same.
+ sf_surface_physics                  = -1,    -1,    -1,	! LSM scheme. See Users' Guide for options (-1=option from suite). Every domain must be the same.
+ radt                                = 15,    15,    15,	! Minutes between radiation physics calls (recommended 1 min per km of d01 dx). Every domain must be the same.
+ bldt                                = 0,     0,     0,		! Minutes between boundary-layer physics calls (recommended 0=every time step). Every domain must be the same.
+ cudt                                = 0,     0,     0,		! Minutes between cumulus physics calls. Set to 0 (called every time step) for all cumulus schemes except Kain-Fritsch.  Every domain must be the same.
+ icloud                              = 1,			! Option to couple subgrid-scale clouds from the PBL scheme to radiation schemes (only works with RRTM/RRTMG rad schemes). See Users' Guide for options. DO NOT ADD ADDITIONAL COLUMNS.
+ num_land_cat                        = 21,			! Number of land categories from WPS input data. See Users' Guide for details. DO NOT ADD ADDITIONAL COLUMNS.
+ sf_urban_physics                    = 0,     0,     0,		! Option for activating urban canopy model (only for Noah LSM). See Users' Guide for details. Use same value for all domains. 
+ /
+
+ &fdda
+ /
+
+ &dynamics
+ hybrid_opt                          = 2,			! Hybrid coordinate option (2=Klemp cubic form with etac; default beginning V4.0). DO NOT ADD ADDITIONAL COLUMNS. 
+ w_damping                           = 0,			! Vertical velocity damping flag (0=off;1=on). DO NOT ADD ADDITIONAL COLUMNS.
+ diff_opt                            = 2,      2,      2,	! Turbulence and mixing option. See Users' Guide for options. 
+ km_opt                              = 4,      4,      4,	! Eddy coefficient option. See Users' Guide for options.
+ diff_6th_opt                        = 0,      0,      0,	! 6th order numerical diffusion option. See Users' Guide for options.
+ diff_6th_factor                     = 0.12,   0.12,   0.12,	! 6th order numerical diffusion non-dimensional rate (max 1.0 = complete removal of 2dx wave in 1 timestep). 
+ base_temp                           = 290.			! Base state temp (K). For real cases only. DO NOT ADD ADDITIONAL COLUMNS.
+ damp_opt                            = 3,			! Upper-level damping option. See Users' Guide for options. DO NOT ADD ADDITIONAL COLUMNS.
+ zdamp                               = 5000.,  5000.,  5000.,	! Damping depth (m) from model top.
+ dampcoef                            = 0.2,    0.2,    0.2,	! Damping coefficient corresponding to damp_opt. See Users' Guide for details.
+ khdif                               = 0,      0,      0,	! Horizontal diffusion constant (m^2/s)	
+ kvdif                               = 0,      0,      0,	! Vertical diffusion constant (m^2/s)
+ non_hydrostatic                     = .true., .true., .true.,	! Set to false to run the model hydrostatically.
+ moist_adv_opt                       = 1,      1,      1,     	! Advection option for moisture. See Users' Guide for details.
+ scalar_adv_opt                      = 1,      1,      1,     	! Advection option for scalars. See Users' Guide for details.
+ gwd_opt                             = 1,      1,      0,	! Switch for gravity wave drag option (1=on;0=off)
+ /
+
+ &bdy_control
+ spec_bdy_width                      = 5,			! Total number of rows for specified boundary value nudging for real cases only. DO NOT ADD ADDITIONAL COLUMNS.
+ specified                           = .true.			! Specified boundary condition for real cases only. DO NOT ADD ADDITIONAL COLUMNS.
+ /
+
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,					! Number of I/O tasks per group for quilting. 0=no quilting. DO NOT ADD ADDITIONAL COLUMNS.
+ nio_groups = 1,						! Number of I/O groups for quilting. DO NOT ADD ADDITIONAL COLUMNS.
+ /

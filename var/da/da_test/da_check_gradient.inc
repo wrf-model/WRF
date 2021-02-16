@@ -81,7 +81,11 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
    !----------------------------------------------------------------------------
 
    zf0=zfy
-   zdf0=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end)
+   zdf0=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               ,jp_start,jp_end)
    if (rootproc) write(6,*)'grtest: F(0)=',zf0,' DF(0)=',zdf0
 
    IF (ZDF0>0.0) write(6,*) 'GRTEST Warning, DF should be negative'
@@ -118,7 +122,11 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
       zfy = j_cost%total
 
       zfa=zfy
-      zdfa=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end)
+      zdfa=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               ,jp_start,jp_end)
 
       if (rootproc) write(6,*)'grtest: alpha=',za,' F(a)=',zfa,' DF(a)=',zdfa
    

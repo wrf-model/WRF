@@ -1709,6 +1709,7 @@ CONTAINS
       TYPE(fieldlist), POINTER :: p, q
       p => grid%head_statevars
       DO WHILE ( ASSOCIATED( p ) )
+        if (p%varname.eq."chem_ic")  exit
          q => p ; p => p%next ; DEALLOCATE(q)
       ENDDO
       NULLIFY(grid%head_statevars) ; NULLIFY( grid%tail_statevars)

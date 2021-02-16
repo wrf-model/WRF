@@ -1,5 +1,8 @@
-subroutine da_vv_to_cv(vv, xp, mzs, nmzs, cv_size, rcv)
-
+subroutine da_vv_to_cv(vv, xp, mzs, nmzs, cv_size, rcv &
+#if (WRF_CHEM == 1)
+                        , mzs_chem, vchem &
+#endif
+                        )
    !---------------------------------------------------------------------------
    ! Purpose: Fill (local) 1D cv array from 3D (local) vv arrays.
    !---------------------------------------------------------------------------
@@ -12,7 +15,10 @@ subroutine da_vv_to_cv(vv, xp, mzs, nmzs, cv_size, rcv)
    integer,        intent(in)    :: mzs(nmzs)   ! Background error structure levels.
    integer,        intent(in)    :: cv_size     ! Length of CV array.
    real,           intent(inout) :: rcv(1:cv_size) ! Control variables v.
-
+#if (WRF_CHEM == 1)
+   integer, optional, intent(in)    :: mzs_chem(:)   ! chem Background error structure levels.
+   type (xchem_type), optional, intent(inout) :: vchem   ! Grdipt/EOF rcv for chem
+#endif
    integer   :: is,ie       ! Local grid range in y coordinate.
    integer   :: js,je       ! Local grid range in x coordinate.
    integer   :: ix,jy       ! Local grid horizontal dimensions.
@@ -21,6 +27,9 @@ subroutine da_vv_to_cv(vv, xp, mzs, nmzs, cv_size, rcv)
    integer   :: cv_s,cv_e   ! Starting and ending indices into CV array.
    integer   :: ijm         ! Size of interior of v1 through v5 arrays.
    integer   :: ijmn        ! Size of interior of alpha cv arrays.
+#if (WRF_CHEM == 1)
+   integer   :: ic, offset,tt
+#endif
 
 #ifdef NORESHAPE
    integer   :: i,j,k,ijk,m,n
@@ -283,6 +292,37 @@ subroutine da_vv_to_cv(vv, xp, mzs, nmzs, cv_size, rcv)
       rcv(cv_s:cv_e) = RESHAPE(vv % alpha(its_int:ite_int,jts_int:jte_int,1:mz,1:ne), (/ijmn/))
 #endif
    end if
+
+#if (WRF_CHEM == 1)
+   if (present(mzs_chem) .and. present(vchem)) then
+      ix = ie-is+1
+      jy = je-js+1
+      offset = 1
+
+      if ( num_chem >= PARAM_FIRST_SCALAR ) then
+         do ic = PARAM_FIRST_SCALAR, num_chem
+            mz = mzs_chem(ic-1)
+            ijm = ix * jy * mz
+            cv_s = cv_e + 1
+            cv_e = cv_s + ijm - 1
+#ifdef NORESHAPE
+            do k=1,mz
+               do j=js,je
+                  do i=is,ie
+                     ijk = ijk + 1
+                     rcv(ijk) = vchem % chem_ic(i,j,k,ic)
+                  end do
+               end do
+            end do
+#else
+            rcv(cv_s:cv_e) = RESHAPE(vchem % chem_ic(is:ie,js:je,1:mz,ic))
+#endif
+         end do
+      end if
+
+   end if
+
+#endif
 
    if (trace_use) call da_trace_exit("da_vv_to_cv")
 

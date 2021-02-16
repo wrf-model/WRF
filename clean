@@ -17,7 +17,7 @@ endif
 
 ( cd tools/CodeBase ; make clean )
 
-( cd inc ; /bin/rm -f *.inc namelist.default )
+( cd inc ; /bin/rm -f *.inc namelist.default commit_decl )
 
 find . -name \*.dSYM -exec rm -rf {} \; >& /dev/null
 
@@ -65,6 +65,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  */constants.asc \
 	  */masses.asc */kernels_z.asc */capacity.asc */termvels.asc */coeff_p.asc */coeff_q.asc \
 	  */gribmap.txt */tr??t?? */co2_trans */namelist.output */ishmael-gamma-tab.bin \
+	  */HLC.TBL */wind-turbine-1.tbl \
           */ishmael-qi-qc.bin */ishmael-qi-qr.bin ) >& /dev/null
      ( cd test/em_fire; rm -rf two_fires rain )
   else if ( "$arg" == '-aa' ) then

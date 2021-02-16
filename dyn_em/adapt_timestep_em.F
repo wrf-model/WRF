@@ -101,7 +101,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   !
 
   tmpTimeInterval = domain_get_current_time ( grid ) - &
-                    domain_get_sim_start_time ( grid )
+                    domain_get_start_time ( grid )
 
   !
   ! Calculate current time in seconds since beginning of model run.
@@ -302,7 +302,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
           * ( grid%interval_seconds )
      CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=bc_time)
      dtInterval = tmpTimeInterval - &
-          (domain_get_current_time(grid) - domain_get_sim_start_time(grid))
+          (domain_get_current_time(grid) - domain_get_start_time(grid))
      
      use_last2 = .TRUE.
      stepping_to_bc = .true.
@@ -351,7 +351,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
              (history_interval_sec) ) * (history_interval_sec)
         CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=output_time)
         dtInterval = tmpTimeInterval - &
-             (domain_get_current_time(grid) - domain_get_sim_start_time(grid))
+             (domain_get_current_time(grid) - domain_get_start_time(grid))
 
         use_last2 = .TRUE.
         grid%stepping_to_time = .TRUE.

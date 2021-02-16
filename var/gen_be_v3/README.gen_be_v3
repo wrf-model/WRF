@@ -1,11 +1,25 @@
 
 *** gen_be_v3.F90 is a user-contribute program and is provided as it is. ***
-*** gen_be_v3.F90 is for univariate processing only. ***
 *** gen_be_v3.F90 is for bin_type=5 (domain-average BE statistics) only. ***
 
 1. To compile:
 
-      See the sample compile_cheyenne/compile_casper and the info in gen_be_v3.F90
+   Option 1: use lapack lib compiled in WRFDA
+      (1) need to compile WRFDA first,
+            cd your_WRFDA_dir
+            ./clean -a
+            ./configure wrfda
+            ./compile all_wrfvar
+      (2) cd your_WRFDA_dir/var/gen_be_v3
+          edit makefile
+          make
+
+   Option 2: use general lapack lib (see the desciption in gen_be_v3.F90)
+
+ Note about precision:
+   For write_ep = .true. application, the code should be compiled with real-4.
+   For gen_be applications, especially cv_options=5, real-4 works, but real-8 is recommended if memory is not an issue.
+   Hopefully the gen_be_v3 code will be updated in the future to better handle the variable declaration.
 
 2. To run:
 
@@ -49,6 +63,7 @@
    be_method = 'NMC'
    varnames = 'T', 'U', 'V', 'RH', 'PSFC' ! for cv_options=7.
                                           ! can also be 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 'QGRAUP', 'W'
+   !varnames = 'PSI', 'CHI_U', 'T_U', 'RH', 'PSFC_U' ! for cv_options=5
    do_pert_calc = .true.
    do_slen_calc = .true.
    slen_opt = 2               ! 1: curve-fitting method (extremely slow, need to run with OPENMP on)
@@ -60,6 +75,7 @@
                               ! 2: read from pert1 file when need it
                               !    This option writes out additional vertical-mode-projected fields when do_eof_transform=.true.
                               ! Set pert1_read_opt=2 for large number of cases and large domain sizes that encounter memory insufficiency.
+                              ! Note: when unbalanced variables are requested in varnames, pert1_read_opt=2 is used regardless of the namelist setting.
 /
 &ens_nml
 /
@@ -68,11 +84,10 @@
 
       Each variable is in separate output file.
 
-      For cv_options=7 purpose, util/combine_be_cv7.f90 can be used to combine be_[T/U/V/RH/PSFC].dat into be.dat that WRFDA can read.
-
       For cv_options=7 and cloud_cv_options=2 purpose, util/combine_be_cv7_ccv2.f90 can be used to
           combine be_[T/U/V/RH/PSFC/QCLOUD/QRAIN/QICE/QSNOW/QGRAUP/W].dat into be.dat that WRFDA can read.
 
-      pert1.* files are intermediate output that can be removed after the successful execution.
+      For cv_options=5 purpose, util/combine_be_cv5.f90 can be used to combine be_[PSI/CHI_U/T_U/RH/PSFC_U].dat and regcoeff[1/2/3].dat into be.dat that WRFDA can read.
 
-      pertv_* files are intermediate pert1_read_opt=2 output that can be removed after the successful execution.
+      pert* [psi.*] files are intermediate output that can be removed after the successful execution.
+

@@ -2,9 +2,9 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
 
    !-----------------------------------------------------------------------
-   ! Purpose: TBD
-   !    Updated for Analysis on Arakawa-C grid
-   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
+   ! Purpose: driver routine for getting innovation vectors
+   ! History:$
+   !    10/22/2008 - Updated for Analysis on Arakawa-C grid (Syed RH Rizvi, NCAR)
    !-----------------------------------------------------------------------
 
    implicit none
@@ -145,7 +145,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_ssmt2     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(satem)%nlocal     > 0) &
          call da_get_innov_vector_satem     (it, num_qcstat_conv,grid, ob, iv)
-      if (iv%info(radar)%nlocal     > 0) &
+      if (iv%info(radar)%nlocal     >= 0 .and. use_radarobs) &
          call da_get_innov_vector_radar     (it, grid, ob, iv)
       if (iv%info(qscat)%nlocal     > 0) &
          call da_get_innov_vector_qscat     (it, num_qcstat_conv,grid, ob, iv)
@@ -168,7 +168,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       end if
       if (iv%info(airsr)%nlocal     > 0) &
       call da_get_innov_vector_airsr    (it,num_qcstat_conv, grid, ob, iv)
-
+ 
    !----------------------------------------------
    ! [5]  write out iv in ascii format
    !-----------------------------------------------
@@ -187,6 +187,11 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
 
    end do
+
+#if (WRF_CHEM == 1)
+   if (iv%info(chemic_surf)%nlocal      > 0) &
+         call da_get_innov_vector_chem_sfc (it,num_qcstat_conv, grid, ob, iv)
+#endif
 
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
@@ -255,6 +260,18 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call domain_clock_set (grid, time_step_seconds=time_step_seconds)
       call domain_clockprint(150, grid, 'get CurrTime from clock,')
    end if
+#if defined(CRTM) || defined(RTTOV)
+   !----------------------------------------------
+   ! write out or read in radiance iv for multi in binary format
+   !-----------------------------------------------
+   if (use_rad) then
+      if ( multi_inc == 1 ) then
+         call da_write_iv_rad_for_multi_inc(it,ob,iv)
+      elseif ( multi_inc == 2 ) then
+         call da_read_iv_rad_for_multi_inc(it,ob,iv)
+      end if
+   end if
+#endif
 
    if ( multi_inc == 1 ) then
 #ifdef DM_PARALLEL
@@ -285,7 +302,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    ! [3] Optionally rescale observation errors:
    !------------------------------------------------------------------------ 
    
-   if (use_obs_errfac) call da_use_obs_errfac( iv)
+   if (use_obs_errfac .and. it == 1) call da_use_obs_errfac(iv)
 
    !------------------------------------------------------------------------  
    ! [4] Optionally add Gaussian noise to O, O-B:

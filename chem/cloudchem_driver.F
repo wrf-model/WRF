@@ -18,6 +18,7 @@
 	       moist, cldfra, cldfra_mp_all, ph_no2,                 &
 	       chem, gas_aqfrac, numgas_aqfrac,                      &
                is_CAMMGMP_used,                                      &!BSINGH:01/31/2013: Added is_CAMMGMP_used for CAM_MAM_cloudchem
+               ph_cw,                                                &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -169,7 +170,8 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, numgas_aqfrac ),     &
          INTENT(INOUT ) ::                                gas_aqfrac
 
-
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
+         INTENT(OUT) ::                            ph_cw            ! ph_cw - pH of cloud water
 
 ! LOCAL  VAR
      integer :: ii,jj,kk
@@ -200,7 +202,7 @@
             id, ktau, ktauc, dtstepc, config_flags,   &
             p_phy, t_phy, rho_phy, alt,               &
             cldfra, ph_no2,                           &
-            moist, chem,                              &
+            moist, chem, ph_cw,                       &
             gas_aqfrac, numgas_aqfrac,                &
             ids,ide, jds,jde, kds,kde,                &
             ims,ime, jms,jme, kms,kme,                &

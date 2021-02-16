@@ -944,15 +944,22 @@ CONTAINS
 ! for cloud, ice, and snow.
 
    IF ( config_flags%swint_opt .eq. 2 ) THEN
-      IF ( ( has_reqc .EQ. 1 ) .AND. &
-           ( has_reqi .EQ. 1 ) .AND. &
-           ( has_reqs .EQ. 1 ) .AND. &
+      IF ((   config_flags%mp_physics == THOMPSON .OR.        &
+              config_flags%mp_physics == THOMPSONAERO .OR.    &
+              config_flags%mp_physics == WSM3SCHEME .OR.    &
+              config_flags%mp_physics == WSM5SCHEME .OR.    &
+              config_flags%mp_physics == WSM6SCHEME .OR.    &
+              config_flags%mp_physics == WSM7SCHEME .OR.    &
+              config_flags%mp_physics == WDM5SCHEME .OR.    &
+              config_flags%mp_physics == WDM6SCHEME .OR.    &
+              config_flags%mp_physics == WDM7SCHEME ).OR.     &
+          (( has_reqc .EQ. 0 .AND. has_reqi .EQ. 0 .and. has_reqs .EQ. 0 ) .AND. &
            ( f_qc            ) .AND. &
            ( f_qi            ) .AND. &
-           ( f_qs            ) ) THEN
+           ( f_qs            ))) THEN
          !  everything is A-OK for FARMS
       ELSE
-         CALL wrf_error_fatal ('--- ERROR: FARMS (swint_opt==2) requires a different MP scheme')
+         CALL wrf_error_fatal ('--- ERROR: FARMS (swint_opt==2) requires a different MP scheme (Please see the module_physics_init')
       END IF
    END IF
 
@@ -1165,13 +1172,13 @@ CONTAINS
     end do
 
 !..Fill initial starting values of radiative effective radii for
-!.. cloud water (2.51 microns), cloud ice (5.01 microns), and
-!.. snow (10.01 microns).
+!.. cloud water (2.49 microns), cloud ice (4.99 microns), and
+!.. snow (9.99 microns).
     if (has_reqc.ne.0) then
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_cloud(i,k,j) = 2.51E-6
+             re_cloud(i,k,j) = RE_QC_BG
           end do
           end do
        end do
@@ -1180,7 +1187,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_ice(i,k,j) = 5.01E-6
+             re_ice(i,k,j) = RE_QI_BG
           end do
           end do
        end do
@@ -1189,7 +1196,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_snow(i,k,j) = 10.01E-6
+             re_snow(i,k,j) = RE_QS_BG
           end do
           end do
        end do
@@ -1342,7 +1349,7 @@ CONTAINS
                 QKE,                                            &
                 SFCEVP,GRDFLX,                                  &
                 TRIM (MMINLU_LOC),                              &
-                XLAT,                                           &
+                XLAT, XLONG,                                    &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
@@ -2349,7 +2356,7 @@ CONTAINS
 #endif
                 QKE, SFCEVP,GRDFLX,                             &
                 MMINLU,                                         &
-                XLAT,                                           &
+                XLAT, XLONG,                                    &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
@@ -2500,6 +2507,9 @@ CONTAINS
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
 #endif
+#ifdef WRF_USE_CTSM
+   USE module_sf_ctsm, only : ctsm_init
+#endif
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
    USE module_sf_bep_bem
@@ -2627,6 +2637,7 @@ CONTAINS
 !Noah-MP
 
    REAL,    DIMENSION(ims:ime, jms:jme) :: XLAT
+   REAL,    DIMENSION(ims:ime, jms:jme) :: XLONG
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: TSNOXY
@@ -3361,6 +3372,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         ENDIF
 #else
         CALL wrf_error_fatal ( "SF CLM CURRENTLY ifdef'ed out, set -DWRF_USE_CLM in configure.wrf in ARCH_LOCAL" )
+#endif
+
+#ifdef WRF_USE_CTSM
+      CASE (CTSMSCHEME)
+
+         CALL ctsm_init( &
+              ids=ids, ide=ide, jds=jds, jde=jde, &
+              ims=ims, ime=ime, jms=jms, jme=jme, &
+              its=its, ite=ite, jts=jts, jte=jte, &
+              dt=DT, xlat=XLAT, xlong=XLONG,      &
+              atm_restart = restart)
 #endif
 
       CASE DEFAULT

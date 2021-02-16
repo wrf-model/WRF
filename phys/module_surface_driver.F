@@ -94,6 +94,7 @@ CONTAINS
 #if (EM_CORE==1)
  !    &          ,lakemask,  lakeflag                                  & !lake
      &          ,lakemask                                  & !lake
+                , restart_flag                             & ! restart_flag
 #endif
             !  cyl ocean variable
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
@@ -311,6 +312,7 @@ CONTAINS
                                        ,RUCLSMSCHEME              &
                                        ,PXLSMSCHEME               &
                                        ,CLMSCHEME                 &
+                                       ,CTSMSCHEME                &
                                        ,SSIBSCHEME                & !ssib
                                        ,MYNNSFCSCHEME             &
                                        ,OMLSCHEME                 &
@@ -354,6 +356,9 @@ CONTAINS
    USE module_sf_noah_seaice_drv
 #ifdef WRF_USE_CLM
    USE module_sf_clm
+#endif
+#ifdef WRF_USE_CTSM
+   USE module_sf_ctsm, only : ctsm_run
 #endif
    USE module_sf_ssib  ! ssib
    USE module_sf_ruclsm
@@ -1350,7 +1355,8 @@ CONTAINS
                                                                                tksatu3d
     real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
 #if (EM_CORE==1)
-    real ,    dimension(ims:ime,jms:jme )  ::  lakemask       
+    real ,    dimension(ims:ime,jms:jme )  ::  lakemask
+    logical , intent(in) :: restart_flag
 !    INTEGER  :: lakeflag
 #endif
 !    logical, dimension(ims:ime,jms:jme ),intent(in)                         :: lake 
@@ -1392,8 +1398,8 @@ CONTAINS
    REAL, PARAMETER    :: PI_GRECO=3.14159 
    INTEGER  :: end_hour, irr_start,xt24,irr_day  
    REAL :: constants_irrigation   
-   REAL,DIMENSION( ims:ime, jms:jme ) :: IRRIGATION_CHANNEL      
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN),OPTIONAL::   IRRIGATION
+   REAL, DIMENSION( ims:ime, jms:jme ) :: IRRIGATION_CHANNEL      
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)   , OPTIONAL::   IRRIGATION
    REAL,  INTENT(IN),OPTIONAL::  irr_daily_amount     
    INTEGER :: phase
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT),OPTIONAL :: irr_rand_field
@@ -1499,6 +1505,7 @@ CONTAINS
          IF ( PRESENT( rainshv ))RAINBL(i,j) = RAINBL(i,j) + RAINSHV(i,j)
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
 #if (EM_CORE==1)
+         IRRIGATION_CHANNEL(i,j) = 0.
          sf_surf_irr: SELECT CASE(sf_surf_irr_scheme)
             CASE(DRIP)
                CALL drip_irrigation(                                     &
@@ -2740,7 +2747,7 @@ CONTAINS
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 ,sfcheadrt,INFXSRT, soldrain                    & !hydro
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
-                ,RS,XLAIDYN)
+                ,RS,XLAIDYN,IRRIGATION_CHANNEL)
            ELSE
                CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
            ENDIF
@@ -2860,7 +2867,7 @@ CONTAINS
 !
 !  END FASDAS
 !
-                ,RS,XLAIDYN)
+                ,RS,XLAIDYN,IRRIGATION_CHANNEL)
          ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
@@ -3863,6 +3870,184 @@ CONTAINS
 ! -------------------------------------------------------------------
 #endif
 
+#ifdef WRF_USE_CTSM
+     CASE (CTSMSCHEME)
+
+     IF (MYJ) call wrf_error_fatal('CTSM is not currently compatible with MYJ.  Please pick a different PBL scheme,')
+
+     IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)        .AND.  &
+       ! PRESENT(emiss)      .AND.  PRESENT(t2)            .AND.    &
+       ! PRESENT(declin) .AND.  PRESENT(coszen)    .AND.            &
+       ! PRESENT(hrang)  .AND. PRESENT( xlat_urb2d)    .AND.        &
+       ! PRESENT(dzr)       .AND.                                   &
+       ! PRESENT( dzb)            .AND. PRESENT(dzg)       .AND.    &
+       ! PRESENT(tr_urb2d) .AND. PRESENT(tb_urb2d)         .AND.    &
+       ! PRESENT(tg_urb2d) .AND. PRESENT(tc_urb2d) .AND.            &
+       ! PRESENT(qc_urb2d) .AND. PRESENT(uc_urb2d) .AND.            &
+       ! PRESENT(xxxr_urb2d) .AND. PRESENT(xxxb_urb2d) .AND.        &
+       ! PRESENT(xxxg_urb2d) .AND.                                  &
+       ! PRESENT(xxxc_urb2d) .AND. PRESENT(trl_urb3d) .AND.         &
+       ! PRESENT(tbl_urb3d)   .AND. PRESENT(tgl_urb3d)  .AND.       &
+       ! PRESENT(sh_urb2d) .AND. PRESENT(lh_urb2d)  .AND.           &
+       ! PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
+       ! PRESENT(ts_urb2d)                          .AND.           &
+       ! PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
+                                                      .TRUE. ) THEN
+
+
+!------------------------------------------------------------------
+         IF ( FRACTIONAL_SEAICE == 1) THEN
+            ! The fields passed to LSM need to represent the full ice values, not
+            ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+            ! to a value representing only the sea-ice portion.   Albedo over open 
+            ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
+            DO j = j_start(ij) , j_end(ij)
+               DO i = i_start(ij) , i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
+                     ALBEDO(I,J) = (ALBEDO(I,J)-(1.-XICE(I,J))*0.08)/XICE(I,J)
+                     EMISS(I,J) = (EMISS(I,J)-(1.-XICE(I,J))*0.98)/XICE(I,J)
+                  ENDIF  
+               ENDDO 
+            ENDDO
+            IF ( isisfc ) THEN
+               ! Use surface layer routine values from the ice portion of grid point
+            ELSE      
+               !      
+               ! We don't have surface layer routine values at this time, so
+               ! just use what we have.  Use ice component of TSK
+               !      
+               CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
+                                       i_start(ij), i_end(ij),               &
+                                       j_start(ij), j_end(ij),               &
+                                       itimestep, .false., tice2tsk_if2cold, &
+                                       XICE, XICE_THRESHOLD,                 &
+                                       SST, TSK, TSK_SEA, TSK_LOCAL )
+
+               DO j = j_start(ij) , j_end(ij)
+                  DO i = i_start(ij) , i_end(ij)
+                     TSK(i,j) = TSK_LOCAL(i,j)
+                  ENDDO
+               ENDDO                                                                                                                                                                 
+            ENDIF                                                                                                                                                                  
+        ENDIF 
+
+
+         CALL ctsm_run( &
+             ! bounds
+             ids=ids, ide=ide, jds=jds, jde=jde, &
+             ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, &
+             its=i_start(ij), ite=i_end(ij), jts=j_start(ij), jte=j_end(ij), &
+
+             ! restart flag
+             restart_flag=restart_flag,&
+
+             ! general information
+             dt             = dt, &
+             xland          = xland, &
+             xice           = xice, &
+             xice_threshold = xice_threshold, &
+
+             ! atm -> lnd variables
+             dz8w     = dz8w, &
+             ht       = ht, &
+             u_phy    = u_phy,  &
+             v_phy    = v_phy,  &
+             p8w      = p_phy,  &
+             t_phy    = t_phy,  &
+             th_phy   = th_phy, &
+             qv_curr  = qv_curr, &
+             rainbl   = rainbl, &
+             sr       = sr, &
+             glw      = glw, &
+             swvisdir = swvisdir, &
+             swvisdif = swvisdif, &
+             swnirdir = swnirdir, &
+             swnirdif = swnirdif, &
+
+             ! lnd -> atm variables
+             tsk      = tsk, &
+             t2       = t2, &
+             qsfc     = qsfc, &
+             albedo   = albedo, &
+             ust      = ust, &
+             hfx      = hfx, &
+             lh       = lh, &
+             qfx      = qfx, &
+             emiss    = emiss, &
+             z0       = z0, &
+             znt      = znt)
+
+         call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
+              &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
+              &            SEAICE_SNOWDEPTH_MAX, SEAICE_SNOWDEPTH_MIN,                 &
+              &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
+              &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
+              &            albsi, icedepth, snowsi,                                    &
+              &            tslb, emiss, albedo, z0, tsk, snow, snowc, snowh,           &
+              &            chs, chs2, cqs2,                                            &
+              &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
+              &            acsnom, snopcx, sfcrunoff, noahres,                         &
+              &            sf_urban_physics, b_t_bep, b_q_bep, rho,                    &
+              &            ids,ide, jds,jde, kds,kde,                                  &
+              &            ims,ime, jms,jme, kms,kme,                                  &
+              &            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
+         IF ( FRACTIONAL_SEAICE == 1 ) THEN
+            ! LSM Returns full land/ice values, no fractional values.
+            ! We return to a fractional component here.  SFLX currently hard-wires
+            ! emissivity over sea ice to 0.98, the same value as over open water, so
+            ! the fractional consideration doesn't have any effect for emissivity.
+            DO j=j_start(ij),j_end(ij)
+               DO i=i_start(ij),i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                     albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+                     emiss(i,j) = ( emiss(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
+                  ENDIF
+               ENDDO
+            ENDDO
+
+            IF ( isisfc ) THEN
+               DO j=j_start(ij),j_end(ij)
+                  DO i=i_start(ij),i_end(ij)
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                        !  Weighted average of fields between ice-cover values and open-water values.
+                        flhc(i,j) = ( flhc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flhc_sea(i,j) )
+                        flqc(i,j) = ( flqc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flqc_sea(i,j) )
+                        cpm(i,j)  = ( cpm(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * cpm_sea(i,j)  )
+                        cqs2(i,j) = ( cqs2(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * cqs2_sea(i,j) )
+                        chs2(i,j) = ( chs2(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * chs2_sea(i,j) )
+                        chs(i,j)  = ( chs(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * chs_sea(i,j)  )
+                        qsfc(i,j) = ( qsfc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qsfc_sea(i,j) )
+                        qgh(i,j)  = ( qgh(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qgh_sea(i,j)  )
+                        qz0(i,j)  = ( qz0(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qz0_sea(i,j)  )
+                                                            !  print *,'hfx =',hfx_sea(170,20)
+                                                            !   print *,'XICE =',XICE(170,20)
+                                                            !    print *,'QSFC =',QSFC(170,20)
+                        hfx(i,j)  = ( hfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * hfx_sea(i,j)  )
+                        qfx(i,j)  = ( qfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qfx_sea(i,j)  )
+                        lh(i,j)   = ( lh(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * lh_sea(i,j)   )
+!save old tsk_ice
+                        tsk_save(i,j)  = tsk(i,j)
+                        tsk(i,j)  = ( tsk(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * tsk_sea(i,j)  )
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ELSE
+               DO j = j_start(ij) , j_end(ij)
+                  DO i = i_start(ij) , i_end(ij)
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                        ! Compute TSK as the open-water and ice-cover average
+                        tsk(i,j) = ( tsk(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * tsk_sea(i,j) )
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ENDIF
+         ENDIF
+
+      ENDIF
+
+#endif
+
      CASE (SSIBSCHEME)
      IF(PRESENT(alswvisdir))THEN
 !---Fernando De Sales (fds 06/2010)--------------------------------------
@@ -4369,7 +4554,7 @@ CONTAINS
               ! QSFC_SEA calculation as done in myjsfc for open water points
               PSFC = PINT(I,LOWLYR(I,J),J)
               QSFC_SEA(i,j) = PQ0SEA/PSFC*EXP(A2S*(TSK(i,j)-A3S)/(TSK(i,j)-A4S))
-              QSFC(i,j) = QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j) / XICE(i,j)
+              QSFC(i,j) = (QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j)) / XICE(i,j)
 !
               HFX_SEA(i,j)  = HFX(i,j)
               QFX_SEA(i,j)  = QFX(i,j)
@@ -4736,7 +4921,7 @@ CONTAINS
               ! QSFC_SEA calculation as done in qnsesfc for open water points
               PSFC = PINT(I,LOWLYR(I,J),J)
               QSFC_SEA(i,j) = PQ0SEA/PSFC*EXP(A2S*(TSK(i,j)-A3S)/(TSK(i,j)-A4S))
-              QSFC(i,j) = QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j) / XICE(i,j)
+              QSFC(i,j) = (QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j)) / XICE(i,j)
 !
               HFX_SEA(i,j)  = HFX(i,j)
               QFX_SEA(i,j)  = QFX(i,j)

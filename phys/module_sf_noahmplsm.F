@@ -478,7 +478,7 @@ contains
 
 ! input/output : need arbitary intial values
   REAL                           , INTENT(INOUT) :: QSNOW  !snowfall [mm/s]
-  REAL                           , INTENT(INOUT) :: QRAIN  !rain at ground srf (mm/s)
+  REAL                           , INTENT(INOUT) :: QRAIN  !rain at ground surface (mm/s)
   REAL                           , INTENT(INOUT) :: FWET   !wetted or snowed fraction of canopy (-)
   REAL                           , INTENT(INOUT) :: SNEQVO !snow mass at last time step (mm)
   REAL                           , INTENT(INOUT) :: EAH    !canopy air vapor pressure (pa)

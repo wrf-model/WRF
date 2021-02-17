@@ -1120,10 +1120,10 @@ CONTAINS
 
 !  rebalance hydrostatically
 
-      DO k  = 2,kte
+      DO k = 2,kte
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                     ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
-                      (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
+                     ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
+                      (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
 
         grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
@@ -1165,10 +1165,10 @@ CONTAINS
 
 !  rebalance hydrostatically
 
-      DO k  = 2,kte
+      DO k = 2,kte
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                     ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
-                      (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
+                     ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
+                      (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
 
         grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
@@ -1212,8 +1212,8 @@ CONTAINS
 
       DO k  = 2,kte
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                     ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
-                      (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
+                     ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
+                      (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
 
         grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
@@ -1245,8 +1245,8 @@ CONTAINS
 
       DO k  = 2,kte
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                     ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
-                      (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
+                     ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
+                      (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
         grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
       ENDDO
@@ -1306,8 +1306,8 @@ CONTAINS
 
       DO k  = 2,kte
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                     ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
-                      (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
+                     ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
+                      (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
 
         grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
@@ -1355,8 +1355,8 @@ CONTAINS
 
       DO k  = 2,kte
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                     ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
-                      (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
+                     ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
+                      (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
 
         grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)

@@ -46,8 +46,9 @@
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
                                      chem_dbg,      &
 #endif
-                                     get_last_gas,mozcart_lbc_set, &
+                                     mozcart_lbc_set, &
                                      bdy_chem_value_top_pv,PVS
+  USE module_chem_share,      only: get_last_gas
   USE module_upper_bc_driver, only: upper_bc_driver
   USE module_tropopause,      only: tropopause_driver
   USE modal_aero_data, only: ntot_amode_cam_mam => ntot_amode
@@ -1132,7 +1133,8 @@
 !
 !
       if( config_flags%cu_physics>0 .and. config_flags%chem_conv_tr>0 &
-           .and. config_flags%cu_physics/=kfcupscheme ) then            !BSINGH - For WRFCuP scheme
+           .and. config_flags%cu_physics/=kfcupscheme                 &
+           .and. config_flags%cu_physics/=gfscheme ) then                !BSINGH - For WRFCuP scheme
         call wrf_debug(15,'calling conv transport for chemical species')
         if(config_flags%chem_opt >0 )then
         ! save old concentrations for convective tendencies

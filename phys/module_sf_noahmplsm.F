@@ -676,9 +676,9 @@ contains
 
 ! irrigation variables 
   REAL                        , INTENT(IN)       :: IRRFRA         ! irrigation fraction
-  REAL                        , INTENT(IN)       :: SIFAC          ! sprinkler irrigation fraction
-  REAL                        , INTENT(IN)       :: MIFAC          ! micro irrigation fraction
-  REAL                        , INTENT(IN)       :: FIFAC          ! flood irrigation fraction   
+  REAL                        , INTENT(INOUT)    :: SIFAC          ! sprinkler irrigation fraction (inout, but only in)
+  REAL                        , INTENT(INOUT)    :: MIFAC          ! micro irrigation fraction
+  REAL                        , INTENT(INOUT)    :: FIFAC          ! flood irrigation fraction   
   INTEGER                     , INTENT(INOUT)    :: IRCNTSI        ! irrigation event number, Sprinkler
   INTEGER                     , INTENT(INOUT)    :: IRCNTMI        ! irrigation event number, Micro
   INTEGER                     , INTENT(INOUT)    :: IRCNTFI        ! irrigation event number, Flood 
@@ -721,7 +721,7 @@ contains
   LOGICAL                             :: dveg_active ! flag to run dynamic vegetation
   LOGICAL                             :: crop_active ! flag to run crop model
   LOGICAL                             :: CROPLU      ! flag to identify croplands
- 
+  REAL                                :: SIFCUK      ! Sprinkler fraction for unknown irrigation methods
   REAL :: FB
   
   ! INTENT (OUT) variables need to be assigned a value.  These normally get assigned values
@@ -734,6 +734,7 @@ contains
       PAHB  = 0.
       PAH  = 0.
   CROPLU = .FALSE.
+  
 ! --------------------------------------------------------------------------------------------------
 ! re-process atmospheric forcing
 
@@ -795,13 +796,33 @@ contains
      IF(parameters%urban_flag .OR. VEGTYP == parameters%ISBARREN) FVEG = 0.0
      IF(ELAI+ESAI == 0.0) FVEG = 0.0
 
-! Calling dynamic irrigation scheme-pvk
-! Call triggering function    
+! Calling dynamic irrigation scheme-prasanth
      IF ( TRIM(LLANDUSE) == "USGS" ) THEN
          IF(VEGTYP .GE. 3 .AND. VEGTYP .LE. 6) CROPLU = .TRUE.
      ELSE IF ( TRIM(LLANDUSE) == "MODIFIED_IGBP_MODIS_NOAH") THEN
-         IF(VEGTYP == 13 .OR. VEGTYP == 14) CROPLU = .TRUE.
+         IF(VEGTYP == 12 .OR. VEGTYP == 14) CROPLU = .TRUE.
      END IF
+
+! If OPT_IRRM = 0 and if methods are unknown for certain area, then use sprinkler irrigation method
+     IF((OPT_IRRM .EQ. 0) .AND. (SIFAC .EQ. 0.) .AND. (MIFAC .EQ. 0.) .AND. (FIFAC .EQ. 0.) &
+         .AND. (IRRFRA .GE. parameters%IRR_FRAC)) THEN
+          SIFAC = 1.0
+     END IF
+! choose method based on user namelist choice
+     IF(OPT_IRRM .EQ. 1) THEN
+        SIFAC = 1.
+        MIFAC = 0.
+        FIFAC = 0.
+     ELSE IF(OPT_IRRM .EQ. 2) THEN
+        SIFAC = 0.
+        MIFAC = 1.
+        FIFAC = 0.
+     ELSE IF(OPT_IRRM .EQ. 3) THEN
+        SIFAC = 0.
+        MIFAC = 0.
+        FIFAC = 1.
+     END IF
+! Call triggering function
      IF((CROPLU .EQV. .TRUE.) .AND. (IRRFRA .GE. parameters%IRR_FRAC) .AND. &
        (RAIN .LT. (parameters%IR_RAIN/3600.)) .AND. ((IRAMTSI+IRAMTMI+IRAMTFI) .EQ. 0.0) )THEN
         CALL TRIGGER_IRRIGATION(parameters,NSOIL,ZSOIL,SH2O,FVEG,JULIAN,IRRFRA,LAI, & !in
@@ -816,7 +837,7 @@ contains
         IRAMTFI = 0.
      END IF
 ! call sprinkler irrigation before CANWAT/PRECIP_HEAT to have canopy interception
-     IF((CROPLU .EQV. .TRUE.) .AND. (IRAMTSI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 1)))THEN
+     IF((CROPLU .EQV. .TRUE.) .AND. (IRAMTSI .GT. 0.0)) THEN
         CALL SPRINKLER_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,& !in
                                   SFCTMP,UU,VV,EAIR,SIFAC,          & !in
                                   IRAMTSI,IREVPLOS,IRSIRATE)          !inout
@@ -826,7 +847,7 @@ contains
         EIRR     = IREVPLOS*1000./DT                                   ! sprinkler evaporation (mm/s)
      END IF
 ! call for micro irrigation and flood irrigation are implemented in WATER subroutine
-! end irrigation call
+! end irrigation call-prasanth
 
     CALL PRECIP_HEAT(parameters,ILOC   ,JLOC   ,VEGTYP ,DT     ,UU     ,VV     , & !in
                      ELAI   ,ESAI   ,FVEG   ,IST    ,                 & !in
@@ -6002,14 +6023,14 @@ ENDIF   ! CROPTYPE == 0
 #endif
 
 ! irrigation: call flood irrigation-pvk
-    IF((CROPLU .EQV. .TRUE.) .AND. (IRAMTFI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 3)))THEN
+    IF((CROPLU .EQV. .TRUE.) .AND. (IRAMTFI .GT. 0.0))THEN
        ! call flood irrigation and add to QINSUR
        CALL FLOOD_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,FIFAC,& !in
                              IRAMTFI,IRFIRATE)                         !inout
        QINSUR = QINSUR + (IRFIRATE/DT)                                ![m/s]
     END IF
 ! irrigation: call micro irrigation-pvk
-    IF((CROPLU .EQV. .TRUE.) .AND. (IRAMTMI .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 2)))THEN
+    IF((CROPLU .EQV. .TRUE.) .AND. (IRAMTMI .GT. 0.0))THEN
        ! call micro irrigation, assuming we implement drip in first layer 
        ! of the Noah-MP. Change layer 1 moisture wrt to MI rate-pvk
        CALL MICRO_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,MIFAC, & !in
@@ -7853,23 +7874,36 @@ ENDIF   ! CROPTYPE == 0
          ! amount of water need to be added to bring soil moisture back to 
          ! field capacity, i.e., irrigation water amount (m)
          IRRWATAMT = (SMCLIM - SMCAVL)*IRRFRA*FVEG  
-         ! sprinkler irrigation amount (m)
-         IF((IRAMTSI .EQ. 0.0) .AND. (SIFAC .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 1)))THEN
+         ! sprinkler irrigation amount (m) based on 2D SIFAC
+         IF((IRAMTSI .EQ. 0.0) .AND. (SIFAC .GT. 0.0) .AND. (OPT_IRRM .EQ. 0)) THEN
             IRAMTSI = SIFAC*IRRWATAMT 
             IRCNTSI = IRCNTSI + 1
+         ! sprinkler irrigation amount (m) based on namelist choice
+         ELSE IF ((IRAMTSI .EQ. 0.0) .AND. (OPT_IRRM .EQ. 1)) THEN
+            IRAMTSI = IRRWATAMT
+            IRCNTSI = IRCNTSI + 1
          END IF
-         ! micro irrigation amount (m)
-         IF((IRAMTMI .EQ. 0.0) .AND. (MIFAC .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 2)))THEN
-            IRAMTMI = MIFAC*IRRWATAMT 
+         ! micro irrigation amount (m) based on 2D MIFAC
+         IF((IRAMTMI .EQ. 0.0) .AND. (MIFAC .GT. 0.0) .AND. (OPT_IRRM .EQ. 0)) THEN
+            IRAMTMI = MIFAC*IRRWATAMT
+            IRCNTMI = IRCNTMI + 1
+         ! micro irrigation amount (m) based on namelist choice
+         ELSE IF ((IRAMTMI .EQ. 0.0) .AND. (OPT_IRRM .EQ. 2)) THEN
+            IRAMTMI = IRRWATAMT 
             IRCNTMI = IRCNTMI + 1
          END IF
          ! flood irrigation amount (m): Assumed to saturate top two layers and 
          ! third layer to FC. As water moves from one end of the field to
-         ! another, surface layers will be saturated
-         IF((IRAMTFI .EQ. 0.0) .AND. (FIFAC .GT. 0.0) .AND. ((OPT_IRRM .EQ. 0) .OR. (OPT_IRRM .EQ. 3)))THEN
+         ! another, surface layers will be saturated. 
+         ! flood irrigation amount (m) based on 2D FIFAC
+         IF((IRAMTFI .EQ. 0.0) .AND. (FIFAC .GT. 0.0) .AND. (OPT_IRRM .EQ. 0)) THEN
             IRAMTFI = FIFAC*(IRRWATAMT)*(parameters%FILOSS+1)
             IRCNTFI = IRCNTFI + 1
-         END IF   
+         !flood irrigation amount (m) based on namelist choice
+         ELSE IF((IRAMTFI .EQ. 0.0) .AND. (OPT_IRRM .EQ. 3)) THEN
+            IRAMTFI = (IRRWATAMT)*(parameters%FILOSS+1)
+            IRCNTFI = IRCNTFI + 1
+         END IF  
       ELSE
          IRRWATAMT = 0.0
          IRAMTSI   = 0.0

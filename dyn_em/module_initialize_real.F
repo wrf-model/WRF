@@ -3957,7 +3957,7 @@ endif
       !  Compute pressure similarly to how computed within model, with final Qv.
 
       !  Do a re-balance or not?  0 = NOPE
-      !  RSA rebalance must be 1 for vertical nesting
+      !  Note that rebalance must be 1 for vertical nesting
       IF ( config_flags%rebalance .EQ. 0 ) THEN
 
           DO j = jts, min(jde-1,jte)

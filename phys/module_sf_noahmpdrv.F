@@ -56,7 +56,8 @@ CONTAINS
 !    USE MODULE_SF_NOAHMPLSM, only: noahmp_options, NOAHMP_SFLX, noahmp_parameters
     USE module_sf_noahmp_glacier
     USE NOAHMP_TABLES, ONLY: ISICE_TABLE, CO2_TABLE, O2_TABLE, DEFAULT_CROP_TABLE, ISCROP_TABLE, ISURBAN_TABLE, NATURAL_TABLE, &
-                             LOW_DENSITY_RESIDENTIAL_TABLE, HIGH_DENSITY_RESIDENTIAL_TABLE, HIGH_INTENSITY_INDUSTRIAL_TABLE
+                             LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE,LCZ_5_TABLE,LCZ_6_TABLE,LCZ_7_TABLE,LCZ_8_TABLE,  &
+                             LCZ_9_TABLE,LCZ_10_TABLE,LCZ_11_TABLE
     USE module_sf_urban,    only: IRI_SCHEME
     USE module_ra_gfdleta,  only: cal_mon_day
 !----------------------------------------------------------------
@@ -669,9 +670,10 @@ CONTAINS
           IF(IPRINT) PRINT *, i,j,'RESET SOIL in surfce.F'
           SOILTYP = 7
        ENDIF
-
-       IF( IVGTYP(I,J) == ISURBAN_TABLE                  .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL_TABLE .or. &
-           IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL_TABLE .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL_TABLE ) THEN
+         IF( IVGTYP(I,J) == ISURBAN_TABLE    .or. IVGTYP(I,J) == LCZ_1_TABLE .or. IVGTYP(I,J) == LCZ_2_TABLE .or. &
+             IVGTYP(I,J) == LCZ_3_TABLE      .or. IVGTYP(I,J) == LCZ_4_TABLE .or. IVGTYP(I,J) == LCZ_5_TABLE .or. &
+             IVGTYP(I,J) == LCZ_6_TABLE      .or. IVGTYP(I,J) == LCZ_7_TABLE .or. IVGTYP(I,J) == LCZ_8_TABLE .or. &
+             IVGTYP(I,J) == LCZ_9_TABLE      .or. IVGTYP(I,J) == LCZ_10_TABLE .or. IVGTYP(I,J) == LCZ_11_TABLE ) THEN
 
          IF(SF_URBAN_PHYSICS == 0 ) THEN
            VEGTYP = ISURBAN_TABLE
@@ -723,11 +725,13 @@ CONTAINS
 
 !=== hydrological processes for vegetation in urban model ===
 !=== irrigate vegetaion only in urban area, MAY-SEP, 9-11pm
+           IF( IVGTYP(I,J) == ISURBAN_TABLE    .or. IVGTYP(I,J) == LCZ_1_TABLE .or. IVGTYP(I,J) == LCZ_2_TABLE .or. &
+               IVGTYP(I,J) == LCZ_3_TABLE      .or. IVGTYP(I,J) == LCZ_4_TABLE .or. IVGTYP(I,J) == LCZ_5_TABLE .or. &
+               IVGTYP(I,J) == LCZ_6_TABLE      .or. IVGTYP(I,J) == LCZ_7_TABLE .or. IVGTYP(I,J) == LCZ_8_TABLE .or. &
+               IVGTYP(I,J) == LCZ_9_TABLE      .or. IVGTYP(I,J) == LCZ_10_TABLE .or. IVGTYP(I,J) == LCZ_11_TABLE ) THEN
 
-       IF( IVGTYP(I,J) == ISURBAN_TABLE                  .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL_TABLE .or. &
-           IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL_TABLE .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL_TABLE ) THEN
 
-         IF(SF_URBAN_PHYSICS > 0 .AND. IRI_SCHEME == 1 ) THEN
+         IF(SF_URBAN_PHYSICS == 1 .AND. IRI_SCHEME == 1 ) THEN
 	     SOLAR_TIME = (JULIAN - INT(JULIAN))*24 + XLONG(I,J)/15.0
 	     IF(SOLAR_TIME < 0.) SOLAR_TIME = SOLAR_TIME + 24.
              CALL CAL_MON_DAY(INT(JULIAN),YR,JMONTH,JDAY)
@@ -1069,9 +1073,12 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
   parameters%EBLFOREST = EBLFOREST_TABLE
 
   parameters%URBAN_FLAG = .FALSE.
-  IF( VEGTYPE == ISURBAN_TABLE                  .or. VEGTYPE == LOW_DENSITY_RESIDENTIAL_TABLE  .or. &
-      VEGTYPE == HIGH_DENSITY_RESIDENTIAL_TABLE .or. VEGTYPE == HIGH_INTENSITY_INDUSTRIAL_TABLE ) THEN
-     parameters%URBAN_FLAG = .TRUE.
+    IF( VEGTYPE == ISURBAN_TABLE    .or. VEGTYPE == LCZ_1_TABLE .or. VEGTYPE == LCZ_2_TABLE .or. &
+             VEGTYPE == LCZ_3_TABLE      .or. VEGTYPE == LCZ_4_TABLE .or. VEGTYPE == LCZ_5_TABLE .or. &
+             VEGTYPE == LCZ_6_TABLE      .or. VEGTYPE == LCZ_7_TABLE .or. VEGTYPE == LCZ_8_TABLE .or. &
+             VEGTYPE == LCZ_9_TABLE      .or. VEGTYPE == LCZ_10_TABLE .or. VEGTYPE == LCZ_11_TABLE ) THEN
+ 
+    parameters%URBAN_FLAG = .TRUE.
   ENDIF
 
 !------------------------------------------------------------------------------------------!
@@ -1161,17 +1168,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%GDDS3     =     GDDS3_TABLE(CROPTYPE)    ! GDD from seeding to post vegetative 
    parameters%GDDS4     =     GDDS4_TABLE(CROPTYPE)    ! GDD from seeding to intial reproductive
    parameters%GDDS5     =     GDDS5_TABLE(CROPTYPE)    ! GDD from seeding to pysical maturity 
-   parameters%C3PSN     =     C3PSNI_TABLE(CROPTYPE)   ! parameters from stomata ! Zhe Zhang 2020-07-13
-   parameters%KC25      =      KC25I_TABLE(CROPTYPE)
-   parameters%AKC       =       AKCI_TABLE(CROPTYPE)
-   parameters%KO25      =      KO25I_TABLE(CROPTYPE)
-   parameters%AKO       =       AKOI_TABLE(CROPTYPE)
-   parameters%AVCMX     =     AVCMXI_TABLE(CROPTYPE)
-   parameters%VCMX25    =    VCMX25I_TABLE(CROPTYPE)
-   parameters%BP        =        BPI_TABLE(CROPTYPE)
-   parameters%MP        =        MPI_TABLE(CROPTYPE)
-   parameters%FOLNMX    =    FOLNMXI_TABLE(CROPTYPE)
-   parameters%QE25      =      QE25I_TABLE(CROPTYPE)   ! ends here
    parameters%C3C4      =      C3C4_TABLE(CROPTYPE)    ! photosynthetic pathway:  1. = c3 2. = c4
    parameters%AREF      =      AREF_TABLE(CROPTYPE)    ! reference maximum CO2 assimulation rate 
    parameters%PSNRF     =     PSNRF_TABLE(CROPTYPE)    ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
@@ -1198,9 +1194,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%STPT      =      STPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to stem
    parameters%RTPT      =      RTPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to root
    parameters%GRAINPT   =   GRAINPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to grain
-   parameters%LFCT      =      LFCT_TABLE(CROPTYPE,:)  ! fraction of translocation to grain ! Zhe Zhang 2020-07-13
-   parameters%STCT      =      STCT_TABLE(CROPTYPE,:)  ! fraction of translocation to grain
-   parameters%RTCT      =      RTCT_TABLE(CROPTYPE,:)  ! fraction of translocation to grain
    parameters%BIO2LAI   =   BIO2LAI_TABLE(CROPTYPE)    ! leaf are per living leaf biomass [m^2/kg]
   END IF
 
@@ -1742,7 +1735,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 		        croptype(i,1,j) > croptype(i,4,j) ) then   ! choose corn
 
 		   cropcat (i,j) = 1
-                   lfmassxy(i,j) =    lai(i,j)/0.015               ! Initialize lfmass Zhe Zhang 2020-07-13
+                   lfmassxy(i,j) =    lai(i,j)/0.035
                    stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	         elseif(croptype(i,2,j) > croptype(i,1,j) .and. &
@@ -1750,7 +1743,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 		        croptype(i,2,j) > croptype(i,4,j) ) then   ! choose soybean
 
 		   cropcat (i,j) = 2
-                   lfmassxy(i,j) =    lai(i,j)/0.030               ! Initialize lfmass Zhe Zhang 2020-07-13
+                   lfmassxy(i,j) =    lai(i,j)/0.015
                    stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	         else
@@ -3207,7 +3200,7 @@ IF((SF_URBAN_PHYSICS == 2).OR.(SF_URBAN_PHYSICS == 3))THEN
     lh(i,j)       = qfx(i,j)*xlv
     hfx(i,j)      = hfx_urb(i,j)                         + (1-frc_urb2d(i,j))*hfx_rural(i,j)      ![W/m/m]
     sh_urb2d(i,j) = hfx_urb(i,j)/frc_urb2d(i,j)
-    lh_urb2d(i,j) = qfx_urb(i,j)*xlv/frc_urb2d(i,j)
+    lh_urb2d(i,j) = qfx_urb(i,j)*xlv
     g_urb2d(i,j)  = grdflx_urb(i,j)
     rn_urb2d(i,j) = rs_abs_urb(i,j)+emiss_urb(i,j)*glw(i,j)-rl_up_urb(i,j)
     ust(i,j)      = (umom**2.+vmom**2.)**.25

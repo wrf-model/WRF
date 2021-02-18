@@ -13,6 +13,10 @@ MODULE module_physics_init
    USE module_state_description
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+   USE module_dm, ONLY : wrf_dm_max_real
+#endif
+
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
@@ -942,22 +946,15 @@ CONTAINS
 ! for cloud, ice, and snow.
 
    IF ( config_flags%swint_opt .eq. 2 ) THEN
-      IF ((   config_flags%mp_physics == THOMPSON .OR.        &
-              config_flags%mp_physics == THOMPSONAERO .OR.    &
-              config_flags%mp_physics == WSM3SCHEME .OR.    &
-              config_flags%mp_physics == WSM5SCHEME .OR.    &
-              config_flags%mp_physics == WSM6SCHEME .OR.    &
-              config_flags%mp_physics == WSM7SCHEME .OR.    &
-              config_flags%mp_physics == WDM5SCHEME .OR.    &
-              config_flags%mp_physics == WDM6SCHEME .OR.    &
-              config_flags%mp_physics == WDM7SCHEME ).OR.     &
-          (( has_reqc .EQ. 0 .AND. has_reqi .EQ. 0 .and. has_reqs .EQ. 0 ) .AND. &
+      IF ( ( has_reqc .EQ. 1 ) .AND. &
+           ( has_reqi .EQ. 1 ) .AND. &
+           ( has_reqs .EQ. 1 ) .AND. &
            ( f_qc            ) .AND. &
            ( f_qi            ) .AND. &
-           ( f_qs            ))) THEN
+           ( f_qs            ) ) THEN
          !  everything is A-OK for FARMS
       ELSE
-         CALL wrf_error_fatal ('--- ERROR: FARMS (swint_opt==2) requires a different MP scheme (Please see the module_physics_init')
+         CALL wrf_error_fatal ('--- ERROR: FARMS (swint_opt==2) requires a different MP scheme')
       END IF
    END IF
 
@@ -1170,13 +1167,13 @@ CONTAINS
     end do
 
 !..Fill initial starting values of radiative effective radii for
-!.. cloud water (2.49 microns), cloud ice (4.99 microns), and
-!.. snow (9.99 microns).
+!.. cloud water (2.51 microns), cloud ice (5.01 microns), and
+!.. snow (10.01 microns).
     if (has_reqc.ne.0) then
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_cloud(i,k,j) = RE_QC_BG
+             re_cloud(i,k,j) = 2.51E-6
           end do
           end do
        end do
@@ -1185,7 +1182,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_ice(i,k,j) = RE_QI_BG
+             re_ice(i,k,j) = 5.01E-6
           end do
           end do
        end do
@@ -1194,7 +1191,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_snow(i,k,j) = RE_QS_BG
+             re_snow(i,k,j) = 10.01E-6
           end do
           end do
        end do
@@ -2499,9 +2496,9 @@ CONTAINS
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
-   USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
+   USE module_sf_noahlsm, only : LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
    USE module_sf_noahmpdrv
-   USE noahmp_tables, ONLY: LOW_DENSITY_RESIDENTIAL_TABLE, HIGH_DENSITY_RESIDENTIAL_TABLE, HIGH_INTENSITY_INDUSTRIAL_TABLE
+   USE noahmp_tables, ONLY: LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE,LCZ_5_TABLE,LCZ_6_TABLE,LCZ_7_TABLE,LCZ_8_TABLE,LCZ_9_TABLE,LCZ_10_TABLE,LCZ_11_TABLE
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
 #endif
@@ -2893,6 +2890,7 @@ CONTAINS
 !-------------------------------------------------
 ! End of Noah-mosaic related variables 
 !-------------------------------------------------  
+     REAL :: max_utype_urb2d
 
 ! IRRIGATION
   INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ims:ime,jms:jme):: irr_rand_field  
@@ -3088,16 +3086,14 @@ CONTAINS
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics)
+                                sf_urban_physics,config_flags%use_wudapt_lcz)
 !                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
                                
                 
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,                     & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,               & !urban
-!                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
-                              LOW_DENSITY_RESIDENTIAL,                       &
-                              HIGH_DENSITY_RESIDENTIAL,                      &
-                              HIGH_INTENSITY_INDUSTRIAL,                       &
+                              LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,                   &
+                              LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11,           &
                               restart,sf_urban_physics,                        & !urban
                               XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
                               TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,    & !urban
@@ -3132,7 +3128,21 @@ CONTAINS
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
-                              FRC_URB2D, UTYPE_URB2D)                            !urban
+                              FRC_URB2D, UTYPE_URB2D,config_flags%use_wudapt_lcz)  !urban
+            
+               max_utype_urb2d = maxval(UTYPE_URB2D)*1.0
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+               max_utype_urb2d = wrf_dm_max_real(max_utype_urb2d)
+#endif
+               IF (config_flags%use_wudapt_lcz.eq.0 .and. max_utype_urb2d.gt.3.0) THEN  !new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. SET USE_WUDAPT_LCZ=1')
+               ENDIF
+               IF (config_flags%use_wudapt_lcz.eq.1 .and. max_utype_urb2d.le.3.0) THEN  ! new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING URBPARM_LCZ.TBL WITH OLD 3 URBAN CLASSES. SET USE_WUDAPT_LCZ=0')
+               ENDIF
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
@@ -3208,12 +3218,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics)
+                                sf_urban_physics,config_flags%use_wudapt_lcz)
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,         & !urban
-                              LOW_DENSITY_RESIDENTIAL_TABLE,                   &
-		              HIGH_DENSITY_RESIDENTIAL_TABLE,                  &
-		              HIGH_INTENSITY_INDUSTRIAL_TABLE,                 &
+                              LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE, &
+                              LCZ_5_TABLE,LCZ_6_TABLE,LCZ_7_TABLE,LCZ_8_TABLE, &
+                              LCZ_9_TABLE,LCZ_10_TABLE,LCZ_11_TABLE,           &
                               restart,sf_urban_physics,                        & !urban
                               XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
                               TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,    & !urban
@@ -3248,11 +3258,26 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
-                              FRC_URB2D, UTYPE_URB2D)                            !urban
+                              FRC_URB2D, UTYPE_URB2D,config_flags%use_wudapt_lcz)  !urban
+ 
+                        max_utype_urb2d = maxval(UTYPE_URB2D)*1.0
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+               max_utype_urb2d = wrf_dm_max_real(max_utype_urb2d)
+#endif
+               IF (config_flags%use_wudapt_lcz.eq.0 .and. max_utype_urb2d.gt.3.0) THEN  !new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. SET USE_WUDAPT_LCZ=1')
+               ENDIF
+               IF (config_flags%use_wudapt_lcz.eq.1 .and. max_utype_urb2d.le.3.0) THEN  ! new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING URBPARM_LCZ.TBL WITH OLD 3 URBAN CLASSES. SET USE_WUDAPT_LCZ=0')
+               ENDIF
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
           ENDIF
+
+
 
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &

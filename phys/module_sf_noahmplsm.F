@@ -346,9 +346,6 @@ MODULE MODULE_SF_NOAHMPLSM
      REAL :: LFPT(NSTAGE)     ! fraction of carbohydrate flux to leaf
      REAL :: STPT(NSTAGE)     ! fraction of carbohydrate flux to stem
      REAL :: RTPT(NSTAGE)     ! fraction of carbohydrate flux to root
-     REAL :: LFCT(NSTAGE)     ! fraction of carbohydrate flux transallocate from leaf to grain ! Zhe Zhang 2020-07-13
-     REAL :: STCT(NSTAGE)     ! fraction of carbohydrate flux transallocate from stem to grain
-     REAL :: RTCT(NSTAGE)     ! fraction of carbohydrate flux transallocate from root to grain
      REAL :: GRAINPT(NSTAGE)  ! fraction of carbohydrate flux to grain
      REAL :: BIO2LAI          ! leaf are per living leaf biomass [m^2/kg]
 
@@ -8592,7 +8589,6 @@ END  SUBROUTINE SHALLOWWATERTABLE
   REAL                   :: STMSMN
   REAL                   :: SAPM     !stem area per unit mass (m2/g)
   REAL                   :: DIEST
-  REAL                   :: LFCONVERT   !leaf to grain conversion ! Zhe Zhang 2020-07-13
   REAL                   :: STCONVERT   !stem to grain conversion [g/m2/s]
   REAL                   :: RTCONVERT   !root to grain conversion [g/m2/s]
 ! -------------------------- constants -------------------------------
@@ -8695,23 +8691,15 @@ END  SUBROUTINE SHALLOWWATERTABLE
 
      GPP = CBHYDRAFX* 0.4 !!g/m2/s C  0.4=12/30, CH20 to C
 
-     LFCONVERT = 0.0 ! Zhe Zhang 2020-07-13
      STCONVERT = 0.0
      RTCONVERT = 0.0
-     LFCONVERT = LFMASS*(parameters%LFCT(PGS)*DT/3600.0)
-     STCONVERT = STMASS*(parameters%STCT(PGS)*DT/3600.0)
-     RTCONVERT = RTMASS*(parameters%RTCT(PGS)*DT/3600.0)
-     LFMASS = LFMASS - LFCONVERT
-     STMASS = STMASS - STCONVERT
-     RTMASS = RTMASS - RTCONVERT
-     GRAIN  = GRAIN + STCONVERT + RTCONVERT + LFCONVERT
-     !IF(PGS==6) THEN
-     !  STCONVERT = STMASS*(0.00005*DT/3600.0)
-     !  STMASS = STMASS - STCONVERT
-     !  RTCONVERT = RTMASS*(0.0005*DT/3600.0)
-     !  RTMASS = RTMASS - RTCONVERT
-     !  GRAIN  = GRAIN + STCONVERT + RTCONVERT
-     !END IF
+     IF(PGS==6) THEN
+       STCONVERT = STMASS*(0.00005*DT/3600.0)
+       STMASS = STMASS - STCONVERT
+       RTCONVERT = RTMASS*(0.0005*DT/3600.0)
+       RTMASS = RTMASS - RTCONVERT
+       GRAIN  = GRAIN + STCONVERT + RTCONVERT
+     END IF
     
      IF(RTMASS.LT.0.0) THEN
        RTTOVR = NPPR
@@ -9178,9 +9166,17 @@ MODULE NOAHMP_TABLES
     INTEGER :: ISCROP_TABLE
     INTEGER :: EBLFOREST_TABLE
     INTEGER :: NATURAL_TABLE
-    INTEGER :: LOW_DENSITY_RESIDENTIAL_TABLE
-    INTEGER :: HIGH_DENSITY_RESIDENTIAL_TABLE
-    INTEGER :: HIGH_INTENSITY_INDUSTRIAL_TABLE
+    INTEGER :: LCZ_1_TABLE
+    INTEGER :: LCZ_2_TABLE
+    INTEGER :: LCZ_3_TABLE
+    INTEGER :: LCZ_4_TABLE
+    INTEGER :: LCZ_5_TABLE
+    INTEGER :: LCZ_6_TABLE
+    INTEGER :: LCZ_7_TABLE
+    INTEGER :: LCZ_8_TABLE
+    INTEGER :: LCZ_9_TABLE
+    INTEGER :: LCZ_10_TABLE
+    INTEGER :: LCZ_11_TABLE
 
     REAL :: CH2OP_TABLE(MVT)       !maximum intercepted h2o per unit lai+sai (mm)
     REAL :: DLEAF_TABLE(MVT)       !characteristic leaf dimension (m)
@@ -9312,18 +9308,6 @@ MODULE NOAHMP_TABLES
     REAL :: GDDS4_TABLE(NCROP)          ! GDD from seeding to intial reproductive
     REAL :: GDDS5_TABLE(NCROP)          ! GDD from seeding to pysical maturity 
 
-    REAL :: C3PSNI_TABLE(NCROP)       !photosynthetic pathway: 0. = c4, 1. = c3 ! Zhe Zhang 2020-07-03
-    REAL :: KC25I_TABLE(NCROP)        !co2 michaelis-menten constant at 25c (pa)
-    REAL :: AKCI_TABLE(NCROP)         !q10 for kc25
-    REAL :: KO25I_TABLE(NCROP)        !o2 michaelis-menten constant at 25c (pa)
-    REAL :: AKOI_TABLE(NCROP)         !q10 for ko25
-    REAL :: VCMX25I_TABLE(NCROP)      !maximum rate of carboxylation at 25c (umol co2/m**2/s)
-    REAL :: AVCMXI_TABLE(NCROP)       !q10 for vcmx25
-    REAL :: BPI_TABLE(NCROP)          !minimum leaf conductance (umol/m**2/s)
-    REAL :: MPI_TABLE(NCROP)          !slope of conductance-to-photosynthesis relationship
-    REAL :: QE25I_TABLE(NCROP)        !quantum efficiency at 25c (umol co2 / umol photon)
-    REAL :: FOLNMXI_TABLE(NCROP)      !foliage nitrogen concentration when
-
  INTEGER :: C3C4_TABLE(NCROP)           ! photosynthetic pathway:  1. = c3 2. = c4
     REAL :: AREF_TABLE(NCROP)           ! reference maximum CO2 assimulation rate 
     REAL :: PSNRF_TABLE(NCROP)          ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
@@ -9354,9 +9338,6 @@ MODULE NOAHMP_TABLES
     REAL :: STPT_TABLE(NCROP,NSTAGE)    ! fraction of carbohydrate flux to stem
     REAL :: RTPT_TABLE(NCROP,NSTAGE)    ! fraction of carbohydrate flux to root
     REAL :: GRAINPT_TABLE(NCROP,NSTAGE) ! fraction of carbohydrate flux to grain
-    REAL :: LFCT_TABLE(NCROP,NSTAGE)    ! fraction of carbohydrate translocation from leaf to grain ! Zhe Zhang 2020-07-13 
-    REAL :: STCT_TABLE(NCROP,NSTAGE)    !                                             stem to grain
-    REAL :: RTCT_TABLE(NCROP,NSTAGE)    !                                             root to grain
     REAL :: BIO2LAI_TABLE(NCROP)        ! leaf are per living leaf biomass [m^2/kg]
 
 ! MPTABLE.TBL optional parameters
@@ -9429,9 +9410,17 @@ CONTAINS
     INTEGER :: ISCROP
     INTEGER :: EBLFOREST
     INTEGER :: NATURAL
-    INTEGER :: LOW_DENSITY_RESIDENTIAL
-    INTEGER :: HIGH_DENSITY_RESIDENTIAL
-    INTEGER :: HIGH_INTENSITY_INDUSTRIAL
+    INTEGER :: LCZ_1
+    INTEGER :: LCZ_2
+    INTEGER :: LCZ_3
+    INTEGER :: LCZ_4
+    INTEGER :: LCZ_5
+    INTEGER :: LCZ_6
+    INTEGER :: LCZ_7
+    INTEGER :: LCZ_8
+    INTEGER :: LCZ_9
+    INTEGER :: LCZ_10
+    INTEGER :: LCZ_11
 
     REAL, DIMENSION(MVT) :: SAI_JAN,SAI_FEB,SAI_MAR,SAI_APR,SAI_MAY,SAI_JUN, &
                                      SAI_JUL,SAI_AUG,SAI_SEP,SAI_OCT,SAI_NOV,SAI_DEC
@@ -9446,7 +9435,7 @@ CONTAINS
 			     
     NAMELIST / noahmp_usgs_veg_categories / VEG_DATASET_DESCRIPTION, NVEG
     NAMELIST / noahmp_usgs_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, ISCROP, EBLFOREST, NATURAL, &
-         LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL, &
+         LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11,&
          CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
          LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  BP, MP, QE25, RMS25, RMR25, ARM, &
          FOLNMX, WDPOOL, WRRAT, MRP, NROOT, RGL, RS, HS, TOPT, RSMAX, &
@@ -9456,7 +9445,7 @@ CONTAINS
 	 
     NAMELIST / noahmp_modis_veg_categories / VEG_DATASET_DESCRIPTION, NVEG
     NAMELIST / noahmp_modis_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, ISCROP, EBLFOREST, NATURAL, &
-         LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL, &
+         LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11, &
          CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
          LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  BP, MP, QE25, RMS25, RMR25, ARM, &
          FOLNMX, WDPOOL, WRRAT, MRP, NROOT, RGL, RS, HS, TOPT, RSMAX, &
@@ -9520,9 +9509,17 @@ CONTAINS
     ISCROP_TABLE       = -99999
     EBLFOREST_TABLE    = -99999
     NATURAL_TABLE      = -99999
-    LOW_DENSITY_RESIDENTIAL_TABLE   = -99999
-    HIGH_DENSITY_RESIDENTIAL_TABLE  = -99999
-    HIGH_INTENSITY_INDUSTRIAL_TABLE = -99999
+    LCZ_1_TABLE   = -99999
+    LCZ_2_TABLE   = -99999
+    LCZ_3_TABLE   = -99999
+    LCZ_4_TABLE   = -99999
+    LCZ_5_TABLE   = -99999
+    LCZ_6_TABLE   = -99999
+    LCZ_7_TABLE   = -99999
+    LCZ_8_TABLE   = -99999
+    LCZ_9_TABLE   = -99999
+    LCZ_10_TABLE   = -99999
+    LCZ_11_TABLE   = -99999
 
     inquire( file='MPTABLE.TBL', exist=file_named ) 
     if ( file_named ) then
@@ -9556,9 +9553,17 @@ CONTAINS
                        ISCROP_TABLE   = ISCROP
                     EBLFOREST_TABLE   = EBLFOREST
                       NATURAL_TABLE   = NATURAL
-      LOW_DENSITY_RESIDENTIAL_TABLE   = LOW_DENSITY_RESIDENTIAL
-     HIGH_DENSITY_RESIDENTIAL_TABLE   = HIGH_DENSITY_RESIDENTIAL
-    HIGH_INTENSITY_INDUSTRIAL_TABLE   = HIGH_INTENSITY_INDUSTRIAL
+                        LCZ_1_TABLE   = LCZ_1
+                        LCZ_2_TABLE   = LCZ_2
+                        LCZ_3_TABLE   = LCZ_3
+                        LCZ_4_TABLE   = LCZ_4
+                        LCZ_5_TABLE   = LCZ_5
+                        LCZ_6_TABLE   = LCZ_6
+                        LCZ_7_TABLE   = LCZ_7
+                        LCZ_8_TABLE   = LCZ_8
+                        LCZ_9_TABLE   = LCZ_9
+                        LCZ_10_TABLE  = LCZ_10
+                        LCZ_11_TABLE  = LCZ_11
 
      CH2OP_TABLE(1:NVEG)  = CH2OP(1:NVEG)
      DLEAF_TABLE(1:NVEG)  = DLEAF(1:NVEG)
@@ -9895,17 +9900,6 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
     REAL, DIMENSION(NCROP) :: GDDS3
     REAL, DIMENSION(NCROP) :: GDDS4
     REAL, DIMENSION(NCROP) :: GDDS5
-    REAL, DIMENSION(NCROP) :: C3PSN   ! this session copied from stomata parameters Zhe Zhang 2020-07-13
-    REAL, DIMENSION(NCROP) :: KC25
-    REAL, DIMENSION(NCROP) :: AKC
-    REAL, DIMENSION(NCROP) :: KO25
-    REAL, DIMENSION(NCROP) :: AKO
-    REAL, DIMENSION(NCROP) :: AVCMX
-    REAL, DIMENSION(NCROP) :: VCMX25
-    REAL, DIMENSION(NCROP) :: BP
-    REAL, DIMENSION(NCROP) :: MP
-    REAL, DIMENSION(NCROP) :: FOLNMX
-    REAL, DIMENSION(NCROP) :: QE25    ! until here
  INTEGER, DIMENSION(NCROP) :: C3C4
     REAL, DIMENSION(NCROP) :: AREF
     REAL, DIMENSION(NCROP) :: PSNRF
@@ -9932,20 +9926,12 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
     REAL, DIMENSION(NCROP) :: STPT_S1,STPT_S2,STPT_S3,STPT_S4,STPT_S5,STPT_S6,STPT_S7,STPT_S8
     REAL, DIMENSION(NCROP) :: RTPT_S1,RTPT_S2,RTPT_S3,RTPT_S4,RTPT_S5,RTPT_S6,RTPT_S7,RTPT_S8
     REAL, DIMENSION(NCROP) :: GRAINPT_S1,GRAINPT_S2,GRAINPT_S3,GRAINPT_S4,GRAINPT_S5,GRAINPT_S6,GRAINPT_S7,GRAINPT_S8
-    REAL, DIMENSION(NCROP) :: LFCT_S1,LFCT_S2,LFCT_S3,LFCT_S4,LFCT_S5,LFCT_S6,LFCT_S7,LFCT_S8
-    REAL, DIMENSION(NCROP) :: STCT_S1,STCT_S2,STCT_S3,STCT_S4,STCT_S5,STCT_S6,STCT_S7,STCT_S8
-    REAL, DIMENSION(NCROP) :: RTCT_S1,RTCT_S2,RTCT_S3,RTCT_S4,RTCT_S5,RTCT_S6,RTCT_S7,RTCT_S8
     REAL, DIMENSION(NCROP) :: BIO2LAI
 
 
-!    NAMELIST / noahmp_crop_parameters /DEFAULT_CROP,   PLTDAY,     HSDAY,  PLANTPOP,      IRRI,  GDDTBASE,   GDDTCUT,     GDDS1,     GDDS2, &
-!                                             GDDS3,     GDDS4,     GDDS5,      C3C4,      AREF,     PSNRF,     I2PAR,   TASSIM0, &
-!                                           TASSIM1,   TASSIM2,         K,      EPSI,     Q10MR,   FOLN_MX,   LEFREEZ,            &
-! Zhe Zhang 2020-07-13
-    NAMELIST / noahmp_crop_parameters /DEFAULT_CROP,   PLTDAY,     HSDAY,  PLANTPOP,      IRRI,  GDDTBASE,   GDDTCUT,     GDDS1,  GDDS2,  GDDS3,     GDDS4,     GDDS5, & !
-                                              C3PSN,     KC25,       AKC,      KO25,       AKO,     AVCMX,    VCMX25,        BP,     MP, FOLNMX,      QE25, &  ! parameters added from stomata
-                                               C3C4,     AREF,     PSNRF,     I2PAR,   TASSIM0,                                               &
-                                        TASSIM1,   TASSIM2,         K,      EPSI,     Q10MR,   FOLN_MX,   LEFREEZ,               & 
+    NAMELIST / noahmp_crop_parameters /DEFAULT_CROP,   PLTDAY,     HSDAY,  PLANTPOP,      IRRI,  GDDTBASE,   GDDTCUT,     GDDS1,     GDDS2, &
+                                             GDDS3,     GDDS4,     GDDS5,      C3C4,      AREF,     PSNRF,     I2PAR,   TASSIM0, &
+                                           TASSIM1,   TASSIM2,         K,      EPSI,     Q10MR,   FOLN_MX,   LEFREEZ,            &
                                         DILE_FC_S1,DILE_FC_S2,DILE_FC_S3,DILE_FC_S4,DILE_FC_S5,DILE_FC_S6,DILE_FC_S7,DILE_FC_S8, &
                                         DILE_FW_S1,DILE_FW_S2,DILE_FW_S3,DILE_FW_S4,DILE_FW_S5,DILE_FW_S6,DILE_FW_S7,DILE_FW_S8, &
                                             FRA_GR,                                                                              &
@@ -9957,9 +9943,6 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
                                            STPT_S1,   STPT_S2,   STPT_S3,   STPT_S4,   STPT_S5,   STPT_S6,   STPT_S7,   STPT_S8, &
                                            RTPT_S1,   RTPT_S2,   RTPT_S3,   RTPT_S4,   RTPT_S5,   RTPT_S6,   RTPT_S7,   RTPT_S8, &
                                         GRAINPT_S1,GRAINPT_S2,GRAINPT_S3,GRAINPT_S4,GRAINPT_S5,GRAINPT_S6,GRAINPT_S7,GRAINPT_S8, &
-                                           LFCT_S1,LFCT_S2,LFCT_S3,LFCT_S4,LFCT_S5,LFCT_S6,LFCT_S7,LFCT_S8,                      &
-                                           STCT_S1,STCT_S2,STCT_S3,STCT_S4,STCT_S5,STCT_S6,STCT_S7,STCT_S8,                      &
-                                           RTCT_S1,RTCT_S2,RTCT_S3,RTCT_S4,RTCT_S5,RTCT_S6,RTCT_S7,RTCT_S8,                      &
                                            BIO2LAI
 
 
@@ -9976,17 +9959,6 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
         GDDS3_TABLE     = -1.E36
         GDDS4_TABLE     = -1.E36
         GDDS5_TABLE     = -1.E36
-       C3PSNI_TABLE     = -1.E36 ! parameter from PSN copied from stomata ! Zhe Zhang 2020-07-13
-        KC25I_TABLE     = -1.E36
-         AKCI_TABLE     = -1.E36
-        KO25I_TABLE     = -1.E36
-         AKOI_TABLE     = -1.E36
-       AVCMXI_TABLE     = -1.E36
-      VCMX25I_TABLE     = -1.E36
-          BPI_TABLE     = -1.E36
-          MPI_TABLE     = -1.E36
-      FOLNMXI_TABLE     = -1.E36
-        QE25I_TABLE     = -1.E36 ! ends here
          C3C4_TABLE     = -99999
          AREF_TABLE     = -1.E36
         PSNRF_TABLE     = -1.E36
@@ -10013,9 +9985,6 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
          STPT_TABLE     = -1.E36
          RTPT_TABLE     = -1.E36
       GRAINPT_TABLE     = -1.E36
-         LFCT_TABLE     = -1.E36 ! convert start
-         STCT_TABLE     = -1.E36
-         RTCT_TABLE     = -1.E36 ! convert end
       BIO2LAI_TABLE     = -1.E36
 
 
@@ -10046,17 +10015,6 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
         GDDS3_TABLE      = GDDS3
         GDDS4_TABLE      = GDDS4
         GDDS5_TABLE      = GDDS5
-       C3PSNI_TABLE(1:5) = C3PSN(1:5)  ! parameters from stomata ! Zhe Zhang 2020-07-13
-        KC25I_TABLE(1:5) = KC25(1:5)
-         AKCI_TABLE(1:5) = AKC(1:5)
-        KO25I_TABLE(1:5) = KO25(1:5)
-         AKOI_TABLE(1:5) = AKO(1:5)
-       AVCMXI_TABLE(1:5) = AVCMX(1:5)
-      VCMX25I_TABLE(1:5) = VCMX25(1:5)
-          BPI_TABLE(1:5) = BP(1:5)
-          MPI_TABLE(1:5) = MP(1:5)
-      FOLNMXI_TABLE(1:5) = FOLNMX(1:5)
-        QE25I_TABLE(1:5) = QE25(1:5)   ! ends here
          C3C4_TABLE      = C3C4
          AREF_TABLE      = AREF
         PSNRF_TABLE      = PSNRF
@@ -10146,30 +10104,6 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
       GRAINPT_TABLE(:,6) = GRAINPT_S6
       GRAINPT_TABLE(:,7) = GRAINPT_S7
       GRAINPT_TABLE(:,8) = GRAINPT_S8
-         LFCT_TABLE(:,1) = LFCT_S1
-         LFCT_TABLE(:,2) = LFCT_S2
-         LFCT_TABLE(:,3) = LFCT_S3
-         LFCT_TABLE(:,4) = LFCT_S4
-         LFCT_TABLE(:,5) = LFCT_S5
-         LFCT_TABLE(:,6) = LFCT_S6
-         LFCT_TABLE(:,7) = LFCT_S7
-         LFCT_TABLE(:,8) = LFCT_S8
-         STCT_TABLE(:,1) = STCT_S1
-         STCT_TABLE(:,2) = STCT_S2
-         STCT_TABLE(:,3) = STCT_S3
-         STCT_TABLE(:,4) = STCT_S4
-         STCT_TABLE(:,5) = STCT_S5
-         STCT_TABLE(:,6) = STCT_S6
-         STCT_TABLE(:,7) = STCT_S7
-         STCT_TABLE(:,8) = STCT_S8
-         RTCT_TABLE(:,1) = RTCT_S1
-         RTCT_TABLE(:,2) = RTCT_S2
-         RTCT_TABLE(:,3) = RTCT_S3
-         RTCT_TABLE(:,4) = RTCT_S4
-         RTCT_TABLE(:,5) = RTCT_S5
-         RTCT_TABLE(:,6) = RTCT_S6
-         RTCT_TABLE(:,7) = RTCT_S7
-         RTCT_TABLE(:,8) = RTCT_S8
       BIO2LAI_TABLE      = BIO2LAI
 
   end subroutine read_mp_crop_parameters

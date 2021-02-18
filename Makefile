@@ -229,9 +229,7 @@ em_quarter_ss : wrf
 	( cd test/em_quarter_ss ; /bin/rm -f kernels.asc_s_0_03_0_9 ; ln -s ../../run/kernels.asc_s_0_03_0_9 . )
 	( cd test/em_quarter_ss ; /bin/rm -f kernels_z.asc ; ln -s ../../run/kernels_z.asc . )
 	( cd test/em_quarter_ss ; /bin/rm -f masses.asc ; ln -s ../../run/masses.asc . )
-	( cd test/em_quarter_ss ; /bin/rm -f termvels.asc ; ln -s ../../run/termvels.asc . ; \
-		ln -sf ../../run/RRTM_DATA . ; \
-		ln -sf ../../run/p3* . ) 
+	( cd test/em_quarter_ss ; /bin/rm -f termvels.asc ; ln -s ../../run/termvels.asc . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -332,9 +330,7 @@ em_b_wave : wrf
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_b_wave ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_b_wave ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
-	( cd test/em_b_wave ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
-		ln -sf ../../run/RRTM_DATA . ; \
-		ln -sf ../../run/p3* . ) 
+	( cd test/em_b_wave ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) 
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -402,9 +398,7 @@ em_seabreeze2d_x : wrf
 	( cd test/em_seabreeze2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_seabreeze2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
 		ln -sf ../../run/LANDUSE.TBL . ; \
-		ln -sf ../../run/RRTM_DATA . ; \
-		ln -sf ../../run/wind-turbine-1.tbl . ; \
-		ln -sf ../../run/p3* . )
+		ln -sf ../../run/RRTM_DATA . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -437,13 +431,11 @@ em_convrad : wrf
 	( cd test/em_convrad ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_convrad ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
 		ln -sf ../../run/LANDUSE.TBL . ; \
-		ln -sf ../../run/RRTM_DATA . ; \
 		ln -sf ../../run/RRTMG_LW_DATA . ; \
 		ln -sf ../../run/RRTMG_SW_DATA . ; \
 		ln -sf ../../run/ozone.formatted . ; \
 		ln -sf ../../run/ozone_lat.formatted . ; \
-		ln -sf ../../run/ozone_plev.formatted . ; \
-		ln -sf ../../run/p3* . ) 
+		ln -sf ../../run/ozone_plev.formatted . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -460,9 +452,7 @@ em_tropical_cyclone : wrf
 	( cd test/em_tropical_cyclone ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_tropical_cyclone ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_tropical_cyclone ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
-		ln -sf ../../run/LANDUSE.TBL . ; \
-		ln -sf ../../run/RRTM_DATA . ; \
-		ln -sf ../../run/p3* . ) 
+		ln -sf ../../run/LANDUSE.TBL . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -496,12 +486,11 @@ em_scm_xy : wrf
 	( cd test/em_scm_xy ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_scm_xy ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_scm_xy ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
-		ln -sf ../../run/LANDUSE.TBL . ; \
-		ln -sf ../../run/VEGPARM.TBL . ; \
-		ln -sf ../../run/SOILPARM.TBL . ; \
 		ln -sf ../../run/GENPARM.TBL . ; \
-		ln -sf ../../run/RRTM_DATA . ; \
-		ln -sf ../../run/p3* . ) 
+		ln -sf ../../run/LANDUSE.TBL . ; \
+		ln -sf ../../run/SOILPARM.TBL . ; \
+		ln -sf ../../run/VEGPARM.TBL . ; \
+		ln -sf ../../run/RRTM_DATA . ) 
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \

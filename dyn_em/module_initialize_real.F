@@ -69,6 +69,8 @@ CONTAINS
    )
 
       USE module_optional_input
+      USE module_radiation_driver, ONLY: cal_cldfra3
+      USE module_dm, ONLY : wrf_dm_max_real
       IMPLICIT NONE
 
       !  Input space and data.  No gridded meteorological data has been stored, though.
@@ -120,6 +122,13 @@ CONTAINS
 
       INTEGER :: auto_levels_opt
       REAL :: max_dz, dzbot, dzstretch_s, dzstretch_u, z1, airmass
+
+      INTEGER:: i_end, j_end
+      REAL, ALLOCATABLE, DIMENSION(:):: temp_P, temp_T, temp_R, temp_Dz
+      REAL, ALLOCATABLE, DIMENSION(:):: temp_Qv, temp_Qc, temp_Qi, temp_Qs
+      REAL, ALLOCATABLE, DIMENSION(:):: temp_CF, temp_Nc, temp_Ni
+      REAL:: max_relh, temp_xland, gridkm
+      LOGICAL :: debug_flag = .FALSE.
 
       REAL :: dclat
 
@@ -4331,6 +4340,124 @@ endif
          enddo
          enddo
       ENDIF
+
+!+---+-----------------------------------------------------------------+
+!..We can consider that in circumstance of a 'cold start' we can make
+!.. an attempt to insert some initial clouds to get a better starting
+!.. radiation representation due to clouds using the icloud3 cloud fraction
+!.. scheme.
+!+---+-----------------------------------------------------------------+
+
+      if (config_flags%insert_init_cloud .AND.                          &
+                    (P_QC .gt. PARAM_FIRST_SCALAR .AND.                 &
+                     P_QI .gt. PARAM_FIRST_SCALAR)) then
+
+         ALLOCATE(temp_P(kts:kte-1))
+         ALLOCATE(temp_Dz(kts:kte-1))
+         ALLOCATE(temp_T(kts:kte-1))
+         ALLOCATE(temp_R(kts:kte-1))
+         ALLOCATE(temp_Qv(kts:kte-1))
+         ALLOCATE(temp_Qc(kts:kte-1))
+         ALLOCATE(temp_Nc(kts:kte-1))
+         ALLOCATE(temp_Qi(kts:kte-1))
+         ALLOCATE(temp_Ni(kts:kte-1))
+         ALLOCATE(temp_Qs(kts:kte-1))
+         ALLOCATE(temp_CF(kts:kte-1))
+
+         i_end = MIN(ite,ide-1)
+         j_end = MIN(jte,jde-1)
+         max_relh = 1.5
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+         max_relh = wrf_dm_max_real ( MAXVAL(grid%u_1(its:i_end,:,jts:j_end)) ) 
+#else
+         max_relh = MAXVAL ( grid%u_1(its:i_end,:,jts:j_end) )
+#endif
+         max_relh = max_relh*0.01
+
+         gridkm = SQRT(config_flags%dx*config_flags%dy)*0.001
+
+         !..As it occurs up above, temporarily utilizing the v_1 variable,
+         !.. to hold temperature, which it does when time_loop=0.
+
+         IF ( internal_time_loop .GT. 1 ) THEN
+            grid%v_1 = grid%t_2+t0
+            CALL theta_to_t ( grid%v_1 , grid%p_hyd  , p00 , &
+                              ids , ide , jds , jde , kds , kde , &
+                              ims , ime , jms , jme , kms , kme , &
+                              its , ite , jts , jte , kts , kte )
+         ENDIF
+
+         do j = jts, j_end
+         do i = its, i_end
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+            debug_flag = .false.
+!           if (i.eq.9 .and. j.eq.9) debug_flag = .true.
+
+            temp_xland = grid%xland(i,j)
+            if (grid%lakemask(i,j) .eq. 1) temp_xland = 1
+            do k = kts, kte-1
+               temp_Dz(k) = (grid%ph_2(i,k+1,j)+grid%phb(i,k+1,j) - (grid%ph_2(i,k,j)+grid%phb(i,k,j)))/g
+               temp_P(k) = grid%p_hyd(i,k,j)
+               temp_T(k) = grid%v_1(i,k,j)         ! Around line num 1800 v_1 used to hold temperature.
+               temp_R(k) = 1./grid%alt(i,k,j)
+               temp_Qv(k) = moist(i,k,j,P_QV)
+               temp_Qc(k) = MAX(0., moist(i,k,j,P_QC))
+               temp_Qi(k) = MAX(0., moist(i,k,j,P_QI))
+               if (P_QS .gt. 1) then
+                  temp_Qs(k) = MAX(0., moist(i,k,j,P_QS))
+               else
+                  temp_Qs(k) = 0.
+               endif
+               if (P_QNI .gt. 1) then
+                  temp_Ni(k) = MAX(0., scalar(i,k,j,P_QNI))
+               else
+                  temp_Ni(k) = 0.
+               endif
+               if (P_QNC .gt. 1) then
+                  temp_Nc(k) = MAX(0., scalar(i,k,j,P_QNC))
+               else
+                  temp_Nc(k) = 0.
+               endif
+               temp_CF(k) = 0.
+            enddo
+
+            call cal_cldfra3(temp_CF,temp_Qv,temp_Qc,temp_Qi,temp_Qs,   &
+     &                temp_Dz, temp_P, temp_T, temp_xland, gridkm,      &
+     &                config_flags%insert_init_cloud, max_relh,         &
+     &                kts, kte-1, debug_flag)
+
+            do k = kts, kte-1
+               grid%cldfra(i,k,j) = temp_CF(k)
+            enddo
+
+            if (debug_flag) then
+            do k = kts, kte-1
+              write(*,*) ' DEBUG_column: ', temp_P(k), temp_T(k), temp_Qv(k), temp_Qc(k), temp_Qi(k), moist(i,k,j,P_QC), moist(i,k,j,P_QI)
+            enddo
+            endif
+
+            do k = kts, kte-1
+               moist(i,k,j,P_QV) = MAX(temp_Qv(k), moist(i,k,j,P_QV)) 
+               moist(i,k,j,P_QC) = temp_Qc(k)
+               moist(i,k,j,P_QI) = temp_Qi(k)
+            enddo
+
+         enddo
+         enddo
+
+         DEALLOCATE(temp_P)
+         DEALLOCATE(temp_Dz)
+         DEALLOCATE(temp_T)
+         DEALLOCATE(temp_R)
+         DEALLOCATE(temp_Qv)
+         DEALLOCATE(temp_Qc)
+         DEALLOCATE(temp_Nc)
+         DEALLOCATE(temp_Qi)
+         DEALLOCATE(temp_Ni)
+         DEALLOCATE(temp_Qs)
+         DEALLOCATE(temp_CF)
+
+      endif
 
 !+---+-----------------------------------------------------------------+
 !..Let us ensure that double-moment microphysics variables have numbers

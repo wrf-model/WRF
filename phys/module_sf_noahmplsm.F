@@ -416,7 +416,7 @@ contains
                    QC      , SOLDN   , LWDN    ,                               & ! IN : Forcing
 	           PRCPCONV, PRCPNONC, PRCPSHCV, PRCPSNOW, PRCPGRPL, PRCPHAIL, & ! IN : Forcing
                    TBOT    , CO2AIR  , O2AIR   , FOLN    , FICEOLD , ZLVL    , & ! IN : Forcing
-                   IRRFRA  , SIFAC   , MIFAC   , FIFAC   , LLANDUSE,           & ! IN : Irrigation: fractions
+                   IRRFRA  , SIFRA   , MIFRA   , FIFRA   , LLANDUSE,           & ! IN : Irrigation: fractions
                    ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
                    STC     , SH2O    , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 
                    CANLIQ  , CANICE  , TV      , TG      , QSFC    , QSNOW   , & ! IN/OUT : 
@@ -676,9 +676,9 @@ contains
 
 ! irrigation variables 
   REAL                        , INTENT(IN)       :: IRRFRA         ! irrigation fraction
-  REAL                        , INTENT(INOUT)    :: SIFAC          ! sprinkler irrigation fraction (inout, but only in)
-  REAL                        , INTENT(INOUT)    :: MIFAC          ! micro irrigation fraction
-  REAL                        , INTENT(INOUT)    :: FIFAC          ! flood irrigation fraction   
+  REAL                        , INTENT(IN)       :: SIFRA          ! sprinkler irrigation fraction
+  REAL                        , INTENT(IN)       :: MIFRA          ! micro irrigation fraction
+  REAL                        , INTENT(IN)       :: FIFRA          ! flood irrigation fraction   
   INTEGER                     , INTENT(INOUT)    :: IRCNTSI        ! irrigation event number, Sprinkler
   INTEGER                     , INTENT(INOUT)    :: IRCNTMI        ! irrigation event number, Micro
   INTEGER                     , INTENT(INOUT)    :: IRCNTFI        ! irrigation event number, Flood 
@@ -691,7 +691,10 @@ contains
   REAL                        , INTENT(INOUT)    :: FIRR           ! irrigation:latent heating due to sprinkler evaporation [w/m2]
   REAL                        , INTENT(INOUT)    :: EIRR           ! evaporation of irrigation water to evaporation,sprinkler [mm/s]
   CHARACTER(LEN=256)          , INTENT(IN)       :: LLANDUSE       ! landuse data name (USGS or MODIS_IGBP)
-  REAL                                           :: IREVPLOS ! loss of irrigation water to evaporation,sprinkler [m/timestep]
+  REAL                                           :: IREVPLOS       ! loss of irrigation water to evaporation,sprinkler [m/timestep]
+  REAL                                           :: SIFAC          ! sprinkler irrigation fraction (local)
+  REAL                                           :: MIFAC          ! micro irrigation fraction (local)
+  REAL                                           :: FIFAC          ! flood irrigation fraction (local)
 
 ! outputs
   REAL                          , INTENT(OUT)    :: NEE    !net ecosys exchange (g/m2/s CO2)
@@ -802,6 +805,10 @@ contains
      ELSE IF ( TRIM(LLANDUSE) == "MODIFIED_IGBP_MODIS_NOAH") THEN
          IF(VEGTYP == 12 .OR. VEGTYP == 14) CROPLU = .TRUE.
      END IF
+
+     SIFAC = SIFRA
+     MIFAC = MIFRA
+     FIFAC = FIFRA
 
 ! If OPT_IRRM = 0 and if methods are unknown for certain area, then use sprinkler irrigation method
      IF((OPT_IRRM .EQ. 0) .AND. (SIFAC .EQ. 0.) .AND. (MIFAC .EQ. 0.) .AND. (FIFAC .EQ. 0.) &

@@ -118,7 +118,7 @@ CONTAINS
                          WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY, & ! Optional Noah-MP
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
                          GRAINXY, GDDXY,                                  & ! Optional Noah-MP
-                         croptype, cropcat,                      &           ! Noah-MP Crop model
+                         croptype, cropcat,                               & ! Noah-MP Crop model
                          iopt_crop,                                       & 
                          iopt_irr, iopt_irrm,                             &   
                          IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,     &   ! Optional Noah-MP

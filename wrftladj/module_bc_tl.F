@@ -2769,10 +2769,10 @@ SUBROUTINE G_FLOW_DEP_BDY_QNN(field, fieldd, u, v, config_flags, &
 END SUBROUTINE G_FLOW_DEP_BDY_QNN
 
 !---------------------------------------------ntu3m---------------------------
-   SUBROUTINE g_flow_dep_bdy_ntu(field,g_field,u,v,config_flags,spec_zone, &
-                                 ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,  &
-                                 kms,kme,ips,ipe,jps,jpe,kps,kpe,its,ite,  &
-                                 jts,jte,kts,kte)
+   SUBROUTINE g_flow_dep_bdy_fixed_inflow(field,g_field,u,v,config_flags, &
+                                 spec_zone,ids,ide,jds,jde,kds,kde,ims,   &
+                                 ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps, &
+                                 kpe,its,ite,jts,jte,kts,kte)
 !-----------------------------------------------------------------------------
       IMPLICIT NONE
 
@@ -2883,7 +2883,7 @@ END SUBROUTINE G_FLOW_DEP_BDY_QNN
       ENDIF
    ENDIF
 
-   END SUBROUTINE g_flow_dep_bdy_ntu
+   END SUBROUTINE g_flow_dep_bdy_fixed_inflow
 !-----------------------------------------------ntu3m----------------------------
 
 END MODULE g_module_bc

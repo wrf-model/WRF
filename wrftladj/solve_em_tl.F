@@ -2748,7 +2748,7 @@ BENCH_END(g_tracer_adv_tim)
 
            IF( config_flags%specified ) THEN
               IF (is.EQ.P_QDCN.OR.is.EQ.P_QTCN.OR.is.EQ.P_QNIN) THEN     ! for ntu3m
-                 CALL g_flow_dep_bdy_ntu(scalar(ims,kms,jms,is),       &
+                 CALL g_flow_dep_bdy_fixed_inflow(scalar(ims,kms,jms,is),&
                                          g_scalar(ims,kms,jms,is),     &
                                          grid%ru_m,grid%rv_m,          &
                                          config_flags,grid%spec_zone,  &

@@ -2616,10 +2616,10 @@ CONTAINS
    END SUBROUTINE flow_dep_bdy_qnn
 
 !-------------------------for ntu3m-------------------------------------------------
-   SUBROUTINE flow_dep_bdy_ntu(field,u,v,config_flags,spec_zone,ids,   &
-                               ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,&
-                               kme,ips,ipe,jps,jpe,kps,kpe,its,ite,jts,&
-                               jte,kts,kte)
+   SUBROUTINE flow_dep_bdy_fixed_inflow(field,u,v,config_flags,        &
+                               spec_zone,ids,ide,jds,jde,kds,kde,ims,  &
+                               ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps,&
+                               kpe,its,ite,jts,jte,kts,kte)
 !-------------------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,  &
@@ -2719,7 +2719,7 @@ CONTAINS
         ENDIF
       ENDIF
 
-   END SUBROUTINE flow_dep_bdy_ntu
+   END SUBROUTINE flow_dep_bdy_fixed_inflow
 !----------------------------for ntu3m--------------------------------------------
 
 !------------------------------------------------------------------------------

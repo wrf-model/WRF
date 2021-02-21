@@ -3339,10 +3339,10 @@ SUBROUTINE A_FLOW_DEP_BDY_QNN(field, fieldb, u, v, config_flags, &
 END SUBROUTINE A_FLOW_DEP_BDY_QNN
 
 !---------------------------------------ntu3m-------------------------
-   SUBROUTINE a_flow_dep_bdy_ntu(a_field,u,v,config_flags,spec_zone, &
-                                 ids,ide,jds,jde,kds,kde,ims,ime,jms,&
-                                 jme,kms,kme,ips,ipe,jps,jpe,kps,kpe,&
-                                 its,ite,jts,jte,kts,kte)
+   SUBROUTINE a_flow_dep_bdy_fixed_inflow(a_field,u,v,config_flags,  &
+                                 spec_zone,ids,ide,jds,jde,kds,kde,  &
+                                 ims,ime,jms,jme,kms,kme,ips,ipe,jps,&
+                                 jpe,kps,kpe,its,ite,jts,jte,kts,kte)
 !---------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme, &
@@ -3463,7 +3463,7 @@ END SUBROUTINE A_FLOW_DEP_BDY_QNN
          ENDDO
       ENDIF
 
-   END SUBROUTINE a_flow_dep_bdy_ntu
+   END SUBROUTINE a_flow_dep_bdy_fixed_inflow
 !--------------------------------------------------ntu3m-------------------------
 
 END MODULE a_module_bc

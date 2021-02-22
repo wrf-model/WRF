@@ -57,7 +57,7 @@
 ! C. He 12/17/2020: optimized MFSNO values dependent on land type based on evaluation with SNOTEL SWE and MODIS SCF, surface albedo
  MFSNO =  4.00,  3.00,  3.00,  3.00,  4.00,  4.00,  2.00,  2.00,  2.00,  2.00,  1.00,  1.00,  1.00,  1.00,  1.00,  3.00,  3.00,  3.00,  3.00,  3.50,  3.50,  3.50,  3.50,  2.50,  3.50,  3.50,  3.50,
 ! C. He 12/17/2020: optimized snow cover factor (m) in SCF formulation to replace original constant 2.5*z0,z0=0.002m, based on evaluation with SNOTEL SWE and MODIS SCF, surface albedo
- SCFFAC= 0.021, 0.007, 0.007, 0.007, 0.013, 0.013, 0.010, 0.009, 0.008, 0.010, 0.005, 0.005, 0.005, 0.005, 0.005, 0.015, 0.010, 0.010, 0.008, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015,  
+ SCFFAC= 0.042, 0.014, 0.014, 0.014, 0.026, 0.026, 0.020, 0.018, 0.016, 0.020, 0.008, 0.008, 0.008, 0.008, 0.008, 0.030, 0.020, 0.020, 0.016, 0.030, 0.030, 0.030, 0.030, 0.030, 0.030, 0.030, 0.030,  
 
  ! Row 1:  Vis
  ! Row 2:  Near IR
@@ -205,7 +205,7 @@
 ! C. He 12/17/2020: optimized MFSNO values dependent on land type based on evaluation with SNOTEL SWE and MODIS SCF, surface albedo
  MFSNO =  1.00,   1.00,   1.00,   1.00,   1.00,   2.00,   2.00,   2.00,   2.00,   2.00,   3.00,   3.00,   4.00,   4.00,   2.50,   3.00,   3.00,   3.50,   3.50,   3.50,
 ! C. He 12/17/2020: optimized snow cover factor (m) in SCF formulation to replace original constant 2.5*z0,z0=0.002m, based on evaluation with SNOTEL SWE and MODIS SCF, surface albedo
- SCFFAC = 0.005, 0.005,  0.005,  0.005,  0.005,  0.008,  0.008,  0.010,  0.010,  0.010,  0.010,  0.007,  0.021,  0.013,  0.015,  0.008,  0.015,  0.015,  0.015,  0.015,
+ SCFFAC = 0.008, 0.008,  0.008,  0.008,  0.008,  0.016,  0.016,  0.020,  0.020,  0.020,  0.020,  0.014,  0.042,  0.026,  0.030,  0.016,  0.030,  0.030,  0.030,  0.030,
 
  ! Row 1:  Vis
  ! Row 2:  Near IR

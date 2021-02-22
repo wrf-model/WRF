@@ -142,7 +142,7 @@ MODULE MODULE_SF_NOAHMPLSM
 		      !   2 -> BATS: when SFCTMP<TFRZ+2.2 
 		      !   3 -> SFCTMP < TFRZ
 		      !   4 -> Use WRF microphysics output
-                      !   5 -> Use wetbulb temperature (Wang et al., 2019 GRL) C.He, 12/18/2020
+		      !   5 -> Use wetbulb temperature (Wang et al., 2019 GRL) C.He, 12/18/2020
  
   INTEGER :: OPT_TBOT ! options for lower boundary condition of soil temperature
                       !   1 -> zero heat flux from bottom (ZBOT and TBOT not used)
@@ -4364,9 +4364,7 @@ ENDIF   ! CROPTYPE == 0
 
        TMPRB  = CWPC*50. / (1. - EXP(-CWPC/2.))
        RB     = TMPRB * SQRT(parameters%DLEAF/UC)
-       RB     = MIN(MAX(RB, 5.0),50.0) ! limit RB to 5~50
-!       RB     = MAX(RB,100.0)  ! typically RB<50,so this leads to constant RB of 100
-!       RB = 200
+       RB     = MIN(MAX(RB, 5.0),50.0) ! limit RB to 5-50, typically RB<50
 
   END SUBROUTINE RAGRB
 

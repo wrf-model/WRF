@@ -3767,6 +3767,17 @@ CONTAINS
                qvs(k) = qvsw - (qvsw-qvsi)*(-12.0-tc)/(-12.0+35.)
             endif
 
+            if (modify_qvapor) then
+               if (qc(k).gt.1.E-8) then
+                  qv(k) = MAX(qv(k), qvsw)
+                  qvs(k) = qvsw
+               endif
+               if (qc(k).le.1.E-8 .and. qi(k).ge.1.E-9) then
+                  qv(k) = MAX(qv(k), qvsi*1.005)    !..To ensure a tiny bit ice supersaturation
+                  qvs(k) = qvsi
+               endif
+            endif
+
             rh(k) = MAX(0.01, qv(k)/qvs(k))
             rhoa(k) = p(k)/(287.0*t(k))
          ENDDO
@@ -3781,14 +3792,13 @@ CONTAINS
       DO k = kts,kte
 
          delz = MAX(100., dz(k))
-         RH_00L = 0.65 + SQRT(1./(25.0+gridkm*gridkm*delz*0.01))
-         RH_00O = 0.81 + SQRT(1./(50.0+gridkm*gridkm*delz*0.01))
+         RH_00L = 0.53 + MIN(0.46,SQRT(1./(50.0+gridkm*gridkm*delz*0.01)))
+         RH_00O = 0.86 + MIN(0.13,SQRT(1./(50.0+gridkm*gridkm*delz*0.01)))
          RHUM = rh(k)
 
-         if (qc(k).gt.1.E-7 .or. qi(k).ge.1.E-7                         &
-     &                    .or. (qs(k).gt.1.E-6 .and. t(k).lt.273.)) then
+         if (qc(k).gt.1.E-6 .or. qi(k).ge.1.E-6                         &
+     &                    .or. (qs(k).gt.1.E-5 .and. t(k).lt.273.)) then
             CLDFRA(K) = 1.0
-            qvs(k) = qv(k)
          else
 
             IF ((XLAND-1.5).GT.0.) THEN                                  !--- Ocean
@@ -3800,36 +3810,36 @@ CONTAINS
             tc = t(k) - 273.15
             if (tc .lt. -12.0) RH_00 = RH_00L
 
-            if (tc .ge. 20.0) then
+            if (tc .ge. 29.0) then
                CLDFRA(K) = 0.0
             elseif (tc .ge. -12.0) then
                RHUM = MIN(rh(k), 1.0)
-               CLDFRA(K) = MAX(0., 1.0-SQRT((1.005-RHUM)/(1.005-RH_00)))
+               CLDFRA(K) = MAX(0., 1.0-SQRT((1.001-RHUM)/(1.001-RH_00)))
             else
                if (max_relh.gt.1.12 .or. (.NOT.(modify_qvapor)) ) then
 !..For HRRR model, the following look OK.
                   RHUM = MIN(rh(k), 1.45)
-                  RH_00 = RH_00 + (1.45-RH_00)*(-12.0-tc)/(-12.0+100.)
+                  RH_00 = RH_00 + (1.45-RH_00)*(-12.0-tc)/(-12.0+112.)
              if (RH_00 .ge. 1.5) then
               WRITE (dbg_msg,*) ' FATAL: RH_00 too large (1.5): ', RH_00, RH_00L, tc
               CALL wrf_error_fatal (dbg_msg)
              endif
-                  CLDFRA(K) = MAX(0., 1.0-SQRT((1.5-RHUM)/(1.5-RH_00)))
+                  CLDFRA(K) = MAX(0., 1.0-SQRT((1.46-RHUM)/(1.46-RH_00)))
                else
 !..but for the GFS model, RH is way lower.
                   RHUM = MIN(rh(k), 1.05)
-                  RH_00 = RH_00 + (1.05-RH_00)*(-12.0-tc)/(-12.0+100.)
+                  RH_00 = RH_00 + (1.05-RH_00)*(-12.0-tc)/(-12.0+112.)
              if (RH_00 .ge. 1.05) then
               WRITE (dbg_msg,*) ' FATAL: RH_00 too large (1.05): ', RH_00, RH_00L, tc
               CALL wrf_error_fatal (dbg_msg)
              endif
-                  CLDFRA(K) = MAX(0., 1.0-SQRT((1.05-RHUM)/(1.05-RH_00)))
+                  CLDFRA(K) = MAX(0., 1.0-SQRT((1.06-RHUM)/(1.06-RH_00)))
                endif
             endif
-            if (CLDFRA(K).gt.0.) CLDFRA(K) = MAX(0.01, MIN(CLDFRA(K),0.9))
+            if (CLDFRA(K).gt.0.) CLDFRA(K) = MAX(0.01, MIN(CLDFRA(K),0.95))
 
             if (debug_flag) then
-              WRITE (dbg_msg,*) 'DEBUG-GT: cloud fraction: ', RH_00, RHUM, CLDFRA(K)
+              WRITE (dbg_msg,*) 'DEBUG-GT: cloud fraction (k,RH_00, RHUM, CF): ',k,RH_00,RHUM,CLDFRA(K)
               CALL wrf_debug (150, dbg_msg)
             endif
 
@@ -3849,8 +3859,8 @@ CONTAINS
         WRITE (dbg_msg,*) 'DEBUG-GT:  Made-up fake profile of clouds'
         CALL wrf_debug (150, dbg_msg)
         do k = kte, kts, -1
-           write(dbg_msg,'(f7.2, 2x, f7.2, 2x, f6.4, 2x, f7.3, 2x,  f15.7, 2x, f15.7)') &
-     &          T(k)-273.15, P(k)*0.01, rh(k), cldfra(k)*100., qc(k)*1000.,qi(k)*1000.
+           write(dbg_msg,'(f7.2,2x,f7.2,2x,f6.4,2x,f7.3,x,f15.7,x,f15.7,x,f15.7)') &
+     &          T(k)-273.15, P(k)*0.01, rh(k), cldfra(k)*100., qc(k)*1000.,qi(k)*1000., qs(k)*1000.
            CALL wrf_debug (150, dbg_msg)
         enddo
       endif
@@ -3859,7 +3869,7 @@ CONTAINS
       if (modify_qvapor) then
          DO k = kts,kte
             if (cldfra(k).gt.0.20 .and. cldfra(k).lt.1.0) then
-               qv(k) = qvs(k)
+               qv(k) = MAX(qv(k),qvs(k))
             endif
          ENDDO
       endif
@@ -3886,16 +3896,18 @@ CONTAINS
 !..Local vars.
       REAL, DIMENSION(kts:kte):: theta
       REAL:: theta1, theta2, delz
-      INTEGER:: k, k2, k_tropo, k_m12C, k_cldb, k_cldt, kbot
+      INTEGER:: k, k2, k_tropo, k_m12C, k_cldb, k_cldt, kbot, k_p150
       LOGICAL:: in_cloud
       character*512 dbg_msg
 
 !+---+
 
       k_m12C = 0
+      k_p150 = 0
       DO k = kte, kts, -1
          theta(k) = T1d(k)*((100000.0/P1d(k))**(287.05/1004.))
          if (T1d(k)-273.16 .gt. -12.0 .and. P1d(k).gt.10100.0) k_m12C = MAX(k_m12C, k)
+         if (P1d(k).gt.14999.0 .and. k_p150.eq.0) k_p150 = k
       ENDDO
       if (k_m12C .le. kts) k_m12C = kts
 
@@ -3919,17 +3931,24 @@ CONTAINS
 !.. tropopause height, as would any other diagnostic, so ensure resulting
 !.. k_tropo level is above 700hPa.
 
-      DO k = kte-3, kts, -1
+      if ( (kte-k_p150) .lt. 3) k_p150 = kte-3
+      DO k = k_p150-2, kts, -1
          theta1 = theta(k)
          theta2 = theta(k+2)
-         delz = dz1d(k) + dz1d(k+1) + dz1d(k+2)
-         if ( ((((theta2-theta1)/delz) .lt. 10./1500. ) .AND.       &
-     &                 (P1d(k).gt.8500.)) .or. (P1d(k).gt.70000.) ) then
-            goto 86
-         endif
+         delz = 0.5*dz1d(k) + dz1d(k+1) + 0.5*dz1d(k+2)
+         if ( (((theta2-theta1)/delz).lt.10./1500.) .OR. P1d(k).gt.70000.) EXIT
       ENDDO
- 86   continue
       k_tropo = MAX(kts+2, MIN(k+2, kte-1))
+
+      if (k_tropo .gt. k_p150) then
+         DO k = kte-3, k_p150-2, -1
+            theta1 = theta(k)
+            theta2 = theta(k+2)
+            delz = 0.5*dz1d(k) + dz1d(k+1) + 0.5*dz1d(k+2)
+            if ( (((theta2-theta1)/delz).lt.10./1500.) .AND. P1d(k).gt.9500.) EXIT
+         ENDDO
+         k_tropo = MAX(k_p150-1, MIN(k+2, kte-1))
+      endif
 
       if (k_tropo.gt.kte-2) then
         WRITE (dbg_msg,*) 'DEBUG-GT: CAUTION, tropopause appears to be very high up: ', k_tropo
@@ -3950,19 +3969,20 @@ CONTAINS
          endif
       ENDDO
 
-!..We would like to prevent fractional clouds below LCL in idealized
-!.. situation with deep well-mixed convective PBL, that otherwise is
-!.. likely to get clouds in more realistic capping inversion layer.
+!..Be a bit more conservative with lower cloud fraction in scenario with
+!.. well-mixed convective boundary layer below LCL.
 
-      kbot = kts+2
+      kbot = kts+1
       DO k = kbot, k_m12C
-         if ( (theta(k)-theta(k-1)) .gt. 0.025E-3*Dz1d(k)) EXIT
+         if ( (theta(k)-theta(k-1)) .gt. 0.010E-3*Dz1d(k)) EXIT
       ENDDO
       kbot = MAX(kts+1, k-2)
       DO k = kts, kbot
-         if (cfr1d(k).gt.0.0 .and. cfr1d(k).lt.1.0) cfr1d(k) = 0.
+         if (cfr1d(k).gt.0.0 .and. cfr1d(k).lt.1.0) cfr1d(k) = MAX(0.01,0.5*cfr1d(k))
       ENDDO
-
+      DO k = kts,k_tropo
+         if (cfr1d(k).gt.0.0) kbot = MIN(k,kbot)
+      ENDDO
 
 !..Starting below tropo height, if cloud fraction greater than 1 percent,
 !.. compute an approximate total layer depth of cloud, determine a total 
@@ -4003,16 +4023,16 @@ CONTAINS
         CALL wrf_debug (150, dbg_msg)
       endif
             if (cfr1d(k_cldb).gt.0.and.cfr1d(k_cldb).lt.1.)             &
-     &               qi1d(k_cldb)=0.05*qvs1d(k_cldb)
+     &               qi1d(k_cldb)=qi1d(k_cldb)+0.05*qvs1d(k_cldb)*cfr1d(k_cldb)
             k = k_cldb
          endif
          k = k - 1
       ENDDO
 
 
-      k_cldb = k_m12C + 3
+      k_cldb = k_m12C + 5
       in_cloud = .false.
-      k = k_m12C + 2
+      k = k_m12C + 4
       DO WHILE (.not. in_cloud .AND. k.gt.kbot)
          k_cldt = 0
          if (cfr1d(k).ge.0.01) then
@@ -4039,7 +4059,7 @@ CONTAINS
             k = k_cldb
          elseif ((k_cldt - k_cldb + 1) .eq. 1) then
             if (cfr1d(k_cldb).gt.0.and.cfr1d(k_cldb).lt.1.)             &
-     &               qc1d(k_cldb)=0.05*qvs1d(k_cldb)
+     &               qc1d(k_cldb)=qc1d(k_cldb)+0.05*qvs1d(k_cldb)*cfr1d(k_cldb)
             k = k_cldb
          endif
          k = k - 1
@@ -4069,9 +4089,9 @@ CONTAINS
 !     print*, ' max_iwc = ', max_iwc, ' over DZ=',tdz
 
       do k = k1, k2
-         max_iwc = MAX(1.E-6, max_iwc - (qi(k)+qs(k)))
+         max_iwc = MAX(1.E-5, max_iwc - (qi(k)+qs(k)))
       enddo
-      max_iwc = MIN(1.E-3, max_iwc)
+      max_iwc = MIN(2.E-3, max_iwc)
 
       this_dz = 0.0
       do k = k1, k2
@@ -4081,7 +4101,7 @@ CONTAINS
             this_dz = this_dz + dz(k)
          endif
          this_iwc = max_iwc*this_dz/tdz
-         iwc = MAX(1.E-6, this_iwc*(1.-entr))
+         iwc = MAX(5.E-6, this_iwc*(1.-entr))
          if (cfr(k).gt.0.0.and.cfr(k).lt.1.0.and.T(k).ge.203.16) then
             qi(k) = qi(k) + cfr(k)*cfr(k)*iwc
          endif
@@ -4110,9 +4130,9 @@ CONTAINS
 !     print*, ' max_lwc = ', max_lwc, ' over DZ=',tdz
 
       do k = k1, k2
-         max_lwc = MAX(1.E-6, max_lwc - qc(k))
+         max_lwc = MAX(1.E-5, max_lwc - qc(k))
       enddo
-      max_lwc = MIN(1.E-3, max_lwc)
+      max_lwc = MIN(2.E-3, max_lwc)
 
       this_dz = 0.0
       do k = k1, k2
@@ -4122,7 +4142,7 @@ CONTAINS
             this_dz = this_dz + dz(k)
          endif
          this_lwc = max_lwc*this_dz/tdz
-         lwc = MAX(1.E-6, this_lwc*(1.-entr))
+         lwc = MAX(5.E-6, this_lwc*(1.-entr))
          if (cfr(k).gt.0.0.and.cfr(k).lt.1.0.and.T(k).ge.253.16) then
             qc(k) = qc(k) + cfr(k)*cfr(k)*lwc
          endif
@@ -4148,14 +4168,14 @@ CONTAINS
       lwp = 0.
       iwp = 0.
       do k = kts, kte
-         if (cfr(k).gt.0.0) then
+         if (cfr(k).gt.0.0 .and. cfr(k).lt.1.0) then
             lwp = lwp + qc(k)*Rho(k)*dz(k)
             iwp = iwp + qi(k)*Rho(k)*dz(k)
          endif
       enddo
 
-      if (lwp .gt. 1.5) then
-         xfac = 1.5/lwp
+      if (lwp .gt. 1.0) then
+         xfac = 1.0/lwp
          do k = kts, kte
             if (cfr(k).gt.0.0 .and. cfr(k).lt.1.0) then
                qc(k) = qc(k)*xfac
@@ -4163,8 +4183,8 @@ CONTAINS
          enddo
       endif
 
-      if (iwp .gt. 1.5) then
-         xfac = 1.5/iwp
+      if (iwp .gt. 1.0) then
+         xfac = 1.0/iwp
          do k = kts, kte
             if (cfr(k).gt.0.0 .and. cfr(k).lt.1.0) then
                qi(k) = qi(k)*xfac

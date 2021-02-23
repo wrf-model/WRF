@@ -16,7 +16,7 @@ CONTAINS
 
    SUBROUTINE diagnostics_driver ( grid, config_flags,                  &
                                    moist, chem, tracer, scalar,         &
-                                   th_phy, pi_phy, p_phy, rho_phy,      & 
+                                   th_phy, pi_phy, p_phy,               & 
                                    p8w, t8w, dz8w,                      &
                                    curr_secs, curr_secs2,               &
                                    diag_flag,                           &
@@ -117,7 +117,6 @@ CONTAINS
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme)            , INTENT(IN) :: th_phy  , &
                                                                            p_phy   , &
                                                                            pi_phy  , &
-                                                                           rho_phy , &
                                                                            dz8w    , &
                                                                            p8w     , &
                                                                            t8w
@@ -911,6 +910,7 @@ CONTAINS
                       ,s_zl  = grid%s_zl                                    &
                       ,td_zl = grid%td_zl                                   &
                       ,q_zl = grid%q_zl                                     &
+                      ,p_zl = grid%p_zl                                     &
                !  Dimension arguments
                       ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
@@ -947,7 +947,7 @@ CONTAINS
                          ,chem                                                &
                          ,th_phy , pi_phy , p_phy                             &
                          ,grid%u_phy , grid%v_phy                             &
-                         ,dz8w , p8w , t8w , rho_phy, grid%rho                &
+                         ,dz8w , p8w , t8w , grid%rho                         &
                          ,ids, ide, jds, jde, kds, kde                        &
                          ,ims, ime, jms, jme, kms, kme                        &
                          ,ips, ipe, jps, jpe, kps, kpe                        &

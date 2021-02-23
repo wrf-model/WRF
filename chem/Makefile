@@ -36,7 +36,6 @@ MODULES =                                 \
         module_bioemi_beis314.o           \
         module_chem_utilities.o           \
         module_cmu_dvode_solver.o         \
-        module_ctrans_aqchem.o            \
         module_data_cbmz.o                \
         module_data_cmu_bulkaqchem.o      \
         module_data_gocartchem.o          \
@@ -61,7 +60,6 @@ MODULES =                                 \
         module_gocart_drydep.o            \
         module_gocart_settling.o          \
         module_gocart_so2so4.o            \
-        module_HLaw.o                     \
         module_input_tracer_data.o        \
         module_interpolate.o              \
         module_mosaic_csuesat.o           \

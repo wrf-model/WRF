@@ -19,12 +19,19 @@ subroutine da_transfer_xatowrf(grid, config_flags)
    !
    !---------------------------------------------------------------------------
 
+#if (WRF_CHEM == 1)
+   USE module_state_description, ONLY : num_chem
+#endif
+
    implicit none
 
    type(domain), intent(inout)            :: grid
    type(grid_config_rec_type), intent(in) :: config_flags
 
    integer :: i, j, k
+#if (WRF_CHEM == 1)
+   integer :: ic
+#endif
 
    real    :: sdmd, s1md
 
@@ -705,7 +712,27 @@ subroutine da_transfer_xatowrf(grid, config_flags)
       grid%moist_btye = grid%moist_btye + model_grid%g_moist_btye
 
    ENDIF
+#else !! not var4d !!
+
+#if (WRF_CHEM == 1)
+      do ic = PARAM_FIRST_SCALAR, num_chem
+         do j=jts,jte
+            do i=its,ite
+               do k=kts, kte
+		if (grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic).lt.0.0) then
+                  grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic)
+		else
+                  grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic)
+		end if
+               end do
+            end do
+         end do
+      end do
+
 #endif
+
+#endif
+
    if (trace_use) call da_trace_exit("da_transfer_xatowrf")
 
 end subroutine da_transfer_xatowrf

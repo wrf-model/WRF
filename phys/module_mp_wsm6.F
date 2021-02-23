@@ -75,8 +75,8 @@ CONTAINS
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
-#ifdef WRF_CHEM
-                 ,evapprod, rainprod                               &
+#if ( WRF_CHEM == 1)
+                 ,wetscav_on, evapprod, rainprod                               &
 #endif
                                                                    )
 !-------------------------------------------------------------------
@@ -144,10 +144,12 @@ CONTAINS
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 ) 
   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), INTENT(INOUT) :: &
                                                       rainprod,   &
                                                       evapprod
+  LOGICAL, INTENT(IN) ::                              wetscav_on
+ 
 ! local variable
   REAL, DIMENSION( its:ite , kts:kte )                 ::         &
                                                       rainprod2d, &
@@ -199,8 +201,8 @@ CONTAINS
                     ,its,ite, jts,jte, kts,kte                     &
                     ,snow,snowncv                                  &
                     ,graupel,graupelncv                            &
-#ifdef WRF_CHEM
-                   ,rainprod2d, evapprod2d                        &
+#if ( WRF_CHEM == 1) 
+                    ,wetscav_on, rainprod2d, evapprod2d            &
 #endif
                                                                    )
          DO K=kts,kte
@@ -259,13 +261,15 @@ CONTAINS
           enddo   
         endif     ! has_reqc, etc...
 !+---+-----------------------------------------------------------------+
-#ifdef WRF_CHEM
-        do i=its,ite
-          do k=kts,kte
-            rainprod(i,k,j) = rainprod2d(i,k)
-            evapprod(i,k,j) = evapprod2d(i,k)
+#if( WRF_CHEM == 1 )
+        if( wetscav_on ) then
+          do i=its,ite
+            do k=kts,kte
+              rainprod(i,k,j) = rainprod2d(i,k)
+              evapprod(i,k,j) = evapprod2d(i,k)
+            enddo
           enddo
-        enddo
+        endif
 #endif
       ENDDO
   END SUBROUTINE wsm6
@@ -285,8 +289,8 @@ CONTAINS
                    ,its,ite, jts,jte, kts,kte                     &
                    ,snow,snowncv                                  &
                    ,graupel,graupelncv                            &
-#ifdef WRF_CHEM
-                   ,rainprod2d, evapprod2d                        &
+#if ( WRF_CHEM == 1 )
+                   ,wetscav_on, rainprod2d, evapprod2d            &
 #endif
                                                                   )
 !-------------------------------------------------------------------
@@ -380,10 +384,11 @@ CONTAINS
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1) 
   REAL, DIMENSION( its:ite , kts:kte ), INTENT(INOUT)  ::         &
                                                       rainprod2d, &
                                                       evapprod2d
+  LOGICAL, INTENT(IN) :: wetscav_on
 #endif
 
 ! LOCAL VAR
@@ -1508,9 +1513,11 @@ CONTAINS
       enddo
       enddo                  ! big loops
 
-#ifdef WRF_CHEM
-      rainprod2d = praut+pracw+praci+psaci+pgaci+psacw+pgacw+paacw+psaut
-      evapprod2d = -(prevp+psevp+pgevp+psdep+pgdep)
+#if( WRF_CHEM == 1 )
+      if( wetscav_on ) then
+        rainprod2d = praut+pracw+praci+psaci+pgaci+psacw+pgacw+paacw+psaut
+        evapprod2d = -(prevp+psevp+pgevp+psdep+pgdep)
+      endif
 #endif
 
   END SUBROUTINE wsm62d

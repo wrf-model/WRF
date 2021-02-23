@@ -17,8 +17,9 @@ implicit none
 contains
 
 subroutine read_reservoir_obs(domainId)
-   use module_namelist, only: nlst_rt
+  use config_base, only: nlst
    use netcdf
+   use module_hydro_stop, only: HYDRO_stop
 #ifdef MPP_LAND
    use module_mpp_land
 #endif
@@ -73,7 +74,7 @@ subroutine read_reservoir_obs(domainId)
 
    ! Check to ensure the namelist option for reading in the reservoir discharge data
    ! has been set to 1. If not, return back to the main calling program.
-   if(nlst_rt(domainId)%reservoir_data_ingest .eq. 0) then
+   if(nlst(domainId)%reservoir_data_ingest .eq. 0) then
        ! No reservoir realtime data requested. 
        return
    endif
@@ -82,7 +83,7 @@ subroutine read_reservoir_obs(domainId)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -96,9 +97,9 @@ subroutine read_reservoir_obs(domainId)
       missingFlag = 0
 
       ! We are on the I/O processor.
-      write(inFlnm,'(A,"/LAKEFILE_DISCHARGE_",A12,".nc")') nlst_rt(domainId)%reservoir_obs_dir,nlst_rt(domainId)%olddate(1:4)//&
-            nlst_rt(domainId)%olddate(6:7)//nlst_rt(domainId)%olddate(9:10)//&
-            nlst_rt(domainId)%olddate(12:13)//nlst_rt(domainId)%olddate(15:16)
+      write(inFlnm,'(A,"/LAKEFILE_DISCHARGE_",A12,".nc")') nlst(domainId)%reservoir_obs_dir,nlst(domainId)%olddate(1:4)//&
+            nlst(domainId)%olddate(6:7)//nlst(domainId)%olddate(9:10)//&
+            nlst(domainId)%olddate(12:13)//nlst(domainId)%olddate(15:16)
 
       ! Check to see if the file exists.
       INQUIRE(FILE=inFlnm,EXIST=file_exists)

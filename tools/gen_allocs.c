@@ -646,6 +646,9 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
             }
           }
         } else {
+
+  if (strcmp(fname,"chem_ic")==0)   continue ;  /* !!! add !!! */
+
 #ifdef USE_ALLOCATABLES
         fprintf(fp,
 "IF ( ALLOCATED( %s%s ) ) THEN \n", structname, fname ) ;

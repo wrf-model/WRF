@@ -3967,9 +3967,8 @@ endif
       !  Compute pressure similarly to how computed within model, with final Qv.
 
       !  Do a re-balance or not?  0 = NOPE
-
-      IF ( ( config_flags%rebalance .EQ. 0 ) .OR. &
-           ( ( config_flags%rebalance .EQ. 2 ) .AND.  ( config_flags%vert_refine_method .NE. 2 ) ) ) THEN
+      !  Note that rebalance must be 1 for vertical nesting
+      IF ( config_flags%rebalance .EQ. 0 ) THEN
 
           DO j = jts, min(jde-1,jte)
              DO k=kts,kte-1

@@ -26,13 +26,14 @@ module module_WRF_HYDRO
                  write_io_real, my_id, mpp_land_bcast_real1, IO_id, &
                 mpp_land_bcast_real, mpp_land_bcast_int1, mpp_land_init
     use module_CPL_LAND, only: CPL_LAND_INIT, cpl_outdate
+    use module_hydro_stop, only: HYDRO_stop
 #endif
     use module_HYDRO_drv, only: HYDRO_ini, HYDRO_exe
 
     use module_rt_data, only:  rt_domain
     use module_gw_gw2d_data, only:  gw2d
     use module_CPL_LAND, only: CPL_LAND_INIT, cpl_outdate
-    use module_namelist, only: nlst_rt
+    use config_base, only: nlst
     USE module_domain, ONLY : domain, domain_clock_get
     USE module_configure, ONLY : grid_config_rec_type
     !yw USE module_configure, only : config_flags
@@ -93,7 +94,7 @@ CONTAINS
         ntime = 1
 
     
-            nlst_rt(did)%dt = HYDRO_dt
+            nlst(did)%dt = HYDRO_dt
 
   
         if(.not. RT_DOMAIN(did)%initialized) then
@@ -102,22 +103,22 @@ CONTAINS
 
            !yw nlst_rt(did)%nsoil = config_flags%num_soil_layers
            !nlst_rt(did)%nsoil = model_config_rec%num_metgrid_soil_levels
-           nlst_rt(did)%nsoil = grid%num_soil_layers
+           nlst(did)%nsoil = grid%num_soil_layers
 
          
 #ifdef MPP_LAND
-           call mpp_land_bcast_int1 (nlst_rt(did)%nsoil)
+           call mpp_land_bcast_int1 (nlst(did)%nsoil)
 #endif
-           allocate(nlst_rt(did)%zsoil8(nlst_rt(did)%nsoil))
+           allocate(nlst(did)%zsoil8(nlst(did)%nsoil))
            if(grid%zs(1) <  0) then
-              nlst_rt(did)%zsoil8(1:nlst_rt(did)%nsoil) = grid%zs(1:nlst_rt(did)%nsoil)
+              nlst(did)%zsoil8(1:nlst(did)%nsoil) = grid%zs(1:nlst(did)%nsoil)
            else
-              nlst_rt(did)%zsoil8(1:nlst_rt(did)%nsoil) = -1*grid%zs(1:nlst_rt(did)%nsoil)
+              nlst(did)%zsoil8(1:nlst(did)%nsoil) = -1*grid%zs(1:nlst(did)%nsoil)
            endif
 
             CALL domain_clock_get( grid, current_timestr=cpl_outdate)
-            nlst_rt(did)%startdate(1:19) = cpl_outdate(1:19)
-            nlst_rt(did)%olddate(1:19) = cpl_outdate(1:19)
+            nlst(did)%startdate(1:19) = cpl_outdate(1:19)
+            nlst(did)%olddate(1:19) = cpl_outdate(1:19)
 
 
 #ifdef MPP_LAND
@@ -137,80 +138,80 @@ CONTAINS
 
 
 
-            if(nlst_rt(did)%sys_cpl .ne. 2) then
+            if(nlst(did)%sys_cpl .ne. 2) then
                call hydro_stop("In module_wrf_HYDRO.F wrf_cpl_HYDRO() - "// &
                                "sys_cpl should be 2.  Check hydro.namelist file.")
             endif
 
 
-            nlst_rt(did)%startdate(1:19) = cpl_outdate(1:19)
-            nlst_rt(did)%olddate(1:19) = cpl_outdate(1:19)
+            nlst(did)%startdate(1:19) = cpl_outdate(1:19)
+            nlst(did)%olddate(1:19) = cpl_outdate(1:19)
 
-            nlst_rt(did)%dt = HYDRO_dt
-            if(nlst_rt(did)%dtrt_ter .ge. HYDRO_dt) then
-               nlst_rt(did)%dtrt_ter = HYDRO_dt
+            nlst(did)%dt = HYDRO_dt
+            if(nlst(did)%dtrt_ter .ge. HYDRO_dt) then
+               nlst(did)%dtrt_ter = HYDRO_dt
                mm0 = 1
             else
-               mm = HYDRO_dt/nlst_rt(did)%dtrt_ter
-               if(mm*nlst_rt(did)%dtrt_ter.lt. HYDRO_dt) nlst_rt(did)%dtrt_ter = HYDRO_dt/mm
+               mm = HYDRO_dt/nlst(did)%dtrt_ter
+               if(mm*nlst(did)%dtrt_ter.lt. HYDRO_dt) nlst(did)%dtrt_ter = HYDRO_dt/mm
                mm0 = mm
             endif
 
-            dtrt_ter0 = nlst_rt(did)%dtrt_ter  
+            dtrt_ter0 = nlst(did)%dtrt_ter  
 
-            if(nlst_rt(did)%dtrt_ch .ge. HYDRO_dt) then
-               nlst_rt(did)%dtrt_ch = HYDRO_dt
+            if(nlst(did)%dtrt_ch .ge. HYDRO_dt) then
+               nlst(did)%dtrt_ch = HYDRO_dt
                mm0 = 1
             else
-               mm = HYDRO_dt/nlst_rt(did)%dtrt_ch
-               if(mm*nlst_rt(did)%dtrt_ch.lt. HYDRO_dt) nlst_rt(did)%dtrt_ch = HYDRO_dt/mm
+               mm = HYDRO_dt/nlst(did)%dtrt_ch
+               if(mm*nlst(did)%dtrt_ch.lt. HYDRO_dt) nlst(did)%dtrt_ch = HYDRO_dt/mm
                mm0 = mm
             endif
 
-            dtrt_ch0 = nlst_rt(did)%dtrt_ch  
+            dtrt_ch0 = nlst(did)%dtrt_ch  
         endif
 
-            if((mm0*nlst_rt(did)%dtrt_ter) .ne. HYDRO_dt) then   ! WRF model time step changed.
+            if((mm0*nlst(did)%dtrt_ter) .ne. HYDRO_dt) then   ! WRF model time step changed.
                if(dtrt_ter0 .ge. HYDRO_dt) then
-                  nlst_rt(did)%dtrt_ter = HYDRO_dt
+                  nlst(did)%dtrt_ter = HYDRO_dt
                   mm0 = 1
                else
                   mm = HYDRO_dt/dtrt_ter0
-                  if(mm*dtrt_ter0 .lt. HYDRO_dt) nlst_rt(did)%dtrt_ter = HYDRO_dt/mm
+                  if(mm*dtrt_ter0 .lt. HYDRO_dt) nlst(did)%dtrt_ter = HYDRO_dt/mm
                   mm0 = mm
                endif
             endif
 
-            if((mm0*nlst_rt(did)%dtrt_ch) .ne. HYDRO_dt) then   ! WRF model time step changed.
+            if((mm0*nlst(did)%dtrt_ch) .ne. HYDRO_dt) then   ! WRF model time step changed.
                if(dtrt_ch0 .ge. HYDRO_dt) then
-                  nlst_rt(did)%dtrt_ch = HYDRO_dt
+                  nlst(did)%dtrt_ch = HYDRO_dt
                   mm0 = 1
                else
                   mm = HYDRO_dt/dtrt_ch0
-                  if(mm*dtrt_ch0 .lt. HYDRO_dt) nlst_rt(did)%dtrt_ch = HYDRO_dt/mm
+                  if(mm*dtrt_ch0 .lt. HYDRO_dt) nlst(did)%dtrt_ch = HYDRO_dt/mm
                   mm0 = mm
                endif
             endif
 
 #ifdef HYDRO_D 
-        write(6,*) "mm, nlst_rt(did)%dt = ",mm, nlst_rt(did)%dt
+        write(6,*) "mm, nlst(did)%dt = ",mm, nlst(did)%dt
 #endif
 
-        if(nlst_rt(did)%rtFlag .eq. 0) return
+        if(nlst(did)%rtFlag .eq. 0) return
 
 
-        nn = nlst_rt(did)%nsoil
+        nn = nlst(did)%nsoil
 
         ! get the data from WRF 
 
 
 
-       if((.not. RT_DOMAIN(did)%initialized) .and. (nlst_rt(did)%rst_typ .eq. 1) ) then
+       if((.not. RT_DOMAIN(did)%initialized) .and. (nlst(did)%rst_typ .eq. 1) ) then
 #ifdef HYDRO_D
            write(6,*) "restart initial data from offline file"
 #endif
        else
-            do k = 1, nlst_rt(did)%nsoil
+            do k = 1, nlst(did)%nsoil
                 RT_DOMAIN(did)%STC(:,:,k) = grid%TSLB(its:ite,k,jts:jte) 
                 RT_DOMAIN(did)%smc(:,:,k) = grid%smois(its:ite,k,jts:jte) 
                 RT_DOMAIN(did)%sh2ox(:,:,k) = grid%sh2o(its:ite,k,jts:jte) 
@@ -223,17 +224,17 @@ CONTAINS
 
 
 ! add for update the WRF state variable.
-            do k = 1, nlst_rt(did)%nsoil
+            do k = 1, nlst(did)%nsoil
                 ! grid%TSLB(its:ite,k,jts:jte) = RT_DOMAIN(did)%STC(:,:,k)
                 grid%smois(its:ite,k,jts:jte) = RT_DOMAIN(did)%smc(:,:,k)
                 grid%sh2o(its:ite,k,jts:jte) = RT_DOMAIN(did)%sh2ox(:,:,k)
             end do 
 
 ! update WRF variable after running routing model.
-            grid%sfcheadrt(its:ite,jts:jte) = rt_domain(did)%sfcheadrt
+            grid%sfcheadrt(its:ite,jts:jte) = rt_domain(did)%overland%control%surface_water_head_lsm
 
 ! provide groundwater soil flux to WRF for fully coupled simulations (FERSCH 09/2014)            
-            if(nlst_rt(did)%GWBASESWCRT .eq. 3 ) then
+            if(nlst(did)%GWBASESWCRT .eq. 3 ) then
 !Wei Yu: comment the following two lines. Not ready for WRF3.7 release
 !yw             grid%qsgw(its:ite,jts:jte) = gw2d(did)%qsgw
 !yw             config_flags%gwsoilcpl = nlst_rt(did)%gwsoilcpl

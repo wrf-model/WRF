@@ -73,6 +73,7 @@ PROGRAM tc_data
    END INTERFACE
 
 #include "version_decl"
+#include "commit_decl"
 
    !  Define the name of this program (program_name defined in module_domain)
 
@@ -133,6 +134,7 @@ PROGRAM tc_data
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
+   CALL  wrf_message ( commit_version )
 
    !  There are variables in the Registry that are only required for the real
    !  program, fields that come from the WPS package.  We define the run-time

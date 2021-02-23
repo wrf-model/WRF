@@ -15,9 +15,7 @@ subroutine cost1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !    to COST1B (or vice-versa) reproduces the original array within
 !    roundoff error.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

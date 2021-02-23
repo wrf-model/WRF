@@ -30,7 +30,7 @@ module module_WRF_HYDRO
 
     use module_rt_data, only:  rt_domain
     use module_CPL_LAND, only: cpl_outdate
-    use module_namelist, only: nlst_rt
+    use config_base, only: nlst
     USE module_domain, ONLY : domain, domain_clock_get
 
     implicit none
@@ -80,27 +80,27 @@ CONTAINS
         ntime = 1
 
     
-            nlst_rt(did)%dt = HYDRO_dt
+            nlst(did)%dt = HYDRO_dt
 
         itime = itime + 1 
         if(.not. RT_DOMAIN(did)%initialized) then
            itime = 1
 
-           nlst_rt(did)%nsoil = grid%num_soil_layers
+           nlst(did)%nsoil = grid%num_soil_layers
 
 #ifdef MPP_LAND
-           call mpp_land_bcast_int1 (nlst_rt(did)%nsoil)
+           call mpp_land_bcast_int1 (nlst(did)%nsoil)
 #endif
-           allocate(nlst_rt(did)%zsoil8(nlst_rt(did)%nsoil))
+           allocate(nlst(did)%zsoil8(nlst(did)%nsoil))
            if(grid%zs(1) <  0) then
-              nlst_rt(did)%zsoil8(1:nlst_rt(did)%nsoil) = grid%zs(1:nlst_rt(did)%nsoil)
+              nlst(did)%zsoil8(1:nlst(did)%nsoil) = grid%zs(1:nlst(did)%nsoil)
            else
-              nlst_rt(did)%zsoil8(1:nlst_rt(did)%nsoil) = -1*grid%zs(1:nlst_rt(did)%nsoil)
+              nlst(did)%zsoil8(1:nlst(did)%nsoil) = -1*grid%zs(1:nlst(did)%nsoil)
            endif
 
             CALL domain_clock_get( grid, current_timestr=cpl_outdate)
-            nlst_rt(did)%startdate(1:19) = cpl_outdate(1:19)
-            nlst_rt(did)%olddate(1:19) = cpl_outdate(1:19)
+            nlst(did)%startdate(1:19) = cpl_outdate(1:19)
+            nlst(did)%olddate(1:19) = cpl_outdate(1:19)
 
 !yw continue
 
@@ -109,37 +109,37 @@ CONTAINS
 #ifdef HYDRO_D
                write(6,*) "sf_surface_physics is ", grid%sf_surface_physics
 #endif
-            nlst_rt(did)%startdate(1:19) = cpl_outdate(1:19)
-            nlst_rt(did)%olddate(1:19) = cpl_outdate(1:19)
+            nlst(did)%startdate(1:19) = cpl_outdate(1:19)
+            nlst(did)%olddate(1:19) = cpl_outdate(1:19)
 
-            nlst_rt(did)%dt = HYDRO_dt
-            noah_timestep = nlst_rt(did)%dt
+            nlst(did)%dt = HYDRO_dt
+            noah_timestep = nlst(did)%dt
 
-            if(nlst_rt(did)%dtrt .lt. HYDRO_dt) then
-               nlst_rt(did)%dtrt = HYDRO_dt
+            if(nlst(did)%dtrt .lt. HYDRO_dt) then
+               nlst(did)%dtrt = HYDRO_dt
                mm0 = 1
             else
-               mm = HYDRO_dt/nlst_rt(did)%dtrt
-               if(mm*nlst_rt(did)%dtrt .lt. HYDRO_dt) nlst_rt(did)%dtrt = HYDRO_dt/mm
+               mm = HYDRO_dt/nlst(did)%dtrt
+               if(mm*nlst(did)%dtrt .lt. HYDRO_dt) nlst(did)%dtrt = HYDRO_dt/mm
                mm0 = mm
             endif
 
-            dtrt0 = nlst_rt(did)%dtrt  
+            dtrt0 = nlst(did)%dtrt  
         endif
 
-            if((mm0*nlst_rt(did)%dtrt) .ne. HYDRO_dt) then   ! WRF model time step changed.
+            if((mm0*nlst(did)%dtrt) .ne. HYDRO_dt) then   ! WRF model time step changed.
                if(dtrt0 .lt. HYDRO_dt) then
-                  nlst_rt(did)%dtrt = HYDRO_dt
+                  nlst(did)%dtrt = HYDRO_dt
                   mm0 = 1
                else
                   mm = HYDRO_dt/dtrt0
-                  if(mm*dtrt0 .lt. HYDRO_dt) nlst_rt(did)%dtrt = HYDRO_dt/mm
+                  if(mm*dtrt0 .lt. HYDRO_dt) nlst(did)%dtrt = HYDRO_dt/mm
                   mm0 = mm
                endif
             endif
 
 #ifdef HYDRO_D 
-        write(6,*) "mm, nlst_rt(did)%dt = ",mm, nlst_rt(did)%dt
+        write(6,*) "mm, nlst(did)%dt = ",mm, nlst(did)%dt
 #endif
 
 ! get forcing data from WRF

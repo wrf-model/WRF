@@ -463,7 +463,8 @@ Namelist variables for controlling the adaptive time step option:
  dfi_fwdstop_hour                    = 12       ! two-digit month of stop time for forward DFI integration
  dfi_fwdstop_minute                  = 00       ! two-digit month of stop time for forward DFI integration
  dfi_fwdstop_second                  = 00       ! two-digit month of stop time for forward DFI integration
- dfi_radar                           = 0        ! DFI radar da switch
+ dfi_savehydmeteors                  = 0        ! option for radar DA: 0: set hydrometeors to 0 before DFI and
+                                                  let them spin up in DFI; 1: keep them unchanged in DFI
 
  &physics
 
@@ -507,6 +508,8 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
+                                     = 24, WSM 7-class scheme (separate hail and graupel categories)
+                                     = 26, WDM 7-class scheme (separate hail and graupel categories)
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
                                        This option has two climatological aerosol input options:
@@ -516,8 +519,11 @@ Namelist variables for controlling the adaptive time step option:
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version
                                      = 40, Morrison (2 moments) with consideration of CESM-NCSU RCP4.5 climatological aerosol 
-                                     = 50, P3 1-category
-                                     = 51, P3 1-category plus double-moment cloud water
+                                     = 50, P3 1-ice category, 1-moment cloud water
+                                     = 51, P3 1-ice category plus double-moment cloud water
+                                     = 52, P3 2-ice categories plus double-moment cloud water
+                                     = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
+                                           for each ice
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
@@ -612,6 +618,8 @@ Namelist variables for controlling the adaptive time step option:
                                             between SW call
                                      = 0,  ! no interpolation
                                      = 1,  ! use interpolation
+                                     = 2,  ! Calls the Fast All-Sky Radiation Model for Solar applications (FARMS)
+                                           ! every model time step. 
  cam_abs_freq_s                      = 21600  ! default CAM clearsky longwave absorption calculation frequency
                                                 (recommended minimum value to speed scheme up)
  levsiz                              = 59     ! for CAM radiation input ozone levels, set automatically
@@ -690,6 +698,20 @@ Namelist variables for controlling the adaptive time step option:
  num_urban_nf                        = 1! (= 10 if BEM active)        number of grid levels in the floors (nf_u in BEM header)
  num_urban_nbui                      = 1! (= 15 if BEM active)        maximum number of types of buildings in an urban class (nbui_max in BEM header)
 
+ sf_surf_irr_scheme (max_dom)        = 0: no irrigation scheme
+                                     = 1: channel scheme (in Noah only)
+                                     = 2: drip scheme
+                                     = 3: sprinkler scheme
+ 
+ irr_daily_amount (max_dom)          = daily equivalent irrigation water amount in mm (float, e.g. 5.7)
+ irr_start_hour (max_dom)            = UTC start hour for irrigation (int, e.g. 5)
+ irr_num_hours (max_dom)             = number of consecutive hours for irrigation (int, e.g. 3)
+ irr_start_julianday (max_dom)       = Julian start day of irrigation (int, e.g. 135)
+ irr_end_julianday (max_dom)         = Julian end day of irrigation (int, e.g. 255)
+ irr_ph (max_dom)                    = 0: all the static IRRIGATION field is activated
+                                     = 1: pseudo random activation field: ensures repeatability across compilers
+                                     = 2: random activation field: results might depend on the compiler fortran RANDOM_SEED
+ irr_freq (max_dom)                  = irrigation frequency in days (int, e.g. 3)
 
  bl_pbl_physics (max_dom)            boundary-layer option
                                      = 0, no boundary-layer 
@@ -784,8 +806,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
                                      = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
-                                     = 14, A modified  GFS simplified Arakawa-Schubert scheme that enables NSAS to work 
-                                           in various model grids across gray-zone resolutions (from KIAPS,ARW only)
+                                     = 14, KIM Simplified Arakawa-Schubert scheme (KSAS) across gray-zone resolutions
                                      = 16, A newer Tiedtke scheme
                                      = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
                                      = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
@@ -801,7 +822,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Deng cumulus scheme (including both shallow and deep convections) from PSU and WRF-Solar.
                                           However the deep part isn't very active. Not recommended to use alone for deep convection 
                                           case. Could work well for grid sizes 3-9 km.
-                                          This scheme only works with MYJ or MYNN PBL schemes 
+                                          This scheme only works with MYJ PBL scheme, and should not be combined with icloud=3
+                                          This scheme can also work with MYNN PBL scheme, but one should turn off EDMF (bl_mynn_edmf=0)
 
  ishallow                            = 0, !  = 1 turns on shallow convection, used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0, !  closure choice (place holder only)
@@ -813,6 +835,7 @@ Namelist variables for controlling the adaptive time step option:
  cu_rad_feedback (max_dom)           = .false.  ! sub-grid cloud effect to the optical depth in radiation
                                                   currently it works only for GF, G3, GD and KF scheme
                                                   One also needs to set cu_diag = 1 for GF, G3, KF-CuP, and GD schemes
+ bmj_rad_feedback (max_dom)          = .false.  ! BMJ convective precipitation-derived sub-grid cloud effect to radiation
  cudt (max_dom)                      = 0,       ! minutes between cumulus physics calls
  kfeta_trigger                       KF trigger option (cu_physics=1 only):
                                      = 1, default option
@@ -884,6 +907,11 @@ Namelist variables for controlling the adaptive time step option:
                                                       on threshold
                                                   3 = with cloud effect, and use cloud fraction option 3, based on
                                                       Sundqvist et al. (1989) (since 3.7)
+ insert_init_cloud                   = .false., ! Default
+                                     = .true.,  ! For use with cold start (zero cloud fields), this option will
+                                                  use the icloud=3 scheme to produce initial cloud water and cloud
+                                                  ice fields as well as ensure initial water vapor field matches
+                                                  saturation, which retains clouds beyond the first few timesteps.
  swrad_scat                          = 1.       ! scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 3,	! where landuse and soil category data come from:
@@ -950,6 +978,8 @@ Namelist variables for controlling the adaptive time step option:
  shadlen                             = 25000.   ! max shadow length in meters for topo_shading=1
  sf_ocean_physics                    = 0        ! activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathymetry)
  oml_hml0                            = 50       ! oml model can be initialized with a constant depth everywhere (m)
+                                                  < 0, oml is initialized with real-time ocean mixed depth
+                                                  = 0, oml is initialized with climatological ocean mixed depth
  oml_gamma                           = 0.14     ! oml deep water lapse rate (K m-1)
  oml_relaxation_time                 = 0.       ! Relaxation time (in second) of mixed layer ocean model back to original values 
                                                   (an example value is 259200 sec. (3 days)) (new in 3.8)
@@ -1043,6 +1073,8 @@ Namelist variables for lake module:
                                                   Points with 0/0 values use ratio defined by iccg_prescribed_(num|den)
  iccg_prescribed_num (max_dom)       = 0.       ! Numerator of user-specified prescribed IC:CG
  iccg_prescribed_den (max_dom)       = 1.       ! Denominator of user-specified prescribed IC:CG
+ ltng_temp_upper                     = -45.     ! Temperature (C) of upper peak of LNOx vertical distribution for IC lightning (used by &chem lnox_opt=2).
+ ltng_temp_lower                     = -15.     ! Temperatures (C) of lower peak of LNOx vertical distribution for both IC and CG lightning (used by &chem lnox_opt=2).
 
 Options for wind turbine drag parameterization:
 
@@ -1050,6 +1082,7 @@ Options for wind turbine drag parameterization:
  windfarm_ij                        = 0         ! whether to use lat-lon or i-j coordinate as wind turbine locations    
                                                 ! 0 = The coordinate of the turbines are defined in terms of lat-lon
                                                 ! 1 = The coordinate of the turbines are defined in terms of grid points
+ windfarm_tke_factor                = 0.25      ! Correction factor applied to the TKE coefficient (deafault is 0.25, Archer et al. 2020)
 
 
 Stochastic parameterization schemes:
@@ -1415,6 +1448,9 @@ The following are for observation nudging:
                                                       Note: option 2 and 3 are not recommended for DX > 2 km
                                                   4 = horizontal Smagorinsky first order closure
                                                       (recommended for real-data cases)
+                                                  5 = SMS-3DTKE scale-adaptive LES/PBL scheme. It must be
+                                                      used with diff_opt = 2. PBL schemes must be turned off
+                                                      (bl_pbl_physics=0). It can work with sf_sfclay_physics = 1, 5, 91.
  damp_opt                            = 0,	! upper level damping flag 
                                                   0 = without damping
                                                   1 = with diffusive damping, maybe used for real-data cases 
@@ -1517,7 +1553,7 @@ The following are for observation nudging:
  pos_def                             = .false.  ! T/F remove negative values of scalar arrays by setting minimum value to zero
  swap_pole_with_next_j               = .false.  ! T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
  actual_distance_average             = .false.  ! T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
- gwd_opt                             = 0       ! for running without gravity wave drag
+ gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
                                      = 1       ; for running the WRF-ARW with its gravity wave drag
                                      = 2       ; for running the WRF-NMM with its gravity wave drag
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
@@ -1556,6 +1592,10 @@ The following are for observation nudging:
                                      = .true. , ! use microphysics variables in bdy file
  have_bcs_scalar (max_dom)           = .false., ! model run after ndown only: do not use scalar variables in bdy file
                                      = .true. , ! use scalar variables in bdy file
+ multi_bdy_files                     = .false., ! F=default; T=model will run with split and individually named LBC files
+                                                  requires usage of bdy_inname = "wrfbdy_d<domain>_<date>"
+                                                  the real program can generate all LBC files in a single run
+                                                  only a single time period is in each separate LBC file
 
  euler_adv                           = .false., ! conservative Eulerian passive advection (NMM only)
  idtadt                              = 1,       ! fundamental timesteps between calls to Euler advection, dynamics (NMM only)
@@ -1755,3 +1795,16 @@ is "h1", so that stream needs to be explicitly requested in the namelist.input f
  auxhist1_outname                    = "wrf_trad_fields_d<domain>_<date>"
  /
 
+
+
+Solar diagnostics output
+
+For solar diagnostics, 2-D fields of variables relevant to solar forecasting are output
+when option solar_diagnostics is activated in diags section of namelist, as shown below.
+Also, if tslist is present when solar_diagnostics is activated, then these same variables
+are output to the time series files for the location(s) specified in tslist (see README.tslist).
+All variables are calculated in phys/module_diag_solar.F and defined in registry.solar_fields
+
+ &diags
+ solar_diagnostics                   =  1
+ /

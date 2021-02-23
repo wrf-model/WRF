@@ -470,6 +470,8 @@ CONTAINS
      CHARACTER (LEN=256) :: cloudcoeff_file, emiscoeff_file
      NAMELIST /wrfvar14/    cloudcoeff_file, emiscoeff_file
 
+     LOGICAL             :: alpha_vertloc
+     NAMELIST /wrfvar16/    alpha_vertloc
 
 
 ! Read the namelist again, if it succeeds after adding the above variables,
@@ -556,6 +558,18 @@ CONTAINS
                              "aerosolcoeff_file, cloudcoeff_file, emiscoeff_file still in your "// &
                               TRIM(nml_name)//" namelist?")
            CALL wrf_debug(0, "-- Remove them as they are obsolete.")
+        ENDIF
+
+!---------------------------------- wrfvar16 -----------------------------
+     else if ( TRIM(nml_name) .eq. "wrfvar16" ) then
+
+     READ   ( UNIT = nml_read_unit , NML = wrfvar16 , iostat=nml_error )
+
+        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+           CALL wrf_debug(0, "-- Is alpha_vertloc still in your "// &
+                              TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Remove it as it is obsolete.")
+           CALL wrf_debug(0, "-- For EnVar DA (ensdim_alpha>0), set proper alpha_vertloc_opt instead.")
         ENDIF
 
 !---------------------------------- error -------------------------------

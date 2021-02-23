@@ -62,10 +62,10 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
    yhat=xhat
 
    call da_calculate_j(1, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                       be%cv%size_jl, xbx, be, iv, yhat, cv, re, y, j_cost, grid, config_flags)
+                       be%cv%size_jl, be%cv%size_jt, xbx, be, iv, yhat, cv, re, y, j_cost, grid, config_flags)
 
    call da_calculate_gradj(1,1,cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp, &
-                           be%cv%size_jl,xbx, be, iv, yhat+cv, y, grad, grid, config_flags, re)
+                           be%cv%size_jl, be%cv%size_jt, xbx, be, iv, yhat+cv, y, grad, grid, config_flags, re)
 
    zfy = j_cost%total
 
@@ -81,7 +81,11 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
    !----------------------------------------------------------------------------
 
    zf0=zfy
-   zdf0=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end)
+   zdf0=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               ,jp_start,jp_end)
    if (rootproc) write(6,*)'grtest: F(0)=',zf0,' DF(0)=',zdf0
 
    IF (ZDF0>0.0) write(6,*) 'GRTEST Warning, DF should be negative'
@@ -110,15 +114,19 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
       end do
 
       call da_calculate_j(1, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                          be%cv%size_jl, xbx, be, iv, yhat, cv, re, y, j_cost, grid, config_flags)
+                          be%cv%size_jl, be%cv%size_jt, xbx, be, iv, yhat, cv, re, y, j_cost, grid, config_flags)
 
       call da_calculate_gradj(1,1,cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp, &
-                              be%cv%size_jl,xbx, be, iv, yhat+cv, y, grad, grid, config_flags, re)
+                              be%cv%size_jl, be%cv%size_jt, xbx, be, iv, yhat+cv, y, grad, grid, config_flags, re)
 
       zfy = j_cost%total
 
       zfa=zfy
-      zdfa=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end)
+      zdfa=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               ,jp_start,jp_end)
 
       if (rootproc) write(6,*)'grtest: alpha=',za,' F(a)=',zfa,' DF(a)=',zdfa
    

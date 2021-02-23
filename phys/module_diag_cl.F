@@ -185,6 +185,16 @@ CONTAINS
           skintempclmax(i,j)=skintemp(i,j)-t273
           skintempclmean(i,j)=skintemp(i,j)-t273
           skintempclstd(i,j)=(skintemp(i,j)-t273)*(skintemp(i,j)-t273)
+          ! reinitialize times
+          tt2clmin(i,j)       = xtime + dt/60.  ! value at end of timestep 
+          tt2clmax(i,j)       = xtime + dt/60.
+          tq2clmin(i,j)       = xtime + dt/60.
+          tq2clmax(i,j)       = xtime + dt/60.
+          tspduv10clmax(i,j)  = xtime + dt/60.
+          traincclmax(i,j)    = xtime + dt/60.
+          trainncclmax(i,j)   = xtime + dt/60.
+          tskintempclmin(i,j) = xtime + dt/60.
+          tskintempclmax(i,j) = xtime + dt/60.
         ENDDO
       ENDDO
     ENDDO

@@ -1,3 +1,12 @@
+#if( BUILD_RRTMK != 1)
+      MODULE module_ra_rrtmg_swk
+      CONTAINS
+      SUBROUTINE rrtmg_sw
+         REAL :: dummy
+         dummy = 1
+      END SUBROUTINE rrtmg_sw
+      END MODULE module_ra_rrtmg_swk
+#else
 !
 !-------------------------------------------------------------------------------
    module parrrsw_k
@@ -1723,7 +1732,7 @@
                       'ERROR: SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   
              factor = (radsno - 2._rb)/3._rb
              index = int(factor)
-             if(index.eq.167) index = 166 
+             if(index.eq.46) index = 45 
              fint = factor-real(index)
              ib = ngb(ig)
              extcosno(ig) = extice3(index,ib)+fint*                            &
@@ -2079,11 +2088,11 @@
        endif
 !
 ! Recompute original s.s.a. to test for conservative solution
-! Balwinder.Singh@pnnl.gov: Code added to avoid 'divide by zero' error 
-! in zwo computation
 !
-       denom = max((1._rb-(1._rb-zw)*(zg/(1._rb-zg))**2),1.0e-30_rb)
-       zwo = zw/denom
+       zwo = 0._rb
+       denom = 1._rb
+       if (zg .ne. 1._rb) denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
+       if (zw .gt. 0._rb .and. denom .ne. 0._rb) zwo = zw / denom
 !
        if (zwo >= zwcrit) then
 !
@@ -4299,7 +4308,7 @@
                    7700._rb, 8050._rb,12850._rb,16000._rb,22650._rb,29000._rb, &
                    38000._rb,  820._rb/)
    wavenum2(:) = (/3250._rb, 4000._rb, 4650._rb, 5150._rb, 6150._rb, 7700._rb, &
-                   8050._rb, 2850._rb,16000._rb,22650._rb,29000._rb,38000._rb, &
+                   8050._rb,12850._rb,16000._rb,22650._rb,29000._rb,38000._rb, &
                    50000._rb, 2600._rb/)
    delwave(:) =  (/ 650._rb,  750._rb,  650._rb,  500._rb, 1000._rb, 1550._rb, &
                     350._rb, 4800._rb, 3150._rb, 6650._rb, 6350._rb, 9000._rb, &
@@ -10163,7 +10172,7 @@ contains
 !
 !-------------------------------------------------------------------------------
    subroutine rad_rrtmg_driver(                                                &
-                       rthratensw,rthratenlw,                                  &
+                       rthratenlw,rthratensw,                                  &
                        lwupflx, lwupflxc, lwdnflx, lwdnflxc,                   &
                        swupflx, swupflxc, swdnflx, swdnflxc,                   &
                        lwupt, lwuptc, lwdnt, lwdntc,                           &
@@ -12063,3 +12072,4 @@ contains
 !-------------------------------------------------------------------------------
    end module module_ra_rrtmg_swk
 !-------------------------------------------------------------------------------
+#endif

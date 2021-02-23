@@ -13,12 +13,16 @@ rconfig   integer    io_form_auxinput12  namelist,time_control   1  2
 
 
 state    real    CLDFRA2         ikj    misc        1         -      h        "CLDFRA2"             "CLOUD FRACTION"
-state    real    RAINPROD        ikj    misc        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
-state    real    EVAPPROD        ikj    misc        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
 state    real    QV_B4MP         ikj    misc        1         -      -        "QV_B4MP"             "WATER VAPOR BEFORE MICROPHYSICS"  "kg kg-1"
 state    real    QC_B4MP         ikj    misc        1         -      -        "QC_B4MP"             "CLOUD WATER BEFORE MICROPHYSICS"  "kg kg-1"
 state    real    QI_B4MP         ikj    misc        1         -      -        "QI_B4MP"             "CLOUD ICE BEFORE MICROPHYSICS"    "kg kg-1"
 state    real    QS_B4MP         ikj    misc        1         -      -        "QS_B4MP"             "SNOW BEFORE MICROPHYSICS"         "kg kg-1"
+
+state    real    ph_cw           ikj    misc        1         -      -        "ph_cw"               "pH of cloud water"             "Unitless"
+state    real    ph_aer01        ikj    misc        1         -      -        "ph_aer01"            "H+ of aerosol bin 1"           "mol/kg"
+state    real    ph_aer02        ikj    misc        1         -      -        "ph_aer02"            "H+ of aerosol bin 2"           "mol/kg"
+state    real    ph_aer03        ikj    misc        1         -      -        "ph_aer03"            "H+ of aerosol bin 3"           "mol/kg"
+state    real    ph_aer04        ikj    misc        1         -      -        "ph_aer04"            "H+ of aerosol bin 4"           "mol/kg"
 
 state    real    ccn1            ikj    misc        1         -      r        "ccn1"                "CCN concentration at S=0.02%"  "#/cm3"
 state    real    ccn2            ikj    misc        1         -      r        "ccn2"                "CCN concentration at S=0.05%"  "#/cm3"
@@ -49,6 +53,12 @@ state   integer last_chem_time_second    -  misc    -         -      r       "la
 #
 state   integer emissframes      -          -          -         -      -       "emissframes"           ""         ""
 state   integer fireemissframes  -        -          -        -        -      "fireemissframes"       ""         ""
+#
+# Rain, evaporation rates
+#
+state    real    -              ikjf     wetscav_frcing        -         -      -        -                     "Rain,evap rates"                  "s-1"
+state    real    RAINPROD       ikjf     wetscav_frcing        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
+state    real    EVAPPROD       ikjf     wetscav_frcing        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
 #
 # Anthropogenic emissions
 #
@@ -3763,20 +3773,7 @@ rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0
 rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
 rconfig   integer cam_mam_nspec            namelist,chem        1              85      irh     "cam_mam_nspec"                   ""    ""
 rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .true.    irh     "CAM_MP_MAM_cpled"                   ""    ""
-# Lightning
-rconfig   integer     lightning_opt       namelist,chem        max_domains        0       rh      "lightning_opt"     ""      ""
-rconfig   integer     lightning_time_step namelist,chem        max_domains        0       rh     "lightning_time_step"  ""      ""
-rconfig   real        lightning_start_seconds namelist,chem    max_domains        0       rh     "lightning_start_seconds"    ""      ""
-rconfig   real        temp_upper          namelist,chem        max_domains      -45.      rh     "temp_upper"         ""      ""
-rconfig   real        temp_lower          namelist,chem        max_domains      -15.      rh     "temp_lower"         ""      ""
-rconfig   real        N_IC                namelist,chem        max_domains        0.      rh     "N_IC"               ""    ""
-rconfig   real        N_CG                namelist,chem        max_domains        0.      rh     "N_CG"               ""    ""
-rconfig   integer     passive_ltng        namelist,chem        max_domains        1       rh     "passive_ltng"     ""      ""
-rconfig   integer     lflash_data         namelist,chem        1                  1       rh     "lflash_data"     ""      ""
-rconfig   real        flashrate_factor    namelist,chem        max_domains        1.      rh     "flashrate_factor"   ""    ""
-rconfig   integer     flashrate_method    namelist,chem        max_domains        1       rh      "flashrate_method"   ""    ""
-rconfig   integer     iccg_method         namelist,chem        max_domains        1       rh      "iccg_method"        ""    ""
-rconfig   integer     cellcount_method    namelist,chem        max_domains        1       rh      "cellcount_method"   ""    ""            
+rconfig   integer mozart_ph_diag           namelist,chem        1              0       rh      "mozart_ph_diag"                  ""    ""
 
 # CLM inputs
 rconfig   character  megan_specifier      namelist,physics     max_mgnspc      " "        -     "map from Megan2.1 to WRF species" "" ""
@@ -4091,6 +4088,8 @@ package   biomassb_t1_mozcart   biomass_burn_opt==4          -          state:me
 # GHG biomass burning
 package   biomassb_ghg  biomass_burn_opt==5          -             state::mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_co,ebu_co2,ebu_ch4;ebu_in:ebu_in_co,ebu_in_co2,ebu_in_ch4
 
+# Package for mozart pH diagnostics
+package  do_mozart_ph_diag    mozart_ph_diag==1      -             state:ph_cw,ph_aer01,ph_aer02,ph_aer03,ph_aer04
 
 package   opt_out      opt_pars_out==1             -          ext_coef:extcof3,extcof55,extcof106,extcof3_5,extcof8_12;bscat_coef:bscof3,bscof55,bscof106;asym_par:asympar3,asympar55,asympar106
 
@@ -4158,6 +4157,9 @@ package   usechemdiag    chemdiag==1         -                conv_ct:conv_co,co
 
 # package for aerosol srf area diagnostic
 package   has_aero_srf_area_diag    aero_srf_area_diag==1         -                aero_srf_area:sulf_srf_area,oc_srf_area,bc_srf_area
+#
+# package for wetscavenging
+package   wetscav_pl                wetscav_onoff==1              -                wetscav_frcing:rainprod,evapprod
 
 # Lightning NOx tracers
 state   real    lnox_total   ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_total"      "Total LNOx tracer"          "ppmv"
@@ -4182,3 +4184,6 @@ package  lnox_opt_decaria   lnox_opt==2    -   tracer:lnox_ic,lnox_cg
 
 # Integrated Reaction Rate option
 rconfig   integer    irr_opt  namelist,chem     max_domains        0     rh     "IRR_OPT"            "" ""
+
+# Time series of vertical profiles
+state   real   ts_o3_profile   ?!k   misc   -   -   -   "TS_O3_PROFILE"   "O3, vertical profile"

@@ -1,3 +1,48 @@
+!
+!ckay=Kiran Alapaty, EPA
+!CGM = Chris Marciano, NCSU
+!TWG = Tim Glotfelty, NCSU/EPA
+!JTR = Jacob Radford, NCSU
+!
+!multi-scale KF scheme
+!  (1) With diagnosed deep and shallow KF cloud fraction using
+!       CAM3-CAM5 methodology, along with captured liquid and ice condensates.
+!       and linking with the RRTMG & Other radiation schemes
+! (2) Scale-dependent Dynamic adjustment timescale for KF clouds (both shallow
+!     and deep)
+! (3) Scale-dependent LCL-based entrainment Methodology that avoids 2-km cloud
+!     radius method
+! (4) Scale-dependent Fallout Rate
+! (5) Scale-dependent Stabilization Capacity
+! (6) Elimination of "double counting" when environment is saturated
+! (7) Inclusion of Convective Momentum Transport (CMT):Zhang&McFarlane,JGR,100,1995
+!
+! Alapaty et al., 2012: Introducing subgrid-scale cloud feedbacks to radiation
+!    for regional meteorological and climate modeling. GRL, V39, I24.
+!
+! Alapaty et al., 2013:  The Kain-Fritsch Scheme: Science Updates and revisiting
+!     gray-scale issues from the NWP and regional climate perspectives. 2013 WRF
+!     workshop: URL:
+!     http://www.mmm.ucar.edu/wrf/users/workshops/WS2013/ppts/9.2.pdf
+!
+! Herwehe et al., 2014: Increasing the credibility of regional climate
+!     simulations by introducing subgrid-scale cloud-radiation interactions. JGR, 119,
+!     5317-5330, doi:10.1002/2014JD021504.
+!
+! Zheng et al., 2016: Improving High-Resolution Weather Forecasts using the
+!     Weather Research and Forecasting (WRF) Model with an Updated Kain-Fritsch
+!     Scheme. Mon. Wea. Rev., 144, 833-860
+!
+! He, J., and K. Alapaty, 2018:  Precipitation partitioning in multiscale
+!     atmospheric simulations: Impacts of stability restoration methods. Journal of
+!     Geophysical Research: Atmospheres, 123. https://doi.org/10.1029/2018JD028710
+!
+! Glotfelty, T., K. Alapaty, J. He, P. Hawbecker, X. Song, and G. Zhang, 2019:
+!     The Weather Research and Forecasting Model with Aerosol Cloud Interactions
+!     (WRF-ACI): Development, Evaluation, and Initial Application. Mon. Wea.
+!     Rev., 147, 1491-1511
+!................................................................
+
 ! begin double moment convective microphysics for MSKF
 
  module module_cu_mp
@@ -1717,8 +1762,8 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
        mtime=deltat/900._r8
        mtimec=deltat/900._r8
 
-       mtime = AMAX1(1.0,mtime)   !TWG remove time scale limitation from CAM5
-       mtimec = AMAX1(1.0,mtimec)    
+       mtime = max(1.0_r8,mtime)   !TWG remove time scale limitation from CAM5
+       mtimec = max(1.0_r8,mtimec)    
 
 ! conservation of qc
 
@@ -3363,42 +3408,6 @@ MODULE module_cu_mskf
    !dkay
    USE module_cu_mp
 !
-!ckay=Kiran Alapaty, EPA
-!CGM = Chris Marciano, NCSU
-!
-!multi-scale KF scheme
-!  (1) With diagnosed deep and shallow KF cloud fraction using
-!       CAM3-CAM5 methodology, along with captured liquid and ice condensates.
-!       and linking with the RRTMG & Other radiation schemes
-! (2) Scale-dependent Dynamic adjustment timescale for KF clouds (both shallow and deep)
-! (3) Scale-dependent LCL-based entrainment Methodology that avoids 2-km cloud radius method
-! (4) Scale-dependent Fallout Rate
-! (5) Scale-dependent Stabilization Capacity
-! (6) Elimination of "double counting" when environment is saturated
-!
-! Alapaty et al., 2012: Introducing subgrid-scale cloud feedbacks to radiation
-!    for regional meteorological and climate modeling. GRL, V39, I24.
-!
-! Alapaty et al., 2013:  The Kain-Fritsch Scheme: Science Updates and revisiting
-!     gray-scale issues from the NWP and regional climate perspectives. 2013 WRF
-!     workshop: URL: http://www.mmm.ucar.edu/wrf/users/workshops/WS2013/ppts/9.2.pdf
-!
-! Herwehe et al., 2014: Increasing the credibility of regional climate simulations 
-!     by introducing subgrid-scale cloud-radiation interactions. JGR, 119,
-!     5317-5330, doi:10.1002/2014JD021504.
-!
-! Zheng et al., 2016: Improving High-Resolution Weather Forecasts using the
-!     Weather Research and Forecasting (WRF) Model with an Updated Kain-Fritsch
-!     Scheme. Mon. Wea. Rev., 144, 833-860
-!
-! He, J., and K. Alapaty, 2018:  Precipitation partitioning in multiscale atmospheric 
-!     simulations: Impacts of stability restoration methods. Journal of Geophysical 
-!     Research: Atmospheres, 123. https://doi.org/10.1029/2018JD028710
-!
-! Glotfelty, T., K. Alapaty, J. He, P. Hawbecker, X. Song, and G. Zhang, 2019: 
-!     The Weather Research and Forecasting Model with Aerosol Cloud Interactions 
-!     (WRF-ACI): Development, Evaluation, and Initial Application. Mon. Wea. Rev., IN PRESS.
-!
 !--------------------------------------------------------------------
 ! Lookup table variables:
       INTEGER, PARAMETER :: KFNT=250,KFNP=220
@@ -3437,9 +3446,10 @@ CONTAINS
              ,UDR_KF,DDR_KF                                  &
              ,UER_KF,DER_KF                                  &
              ,TIMEC_KF,KF_EDRATES                            & 
-             ,ZOL,WSTAR,UST,PBLH                             &   !ckay
+             ,ZOL,HFX,UST,PBLH                               &   !ckay
              ,aerocu,no_src_types_cu,aercu_fct,aercu_opt     & !PSH/TWG
-             ,EFCS,EFIS,EFSS)
+             ,EFCS,EFIS,EFSS                                 &
+             ,RUCUTEN,RVCUTEN,XLAND)                                 !JTR
 !
 !-------------------------------------------------------------
    IMPLICIT NONE
@@ -3513,7 +3523,9 @@ CONTAINS
                                                    RQRCUTEN, &
                                                    RQICUTEN, &
                                                    RQSCUTEN, &
-                                                   RQVFTEN
+                                                   RQVFTEN,  &
+                                                   RUCUTEN,  & !JTR
+                                                   RVCUTEN
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -3569,9 +3581,10 @@ CONTAINS
 !ckay
    REAL, DIMENSION( ims:ime, jms:jme )                     , &
          INTENT(   IN) ::                               ZOL, &
-                                                      WSTAR, &
+                                                        HFX, &
                                                         UST, &
-                                                       PBLH
+                                                       PBLH, &
+                                                       XLAND
 !ckaywup
    REAL, DIMENSION( ims:ime,  kms:kme , jms:jme )          , &
            INTENT(INOUT) ::                             w_up
@@ -3617,6 +3630,12 @@ CONTAINS
    REAL    :: lastdt = -1.0
    REAL    :: W0AVGfctr, W0fctr, W0den
    
+!JTR 06/26/19: Added tendency variables and CMT flag
+   REAL, DIMENSION( kts:kte ) :: DUDT, DVDT
+   LOGICAL :: cmt_opt_flag
+
+!JTR: CMT on by default
+   cmt_opt_flag = .TRUE.
 !
    DXSQ=DX*DX
 
@@ -3838,6 +3857,8 @@ CONTAINS
                DQRDT(k)=0.
                DQSDT(k)=0.
                DTDT(k)=0.
+               DUDT(k)=0.
+               DVDT(k)=0.
 !ckay
                cldfra_dp_KF(I,k,J)=0.
                cldfra_sh_KF(I,k,J)=0.
@@ -3922,10 +3943,18 @@ CONTAINS
                  UDR_KF,DDR_KF,                     &
                  UER_KF,DER_KF,                     &
                  TIMEC_KF,KF_EDRATES,               &                 
-                 ZOL,WSTAR,UST,PBLH,                &
+                 ZOL,HFX,UST,PBLH,                  &
                  aerocu,no_src_types_cu,aercu_fct,  &
-                 aercu_opt,EFCS,EFIS,EFSS) !PSH/TWG
+                 aercu_opt,EFCS,EFIS,EFSS,          & !PSH/TWG
+                 DUDT, DVDT, cmt_opt_flag,XLAND)      !JTR
 
+!JTR: Pass 1D tendency arrays to 3D arrays              
+              IF(cmt_opt_flag) THEN
+                 DO K=kts,kte
+                    RUCUTEN(I,K,J) = DUDT(K)
+                    RVCUTEN(I,K,J) = DVDT(K)
+                 ENDDO
+              ENDIF
               DO K=kts,kte
                  RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
                  RQVCUTEN(I,K,J)=DQDT(K)
@@ -3958,7 +3987,7 @@ CONTAINS
                 ENDDO
               ENDIF
 !
-         ENDIF 
+         ENDIF
        ENDDO     ! i-loop
      ENDDO       ! j-loop
 !
@@ -3988,9 +4017,10 @@ CONTAINS
                       UDR_KF,DDR_KF,                       &
                       UER_KF,DER_KF,                       &
                       TIMEC_KF,KF_EDRATES,                 &
-                      ZOL,WSTAR,UST,PBLH,                  &
+                      ZOL,HFX,UST,PBLH,                    &
                       aerocu,no_src_types_cu,aercu_fct,    &
-                      aercu_opt,EFCS,EFIS,EFSS) !PSH/TWG
+                      aercu_opt,EFCS,EFIS,EFSS,            & !PSH/TWG
+                      DUDT,DVDT,cmt_opt_flag,XLAND)          !JTR
 
 !-----------------------------------------------------------
 !***** The KF scheme that is currently used in experimental runs of EMCs 
@@ -4038,9 +4068,10 @@ CONTAINS
 !ckay
       REAL, DIMENSION( ims:ime, jms:jme ),                 &
             INTENT(   IN) ::                          ZOL, &
-                                                    WSTAR, &
+                                                      HFX, &
                                                       UST, &
-                                                     PBLH
+                                                     PBLH, &
+                                                     XLAND
 !
       REAL, DIMENSION( kts:kte ), INTENT(INOUT) ::         &
                                                      DQDT, &
@@ -4175,7 +4206,7 @@ CONTAINS
 
 !ckaywup
    REAL    :: envEsat, envQsat, envRH, envRHavg, denSplume
-   REAL    :: updil, Drag
+   REAL    :: updil, Drag, WST, thetav
 !TWG Mar 2017
    REAL, PARAMETER :: P1_HU10 = 7.6725
    REAL, PARAMETER :: P2_HU10 = 1.0118
@@ -4260,6 +4291,24 @@ CONTAINS
       LOGICAL :: IPRNT
       REAL :: u00,qslcl,rhlcl,dqssdt    !jfb
       CHARACTER*1024 message
+
+!JTR 06/18/2019: Variables needed for CMT
+      REAL, DIMENSION (kts:kte), INTENT(INOUT) :: DUDT, DVDT
+      REAL, DIMENSION (kts:kte) :: TDN,TUP
+      REAL, DIMENSION (kts:kte) :: stat_energy
+      REAL(r8), DIMENSION (pcols,kts:kte) :: DUDTnew, DVDTnew,   &
+                                             DPDX, DPDY, MC,     &
+                                             DERconvF, UERconvF, &
+                                             UMFconvF, DMFconvF, &
+                                             DPconvF, U0F, V0F,  &
+                                             Z0F, SUU, SDD,      &
+                                             SHAT, QHAT, QDN,QUP
+      Logical :: CMTprint
+      Data CMTprint/.false./
+      INTEGER :: JDD(1), IL1G, ILG
+      REAL(r8) :: DSUBCLD(1), VMFLCLconv(1), DTnew
+      LOGICAL :: cmt_opt_flag
+
 !
       DATA P00,T00/1.E5,273.16/
       DATA RLF/3.339E5/
@@ -4600,6 +4649,7 @@ usl:   DO
 
             RAD = AMIN1(4000.,RAD)  ! max trap
             RAD = AMAX1(500.,RAD)  ! min trap
+ 
 !     
 !*******************************************************************
 !                                                                  *
@@ -4963,7 +5013,6 @@ updraft:    DO NK=K,KL-1
                 IF(NK1.LE.KPBL)UER(NK1)=UER(NK1)+VMFLCL*DP(NK1)/DPTHMX
               ENDIF
 
-
 !dkay
               IF (aercu_opt.gt.0) THEN
                   eps1u = 0.622
@@ -4994,7 +5043,6 @@ updraft:    DO NK=K,KL-1
                 CPin   = CP
 
             EPSI0(1) = 2.0E-4
-
             DO KQ=KTS,KTE
               JK = KTE-KQ+1
                    zfu(1,JK) = zf_wrf(KQ)
@@ -5112,19 +5160,19 @@ updraft:    DO NK=K,KL-1
 
                JK = KX-KQ+1
 !               print *,'kf qliq=', QLIQ(KQ)
-                 QLIQ(KQ) = amax1(0.0,zmqliq(1,JK))
-                 QICE(KQ) = amax1(0.0,zmqice(1,JK))
+                 QLIQ(KQ) = max(0._r8,zmqliq(1,JK))
+                 QICE(KQ) = max(0._r8,zmqice(1,JK))
 !TWG 06/14/16
-                 QRAIN(KQ) = amax1(0.0,zmqrain(1,JK))
-                 QSNOW(KQ) = amax1(0.0,zmqsnow(1,JK))
-                 NLIQ(KQ) = amax1(0.0,ncmp(1,JK))
-                 NICE(KQ) = amax1(0.0,nimp(1,JK))
-                 NRAIN(KQ) = amax1(0.0,nrmp(1,JK))
-                 NSNOW(KQ) = amax1(0.0,nsmp(1,JK))
-                 CCN(KQ) = amax1(0.0,zmccn(1,JK))
-                 EFFCH(KQ) = MAX(2.49, MIN(effc(1,JK), 50.))
-                 EFFIH(KQ) = MAX(4.99, MIN(effi(1,JK), 125.))
-                 EFFSH(KQ) = MAX(9.99, MIN(effs(1,JK), 999.))
+                 QRAIN(KQ) = max(0._r8,zmqrain(1,JK))
+                 QSNOW(KQ) = max(0._r8,zmqsnow(1,JK))
+                 NLIQ(KQ) = max(0._r8,ncmp(1,JK))
+                 NICE(KQ) = max(0._r8,nimp(1,JK))
+                 NRAIN(KQ) = max(0._r8,nrmp(1,JK))
+                 NSNOW(KQ) = max(0._r8,nsmp(1,JK))
+                 CCN(KQ) = max(0._r8,zmccn(1,JK))
+                 EFFCH(KQ) = max(2.49_r8, min(effc(1,JK), 50._r8))
+                 EFFIH(KQ) = max(4.99_r8, min(effi(1,JK), 125._r8))
+                 EFFSH(KQ) = max(9.99_r8, min(effs(1,JK), 999._r8))
 ! END TWG        
                   DETLQ(KQ)= QLIQ(KQ)*UDR(KQ)
                   DETIC(KQ)= QICE(KQ)*UDR(KQ)
@@ -5545,7 +5593,19 @@ updraft:    DO NK=K,KL-1
          TIMEC = TIMEC*Scale_Fac
 
 !ckay SCLvel = SubCloudLayerVELOCITY = Wsb
-         SCLvel = WSTAR(I,J)**3
+!ckay estimate WSTAR to allow most of the PBL schemes here...
+         densPlume = P0(1)/R/T0(1)
+         WST = HFX(I,J)/densPlume/CP  ! hfx in kinematic units  CKAY
+         WST = amax1(0.,WST)  ! +ve hfx only
+         WST = G*PBLH(I,J)*WST
+         thetav = (1.E5/P0(1))**(R/CP)
+         thetav = T0(1) * thetav
+         eps1u = 0.622
+         thetav = thetav*(1.+Q0(1)*eps1u)
+         WST = WST/thetav
+         WST = WST**0.3333
+
+         SCLvel = WST**3
          ZLCL_KAY = amax1(ZLCL,Z0(KPBL))
          SCLvel = SCLvel/PBLH(I,J)
          SCLvel = SCLvel*ZLCL_kay   
@@ -5757,7 +5817,7 @@ updraft:    DO NK=K,KL-1
           ENDIF
         ENDIF
       ENDIF devap
-!
+
 !...IF DOWNDRAFT DOES NOT EVAPORATE ANY WATER FOR SPECIFIED RELATIVE
 !...HUMIDITY, NO DOWNDRAFT IS ALLOWED...
 !
@@ -5816,7 +5876,8 @@ d_mf:   IF(TDER.LT.1.)THEN
 !           DETLQ(NK)=DETLQ(NK)*UPDINC
 !           DETIC(NK)=DETIC(NK)*UPDINC
 !         ENDDO
-!     
+!
+  
 !...ZERO OUT THE ARRAYS FOR DOWNDRAFT DATA AT LEVELS ABOVE AND BELOW THE
 !...DOWNDRAFT...
 !     
@@ -6651,6 +6712,186 @@ iter:     DO NCOUNT=1,10
           DTDT(K)=(TG(K)-T0(K))/TIMEC
           DQDT(K)=(QG(K)-Q0(K))/TIMEC
         ENDDO
+
+!JTR Begin CMT
+        IF(cmt_opt_flag) THEN
+
+              DO KQ=KTS,KTE
+                 JK = KTE-KQ+1
+                 DPconvF(1,JK)=0.0
+                 DERconvF(1,JK)=0.0
+                 UERconvF(1,JK)=0.0
+                 MC(1,JK)=0.0
+                 UMFconvF(1,JK)=0.0
+                 PRU(1,JK)=0.0
+                 QDN(1,JK)=0.0
+                 QUP(1,JK)=0.0
+                 QHAT(1,JK)=0.0
+                 SDD(1,JK)=0.0
+                 SUU(1,JK)=0.0
+                 SHAT(1,JK)=0.0
+                 TEE(1,JK)=0.0
+                 U0F(1,JK)=0.0
+                 V0F(1,JK)=0.0
+                 Z0F(1,JK)=0.0
+                 ZFU(1,JK)=0.0
+              END DO
+
+              zf_wrf(0) = 0.0  ! ground
+              grav = 9.8
+              cpin = CP
+              Rdry = R
+              Zfu(1,KTE+1) = 0.0
+                 DTnew = DT
+                 DSUBCLD(1) = ZLCL
+                 VMFLCLconv(1) = ((VMFLCL/DXSQ)*G)/100.
+                 IL1G = 1
+                 IL2G = 1
+                 ILG = 1
+                 MSG1 = 0
+!ckay
+                 JBB(1) = KTE-KLCL+1  ! updraft base level   =====>>> flipped for CAM5 indexing
+                 JDD(1) = KTE-LFS+1
+                 JTT(1) = KTE-LTOP+1
+!ckay
+                  if(JDD(1).LT.JTT(1).or.JDD(1).GT.JBB(1)) then 
+                      JDD(1)=JBB(1)-1  ! for cases no downdraft
+                   end if
+                  if(jtt(1).gt.jbb(1))  then
+                   JTT(1) = JBB(1)
+                  end if     
+
+!JTR Begin CMT Variable Prep
+! CKAY fill in grid-scale values for below cloud and above cloud portions
+! Ckay and then fill in-cloud updraft and downdraft properties
+               DO KQ=KTS,KTE
+                 TDN(KQ) = T0(KQ)
+                 TUP(KQ) = T0(KQ)
+               end do
+
+
+               !JTRnew: Added conditionals in case up/downdraft temps are 0.0
+               DO KQ= KLCL,LTOP
+                 if(TZ(KQ).NE.0.0) then
+                        TDN(KQ) = TZ(KQ)
+                 endif
+                 if(TU(KQ).NE.0.0) then
+                        TUP(KQ) = TU(KQ)
+                 endif
+               end do
+               
+               !JTRnew: Pulled this out of the main loop so the entire column
+               !gets defined before use in the main loop
+               DO KQ=KTS,KTE
+                  zf_wrf(KQ) = zf_wrf(KQ-1)+DZQ(KQ)
+                  stat_energy(KQ) = CP*(T0(KQ)*(1.0+0.622*Q0(KQ))) + G*Zf_wrf(KQ)
+               ENDDO
+
+               DO KQ=KTS,KTE
+                 JK = KTE-KQ+1
+                 DUDTnew(1,JK) = 0.0
+                 DVDTnew(1,JK) = 0.0
+                 DPDX(1,JK) = 0.0
+                 DPDY(1,JK) = 0.0
+
+                 zf_wrf(KQ) = zf_wrf(KQ-1)+DZQ(KQ)
+                 zfu(1,JK) = zf_wrf(KQ) 
+
+                 IF(KQ.EQ.KTE) THEN
+                     qhat(1,JK) = Q0(KQ)
+                     shat(1,JK) = stat_energy(KQ)
+                 ELSE
+                     qhat(1,JK) = 0.5*(Q0(KQ)/(1.+Q0(KQ)) + Q0(KQ+1)/(1.+Q0(KQ+1))) 
+                     shat(1,JK) = 0.5*(stat_energy(KQ) + stat_energy(KQ+1))
+                 ENDIF
+                  
+!ckay fill in clear and cloudy layers properly
+               IF(KQ.LT.KLCL .OR. KQ.GT.LTOP) then  ! subcloud layer or above-cloud layer
+                   QUP(1,JK) = Q0(KQ)/(1.+Q0(KQ))
+                   QDN(1,JK) = Q0(KQ)/(1.+Q0(KQ))
+                   SUU(1,JK) = CP*(T0(KQ)*(1.0+0.622*Q0(KQ))) + G*Zf_wrf(KQ)
+                   SDD(1,JK) = CP*(T0(KQ)*(1.0+0.622*Q0(KQ))) + G*Zf_wrf(KQ)
+               Else  
+                 QUP(1,JK) = QU(KQ)/(1.+QU(KQ))
+                 QDN(1,JK) = QD(KQ)/(1.+QD(KQ))
+
+                 !JTRnew: Replaced TU and TZ with TUP and TDN
+                 !Ckay replaced Qu and Qd with QUP & QDN
+                 SUU(1,JK) = CP*(TUP(KQ)*(1.0+0.622*QUP(1,JK))) + G*Zf_wrf(KQ)
+                 SDD(1,JK) = CP*(TDN(KQ)*(1.0+0.622*QDN(1,JK))) + G*Zf_wrf(KQ)
+               End if ! for subcloud and above-cloud layers
+                 DERconvF(1,JK) = (((DER(KQ)/DXSQ)*G)/100.)/DZQ(KQ)
+                 UERconvF(1,JK) = (((UER(KQ)/DXSQ)*G)/100.)/DZQ(KQ)
+                 DMFconvF(1,JK) = ((DMF(KQ)/DXSQ)*G)/100.
+                 !JTR Updraft mass flux from kg/s to hpa/s
+                 UMFconvF(1,JK) = ((UMF(KQ)/DXSQ)*G)/100.
+                 MC(1,JK) = DMFconvF(1,JK) + UMFconvF(1,JK)
+                 DPconvF(1,JK) = DP(KQ)/100.
+                 PRU(1,JK) = P0(KQ)/100.0    ! in millibars or hPa
+                 U0F(1,JK) = U0(KQ)
+                 V0F(1,JK) = V0(KQ)
+                 Z0F(1,JK) = Z0(KQ)
+                 TEE(1,JK) = T0(KQ)
+               END DO ! for k loop
+
+!JTR End CMT Variable Prep
+              if(CMTprint) then
+                print *,'DP',minval(DPconvF),maxval(DPconvF)
+                print *,'DER',minval(DERconvF),maxval(DERconvF)
+                print *,'UER',minval(UERconvF),maxval(UERconvF)
+                print *,'MC',minval(MC),maxval(MC)
+                print *,'DMF',minval(DMFconvF),maxval(DMFconvF)
+                print *,'UMF',minval(UMFconvF),maxval(UMFconvF)
+                print *,'VMFLCL',VMFLCLconv(ILG)
+                print *,'PRU',minval(PRU),maxval(PRU)
+                print *,'QDD',maxval(QDn)
+                print *,'QUU',minval(QUp),maxval(QUp)
+                print *,'QHAT',minval(QHAT),maxval(QHAT)
+                print *,'SDD',minval(SDD),maxval(SDD)
+                print *,'SUU',minval(SUU),maxval(SUU)
+                print *,'SHAT',minval(SHAT),maxval(SHAT)
+                print *,'TEE',minval(TEE),maxval(TEE)
+                print *,'U0F',minval(U0F),maxval(U0F)
+                print *,'V0F',minval(V0F),maxval(V0F)
+                print *,'Z0F',minval(Z0F),maxval(Z0F)
+                print *,'ZFU',minval(ZFU),maxval(ZFU)
+                print *,'DSUBCLD',DSUBCLD(ILG)
+                print *,'JBB',JBB(ILG)
+                print *,'JDD',JDD(ILG)
+                print *,'JTT',JTT(ILG)
+                print *,'msg1',msg1
+                print *,'DT',DTnew
+                print *,'grav',grav
+                print *,'cpin',CPIN
+                print *,'rdry',Rdry
+                print *,'KTE',KTE
+                print *,'IL1G',IL1G
+                print *,'IL2G',IL2G
+                print *,'ILG',ILG
+              end if ! CMTpring
+           
+                CALL MSKF_CMT(DUDTnew,DVDTnew,dpdx,dpdy,     &
+                       DPconvF,DERconvF,UERconvF,          &
+                       MC,DMFconvF,                        &
+                       UMFconvF,VMFLCLconv,PRU,       &
+                       QDN,QUP,QHAT,SDD,SUU,SHAT,TEE,U0F,  &
+                       V0F,Z0F,ZFU,DSUBCLD,JBB,  &
+                       JDD,JTT,msg1,DTnew,       &
+                       grav,CPIN,Rdry,KTE,IL1G,IL2G,ILG)
+           !Invert tendency arrays
+           DO KQ=kts,kte
+              JK = KTE-KQ+1
+              DUDT(KQ) =  DUDTnew(1,JK)
+              DVDT(KQ) =  DVDTnew(1,JK)
+           ENDDO
+
+              if(CMTprint) then
+           print *,'max/min dudt=',maxval(DUDT), minval(DUDT)
+           print *,'max/min dVdt=',maxval(DVDT), minval(DVDT)
+              end if ! for CMTprint
+        ENDIF  ! for cmt flag
+!JTR End CMT
+        
         PRATEC(I,J)=PPTFLX*(1.-FBFRC)/DXSQ
         RAINCV(I,J)=DT*PRATEC(I,J)
 !        RAINCV(I,J)=.1*.5*DT*PPTFLX/DXSQ               !  PPT FB MODS
@@ -7113,7 +7354,8 @@ iter:     DO NCOUNT=1,10
                      P_FIRST_SCALAR,restart,allowed_to_read,        &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
-                     its, ite, jts, jte, kts, kte                   )
+                     its, ite, jts, jte, kts, kte,                  &
+                     RUCUTEN, RVCUTEN                               ) !JTR
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !  SAVE !TWG 2017 add to avoid memeory issues
@@ -7131,7 +7373,9 @@ iter:     DO NCOUNT=1,10
                                                           RQCCUTEN, &
                                                           RQRCUTEN, &
                                                           RQICUTEN, &
-                                                          RQSCUTEN
+                                                          RQSCUTEN, &
+                                                           RUCUTEN, &
+                                                           RVCUTEN
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: W0AVG
 
@@ -7153,6 +7397,9 @@ iter:     DO NCOUNT=1,10
          RQVCUTEN(i,k,j)=0.
          RQCCUTEN(i,k,j)=0.
          RQRCUTEN(i,k,j)=0.
+         !JTR Momentum tendencies
+         RUCUTEN(i,k,j)=0.
+         RVCUTEN(i,k,j)=0.
       ENDDO
       ENDDO
       ENDDO
@@ -7329,5 +7576,492 @@ iter:     DO NCOUNT=1,10
        enddo   
 !
    END SUBROUTINE MSKF_LUTAB
+
+!JTR 06/18/2019: Inserted momentum transport subroutine
+    SUBROUTINE MSKF_CMT(DUDT,DVDT,dpdx,dpdy, &
+    DP,ED,EU,MC,MD,MU,MB, &
+    P,QD,QU,QHAT,SD,SU,SHAT,T,U,V,Z,ZF, &
+    DSUBCLD,JB,JD,JT, &
+    MSG,DT,GRAV,CPRES,RGAS,ILEV,IL1G,IL2G,ILG)
+
+!     * JULY 17/92. - GUANG JUN ZHANG, M.LAZARE.
+
+!     * PERFORMS MOMENTUM MIXING DUE TO CUMULUS PARAMETRIZATION.
+
+! ongxl 20060901---------------------
+    use shr_kind_mod, only: r8=>shr_kind_r8
+    implicit none
+    integer, parameter :: NBF = 10
+! ongxl      PARAMETER(NBF=10)
+! ongxl      PARAMETER(JLG=128, JLEV=18)
+! ongxl 20060901---------------------
+         
+    real(r8) DUDT(ILG,ILEV),  DVDT(ILG,ILEV), &
+    dpdx(ILG,ILEV),  dpdy(ILG,ILEV), &
+    ALPHA(ILG,ILEV), DP(ILG,ILEV), &
+    ED(ILG,ILEV),    EU(ILG,ILEV),    MB(ILG), &
+    MC(ILG,ILEV),    MD(ILG,ILEV),    MU(ILG,ILEV), &
+    P(ILG,ILEV),     QD(ILG,ILEV),    QU(ILG,ILEV), &
+    QHAT(ILG,ILEV),  SD(ILG,ILEV),    SU(ILG,ILEV), &
+    SHAT(ILG,ILEV),  T(ILG,ILEV),     U(ILG,ILEV), &
+    V(ILG,ILEV),     Z(ILG,ILEV),     ZF(ILG,ILEV+1)    !songxl
+! ongxl     7     V(ILG,ILEV),     Z(ILG,ILEV),     ZF(ILG,ILEV)
+
+    real(r8) DSUBCLD(ILG)
+! ongxl 20060901-----------------
+    real(r8) DT, GRAV, CPRES, RGAS
+    integer :: MSG, ILEV, IL1G, IL2G, ILG
+! ongxl 20060901-----------------
+
+    INTEGER ::   JB(ILG),    JD(ILG),         JT(ILG)
+
+!     * INTERNAL WORK FIELDS.
+
+    real(r8) AC(ILG,ILEV),    AD(ILG,ILEV),    AU(ILG,ILEV), &
+    ACFL(ILG,ILEV),  ADFL(ILG,ILEV),  AUFL(ILG,ILEV), &
+    B1(ILG,ILEV),    B1FL(ILG,ILEV),  BD(ILG,ILEV), &
+    BU(ILG,ILEV),    D0(ILG,ILEV),    D0HAT(ILG,ILEV), &
+    DELPX(ILG,ILEV), DELPY(ILG,ILEV), DZ(ILG,ILEV), &
+    DZF(ILG,ILEV),   EC(ILG,ILEV),    E(ILG,ILEV), &
+    EHAT(ILG,ILEV),  RHO(ILG,ILEV),   RHOHAT(ILG,ILEV), &
+    UHAT(ILG,ILEV),  VHAT(ILG,ILEV),  UC(ILG,ILEV), &
+    VC(ILG,ILEV),    W0(ILG,ILEV),    W1(ILG,ILEV), &
+    W0FL(ILG,ILEV),  W1FL(ILG,ILEV)
+
+    real(r8) COSA(ILG),    SINA(ILG),    CCX(ILG),     CCY(ILG), &
+    UMN(ILG),     VMN(ILG),     DEP(ILG)
+
+    real(r8) FX(ILG,ILEV,NBF), DX(ILG,ILEV,NBF), &
+    AA(ILG,ILEV,NBF), BB(ILG,ILEV,NBF),  CC(ILG,ILEV,NBF), &
+    FY(ILG,ILEV,NBF), DY(ILG,ILEV,NBF)
+
+! ongxl      COMMON/CONST/ALFA1(NBF),ALFA2(NBF),BSJ0(NBF),BSJ1(NBF),
+! ongxl     1             BSJ0CHI,FACTOR
+! ongxl      COMMON/TAU/TAU(NBF)
+! ongxl 20060901-----------------
+    real(r8) ALFA1(NBF),ALFA2(NBF),BSJ0(NBF),BSJ1(NBF),BSJ0CHI,FACTOR,TAU(NBF)
+! ongxl 20060901-----------------
+    DATA ALFA1/4.33675e-05_r8, 7.88429e-05_r8, 1.13065e-04_r8, 1.45836e-04_r8, &
+    &            1.76823e-04_r8, 2.05660e-04_r8, 2.32101e-04_r8, 2.55829e-04_r8, &
+    &            2.76672e-04_r8, 2.94347e-04_r8/
+    DATA ALFA2/-8.64731e-05_r8,-1.56092e-04_r8,-2.21315e-04_r8,-2.80995e-04_r8, &
+    -3.33799e-04_r8,-3.78455e-04_r8,-4.14020e-04_r8,-4.39600e-04_r8, &
+    -4.54652e-04_r8,-4.58761e-04_r8/
+    DATA BSJ0/-4.02759e-01_r8, 3.00116e-01_r8, -2.49705e-01_r8, 2.18359e-01_r8, &
+    -1.96465e-01_r8, 1.80062e-01_r8, -1.67183e-01_r8, 1.56722e-01_r8, &
+    -1.48011e-01_r8, 1.40605e-01_r8/
+    DATA BSJ1/1.14193e-01_r8, 2.05841e-01_r8, 2.91209e-01_r8, 3.68619e-01_r8, &
+    &           4.36201e-01_r8, 4.92233e-01_r8, 5.35486e-01_r8, 5.64886e-01_r8, &
+    &           5.79879e-01_r8, 5.80195e-01_r8/
+    DATA BSJ0CHI/-0.402759_r8/
+    DATA FACTOR/0.179503_r8/
+    DATA TAU/ 3.83170e+00_r8, 7.01560e+00_r8, 1.01735e+01_r8, 1.33237e+01_r8, &
+    &           1.64705e+01_r8, 1.96120e+01_r8, 2.27560e+01_r8, 2.58980e+01_r8, &
+    &           2.90480e+01_r8, 3.21926e+01_r8/
+! ongxl 20060901------------------------
+    integer :: J, IL, N ,jj
+    real(r8) RC, RMAX, CHI, SHAPE, RNU, WINDMAG
+! ongxl 20060901-----------------------
+
+!----------------------------------------------------------------------
+!***********************************************************************
+! CCC INITIALIZE RELEVANT INTERFACIAL AND MIDLAYER VARIABLES     CCCCC
+!***********************************************************************
+    RC=3000._r8         ! cloud radius (m)
+    RMAX=50000._r8      ! distance where perturb. vanishes (m)
+    CHI=3.8317_r8/RC
+    SHAPE=0.8_r8
+    DO 5 J=MSG+1,ILEV
+        DO 5 IL=IL1G,IL2G
+            BU(IL,J)=0._r8
+            ALPHA(IL,J)=0.5_r8
+            BD(IL,J)=0._r8
+            DELPX(IL,J)=0._r8
+            DELPY(IL,J)=0._r8
+            EC(IL,J)=EU(IL,J)+ED(IL,J)     ! unit: 1/s
+            IF(T(IL,J) > 0._r8)        THEN
+                RHO(IL,J)=100._r8*P(IL,J)/(RGAS*T(IL,J))
+            ENDIF
+    5 END DO
+
+    DO 10 N=1,NBF
+        DO 10 J=MSG+1,ILEV
+            DO 10 IL=IL1G,IL2G
+                FX(IL,J,N)=0._r8
+                FY(IL,J,N)=0._r8
+    10 END DO
+
+    DO 15 J=MSG+2,ILEV
+        DO 15 IL=IL1G,IL2G
+            BU(IL,J)=(   SU(IL,J)-SHAT(IL,J)+0.608_r8*( QU(IL,J) &
+            *(SU(IL,J)-GRAV/CPRES*ZF(IL,J))-QHAT(IL,J) &
+            *(SHAT(IL,J)-GRAV/CPRES*ZF(IL,J)) )  ) &
+            /( (SHAT(IL,J)-GRAV/CPRES*ZF(IL,J)) &
+            *(1._r8+.608_r8*QHAT(IL,J)) )*GRAV
+            BD(IL,J)=(   SD(IL,J)-SHAT(IL,J)+0.608_r8*( QD(IL,J) &
+            *(SD(IL,J)-GRAV/CPRES*ZF(IL,J))-QHAT(IL,J) &
+            *(SHAT(IL,J)-GRAV/CPRES*ZF(IL,J)) )  ) &
+            /( (SHAT(IL,J)-GRAV/CPRES*ZF(IL,J)) &
+            *(1._r8+.608_r8*QHAT(IL,J)) )*GRAV
+    15 END DO
+
+    DO 20 IL=IL1G,IL2G
+        UMN(IL)=0._r8
+        VMN(IL)=0._r8
+    !       DEP(IL)=0.
+        COSA(IL)=0._r8
+        SINA(IL)=0._r8
+        CCX(IL)=0._r8
+        CCY(IL)=0._r8
+    20 END DO
+
+    DO 25 J=1,ILEV
+        DO 25 IL=IL1G,IL2G
+            IF(J >= JT(IL) .AND. J < JB(IL))     THEN
+                UMN(IL)=UMN(IL)+U(IL,J)*P(IL,J)/T(IL,J)* &
+                (ZF(IL,J)-ZF(IL,J+1))
+                VMN(IL)=VMN(IL)+V(IL,J)*P(IL,J)/T(IL,J)* &
+                (ZF(IL,J)-ZF(IL,J+1))
+            !         DEP(IL)=DEP(IL)+P(IL,J)/T(IL,J)*(ZF(IL,J)-ZF(IL,J+1))
+            ENDIF
+    25 END DO
+
+    DO 30 IL=IL1G,IL2G
+        WINDMAG=SQRT(UMN(IL)**2+VMN(IL)**2)
+    !       IF(DEP(IL).NE.0. .AND. WINDMAG.NE.0.)   THEN
+        IF(WINDMAG /= 0._r8)                       THEN
+            COSA(IL)=UMN(IL)/WINDMAG
+            SINA(IL)=VMN(IL)/WINDMAG
+        !         CCX(IL)=0.*UMN(IL)/DEP(IL)
+        !         CCY(IL)=0.*VMN(IL)/DEP(IL)
+        ENDIF
+    30 END DO
+
+    DO 35 J=MSG+1,ILEV
+        DO 35 IL=IL1G,IL2G
+            IF(J > MSG+1)                          THEN
+                RHOHAT(IL,J)=ALPHA(IL,J)*RHO(IL,J-1)+(1._r8-ALPHA(IL,J))*RHO(IL,J)
+                DZF(IL,J)=Z(IL,J-1)-Z(IL,J)
+                UHAT(IL,J)=ALPHA(IL,J)*U(IL,J-1)+(1._r8-ALPHA(IL,J))*U(IL,J)
+                VHAT(IL,J)=ALPHA(IL,J)*V(IL,J-1)+(1._r8-ALPHA(IL,J))*V(IL,J)
+            ELSE
+                RHOHAT(IL,J)=RHO(IL,J)
+                DZF(IL,J)=ZF(IL,J)-Z(IL,J)
+                UHAT(IL,J)=U(IL,J)
+                VHAT(IL,J)=V(IL,J)
+            ENDIF
+            UC(IL,J)=UHAT(IL,J)
+            VC(IL,J)=VHAT(IL,J)
+    35 END DO
+
+    DO 40 J=MSG+1,ILEV
+        DO 40 IL=IL1G,IL2G
+            IF(J < ILEV)                       THEN
+                DZ(IL,J)=ZF(IL,J)-ZF(IL,J+1)
+            ELSE
+            !          DZ(IL,ILEV)=ZF(IL,ILEV)
+                DZ(IL,ILEV)=DP(IL,ILEV)*100._r8/(RHO(IL,ILEV)*GRAV) !m
+            ENDIF
+    40 END DO
+!     ******************************************************************
+!     AU, AD,AC ARE ACTUAL FRACTIONAL CLOUD AREA TIMES GRAV
+!     ******************************************************************
+    DO 75 J=MSG+1,ILEV
+        DO 75 IL=IL1G,IL2G
+            IF(J >= JT(IL))                     THEN
+                AU(IL,J)=MU(IL,JB(IL))*100._r8/GRAV/RHOHAT(IL,JB(IL))
+            ELSE
+                AU(IL,J)=0._r8
+            ENDIF
+            IF(J >= JD(IL))                     THEN
+                AD(IL,J)=-MD(IL,JD(IL))*100._r8/GRAV/RHOHAT(IL,JD(IL))
+            ELSE
+                AD(IL,J)=0._r8
+            ENDIF
+            AC(IL,J)=AU(IL,J)+AD(IL,J)
+            IF(AC(IL,J) > 0._r8)                  THEN
+                W0(IL,J)=MC(IL,J)*100._r8/GRAV/(RHOHAT(IL,J)*AC(IL,J))
+            ELSE
+                W0(IL,J)=0._r8
+            ENDIF
+    75 END DO
+
+    DO 80 J=MSG+1,ILEV
+        DO 80 IL=IL1G,IL2G
+            IF(J < ILEV)                       THEN
+                ACFL(IL,J)=ALPHA(IL,J)*AC(IL,J)+(1._r8-ALPHA(IL,J))*AC(IL,J+1)
+                AUFL(IL,J)=ALPHA(IL,J)*AU(IL,J)+(1._r8-ALPHA(IL,J))*AU(IL,J+1)
+                ADFL(IL,J)=ALPHA(IL,J)*AD(IL,J)+(1._r8-ALPHA(IL,J))*AD(IL,J+1)
+                W0FL(IL,J)=ALPHA(IL,J)*W0(IL,J)+(1._r8-ALPHA(IL,J))*W0(IL,J+1)
+            ELSE
+                ACFL(IL,J)=ALPHA(IL,J)*AC(IL,J)
+                AUFL(IL,J)=ALPHA(IL,J)*AU(IL,J)
+                ADFL(IL,J)=ALPHA(IL,J)*AD(IL,J)
+                W0FL(IL,J)=ALPHA(IL,J)*W0(IL,J)
+            ENDIF
+    80 END DO
+
+    DO 250 J=MSG+1,ILEV
+        DO 250 IL=IL1G,IL2G
+            IF(J < JB(IL) .AND. J >= JT(IL) .AND. ACFL(IL,J) > 0._r8) THEN
+                D0(IL,J)=( MC(IL,J+1)-MC(IL,J) )*100._r8/GRAV &
+                /(RHO(IL,J)*DZ(IL,J)*ACFL(IL,J))
+            ELSE
+                IF(J == JB(IL) .AND. ACFL(IL,J) > 0._r8 )               THEN
+                    D0(IL,J)= -MC(IL,J)*100._r8/GRAV &
+                    /(RHO(IL,J)*DZ(IL,J)*ACFL(IL,J))
+                ELSE
+                    D0(IL,J)=0._r8
+                ENDIF
+            ENDIF
+            IF(J < JB(IL) .AND. J >= JT(IL) .AND. ACFL(IL,J) > 0._r8 &
+             .AND. ADFL(IL,J) > 0._r8 .AND. AUFL(IL,J) > 0._r8)        THEN
+                E(IL,J)=1._r8/CHI**2*ADFL(IL,J)/(ACFL(IL,J)*RHO(IL,J)) &
+                *( 1._r8/(AUFL(IL,J)*DZ(IL,J)) &
+                *(MU(IL,J)-MU(IL,J+1))*100._r8/GRAV - &
+                &                 1._r8/(ADFL(IL,J)*DZ(IL,J)) &
+                *(MD(IL,J)-MD(IL,J+1))*100._r8/GRAV ) &
+                *SHAPE/FACTOR
+
+            ELSE
+                E(IL,J)=0._r8
+            ENDIF
+    250 END DO
+
+    DO 275 J=MSG+1,ILEV
+        DO 275 IL=IL1G,IL2G
+            IF(J > MSG+1)                                           THEN
+                D0HAT(IL,J)=ALPHA(IL,J)*D0(IL,J-1)+(1._r8-ALPHA(IL,J))*D0(IL,J)
+                EHAT(IL,J)=ALPHA(IL,J)*E(IL,J-1)+(1._r8-ALPHA(IL,J))*E(IL,J)
+            ELSE
+                D0HAT(IL,J)=(1._r8-ALPHA(IL,J))*D0(IL,J)
+                EHAT(IL,J)=(1._r8-ALPHA(IL,J))*E(IL,J)
+            ENDIF
+    275 END DO
+
+!     **********************************************
+!     CALCULATE FIRST HARMONICS IN THERMODYNAMICS
+!     **********************************************
+    DO 325 J=MSG+1,ILEV
+        DO 325 IL=IL1G,IL2G
+            IF( J >= JD(IL) .AND. J <= JB(IL) .AND. AU(IL,J) > 0._r8 &
+             .AND. AD(IL,J) > 0._r8 .AND. AC(IL,J) > 0._r8 )          THEN
+                W1(IL,J)=SHAPE/FACTOR*(MU(IL,J)/AU(IL,J)-MD(IL,J)/AD(IL,J)) &
+                *100._r8/GRAV*AD(IL,J)/(AC(IL,J)*RHOHAT(IL,J))
+                B1(IL,J)=SHAPE/FACTOR*(BU(IL,J)-BD(IL,J))*AD(IL,J)/AC(IL,J)
+            ELSE
+                W1(IL,J)=0._r8
+                B1(IL,J)=0._r8
+            ENDIF
+    325 END DO
+
+    DO 350 J=MSG+1,ILEV
+        DO 350 IL=IL1G,IL2G
+            IF(J < ILEV)                                      THEN
+                W1FL(IL,J)=ALPHA(IL,J)*W1(IL,J)+(1._r8-ALPHA(IL,J))*W1(IL,J+1)
+                B1FL(IL,J)=ALPHA(IL,J)*B1(IL,J)+(1._r8-ALPHA(IL,J))*B1(IL,J+1)
+            ELSE
+                W1FL(IL,J)=ALPHA(IL,J)*W1(IL,J)
+                B1FL(IL,J)=ALPHA(IL,J)*B1(IL,J)
+            ENDIF
+    350 END DO
+
+    DO 500 N=1,NBF
+        DO 500 J=MSG+1,ILEV
+            DO 500 IL=IL1G,IL2G
+                IF(J < JB(IL) .AND. J >= JT(IL) .AND. MC(IL,J) > 0._r8 &
+                 .AND. MC(IL,J+1) > 0._r8)                          THEN
+                    FX(IL,J,N)=2._r8*RHO(IL,J)/BSJ0(N)**2 &
+                    *( D0(IL,J)*E(IL,J)*CHI**2*COSA(IL)*ALFA1(N) &
+                    +2._r8*W0FL(IL,J)*RC/RMAX**2*BSJ1(N) &
+                    *( (EHAT(IL,J)-EHAT(IL,J+1))/DZ(IL,J)*CHI*COSA(IL) &
+                    *BSJ0CHI+(UHAT(IL,J)-UHAT(IL,J+1))/DZ(IL,J) ) &
+                    -(D0HAT(IL,J)-D0HAT(IL,J+1))/DZ(IL,J)*W1FL(IL,J)*COSA(IL) &
+                    *(ALFA2(N)-ALFA1(N))    -2._r8*( (W0(IL,J)-W0(IL,J+1)) &
+                    *(W1(IL,J)-W1(IL,J+1))/DZ(IL,J)**2 &
+                    -W0FL(IL,J)*W1FL(IL,J) &
+                    *( LOG(RHO(IL,J-1))/(DZ(IL,J)*DZF(IL,J)) &
+                    -(1._r8/DZF(IL,J)+1._r8/DZF(IL,J+1))/DZ(IL,J) &
+                    *LOG(RHO(IL,J)) &
+                    +LOG(RHO(IL,J+1))/(DZ(IL,J)*DZF(IL,J+1)) ) ) &
+                    *COSA(IL)*ALFA1(N) &
+                    +(RHOHAT(IL,J)*B1(IL,J)-RHOHAT(IL,J+1)*B1(IL,J+1)) &
+                    /(DZ(IL,J)*RHO(IL,J))*COSA(IL)*ALFA1(N) )
+                    FY(IL,J,N)=2._r8*RHO(IL,J)/BSJ0(N)**2 &
+                    *( D0(IL,J)*E(IL,J)*CHI**2*SINA(IL)*ALFA1(N) &
+                    +2._r8*W0FL(IL,J)*RC/RMAX**2*BSJ1(N) &
+                    *( (EHAT(IL,J)-EHAT(IL,J+1))/DZ(IL,J)*CHI*SINA(IL) &
+                    *BSJ0CHI+(VHAT(IL,J)-VHAT(IL,J+1))/DZ(IL,J) ) &
+                    -(D0HAT(IL,J)-D0HAT(IL,J+1))/DZ(IL,J)*W1FL(IL,J)*SINA(IL) &
+                    *(ALFA2(N)-ALFA1(N))    -2._r8*( (W0(IL,J)-W0(IL,J+1)) &
+                    *(W1(IL,J)-W1(IL,J+1))/DZ(IL,J)**2 &
+                    -W0FL(IL,J)*W1FL(IL,J) &
+                    *( LOG(RHO(IL,J-1))/(DZ(IL,J)*DZF(IL,J)) &
+                    -(1._r8/DZF(IL,J)+1._r8/DZF(IL,J+1))/DZ(IL,J) &
+                    *LOG(RHO(IL,J)) &
+                    +LOG(RHO(IL,J+1))/(DZ(IL,J)*DZF(IL,J+1)) ) ) &
+                    *SINA(IL)*ALFA1(N) &
+                    +(RHOHAT(IL,J)*B1(IL,J)-RHOHAT(IL,J+1)*B1(IL,J+1)) &
+                    /(DZ(IL,J)*RHO(IL,J))*SINA(IL)*ALFA1(N) )
+                ENDIF
+    500 END DO
+
+    DO 525 N=1,NBF
+        DO 525 IL=IL1G,IL2G
+            AA(IL,MSG+1,N)=0._r8
+            BB(IL,MSG+1,N)=1._r8/ DZF(IL,MSG+2)
+            CC(IL,MSG+1,N)=-1._r8/ DZF(IL,MSG+2)
+              
+            AA(IL,ILEV,N)=1._r8/ DZF(IL,ILEV)
+            BB(IL,ILEV,N)=-1._r8/ DZF(IL,ILEV)
+            CC(IL,ILEV,N)=0._r8
+              
+            DX(IL,MSG+1,N)=B1(IL,MSG+2)*ALFA1(N)*2._r8 &
+            *COSA(IL)/BSJ0(N)**2
+            DX(IL,ILEV,N)=B1(IL,ILEV)*ALFA1(N)*2._r8 &
+            *COSA(IL)/BSJ0(N)**2
+              
+            DY(IL,MSG+1,N)=B1(IL,MSG+2)*ALFA1(N)*2._r8 &
+            *SINA(IL)/BSJ0(N)**2
+            DY(IL,ILEV,N)=B1(IL,ILEV)*ALFA1(N)*2._r8 &
+            *SINA(IL)/BSJ0(N)**2
+    525 END DO
+
+    DO 550 N=1,NBF
+        DO 550 J=MSG+2,ILEV-1
+            DO 550 IL=IL1G,IL2G
+                AA(IL,J,N)=1._r8/( DZ(IL,J)*DZF(IL,J) )
+                BB(IL,J,N)=-( 1._r8/DZ(IL,J)*(1._r8/DZF(IL,J)+1._r8/DZF(IL,J+1)) &
+                +(TAU(N)/RMAX)**2 )
+                CC(IL,J,N)=1._r8/( DZ(IL,J)*DZF(IL,J+1) )
+                  
+                DX(IL,J,N)=FX(IL,J,N)
+                DY(IL,J,N)=FY(IL,J,N)
+    550 END DO
+
+
+    DO 575 N=1,NBF
+        DO 575 IL=IL1G,IL2G
+            CC(IL,MSG+1,N)=CC(IL,MSG+1,N)/BB(IL,MSG+1,N)
+            DX(IL,MSG+1,N)=DX(IL,MSG+1,N)/BB(IL,MSG+1,N)
+            DY(IL,MSG+1,N)=DY(IL,MSG+1,N)/BB(IL,MSG+1,N)
+    575 END DO
+
+    DO 600 N=1,NBF
+        DO 600 J=MSG+2,ILEV
+            DO 600 IL=IL1G,IL2G
+                CC(IL,J,N)=CC(IL,J,N)/(BB(IL,J,N)-AA(IL,J,N)*CC(IL,J-1,N))
+                DX(IL,J,N)=(DX(IL,J,N)-AA(IL,J,N)*DX(IL,J-1,N)) &
+                /(BB(IL,J,N)-AA(IL,J,N)*CC(IL,J-1,N))
+                DY(IL,J,N)=(DY(IL,J,N)-AA(IL,J,N)*DY(IL,J-1,N)) &
+                /(BB(IL,J,N)-AA(IL,J,N)*CC(IL,J-1,N))
+    600 END DO
+
+    DO 650 N=1,NBF
+        DO 650 J=ILEV-1,MSG+1,-1
+            DO 650 IL=IL1G,IL2G
+                DX(IL,J,N)=DX(IL,J,N)-CC(IL,J,N)*DX(IL,J+1,N)
+                DY(IL,J,N)=DY(IL,J,N)-CC(IL,J,N)*DY(IL,J+1,N)
+    650 END DO
+
+    DO 700 N=1,NBF
+        DO 700 J=MSG+1,ILEV
+            DO 700 IL=IL1G,IL2G
+                DELPX(IL,J)=DELPX(IL,J)+DX(IL,J,N)*BSJ1(N)   !kg/m/s**2
+                DELPY(IL,J)=DELPY(IL,J)+DY(IL,J,N)*BSJ1(N)   !kg/m/s**2
+    700 END DO
+
+    DO 850 J=MSG+1,ILEV
+        DO 850 IL=IL1G,IL2G
+            DELPX(IL,J)=DELPX(IL,J)/RC             !kg/m**2/s**2
+            DELPY(IL,J)=DELPY(IL,J)/RC             !kg/m**2/s**2
+        ! to get cloud-scale pressure gradient by multiplying cloud fraction
+            DELPX(IL,J)=ACFL(IL,J)*DELPX(IL,J)/RHO(IL,J)  !m/s/s
+            DELPY(IL,J)=ACFL(IL,J)*DELPY(IL,J)/RHO(IL,J)  !m/s/s
+            dpdx(IL,J)=DELPX(IL,J)
+            dpdy(IL,J)=DELPY(IL,J)
+    850 END DO
+
+!     ************************************
+!     CALCULATE THE CLOUD MEAN WIND
+!     ************************************
+
+    DO 875 J=ILEV-1,MSG+1,-1
+        DO 875 IL=IL1G,IL2G
+            IF(MC(IL,J) > 0._r8 .AND. MC(IL,J+1) > 0._r8 &
+             .AND. J > JT(IL) .AND. J < JB(IL))      THEN
+                UC(IL,J)=UC(IL,J+1) + RHO(IL,J)*DZ(IL,J) &
+                /((MC(IL,J)+MC(IL,J+1))*0.5_r8*100._r8/GRAV) &
+                *( EC(IL,J)*(U(IL,J)-UC(IL,J+1))-DELPX(IL,J) )
+                VC(IL,J)=VC(IL,J+1) + RHO(IL,J)*DZ(IL,J) &
+                /((MC(IL,J)+MC(IL,J+1))*0.5_r8*100._r8/GRAV) &
+                *( EC(IL,J)*(V(IL,J)-VC(IL,J+1))-DELPY(IL,J) )
+            ENDIF
+    875 END DO
+
+!     RNU=1.
+    RNU=0._r8
+    DO 950 J=MSG+1,ILEV
+        DO 950 IL=IL1G,IL2G
+            IF( J >= JT(IL) .AND. J <= JB(IL) )                 THEN
+                UHAT(IL,J)=UHAT(IL,J)+RNU*ALPHA(IL,J)*DT*DUDT(IL,J-1)
+                VHAT(IL,J)=VHAT(IL,J)+RNU*ALPHA(IL,J)*DT*DVDT(IL,J-1)
+                IF(J == JT(IL))                                     THEN
+                    DUDT(IL,J)=1._r8/(1._r8+RNU*ALPHA(IL,J+1)*MC(IL,J+1)*DT/DP(IL,J))* &
+                    MC(IL,J+1)*(UC(IL,J+1)-UHAT(IL,J+1))/DP(IL,J)
+                    DVDT(IL,J)=1._r8/(1._r8+RNU*ALPHA(IL,J+1)*MC(IL,J+1)*DT/DP(IL,J))* &
+                    MC(IL,J+1)*(VC(IL,J+1)-VHAT(IL,J+1))/DP(IL,J)
+                ELSE IF(J < JB(IL))                                THEN
+                    DUDT(IL,J)=1._r8/(1._r8+RNU*ALPHA(IL,J+1)*MC(IL,J+1)*DT/DP(IL,J)) &
+                    *(MC(IL,J+1)*(UC(IL,J+1)-UHAT(IL,J+1)) &
+                    -MC(IL,J)*(UC(IL,J)-UHAT(IL,J)))/DP(IL,J)
+                    DVDT(IL,J)=1._r8/(1._r8+RNU*ALPHA(IL,J+1)*MC(IL,J+1)*DT/DP(IL,J)) &
+                    *(MC(IL,J+1)*(VC(IL,J+1)-VHAT(IL,J+1)) &
+                    -MC(IL,J)*(VC(IL,J)-VHAT(IL,J)))/DP(IL,J)
+                ELSE
+                    DUDT(IL,J)=-1._r8/DSUBCLD(IL)*MC(IL,J)*(UC(IL,J)-UHAT(IL,J))
+                    DVDT(IL,J)=-1._r8/DSUBCLD(IL)*MC(IL,J)*(VC(IL,J)-VHAT(IL,J))
+                ENDIF
+            ENDIF
+        ! dudt and dvdt (m/s/s)
+
+            if (abs(dudt(il,j)) > 5.0e-2_r8 .OR. abs(dvdt(il,j)) > 5.0e-2_r8) then
+                print*,'moment',il,j,dt,jt(il),jb(il) &
+                ,dudt(il,j),dvdt(il,j),dp(il,j) &
+                ,MC(IL,J+1),UC(IL,J+1),VC(IL,J+1),uhat(il,j+1),vhat(il,j+1) &
+                ,DSUBCLD(IL),MC(IL,J),UC(IL,J),VC(IL,J),UHAT(IL,J),VHAT(IL,J)
+                print*,'mb,msg,ilev=',mb(il),msg,ilev
+                print*,'uc=',(uc(il,jj),jj=msg+1,ilev)
+                print*,'vc=',(vc(il,jj),jj=msg+1,ilev)
+                print*,'mc=',(mc(il,jj),jj=msg+1,ilev)
+                print*,'mu=',(mu(il,jj),jj=msg+1,ilev)
+                print*,'md=',(md(il,jj),jj=msg+1,ilev)
+                print*,'u=',(u(il,jj),jj=msg+1,ilev)
+                print*,'v=',(v(il,jj),jj=msg+1,ilev)
+                print*,'ec=',(ec(il,jj),jj=msg+1,ilev)
+                print*,'delpx=',(delpx(il,jj),jj=msg+1,ilev)
+                print*,'delpy=',(delpy(il,jj),jj=msg+1,ilev)
+                print*,'RHO=',(RHO(il,jj),jj=msg+1,ilev)
+                print*,'dz=',(dz(il,jj),jj=msg+1,ilev)
+            endif
+
+        !     if (abs(dudt(il,j)).gt.1.0e-2.or.abs(dvdt(il,j)).gt.1.0e-2) then
+        !      do i9=IL1G,IL2G
+        !      do j9=MSG+1,ILEV
+        !      print* ,'bad',i9,j9,dt,jt(i9),jb(i9)
+        !    $       ,dudt(i9,j9),dvdt(i9,j9),dp(i9,j9),dz(i9,j9)
+        !    $       ,mc(i9,j9+1),uc(i9,j9+1),vc(i9,j9+1),ec(i9,j9+1)
+        !    $       ,du(i9,j9+1)
+        !    $       ,uhat(i9,j9+1),vhat(i9,j9+1),delpx(i9,j9),delpx(i9,j9+1)
+        !    $       ,delpy(i9,j9),delpy(i9,j9+1)
+        !      enddo
+        !      enddo
+        !     endif
+    950 END DO
+
+
+    RETURN
+    END SUBROUTINE MSKF_CMT
+
 
 END MODULE module_cu_mskf

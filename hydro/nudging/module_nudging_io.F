@@ -2,27 +2,28 @@
 !  Author(s)/Contact(s):
 !  Abstract:
 !  History Log:
-! 
+!
 !  Usage:
 !  Parameters: <Specify typical arguments passed>
 !  Input Files:
 !        <list file names and briefly describe the data they include>
 !  Output Files:
 !        <list file names and briefly describe the information they include>
-! 
+!
 !  Condition codes:
 !        <list exit condition or error codes returned >
 !        If appropriate, descriptive troubleshooting instructions or
 !        likely causes for failures could be mentioned here with the
 !        appropriate error code
-! 
+!
 !  User controllable options: <if applicable>
 
 module module_nudging_io
 
 use netcdf
-use module_namelist, only: nlst_rt
+use config_base, only: nlst
 use module_RT_data,  only: rt_domain
+use module_hydro_stop, only: HYDRO_stop
 
 implicit none
 #include <netcdf.inc>
@@ -44,41 +45,41 @@ integer, parameter :: did = 1
 contains
 
 !===================================================================================================
-! Program Name: 
+! Program Name:
 !   subroutine find_timeslice_file
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
+! Abstract:
 !   Return a single file path/names of timeslice files given a single date.
-! History Log: 
+! History Log:
 !   6/4/15 - Created,
 ! Usage:
-! Parameters: 
+! Parameters:
 !   q
-! Input Files:  
-! Output Files: 
-! Condition codes: 
+! Input Files:
+! Output Files:
+! Condition codes:
 ! User controllable options: namelist option for nlst_rt(did)%timeSlicePath
-! Notes: 
+! Notes:
 
-function find_timeslice_file(date, obsResolution)            
+function find_timeslice_file(date, obsResolution)
 implicit none
 character(len=256) :: find_timeslice_file      ! Output
 character(len=19), intent(in) :: date          ! Input
 character(len=2),  intent(in) :: obsResolution ! Input
 !Internals
-character(len=256) :: tmpTimeSlice 
+character(len=256) :: tmpTimeSlice
 logical :: fileExists
 
 #ifdef HYDRO_D
 print*,'Ndg: start find_timeslice_file'
 call flush(6)
-#endif 
+#endif
 
 find_timeslice_file=''
 ! is there a file with this name?
 ! note files are not resolved below minutes.
-tmpTimeSlice = trim(nlst_rt(did)%timeSlicePath) // date // "." // &
+tmpTimeSlice = trim(nlst(did)%timeSlicePath) // '/' //date // "." // &
                     obsResolution // 'min.usgsTimeSlice.ncdf'
 inquire(FILE=tmpTimeSlice, EXIST=fileExists)
 if (fileExists) find_timeslice_file = trim(tmpTimeSlice)
@@ -93,30 +94,30 @@ call flush(6)
 end function find_timeslice_file
 
 !===================================================================================================
-! Program Name: 
+! Program Name:
 !   subroutine read_timeslice_file
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
+! Abstract:
 !   Return the contents of a timeslice file.
-! History Log: 
+! History Log:
 !   6/4/15 - Created,
 ! Usage:
-! Parameters: 
-!   
-! Input Files:  
-! Output Files: 
-! Condition codes: 
+! Parameters:
+!
+! Input Files:
+! Output Files:
+! Condition codes:
 ! User controllable options: namelist option for nlst_rt(did)%timeSlicePath
-! Notes: 
- 
+! Notes:
+
 subroutine read_timeslice_file(  &
      timeSliceFile,              &  !! IN: char, file path/name
      sanityQcDischarge,          &  !! IN: perform sanity check qc?
      sliceTime,                  &  !! OUT: the file time.
      updateTime,                 &  !! OUT: the time the file was updated.
      sliceResolution,            &  !! OUT: temporal resolution of the file in minutes.
-     gageId,                     &  !! OUT: integer, the USGS gage ID. 
+     gageId,                     &  !! OUT: integer, the USGS gage ID.
      gageTime,                   &  !! OUT: output converted for comparision to model time??
      gageQC,                     &  !! OUT: quality control flag for discharge
      gageDischarge,              &  !! OUT: real, the m3/s observed discharge
@@ -179,7 +180,7 @@ call get_1d_netcdf_real(ncid, 'discharge', gageDischarge, caller, &
 errStatus=errStatus+errStatusOut
 
 !! the quality short integer needs scaled
-allocate(gageQCIn(size(gageQC))) 
+allocate(gageQCIn(size(gageQC)))
 call get_1d_netcdf_int2(ncid, 'discharge_quality', gageQCIn,        caller, &
                         fatalErr, errStatusOut)
 errStatus=errStatus+errStatusOut
@@ -194,13 +195,13 @@ if (sanityQcDischarge) then
    where(gageDischarge .le. 0.000) gageQC=0
    !! peak flow on MS river *2
    !! http://nwis.waterdata.usgs.gov/nwis/peak?site_no=07374000&agency_cd=USGS&format=html
-   !! baton rouge 1945: 1,473,000cfs=41,711cfs, multiply it roughly by 2
+   !! baton rouge 1945: 1,473,000cfs=41,711cms, multiply it roughly by 2
    where(gageDischarge .ge. 90000.0) gageQC=0
    if(any(gageQc .eq. 0)) then
-      write(6,*) 'Ndg: some gageQC set to zero'  
+      write(6,*) 'Ndg: some gageQC set to zero'
    endif
 endif
- 
+
 iRet = nf90_close(ncId)
 if (iRet /= nf90_NoErr) then
    write(*,'("Problem closing timeSliceFile: ''", A, "''")') trim(timeSliceFile)
@@ -209,32 +210,32 @@ if (iRet /= nf90_NoErr) then
 endif
 
 #ifdef HYDRO_D
-print*,'Ndg: finish read_timeslice_file'  
+print*,'Ndg: finish read_timeslice_file'
 call flush(6)!
-#endif 
+#endif
 
 end subroutine read_timeslice_file
 
 !===================================================================================================
-! Program Name: 
+! Program Name:
 !   subroutine read_reach_gage_collocation
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
-!   Read the gages column from the "RouteLink.nc" netcdf file specifing the channel topology. 
-! History Log: 
+! Abstract:
+!   Read the gages column from the "RouteLink.nc" netcdf file specifing the channel topology.
+! History Log:
 !   7/20/15 -Created, JLM.
 ! Usage:
-! Parameters: 
-! Input Files: 
+! Parameters:
+! Input Files:
 !   netcdf file RouteLink.nc or other name ending with .nc.
 ! Output Files:
-! Condition codes: 
+! Condition codes:
 ! User controllable options:
 ! Notes: Currently no csv support, but basic code is in place though commented out.
 
 subroutine read_reach_gage_collocation(gageIds)
-use module_namelist, only: nlst_rt
+  use config_base, only: nlst
 implicit none
 character(len=15), dimension(:), intent(out) :: gageIds
 !integer, dimension(:), intent(out) :: gageIds
@@ -247,16 +248,16 @@ logical :: routeLinkNetcdf
 
 #ifdef HYDRO_D
 print*,'Ndg: Starting read_reach_gage_collocation'
-#endif 
+#endif
 
 varName = 'gages'
 !! is RouteLink file netcdf (*.nc) or csv (*.csv)
-route_link_f   = nlst_rt(did)%route_link_f
+route_link_f   = nlst(did)%route_link_f
 route_link_f_r = adjustr(route_link_f)
 lenRouteLinkFR = len(route_link_f_r)
 routeLinkNetcdf = route_link_f_r( (lenRouteLinkFR-2):lenRouteLinkFR) .eq. '.nc'
 
-if(routeLinkNetcdf) then 
+if(routeLinkNetcdf) then
 
 !! part of this could become a get_1d_netcdf
    iRet = nf90_open(trim(route_link_f), nf90_NoWrite, ncId)
@@ -264,7 +265,7 @@ if(routeLinkNetcdf) then
       write(6,'("read_reach_gage_collocation: Problem opening file ''", A, "''")') trim(route_link_f)
       call hydro_stop("read_reach_gage_collocation")
    endif
-   
+
    iRet = nf90_inq_varid(ncid, varName, varid)
    if (iRet /= nf90_NoErr) then
       print*,"Ndg: read_reach_gage_collocation: variable: " // trim(varName)
@@ -283,7 +284,7 @@ if(routeLinkNetcdf) then
       call hydro_stop("read_reach_gage_collocation")
    end if
 
-else   
+else
    call hydro_stop('read_reach_gage_collocation: csv not currently supported.')
    !! here's some code to start from if/when we do want to support csv for this.
    !open(unit=79,file=trim(route_link_f),form='formatted',status='old')
@@ -306,30 +307,30 @@ end if ! routeLinkNetcdf
 #ifdef HYDRO_D
 print*,'Ndg: Finish read_reach_gage_collocation'
 call flush(6)
-#endif 
+#endif
 
 end subroutine read_reach_gage_collocation
 
 !===================================================================================================
-! Program Name: 
+! Program Name:
 !   subroutine read_gridded_nudging_frxst_gage_csv
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
-!   For gridded channel routine, the mechanism is to use forecast points to 
+! Abstract:
+!   For gridded channel routine, the mechanism is to use forecast points to
 !   identify gages. This file determines the collocation of the two. See the
 !   file in the nudging/ directory for more info.
-! History Log: 
+! History Log:
 !   6/22/15 -Created, JLM.
 ! Usage:
-! Parameters: 
+! Parameters:
 ! Input Files: Nudging_frxst_gage.csv
-! Output Files: 
-! Condition codes: 
-! User controllable options: 
+! Output Files:
+! Condition codes:
+! User controllable options:
 ! Notes:
 
-subroutine read_gridded_nudging_frxst_gage_csv(frxstId, gageId, nGages) 
+subroutine read_gridded_nudging_frxst_gage_csv(frxstId, gageId, nGages)
 implicit none
 integer,           dimension(:), intent(out) :: frxstId
 character(len=15), dimension(:), intent(out) :: gageId
@@ -356,17 +357,17 @@ do
 #else
    read(26, '( a )', end = 200 ) line
 #endif
-   if( line( 1:1 ) == '!' ) cycle     
+   if( line( 1:1 ) == '!' ) cycle
    colCount = 1
    lastCommaPos = 0
    do ii = 1, len( line )
 
       if( line( ii:ii ) == '!' ) exit
 
-      if (ii .eq. 1) lineCount = lineCount + 1      
+      if (ii .eq. 1) lineCount = lineCount + 1
 
-      if( line( ii:ii ) == ',' ) then 
-         if(colCount .eq. 1) then 
+      if( line( ii:ii ) == ',' ) then
+         if(colCount .eq. 1) then
             read (line((lastCommaPos+1):(ii-1)),'(I5)') tmpInt
             frxstId(lineCount) = tmpInt
          end if
@@ -395,30 +396,30 @@ print*,"Ndg: frxstId: ", frxstId(1:nGages)
 print*,"Ndg: gageId:",   gageId(1:nGages)
 print*,'Ndg: finish read_gridded_nudging_frxst_gage_csv'
 call flush(6)
-#endif 
+#endif
 
 end subroutine read_gridded_nudging_frxst_gage_csv
 
 !===================================================================================================
-! Program Name: 
+! Program Name:
 !   subroutine read_nudging_param_file
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
-!   Set up the default nudging parameters with the model initialization. 
-! History Log: 
+! Abstract:
+!   Set up the default nudging parameters with the model initialization.
+! History Log:
 !   6/22/15 -Created, JLM.
 ! Usage:
-! Parameters: 
+! Parameters:
 ! Input Files: Nudging_frxst_gage.csv
-! Output Files: 
-! Condition codes: 
-! User controllable options: 
+! Output Files:
+! Condition codes:
+! User controllable options:
 ! Notes:
 
 subroutine read_nudging_param_file(  &
      paramFile,                      &  !! IN: char, file path/name
-     gageId,                         &  !! OUT: integer, the USGS gage ID. 
+     gageId,                         &  !! OUT: integer, the USGS gage ID.
      gageR,                          &  !! OUT: output converted for comparision to model time??
      gageG,                          &  !! OUT: quality control flag for discharge
      gageTau,                        &  !! OUT: real the half-window for NN/IDW interp
@@ -460,7 +461,7 @@ if(size(gageExpCoeff,2) .ne. 0 .and. size(gageExpCoeff,3) .ne. 0) then
    call get_3d_netcdf_real(ncid, 'qThresh',  gageQThresh,  caller, .true., errStatus)
    call get_3d_netcdf_real(ncid, 'expCoeff', gageExpCoeff, caller, .true., errStatus)
 end if
-  
+
 iRet = nf90_close(ncId)
 if (iRet /= nf90_NoErr) then
    write(*,'("Problem closing paramFile: ''", A, "''")') trim(paramFile)
@@ -468,7 +469,7 @@ if (iRet /= nf90_NoErr) then
 endif
 
 #ifdef HYDRO_D
-print*,'Ndg: finish read_nudging_param_file' 
+print*,'Ndg: finish read_nudging_param_file'
 call flush(6)
 #endif
 
@@ -476,23 +477,23 @@ end subroutine read_nudging_param_file
 
 
 !===================================================================================================
-! Subroutine Name: 
+! Subroutine Name:
 !   subroutine write_nwis_not_in_RLAndParams
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
-!   Write a log file of gages supplied by NWIS but which are not found in 
-!   the intersection of our Route_Link gages and our parameter file gages. 
-!   Perhaps they were not picked up by us as available, 
+! Abstract:
+!   Write a log file of gages supplied by NWIS but which are not found in
+!   the intersection of our Route_Link gages and our parameter file gages.
+!   Perhaps they were not picked up by us as available,
 !   or they are simply not in NHD+.
-! History Log: 
+! History Log:
 !   11/04/15 -Created, JLM.
 ! Usage:
-! Parameters: 
-! Input Files: 
-! Output Files: 
-! Condition codes: 
-! User controllable options: None. 
+! Parameters:
+! Input Files:
+! Output Files:
+! Condition codes:
+! User controllable options: None.
 ! Notes:
 
 subroutine write_nwis_not_in_RLAndParams( gageId, count )
@@ -518,30 +519,30 @@ do cc=1,count
 end do
 
 #ifndef NCEP_WCOSS
-close(919) 
+close(919)
 #else
-close(27) 
+close(27)
 #endif
 
 end subroutine write_nwis_not_in_RLAndParams
 
 
 !===================================================================================================
-! Subroutine Name: 
+! Subroutine Name:
 !   subroutine write_nudging_last_obs
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
 ! Abstract:
 !   Write out the last observations collected over time.
-! History Log: 
+! History Log:
 !   02/03/16 -Created, JLM.
 ! Usage:
-! Parameters: 
-! Input Files: 
-! Output Files: 
-! Condition codes: 
-! User controllable options: None. 
-! Notes:  Needs better error handling... 
+! Parameters:
+! Input Files:
+! Output Files:
+! Condition codes:
+! User controllable options: None.
+! Notes:  Needs better error handling...
 
 subroutine write_nudging_last_obs(lastObsStr, modelTime, g_nudge)
 
@@ -675,12 +676,12 @@ do tt=1,nTime
    qualityInt2(tt,ss) = nint(100*lastObsStr(ss)%lastObsQuality(tt), kind=2)
 end do
 end do
-iret = nf90_put_var(ncid, varid, qualityInt2) 
+iret = nf90_put_var(ncid, varid, qualityInt2)
 deallocate(qualityInt2)
 
 ! discharge_quality write var
 iret = nf90_inq_varid(ncid, "nudge", varid)
-iret = nf90_put_var(ncid, varid, g_nudge) 
+iret = nf90_put_var(ncid, varid, g_nudge)
 
 !! close
 iret= nf90_close(ncid)
@@ -694,22 +695,22 @@ end subroutine write_nudging_last_obs
 
 
 !===================================================================================================
-! Program Name: 
+! Program Name:
 !   subroutine find_nudging_last_obs_file
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
+! Abstract:
 !   Return a single file path/names of nudging last obs file given a single date.
-! History Log: 
+! History Log:
 !   2/9/16 - Created,
 ! Usage:
-! Parameters: 
+! Parameters:
 !   date
 ! Input Files:  nudgingLastObs.YYYY-mm-dd_HH:MM:SS.nc
-! Output Files: 
-! Condition codes: 
+! Output Files:
+! Condition codes:
 ! User controllable options:
-! Notes: 
+! Notes:
 
 function find_nudging_last_obs_file(fileName)
 implicit none
@@ -720,7 +721,7 @@ logical :: fileExists
 #ifdef HYDRO_D
 print*,'Ndg: start find_nudging_last_obs_file'
 flush(6)
-#endif 
+#endif
 
 find_nudging_last_obs_file=''
 ! is there a file with this name?
@@ -739,21 +740,21 @@ end function find_nudging_last_obs_file
 
 
 !===================================================================================================
-! Subroutine Name: 
+! Subroutine Name:
 !   subroutine read_nudging_last_obs
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
 ! Abstract:
 !   read in the last observations collected over time.
-! History Log: 
+! History Log:
 !   02/03/16 -Created, JLM.
 ! Usage:
-! Parameters: 
-! Input Files: 
-! Output Files: 
-! Condition codes: 
-! User controllable options: None. 
-! Notes: Needs better error handling... 
+! Parameters:
+! Input Files:
+! Output Files:
+! Condition codes:
+! User controllable options: None.
+! Notes: Needs better error handling...
 
 subroutine read_nudging_last_obs(fileName, lastObsStr, g_nudge)
 
@@ -828,9 +829,9 @@ end do
 deallocate(qualityInt2)
 
 iret = nf90_inq_varid(ncid, "nudge", varid)
-if(iret .eq. nf90_noerr) then   
+if(iret .eq. nf90_noerr) then
    iret = nf90_get_var(ncid, varid, g_nudge)
-else 
+else
    g_nudge=0.0000000000
 end if
 
@@ -846,21 +847,21 @@ end subroutine read_nudging_last_obs
 
 
 !===================================================================================================
-! Subroutine Name: 
+! Subroutine Name:
 !   subroutine read_network_reexpression
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
-!   Read the three netcdf files which allow the stream network to be traversed with 
+! Abstract:
+!   Read the three netcdf files which allow the stream network to be traversed with
 !   indexing.
-! History Log: 
+! History Log:
 !   7/23/15 -Created, JLM.
 ! Usage:
-! Parameters: 
-! Input Files: 
-! Output Files: 
-! Condition codes: 
-! User controllable options: None. 
+! Parameters:
+! Input Files:
+! Output Files:
+! Condition codes:
+! User controllable options: None.
 ! Notes:
 
 subroutine read_network_reexpression( &
@@ -875,11 +876,11 @@ subroutine read_network_reexpression( &
 implicit none
 
 character(len=*), intent(in) :: file
-integer*4, dimension(:), intent(out) :: upGo      
-integer*4, dimension(:), intent(out) :: upStart   
-integer*4, dimension(:), intent(out) :: upEnd     
-integer*4, dimension(:), intent(out) :: downGo    
-integer*4, dimension(:), intent(out) :: downStart 
+integer*4, dimension(:), intent(out) :: upGo
+integer*4, dimension(:), intent(out) :: upStart
+integer*4, dimension(:), intent(out) :: upEnd
+integer*4, dimension(:), intent(out) :: downGo
+integer*4, dimension(:), intent(out) :: downStart
 integer*4, dimension(:), intent(out) :: downEnd
 
 character(len=25) :: subroutineName
@@ -918,26 +919,26 @@ flush(6)
 end subroutine read_network_reexpression
 
 !===================================================================================================
-! Subroutine Name: 
+! Subroutine Name:
 !   subroutine output_chan_connectivity
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
-!   For gridded channel routing, write the channel connectivity to a netcdf file 
-!   so channel analyses can be performed offline. Do it here so any changes to the 
+! Abstract:
+!   For gridded channel routing, write the channel connectivity to a netcdf file
+!   so channel analyses can be performed offline. Do it here so any changes to the
 !   topology calculation are maintained without external code.
-! History Log: 
+! History Log:
 !   5/27/15 -Created, JLM.
 ! Usage:
-! Parameters: 
-! Input Files: 
-! Output Files: 
-! Condition codes: 
+! Parameters:
+! Input Files:
+! Output Files:
+! Condition codes:
 ! User controllable options:
-! Notes  : 
-!   One day it might be worth writing code to read the files output by this code, 
+! Notes  :
+!   One day it might be worth writing code to read the files output by this code,
 !   depending on the time spent on the calculations when restarting a domain:
-!   is recalculation faster than reading in the file written by this routine?   
+!   is recalculation faster than reading in the file written by this routine?
 
 subroutine output_chan_connectivity( &
      inCHLAT,     inCHLON,             &   !! Channel grid lat, lon.
@@ -972,7 +973,7 @@ character(len=256), parameter :: output_flnm = "CHANNEL_CONNECTIVITY.nc"
 real,    allocatable, dimension(:) :: CHLAT, CHLON, CHANLEN
 integer, allocatable, dimension(:) :: FROM_NODE, TO_NODE, CHANXI, CHANYJ, TYPEL, LAKENODE
 
-!! handle the parallelization in this routine instead of in the main code. 
+!! handle the parallelization in this routine instead of in the main code.
 
 #ifdef MPP_LAND
 
@@ -982,7 +983,7 @@ if(my_id .eq. io_id) then
    allocate( to_node(rt_domain(did)%gnlinks),  chanXI(rt_domain(did)%gnlinks)    )
    allocate( chanYJ(rt_domain(did)%gnlinks),   typeL(rt_domain(did)%gnlinks)     )
    allocate( lakeNode(rt_domain(did)%gnlinks) )
-else 
+else
    allocate(chLat(1),  chLon(1),  chanLen(1), from_node(1), to_node(1) )
    allocate(chanXI(1), chanYJ(1), typeL(1),  lakeNode(1))
 end if
@@ -1031,56 +1032,50 @@ lakeNode  = inLakeNode
 if(my_id .eq. io_id) then
 #endif
 
-   !! jlm: check that all the input variables have the same dimensions? Or will that happen 
+   !! jlm: check that all the input variables have the same dimensions? Or will that happen
    !! by defult when trying to write to ncdf?
 
    ! Open the  finemesh static files to obtain projection information
    ! jlm: this seems optional, might be nice if output is used for plotting/GIS.
    ! jlm: set did:=1 in nlst_rt
 #ifdef HYDRO_D
-   write(*,'("geo_finegrid_flnm: ''", A, "''")') trim(nlst_rt(did)%geo_finegrid_flnm)
+   write(*,'("geo_finegrid_flnm: ''", A, "''")') trim(nlst(did)%geo_finegrid_flnm)
 #endif
 
-   iret = nf_open(trim(nlst_rt(1)%geo_finegrid_flnm), NF_NOWRITE, ncstatic)
-   
+   iret = nf_open(trim(nlst(1)%geo_finegrid_flnm), NF_NOWRITE, ncstatic)
+
    if (iret /= 0) then
       write(*,'("Problem opening geo_finegrid file: ''", A, "''")') &
-           trim(nlst_rt(1)%geo_finegrid_flnm)
+           trim(nlst(1)%geo_finegrid_flnm)
       write(*,*) "HIRES_OUTPUT will not be georeferenced..."
       projInfo_flag = 0
    else
       projInfo_flag = 1
    endif
-   
+
    if(projInfo_flag.eq.1) then !if/then hires_georef
       ! Get projection information from finegrid netcdf file
       iret = NF_INQ_VARID(ncstatic,'lambert_conformal_conic',varid)
       if(iret .eq. 0) &
            iret = NF_GET_ATT_REAL(ncstatic, varid, 'longitude_of_central_meridian', long_cm)
       iret = NF_GET_ATT_REAL(ncstatic, varid, 'latitude_of_projection_origin', lat_po)
-      iret = NF_GET_ATT_REAL(ncstatic, varid, 'false_easting', fe)  
-      iret = NF_GET_ATT_REAL(ncstatic, varid, 'false_northing', fn)  
-      iret = NF_GET_ATT_REAL(ncstatic, varid, 'standard_parallel', sp)  
-   end if  !endif hires_georef 
+      iret = NF_GET_ATT_REAL(ncstatic, varid, 'false_easting', fe)
+      iret = NF_GET_ATT_REAL(ncstatic, varid, 'false_northing', fn)
+      iret = NF_GET_ATT_REAL(ncstatic, varid, 'standard_parallel', sp)
+   end if  !endif hires_georef
    iret = nf_close(ncstatic)
-   
-   
+
+
    ! Create the channel connectivity file
 #ifdef HYDRO_D
    print*,'Ndg: output_flnm = "'//trim(output_flnm)//'"'
    flush(6)
 #endif
 
-#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
-   write(6,*) "using normal netcdf file for CHANNEL_CONNECTIVITY"
-   iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
-#else
-   write(6,*) "using large netcdf file for CHANNEL_CONNECTIVITY"
-   iret = nf_create(trim(output_flnm), ior(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#endif
+   iret = nf90_create(trim(output_flnm), OR(NF90_CLOBBER, NF90_NETCDF4), ncid)
 
    if (iret /= 0) then
-      print*,"Ndg: Problem nf_create"
+      print*,"Ndg: Problem nf90_create"
       call hydro_stop("output_channel_connectivity")
    endif
 
@@ -1091,7 +1086,7 @@ if(my_id .eq. io_id) then
 #endif
 
    ! Dimension definitions
-   iret = nf_def_dim(ncid, "nStreamCells", nStreamCells, streamCellDimID)  
+   iret = nf_def_dim(ncid, "nStreamCells", nStreamCells, streamCellDimID)
 
    ! Variable definitions
    ! LATITUDE - float
@@ -1213,7 +1208,7 @@ deallocate(chLat, chLon, chanLen, from_node, to_node, chanXI, chanYJ, typeL, lak
 if(my_id .eq. io_id) then
 #endif
 #ifdef HYDRO_D
-   write(6,*) "end of output_chan_connectivity" 
+   write(6,*) "end of output_chan_connectivity"
    flush(6)
 #endif
 #ifdef MPP_LAND
@@ -1223,27 +1218,27 @@ endif
 end subroutine output_chan_connectivity
 
 !===================================================================================================
-! Program Names: 
+! Program Names:
 !   get_1d_netcdf_real, get_1d_netcdf_int4
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
-!   Read a variable of real or integer type from an open netcdf file, respectively. 
-! History Log: 
+! Abstract:
+!   Read a variable of real or integer type from an open netcdf file, respectively.
+! History Log:
 !   7/17/15 -Created, JLM.
 ! Usage:
-! Parameters: 
+! Parameters:
 !   See definitions.
-! Input Files: 
+! Input Files:
 !   This file is refered to by it's "ncid" obtained from nc_open
-!   prior to calling this routine. 
-! Output Files: 
+!   prior to calling this routine.
+! Output Files:
 !   None.
-! Condition codes: 
+! Condition codes:
 !   hydro_stop is passed "get_1d_netcdf".
-! User controllable options: 
-! Notes: 
-!   Could define an interface for these. 
+! User controllable options:
+! Notes:
+!   Could define an interface for these.
 
 subroutine get_1d_netcdf_int2(ncid, varName, var, callingRoutine, fatal_if_error, errStatus)
 implicit none
@@ -1263,7 +1258,7 @@ if (iret /= nf90_NoErr) then
 end if
 iRet = nf90_get_var(ncid, varid, var)
 if (iret /= nf90_NoErr) then
-   print*, trim(callingRoutine) // ": get_1d_netcdf_int2: values: " // trim(varName)   
+   print*, trim(callingRoutine) // ": get_1d_netcdf_int2: values: " // trim(varName)
    if (fatal_IF_ERROR) call hydro_stop("get_1d_netcdf_int2")
    errStatus=errStatus+1
 end if
@@ -1288,7 +1283,7 @@ if (iret /= nf90_NoErr) then
 end if
 iRet = nf90_get_var(ncid, varid, var)
 if (iret /= nf90_NoErr) then
-   print*, trim(callingRoutine) // ": get_1d_netcdf_int4: values: " // trim(varName)   
+   print*, trim(callingRoutine) // ": get_1d_netcdf_int4: values: " // trim(varName)
    if (fatal_IF_ERROR) call hydro_stop("get_1d_netcdf_int4")
    errStatus=errStatus+1
 end if
@@ -1346,7 +1341,7 @@ end subroutine get_1d_netcdf_text
 
 
 !==============================================================================
-! 3D real 
+! 3D real
 subroutine get_3d_netcdf_real(ncid, varName, var, callingRoutine, fatal_if_error, errStatus)
 implicit none
 integer,                intent(in)  :: ncid !! the file identifier
@@ -1372,28 +1367,28 @@ end if
 end subroutine get_3d_netcdf_real
 
 !===================================================================================================
-! Program Names: 
+! Program Names:
 !   get_netcdf_dim
-! Author(s)/Contact(s): 
+! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
-! Abstract: 
+! Abstract:
 !   Get the length of a provided dimension.
-! History Log: 
+! History Log:
 !   7/23/15 -Created, JLM.
 ! Usage:
-! Parameters: 
+! Parameters:
 !   file: character, the file to query
 !   dimName: character, the name of the dimension
 !   callingRoutine: character, the name of the calling routine for error messages
-! Input Files:  
-!   Specified argument. 
-! Output Files: 
-! Condition codes: 
+! Input Files:
+!   Specified argument.
+! Output Files:
+! Condition codes:
 !   hydro_stop is called. .
 ! User controllable options:
-! Notes: 
+! Notes:
 
-function get_netcdf_dim(file, dimName, callingRoutine, fatalErr) 
+function get_netcdf_dim(file, dimName, callingRoutine, fatalErr)
 implicit none
 integer :: get_netcdf_dim  !! return value, zero if failure
 character(len=*), intent(in)   :: file, dimName, callingRoutine
@@ -1445,4 +1440,4 @@ end function get_netcdf_dim
 
 !===================================================================================================
 end module module_nudging_io
- 
+

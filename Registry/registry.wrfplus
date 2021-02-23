@@ -399,7 +399,6 @@ state    real  a_v_phy           ikj      misc        1         -       r      "
 i1       real  a_dz8w            ikj      misc        1         Z
 i1       real  a_p8w             ikj      misc        1         Z
 i1       real  a_t8w             ikj      misc        1         Z
-i1       real  a_rho_phy         ikj      misc        1         -
 
 i1       real  g_th_phy          ikj      misc        1         -
 i1       real  g_pi_phy          ikj      misc        1         -
@@ -410,7 +409,6 @@ state    real  g_v_phy           ikj      misc        1         -       r      "
 i1       real  g_dz8w            ikj      misc        1         Z
 i1       real  g_p8w             ikj      misc        1         Z
 i1       real  g_t8w             ikj      misc        1         Z
-i1       real  g_rho_phy         ikj      misc        1         -
 
 # Additional for gravity wave drag
 state   real   g_DTAUX3D         ikj     misc        1         -     rh        "g_DTAUX3D"               "LOCAL U GWDO STRESS"   "m s-1"

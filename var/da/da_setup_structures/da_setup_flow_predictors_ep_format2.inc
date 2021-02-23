@@ -359,6 +359,7 @@ subroutine da_setup_flow_predictors_ep_format2( ix, jy, kz, ne, ep, its, ite, jt
                read(unit=ep_unit) temp3d_r4(1:ix,1:jy,1:kz)
                temp3d = temp3d_r4
             end if
+            call wrf_dm_bcast_real(temp3d, ijk)
             te = ie + (it-1)*nens
             ep % ci(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * &
                                                   temp3d(its:ite,jts:jte,kts:kte)
@@ -393,6 +394,7 @@ subroutine da_setup_flow_predictors_ep_format2( ix, jy, kz, ne, ep, its, ite, jt
                read(unit=ep_unit) temp3d_r4(1:ix,1:jy,1:kz)
                temp3d = temp3d_r4
             end if
+            call wrf_dm_bcast_real(temp3d, ijk)
             te = ie + (it-1)*nens
             ep % sn(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * &
                                                   temp3d(its:ite,jts:jte,kts:kte)
@@ -427,6 +429,7 @@ subroutine da_setup_flow_predictors_ep_format2( ix, jy, kz, ne, ep, its, ite, jt
                read(unit=ep_unit) temp3d_r4(1:ix,1:jy,1:kz)
                temp3d = temp3d_r4
             end if
+            call wrf_dm_bcast_real(temp3d, ijk)
             te = ie + (it-1)*nens
             ep % gr(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * &
                                                   temp3d(its:ite,jts:jte,kts:kte)

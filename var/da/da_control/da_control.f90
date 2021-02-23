@@ -6,6 +6,7 @@ module da_control
 
    use module_driver_constants, only : max_domains, max_eta, max_moves, max_bogus, &
                                        max_outer_iterations, max_instruments, max_plevs, &
+                                       max_zlevs, &
                                        max_ocean, num_ob_indexes
 
    implicit none
@@ -274,10 +275,11 @@ module da_control
    ! Do not use get_unit/free_unit because tracing is too low level
    integer, parameter :: trace_csv_unit = 8
 
-   integer :: y_unit, yp_unit, cost_unit, grad_unit, stats_unit, jo_unit
+   integer :: y_unit, yp_unit, cost_unit, grad_unit, stats_unit, jo_unit, stats_unit2
    integer :: check_max_iv_unit, check_buddy_unit, rand_unit, omb_unit, &
               filtered_obs_unit
    integer :: biasprep_unit, qcstat_conv_unit
+   integer :: varbc_tamdar_unit
 
    integer,parameter :: filename_len = 200
 
@@ -369,6 +371,7 @@ module da_control
    integer       :: cv_size_domain_jp    ! Total jp cv size.
    integer       :: cv_size_domain_js    ! Total js cv size.
    integer       :: cv_size_domain_jl    ! Total jl cv size.
+   integer       :: cv_size_domain_jt    ! Total jt cv size.
    integer       :: cv_size_domain       ! Total cv size.    
 
    ! Hybrid:
@@ -419,6 +422,8 @@ module da_control
                                            ! missing_r
       outside_of_domain       = -77, &     ! Data outside horizontal domain 
                                            ! or time window, data set to missing_r
+      fail_varbc_aircraft     = -55, &     ! Data fail VarBC of aircraft 
+                                           ! => no action
       wrong_direction         = -15, &     ! Wind vector direction <0 or> 360 
                                            ! => direction set to missing_r
       negative_spd            = -14, &     ! Wind vector norm is negative 
@@ -511,6 +516,9 @@ module da_control
    integer, parameter :: tamdar_sfc = 27
    integer, parameter :: rain      = 28
    integer, parameter :: gpseph    = 29
+#if (WRF_CHEM == 1)
+   integer, parameter :: chemic_surf = 30
+#endif
 
    character(len=14), parameter :: obs_names(num_ob_indexes) = (/ &
       "sound         ", &
@@ -542,6 +550,9 @@ module da_control
       "tamdar_sfc    ", &
       "rain          ", &
       "gpseph        "  &
+#if (WRF_CHEM == 1)
+     ,"chemic_surf   " &
+#endif
    /)
 
    logical :: pseudo_tpw

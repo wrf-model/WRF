@@ -47,13 +47,12 @@
    USE module_cbmz_initmixrats, only:     cbmz_init_wrf_mixrats
    USE module_mosaic_driver, only:        init_data_mosaic_asect
    USE module_mosaic_initmixrats, only:   mosaic_init_wrf_mixrats
-   USE module_input_chem_data, only:      get_last_gas,              &
-                                          gasprofile_init_pnnl,      &
+   USE module_input_chem_data, only:      gasprofile_init_pnnl,      &
                                           mozcart_lbc_init,          &
                                           last_chem_time,            &
                                           setup_gasprofile_maps,     &
                                           initial_pvo3
-
+   USE module_chem_share, only: get_last_gas
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
    USE module_upper_bc_driver, only: upper_bc_init
    USE module_tropopause,      only: tropopause_init
@@ -152,6 +151,7 @@
    real :: xtime,xhour,xmin,gmtp,xlonn,rlat
    logical :: is_moz_chm
 #include "version_decl"
+#include "commit_decl"
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
 #endif
@@ -159,6 +159,7 @@
 
 call wrf_message("*********************************************************************")
 call wrf_message(program_name)
+call wrf_message(commit_version)
 call wrf_message("*                                                                   *")
 call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF-Chem HELP at                     *")
 call wrf_message("*                                                                   *")
@@ -453,7 +454,7 @@ call wrf_message("**************************************************************
             (config_flags%chem_opt >= 31  .AND. config_flags%chem_opt <= 34)  .OR. &
              config_flags%chem_opt == 170 .OR.  config_flags%chem_opt == 198  .OR. &
              config_flags%chem_opt == 199 .OR.  config_flags%chem_opt == 201  .OR. &
-             config_flags%chem_opt == 203 .OR.                                     &
+             config_flags%chem_opt == 202 .OR.  config_flags%chem_opt == 203  .OR. &
              config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611 ) then
             call wrf_debug( 15, 'using N2O5 heterogeneous chemistry without Cl- pathway')
         else
@@ -1946,7 +1947,11 @@ ENDIF ghg_block
 !
    drydep_select: SELECT CASE(config_flags%gas_drydep_opt)
      CASE (WESELY)
-       CALL wrf_debug(15,'initializing dry dep (wesely)')
+        IF (numgas .eq. 0) THEN
+            CALL wrf_error_fatal("ERROR: numgas = 0, SELECTED CHEM OPT IS &
+            &NOT COMPATIBLE WITH WESELY DRY DEPOSITION")
+        ENDIF
+        CALL wrf_debug(15,'initializing dry dep (wesely)') 
 
         call dep_init( id, config_flags, numgas, mminlu_loc, &
                       its, ite, jts, jte, ide, jde )

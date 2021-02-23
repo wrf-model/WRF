@@ -255,8 +255,7 @@ CONTAINS
 
      CA_RAD(I,K,J)=(1.0-CLDAREAA(I,K,J))*CS+CLDAREAA(I,K,J)
      CLDFRA_SH(I,K,J)= CA_RAD(I,K,J)
-!    CW_RAD(I,K,J)=CLDLIQA(I,K,J)+QC(I,K,J)
-     CW_RAD(I,K,J)=CLDLIQA(I,K,J)*CLDAREAA(I,K,J) + QC(I,K,J)
+     CW_RAD(I,K,J)=CLDLIQA(I,K,J)*CLDAREAA(I,K,J)
   ENDDO
   ENDDO
   ENDDO
@@ -414,12 +413,9 @@ CONTAINS
       ENDIF
 
       IF(CLDDPTHB(I,J) .LE. 0.0) THEN   ! No active updraft
-        IF( CLDAREAB(I,K,J) .LE. 1.0e-3 .OR. CLDLIQB(I,K,J) .LE. 1.0e-17 ) THEN
-  !        QC(I,K,J)=QC(I,K,J)+CLDAREAB(I,K,J)*CLDLIQB(I,K,J)
           RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)+CLDAREAB(I,K,J)*CLDLIQB(I,K,J)/DT
           CLDAREAB(I,K,J) = 0.0
           CLDLIQB(I,K,J) = 0.0
-        ENDIF
       ENDIF
     ENDDO
     ENDDO
@@ -680,6 +676,7 @@ CONTAINS
       DCLDBASE(I,J)=0.0
       CLDBMFLX(I,J)=0.0
 #endif
+      RADIUSC(I,J)=0.0
 !
 !...INPUT A VERTICAL SOUNDING ... NOTE THAT MODEL LAYERS ARE NUMBERED FROM THE
 !...BOTTOM-UP IN THE SHALLOW CONVECTION SCHEME...
@@ -1362,7 +1359,7 @@ CONTAINS
 ! WHERE LTOP1 IS THE KAIN-FRITSCH UPDRAFT TOP AND LTOP2 IS THE HEIGHT CALCULATED
 ! USING THE EQUATION: CTP2=CLDTOPB(I,J)+0.2*WUMAX*DT2/2.0
 !
-      LTOP1=NK
+      LTOP1=MIN(NK,KLM)
       CTP1=Z0(LTOP1)
 
       WUMAX=WU(1)
@@ -2098,6 +2095,7 @@ CONTAINS
 !
       IF(CAPEI(I,J) .LT. 100.0) THEN    ! averaging KF number of clouds
         NT = NINT(15.0*60.0/(0.5*DT))-1 ! for 15 min.
+        NT = MIN(NT, 100)
       ELSE
         NT = 0
       ENDIF
@@ -2244,15 +2242,27 @@ CONTAINS
       ENDDO
 !
 !...CHECK TO SEE IF MIXING RATIO DIPS BELOW ZERO ANYWHERE;  IF SO, BORROW
-!...MOISTURE FROM ADJACENT LAYERS TO BRING IT BACK UP ABOVE ZERO...
+!...MOISTURE FROM ADJACENT LAYERS TO BRING IT BACK UP ABOVE ZERO; WITH
+!...INDEX NK-1, MINIMUM VALUE FOR NK=2...
 !
-      DO NK = 1,LTOP
+      DO NK = 2,LTOP
         IF(QQG(NK).LT.0.)THEN
           TMA = QQG(NK+1)*EMS(NK+1)
           TMB = QQG(NK-1)*EMS(NK-1)
           TMM = (QQG(NK)-1.E-9)*EMS(NK  )
-          BCOEFF = -TMM/((TMA*TMA)/TMB+TMB)
-          ACOEFF = BCOEFF*TMA/TMB
+          IF(TMA .NE. 0.0 .AND. TMB .NE. 0.0)THEN
+            BCOEFF = -TMM/((TMA*TMA)/TMB+TMB)
+            ACOEFF = BCOEFF*TMA/TMB
+          ELSE IF(TMA .EQ. 0.0 .AND. TMB .EQ. 0.0) THEN
+            BCOEFF = 0.0
+            ACOEFF = 0.0
+          ELSE IF(TMA .EQ. 0.0) THEN
+            BCOEFF = -TMM/TMB
+            ACOEFF = 0.0
+          ELSE IF(TMB .EQ. 0.0) THEN
+            BCOEFF = 0.0
+            ACOEFF = -TMM/TMA
+          ENDIF
           TMB = TMB*(1.-BCOEFF)
           TMA = TMA*(1.-ACOEFF)
           QQG(NK) = 1.E-9
@@ -2786,7 +2796,7 @@ CONTAINS
 !
 ! CALCULATE THE CONVECTIVE RAINFALL
 !
-        RAINSHV(I,J)=.1*.5*DT2*PPTFLX/DXSQ
+        RAINSHV(I,J)=.5*DT2*PPTFLX/DXSQ
 
     IF ( wrf_dm_on_monitor()) THEN
       CALL get_wrf_debug_level( dbg_level )
@@ -4465,7 +4475,7 @@ CONTAINS
        IF(IPTB.GE.220 .OR. IPTB.LE.1 .OR. ITHTB.GE.250 .OR. ITHTB.LE.1)THEN
          write(98,'(a,6i5,2f9.2,i3)')'*** OUT OF BOUNDS ***', ktau,i,j,nk,IPTB, ITHTB, &
                     p/100.0, thes, tracker
-         call flush(98)
+         flush(98)
        ENDIF
 !
       t00=ttab(ithtb  ,iptb  )
@@ -4783,7 +4793,7 @@ CONTAINS
       ithtb=int(tth)+1
        IF(IPTB.GE.220 .OR. IPTB.LE.1 .OR. ITHTB.GE.250 .OR. ITHTB.LE.1)THEN
          write(97,'(a,6i5,2f9.2)')'*** OUT OF BOUNDS ***', ktau,i,j,nk,IPTB, ITHTB, p/100., thes
-         call flush(97)
+         flush(97)
        ENDIF
 !
       t00=ttab(ithtb  ,iptb  )

@@ -20,7 +20,7 @@ HYDROTBL_F = "./DOMAIN/hydro2dtbl.nc"
 LAND_SPATIAL_META_FLNM = "./DOMAIN/GEOGRID_LDASOUT_Spatial_Metadata.nc"
 
 ! Specify the name of the restart file if starting from restart...comment out with '!' if not...
-RESTART_FILE  = 'HYDRO_RST.2013-09-12_04:00_DOMAIN3'
+RESTART_FILE  = 'RESTART/HYDRO_RST.2011-08-26_00:00_DOMAIN1'
 
 !!!! --------------------- MODEL SETUP OPTIONS -------------------- !!!!
 
@@ -59,17 +59,17 @@ SPLIT_OUTPUT_COUNT = 1
 
 ! Specify the minimum stream order to output to netcdf point file...(integer)
 ! Note: lower value of stream order produces more output.
-order_to_write = 4
+order_to_write = 1
 
 ! Flag to turn on/off new I/O routines: 0 = deprecated output routines (use when running with Noah LSM),
-! 1 = with scale/offset/compression, ! 2 = with scale/offset/NO compression, 
+! 1 = with scale/offset/compression, ! 2 = with scale/offset/NO compression,
 ! 3 = compression only, 4 = no scale/offset/compression (default)
-io_form_outputs = 1
+io_form_outputs = 4
 
 ! Realtime run configuration option:
 ! 0=all (default), 1=analysis, 2=short-range, 3=medium-range, 4=long-range, 5=retrospective,
 ! 6=diagnostic (includes all of 1-4 outputs combined)
-io_config_outputs = 1
+io_config_outputs = 0
 
 ! Option to write output files at time 0 (restart cold start time): 0=no, 1=yes (default)
 t0OutputFlag = 1
@@ -113,10 +113,10 @@ ZSOIL8(3) = -1.00
 ZSOIL8(4) = -2.00
 
 ! Specify the grid spacing of the terrain routing grid...(meters)
-DXRT = 100.0
+DXRT = 250.0
 
 ! Specify the integer multiple between the land model grid and the terrain routing grid...(integer)
-AGGFACTRT = 10
+AGGFACTRT = 4
 
 ! Specify the channel routing model timestep...(seconds)
 DTRT_CH = 10
@@ -143,21 +143,63 @@ channel_option = 3
 ! Specify the reach file for reach-based routing options (e.g.: "Route_Link.nc")
 !route_link_f = "./DOMAIN/Route_Link.nc"
 
+! If using channel_option=2, activate the compound channel formulation? (Default=.FALSE.)
+! This option is currently only supported if using reach-based routing with UDMP=1.
+compound_channel = .FALSE.
+
 ! Specify the lake parameter file (e.g.: "LAKEPARM.nc").
 ! Note REQUIRED if lakes are on.
 route_lake_f = "./DOMAIN/LAKEPARM.nc"
 
-! Switch to activate baseflow bucket model...(0=none, 1=exp. bucket, 2=pass-through)
+! Specify the reservoir parameter file
+reservoir_parameter_file = "./DOMAIN/persistence_parm.nc"
+
+! If using USGS persistence reservoirs, set to True. (default=.FALSE.)
+reservoir_persistence_usgs = .FALSE.
+
+! Specify the path to the timeslice files to be used by USGS reservoirs
+reservoir_usgs_timeslice_path = "./usgs_timeslices/"
+
+! If using USACE persistence reservoirs, set to True. (default=.FALSE.)
+reservoir_persistence_usace = .FALSE.
+
+! Specify the path to the timeslice files to be used by USACE reservoirs
+reservoir_usace_timeslice_path = "./usace_timeslices/"
+
+! Specify lookback hours to read reservoir observation data
+reservoir_observation_lookback_hours = 24
+
+! Specify update time interval in seconds to read new reservoir observation data
+! The default is 86400 (seconds per day). Set to 3600 for standard and extended AnA simulations.
+! Set to 1000000000 for short range and medium range forecasts.
+reservoir_observation_update_time_interval_seconds = 3600
+
+! If using RFC forecast reservoirs, set to True. (default=.FALSE.)
+reservoir_rfc_forecasts = .FALSE.
+
+! Specify the path to the RFC time series files to be used by reservoirs
+reservoir_rfc_forecasts_time_series_path = "./rfc_timeseries/"
+
+! Specify lookback hours to read reservoir RFC forecasts
+reservoir_rfc_forecasts_lookback_hours = 28
+
+! Switch to activate baseflow bucket model...(0=none, 1=exp. bucket, 2=pass-through,
+! 4=exp. bucket with area normalized parameters)
+! Option 4 is currently only supported if using reach-based routing with UDMP=1.
 GWBASESWCRT = 1
 
+! Switch to activate bucket model loss (0=no, 1=yes)
+! This option is currently only supported if using reach-based routing with UDMP=1.
+bucket_loss = 0
+
 ! Groundwater/baseflow 2d mask specified on land surface model grid (e.g.: "GWBASINS.nc")
-!Note: Only required if baseflow  model is active (1 or 2) and UDMP_OPT=0.
+! Note: Only required if baseflow  model is active (1 or 2) and UDMP_OPT=0.
 gwbasmskfil = "./DOMAIN/GWBASINS.nc"
 
 ! Groundwater bucket parameter file (e.g.: "GWBUCKPARM.nc")
 GWBUCKPARM_file = "./DOMAIN/GWBUCKPARM.nc"
 
-! User defined mapping, such NHDPlus: 0=no (default), 1=yes
+! User defined mapping, such as NHDPlus: 0=no (default), 1=yes
 UDMP_OPT = 0
 
 ! If on, specify the user-defined mapping file (e.g.: "spatialweights.nc")
@@ -183,20 +225,20 @@ readTimesliceParallel = .TRUE.
 ! temporalPersistence defaults to true, only runs if necessary params present.
 temporalPersistence = .FALSE.
 
-! The total number of last (obs, modeled) pairs to save in nudgingLastObs for 
+! The total number of last (obs, modeled) pairs to save in nudgingLastObs for
 ! removal of bias. This is the maximum array length. (This option is active when persistBias=FALSE)
 ! (Default=960=10days @15min obs resolution, if all the obs are present and longer if not.)
 nLastObs = 960
 
-! If using temporalPersistence the last observation persists by default. 
-! This option instead persists the bias after the last observation. 
+! If using temporalPersistence the last observation persists by default.
+! This option instead persists the bias after the last observation.
 persistBias = .FALSE.
 
 ! AnA (FALSE)  vs Forecast (TRUE) bias persistence.
-! If persistBias: Does the window for calculating the bias end at 
+! If persistBias: Does the window for calculating the bias end at
 ! model init time (=t0)?
-! FALSE = window ends at model time (moving), 
-! TRUE = window ends at init=t0(fcst) time. 
+! FALSE = window ends at model time (moving),
+! TRUE = window ends at init=t0(fcst) time.
 ! (If commented out, Default=FALSE)
 ! Note: Perfect restart tests require this option to be .FALSE.
 biasWindowBeforeT0 = .FALSE.

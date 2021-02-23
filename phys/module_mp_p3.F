@@ -22,8 +22,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       3.1.11                                                                    !
-! Last updated:  2019-03-07                                                                !
+! Version:       3.1.14                                                                    !
+! Last updated:  2020-01-30                                                                !
 !__________________________________________________________________________________________!
 
  MODULE MODULE_MP_P3
@@ -101,15 +101,15 @@
  implicit none
 
 ! Passed arguments:
- character*(*), intent(in)            :: lookup_file_dir            !directory of the lookup tables
- integer,       intent(in)            :: nCat                       !number of free ice categories
- integer,       intent(out)           :: stat                       !return status of subprogram
- logical,       intent(in)            :: abort_on_err               !abort when an error is encountered [.false.]
- character(len=*), intent(in)         :: model                      !driving model
+ character*(*), intent(in)              :: lookup_file_dir          !directory of the lookup tables
+ integer,       intent(in)              :: nCat                     !number of free ice categories
+ integer,       intent(out),   optional :: stat                     !return status of subprogram
+ logical,       intent(in),    optional :: abort_on_err             !abort when an error is encountered [.false.]
+ character(len=*), intent(in), optional :: model                    !driving model
 
 ! Local variables and parameters:
  logical, save                :: is_init = .false.
- character(len=16), parameter :: version_p3               = '3.1.11'!version number of P3
+ character(len=16), parameter :: version_p3               = '3.1.14'!version number of module_mp_p3.F90
  character(len=16), parameter :: version_intended_table_1 = '4.1'   !lookupTable_1 version intended for this P3 version
  character(len=16), parameter :: version_intended_table_2 = '4.1'   !lookupTable_2 version intended for this P3 version
  character(len=1024)          :: version_header_table_1             !version number read from header, table 1
@@ -132,21 +132,16 @@
  lookup_file_2 = trim(lookup_file_dir)//'/'//'p3_lookup_table_2.dat-v'//trim(version_intended_table_2)
 
 !-- override for local path/filenames:
-!lookup_file_1 = '/data/ords/armn/armngr8/storage_model/p3_lookup_tables/p3_lookup_table_1.dat-v'//trim(version_intended_table_1)
-!lookup_file_2 = '/data/ords/armn/armngr8/storage_model/p3_lookup_tables/p3_lookup_table_2.dat-v'//trim(version_intended_table_2)
-!lookup_file_1 = '/fs/site1/dev/eccc/mrd/rpnatm/jam003/storage_model/p3_lookup_tables/p3_lookup_table_1.dat-v'//trim(version_intended_table_1)
-!lookup_file_2 = '/fs/site1/dev/eccc/mrd/rpnatm/jam003/storage_model/p3_lookup_tables/p3_lookup_table_2.dat-v'//trim(version_intended_table_2)
-!==
+!lookup_file_1 = 'MY_LOCAL_PATH/p3_lookup_table_1.dat-v'//trim(version_intended_table_1)
+!lookup_file_2 = 'MY_LOCAL_PATH/p3_lookup_table_2.dat-v'//trim(version_intended_table_2)
 
 !------------------------------------------------------------------------------------------!
 
  end_status = STATUS_ERROR
  err_abort = .false.
-! if (present(abort_on_err)) err_abort = abort_on_err
- err_abort = abort_on_err
+ if (present(abort_on_err)) err_abort = abort_on_err
  if (is_init) then
-!    if (present(stat)) stat = STATUS_OK
-    stat = STATUS_OK
+    if (present(stat)) stat = STATUS_OK
     return
  endif
 
@@ -315,9 +310,11 @@
     print*, '************************************************'
     print*
     global_status = STATUS_ERROR
-    if (trim(model) == 'WRF') then
-       print*,'Stopping in P3 init'
-       stop
+    if (present(model)) then
+       if (trim(model) == 'WRF') then
+          print*,'Stopping in P3 init'
+          stop
+       endif
     endif
  endif
 
@@ -357,7 +354,7 @@
  if (global_status == STATUS_ERROR) then
     if (err_abort) then
        print*,'Stopping in P3 init'
-       call flush(6)
+       flush(6)
        stop
     endif
     return
@@ -395,9 +392,11 @@
        print*, '************************************************'
        print*
        global_status = STATUS_ERROR
-       if (trim(model) == 'WRF') then
-          print*,'Stopping in P3 init'
-          stop
+       if (present(model)) then
+          if (trim(model) == 'WRF') then
+             print*,'Stopping in P3 init'
+             stop
+          endif
        endif
     endif
     IF_OKB: if (global_status /= STATUS_ERROR) then
@@ -431,7 +430,7 @@
    if (global_status == STATUS_ERROR) then
       if (err_abort) then
          print*,'Stopping in P3 init'
-         call flush(6)
+         flush(6)
          stop
       endif
       return
@@ -573,8 +572,7 @@
  endif
 
  end_status = STATUS_OK
-! if (present(stat)) stat = end_status
- stat = end_status
+ if (present(stat)) stat = end_status
  is_init = .true.
 
  return
@@ -1143,8 +1141,6 @@ END subroutine p3_init
 
 !----------------------------------------------------------------------------------------!
 
-!#include "tdpack_const.hf"  !No longer used .. commented code kept in for now
-
    end_status = STATUS_ERROR
 
    i_strt = 1  ! beginning index of slab
@@ -1468,7 +1464,7 @@ END subroutine p3_init
        DELTA_Qtot = Qsi(k)*(1.-RHoo)                          ! half-width of Qtot subgrid PDF
        SCF(k)     = 0.5*(Qtot+DELTA_Qtot-QSI(k))/DELTA_Qtot   ! subgrid cloud fraction
 
-       if (SCF(k) .lt. 0.01 ) then          ! minimum allowed Cloud fraction (below it's clear-sky)
+       if (SCF(k) .lt. 0.01 ) then          ! minimum allowed Cloud fraction (below is clear-sky)
           SCF(k)    = 0.                    ! inverse of Cloud cover
           iSCF(k)   = 0.                    ! inverse of Cloud cover
           Qv_cld(k) = 0.                    ! water vapour mix. ratio in Cloudy part
@@ -1981,7 +1977,9 @@ END subroutine p3_init
 
 ! The test below is skipped if SCPF is not used since now, if SCF>0 somewhere, then nucleation is possible.
 ! If there is the possibility of nucleation or droplet activation (i.e., if RH is relatively high)
-! then calculate microphysical processes even if there is no existing condensate
+! then calculate microphysical processes even if there is no existing condensate.
+! Note only theta is updated from clipping and not temp, though temp is used for subsequent calculations.
+! This change is tiny and therefore neglected.
        if ((t(i,k).lt.273.15 .and. supi(i,k).ge.-0.05) .or.                              &
            (t(i,k).ge.273.15 .and. sup(i,k).ge.-0.05 ) .and. (.not. SCPF_on))            &
            log_nucleationPossible = .true.
@@ -2666,19 +2664,12 @@ END subroutine p3_init
 
           call find_lookupTable_indices_3(dumii,dumjj,dum1,rdumii,rdumjj,inv_dum3,mu_r(i,k),lamr(i,k))
          !interpolate value at mu_r
-! bug fix 12/23/18
-!          dum1 = revap_table(dumii,dumjj)+(rdumii-real(dumii))*inv_dum3*                &
-!                 (revap_table(dumii+1,dumjj)-revap_table(dumii,dumjj))
-
           dum1 = revap_table(dumii,dumjj)+(rdumii-real(dumii))*                          &
                  (revap_table(dumii+1,dumjj)-revap_table(dumii,dumjj))
 
          !interoplate value at mu_r+1
-! bug fix 12/23/18
-!          dum2 = revap_table(dumii,dumjj+1)+(rdumii-real(dumii))*inv_dum3*              &
-!                 (revap_table(dumii+1,dumjj+1)-revap_table(dumii,dumjj+1))
           dum2 = revap_table(dumii,dumjj+1)+(rdumii-real(dumii))*                        &
-                 (revap_table(dumii+1,dumjj+1)-revap_table(dumii,dumjj+1))           
+                 (revap_table(dumii+1,dumjj+1)-revap_table(dumii,dumjj+1))
          !final interpolation
           dum  = dum1+(rdumjj-real(dumjj))*(dum2-dum1)
 
@@ -2825,7 +2816,7 @@ END subroutine p3_init
        endif
 
        if (t(i,k).lt.258.15 .and. supi_cld.ge.0.05) then
-!         dum = exp(-0.639+0.1296*100.*supi(i,k))*1000.*inv_rho(i,k)  !Meyers et al. (1992)
+!         dum = exp(-0.639+0.1296*100.*supi(i,k))*1000.*inv_rho(i,k)        !Meyers et al. (1992)
 !         dum = 0.005*exp(0.304*(273.15-t(i,k)))*1000.*inv_rho(i,k)         !Cooper (1986)
           dum = 0.005*dexp(dble(0.304*(273.15-t(i,k))))*1000.*inv_rho(i,k)  !Cooper (1986)
           dum = min(dum,100.e3*inv_rho(i,k)*SCF(k))
@@ -3069,6 +3060,7 @@ END subroutine p3_init
           ratio = min(1.,ratio)
           qcevp = qcevp*ratio
           qrevp = qrevp*ratio
+          nrevp = nrevp*ratio
        endif
 
 
@@ -3087,7 +3079,11 @@ END subroutine p3_init
           qidep = qidep*ratio
           qinuc = qinuc*ratio
        endif
-       qisub  = qisub*min(1.,max(0.,-qdep_satadj)/max(sum(qisub), 1.e-20))  !optimized (avoids IF(qisub.gt.0.) )
+       do iice = 1,nCat
+          dum = max(qisub(iice),1.e-20)
+          qisub(iice)  = qisub(iice)*min(1.,max(0.,-qdep_satadj)/max(sum(qisub), 1.e-20))  !optimized (avoids IF(qisub.gt.0.) )
+          nisub(iice)  = nisub(iice)*min(1.,qisub(iice)/dum)
+       enddo
       !qchetc = qchetc*min(1.,qc(i,k)*odt/max(sum(qchetc),1.e-20))  !currently not used
       !qrhetc = qrhetc*min(1.,qr(i,k)*odt/max(sum(qrhetc),1.e-20))  !currently not used
    !==
@@ -3213,9 +3209,7 @@ END subroutine p3_init
              birim(i,k,iice) = 0.
           endif
 
-        ! densify under wet growth
-        ! -- to be removed post-v2.1.  Densification automatically happens
-        !    during wet growth due to parameterized rime density --
+        ! densify ice during wet growth (assume total soaking)
           if (log_wetgrowth(iice)) then
              qirim(i,k,iice) = qitot(i,k,iice)
              birim(i,k,iice) = qirim(i,k,iice)*inv_rho_rimeMax
@@ -3230,9 +3224,12 @@ END subroutine p3_init
 
           qv(i,k) = qv(i,k) + (-qidep(iice)+qisub(iice)-qinuc(iice))*dt
 
+        ! Update theta. Note temperature is not updated here even though it is used below for
+        ! the homogeneous freezing threshold. This is done for simplicity - the error will be
+        ! very small and the homogeneous temp. freezing threshold is approximate anyway.
           th(i,k) = th(i,k) + invexn(i,k)*((qidep(iice)-qisub(iice)+qinuc(iice))*      &
                               xxls(i,k)*inv_cp +(qrcol(iice)+qccol(iice)+qchetc(iice)+ &
-                              qcheti(iice)+qrhetc(iice)+qrheti(iice)+                  & 
+                              qcheti(iice)+qrhetc(iice)+qrheti(iice)+                  &
                               qrmul(iice)-qimlt(iice))*                                &
                               xlf(i,k)*inv_cp)*dt
 
@@ -3255,6 +3252,10 @@ END subroutine p3_init
        endif
 
        qv(i,k) = qv(i,k) + (-qcnuc-qccon-qrcon+qcevp+qrevp)*dt
+
+      ! Update theta. Note temperature is not updated here even though it is used below for
+      ! the homogeneous freezing threshold. This is done for simplicity - the error will be
+      ! very small and the homogeneous temp. freezing threshold is approximate anyway.
        th(i,k) = th(i,k) + invexn(i,k)*((qcnuc+qccon+qrcon-qcevp-qrevp)*xxlv(i,k)*    &
                  inv_cp)*dt
    !==
@@ -3519,11 +3520,6 @@ END subroutine p3_init
                 call find_lookupTable_indices_3(dumii,dumjj,dum1,rdumii,rdumjj,inv_dum3, &
                                         mu_r(i,k),lamr(i,k))
                 !mass-weighted fall speed:
-! bug fix 12/23/18
-!                dum1 = vm_table(dumii,dumjj)+(rdumii-real(dumii))*inv_dum3*             &
-!                       (vm_table(dumii+1,dumjj)-vm_table(dumii,dumjj))         !at mu_r
-!                dum2 = vm_table(dumii,dumjj+1)+(rdumii-real(dumii))*inv_dum3*           &
-!                       (vm_table(dumii+1,dumjj+1)-vm_table(dumii,dumjj+1))   !at mu_r+1
                 dum1 = vm_table(dumii,dumjj)+(rdumii-real(dumii))*                       &
                        (vm_table(dumii+1,dumjj)-vm_table(dumii,dumjj))         !at mu_r
                 dum2 = vm_table(dumii,dumjj+1)+(rdumii-real(dumii))*                     &
@@ -3533,15 +3529,10 @@ END subroutine p3_init
                 V_qr(k) = V_qr(k)*rhofacr(i,k)               !corrected for air density
 
                 ! number-weighted fall speed:
-! bug fix 12/23/18
-!                dum1 = vn_table(dumii,dumjj)+(rdumii-real(dumii))*inv_dum3*             &
-!                       (vn_table(dumii+1,dumjj)-vn_table(dumii,dumjj))        !at mu_r
-!                dum2 = vn_table(dumii,dumjj+1)+(rdumii-real(dumii))*inv_dum3*           &
-!                       (vn_table(dumii+1,dumjj+1)-vn_table(dumii,dumjj+1))    !at mu_r+1
                 dum1 = vn_table(dumii,dumjj)+(rdumii-real(dumii))*                       &
                        (vn_table(dumii+1,dumjj)-vn_table(dumii,dumjj))        !at mu_r
                 dum2 = vn_table(dumii,dumjj+1)+(rdumii-real(dumii))*                     &
-                       (vn_table(dumii+1,dumjj+1)-vn_table(dumii,dumjj+1))    !at mu_r+1  
+                       (vn_table(dumii+1,dumjj+1)-vn_table(dumii,dumjj+1))    !at mu_r+1
 
                 V_nr(k) = dum1+(rdumjj-real(dumjj))*(dum2-dum1)            !interpolated
                 V_nr(k) = V_nr(k)*rhofacr(i,k)                !corrected for air density
@@ -3750,6 +3741,8 @@ END subroutine p3_init
 
 !------------------------------------------------------------------------------------------!
 
+! note: This debug check is commented since small negative qx,nx values are possible here
+!       (but get adjusted below).  If uncommented, caution in interpreting results.
 !     if (debug_on) call check_values(qv(i,:),T(i,:),qc(i,:),nc(i,:),qr(i,:),nr(i,:),      &
 !                          qitot(i,:,:),qirim(i,:,:),nitot(i,:,:),birim(i,:,:),i,it,       &
 !                          debug_ABORT,600)
@@ -3796,6 +3789,7 @@ END subroutine p3_init
           qitot(i,k,iice_dest) = qitot(i,k,iice_dest) + Q_nuc
           birim(i,k,iice_dest) = birim(i,k,iice_dest) + Q_nuc*inv_rho_rimeMax
           nitot(i,k,iice_dest) = nitot(i,k,iice_dest) + N_nuc
+         ! update theta. Note temperature is NOT updated here, but currently not used after
           th(i,k) = th(i,k) + invexn(i,k)*Q_nuc*xlf(i,k)*inv_cp
           qc(i,k) = 0.  != qc(i,k) - Q_nuc
           nc(i,k) = 0.  != nc(i,k) - N_nuc
@@ -3817,6 +3811,7 @@ END subroutine p3_init
           qitot(i,k,iice_dest) = qitot(i,k,iice_dest) + Q_nuc
           birim(i,k,iice_dest) = birim(i,k,iice_dest) + Q_nuc*inv_rho_rimeMax
           nitot(i,k,iice_dest) = nitot(i,k,iice_dest) + N_nuc
+         ! update theta. Note temperature is NOT updated here, but currently not used after
           th(i,k) = th(i,k) + invexn(i,k)*Q_nuc*xlf(i,k)*inv_cp
           qr(i,k) = 0.  ! = qr(i,k) - Q_nuc
           nr(i,k) = 0.  ! = nr(i,k) - N_nuc
@@ -3824,10 +3819,12 @@ END subroutine p3_init
 
     enddo k_loop_fz
 
-    if (debug_on) call check_values(qv(i,:),T(i,:),qc(i,:),nc(i,:),qr(i,:),nr(i,:),       &
-                         qitot(i,:,:),qirim(i,:,:),nitot(i,:,:),birim(i,:,:),i,it,        &
-                         debug_ABORT,700)
-    if (global_status /= STATUS_OK) return
+! note: This debug check is commented since small negative qx,nx values are possible here
+!       (but get adjusted below).  If uncommented, caution in interpreting results.
+!     if (debug_on) call check_values(qv(i,:),T(i,:),qc(i,:),nc(i,:),qr(i,:),nr(i,:),       &
+!                          qitot(i,:,:),qirim(i,:,:),nitot(i,:,:),birim(i,:,:),i,it,        &
+!                          debug_ABORT,700)
+!     if (global_status /= STATUS_OK) return
 
 !...................................................
 ! final checks to ensure consistency of mass/number

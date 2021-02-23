@@ -9,6 +9,7 @@ MODULE module_mp_wdm7
 !
 !
    USE module_mp_radar
+   USE module_model_constants, only : RE_QC_BG, RE_QI_BG, RE_QS_BG
 !
    REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
    REAL, PARAMETER, PRIVATE :: n0r = 8.e6         ! intercept parameter rain
@@ -334,9 +335,9 @@ CONTAINS
          IF (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) THEN
            DO i=its,ite
              DO k=kts,kte
-               re_qc(k) = 2.51E-6
-               re_qi(k) = 10.01E-6
-               re_qs(k) = 25.E-6
+               re_qc(k) = RE_QC_BG
+               re_qi(k) = RE_QI_BG
+               re_qs(k) = RE_QS_BG
 
                t1d(k)  = th(i,k,j)*pii(i,k,j)
                den1d(k)= den(i,k,j)
@@ -349,9 +350,9 @@ CONTAINS
                                  qmin, t0c, re_qc, re_qi, re_qs,       &
                                  kts, kte, i, j)
              DO k=kts,kte
-               re_cloud(i,k,j) = max(2.51E-6,  min(re_qc(k),  50.E-6))
-               re_ice(i,k,j)   = max(10.01E-6, min(re_qi(k), 125.E-6))
-               re_snow(i,k,j)  = max(25.E-6,   min(re_qs(k), 999.E-6))
+               re_cloud(i,k,j) = max(RE_QC_BG, min(re_qc(k),  50.E-6))
+               re_ice(i,k,j)   = max(RE_QI_BG, min(re_qi(k), 125.E-6))
+               re_snow(i,k,j)  = max(RE_QS_BG, min(re_qs(k), 999.E-6))
              ENDDO
            ENDDO
          ENDIF
@@ -917,8 +918,6 @@ CONTAINS
                          +precs2*work2(i,k)*coeres)/den(i,k)                  
               psmlt(i,k) = min(max(psmlt(i,k)*dtcld/mstep(i),-qrs(i,k,2)     &
                          /mstep(i)),0.)
-              qrs(i,k,2) = qrs(i,k,2) + psmlt(i,k)
-              qrs(i,k,1) = qrs(i,k,1) - psmlt(i,k)
 !
 ! nsmlt: melting of snow [LH A27]
 !       (T>T0: ->NR)
@@ -927,6 +926,8 @@ CONTAINS
                 sfac = rslope(i,k,2)*n0s*n0sfac(i,k)/qrs(i,k,2)
                 ncr(i,k,3) = ncr(i,k,3) - sfac*psmlt(i,k)
               endif
+              qrs(i,k,2) = qrs(i,k,2) + psmlt(i,k)
+              qrs(i,k,1) = qrs(i,k,1) - psmlt(i,k)
               t(i,k) = t(i,k) + xlf/cpm(i,k)*psmlt(i,k)
             endif
 !
@@ -940,8 +941,6 @@ CONTAINS
                            /den(i,k)                                          
               pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld/mstep(i),                &
                           -qrs(i,k,3)/mstep(i)),0.)
-              qrs(i,k,3) = qrs(i,k,3) + pgmlt(i,k)
-              qrs(i,k,1) = qrs(i,k,1) - pgmlt(i,k)
 !
 ! ngmlt: melting of graupel [LH A28]
 !       (T>T0: ->NR)
@@ -950,6 +949,8 @@ CONTAINS
                 gfac = rslope(i,k,3)*n0g/qrs(i,k,3)
                 ncr(i,k,3) = ncr(i,k,3) - gfac*pgmlt(i,k)
               endif
+              qrs(i,k,3) = qrs(i,k,3) + pgmlt(i,k)
+              qrs(i,k,1) = qrs(i,k,1) - pgmlt(i,k)
               t(i,k) = t(i,k) + xlf/cpm(i,k)*pgmlt(i,k)
             endif
 !
@@ -2277,8 +2278,8 @@ CONTAINS
 ! (NC->NCCN) 
 !
           if(pcond(i,k).eq.-qci(i,k,1)/dtcld) then
-            ncr(i,k,2) = 0.
             ncr(i,k,1) = ncr(i,k,1)+ncr(i,k,2)
+            ncr(i,k,2) = 0.
           endif
 !
           q(i,k) = q(i,k)-pcond(i,k)*dtcld

@@ -1039,9 +1039,9 @@ endif
                       grid%re_cloud_gsfc, grid%re_ice_gsfc,             & ! Goddard
                       grid%re_snow_gsfc, grid%re_graupel_gsfc,          & ! Goddard
                       grid%re_hail_gsfc, grid%re_rain_gsfc,             & ! Goddard
-                      grid%nca,grid%swrad_scat,                    &
+                      grid%nca,grid%swrad_scat,                         &
                       grid%cldefi,grid%lowlyr,                          &
-                      grid%mass_flux,                              &
+                      grid%mass_flux,                                   &
                       grid%rthften, grid%rqvften,                       &
 #if (WRF_USE_CLM == 1)
                       model_config_rec%megan_specifier, model_config_rec%megan_factors_file,    &
@@ -1051,7 +1051,7 @@ endif
 #if (WRF_CHEM == 1)
                       grid%cldfra_old,                                  &
 #else
-                      cldfra_old,                                  &
+                      cldfra_old,                                       &
 #endif
                       grid%glw,grid%gsw,grid%emiss,grid%embck,            &
                       grid%lu_index,                                      &
@@ -1072,10 +1072,12 @@ endif
                       grid%acsnom,grid%ivgtyp,grid%isltyp, grid%sfcevp,grid%smois,     &
                       grid%sh2o, grid%snowh, grid%smfr3d,                    &
                       grid%snoalb,                 &
-                      grid%DX,grid%DY,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy, &
+                      grid%DX,grid%DY,grid%dx2d,grid%area2d,              &
+                      grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy, &
                       grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state,&
                       allowed_to_read, grid%moved, start_of_simulation,               &
-                      grid%LAGDAY, &
+                      grid%LAGDAY,                            &
+                      grid%U10,grid%V10,grid%U10E,grid%V10E,  &
                       ids, ide, jds, jde, kds, kde,           &
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &
@@ -1249,6 +1251,7 @@ endif
                       ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic
                       ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic
                       ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
+                      ,grid%irr_rand_field,config_flags%irr_ph,config_flags%irr_freq                 &
                       ,grid%QR_CU, grid%QS_CU                                                        &
                       ,grid%NC_CU, grid%NI_CU, grid%NR_CU, grid%NS_CU,grid%CCN_CU                    &
                       ,grid%alevsiz_cu,grid%num_months,grid%no_src_types_cu,grid%aeromcu             &
@@ -1295,11 +1298,6 @@ endif
          call wrf_debug(200,'In start_em, after zero_avgflx call')
       ENDDO
    ENDIF
-
-#ifdef MCELIO
-   grid%LU_MASK = 0.
-   WHERE ( grid%lu_index .EQ. 16 ) grid%LU_MASK = 1.
-#endif
 
    call wrf_debug(100,'start_em: calling lightning_init')
    CALL lightning_init ( id=grid%id, itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
@@ -1524,10 +1522,21 @@ endif
 !
        DO j = jts,min(jte,jde-1)
        DO i = its, min(ite,ide-1)
-          im1 = max(i-1,ids)
-          ip1 = min(i+1,ide-1)
-          jm1 = max(j-1,jds)
-          jp1 = min(j+1,jde-1)
+          if (config_flags%periodic_x ) then
+            im1 = i-1
+            ip1 = i+1
+          else
+            im1 = max(i-1,ids)
+            ip1 = min(i+1,ide-1)
+          endif
+
+          if (config_flags%periodic_y ) then
+            jm1 = j-1
+            jp1 = j+1
+          else
+            jm1 = max(j-1,jds)
+            jp1 = min(j+1,jde-1)
+          endif
           grid%toposlpx(i,j)=(grid%ht(ip1,j)-grid%ht(im1,j))*grid%msftx(i,j)*grid%rdx/(ip1-im1)
           grid%toposlpy(i,j)=(grid%ht(i,jp1)-grid%ht(i,jm1))*grid%msfty(i,j)*grid%rdy/(jp1-jm1)
           grid%lap_hgt(i,j)=(grid%ht(ip1,j)+grid%ht(im1,j)+grid%ht(i,jp1)+grid%ht(i,jm1)-grid%ht(i,j)*4.)/4.
@@ -2062,6 +2071,7 @@ DEALLOCATE(z_at_q)
                  ,s_zl  = grid%s_zl             &  
                  ,td_zl = grid%td_zl            &
                  ,q_zl = grid%q_zl              &
+                 ,p_zl = grid%p_zl              &
                  !  Dimension arguments
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
@@ -2083,7 +2093,7 @@ DEALLOCATE(z_at_q)
                U=grid%u_2                                           &
                ,V=grid%v_2                                          &
                ,W=grid%w_2                                          &
-               ,t=grid%t_2                                          &
+               ,t=grid%th_phy_m_t0                                  &
                ,qv=moist(:,:,:,P_QV)                                &
                ,zp=grid%ph_2                                        &
                ,zb=grid%phb                                         &

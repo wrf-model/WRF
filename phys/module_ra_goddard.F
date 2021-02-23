@@ -5254,7 +5254,7 @@ enddo
 !dir$ vector aligned
  DO ic=1,irestrict
  if(lmask(ic) .eqv. .true.) then
-       df_sub(ic,k) = max(df(ic,k) - df(ic,k-1), 0.)  !df for each layer (remove negative df_sub) 
+       df_sub(ic,k) = max(df(ic,k) - df(ic,k-1), 0._fp_kind)  !df for each layer (remove negative df_sub) 
  endif
  ENDDO
  enddo
@@ -5275,7 +5275,7 @@ enddo
 !dir$ vector aligned
  DO ic=1,irestrict
  if(lmask(ic) .eqv. .true.) then
-    flc(ic,k)=max(flc(ic,k)-df_clr(ic,k),0.)  !this filter is for small cosine zenith angle.
+    flc(ic,k)=max(flc(ic,k)-df_clr(ic,k),0._fp_kind)  !this filter is for small cosine zenith angle.
  endif
  ENDDO
  enddo
@@ -5316,7 +5316,7 @@ enddo
            i_tau = min(max(int(cld_alb*10.)+1,1),10) !1~10
            ratio = ratio_lut(i_tau,i_cos)
        else !use computed clear and cloudy flux ratio (not fast_overcast)
-           ratio = max(0.01, min(1.,(flx(ic,k)/flc(ic,k))))
+           ratio = max(0.01_fp_kind, min(1._fp_kind,(flx(ic,k)/flc(ic,k))))
        endif
        df_sub(ic,k)  = df_sub(ic,k)*ratio  !compute cloudy-sky df_sub
     enddo !k
@@ -5340,8 +5340,8 @@ enddo
 !dir$ vector aligned
  DO ic=1,irestrict
  if(lmask(ic) .eqv. .true.) then
-    flx(ic,k)  = max(flx(ic,k)-df_cld(ic,k) , 0.)  !this max is for small cosz
-    flxd(ic,k) = max(flxd(ic,k)-df_cld(ic,k), 0.)  !this max is for small cosz
+    flx(ic,k)  = max(flx(ic,k)-df_cld(ic,k) , 0._fp_kind)  !this max is for small cosz
+    flxd(ic,k) = max(flxd(ic,k)-df_cld(ic,k), 0._fp_kind)  !this max is for small cosz
     flxu(ic,k) = flx(ic,k)-flxd(ic,k)
  endif
  ENDDO
@@ -5361,7 +5361,7 @@ enddo
    if (  (fdirir(ic)-df_cld(ic,np+1)) >= 0. ) then ! normal
     fdirir(ic)=fdirir(ic)-df_cld(ic,np+1)  ! updated 
    else ! if negative, it also reduces diffuse component.
-    fdifir(ic) = MAX(0., fdifir(ic) + (fdirir(ic)-df_cld(ic,np+1)) )
+    fdifir(ic) = max(0._fp_kind, fdifir(ic) + (fdirir(ic)-df_cld(ic,np+1)) )
     fdirir(ic)=0.
    endif
 !
@@ -5717,7 +5717,7 @@ enddo
 
 !-----for direct incident radiation
 !     the effective layer optical properties. eqs. (6.2)-(6.4)  !modify max & min
-           tautob(ic)=tausto(ic) + max(tauclb(ic,k,ib),0.e0)
+           tautob(ic)=tausto(ic) + max(tauclb(ic,k,ib),0._fp_kind)
            ssatob(ic)=min(max((ssatau(ic)+ssacl(ic,k,ib)*tauclb(ic,k,ib))/tautob(ic) , ssa_min), ssa_max)  !SSA of cloud is unity
            asytob(ic)=min(max((asysto(ic)+asycl(ic,k,ib)*ssacl(ic,k,ib)*tauclb(ic,k,ib)) &
                          /(   max(ssatob(ic)*tautob(ic),const_tiny)   ),asy_min), asy_max)
@@ -6176,7 +6176,7 @@ enddo
 !-----compute reflectance and transmittance of the cloudy portion of a layer
 
 !-----for direct incident radiation. eqs.(6.2)-(6.4)
-           tautob(ic,k)=tausto(ic,k)+max(tauclb(ic,k),0.e0)
+           tautob(ic,k)=tausto(ic,k)+max(tauclb(ic,k),0._fp_kind)
            ssatob(ic,k)=min(max((ssatau(ic,k)+ssacl(ic,k,iv)*tauclb(ic,k))/tautob(ic,k),ssa_min),ssa_max)
            asytob(ic,k)=min(max((asysto(ic,k)+asycl(ic,k,iv)*ssacl(ic,k,iv)*tauclb(ic,k)) &
                       /(  max(ssatob(ic,k)*tautob(ic,k),const_tiny)  ),ssa_min),ssa_max)
@@ -6187,7 +6187,7 @@ enddo
              ssatof(ic,k)=ssatob(ic,k)
              asytof(ic,k)=asytob(ic,k)
            else
-             tautof(ic,k)=tausto(ic,k)+max(tauclf(ic,k),0.e0)
+             tautof(ic,k)=tausto(ic,k)+max(tauclf(ic,k),0._fp_kind)
              ssatof(ic,k)=min(max((ssatau(ic,k)+ssacl(ic,k,iv)*tauclf(ic,k))/tautof(ic,k),ssa_min),ssa_max) 
              asytof(ic,k)=min(max((asysto(ic,k)+asycl(ic,k,iv)*ssacl(ic,k,iv)*tauclf(ic,k)) &
                         /(  max(ssatof(ic,k)*tautof(ic,k),const_tiny)  ),asy_min),asy_max)
@@ -6529,7 +6529,7 @@ enddo
 !-----normalize cloud cover following eq. (7.8)
            fa=fcld(ic,k)/cc(ic,kk)
 !-----table look-up
-           taux=min(taux,32.)
+           taux=min(taux,32._fp_kind)
            fm=cosz(ic)/dm
            ft=(log10(taux)-t1)/dt
            fa=fa/da
@@ -6555,8 +6555,8 @@ enddo
            xai=xai+(-caib(im,it,ia-1)*(1.-fa)+ &
            caib(im,it,ia+1)*(1.+fa))*fa*.5+caib(im,it,ia)*(1.-fa*fa)
            xai= xai-2.*caib(im,it,ia)
-           xai=max(xai,0.0)
-           xai=min(xai,1.0)
+           xai=max(xai,0._fp_kind)
+           xai=min(xai,1._fp_kind)
            tauclb(ic,k) = taux*xai
 !-----scale cloud optical thickness for diffuse radiation following eq. (7.4)
 !     the scaling factor, xai, is a function of the cloud optical
@@ -6566,8 +6566,8 @@ enddo
            xai=xai+(-caif(it,ia-1)*(1.-fa)+ &
             caif(it,ia+1)*(1.+fa))*fa*.5+caif(it,ia)*(1.-fa*fa)
            xai= xai-caif(it,ia)
-           xai=max(xai,0.0)
-           xai=min(xai,1.0)
+           xai=max(xai,0._fp_kind)
+           xai=min(xai,1._fp_kind)
            tauclf(ic,k) = taux*xai
          endif
        endif
@@ -10427,11 +10427,11 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 !new
      dp   (ic,k) = pl(ic,k+1)-pl(ic,k)
      dh2o (ic,k) = 1.02*wa(ic,k)*dp(ic,k)
-     dh2o (ic,k) = max(dh2o (ic,k),1.e-30)
+     dh2o (ic,k) = max(dh2o (ic,k),1.e-30_fp_kind)
      do3  (ic,k) = 476.*oa(ic,k)*dp(ic,k)
-     do3  (ic,k) = max(do3 (ic,k),1.e-30)
+     do3  (ic,k) = max(do3 (ic,k),1.e-30_fp_kind)
      dco2 (ic,k) = 789.*co2*dp(ic,k)
-     dco2 (ic,k) = max(dco2 (ic,k),1.e-30)
+     dco2 (ic,k) = max(dco2 (ic,k),1.e-30_fp_kind)
      dch4 (ic,k) = 789.*ch4*dp(ic,k)
      dn2o (ic,k) = 789.*n2o*dp(ic,k)
      df11 (ic,k) = 789.*cfc11*dp(ic,k)
@@ -10576,7 +10576,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
               taux=taux*(1.-ww*ff)
 !-----compute cloud diffuse transmittance. it is approximated by using
 !     a diffusivity factor of 1.66.
-              tauxa=max(0.,1.66*taux)
+              tauxa=max(0._fp_kind,1.66*taux)
               tcldlyr(ic,k)=0.
               if(tauxa.lt.80.) tcldlyr(ic,k)=exp(-tauxa)
            endif
@@ -10885,8 +10885,8 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
        if (k2 .eq. k1+1) then
 !dir$ vector aligned
        DO ic=1,irestrict
-         yy=min(0.999,trant(ic))
-         yy=max(0.001,yy)
+         yy=min(0.999_fp_kind,trant(ic))
+         yy=max(0.001_fp_kind,yy)
 !-hmhj use log instead of alog for default intrinsic function
          xx=(blevel(ic,k1)-blevel(ic,k2))/ log(yy)
          bu=(blevel(ic,k1)-blevel(ic,k2)*yy)/(1.0-yy)+xx
@@ -11652,9 +11652,9 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 !-----normalize we and pe
         pe=(log10(x2)-p1)/dpe
 !-----restrict the magnitudes of the normalized we and pe.
-        we=min(we,REAL(nh-1))
-        pe=max(pe,0.0)
-        pe=min(pe,REAL(nx-1))
+        we=min(we,real(nh-1,kind=fp_kind))
+        pe=max(pe,0._fp_kind)
+        pe=min(pe,real(nx-1,kind=fp_kind))
 !-----assign iw and ip and compute the distance of we and pe
 !     from iw and ip.
         iw=int(we+1.0)
@@ -11684,8 +11684,8 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
         t2 = ca*(1.-fw) + cb*fw
 !-----update the total transmittance between levels k1 and k2
         tran(ic)= (ax + (t1+t2*x3) * x3)*tran(ic)
-        tran(ic)=min(tran(ic),0.9999999)
-        tran(ic)=max(tran(ic),0.0000001)
+        tran(ic)=min(tran(ic),0.9999999_fp_kind)
+        tran(ic)=max(tran(ic),0.0000001_fp_kind)
        else
         tran(ic)=0.9999999
        endif

@@ -4,9 +4,7 @@ subroutine zmf5kf ( lot, ido, l1, na, cc, im1, in1, ch, im2, in2, wa )
 !
 !! ZMF5KF is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

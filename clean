@@ -17,7 +17,7 @@ endif
 
 ( cd tools/CodeBase ; make clean )
 
-( cd inc ; /bin/rm -f *.inc namelist.default )
+( cd inc ; /bin/rm -f *.inc namelist.default commit_decl )
 
 find . -name \*.dSYM -exec rm -rf {} \; >& /dev/null
 
@@ -51,7 +51,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  /bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; \
 	  /bin/rm -f namelist.input ) >& /dev/null
     ( cd test/exp_real ; /bin/rm -f gm* out* fort* real* ) >& /dev/null
-    ( cd test ; rm -f */*.exe */ETAMPNEW_DATA* */GENPARM.TBL */LANDUSE.TBL */README.namelist \
+    ( cd test ; rm -f */*.exe */ETAMPNEW_DATA* */GENPARM.TBL */LANDUSE.TBL */README.namelist */README.physics_files \
 	  */RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */MPTABLE.TBL */URBPARM.TBL */grib2map.tbl \
 	  */CAM_ABS_DATA */CAM_AEROPT_DATA \
 	  */CCN_ACTIVATE.BIN \
@@ -65,7 +65,9 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  */constants.asc */p3_lookup_table_1.dat \
 	  */masses.asc */kernels_z.asc */capacity.asc */termvels.asc */coeff_p.asc */coeff_q.asc \
 	  */gribmap.txt */tr??t?? */co2_trans */namelist.output */ishmael-gamma-tab.bin \
+	  */HLC.TBL */wind-turbine-1.tbl \
           */ishmael-qi-qc.bin */ishmael-qi-qr.bin ) >& /dev/null
+     ( cd test/em_fire; rm -rf two_fires rain )
   else if ( "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup
     /bin/rm -f Registry/Registry.backup

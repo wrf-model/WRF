@@ -1,14 +1,14 @@
 # CLM Variables
 
-state   integer NUMC           ij       misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "NUMC"     "NUMBER OF COLUMN SUBGRIDS"   " "
-state   integer NUMP           ij       misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "NUMP"     "NUMBER OF PFT SUBGRIDS"   " "
+state   integer NUMC           ij       misc      1          Z     rd=(interp_fcni)u=(copy_fcni)           "NUMC"     "NUMBER OF COLUMN SUBGRIDS"   " "
+state   integer NUMP           ij       misc      1          Z     rd=(interp_fcni)u=(copy_fcni)           "NUMP"     "NUMBER OF PFT SUBGRIDS"   " "
 state   real    SABV           ij       misc      1          Z     h                                                           "SABV"     "NET VEGETATION SOLAR RADIATION" "W m-2"
 state   real    SABG           ij       misc      1          Z     h                                                           "SABG"     "NET SOIL SOLAR RADIATION"       "W m-2"
 state   real    LWUP           ij       misc      1          Z     h                                                           "LWUP"     "OUTGOING LONGWAVE RADIATION"    "W m-2"
 state  real     LHSOI          i4j      misc      1          Z      h                                                           "LHSOI"           "LH from soil"              "W/m^2"
 state  real     LHVEG          i4j      misc      1          Z      h                                                           "LHVEG"           "LH from vegetation"        "W/m^2"
 state  real     LHTRAN         i4j      misc      1          Z      h                                                           "LHTRAN"          "LH from transpiration"     "W/m^2"
-state   integer SNL            i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "SNL"      "NUMBER OF SNOW LAYERS"   " "
+state   integer SNL            i4j      misc      1          Z     rd=(interp_fcni)u=(copy_fcni)           "SNL"      "NUMBER OF SNOW LAYERS"   " "
 state   real    SNOWDP         i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "SNOWDP"   "SUBGRID SNOW DEPTH"              "m"
 state   real    WTC            i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "WTC"      "COLUMN WEIGHT"                "fraction"
 state   real    WTP            i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "WTP"      "PFT WEIGHT"                   "fraction"

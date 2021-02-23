@@ -795,6 +795,8 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SOIL',    config_flags%opt_soil    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_PEDO',    config_flags%opt_pedo    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_CROP',    config_flags%opt_crop    , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_IRR',     config_flags%opt_irr     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_IRRM',    config_flags%opt_irrm    , 1 , ierr )
       ENDIF
 
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr )

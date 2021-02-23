@@ -57,7 +57,8 @@ CONTAINS
      &          ,wsat_px, clay_px, csand_px, fmsand_px                              & ! PX-LSM
      &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz     &
      &          ,iopt_inf ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot ,iopt_stc     &
-     &          ,iopt_gla ,iopt_rsf  ,iopt_soil ,iopt_pedo ,iopt_crop               &
+     &          ,iopt_gla ,iopt_rsf  ,iopt_soil ,iopt_pedo ,iopt_crop ,iopt_irr     &
+     &          ,iopt_irrm                                                          &
      &          ,soilcomp  , soilcl1, soilcl2, soilcl3, soilcl4                     &
      &          ,isnowxy  ,tvxy      ,tgxy      ,canicexy  ,canliqxy  ,eahxy        &
      &          ,tahxy    ,cmxy      ,chxy      ,fwetxy    ,sneqvoxy  ,alboldxy     &
@@ -73,7 +74,11 @@ CONTAINS
      &          ,bgapxy   ,wgapxy    ,tgvxy     ,tgbxy     ,chvxy     ,chbxy        &    
      &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
      &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
-     &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &                      
+     &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &            
+           ! Noah-MP irrigation
+     &          ,IRFRACT  ,SIFRACT   ,MIFRACT   ,FIFRACT   ,IRNUMSI   ,IRNUMMI      &
+     &          ,IRNUMFI  ,IRWATSI   ,IRWATMI   ,IRWATFI   ,IRELOSS   ,IRSIVOL      &
+     &          ,IRMIVOL  ,IRFIVOL   ,IRRSPLH                                       &          
            ! Noah-MP ground water
      &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
      &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
@@ -883,7 +888,8 @@ CONTAINS
 
    INTEGER, OPTIONAL, INTENT(IN) ::    idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc , iopt_frz, &
                                     iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc, &
-				    iopt_gla, iopt_rsf, iopt_soil,iopt_pedo,iopt_crop
+				    iopt_gla, iopt_rsf, iopt_soil,iopt_pedo,iopt_crop, iopt_irr, &
+                                    iopt_irrm
    REAL,    OPTIONAL, DIMENSION(ims:ime ,8, jms:jme), INTENT(IN) :: SOILCOMP
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme)  , INTENT(IN) :: SOILCL1,SOILCL2,SOILCL3,SOILCL4
 
@@ -903,6 +909,12 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: PLANTING
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: HARVEST
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: SEASON_GDD
+
+!  NoahMP irrigation
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN)    :: IRFRACT, SIFRACT, MIFRACT, FIFRACT
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: IRWATSI, IRWATMI, IRWATFI, IRELOSS, &
+                                                                     IRSIVOL, IRMIVOL, IRFIVOL, IRRSPLH
+   INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: IRNUMSI, IRNUMMI, IRNUMFI
 
 !  NoahMP specific fields - runoff option 5
 
@@ -1363,7 +1375,7 @@ CONTAINS
  
 !
    REAL   :: xice_threshold
-
+   CHARACTER(LEN=256) :: LLANDUSE
 ! cyl 3d ocean variable 
    integer :: okms, okme
    real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(INOUT):: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH
@@ -3073,6 +3085,8 @@ CONTAINS
             ENDIF
          ENDIF
 
+!for NoahMP irrigation scheme
+         LLANDUSE = MMINLU
 !added for WRF_HYDRO
 #ifdef WRF_HYDRO
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
@@ -3085,16 +3099,20 @@ CONTAINS
                PLANTING,  HARVEST,SEASON_GDD,                               &
                   IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
-	       IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,             &
+	       IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,   IOPT_IRR, &
+              IOPT_IRRM,                                                      &
                 IZ0TLND, SF_URBAN_PHYSICS,                                    &
 	       SOILCOMP,  SOILCL1,  SOILCL2,  SOILCL3,   SOILCL4,             &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,        GLW, &
 		    P8W,   RAINBL,       SR,                                  &
-		    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
+		IRFRACT,  SIFRACT,  MIFRACT,  FIFRACT,                        &
+                    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
 		 SMSTOT,SFCRUNOFF, UDRUNOFF,   ALBEDO,     SNOWC,      SMOIS, &
 		   SH2O,     TSLB,     SNOW,    SNOWH,    CANWAT,     ACSNOM, &
 		 ACSNOW,    EMISS,     QSFC,                                  &
  		     Z0,      ZNT,                                            & ! IN/OUT LSM eqv
+                IRNUMSI,  IRNUMMI,  IRNUMFI,  IRWATSI,   IRWATMI,    IRWATFI, & ! IN/OUT Noah MP only
+                IRELOSS,  IRSIVOL,  IRMIVOL,  IRFIVOL,   IRRSPLH,   LLANDUSE, &
 		ISNOWXY,     TVXY,     TGXY, CANICEXY,  CANLIQXY,      EAHXY, &
 		  TAHXY,     CMXY,     CHXY,   FWETXY,  SNEQVOXY,   ALBOLDXY, &
 		QSNOWXY, WSLAKEXY,    ZWTXY,     WAXY,      WTXY,     TSNOXY, &

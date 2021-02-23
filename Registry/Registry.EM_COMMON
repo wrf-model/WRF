@@ -797,6 +797,7 @@ state    real   ACRUNOFF         ij     misc        1         -     irhd=(interp
 state    real   ACSNOM           ij     misc        1         -      rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)       "ACSNOM"           "ACCUMULATED MELTED SNOW"  "kg m-2"
 state    real   SNOW             ij     misc        1         -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SNOW"             "SNOW WATER EQUIVALENT"    "kg m-2"
 state    real   SNOWH            ij     misc        1         -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SNOWH"            "PHYSICAL SNOW DEPTH"      "m"
+
 #state    real   RHOSN            ij     misc        1         -    i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
 state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
@@ -2486,6 +2487,8 @@ rconfig   integer opt_rsf     namelist,noah_mp      1           1         h    "
 rconfig   integer opt_soil    namelist,noah_mp      1           1         h    "opt_soil" "flag for using different input soil information"   ""
 rconfig   integer opt_pedo    namelist,noah_mp      1           1         h    "opt_pedo" "pedo_transfer function option"   ""
 rconfig   integer opt_crop    namelist,noah_mp      1           0         h    "opt_crop" "crop model option"   ""
+rconfig   integer opt_irr     namelist,noah_mp      1           0         h    "opt_irr"  "Noah-MP irrigation option"   ""
+rconfig   integer opt_irrm    namelist,noah_mp      1           0         h    "opt_irrm" "Noah-MP irrigation method option"   ""
 rconfig   real    WTDDT               namelist,physics         max_domains     30.      h     "wtddt"    "minutes between calls to lateral hydro"  ""
 
 # For WRF Hydro

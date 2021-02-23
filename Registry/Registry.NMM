@@ -1104,6 +1104,8 @@ rconfig   integer opt_rsf     namelist,noah_mp      1            1         h    
 rconfig   integer opt_soil    namelist,noah_mp      1            1         h    "opt_soil" "flag for using different input soil information"   ""
 rconfig   integer opt_pedo    namelist,noah_mp      1            1         h    "opt_pedo" "pedo_transfer function option"   ""
 rconfig   integer opt_crop    namelist,noah_mp      1            0         h    "opt_crop" "crop model option"   ""
+rconfig   integer opt_irr     namelist,noah_mp      1            0         h    "opt_irr"  "Noah-MP irrigation option"   ""
+rconfig   integer opt_irrm    namelist,noah_mp      1            0         h    "opt_irrm" "Noah-MP irrigation method option"   ""
 
 # For WRF Hydro
 rconfig   integer wrf_hydro               derived              1     0      h     "wrf_hydro"   "descrip"  "unit"
@@ -1213,6 +1215,23 @@ state integer   pgsxy      ij      -       1      -     rh                      
 
 state    real    gecros_state i{gecros}j  -       1      Z     rhd=(interp_mask_land_field:lu_index)u=(UpNear)     "gecros"      "gecros state array"         "-"
  
+#Noah-MP Irrigation
+state    real   IRFRACT    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "IRFRACT"     "Irrigation fraction"            ""
+state    real   SIFRACT    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "SIFRACT"     "Sprinkler Irrigation fraction"            ""
+state    real   MIFRACT    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "MIFRACT"     "Micro Irrigation fraction"            ""
+state    real   FIFRACT    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "FIFRACT"     "Flood Irrigation fraction"            ""
+state  integer  IRNUMSI    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "IRNUMSI"     "Sprinkler Irrigation Event Count" ""
+state  integer  IRNUMMI    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "IRNUMMI"     "Micro Irrigation Event Count" ""
+state  integer  IRNUMFI    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "IRNUMFI"     "Flood Irrigation Event Count" ""
+state    real   IRWATSI    ij      -       1      -     r                                                     "IRWATSI"     "Sprinkler Irrigation Amount for the Event"     "m"
+state    real   IRWATMI    ij      -       1      -     r                                                     "IRWATMI"     "Micro Irrigation Amount for the Event"     "m"
+state    real   IRWATFI    ij      -       1      -     r                                                     "IRWATFI"     "Flood Irrigation Amount for the Event"     "m"
+state    real   IRSIVOL    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "IRSIVOL"     "Sprinkler Irrigation Water Accumulated"     "mm"
+state    real   IRMIVOL    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "IRMIVOL"     "Micro Irrigation Water Accumulated"     "mm"
+state    real   IRFIVOL    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "IRFIVOL"     "Flood Irrigation Water Accumulated"     "mm"
+state    real   IRELOSS    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "IRELOSS"     "Sprinkler Evaporation Loss Accumulated"     "mm"
+state    real   IRRSPLH    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "IRRSPLH"     "Sprinkler Evaporation Loss Accumulated"     "Joules m^-2"
+
 # added state for etampnew microphysics (needed for restarts)
 state    real  mp_restart_state   p      misc        1         -      r       "MP_RESTART_STATE"       "STATE VECTOR FOR MICROPHYSICS RESTARTS"
 state    real  tbpvs_state       p      misc        1         -      r        "TBPVS_STATE"           "STATE FOR ETAMPNEW MICROPHYSICS"

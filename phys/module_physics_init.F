@@ -118,8 +118,12 @@ CONTAINS
                          WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY, & ! Optional Noah-MP
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
                          GRAINXY, GDDXY,                                  & ! Optional Noah-MP
-                         croptype, cropcat,                      &           ! Noah-MP Crop model
-                         iopt_crop,                                       &  
+                         croptype, cropcat,                               & ! Noah-MP Crop model
+                         iopt_crop,                                       & 
+                         iopt_irr, iopt_irrm,                             &   
+                         IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,     &   ! Optional Noah-MP
+                         IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,     &   ! Optional Noah-MP
+                         IRRSPLH,                                         &
                          gecros_state,                                    & ! Optional gecros crop
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
@@ -539,9 +543,22 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
-   INTEGER, INTENT(IN ) :: iopt_crop
+   INTEGER, INTENT(IN ) :: iopt_crop, iopt_irr, iopt_irrm 
    REAL,    OPTIONAL, DIMENSION(ims:ime,60,jms:jme) :: gecros_state      ! Optional gecros crop
 
+!  Irrigation
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATSI 
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATMI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATFI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRELOSS
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRSIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRMIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRFIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRRSPLH
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMSI
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMMI
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMFI
+                                                                
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
 
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
@@ -1357,6 +1374,10 @@ CONTAINS
                 GRAINXY, GDDXY,                                 & ! Noah-MP Crop model
                 croptype, cropcat,                              & ! Noah-MP Crop model
                 iopt_crop,                                      & 
+                iopt_irr, iopt_irrm,                            &
+                IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,    & ! Noah-MP Irrigation
+                IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,    & ! Noah-MP Irrigation
+                IRRSPLH,                                        & ! Noah-MP Irrigation
                 gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
@@ -2364,6 +2385,10 @@ CONTAINS
                 GRAINXY, GDDXY,                                 & ! Noah-MP Crop model
                 croptype, cropcat,                              & ! Noah-MP Crop model
                 iopt_crop,                                      &
+                iopt_irr, iopt_irrm,                            &
+                IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,    & ! Noah-MP Irrigation
+                IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,    & ! Noah-MP Irrigation
+                IRRSPLH,                                        &
                 gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
@@ -2686,11 +2711,24 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
-   INTEGER , INTENT(IN)        ::     iopt_crop
+   INTEGER , INTENT(IN)        ::     iopt_crop, iopt_irr, iopt_irrm
    REAL,    OPTIONAL, DIMENSION(ims:ime,60,jms:jme) :: gecros_state                  ! Optional gecros crop
    INTEGER, OPTIONAL, INTENT(IN)  ::  ISICE
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
    REAL , OPTIONAL, INTENT(IN) :: WTDDT
+
+!Irrigation
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATSI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATMI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATFI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRELOSS
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRSIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRMIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRFIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRRSPLH
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMSI
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMMI
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMFI 
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -3193,9 +3231,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
                      grainxy  ,gddxy    ,                                                   &
                      croptype ,cropcat  ,                      &
+                     irnumsi  ,irnummi  ,irnumfi  ,irwatsi,    &
+                     irwatmi  ,irwatfi  ,ireloss  ,irsivol,    &
+                     irmivol  ,irfivol  ,irrsplh  ,            &
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
                      allowed_to_read, iopt_run , iopt_crop,    &
+                     iopt_irr, iopt_irrm,                      &
                      sf_urban_physics,                         &  ! urban scheme
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &

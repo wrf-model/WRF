@@ -1107,6 +1107,10 @@ endif
                       grid%GRAINXY, grid%GDDXY,                                                 &   ! Optional Noah-MP
                       grid%CROPTYPE, grid%CROPCAT,                                                 &   ! Optional Noah-MP
                       config_flags%opt_crop,                                                    &
+                      config_flags%opt_irr, config_flags%opt_irrm,                              &   ! Optional Noah-MP
+                      grid%IRNUMSI, grid%IRNUMMI, grid%IRNUMFI, grid%IRWATSI, grid%IRWATMI,     &   ! Optional Noah-MP
+                      grid%IRWATFI, grid%IRELOSS, grid%IRSIVOL, grid%IRMIVOL, grid%IRFIVOL,     &   ! Optional Noah-MP
+                      grid%IRRSPLH,                                                             &   ! Optional Noah-MP
                       grid%gecros_state,                                                        &   ! Optional gecros crop
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP

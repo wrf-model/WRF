@@ -142,7 +142,8 @@ MODULE MODULE_SF_NOAHMPLSM
 		      !   2 -> BATS: when SFCTMP<TFRZ+2.2 
 		      !   3 -> SFCTMP < TFRZ
 		      !   4 -> Use WRF microphysics output
-
+		      !   5 -> Use wetbulb temperature (Wang et al., 2019 GRL) C.He, 12/18/2020
+ 
   INTEGER :: OPT_TBOT ! options for lower boundary condition of soil temperature
                       !   1 -> zero heat flux from bottom (ZBOT and TBOT not used)
                       ! **2 -> TBOT at ZBOT (8m) read from a file (original Noah)
@@ -231,6 +232,7 @@ MODULE MODULE_SF_NOAHMPLSM
     REAL :: DEN                !tree density (no. of trunks per m2)
     REAL :: RC                 !tree crown radius (m)
     REAL :: MFSNO              !snowmelt m parameter ()
+    REAL :: SCFFAC             !snow cover factor (m) (originally hard-coded 2.5*z0 in SCF formulation)
     REAL :: SAIM(12)           !monthly stem area index, one-sided
     REAL :: LAIM(12)           !monthly leaf area index, one-sided
     REAL :: SLA                !single-side leaf area per Kg [m2/kg]
@@ -303,6 +305,8 @@ MODULE MODULE_SF_NOAHMPLSM
      REAL :: FSATMX       !maximum surface saturated fraction (global mean)
      REAL :: Z0SNO        !snow surface roughness length (m) (0.002)
      REAL :: SSI          !liquid water holding capacity for snowpack (m3/m3)
+     REAL :: SNOW_RET_FAC !snowpack water release timescale factor (1/s)
+     REAL :: SNOW_EMIS    !snow emissivity
      REAL :: SWEMX        !new snow mass to fully cover old snow (mm)
      REAL :: TAU0         !tau0 from Yang97 eqn. 10a
      REAL :: GRAIN_GROWTH !growth from vapor diffusion Yang97 eqn. 10b
@@ -1045,6 +1049,15 @@ END IF
   REAL                                        :: PRCP_FROZEN   !total frozen precipitation [mm/s] ! MB/AN : v3.7
   REAL, PARAMETER                             :: RHO_GRPL = 500.0  ! graupel bulk density [kg/m3] ! MB/AN : v3.7
   REAL, PARAMETER                             :: RHO_HAIL = 917.0  ! hail bulk density [kg/m3]    ! MB/AN : v3.7
+! wet-bulb scheme Wang et al., 2019 GRL, C.He, 12/18/2020
+  REAL               :: ESATAIR    ! saturated vapor pressure of air
+  REAL               :: LATHEA     ! latent heat of vapor/sublimation
+  REAL               :: GAMMA_b      ! (cp*p)/(eps*L)
+  REAL               :: TDC        ! air temperature [C]
+  REAL               :: TWET       ! wetbulb temperature
+  INTEGER            :: ITER
+  INTEGER, PARAMETER :: NITER = 10 ! iterations for Twet calculation
+
 ! --------------------------------------------------------------------------------------------------
 
 !jref: seems like PAIR should be P1000mb??
@@ -1132,6 +1145,23 @@ END IF
 	  FPICE = 0.0
         ENDIF
 	
+     ENDIF
+
+! wet-bulb scheme (Wang et al., 2019 GRL), C.He, 12/18/2020
+     IF(OPT_SNF == 5) THEN
+       TDC   = MIN( 50., MAX(-50.,(SFCTMP-TFRZ)) ) !Kelvin to degree Celsius with limit -50 to +50
+       IF (SFCTMP > TFRZ) THEN
+          LATHEA = HVAP
+       ELSE
+          LATHEA = HSUB
+       END IF
+       GAMMA_b = CPAIR*SFCPRS/(0.622*LATHEA)
+       TWET    = TDC - 5.  ! first guess wetbulb temperature
+       DO ITER = 1, NITER
+          ESATAIR = 610.8 * EXP((17.27*TWET)/(237.3+TWET))
+          TWET    = TWET - (ESATAIR-EAIR)/ GAMMA_b  ! Wang et al., 2019 GRL Eq.2
+       END DO
+       FPICE = 1.0/(1.0+6.99E-5*exp(2.0*(TWET+3.97))) ! Wang et al., 2019 GRL Eq. 1
      ENDIF
 
      RAIN   = PRCP * (1.-FPICE)
@@ -1954,7 +1984,8 @@ ENDIF   ! CROPTYPE == 0
      IF(SNOWH.GT.0.)  THEN
          BDSNO    = SNEQV / SNOWH
          FMELT    = (BDSNO/100.)**parameters%MFSNO
-         FSNO     = TANH( SNOWH /(2.5* Z0 * FMELT))
+         !FSNO     = TANH( SNOWH /(2.5* Z0 * FMELT))
+         FSNO     = TANH( SNOWH /(parameters%SCFFAC * FMELT)) ! C.He: bring hard-coded 2.5*z0 to MPTABLE tunable parameter SCFFAC
      ENDIF
 
 ! ground roughness length
@@ -2023,9 +2054,9 @@ ENDIF   ! CROPTYPE == 0
 
      EMV = 1. - EXP(-(ELAI+ESAI)/1.0)
      IF (ICE == 1) THEN
-       EMG = 0.98*(1.-FSNO) + 1.0*FSNO
+       EMG = 0.98*(1.-FSNO) + parameters%SNOW_EMIS*FSNO  ! move hard-coded snow emissivity as a global parameter to MPTABLE
      ELSE
-       EMG = parameters%EG(IST)*(1.-FSNO) + 1.0*FSNO
+       EMG = parameters%EG(IST)*(1.-FSNO) + parameters%SNOW_EMIS*FSNO
      END IF
 
 ! soil moisture factor controlling stomatal resistance
@@ -4456,8 +4487,7 @@ ENDIF   ! CROPTYPE == 0
 
        TMPRB  = CWPC*50. / (1. - EXP(-CWPC/2.))
        RB     = TMPRB * SQRT(parameters%DLEAF/UC)
-       RB     = MAX(RB,100.0)
-!       RB = 200
+       RB     = MIN(MAX(RB, 5.0),50.0) ! limit RB to 5-50, typically RB<50
 
   END SUBROUTINE RAGRB
 
@@ -5617,6 +5647,7 @@ ENDIF   ! CROPTYPE == 0
         SNEQV  = MAX(0.,TEMP1-XM(1))  
         PROPOR = SNEQV/TEMP1
         SNOWH  = MAX(0.,PROPOR * SNOWH)
+        SNOWH  = MIN(MAX(SNOWH,SNEQV/500.0),SNEQV/50.0)  ! limit adjustment to a reasonable density
         HEATR  = HM(1) - HFUS*(TEMP1-SNEQV)/DT  
         IF (HEATR > 0.) THEN
               XM(1) = HEATR*DT/HFUS             
@@ -6480,10 +6511,12 @@ ENDIF   ! CROPTYPE == 0
              IF(J /= 0) THEN
                 SNLIQ(J+1) = SNLIQ(J+1) + SNLIQ(J)
                 SNICE(J+1) = SNICE(J+1) + SNICE(J)
+                DZSNSO(J+1) = DZSNSO(J+1) + DZSNSO(J)
              ELSE
                IF (ISNOW_OLD < -1) THEN    ! MB/KM: change to ISNOW
                 SNLIQ(J-1) = SNLIQ(J-1) + SNLIQ(J)
                 SNICE(J-1) = SNICE(J-1) + SNICE(J)
+                DZSNSO(J-1) = DZSNSO(J-1) + DZSNSO(J)
                ELSE
 	         IF(SNICE(J) >= 0.) THEN
                   PONDING1 = SNLIQ(J)    ! ISNOW WILL GET SET TO ZERO BELOW; PONDING1 WILL GET 
@@ -6891,6 +6924,7 @@ ENDIF   ! CROPTYPE == 0
            ! The change in DZ due to compaction
 
            DZSNSO(J) = DZSNSO(J)*(1.+PDZDTC)
+           DZSNSO(J) = max(DZSNSO(J),SNICE(J)/DENICE + SNLIQ(J)/DENH2O)
         END IF
 
         ! Pressure of overlying snow
@@ -6953,6 +6987,7 @@ ENDIF   ! CROPTYPE == 0
    REAL, DIMENSION(-NSNOW+1:0) :: EPORE     !effective porosity = porosity - VOL_ICE
    REAL :: PROPOR, TEMP
    REAL :: PONDING1, PONDING2
+   REAL, PARAMETER :: max_liq_mass_fraction = 0.4
 ! ----------------------------------------------------------------------
 
 !for the case when SNEQV becomes '0' after 'COMBINE'
@@ -6975,6 +7010,7 @@ ENDIF   ! CROPTYPE == 0
       SNEQV  = SNEQV - QSNSUB*DT + QSNFRO*DT
       PROPOR = SNEQV/TEMP
       SNOWH  = MAX(0.,PROPOR * SNOWH)
+      SNOWH  = MIN(MAX(SNOWH,SNEQV/500.0),SNEQV/50.0)  ! limit adjustment to a reasonable density
 
       IF(SNEQV < 0.) THEN
          SICE(1) = SICE(1) + SNEQV/(DZSNSO(1)*1000.)
@@ -7026,9 +7062,20 @@ ENDIF   ! CROPTYPE == 0
      SNLIQ(J) = SNLIQ(J) + QIN
      VOL_LIQ(J) = SNLIQ(J)/(DZSNSO(J)*DENH2O)
      QOUT = MAX(0.,(VOL_LIQ(J)-parameters%SSI*EPORE(J))*DZSNSO(J))
+     IF(J == 0) THEN
+       QOUT = MAX((VOL_LIQ(J)- EPORE(J))*DZSNSO(J) , parameters%SNOW_RET_FAC*DT*QOUT)
+     END IF
      QOUT = QOUT*DENH2O
      SNLIQ(J) = SNLIQ(J) - QOUT
+     IF((SNLIQ(J)/(SNICE(J)+SNLIQ(J))) > max_liq_mass_fraction) THEN
+       QOUT = QOUT + (SNLIQ(J) - max_liq_mass_fraction/(1.0 - max_liq_mass_fraction)*SNICE(J))
+       SNLIQ(J) = max_liq_mass_fraction/(1.0 - max_liq_mass_fraction)*SNICE(J)
+     ENDIF
      QIN = QOUT
+   END DO
+
+   DO J = ISNOW+1, 0
+     DZSNSO(J) = MAX(DZSNSO(J),SNLIQ(J)/DENH2O + SNICE(J)/DENICE)
    END DO
 
 ! Liquid water from snow bottom to soil
@@ -9614,7 +9661,7 @@ END SUBROUTINE EMERG
                                     ! 1 -> semi-implicit; 2 -> full implicit (original Noah)
   INTEGER,  INTENT(IN) :: iopt_rsf  !surface resistance (1->Sakaguchi/Zeng; 2->Seller; 3->mod Sellers; 4->1+snow)
   INTEGER,  INTENT(IN) :: iopt_soil !soil parameters set-up option
-  INTEGER,  INTENT(IN) :: iopt_pedo !pedo-transfer function
+  INTEGER,  INTENT(IN) :: iopt_pedo !pedo-transfer function (1->Saxton and Rawls)
   INTEGER,  INTENT(IN) :: iopt_crop !crop model option (0->none; 1->Liu et al.; 2->Gecros)
   INTEGER,  INTENT(IN) :: iopt_irr  ! 0 -> No irrigation; 
                                     ! 1 -> Irrigation ON;
@@ -9682,6 +9729,7 @@ MODULE NOAHMP_TABLES
     REAL :: DEN_TABLE(MVT)         !tree density (no. of trunks per m2)
     REAL :: RC_TABLE(MVT)          !tree crown radius (m)
     REAL :: MFSNO_TABLE(MVT)       !snowmelt curve parameter ()
+    REAL :: SCFFAC_TABLE(MVT)      !snow cover factor (m) (replace original hard-coded 2.5*z0 in SCF formulation)
     REAL :: SAIM_TABLE(MVT,12)     !monthly stem area index, one-sided
     REAL :: LAIM_TABLE(MVT,12)     !monthly leaf area index, one-sided
     REAL :: SLA_TABLE(MVT)         !single-side leaf area per Kg [m2/kg]
@@ -9773,6 +9821,8 @@ MODULE NOAHMP_TABLES
     REAL :: FSATMX_TABLE   !maximum surface saturated fraction (global mean)
     REAL :: Z0SNO_TABLE    !snow surface roughness length (m) (0.002)
     REAL :: SSI_TABLE      !liquid water holding capacity for snowpack (m3/m3) (0.03)
+    REAL :: SNOW_RET_FAC_TABLE  !snowpack water release timescale factor (1/s)
+    REAL :: SNOW_EMIS_TABLE!snow emissivity
     REAL :: SWEMX_TABLE    !new snow mass to fully cover old snow (mm)
     REAL :: TAU0_TABLE          !tau0 from Yang97 eqn. 10a
     REAL :: GRAIN_GROWTH_TABLE  !growth from vapor diffusion Yang97 eqn. 10b
@@ -9943,7 +9993,7 @@ CONTAINS
                                      LAI_JUL,LAI_AUG,LAI_SEP,LAI_OCT,LAI_NOV,LAI_DEC
     REAL, DIMENSION(MVT) :: RHOL_VIS, RHOL_NIR, RHOS_VIS, RHOS_NIR, &
                                      TAUL_VIS, TAUL_NIR, TAUS_VIS, TAUS_NIR
-    REAL, DIMENSION(MVT) :: CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, &
+    REAL, DIMENSION(MVT) :: CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, SCFFAC, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, &
                      AVCMX, AQE, LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  &
                      BP, MP, QE25, RMS25, RMR25, ARM, FOLNMX, WDPOOL, WRRAT, MRP, NROOT, RGL, RS, HS, TOPT, RSMAX, &
 		     SLAREA, EPS1, EPS2, EPS3, EPS4, EPS5
@@ -9951,7 +10001,7 @@ CONTAINS
     NAMELIST / noahmp_usgs_veg_categories / VEG_DATASET_DESCRIPTION, NVEG
     NAMELIST / noahmp_usgs_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, ISCROP, EBLFOREST, NATURAL, &
          LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL, &
-         CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
+         CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, SCFFAC, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
          LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  BP, MP, QE25, RMS25, RMR25, ARM, &
          FOLNMX, WDPOOL, WRRAT, MRP, NROOT, RGL, RS, HS, TOPT, RSMAX, &
          SAI_JAN, SAI_FEB, SAI_MAR, SAI_APR, SAI_MAY, SAI_JUN,SAI_JUL,SAI_AUG,SAI_SEP,SAI_OCT,SAI_NOV,SAI_DEC, &
@@ -9961,7 +10011,7 @@ CONTAINS
     NAMELIST / noahmp_modis_veg_categories / VEG_DATASET_DESCRIPTION, NVEG
     NAMELIST / noahmp_modis_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, ISCROP, EBLFOREST, NATURAL, &
          LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL, &
-         CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
+         CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, SCFFAC, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
          LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  BP, MP, QE25, RMS25, RMR25, ARM, &
          FOLNMX, WDPOOL, WRRAT, MRP, NROOT, RGL, RS, HS, TOPT, RSMAX, &
          SAI_JAN, SAI_FEB, SAI_MAR, SAI_APR, SAI_MAY, SAI_JUN,SAI_JUL,SAI_AUG,SAI_SEP,SAI_OCT,SAI_NOV,SAI_DEC, &
@@ -9977,6 +10027,7 @@ CONTAINS
     DEN_TABLE    = -1.E36
     RC_TABLE     = -1.E36
     MFSNO_TABLE  = -1.E36
+    SCFFAC_TABLE = -1.E36
     RHOL_TABLE   = -1.E36
     RHOS_TABLE   = -1.E36
     TAUL_TABLE   = -1.E36
@@ -10072,6 +10123,7 @@ CONTAINS
        DEN_TABLE(1:NVEG)  = DEN(1:NVEG)
         RC_TABLE(1:NVEG)  = RC(1:NVEG)
      MFSNO_TABLE(1:NVEG)  = MFSNO(1:NVEG)
+    SCFFAC_TABLE(1:NVEG)  = SCFFAC(1:NVEG)
         XL_TABLE(1:NVEG)  = XL(1:NVEG)
      CWPVT_TABLE(1:NVEG)  = CWPVT(1:NVEG)
      C3PSN_TABLE(1:NVEG)  = C3PSN(1:NVEG)
@@ -10311,12 +10363,12 @@ CONTAINS
     integer :: ierr
     logical :: file_named 
 
-    REAL :: CO2,O2,TIMEAN,FSATMX,Z0SNO,SSI, &
+    REAL :: CO2,O2,TIMEAN,FSATMX,Z0SNO,SSI,SNOW_RET_FAC,SNOW_EMIS,&
             SWEMX,TAU0,GRAIN_GROWTH,EXTRA_GROWTH,DIRT_SOOT,&
 	    BATS_COSZ,BATS_VIS_NEW,BATS_NIR_NEW,BATS_VIS_AGE,BATS_NIR_AGE,BATS_VIS_DIR,BATS_NIR_DIR,&
 	    RSURF_SNOW,RSURF_EXP
 
-    NAMELIST / noahmp_global_parameters / CO2,O2,TIMEAN,FSATMX,Z0SNO,SSI, &
+    NAMELIST / noahmp_global_parameters / CO2,O2,TIMEAN,FSATMX,Z0SNO,SSI,SNOW_RET_FAC,SNOW_EMIS,&
             SWEMX,TAU0,GRAIN_GROWTH,EXTRA_GROWTH,DIRT_SOOT,&
 	    BATS_COSZ,BATS_VIS_NEW,BATS_NIR_NEW,BATS_VIS_AGE,BATS_NIR_AGE,BATS_VIS_DIR,BATS_NIR_DIR,&
 	    RSURF_SNOW,RSURF_EXP
@@ -10329,7 +10381,9 @@ CONTAINS
     FSATMX_TABLE     = -1.E36
      Z0SNO_TABLE     = -1.E36
        SSI_TABLE     = -1.E36
-     SWEMX_TABLE     = -1.E36
+SNOW_RET_FAC_TABLE   = -1.E36
+   SNOW_EMIS_TABLE   = -1.E36
+       SWEMX_TABLE   = -1.E36
         TAU0_TABLE   = -1.E36
 GRAIN_GROWTH_TABLE   = -1.E36
 EXTRA_GROWTH_TABLE   = -1.E36
@@ -10365,6 +10419,8 @@ RSURF_SNOW_TABLE     = -1.E36
     FSATMX_TABLE     = FSATMX
      Z0SNO_TABLE     = Z0SNO
        SSI_TABLE     = SSI
+SNOW_RET_FAC_TABLE   = SNOW_RET_FAC
+   SNOW_EMIS_TABLE   = SNOW_EMIS
      SWEMX_TABLE     = SWEMX
         TAU0_TABLE   = TAU0
 GRAIN_GROWTH_TABLE   = GRAIN_GROWTH

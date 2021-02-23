@@ -1185,6 +1185,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
   parameters%DEN    =    DEN_TABLE(VEGTYPE)       !tree density (no. of trunks per m2)
   parameters%RC     =     RC_TABLE(VEGTYPE)       !tree crown radius (m)
   parameters%MFSNO  =  MFSNO_TABLE(VEGTYPE)       !snowmelt m parameter ()
+  parameters%SCFFAC = SCFFAC_TABLE(VEGTYPE)       !snow cover factor (m) (originally hard-coded 2.5*z0 in SCF formulation)
   parameters%SAIM   =   SAIM_TABLE(VEGTYPE,:)     !monthly stem area index, one-sided
   parameters%LAIM   =   LAIM_TABLE(VEGTYPE,:)     !monthly leaf area index, one-sided
   parameters%SLA    =    SLA_TABLE(VEGTYPE)       !single-side leaf area per Kg [m2/kg]
@@ -1313,7 +1314,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%FSATMX     =      FSATMX_TABLE
    parameters%Z0SNO      =       Z0SNO_TABLE
    parameters%SSI        =         SSI_TABLE
-   parameters%SWEMX      =       SWEMX_TABLE
+   parameters%SNOW_RET_FAC = SNOW_RET_FAC_TABLE
+   parameters%SNOW_EMIS  =   SNOW_EMIS_TABLE
+   parameters%SWEMX        =     SWEMX_TABLE
    parameters%TAU0         =      TAU0_TABLE
    parameters%GRAIN_GROWTH = GRAIN_GROWTH_TABLE
    parameters%EXTRA_GROWTH = EXTRA_GROWTH_TABLE
@@ -1701,7 +1704,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
        ENDIF
 
 
-       ! Check if snow/snowh are consistent and cap SWE at 2000mm;
+       ! Check if snow/snowh are consistent and cap SWE at 5000mm;
        !  the Noah-MP code does it internally but if we don't do it here, problems ensue
        DO J = jts,jtf
           DO I = its,itf
@@ -1710,9 +1713,9 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                                      ,i,j,snow(i,j),snowh(i,j)
                CALL wrf_message(err_message)
              ENDIF
-             IF ( SNOW( i,j ) > 2000. ) THEN
-               SNOWH(I,J) = SNOWH(I,J) * 2000. / SNOW(I,J)      ! SNOW in mm and SNOWH in m
-               SNOW (I,J) = 2000.                               ! cap SNOW at 2000, maintain density
+             IF ( SNOW( i,j ) > 5000. ) THEN
+               SNOWH(I,J) = SNOWH(I,J) * 5000. / SNOW(I,J)      ! SNOW in mm and SNOWH in m
+               SNOW (I,J) = 5000.                               ! cap SNOW at 5000, maintain density
              ENDIF
           ENDDO
        ENDDO

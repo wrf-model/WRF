@@ -1102,10 +1102,12 @@ endif
                       grid%SNICEXY, grid%SNLIQXY, grid%TVXY, grid%TGXY, grid%CANICEXY,          &   ! Optional Noah-MP
                       grid%CANLIQXY, grid%EAHXY, grid%TAHXY, grid%CMXY,                         &   ! Optional Noah-MP
                       grid%CHXY, grid%FWETXY, grid%SNEQVOXY, grid%ALBOLDXY, grid%QSNOWXY,       &   ! Optional Noah-MP
-                      grid%WSLAKEXY, grid%ZWTXY, grid%WAXY, grid%WTXY, grid%LFMASSXY, grid%RTMASSXY, & ! Optional Noah-MP
+                      grid%QRAINXY,                                                             &   ! Optional Noah-MP
+                      grid%WSLAKEXY, grid%ZWTXY, grid%WAXY, grid%WTXY, grid%LFMASSXY,           &   ! Optional Noah-MP
+                      grid%RTMASSXY,                                                            &   ! Optional Noah-MP
                       grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
                       grid%GRAINXY, grid%GDDXY,                                                 &   ! Optional Noah-MP
-                      grid%CROPTYPE, grid%CROPCAT,                                                 &   ! Optional Noah-MP
+                      grid%CROPTYPE, grid%CROPCAT,                                              &   ! Optional Noah-MP
                       config_flags%opt_crop,                                                    &
                       config_flags%opt_irr, config_flags%opt_irrm,                              &   ! Optional Noah-MP
                       grid%IRNUMSI, grid%IRNUMMI, grid%IRNUMFI, grid%IRWATSI, grid%IRWATMI,     &   ! Optional Noah-MP

@@ -32,7 +32,7 @@ CONTAINS
                IRELOSS,  IRSIVOL,  IRMIVOL,   IRFIVOL,  IRRSPLH,  LLANDUSE, & ! IN/OUT Noah MP only
                ISNOWXY,     TVXY,     TGXY,  CANICEXY, CANLIQXY,     EAHXY, & ! IN/OUT Noah MP only
 	         TAHXY,     CMXY,     CHXY,    FWETXY, SNEQVOXY,  ALBOLDXY, & ! IN/OUT Noah MP only
-               QSNOWXY, WSLAKEXY,    ZWTXY,      WAXY,     WTXY,    TSNOXY, & ! IN/OUT Noah MP only
+               QSNOWXY, QRAINXY,  WSLAKEXY, ZWTXY,  WAXY,  WTXY,    TSNOXY, & ! IN/OUT Noah MP only
 	       ZSNSOXY,  SNICEXY,  SNLIQXY,  LFMASSXY, RTMASSXY,  STMASSXY, & ! IN/OUT Noah MP only
 	        WOODXY, STBLCPXY, FASTCPXY,    XLAIXY,   XSAIXY,   TAUSSXY, & ! IN/OUT Noah MP only
 	       SMOISEQ, SMCWTDXY,DEEPRECHXY,   RECHXY,  GRAINXY,    GDDXY,PGSXY,  & ! IN/OUT Noah MP only
@@ -213,6 +213,7 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  SNEQVOXY  ! snow mass at last time step(mm h2o)
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ALBOLDXY  ! snow albedo at last time step (-)
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  QSNOWXY   ! snowfall on the ground [mm/s]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  QRAINXY   ! rainfall on the ground [mm/s]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  WSLAKEXY  ! lake water storage [mm]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ZWTXY     ! water table depth [m]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  WAXY      ! water in the "aquifer" [mm]
@@ -381,6 +382,7 @@ CONTAINS
     REAL                                :: SNEQVO       ! snow mass at last time step(mm h2o)
     REAL                                :: ALBOLD       ! snow albedo at last time step (-)
     REAL                                :: QSNOW        ! snowfall on the ground [mm/s]
+    REAL                                :: QRAIN        ! rainfall on the ground [mm/s]
     REAL                                :: WSLAKE       ! lake water storage [mm]
     REAL                                :: ZWT          ! water table depth [m]
     REAL                                :: WA           ! water in the "aquifer" [mm]
@@ -665,6 +667,7 @@ CONTAINS
        SNEQVO                = SNEQVOXY(I,J)                ! SWE previous timestep
        ALBOLD                = ALBOLDXY(I,J)                ! albedo previous timestep, for snow aging
        QSNOW                 = QSNOWXY (I,J)                ! snow falling on ground
+       QRAIN                 = QRAINXY (I,J)                ! rain falling on ground
        WSLAKE                = WSLAKEXY(I,J)                ! lake water storage (can be neg.) (mm)
        ZWT                   = ZWTXY   (I,J)                ! depth to water table [m]
        WA                    = WAXY    (I,J)                ! water storage in aquifer [mm]
@@ -942,6 +945,7 @@ CONTAINS
             ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
             STC     , SMH2O   , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 
             CANLIQ  , CANICE  , TV      , TG      , QSFC1D  , QSNOW   , & ! IN/OUT : 
+            QRAIN   ,                                                   & ! IN/OUT :
             ISNOW   , ZSNSO   , SNDPTH  , SWE     , SNICE   , SNLIQ   , & ! IN/OUT : 
             ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
             STMASS  , WOOD    , STBLCP  , FASTCP  , PLAI    , PSAI    , & ! IN/OUT : 
@@ -1019,6 +1023,7 @@ CONTAINS
              SNEQVOXY (I,J)                = SNEQVO
              ALBOLDXY (I,J)                = ALBOLD
              QSNOWXY  (I,J)                = QSNOW
+             QRAINXY  (I,J)                = QRAIN
              WSLAKEXY (I,J)                = WSLAKE
              ZWTXY    (I,J)                = ZWT
              WAXY     (I,J)                = WA
@@ -1512,7 +1517,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
        TSLB , SMOIS , SH2O , DZS , FNDSOILW , FNDSNOWH ,             &
        TSK, isnowxy , tvxy     ,tgxy     ,canicexy ,         TMN,     XICE,   &
        canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
-       fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
+       fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy, qrainxy, wslakexy, zwtxy, waxy, &
        wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
        stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
        grainxy  ,gddxy    ,                                                   &
@@ -1595,6 +1600,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: sneqvoxy    !snow mass at last time step(mm h2o)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: alboldxy    !snow albedo at last time step (-)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qsnowxy     !snowfall on the ground [mm/s]
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qrainxy     !rainfall on the ground [mm/s]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: wslakexy    !lake water storage [mm]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: zwtxy       !water table depth [m]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: waxy        !water in the "aquifer" [mm]
@@ -1817,6 +1823,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
              sneqvoxy   (I,J) = 0.0
              alboldxy   (I,J) = 0.65
              qsnowxy    (I,J) = 0.0
+             qrainxy    (I,J) = 0.0
              wslakexy   (I,J) = 0.0
 
              if(iopt_run.ne.5) then 

@@ -119,7 +119,11 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
    phat  = - precon * ghat
 
-   rrmold = da_dot_cv(cv_size, -phat, ghat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
+   rrmold = da_dot_cv(cv_size, -phat, ghat, grid, be%cv_mz, be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               , jp_start, jp_end)
    j_grad_norm_target = sqrt (rrmold)
 
    if (orthonorm_gradient) then
@@ -149,7 +153,11 @@ subroutine da_minimise_cg(grid, config_flags,            &
       call da_calculate_gradj(it,iter,cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp, &
                               be%cv%size_jl,be%cv%size_jt,xbx,be,iv,phat,y,fhat,grid,config_flags)
       
-      apdotp = da_dot_cv(cv_size, fhat, phat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
+      apdotp = da_dot_cv(cv_size, fhat, phat, grid, be%cv_mz, be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               , jp_start, jp_end)
 
       step = 0.0
       if (apdotp .gt. 0.0) step = rrmold/apdotp
@@ -160,12 +168,20 @@ subroutine da_minimise_cg(grid, config_flags,            &
     ! Orthonormalize new gradient (using modified Gramm-Schmidt algorithm)
       if (orthonorm_gradient) then
          do i = iter-1, 0, -1
-            gdot = da_dot_cv(cv_size, ghat, qhat(i)%values, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
+            gdot = da_dot_cv(cv_size, ghat, qhat(i)%values, grid, be%cv_mz, be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               , jp_start, jp_end)
             ghat = ghat - gdot * qhat(i)%values
          end do
       end if
       
-      rrmnew = da_dot_cv (cv_size, precon*ghat, ghat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
+      rrmnew = da_dot_cv (cv_size, precon*ghat, ghat, grid, be%cv_mz, be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               , jp_start, jp_end)
       rrmnew_norm = sqrt(rrmnew)
 
       ratio = 0.0
@@ -188,7 +204,11 @@ subroutine da_minimise_cg(grid, config_flags,            &
                              be%cv%size_jl, be%cv%size_jt, xbx, be, iv, xhat, cv, re, y, j_cost, grid, config_flags)
          j_total = j_cost%total
       else
-         j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end)
+         j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,be%cv_mz,be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               ,jp_start,jp_end)
       endif
 
       if ( write_detail_grad_fn ) then
@@ -230,7 +250,11 @@ subroutine da_minimise_cg(grid, config_flags,            &
    call da_calculate_gradj(it,iter,cv_size,be%cv%size_jb, be%cv%size_je,be%cv%size_jp, &
                            be%cv%size_jl,be%cv%size_jt,xbx, be, iv, xhat+cv, y, ghat, grid, config_flags, re)
 
-   rrmnew_norm = SQRT(da_dot_cv(cv_size,ghat,ghat,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end))
+   rrmnew_norm = SQRT(da_dot_cv(cv_size,ghat,ghat,grid,be%cv_mz,be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               ,jp_start,jp_end))
 
     write(unit=stdout,fmt=15) iter, j_cost%total , rrmnew_norm
 15  format('Final: ',I3,' iter, J=',1PD22.15,', g=',1PD22.15)

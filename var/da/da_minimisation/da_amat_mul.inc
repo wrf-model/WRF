@@ -33,7 +33,11 @@ subroutine da_amat_mul(be, grid, cv_size, ntmaxit, neign, eignval, eignvec, qhat
 
    xhat     = 0.0
    do j = 1, neign
-      dot_cv = da_dot_cv(cv_size, qhat(:,j), shat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
+      dot_cv = da_dot_cv(cv_size, qhat(:,j), shat, grid, be%cv_mz, be%ncv_mz, &
+#if (WRF_CHEM == 1)
+                be%cv_mz_chemic, &
+#endif
+                jp_start, jp_end)
       do i = 1, neign
          xhat = xhat + qhat(:,i) * &
                 SUM(eignvec(i,1:neign)*eignval(1:neign)*eignvec(j,1:neign)) * dot_cv

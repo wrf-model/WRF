@@ -12,6 +12,7 @@ WRFVAR_OBJS = \
    da_minimisation.o \
    da_vtox_transforms.o \
    da_obs.o \
+   da_chem_sfc.o \
    da_obs_io.o \
    da_join_iv_for_multi_inc.o \
    da_metar.o \

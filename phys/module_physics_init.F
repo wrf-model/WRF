@@ -114,12 +114,16 @@ CONTAINS
                          ISNOWXY, ZSNSOXY, TSNOXY,                        & ! Optional Noah-MP
                          SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,          & ! Optional Noah-MP
                          CANLIQXY, EAHXY, TAHXY, CMXY,                    & ! Optional Noah-MP
-                         CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,       & ! Optional Noah-MP
+                         CHXY, FWETXY, SNEQVOXY, ALBOLDXY,QSNOWXY,QRAINXY,& ! Optional Noah-MP
                          WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY, & ! Optional Noah-MP
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
                          GRAINXY, GDDXY,                                  & ! Optional Noah-MP
-                         croptype, cropcat,                      &           ! Noah-MP Crop model
-                         iopt_crop,                                       &  
+                         croptype, cropcat,                               & ! Noah-MP Crop model
+                         iopt_crop,                                       & 
+                         iopt_irr, iopt_irrm,                             &   
+                         IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,     &   ! Optional Noah-MP
+                         IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,     &   ! Optional Noah-MP
+                         IRRSPLH,                                         &
                          gecros_state,                                    & ! Optional gecros crop
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
@@ -506,6 +510,7 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SNEQVOXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ALBOLDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QRAINXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WSLAKEXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ZWTXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WAXY
@@ -539,9 +544,22 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
-   INTEGER, INTENT(IN ) :: iopt_crop
+   INTEGER, INTENT(IN ) :: iopt_crop, iopt_irr, iopt_irrm 
    REAL,    OPTIONAL, DIMENSION(ims:ime,60,jms:jme) :: gecros_state      ! Optional gecros crop
 
+!  Irrigation
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATSI 
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATMI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATFI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRELOSS
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRSIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRMIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRFIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRRSPLH
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMSI
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMMI
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMFI
+                                                                
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
 
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
@@ -942,15 +960,22 @@ CONTAINS
 ! for cloud, ice, and snow.
 
    IF ( config_flags%swint_opt .eq. 2 ) THEN
-      IF ( ( has_reqc .EQ. 1 ) .AND. &
-           ( has_reqi .EQ. 1 ) .AND. &
-           ( has_reqs .EQ. 1 ) .AND. &
+      IF ((   config_flags%mp_physics == THOMPSON .OR.        &
+              config_flags%mp_physics == THOMPSONAERO .OR.    &
+              config_flags%mp_physics == WSM3SCHEME .OR.    &
+              config_flags%mp_physics == WSM5SCHEME .OR.    &
+              config_flags%mp_physics == WSM6SCHEME .OR.    &
+              config_flags%mp_physics == WSM7SCHEME .OR.    &
+              config_flags%mp_physics == WDM5SCHEME .OR.    &
+              config_flags%mp_physics == WDM6SCHEME .OR.    &
+              config_flags%mp_physics == WDM7SCHEME ).OR.     &
+          (( has_reqc .EQ. 0 .AND. has_reqi .EQ. 0 .and. has_reqs .EQ. 0 ) .AND. &
            ( f_qc            ) .AND. &
            ( f_qi            ) .AND. &
-           ( f_qs            ) ) THEN
+           ( f_qs            ))) THEN
          !  everything is A-OK for FARMS
       ELSE
-         CALL wrf_error_fatal ('--- ERROR: FARMS (swint_opt==2) requires a different MP scheme')
+         CALL wrf_error_fatal ('--- ERROR: FARMS (swint_opt==2) requires a different MP scheme (Please see the module_physics_init')
       END IF
    END IF
 
@@ -1163,13 +1188,13 @@ CONTAINS
     end do
 
 !..Fill initial starting values of radiative effective radii for
-!.. cloud water (2.51 microns), cloud ice (5.01 microns), and
-!.. snow (10.01 microns).
+!.. cloud water (2.49 microns), cloud ice (4.99 microns), and
+!.. snow (9.99 microns).
     if (has_reqc.ne.0) then
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_cloud(i,k,j) = 2.51E-6
+             re_cloud(i,k,j) = RE_QC_BG
           end do
           end do
        end do
@@ -1178,7 +1203,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_ice(i,k,j) = 5.01E-6
+             re_ice(i,k,j) = RE_QI_BG
           end do
           end do
        end do
@@ -1187,7 +1212,7 @@ CONTAINS
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_snow(i,k,j) = 10.01E-6
+             re_snow(i,k,j) = RE_QS_BG
           end do
           end do
        end do
@@ -1340,16 +1365,20 @@ CONTAINS
                 QKE,                                            &
                 SFCEVP,GRDFLX,                                  &
                 TRIM (MMINLU_LOC),                              &
-                XLAT,                                           &
+                XLAT, XLONG,                                    &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
-                CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
+                CHXY, FWETXY, SNEQVOXY,ALBOLDXY,QSNOWXY,QRAINXY,&
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
                 GRAINXY, GDDXY,                                 & ! Noah-MP Crop model
                 croptype, cropcat,                              & ! Noah-MP Crop model
                 iopt_crop,                                      & 
+                iopt_irr, iopt_irrm,                            &
+                IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,    & ! Noah-MP Irrigation
+                IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,    & ! Noah-MP Irrigation
+                IRRSPLH,                                        & ! Noah-MP Irrigation
                 gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
@@ -2347,16 +2376,20 @@ CONTAINS
 #endif
                 QKE, SFCEVP,GRDFLX,                             &
                 MMINLU,                                         &
-                XLAT,                                           &
+                XLAT, XLONG,                                    &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
-                CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
+                CHXY, FWETXY, SNEQVOXY,ALBOLDXY,QSNOWXY,QRAINXY,&
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
                 GRAINXY, GDDXY,                                 & ! Noah-MP Crop model
                 croptype, cropcat,                              & ! Noah-MP Crop model
                 iopt_crop,                                      &
+                iopt_irr, iopt_irrm,                            &
+                IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,    & ! Noah-MP Irrigation
+                IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,    & ! Noah-MP Irrigation
+                IRRSPLH,                                        &
                 gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
@@ -2498,6 +2531,9 @@ CONTAINS
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
 #endif
+#ifdef WRF_USE_CTSM
+   USE module_sf_ctsm, only : ctsm_init
+#endif
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
    USE module_sf_bep_bem
@@ -2625,6 +2661,7 @@ CONTAINS
 !Noah-MP
 
    REAL,    DIMENSION(ims:ime, jms:jme) :: XLAT
+   REAL,    DIMENSION(ims:ime, jms:jme) :: XLONG
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: TSNOXY
@@ -2642,6 +2679,7 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SNEQVOXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ALBOLDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QRAINXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WSLAKEXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ZWTXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WAXY
@@ -2675,11 +2713,24 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
-   INTEGER , INTENT(IN)        ::     iopt_crop
+   INTEGER , INTENT(IN)        ::     iopt_crop, iopt_irr, iopt_irrm
    REAL,    OPTIONAL, DIMENSION(ims:ime,60,jms:jme) :: gecros_state                  ! Optional gecros crop
    INTEGER, OPTIONAL, INTENT(IN)  ::  ISICE
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
    REAL , OPTIONAL, INTENT(IN) :: WTDDT
+
+!Irrigation
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATSI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATMI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRWATFI
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRELOSS
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRSIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRMIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRFIVOL
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRRSPLH
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMSI
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMMI
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMFI 
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -3177,14 +3228,18 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH,          &
                      TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,TMN,XICE,                  &
                      canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
-                     fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
+                     fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,qrainxy, wslakexy, zwtxy, waxy,&
                      wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
                      stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
                      grainxy  ,gddxy    ,                                                   &
                      croptype ,cropcat  ,                      &
+                     irnumsi  ,irnummi  ,irnumfi  ,irwatsi,    &
+                     irwatmi  ,irwatfi  ,ireloss  ,irsivol,    &
+                     irmivol  ,irfivol  ,irrsplh  ,            &
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
                      allowed_to_read, iopt_run , iopt_crop,    &
+                     iopt_irr, iopt_irrm,                      &
                      sf_urban_physics,                         &  ! urban scheme
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
@@ -3359,6 +3414,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         ENDIF
 #else
         CALL wrf_error_fatal ( "SF CLM CURRENTLY ifdef'ed out, set -DWRF_USE_CLM in configure.wrf in ARCH_LOCAL" )
+#endif
+
+#ifdef WRF_USE_CTSM
+      CASE (CTSMSCHEME)
+
+         CALL ctsm_init( &
+              ids=ids, ide=ide, jds=jds, jde=jde, &
+              ims=ims, ime=ime, jms=jms, jme=jme, &
+              its=its, ite=ite, jts=jts, jte=jte, &
+              dt=DT, xlat=XLAT, xlong=XLONG,      &
+              atm_restart = restart)
 #endif
 
       CASE DEFAULT

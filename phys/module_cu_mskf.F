@@ -1762,8 +1762,8 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
        mtime=deltat/900._r8
        mtimec=deltat/900._r8
 
-       mtime = AMAX1(1.0,mtime)   !TWG remove time scale limitation from CAM5
-       mtimec = AMAX1(1.0,mtimec)    
+       mtime = max(1.0_r8,mtime)   !TWG remove time scale limitation from CAM5
+       mtimec = max(1.0_r8,mtimec)    
 
 ! conservation of qc
 
@@ -5160,19 +5160,19 @@ updraft:    DO NK=K,KL-1
 
                JK = KX-KQ+1
 !               print *,'kf qliq=', QLIQ(KQ)
-                 QLIQ(KQ) = amax1(0.0,zmqliq(1,JK))
-                 QICE(KQ) = amax1(0.0,zmqice(1,JK))
+                 QLIQ(KQ) = max(0._r8,zmqliq(1,JK))
+                 QICE(KQ) = max(0._r8,zmqice(1,JK))
 !TWG 06/14/16
-                 QRAIN(KQ) = amax1(0.0,zmqrain(1,JK))
-                 QSNOW(KQ) = amax1(0.0,zmqsnow(1,JK))
-                 NLIQ(KQ) = amax1(0.0,ncmp(1,JK))
-                 NICE(KQ) = amax1(0.0,nimp(1,JK))
-                 NRAIN(KQ) = amax1(0.0,nrmp(1,JK))
-                 NSNOW(KQ) = amax1(0.0,nsmp(1,JK))
-                 CCN(KQ) = amax1(0.0,zmccn(1,JK))
-                 EFFCH(KQ) = MAX(2.49, MIN(effc(1,JK), 50.))
-                 EFFIH(KQ) = MAX(4.99, MIN(effi(1,JK), 125.))
-                 EFFSH(KQ) = MAX(9.99, MIN(effs(1,JK), 999.))
+                 QRAIN(KQ) = max(0._r8,zmqrain(1,JK))
+                 QSNOW(KQ) = max(0._r8,zmqsnow(1,JK))
+                 NLIQ(KQ) = max(0._r8,ncmp(1,JK))
+                 NICE(KQ) = max(0._r8,nimp(1,JK))
+                 NRAIN(KQ) = max(0._r8,nrmp(1,JK))
+                 NSNOW(KQ) = max(0._r8,nsmp(1,JK))
+                 CCN(KQ) = max(0._r8,zmccn(1,JK))
+                 EFFCH(KQ) = max(2.49_r8, min(effc(1,JK), 50._r8))
+                 EFFIH(KQ) = max(4.99_r8, min(effi(1,JK), 125._r8))
+                 EFFSH(KQ) = max(9.99_r8, min(effs(1,JK), 999._r8))
 ! END TWG        
                   DETLQ(KQ)= QLIQ(KQ)*UDR(KQ)
                   DETIC(KQ)= QICE(KQ)*UDR(KQ)

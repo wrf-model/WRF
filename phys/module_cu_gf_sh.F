@@ -40,6 +40,11 @@
 !    itf,ktf,its,ite, kts,kte are dimensions
 !    ztexec,zqexec    excess temperature and moisture for updraft
 MODULE module_cu_gf_sh
+
+#if ( WRF_CHEM == 1 )
+     USE module_cu_gf_ctrans,only: ctrans_gf
+#endif
+
     real, parameter:: c1_shal=0.! .0005
     real, parameter:: g  =9.81
     real, parameter:: cp =1004.
@@ -59,6 +64,13 @@ contains
                          zuo,xmb_out,kbcon,ktop,k22,ierr,ierrc,    &
 ! output tendencies
                          OUTT,OUTQ,OUTQC,cnvwt,pre,cupclw,             &
+#if ( WRF_CHEM == 1 )
+                         num_chem,chem2d,outchemt,             &
+                         num_tracer,tracer2d,outtracert,       &
+                         numgas,chemopt,traceropt,             &
+                         conv_tr_wetscav,conv_tr_aqchem,       &
+                         chem_conv_tr,                         &
+#endif
 ! dimesnional variables
                          itf,ktf,its,ite, kts,kte,ipr)
 !
@@ -114,6 +126,29 @@ contains
        real                                                            &
         ,intent (in   )                   ::                           &
         dtime,tcrit
+
+#if ( WRF_CHEM == 1 )
+       INTEGER,INTENT(IN   ) ::                                        &
+              num_chem,num_tracer,numgas,chemopt,traceropt,            &
+              conv_tr_wetscav,conv_tr_aqchem,chem_conv_tr
+       REAL,DIMENSION(its:ite , kts:kte , num_chem),INTENT(IN)::     &
+                        tracer2d
+       REAL,DIMENSION(its:ite , kts:kte , num_chem),INTENT(IN)::     &
+                        chem2d
+       REAL,DIMENSION(its:ite , kts:kte , num_tracer),INTENT(INOUT)::  &
+                        outtracert
+       REAL,DIMENSION(its:ite , kts:kte , num_tracer),INTENT(INOUT)::  &
+                        outchemt
+       INTEGER :: nv
+       real,dimension(its:ite,kts:kte) ::  tempco
+       real,dimension(its:ite,kts:kte) ::                           &
+                     zdo,clw_all,pwdo,dd_massentro,dd_massdetro
+       real,dimension(its:ite)::                               &
+                     pwevo,pwavo,edto
+       integer,dimension(its:ite)::                            &
+                     jmin
+#endif
+
   !
   !***************** the following are your basic environmental
   !                  variables. They carry a "_cup" if they are
@@ -837,6 +872,61 @@ contains
           enddo
         endif
        enddo
+
+#if ( WRF_CHEM == 1 )
+!--- calculate in-cloud/updraft air temperature
+    do i=its,itf
+      if (ierr(i)==0) then
+        do k=kts,ktf
+          tempco(i,k)=(1./cp)*(hco(i,k)-g*zo_cup(i,k)-xlv*qco(i,k))
+        enddo !k
+      else
+        do k=kts,ktf
+          tempco(i,k)=tn_cup(i,k)
+        enddo !k
+      endif !ierr
+    enddo !i
+    do i=its,itf
+      pwevo(i)=0.
+      pwavo(i)=0.
+      jmin(i)=0
+      edto(i)=0.
+      do k=kts,kte
+        zdo(i,k)=0.
+        pwdo(i,k)=0.
+        dd_massentro(i,k)=0.
+        dd_massdetro(i,k)=0.
+        clw_all(i,k)=0.
+      enddo
+    enddo
+   
+    if ((chem_conv_tr>0).and.(chemopt>0)) then
+      call ctrans_gf(numgas,num_chem,chem2d,chemopt,0  &
+                     ,outchemt,conv_tr_wetscav,conv_tr_aqchem &
+                     ,po,po_cup,zo_cup &
+                     ,zuo,zdo,pwo,pwdo,pwevo,pwavo &
+                     ,up_massentro,up_massdetro &
+                     ,dd_massentro,dd_massdetro &
+                     ,tempco,clw_all  &
+                     ,ktop,k22,kbcon,jmin  &
+                     ,xmb,ierr,edto  &
+                     ,itf,ktf,its,ite,kts,kte  &
+                     ,1)
+    endif
+    if ((chem_conv_tr>0).and.(traceropt>0)) then
+      call ctrans_gf(0,num_tracer,tracer2d,0,traceropt  &
+                     ,outtracert,0,0        &
+                     ,po,po_cup,zo_cup &
+                     ,zuo,zdo,pwo,pwdo,pwevo,pwavo &
+                     ,up_massentro,up_massdetro &
+                     ,dd_massentro,dd_massdetro &
+                     ,tempco,clw_all  &
+                     ,ktop,k22,kbcon,jmin  &
+                     ,xmb,ierr,edto  &
+                     ,itf,ktf,its,ite,kts,kte  &
+                     ,1)
+    endif
+#endif
 !      
 ! done shallow
 !--------------------------done------------------------------

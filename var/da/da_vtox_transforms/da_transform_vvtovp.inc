@@ -4,7 +4,15 @@ subroutine da_transform_vvtovp(grid, evec, eval, vertical_wgt, vv, vp, mz, level
    ! Purpose: Transform from fields on vertical EOFS to fields on vertical 
    ! levels.
    !
-   ! Method:  Perform vp(i,j,k) = P E L^{1/2} vv(i,j,m) transform.
+   ! Method:  Perform vp(i,j,k) = E L^{1/2} vv(i,j,m) transform.
+   !
+   ! Zhiquan (Jake) liu's note: 2015-09
+   !-------------------------------------------------------------------------
+   ! 1. evec/eval assumed to vary in y direction (jds:jde) though it may not
+   !     be true in BE file (e.g., likely domain-averaged BE with bin_type=5).
+   ! 2. evec/eval truncated to number of EOF mode mz<=levels
+   ! 3. eval here is in fact square root of eigen values (see da_allocate_background_errors)
+   ! 4. by default, vertical weight not calculated/used
    !---------------------------------------------------------------------------
 
    implicit none

@@ -591,7 +591,7 @@
                       grid%ISNOWXY, grid%ZSNSOXY, grid%TSNOXY,                                  &   ! Optional Noah-MP
                       grid%SNICEXY, grid%SNLIQXY, grid%TVXY, grid%TGXY, grid%CANICEXY,          &   ! Optional Noah-MP
                       grid%CANLIQXY, grid%EAHXY, grid%TAHXY, grid%CMXY,                         &   ! Optional Noah-MP
-                      grid%CHXY, grid%FWETXY, grid%SNEQVOXY, grid%ALBOLDXY, grid%QSNOWXY,       &   ! Optional Noah-MP
+                      grid%CHXY, grid%FWETXY, grid%SNEQVOXY,grid%ALBOLDXY,grid%QSNOWXY,grid%QRAINXY, &   ! Optional Noah-MP
                       grid%WSLAKEXY, grid%ZWTXY, grid%WAXY, grid%WTXY, grid%LFMASSXY, grid%RTMASSXY, & ! Optional Noah-MP
                       grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
                       grid%XSAIXY,                                                              &   ! Optional Noah-MP

@@ -42,6 +42,11 @@ module da_radiance1
    use da_tracing, only : da_trace
 #endif
 
+#ifdef DM_PARALLEL
+   use da_control, only : ierr,comm,root
+   use da_par_util1, only : true_mpi_real, mpi_sum,mpi_integer
+#endif
+
    implicit none
    
    type datalink_type
@@ -243,6 +248,8 @@ contains
 #include "da_qc_ahi.inc"
 #include "da_qc_goesimg.inc"
 #include "da_write_iv_rad_ascii.inc"
+#include "da_write_iv_rad_for_multi_inc.inc"
+#include "da_read_iv_rad_for_multi_inc.inc"
 #include "da_write_oa_rad_ascii.inc"
 #include "da_detsurtyp.inc"
 #include "da_cld_eff_radius.inc"

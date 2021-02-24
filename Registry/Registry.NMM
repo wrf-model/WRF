@@ -872,7 +872,6 @@ state   real    qnifa          ikjftb  scalar      1         m     i01h023ru=(Up
 state   real    qndrop         ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
 state   real    qrimef         ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QRIMEF"           "rime factor * qi" "kg kg-1"
 
-
 state   real    -              ijkftb  dfi_scalar      1         m     -   -
 state   real    dfi_qndrop     ijkftb  dfi_scalar      1         m     \
    rsu=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)    "DFI_QNDROP"    "DFI Droplet number mixing ratio"        "# kg-1"
@@ -1795,6 +1794,7 @@ package   wdm7scheme    mp_physics==26               -             moist:qv,qc,q
 package   p3_1category    mp_physics==50               -             moist:qv
 package   p3_1category_nc mp_physics==51               -             moist:qv
 package   p3_2category    mp_physics==52               -             moist:qv
+package   ntu             mp_physics==56               -             moist:qv
 package   jensen_ishmael    mp_physics==86               -             moist:qv
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   etampnew      mp_physics==95               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef

@@ -524,6 +524,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 52, P3 2-ice categories plus double-moment cloud water
                                      = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
                                            for each ice
+                                     = 56, NTU multi-moment scheme  ! for ntu3m
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
@@ -559,6 +560,11 @@ Namelist variables for controlling the adaptive time step option:
  use_mp_re                           = 1       ! whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
                                                  0: do not use; 1: use effective radii
                                                  (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21,28)
+
+ CCNTY                               = 1       ! for aerosol background type, marine,  for ntu3m
+                                     = 2       ! continental clean (default), for ntu3m
+                                     = 3       ! continental average, for ntu3m
+                                     = 4       ! continental urban, for ntu3m
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation

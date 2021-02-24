@@ -638,6 +638,70 @@ state   real    dfi_qaoli3        ikjftb  dfi_scalar      1         -     \
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
+#---------for ntu3m---------------------------------------------------------------------------
+state   real    qdcn           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QDCN"           "Mass mixing ratio for dry CN " "kg kg-1"
+state   real    qtcn           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QTCN"           "Mass mixing ratio for total CN" "kg kg-1"
+state   real    qccn           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QCCN"           "Mass mixing ratio for cloud CN" "kg kg-1"
+state   real    qrcn           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QRCN"           "Mass mixing ratio for rain CN" "kg kg-1"
+state   real    qnin           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QNIN"           "Potential ice nuclei number mixing ratio" "# kg-1"
+state   real    fi             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "FI"             "Shape moment mixing ratio for pristine ice" "kg kg-1"
+state   real    fs             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "FS"             "Shape moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    vi             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "VI"             "Volume moment mixing ratio for pristine ice" "m^3 kg-1"
+state   real    vs             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "VS"             "Volume moment mixing ratio for snow-aggragates" "m^3 kg-1"
+state   real    vg             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "VG"             "Volume moment mixing ratio for rimed ice" "m^3 kg-1"
+state   real    ai             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "AI"             "Second moment mixing ratio for pristine ice" "kg kg-1"
+state   real    as             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "AS"             "Second moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    ag             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "AG"             "Second moment mixing ratio for rimed ice" "kg kg-1"
+state   real    ah             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "AH"             "Second moment mixing ratio for hail" "kg kg-1"
+state   real    i3m            ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "I3M"            "Third moment mixing ratio for pristine ice" "kg kg-1"
+
+state   real    dfi_qdcn       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QDCN"      "Mass mixing ratio for dry CN" "kg kg-1"
+state   real    dfi_qtcn       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QTCN"      "Mass mixing ratio for total CN" "kg kg-1"
+state   real    dfi_qccn       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QCCN"      "Mass mixing ratio for cloud CN" "kg kg-1"
+state   real    dfi_qrcn       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QRCN"      "Mass mixing ratio for rain CN" "kg kg-1"
+state   real    dfi_qnin       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QNIN"      "Potential ice nuclei number mixing ratio" "# kg-1"
+state   real    dfi_fi         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_FI"        "Shape moment mixing ratio for pristine ice" "kg kg-1"
+state   real    dfi_fs         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_FS"        "Shape moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    dfi_vi         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_VI"        "Volume moment mixing ratio for pristine ice" "m^3 kg-1"
+state   real    dfi_vs         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_VS"        "Volume moment mixing ratio for snow-aggregates" "m^3 kg-1"
+state   real    dfi_vg         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_VG"        "Volume moment mixing ratio for rimed ice" "m^3 kg-1"
+state   real    dfi_ai         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_AI"        "Second moment mixing ratio for pristine ice" "kg kg-1"
+state   real    dfi_as         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_AS"        "Second moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    dfi_ag         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_AG"        "Second moment mixing ratio for rimed ice" "kg kg-1"
+state   real    dfi_ah         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_AH"        "Second moment mixing ratio for hail" "kg kg-1"
+state   real    dfi_i3m        ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_I3M"       "Third moment mixing ratio for pristine ice" "kg kg-1"
+#-------------------------------------for ntu3m----------------------------------------------------------
+#
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Arrays for Specified LBCs  (lbc arrays REMOVED; Boundary arrays are now specified with the state array; see above, 20050413 JM )
@@ -2245,7 +2309,7 @@ rconfig   real     nssl_cnos              namelist,physics      max_domains  3.e
 rconfig   real     nssl_rho_qh            namelist,physics      max_domains  500.     rh       "Graupel particle density"  ""      ""
 rconfig   real     nssl_rho_qhl           namelist,physics      max_domains  900.     rh       "Hail particle density"  ""      ""
 rconfig   real     nssl_rho_qs            namelist,physics      max_domains  100.     rh       "Snow particle density"  ""      ""
-
+rconfig   integer     CCNTY               namelist,physics      1            2        rh       "Aerosol background type for NTU microphysics"  ""   ""
 
 # Lightning Qv Nudging 
 rconfig   integer  nudge_lightning        namelist,physics      max_domains   0       rh       "flag for lightning Qv nudging"  ""      ""
@@ -2828,6 +2892,7 @@ package   p3_1category_nc mp_physics==51               -             moist:qv,qc
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
 package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnc,qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS,re_cloud,re_ice,re_snow,mskf_refl_10cm
 package   jensen_ishmael  mp_physics==55               -             moist:qv,qc,qr,qi,qi2,qi3;scalar:qnr,qni,qvoli,qaoli,qni2,qvoli2,qaoli2,qni3,qvoli3,qaoli3;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,phii3d,itype,vmi3d_2,rhopo3d_2,di3d_2,phii3d_2,itype_2,vmi3d_3,rhopo3d_3,di3d_3,phii3d_3,itype_3,refl_10cm
+package   ntu             mp_physics==56               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qdcn,qtcn,qccn,qrcn,qnin,fi,fs,vi,vs,vg,ai,as,ag,ah,i3m
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   gsfcgcescheme   mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 
@@ -2862,6 +2927,7 @@ package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi
 package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_2category_dfi  mp_physics_dfi==52    -                dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib,dfi_qni2,dfi_qir2,dfi_qib2;state:dfi_re_cloud,dfi_re_ice
 package   jensen_ishmael_dfi  mp_physics_dfi==55         -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2,dfi_qi3;dfi_scalar:dfi_qnr,dfi_qni,dfi_qvoli,dfi_qaoli,dfi_qni2,dfi_qvoli2,dfi_qaoli2,dfi_qni3,dfi_qvoli3,dfi_qaoli3;state:dfi_re_cloud,dfi_re_ice
+package   ntu_dfi           mp_physics_dfi==56       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qdcn,dfi_qtcn,dfi_qccn,dfi_qrcn,dfi_qnin,dfi_fi,dfi_fs,dfi_vi,dfi_vs,dfi_vg,dfi_ai,dfi_as,dfi_ag,dfi_ah,dfi_i3m
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 package   gsfcgcescheme_dfi   mp_physics_dfi==97     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 

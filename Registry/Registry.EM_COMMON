@@ -1619,7 +1619,9 @@ state integer  STEPCU          -        misc        1         -      r        "S
                                                 
 state    real  RTHRATEN        ikj      misc        1         -      rd       "RTHRATEN"              "THETA TENDENCY DUE TO RADIATION"              "K s-1"
 state    real  RTHRATENLW      ikj      misc        1         -      r        "RTHRATLW"              "UNCOUPLED THETA TENDENCY DUE TO LONG WAVE RADIATION"    "K s-1"
+state    real  RTHRATENLWC     ikj      misc        1         -      r        "RTHRATLWC"             "UNCOUPLED THETA TEND DUE TO CLEAR SKY LONG WAVE RAD"    "K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
+state    real  RTHRATENSWC     ikj      misc        1         -      r        "RTHRATSWC"             "UNCOUPLED THETA TEND DUE TO CLEAR SKY SHORT WAVE RAD"   "K s-1"
 state    real  CLDFRA          ikj      misc        1         -      i0rh     "CLDFRA"                "CLOUD FRACTION"   ""
 state    real  CONVCLD          ij      misc        1         -      r        "CONVCLD"               "BMJ CONVECTIVE CLOUD" "kg m-2"
 state    real  CCLDFRA         ikj      misc        1         -      r        "CCLDFRA"               "CONVECTIVE CLOUD FRACTION" ""

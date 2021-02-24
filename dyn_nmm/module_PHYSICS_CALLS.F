@@ -196,7 +196,6 @@
                                                         SWVISDIF, &
                                                         SWNIRDIR, &
                                                         SWNIRDIF
-
 !
 !..Additions for coupling cloud physics effective radii and radiation.  G. Thompson
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: re_cloud, re_ice, re_snow
@@ -235,7 +234,8 @@
      &                                          ,P8W,P_PHY,PI_PHY       &
      &                                          ,RR,T8W                 &
      &                                          ,THRATENLW,THRATENSW    &
-     &                                          ,TH_PHY,T_PHY,Z_PHY
+     &                                          ,TH_PHY,T_PHY,Z_PHY     &
+     &                                          ,RTHRATENLWC,RTHRATENSWC
 !
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
@@ -313,6 +313,8 @@
      &                 /(P_PHY(I,K,J)*G)
 !
           RTHRATEN(I,K,J)=0.
+          RTHRATENLWC(I,K,J)=0.
+          RTHRATENSWC(I,K,J)=0.
           THRATENLW(I,K,J)=0.
           THRATENSW(I,K,J)=0.
 !         PM2_5_DRY(I,K,J)=0.
@@ -424,6 +426,7 @@
      &       ,aer_ssa_opt=config_flags%aer_ssa_opt,aer_ssa_val=config_flags%aer_ssa_val             &
      &       ,aer_asy_opt=config_flags%aer_asy_opt,aer_asy_val=config_flags%aer_asy_val             &
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
+     &                 ,RTHRATENLWC=RTHRATENLWC,RTHRATENSWC=RTHRATENSWC  &
      &                 ,RTHRATEN=RTHRATEN                               &
      &                 ,CEN_LAT=grid%cen_lat                            &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &

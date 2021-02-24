@@ -273,6 +273,7 @@ BENCH_START(rad_driver_tim)
      &        ,RHO=grid%rho            ,RLWTOA=grid%rlwtoa                           &
      &        ,RSWTOA=grid%rswtoa      ,RTHRATEN=grid%rthraten                       &
      &        ,RTHRATENLW=grid%rthratenlw       ,RTHRATENSW=grid%rthratensw          &
+     &        ,RTHRATENLWC=grid%rthratenlwc     ,RTHRATENSWC=grid%rthratenswc        &
      &        ,SNOW=grid%snow          ,STEPRA=grid%stepra      ,SWDOWN=grid%swdown  &
      &        ,SWDOWNC=grid%swdownc    ,SW_PHYSICS=config_flags%ra_sw_physics        &
      &        ,T8W=t8w                 ,T=grid%t_phy           ,TAUCLDC=grid%taucldc &

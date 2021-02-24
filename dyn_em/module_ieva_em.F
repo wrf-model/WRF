@@ -208,15 +208,16 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 !===================================================================================================
            wfrac = 1.0
             
-           IF( ww(i,k,j) < 0.0 ) THEN    !! Omega has opposite sign of W
-             cx = rdx*(max(u(i+1,k,j  ), 0.0) - min(u(i,k,j), 0.0)) 
-             cy = rdy*(max(v(i,  k,j+1), 0.0) - min(v(i,k,j), 0.0)) 
-           ELSE
-             cx = rdx*(max(u(i+1,k-1,j  ), 0.0) - min(u(i,k-1,j), 0.0)) 
-             cy = rdy*(max(v(i,  k-1,j+1), 0.0) - min(v(i,k-1,j), 0.0))
-           ENDIF
+!          IF( ww(i,k,j) < 0.0 ) THEN    !! Omega has opposite sign of W
+!            cx = rdx*(max(u(i+1,k,j  ), 0.0) - min(u(i,k,j), 0.0)) 
+!            cy = rdy*(max(v(i,  k,j+1), 0.0) - min(v(i,k,j), 0.0)) 
+!          ELSE
+!            cx = rdx*(max(u(i+1,k-1,j  ), 0.0) - min(u(i,k-1,j), 0.0)) 
+!            cy = rdy*(max(v(i,  k-1,j+1), 0.0) - min(v(i,k-1,j), 0.0))
+!          ENDIF
 
-           cw_max = max(alpha_max - dt*Ceps*(cx + cy),0.0)                 ! adjusted max vertical courant
+!          cw_max = max(alpha_max - dt*Ceps*(cx + cy),0.0)                 ! adjusted max vertical courant
+           cw_max = alpha_max                                              ! Using simpler version...
 
            cr     = ww(i,k,j) * dt * rdnw(k) / (c1f(k)*mut(i,j)+c2f(k))    ! vertical courant number
          

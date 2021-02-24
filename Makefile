@@ -559,6 +559,7 @@ em_real : wrf
                ln -sf ../../run/aerosol_lat.formatted . ;              \
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
+               ln -sf ../../run/eclipse_besselian_elements.dat . ;     \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
                ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
                ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
@@ -592,6 +593,7 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f tc.exe ; ln -s ../../main/tc.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd test/em_real ; /bin/rm -f README.physics_files ; ln -s ../../run/README.physics_files . )
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
              ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
@@ -621,6 +623,7 @@ em_real : wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
+             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
              ln -sf ../../run/capacity.asc . ;                      \
              ln -sf ../../run/coeff_p.asc . ;                       \
              ln -sf ../../run/coeff_q.asc . ;                       \
@@ -916,6 +919,7 @@ nmm_real : nmm_wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
+             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
              ln -sf ../../run/capacity.asc . ;                      \
              ln -sf ../../run/coeff_p.asc . ;                       \
              ln -sf ../../run/coeff_q.asc . ;                       \

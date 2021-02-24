@@ -273,6 +273,7 @@ BENCH_START(rad_driver_tim)
      &        ,RHO=grid%rho            ,RLWTOA=grid%rlwtoa                           &
      &        ,RSWTOA=grid%rswtoa      ,RTHRATEN=grid%rthraten                       &
      &        ,RTHRATENLW=grid%rthratenlw       ,RTHRATENSW=grid%rthratensw          &
+     &        ,RTHRATENLWC=grid%rthratenlwc     ,RTHRATENSWC=grid%rthratenswc        &
      &        ,SNOW=grid%snow          ,STEPRA=grid%stepra      ,SWDOWN=grid%swdown  &
      &        ,SWDOWNC=grid%swdownc    ,SW_PHYSICS=config_flags%ra_sw_physics        &
      &        ,T8W=t8w                 ,T=grid%t_phy           ,TAUCLDC=grid%taucldc &
@@ -434,7 +435,10 @@ BENCH_START(rad_driver_tim)
      &         ,slope_rad=config_flags%slope_rad,topo_shading=config_flags%topo_shading     &
      &         ,shadowmask=grid%shadowmask   &
      &         ,ht=grid%ht,dx=grid%dx,dy=grid%dy,dx2d=grid%dx2d,area2d=grid%area2d &           
-     &         ,diffuse_frac=grid%diffuse_frac &           
+     &         ,diffuse_frac=grid%diffuse_frac &  
+     &         ,obscur=grid%ECOBSC, mask=grid%ECMASK                       &
+     &         ,elat_track=grid%elat_track,elon_track=grid%elon_track      &
+     &         ,SW_ECLIPSE=config_flags%ra_sw_eclipse                      &         
      &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    &
      &         ,cw_rad=grid%cw_rad                     &
      &         ,shcu_physics=config_flags%shcu_physics                     &
@@ -782,12 +786,14 @@ BENCH_START(surf_driver_tim)
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
      &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
      &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo &
-     &        ,iopt_crop=config_flags%opt_crop                                       &
+     &        ,iopt_crop=config_flags%opt_crop, iopt_irr=config_flags%opt_irr   &
+     &        ,iopt_irrm=config_flags%opt_irrm                                       &
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
      &        ,  fwetxy=grid%fwetxy   ,sneqvoxy=grid%sneqvoxy,alboldxy=grid%alboldxy &
-     &        , qsnowxy=grid%qsnowxy  ,wslakexy=grid%wslakexy,   zwtxy=grid%zwtxy    &
+     &        , qsnowxy=grid%qsnowxy  ,qrainxy=grid%qrainxy  ,wslakexy=grid%wslakexy &
+     &        , zwtxy=grid%zwtxy                                                     &
      &        ,    waxy=grid%waxy     ,    wtxy=grid%wtxy    ,  tsnoxy=grid%tsnoxy   &
      &        , zsnsoxy=grid%zsnsoxy  , snicexy=grid%snicexy , snliqxy=grid%snliqxy  &
      &        ,lfmassxy=grid%lfmassxy ,rtmassxy=grid%rtmassxy,stmassxy=grid%stmassxy &
@@ -814,7 +820,13 @@ BENCH_START(surf_driver_tim)
      &        ,   ghbxy=grid%ghbxy    ,   irgxy=grid%irgxy   ,   ircxy=grid%ircxy    &
      &        ,   irbxy=grid%irbxy    ,    trxy=grid%trxy    ,   evcxy=grid%evcxy    &
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
-     &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
+     &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &
+           !Noah-MP irrigation
+     &        , IRFRACT=grid%IRFRACT  , SIFRACT=grid%SIFRACT ,MIFRACT=grid%MIFRACT   &
+     &        , FIFRACT=grid%FIFRACT  , IRNUMSI=grid%IRNUMSI ,IRNUMMI=grid%IRNUMMI   &
+     &        , IRNUMFI=grid%IRNUMFI  , IRWATSI=grid%IRWATSI ,IRWATMI=grid%IRWATMI   &
+     &        , IRWATFI=grid%IRWATFI  , IRELOSS=grid%IRELOSS ,IRSIVOL=grid%IRSIVOL   &
+     &        , IRMIVOL=grid%IRMIVOL  , IRFIVOL=grid%IRFIVOL ,IRRSPLH=grid%IRRSPLH   &                       
            !Optional hydro variables in NOAHMP
      &        ,smcwtdxy=grid%smcwtdxy ,rechxy=grid%rechxy ,deeprechxy=grid%deeprechxy &
      &        ,fdepthxy=grid%fdepthxy, areaxy=grid%areaxy, rivercondxy=grid%rivercondxy  &
@@ -1294,6 +1306,10 @@ BENCH_START(cu_driver_tim)
      &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2       &
 #if (WRF_CHEM == 1)
      &             ,CHEM_OPT=config_flags%chem_opt                             & !CuP, rce 22-aug-2011 !BSINGH - For WRFCuP scheme
+     &             ,CONV_TR_WETSCAV=config_flags%conv_tr_wetscav          &
+     &             ,CONV_TR_AQCHEM=config_flags%conv_tr_aqchem            &
+     &             ,CHEM_CONV_TR=config_flags%chem_conv_tr                &
+     &             ,TRACEROPT=config_flags%tracer_opt                     &
 #endif
 
 #if ( WRF_DFI_RADAR == 1 )

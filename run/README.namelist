@@ -524,6 +524,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 52, P3 2-ice categories plus double-moment cloud water
                                      = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
                                            for each ice
+                                     = 56, NTU multi-moment scheme  ! for ntu3m
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
@@ -559,6 +560,11 @@ Namelist variables for controlling the adaptive time step option:
  use_mp_re                           = 1       ! whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
                                                  0: do not use; 1: use effective radii
                                                  (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21,28)
+
+ CCNTY                               = 1       ! for aerosol background type, marine,  for ntu3m
+                                     = 2       ! continental clean (default), for ntu3m
+                                     = 3       ! continental average, for ntu3m
+                                     = 4       ! continental urban, for ntu3m
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
@@ -596,6 +602,8 @@ Namelist variables for controlling the adaptive time step option:
                                               use the same value for all nests.                      
  cldovrlp                            = 2,   ! cloud overlapping option for RRTMG only. 1=random, 2=maximum-random (default), 
                                               3=maximum, 4=exponential, 5=exponential-random
+ ra_sw_eclipse                       = 0,   ! eclipse effect on shortwave radiation. 0: off, 1: on. 
+                                              Applies to RRTMG, Goddard, old Goddard and Dudhia schemes
 
  nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
                                                 calls to shortwave radiation; the value
@@ -907,6 +915,11 @@ Namelist variables for controlling the adaptive time step option:
                                                       on threshold
                                                   3 = with cloud effect, and use cloud fraction option 3, based on
                                                       Sundqvist et al. (1989) (since 3.7)
+ insert_init_cloud                   = .false., ! Default
+                                     = .true.,  ! For use with cold start (zero cloud fields), this option will
+                                                  use the icloud=3 scheme to produce initial cloud water and cloud
+                                                  ice fields as well as ensure initial water vapor field matches
+                                                  saturation, which retains clouds beyond the first few timesteps.
  swrad_scat                          = 1.       ! scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 3,	! where landuse and soil category data come from:
@@ -1257,6 +1270,19 @@ Options for use with the Noah-MP Land Surface Model:
                                                      0 -> No crop model, will run default dynamic vegetation
                                                      1 -> Liu, et al. 2016
                                                      2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
+ 
+ opt_irr                            = 0,        !  options for irrigation scheme
+                                                           geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+	                                             0 -> No irrigation
+                                                     1 -> Irrigation ON
+                                                     2 -> irrigation trigger based on crop season Planting and harvesting dates
+                                                     3 -> irrigation trigger based on LAI threshold
+ opt_irrm                           = 0,        !  options for irrigation method (only if opt_irr > 0)
+                                                           geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                     0 -> method based on geo_em fractions (all three methods are ON)
+                                                     1 -> sprinkler method
+                                                     2 -> micro/drip irrigation
+                                                     3 -> surface flooding  
  /
 
  &fdda

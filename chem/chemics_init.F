@@ -47,13 +47,12 @@
    USE module_cbmz_initmixrats, only:     cbmz_init_wrf_mixrats
    USE module_mosaic_driver, only:        init_data_mosaic_asect
    USE module_mosaic_initmixrats, only:   mosaic_init_wrf_mixrats
-   USE module_input_chem_data, only:      get_last_gas,              &
-                                          gasprofile_init_pnnl,      &
+   USE module_input_chem_data, only:      gasprofile_init_pnnl,      &
                                           mozcart_lbc_init,          &
                                           last_chem_time,            &
                                           setup_gasprofile_maps,     &
                                           initial_pvo3
-
+   USE module_chem_share, only: get_last_gas
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
    USE module_upper_bc_driver, only: upper_bc_init
    USE module_tropopause,      only: tropopause_init

@@ -123,6 +123,7 @@
 !..Need to fill special height var for setting up initial condition.  G. Thompson
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: dz8w   !mchen
+   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: PRES,RHOA       ! ntu3m
 
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
@@ -147,6 +148,8 @@
 #endif
    ALLOCATE(dz8w(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; dz8w = 0.
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
+   ALLOCATE(PRES(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; PRES = 0.   ! ntu3m
+   ALLOCATE(RHOA(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; RHOA = 0.   ! ntu3m
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
@@ -691,8 +694,8 @@
       ENDDO
       ENDDO
       ENDDO
-      IF ( ( config_flags%rebalance .EQ. 1 ) .OR. &
-           ( ( config_flags%rebalance .EQ. 2 ) .AND. ( config_flags%vert_refine_method .EQ. 2 ) ) ) THEN
+      !Note that rebalance must be set to 1 for vertical nesting
+      IF ( config_flags%rebalance .EQ. 1 ) THEN
         !  Integrate base geopotential, starting at terrain elevation.  This assures that
         !  the base state is in exact hydrostatic balance with respect to the model equations.
         !  This field is on full levels.
@@ -773,9 +776,9 @@
   !  it is an easy decision.
   ELSE
      ! We request rebalancing for vertical grid nesting, or when the user asks for rebalancing.
+     ! (Note that rebalance now must be set to 1 for vertical nesting)
      ! Rebalance recomputes 1/rho, p, ph_2, ph0, p_hyd
-     IF ( ( config_flags%rebalance .EQ. 1 ) .OR. &
-        ( ( config_flags%rebalance .EQ. 2 ) .AND. ( config_flags%vert_refine_method .EQ. 2 ) ) ) THEN
+     IF ( config_flags%rebalance .EQ. 1 ) THEN
        call rebalance_driver_cycl (grid )
        DO j = jts,min(jte,jde-1)
        DO k = kts,kte
@@ -866,6 +869,8 @@
       DO k = kts,kte
          DO i = its, min(ite,ide-1)
             z_at_q(i,k,j)=(grid%ph_2(i,k,j)+grid%phb(i,k,j))/g
+            PRES(i,k,j) = grid%p(i,k,j)+grid%pb(i,k,j)              ! ntu3m
+            RHOA(i,k,j) = 1./grid%alt(i,k,j)*(1.+moist(i,k,j,P_QV)) ! ntu3m
          ENDDO
       ENDDO
    ENDDO
@@ -1032,6 +1037,9 @@ endif
                       z_at_q, grid%alt, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
+                      PRES,RHOA,config_flags%CCNTY,scalar(:,:,:,P_QDCN),& ! for ntu3m
+                      scalar(:,:,:,P_QTCN),scalar(:,:,:,P_QCCN),        & ! for ntu3m
+                      scalar(:,:,:,P_QRCN),scalar(:,:,:,P_QNIN),        & ! for ntu3m
                       grid%re_cloud_gsfc, grid%re_ice_gsfc,             & ! Goddard
                       grid%re_snow_gsfc, grid%re_graupel_gsfc,          & ! Goddard
                       grid%re_hail_gsfc, grid%re_rain_gsfc,             & ! Goddard
@@ -1102,11 +1110,17 @@ endif
                       grid%SNICEXY, grid%SNLIQXY, grid%TVXY, grid%TGXY, grid%CANICEXY,          &   ! Optional Noah-MP
                       grid%CANLIQXY, grid%EAHXY, grid%TAHXY, grid%CMXY,                         &   ! Optional Noah-MP
                       grid%CHXY, grid%FWETXY, grid%SNEQVOXY, grid%ALBOLDXY, grid%QSNOWXY,       &   ! Optional Noah-MP
-                      grid%WSLAKEXY, grid%ZWTXY, grid%WAXY, grid%WTXY, grid%LFMASSXY, grid%RTMASSXY, & ! Optional Noah-MP
+                      grid%QRAINXY,                                                             &   ! Optional Noah-MP
+                      grid%WSLAKEXY, grid%ZWTXY, grid%WAXY, grid%WTXY, grid%LFMASSXY,           &   ! Optional Noah-MP
+                      grid%RTMASSXY,                                                            &   ! Optional Noah-MP
                       grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
                       grid%GRAINXY, grid%GDDXY,                                                 &   ! Optional Noah-MP
-                      grid%CROPTYPE, grid%CROPCAT,                                                 &   ! Optional Noah-MP
+                      grid%CROPTYPE, grid%CROPCAT,                                              &   ! Optional Noah-MP
                       config_flags%opt_crop,                                                    &
+                      config_flags%opt_irr, config_flags%opt_irrm,                              &   ! Optional Noah-MP
+                      grid%IRNUMSI, grid%IRNUMMI, grid%IRNUMFI, grid%IRWATSI, grid%IRWATMI,     &   ! Optional Noah-MP
+                      grid%IRWATFI, grid%IRELOSS, grid%IRSIVOL, grid%IRMIVOL, grid%IRFIVOL,     &   ! Optional Noah-MP
+                      grid%IRRSPLH,                                                             &   ! Optional Noah-MP
                       grid%gecros_state,                                                        &   ! Optional gecros crop
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
@@ -1963,6 +1977,8 @@ endif
 #endif
 
 DEALLOCATE(z_at_q)
+DEALLOCATE(PRES)       ! ntu3m
+DEALLOCATE(RHOA)       ! ntu3m
 
    IF (config_flags%p_lev_diags == PRESS_DIAGS ) THEN
     CALL wrf_debug ( 200 , ' PLD: pressure level diags' )
@@ -2302,7 +2318,11 @@ endif
                qvf1 = qtot*qvf2
 
                grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_2(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
-               qvf = 1.+rvovrd*moist(i,kk,j,P_QV)
+               IF ( grid%use_theta_m == 0) THEN
+                  qvf = 1.+rvovrd*moist(i,kk,j,P_QV)
+               ELSE
+                  qvf = 1.
+               ENDIF
                grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf*         &
                       (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
                grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
@@ -2323,7 +2343,11 @@ endif
                qvf1 = qtot*qvf2
                grid%p(i,kk,j) = grid%p(i,kk+1,j) - ((grid%c1f(k)*grid%Mu_2(i,j)) +       &
                                qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/qvf2/grid%rdn(kk+1)
-               qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               IF ( grid%use_theta_m == 0) THEN
+                  qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               ELSE
+                  qvf = 1.
+               ENDIF
                grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
                            (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
                grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
@@ -2371,7 +2395,11 @@ endif
                qvf2 = 1./(1.+qvf1)
                qvf1 = qvf1*qvf2
                grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_2(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
-               qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               IF ( grid%use_theta_m == 0) THEN
+                  qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               ELSE
+                  qvf = 1.
+               ENDIF
                grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf    &
                            *(((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
                grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
@@ -2384,7 +2412,11 @@ endif
                qvf2 = 1./(1.+qvf1)
                qvf1 = qvf1*qvf2
                grid%p(i,kk,j) = grid%p(i,kk+1,j) - ((grid%c1f(k)*grid%Mu_2(i,j)) + qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/qvf2/grid%rdn(kk+1)
-               qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               IF ( grid%use_theta_m == 0) THEN
+                  qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               ELSE
+                  qvf = 1.
+               ENDIF
                grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
                            (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
                grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)

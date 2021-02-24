@@ -555,6 +555,7 @@ em_real : wrf
                ln -sf ../../run/aerosol_lat.formatted . ;              \
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
+               ln -sf ../../run/eclipse_besselian_elements.dat . ;     \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
                ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;         \
                ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;         \
@@ -617,6 +618,7 @@ em_real : wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
+             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
              ln -sf ../../run/capacity.asc . ;                      \
              ln -sf ../../run/coeff_p.asc . ;                       \
              ln -sf ../../run/coeff_q.asc . ;                       \
@@ -911,6 +913,7 @@ nmm_real : nmm_wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
+             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
              ln -sf ../../run/capacity.asc . ;                      \
              ln -sf ../../run/coeff_p.asc . ;                       \
              ln -sf ../../run/coeff_q.asc . ;                       \

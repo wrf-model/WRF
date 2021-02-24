@@ -966,6 +966,10 @@ state    real   CHC_SFCDIF      ij          misc       1         -     r      "C
 state    real   CMGR_SFCDIF     ij          misc       1         -     r      "CMGR_SFCDIF" "" ""
 state    real   CHGR_SFCDIF     ij          misc       1         -     r      "CHGR_SFCDIF" "" ""
 
+state    integer   ECMASK       ij          misc        1        -     rh     "ECMASK"  "ECLIPSE MASK"     "dimensionless"
+state    real      ECOBSC       ij          misc        1        -     rh     "ECOBSC"  "ECLIPSE OBSCURITY"     "dimensionless"
+state    real      elon_track   -           misc        1        -     rh     "elon_track"  "ECLIPSE LON"     "degrees"
+state    real      elat_track   -           misc        1        -     rh     "elat_track"  "ECLIPSE LAT"     "degrees"
 
 # solar location variables from radiation driver
 state    real   COSZEN           ij     misc        1         -      rh      "COSZEN"  "COS of SOLAR ZENITH ANGLE"     "dimensionless"
@@ -2331,6 +2335,7 @@ rconfig   integer     do_radar_ref        namelist,physics      1              0
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
+rconfig   integer     ra_sw_eclipse       namelist,physics	1              0       rh       "ra_sw_eclipse"         "0/1 flag: 1=turn eclipse on"      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   real    naer                    namelist,physics      max_domains    1e9     rh   "NAER"          ""      ""
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    -1      rh       "sf_sfclay_physics"             ""      ""
@@ -2956,6 +2961,7 @@ package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,
 package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc,cod2d_out,ctop2d_out,re_cloud,re_ice,re_snow
 package   flgswscheme     ra_sw_physics==7           -             -
 package   gfdlswscheme    ra_sw_physics==99          -             -
+package   eclipsescheme   ra_sw_eclipse==1           -             state:ecmask,ecobsc,elat_track,elon_track
 
 package   nosfcscheme        sf_sfclay_physics==0        -             -
 package   sfclayrevscheme    sf_sfclay_physics==1        -             -

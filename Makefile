@@ -151,7 +151,7 @@ all_wrfvar :
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \
-	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCOPTIM) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
+	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCOPTIM) $(FORMAT_FIXED) $(FCCOMPAT)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
 	fi
 ### Use 'make' to avoid '-i -r' above:
 	if [ $(WAVELET) ] ; then \
@@ -555,6 +555,7 @@ em_real : wrf
                ln -sf ../../run/aerosol_lat.formatted . ;              \
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
+               ln -sf ../../run/eclipse_besselian_elements.dat . ;     \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
                ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;         \
                ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;         \
@@ -587,6 +588,7 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f tc.exe ; ln -s ../../main/tc.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd test/em_real ; /bin/rm -f README.physics_files ; ln -s ../../run/README.physics_files . )
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
              ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
@@ -616,6 +618,7 @@ em_real : wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
+             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
              ln -sf ../../run/capacity.asc . ;                      \
              ln -sf ../../run/coeff_p.asc . ;                       \
              ln -sf ../../run/coeff_q.asc . ;                       \
@@ -910,6 +913,7 @@ nmm_real : nmm_wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
+             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
              ln -sf ../../run/capacity.asc . ;                      \
              ln -sf ../../run/coeff_p.asc . ;                       \
              ln -sf ../../run/coeff_q.asc . ;                       \

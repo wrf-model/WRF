@@ -680,7 +680,8 @@ CONTAINS
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) :: dat
       TYPE( grid_config_rec_type ) config_flags
 
-      INTEGER  :: i, j, k, istag, jstag, itime, k_end
+      INTEGER  :: i, j, k, istag, jstag, itime, k_end, &
+                  i_start, i_end
 
       LOGICAL  :: debug, open_bc_copy
 
@@ -779,7 +780,7 @@ CONTAINS
         symmetry_xs: IF( ( config_flags%symmetric_xs ) .and.  &
                          ( its == ids )                  )  THEN
 
-          IF ( (variable /= 'u') .and. (variable /= 'x') ) THEN
+          IF ( istag == -1 ) THEN
 
             DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
             DO k = kts, k_end
@@ -823,7 +824,7 @@ CONTAINS
         symmetry_xe: IF( ( config_flags%symmetric_xe ) .and.  &
                          ( ite == ide )                  )  THEN
 
-          IF ( (variable /= 'u') .and. (variable /= 'x') ) THEN
+          IF ( istag == -1 ) THEN
 
             DO j = MAX(jds,jts-1), MIN(jte+1,jde+jstag)
             DO k = kts, k_end
@@ -927,13 +928,27 @@ CONTAINS
 
 !  same procedure in y
 
+!  Set the starting and ending loop indexes in the 'i' direction, so that
+!  halo cells on the edge of the domain are also updated.  Begin with a default
+!  start and end index for inner tiles, and then modify if the tile is on the
+!  edge of the domain.
+
+      i_start = MAX(ids, its-1)
+      i_end = MIN(ite+1, ide+istag)
+      IF ( its .eq. ids) THEN
+        i_start = ims
+      END IF
+      IF ( ite .eq. ide) THEN
+        i_end = ime
+      END IF
+
       periodicity_y:  IF( ( config_flags%periodic_y ) ) THEN
         IF ( ( jds == jps ) .and. ( jde == jpe ) )  THEN      ! test if both north and south on processor
           IF( jts == jds ) then
 
             DO j = 0, -(bdyzone-1), -1
             DO k = kts, k_end
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = i_start, i_end
               dat(i,k,jds+j-1) = dat(i,k,jde+j-1)
             ENDDO
             ENDDO
@@ -945,7 +960,7 @@ CONTAINS
 
             DO j = -jstag, bdyzone
             DO k = kts, k_end
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = i_start, i_end
               dat(i,k,jde+j+jstag) = dat(i,k,jds+j+jstag)
             ENDDO
             ENDDO
@@ -960,11 +975,11 @@ CONTAINS
         symmetry_ys: IF( ( config_flags%symmetric_ys ) .and.  &
                          ( jts == jds)                   )  THEN
 
-          IF ( (variable /= 'v') .and. (variable /= 'y') ) THEN
+          IF ( jstag == -1 ) THEN
 
             DO j = 1, bdyzone
             DO k = kts, k_end
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = i_start, i_end
               dat(i,k,jds-j) = dat(i,k,jds+j-1)
             ENDDO                               
             ENDDO
@@ -976,7 +991,7 @@ CONTAINS
 
               DO j = 1, bdyzone
               DO k = kts, k_end
-              DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              DO i = i_start, i_end
                 dat(i,k,jds-j) = - dat(i,k,jds+j)
               ENDDO              
               ENDDO
@@ -986,7 +1001,7 @@ CONTAINS
 
               DO j = 1, bdyzone
               DO k = kts, k_end
-              DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              DO i = i_start, i_end
                 dat(i,k,jds-j) = dat(i,k,jds+j)
               ENDDO              
               ENDDO
@@ -1003,11 +1018,11 @@ CONTAINS
         symmetry_ye: IF( ( config_flags%symmetric_ye ) .and.  &
                          ( jte == jde )                  )  THEN
 
-          IF ( (variable /= 'v') .and. (variable /= 'y') ) THEN
+          IF ( jstag == -1 ) THEN
 
             DO j = 1, bdyzone
             DO k = kts, k_end
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = i_start, i_end
               dat(i,k,jde+j-1) = dat(i,k,jde-j)
             ENDDO                               
             ENDDO
@@ -1019,7 +1034,7 @@ CONTAINS
 
               DO j = 1, bdyzone
               DO k = kts, k_end
-              DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              DO i = i_start, i_end
                 dat(i,k,jde+j) = - dat(i,k,jde-j)
               ENDDO                               
               ENDDO
@@ -1029,7 +1044,7 @@ CONTAINS
 
               DO j = 1, bdyzone
               DO k = kts, k_end
-              DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              DO i = i_start, i_end
                 dat(i,k,jde+j) = dat(i,k,jde-j)
               ENDDO                               
               ENDDO
@@ -1050,7 +1065,7 @@ CONTAINS
                          ( jts == jds) .and. open_bc_copy )  THEN
 
             DO k = kts, k_end
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = i_start, i_end
               dat(i,k,jds-1) = dat(i,k,jds)
               dat(i,k,jds-2) = dat(i,k,jds)
               dat(i,k,jds-3) = dat(i,k,jds)
@@ -1070,7 +1085,7 @@ CONTAINS
           IF (variable /= 'v' .and. variable /= 'y' ) THEN
 
             DO k = kts, k_end
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = i_start, i_end
               dat(i,k,jde  ) = dat(i,k,jde-1)
               dat(i,k,jde+1) = dat(i,k,jde-1)
               dat(i,k,jde+2) = dat(i,k,jde-1)
@@ -1080,7 +1095,7 @@ CONTAINS
           ELSE
 
             DO k = kts, k_end
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = i_start, i_end
               dat(i,k,jde+1) = dat(i,k,jde)
               dat(i,k,jde+2) = dat(i,k,jde)
               dat(i,k,jde+3) = dat(i,k,jde)
@@ -1094,54 +1109,6 @@ CONTAINS
 !  end open b.c in Y copy into boundary zone addition.  WCS, 19 March 2000
 
       END IF periodicity_y
-
-!  fix corners for doubly periodic domains
-
-      IF ( config_flags%periodic_x .and. config_flags%periodic_y &
-           .and. (ids == ips) .and. (ide == ipe)                 &
-           .and. (jds == jps) .and. (jde == jpe)                   ) THEN
-
-         IF ( (its == ids) .and. (jts == jds) ) THEN  ! lower left corner fill
-           DO j = 0, -(bdyzone-1), -1
-           DO k = kts, k_end
-           DO i = 0, -(bdyzone-1), -1
-             dat(ids+i-1,k,jds+j-1) = dat(ide+i-1,k,jde+j-1)
-           ENDDO
-           ENDDO
-           ENDDO
-         END IF
-
-         IF ( (ite == ide) .and. (jts == jds) ) THEN  ! lower right corner fill
-           DO j = 0, -(bdyzone-1), -1
-           DO k = kts, k_end
-           DO i = 1, bdyzone
-             dat(ide+i+istag,k,jds+j-1) = dat(ids+i+istag,k,jde+j-1)
-           ENDDO
-           ENDDO
-           ENDDO
-         END IF
-
-         IF ( (ite == ide) .and. (jte == jde) ) THEN  ! upper right corner fill
-           DO j = 1, bdyzone
-           DO k = kts, k_end
-           DO i = 1, bdyzone
-             dat(ide+i+istag,k,jde+j+jstag) = dat(ids+i+istag,k,jds+j+jstag)
-           ENDDO
-           ENDDO
-           ENDDO
-         END IF
-
-         IF ( (its == ids) .and. (jte == jde) ) THEN  ! upper left corner fill
-           DO j = 1, bdyzone
-           DO k = kts, k_end
-           DO i = 0, -(bdyzone-1), -1
-             dat(ids+i-1,k,jde+j+jstag) = dat(ide+i-1,k,jds+j+jstag)
-           ENDDO
-           ENDDO
-           ENDDO
-         END IF
-
-       END IF
 
    END SUBROUTINE set_physical_bc3d
 
@@ -2614,6 +2581,113 @@ CONTAINS
     ENDIF
 
    END SUBROUTINE flow_dep_bdy_qnn
+
+!-------------------------for ntu3m-------------------------------------------------
+   SUBROUTINE flow_dep_bdy_fixed_inflow(field,u,v,config_flags,        &
+                               spec_zone,ids,ide,jds,jde,kds,kde,ims,  &
+                               ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps,&
+                               kpe,its,ite,jts,jte,kts,kte)
+!-------------------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,  &
+                             kms,kme,ips,ipe,jps,jpe,kps,kpe,its,ite,  &
+                             jts,jte,kts,kte,spec_zone
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: field
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: u,v
+      TYPE( grid_config_rec_type ) config_flags
+      INTEGER :: i,j,k,ibs,ibe,jbs,jbe,itf,jtf,ktf,i_inner,j_inner,    &
+                 b_dist,b_limit
+      LOGICAL :: periodic_x
+
+      periodic_x = config_flags%periodic_x
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF (periodic_x) b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs),min(itf,ibe-b_limit)
+              i_inner = max(i,ibs+spec_zone)
+              i_inner = min(i_inner,ibe-spec_zone)
+              IF (periodic_x) i_inner = i
+              IF (v(i,k,j) .lt. 0.) THEN
+                field(i,k,j) = field(i_inner,k,jbs+spec_zone)
+              ELSE
+                field(i,k,j) = field(i,k,j)
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+      IF (jbe - jtf .lt. spec_zone) THEN
+! Y-end boundary
+        DO j = max(jts,jbe-spec_zone+1),jtf
+          b_dist = jbe - j
+          b_limit = b_dist
+          IF (periodic_x) b_limit = 0
+          DO k = kts,ktf
+            DO i = max(its,b_limit+ibs),min(itf,ibe-b_limit)
+              i_inner = max(i,ibs+spec_zone)
+              i_inner = min(i_inner,ibe-spec_zone)
+              IF (periodic_x) i_inner = i
+              IF (v(i,k,j+1) .gt. 0.) THEN
+                field(i,k,j) = field(i_inner,k,jbe-spec_zone)
+              ELSE
+                field(i,k,j) = field(i,k,j)
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+      IF (.NOT.periodic_x) THEN
+        IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+          DO i = its, min(itf,ibs+spec_zone-1)
+            b_dist = i - ibs
+            DO k = kts, ktf
+              DO j = max(jts,b_dist+jbs+1),min(jtf,jbe-b_dist-1)
+                j_inner = max(j,jbs+spec_zone)
+                j_inner = min(j_inner,jbe-spec_zone)
+                IF (u(i,k,j) .lt. 0.) THEN
+                  field(i,k,j) = field(ibs+spec_zone,k,j_inner)
+                ELSE
+                  field(i,k,j) = field(i,k,j)
+                ENDIF
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDIF
+        IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+          DO i = max(its,ibe-spec_zone+1),itf
+            b_dist = ibe - i
+            DO k = kts, ktf
+              DO j = max(jts,b_dist+jbs+1),min(jtf,jbe-b_dist-1)
+                j_inner = max(j,jbs+spec_zone)
+                j_inner = min(j_inner,jbe-spec_zone)
+                IF (u(i+1,k,j) .gt. 0.) THEN
+                  field(i,k,j) = field(ibe-spec_zone,k,j_inner)
+                ELSE
+                  field(i,k,j) = field(i,k,j)
+                ENDIF
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDIF
+      ENDIF
+
+   END SUBROUTINE flow_dep_bdy_fixed_inflow
+!----------------------------for ntu3m--------------------------------------------
 
 !------------------------------------------------------------------------------
 

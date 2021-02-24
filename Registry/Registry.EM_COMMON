@@ -638,6 +638,70 @@ state   real    dfi_qaoli3        ikjftb  dfi_scalar      1         -     \
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
+#---------for ntu3m---------------------------------------------------------------------------
+state   real    qdcn           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QDCN"           "Mass mixing ratio for dry CN " "kg kg-1"
+state   real    qtcn           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QTCN"           "Mass mixing ratio for total CN" "kg kg-1"
+state   real    qccn           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QCCN"           "Mass mixing ratio for cloud CN" "kg kg-1"
+state   real    qrcn           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QRCN"           "Mass mixing ratio for rain CN" "kg kg-1"
+state   real    qnin           ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QNIN"           "Potential ice nuclei number mixing ratio" "# kg-1"
+state   real    fi             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "FI"             "Shape moment mixing ratio for pristine ice" "kg kg-1"
+state   real    fs             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "FS"             "Shape moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    vi             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "VI"             "Volume moment mixing ratio for pristine ice" "m^3 kg-1"
+state   real    vs             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "VS"             "Volume moment mixing ratio for snow-aggragates" "m^3 kg-1"
+state   real    vg             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "VG"             "Volume moment mixing ratio for rimed ice" "m^3 kg-1"
+state   real    ai             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "AI"             "Second moment mixing ratio for pristine ice" "kg kg-1"
+state   real    as             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "AS"             "Second moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    ag             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "AG"             "Second moment mixing ratio for rimed ice" "kg kg-1"
+state   real    ah             ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "AH"             "Second moment mixing ratio for hail" "kg kg-1"
+state   real    i3m            ikjftb   scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)  "I3M"            "Third moment mixing ratio for pristine ice" "kg kg-1"
+
+state   real    dfi_qdcn       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QDCN"      "Mass mixing ratio for dry CN" "kg kg-1"
+state   real    dfi_qtcn       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QTCN"      "Mass mixing ratio for total CN" "kg kg-1"
+state   real    dfi_qccn       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QCCN"      "Mass mixing ratio for cloud CN" "kg kg-1"
+state   real    dfi_qrcn       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QRCN"      "Mass mixing ratio for rain CN" "kg kg-1"
+state   real    dfi_qnin       ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_QNIN"      "Potential ice nuclei number mixing ratio" "# kg-1"
+state   real    dfi_fi         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_FI"        "Shape moment mixing ratio for pristine ice" "kg kg-1"
+state   real    dfi_fs         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_FS"        "Shape moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    dfi_vi         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_VI"        "Volume moment mixing ratio for pristine ice" "m^3 kg-1"
+state   real    dfi_vs         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_VS"        "Volume moment mixing ratio for snow-aggregates" "m^3 kg-1"
+state   real    dfi_vg         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_VG"        "Volume moment mixing ratio for rimed ice" "m^3 kg-1"
+state   real    dfi_ai         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_AI"        "Second moment mixing ratio for pristine ice" "kg kg-1"
+state   real    dfi_as         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_AS"        "Second moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    dfi_ag         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_AG"        "Second moment mixing ratio for rimed ice" "kg kg-1"
+state   real    dfi_ah         ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_AH"        "Second moment mixing ratio for hail" "kg kg-1"
+state   real    dfi_i3m        ikjftb   dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)     "DFI_I3M"       "Third moment mixing ratio for pristine ice" "kg kg-1"
+#-------------------------------------for ntu3m----------------------------------------------------------
+#
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Arrays for Specified LBCs  (lbc arrays REMOVED; Boundary arrays are now specified with the state array; see above, 20050413 JM )
@@ -797,6 +861,7 @@ state    real   ACRUNOFF         ij     misc        1         -     irhd=(interp
 state    real   ACSNOM           ij     misc        1         -      rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)       "ACSNOM"           "ACCUMULATED MELTED SNOW"  "kg m-2"
 state    real   SNOW             ij     misc        1         -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SNOW"             "SNOW WATER EQUIVALENT"    "kg m-2"
 state    real   SNOWH            ij     misc        1         -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SNOWH"            "PHYSICAL SNOW DEPTH"      "m"
+
 #state    real   RHOSN            ij     misc        1         -    i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
 state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
@@ -901,6 +966,10 @@ state    real   CHC_SFCDIF      ij          misc       1         -     r      "C
 state    real   CMGR_SFCDIF     ij          misc       1         -     r      "CMGR_SFCDIF" "" ""
 state    real   CHGR_SFCDIF     ij          misc       1         -     r      "CHGR_SFCDIF" "" ""
 
+state    integer   ECMASK       ij          misc        1        -     rh     "ECMASK"  "ECLIPSE MASK"     "dimensionless"
+state    real      ECOBSC       ij          misc        1        -     rh     "ECOBSC"  "ECLIPSE OBSCURITY"     "dimensionless"
+state    real      elon_track   -           misc        1        -     rh     "elon_track"  "ECLIPSE LON"     "degrees"
+state    real      elat_track   -           misc        1        -     rh     "elat_track"  "ECLIPSE LAT"     "degrees"
 
 # solar location variables from radiation driver
 state    real   COSZEN           ij     misc        1         -      rh      "COSZEN"  "COS of SOLAR ZENITH ANGLE"     "dimensionless"
@@ -1553,7 +1622,7 @@ state    real  RTHRATENLW      ikj      misc        1         -      r        "R
 state    real  RTHRATENLWC     ikj      misc        1         -      r        "RTHRATLWC"             "UNCOUPLED THETA TEND DUE TO CLEAR SKY LONG WAVE RAD"    "K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  RTHRATENSWC     ikj      misc        1         -      r        "RTHRATSWC"             "UNCOUPLED THETA TEND DUE TO CLEAR SKY SHORT WAVE RAD"   "K s-1"
-state    real  CLDFRA          ikj      misc        1         -      rh       "CLDFRA"                "CLOUD FRACTION"   ""
+state    real  CLDFRA          ikj      misc        1         -      i0rh     "CLDFRA"                "CLOUD FRACTION"   ""
 state    real  CONVCLD          ij      misc        1         -      r        "CONVCLD"               "BMJ CONVECTIVE CLOUD" "kg m-2"
 state    real  CCLDFRA         ikj      misc        1         -      r        "CCLDFRA"               "CONVECTIVE CLOUD FRACTION" ""
 state    real  CLDFRA_OLD      ikj      misc        1         -      r        "CLDFRA_OLD"            "previous time level cldfra"                           ""
@@ -1790,7 +1859,6 @@ state    real  v_phy           ikj      misc        1         -      r      "V_P
 i1       real  dz8w            ikj      misc        1         Z
 i1       real  p8w             ikj      misc        1         Z
 i1       real  t8w             ikj      misc        1         Z
-i1       real  rho_phy         ikj      misc        1         -
 i1    logical  CU_ACT_FLAG     ij       misc        1         -
 
                                                 
@@ -2110,7 +2178,7 @@ rconfig   integer num_metgrid_soil_levels namelist,domains	1             4      
 rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
 rconfig   logical interp_theta            namelist,domains	1              .false. irh    "interp_theta"  "inside real, vertically interpolate theta (T) or temperature (F)"  ""
 rconfig   integer interp_type             namelist,domains	1              2       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"  ""
-rconfig   integer rebalance               namelist,domains      1              0       irh    "rebalance"  "0=no; 1=yes, always; 2=yes, but only when doing vertical nesting"
+rconfig   integer rebalance               namelist,domains      1              0       irh    "rebalance"  "0=no; 1=yes (must be 1 if vertical nesting is used)"
 rconfig   integer vert_refine_method      namelist,domains      max_domains    0       irh    "vert_refine_method"  "0=no vertical nesting, 1=integer refinement, 2=use specified eta levels or compute_eta routine" ""
 rconfig   integer vert_refine_fact        namelist,domains      1              1       irh    "vertical refinment factor for ndown, not used for concurrent vertical grid nesting"  "" ""
 rconfig   integer extrap_type             namelist,domains	1              2       irh    "extrap_type"  "1= use 2 lowest levels, 2=constant"  ""
@@ -2247,7 +2315,7 @@ rconfig   real     nssl_cnos              namelist,physics      max_domains  3.e
 rconfig   real     nssl_rho_qh            namelist,physics      max_domains  500.     rh       "Graupel particle density"  ""      ""
 rconfig   real     nssl_rho_qhl           namelist,physics      max_domains  900.     rh       "Hail particle density"  ""      ""
 rconfig   real     nssl_rho_qs            namelist,physics      max_domains  100.     rh       "Snow particle density"  ""      ""
-
+rconfig   integer     CCNTY               namelist,physics      1            2        rh       "Aerosol background type for NTU microphysics"  ""   ""
 
 # Lightning Qv Nudging 
 rconfig   integer  nudge_lightning        namelist,physics      max_domains   0       rh       "flag for lightning Qv nudging"  ""      ""
@@ -2269,6 +2337,7 @@ rconfig   integer     do_radar_ref        namelist,physics      1              0
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
+rconfig   integer     ra_sw_eclipse       namelist,physics	1              0       rh       "ra_sw_eclipse"         "0/1 flag: 1=turn eclipse on"      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   real    naer                    namelist,physics      max_domains    1e9     rh   "NAER"          ""      ""
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    -1      rh       "sf_sfclay_physics"             ""      ""
@@ -2460,6 +2529,7 @@ rconfig   integer tracer_pblmix           namelist,physics      max_domains  1  
 rconfig   logical use_aero_icbc           namelist,physics     	1              .false. rh    "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
 rconfig   logical use_rap_aero_icbc       namelist,physics      1              .false. r     "use_rap_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero from RAP"  "logical flag"
 rconfig   integer use_mp_re               namelist,physics     	1              1       h     "use_mp_re"  "use effective radii computed in some mp schemes in RRTMG"  "flag"
+rconfig   logical insert_init_cloud       namelist,physics      1              .false. irh   "insert_init_cloud" "Insert diagnostic initial cloud using icloud=3 method (Thompson)"  "logical flag"
 
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
@@ -2488,6 +2558,8 @@ rconfig   integer opt_rsf     namelist,noah_mp      1           1         h    "
 rconfig   integer opt_soil    namelist,noah_mp      1           1         h    "opt_soil" "flag for using different input soil information"   ""
 rconfig   integer opt_pedo    namelist,noah_mp      1           1         h    "opt_pedo" "pedo_transfer function option"   ""
 rconfig   integer opt_crop    namelist,noah_mp      1           0         h    "opt_crop" "crop model option"   ""
+rconfig   integer opt_irr     namelist,noah_mp      1           0         h    "opt_irr"  "Noah-MP irrigation option"   ""
+rconfig   integer opt_irrm    namelist,noah_mp      1           0         h    "opt_irrm" "Noah-MP irrigation method option"   ""
 rconfig   real    WTDDT               namelist,physics         max_domains     30.      h     "wtddt"    "minutes between calls to lateral hydro"  ""
 
 # For WRF Hydro
@@ -2827,6 +2899,7 @@ package   p3_1category_nc mp_physics==51               -             moist:qv,qc
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
 package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnc,qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS,re_cloud,re_ice,re_snow,mskf_refl_10cm
 package   jensen_ishmael  mp_physics==55               -             moist:qv,qc,qr,qi,qi2,qi3;scalar:qnr,qni,qvoli,qaoli,qni2,qvoli2,qaoli2,qni3,qvoli3,qaoli3;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,phii3d,itype,vmi3d_2,rhopo3d_2,di3d_2,phii3d_2,itype_2,vmi3d_3,rhopo3d_3,di3d_3,phii3d_3,itype_3,refl_10cm
+package   ntu             mp_physics==56               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qdcn,qtcn,qccn,qrcn,qnin,fi,fs,vi,vs,vg,ai,as,ag,ah,i3m
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   gsfcgcescheme   mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 
@@ -2861,6 +2934,7 @@ package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi
 package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_2category_dfi  mp_physics_dfi==52    -                dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib,dfi_qni2,dfi_qir2,dfi_qib2;state:dfi_re_cloud,dfi_re_ice
 package   jensen_ishmael_dfi  mp_physics_dfi==55         -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2,dfi_qi3;dfi_scalar:dfi_qnr,dfi_qni,dfi_qvoli,dfi_qaoli,dfi_qni2,dfi_qvoli2,dfi_qaoli2,dfi_qni3,dfi_qvoli3,dfi_qaoli3;state:dfi_re_cloud,dfi_re_ice
+package   ntu_dfi           mp_physics_dfi==56       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qdcn,dfi_qtcn,dfi_qccn,dfi_qrcn,dfi_qnin,dfi_fi,dfi_fs,dfi_vi,dfi_vs,dfi_vg,dfi_ai,dfi_as,dfi_ag,dfi_ah,dfi_i3m
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 package   gsfcgcescheme_dfi   mp_physics_dfi==97     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 
@@ -2889,6 +2963,7 @@ package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,
 package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc,cod2d_out,ctop2d_out,re_cloud,re_ice,re_snow
 package   flgswscheme     ra_sw_physics==7           -             -
 package   gfdlswscheme    ra_sw_physics==99          -             -
+package   eclipsescheme   ra_sw_eclipse==1           -             state:ecmask,ecobsc,elat_track,elon_track
 
 package   nosfcscheme        sf_sfclay_physics==0        -             -
 package   sfclayrevscheme    sf_sfclay_physics==1        -             -
@@ -2909,8 +2984,9 @@ package   nolsmscheme    sf_surface_physics==0       -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn,smcrel,xlaidyn
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,qrainxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4
 package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
+package   ctsmscheme     sf_surface_physics==6       -             - 
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,t2obs,q2obs,vegf_px,imperv,canfra,lai_px,wwlt_px,wfc_px,wsat_px,clay_px,csand_px,fmsand_px
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
 
@@ -3065,7 +3141,7 @@ package   icedepth_one   seaice_thickness_opt==1     -             state:icedept
 #Time series options for text output
 package   notseries             process_time_series==0                 -             -
 package   tseries               process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_p_profile,ts_w_profile
-package   tseries_add_solar     process_time_series==2                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_cldfrac2d,ts_wvp,ts_lwp,ts_iwp,ts_swp,ts_lwp_tot,ts_iwp_tot,ts_swp_tot,ts_re_qc,ts_re_qi,ts_re_qs,ts_re_qc_tot,ts_re_qi_tot,ts_re_qs_tot,ts_tau_qc,ts_tau_qi,ts_tau_qs,ts_tau_qc_tot,ts_tau_qi_tot,ts_tau_qs_tot,ts_cbaseht,ts_ctopht,ts_cbaseht_tot,ts_ctopht_tot,ts_clrnidx,ts_p_profile,ts_w_profile
+package   tseries_add_solar     process_time_series==2                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_cldfrac2d,ts_wvp,ts_lwp,ts_iwp,ts_swp,ts_lwp_tot,ts_iwp_tot,ts_swp_tot,ts_re_qc,ts_re_qi,ts_re_qs,ts_re_qc_tot,ts_re_qi_tot,ts_re_qs_tot,ts_tau_qc,ts_tau_qi,ts_tau_qs,ts_tau_qc_tot,ts_tau_qi_tot,ts_tau_qs_tot,ts_cbaseht,ts_ctopht,ts_cbaseht_tot,ts_ctopht_tot,ts_clrnidx,ts_p_profile,ts_w_profile,ts_swdown,ts_swddni,ts_swddif,ts_swdownc,ts_swddnic,ts_swdown2,ts_swddni2,ts_swddif2,ts_swdownc2,ts_swddnic2
 
 # WRF-HAILCAST
 state    real   HAILCAST_DHAIL1   ij     misc        1         -      r          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"

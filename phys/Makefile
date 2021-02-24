@@ -65,6 +65,7 @@ MODULES = \
 	module_cu_tiedtke.o\
 	module_cu_ntiedtke.o\
 	module_cu_gd.o \
+        module_cu_gf_ctrans.o \
 	module_cu_gf_wrfdrv.o \
 	module_cu_gf_deep.o \
 	module_cu_gf_sh.o \
@@ -102,6 +103,7 @@ MODULES = \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
 	module_mp_wdm7.o \
+	module_mp_ntu.o \
 	module_mp_cammgmp_driver.o \
 	module_ra_sw.o  \
 	module_ra_clWRF_support.o  \
@@ -121,6 +123,7 @@ MODULES = \
         module_ra_flg.o \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
+	module_ra_eclipse.o \
 	module_ra_aerosol.o  \
 	module_ra_farms.o  \
 	module_sf_sfclay.o \
@@ -132,6 +135,7 @@ MODULES = \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
 	module_sf_clm.o  \
+	module_sf_ctsm.o \
         module_sf_ssib.o  \
 	module_sf_noah_seaice.o \
 	module_sf_noah_seaice_drv.o \

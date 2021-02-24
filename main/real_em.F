@@ -89,6 +89,7 @@ real::t1,t2
    LOGICAL :: ok_so_far
 
 #include "version_decl"
+#include "commit_decl"
 
    !  Define the name of this program (program_name defined in module_domain)
 
@@ -143,6 +144,7 @@ real::t1,t2
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
+   CALL  wrf_message ( commit_version )
 
    !  Allocate the space for the mother of all domains.
 

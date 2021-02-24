@@ -49,6 +49,10 @@ subroutine da_calculate_grady(iv, re, jo_grad_y)
 #endif
    if (iv%info(airsr)%nlocal     > 0) call da_calculate_grady_airsr    (iv, re, jo_grad_y)
 
+#if (WRF_CHEM == 1)
+   if (iv%info(chemic_surf)%nlocal > 0) call da_calculate_grady_chem_sfc (iv, re, jo_grad_y)
+#endif
+
    if (trace_use) call da_trace_exit("da_calculate_grady")
 
 end subroutine da_calculate_grady

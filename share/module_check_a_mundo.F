@@ -576,24 +576,6 @@
          END IF
       ENDDO
 
-!-----------------------------------------------------------------------
-! The FARMS radiation option (swint_opt==2) requires both effective radii
-! and mass for cloud, ice, and snow. A run-time option is available to 
-! disable the use of effective radii in the MP schemes. These two options 
-! may not be used together.
-!-----------------------------------------------------------------------
-      oops = 0
-      IF ( ( model_config_rec%swint_opt .EQ. 2 ) .AND. &
-           ( model_config_rec%use_mp_re .NE. 1 ) ) THEN
-         oops = oops + 1
-      END IF
-
-      IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- ERROR: FARMS (swint_opt=2) requires effective radii (use_mp_re=1)'
-         CALL wrf_message ( wrf_err_message )
-         count_fatal_error = count_fatal_error + 1
-      END IF
-
 #endif
 
 !-----------------------------------------------------------------------
@@ -2108,6 +2090,30 @@
 #endif
 
 !-----------------------------------------------------------------------
+!  The CTSM scheme may not even be compiled, so make sure it is not allowed
+!  to be run if the code is not available.
+!-----------------------------------------------------------------------
+
+#if !defined ( WRF_USE_CTSM ) 
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%sf_surface_physics(i) .EQ. CTSMSCHEME ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: The CTSM surface scheme was requested in the namelist.input file.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: However, the WRF CTSM scheme was not compiled in WRF.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: Please read doc/README.CTSM for how to compile WRF with CTSM.'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
+!-----------------------------------------------------------------------
 !  grav_settling = 1 must be turned off for mp_physics=28.
 !-----------------------------------------------------------------------
       oops = 0
@@ -2317,6 +2323,26 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  Consistency checks for vertical refinement:
+!  rebalance must be set to 1 
+!-----------------------------------------------------------------------
+      oops = 0 
+      DO i = 2, model_config_rec % max_dom
+        IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+        IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+          IF ( model_config_rec%rebalance .NE. 1 ) THEN
+            oops = oops + 1
+          END IF
+        END IF
+      END DO
+
+      IF ( oops .GT. 0 ) THEN
+        wrf_err_message = '--- ERROR: vert_refine_method=2 only works with rebalance=1 '
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! This WRF version does not support trajectories on a global domain
 !-----------------------------------------------------------------------
       IF (  model_config_rec % polar(1) .AND. &
@@ -2484,6 +2510,28 @@
                            'o3input=0 to avoid data pre-processing'
          CALL wrf_debug ( 1, wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
+!  Consistency checks between eclipse option and shortwave radiation
+!  scheme selection. Eclipse option only applies to
+!  RRTMG_SWSCHEME, SWRADSCHEME, GSFCSWSCHEME and GODDARDSWSCHEME
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+        IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%ra_sw_eclipse == 1 ) THEN
+          IF ( ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) .OR. &
+               ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
+               ( model_config_rec%ra_sw_physics(i) .EQ. GSFCSWSCHEME        ) .OR. &
+               ( model_config_rec%ra_sw_physics(i) .EQ. GODDARDSWSCHEME     ) ) THEN
+             !  We are OK, these sw radiation schemes have eclipse physics
+          ELSE
+            wrf_err_message = '--- ERROR: ra_sw_eclipse=1 only works with ra_sw_physics=1 (Dudhia), ' // &
+                              '=2 (Old Goddard), =4 (RRTMG) and =5 (new Goddard) '
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+          END IF
+         END IF
+      END DO
 
 #if (WRF_CHEM == 1 && WRF_KPP == 1 )
 !-----------------------------------------------------------------------
@@ -3029,6 +3077,11 @@
          model_config_rec % num_soil_layers = 2
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME    ) THEN
          model_config_rec % num_soil_layers = 10
+#if (EM_CORE == 1)
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CTSMSCHEME    ) THEN
+         ! Using 4 for the sake of the sea ice scheme
+         model_config_rec % num_soil_layers = 4
+#endif
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SSIBSCHEME   ) THEN
          model_config_rec % num_soil_layers = 3
 #if (NMM_CORE == 1)

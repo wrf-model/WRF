@@ -128,6 +128,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    ! Flag for producing diagnostic fields (e.g., radar reflectivity)
    LOGICAL                        :: diag_flag
    INTEGER                        :: ke_diag ! tells reflectivity calculation whether to do full depth or only k=1
+   LOGICAL                        :: restart_flag !  tells if it is a restart timestep to write restart files. 
    
 #if (WRF_CHEM == 1)
    ! Index cross-referencing array for tendency accumulation
@@ -277,6 +278,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    curr_secs2 = real_time(tmpTimeInterval2)
 
    old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop
+
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  3/5/07
 !   In this call, we do the time-step adaptation and set time-dependent lateral
@@ -292,6 +294,13 @@ SUBROUTINE solve_em ( grid , config_flags  &
    ENDIF
 ! End of adaptive time step modifications
 !-----------------------------------------------------------------------------
+!
+! Set restart flag value history output time
+!-----------------------------------------------------------------------------
+   restart_flag = .false.
+   if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(restart_alarm)) ) then
+      restart_flag = .true.
+   endif
 !
 ! Set diagnostic flag value history output time
 !-----------------------------------------------------------------------------
@@ -320,7 +329,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! see matching halo calls below for stencils
 !--------------------------------------------------------------
      CALL wrf_debug ( 200 , ' call HALO_RK_CHEM' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #      include "HALO_EM_CHEM_E_3.inc"
        IF( config_flags%progn > 0 ) THEN
 #         include "HALO_EM_SCALAR_E_3.inc"
@@ -328,7 +337,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
        IF( config_flags%cu_physics == CAMZMSCHEME ) THEN
 #         include "HALO_EM_SCALAR_E_3.inc"
        ENDIF
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #      include "HALO_EM_CHEM_E_5.inc"
        IF( config_flags%cu_physics == CAMZMSCHEME ) THEN
 #         include "HALO_EM_SCALAR_E_5.inc"
@@ -337,7 +346,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 #         include "HALO_EM_SCALAR_E_5.inc"
       ENDIF
      ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    ENDIF
@@ -346,12 +355,12 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! see matching halo calls below for stencils
 !--------------------------------------------------------------
      CALL wrf_debug ( 200 , ' call HALO_RK_tracer' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #      include "HALO_EM_TRACER_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #      include "HALO_EM_TRACER_E_5.inc"
      ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    ENDIF
@@ -756,6 +765,7 @@ BENCH_START(calc_p_rho_tim)
                              , k_start , k_end                  &
                              , f_flux                           &
                              , aerocu                           &
+                             , restart_flag                     &
                             )
 
 #ifdef DM_PARALLEL
@@ -2288,12 +2298,12 @@ BENCH_END(flow_depbdy_tim)
 BENCH_START(tke_adv_tim)
        TKE_advance: IF (config_flags%km_opt .eq. 2.or.config_flags%km_opt.eq.5) then ! XZ
 #ifdef DM_PARALLEL
-         IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+         IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #       include "HALO_EM_TKE_ADVECT_3.inc"
-         ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+         ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #       include "HALO_EM_TKE_ADVECT_5.inc"
          ELSE
-          WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+          WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
           CALL wrf_error_fatal(TRIM(wrf_err_message))
          ENDIF
 #endif
@@ -2791,8 +2801,17 @@ BENCH_END(tracer_adv_tim)
                                   kts=k_start    , kte=k_end                              )
 
            IF ( config_flags%specified ) THEN
-
-             IF ( is .EQ. P_QNN ) THEN
+              IF (is.EQ.P_QDCN.OR.is.EQ.P_QTCN.OR.is.EQ.P_QNIN) THEN       ! for ntu3m
+                 CALL flow_dep_bdy_fixed_inflow(scalar(ims,kms,jms,is), &
+                                       grid%ru_m,grid%rv_m,config_flags,&
+                                       grid%spec_zone,ids,ide,jds,jde,  &
+                                       kds,kde,ims,ime,jms,jme,kms,kme, &
+                                       ips,ipe,jps,jpe,kps,kpe,         &
+                                       grid%i_start(ij),grid%i_end(ij), &
+                                       grid%j_start(ij),grid%j_end(ij), &
+                                       k_start,k_end)
+              ELSEIF (is.EQ.P_QNN) THEN                                    ! for ntu3m
+!             IF ( is .EQ. P_QNN ) THEN                                    ! for ntu3m
                CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
@@ -3116,12 +3135,13 @@ BENCH_END(calc_p_rho_tim)
 ! scalar                  x
 
 #ifdef DM_PARALLEL
-       IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+       IF      ( config_flags%h_mom_adv_order <= 4 .and. config_flags%h_sca_adv_order <= 4 ) THEN
 #    include "HALO_EM_D2_3.inc"
-       ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+       ELSE IF ( config_flags%h_mom_adv_order <= 6 .and. config_flags%h_sca_adv_order <= 6 ) THEN
 #    include "HALO_EM_D2_5.inc"
        ELSE 
-         WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+         WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order or h_sca_adv_order = ', &
+               config_flags%h_mom_adv_order, config_flags%h_sca_adv_order
          CALL wrf_error_fatal(TRIM(wrf_err_message))
        ENDIF
 #  include "PERIOD_BDY_EM_D.inc"
@@ -3252,13 +3272,13 @@ BENCH_END(bc_end_tim)
 ! moist, chem, scalar, tke      x
 
 
-       IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+       IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
          IF ( (config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #         include "HALO_EM_TKE_5.inc"
          ELSE
 #         include "HALO_EM_TKE_3.inc"
          ENDIF
-       ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+       ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
          IF ( (config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #         include "HALO_EM_TKE_7.inc"
          ELSE
@@ -3706,7 +3726,8 @@ BENCH_START(micro_driver_tim)
       &        , QID_CURR=moist(ims,kms,jms,P_QID), F_QID=F_QID               &
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
 #if (WRF_CHEM == 1)
-      &        , RAINPROD=grid%rainprod, EVAPPROD=grid%evapprod           &
+      &        , RAINPROD=wetscav_frcing(ims,kms,jms,p_rainprod)          &
+      &        , EVAPPROD=wetscav_frcing(ims,kms,jms,p_evapprod)          &
       &        , QV_B4MP=grid%qv_b4mp,QC_B4MP=grid%qc_b4mp                &
       &        , QI_B4MP=grid%qi_b4mp, QS_B4MP=grid%qs_b4mp               &
 #endif
@@ -3744,6 +3765,21 @@ BENCH_START(micro_driver_tim)
 !       &        , QZH_CURR=scalar(ims,kms,jms,P_QZH), F_QZH=F_QZH          & ! "
       &        , QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG    & ! for nssl_2mom
       &        , QVOLH_CURR=scalar(ims,kms,jms,P_QVOLH), F_QVOLH=F_QVOLH    & ! for nssl_2mom
+      &        , QDCN_CURR=scalar(ims,kms,jms,P_QDCN), F_QDCN=F_QDCN      & ! for ntu3m
+      &        , QTCN_CURR=scalar(ims,kms,jms,P_QTCN), F_QTCN=F_QTCN      & ! for ntu3m
+      &        , QCCN_CURR=scalar(ims,kms,jms,P_QCCN), F_QCCN=F_QCCN      & ! for ntu3m
+      &        , QRCN_CURR=scalar(ims,kms,jms,P_QRCN), F_QRCN=F_QRCN      & ! for ntu3m
+      &        , QNIN_CURR=scalar(ims,kms,jms,P_QNIN), F_QNIN=F_QNIN      & ! for ntu3m
+      &        , FI_CURR=scalar(ims,kms,jms,P_FI), F_FI=F_FI              & ! for ntu3m
+      &        , FS_CURR=scalar(ims,kms,jms,P_FS), F_FS=F_FS              & ! for ntu3m
+      &        , VI_CURR=scalar(ims,kms,jms,P_VI), F_VI=F_VI              & ! for ntu3m
+      &        , VS_CURR=scalar(ims,kms,jms,P_VS), F_VS=F_VS              & ! for ntu3m
+      &        , VG_CURR=scalar(ims,kms,jms,P_VG), F_VG=F_VG              & ! for ntu3m
+      &        , AI_CURR=scalar(ims,kms,jms,P_AI), F_AI=F_AI              & ! for ntu3m
+      &        , AS_CURR=scalar(ims,kms,jms,P_AS), F_AS=F_AS              & ! for ntu3m
+      &        , AG_CURR=scalar(ims,kms,jms,P_AG), F_AG=F_AG              & ! for ntu3m
+      &        , AH_CURR=scalar(ims,kms,jms,P_AH), F_AH=F_AH              & ! for ntu3m
+      &        , I3M_CURR=scalar(ims,kms,jms,P_I3M), F_I3M=F_I3m          & ! for ntu3m
       &        , cu_used=config_flags%cu_used                             &
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
       &        , qicuten=grid%rqicuten, qccuten=grid%rqccuten             &
@@ -4264,12 +4300,13 @@ BENCH_END(moist_phys_end_tim)
 
 
 #ifdef DM_PARALLEL
-   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+   IF      ( config_flags%h_mom_adv_order <= 4 .and. config_flags%h_sca_adv_order <= 4 ) THEN
 #    include "HALO_EM_D3_3.inc"
-   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+   ELSE IF ( config_flags%h_mom_adv_order <= 6 .and. config_flags%h_sca_adv_order <= 6 ) THEN
 #    include "HALO_EM_D3_5.inc"
    ELSE 
-      WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+      WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order or h_sca_adv_order = ', &
+               config_flags%h_mom_adv_order, config_flags%h_sca_adv_order
       CALL wrf_error_fatal(TRIM(wrf_err_message))
    ENDIF
 #  include "PERIOD_BDY_EM_D3.inc"
@@ -4590,7 +4627,7 @@ BENCH_END(bc_2d_tim)
 
   CALL after_all_rk_steps ( grid, config_flags,                  &
                             moist, chem, tracer, scalar,         &
-                            th_phy, pi_phy, p_phy, rho_phy,      &   
+                            th_phy, pi_phy, p_phy,               &   
                             p8w, t8w, dz8w,                      &
                             REAL(curr_secs,8), curr_secs2,       &
                             diag_flag,                           &
@@ -4609,12 +4646,13 @@ BENCH_END(bc_2d_tim)
 ! see above
 !--------------------------------------------------------------
    CALL wrf_debug ( 200 , ' call HALO_RK_E' )
-   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+   IF      ( config_flags%h_mom_adv_order <= 4  .and. config_flags%h_sca_adv_order <= 4 ) THEN
 #    include "HALO_EM_E_3.inc"
-   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+   ELSE IF ( config_flags%h_mom_adv_order <= 6 .and. config_flags%h_sca_adv_order <= 6 ) THEN
 #    include "HALO_EM_E_5.inc"
    ELSE
-     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order or h_sca_adv_order = ', &
+               config_flags%h_mom_adv_order, config_flags%h_sca_adv_order
      CALL wrf_error_fatal(TRIM(wrf_err_message))
    ENDIF
 #endif
@@ -4625,12 +4663,12 @@ BENCH_END(bc_2d_tim)
 ! see above
 !--------------------------------------------------------------
      CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #      include "HALO_EM_MOIST_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #      include "HALO_EM_MOIST_E_5.inc"
      ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    ENDIF
@@ -4639,12 +4677,12 @@ BENCH_END(bc_2d_tim)
 ! see above
 !--------------------------------------------------------------
      CALL wrf_debug ( 200 , ' call HALO_RK_CHEM' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #      include "HALO_EM_CHEM_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #      include "HALO_EM_CHEM_E_5.inc"
      ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    ENDIF
@@ -4653,12 +4691,12 @@ BENCH_END(bc_2d_tim)
 ! see above
 !--------------------------------------------------------------
      CALL wrf_debug ( 200 , ' call HALO_RK_TRACER' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #      include "HALO_EM_TRACER_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #      include "HALO_EM_TRACER_E_5.inc"
      ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    ENDIF
@@ -4667,12 +4705,12 @@ BENCH_END(bc_2d_tim)
 ! see above
 !--------------------------------------------------------------
      CALL wrf_debug ( 200 , ' call HALO_RK_SCALAR' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #      include "HALO_EM_SCALAR_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #      include "HALO_EM_SCALAR_E_5.inc"
      ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    ENDIF

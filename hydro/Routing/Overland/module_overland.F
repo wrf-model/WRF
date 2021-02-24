@@ -19,10 +19,10 @@ module overland_data
     ! hold all variables used in overland routing
     type overland_struct
 
-        type (overland_control_struct), pointer :: control => NULL()                             ! i/o and control variables
-        type (overland_stream_and_lake_interface_struct), pointer :: streams_and_lakes => NULL() ! channel and lake related
-        type (overland_routing_properties_struct), pointer :: properties => NULL()               ! properties used in routing code
-        type (overland_mass_balance_struct), pointer :: mass_balance => NULL()                   ! mass balance variables
+        type (overland_control_struct), pointer :: control => null()                             ! i/o and control variables
+        type (overland_stream_and_lake_interface_struct), pointer :: streams_and_lakes => null() ! channel and lake related
+        type (overland_routing_properties_struct), pointer :: properties => null()               ! properties used in routing code
+        type (overland_mass_balance_struct), pointer :: mass_balance => null()                   ! mass balance variables
 
         ! unused pointer are in an undefined state
         ! this means the result of calling associated(<pointer>)

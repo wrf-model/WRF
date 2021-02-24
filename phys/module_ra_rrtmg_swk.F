@@ -1732,7 +1732,7 @@
                       'ERROR: SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   
              factor = (radsno - 2._rb)/3._rb
              index = int(factor)
-             if(index.eq.167) index = 166 
+             if(index.eq.46) index = 45 
              fint = factor-real(index)
              ib = ngb(ig)
              extcosno(ig) = extice3(index,ib)+fint*                            &
@@ -4308,7 +4308,7 @@
                    7700._rb, 8050._rb,12850._rb,16000._rb,22650._rb,29000._rb, &
                    38000._rb,  820._rb/)
    wavenum2(:) = (/3250._rb, 4000._rb, 4650._rb, 5150._rb, 6150._rb, 7700._rb, &
-                   8050._rb, 2850._rb,16000._rb,22650._rb,29000._rb,38000._rb, &
+                   8050._rb,12850._rb,16000._rb,22650._rb,29000._rb,38000._rb, &
                    50000._rb, 2600._rb/)
    delwave(:) =  (/ 650._rb,  750._rb,  650._rb,  500._rb, 1000._rb, 1550._rb, &
                     350._rb, 4800._rb, 3150._rb, 6650._rb, 6350._rb, 9000._rb, &

@@ -1,4 +1,8 @@
-subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
+subroutine da_transform_vtovv(grid, cv_size, be, cv, vv &
+#if (WRF_CHEM == 1)
+                        , vchem &
+#endif
+                        )
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -11,6 +15,11 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
    type(be_type), intent(in)    :: be   ! Background error structure.
    real,          intent(in)    :: cv(cv_size)   ! control variables.
    type(vp_type), intent(inout) :: vv   ! Grid point/EOF equivalent.
+
+#if (WRF_CHEM == 1) 
+   type(xchem_type), optional, intent(inout) :: vchem   ! Grid point/EOF equivalent.
+   integer :: ic
+#endif
 
    integer :: s(4)   ! Index bounds into arrays.
    integer :: n      ! Loop counter.
@@ -27,7 +36,15 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
       !-------------------------------------------------------------------------
       ! [1.0] Fill vv arrays from 1-dimensional cv array.
       !-------------------------------------------------------------------------
-      call da_cv_to_vv(cv_size, cv, be%cv_mz, be%ncv_mz, vv)
+#if (WRF_CHEM == 1)
+      if (present(vchem)) then
+         call da_cv_to_vv(cv_size, cv, be%cv_mz, be%ncv_mz, vv, be%cv_mz_chemic, vchem=vchem)
+      else
+#endif
+         call da_cv_to_vv(cv_size, cv, be%cv_mz, be%ncv_mz, vv)
+#if (WRF_CHEM == 1)
+      end if
+#endif
    endif
    if( .not. use_rf .or. do_normalize ) s(1:2)=1
 
@@ -224,6 +241,25 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
          end do
       endif
    endif
+
+#if (WRF_CHEM == 1)
+   ! [2.10] Transform chem_ic control variables
+
+   if (present(vchem)) then
+   do ic = PARAM_FIRST_SCALAR, num_chem
+      mz = be % v12 (ic-1) % mz
+      if( use_rf .and. mz > 0 ) then
+         call da_transform_through_rf(grid, mz, be % v12 (ic-1) % rf_alpha, &
+                                                be % v12 (ic-1) % val, &
+                                                vchem % chem_ic (:,:,:,ic))
+
+     elseif( .not. use_rf ) then
+         call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for chem_ic"/))
+      endif
+   end do
+   end if
+
+#endif
 
    if (trace_use) call da_trace_exit("da_transform_vtovv")
 

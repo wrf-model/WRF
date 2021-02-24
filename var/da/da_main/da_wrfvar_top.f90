@@ -29,7 +29,11 @@ module da_wrfvar_top
 
    use module_state_description, only : num_moist, num_a_moist, num_g_moist, &
       num_scalar, num_a_scalar, num_g_scalar, &
-      num_chem, PARAM_FIRST_SCALAR, num_tracer 
+#if (WRF_CHEM == 1)
+      num_chem, PARAM_FIRST_SCALAR
+#else
+      num_chem, PARAM_FIRST_SCALAR, num_tracer
+#endif
    use module_tiles, only : set_tiles
 
 
@@ -39,6 +43,9 @@ module da_wrfvar_top
       ntasks, data_order_xy,wrf_dm_initialize
    use module_comm_dm, only : halo_radar_xa_w_sub,halo_ssmi_xa_sub, &
       halo_sfc_xa_sub, halo_xa_sub, halo_psichi_uv_adj_sub, halo_bal_eqn_adj_sub, &
+#if (WRF_CHEM == 1)
+      halo_chem_init_sub, halo_chem_xa_sub, &
+#endif
       halo_psichi_uv_sub, halo_init_sub, halo_psichi_uv_adj_sub, halo_2d_work_sub
 #endif
 
@@ -47,6 +54,9 @@ module da_wrfvar_top
    use da_define_structures, only : y_type, j_type, iv_type, be_type, &
       xbx_type,da_deallocate_background_errors,da_initialize_cv, &
       da_zero_vp_type,da_allocate_y,da_deallocate_observations, &
+#if (WRF_CHEM == 1)
+      da_zero_xchem_type, &
+#endif
       da_deallocate_y, da_zero_x, da_random_seed
    use da_minimisation, only : da_get_innov_vector,da_minimise_cg, &
       da_minimise_lz, da_write_diagnostics, da_calculate_residual, &
@@ -54,8 +64,12 @@ module da_wrfvar_top
       da_kmat_mul
    use da_obs, only : da_transform_xtoy_adj 
    use da_obs_io, only : da_write_filtered_obs, da_write_obs, da_final_write_obs , &
+#if (WRF_CHEM == 1)
+                         da_read_obs_chem_sfc, &
+#endif
                          da_write_obs_etkf, da_write_modified_filtered_obs
-   use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims
+   use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims, &
+                           da_vv_to_cv, da_cv_to_vv
    use da_physics, only : da_uvprho_to_w_lin
 #if defined (CRTM) || defined (RTTOV)
    use da_radiance, only : da_deallocate_radiance
@@ -65,7 +79,7 @@ module da_wrfvar_top
    use da_varbc, only : da_varbc_init,da_varbc_update
 #endif
    use da_reporting, only : message, da_warning, da_error, da_message
-   use da_setup_structures, only : da_setup_obs_structures, &
+   use da_setup_structures, only : da_setup_obs_structures, da_write_vp, &
       da_setup_background_errors,da_setup_flow_predictors, &
       da_setup_cv, da_scale_background_errors, da_scale_background_errors_cv3
    use da_setup_structures, only : da_setup_flow_predictors_para_read_opt1
@@ -74,9 +88,13 @@ module da_wrfvar_top
    use da_tools_serial, only : da_get_unit, da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, da_trace_report
    use da_transfer_model, only : da_transfer_xatoanalysis,da_setup_firstguess, &
+#if (WRF_CHEM == 1)
+       da_transfer_wrftoxb_chem, &
+#endif
        da_transfer_wrftltoxa_adj
    use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa, &
-      da_transform_xtoxa_adj, da_copy_xa, da_add_xa, da_transform_vpatox
+      da_transform_xtoxa_adj, da_copy_xa, da_add_xa, da_transform_vpatox, &
+      da_transform_vtox_inv
    use da_wrfvar_io, only : da_med_initialdata_input, da_update_firstguess
    use da_tools, only : da_set_randomcv, da_get_julian_time
 
@@ -132,7 +150,11 @@ module da_wrfvar_top
 
 #ifdef DM_PARALLEL
    integer                 :: nbytes
+#if (WRF_CHEM == 1)
+   integer, parameter      :: configbuflen = 6* CONFIG_BUF_LEN
+#else
    integer, parameter      :: configbuflen = 4* CONFIG_BUF_LEN
+#endif
    integer                 :: configbuf( configbuflen )
 #endif
 
@@ -150,5 +172,7 @@ contains
 #include "da_wrfvar_interface.inc"
 #include "da_wrfvar_finalize.inc"
 #include "da_solve.inc"
+#include "da_solve_init.inc"
+#include "da_solve_dual_res_init.inc"
 
 end module da_wrfvar_top

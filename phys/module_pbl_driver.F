@@ -1210,12 +1210,20 @@ CONTAINS
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
               ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime            &
               ,RTHRATEN=RTHRATEN                                    &
+! for multilayer UCM
+              ,IDIFF=idiff,FLAG_BEP=flag_bep,FRC_URB2D=frc_urb2d    &
+              ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep      &
+              ,A_Q_BEP=a_q_bep                                      &
+              ,A_E_BEP=a_e_bep,B_U_BEP=b_u_bep,B_V_BEP=b_v_bep      &
+              ,B_T_BEP=b_t_bep,B_Q_BEP=b_q_bep                      &
+              ,B_E_BEP=b_e_bep,DLG_BEP=dlg_bep                      &
+              ,DL_U_BEP=dl_u_bep,SF_BEP=sf_bep,VL_BEP=vl_bep        &
 ! for grims shallow convection with ysupbl
               ,WSTAR=wstar,DELTA=delta                              &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                                                                    )
+                                                                   )
 !
 ! FASDAS
 !

@@ -60488,8 +60488,10 @@ end subroutine clmdrv
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
+#if ( WRF_CHEM == 1) 
                      megan_specifier0, megan_mapped_emisfctrs,     &
                      megan_factors_file,                           &
+#endif
                      dt,maxpatch                                   &
                     ,numc,nump,snl,                                      &
                      snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
@@ -60526,6 +60528,7 @@ end subroutine clmdrv
                                                                          )
 
   USE module_wrf_error
+#if ( WRF_CHEM == 1)
   USE module_state_description, only : MEGAN2_CLM, &
            CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
            CBMZ_MOSAIC_8BIN_AQ,CBMZ_MOSAIC_DMS_4BIN, &
@@ -60534,6 +60537,7 @@ end subroutine clmdrv
            SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP, &
            RADM2SORG,RADM2SORG_KPP,RADM2SORG_AQ,RADM2SORG_AQCHEM, &
            MOZCART_KPP,MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP
+#endif
 
   USE shr_megan_mod, only   : shr_megan_init
   USE MEGANFactorsMod, only : megan_factors_init
@@ -60647,15 +60651,17 @@ end subroutine clmdrv
 #ifdef CN
      real,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: dyntlai,dyntsai,dyntop,dynbot    !ADD_NEW_VAR                                       
 #endif
+#if ( WRF_CHEM == 1)
      character(len=*), intent(in) :: megan_specifier0(:)
      !czhao add megan_specifier to replace namelist input
      character(len=2000) :: megan_specifier(100)
+     character(len=*), intent(in) :: megan_factors_file
+     logical, intent(in)          :: megan_mapped_emisfctrs
+#endif
 !sw++
 !    character(len=256) :: term1,term2,term3,term4,term5,term6,term7,term8 
      character(len=300) :: term1,term2,term3,term4,term5,term6,term7,term8 
 !sw--
-     character(len=*), intent(in) :: megan_factors_file
-     logical, intent(in)          :: megan_mapped_emisfctrs
 
 
    INTEGER                   :: L
@@ -60687,7 +60693,7 @@ end subroutine clmdrv
 !sw--
 
    !************************megan speciation by Chun Zhao****************************!
-master_init: &
+#if ( WRF_CHEM == 1)
    if (chem_opt > 0 .and. id == 1) then 
      megan_specifier(:)=' '
    chemmech_select: SELECT CASE(chem_opt)
@@ -60838,7 +60844,8 @@ master_init: &
      CASE DEFAULT 
        call wrf_error_fatal( "selected wrong gas chemistry mechanism for CLM-MEGAN! check chem_opt!" )
      END SELECT chemmech_select 
-
+     endif
+#endif
 
    call CLMDebug('Now in clminit.')
 
@@ -60898,6 +60905,7 @@ IF ( wrf_dm_on_monitor() ) THEN
   close(lu_unit)
 END IF
 
+#if ( WRF_CHEM == 1 )
 !  Use flag instead.   BJG 3/29/19
 !   if( bio_emiss_opt == MEGAN2_CLM .and. id == 1 ) then
    if( do_readmeganfile .and. id == 1 ) then
@@ -60929,6 +60937,7 @@ END IF
      CALL VOCEmission_init
      CALL wrf_message( 'clminit: done VOCEmission_init' )
    endif
+#endif
 
   ix = 0
   do i=1, idx_Mie_snw_mx
@@ -60968,7 +60977,6 @@ END IF
   CALL wrf_dm_bcast_real(xx_snowage_kappa,idx_T_max*idx_Tgrd_max*idx_rhos_max)
   CALL wrf_dm_bcast_real(xx_snowage_drdt0,idx_T_max*idx_Tgrd_max*idx_rhos_max)
 
-  endif master_init
 
  IF(restart) then
    return

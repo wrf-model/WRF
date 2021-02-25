@@ -58,7 +58,7 @@ CONTAINS
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
                          RTHFTEN, RQVFTEN,                       &
-#if (WRF_USE_CLM == 1)
+#if (WRF_USE_CLM == 1) && ( WRF_CHEM == 1 )
                          megan_specifier, megan_factors_file,    &
                          megan_mapped_emisfctrs,                 &
 #endif
@@ -766,7 +766,7 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhtran,lhveg
-#if (WRF_USE_CLM == 1)
+#if (WRF_USE_CLM == 1) && ( WRF_CHEM == 1 )
    LOGICAL, INTENT(IN)          :: megan_mapped_emisfctrs
    CHARACTER(LEN=*), INTENT(IN) :: megan_factors_file
    CHARACTER(LEN=*), INTENT(IN) :: megan_specifier(:)
@@ -1489,7 +1489,7 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhveg,lhtran                      &
-#if (WRF_USE_CLM == 1)
+#if (WRF_USE_CLM == 1) && ( WRF_CHEM == 1)
                 ,megan_specifier, megan_factors_file                &
                 ,megan_mapped_emisfctrs                             &
 #endif
@@ -2507,7 +2507,7 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhveg,lhtran                      &
-#if (WRF_USE_CLM == 1)
+#if (WRF_USE_CLM == 1) && ( WRF_CHEM == 1 )
                 ,megan_specifier, megan_factors_file     &
                 ,megan_mapped_emisfctrs                  &
 #endif
@@ -2932,7 +2932,7 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhtran,lhveg
-#if (WRF_USE_CLM == 1)
+#if (WRF_USE_CLM == 1) && ( WRF_CHEM == 1 )
    LOGICAL, INTENT(IN)          :: megan_mapped_emisfctrs
    CHARACTER(LEN=*), INTENT(IN) :: megan_factors_file
    CHARACTER(LEN=*), INTENT(IN) :: megan_specifier(:)
@@ -3431,11 +3431,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
+#if ( WRF_CHEM == 1 )
                      megan_specifier,                              &
                      megan_mapped_emisfctrs,                       &
-                     megan_factors_file                            &
+                     megan_factors_file,                           &
+#endif
 !sw++
-                    ,dt,maxpatch                                         &
+                     dt,maxpatch                                         &
 !sw--
                     ,numc,nump,snl,                                      &
                      snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &

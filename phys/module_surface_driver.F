@@ -1169,10 +1169,12 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid ,&
                 LHsoi,LHveg,LHtran
+#if ( WRF_CHEM == 1 ) 
 !sw++
   real,    optional,  dimension(ims:ime,jms:jme,1:ne_area ),intent(inout) ::  &
                 e_bio
 !sw--
+#endif
 #ifdef CN
 !ylu 05/31/2011
 

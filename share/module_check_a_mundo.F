@@ -2106,11 +2106,13 @@
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
+#if ( WRF_CHEM == 1)
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%bio_emiss_opt(i) == MEGAN2_CLM ) THEN
             oops = oops + 1 
          END IF
       ENDDO
+
       IF ( oops .GT. 0 ) THEN
          wrf_err_message = '--- ERROR: The CLM Megan2.1 bio emission scheme was requested in the namelist.input file.'
          CALL wrf_debug ( 0, TRIM(wrf_err_message) )
@@ -2120,11 +2122,13 @@
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
+#endif
 #else
 !-----------------------------------------------------------------------
 !  The CLM scheme has been compiled.
 !  Check for possible logic errors with namelist settings.
 !-----------------------------------------------------------------------
+#if ( WRF_CHEM == 1 )
       oops = 0
       DO i = 1, model_config_rec % max_dom
         IF ( model_config_rec%bio_emiss_opt(i) == MEGAN2_CLM .and. &
@@ -2141,6 +2145,7 @@
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
         count_fatal_error = count_fatal_error + 1
       END IF
+#endif
       oops = 0
       DO i = 1, model_config_rec % max_dom
         IF ( model_config_rec%SF_SURFACE_PHYSICS(i) == CLMSCHEME .and. &

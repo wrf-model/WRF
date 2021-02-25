@@ -1043,7 +1043,7 @@ endif
                       grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                                   &
                       grid%rthften, grid%rqvften,                       &
-#if (WRF_USE_CLM == 1)
+#if (WRF_USE_CLM == 1) && ( WRF_CHEM == 1)
                       model_config_rec%megan_specifier, model_config_rec%megan_factors_file,    &
                       model_config_rec%megan_mapped_emisfctrs,                      &
 #endif

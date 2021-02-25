@@ -3246,7 +3246,7 @@ halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,qv_diabatic,qc_diabatic,msftx,m
 halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
 halo      HALO_EM_INIT_6 dyn_em 48:om_tmp,om_s,om_u,om_v,om_depth,om_tini,om_sini,om_lat,om_lon,om_ml
 halo      HALO_EM_VINTERP_UV_1 dyn_em 48:pd_gc,pb,pmaxw,ptrop,pmaxwnn,ptropnn
-halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
+halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut,rho
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
 halo      HALO_EM_PHYS_CU dyn_em         4:rucuten,rvcuten
@@ -3360,7 +3360,7 @@ period    PERIOD_BDY_EM_TKE_OLD dyn_em 4:tke_1
 
 period    PERIOD_BDY_EM_E dyn_em 2:u_2,v_2,ht
 period    PERIOD_EM_HYDRO_UV dyn_em 1:u_2,v_2
-period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al
+period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al,rho
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy,ustm,ust
 period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,rucuten,rvcuten,xkmh,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2,rho,gamu,gamv,xkmv_meso
 period    PERIOD_BDY_EM_FDDA_BC dyn_em 2:rundgdten,rvndgdten

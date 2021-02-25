@@ -25,7 +25,7 @@ use module_wrf_error
       parameter (ndm=2)
 
       integer nz_um           ! Maximum number of vertical levels in the urban grid
-      parameter(nz_um=16)
+      parameter(nz_um=18)
 
       integer ng_u            ! Number of grid levels in the ground
       parameter (ng_u=10)
@@ -46,7 +46,7 @@ use module_wrf_error
       parameter (dz_u=5.)
 
       integer nbui_max         !maximum number of types of buildings in an urban class
-      parameter (nbui_max=7)   !must be less or equal than nz_um 
+      parameter (nbui_max=15)   !must be less or equal than nz_um 
 
 
       real h_water

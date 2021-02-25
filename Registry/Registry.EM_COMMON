@@ -2738,6 +2738,7 @@ rconfig   integer  chem_adv_opt           namelist,dynamics	max_domains    1    
 rconfig   integer  tracer_adv_opt         namelist,dynamics     max_domains    1       rh    "tracer_adv_opt"        "positive-definite RK3 transport switch"      ""
 rconfig   integer  scalar_adv_opt         namelist,dynamics	max_domains    1       rh    "scalar_adv_opt"        "positive-definite RK3 transport switch"      ""
 rconfig   integer  tke_adv_opt            namelist,dynamics	max_domains    1       rh    "tke_adv_opt"           "positive-definite RK3 transport switch"      ""
+rconfig   integer  phi_adv_z              namelist,dynamics	max_domains    1       h     "phi_adv_z"             "Vertical advection option for geopotential; 1: original 2: avoid double staggering of omega"   ""
 # switches for selectively deactivating 2nd and 6th order horizontal filters for specific scalar variable classes
 rconfig   logical  moist_mix2_off         namelist,dynamics	max_domains    .false. rh    "moist_mix2_off"        "de-activate 2nd-order horizontal mixing for moisture"      ""
 rconfig   logical  chem_mix2_off          namelist,dynamics	max_domains    .false. rh    "chem_mix2_off"         "de-activate 2nd-order horizontal mixing for chem species"  ""

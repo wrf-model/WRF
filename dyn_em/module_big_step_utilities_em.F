@@ -1454,23 +1454,42 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 ! advective form for the geopotential equation
 
+   !  RHS term 3 is: - omega partial d/dnu(phi)
+
    DO j = jts, jtf
+      IF (config_flags%phi_adv_z == 2) THEN
+         !  First get staggered partial d/dnu(phi) and then multiply with omega
+         !  to avoid double staggering of omega
 
-     DO k = 2, kte
-     DO i = its, itf
-          wdwn(i,k) = .5*(ww(i,k,j)+ww(i,k-1,j))*rdnw(k-1)               &
-                        *(ph(i,k,j)-ph(i,k-1,j)+phb(i,k,j)-phb(i,k-1,j))
-     ENDDO
-     ENDDO
+         DO k = 2, kte
+         DO i = its, itf
+              wdwn(i,k) = rdnw(k-1)*(ph(i,k,j)-ph(i,k-1,j)+phb(i,k,j)-phb(i,k-1,j))
+         ENDDO
+         ENDDO
 
-!  RHS term 3 is: - omega partial d/dnu(phi)
+         DO k = 2, kte-1
+         DO i = its, itf
+              ph_tend(i,k,j) = ph_tend(i,k,j)                           &
+                                - ww(i,k,j)*(fnm(k)*wdwn(i,k+1)+fnp(k)*wdwn(i,k))
+         ENDDO
+         ENDDO
+      ELSE
+         !  First destagger omega and multiply with partial d/dnu(phi), then stagger the product
 
-     DO k = 2, kte-1
-     DO i = its, itf
-           ph_tend(i,k,j) = ph_tend(i,k,j)                           &
-                             - (fnm(k)*wdwn(i,k+1)+fnp(k)*wdwn(i,k))
-     ENDDO
-     ENDDO
+         DO k = 2, kte
+         DO i = its, itf
+              wdwn(i,k) = .5*(ww(i,k,j)+ww(i,k-1,j))*rdnw(k-1)               &
+                            *(ph(i,k,j)-ph(i,k-1,j)+phb(i,k,j)-phb(i,k-1,j))
+         ENDDO
+         ENDDO
+
+         DO k = 2, kte-1
+         DO i = its, itf
+               ph_tend(i,k,j) = ph_tend(i,k,j)                           &
+                                 - (fnm(k)*wdwn(i,k+1)+fnp(k)*wdwn(i,k))
+         ENDDO
+         ENDDO
+     ENDIF
 
    ENDDO
 

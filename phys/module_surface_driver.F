@@ -1335,9 +1335,7 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: FLQC_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QGH_SEA
 !
-     REAL, DIMENSION( ims:ime, jms:jme ) :: PSIH_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: PBLH_SEA
-     REAL, DIMENSION( ims:ime, jms:jme ) :: RMOL_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: UST_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
@@ -2006,7 +2004,7 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux, &
                  sf_surface_physics  )
          ELSE
          CALL SFCLAY(u_phytmp,v_phytmp,t_phy,qv_curr,              &
@@ -2058,7 +2056,7 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux, &
                  sf_surface_physics  )
          ELSE
          CALL SFCLAYREV(u_phytmp,v_phytmp,t_phy,qv_curr,&
@@ -4608,17 +4606,17 @@ CONTAINS
 ! the second call to MYJSFC does not double-count the effect.
 
      ! Save INTENT(INOUT) variables before the frozen-water/true-land call to MYJSFC:
-     QSFC_HOLD  = QSFC
-     QZ0_HOLD   = QZ0
-     THZ0_HOLD  = THZ0
-     UZ0_HOLD   = UZ0
-     VZ0_HOLD   = VZ0
-     USTAR_HOLD = USTAR
-     ZNT_HOLD   = ZNT
-     PBLH_HOLD  = PBLH
-     RMOL_HOLD  = RMOL
-     AKHS_HOLD  = AKHS
-     AKMS_HOLD  = AKMS
+     QSFC_HOLD(its:ite,jts:jte)  = QSFC(its:ite,jts:jte)
+     QZ0_HOLD(its:ite,jts:jte)   = QZ0(its:ite,jts:jte)
+     THZ0_HOLD(its:ite,jts:jte)  = THZ0(its:ite,jts:jte)
+     UZ0_HOLD(its:ite,jts:jte)   = UZ0(its:ite,jts:jte)
+     VZ0_HOLD(its:ite,jts:jte)   = VZ0(its:ite,jts:jte)
+     USTAR_HOLD(its:ite,jts:jte) = USTAR(its:ite,jts:jte)
+     ZNT_HOLD(its:ite,jts:jte)   = ZNT(its:ite,jts:jte)
+     PBLH_HOLD(its:ite,jts:jte)  = PBLH(its:ite,jts:jte)
+     RMOL_HOLD(its:ite,jts:jte)  = RMOL(its:ite,jts:jte)
+     AKHS_HOLD(its:ite,jts:jte)  = AKHS(its:ite,jts:jte)
+     AKMS_HOLD(its:ite,jts:jte)  = AKMS(its:ite,jts:jte)
 
 ! Strictly INTENT(OUT):  Set by MYJSFC
 
@@ -4687,16 +4685,15 @@ CONTAINS
         ENDDO
      ENDDO
 
-     QZ0_SEA  = QZ0_HOLD
-     THZ0_SEA = THZ0_HOLD
-     UZ0_SEA  = UZ0_HOLD
-     VZ0_SEA  = VZ0_HOLD
-     USTAR_SEA = USTAR_HOLD
-     PBLH_SEA = PBLH_HOLD
-     RMOL_SEA = RMOL_HOLD
-     AKHS_SEA = AKHS_HOLD
-     AKMS_SEA = AKMS_HOLD
-
+     QZ0_SEA(its:ite,jts:jte)  = QZ0_HOLD(its:ite,jts:jte)
+     THZ0_SEA(its:ite,jts:jte) = THZ0_HOLD(its:ite,jts:jte)
+     UZ0_SEA(its:ite,jts:jte)  = UZ0_HOLD(its:ite,jts:jte)
+     VZ0_SEA(its:ite,jts:jte)  = VZ0_HOLD(its:ite,jts:jte)
+     USTAR_SEA(its:ite,jts:jte) = USTAR_HOLD(its:ite,jts:jte)
+     PBLH_SEA(its:ite,jts:jte) = PBLH_HOLD(its:ite,jts:jte)
+     RMOL_SEA(its:ite,jts:jte) = RMOL_HOLD(its:ite,jts:jte)
+     AKHS_SEA(its:ite,jts:jte) = AKHS_HOLD(its:ite,jts:jte)
+     AKMS_SEA(its:ite,jts:jte) = AKMS_HOLD(its:ite,jts:jte)
 !
 ! open water call
 !
@@ -4975,17 +4972,17 @@ CONTAINS
 ! the second call to QNSESFC does not double-count the effect.
 
      ! Save INTENT(INOUT) variables before the frozen-water/true-land call to QNSESFC:
-     QSFC_HOLD  = QSFC
-     QZ0_HOLD   = QZ0
-     THZ0_HOLD  = THZ0
-     UZ0_HOLD   = UZ0
-     VZ0_HOLD   = VZ0
-     USTAR_HOLD = USTAR
-     ZNT_HOLD   = ZNT
-     PBLH_HOLD  = PBLH
-     RMOL_HOLD  = RMOL
-     AKHS_HOLD  = AKHS
-     AKMS_HOLD  = AKMS
+     QSFC_HOLD(its:ite,jts:jte)  = QSFC(its:ite,jts:jte)
+     QZ0_HOLD(its:ite,jts:jte)   = QZ0(its:ite,jts:jte)
+     THZ0_HOLD(its:ite,jts:jte)  = THZ0(its:ite,jts:jte)
+     UZ0_HOLD(its:ite,jts:jte)   = UZ0(its:ite,jts:jte)
+     VZ0_HOLD(its:ite,jts:jte)   = VZ0(its:ite,jts:jte)
+     USTAR_HOLD(its:ite,jts:jte) = USTAR(its:ite,jts:jte)
+     ZNT_HOLD(its:ite,jts:jte)   = ZNT(its:ite,jts:jte)
+     PBLH_HOLD(its:ite,jts:jte)  = PBLH(its:ite,jts:jte)
+     RMOL_HOLD(its:ite,jts:jte)  = RMOL(its:ite,jts:jte)
+     AKHS_HOLD(its:ite,jts:jte)  = AKHS(its:ite,jts:jte)
+     AKMS_HOLD(its:ite,jts:jte)  = AKMS(its:ite,jts:jte)
 
 ! Strictly INTENT(OUT):  Set by QNSESFC
 
@@ -5054,16 +5051,15 @@ CONTAINS
         ENDDO
      ENDDO
 
-     QZ0_SEA  = QZ0_HOLD
-     THZ0_SEA = THZ0_HOLD
-     UZ0_SEA  = UZ0_HOLD
-     VZ0_SEA  = VZ0_HOLD
-     USTAR_SEA = USTAR_HOLD
-     PBLH_SEA = PBLH_HOLD
-     RMOL_SEA = RMOL_HOLD
-     AKHS_SEA = AKHS_HOLD
-     AKMS_SEA = AKMS_HOLD
-
+     QZ0_SEA(its:ite,jts:jte)  = QZ0_HOLD(its:ite,jts:jte)
+     THZ0_SEA(its:ite,jts:jte) = THZ0_HOLD(its:ite,jts:jte)
+     UZ0_SEA(its:ite,jts:jte)  = UZ0_HOLD(its:ite,jts:jte)
+     VZ0_SEA(its:ite,jts:jte)  = VZ0_HOLD(its:ite,jts:jte)
+     USTAR_SEA(its:ite,jts:jte) = USTAR_HOLD(its:ite,jts:jte)
+     PBLH_SEA(its:ite,jts:jte) = PBLH_HOLD(its:ite,jts:jte)
+     RMOL_SEA(its:ite,jts:jte) = RMOL_HOLD(its:ite,jts:jte)
+     AKHS_SEA(its:ite,jts:jte) = AKHS_HOLD(its:ite,jts:jte)
+     AKMS_SEA(its:ite,jts:jte) = AKMS_HOLD(its:ite,jts:jte)
 !
 ! open water call
 !
@@ -5737,7 +5733,7 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
-                     sf_surface_physics                             )
+                     scm_force_flux,sf_surface_physics             )
 
      USE module_sf_sfclayrev
      implicit none
@@ -5813,6 +5809,7 @@ CONTAINS
                INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
+     INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 
 !--------------------------------------------------------------------
 !    New for wrapper
@@ -5873,6 +5870,8 @@ CONTAINS
                                                 T2_HOLD,          & !ssib
                                                 Q2_HOLD,          & !ssib
                                                 TSK_HOLD,         & !ssib
+                                                U10_HOLD,         & !ssib
+                                                V10_HOLD,         & !ssib
                                                 CD_SEA,           &
                                                 CDA_SEA,          &
                                                 CK_SEA,           &
@@ -5925,35 +5924,34 @@ CONTAINS
 
 ! INTENT (INOUT) to SFCLAY:  Save the variables before the first call
 ! (for land/frozen water) to SFCLAY, to keep from double-counting the
-! effects of that routine
-     BR_HOLD   = BR
-     CHS2_HOLD = CHS2
-     CHS_HOLD  = CHS
-     CPM_HOLD  = CPM
-     CQS2_HOLD = CQS2
-     FLHC_HOLD = FLHC
-     FLQC_HOLD = FLQC
-     GZ1OZ0_HOLD = GZ1OZ0
-     HFX_HOLD  = HFX
-     LH_HOLD   = LH
-     MOL_HOLD  = MOL
-     PSIH_HOLD = PSIH
-     PSIM_HOLD = PSIM
-     FH_HOLD   = FH
-     FM_HOLD   = FM
-     QFX_HOLD  = QFX
-     QGH_HOLD  = QGH
-     REGIME_HOLD = REGIME
-     RMOL_HOLD = RMOL
-     UST_HOLD  = UST
-     WSPD_HOLD = WSPD
-     ZNT_HOLD  = ZNT
-     ZOL_HOLD  = ZOL
+     BR_HOLD(its:ite,jts:jte)     = BR(its:ite,jts:jte)
+     CHS2_HOLD(its:ite,jts:jte)   = CHS2(its:ite,jts:jte)
+     CHS_HOLD(its:ite,jts:jte)    = CHS(its:ite,jts:jte)
+     CPM_HOLD(its:ite,jts:jte)    = CPM(its:ite,jts:jte)
+     CQS2_HOLD(its:ite,jts:jte)   = CQS2(its:ite,jts:jte)
+     FLHC_HOLD(its:ite,jts:jte)   = FLHC(its:ite,jts:jte)
+     FLQC_HOLD(its:ite,jts:jte)   = FLQC(its:ite,jts:jte)
+     GZ1OZ0_HOLD(its:ite,jts:jte) = GZ1OZ0(its:ite,jts:jte)
+     HFX_HOLD(its:ite,jts:jte)    = HFX(its:ite,jts:jte)
+     LH_HOLD(its:ite,jts:jte)     = LH(its:ite,jts:jte)
+     MOL_HOLD(its:ite,jts:jte)    = MOL(its:ite,jts:jte)
+     PSIH_HOLD(its:ite,jts:jte)   = PSIH(its:ite,jts:jte)
+     PSIM_HOLD(its:ite,jts:jte)   = PSIM(its:ite,jts:jte)
+     QFX_HOLD(its:ite,jts:jte)    = QFX(its:ite,jts:jte)
+     QGH_HOLD(its:ite,jts:jte)    = QGH(its:ite,jts:jte)
+     REGIME_HOLD(its:ite,jts:jte) = REGIME(its:ite,jts:jte)
+     RMOL_HOLD(its:ite,jts:jte)   = RMOL(its:ite,jts:jte)
+     UST_HOLD(its:ite,jts:jte)    = UST(its:ite,jts:jte)
+     WSPD_HOLD(its:ite,jts:jte)   = WSPD(its:ite,jts:jte)
+     ZNT_HOLD(its:ite,jts:jte)    = ZNT(its:ite,jts:jte)
+     ZOL_HOLD(its:ite,jts:jte)    = ZOL(its:ite,jts:jte)
 !also save these variables for SSIB (fds 12/2010)
-     TH2_HOLD = TH2
-     T2_HOLD = T2
-     Q2_HOLD = Q2
-     TSK_HOLD = TSK
+     TH2_HOLD(its:ite,jts:jte)    = TH2(its:ite,jts:jte)
+     T2_HOLD(its:ite,jts:jte)     = T2(its:ite,jts:jte)
+     Q2_HOLD(its:ite,jts:jte)     = Q2(its:ite,jts:jte)
+     TSK_HOLD(its:ite,jts:jte)    = TSK(its:ite,jts:jte)
+     U10_HOLD(its:ite,jts:jte)    = U10(its:ite,jts:jte) !fds (01/2014)
+     V10_HOLD(its:ite,jts:jte)    = V10(its:ite,jts:jte) !fds (01/2014)
      
 ! INTENT(OUT) from SFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to SFCLAY.
@@ -5984,7 +5982,7 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux)
 !
 !Restore land-point values calculated by SSiB (fds 12/2010)
      IF (itimestep .gt. 1 .and. sf_surface_physics .EQ. 8) then
@@ -6030,28 +6028,28 @@ CONTAINS
      ENDDO
 
      ! Restore the values from before the land/frozen-water call
-     BR_SEA   = BR_HOLD
-     CHS2_SEA = CHS2_HOLD
-     CHS_SEA  = CHS_HOLD
-     CPM_SEA  = CPM_HOLD
-     CQS2_SEA = CQS2_HOLD
-     FLHC_SEA = FLHC_HOLD
-     FLQC_SEA = FLQC_HOLD
-     GZ1OZ0_SEA = GZ1OZ0_HOLD
-     HFX_SEA  = HFX_HOLD
-     LH_SEA   = LH_HOLD
-     MOL_SEA  = MOL_HOLD
-     PSIH_SEA = PSIH_HOLD
-     PSIM_SEA = PSIM_HOLD
-     FH_SEA   = FH_HOLD
-     FM_SEA   = FM_HOLD
-     QFX_SEA  = QFX_HOLD
-     QGH_SEA  = QGH_HOLD
-     REGIME_SEA = REGIME_HOLD
-     RMOL_SEA = RMOL_HOLD
-     UST_SEA  = UST_HOLD
-     WSPD_SEA = WSPD_HOLD
-     ZOL_SEA  = ZOL_HOLD
+     BR_SEA(its:ite,jts:jte)     = BR_HOLD(its:ite,jts:jte)
+     CHS2_SEA(its:ite,jts:jte)   = CHS2_HOLD(its:ite,jts:jte)
+     CHS_SEA(its:ite,jts:jte)    = CHS_HOLD(its:ite,jts:jte)
+     CPM_SEA(its:ite,jts:jte)    = CPM_HOLD(its:ite,jts:jte)
+     CQS2_SEA(its:ite,jts:jte)   = CQS2_HOLD(its:ite,jts:jte)
+     FLHC_SEA(its:ite,jts:jte)   = FLHC_HOLD(its:ite,jts:jte)
+     FLQC_SEA(its:ite,jts:jte)   = FLQC_HOLD(its:ite,jts:jte)
+     GZ1OZ0_SEA(its:ite,jts:jte) = GZ1OZ0_HOLD(its:ite,jts:jte)
+     HFX_SEA(its:ite,jts:jte)    = HFX_HOLD(its:ite,jts:jte)
+     LH_SEA(its:ite,jts:jte)     = LH_HOLD(its:ite,jts:jte)
+     MOL_SEA(its:ite,jts:jte)    = MOL_HOLD(its:ite,jts:jte)
+     PSIH_SEA(its:ite,jts:jte)   = PSIH_HOLD(its:ite,jts:jte)
+     PSIM_SEA(its:ite,jts:jte)   = PSIM_HOLD(its:ite,jts:jte)
+     FH_SEA(its:ite,jts:jte)     = FH_HOLD(its:ite,jts:jte)
+     FM_SEA(its:ite,jts:jte)     = FM_HOLD(its:ite,jts:jte)
+     QFX_SEA(its:ite,jts:jte)    = QFX_HOLD(its:ite,jts:jte)
+     QGH_SEA(its:ite,jts:jte)    = QGH_HOLD(its:ite,jts:jte)
+     REGIME_SEA(its:ite,jts:jte) = REGIME_HOLD(its:ite,jts:jte)
+     RMOL_SEA(its:ite,jts:jte)   = RMOL_HOLD(its:ite,jts:jte)
+     UST_SEA(its:ite,jts:jte)    = UST_HOLD(its:ite,jts:jte)
+     WSPD_SEA(its:ite,jts:jte)   = WSPD_HOLD(its:ite,jts:jte)
+     ZOL_SEA(its:ite,jts:jte)    = ZOL_HOLD(its:ite,jts:jte)
 !
      ! open-water call
      call sfclayrev(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
@@ -6074,7 +6072,7 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
-                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
+                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd,scm_force_flux)
 !
      DO j = JTS , JTE
         DO i = ITS, ITE
@@ -6152,7 +6150,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
-                     sf_surface_physics                             )
+                     scm_force_flux,sf_surface_physics             )
 
      USE module_sf_sfclay
      implicit none
@@ -6230,6 +6228,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
+     INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 
 !--------------------------------------------------------------------
 !    New for wrapper
@@ -6345,36 +6344,34 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
 ! INTENT (INOUT) to SFCLAY:  Save the variables before the first call
 ! (for land/frozen water) to SFCLAY, to keep from double-counting the
 ! effects of that routine
-     BR_HOLD   = BR
-     CHS2_HOLD = CHS2
-     CHS_HOLD  = CHS
-     CPM_HOLD  = CPM
-     CQS2_HOLD = CQS2
-     FLHC_HOLD = FLHC
-     FLQC_HOLD = FLQC
-     GZ1OZ0_HOLD = GZ1OZ0
-     HFX_HOLD  = HFX
-     LH_HOLD   = LH
-     MOL_HOLD  = MOL
-     PSIH_HOLD = PSIH
-     PSIM_HOLD = PSIM
-     FH_HOLD   = FH
-     FM_HOLD   = FM
-     QFX_HOLD  = QFX
-     QGH_HOLD  = QGH
-     REGIME_HOLD = REGIME
-     RMOL_HOLD = RMOL
-     UST_HOLD  = UST
-     WSPD_HOLD = WSPD
-     ZNT_HOLD  = ZNT
-     ZOL_HOLD  = ZOL
+     BR_HOLD(its:ite,jts:jte)     = BR(its:ite,jts:jte)
+     CHS2_HOLD(its:ite,jts:jte)   = CHS2(its:ite,jts:jte)
+     CHS_HOLD(its:ite,jts:jte)    = CHS(its:ite,jts:jte)
+     CPM_HOLD(its:ite,jts:jte)    = CPM(its:ite,jts:jte)
+     CQS2_HOLD(its:ite,jts:jte)   = CQS2(its:ite,jts:jte)
+     FLHC_HOLD(its:ite,jts:jte)   = FLHC(its:ite,jts:jte)
+     FLQC_HOLD(its:ite,jts:jte)   = FLQC(its:ite,jts:jte)
+     GZ1OZ0_HOLD(its:ite,jts:jte) = GZ1OZ0(its:ite,jts:jte)
+     HFX_HOLD(its:ite,jts:jte)    = HFX(its:ite,jts:jte)
+     LH_HOLD(its:ite,jts:jte)     = LH(its:ite,jts:jte)
+     MOL_HOLD(its:ite,jts:jte)    = MOL(its:ite,jts:jte)
+     PSIH_HOLD(its:ite,jts:jte)   = PSIH(its:ite,jts:jte)
+     PSIM_HOLD(its:ite,jts:jte)   = PSIM(its:ite,jts:jte)
+     QFX_HOLD(its:ite,jts:jte)    = QFX(its:ite,jts:jte)
+     QGH_HOLD(its:ite,jts:jte)    = QGH(its:ite,jts:jte)
+     REGIME_HOLD(its:ite,jts:jte) = REGIME(its:ite,jts:jte)
+     RMOL_HOLD(its:ite,jts:jte)   = RMOL(its:ite,jts:jte)
+     UST_HOLD(its:ite,jts:jte)    = UST(its:ite,jts:jte)
+     WSPD_HOLD(its:ite,jts:jte)   = WSPD(its:ite,jts:jte)
+     ZNT_HOLD(its:ite,jts:jte)    = ZNT(its:ite,jts:jte)
+     ZOL_HOLD(its:ite,jts:jte)    = ZOL(its:ite,jts:jte)
 !also save these variables for SSIB (fds 12/2010)
-     TH2_HOLD = TH2
-     T2_HOLD = T2
-     Q2_HOLD = Q2
-     TSK_HOLD = TSK
-     U10_HOLD = U10 !fds (01/2014)
-     V10_HOLD = V10 !fds (01/2014)
+     TH2_HOLD(its:ite,jts:jte)    = TH2(its:ite,jts:jte)
+     T2_HOLD(its:ite,jts:jte)     = T2(its:ite,jts:jte)
+     Q2_HOLD(its:ite,jts:jte)     = Q2(its:ite,jts:jte)
+     TSK_HOLD(its:ite,jts:jte)    = TSK(its:ite,jts:jte)
+     U10_HOLD(its:ite,jts:jte)    = U10(its:ite,jts:jte) !fds (01/2014)
+     V10_HOLD(its:ite,jts:jte)    = V10(its:ite,jts:jte) !fds (01/2014)
      
 ! INTENT(OUT) from SFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to SFCLAY.
@@ -6405,7 +6402,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux)
 !
 !Restore land-point values calculated by SSiB (fds 12/2010)
      IF (itimestep .gt. 1 .and. sf_surface_physics .EQ. 8) then
@@ -6453,28 +6450,28 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      ENDDO
 
      ! Restore the values from before the land/frozen-water call
-     BR_SEA   = BR_HOLD
-     CHS2_SEA = CHS2_HOLD
-     CHS_SEA  = CHS_HOLD
-     CPM_SEA  = CPM_HOLD
-     CQS2_SEA = CQS2_HOLD
-     FLHC_SEA = FLHC_HOLD
-     FLQC_SEA = FLQC_HOLD
-     GZ1OZ0_SEA = GZ1OZ0_HOLD
-     HFX_SEA  = HFX_HOLD
-     LH_SEA   = LH_HOLD
-     MOL_SEA  = MOL_HOLD
-     PSIH_SEA = PSIH_HOLD
-     PSIM_SEA = PSIM_HOLD
-     FH_SEA   = FH_HOLD
-     FM_SEA   = FM_HOLD
-     QFX_SEA  = QFX_HOLD
-     QGH_SEA  = QGH_HOLD
-     REGIME_SEA = REGIME_HOLD
-     RMOL_SEA = RMOL_HOLD
-     UST_SEA  = UST_HOLD
-     WSPD_SEA = WSPD_HOLD
-     ZOL_SEA  = ZOL_HOLD
+     BR_SEA(its:ite,jts:jte)     = BR_HOLD(its:ite,jts:jte)
+     CHS2_SEA(its:ite,jts:jte)   = CHS2_HOLD(its:ite,jts:jte)
+     CHS_SEA(its:ite,jts:jte)    = CHS_HOLD(its:ite,jts:jte)
+     CPM_SEA(its:ite,jts:jte)    = CPM_HOLD(its:ite,jts:jte)
+     CQS2_SEA(its:ite,jts:jte)   = CQS2_HOLD(its:ite,jts:jte)
+     FLHC_SEA(its:ite,jts:jte)   = FLHC_HOLD(its:ite,jts:jte)
+     FLQC_SEA(its:ite,jts:jte)   = FLQC_HOLD(its:ite,jts:jte)
+     GZ1OZ0_SEA(its:ite,jts:jte) = GZ1OZ0_HOLD(its:ite,jts:jte)
+     HFX_SEA(its:ite,jts:jte)    = HFX_HOLD(its:ite,jts:jte)
+     LH_SEA(its:ite,jts:jte)     = LH_HOLD(its:ite,jts:jte)
+     MOL_SEA(its:ite,jts:jte)    = MOL_HOLD(its:ite,jts:jte)
+     PSIH_SEA(its:ite,jts:jte)   = PSIH_HOLD(its:ite,jts:jte)
+     PSIM_SEA(its:ite,jts:jte)   = PSIM_HOLD(its:ite,jts:jte)
+     FH_SEA(its:ite,jts:jte)     = FH_HOLD(its:ite,jts:jte)
+     FM_SEA(its:ite,jts:jte)     = FM_HOLD(its:ite,jts:jte)
+     QFX_SEA(its:ite,jts:jte)    = QFX_HOLD(its:ite,jts:jte)
+     QGH_SEA(its:ite,jts:jte)    = QGH_HOLD(its:ite,jts:jte)
+     REGIME_SEA(its:ite,jts:jte) = REGIME_HOLD(its:ite,jts:jte)
+     RMOL_SEA(its:ite,jts:jte)   = RMOL_HOLD(its:ite,jts:jte)
+     UST_SEA(its:ite,jts:jte)    = UST_HOLD(its:ite,jts:jte)
+     WSPD_SEA(its:ite,jts:jte)   = WSPD_HOLD(its:ite,jts:jte)
+     ZOL_SEA(its:ite,jts:jte)    = ZOL_HOLD(its:ite,jts:jte)
 !
      ! open-water call
      call sfclay(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
@@ -6497,7 +6494,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
-                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
+                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd,scm_force_flux)
 !
      DO j = JTS , JTE
         DO i = ITS, ITE
@@ -6712,27 +6709,27 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 ! (for land/frozen water) to SFCLAY, to keep from double-counting the
 ! effects of that routine
 !
-     BR_HOLD     = BR
-     CHS_HOLD    = CHS
-     CHS2_HOLD   = CHS2
-     CPM_HOLD    = CPM
-     CQS2_HOLD   = CQS2
-     FLHC_HOLD   = FLHC
-     FLQC_HOLD   = FLQC
-     GZ1OZ0_HOLD = GZ1OZ0
-     HFX_HOLD    = HFX
-     LH_HOLD     = LH
-     MOL_HOLD    = MOL
-     PSIH_HOLD   = PSIH
-     PSIM_HOLD   = PSIM
-     QFX_HOLD    = QFX
-     QGH_HOLD    = QGH
-     REGIME_HOLD = REGIME
-     RMOL_HOLD   = RMOL
-     UST_HOLD    = UST
-     WSPD_HOLD   = WSPD
-     ZNT_HOLD    = ZNT
-     ZOL_HOLD    = ZOL
+     BR_HOLD(its:ite,jts:jte)     = BR(its:ite,jts:jte)
+     CHS_HOLD(its:ite,jts:jte)    = CHS(its:ite,jts:jte)
+     CHS2_HOLD(its:ite,jts:jte)   = CHS2(its:ite,jts:jte)
+     CPM_HOLD(its:ite,jts:jte)    = CPM(its:ite,jts:jte)
+     CQS2_HOLD(its:ite,jts:jte)   = CQS2(its:ite,jts:jte)
+     FLHC_HOLD(its:ite,jts:jte)   = FLHC(its:ite,jts:jte)
+     FLQC_HOLD(its:ite,jts:jte)   = FLQC(its:ite,jts:jte)
+     GZ1OZ0_HOLD(its:ite,jts:jte) = GZ1OZ0(its:ite,jts:jte)
+     HFX_HOLD(its:ite,jts:jte)    = HFX(its:ite,jts:jte)
+     LH_HOLD(its:ite,jts:jte)     = LH(its:ite,jts:jte)
+     MOL_HOLD(its:ite,jts:jte)    = MOL(its:ite,jts:jte)
+     PSIH_HOLD(its:ite,jts:jte)   = PSIH(its:ite,jts:jte)
+     PSIM_HOLD(its:ite,jts:jte)   = PSIM(its:ite,jts:jte)
+     QFX_HOLD(its:ite,jts:jte)    = QFX(its:ite,jts:jte)
+     QGH_HOLD(its:ite,jts:jte)    = QGH(its:ite,jts:jte)
+     REGIME_HOLD(its:ite,jts:jte) = REGIME(its:ite,jts:jte)
+     RMOL_HOLD(its:ite,jts:jte)   = RMOL(its:ite,jts:jte)
+     UST_HOLD(its:ite,jts:jte)    = UST(its:ite,jts:jte)
+     WSPD_HOLD(its:ite,jts:jte)   = WSPD(its:ite,jts:jte)
+     ZNT_HOLD(its:ite,jts:jte)    = ZNT(its:ite,jts:jte)
+     ZOL_HOLD(its:ite,jts:jte)    = ZOL(its:ite,jts:jte)
 
 ! INTENT(OUT) from PXSFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to PXSFCLAY.
@@ -6774,26 +6771,26 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
      ENDDO
 
      ! INTENT(INOUT) variables held over from before the first call to PXSFCLAY:
-     BR_SEA     = BR_HOLD
-     CHS_SEA    = CHS_HOLD
-     CHS2_SEA   = CHS2_HOLD
-     CPM_SEA    = CPM_HOLD
-     CQS2_SEA   = CQS2_HOLD
-     FLHC_SEA   = FLHC_HOLD
-     FLQC_SEA   = FLQC_HOLD
-     GZ1OZ0_SEA = GZ1OZ0_HOLD
-     HFX_SEA    = HFX_HOLD
-     LH_SEA     = LH_HOLD
-     MOL_SEA    = MOL_HOLD
-     PSIH_SEA   = PSIH_HOLD
-     PSIM_SEA   = PSIM_HOLD
-     QFX_SEA    = QFX_HOLD
-     QGH_SEA    = QGH_HOLD
-     REGIME_SEA = REGIME_HOLD
-     RMOL_SEA   = RMOL_HOLD
-     UST_SEA    = UST_HOLD
-     WSPD_SEA   = WSPD_HOLD
-     ZOL_SEA    = ZOL_HOLD
+     BR_SEA(its:ite,jts:jte)     = BR_HOLD(its:ite,jts:jte)
+     CHS_SEA(its:ite,jts:jte)    = CHS_HOLD(its:ite,jts:jte)
+     CHS2_SEA(its:ite,jts:jte)   = CHS2_HOLD(its:ite,jts:jte)
+     CPM_SEA(its:ite,jts:jte)    = CPM_HOLD(its:ite,jts:jte)
+     CQS2_SEA(its:ite,jts:jte)   = CQS2_HOLD(its:ite,jts:jte)
+     FLHC_SEA(its:ite,jts:jte)   = FLHC_HOLD(its:ite,jts:jte)
+     FLQC_SEA(its:ite,jts:jte)   = FLQC_HOLD(its:ite,jts:jte)
+     GZ1OZ0_SEA(its:ite,jts:jte) = GZ1OZ0_HOLD(its:ite,jts:jte)
+     HFX_SEA(its:ite,jts:jte)    = HFX_HOLD(its:ite,jts:jte)
+     LH_SEA(its:ite,jts:jte)     = LH_HOLD(its:ite,jts:jte)
+     MOL_SEA(its:ite,jts:jte)    = MOL_HOLD(its:ite,jts:jte)
+     PSIH_SEA(its:ite,jts:jte)   = PSIH_HOLD(its:ite,jts:jte)
+     PSIM_SEA(its:ite,jts:jte)   = PSIM_HOLD(its:ite,jts:jte)
+     QFX_SEA(its:ite,jts:jte)    = QFX_HOLD(its:ite,jts:jte)
+     QGH_SEA(its:ite,jts:jte)    = QGH_HOLD(its:ite,jts:jte)
+     REGIME_SEA(its:ite,jts:jte) = REGIME_HOLD(its:ite,jts:jte)
+     RMOL_SEA(its:ite,jts:jte)   = RMOL_HOLD(its:ite,jts:jte)
+     UST_SEA(its:ite,jts:jte)    = UST_HOLD(its:ite,jts:jte)
+     WSPD_SEA(its:ite,jts:jte)   = WSPD_HOLD(its:ite,jts:jte)
+     ZOL_SEA(its:ite,jts:jte)    = ZOL_HOLD(its:ite,jts:jte)
 
 ! Open-water call.
      ! Variables newly set (INTENT(OUT)) or changed (INTENT(INOUT)) by

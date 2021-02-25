@@ -3564,6 +3564,24 @@ BENCH_END(advance_ppt_tim)
        jts = max(grid%j_start(ij),jds+sz)
        jte = min(grid%j_end(ij),jde-1-sz)
 
+       if (config_flags%madwrf_opt == 2) then
+         CALL wrf_debug ( 200 , ' call cloud_tracer_nudge' )
+
+         CALL cloud_tracer_nudge(  dtm, config_flags%madwrf_dt_relax, &
+                                   config_flags%madwrf_dt_nudge,     &
+                                   grid%xtime,                       &
+                                   moist(ims,kms,jms,P_QC),          &
+                                   moist(ims,kms,jms,P_QI),          &
+                                   moist(ims,kms,jms,P_QS),          &
+                                   tracer(ims,kms,jms,P_tr_qc),      &
+                                   tracer(ims,kms,jms,P_tr_qi),      &
+                                   tracer(ims,kms,jms,P_tr_qs),      &
+                                   ids, ide, jds, jde, kds, kde,     &
+                                   ims, ime, jms, jme, kms, kme,     &
+                                   its, ite, jts, jte,               &
+                                   k_start    , k_end                )
+       end if
+
        CALL wrf_debug ( 200 , ' call moist_physics_prep' )
 BENCH_START(moist_physics_prep_tim)
        CALL moist_physics_prep_em( grid%t_2, grid%t_1, t0, grid%rho,           &

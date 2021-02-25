@@ -2126,6 +2126,11 @@ state   real    tr18_7     ikjftb  tracer        1         -     i8rhusdf=(bdy_i
 state   real    tr18_8     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr18_8"         "tr18_8"          -
 state   real    tr18_9     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr18_9"         "tr18_9"          -
 
+# MAD-WRF
+state   real    tr_qc   ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr_qcloud"      "Tracer with the liquid content" "Kg Kg-1"
+state   real    tr_qi   ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr_qice"        "Tracer with the ice content" "Kg Kg-1"
+state   real    tr_qs   ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr_qsnow"       "Tracer with the snow content" "Kg Kg-1"
+
 # GHG chem arrays, Chem Scalars for CO2 used in the GHG options
 state   real    co2_bio    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_BIO"       "mixing ratio of VPRM CO2" "ppmv"
 state   real    co2_ant    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_ANT"       "mixing ratio of anthropogenic CO2"          "ppmv"

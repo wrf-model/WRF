@@ -1551,6 +1551,8 @@ The following are for observation nudging:
  gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
                                      = 1       ; for running the WRF-ARW with its gravity wave drag
                                      = 2       ; for running the WRF-NMM with its gravity wave drag
+                                     = 3       ; NOAA/GSL gravity wave drag and turbulent orographic form drag
+ gwd_diags                           = 0       ; set to 1 to output diagnostics for gwd_opt = 3
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
                                      = 1       ! NBA1 using diagnostic stress terms (km_opt=2,3 for scalars)
                                      = 2       ! NBA2 using tke-based stress terms (km_opt=2 needed)

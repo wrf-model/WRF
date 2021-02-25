@@ -97,6 +97,8 @@ dimspec    gecros  2     constant=60                       z     gecros
 
 # Set up the dust erosion dimension irrespective of WRF-Chem, but namelist erosion_dim=3 mandatory when not using WRF-Chem  (gthompsn, 2017Jun23)
 dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
+dimspec    clmvoc  3     constant=2                        z     clmvoc_lev
+dimspec    npft    2     namelist=num_pft_clm              z     pft_fraction
 
 # Dimensions required only for Chemistry
 

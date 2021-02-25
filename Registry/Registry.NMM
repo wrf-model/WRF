@@ -1795,6 +1795,7 @@ package   wdm7scheme    mp_physics==26               -             moist:qv,qc,q
 package   p3_1category    mp_physics==50               -             moist:qv
 package   p3_1category_nc mp_physics==51               -             moist:qv
 package   p3_2category    mp_physics==52               -             moist:qv
+package   p3_1cat_3mom    mp_physics==53               -             moist:qv
 package   ntu             mp_physics==56               -             moist:qv
 package   jensen_ishmael    mp_physics==86               -             moist:qv
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef

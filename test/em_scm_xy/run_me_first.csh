@@ -9,5 +9,6 @@ ln -sf ../../run/VEGPARM.TBL .
 ln -sf ../../run/SOILPARM.TBL .
 ln -sf ../../run/GENPARM.TBL .
 ln -sf ../../run/RRTM_DATA .
+ln -sf ../../run/p3* .
 
 echo done

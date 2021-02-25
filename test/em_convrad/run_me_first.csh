@@ -11,5 +11,6 @@ ln -sf ../../run/RRTMG_SW_DATA .
 ln -sf ../../run/ozone.formatted .
 ln -sf ../../run/ozone_lat.formatted .
 ln -sf ../../run/ozone_plev.formatted .
+ln -sf ../../run/p3* .
 
 echo done

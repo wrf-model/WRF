@@ -171,7 +171,8 @@ SUBROUTINE microphysics_driver(                                          &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
                     ,WSM7SCHEME, WDM7SCHEME &
                     ,NUWRF4ICESCHEME &
-                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, MORR_TM_AERO, JENSEN_ISHMAEL,SPRINKLER, NTU !,MILBRANDT3MOM, for ntu3m
+                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, P3_1CAT_3MOM &
+                    ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU !,MILBRANDT3MOM
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
 #endif
@@ -1540,6 +1541,51 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,diag_di2_3d=di3d_2                                         &
                  ,diag_rhopo2_3d=rhopo3d_2                                   &
                                                                     )
+
+    CASE (P3_1CAT_3MOM)                                                                                          
+         CALL wrf_debug(100, 'microphysics_driver: calling p3 one category 3 moment')
+
+         CALL mp_p3_wrapper_wrf(                         &                           
+                     ITIMESTEP=itimestep,                &                           
+                     TH_3d=th,                            &                          
+                     QV_3d=qv_curr,                       &                          
+                     QC_3d=qc_curr,                       &                          
+                     QR_3d=qr_curr,                       &                          
+                     QNR_3d=qnr_curr,                     &                          
+                     QI1_3d=qi_curr,                     &                           
+                     QIR1_3d=qir_curr,                    &                          
+                     QNI1_3d=qni_curr,                   &                           
+                     QIB1_3d=qib_curr,                 &                             
+                     th_old_3d=th_old,                 &                             
+                     qv_old_3d=qv_old,                 &                             
+                     nc_3d=qnc_curr,                   & 
+                     PII=pi_phy,                         &                           
+                     P=p,                                &                           
+                     DT=dt,                           &                              
+                     DZ=dz8w,                            &                           
+                     W=w                                 &                           
+                    ,RAINNC=RAINNC                       &                           
+                    ,RAINNCV=RAINNCV                     &                           
+                    ,SR=SR                               &                           
+                    ,SNOWNC=SNOWNC                       &                           
+                    ,SNOWNCV=SNOWNCV                     &                           
+                    ,N_ICECAT=1                     &                                
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &                
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &                
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &                
+                 ,diag_zdbz_3d=refl_10cm,                                 &          
+                     diag_effc_3d=re_cloud,                    &                     
+                     diag_effi_3d=re_ice                       &                     
+                 ,diag_vmi_3d=vmi3d                                       &          
+                 ,diag_di_3d=di3d                                         &          
+                 ,diag_rhopo_3d=rhopo3d                                   &          
+                 ,QZI1_3d=qzi_curr                                   &               
+! not currently output
+!                 ,diag_dhmax_3d=dhmax3d                                       &      
+!                 ,diag_lami_3d=lami3d                                         &      
+!                 ,diag_mui_3d=mui3d                                   &              
+                                                                    )
+
 #endif
 
 

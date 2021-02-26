@@ -9,6 +9,7 @@ use module_wrf_error
 #endif
  USE module_sf_urban
  USE module_sf_bem
+ USE module_bep_bem_helper, ONLY: nurbm
 
 ! SGClarke 09/11/2008
 ! Access urban_param.tbl values through calling urban_param_init in module_physics_init
@@ -18,8 +19,8 @@ use module_wrf_error
 !  Dimension for the array used in the BEP module
 ! -----------------------------------------------------------------------
 
-      integer nurbm           ! Maximum number of urban classes    
-      parameter (nurbm=11)
+!     integer nurbm           ! Maximum number of urban classes    
+!     parameter (nurbm=11)
 
       integer ndm             ! Maximum number of street directions 
       parameter (ndm=2)

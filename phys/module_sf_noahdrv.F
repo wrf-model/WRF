@@ -27,6 +27,9 @@ use mpas_atmphys_utilities, only: physics_error_fatal
 #if ( WRF_CHEM == 1 )
   USE module_data_gocart_dust
 #endif
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+   USE module_dm, ONLY : wrf_dm_max_real
+#endif
 !-------------------------------
 
 !
@@ -655,6 +658,7 @@ CONTAINS
    REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM
    REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB, CMGR_URB, CHGR_URB
    REAL :: frc_urb,lb_urb
+   INTEGER :: nurbm
    REAL :: check 
 ! ----------------------------------------------------------------------
 ! DECLARATIONS END - urban
@@ -1542,6 +1546,12 @@ CONTAINS
       ENDDO ILOOP                                                       ! of I loop
    ENDDO JLOOP                                                          ! of J loop
 
+      IF(maxval(UTYPE_URB2D).GT.3)THEN
+       nurbm=11
+      ELSE
+       nurbm=3
+      ENDIF
+
       IF (SF_URBAN_PHYSICS == 2) THEN
 
 
@@ -1554,7 +1564,7 @@ CONTAINS
             b_q_bep(i,kts:kte,j)=0.
          end do
          end do
-       CALL BEP(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy,   &
+       CALL BEP(nurbm,frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy,&
                 th_phy,rho,p_phy,swdown,glw,                           &
                 gmt,julday,xlong,xlat,declin_urb,cosz_urb2d,omg_urb2d, &
            num_urban_ndm, urban_map_zrd, urban_map_zwd, urban_map_gd,  &
@@ -1588,8 +1598,8 @@ CONTAINS
          end do
          end do
         
-
-       CALL BEP_BEM(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy, &
+      
+       CALL BEP_BEM(nurbm,frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy, &
                 th_phy,rho,p_phy,swdown,glw,                           &
                 gmt,julday,xlong,xlat,declin_urb,cosz_urb2d,omg_urb2d, &
            num_urban_ndm, urban_map_zrd, urban_map_zwd, urban_map_gd,  &

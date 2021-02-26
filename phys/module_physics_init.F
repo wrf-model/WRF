@@ -244,6 +244,7 @@ CONTAINS
                          ,xtime1, PBLHAVG, TKEAVG               &
                          ,ccn_conc                             & ! RAS
                          ,QKE                                  & !for MYNN
+                         ,pep                                  & ! EEPS
                          ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
                          ,TSK_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic                                     & ! danli mosaic
                          ,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic                                 & ! danli mosaic
@@ -458,7 +459,7 @@ CONTAINS
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
-  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE
+  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE,pep
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                                             massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -1354,7 +1355,7 @@ CONTAINS
    CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,mfshconv,               &
+                num_soil_layers,TKE_PBL,mfshconv,pep,           &
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
@@ -2372,7 +2373,7 @@ CONTAINS
    SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,mfshconv,               &
+                num_soil_layers,TKE_PBL,mfshconv,pep,           &
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
@@ -2563,6 +2564,7 @@ CONTAINS
    USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
+   USE module_bl_eeps
    USE module_bl_temf
 #if ( WRFPLUS == 1 )
    USE module_bl_surface_drag
@@ -2648,7 +2650,8 @@ CONTAINS
                                                           RQCBLTEN, &
                                                           RQIBLTEN, &
                                                           TKE_PBL
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE
+
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE, pep
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                               massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -3670,6 +3673,24 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         its, ite, jts, jte, kts, kte          )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling TEMF scheme' )
+         ENDIF
+
+      CASE (EEPSSCHEME)
+           IF(isfc .ne. 1 .and. isfc .ne. 2 .and. isfc .ne. 5 .and. isfc .ne. 91) CALL wrf_error_fatal &
+                ( 'module_physics_init: use mynnsfc or sfclay or myjsfc schemefor this pbl option')
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+          IF ( PRESENT( pep ) ) THEN
+           CALL eepsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
+                        RQCBLTEN,RQIBLTEN,P_QI,               &
+                        PARAM_FIRST_SCALAR,TKE_PBL,pep,       &
+                        restart,                              &
+                        allowed_to_read ,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+          ELSE
+            CALL wrf_error_fatal ( 'arguments not present for calling EEPS scheme' )
          ENDIF
 
 #endif

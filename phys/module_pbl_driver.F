@@ -57,6 +57,8 @@ CONTAINS
                  ,vdfg                                             &
                  ,nupdraft,maxMF,ktop_plume                        &
                  ,spp_pbl,pattern_spp_pbl                          &
+              ! EEPS
+                 ,pep,pek_adv,pep_adv                              &
                  ,restart,cycling                                  &
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
@@ -144,7 +146,7 @@ CONTAINS
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    FITCHSCHEME,SHINHONGSCHEME,                       &
-                   TEMFPBLSCHEME,GBMPBLSCHEME,                       &
+                   TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,                  &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar,& !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
                    p_qnwfa,p_qnifa
 #if ( WRFPLUS == 1 )
@@ -186,6 +188,7 @@ CONTAINS
    USE module_bl_gbmpbl
 #if (EM_CORE==1)
    USE module_bl_mynn
+   USE module_bl_eeps
    USE module_bl_fogdes
    USE module_wind_fitch
 #endif
@@ -470,6 +473,11 @@ CONTAINS
                                                       rthratenlw, &
                                                       wsedl3d
 
+!For EEPS PBL scheme
+    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            &
+               INTENT(INOUT   )    ::                        pep
+    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),        &
+               INTENT(INOUT) ::                  pek_adv,pep_adv
 
 !2D Variables required by camuwpbl scheme
     REAL,       DIMENSION( ims:ime , jms:jme ),                   &
@@ -1839,6 +1847,52 @@ CONTAINS
                 enddo
                 enddo
               ENDIF
+           ENDIF
+
+        CASE (EEPSSCHEME)
+
+              IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                   PRESENT( qi_curr )                            .AND. &
+                   PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                   PRESENT( rqiblten )                           .AND. &
+                   PRESENT( pep )                                .AND. &
+                   PRESENT( pek_adv )  .AND. PRESENT( pep_adv ) ) THEN
+
+                CALL wrf_debug(100,'in EEPSPBL')
+
+                CALL  eeps(&
+                   U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy                  &
+                  ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
+                  ,QR3D=qr_curr,QS3D=qs_curr,QG3D=qg_curr               &
+                  ,P3D=p_phy,PI3D=pi_phy,PEK=tke_pbl,PEP=pep            &
+                  ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
+                  ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
+                  ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten,KPBL=kpbl        &
+                  ,DZ8W=dz8w,PSFC=psfc,TSK=tsk,QSFC=qsfc,WSPD=wspd      &
+                  ,UST=ust,XLAND=xland,HFX=hfx,QFX=qfx,RMOL=rmol        &
+                  ,DT=dtbl,DX=dx,EXCH_H=exch_h,EXCH_M=exch_m,PBLH=pblh  &
+                  ,ITIMESTEP=itimestep,PEK_ADV=pek_adv,PEP_ADV=pep_adv   &
+                   ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+                   ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+                   ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                   )
+              ELSE
+               WRITE ( message , FMT = '(A,6(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'qi_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten, '//                                     &
+                 'rqiblten, ' ,                                     &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( qi_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten ) ,                             &
+                  PRESENT( rqiblten )
+               CALL wrf_debug(0,message)
+               CALL wrf_error_fatal('Lack arguments to call EEPS pbl')
            ENDIF
 
         CASE (BOULACSCHEME)

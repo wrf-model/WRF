@@ -738,6 +738,8 @@ Namelist variables for controlling the adaptive time step option:
                                           sf_sfclay_physics=10
                                      = 11, Shin-Hong 'scale-aware' PBL scheme
                                      = 12, Grenier-Bretherton-McCaa scheme (ARW only)
+                                     = 16, TKE+TKE dissipation rate (epsilon) scheme (ARW only)
+                                           works with surface layer options 1,91,2,5.
                                      = 93, 2015 GFS scheme (NMM only)
                                      = 99, MRF scheme
 

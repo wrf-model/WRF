@@ -685,6 +685,7 @@ module_pbl_driver.o:  \
 		module_bl_mynn.o \
 		module_bl_fogdes.o \
 		module_bl_gwdo.o \
+		module_bl_gwdo_gsl.o \
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
 		$(PHYS_BL) \

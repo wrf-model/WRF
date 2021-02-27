@@ -1148,6 +1148,44 @@ state   real   OL2              ij     misc        1         -     i012rhdus "OL
 state   real   OL3              ij     misc        1         -     i012rhdus "OL3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 state   real   OL4              ij     misc        1         -     i012rhdus "OL4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 
+# Additional for GSL gravity wave drag suite
+state   real   DTAUX3D_ls      ikj     misc        1         -     rh        "DTAUX3D_ls"            "LOCAL U GWDO STRESS LARGE-SCALE"   "m s-1"
+state   real   DTAUY3D_ls      ikj     misc        1         -     rh        "DTAUY3D_ls"            "LOCAL V GWDO STRESS LARGE-SCALE"   "m s-1"
+state   real   DTAUX3D_bl      ikj     misc        1         -     rh        "DTAUX3D_bl"            "LOCAL U GWDO STRESS BLOCKING"   "m s-1"
+state   real   DTAUY3D_bl      ikj     misc        1         -     rh        "DTAUY3D_bl"            "LOCAL V GWDO STRESS BLOCKING"   "m s-1"
+state   real   DTAUX3D_ss      ikj     misc        1         -     rh        "DTAUX3D_ss"            "LOCAL U GWDO STRESS SMALL-SCALE"   "m s-1"
+state   real   DTAUY3D_ss      ikj     misc        1         -     rh        "DTAUY3D_ss"            "LOCAL V GWDO STRESS SMALL-SCALE"   "m s-1"
+state   real   DTAUX3D_fd      ikj     misc        1         -     rh        "DTAUX3D_fd"            "LOCAL U GWDO STRESS FORM-DRAG"   "m s-1"
+state   real   DTAUY3D_fd      ikj     misc        1         -     rh        "DTAUY3D_fd"            "LOCAL V GWDO STRESS FORM-DRAG"   "m s-1"
+state   real   DUSFCG_ls        ij     misc        1         -     rh        "DUSFCG_ls"             "COLUMN-INTEGRATED U GWDO STRESS LARGE-SCALE"   "Pa m s-1"
+state   real   DVSFCG_ls        ij     misc        1         -     rh        "DVSFCG_ls"             "COLUMN-INTEGRATED V GWDO STRESS LARGE-SCALE"   "Pa m s-1"
+state   real   DUSFCG_bl        ij     misc        1         -     rh        "DUSFCG_bl"             "COLUMN-INTEGRATED U GWDO STRESS BLOCKING"   "Pa m s-1"
+state   real   DVSFCG_bl        ij     misc        1         -     rh        "DVSFCG_bl"             "COLUMN-INTEGRATED V GWDO STRESS BLOCKING"   "Pa m s-1"
+state   real   DUSFCG_ss        ij     misc        1         -     rh        "DUSFCG_ss"             "COLUMN-INTEGRATED U GWDO STRESS SMALL-SCALE"   "Pa m s-1"
+state   real   DVSFCG_ss        ij     misc        1         -     rh        "DVSFCG_ss"             "COLUMN-INTEGRATED V GWDO STRESS SMALL-SCALE"   "Pa m s-1"
+state   real   DUSFCG_fd        ij     misc        1         -     rh        "DUSFCG_fd"             "COLUMN-INTEGRATED U GWDO STRESS FORM-DRAG"   "Pa m s-1"
+state   real   DVSFCG_fd        ij     misc        1         -     rh        "DVSFCG_fd"             "COLUMN-INTEGRATED V GWDO STRESS FORM-DRAG"   "Pa m s-1"
+state   real   VAR2Dls          ij     misc        1         -     i012rhdus "VARls"                 "STANDARD DEVIATION of 2.5min-resolution topography"   "m"
+state   real   OC12Dls          ij     misc        1         -     i012rhdus "CONls"                 "OROGRAPHIC CONVEXITY of 2.5min-resolution topography"   ""
+state   real   OA1ls            ij     misc        1         -     i012rhdus "OA1ls"                 "OROGRAPHIC ASYMMETRY in West direction from 2.5min-resolution topography"   ""
+state   real   OA2ls            ij     misc        1         -     i012rhdus "OA2ls"                 "OROGRAPHIC ASYMMETRY in South direction from 2.5min-resolution topography"   ""
+state   real   OA3ls            ij     misc        1         -     i012rhdus "OA3ls"                 "OROGRAPHIC ASYMMETRY in South-West direction from 2.5min-resolution topography"   ""
+state   real   OA4ls            ij     misc        1         -     i012rhdus "OA4ls"                 "OROGRAPHIC ASYMMETRY in North-West direction from 2.5min-resolution topography"   ""
+state   real   OL1ls            ij     misc        1         -     i012rhdus "OL1ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 2.5min-resolution topography"   ""
+state   real   OL2ls            ij     misc        1         -     i012rhdus "OL2ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 2.5min-resolution topography"   ""
+state   real   OL3ls            ij     misc        1         -     i012rhdus "OL3ls"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 2.5min-resolution topography"   ""
+state   real   OL4ls            ij     misc        1         -     i012rhdus "OL4ls"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 2.5min-resolution topography"   ""
+state   real   VAR2Dss          ij     misc        1         -     i012rhdus "VARss"                 "STANDARD DEVIATION of 30sec-resolution topography"   "m"
+state   real   OC12Dss          ij     misc        1         -     i012rhdus "CONss"                 "OROGRAPHIC CONVEXITY of 30sec-resolution topography"   ""
+state   real   OA1ss            ij     misc        1         -     i012rhdus "OA1ss"                 "OROGRAPHIC ASYMMETRY in West direction from 30sec-resolution topography"   ""
+state   real   OA2ss            ij     misc        1         -     i012rhdus "OA2ss"                 "OROGRAPHIC ASYMMETRY in South direction from 30sec-resolution topography"   ""
+state   real   OA3ss            ij     misc        1         -     i012rhdus "OA3ss"                 "OROGRAPHIC ASYMMETRY in South-West direction from 30sec-resolution topography"   ""
+state   real   OA4ss            ij     misc        1         -     i012rhdus "OA4ss"                 "OROGRAPHIC ASYMMETRY in North-West direction from 30sec-resolution topography"   ""
+state   real   OL1ss            ij     misc        1         -     i012rhdus "OL1ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 30sec-resolution topography"   ""
+state   real   OL2ss            ij     misc        1         -     i012rhdus "OL2ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 30sec-resolution topography"   ""
+state   real   OL3ss            ij     misc        1         -     i012rhdus "OL3ss"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 30sec-resolution topography"   ""
+state   real   OL4ss            ij     misc        1         -     i012rhdus "OL4ss"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 30sec-resolution topography"   ""
+
 # Additional for topo_wind
 state    real   ctopo             ij      misc        1         -     rdu         "ctopo"              "Correction for topography"       ""
 state    real   ctopo2            ij      misc        1         -     rdu         "ctopo2"             "Correction for topography 2"     ""
@@ -2251,7 +2289,8 @@ rconfig   integer fft_used                derived               1             0 
 rconfig   integer cu_used                 derived               1             0       -     "cu_used"   "turn on if any cumulus scheme is used"
 rconfig   integer shcu_used               derived               1             0       -     "shcu_used" "turn on if any shallow cumulus scheme is used"
 rconfig   integer cam_used                derived               1             0       -     "cam_used"  "turn on if one of the following CAM schemes is used: MP, PBL, SHCU"
-rconfig   integer gwd_used                derived               1             0       -     "gwd_used"  "turn on if gwd_opt is on on any domains"
+rconfig   integer gwd_used                derived               1             0       -     "gwd_used"  "takes on the non-zero value of gwd_opt used on any domain"
+rconfig   integer gwd_diags_used          derived               1             0       -     "gwd_diags_used"  "takes on the non-zero value of gwd_opt used on any domain if gwd_diags==1"
 rconfig   integer alloc_qndropsource      derived               1             0       -     "alloc_qndropsource"  "allocate qndropsource if CHEM==1 or if progn=1"
 
 rconfig   integer   num_moves       namelist,domains    1                0
@@ -2712,8 +2751,9 @@ rconfig   integer km_opt                  namelist,dynamics	max_domains   -1    
 rconfig   integer km_opt_dfi              namelist,dynamics	max_domains   1       irh    "km_opt_dfi"            ""      ""
 rconfig   integer damp_opt                namelist,dynamics	1             3       irh    "damp_opt"              ""      ""
 rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
-rconfig   integer gwd_opt                 namelist,dynamics     max_domains   0       irh    "gwd_opt"              ""      ""
-rconfig   real    max_rot_angle_gwd       namelist,dynamics     1             22.5    irh    "max_rot_angle_gwd"    "max projection rotation angle permitted for gwd_opt=1"      ""
+rconfig   integer gwd_opt                 namelist,dynamics     max_domains   0       irh    "gwd_opt"               ""      ""
+rconfig   integer gwd_diags               namelist,dynamics     1             0       irh    "gwd_diags"             "switch to turn on extra gwd diagnostics if available for given gwd_opt"      ""
+rconfig   real    max_rot_angle_gwd       namelist,dynamics     1             22.5    irh    "max_rot_angle_gwd"    "max projection rotation angle permitted for gravity wave drag"      ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.2     h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
@@ -3094,9 +3134,12 @@ package   swintopt2      swint_opt==2               -              state:swdown2
 package   aercuopt       aercu_used==1              -              state:aeromcu,CU_UAF,EFCS,EFIS,EFSS,qr_cu,qs_cu,nc_cu,ni_cu,nr_cu,ns_cu,ccn_cu,aerovar;aerocu:cu_sulfate,cu_seasalt,cu_dust1,cu_dust2,cu_dust3,cu_dust4,cu_phoocar,cu_phiocar,cu_phobcar,cu_phibcar
 
 package   slopeopt       slope_rad==1               -              -
-package   gwd_used       gwd_used==1                -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg
+package   gwd_used_1     gwd_used==1                -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg
+package   gwd_used_3     gwd_used==3                -              state:var2dls,oc12dls,oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,ol3ls,ol4ls,var2dss,oc12dss,oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss 
+package   gwd_diags_used_3   gwd_diags_used==3      -              state:dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,dusfcg_ls,dvsfcg_ls,dusfcg_bl,dvsfcg_bl,dusfcg_ss,dvsfcg_ss,dusfcg_fd,dvsfcg_fd
 package   nogwdopt       gwd_opt==0                 -              -
 package   gwdopt         gwd_opt==1                 -              -
+package   gwdoptgsl      gwd_opt==3                 -              -
 package   omlscheme      sf_ocean_physics==1        -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
 package   pwp3dscheme    sf_ocean_physics==2        -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml,om_tmp,om_s,om_depth,om_u,om_v,om_lat,om_lon,om_ml,om_tini,om_sini
 

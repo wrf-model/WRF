@@ -43,6 +43,7 @@ MODULES = \
 	module_bl_mynn.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
+	module_bl_gwdo_gsl.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
 	module_checkerror.o \

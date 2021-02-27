@@ -759,6 +759,21 @@
          END IF
       ENDDO
 
+!-----------------------------------------------------------------------
+! Check that all values of gwd_opt are the same for all domains
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % gwd_opt(i) .NE. model_config_rec % gwd_opt(1) ) .AND. &
+              ( model_config_rec % gwd_opt(i) .NE. 0                             ) ) THEN 
+            wrf_err_message = '--- ERROR: gwd_opt must be equal for all domains (or = zero)'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix gwd_opt in namelist.input '
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that all values of cu_physics are the same for all domains
@@ -1599,17 +1614,31 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-!  We need to know if the orographic gravity wave drag scheme is active 
-!  on any domains. This allows the model to allocate space.
+!  We need to know if the any of the orographic gravity wave drag schemes
+!  are active on any domains. This allows the model to allocate space.
 !-----------------------------------------------------------------------
 
       model_config_rec%gwd_used = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%gwd_opt(i) .NE. NOGWDOPT ) THEN
+         IF ( model_config_rec%gwd_opt(i) .EQ. 1 ) THEN
             model_config_rec%gwd_used = 1
          END IF
       ENDDO
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%gwd_opt(i) .EQ. 3 ) THEN
+            model_config_rec%gwd_used = 3
+         END IF
+      ENDDO
+      ! Check if user is requesting extra gravity-wave-drag diagnostics
+      ! for a given GWD scheme
+      ! Only assigned to gwd_opts that have diagnostics available
+      model_config_rec%gwd_diags_used = 0
+      IF ( model_config_rec%gwd_used .EQ. 3 .AND.     &
+           model_config_rec%gwd_diags .EQ. 1 ) THEN
+         model_config_rec%gwd_diags_used = 3
+      END IF
 
 !-----------------------------------------------------------------------
 ! Make sure microphysics option without QICE array cannot be used with icloud=3

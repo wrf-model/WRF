@@ -5866,7 +5866,7 @@ CONTAINS
                                                 WSPD_HOLD,        &
                                                 ZNT_HOLD,         &
                                                 ZOL_HOLD,         &
-                                                QSFS_HOLD,        &
+                                                QSFC_HOLD,        &
                                                 TH2_HOLD,         & !ssib
                                                 T2_HOLD,          & !ssib
                                                 Q2_HOLD,          & !ssib

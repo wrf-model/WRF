@@ -717,7 +717,7 @@ state   real   soilcbot            isj   misc          1     Z     i012rdu   "SO
 state   real   soilcat             ij    misc          1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
 state   real   vegcat              ij    misc          1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
 
-state   real   pct_pft_input       i{npft}j   misc        1     Z     i012rh   "PCT_PFT"   "PFT PERCENTAGE BY CATEGORY"  ""
+state   real   pct_pft_input i{npft}j    misc          1     Z     i012rh   "PCT_PFT"   "PFT PERCENTAGE BY CATEGORY"  ""
 state   real   irrigation          ij    misc          1     -     i012rdu "IRRIGATION"    "irrigated land percentage" ""
 state   integer   irr_rand_field   ij    misc          1     -     hrdu    "IRR_PH_FIELD"  "irrigated land percentage" ""
 

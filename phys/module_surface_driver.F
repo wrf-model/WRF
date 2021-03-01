@@ -1426,15 +1426,15 @@ CONTAINS
   real,    dimension(ims:ime,1:maxpatch,jms:jme ) ::  q_ref2m   ! clm
 
 !jdf
-  real,  intent(inout) :: t_veg24(ims:ime,1:maxpatch,jms:jme)      ! voce accum variables
-  real,  intent(inout) :: t_veg240(ims:ime,1:maxpatch,jms:jme)
-  real,  intent(inout) :: fsun24(ims:ime,1:maxpatch,jms:jme)
-  real,  intent(inout) :: fsun240(ims:ime,1:maxpatch,jms:jme)
-  real,  intent(inout) :: fsd24(ims:ime,1:maxpatch,jms:jme)
-  real,  intent(inout) :: fsd240(ims:ime,1:maxpatch,jms:jme)
-  real,  intent(inout) :: fsi24(ims:ime,1:maxpatch,jms:jme)
-  real,  intent(inout) :: fsi240(ims:ime,1:maxpatch,jms:jme)
-  real,  intent(inout) :: laip(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: t_veg24(ims:ime,1:maxpatch,jms:jme)      ! voce accum variables
+  real,  intent(inout),optional :: t_veg240(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsun24(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsun240(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsd24(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsd240(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsi24(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsi240(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: laip(ims:ime,1:maxpatch,jms:jme)
 !jdf
 
 !------------------------------------------------------------------

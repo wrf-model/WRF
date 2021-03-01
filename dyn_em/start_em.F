@@ -77,7 +77,6 @@
                            ipsy, ipey, jpsy, jpey, kpsy, kpey
 
    INTEGER     :: i_m
-   INTEGER     :: numgas
 
    REAL        :: p_top_test, p00, t00, a, tiso, p_surf, pd_surf, temp, tiso_tmp
    REAL        :: p_strat, a_strat
@@ -87,6 +86,7 @@
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) :: &
                       z_at_w,convfac
    REAL :: tempfac
+   INTEGER     :: numgas
 #endif
 
    REAL :: qvf1, qvf2, qvf

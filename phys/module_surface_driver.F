@@ -5866,6 +5866,7 @@ CONTAINS
                                                 WSPD_HOLD,        &
                                                 ZNT_HOLD,         &
                                                 ZOL_HOLD,         &
+                                                QSFC_HOLD,        &
                                                 TH2_HOLD,         & !ssib
                                                 T2_HOLD,          & !ssib
                                                 Q2_HOLD,          & !ssib
@@ -5945,6 +5946,7 @@ CONTAINS
      WSPD_HOLD(its:ite,jts:jte)   = WSPD(its:ite,jts:jte)
      ZNT_HOLD(its:ite,jts:jte)    = ZNT(its:ite,jts:jte)
      ZOL_HOLD(its:ite,jts:jte)    = ZOL(its:ite,jts:jte)
+     QSFC_HOLD(its:ite,jts:jte)   = QSFC(its:ite,jts:jte)
 !also save these variables for SSIB (fds 12/2010)
      TH2_HOLD(its:ite,jts:jte)    = TH2(its:ite,jts:jte)
      T2_HOLD(its:ite,jts:jte)     = T2(its:ite,jts:jte)
@@ -6050,6 +6052,8 @@ CONTAINS
      UST_SEA(its:ite,jts:jte)    = UST_HOLD(its:ite,jts:jte)
      WSPD_SEA(its:ite,jts:jte)   = WSPD_HOLD(its:ite,jts:jte)
      ZOL_SEA(its:ite,jts:jte)    = ZOL_HOLD(its:ite,jts:jte)
+     ZNT_SEA(its:ite,jts:jte)    = ZNT_HOLD(its:ite,jts:jte)
+     QSFC_SEA(its:ite,jts:jte)   = QSFC_HOLD(its:ite,jts:jte)
 !
      ! open-water call
      call sfclayrev(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
@@ -6285,6 +6289,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                                                 WSPD_HOLD,        &
                                                 ZNT_HOLD,         &
                                                 ZOL_HOLD,         &
+                                                QSFC_HOLD,        &
                                                 TH2_HOLD,         & !ssib
                                                 T2_HOLD,          & !ssib
                                                 Q2_HOLD,          & !ssib
@@ -6365,6 +6370,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      WSPD_HOLD(its:ite,jts:jte)   = WSPD(its:ite,jts:jte)
      ZNT_HOLD(its:ite,jts:jte)    = ZNT(its:ite,jts:jte)
      ZOL_HOLD(its:ite,jts:jte)    = ZOL(its:ite,jts:jte)
+     QSFC_HOLD(its:ite,jts:jte)   = QSFC(its:ite,jts:jte)
 !also save these variables for SSIB (fds 12/2010)
      TH2_HOLD(its:ite,jts:jte)    = TH2(its:ite,jts:jte)
      T2_HOLD(its:ite,jts:jte)     = T2(its:ite,jts:jte)
@@ -6472,6 +6478,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      UST_SEA(its:ite,jts:jte)    = UST_HOLD(its:ite,jts:jte)
      WSPD_SEA(its:ite,jts:jte)   = WSPD_HOLD(its:ite,jts:jte)
      ZOL_SEA(its:ite,jts:jte)    = ZOL_HOLD(its:ite,jts:jte)
+     ZNT_SEA(its:ite,jts:jte)    = ZNT_HOLD(its:ite,jts:jte)
+     QSFC_SEA(its:ite,jts:jte)   = QSFC_HOLD(its:ite,jts:jte)
 !
      ! open-water call
      call sfclay(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I

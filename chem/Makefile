@@ -1,8 +1,3 @@
-#  
-# MANUAL CHANGES TO THIS FILE WILL BE LOST 
-#  ... EDIT Makefile_org INSTEAD ...
-# this file was written by gen_kpp.c 
-
 #
 #  Changing this file requires mods to 
 #	WRFV3_top/chem/KPP/util/wkc/change_chem_Makefile.c

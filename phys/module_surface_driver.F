@@ -5947,7 +5947,6 @@ CONTAINS
      ZNT_HOLD(its:ite,jts:jte)    = ZNT(its:ite,jts:jte)
      ZOL_HOLD(its:ite,jts:jte)    = ZOL(its:ite,jts:jte)
      QSFC_HOLD(its:ite,jts:jte)   = QSFC(its:ite,jts:jte)
-     
 !also save these variables for SSIB (fds 12/2010)
      TH2_HOLD(its:ite,jts:jte)    = TH2(its:ite,jts:jte)
      T2_HOLD(its:ite,jts:jte)     = T2(its:ite,jts:jte)

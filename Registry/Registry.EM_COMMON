@@ -3166,8 +3166,7 @@ halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,qv_diabatic,qc_diabatic,msftx,m
 halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
 halo      HALO_EM_INIT_6 dyn_em 48:om_tmp,om_s,om_u,om_v,om_depth,om_tini,om_sini,om_lat,om_lon,om_ml
 halo      HALO_EM_VINTERP_UV_1 dyn_em 48:pd_gc,pb,pmaxw,ptrop,pmaxwnn,ptropnn
-#halo      HALO_EM_A dyn_em  8:u_1,u_2,v_1,v_2,ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
-halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
+halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut,rho
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
 halo      HALO_EM_PHYS_CU dyn_em         4:rucuten,rvcuten

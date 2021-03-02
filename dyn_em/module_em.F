@@ -440,7 +440,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 ! Code for splitting vertical velocity into ex/im parts
 
    CALL WW_SPLIT(wwE, wwI, ph, phb,                &
-                 u_old, v_old, ww,                 &
+                 u,  v,  ww,                       &
                  mut, rdnw, msfty,                 &
                  c1f, c2f,                         &
                  rdx, rdy, msfux, msfuy,           &

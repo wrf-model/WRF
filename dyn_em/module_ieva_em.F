@@ -216,8 +216,12 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 !            cy = rdy*(max(v(i,  k-1,j+1), 0.0) - min(v(i,k-1,j), 0.0))
 !          ENDIF
 
+           cx = 0.25*rdx*(u(i+1,k,j  ) + u(i,k,j) + u(i+1,k-1,j  ) + u(i,k-1,j)) 
+           cy = 0.25*rdy*(v(i,  k,j+1) + v(i,k,j) + v(i  ,k-1,j+1) + v(i,k-1,j)) 
+
+!          cw_max = alpha_max                                              ! Using simpler version...
 !          cw_max = max(alpha_max - dt*Ceps*(cx + cy),0.0)                 ! adjusted max vertical courant
-           cw_max = alpha_max                                              ! Using simpler version...
+           cw_max = max(alpha_max - dt*Ceps*sqrt(cx**2 + cy**2),0.0)       ! adjusted max vertical courant
 
            cr     = ww(i,k,j) * dt * rdnw(k) / (c1f(k)*mut(i,j)+c2f(k))    ! vertical courant number
          

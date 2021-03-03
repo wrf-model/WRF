@@ -524,6 +524,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 52, P3 2-ice categories plus double-moment cloud water
                                      = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
                                            for each ice
+                                     = 56, NTU multi-moment scheme  ! for ntu3m
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
@@ -559,6 +560,11 @@ Namelist variables for controlling the adaptive time step option:
  use_mp_re                           = 1       ! whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
                                                  0: do not use; 1: use effective radii
                                                  (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21,28)
+
+ CCNTY                               = 1       ! for aerosol background type, marine,  for ntu3m
+                                     = 2       ! continental clean (default), for ntu3m
+                                     = 3       ! continental average, for ntu3m
+                                     = 4       ! continental urban, for ntu3m
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
@@ -596,6 +602,8 @@ Namelist variables for controlling the adaptive time step option:
                                               use the same value for all nests.                      
  cldovrlp                            = 2,   ! cloud overlapping option for RRTMG only. 1=random, 2=maximum-random (default), 
                                               3=maximum, 4=exponential, 5=exponential-random
+ ra_sw_eclipse                       = 0,   ! eclipse effect on shortwave radiation. 0: off, 1: on. 
+                                              Applies to RRTMG, Goddard, old Goddard and Dudhia schemes
 
  nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
                                                 calls to shortwave radiation; the value
@@ -686,9 +694,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0: no
                                      = 1: Single-layer, UCM 
                                      = 2: Multi-layer, Building Environment Parameterization (BEP) scheme 
-                                          (works only with MYJ and BouLac PBL)
+                                          (works only with YSU, MYJ and BouLac PBL)
                                      = 3: Multi-layer, Building Environment Model (BEM) scheme 
-                                          (works only with MYJ and BouLac PBL)
+                                          (works only with YSU, MYJ and BouLac PBL)
 
  num_urban_ndm                       = 1! (=  2 if BEP or BEM active) maximum number of street dimensions (ndm in BEP or BEM header)
  num_urban_ng                        = 1! (= 10 if BEP or BEM active) number of grid levels in the ground (ng_u in BEP or BEM header)
@@ -730,6 +738,8 @@ Namelist variables for controlling the adaptive time step option:
                                           sf_sfclay_physics=10
                                      = 11, Shin-Hong 'scale-aware' PBL scheme
                                      = 12, Grenier-Bretherton-McCaa scheme (ARW only)
+                                     = 16, TKE+TKE dissipation rate (epsilon) scheme (ARW only)
+                                           works with surface layer options 1,91,2,5.
                                      = 93, 2015 GFS scheme (NMM only)
                                      = 99, MRF scheme
 
@@ -1075,6 +1085,12 @@ Namelist variables for lake module:
  iccg_prescribed_den (max_dom)       = 1.       ! Denominator of user-specified prescribed IC:CG
  ltng_temp_upper                     = -45.     ! Temperature (C) of upper peak of LNOx vertical distribution for IC lightning (used by &chem lnox_opt=2).
  ltng_temp_lower                     = -15.     ! Temperatures (C) of lower peak of LNOx vertical distribution for both IC and CG lightning (used by &chem lnox_opt=2).
+
+ madwrf_opt = 0         ! MAD-WRF model: 0) Off, 1) Advect/diffuse hydrometeors (qcloud, qice, qsnow),  2) Nudge advected/diffused hydrometeors to model state.
+ madwrf_dt_relax = 60.0 ! Relaxation time for hydrometeor nudging [s]
+ madwrf_dt_nudge = 60.0 ! Temporal period for hydrometeor nudging [min]
+ madwrf_cldinit = 0     ! Enhance cloud initialization: 0: Off, 1: On
+
 
 Options for wind turbine drag parameterization:
 
@@ -1535,6 +1551,7 @@ The following are for observation nudging:
  chem_adv_opt (max_dom)              = 1        ! for chem variables
  tracer_adv_opt (max_dom)            = 1        ! for tracer variables (WRF-Chem activated)
  tke_adv_opt (max_dom)               = 1        ! for tke
+ phi_adv_z (max_dom)                 = 1        ! vertical advection option for geopotential; 1: original (default) 2: avoid double staggering of omega
  moist_mix2_off (max_dom)            = .false.  ! if set to T, deactivate 2nd-order horizontal mixing for moisture. default is F.
  chem_mix2_off (max_dom)             = .false.  ! if set to T, deactivate 2nd-order horizontal mixing for chem species. default is F.
  tracer_mix2_off (max_dom)           = .false.  ! if set to T, deactivate 2nd-order horizontal mixing for tracers. default is F. 
@@ -1569,6 +1586,8 @@ The following are for observation nudging:
  gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
                                      = 1       ; for running the WRF-ARW with its gravity wave drag
                                      = 2       ; for running the WRF-NMM with its gravity wave drag
+                                     = 3       ; NOAA/GSL gravity wave drag and turbulent orographic form drag
+ gwd_diags                           = 0       ; set to 1 to output diagnostics for gwd_opt = 3
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
                                      = 1       ! NBA1 using diagnostic stress terms (km_opt=2,3 for scalars)
                                      = 2       ! NBA2 using tke-based stress terms (km_opt=2 needed)

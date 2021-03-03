@@ -467,6 +467,10 @@ HSEQUIP: 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.5 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 
 
 HSEQUIP_SCALE_FACTOR: 16.00, 20.00, 36.00
 
+
+
+
+
 STREET PARAMETERS:
 #      (sf_urban_physics=2,3)
 

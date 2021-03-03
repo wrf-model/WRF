@@ -157,6 +157,10 @@ module_clear_halos.o: module_configure.o \
 
 # DEPENDENCIES for phys
 
+module_madwrf.o: ../share/module_model_constants.o \
+		../share/module_soil_pre.o \
+		../phys/module_mp_thompson.o
+
 module_bl_myjpbl.o: ../share/module_model_constants.o
 
 module_bl_myjurb.o: ../share/module_model_constants.o
@@ -475,9 +479,9 @@ module_sf_noahmplsm.o:	../share/module_model_constants.o \
 
 module_sf_noahmp_groundwater.o:	module_sf_noahmplsm.o
 
-module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o
+module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o module_bep_bem_helper.o
 
-module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o
+module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o module_bep_bem_helper.o
 
 module_sf_bem.o: ../share/module_model_constants.o
 
@@ -685,6 +689,7 @@ module_pbl_driver.o:  \
 		module_bl_mynn.o \
 		module_bl_fogdes.o \
 		module_bl_gwdo.o \
+		module_bl_gwdo_gsl.o \
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
 		$(PHYS_BL) \
@@ -1028,7 +1033,8 @@ module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
 
 module_check_a_mundo.o: ../frame/module_configure.o ../frame/module_wrf_error.o \
 		../frame/module_state_description.o \
-		../share/module_model_constants.o
+		../share/module_model_constants.o \
+		../phys/module_bep_bem_helper.o
 
 dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
 		../frame/module_state_description.o \

@@ -48,6 +48,8 @@
 !
 !</DESCRIPTION>
 
+      USE module_bep_bem_helper, ONLY: nurbm
+
       IMPLICIT NONE
 
       LOGICAL :: exists, vnest
@@ -106,7 +108,6 @@
          INTEGER FUNCTION bep_bem_nbui_max() 
          END FUNCTION bep_bem_nbui_max
       END INTERFACE
-
 
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
@@ -367,6 +368,20 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check  MAD-WRF configuration
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % madwrf_opt .EQ. 1 .AND.     &
+             (model_config_rec % mp_physics(i) .NE. 96 .or. &
+              model_config_rec % use_mp_re /= 0)) THEN
+            wrf_err_message = '--- ERROR: madwrf_opt = 1 requires mp_physics=96 and use_mp_re=0'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Check that SMS-3DTKE scheme Must work with Revised MM5 surface layer 
 ! scheme (sf_sfclay_physics = 1), MYNN surface (sf_sfclay_physics = 5)
 ! and old MM5 surface scheme (sf_sfclay_physics = 91). Also, SMS-3DTKE
@@ -386,6 +401,19 @@
             count_fatal_error = count_fatal_error + 1
          END IF
       ENDDO
+
+!-----------------------------------------------------------------------
+! Urban physics set up. If the run-time option for use_wudapt_lcz = 0,
+! then the number of urban classes is 3. Else, if the use_wudapt_lcz = 1, 
+! then the number increases to 11. The seemingly local variable 
+! assignment, "nurbm", is actually USE associated from the BEP BEM 
+! helper module.
+!-----------------------------------------------------------------------
+      IF      ( model_config_rec%use_wudapt_lcz .EQ. 0 ) THEN
+         nurbm = 3
+      ELSE IF ( model_config_rec%use_wudapt_lcz .EQ. 1 ) THEN
+         nurbm = 11
+      END IF
 
 !-----------------------------------------------------------------------
 ! Assign the dimensions for the urban options to the values defined in 
@@ -759,6 +787,21 @@
          END IF
       ENDDO
 
+!-----------------------------------------------------------------------
+! Check that all values of gwd_opt are the same for all domains
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % gwd_opt(i) .NE. model_config_rec % gwd_opt(1) ) .AND. &
+              ( model_config_rec % gwd_opt(i) .NE. 0                             ) ) THEN 
+            wrf_err_message = '--- ERROR: gwd_opt must be equal for all domains (or = zero)'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix gwd_opt in namelist.input '
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that all values of cu_physics are the same for all domains
@@ -1599,17 +1642,31 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-!  We need to know if the orographic gravity wave drag scheme is active 
-!  on any domains. This allows the model to allocate space.
+!  We need to know if the any of the orographic gravity wave drag schemes
+!  are active on any domains. This allows the model to allocate space.
 !-----------------------------------------------------------------------
 
       model_config_rec%gwd_used = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%gwd_opt(i) .NE. NOGWDOPT ) THEN
+         IF ( model_config_rec%gwd_opt(i) .EQ. 1 ) THEN
             model_config_rec%gwd_used = 1
          END IF
       ENDDO
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%gwd_opt(i) .EQ. 3 ) THEN
+            model_config_rec%gwd_used = 3
+         END IF
+      ENDDO
+      ! Check if user is requesting extra gravity-wave-drag diagnostics
+      ! for a given GWD scheme
+      ! Only assigned to gwd_opts that have diagnostics available
+      model_config_rec%gwd_diags_used = 0
+      IF ( model_config_rec%gwd_used .EQ. 3 .AND.     &
+           model_config_rec%gwd_diags .EQ. 1 ) THEN
+         model_config_rec%gwd_diags_used = 3
+      END IF
 
 !-----------------------------------------------------------------------
 ! Make sure microphysics option without QICE array cannot be used with icloud=3
@@ -2581,6 +2638,28 @@
                            'o3input=0 to avoid data pre-processing'
          CALL wrf_debug ( 1, wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
+!  Consistency checks between eclipse option and shortwave radiation
+!  scheme selection. Eclipse option only applies to
+!  RRTMG_SWSCHEME, SWRADSCHEME, GSFCSWSCHEME and GODDARDSWSCHEME
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+        IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%ra_sw_eclipse == 1 ) THEN
+          IF ( ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) .OR. &
+               ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
+               ( model_config_rec%ra_sw_physics(i) .EQ. GSFCSWSCHEME        ) .OR. &
+               ( model_config_rec%ra_sw_physics(i) .EQ. GODDARDSWSCHEME     ) ) THEN
+             !  We are OK, these sw radiation schemes have eclipse physics
+          ELSE
+            wrf_err_message = '--- ERROR: ra_sw_eclipse=1 only works with ra_sw_physics=1 (Dudhia), ' // &
+                              '=2 (Old Goddard), =4 (RRTMG) and =5 (new Goddard) '
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+          END IF
+         END IF
+      END DO
 
 #if (WRF_CHEM == 1 && WRF_KPP == 1 )
 !-----------------------------------------------------------------------

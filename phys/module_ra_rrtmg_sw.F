@@ -9917,6 +9917,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_SWRAD(                                        &
                        rthratensw,                                &
+                       rthratenswc,                               &
                        swupt, swuptc, swuptcln, swdnt, swdntc, swdntcln, &
                        swupb, swupbc, swupbcln, swdnb, swdnbc, swdnbcln, &
 !                      swupflx, swupflxc, swdnflx, swdnflxc,      &
@@ -9960,8 +9961,9 @@ CONTAINS
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,yr,julian                          & ! jararias 2013/08
-                                                                  )
+                       xcoszen,yr,julian,                          & ! jararias 2013/08
+                       obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
+                       )
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -9985,7 +9987,8 @@ CONTAINS
                                                            rho3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         INTENT(INOUT)  ::                            RTHRATENSW
+         INTENT(INOUT)  ::                            RTHRATENSW, &
+                                                      RTHRATENSWC
 
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GSW, &
@@ -10124,6 +10127,10 @@ CONTAINS
          OPTIONAL, INTENT(OUT) ::                                 &
                                SWUPFLX,SWUPFLXC,                  &
                                SWDNFLX,SWDNFLXC
+
+! amontornes-bcodina 2015/09 solar eclipses
+!  obscur --> degree of obscuration for solar eclipses prediction (2D)
+                               REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: obscur	
 
 !  LOCAL VARS
  
@@ -10636,8 +10643,11 @@ CONTAINS
 
 ! Set cosine of solar zenith angle
          coszen(ncol) = coszrs
-! Set solar constant
-         scon = solcon
+! Set solar constant (original) amontornes-bcodina 2015/09
+!         scon = solcon
+! amontornes-bcodina 2015/09 solar eclipses
+         scon = solcon*(1-obscur(i,j))
+         
 ! For Earth/Sun distance adjustment in RRTMG
 !         dyofyr = julday
 !         adjes = 0.0 
@@ -11214,6 +11224,8 @@ CONTAINS
          do k=kts,kte 
             tten1d(k) = swhr(ncol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
+            tten1d(k) = swhrc(ncol,k)/86400.
+            rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
       else
          if (present(swupt)) then 

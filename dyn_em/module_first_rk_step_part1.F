@@ -277,6 +277,7 @@ BENCH_START(rad_driver_tim)
      &        ,RHO=grid%rho            ,RLWTOA=grid%rlwtoa                           &
      &        ,RSWTOA=grid%rswtoa      ,RTHRATEN=grid%rthraten                       &
      &        ,RTHRATENLW=grid%rthratenlw       ,RTHRATENSW=grid%rthratensw          &
+     &        ,RTHRATENLWC=grid%rthratenlwc     ,RTHRATENSWC=grid%rthratenswc        &
      &        ,SNOW=grid%snow          ,STEPRA=grid%stepra      ,SWDOWN=grid%swdown  &
      &        ,SWDOWNC=grid%swdownc    ,SW_PHYSICS=config_flags%ra_sw_physics        &
      &        ,T8W=t8w                 ,T=grid%t_phy           ,TAUCLDC=grid%taucldc &
@@ -438,7 +439,10 @@ BENCH_START(rad_driver_tim)
      &         ,slope_rad=config_flags%slope_rad,topo_shading=config_flags%topo_shading     &
      &         ,shadowmask=grid%shadowmask   &
      &         ,ht=grid%ht,dx=grid%dx,dy=grid%dy,dx2d=grid%dx2d,area2d=grid%area2d &           
-     &         ,diffuse_frac=grid%diffuse_frac &           
+     &         ,diffuse_frac=grid%diffuse_frac &  
+     &         ,obscur=grid%ECOBSC, mask=grid%ECMASK                       &
+     &         ,elat_track=grid%elat_track,elon_track=grid%elon_track      &
+     &         ,SW_ECLIPSE=config_flags%ra_sw_eclipse                      &         
      &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    &
      &         ,cw_rad=grid%cw_rad                     &
      &         ,shcu_physics=config_flags%shcu_physics                     &
@@ -1087,14 +1091,35 @@ BENCH_START(pbl_driver_tim)
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &
+!EEPS for ARW
+     &        ,pep=grid%pep_pbl                                           &
+     &        ,PEK_ADV=scalar(ims,kms,jms,P_pek_adv)                      &!TKEadvection
+     &        ,PEP_ADV=scalar(ims,kms,jms,P_pep_adv)                      &!TKEadvection
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
+     &        ,gwd_diags=config_flags%gwd_diags &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
      &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
      &        ,SINA=grid%sina,COSA=grid%cosa                              &
+     &        ,dtaux3d_ls=grid%dtaux3d_ls,dtauy3d_ls=grid%dtauy3d_ls      &
+     &        ,dtaux3d_bl=grid%dtaux3d_bl,dtauy3d_bl=grid%dtauy3d_bl      &
+     &        ,dtaux3d_ss=grid%dtaux3d_ss,dtauy3d_ss=grid%dtauy3d_ss      &
+     &        ,dtaux3d_fd=grid%dtaux3d_fd,dtauy3d_fd=grid%dtauy3d_fd      &
+     &        ,DUSFCG_ls=grid%dusfcg_ls,DVSFCG_ls=grid%dvsfcg_ls &
+     &        ,DUSFCG_bl=grid%dusfcg_bl,DVSFCG_bl=grid%dvsfcg_bl &
+     &        ,DUSFCG_ss=grid%dusfcg_ss,DVSFCG_ss=grid%dvsfcg_ss &
+     &        ,DUSFCG_fd=grid%dusfcg_fd,DVSFCG_fd=grid%dvsfcg_fd &
+     &        ,VAR2DLS=grid%var2dls,OC12DLS=grid%oc12dls                  &
+     &        ,OA1LS=grid%oa1ls,OA2LS=grid%oa2ls,OA3LS=grid%oa3ls         &
+     &        ,OA4LS=grid%oa4ls,OL1LS=grid%ol1ls,OL2LS=grid%ol2ls         &
+     &        ,OL3LS=grid%ol3ls,OL4LS=grid%ol4ls                          &
+     &        ,VAR2DSS=grid%var2dss,OC12DSS=grid%oc12dss                  &
+     &        ,OA1SS=grid%oa1ss,OA2SS=grid%oa2ss,OA3SS=grid%oa3ss         &
+     &        ,OA4SS=grid%oa4ss,OL1SS=grid%ol1ss,OL2SS=grid%ol2ss         &
+     &        ,OL3SS=grid%ol3ss,OL4SS=grid%ol4ss                          &
      &        ,MFSHCONV=config_flags%mfshconv                             &
      &        ,MASSFLUX_EDKF=grid%massflux_EDKF                           & 
      &        ,ENTR_EDKF=grid%entr_EDKF, DETR_EDKF=grid%detr_EDKF         &

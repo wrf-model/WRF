@@ -592,7 +592,7 @@ state  real   rrw       ijkb  dyn_nmm   1    -     rh       "RRW"       "Tracer"
 state  real   f_ice     ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_ICE"     "Frozen fraction of CWM"               ""
 state  real   f_rain    ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
 state  real   f_rimef   ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,1.0)u=(UpMassIKJ:@EExtrap,1.0)  "F_RIMEF"   "Rime factor"                          ""
-state  real   cldfra    ijk   dyn_nmm   1    -     rh023   "CLDFRA"    "Cloud fraction"                       ""
+state  real   cldfra    ijk   dyn_nmm   1    -     i023rhdu   "CLDFRA"    "Cloud fraction"                       ""
 state  real   CONVCLD   ij    dyn_nmm   1    -     r      "CONVCLD"    "BMJ CONVECTIVE CLOUD"                 "kg m-2"
 state  real   CCLDFRA   ikj   dyn_nmm   1    -     r      "CCLDFRA"    "CONVECTIVE CLOUD FRACTION"            ""
 state  real   sr        ij    dyn_nmm   1    -     irh023      "SR"        "Timestep mass ratio of snow:precip"   ""
@@ -843,6 +843,11 @@ state   real    qs             ijkfbt   moist       1         m     rh023u=(UpMa
 state   real    qg             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 state   real    qh             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
 
+# MAD-WRF
+state   real    -              ijkfbt   tracer      1         m     -    -
+state   real    tr_qc          ijkfbt   tracer      1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "tr_qcloud"      "Tracer with the liquid content" "kg kg-1"
+state   real    tr_qi          ijkfbt   tracer      1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "tr_qice"        "Tracer with the ice content"    "kg kg-1"
+state   real    tr_qs          ijkfbt   tracer      1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "tr_qsnow"       "Tracer with the snow content"   "kg kg-1"
 
 state   real    -              ijkfbt   dfi_moist       1         m     -    -
 state   real    dfi_qv         ijkfbt   dfi_moist       1         m     r      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
@@ -872,7 +877,6 @@ state   real    qnifa          ikjftb  scalar      1         m     i01h023ru=(Up
 state   real    qndrop         ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
 state   real    qrimef         ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QRIMEF"           "rime factor * qi" "kg kg-1"
 
-
 state   real    -              ijkftb  dfi_scalar      1         m     -   -
 state   real    dfi_qndrop     ijkftb  dfi_scalar      1         m     \
    rsu=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)    "DFI_QNDROP"    "DFI Droplet number mixing ratio"        "# kg-1"
@@ -896,6 +900,12 @@ state   real    dfi_qnwfa      ikjftb  dfi_scalar      1         m     \
    rsu=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)    "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
 state   real    dfi_qnifa      ikjftb  dfi_scalar      1         m     \
    rsu=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)    "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
+
+# MAD-WRF
+state     real    brtemp         ij       dyn_em      1         -    i01h "brtemp"   "Brightness temperature to calc cloud top height" "K"
+state     real    cldmask        ij       dyn_em      1         -    i01h "cldmask"  "Cloud mask" "-"
+state     real    cldtopz        ij       dyn_em      1         -    i01h "cldtopz"  "Cloud top height above sea level" "m asl"
+state     real    cldbasez       ij       dyn_em      1         -    i01h "cldbasez" "Cloud base height above ground level" "m agl"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1445,6 +1455,7 @@ rconfig   integer     do_radar_ref        namelist,physics      1              0
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh0123       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh0123       "ra_sw_physics"         ""      ""
+rconfig   integer     ra_sw_eclipse       namelist,physics      1              0       rh           "ra_sw_eclipse"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh0123       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh0123       "sf_surface_physics"            ""      ""
@@ -1507,6 +1518,7 @@ rconfig   integer maxens3                 namelist,physics	1            16      
 rconfig   integer ensdim                  namelist,physics	1            144      irh    "ensdim"                    ""      ""
 rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
 rconfig   integer num_land_cat            namelist,physics	1            24       -      "num_land_cat"                  ""      ""
+rconfig   integer use_wudapt_lcz          namelist,physics      1             0       -      "use_wudapt_lcz"                  ""      ""
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
 rconfig   integer topo_wind               namelist,physics      max_domains    0       -     "topo_wind"  "2: Use Mass sfc drag scheme, 1: improve effects topography over surface wind, 0:not" ""
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
@@ -1599,6 +1611,12 @@ rconfig   real    aercu_fct               namelist,physics      1             1.
 
 rconfig   integer ICLOUD_CU               derived               1             0        -     "ICLOUD_CU"                     ""      ""
 rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
+
+# MAD-WRF
+rconfig   integer madwrf_opt          namelist,physics      1              0       rh    "madwrf_opt" "MAD-WRF model" "0: off, 1: Advect/diffuse hydromets, 2: Nudge advected/diffused hydrometes to model state"
+rconfig   real    madwrf_dt_relax            namelist,physics      1              60.     rh    "madwrf_dt_relax" "Relaxation time for hydrometeor nudging"  "s"
+rconfig   real    madwrf_dt_nudge            namelist,physics      1              60.     rh    "madwrf_dt_nudge" "Temporal period for hydrometeor nudging"  "Min"
+rconfig   integer madwrf_cldinit             namelist,physics      1              0       rh    "madwrf_cldinit"  "Enhance cloud initialization" "0: Off, 1: On"
 
 # cam radiation variables
 state  real    -       i{ls}jf ozmixm      1    -   -     -
@@ -1797,11 +1815,19 @@ package   wdm7scheme    mp_physics==26               -             moist:qv,qc,q
 package   p3_1category    mp_physics==50               -             moist:qv
 package   p3_1category_nc mp_physics==51               -             moist:qv
 package   p3_2category    mp_physics==52               -             moist:qv
+package   p3_1cat_3mom    mp_physics==53               -             moist:qv
+package   ntu             mp_physics==56               -             moist:qv
 package   jensen_ishmael    mp_physics==86               -             moist:qv
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   etampnew      mp_physics==95               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
 package   gsfcgcescheme mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 package   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_max
+package   madwrf_mp       mp_physics==96               -             moist:qv,qc,qi,qs
+
+
+# MAD-WRF
+package   cldinit         madwrf_cldinit==1            -             state:brtemp,cldmask,cldtopz,cldbasez
+package   madwrf          madwrf_opt==2                -             tracer:tr_qc,tr_qi,tr_qs
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
@@ -1850,6 +1876,7 @@ package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 package   hwrfswscheme  ra_sw_physics==98            -             state:o3rad
 package   heldsuarez    ra_lw_physics==31            -             -
+package   eclipsescheme   ra_sw_eclipse==1           -             -
 
 package   nosfcscheme    sf_sfclay_physics==0        -             -
 package   sfclayscheme   sf_sfclay_physics==91       -             -

@@ -13,6 +13,10 @@ MODULE module_physics_init
    USE module_state_description
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+   USE module_dm, ONLY : wrf_dm_max_real
+#endif
+
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
@@ -49,6 +53,8 @@ CONTAINS
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
 #if ( EM_CORE == 1 )
+                         PRES,RHOA,CCNTY,QDCN,QTCN,QCCN,QRCN,    & ! for ntu3m
+                         QNIN,                                   & ! for ntu3m
                          re_cloud_gsfc, re_ice_gsfc,             & 
                          re_snow_gsfc,                           & ! Goddard
                          re_graupel_gsfc, re_hail_gsfc,          &
@@ -246,6 +252,7 @@ CONTAINS
                          ,xtime1, PBLHAVG, TKEAVG               &
                          ,ccn_conc                             & ! RAS
                          ,QKE                                  & !for MYNN
+                         ,pep                                  & ! EEPS
                          ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
                          ,TSK_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic                                     & ! danli mosaic
                          ,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic                                 & ! danli mosaic
@@ -460,7 +467,7 @@ CONTAINS
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
-  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE
+  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE,pep
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                                             massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -697,6 +704,11 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme), INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
+#if ( EM_CORE == 1 )
+   INTEGER, OPTIONAL, INTENT(IN) :: CCNTY                                               ! for ntu3m
+   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA          ! for ntu3m
+   REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN  ! for ntu3m
+#endif
 ! lake varibles:
   real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
                                                                              savedtke12d
@@ -953,7 +965,8 @@ CONTAINS
          config_flags%mp_physics  .eq. JENSEN_ISHMAEL .or.  &
          config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
          config_flags%mp_physics  .eq. P3_1CATEGORY_NC .or. &
-         config_flags%mp_physics  .eq. P3_2CATEGORY    ) ) then    ! P3
+         config_flags%mp_physics  .eq. P3_2CATEGORY .or.    &    
+         config_flags%mp_physics  .eq. P3_1CAT_3MOM   ) ) then    ! P3
       has_reqc = 1
       has_reqi = 1
       has_reqs = 1
@@ -963,6 +976,7 @@ CONTAINS
    if (config_flags%mp_physics .eq. P3_1CATEGORY .or.       &
        config_flags%mp_physics .eq. P3_1CATEGORY_NC .or.    &
        config_flags%mp_physics .eq. JENSEN_ISHMAEL .or.    &
+       config_flags%mp_physics .eq. P3_1CAT_3MOM .or.      &
        config_flags%mp_physics .eq. P3_2CATEGORY      ) then
       has_reqs = 0
    end if
@@ -1356,7 +1370,7 @@ CONTAINS
    CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,mfshconv,               &
+                num_soil_layers,TKE_PBL,mfshconv,pep,           &
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
@@ -1561,6 +1575,10 @@ CONTAINS
                 adv_moist_cond,                                 &
                 MPDT, DT, DX, DY, LOWLYR,                       &
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
+#if ( EM_CORE == 1 )
+                PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,      & ! for ntu3m
+                QNIN,                                           & ! for ntu3m
+#endif
                 mp_restart_state,tbpvs_state,tbpvs0_state,      &
                 allowed_to_read, start_of_simulation,           &
 !CAMMGMP specific variables
@@ -2374,7 +2392,7 @@ CONTAINS
    SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,mfshconv,               &
+                num_soil_layers,TKE_PBL,mfshconv,pep,           &
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
@@ -2544,9 +2562,9 @@ CONTAINS
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
-   USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
+   USE module_sf_noahlsm, only : LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
    USE module_sf_noahmpdrv
-   USE noahmp_tables, ONLY: LOW_DENSITY_RESIDENTIAL_TABLE, HIGH_DENSITY_RESIDENTIAL_TABLE, HIGH_INTENSITY_INDUSTRIAL_TABLE
+   USE noahmp_tables, ONLY: LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE,LCZ_5_TABLE,LCZ_6_TABLE,LCZ_7_TABLE,LCZ_8_TABLE,LCZ_9_TABLE,LCZ_10_TABLE,LCZ_11_TABLE
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
 #endif
@@ -2569,6 +2587,7 @@ CONTAINS
    USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
+   USE module_bl_eeps
    USE module_bl_temf
 #if ( WRFPLUS == 1 )
    USE module_bl_surface_drag
@@ -2656,7 +2675,8 @@ CONTAINS
                                                           RQCBLTEN, &
                                                           RQIBLTEN, &
                                                           TKE_PBL
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE
+
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE, pep
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                               massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -2972,7 +2992,9 @@ CONTAINS
 
 ! IRRIGATION
   INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ims:ime,jms:jme):: irr_rand_field  
-  INTEGER,OPTIONAL :: irr_ph,irr_freq       
+  INTEGER,OPTIONAL :: irr_ph,irr_freq  
+  REAL :: max_utype_urb2d
+
 #if ( EM_CORE == 1 )
 !local mynn 
    INTEGER :: mynn_closure_level
@@ -3164,16 +3186,14 @@ CONTAINS
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics)
+                                sf_urban_physics,config_flags%use_wudapt_lcz)          !urban)
 !                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
                                
                 
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,                     & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,               & !urban
-!                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
-                              LOW_DENSITY_RESIDENTIAL,                       &
-                              HIGH_DENSITY_RESIDENTIAL,                      &
-                              HIGH_INTENSITY_INDUSTRIAL,                       &
+                              LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,                   &
+                              LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11,           &
                               restart,sf_urban_physics,                        & !urban
                               XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
                               TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,    & !urban
@@ -3208,12 +3228,27 @@ CONTAINS
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
-                              FRC_URB2D, UTYPE_URB2D)                            !urban
+                              FRC_URB2D, UTYPE_URB2D,config_flags%use_wudapt_lcz)  !urban
+          
+
+               max_utype_urb2d = maxval(UTYPE_URB2D)*1.0
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+               max_utype_urb2d = wrf_dm_max_real(max_utype_urb2d)
+#endif
+               IF (config_flags%use_wudapt_lcz.eq.0 .and. max_utype_urb2d.gt.3.0) THEN  !new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. SET USE_WUDAPT_LCZ=1')
+               ENDIF
+               IF (config_flags%use_wudapt_lcz.eq.1 .and. max_utype_urb2d.le.3.0) THEN  ! new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING URBPARM_LCZ.TBL WITH OLD 3 URBAN CLASSES. SET USE_WUDAPT_LCZ=0')
+               ENDIF
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
           ENDIF
-          
+
 !danli mosaic
 
           IF (SF_surface_mosaic.eq.1) THEN
@@ -3288,12 +3323,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics)
+                                sf_urban_physics,config_flags%use_wudapt_lcz)
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,         & !urban
-                              LOW_DENSITY_RESIDENTIAL_TABLE,                   &
-		              HIGH_DENSITY_RESIDENTIAL_TABLE,                  &
-		              HIGH_INTENSITY_INDUSTRIAL_TABLE,                 &
+                              LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE, &
+                              LCZ_5_TABLE,LCZ_6_TABLE,LCZ_7_TABLE,LCZ_8_TABLE, &
+                              LCZ_9_TABLE,LCZ_10_TABLE,LCZ_11_TABLE,           & 
                               restart,sf_urban_physics,                        & !urban
                               XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
                               TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,    & !urban
@@ -3328,7 +3363,19 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
-                              FRC_URB2D, UTYPE_URB2D)                            !urban
+                              FRC_URB2D, UTYPE_URB2D,config_flags%use_wudapt_lcz)  !urban
+                             max_utype_urb2d = maxval(UTYPE_URB2D)*1.0
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+               max_utype_urb2d = wrf_dm_max_real(max_utype_urb2d)
+#endif
+               IF (config_flags%use_wudapt_lcz.eq.0 .and. max_utype_urb2d.gt.3.0) THEN  !new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING 10 WUDAPT LCZ WITHOUT URBPARM_LCZ.TBL. SET USE_WUDAPT_LCZ=1')
+               ENDIF
+               IF (config_flags%use_wudapt_lcz.eq.1 .and. max_utype_urb2d.le.3.0) THEN  ! new LCZ
+                 CALL wrf_error_fatal &
+                 ('USING URBPARM_LCZ.TBL WITH OLD 3 URBAN CLASSES. SET USE_WUDAPT_LCZ=0')
+               ENDIF
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
@@ -3530,8 +3577,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (YSUSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
-           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL ysuinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -3544,7 +3589,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
            CALL shinhonginit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
                         RQCBLTEN,RQIBLTEN,TKE_PBL,P_QI,       &
                         PARAM_FIRST_SCALAR,                   &
@@ -3557,7 +3602,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
            CALL mrfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -3570,7 +3615,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            if(isfc .ne. 1 .and. isfc .ne. 7)CALL wrf_error_fatal &
             ( 'module_physics_init: use sfclay or pxsfc scheme for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
            CALL acminit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -3583,7 +3628,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
            CALL gfsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -3597,7 +3642,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
            CALL gfsedmfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -3631,7 +3676,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            if(isfc .ne. 4)CALL wrf_error_fatal &
             ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
            CALL qnsepblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                         TKE_PBL,EXCH_H,restart,               &
                         allowed_to_read ,                     &
@@ -3663,7 +3708,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                          its, ite, jts, jte, kts, kte          )
         CASE (CAMUWPBLSCHEME)
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
            CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,        &
                 restart,TKE_PBL,is_CAMMGMP_used, &
                 ids, ide, jds, jde, kds, kde,                          &
@@ -3679,7 +3724,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            IF(isfc .NE. 5 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
                 ( 'module_physics_init: use mynnsfc or sfclay or myjsfc scheme for this pbl option')
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
            
            SELECT CASE(config_flags%bl_pbl_physics)
 
@@ -3706,7 +3751,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            ! if(isfc .ne. 0)CALL wrf_error_fatal &
            !  ( 'module_physics_init: use sfclay scheme = 0 for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
          IF ( PRESENT( te_temf ) .AND. PRESENT( cf3d_temf )) THEN
            CALL temfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
@@ -3719,6 +3764,24 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         its, ite, jts, jte, kts, kte          )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling TEMF scheme' )
+         ENDIF
+
+      CASE (EEPSSCHEME)
+           IF(isfc .ne. 1 .and. isfc .ne. 2 .and. isfc .ne. 5 .and. isfc .ne. 91) CALL wrf_error_fatal &
+                ( 'module_physics_init: use mynnsfc or sfclay or myjsfc schemefor this pbl option')
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+          IF ( PRESENT( pep ) ) THEN
+           CALL eepsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
+                        RQCBLTEN,RQIBLTEN,P_QI,               &
+                        PARAM_FIRST_SCALAR,TKE_PBL,pep,       &
+                        restart,                              &
+                        allowed_to_read ,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+          ELSE
+            CALL wrf_error_fatal ( 'arguments not present for calling EEPS scheme' )
          ENDIF
 
 #endif
@@ -4199,6 +4262,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       adv_moist_cond,                             &
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
+#if ( EM_CORE == 1 )
+                      PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,  & ! for ntu3m
+                      QNIN,                                       & ! for ntu3m
+#endif
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
                       allowed_to_read, start_of_simulation,       &
 !CAMMGMP specific variables
@@ -4241,6 +4308,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 #if (EM_CORE==1)
    USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
    USE module_mp_morr_two_moment_aero              !TWG2017
+   USE module_mp_ntu
 #endif
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -4268,6 +4336,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RAINNC,SNOWNC,GRAUPELNC
    REAL,     DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(INOUT) :: &
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+#if ( EM_CORE == 1 )
+   INTEGER, OPTIONAL, INTENT(IN) :: CCNTY                                              ! for ntu3m
+   REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XLAND                     ! for ntu3m
+   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA         ! for ntu3m
+   REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN ! for ntu3m
+#endif
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL , INTENT(IN)  :: allowed_to_read
    REAL, INTENT(INOUT) :: ccn_conc ! RAS
@@ -4398,11 +4472,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         CALL jensen_ishmael_init()
 
      CASE (P3_1CATEGORY)
-         CALL p3_init('.',1,'WRF',i_err,.false.)
+         CALL p3_init('.',1,.false.,'WRF',i_err,.false.)
      CASE (P3_1CATEGORY_NC)
-         CALL p3_init('.',1,'WRF',i_err,.false.)
+         CALL p3_init('.',1,.false.,'WRF',i_err,.false.)
      CASE (P3_2CATEGORY)
-         CALL p3_init('.',2,'WRF',i_err,.false.)
+         CALL p3_init('.',2,.false.,'WRF',i_err,.false.)
+     CASE (P3_1CAT_3MOM)
+         CALL p3_init('.',1,.true.,'WRF',i_err,.false.)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)
@@ -4414,6 +4490,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         config_flags%hail_opt, allowed_to_read )
      CASE (WDM7SCHEME)
           CALL wdm7init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
+#if (EM_CORE==1)
+     CASE (NTU)
+          CALL ntu_init(PRES,z_at_q,RHOA,QDCN,QTCN,QCCN,QRCN,QNIN,      &
+                        XLAND,CCNTY,restart,ids,ide,jds,jde,kds,kde,    &
+                        ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+#endif
 #if (EM_CORE==1)
     CASE (FULL_KHAIN_LYNN)
      IF(start_of_simulation.or.restart)THEN
@@ -4449,6 +4531,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE DEFAULT
 
    END SELECT mp_select
+
+   if (config_flags%madwrf_opt == 2 .and. (.not. f_qc .or. .not. f_qi .or. .not. f_qs)) &
+        call wrf_error_fatal('madwrf_opt = 2 requires a mp_physics option with qc, qi, and qs')
 
    END SUBROUTINE mp_init
 

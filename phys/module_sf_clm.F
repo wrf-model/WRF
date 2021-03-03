@@ -3818,6 +3818,11 @@ module pftvarcon
 ! Set specific vegetation type values
 
 
+  USE module_date_time
+  USE module_sf_urban, only: urban
+  USE module_sf_noahlsm, only: LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
+  USE module_ra_gfdleta,  only: cal_mon_day
+  USE module_configure
 
   integer,parameter :: noveg                  = 0                 !value for not vegetated 
   integer,parameter :: ndllf_evr_tmp_tree     = 1  !value for Needleleaf evergreen temperate tree
@@ -60214,10 +60219,10 @@ has_urban_physics : &
 ! URBAN CANOPY MODEL START - urban
 !--------------------------------------
 ! Input variables lsm --> urban
-
-
-          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &
-              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN
+ IF( IVGTYP(I,J) == 1    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+     IVGTYP(I,J) == LCZ_3.or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+     IVGTYP(I,J) == LCZ_6.or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+     IVGTYP(I,J) == LCZ_9.or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
 
 ! Call urban
       forc_sols_buf  = swd_buf*0.35_r8

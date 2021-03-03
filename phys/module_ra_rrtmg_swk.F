@@ -10173,6 +10173,7 @@ contains
 !-------------------------------------------------------------------------------
    subroutine rad_rrtmg_driver(                                                &
                        rthratenlw,rthratensw,                                  &
+                       rthratenlwc,rthratenswc,                                &
                        lwupflx, lwupflxc, lwdnflx, lwdnflxc,                   &
                        swupflx, swupflxc, swdnflx, swdnflxc,                   &
                        lwupt, lwuptc, lwdnt, lwdntc,                           &
@@ -10218,6 +10219,8 @@ contains
 
    real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratensw
    real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratenlw
+   real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratenswc
+   real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratenlwc
    real, dimension(ims:ime,kms:kme+2,jms:jme), optional, intent(inout) :: lwupflx
    real, dimension(ims:ime,kms:kme+2,jms:jme), optional, intent(inout) :: lwupflxc
    real, dimension(ims:ime,kms:kme+2,jms:jme), optional, intent(inout) :: lwdnflx
@@ -10798,6 +10801,7 @@ contains
                  visdir  ,visdif  ,nirdir  ,nirdif )
 
          rthratensw(i,kts:kte,j) = swhr(1,kts:kte)/86400.
+         rthratenswc(i,kts:kte,j) = swhrc(1,kts:kte)/86400.
          if(present(swupflx))then
            swupflx(i,kts:kte+2,j) = swuflx(1,kts:kte+2)
            swupflxc(i,kts:kte+2,j) = swuflxc(1,kts:kte+2)
@@ -10830,6 +10834,7 @@ contains
                       uflx, dflx, hr, uflxc, dflxc, hrc)
 !
        rthratenlw(i,kts:kte,j) = hr(1,kts:kte)/86400.
+       rthratenlwc(i,kts:kte,j) = hrc(1,kts:kte)/86400.
        if(present(lwupflx))then
          lwupflx(i,kts:kte+2,j) = uflx(1,kts:kte+2)
          lwupflxc(i,kts:kte+2,j) = uflxc(1,kts:kte+2)

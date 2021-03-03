@@ -1574,6 +1574,8 @@ rconfig   real    ens_pblamp              namelist,physics     max_domains   0.2
 rconfig   real    ens_Cdamp               namelist,physics     max_domains   0.2      irh   "Cd perturbation Amplitude"  "unit: 100*%"
 endif
 
+# CLM
+rconfig   integer num_pft_clm             namelist,physics      1            17       -      "num_pft_clm"                  ""      ""
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"

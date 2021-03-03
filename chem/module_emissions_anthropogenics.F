@@ -417,7 +417,7 @@ is_mozart:if( is_moz_chm ) then
           chem(its:ite,kts,j,p_mbo)=chem(its:ite,kts,j,p_mbo)+ ebio_mbo(its:ite,j)*conv_rho(its:ite)
         endif
       enddo
-     CASE (MEGAN2)
+     CASE (MEGAN2,MEGAN2_CLM)
       do j = jts,jte
         con2ppm(its:ite,j) = dtstep/(dz8w(its:ite,kts,j)*60.)
       end do

@@ -1296,11 +1296,11 @@ state   real    F_RAIN_PHY     ikj     misc         1         -      rhdu     "F
 state   real    F_RIMEF_PHY    ikj     misc         1         -      rhdu     "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
 state   real    qndropsource   ikj     misc         1         -      r        "qndropsource"         "Droplet number source"   "#/kg/s"
 # ivanr microphysics variables
-state    real    cld           ikj    misc        1         -      r        "CLD"                  "w2id "         ""
-state    real    tw2           ikj    misc        1         -      r        "TW2"                  "w2id "         ""
-state    real    pw2           ikj    misc        1         -      r        "PW2"                  "w2id "         ""
-state    real    qw2           ikj    misc        1         -      r        "QW2"                  "w2id "         ""
-state    real    f_snow        ikj    misc        1         -      r        "F_SNOW"               "w2id "         ""
+state    real    cld           ikj    misc        1         -      r        "CLD"                  "CLOUD FRACTION"         "0 - 1 fraction"
+state    real    tw2           ikj    misc        1         -      r        "TW2"                  "T from previous timestep"         "K"
+state    real    pw2           ikj    misc        1         -      r        "PW2"                  "P from previous timestep"         "Pa"
+state    real    qw2           ikj    misc        1         -      r        "QW2"                  "Q from previous timestep"         "kg kg-1"
+state    real    f_snow        ikj    misc        1         -      r        "F_SNOW"               "FRACTION OF SNOW"         "0 - 1 fraction"
 # cyl 3DPWP variables
 state   real    OM_TMP        i{nocnl}j      misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)    "OM_TMP" "temperature"   "k"
 state   real    OM_S          i{nocnl}j      misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)  "OM_S" "salinity"       "degree"

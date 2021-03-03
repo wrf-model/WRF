@@ -1185,7 +1185,8 @@ CONTAINS
                                                              CPM, &
                                                             CHS2, &
                                                             CQS2
-
+! CTSM local variable
+   REAL, DIMENSION( ims:ime , jms:jme ) :: xland_ctsm
 ! SSIB local variables
    REAL ZDIFF
    REAL, DIMENSION( ims:ime , jms:jme ) :: XICE_save
@@ -3898,13 +3899,13 @@ CONTAINS
         !For WRF-CTSM simulations, we would like the land model (CTSM)
         ! to handle inland lake points.
         ! Here, we are changing xland to include lake points, so that
-        ! CTSM can handle it. 
+        ! CTSM can handle it.
          DO j=j_start(ij),j_end(ij)
             DO i=i_start(ij),i_end(ij)
-                IF (lakemask(i,j).EQ.1. .AND. xland(i,j).GT.1.5 .AND. ht(i,j).GT.lake_min_elev) THEN
-                    WRITE( message,* ) 'WRF-CTSM: for great lakes  xland ==1'
-                    CALL wrf_message ( message )
-                    xland (i,j)  = 1  
+                xland_ctsm (i,j) = xland (i,j) 
+                !IF (lakemask(i,j).EQ.1. .AND. xland(i,j).GT.1.5 .AND. ht(i,j).GT.lake_min_elev) THEN
+                IF (lakemask(i,j).EQ.1.) THEN
+                    xland_ctsm (i,j)  = 1  
                 ENDIF
             ENDDO
          ENDDO
@@ -3956,7 +3957,7 @@ CONTAINS
 
              ! general information
              dt             = dt, &
-             xland          = xland, &
+             xland          = xland_ctsm, &
              xice           = xice, &
              xice_threshold = xice_threshold, &
 

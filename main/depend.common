@@ -479,9 +479,9 @@ module_sf_noahmplsm.o:	../share/module_model_constants.o \
 
 module_sf_noahmp_groundwater.o:	module_sf_noahmplsm.o
 
-module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o
+module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o module_bep_bem_helper.o
 
-module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o
+module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o module_bep_bem_helper.o
 
 module_sf_bem.o: ../share/module_model_constants.o
 
@@ -1033,7 +1033,8 @@ module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
 
 module_check_a_mundo.o: ../frame/module_configure.o ../frame/module_wrf_error.o \
 		../frame/module_state_description.o \
-		../share/module_model_constants.o
+		../share/module_model_constants.o \
+		../phys/module_bep_bem_helper.o
 
 dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
 		../frame/module_state_description.o \

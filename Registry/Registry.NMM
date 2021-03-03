@@ -592,7 +592,7 @@ state  real   rrw       ijkb  dyn_nmm   1    -     rh       "RRW"       "Tracer"
 state  real   f_ice     ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_ICE"     "Frozen fraction of CWM"               ""
 state  real   f_rain    ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
 state  real   f_rimef   ikj   dyn_nmm   1    -     rh023d=(DownMassIKJ:@EExtrap,1.0)u=(UpMassIKJ:@EExtrap,1.0)  "F_RIMEF"   "Rime factor"                          ""
-state  real   cldfra    ijk   dyn_nmm   1    -     rh023   "CLDFRA"    "Cloud fraction"                       ""
+state  real   cldfra    ijk   dyn_nmm   1    -     i023rhdu   "CLDFRA"    "Cloud fraction"                       ""
 state  real   CONVCLD   ij    dyn_nmm   1    -     r      "CONVCLD"    "BMJ CONVECTIVE CLOUD"                 "kg m-2"
 state  real   CCLDFRA   ikj   dyn_nmm   1    -     r      "CCLDFRA"    "CONVECTIVE CLOUD FRACTION"            ""
 state  real   sr        ij    dyn_nmm   1    -     irh023      "SR"        "Timestep mass ratio of snow:precip"   ""
@@ -843,6 +843,11 @@ state   real    qs             ijkfbt   moist       1         m     rh023u=(UpMa
 state   real    qg             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 state   real    qh             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
 
+# MAD-WRF
+state   real    -              ijkfbt   tracer      1         m     -    -
+state   real    tr_qc          ijkfbt   tracer      1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "tr_qcloud"      "Tracer with the liquid content" "kg kg-1"
+state   real    tr_qi          ijkfbt   tracer      1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "tr_qice"        "Tracer with the ice content"    "kg kg-1"
+state   real    tr_qs          ijkfbt   tracer      1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "tr_qsnow"       "Tracer with the snow content"   "kg kg-1"
 
 state   real    -              ijkfbt   dfi_moist       1         m     -    -
 state   real    dfi_qv         ijkfbt   dfi_moist       1         m     r      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
@@ -895,6 +900,12 @@ state   real    dfi_qnwfa      ikjftb  dfi_scalar      1         m     \
    rsu=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)    "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
 state   real    dfi_qnifa      ikjftb  dfi_scalar      1         m     \
    rsu=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)    "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
+
+# MAD-WRF
+state     real    brtemp         ij       dyn_em      1         -    i01h "brtemp"   "Brightness temperature to calc cloud top height" "K"
+state     real    cldmask        ij       dyn_em      1         -    i01h "cldmask"  "Cloud mask" "-"
+state     real    cldtopz        ij       dyn_em      1         -    i01h "cldtopz"  "Cloud top height above sea level" "m asl"
+state     real    cldbasez       ij       dyn_em      1         -    i01h "cldbasez" "Cloud base height above ground level" "m agl"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1598,6 +1609,12 @@ rconfig   real    aercu_fct               namelist,physics      1             1.
 rconfig   integer ICLOUD_CU               derived               1             0        -     "ICLOUD_CU"                     ""      ""
 rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
 
+# MAD-WRF
+rconfig   integer madwrf_opt          namelist,physics      1              0       rh    "madwrf_opt" "MAD-WRF model" "0: off, 1: Advect/diffuse hydromets, 2: Nudge advected/diffused hydrometes to model state"
+rconfig   real    madwrf_dt_relax            namelist,physics      1              60.     rh    "madwrf_dt_relax" "Relaxation time for hydrometeor nudging"  "s"
+rconfig   real    madwrf_dt_nudge            namelist,physics      1              60.     rh    "madwrf_dt_nudge" "Temporal period for hydrometeor nudging"  "Min"
+rconfig   integer madwrf_cldinit             namelist,physics      1              0       rh    "madwrf_cldinit"  "Enhance cloud initialization" "0: Off, 1: On"
+
 # cam radiation variables
 state  real    -       i{ls}jf ozmixm      1    -   -     -
 state  real   mth01    i{ls}jf ozmixm      1    -   -     "OZMIXMTH01"  "Month 1 CAM ozone mixing ratio"
@@ -1802,6 +1819,12 @@ package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,q
 package   etampnew      mp_physics==95               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
 package   gsfcgcescheme mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 package   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_max
+package   madwrf_mp       mp_physics==96               -             moist:qv,qc,qi,qs
+
+
+# MAD-WRF
+package   cldinit         madwrf_cldinit==1            -             state:brtemp,cldmask,cldtopz,cldbasez
+package   madwrf          madwrf_opt==2                -             tracer:tr_qc,tr_qi,tr_qs
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv

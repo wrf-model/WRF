@@ -157,6 +157,10 @@ module_clear_halos.o: module_configure.o \
 
 # DEPENDENCIES for phys
 
+module_madwrf.o: ../share/module_model_constants.o \
+		../share/module_soil_pre.o \
+		../phys/module_mp_thompson.o
+
 module_bl_myjpbl.o: ../share/module_model_constants.o
 
 module_bl_myjurb.o: ../share/module_model_constants.o

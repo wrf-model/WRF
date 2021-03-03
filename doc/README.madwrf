@@ -1,0 +1,38 @@
+The MAD-WRF model is designed to improve the solar irradiance nowcast
+
+There are two options to run MAD-WRF:
+
+ 1. madwrf_opt = 1: The initial hydrometeors are advected and diffused with the model dynamics without accounting for any microphysical processes. 
+                    The user should set mp_physics = 96 and use_mp_re = 0 in the physics block of the WRF namelist.
+
+ 2. madwrf_opt = 2: There is a set of hydrometeor tracers that are advected and diffused with the model dynamics. 
+                    At initial time the tracers are equal to the standard hydrometeors.
+                    During the simulation the standard hydrometeors are nudged towards the tracers.
+                    The namelist variable madwrf_dt_nudge sets the temporal period for hydrometeor nudging [min]
+                    The namelist madwrf_dt_relax sets the relaxation time for hydrometeor nudging [s]
+
+
+MAD-WRF has an option to enhance the cloud initialization.
+To turn on (off) the cloud initialization set the namelist variable madwrf_cldinit to 1 (0)
+
+By default the model enhances the cloud analysis based on the analyzed relative humidity.
+The user can enhance the cloud initialization by providing additional variables to Metgrid via the WPS intermediate format:
+
+1. Cloud mask (CLDMASK variable): 
+     Remove clouds if clear (cldmask = 0)
+
+2. Cloud mask (CLDMASK variable) + brightness temperature (BRTEMP variable) sensitive to hydrometeor content (e.g. GOES-R channel 13):
+     Remove clouds if clear (cldmask = 0)
+     Reduce / extend cloud top heights to match observations
+     Add clouds over clear sky regions (cldmask = 1)
+
+3. Cloud top height (CLDTOPZ variable) with 0 values over clear sky regions
+     Remove clouds if clear (cldmask = 0)
+     Reduce / extend cloud top heights to match observations
+     Add clouds over clear sky regions (cldmask = 1)
+
+4 Either 2 or 3 + the cloud base height (CLDBASEZ variable)
+     Remove clouds if clear (cldmask = 0)
+     Reduce / extend cloud top / base heights to match observations
+
+Missing values in any of these variables should be set to -999.9

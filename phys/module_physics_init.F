@@ -4441,6 +4441,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
    END SELECT mp_select
 
+   if (config_flags%madwrf_opt == 2 .and. (.not. f_qc .or. .not. f_qi .or. .not. f_qs)) &
+        call wrf_error_fatal('madwrf_opt = 2 requires a mp_physics option with qc, qi, and qs')
+
    END SUBROUTINE mp_init
 
 #if  ( EM_CORE == 1 )

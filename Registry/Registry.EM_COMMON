@@ -1667,7 +1667,7 @@ state    real  RTHRATENLW      ikj      misc        1         -      r        "R
 state    real  RTHRATENLWC     ikj      misc        1         -      r        "RTHRATLWC"             "UNCOUPLED THETA TEND DUE TO CLEAR SKY LONG WAVE RAD"    "K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  RTHRATENSWC     ikj      misc        1         -      r        "RTHRATSWC"             "UNCOUPLED THETA TEND DUE TO CLEAR SKY SHORT WAVE RAD"   "K s-1"
-state    real  CLDFRA          ikj      misc        1         -      i0rh     "CLDFRA"                "CLOUD FRACTION"   ""
+state    real  CLDFRA          ikj      misc        1         -      irhdu    "CLDFRA"                "CLOUD FRACTION"   ""
 state    real  CONVCLD          ij      misc        1         -      r        "CONVCLD"               "BMJ CONVECTIVE CLOUD" "kg m-2"
 state    real  CCLDFRA         ikj      misc        1         -      r        "CCLDFRA"               "CONVECTIVE CLOUD FRACTION" ""
 state    real  CLDFRA_OLD      ikj      misc        1         -      r        "CLDFRA_OLD"            "previous time level cldfra"                           ""
@@ -2101,6 +2101,11 @@ state    real  track_qsnow    {tl}k      misc     1         -      -       "trac
 state    real  track_qgraup   {tl}k      misc     1         -      -       "track_qgraup"       "graupel mixing ratio"       "kg kg-1"
 state    real  track_qvapor   {tl}k      misc     1         -      -       "track_qvapor"       "water vapor mixing ratio"   "kg kg-1"
 
+# MAD-WRF
+state     real    brtemp         ij       dyn_em      1         -    i01h "brtemp"   "Brightness temperature to calc cloud top height" "K"
+state     real    cldmask        ij       dyn_em      1         -    i01h "cldmask"  "Cloud mask" "-"
+state     real    cldtopz        ij       dyn_em      1         -    i01h "cldtopz"  "Cloud top height above sea level" "m asl"
+state     real    cldbasez       ij       dyn_em      1         -    i01h "cldbasez" "Cloud base height above ground level" "m agl"
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -2585,6 +2590,11 @@ rconfig   integer morr_rimed_ice          namelist,physics      1              1
 rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"
 rconfig   integer calc_clean_atm_diag     derived               1              0       -     "calc_clean_atm_diag" "carries decision on using clean sky diagnostics"       "flag"
 
+# MAD-WRF
+rconfig   integer madwrf_opt          namelist,physics      1              0       rh    "madwrf_opt" "MAD-WRF model" "0: off, 1: Advect/diffuse hydromets, 2: Nudge advected/diffused hydrometes to model state"
+rconfig   real    madwrf_dt_relax            namelist,physics      1              60.     rh    "madwrf_dt_relax" "Relaxation time for hydrometeor nudging"  "s"
+rconfig   real    madwrf_dt_nudge            namelist,physics      1              60.     rh    "madwrf_dt_nudge" "Temporal period for hydrometeor nudging"  "Min"
+rconfig   integer madwrf_cldinit             namelist,physics      1              0       rh    "madwrf_cldinit"  "Enhance cloud initialization" "0: Off, 1: On"
 
 # For Noah-MP
 rconfig   integer dveg        namelist,noah_mp      1           4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
@@ -2951,10 +2961,14 @@ package   jensen_ishmael  mp_physics==55               -             moist:qv,qc
 package   ntu             mp_physics==56               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qdcn,qtcn,qccn,qrcn,qnin,fi,fs,vi,vs,vg,ai,as,ag,ah,i3m
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   gsfcgcescheme   mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
-
+package   madwrf_mp       mp_physics==96               -             moist:qv,qc,qi,qs
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
 endif
+
+# MAD-WRF
+package   cldinit         madwrf_cldinit==1            -             state:brtemp,cldmask,cldtopz,cldbasez
+package   madwrf          madwrf_opt==2                -             tracer:tr_qc,tr_qi,tr_qs
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv

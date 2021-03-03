@@ -101,11 +101,9 @@ CONTAINS
   USE module_ghg_fluxes
   USE module_lightning_nox_driver
   USE module_cam_mam_addemiss, only: cam_mam_addemiss
-!sw++
 #if( WRF_USE_CLM == 1)
   USE shr_megan_mod, only : shr_megan_mechcomps_n, shr_megan_mechcomps
 #endif
-!sw--
   
   IMPLICIT NONE
 
@@ -340,11 +338,9 @@ CONTAINS
 !
       INTEGER :: begday,endday,i, j, k, m, p_in_chem, ksub, dust_emiss_active, seasalt_emiss_active,emiss_ash_hgt
       REAL :: conv,conv3,conv4,oconv3,oconv4
-!sw++
 #if( WRF_USE_CLM == 1)
       REAL :: convert2(its:ite,jts:jte)
 #endif
-!sw--
       CHARACTER (LEN=80) :: message
       LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
 
@@ -888,38 +884,13 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
        endif
-!sw++
 #if( WRF_USE_CLM == 1)
      CASE (MEGAN2_CLM)
 !...conversion factor from ppm m min-1 to mol km-2 hr-1
 !...(e_bio is in units of ppm m min-1)
        convert2(its:ite,jts:jte) = rho_phy(its:ite,kts,jts:jte)*60./.02897
-       print*,'jdf shr_megan_mechcomps_n',shr_megan_mechcomps_n
-       print*,'jdf index iso     ',p_isoprene
-       print*,'jdf index no      ',p_no
-       print*,'jdf index no2     ',p_no2
-       print*,'jdf index co      ',p_co
-       print*,'jdf index hcho    ',p_hcho
-       print*,'jdf index ald     ',p_ald
-       print*,'jdf index acet    ',p_acet
-       print*,'jdf index tol     ',p_tol
-       print*,'jdf index c10h16  ',p_c10h16
-       print*,'jdf index so2     ',p_so2
-       print*,'jdf index dms     ',p_dms
-       print*,'jdf index bigalk  ',p_bigalk
-       print*,'jdf index bigene  ',p_bigene
-       print*,'jdf index nh3     ',p_nh3
-       print*,'jdf index c3hoh   ',p_ch3oh
-       print*,'jdf index c2h5oh  ',p_c2h5oh
-       print*,'jdf index ch3co2h ',p_ch3co2h
-       print*,'jdf index mek     ',p_mek
-       print*,'jdf index c2h4    ',p_c2h4
-       print*,'jdf index ceh6    ',p_c3h6
-       print*,'jdf index c3h8    ',p_c3h8
        do m = 1,shr_megan_mechcomps_n
          p_in_chem = shr_megan_mechcomps(m)%index
-         print*,'jdf index',m,p_in_chem
-!jdf     IF ( p_in_chem+1 == p_isopr ) THEN
          IF ( p_in_chem+1 == p_isoprene ) THEN
            ebio_iso(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
          ELSEIF ( p_in_chem+1 == p_no ) THEN
@@ -967,7 +938,6 @@ CONTAINS
          ENDIF
        end do
 #endif
-!sw--
 
      CASE DEFAULT 
        if( do_bioemiss ) &

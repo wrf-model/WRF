@@ -149,7 +149,6 @@ CONTAINS
 
 !  Added flag to use MEGANv2.1 file   BJG 3/28/19
    LOGICAL   :: do_meganfile
-!  End modification
 
 #if ( WRF_DFI_RADAR == 1 )
     INTEGER  do_capsupress   ! =1 do CAP supress, other = don't
@@ -489,7 +488,6 @@ BENCH_START(surf_driver_tim)
 !  Ensure WRF_Chem is compiled if bio_emiss_opt is tested, and add flag to read MEGANv2.1
 !  file if bio_emiss_opt is set properly (even if chem_opt == 0).  
 !  Also explicitly set do_bioe to .false. if chem_opt <= 0.   BJG 3/28/19
-!sw++
 #if( WRF_USE_CLM == 1) && (WRF_CHEM == 1)
       if( config_flags%bio_emiss_opt == MEGAN2_CLM ) then
         do_meganfile = .true.
@@ -506,8 +504,6 @@ BENCH_START(surf_driver_tim)
       do_bioe = .false.
       do_meganfile = .false.
 #endif
-!sw--
-!  End modification
 
 
 
@@ -536,14 +532,10 @@ BENCH_START(surf_driver_tim)
      &        ,SEAICE_SNOWDEPTH_MIN=config_flags%seaice_snowdepth_min     &
      &        ,TICE2TSK_IF2COLD=config_flags%tice2tsk_if2cold             &
      &        ,IFNDALBSI=grid%ifndalbsi, IFNDICEDEPTH=grid%ifndicedepth   &
-!sw++
-!  Added test of WRF_Chem compilation for some variables, and added flag.   BJG 3/28/19
 #if ( WRF_CHEM == 1 )
               ,NE_AREA=grid%ne_area,E_BIO=grid%e_bio &
 #endif
               ,IFNDSNOWSI=grid%ifndsnowsi, DO_BIOE=do_bioe, DO_MEGANFILE=do_meganfile          &
-!  End modification
-!sw--
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &
      &        ,IRRIGATION=grid%irrigation,SF_SURF_IRR_SCHEME=config_flags%sf_surf_irr_scheme  & 
      &        ,IRR_DAILY_AMOUNT=config_flags%irr_daily_amount                                                & 
@@ -675,7 +667,6 @@ BENCH_START(surf_driver_tim)
      &         SABGsubgrid=grid%SABGsubgrid,NRAsubgrid=grid%NRAsubgrid,             &
      &         SWUPsubgrid=grid%SWUPsubgrid,LHsoi=grid%LHsoi,                       &
      &         LHveg=grid%LHveg, LHtran=grid%LHtran                                 &
-!sw++
                ,t_veg24=grid%t_veg24,            t_veg240=grid%t_veg240,            & !voce accum variables
                fsun24=grid%fsun24,              fsun240=grid%fsun240,               & !voce accum variables
                fsd24=grid%fsd24,                fsd240=grid%fsd240,                 & !voce accum variables
@@ -683,7 +674,6 @@ BENCH_START(surf_driver_tim)
                laip=grid%laip,                                                      & !voce accum variables
                pct_pft_input=grid%pct_pft_input,num_pft_input=grid%num_pft_clm,  &
                input_pft_flag=config_flags%input_pft                             &
-!sw--
 ! end of CLM variables
      &        ,SLOPE_RAD=config_flags%slope_rad,TOPO_SHADING=config_flags%topo_shading & ! solar
      &        ,SHADOWMASK=grid%shadowmask,DIFFUSE_FRAC=grid%diffuse_frac               & ! solar

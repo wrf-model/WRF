@@ -1360,9 +1360,7 @@ CONTAINS
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
-!sw++
                 frac_up, itimestep,id,                          &
-!sw--
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -2380,9 +2378,7 @@ CONTAINS
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
-!sw++
                 frac_up, itimestep, id,                         &
-!sw--
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -2895,9 +2891,7 @@ CONTAINS
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                                         TSK_SAVE
    LOGICAL,  INTENT(IN) :: start_of_simulation
-!sw++
    INTEGER :: i,j,patch
-!sw--
 
 ! CLM varaibles
    INTEGER , INTENT(IN)        ::     maxpatch
@@ -3423,11 +3417,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS,  &
                      FNDSOILW, FNDSNOWH,                           &
                      num_soil_layers, restart,                     &
-!  Use flag.  BJG 3/29/19
-!sw++
-!                     allowed_to_read, id, config_flags%bio_emiss_opt, &
                      allowed_to_read, id, do_readmeganfile, &
-!sw--
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
@@ -3436,9 +3426,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      megan_mapped_emisfctrs,                       &
                      megan_factors_file,                           &
 #endif
-!sw++
                      dt,maxpatch                                         &
-!sw--
                     ,numc,nump,snl,                                      &
                      snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
                      h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &

@@ -105,7 +105,11 @@ CONTAINS
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
      &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
      &          ,XTIME,OM_TINI,OM_SINI,id,omdt                        &
-! CLM variables
+! CLM variables, some only included if WRF_CHEM is compiled     BJG 3/28/19
+#if ( WRF_CHEM == 1)
+     &          ,e_bio,ne_area  &
+#endif
+                ,do_bioe,do_meganfile  &
      &          ,numc,nump,sabv,sabg,lwup,snl,history_interval &
      &          ,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
      &           h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,         &
@@ -135,6 +139,10 @@ CONTAINS
      &           ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
      &           Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
      &           SWUPsubgrid,LHsoi,LHveg,LHtran                      &
+!sw++
+     &           ,t_veg24, t_veg240, fsun24, fsun240,                &
+     &           fsd24, fsd240, fsi24, fsi240, laip                  &
+!sw--
 #ifdef CN
 !ADD_NEW_VAR for crop and cn
      &           ,dyntlai,dyntsai,dyntop,dynbot                              &
@@ -168,6 +176,9 @@ CONTAINS
      &           ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
      &           ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
+!sw++
+                 ,pct_pft_input,num_pft_input,input_pft_flag  &
+!sw--
             !  Optional urban
      &          ,slope_rad,topo_shading,shadowmask                    & !I solar
      &          ,swnorm,slope,slp_azi,diffuse_frac                    & !I solar
@@ -607,6 +618,8 @@ CONTAINS
    INTEGER, INTENT(IN)::   IFNDALBSI
    INTEGER, INTENT(IN)::   IFNDICEDEPTH
    INTEGER, INTENT(IN)::   IFNDSNOWSI
+   LOGICAL, INTENT(IN)::   do_bioe
+   LOGICAL, INTENT(IN)::   do_meganfile
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
@@ -1104,11 +1117,18 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)          ::   ZOL
 
    INTEGER, INTENT(IN) :: MAXPATCH, inest
+#if ( WRF_CHEM == 1 )
+   INTEGER, INTENT(IN) :: ne_area
+#endif
+!   End modification
 
   integer, optional,  dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: sabv,sabg,lwup
   integer, optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) ::t2m_max,t2m_min,t2clm
+  INTEGER, INTENT(IN)         :: num_pft_input
+  LOGICAL,OPTIONAL,INTENT(IN) :: input_pft_flag
+  REAL, DIMENSION(ims:ime, num_pft_input,jms:jme ),OPTIONAL, INTENT(IN) ::  pct_pft_input
   real,    optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
                 h2ocan,h2ocan_col,   &
@@ -1137,6 +1157,10 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid ,&
                 LHsoi,LHveg,LHtran
+#if ( WRF_CHEM == 1 ) 
+  real,    optional,  dimension(ims:ime,jms:jme,1:ne_area ),intent(inout) ::  &
+                e_bio
+#endif
 #ifdef CN
 !ylu 05/31/2011
 
@@ -1385,6 +1409,15 @@ CONTAINS
 !
   real,    dimension(ims:ime,1:maxpatch,jms:jme ) ::  q_ref2m   ! clm
 
+  real,  intent(inout),optional :: t_veg24(ims:ime,1:maxpatch,jms:jme)      ! voce accum variables
+  real,  intent(inout),optional :: t_veg240(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsun24(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsun240(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsd24(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsd240(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsi24(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: fsi240(ims:ime,1:maxpatch,jms:jme)
+  real,  intent(inout),optional :: laip(ims:ime,1:maxpatch,jms:jme)
 
 !------------------------------------------------------------------
    CHARACTER*256 :: message
@@ -3707,8 +3740,13 @@ CONTAINS
             ENDIF
          ENDIF
 
-
+       write(message,'('' surface_driver: B4 call to clmdrv with do_bioe = '',l)') do_bioe
+       CALL wrf_debug( 100,trim(message) )
        CALL wrf_debug(100,'in clmdrv')
+
+       if (num_soil_layers.ne.10) then
+        CALL wrf_error_fatal('CLM land surface model need num_soil_layers=10')
+       endif
 
        CALL clmdrv(dz8w,qv_curr,p8w, t_phy,tsk,                   &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,               &
@@ -3719,14 +3757,17 @@ CONTAINS
                 num_soil_layers,dtbl,xtime, dt,dzs,             &
                 smois,tslb,snow,canwat,                         &
                 chs,chs2,sh2o,snowh,                            &
-                u_phy,v_phy,                                    &
+                u_phy,v_phy,rho,                                &
                 shdmin,shdmax,                                  &
                 acsnom,acsnow,                                  &
                 dx,xlat,xlong,ht,                               &
+#if ( WRF_CHEM == 1 )
+                ne_area,e_bio,                                  &
+#endif
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
-                inest,sf_urban_physics, nlcat                   &
+                inest,sf_urban_physics,do_bioe,do_meganfile,id   &
 !Optional urban
                ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
                ,cmgr_sfcdif,chgr_sfcdif                        &
@@ -3777,7 +3818,9 @@ CONTAINS
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid,&
                 LHsoi,LHveg,LHtran, &
                 alswvisdir, alswvisdif, alswnirdir, alswnirdif,      & ! clm
-                swvisdir, swvisdif, swnirdir, swnirdif               & ! clm
+                swvisdir, swvisdif, swnirdir, swnirdif,              & ! clm
+                t_veg24, t_veg240, fsun24, fsun240,                  &
+                fsd24, fsd240, fsi24, fsi240, laip                   &
 #ifdef CN
 !CROP&CN RESTART AND OUTPUTS
                 ,dyntlai,dyntsai,dyntop,dynbot &
@@ -3811,6 +3854,7 @@ CONTAINS
                 ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
                 ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
+                ,nlcat,landusef,num_pft_input,pct_pft_input,input_pft_flag &
                  )
 
          IF ( FRACTIONAL_SEAICE == 1 ) THEN

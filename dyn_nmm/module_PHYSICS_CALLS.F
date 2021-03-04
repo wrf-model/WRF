@@ -1618,7 +1618,7 @@
      &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev  &
 ! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
-     &        ,fasdas=fasdas
+     &        ,fasdas=fasdas,do_bioe=.false.,do_meganfile=.false.,num_pft_input=grid%num_pft_clm                             &
      &                                                          )
 !
 !-----------------------------------------------------------------------

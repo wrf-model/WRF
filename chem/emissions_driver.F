@@ -101,6 +101,9 @@ CONTAINS
   USE module_ghg_fluxes
   USE module_lightning_nox_driver
   USE module_cam_mam_addemiss, only: cam_mam_addemiss
+#if( WRF_USE_CLM == 1)
+  USE shr_megan_mod, only : shr_megan_mechcomps_n, shr_megan_mechcomps
+#endif
   
   IMPLICIT NONE
 
@@ -333,8 +336,11 @@ CONTAINS
 !
 ! Local variables...
 !
-      INTEGER :: begday,endday,i, j, k, ksub, dust_emiss_active, seasalt_emiss_active,emiss_ash_hgt
+      INTEGER :: begday,endday,i, j, k, m, p_in_chem, ksub, dust_emiss_active, seasalt_emiss_active,emiss_ash_hgt
       REAL :: conv,conv3,conv4,oconv3,oconv4
+#if( WRF_USE_CLM == 1)
+      REAL :: convert2(its:ite,jts:jte)
+#endif
       CHARACTER (LEN=80) :: message
       LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
 
@@ -878,6 +884,60 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
        endif
+#if( WRF_USE_CLM == 1)
+     CASE (MEGAN2_CLM)
+!...conversion factor from ppm m min-1 to mol km-2 hr-1
+!...(e_bio is in units of ppm m min-1)
+       convert2(its:ite,jts:jte) = rho_phy(its:ite,kts,jts:jte)*60./.02897
+       do m = 1,shr_megan_mechcomps_n
+         p_in_chem = shr_megan_mechcomps(m)%index
+         IF ( p_in_chem+1 == p_isoprene ) THEN
+           ebio_iso(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_no ) THEN
+           ebio_no(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_no2 ) THEN
+           ebio_no2(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_co ) THEN
+           ebio_co(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_hcho ) THEN
+           ebio_hcho(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_ald ) THEN
+           ebio_ald(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_acet ) THEN
+           ebio_acet(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_tol ) THEN
+           ebio_tol(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_c10h16 ) THEN
+           ebio_c10h16(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_so2 ) THEN
+           ebio_so2(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_dms ) THEN
+           ebio_dms(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_bigalk ) THEN
+           ebio_bigalk(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_bigene ) THEN
+           ebio_bigene(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_nh3 ) THEN
+           ebio_nh3(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_ch3oh ) THEN
+           ebio_ch3oh(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_c2h5oh ) THEN
+           ebio_c2h5oh(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_ch3co2h ) THEN
+           ebio_ch3cooh(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_mek ) THEN
+           ebio_mek(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_c2h4 ) THEN
+           ebio_c2h4(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_c2h6 ) THEN
+           ebio_c2h6(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_c3h6 ) THEN
+           ebio_c3h6(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ELSEIF ( p_in_chem+1 == p_c3h8 ) THEN
+           ebio_c3h8(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)
+         ENDIF
+       end do
+#endif
 
      CASE DEFAULT 
        if( do_bioemiss ) &

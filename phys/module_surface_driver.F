@@ -3898,12 +3898,11 @@ CONTAINS
 !------------------------------------------------------------------
         !For WRF-CTSM simulations, we would like the land model (CTSM)
         ! to handle inland lake points.
-        ! Here, we are changing xland to include lake points, so that
+        ! Here, we are making ctsm_xland to include lake points, so that
         ! CTSM can handle it.
          DO j=j_start(ij),j_end(ij)
             DO i=i_start(ij),i_end(ij)
                 xland_ctsm (i,j) = xland (i,j) 
-                !IF (lakemask(i,j).EQ.1. .AND. xland(i,j).GT.1.5 .AND. ht(i,j).GT.lake_min_elev) THEN
                 IF (lakemask(i,j).EQ.1.) THEN
                     xland_ctsm (i,j)  = 1  
                 ENDIF

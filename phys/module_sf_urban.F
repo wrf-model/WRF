@@ -2863,7 +2863,6 @@ ENDIF
                   FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
                 ENDIF
               SWITCH_URB=1
-<<<<<<< HEAD
             ENDIF
 !!!!!
 !!!!!

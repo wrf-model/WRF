@@ -791,25 +791,25 @@ do iz= kts,kte
          enddo
 	
          do id=1,ndm
-          do ig=1,ng_u
+           do ig=1,ng_u
             tg1D(id,ig)=tgb_urb4d(ix,ind_gd(ig,id),iy)
-         enddo
+           enddo
          
            do iz_u=1,nz_um
-           do ir=1,nwr_u
-            tr1D(id,iz_u,ir)=trb_urb4d(ix,ind_zrd(iz_u,ir,id),iy)
+             do ir=1,nwr_u
+               tr1D(id,iz_u,ir)=trb_urb4d(ix,ind_zrd(iz_u,ir,id),iy)
+             enddo
+             do ir=1,ngr_u
+               if(gr_flag_u.eq.1)then
+                 trv1D(id,iz_u,ir)=trv_urb4d(ix,ind_grd(iz_u,ir,id),iy)
+                 qr1D(id,iz_u,ir)=qr_urb4d(ix,ind_grd(iz_u,ir,id),iy)
+               else
+                 trv1D(id,iz_u,ir)=0.
+                 qr1D(id,iz_u,ir)=0.
+               endif
+             enddo
            enddo
-           do ir=1,ngr_u
-          if(gr_flag_u.eq.1)then
-            trv1D(id,iz_u,ir)=trv_urb4d(ix,ind_grd(iz_u,ir,id),iy)
-            qr1D(id,iz_u,ir)=qr_urb4d(ix,ind_grd(iz_u,ir,id),iy)
-          else
-            trv1D(id,iz_u,ir)=0.
-            qr1D(id,iz_u,ir)=0.
-          endif
-          enddo
-          enddo
-           enddo
+        enddo
 
 
 
@@ -841,7 +841,7 @@ do iz= kts,kte
 
 
 
-  do id=1,ndm  !direction
+         do id=1,ndm  !direction
             do iz_u=1,nz_um !vertical levels
                do ibui=1,nbui_max !type of building
                   twlev1D(2*id-1,iz_u,ibui)=tw1lev_urb3d(ix,ind_wd(ibui,iz_u,id),iy)
@@ -876,22 +876,22 @@ do iz= kts,kte
 !   
 
         do id=1,ndm
-	 do iz=1,nz_um
-         do ibui=1,nbui_max !type of building
-!!	  sfw1D(2*id-1,iz)=sfw1(ix,iy,ind_zd(iz,id))
-!!	  sfw1D(2*id,iz)=sfw2(ix,iy,ind_zd(iz,id))
-	  sfw1D(2*id-1,iz,ibui)=sfw1_urb3d(ix,ind_zd(ibui,iz,id),iy)
-	  sfw1D(2*id,iz,ibui)=sfw2_urb3d(ix,ind_zd(ibui,iz,id),iy)
-         enddo
-	 enddo
-	 enddo
-	 
-	 do id=1,ndm
-	  sfg1D(id)=sfg_urb3d(ix,id,iy)
+          do iz=1,nz_um
+            do ibui=1,nbui_max !type of building
+          !!  sfw1D(2*id-1,iz)=sfw1(ix,iy,ind_zd(iz,id))
+          !!  sfw1D(2*id,iz)=sfw2(ix,iy,ind_zd(iz,id))
+              sfw1D(2*id-1,iz,ibui)=sfw1_urb3d(ix,ind_zd(ibui,iz,id),iy)
+              sfw1D(2*id,iz,ibui)=sfw2_urb3d(ix,ind_zd(ibui,iz,id),iy)
+            enddo
+          enddo
+        enddo
+ 
+        do id=1,ndm
+          sfg1D(id)=sfg_urb3d(ix,id,iy)
           lfg1D(id)=lfg_urb3d(ix,id,iy)
           dg1D(id)=dg_urb3d(ix,id,iy)
 
-	 enddo
+        enddo
 
 	 do id=1,ndm
 	 do iz=1,nz_um
@@ -1669,8 +1669,8 @@ do iz= kts,kte
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
 
-        do ibui=1,nbui
-        do iz=1,nz_um
+       do ibui=1,nbui
+          do iz=1,nz_um
              qlevb1D(iz)=qlev(iz,ibui)
              tlevb1D(iz)=tlev(iz,ibui) 
           enddo
@@ -1685,9 +1685,9 @@ do iz= kts,kte
              enddo
 
              do ily=1,nf_u
-             do iz=1,nz_um-1
-               tflevb1D(ily,iz)=tflev(id,ily,iz,ibui)
-             enddo
+                do iz=1,nz_um-1
+                  tflevb1D(ily,iz)=tflev(id,ily,iz,ibui)
+                enddo
              enddo
 
              do iz=1,nz_um

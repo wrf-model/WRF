@@ -1709,23 +1709,25 @@ do iz= kts,kte
 
     !print*,'HFGR_BEFORE_CALLING_BEM',hfgr(nlev(ibui))
 
-                      call BEM(nz_um,nlev(ibui),nhourday,dt,bs_u(1,iurb),                &
+          call BEM(nz_um,nlev(ibui),nhourday,dt,bs_u(1,iurb),                &
                    bs_u(2,iurb),dz_u,nwr_u,nf_u,nwr_u,ngb_u,sfwb1D,gfwb1D,   &
-                   sfwinb1D,sfr_avb(1,ibui),lfrb(1,ibui),gfrb(1,ibui),sfrbpv(1,ibui),   &
+                   sfwinb1D,sfr_avb(1,ibui),lfrb(1,ibui),gfrb(1,ibui),       &
+                   sfrbpv(1,ibui),                                           &
                    latent,sigma,albw,albwin,albr,                            &
-     	           emr,emw,emwind,rsw,rlw,r,cp_u,                            &
-     	           da_u,tmp_u,qv_u,pr_u,rs,rld,dzw,csw,alaw,pwin_u(iurb),    &
+                   emr,emw,emwind,rsw,rlw,r,cp_u,                            &
+                   da_u,tmp_u,qv_u,pr_u,rs,rld,dzw,csw,alaw,pwin_u(iurb),    &
                    cop_u(iurb),beta_u(iurb),sw_cond_u(iurb),time_on_u(iurb), &
                    time_off_u(iurb),targtemp_u(iurb),gaptemp_u(iurb),        &
                    targhum_u(iurb),gaphum_u(iurb),perflo_u(iurb),            &
-                   gr_frac_roof,pv_frac_roof,gr_flag,  & 
-                   ua_u,va_u,                                                  &
+                   gr_frac_roof,pv_frac_roof,gr_flag,                        & 
+                   ua_u,va_u,                                                &
                    hsesf_u(iurb),hsequip,                                    &
-     	           dzf,csf,alaf,dzgb,csgb,alagb,dzr,csr,                     &
-     	           alar,tlevb1D,qlevb1D,twb1D,twlevb1D,tflevb1D,tglevb1D,    &
-     	           trb1D,sflev1D,lflev1D,consumlev1D,eppvlev(ibui),tpvlevb(1,ibui), &
+                   dzf,csf,alaf,dzgb,csgb,alagb,dzr,csr,                     &
+                   alar,tlevb1D,qlevb1D,twb1D,twlevb1D,tflevb1D,tglevb1D,    &
+                   trb1D,sflev1D,lflev1D,consumlev1D,eppvlev(ibui),          &
+                   tpvlevb(1,ibui),                                          &
                    sfvlev1D,lfvlev1D,hfgrb(1,ibui),tr_avb(1,ibui),           &
-                    tpv(ibui),sfpv(ibui),sfr_indoor(ibui))
+                   tpv(ibui),sfpv(ibui),sfr_indoor(ibui))
           
 
 !

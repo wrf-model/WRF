@@ -3007,7 +3007,6 @@ CONTAINS
 ! IRRIGATION
   INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ims:ime,jms:jme):: irr_rand_field  
   INTEGER,OPTIONAL :: irr_ph,irr_freq  
-  REAL :: max_utype_urb2d
 
 #if ( EM_CORE == 1 )
 !local mynn 

@@ -1245,7 +1245,8 @@ CONTAINS
                                                              CPM, &
                                                             CHS2, &
                                                             CQS2
-
+! CTSM local variable
+   REAL, DIMENSION( ims:ime , jms:jme ) :: xland_ctsm
 ! SSIB local variables
    REAL ZDIFF
    REAL, DIMENSION( ims:ime , jms:jme ) :: XICE_save
@@ -4002,6 +4003,19 @@ CONTAINS
 
 
 !------------------------------------------------------------------
+        !For WRF-CTSM simulations, we would like the land model (CTSM)
+        ! to handle inland lake points.
+        ! Here, we are making ctsm_xland to include lake points, so that
+        ! CTSM can handle it.
+         DO j=j_start(ij),j_end(ij)
+            DO i=i_start(ij),i_end(ij)
+                xland_ctsm (i,j) = xland (i,j) 
+                IF (lakemask(i,j).EQ.1.) THEN
+                    xland_ctsm (i,j)  = 1  
+                ENDIF
+            ENDDO
+         ENDDO
+
          IF ( FRACTIONAL_SEAICE == 1) THEN
             ! The fields passed to LSM need to represent the full ice values, not
             ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
@@ -4049,7 +4063,7 @@ CONTAINS
 
              ! general information
              dt             = dt, &
-             xland          = xland, &
+             xland          = xland_ctsm, &
              xice           = xice, &
              xice_threshold = xice_threshold, &
 
@@ -4151,6 +4165,17 @@ CONTAINS
          ENDIF
 
       ENDIF
+
+      DO j=j_start(ij),j_end(ij)                                               
+         DO i=i_start(ij),i_end(ij)
+            CHKLOWQ(I,J)= 1.0
+            SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+            !SFCEXC(I,J)= CHS(I,J)
+            IF(PRESENT(ACHFX))ACHFX(I,J)=ACHFX(I,J) + HFX(I,J)*DT
+            IF(PRESENT(ACLHF))ACLHF(I,J)=ACLHF(I,J) + LH(I,J)*DT
+            IF(PRESENT(ACGRDFLX))ACGRDFLX(I,J)=ACGRDFLX(I,J) + GRDFLX(I,J)*DT
+         ENDDO
+      ENDDO
 
 #endif
 

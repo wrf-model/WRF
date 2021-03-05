@@ -1099,6 +1099,7 @@ endif
                       config_flags%urban_map_wd,                            & !multi-layer urban
                       config_flags%urban_map_gbd,                           & !multi-layer urban
                       config_flags%urban_map_fbd,                           & !multi-layer urban
+                      config_flags%urban_map_zgrd,                          & !multi-layer urban
                       config_flags%num_urban_hi,                            & !multi-layer urban
                       grid%raincv_a,grid%raincv_b,                                    &
                       grid%gd_cloud, grid%gd_cloud2,                                  & ! Optional
@@ -1153,6 +1154,11 @@ endif
                       grid%LF_AC_URB3D,grid%CM_AC_URB3D,grid%SFVENT_URB3D,grid%LFVENT_URB3D,   & !multi-layer urban
                       grid%SFWIN1_URB3D,grid%SFWIN2_URB3D, & !multi-layer urban
                       grid%SFW1_URB3D,grid%SFW2_URB3D,grid%SFR_URB3D,grid%SFG_URB3D,     & !multi-layer urban
+                      grid%EP_PV_URB3D,grid%T_PV_URB3D,                                  & !GRZ
+                      grid%TRV_URB4D,grid%QR_URB4D,grid%QGR_URB3D,grid%TGR_URB3D,        & !GRZ
+                      grid%DRAIN_URB4D,grid%DRAINGR_URB3D,grid%SFRV_URB3D,               & !GRZ
+                      grid%LFRV_URB3D,grid%DGR_URB3D,grid%DG_URB3D,grid%LFR_URB3D,     & !GRZ
+                      grid%LFG_URB3D,                                                  & !GRZ 
                       grid%LP_URB2D,grid%HI_URB2D,grid%LB_URB2D,grid%HGT_URB2D,        & !multi-layer urban
                       grid%MH_URB2D,grid%STDH_URB2D,grid%LF_URB2D,                     & !SLUCM
                       grid%A_U_BEP,grid%A_V_BEP,grid%A_T_BEP,grid%A_Q_BEP,             & !multi-layer urban

@@ -1505,6 +1505,7 @@
      &          ,urban_map_wd  = config_flags%urban_map_wd              & !multi-layer urban
      &          ,urban_map_gbd = config_flags%urban_map_gbd             & !multi-layer urban
      &          ,urban_map_fbd = config_flags%urban_map_fbd             & !multi-layer urban
+     &          ,urban_map_zgrd = config_flags%urban_map_zgrd             & !multi-layer urban
      &          ,NUM_URBAN_HI=config_flags%num_urban_hi                 & !multi-layer urban
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &

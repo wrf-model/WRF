@@ -63,6 +63,7 @@ dimspec    umap6   2     namelist=urban_map_bd             z     urban_map_bd
 dimspec    umap7   2     namelist=urban_map_wd             z     urban_map_wd
 dimspec    umap8   2     namelist=urban_map_gbd            z     urban_map_gbd
 dimspec    umap9   2     namelist=urban_map_fbd            z     urban_map_fbd
+dimspec    umap10  2     namelist=urban_map_zgrd           z     urban_map_zgrd
 
 dimspec    mocat   2     namelist=mosaic_cat               z     mosaic categories  # danli
 dimspec    mocat2  2     namelist=mosaic_cat_soil          z     mosaic categories * soil layers  # danli

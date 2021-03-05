@@ -107,6 +107,10 @@
 
          INTEGER FUNCTION bep_bem_nbui_max() 
          END FUNCTION bep_bem_nbui_max
+         
+         INTEGER FUNCTION bep_bem_ngr_u()
+         END FUNCTION bep_bem_ngr_u
+
       END INTERFACE
 
 !-----------------------------------------------------------------------
@@ -435,6 +439,8 @@
            model_config_rec % num_urban_nf   = bep_bem_nf_u()
            model_config_rec % num_urban_ngb  = bep_bem_ngb_u()
            model_config_rec % num_urban_nbui = bep_bem_nbui_max()
+           model_config_rec % num_urban_ngr  = bep_bem_ngr_u()
+
          END IF
       ENDDO
 
@@ -3011,6 +3017,9 @@
                                           (model_config_rec%num_urban_nz - 1)  * &
                                           model_config_rec%num_urban_nf        * &
                                           model_config_rec%num_urban_nbui
+        model_config_rec%urban_map_zgrd = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_ngr  * &
+                                          model_config_rec%num_urban_nz
 
       END IF     
       

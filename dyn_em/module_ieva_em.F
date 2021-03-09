@@ -46,7 +46,7 @@ END FUNCTION CHK_IEVA
 ! IEVA code for splitting vertical velocity into pieces for explicit and implicit
 ! advection by the routines based on Shchepetkin (2015)
 
-SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
+SUBROUTINE WW_SPLIT(wwE, wwI,                         &
                     u, v, ww,                         &
                     mut, rdnw, msfty,                 &
                     c1f, c2f,                         &
@@ -64,7 +64,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
                                        its, ite, jts, jte, kts, kte, &
                                        rk_step
 
-   REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::   u, v, ww, ph, phb
+   REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::   u, v, ww
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(INOUT) ::  wwE, wwI
 
@@ -84,6 +84,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
    INTEGER         :: i, j, k, ii, jj, i_start, i_end, j_start, j_end, ktf
    LOGICAL         :: print_flag = .true.
    SAVE            :: print_flag
+   LOGICAL         :: degrade_xs, degrade_ys, degrade_xe, degrade_ye
    
 ! Implicit advection parameters based on Shchepetkin (2015)
 ! Moved these to the top of the module.
@@ -111,11 +112,65 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
 ! =========================================================================
 ! Loop limits
 
+! positive definite filter
+
    ktf     = kte
-   i_start = its - 1
-   i_end   = MIN(ite+1,ide) 
-   j_start = jts - 1
-   j_end   = MIN(jte+1,jde)
+   i_start = its-1
+   i_end   = MIN(ite,ide-1)+1
+   j_start = jts-1
+   j_end   = MIN(jte,jde-1)+1
+
+!-- loop bounds for open or specified conditions
+
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+
+   degrade_xs = .true.
+   degrade_xe = .true.
+   degrade_ys = .true.
+   degrade_ye = .true.
+
+   IF( config_flags%periodic_x   .or. &
+       config_flags%symmetric_xs .or. &
+       (its > ids+3)                ) degrade_xs = .false.
+   IF( config_flags%periodic_x   .or. &
+       config_flags%symmetric_xe .or. &
+       (ite < ide-3)                ) degrade_xe = .false.
+   IF( config_flags%periodic_y   .or. &
+       config_flags%symmetric_ys .or. &
+       (jts > jds+3)                ) degrade_ys = .false.
+   IF( config_flags%periodic_y   .or. &
+       config_flags%symmetric_ye .or. &
+       (jte < jde-4)                ) degrade_ye = .false.
+
+   IF(degrade_xs) i_start = MAX(its-1,ids)
+   IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
+   IF(degrade_ys) j_start = MAX(jts-1,jds)
+   IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
+
+   IF(config_flags%specified .or. config_flags%nested) THEN
+     IF (degrade_xs) i_start = MAX(its-1,ids+1)
+     IF (degrade_xe) i_end   = MIN(ite+1,ide-2)
+     IF (degrade_ys) j_start = MAX(jts-1,jds+1)
+     IF (degrade_ye) j_end   = MIN(jte+1,jde-2)
+   END IF
+
+   IF(config_flags%open_xs) THEN
+     IF (degrade_xs) i_start = MAX(its-1,ids+1)
+   END IF
+   IF(config_flags%open_xe) THEN
+     IF (degrade_xe) i_end   = MIN(ite+1,ide-2)
+   END IF
+   IF(config_flags%open_ys) THEN
+     IF (degrade_ys) j_start = MAX(jts-1,jds+1)
+   END IF
+   IF(config_flags%open_ye) THEN
+     IF (degrade_ye) j_end   = MIN(jte+1,jde-2)
+   END IF
 
 ! =========================================================================
 ! PRINT OUT IEVA INFO
@@ -150,13 +205,13 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
      print_flag = .false.
    ENDIF
 
-   DO j = jms, jme
-   DO k = kms, kme
-   DO i = ims, ime
-     wwE(i,k,j) = 0.
-     wwI(i,k,j) = 0.
-   ENDDO
-   ENDDO
+   DO j = j_start, j_end
+    DO k = kts, ktf
+     DO i = i_start, i_end
+      wwE(i,k,j) = 0.
+      wwI(i,k,j) = 0.
+     ENDDO
+    ENDDO
    ENDDO
 
 ! =========================================================================
@@ -219,9 +274,9 @@ SUBROUTINE WW_SPLIT(wwE, wwI, ph, phb,                &
            cx = 0.25*rdx*(u(i+1,k,j  ) + u(i,k,j) + u(i+1,k-1,j  ) + u(i,k-1,j)) 
            cy = 0.25*rdy*(v(i,  k,j+1) + v(i,k,j) + v(i  ,k-1,j+1) + v(i,k-1,j)) 
 
-!          cw_max = alpha_max                                              ! Using simpler version...
+           cw_max = alpha_max                                              ! Using simpler version...
 !          cw_max = max(alpha_max - dt*Ceps*(cx + cy),0.0)                 ! adjusted max vertical courant
-           cw_max = max(alpha_max - dt*Ceps*sqrt(cx**2 + cy**2),0.0)       ! adjusted max vertical courant
+!          cw_max = max(alpha_max - dt*Ceps*sqrt(cx**2 + cy**2),0.0)       ! adjusted max vertical courant
 
            cr     = ww(i,k,j) * dt * rdnw(k) / (c1f(k)*mut(i,j)+c2f(k))    ! vertical courant number
          
@@ -830,7 +885,7 @@ END SUBROUTINE advect_s_implicit
 SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
                               ru, rv, rom,                   &
                               c1, c2,                        &
-                              mut_old, mut, mut_new,         &
+                              muu_old, muu, muu_new,         &
                               config_flags,                  &
                               msfux, msfuy, msfvx, msfvy,    &
                               msftx, msfty,                  &
@@ -864,7 +919,7 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
 ! mu_new ==> "n+1*" estimated column needed for dynamical variables where we dont
 !            have time-avg column mass.  For scalars (not theta) mut_new == mut
 
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: mut, mut_old, mut_new
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: muu, muu_old, muu_new
 
 !-------------------------------------------------------------------------------
 
@@ -899,8 +954,6 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
 
    REAL    :: wiL, wiR, dz
    
-   REAL , DIMENSION( ims:ime+1 , jms:jme ) :: muu, muu_old, muu_new
-
    REAL(KIND=8), DIMENSION(ims:ime,kts:kte) :: at, bt, ct, rt, bb
    REAL(KIND=8), DIMENSION(ims:ime)         :: btmp
       
@@ -913,19 +966,7 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
    i_end   = ite
    j_start = jts
    j_end   = MIN(jte,jde-1)
-   
-! Compute column masses for u-staggering...
-
-   DO j = j_start, j_end
-    DO i = i_start, i_end
-
-      muu(i,j)     = 0.5*(mut(i,j)    +mut(i-1,j))
-      muu_old(i,j) = 0.5*(mut_old(i,j)+mut_old(i-1,j))
-      muu_new(i,j) = 0.5*(mut_new(i,j)+mut_new(i-1,j))
-      
-    ENDDO
-  ENDDO
-    
+       
 ! Vertical loop to do implicit advection.....
 
    DO j = j_start, j_end
@@ -971,7 +1012,7 @@ END SUBROUTINE advect_u_implicit
 SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
                               ru, rv, rom,                   &
                               c1, c2,                        &
-                              mut_old, mut, mut_new,         &
+                              muv_old, muv, muv_new,         &
                               config_flags,                  &
                               msfux, msfuy, msfvx, msfvy,    &
                               msftx, msfty,                  &
@@ -1005,7 +1046,7 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
 ! mu_new ==> "n+1*" estimated column needed for dynamical variables where we dont
 !            have time-avg column mass.  For scalars (not theta) mut_new == mut
 
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: mut, mut_old, mut_new
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: muv, muv_old, muv_new
 
 !-------------------------------------------------------------------------------
 
@@ -1040,8 +1081,6 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
 
    REAL    :: mrdx, mrdy, ub, vb, uw, vw, dvm, dvp, wiL, wiR, dz
 
-   REAL,   DIMENSION( ims:ime , jms:jme+1 ) :: muv, muv_old, muv_new
-
    REAL(KIND=8), DIMENSION(ims:ime,kts:kte) :: at, bt, ct, rt, bb
    REAL(KIND=8), DIMENSION(ims:ime)         :: btmp
    
@@ -1054,18 +1093,6 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
    i_end   = MIN(ite,ide-1)
    j_start = jts
    j_end   = jte
-
-! Compute column masses for v-staggering...
-
-   DO j = j_start,j_end
-    DO i = i_start, i_end
-
-      muv(i,j)     = 0.5*(mut(i,j)    +mut(i,j-1))
-      muv_old(i,j) = 0.5*(mut_old(i,j)+mut_old(i,j-1))
-      muv_new(i,j) = 0.5*(mut_new(i,j)+mut_new(i,j-1))
-      
-    ENDDO
-  ENDDO
  
 ! Main Loop
 

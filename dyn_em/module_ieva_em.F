@@ -100,19 +100,17 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
 
 ! Debug declarations
 
-   REAL,    PARAMETER :: binfrac = 0.1
-   INTEGER, PARAMETER :: binsize = 11
-   INTEGER            :: count(binsize)
-   real(KIND=4)       :: binavg(binsize), crs(binsize)
+!  REAL,    PARAMETER :: binfrac = 0.1
+!  INTEGER, PARAMETER :: binsize = 11
+!  INTEGER            :: count(binsize)
+!  real(KIND=4)       :: binavg(binsize), crs(binsize)
 
 ! Check to see if IEVA is on for this RK3 substep
 
    ieva = CHK_IEVA(config_flags, rk_step)
 
 ! =========================================================================
-! Loop limits
-
-! positive definite filter
+! Loop limits:  need to compute wwE & wwI one halo ring out for staggered variables.
 
    ktf     = kte
    i_start = its-1
@@ -120,57 +118,6 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
    j_start = jts-1
    j_end   = MIN(jte,jde-1)+1
 
-!-- loop bounds for open or specified conditions
-
-!  determine boundary mods for flux operators
-!  We degrade the flux operators from 3rd/4th order
-!   to second order one gridpoint in from the boundaries for
-!   all boundary conditions except periodic and symmetry - these
-!   conditions have boundary zone data fill for correct application
-!   of the higher order flux stencils
-
-   degrade_xs = .true.
-   degrade_xe = .true.
-   degrade_ys = .true.
-   degrade_ye = .true.
-
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+3)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-3)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+3)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-4)                ) degrade_ye = .false.
-
-   IF(degrade_xs) i_start = MAX(its-1,ids)
-   IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
-   IF(degrade_ys) j_start = MAX(jts-1,jds)
-   IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
-
-   IF(config_flags%specified .or. config_flags%nested) THEN
-     IF (degrade_xs) i_start = MAX(its-1,ids+1)
-     IF (degrade_xe) i_end   = MIN(ite+1,ide-2)
-     IF (degrade_ys) j_start = MAX(jts-1,jds+1)
-     IF (degrade_ye) j_end   = MIN(jte+1,jde-2)
-   END IF
-
-   IF(config_flags%open_xs) THEN
-     IF (degrade_xs) i_start = MAX(its-1,ids+1)
-   END IF
-   IF(config_flags%open_xe) THEN
-     IF (degrade_xe) i_end   = MIN(ite+1,ide-2)
-   END IF
-   IF(config_flags%open_ys) THEN
-     IF (degrade_ys) j_start = MAX(jts-1,jds+1)
-   END IF
-   IF(config_flags%open_ye) THEN
-     IF (degrade_ye) j_end   = MIN(jte+1,jde-2)
-   END IF
 
 ! =========================================================================
 ! PRINT OUT IEVA INFO
@@ -206,12 +153,12 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
    ENDIF
 
    DO j = j_start, j_end
-    DO k = kts, ktf
-     DO i = i_start, i_end
-      wwE(i,k,j) = 0.
-      wwI(i,k,j) = 0.
+     DO k = kts, ktf
+       DO i = i_start, i_end
+         wwE(i,k,j) = 0.
+         wwI(i,k,j) = 0.
+       ENDDO
      ENDDO
-    ENDDO
    ENDDO
 
 ! =========================================================================
@@ -228,7 +175,7 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
 !
 !=========================================================================
 
-! Set upper and lower boundary values
+! Set upper and lower boundary values to be explicit advection
 
      DO j = j_start, j_end
        DO i = i_start,i_end
@@ -243,14 +190,15 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
      ENDDO
        
      DO j = j_start, j_end
+       
        DO k = 2, ktf-1
 
          DO i = i_start,i_end
          
 !===================================================================================================
 !      
-! Translating Shchepetkin (2015), all the volumes and surface areas cancel out (not obvious unless you read
-! the definitions of U, V, and W right after equation 3.7 (they are u*dy*dz, v*dx*dz, w*dx*dy)...
+! Translating Shchepetkin (2015, hereafter S2015), all the volumes and surface areas cancel out (not obvious 
+! unless you read the definitions of U, V, and W right after equation 3.7; they are u*dy*dz, v*dx*dz, w*dx*dy)...
 ! You can write the algorithm using the adjusted maximum vertical courant number (alpha_max - eps*hor_div)
 ! versus the actual vertical courant number.  This code is based on the appendix C of Shchepetkin (2015).
 ! The CX and CY measure the maximum possible divergence for a zone, e.g., the Lipschlitz number.  If 
@@ -261,8 +209,9 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
 ! region than the integrators used in Shchepetkin (2015).
 !
 !===================================================================================================
-           wfrac = 1.0
-            
+
+! S2015 Lipshlitz courant number.  Sometimes it can be touchy so we use simpler estimate below
+!          
 !          IF( ww(i,k,j) < 0.0 ) THEN    !! Omega has opposite sign of W
 !            cx = rdx*(max(u(i+1,k,j  ), 0.0) - min(u(i,k,j), 0.0)) 
 !            cy = rdy*(max(v(i,  k,j+1), 0.0) - min(v(i,k,j), 0.0)) 
@@ -271,16 +220,20 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
 !            cy = rdy*(max(v(i,  k-1,j+1), 0.0) - min(v(i,k-1,j), 0.0))
 !          ENDIF
 
+!          cw_max = max(alpha_max - dt*Ceps*(cx + cy),0.0)                 ! S2015 adjusted max vertical courant
+
+! Compute a mean flow courant number to adjust the max vertical courant number
+
            cx = 0.25*rdx*(u(i+1,k,j  ) + u(i,k,j) + u(i+1,k-1,j  ) + u(i,k-1,j)) 
            cy = 0.25*rdy*(v(i,  k,j+1) + v(i,k,j) + v(i  ,k-1,j+1) + v(i,k-1,j)) 
+           
+           cw_max = max(alpha_max - dt*Ceps*sqrt(cx**2 + cy**2),0.0)       ! simpler adjusted max vertical courant
 
-           cw_max = alpha_max                                              ! Using simpler version...
-!          cw_max = max(alpha_max - dt*Ceps*(cx + cy),0.0)                 ! adjusted max vertical courant
-!          cw_max = max(alpha_max - dt*Ceps*sqrt(cx**2 + cy**2),0.0)       ! adjusted max vertical courant
-
-           cr     = ww(i,k,j) * dt * rdnw(k) / (c1f(k)*mut(i,j)+c2f(k))    ! vertical courant number
+           cr     = ww(i,k,j) * dt * rdnw(k) / (c1f(k)*mut(i,j)+c2f(k))    ! the actual vertical courant number
          
            IF( cw_max > 0.0 ) THEN
+                      
+             wfrac   = 1.0   ! initialize wfrac
       
              cw_max2 = cw_max**2
              cw_min  = cw_max*cmnx_ratio
@@ -314,7 +267,8 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
 !
 !=========================================================================
                 
-           ELSE
+           ELSE   ! If cw_max <= 0 - then the horizontal flow is very fast
+                  ! so do all vertical transport implicitly
 
 !=========================================================================
 ! DEBUG CODE BLOCK:  write out information when fully implicit
@@ -807,7 +761,7 @@ SUBROUTINE advect_s_implicit( s, s_old, tendency,            &
                                                                   rdy
    REAL ,                                        INTENT(IN   ) :: dt_rk
 
-   ! Local data
+! Local data
    
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
@@ -824,14 +778,13 @@ SUBROUTINE advect_s_implicit( s, s_old, tendency,            &
    
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1
    INTEGER :: valid_ik, skip
-   CHARACTER*512 :: temp
 
-   LOGICAL         :: print_flag = .true.
-   SAVE            :: print_flag
-
-!-- loop bounds 
+!
 
    ktf     = MIN(kte,kde-1)
+   
+!-- horizontal loop bounds copied from module_advect_em.F/advect_scalar
+
    i_start = its
    i_end   = MIN(ite,ide-1)
    j_start = jts
@@ -898,7 +851,7 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
 
    IMPLICIT NONE
    
-   ! Input data
+! Input data
    
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
@@ -962,22 +915,37 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
    INTEGER :: valid_ik
 
    ktf     = MIN(kte,kde-1)
+   
+!-- loop bounds copied from module_advect_em.F/advect_u
+
+   specified = .false.
+   if(config_flags%specified .or. config_flags%nested) specified = .true.
+
    i_start = its
    i_end   = ite
    j_start = jts
-   j_end   = MIN(jte,jde-1)
+   j_end   = min(jte,jde-1)
+
+!  IF ( config_flags%open_xs ) i_start = MAX(ids+1,its)
+!  IF ( config_flags%open_xe ) i_end   = MIN(ide-1,ite)
+
+   IF ( config_flags%open_ys .or. specified ) i_start = MAX(ids+1,its)
+   IF ( config_flags%open_ye .or. specified ) i_end   = MIN(ide-1,ite)
+   IF ( config_flags%periodic_x ) i_start = its
+   IF ( config_flags%periodic_x ) i_end = ite
        
 ! Vertical loop to do implicit advection.....
 
    DO j = j_start, j_end
    
      DO k = kts, ktf
+      
+       km1 = k - 1
+       kp1 = k + 1
+       IF( k .eq. ktf ) kp1 = ktf
+       IF( k .eq. kts ) km1 = kts
+
        DO i = i_start, i_end
-     
-         km1 = k - 1
-         kp1 = k + 1
-         IF( k .eq. ktf ) kp1 = ktf
-         IF( k .eq. kts ) km1 = kts
 
 ! SO IMPORTANT to * 1/DZ HERE CAUSE IT CHANGES Wi* SIGN TO BE CORRECT FOR UPWINDING!!!!
          wiL   = 0.5*(rom(i-1,k,  j)+rom(i,k,  j)) * rdzw(k) * msfuy(i,j) / (c1(k)*muu_new(i,j)+c2(k)) 
@@ -1089,22 +1057,35 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
    INTEGER :: valid_ik
    
    ktf     = MIN(kte,kde-1)
+   
+!-- loop bounds copied from module_advect_em.F/advect_v   
+   
+   specified = .false.
+   if(config_flags%specified .or. config_flags%nested) specified = .true.
+
    i_start = its
    i_end   = MIN(ite,ide-1)
    j_start = jts
    j_end   = jte
+
+! Polar boundary conditions are like open or specified
+! We don't want to calculate vertical v tendencies at the N or S pole
+   IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+   IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
  
 ! Main Loop
 
    DO j = j_start, j_end
    
      DO k = kts, ktf
+     
+       km1 = k - 1
+       kp1 = k + 1
+       IF( k .eq. ktf ) kp1 = ktf
+       IF( k .eq. kts ) km1 = kts
+
        DO i = i_start, i_end
      
-         km1 = k - 1
-         kp1 = k + 1
-         IF( k .eq. ktf ) kp1 = ktf
-         IF( k .eq. kts ) km1 = kts
 
          wiL   = 0.5*(rom(i,k,  j-1)+rom(i,k,  j)) * rdzw(k) * msfvy(i,j) / (c1(k)*muv_new(i,j)+c2(k)) 
          wiR   = 0.5*(rom(i,k+1,j-1)+rom(i,k+1,j)) * rdzw(k) * msfvy(i,j) / (c1(k)*muv_new(i,j)+c2(k))

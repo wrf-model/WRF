@@ -9,8 +9,8 @@ MODULE module_em
    USE module_advect_em, only: advect_u, advect_v, advect_w, advect_scalar, advect_scalar_pd, advect_scalar_mono, &
         advect_weno_u, advect_weno_v, advect_weno_w, advect_scalar_weno,  advect_scalar_wenopd
    
-   USE module_big_step_utilities_em, only: grid_config_rec_type, calculate_full, couple_momentum, calc_mu_uv, calc_ww_cp, &
-        calc_cq, calc_alt, calc_php, set_tend, rhs_ph, horizontal_pressure_gradient, pg_buoy_w, w_damp, &
+   USE module_big_step_utilities_em, only: grid_config_rec_type, calculate_full, couple_momentum, calc_mu_uv, calc_mu_uv_1, &
+        calc_ww_cp, calc_cq, calc_alt, calc_php, set_tend, rhs_ph, horizontal_pressure_gradient, pg_buoy_w, w_damp, &
         perturbation_coriolis, coriolis, curvature, horizontal_diffusion, horizontal_diffusion_3dmp, &
         vertical_diffusion_u, vertical_diffusion_v, vertical_diffusion, vertical_diffusion_3dmp, sixth_order_diffusion, & 
         rk_rayleigh_damp, theta_relaxation, vertical_diffusion_mp, zero_tend, zero_tend2d
@@ -343,6 +343,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 ! IEVA declarations
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme ) :: wwE, wwI  
    REAL , DIMENSION( ims:ime , jms:jme )         :: mut_old, mut_new                                                              
+   REAL , DIMENSION( ims:ime , jms:jme )         :: muu_old, muu_new                                                              
+   REAL , DIMENSION( ims:ime , jms:jme )         :: muv_old, muv_new                                                              
    LOGICAL                                       :: ieva
    
 !<DESCRIPTION>
@@ -430,16 +432,10 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    rk_order = config_flags%rk_ord
    dt_step  = dt / (rk_order - rk_step + 1)   ! needed for calculations using sub-rk step
 
-! Need an estimate of the mut at the n time level...
-
-   CALL calculate_full( mut_old, mub, mu_old,     &
-                        ids, ide, jds, jde, 1, 2, &
-                        ims, ime, jms, jme, 1, 1, &
-                        its, ite, jts, jte, 1, 1 )
                         
 ! Code for splitting vertical velocity into ex/im parts
 
-   CALL WW_SPLIT(wwE, wwI, ph, phb,                &
+   CALL WW_SPLIT(wwE, wwI,                         &
                  u,  v,  ww,                       &
                  mut, rdnw, msfty,                 &
                  c1f, c2f,                         &
@@ -455,6 +451,13 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    ieva = CHK_IEVA( config_flags, rk_step ) 
 
    IF( ieva ) THEN
+   
+! Need an estimate of the mut at the n time level...
+
+   CALL calculate_full( mut_old,  mub, mu_old,     &
+                        ids, ide, jds, jde, 1, 2,  &
+                        ims, ime, jms, jme, 1, 1,  &
+                        its, ite, jts, jte, 1, 1 )
 
 ! Estimate new temporary column mass
                         
@@ -467,6 +470,19 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                        ims, ime, jms, jme, kms, kme,        &
                        its, ite, jts, jte, kts, kte    )
                          
+! Create staggered mass values for u and v points
+
+   CALL calc_mu_uv_1 ( config_flags,                 &
+                       mut_old, muu_old, muv_old,    &
+                       ids, ide, jds, jde, kds, kde, &
+                       ims, ime, jms, jme, kms, kme, &
+                       its, ite, jts, jte, kts, kte )
+                      
+   CALL calc_mu_uv_1 ( config_flags,                 &
+                       mut_new, muu_new, muv_new,    &
+                       ids, ide, jds, jde, kds, kde, &
+                       ims, ime, jms, jme, kms, kme, &
+                       its, ite, jts, jte, kts, kte )
 
    ENDIF
 
@@ -501,7 +517,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
      CALL advect_u_implicit ( u, u_old, ru_tend, ru, rv, wwI,  &
                               c1h, c2h,                        &
-                              mut_old, mut, mut_new,           &
+                              muu_old, muu, muu_new,           &
                               config_flags,                    &
                               msfux, msfuy, msfvx, msfvy,      &
                               msftx, msfty,                    &
@@ -542,7 +558,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
      
      CALL advect_v_implicit ( v, v_old, rv_tend, ru, rv, wwI,  &
                               c1h, c2h,                        &
-                              mut_old, mut, mut_new,           &
+                              muv_old, muv, muv_new,           &
                               config_flags,                    &
                               msfux, msfuy, msfvx, msfvy,      &
                               msftx, msfty,                    &
@@ -1081,7 +1097,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                             tenddec,                         &
                             rk_step, dt_step,                &
                             ru, rv, ww,                      &  
-                            u_old,  v_old,                   &  
+                            u,   v,                          &  
                             mut, mub, mu_old,                &
                             c1h, c2h, c1f, c2f, alt,         &
                             scalar_old, scalar,              &
@@ -1130,8 +1146,8 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(IN   ) ::     ru,     &
                                                                       rv,     &
                                                                       ww,     &
-                                                                      u_old,  &
-                                                                      v_old,  &
+                                                                      u,      &
+                                                                      v,      &
                                                                       xkmhd,  &
                                                                       alt,    &
                                                                       phb,    &
@@ -1202,8 +1218,8 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
 ! Code for splitting vertical velocity into ex/im parts
 
-   CALL WW_SPLIT(wwE, wwI, ph, phb,                &
-                 u_old, v_old, ww,                 &
+   CALL WW_SPLIT(wwE, wwI,                         &
+                 u,   v,    ww,                    &
                  mut, rdnw, msfty,                 &
                  c1f, c2f,                         &
                  rdx, rdy, msfux, msfuy,           &

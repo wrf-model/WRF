@@ -452,7 +452,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
    IF( ieva ) THEN
    
-! Need an estimate of the mut at the n time level...
+! Need an estimate of the mut at the original ('n') time level...
 
    CALL calculate_full( mut_old,  mub, mu_old,     &
                         ids, ide, jds, jde, 1, 2,  &
@@ -1097,7 +1097,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                             tenddec,                         &
                             rk_step, dt_step,                &
                             ru, rv, ww,                      &  
-                            u,   v,                          &  
+                            u_old, v_old,                    &  
                             mut, mub, mu_old,                &
                             c1h, c2h, c1f, c2f, alt,         &
                             scalar_old, scalar,              &
@@ -1146,8 +1146,8 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(IN   ) ::     ru,     &
                                                                       rv,     &
                                                                       ww,     &
-                                                                      u,      &
-                                                                      v,      &
+                                                                      u_old,  &
+                                                                      v_old,  &
                                                                       xkmhd,  &
                                                                       alt,    &
                                                                       phb,    &
@@ -1197,6 +1197,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
 ! IEVA variables
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: wwE, wwI  
+   REAL, DIMENSION( ims:ime, jms:jme )          :: mut_old  
    LOGICAL                                      :: ieva
 
 !<DESCRIPTION>
@@ -1219,7 +1220,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 ! Code for splitting vertical velocity into ex/im parts
 
    CALL WW_SPLIT(wwE, wwI,                         &
-                 u,   v,    ww,                    &
+                 u_old,   v_old,    ww,            &
                  mut, rdnw, msfty,                 &
                  c1f, c2f,                         &
                  rdx, rdy, msfux, msfuy,           &
@@ -1228,6 +1229,17 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                  ids, ide, jds, jde, kds, kde,     &
                  ims, ime, jms, jme, kms, kme,     &
                  its, ite, jts, jte, kts, kte )
+                 
+                 
+   IF( ieva ) THEN
+   
+! Need an estimate of the mut at the original ('n') time level...
+
+    CALL calculate_full( mut_old,  mub, mu_old,     &
+                         ids, ide, jds, jde, 1, 2,  &
+                         ims, ime, jms, jme, 1, 1,  &
+                         its, ite, jts, jte, 1, 1 )
+   ENDIF
    
    CALL nl_get_time_step ( 1, time_step )
 
@@ -1338,7 +1350,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                 advect_tend(ims,kms,jms),       &
                                 ru, rv, wwI,                    &
                                 c1h, c2h,                       &
-                                mut, mut, mut,                  &
+                                mut_old, mut, mut,              &
                                 config_flags,                   &
                                 msfux, msfuy, msfvx, msfvy,     &
                                 msftx, msfty,                   &

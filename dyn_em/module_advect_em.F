@@ -1349,8 +1349,8 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    IF ( config_flags%open_ys .or. specified ) i_start = MAX(ids+1,its)
    IF ( config_flags%open_ye .or. specified ) i_end   = MIN(ide-1,ite)
-      IF ( config_flags%periodic_x ) i_start = its
-      IF ( config_flags%periodic_x ) i_end = ite
+   IF ( config_flags%periodic_x ) i_start = its
+   IF ( config_flags%periodic_x ) i_end = ite
 
    DO i = i_start, i_end
      vflux(i,kts)=0.
@@ -2818,20 +2818,20 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 !     we can do this using *(my/mx) (see eqn. 45 for example)
 
 
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = jte
+    i_start = its
+    i_end   = MIN(ite,ide-1)
+    j_start = jts
+    j_end   = jte
 
-      DO i = i_start, i_end
-         vflux(i,kts)=0.
-         vflux(i,kte)=0.
-      ENDDO
+    DO i = i_start, i_end
+       vflux(i,kts)=0.
+       vflux(i,kte)=0.
+    ENDDO
 
-      ! Polar boundary conditions are like open or specified
-      ! We don't want to calculate vertical v tendencies at the N or S pole
-      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
+    ! Polar boundary conditions are like open or specified
+    ! We don't want to calculate vertical v tendencies at the N or S pole
+    IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+    IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
 
     vert_order_test : IF (vert_order == 6) THEN    
 
@@ -5850,15 +5850,15 @@ ELSE IF (horz_order == 2 ) THEN
 !     Here we have:  - partial d/dz (w*rom) = - partial d/dz (w rho w / my)
 !     Therefore we don't need to make a correction for advect_w
 
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = MIN(jte,jde-1)
+    i_start = its
+    i_end   = MIN(ite,ide-1)
+    j_start = jts
+    j_end   = MIN(jte,jde-1)
 
-      DO i = i_start, i_end
-         vflux(i,kts)=0.
-         vflux(i,kte)=0.
-      ENDDO
+    DO i = i_start, i_end
+       vflux(i,kts)=0.
+       vflux(i,kte)=0.
+    ENDDO
 
     vert_order_test : IF (vert_order == 6) THEN    
 
@@ -11416,8 +11416,8 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
 
    IF ( config_flags%open_ys .or. specified ) i_start = MAX(ids+1,its)
    IF ( config_flags%open_ye .or. specified ) i_end   = MIN(ide-1,ite)
-      IF ( config_flags%periodic_x ) i_start = its
-      IF ( config_flags%periodic_x ) i_end = ite
+   IF ( config_flags%periodic_x ) i_start = its
+   IF ( config_flags%periodic_x ) i_end = ite
 
    DO i = i_start, i_end
      vflux(i,kts)=0.
@@ -12097,20 +12097,20 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
 !     we can do this using *(my/mx) (see eqn. 45 for example)
 
 
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = jte
+    i_start = its
+    i_end   = MIN(ite,ide-1)
+    j_start = jts
+    j_end   = jte
 
-      DO i = i_start, i_end
-         vflux(i,kts)=0.
-         vflux(i,kte)=0.
-      ENDDO
+    DO i = i_start, i_end
+       vflux(i,kts)=0.
+       vflux(i,kte)=0.
+    ENDDO
 
-      ! Polar boundary conditions are like open or specified
-      ! We don't want to calculate vertical v tendencies at the N or S pole
-      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
+    ! Polar boundary conditions are like open or specified
+    ! We don't want to calculate vertical v tendencies at the N or S pole
+    IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+    IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
 
 !    vert_order_test : IF (vert_order == 6) THEN    
 

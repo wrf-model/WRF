@@ -2138,7 +2138,7 @@ BENCH_START(rk_scalar_tend_tim)
                CALL rk_scalar_tend (  im, im, config_flags, tenddec,         & 
                            rk_step, dt_rk,                                   &
                            grid%ru_m, grid%rv_m, grid%ww_m,                  &
-                           grid%u_2, grid%v_2,                               &  
+                           grid%u_1, grid%v_1,                               &  
                            grid%muts, grid%mub, grid%mu_1,                   &
                            grid%c1h, grid%c2h,  grid%c1f, grid%c2f,          &
                            grid%alt,                                         &
@@ -2307,7 +2307,7 @@ BENCH_START(tke_adv_tim)
            CALL rk_scalar_tend ( 1, 1, config_flags, tenddec,                      & 
                             rk_step, dt_rk,                                        &
                             grid%ru_m, grid%rv_m, grid%ww_m,                       &
-                            grid%u_2, grid%v_2,                                    &  
+                            grid%u_1, grid%v_1,                                    &  
                             grid%muts, grid%mub, grid%mu_1,                        &
                             grid%c1h, grid%c2h,  grid%c1f, grid%c2f,               &
                             grid%alt,                                              &
@@ -2400,7 +2400,7 @@ BENCH_START(chem_adv_tim)
              CALL rk_scalar_tend ( ic, ic, config_flags, tenddec,                & 
                               rk_step, dt_rk,                                    &
                               grid%ru_m, grid%rv_m, grid%ww_m,                   &
-                              grid%u_2, grid%v_2,                                &  
+                              grid%u_1, grid%v_1,                                &  
                               grid%muts, grid%mub, grid%mu_1,                    &
                               grid%c1h, grid%c2h,  grid%c1f, grid%c2f,           &
                               grid%alt,                                          &
@@ -2562,7 +2562,7 @@ BENCH_START(tracer_adv_tim)
              CALL rk_scalar_tend ( ic, ic, config_flags, tenddec,                & 
                               rk_step, dt_rk,                                    &
                               grid%ru_m, grid%rv_m, grid%ww_m,                   &
-                              grid%u_2, grid%v_2,                                &  
+                              grid%u_1, grid%v_1,                                &  
                               grid%muts, grid%mub, grid%mu_1,                    &
                               grid%c1h, grid%c2h,  grid%c1f, grid%c2f,           &
                               grid%alt,                                          &
@@ -2704,7 +2704,7 @@ BENCH_END(tracer_adv_tim)
            CALL rk_scalar_tend ( is, is, config_flags, tenddec,                   & 
                                  rk_step, dt_rk,                                  &
                                  grid%ru_m, grid%rv_m, grid%ww_m,                 &
-                                 grid%u_2, grid%v_2,                              &  
+                                 grid%u_1, grid%v_1,                              &  
                                  grid%muts, grid%mub, grid%mu_1,                  &
                                  grid%c1h, grid%c2h,  grid%c1f, grid%c2f,         &
                                  grid%alt,                                        &

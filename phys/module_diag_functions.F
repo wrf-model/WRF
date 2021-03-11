@@ -509,7 +509,6 @@ CONTAINS
       LOGICAL                 :: wflag      !~ Saturation flag
       REAL                    :: freeze     !~ Water loading multiplier
       REAL                    :: pdiff      !~ Pressure difference between levs
-      REAL                    :: hdiff      !~ Height difference between levs. Modified by Zhixiao. 
       REAL                    :: pm, pu, pd !~ Middle, upper, lower pressures
       REAL                    :: lidxu      !~ Lifted index at upper level
       REAL                    :: lidxd      !~ Lifted index at lower level

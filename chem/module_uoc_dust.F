@@ -7,6 +7,9 @@ MODULE uoc_dust
 ! 
 ! For references and available schemes, see module_qf03.F
 ! Martina Klose, 29 May 2013
+!
+! A. Ukhov, 11 March 2021, Now "emis_dust" is accumulated dust 
+! emission (kg/m2). Before was instantenious flux (ug m^-2 s^-1).
 ! 
 !----------------------------------------------------------------------------
   USE module_data_gocart_dust
@@ -17,7 +20,7 @@ MODULE uoc_dust
   USE module_sf_ruclsm,  ONLY:DRYSMC_ruc => DRYSMC
   
   CONTAINS
-  subroutine uoc_dust_driver(ktau,dt,config_flags,                         &
+  subroutine uoc_dust_driver(dt,config_flags,                         &
          chem,rho_phy,dz8w,smois,ust,                                      &
          isltyp,vegfra,g,emis_dust,                                        &
          ust_t_min, imod, rough_cor, smois_cor,                            &
@@ -31,7 +34,7 @@ MODULE uoc_dust
   IMPLICIT NONE
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
-   INTEGER,      INTENT(IN   ) :: ktau, imod,                              &
+   INTEGER,      INTENT(IN   ) :: imod,                              &
                                   ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
@@ -235,13 +238,17 @@ MODULE uoc_dust
          chem(i,kts,j,p_dust_3)=tc(3)*converi
          chem(i,kts,j,p_dust_4)=tc(4)*converi
          chem(i,kts,j,p_dust_5)=tc(5)*converi
-! for output diagnostics
-         emis_dust(i,1,j,p_edust1)=bems(1)*converi 
-         emis_dust(i,1,j,p_edust2)=bems(2)*converi
-         emis_dust(i,1,j,p_edust3)=bems(3)*converi 
-         emis_dust(i,1,j,p_edust4)=bems(4)*converi
-         emis_dust(i,1,j,p_edust5)=bems(5)*converi      ![kg/m2/s] -> [ug/m2/s] 
-
+     
+         ! A. Ukhov
+         ! for output diagnostics
+         ! bems (kg/m2) per dt
+         ! p_edust1...5 is accumulated dust emission (kg/m2)
+         emis_dust(i,1,j,p_edust1)=emis_dust(i,1,j,p_edust1)+bems(1)
+         emis_dust(i,1,j,p_edust2)=emis_dust(i,1,j,p_edust2)+bems(2)
+         emis_dust(i,1,j,p_edust3)=emis_dust(i,1,j,p_edust3)+bems(3)
+         emis_dust(i,1,j,p_edust4)=emis_dust(i,1,j,p_edust4)+bems(4)
+         emis_dust(i,1,j,p_edust5)=emis_dust(i,1,j,p_edust5)+bems(5)
+         
      else   ! no dust source
          emis_dust(i,1,j,p_edust1)=0.
          emis_dust(i,1,j,p_edust2)=0.

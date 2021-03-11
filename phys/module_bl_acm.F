@@ -21,7 +21,7 @@ CONTAINS
                      UST,      HFX,      QFX,   TSK,                  &
                      PSFC,     EP1,      G,                           &
                      ROVCP,    RD,       CPD,                         &
-                     PBLH,     KPBL2D,   EXCH_H, REGIME,              &
+                     PBLH,     KPBL2D,   EXCH_H, EXCH_M, REGIME,      &
                      GZ1OZ0,   WSPD,     PSIM, MUT, RMOL,             &
                      RUBLTEN,  RVBLTEN,  RTHBLTEN,                    &
                      RQVBLTEN, RQCBLTEN, RQIBLTEN,                    &
@@ -50,6 +50,11 @@ CONTAINS
 !     JP        3/2013   - WRFChem version. Mixing of chemical species are added
 !     HF        5/2016   - MPAS version  
 !     JP        8/2017   - Z-coord version from MPAS version for hybrid coords  
+!     JP        10/2020  - Fixed a bug where KSRC is now an array dimensioned ( its:ite )
+!                        - Modified the PBL height algorithm for stable conditions so
+!                          that the Richardson number is computed using windspeed in layer
+!                          k rather than wind speed difference between layer k and ksrc
+!                        - Added EXCH_M to argument list 
 !
 !**********************************************************************
 !   ARGUMENT LIST:
@@ -145,7 +150,7 @@ CONTAINS
                                                         RQCBLTEN, RQIBLTEN
 
    real,     dimension( ims:ime, kms:kme, jms:jme ),                         &
-             intent(inout)   ::                         exch_h
+             intent(inout)   ::                         exch_h,exch_m
 
     INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT  ) ::  KPBL2D
  
@@ -223,6 +228,7 @@ CONTAINS
               ,psfcpa=psfc(ims,j),ust=ust(ims,j)                   &
               ,pbl=pblh(ims,j)                                     &
               ,exch_hx=exch_h(ims,kms,j)                           &
+              ,exch_mx=exch_m(ims,kms,j)                           &
               ,regime=regime(ims,j),psim=psim(ims,j)               &
               ,hfx=hfx(ims,j),qfx=qfx(ims,j)                       &
               ,tg=tsk(ims,j),gz1oz0=gz1oz0(ims,j)                  &
@@ -264,7 +270,7 @@ CONTAINS
 #endif
               ,dzf,densx,utnp,vtnp,ttnp,qvtnp,qctnp,qitnp   &
               ,cpd,g,rovcp,rd,rdt,psfcpa,ust                &
-              ,pbl,exch_hx,regime,psim                      &
+              ,pbl,exch_hx,exch_mx,regime,psim                      &
               ,hfx,qfx,tg,gz1oz0,wspd ,klpbl                &
               ,mut, rmol                                    &
               ,ep1,karman                                   &
@@ -298,7 +304,7 @@ CONTAINS
       real,     dimension( ims:ime ), intent(in)      ::   hfx, qfx
       real,     dimension( ims:ime ), intent(in)      ::   mut
       real,     dimension( ims:ime, kms:kme ),                    &
-                intent(inout)                         ::   exch_hx
+                intent(inout)                         ::   exch_hx,exch_mx
 !... Integer
       INTEGER, DIMENSION( ims:ime ),       INTENT(OUT):: KLPBL
       INTEGER,  INTENT(IN)      ::      XTIME
@@ -315,7 +321,7 @@ CONTAINS
 !--Local 
       INTEGER I, K     
       INTEGER :: KPBLHT
-      INTEGER, DIMENSION( its:ite ) :: KPBLH, NOCONV
+      INTEGER, DIMENSION( its:ite ) :: KPBLH, NOCONV, KSRC
 
 !... Real
       REAL    ::  TVCON, WSS, TCONV, TH1, TOG, DTMP, WSSQ
@@ -333,7 +339,7 @@ CONTAINS
       REAL    ::  A,TST12,RL,ZFUNC,DENSF
 
 !... Integer
-      INTEGER :: KL, jtf, ktf, itf, KMIX, KSRC
+      INTEGER :: KL, jtf, ktf, itf, KMIX
       character*512 :: message
 !-----initialize vertical tendencies and
 
@@ -419,36 +425,38 @@ CONTAINS
 !...  COMPUTE PBL WHERE RICHARDSON NUMBER = RIC (0.25) HOLTSLAG ET AL 1990  
      DO 100 I = its,ite
        DO K = 1,kte
-         KSRC = K
+         RIB(I,K) = 0.0
+         KSRC(I) = K
          IF (ZF(I,K).gt.30.0) GO TO 69
        ENDDO
-69     CONTINUE
+69     CONTINUE 
+!       KSRC(I) = 1  ! test
        TH1 = 0.0
        ZH1 = 0.0
        UH1 = 0.0
        VH1 = 0.0
-       DO K = 1,KSRC
+       DO K = 1,KSRC(I)
          TH1 = TH1 + THETAV(I,K)  
          ZH1 = ZH1 + ZA(I,K)
          UH1 = UH1 + US(I,K)
          VH1 = VH1 + VS(I,K)
        ENDDO  
-       TH1 = TH1/KSRC
-       ZH1 = ZH1/KSRC
-       UH1 = UH1/KSRC
-       VH1 = VH1/KSRC
+       TH1 = TH1/KSRC(I)
+       ZH1 = ZH1/KSRC(I)
+       UH1 = UH1/KSRC(I)
+       VH1 = VH1/KSRC(I)
        IF(MOL(I).LT.0.0 .AND. XTIME.GT.1) then
          WSS   = (UST(I) ** 3 + 0.6 * WST(I) ** 3) ** 0.33333
          TCONV = -8.5 * UST(I) * TSTV(I) / WSS
          TH1   = TH1 + TCONV
        ENDIF
 
-99     KMIX = KSRC
-       DO K = KSRC,kte
+99     KMIX = KSRC(I)
+       DO K = KSRC(I),kte
          DTMP   = THETAV(I,K) - TH1
          IF (DTMP.LT.0.0) KMIX = K
        ENDDO
-       IF(KMIX.GT.KSRC) THEN
+       IF(KMIX.GT.KSRC(I)) THEN
          FINTT = (TH1 - THETAV(I,KMIX)) / (THETAV(I,KMIX+1)               &
                - THETAV(I,KMIX))
          ZMIX = FINTT * (ZA(I,KMIX+1)-ZA(I,KMIX)) + ZA(I,KMIX)
@@ -464,7 +472,11 @@ CONTAINS
          TOG = 0.5 * (THETAV(I,K) + TH1) / G
          WSSQ = (US(I,K)-UMIX)**2                                     &
               + (VS(I,K)-VMIX)**2
-         IF (KMIX == KSRC) WSSQ = WSSQ + 100.*UST(I)*UST(I) 
+!         IF (KMIX == KSRC(I)) WSSQ = WSSQ + 100.*UST(I)*UST(I) 
+         IF (KMIX .EQ. KSRC(I)) THEN
+               WSSQ = US(I,K)**2 + VS(I,K)**2
+               WSSQ = WSSQ + 100.*UST(I)*UST(I) 
+         ENDIF
          WSSQ = MAX( WSSQ, 0.1 )
          RIB(I,K) = ABS(ZA(I,K)-ZMIX) * DTMP / (TOG * WSSQ)
          IF (RIB(I,K) .GE. RIC) GO TO 201
@@ -486,7 +498,7 @@ CONTAINS
 100  CONTINUE
 
      DO I = its,ite
-       IF (KPBLH(I) .GT. KSRC) THEN
+       IF (KPBLH(I) .GT. KSRC(I)) THEN
 !---------INTERPOLATE BETWEEN LEVELS -- jp 7/93
          FINT(I) = (RIC - RIB(I,KPBLH(I)-1)) / (RIB(I,KPBLH(I)) -       &
                     RIB(I,KPBLH(I)-1))
@@ -501,8 +513,8 @@ CONTAINS
                      ZF(I,KPBLHT-1)
          KLPBL(I) = KPBLHT
        ELSE
-         KLPBL(I) = KSRC
-         PBL(I)    = ZA(I,KSRC)                                                  
+         KLPBL(I) = KSRC(I)
+         PBL(I)    = ZA(I,KSRC(I))                                                  
        ENDIF
 
      ENDDO
@@ -549,6 +561,7 @@ CONTAINS
      DO K = kts, kte-1
        DO I = its, ite
          exch_hx(I,K) = EDDYZ(I,K)
+         exch_mx(I,K) = EDDYZM(I,K)
        ENDDO
      ENDDO
 

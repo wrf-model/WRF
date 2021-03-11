@@ -129,7 +129,7 @@ CONTAINS
 !                      (Ran et al., 2016 JGR-atmosphere, Ran et al. 2017 in preparation)
 !    JP     12/2018 -  revised soil type categories (ISTI) to conform to WRF soil type input data 
 !                      soil types Sand through Clay are now 1-12 rather than 1-11
-
+!    JP     12/2021 -  Added new pathway for evaporation from the ground in the vegetated fraction of the grid cell.  
 !
 !--------------------------------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------------------------------
@@ -658,8 +658,9 @@ CONTAINS
           
           END DO                        ! Time internal PX time loop   
 
-          TSK(I,J)    = TSLB(I,1,J)     ! Skin temp set to 1 cm soil temperature in PX for now
-          CANWAT(I,J) = WR * 1000.      ! convert WR back to mm for CANWAT
+!          TSK(I,J)    = TSLB(I,1,J)     ! Skin temp set to 1 cm soil temperature in PX for now
+          IF (IFLAND .LT. 1.5) TSK(I,J)    = TSLB(I,1,J)     ! ATV 02/20: changed for compatibility with sst_skin = 1.
+	  CANWAT(I,J) = WR * 1000.      ! convert WR back to mm for CANWAT
           RAW = RA(I,J) + 4.503 / USTAR
           QSFC(I,J) = QFX(I,J) * RAW / DENS1 + QV1
           
@@ -1182,6 +1183,7 @@ CONTAINS
       REAL        :: VAPPRS, QSBT, RH2MOD, IMF, VEGF, SOILF
       REAL        :: RSOIL, LDRY, DP       ! Soil model updates - JEP 12/14
       REAL        :: C1MAX,ZZA,ZZB,ZDEL,ZLY,ZA,ZB,ZY2
+      REAL        :: Rinc, Hcan                           ! JEP 2020
 
 !... Parameters
       REAL        :: ZOBS, GAMAH, BETAH, SIGF, BH, CT_SNOW, CT_IMPERV
@@ -1293,11 +1295,16 @@ CONTAINS
         ENDIF
 
         !--------------------------------------------------------------------
+        ! In-canopy resistance  - Erisman et al (1994)
+        Hcan  = ZNT * 10.0
+        Rinc  = 14.0 * LAI* Hcan / UST
+
+        !--------------------------------------------------------------------
         !--  COMPUTE MOISTURE FLUX
         CALL QFLUX( DENS1,  QV1,    TA1,  SOLDN,  RAW, QSS,            &
                     VEGFRC, ISNOW,  ISTI, IFLAND, LAI, BETAP,          &
                     WG,     W2,     WR,                                &
-                    RSTMIN, WWLT, WFC, RSOIL,                          &     !  Soil model updates - JEP 12/14
+                    RSTMIN, WWLT, WFC, RSOIL, RINC,                    &     !  Soil model updates - JEP 12/14; added RINC 2020
                     EG,     ER,     ETR,  CQ4,    RS,  FASS)
         !--------------------------------------------------------------------
 
@@ -1510,7 +1517,7 @@ CONTAINS
       SUBROUTINE QFLUX (DENS1,  QV1,   TA1,  RG,     RAW, QSS,           & ! in
                         VEGFRC, ISNOW, ISTI, IFLAND, LAI, BETAP,         & ! in
                         WG,     W2,    WR,                               & ! in
-                        RSTMIN, WWLT,  WFC,  RSOIL,                      & ! in  !Soil model updates - JEP 12/14
+                        RSTMIN, WWLT,  WFC,  RSOIL, RINC,                & ! in  !Soil model updates - JEP 12/14
                         EG,     ER,    ETR,  CQ4,    RS,  FASS)            ! out
 
 !-------------------------------------------------------------------------
@@ -1565,7 +1572,7 @@ CONTAINS
                                VEGFRC, LAI,                              &
                                WG, W2, WR, RSTMIN   
       REAL ,    INTENT(INOUT)  :: BETAP, RSOIL
-      REAL,     INTENT(IN)   :: WWLT, WFC
+      REAL,     INTENT(IN)   :: WWLT, WFC, RINC
 
       REAL ,    INTENT(OUT) :: EG, ER, ETR, CQ4, RS, FASS
 
@@ -1593,7 +1600,8 @@ CONTAINS
 !      IF (QSS .LT. QV1) BETAP = 1.0  
       IF (QSS .LT. QV1) RSOIL = 0.0
 !      EG = DENS1 * (1.0 - VEGFRC) * BETAP * (QSS - QV1) / RAW
-      EG = DENS1 * (1.0 - VEGFRC) * (QSS - QV1) / (RAW + RSOIL)
+!      EG = DENS1 * (1.0 - VEGFRC) * (QSS - QV1) / (RAW + RSOIL)
+      EG = DENS1 * (QSS - QV1) * ((1.0 - VEGFRC) / (RAW + RSOIL) + VEGFRC/(RAW + RINC +RSOIL))
 
       !!---------------------------------------------------------------------
 !... CANOPY

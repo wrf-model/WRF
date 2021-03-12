@@ -811,11 +811,11 @@ CONTAINS
          ENDIF
 
       END DO
-      !~ Save LFC pressure and height. Modified by Zhixiao
+      !~ Assuming the the LFC is at a pressure level for now
       !  ---------------------------------------------------
       IF ( PLFC /= PLFC .OR. PLFC < REAL (0) ) THEN
-          PLFC = REAL ( -1 )
-          ZLFC = REAL ( -1 )
+         PLFC = REAL ( -1 )
+         ZLFC = REAL ( -1 )
       END IF
    
       IF ( CAPE /= CAPE ) cape = REAL ( 0 )

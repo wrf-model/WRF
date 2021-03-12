@@ -440,7 +440,7 @@ CONTAINS
   !~                                                                          ~!
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
     FUNCTION Buoyancy ( nz, tk, rh, p, hgt, sfc, cape, cin, zlfc, plfc, lidx,  &
-                         parcel ) result (ostat)
+                        parcel ) result (ostat)
   
       IMPLICIT NONE
   
@@ -452,12 +452,9 @@ CONTAINS
       REAL,    INTENT ( IN )  :: hgt  ( nz ) !~ Height profile ( gpm )
       REAL,    INTENT ( OUT ) :: cape        !~ CAPE ( J kg^-1 )
       REAL,    INTENT ( OUT ) :: cin         !~ CIN  ( J kg^-1 )
-      REAL,    INTENT ( OUT ) :: zlcl        !~ LCL Height ( gpm ) Modified by Zhixiao.
       REAL,    INTENT ( OUT ) :: zlfc        !~ LFC Height ( gpm )
       REAL,    INTENT ( OUT ) :: plfc        !~ LFC Pressure ( Pa )
       REAL,    INTENT ( OUT ) :: lidx        !~ Lifted index
-      REAL,    INTENT ( OUT ) :: zel         !~ EL Height ( gpm ) Modified by Zhixiao.
-      REAL,    INTENT ( OUT ) :: zmu         !~ Most unstable parcel height ( gpm ) Modified by Zhixiao.
       INTEGER                 :: ostat       !~ Function return status
                                              !~ Nonzero is bad.
 
@@ -474,7 +471,7 @@ CONTAINS
       REAL                    :: buoy ( nz ) !~ Buoyancy
       REAL                    :: tlclK       !~ LCL temperature ( K )
       REAL                    :: plcl        !~ LCL pressure ( Pa )
-      REAL                    :: pel         !~ EL pressure ( Pa ). Modified by Zhixiao.
+      REAL                    :: pel         !~ Equilibrium pressure ( Pa ). Modified by Zhixiao.
       REAL                    :: nbuoy       !~ Negative buoyancy
       REAL                    :: pbuoy       !~ Positive buoyancy
   
@@ -525,16 +522,12 @@ CONTAINS
          PARAMETER ( g  = 9.80665 )         !~ m s^-2
       REAL                    :: RUNDEF
          PARAMETER ( RUNDEF = -9.999E30 )
-         
       !~ Initialize variables
       !  --------------------
       ostat  = 0
       CAPE   = REAL ( 0 )
       CIN    = RUNDEF !Change CIN filling values from 0 to default filling. CIN should not initially be filled by 0, because 0 means no inhibition energy. Modified by Zhixiao
-      ZLFC   = RUNDEF
-      ZLCL   = RUNDEF ! Modified by Zhixiao
-      ZEL    = RUNDEF ! Modified by Zhixiao
-      ZMU    = RUNDEF ! Modified by Zhixiao
+      PLFC   = RUNDEF
   
       !~ Look for submitted parcel definition
       !~ 1 = Most unstable
@@ -565,7 +558,7 @@ CONTAINS
         !Removed by Zhixiao. Water vapor mixing ratio (w) is not conserved during parcel lifting processes. We should not use w to define MU layer.
         !thetav(k)   = Theta ( VirtualTemperature ( tK (k), w (k) ), p(k)/100.0 )
         !Added by Zhixiao. Critical modification: We use the model level with maximum equivalent potential temperature (etheta) below 500mb to define the MU layer
-        !Because equivalent potential temperature is conseved both in dry and moist adiabatic processes.
+        !Because equivalent potential temperature is conserved in dry and moist adiabatic processes.
         etheta(k)   = Thetae( tK(k), p(k)/100.0, rh(k), w(k) )
       END DO
   
@@ -820,24 +813,14 @@ CONTAINS
       END DO
       !~ Save LFC pressure and height. Modified by Zhixiao
       !  ---------------------------------------------------
-      IF ( lfclev > 0 ) THEN
-         PLFC = p   ( lfclev )
-         ZLFC = hgt ( lfclev )
+      IF ( PLFC /= PLFC .OR. PLFC < REAL (0) ) THEN
+          PLFC = REAL ( -1 )
+          ZLFC = REAL ( -1 )
       END IF
    
-  !    IF ( PLFC /= PLFC .OR. PLFC < REAL (0) ) THEN
-  !       ZLFC = REAL ( -1 )
-  !    END IF
+      IF ( CAPE /= CAPE ) cape = REAL ( 0 )
 
-      IF ( lcllev > 0 ) THEN !Modified by Zhixiao
-         ZLCL = hgt ( lcllev ) !Modified by Zhixiao
-      END IF !Modified by Zhixiao
-
-      IF ( ellev > 0 ) THEN !Modified by Zhixiao
-         ZEL = hgt ( ellev ) !Modified by Zhixiao
-      END IF !Modified by Zhixiao
-
-      ZMU = hgt ( srclev ) !Modified by Zhixiao
+      IF ( CIN  /= CIN  ) cin  = RUNDEF
 
       !~ Chirp
       !  -----

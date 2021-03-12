@@ -439,8 +439,8 @@ CONTAINS
   !~    to higher levels.                                                     ~!
   !~                                                                          ~!
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
-    FUNCTION Buoyancy ( nz, tk, rh, p, hgt, sfc, cape, cin, zlcl, zlfc, zel, zmu,  &
-                        parcel ) result (ostat) !Add declaration of lcl, el, and MU layer. Modified by Zhixiao.
+    FUNCTION Buoyancy ( nz, tk, rh, p, hgt, sfc, cape, cin, zlfc, plfc, lidx,  &
+                         parcel ) result (ostat)
   
       IMPLICIT NONE
   
@@ -454,6 +454,8 @@ CONTAINS
       REAL,    INTENT ( OUT ) :: cin         !~ CIN  ( J kg^-1 )
       REAL,    INTENT ( OUT ) :: zlcl        !~ LCL Height ( gpm ) Modified by Zhixiao.
       REAL,    INTENT ( OUT ) :: zlfc        !~ LFC Height ( gpm )
+      REAL,    INTENT ( OUT ) :: plfc        !~ LFC Pressure ( Pa )
+      REAL,    INTENT ( OUT ) :: lidx        !~ Lifted index
       REAL,    INTENT ( OUT ) :: zel         !~ EL Height ( gpm ) Modified by Zhixiao.
       REAL,    INTENT ( OUT ) :: zmu         !~ Most unstable parcel height ( gpm ) Modified by Zhixiao.
       INTEGER                 :: ostat       !~ Function return status
@@ -508,7 +510,7 @@ CONTAINS
       LOGICAL                 :: flag       !~ Dummy flag
       LOGICAL                 :: wflag      !~ Saturation flag
       REAL                    :: freeze     !~ Water loading multiplier
-      REAL                    :: pdiff      !~ Pressure difference between levs
+      REAL                    :: pdiff      !~ Pressure difference between levs 
       REAL                    :: pm, pu, pd !~ Middle, upper, lower pressures
       REAL                    :: lidxu      !~ Lifted index at upper level
       REAL                    :: lidxd      !~ Lifted index at lower level
@@ -522,9 +524,9 @@ CONTAINS
       REAL                    :: g          !~ Acceleration due to gravity
          PARAMETER ( g  = 9.80665 )         !~ m s^-2
       REAL                    :: RUNDEF
-         PARAMETER ( RUNDEF = -999 ) !Specialized for CACTI. CACTI-Simulation default filling value is -999. Modified by Zhixiao. Please reset RUNDEF = -9.999E30 for general use. 
-  
-      !~ Initialize variables zhixiao
+         PARAMETER ( RUNDEF = -9.999E30 )
+         
+      !~ Initialize variables
       !  --------------------
       ostat  = 0
       CAPE   = REAL ( 0 )
@@ -788,9 +790,38 @@ CONTAINS
             END IF !Modified by Zhixiao         
          END DO !Modified by Zhixiao
       END IF !Modified by Zhixiao
-      !~ Covert LCL and LFC from pressure level to height. Modified by Zhixiao
+      !~ Calculate lifted index by interpolating difference between
+       !~ parcel and ambient Tv to 500mb.
+       !  ----------------------------------------------------------
+       DO k = sfc + 1, nz
+
+          pm = 50000.
+          pu = p ( k )
+          pd = p ( k - 1 )
+
+          !~ If we're already above 500mb just set lifted index to 0.
+          !~ --------------------------------------------------------
+          IF ( pd .le. pm ) THEN
+             lidx = 0.
+             EXIT
+
+          ELSEIF ( pu .le. pm .and. pd .gt. pm) THEN
+
+             !~ Found trapping pressure: up, middle, down.
+             !~ We are doing first order interpolation.  
+             !  ------------------------------------------
+             lidxu = -dTvK ( k ) * ( pu / 100000. ) ** (Rd/Cp)
+             lidxd = -dTvK ( k-1 ) * ( pd / 100000. ) ** (Rd/Cp)
+             lidx = ( lidxu * (pm-pd) + lidxd * (pu-pm) ) / (pu-pd)
+             EXIT
+
+          ENDIF
+
+       END DO
+      !~ Save LFC pressure and height. Modified by Zhixiao
       !  ---------------------------------------------------
       IF ( lfclev > 0 ) THEN
+         PLFC = p   ( lfclev )
          ZLFC = hgt ( lfclev )
       END IF
    

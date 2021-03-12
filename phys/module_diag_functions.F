@@ -527,6 +527,7 @@ CONTAINS
       ostat  = 0
       CAPE   = REAL ( 0 )
       CIN    = RUNDEF !Change CIN filling values from 0 to default filling. CIN should not initially be filled by 0, because 0 means no inhibition energy. Modified by Zhixiao
+      ZLFC   = RUNDEF
       PLFC   = RUNDEF
   
       !~ Look for submitted parcel definition

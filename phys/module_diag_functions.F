@@ -791,33 +791,33 @@ CONTAINS
          END DO !Modified by Zhixiao
       END IF !Modified by Zhixiao
       !~ Calculate lifted index by interpolating difference between
-       !~ parcel and ambient Tv to 500mb.
-       !  ----------------------------------------------------------
-       DO k = sfc + 1, nz
+      !~ parcel and ambient Tv to 500mb.
+      !  ----------------------------------------------------------
+      DO k = sfc + 1, nz
 
-          pm = 50000.
-          pu = p ( k )
-          pd = p ( k - 1 )
+         pm = 50000.
+         pu = p ( k )
+         pd = p ( k - 1 )
 
-          !~ If we're already above 500mb just set lifted index to 0.
-          !~ --------------------------------------------------------
-          IF ( pd .le. pm ) THEN
-             lidx = 0.
-             EXIT
+         !~ If we're already above 500mb just set lifted index to 0.
+         !~ --------------------------------------------------------
+         IF ( pd .le. pm ) THEN
+            lidx = 0.
+            EXIT
 
-          ELSEIF ( pu .le. pm .and. pd .gt. pm) THEN
+         ELSEIF ( pu .le. pm .and. pd .gt. pm) THEN
 
-             !~ Found trapping pressure: up, middle, down.
-             !~ We are doing first order interpolation.  
-             !  ------------------------------------------
-             lidxu = -dTvK ( k ) * ( pu / 100000. ) ** (Rd/Cp)
-             lidxd = -dTvK ( k-1 ) * ( pd / 100000. ) ** (Rd/Cp)
-             lidx = ( lidxu * (pm-pd) + lidxd * (pu-pm) ) / (pu-pd)
-             EXIT
+            !~ Found trapping pressure: up, middle, down.
+            !~ We are doing first order interpolation.  
+            !  ------------------------------------------
+            lidxu = -dTvK ( k ) * ( pu / 100000. ) ** (Rd/Cp)
+            lidxd = -dTvK ( k-1 ) * ( pd / 100000. ) ** (Rd/Cp)
+            lidx = ( lidxu * (pm-pd) + lidxd * (pu-pm) ) / (pu-pd)
+            EXIT
 
-          ENDIF
+         ENDIF
 
-       END DO
+      END DO
       !~ Save LFC pressure and height. Modified by Zhixiao
       !  ---------------------------------------------------
       IF ( lfclev > 0 ) THEN

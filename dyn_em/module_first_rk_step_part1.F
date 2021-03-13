@@ -34,6 +34,7 @@ CONTAINS
                              , f_flux                           &
                              , aerocu                           &
                              , restart_flag                     &
+                             , feedback_is_ready                &
                             )
     USE module_state_description
     USE module_model_constants
@@ -118,6 +119,9 @@ CONTAINS
     LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
 
     LOGICAL, INTENT(IN)                           :: restart_flag  
+
+    LOGICAL, INTENT(IN) :: feedback_is_ready  ! For WRF-CMAQ coupled model, indicates feedback information is available
+
 ! Local
     real :: HYDRO_dt
     REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
@@ -434,14 +438,63 @@ BENCH_START(rad_driver_tim)
      &         ,slope_rad=config_flags%slope_rad,topo_shading=config_flags%topo_shading     &
      &         ,shadowmask=grid%shadowmask   &
      &         ,ht=grid%ht,dx=grid%dx,dy=grid%dy,dx2d=grid%dx2d,area2d=grid%area2d &           
-     &         ,diffuse_frac=grid%diffuse_frac &           
+     &         ,diffuse_frac=grid%diffuse_frac &  
      &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    &
      &         ,cw_rad=grid%cw_rad                     &
      &         ,shcu_physics=config_flags%shcu_physics                     &
      &         ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS        &
      &         ,EFCG=grid%EFCG,EFCS=grid%EFCS,EFIG=grid%EFIG &
      &         ,EFIS=grid%EFIS,EFSG=grid%EFSG,aercu_opt=config_flags%aercu_opt & 
-     &         ,EFSS=grid%EFSS,QS_CU=grid%QS_CU)
+     &         ,EFSS=grid%EFSS,QS_CU=grid%QS_CU &
+     &         ,feedback_is_ready=feedback_is_ready   &
+#if ( WRF_CMAQ == 1)
+     &         ,mass_ws_i=grid%mass_ws_i              &
+     &         ,mass_ws_j=grid%mass_ws_j              &
+     &         ,mass_ws_k=grid%mass_ws_k              &
+     &         ,mass_in_i=grid%mass_in_i              &
+     &         ,mass_in_j=grid%mass_in_j              &
+     &         ,mass_in_k=grid%mass_in_k              &
+     &         ,mass_ec_i=grid%mass_ec_i              &
+     &         ,mass_ec_j=grid%mass_ec_j              &
+     &         ,mass_ec_k=grid%mass_ec_k              &
+     &         ,mass_ss_i=grid%mass_ss_i              &
+     &         ,mass_ss_j=grid%mass_ss_j              &
+     &         ,mass_ss_k=grid%mass_ss_k              &
+     &         ,mass_h2o_i=grid%mass_h2o_i            &
+     &         ,mass_h2o_j=grid%mass_h2o_j            &
+     &         ,mass_h2o_k=grid%mass_h2o_k            &
+     &         ,dgn_i=grid%dgn_i                      &
+     &         ,dgn_j=grid%dgn_j                      &
+     &         ,dgn_k=grid%dgn_k                      &
+     &         ,sig_i=grid%sig_i                      &
+     &         ,sig_j=grid%sig_j                      &
+     &         ,sig_k=grid%sig_k                      &
+     &         ,sw_gtauxar_01=grid%sw_gtauxar_01      &
+     &         ,sw_gtauxar_02=grid%sw_gtauxar_02      &
+     &         ,sw_gtauxar_03=grid%sw_gtauxar_03      &
+     &         ,sw_gtauxar_04=grid%sw_gtauxar_04      &
+     &         ,sw_gtauxar_05=grid%sw_gtauxar_05      &
+     &         ,sw_ttauxar_01=grid%sw_ttauxar_01      &
+     &         ,sw_ttauxar_02=grid%sw_ttauxar_02      &
+     &         ,sw_ttauxar_03=grid%sw_ttauxar_03      &
+     &         ,sw_ttauxar_04=grid%sw_ttauxar_04      &
+     &         ,sw_ttauxar_05=grid%sw_ttauxar_05      &
+     &         ,sw_asy_fac_01=grid%sw_asy_fac_01      &
+     &         ,sw_asy_fac_02=grid%sw_asy_fac_02      &
+     &         ,sw_asy_fac_03=grid%sw_asy_fac_03      &
+     &         ,sw_asy_fac_04=grid%sw_asy_fac_04      &
+     &         ,sw_asy_fac_05=grid%sw_asy_fac_05      &
+     &         ,sw_ssa_01=grid%sw_ssa_01              &
+     &         ,sw_ssa_02=grid%sw_ssa_02              &
+     &         ,sw_ssa_03=grid%sw_ssa_03              &
+     &         ,sw_ssa_04=grid%sw_ssa_04              &
+     &         ,sw_ssa_05=grid%sw_ssa_05              &
+     &         ,ozone=grid%ozone                      &
+     &         ,sw_zbbcddir=grid%sw_zbbcddir          &
+     &         ,sw_dirdflux=grid%sw_dirdflux          &
+     &         ,sw_difdflux=grid%sw_difdflux          &
+#endif
+                                                      )
 
 BENCH_END(rad_driver_tim)
 
@@ -782,12 +835,12 @@ BENCH_START(surf_driver_tim)
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
      &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
      &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo &
-     &        ,iopt_crop=config_flags%opt_crop                                       &
+     &        ,iopt_crop=config_flags%opt_crop                                  &
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
      &        ,  fwetxy=grid%fwetxy   ,sneqvoxy=grid%sneqvoxy,alboldxy=grid%alboldxy &
-     &        , qsnowxy=grid%qsnowxy  ,wslakexy=grid%wslakexy,   zwtxy=grid%zwtxy    &
+     &        , qsnowxy=grid%qsnowxy  ,wslakexy=grid%wslakexy, zwtxy=grid%zwtxy      &
      &        ,    waxy=grid%waxy     ,    wtxy=grid%wtxy    ,  tsnoxy=grid%tsnoxy   &
      &        , zsnsoxy=grid%zsnsoxy  , snicexy=grid%snicexy , snliqxy=grid%snliqxy  &
      &        ,lfmassxy=grid%lfmassxy ,rtmassxy=grid%rtmassxy,stmassxy=grid%stmassxy &
@@ -814,7 +867,7 @@ BENCH_START(surf_driver_tim)
      &        ,   ghbxy=grid%ghbxy    ,   irgxy=grid%irgxy   ,   ircxy=grid%ircxy    &
      &        ,   irbxy=grid%irbxy    ,    trxy=grid%trxy    ,   evcxy=grid%evcxy    &
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
-     &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
+     &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &
            !Optional hydro variables in NOAHMP
      &        ,smcwtdxy=grid%smcwtdxy ,rechxy=grid%rechxy ,deeprechxy=grid%deeprechxy &
      &        ,fdepthxy=grid%fdepthxy, areaxy=grid%areaxy, rivercondxy=grid%rivercondxy  &

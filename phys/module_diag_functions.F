@@ -814,6 +814,11 @@ CONTAINS
       END DO
       !~ Assuming the the LFC is at a pressure level for now
       !  ---------------------------------------------------
+      IF ( lfclev > 0 ) THEN
+          PLFC = p   ( lfclev )
+          ZLFC = hgt ( lfclev )
+      END IF
+
       IF ( PLFC /= PLFC .OR. PLFC < REAL (0) ) THEN
          PLFC = REAL ( -1 )
          ZLFC = REAL ( -1 )

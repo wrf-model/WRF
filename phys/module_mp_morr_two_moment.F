@@ -88,7 +88,7 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
    USE     module_wrf_error
    USE module_mp_radar
 
-! USE WRF PHYSICS CONSTANTS
+!  USE WRF PHYSICS CONSTANTS
   use module_model_constants, ONLY: CP, G, R => r_d, RV => r_v, EP_2
 
 !  USE module_state_description
@@ -572,7 +572,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                ,IMS,IME, JMS,JME, KMS,KME               & ! memory dims
                ,ITS,ITE, JTS,JTE, KTS,KTE               & ! tile   dims            )
 !jdf		   ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
-               ,rainprod, evapprod                      &
+               ,wetscav_on, rainprod, evapprod                      &
 		   ,QLSINK,PRECR,PRECI,PRECS,PRECG &        ! HM ADD, WRF-CHEM
                                             )
  
@@ -673,6 +673,8 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
 
+   LOGICAL, optional, INTENT(IN) :: wetscav_on
+
    ! LOCAL VARIABLES
 
    REAL, DIMENSION(its:ite, kts:kte, jts:jte)::                     &
@@ -719,10 +721,18 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
 
+   LOGICAL :: has_wetscav
+
 ! below for wrf-chem
    flag_qndrop = .false.
    IF ( PRESENT ( f_qndrop ) ) flag_qndrop = f_qndrop
 !!!!!!!!!!!!!!!!!!!!!!
+
+   IF( PRESENT( wetscav_on ) ) THEN
+     has_wetscav = wetscav_on
+   ELSE
+     has_wetscav = .false.
+   ENDIF
 
    ! Initialize tendencies (all set to 0) and transfer
    ! array to local variables
@@ -822,7 +832,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                                   QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
                                   nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
 #if (WRF_CHEM == 1)
-                                  ,rainprod1d, evapprod1d & !wrf-chem
+                                  ,has_wetscav,rainprod1d, evapprod1d & !wrf-chem
 #endif
                        )
 
@@ -879,8 +889,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 !          EFFIS(I,K,J)     = MAX(EFFIS(I,K,J),13.)
 
 #if ( WRF_CHEM == 1)
-           IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
-           IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
+           IF ( has_wetscav ) THEN
+             IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
+             IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
+           ENDIF
 #endif
 
       end do
@@ -926,7 +938,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                         nc3d,nc3dten,iinum, & ! wrf-chem
 				c2prec,CSED,ISED,SSED,GSED,RSED  &  ! hm added, wrf-chem
 #if (WRF_CHEM == 1)
-        ,rainprod, evapprod &
+        ,has_wetscav,rainprod, evapprod &
 #endif
                         )
 
@@ -1023,6 +1035,11 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! MODEL INPUT PARAMETERS (FORMERLY IN COMMON BLOCKS)
 
         REAL DT         ! MODEL TIME STEP (SEC)
+
+#if (WRF_CHEM == 1)
+      LOGICAL, INTENT(IN) :: has_wetscav
+#endif
+
 
 !.....................................................................................................
 ! LOCAL VARIABLES: ALL PARAMETERS BELOW ARE LOCAL TO SCHEME AND DON'T NEED TO COMMUNICATE WITH THE
@@ -2053,8 +2070,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       QC3DTEN(K) = QC3DTEN(K)+PCC(K)
 
 #if (WRF_CHEM == 1)
+      IF( has_wetscav ) THEN
          evapprod(k) = - PRE(K) - EVPMS(K) - EVPMG(K)
          rainprod(k) = PRA(K) + PRC(K) + tqimelt(K)
+      END IF
 #endif
 
 !.......................................................................
@@ -3297,10 +3316,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
          NR3DTEN(K) = NR3DTEN(K)+NSUBR(K)
 
 #if (WRF_CHEM == 1)
+      IF( has_wetscav ) THEN
          evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
          rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
                        + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K)  &
                        + PRDS(K) + PRDG(K)
+      ENDIF
 #endif
 
          END IF !!!!!! TEMPERATURE

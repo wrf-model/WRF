@@ -17,7 +17,7 @@ CONTAINS
                     use_tot_or_hyd_p,extrap_below_grnd,missing,     &  
                     num_z_levels,max_z_levels,z_levels,             &
                     z_zl,u_zl,v_zl,t_zl,rh_zl,ght_zl,s_zl,td_zl,    &
-                    q_zl,                                           &
+                    q_zl,p_zl,                                      &
                     ids,ide, jds,jde, kds,kde,                      &
                     ims,ime, jms,jme, kms,kme,                      &
                     its,ite, jts,jte, kts,kte                       )
@@ -44,7 +44,7 @@ CONTAINS
       !  Output variables
    
       REAL   , INTENT(  OUT) ,  DIMENSION(num_z_levels)                     :: z_zl
-      REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , num_z_levels , jms:jme) :: u_zl,v_zl,t_zl,rh_zl,ght_zl,s_zl,td_zl,q_zl
+      REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , num_z_levels , jms:jme) :: u_zl,v_zl,t_zl,rh_zl,ght_zl,s_zl,td_zl,q_zl,p_zl
    
       !  Local variables
    
@@ -82,6 +82,7 @@ CONTAINS
                ght_zl(i,kz,j) = missing
                s_zl  (i,kz,j) = missing
                td_zl (i,kz,j) = missing
+               p_zl  (i,kz,j) = missing
             END DO
          END DO
       END DO
@@ -116,11 +117,16 @@ CONTAINS
 
                      pu = pp(i,ke+1,j)+pb(i,ke+1,j) 
                      pd = pp(i,ke  ,j)+pb(i,ke  ,j)
-                     pm = ( pu * (zm-zd) + pd * (zu-zm) ) / (zu-zd)
    
                      !  Found trapping height: up, middle, down.
                      !  We are doing first order interpolation.  
                      !  Now we just put in a list of diagnostics for this level.
+
+                     !  0. Pressure (Pa)
+                     !  Note that it is ln(p) that varies linearly with height, not p itself
+                     
+                     pm = exp( ( log(pu) * (zm-zd) + log(pd) * (zu-zm) ) / (zu-zd) )
+                     p_zl(i,kz,j) = pm
    
                      !  1. Temperature (K)
    

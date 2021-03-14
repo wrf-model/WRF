@@ -13,7 +13,7 @@ contains
 function get_model_version()
 character (len=512) :: get_model_version
 
-#ifdef NCEP_WCOSS
+#ifdef NWM_META
    get_model_version="NWM " // NWM_VERSION
 #else
    get_model_version="WRF-Hydro " // WRF_HYDRO_VERSION

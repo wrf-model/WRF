@@ -21,21 +21,22 @@
 ! This subrouting includs the data structure and tools used for NHDPlus network mapping.
 module module_UDMAP
 
-use module_namelist, only: nlst_rt
+  use config_base, only: nlst
 #ifdef MPP_LAND
-use module_mpp_land, only: my_id, local_startx_rt, local_starty_rt,  &
-         local_endx_rt,local_endy_rt, left_id, right_id, down_id, up_id, mpp_collect_1d_int_mem, &
-         IO_id , numprocs
-use module_mpp_land, only: mpp_land_bcast_int, mpp_land_bcast_real8_1d, mpp_land_bcast_int1
-
-use module_mpp_land, only: sum_int1d, global_rt_nx, global_rt_ny, write_IO_rt_int, MPP_LAND_COM_INTEGER
-
-use MODULE_mpp_ReachLS, only : updatelinkv, ReachLS_write_io, com_write1dInt, &
-               com_decomp1dInt, pack_decomp_int, pack_decomp_real8
-
+  use module_mpp_land, only: my_id, local_startx_rt, local_starty_rt,  &
+       local_endx_rt,local_endy_rt, left_id, right_id, down_id, up_id, mpp_collect_1d_int_mem, &
+       IO_id , numprocs
+  use module_mpp_land, only: mpp_land_bcast_int, mpp_land_bcast_real8_1d, mpp_land_bcast_int1
+  
+  use module_mpp_land, only: sum_int1d, global_rt_nx, global_rt_ny, write_IO_rt_int, MPP_LAND_COM_INTEGER
+  
+  use MODULE_mpp_ReachLS, only : updatelinkv, ReachLS_write_io, com_write1dInt, &
+       com_decomp1dInt, pack_decomp_int, pack_decomp_real8
+  use module_hydro_stop, only:HYDRO_stop
+  use hashtable
 #endif
 
-implicit none
+  implicit none
 
 #ifndef MPP_LAND
     integer, parameter :: numprocs=1
@@ -88,10 +89,9 @@ contains
         integer :: ix_bufid, ii, ixrt,jxrt
         integer, allocatable, dimension(:) :: gbufi,gbufj,bufsize
         real*8 , allocatable, dimension(:) :: gbufw
-        integer :: cache_block, cache_idx, cache_block_begin, cache_block_end
         
         did = 1
-        call get_dimension(trim(nlst_rt(did)%UDMAP_FILE), ndata, npid) 
+        call get_dimension(trim(nlst(did)%UDMAP_FILE), ndata, npid) 
 
 #ifdef MPP_LAND
         gnpid = npid
@@ -101,8 +101,8 @@ contains
            allocate (nprocs_map(ndata))
            allocate(gbufi(ndata))
            allocate(gbufj(ndata))
-           call get1d_int(trim(nlst_rt(did)%UDMAP_FILE),"i_index",gbufi)
-           call get1d_int(trim(nlst_rt(did)%UDMAP_FILE),"j_index",gbufj)
+           call get1d_int(trim(nlst(did)%UDMAP_FILE),"i_index",gbufi)
+           call get1d_int(trim(nlst(did)%UDMAP_FILE),"j_index",gbufj)
         endif
            call get_nprocs_map(ixrt,jxrt,gbufi,gbufj,nprocs_map,ndata)
 
@@ -153,9 +153,9 @@ contains
 !      check  polyid and linkid
         allocate(linkid(nlinksl))
         if(my_id .eq. io_id) then
-            call get1d_int(trim(nlst_rt(did)%route_link_f),"link",linkid)
+            call get1d_int(trim(nlst(did)%route_link_f),"link",linkid)
             allocate(gbufid(npid))
-            call get1d_int(trim(nlst_rt(did)%UDMAP_FILE),"polyid",gbufid)
+            call get1d_int(trim(nlst(did)%UDMAP_FILE),"polyid",gbufid)
         endif
 #ifdef MPP_LAND
        if(nlinksl .gt. 0) then
@@ -168,19 +168,32 @@ contains
           bufidflag = -999
        endif
 
-       cache_block = 256
-       do cache_idx = 0, nlinksl - 1, cache_block
-          cache_block_begin = cache_idx + 1
-          cache_block_end = min(cache_idx + cache_block, nlinksl)
-          do i = 1, ix_bufid
-             if(bufidflag(i) /= -999) cycle
-             do j = cache_block_begin, cache_block_end
-                if(bufid_tmp(i) .eq. linkid(j)) then
-                   bufidflag(i) = bufid_tmp(i)
-                endif
-             end do
-          enddo
-       enddo
+       ! The following loops are replaced by a hashtable-based algorithm
+       !  do i = 1, ix_bufid
+       !           do j = 1, nlinksl
+       !                if(bufid_tmp(i) .eq. linkid(j)) then
+       !                   bufidflag(i) = bufid_tmp(i)
+       !                   goto 102
+       !                endif
+       !           end do
+       ! 102       continue
+       !        end do
+
+       block
+         type(hash_t) :: hash_table
+         integer :: val,it
+         logical :: found
+         
+         call hash_table%set_all_idx(bufid_tmp, ix_bufid)
+         do it = 1, nlinksl
+            call hash_table%get(linkid(it), val, found)
+            if(found .eqv. .true.) then
+               bufidflag(val) = bufid_tmp(val)
+            end if
+         end do
+         call hash_table%clear()
+       end block
+
 #ifdef MPP_LAND
       call com_write1dInt(bufidflag,ix_bufid,gbufid,npid)
 #endif
@@ -192,7 +205,7 @@ contains
       if(my_id .eq. io_id) then
           allocate(bufsize(npid))
           allocate(g1bufid(ndata))
-          call get1d_int(trim(nlst_rt(did)%UDMAP_FILE),"overlaps",bufsize)
+          call get1d_int(trim(nlst(did)%UDMAP_FILE),"overlaps",bufsize)
           g1bufid = -999
           i = 1
           do k = 1, npid
@@ -219,7 +232,7 @@ contains
 
       if(my_id .eq. io_id) then
           allocate(gbufw(ndata))
-          call get1d_real8(trim(nlst_rt(did)%UDMAP_FILE),"regridweight",gbufw)
+          call get1d_real8(trim(nlst(did)%UDMAP_FILE),"regridweight",gbufw)
       endif
       if(lnsizes(my_id+1) .gt. 0) allocate(bufw(lnsizes(my_id+1) ))
       call pack_decomp_real8(gbufw, ndata, nprocs_map, lnsizes, istart,bufw)

@@ -467,6 +467,45 @@ HSEQUIP: 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.5 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 
 
 HSEQUIP_SCALE_FACTOR: 16.00, 20.00, 36.00
 
+#
+# GR_FLAG: 1 to switch on green roof model (0-1)
+#      (sf_urban_physics=3)
+#
+
+GR_FLAG:0
+
+#
+# GR_TYPE: 1 for GRASS, 2 for SEDUM vegetation on the green roof
+#      (sf_urban_physics=3)
+#
+
+GR_TYPE: 2
+
+#
+# GR_FRAC_ROOF: fraction of green roof over the roof (0:1)
+#      (sf_urban_physics=3)
+#
+
+GR_FRAC_ROOF:0,0,0
+
+#
+# HSEQUIP:  Diurnal  profile of sprinkler irrigation for the green roof
+#      (sf_urban_physics=3)
+#
+
+IRHO:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1
+
+
+#
+# PV_FRAC_ROOF: fraction of photovoltaic panels over the roof (0:1)
+#      (sf_urban_physics=3)
+#
+
+PV_FRAC_ROOF: 0,0,0
+
+
+
+
 STREET PARAMETERS:
 #      (sf_urban_physics=2,3)
 

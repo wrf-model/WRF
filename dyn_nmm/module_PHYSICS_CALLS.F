@@ -244,6 +244,8 @@
 
       REAL :: DXKM, DYKM
 
+      LOGICAL, PARAMETER :: feedback_is_ready = .FALSE.
+
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -515,6 +517,7 @@
      &                 ,AERCU_OPT=config_flags%aercu_opt                &
      &                 ,CU_PHYSICS=config_flags%cu_physics              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
+     &                 ,feedback_is_ready=feedback_is_ready             &
      &                 ,CALC_CLEAN_ATM_DIAG=CONFIG_FLAGS%CALC_CLEAN_ATM_DIAG)
 
 

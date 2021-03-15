@@ -29,6 +29,12 @@ HYDRO_D =  $(WRF_HYDRO)
 endif
 
 
+ifeq ($(NWM_META),1)
+NWM_META = -DNWM_META
+else
+NWM_META =
+endif
+
 ifeq ($(WRF_HYDRO_NUDGING),1)
 WRF_HYDRO_NUDGING = -DWRF_HYDRO_NUDGING
 else
@@ -49,13 +55,13 @@ endif
 
 
 RMD		=	rm -f
-COMPILER90=	mpif90  
-F90FLAGS  =       -w -c -ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4 
-MODFLAG	=	-I"./" -I"../../MPP" -I"../MPP" -I"../mod"
-LDFLAGS	=	
-CPPINVOKE	=   -cpp
-CPPFLAGS	=   -DMPP_LAND -I"../Data_Rec" $(HYDRO_D) $(SPATIAL_SOIL)  $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE)
+COMPILER90      =	mpif90  
+F90FLAGS        =       -w -c -O2 -ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4 -std=legacy
+MODFLAG      	=	-I"./" -I"../../MPP" -I"../MPP" -I"../mod"
+LDFLAGS	        =	
+CPPINVOKE	=       -cpp
+CPPFLAGS	=       -DMPP_LAND -I"../Data_Rec" $(HYDRO_D) $(SPATIAL_SOIL) $(NWM_META) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE)
 
-LIBS 	=	
+LIBS 	        =	
 NETCDFINC       =       $(NETCDF_INC)
 NETCDFLIB       =       -L$(NETCDF_LIB) -lnetcdff -lnetcdf

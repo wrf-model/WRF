@@ -12,6 +12,15 @@ if ( !  -e configure.wrf  ) then
   exit 1
 endif
 
+#----------------------------------
+# identify the commit where the compiled code came from
+git log >& /dev/null
+if ($status) then
+   set v='No git found or not a git repository, git commit version not available.'
+else
+   set v=(git `git log | head -1`  `git diff --shortstat`) >& /dev/null
+endif
+echo "    CHARACTER (LEN=*), PARAMETER :: commit_version = '$v'" > inc/commit_decl
 
 #----------------------------------
 if ( ! $?WRF_KPP )   setenv WRF_KPP  0
@@ -473,7 +482,8 @@ else
   echo " "
   echo "============================================================================================== "
   echo " "
-  cat inc/version_decl | cut -d"'" -f2
+  cat inc/version_decl | cut -d"'" -f2 | head -1
+  cat inc/commit_decl | cut -d"'" -f2
   echo " "
   echo -n "Compiling: "
   if ( $WRF_DA_CORE ) echo -n "WRF_DA_CORE "

@@ -48,7 +48,8 @@ COMPILER90=	pgf90
 F90FLAGS  =     -Mfree -Mfptrap -c -byteswapio -Ktrap=fp -O2 -Kieee
 LDFLAGS  =      $(F90FLAGS)
 MODFLAG	=	-I./ -I ../mod
-CPPINVOKE	= -Mpreprocess
+LDFLAGS	=	
+CPPINVOKE	=
 CPPFLAGS	=       -I ../Data_Rec $(HYDRO_D) $(WRF_HYDRO) $(SPATIAL_SOIL) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN)
 LIBS 	=	
 NETCDFINC       =       $(NETCDF_INC)

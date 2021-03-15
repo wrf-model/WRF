@@ -399,7 +399,6 @@ state    real  a_v_phy           ikj      misc        1         -       r      "
 i1       real  a_dz8w            ikj      misc        1         Z
 i1       real  a_p8w             ikj      misc        1         Z
 i1       real  a_t8w             ikj      misc        1         Z
-i1       real  a_rho_phy         ikj      misc        1         -
 
 i1       real  g_th_phy          ikj      misc        1         -
 i1       real  g_pi_phy          ikj      misc        1         -
@@ -410,7 +409,6 @@ state    real  g_v_phy           ikj      misc        1         -       r      "
 i1       real  g_dz8w            ikj      misc        1         Z
 i1       real  g_p8w             ikj      misc        1         Z
 i1       real  g_t8w             ikj      misc        1         Z
-i1       real  g_rho_phy         ikj      misc        1         -
 
 # Additional for gravity wave drag
 state   real   g_DTAUX3D         ikj     misc        1         -     rh        "g_DTAUX3D"               "LOCAL U GWDO STRESS"   "m s-1"
@@ -522,6 +520,38 @@ state   real    a_qvolh          ikjftb  a_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "A_QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
 state   real    a_qrimef         ikjftb  a_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "A_QRIMEF"        "rime factor * qi" "kg kg-1"
+#-------------------------------ntu3m------------------------------------------------------------------
+state   real    a_qdcn           ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QDCN"          "Mass mixing ratio for dry CN" "kg kg-1"
+state   real    a_qtcn           ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QTCN"          "Mass mixing ratio for total CN" "kg kg-1"
+state   real    a_qccn           ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QCCN"          "Mass mixing ratio for cloud CN" "kg kg-1"
+state   real    a_qrcn           ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QRCN"          "Mass mixing ratio for rain CN" "kg kg-1"
+state   real    a_qnin           ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNIN"          "Potential ice nuclei number mixing ratio" "# kg-1"
+state   real    a_fi             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_FI"            "Shape moment mixing ratio for pristine ice" "kg kg-1"
+state   real    a_fs             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_FS"            "Shape moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    a_vi             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_VI"            "Volume moment mixing ratio for pristine ice" "m^3 kg-1"
+state   real    a_vs             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_VS"            "Volume moment mixing ratio for snow-aggregates" "m^3 kg-1"
+state   real    a_vg             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_VG"            "Volume moment mixing ratio for rimed ice" "m^3 kg-1"
+state   real    a_ai             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_AI"            "Second moment mixing ratio for pristine ice" "kg kg-1"
+state   real    a_as             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_AS"            "Second moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    a_ag             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_AG"            "Second moment mixing ratio for rimed ice" "kg kg-1"
+state   real    a_ah             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_AH"            "Second moment mixing ratio for hail" "kg kg-1"
+state   real    a_i3m            ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_I3M"           "Third moment mixing ratio for pristine ice" "kg kg-1"
+#-------------------------------ntu3m------------------------------------------------------------------
 
 state   real    -              ikjftb  g_scalar      1         -     -   -
 state   real    g_qndrop         ikjftb  g_scalar      1         -     \
@@ -552,6 +582,38 @@ state   real    g_qvolh          ikjftb  g_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "G_QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
 state   real    g_qrimef         ikjftb  g_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "G_QRIMEF"        "rime factor * qi" "kg kg-1"
+#-----------------------------------------ntu3m----------------------------------------------------------------------
+state   real    g_qdcn         ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QDCN"         "Mass mixing ratio for dry CN" "kg kg-1"
+state   real    g_qtcn         ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QTCN"         "Mass mixing ratio for total CN" "kg kg-1"
+state   real    g_qccn         ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QCCN"         "Mass mixing ratio for cloud CN" "kg kg-1"
+state   real    g_qrcn         ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QRCN"         "Mass mixing ratio for rain CN" "kg kg-1"
+state   real    g_qnin         ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNIN"         "Potential ice nuclei number mixing ratio" "# kg-1"
+state   real    g_fi           ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_FI"           "Shape moment mixing ratio for pristine ice" "kg kg-1"
+state   real    g_fs           ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_FS"           "Shape moment mixing ratio for snow-aggregates" "kg kg-1"
+state   real    g_vi           ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_VI"           "Volume moment mixing ratio for pristine ice" "m^3 kg-1"
+state   real    g_vs           ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_VS"           "Volume moment mixing ratio for snow-aggregates" "m^3 kg-1"
+state   real    g_vg           ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_VG"           "Volume moment mixing ratio for rimed ice" "m^3 kg-1"
+state   real    g_ai           ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_AI"           "Second moment mixing ratio for pristine ice" "kg kg-1"
+state   real    g_as           ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_AS"           "Second moment mixing ratio for snow-aggreagtes" "kg kg-1"
+state   real    g_ag           ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_AG"           "Second moment mixing ratio for rimed ice" "kg kg-1"
+state   real    g_ah           ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_AH"           "Second moment mixing ratio for hail" "kg kg-1"
+state   real    g_i3m          ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_I3M"          "Third moment mixing ratio for pristine ice" "kg kg-1"
+#-----------------------------------------ntu3m----------------------------------------------------------------------
 
 # Placeholder for decoupled advective tendency diagnostics for non-chem
 state   real  -               ikjf      g_advh_t      1         -     -         -
@@ -820,6 +882,7 @@ package   p3_1category_plus     mp_physics_plus==50     -          g_moist:g_qv,
 package   p3_1category_nc_plus  mp_physics_plus==51     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   p3_2category_4dvar    mp_physics_plus==52     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qi2;a_moist:a_qv,a_qc,a_qr,a_qi,a_qi2
 package   morr_tm_aero_4dvar    mp_physics_plus==40     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   ntu_plus              mp_physics_plus==56     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
 package   etampnew_plus         mp_physics_plus==95     -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
 package   lscond_plus           mp_physics_plus==98     -          g_moist:g_qv;a_moist:a_qv
 package   mkessler_plus         mp_physics_plus==99     -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr

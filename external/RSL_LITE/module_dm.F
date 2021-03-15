@@ -4257,7 +4257,7 @@ endif
             DO i = MAX(ids,ips),MIN(ide-1,ipe)
 
                DO k = 1, kpe-1
-                  grid%pb(i,k,j) = ngrid%c3h(k)*(ngrid%c1h(k)*grid%mub(i,j)+ngrid%c2h(k)) + ngrid%c4h(k) + ngrid%p_top
+                  grid%pb(i,k,j) = ngrid%c3h(k) * grid%mub(i,j) + ngrid%c4h(k) + ngrid%p_top
              
                   !  If this is a real run, recalc t_init.
    

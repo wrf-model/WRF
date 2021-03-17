@@ -829,6 +829,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Grell 3D ensemble scheme (use with cu_physics=93 or 5) (PLACEHOLDER: SWITCH NOT YET IMPLEMENTED--use ishallow)
                                      = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
                                      = 3, GRIMS shallow cumulus from YSU group
+                                     = 4, NSAS shallow cululus scheme. Must be used with KIAPS SAS cumulus scheme (cu_physics = 14)
                                      = 5, Deng cumulus scheme (including both shallow and deep convections) from PSU and WRF-Solar.
                                           However the deep part isn't very active. Not recommended to use alone for deep convection 
                                           case. Could work well for grid sizes 3-9 km.

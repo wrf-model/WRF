@@ -311,7 +311,8 @@ use module_wrf_error
                     U10,V10,TH2,Q2,UST,mh_urb,stdh_urb,lf_urb,        & ! O 
                     lp_urb,hgt_urb,frc_urb,lb_urb,zo_check,           & ! O
                     CMCR,TGR,TGRL,SMR,CMGR_URB,CHGR_URB,jmonth,       & ! H
-                    DRELR,DRELB,DRELG,FLXHUMR,FLXHUMB,FLXHUMG)
+                    DRELR,DRELB,DRELG,FLXHUMR,FLXHUMB,FLXHUMG,        &
+		    AHE_SCHEME,AH24,AH)
 
    IMPLICIT NONE
 
@@ -380,6 +381,9 @@ use module_wrf_error
    REAL, INTENT(INOUT) :: CMC_URB
    REAL, INTENT(INOUT) :: CHC_URB
    REAL, INTENT(INOUT) :: ZNT  ! roughness length                       [m]    ! modified by danli
+   INTEGER, INTENT(IN) :: AHE_SCHEME ! AHE treatment
+   REAL, DIMENSION(0:23), INTENT(IN) :: AH24
+   REAL, INTENT(OUT)   :: AH
 !-------------------------------------------------------------------------------
 ! I: NUDAPT Input Parameters
 !-------------------------------------------------------------------------------
@@ -465,7 +469,7 @@ use module_wrf_error
 ! L:  Local variables from read_param
 !-------------------------------------------------------------------------------
 
-   REAL :: ZR, Z0C, Z0HC, ZDC, SVF, R, RW, HGT, AH, ALH
+   REAL :: ZR, Z0C, Z0HC, ZDC, SVF, R, RW, HGT, ALH
    REAL :: SIGMA_ZED
    REAL :: CAPR, CAPB, CAPG, AKSR, AKSB, AKSG, ALBR, ALBB, ALBG 
    REAL :: EPSR, EPSB, EPSG, Z0R,  Z0B,  Z0G,  Z0HB, Z0HG
@@ -594,6 +598,11 @@ use module_wrf_error
 ! Set parameters
 !-------------------------------------------------------------------------------
 
+  if((ahe_scheme==3).OR.(ahe_scheme==2)) then
+     ahoption=1 !Override depend on ahe_scheme
+  else
+     ahoption=0
+  endif
 ! Miao, 2007/01/17, cal. ah
    if(ahoption==1) then
      tloc=mod(int(OMG/PI*180./15.+12.+0.5 ),24)
@@ -763,10 +772,14 @@ use module_wrf_error
  endif
 
  !End NUDAPT Modification
-
-
+  AH=0.0
+  if(ahe_scheme==2) then
+   if(tloc==24) tloc=0
+   AH=AH24(tloc)
+   else
 ! Miao, 2007/01/17, cal. ah
    if(ahoption==1) AH=AH*ahdiuprf(tloc)
+  endif
 
 ! Yang, 2014/10/08, cal. alh
    Kalh=0

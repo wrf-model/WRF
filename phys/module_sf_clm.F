@@ -3826,6 +3826,7 @@ CONTAINS
                    ,ims,ime, jms,jme, kms,kme                    &
                    ,its,ite, jts,jte, kts,kte                    &
                    ,inest, sf_urban_physics,nlcat,               &
+		   ahe_scheme,ahe24,ahucm,                           &
 !Optional urban
                 CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,   &
                 CMGR_SFCDIF,CHGR_SFCDIF,                       &
@@ -3933,6 +3934,11 @@ CONTAINS
                                                          tslb     ! TSLB     STEMP
 
    integer,intent(in)  :: nlcat
+   INTEGER,  INTENT(IN   )   :: ahe_scheme
+   REAL, INTENT(IN), DIMENSION( 0:23, ims:ime, jms:jme ), OPTIONAL :: ahe24
+   REAL, INTENT(OUT), DIMENSION( ims:ime,jms:jme ) :: ahucm
+   REAL, DIMENSION(0:23) :: AH24
+   REAL :: AH
   real,intent(in) :: dt,dx
   real,intent(in) :: xtime, dtwrf   !fchen
   real(r8) :: dtt
@@ -5218,6 +5224,12 @@ CONTAINS
             enddo
             frc_urb = FRC_URB2D(I,J)
             check = 0.
+
+	    IF(PRESENT(ahe24))THEN
+	       AH24 = ahe24(:,I,J)
+	    ELSE
+	       AH24 = 0.0
+	    ENDIF
 !
 
 ! Call urban
@@ -5242,8 +5254,10 @@ CONTAINS
                        hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                        TGRL_URB,SMR_URB,CMGR_URB, CHGR_URB, jmonth,     & ! H
                        DRELR_URB,DRELB_URB,                             & ! H
-                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)    
+                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+		       AHE_SCHEME,AH24,AH)    
 
+            AHUCM(I,J) = AH
             TS_URB2D(I,J) = TS_URB
 
             albxy(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxy_buf   ![-]

@@ -17,7 +17,7 @@ CONTAINS
                  IDVEG, IOPT_CRS,  IOPT_BTR, IOPT_RUN, IOPT_SFC, IOPT_FRZ,  & ! IN : User options
               IOPT_INF, IOPT_RAD,  IOPT_ALB, IOPT_SNF,IOPT_TBOT, IOPT_STC,  & ! IN : User options
               IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,            & ! IN : User options
-              IZ0TLND, SF_URBAN_PHYSICS,                                    & ! IN : User options
+              IZ0TLND, SF_URBAN_PHYSICS, AHE_SCHEME, AHE24, AHUCM,          & ! IN : User options
 	      SOILCOMP,  SOILCL1,  SOILCL2,   SOILCL3,  SOILCL4,            & ! IN : User options
                    T3D,     QV3D,     U_PHY,    V_PHY,   SWDOWN,      GLW,  & ! IN : Forcing
 		 P8W3D,PRECIP_IN,        SR,                                & ! IN : Forcing
@@ -117,6 +117,12 @@ CONTAINS
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  P8W3D     ! 3D pressure, valid at interface [Pa]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  PRECIP_IN ! total input precipitation [mm]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SR        ! frozen precipitation ratio [-]
+   INTEGER,  INTENT(IN   )   :: AHE_SCHEME
+   REAL, INTENT(IN), DIMENSION( 0:23, ims:ime, jms:jme ), OPTIONAL :: AHE24
+   REAL, INTENT(OUT), DIMENSION( ims:ime, jms:jme ) :: AHUCM
+   REAL, DIMENSION(0:23) :: AH24
+   REAL :: AH
+
 
 !Optional Detailed Precipitation Partitioning Inputs
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_RAINC  ! convective precipitation entering land model [mm] ! MB/AN : v3.7
@@ -2520,8 +2526,8 @@ end function checkIfHarvest
                             a_u_bep,        a_v_bep,        a_t_bep,    a_q_bep,            & !O multi-layer urban
                             a_e_bep,        b_u_bep,        b_v_bep,                        & !O multi-layer urban
                             b_t_bep,        b_q_bep,        b_e_bep,    dlg_bep,            & !O multi-layer urban
-                           dl_u_bep,         sf_bep,         vl_bep                         & !O multi-layer urban
-                 )
+                           dl_u_bep,         sf_bep,         vl_bep,                        & !O multi-layer urban
+			   ahe_scheme,     ahe24,  ahucm        )
 
   USE module_sf_urban,    only: urban
   USE module_sf_bep,      only: bep
@@ -2585,6 +2591,11 @@ end function checkIfHarvest
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),          INTENT(INOUT) :: CHS, CHS2, CQS2
 
      INTEGER,  INTENT(IN   )   ::  julian, julyr                  !urban
+     INTEGER,  INTENT(IN   )   :: ahe_scheme
+     REAL, INTENT(IN), DIMENSION( 0:23, ims:ime, jms:jme ), OPTIONAL :: ahe24
+     REAL, INTENT(OUT), DIMENSION( ims:ime, jms:jme ) :: ahucm
+     REAL, DIMENSION(0:23) :: AH24
+     REAL :: AH
 
 ! local variables lsm --> urban
 
@@ -2932,6 +2943,12 @@ ILOOP : DO I = its, ite
       CHECK = 1
     END IF
 
+    IF(PRESENT(ahe24))THEN
+       AH24 = ahe24(:,I,J)
+    ELSE
+       AH24 = 0.0
+    ENDIF
+
 ! Call urban
 
     CALL cal_mon_day(julian,julyr,jmonth,jday)
@@ -2955,8 +2972,9 @@ ILOOP : DO I = its, ite
             hgt_urb,    frc_urb,     lb_urb,      check, CMCR_URB,TGR_URB,             & ! H
            TGRL_URB,    SMR_URB,   CMGR_URB,   CHGR_URB,   jmonth,                     & ! H
           DRELR_URB,  DRELB_URB,                                                       & ! H
-          DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB )
+          DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,AHE_SCHEME,AH24,AH )
 
+    AHUCM(I,J)    = AH
     TS_URB2D(I,J) = TS_URB
 
     ALBEDO(I,J)   = FRC_URB2D(I,J) * ALB_URB + (1-FRC_URB2D(I,J)) * ALBEDO(I,J)        ![-]      

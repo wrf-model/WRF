@@ -670,6 +670,9 @@ BENCH_START(surf_driver_tim)
      &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
          ! Optional urban for BEP scheme
      &        ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics             &
+     &        ,AHE_SCHEME=config_flags%ahe_scheme                         & !AHE
+     &        ,AHE24 = grid%ahe24                                         & !AHE
+     &        ,AHUCM = grid%ahucm                                         & !AHE
      &        ,num_urban_ndm = config_flags%num_urban_ndm                 & !multi-layer urban
      &        ,urban_map_zrd = config_flags%urban_map_zrd                 & !multi-layer urban
      &        ,urban_map_zwd = config_flags%urban_map_zwd                 & !multi-layer urban
@@ -983,18 +986,8 @@ BENCH_START(pbl_driver_tim)
      &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)          &
      &        ,KTS=k_start, KTE=min(k_end,kde-1)                          &
      &        ,NUM_TILES=grid%num_tiles                                   &
-     &        ,AHE0 =grid%ahe0, AHE1 =grid%ahe1, AHE2 =grid%ahe2, AHE3 =grid%ahe3  & 
-     &        ,AHE4 =grid%ahe4, AHE5 =grid%ahe5, AHE6 =grid%ahe6, AHE7 =grid%ahe7  &
-     &        ,AHE8 =grid%ahe8, AHE9 =grid%ahe9, AHE10=grid%ahe10,AHE11=grid%ahe11 &
-     &        ,AHE12=grid%ahe12,AHE13=grid%ahe13,AHE14=grid%ahe14,AHE15=grid%ahe15 &
-     &        ,AHE16=grid%ahe16,AHE17=grid%ahe17,AHE18=grid%ahe18,AHE19=grid%ahe19 &
-     &        ,AHE20=grid%ahe20,AHE21=grid%ahe21,AHE22=grid%ahe22,AHE23=grid%ahe23 &
-     &        ,AME0 =grid%ame0, AME1 =grid%ame1, AME2 =grid%ame2, AME3 =grid%ame3  & 
-     &        ,AME4 =grid%ame4, AME5 =grid%ame5, AME6 =grid%ame6, AME7 =grid%ame7  &
-     &        ,AME8 =grid%ame8, AME9 =grid%ame9, AME10=grid%ame10,AME11=grid%ame11 &
-     &        ,AME12=grid%ame12,AME13=grid%ame13,AME14=grid%ame14,AME15=grid%ame15 &
-     &        ,AME16=grid%ame16,AME17=grid%ame17,AME18=grid%ame18,AME19=grid%ame19 &
-     &        ,AME20=grid%ame20,AME21=grid%ame21,AME22=grid%ame22,AME23=grid%ame23 &
+     &        ,AHE_SCHEME=config_flags%ahe_scheme                         &
+     &        ,AHE24 = grid%ahe24, AME24 = grid%ame24                     &
      &        ,AHE  =grid%ahe,  AME  =grid%ame,  GMT=grid%gmt, XTIME=grid%xtime &
           ! Variables Required by ACM PBL  - jp
      &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut,P_TOP=grid%p_top    &

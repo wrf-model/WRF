@@ -62,7 +62,7 @@ CONTAINS
                   ids,ide, jds,jde, kds,kde,                    &
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
-                  sf_urban_physics,                             &
+                  sf_urban_physics,ahe_scheme,ahe24,ahucm,      &
                   CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,  &
                   CMGR_SFCDIF,CHGR_SFCDIF,                      &
 !Optional Urban
@@ -262,6 +262,12 @@ CONTAINS
    INTEGER,  INTENT(IN   )   ::  isurban
    INTEGER,  INTENT(IN   )   ::  isice
    INTEGER,  INTENT(IN   )   ::  julian, julyr                  !urban
+   INTEGER,  INTENT(IN   )   :: ahe_scheme
+   REAL, INTENT(IN), DIMENSION( 0:23, ims:ime, jms:jme ),       &
+                    OPTIONAL :: ahe24
+   REAL, INTENT(OUT), DIMENSION( ims:ime,jms:jme) :: ahucm
+   REAL, DIMENSION(0:23) :: AH24
+   REAL :: AH
 
 !added by Wei Yu  for routing
     REAL,    DIMENSION( ims:ime, jms:jme )                     , &
@@ -1362,6 +1368,12 @@ CONTAINS
             if (I.eq.73.and.J.eq.125)THEN
                check = 1
             end if
+	    
+	    IF(PRESENT(ahe24))THEN
+	       AH24 = ahe24(:,I,J)
+	    ELSE
+	       AH24 = 0.0
+	    ENDIF
 !
 ! Call urban
             CALL cal_mon_day(julian,julyr,jmonth,jday)
@@ -1385,7 +1397,8 @@ CONTAINS
                        hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                        TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                        DRELR_URB,DRELB_URB,                             & ! H
-                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)                            
+                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+		       AHE_SCHEME,AH24,AH)                            
 
 #if 0
           IF(IPRINT) THEN
@@ -1413,7 +1426,7 @@ CONTAINS
           'Q2_URB',Q2_URB,'CHS_URB',CHS_URB,'CHS2_URB',CHS2_URB
            endif
 #endif
-
+            AHUCM(I,J) = AH
             TS_URB2D(I,J) = TS_URB
 
             ALBEDO(I,J) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*ALBEDOK   ![-]
@@ -2300,7 +2313,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   ids,ide, jds,jde, kds,kde,                    &
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
-                  sf_urban_physics,                             &
+                  sf_urban_physics,ahe_scheme,ahe24,ahucm,      &
                   CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,  &
                   CMGR_SFCDIF,CHGR_SFCDIF,                      &
 !Optional Urban
@@ -2508,6 +2521,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    INTEGER,  INTENT(IN   )   ::  isurban
    INTEGER,  INTENT(IN   )   ::  isice
    INTEGER,  INTENT(IN   )   ::  julian,julyr
+   INTEGER,  INTENT(IN   )   :: ahe_scheme
+   REAL, INTENT(IN), DIMENSION( 0:23, ims:ime, jms:jme ),       &
+                    OPTIONAL :: ahe24
+   REAL, INTENT(OUT), DIMENSION(ims:ime,jms:jme) :: ahucm
+   REAL, DIMENSION(0:23) :: AH24
+   REAL :: AH
 
 !added by Wei Yu  for routing
     REAL,    DIMENSION( ims:ime, jms:jme )                     , &
@@ -3723,6 +3742,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   if (I.eq.73.and.J.eq.125)THEN
                      check = 1
                   end if
+
+	          IF(PRESENT(ahe24))THEN
+	             AH24 = ahe24(:,I,J)
+	          ELSE
+	             AH24 = 0.0
+	          ENDIF
       !
       ! Call urban
                   CALL cal_mon_day(julian,julyr,jmonth,jday)      
@@ -3746,7 +3771,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
-                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)     
+                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+			     AHE_SCHEME, AH24, AH)     
       
 #if 0
                 IF(IPRINT) THEN
@@ -3773,8 +3799,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                'U10_URB',U10_URB,'V10_URB',V10_URB,'TH2_URB',TH2_URB,      &
                 'Q2_URB',Q2_URB,'CHS_URB',CHS_URB,'CHS2_URB',CHS2_URB
                  endif
-#endif
-      
+#endif 
+                  AHUCM(I,J) = AH
                   TS_URB2D(I,J) = TS_URB
       
                   ALBEDO(I,J) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*ALBEDOK   ![-]
@@ -4577,6 +4603,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   if (I.eq.73.and.J.eq.125)THEN
                      check = 1
                   end if
+
+	          IF(PRESENT(ahe24))THEN
+	             AH24 = ahe24(:,I,J)
+	          ELSE
+	             AH24 = 0.0
+	          ENDIF
       !
       ! Call urban
                   CALL cal_mon_day(julian,julyr,jmonth,jday)        
@@ -4600,11 +4632,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
-                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)  
+                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+			     AHE_SCHEME,AH24,AH)  
       
 #if 0
                 IF(IPRINT) THEN
-      
+
              print*, 'AFTER CALL URBAN'
              print*,'num_roof_layers',num_roof_layers, 'num_wall_layers',  &
               num_wall_layers,                                             &
@@ -4628,7 +4661,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                 'Q2_URB',Q2_URB,'CHS_URB',CHS_URB,'CHS2_URB',CHS2_URB
                  endif
 #endif
-      
+                  AHUCM(I,J) = AH
                   TS_URB2D(I,J) = TS_URB
       
                   ALBEDO(I,J) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*ALBEDOK   ![-]

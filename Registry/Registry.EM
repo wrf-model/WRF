@@ -45,6 +45,7 @@ package   tconly         use_wps_input==2            -             state:u_gc,v_
 # Distributed AHE inclusion
 state    real   AHE            ij       misc        1        -     rh01du=(copy_fcnm)  "AHE "   "anthropogenic heat emission"  "w m-2"
 state    real   AME            ij       misc        1        -     rh01du=(copy_fcnm)  "AME "   "anthropogenic mositure emission"  "w m-2"
+state    real   AHUCM          ij       misc        1        -     rh01du=(copy_fcnm)  "AHUCM"   "anthropogenic heat emission (UCM)"  "w m-2"
 state    real   AHE24          i{hr}j     misc        1        Z     i01r01du=(copy_fcnm)  "AHE24"   "24-hr anthropogenic heat flux"  "w m-2"
 state    real   AME24          i{hr}j     misc        1        Z     i01r01du=(copy_fcnm)  "AME24"   "24-hr anthropogenic moisture flux"  "w m-2"
 rconfig   integer     ahe_scheme          namelist,physics      max_domains    0       rh   "ahe_scheme"    "0=no AHE,1=1st-level,2=AHE24 in UCM,3=Default tables UCM."       ""

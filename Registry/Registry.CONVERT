@@ -51,6 +51,7 @@ dimspec    w      -     namelist=spec_bdy_width      c          spec_bdy_width
 dimspec    e      3     namelist=ensdim              z          ensemble dimension
 dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
 dimspec    m      2     constant=12                  z          months_per_year
+dimspec    hr     2     constant=(0:23)              z          hour
 
 
 ################################################################################

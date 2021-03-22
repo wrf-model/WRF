@@ -209,6 +209,8 @@ state    real   w              ikjb     dyn_em      2         Z     \
 state    real   ww             ikj     dyn_em      1         Z      r         "ww"   "mu-coupled eta-dot"    "Pa s-1"
 state    real   rw             ikj     dyn_em      1         Z      -         "rw"   "mu-coupled w"          "Pa m s-1"
 i1       real   ww1            ikj     dyn_em      1         Z                                          
+i1       real   wwE            ikj     dyn_em      1         Z      -         "wwE"  "Explicit vertical velocity" "Pa s-1"
+i1       real   wwI            ikj     dyn_em      1         Z      -         "wwI"  "Implicit vertical velocity" "Pa s-1"
 state    real   ww_m           ikj     dyn_em      1         Z      r         "ww_m"   "time-avg mu-coupled eta-dot"    "Pa s-1"
 i1       real   wwp            ikj     dyn_em      1         Z                                          
 i1       real   rw_tend        ikj     dyn_em      1         Z                                          
@@ -2772,11 +2774,13 @@ rconfig   integer scm_force_flux          namelist,scm  1       0           rh  
 # dynamics option (see package definitions, below)
 rconfig   integer dyn_opt                 namelist,dynamics	1             2 
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
-rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
+rconfig   integer w_damping               namelist,dynamics	1             0       irh   "w_damping"             ""      ""
+rconfig   real    w_crit_cfl              namelist,dynamics 1             1.2     irh   "w_crit_cfl"        "W-CFL where w-damping is on" ""
+rconfig   integer zadvect_implicit        namelist,dynamics 1             0       irh   "zadvect_implicit"  "Turns on IEVA for vertical adv" ""
 # diff_opt 1=old diffusion, 2=new
-rconfig   integer diff_opt                namelist,dynamics	max_domains   -1      irh    "diff_opt"              ""      ""
+rconfig   integer diff_opt                namelist,dynamics	max_domains   -1      irh   "diff_opt"              ""      ""
 # diff_opt_dfi is needed for backwards integration in dfi
-rconfig   integer diff_opt_dfi            namelist,dynamics	max_domains   0       irh    "diff_opt_dfi"          ""      ""
+rconfig   integer diff_opt_dfi            namelist,dynamics	max_domains   0       irh   "diff_opt_dfi"          ""      ""
 # km_opt   1=old coefs, 2=tke, 3=Smagorinksy
 rconfig   integer km_opt                  namelist,dynamics	max_domains   -1      irh    "km_opt"                ""      ""
 # km_opt_dfi is needed for backward integration in dfi

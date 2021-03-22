@@ -209,6 +209,8 @@ state    real   w              ikjb     dyn_em      2         Z     \
 state    real   ww             ikj     dyn_em      1         Z      r         "ww"   "mu-coupled eta-dot"    "Pa s-1"
 state    real   rw             ikj     dyn_em      1         Z      -         "rw"   "mu-coupled w"          "Pa m s-1"
 i1       real   ww1            ikj     dyn_em      1         Z                                          
+i1       real   wwE            ikj     dyn_em      1         Z      -         "wwE"  "Explicit vertical velocity" "Pa s-1"
+i1       real   wwI            ikj     dyn_em      1         Z      -         "wwI"  "Implicit vertical velocity" "Pa s-1"
 state    real   ww_m           ikj     dyn_em      1         Z      r         "ww_m"   "time-avg mu-coupled eta-dot"    "Pa s-1"
 i1       real   wwp            ikj     dyn_em      1         Z                                          
 i1       real   rw_tend        ikj     dyn_em      1         Z                                          

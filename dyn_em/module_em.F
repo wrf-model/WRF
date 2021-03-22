@@ -192,7 +192,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
                          mu_tend, u_save, v_save, w_save, ph_save,        &
                          t_save, mu_save, RTHFTEN,                        &
-                         ru, rv, rw, ww,                                  &
+                         ru, rv, rw, ww, wwE, wwI,                        &
                          u, v, w, t, ph,                                  &
                          u_old, v_old, w_old, t_old, ph_old,              &
                          h_diabatic, phb,t_init,                          &
@@ -1096,7 +1096,7 @@ END SUBROUTINE rk_addtend_dry
 SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                             tenddec,                         &
                             rk_step, dt_step,                &
-                            ru, rv, ww,                      &  
+                            ru, rv, ww, wwE, wwI,            &  
                             u_old, v_old,                    &  
                             mut, mub, mu_old,                &
                             c1h, c2h, c1f, c2f, alt,         &

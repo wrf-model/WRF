@@ -152,15 +152,6 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
      print_flag = .false.
    ENDIF
 
-   DO j = j_start, j_end
-     DO k = kts, ktf
-       DO i = i_start, i_end
-         wwE(i,k,j) = 0.
-         wwI(i,k,j) = 0.
-       ENDDO
-     ENDDO
-   ENDDO
-
 ! =========================================================================
 ! Loop limits
 
@@ -174,6 +165,15 @@ SUBROUTINE WW_SPLIT(wwE, wwI,                         &
 !    count(:)  = 0
 !
 !=========================================================================
+
+     DO j = j_start, j_end
+       DO k = kts+1, ktf-1
+         DO i = i_start, i_end
+           wwE(i,k,j) = 0.
+           wwI(i,k,j) = 0.
+         ENDDO
+       ENDDO
+     ENDDO
 
 ! Set upper and lower boundary values to be explicit advection
 

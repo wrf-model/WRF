@@ -3290,6 +3290,10 @@
 
 !jm not thread safe      hvrtau = '$Revision: 1.3 $'
 
+! Initialize sfluxzen to 0.0 to prevent junk values when nlayers = laytrop
+
+      sfluxzen(:) = 0.0
+
 ! Calculate gaseous optical depth and planck fractions for each spectral band.
 
       call taumol16

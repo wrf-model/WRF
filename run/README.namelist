@@ -273,8 +273,9 @@ Namelist variables specifically for the WPS input for real:
  vert_refine_fact                    = 1        ! vertical refinement factor for ndown, not used for concurrent vertical grid refinement
  vert_refine_method (max_dom)        = 0        ! vertical refinement method (new in 3.7)
                                                   0: no vertical refinement
-                                                  1: integer vertical refinement
-                                                  2: use specified or computed eta levels for vertical refinement
+                                                  1: integer vertical refinement (must set rebalance=1)
+                                                  2: use specified or computed eta levels for vertical refinement (must set rebalance=1)
+ rebalance                           = 0        ! must be set to =1 if vertical nesting is used. 
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
@@ -522,10 +523,12 @@ Namelist variables for controlling the adaptive time step option:
                                      = 50, P3 1-ice category, 1-moment cloud water
                                      = 51, P3 1-ice category plus double-moment cloud water
                                      = 52, P3 2-ice categories plus double-moment cloud water
+                                     = 53, P3 1-ice category, 3-moment cloud water
                                      = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
                                            for each ice
                                      = 56, NTU multi-moment scheme  ! for ntu3m
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
+                                     = 96, Madwrf
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
@@ -686,6 +689,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, RUC land-surface model
                                      = 4, Noah-MP land-surface model (see additional &noah_mp namelist)
                                      = 5, Community Land Model version 4 (CLM4), adapted from CAM
+                                     = 6, Community Terrestrial Systems Model (CTSM). See doc/README.CTSM for info on running this option.
                                      = 7, Pleim-Xiu LSM (ARW)
                                      = 8, Simplified Simple Biosphere Model (SSiB) 
                                           - can be used with Dudhia/RRTM, CAM or RRTMG radiation options
@@ -829,6 +833,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Grell 3D ensemble scheme (use with cu_physics=93 or 5) (PLACEHOLDER: SWITCH NOT YET IMPLEMENTED--use ishallow)
                                      = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
                                      = 3, GRIMS shallow cumulus from YSU group
+                                     = 4, NSAS shallow cululus scheme. Must be used with KIAPS SAS cumulus scheme (cu_physics = 14)
                                      = 5, Deng cumulus scheme (including both shallow and deep convections) from PSU and WRF-Solar.
                                           However the deep part isn't very active. Not recommended to use alone for deep convection 
                                           case. Could work well for grid sizes 3-9 km.
@@ -942,6 +947,13 @@ Namelist variables for controlling the adaptive time step option:
                                                   28 - for USGS if including lake category
                                                   21 - for MODIS if including lake category (default since 3.8)
 						  40 - for NCLD
+ use_wudapt_lcz                      = 0,       ! Option to use WUDAPT LCZ urban landuse categories, along with standard
+						  urban classes (31-33). 
+                                                  = 0: use the traditional 33 landuse classes (31-33 for urban)
+                                                  = 1: use the WUDAPT LCZ urban landuse categories
+							* Note: If the number of urban category in the input files is
+							  inconsistent with the namelist option, error messages will occur.
+							  The method to create the LCZ data is described here: http://www.wudapt.org/
  num_soil_cat                        = 16,      ! number of soil categories in input data
 
  pxlsm_smois_init(max_dom)           = 1        ! PXLSM Soil moisture initialization option 

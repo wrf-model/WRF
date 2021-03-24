@@ -314,11 +314,11 @@ state    real  e_hum          i+jf     emis_ant     1         Z      i5     "E_H
 
 # dust and seas emission arrays
 state   real     -          i{dust}jf      emis_dust      -        -        -         -                    "Dust Emissions"         ""
-state    real  edust1       i{dust}jf      emis_dust      1         Z      -     "EDUST1"         "DUST emissions bin1"  ""
-state    real  edust2       i{dust}jf      emis_dust      1         Z      -     "EDUST2"         "DUST emissions bin2"  ""
-state    real  edust3       i{dust}jf      emis_dust      1         Z      -     "EDUST3"         "DUST emissions bin3"  ""
-state    real  edust4       i{dust}jf      emis_dust      1         Z      -     "EDUST4"         "DUST emissions bin4"  ""
-state    real  edust5       i{dust}jf      emis_dust      1         Z      -     "EDUST5"         "DUST emissions bin5"  ""
+state    real  edust1       i{dust}jf      emis_dust      1         Z      -     "EDUST1"         "Accumulated DUST emissions bin1"  "kg/m2"
+state    real  edust2       i{dust}jf      emis_dust      1         Z      -     "EDUST2"         "Accumulated DUST emissions bin2"  "kg/m2"
+state    real  edust3       i{dust}jf      emis_dust      1         Z      -     "EDUST3"         "Accumulated DUST emissions bin3"  "kg/m2"
+state    real  edust4       i{dust}jf      emis_dust      1         Z      -     "EDUST4"         "Accumulated DUST emissions bin4"  "kg/m2"
+state    real  edust5       i{dust}jf      emis_dust      1         Z      -     "EDUST5"         "Accumulated DUST emissions bin5"  "kg/m2"
 state   real     -          i{dust}jf      emis_seas      -        -        -         -                    "Sea-Salt Emissions"         ""
 state    real  eseas1       i{dust}jf      emis_seas      1         Z      -     "ESEAS1"         "Sea-Salt emissions bin1 "  ""
 state    real  eseas2       i{dust}jf      emis_seas      1         Z      -     "ESEAS2"         "Sea-Salt emissions bin2 "  ""
@@ -684,8 +684,8 @@ state    real  sandfrac       ij      misc        1         -      i01r    "SAND
 state    real  clayfrac_nga   ij      misc        1         -      i01r    "CLAYFRAC_NGA"        "Clay fraction in each grid cell (0-1)"                                     "none"
 state    real  sandfrac_nga   ij      misc        1         -      i01r    "SANDFRAC_NGA"        "Sand fraction in each grid cell (0-1)"                                     "none"
 state    real  afwa_dustloft  ij      misc        1         -      h02     "AFWA_DUSTLOFT"       "AFWA Diagnostic dust lofting potential (U10-U10t)"                         "m s^-1"
-state    real  tot_dust       ikj     misc        1         -      h02     "TOT_DUST"            "Total dust concentration (0.1-20 um)"                                      "ug m^-3"
-state    real  tot_edust      ij      misc        1         -      h02     "TOT_EDUST"           "Total dust emission flux (0.1-20 um)"                                      "g m^-2 s^-1"
+state    real  tot_dust       ikj     misc        1         -      h02     "TOT_DUST"            "Total dust concentration (0.2-20 um)"                                      "ug m^-3"
+state    real  tot_edust      ij      misc        1         -      h02     "TOT_EDUST"           "Total accumulated dust emission (0.2-20 um)"                               "kg m^-2"
 state    real  vis_dust       ikj     misc        1         -      h02     "VIS_DUST"            "Visibility due to dust only"                                               "m"
 
 # These 3D arrays are output from the SOA module for different purposes

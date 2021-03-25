@@ -3636,12 +3636,17 @@ SUBROUTINE calculate_full ( rfield, rfieldb, rfieldp,     &
    
    ! Local indices.
    
-   INTEGER :: i, j, k, itf, jtf, ktf
+   INTEGER :: i, j, k, itf, jtf, ktf, i_start, j_start
    
 !<DESCRIPTION>
 !
 !  calculate_full
 !  calculates full 3D field from pertubation and base field.
+!  The input fields (mu base and perturbation mu) are communicated prior
+!  to this call. That fills the total field into the halo region. That
+!  extra row/column is only used by the IEVA scheme. Having the extra
+!  row/column filled with valid values is not a problem for the rest of
+!  the model.
 !
 !</DESCRIPTION>
 
@@ -3649,9 +3654,12 @@ SUBROUTINE calculate_full ( rfield, rfieldb, rfieldp,     &
    jtf=MIN(jte,jde-1)
    ktf=MIN(kte,kde-1)
 
-   DO j=jts,jtf
+   i_start=its-1
+   j_start=jts-1
+
+   DO j=j_start,jtf
    DO k=kts,ktf
-   DO i=its,itf
+   DO i=i_start,itf
       rfield(i,k,j)=rfieldb(i,k,j)+rfieldp(i,k,j)
    ENDDO
    ENDDO

@@ -174,18 +174,6 @@ CONTAINS
     REAL,    DIMENSION( ims:ime, kdvel, ndvel ) :: VD2D
 #endif
    
-
-
-!**************************************
-! dry air density - Hosein, June 2015
-!     do j = jts,jte
-!     do k = kts,kte
-!     do i = its,ite
-!       RR3DA(i,k,j) = RR3D(i,k,j) * (1.0 + 1.609*QV3D(i,k,j)) / (1.0 + QV3D(i,k,j))
-!     enddo
-!     enddo
-!     enddo
-!***************************************
    RDT = 1.0 / DTPBL
 
 !==================================================
@@ -246,14 +234,6 @@ CONTAINS
       ENDDO
 #endif
    ENDDO
-
-
-!   write(46,*) pblh (7221,1)
-!   write(56,*) 'rublten'  , rublten (1000,6,1)
-!   write(56,*) 'rvblten'  , rvblten (1000,6,1)
-!   write(56,*) 'rthblten' , rthblten(1000,6,1)
-!   write(56,*) '==========='
-
 
    END SUBROUTINE ACMPBL
 !-----------------------------------------------------------------------
@@ -399,7 +379,6 @@ CONTAINS
        DO I = its,ite
          ZF(I,K) = DZF(I,K) + ZF(I,K-1)
          ZA(I,K) = 0.5 * (ZF(I,K) + ZF(I,K-1))
-!         write(0,*) i , k , zf, za 
          DZH(I,K) = ZF(I,K) - ZF(I,K-1)
          DZHI(I,K)= 1./DZH(I,K)
        ENDDO
@@ -430,7 +409,7 @@ CONTAINS
          IF (ZF(I,K).gt.30.0) GO TO 69
        ENDDO
 69     CONTINUE 
-!       KSRC(I) = 1  ! test
+
        TH1 = 0.0
        ZH1 = 0.0
        UH1 = 0.0
@@ -472,7 +451,6 @@ CONTAINS
          TOG = 0.5 * (THETAV(I,K) + TH1) / G
          WSSQ = (US(I,K)-UMIX)**2                                     &
               + (VS(I,K)-VMIX)**2
-!         IF (KMIX == KSRC(I)) WSSQ = WSSQ + 100.*UST(I)*UST(I) 
          IF (KMIX .EQ. KSRC(I)) THEN
                WSSQ = US(I,K)**2 + VS(I,K)**2
                WSSQ = WSSQ + 100.*UST(I)*UST(I) 
@@ -736,8 +714,6 @@ CONTAINS
       REAL, PARAMETER :: P      = 2.0   ! ZFUNC exponent
       REAL, PARAMETER :: EDYZ0  = 0.01  ! New Min Kz
       REAL, PARAMETER :: PR     = 0.8   ! Prandtl #
-!      REAL, PARAMETER :: EDYZ0  = 0.1
-!--   IMVDIF      imvdif=1 for moist adiabat vertical diffusion
       INTEGER, PARAMETER :: imvdif = 1
 !
       ILX = ite 
@@ -804,12 +780,6 @@ CONTAINS
           SQL = (ZK * RLAM / (RLAM + ZK)) ** 2
             
           IF (RI .GE. 0.0) THEN
-!	          IF (ZF(I,K).LT.PBL(I).AND.ZOVL.GT.0.0) THEN
-!	            FH = MAX((1.-ZF(I,K)/PBL(I))**2,0.01) * PHIH **(-2)
-!                  SQL = ZK ** 2
-!	          ELSE
-!	            FH = (MAX(1.-RI/RC,0.01))**2
-!	          ENDIF
             FH=1./(1.+10.*RI+50.*RI**2+5000.*RI**4)+0.0012  !pleim5
             FM= PR*FH + 0.00104
 
@@ -834,7 +804,7 @@ CONTAINS
       ENDDO               ! for k loop
 !
       DO I = its,ILX
-        EDDYZ(I,KL) = 0.0 ! EDDYZ(I,KLM) -- changed jp 3/08
+        EDDYZ(I,KL) = 0.0
         EDDYZM(I,KL) = 0.0
       ENDDO
 
@@ -952,7 +922,7 @@ CONTAINS
       REAL, DIMENSION( kts:kte, its:ite) :: MBARKS, MDWN
       REAL, DIMENSION( kts:kte )         :: XPLUS, XMINUS
       REAL  DELC
-      REAL, DIMENSION( kts:kte )                :: AI, BI, CI, EI !, Y
+      REAL, DIMENSION( kts:kte )                :: AI, BI, CI, EI
       REAL, ALLOCATABLE, DIMENSION( : , : )     :: DI, UI    
       REAL, ALLOCATABLE, DIMENSION( : , : )     :: FS
       REAL, ALLOCATABLE, DIMENSION( : , : , : ) :: VCI

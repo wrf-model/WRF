@@ -3,6 +3,9 @@ MODULE GOCART_DUST_AFWA
 ! AFWA dust routine
 ! Created by Sandra Jones (AER and AFWA) and Glenn Creighton (AFWA).
 !
+! A. Ukhov, 11 March 2021, Now "emis_dust" is accumulated dust 
+! emission (kg/m2). Before was instantenious flux (g m^-2 s^-1).
+! Code cleanup, remove unused variables.
 
   USE module_data_gocart_dust
 
@@ -11,9 +14,9 @@ MODULE GOCART_DUST_AFWA
   INTRINSIC max, min
 
 CONTAINS
-  SUBROUTINE gocart_dust_afwa_driver(ktau,dt,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,erod_dri,dustin,snowh,zs,   &
-         ivgtyp,isltyp,vegfra,lai_vegmask,xland,xlat,xlong,gsw,dx,g,emis_dust,      &
+  SUBROUTINE gocart_dust_afwa_driver(dt,config_flags,alt,  &
+         chem,rho_phy,smois,u10,v10,p8w,dz8w,erod,erod_dri,dustin,snowh,   &
+         isltyp,vegfra,lai_vegmask,xland,dx,g,emis_dust,      &
          ust,znt,clay_wrf,sand_wrf,clay_nga,sand_nga,afwa_dustloft,                 &
          tot_dust,tot_edust,vis_dust,alpha,gamma,smtune,ustune,            &
          ids,ide, jds,jde, kds,kde,                                        &
@@ -25,39 +28,29 @@ CONTAINS
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
-   INTEGER,      INTENT(IN   ) :: julday, ktau,                            &
-                                  ids,ide, jds,jde, kds,kde,               &
+   INTEGER,      INTENT(IN   ) :: ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
    INTEGER,DIMENSION( ims:ime , jms:jme )                  ,               &
-          INTENT(IN   ) ::                                                 &
-                                                     ivgtyp,               &
-                                                     isltyp
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),                &
-         INTENT(IN ) ::                              moist
+          INTENT(IN   ) ::    isltyp
+                                                     
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                           chem
    REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTIONAL,           &
-         INTENT(INOUT ) ::                                                 &
-         emis_dust
+         INTENT(INOUT ) ::    emis_dust
+         
    REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,     &
-         INTENT(IN   ) ::                            smois
-   REAL, DIMENSION( config_flags%num_soil_layers ) ,                       &
-         INTENT(IN   ) ::                            zs
+         INTENT(IN   ) ::                            smois   
    REAL, DIMENSION( ims:ime , jms:jme, ndcls )             ,               &
          INTENT(IN   ) ::                            erod,erod_dri
    REAL, DIMENSION( ims:ime , jms:jme, 5 )                 ,               &
          INTENT(INOUT) ::                            dustin
    REAL, DIMENSION( ims:ime , jms:jme )                    ,               &
-         INTENT(IN   ) ::                                                  &
-                                                     u10,                  &
+         INTENT(IN   ) ::                            u10,                  &
                                                      v10,                  &
-                                                     gsw,                  &
                                                      vegfra,               &
                                                      lai_vegmask,          &
                                                      xland,                &
-                                                     xlat,                 &
-                                                     xlong,                &
                                                      ust,                  &
                                                      znt,                  &
                                                      clay_wrf,             &
@@ -65,13 +58,11 @@ CONTAINS
                                                      clay_nga,             &
                                                      sand_nga,             &
                                                      snowh
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                         &
-         INTENT(IN   ) ::                                                  &
-                                                     alt,                  &
-                                                     t_phy,                &
-                                                     dz8w,p8w,             &
-                                                     u_phy,v_phy,rho_phy
-  REAL, DIMENSION( ims:ime , jms:jme )                    ,                &
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme )   ,                      &
+         INTENT(IN   ) ::                            alt,                  &
+                                                     p8w,dz8w,             &
+                                                     rho_phy
+  REAL, DIMENSION( ims:ime , jms:jme )               ,                     &
          INTENT(  OUT) ::                            afwa_dustloft,        &
                                                      tot_edust
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                          &
@@ -81,7 +72,7 @@ CONTAINS
 
   ! Local variables
 
-  INTEGER :: nmx,smx,i,j,k,imx,jmx,lmx,lhave
+  INTEGER :: nmx,smx,i,j,k,imx,jmx,lmx
   INTEGER,DIMENSION (1,1) :: ilwi
   REAL*8, DIMENSION (1,1) :: erodtot
   REAL*8, DIMENSION (1,1) :: vegmask
@@ -89,8 +80,7 @@ CONTAINS
   REAL, DIMENSION( ims:ime , jms:jme ) :: clay,sand
   REAL*8, DIMENSION (1,1) :: drylimit
   REAL*8, DIMENSION (5)   :: tc,bems
-  REAL*8, DIMENSION (1,1) :: airden,airmas,ustar
-  REAL*8, DIMENSION (1) :: dxy
+  REAL*8, DIMENSION (1,1) :: airden,ustar
   REAL*8, DIMENSION (3) :: massfrac
   REAL*8                :: volsm
   REAL :: conver,converi
@@ -98,6 +88,7 @@ CONTAINS
   REAL*8 :: zwant
   REAL, INTENT(IN   ) :: alpha, gamma, smtune, ustune
   INTEGER :: smois_opt
+  real    :: dz_lowest
 
   conver=1.e-9
   converi=1.e9
@@ -143,10 +134,9 @@ CONTAINS
 
       ! Air mass and density at lowest model level.
 
-      airmas(1,1)=-(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
       airden(1,1)=rho_phy(i,kts,j)
       ustar(1,1)=ust(i,j)
-      dxy(1)=dx*dx
+      dz_lowest = dz8w(i,1,j)
 
       ! Friction velocity tuning constant (Note: recommend 0.7 for PXLSM,
       ! else use 1.0.  This was created due to make the scheme compatible
@@ -297,7 +287,7 @@ CONTAINS
       ! Call dust emission routine.
 
       call source_dust(imx, jmx, lmx, nmx, smx, dt, tc, ustar, massfrac, &
-                       erodtot, ilwi, dxy, gravsm, volsm, airden, airmas, &
+                       erodtot, ilwi, gravsm, volsm, airden,dz_lowest,   &
                        bems, ustart, g, drylimit, alpha, gamma, smois_opt)
 
       IF(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
@@ -319,7 +309,7 @@ CONTAINS
          chem(i,kts,j,p_ac0) =  chem(i,kts,j,p_ac0) +  0.03*sum(tc(1:5))*converi*factnuma*soilfac
          chem(i,kts,j,p_corn) =  chem(i,kts,j,p_corn) + 0.97*1.02*sum(tc(1:5))*converi*factnumc*soilfac
       ELSE
-        chem(i,kts,j,p_dust_1)=tc(1)*converi
+        chem(i,kts,j,p_dust_1)=tc(1)*converi ! tc(1...5) is (kg/kg), p_dust_1...5 (ug/kg)
         chem(i,kts,j,p_dust_2)=tc(2)*converi
         chem(i,kts,j,p_dust_3)=tc(3)*converi
         chem(i,kts,j,p_dust_4)=tc(4)*converi
@@ -337,17 +327,19 @@ CONTAINS
         afwa_dustloft(i,j)=ustune*w10-ustart*(LOG(10.0/znt(i,j))+psi)/0.4
       ENDIF
 
-      ! For output diagnostics (g m^-2 s^-1)
+     ! A. Ukhov
+     ! for output diagnostics
+     ! bems (kg/m2) per dt
+     ! p_edust1...5 is accumulated dust emission (kg/m2)
+     emis_dust(i,1,j,p_edust1)=emis_dust(i,1,j,p_edust1)+bems(1)
+     emis_dust(i,1,j,p_edust2)=emis_dust(i,1,j,p_edust2)+bems(2)
+     emis_dust(i,1,j,p_edust3)=emis_dust(i,1,j,p_edust3)+bems(3)
+     emis_dust(i,1,j,p_edust4)=emis_dust(i,1,j,p_edust4)+bems(4)
+     emis_dust(i,1,j,p_edust5)=emis_dust(i,1,j,p_edust5)+bems(5)
 
-      emis_dust(i,1,j,p_edust1)=bems(1)
-      emis_dust(i,1,j,p_edust2)=bems(2)
-      emis_dust(i,1,j,p_edust3)=bems(3)
-      emis_dust(i,1,j,p_edust4)=bems(4)
-      emis_dust(i,1,j,p_edust5)=bems(5)
 
-      ! Diagnostic total emitted dust (g m^-2 s^-1)
-
-      tot_edust(i,j)=(bems(1)+bems(2)+bems(3)+bems(4)+bems(5))
+     ! Diagnostic accumulated total emitted dust (kg/m2)
+     tot_edust(i,j)=tot_edust(i,j)+(bems(1)+bems(2)+bems(3)+bems(4)+bems(5))
 
     ENDIF
 
@@ -379,7 +371,7 @@ CONTAINS
   END SUBROUTINE gocart_dust_afwa_driver
 
   SUBROUTINE source_dust(imx, jmx, lmx, nmx, smx, dt1, tc, ustar, massfrac,&
-                         erod, ilwi, dxy, gravsm, volsm, airden, airmas, &
+                         erod, ilwi, gravsm, volsm, airden, dz_lowest,     &
                          bems, ustart, g0, drylimit, alpha, gamma, smois_opt)
 
   ! ****************************************************************************
@@ -394,8 +386,6 @@ CONTAINS
   ! *         DRYLIMIT  Upper GRAVSM (VOLSM) limit for air-dry soil   (g/g)
   ! *         ALPHA     Constant to fudge the total emission of dust  (1/m)
   ! *         GAMMA     Exponential tuning constant for erodibility   (-)
-  ! *         DXY       Surface of each grid cell                     (m2)
-  ! *         AIRMAS    Mass of air for each grid box                 (kg)
   ! *         AIRDEN    Density of air for each grid box              (kg/m3)
   ! *         USTAR     Friction velocity                             (m/s)
   ! *         MASSFRAC  Fraction of mass in each of 3 soil classes    (-)
@@ -405,6 +395,7 @@ CONTAINS
   ! *         IMX       Number of I points                            (-)
   ! *         JMX       Number of J points                            (-)
   ! *         LMX       Number of L points                            (-)
+  ! *         dz_lowest heigth of the lowest layer                    (m)
   ! *
   ! *  Data (see module_data_gocart_dust):
   ! *         SPOINT    Pointer to 3 soil classes                     (-)
@@ -440,11 +431,11 @@ CONTAINS
   ! *         DLNDP     Dust bin width                                (-)
   ! *         EMIT      Total vertical mass flux                      (kg/m2/s)
   ! *         EMIT_VOL  Total vertical volume flux                    (m/s)
-  ! *         DSRC      Mass of emitted dust               (kg/timestep/cell)
+  ! *         DSRC      Mass of emitted dust               (kg/timestep/m2)
   ! *
   ! *  Output:
-  ! *         TC        Total concentration of dust        (kg/kg/timestep/cell)
-  ! *         BEMS      Source of each dust type           (kg/timestep/cell) 
+  ! *         TC        Total concentration of dust                 (kg/kg)
+  ! *         BEMS      Source of each dust type           (kg/timestep/m2)
   ! *         USTART    Threshold friction vel. (bin 7)               (m/s)
   ! *
   ! ****************************************************************************
@@ -455,22 +446,22 @@ CONTAINS
   REAL*8, INTENT(IN)    :: ustar(imx,jmx)
   REAL*8, INTENT(IN)    :: gravsm(imx,jmx)
   REAL*8, INTENT(IN)    :: drylimit(imx,jmx) 
-  REAL*8, INTENT(IN)    :: dxy(jmx)
-  REAL*8, INTENT(IN)    :: airden(imx,jmx,lmx), airmas(imx,jmx,lmx)
+  REAL*8, INTENT(IN)    :: airden(imx,jmx,lmx)
   REAL*8, INTENT(INOUT) :: tc(imx,jmx,lmx,nmx)
   REAL*8, INTENT(OUT)   :: bems(imx,jmx,nmx) 
   REAL, INTENT(IN)    :: g0,dt1
   REAL, INTENT(OUT)   :: ustart
   INTEGER, INTENT(IN) :: smois_opt
   REAL*8, INTENT(IN)    :: volsm
+  REAL,   INTENT(IN)  :: dz_lowest
 
   REAL*8    :: den(smx), diam(smx)
-  REAL*8    :: dvol(nmx), dlndp(nmx)
+! REAL*8    :: dvol(nmx), dlndp(nmx)
 ! REAL*8    :: distr_dust(nmx)
   REAL*8    :: dsurface(smx), ds_rel(smx)
   REAL*8    :: massfrac(3)
-  REAL*8    :: u_ts0, u_ts, dsrc, srce, dmass, dvol_tot
-  REAL*8    :: emit, emit_vol
+  REAL*8    :: u_ts0, u_ts, dsrc, dmass!, dvol_tot
+  REAL*8    :: emit!, emit_vol
   REAL      :: rhoa, g
   REAL*8    :: salt, stotal
   INTEGER   :: i, j, m, n, s
@@ -651,13 +642,12 @@ CONTAINS
 
         ! Calculate total mass emitted
 
-        dsrc = emit*distr_dust(n)*dxy(j)*dt1  ! (kg)
+        dsrc = emit*distr_dust(n)*dt1  ! (kg m^-2) per dt1
         IF (dsrc < 0.0) dsrc = 0.0
 
         ! Update dust mixing ratio at first model level.
-
-        tc(i,j,1,n) = tc(i,j,1,n) + dsrc / airmas(i,j,1) ! (kg/kg)
-        bems(i,j,n) = 1000.*dsrc/(dxy(j)*dt1) ! diagnostic (g/m2/s)
+        tc(i,j,1,n) = tc(i,j,1,n) + dsrc/dz_lowest/airden(i,j,1)  ! (kg/kg)
+        bems(i,j,n) = dsrc                     ! diagnostic (kg/m2) per dt1
       END DO
     END DO
   END DO

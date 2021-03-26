@@ -35,7 +35,8 @@ END SUBROUTINE irr_calc_phase
    INTEGER, INTENT(INOUT) :: irr_rand_field_val
   IRRIGATION_CHANNEL=0.
   IF(RAINBL.LE.0.01 .AND. IRRIGATION.GE.0.001) THEN
-   end_hour=irr_start_hour+irr_num_hours    
+   end_hour=irr_start_hour+irr_num_hours   
+   if(end_hour.gt.23) end_hour=end_hour-24
    constants_irrigation=irr_freq*irr_daily_amount*0.000277778*0.01/irr_num_hours  ! hours in second:1/3600=0.000277778 
    phase=0.
    timing=modulo((int(julian_in)-irr_start_julianday),irr_freq)
@@ -44,7 +45,9 @@ END SUBROUTINE irr_calc_phase
    xt24=mod(xtime,1440.)
    tloc=floor(gmt+xt24/60.)
    if(tloc.lt.0) tloc=tloc+24
-   IF ((tloc.GE.irr_start_hour .AND. tloc.LT.end_hour) .AND. (julian_in.GE.irr_start_julianday  .AND. julian_in.LT.irr_end_julianday) .AND. timing.EQ.0.  ) THEN
+   IF (((tloc.GE.irr_start_hour .AND. tloc.LT.24) .OR. ( tloc.GE.0 .AND. tloc.LT.end_hour) ) & 
+                .AND. ((julian_in.GE.irr_start_julianday  .AND.  julian_in.LT.367) .OR.  &
+             (  julian_in.GE.0 .AND.   julian_in.LT.irr_end_julianday)) .AND. timing.EQ.0.  ) THEN
        IF(irr_ph.EQ.0) THEN
           RAINBL =RAINBL +dt*IRRIGATION*constants_irrigation
           IRRIGATION_CHANNEL=0.
@@ -81,6 +84,7 @@ SUBROUTINE channel_irrigation(  julian_in                             & !ARI
   IRRIGATION_CHANNEL=0.
   IF(RAINBL.LE.0.01 .AND. IRRIGATION.GE.0.001) THEN
    end_hour=irr_start_hour+irr_num_hours
+   if(end_hour.gt.23) end_hour=end_hour-24
    constants_irrigation=irr_freq*irr_daily_amount*0.000277778*0.01/irr_num_hours  ! hours in second:1/3600=0.000277778 
    phase=0.
    timing=modulo((int(julian_in)-irr_start_julianday),irr_freq)
@@ -89,7 +93,9 @@ SUBROUTINE channel_irrigation(  julian_in                             & !ARI
    xt24=mod(xtime,1440.)
    tloc=floor(gmt+xt24/60.)
    if(tloc.lt.0) tloc=tloc+24
-   IF ((tloc.GE.irr_start_hour .AND. tloc.LT.end_hour) .AND. (julian_in.GE.irr_start_julianday .AND. julian_in.LT.irr_end_julianday) .AND. timing.EQ.0.  ) THEN
+   IF (((tloc.GE.irr_start_hour .AND. tloc.LT.24) .OR. ( tloc.GE.0 .AND. tloc.LT.end_hour) ) &
+               .AND. ((julian_in.GE.irr_start_julianday  .AND.  julian_in.LT.367) .OR.       &
+             (  julian_in.GE.0 .AND.   julian_in.LT.irr_end_julianday)) .AND. timing.EQ.0.  ) THEN
      IF(irr_ph.EQ.0) THEN
              IRRIGATION_CHANNEL=dt*IRRIGATION*constants_irrigation
      ELSE
@@ -137,7 +143,7 @@ SUBROUTINE sprinkler_irrigation(  julian_in                                     
                                                         qr_curr
    REAL, INTENT(IN   ) :: dt
    end_hour=irr_start_hour+irr_num_hours
-
+   if(end_hour.gt.23) end_hour=end_hour-24
    xt24=mod(xtime,1440.)
    tloc=floor(gmt+xt24/60.)
    if(tloc.lt.0) tloc=tloc+24
@@ -147,9 +153,9 @@ SUBROUTINE sprinkler_irrigation(  julian_in                                     
      DO b=jts,jte
 
       constants_irrigation=irr_freq*irr_daily_amount/(irr_num_hours*3600*rho(a,kms,b)*dz8w(a,kms,b)*100)
-      IF ( (tloc.GE.irr_start_hour .AND. tloc.LT.end_hour) .AND. &
+      IF ( ((tloc.GE.irr_start_hour .AND. tloc.LT.24) .OR. ( tloc.GE.0 .AND. tloc.LT.end_hour) ) .AND. &
           (irrigation(a,b).GE.0.1) .AND. &
-          (julian_in.GE.irr_start_julianday .AND. julian_in.LT.irr_end_julianday ) ) THEN
+          ((julian_in.GE.irr_start_julianday  .AND.  julian_in.LT.367) .OR. (  julian_in.GE.0 .AND.   julian_in.LT.irr_end_julianday)) ) THEN
         CALL irr_calc_phase(irr_ph,phase,irr_rand_field_val(a,b),a,b,irrigation(a,b),irr_freq)
         IF(irr_ph.EQ.0) THEN
               qr_curr(a,kms,b)=qr_curr(a,kms,b)+irrigation(a,b)*constants_irrigation*dt

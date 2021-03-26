@@ -569,6 +569,7 @@ package   p3_1category    mp_physics==50               -             moist:qv,qc
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2
 package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg
+package   ntu             mp_physics==56               -             moist:qv,qc,qr,qi,qs,qg,qh
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs
 package   lscondscheme    mp_physics==98               -             moist:qv
 package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr
@@ -600,6 +601,7 @@ package   p3_1category_4dvar     mp_physics_4dvar==50     -          g_moist:g_q
 package   p3_1category_nc_4dvar  mp_physics_4dvar==51     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   p3_2category_4dvar     mp_physics_4dvar==52     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qi2;a_moist:a_qv,a_qc,a_qr,a_qi,a_qi2
 package   morr_tm_aero_4dvar     mp_physics_4dvar==40     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   ntu_4dvar              mp_physics_4dvar==56     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
 package   etampnew_4dvar         mp_physics_4dvar==95     -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
 package   lscond_4dvar           mp_physics_4dvar==98     -          g_moist:g_qv;a_moist:a_qv
 package   mkessler_4dvar         mp_physics_4dvar==99     -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr

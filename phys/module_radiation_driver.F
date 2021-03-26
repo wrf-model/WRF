@@ -29,8 +29,10 @@ CONTAINS
               ,RHO    ,RLWTOA                                             &
               ,RSWTOA ,RTHRATEN                                           &
               ,RTHRATENLW      ,RTHRATENSW                                &
+              ,RTHRATENLWC     ,RTHRATENSWC                               &
               ,SNOW   ,STEPRA ,SWDOWN                                     &
               ,SWDOWNC ,SW_PHYSICS                                        &
+              ,SW_ECLIPSE                                                 &
               ,T8W     ,T ,TAUCLDC                                        &
               ,TAUCLDI ,TSK ,VEGFRA                                       &
               ,WARM_RAIN ,XICE ,XLAND                                     &
@@ -166,6 +168,7 @@ CONTAINS
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
               ,cw_rad, shcu_physics                                       &
+              ,obscur,mask,elat_track,elon_track                          &
               ,taod5502d, taod5503d                                       &
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
@@ -213,7 +216,8 @@ CONTAINS
 #endif
 #endif
                                        ,KFCUPSCHEME, BMJSCHEME      & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
-                                       ,FLGLWSCHEME, FLGSWSCHEME
+                                       ,FLGLWSCHEME, FLGSWSCHEME    &
+                                       ,ECLIPSESCHEME
 
    USE module_model_constants
 #ifndef HWRF
@@ -248,7 +252,8 @@ CONTAINS
    USE module_ra_aerosol    , ONLY : calc_aerosol_goddard_sw, &
                                      calc_aerosol_rrtmg_sw
    USE module_ra_farms      , ONLY : farms_driver
-
+! amontornes-bcodina 2015/09 solar eclipses
+   USE module_ra_eclipse    , ONLY : solar_eclipse
 
    !  This driver calls subroutines for the radiation parameterizations.
    !
@@ -350,8 +355,12 @@ CONTAINS
 !                 due to radiation (K/s)
 !-- RTHRATENLW    Theta tendency 
 !                 due to long wave radiation (K/s)
+!-- RTHRATENLWC   Theta tendency 
+!                 due to clear-sky long wave radiation (K/s)
 !-- RTHRATENSW    Theta temperature tendency 
 !                 due to short wave radiation (K/s)
+!-- RTHRATENSWC   Theta tendency 
+!                 due to clear-sky short wave radiation (K/s)
 !-- dt            time step (s)
 !-- itimestep     number of time steps
 !-- GLW           downward long wave flux at ground surface (W/m^2)
@@ -427,7 +436,7 @@ CONTAINS
                                                          kts,kte, &
                                        num_tiles
 
-   INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics
+   INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics, sw_eclipse
    INTEGER, INTENT(IN)            :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
@@ -564,7 +573,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATEN, &
                                                       RTHRATENLW, &
-                                                      RTHRATENSW
+                                                      RTHRATENLWC,&
+                                                      RTHRATENSW, &
+                                                      RTHRATENSWC
 
 !  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
 !        INTENT(INOUT)  ::                                  SWUP, &
@@ -879,6 +890,15 @@ CONTAINS
 ! jararias 2013/11 but modified on 2016/2/10
 !  the following three arrays may be dimensioned by (ims,ime,kms,kme,jms,jme,aerosol_vars)
    real, dimension(:,:,:,:), pointer :: tauaer_sw=>null(), ssaaer_sw=>null(), asyaer_sw=>null()
+!
+! Montornes-Cordian eclipse variables
+   real,    dimension(ims:ime,jms:jme), optional, INTENT(OUT) :: obscur
+   integer, dimension(ims:ime,jms:jme), optional, INTENT(OUT) :: mask
+   real,                                optional, INTENT(OUT) :: elat_track, elon_track
+! Local variables
+   INTEGER, DIMENSION( ims:ime, jms:jme ) :: mask_loc
+   REAL,    DIMENSION( ims:ime, jms:jme ) :: obscur_loc
+   REAL                                   :: elat_loc, elon_loc
 
 ! Trude AOD variables
      INTEGER, PARAMETER:: taer_type = 1                                  !  rural, urban, maritime, ...
@@ -1042,6 +1062,15 @@ CONTAINS
          jte = j_end(ij)
          CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,               &
                        DEGRAD,DPD                                )
+
+! amontornes-bcodina 2015/09 solar eclipses
+!    Solar eclipse prediction based on the Bessel's method
+!    outputs: obscur, mask, elat_track, elon_track
+         CALL solar_eclipse(ims,ime,jms,jme,its,ite,jts,jte,        &
+                            julian,gmt,YR,xtime,radt,               &
+                            degrad,xlong,xlat,obscur_loc,mask_loc,  &
+                            elat_loc,elon_loc,sw_eclipse  )
+
          IF(PRESENT(declinx).AND.PRESENT(solconx))THEN
 ! saved to state arrays used in surface driver
            declinx=declin
@@ -1585,7 +1614,9 @@ CONTAINS
      DO i=its,ite
         RTHRATEN(I,K,J)=0.
         RTHRATENLW(I,K,J)=0.
+        RTHRATENLWC(I,K,J)=0.
         RTHRATENSW(I,K,J)=0.
+        RTHRATENSWC(I,K,J)=0.
         CEMISS(I,K,J)=0.0
      ENDDO
      ENDDO
@@ -1698,7 +1729,8 @@ CONTAINS
 
              CALL RRTMLWRAD(                                        &
                   P_TOP=p_top_dummy                                 & 
-                 ,RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
+                 ,RTHRATEN=RTHRATEN,RTHRATENC=RTHRATENLWC,GLW=GLW   &
+                 ,OLR=RLWTOA,EMISS=EMISS                            &
                  ,QV3D=QV                                           &
                  ,QC3D=QC                                           &
                  ,QR3D=QR                                           &
@@ -1765,6 +1797,7 @@ CONTAINS
                     ,reg3d=re_graupel_gsfc,reh3d=re_hail_gsfc          & !optional 
                     ,erbe_out=erbe_out                                 &
                     ,itimestep=itimestep, dt_in = dt                   &
+                    ,obscur=obscur_loc                                 & 
 #if (WRF_CHEM == 1)
                     ,AERO=aero                                         &
                     ,CHEM_OPT=chem_opt                                 &
@@ -1848,6 +1881,7 @@ CONTAINS
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2).AND. PRESENT(ALSWVISDIR) ) THEN
              CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
+                     RTHRATENLWC=RTHRATENLWC,RTHRATENSWC=RTHRATENSWC,  &
                      dolw=.true.,dosw=.false.,                         &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
@@ -1923,6 +1957,7 @@ CONTAINS
 
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
+                  RTHRATENLWC=RTHRATENLWC,                          &
                   LWUPT=LWUPT,LWUPTC=LWUPTC,LWUPTCLN=LWUPTCLN,      &
                   LWDNT=LWDNT,LWDNTC=LWDNTC,LWDNTCLN=LWDNTCLN,      &
                   LWUPB=LWUPB,LWUPBC=LWUPBC,LWUPBCLN=LWUPBCLN,      &
@@ -1981,13 +2016,14 @@ CONTAINS
            IF ( PRESENT(F_QNC) .AND. PRESENT(QNC_CURR) ) THEN
              call rad_rrtmg_driver(                                 &
                            RTHRATEN, RTHRATENSW,                    &
+                           RTHRATENLWC, RTHRATENSWC,                &
                            lwupflx, lwupflxc, lwdnflx, lwdnflxc,    &
                            swupflx, swupflxc, swdnflx, swdnflxc,    &
                            lwupt, lwuptc, lwdnt, lwdntc,            &
-                           lwupb, lwupbc, lwdnb, lwdnb,             &
+                           lwupb, lwupbc, lwdnb, lwdnbc,            &
                            glw, olr, lwcf,                          &
                            swupt, swuptc, swdnt, swdntc,            &
-                           swupb, swupbc, swdnb, swdnb,             &
+                           swupb, swupbc, swdnb, swdnbc,            &
                            gsw, swcf,                               &
                            coszen, solcon, albedo, emiss,           &
                            t,t8w, tsk, rho, p, p8w, cldfra,         &
@@ -2012,6 +2048,7 @@ CONTAINS
 
              CALL RRTMG_LWRAD_FAST(                                 &
                   RTHRATENLW=RTHRATEN,                              &
+                  RTHRATENLWC=RTHRATENLWC,                          &
                   LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
                   LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
                   LWUPB=LWUPB,LWUPBC=LWUPBC,                        &
@@ -2109,7 +2146,7 @@ CONTAINS
 	      ,NETSWBOT=GSW,DLWBOT=GLW                &
 	      ,DSWBOT=SWDOWN,deltat=RTHRATEN          &
 	      ,dtshort=RTHRATENSW,dtlongwv=RTHRATENLW &
-              ,SWDDIR=swddir,SWDDIF=swddif,SWDDNI=swddni &  ! amontornes-bcodina (2014-04-20)
+              ,SWDDIR=swddir,SWDDIF=swddif,SWDDNI=swddni &
               )
 
           CALL wrf_debug(100, 'a4 Fu_Liou-Gu')
@@ -2237,7 +2274,8 @@ CONTAINS
                     ,QG3D=qg                                           &
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
-                    ,coszen=coszen,julian=julian                       )
+                    ,coszen=coszen,julian=julian                       &
+                    ,obscur=obscur_loc                                 )
 
         CASE (GSFCSWSCHEME)
              CALL wrf_debug(100, 'CALL gsfcswrad')
@@ -2276,6 +2314,7 @@ CONTAINS
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,F_QNDROP=f_qndrop                                 &
                     ,COSZEN=coszen                                     &
+                    ,OBSCUR=obscur_loc                                 &
                                                                        )
 
         case (goddardswscheme)
@@ -2326,6 +2365,7 @@ CONTAINS
                     ,sflxd=sflxd                                       & !optional
                     ,swddir=swddir,swddni=swddni,swddif=swddif         & !optional 
                     ,coszen=coszen                                     & !optional
+                    ,obscur=obscur_loc                                 & 
                     ,itimestep=itimestep, dt_in = dt                   &
 #if (WRF_CHEM == 1)
                     ,aod2d_out=aod2d_out, atop2d_out=atop2d_out        & ! optional
@@ -2335,12 +2375,6 @@ CONTAINS
 #endif
                                                                        )
 
-
-
-
-
-
-
         CASE (CAMSWSCHEME)
              CALL wrf_debug(100, 'CALL camrad sw')
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
@@ -2348,6 +2382,7 @@ CONTAINS
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2) .AND. PRESENT(ALSWVISDIR)) THEN
              CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
+                     RTHRATENLWC=RTHRATENLWC,RTHRATENSWC=RTHRATENSWC,  &
                      dolw=.false.,dosw=.true.,                         &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
@@ -2392,7 +2427,7 @@ CONTAINS
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,coszen=coszen                                     )
+                 ,coszen=coszen                                        )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
@@ -2410,6 +2445,7 @@ CONTAINS
 
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
+                     RTHRATENSWC=RTHRATENSWC,                          &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,SWUPTCLN=SWUPTCLN,      &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,SWDNTCLN=SWDNTCLN,      &
                      SWUPB=SWUPB,SWUPBC=SWUPBC,SWUPBCLN=SWUPBCLN,      &
@@ -2468,6 +2504,7 @@ CONTAINS
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
+                     obscur=obscur_loc,                                 & 
                      xcoszen=coszen,yr=yr,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
 
              DO j=jts,jte
@@ -2495,6 +2532,7 @@ CONTAINS
              CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
              CALL RRTMG_SWRAD_FAST(                                    &
                      RTHRATENSW=RTHRATENSW,                            &
+                     RTHRATENSWC=RTHRATENSWC,                          &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
                      SWUPB=SWUPB,SWUPBC=SWUPBC,                        &
@@ -2739,6 +2777,19 @@ CONTAINS
                                          coszen_ref                         )
       ENDIF
 
+     IF ( PRESENT( obscur ) ) THEN
+        IF ( sw_eclipse == eclipsescheme ) THEN
+           DO j=jts,jte
+           DO i=its,ite
+              obscur(i,j) = obscur_loc(i,j)
+              mask(i,j)   = mask_loc(i,j)
+           ENDDO
+           ENDDO
+           elat_track = elat_loc
+           elon_track = elon_loc
+        ENDIF
+     ENDIF
+
    ENDDO
    !$OMP END PARALLEL DO
 
@@ -2797,8 +2848,9 @@ CONTAINS
          jte = j_end(ij)
          call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
               p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
-              coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-              julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
+              coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,                    &
+              julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2,           &
+              has_reqc, has_reqi, has_reqs, CLDFRA)
        enddo
        !$OMP END PARALLEL DO
     end if
@@ -3247,6 +3299,7 @@ CONTAINS
              xxlat=xlat(i,j)*degrad
              coszen(i,j)=sin(xxlat)*sin(declin) &
                         +cos(xxlat)*cos(declin) *cos(hrang(i,j))
+             coszen(i, j) = min (max (coszen(i, j), -1.0), 1.0)
           enddo
        enddo
    END SUBROUTINE calc_coszen

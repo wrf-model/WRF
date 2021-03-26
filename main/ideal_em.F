@@ -54,6 +54,7 @@ PROGRAM ideal
    END INTERFACE
 
 #include "version_decl"
+#include "commit_decl"
 
 
 #ifdef DM_PARALLEL
@@ -94,6 +95,7 @@ PROGRAM ideal
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
+   CALL  wrf_message ( commit_version )
    CALL  set_physics_rconfigs
    CALL  check_nml_consistency
 

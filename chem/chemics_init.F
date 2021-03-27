@@ -394,7 +394,7 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%cu_diag == 1) then
-   !BSINGH (12/17/2013): Added Kain–Fritsch Cumulus Potential (KF-CuP) scheme (cu_physics = 10)
+   !BSINGH (12/17/2013): Added Kain-Fritsch Cumulus Potential (KF-CuP) scheme (cu_physics = 10)
    !HSBADR (02/12/2019): Added Grell-Devenyi (GD) ensemble scheme (cu_physics = 93)
    if ( config_flags%cu_physics /= 3 .AND. config_flags%cu_physics /= 5 .AND. &
         config_flags%cu_physics /= 10 .AND. config_flags%cu_physics /= 93 ) then

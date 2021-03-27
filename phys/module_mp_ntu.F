@@ -283,7 +283,7 @@
       DO J = JTS,JTF
          DO K = KTS,KTE-1
             DO I = ITS,ITF
-               NK = KME-K
+               NK = KTE-K
                DZ8W(I,K,J) = DZ(I,NK+1,J)-DZ(I,NK,J)
                RHO(I,K,J) = 1./ALT(I,NK,J)*(1.+QV(I,NK,J))
                P_PHY(I,K,J) = P(I,NK,J)+PB(I,NK,J)
@@ -302,7 +302,7 @@
       DO J = JTS,JTF
          DO K = KTS,KTE-1
             DO I = ITS,ITF
-               NK = KME-K
+               NK = KTE-K
                QDCN(I,NK,J) = QAERO(I,K,J,1)
                QTCN(I,NK,J) = QAERO(I,K,J,2)
                QCCN(I,NK,J) = QAERO(I,K,J,3)
@@ -1606,9 +1606,9 @@
       ENDDO
       IF (ID_DUST*ID_IN.NE.0) THEN                                      ! IF DUST EXISTS
          DUST_IN0 = 0.
-         DO IM = 1,NCCN
-            DUST_IN0 = DUST_IN0+ZCCN(IM,ID_DUST)
-         ENDDO
+!         DO IM = 1,NCCN
+!            DUST_IN0 = DUST_IN0+ZCCN(IM,ID_DUST)
+!         ENDDO
       ELSE                                                              ! NO DUST
          DUST_IN0 = BACKIN
       ENDIF
@@ -1728,7 +1728,7 @@
          I3MNCV(I,J) = 0.; SR(I,J) = 0.
 !----------------- write data from 3D to 1D and assign upside down -----
          DO K = KTS,KTE
-            NK = KME-K
+            NK = KTE-K+1
             S1D(K) = 0.
             TK1D(K) = TH(I,NK,J)*PII(I,NK,J)
             W1D(K)  = 0.5*(W(I,NK,J)+W(I,NK+1,J))                      ! W at half level
@@ -1775,7 +1775,7 @@
               KTS,KTE)
 
          DO K = KTS,KTE
-            NK = KME-K
+            NK = KTE-K+1
             TH(I,NK,J) = TK1D(K)/PII(I,NK,J)
             QV(I,NK,J) = MAX(0.,QV1D(K))
             QC(I,NK,J) = MAX(0.,QC1D(K))

@@ -1678,7 +1678,8 @@ CONTAINS
 #endif
               ,UST=UST, HFX=HFX, QFX=QFX, TSK=tsk                               &
               ,PSFC=PSFC, EP1=EP_1, G=g, ROVCP=rcp,RD=r_D,CPD=cp                 &
-              ,PBLH=pblh, KPBL2D=kpbl, EXCH_H=exch_h, REGIME=regime              &
+              ,PBLH=pblh, KPBL2D=kpbl, EXCH_H=exch_h, EXCH_M=exch_m              &
+              ,REGIME=regime                                                     &
               ,GZ1OZ0=gz1oz0,WSPD=wspd,PSIM=psim, MUT=mut, RMOL=rmol             &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten                 &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten             &

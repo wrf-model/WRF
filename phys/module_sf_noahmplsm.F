@@ -8169,7 +8169,7 @@ ENDIF   ! CROPTYPE == 0
    ISOIL = 1
    CALL WDFCND2 (parameters,WDF,WCND,SH2O(ISOIL),SICEMAX,ISOIL)
 
-  ! sorptivity based on Eq. 10b from Kutílek, Miroslav, and Jana Valentová (1986) 
+  ! sorptivity based on Eq. 10b from Kutilek, Miroslav, and Jana Valentova (1986) 
   ! sorptivity approximations. Transport in Porous Media 1.1, 57-62.
    SP = SQRT(2.0 * (parameters%SMCMAX(ISOIL) - SMC(ISOIL)) * (parameters%DWSAT(ISOIL) - WDF)) 
 

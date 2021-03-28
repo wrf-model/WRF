@@ -1,4 +1,3 @@
-
 ! The National Taiwan University (NTU) scheme is a multi-moment bulk scheme (two moments for the liquid-phase and 3 moments 
 ! for the ice-phase hydrometeors) with consideration for ice crystal shape and density variations.  This scheme is developed 
 ! by Dr. Tzu-Chin Tsai and Prof. Jen-Ping Chen at the National Taiwan University. The NTU multi-moment bulk microphysics scheme 
@@ -7,15 +6,15 @@
 !-------------------------------------------------------------------------------------------------------------------------------
 ! References :
 ! 1. Chen, J.-P. and S.-T. Liu, 2004: Physically based two-moment bulkwater parametrization for warm-cloud microphysics.
-!       Quart. J. Roy. Meteor. Soc., 130, 51–78.
+!       Quart. J. Roy. Meteor. Soc., 130, 51-78.
 ! 2. Cheng, C.-T., W.-C. Wang, and J.-P. Chen, 2007: A modeling study of aerosol impacts on cloud microphysics and radiative 
-!       properties. Quart. J. Roy. Meteor. Soc., 133, 283–297.
+!       properties. Quart. J. Roy. Meteor. Soc., 133, 283-297.
 ! 3. Cheng, C.-T., W.-C. Wang, and J.-P. Chen, 2010: Simulation of the effects of increasing cloud condensation nuclei on 
-!       mixed-phase clouds and precipitation of a front system. Atmos. Res., 96, 461–476.
+!       mixed-phase clouds and precipitation of a front system. Atmos. Res., 96, 461-476.
 ! 4. Chen, J.-P. and T.-C. Tsai, 2016: Triple-moment modal parameterization for the adaptive growth habit of pristine ice 
-!       crystals. J. Atmos. Sci., 73, 2105–2122.
+!       crystals. J. Atmos. Sci., 73, 2105-2122.
 ! 5. Tsai, T.-C., and J.-P. Chen, 2020: Multi-moment ice bulk microphysics scheme with consideration for particle shape 
-!       and apparent density. Part I: Methodology and idealized simulation. J. Atmos. Sci., 77, 1821–1850.
+!       and apparent density. Part I: Methodology and idealized simulation. J. Atmos. Sci., 77, 1821-1850.
 !
 !--------------------------------------------------------------------------------------------------------------------------------
 ! The notation for terms involving two interacting categories are denoted by B(x,y)MPxy, where B is the prognostic variable

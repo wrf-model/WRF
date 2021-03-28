@@ -253,7 +253,7 @@
 
       CONTAINS
 !======================================================================
-      SUBROUTINE NTU_INIT(PRES,z_at_q,RHOA,QDCN,QTCN,QCCN,QRCN,QNIN,   &
+      SUBROUTINE NTU_INIT(PHB,PH,P,PB,ALT,QV,QDCN,QTCN,QCCN,QRCN,QNIN, &
                  XLAND,CCNTY,RESTART,IDS,IDE,JDS,JDE,KDS,KDE,IMS,IME,  &
                  JMS,JME,KMS,KME,ITS,ITE,JTS,JTE,KTS,KTE)
 !======================================================================
@@ -262,12 +262,11 @@
       INTEGER, INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,IMS,IME,JMS,JME,  &
                              KMS,KME,ITS,ITE,JTS,JTE,KTS,KTE,CCNTY
       REAL, INTENT(IN), DIMENSION(IMS:IME,JMS:JME) :: XLAND             ! 1:land ; 2:ocean
-      REAL, INTENT(IN), DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: PRES,    &
-                        z_at_q,RHOA
+      REAL, INTENT(IN), DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: PHB,PH,P,&
+                        PB,ALT,QV
       REAL, INTENT(INOUT), DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: QDCN, &
                            QTCN,QCCN,QRCN,QNIN
-      REAL, DIMENSION(ITS:ITE,KTS:KTE,JTS:JTE) :: ZATQ1,RHOA1,PRES1,   &
-                                                  RHO,DZ8W,P_PHY
+      REAL, DIMENSION(ITS:ITE,KTS:KTE,JTS:JTE) :: DZ,RHO,DZ8W,P_PHY
       REAL, DIMENSION(ITS:ITE,KTS:KTE,JTS:JTE,NAERT) :: QAERO
       INTEGER :: I,J,K,NK,ITF,JTF
 
@@ -277,25 +276,17 @@
       DO J = JTS,JTF
          DO K = KTS,KTE
             DO I = ITS,ITF
-               IF (K.EQ.KTE) THEN
-                  ZATQ1(I,K,J) = z_at_q(I,K,J)-z_at_q(I,K-1,J)
-                  RHOA1(I,K,J) = 2.*RHOA(I,K-1,J)-RHOA(I,K-2,J)
-                  PRES1(I,K,J) = 2.*PRES(I,K-1,J)-PRES(I,K-2,J)
-               ELSE
-                  ZATQ1(I,K,J) = z_at_q(I,K+1,J)-z_at_q(I,K,J)
-                  RHOA1(I,K,J) = RHOA(I,K,J)
-                  PRES1(I,K,J) = PRES(I,K,J)
-               ENDIF
+               DZ(I,K,J) = (PHB(I,K,J)+PH(I,K,J))/G
             ENDDO
          ENDDO
       ENDDO
       DO J = JTS,JTF
-         DO K = KTS,KTE
+         DO K = KTS,KTE-1
             DO I = ITS,ITF
-               NK = KME-K+1
-               DZ8W(I,K,J) = ZATQ1(I,NK,J)
-               RHO(I,K,J) = RHOA1(I,NK,J)
-               P_PHY(I,K,J) = PRES1(I,NK,J)
+               NK = KTE-K
+               DZ8W(I,K,J) = DZ(I,NK+1,J)-DZ(I,NK,J)
+               RHO(I,K,J) = 1./ALT(I,NK,J)*(1.+QV(I,NK,J))
+               P_PHY(I,K,J) = P(I,NK,J)+PB(I,NK,J)
                QAERO(I,K,J,1) = QDCN(I,NK,J)
                QAERO(I,K,J,2) = QTCN(I,NK,J)
                QAERO(I,K,J,3) = QCCN(I,NK,J)
@@ -309,9 +300,9 @@
               KDS,KDE,IMS,IME,JMS,JME,KMS,KME,ITS,ITE,JTS,JTE,KTS,KTE)
       ENDIF
       DO J = JTS,JTF
-         DO K = KTS,KTE
+         DO K = KTS,KTE-1
             DO I = ITS,ITF
-               NK = KME-K+1
+               NK = KTE-K
                QDCN(I,NK,J) = QAERO(I,K,J,1)
                QTCN(I,NK,J) = QAERO(I,K,J,2)
                QCCN(I,NK,J) = QAERO(I,K,J,3)
@@ -1615,9 +1606,9 @@
       ENDDO
       IF (ID_DUST*ID_IN.NE.0) THEN                                      ! IF DUST EXISTS
          DUST_IN0 = 0.
-         DO IM = 1,NCCN
-            DUST_IN0 = DUST_IN0+ZCCN(IM,ID_DUST)
-         ENDDO
+!         DO IM = 1,NCCN
+!            DUST_IN0 = DUST_IN0+ZCCN(IM,ID_DUST)
+!         ENDDO
       ELSE                                                              ! NO DUST
          DUST_IN0 = BACKIN
       ENDIF
@@ -1685,7 +1676,7 @@
       ENDDO                                                             ! FOR J LOOPS
 
       PRINT *,'aerosols_init,I,J,NAER',(ITS+ITE)/2,(JTS+JTE)/2,NAER
-      DO K = KTS,KTE
+      DO K = KTS,KTE-1
          WRITE(*,'(I2,X,20(E12.6,X))') K,(QAERO((ITS+ITE)/2,K,         &
          (JTS+JTE)/2,IV),IV=1,NAERT)
       ENDDO
@@ -1737,7 +1728,7 @@
          I3MNCV(I,J) = 0.; SR(I,J) = 0.
 !----------------- write data from 3D to 1D and assign upside down -----
          DO K = KTS,KTE
-            NK = KME-K
+            NK = KTE-K+1
             S1D(K) = 0.
             TK1D(K) = TH(I,NK,J)*PII(I,NK,J)
             W1D(K)  = 0.5*(W(I,NK,J)+W(I,NK+1,J))                      ! W at half level
@@ -1784,7 +1775,7 @@
               KTS,KTE)
 
          DO K = KTS,KTE
-            NK = KME-K
+            NK = KTE-K+1
             TH(I,NK,J) = TK1D(K)/PII(I,NK,J)
             QV(I,NK,J) = MAX(0.,QV1D(K))
             QC(I,NK,J) = MAX(0.,QC1D(K))
@@ -2583,7 +2574,7 @@
       CALL PTFLUX(QG3D(1),VT_QG(1),RHO(1),DZ3D(1),KTE,DT,DTMN,GRAPNCV)
       CALL PTFLUX(QH3D(1),VT_QH(1),RHO(1),DZ3D(1),KTE,DT,DTMN,HAILNCV)
       RAINNC = RAINNC+CLODNCV+RAINNCV+ICENCV+SNOWNCV+GRAPNCV+HAILNCV
-      SNOWNC = SNOWNC+SNOWNCV
+      SNOWNC = SNOWNC+ICENCV+SNOWNCV
       GRAPNC = GRAPNC+GRAPNCV
       HAILNC = HAILNC+HAILNCV
       SR     = (ICENCV+SNOWNCV+GRAPNCV+HAILNCV)/                       &

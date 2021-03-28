@@ -127,7 +127,6 @@
 !..Need to fill special height var for setting up initial condition.  G. Thompson
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: dz8w   !mchen
-   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: PRES,RHOA       ! ntu3m
 
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
@@ -152,8 +151,6 @@
 #endif
    ALLOCATE(dz8w(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; dz8w = 0.
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
-   ALLOCATE(PRES(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; PRES = 0.   ! ntu3m
-   ALLOCATE(RHOA(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; RHOA = 0.   ! ntu3m
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
@@ -873,8 +870,6 @@
       DO k = kts,kte
          DO i = its, min(ite,ide-1)
             z_at_q(i,k,j)=(grid%ph_2(i,k,j)+grid%phb(i,k,j))/g
-            PRES(i,k,j) = grid%p(i,k,j)+grid%pb(i,k,j)              ! ntu3m
-            RHOA(i,k,j) = 1./grid%alt(i,k,j)*(1.+moist(i,k,j,P_QV)) ! ntu3m
          ENDDO
       ENDDO
    ENDDO
@@ -1041,9 +1036,11 @@ endif
                       z_at_q, grid%alt, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
-                      PRES,RHOA,config_flags%CCNTY,scalar(:,:,:,P_QDCN),& ! for ntu3m
-                      scalar(:,:,:,P_QTCN),scalar(:,:,:,P_QCCN),        & ! for ntu3m
-                      scalar(:,:,:,P_QRCN),scalar(:,:,:,P_QNIN),        & ! for ntu3m
+                      grid%phb,grid%ph_2,grid%p,grid%pb,                & ! for ntu3m
+                      moist(:,:,:,P_QV),config_flags%CCNTY,             & ! for ntu3m
+                      scalar(:,:,:,P_QDCN),scalar(:,:,:,P_QTCN),        & ! for ntu3m
+                      scalar(:,:,:,P_QCCN),scalar(:,:,:,P_QRCN),        & ! for ntu3m
+                      scalar(:,:,:,P_QNIN),                             & ! for ntu3m
                       grid%re_cloud_gsfc, grid%re_ice_gsfc,             & ! Goddard
                       grid%re_snow_gsfc, grid%re_graupel_gsfc,          & ! Goddard
                       grid%re_hail_gsfc, grid%re_rain_gsfc,             & ! Goddard
@@ -2002,8 +1999,6 @@ endif
 #endif
 
 DEALLOCATE(z_at_q)
-DEALLOCATE(PRES)       ! ntu3m
-DEALLOCATE(RHOA)       ! ntu3m
 
    IF (config_flags%p_lev_diags == PRESS_DIAGS ) THEN
     CALL wrf_debug ( 200 , ' PLD: pressure level diags' )

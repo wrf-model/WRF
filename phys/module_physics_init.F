@@ -53,8 +53,8 @@ CONTAINS
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
 #if ( EM_CORE == 1 )
-                         PRES,RHOA,CCNTY,QDCN,QTCN,QCCN,QRCN,    & ! for ntu3m
-                         QNIN,                                   & ! for ntu3m
+                         PHB,PH,P,PB,QV,CCNTY,QDCN,QTCN,QCCN,    & ! for ntu3m
+                         QRCN,QNIN,                              & ! for ntu3m
                          re_cloud_gsfc, re_ice_gsfc,             & 
                          re_snow_gsfc,                           & ! Goddard
                          re_graupel_gsfc, re_hail_gsfc,          &
@@ -726,7 +726,7 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
 #if ( EM_CORE == 1 )
    INTEGER, OPTIONAL, INTENT(IN) :: CCNTY                                               ! for ntu3m
-   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA          ! for ntu3m
+   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PHB,PH,P,PB,QV     ! for ntu3m
    REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN  ! for ntu3m
 #endif
 ! lake varibles:
@@ -1602,7 +1602,7 @@ CONTAINS
                 MPDT, DT, DX, DY, LOWLYR,                       &
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
 #if ( EM_CORE == 1 )
-                PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,      & ! for ntu3m
+                PHB,PH,P,PB,QV,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN, & ! for ntu3m
                 QNIN,                                           & ! for ntu3m
 #endif
                 mp_restart_state,tbpvs_state,tbpvs0_state,      &
@@ -4323,8 +4323,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
 #if ( EM_CORE == 1 )
-                      PRES,RHOA,XLAND,CCNTY,QDCN,QTCN,QCCN,QRCN,  & ! for ntu3m
-                      QNIN,                                       & ! for ntu3m
+                      PHB,PH,P,PB,QV,XLAND,CCNTY,QDCN,QTCN,QCCN,  & ! for ntu3m
+                      QRCN,QNIN,                                  & ! for ntu3m
 #endif
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
                       allowed_to_read, start_of_simulation,       &
@@ -4399,7 +4399,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 #if ( EM_CORE == 1 )
    INTEGER, OPTIONAL, INTENT(IN) :: CCNTY                                              ! for ntu3m
    REAL, OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XLAND                     ! for ntu3m
-   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PRES,RHOA         ! for ntu3m
+   REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PHB,PH,P,PB,QV    ! for ntu3m
    REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN ! for ntu3m
 #endif
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
@@ -4552,9 +4552,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           CALL wdm7init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
 #if (EM_CORE==1)
      CASE (NTU)
-          CALL ntu_init(PRES,z_at_q,RHOA,QDCN,QTCN,QCCN,QRCN,QNIN,      &
-                        XLAND,CCNTY,restart,ids,ide,jds,jde,kds,kde,    &
-                        ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+          CALL ntu_init(PHB,PH,P,PB,inv_dens,QV,QDCN,QTCN,QCCN,QRCN,   &
+                        QNIN,XLAND,CCNTY,restart,ids,ide,jds,jde,kds,  &
+                        kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,   &
+                        kts,kte)
 #endif
 #if (EM_CORE==1)
     CASE (FULL_KHAIN_LYNN)

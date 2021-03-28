@@ -2006,7 +2006,7 @@
                 CALL wrf_message ( wrf_err_message )
                 wrf_err_message = '---          Grell 3D (G3) CU scheme'
                 CALL wrf_message ( wrf_err_message )
-                wrf_err_message = '---          Kain–Fritsch Cumulus Potential (KF-CuP) CU scheme'
+                wrf_err_message = '---          Kain-Fritsch Cumulus Potential (KF-CuP) CU scheme'
                 CALL wrf_message ( wrf_err_message )
                 wrf_err_message = '---          Grell-Devenyi (GD) CU scheme'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )

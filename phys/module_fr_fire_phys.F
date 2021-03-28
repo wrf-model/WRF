@@ -47,7 +47,7 @@ end type fire_params
 !***    with common ancestor as submitted to V3.3 in 01/2017 commit 3f78267b38e0f0a3 ***!
 !*** Reference: J. Mandel, S. Amram, J.D. Beezley, G. Kelman, A.K. Kochanski, V.Y.   ***!
 !***    Kondratenko, B.H. Lynn, B. Regev, M. Vejmelka, Recent advances and           ***!
-!***    applications of WRF–SFIRE. Natural Hazards and Earth System Science, 14,     ***!
+!***    applications of WRF-SFIRE. Natural Hazards and Earth System Science, 14,     ***!
 !***    2829-2845, 2014, doi:10.5194/nhess-14-2829-2014                              ***!
 !***************************************************************************************!
 

@@ -1978,7 +1978,7 @@ enddo
   IRI = 1
   IPI = 1
 
-	IF(AMAX1(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
+	IF(max(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
 
     RW = 0.0
     IRW = 0
@@ -9064,7 +9064,7 @@ end if
 
      PI=3.1415927d0
      rho=1.0d0            ! Water Density,[rho]=g/cm^3
-     sigma=72.8d0         ! Surf. Tension,(H2O,20°C)=7.28d-2 N/m
+     sigma=72.8d0         ! Surf. Tension,(H2O,20C)=7.28d-2 N/m
                       ! [sigma]=g/s^2
      ak10=rho*PI/12.0d0
 

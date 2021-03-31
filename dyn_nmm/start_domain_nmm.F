@@ -246,7 +246,7 @@
       integer :: num_urban_hi, &
                  num_urban_ndm,urban_map_zrd,urban_map_zwd,urban_map_gd,  &
                  urban_map_zd ,urban_map_zdf,urban_map_bd ,urban_map_wd,  &
-                 urban_map_gbd,urban_map_fbd
+                 urban_map_gbd,urban_map_fbd,urban_map_zgrd
 !Rogers GMT
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
@@ -2178,7 +2178,7 @@
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
      &             ,num_urban_ndm,urban_map_zrd,urban_map_zwd,urban_map_gd  &
      &             ,urban_map_zd ,urban_map_zdf,urban_map_bd ,urban_map_wd  &
-     &             ,urban_map_gbd,urban_map_fbd                             &
+     &             ,urban_map_gbd,urban_map_fbd,urban_map_zgrd              &
      &             ,NUM_URBAN_HI                                            &
      &             ,GRID%RAINCV_A,GRID%RAINCV_B                         &
      &               ,ISNOWXY=grid%ISNOWXY, ZSNSOXY=grid%ZSNSOXY, TSNOXY=grid%TSNOXY,    & ! Optional Noah-MP
@@ -2187,7 +2187,7 @@
      &                CANLIQXY=grid%CANLIQXY, EAHXY=grid%EAHXY,                          & ! Optional Noah-MP
      &                TAHXY=grid%TAHXY, CMXY=grid%CMXY,                                  & ! Optional Noah-MP
      &                CHXY=grid%CHXY, FWETXY=grid%FWETXY, SNEQVOXY=grid%SNEQVOXY,        & ! Optional Noah-MP
-     &                ALBOLDXY=grid%ALBOLDXY, QSNOWXY=grid%QSNOWXY,                      & ! Optional Noah-MP
+     &                ALBOLDXY=grid%ALBOLDXY, QSNOWXY=grid%QSNOWXY, QRAINXY=grid%QRAINXY,& ! Optional Noah-MP
      &                WSLAKEXY=grid%WSLAKEXY, ZWTXY=grid%ZWTXY, WAXY=grid%WAXY,          & ! Optional Noah-MP
      &                WTXY=grid%WTXY, LFMASSXY=grid%LFMASSXY, RTMASSXY=grid%RTMASSXY,    & ! Optional Noah-MP
      &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
@@ -2199,6 +2199,13 @@
      &                smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy,   &
      &                deeprechxy=grid%deeprechxy,                                         &
      &                iopt_crop=config_flags%opt_crop,                                                    &
+     &                iopt_irr=config_flags%opt_irr,                                     & 
+     &                iopt_irrm=config_flags%opt_irrm,                                   &
+     &                IRNUMSI=grid%IRNUMSI, IRNUMMI=grid%IRNUMMI, IRNUMFI=grid%IRNUMFI,  &
+     &                IRWATSI=grid%IRWATSI, IRWATMI=grid%IRWATMI, IRWATFI=grid%IRWATFI,  &
+     &                IRELOSS=grid%IRELOSS,                                              &
+     &                IRSIVOL=grid%IRSIVOL, IRMIVOL=grid%IRMIVOL, IRFIVOL=grid%IRFIVOL,  &   ! Optional Noah-MP
+     &                IRRSPLH=grid%IRRSPLH,                                              &   ! Optional Noah-MP
      &                gecros_state=grid%gecros_state,                                                        &   ! Optional gecros crop
      &                lakedepth2d=grid%lakedepth2d,  savedtke12d=grid%savedtke12d,  snowdp2d=grid%snowdp2d,   h2osno2d=grid%h2osno2d,               & !lake
      &                snl2d= grid%snl2d, t_grnd2d=grid%t_grnd2d, t_lake3d=grid%t_lake3d, lake_icefrac3d=grid%lake_icefrac3d,                        & !lake

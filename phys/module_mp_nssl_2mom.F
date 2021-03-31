@@ -149,7 +149,7 @@ MODULE module_mp_nssl_2mom
   logical, private :: cleardiag = .false.
   PRIVATE
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   integer, parameter :: wrfchem_flag = 1
 #else
   integer, parameter :: wrfchem_flag = 0
@@ -1637,7 +1637,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                               diagflag,ke_diag,                                         &
                               nssl_progn,                                              & ! wrf-chem 
 ! 20130903 acd_mb_washout start
-                              rainprod, evapprod,                                       & ! wrf-chem 
+                              wetscav_on, rainprod, evapprod,                           & ! wrf-chem 
 ! 20130903 acd_mb_washout end
                               cu_used, qrcuten, qscuten, qicuten, qccuten,              & ! hm added
                               ids,ide, jds,jde, kds,kde,                                &  ! domain dims
@@ -1724,7 +1724,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 ! mu : air mass in column
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional, INTENT(IN):: qrcuten, qscuten, qicuten, qccuten
    INTEGER, optional, intent(in) :: cu_used
-
+   LOGICAL, optional, intent(in) :: wetscav_on
 !
 ! local variables
 !
@@ -1762,7 +1762,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
       double precision :: timevtcalc,timesetvt
       
       logical :: f_cnatmp
-      
+      logical :: has_wetscav
       integer :: kediagloc
 
 
@@ -2075,10 +2075,16 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 
         ENDDO ! ix
        ENDDO ! kz
-
+    
+         has_wetscav = .false.
          IF ( wrfchem_flag > 0 ) THEN
-           IF ( PRESENT( rainprod ) ) rainprod2d(its:ite,kts:kte) = 0
-           IF ( PRESENT( evapprod ) ) evapprod2d(its:ite,kts:kte) = 0
+           IF ( PRESENT( wetscav_on ) ) THEN
+             has_wetscav = wetscav_on
+             IF ( has_wetscav ) THEN
+               IF ( PRESENT( rainprod ) ) rainprod2d(its:ite,kts:kte) = 0
+               IF ( PRESENT( evapprod ) ) evapprod2d(its:ite,kts:kte) = 0
+             ENDIF
+           ENDIF
          ENDIF
          
 
@@ -2209,7 +2215,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
      &   cdx,                              &
      &   xdn0,dbz2d,tke2d,                 &
      &   timevtcalc,axtra2d, makediag        &
-     &   ,rainprod2d, evapprod2d           &
+     &   ,has_wetscav, rainprod2d, evapprod2d  &
      & ,elec2,its,ids,ide,jds,jde          &
      & )
 
@@ -2371,8 +2377,8 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
          IF ( lvh > 0 )  vhw(ix,kz,jy) = an(ix,1,kz,lvh)
          IF ( lvhl > 0 .and. present( vhl ) ) vhl(ix,kz,jy) = an(ix,1,kz,lvhl)
 
-#ifdef WRF_CHEM
-         IF ( wrfchem_flag > 0 ) THEN
+#if ( WRF_CHEM == 1 )
+         IF ( has_wetscav ) THEN
            IF ( PRESENT( rainprod ) ) rainprod(ix,kz,jy) = rainprod2d(ix,kz)
            IF ( PRESENT( evapprod ) ) evapprod(ix,kz,jy) = evapprod2d(ix,kz)
          ENDIF
@@ -9204,7 +9210,7 @@ END SUBROUTINE nssl_2mom_driver
      &   cdx,                              &
      &   xdn0,tmp3d,tkediss  &
      & ,timevtcalc,axtra,io_flag  &
-     & ,rainprod2d, evapprod2d &
+     & ,has_wetscav, rainprod2d, evapprod2d &
      & ,elec,its,ids,ide,jds,jde &
      & )
 
@@ -9277,6 +9283,7 @@ END SUBROUTINE nssl_2mom_driver
       real dtp,dx,dy,dz
 
       logical, intent(in) :: io_flag
+      logical, intent(in) :: has_wetscav
 
       integer itile,jtile,ktile
       integer ixbeg,jybeg
@@ -17798,7 +17805,7 @@ END SUBROUTINE nssl_2mom_driver
       end if
 
 
-      IF ( wrfchem_flag > 0 ) THEN
+      IF ( has_wetscav ) THEN
         DO mgs = 1,ngscnt
          evapprod2d(igs(mgs),kgs(mgs)) = -(qrcev(mgs) + qssbv(mgs)  + qhsbv(mgs) + qhlsbv(mgs)) 
          rainprod2d(igs(mgs),kgs(mgs)) = qrcnw(mgs) + qracw(mgs) + qsacw(mgs) + qhacw(mgs) + qhlacw(mgs) + &

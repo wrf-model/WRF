@@ -4222,7 +4222,7 @@ CONTAINS
         if(cnvflg(i)) then
           if (gdx(i) < dxcrt) then
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i))
-            scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0._kind_phys)
+            scaldfunc(i) = max(min(scaldfunc(i), 1._kind_phys), 0._kind_phys)
           else
             scaldfunc(i) = 1.0
           endif

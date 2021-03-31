@@ -241,7 +241,7 @@ is_mozart:if( is_moz_chm ) then
    if (config_flags%aircraft_emiss_opt == 1 ) then
       do j=jts,jte  
         do k=kts,min(config_flags%kemit_aircraft,kte)
-          conv_rho(its:ite)=4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+          conv_rho(its:ite)=4.828e-4/rho_phy(its:ite,k,j)*dtstep/(dz8w(its:ite,k,j)*60.)
           if( p_no >= param_first_scalar ) then
             chem(its:ite,k,j,p_no)  = chem(its:ite,k,j,p_no)  + emis_aircraft(its:ite,k,j,p_eac_no) *conv_rho(its:ite)
           endif
@@ -417,7 +417,7 @@ is_mozart:if( is_moz_chm ) then
           chem(its:ite,kts,j,p_mbo)=chem(its:ite,kts,j,p_mbo)+ ebio_mbo(its:ite,j)*conv_rho(its:ite)
         endif
       enddo
-     CASE (MEGAN2)
+     CASE (MEGAN2,MEGAN2_CLM)
       do j = jts,jte
         con2ppm(its:ite,j) = dtstep/(dz8w(its:ite,kts,j)*60.)
       end do

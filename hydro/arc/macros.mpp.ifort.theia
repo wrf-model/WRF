@@ -80,7 +80,7 @@ F90FLAGS        = -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FR
 MODFLAG         = -I./ -I../../MPP -I../MPP -I../mod
 LDFLAGS         = 
 CPPINVOKE       = -fpp
-CPPFLAGS        = -DMPP_LAND -I../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
+CPPFLAGS        = -DMPP_LAND -I../Data_Rec $(HYDRO_D)
 # -C:                  Do not discard comments.
 # -P:                  Inhibit generation of linemarkers in the output 
 #                       from the preprocessor.

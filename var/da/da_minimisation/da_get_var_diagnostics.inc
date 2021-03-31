@@ -205,12 +205,12 @@ subroutine da_get_var_diagnostics(it, iv, j)
 
       write(unit=stdout,fmt=*) ' '
       write(unit=stdout,fmt='(A)') 'Diagnostics'
-      write(unit=stdout,fmt='(A,F12.2)')   '   Final cost function J       = ', j % total
+      write(unit=stdout,fmt='(A,F30.2)')   '   Final cost function J       = ', j % total
       write(unit=stdout,fmt=*) ' '
 
       write(unit=stdout,fmt='(a,i8)')    '   Total number of obs.        = ', num_stats_tot
-      write(unit=stdout,fmt='(a,f15.5)') '   Final value of J            = ', j % total
-      write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jo           = ', j % jo % total
+      write(unit=stdout,fmt='(a,f30.5)') '   Final value of J            = ', j % total
+      write(unit=stdout,fmt='(a,f30.5)') '   Final value of Jo           = ', j % jo % total
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jd           = ', j % jd
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jb           = ', j % jb
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jc           = ', j % jc

@@ -1454,23 +1454,42 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 ! advective form for the geopotential equation
 
+   !  RHS term 3 is: - omega partial d/dnu(phi)
+
    DO j = jts, jtf
+      IF (config_flags%phi_adv_z == 2) THEN
+         !  First get staggered partial d/dnu(phi) and then multiply with omega
+         !  to avoid double staggering of omega
 
-     DO k = 2, kte
-     DO i = its, itf
-          wdwn(i,k) = .5*(ww(i,k,j)+ww(i,k-1,j))*rdnw(k-1)               &
-                        *(ph(i,k,j)-ph(i,k-1,j)+phb(i,k,j)-phb(i,k-1,j))
-     ENDDO
-     ENDDO
+         DO k = 2, kte
+         DO i = its, itf
+              wdwn(i,k) = rdnw(k-1)*(ph(i,k,j)-ph(i,k-1,j)+phb(i,k,j)-phb(i,k-1,j))
+         ENDDO
+         ENDDO
 
-!  RHS term 3 is: - omega partial d/dnu(phi)
+         DO k = 2, kte-1
+         DO i = its, itf
+              ph_tend(i,k,j) = ph_tend(i,k,j)                           &
+                                - ww(i,k,j)*(fnm(k)*wdwn(i,k+1)+fnp(k)*wdwn(i,k))
+         ENDDO
+         ENDDO
+      ELSE
+         !  First destagger omega and multiply with partial d/dnu(phi), then stagger the product
 
-     DO k = 2, kte-1
-     DO i = its, itf
-           ph_tend(i,k,j) = ph_tend(i,k,j)                           &
-                             - (fnm(k)*wdwn(i,k+1)+fnp(k)*wdwn(i,k))
-     ENDDO
-     ENDDO
+         DO k = 2, kte
+         DO i = its, itf
+              wdwn(i,k) = .5*(ww(i,k,j)+ww(i,k-1,j))*rdnw(k-1)               &
+                            *(ph(i,k,j)-ph(i,k-1,j)+phb(i,k,j)-phb(i,k-1,j))
+         ENDDO
+         ENDDO
+
+         DO k = 2, kte-1
+         DO i = its, itf
+               ph_tend(i,k,j) = ph_tend(i,k,j)                           &
+                                 - (fnm(k)*wdwn(i,k+1)+fnp(k)*wdwn(i,k))
+         ENDDO
+         ENDDO
+     ENDIF
 
    ENDDO
 
@@ -1506,7 +1525,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    jtf=MIN(jte,jde-1)
 
    IF ( (config_flags%open_ys .or. specified) .and. jts == jds ) j_start = jts+1
-   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jtf-2
+   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jte-2
 
    DO j = j_start, jtf
 
@@ -1539,7 +1558,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    jtf=MIN(jte,jde-1)
 
    IF ( (config_flags%open_xs .or. specified) .and. its == ids ) i_start = its+1
-   IF ( (config_flags%open_xe .or. specified) .and. ite == ide ) itf = itf-2
+   IF ( (config_flags%open_xe .or. specified) .and. ite == ide ) itf = ite-2
 
    DO j = j_start, jtf
 
@@ -1574,7 +1593,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    jtf=MIN(jte,jde-1)
 
    IF ( (config_flags%open_ys .or. specified) .and. jts == jds ) j_start = jts+2
-   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jtf-3
+   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jte-3
 
    DO j = j_start, jtf
 
@@ -1664,7 +1683,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    jtf=MIN(jte,jde-1)
 
    IF ( (config_flags%open_xs) .and. its == ids ) i_start = its+2
-   IF ( (config_flags%open_xe) .and. ite == ide ) itf = itf-3
+   IF ( (config_flags%open_xe) .and. ite == ide ) itf = ite-3
 
    DO j = j_start, jtf
 
@@ -2482,13 +2501,13 @@ END SUBROUTINE pg_buoy_w
 !-------------------------------------------------------------------------------
 
 SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
-                      u, v, ww, w, mut, c1f, c2f, rdnw, &
-                      rdx, rdy, msfux, msfuy,           &
-                      msfvx, msfvy, dt,                 &
-                      config_flags,                     &
-                      ids, ide, jds, jde, kds, kde,     &
-                      ims, ime, jms, jme, kms, kme,     &
-                      its, ite, jts, jte, kts, kte     )
+                   u, v, ww, w, mut, c1f, c2f, rdnw,    &
+                   rdx, rdy, msfux, msfuy,              &
+                   msfvx, msfvy, dt,                    &
+                   config_flags,                        &
+                   ids, ide, jds, jde, kds, kde,        &
+                   ims, ime, jms, jme, kms, kme,        &
+                   its, ite, jts, jte, kts, kte     )
 
    USE module_llxy
    IMPLICIT NONE
@@ -2523,7 +2542,6 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    REAL                :: vert_cfl, cf_n, cf_d, maxdub, maxdeta
 
    INTEGER :: itf, jtf, i, j, k, maxi, maxj, maxk
-   INTEGER :: some
    CHARACTER*512 :: temp
 
    CHARACTER (LEN=256) :: time_str
@@ -2532,9 +2550,18 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    integer :: total
    REAL :: msfuxt , msfxffl
    
+   REAL    :: w_damp_on     = 1.0
+   REAL    :: w_crit_cfl    = 2.0
+   REAL    :: w_flag_cfl    = 1.2
+   LOGICAL :: wflags_differ = .false.
+   LOGICAL :: print_flag    = .true.
+   SAVE    :: print_flag
+   INTEGER :: some1       ! Now have two catagories of CFL information, hence some1 & some2
+   INTEGER :: some2        
+
 !<DESCRIPTION>
 !
-!  w_damp computes a damping term for the vertical velocity when the
+!  W_damp computes a damping term for the vertical velocity when the
 !  vertical Courant number is too large.  This was found to be preferable to
 !  decreasing the timestep or increasing the diffusion in real-data applications
 !  that produced potentially-unstable large vertical velocities because of
@@ -2545,154 +2572,175 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 !  horizontal motion.  These values are returned via the max_vert_cfl and
 !  max_horiz_cfl variables.  (Added by T. Hutchinson, WSI, 3/5/2007)
 !
+!-----
+!
+!  W_damp modified to be more flexible with IEVA capability. Two things changed.
+!  First, the value of the W-CFL where damping is turned on can now be set in the namelist
+!  using "w_crit_cfl".  Second, the code has been modified to report two levels of
+!  W-CFL information.  Previously, both damping and W-CFL information was
+!  printed at a W-CFL == 1.2.  This new capability does not need IEVA on to run.
+!
+!  We keep the old level reporting (for consistency), but use "w_flag_cfl" to flag 
+!  and print information from those points.  "w_flag_cfl" is set here in w_damp.  
+!  A second level of print occurs, which is useful for when we run
+!  IEVA, because many points can run with W-CFL > 1.2.  We now print this
+!  second level separately, as these points might make the model blow up.
+!  and where we now want Rayleigh damping turned on.  The default value "w_crit_cfl" 
+!  which replaced "w_beta" in the old code, is set in the namelist/Registery
+!  turn on w_damp at 1.2 consistent with the WRFV3/4 (before this) code.
+!
+!  Summary
+!  -------
+!  W_damp will write out CFL information when the vertical courant number is > w_flag_cfl,
+!  and W_damp will also turn on Rayleigh damping if vertical courant number > w_crit_cfl.
+!
+!  Typical settings for non-IEVA use:  w_crit_cfl = 1.2
+!  Typical settings for     IEVA use:  w_crit_cfl = 2.0
+!
+!  I also commented out a lot of code put in 8-13 years ago for timing assuming that
+!  this is no longer needed....there is some pretty hacky stuff.  HTH.
+!
+!      (Added by L. Wicker, NSSL, 5/4/2020)
+!
 !</DESCRIPTION>
 
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
 
-   some = 0
-   max_vert_cfl = 0.
+   some1 = 0
+   some2 = 0
+
+   max_vert_cfl  = 0.
    max_horiz_cfl = 0.
    total = 0
+
+   w_crit_cfl = config_flags%w_crit_cfl
+
+   IF( abs(w_crit_cfl - w_flag_cfl) > 0.1 ) THEN
+     wflags_differ = .true.
+   ELSE
+     wflags_differ = .false.
+   ENDIF
+
+   IF( print_flag ) THEN
+     write(wrf_err_message,*) '----------------------------------------'
+     CALL wrf_debug( 0, wrf_err_message )
+     WRITE(temp,*) 'W-DAMPING  BEGINS AT W-COURANT NUMBER = ',w_crit_cfl
+     CALL wrf_debug ( 0 , TRIM(temp) )
+     write(wrf_err_message,*) '----------------------------------------'
+     CALL wrf_debug( 0, wrf_err_message )
+     print_flag = .false.
+   ENDIF
 
    IF(config_flags%polar ) then
      msfxffl = 1.0/COS(config_flags%fft_filter_lat*degrad)
    END IF
 
-   IF ( config_flags%w_damping == 1 ) THEN
+! Routine has been reorganized to hopefully reduce redundant code while maintaining efficiency
+
 #ifdef OPTIMIZE_CFL_TEST
 ! 20121025, L. Meadows vector optimization does not include special case for Cassini
-     IF(config_flags%polar ) then
-       CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support global domains')
-     END IF
+
+   IF(config_flags%polar ) then
+     CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support global domains')
+   END IF
+
 #endif
 
-     DO j = jts,jtf
+   DO j = jts,jtf
+     DO k = 2,kde-1
+       DO i = its,itf
 
-     DO k = 2, kde-1
-     DO i = its,itf
-#if 1
+         vert_cfl = abs(ww(i,k,j)/(c1f(k)*mut(i,j)+c2f(k))*rdnw(k)*dt)
+
 # ifdef OPTIMIZE_CFL_TEST
 ! L. Meadows, Intel, MIC optimization, 20121025
-        msfuxt = msfux(i,j)
-        vert_cfl = abs(ww(i,k,j)/(c1f(k)*mut(i,j)+c2f(k))*rdnw(k)*dt)
-        IF ( vert_cfl > max_vert_cfl ) THEN
-           max_vert_cfl = vert_cfl
-        ENDIF
-# else
-        IF(config_flags%polar ) then
-           msfuxt = MIN(msfux(i,j), msfxffl)
-        ELSE
-           msfuxt = msfux(i,j)
-        END IF
-        vert_cfl = abs(ww(i,k,j)/(c1f(k)*mut(i,j)+c2f(k))*rdnw(k)*dt)
 
-        IF ( vert_cfl > max_vert_cfl ) THEN
-           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k
-           maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
-        ENDIF
+         msfuxt = msfux(i,j)
+
+         IF ( vert_cfl > max_vert_cfl ) THEN
+            max_vert_cfl = vert_cfl
+         ENDIF
+# else
+         IF(config_flags%polar ) THEN
+            msfuxt = MIN(msfux(i,j), msfxffl)
+         ELSE
+            msfuxt = msfux(i,j)
+         ENDIF
+
+         IF ( vert_cfl > max_vert_cfl ) THEN
+            max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k
+            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
+         ENDIF
 # endif
         
-        horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
-             abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
-        if (horiz_cfl > max_horiz_cfl) then
-           max_horiz_cfl = horiz_cfl
-        endif
+         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt     * dt),    &
+                          abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
+
+         IF (horiz_cfl > max_horiz_cfl) THEN
+            max_horiz_cfl = horiz_cfl
+         ENDIF
+
+! Dump out more information without affecting performance
         
-        if(vert_cfl .gt. w_beta)then
-#else
-! restructure to get rid of divide
-!
-! This had been used for efficiency, but with the addition of returning the cfl values,
-!   the old version (above) was reinstated.  (T. Hutchinson, 3/5/2007)
-!
-        cf_n = abs(ww(i,k,j)*rdnw(k)*dt)
-        cf_d = abs((c1f(k)*mut(i,j)+c2f(k)))
-        if(cf_n .gt. cf_d*w_beta )then
-#endif
 #ifndef OPTIMIZE_CFL_TEST
 ! This internal write is costly on newer Xeon processors because it breaks
 ! vectorization.  (J. Michalakes for L. Meadows at Intel, 12/13/2012)
-           WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
+
+         IF (vert_cfl .gt. w_crit_cfl) THEN
+
+           some1 = some1 + 1
+
+           WRITE(temp,FMT="(3(1x,i5,1x),'W-CRIT_CFL: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") &
+                                         i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
-#endif
-           if ( vert_cfl > 2. ) some = some + 1
-           rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_beta)*(c1f(k)*mut(i,j)+c2f(k))
-        endif
-     END DO
-     ENDDO
-     ENDDO
-   ELSE
-! just print
-     DO j = jts,jtf
 
-     DO k = 2, kde-1
-     DO i = its,itf
+         ENDIF
 
-#if 1
-# ifdef OPTIMIZE_CFL_TEST
-        msfuxt = msfux(i,j)
-        vert_cfl = abs(ww(i,k,j)/(c1f(k)*mut(i,j)+c2f(k))*rdnw(k)*dt)
-        IF ( vert_cfl > max_vert_cfl ) THEN
-           max_vert_cfl = vert_cfl
-        ENDIF
-# else
-! L. Meadows MIC optimization, 20121025
-        IF(config_flags%polar ) then
-           msfuxt = MIN(msfux(i,j), msfxffl)
-        ELSE
-           msfuxt = msfux(i,j)
-        END IF
-        vert_cfl = abs(ww(i,k,j)/(c1f(k)*mut(i,j)+c2f(k))*rdnw(k)*dt)
-        
-        IF ( vert_cfl > max_vert_cfl ) THEN
-           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k
-           maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
-        ENDIF
-# endif
-        
-        horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
-             abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
+         IF ((vert_cfl .gt. w_flag_cfl) .and. wflags_differ) THEN
 
-        if (horiz_cfl > max_horiz_cfl) then
-           max_horiz_cfl = horiz_cfl
-        endif
-        
-        if(vert_cfl .gt. w_beta)then
-#else
-! restructure to get rid of divide
-!
-! This had been used for efficiency, but with the addition of returning the cfl values,
-!   the old version (above) was reinstated.  (T. Hutchinson, 3/5/2007)
-!
-        cf_n = abs(ww(i,k,j)*rdnw(k)*dt)
-        cf_d = abs((c1f(k)*mut(i,j)+c2f(k)))
-        if(cf_n .gt. cf_d*w_beta )then
-#endif
-#ifndef OPTIMIZE_CFL_TEST
-           WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
+           some2 = some2 + 1
+
+           WRITE(temp,FMT="(3(1x,i5,1x),'W-FLAG_CFL: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") &
+                                         i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
+
+         ENDIF
 #endif
-           if ( vert_cfl > 2. ) some = some + 1
-        endif
-     END DO
-     ENDDO
-     ENDDO
-   ENDIF
-   IF ( some .GT. 0 ) THEN
+
+         IF ((vert_cfl .gt. w_crit_cfl) .and. (config_flags%w_damping == 1) ) THEN
+
+           rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_crit_cfl)*(c1f(k)*mut(i,j)+c2f(k))
+
+         ENDIF
+
+       ENDDO   ! end i-loop
+     ENDDO   ! end k-loop
+   ENDDO   ! end j-loop
+
+   IF ( some1 .GT. 0 ) THEN
      CALL get_current_time_string( time_str )
      CALL get_current_grid_name( grid_str )
-     WRITE(temp,*)some,                                            &
-            ' points exceeded cfl=2 in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
+     WRITE(temp,*) some1,                                            &
+            ' points exceeded W_CRITICAL_CFL in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
      CALL wrf_debug ( 0 , TRIM(temp) )
-#ifndef OPTIMIZE_CFL_TEST
-     WRITE(temp,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta)=',max_vert_cfl, &
-                             maxdub,maxdeta
+     WRITE(temp,FMT="('Max   W: ',3(1x,i5,1x),'W: ',f7.2,2x,'W-CFL: ',f7.2,2x,'dETA: ',f7.2))") &
+                            maxi, maxj, maxk, maxdub, max_vert_cfl, maxdeta
      CALL wrf_debug ( 0 , TRIM(temp) )
-#endif
+     WRITE(temp,FMT="('Max U/V: ',3(1x,i5,1x),'U: ',f7.2,2x,'U-CFL: ',f7.2,2x,'V: ',f7.2,2x,'V-CFL: ',f7.2))") &
+           maxi, maxj, maxk, u(maxi,maxk,maxj), dt*u(maxi,maxk,maxj)*rdx, v(maxi,maxk,maxj), dt*v(maxi,maxk,maxj)*rdy
+     CALL wrf_debug ( 0 , TRIM(temp) )
    ENDIF
 
-END SUBROUTINE w_damp
+   IF ( some2 .GT. 0 ) THEN   
+     CALL get_current_time_string( time_str )
+     CALL get_current_grid_name( grid_str )
+     WRITE(temp,*) some2,                                            &
+            ' points exceeded W_FLAG_CFL in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
+     CALL wrf_debug ( 0 , TRIM(temp) )
+   ENDIF
+
+END SUBROUTINE W_DAMP
 
 !-------------------------------------------------------------------------------
 
@@ -3588,12 +3636,17 @@ SUBROUTINE calculate_full ( rfield, rfieldb, rfieldp,     &
    
    ! Local indices.
    
-   INTEGER :: i, j, k, itf, jtf, ktf
+   INTEGER :: i, j, k, itf, jtf, ktf, i_start, j_start
    
 !<DESCRIPTION>
 !
 !  calculate_full
 !  calculates full 3D field from pertubation and base field.
+!  The input fields (mu base and perturbation mu) are communicated prior
+!  to this call. That fills the total field into the halo region. That
+!  extra row/column is only used by the IEVA scheme. Having the extra
+!  row/column filled with valid values is not a problem for the rest of
+!  the model.
 !
 !</DESCRIPTION>
 
@@ -3601,9 +3654,12 @@ SUBROUTINE calculate_full ( rfield, rfieldb, rfieldp,     &
    jtf=MIN(jte,jde-1)
    ktf=MIN(kte,kde-1)
 
-   DO j=jts,jtf
+   i_start=its-1
+   j_start=jts-1
+
+   DO j=j_start,jtf
    DO k=kts,ktf
-   DO i=its,itf
+   DO i=i_start,itf
       rfield(i,k,j)=rfieldb(i,k,j)+rfieldp(i,k,j)
    ENDDO
    ENDDO
@@ -6683,5 +6739,52 @@ SUBROUTINE conv_t_tendf_to_moist ( t_1 , moist_old ,                &
 END SUBROUTINE conv_t_tendf_to_moist
 
 !==============================================================================
+
+  subroutine Cloud_tracer_nudge (dt, dt_relax, dt_nudge, xtime, qc, qi, qs,  &
+      tr_qc, tr_qi, tr_qs, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, &
+      kms, kme, its, ite, jts, jte, kts, kte)
+
+    implicit none
+
+    real, intent(in) :: dt, dt_relax, dt_nudge, xtime
+    real, dimension (ims:ime, kms:kme, jms:jme), intent (inout) :: qc, qi, qs
+    real, dimension (ims:ime, kms:kme, jms:jme), intent(in) :: tr_qc, tr_qi, tr_qs
+    integer, intent(in) :: ids, ide, jds, jde, kds, kde, ims,ime, jms, jme, &
+        kms, kme, its, ite, jts, jte, kts, kte
+
+
+    integer :: i, j, k, i_start, i_end, j_start, j_end, k_start, k_end
+
+!--------------------------------------------------------------------
+
+!<DESCRIPTION>
+!
+!  Cloud_tracer_nudge nudges qc, qi, and qs towards advected tracer values
+!         tr_qc, tr_qi, tr_qs
+!
+!</DESCRIPTION>
+
+      ! Set up loop bounds
+    i_start = its
+    i_end = min (ite, ide - 1)
+    j_start = jts
+    j_end = min (jte, jde - 1)
+    k_start = kts
+    k_end = min (kte, kde - 1)
+
+      ! Nudge
+    if (xtime < dt_nudge) then
+      do j = j_start, j_end
+        do k = k_start, k_end
+          do i = i_start, i_end
+             qc(i, k, j) = qc(i, k, j) + (tr_qc(i, k, j) - qc(i, k, j)) * dt / dt_relax
+             qi(i, k, j) = qi(i, k, j) + (tr_qi(i, k, j) - qi(i, k, j)) * dt / dt_relax
+             qs(i, k, j) = qs(i, k, j) + (tr_qs(i, k, j) - qs(i, k, j)) * dt / dt_relax
+          end do
+        end do
+      end do
+    end if
+
+  end subroutine Cloud_tracer_nudge
 
 END MODULE module_big_step_utilities_em

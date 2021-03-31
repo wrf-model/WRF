@@ -188,6 +188,11 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    end do
 
+#if (WRF_CHEM == 1)
+   if (iv%info(chemic_surf)%nlocal      > 0) &
+         call da_get_innov_vector_chem_sfc (it,num_qcstat_conv, grid, ob, iv)
+#endif
+
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
       iv%time = num_fgat_time
@@ -297,7 +302,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    ! [3] Optionally rescale observation errors:
    !------------------------------------------------------------------------ 
    
-   if (use_obs_errfac) call da_use_obs_errfac( iv)
+   if (use_obs_errfac .and. it == 1) call da_use_obs_errfac(iv)
 
    !------------------------------------------------------------------------  
    ! [4] Optionally add Gaussian noise to O, O-B:

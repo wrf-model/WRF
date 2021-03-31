@@ -3338,4 +3338,132 @@ SUBROUTINE A_FLOW_DEP_BDY_QNN(field, fieldb, u, v, config_flags, &
   END IF
 END SUBROUTINE A_FLOW_DEP_BDY_QNN
 
+!---------------------------------------ntu3m-------------------------
+   SUBROUTINE a_flow_dep_bdy_fixed_inflow(a_field,u,v,config_flags,  &
+                                 spec_zone,ids,ide,jds,jde,kds,kde,  &
+                                 ims,ime,jms,jme,kms,kme,ips,ipe,jps,&
+                                 jpe,kps,kpe,its,ite,jts,jte,kts,kte)
+!---------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme, &
+                             kms,kme,ips,ipe,jps,jpe,kps,kpe,its,ite, &
+                             jts,jte,kts,kte,spec_zone
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::      &
+                                                a_field
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: u,v
+      TYPE(grid_config_rec_type),INTENT(IN) :: config_flags
+      INTEGER :: i,j,k,ibs,ibe,jbs,jbe,itf,jtf,ktf,i_inner,j_inner,   &
+                 b_dist,b_limit
+      LOGICAL :: periodic_x
+      REAL :: a_aux
+
+      a_aux = 0.0
+      periodic_x = config_flags%periodic_x
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+
+      IF (.NOT.periodic_x) THEN
+         IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+            DO i = max(its,ibe-spec_zone+1), itf
+               b_dist = ibe - i
+               DO k = kts, ktf
+                  DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+                     j_inner = max(j,jbs+spec_zone)
+                     j_inner = min(j_inner,jbe-spec_zone)
+                     IF (u(i+1,k,j) .gt. 0.) THEN
+                        a_aux = a_aux+a_field(i,k,j)
+                        a_field(i,k,j) = 0.
+                        a_field(ibe-spec_zone,k,j_inner) =             &
+                        a_field(ibe-spec_zone,k,j_inner)+a_aux
+                        a_aux = 0.
+                     ELSE
+                        a_field(i,k,j) = a_field(i,k,j)
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ENDDO
+         ENDIF
+
+         IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+            DO i = its,min(itf,ibs+spec_zone-1)
+               b_dist = i - ibs
+               DO k = kts, ktf
+                  DO j = max(jts,b_dist+jbs+1),min(jtf,jbe-b_dist-1)
+                     j_inner = max(j,jbs+spec_zone)
+                     j_inner = min(j_inner,jbe-spec_zone)
+                     IF (u(i,k,j) .lt. 0.) THEN
+                        a_aux = a_aux+a_field(i,k,j)
+                        a_field(i,k,j) = 0.
+                        a_field(ibs+spec_zone,k,j_inner) =             &
+                        a_field(ibs+spec_zone,k,j_inner)+a_aux
+                        a_aux = 0.
+                     ELSE
+                        a_field(i,k,j) = a_field(i,k,j)
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ENDDO
+         ENDIF
+      ENDIF
+
+      IF (jbe - jtf .lt. spec_zone) THEN
+! Y-end boundary
+         DO j = max(jts,jbe-spec_zone+1), jtf
+            b_dist = jbe - j
+            b_limit = b_dist
+            IF (periodic_x) b_limit = 0
+            DO k = kts, ktf
+               DO i = max(its,b_limit+ibs),min(itf,ibe-b_limit)
+                  i_inner = max(i,ibs+spec_zone)
+                  i_inner = min(i_inner,ibe-spec_zone)
+                  IF (periodic_x) i_inner = i
+                  IF (v(i,k,j+1).gt.0.) THEN
+                     a_aux = a_aux+a_field(i,k,j)
+                     a_field(i,k,j) = 0.
+                     a_field(i_inner,k,jbe-spec_zone) =                &
+                     a_field(i_inner,k,jbe-spec_zone)+a_aux
+                     a_aux = 0.
+                  ELSE
+                     a_field(i,k,j) = a_field(i,k,j)
+                  ENDIF
+               ENDDO
+            ENDDO
+         ENDDO
+      ENDIF
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+         DO j = jts, min(jtf,jbs+spec_zone-1)
+            b_dist = j - jbs
+            b_limit = b_dist
+            IF (periodic_x) b_limit = 0
+            DO k = kts, ktf
+               DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+                  i_inner = max(i,ibs+spec_zone)
+                  i_inner = min(i_inner,ibe-spec_zone)
+                  IF (periodic_x) i_inner = i
+                  IF (v(i,k,j) .lt. 0.) THEN
+                     a_aux = a_aux+a_field(i,k,j)
+                     a_field(i,k,j) = 0.
+                     a_field(i_inner,k,jbs+spec_zone) =                &
+                     a_field(i_inner,k,jbs+spec_zone)+a_aux
+                     a_aux = 0.
+                  ELSE
+                     a_field(i,k,j) = a_field(i,k,j)
+                  ENDIF
+               ENDDO
+            ENDDO
+         ENDDO
+      ENDIF
+
+   END SUBROUTINE a_flow_dep_bdy_fixed_inflow
+!--------------------------------------------------ntu3m-------------------------
+
 END MODULE a_module_bc

@@ -61,6 +61,16 @@ state    real   ts_cbaseht_tot  ?!       misc       -         -     -      "TS_C
 state    real   ts_ctopht_tot   ?!       misc       -         -     -      "TS_CTOPHT_TOT"   "CLOUD TOP HEIGHT RES + UNRES"
 state    real   ts_clrnidx      ?!       misc       -         -     -      "TS_CLRNIDX"      "CLEARNESS INDEX"
 state    real   ts_sza          ?!       misc       -         -     -      "TS_SZA"          "SOLAR ZENITH ANGLE"
+state    real   ts_swdown       ?!       misc       -         -     -      "TS_SWDOWN"       "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"
+state    real   ts_swddni       ?!       misc       -         -     -      "TS_SWDDNI"       "SHORTWAVE SURFACE DOWNWARD DIRECT NORMAL IRRADIANCE"
+state    real   ts_swddif       ?!       misc       -         -     -      "TS_SWDDIF"       "SHORTWAVE SURFACE DOWNWARD DIFFUSE IRRADIANCE"
+state    real   ts_swdownc      ?!       misc       -         -     -      "TS_SWDOWNC"      "DOWNWARD CLEAR-SKY SHORTWAVE FLUX AT GROUND SURFACE"
+state    real   ts_swddnic      ?!       misc       -         -     -      "TS_SWDDNIC"      "CLEAR-SKY SHORTWAVE SURFACE DOWNWARD DIRECT NORMAL IRRADIANCE"
+state    real   ts_swdown2      ?!       misc       -         -     -      "TS_SWDOWN2"      "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE FROM FARMS"
+state    real   ts_swddni2      ?!       misc       -         -     -      "TS_SWDDNI2"      "SHORTWAVE SURFACE DOWNWARD DIRECT NORMAL IRRADIANCE FROM FARMS"
+state    real   ts_swddif2      ?!       misc       -         -     -      "TS_SWDDIF2"      "SHORTWAVE SURFACE DOWNWARD DIFFUSE IRRADIANCE FROM FARMS"
+state    real   ts_swdownc2     ?!       misc       -         -     -      "TS_SWDOWNC2"     "DOWNWARD CLEAR-SKY SHORTWAVE FLUX AT GROUND SURFACE FROM FARMS"
+state    real   ts_swddnic2     ?!       misc       -         -     -      "TS_SWDDNIC2"     "CLEAR-SKY SHORTWAVE SURFACE DOWNWARD DIRECT NORMAL IRRADIANCE FROM FARMS"
 
 #  Package declarations
 

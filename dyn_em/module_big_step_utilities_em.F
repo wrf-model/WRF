@@ -2727,9 +2727,9 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      WRITE(temp,FMT="('Max   W: ',3(1x,i5,1x),'W: ',f7.2,2x,'w-cfl: ',f7.2,2x,'dETA: ',f7.2)") &
                             maxi, maxj, maxk, maxdub, max_vert_cfl, maxdeta
      CALL wrf_debug ( 0 , TRIM(temp) )
-     WRITE(temp,FMT="('Max U/V: ',3(1x,i5,1x),'U: ',f7.2,2x,'u-cfl: ',f7.2,2x,'V: ',f7.2,2x,'v-cfl: ',f7.2)") &
-           maxi, maxj, maxk, u(maxi,maxk,maxj), dt*u(maxi,maxk,maxj)*rdx, v(maxi,maxk,maxj), dt*v(maxi,maxk,maxj)*rdy
-     CALL wrf_debug ( 0 , TRIM(temp) )
+!    WRITE(temp,FMT="('Max U/V: ',3(1x,i5,1x),'U: ',f7.2,2x,'u-cfl: ',f7.2,2x,'V: ',f7.2,2x,'v-cfl: ',f7.2)") &
+!          maxi, maxj, maxk, u(maxi,maxk,maxj), dt*u(maxi,maxk,maxj)*rdx, v(maxi,maxk,maxj), dt*v(maxi,maxk,maxj)*rdy
+!    CALL wrf_debug ( 0 , TRIM(temp) )
    ENDIF
 
    IF ( some2 .GT. 0 ) THEN   

@@ -2313,6 +2313,7 @@ CONTAINS
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij),     &
               kts,kte,scm_force_flux    )
+           ENDIF
 #if ( EM_CORE==1)
          DO j = j_start(ij),j_end(ij)
             DO i = i_start(ij),i_end(ij)
@@ -2322,9 +2323,7 @@ CONTAINS
             END DO
          END DO
 #endif         
-
-        ENDIF
-        ELSE
+       ELSE
          CALL wrf_error_fatal('Lacking arguments for QNSESFC in surface driver')
        ENDIF
 

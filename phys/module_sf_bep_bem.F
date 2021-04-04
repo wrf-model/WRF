@@ -4290,8 +4290,8 @@ do iz= kts,kte
 
       data dzg_u /0.2,0.12,0.08,0.05,0.03,0.02,0.02,0.01,0.005,0.0025/
       
-      real gx,iz,dzg_tot
-      integer gr_type
+      real gx,dzg_tot
+      integer gr_type,iz
 ! ----------------------------------------------------------------------
 ! END VARIABLES DEFINITIONS
 ! ----------------------------------------------------------------------
@@ -4490,8 +4490,8 @@ do iz= kts,kte
 
       data dzgr_u /0.1,0.003,0.06,0.003,0.05,0.04,0.02,0.0125,0.005,0.0025/
 
-      real gx,iz,dzgr_tot
-      integer gr_type
+      real gx,dzgr_tot
+      integer gr_type,iz
 ! ----------------------------------------------------------------------
 ! END VARIABLES DEFINITIONS
 

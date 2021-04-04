@@ -8027,8 +8027,8 @@ ENDIF   ! CROPTYPE == 0
     ELSE ! Equation (4)
        IRRLOSS   = 4.337*(EXP(0.077*WINDSPEED))*(((ESAT1-EAIR)*0.01)**(-0.098)) ! [%]
     END IF
-    IF(ISNAN(IRRLOSS))IRRLOSS=4.0 ! In case if IRRLOSS is NaN
-    
+    !IF(ISNAN(IRRLOSS))IRRLOSS=4.0 ! In case if IRRLOSS is NaN
+    IF ((IRRLOSS .GT. 1000.0) .OR. (IRRLOSS .LT. 0.0)) IRRLOSS=4.0 ! In case if IRRLOSS is out of range
     ! Sprinkler water (m) for sprinkler fraction 
     IRSIRATE  = IRSIRATE * SIFAC
     IF(IRSIRATE .GE. IRAMTSI)THEN

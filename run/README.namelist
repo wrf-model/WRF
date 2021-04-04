@@ -1261,6 +1261,7 @@ Options for use with the Noah-MP Land Surface Model:
                                                      2 = BATS:  Snow when SFCTMP < TFRZ+2.2
                                                      3 = Snow when SFCTMP < TFRZ
                                                      4 = Use WRF precipitation partitioning
+                                                     5 = Use wetbulb temperature (Wang et al., 2019 GRL)
  opt_tbot                           = 2,        ! Noah-MP Soil Temperature Lower Boundary Condition
                                                      1 = Zero heat flux
                                                      2 = TBOT at 8 m from input file

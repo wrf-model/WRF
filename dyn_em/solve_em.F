@@ -3458,6 +3458,7 @@ BENCH_END(bc_end_tim)
                  &   grid%avgflx_efu1,grid%avgflx_dfd1,grid%avgflx_efd1 )
             CALL wrf_debug(200,'In solve_em, after zero_avgflx call')
          ENDDO
+         !$OMP END PARALLEL DO
       ENDIF
 
 ! Update avgflx quantities
@@ -3479,6 +3480,7 @@ BENCH_END(bc_end_tim)
          CALL wrf_debug(200,'In solve_em, after upd_avgflx call')
          
       ENDDO
+      !$OMP END PARALLEL DO
       grid%avgflx_count = grid%avgflx_count + 1
    ENDIF
 !

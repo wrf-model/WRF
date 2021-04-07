@@ -986,6 +986,26 @@ if [ $retval -ne 0 ] ; then
   fi
 fi
 
+# testing for Fortran 2003 IEEE features
+make fortran_2003_isnan_test > tools/fortran_2003_isnan_test.log 2>&1
+rm -f tools/fortran_2003_isnan_test.log
+retval=-1
+if [ -f tools/fortran_2003_isnan_test.exe ] ; then
+  retval=0
+fi
+if [ $retval -ne 0 ] ; then
+  sed -e '/^ARCH_LOCAL/s/$/ -DNO_ISNAN/' configure.wrf > configure.wrf.edit
+  mv configure.wrf.edit configure.wrf
+  echo " "
+  echo " "
+  echo "************************** W A R N I N G ************************************"
+  echo " "
+  echo "There are some intrinsic Fortran 2003 features in WRF that your compiler does not"
+  echo "recognize. The isnan function calls have been removed."
+  echo " "
+  echo "*****************************************************************************"
+fi
+
 # testing for Fortran 2008 intrinsic gamma function
 make fortran_2008_gamma_test > tools/fortran_2008_gamma.log 2>&1
 rm -f tools/fortran_2008_gamma.log

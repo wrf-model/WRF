@@ -29,6 +29,13 @@ contains
                   uoce,voce,                                                   &
                   rthraten,ysu_topdown_pblmix,                                 &
                   ctopo,ctopo2,                                                &
+                  idiff,flag_bep,frc_urb2d,                                    &
+                  a_u_bep,a_v_bep,a_t_bep,                                     &
+                  a_q_bep,                                                     &
+                  a_e_bep,b_u_bep,b_v_bep,                                     &
+                  b_t_bep,b_q_bep,                                             &
+                  b_e_bep,dlg_bep,                                             &
+                  dl_u_bep,sf_bep,vl_bep,                                      &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -108,6 +115,23 @@ contains
 !-- jte         end index for j in tile
 !-- kts         start index for k in tile
 !-- kte         end index for k in tile
+!-- idiff       diff3d BEP/BEM+BEM diffusion flag 
+!-- flag_bep    flag to use BEP/BEP+BEM
+!-- frc_urb2d   urban fraction 
+!-- a_u_bep     BEP/BEP+BEM implicit component u-mom
+!-- a_v_bep     BEP/BEP+BEM implicit component v-mom
+!-- a_t_bep     BEP/BEP+BEM implicit component pot. temp.
+!-- a_q_bep     BEP/BEP+BEM implicit component vapor mixing ratio
+!-- a_e_bep     BEP/BEP+BEM implicit component TKE
+!-- b_u_bep     BEP/BEP+BEM explicit component u-mom
+!-- b_v_bep     BEP/BEP+BEM explicit component v-mom
+!-- b_t_bep     BEP/BEP+BEM explicit component pot.temp.
+!-- b_q_bep     BEP/BEP+BEM explicit component vapor mixing ratio
+!-- b_e_bep     BEP/BEP+BEM explicit component TKE
+!-- dlg_bep     Height above ground Martilli et al. (2002) Eq. 24
+!-- dl_u_bep    modified length scale Martilli et al. (2002) Eq. 22
+!-- sf_bep      fraction of vertical surface not occupied by buildings
+!-- vl_bep      volume fraction of grid cell not occupied by buildings
 !-------------------------------------------------------------------------------
 !
    integer,parameter ::  ndiff = 3
@@ -180,6 +204,17 @@ contains
    integer,  dimension( ims:ime, jms:jme )                                   , &
              intent(out  )   ::                                        kpbl2d
    logical,  intent(in)      ::                                       flag_qi
+   integer, intent(in) ::                                               idiff
+   logical, intent(in) ::                                            flag_bep
+   real,dimension(ims:ime,kms:kme,jms:jme),intent(in) ::              a_u_bep, &
+                                                              a_v_bep,a_t_bep, &
+                                                              a_e_bep,b_u_bep, &
+                                                              a_q_bep,b_q_bep, &
+                                                              b_v_bep,b_t_bep, &
+                                                              b_e_bep,dlg_bep, &
+                                                                     dl_u_bep, &
+                                                                vl_bep,sf_bep
+   real, dimension(ims:ime,jms:jme),intent(in) :: frc_urb2d
 !
 !optional
 !
@@ -206,10 +241,30 @@ contains
                                                                         dvsfc, &
                                                                         dtsfc, &
                                                                         dqsfc
-
+   real,dimension(its:ite,kts:kte,jts:jte) :: a_u,a_v,a_t,a_e,b_u,b_v,b_t,b_e, &
+                                                     a_q,b_q,dlg,dl_u,sfk,vlk
+   real,dimension(its:ite,jts:jte)         :: frcurb
+   real :: bepswitch ! 0 if not using bep or bep+bem, 1 if using
 !
    qv2d(its:ite,:) = 0.0
 !
+   bepswitch = 0.0
+   a_u(:,:,:)=0.0
+   a_v(:,:,:)=0.0
+   a_t(:,:,:)=0.0
+   a_q(:,:,:)=0.0
+   a_e(:,:,:)=0.0
+   b_u(:,:,:)=0.0
+   b_v(:,:,:)=0.0
+   b_t(:,:,:)=0.0
+   b_q(:,:,:)=0.0
+   b_e(:,:,:)=0.0
+   sfk(:,:,:)=1.0
+   vlk(:,:,:)=1.0
+   dl_u(:,:,:)=0.0
+   dlg(:,:,:)=0.0
+   frcurb(:,:)=0.0   
+
    do j = jts,jte
       do k = kts,kte+1
         do i = its,ite
@@ -225,6 +280,29 @@ contains
           if(flag_qi) qv2d(i,k+kte+kte) = qi3d(i,k,j)
         enddo
       enddo
+
+      if(flag_bep) then
+        bepswitch=1.0
+        do k=kts,kte
+          do i=its,ite
+            a_u(i,k,j)=a_u_bep(i,k,j)
+            a_v(i,k,j)=a_v_bep(i,k,j)
+            a_t(i,k,j)=a_t_bep(i,k,j)
+            a_q(i,k,j)=a_q_bep(i,k,j)
+            a_e(i,k,j)=a_e_bep(i,k,j)
+            b_u(i,k,j)=b_u_bep(i,k,j)
+            b_v(i,k,j)=b_v_bep(i,k,j)
+            b_t(i,k,j)=b_t_bep(i,k,j)
+            b_q(i,k,j)=b_q_bep(i,k,j)
+            b_e(i,k,j)=b_e_bep(i,k,j)
+            sfk(i,k,j)=sf_bep(i,k,j)
+            vlk(i,k,j)=vl_bep(i,k,j)
+            dl_u(i,k,j)=dl_u_bep(i,k,j)
+            dlg(i,k,j)=dlg_bep(i,k,j)
+            frcurb(i,j)=frc_urb2d(i,j)
+          enddo
+        enddo
+      endif
 !
       call ysu2d(J=j,ux=u3d(ims,kms,j),vx=v3d(ims,kms,j)                       &
               ,tx=t3d(ims,kms,j)                                               &
@@ -254,6 +332,14 @@ contains
               ,rthraten=rthraten(ims,kms,j),p2diORG=p3di(ims,kms,j)            &
               ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
+              ,a_u2d=a_u(its,kts,j), a_v2d=a_v(its,kts,j)                      &
+              ,a_t2d=a_t(its,kts,j), a_q2d=a_q(its,kts,j)                      &
+              ,b_u2d=b_u(its,kts,j), b_v2d=b_v(its,kts,j)                      &
+              ,b_t2d=b_t(its,kts,j), b_q2d=b_q(its,kts,j)                      &
+              ,b_e2d=b_e(its,kts,j), a_e2d=a_e(its,kts,j)                      &
+              ,sfk2d=sfk(its,kts,j), vlk2d=vlk(its,kts,j)                      &
+              ,dlu2d=dl_u(its,kts,j), dlg2d=dlg(its,kts,j)                     &
+              ,frc_urb1d=frcurb(its,j), bepswitch=bepswitch                    &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -288,6 +374,11 @@ contains
                   rthraten,p2diORG,                                            &
                   ysu_topdown_pblmix,                                          &
                   ctopo,ctopo2,                                                &
+                  a_u2d, a_v2d, a_t2d, a_q2d,                                  &
+                  b_u2d, b_v2d, b_t2d, b_q2d,                                  &
+                  b_e2d, a_e2d, sfk2d, vlk2d,                                  &
+                  dlu2d, dlg2d,                                                &
+                  frc_urb1d, bepswitch,                                        &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -344,9 +435,11 @@ contains
 !              ==> kzo = 0.1 for momentum and = 0.01 for mass to account for
 !                  internal wave mixing of large et al. (1994), songyou hong, feb 2016
 !              ==> alleviate superious excessive mixing when delz is large
+!              add multilayer urban canopy models of BEP and BEP+BEM, jan 2021
 !
 !     references:
 !
+!        hendricks, knievel, and wang (2020), j. appl. meteor. clim.
 !        hong (2010) quart. j. roy. met. soc
 !        hong, noh, and dudhia (2006), mon. wea. rev.
 !        hong and pan (1996), mon. wea. rev.
@@ -432,9 +525,28 @@ contains
    real,     dimension( ims:ime )                                            , &
              optional                                                        , &
              intent(inout)   ::                                        regime
-!
+! 
 ! local vars
 !
+   real,     dimension( its:ite, kts:kte ),                                    &
+             intent(in)      ::                                         a_u2d, &
+                                                                        a_v2d, &
+                                                                        a_t2d, &
+                                                                        a_q2d, &
+                                                                        b_u2d, &
+                                                                        b_v2d, &
+                                                                        b_t2d, &
+                                                                        b_q2d, &
+                                                                        b_e2d, &
+                                                                        a_e2d, &
+                                                                        sfk2d, &
+                                                                        vlk2d, &
+                                                                        dlu2d, &
+                                                                        dlg2d
+
+   real,     dimension( its:ite ),                                             &
+             intent(in)      ::                                      frc_urb1d
+   real ::                                                           bepswitch
    real,     dimension( its:ite )            ::                           hol
    real,     dimension( its:ite, kts:kte+1 ) ::                            zq
 !
@@ -469,7 +581,8 @@ contains
                                                                          xkzq, &
                                                                          zfac, &
                                                                         rhox2, &
-                                                                       hgamt2
+                                                                       hgamt2, &
+                                                                     ad1, adm
 !
 !jdf added exch_hx
 !
@@ -1109,13 +1222,13 @@ contains
 !
    do i = its,ite
      ad(i,1) = 1.
-     f1(i,1) = thx(i,1)-300.+hfx(i)/cont/del(i,1)*dt2
+     f1(i,1) = thx(i,1)-300.+(1.0-bepswitch)*hfx(i)/cont/del(i,1)*dt2
    enddo
 !
    do k = kts,kte-1
      do i = its,ite
-       dtodsd = dt2/del(i,k)
-       dtodsu = dt2/del(i,k+1)
+       dtodsd = sfk2d(i,k)*dt2/del(i,k)
+       dtodsu = sfk2d(i,k)*dt2/del(i,k+1)
        dsig   = p2d(i,k)-p2d(i,k+1)
        rdz    = 1./dza(i,k+1)
        tem1   = dsig*xkzh(i,k)*rdz
@@ -1134,11 +1247,20 @@ contains
        endif
        tem1   = dsig*xkzh(i,k)*rdz
        dsdz2     = tem1*rdz
-       au(i,k)   = -dtodsd*dsdz2
-       al(i,k)   = -dtodsu*dsdz2
+       au(i,k)   = -dtodsd*dsdz2/vlk2d(i,k)
+       al(i,k)   = -dtodsu*dsdz2/vlk2d(i,k)
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
        exch_hx(i,k+1) = xkzh(i,k)
+     enddo
+   enddo
+!
+! add bep/bep+bem forcing for heat if flag_bep=.true.
+!
+   do k = kts,kte
+     do i = its,ite
+      ad(i,k) = ad(i,k) - a_t2d(i,k)*dt2
+      f1(i,k) = f1(i,k) + b_t2d(i,k)*dt2
      enddo
    enddo
 !
@@ -1183,7 +1305,7 @@ contains
 !
    do i = its,ite
      ad(i,1) = 1.
-     f3(i,1,1) = qx(i,1)+qfx(i)*g/del(i,1)*dt2
+     f3(i,1,1) = qx(i,1)+(1.0-bepswitch)*qfx(i)*g/del(i,1)*dt2
    enddo
 !
    if(ndiff.ge.2) then
@@ -1205,8 +1327,8 @@ contains
 !
    do k = kts,kte-1
      do i = its,ite
-       dtodsd = dt2/del(i,k)
-       dtodsu = dt2/del(i,k+1)
+       dtodsd = sfk2d(i,k)*dt2/del(i,k)
+       dtodsu = sfk2d(i,k)*dt2/del(i,k+1)
        dsig   = p2d(i,k)-p2d(i,k+1)
        rdz    = 1./dza(i,k+1)
        tem1   = dsig*xkzq(i,k)*rdz
@@ -1225,8 +1347,8 @@ contains
        endif
        tem1   = dsig*xkzq(i,k)*rdz
        dsdz2     = tem1*rdz
-       au(i,k)   = -dtodsd*dsdz2
-       al(i,k)   = -dtodsu*dsdz2
+       au(i,k)   = -dtodsd*dsdz2/vlk2d(i,k)
+       al(i,k)   = -dtodsu*dsdz2/vlk2d(i,k)
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
 !      exch_hx(i,k+1) = xkzh(i,k)
@@ -1243,6 +1365,15 @@ contains
        enddo
      enddo
    endif
+!
+! add bep/bep+bem forcing for water vapor if flag_bep=.true.
+!
+   do k = kts,kte
+     do i = its,ite
+      ad(i,k) = ad(i,k) - a_q2d(i,k)*dt2
+      f3(i,k,1) = f3(i,k,1) + b_q2d(i,k)*dt2
+     enddo
+   enddo
 !
 ! copies here to avoid duplicate input args for tridin
 !
@@ -1316,7 +1447,7 @@ contains
         rlamdz = 150.0
        endif
        el_ysu(i,k) = zk*rlamdz/(rlamdz+zk)
-       tke_ysu(i,k)=16.6*el_ysu(i,k)*(shear_ysu(i,k)-buoy_ysu(i,k))
+       tke_ysu(i,k)=16.6*el_ysu(i,k)*(shear_ysu(i,k)-buoy_ysu(i,k)+b_e2d(i,k))
  !q2 when q3 positive
        if(tke_ysu(i,k).le.0) then
         tke_ysu(i,k)=0.0
@@ -1328,7 +1459,6 @@ contains
  !tke is q2
       CALL GET_PBLH(KTS,KTE,pblh_ysu(i),thvx(i,kts:kte),&
       &    tke_ysu(i,kts:kte),zq(i,kts:kte+1),dzq(i,kts:kte),xland(i))
-
 !--- end of paj tke
 ! compute vconv
 !      Use Beljaars over land
@@ -1348,9 +1478,11 @@ contains
       if(present(ctopo)) then
         vconvnew=0.9*vconvfx(i)+1.5*(max((pblh_ysu(i)-500)/1000.0,0.0))
         vconvlim = min(vconvnew,1.0)
-        ad(i,1) = 1.+fric(i,1)*vconvlim+ctopo(i)*fric(i,1)*(1-vconvlim)
+       ad(i,1) = 1.+(1.0-bepswitch*frc_urb1d(i))* &
+                     (fric(i,1)*vconvlim+ctopo(i)*fric(i,1)*(1-vconvlim)) - &
+                     fric(i,1)*bepswitch*(1-frc_urb1d(i))
       else
-       ad(i,1) = 1.+fric(i,1)
+       ad(i,1) = 1.+(1.0-bepswitch)*fric(i,1)
       endif
      f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
      f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
@@ -1358,8 +1490,8 @@ contains
 !
    do k = kts,kte-1
      do i = its,ite
-       dtodsd = dt2/del(i,k)
-       dtodsu = dt2/del(i,k+1)
+       dtodsd = sfk2d(i,k)*dt2/del(i,k)
+       dtodsu = sfk2d(i,k)*dt2/del(i,k+1)
        dsig   = p2d(i,k)-p2d(i,k+1)
        rdz    = 1./dza(i,k+1)
        tem1   = dsig*xkzm(i,k)*rdz
@@ -1383,11 +1515,27 @@ contains
        endif
        tem1   = dsig*xkzm(i,k)*rdz
        dsdz2     = tem1*rdz
-       au(i,k)   = -dtodsd*dsdz2
-       al(i,k)   = -dtodsu*dsdz2
+       au(i,k)   = -dtodsd*dsdz2/vlk2d(i,k)
+       al(i,k)   = -dtodsu*dsdz2/vlk2d(i,k)
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
        exch_mx(i,k+1) = xkzm(i,k)
+     enddo
+   enddo
+!
+! add bep/bep+bem forcing for momentum if flag_bep=.true.
+!
+   do k = kts,kte
+     do i = its,ite
+       ad1(i,k) = ad(i,k)
+     end do
+   end do
+   do k = kts,kte
+     do i = its,ite
+       ad(i,k) = ad(i,k) - a_u2d(i,k)*dt2
+       ad1(i,k) = ad1(i,k) - a_v2d(i,k)*dt2
+       f1(i,k) = f1(i,k) + b_u2d(i,k)*dt2
+       f2(i,k) = f2(i,k) + b_v2d(i,k)*dt2
      enddo
    enddo
 !
@@ -1403,7 +1551,7 @@ contains
 !
 !     solve tridiagonal problem for momentum
 !
-   call tridi1n(al,ad,cu,r1,r2,au,f1,f2,its,ite,kts,kte,1)
+    call tridi2n(al,ad,ad1,cu,r1,r2,au,f1,f2,its,ite,kts,kte,1)
 !
 !     recover tendencies of momentum
 !
@@ -1437,7 +1585,7 @@ contains
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------
-   subroutine tridi1n(cl,cm,cu,r1,r2,au,f1,f2,its,ite,kts,kte,nt)
+   subroutine tridi2n(cl,cm,cm1,cu,r1,r2,au,f1,f2,its,ite,kts,kte,nt)
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
@@ -1449,6 +1597,7 @@ contains
 !
    real, dimension( its:ite, kts:kte )                                       , &
          intent(in   )  ::                                                 cm, &
+                                                                          cm1, &
                                                                            r1
    real, dimension( its:ite, kts:kte,nt )                                    , &
          intent(in   )  ::                                                 r2
@@ -1476,11 +1625,11 @@ contains
 !
    do it = 1,nt
      do i = its,l
-       fk = 1./cm(i,1)
+       fk = 1./cm1(i,1)
        f2(i,1,it) = fk*r2(i,1,it)
      enddo
    enddo
-!
+
    do k = kts+1,n-1
      do i = its,l
        fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
@@ -1492,7 +1641,7 @@ contains
    do it = 1,nt
      do k = kts+1,n-1
        do i = its,l
-         fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
+         fk = 1./(cm1(i,k)-cl(i,k)*au(i,k-1))
          f2(i,k,it) = fk*(r2(i,k,it)-cl(i,k)*f2(i,k-1,it))
        enddo
      enddo
@@ -1505,7 +1654,7 @@ contains
 !
    do it = 1,nt
      do i = its,l
-       fk = 1./(cm(i,n)-cl(i,n)*au(i,n-1))
+       fk = 1./(cm1(i,n)-cl(i,n)*au(i,n-1))
        f2(i,n,it) = fk*(r2(i,n,it)-cl(i,n)*f2(i,n-1,it))
      enddo
    enddo
@@ -1524,7 +1673,7 @@ contains
      enddo
    enddo
 !
-   end subroutine tridi1n
+   end subroutine tridi2n
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------

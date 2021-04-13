@@ -149,6 +149,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 
    ! Flag for producing diagnostic fields (e.g., radar reflectivity)
    LOGICAL                        :: diag_flag
+   LOGICAL                        :: restart_flag ! tells if it is a restart timestep to write restart files
       
 #if (WRF_CHEM==1)
    ! Index cross-referencing array for tendency accumulation
@@ -313,6 +314,13 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    ENDIF
 ! End of adaptive time step modifications
 !-----------------------------------------------------------------------------
+!
+! Set restart flag value history output time
+!-----------------------------------------------------------------------------
+   restart_flag = .false.
+   if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(restart_alarm)) ) then
+      restart_flag = .true.
+   endif
 !
 ! Set diagnostic flag value history output time
 !-----------------------------------------------------------------------------
@@ -677,6 +685,7 @@ BENCH_END(set_phys_bc_tim)
                              , k_start , k_end                  &
                              , f_flux                           &
                              , aerocu                           &
+                             , restart_flag                     &
                             )
 
 #ifdef DM_PARALLEL
@@ -766,13 +775,13 @@ BENCH_START(rk_tend_tim)
                          ,ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf                                      &
                          ,mu_tend, grid%u_save, grid%v_save, w_save, ph_save                                   &
                          ,grid%t_save, mu_save, grid%rthften                                                   &
-                         ,grid%ru, grid%rv, grid%rw, grid%ww                                                   &
+                         ,grid%ru, grid%rv, grid%rw, grid%ww, wwE, wwI                                         &
                          ,grid%u_2, grid%v_2, grid%w_2, grid%t_2, grid%ph_2                                    &
                          ,grid%u_1, grid%v_1, grid%w_1, grid%t_1, grid%ph_1                                    &
                          ,grid%h_diabatic, grid%phb, grid%t_init                                               &
-                         ,grid%mu_2, grid%mut, grid%muu, grid%muv, grid%mub                                    &
+                         ,grid%mu_1, grid%mu_2, grid%mut, grid%muu, grid%muv, grid%mub                         &
                          ,grid%c1h, grid%c2h, grid%c1f, grid%c2f                                               &
-                         ,grid%al, grid%alt, grid%p, grid%pb, grid%php, cqu, cqv, cqw                          &
+                         ,grid%al, grid%ht, grid%alt, grid%p, grid%pb, grid%php, cqu, cqv, cqw                 &
                          ,grid%u_base, grid%v_base, grid%t_base, grid%qv_base, grid%z_base                     &
                          ,grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv                                    &
                          ,grid%msfvy, grid%msftx,grid%msfty, grid%clat, grid%f, grid%e, grid%sina, grid%cosa   &
@@ -2268,9 +2277,10 @@ BENCH_END(small_step_finish_tim)
 BENCH_START(rk_scalar_tend_tim)
                CALL rk_scalar_tend (  im, im, config_flags, tenddec,         &
                            rk_step, dt_rk,                                   &
-                           grid%ru_m, grid%rv_m, grid%ww_m,                  &
+                           grid%ru_m, grid%rv_m, grid%ww_m, wwE, wwI,        &
+                           grid%u_1, grid%v_1,                               &
                            grid%muts, grid%mub, grid%mu_1,                   &
-                           grid%c1h, grid%c2h,                               &
+                           grid%c1h, grid%c2h, grid%c1f, grid%c2f,           &
                            grid%alt,                                         &
                            moist_old(ims,kms,jms,im),                        &
                            moist(ims,kms,jms,im),                            &
@@ -2474,9 +2484,10 @@ BENCH_START(tke_adv_tim)
            tenddec = .false.
            CALL rk_scalar_tend ( 1, 1, config_flags, tenddec,                      &
                             rk_step, dt_rk,                                        &
-                            grid%ru_m, grid%rv_m, grid%ww_m,                       &
+                            grid%ru_m, grid%rv_m, grid%ww_m, wwE, wwI,             &
+                            grid%u_1, grid%v_1,                                    &
                             grid%muts, grid%mub, grid%mu_1,                        &
-                            grid%c1h, grid%c2h,                                    &
+                            grid%c1h, grid%c2h, grid%c1f, grid%c2f,                &
                             grid%alt,                                              &
                             grid%tke_1,                                            &
                             grid%tke_2,                                            &
@@ -2579,9 +2590,10 @@ BENCH_START(chem_adv_tim)
                         ( adv_ct_indices(ic) >= PARAM_FIRST_SCALAR ))
              CALL rk_scalar_tend ( ic, ic, config_flags, tenddec,                &
                               rk_step, dt_rk,                                    &
-                              grid%ru_m, grid%rv_m, grid%ww_m,                   &
+                              grid%ru_m, grid%rv_m, grid%ww_m, wwE, wwI,         &
+                              grid%u_1, grid%v_1,                                &
                               grid%muts, grid%mub, grid%mu_1,                    &
-                              grid%c1h, grid%c2h,                                &
+                              grid%c1h, grid%c2h, grid%c1f, grid%c2f,            &
                               grid%alt,                                          &
                               chem_old(ims,kms,jms,ic),                          &
                               chem(ims,kms,jms,ic),                              &
@@ -2722,9 +2734,10 @@ BENCH_START(tracer_adv_tim)
              tenddec = .false.
              CALL rk_scalar_tend ( ic, ic, config_flags, tenddec,                &
                               rk_step, dt_rk,                                    &
-                              grid%ru_m, grid%rv_m, grid%ww_m,                   &
+                              grid%ru_m, grid%rv_m, grid%ww_m, wwE, wwI,         &
+                              grid%u_1, grid%v_1,                                &
                               grid%muts, grid%mub, grid%mu_1,                    &
-                              grid%c1h, grid%c2h,                                &
+                              grid%c1h, grid%c2h, grid%c1f, grid%c2f,            &
                               grid%alt,                                          &
                               tracer_old(ims,kms,jms,ic),                        &
                               tracer(ims,kms,jms,ic),                            &
@@ -2882,9 +2895,10 @@ BENCH_END(tracer_adv_tim)
            tenddec = .false.
            CALL rk_scalar_tend ( is, is, config_flags, tenddec,                   &
                                  rk_step, dt_rk,                                  &
-                                 grid%ru_m, grid%rv_m, grid%ww_m,                 &
+                                 grid%ru_m, grid%rv_m, grid%ww_m, wwE, wwI,       &
+                                 grid%u_1, grid%v_1,                              &
                                  grid%muts, grid%mub, grid%mu_1,                  &
-                                 grid%c1h, grid%c2h,                              &
+                                 grid%c1h, grid%c2h, grid%c1f, grid%c2f,          &
                                  grid%alt,                                        &
                                  scalar_old(ims,kms,jms,is),                      &
                                  scalar(ims,kms,jms,is),                          &
@@ -2979,29 +2993,55 @@ BENCH_END(tracer_adv_tim)
                                   kts=k_start    , kte=k_end                              )
 
            IF( config_flags%specified ) THEN
-
-             IF(is .ne. P_QNN)THEN
-               !CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
-               CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
-                                  grid%ru_m, grid%rv_m, config_flags,   &
-                                  grid%spec_zone,                  &
-                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                  grid%i_start(ij), grid%i_end(ij),  &
-                                  grid%j_start(ij), grid%j_end(ij),  &
-                                  k_start, k_end                    )
-             ELSE
-               CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
-                                  grid%ru_m, grid%rv_m, config_flags,   &
-                                  grid%spec_zone,                  &
-                                  grid%ccn_conc,              & ! RAS
-                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
-                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
-                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                  grid%i_start(ij), grid%i_end(ij),  &
-                                  grid%j_start(ij), grid%j_end(ij),  &
-                                  k_start, k_end                    )
+              IF (is.EQ.P_QDCN.OR.is.EQ.P_QTCN.OR.is.EQ.P_QNIN) THEN    ! for ntu3m
+                 CALL flow_dep_bdy_fixed_inflow(scalar(ims,kms,jms,is),&
+                                       grid%ru_m,grid%rv_m,            &
+                                       config_flags,grid%spec_zone,ids,&
+                                       ide,jds,jde,kds,kde,ims,ime,jms,&
+                                       jme,kms,kme,ips,ipe,jps,jpe,kps,&
+                                       kpe,grid%i_start(ij),           &
+                                       grid%i_end(ij),grid%j_start(ij),&
+                                       grid%j_end(ij),k_start,k_end)
+              ELSEIF (is.EQ.P_QNN) THEN
+                 CALL flow_dep_bdy_qnn(scalar(ims,kms,jms,is),         &
+                                       grid%ru_m,grid%rv_m,            &
+                                       config_flags,grid%spec_zone,    &
+                                       grid%ccn_conc,ids,ide,jds,jde,  &
+                                       kds,kde,ims,ime,jms,jme,kms,kme,&
+                                       ips,ipe,jps,jpe,kps,kpe,        &
+                                       grid%i_start(ij),grid%i_end(ij),&
+                                       grid%j_start(ij),grid%j_end(ij),&
+                                       k_start,k_end)
+              ELSE
+                 CALL flow_dep_bdy(scalar(ims,kms,jms,is),grid%ru_m,   &
+                                   grid%rv_m,config_flags,             &
+                                   grid%spec_zone,ids,ide,jds,jde,kds, &
+                                   kde,ims,ime,jms,jme,kms,kme,ips,ipe,&
+                                   jps,jpe,kps,kpe,grid%i_start(ij),   &
+                                   grid%i_end(ij),grid%j_start(ij),    &
+                                   grid%j_end(ij),k_start,k_end)        ! for ntu3m
+!             IF(is .ne. P_QNN)THEN                                     ! for ntu3m
+!               !CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+!               CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
+!                                  grid%ru_m, grid%rv_m, config_flags,   &
+!                                  grid%spec_zone,                  &
+!                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
+!                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
+!                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+!                                  grid%i_start(ij), grid%i_end(ij),  &
+!                                  grid%j_start(ij), grid%j_end(ij),  &
+!                                  k_start, k_end                    )
+!             ELSE
+!               CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
+!                                  grid%ru_m, grid%rv_m, config_flags,   &
+!                                  grid%spec_zone,                  &
+!                                  grid%ccn_conc,              & ! RAS
+!                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
+!                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
+!                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+!                                  grid%i_start(ij), grid%i_end(ij),  &
+!                                  grid%j_start(ij), grid%j_end(ij),  &
+!                                  k_start, k_end                    ) ! for ntu3m
              ENDIF
 
            ENDIF
@@ -3881,6 +3921,21 @@ BENCH_START(micro_driver_tim)
 !       &        , QZH_CURR=scalar(ims,kms,jms,P_QZH), F_QZH=F_QZH          & ! "
       &        , QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG    & ! for nssl_2mom
       &        , QVOLH_CURR=scalar(ims,kms,jms,P_QVOLH), F_QVOLH=F_QVOLH    & ! for nssl_2mom
+      &        , QDCN_CURR=scalar(ims,kms,jms,P_QDCN), F_QDCN=F_QDCN      & ! for ntu3m
+      &        , QTCN_CURR=scalar(ims,kms,jms,P_QTCN), F_QTCN=F_QTCN      & ! for ntu3m
+      &        , QCCN_CURR=scalar(ims,kms,jms,P_QCCN), F_QCCN=F_QCCN      & ! for ntu3m
+      &        , QRCN_CURR=scalar(ims,kms,jms,P_QRCN), F_QRCN=F_QRCN      & ! for ntu3m
+      &        , QNIN_CURR=scalar(ims,kms,jms,P_QNIN), F_QNIN=F_QNIN      & ! for ntu3m
+      &        , FI_CURR=scalar(ims,kms,jms,P_FI), F_FI=F_FI              & ! for ntu3m
+      &        , FS_CURR=scalar(ims,kms,jms,P_FS), F_FS=F_FS              & ! for ntu3m
+      &        , VI_CURR=scalar(ims,kms,jms,P_VI), F_VI=F_VI              & ! for ntu3m
+      &        , VS_CURR=scalar(ims,kms,jms,P_VS), F_VS=F_VS              & ! for ntu3m
+      &        , VG_CURR=scalar(ims,kms,jms,P_VG), F_VG=F_VG              & ! for ntu3m
+      &        , AI_CURR=scalar(ims,kms,jms,P_AI), F_AI=F_AI              & ! for ntu3m
+      &        , AS_CURR=scalar(ims,kms,jms,P_AS), F_AS=F_AS              & ! for ntu3m
+      &        , AG_CURR=scalar(ims,kms,jms,P_AG), F_AG=F_AG              & ! for ntu3m
+      &        , AH_CURR=scalar(ims,kms,jms,P_AH), F_AH=F_AH              & ! for ntu3m
+      &        , I3M_CURR=scalar(ims,kms,jms,P_I3M), F_I3M=F_I3m          & ! for ntu3m
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
       &        , qicuten=grid%rqicuten, qccuten=grid%rqccuten             &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
@@ -4707,7 +4762,7 @@ BENCH_END(bc_2d_tim)
 
 ! CALL after_all_rk_steps ( grid, config_flags,                  &
 !                           moist, chem, tracer, scalar,         &
-!                           th_phy, pi_phy, p_phy, rho_phy,      &   
+!                           th_phy, pi_phy, p_phy,               &   
 !                           p8w, t8w, dz8w,                      &
 !                           curr_secs,                           &
 !                           diag_flag,                           &
@@ -5445,6 +5500,21 @@ BENCH_START(adj_micro_driver_tim)
 !       &        , QZH_CURR=scalar(ims,kms,jms,P_QZH), F_QZH=F_QZH          & ! "
       &        , QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG  & ! for nssl_2mom
       &        , QVOLH_CURR=scalar(ims,kms,jms,P_QVOLH), F_QVOLH=F_QVOLH  & ! for nssl_2mom
+      &        , QDCN_CURR=scalar(ims,kms,jms,P_QDCN), F_QDCN=F_QDCN      & ! for ntu3m
+      &        , QTCN_CURR=scalar(ims,kms,jms,P_QTCN), F_QTCN=F_QTCN      & ! for ntu3m
+      &        , QCCN_CURR=scalar(ims,kms,jms,P_QCCN), F_QCCN=F_QCCN      & ! for ntu3m
+      &        , QRCN_CURR=scalar(ims,kms,jms,P_QRCN), F_QRCN=F_QRCN      & ! for ntu3m
+      &        , QNIN_CURR=scalar(ims,kms,jms,P_QNIN), F_QNIN=F_QNIN      & ! for ntu3m
+      &        , FI_CURR=scalar(ims,kms,jms,P_FI), F_FI=F_FI              & ! for ntu3m
+      &        , FS_CURR=scalar(ims,kms,jms,P_FS), F_FS=F_FS              & ! for ntu3m
+      &        , VI_CURR=scalar(ims,kms,jms,P_VI), F_VI=F_VI              & ! for ntu3m
+      &        , VS_CURR=scalar(ims,kms,jms,P_VS), F_VS=F_VS              & ! for ntu3m
+      &        , VG_CURR=scalar(ims,kms,jms,P_VG), F_VG=F_VG              & ! for ntu3m
+      &        , AI_CURR=scalar(ims,kms,jms,P_AI), F_AI=F_AI              & ! for ntu3m
+      &        , AS_CURR=scalar(ims,kms,jms,P_AS), F_AS=F_AS              & ! for ntu3m
+      &        , AG_CURR=scalar(ims,kms,jms,P_AG), F_AG=F_AG              & ! for ntu3m
+      &        , AH_CURR=scalar(ims,kms,jms,P_AH), F_AH=F_AH              & ! for ntu3m
+      &        , I3M_CURR=scalar(ims,kms,jms,P_I3M), F_I3M=F_I3m          & ! for ntu3m
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
       &        , qicuten=grid%rqicuten                                    &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce

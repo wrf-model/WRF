@@ -604,8 +604,8 @@
       endif
       if ( De .gt. 26.0 ) then 
         Ptau =  (2.8355 + (100.0-De)*0.006)*solarangle - 0.00612
-        Ptau = max(Ptau, PTAU_MIN)
       endif
+      Ptau = max(Ptau, PTAU_MIN)
 
       PDHI = 1047.6367*solarangle**1.0883
 

@@ -5505,7 +5505,7 @@ END SUBROUTINE nonlocal_flux
     :: i, j, k, ktf, i_start, i_end, j_start, j_end
 
     REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 )  &
-    :: xkxavg
+    :: xkxavg, rhoavg
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -5538,10 +5538,11 @@ END SUBROUTINE nonlocal_flux
     DO j = j_start, j_end
     DO k = kts, ktf
     DO i = i_start, i_end
-      xkxavg(i,k,j) = 0.25 * ( xkx(i-1,k,j  ) + xkx(i,k,j  ) +  &
+      rhoavg(i,k,j) = 0.25 * ( rho(i-1,k,j  ) + rho(i,k,j  ) +  &
+                               rho(i-1,k,j-1) + rho(i,k,j-1) )
+      xkxavg(i,k,j) = rhoavg(i,k,j) *                           &
+                      0.25 * ( xkx(i-1,k,j  ) + xkx(i,k,j  ) +  &
                                xkx(i-1,k,j-1) + xkx(i,k,j-1) )
-      xkxavg(i,k,j) = xkxavg(i,k,j) * .25 * ( rho(i-1,k,j  ) + rho(i,k,j  )  +  &
-                                              rho(i-1,k,j-1) + rho(i,k,j-1) )
     END DO
     END DO
     END DO
@@ -5554,7 +5555,7 @@ END SUBROUTINE nonlocal_flux
       DO k = kts, ktf
       DO i = i_start, i_end
 
-        titau(i,k,j) = rho(i,k,j) * mtau(i,k,j)
+        titau(i,k,j) = rhoavg(i,k,j) * mtau(i,k,j)
 
       END DO
       END DO
@@ -5568,7 +5569,7 @@ END SUBROUTINE nonlocal_flux
         DO k = kts, ktf
         DO i = i_start, i_end
           titau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)
-          mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rho(i,k,j)
+          mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rhoavg(i,k,j)
 
         END DO
         END DO
@@ -5650,7 +5651,7 @@ END SUBROUTINE nonlocal_flux
     :: i, j, k, ktf, i_start, i_end, j_start, j_end
 
     REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 )  &
-    :: xkxavg
+    :: xkxavg, rhoavg
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -5683,10 +5684,11 @@ END SUBROUTINE nonlocal_flux
     DO j = j_start, j_end
     DO k = kts+1, ktf
     DO i = i_start, i_end
-      xkxavg(i,k,j) = 0.5 * ( fnm(k) * ( xkx(i,k  ,j) + xkx(i-1,k  ,j) ) +  &
+      rhoavg(i,k,j) = 0.5 * ( fnm(k) * ( rho(i-1,k  ,j) + rho(i,k  ,j) ) + &
+                              fnp(k) * ( rho(i-1,k-1,j) + rho(i,k-1,j) ) )
+      xkxavg(i,k,j) = rhoavg(i,k,j)  *                                     &
+                      0.5 * ( fnm(k) * ( xkx(i,k  ,j) + xkx(i-1,k  ,j) ) + &
                               fnp(k) * ( xkx(i,k-1,j) + xkx(i-1,k-1,j) ) )
-      xkxavg(i,k,j) = xkxavg(i,k,j) * 0.5 * ( fnm(k) * ( rho(i-1,k  ,j) + rho(i,k  ,j) ) + &
-                                              fnp(k) * ( rho(i-1,k-1,j) + rho(i,k-1,j) ) )
     END DO
     END DO
     END DO
@@ -5696,7 +5698,7 @@ END SUBROUTINE nonlocal_flux
       DO j = j_start, j_end
       DO k = kts+1, ktf
       DO i = i_start, i_end
-         titau(i,k,j) = rho(i,k,j) * mtau(i,k,j)
+         titau(i,k,j) = rhoavg(i,k,j) * mtau(i,k,j)
       ENDDO
       ENDDO
       ENDDO
@@ -5710,7 +5712,7 @@ END SUBROUTINE nonlocal_flux
         DO i = i_start, i_end
 
           titau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)
-          mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rho(i,k,j)
+          mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rhoavg(i,k,j)
 
         ENDDO
         ENDDO
@@ -5799,7 +5801,7 @@ END SUBROUTINE nonlocal_flux
     :: i, j, k, ktf, i_start, i_end, j_start, j_end
 
     REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 )  &
-    :: xkxavg
+    :: xkxavg, rhoavg
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -5832,10 +5834,11 @@ END SUBROUTINE nonlocal_flux
     DO j = j_start, j_end
     DO k = kts+1, ktf
     DO i = i_start, i_end
-      xkxavg(i,k,j) = 0.5 * ( fnm(k) * ( xkx(i,k  ,j) + xkx(i,k  ,j-1) ) +  &
+      rhoavg(i,k,j) = 0.5 * ( fnm(k) * ( rho(i,k  ,j) + rho(i,k  ,j-1) ) + &
+                              fnp(k) * ( rho(i,k-1,j) + rho(i,k-1,j-1) ) )
+      xkxavg(i,k,j) = rhoavg(i,k,j)  *                                     &
+                      0.5 * ( fnm(k) * ( xkx(i,k  ,j) + xkx(i,k  ,j-1) ) + &
                               fnp(k) * ( xkx(i,k-1,j) + xkx(i,k-1,j-1) ) )
-      xkxavg(i,k,j) = xkxavg(i,k,j) * 0.5 * ( fnm(k) * ( rho(i,k  ,j) + rho(i,k  ,j-1) ) +  &
-                                              fnp(k) * ( rho(i,k-1,j) + rho(i,k-1,j-1) ) )
     END DO
     END DO
     END DO
@@ -5846,7 +5849,7 @@ END SUBROUTINE nonlocal_flux
       DO k = kts+1, ktf
       DO i = i_start, i_end
 
-        titau(i,k,j) =  rho(i,k,j) * mtau(i,k,j)
+        titau(i,k,j) =  rhoavg(i,k,j) * mtau(i,k,j)
 
       END DO
       END DO
@@ -5861,7 +5864,7 @@ END SUBROUTINE nonlocal_flux
         DO i = i_start, i_end
 
           titau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)
-          mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rho(i,k,j)
+          mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rhoavg(i,k,j)
 
         END DO
         END DO
@@ -8096,13 +8099,7 @@ END SUBROUTINE phy_bc
     ENDDO
  
   CASE (1) ! use surface heat flux computed from surface routine
-    DO j = j_start, j_end
-    DO i = i_start, i_end
-       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
-       heat_flux = hfx(i,j)/cpm/rho(i,1,j)
-    ENDDO
-    ENDDO
- 
+    ! do nothing
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
   END SELECT hflux

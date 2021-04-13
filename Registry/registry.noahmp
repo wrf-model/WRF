@@ -12,6 +12,7 @@ state    real   fwetxy     ij      -       1      -     i02rhd=(interp_mask_fiel
 state    real   sneqvoxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "sneqvo"     "snow mass at last time step"         "mm"
 state    real   alboldxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "albold"     "snow albedo at last timestep"        "-"
 state    real   qsnowxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "qsnowxy"    "snowfall on the ground"              "mm/s"
+state    real   qrainxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "qrainxy"    "rainfall on the ground"              "mm/s"
 state    real   wslakexy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wslake"     "lake water storage"                  "mm"
 state    real   zwtxy      ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "zwt"        "water table depth"                   "m"
 state    real   waxy       ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wa"         "water in the acquifer"               "mm"
@@ -110,3 +111,20 @@ state integer   pgsxy      ij      -       1      -     rh                      
 
 # Gecros crop model only
 state    real    gecros_state i{gecros}j  -       1      Z     rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "gecros"      "gecros state array"         "-"
+
+#Noah-MP Irrigation
+state    real   IRFRACT    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRFRACT"     "Irrigation fraction"            ""
+state    real   SIFRACT    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SIFRACT"     "Sprinkler Irrigation fraction"            ""
+state    real   MIFRACT    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "MIFRACT"     "Micro Irrigation fraction"            ""
+state    real   FIFRACT    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "FIFRACT"     "Flood Irrigation fraction"            ""
+state  integer  IRNUMSI    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRNUMSI"     "Sprinkler Irrigation Event Count" ""
+state  integer  IRNUMMI    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRNUMMI"     "Micro Irrigation Event Count" ""
+state  integer  IRNUMFI    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRNUMFI"     "Flood Irrigation Event Count" ""
+state    real   IRWATSI    ij      -       1      -     r                                                           "IRWATSI"     "Sprinkler Irrigation Amount for the Event"     "m"
+state    real   IRWATMI    ij      -       1      -     r                                                           "IRWATMI"     "Micro Irrigation Amount for the Event"     "m"
+state    real   IRWATFI    ij      -       1      -     r                                                           "IRWATFI"     "Flood Irrigation Amount for the Event"     "m"
+state    real   IRSIVOL    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRSIVOL"     "Sprinkler Irrigation Water Accumulated"     "mm"
+state    real   IRMIVOL    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRMIVOL"     "Micro Irrigation Water Accumulated"     "mm"
+state    real   IRFIVOL    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRFIVOL"     "Flood Irrigation Water Accumulated"     "mm"
+state    real   IRELOSS    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRELOSS"     "Sprinkler Evaporation Loss Accumulated"     "mm"
+state    real   IRRSPLH    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRRSPLH"     "Sprinkler Evaporation Loss Accumulated"     "Joules m^-2"

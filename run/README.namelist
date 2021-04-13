@@ -273,8 +273,9 @@ Namelist variables specifically for the WPS input for real:
  vert_refine_fact                    = 1        ! vertical refinement factor for ndown, not used for concurrent vertical grid refinement
  vert_refine_method (max_dom)        = 0        ! vertical refinement method (new in 3.7)
                                                   0: no vertical refinement
-                                                  1: integer vertical refinement
-                                                  2: use specified or computed eta levels for vertical refinement
+                                                  1: integer vertical refinement (must set rebalance=1)
+                                                  2: use specified or computed eta levels for vertical refinement (must set rebalance=1)
+ rebalance                           = 0        ! must be set to =1 if vertical nesting is used. 
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
@@ -522,9 +523,12 @@ Namelist variables for controlling the adaptive time step option:
                                      = 50, P3 1-ice category, 1-moment cloud water
                                      = 51, P3 1-ice category plus double-moment cloud water
                                      = 52, P3 2-ice categories plus double-moment cloud water
+                                     = 53, P3 1-ice category, 3-moment cloud water
                                      = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
                                            for each ice
+                                     = 56, NTU multi-moment scheme  ! for ntu3m
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
+                                     = 96, Madwrf
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
@@ -559,6 +563,11 @@ Namelist variables for controlling the adaptive time step option:
  use_mp_re                           = 1       ! whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
                                                  0: do not use; 1: use effective radii
                                                  (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21,28)
+
+ CCNTY                               = 1       ! for aerosol background type, marine,  for ntu3m
+                                     = 2       ! continental clean (default), for ntu3m
+                                     = 3       ! continental average, for ntu3m
+                                     = 4       ! continental urban, for ntu3m
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
@@ -596,6 +605,8 @@ Namelist variables for controlling the adaptive time step option:
                                               use the same value for all nests.                      
  cldovrlp                            = 2,   ! cloud overlapping option for RRTMG only. 1=random, 2=maximum-random (default), 
                                               3=maximum, 4=exponential, 5=exponential-random
+ ra_sw_eclipse                       = 0,   ! eclipse effect on shortwave radiation. 0: off, 1: on. 
+                                              Applies to RRTMG, Goddard, old Goddard and Dudhia schemes
 
  nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
                                                 calls to shortwave radiation; the value
@@ -678,6 +689,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, RUC land-surface model
                                      = 4, Noah-MP land-surface model (see additional &noah_mp namelist)
                                      = 5, Community Land Model version 4 (CLM4), adapted from CAM
+                                     = 6, Community Terrestrial Systems Model (CTSM). See doc/README.CTSM for info on running this option.
                                      = 7, Pleim-Xiu LSM (ARW)
                                      = 8, Simplified Simple Biosphere Model (SSiB) 
                                           - can be used with Dudhia/RRTM, CAM or RRTMG radiation options
@@ -686,9 +698,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0: no
                                      = 1: Single-layer, UCM 
                                      = 2: Multi-layer, Building Environment Parameterization (BEP) scheme 
-                                          (works only with MYJ and BouLac PBL)
+                                          (works only with YSU, MYJ and BouLac PBL)
                                      = 3: Multi-layer, Building Environment Model (BEM) scheme 
-                                          (works only with MYJ and BouLac PBL)
+                                          (works only with YSU, MYJ and BouLac PBL)
 
  num_urban_ndm                       = 1! (=  2 if BEP or BEM active) maximum number of street dimensions (ndm in BEP or BEM header)
  num_urban_ng                        = 1! (= 10 if BEP or BEM active) number of grid levels in the ground (ng_u in BEP or BEM header)
@@ -730,6 +742,8 @@ Namelist variables for controlling the adaptive time step option:
                                           sf_sfclay_physics=10
                                      = 11, Shin-Hong 'scale-aware' PBL scheme
                                      = 12, Grenier-Bretherton-McCaa scheme (ARW only)
+                                     = 16, TKE+TKE dissipation rate (epsilon) scheme (ARW only)
+                                           works with surface layer options 1,91,2,5.
                                      = 93, 2015 GFS scheme (NMM only)
                                      = 99, MRF scheme
 
@@ -819,6 +833,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Grell 3D ensemble scheme (use with cu_physics=93 or 5) (PLACEHOLDER: SWITCH NOT YET IMPLEMENTED--use ishallow)
                                      = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
                                      = 3, GRIMS shallow cumulus from YSU group
+                                     = 4, NSAS shallow cululus scheme. Must be used with KIAPS SAS cumulus scheme (cu_physics = 14)
                                      = 5, Deng cumulus scheme (including both shallow and deep convections) from PSU and WRF-Solar.
                                           However the deep part isn't very active. Not recommended to use alone for deep convection 
                                           case. Could work well for grid sizes 3-9 km.
@@ -907,6 +922,11 @@ Namelist variables for controlling the adaptive time step option:
                                                       on threshold
                                                   3 = with cloud effect, and use cloud fraction option 3, based on
                                                       Sundqvist et al. (1989) (since 3.7)
+ insert_init_cloud                   = .false., ! Default
+                                     = .true.,  ! For use with cold start (zero cloud fields), this option will
+                                                  use the icloud=3 scheme to produce initial cloud water and cloud
+                                                  ice fields as well as ensure initial water vapor field matches
+                                                  saturation, which retains clouds beyond the first few timesteps.
  swrad_scat                          = 1.       ! scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 3,	! where landuse and soil category data come from:
@@ -927,6 +947,13 @@ Namelist variables for controlling the adaptive time step option:
                                                   28 - for USGS if including lake category
                                                   21 - for MODIS if including lake category (default since 3.8)
 						  40 - for NCLD
+ use_wudapt_lcz                      = 0,       ! Option to use WUDAPT LCZ urban landuse categories, along with standard
+						  urban classes (31-33). 
+                                                  = 0: use the traditional 33 landuse classes (31-33 for urban)
+                                                  = 1: use the WUDAPT LCZ urban landuse categories
+							* Note: If the number of urban category in the input files is
+							  inconsistent with the namelist option, error messages will occur.
+							  The method to create the LCZ data is described here: http://www.wudapt.org/
  num_soil_cat                        = 16,      ! number of soil categories in input data
 
  pxlsm_smois_init(max_dom)           = 1        ! PXLSM Soil moisture initialization option 
@@ -1070,6 +1097,12 @@ Namelist variables for lake module:
  iccg_prescribed_den (max_dom)       = 1.       ! Denominator of user-specified prescribed IC:CG
  ltng_temp_upper                     = -45.     ! Temperature (C) of upper peak of LNOx vertical distribution for IC lightning (used by &chem lnox_opt=2).
  ltng_temp_lower                     = -15.     ! Temperatures (C) of lower peak of LNOx vertical distribution for both IC and CG lightning (used by &chem lnox_opt=2).
+
+ madwrf_opt = 0         ! MAD-WRF model: 0) Off, 1) Advect/diffuse hydrometeors (qcloud, qice, qsnow),  2) Nudge advected/diffused hydrometeors to model state.
+ madwrf_dt_relax = 60.0 ! Relaxation time for hydrometeor nudging [s]
+ madwrf_dt_nudge = 60.0 ! Temporal period for hydrometeor nudging [min]
+ madwrf_cldinit = 0     ! Enhance cloud initialization: 0: Off, 1: On
+
 
 Options for wind turbine drag parameterization:
 
@@ -1228,6 +1261,7 @@ Options for use with the Noah-MP Land Surface Model:
                                                      2 = BATS:  Snow when SFCTMP < TFRZ+2.2
                                                      3 = Snow when SFCTMP < TFRZ
                                                      4 = Use WRF precipitation partitioning
+                                                     5 = Use wetbulb temperature (Wang et al., 2019 GRL)
  opt_tbot                           = 2,        ! Noah-MP Soil Temperature Lower Boundary Condition
                                                      1 = Zero heat flux
                                                      2 = TBOT at 8 m from input file
@@ -1257,6 +1291,19 @@ Options for use with the Noah-MP Land Surface Model:
                                                      0 -> No crop model, will run default dynamic vegetation
                                                      1 -> Liu, et al. 2016
                                                      2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
+ 
+ opt_irr                            = 0,        !  options for irrigation scheme
+                                                           geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+	                                             0 -> No irrigation
+                                                     1 -> Irrigation ON
+                                                     2 -> irrigation trigger based on crop season Planting and harvesting dates
+                                                     3 -> irrigation trigger based on LAI threshold
+ opt_irrm                           = 0,        !  options for irrigation method (only if opt_irr > 0)
+                                                           geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                     0 -> method based on geo_em fractions (all three methods are ON)
+                                                     1 -> sprinkler method
+                                                     2 -> micro/drip irrigation
+                                                     3 -> surface flooding  
  /
 
  &fdda
@@ -1424,6 +1471,13 @@ The following are for observation nudging:
  rk_ord                              = 3,	! time-integration scheme option:
                                                   2 = Runge-Kutta 2nd order
                                                   3 = Runge-Kutta 3rd order
+ zadvect_implicit                    = 0,       ! toggle off on [0/1] the IEVA scheme. Default off.
+ w_crit_cfl                          = 1.2      ! default vertical courant number where vertical velocity damping begins (see below).
+                                                !   when zadvect_implicit is on, value can be ~ 2.0
+ zdamp (max_dom)                     = 5000.,	! damping depth (m) from model top
+ w_damping                           = 0,       ! vertical velocity damping flag (for operational use)
+                                                  0 = without damping
+                                                  1 = with    damping
  diff_opt(max_dom)                   = 0,	! turbulence and mixing option:
                                                   0 = no turbulence or explicit
                                                       spatial numerical filters (km_opt IS IGNORED).
@@ -1472,10 +1526,6 @@ The following are for observation nudging:
  diff_6th_slopeopt (max_dom)         = 0        ! if set to =1, turns on 6th-order numerical diffusion - terrain-slope tapering. default is 0=off
  diff_6th_thresh (max_dom)           = 0.10     ! slope threshold (m/m) that turns off 6th order diff in steep terrain
  dampcoef (max_dom)                  = 0.,	! damping coefficient (see above)
- zdamp (max_dom)                     = 5000.,	! damping depth (m) from model top
- w_damping                           = 0,       ! vertical velocity damping flag (for operational use)
-                                                  0 = without damping
-                                                  1 = with    damping
  base_temp                           = 290.,    ! real-data, em ONLY, base sea-level temp (K)
  base_pres                           = 10^5     ! real-data, em ONLY, base sea-level pres (Pa), DO NOT CHANGE
  base_lapse                          = 50.,     ! real-data, em ONLY, lapse rate (K), DO NOT CHANGE
@@ -1517,6 +1567,7 @@ The following are for observation nudging:
  chem_adv_opt (max_dom)              = 1        ! for chem variables
  tracer_adv_opt (max_dom)            = 1        ! for tracer variables (WRF-Chem activated)
  tke_adv_opt (max_dom)               = 1        ! for tke
+ phi_adv_z (max_dom)                 = 1        ! vertical advection option for geopotential; 1: original (default) 2: avoid double staggering of omega
  moist_mix2_off (max_dom)            = .false.  ! if set to T, deactivate 2nd-order horizontal mixing for moisture. default is F.
  chem_mix2_off (max_dom)             = .false.  ! if set to T, deactivate 2nd-order horizontal mixing for chem species. default is F.
  tracer_mix2_off (max_dom)           = .false.  ! if set to T, deactivate 2nd-order horizontal mixing for tracers. default is F. 
@@ -1551,6 +1602,8 @@ The following are for observation nudging:
  gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
                                      = 1       ; for running the WRF-ARW with its gravity wave drag
                                      = 2       ; for running the WRF-NMM with its gravity wave drag
+                                     = 3       ; NOAA/GSL gravity wave drag and turbulent orographic form drag
+ gwd_diags                           = 0       ; set to 1 to output diagnostics for gwd_opt = 3
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
                                      = 1       ! NBA1 using diagnostic stress terms (km_opt=2,3 for scalars)
                                      = 2       ! NBA2 using tke-based stress terms (km_opt=2 needed)

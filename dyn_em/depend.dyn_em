@@ -193,12 +193,15 @@ module_initialize_scm_xy.o : \
 module_initialize_real.o :  \
 		nest_init_utils.o	\
 		module_polarfft.o \
+		../phys/module_madwrf.o \
 		../share/module_llxy.o	\
+		../frame/module_dm.o \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_state_description.o \
 		../frame/module_timing.o \
 		../frame/module_dm.o \
+		../phys/module_radiation_driver.o \
 		../share/module_io_domain.o \
 		../share/module_model_constants.o \
 		../share/module_bc.o \

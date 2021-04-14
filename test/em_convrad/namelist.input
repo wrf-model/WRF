@@ -62,7 +62,7 @@
  cudt                                = 0,
  bucket_mm                           =10.,
  bucket_J                            =1.e8,
- fractional_seaice		     = 0,
+ fractional_seaice		                 = 0,
  /
 
  &fdda

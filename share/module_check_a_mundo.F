@@ -859,6 +859,20 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If fractional_seaice == 1, cannot have the simple land model slab 
+! scheme activated.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec%fractional_seaice     .EQ. 1          ) .AND. &
+           ( model_config_rec%sf_surface_physics(1) .EQ. SLABSCHEME ) ) THEN
+         wrf_err_message = '--- ERROR: fractional seaice does not work with simple slab thermal diffusion land model'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '--- ERROR: Change either fractional_seaice=1 OR sf_surface_physics=1'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! Check that if fine_input_stream /= 0, io_form_auxinput2 must also be in use
 !-----------------------------------------------------------------------
 

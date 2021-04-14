@@ -53,7 +53,7 @@
  cu_physics                          = 0,
  cudt                                = 0,
  isftcflx                            = 1,
- fractional_seaice		     = 0,
+ fractional_seaice		       = 0,
  /
 
  &fdda

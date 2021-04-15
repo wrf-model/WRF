@@ -2596,9 +2596,6 @@ CONTAINS
            ENDDO
            ENDDO
 
-           IF ( FRACTIONAL_SEAICE == 1 ) THEN
-              CALL wrf_error_fatal('SLAB scheme cannot be used with fractional seaice')
-           ENDIF
         CALL wrf_debug(100,'in SLAB')
           CALL SLAB(t_phy,qv_curr,p_phy,flhc,flqc,  &
              psfc,xland,tmn,hfx,qfx,lh,tsk,qsfc,chklowq,          &

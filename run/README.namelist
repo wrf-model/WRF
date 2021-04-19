@@ -169,6 +169,7 @@ For automatic moving nests: requires special input data, and environment variabl
                                                   set time_step = 60, time_step_fract_num = 3, and 
                                                   time_step_fract_den = 10
  time_step_dfi                       = 60,	! time step for DFI, may be different from regular time_step
+ reasonable_time_step_ratio          = 6.,	! Any d01, real-data case with a time step ratio larger than this is stopped. Except for specific circumstances (e.g., using IEVA), this value should be no larger than 6 (default). 
  max_dom                             = 1,	! number of domains - set it to > 1 if it is a nested run
  s_we (max_dom)                      = 1,	! start index in x (west-east) direction (leave as is)
  e_we (max_dom)                      = 91,	! end index in x (west-east) direction (staggered dimension)

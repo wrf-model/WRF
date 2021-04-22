@@ -1,7 +1,7 @@
 !WRF:MODEL_LAYER:PHYSICS
 
 
-! prepocessed on "Apr 20 2021" at "11:08:07"
+! prepocessed on "Apr 22 2021" at "00:17:12"
 
 
 
@@ -922,6 +922,7 @@ MODULE module_mp_nssl_2mom
 
       logical, parameter :: do_satadj_for_wrfchem = .true.
 
+
 ! Note to users: Many of these options are for development and not guaranteed to perform well.
 ! Some may not be functional depending on the version of the code.
 ! Some may be useful for ensemble physics diversity. Feel free to contact me if you have questions
@@ -1121,8 +1122,10 @@ MODULE module_mp_nssl_2mom
 
    integer, intent(in) :: ipctmp,mixphase,ihvol
    logical, optional, intent(in) :: idoniconlytmp
-   logical :: wrote_namelist = .false.
-   logical :: wrf_dm_on_monitor
+
+    logical :: wrote_namelist = .false.
+    logical :: wrf_dm_on_monitor
+
      double precision :: arg
      real    :: temq
      integer :: igam
@@ -1190,7 +1193,7 @@ MODULE module_mp_nssl_2mom
           close(15)
           wrote_namelist = .true.
         ENDIF
-      ENDIF
+       ENDIF
 
 
 
@@ -1971,13 +1974,12 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                               diagflag,ke_diag,                                         &
                               nssl_progn,                                              & ! wrf-chem 
 ! 20130903 acd_mb_washout start
-                              rainprod, evapprod,                                       & ! wrf-chem 
+                              wetscav_on, rainprod, evapprod,                           & ! wrf-chem 
 ! 20130903 acd_mb_washout end
                               cu_used, qrcuten, qscuten, qicuten, qccuten,              & ! hm added
                               ids,ide, jds,jde, kds,kde,                                &  ! domain dims
                               ims,ime, jms,jme, kms,kme,                                &  ! memory dims
                               its,ite, jts,jte, kts,kte)                                   ! tile dims
-
 
 
 
@@ -2036,8 +2038,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                             SNOWNC,SNOWNCV,GRPLNC,GRPLNCV,SR        ! accumulated precip (NC) and rate (NCV)
       real, dimension(ims:ime, jms:jme), optional, intent(inout)::                                 &
                             HAILNC,HAILNCV ! accumulated precip (NC) and rate (NCV)
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional, INTENT(INOUT):: &
-                          re_cloud, re_ice, re_snow
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional, INTENT(INOUT)::  re_cloud, re_ice, re_snow
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional, INTENT(IN):: tkediss
       INTEGER, INTENT(IN), optional :: has_reqc, has_reqi, has_reqs
       real, dimension(ims:ime, jms:jme), intent(out), optional ::                                 &
@@ -2067,6 +2068,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 ! mu : air mass in column
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional, INTENT(IN):: qrcuten, qscuten, qicuten, qccuten
    INTEGER, optional, intent(in) :: cu_used
+   LOGICAL, optional, intent(in) :: wetscav_on
 
 !
 ! local variables
@@ -2112,6 +2114,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
       double precision :: timevtcalc,timesetvt
       
       logical :: f_cnatmp, f_cinatmp
+      logical :: has_wetscav
 
       integer :: kediagloc
       integer :: iunit
@@ -2321,6 +2324,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
           IF ( lhl > 1 ) an(ix,1,kz,lhl)  = qhl(ix,kz,jy)
           IF ( lccn > 1 ) THEN
            IF ( is_aerosol_aware .and. flag_qnwfa ) THEN
+            ! 
            ELSEIF ( present( cn ) ) THEN
              IF ( lccna > 1 .and. .not. ( present( cna ) .and. f_cnatmp ) ) THEN
                an(ix,1,kz,lccna) = cn(ix,kz,jy)
@@ -2485,9 +2489,15 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
         ENDDO ! ix
        ENDDO ! kz
 
+         has_wetscav = .false.
          IF ( wrfchem_flag > 0 ) THEN
-           IF ( PRESENT( rainprod ) ) rainprod2d(its:ite,kts:kte) = 0
-           IF ( PRESENT( evapprod ) ) evapprod2d(its:ite,kts:kte) = 0
+           IF ( PRESENT( wetscav_on ) ) THEN
+             has_wetscav = wetscav_on
+             IF ( has_wetscav ) THEN
+               IF ( PRESENT( rainprod ) ) rainprod2d(its:ite,kts:kte) = 0
+               IF ( PRESENT( evapprod ) ) evapprod2d(its:ite,kts:kte) = 0
+             ENDIF
+           ENDIF
          ENDIF
          
 
@@ -2620,7 +2630,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
      &   cdx,                              &
      &   xdn0,dbz2d,tke2d,                 &
      &   timevtcalc,axtra2d, makediag        &
-     &   ,rainprod2d, evapprod2d           &
+     &   ,has_wetscav,rainprod2d, evapprod2d  &
      & ,elec2,its,ids,ide,jds,jde          &
      & )
       ENDIF
@@ -2761,6 +2771,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
          IF ( lhl > 1 ) qhl(ix,kz,jy) = an(ix,1,kz,lhl)
          
          IF ( lccn > 1 .and. is_aerosol_aware .and. flag_qnwfa ) THEN
+           ! not used here
          ELSEIF ( present( cn ) .and. lccn > 1 .and. .not. flag_qndrop) THEN
             IF ( lccna > 1 .and. .not. present( cna ) ) THEN
               cn(ix,kz,jy) = Max(0.0, an(ix,1,kz,lccna) )
@@ -2780,7 +2791,6 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
            ENDIF
          ENDIF
 
-
          IF ( ipconc >= 5 ) THEN
 
           ccw(ix,kz,jy) = an(ix,1,kz,lnc)
@@ -2797,7 +2807,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
          IF ( lvh > 0 )  vhw(ix,kz,jy) = an(ix,1,kz,lvh)
          IF ( lvhl > 0 .and. present( vhl ) ) vhl(ix,kz,jy) = an(ix,1,kz,lvhl)
 
-         IF ( wrfchem_flag > 0 ) THEN
+         IF ( has_wetscav ) THEN
            IF ( PRESENT( rainprod ) ) rainprod(ix,kz,jy) = rainprod2d(ix,kz)
            IF ( PRESENT( evapprod ) ) evapprod(ix,kz,jy) = evapprod2d(ix,kz)
          ENDIF
@@ -10000,7 +10010,7 @@ END SUBROUTINE nssl_2mom_driver
      &   cdx,                              &
      &   xdn0,tmp3d,tkediss  &
      & ,timevtcalc,axtra,io_flag  &
-     & ,rainprod2d, evapprod2d &
+     & , has_wetscav,rainprod2d, evapprod2d &
      & ,elec,its,ids,ide,jds,jde &
      & )
 
@@ -10080,6 +10090,7 @@ END SUBROUTINE nssl_2mom_driver
       integer nxend,nyend,nzend,nzbeg
       integer :: my_rank = 0
       integer, parameter :: myprock = 1, nprock = 1
+      logical, intent(in) :: has_wetscav
       real rainprod2d(-nor+1:nx+nor,-norz+ng1:nz+norz)
       real evapprod2d(-nor+1:nx+nor,-norz+ng1:nz+norz)
 
@@ -18934,7 +18945,7 @@ END SUBROUTINE nssl_2mom_driver
       end if
 
 
-      IF ( wrfchem_flag > 0 ) THEN
+      IF ( has_wetscav ) THEN
         DO mgs = 1,ngscnt
          evapprod2d(igs(mgs),kgs(mgs)) = -(qrcev(mgs) + qssbv(mgs)  + qhsbv(mgs) + qhlsbv(mgs)) 
          rainprod2d(igs(mgs),kgs(mgs)) = qrcnw(mgs) + qracw(mgs) + qsacw(mgs) + qhacw(mgs) + qhlacw(mgs) + &

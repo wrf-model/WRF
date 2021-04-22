@@ -5160,7 +5160,7 @@ END SUBROUTINE vertical_diffusion_s
   DO j = j_start,j_end
   DO i = i_start,i_end
      IF(pblflg(i,j))THEN
-       k = kpbl(i,j) - 1
+       k = max(kpbl(i,j) - 1,1)
        wm3           = wstar3(i,j) + 5. * ust(i,j)**3
        wm2(i,j)      = wm3**h2
        bfxpbl(i,j)   = -0.15*thv(i,1,j)/g*wm3/hpbl(i,j)
@@ -5175,7 +5175,7 @@ END SUBROUTINE vertical_diffusion_s
        delb          = govrth(i,j)*dthv(i,j)
  
        deltaoh(i,j)  = d1*hpbl(i,j) + d2*wm2(i,j)/delb
-       deltaoh(i,j)  = max(ezfac*deltaoh(i,j),hpbl(i,j)-za(i,kpbl(i,j)-1,j)-1.)
+       deltaoh(i,j)  = max(ezfac*deltaoh(i,j),hpbl(i,j)-za(i,k,j)-1.)
        deltaoh(i,j)  = min(deltaoh(i,j), hpbl(i,j))
  
        if ((du .ne. 0) .or. (dv .ne. 0)) then

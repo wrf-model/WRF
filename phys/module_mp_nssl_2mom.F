@@ -1,15 +1,6 @@
 !WRF:MODEL_LAYER:PHYSICS
 
 
-! prepocessed on "Apr 22 2021" at "00:17:12"
-
-
-
-
-
-
-
-
 !---------------------------------------------------------------------
 ! IMPORTANT: Best results are attained using the 5th-order WENO (Weighted Essentially Non-Oscillatory) advection option (4) for scalars:
 ! moist_adv_opt                       = 4,
@@ -174,7 +165,7 @@ MODULE module_mp_nssl_2mom
   logical, private :: cleardiag = .false.
   PRIVATE
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   integer, parameter :: wrfchem_flag = 1
 #else
   integer, parameter :: wrfchem_flag = 0
@@ -2615,7 +2606,6 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 !      IF ( isedonly /= 2 ) THEN
 
 
-      IF ( .true. ) THEN
       call nssl_2mom_gs   &
      &  (nx,ny,nz,na,jy   &
      &  ,nor,nor          &
@@ -2630,10 +2620,9 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
      &   cdx,                              &
      &   xdn0,dbz2d,tke2d,                 &
      &   timevtcalc,axtra2d, makediag        &
-     &   ,has_wetscav,rainprod2d, evapprod2d  &
-     & ,elec2,its,ids,ide,jds,jde          &
+     &   ,has_wetscav, rainprod2d, evapprod2d  &
+     &   ,elec2,its,ids,ide,jds,jde          &
      & )
-      ENDIF
 
 
 
@@ -2807,10 +2796,12 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
          IF ( lvh > 0 )  vhw(ix,kz,jy) = an(ix,1,kz,lvh)
          IF ( lvhl > 0 .and. present( vhl ) ) vhl(ix,kz,jy) = an(ix,1,kz,lvhl)
 
+#if ( WRF_CHEM == 1 )
          IF ( has_wetscav ) THEN
            IF ( PRESENT( rainprod ) ) rainprod(ix,kz,jy) = rainprod2d(ix,kz)
            IF ( PRESENT( evapprod ) ) evapprod(ix,kz,jy) = evapprod2d(ix,kz)
          ENDIF
+#endif
 
         ENDDO
        ENDDO
@@ -16497,70 +16488,6 @@ END SUBROUTINE nssl_2mom_driver
         
         ELSEIF ( ihlcnh == 3 ) THEN !{
          
-          IF ( wtest  .and. &
-               ( qhacw(mgs)*dtp > qxmin(lh) .and. temg(mgs) .lt. tfr-2. .and. qx(mgs,lh) > hlcnhqmin ) ) THEN
-        ! convert number, mass, and reflectivity for d > dw
-           IF ( ipconc == 5 ) THEN
-             dg0(mgs) = Min( dg0(mgs), hldia1 )
-             !dg0(mgs) = hldia1
-           ENDIF
-           
-           ratio = Min( maxratiolu, dg0(mgs)/xdia(mgs,lh,1) )
-
-
-           ! mass
-            tmp2 = gaminterp(ratio,alpha(mgs,lh),4,1)
-           IF ( ipconc == 5 ) THEN
-       !      tmp2 = Min( 0.25, tmp2 )
-           ENDIF
-            qxd1 = qx(mgs,lh)*(tmp2)
-            qhlcnh(mgs) = dtpinv*qxd1
-
-            
-            
-            IF ( ( qxd1 > qxmin(lhl) .and. ipconc > 5 ) .or. ( qxd1 > 10.*qxmin(lhl) .and. ipconc == 5) ) THEN
-            
-           ! number
-            tmp = gaminterp(ratio,alpha(mgs,lh),1,1)
-             IF ( ipconc == 5 ) THEN
-          !     tmp = Min( 0.2, tmp )
-             ENDIF
-            cxd1 = cx(mgs,lh)*( tmp)
-            chlcnh(mgs) = dtpinv*cxd1
-            chlcnhhl(mgs) = chlcnh(mgs)
-
-           IF ( qx(mgs,lhl) > qxmin(lhl) .and. dmhlopt > 0 ) THEN
-             dh0 = rho0(mgs)*qhlcnh(mgs)/chlcnhhl(mgs)
-             IF ( dh0 < xmas(mgs,lhl) ) THEN
-               ! dh0 = ( qxd1*dh0 + qx(mgs,lhl)*xmas(mgs,lhl))/( qxd1 + qx(mgs,lhl))  ! weighted average
-               dh0 = (( qxd1*dh0**(1./3.) + qx(mgs,lhl)*xmas(mgs,lhl)**(1./3.))/( qxd1 + qx(mgs,lhl)))**3  ! weighted average
-               chlcnhhl(mgs) = Min( chlcnhhl(mgs), rho0(mgs)*qhlcnh(mgs)/dh0 )
-             ELSE
-!               dh0 = Max( dh0, xmas(mgs,lhl) ) ! when enough hail is established, do not dilute the size
-             ENDIF
-           ENDIF
-
-
-
-            ELSE
-               qhlcnh(mgs) = 0.0
-            ENDIF
-
-!           IF ( cxd1 < 0.0 .or. qxd1 < 0.0 ) THEN
-!             write(0,*) 'cxd1,qxd1 = ',cxd1,qxd1
-!             write(0,*) 'dw,temcg = ',dw,temcg(mgs),ratio 
-!           ENDIF
-           
-!           write(0,*) 'dw,temcg = ',dw,temcg(mgs),ratio
-!           write(0,*) 'qhlcnh,qh = ',qhlcnh(mgs),qx(mgs,lh),qxd1
-!           write(0,*) 'chlcnh,ch = ',chlcnh(mgs),cx(mgs,lh),cxd1
-!           write(0,*) 'zhlcnh,zh = ',zhlcnh(mgs),zx(mgs,lh),zxd1
-!           write(0,*) 'tmp1,2,3 = ',tmp,tmp2,tmp3
-
-           vhlcnh(mgs) = rho0(mgs)*qhlcnh(mgs)/xdn(mgs,lh)
-           vhlcnhl(mgs) = rho0(mgs)*qhlcnh(mgs)/Max(xdnmn(lhl), xdn(mgs,lh))
-           
-           ENDIF
 
         ENDIF !}
       
@@ -16568,47 +16495,6 @@ END SUBROUTINE nssl_2mom_driver
       
       ELSEIF ( ihlcnh == 2 ) THEN ! 10-ice type conversion 
 
-!
-! Staka and Mansell (2005) type conversion -- assuming alphah = 0 for now!
-!
-!      hldia1 is set in micro_module and namelist
-      IF ( .true. ) THEN
-      
-        ! convert number, mass, and reflectivity for d > hldia1,
-        ! regardless of wet growth status, but as long as riming > 0
-        DO mgs = 1,ngscnt
-        IF ( qhacw(mgs)*dtp > qxmin(lh) .and. temg(mgs) .lt. tfr-2. .and. qx(mgs,lh) > qxmin(lh) ) THEN
-           ratio = Min( maxratiolu, hldia1/xdia(mgs,lh,1) )
-
-           ! number
-            tmp = gaminterp(ratio,alpha(mgs,lh),1,1)
-            cxd1 = cx(mgs,lh)*( tmp)
-            chlcnh(mgs) = dtpinv*cxd1
-            chlcnhhl(mgs) = chlcnh(mgs)
-
-           ! mass
-            tmp2 = gaminterp(ratio,alpha(mgs,lh),4,1)
-            qxd1 = qx(mgs,lh)*(tmp2)
-            qhlcnh(mgs) = dtpinv*qxd1
-
-!           IF ( cxd1 < 0.0 .or. qxd1 < 0.0 ) THEN
-!             write(0,*) 'cxd1,qxd1 = ',cxd1,qxd1
-!             write(0,*) 'dw,temcg = ',dw,temcg(mgs),ratio 
-!           ENDIF
-           
-!           write(0,*) 'dw,temcg = ',dw,temcg(mgs),ratio
-!           write(0,*) 'qhlcnh,qh = ',qhlcnh(mgs),qx(mgs,lh),qxd1
-!           write(0,*) 'chlcnh,ch = ',chlcnh(mgs),cx(mgs,lh),cxd1
-!           write(0,*) 'zhlcnh,zh = ',zhlcnh(mgs),zx(mgs,lh),zxd1
-!           write(0,*) 'tmp1,2,3 = ',tmp,tmp2,tmp3
-
-           vhlcnh(mgs) = rho0(mgs)*qhlcnh(mgs)/xdn(mgs,lh)
-           vhlcnhl(mgs) = rho0(mgs)*qhlcnh(mgs)/Max(xdnmn(lhl), xdn(mgs,lh))
-           
-         ENDIF
-         
-         ENDDO
-       
       ELSEIF ( ihlcnh == 0 ) THEN
 
       do mgs = 1,ngscnt
@@ -16633,7 +16519,7 @@ END SUBROUTINE nssl_2mom_driver
       end if
       end do
       
-      ENDIF ! true
+!      ENDIF ! true
       
       ENDIF ! ihlcnh options
       

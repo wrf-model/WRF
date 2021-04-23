@@ -1067,7 +1067,7 @@ CONTAINS
       TYPE(fieldlist), POINTER :: p, q
       INTEGER, PARAMETER :: read_unit = 10
       LOGICAL, EXTERNAL  :: wrf_dm_on_monitor
-      CHARACTER*256      :: inln, t1, fieldlst
+      CHARACTER*8000     :: inln, t1, fieldlst
       CHARACTER*256      :: fname, mess, dname, lookee
       CHARACTER*1        :: op, strmtyp
       CHARACTER*3        :: strmid

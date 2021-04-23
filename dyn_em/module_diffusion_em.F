@@ -5121,7 +5121,7 @@ END SUBROUTINE vertical_diffusion_s
   DO j = j_start, j_end
   DO i = i_start, i_end
      IF(hpbl(i,j).LT.zq(i,2,j)) kpbl(i,j) = 1
-     IF(kpbl(i,j).LT.1) pblflg(i,j) = .false.
+     IF(kpbl(i,j).LE.1) pblflg(i,j) = .false.
   ENDDO
   ENDDO
 
@@ -5160,7 +5160,7 @@ END SUBROUTINE vertical_diffusion_s
   DO j = j_start,j_end
   DO i = i_start,i_end
      IF(pblflg(i,j))THEN
-       k = max(kpbl(i,j) - 1,1)
+       k = kpbl(i,j) - 1
        wm3           = wstar3(i,j) + 5. * ust(i,j)**3
        wm2(i,j)      = wm3**h2
        bfxpbl(i,j)   = -0.15*thv(i,1,j)/g*wm3/hpbl(i,j)

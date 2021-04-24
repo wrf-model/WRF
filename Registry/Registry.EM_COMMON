@@ -966,18 +966,18 @@ state    real   SFW1_URB3D      i{umap4}j   misc       1         Z     r      "S
 state    real   SFW2_URB3D      i{umap4}j   misc       1         Z     r      "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   SFR_URB3D       i{umap5}j   misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   SFG_URB3D       i{umap0}j   misc       1         Z     r      "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   EP_PV_URB3D     ij          misc       1         -     rh      "EP_PV_URB3D"  "ELEC. PRODUCTION OF ROOFTOP PV PANELS" "W m{-2}" !PVP
-state    real   T_PV_URB3D      i{umap5}j   misc       1         -     r       "T_PV_URB3D"  "PHOTOVOLTAIC PANELS TEMPERATURE " "K" !PVP
+state    real   EP_PV_URB3D     ij          misc       1         -     rh     "EP_PV_URB3D"  "ELEC. PRODUCTION OF ROOFTOP PV PANELS" "W m{-2}" !PVP
+state    real   T_PV_URB3D      i{umap5}j   misc       1         -     r      "T_PV_URB3D"  "PHOTOVOLTAIC PANELS TEMPERATURE " "K" !PVP
 state    real   TRV_URB4D       i{umap10}j  misc       1         Z     r      "TRV_URB4D" "GREEN ROOF LAYER TEMPERATURE"          "K"
 state    real   QR_URB4D        i{umap10}j  misc       1         Z     r      "QR_URB4D" "GREEN ROOF LAYER MOISTURE"          "dimensionless"
-state    real   QGR_URB3D       ij          misc       1         Z     rh      "QGR_URB4D" "GREEN ROOF LAYER MOISTURE OUTPUT"          "dimensionless"
-state    real   TGR_URB3D       ij          misc       1         Z     rh      "TGR_URB4D" "GREEN ROOF LAYER TEMPERATURE OUTPUT"          "dimensionless"
+state    real   QGR_URB3D       ij          misc       1         Z     rh     "QGR_URB4D" "GREEN ROOF LAYER MOISTURE OUTPUT"          "dimensionless"
+state    real   TGR_URB3D       ij          misc       1         Z     rh     "TGR_URB4D" "GREEN ROOF LAYER TEMPERATURE OUTPUT"          "dimensionless"
 state    real   DRAIN_URB4D     i{umap5}j   misc       1         Z     r      "DRAIN_URB4D" "GREEN ROOF DRAINAGE"          "mm"
-state    real   DRAINGR_URB3D   ij          misc       1         -     rh      "DRAINGR_URB3D"  "ACCUMULATED GREEN ROOF DRAINAGE" "mm"
-state    real   SFRV_URB3D      i{umap5}j   misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM GREEN ROOF"  "W m{-2}"
-state    real   LFRV_URB3D      i{umap5}j   misc       1         Z     r      "LFR_URB3D"  "LATENT HEAT FLUX FROM GREEN ROOF"  "W m{-2}"
+state    real   DRAINGR_URB3D   ij          misc       1         -     rh     "DRAINGR_URB3D"  "ACCUMULATED GREEN ROOF DRAINAGE" "mm"
+state    real   SFRV_URB3D      i{umap5}j   misc       1         Z     r      "SFRV_URB3D"  "SENSIBLE HEAT FLUX FROM GREEN ROOF"  "W m{-2}"
+state    real   LFRV_URB3D      i{umap5}j   misc       1         Z     r      "LFRV_URB3D"  "LATENT HEAT FLUX FROM GREEN ROOF"  "W m{-2}"
 state    real   DGR_URB3D       i{umap5}j   misc       1         Z     r      "DGR_URB3D" "ROOF LAYER DEPTH WATER RETENTION"          "mm"
-state    real   DG_URB3D        i{umap0}j   misc      1         Z     r      "DG_URB4D" "ROOF LAYER DEPTH WATER RETENTION"          "mm"
+state    real   DG_URB3D        i{umap0}j   misc       1         Z     r      "DG_URB4D" "ROOF LAYER DEPTH WATER RETENTION"          "mm"
 state    real   LFR_URB3D       i{umap5}j   misc       1         Z     r      "LFR_URB3D"  "LATENT HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   LFG_URB3D       i{umap0}j   misc       1         Z     r      "LFG_URB3D"  "LATENT HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 

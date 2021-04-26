@@ -13,7 +13,7 @@ SUBROUTINE irrigation_on(julian_in,irr_start_julianday,irr_end_julianday,irr_on)
    END IF
  ELSE
    IF((julian_in.GE.irr_start_julianday  .AND.  julian_in.LT.367) .OR.  &
-     (  julian_in.GE.0 .AND.   julian_in.LT.irr_end_julianday))  THEN
+     ( julian_in.GE.0 .AND.   julian_in.LT.irr_end_julianday))  THEN
       irr_on = 1
    END IF
  END IF

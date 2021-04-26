@@ -3822,7 +3822,7 @@ END MODULE module_interp_info
                              nri, nrj,                             &  
                              ipos, jpos
       LOGICAL, INTENT(IN) :: xstag, ystag
-      INTEGER             :: smooth_option, feedback , spec_zone
+      INTEGER             :: smooth_option, feedback
    
       REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
 
@@ -3830,7 +3830,14 @@ END MODULE module_interp_info
 
       CALL nl_get_feedback       ( 1, feedback  )
       IF ( feedback == 0 ) RETURN
-      CALL nl_get_spec_zone ( 1, spec_zone )
+
+      !  The important part of feedback is when physics is activated, and we get unexpected and somewhat
+      !  horizontally assymmetrical values next to each other. Since physics is all column based, we do not
+      !  need to smooth U- or V-staggered fields.
+
+      IF ( ( xstag ) .OR. ( ystag ) ) THEN
+         RETURN
+      END IF
 
       !  These are the 2d smoothers used on the fedback data.  These filters
       !  are run on the coarse grid data (after the nested info has been

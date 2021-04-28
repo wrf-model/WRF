@@ -1621,8 +1621,6 @@ The following are for observation nudging:
  spec_exp                            = 0.       ! exponential multiplier for relaxation zone ramp for specified=.t.
                                                   (0.=linear ramp default, e.g. 0.33=~3*dx exp decay factor)
  constant_bc                         = .false.  ! constant boundary condition used with DFI
- spec_bdy_final_mu                   = 1,       ! whether to call spec_bdy_final for mu (this may cause different restart results in V3.8): 
-                                                  = 0, no call; = 1: call (this may cause different restart results)
 
  periodic_x (max_dom)                = .false., ! periodic boundary conditions in x direction
  symmetric_xs (max_dom)              = .false., ! symmetric boundary conditions at x start (west)

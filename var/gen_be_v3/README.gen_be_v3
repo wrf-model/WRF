@@ -41,6 +41,7 @@
                                         ! 'qcloud', 'qrain', 'qice', 'qsnow', 'qgraup' are ep_format=1 cloud names.
    do_pert_calc = .true.
    do_slen_calc = .false.  ! can be set to .true. to also generate BE from ensembles.
+   verbose = .true.        ! can be useful for checking the list of wrf files that are actually used in the code
 /
 &ens_nml
    nens = 10               ! number of ensembles

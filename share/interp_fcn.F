@@ -3839,7 +3839,7 @@ END MODULE module_interp_info
       !  which is already a simple smoother.
 
       IF ( ( xstag ) .OR. ( ystag ) ) THEN
-         RETURN
+!        RETURN
       END IF
 
       !  These are the 2d smoothers used on the fedback data.  These filters
@@ -3863,6 +3863,9 @@ END MODULE module_interp_info
                       ipos, jpos                            &  ! Position of lower left of nest in 
                       )
       ELSE IF ( smooth_option == 2 ) THEN
+      IF ( ( xstag ) .OR. ( ystag ) ) THEN
+         RETURN
+      END IF
          CALL smdsm ( cfld , &
                       cids, cide, ckds, ckde, cjds, cjde,   &
                       cims, cime, ckms, ckme, cjms, cjme,   &
@@ -3877,6 +3880,22 @@ END MODULE module_interp_info
       END IF
 
    END SUBROUTINE smoother 
+
+!=================================================================================
+
+   INTEGER FUNCTION parent_loc_of_fg ( ni , ipos , nri )
+
+     !  i and j, mass points only
+
+     IMPLICIT NONE 
+
+     INTEGER, INTENT(IN) :: ni , ipos , nri
+
+     parent_loc_of_fg = ipos + (ni-1)/nri
+
+   END FUNCTION parent_loc_of_fg
+
+!=================================================================================
 
    SUBROUTINE sm121 ( cfld , &
                       cids, cide, ckds, ckde, cjds, cjde,   &
@@ -3911,6 +3930,9 @@ END MODULE module_interp_info
 
       INTEGER, PARAMETER  :: smooth_passes = 1 ! More passes requires a larger stencil (currently 48 pt)
 
+      IF ( ( xstag ) .OR. ( ystag ) ) THEN
+         RETURN
+      END IF
       istag = 1 ; jstag = 1
       IF ( xstag ) istag = 0
       IF ( ystag ) jstag = 0

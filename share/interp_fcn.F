@@ -3829,8 +3829,18 @@ END MODULE module_interp_info
       !  If there is no feedback, there can be no smoothing.
 
       CALL nl_get_feedback       ( 1, feedback  )
-      IF ( feedback == 0 ) RETURN
-      CALL nl_get_spec_zone ( 1, spec_zone )
+      IF ( feedback == 0 ) THEN
+         RETURN
+      END IF
+
+      !  Do no feedback smoothing on U or V. Feedback smoothing is primarily due to
+      !  non-isotropic neighboring-grid-cell impacts from physics. The U and V mods
+      !  to fields from physics were already averaged back from mass point locations,
+      !  which is already a simple smoother.
+
+      IF ( ( xstag ) .OR. ( ystag ) ) THEN
+         RETURN
+      END IF
 
       !  These are the 2d smoothers used on the fedback data.  These filters
       !  are run on the coarse grid data (after the nested info has been

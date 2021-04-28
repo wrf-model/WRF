@@ -3400,7 +3400,9 @@ halo      HALO_EM_SCALAR_OLD_E_3 dyn_em 24:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_5 dyn_em 48:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_7 dyn_em 80:scalar_old
 
-halo      HALO_EM_FEEDBACK   dyn_em 48:ht
+!halo      HALO_EM_FEEDBACK   dyn_em 48:ht
+halo      HALO_EM_FEEDBACK   dyn_em 48:u_2,v_2,w_2,ph_2,phb,t_2,mu_2,mub,alb,pb,moist,dfi_moist,scalar,dfi_scalar,var2d,oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,var2dls,oc12dls,oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,ol3ls,ol4ls,var2dss,oc12dss,oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss,ht,th_old,qv_old,tracer,pcb,pc_2
+!halo      HALO_EM_FEEDBACK   dyn_em 48:w_2,ph_2,phb,t_2,mu_2,mub,alb,pb,moist,dfi_moist,scalar,dfi_scalar,var2d,oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,var2dls,oc12dls,oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,ol3ls,ol4ls,var2dss,oc12dss,oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss,ht,th_old,qv_old,tracer,pcb,pc_2
 halo      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
 halo      HALO_EM_HYDRO_NOAHMP dyn_em 8:ZWTXY
 halo      HALO_EM_HYDRO_NOAHMP_INIT dyn_em 8:ZWTXY,FDEPTHXY,HT,ISLTYP

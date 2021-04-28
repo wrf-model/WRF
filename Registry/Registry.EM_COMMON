@@ -1157,16 +1157,16 @@ state   real   DTAUX3D         ikj     misc        1         -     rh        "DT
 state   real   DTAUY3D         ikj     misc        1         -     rh        "DTAUY3D"               "LOCAL V GWDO STRESS"   "m s-1"  
 state   real   DUSFCG           ij     misc        1         -     rh        "DUSFCG"                "COLUMN-INTEGRATED U GWDO STRESS"   "Pa m s-1"
 state   real   DVSFCG           ij     misc        1         -     rh        "DVSFCG"                "COLUMN-INTEGRATED V GWDO STRESS"   "Pa m s-1"
-state   real   VAR2D            ij     misc        1         -     i012rhdus "VAR"                   "OROGRAPHIC VARIANCE"   ""   ""
-state   real   OC12D            ij     misc        1         -     i012rhdus "CON"                   "OROGRAPHIC CONVEXITY"   ""   ""
-state   real   OA1              ij     misc        1         -     i012rhdus "OA1"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OA2              ij     misc        1         -     i012rhdus "OA2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OA3              ij     misc        1         -     i012rhdus "OA3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OA4              ij     misc        1         -     i012rhdus "OA4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OL1              ij     misc        1         -     i012rhdus "OL1"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OL2              ij     misc        1         -     i012rhdus "OL2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OL3              ij     misc        1         -     i012rhdus "OL3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OL4              ij     misc        1         -     i012rhdus "OL4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   VAR2D            ij     misc        1         -     i012rhdu  "VAR"                   "OROGRAPHIC VARIANCE"   ""   ""
+state   real   OC12D            ij     misc        1         -     i012rhdu  "CON"                   "OROGRAPHIC CONVEXITY"   ""   ""
+state   real   OA1              ij     misc        1         -     i012rhdu  "OA1"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OA2              ij     misc        1         -     i012rhdu  "OA2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OA3              ij     misc        1         -     i012rhdu  "OA3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OA4              ij     misc        1         -     i012rhdu  "OA4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OL1              ij     misc        1         -     i012rhdu  "OL1"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OL2              ij     misc        1         -     i012rhdu  "OL2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OL3              ij     misc        1         -     i012rhdu  "OL3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OL4              ij     misc        1         -     i012rhdu  "OL4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 
 # Additional for GSL gravity wave drag suite
 state   real   DTAUX3D_ls      ikj     misc        1         -     rh        "DTAUX3D_ls"            "LOCAL U GWDO STRESS LARGE-SCALE"   "m s-1"
@@ -1185,26 +1185,26 @@ state   real   DUSFCG_ss        ij     misc        1         -     rh        "DU
 state   real   DVSFCG_ss        ij     misc        1         -     rh        "DVSFCG_ss"             "COLUMN-INTEGRATED V GWDO STRESS SMALL-SCALE"   "Pa m s-1"
 state   real   DUSFCG_fd        ij     misc        1         -     rh        "DUSFCG_fd"             "COLUMN-INTEGRATED U GWDO STRESS FORM-DRAG"   "Pa m s-1"
 state   real   DVSFCG_fd        ij     misc        1         -     rh        "DVSFCG_fd"             "COLUMN-INTEGRATED V GWDO STRESS FORM-DRAG"   "Pa m s-1"
-state   real   VAR2Dls          ij     misc        1         -     i012rhdus "VARls"                 "STANDARD DEVIATION of 2.5min-resolution topography"   "m"
-state   real   OC12Dls          ij     misc        1         -     i012rhdus "CONls"                 "OROGRAPHIC CONVEXITY of 2.5min-resolution topography"   ""
-state   real   OA1ls            ij     misc        1         -     i012rhdus "OA1ls"                 "OROGRAPHIC ASYMMETRY in West direction from 2.5min-resolution topography"   ""
-state   real   OA2ls            ij     misc        1         -     i012rhdus "OA2ls"                 "OROGRAPHIC ASYMMETRY in South direction from 2.5min-resolution topography"   ""
-state   real   OA3ls            ij     misc        1         -     i012rhdus "OA3ls"                 "OROGRAPHIC ASYMMETRY in South-West direction from 2.5min-resolution topography"   ""
-state   real   OA4ls            ij     misc        1         -     i012rhdus "OA4ls"                 "OROGRAPHIC ASYMMETRY in North-West direction from 2.5min-resolution topography"   ""
-state   real   OL1ls            ij     misc        1         -     i012rhdus "OL1ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 2.5min-resolution topography"   ""
-state   real   OL2ls            ij     misc        1         -     i012rhdus "OL2ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 2.5min-resolution topography"   ""
-state   real   OL3ls            ij     misc        1         -     i012rhdus "OL3ls"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 2.5min-resolution topography"   ""
-state   real   OL4ls            ij     misc        1         -     i012rhdus "OL4ls"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 2.5min-resolution topography"   ""
-state   real   VAR2Dss          ij     misc        1         -     i012rhdus "VARss"                 "STANDARD DEVIATION of 30sec-resolution topography"   "m"
-state   real   OC12Dss          ij     misc        1         -     i012rhdus "CONss"                 "OROGRAPHIC CONVEXITY of 30sec-resolution topography"   ""
-state   real   OA1ss            ij     misc        1         -     i012rhdus "OA1ss"                 "OROGRAPHIC ASYMMETRY in West direction from 30sec-resolution topography"   ""
-state   real   OA2ss            ij     misc        1         -     i012rhdus "OA2ss"                 "OROGRAPHIC ASYMMETRY in South direction from 30sec-resolution topography"   ""
-state   real   OA3ss            ij     misc        1         -     i012rhdus "OA3ss"                 "OROGRAPHIC ASYMMETRY in South-West direction from 30sec-resolution topography"   ""
-state   real   OA4ss            ij     misc        1         -     i012rhdus "OA4ss"                 "OROGRAPHIC ASYMMETRY in North-West direction from 30sec-resolution topography"   ""
-state   real   OL1ss            ij     misc        1         -     i012rhdus "OL1ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 30sec-resolution topography"   ""
-state   real   OL2ss            ij     misc        1         -     i012rhdus "OL2ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 30sec-resolution topography"   ""
-state   real   OL3ss            ij     misc        1         -     i012rhdus "OL3ss"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 30sec-resolution topography"   ""
-state   real   OL4ss            ij     misc        1         -     i012rhdus "OL4ss"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 30sec-resolution topography"   ""
+state   real   VAR2Dls          ij     misc        1         -     i012rhdu  "VARls"                 "STANDARD DEVIATION of 2.5min-resolution topography"   "m"
+state   real   OC12Dls          ij     misc        1         -     i012rhdu  "CONls"                 "OROGRAPHIC CONVEXITY of 2.5min-resolution topography"   ""
+state   real   OA1ls            ij     misc        1         -     i012rhdu  "OA1ls"                 "OROGRAPHIC ASYMMETRY in West direction from 2.5min-resolution topography"   ""
+state   real   OA2ls            ij     misc        1         -     i012rhdu  "OA2ls"                 "OROGRAPHIC ASYMMETRY in South direction from 2.5min-resolution topography"   ""
+state   real   OA3ls            ij     misc        1         -     i012rhdu  "OA3ls"                 "OROGRAPHIC ASYMMETRY in South-West direction from 2.5min-resolution topography"   ""
+state   real   OA4ls            ij     misc        1         -     i012rhdu  "OA4ls"                 "OROGRAPHIC ASYMMETRY in North-West direction from 2.5min-resolution topography"   ""
+state   real   OL1ls            ij     misc        1         -     i012rhdu  "OL1ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 2.5min-resolution topography"   ""
+state   real   OL2ls            ij     misc        1         -     i012rhdu  "OL2ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 2.5min-resolution topography"   ""
+state   real   OL3ls            ij     misc        1         -     i012rhdu  "OL3ls"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 2.5min-resolution topography"   ""
+state   real   OL4ls            ij     misc        1         -     i012rhdu  "OL4ls"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 2.5min-resolution topography"   ""
+state   real   VAR2Dss          ij     misc        1         -     i012rhdu  "VARss"                 "STANDARD DEVIATION of 30sec-resolution topography"   "m"
+state   real   OC12Dss          ij     misc        1         -     i012rhdu  "CONss"                 "OROGRAPHIC CONVEXITY of 30sec-resolution topography"   ""
+state   real   OA1ss            ij     misc        1         -     i012rhdu  "OA1ss"                 "OROGRAPHIC ASYMMETRY in West direction from 30sec-resolution topography"   ""
+state   real   OA2ss            ij     misc        1         -     i012rhdu  "OA2ss"                 "OROGRAPHIC ASYMMETRY in South direction from 30sec-resolution topography"   ""
+state   real   OA3ss            ij     misc        1         -     i012rhdu  "OA3ss"                 "OROGRAPHIC ASYMMETRY in South-West direction from 30sec-resolution topography"   ""
+state   real   OA4ss            ij     misc        1         -     i012rhdu  "OA4ss"                 "OROGRAPHIC ASYMMETRY in North-West direction from 30sec-resolution topography"   ""
+state   real   OL1ss            ij     misc        1         -     i012rhdu  "OL1ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 30sec-resolution topography"   ""
+state   real   OL2ss            ij     misc        1         -     i012rhdu  "OL2ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 30sec-resolution topography"   ""
+state   real   OL3ss            ij     misc        1         -     i012rhdu  "OL3ss"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 30sec-resolution topography"   ""
+state   real   OL4ss            ij     misc        1         -     i012rhdu  "OL4ss"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 30sec-resolution topography"   ""
 
 # Additional for topo_wind
 state    real   ctopo             ij      misc        1         -     rdu         "ctopo"              "Correction for topography"       ""
@@ -3400,9 +3400,7 @@ halo      HALO_EM_SCALAR_OLD_E_3 dyn_em 24:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_5 dyn_em 48:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_7 dyn_em 80:scalar_old
 
-!halo      HALO_EM_FEEDBACK   dyn_em 48:ht
-halo      HALO_EM_FEEDBACK   dyn_em 48:u_2,v_2,w_2,ph_2,phb,t_2,mu_2,mub,alb,pb,moist,dfi_moist,scalar,dfi_scalar,var2d,oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,var2dls,oc12dls,oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,ol3ls,ol4ls,var2dss,oc12dss,oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss,ht,th_old,qv_old,tracer,pcb,pc_2
-!halo      HALO_EM_FEEDBACK   dyn_em 48:w_2,ph_2,phb,t_2,mu_2,mub,alb,pb,moist,dfi_moist,scalar,dfi_scalar,var2d,oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,var2dls,oc12dls,oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,ol3ls,ol4ls,var2dss,oc12dss,oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss,ht,th_old,qv_old,tracer,pcb,pc_2
+halo      HALO_EM_FEEDBACK   dyn_em 48:u_2,v_2,w_2,ph_2,phb,t_2,mu_2,mub,alb,pb,moist,dfi_moist,scalar,dfi_scalar,ht,th_old,qv_old,tracer,pcb,pc_2
 halo      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
 halo      HALO_EM_HYDRO_NOAHMP dyn_em 8:ZWTXY
 halo      HALO_EM_HYDRO_NOAHMP_INIT dyn_em 8:ZWTXY,FDEPTHXY,HT,ISLTYP

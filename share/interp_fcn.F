@@ -3833,15 +3833,6 @@ END MODULE module_interp_info
          RETURN
       END IF
      
-      !  Feedback smoothing is to address horizontally inconsistent forcings from 
-      !  the column-based physics schemes. The U and V fields have their updates
-      !  interpolated to their particular staggering, which is in effect a single
-      !  direction filter from the FG.
-
-      IF ( ( xstag ) .OR. ( ystag ) ) THEN
-         RETURN
-      END IF
-
       !  These are the 2d smoothers used on the fedback data.  These filters
       !  are run on the coarse grid data (after the nested info has been
       !  fedback).  Only the area of the nest in the coarse grid is filtered.

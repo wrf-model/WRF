@@ -3400,7 +3400,7 @@ halo      HALO_EM_SCALAR_OLD_E_3 dyn_em 24:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_5 dyn_em 48:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_7 dyn_em 80:scalar_old
 
-halo      HALO_EM_FEEDBACK   dyn_em 48:ht
+halo      HALO_EM_FEEDBACK   dyn_em 48:u_2,v_2,w_2,ph_2,phb,t_2,mu_2,mub,alb,pb,moist,dfi_moist,scalar,dfi_scalar,ht,th_old,qv_old,tracer,pcb,pc_2
 halo      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
 halo      HALO_EM_HYDRO_NOAHMP dyn_em 8:ZWTXY
 halo      HALO_EM_HYDRO_NOAHMP_INIT dyn_em 8:ZWTXY,FDEPTHXY,HT,ISLTYP

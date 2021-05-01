@@ -3829,7 +3829,7 @@ END MODULE module_interp_info
       !  If there is no feedback, there can be no smoothing.
 
       CALL nl_get_feedback       ( 1, feedback  )
-      IF ( feedback .EQ. 0 ) THEN
+      IF ( feedback == 0 ) THEN
          RETURN
       END IF
      

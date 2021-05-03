@@ -1157,7 +1157,7 @@ state   real   DTAUX3D         ikj     misc        1         -     rh        "DT
 state   real   DTAUY3D         ikj     misc        1         -     rh        "DTAUY3D"               "LOCAL V GWDO STRESS"   "m s-1"  
 state   real   DUSFCG           ij     misc        1         -     rh        "DUSFCG"                "COLUMN-INTEGRATED U GWDO STRESS"   "Pa m s-1"
 state   real   DVSFCG           ij     misc        1         -     rh        "DVSFCG"                "COLUMN-INTEGRATED V GWDO STRESS"   "Pa m s-1"
-state   real   VAR2D            ij     misc        1         -     i012rhd   "VAR"                   "OROGRAPHIC VARIANCE"   ""   ""
+state   real   VAR2D            ij     misc        1         -     i012rhd   "VAR"                   "OROGRAPHIC VARIANCE"    ""   ""
 state   real   OC12D            ij     misc        1         -     i012rhd   "CON"                   "OROGRAPHIC CONVEXITY"   ""   ""
 state   real   OA1              ij     misc        1         -     i012rhd   "OA1"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 state   real   OA2              ij     misc        1         -     i012rhd   "OA2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""

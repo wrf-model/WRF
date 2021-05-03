@@ -1,4 +1,4 @@
-!  Create an initial data set for the WRF model based on an ideal condition
+!  Create an initial data set for the WRF model based on an ideal condition 
 !  This program is specifically set up for the NMM core.   
 
 PROGRAM ideal_nmm

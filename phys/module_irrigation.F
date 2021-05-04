@@ -21,8 +21,7 @@ SUBROUTINE irrigation_on(julian_in,irr_start_julianday,irr_end_julianday,irr_on,
       irr_on_day=1
    END IF
  ELSE
-   IF((julian_in.GE.irr_start_julianday  .AND.  julian_in.LT.367) .OR.  &
-     (  julian_in.GE.0 .AND.   julian_in.LT.irr_end_julianday))  THEN
+   IF(.NOT. (julian_in.GE.irr_start_julianday .AND. julian_in.LT.irr_end_julianday))  THEN
       irr_on_day = 1
    END IF
  END IF 
@@ -32,8 +31,7 @@ SUBROUTINE irrigation_on(julian_in,irr_start_julianday,irr_end_julianday,irr_on,
       irr_on_time=1
    END IF
  ELSE
-   IF((tloc.GE.irr_start_hour  .AND.  tloc.LT.24) .OR.  &
-     (  tloc.GE.0 .AND.   tloc.LT.end_hour))  THEN
+   IF(.NOT. (tloc.GE.irr_start_hour .AND. tloc.LT.end_hour))  THEN
       irr_on_time = 1
    END IF
  END IF

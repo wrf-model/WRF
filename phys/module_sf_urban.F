@@ -2008,6 +2008,11 @@ ENDIF
          ACTION='READ',          &
          POSITION='REWIND',      &
          IOSTAT=IOSTATUS)
+
+         IF (IOSTATUS > 0) THEN
+         FATAL_ERROR('Error opening URBPARM.TBL. Make sure URBPARM.TBL (found in run/) is linked to the running directory.')
+         ENDIF
+
  else
    OPEN (UNIT=11,                &
          FILE='URBPARM_LCZ.TBL', &
@@ -2016,12 +2021,12 @@ ENDIF
          ACTION='READ',          &
          POSITION='REWIND',      &
          IOSTAT=IOSTATUS)
+
+         IF (IOSTATUS > 0) THEN
+         FATAL_ERROR('Error opening URBPARM_LCZ.TBL. Make sure URBPARM_LCZ.TBL (found in run/) is linked to the running directory.')
+         ENDIF
  endif
  
-
-   IF (IOSTATUS > 0) THEN
-   FATAL_ERROR('ERROR OPEN URBPARM.TBL')
-   ENDIF
 
    READLOOP : do 
       read(11,'(A512)', iostat=iostatus) string

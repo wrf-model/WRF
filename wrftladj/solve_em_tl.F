@@ -4254,7 +4254,6 @@ BENCH_END(g_bc_2d_tim)
                                 grid%j_start(ij), grid%j_end(ij),                        &
                                 k_start    , k_end                     )
 
-     IF( config_flags%spec_bdy_final_mu .EQ. 1 ) THEN
      CALL g_spec_bdy_final ( grid%mu_2, grid%g_mu_2, grid%muts, grid%g_muts, grid%msfty, &
                                 grid%mu_bxs, grid%g_mu_bxs, grid%mu_bxe, grid%g_mu_bxe,  &
                                 grid%mu_bys, grid%g_mu_bys, grid%mu_bye, grid%g_mu_bye,  &
@@ -4269,7 +4268,6 @@ BENCH_END(g_bc_2d_tim)
                                 grid%i_start(ij), grid%i_end(ij),                        &
                                 grid%j_start(ij), grid%j_end(ij),                        &
                                 1  , 1                    )
-     ENDIF
 
      moisture_loop_bdy_3 : DO im = PARAM_FIRST_SCALAR , num_3d_m
 

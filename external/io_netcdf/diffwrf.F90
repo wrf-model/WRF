@@ -93,7 +93,8 @@ end module read_util_module
   integer :: icenter, prev_icenter, jcenter, prev_jcenter,ntries
   real :: searchlat, searchlong
 
-  real, allocatable, dimension(:,:,:,:) :: data,data2
+  real,    allocatable, dimension(:,:,:,:) ::  data, data2
+  integer, allocatable, dimension(:,:,:,:) :: idata,idata2
   real, allocatable, dimension(:,:)     :: xlat,xlong
 
   integer :: ierr, ierr2, ier, ier2, Status, Status_next_time, Status_next_time2, Status_next_var, Status_next_var_2
@@ -180,7 +181,7 @@ if ( Justplot ) then
       start_index = 1
       end_index = 1
       call ext_ncd_get_var_info (dh1,VarName,ndim,ordering,staggering,start_index,end_index, WrfType, ierr )
-      if(WrfType /= WRF_REAL .AND. WrfType /= WRF_DOUBLE) then 
+      if(WrfType /= WRF_REAL .AND. WrfType /= WRF_DOUBLE .AND. WrfType /= WRF_INTEGER) then 
         call ext_ncd_get_next_var (dh1, VarName, Status_next_var) 
         cycle 
       endif 
@@ -338,7 +339,7 @@ else
         write(*,*)'Big difference: The types do not match'
         GOTO 1234
       ENDIF
-      if( WrfType == WRF_REAL) then
+      if( WrfType == WRF_REAL .OR. WrfType == WRF_INTEGER ) then
         DO i = 1, ndim
           IF ( end_index(i) /= end_index2(i) ) THEN
             write(*,*)'Big difference: dim ',i,' lengths differ for ',Varname,' differ in ',flnm2
@@ -356,8 +357,13 @@ else
 !                 VarName, ndim, end_index(1), end_index(2), end_index(3), &
 !                 trim(ordering), trim(DateStr)
 
-        allocate(data (end_index(1), end_index(2), end_index(3), 1))
-        allocate(data2(end_index(1), end_index(2), end_index(3), 1))
+        if      (WrfType == WRF_REAL    ) then
+          allocate( data (end_index(1), end_index(2), end_index(3), 1))
+          allocate( data2(end_index(1), end_index(2), end_index(3), 1))
+        else if (WrfType == WRF_INTEGER ) then
+          allocate(idata (end_index(1), end_index(2), end_index(3), 1))
+          allocate(idata2(end_index(1), end_index(2), end_index(3), 1))
+        endif
 
         if ( ndim .eq. 3 ) then
           ord = 'XYZ'
@@ -369,33 +375,63 @@ else
           ord = '0'
         endif
 
-        call ext_ncd_read_field(dh1,DateStr,TRIM(VarName),data,WRF_REAL,0,0,0,ord,&
-                            staggering, dimnames ,                      &
-                            start_index,end_index,                      & !dom 
-                            start_index,end_index,                      & !mem
-                            start_index,end_index,                      & !pat
-                            ierr)
-
-        IF ( ierr /= 0 ) THEN
-          write(*,*)'Error reading ',Varname,' from ',flnm
-          write(*,*)'  ndim = ', ndim
-          write(*,*)'  end_index(1) ',end_index(1)
-          write(*,*)'  end_index(2) ',end_index(2)
-          write(*,*)'  end_index(3) ',end_index(3)
-        ENDIF
-        call ext_ncd_read_field(dh2,DateStr,TRIM(VarName),data2,WRF_REAL,0,0,0,ord,&
-                            staggering, dimnames ,                      &
-                            start_index,end_index,                      & !dom 
-                            start_index,end_index,                      & !mem
-                            start_index,end_index,                      & !pat
-                            ierr)
-        IF ( ierr /= 0 ) THEN
-          write(*,*)'Error reading ',Varname,' from ',flnm2
-          write(*,*)'  ndim = ', ndim
-          write(*,*)'  end_index(1) ',end_index(1)
-          write(*,*)'  end_index(2) ',end_index(2)
-          write(*,*)'  end_index(3) ',end_index(3)
-        ENDIF
+        if      (WrfType == WRF_REAL ) then
+           call ext_ncd_read_field(dh1,DateStr,TRIM(VarName),data,WRF_REAL,0,0,0,ord,&
+                               staggering, dimnames ,                      &
+                               start_index,end_index,                      & !dom 
+                               start_index,end_index,                      & !mem
+                               start_index,end_index,                      & !pat
+                               ierr)
+   
+           IF ( ierr /= 0 ) THEN
+             write(*,*)'Error reading ',Varname,' from ',flnm
+             write(*,*)'  ndim = ', ndim
+             write(*,*)'  end_index(1) ',end_index(1)
+             write(*,*)'  end_index(2) ',end_index(2)
+             write(*,*)'  end_index(3) ',end_index(3)
+           ENDIF
+           call ext_ncd_read_field(dh2,DateStr,TRIM(VarName),data2,WRF_REAL,0,0,0,ord,&
+                               staggering, dimnames ,                      &
+                               start_index,end_index,                      & !dom 
+                               start_index,end_index,                      & !mem
+                               start_index,end_index,                      & !pat
+                               ierr)
+           IF ( ierr /= 0 ) THEN
+             write(*,*)'Error reading ',Varname,' from ',flnm2
+             write(*,*)'  ndim = ', ndim
+             write(*,*)'  end_index(1) ',end_index(1)
+             write(*,*)'  end_index(2) ',end_index(2)
+             write(*,*)'  end_index(3) ',end_index(3)
+           ENDIF
+        else if (WrfType == WRF_INTEGER ) then
+           call ext_ncd_read_field(dh1,DateStr,TRIM(VarName),idata,WRF_INTEGER,0,0,0,ord,&
+                               staggering, dimnames ,                      &
+                               start_index,end_index,                      & !dom 
+                               start_index,end_index,                      & !mem
+                               start_index,end_index,                      & !pat
+                               ierr)
+   
+           IF ( ierr /= 0 ) THEN
+             write(*,*)'Error reading ',Varname,' from ',flnm
+             write(*,*)'  ndim = ', ndim
+             write(*,*)'  end_index(1) ',end_index(1)
+             write(*,*)'  end_index(2) ',end_index(2)
+             write(*,*)'  end_index(3) ',end_index(3)
+           ENDIF
+           call ext_ncd_read_field(dh2,DateStr,TRIM(VarName),idata2,WRF_INTEGER,0,0,0,ord,&
+                               staggering, dimnames ,                      &
+                               start_index,end_index,                      & !dom 
+                               start_index,end_index,                      & !mem
+                               start_index,end_index,                      & !pat
+                               ierr)
+           IF ( ierr /= 0 ) THEN
+             write(*,*)'Error reading ',Varname,' from ',flnm2
+             write(*,*)'  ndim = ', ndim
+             write(*,*)'  end_index(1) ',end_index(1)
+             write(*,*)'  end_index(2) ',end_index(2)
+             write(*,*)'  end_index(3) ',end_index(3)
+           ENDIF
+        endif
 
         IFDIFFS=0
         sumE = 0.0
@@ -408,23 +444,45 @@ else
          IF (LEVLIM.EQ.-1.OR.K.EQ.LEVLIM.OR.NDIM.eq.2) THEN
           cross = 0 
           IKDIFFS = 0
-          do i = 1, end_index(1)-cross
-            do j = 1, end_index(2)-cross
-              a = data(I,J,K,1)
-              b = data2(I,J,K,1)
-              ! borrowed from  Thomas Oppe's comp program
-              sumE = sumE + ( a - b ) * ( a - b )
-              sum1 = sum1 + a * a
-              sum2 = sum2 + b * b
-              diff1 = max ( diff1 , abs ( a - b ) )
-              diff2 = max ( diff2 , abs ( b ) )
-              n = n + 1
-              IF (a .ne. b) then
-                IKDIFFS = IKDIFFS + 1
-                IFDIFFS = IFDIFFS + 1
-              ENDIF
-            ENDDO
-          ENDDO
+
+          if      (WrfType == WRF_REAL ) then
+             do i = 1, end_index(1)-cross
+               do j = 1, end_index(2)-cross
+                 a = data(I,J,K,1)
+                 b = data2(I,J,K,1)
+                 ! borrowed from  Thomas Oppe's comp program
+                 sumE = sumE + ( a - b ) * ( a - b )
+                 sum1 = sum1 + a * a
+                 sum2 = sum2 + b * b
+                 diff1 = max ( diff1 , abs ( a - b ) )
+                 diff2 = max ( diff2 , abs ( b ) )
+                 n = n + 1
+                 IF (a .ne. b) then
+                   IKDIFFS = IKDIFFS + 1
+                   IFDIFFS = IFDIFFS + 1
+                 ENDIF
+               ENDDO
+             ENDDO
+          else if (WrfType == WRF_INTEGER ) then
+             do i = 1, end_index(1)-cross
+               do j = 1, end_index(2)-cross
+                 a = idata(I,J,K,1)
+                 b = idata2(I,J,K,1)
+                 ! borrowed from  Thomas Oppe's comp program
+                 sumE = sumE + ( a - b ) * ( a - b )
+                 sum1 = sum1 + a * a
+                 sum2 = sum2 + b * b
+                 diff1 = max ( diff1 , abs ( a - b ) )
+                 diff2 = max ( diff2 , abs ( b ) )
+                 n = n + 1
+                 IF (a .ne. b) then
+                   IKDIFFS = IKDIFFS + 1
+                   IFDIFFS = IFDIFFS + 1
+                 ENDIF
+               ENDDO
+             ENDDO
+          endif
+
          ENDIF
         enddo
         rmsE = sqrt ( sumE / dble( n ) )
@@ -463,8 +521,13 @@ else
  76 FORMAT (5x,'Field ',2x,'Ndifs',4x,'Dims ',6x,'RMS (1)',12x,'RMS (2)',5x,'DIGITS',4x,'RMSE',5x,'pntwise max')
  77 FORMAT ( A10,1x,I9,2x,I3,1x,e18.10,1x,e18.10,1x,i3,1x,e12.4,1x,e12.4 )
         ENDIF
-        deallocate(data)
-        deallocate(data2)
+        if      (WrfType == WRF_REAL    ) then
+          deallocate( data )
+          deallocate( data2)
+        else if (WrfType == WRF_INTEGER ) then
+          deallocate(idata )
+          deallocate(idata2)
+        endif
 
       endif
  1234 CONTINUE

@@ -347,7 +347,7 @@
       if (tau_qv > TAU_MIN) then
         Call Watermodel (tau_tot, de_cloud2, solarangle, Tducld_water, Ruucld_water)
       else
-        Tducld_water = 1.0
+        Tducld_water = 0.0
         Ruucld_water = 0.0
         tau_qv2 = 0.0
       end if
@@ -356,7 +356,7 @@
       if (tau_qi > TAU_MIN) then
         call Icemodel (tau_tot, de_ice2, solarangle, Tducld_ice, Ruucld_ice)
       else
-        Tducld_ice = 1.0
+        Tducld_ice = 0.0
         Ruucld_ice = 0.0
         tau_qi2 = 0.0
       end if
@@ -365,7 +365,7 @@
       if (tau_qs > TAU_MIN) then
         call Icemodel (tau_tot, de_snow2, solarangle, Tducld_snow, Ruucld_snow)
       else
-        Tducld_snow = 1.0
+        Tducld_snow = 0.0
         Ruucld_snow = 0.0
         tau_qs2 = 0.0
       end if
@@ -378,6 +378,9 @@
         Ruucld = (tau_qv2 * Ruucld_water + tau_qi2 * Ruucld_ice + tau_qs2 * Ruucld_snow)  / tau_tot
         Ruucld = min(Ruucld, 1.0) 
         Ruucld = max(Ruucld, 0.0) 
+      else
+        Tducld = 0.0
+        Ruucld = 0.0
       end if
 
       tau = tau_qv2 + tau_qi2 + tau_qs2 

@@ -52,7 +52,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  /bin/rm -f namelist.input ) >& /dev/null
     ( cd test/exp_real ; /bin/rm -f gm* out* fort* real* ) >& /dev/null
     ( cd test ; rm -f */*.exe */ETAMPNEW_DATA* */GENPARM.TBL */LANDUSE.TBL */README.namelist */README.physics_files \
-	  */RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */MPTABLE.TBL */URBPARM.TBL */grib2map.tbl \
+	  */RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */MPTABLE.TBL */URBPARM.TBL */URBPARM_LCZ.TBL */grib2map.tbl \
 	  */CAM_ABS_DATA */CAM_AEROPT_DATA \
 	  */CCN_ACTIVATE.BIN \
 	  */CAMtr_volume_mixing_ratio.RCP4.5 */CAMtr_volume_mixing_ratio.RCP6 */CAMtr_volume_mixing_ratio.RCP8.5 \

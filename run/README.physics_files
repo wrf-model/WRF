@@ -154,6 +154,8 @@ Other Options:
 
 Urban Physics (sf_urban_physics = 1, 2, and 3)
 	URBPARM.TBL
+	(if using WUDAPT LCZ use_wudapt_lcz - 1)
+		URBPARM_LCZ.TBL
 
 Chemistry
 	HLC.TBL

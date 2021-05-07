@@ -524,7 +524,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 50, P3 1-ice category, 1-moment cloud water
                                      = 51, P3 1-ice category plus double-moment cloud water
                                      = 52, P3 2-ice categories plus double-moment cloud water
-                                     = 53, P3 1-ice category, 3-moment cloud water
+                                     = 53, P3 1-ice category, 3-moment ice, plus double-moment cloud water
                                      = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
                                            for each ice
                                      = 56, NTU multi-moment scheme  ! for ntu3m

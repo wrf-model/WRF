@@ -1460,7 +1460,7 @@ rconfig   real    radt                    namelist,physics	max_domains    0     
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh0123       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh0123       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh0123       "bl_pbl_physics"                ""      ""
-rconfig   integer     ysu_topdown_pblmix  namelist,physics      max_domains    0       rh       "ysu_topdown_pblmix"            ""      ""
+rconfig   integer     ysu_topdown_pblmix  namelist,physics      max_domains    1       rh       "ysu_topdown_pblmix"            ""      ""
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
@@ -1897,7 +1897,7 @@ package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
 package   ruclsmscheme   sf_surface_physics==3       -             state:ACRUNOFF
 
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,qrainxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4,gecros_state
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,qrainxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4,gecros_state,irfract,sifract,mifract,fifract,irnumsi,irnummi,irnumfi,irwatsi,irwatmi,irwatfi,irsivol,irmivol,irfivol,ireloss,irrsplh
 
 package   clmscheme      sf_surface_physics==5       -             -
 package   gfdlslab       sf_surface_physics==88      -             -

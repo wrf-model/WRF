@@ -814,6 +814,11 @@ CONTAINS
 	 parameters%GDDS5  = SEASON_GDD(I,J) / 1770.0 * parameters%GDDS5
        end if
 
+       if(iopt_irr == 2) then ! based on planting and harvesting dates.
+         parameters%PLTDAY = PLANTING(I,J)
+         parameters%HSDAY  = HARVEST (I,J)
+       end if
+
 !=== hydrological processes for vegetation in urban model ===
 !=== irrigate vegetaion only in urban area, MAY-SEP, 9-11pm
 

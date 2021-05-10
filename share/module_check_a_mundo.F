@@ -554,6 +554,26 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If Deng Shallow Convection is on, icloud_bl cannot be 1
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec%shcu_physics(i) .EQ. dengshcuscheme ) .AND. &
+              ( model_config_rec%icloud_bl .EQ. 1 ) ) THEN
+              oops = oops + 1
+         END IF
+      ENDDO
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: Options shcu_physics = 5 and icloud_bl = 1 should not be used together'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Choose either one in namelist.input and rerun the model'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! For ARW users, a request for CU=4 (SAS) should be switched to option
 ! CU = 95. The option CU = 4 is a scaleaware scheme used by NMM.
 !-----------------------------------------------------------------------
@@ -856,6 +876,20 @@
             CALL wrf_debug ( 1, wrf_err_message )
             wrf_err_message = '--- WARNING: tice2tsk_if2cold will have no effect on results.'
             CALL wrf_debug ( 1, wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
+! If fractional_seaice == 1, cannot have the simple land model slab 
+! scheme activated.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec%fractional_seaice     .EQ. 1          ) .AND. &
+           ( model_config_rec%sf_surface_physics(1) .EQ. SLABSCHEME ) ) THEN
+         wrf_err_message = '--- ERROR: fractional seaice does not work with simple slab thermal diffusion land model'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '--- ERROR: Change either fractional_seaice=1 OR sf_surface_physics=1'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
       END IF
 
 !-----------------------------------------------------------------------

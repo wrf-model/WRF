@@ -2227,16 +2227,6 @@ CONTAINS
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
-#if ( EM_CORE==1)
-         DO j = j_start(ij),j_end(ij)
-            DO i = i_start(ij),i_end(ij)
-               wspd(i,j) = MAX(SQRT(u_phy(i,kts,j)**2+v_phy(i,kts,j)**2),0.001)
-               ch(i,j) = chs (i,j)
-!!           ch(i,j) = flhc(i,j)/( cpm(i,j)*rho(i,kts,j) )
-            END DO
-         END DO
-#endif         
-
         ENDIF
 #if ( EM_CORE==1)
 !       ustm is not available in NMM
@@ -2244,6 +2234,8 @@ CONTAINS
          DO j = j_start(ij),j_end(ij)
             DO i = i_start(ij),i_end(ij)
                ustm(i,j) = ust(i,j)
+               wspd(i,j) = MAX(SQRT(u_phy(i,kts,j)**2+v_phy(i,kts,j)**2),0.001)
+               ch(i,j) = chs (i,j)
             END DO
          END DO
 #endif
@@ -2321,6 +2313,7 @@ CONTAINS
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij),     &
               kts,kte,scm_force_flux    )
+           ENDIF
 #if ( EM_CORE==1)
          DO j = j_start(ij),j_end(ij)
             DO i = i_start(ij),i_end(ij)
@@ -2330,9 +2323,7 @@ CONTAINS
             END DO
          END DO
 #endif         
-
-        ENDIF
-        ELSE
+       ELSE
          CALL wrf_error_fatal('Lacking arguments for QNSESFC in surface driver')
        ENDIF
 
@@ -2605,9 +2596,6 @@ CONTAINS
            ENDDO
            ENDDO
 
-           IF ( FRACTIONAL_SEAICE == 1 ) THEN
-              CALL wrf_error_fatal('SLAB scheme cannot be used with fractional seaice')
-           ENDIF
         CALL wrf_debug(100,'in SLAB')
           CALL SLAB(t_phy,qv_curr,p_phy,flhc,flqc,  &
              psfc,xland,tmn,hfx,qfx,lh,tsk,qsfc,chklowq,          &

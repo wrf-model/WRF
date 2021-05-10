@@ -49,8 +49,8 @@
 # table entries are of the form
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
 #
-state    real  XLAT             ij      misc        1         -     i0123rh0156{22}{23}du=(copy_fcnm)      "XLAT"                "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
-state    real  XLONG            ij      misc        1         -     i0123rh0156{22}{23}d=(interp_fcn_blint_ll:xlat,input_from_file)u=(copy_fcnm)      "XLONG"               "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLAT             ij      misc        1         -     i0123rh0156{22}{23}d      "XLAT"                "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
+state    real  XLONG            ij      misc        1         -     i0123rh0156{22}{23}d=(interp_fcn_blint_ll:xlat,input_from_file)      "XLONG"               "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 
 # It is required that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
@@ -966,18 +966,18 @@ state    real   SFW1_URB3D      i{umap4}j   misc       1         Z     r      "S
 state    real   SFW2_URB3D      i{umap4}j   misc       1         Z     r      "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   SFR_URB3D       i{umap5}j   misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   SFG_URB3D       i{umap0}j   misc       1         Z     r      "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   EP_PV_URB3D     ij          misc       1         -     rh      "EP_PV_URB3D"  "ELEC. PRODUCTION OF ROOFTOP PV PANELS" "W m{-2}" !PVP
-state    real   T_PV_URB3D      i{umap5}j   misc       1         -     r       "T_PV_URB3D"  "PHOTOVOLTAIC PANELS TEMPERATURE " "K" !PVP
+state    real   EP_PV_URB3D     ij          misc       1         -     rh     "EP_PV_URB3D"  "ELEC. PRODUCTION OF ROOFTOP PV PANELS" "W m{-2}" !PVP
+state    real   T_PV_URB3D      i{umap5}j   misc       1         -     r      "T_PV_URB3D"  "PHOTOVOLTAIC PANELS TEMPERATURE " "K" !PVP
 state    real   TRV_URB4D       i{umap10}j  misc       1         Z     r      "TRV_URB4D" "GREEN ROOF LAYER TEMPERATURE"          "K"
 state    real   QR_URB4D        i{umap10}j  misc       1         Z     r      "QR_URB4D" "GREEN ROOF LAYER MOISTURE"          "dimensionless"
-state    real   QGR_URB3D       ij          misc       1         Z     rh      "QGR_URB4D" "GREEN ROOF LAYER MOISTURE OUTPUT"          "dimensionless"
-state    real   TGR_URB3D       ij          misc       1         Z     rh      "TGR_URB4D" "GREEN ROOF LAYER TEMPERATURE OUTPUT"          "dimensionless"
+state    real   QGR_URB3D       ij          misc       1         Z     rh     "QGR_URB4D" "GREEN ROOF LAYER MOISTURE OUTPUT"          "dimensionless"
+state    real   TGR_URB3D       ij          misc       1         Z     rh     "TGR_URB4D" "GREEN ROOF LAYER TEMPERATURE OUTPUT"          "dimensionless"
 state    real   DRAIN_URB4D     i{umap5}j   misc       1         Z     r      "DRAIN_URB4D" "GREEN ROOF DRAINAGE"          "mm"
-state    real   DRAINGR_URB3D   ij          misc       1         -     rh      "DRAINGR_URB3D"  "ACCUMULATED GREEN ROOF DRAINAGE" "mm"
-state    real   SFRV_URB3D      i{umap5}j   misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM GREEN ROOF"  "W m{-2}"
-state    real   LFRV_URB3D      i{umap5}j   misc       1         Z     r      "LFR_URB3D"  "LATENT HEAT FLUX FROM GREEN ROOF"  "W m{-2}"
+state    real   DRAINGR_URB3D   ij          misc       1         -     rh     "DRAINGR_URB3D"  "ACCUMULATED GREEN ROOF DRAINAGE" "mm"
+state    real   SFRV_URB3D      i{umap5}j   misc       1         Z     r      "SFRV_URB3D"  "SENSIBLE HEAT FLUX FROM GREEN ROOF"  "W m{-2}"
+state    real   LFRV_URB3D      i{umap5}j   misc       1         Z     r      "LFRV_URB3D"  "LATENT HEAT FLUX FROM GREEN ROOF"  "W m{-2}"
 state    real   DGR_URB3D       i{umap5}j   misc       1         Z     r      "DGR_URB3D" "ROOF LAYER DEPTH WATER RETENTION"          "mm"
-state    real   DG_URB3D        i{umap0}j   misc      1         Z     r      "DG_URB4D" "ROOF LAYER DEPTH WATER RETENTION"          "mm"
+state    real   DG_URB3D        i{umap0}j   misc       1         Z     r      "DG_URB4D" "ROOF LAYER DEPTH WATER RETENTION"          "mm"
 state    real   LFR_URB3D       i{umap5}j   misc       1         Z     r      "LFR_URB3D"  "LATENT HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   LFG_URB3D       i{umap0}j   misc       1         Z     r      "LFG_URB3D"  "LATENT HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 
@@ -1157,16 +1157,16 @@ state   real   DTAUX3D         ikj     misc        1         -     rh        "DT
 state   real   DTAUY3D         ikj     misc        1         -     rh        "DTAUY3D"               "LOCAL V GWDO STRESS"   "m s-1"  
 state   real   DUSFCG           ij     misc        1         -     rh        "DUSFCG"                "COLUMN-INTEGRATED U GWDO STRESS"   "Pa m s-1"
 state   real   DVSFCG           ij     misc        1         -     rh        "DVSFCG"                "COLUMN-INTEGRATED V GWDO STRESS"   "Pa m s-1"
-state   real   VAR2D            ij     misc        1         -     i012rhdus "VAR"                   "OROGRAPHIC VARIANCE"   ""   ""
-state   real   OC12D            ij     misc        1         -     i012rhdus "CON"                   "OROGRAPHIC CONVEXITY"   ""   ""
-state   real   OA1              ij     misc        1         -     i012rhdus "OA1"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OA2              ij     misc        1         -     i012rhdus "OA2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OA3              ij     misc        1         -     i012rhdus "OA3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OA4              ij     misc        1         -     i012rhdus "OA4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OL1              ij     misc        1         -     i012rhdus "OL1"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OL2              ij     misc        1         -     i012rhdus "OL2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OL3              ij     misc        1         -     i012rhdus "OL3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
-state   real   OL4              ij     misc        1         -     i012rhdus "OL4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   VAR2D            ij     misc        1         -     i012rhd   "VAR"                   "OROGRAPHIC VARIANCE"                       ""   ""
+state   real   OC12D            ij     misc        1         -     i012rhd   "CON"                   "OROGRAPHIC CONVEXITY"                      ""   ""
+state   real   OA1              ij     misc        1         -     i012rhd   "OA1"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OA2              ij     misc        1         -     i012rhd   "OA2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OA3              ij     misc        1         -     i012rhd   "OA3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OA4              ij     misc        1         -     i012rhd   "OA4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OL1              ij     misc        1         -     i012rhd   "OL1"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OL2              ij     misc        1         -     i012rhd   "OL2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OL3              ij     misc        1         -     i012rhd   "OL3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+state   real   OL4              ij     misc        1         -     i012rhd   "OL4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 
 # Additional for GSL gravity wave drag suite
 state   real   DTAUX3D_ls      ikj     misc        1         -     rh        "DTAUX3D_ls"            "LOCAL U GWDO STRESS LARGE-SCALE"   "m s-1"
@@ -1185,26 +1185,26 @@ state   real   DUSFCG_ss        ij     misc        1         -     rh        "DU
 state   real   DVSFCG_ss        ij     misc        1         -     rh        "DVSFCG_ss"             "COLUMN-INTEGRATED V GWDO STRESS SMALL-SCALE"   "Pa m s-1"
 state   real   DUSFCG_fd        ij     misc        1         -     rh        "DUSFCG_fd"             "COLUMN-INTEGRATED U GWDO STRESS FORM-DRAG"   "Pa m s-1"
 state   real   DVSFCG_fd        ij     misc        1         -     rh        "DVSFCG_fd"             "COLUMN-INTEGRATED V GWDO STRESS FORM-DRAG"   "Pa m s-1"
-state   real   VAR2Dls          ij     misc        1         -     i012rhdus "VARls"                 "STANDARD DEVIATION of 2.5min-resolution topography"   "m"
-state   real   OC12Dls          ij     misc        1         -     i012rhdus "CONls"                 "OROGRAPHIC CONVEXITY of 2.5min-resolution topography"   ""
-state   real   OA1ls            ij     misc        1         -     i012rhdus "OA1ls"                 "OROGRAPHIC ASYMMETRY in West direction from 2.5min-resolution topography"   ""
-state   real   OA2ls            ij     misc        1         -     i012rhdus "OA2ls"                 "OROGRAPHIC ASYMMETRY in South direction from 2.5min-resolution topography"   ""
-state   real   OA3ls            ij     misc        1         -     i012rhdus "OA3ls"                 "OROGRAPHIC ASYMMETRY in South-West direction from 2.5min-resolution topography"   ""
-state   real   OA4ls            ij     misc        1         -     i012rhdus "OA4ls"                 "OROGRAPHIC ASYMMETRY in North-West direction from 2.5min-resolution topography"   ""
-state   real   OL1ls            ij     misc        1         -     i012rhdus "OL1ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 2.5min-resolution topography"   ""
-state   real   OL2ls            ij     misc        1         -     i012rhdus "OL2ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 2.5min-resolution topography"   ""
-state   real   OL3ls            ij     misc        1         -     i012rhdus "OL3ls"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 2.5min-resolution topography"   ""
-state   real   OL4ls            ij     misc        1         -     i012rhdus "OL4ls"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 2.5min-resolution topography"   ""
-state   real   VAR2Dss          ij     misc        1         -     i012rhdus "VARss"                 "STANDARD DEVIATION of 30sec-resolution topography"   "m"
-state   real   OC12Dss          ij     misc        1         -     i012rhdus "CONss"                 "OROGRAPHIC CONVEXITY of 30sec-resolution topography"   ""
-state   real   OA1ss            ij     misc        1         -     i012rhdus "OA1ss"                 "OROGRAPHIC ASYMMETRY in West direction from 30sec-resolution topography"   ""
-state   real   OA2ss            ij     misc        1         -     i012rhdus "OA2ss"                 "OROGRAPHIC ASYMMETRY in South direction from 30sec-resolution topography"   ""
-state   real   OA3ss            ij     misc        1         -     i012rhdus "OA3ss"                 "OROGRAPHIC ASYMMETRY in South-West direction from 30sec-resolution topography"   ""
-state   real   OA4ss            ij     misc        1         -     i012rhdus "OA4ss"                 "OROGRAPHIC ASYMMETRY in North-West direction from 30sec-resolution topography"   ""
-state   real   OL1ss            ij     misc        1         -     i012rhdus "OL1ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 30sec-resolution topography"   ""
-state   real   OL2ss            ij     misc        1         -     i012rhdus "OL2ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 30sec-resolution topography"   ""
-state   real   OL3ss            ij     misc        1         -     i012rhdus "OL3ss"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 30sec-resolution topography"   ""
-state   real   OL4ss            ij     misc        1         -     i012rhdus "OL4ss"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 30sec-resolution topography"   ""
+state   real   VAR2Dls          ij     misc        1         -     i012rhd   "VARls"                 "STANDARD DEVIATION of 2.5min-resolution topography"   "m"
+state   real   OC12Dls          ij     misc        1         -     i012rhd   "CONls"                 "OROGRAPHIC CONVEXITY of 2.5min-resolution topography"   ""
+state   real   OA1ls            ij     misc        1         -     i012rhd   "OA1ls"                 "OROGRAPHIC ASYMMETRY in West direction from 2.5min-resolution topography"   ""
+state   real   OA2ls            ij     misc        1         -     i012rhd   "OA2ls"                 "OROGRAPHIC ASYMMETRY in South direction from 2.5min-resolution topography"   ""
+state   real   OA3ls            ij     misc        1         -     i012rhd   "OA3ls"                 "OROGRAPHIC ASYMMETRY in South-West direction from 2.5min-resolution topography"   ""
+state   real   OA4ls            ij     misc        1         -     i012rhd   "OA4ls"                 "OROGRAPHIC ASYMMETRY in North-West direction from 2.5min-resolution topography"   ""
+state   real   OL1ls            ij     misc        1         -     i012rhd   "OL1ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 2.5min-resolution topography"   ""
+state   real   OL2ls            ij     misc        1         -     i012rhd   "OL2ls"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 2.5min-resolution topography"   ""
+state   real   OL3ls            ij     misc        1         -     i012rhd   "OL3ls"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 2.5min-resolution topography"   ""
+state   real   OL4ls            ij     misc        1         -     i012rhd   "OL4ls"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 2.5min-resolution topography"   ""
+state   real   VAR2Dss          ij     misc        1         -     i012rhd   "VARss"                 "STANDARD DEVIATION of 30sec-resolution topography"   "m"
+state   real   OC12Dss          ij     misc        1         -     i012rhd   "CONss"                 "OROGRAPHIC CONVEXITY of 30sec-resolution topography"   ""
+state   real   OA1ss            ij     misc        1         -     i012rhd   "OA1ss"                 "OROGRAPHIC ASYMMETRY in West direction from 30sec-resolution topography"   ""
+state   real   OA2ss            ij     misc        1         -     i012rhd   "OA2ss"                 "OROGRAPHIC ASYMMETRY in South direction from 30sec-resolution topography"   ""
+state   real   OA3ss            ij     misc        1         -     i012rhd   "OA3ss"                 "OROGRAPHIC ASYMMETRY in South-West direction from 30sec-resolution topography"   ""
+state   real   OA4ss            ij     misc        1         -     i012rhd   "OA4ss"                 "OROGRAPHIC ASYMMETRY in North-West direction from 30sec-resolution topography"   ""
+state   real   OL1ss            ij     misc        1         -     i012rhd   "OL1ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Westerly flow from 30sec-resolution topography"   ""
+state   real   OL2ss            ij     misc        1         -     i012rhd   "OL2ss"                 "OROGRAPHIC EFFECTIVE LENGTH for Southerly flow from 30sec-resolution topography"   ""
+state   real   OL3ss            ij     misc        1         -     i012rhd   "OL3ss"                 "OROGRAPHIC EFFECTIVE LENGTH for South-Westerly flow from 30sec-resolution topography"   ""
+state   real   OL4ss            ij     misc        1         -     i012rhd   "OL4ss"                 "OROGRAPHIC EFFECTIVE LENGTH for North-Westerly flow from 30sec-resolution topography"   ""
 
 # Additional for topo_wind
 state    real   ctopo             ij      misc        1         -     rdu         "ctopo"              "Correction for topography"       ""
@@ -1470,8 +1470,8 @@ state   real    tlp            -       misc         -         -     i02rh     "t
 state   real    tiso           -       misc         -         -     i02rh     "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
 state   real    tlp_strat      -       misc         -         -     i02rh     "tlp_strat"             "BASE STATE LAPSE RATE (DT/D(LN(P)) IN STRATOSPHERE"  "K"
 state   real    p_strat        -       misc         -         -     i02rh     "p_strat"               "BASE STATE PRESSURE AT BOTTOM OF STRATOSPHERE" "Pa"
-state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
-state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
+state   real    max_msftx      -       misc         -         -      rh       "max_msftx"             "Max map factor in domain"  ""
+state   real    max_msfty      -       misc         -         -      rh       "max_msfty"             "Max map factor in domain"  ""
 
 # NUWRF:  State variables for Goddard microphysics
 state   real    phys_tot       ikj      misc        1         -     h         "PHYS_TOT"              "TOTAL LATENT HEATING RATE"                       "K s-1"
@@ -1612,7 +1612,6 @@ state    real  MASS_FLUX        ij      misc        1         -      r        "M
 # ckay
 state    real  cldfra_dp        ikj     misc        1         -      r         "CLDFRA_DP"             "DEEP CONVECTIVE CLOUD FRACTION FROM KF"  ""
 state    real  cldfra_sh        ikj     misc        1         -      r         "CLDFRA_SH"             "SHALLOW CONVECTIVE CLOUD FRACTION FROM KF"  ""
-state    real  w_up             ikj     misc        1         -      rdu      "W_UP"                  "EFFECTIVE SUBGRID VELOCITY FROM KF"  "m s-1"
 state    real  udr_kf           ikj     misc        1         -      rh    "UDR_KF"                "UPDRAFT DETRAINMENT RATE FROM KF"  "kg s-1"
 state    real  ddr_kf           ikj     misc        1         -      rh    "DDR_KF"                "DOWNDRAFT DETRAINMENT RATE FROM KF"  "kg s-1"
 state    real  uer_kf           ikj     misc        1         -      rh    "UER_KF"                "UPDRAFT ENTRAINMENT RATE FROM KF"  "kg s-1"
@@ -1687,7 +1686,7 @@ state    real  RTHRATENLW      ikj      misc        1         -      r        "R
 state    real  RTHRATENLWC     ikj      misc        1         -      r        "RTHRATLWC"             "UNCOUPLED THETA TEND DUE TO CLEAR SKY LONG WAVE RAD"    "K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  RTHRATENSWC     ikj      misc        1         -      r        "RTHRATSWC"             "UNCOUPLED THETA TEND DUE TO CLEAR SKY SHORT WAVE RAD"   "K s-1"
-state    real  CLDFRA          ikj      misc        1         -      irhdu    "CLDFRA"                "CLOUD FRACTION"   ""
+state    real  CLDFRA          ikj      misc        1         -      irh      "CLDFRA"                "CLOUD FRACTION"   ""
 state    real  CONVCLD          ij      misc        1         -      r        "CONVCLD"               "BMJ CONVECTIVE CLOUD" "kg m-2"
 state    real  CCLDFRA         ikj      misc        1         -      r        "CCLDFRA"               "CONVECTIVE CLOUD FRACTION" ""
 state    real  CLDFRA_OLD      ikj      misc        1         -      r        "CLDFRA_OLD"            "previous time level cldfra"                           ""
@@ -2427,7 +2426,7 @@ rconfig   integer     irr_ph              namelist,physics      max_domains    0
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    -1      rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    -1      rh       "bl_pbl_physics"                ""      ""
 rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0       rh       "bl_mynn_tkebudget"             ""      ""
-rconfig   integer     ysu_topdown_pblmix  namelist,physics      1              0       rh       "ysu_topdown_pblmix"            ""      ""
+rconfig   integer     ysu_topdown_pblmix  namelist,physics      1              1       rh       "ysu_topdown_pblmix"            ""      ""
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
 rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              2       irh      "bl_mynn_cloudpdf"              "0:original, 1:Kuwano, 2:Chaboreau-Bechtold"            ""
@@ -2578,7 +2577,7 @@ rconfig   integer slope_rad               namelist,physics      max_domains    0
 rconfig   integer topo_shading            namelist,physics      max_domains    0       -     "topo_shading" "1: apply topographic shading to radiation, 0:not" ""
 rconfig   integer topo_wind               namelist,physics      max_domains    0       -     "topo_wind"  "2: Use Mass sfc drag scheme, 1: improve effects topography over surface wind, 0:not" ""
 rconfig   integer no_mp_heating           namelist,physics      1              0       -     "no_mp_heating" "switch to turn of latent heating in mp schemes"   ""
-rconfig   integer fractional_seaice       namelist,physics      1              1       -     "fractional_seaice" "Fractional sea-ice option"
+rconfig   integer fractional_seaice       namelist,physics      1              0       -     "fractional_seaice" "Fractional sea-ice option: 0=OFF; 1=ON"
 rconfig   integer seaice_snowdepth_opt    namelist,physics      1              0       -     "seaice_snowdepth_opt" "Method for treating snow depth on sea ice"
 rconfig   real    seaice_snowdepth_max    namelist,physics      1          1.E10       -     "seaice_snowdepth_max" "Maximum allowed accumulation (m) of snow on sea ice"
 rconfig   real    seaice_snowdepth_min    namelist,physics      1          0.001       -     "seaice_snowdepth_min" "Minimum snow depth (m) on sea ice"
@@ -2774,13 +2773,13 @@ rconfig   integer scm_force_flux          namelist,scm  1       0           rh  
 # dynamics option (see package definitions, below)
 rconfig   integer dyn_opt                 namelist,dynamics	1             2 
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
-rconfig   integer w_damping               namelist,dynamics	1             0       irh   "w_damping"             ""      ""
-rconfig   real    w_crit_cfl              namelist,dynamics 1             1.2     irh   "w_crit_cfl"        "W-CFL where w-damping is on" ""
-rconfig   integer zadvect_implicit        namelist,dynamics 1             0       irh   "zadvect_implicit"  "Turns on IEVA for vertical adv" ""
+rconfig   integer w_damping               namelist,dynamics	1             0       irh   "w_damping"              ""      ""
+rconfig   real    w_crit_cfl              namelist,dynamics	1             1.0     irh   "w_crit_cfl"             "W-CFL where w-damping is on" ""
+rconfig   integer zadvect_implicit        namelist,dynamics	1             0       irh   "zadvect_implicit"       "Turns on IEVA for vertical adv" ""
 # diff_opt 1=old diffusion, 2=new
-rconfig   integer diff_opt                namelist,dynamics	max_domains   -1      irh   "diff_opt"              ""      ""
+rconfig   integer diff_opt                namelist,dynamics	max_domains   -1      irh   "diff_opt"               ""      ""
 # diff_opt_dfi is needed for backwards integration in dfi
-rconfig   integer diff_opt_dfi            namelist,dynamics	max_domains   0       irh   "diff_opt_dfi"          ""      ""
+rconfig   integer diff_opt_dfi            namelist,dynamics	max_domains   0       irh   "diff_opt_dfi"           ""      ""
 # km_opt   1=old coefs, 2=tke, 3=Smagorinksy
 rconfig   integer km_opt                  namelist,dynamics	max_domains   -1      irh    "km_opt"                ""      ""
 # km_opt_dfi is needed for backward integration in dfi
@@ -2881,7 +2880,6 @@ rconfig   logical open_ye                 namelist,bdy_control	max_domains    .f
 rconfig   logical polar                   namelist,bdy_control	max_domains    .false. rh    "polar"                 ""      ""
 rconfig   logical nested                  namelist,bdy_control	max_domains    .false. rh    "nested"                ""      ""
 rconfig   real    spec_exp                namelist,bdy_control          1     0.      irh    "spec_exp"              ""      ""
-rconfig   integer spec_bdy_final_mu       namelist,bdy_control	        1     1        rh    "call spec_bdy_final for mu"    ""      ""
 rconfig   integer real_data_init_type     namelist,bdy_control		1                 1    irh   "real_data_init_type"   "REAL DATA INITIALIZATION OPTIONS: 1=SI, 2=MM5, 3=GENERIC" "PRE-PROCESSOR TYPES"
 rconfig   logical have_bcs_moist          namelist,bdy_control  max_domains    .false. rh    "have_bcs_moist"           ""      ""
 rconfig   logical have_bcs_scalar         namelist,bdy_control  max_domains    .false. rh    "have_bcs_scalar"          ""      ""
@@ -3074,8 +3072,8 @@ package   nolsmscheme    sf_surface_physics==0       -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn,smcrel,xlaidyn
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
-package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,q_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,qrainxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4
+package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,q_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid,t_veg24,t_veg240,fsun,fsun24,fsun240,fsd24,fsd240,fsi24,fsi240,laip,pct_pft
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,qrainxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4,irfract,sifract,mifract,fifract,irnumsi,irnummi,irnumfi,irwatsi,irwatmi,irwatfi,irsivol,irmivol,irfivol,ireloss,irrsplh
 package   ctsmscheme     sf_surface_physics==6       -             - 
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,t2obs,q2obs,vegf_px,imperv,canfra,lai_px,wwlt_px,wfc_px,wsat_px,clay_px,csand_px,fmsand_px
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
@@ -3124,7 +3122,7 @@ package   g3scheme       cu_physics==5               -             state:cugd_qv
 package   tiedtkescheme  cu_physics==6               -             -
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd,evapcdp3d,icwmrdp3d,rprddp3d,dp3d,du3d,ed3d,eu3d,md3d,mu3d,dsubcld2d,ideep2d,jt2d,maxg2d,lengath2d,dlf,rliq,tpert2d
 package   kfcupscheme    cu_physics==10              -             state:cldfratend_cup,cldfra_cup,updfra_cup,qc_iu_cup,qc_ic_cup,qndrop_ic_cup,wup_cup,mfup_cup,mfup_ent_cup,mfdn_cup,mfdn_ent_cup,fcvt_qc_to_pr_cup,fcvt_qc_to_qi_cup,fcvt_qi_to_pr_cup,lnterms,w0avg
-package   mskfscheme   cu_physics==11              -             state:w0avg,w_up
+package   mskfscheme     cu_physics==11              -             state:w0avg
 package   ksasscheme     cu_physics==14              -             -
 package   nsasscheme     cu_physics==96              -             -
 package   ntiedtkescheme cu_physics==16              -             -
@@ -3400,12 +3398,10 @@ halo      HALO_EM_TRACER_OLD_E_7 dyn_em 80:tracer_old
 halo      HALO_EM_SCALAR_OLD_E_3 dyn_em 24:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_5 dyn_em 48:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_7 dyn_em 80:scalar_old
-
-halo      HALO_EM_FEEDBACK   dyn_em 48:ht
+halo      HALO_EM_FEEDBACK   dyn_em 48:u_2,v_2,w_2,ph_2,phb,t_2,mu_2,mub,alb,pb,moist,dfi_moist,scalar,dfi_scalar,ht,th_old,qv_old,tracer,pcb,pc_2
 halo      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
 halo      HALO_EM_HYDRO_NOAHMP dyn_em 8:ZWTXY
 halo      HALO_EM_HYDRO_NOAHMP_INIT dyn_em 8:ZWTXY,FDEPTHXY,HT,ISLTYP
-
 halo      HALO_EM_COUPLE_A   dyn_em 24:mub,mu_1,mu_2
 period    PERIOD_EM_COUPLE_A dyn_em 2:mub,mu_1,mu_2
 halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
@@ -3452,7 +3448,7 @@ period    PERIOD_BDY_EM_E dyn_em 2:u_2,v_2,ht
 period    PERIOD_EM_HYDRO_UV dyn_em 1:u_2,v_2
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al,rho
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy,ustm,ust
-period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,rucuten,rvcuten,xkmh,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2,rho,gamu,gamv,xkmv_meso
+period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,rucuten,rvcuten,rushten,rvshten,xkmh,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2,rho,gamu,gamv,xkmv_meso
 period    PERIOD_BDY_EM_FDDA_BC dyn_em 2:rundgdten,rvndgdten
 period    PERIOD_BDY_EM_B dyn_em 2:ru_tend,rv_tend,ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
 period    PERIOD_BDY_EM_B3 dyn_em 2:ph_2,al,p,mu_2,muts,mudf

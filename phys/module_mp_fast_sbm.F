@@ -6141,8 +6141,8 @@ enddo
     BRKWEIGHT = 0.0d0
  	 CALL BREAKINIT_KS(PKIJ,QKJ,ECOALMASSM,BRKWEIGHT,XL,DROPRADII,BR_MAX,JBREAK,JMAX,NKR,VR1) ! Rain Spontanous Breakup
 #if (defined(DM_PARALLEL))
- 	 	DM_BCAST_MACRO_R4 (PKIJ)
-    DM_BCAST_MACRO_R4 (QKJ)
+ 	 	DM_BCAST_MACRO_R4(PKIJ)
+    DM_BCAST_MACRO_R4(QKJ)
 #endif
  	  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading BREAKINIT_KS" '
     CALL wrf_debug(000, errmess)

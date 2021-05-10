@@ -195,7 +195,7 @@ MODULE module_ra_cam
    data amo   /  48.0000   /
 
 contains
-subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
+subroutine camrad(RTHRATENLW,RTHRATENSW,RTHRATENLWC,RTHRATENSWC,   &
                      dolw,dosw,                                    &
                      SWUPT,SWUPTC,SWDNT,SWDNTC,                    &
                      LWUPT,LWUPTC,LWDNT,LWDNTC,                    &
@@ -276,7 +276,9 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATENLW, &
-                                                        RTHRATENSW
+                                                        RTHRATENLWC, &
+                                                        RTHRATENSW, &
+                                                        RTHRATENSWC
 !
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(IN   )  ::                                  XLAT, &
@@ -421,10 +423,12 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), dimension(  1:ite-its+1 ) :: solsd         ! Downward solar rad onto surface (sw diffuse)
    real(r8), dimension(  1:ite-its+1 ) :: solld         ! Downward solar rad onto surface (lw diffuse)
    real(r8), dimension(  1:ite-its+1, 1:kte-kts+1 ) :: qrs      ! Solar heating rate
+   real(r8), dimension(  1:ite-its+1, 1:kte-kts+1 ) :: qrscs    ! Clear sky solar heating rate
    real(r8), dimension(  1:ite-its+1 ) :: fsds          ! Flux Shortwave Downwelling Surface
    real(r8), dimension(  1:ite-its+1 ) :: fsdsdir       ! Flux Shortwave Direct Downwelling Surface
    real(r8), dimension(  1:ite-its+1 ) :: fsdsdif       ! Flux Shortwave Diffuse Downwelling Surface
    real(r8), dimension(  1:ite-its+1, 1:kte-kts+1 ) :: qrl      ! Longwave cooling rate
+   real(r8), dimension(  1:ite-its+1, 1:kte-kts+1 ) :: qrlcs    ! Clear sky longwave cooling rate
    real(r8), dimension(  1:ite-its+1 ) :: flwds          ! Surface down longwave flux
    real(r8), dimension(  1:ite-its+1, levsiz, num_months ) :: ozmixmj        ! monthly ozone mixing ratio
    real(r8), dimension(  1:ite-its+1, levsiz ) :: ozmix          ! ozone mixing ratio (time interpolated)
@@ -770,7 +774,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                    fsdndir ,fsdncdir,fsdndif ,fsdncdif, & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
                    flup, flupc, fldn, fldnc, swcftoa, lwcftoa, olrtoa,  &
                    fsns, fsnt    ,flns    ,flnt    , &
-                   qrs, qrl, flwds, rel, rei,                       &
+                   qrs, qrscs, qrl, qrlcs, flwds, rel, rei,             &
                    sols, soll, solsd, solld,                  &
 !ccc
 #ifdef CLWRFGHG
@@ -786,6 +790,8 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       ii = i - its + 1
       if(dolw)RTHRATENLW(I,K,J) = 1.e4*qrl(ii,kk)/(cpair*pi_phy(i,k,j))
       if(dosw)RTHRATENSW(I,K,J) = 1.e4*qrs(ii,kk)/(cpair*pi_phy(i,k,j))
+      if(dolw)RTHRATENLWC(I,K,J) = 1.e4*qrlcs(ii,kk)/(cpair*pi_phy(i,k,j))
+      if(dosw)RTHRATENSWC(I,K,J) = 1.e4*qrscs(ii,kk)/(cpair*pi_phy(i,k,j))
       cemiss(i,k,j)     = emis(ii,kk)
       taucldc(i,k,j)    = tauxcl(ii,kk)
       taucldi(i,k,j)    = tauxci(ii,kk)
@@ -1578,7 +1584,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                   flup    ,flupc   ,fldn    ,fldnc   , &
                   swcf    ,lwcf    ,flut    ,          &
                   fsns    ,fsnt    ,flns    ,flnt    , &
-                  qrs     ,qrl     ,flwds   ,rel     ,rei     , &
+                  qrs     ,qrscs   ,qrl     ,qrlcs   ,flwds   ,rel     ,rei     , &
                   sols    ,soll    ,solsd   ,solld   , &
 !ccc
 #ifdef CLWRFGHG
@@ -1694,6 +1700,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8), intent(out) :: solsd(pcols)         ! Downward solar rad onto surface (sw diffuse)
    real(r8), intent(out) :: solld(pcols)         ! Downward solar rad onto surface (lw diffuse)
    real(r8), intent(out) :: qrs(pcols,pver)      ! Solar heating rate
+   real(r8), intent(out) :: qrscs(pcols,pver)    ! Clear sky solar heating rate
    real(r8), intent(out) :: fsds(pcols)          ! Flux Shortwave Downwelling Surface
    real(r8), intent(out) :: fsdsdir(pcols)       ! Flux Shortwave Direct Downwelling Surface (amontornes-bcodina 2014-04-20)
    real(r8), intent(out) :: fsdsdif(pcols)       ! Flux Shortwave Diffuse Downwelling Surface (amontornes-bcodina 2014-04-20)
@@ -1717,6 +1724,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 ! Output longwave arguments
 !
    real(r8), intent(out) :: qrl(pcols,pver)      ! Longwave cooling rate
+   real(r8), intent(out) :: qrlcs(pcols,pver)    ! Clear sky longwave cooling rate
    real(r8), intent(out) :: flwds(pcols)         ! Surface down longwave flux
 
    real(r8), intent(inout) :: abstot(pcols,pverp,pverp) ! Total absorptivity
@@ -1846,7 +1854,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 !                   rei     ,eccf    ,coszrs  ,scon    ,solin   ,solcon , &
                     rei     ,tauxcl  ,tauxci  ,eccf    ,coszrs  ,scon    ,solin   ,solcon , &
                     asdir   ,asdif   ,aldir   ,aldif   ,nmxrgnrf, &
-                    pmxrgnrf,qrs     ,fsnt    ,fsntc   ,fsntoa  , &
+                    pmxrgnrf,qrs     ,qrscs   ,fsnt    ,fsntc   ,fsntoa  , &
                     fsntoac ,fsnirt  ,fsnrtc  ,fsnirtsq,fsns    , &
                     fsnsc   ,fsdsc   ,fsds    ,sols    ,soll    , &
                     solsd   ,solld   ,frc_day ,                   &
@@ -1896,7 +1904,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 !                   rei     ,eccf    ,coszrs  ,scon    ,solin   ,solcon , &
                     rei     ,tauxcl  ,tauxci  ,eccf    ,coszrs  ,scon    ,solin   ,solcon , &
                     asdir   ,asdif   ,aldir   ,aldif   ,nmxrgn  , &
-                    pmxrgn  ,qrs     ,fsnt    ,fsntc   ,fsntoa  , &
+                    pmxrgn  ,qrs     ,qrscs   ,fsnt    ,fsntc   ,fsntoa  , &
                     fsntoac ,fsnirt  ,fsnrtc  ,fsnirtsq,fsns    , &
                     fsnsc   ,fsdsc   ,fsds    ,sols    ,soll    , &
                     solsd   ,solld   ,frc_day ,                   &
@@ -2014,8 +2022,9 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                        pbr     ,pnm     ,pmln    ,piln    ,          &
                        qm1(1,1,in2o)    ,qm1(1,1,ich4)    ,          &
                        qm1(1,1,if11)    ,qm1(1,1,if12)    ,          &
-                       cld     ,emis    ,pmxrgn  ,nmxrgn  ,qrl     , &
-                       doabsems, abstot, absnxt, emstot,             &
+                       cld     ,emis    ,pmxrgn  ,nmxrgn  ,          &
+                       qrl     ,qrlcs   ,                            &
+                       doabsems,abstot  ,absnxt  ,emstot  ,          &
                        flns    ,flnt    ,flnsc   ,flntc   ,flwds   , &
                        flut    ,flutc   ,                            &
                        flup    ,flupc   ,fldn    ,fldnc   ,          &
@@ -2049,7 +2058,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                        pbr       ,pnm     ,pmln    ,piln    ,          &
                        n2o       ,ch4     ,cfc11   ,cfc12   ,          &
                        cld       ,emis    ,pmxrgn  ,nmxrgn  ,qrl     , &
-                       doabsems, abstot, absnxt, emstot,             &
+                       qrlcs, doabsems, abstot, absnxt, emstot,        &
                        flns      ,flnt    ,flnsc   ,flntc   ,flwds   , &
                        flut      ,flutc   ,                            &
                        flup      ,flupc   ,fldn    ,fldnc   ,          &
@@ -4756,7 +4765,7 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
                     pmid    ,pint    ,pmln    ,piln    ,          &
                              n2o     ,ch4     ,cfc11   ,cfc12   , &
                     cld     ,emis    ,pmxrgn  ,nmxrgn  ,qrl     , &
-                    doabsems, abstot, absnxt, emstot,             &
+                    qrlcs, doabsems, abstot, absnxt, emstot,      &
                     flns    ,flnt    ,flnsc   ,flntc   ,flwds   , &
                     flut    ,flutc   , &
                     flup    ,flupc   ,fldn    ,fldnc   ,          &
@@ -4834,6 +4843,7 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! Output arguments
 !
    real(r8), intent(out) :: qrl(pcols,pver)      ! Longwave heating rate
+   real(r8), intent(out) :: qrlcs(pcols,pver)    ! Clear sky longwave heating rate
    real(r8), intent(out) :: flns(pcols)          ! Surface cooling flux
    real(r8), intent(out) :: flnt(pcols)          ! Net outgoing flux
    real(r8), intent(out) :: flut(pcols)          ! Upward flux at top of model
@@ -5674,9 +5684,17 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
                      1.E-4*gravit/((pint(i,k) - pint(i,k+1)))
       end do
    end do
+   ! Repeat for clear sky
+   do k=ntoplw,pver
+      do i=1,ncol
+         qrlcs(i,k) = (fsul(i,k) - fsdl(i,k) - fsul(i,k+1) + fsdl(i,k+1))* &
+                     1.E-4*gravit/((pint(i,k) - pint(i,k+1)))
+      end do
+   end do
 ! Return 0 above solution domain
    if ( ntoplw > 1 )then
       qrl(:ncol,:ntoplw-1) = 0.
+      qrlcs(:ncol,:ntoplw-1) = 0.
    end if
 
 ! Added downward/upward total and clear sky fluxes
@@ -5706,7 +5724,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 !                   rei     ,eccf    ,coszrs  ,scon    ,solin   ,solcon,  &
                     rei     ,tauxcl  ,tauxci  ,eccf    ,coszrs  ,scon    ,solin   ,solcon,  &
                     asdir   ,asdif   ,aldir   ,aldif   ,nmxrgn  , &
-                    pmxrgn  ,qrs     ,fsnt    ,fsntc   ,fsntoa  , &
+                    pmxrgn  ,qrs     ,qrscs   ,fsnt    ,fsntc   ,fsntoa  , &
                     fsntoac ,fsnirtoa,fsnrtoac,fsnrtoaq,fsns    , &
                     fsnsc   ,fsdsc   ,fsds    ,sols    ,soll    , &
                     solsd   ,solld   ,frc_day ,                   &
@@ -5882,6 +5900,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 
    real(r8), intent(out) :: solin(pcols)     ! Incident solar flux
    real(r8), intent(out) :: qrs(pcols,pver)  ! Solar heating rate
+   real(r8), intent(out) :: qrscs(pcols,pver)! Clear sky solar heating rate
    real(r8), intent(out) :: fsns(pcols)      ! Surface absorbed solar flux
    real(r8), intent(out) :: fsnt(pcols)      ! Total column absorbed solar flux
    real(r8), intent(out) :: fsntoa(pcols)    ! Net solar flux at TOA
@@ -6072,6 +6091,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) solflx           ! Solar flux in current interval
    real(r8) sfltot           ! Spectrally summed total solar flux
    real(r8) totfld(0:pver)   ! Spectrally summed flux divergence
+   real(r8) totfldc(0:pver)  ! Spectrally summed clear sky flux divergence
    real(r8) fswup(0:pverp)   ! Spectrally summed up flux
    real(r8) fswdn(0:pverp)   ! Spectrally summed down flux
    real(r8) fswupc(0:pverp)  ! Spectrally summed up clear sky flux
@@ -6345,6 +6365,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 
       do k=1, pver
          qrs(i,k) = 0.0_r8
+         qrscs(i,k) = 0.0_r8
       end do
 
       ! initialize aerosol diagnostic fields to 0.0 
@@ -7181,6 +7202,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! 
          do k=0,pver
             totfld(k) = 0.0_r8
+            totfldc(k) = 0.0_r8
             fswup (k) = 0.0_r8
             fswdn (k) = 0.0_r8
             fswupc (k) = 0.0_r8
@@ -7514,6 +7536,13 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             fswdncdir(k) = fswdncdir(k) + solflx*exptdnc(k) ! Beer's Law amontornes-bcodina (2014-04-20)
             end do
 
+            ! For clear sky heating rate
+            do k=0,pver
+               kp1 = k+1
+               flxdiv = (fluxdn(k  ) - fluxdn(kp1)) + (fluxup(kp1) - fluxup(k))
+               totfldc(k) = totfldc(k)  + solflx*flxdiv
+            end do
+
             fsntc(i)    = fsntc(i)+solflx*(fluxdn(1)-fluxup(1))
             fsntoac(i)  = fsntoac(i)+solflx*(fluxdn(0)-fluxup(0))
             fsnsc(i)    = fsnsc(i)+solflx*(fluxdn(pverp)-fluxup(pverp))
@@ -7532,6 +7561,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! 
          do k=1,pver
             qrs(i,k) = -1.E-4*gravit*totfld(k)/(pint(i,k) - pint(i,k+1))
+            qrscs(i,k) = -1.E-4*gravit*totfldc(k)/(pint(i,k) - pint(i,k+1))
          end do
 
 ! Added downward/upward total and clear sky fluxes

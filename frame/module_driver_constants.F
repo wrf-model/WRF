@@ -66,6 +66,10 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_trackchem   =   100
 
+   !  The maximum number of megan species in chem mech
+
+   INTEGER , PARAMETER :: max_mgnspc      =   100
+
    !  The maximum number of outer iterations (for DA minimisation)
 
    INTEGER , PARAMETER :: max_outer_iterations = 100
@@ -80,7 +84,12 @@ MODULE module_driver_constants
 
    !  The maximum number of obs indexes (for conventional DA obs) 
 
+#if (WRF_CHEM == 1)
+   INTEGER , PARAMETER :: num_ob_indexes  =   30
+#else
    INTEGER , PARAMETER :: num_ob_indexes  =   29
+#endif
+
 
    !  The maximum number of bogus storms
 

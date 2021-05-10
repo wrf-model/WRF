@@ -20,7 +20,7 @@ CONTAINS
                      ,ccldfra,convcld,qcconv,qiconv                   &
                      ,bmj_rad_feedback                                & 
                      ,rainc,raincv,pratec,nca                         &
-                     ,cldfra_dp,cldfra_sh,w_up                        & !ckay for subgrid cloud
+                     ,cldfra_dp,cldfra_sh                             &
                      ,udr_kf,ddr_kf,uer_kf,der_kf,timec_kf,kf_edrates & !kf_edrates
                      ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
@@ -129,6 +129,10 @@ CONTAINS
                  ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,do_capsuppress                                  &
 #endif 
+#if ( WRF_CHEM == 1 )
+                   ,traceropt,conv_tr_wetscav                         &
+                   ,conv_tr_aqchem,chem_conv_tr                       &
+#endif
 #if (EM_CORE == 1)                               
           ,QR_CU,QS_CU,NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU,CU_UAF          &
           ,alevsiz_cu,num_months,no_src_types_cu,aercu_opt,aercu_fct  &
@@ -152,9 +156,15 @@ CONTAINS
                                           ,KFCUPSCHEME                & !CuP, wig 3-Aug-2006  !BSINGH - For WRFCuP scheme
                                           ,num_chem                   & !CuP, rce 10-may-2012 !BSINGH - For WRFCuP scheme
 #endif
+#if ( WRF_CHEM == 1)
+                                          ,num_tracer                 &
+#endif
                                           ,TIEDTKESCHEME              &
                                           ,NTIEDTKESCHEME             
 
+#if ( WRF_CHEM == 1 )
+  USE module_chem_share, only:      get_last_gas
+#endif
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY:    DUCUSCHEME
 #endif
@@ -468,9 +478,6 @@ CONTAINS
 
    INTEGER, INTENT(IN   )        ::   kf_edrates
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         INTENT(INOUT ),OPTIONAL ::                        w_up
-
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
           GSW,HT,XLAND
 #if (EM_CORE == 1)
@@ -651,6 +658,14 @@ CONTAINS
                                                      updfra_cup    !CuP, rce 10-may-2012
 
    INTEGER, OPTIONAL, INTENT(IN) ::                    chem_opt    !CuP, rce 10-may-2012
+
+#if ( WRF_CHEM == 1 )
+   INTEGER, OPTIONAL, INTENT(IN) ::                    traceropt, &
+                                                 conv_tr_wetscav, &
+                                                  conv_tr_aqchem, &
+                                                    chem_conv_tr
+  INTEGER :: numgas
+#endif
 
    LOGICAL, DIMENSION( ims:ime, jms:jme ),                       &
             INTENT(OUT) ::                              cupflag    !CuP, wig 9-Oct-2006
@@ -1060,7 +1075,6 @@ CONTAINS
                ,F_QI=f_qi,F_QS=f_qs                             &
                ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
                ,CLDFRA_SH_KF=cldfra_sh                          &
-               ,W_UP=w_up                                       & ! ckay
                ,QC_KF=QC_CU,QI_KF=QI_CU,QR_KF=QR_CU,QS_KF=QS_CU &
                ,NC_KF=NC_CU,NI_KF=NI_CU,NR_KF=NR_CU,NS_KF=NS_CU &
                ,CCN_KF=CCN_CU,AINC_FRAC=CU_UAF                  &
@@ -1281,6 +1295,10 @@ CONTAINS
          endif
 #endif
 
+#if ( WRF_CHEM == 1 )
+         numgas = get_last_gas(chem_opt)
+#endif
+
          CALL GFDRV(spp_conv,pattern_spp_conv,field_conv,       &
                 DT=dt,DX=dx                                     &
                ,RHO=rho,RAINCV=raincv,PRATEC=tmppratec          &
@@ -1317,6 +1335,15 @@ CONTAINS
                ,do_capsuppress=do_capsuppress                   &
                ,cap_suppress_loc=cap_suppress_loc               &
 #endif 
+#if ( WRF_CHEM == 1 )
+              ,chem=grid%chem,tracer=grid%tracer                &
+              ,numgas=numgas       &
+              ,num_chem=num_chem,chemopt=chem_opt  &
+              ,num_tracer=num_tracer,traceropt=traceropt   &
+              ,conv_tr_wetscav=conv_tr_wetscav     &
+              ,conv_tr_aqchem=conv_tr_aqchem       &
+              ,chem_conv_tr=chem_conv_tr           &
+#endif  
                                                                 )
      CASE (CAMZMSCHEME)
           IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &

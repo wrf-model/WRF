@@ -64,18 +64,18 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                         ' index-of-channels : '
       write(unit=innov_rad_unit,fmt='(10i5)') iv%instid(i)%ichan
       if ( amsr2 ) then
-         write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi clw'
+         write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi solzen solazi clw'
       else
-         write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi'
+         write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi solzen solazi'
       end if
       write(unit=innov_rad_unit,fmt='(a)') ' grid%xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
-                    & soiltyp vegtyp vegfra elev clwp'
+                    & soiltyp vegtyp vegfra elev clwp cloud_frac'
       ndomain = 0
       do n =1,iv%instid(i)%num_rad
          if (iv%instid(i)%info%proc_domain(1,n)) then
             ndomain=ndomain+1
             if ( amsr2 ) then ! write out clw
-               write(unit=innov_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2,f8.3)') 'INFO : ', ndomain, &
+               write(unit=innov_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,6f8.2,f8.3)') 'INFO : ', ndomain, &
                                 iv%instid(i)%info%date_char(n), &
                                 iv%instid(i)%scanpos(n),        &
                                 iv%instid(i)%landsea_mask(n),   &
@@ -84,9 +84,11 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                                 iv%instid(i)%info%lon(1,n),     &
                                 iv%instid(i)%satzen(n),         &
                                 iv%instid(i)%satazi(n),         &
+                                iv%instid(i)%solzen(n),         &
+                                iv%instid(i)%solazi(n),         &
                                 iv%instid(i)%clw(n)
             else ! no clw info
-               write(unit=innov_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2)') 'INFO : ', ndomain, &
+               write(unit=innov_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,6f8.2)') 'INFO : ', ndomain, &
                                 iv%instid(i)%info%date_char(n), &
                                 iv%instid(i)%scanpos(n),        &
                                 iv%instid(i)%landsea_mask(n),   &
@@ -94,7 +96,9 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                                 iv%instid(i)%info%lat(1,n),     &
                                 iv%instid(i)%info%lon(1,n),     &
                                 iv%instid(i)%satzen(n),         &
-                                iv%instid(i)%satazi(n)
+                                iv%instid(i)%satazi(n),         &
+                                iv%instid(i)%solzen(n),         &
+                                iv%instid(i)%solazi(n)
             end if
             select case (iv%instid(i)%isflg(n))
             case (0) ;
@@ -114,7 +118,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
             case (7) ;
                surftype = 'MSNO : '
             end select
-            write(unit=innov_rad_unit,fmt='(a,i7,9f10.2,3i3,f8.3,f10.2,f8.3)') surftype, n, &
+            write(unit=innov_rad_unit,fmt='(a,i7,9f10.2,3i3,f8.3,f10.2,f8.3,f15.5)') surftype, n, &
                              iv%instid(i)%t2m(n), &
                              iv%instid(i)%mr2m(n),   &
                              iv%instid(i)%u10(n), &
@@ -129,7 +133,8 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                              nint(iv%instid(i)%vegtyp(n)), &
                              iv%instid(i)%vegfra(n), &
                              iv%instid(i)%elevation(n), &
-                             iv%instid(i)%clwp(n)
+                             iv%instid(i)%clwp(n), &
+                             iv%instid(i)%cloud_frac(n)
 
             write(unit=innov_rad_unit,fmt='(a)') 'OBS  : '
             write(unit=innov_rad_unit,fmt='(10f11.2)') ob%instid(i)%tb(:,n)

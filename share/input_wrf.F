@@ -740,6 +740,10 @@
                    ! All is well.  Noah-MP and Noah have compatible wrfinput files.
                 ELSE IF ( ( config_flags%sf_surface_physics == NOAHMPSCHEME ) .and. ( itmp == LSMSCHEME ) ) then
                    ! All is well.  Noah-MP and Noah have compatible wrfinput files.
+#if ( NMM_CORE != 1 )
+                ELSE IF ( ( config_flags%sf_surface_physics == CTSMSCHEME ) ) then
+                   ! All is well.  CTSM doesn't care about the wrfinput file.
+#endif
                 ELSE
                    call wrf_message("----------------- ERROR -------------------")
                    WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
@@ -1899,8 +1903,6 @@
     CHARACTER (LEN=1024) :: input_title_char
     LOGICAL :: skip_rigorous_and_return_right_away
     INTEGER :: ierr
-
-#include "version_decl"
 
     !  Make sure that the input data is consistent with the current code.
 

@@ -63,6 +63,7 @@ dimspec    umap6   2     namelist=urban_map_bd             z     urban_map_bd
 dimspec    umap7   2     namelist=urban_map_wd             z     urban_map_wd
 dimspec    umap8   2     namelist=urban_map_gbd            z     urban_map_gbd
 dimspec    umap9   2     namelist=urban_map_fbd            z     urban_map_fbd
+dimspec    umap10  2     namelist=urban_map_zgrd           z     urban_map_zgrd
 
 dimspec    mocat   2     namelist=mosaic_cat               z     mosaic categories  # danli
 dimspec    mocat2  2     namelist=mosaic_cat_soil          z     mosaic categories * soil layers  # danli
@@ -97,6 +98,8 @@ dimspec    gecros  2     constant=60                       z     gecros
 
 # Set up the dust erosion dimension irrespective of WRF-Chem, but namelist erosion_dim=3 mandatory when not using WRF-Chem  (gthompsn, 2017Jun23)
 dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
+dimspec    clmvoc  3     constant=2                        z     clmvoc_lev
+dimspec    npft    2     namelist=num_pft_clm              z     pft_fraction
 
 # Dimensions required only for Chemistry
 

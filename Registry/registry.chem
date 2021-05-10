@@ -13,12 +13,16 @@ rconfig   integer    io_form_auxinput12  namelist,time_control   1  2
 
 
 state    real    CLDFRA2         ikj    misc        1         -      h        "CLDFRA2"             "CLOUD FRACTION"
-state    real    RAINPROD        ikj    misc        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
-state    real    EVAPPROD        ikj    misc        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
 state    real    QV_B4MP         ikj    misc        1         -      -        "QV_B4MP"             "WATER VAPOR BEFORE MICROPHYSICS"  "kg kg-1"
 state    real    QC_B4MP         ikj    misc        1         -      -        "QC_B4MP"             "CLOUD WATER BEFORE MICROPHYSICS"  "kg kg-1"
 state    real    QI_B4MP         ikj    misc        1         -      -        "QI_B4MP"             "CLOUD ICE BEFORE MICROPHYSICS"    "kg kg-1"
 state    real    QS_B4MP         ikj    misc        1         -      -        "QS_B4MP"             "SNOW BEFORE MICROPHYSICS"         "kg kg-1"
+
+state    real    ph_cw           ikj    misc        1         -      -        "ph_cw"               "pH of cloud water"             "Unitless"
+state    real    ph_aer01        ikj    misc        1         -      -        "ph_aer01"            "H+ of aerosol bin 1"           "mol/kg"
+state    real    ph_aer02        ikj    misc        1         -      -        "ph_aer02"            "H+ of aerosol bin 2"           "mol/kg"
+state    real    ph_aer03        ikj    misc        1         -      -        "ph_aer03"            "H+ of aerosol bin 3"           "mol/kg"
+state    real    ph_aer04        ikj    misc        1         -      -        "ph_aer04"            "H+ of aerosol bin 4"           "mol/kg"
 
 state    real    ccn1            ikj    misc        1         -      r        "ccn1"                "CCN concentration at S=0.02%"  "#/cm3"
 state    real    ccn2            ikj    misc        1         -      r        "ccn2"                "CCN concentration at S=0.05%"  "#/cm3"
@@ -49,6 +53,12 @@ state   integer last_chem_time_second    -  misc    -         -      r       "la
 #
 state   integer emissframes      -          -          -         -      -       "emissframes"           ""         ""
 state   integer fireemissframes  -        -          -        -        -      "fireemissframes"       ""         ""
+#
+# Rain, evaporation rates
+#
+state    real    -              ikjf     wetscav_frcing        -         -      -        -                     "Rain,evap rates"                  "s-1"
+state    real    RAINPROD       ikjf     wetscav_frcing        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
+state    real    EVAPPROD       ikjf     wetscav_frcing        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
 #
 # Anthropogenic emissions
 #
@@ -304,11 +314,11 @@ state    real  e_hum          i+jf     emis_ant     1         Z      i5     "E_H
 
 # dust and seas emission arrays
 state   real     -          i{dust}jf      emis_dust      -        -        -         -                    "Dust Emissions"         ""
-state    real  edust1       i{dust}jf      emis_dust      1         Z      -     "EDUST1"         "DUST emissions bin1"  ""
-state    real  edust2       i{dust}jf      emis_dust      1         Z      -     "EDUST2"         "DUST emissions bin2"  ""
-state    real  edust3       i{dust}jf      emis_dust      1         Z      -     "EDUST3"         "DUST emissions bin3"  ""
-state    real  edust4       i{dust}jf      emis_dust      1         Z      -     "EDUST4"         "DUST emissions bin4"  ""
-state    real  edust5       i{dust}jf      emis_dust      1         Z      -     "EDUST5"         "DUST emissions bin5"  ""
+state    real  edust1       i{dust}jf      emis_dust      1         Z      -     "EDUST1"         "Accumulated DUST emissions bin1"  "kg/m2"
+state    real  edust2       i{dust}jf      emis_dust      1         Z      -     "EDUST2"         "Accumulated DUST emissions bin2"  "kg/m2"
+state    real  edust3       i{dust}jf      emis_dust      1         Z      -     "EDUST3"         "Accumulated DUST emissions bin3"  "kg/m2"
+state    real  edust4       i{dust}jf      emis_dust      1         Z      -     "EDUST4"         "Accumulated DUST emissions bin4"  "kg/m2"
+state    real  edust5       i{dust}jf      emis_dust      1         Z      -     "EDUST5"         "Accumulated DUST emissions bin5"  "kg/m2"
 state   real     -          i{dust}jf      emis_seas      -        -        -         -                    "Sea-Salt Emissions"         ""
 state    real  eseas1       i{dust}jf      emis_seas      1         Z      -     "ESEAS1"         "Sea-Salt emissions bin1 "  ""
 state    real  eseas2       i{dust}jf      emis_seas      1         Z      -     "ESEAS2"         "Sea-Salt emissions bin2 "  ""
@@ -674,8 +684,8 @@ state    real  sandfrac       ij      misc        1         -      i01r    "SAND
 state    real  clayfrac_nga   ij      misc        1         -      i01r    "CLAYFRAC_NGA"        "Clay fraction in each grid cell (0-1)"                                     "none"
 state    real  sandfrac_nga   ij      misc        1         -      i01r    "SANDFRAC_NGA"        "Sand fraction in each grid cell (0-1)"                                     "none"
 state    real  afwa_dustloft  ij      misc        1         -      h02     "AFWA_DUSTLOFT"       "AFWA Diagnostic dust lofting potential (U10-U10t)"                         "m s^-1"
-state    real  tot_dust       ikj     misc        1         -      h02     "TOT_DUST"            "Total dust concentration (0.1-20 um)"                                      "ug m^-3"
-state    real  tot_edust      ij      misc        1         -      h02     "TOT_EDUST"           "Total dust emission flux (0.1-20 um)"                                      "g m^-2 s^-1"
+state    real  tot_dust       ikj     misc        1         -      h02     "TOT_DUST"            "Total dust concentration (0.2-20 um)"                                      "ug m^-3"
+state    real  tot_edust      ij      misc        1         -      h02     "TOT_EDUST"           "Total accumulated dust emission (0.2-20 um)"                               "kg m^-2"
 state    real  vis_dust       ikj     misc        1         -      h02     "VIS_DUST"            "Visibility due to dust only"                                               "m"
 
 # These 3D arrays are output from the SOA module for different purposes
@@ -2116,6 +2126,11 @@ state   real    tr18_7     ikjftb  tracer        1         -     i8rhusdf=(bdy_i
 state   real    tr18_8     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr18_8"         "tr18_8"          -
 state   real    tr18_9     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr18_9"         "tr18_9"          -
 
+# MAD-WRF
+state   real    tr_qc   ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr_qcloud"      "Tracer with the liquid content" "Kg Kg-1"
+state   real    tr_qi   ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr_qice"        "Tracer with the ice content" "Kg Kg-1"
+state   real    tr_qs   ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr_qsnow"       "Tracer with the snow content" "Kg Kg-1"
+
 # GHG chem arrays, Chem Scalars for CO2 used in the GHG options
 state   real    co2_bio    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_BIO"       "mixing ratio of VPRM CO2" "ppmv"
 state   real    co2_ant    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_ANT"       "mixing ratio of anthropogenic CO2"          "ppmv"
@@ -2155,6 +2170,10 @@ state   real    dcb2            ikjftb  chem    1       -       i0{12}rhusdf=(bd
 state   real    dcb3            ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "dcb3"  "DCB3 mixing ratio"    "ppmv"
 state   real    ethene          ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "ethene"        "ETHENE mixing ratio"  "ppmv"
 state   real    isoprene        ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "isoprene"      "ISOPRENE mixing ratio"        "ppmv"
+state   real    isopoo          ikjftb  chem    1       -      i0{12}rhusdf=(bdy_interp:dt) "isopoo" "ISOPOO mixing ratio"   "ppmv"
+state   real    isop2o2         ikjftb  chem    1       -      i0{12}rhusdf=(bdy_interp:dt) "isop2o2" "ISOP2O2 mixing ratio"   "ppmv"
+state   real    isopooh         ikjftb  chem    1       -     i0{12}rhusdf=(bdy_interp:dt) "isopooh" "ISOPOOH mixing ratio"   "ppmv"
+state   real    isopooh2        ikjftb  chem    1       -     i0{12}rhusdf=(bdy_interp:dt) "isopooh2" "ISOPOOH2 mixing ratio"   "ppmv"
 state   real    c2h2            ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "c2h2"  "C2H2 mixing ratio"    "ppmv"
 state   real    alk3            ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "alk3"  "ALK3 mixing ratio"    "ppmv"
 state   real    alk4            ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "alk4"  "ALK4 mixing ratio"    "ppmv"
@@ -3759,6 +3778,12 @@ rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0
 rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
 rconfig   integer cam_mam_nspec            namelist,chem        1              85      irh     "cam_mam_nspec"                   ""    ""
 rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .true.    irh     "CAM_MP_MAM_cpled"                   ""    ""
+rconfig   integer mozart_ph_diag           namelist,chem        1              0       rh      "mozart_ph_diag"                  ""    ""
+
+# CLM inputs
+rconfig   character  megan_specifier      namelist,physics     max_mgnspc      " "        -     "map from Megan2.1 to WRF species" "" ""
+rconfig   character  megan_factors_file   namelist,physics              1      " "        -     "Megan2.1 emission factors" "" ""
+rconfig   logical    megan_mapped_emisfctrs   namelist,physics          1      .false.    -     "use mapped emission factors" "" ""
 
 # GHG chemistry namelist options:
 rconfig   character   vprm_opt            namelist,chem        max_domains   "VPRM_param_US"  -       "the file contains VPRM parameters"  ""      ""
@@ -3955,7 +3980,7 @@ package   cbmz_mosaic_kpp chem_opt==170               -             chem:so2,sul
 
 
 #SAPRCNOV new package, automatically created using diff_mechanisSpc_wrfRegistry.m script (pablo-saide@uiowa.edu)
-package saprc99_kpp    chem_opt==195   -       chem:o3,h2o2,no,no2,no3,n2o5,hono,hno3,hno4,so2,h2so4,co,hcho,ccho,rcho,acet,mek,hcooh,meoh,etoh,cco_oh,rco_oh,gly,mgly,bacl,cres,bald,isoprod,methacro,mvk,prod2,dcb1,dcb2,dcb3,ethene,isoprene,c2h6,c3h8,c2h2,c3h6,alk3,alk4,alk5,aro1,aro2,ole1,ole2,terp,rno3,nphe,phen,pan,pan2,pbzn,ma_pan,co2,cco_ooh,rco_o2,rco_ooh,xn,xc,ho,ho2,c_o2,cooh,rooh,ro2_r,r2o2,ro2_n,cco_o2,bzco_o2,ma_rco3,nh3,hcl,ch4
+package saprc99_kpp    chem_opt==195   -       chem:o3,h2o2,no,no2,no3,n2o5,hono,hno3,hno4,so2,h2so4,co,hcho,ccho,rcho,acet,mek,hcooh,meoh,etoh,cco_oh,rco_oh,gly,mgly,bacl,cres,bald,isoprod,methacro,mvk,prod2,dcb1,dcb2,dcb3,ethene,isoprene,isopoo,isopooh,iepox,isop2o2,isopooh2,psd1,c2h6,c3h8,c2h2,c3h6,alk3,alk4,alk5,aro1,aro2,ole1,ole2,terp,rno3,nphe,phen,pan,pan2,pbzn,ma_pan,co2,cco_ooh,rco_o2,rco_ooh,xn,xc,ho,ho2,c_o2,cooh,rooh,ro2_r,r2o2,ro2_n,cco_o2,bzco_o2,ma_rco3,sesq,nh3,hcl,ch4
 
 package saprc99_mosaic_4bin_vbs2_kpp    chem_opt==198   -       chem:o3,h2o2,no,no2,no3,n2o5,hono,hno3,hno4,so2,h2so4,co,hcho,ccho,rcho,acet,mek,hcooh,meoh,etoh,cco_oh,rco_oh,gly,mgly,bacl,cres,bald,isoprod,methacro,mvk,prod2,dcb1,dcb2,dcb3,ethene,isoprene,c2h6,c3h8,c2h2,c3h6,alk3,alk4,alk5,aro1,aro2,ole1,ole2,terp,rno3,nphe,phen,pan,pan2,pbzn,ma_pan,co2,cco_ooh,rco_o2,rco_ooh,xn,xc,ho,ho2,c_o2,cooh,rooh,ro2_r,r2o2,ro2_n,cco_o2,bzco_o2,ma_rco3,sesq,pcg1_b_c,pcg2_b_c,pcg1_b_o,pcg2_b_o,opcg1_b_c,opcg1_b_o,pcg1_f_c,pcg2_f_c,pcg1_f_o,pcg2_f_o,opcg1_f_c,opcg1_f_o,psd1,psd2,nh3,hcl,nume,den,ant1_c,ant1_o,biog1_c,biog1_o,ch4,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,pcg1_b_c_a01,pcg2_b_c_a01,pcg1_b_o_a01,pcg2_b_o_a01,opcg1_b_c_a01,opcg1_b_o_a01,pcg1_f_c_a01,pcg2_f_c_a01,pcg1_f_o_a01,pcg2_f_o_a01,opcg1_f_c_a01,opcg1_f_o_a01,ant1_c_a01,ant1_o_a01,biog1_c_a01,biog1_o_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,pcg1_b_c_a02,pcg2_b_c_a02,pcg1_b_o_a02,pcg2_b_o_a02,opcg1_b_c_a02,opcg1_b_o_a02,pcg1_f_c_a02,pcg2_f_c_a02,pcg1_f_o_a02,pcg2_f_o_a02,opcg1_f_c_a02,opcg1_f_o_a02,ant1_c_a02,ant1_o_a02,biog1_c_a02,biog1_o_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,pcg1_b_c_a03,pcg2_b_c_a03,pcg1_b_o_a03,pcg2_b_o_a03,opcg1_b_c_a03,opcg1_b_o_a03,pcg1_f_c_a03,pcg2_f_c_a03,pcg1_f_o_a03,pcg2_f_o_a03,opcg1_f_c_a03,opcg1_f_o_a03,ant1_c_a03,ant1_o_a03,biog1_c_a03,biog1_o_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,pcg1_b_c_a04,pcg2_b_c_a04,pcg1_b_o_a04,pcg2_b_o_a04,opcg1_b_c_a04,opcg1_b_o_a04,pcg1_f_c_a04,pcg2_f_c_a04,pcg1_f_o_a04,pcg2_f_o_a04,opcg1_f_c_a04,opcg1_f_o_a04,ant1_c_a04,ant1_o_a04,biog1_c_a04,biog1_o_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04
 
@@ -4053,6 +4078,7 @@ package   cu_kfcup_select   kfcup_diag==1             -            state: chem_c
 package   gunther1      bio_emiss_opt==1             -             -
 package   beis314       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
+package   megan2_clm    bio_emiss_opt==4   
 
 # Biospheric CO2 and CH4 emissions
 package   ebioco2       bio_emiss_opt==16            -             state:rad_vprm,lambda_vprm,alpha_vprm,resp_vprm;vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;eghg_bio:ebio_gee,ebio_res,ebio_co2oce
@@ -4067,6 +4093,8 @@ package   biomassb_t1_mozcart   biomass_burn_opt==4          -          state:me
 # GHG biomass burning
 package   biomassb_ghg  biomass_burn_opt==5          -             state::mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_co,ebu_co2,ebu_ch4;ebu_in:ebu_in_co,ebu_in_co2,ebu_in_ch4
 
+# Package for mozart pH diagnostics
+package  do_mozart_ph_diag    mozart_ph_diag==1      -             state:ph_cw,ph_aer01,ph_aer02,ph_aer03,ph_aer04
 
 package   opt_out      opt_pars_out==1             -          ext_coef:extcof3,extcof55,extcof106,extcof3_5,extcof8_12;bscat_coef:bscof3,bscof55,bscof106;asym_par:asympar3,asympar55,asympar106
 
@@ -4134,6 +4162,9 @@ package   usechemdiag    chemdiag==1         -                conv_ct:conv_co,co
 
 # package for aerosol srf area diagnostic
 package   has_aero_srf_area_diag    aero_srf_area_diag==1         -                aero_srf_area:sulf_srf_area,oc_srf_area,bc_srf_area
+#
+# package for wetscavenging
+package   wetscav_pl                wetscav_onoff==1              -                wetscav_frcing:rainprod,evapprod
 
 # Lightning NOx tracers
 state   real    lnox_total   ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_total"      "Total LNOx tracer"          "ppmv"

@@ -8875,7 +8875,7 @@
 !
 ! Citations
 ! DeMott, P. J., Coauthors 2010: Predicting global atmospheric ice nuclei distributions and 
-!     their impacts on climate. Proc. Natl. Acad. Sci. USA, 107:11217–11222.
+!     their impacts on climate. Proc. Natl. Acad. Sci. USA, 107:11217-11222.
 !
 !------------------------------------------------------------------------
  real,intent(in) :: p_air !air pressure [hPa]

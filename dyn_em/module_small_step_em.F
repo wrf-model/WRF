@@ -1315,20 +1315,45 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                     +(1.-epssm)*t_2ave(i,k,j))
       t_2ave(i,k,j)=(t_2ave(i,k,j) + (c1h(k)*Muave(i,j))*t0) &
                     /((c1h(k)*Muts(i,j)+c2h(k))*(t0+t_1(i,k,j)))
-      wdwn(i,k+1)=.5*(ww(i,k+1,j)+ww(i,k,j))*rdnw(k)    &
-           *(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
       rhs(i,k+1) = dts*(ph_tend(i,k+1,j) + .5*g*(1.-epssm)*w(i,k+1,j))
     ENDDO
     ENDDO
 !   building up RHS of phi equation
 !   ph_tend contains terms 1 and 2; now adding 3 and 4 in stages:
 !   here rhs = delta t [ph_tend + ~g*w/2 - ~ww * partial d phi/dz]
-    DO k=2,k_end
-    DO i=i_start, i_end
-       rhs(i,k) = rhs(i,k)-dts*( fnm(k)*wdwn(i,k+1)  &
-                                +fnp(k)*wdwn(i,k  ) )
-    ENDDO
-    ENDDO
+    IF (config_flags%phi_adv_z == 2) THEN
+      !  First get staggered partial d/dnu(phi) and then multiply with omega
+      !  to avoid double staggering of omega
+
+      DO k=1, k_end
+      DO i=i_start, i_end
+         wdwn(i,k+1)=rdnw(k)*(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
+      ENDDO
+      ENDDO
+
+      DO k=2,k_end
+      DO i=i_start, i_end
+         rhs(i,k) = rhs(i,k)-dts*ww(i,k,j)*( fnm(k)*wdwn(i,k+1)  &
+                                            +fnp(k)*wdwn(i,k  ) )
+      ENDDO
+      ENDDO
+    ELSE
+      !  First destagger omega and multiply with partial d/dnu(phi), then stagger the product
+
+      DO k=1, k_end
+      DO i=i_start, i_end
+         wdwn(i,k+1)=.5*(ww(i,k+1,j)+ww(i,k,j))*rdnw(k)    &
+              *(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
+      ENDDO
+      ENDDO
+
+      DO k=2,k_end
+      DO i=i_start, i_end
+         rhs(i,k) = rhs(i,k)-dts*( fnm(k)*wdwn(i,k+1)  &
+                                  +fnp(k)*wdwn(i,k  ) )
+      ENDDO
+      ENDDO
+    ENDIF
 !  NOTE:  phi'' is not coupled with the map-scale factor  (1/m),
 !         but it's tendency is, so must multiply by msft here
 !   Comments on map scale factors:

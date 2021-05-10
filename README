@@ -1,6 +1,6 @@
-WRF Model Version 4.2.2
+WRF Model Version 4.3
 
-http://www2.mmm.ucar.edu/wrf/users/
+https://www2.mmm.ucar.edu/wrf/users/
 
 ------------------------
 WRF PUBLIC DOMAIN NOTICE
@@ -29,18 +29,21 @@ This is the main directory for the WRF Version 4 source code release.
 ======================================
 
 Other README files are located in the WRF/doc directory:
+doc/README.crtm
+doc/README.CTSM
+doc/README.cygwin.md
 doc/README.DA
-doc/README.NMM
-doc/README.SSIB
-doc/README.WRFPLUS
 doc/README.hybrid_vert_coord
 doc/README.hydro
 doc/README.io_config
 doc/README.irr_diag
+doc/README.madwrf
+doc/README.NMM
 doc/README.rsl_output
-doc/README.windturbine
+doc/README.SSIB
 doc/README_test_cases
-doc/README.cygwin.md
+doc/README.windturbine
+doc/README.WRFPLUS
 
 - Beginning with version 4.0, for more information on the releases, visit 
   the WRF GitHub Release Page:

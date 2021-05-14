@@ -1428,7 +1428,6 @@ state   real    p_top          -       misc         -         -     irh       "p
 state logical got_var_sso      -       misc         -         -     i02rh    "got_var_sso"           "whether VAR_SSO was included in WPS output (beginning V3.4)" ""
 state logical v4_metgrid 	-	misc	    -	      -     -     "v4_metgrid"		     "for real, T/F: identify if this is v4 metgrid data" ""
 
-
 #BSINGH - Adding all these variables for CuP scheme[any var before t00]
 state   real    lat_ll_t       -       dyn_em       -         -     ir       "lat_ll_t"              "latitude lower left, temp point" "degrees"
 state   real    lat_ul_t       -       dyn_em       -         -     ir       "lat_ul_t"              "latitude up left, temp point" "degrees"

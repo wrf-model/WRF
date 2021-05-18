@@ -709,7 +709,7 @@ IF ( wrf_dm_on_monitor() ) THEN
     fmc_gc_initial_value(1)=fmc_1h
     fmc_gc_initial_value(2)=fmc_10h
     fmc_gc_initial_value(3)=fmc_100h
-    fmc_gc_initial_value(3)=fmc_1000h
+    fmc_gc_initial_value(4)=fmc_1000h
     fmc_gc_initial_value(5)=fmc_live
     !
     ! end initialization from scalars tied to a particular model with 5 fuel moisture classes
@@ -1250,7 +1250,7 @@ do j=jfts,jfte
         ratio = fp%betafl(i,j)/betaop
         gamma = gammax *(ratio**a) *exp(a*(1.-ratio)) !optimum rxn vel, 1/min
 
-        wn = fuelload/(1 + st(k))       ! net fuel loading, lb/ft^2
+        wn = fuelload * (1 - st(k))       ! net fuel loading, lb/ft^2
         rtemp1 = fp%fmc_g(i,j)/fuelmce(k)
         etam = 1.-2.59*rtemp1 +5.11*rtemp1**2 -3.52*rtemp1**3  !moist damp coef
         etas = 0.174* se(k)**(-0.19)                ! mineral damping coef

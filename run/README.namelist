@@ -1099,7 +1099,8 @@ Namelist variables for lake module:
  ltng_temp_upper                     = -45.     ! Temperature (C) of upper peak of LNOx vertical distribution for IC lightning (used by &chem lnox_opt=2).
  ltng_temp_lower                     = -15.     ! Temperatures (C) of lower peak of LNOx vertical distribution for both IC and CG lightning (used by &chem lnox_opt=2).
 
- madwrf_opt = 0         ! MAD-WRF model: 0) Off, 1) Advect/diffuse hydrometeors (qcloud, qice, qsnow),  2) Nudge advected/diffused hydrometeors to model state.
+Options for MAD-WRF - see doc/README.madwrf for usage information 
+ madwrf_opt = 0         ! MAD-WRF model: 0) Off, 1) Advect/diffuse passive hydrometeors (qcloud, qice, qsnow), 2) Nudge active microphysics hydrometeors to passive ones
  madwrf_dt_relax = 60.0 ! Relaxation time for hydrometeor nudging [s]
  madwrf_dt_nudge = 60.0 ! Temporal period for hydrometeor nudging [min]
  madwrf_cldinit = 0     ! Enhance cloud initialization: 0: Off, 1: On

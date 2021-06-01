@@ -3438,7 +3438,7 @@ CONTAINS
              ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN            &
              ,RQICUTEN,RQSCUTEN, RQVFTEN                     &
 !ckay
-             ,cldfra_dp_KF,cldfra_sh_KF,w_up                 &
+             ,cldfra_dp_KF,cldfra_sh_KF                      &
              ,qc_KF,qi_KF,qr_KF,qs_KF                        & ! TWG
              ,nc_KF,ni_KF,nr_KF,ns_KF                        & ! TWG
              ,ccn_KF,ainc_frac                               & ! TWG
@@ -3585,9 +3585,6 @@ CONTAINS
                                                         UST, &
                                                        PBLH, &
                                                        XLAND
-!ckaywup
-   REAL, DIMENSION( ims:ime,  kms:kme , jms:jme )          , &
-           INTENT(INOUT) ::                             w_up
 
 ! LOCAL VARS
 
@@ -3679,9 +3676,6 @@ CONTAINS
 !           New, to support adaptive time step:
 !
             W0AVG(I,K,J) = ( W0AVG(I,K,J) * W0AVGfctr + W0 * W0fctr ) / W0den
-!ckaywup
-!           w(I,K,J)=w(I,K,J)+w_up(i,K,j)  
-
          ENDDO
       ENDDO
    ENDDO
@@ -3876,7 +3870,6 @@ CONTAINS
                EFCS(I,k,J)=2.51
                EFIS(I,k,J)=5.01
               END IF
-               w_up(I,k,J)=0.
             ENDDO
              IF (aercu_opt.gt.0) THEN
                ainc_frac(I,J) = 0. ! TWG
@@ -3935,7 +3928,7 @@ CONTAINS
                  ims,ime, jms,jme, kms,kme,         &
                  its,ite, jts,jte, kts,kte,         &
 !ckay
-                 cldfra_dp_KF,cldfra_sh_KF,w_up,    &
+                 cldfra_dp_KF,cldfra_sh_KF,         &
                  qc_KF,qi_KF,qr_KF,qs_KF,           &
                  nc_KF,ni_KF,nr_KF,ns_KF,ccn_KF,    & !TWG
                  ainc_frac,                         & !TWG
@@ -4009,7 +4002,7 @@ CONTAINS
                       ims,ime, jms,jme, kms,kme,           &
                       its,ite, jts,jte, kts,kte,           &
 !ckay
-                      cldfra_dp_KF,cldfra_sh_KF,w_up,      &
+                      cldfra_dp_KF,cldfra_sh_KF,           &
                       qc_KF,qi_KF,qr_KF,qs_KF,             & !TWG
                       nc_KF,ni_KF,nr_KF,ns_KF,ccn_KF,      & !TWG
                       ainc_frac,                           & !TWG
@@ -4128,10 +4121,6 @@ CONTAINS
             INTENT(OUT) ::                          CUBOT, &
                                                     CUTOP
       REAL,  INTENT(IN   ) :: CUDT
-
-!ckaywup
-  REAL, DIMENSION( ims:ime,  kms:kme , jms:jme )         , &
-        INTENT(  OUT) ::                             w_up                       
 !
 !...DEFINE LOCAL VARIABLES...
 !
@@ -5325,7 +5314,6 @@ updraft:    DO NK=K,KL-1
                 EFSS(I,NK,J)=10.01
               END IF
 ! END TWG
-                w_up(I,NK,J)=0.
               ENDDO
 !        
             ELSEIF(CLDHGT(LC).GT.CHMIN .and. ABE.GT.1)THEN      ! Deep Convection allowed
@@ -5342,7 +5330,6 @@ updraft:    DO NK=K,KL-1
 !ckay
               DO NK=K,LTOP
                 cldfra_dp_KF(I,NK,J)=0.
-                w_up(I,NK,J)=0.
               ENDDO
               IF(NU.EQ.NUCHM)THEN
                 EXIT usl               ! Shallow Convection from this layer
@@ -5375,7 +5362,6 @@ updraft:    DO NK=K,KL-1
                   EFSS(I,NK,J)=10.01
                 END IF
 ! END TWG
-                  w_up(I,NK,J)=0.
                 ENDDO
               ENDIF
             ENDIF
@@ -5482,7 +5468,6 @@ updraft:    DO NK=K,KL-1
         EFSS(I,NK,J)=10.01
        END IF
 ! END TWG
-        w_up (I,NK,J)=0.
       ENDIF
       UDR(NK)=0.
       QDT(NK)=0.
@@ -5540,7 +5525,6 @@ updraft:    DO NK=K,KL-1
           EFIS(I,NK,J)=5.01
          END IF
 ! END TWG
-          w_up(I,NK,J)=0.
         ENDIF
         THTA0(NK)=0.
         THTAU(NK)=0.
@@ -6334,9 +6318,6 @@ iter:     DO NCOUNT=1,10
 !ckaywup
             DMF_new=DMF(NK)/updil
             FXM_new=FXM(NK)/dxsq
-!           w_up(I,NK,J) = (UMF_new+DMF_new-FXM_new)/denSplume
-!           w_up(I,NK,J) = w_up(I,NK,J)*Drag*DT/TIMEC
-           w_up(I,NK,J) = (UMF_new/denSplume)*Drag*DT/TIMEC
           ENDDO
         ELSE 
           DO NK=KLCL, LTOP
@@ -6349,10 +6330,6 @@ iter:     DO NCOUNT=1,10
 !new added downdraft impact
             DMF_new = DMF(NK)/updil
             FXM_new = FXM(NK)/dxsq
-!           w_up(I,NK,J) = (UMF_new+DMF_new-FXM_new)/denSplume
-!           w_up(I,NK,J) = w_up(I,NK,J)*Drag*DT/TIMEC
-           w_up(I,NK,J) = (UMF_new/denSplume)*Drag*DT/TIMEC
-
           ENDDO
         ENDIF
 !ckaywup
@@ -6363,9 +6340,6 @@ iter:     DO NCOUNT=1,10
            envQsat = 0.622*envEsat/(P0(NK)-envEsat)
            envRH  = Q0(NK)/envQsat
             envRHavg = envRHavg + envRH
-           if(envRH.gt.1.01) then
-             w_up(I,NK,J) = 0.0
-           end if
           END DO
 
 !kf_edrates

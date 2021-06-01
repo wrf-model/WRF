@@ -29,8 +29,9 @@ SBM (Options 30 and 32):
 	termvels.asc
 
 P3 (Options 50, 51, and 52)
-	p3_lookup_table_1.dat-v4.1
-	p3_lookup_table_2.dat-v4.1
+	p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax
+	p3_lookupTable_1.dat-3momI_v5.1.6.gz
+	p3_lookupTable_2.dat-4.1
 
 Jensen (Option 55):
 	ishmael-gamma-tab.bin
@@ -152,8 +153,11 @@ Eclipse option (ra_sw_eclipse = 1)
 ----------------------------------------------------------------------------------
 Other Options:
 
-Urban Physics (sf_urban_physics = 1, 2, and 3)
+Urban Physics, no LCZ (sf_urban_physics = 1, 2, & 3)
 	URBPARM.TBL
 
-Chemistry
+Urban Physics (sf_urban_physics = 1, 2, and 3) with LCZ (use_wudapt_lcz = 1)
+	URBPARM_LCZ.TBL
+
+Chemistry (chem_opt = 112, 114, 111, 201, 202)
 	HLC.TBL

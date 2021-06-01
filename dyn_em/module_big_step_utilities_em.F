@@ -2691,7 +2691,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 
            some1 = some1 + 1
 
-           WRITE(temp,FMT="(3(1x,i5,1x),'W-CRIT_CFL: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") &
+           WRITE(temp,FMT="(3(1x,i5,1x),'w-crit_cfl: ',f7.4,2x,'w-cfl: ',f7.4,2x,'dETA: ',f7.4)") &
                                          i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
 
@@ -2701,7 +2701,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 
            some2 = some2 + 1
 
-           WRITE(temp,FMT="(3(1x,i5,1x),'W-FLAG_CFL: ',f7.4,2x,'W-CFL: ',f7.4,2x,'dETA: ',f7.4))") &
+           WRITE(temp,FMT="(3(1x,i5,1x),'w-flag_cfl: ',f7.4,2x,'w-cfl: ',f7.4,2x,'dETA: ',f7.4)") &
                                          i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
 
@@ -2722,21 +2722,21 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      CALL get_current_time_string( time_str )
      CALL get_current_grid_name( grid_str )
      WRITE(temp,*) some1,                                            &
-            ' points exceeded W_CRITICAL_CFL in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
+            ' points exceeded w_critical_cfl in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
      CALL wrf_debug ( 0 , TRIM(temp) )
-     WRITE(temp,FMT="('Max   W: ',3(1x,i5,1x),'W: ',f7.2,2x,'W-CFL: ',f7.2,2x,'dETA: ',f7.2))") &
+     WRITE(temp,FMT="('Max   W: ',3(1x,i5,1x),'W: ',f7.2,2x,'w-cfl: ',f7.2,2x,'dETA: ',f7.2)") &
                             maxi, maxj, maxk, maxdub, max_vert_cfl, maxdeta
      CALL wrf_debug ( 0 , TRIM(temp) )
-     WRITE(temp,FMT="('Max U/V: ',3(1x,i5,1x),'U: ',f7.2,2x,'U-CFL: ',f7.2,2x,'V: ',f7.2,2x,'V-CFL: ',f7.2))") &
-           maxi, maxj, maxk, u(maxi,maxk,maxj), dt*u(maxi,maxk,maxj)*rdx, v(maxi,maxk,maxj), dt*v(maxi,maxk,maxj)*rdy
-     CALL wrf_debug ( 0 , TRIM(temp) )
+!    WRITE(temp,FMT="('Max U/V: ',3(1x,i5,1x),'U: ',f7.2,2x,'u-cfl: ',f7.2,2x,'V: ',f7.2,2x,'v-cfl: ',f7.2)") & 
+!          maxi, maxj, maxk, u(maxi,maxk,maxj), dt*u(maxi,maxk,maxj)*rdx, v(maxi,maxk,maxj), dt*v(maxi,maxk,maxj)*rdy
+!    CALL wrf_debug ( 0 , TRIM(temp) )
    ENDIF
 
    IF ( some2 .GT. 0 ) THEN   
      CALL get_current_time_string( time_str )
      CALL get_current_grid_name( grid_str )
      WRITE(temp,*) some2,                                            &
-            ' points exceeded W_FLAG_CFL in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
+            ' points exceeded w_flag_cfl in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
      CALL wrf_debug ( 0 , TRIM(temp) )
    ENDIF
 
@@ -3636,12 +3636,17 @@ SUBROUTINE calculate_full ( rfield, rfieldb, rfieldp,     &
    
    ! Local indices.
    
-   INTEGER :: i, j, k, itf, jtf, ktf
+   INTEGER :: i, j, k, itf, jtf, ktf, i_start, j_start
    
 !<DESCRIPTION>
 !
 !  calculate_full
 !  calculates full 3D field from pertubation and base field.
+!  The input fields (mu base and perturbation mu) are communicated prior
+!  to this call. That fills the total field into the halo region. That
+!  extra row/column is only used by the IEVA scheme. Having the extra
+!  row/column filled with valid values is not a problem for the rest of
+!  the model.
 !
 !</DESCRIPTION>
 
@@ -3649,9 +3654,12 @@ SUBROUTINE calculate_full ( rfield, rfieldb, rfieldp,     &
    jtf=MIN(jte,jde-1)
    ktf=MIN(kte,kde-1)
 
-   DO j=jts,jtf
+   i_start=its-1
+   j_start=jts-1
+
+   DO j=j_start,jtf
    DO k=kts,ktf
-   DO i=its,itf
+   DO i=i_start,itf
       rfield(i,k,j)=rfieldb(i,k,j)+rfieldp(i,k,j)
    ENDDO
    ENDDO

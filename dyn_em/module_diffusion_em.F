@@ -5121,7 +5121,7 @@ END SUBROUTINE vertical_diffusion_s
   DO j = j_start, j_end
   DO i = i_start, i_end
      IF(hpbl(i,j).LT.zq(i,2,j)) kpbl(i,j) = 1
-     IF(kpbl(i,j).LT.1) pblflg(i,j) = .false.
+     IF(kpbl(i,j).LE.1) pblflg(i,j) = .false.
   ENDDO
   ENDDO
 
@@ -5175,7 +5175,7 @@ END SUBROUTINE vertical_diffusion_s
        delb          = govrth(i,j)*dthv(i,j)
  
        deltaoh(i,j)  = d1*hpbl(i,j) + d2*wm2(i,j)/delb
-       deltaoh(i,j)  = max(ezfac*deltaoh(i,j),hpbl(i,j)-za(i,kpbl(i,j)-1,j)-1.)
+       deltaoh(i,j)  = max(ezfac*deltaoh(i,j),hpbl(i,j)-za(i,k,j)-1.)
        deltaoh(i,j)  = min(deltaoh(i,j), hpbl(i,j))
  
        if ((du .ne. 0) .or. (dv .ne. 0)) then
@@ -8099,13 +8099,7 @@ END SUBROUTINE phy_bc
     ENDDO
  
   CASE (1) ! use surface heat flux computed from surface routine
-    DO j = j_start, j_end
-    DO i = i_start, i_end
-       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
-       heat_flux = hfx(i,j)/cpm/rho(i,1,j)
-    ENDDO
-    ENDDO
- 
+    ! do nothing
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
   END SELECT hflux

@@ -169,6 +169,7 @@ For automatic moving nests: requires special input data, and environment variabl
                                                   set time_step = 60, time_step_fract_num = 3, and 
                                                   time_step_fract_den = 10
  time_step_dfi                       = 60,	! time step for DFI, may be different from regular time_step
+ reasonable_time_step_ratio          = 6.,	! Any d01, real-data case with a time step ratio larger than this is stopped. Except for specific circumstances (e.g., using IEVA), this value should be no larger than 6 (default). 
  max_dom                             = 1,	! number of domains - set it to > 1 if it is a nested run
  s_we (max_dom)                      = 1,	! start index in x (west-east) direction (leave as is)
  e_we (max_dom)                      = 91,	! end index in x (west-east) direction (staggered dimension)
@@ -523,7 +524,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 50, P3 1-ice category, 1-moment cloud water
                                      = 51, P3 1-ice category plus double-moment cloud water
                                      = 52, P3 2-ice categories plus double-moment cloud water
-                                     = 53, P3 1-ice category, 3-moment cloud water
+                                     = 53, P3 1-ice category, 3-moment ice, plus double-moment cloud water
                                      = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
                                            for each ice
                                      = 56, NTU multi-moment scheme  ! for ntu3m
@@ -1261,6 +1262,7 @@ Options for use with the Noah-MP Land Surface Model:
                                                      2 = BATS:  Snow when SFCTMP < TFRZ+2.2
                                                      3 = Snow when SFCTMP < TFRZ
                                                      4 = Use WRF precipitation partitioning
+                                                     5 = Use wetbulb temperature (Wang et al., 2019 GRL)
  opt_tbot                           = 2,        ! Noah-MP Soil Temperature Lower Boundary Condition
                                                      1 = Zero heat flux
                                                      2 = TBOT at 8 m from input file
@@ -1619,8 +1621,6 @@ The following are for observation nudging:
  spec_exp                            = 0.       ! exponential multiplier for relaxation zone ramp for specified=.t.
                                                   (0.=linear ramp default, e.g. 0.33=~3*dx exp decay factor)
  constant_bc                         = .false.  ! constant boundary condition used with DFI
- spec_bdy_final_mu                   = 1,       ! whether to call spec_bdy_final for mu (this may cause different restart results in V3.8): 
-                                                  = 0, no call; = 1: call (this may cause different restart results)
 
  periodic_x (max_dom)                = .false., ! periodic boundary conditions in x direction
  symmetric_xs (max_dom)              = .false., ! symmetric boundary conditions at x start (west)

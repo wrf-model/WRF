@@ -617,8 +617,8 @@ SUBROUTINE advect_ph_implicit( ph, pho, tendency, phb,        &
    INTEGER :: jmin, jmax, jp, jm, imin, imax, im, ip
    REAL    :: wiL, wiR, wiC, weL, weR, dz
 
-   REAL(KIND=8), DIMENSION(ims:ime,kts:kte) :: at, bt, ct, rt, bb
-   REAL(KIND=8), DIMENSION(ims:ime)         :: btmp(ims:ime)
+   REAL(KIND=8), DIMENSION(its:ite,kts:kte) :: at, bt, ct, rt, bb
+   REAL(KIND=8), DIMENSION(its:ite)         :: btmp(ims:ime)
    
    LOGICAL :: specified
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1, valid_ik
@@ -685,7 +685,7 @@ SUBROUTINE advect_ph_implicit( ph, pho, tendency, phb,        &
        ENDDO
      ENDDO
 
-     CALL tridiag2D(at, bt, ct, rt, bb, ims, ime, i_start, i_end, kts, kte, kts+1, ktf) 
+     CALL tridiag2D(at, bt, ct, rt, bb, its, ite, i_start, i_end, kts, kte, kts+1, ktf) 
 
      DO k = kts+1, ktf
        DO i = i_start, i_end
@@ -773,8 +773,8 @@ SUBROUTINE advect_s_implicit( s, s_old, tendency,            &
 
    REAL    :: mrdx, mrdy, ub, vb, uw, vw, dvm, dvp, wiL, wiR, dz
 
-   REAL(KIND=8), DIMENSION(ims:ime,kts:kte) :: at, bt, ct, rt, bb   
-   REAL(KIND=8), DIMENSION(ims:ime)         :: btmp
+   REAL(KIND=8), DIMENSION(its:ite,kts:kte) :: at, bt, ct, rt, bb   
+   REAL(KIND=8), DIMENSION(its:ite)         :: btmp
    
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1
    INTEGER :: valid_ik, skip
@@ -817,7 +817,7 @@ SUBROUTINE advect_s_implicit( s, s_old, tendency,            &
        ENDDO
      ENDDO
       
-     CALL tridiag2D(at, bt, ct, rt, bb, ims, ime, i_start, i_end, kts, kte, kts, ktf) 
+     CALL tridiag2D(at, bt, ct, rt, bb, its, ite, i_start, i_end, kts, kte, kts, ktf) 
 
      DO k = kts, ktf
        DO i = i_start, i_end
@@ -907,8 +907,8 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
 
    REAL    :: wiL, wiR, dz
    
-   REAL(KIND=8), DIMENSION(ims:ime,kts:kte) :: at, bt, ct, rt, bb
-   REAL(KIND=8), DIMENSION(ims:ime)         :: btmp
+   REAL(KIND=8), DIMENSION(its:ite,kts:kte) :: at, bt, ct, rt, bb
+   REAL(KIND=8), DIMENSION(its:ite)         :: btmp
       
    LOGICAL :: specified
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1
@@ -961,7 +961,7 @@ SUBROUTINE advect_u_implicit( u, u_old, tendency,            &
        ENDDO
      ENDDO
    
-     CALL tridiag2D(at, bt, ct, rt, bb, ims, ime, i_start, i_end, kts, kte, kts, ktf) 
+     CALL tridiag2D(at, bt, ct, rt, bb, its, ite, i_start, i_end, kts, kte, kts, ktf) 
 
      DO k = kts, ktf
        DO i = i_start, i_end
@@ -1049,8 +1049,8 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
 
    REAL    :: mrdx, mrdy, ub, vb, uw, vw, dvm, dvp, wiL, wiR, dz
 
-   REAL(KIND=8), DIMENSION(ims:ime,kts:kte) :: at, bt, ct, rt, bb
-   REAL(KIND=8), DIMENSION(ims:ime)         :: btmp
+   REAL(KIND=8), DIMENSION(its:ite,kts:kte) :: at, bt, ct, rt, bb
+   REAL(KIND=8), DIMENSION(its:ite)         :: btmp
    
    LOGICAL :: specified
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1
@@ -1100,7 +1100,7 @@ SUBROUTINE advect_v_implicit( v, v_old, tendency,            &
        ENDDO
      ENDDO
       
-     CALL tridiag2D(at, bt, ct, rt, bb, ims, ime, i_start, i_end, kts, kte, kts, ktf) 
+     CALL tridiag2D(at, bt, ct, rt, bb, its, ite, i_start, i_end, kts, kte, kts, ktf) 
 
      DO k = kts, ktf
        DO i = i_start, i_end
@@ -1194,8 +1194,8 @@ SUBROUTINE advect_w_implicit( w, w_old, tendency,            &
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
    REAL    :: wiL, wiR, dz, dw
 
-   REAL(KIND=8), DIMENSION(ims:ime,kts:kte) :: at, bt, ct, rt, bb
-   REAL(KIND=8), DIMENSION(ims:ime)         :: btmp
+   REAL(KIND=8), DIMENSION(its:ite,kts:kte) :: at, bt, ct, rt, bb
+   REAL(KIND=8), DIMENSION(its:ite)         :: btmp
    
    LOGICAL :: specified
    INTEGER :: iup, jup, kup, idn, jdn, kdn, kp1, km1
@@ -1255,7 +1255,7 @@ SUBROUTINE advect_w_implicit( w, w_old, tendency,            &
        ENDDO
      ENDDO
 
-     CALL tridiag2D(at, bt, ct, rt, bb, ims, ime, i_start, i_end, kts, kte, kts+1, ktf) 
+     CALL tridiag2D(at, bt, ct, rt, bb, its, ite, i_start, i_end, kts, kte, kts+1, ktf) 
 
      DO k = kts+1, ktf
        DO i = i_start, i_end

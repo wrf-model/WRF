@@ -574,7 +574,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
      IF( (rk_step == rk_order) .and. ( adv_opt == WENO_MOM ) ) THEN
 
-       CALL advect_weno_w ( w, w, rw_tend, ru, rv, ww,    &
+       CALL advect_weno_w ( w, w, rw_tend, ru, rv, wwE,   &
                             c1h, c2h,                     &
                             mut, time_step, config_flags, &
                             msfux, msfuy, msfvx, msfvy,   &
@@ -586,7 +586,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
      ELSE
      
-       CALL advect_w ( w, w, rw_tend, ru, rv, ww,    &
+       CALL advect_w ( w, w, rw_tend, ru, rv, wwE,   &
                        c1h, c2h,                     &
                        mut, time_step, config_flags, &
                        msfux, msfuy, msfvx, msfvy,   &
@@ -611,7 +611,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
      
 ! also use weno for monotonic scalar option so that the h_ and z_tendency arrays are not needed
 
-     CALL advect_scalar_weno ( t, t, t_tend, ru, rv, ww,      &
+     CALL advect_scalar_weno ( t, t, t_tend, ru, rv, wwE,     &
                                c1h, c2h, mut, time_step,      &
                                config_flags,                  &
                                msfux, msfuy, msfvx, msfvy,    &
@@ -622,7 +622,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                its, ite, jts, jte, kts, kte  )
    ELSE
 
-     CALL advect_scalar ( t, t, t_tend, ru, rv, ww,     &
+     CALL advect_scalar ( t, t, t_tend, ru, rv, wwE,    &
                           c1h, c2h,                     &
                           mut, time_step, config_flags, &
                           msfux, msfuy, msfvx, msfvy,   &
@@ -665,7 +665,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
    END IF
 
-   CALL rhs_ph( ph_tend, u, v, ww, ph, ph, phb, w, &
+   CALL rhs_ph( ph_tend, u, v, wwE, ph, ph, phb, w, &
                 mut, muu, muv,                     &
                 c1f, c2f,                          &
                 fnm, fnp,                          &

@@ -281,7 +281,7 @@ CONTAINS
                W0AVG1D(k) = W0AVG(i,k,j)
                tke1d(k)  = tkeavg(i,k,j)
                RHO1D(K) =rho(I,K,J)
-               QV1D(K)=QV(I,K,J)
+               QV1D(K)=MAX(QV(I,K,J),1.E-12)
                RH1D(K)=RH(I,K,J)
 #ifdef DENG_SHCU1D
                ca_rad1d(k) = ca_rad(i,k,j)

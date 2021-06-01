@@ -8027,8 +8027,11 @@ ENDIF   ! CROPTYPE == 0
     ELSE ! Equation (4)
        IRRLOSS   = 4.337*(EXP(0.077*WINDSPEED))*(((ESAT1-EAIR)*0.01)**(-0.098)) ! [%]
     END IF
-    IF(ISNAN(IRRLOSS))IRRLOSS=4.0 ! In case if IRRLOSS is NaN
-    
+
+    ! PGI Fortran compiler does not support ISNAN
+    IF ( isnan_lsm(IRRLOSS)) IRRLOSS=4.0 ! In case if IRRLOSS is NaN
+    IF ( (IRRLOSS .GT. 100.0) .OR. (IRRLOSS .LT. 0.0) ) IRRLOSS=4.0 ! In case if IRRLOSS is out of range
+
     ! Sprinkler water (m) for sprinkler fraction 
     IRSIRATE  = IRSIRATE * SIFAC
     IF(IRSIRATE .GE. IRAMTSI)THEN
@@ -8040,6 +8043,13 @@ ENDIF   ! CROPTYPE == 0
     IREVPLOS = IRSIRATE*IRRLOSS*(1./100.) 
     IRSIRATE = IRSIRATE-IREVPLOS
   END SUBROUTINE SPRINKLER_IRRIGATION
+
+    logical function isnan_lsm(arg1)
+        real,intent(in) :: arg1
+       isnan_lsm = (arg1 .ne. arg1)
+       return
+    end function isnan_lsm
+
   !============================================================================================================
   SUBROUTINE MICRO_IRRIGATION(parameters,NSOIL,DT,SH2O,SMC,SICE,MIFAC, & !in
                               IRAMTMI,IRMIRATE)                          !inout
@@ -8169,7 +8179,7 @@ ENDIF   ! CROPTYPE == 0
    ISOIL = 1
    CALL WDFCND2 (parameters,WDF,WCND,SH2O(ISOIL),SICEMAX,ISOIL)
 
-  ! sorptivity based on Eq. 10b from Kutílek, Miroslav, and Jana Valentová (1986) 
+  ! sorptivity based on Eq. 10b from Kutilek, Miroslav, and Jana Valentova (1986) 
   ! sorptivity approximations. Transport in Porous Media 1.1, 57-62.
    SP = SQRT(2.0 * (parameters%SMCMAX(ISOIL) - SMC(ISOIL)) * (parameters%DWSAT(ISOIL) - WDF)) 
 

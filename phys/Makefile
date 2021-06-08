@@ -6,8 +6,10 @@ RM      =       rm -f
 
 
 MODULES = \
+	complex_number_module.o \
 	module_bep_bem_helper.o \
 	module_cam_shr_kind_mod.o \
+	module_twoway_rrtmg_aero_optical_util.o \
 	module_cam_support.o \
 	module_cam_shr_const_mod.o \
 	module_cam_physconst.o \

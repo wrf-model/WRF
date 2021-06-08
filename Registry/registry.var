@@ -37,8 +37,8 @@ state    real   g_p            ijk     dyn_em      1         -      rh        "g
 state    real    a_z            ijk     misc        1         Z     -         " " " " " "
 state    real    g_z            ijk     misc        1         Z     -         " " " " " "
 # For KMA, pressure coefficient.
-state    real    kma_a          k       misc        1         Z     -         "A"  "KMA Constants A to convert surface presure to full level pressure" "dimensionless"
-state    real    kma_b          k       misc        1         Z     -         "B"  "KMA Constants B to convert surface presure to full level pressure" "dimensionless"
+state    real    kma_a          k       misc        1         Z     -         "A"  "KMA Constants A to convert surface pressure to full level pressure" "dimensionless"
+state    real    kma_b          k       misc        1         Z     -         "B"  "KMA Constants B to convert surface pressure to full level pressure" "dimensionless"
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Scalar (4D) arrays
 # Moist Scalars

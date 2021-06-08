@@ -2444,7 +2444,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
    real(r8) r2sslp             ! 1/2 of rsslp
    real(r8) ds2c               ! Y in eq(7) in table A2 of R&D
    real(r8)  dplos             ! Ozone pathlength eq(A2) in R&Di
-   real(r8) dplol              ! Presure weighted ozone pathlength
+   real(r8) dplol              ! Pressure weighted ozone pathlength
    real(r8) tlocal             ! Local interface temperature
    real(r8) beta               ! Ozone mean line parameter eq(A3) in R&Di
 !                               (includes Voigt line correction factor)

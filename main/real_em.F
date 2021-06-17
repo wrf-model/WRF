@@ -4,7 +4,7 @@ PROGRAM real_data
 
    USE module_machine
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : wrf_dm_initialize
+   USE module_dm, ONLY : wrf_dm_initialize, mpi_comm_allcompute
 #endif
    USE module_domain, ONLY : domain, alloc_and_configure_domain, &
         domain_clock_set, head_grid, program_name, domain_clockprint, &
@@ -56,9 +56,9 @@ PROGRAM real_data
 
    INTEGER :: max_dom, domain_id , grid_id , parent_id , parent_id1 , id
    INTEGER :: e_we , e_sn , i_parent_start , j_parent_start
-   INTEGER :: idum1, idum2 
+   INTEGER :: idum1, idum2
 #ifdef DM_PARALLEL
-   INTEGER                 :: nbytes
+   INTEGER                 :: nbytes, save_comm
    INTEGER, PARAMETER      :: configbuflen = 4* CONFIG_BUF_LEN
    INTEGER                 :: configbuf( configbuflen )
    LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
@@ -119,6 +119,8 @@ real::t1,t2
    !  The configuration switches mostly come from the NAMELIST input.
 
 #ifdef DM_PARALLEL
+   CALL wrf_get_dm_communicator( save_comm )
+   CALL wrf_set_dm_communicator( mpi_comm_allcompute )
    IF ( wrf_dm_on_monitor() ) THEN
       CALL initial_config
    END IF
@@ -126,6 +128,7 @@ real::t1,t2
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
    CALL wrf_dm_initialize
+   CALL wrf_set_dm_communicator( save_comm )
 #else
    CALL initial_config
 #endif

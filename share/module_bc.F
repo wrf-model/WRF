@@ -1585,7 +1585,7 @@ CONTAINS
 
 
       REAL,  DIMENSION( ims:ime , kms:kme       , jms:jme ), INTENT(INOUT  ) :: field_tend
-      REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:kme ), INTENT(IN   )   :: field_tend_perturb
+      REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:jme ), INTENT(IN   )   :: field_tend_perturb
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: mu_2
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: mub
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: msf

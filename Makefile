@@ -121,9 +121,9 @@ wrf : framework_only
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
-	if [ ! -f run/p3_lookupTable_1.dat-3momI_v5.1.6 ] ; then \
-	  ( cd run ; cp p3_lookupTable_1.dat-3momI_v5.1.6.gz hold.gz ; \
-	    gunzip hold.gz ; mv hold p3_lookupTable_1.dat-3momI_v5.1.6 ) ; \
+	if [ ! -f run/p3_lookupTable_1.dat-5.3-3momI ] ; then \
+	  ( cd run ; cp p3_lookupTable_1.dat-5.3-3momI.gz hold.gz ; \
+	    gunzip hold.gz ; mv hold p3_lookupTable_1.dat-5.3-3momI ) ; \
 	fi
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`

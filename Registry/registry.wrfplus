@@ -692,6 +692,7 @@ package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi
 
 package   lscondscheme   mp_physics==98              -             moist:qv
 package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr
+package   wsm6sscheme    mp_physics==106             -             moist:qv,qc,qr,qi,qs,qg
 package   surfdragscheme bl_pbl_physics==98          -             -
 package   ducuscheme     cu_physics==98              -             -
 

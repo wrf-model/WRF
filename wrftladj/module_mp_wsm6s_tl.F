@@ -465,9 +465,9 @@ CONTAINS
       CALL G_FALLKC(qci, g_qci, fallc, g_fallc, den, g_den, delz, g_delz&
 &             , dtcld, kte, kts, its, ite, kme, kms, ims, ime)
       CALL G_RAINSC(fall, g_fall, fallc, g_fallc, xl, g_xl, t, g_t, q, &
-&             g_q, qci, g_qci, cpm, g_cpm, den, g_den, qrs, g_qrs, delz&
-&             , g_delz, rain, g_rain, rainncv, g_rainncv, dtcld, kte, &
-&             kts, its, ite, kme, kms, ims, ime)
+&             qci, g_qci, cpm, g_cpm, den, g_den, qrs, g_qrs, delz, &
+&             g_delz, rain, g_rain, rainncv, g_rainncv, dtcld, kte, kts&
+&             , its, ite, kme, kms, ims, ime)
       CALL G_WARMR(t, g_t, q, g_q, qci, g_qci, qrs, g_qrs, den, g_den, p&
 &            , g_p, dtcld, xl, g_xl, rh, g_rh, qs, g_qs, praut, g_praut&
 &            , pracw, g_pracw, prevp, g_prevp, ims, ime, kms, kme, its, &
@@ -1134,7 +1134,7 @@ CONTAINS
     REAL :: g_tmp1, g_tmp2, g_tmp3, g_tmp4, g_tmp5, g_tmp6, g_tmp7, &
 &   g_tmp8
     INTEGER :: mstepmax, k, i, n, nw, jj
-    REAL :: supcol, a, b, c, d
+    REAL :: fqs, fqg, supcol, a, b, c, d
     REAL :: g_a, g_b, g_c, g_d
     INTRINSIC MAX
     INTRINSIC MIN
@@ -1162,10 +1162,18 @@ CONTAINS
     REAL :: g_max4
     REAL :: max5
     REAL :: g_max5
-    REAL :: abs2
-    REAL :: abs3
     REAL :: max6
     REAL :: g_max6
+    REAL :: abs2
+    REAL :: max7
+    REAL :: g_max7
+    REAL :: abs3
+    REAL :: max8
+    REAL :: g_max8
+    REAL :: max9
+    REAL :: g_max9
+    REAL :: max10
+    REAL :: g_max10
     REAL :: pwy1
     REAL :: pwr1
     REAL :: g_pwr1
@@ -1189,12 +1197,12 @@ CONTAINS
     g_work1 = 0.0_8
     DO k=kte,kts,-1
       DO i=its,ite
-        IF (qrs(i, k, 1) .LT. qcrmin) THEN
-          max1 = qcrmin
-          g_max1 = 0.0_8
-        ELSE
+        IF (qcrmin .LT. qrs(i, k, 1)) THEN
           g_max1 = g_qrs(i, k, 1)
           max1 = qrs(i, k, 1)
+        ELSE
+          max1 = qcrmin
+          g_max1 = 0.0_8
         END IF
         pwy1 = (bvtr-2.)/4.
         IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
@@ -1216,12 +1224,12 @@ CONTAINS
         g_work1(i, k, 1) = vt2r_a*(pwr2*g_pwr1+pwr1*g_pwr2-temp*g_delz(i&
 &         , k))/delz(i, k)
         work1(i, k, 1) = vt2r_a*temp
-        IF (qrs(i, k, 2) .LT. qcrmin) THEN
-          max2 = qcrmin
-          g_max2 = 0.0_8
-        ELSE
+        IF (qcrmin .LT. qrs(i, k, 2)) THEN
           g_max2 = g_qrs(i, k, 2)
           max2 = qrs(i, k, 2)
+        ELSE
+          max2 = qcrmin
+          g_max2 = 0.0_8
         END IF
         IF (90. .GT. t0c - t(i, k)) THEN
           g_y3 = -g_t(i, k)
@@ -1231,11 +1239,11 @@ CONTAINS
           g_y3 = 0.0_8
         END IF
         IF (0. .LT. y3) THEN
-          g_max6 = g_y3
-          max6 = y3
+          g_max8 = g_y3
+          max8 = y3
         ELSE
-          max6 = 0.
-          g_max6 = 0.0_8
+          max8 = 0.
+          g_max8 = 0.0_8
         END IF
         pwy1 = (bvts-2.)/4.
         IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
@@ -1253,19 +1261,19 @@ CONTAINS
           g_pwr2 = pwy2*max2**(pwy2-1)*g_max2
         END IF
         pwr2 = max2**pwy2
-        g_arg1 = -(bvts*alpha*g_max6/4.)
-        arg1 = -(bvts*alpha*max6/4.)
+        g_arg1 = -(bvts*alpha*g_max8/4.)
+        arg1 = -(bvts*alpha*max8/4.)
         temp = EXP(arg1)
         temp0 = pwr1*pwr2/delz(i, k)
         g_work1(i, k, 2) = vt2s_a*(temp*(pwr2*g_pwr1+pwr1*g_pwr2-temp0*&
 &         g_delz(i, k))/delz(i, k)+temp0*EXP(arg1)*g_arg1)
         work1(i, k, 2) = vt2s_a*(temp0*temp)
-        IF (qrs(i, k, 3) .LT. qcrmin) THEN
-          max3 = qcrmin
-          g_max3 = 0.0_8
-        ELSE
+        IF (qcrmin .LT. qrs(i, k, 3)) THEN
           g_max3 = g_qrs(i, k, 3)
           max3 = qrs(i, k, 3)
+        ELSE
+          max3 = qcrmin
+          g_max3 = 0.0_8
         END IF
         pwy1 = (bvtg-2.)/4.
         IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
@@ -1420,155 +1428,165 @@ CONTAINS
 ! psmlt: melting of snow [RH83 A25]
 !       (T>T0: S->R) psmlt<0: min=-qrs(i,k,2), max=0
 !---------------------------------------------------------------
-            IF (t(i, k) .GT. t0c .AND. qrs(i, k, 2) .GT. qcrmin) THEN
 !update xl, cpm
-              g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-              xlf = xlf0
-              IF (90. .GT. t0c - t(i, k)) THEN
-                g_y1 = -g_t(i, k)
-                y1 = t0c - t(i, k)
-              ELSE
-                y1 = 90.
-                g_y1 = 0.0_8
-              END IF
-              IF (0. .LT. y1) THEN
-                g_max4 = g_y1
-                max4 = y1
-              ELSE
-                max4 = 0.
-                g_max4 = 0.0_8
-              END IF
-              temp0 = alpha*max4/2.
-              g_a = EXP(temp0)*alpha*g_max4/2.
-              a = EXP(temp0)
-              IF (90. .GT. t0c - t(i, k)) THEN
-                g_y2 = -g_t(i, k)
-                y2 = t0c - t(i, k)
-              ELSE
-                y2 = 90.
-                g_y2 = 0.0_8
-              END IF
-              IF (0. .LT. y2) THEN
-                g_max5 = g_y2
-                max5 = y2
-              ELSE
-                max5 = 0.
-                g_max5 = 0.0_8
-              END IF
-              g_arg1 = alpha*(3-bvts)*g_max5/8.
-              arg1 = alpha*max5*(3-bvts)/8.
-              g_b = EXP(arg1)*g_arg1
-              b = EXP(arg1)
-              temp0 = (t0c-t(i, k))/(t(i, k)+120.)
-              temp = t(i, k)**1.5
-              g_c = (temp0*1.5*t(i, k)**0.5-temp*(temp0+1.0)/(t(i, k)+&
-&               120.))*g_t(i, k)
-              c = temp*temp0
-              IF (t(i, k) .LE. 0.0_8 .AND. (3.88/6. .EQ. 0.0_8 .OR. 3.88&
-&                 /6. .NE. INT(3.88/6.))) THEN
-                g_pwr1 = 0.0_8
-              ELSE
-                g_pwr1 = 3.88*t(i, k)**(3.88/6.-1)*g_t(i, k)/6.
-              END IF
-              pwr1 = t(i, k)**(3.88/6.)
-              g_pwx2 = g_t(i, k)
-              pwx2 = t(i, k) + 120.
-              IF (pwx2 .LE. 0.0_8 .AND. (5./6. .EQ. 0.0_8 .OR. 5./6. &
-&                 .NE. INT(5./6.))) THEN
-                g_pwr2 = 0.0_8
-              ELSE
-                g_pwr2 = 5.*pwx2**(5./6.-1)*g_pwx2/6.
-              END IF
-              pwr2 = pwx2**(5./6.)
-              temp0 = pwr1/pwr2
-              g_d = (t0c-t(i, k))*(g_pwr1-temp0*g_pwr2)/pwr2 - temp0*g_t&
-&               (i, k)
-              d = (t0c-t(i, k))*temp0
-              g_arg1 = qrs(i, k, 2)*g_den(i, k) + den(i, k)*g_qrs(i, k, &
-&               2)
-              arg1 = den(i, k)*qrs(i, k, 2)
-              temp0 = SQRT(arg1)
-              IF (arg1 .EQ. 0.0_8) THEN
-                g_result1 = 0.0_8
-              ELSE
-                g_result1 = g_arg1/(2.0*temp0)
-              END IF
-              result1 = temp0
-              IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/&
-&                 3. .NE. INT(1.0/3.))) THEN
-                g_pwr1 = 0.0_8
-              ELSE
-                g_pwr1 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
-              END IF
-              pwr1 = p(i, k)**(1./3.)
-              pwy2 = (13.+3*bvts)/24.
-              IF (den(i, k) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&                 .NE. INT(pwy2))) THEN
-                g_pwr2 = 0.0_8
-              ELSE
-                g_pwr2 = pwy2*den(i, k)**(pwy2-1)*g_den(i, k)
-              END IF
-              pwr2 = den(i, k)**pwy2
-              pwy3 = (5.+bvts)/8.
-              IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (pwy3 .EQ. 0.0_8 .OR. &
-&                 pwy3 .NE. INT(pwy3))) THEN
-                g_pwr3 = 0.0_8
-              ELSE
-                g_pwr3 = pwy3*qrs(i, k, 2)**(pwy3-1)*g_qrs(i, k, 2)
-              END IF
-              pwr3 = qrs(i, k, 2)**pwy3
-              temp0 = b*d*pwr3
-              g_psmlt0 = psmlt_a*(result1*(c*g_a+a*g_c)+a*c*g_result1) +&
-&               psmlt_b*(pwr1*pwr2*(pwr3*(d*g_b+b*g_d)+b*d*g_pwr3)+temp0&
-&               *(pwr2*g_pwr1+pwr1*g_pwr2))
-              psmlt0 = psmlt_a*(a*c*result1) + psmlt_b*(temp0*(pwr1*pwr2&
-&               ))
-              g_tmp3 = dtcld*g_psmlt0/mstep(i)
-              tmp3 = psmlt0*dtcld/mstep(i)
-              g_tmp4 = -(g_qrs(i, k, 2)/mstep(i))
-              tmp4 = -(qrs(i, k, 2)/mstep(i))
-              IF (tmp3 .GT. tmp4) THEN
-                g_tmp5 = g_tmp3
-                tmp5 = tmp3
-              ELSE
-                g_tmp5 = g_tmp4
-                tmp5 = tmp4
-              END IF
-              IF (tmp5 .LT. 0.) THEN
-                g_psmlt(i, k) = g_tmp5
-                psmlt(i, k) = tmp5
-              ELSE
-                g_psmlt(i, k) = 0.0_8
-                psmlt(i, k) = 0.
-              END IF
-              IF (psmlt(i, k) .GE. 0.) THEN
-                abs2 = psmlt(i, k)
-              ELSE
-                abs2 = -psmlt(i, k)
-              END IF
-              IF (abs2 .LT. qmin) THEN
-                g_psmlt(i, k) = 0.0_8
-                psmlt(i, k) = 0.
-              END IF
-              IF (qrs(i, k, 2) + psmlt(i, k) .LT. 0.) THEN
-                g_qrs(i, k, 2) = 0.0_8
-                qrs(i, k, 2) = 0.
-              ELSE
-                g_qrs(i, k, 2) = g_qrs(i, k, 2) + g_psmlt(i, k)
-                qrs(i, k, 2) = qrs(i, k, 2) + psmlt(i, k)
-              END IF
-              IF (qrs(i, k, 1) - psmlt(i, k) .LT. 0.) THEN
-                g_qrs(i, k, 1) = 0.0_8
-                qrs(i, k, 1) = 0.
-              ELSE
-                g_qrs(i, k, 1) = g_qrs(i, k, 1) - g_psmlt(i, k)
-                qrs(i, k, 1) = qrs(i, k, 1) - psmlt(i, k)
-              END IF
-              temp0 = psmlt(i, k)/cpm(i, k)
-              g_t(i, k) = g_t(i, k) + xlf*(g_psmlt(i, k)-temp0*g_cpm(i, &
-&               k))/cpm(i, k)
-              t(i, k) = t(i, k) + xlf*temp0
+            g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+            xlf = xlf0
+            IF (90. .GT. t0c - t(i, k)) THEN
+              g_y1 = -g_t(i, k)
+              y1 = t0c - t(i, k)
+            ELSE
+              y1 = 90.
+              g_y1 = 0.0_8
             END IF
+            IF (0. .LT. y1) THEN
+              g_max4 = g_y1
+              max4 = y1
+            ELSE
+              max4 = 0.
+              g_max4 = 0.0_8
+            END IF
+            temp0 = alpha*max4/2.
+            g_a = EXP(temp0)*alpha*g_max4/2.
+            a = EXP(temp0)
+            IF (90. .GT. t0c - t(i, k)) THEN
+              g_y2 = -g_t(i, k)
+              y2 = t0c - t(i, k)
+            ELSE
+              y2 = 90.
+              g_y2 = 0.0_8
+            END IF
+            IF (0. .LT. y2) THEN
+              g_max5 = g_y2
+              max5 = y2
+            ELSE
+              max5 = 0.
+              g_max5 = 0.0_8
+            END IF
+            g_arg1 = alpha*(3-bvts)*g_max5/8.
+            arg1 = alpha*max5*(3-bvts)/8.
+            g_b = EXP(arg1)*g_arg1
+            b = EXP(arg1)
+            temp0 = (t0c-t(i, k))/(t(i, k)+120.)
+            temp = t(i, k)**1.5
+            g_c = (temp0*1.5*t(i, k)**0.5-temp*(temp0+1.0)/(t(i, k)+120.&
+&             ))*g_t(i, k)
+            c = temp*temp0
+            IF (t(i, k) .LE. 0.0_8 .AND. (3.88/6. .EQ. 0.0_8 .OR. 3.88/&
+&               6. .NE. INT(3.88/6.))) THEN
+              g_pwr1 = 0.0_8
+            ELSE
+              g_pwr1 = 3.88*t(i, k)**(3.88/6.-1)*g_t(i, k)/6.
+            END IF
+            pwr1 = t(i, k)**(3.88/6.)
+            g_pwx2 = g_t(i, k)
+            pwx2 = t(i, k) + 120.
+            IF (pwx2 .LE. 0.0_8 .AND. (5./6. .EQ. 0.0_8 .OR. 5./6. .NE. &
+&               INT(5./6.))) THEN
+              g_pwr2 = 0.0_8
+            ELSE
+              g_pwr2 = 5.*pwx2**(5./6.-1)*g_pwx2/6.
+            END IF
+            pwr2 = pwx2**(5./6.)
+            temp0 = pwr1/pwr2
+            g_d = (t0c-t(i, k))*(g_pwr1-temp0*g_pwr2)/pwr2 - temp0*g_t(i&
+&             , k)
+            d = (t0c-t(i, k))*temp0
+            IF (qrs(i, k, 2) .LT. qcrmin) THEN
+              max6 = qcrmin
+              g_max6 = 0.0_8
+            ELSE
+              g_max6 = g_qrs(i, k, 2)
+              max6 = qrs(i, k, 2)
+            END IF
+            IF (qrs(i, k, 2) .LT. qcrmin) THEN
+              max9 = qcrmin
+              g_max9 = 0.0_8
+            ELSE
+              g_max9 = g_qrs(i, k, 2)
+              max9 = qrs(i, k, 2)
+            END IF
+            g_arg1 = max6*g_den(i, k) + den(i, k)*g_max6
+            arg1 = den(i, k)*max6
+            temp0 = SQRT(arg1)
+            IF (arg1 .EQ. 0.0_8) THEN
+              g_result1 = 0.0_8
+            ELSE
+              g_result1 = g_arg1/(2.0*temp0)
+            END IF
+            result1 = temp0
+            IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. &
+&               .NE. INT(1.0/3.))) THEN
+              g_pwr1 = 0.0_8
+            ELSE
+              g_pwr1 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
+            END IF
+            pwr1 = p(i, k)**(1./3.)
+            pwy2 = (13.+3*bvts)/24.
+            IF (den(i, k) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
+&               .NE. INT(pwy2))) THEN
+              g_pwr2 = 0.0_8
+            ELSE
+              g_pwr2 = pwy2*den(i, k)**(pwy2-1)*g_den(i, k)
+            END IF
+            pwr2 = den(i, k)**pwy2
+            pwy3 = (5.+bvts)/8.
+            IF (max9 .LE. 0.0_8 .AND. (pwy3 .EQ. 0.0_8 .OR. pwy3 .NE. &
+&               INT(pwy3))) THEN
+              g_pwr3 = 0.0_8
+            ELSE
+              g_pwr3 = pwy3*max9**(pwy3-1)*g_max9
+            END IF
+            pwr3 = max9**pwy3
+            temp0 = b*d*pwr3
+            g_psmlt0 = psmlt_a*(result1*(c*g_a+a*g_c)+a*c*g_result1) + &
+&             psmlt_b*(pwr1*pwr2*(pwr3*(d*g_b+b*g_d)+b*d*g_pwr3)+temp0*(&
+&             pwr2*g_pwr1+pwr1*g_pwr2))
+            psmlt0 = psmlt_a*(a*c*result1) + psmlt_b*(temp0*(pwr1*pwr2))
+            g_tmp3 = dtcld*g_psmlt0/mstep(i)
+            tmp3 = psmlt0*dtcld/mstep(i)
+            g_tmp4 = -(g_qrs(i, k, 2)/mstep(i))
+            tmp4 = -(qrs(i, k, 2)/mstep(i))
+            IF (tmp3 .GT. tmp4) THEN
+              g_tmp5 = g_tmp3
+              tmp5 = tmp3
+            ELSE
+              g_tmp5 = g_tmp4
+              tmp5 = tmp4
+            END IF
+            IF (tmp5 .LT. 0.) THEN
+              g_psmlt(i, k) = g_tmp5
+              psmlt(i, k) = tmp5
+            ELSE
+              g_psmlt(i, k) = 0.0_8
+              psmlt(i, k) = 0.
+            END IF
+            IF (psmlt(i, k) .GE. 0.) THEN
+              abs2 = psmlt(i, k)
+            ELSE
+              abs2 = -psmlt(i, k)
+            END IF
+            IF (abs2 .LT. qmin) THEN
+              g_psmlt(i, k) = 0.0_8
+              psmlt(i, k) = 0.
+            END IF
+            IF (qrs(i, k, 2) + psmlt(i, k) .LT. 0.) THEN
+              g_qrs(i, k, 2) = 0.0_8
+              qrs(i, k, 2) = 0.
+            ELSE
+              g_qrs(i, k, 2) = g_qrs(i, k, 2) + g_psmlt(i, k)
+              qrs(i, k, 2) = qrs(i, k, 2) + psmlt(i, k)
+            END IF
+            IF (qrs(i, k, 1) - psmlt(i, k) .LT. 0.) THEN
+              g_qrs(i, k, 1) = 0.0_8
+              qrs(i, k, 1) = 0.
+            ELSE
+              g_qrs(i, k, 1) = g_qrs(i, k, 1) - g_psmlt(i, k)
+              qrs(i, k, 1) = qrs(i, k, 1) - psmlt(i, k)
+            END IF
+            temp0 = psmlt(i, k)/cpm(i, k)
+            g_t(i, k) = g_t(i, k) + xlf*(g_psmlt(i, k)-temp0*g_cpm(i, k)&
+&             )/cpm(i, k)
+            t(i, k) = t(i, k) + xlf*temp0
           END IF
         END DO
       END DO
@@ -1579,118 +1597,129 @@ CONTAINS
       DO k=kte,kts,-1
         DO i=its,ite
           IF (n .LE. mstep(i)) THEN
-            IF (t(i, k) .GT. t0c .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update xl, cpm
-              xlf = xlf0
-              g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-              temp0 = (t0c-t(i, k))/(t(i, k)+120.)
-              temp = t(i, k)**1.5
-              g_c = (temp0*1.5*t(i, k)**0.5-temp*(temp0+1.0)/(t(i, k)+&
-&               120.))*g_t(i, k)
-              c = temp*temp0
-              IF (t(i, k) .LE. 0.0_8 .AND. (3.88/6. .EQ. 0.0_8 .OR. 3.88&
-&                 /6. .NE. INT(3.88/6.))) THEN
-                g_pwr1 = 0.0_8
-              ELSE
-                g_pwr1 = 3.88*t(i, k)**(3.88/6.-1)*g_t(i, k)/6.
-              END IF
-              pwr1 = t(i, k)**(3.88/6.)
-              g_pwx2 = g_t(i, k)
-              pwx2 = t(i, k) + 120.
-              IF (pwx2 .LE. 0.0_8 .AND. (5./6. .EQ. 0.0_8 .OR. 5./6. &
-&                 .NE. INT(5./6.))) THEN
-                g_pwr2 = 0.0_8
-              ELSE
-                g_pwr2 = 5.*pwx2**(5./6.-1)*g_pwx2/6.
-              END IF
-              pwr2 = pwx2**(5./6.)
-              temp0 = pwr1/pwr2
-              g_d = (t0c-t(i, k))*(g_pwr1-temp0*g_pwr2)/pwr2 - temp0*g_t&
-&               (i, k)
-              d = (t0c-t(i, k))*temp0
-              g_arg1 = qrs(i, k, 3)*g_den(i, k) + den(i, k)*g_qrs(i, k, &
-&               3)
-              arg1 = den(i, k)*qrs(i, k, 3)
-              temp0 = SQRT(arg1)
-              IF (arg1 .EQ. 0.0_8) THEN
-                g_result1 = 0.0_8
-              ELSE
-                g_result1 = g_arg1/(2.0*temp0)
-              END IF
-              result1 = temp0
-              IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/&
-&                 3. .NE. INT(1.0/3.))) THEN
-                g_pwr1 = 0.0_8
-              ELSE
-                g_pwr1 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
-              END IF
-              pwr1 = p(i, k)**(1./3.)
-              pwy2 = (13.+3*bvtg)/24.
-              IF (den(i, k) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&                 .NE. INT(pwy2))) THEN
-                g_pwr2 = 0.0_8
-              ELSE
-                g_pwr2 = pwy2*den(i, k)**(pwy2-1)*g_den(i, k)
-              END IF
-              pwr2 = den(i, k)**pwy2
-              pwy3 = (5.+bvtg)/8.
-              IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (pwy3 .EQ. 0.0_8 .OR. &
-&                 pwy3 .NE. INT(pwy3))) THEN
-                g_pwr3 = 0.0_8
-              ELSE
-                g_pwr3 = pwy3*qrs(i, k, 3)**(pwy3-1)*g_qrs(i, k, 3)
-              END IF
-              pwr3 = qrs(i, k, 3)**pwy3
-              g_pgmlt0 = pgmlt_a*(result1*g_c+c*g_result1) + pgmlt_b*(&
-&               pwr2*pwr3*(pwr1*g_d+d*g_pwr1)+d*pwr1*(pwr3*g_pwr2+pwr2*&
-&               g_pwr3))
-              pgmlt0 = pgmlt_a*c*result1 + pgmlt_b*d*pwr1*pwr2*pwr3
-              g_tmp6 = dtcld*g_pgmlt0/mstep(i)
-              tmp6 = pgmlt0*dtcld/mstep(i)
-              g_tmp7 = -(g_qrs(i, k, 3)/mstep(i))
-              tmp7 = -(qrs(i, k, 3)/mstep(i))
-              IF (tmp6 .GT. tmp7) THEN
-                g_tmp8 = g_tmp6
-                tmp8 = tmp6
-              ELSE
-                g_tmp8 = g_tmp7
-                tmp8 = tmp7
-              END IF
-              IF (tmp8 .LT. 0.) THEN
-                g_pgmlt(i, k) = g_tmp8
-                pgmlt(i, k) = tmp8
-              ELSE
-                g_pgmlt(i, k) = 0.0_8
-                pgmlt(i, k) = 0.
-              END IF
-              IF (pgmlt(i, k) .GE. 0.) THEN
-                abs3 = pgmlt(i, k)
-              ELSE
-                abs3 = -pgmlt(i, k)
-              END IF
-              IF (abs3 .LT. qmin) THEN
-                g_pgmlt(i, k) = 0.0_8
-                pgmlt(i, k) = 0.
-              END IF
-              IF (qrs(i, k, 3) + pgmlt(i, k) .LT. 0.) THEN
-                g_qrs(i, k, 3) = 0.0_8
-                qrs(i, k, 3) = 0.
-              ELSE
-                g_qrs(i, k, 3) = g_qrs(i, k, 3) + g_pgmlt(i, k)
-                qrs(i, k, 3) = qrs(i, k, 3) + pgmlt(i, k)
-              END IF
-              IF (qrs(i, k, 1) - pgmlt(i, k) .LT. 0.) THEN
-                g_qrs(i, k, 1) = 0.0_8
-                qrs(i, k, 1) = 0.
-              ELSE
-                g_qrs(i, k, 1) = g_qrs(i, k, 1) - g_pgmlt(i, k)
-                qrs(i, k, 1) = qrs(i, k, 1) - pgmlt(i, k)
-              END IF
-              temp0 = pgmlt(i, k)/cpm(i, k)
-              g_t(i, k) = g_t(i, k) + xlf*(g_pgmlt(i, k)-temp0*g_cpm(i, &
-&               k))/cpm(i, k)
-              t(i, k) = t(i, k) + xlf*temp0
+            xlf = xlf0
+!               cpm(i,k)=cpmcal(q(i,k)) ! not change
+            temp0 = (t0c-t(i, k))/(t(i, k)+120.)
+            temp = t(i, k)**1.5
+            g_c = (temp0*1.5*t(i, k)**0.5-temp*(temp0+1.0)/(t(i, k)+120.&
+&             ))*g_t(i, k)
+            c = temp*temp0
+            IF (t(i, k) .LE. 0.0_8 .AND. (3.88/6. .EQ. 0.0_8 .OR. 3.88/&
+&               6. .NE. INT(3.88/6.))) THEN
+              g_pwr1 = 0.0_8
+            ELSE
+              g_pwr1 = 3.88*t(i, k)**(3.88/6.-1)*g_t(i, k)/6.
             END IF
+            pwr1 = t(i, k)**(3.88/6.)
+            g_pwx2 = g_t(i, k)
+            pwx2 = t(i, k) + 120.
+            IF (pwx2 .LE. 0.0_8 .AND. (5./6. .EQ. 0.0_8 .OR. 5./6. .NE. &
+&               INT(5./6.))) THEN
+              g_pwr2 = 0.0_8
+            ELSE
+              g_pwr2 = 5.*pwx2**(5./6.-1)*g_pwx2/6.
+            END IF
+            pwr2 = pwx2**(5./6.)
+            temp0 = pwr1/pwr2
+            g_d = (t0c-t(i, k))*(g_pwr1-temp0*g_pwr2)/pwr2 - temp0*g_t(i&
+&             , k)
+            d = (t0c-t(i, k))*temp0
+            IF (qrs(i, k, 3) .LT. qcrmin) THEN
+              max7 = qcrmin
+              g_max7 = 0.0_8
+            ELSE
+              g_max7 = g_qrs(i, k, 3)
+              max7 = qrs(i, k, 3)
+            END IF
+            IF (qrs(i, k, 3) .LT. qcrmin) THEN
+              max10 = qcrmin
+              g_max10 = 0.0_8
+            ELSE
+              g_max10 = g_qrs(i, k, 3)
+              max10 = qrs(i, k, 3)
+            END IF
+            g_arg1 = max7*g_den(i, k) + den(i, k)*g_max7
+            arg1 = den(i, k)*max7
+            temp0 = SQRT(arg1)
+            IF (arg1 .EQ. 0.0_8) THEN
+              g_result1 = 0.0_8
+            ELSE
+              g_result1 = g_arg1/(2.0*temp0)
+            END IF
+            result1 = temp0
+            IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. &
+&               .NE. INT(1.0/3.))) THEN
+              g_pwr1 = 0.0_8
+            ELSE
+              g_pwr1 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
+            END IF
+            pwr1 = p(i, k)**(1./3.)
+            pwy2 = (13.+3*bvtg)/24.
+            IF (den(i, k) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
+&               .NE. INT(pwy2))) THEN
+              g_pwr2 = 0.0_8
+            ELSE
+              g_pwr2 = pwy2*den(i, k)**(pwy2-1)*g_den(i, k)
+            END IF
+            pwr2 = den(i, k)**pwy2
+            pwy3 = (5.+bvtg)/8.
+            IF (max10 .LE. 0.0_8 .AND. (pwy3 .EQ. 0.0_8 .OR. pwy3 .NE. &
+&               INT(pwy3))) THEN
+              g_pwr3 = 0.0_8
+            ELSE
+              g_pwr3 = pwy3*max10**(pwy3-1)*g_max10
+            END IF
+            pwr3 = max10**pwy3
+            g_pgmlt0 = pgmlt_a*(result1*g_c+c*g_result1) + pgmlt_b*(pwr2&
+&             *pwr3*(pwr1*g_d+d*g_pwr1)+d*pwr1*(pwr3*g_pwr2+pwr2*g_pwr3)&
+&             )
+            pgmlt0 = pgmlt_a*c*result1 + pgmlt_b*d*pwr1*pwr2*pwr3
+            g_tmp6 = dtcld*g_pgmlt0/mstep(i)
+            tmp6 = pgmlt0*dtcld/mstep(i)
+            g_tmp7 = -(g_qrs(i, k, 3)/mstep(i))
+            tmp7 = -(qrs(i, k, 3)/mstep(i))
+            IF (tmp6 .GT. tmp7) THEN
+              g_tmp8 = g_tmp6
+              tmp8 = tmp6
+            ELSE
+              g_tmp8 = g_tmp7
+              tmp8 = tmp7
+            END IF
+            IF (tmp8 .LT. 0.) THEN
+              g_pgmlt(i, k) = g_tmp8
+              pgmlt(i, k) = tmp8
+            ELSE
+              g_pgmlt(i, k) = 0.0_8
+              pgmlt(i, k) = 0.
+            END IF
+            IF (pgmlt(i, k) .GE. 0.) THEN
+              abs3 = pgmlt(i, k)
+            ELSE
+              abs3 = -pgmlt(i, k)
+            END IF
+            IF (abs3 .LT. qmin) THEN
+              g_pgmlt(i, k) = 0.0_8
+              pgmlt(i, k) = 0.
+            END IF
+            IF (qrs(i, k, 3) + pgmlt(i, k) .LT. 0.) THEN
+              g_qrs(i, k, 3) = 0.0_8
+              qrs(i, k, 3) = 0.
+            ELSE
+              g_qrs(i, k, 3) = g_qrs(i, k, 3) + g_pgmlt(i, k)
+              qrs(i, k, 3) = qrs(i, k, 3) + pgmlt(i, k)
+            END IF
+            IF (qrs(i, k, 1) - pgmlt(i, k) .LT. 0.) THEN
+              g_qrs(i, k, 1) = 0.0_8
+              qrs(i, k, 1) = 0.
+            ELSE
+              g_qrs(i, k, 1) = g_qrs(i, k, 1) - g_pgmlt(i, k)
+              qrs(i, k, 1) = qrs(i, k, 1) - pgmlt(i, k)
+            END IF
+            temp0 = pgmlt(i, k)/cpm(i, k)
+            g_t(i, k) = g_t(i, k) + xlf*(g_pgmlt(i, k)-temp0*g_cpm(i, k)&
+&             )/cpm(i, k)
+            t(i, k) = t(i, k) + xlf*temp0
           END IF
         END DO
       END DO
@@ -1712,7 +1741,7 @@ CONTAINS
 &   pgmlt0, help_i, help_h, w1
     REAL :: tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8
     INTEGER :: mstepmax, k, i, n, nw, jj
-    REAL :: supcol, a, b, c, d
+    REAL :: fqs, fqg, supcol, a, b, c, d
     INTRINSIC MAX
     INTRINSIC MIN
     INTRINSIC EXP
@@ -1730,9 +1759,13 @@ CONTAINS
     REAL :: abs1
     REAL :: max4
     REAL :: max5
-    REAL :: abs2
-    REAL :: abs3
     REAL :: max6
+    REAL :: abs2
+    REAL :: max7
+    REAL :: abs3
+    REAL :: max8
+    REAL :: max9
+    REAL :: max10
     REAL :: pwy1
     REAL :: pwr1
     REAL :: pwy2
@@ -1747,20 +1780,20 @@ CONTAINS
     numdt = 1
     DO k=kte,kts,-1
       DO i=its,ite
-        IF (qrs(i, k, 1) .LT. qcrmin) THEN
-          max1 = qcrmin
-        ELSE
+        IF (qcrmin .LT. qrs(i, k, 1)) THEN
           max1 = qrs(i, k, 1)
+        ELSE
+          max1 = qcrmin
         END IF
         pwy1 = (bvtr-2.)/4.
         pwr1 = den(i, k)**pwy1
         pwy2 = bvtr/4.
         pwr2 = max1**pwy2
         work1(i, k, 1) = vt2r_a*pwr1*pwr2/delz(i, k)
-        IF (qrs(i, k, 2) .LT. qcrmin) THEN
-          max2 = qcrmin
-        ELSE
+        IF (qcrmin .LT. qrs(i, k, 2)) THEN
           max2 = qrs(i, k, 2)
+        ELSE
+          max2 = qcrmin
         END IF
         IF (90. .GT. t0c - t(i, k)) THEN
           y3 = t0c - t(i, k)
@@ -1768,20 +1801,20 @@ CONTAINS
           y3 = 90.
         END IF
         IF (0. .LT. y3) THEN
-          max6 = y3
+          max8 = y3
         ELSE
-          max6 = 0.
+          max8 = 0.
         END IF
         pwy1 = (bvts-2.)/4.
         pwr1 = den(i, k)**pwy1
         pwy2 = bvts/4.
         pwr2 = max2**pwy2
-        arg1 = -(bvts*alpha*max6/4.)
+        arg1 = -(bvts*alpha*max8/4.)
         work1(i, k, 2) = vt2s_a*pwr1*pwr2/delz(i, k)*EXP(arg1)
-        IF (qrs(i, k, 3) .LT. qcrmin) THEN
-          max3 = qcrmin
-        ELSE
+        IF (qcrmin .LT. qrs(i, k, 3)) THEN
           max3 = qrs(i, k, 3)
+        ELSE
+          max3 = qcrmin
         END IF
         pwy1 = (bvtg-2.)/4.
         pwr1 = den(i, k)**pwy1
@@ -1875,76 +1908,84 @@ CONTAINS
 ! psmlt: melting of snow [RH83 A25]
 !       (T>T0: S->R) psmlt<0: min=-qrs(i,k,2), max=0
 !---------------------------------------------------------------
-            IF (t(i, k) .GT. t0c .AND. qrs(i, k, 2) .GT. qcrmin) THEN
 !update xl, cpm
-              cpm(i, k) = CPMCAL(q(i, k))
-              xlf = xlf0
-              IF (90. .GT. t0c - t(i, k)) THEN
-                y1 = t0c - t(i, k)
-              ELSE
-                y1 = 90.
-              END IF
-              IF (0. .LT. y1) THEN
-                max4 = y1
-              ELSE
-                max4 = 0.
-              END IF
-              a = EXP(alpha*max4/2.)
-              IF (90. .GT. t0c - t(i, k)) THEN
-                y2 = t0c - t(i, k)
-              ELSE
-                y2 = 90.
-              END IF
-              IF (0. .LT. y2) THEN
-                max5 = y2
-              ELSE
-                max5 = 0.
-              END IF
-              arg1 = alpha*max5*(3-bvts)/8.
-              b = EXP(arg1)
-              c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
-              pwr1 = t(i, k)**(3.88/6.)
-              pwx2 = t(i, k) + 120.
-              pwr2 = pwx2**(5./6.)
-              d = pwr1*(t0c-t(i, k))/pwr2
-              arg1 = den(i, k)*qrs(i, k, 2)
-              result1 = SQRT(arg1)
-              pwr1 = p(i, k)**(1./3.)
-              pwy2 = (13.+3*bvts)/24.
-              pwr2 = den(i, k)**pwy2
-              pwy3 = (5.+bvts)/8.
-              pwr3 = qrs(i, k, 2)**pwy3
-              psmlt0 = psmlt_a*a*c*result1 + psmlt_b*b*d*pwr1*pwr2*pwr3
-              tmp3 = psmlt0*dtcld/mstep(i)
-              tmp4 = -(qrs(i, k, 2)/mstep(i))
-              IF (tmp3 .GT. tmp4) THEN
-                tmp5 = tmp3
-              ELSE
-                tmp5 = tmp4
-              END IF
-              IF (tmp5 .LT. 0.) THEN
-                psmlt(i, k) = tmp5
-              ELSE
-                psmlt(i, k) = 0.
-              END IF
-              IF (psmlt(i, k) .GE. 0.) THEN
-                abs2 = psmlt(i, k)
-              ELSE
-                abs2 = -psmlt(i, k)
-              END IF
-              IF (abs2 .LT. qmin) psmlt(i, k) = 0.
-              IF (qrs(i, k, 2) + psmlt(i, k) .LT. 0.) THEN
-                qrs(i, k, 2) = 0.
-              ELSE
-                qrs(i, k, 2) = qrs(i, k, 2) + psmlt(i, k)
-              END IF
-              IF (qrs(i, k, 1) - psmlt(i, k) .LT. 0.) THEN
-                qrs(i, k, 1) = 0.
-              ELSE
-                qrs(i, k, 1) = qrs(i, k, 1) - psmlt(i, k)
-              END IF
-              t(i, k) = t(i, k) + xlf/cpm(i, k)*psmlt(i, k)
+            cpm(i, k) = CPMCAL(q(i, k))
+            xlf = xlf0
+            IF (90. .GT. t0c - t(i, k)) THEN
+              y1 = t0c - t(i, k)
+            ELSE
+              y1 = 90.
             END IF
+            IF (0. .LT. y1) THEN
+              max4 = y1
+            ELSE
+              max4 = 0.
+            END IF
+            a = EXP(alpha*max4/2.)
+            IF (90. .GT. t0c - t(i, k)) THEN
+              y2 = t0c - t(i, k)
+            ELSE
+              y2 = 90.
+            END IF
+            IF (0. .LT. y2) THEN
+              max5 = y2
+            ELSE
+              max5 = 0.
+            END IF
+            arg1 = alpha*max5*(3-bvts)/8.
+            b = EXP(arg1)
+            c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
+            pwr1 = t(i, k)**(3.88/6.)
+            pwx2 = t(i, k) + 120.
+            pwr2 = pwx2**(5./6.)
+            d = pwr1*(t0c-t(i, k))/pwr2
+            IF (qrs(i, k, 2) .LT. qcrmin) THEN
+              max6 = qcrmin
+            ELSE
+              max6 = qrs(i, k, 2)
+            END IF
+            IF (qrs(i, k, 2) .LT. qcrmin) THEN
+              max9 = qcrmin
+            ELSE
+              max9 = qrs(i, k, 2)
+            END IF
+            arg1 = den(i, k)*max6
+            result1 = SQRT(arg1)
+            pwr1 = p(i, k)**(1./3.)
+            pwy2 = (13.+3*bvts)/24.
+            pwr2 = den(i, k)**pwy2
+            pwy3 = (5.+bvts)/8.
+            pwr3 = max9**pwy3
+            psmlt0 = psmlt_a*a*c*result1 + psmlt_b*b*d*pwr1*pwr2*pwr3
+            tmp3 = psmlt0*dtcld/mstep(i)
+            tmp4 = -(qrs(i, k, 2)/mstep(i))
+            IF (tmp3 .GT. tmp4) THEN
+              tmp5 = tmp3
+            ELSE
+              tmp5 = tmp4
+            END IF
+            IF (tmp5 .LT. 0.) THEN
+              psmlt(i, k) = tmp5
+            ELSE
+              psmlt(i, k) = 0.
+            END IF
+            IF (psmlt(i, k) .GE. 0.) THEN
+              abs2 = psmlt(i, k)
+            ELSE
+              abs2 = -psmlt(i, k)
+            END IF
+            IF (abs2 .LT. qmin) psmlt(i, k) = 0.
+            IF (qrs(i, k, 2) + psmlt(i, k) .LT. 0.) THEN
+              qrs(i, k, 2) = 0.
+            ELSE
+              qrs(i, k, 2) = qrs(i, k, 2) + psmlt(i, k)
+            END IF
+            IF (qrs(i, k, 1) - psmlt(i, k) .LT. 0.) THEN
+              qrs(i, k, 1) = 0.
+            ELSE
+              qrs(i, k, 1) = qrs(i, k, 1) - psmlt(i, k)
+            END IF
+            t(i, k) = t(i, k) + xlf/cpm(i, k)*psmlt(i, k)
           END IF
         END DO
       END DO
@@ -1955,53 +1996,61 @@ CONTAINS
       DO k=kte,kts,-1
         DO i=its,ite
           IF (n .LE. mstep(i)) THEN
-            IF (t(i, k) .GT. t0c .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update xl, cpm
-              xlf = xlf0
-              cpm(i, k) = CPMCAL(q(i, k))
-              c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
-              pwr1 = t(i, k)**(3.88/6.)
-              pwx2 = t(i, k) + 120.
-              pwr2 = pwx2**(5./6.)
-              d = pwr1*(t0c-t(i, k))/pwr2
-              arg1 = den(i, k)*qrs(i, k, 3)
-              result1 = SQRT(arg1)
-              pwr1 = p(i, k)**(1./3.)
-              pwy2 = (13.+3*bvtg)/24.
-              pwr2 = den(i, k)**pwy2
-              pwy3 = (5.+bvtg)/8.
-              pwr3 = qrs(i, k, 3)**pwy3
-              pgmlt0 = pgmlt_a*c*result1 + pgmlt_b*d*pwr1*pwr2*pwr3
-              tmp6 = pgmlt0*dtcld/mstep(i)
-              tmp7 = -(qrs(i, k, 3)/mstep(i))
-              IF (tmp6 .GT. tmp7) THEN
-                tmp8 = tmp6
-              ELSE
-                tmp8 = tmp7
-              END IF
-              IF (tmp8 .LT. 0.) THEN
-                pgmlt(i, k) = tmp8
-              ELSE
-                pgmlt(i, k) = 0.
-              END IF
-              IF (pgmlt(i, k) .GE. 0.) THEN
-                abs3 = pgmlt(i, k)
-              ELSE
-                abs3 = -pgmlt(i, k)
-              END IF
-              IF (abs3 .LT. qmin) pgmlt(i, k) = 0.
-              IF (qrs(i, k, 3) + pgmlt(i, k) .LT. 0.) THEN
-                qrs(i, k, 3) = 0.
-              ELSE
-                qrs(i, k, 3) = qrs(i, k, 3) + pgmlt(i, k)
-              END IF
-              IF (qrs(i, k, 1) - pgmlt(i, k) .LT. 0.) THEN
-                qrs(i, k, 1) = 0.
-              ELSE
-                qrs(i, k, 1) = qrs(i, k, 1) - pgmlt(i, k)
-              END IF
-              t(i, k) = t(i, k) + xlf/cpm(i, k)*pgmlt(i, k)
+            xlf = xlf0
+!               cpm(i,k)=cpmcal(q(i,k)) ! not change
+            c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
+            pwr1 = t(i, k)**(3.88/6.)
+            pwx2 = t(i, k) + 120.
+            pwr2 = pwx2**(5./6.)
+            d = pwr1*(t0c-t(i, k))/pwr2
+            IF (qrs(i, k, 3) .LT. qcrmin) THEN
+              max7 = qcrmin
+            ELSE
+              max7 = qrs(i, k, 3)
             END IF
+            IF (qrs(i, k, 3) .LT. qcrmin) THEN
+              max10 = qcrmin
+            ELSE
+              max10 = qrs(i, k, 3)
+            END IF
+            arg1 = den(i, k)*max7
+            result1 = SQRT(arg1)
+            pwr1 = p(i, k)**(1./3.)
+            pwy2 = (13.+3*bvtg)/24.
+            pwr2 = den(i, k)**pwy2
+            pwy3 = (5.+bvtg)/8.
+            pwr3 = max10**pwy3
+            pgmlt0 = pgmlt_a*c*result1 + pgmlt_b*d*pwr1*pwr2*pwr3
+            tmp6 = pgmlt0*dtcld/mstep(i)
+            tmp7 = -(qrs(i, k, 3)/mstep(i))
+            IF (tmp6 .GT. tmp7) THEN
+              tmp8 = tmp6
+            ELSE
+              tmp8 = tmp7
+            END IF
+            IF (tmp8 .LT. 0.) THEN
+              pgmlt(i, k) = tmp8
+            ELSE
+              pgmlt(i, k) = 0.
+            END IF
+            IF (pgmlt(i, k) .GE. 0.) THEN
+              abs3 = pgmlt(i, k)
+            ELSE
+              abs3 = -pgmlt(i, k)
+            END IF
+            IF (abs3 .LT. qmin) pgmlt(i, k) = 0.
+            IF (qrs(i, k, 3) + pgmlt(i, k) .LT. 0.) THEN
+              qrs(i, k, 3) = 0.
+            ELSE
+              qrs(i, k, 3) = qrs(i, k, 3) + pgmlt(i, k)
+            END IF
+            IF (qrs(i, k, 1) - pgmlt(i, k) .LT. 0.) THEN
+              qrs(i, k, 1) = 0.
+            ELSE
+              qrs(i, k, 1) = qrs(i, k, 1) - pgmlt(i, k)
+            END IF
+            t(i, k) = t(i, k) + xlf/cpm(i, k)*pgmlt(i, k)
           END IF
         END DO
       END DO
@@ -2253,16 +2302,16 @@ CONTAINS
   END SUBROUTINE FALLKC
 
 !  Differentiation of rainsc in forward (tangent) mode (with options r8):
-!   variations   of useful results: t cpm xl qrs rain qci rainncv
-!   with respect to varying inputs: fallc q t cpm xl delz den qrs
+!   variations   of useful results: t xl qrs rain qci rainncv
+!   with respect to varying inputs: fallc t cpm xl delz den qrs
 !                fall rain qci rainncv
 !=======================================================================
 !
 !=======================================================================
   SUBROUTINE G_RAINSC(fall, g_fall, fallc, g_fallc, xl, g_xl, t, g_t, q&
-&   , g_q, qci, g_qci, cpm, g_cpm, den, g_den, qrs, g_qrs, delz, g_delz&
-&   , rain, g_rain, rainncv, g_rainncv, dtcld, kte, kts, its, ite, kme, &
-&   kms, ims, ime)
+&   , qci, g_qci, cpm, g_cpm, den, g_den, qrs, g_qrs, delz, g_delz, rain&
+&   , g_rain, rainncv, g_rainncv, dtcld, kte, kts, its, ite, kme, kms, &
+&   ims, ime)
     IMPLICIT NONE
     INTEGER :: kte, kts, its, ite, kme, kms, ims, ime
     REAL, DIMENSION(its:ite, kts:kte, 3) :: qrs, fall
@@ -2270,7 +2319,7 @@ CONTAINS
     REAL, DIMENSION(its:ite, kts:kte, 2) :: qci
     REAL, DIMENSION(its:ite, kts:kte, 2) :: g_qci
     REAL, DIMENSION(ims:ime, kms:kme) :: delz, den, q
-    REAL, DIMENSION(ims:ime, kms:kme) :: g_delz, g_den, g_q
+    REAL, DIMENSION(ims:ime, kms:kme) :: g_delz, g_den
     REAL, DIMENSION(its:ite, kts:kte) :: xl, t, cpm, fallc
     REAL, DIMENSION(its:ite, kts:kte) :: g_xl, g_t, g_cpm, g_fallc
     REAL, DIMENSION(ims:ime) :: rain, rainncv
@@ -2278,14 +2327,16 @@ CONTAINS
     INTEGER :: k, i
     REAL :: dtcld, fallsum, supcol, xlf, temp, temp0, pfrzdtr, pfrzdtc
     REAL :: g_fallsum, g_supcol, g_xlf, g_temp, g_pfrzdtr, g_pfrzdtc
-    REAL :: qtmp
-    REAL :: g_qtmp
+    REAL :: ft0, ft40, fsupcol, fqc, fqi, fqr, qtmp
+    REAL :: g_ft0, g_ft40, g_qtmp
     INTRINSIC MAX
     INTRINSIC ABS
     INTRINSIC EXP
     INTRINSIC MIN
     REAL :: x1
     REAL :: g_x1
+    REAL :: max1
+    REAL :: g_max1
     REAL :: abs0
     REAL :: abs1
     REAL :: abs2
@@ -2318,179 +2369,186 @@ CONTAINS
 ! pimlt: instantaneous melting of cloud ice [RH83 A28]
 !       (T>T0: I->C) pimlt=qci(i,k,2) t-
 !---------------------------------------------------------------
-        IF (t(i, k) .GT. t0c .AND. qci(i, k, 2) .GT. 0.) THEN
 !update xl, cpm
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) THEN
           xlf = xlf0
-          IF (qci(i, k, 2) .LT. 0.) THEN
-            qtmp = 0.
-            g_qtmp = 0.0_8
-          ELSE
-            g_qtmp = g_qci(i, k, 2)
-            qtmp = qci(i, k, 2)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs0 = qtmp
-          ELSE
-            abs0 = -qtmp
-          END IF
-          IF (abs0 .LT. qmin) THEN
-            qtmp = 0.
-            g_qtmp = 0.0_8
-          END IF
-          IF (qci(i, k, 1) + qtmp .LT. 0.) THEN
-            g_qci(i, k, 1) = 0.0_8
-            qci(i, k, 1) = 0.
-          ELSE
-            g_qci(i, k, 1) = g_qci(i, k, 1) + g_qtmp
-            qci(i, k, 1) = qci(i, k, 1) + qtmp
-          END IF
-          IF (qci(i, k, 2) - qtmp .LT. 0.) THEN
-            g_qci(i, k, 2) = 0.0_8
-            qci(i, k, 2) = 0.
-          ELSE
-            g_qci(i, k, 2) = g_qci(i, k, 2) - g_qtmp
-            qci(i, k, 2) = qci(i, k, 2) - qtmp
-          END IF
-          temp1 = qtmp/cpm(i, k)
-          g_t(i, k) = g_t(i, k) - xlf*(g_qtmp-temp1*g_cpm(i, k))/cpm(i, &
-&           k)
-          t(i, k) = t(i, k) - xlf*temp1
+          g_xlf = 0.0_8
         END IF
+        CALL G_SMOOTHIF(t(i, k), g_t(i, k), t0c, ft0, g_ft0, 't0')
+        IF (qci(i, k, 2) .LT. 0.) THEN
+          max1 = 0.
+          g_max1 = 0.0_8
+        ELSE
+          g_max1 = g_qci(i, k, 2)
+          max1 = qci(i, k, 2)
+        END IF
+        g_qtmp = max1*g_ft0 + ft0*g_max1
+        qtmp = ft0*max1
+        IF (qtmp .GE. 0.) THEN
+          abs0 = qtmp
+        ELSE
+          abs0 = -qtmp
+        END IF
+        IF (abs0 .LT. qmin) THEN
+          qtmp = 0.
+          g_qtmp = 0.0_8
+        END IF
+        IF (qci(i, k, 1) + qtmp .LT. 0.) THEN
+          g_qci(i, k, 1) = 0.0_8
+          qci(i, k, 1) = 0.
+        ELSE
+          g_qci(i, k, 1) = g_qci(i, k, 1) + g_qtmp
+          qci(i, k, 1) = qci(i, k, 1) + qtmp
+        END IF
+        IF (qci(i, k, 2) - qtmp .LT. 0.) THEN
+          g_qci(i, k, 2) = 0.0_8
+          qci(i, k, 2) = 0.
+        ELSE
+          g_qci(i, k, 2) = g_qci(i, k, 2) - g_qtmp
+          qci(i, k, 2) = qci(i, k, 2) - qtmp
+        END IF
+        temp1 = xlf*qtmp/cpm(i, k)
+        g_t(i, k) = g_t(i, k) - (qtmp*g_xlf+xlf*g_qtmp-temp1*g_cpm(i, k)&
+&         )/cpm(i, k)
+        t(i, k) = t(i, k) - temp1
 !---------------------------------------------------------------
 ! pihmf: homogeneous freezing of cloud water below -40c
 !        (T<-40C: C->I) min=0,pihmf=qci(i,k,1) t+
 !---------------------------------------------------------------
 !update xl, cpm
-        IF (t(i, k) .LT. t0c - 40. .AND. qci(i, k, 1) .GT. 0.) THEN
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
-          IF (qci(i, k, 1) .LT. 0.) THEN
-            qtmp = 0.
-            g_qtmp = 0.0_8
-          ELSE
-            g_qtmp = g_qci(i, k, 1)
-            qtmp = qci(i, k, 1)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs1 = qtmp
-          ELSE
-            abs1 = -qtmp
-          END IF
-!update qc, qi, t
-          IF (abs1 .LT. qmin) THEN
-            qtmp = 0.
-            g_qtmp = 0.0_8
-          END IF
-          IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
-            g_qci(i, k, 2) = 0.0_8
-            qci(i, k, 2) = 0.
-          ELSE
-            g_qci(i, k, 2) = g_qci(i, k, 2) + g_qtmp
-            qci(i, k, 2) = qci(i, k, 2) + qtmp
-          END IF
-          IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
-            g_qci(i, k, 1) = 0.0_8
-            qci(i, k, 1) = 0.
-          ELSE
-            g_qci(i, k, 1) = g_qci(i, k, 1) - g_qtmp
-            qci(i, k, 1) = qci(i, k, 1) - qtmp
-          END IF
-          temp1 = xlf*qtmp/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + (qtmp*g_xlf+xlf*g_qtmp-temp1*g_cpm(i, &
-&           k))/cpm(i, k)
-          t(i, k) = t(i, k) + temp1
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        g_supcol = -g_t(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
         END IF
+        CALL G_SMOOTHIF(supcol, g_supcol, 40., ft40, g_ft40, 't0')
+        IF (ft40*qci(i, k, 1) .LT. 0.) THEN
+          qtmp = 0.
+          g_qtmp = 0.0_8
+        ELSE
+          g_qtmp = qci(i, k, 1)*g_ft40 + ft40*g_qci(i, k, 1)
+          qtmp = ft40*qci(i, k, 1)
+        END IF
+        IF (qtmp .GE. 0.) THEN
+          abs1 = qtmp
+        ELSE
+          abs1 = -qtmp
+        END IF
+!update qc, qi, t
+        IF (abs1 .LT. qmin) THEN
+          qtmp = 0.
+          g_qtmp = 0.0_8
+        END IF
+        IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
+          g_qci(i, k, 2) = 0.0_8
+          qci(i, k, 2) = 0.
+        ELSE
+          g_qci(i, k, 2) = g_qci(i, k, 2) + g_qtmp
+          qci(i, k, 2) = qci(i, k, 2) + qtmp
+        END IF
+        IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
+          g_qci(i, k, 1) = 0.0_8
+          qci(i, k, 1) = 0.
+        ELSE
+          g_qci(i, k, 1) = g_qci(i, k, 1) - g_qtmp
+          qci(i, k, 1) = qci(i, k, 1) - qtmp
+        END IF
+        temp1 = xlf*qtmp/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + (qtmp*g_xlf+xlf*g_qtmp-temp1*g_cpm(i, k)&
+&         )/cpm(i, k)
+        t(i, k) = t(i, k) + temp1
 !---------------------------------------------------------------
 ! pihtf: heterogeneous freezing of cloud water
 !        (T0>T>-40C: C->I) max=qci(i,k,1),min=0. t+
 !---------------------------------------------------------------
-        IF (t(i, k) .GT. t0c - 40. .AND. t(i, k) .LT. t0c .AND. qci(i, k&
-&           , 1) .GT. 0.) THEN
 !update xl, cpm
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          g_supcol = -g_t(i, k)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
-          temp1 = den(i, k)/(denr*xncr)
-          temp2 = qci(i, k, 1)*qci(i, k, 1)
-          temp3 = EXP(pfrz2*supcol) - 1.
-          g_x1 = pfrz1*dtcld*(temp2*temp1*EXP(pfrz2*supcol)*pfrz2*&
-&           g_supcol+temp3*(temp1*2*qci(i, k, 1)*g_qci(i, k, 1)+temp2*&
-&           g_den(i, k)/(denr*xncr)))
-          x1 = pfrz1*dtcld*(temp3*(temp2*temp1))
-          IF (x1 .GT. qci(i, k, 1)) THEN
-            g_pfrzdtc = g_qci(i, k, 1)
-            pfrzdtc = qci(i, k, 1)
-          ELSE
-            g_pfrzdtc = g_x1
-            pfrzdtc = x1
-          END IF
-          IF (pfrzdtc .LT. 0.) THEN
-            qtmp = 0.
-            g_qtmp = 0.0_8
-          ELSE
-            g_qtmp = g_pfrzdtc
-            qtmp = pfrzdtc
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs2 = qtmp
-          ELSE
-            abs2 = -qtmp
-          END IF
-!update qc, qi, t
-          IF (abs2 .LT. qmin) THEN
-            qtmp = 0.
-            g_qtmp = 0.0_8
-          END IF
-          IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
-            g_qci(i, k, 2) = 0.0_8
-            qci(i, k, 2) = 0.
-          ELSE
-            g_qci(i, k, 2) = g_qci(i, k, 2) + g_qtmp
-            qci(i, k, 2) = qci(i, k, 2) + qtmp
-          END IF
-          IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
-            g_qci(i, k, 1) = 0.0_8
-            qci(i, k, 1) = 0.
-          ELSE
-            g_qci(i, k, 1) = g_qci(i, k, 1) - g_qtmp
-            qci(i, k, 1) = qci(i, k, 1) - qtmp
-          END IF
-          temp3 = xlf*qtmp/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + (qtmp*g_xlf+xlf*g_qtmp-temp3*g_cpm(i, &
-&           k))/cpm(i, k)
-          t(i, k) = t(i, k) + temp3
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        g_supcol = -g_t(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
         END IF
+!t>-40C=t0c-40,t0c-t<40, supcol<40,-supcol>-40
+        CALL G_SMOOTHIF(-supcol, -g_supcol, -40., ft40, g_ft40, 't0')
+        temp1 = den(i, k)/(denr*xncr)
+        temp2 = qci(i, k, 1)*qci(i, k, 1)
+        temp3 = EXP(pfrz2*supcol) - 1.
+        g_x1 = pfrz1*dtcld*(temp2*temp1*EXP(pfrz2*supcol)*pfrz2*g_supcol&
+&         +temp3*(temp1*2*qci(i, k, 1)*g_qci(i, k, 1)+temp2*g_den(i, k)/&
+&         (denr*xncr)))
+        x1 = pfrz1*dtcld*(temp3*(temp2*temp1))
+        IF (x1 .GT. qci(i, k, 1)) THEN
+          g_pfrzdtc = g_qci(i, k, 1)
+          pfrzdtc = qci(i, k, 1)
+        ELSE
+          g_pfrzdtc = g_x1
+          pfrzdtc = x1
+        END IF
+        IF (ft40*pfrzdtc .LT. 0.) THEN
+          qtmp = 0.
+          g_qtmp = 0.0_8
+        ELSE
+          g_qtmp = pfrzdtc*g_ft40 + ft40*g_pfrzdtc
+          qtmp = ft40*pfrzdtc
+        END IF
+        IF (qtmp .GE. 0.) THEN
+          abs2 = qtmp
+        ELSE
+          abs2 = -qtmp
+        END IF
+!update qc, qi, t
+        IF (abs2 .LT. qmin) THEN
+          qtmp = 0.
+          g_qtmp = 0.0_8
+        END IF
+        IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
+          g_qci(i, k, 2) = 0.0_8
+          qci(i, k, 2) = 0.
+        ELSE
+          g_qci(i, k, 2) = g_qci(i, k, 2) + g_qtmp
+          qci(i, k, 2) = qci(i, k, 2) + qtmp
+        END IF
+        IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
+          g_qci(i, k, 1) = 0.0_8
+          qci(i, k, 1) = 0.
+        ELSE
+          g_qci(i, k, 1) = g_qci(i, k, 1) - g_qtmp
+          qci(i, k, 1) = qci(i, k, 1) - qtmp
+        END IF
+        temp3 = xlf*qtmp/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + (qtmp*g_xlf+xlf*g_qtmp-temp3*g_cpm(i, k)&
+&         )/cpm(i, k)
+        t(i, k) = t(i, k) + temp3
 !---------------------------------------------------------------
 ! pgfrz: freezing of rain water [LFO 45] 
 !        (T<T0, R->G) max=qrs(i,k,1),min=0. t+
 !---------------------------------------------------------------
-        IF (t(i, k) .LT. t0c .AND. qrs(i, k, 1) .GT. 0.) THEN
 !update xl, cpm
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          g_supcol = -g_t(i, k)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+!         cpm(i,k)=cpmcal(q(i,k))!not change
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        g_supcol = -g_t(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
+        END IF
+        IF (qrs(i, k, 1) .GT. 0.) THEN
           IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
 &             .NE. INT(3./4.))) THEN
             g_pwr1 = 0.0_8
@@ -2509,48 +2567,51 @@ CONTAINS
           g_temp = pgfrz_a*(pwr1*pwr2*EXP(pfrz2*supcol)*pfrz2*g_supcol+&
 &           temp3*(pwr2*g_pwr1+pwr1*g_pwr2))
           temp = pgfrz_a*(temp3*(pwr1*pwr2))
-          IF (temp*dtcld .GT. qrs(i, k, 1)) THEN
-            g_pfrzdtr = g_qrs(i, k, 1)
-            pfrzdtr = qrs(i, k, 1)
-          ELSE
-            g_pfrzdtr = dtcld*g_temp
-            pfrzdtr = temp*dtcld
-          END IF
-          IF (pfrzdtr .LT. 0.) THEN
-            qtmp = 0.
-            g_qtmp = 0.0_8
-          ELSE
-            g_qtmp = g_pfrzdtr
-            qtmp = pfrzdtr
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs3 = qtmp
-          ELSE
-            abs3 = -qtmp
-          END IF
-          IF (abs3 .LT. qmin) THEN
-            qtmp = 0.
-            g_qtmp = 0.0_8
-          END IF
-          IF (qrs(i, k, 3) + qtmp .LT. 0.) THEN
-            g_qrs(i, k, 3) = 0.0_8
-            qrs(i, k, 3) = 0.
-          ELSE
-            g_qrs(i, k, 3) = g_qrs(i, k, 3) + g_qtmp
-            qrs(i, k, 3) = qrs(i, k, 3) + qtmp
-          END IF
-          IF (qrs(i, k, 1) - qtmp .LT. 0.) THEN
-            g_qrs(i, k, 1) = 0.0_8
-            qrs(i, k, 1) = 0.
-          ELSE
-            g_qrs(i, k, 1) = g_qrs(i, k, 1) - g_qtmp
-            qrs(i, k, 1) = qrs(i, k, 1) - qtmp
-          END IF
-          temp3 = xlf*qtmp/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + (qtmp*g_xlf+xlf*g_qtmp-temp3*g_cpm(i, &
-&           k))/cpm(i, k)
-          t(i, k) = t(i, k) + temp3
+        ELSE
+          temp = 0.
+          g_temp = 0.0_8
         END IF
+        IF (temp*dtcld .GT. qrs(i, k, 1)) THEN
+          g_pfrzdtr = g_qrs(i, k, 1)
+          pfrzdtr = qrs(i, k, 1)
+        ELSE
+          g_pfrzdtr = dtcld*g_temp
+          pfrzdtr = temp*dtcld
+        END IF
+        IF (pfrzdtr .LT. 0.) THEN
+          qtmp = 0.
+          g_qtmp = 0.0_8
+        ELSE
+          g_qtmp = g_pfrzdtr
+          qtmp = pfrzdtr
+        END IF
+        IF (qtmp .GE. 0.) THEN
+          abs3 = qtmp
+        ELSE
+          abs3 = -qtmp
+        END IF
+        IF (abs3 .LT. qmin) THEN
+          qtmp = 0.
+          g_qtmp = 0.0_8
+        END IF
+        IF (qrs(i, k, 3) + qtmp .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_qrs(i, k, 3) + g_qtmp
+          qrs(i, k, 3) = qrs(i, k, 3) + qtmp
+        END IF
+        IF (qrs(i, k, 1) - qtmp .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_qrs(i, k, 1) - g_qtmp
+          qrs(i, k, 1) = qrs(i, k, 1) - qtmp
+        END IF
+        temp3 = xlf*qtmp/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + (qtmp*g_xlf+xlf*g_qtmp-temp3*g_cpm(i, k)&
+&         )/cpm(i, k)
+        t(i, k) = t(i, k) + temp3
       END DO
     END DO
   END SUBROUTINE G_RAINSC
@@ -2569,12 +2630,13 @@ CONTAINS
     REAL, DIMENSION(ims:ime) :: rain, rainncv
     INTEGER :: k, i
     REAL :: dtcld, fallsum, supcol, xlf, temp, temp0, pfrzdtr, pfrzdtc
-    REAL :: qtmp
+    REAL :: ft0, ft40, fsupcol, fqc, fqi, fqr, qtmp
     INTRINSIC MAX
     INTRINSIC ABS
     INTRINSIC EXP
     INTRINSIC MIN
     REAL :: x1
+    REAL :: max1
     REAL :: abs0
     REAL :: abs1
     REAL :: abs2
@@ -2596,153 +2658,156 @@ CONTAINS
 ! pimlt: instantaneous melting of cloud ice [RH83 A28]
 !       (T>T0: I->C) pimlt=qci(i,k,2) t-
 !---------------------------------------------------------------
-        IF (t(i, k) .GT. t0c .AND. qci(i, k, 2) .GT. 0.) THEN
 !update xl, cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xlf = xlf0
-          IF (qci(i, k, 2) .LT. 0.) THEN
-            qtmp = 0.
-          ELSE
-            qtmp = qci(i, k, 2)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs0 = qtmp
-          ELSE
-            abs0 = -qtmp
-          END IF
-          IF (abs0 .LT. qmin) qtmp = 0.
-          IF (qci(i, k, 1) + qtmp .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) + qtmp
-          END IF
-          IF (qci(i, k, 2) - qtmp .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - qtmp
-          END IF
-          t(i, k) = t(i, k) - xlf/cpm(i, k)*qtmp
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        IF (qci(i, k, 2) .LT. 0.) THEN
+          max1 = 0.
+        ELSE
+          max1 = qci(i, k, 2)
         END IF
+        qtmp = ft0*max1
+        IF (qtmp .GE. 0.) THEN
+          abs0 = qtmp
+        ELSE
+          abs0 = -qtmp
+        END IF
+        IF (abs0 .LT. qmin) qtmp = 0.
+        IF (qci(i, k, 1) + qtmp .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) + qtmp
+        END IF
+        IF (qci(i, k, 2) - qtmp .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - qtmp
+        END IF
+        t(i, k) = t(i, k) - xlf/cpm(i, k)*qtmp
 !---------------------------------------------------------------
 ! pihmf: homogeneous freezing of cloud water below -40c
 !        (T<-40C: C->I) min=0,pihmf=qci(i,k,1) t+
 !---------------------------------------------------------------
 !update xl, cpm
-        IF (t(i, k) .LT. t0c - 40. .AND. qci(i, k, 1) .GT. 0.) THEN
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xlf = xls - xl(i, k)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          IF (qci(i, k, 1) .LT. 0.) THEN
-            qtmp = 0.
-          ELSE
-            qtmp = qci(i, k, 1)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs1 = qtmp
-          ELSE
-            abs1 = -qtmp
-          END IF
-!update qc, qi, t
-          IF (abs1 .LT. qmin) qtmp = 0.
-          IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) + qtmp
-          END IF
-          IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - qtmp
-          END IF
-          t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        CALL SMOOTHIF(supcol, 40., ft40, 't0')
+        IF (ft40*qci(i, k, 1) .LT. 0.) THEN
+          qtmp = 0.
+        ELSE
+          qtmp = ft40*qci(i, k, 1)
         END IF
+        IF (qtmp .GE. 0.) THEN
+          abs1 = qtmp
+        ELSE
+          abs1 = -qtmp
+        END IF
+!update qc, qi, t
+        IF (abs1 .LT. qmin) qtmp = 0.
+        IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) + qtmp
+        END IF
+        IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - qtmp
+        END IF
+        t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
 !---------------------------------------------------------------
 ! pihtf: heterogeneous freezing of cloud water
 !        (T0>T>-40C: C->I) max=qci(i,k,1),min=0. t+
 !---------------------------------------------------------------
-        IF (t(i, k) .GT. t0c - 40. .AND. t(i, k) .LT. t0c .AND. qci(i, k&
-&           , 1) .GT. 0.) THEN
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xlf = xls - xl(i, k)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          x1 = pfrz1*(EXP(pfrz2*supcol)-1.)*den(i, k)/denr/xncr*qci(i, k&
-&           , 1)*qci(i, k, 1)*dtcld
-          IF (x1 .GT. qci(i, k, 1)) THEN
-            pfrzdtc = qci(i, k, 1)
-          ELSE
-            pfrzdtc = x1
-          END IF
-          IF (pfrzdtc .LT. 0.) THEN
-            qtmp = 0.
-          ELSE
-            qtmp = pfrzdtc
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs2 = qtmp
-          ELSE
-            abs2 = -qtmp
-          END IF
-!update qc, qi, t
-          IF (abs2 .LT. qmin) qtmp = 0.
-          IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) + qtmp
-          END IF
-          IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - qtmp
-          END IF
-          t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+!t>-40C=t0c-40,t0c-t<40, supcol<40,-supcol>-40
+        CALL SMOOTHIF(-supcol, -40., ft40, 't0')
+        x1 = pfrz1*(EXP(pfrz2*supcol)-1.)*den(i, k)/denr/xncr*qci(i, k, &
+&         1)*qci(i, k, 1)*dtcld
+        IF (x1 .GT. qci(i, k, 1)) THEN
+          pfrzdtc = qci(i, k, 1)
+        ELSE
+          pfrzdtc = x1
         END IF
+        IF (ft40*pfrzdtc .LT. 0.) THEN
+          qtmp = 0.
+        ELSE
+          qtmp = ft40*pfrzdtc
+        END IF
+        IF (qtmp .GE. 0.) THEN
+          abs2 = qtmp
+        ELSE
+          abs2 = -qtmp
+        END IF
+!update qc, qi, t
+        IF (abs2 .LT. qmin) qtmp = 0.
+        IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) + qtmp
+        END IF
+        IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - qtmp
+        END IF
+        t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
 !---------------------------------------------------------------
 ! pgfrz: freezing of rain water [LFO 45] 
 !        (T<T0, R->G) max=qrs(i,k,1),min=0. t+
 !---------------------------------------------------------------
-        IF (t(i, k) .LT. t0c .AND. qrs(i, k, 1) .GT. 0.) THEN
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xlf = xls - xl(i, k)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k))!not change
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 1) .GT. 0.) THEN
           pwr1 = den(i, k)**(3./4.)
           pwr2 = qrs(i, k, 1)**(7./4.)
           temp = pgfrz_a*(EXP(pfrz2*supcol)-1.)*pwr1*pwr2
-          IF (temp*dtcld .GT. qrs(i, k, 1)) THEN
-            pfrzdtr = qrs(i, k, 1)
-          ELSE
-            pfrzdtr = temp*dtcld
-          END IF
-          IF (pfrzdtr .LT. 0.) THEN
-            qtmp = 0.
-          ELSE
-            qtmp = pfrzdtr
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs3 = qtmp
-          ELSE
-            abs3 = -qtmp
-          END IF
-          IF (abs3 .LT. qmin) qtmp = 0.
-          IF (qrs(i, k, 3) + qtmp .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + qtmp
-          END IF
-          IF (qrs(i, k, 1) - qtmp .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) - qtmp
-          END IF
-          t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
+        ELSE
+          temp = 0.
         END IF
+        IF (temp*dtcld .GT. qrs(i, k, 1)) THEN
+          pfrzdtr = qrs(i, k, 1)
+        ELSE
+          pfrzdtr = temp*dtcld
+        END IF
+        IF (pfrzdtr .LT. 0.) THEN
+          qtmp = 0.
+        ELSE
+          qtmp = pfrzdtr
+        END IF
+        IF (qtmp .GE. 0.) THEN
+          abs3 = qtmp
+        ELSE
+          abs3 = -qtmp
+        END IF
+        IF (abs3 .LT. qmin) qtmp = 0.
+        IF (qrs(i, k, 3) + qtmp .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + qtmp
+        END IF
+        IF (qrs(i, k, 1) - qtmp .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - qtmp
+        END IF
+        t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
       END DO
     END DO
   END SUBROUTINE RAINSC
@@ -2774,8 +2839,9 @@ CONTAINS
     REAL :: coeres, supsat, satdt, dtcld, praut1
     REAL :: g_supsat, g_satdt, g_praut1
     INTEGER :: i, k
-    REAL :: prevp0, prevp1, temp, a, b, c, d, e
-    REAL :: g_a, g_b, g_c, g_d, g_e
+    REAL :: fqv, fqc, fqr, fqc0, fprevp, prevp0, prevp1, temp, a, b, c, &
+&   d, e
+    REAL :: g_fqc0, g_a, g_b, g_c, g_d, g_e
     INTRINSIC LOG
     INTRINSIC EXP
     INTRINSIC MIN
@@ -2790,6 +2856,10 @@ CONTAINS
     REAL :: g_x3
     REAL :: abs0
     REAL :: abs1
+    REAL :: max1
+    REAL :: g_max1
+    REAL :: max2
+    REAL :: g_max2
     REAL :: abs2
     REAL :: arg1
     REAL :: g_arg1
@@ -2820,49 +2890,59 @@ CONTAINS
 ! praut: auto conversion rate from cloud to rain [HDC 16]
 !        (C->R) praut>0 max=qci(i,k,1)/dtcld, min=0.
 !---------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qc0) THEN
+        CALL G_SMOOTHIF(qci(i, k, 1), g_qci(i, k, 1), qc0, fqc0, g_fqc0&
+&                 , 'q0')
+!qc0=5.03e-4
+        IF (qci(i, k, 1) .GT. 0.) THEN
+! x**a need x>0
 !(qci(i,k,1)**(7./3.))
           g_arg1 = 7.*g_qci(i, k, 1)/(3.*qci(i, k, 1))
           arg1 = LOG(qci(i, k, 1))*(7./3.)
-          g_praut1 = qck1*EXP(arg1)*g_arg1
-          praut1 = qck1*EXP(arg1)
-          IF (praut1 .GT. qci(i, k, 1)/dtcld) THEN
-            g_praut(i, k) = g_qci(i, k, 1)/dtcld
-            praut(i, k) = qci(i, k, 1)/dtcld
-          ELSE
-            g_praut(i, k) = g_praut1
-            praut(i, k) = praut1
-          END IF
-          IF (praut(i, k) .GE. 0.) THEN
-            abs0 = praut(i, k)
-          ELSE
-            abs0 = -praut(i, k)
-          END IF
-          IF (abs0 .LT. qmin/dtcld) THEN
-            g_praut(i, k) = 0.0_8
-            praut(i, k) = 0.
-          END IF
-          IF (qci(i, k, 1) - praut(i, k)*dtcld .LT. 0.) THEN
-            g_qci(i, k, 1) = 0.0_8
-            qci(i, k, 1) = 0.
-          ELSE
-            g_qci(i, k, 1) = g_qci(i, k, 1) - dtcld*g_praut(i, k)
-            qci(i, k, 1) = qci(i, k, 1) - praut(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 1) + praut(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 1) = 0.0_8
-            qrs(i, k, 1) = 0.
-          ELSE
-            g_qrs(i, k, 1) = g_qrs(i, k, 1) + dtcld*g_praut(i, k)
-            qrs(i, k, 1) = qrs(i, k, 1) + praut(i, k)*dtcld
-          END IF
+          temp0 = EXP(arg1)
+          g_praut1 = qck1*(temp0*g_fqc0+fqc0*EXP(arg1)*g_arg1)
+          praut1 = qck1*(fqc0*temp0)
+        ELSE
+          praut1 = 0.
+          g_praut1 = 0.0_8
+        END IF
+        IF (praut1 .GT. qci(i, k, 1)/dtcld) THEN
+          g_praut(i, k) = g_qci(i, k, 1)/dtcld
+          praut(i, k) = qci(i, k, 1)/dtcld
+        ELSE
+          g_praut(i, k) = g_praut1
+          praut(i, k) = praut1
+        END IF
+        IF (praut(i, k) .GE. 0.) THEN
+          abs0 = praut(i, k)
+        ELSE
+          abs0 = -praut(i, k)
+        END IF
+        IF (abs0 .LT. qmin/dtcld) THEN
           g_praut(i, k) = 0.0_8
           praut(i, k) = 0.
         END IF
+        IF (qci(i, k, 1) - praut(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 1) = 0.0_8
+          qci(i, k, 1) = 0.
+        ELSE
+          g_qci(i, k, 1) = g_qci(i, k, 1) - dtcld*g_praut(i, k)
+          qci(i, k, 1) = qci(i, k, 1) - praut(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 1) + praut(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_qrs(i, k, 1) + dtcld*g_praut(i, k)
+          qrs(i, k, 1) = qrs(i, k, 1) + praut(i, k)*dtcld
+        END IF
+        g_praut(i, k) = 0.0_8
+        praut(i, k) = 0.
 !---------------------------------------------------------------
 ! pracw: accretion of cloud water by rain [LFO 51]
 !        (C->R) max=qci(i,k,1)/dtcld, min=0.
 !---------------------------------------------------------------
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
         IF (qrs(i, k, 1) .GT. 0 .AND. qci(i, k, 1) .GT. 0.) THEN
           pwy1 = (1.+bvtr)/4.
           IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
@@ -2883,197 +2963,211 @@ CONTAINS
           g_pracw(i, k) = pracw_a*(qci(i, k, 1)*(pwr2*g_pwr1+pwr1*g_pwr2&
 &           )+pwr1*pwr2*g_qci(i, k, 1))
           pracw(i, k) = pracw_a*pwr1*pwr2*qci(i, k, 1)
-          IF (pracw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            g_x1 = g_qci(i, k, 1)/dtcld
-            x1 = qci(i, k, 1)/dtcld
-          ELSE
-            g_x1 = g_pracw(i, k)
-            x1 = pracw(i, k)
-          END IF
-          IF (x1 .LT. 0.) THEN
-            g_pracw(i, k) = 0.0_8
-            pracw(i, k) = 0.
-          ELSE
-            g_pracw(i, k) = g_x1
-            pracw(i, k) = x1
-          END IF
-          IF (pracw(i, k) .GE. 0.) THEN
-            abs1 = pracw(i, k)
-          ELSE
-            abs1 = -pracw(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) THEN
-            g_pracw(i, k) = 0.0_8
-            pracw(i, k) = 0.
-          END IF
-          IF (qci(i, k, 1) - pracw(i, k)*dtcld .LT. 0.) THEN
-            g_qci(i, k, 1) = 0.0_8
-            qci(i, k, 1) = 0.
-          ELSE
-            g_qci(i, k, 1) = g_qci(i, k, 1) - dtcld*g_pracw(i, k)
-            qci(i, k, 1) = qci(i, k, 1) - pracw(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 1) + pracw(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 1) = 0.0_8
-            qrs(i, k, 1) = 0.
-          ELSE
-            g_qrs(i, k, 1) = g_qrs(i, k, 1) + dtcld*g_pracw(i, k)
-            qrs(i, k, 1) = qrs(i, k, 1) + pracw(i, k)*dtcld
-          END IF
+        ELSE
           g_pracw(i, k) = 0.0_8
           pracw(i, k) = 0.
         END IF
+        IF (pracw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          g_x1 = g_qci(i, k, 1)/dtcld
+          x1 = qci(i, k, 1)/dtcld
+        ELSE
+          g_x1 = g_pracw(i, k)
+          x1 = pracw(i, k)
+        END IF
+        IF (x1 .LT. 0.) THEN
+          g_pracw(i, k) = 0.0_8
+          pracw(i, k) = 0.
+        ELSE
+          g_pracw(i, k) = g_x1
+          pracw(i, k) = x1
+        END IF
+        IF (pracw(i, k) .GE. 0.) THEN
+          abs1 = pracw(i, k)
+        ELSE
+          abs1 = -pracw(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) THEN
+          g_pracw(i, k) = 0.0_8
+          pracw(i, k) = 0.
+        END IF
+        IF (qci(i, k, 1) - pracw(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 1) = 0.0_8
+          qci(i, k, 1) = 0.
+        ELSE
+          g_qci(i, k, 1) = g_qci(i, k, 1) - dtcld*g_pracw(i, k)
+          qci(i, k, 1) = qci(i, k, 1) - pracw(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 1) + pracw(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_qrs(i, k, 1) + dtcld*g_pracw(i, k)
+          qrs(i, k, 1) = qrs(i, k, 1) + pracw(i, k)*dtcld
+        END IF
+        g_pracw(i, k) = 0.0_8
+        pracw(i, k) = 0.
 !
 !---------------------------------------------------------------
 ! prevp: evaporation/condensation rate of rain [HDC 14] 
 !        (V->R or R->V) rh(i,k,1)>1., prevp>0, V->R, min=0.,                max=satdt ;
 !                       rh(i,k,1)<1., prevp<0, R->V, min=-qrs(i,k,1)/dtcld, max=0.
 !---------------------------------------------------------------
-        IF (qrs(i, k, 1) .GT. qcrmin) THEN
 !update rh
-          CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k)&
-&                 , g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), &
-&                 g_qs(i, k, :))
+        CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k), &
+&               g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), g_qs&
+&               (i, k, :))
 !update xl, cpm
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_supsat = g_q(i, k) - g_qs(i, k, 1)
-          supsat = q(i, k) - qs(i, k, 1)
-          g_satdt = g_supsat/dtcld
-          satdt = supsat/dtcld
-          g_arg1 = qrs(i, k, 1)*g_den(i, k) + den(i, k)*g_qrs(i, k, 1)
-          arg1 = den(i, k)*qrs(i, k, 1)
-          temp0 = SQRT(arg1)
-          IF (arg1 .EQ. 0.0_8) THEN
-            g_a = 0.0_8
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        g_supsat = g_q(i, k) - g_qs(i, k, 1)
+        supsat = q(i, k) - qs(i, k, 1)
+        g_satdt = g_supsat/dtcld
+        satdt = supsat/dtcld
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max1 = qcrmin
+          g_max1 = 0.0_8
+        ELSE
+          g_max1 = g_qrs(i, k, 1)
+          max1 = qrs(i, k, 1)
+        END IF
+        temp0 = den(i, k)*max1
+        temp1 = SQRT(temp0)
+        IF (temp0 .EQ. 0.0_8) THEN
+          g_a = 0.0_8
+        ELSE
+          g_a = (max1*g_den(i, k)+den(i, k)*g_max1)/(2.0*temp1)
+        END IF
+        a = temp1
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max2 = qcrmin
+          g_max2 = 0.0_8
+        ELSE
+          g_max2 = g_qrs(i, k, 1)
+          max2 = qrs(i, k, 1)
+        END IF
+        g_pwx1 = g_t(i, k)
+        pwx1 = t(i, k) + 120.
+        IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. .NE. &
+&           INT(1.0/6.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
+        END IF
+        pwr1 = pwx1**(1./6.)
+        IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/6. &
+&           .NE. INT(5.12/6.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
+        END IF
+        pwr2 = t(i, k)**(5.12/6.)
+        IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. .NE.&
+&           INT(1.0/3.))) THEN
+          g_pwr3 = 0.0_8
+        ELSE
+          g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
+        END IF
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvtr)/24.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 .NE. &
+&           INT(pwy4))) THEN
+          g_pwr4 = 0.0_8
+        ELSE
+          g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
+        END IF
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvtr)/8.
+        IF (max2 .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5 .NE. INT(&
+&           pwy5))) THEN
+          g_pwr5 = 0.0_8
+        ELSE
+          g_pwr5 = pwy5*max2**(pwy5-1)*g_max2
+        END IF
+        pwr5 = max2**pwy5
+        temp1 = pwr1*pwr3/pwr2
+        g_b = pwr4*pwr5*(pwr3*g_pwr1+pwr1*g_pwr3-temp1*g_pwr2)/pwr2 + &
+&         temp1*(pwr5*g_pwr4+pwr4*g_pwr5)
+        b = temp1*(pwr4*pwr5)
+        temp1 = rv*t(i, k)**3.5
+        temp0 = den(i, k)*(t(i, k)+120.)
+        temp2 = xl(i, k)*xl(i, k)
+        temp3 = temp2*temp0/temp1
+        g_c = diffac_a*(temp0*2*xl(i, k)*g_xl(i, k)+temp2*((t(i, k)+120.&
+&         )*g_den(i, k)+den(i, k)*g_t(i, k))-temp3*rv*3.5*t(i, k)**2.5*&
+&         g_t(i, k))/temp1
+        c = diffac_a*temp3
+        temp3 = t(i, k)**1.81
+        temp2 = temp3*qs(i, k, 1)
+        temp1 = p(i, k)/temp2
+        g_d = diffac_b*(g_p(i, k)-temp1*(qs(i, k, 1)*1.81*t(i, k)**0.81*&
+&         g_t(i, k)+temp3*g_qs(i, k, 1)))/temp2
+        d = diffac_b*temp1
+        temp3 = (rh(i, k, 1)-1.)/(c+d)
+        g_e = (g_rh(i, k, 1)-temp3*(g_c+g_d))/(c+d)
+        e = temp3
+        temp3 = prevp_a*a + prevp_b*b
+        g_prevp(i, k) = e*(prevp_a*g_a+prevp_b*g_b) + temp3*g_e
+        prevp(i, k) = temp3*e
+        IF (prevp(i, k) .LT. 0.) THEN
+          IF (prevp(i, k) .LT. -(qrs(i, k, 1)/dtcld)) THEN
+            g_x2 = -(g_qrs(i, k, 1)/dtcld)
+            x2 = -(qrs(i, k, 1)/dtcld)
           ELSE
-            g_a = g_arg1/(2.0*temp0)
+            g_x2 = g_prevp(i, k)
+            x2 = prevp(i, k)
           END IF
-          a = temp0
-          g_pwx1 = g_t(i, k)
-          pwx1 = t(i, k) + 120.
-          IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. .NE. &
-&             INT(1.0/6.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
-          END IF
-          pwr1 = pwx1**(1./6.)
-          IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/6. &
-&             .NE. INT(5.12/6.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
-          END IF
-          pwr2 = t(i, k)**(5.12/6.)
-          IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. &
-&             .NE. INT(1.0/3.))) THEN
-            g_pwr3 = 0.0_8
-          ELSE
-            g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
-          END IF
-          pwr3 = p(i, k)**(1./3.)
-          pwy4 = (13.+3.*bvtr)/24.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 .NE.&
-&             INT(pwy4))) THEN
-            g_pwr4 = 0.0_8
-          ELSE
-            g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
-          END IF
-          pwr4 = den(i, k)**pwy4
-          pwy5 = (5.+bvtr)/8.
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5 &
-&             .NE. INT(pwy5))) THEN
-            g_pwr5 = 0.0_8
-          ELSE
-            g_pwr5 = pwy5*qrs(i, k, 1)**(pwy5-1)*g_qrs(i, k, 1)
-          END IF
-          pwr5 = qrs(i, k, 1)**pwy5
-          temp0 = pwr1*pwr3/pwr2
-          g_b = pwr4*pwr5*(pwr3*g_pwr1+pwr1*g_pwr3-temp0*g_pwr2)/pwr2 + &
-&           temp0*(pwr5*g_pwr4+pwr4*g_pwr5)
-          b = temp0*(pwr4*pwr5)
-          temp0 = rv*t(i, k)**3.5
-          temp1 = den(i, k)*(t(i, k)+120.)
-          temp2 = xl(i, k)*xl(i, k)
-          temp3 = temp2*temp1/temp0
-          g_c = diffac_a*(temp1*2*xl(i, k)*g_xl(i, k)+temp2*((t(i, k)+&
-&           120.)*g_den(i, k)+den(i, k)*g_t(i, k))-temp3*rv*3.5*t(i, k)&
-&           **2.5*g_t(i, k))/temp0
-          c = diffac_a*temp3
-          temp3 = t(i, k)**1.81
-          temp2 = temp3*qs(i, k, 1)
-          temp1 = p(i, k)/temp2
-          g_d = diffac_b*(g_p(i, k)-temp1*(qs(i, k, 1)*1.81*t(i, k)**&
-&           0.81*g_t(i, k)+temp3*g_qs(i, k, 1)))/temp2
-          d = diffac_b*temp1
-          temp3 = (rh(i, k, 1)-1.)/(c+d)
-          g_e = (g_rh(i, k, 1)-temp3*(g_c+g_d))/(c+d)
-          e = temp3
-          temp3 = prevp_a*a + prevp_b*b
-          g_prevp(i, k) = e*(prevp_a*g_a+prevp_b*g_b) + temp3*g_e
-          prevp(i, k) = temp3*e
-          IF (prevp(i, k) .LT. 0.) THEN
-            IF (prevp(i, k) .LT. -(qrs(i, k, 1)/dtcld)) THEN
-              g_x2 = -(g_qrs(i, k, 1)/dtcld)
-              x2 = -(qrs(i, k, 1)/dtcld)
-            ELSE
-              g_x2 = g_prevp(i, k)
-              x2 = prevp(i, k)
-            END IF
-            IF (x2 .GT. 0.) THEN
-              g_prevp(i, k) = 0.0_8
-              prevp(i, k) = 0.
-            ELSE
-              g_prevp(i, k) = g_x2
-              prevp(i, k) = x2
-            END IF
-          ELSE
-            IF (prevp(i, k) .GT. satdt) THEN
-              g_x3 = g_satdt
-              x3 = satdt
-            ELSE
-              g_x3 = g_prevp(i, k)
-              x3 = prevp(i, k)
-            END IF
-            IF (x3 .LT. 0.) THEN
-              g_prevp(i, k) = 0.0_8
-              prevp(i, k) = 0.
-            ELSE
-              g_prevp(i, k) = g_x3
-              prevp(i, k) = x3
-            END IF
-          END IF
-          IF (prevp(i, k) .GE. 0.) THEN
-            abs2 = prevp(i, k)
-          ELSE
-            abs2 = -prevp(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) THEN
+          IF (x2 .GT. 0.) THEN
             g_prevp(i, k) = 0.0_8
             prevp(i, k) = 0.
-          END IF
-          IF (q(i, k) - prevp(i, k)*dtcld .LT. 0.) THEN
-            g_q(i, k) = 0.0_8
-            q(i, k) = 0.
           ELSE
-            g_q(i, k) = g_q(i, k) - dtcld*g_prevp(i, k)
-            q(i, k) = q(i, k) - prevp(i, k)*dtcld
+            g_prevp(i, k) = g_x2
+            prevp(i, k) = x2
           END IF
-          IF (qrs(i, k, 1) + prevp(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 1) = 0.0_8
-            qrs(i, k, 1) = 0.
+        ELSE
+          IF (prevp(i, k) .GT. satdt) THEN
+            g_x3 = g_satdt
+            x3 = satdt
           ELSE
-            g_qrs(i, k, 1) = g_qrs(i, k, 1) + dtcld*g_prevp(i, k)
-            qrs(i, k, 1) = qrs(i, k, 1) + prevp(i, k)*dtcld
+            g_x3 = g_prevp(i, k)
+            x3 = prevp(i, k)
           END IF
-          temp3 = prevp(i, k)*xl(i, k)/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + dtcld*(xl(i, k)*g_prevp(i, k)+prevp(i&
-&           , k)*g_xl(i, k)-temp3*g_cpm(i, k))/cpm(i, k)
-          t(i, k) = t(i, k) + dtcld*temp3
+          IF (x3 .LT. 0.) THEN
+            g_prevp(i, k) = 0.0_8
+            prevp(i, k) = 0.
+          ELSE
+            g_prevp(i, k) = g_x3
+            prevp(i, k) = x3
+          END IF
+        END IF
+        IF (prevp(i, k) .GE. 0.) THEN
+          abs2 = prevp(i, k)
+        ELSE
+          abs2 = -prevp(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) THEN
           g_prevp(i, k) = 0.0_8
           prevp(i, k) = 0.
         END IF
+        IF (q(i, k) - prevp(i, k)*dtcld .LT. 0.) THEN
+          g_q(i, k) = 0.0_8
+          q(i, k) = 0.
+        ELSE
+          g_q(i, k) = g_q(i, k) - dtcld*g_prevp(i, k)
+          q(i, k) = q(i, k) - prevp(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 1) + prevp(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_qrs(i, k, 1) + dtcld*g_prevp(i, k)
+          qrs(i, k, 1) = qrs(i, k, 1) + prevp(i, k)*dtcld
+        END IF
+        temp3 = prevp(i, k)*xl(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*(xl(i, k)*g_prevp(i, k)+prevp(i, k&
+&         )*g_xl(i, k)-temp3*g_cpm(i, k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*temp3
+        g_prevp(i, k) = 0.0_8
+        prevp(i, k) = 0.
       END DO
     END DO
   END SUBROUTINE G_WARMR
@@ -3093,7 +3187,8 @@ CONTAINS
 &   , t, cpm
     REAL :: coeres, supsat, satdt, dtcld, praut1
     INTEGER :: i, k
-    REAL :: prevp0, prevp1, temp, a, b, c, d, e
+    REAL :: fqv, fqc, fqr, fqc0, fprevp, prevp0, prevp1, temp, a, b, c, &
+&   d, e
     INTRINSIC LOG
     INTRINSIC EXP
     INTRINSIC MIN
@@ -3105,6 +3200,8 @@ CONTAINS
     REAL :: x3
     REAL :: abs0
     REAL :: abs1
+    REAL :: max1
+    REAL :: max2
     REAL :: abs2
     REAL :: arg1
     REAL :: pwy1
@@ -3123,144 +3220,159 @@ CONTAINS
 ! praut: auto conversion rate from cloud to rain [HDC 16]
 !        (C->R) praut>0 max=qci(i,k,1)/dtcld, min=0.
 !---------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qc0) THEN
+        CALL SMOOTHIF(qci(i, k, 1), qc0, fqc0, 'q0')
+!qc0=5.03e-4
+        IF (qci(i, k, 1) .GT. 0.) THEN
+! x**a need x>0
 !(qci(i,k,1)**(7./3.))
           arg1 = LOG(qci(i, k, 1))*(7./3.)
-          praut1 = qck1*EXP(arg1)
-          IF (praut1 .GT. qci(i, k, 1)/dtcld) THEN
-            praut(i, k) = qci(i, k, 1)/dtcld
-          ELSE
-            praut(i, k) = praut1
-          END IF
-          IF (praut(i, k) .GE. 0.) THEN
-            abs0 = praut(i, k)
-          ELSE
-            abs0 = -praut(i, k)
-          END IF
-          IF (abs0 .LT. qmin/dtcld) praut(i, k) = 0.
-          IF (qci(i, k, 1) - praut(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - praut(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 1) + praut(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + praut(i, k)*dtcld
-          END IF
-          praut(i, k) = 0.
+          praut1 = fqc0*qck1*EXP(arg1)
+        ELSE
+          praut1 = 0.
         END IF
+        IF (praut1 .GT. qci(i, k, 1)/dtcld) THEN
+          praut(i, k) = qci(i, k, 1)/dtcld
+        ELSE
+          praut(i, k) = praut1
+        END IF
+        IF (praut(i, k) .GE. 0.) THEN
+          abs0 = praut(i, k)
+        ELSE
+          abs0 = -praut(i, k)
+        END IF
+        IF (abs0 .LT. qmin/dtcld) praut(i, k) = 0.
+        IF (qci(i, k, 1) - praut(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - praut(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 1) + praut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) + praut(i, k)*dtcld
+        END IF
+        praut(i, k) = 0.
 !---------------------------------------------------------------
 ! pracw: accretion of cloud water by rain [LFO 51]
 !        (C->R) max=qci(i,k,1)/dtcld, min=0.
 !---------------------------------------------------------------
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
         IF (qrs(i, k, 1) .GT. 0 .AND. qci(i, k, 1) .GT. 0.) THEN
           pwy1 = (1.+bvtr)/4.
           pwr1 = den(i, k)**pwy1
           pwy2 = (3.+bvtr)/4.
           pwr2 = qrs(i, k, 1)**pwy2
           pracw(i, k) = pracw_a*pwr1*pwr2*qci(i, k, 1)
-          IF (pracw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            x1 = qci(i, k, 1)/dtcld
-          ELSE
-            x1 = pracw(i, k)
-          END IF
-          IF (x1 .LT. 0.) THEN
-            pracw(i, k) = 0.
-          ELSE
-            pracw(i, k) = x1
-          END IF
-          IF (pracw(i, k) .GE. 0.) THEN
-            abs1 = pracw(i, k)
-          ELSE
-            abs1 = -pracw(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) pracw(i, k) = 0.
-          IF (qci(i, k, 1) - pracw(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - pracw(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 1) + pracw(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + pracw(i, k)*dtcld
-          END IF
+        ELSE
           pracw(i, k) = 0.
         END IF
+        IF (pracw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          x1 = qci(i, k, 1)/dtcld
+        ELSE
+          x1 = pracw(i, k)
+        END IF
+        IF (x1 .LT. 0.) THEN
+          pracw(i, k) = 0.
+        ELSE
+          pracw(i, k) = x1
+        END IF
+        IF (pracw(i, k) .GE. 0.) THEN
+          abs1 = pracw(i, k)
+        ELSE
+          abs1 = -pracw(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) pracw(i, k) = 0.
+        IF (qci(i, k, 1) - pracw(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - pracw(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 1) + pracw(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) + pracw(i, k)*dtcld
+        END IF
+        pracw(i, k) = 0.
 !
 !---------------------------------------------------------------
 ! prevp: evaporation/condensation rate of rain [HDC 14] 
 !        (V->R or R->V) rh(i,k,1)>1., prevp>0, V->R, min=0.,                max=satdt ;
 !                       rh(i,k,1)<1., prevp<0, R->V, min=-qrs(i,k,1)/dtcld, max=0.
 !---------------------------------------------------------------
-        IF (qrs(i, k, 1) .GT. qcrmin) THEN
 !update rh
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          supsat = q(i, k) - qs(i, k, 1)
-          satdt = supsat/dtcld
-          arg1 = den(i, k)*qrs(i, k, 1)
-          a = SQRT(arg1)
-          pwx1 = t(i, k) + 120.
-          pwr1 = pwx1**(1./6.)
-          pwr2 = t(i, k)**(5.12/6.)
-          pwr3 = p(i, k)**(1./3.)
-          pwy4 = (13.+3.*bvtr)/24.
-          pwr4 = den(i, k)**pwy4
-          pwy5 = (5.+bvtr)/8.
-          pwr5 = qrs(i, k, 1)**pwy5
-          b = pwr1/pwr2*pwr3*pwr4*pwr5
-          c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i&
-&           , k)**3.5
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-          e = (rh(i, k, 1)-1.)/(c+d)
-          prevp(i, k) = (prevp_a*a+prevp_b*b)*e
-          IF (prevp(i, k) .LT. 0.) THEN
-            IF (prevp(i, k) .LT. -(qrs(i, k, 1)/dtcld)) THEN
-              x2 = -(qrs(i, k, 1)/dtcld)
-            ELSE
-              x2 = prevp(i, k)
-            END IF
-            IF (x2 .GT. 0.) THEN
-              prevp(i, k) = 0.
-            ELSE
-              prevp(i, k) = x2
-            END IF
-          ELSE
-            IF (prevp(i, k) .GT. satdt) THEN
-              x3 = satdt
-            ELSE
-              x3 = prevp(i, k)
-            END IF
-            IF (x3 .LT. 0.) THEN
-              prevp(i, k) = 0.
-            ELSE
-              prevp(i, k) = x3
-            END IF
-          END IF
-          IF (prevp(i, k) .GE. 0.) THEN
-            abs2 = prevp(i, k)
-          ELSE
-            abs2 = -prevp(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) prevp(i, k) = 0.
-          IF (q(i, k) - prevp(i, k)*dtcld .LT. 0.) THEN
-            q(i, k) = 0.
-          ELSE
-            q(i, k) = q(i, k) - prevp(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 1) + prevp(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + prevp(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + prevp(i, k)*dtcld*xl(i, k)/cpm(i, k)
-          prevp(i, k) = 0.
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        supsat = q(i, k) - qs(i, k, 1)
+        satdt = supsat/dtcld
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max1 = qcrmin
+        ELSE
+          max1 = qrs(i, k, 1)
         END IF
+        a = SQRT(den(i, k)*max1)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max2 = qcrmin
+        ELSE
+          max2 = qrs(i, k, 1)
+        END IF
+        pwx1 = t(i, k) + 120.
+        pwr1 = pwx1**(1./6.)
+        pwr2 = t(i, k)**(5.12/6.)
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvtr)/24.
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvtr)/8.
+        pwr5 = max2**pwy5
+        b = pwr1/pwr2*pwr3*pwr4*pwr5
+        c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i, &
+&         k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        prevp(i, k) = (prevp_a*a+prevp_b*b)*e
+        IF (prevp(i, k) .LT. 0.) THEN
+          IF (prevp(i, k) .LT. -(qrs(i, k, 1)/dtcld)) THEN
+            x2 = -(qrs(i, k, 1)/dtcld)
+          ELSE
+            x2 = prevp(i, k)
+          END IF
+          IF (x2 .GT. 0.) THEN
+            prevp(i, k) = 0.
+          ELSE
+            prevp(i, k) = x2
+          END IF
+        ELSE
+          IF (prevp(i, k) .GT. satdt) THEN
+            x3 = satdt
+          ELSE
+            x3 = prevp(i, k)
+          END IF
+          IF (x3 .LT. 0.) THEN
+            prevp(i, k) = 0.
+          ELSE
+            prevp(i, k) = x3
+          END IF
+        END IF
+        IF (prevp(i, k) .GE. 0.) THEN
+          abs2 = prevp(i, k)
+        ELSE
+          abs2 = -prevp(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) prevp(i, k) = 0.
+        IF (q(i, k) - prevp(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - prevp(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 1) + prevp(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) + prevp(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + prevp(i, k)*dtcld*xl(i, k)/cpm(i, k)
+        prevp(i, k) = 0.
       END DO
     END DO
   END SUBROUTINE WARMR
@@ -3293,12 +3405,12 @@ CONTAINS
     REAL :: g_supcol, g_eacrs, g_egi, g_praci1, g_piacr1, g_psaci1, &
 &   g_pgaci1
     INTEGER :: i, k
-    REAL :: delta3, xlf, a, b, c, d, e
-    REAL :: g_xlf, g_a, g_b, g_c, g_d
+    REAL :: fsupcol, fqc, fqi, fqr, fqs, fqg, delta3, xlf, a, b, c, d, e
+    REAL :: g_fsupcol, g_xlf, g_a, g_b, g_c, g_d
+    INTRINSIC MAX
     INTRINSIC SQRT
     INTRINSIC ABS
     INTRINSIC MIN
-    INTRINSIC MAX
     INTRINSIC EXP
     REAL :: x1
     REAL :: g_x1
@@ -3320,16 +3432,20 @@ CONTAINS
     REAL :: g_y4
     REAL :: y5
     REAL :: g_y5
-    REAL :: y6
-    REAL :: g_y6
     REAL :: x6
     REAL :: g_x6
     REAL :: x7
     REAL :: g_x7
-    REAL :: abs0
-    REAL :: g_abs0
-    REAL :: abs1
-    REAL :: abs2
+    REAL :: x8
+    REAL :: g_x8
+    REAL :: x9
+    REAL :: g_x9
+    REAL :: x10
+    REAL :: g_x10
+    REAL :: x11
+    REAL :: g_x11
+    REAL :: y6
+    REAL :: g_y6
     REAL :: max1
     REAL :: g_max1
     REAL :: max2
@@ -3340,16 +3456,68 @@ CONTAINS
     REAL :: g_max4
     REAL :: max5
     REAL :: g_max5
+    REAL :: abs0
+    REAL :: g_abs0
+    REAL :: abs1
+    REAL :: abs2
+    REAL :: max6
+    REAL :: g_max6
+    REAL :: max7
+    REAL :: g_max7
+    REAL :: max8
+    REAL :: g_max8
+    REAL :: max9
+    REAL :: g_max9
+    REAL :: max10
+    REAL :: g_max10
+    REAL :: max11
+    REAL :: g_max11
     REAL :: abs3
     REAL :: g_abs3
     REAL :: abs4
+    REAL :: max12
+    REAL :: g_max12
+    REAL :: max13
+    REAL :: g_max13
+    REAL :: max14
+    REAL :: g_max14
+    REAL :: max15
+    REAL :: g_max15
+    REAL :: max16
+    REAL :: g_max16
     REAL :: abs5
     REAL :: g_abs5
     REAL :: abs6
-    REAL :: max6
-    REAL :: g_max6
+    REAL :: max17
+    REAL :: g_max17
     REAL :: abs7
     REAL :: abs8
+    REAL :: max18
+    REAL :: g_max18
+    REAL :: max19
+    REAL :: g_max19
+    REAL :: max20
+    REAL :: g_max20
+    REAL :: max21
+    REAL :: g_max21
+    REAL :: max22
+    REAL :: g_max22
+    REAL :: max23
+    REAL :: g_max23
+    REAL :: max24
+    REAL :: g_max24
+    REAL :: max25
+    REAL :: g_max25
+    REAL :: max26
+    REAL :: g_max26
+    REAL :: max27
+    REAL :: g_max27
+    REAL :: max28
+    REAL :: g_max28
+    REAL :: max29
+    REAL :: g_max29
+    REAL :: max30
+    REAL :: g_max30
     REAL :: pwy1
     REAL :: pwr1
     REAL :: g_pwr1
@@ -3370,17 +3538,247 @@ CONTAINS
     REAL :: temp2
     g_cpm = 0.0_8
     g_xl = 0.0_8
-    g_eacrs = 0.0_8
     DO k=kts,kte
       DO i=its,ite
 !-------------------------------------------------------------
 ! praci: Accretion of cloud ice by rain [LFO 25]
 !        (T<T0: I->S or I->G) praci: min=0,max=qci(i,k,2)/dtcld
 !-------------------------------------------------------------
+        g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 1) .GT. qcrmin .AND. qci(i, k&
-&           , 2) .GT. qmin) THEN
-          pwy1 = (bvtr-2.)/4.
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't0')
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max1 = qcrmin
+          g_max1 = 0.0_8
+        ELSE
+          g_max1 = g_qrs(i, k, 1)
+          max1 = qrs(i, k, 1)
+        END IF
+        pwy1 = (bvtr-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtr/4.
+        IF (max1 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max1**(pwy2-1)*g_max1
+        END IF
+        pwr2 = max1**pwy2
+        g_vt2r = vt2r_a*(pwr2*g_pwr1+pwr1*g_pwr2)
+        vt2r = vt2r_a*pwr1*pwr2
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max2 = qmin
+          g_max2 = 0.0_8
+        ELSE
+          g_max2 = g_qci(i, k, 2)
+          max2 = qci(i, k, 2)
+        END IF
+        g_pwx1 = max2*g_den(i, k) + den(i, k)*g_max2
+        pwx1 = den(i, k)*max2
+        IF (pwx1 .LE. 0.0_8 .AND. (1.31/8. .EQ. 0.0_8 .OR. 1.31/8. .NE. &
+&           INT(1.31/8.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 1.31*pwx1**(1.31/8.-1)*g_pwx1/8.
+        END IF
+        pwr1 = pwx1**(1.31/8.)
+        g_vt2i = vt2i_a*g_pwr1
+        vt2i = vt2i_a*pwr1
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max3 = qcrmin
+          g_max3 = 0.0_8
+        ELSE
+          g_max3 = g_qrs(i, k, 1)
+          max3 = qrs(i, k, 1)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max18 = qmin
+          g_max18 = 0.0_8
+        ELSE
+          g_max18 = g_qci(i, k, 2)
+          max18 = qci(i, k, 2)
+        END IF
+        g_pwx1 = max3*g_den(i, k) + den(i, k)*g_max3
+        pwx1 = den(i, k)*max3
+        IF (pwx1 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. INT(&
+&           3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*pwx1**(3./4.-1)*g_pwx1/4.
+        END IF
+        pwr1 = pwx1**(3./4.)
+        g_b = max18*g_pwr1 + pwr1*g_max18
+        b = pwr1*max18
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max4 = qcrmin
+          g_max4 = 0.0_8
+        ELSE
+          g_max4 = g_qrs(i, k, 1)
+          max4 = qrs(i, k, 1)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max19 = qmin
+          g_max19 = 0.0_8
+        ELSE
+          g_max19 = g_qci(i, k, 2)
+          max19 = qci(i, k, 2)
+        END IF
+        IF (den(i, k) .LE. 0.0_8 .AND. (5./8. .EQ. 0.0_8 .OR. 5./8. .NE.&
+&           INT(5./8.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 5.*den(i, k)**(5./8.-1)*g_den(i, k)/8.
+        END IF
+        pwr1 = den(i, k)**(5./8.)
+        temp1 = SQRT(max4)
+        IF (max4 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max4/(2.0*temp1)
+        END IF
+        result1 = temp1
+        IF (max19 .LE. 0.0_8 .AND. (9./8. .EQ. 0.0_8 .OR. 9./8. .NE. INT&
+&           (9./8.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 9.*max19**(9./8.-1)*g_max19/8.
+        END IF
+        pwr2 = max19**(9./8.)
+        g_c = pwr2*(result1*g_pwr1+pwr1*g_result1) + pwr1*result1*g_pwr2
+        c = pwr1*result1*pwr2
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max5 = qcrmin
+          g_max5 = 0.0_8
+        ELSE
+          g_max5 = g_qrs(i, k, 1)
+          max5 = qrs(i, k, 1)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max20 = qmin
+          g_max20 = 0.0_8
+        ELSE
+          g_max20 = g_qci(i, k, 2)
+          max20 = qci(i, k, 2)
+        END IF
+        temp1 = SQRT(den(i, k))
+        IF (den(i, k) .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_den(i, k)/(2.0*temp1)
+        END IF
+        result1 = temp1
+        temp1 = SQRT(max5)
+        IF (max5 .EQ. 0.0_8) THEN
+          g_result2 = 0.0_8
+        ELSE
+          g_result2 = g_max5/(2.0*temp1)
+        END IF
+        result2 = temp1
+        temp1 = SQRT(result2)
+        IF (result2 .EQ. 0.0_8) THEN
+          g_result3 = 0.0_8
+        ELSE
+          g_result3 = g_result2/(2.0*temp1)
+        END IF
+        result3 = temp1
+        IF (max20 .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4. .NE. INT&
+&           (5./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 5.*max20**(5./4.-1)*g_max20/4.
+        END IF
+        pwr1 = max20**(5./4.)
+        g_d = pwr1*(result3*g_result1+result1*g_result3) + result1*&
+&         result3*g_pwr1
+        d = result1*result3*pwr1
+        IF (vt2r - vt2i .GE. 0.) THEN
+          g_abs0 = g_vt2r - g_vt2i
+          abs0 = vt2r - vt2i
+        ELSE
+          g_abs0 = g_vt2i - g_vt2r
+          abs0 = -(vt2r-vt2i)
+        END IF
+        temp1 = praci_b*b + praci_c*c + praci_d*d
+        g_praci1 = praci_a*(temp1*g_abs0+abs0*(praci_b*g_b+praci_c*g_c+&
+&         praci_d*g_d))
+        praci1 = praci_a*(abs0*temp1)
+        IF (praci1 .GT. qci(i, k, 2)/dtcld) THEN
+          g_praci(i, k) = g_qci(i, k, 2)/dtcld
+          praci(i, k) = qci(i, k, 2)/dtcld
+        ELSE
+          g_praci(i, k) = g_praci1
+          praci(i, k) = praci1
+        END IF
+        g_praci(i, k) = praci(i, k)*g_fsupcol + fsupcol*g_praci(i, k)
+        praci(i, k) = fsupcol*praci(i, k)
+!update qi, qs, qg
+        IF (qrs(i, k, 1) .LT. 1.e-4) THEN
+          delta3 = 1.
+        ELSE
+          delta3 = 0.
+        END IF
+        IF (praci(i, k) .GE. 0.) THEN
+          abs1 = praci(i, k)
+        ELSE
+          abs1 = -praci(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) THEN
+          g_praci(i, k) = 0.0_8
+          praci(i, k) = 0.
+        END IF
+        IF (qci(i, k, 2) - praci(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 2) = 0.0_8
+          qci(i, k, 2) = 0.
+        ELSE
+          g_qci(i, k, 2) = g_qci(i, k, 2) - dtcld*g_praci(i, k)
+          qci(i, k, 2) = qci(i, k, 2) - praci(i, k)*dtcld
+        END IF
+        g_x1 = g_qrs(i, k, 2) + delta3*dtcld*g_praci(i, k)
+        x1 = qrs(i, k, 2) + praci(i, k)*delta3*dtcld
+        IF (x1 .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_x1
+          qrs(i, k, 2) = x1
+        END IF
+        g_x2 = g_qrs(i, k, 3) + (1-delta3)*dtcld*g_praci(i, k)
+        x2 = qrs(i, k, 3) + praci(i, k)*(1-delta3)*dtcld
+        IF (x2 .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_x2
+          qrs(i, k, 3) = x2
+        END IF
+        g_praci(i, k) = 0.0_8
+        praci(i, k) = 0.
+!-------------------------------------------------------------
+! piacr: Accretion of rain by cloud ice [LFO 26]
+!        (T<T0: R->S or R->G) piacr: min=0,max=qrs(i,k,1)/dtcld
+!-------------------------------------------------------------
+!         supcol = t0c-t(i,k) !not change
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't0')
+!call smoothif(qci(i,k,2),qmin  ,fqi,'q0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
+!update cpm
+        g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
+        END IF
+        IF (qci(i, k, 2) .GT. 0. .AND. qrs(i, k, 1) .GT. 0.) THEN
+!piacr_a=1.75e5
+          pwy1 = (3.+bvtr)/4.
           IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
 &             INT(pwy1))) THEN
             g_pwr1 = 0.0_8
@@ -3388,7 +3786,7 @@ CONTAINS
             g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
           END IF
           pwr1 = den(i, k)**pwy1
-          pwy2 = bvtr/4.
+          pwy2 = (6.+bvtr)/4.
           IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
 &             .NE. INT(pwy2))) THEN
             g_pwr2 = 0.0_8
@@ -3396,393 +3794,594 @@ CONTAINS
             g_pwr2 = pwy2*qrs(i, k, 1)**(pwy2-1)*g_qrs(i, k, 1)
           END IF
           pwr2 = qrs(i, k, 1)**pwy2
-          g_vt2r = vt2r_a*(pwr2*g_pwr1+pwr1*g_pwr2)
-          vt2r = vt2r_a*pwr1*pwr2
-          g_pwx1 = qci(i, k, 2)*g_den(i, k) + den(i, k)*g_qci(i, k, 2)
-          pwx1 = den(i, k)*qci(i, k, 2)
-          IF (pwx1 .LE. 0.0_8 .AND. (1.31/8. .EQ. 0.0_8 .OR. 1.31/8. &
-&             .NE. INT(1.31/8.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 1.31*pwx1**(1.31/8.-1)*g_pwx1/8.
-          END IF
-          pwr1 = pwx1**(1.31/8.)
-          g_vt2i = vt2i_a*g_pwr1
-          vt2i = vt2i_a*pwr1
-          g_pwx1 = qrs(i, k, 1)*g_den(i, k) + den(i, k)*g_qrs(i, k, 1)
-          pwx1 = den(i, k)*qrs(i, k, 1)
-          IF (pwx1 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. &
-&             INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*pwx1**(3./4.-1)*g_pwx1/4.
-          END IF
-          pwr1 = pwx1**(3./4.)
-          g_b = qci(i, k, 2)*g_pwr1 + pwr1*g_qci(i, k, 2)
-          b = pwr1*qci(i, k, 2)
-          IF (den(i, k) .LE. 0.0_8 .AND. (5./8. .EQ. 0.0_8 .OR. 5./8. &
-&             .NE. INT(5./8.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 5.*den(i, k)**(5./8.-1)*g_den(i, k)/8.
-          END IF
-          pwr1 = den(i, k)**(5./8.)
-          temp1 = SQRT(qrs(i, k, 1))
-          IF (qrs(i, k, 1) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 1)/(2.0*temp1)
-          END IF
-          result1 = temp1
-          IF (qci(i, k, 2) .LE. 0.0_8 .AND. (9./8. .EQ. 0.0_8 .OR. 9./8.&
-&             .NE. INT(9./8.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 9.*qci(i, k, 2)**(9./8.-1)*g_qci(i, k, 2)/8.
-          END IF
-          pwr2 = qci(i, k, 2)**(9./8.)
-          g_c = pwr2*(result1*g_pwr1+pwr1*g_result1) + pwr1*result1*&
-&           g_pwr2
-          c = pwr1*result1*pwr2
-          temp1 = SQRT(den(i, k))
-          IF (den(i, k) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_den(i, k)/(2.0*temp1)
-          END IF
-          result1 = temp1
-          temp1 = SQRT(qrs(i, k, 1))
-          IF (qrs(i, k, 1) .EQ. 0.0_8) THEN
-            g_result2 = 0.0_8
-          ELSE
-            g_result2 = g_qrs(i, k, 1)/(2.0*temp1)
-          END IF
-          result2 = temp1
-          temp1 = SQRT(result2)
-          IF (result2 .EQ. 0.0_8) THEN
-            g_result3 = 0.0_8
-          ELSE
-            g_result3 = g_result2/(2.0*temp1)
-          END IF
-          result3 = temp1
-          IF (qci(i, k, 2) .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4.&
-&             .NE. INT(5./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 5.*qci(i, k, 2)**(5./4.-1)*g_qci(i, k, 2)/4.
-          END IF
-          pwr1 = qci(i, k, 2)**(5./4.)
-          g_d = pwr1*(result3*g_result1+result1*g_result3) + result1*&
-&           result3*g_pwr1
-          d = result1*result3*pwr1
-          IF (vt2r - vt2i .GE. 0.) THEN
-            g_abs0 = g_vt2r - g_vt2i
-            abs0 = vt2r - vt2i
-          ELSE
-            g_abs0 = g_vt2i - g_vt2r
-            abs0 = -(vt2r-vt2i)
-          END IF
-          temp1 = praci_b*b + praci_c*c + praci_d*d
-          g_praci1 = praci_a*(temp1*g_abs0+abs0*(praci_b*g_b+praci_c*g_c&
-&           +praci_d*g_d))
-          praci1 = praci_a*(abs0*temp1)
-          IF (praci1 .GT. qci(i, k, 2)/dtcld) THEN
-            g_praci(i, k) = g_qci(i, k, 2)/dtcld
-            praci(i, k) = qci(i, k, 2)/dtcld
-          ELSE
-            g_praci(i, k) = g_praci1
-            praci(i, k) = praci1
-          END IF
-!update qi, qs, qg
-          IF (qrs(i, k, 1) .LT. 1.e-4) THEN
-            delta3 = 1.
-          ELSE
-            delta3 = 0.
-          END IF
-          IF (praci(i, k) .GE. 0.) THEN
-            abs1 = praci(i, k)
-          ELSE
-            abs1 = -praci(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) THEN
-            g_praci(i, k) = 0.0_8
-            praci(i, k) = 0.
-          END IF
-          IF (qci(i, k, 2) - praci(i, k)*dtcld .LT. 0.) THEN
-            g_qci(i, k, 2) = 0.0_8
-            qci(i, k, 2) = 0.
-          ELSE
-            g_qci(i, k, 2) = g_qci(i, k, 2) - dtcld*g_praci(i, k)
-            qci(i, k, 2) = qci(i, k, 2) - praci(i, k)*dtcld
-          END IF
-          g_x1 = g_qrs(i, k, 2) + delta3*dtcld*g_praci(i, k)
-          x1 = qrs(i, k, 2) + praci(i, k)*delta3*dtcld
-          IF (x1 .LT. 0.) THEN
-            g_qrs(i, k, 2) = 0.0_8
-            qrs(i, k, 2) = 0.
-          ELSE
-            g_qrs(i, k, 2) = g_x1
-            qrs(i, k, 2) = x1
-          END IF
-          g_x2 = g_qrs(i, k, 3) + (1-delta3)*dtcld*g_praci(i, k)
-          x2 = qrs(i, k, 3) + praci(i, k)*(1-delta3)*dtcld
-          IF (x2 .LT. 0.) THEN
-            g_qrs(i, k, 3) = 0.0_8
-            qrs(i, k, 3) = 0.
-          ELSE
-            g_qrs(i, k, 3) = g_x2
-            qrs(i, k, 3) = x2
-          END IF
-          g_praci(i, k) = 0.0_8
-          praci(i, k) = 0.
+          temp1 = qci(i, k, 2)**0.75
+          g_piacr1 = piacr_a*(pwr1*pwr2*0.75*qci(i, k, 2)**(-0.25)*g_qci&
+&           (i, k, 2)+temp1*(pwr2*g_pwr1+pwr1*g_pwr2))
+          piacr1 = piacr_a*(temp1*(pwr1*pwr2))
+        ELSE
+          piacr1 = 0.
+          g_piacr1 = 0.0_8
         END IF
-!-------------------------------------------------------------
-! piacr: Accretion of rain by cloud ice [LFO 26]
-!        (T<T0: R->S or R->G) piacr: min=0,max=qrs(i,k,1)/dtcld
-!-------------------------------------------------------------
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 1&
-&           ) .GT. qcrmin) THEN
-!update cpm
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
-          IF (qci(i, k, 2) .GT. 0. .AND. qrs(i, k, 1) .GT. 0.) THEN
-!piacr_a=1.75e5
-            pwy1 = (3.+bvtr)/4.
-            IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 &
-&               .NE. INT(pwy1))) THEN
-              g_pwr1 = 0.0_8
-            ELSE
-              g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-            END IF
-            pwr1 = den(i, k)**pwy1
-            pwy2 = (6.+bvtr)/4.
-            IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2&
-&               .NE. INT(pwy2))) THEN
-              g_pwr2 = 0.0_8
-            ELSE
-              g_pwr2 = pwy2*qrs(i, k, 1)**(pwy2-1)*g_qrs(i, k, 1)
-            END IF
-            pwr2 = qrs(i, k, 1)**pwy2
-            temp1 = qci(i, k, 2)**0.75
-            g_piacr1 = piacr_a*(pwr1*pwr2*0.75*qci(i, k, 2)**(-0.25)*&
-&             g_qci(i, k, 2)+temp1*(pwr2*g_pwr1+pwr1*g_pwr2))
-            piacr1 = piacr_a*(temp1*(pwr1*pwr2))
-          ELSE
-            piacr1 = 0.
-            g_piacr1 = 0.0_8
-          END IF
-          IF (piacr1 .GT. qrs(i, k, 1)/dtcld) THEN
-            g_piacr(i, k) = g_qrs(i, k, 1)/dtcld
-            piacr(i, k) = qrs(i, k, 1)/dtcld
-          ELSE
-            g_piacr(i, k) = g_piacr1
-            piacr(i, k) = piacr1
-          END IF
+        IF (piacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+          g_piacr(i, k) = g_qrs(i, k, 1)/dtcld
+          piacr(i, k) = qrs(i, k, 1)/dtcld
+        ELSE
+          g_piacr(i, k) = g_piacr1
+          piacr(i, k) = piacr1
+        END IF
+        g_piacr(i, k) = piacr(i, k)*g_fsupcol + fsupcol*g_piacr(i, k)
+        piacr(i, k) = fsupcol*piacr(i, k)
 ! update qr,qs,qg,t
-          IF (qrs(i, k, 1) .LT. 1.e-4) THEN
-            delta3 = 1.
-          ELSE
-            delta3 = 0.
-          END IF
-          IF (piacr(i, k) .GE. 0.) THEN
-            abs2 = piacr(i, k)
-          ELSE
-            abs2 = -piacr(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) THEN
-            g_piacr(i, k) = 0.0_8
-            piacr(i, k) = 0.
-          END IF
-          IF (qrs(i, k, 1) - piacr(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 1) = 0.0_8
-            qrs(i, k, 1) = 0.
-          ELSE
-            g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*g_piacr(i, k)
-            qrs(i, k, 1) = qrs(i, k, 1) - piacr(i, k)*dtcld
-          END IF
-          g_x3 = g_qrs(i, k, 2) + delta3*dtcld*g_piacr(i, k)
-          x3 = qrs(i, k, 2) + piacr(i, k)*delta3*dtcld
-          IF (x3 .LT. 0.) THEN
-            g_qrs(i, k, 2) = 0.0_8
-            qrs(i, k, 2) = 0.
-          ELSE
-            g_qrs(i, k, 2) = g_x3
-            qrs(i, k, 2) = x3
-          END IF
-          g_x4 = g_qrs(i, k, 3) + (1-delta3)*dtcld*g_piacr(i, k)
-          x4 = qrs(i, k, 3) + piacr(i, k)*(1-delta3)*dtcld
-          IF (x4 .LT. 0.) THEN
-            g_qrs(i, k, 3) = 0.0_8
-            qrs(i, k, 3) = 0.
-          ELSE
-            g_qrs(i, k, 3) = g_x4
-            qrs(i, k, 3) = x4
-          END IF
-          temp1 = piacr(i, k)*xlf/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_piacr(i, k)+piacr(i, k)*&
-&           g_xlf-temp1*g_cpm(i, k))/cpm(i, k)
-          t(i, k) = t(i, k) + dtcld*temp1
+        IF (qrs(i, k, 1) .LT. 1.e-4) THEN
+          delta3 = 1.
+        ELSE
+          delta3 = 0.
+        END IF
+        IF (piacr(i, k) .GE. 0.) THEN
+          abs2 = piacr(i, k)
+        ELSE
+          abs2 = -piacr(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) THEN
           g_piacr(i, k) = 0.0_8
           piacr(i, k) = 0.
         END IF
+        IF (qrs(i, k, 1) - piacr(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*g_piacr(i, k)
+          qrs(i, k, 1) = qrs(i, k, 1) - piacr(i, k)*dtcld
+        END IF
+        g_x3 = g_qrs(i, k, 2) + delta3*dtcld*g_piacr(i, k)
+        x3 = qrs(i, k, 2) + piacr(i, k)*delta3*dtcld
+        IF (x3 .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_x3
+          qrs(i, k, 2) = x3
+        END IF
+        g_x4 = g_qrs(i, k, 3) + (1-delta3)*dtcld*g_piacr(i, k)
+        x4 = qrs(i, k, 3) + piacr(i, k)*(1-delta3)*dtcld
+        IF (x4 .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_x4
+          qrs(i, k, 3) = x4
+        END IF
+        temp1 = piacr(i, k)*xlf/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_piacr(i, k)+piacr(i, k)*&
+&         g_xlf-temp1*g_cpm(i, k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*temp1
+        g_piacr(i, k) = 0.0_8
+        piacr(i, k) = 0.
 !-------------------------------------------------------------
 ! psaci: Accretion of cloud ice by snow [HDC 10]
 !        (T<T0: I->S) psaci: min=0, max=qci(i,k,2)/dtcld
 !-------------------------------------------------------------
         g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 2&
-&           ) .GT. qcrmin) THEN
-          g_x5 = -(EXP(-(0.07*supcol))*0.07*g_supcol)
-          x5 = EXP(0.07*(-supcol))
-          IF (x5 .GT. 1.) THEN
-            eacrs = 1.
-            g_eacrs = 0.0_8
-          ELSE
-            g_eacrs = g_x5
-            eacrs = x5
-          END IF
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y1 = -g_t(i, k)
-            y1 = t0c - t(i, k)
-          ELSE
-            y1 = 90.
-            g_y1 = 0.0_8
-          END IF
-          IF (0. .LT. y1) THEN
-            g_max1 = g_y1
-            max1 = y1
-          ELSE
-            max1 = 0.
-            g_max1 = 0.0_8
-          END IF
-          pwy1 = (bvts-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvts/4.
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 2)**(pwy2-1)*g_qrs(i, k, 2)
-          END IF
-          pwr2 = qrs(i, k, 2)**pwy2
-          g_arg1 = -(alpha*bvts*g_max1/4.)
-          arg1 = -(alpha*bvts*max1/4.)
-          temp1 = EXP(arg1)
-          g_vt2s = vt2s_a*(temp1*(pwr2*g_pwr1+pwr1*g_pwr2)+pwr1*pwr2*EXP&
-&           (arg1)*g_arg1)
-          vt2s = vt2s_a*(pwr1*pwr2*temp1)
-          g_pwx1 = qci(i, k, 2)*g_den(i, k) + den(i, k)*g_qci(i, k, 2)
-          pwx1 = den(i, k)*qci(i, k, 2)
-          IF (pwx1 .LE. 0.0_8 .AND. (1.31/8. .EQ. 0.0_8 .OR. 1.31/8. &
-&             .NE. INT(1.31/8.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 1.31*pwx1**(1.31/8.-1)*g_pwx1/8.
-          END IF
-          pwr1 = pwx1**(1.31/8.)
-          g_vt2i = vt2i_a*g_pwr1
-          vt2i = vt2i_a*pwr1
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y2 = -g_t(i, k)
-            y2 = t0c - t(i, k)
-          ELSE
-            y2 = 90.
-            g_y2 = 0.0_8
-          END IF
-          IF (0. .LT. y2) THEN
-            g_max2 = g_y2
-            max2 = y2
-          ELSE
-            max2 = 0.
-            g_max2 = 0.0_8
-          END IF
-          g_a = EXP(alpha*max2)*alpha*g_max2
-          a = EXP(alpha*max2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y3 = -g_t(i, k)
-            y3 = t0c - t(i, k)
-          ELSE
-            y3 = 90.
-            g_y3 = 0.0_8
-          END IF
-          IF (0. .LT. y3) THEN
-            g_max3 = g_y3
-            max3 = y3
-          ELSE
-            max3 = 0.
-            g_max3 = 0.0_8
-          END IF
-          g_arg1 = -(alpha*3.*g_max3/4.)
-          arg1 = -(3.*alpha*max3/4.)
-          g_pwx1 = qrs(i, k, 2)*g_den(i, k) + den(i, k)*g_qrs(i, k, 2)
-          pwx1 = den(i, k)*qrs(i, k, 2)
-          IF (pwx1 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. &
-&             INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*pwx1**(3./4.-1)*g_pwx1/4.
-          END IF
-          pwr1 = pwx1**(3./4.)
-          temp1 = pwr1*qci(i, k, 2)
-          temp2 = EXP(arg1)
-          g_b = temp1*EXP(arg1)*g_arg1 + temp2*(qci(i, k, 2)*g_pwr1+pwr1&
-&           *g_qci(i, k, 2))
-          b = temp2*temp1
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y4 = -g_t(i, k)
-            y4 = t0c - t(i, k)
-          ELSE
-            y4 = 90.
-            g_y4 = 0.0_8
-          END IF
-          IF (0. .LT. y4) THEN
-            g_max4 = g_y4
-            max4 = y4
-          ELSE
-            max4 = 0.
-            g_max4 = 0.0_8
-          END IF
-          g_arg1 = -(alpha*g_max4/2.)
-          arg1 = -(alpha*max4/2.)
-          IF (den(i, k) .LE. 0.0_8 .AND. (5./8. .EQ. 0.0_8 .OR. 5./8. &
-&             .NE. INT(5./8.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 5.*den(i, k)**(5./8.-1)*g_den(i, k)/8.
-          END IF
-          pwr1 = den(i, k)**(5./8.)
-          temp2 = SQRT(qrs(i, k, 2))
-          IF (qrs(i, k, 2) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 2)/(2.0*temp2)
-          END IF
-          result1 = temp2
-          IF (qci(i, k, 2) .LE. 0.0_8 .AND. (9./8. .EQ. 0.0_8 .OR. 9./8.&
-&             .NE. INT(9./8.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 9.*qci(i, k, 2)**(9./8.-1)*g_qci(i, k, 2)/8.
-          END IF
-          pwr2 = qci(i, k, 2)**(9./8.)
-          temp2 = pwr1*result1*pwr2
-          temp1 = EXP(arg1)
-          g_c = temp2*EXP(arg1)*g_arg1 + temp1*(pwr2*(result1*g_pwr1+&
-&           pwr1*g_result1)+pwr1*result1*g_pwr2)
-          c = temp1*temp2
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't0')
+        g_x5 = -(EXP(-(0.07*supcol))*0.07*g_supcol)
+        x5 = EXP(0.07*(-supcol))
+        IF (x5 .GT. 1.) THEN
+          eacrs = 1.
+          g_eacrs = 0.0_8
+        ELSE
+          g_eacrs = g_x5
+          eacrs = x5
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max6 = qcrmin
+          g_max6 = 0.0_8
+        ELSE
+          g_max6 = g_qrs(i, k, 2)
+          max6 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y6 = -g_t(i, k)
+          y6 = t0c - t(i, k)
+        ELSE
+          y6 = 90.
+          g_y6 = 0.0_8
+        END IF
+        IF (0. .LT. y6) THEN
+          g_max21 = g_y6
+          max21 = y6
+        ELSE
+          max21 = 0.
+          g_max21 = 0.0_8
+        END IF
+        pwy1 = (bvts-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvts/4.
+        IF (max6 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max6**(pwy2-1)*g_max6
+        END IF
+        pwr2 = max6**pwy2
+        g_arg1 = -(alpha*bvts*g_max21/4.)
+        arg1 = -(alpha*bvts*max21/4.)
+        temp1 = EXP(arg1)
+        g_vt2s = vt2s_a*(temp1*(pwr2*g_pwr1+pwr1*g_pwr2)+pwr1*pwr2*EXP(&
+&         arg1)*g_arg1)
+        vt2s = vt2s_a*(pwr1*pwr2*temp1)
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max7 = qmin
+          g_max7 = 0.0_8
+        ELSE
+          g_max7 = g_qci(i, k, 2)
+          max7 = qci(i, k, 2)
+        END IF
+        g_pwx1 = max7*g_den(i, k) + den(i, k)*g_max7
+        pwx1 = den(i, k)*max7
+        IF (pwx1 .LE. 0.0_8 .AND. (1.31/8. .EQ. 0.0_8 .OR. 1.31/8. .NE. &
+&           INT(1.31/8.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 1.31*pwx1**(1.31/8.-1)*g_pwx1/8.
+        END IF
+        pwr1 = pwx1**(1.31/8.)
+        g_vt2i = vt2i_a*g_pwr1
+        vt2i = vt2i_a*pwr1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y1 = -g_t(i, k)
+          y1 = t0c - t(i, k)
+        ELSE
+          y1 = 90.
+          g_y1 = 0.0_8
+        END IF
+        IF (0. .LT. y1) THEN
+          g_max8 = g_y1
+          max8 = y1
+        ELSE
+          max8 = 0.
+          g_max8 = 0.0_8
+        END IF
+        g_a = EXP(alpha*max8)*alpha*g_max8
+        a = EXP(alpha*max8)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y2 = -g_t(i, k)
+          y2 = t0c - t(i, k)
+        ELSE
+          y2 = 90.
+          g_y2 = 0.0_8
+        END IF
+        IF (0. .LT. y2) THEN
+          g_max9 = g_y2
+          max9 = y2
+        ELSE
+          max9 = 0.
+          g_max9 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max22 = qcrmin
+          g_max22 = 0.0_8
+        ELSE
+          g_max22 = g_qrs(i, k, 2)
+          max22 = qrs(i, k, 2)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max28 = qmin
+          g_max28 = 0.0_8
+        ELSE
+          g_max28 = g_qci(i, k, 2)
+          max28 = qci(i, k, 2)
+        END IF
+        g_arg1 = -(alpha*3.*g_max9/4.)
+        arg1 = -(3.*alpha*max9/4.)
+        g_pwx1 = max22*g_den(i, k) + den(i, k)*g_max22
+        pwx1 = den(i, k)*max22
+        IF (pwx1 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. INT(&
+&           3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*pwx1**(3./4.-1)*g_pwx1/4.
+        END IF
+        pwr1 = pwx1**(3./4.)
+        temp1 = EXP(arg1)
+        g_b = pwr1*max28*EXP(arg1)*g_arg1 + temp1*(max28*g_pwr1+pwr1*&
+&         g_max28)
+        b = temp1*(pwr1*max28)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y3 = -g_t(i, k)
+          y3 = t0c - t(i, k)
+        ELSE
+          y3 = 90.
+          g_y3 = 0.0_8
+        END IF
+        IF (0. .LT. y3) THEN
+          g_max10 = g_y3
+          max10 = y3
+        ELSE
+          max10 = 0.
+          g_max10 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max23 = qcrmin
+          g_max23 = 0.0_8
+        ELSE
+          g_max23 = g_qrs(i, k, 2)
+          max23 = qrs(i, k, 2)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max29 = qmin
+          g_max29 = 0.0_8
+        ELSE
+          g_max29 = g_qci(i, k, 2)
+          max29 = qci(i, k, 2)
+        END IF
+        g_arg1 = -(alpha*g_max10/2.)
+        arg1 = -(alpha*max10/2.)
+        IF (den(i, k) .LE. 0.0_8 .AND. (5./8. .EQ. 0.0_8 .OR. 5./8. .NE.&
+&           INT(5./8.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 5.*den(i, k)**(5./8.-1)*g_den(i, k)/8.
+        END IF
+        pwr1 = den(i, k)**(5./8.)
+        temp1 = SQRT(max23)
+        IF (max23 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max23/(2.0*temp1)
+        END IF
+        result1 = temp1
+        IF (max29 .LE. 0.0_8 .AND. (9./8. .EQ. 0.0_8 .OR. 9./8. .NE. INT&
+&           (9./8.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 9.*max29**(9./8.-1)*g_max29/8.
+        END IF
+        pwr2 = max29**(9./8.)
+        temp1 = pwr1*result1*pwr2
+        temp2 = EXP(arg1)
+        g_c = temp1*EXP(arg1)*g_arg1 + temp2*(pwr2*(result1*g_pwr1+pwr1*&
+&         g_result1)+pwr1*result1*g_pwr2)
+        c = temp2*temp1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y4 = -g_t(i, k)
+          y4 = t0c - t(i, k)
+        ELSE
+          y4 = 90.
+          g_y4 = 0.0_8
+        END IF
+        IF (0. .LT. y4) THEN
+          g_max11 = g_y4
+          max11 = y4
+        ELSE
+          max11 = 0.
+          g_max11 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max24 = qcrmin
+          g_max24 = 0.0_8
+        ELSE
+          g_max24 = g_qrs(i, k, 2)
+          max24 = qrs(i, k, 2)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max30 = qmin
+          g_max30 = 0.0_8
+        ELSE
+          g_max30 = g_qci(i, k, 2)
+          max30 = qci(i, k, 2)
+        END IF
+        g_arg1 = -(alpha*g_max11/4.)
+        arg1 = -(alpha*max11/4.)
+        temp2 = SQRT(den(i, k))
+        IF (den(i, k) .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_den(i, k)/(2.0*temp2)
+        END IF
+        result1 = temp2
+        temp2 = SQRT(max24)
+        IF (max24 .EQ. 0.0_8) THEN
+          g_result2 = 0.0_8
+        ELSE
+          g_result2 = g_max24/(2.0*temp2)
+        END IF
+        result2 = temp2
+        temp2 = SQRT(result2)
+        IF (result2 .EQ. 0.0_8) THEN
+          g_result3 = 0.0_8
+        ELSE
+          g_result3 = g_result2/(2.0*temp2)
+        END IF
+        result3 = temp2
+        IF (max30 .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4. .NE. INT&
+&           (5./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 5.*max30**(5./4.-1)*g_max30/4.
+        END IF
+        pwr1 = max30**(5./4.)
+        temp2 = result1*result3*pwr1
+        temp1 = EXP(arg1)
+        g_d = temp2*EXP(arg1)*g_arg1 + temp1*(pwr1*(result3*g_result1+&
+&         result1*g_result3)+result1*result3*g_pwr1)
+        d = temp1*temp2
+        IF (vt2s - vt2i .GE. 0.) THEN
+          g_abs3 = g_vt2s - g_vt2i
+          abs3 = vt2s - vt2i
+        ELSE
+          g_abs3 = g_vt2i - g_vt2s
+          abs3 = -(vt2s-vt2i)
+        END IF
+        temp2 = psaci_b*b + psaci_c*c + psaci_d*d
+        temp1 = a*abs3*eacrs
+        g_psaci1 = psaci_a*(temp2*(eacrs*(abs3*g_a+a*g_abs3)+a*abs3*&
+&         g_eacrs)+temp1*(psaci_b*g_b+psaci_c*g_c+psaci_d*g_d))
+        psaci1 = psaci_a*(temp1*temp2)
+        IF (psaci1 .GT. qci(i, k, 2)/dtcld) THEN
+          g_psaci(i, k) = g_qci(i, k, 2)/dtcld
+          psaci(i, k) = qci(i, k, 2)/dtcld
+        ELSE
+          g_psaci(i, k) = g_psaci1
+          psaci(i, k) = psaci1
+        END IF
+        g_psaci(i, k) = psaci(i, k)*g_fsupcol + fsupcol*g_psaci(i, k)
+        psaci(i, k) = fsupcol*psaci(i, k)
+        IF (psaci(i, k) .GE. 0.) THEN
+          abs4 = psaci(i, k)
+        ELSE
+          abs4 = -psaci(i, k)
+        END IF
+        IF (abs4 .LT. qmin/dtcld) THEN
+          g_psaci(i, k) = 0.0_8
+          psaci(i, k) = 0.
+        END IF
+        IF (qci(i, k, 2) - psaci(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 2) = 0.0_8
+          qci(i, k, 2) = 0.
+        ELSE
+          g_qci(i, k, 2) = g_qci(i, k, 2) - dtcld*g_psaci(i, k)
+          qci(i, k, 2) = qci(i, k, 2) - psaci(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psaci(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_psaci(i, k)
+          qrs(i, k, 2) = qrs(i, k, 2) + psaci(i, k)*dtcld
+        END IF
+        g_psaci(i, k) = 0.0_8
+        psaci(i, k) = 0.
+!-------------------------------------------------------------
+! pgaci: Accretion of cloud ice by graupel [LFO 41]
+!        (T<T0: I->G) pgaci:min=0,max=qci(i,k,2)/dtcld
+!-------------------------------------------------------------
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,    0.,fsupcol,'t0')
+!call smoothif(qci(i,k,2),qmin  ,fqi,'q0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!min(exp(0.07*(-supcol)),1.)
+        g_egi = g_eacrs
+        egi = eacrs
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max12 = qcrmin
+          g_max12 = 0.0_8
+        ELSE
+          g_max12 = g_qrs(i, k, 3)
+          max12 = qrs(i, k, 3)
+        END IF
+        pwy1 = (bvtg-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtg/4.
+        IF (max12 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max12**(pwy2-1)*g_max12
+        END IF
+        pwr2 = max12**pwy2
+        g_vt2g = vt2g_a*(pwr2*g_pwr1+pwr1*g_pwr2)
+        vt2g = vt2g_a*pwr1*pwr2
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max13 = qmin
+          g_max13 = 0.0_8
+        ELSE
+          g_max13 = g_qci(i, k, 2)
+          max13 = qci(i, k, 2)
+        END IF
+        g_pwx1 = max13*g_den(i, k) + den(i, k)*g_max13
+        pwx1 = den(i, k)*max13
+        IF (pwx1 .LE. 0.0_8 .AND. (1.31/8. .EQ. 0.0_8 .OR. 1.31/8. .NE. &
+&           INT(1.31/8.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 1.31*pwx1**(1.31/8.-1)*g_pwx1/8.
+        END IF
+        pwr1 = pwx1**(1.31/8.)
+        g_vt2i = vt2i_a*g_pwr1
+        vt2i = vt2i_a*pwr1
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max14 = qcrmin
+          g_max14 = 0.0_8
+        ELSE
+          g_max14 = g_qrs(i, k, 3)
+          max14 = qrs(i, k, 3)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max25 = qmin
+          g_max25 = 0.0_8
+        ELSE
+          g_max25 = g_qci(i, k, 2)
+          max25 = qci(i, k, 2)
+        END IF
+        g_pwx1 = max14*g_den(i, k) + den(i, k)*g_max14
+        pwx1 = den(i, k)*max14
+        IF (pwx1 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. INT(&
+&           3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*pwx1**(3./4.-1)*g_pwx1/4.
+        END IF
+        pwr1 = pwx1**(3./4.)
+        g_b = max25*g_pwr1 + pwr1*g_max25
+        b = pwr1*max25
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max15 = qcrmin
+          g_max15 = 0.0_8
+        ELSE
+          g_max15 = g_qrs(i, k, 3)
+          max15 = qrs(i, k, 3)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max26 = qmin
+          g_max26 = 0.0_8
+        ELSE
+          g_max26 = g_qci(i, k, 2)
+          max26 = qci(i, k, 2)
+        END IF
+        IF (den(i, k) .LE. 0.0_8 .AND. (5./8. .EQ. 0.0_8 .OR. 5./8. .NE.&
+&           INT(5./8.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 5.*den(i, k)**(5./8.-1)*g_den(i, k)/8.
+        END IF
+        pwr1 = den(i, k)**(5./8.)
+        temp2 = SQRT(max15)
+        IF (max15 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max15/(2.0*temp2)
+        END IF
+        result1 = temp2
+        IF (max26 .LE. 0.0_8 .AND. (9./8. .EQ. 0.0_8 .OR. 9./8. .NE. INT&
+&           (9./8.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 9.*max26**(9./8.-1)*g_max26/8.
+        END IF
+        pwr2 = max26**(9./8.)
+        g_c = pwr2*(result1*g_pwr1+pwr1*g_result1) + pwr1*result1*g_pwr2
+        c = pwr1*result1*pwr2
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max16 = qcrmin
+          g_max16 = 0.0_8
+        ELSE
+          g_max16 = g_qrs(i, k, 3)
+          max16 = qrs(i, k, 3)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max27 = qmin
+          g_max27 = 0.0_8
+        ELSE
+          g_max27 = g_qci(i, k, 2)
+          max27 = qci(i, k, 2)
+        END IF
+        temp2 = SQRT(den(i, k))
+        IF (den(i, k) .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_den(i, k)/(2.0*temp2)
+        END IF
+        result1 = temp2
+        temp2 = SQRT(max16)
+        IF (max16 .EQ. 0.0_8) THEN
+          g_result2 = 0.0_8
+        ELSE
+          g_result2 = g_max16/(2.0*temp2)
+        END IF
+        result2 = temp2
+        temp2 = SQRT(result2)
+        IF (result2 .EQ. 0.0_8) THEN
+          g_result3 = 0.0_8
+        ELSE
+          g_result3 = g_result2/(2.0*temp2)
+        END IF
+        result3 = temp2
+        IF (max27 .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4. .NE. INT&
+&           (5./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 5.*max27**(5./4.-1)*g_max27/4.
+        END IF
+        pwr1 = max27**(5./4.)
+        g_d = pwr1*(result3*g_result1+result1*g_result3) + result1*&
+&         result3*g_pwr1
+        d = result1*result3*pwr1
+        IF (vt2g - vt2i .GE. 0.) THEN
+          g_abs5 = g_vt2g - g_vt2i
+          abs5 = vt2g - vt2i
+        ELSE
+          g_abs5 = g_vt2i - g_vt2g
+          abs5 = -(vt2g-vt2i)
+        END IF
+        temp2 = pgaci_b*b + pgaci_c*c + pgaci_d*d
+        g_pgaci1 = pgaci_a*(abs5*egi*(pgaci_b*g_b+pgaci_c*g_c+pgaci_d*&
+&         g_d)+temp2*(egi*g_abs5+abs5*g_egi))
+        pgaci1 = pgaci_a*(temp2*(abs5*egi))
+        IF (pgaci1 .GT. qci(i, k, 2)/dtcld) THEN
+          g_pgaci(i, k) = g_qci(i, k, 2)/dtcld
+          pgaci(i, k) = qci(i, k, 2)/dtcld
+        ELSE
+          g_pgaci(i, k) = g_pgaci1
+          pgaci(i, k) = pgaci1
+        END IF
+        g_pgaci(i, k) = pgaci(i, k)*g_fsupcol + fsupcol*g_pgaci(i, k)
+        pgaci(i, k) = fsupcol*pgaci(i, k)
+        IF (pgaci(i, k) .GE. 0.) THEN
+          abs6 = pgaci(i, k)
+        ELSE
+          abs6 = -pgaci(i, k)
+        END IF
+        IF (abs6 .LT. qmin/dtcld) THEN
+          g_pgaci(i, k) = 0.0_8
+          pgaci(i, k) = 0.
+        END IF
+        IF (qci(i, k, 2) - pgaci(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 2) = 0.0_8
+          qci(i, k, 2) = 0.
+        ELSE
+          g_qci(i, k, 2) = g_qci(i, k, 2) - dtcld*g_pgaci(i, k)
+          qci(i, k, 2) = qci(i, k, 2) - pgaci(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgaci(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgaci(i, k)
+          qrs(i, k, 3) = qrs(i, k, 3) + pgaci(i, k)*dtcld
+        END IF
+        g_pgaci(i, k) = 0.0_8
+        pgaci(i, k) = 0.
+!-------------------------------------------------------------
+! psacw: Accretion of cloud water by snow  [LFO 24]
+!        (T<T0: C->G, and T>=T0: C->R) psacw:min=0,max=qci(i,k,1)/dtcld
+!-------------------------------------------------------------
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,    0.,fsupcol,'t0')
+!call smoothif(qrs(i,k,2),qcrmin,fqs,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
+!update cpm
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .GT. 0. .AND. qci(i, k, 1) .GT. 0.) THEN
           IF (90. .GT. t0c - t(i, k)) THEN
             g_y5 = -g_t(i, k)
             y5 = t0c - t(i, k)
@@ -3791,271 +4390,14 @@ CONTAINS
             g_y5 = 0.0_8
           END IF
           IF (0. .LT. y5) THEN
-            g_max5 = g_y5
-            max5 = y5
+            g_max17 = g_y5
+            max17 = y5
           ELSE
-            max5 = 0.
-            g_max5 = 0.0_8
+            max17 = 0.
+            g_max17 = 0.0_8
           END IF
-          g_arg1 = -(alpha*g_max5/4.)
-          arg1 = -(alpha*max5/4.)
-          temp2 = SQRT(den(i, k))
-          IF (den(i, k) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_den(i, k)/(2.0*temp2)
-          END IF
-          result1 = temp2
-          temp2 = SQRT(qrs(i, k, 2))
-          IF (qrs(i, k, 2) .EQ. 0.0_8) THEN
-            g_result2 = 0.0_8
-          ELSE
-            g_result2 = g_qrs(i, k, 2)/(2.0*temp2)
-          END IF
-          result2 = temp2
-          temp2 = SQRT(result2)
-          IF (result2 .EQ. 0.0_8) THEN
-            g_result3 = 0.0_8
-          ELSE
-            g_result3 = g_result2/(2.0*temp2)
-          END IF
-          result3 = temp2
-          IF (qci(i, k, 2) .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4.&
-&             .NE. INT(5./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 5.*qci(i, k, 2)**(5./4.-1)*g_qci(i, k, 2)/4.
-          END IF
-          pwr1 = qci(i, k, 2)**(5./4.)
-          temp2 = result1*result3*pwr1
-          temp1 = EXP(arg1)
-          g_d = temp2*EXP(arg1)*g_arg1 + temp1*(pwr1*(result3*g_result1+&
-&           result1*g_result3)+result1*result3*g_pwr1)
-          d = temp1*temp2
-          IF (vt2s - vt2i .GE. 0.) THEN
-            g_abs3 = g_vt2s - g_vt2i
-            abs3 = vt2s - vt2i
-          ELSE
-            g_abs3 = g_vt2i - g_vt2s
-            abs3 = -(vt2s-vt2i)
-          END IF
-          temp2 = psaci_b*b + psaci_c*c + psaci_d*d
-          temp1 = a*abs3*eacrs
-          g_psaci1 = psaci_a*(temp2*(eacrs*(abs3*g_a+a*g_abs3)+a*abs3*&
-&           g_eacrs)+temp1*(psaci_b*g_b+psaci_c*g_c+psaci_d*g_d))
-          psaci1 = psaci_a*(temp1*temp2)
-          IF (psaci1 .GT. qci(i, k, 2)/dtcld) THEN
-            g_psaci(i, k) = g_qci(i, k, 2)/dtcld
-            psaci(i, k) = qci(i, k, 2)/dtcld
-          ELSE
-            g_psaci(i, k) = g_psaci1
-            psaci(i, k) = psaci1
-          END IF
-          IF (psaci(i, k) .GE. 0.) THEN
-            abs4 = psaci(i, k)
-          ELSE
-            abs4 = -psaci(i, k)
-          END IF
-          IF (abs4 .LT. qmin/dtcld) THEN
-            g_psaci(i, k) = 0.0_8
-            psaci(i, k) = 0.
-          END IF
-          IF (qci(i, k, 2) - psaci(i, k)*dtcld .LT. 0.) THEN
-            g_qci(i, k, 2) = 0.0_8
-            qci(i, k, 2) = 0.
-          ELSE
-            g_qci(i, k, 2) = g_qci(i, k, 2) - dtcld*g_psaci(i, k)
-            qci(i, k, 2) = qci(i, k, 2) - psaci(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + psaci(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 2) = 0.0_8
-            qrs(i, k, 2) = 0.
-          ELSE
-            g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_psaci(i, k)
-            qrs(i, k, 2) = qrs(i, k, 2) + psaci(i, k)*dtcld
-          END IF
-          g_psaci(i, k) = 0.0_8
-          psaci(i, k) = 0.
-        END IF
-!-------------------------------------------------------------
-! pgaci: Accretion of cloud ice by graupel [LFO 41]
-!        (T<T0: I->G) pgaci:min=0,max=qci(i,k,2)/dtcld
-!-------------------------------------------------------------
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 3&
-&           ) .GT. qcrmin) THEN
-!min(exp(0.07*(-supcol)),1.)
-          g_egi = g_eacrs
-          egi = eacrs
-          pwy1 = (bvtg-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtg/4.
-          IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 3)**(pwy2-1)*g_qrs(i, k, 3)
-          END IF
-          pwr2 = qrs(i, k, 3)**pwy2
-          g_vt2g = vt2g_a*(pwr2*g_pwr1+pwr1*g_pwr2)
-          vt2g = vt2g_a*pwr1*pwr2
-          g_pwx1 = qci(i, k, 2)*g_den(i, k) + den(i, k)*g_qci(i, k, 2)
-          pwx1 = den(i, k)*qci(i, k, 2)
-          IF (pwx1 .LE. 0.0_8 .AND. (1.31/8. .EQ. 0.0_8 .OR. 1.31/8. &
-&             .NE. INT(1.31/8.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 1.31*pwx1**(1.31/8.-1)*g_pwx1/8.
-          END IF
-          pwr1 = pwx1**(1.31/8.)
-          g_vt2i = vt2i_a*g_pwr1
-          vt2i = vt2i_a*pwr1
-          g_pwx1 = qrs(i, k, 3)*g_den(i, k) + den(i, k)*g_qrs(i, k, 3)
-          pwx1 = den(i, k)*qrs(i, k, 3)
-          IF (pwx1 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. &
-&             INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*pwx1**(3./4.-1)*g_pwx1/4.
-          END IF
-          pwr1 = pwx1**(3./4.)
-          g_b = qci(i, k, 2)*g_pwr1 + pwr1*g_qci(i, k, 2)
-          b = pwr1*qci(i, k, 2)
-          IF (den(i, k) .LE. 0.0_8 .AND. (5./8. .EQ. 0.0_8 .OR. 5./8. &
-&             .NE. INT(5./8.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 5.*den(i, k)**(5./8.-1)*g_den(i, k)/8.
-          END IF
-          pwr1 = den(i, k)**(5./8.)
-          temp2 = SQRT(qrs(i, k, 3))
-          IF (qrs(i, k, 3) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 3)/(2.0*temp2)
-          END IF
-          result1 = temp2
-          IF (qci(i, k, 2) .LE. 0.0_8 .AND. (9./8. .EQ. 0.0_8 .OR. 9./8.&
-&             .NE. INT(9./8.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 9.*qci(i, k, 2)**(9./8.-1)*g_qci(i, k, 2)/8.
-          END IF
-          pwr2 = qci(i, k, 2)**(9./8.)
-          g_c = pwr2*(result1*g_pwr1+pwr1*g_result1) + pwr1*result1*&
-&           g_pwr2
-          c = pwr1*result1*pwr2
-          temp2 = SQRT(den(i, k))
-          IF (den(i, k) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_den(i, k)/(2.0*temp2)
-          END IF
-          result1 = temp2
-          temp2 = SQRT(qrs(i, k, 3))
-          IF (qrs(i, k, 3) .EQ. 0.0_8) THEN
-            g_result2 = 0.0_8
-          ELSE
-            g_result2 = g_qrs(i, k, 3)/(2.0*temp2)
-          END IF
-          result2 = temp2
-          temp2 = SQRT(result2)
-          IF (result2 .EQ. 0.0_8) THEN
-            g_result3 = 0.0_8
-          ELSE
-            g_result3 = g_result2/(2.0*temp2)
-          END IF
-          result3 = temp2
-          IF (qci(i, k, 2) .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4.&
-&             .NE. INT(5./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 5.*qci(i, k, 2)**(5./4.-1)*g_qci(i, k, 2)/4.
-          END IF
-          pwr1 = qci(i, k, 2)**(5./4.)
-          g_d = pwr1*(result3*g_result1+result1*g_result3) + result1*&
-&           result3*g_pwr1
-          d = result1*result3*pwr1
-          IF (vt2g - vt2i .GE. 0.) THEN
-            g_abs5 = g_vt2g - g_vt2i
-            abs5 = vt2g - vt2i
-          ELSE
-            g_abs5 = g_vt2i - g_vt2g
-            abs5 = -(vt2g-vt2i)
-          END IF
-          temp2 = pgaci_b*b + pgaci_c*c + pgaci_d*d
-          g_pgaci1 = pgaci_a*(abs5*egi*(pgaci_b*g_b+pgaci_c*g_c+pgaci_d*&
-&           g_d)+temp2*(egi*g_abs5+abs5*g_egi))
-          pgaci1 = pgaci_a*(temp2*(abs5*egi))
-          IF (pgaci1 .GT. qci(i, k, 2)/dtcld) THEN
-            g_pgaci(i, k) = g_qci(i, k, 2)/dtcld
-            pgaci(i, k) = qci(i, k, 2)/dtcld
-          ELSE
-            g_pgaci(i, k) = g_pgaci1
-            pgaci(i, k) = pgaci1
-          END IF
-          IF (pgaci(i, k) .GE. 0.) THEN
-            abs6 = pgaci(i, k)
-          ELSE
-            abs6 = -pgaci(i, k)
-          END IF
-          IF (abs6 .LT. qmin/dtcld) THEN
-            g_pgaci(i, k) = 0.0_8
-            pgaci(i, k) = 0.
-          END IF
-          IF (qci(i, k, 2) - pgaci(i, k)*dtcld .LT. 0.) THEN
-            g_qci(i, k, 2) = 0.0_8
-            qci(i, k, 2) = 0.
-          ELSE
-            g_qci(i, k, 2) = g_qci(i, k, 2) - dtcld*g_pgaci(i, k)
-            qci(i, k, 2) = qci(i, k, 2) - pgaci(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgaci(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 3) = 0.0_8
-            qrs(i, k, 3) = 0.
-          ELSE
-            g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgaci(i, k)
-            qrs(i, k, 3) = qrs(i, k, 3) + pgaci(i, k)*dtcld
-          END IF
-          g_pgaci(i, k) = 0.0_8
-          pgaci(i, k) = 0.
-        END IF
-!-------------------------------------------------------------
-! psacw: Accretion of cloud water by snow  [LFO 24]
-!        (T<T0: C->G, and T>=T0: C->R) psacw:min=0,max=qci(i,k,1)/dtcld
-!-------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qmin .AND. qrs(i, k, 2) .GT. qcrmin) THEN
-          supcol = t0c - t(i, k)
-!update cpm
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y6 = -g_t(i, k)
-            y6 = t0c - t(i, k)
-          ELSE
-            y6 = 90.
-            g_y6 = 0.0_8
-          END IF
-          IF (0. .LT. y6) THEN
-            g_max6 = g_y6
-            max6 = y6
-          ELSE
-            max6 = 0.
-            g_max6 = 0.0_8
-          END IF
-          g_arg1 = (1.-bvts)*alpha*g_max6/4.
-          arg1 = (1.-bvts)*alpha*max6/4.
+          g_arg1 = (1.-bvts)*alpha*g_max17/4.
+          arg1 = (1.-bvts)*alpha*max17/4.
           g_a = EXP(arg1)*g_arg1
           a = EXP(arg1)
           pwy1 = (1.+bvts)/4.
@@ -4078,72 +4420,89 @@ CONTAINS
           g_psacw(i, k) = psacw_a*(qci(i, k, 1)*(pwr2*(pwr1*g_a+a*g_pwr1&
 &           )+a*pwr1*g_pwr2)+temp2*g_qci(i, k, 1))
           psacw(i, k) = psacw_a*(temp2*qci(i, k, 1))
-          IF (psacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            g_x6 = g_qci(i, k, 1)/dtcld
-            x6 = qci(i, k, 1)/dtcld
-          ELSE
-            g_x6 = g_psacw(i, k)
-            x6 = psacw(i, k)
-          END IF
-          IF (x6 .LT. 0.) THEN
-            g_psacw(i, k) = 0.0_8
-            psacw(i, k) = 0.
-          ELSE
-            g_psacw(i, k) = g_x6
-            psacw(i, k) = x6
-          END IF
-          IF (psacw(i, k) .GE. 0.) THEN
-            abs7 = psacw(i, k)
-          ELSE
-            abs7 = -psacw(i, k)
-          END IF
-          IF (abs7 .LT. qmin/dtcld) THEN
-            g_psacw(i, k) = 0.0_8
-            psacw(i, k) = 0.
-          END IF
-          IF (qci(i, k, 1) - psacw(i, k)*dtcld .LT. 0.) THEN
-            g_qci(i, k, 1) = 0.0_8
-            qci(i, k, 1) = 0.
-          ELSE
-            g_qci(i, k, 1) = g_qci(i, k, 1) - dtcld*g_psacw(i, k)
-            qci(i, k, 1) = qci(i, k, 1) - psacw(i, k)*dtcld
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (qrs(i, k, 3) + psacw(i, k)*dtcld .LT. 0.) THEN
-              g_qrs(i, k, 3) = 0.0_8
-              qrs(i, k, 3) = 0.
-            ELSE
-              g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_psacw(i, k)
-              qrs(i, k, 3) = qrs(i, k, 3) + psacw(i, k)*dtcld
-            END IF
-            temp2 = psacw(i, k)*xlf/cpm(i, k)
-            g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_psacw(i, k)+psacw(i, k)&
-&             *g_xlf-temp2*g_cpm(i, k))/cpm(i, k)
-            t(i, k) = t(i, k) + dtcld*temp2
-            g_psacw(i, k) = 0.0_8
-            psacw(i, k) = 0.
-          ELSE IF (qrs(i, k, 1) + psacw(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 1) = 0.0_8
-            qrs(i, k, 1) = 0.
-          ELSE
-            g_qrs(i, k, 1) = g_qrs(i, k, 1) + dtcld*g_psacw(i, k)
-            qrs(i, k, 1) = qrs(i, k, 1) + psacw(i, k)*dtcld
-          END IF
+        ELSE
+          g_psacw(i, k) = 0.0_8
+          psacw(i, k) = 0.
         END IF
+        IF (psacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          g_x6 = g_qci(i, k, 1)/dtcld
+          x6 = qci(i, k, 1)/dtcld
+        ELSE
+          g_x6 = g_psacw(i, k)
+          x6 = psacw(i, k)
+        END IF
+        IF (x6 .LT. 0.) THEN
+          g_psacw(i, k) = 0.0_8
+          psacw(i, k) = 0.
+        ELSE
+          g_psacw(i, k) = g_x6
+          psacw(i, k) = x6
+        END IF
+        g_psacw(i, k) = psacw(i, k)*g_fsupcol + fsupcol*g_psacw(i, k)
+        psacw(i, k) = fsupcol*psacw(i, k)
+        IF (psacw(i, k) .GE. 0.) THEN
+          abs7 = psacw(i, k)
+        ELSE
+          abs7 = -psacw(i, k)
+        END IF
+        IF (abs7 .LT. qmin/dtcld) THEN
+          g_psacw(i, k) = 0.0_8
+          psacw(i, k) = 0.
+        END IF
+        IF (qci(i, k, 1) - psacw(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 1) = 0.0_8
+          qci(i, k, 1) = 0.
+        ELSE
+          g_qci(i, k, 1) = g_qci(i, k, 1) - dtcld*g_psacw(i, k)
+          qci(i, k, 1) = qci(i, k, 1) - psacw(i, k)*dtcld
+        END IF
+        g_x7 = g_qrs(i, k, 1) + dtcld*((1.-fsupcol)*g_psacw(i, k)-psacw(&
+&         i, k)*g_fsupcol)
+        x7 = qrs(i, k, 1) + (1.-fsupcol)*psacw(i, k)*dtcld
+        IF (x7 .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_x7
+          qrs(i, k, 1) = x7
+        END IF
+        g_x8 = g_qrs(i, k, 3) + dtcld*(psacw(i, k)*g_fsupcol+fsupcol*&
+&         g_psacw(i, k))
+        x8 = qrs(i, k, 3) + fsupcol*psacw(i, k)*dtcld
+        IF (x8 .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_x8
+          qrs(i, k, 3) = x8
+        END IF
+        temp2 = psacw(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*(temp2*(xlf*g_fsupcol+fsupcol*&
+&         g_xlf)+fsupcol*xlf*(g_psacw(i, k)-temp2*g_cpm(i, k))/cpm(i, k)&
+&         )
+        t(i, k) = t(i, k) + dtcld*(fsupcol*xlf*temp2)
+!t>=t0 pseml
+        g_psacw(i, k) = (1-fsupcol)*g_psacw(i, k) - psacw(i, k)*&
+&         g_fsupcol
+        psacw(i, k) = (1-fsupcol)*psacw(i, k)
 !-------------------------------------------------------------
 ! pgacw: Accretion of cloud water by graupel [LFO 40]
 !        (T<T0: C->G, and T>=T0: C->R) pgacw:min=0.,max=qci(i,k,1)/dtcld
 !-------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qmin .AND. qrs(i, k, 3) .GT. qcrmin) THEN
-          supcol = t0c - t(i, k)
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
+        g_supcol = -g_t(i, k)
+        supcol = t0c - t(i, k)
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
+        END IF
+        IF (qrs(i, k, 3) .GT. 0. .AND. qci(i, k, 1) .GT. 0.) THEN
           pwy1 = (1.+bvtg)/4.
           IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
 &             INT(pwy1))) THEN
@@ -4163,58 +4522,70 @@ CONTAINS
           g_pgacw(i, k) = pgacw_a*(qci(i, k, 1)*(pwr2*g_pwr1+pwr1*g_pwr2&
 &           )+pwr1*pwr2*g_qci(i, k, 1))
           pgacw(i, k) = pgacw_a*pwr1*pwr2*qci(i, k, 1)
-          IF (pgacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            g_x7 = g_qci(i, k, 1)/dtcld
-            x7 = qci(i, k, 1)/dtcld
-          ELSE
-            g_x7 = g_pgacw(i, k)
-            x7 = pgacw(i, k)
-          END IF
-          IF (x7 .LT. 0.) THEN
-            g_pgacw(i, k) = 0.0_8
-            pgacw(i, k) = 0.
-          ELSE
-            g_pgacw(i, k) = g_x7
-            pgacw(i, k) = x7
-          END IF
-          IF (pgacw(i, k) .GE. 0.) THEN
-            abs8 = pgacw(i, k)
-          ELSE
-            abs8 = -pgacw(i, k)
-          END IF
-          IF (abs8 .LT. qmin/dtcld) THEN
-            g_pgacw(i, k) = 0.0_8
-            pgacw(i, k) = 0.
-          END IF
-          IF (qci(i, k, 1) - pgacw(i, k)*dtcld .LT. 0.) THEN
-            g_qci(i, k, 1) = 0.0_8
-            qci(i, k, 1) = 0.
-          ELSE
-            g_qci(i, k, 1) = g_qci(i, k, 1) - dtcld*g_pgacw(i, k)
-            qci(i, k, 1) = qci(i, k, 1) - pgacw(i, k)*dtcld
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (qrs(i, k, 3) + pgacw(i, k)*dtcld .LT. 0.) THEN
-              g_qrs(i, k, 3) = 0.0_8
-              qrs(i, k, 3) = 0.
-            ELSE
-              g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgacw(i, k)
-              qrs(i, k, 3) = qrs(i, k, 3) + pgacw(i, k)*dtcld
-            END IF
-            temp2 = pgacw(i, k)*xlf/cpm(i, k)
-            g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_pgacw(i, k)+pgacw(i, k)&
-&             *g_xlf-temp2*g_cpm(i, k))/cpm(i, k)
-            t(i, k) = t(i, k) + dtcld*temp2
-            g_pgacw(i, k) = 0.0_8
-            pgacw(i, k) = 0.
-          ELSE IF (qrs(i, k, 1) + pgacw(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 1) = 0.0_8
-            qrs(i, k, 1) = 0.
-          ELSE
-            g_qrs(i, k, 1) = g_qrs(i, k, 1) + dtcld*g_pgacw(i, k)
-            qrs(i, k, 1) = qrs(i, k, 1) + pgacw(i, k)*dtcld
-          END IF
+        ELSE
+          g_pgacw(i, k) = 0.0_8
+          pgacw(i, k) = 0.
         END IF
+        IF (pgacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          g_x9 = g_qci(i, k, 1)/dtcld
+          x9 = qci(i, k, 1)/dtcld
+        ELSE
+          g_x9 = g_pgacw(i, k)
+          x9 = pgacw(i, k)
+        END IF
+        IF (x9 .LT. 0.) THEN
+          g_pgacw(i, k) = 0.0_8
+          pgacw(i, k) = 0.
+        ELSE
+          g_pgacw(i, k) = g_x9
+          pgacw(i, k) = x9
+        END IF
+        IF (pgacw(i, k) .GE. 0.) THEN
+          abs8 = pgacw(i, k)
+        ELSE
+          abs8 = -pgacw(i, k)
+        END IF
+!pgacw(i,k)=fqg*fqc*pgacw(i,k)
+        IF (abs8 .LT. qmin/dtcld) THEN
+          g_pgacw(i, k) = 0.0_8
+          pgacw(i, k) = 0.
+        END IF
+        IF (qci(i, k, 1) - pgacw(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 1) = 0.0_8
+          qci(i, k, 1) = 0.
+        ELSE
+          g_qci(i, k, 1) = g_qci(i, k, 1) - dtcld*g_pgacw(i, k)
+          qci(i, k, 1) = qci(i, k, 1) - pgacw(i, k)*dtcld
+        END IF
+        g_x10 = g_qrs(i, k, 1) + dtcld*((1.-fsupcol)*g_pgacw(i, k)-pgacw&
+&         (i, k)*g_fsupcol)
+        x10 = qrs(i, k, 1) + (1.-fsupcol)*pgacw(i, k)*dtcld
+        IF (x10 .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_x10
+          qrs(i, k, 1) = x10
+        END IF
+        g_x11 = g_qrs(i, k, 3) + dtcld*(pgacw(i, k)*g_fsupcol+fsupcol*&
+&         g_pgacw(i, k))
+        x11 = qrs(i, k, 3) + fsupcol*pgacw(i, k)*dtcld
+        IF (x11 .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_x11
+          qrs(i, k, 3) = x11
+        END IF
+        temp2 = pgacw(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*(temp2*(xlf*g_fsupcol+fsupcol*&
+&         g_xlf)+fsupcol*xlf*(g_pgacw(i, k)-temp2*g_cpm(i, k))/cpm(i, k)&
+&         )
+        t(i, k) = t(i, k) + dtcld*(fsupcol*xlf*temp2)
+! t>=t0 pgeml
+        g_pgacw(i, k) = (1-fsupcol)*g_pgacw(i, k) - pgacw(i, k)*&
+&         g_fsupcol
+        pgacw(i, k) = (1-fsupcol)*pgacw(i, k)
       END DO
     END DO
   END SUBROUTINE G_ACCRET1
@@ -4233,11 +4604,11 @@ CONTAINS
     REAL :: supcol, dtcld, eacrs, egi, praci1, piacr1, psaci1, pgaci1, &
 &   temp, temp0
     INTEGER :: i, k
-    REAL :: delta3, xlf, a, b, c, d, e
+    REAL :: fsupcol, fqc, fqi, fqr, fqs, fqg, delta3, xlf, a, b, c, d, e
+    INTRINSIC MAX
     INTRINSIC SQRT
     INTRINSIC ABS
     INTRINSIC MIN
-    INTRINSIC MAX
     INTRINSIC EXP
     REAL :: x1
     REAL :: x2
@@ -4249,24 +4620,52 @@ CONTAINS
     REAL :: y3
     REAL :: y4
     REAL :: y5
-    REAL :: y6
     REAL :: x6
     REAL :: x7
-    REAL :: abs0
-    REAL :: abs1
-    REAL :: abs2
+    REAL :: x8
+    REAL :: x9
+    REAL :: x10
+    REAL :: x11
+    REAL :: y6
     REAL :: max1
     REAL :: max2
     REAL :: max3
     REAL :: max4
     REAL :: max5
+    REAL :: abs0
+    REAL :: abs1
+    REAL :: abs2
+    REAL :: max6
+    REAL :: max7
+    REAL :: max8
+    REAL :: max9
+    REAL :: max10
+    REAL :: max11
     REAL :: abs3
     REAL :: abs4
+    REAL :: max12
+    REAL :: max13
+    REAL :: max14
+    REAL :: max15
+    REAL :: max16
     REAL :: abs5
     REAL :: abs6
-    REAL :: max6
+    REAL :: max17
     REAL :: abs7
     REAL :: abs8
+    REAL :: max18
+    REAL :: max19
+    REAL :: max20
+    REAL :: max21
+    REAL :: max22
+    REAL :: max23
+    REAL :: max24
+    REAL :: max25
+    REAL :: max26
+    REAL :: max27
+    REAL :: max28
+    REAL :: max29
+    REAL :: max30
     REAL :: pwy1
     REAL :: pwr1
     REAL :: pwy2
@@ -4283,415 +4682,553 @@ CONTAINS
 !        (T<T0: I->S or I->G) praci: min=0,max=qci(i,k,2)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 1) .GT. qcrmin .AND. qci(i, k&
-&           , 2) .GT. qmin) THEN
-          pwy1 = (bvtr-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtr/4.
-          pwr2 = qrs(i, k, 1)**pwy2
-          vt2r = vt2r_a*pwr1*pwr2
-          pwx1 = den(i, k)*qci(i, k, 2)
-          pwr1 = pwx1**(1.31/8.)
-          vt2i = vt2i_a*pwr1
-          pwx1 = den(i, k)*qrs(i, k, 1)
-          pwr1 = pwx1**(3./4.)
-          b = pwr1*qci(i, k, 2)
-          pwr1 = den(i, k)**(5./8.)
-          result1 = SQRT(qrs(i, k, 1))
-          pwr2 = qci(i, k, 2)**(9./8.)
-          c = pwr1*result1*pwr2
-          result1 = SQRT(den(i, k))
-          result2 = SQRT(qrs(i, k, 1))
-          result3 = SQRT(result2)
-          pwr1 = qci(i, k, 2)**(5./4.)
-          d = result1*result3*pwr1
-          IF (vt2r - vt2i .GE. 0.) THEN
-            abs0 = vt2r - vt2i
-          ELSE
-            abs0 = -(vt2r-vt2i)
-          END IF
-          praci1 = praci_a*abs0*(praci_b*b+praci_c*c+praci_d*d)
-          IF (praci1 .GT. qci(i, k, 2)/dtcld) THEN
-            praci(i, k) = qci(i, k, 2)/dtcld
-          ELSE
-            praci(i, k) = praci1
-          END IF
-!update qi, qs, qg
-          IF (qrs(i, k, 1) .LT. 1.e-4) THEN
-            delta3 = 1.
-          ELSE
-            delta3 = 0.
-          END IF
-          IF (praci(i, k) .GE. 0.) THEN
-            abs1 = praci(i, k)
-          ELSE
-            abs1 = -praci(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) praci(i, k) = 0.
-          IF (qci(i, k, 2) - praci(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - praci(i, k)*dtcld
-          END IF
-          x1 = qrs(i, k, 2) + praci(i, k)*delta3*dtcld
-          IF (x1 .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = x1
-          END IF
-          x2 = qrs(i, k, 3) + praci(i, k)*(1-delta3)*dtcld
-          IF (x2 .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = x2
-          END IF
-          praci(i, k) = 0.
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max1 = qcrmin
+        ELSE
+          max1 = qrs(i, k, 1)
         END IF
+        pwy1 = (bvtr-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtr/4.
+        pwr2 = max1**pwy2
+        vt2r = vt2r_a*pwr1*pwr2
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max2 = qmin
+        ELSE
+          max2 = qci(i, k, 2)
+        END IF
+        pwx1 = den(i, k)*max2
+        pwr1 = pwx1**(1.31/8.)
+        vt2i = vt2i_a*pwr1
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max3 = qcrmin
+        ELSE
+          max3 = qrs(i, k, 1)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max18 = qmin
+        ELSE
+          max18 = qci(i, k, 2)
+        END IF
+        pwx1 = den(i, k)*max3
+        pwr1 = pwx1**(3./4.)
+        b = pwr1*max18
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max4 = qcrmin
+        ELSE
+          max4 = qrs(i, k, 1)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max19 = qmin
+        ELSE
+          max19 = qci(i, k, 2)
+        END IF
+        pwr1 = den(i, k)**(5./8.)
+        result1 = SQRT(max4)
+        pwr2 = max19**(9./8.)
+        c = pwr1*result1*pwr2
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max5 = qcrmin
+        ELSE
+          max5 = qrs(i, k, 1)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max20 = qmin
+        ELSE
+          max20 = qci(i, k, 2)
+        END IF
+        result1 = SQRT(den(i, k))
+        result2 = SQRT(max5)
+        result3 = SQRT(result2)
+        pwr1 = max20**(5./4.)
+        d = result1*result3*pwr1
+        IF (vt2r - vt2i .GE. 0.) THEN
+          abs0 = vt2r - vt2i
+        ELSE
+          abs0 = -(vt2r-vt2i)
+        END IF
+        praci1 = praci_a*abs0*(praci_b*b+praci_c*c+praci_d*d)
+        IF (praci1 .GT. qci(i, k, 2)/dtcld) THEN
+          praci(i, k) = qci(i, k, 2)/dtcld
+        ELSE
+          praci(i, k) = praci1
+        END IF
+        praci(i, k) = fsupcol*praci(i, k)
+!update qi, qs, qg
+        IF (qrs(i, k, 1) .LT. 1.e-4) THEN
+          delta3 = 1.
+        ELSE
+          delta3 = 0.
+        END IF
+        IF (praci(i, k) .GE. 0.) THEN
+          abs1 = praci(i, k)
+        ELSE
+          abs1 = -praci(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) praci(i, k) = 0.
+        IF (qci(i, k, 2) - praci(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - praci(i, k)*dtcld
+        END IF
+        x1 = qrs(i, k, 2) + praci(i, k)*delta3*dtcld
+        IF (x1 .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = x1
+        END IF
+        x2 = qrs(i, k, 3) + praci(i, k)*(1-delta3)*dtcld
+        IF (x2 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x2
+        END IF
+        praci(i, k) = 0.
 !-------------------------------------------------------------
 ! piacr: Accretion of rain by cloud ice [LFO 26]
 !        (T<T0: R->S or R->G) piacr: min=0,max=qrs(i,k,1)/dtcld
 !-------------------------------------------------------------
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 1&
-&           ) .GT. qcrmin) THEN
+!         supcol = t0c-t(i,k) !not change
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+!call smoothif(qci(i,k,2),qmin  ,fqi,'q0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          IF (qci(i, k, 2) .GT. 0. .AND. qrs(i, k, 1) .GT. 0.) THEN
+        cpm(i, k) = CPMCAL(q(i, k))
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qci(i, k, 2) .GT. 0. .AND. qrs(i, k, 1) .GT. 0.) THEN
 !piacr_a=1.75e5
-            pwy1 = (3.+bvtr)/4.
-            pwr1 = den(i, k)**pwy1
-            pwy2 = (6.+bvtr)/4.
-            pwr2 = qrs(i, k, 1)**pwy2
-            piacr1 = piacr_a*pwr1*qci(i, k, 2)**0.75*pwr2
-          ELSE
-            piacr1 = 0.
-          END IF
-          IF (piacr1 .GT. qrs(i, k, 1)/dtcld) THEN
-            piacr(i, k) = qrs(i, k, 1)/dtcld
-          ELSE
-            piacr(i, k) = piacr1
-          END IF
-! update qr,qs,qg,t
-          IF (qrs(i, k, 1) .LT. 1.e-4) THEN
-            delta3 = 1.
-          ELSE
-            delta3 = 0.
-          END IF
-          IF (piacr(i, k) .GE. 0.) THEN
-            abs2 = piacr(i, k)
-          ELSE
-            abs2 = -piacr(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) piacr(i, k) = 0.
-          IF (qrs(i, k, 1) - piacr(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) - piacr(i, k)*dtcld
-          END IF
-          x3 = qrs(i, k, 2) + piacr(i, k)*delta3*dtcld
-          IF (x3 .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = x3
-          END IF
-          x4 = qrs(i, k, 3) + piacr(i, k)*(1-delta3)*dtcld
-          IF (x4 .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = x4
-          END IF
-          t(i, k) = t(i, k) + piacr(i, k)*dtcld*xlf/cpm(i, k)
-          piacr(i, k) = 0.
+          pwy1 = (3.+bvtr)/4.
+          pwr1 = den(i, k)**pwy1
+          pwy2 = (6.+bvtr)/4.
+          pwr2 = qrs(i, k, 1)**pwy2
+          piacr1 = piacr_a*pwr1*qci(i, k, 2)**0.75*pwr2
+        ELSE
+          piacr1 = 0.
         END IF
+        IF (piacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+          piacr(i, k) = qrs(i, k, 1)/dtcld
+        ELSE
+          piacr(i, k) = piacr1
+        END IF
+        piacr(i, k) = fsupcol*piacr(i, k)
+! update qr,qs,qg,t
+        IF (qrs(i, k, 1) .LT. 1.e-4) THEN
+          delta3 = 1.
+        ELSE
+          delta3 = 0.
+        END IF
+        IF (piacr(i, k) .GE. 0.) THEN
+          abs2 = piacr(i, k)
+        ELSE
+          abs2 = -piacr(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) piacr(i, k) = 0.
+        IF (qrs(i, k, 1) - piacr(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - piacr(i, k)*dtcld
+        END IF
+        x3 = qrs(i, k, 2) + piacr(i, k)*delta3*dtcld
+        IF (x3 .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = x3
+        END IF
+        x4 = qrs(i, k, 3) + piacr(i, k)*(1-delta3)*dtcld
+        IF (x4 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x4
+        END IF
+        t(i, k) = t(i, k) + piacr(i, k)*dtcld*xlf/cpm(i, k)
+        piacr(i, k) = 0.
 !-------------------------------------------------------------
 ! psaci: Accretion of cloud ice by snow [HDC 10]
 !        (T<T0: I->S) psaci: min=0, max=qci(i,k,2)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 2&
-&           ) .GT. qcrmin) THEN
-          x5 = EXP(0.07*(-supcol))
-          IF (x5 .GT. 1.) THEN
-            eacrs = 1.
-          ELSE
-            eacrs = x5
-          END IF
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y1 = t0c - t(i, k)
-          ELSE
-            y1 = 90.
-          END IF
-          IF (0. .LT. y1) THEN
-            max1 = y1
-          ELSE
-            max1 = 0.
-          END IF
-          pwy1 = (bvts-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvts/4.
-          pwr2 = qrs(i, k, 2)**pwy2
-          arg1 = -(alpha*bvts*max1/4.)
-          vt2s = vt2s_a*pwr1*pwr2*EXP(arg1)
-          pwx1 = den(i, k)*qci(i, k, 2)
-          pwr1 = pwx1**(1.31/8.)
-          vt2i = vt2i_a*pwr1
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y2 = t0c - t(i, k)
-          ELSE
-            y2 = 90.
-          END IF
-          IF (0. .LT. y2) THEN
-            max2 = y2
-          ELSE
-            max2 = 0.
-          END IF
-          a = EXP(alpha*max2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y3 = t0c - t(i, k)
-          ELSE
-            y3 = 90.
-          END IF
-          IF (0. .LT. y3) THEN
-            max3 = y3
-          ELSE
-            max3 = 0.
-          END IF
-          arg1 = -(3.*alpha*max3/4.)
-          pwx1 = den(i, k)*qrs(i, k, 2)
-          pwr1 = pwx1**(3./4.)
-          b = EXP(arg1)*pwr1*qci(i, k, 2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y4 = t0c - t(i, k)
-          ELSE
-            y4 = 90.
-          END IF
-          IF (0. .LT. y4) THEN
-            max4 = y4
-          ELSE
-            max4 = 0.
-          END IF
-          arg1 = -(alpha*max4/2.)
-          pwr1 = den(i, k)**(5./8.)
-          result1 = SQRT(qrs(i, k, 2))
-          pwr2 = qci(i, k, 2)**(9./8.)
-          c = EXP(arg1)*pwr1*result1*pwr2
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        x5 = EXP(0.07*(-supcol))
+        IF (x5 .GT. 1.) THEN
+          eacrs = 1.
+        ELSE
+          eacrs = x5
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max6 = qcrmin
+        ELSE
+          max6 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y6 = t0c - t(i, k)
+        ELSE
+          y6 = 90.
+        END IF
+        IF (0. .LT. y6) THEN
+          max21 = y6
+        ELSE
+          max21 = 0.
+        END IF
+        pwy1 = (bvts-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvts/4.
+        pwr2 = max6**pwy2
+        arg1 = -(alpha*bvts*max21/4.)
+        vt2s = vt2s_a*pwr1*pwr2*EXP(arg1)
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max7 = qmin
+        ELSE
+          max7 = qci(i, k, 2)
+        END IF
+        pwx1 = den(i, k)*max7
+        pwr1 = pwx1**(1.31/8.)
+        vt2i = vt2i_a*pwr1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y1 = t0c - t(i, k)
+        ELSE
+          y1 = 90.
+        END IF
+        IF (0. .LT. y1) THEN
+          max8 = y1
+        ELSE
+          max8 = 0.
+        END IF
+        a = EXP(alpha*max8)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y2 = t0c - t(i, k)
+        ELSE
+          y2 = 90.
+        END IF
+        IF (0. .LT. y2) THEN
+          max9 = y2
+        ELSE
+          max9 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max22 = qcrmin
+        ELSE
+          max22 = qrs(i, k, 2)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max28 = qmin
+        ELSE
+          max28 = qci(i, k, 2)
+        END IF
+        arg1 = -(3.*alpha*max9/4.)
+        pwx1 = den(i, k)*max22
+        pwr1 = pwx1**(3./4.)
+        b = EXP(arg1)*pwr1*max28
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y3 = t0c - t(i, k)
+        ELSE
+          y3 = 90.
+        END IF
+        IF (0. .LT. y3) THEN
+          max10 = y3
+        ELSE
+          max10 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max23 = qcrmin
+        ELSE
+          max23 = qrs(i, k, 2)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max29 = qmin
+        ELSE
+          max29 = qci(i, k, 2)
+        END IF
+        arg1 = -(alpha*max10/2.)
+        pwr1 = den(i, k)**(5./8.)
+        result1 = SQRT(max23)
+        pwr2 = max29**(9./8.)
+        c = EXP(arg1)*pwr1*result1*pwr2
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y4 = t0c - t(i, k)
+        ELSE
+          y4 = 90.
+        END IF
+        IF (0. .LT. y4) THEN
+          max11 = y4
+        ELSE
+          max11 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max24 = qcrmin
+        ELSE
+          max24 = qrs(i, k, 2)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max30 = qmin
+        ELSE
+          max30 = qci(i, k, 2)
+        END IF
+        arg1 = -(alpha*max11/4.)
+        result1 = SQRT(den(i, k))
+        result2 = SQRT(max24)
+        result3 = SQRT(result2)
+        pwr1 = max30**(5./4.)
+        d = EXP(arg1)*result1*result3*pwr1
+        IF (vt2s - vt2i .GE. 0.) THEN
+          abs3 = vt2s - vt2i
+        ELSE
+          abs3 = -(vt2s-vt2i)
+        END IF
+        psaci1 = psaci_a*a*abs3*(psaci_b*b+psaci_c*c+psaci_d*d)*eacrs
+        IF (psaci1 .GT. qci(i, k, 2)/dtcld) THEN
+          psaci(i, k) = qci(i, k, 2)/dtcld
+        ELSE
+          psaci(i, k) = psaci1
+        END IF
+        psaci(i, k) = fsupcol*psaci(i, k)
+        IF (psaci(i, k) .GE. 0.) THEN
+          abs4 = psaci(i, k)
+        ELSE
+          abs4 = -psaci(i, k)
+        END IF
+        IF (abs4 .LT. qmin/dtcld) psaci(i, k) = 0.
+        IF (qci(i, k, 2) - psaci(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - psaci(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psaci(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psaci(i, k)*dtcld
+        END IF
+        psaci(i, k) = 0.
+!-------------------------------------------------------------
+! pgaci: Accretion of cloud ice by graupel [LFO 41]
+!        (T<T0: I->G) pgaci:min=0,max=qci(i,k,2)/dtcld
+!-------------------------------------------------------------
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,    0.,fsupcol,'t0')
+!call smoothif(qci(i,k,2),qmin  ,fqi,'q0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!min(exp(0.07*(-supcol)),1.)
+        egi = eacrs
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max12 = qcrmin
+        ELSE
+          max12 = qrs(i, k, 3)
+        END IF
+        pwy1 = (bvtg-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtg/4.
+        pwr2 = max12**pwy2
+        vt2g = vt2g_a*pwr1*pwr2
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max13 = qmin
+        ELSE
+          max13 = qci(i, k, 2)
+        END IF
+        pwx1 = den(i, k)*max13
+        pwr1 = pwx1**(1.31/8.)
+        vt2i = vt2i_a*pwr1
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max14 = qcrmin
+        ELSE
+          max14 = qrs(i, k, 3)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max25 = qmin
+        ELSE
+          max25 = qci(i, k, 2)
+        END IF
+        pwx1 = den(i, k)*max14
+        pwr1 = pwx1**(3./4.)
+        b = pwr1*max25
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max15 = qcrmin
+        ELSE
+          max15 = qrs(i, k, 3)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max26 = qmin
+        ELSE
+          max26 = qci(i, k, 2)
+        END IF
+        pwr1 = den(i, k)**(5./8.)
+        result1 = SQRT(max15)
+        pwr2 = max26**(9./8.)
+        c = pwr1*result1*pwr2
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max16 = qcrmin
+        ELSE
+          max16 = qrs(i, k, 3)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max27 = qmin
+        ELSE
+          max27 = qci(i, k, 2)
+        END IF
+        result1 = SQRT(den(i, k))
+        result2 = SQRT(max16)
+        result3 = SQRT(result2)
+        pwr1 = max27**(5./4.)
+        d = result1*result3*pwr1
+        IF (vt2g - vt2i .GE. 0.) THEN
+          abs5 = vt2g - vt2i
+        ELSE
+          abs5 = -(vt2g-vt2i)
+        END IF
+        pgaci1 = pgaci_a*abs5*(pgaci_b*b+pgaci_c*c+pgaci_d*d)*egi
+        IF (pgaci1 .GT. qci(i, k, 2)/dtcld) THEN
+          pgaci(i, k) = qci(i, k, 2)/dtcld
+        ELSE
+          pgaci(i, k) = pgaci1
+        END IF
+        pgaci(i, k) = fsupcol*pgaci(i, k)
+        IF (pgaci(i, k) .GE. 0.) THEN
+          abs6 = pgaci(i, k)
+        ELSE
+          abs6 = -pgaci(i, k)
+        END IF
+        IF (abs6 .LT. qmin/dtcld) pgaci(i, k) = 0.
+        IF (qci(i, k, 2) - pgaci(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - pgaci(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgaci(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgaci(i, k)*dtcld
+        END IF
+        pgaci(i, k) = 0.
+!-------------------------------------------------------------
+! psacw: Accretion of cloud water by snow  [LFO 24]
+!        (T<T0: C->G, and T>=T0: C->R) psacw:min=0,max=qci(i,k,1)/dtcld
+!-------------------------------------------------------------
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,    0.,fsupcol,'t0')
+!call smoothif(qrs(i,k,2),qcrmin,fqs,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
+!update cpm
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 2) .GT. 0. .AND. qci(i, k, 1) .GT. 0.) THEN
           IF (90. .GT. t0c - t(i, k)) THEN
             y5 = t0c - t(i, k)
           ELSE
             y5 = 90.
           END IF
           IF (0. .LT. y5) THEN
-            max5 = y5
+            max17 = y5
           ELSE
-            max5 = 0.
+            max17 = 0.
           END IF
-          arg1 = -(alpha*max5/4.)
-          result1 = SQRT(den(i, k))
-          result2 = SQRT(qrs(i, k, 2))
-          result3 = SQRT(result2)
-          pwr1 = qci(i, k, 2)**(5./4.)
-          d = EXP(arg1)*result1*result3*pwr1
-          IF (vt2s - vt2i .GE. 0.) THEN
-            abs3 = vt2s - vt2i
-          ELSE
-            abs3 = -(vt2s-vt2i)
-          END IF
-          psaci1 = psaci_a*a*abs3*(psaci_b*b+psaci_c*c+psaci_d*d)*eacrs
-          IF (psaci1 .GT. qci(i, k, 2)/dtcld) THEN
-            psaci(i, k) = qci(i, k, 2)/dtcld
-          ELSE
-            psaci(i, k) = psaci1
-          END IF
-          IF (psaci(i, k) .GE. 0.) THEN
-            abs4 = psaci(i, k)
-          ELSE
-            abs4 = -psaci(i, k)
-          END IF
-          IF (abs4 .LT. qmin/dtcld) psaci(i, k) = 0.
-          IF (qci(i, k, 2) - psaci(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - psaci(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + psaci(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) + psaci(i, k)*dtcld
-          END IF
-          psaci(i, k) = 0.
-        END IF
-!-------------------------------------------------------------
-! pgaci: Accretion of cloud ice by graupel [LFO 41]
-!        (T<T0: I->G) pgaci:min=0,max=qci(i,k,2)/dtcld
-!-------------------------------------------------------------
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 3&
-&           ) .GT. qcrmin) THEN
-!min(exp(0.07*(-supcol)),1.)
-          egi = eacrs
-          pwy1 = (bvtg-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtg/4.
-          pwr2 = qrs(i, k, 3)**pwy2
-          vt2g = vt2g_a*pwr1*pwr2
-          pwx1 = den(i, k)*qci(i, k, 2)
-          pwr1 = pwx1**(1.31/8.)
-          vt2i = vt2i_a*pwr1
-          pwx1 = den(i, k)*qrs(i, k, 3)
-          pwr1 = pwx1**(3./4.)
-          b = pwr1*qci(i, k, 2)
-          pwr1 = den(i, k)**(5./8.)
-          result1 = SQRT(qrs(i, k, 3))
-          pwr2 = qci(i, k, 2)**(9./8.)
-          c = pwr1*result1*pwr2
-          result1 = SQRT(den(i, k))
-          result2 = SQRT(qrs(i, k, 3))
-          result3 = SQRT(result2)
-          pwr1 = qci(i, k, 2)**(5./4.)
-          d = result1*result3*pwr1
-          IF (vt2g - vt2i .GE. 0.) THEN
-            abs5 = vt2g - vt2i
-          ELSE
-            abs5 = -(vt2g-vt2i)
-          END IF
-          pgaci1 = pgaci_a*abs5*(pgaci_b*b+pgaci_c*c+pgaci_d*d)*egi
-          IF (pgaci1 .GT. qci(i, k, 2)/dtcld) THEN
-            pgaci(i, k) = qci(i, k, 2)/dtcld
-          ELSE
-            pgaci(i, k) = pgaci1
-          END IF
-          IF (pgaci(i, k) .GE. 0.) THEN
-            abs6 = pgaci(i, k)
-          ELSE
-            abs6 = -pgaci(i, k)
-          END IF
-          IF (abs6 .LT. qmin/dtcld) pgaci(i, k) = 0.
-          IF (qci(i, k, 2) - pgaci(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - pgaci(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgaci(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgaci(i, k)*dtcld
-          END IF
-          pgaci(i, k) = 0.
-        END IF
-!-------------------------------------------------------------
-! psacw: Accretion of cloud water by snow  [LFO 24]
-!        (T<T0: C->G, and T>=T0: C->R) psacw:min=0,max=qci(i,k,1)/dtcld
-!-------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qmin .AND. qrs(i, k, 2) .GT. qcrmin) THEN
-          supcol = t0c - t(i, k)
-!update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y6 = t0c - t(i, k)
-          ELSE
-            y6 = 90.
-          END IF
-          IF (0. .LT. y6) THEN
-            max6 = y6
-          ELSE
-            max6 = 0.
-          END IF
-          arg1 = (1.-bvts)*alpha*max6/4.
+          arg1 = (1.-bvts)*alpha*max17/4.
           a = EXP(arg1)
           pwy1 = (1.+bvts)/4.
           pwr1 = den(i, k)**pwy1
           pwy2 = (3.+bvts)/4.
           pwr2 = qrs(i, k, 2)**pwy2
           psacw(i, k) = psacw_a*a*pwr1*pwr2*qci(i, k, 1)
-          IF (psacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            x6 = qci(i, k, 1)/dtcld
-          ELSE
-            x6 = psacw(i, k)
-          END IF
-          IF (x6 .LT. 0.) THEN
-            psacw(i, k) = 0.
-          ELSE
-            psacw(i, k) = x6
-          END IF
-          IF (psacw(i, k) .GE. 0.) THEN
-            abs7 = psacw(i, k)
-          ELSE
-            abs7 = -psacw(i, k)
-          END IF
-          IF (abs7 .LT. qmin/dtcld) psacw(i, k) = 0.
-          IF (qci(i, k, 1) - psacw(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - psacw(i, k)*dtcld
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (qrs(i, k, 3) + psacw(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = qrs(i, k, 3) + psacw(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + psacw(i, k)*dtcld*xlf/cpm(i, k)
-            psacw(i, k) = 0.
-          ELSE IF (qrs(i, k, 1) + psacw(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + psacw(i, k)*dtcld
-          END IF
+        ELSE
+          psacw(i, k) = 0.
         END IF
+        IF (psacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          x6 = qci(i, k, 1)/dtcld
+        ELSE
+          x6 = psacw(i, k)
+        END IF
+        IF (x6 .LT. 0.) THEN
+          psacw(i, k) = 0.
+        ELSE
+          psacw(i, k) = x6
+        END IF
+        psacw(i, k) = fsupcol*psacw(i, k)
+        IF (psacw(i, k) .GE. 0.) THEN
+          abs7 = psacw(i, k)
+        ELSE
+          abs7 = -psacw(i, k)
+        END IF
+        IF (abs7 .LT. qmin/dtcld) psacw(i, k) = 0.
+        IF (qci(i, k, 1) - psacw(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - psacw(i, k)*dtcld
+        END IF
+        x7 = qrs(i, k, 1) + (1.-fsupcol)*psacw(i, k)*dtcld
+        IF (x7 .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = x7
+        END IF
+        x8 = qrs(i, k, 3) + fsupcol*psacw(i, k)*dtcld
+        IF (x8 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x8
+        END IF
+        t(i, k) = t(i, k) + fsupcol*psacw(i, k)*dtcld*xlf/cpm(i, k)
+!t>=t0 pseml
+        psacw(i, k) = (1-fsupcol)*psacw(i, k)
 !-------------------------------------------------------------
 ! pgacw: Accretion of cloud water by graupel [LFO 40]
 !        (T<T0: C->G, and T>=T0: C->R) pgacw:min=0.,max=qci(i,k,1)/dtcld
 !-------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qmin .AND. qrs(i, k, 3) .GT. qcrmin) THEN
-          supcol = t0c - t(i, k)
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
+        supcol = t0c - t(i, k)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 3) .GT. 0. .AND. qci(i, k, 1) .GT. 0.) THEN
           pwy1 = (1.+bvtg)/4.
           pwr1 = den(i, k)**pwy1
           pwy2 = (3.+bvtg)/4.
           pwr2 = qrs(i, k, 3)**pwy2
           pgacw(i, k) = pgacw_a*pwr1*pwr2*qci(i, k, 1)
-          IF (pgacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            x7 = qci(i, k, 1)/dtcld
-          ELSE
-            x7 = pgacw(i, k)
-          END IF
-          IF (x7 .LT. 0.) THEN
-            pgacw(i, k) = 0.
-          ELSE
-            pgacw(i, k) = x7
-          END IF
-          IF (pgacw(i, k) .GE. 0.) THEN
-            abs8 = pgacw(i, k)
-          ELSE
-            abs8 = -pgacw(i, k)
-          END IF
-          IF (abs8 .LT. qmin/dtcld) pgacw(i, k) = 0.
-          IF (qci(i, k, 1) - pgacw(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - pgacw(i, k)*dtcld
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (qrs(i, k, 3) + pgacw(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = qrs(i, k, 3) + pgacw(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + pgacw(i, k)*dtcld*xlf/cpm(i, k)
-            pgacw(i, k) = 0.
-          ELSE IF (qrs(i, k, 1) + pgacw(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + pgacw(i, k)*dtcld
-          END IF
+        ELSE
+          pgacw(i, k) = 0.
         END IF
+        IF (pgacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          x9 = qci(i, k, 1)/dtcld
+        ELSE
+          x9 = pgacw(i, k)
+        END IF
+        IF (x9 .LT. 0.) THEN
+          pgacw(i, k) = 0.
+        ELSE
+          pgacw(i, k) = x9
+        END IF
+        IF (pgacw(i, k) .GE. 0.) THEN
+          abs8 = pgacw(i, k)
+        ELSE
+          abs8 = -pgacw(i, k)
+        END IF
+!pgacw(i,k)=fqg*fqc*pgacw(i,k)
+        IF (abs8 .LT. qmin/dtcld) pgacw(i, k) = 0.
+        IF (qci(i, k, 1) - pgacw(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - pgacw(i, k)*dtcld
+        END IF
+        x10 = qrs(i, k, 1) + (1.-fsupcol)*pgacw(i, k)*dtcld
+        IF (x10 .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = x10
+        END IF
+        x11 = qrs(i, k, 3) + fsupcol*pgacw(i, k)*dtcld
+        IF (x11 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x11
+        END IF
+        t(i, k) = t(i, k) + fsupcol*pgacw(i, k)*dtcld*xlf/cpm(i, k)
+! t>=t0 pgeml
+        pgacw(i, k) = (1-fsupcol)*pgacw(i, k)
       END DO
     END DO
   END SUBROUTINE ACCRET1
@@ -4723,12 +5260,12 @@ CONTAINS
     REAL :: g_supcol, g_vt2r, g_vt2s, g_vt2g, g_xlf, g_egs
     REAL :: acrfac1, acrfac2, acrfac3, acrfac4, pracs1, psacr1, pgacr1, &
 &   pgacs1
-    REAL :: g_pracs1, g_pgacs1
+    REAL :: g_pracs1, g_psacr1, g_pgacr1, g_pgacs1
     INTEGER :: i, k
-    REAL :: temp1, delta2, a, b, c, d
-    REAL :: g_a, g_b, g_c, g_d
-    INTRINSIC MIN
+    REAL :: fsupcol, ft0, fqr, fqs, fqg, temp1, delta2, a, b, c, d
+    REAL :: g_fsupcol, g_ft0, g_fqs, g_fqg, g_a, g_b, g_c, g_d
     INTRINSIC MAX
+    INTRINSIC MIN
     INTRINSIC EXP
     INTRINSIC SQRT
     INTRINSIC ABS
@@ -4748,34 +5285,36 @@ CONTAINS
     REAL :: g_y7
     REAL :: y8
     REAL :: g_y8
-    REAL :: y9
-    REAL :: g_y9
-    REAL :: y10
-    REAL :: g_y10
     REAL :: x1
     REAL :: g_x1
     REAL :: x2
     REAL :: g_x2
     REAL :: x3
     REAL :: g_x3
+    REAL :: x4
+    REAL :: g_x4
+    REAL :: y9
+    REAL :: g_y9
+    REAL :: y10
+    REAL :: g_y10
     REAL :: y11
     REAL :: g_y11
     REAL :: y12
     REAL :: g_y12
+    REAL :: x5
+    REAL :: g_x5
+    REAL :: x6
+    REAL :: g_x6
     REAL :: y13
     REAL :: g_y13
     REAL :: y14
     REAL :: g_y14
     REAL :: y15
     REAL :: g_y15
-    REAL :: x4
-    REAL :: g_x4
-    REAL :: x5
-    REAL :: g_x5
-    REAL :: x6
-    REAL :: g_x6
     REAL :: x7
     REAL :: g_x7
+    REAL :: x8
+    REAL :: g_x8
     REAL :: max1
     REAL :: g_max1
     REAL :: max2
@@ -4786,11 +5325,11 @@ CONTAINS
     REAL :: g_max4
     REAL :: max5
     REAL :: g_max5
+    REAL :: max6
+    REAL :: g_max6
     REAL :: abs0
     REAL :: g_abs0
     REAL :: abs1
-    REAL :: max6
-    REAL :: g_max6
     REAL :: max7
     REAL :: g_max7
     REAL :: max8
@@ -4799,27 +5338,91 @@ CONTAINS
     REAL :: g_max9
     REAL :: max10
     REAL :: g_max10
-    REAL :: abs2
-    REAL :: g_abs2
-    REAL :: abs3
-    REAL :: abs4
-    REAL :: g_abs4
-    REAL :: abs5
     REAL :: max11
     REAL :: g_max11
     REAL :: max12
     REAL :: g_max12
+    REAL :: abs2
+    REAL :: g_abs2
+    REAL :: abs3
     REAL :: max13
     REAL :: g_max13
     REAL :: max14
     REAL :: g_max14
     REAL :: max15
     REAL :: g_max15
+    REAL :: max16
+    REAL :: g_max16
+    REAL :: max17
+    REAL :: g_max17
+    REAL :: abs4
+    REAL :: g_abs4
+    REAL :: abs5
+    REAL :: max18
+    REAL :: g_max18
+    REAL :: max19
+    REAL :: g_max19
+    REAL :: max20
+    REAL :: g_max20
+    REAL :: max21
+    REAL :: g_max21
+    REAL :: max22
+    REAL :: g_max22
+    REAL :: max23
+    REAL :: g_max23
     REAL :: abs6
     REAL :: g_abs6
     REAL :: abs7
     REAL :: abs8
     REAL :: abs9
+    REAL :: max24
+    REAL :: g_max24
+    REAL :: max25
+    REAL :: g_max25
+    REAL :: max26
+    REAL :: g_max26
+    REAL :: max27
+    REAL :: g_max27
+    REAL :: max28
+    REAL :: g_max28
+    REAL :: max29
+    REAL :: g_max29
+    REAL :: max30
+    REAL :: g_max30
+    REAL :: max31
+    REAL :: g_max31
+    REAL :: max32
+    REAL :: g_max32
+    REAL :: max33
+    REAL :: g_max33
+    REAL :: max34
+    REAL :: g_max34
+    REAL :: max35
+    REAL :: g_max35
+    REAL :: max36
+    REAL :: g_max36
+    REAL :: max37
+    REAL :: g_max37
+    REAL :: max38
+    REAL :: g_max38
+    REAL :: max39
+    REAL :: g_max39
+    REAL :: max40
+    REAL :: g_max40
+    REAL :: max41
+    REAL :: g_max41
+    REAL :: max42
+    REAL :: g_max42
+    REAL :: max43
+    REAL :: g_max43
+    REAL :: max44
+    REAL :: g_max44
+    REAL :: max45
+    REAL :: g_max45
+    REAL :: max46
+    REAL :: g_max46
+    REAL :: max47
+    REAL :: g_max47
     REAL :: pwy1
     REAL :: pwr1
     REAL :: g_pwr1
@@ -4842,1104 +5445,1354 @@ CONTAINS
 ! pracs: Accretion of snow by rain [LFO 27]
 !         (T<T0: S->G) pracs: min=0., max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
+        g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k&
-&           , 2) .GT. qcrmin) THEN
-          pwy1 = (bvtr-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtr/4.
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 1)**(pwy2-1)*g_qrs(i, k, 1)
-          END IF
-          pwr2 = qrs(i, k, 1)**pwy2
-          g_vt2r = vt2r_a*(pwr2*g_pwr1+pwr1*g_pwr2)
-          vt2r = vt2r_a*pwr1*pwr2
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y1 = -g_t(i, k)
-            y1 = t0c - t(i, k)
-          ELSE
-            y1 = 90.
-            g_y1 = 0.0_8
-          END IF
-          IF (0. .LT. y1) THEN
-            g_max1 = g_y1
-            max1 = y1
-          ELSE
-            max1 = 0.
-            g_max1 = 0.0_8
-          END IF
-          pwy1 = (bvts-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvts/4.
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 2)**(pwy2-1)*g_qrs(i, k, 2)
-          END IF
-          pwr2 = qrs(i, k, 2)**pwy2
-          g_arg1 = -(alpha*bvts*g_max1/4.)
-          arg1 = -(alpha*bvts*max1/4.)
-          temp = EXP(arg1)
-          g_vt2s = vt2s_a*(temp*(pwr2*g_pwr1+pwr1*g_pwr2)+pwr1*pwr2*EXP(&
-&           arg1)*g_arg1)
-          vt2s = vt2s_a*(pwr1*pwr2*temp)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y2 = -g_t(i, k)
-            y2 = t0c - t(i, k)
-          ELSE
-            y2 = 90.
-            g_y2 = 0.0_8
-          END IF
-          IF (0. .LT. y2) THEN
-            g_max2 = g_y2
-            max2 = y2
-          ELSE
-            max2 = 0.
-            g_max2 = 0.0_8
-          END IF
-          g_a = EXP(alpha*max2)*alpha*g_max2
-          a = EXP(alpha*max2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y3 = -g_t(i, k)
-            y3 = t0c - t(i, k)
-          ELSE
-            y3 = 90.
-            g_y3 = 0.0_8
-          END IF
-          IF (0. .LT. y3) THEN
-            g_max3 = g_y3
-            max3 = y3
-          ELSE
-            max3 = 0.
-            g_max3 = 0.0_8
-          END IF
-          g_arg1 = -(alpha*3.*g_max3/2.)
-          arg1 = -(3.*alpha*max3/2.)
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (3./2. .EQ. 0.0_8 .OR. 3./2.&
-&             .NE. INT(3./2.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 3.*qrs(i, k, 2)**(3./2.-1)*g_qrs(i, k, 2)/2.
-          END IF
-          pwr2 = qrs(i, k, 2)**(3./2.)
-          temp = SQRT(qrs(i, k, 1))
-          IF (qrs(i, k, 1) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 1)/(2.0*temp)
-          END IF
-          result1 = temp
-          temp = SQRT(result1)
-          IF (result1 .EQ. 0.0_8) THEN
-            g_result2 = 0.0_8
-          ELSE
-            g_result2 = g_result1/(2.0*temp)
-          END IF
-          result2 = temp
-          temp = pwr1*pwr2*result2
-          temp0 = EXP(arg1)
-          g_b = temp*EXP(arg1)*g_arg1 + temp0*(result2*(pwr2*g_pwr1+pwr1&
-&           *g_pwr2)+pwr1*pwr2*g_result2)
-          b = temp0*temp
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y4 = -g_t(i, k)
-            y4 = t0c - t(i, k)
-          ELSE
-            y4 = 90.
-            g_y4 = 0.0_8
-          END IF
-          IF (0. .LT. y4) THEN
-            g_max4 = g_y4
-            max4 = y4
-          ELSE
-            max4 = 0.
-            g_max4 = 0.0_8
-          END IF
-          g_arg1 = -(alpha*5.*g_max4/4.)
-          arg1 = -(5.*alpha*max4/4.)
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4.&
-&             .NE. INT(5./4.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 5.*qrs(i, k, 2)**(5./4.-1)*g_qrs(i, k, 2)/4.
-          END IF
-          pwr2 = qrs(i, k, 2)**(5./4.)
-          temp0 = SQRT(qrs(i, k, 1))
-          IF (qrs(i, k, 1) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 1)/(2.0*temp0)
-          END IF
-          result1 = temp0
-          temp0 = pwr1*pwr2*result1
-          temp = EXP(arg1)
-          g_c = temp0*EXP(arg1)*g_arg1 + temp*(result1*(pwr2*g_pwr1+pwr1&
-&           *g_pwr2)+pwr1*pwr2*g_result1)
-          c = temp*temp0
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y5 = -g_t(i, k)
-            y5 = t0c - t(i, k)
-          ELSE
-            y5 = 90.
-            g_y5 = 0.0_8
-          END IF
-          IF (0. .LT. y5) THEN
-            g_max5 = g_y5
-            max5 = y5
-          ELSE
-            max5 = 0.
-            g_max5 = 0.0_8
-          END IF
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4.&
-&             .NE. INT(3./4.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 3.*qrs(i, k, 1)**(3./4.-1)*g_qrs(i, k, 1)/4.
-          END IF
-          pwr2 = qrs(i, k, 1)**(3./4.)
-          temp0 = qrs(i, k, 2)*pwr1*pwr2
-          temp = EXP(-(alpha*max5))
-          g_d = temp*(pwr1*pwr2*g_qrs(i, k, 2)+qrs(i, k, 2)*(pwr2*g_pwr1&
-&           +pwr1*g_pwr2)) - temp0*EXP(-(alpha*max5))*alpha*g_max5
-          d = temp*temp0
-          IF (vt2r - vt2s .GE. 0.) THEN
-            g_abs0 = g_vt2r - g_vt2s
-            abs0 = vt2r - vt2s
-          ELSE
-            g_abs0 = g_vt2s - g_vt2r
-            abs0 = -(vt2r-vt2s)
-          END IF
-          temp0 = pracs_b*b + pracs_c*c + pracs_d*d
-          g_pracs1 = pracs_a*(temp0*(abs0*g_a+a*g_abs0)+a*abs0*(pracs_b*&
-&           g_b+pracs_c*g_c+pracs_d*g_d))
-          pracs1 = pracs_a*(a*abs0*temp0)
-          IF (pracs1 .GT. qrs(i, k, 2)/dtcld) THEN
-            g_pracs(i, k) = g_qrs(i, k, 2)/dtcld
-            pracs(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            g_pracs(i, k) = g_pracs1
-            pracs(i, k) = pracs1
-          END IF
-          IF (pracs(i, k) .GE. 0.) THEN
-            abs1 = pracs(i, k)
-          ELSE
-            abs1 = -pracs(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) THEN
-            g_pracs(i, k) = 0.0_8
-            pracs(i, k) = 0.
-          END IF
-          IF (qrs(i, k, 2) - pracs(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 2) = 0.0_8
-            qrs(i, k, 2) = 0.
-          ELSE
-            g_qrs(i, k, 2) = g_qrs(i, k, 2) - dtcld*g_pracs(i, k)
-            qrs(i, k, 2) = qrs(i, k, 2) - pracs(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pracs(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 3) = 0.0_8
-            qrs(i, k, 3) = 0.
-          ELSE
-            g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pracs(i, k)
-            qrs(i, k, 3) = qrs(i, k, 3) + pracs(i, k)*dtcld
-          END IF
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't0')
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max1 = qcrmin
+          g_max1 = 0.0_8
+        ELSE
+          g_max1 = g_qrs(i, k, 1)
+          max1 = qrs(i, k, 1)
+        END IF
+!call smoothif(qrs(i,k,1),1.e-4,fqr,'q0')
+!call smoothif(qrs(i,k,2),1.e-4,fqs,'q0')
+        pwy1 = (bvtr-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtr/4.
+        IF (max1 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max1**(pwy2-1)*g_max1
+        END IF
+        pwr2 = max1**pwy2
+        g_vt2r = vt2r_a*(pwr2*g_pwr1+pwr1*g_pwr2)
+        vt2r = vt2r_a*pwr1*pwr2
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max2 = qcrmin
+          g_max2 = 0.0_8
+        ELSE
+          g_max2 = g_qrs(i, k, 2)
+          max2 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y13 = -g_t(i, k)
+          y13 = t0c - t(i, k)
+        ELSE
+          y13 = 90.
+          g_y13 = 0.0_8
+        END IF
+        IF (0. .LT. y13) THEN
+          g_max24 = g_y13
+          max24 = y13
+        ELSE
+          max24 = 0.
+          g_max24 = 0.0_8
+        END IF
+        pwy1 = (bvts-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvts/4.
+        IF (max2 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max2**(pwy2-1)*g_max2
+        END IF
+        pwr2 = max2**pwy2
+        g_arg1 = -(alpha*bvts*g_max24/4.)
+        arg1 = -(alpha*bvts*max24/4.)
+        temp = EXP(arg1)
+        g_vt2s = vt2s_a*(temp*(pwr2*g_pwr1+pwr1*g_pwr2)+pwr1*pwr2*EXP(&
+&         arg1)*g_arg1)
+        vt2s = vt2s_a*(pwr1*pwr2*temp)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y1 = -g_t(i, k)
+          y1 = t0c - t(i, k)
+        ELSE
+          y1 = 90.
+          g_y1 = 0.0_8
+        END IF
+        IF (0. .LT. y1) THEN
+          g_max3 = g_y1
+          max3 = y1
+        ELSE
+          max3 = 0.
+          g_max3 = 0.0_8
+        END IF
+        g_a = EXP(alpha*max3)*alpha*g_max3
+        a = EXP(alpha*max3)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y2 = -g_t(i, k)
+          y2 = t0c - t(i, k)
+        ELSE
+          y2 = 90.
+          g_y2 = 0.0_8
+        END IF
+        IF (0. .LT. y2) THEN
+          g_max4 = g_y2
+          max4 = y2
+        ELSE
+          max4 = 0.
+          g_max4 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max25 = qcrmin
+          g_max25 = 0.0_8
+        ELSE
+          g_max25 = g_qrs(i, k, 2)
+          max25 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max39 = qcrmin
+          g_max39 = 0.0_8
+        ELSE
+          g_max39 = g_qrs(i, k, 1)
+          max39 = qrs(i, k, 1)
+        END IF
+        g_arg1 = -(alpha*3.*g_max4/2.)
+        arg1 = -(3.*alpha*max4/2.)
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max25 .LE. 0.0_8 .AND. (3./2. .EQ. 0.0_8 .OR. 3./2. .NE. INT&
+&           (3./2.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 3.*max25**(3./2.-1)*g_max25/2.
+        END IF
+        pwr2 = max25**(3./2.)
+        temp = SQRT(max39)
+        IF (max39 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max39/(2.0*temp)
+        END IF
+        result1 = temp
+        temp = SQRT(result1)
+        IF (result1 .EQ. 0.0_8) THEN
+          g_result2 = 0.0_8
+        ELSE
+          g_result2 = g_result1/(2.0*temp)
+        END IF
+        result2 = temp
+        temp = pwr1*pwr2*result2
+        temp0 = EXP(arg1)
+        g_b = temp*EXP(arg1)*g_arg1 + temp0*(result2*(pwr2*g_pwr1+pwr1*&
+&         g_pwr2)+pwr1*pwr2*g_result2)
+        b = temp0*temp
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y3 = -g_t(i, k)
+          y3 = t0c - t(i, k)
+        ELSE
+          y3 = 90.
+          g_y3 = 0.0_8
+        END IF
+        IF (0. .LT. y3) THEN
+          g_max5 = g_y3
+          max5 = y3
+        ELSE
+          max5 = 0.
+          g_max5 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max26 = qcrmin
+          g_max26 = 0.0_8
+        ELSE
+          g_max26 = g_qrs(i, k, 2)
+          max26 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max40 = qcrmin
+          g_max40 = 0.0_8
+        ELSE
+          g_max40 = g_qrs(i, k, 1)
+          max40 = qrs(i, k, 1)
+        END IF
+        g_arg1 = -(alpha*5.*g_max5/4.)
+        arg1 = -(5.*alpha*max5/4.)
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max26 .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4. .NE. INT&
+&           (5./4.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 5.*max26**(5./4.-1)*g_max26/4.
+        END IF
+        pwr2 = max26**(5./4.)
+        temp0 = SQRT(max40)
+        IF (max40 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max40/(2.0*temp0)
+        END IF
+        result1 = temp0
+        temp0 = pwr1*pwr2*result1
+        temp = EXP(arg1)
+        g_c = temp0*EXP(arg1)*g_arg1 + temp*(result1*(pwr2*g_pwr1+pwr1*&
+&         g_pwr2)+pwr1*pwr2*g_result1)
+        c = temp*temp0
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y4 = -g_t(i, k)
+          y4 = t0c - t(i, k)
+        ELSE
+          y4 = 90.
+          g_y4 = 0.0_8
+        END IF
+        IF (0. .LT. y4) THEN
+          g_max6 = g_y4
+          max6 = y4
+        ELSE
+          max6 = 0.
+          g_max6 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max27 = qcrmin
+          g_max27 = 0.0_8
+        ELSE
+          g_max27 = g_qrs(i, k, 2)
+          max27 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max41 = qcrmin
+          g_max41 = 0.0_8
+        ELSE
+          g_max41 = g_qrs(i, k, 1)
+          max41 = qrs(i, k, 1)
+        END IF
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max41 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. INT&
+&           (3./4.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 3.*max41**(3./4.-1)*g_max41/4.
+        END IF
+        pwr2 = max41**(3./4.)
+        temp0 = pwr1*max27*pwr2
+        temp = EXP(-(alpha*max6))
+        g_d = temp*(pwr2*(max27*g_pwr1+pwr1*g_max27)+pwr1*max27*g_pwr2) &
+&         - temp0*EXP(-(alpha*max6))*alpha*g_max6
+        d = temp*temp0
+        IF (vt2r - vt2s .GE. 0.) THEN
+          g_abs0 = g_vt2r - g_vt2s
+          abs0 = vt2r - vt2s
+        ELSE
+          g_abs0 = g_vt2s - g_vt2r
+          abs0 = -(vt2r-vt2s)
+        END IF
+        temp0 = pracs_b*b + pracs_c*c + pracs_d*d
+        g_pracs1 = pracs_a*(temp0*(abs0*g_a+a*g_abs0)+a*abs0*(pracs_b*&
+&         g_b+pracs_c*g_c+pracs_d*g_d))
+        pracs1 = pracs_a*(a*abs0*temp0)
+        IF (pracs1 .GT. qrs(i, k, 2)/dtcld) THEN
+          g_pracs(i, k) = g_qrs(i, k, 2)/dtcld
+          pracs(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          g_pracs(i, k) = g_pracs1
+          pracs(i, k) = pracs1
+        END IF
+        g_pracs(i, k) = pracs(i, k)*g_fsupcol + fsupcol*g_pracs(i, k)
+        pracs(i, k) = fsupcol*pracs(i, k)
+        IF (pracs(i, k) .GE. 0.) THEN
+          abs1 = pracs(i, k)
+        ELSE
+          abs1 = -pracs(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) THEN
           g_pracs(i, k) = 0.0_8
           pracs(i, k) = 0.
         END IF
+        IF (qrs(i, k, 2) - pracs(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_qrs(i, k, 2) - dtcld*g_pracs(i, k)
+          qrs(i, k, 2) = qrs(i, k, 2) - pracs(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pracs(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pracs(i, k)
+          qrs(i, k, 3) = qrs(i, k, 3) + pracs(i, k)*dtcld
+        END IF
+        g_pracs(i, k) = 0.0_8
+        pracs(i, k) = 0.
 !-------------------------------------------------------------
 ! psacr: Accretion of rain by snow [LFO 28]
 !         (T< T0: R->S or R->G)                 min=0.,max=qrs(i,k,1)/dtcld
 !         (T>=T0: S->R enhance melting of snow) min=0.,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k, 2) .GT. qcrmin) &
-&       THEN
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,0.,fsupcol,'t0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
+!call smoothif(qrs(i,k,2),qcrmin,fqs,'q0')
 !update cpm
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
-          pwy1 = (bvtr-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtr/4.
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 1)**(pwy2-1)*g_qrs(i, k, 1)
-          END IF
-          pwr2 = qrs(i, k, 1)**pwy2
-          g_vt2r = vt2r_a*(pwr2*g_pwr1+pwr1*g_pwr2)
-          vt2r = vt2r_a*pwr1*pwr2
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y6 = -g_t(i, k)
-            y6 = t0c - t(i, k)
-          ELSE
-            y6 = 90.
-            g_y6 = 0.0_8
-          END IF
-          IF (0. .LT. y6) THEN
-            g_max6 = g_y6
-            max6 = y6
-          ELSE
-            max6 = 0.
-            g_max6 = 0.0_8
-          END IF
-          pwy1 = (bvts-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvts/4.
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 2)**(pwy2-1)*g_qrs(i, k, 2)
-          END IF
-          pwr2 = qrs(i, k, 2)**pwy2
-          g_arg1 = -(alpha*bvts*g_max6/4.)
-          arg1 = -(alpha*bvts*max6/4.)
-          temp0 = EXP(arg1)
-          g_vt2s = vt2s_a*(temp0*(pwr2*g_pwr1+pwr1*g_pwr2)+pwr1*pwr2*EXP&
-&           (arg1)*g_arg1)
-          vt2s = vt2s_a*(pwr1*pwr2*temp0)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y7 = -g_t(i, k)
-            y7 = t0c - t(i, k)
-          ELSE
-            y7 = 90.
-            g_y7 = 0.0_8
-          END IF
-          IF (0. .LT. y7) THEN
-            g_max7 = g_y7
-            max7 = y7
-          ELSE
-            max7 = 0.
-            g_max7 = 0.0_8
-          END IF
-          g_a = EXP(alpha*max7)*alpha*g_max7
-          a = EXP(alpha*max7)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y8 = -g_t(i, k)
-            y8 = t0c - t(i, k)
-          ELSE
-            y8 = 90.
-            g_y8 = 0.0_8
-          END IF
-          IF (0. .LT. y8) THEN
-            g_max8 = g_y8
-            max8 = y8
-          ELSE
-            max8 = 0.
-            g_max8 = 0.0_8
-          END IF
-          g_arg1 = -(alpha*g_max8/4.)
-          arg1 = -(alpha*max8/4.)
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (3./2. .EQ. 0.0_8 .OR. 3./2.&
-&             .NE. INT(3./2.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 3.*qrs(i, k, 1)**(3./2.-1)*g_qrs(i, k, 1)/2.
-          END IF
-          pwr2 = qrs(i, k, 1)**(3./2.)
-          temp0 = SQRT(qrs(i, k, 2))
-          IF (qrs(i, k, 2) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 2)/(2.0*temp0)
-          END IF
-          result1 = temp0
-          temp0 = SQRT(result1)
-          IF (result1 .EQ. 0.0_8) THEN
-            g_result2 = 0.0_8
-          ELSE
-            g_result2 = g_result1/(2.0*temp0)
-          END IF
-          result2 = temp0
-          temp0 = pwr1*pwr2*result2
-          temp = EXP(arg1)
-          g_b = temp0*EXP(arg1)*g_arg1 + temp*(result2*(pwr2*g_pwr1+pwr1&
-&           *g_pwr2)+pwr1*pwr2*g_result2)
-          b = temp*temp0
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y9 = -g_t(i, k)
-            y9 = t0c - t(i, k)
-          ELSE
-            y9 = 90.
-            g_y9 = 0.0_8
-          END IF
-          IF (0. .LT. y9) THEN
-            g_max9 = g_y9
-            max9 = y9
-          ELSE
-            max9 = 0.
-            g_max9 = 0.0_8
-          END IF
-          g_arg1 = -(alpha*g_max9/2.)
-          arg1 = -(alpha*max9/2.)
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4.&
-&             .NE. INT(5./4.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 5.*qrs(i, k, 1)**(5./4.-1)*g_qrs(i, k, 1)/4.
-          END IF
-          pwr2 = qrs(i, k, 1)**(5./4.)
-          temp0 = SQRT(qrs(i, k, 2))
-          IF (qrs(i, k, 2) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 2)/(2.0*temp0)
-          END IF
-          result1 = temp0
-          temp0 = pwr1*pwr2*result1
-          temp = EXP(arg1)
-          g_c = temp0*EXP(arg1)*g_arg1 + temp*(result1*(pwr2*g_pwr1+pwr1&
-&           *g_pwr2)+pwr1*pwr2*g_result1)
-          c = temp*temp0
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y10 = -g_t(i, k)
-            y10 = t0c - t(i, k)
-          ELSE
-            y10 = 90.
-            g_y10 = 0.0_8
-          END IF
-          IF (0. .LT. y10) THEN
-            g_max10 = g_y10
-            max10 = y10
-          ELSE
-            max10 = 0.
-            g_max10 = 0.0_8
-          END IF
-          g_arg1 = -(alpha*3.*g_max10/4.)
-          arg1 = -(3.*alpha*max10/4.)
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4.&
-&             .NE. INT(3./4.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 3.*qrs(i, k, 2)**(3./4.-1)*g_qrs(i, k, 2)/4.
-          END IF
-          pwr2 = qrs(i, k, 2)**(3./4.)
-          temp0 = qrs(i, k, 1)*pwr1*pwr2
-          temp = EXP(arg1)
-          g_d = temp0*EXP(arg1)*g_arg1 + temp*(pwr1*pwr2*g_qrs(i, k, 1)+&
-&           qrs(i, k, 1)*(pwr2*g_pwr1+pwr1*g_pwr2))
-          d = temp*temp0
-          IF (vt2r - vt2s .GE. 0.) THEN
-            g_abs2 = g_vt2r - g_vt2s
-            abs2 = vt2r - vt2s
-          ELSE
-            g_abs2 = g_vt2s - g_vt2r
-            abs2 = -(vt2r-vt2s)
-          END IF
-          temp0 = psacr_b*b + psacr_c*c + psacr_d*d
-          g_psacr(i, k) = psacr_a*(temp0*(abs2*g_a+a*g_abs2)+a*abs2*(&
-&           psacr_b*g_b+psacr_c*g_c+psacr_d*g_d))
-          psacr(i, k) = psacr_a*(a*abs2*temp0)
-          IF (psacr(i, k) .GE. 0.) THEN
-            abs3 = psacr(i, k)
-          ELSE
-            abs3 = -psacr(i, k)
-          END IF
-          IF (abs3 .LT. qmin/dtcld) THEN
-            g_psacr(i, k) = 0.0_8
-            psacr(i, k) = 0.
-          END IF
-!update qr qs qg
-          IF (qrs(i, k, 1) .LT. 1.e-4 .AND. qrs(i, k, 2) .LT. 1.e-4) &
-&         THEN
-            delta2 = 1.
-          ELSE
-            delta2 = 0.
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (psacr(i, k) .GT. qrs(i, k, 1)/dtcld) THEN
-              g_psacr(i, k) = g_qrs(i, k, 1)/dtcld
-              psacr(i, k) = qrs(i, k, 1)/dtcld
-            ELSE
-              psacr(i, k) = psacr(i, k)
-            END IF
-            IF (qrs(i, k, 1) - psacr(i, k)*dtcld .LT. 0.) THEN
-              g_qrs(i, k, 1) = 0.0_8
-              qrs(i, k, 1) = 0.
-            ELSE
-              g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*g_psacr(i, k)
-              qrs(i, k, 1) = qrs(i, k, 1) - psacr(i, k)*dtcld
-            END IF
-            g_x1 = g_qrs(i, k, 2) + delta2*dtcld*g_psacr(i, k)
-            x1 = qrs(i, k, 2) + delta2*psacr(i, k)*dtcld
-            IF (x1 .LT. 0.) THEN
-              g_qrs(i, k, 2) = 0.0_8
-              qrs(i, k, 2) = 0.
-            ELSE
-              g_qrs(i, k, 2) = g_x1
-              qrs(i, k, 2) = x1
-            END IF
-            g_x2 = g_qrs(i, k, 3) + (1-delta2)*dtcld*g_psacr(i, k)
-            x2 = qrs(i, k, 3) + (1-delta2)*psacr(i, k)*dtcld
-            IF (x2 .LT. 0.) THEN
-              g_qrs(i, k, 3) = 0.0_8
-              qrs(i, k, 3) = 0.
-            ELSE
-              g_qrs(i, k, 3) = g_x2
-              qrs(i, k, 3) = x2
-            END IF
-            temp0 = psacr(i, k)*xlf/cpm(i, k)
-            g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_psacr(i, k)+psacr(i, k)&
-&             *g_xlf-temp0*g_cpm(i, k))/cpm(i, k)
-            t(i, k) = t(i, k) + dtcld*temp0
-            g_psacr(i, k) = 0.0_8
-            psacr(i, k) = 0.
-          ELSE IF (psacr(i, k) .GT. qrs(i, k, 2)/dtcld) THEN
-            g_psacr(i, k) = g_qrs(i, k, 2)/dtcld
-            psacr(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            psacr(i, k) = psacr(i, k)
-          END IF
+        g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
         END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max7 = qcrmin
+          g_max7 = 0.0_8
+        ELSE
+          g_max7 = g_qrs(i, k, 1)
+          max7 = qrs(i, k, 1)
+        END IF
+        pwy1 = (bvtr-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtr/4.
+        IF (max7 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max7**(pwy2-1)*g_max7
+        END IF
+        pwr2 = max7**pwy2
+        g_vt2r = vt2r_a*(pwr2*g_pwr1+pwr1*g_pwr2)
+        vt2r = vt2r_a*pwr1*pwr2
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max8 = qcrmin
+          g_max8 = 0.0_8
+        ELSE
+          g_max8 = g_qrs(i, k, 2)
+          max8 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y14 = -g_t(i, k)
+          y14 = t0c - t(i, k)
+        ELSE
+          y14 = 90.
+          g_y14 = 0.0_8
+        END IF
+        IF (0. .LT. y14) THEN
+          g_max28 = g_y14
+          max28 = y14
+        ELSE
+          max28 = 0.
+          g_max28 = 0.0_8
+        END IF
+        pwy1 = (bvts-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvts/4.
+        IF (max8 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max8**(pwy2-1)*g_max8
+        END IF
+        pwr2 = max8**pwy2
+        g_arg1 = -(alpha*bvts*g_max28/4.)
+        arg1 = -(alpha*bvts*max28/4.)
+        temp0 = EXP(arg1)
+        g_vt2s = vt2s_a*(temp0*(pwr2*g_pwr1+pwr1*g_pwr2)+pwr1*pwr2*EXP(&
+&         arg1)*g_arg1)
+        vt2s = vt2s_a*(pwr1*pwr2*temp0)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y5 = -g_t(i, k)
+          y5 = t0c - t(i, k)
+        ELSE
+          y5 = 90.
+          g_y5 = 0.0_8
+        END IF
+        IF (0. .LT. y5) THEN
+          g_max9 = g_y5
+          max9 = y5
+        ELSE
+          max9 = 0.
+          g_max9 = 0.0_8
+        END IF
+        g_a = EXP(alpha*max9)*alpha*g_max9
+        a = EXP(alpha*max9)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y6 = -g_t(i, k)
+          y6 = t0c - t(i, k)
+        ELSE
+          y6 = 90.
+          g_y6 = 0.0_8
+        END IF
+        IF (0. .LT. y6) THEN
+          g_max10 = g_y6
+          max10 = y6
+        ELSE
+          max10 = 0.
+          g_max10 = 0.0_8
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max29 = qcrmin
+          g_max29 = 0.0_8
+        ELSE
+          g_max29 = g_qrs(i, k, 1)
+          max29 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max42 = qcrmin
+          g_max42 = 0.0_8
+        ELSE
+          g_max42 = g_qrs(i, k, 2)
+          max42 = qrs(i, k, 2)
+        END IF
+        g_arg1 = -(alpha*g_max10/4.)
+        arg1 = -(alpha*max10/4.)
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max29 .LE. 0.0_8 .AND. (3./2. .EQ. 0.0_8 .OR. 3./2. .NE. INT&
+&           (3./2.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 3.*max29**(3./2.-1)*g_max29/2.
+        END IF
+        pwr2 = max29**(3./2.)
+        temp0 = SQRT(max42)
+        IF (max42 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max42/(2.0*temp0)
+        END IF
+        result1 = temp0
+        temp0 = SQRT(result1)
+        IF (result1 .EQ. 0.0_8) THEN
+          g_result2 = 0.0_8
+        ELSE
+          g_result2 = g_result1/(2.0*temp0)
+        END IF
+        result2 = temp0
+        temp0 = pwr1*pwr2*result2
+        temp = EXP(arg1)
+        g_b = temp0*EXP(arg1)*g_arg1 + temp*(result2*(pwr2*g_pwr1+pwr1*&
+&         g_pwr2)+pwr1*pwr2*g_result2)
+        b = temp*temp0
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y7 = -g_t(i, k)
+          y7 = t0c - t(i, k)
+        ELSE
+          y7 = 90.
+          g_y7 = 0.0_8
+        END IF
+        IF (0. .LT. y7) THEN
+          g_max11 = g_y7
+          max11 = y7
+        ELSE
+          max11 = 0.
+          g_max11 = 0.0_8
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max30 = qcrmin
+          g_max30 = 0.0_8
+        ELSE
+          g_max30 = g_qrs(i, k, 1)
+          max30 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max43 = qcrmin
+          g_max43 = 0.0_8
+        ELSE
+          g_max43 = g_qrs(i, k, 2)
+          max43 = qrs(i, k, 2)
+        END IF
+        g_arg1 = -(alpha*g_max11/2.)
+        arg1 = -(alpha*max11/2.)
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max30 .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4. .NE. INT&
+&           (5./4.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 5.*max30**(5./4.-1)*g_max30/4.
+        END IF
+        pwr2 = max30**(5./4.)
+        temp0 = SQRT(max43)
+        IF (max43 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max43/(2.0*temp0)
+        END IF
+        result1 = temp0
+        temp0 = pwr1*pwr2*result1
+        temp = EXP(arg1)
+        g_c = temp0*EXP(arg1)*g_arg1 + temp*(result1*(pwr2*g_pwr1+pwr1*&
+&         g_pwr2)+pwr1*pwr2*g_result1)
+        c = temp*temp0
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y8 = -g_t(i, k)
+          y8 = t0c - t(i, k)
+        ELSE
+          y8 = 90.
+          g_y8 = 0.0_8
+        END IF
+        IF (0. .LT. y8) THEN
+          g_max12 = g_y8
+          max12 = y8
+        ELSE
+          max12 = 0.
+          g_max12 = 0.0_8
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max31 = qcrmin
+          g_max31 = 0.0_8
+        ELSE
+          g_max31 = g_qrs(i, k, 1)
+          max31 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max44 = qcrmin
+          g_max44 = 0.0_8
+        ELSE
+          g_max44 = g_qrs(i, k, 2)
+          max44 = qrs(i, k, 2)
+        END IF
+        g_arg1 = -(alpha*3.*g_max12/4.)
+        arg1 = -(3.*alpha*max12/4.)
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max44 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. INT&
+&           (3./4.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 3.*max44**(3./4.-1)*g_max44/4.
+        END IF
+        pwr2 = max44**(3./4.)
+        temp0 = pwr1*max31*pwr2
+        temp = EXP(arg1)
+        g_d = temp0*EXP(arg1)*g_arg1 + temp*(pwr2*(max31*g_pwr1+pwr1*&
+&         g_max31)+pwr1*max31*g_pwr2)
+        d = temp*temp0
+        IF (vt2r - vt2s .GE. 0.) THEN
+          g_abs2 = g_vt2r - g_vt2s
+          abs2 = vt2r - vt2s
+        ELSE
+          g_abs2 = g_vt2s - g_vt2r
+          abs2 = -(vt2r-vt2s)
+        END IF
+        temp0 = psacr_b*b + psacr_c*c + psacr_d*d
+        g_psacr1 = psacr_a*(temp0*(abs2*g_a+a*g_abs2)+a*abs2*(psacr_b*&
+&         g_b+psacr_c*g_c+psacr_d*g_d))
+        psacr1 = psacr_a*(a*abs2*temp0)
+        IF (supcol .GT. 0.) THEN
+          IF (psacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+            g_psacr(i, k) = g_qrs(i, k, 1)/dtcld
+            psacr(i, k) = qrs(i, k, 1)/dtcld
+          ELSE
+            g_psacr(i, k) = g_psacr1
+            psacr(i, k) = psacr1
+          END IF
+        ELSE IF (psacr1 .GT. qrs(i, k, 2)/dtcld) THEN
+          g_psacr(i, k) = g_qrs(i, k, 2)/dtcld
+          psacr(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          g_psacr(i, k) = g_psacr1
+          psacr(i, k) = psacr1
+        END IF
+        IF (psacr(i, k) .GE. 0.) THEN
+          abs3 = psacr(i, k)
+        ELSE
+          abs3 = -psacr(i, k)
+        END IF
+!psacr(i,k)=fqr*fqs*psacr(i,k)
+        IF (abs3 .LT. qmin/dtcld) THEN
+          g_psacr(i, k) = 0.0_8
+          psacr(i, k) = 0.
+        END IF
+!update qr qs qg
+        IF (qrs(i, k, 1) .LT. 1.e-4 .AND. qrs(i, k, 2) .LT. 1.e-4) THEN
+          delta2 = 1.
+        ELSE
+          delta2 = 0.
+        END IF
+        IF (qrs(i, k, 1) - fsupcol*psacr(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*(psacr(i, k)*g_fsupcol&
+&           +fsupcol*g_psacr(i, k))
+          qrs(i, k, 1) = qrs(i, k, 1) - fsupcol*psacr(i, k)*dtcld
+        END IF
+        g_x1 = g_qrs(i, k, 2) + delta2*dtcld*(psacr(i, k)*g_fsupcol+&
+&         fsupcol*g_psacr(i, k))
+        x1 = qrs(i, k, 2) + fsupcol*delta2*psacr(i, k)*dtcld
+        IF (x1 .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_x1
+          qrs(i, k, 2) = x1
+        END IF
+        g_x2 = g_qrs(i, k, 3) + (1-delta2)*dtcld*(psacr(i, k)*g_fsupcol+&
+&         fsupcol*g_psacr(i, k))
+        x2 = qrs(i, k, 3) + fsupcol*(1-delta2)*psacr(i, k)*dtcld
+        IF (x2 .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_x2
+          qrs(i, k, 3) = x2
+        END IF
+        temp0 = psacr(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*(temp0*(xlf*g_fsupcol+fsupcol*&
+&         g_xlf)+fsupcol*xlf*(g_psacr(i, k)-temp0*g_cpm(i, k))/cpm(i, k)&
+&         )
+        t(i, k) = t(i, k) + dtcld*(fsupcol*xlf*temp0)
+! t>=t0 pseml 
+        g_psacr(i, k) = (1-fsupcol)*g_psacr(i, k) - psacr(i, k)*&
+&         g_fsupcol
+        psacr(i, k) = (1-fsupcol)*psacr(i, k)
 !-------------------------------------------------------------
 ! pgacr: Accretion of rain by graupel [LFO 42]
 !         (T< T0: R->G)                            min=0.,max=qrs(i,k,1)/dtcld
 !         (T>=T0: G->R enhance melting of graupel) min=0.,max=qrs(i,k,3)/dtcld
 !-------------------------------------------------------------
+        g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k, 3) .GT. qcrmin) &
-&       THEN
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
 !update cpm
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
-          pwy1 = (bvtr-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtr/4.
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 1)**(pwy2-1)*g_qrs(i, k, 1)
-          END IF
-          pwr2 = qrs(i, k, 1)**pwy2
-          g_vt2r = vt2r_a*(pwr2*g_pwr1+pwr1*g_pwr2)
-          vt2r = vt2r_a*pwr1*pwr2
-          pwy1 = (bvtg-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtg/4.
-          IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 3)**(pwy2-1)*g_qrs(i, k, 3)
-          END IF
-          pwr2 = qrs(i, k, 3)**pwy2
-          g_vt2g = vt2g_a*(pwr2*g_pwr1+pwr1*g_pwr2)
-          vt2g = vt2g_a*pwr1*pwr2
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (3./2. .EQ. 0.0_8 .OR. 3./2.&
-&             .NE. INT(3./2.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 3.*qrs(i, k, 1)**(3./2.-1)*g_qrs(i, k, 1)/2.
-          END IF
-          pwr2 = qrs(i, k, 1)**(3./2.)
-          temp0 = SQRT(qrs(i, k, 3))
-          IF (qrs(i, k, 3) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 3)/(2.0*temp0)
-          END IF
-          result1 = temp0
-          temp0 = SQRT(result1)
-          IF (result1 .EQ. 0.0_8) THEN
-            g_result2 = 0.0_8
-          ELSE
-            g_result2 = g_result1/(2.0*temp0)
-          END IF
-          result2 = temp0
-          g_b = result2*(pwr2*g_pwr1+pwr1*g_pwr2) + pwr1*pwr2*g_result2
-          b = pwr1*pwr2*result2
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4.&
-&             .NE. INT(5./4.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 5.*qrs(i, k, 1)**(5./4.-1)*g_qrs(i, k, 1)/4.
-          END IF
-          pwr2 = qrs(i, k, 1)**(5./4.)
-          temp0 = SQRT(qrs(i, k, 3))
-          IF (qrs(i, k, 3) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 3)/(2.0*temp0)
-          END IF
-          result1 = temp0
-          g_c = result1*(pwr2*g_pwr1+pwr1*g_pwr2) + pwr1*pwr2*g_result1
-          c = pwr1*pwr2*result1
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4.&
-&             .NE. INT(3./4.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 3.*qrs(i, k, 3)**(3./4.-1)*g_qrs(i, k, 3)/4.
-          END IF
-          pwr2 = qrs(i, k, 3)**(3./4.)
-          g_d = pwr1*pwr2*g_qrs(i, k, 1) + qrs(i, k, 1)*(pwr2*g_pwr1+&
-&           pwr1*g_pwr2)
-          d = pwr1*qrs(i, k, 1)*pwr2
-          IF (vt2r - vt2g .GE. 0.) THEN
-            g_abs4 = g_vt2r - g_vt2g
-            abs4 = vt2r - vt2g
-          ELSE
-            g_abs4 = g_vt2g - g_vt2r
-            abs4 = -(vt2r-vt2g)
-          END IF
-          temp0 = pgacr_b*b + pgacr_c*c + pgacr_d*d
-          g_pgacr(i, k) = pgacr_a*(temp0*g_abs4+abs4*(pgacr_b*g_b+&
-&           pgacr_c*g_c+pgacr_d*g_d))
-          pgacr(i, k) = pgacr_a*(abs4*temp0)
-          IF (pgacr(i, k) .GE. 0.) THEN
-            abs5 = pgacr(i, k)
-          ELSE
-            abs5 = -pgacr(i, k)
-          END IF
-          IF (abs5 .LT. qmin/dtcld) THEN
-            g_pgacr(i, k) = 0.0_8
-            pgacr(i, k) = 0.
-          END IF
-! update qr,qg,t
-          IF (supcol .GT. 0.) THEN
-            IF (pgacr(i, k) .GT. qrs(i, k, 1)/dtcld) THEN
-              g_pgacr(i, k) = g_qrs(i, k, 1)/dtcld
-              pgacr(i, k) = qrs(i, k, 1)/dtcld
-            ELSE
-              pgacr(i, k) = pgacr(i, k)
-            END IF
-            IF (qrs(i, k, 1) - pgacr(i, k)*dtcld .LT. 0.) THEN
-              g_qrs(i, k, 1) = 0.0_8
-              qrs(i, k, 1) = 0.
-            ELSE
-              g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*g_pgacr(i, k)
-              qrs(i, k, 1) = qrs(i, k, 1) - pgacr(i, k)*dtcld
-            END IF
-            IF (qrs(i, k, 3) + pgacr(i, k)*dtcld .LT. 0.) THEN
-              g_qrs(i, k, 3) = 0.0_8
-              qrs(i, k, 3) = 0.
-            ELSE
-              g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgacr(i, k)
-              qrs(i, k, 3) = qrs(i, k, 3) + pgacr(i, k)*dtcld
-            END IF
-            temp0 = pgacr(i, k)*xlf/cpm(i, k)
-            g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_pgacr(i, k)+pgacr(i, k)&
-&             *g_xlf-temp0*g_cpm(i, k))/cpm(i, k)
-            t(i, k) = t(i, k) + dtcld*temp0
-            g_pgacr(i, k) = 0.0_8
-            pgacr(i, k) = 0.
-          ELSE IF (pgacr(i, k) .GT. qrs(i, k, 3)/dtcld) THEN
-            g_pgacr(i, k) = g_qrs(i, k, 3)/dtcld
-            pgacr(i, k) = qrs(i, k, 3)/dtcld
-          ELSE
-            pgacr(i, k) = pgacr(i, k)
-          END IF
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
         END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max13 = qcrmin
+          g_max13 = 0.0_8
+        ELSE
+          g_max13 = g_qrs(i, k, 1)
+          max13 = qrs(i, k, 1)
+        END IF
+        pwy1 = (bvtr-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtr/4.
+        IF (max13 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max13**(pwy2-1)*g_max13
+        END IF
+        pwr2 = max13**pwy2
+        g_vt2r = vt2r_a*(pwr2*g_pwr1+pwr1*g_pwr2)
+        vt2r = vt2r_a*pwr1*pwr2
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max14 = qcrmin
+          g_max14 = 0.0_8
+        ELSE
+          g_max14 = g_qrs(i, k, 3)
+          max14 = qrs(i, k, 3)
+        END IF
+        pwy1 = (bvtg-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtg/4.
+        IF (max14 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max14**(pwy2-1)*g_max14
+        END IF
+        pwr2 = max14**pwy2
+        g_vt2g = vt2g_a*(pwr2*g_pwr1+pwr1*g_pwr2)
+        vt2g = vt2g_a*pwr1*pwr2
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max15 = qcrmin
+          g_max15 = 0.0_8
+        ELSE
+          g_max15 = g_qrs(i, k, 1)
+          max15 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max32 = qcrmin
+          g_max32 = 0.0_8
+        ELSE
+          g_max32 = g_qrs(i, k, 3)
+          max32 = qrs(i, k, 3)
+        END IF
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max15 .LE. 0.0_8 .AND. (3./2. .EQ. 0.0_8 .OR. 3./2. .NE. INT&
+&           (3./2.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 3.*max15**(3./2.-1)*g_max15/2.
+        END IF
+        pwr2 = max15**(3./2.)
+        temp0 = SQRT(max32)
+        IF (max32 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max32/(2.0*temp0)
+        END IF
+        result1 = temp0
+        temp0 = SQRT(result1)
+        IF (result1 .EQ. 0.0_8) THEN
+          g_result2 = 0.0_8
+        ELSE
+          g_result2 = g_result1/(2.0*temp0)
+        END IF
+        result2 = temp0
+        g_b = result2*(pwr2*g_pwr1+pwr1*g_pwr2) + pwr1*pwr2*g_result2
+        b = pwr1*pwr2*result2
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max16 = qcrmin
+          g_max16 = 0.0_8
+        ELSE
+          g_max16 = g_qrs(i, k, 1)
+          max16 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max33 = qcrmin
+          g_max33 = 0.0_8
+        ELSE
+          g_max33 = g_qrs(i, k, 3)
+          max33 = qrs(i, k, 3)
+        END IF
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max16 .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4. .NE. INT&
+&           (5./4.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 5.*max16**(5./4.-1)*g_max16/4.
+        END IF
+        pwr2 = max16**(5./4.)
+        temp0 = SQRT(max33)
+        IF (max33 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max33/(2.0*temp0)
+        END IF
+        result1 = temp0
+        g_c = result1*(pwr2*g_pwr1+pwr1*g_pwr2) + pwr1*pwr2*g_result1
+        c = pwr1*pwr2*result1
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max17 = qcrmin
+          g_max17 = 0.0_8
+        ELSE
+          g_max17 = g_qrs(i, k, 1)
+          max17 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max34 = qcrmin
+          g_max34 = 0.0_8
+        ELSE
+          g_max34 = g_qrs(i, k, 3)
+          max34 = qrs(i, k, 3)
+        END IF
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max34 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. INT&
+&           (3./4.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 3.*max34**(3./4.-1)*g_max34/4.
+        END IF
+        pwr2 = max34**(3./4.)
+        g_d = pwr2*(max17*g_pwr1+pwr1*g_max17) + pwr1*max17*g_pwr2
+        d = pwr1*max17*pwr2
+        IF (vt2r - vt2g .GE. 0.) THEN
+          g_abs4 = g_vt2r - g_vt2g
+          abs4 = vt2r - vt2g
+        ELSE
+          g_abs4 = g_vt2g - g_vt2r
+          abs4 = -(vt2r-vt2g)
+        END IF
+        temp0 = pgacr_b*b + pgacr_c*c + pgacr_d*d
+        g_pgacr1 = pgacr_a*(temp0*g_abs4+abs4*(pgacr_b*g_b+pgacr_c*g_c+&
+&         pgacr_d*g_d))
+        pgacr1 = pgacr_a*(abs4*temp0)
+        IF (supcol .GT. 0.) THEN
+          IF (pgacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+            g_pgacr(i, k) = g_qrs(i, k, 1)/dtcld
+            pgacr(i, k) = qrs(i, k, 1)/dtcld
+          ELSE
+            g_pgacr(i, k) = g_pgacr1
+            pgacr(i, k) = pgacr1
+          END IF
+        ELSE IF (pgacr1 .GT. qrs(i, k, 3)/dtcld) THEN
+          g_pgacr(i, k) = g_qrs(i, k, 3)/dtcld
+          pgacr(i, k) = qrs(i, k, 3)/dtcld
+        ELSE
+          g_pgacr(i, k) = g_pgacr1
+          pgacr(i, k) = pgacr1
+        END IF
+        IF (pgacr(i, k) .GE. 0.) THEN
+          abs5 = pgacr(i, k)
+        ELSE
+          abs5 = -pgacr(i, k)
+        END IF
+!pgacr(i,k)=fqg*fqr*pgacr(i,k)
+        IF (abs5 .LT. qmin/dtcld) THEN
+          g_pgacr(i, k) = 0.0_8
+          pgacr(i, k) = 0.
+        END IF
+        IF (qrs(i, k, 1) - fsupcol*pgacr(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*(pgacr(i, k)*g_fsupcol&
+&           +fsupcol*g_pgacr(i, k))
+          qrs(i, k, 1) = qrs(i, k, 1) - fsupcol*pgacr(i, k)*dtcld
+        END IF
+        g_x3 = g_qrs(i, k, 3) + dtcld*(pgacr(i, k)*g_fsupcol+fsupcol*&
+&         g_pgacr(i, k))
+        x3 = qrs(i, k, 3) + fsupcol*pgacr(i, k)*dtcld
+        IF (x3 .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_x3
+          qrs(i, k, 3) = x3
+        END IF
+        temp0 = pgacr(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*(temp0*(xlf*g_fsupcol+fsupcol*&
+&         g_xlf)+fsupcol*xlf*(g_pgacr(i, k)-temp0*g_cpm(i, k))/cpm(i, k)&
+&         )
+        t(i, k) = t(i, k) + dtcld*(fsupcol*xlf*temp0)
+! t>=t0 pgeml 
+        g_pgacr(i, k) = (1-fsupcol)*g_pgacr(i, k) - pgacr(i, k)*&
+&         g_fsupcol
+        pgacr(i, k) = (1-fsupcol)*pgacr(i, k)
 !-------------------------------------------------------------
 ! pgacs: Accretion of snow by graupel [LFO 29]
 !        (S->G) min=0,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
         g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (qrs(i, k, 2) .GT. qcrmin .AND. qrs(i, k, 3) .GT. qcrmin) &
-&       THEN
-          g_x3 = -(EXP(-(0.09*supcol))*0.09*g_supcol)
-          x3 = EXP(-(0.09*supcol))
-          IF (x3 .GT. 1.) THEN
-            egs = 1.
-            g_egs = 0.0_8
-          ELSE
-            g_egs = g_x3
-            egs = x3
-          END IF
-          pwy1 = (bvtg-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtg/4.
-          IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 3)**(pwy2-1)*g_qrs(i, k, 3)
-          END IF
-          pwr2 = qrs(i, k, 3)**pwy2
-          g_vt2g = vt2g_a*(pwr2*g_pwr1+pwr1*g_pwr2)
-          vt2g = vt2g_a*pwr1*pwr2
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y11 = -g_t(i, k)
-            y11 = t0c - t(i, k)
-          ELSE
-            y11 = 90.
-            g_y11 = 0.0_8
-          END IF
-          IF (0. .LT. y11) THEN
-            g_max11 = g_y11
-            max11 = y11
-          ELSE
-            max11 = 0.
-            g_max11 = 0.0_8
-          END IF
-          pwy1 = (bvts-2.)/4.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE.&
-&             INT(pwy1))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
-          END IF
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvts/4.
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 &
-&             .NE. INT(pwy2))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = pwy2*qrs(i, k, 2)**(pwy2-1)*g_qrs(i, k, 2)
-          END IF
-          pwr2 = qrs(i, k, 2)**pwy2
-          g_arg1 = -(alpha*bvts*g_max11/4.)
-          arg1 = -(alpha*bvts*max11/4.)
-          temp0 = EXP(arg1)
-          g_vt2s = vt2s_a*(temp0*(pwr2*g_pwr1+pwr1*g_pwr2)+pwr1*pwr2*EXP&
-&           (arg1)*g_arg1)
-          vt2s = vt2s_a*(pwr1*pwr2*temp0)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y12 = -g_t(i, k)
-            y12 = t0c - t(i, k)
-          ELSE
-            y12 = 90.
-            g_y12 = 0.0_8
-          END IF
-          IF (0. .LT. y12) THEN
-            g_max12 = g_y12
-            max12 = y12
-          ELSE
-            max12 = 0.
-            g_max12 = 0.0_8
-          END IF
-          g_a = EXP(alpha*max12)*alpha*g_max12
-          a = EXP(alpha*max12)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y13 = -g_t(i, k)
-            y13 = t0c - t(i, k)
-          ELSE
-            y13 = 90.
-            g_y13 = 0.0_8
-          END IF
-          IF (0. .LT. y13) THEN
-            g_max13 = g_y13
-            max13 = y13
-          ELSE
-            max13 = 0.
-            g_max13 = 0.0_8
-          END IF
-          g_arg1 = -(alpha*3.*g_max13/2.)
-          arg1 = -(3.*alpha*max13/2.)
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (3./2. .EQ. 0.0_8 .OR. 3./2.&
-&             .NE. INT(3./2.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 3.*qrs(i, k, 2)**(3./2.-1)*g_qrs(i, k, 2)/2.
-          END IF
-          pwr2 = qrs(i, k, 2)**(3./2.)
-          temp0 = SQRT(qrs(i, k, 3))
-          IF (qrs(i, k, 3) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 3)/(2.0*temp0)
-          END IF
-          result1 = temp0
-          temp0 = SQRT(result1)
-          IF (result1 .EQ. 0.0_8) THEN
-            g_result2 = 0.0_8
-          ELSE
-            g_result2 = g_result1/(2.0*temp0)
-          END IF
-          result2 = temp0
-          temp0 = pwr1*pwr2*result2
-          temp = EXP(arg1)
-          g_b = temp0*EXP(arg1)*g_arg1 + temp*(result2*(pwr2*g_pwr1+pwr1&
-&           *g_pwr2)+pwr1*pwr2*g_result2)
-          b = temp*temp0
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y14 = -g_t(i, k)
-            y14 = t0c - t(i, k)
-          ELSE
-            y14 = 90.
-            g_y14 = 0.0_8
-          END IF
-          IF (0. .LT. y14) THEN
-            g_max14 = g_y14
-            max14 = y14
-          ELSE
-            max14 = 0.
-            g_max14 = 0.0_8
-          END IF
-          g_arg1 = -(alpha*5.*g_max14/4.)
-          arg1 = -(5.*alpha*max14/4.)
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4.&
-&             .NE. INT(5./4.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 5.*qrs(i, k, 2)**(5./4.-1)*g_qrs(i, k, 2)/4.
-          END IF
-          pwr2 = qrs(i, k, 2)**(5./4.)
-          temp0 = SQRT(qrs(i, k, 3))
-          IF (qrs(i, k, 3) .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_qrs(i, k, 3)/(2.0*temp0)
-          END IF
-          result1 = temp0
-          temp0 = pwr1*pwr2*result1
-          temp = EXP(arg1)
-          g_c = temp0*EXP(arg1)*g_arg1 + temp*(result1*(pwr2*g_pwr1+pwr1&
-&           *g_pwr2)+pwr1*pwr2*g_result1)
-          c = temp*temp0
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y15 = -g_t(i, k)
-            y15 = t0c - t(i, k)
-          ELSE
-            y15 = 90.
-            g_y15 = 0.0_8
-          END IF
-          IF (0. .LT. y15) THEN
-            g_max15 = g_y15
-            max15 = y15
-          ELSE
-            max15 = 0.
-            g_max15 = 0.0_8
-          END IF
-          IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. &
-&             .NE. INT(3./4.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4.&
-&             .NE. INT(3./4.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 3.*qrs(i, k, 3)**(3./4.-1)*g_qrs(i, k, 3)/4.
-          END IF
-          pwr2 = qrs(i, k, 3)**(3./4.)
-          temp0 = qrs(i, k, 2)*pwr1*pwr2
-          temp = EXP(-(alpha*max15))
-          g_d = temp*(pwr1*pwr2*g_qrs(i, k, 2)+qrs(i, k, 2)*(pwr2*g_pwr1&
-&           +pwr1*g_pwr2)) - temp0*EXP(-(alpha*max15))*alpha*g_max15
-          d = temp*temp0
-          IF (vt2g - vt2s .GE. 0.) THEN
-            g_abs6 = g_vt2g - g_vt2s
-            abs6 = vt2g - vt2s
-          ELSE
-            g_abs6 = g_vt2s - g_vt2g
-            abs6 = -(vt2g-vt2s)
-          END IF
-          temp0 = pgacs_b*b + pgacs_c*c + pgacs_d*d
-          temp = a*abs6*egs
-          g_pgacs1 = pgacs_a*(temp0*(egs*(abs6*g_a+a*g_abs6)+a*abs6*&
-&           g_egs)+temp*(pgacs_b*g_b+pgacs_c*g_c+pgacs_d*g_d))
-          pgacs1 = pgacs_a*(temp*temp0)
-          IF (pgacs1 .GT. qrs(i, k, 2)/dtcld) THEN
-            g_pgacs(i, k) = g_qrs(i, k, 2)/dtcld
-            pgacs(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            g_pgacs(i, k) = g_pgacs1
-            pgacs(i, k) = pgacs1
-          END IF
-          IF (pgacs(i, k) .GE. 0.) THEN
-            abs7 = pgacs(i, k)
-          ELSE
-            abs7 = -pgacs(i, k)
-          END IF
-          IF (abs7 .LT. qmin/dtcld) THEN
-            g_pgacs(i, k) = 0.0_8
-            pgacs(i, k) = 0.
-          END IF
-          IF (qrs(i, k, 2) - pgacs(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 2) = 0.0_8
-            qrs(i, k, 2) = 0.
-          ELSE
-            g_qrs(i, k, 2) = g_qrs(i, k, 2) - dtcld*g_pgacs(i, k)
-            qrs(i, k, 2) = qrs(i, k, 2) - pgacs(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgacs(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 3) = 0.0_8
-            qrs(i, k, 3) = 0.
-          ELSE
-            g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgacs(i, k)
-            qrs(i, k, 3) = qrs(i, k, 3) + pgacs(i, k)*dtcld
-          END IF
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        g_x4 = -(EXP(-(0.09*supcol))*0.09*g_supcol)
+        x4 = EXP(-(0.09*supcol))
+        IF (x4 .GT. 1.) THEN
+          egs = 1.
+          g_egs = 0.0_8
+        ELSE
+          g_egs = g_x4
+          egs = x4
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max18 = qcrmin
+          g_max18 = 0.0_8
+        ELSE
+          g_max18 = g_qrs(i, k, 3)
+          max18 = qrs(i, k, 3)
+        END IF
+        pwy1 = (bvtg-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtg/4.
+        IF (max18 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max18**(pwy2-1)*g_max18
+        END IF
+        pwr2 = max18**pwy2
+        g_vt2g = vt2g_a*(pwr2*g_pwr1+pwr1*g_pwr2)
+        vt2g = vt2g_a*pwr1*pwr2
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max19 = qcrmin
+          g_max19 = 0.0_8
+        ELSE
+          g_max19 = g_qrs(i, k, 2)
+          max19 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y15 = -g_t(i, k)
+          y15 = t0c - t(i, k)
+        ELSE
+          y15 = 90.
+          g_y15 = 0.0_8
+        END IF
+        IF (0. .LT. y15) THEN
+          g_max35 = g_y15
+          max35 = y15
+        ELSE
+          max35 = 0.
+          g_max35 = 0.0_8
+        END IF
+        pwy1 = (bvts-2.)/4.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy1 .EQ. 0.0_8 .OR. pwy1 .NE. &
+&           INT(pwy1))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwy1*den(i, k)**(pwy1-1)*g_den(i, k)
+        END IF
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvts/4.
+        IF (max19 .LE. 0.0_8 .AND. (pwy2 .EQ. 0.0_8 .OR. pwy2 .NE. INT(&
+&           pwy2))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = pwy2*max19**(pwy2-1)*g_max19
+        END IF
+        pwr2 = max19**pwy2
+        g_arg1 = -(alpha*bvts*g_max35/4.)
+        arg1 = -(alpha*bvts*max35/4.)
+        temp0 = EXP(arg1)
+        g_vt2s = vt2s_a*(temp0*(pwr2*g_pwr1+pwr1*g_pwr2)+pwr1*pwr2*EXP(&
+&         arg1)*g_arg1)
+        vt2s = vt2s_a*(pwr1*pwr2*temp0)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y9 = -g_t(i, k)
+          y9 = t0c - t(i, k)
+        ELSE
+          y9 = 90.
+          g_y9 = 0.0_8
+        END IF
+        IF (0. .LT. y9) THEN
+          g_max20 = g_y9
+          max20 = y9
+        ELSE
+          max20 = 0.
+          g_max20 = 0.0_8
+        END IF
+        g_a = EXP(alpha*max20)*alpha*g_max20
+        a = EXP(alpha*max20)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y10 = -g_t(i, k)
+          y10 = t0c - t(i, k)
+        ELSE
+          y10 = 90.
+          g_y10 = 0.0_8
+        END IF
+        IF (0. .LT. y10) THEN
+          g_max21 = g_y10
+          max21 = y10
+        ELSE
+          max21 = 0.
+          g_max21 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max36 = qcrmin
+          g_max36 = 0.0_8
+        ELSE
+          g_max36 = g_qrs(i, k, 2)
+          max36 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max45 = qcrmin
+          g_max45 = 0.0_8
+        ELSE
+          g_max45 = g_qrs(i, k, 3)
+          max45 = qrs(i, k, 3)
+        END IF
+        g_arg1 = -(alpha*3.*g_max21/2.)
+        arg1 = -(3.*alpha*max21/2.)
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max36 .LE. 0.0_8 .AND. (3./2. .EQ. 0.0_8 .OR. 3./2. .NE. INT&
+&           (3./2.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 3.*max36**(3./2.-1)*g_max36/2.
+        END IF
+        pwr2 = max36**(3./2.)
+        temp0 = SQRT(max45)
+        IF (max45 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max45/(2.0*temp0)
+        END IF
+        result1 = temp0
+        temp0 = SQRT(result1)
+        IF (result1 .EQ. 0.0_8) THEN
+          g_result2 = 0.0_8
+        ELSE
+          g_result2 = g_result1/(2.0*temp0)
+        END IF
+        result2 = temp0
+        temp0 = pwr1*pwr2*result2
+        temp = EXP(arg1)
+        g_b = temp0*EXP(arg1)*g_arg1 + temp*(result2*(pwr2*g_pwr1+pwr1*&
+&         g_pwr2)+pwr1*pwr2*g_result2)
+        b = temp*temp0
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y11 = -g_t(i, k)
+          y11 = t0c - t(i, k)
+        ELSE
+          y11 = 90.
+          g_y11 = 0.0_8
+        END IF
+        IF (0. .LT. y11) THEN
+          g_max22 = g_y11
+          max22 = y11
+        ELSE
+          max22 = 0.
+          g_max22 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max37 = qcrmin
+          g_max37 = 0.0_8
+        ELSE
+          g_max37 = g_qrs(i, k, 2)
+          max37 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max46 = qcrmin
+          g_max46 = 0.0_8
+        ELSE
+          g_max46 = g_qrs(i, k, 3)
+          max46 = qrs(i, k, 3)
+        END IF
+        g_arg1 = -(alpha*5.*g_max22/4.)
+        arg1 = -(5.*alpha*max22/4.)
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max37 .LE. 0.0_8 .AND. (5./4. .EQ. 0.0_8 .OR. 5./4. .NE. INT&
+&           (5./4.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 5.*max37**(5./4.-1)*g_max37/4.
+        END IF
+        pwr2 = max37**(5./4.)
+        temp0 = SQRT(max46)
+        IF (max46 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_max46/(2.0*temp0)
+        END IF
+        result1 = temp0
+        temp0 = pwr1*pwr2*result1
+        temp = EXP(arg1)
+        g_c = temp0*EXP(arg1)*g_arg1 + temp*(result1*(pwr2*g_pwr1+pwr1*&
+&         g_pwr2)+pwr1*pwr2*g_result1)
+        c = temp*temp0
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y12 = -g_t(i, k)
+          y12 = t0c - t(i, k)
+        ELSE
+          y12 = 90.
+          g_y12 = 0.0_8
+        END IF
+        IF (0. .LT. y12) THEN
+          g_max23 = g_y12
+          max23 = y12
+        ELSE
+          max23 = 0.
+          g_max23 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max38 = qcrmin
+          g_max38 = 0.0_8
+        ELSE
+          g_max38 = g_qrs(i, k, 2)
+          max38 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max47 = qcrmin
+          g_max47 = 0.0_8
+        ELSE
+          g_max47 = g_qrs(i, k, 3)
+          max47 = qrs(i, k, 3)
+        END IF
+        IF (den(i, k) .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE.&
+&           INT(3./4.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = 3.*den(i, k)**(3./4.-1)*g_den(i, k)/4.
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        IF (max47 .LE. 0.0_8 .AND. (3./4. .EQ. 0.0_8 .OR. 3./4. .NE. INT&
+&           (3./4.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 3.*max47**(3./4.-1)*g_max47/4.
+        END IF
+        pwr2 = max47**(3./4.)
+        temp0 = pwr1*max38*pwr2
+        temp = EXP(-(alpha*max23))
+        g_d = temp*(pwr2*(max38*g_pwr1+pwr1*g_max38)+pwr1*max38*g_pwr2) &
+&         - temp0*EXP(-(alpha*max23))*alpha*g_max23
+        d = temp*temp0
+        IF (vt2g - vt2s .GE. 0.) THEN
+          g_abs6 = g_vt2g - g_vt2s
+          abs6 = vt2g - vt2s
+        ELSE
+          g_abs6 = g_vt2s - g_vt2g
+          abs6 = -(vt2g-vt2s)
+        END IF
+        temp0 = pgacs_b*b + pgacs_c*c + pgacs_d*d
+        temp = a*abs6*egs
+        g_pgacs1 = pgacs_a*(temp0*(egs*(abs6*g_a+a*g_abs6)+a*abs6*g_egs)&
+&         +temp*(pgacs_b*g_b+pgacs_c*g_c+pgacs_d*g_d))
+        pgacs1 = pgacs_a*(temp*temp0)
+        IF (pgacs1 .GT. qrs(i, k, 2)/dtcld) THEN
+          g_pgacs(i, k) = g_qrs(i, k, 2)/dtcld
+          pgacs(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          g_pgacs(i, k) = g_pgacs1
+          pgacs(i, k) = pgacs1
+        END IF
+        IF (pgacs(i, k) .GE. 0.) THEN
+          abs7 = pgacs(i, k)
+        ELSE
+          abs7 = -pgacs(i, k)
+        END IF
+!pgacs(i,k)=fqg*fqs*pgacs(i,k)
+        IF (abs7 .LT. qmin/dtcld) THEN
           g_pgacs(i, k) = 0.0_8
           pgacs(i, k) = 0.
         END IF
+        IF (qrs(i, k, 2) - pgacs(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_qrs(i, k, 2) - dtcld*g_pgacs(i, k)
+          qrs(i, k, 2) = qrs(i, k, 2) - pgacs(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgacs(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgacs(i, k)
+          qrs(i, k, 3) = qrs(i, k, 3) + pgacs(i, k)*dtcld
+        END IF
+        g_pgacs(i, k) = 0.0_8
+        pgacs(i, k) = 0.
 !-------------------------------------------------------------
 ! pseml: Enhanced melting of snow by accretion of water
 !        (T>=T0: S->R) pseml<0 max=0,min=-qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
-        g_supcol = -g_t(i, k)
-        supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 2) .GT. 0.) THEN
+!         supcol = t0c-t(i,k) ! not change
 !update cpm
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
-          temp0 = supcol/xlf
-          temp = psacw(i, k) + psacr(i, k)
-          g_x6 = cliq*(temp0*(g_psacw(i, k)+g_psacr(i, k))+temp*(&
-&           g_supcol-temp0*g_xlf)/xlf)
-          x6 = cliq*(temp*temp0)
-          IF (x6 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-            g_x4 = -(g_qrs(i, k, 2)/dtcld)
-            x4 = -(qrs(i, k, 2)/dtcld)
-          ELSE
-            g_x4 = g_x6
-            x4 = x6
-          END IF
-          IF (x4 .GT. 0.) THEN
-            g_pseml(i, k) = 0.0_8
-            pseml(i, k) = 0.
-          ELSE
-            g_pseml(i, k) = g_x4
-            pseml(i, k) = x4
-          END IF
-          IF (pseml(i, k) .GE. 0.) THEN
-            abs8 = pseml(i, k)
-          ELSE
-            abs8 = -pseml(i, k)
-          END IF
-          IF (abs8 .LT. qmin/dtcld) THEN
-            g_pseml(i, k) = 0.0_8
-            pseml(i, k) = 0.
-          END IF
-          IF (qrs(i, k, 1) - pseml(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 1) = 0.0_8
-            qrs(i, k, 1) = 0.
-          ELSE
-            g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*g_pseml(i, k)
-            qrs(i, k, 1) = qrs(i, k, 1) - pseml(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + pseml(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 2) = 0.0_8
-            qrs(i, k, 2) = 0.
-          ELSE
-            g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_pseml(i, k)
-            qrs(i, k, 2) = qrs(i, k, 2) + pseml(i, k)*dtcld
-          END IF
-          temp0 = pseml(i, k)*xlf/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_pseml(i, k)+pseml(i, k)*&
-&           g_xlf-temp0*g_cpm(i, k))/cpm(i, k)
-          t(i, k) = t(i, k) + dtcld*temp0
+!         cpm(i,k)=cpmcal(q(i,k)) ! not change
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
+        END IF
+        CALL G_SMOOTHIF(t(i, k), g_t(i, k), t0c, ft0, g_ft0, 't0')
+        CALL G_SMOOTHIF(qrs(i, k, 2), g_qrs(i, k, 2), 0., fqs, g_fqs, &
+&                 'q+')
+        temp0 = supcol/xlf
+        temp = psacw(i, k) + psacr(i, k)
+        g_x7 = cliq*(temp0*(g_psacw(i, k)+g_psacr(i, k))+temp*(g_supcol-&
+&         temp0*g_xlf)/xlf)
+        x7 = cliq*(temp*temp0)
+        IF (x7 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+          g_x5 = -(g_qrs(i, k, 2)/dtcld)
+          x5 = -(qrs(i, k, 2)/dtcld)
+        ELSE
+          g_x5 = g_x7
+          x5 = x7
+        END IF
+        IF (x5 .GT. 0.) THEN
           g_pseml(i, k) = 0.0_8
           pseml(i, k) = 0.
-          g_psacw(i, k) = 0.0_8
-          psacw(i, k) = 0.
-          g_psacr(i, k) = 0.0_8
-          psacr(i, k) = 0.
+        ELSE
+          g_pseml(i, k) = g_x5
+          pseml(i, k) = x5
         END IF
+        g_pseml(i, k) = pseml(i, k)*(fqs*g_ft0+ft0*g_fqs) + ft0*fqs*&
+&         g_pseml(i, k)
+        pseml(i, k) = ft0*fqs*pseml(i, k)
+        IF (pseml(i, k) .GE. 0.) THEN
+          abs8 = pseml(i, k)
+        ELSE
+          abs8 = -pseml(i, k)
+        END IF
+        IF (abs8 .LT. qmin/dtcld) THEN
+          g_pseml(i, k) = 0.0_8
+          pseml(i, k) = 0.
+        END IF
+        IF (qrs(i, k, 1) - pseml(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*g_pseml(i, k)
+          qrs(i, k, 1) = qrs(i, k, 1) - pseml(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + pseml(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_pseml(i, k)
+          qrs(i, k, 2) = qrs(i, k, 2) + pseml(i, k)*dtcld
+        END IF
+        temp0 = pseml(i, k)*xlf/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_pseml(i, k)+pseml(i, k)*&
+&         g_xlf-temp0*g_cpm(i, k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*temp0
+        g_pseml(i, k) = 0.0_8
+        pseml(i, k) = 0.
+        g_psacw(i, k) = 0.0_8
+        psacw(i, k) = 0.
+        g_psacr(i, k) = 0.0_8
+        psacr(i, k) = 0.
 !-------------------------------------------------------------
 ! pgeml: Enhanced melting of graupel by accretion of water [RH84 A21-A22]
 !        (T>=T0: G->R) pgeml<0 max=0,min=-qrs(i,k,3)/dtcld
 !-------------------------------------------------------------
         g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 3) .GT. 0.) THEN
 !update cpm
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_xlf = -g_xl(i, k)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            g_xlf = 0.0_8
-          END IF
-          temp0 = supcol/xlf
-          temp = pgacw(i, k) + pgacr(i, k)
-          g_x7 = cliq*(temp0*(g_pgacw(i, k)+g_pgacr(i, k))+temp*(&
-&           g_supcol-temp0*g_xlf)/xlf)
-          x7 = cliq*(temp*temp0)
-          IF (x7 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-            g_x5 = -(g_qrs(i, k, 3)/dtcld)
-            x5 = -(qrs(i, k, 3)/dtcld)
-          ELSE
-            g_x5 = g_x7
-            x5 = x7
-          END IF
-          IF (x5 .GT. 0.) THEN
-            g_pgeml(i, k) = 0.0_8
-            pgeml(i, k) = 0.
-          ELSE
-            g_pgeml(i, k) = g_x5
-            pgeml(i, k) = x5
-          END IF
-          IF (pgeml(i, k) .GE. 0.) THEN
-            abs9 = pgeml(i, k)
-          ELSE
-            abs9 = -pgeml(i, k)
-          END IF
-          IF (abs9 .LT. qmin/dtcld) THEN
-            g_pgeml(i, k) = 0.0_8
-            pgeml(i, k) = 0.
-          END IF
-          IF (qrs(i, k, 1) - pgeml(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 1) = 0.0_8
-            qrs(i, k, 1) = 0.
-          ELSE
-            g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*g_pgeml(i, k)
-            qrs(i, k, 1) = qrs(i, k, 1) - pgeml(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgeml(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 3) = 0.0_8
-            qrs(i, k, 3) = 0.
-          ELSE
-            g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgeml(i, k)
-            qrs(i, k, 3) = qrs(i, k, 3) + pgeml(i, k)*dtcld
-          END IF
-          temp0 = pgeml(i, k)*xlf/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_pgeml(i, k)+pgeml(i, k)*&
-&           g_xlf-temp0*g_cpm(i, k))/cpm(i, k)
-          t(i, k) = t(i, k) + dtcld*temp0
+!         cpm(i,k)=cpmcal(q(i,k)) ! not change
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_xlf = -g_xl(i, k)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          g_xlf = 0.0_8
+        END IF
+        CALL G_SMOOTHIF(t(i, k), g_t(i, k), t0c, ft0, g_ft0, 't0')
+        CALL G_SMOOTHIF(qrs(i, k, 3), g_qrs(i, k, 3), 0., fqg, g_fqg, &
+&                 'q+')
+        temp0 = supcol/xlf
+        temp = pgacw(i, k) + pgacr(i, k)
+        g_x8 = cliq*(temp0*(g_pgacw(i, k)+g_pgacr(i, k))+temp*(g_supcol-&
+&         temp0*g_xlf)/xlf)
+        x8 = cliq*(temp*temp0)
+        IF (x8 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+          g_x6 = -(g_qrs(i, k, 3)/dtcld)
+          x6 = -(qrs(i, k, 3)/dtcld)
+        ELSE
+          g_x6 = g_x8
+          x6 = x8
+        END IF
+        IF (x6 .GT. 0.) THEN
           g_pgeml(i, k) = 0.0_8
           pgeml(i, k) = 0.
-          g_pgacw(i, k) = 0.0_8
-          pgacw(i, k) = 0.
-          g_pgacr(i, k) = 0.0_8
-          pgacr(i, k) = 0.
+        ELSE
+          g_pgeml(i, k) = g_x6
+          pgeml(i, k) = x6
         END IF
+        g_pgeml(i, k) = pgeml(i, k)*(fqg*g_ft0+ft0*g_fqg) + ft0*fqg*&
+&         g_pgeml(i, k)
+        pgeml(i, k) = ft0*fqg*pgeml(i, k)
+        IF (pgeml(i, k) .GE. 0.) THEN
+          abs9 = pgeml(i, k)
+        ELSE
+          abs9 = -pgeml(i, k)
+        END IF
+        IF (abs9 .LT. qmin/dtcld) THEN
+          g_pgeml(i, k) = 0.0_8
+          pgeml(i, k) = 0.
+        END IF
+        IF (qrs(i, k, 1) - pgeml(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 1) = 0.0_8
+          qrs(i, k, 1) = 0.
+        ELSE
+          g_qrs(i, k, 1) = g_qrs(i, k, 1) - dtcld*g_pgeml(i, k)
+          qrs(i, k, 1) = qrs(i, k, 1) - pgeml(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgeml(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgeml(i, k)
+          qrs(i, k, 3) = qrs(i, k, 3) + pgeml(i, k)*dtcld
+        END IF
+        temp0 = pgeml(i, k)*xlf/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*(xlf*g_pgeml(i, k)+pgeml(i, k)*&
+&         g_xlf-temp0*g_cpm(i, k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*temp0
+        g_pgeml(i, k) = 0.0_8
+        pgeml(i, k) = 0.
+        g_pgacw(i, k) = 0.0_8
+        pgacw(i, k) = 0.
+        g_pgacr(i, k) = 0.0_8
+        pgacr(i, k) = 0.
       END DO
     END DO
   END SUBROUTINE G_ACCRET2
@@ -5960,9 +6813,9 @@ CONTAINS
     REAL :: acrfac1, acrfac2, acrfac3, acrfac4, pracs1, psacr1, pgacr1, &
 &   pgacs1
     INTEGER :: i, k
-    REAL :: temp1, delta2, a, b, c, d
-    INTRINSIC MIN
+    REAL :: fsupcol, ft0, fqr, fqs, fqg, temp1, delta2, a, b, c, d
     INTRINSIC MAX
+    INTRINSIC MIN
     INTRINSIC EXP
     INTRINSIC SQRT
     INTRINSIC ABS
@@ -5974,45 +6827,78 @@ CONTAINS
     REAL :: y6
     REAL :: y7
     REAL :: y8
-    REAL :: y9
-    REAL :: y10
     REAL :: x1
     REAL :: x2
     REAL :: x3
+    REAL :: x4
+    REAL :: y9
+    REAL :: y10
     REAL :: y11
     REAL :: y12
+    REAL :: x5
+    REAL :: x6
     REAL :: y13
     REAL :: y14
     REAL :: y15
-    REAL :: x4
-    REAL :: x5
-    REAL :: x6
     REAL :: x7
+    REAL :: x8
     REAL :: max1
     REAL :: max2
     REAL :: max3
     REAL :: max4
     REAL :: max5
+    REAL :: max6
     REAL :: abs0
     REAL :: abs1
-    REAL :: max6
     REAL :: max7
     REAL :: max8
     REAL :: max9
     REAL :: max10
-    REAL :: abs2
-    REAL :: abs3
-    REAL :: abs4
-    REAL :: abs5
     REAL :: max11
     REAL :: max12
+    REAL :: abs2
+    REAL :: abs3
     REAL :: max13
     REAL :: max14
     REAL :: max15
+    REAL :: max16
+    REAL :: max17
+    REAL :: abs4
+    REAL :: abs5
+    REAL :: max18
+    REAL :: max19
+    REAL :: max20
+    REAL :: max21
+    REAL :: max22
+    REAL :: max23
     REAL :: abs6
     REAL :: abs7
     REAL :: abs8
     REAL :: abs9
+    REAL :: max24
+    REAL :: max25
+    REAL :: max26
+    REAL :: max27
+    REAL :: max28
+    REAL :: max29
+    REAL :: max30
+    REAL :: max31
+    REAL :: max32
+    REAL :: max33
+    REAL :: max34
+    REAL :: max35
+    REAL :: max36
+    REAL :: max37
+    REAL :: max38
+    REAL :: max39
+    REAL :: max40
+    REAL :: max41
+    REAL :: max42
+    REAL :: max43
+    REAL :: max44
+    REAL :: max45
+    REAL :: max46
+    REAL :: max47
     REAL :: pwy1
     REAL :: pwr1
     REAL :: pwy2
@@ -6027,529 +6913,694 @@ CONTAINS
 !         (T<T0: S->G) pracs: min=0., max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k&
-&           , 2) .GT. qcrmin) THEN
-          pwy1 = (bvtr-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtr/4.
-          pwr2 = qrs(i, k, 1)**pwy2
-          vt2r = vt2r_a*pwr1*pwr2
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y1 = t0c - t(i, k)
-          ELSE
-            y1 = 90.
-          END IF
-          IF (0. .LT. y1) THEN
-            max1 = y1
-          ELSE
-            max1 = 0.
-          END IF
-          pwy1 = (bvts-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvts/4.
-          pwr2 = qrs(i, k, 2)**pwy2
-          arg1 = -(alpha*bvts*max1/4.)
-          vt2s = vt2s_a*pwr1*pwr2*EXP(arg1)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y2 = t0c - t(i, k)
-          ELSE
-            y2 = 90.
-          END IF
-          IF (0. .LT. y2) THEN
-            max2 = y2
-          ELSE
-            max2 = 0.
-          END IF
-          a = EXP(alpha*max2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y3 = t0c - t(i, k)
-          ELSE
-            y3 = 90.
-          END IF
-          IF (0. .LT. y3) THEN
-            max3 = y3
-          ELSE
-            max3 = 0.
-          END IF
-          arg1 = -(3.*alpha*max3/2.)
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 2)**(3./2.)
-          result1 = SQRT(qrs(i, k, 1))
-          result2 = SQRT(result1)
-          b = EXP(arg1)*pwr1*pwr2*result2
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y4 = t0c - t(i, k)
-          ELSE
-            y4 = 90.
-          END IF
-          IF (0. .LT. y4) THEN
-            max4 = y4
-          ELSE
-            max4 = 0.
-          END IF
-          arg1 = -(5.*alpha*max4/4.)
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 2)**(5./4.)
-          result1 = SQRT(qrs(i, k, 1))
-          c = EXP(arg1)*pwr1*pwr2*result1
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y5 = t0c - t(i, k)
-          ELSE
-            y5 = 90.
-          END IF
-          IF (0. .LT. y5) THEN
-            max5 = y5
-          ELSE
-            max5 = 0.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 1)**(3./4.)
-          d = EXP(-(alpha*max5))*pwr1*qrs(i, k, 2)*pwr2
-          IF (vt2r - vt2s .GE. 0.) THEN
-            abs0 = vt2r - vt2s
-          ELSE
-            abs0 = -(vt2r-vt2s)
-          END IF
-          pracs1 = pracs_a*a*abs0*(pracs_b*b+pracs_c*c+pracs_d*d)
-          IF (pracs1 .GT. qrs(i, k, 2)/dtcld) THEN
-            pracs(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            pracs(i, k) = pracs1
-          END IF
-          IF (pracs(i, k) .GE. 0.) THEN
-            abs1 = pracs(i, k)
-          ELSE
-            abs1 = -pracs(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) pracs(i, k) = 0.
-          IF (qrs(i, k, 2) - pracs(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) - pracs(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pracs(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pracs(i, k)*dtcld
-          END IF
-          pracs(i, k) = 0.
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max1 = qcrmin
+        ELSE
+          max1 = qrs(i, k, 1)
         END IF
+!call smoothif(qrs(i,k,1),1.e-4,fqr,'q0')
+!call smoothif(qrs(i,k,2),1.e-4,fqs,'q0')
+        pwy1 = (bvtr-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtr/4.
+        pwr2 = max1**pwy2
+        vt2r = vt2r_a*pwr1*pwr2
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max2 = qcrmin
+        ELSE
+          max2 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y13 = t0c - t(i, k)
+        ELSE
+          y13 = 90.
+        END IF
+        IF (0. .LT. y13) THEN
+          max24 = y13
+        ELSE
+          max24 = 0.
+        END IF
+        pwy1 = (bvts-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvts/4.
+        pwr2 = max2**pwy2
+        arg1 = -(alpha*bvts*max24/4.)
+        vt2s = vt2s_a*pwr1*pwr2*EXP(arg1)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y1 = t0c - t(i, k)
+        ELSE
+          y1 = 90.
+        END IF
+        IF (0. .LT. y1) THEN
+          max3 = y1
+        ELSE
+          max3 = 0.
+        END IF
+        a = EXP(alpha*max3)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y2 = t0c - t(i, k)
+        ELSE
+          y2 = 90.
+        END IF
+        IF (0. .LT. y2) THEN
+          max4 = y2
+        ELSE
+          max4 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max25 = qcrmin
+        ELSE
+          max25 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max39 = qcrmin
+        ELSE
+          max39 = qrs(i, k, 1)
+        END IF
+        arg1 = -(3.*alpha*max4/2.)
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max25**(3./2.)
+        result1 = SQRT(max39)
+        result2 = SQRT(result1)
+        b = EXP(arg1)*pwr1*pwr2*result2
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y3 = t0c - t(i, k)
+        ELSE
+          y3 = 90.
+        END IF
+        IF (0. .LT. y3) THEN
+          max5 = y3
+        ELSE
+          max5 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max26 = qcrmin
+        ELSE
+          max26 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max40 = qcrmin
+        ELSE
+          max40 = qrs(i, k, 1)
+        END IF
+        arg1 = -(5.*alpha*max5/4.)
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max26**(5./4.)
+        result1 = SQRT(max40)
+        c = EXP(arg1)*pwr1*pwr2*result1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y4 = t0c - t(i, k)
+        ELSE
+          y4 = 90.
+        END IF
+        IF (0. .LT. y4) THEN
+          max6 = y4
+        ELSE
+          max6 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max27 = qcrmin
+        ELSE
+          max27 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max41 = qcrmin
+        ELSE
+          max41 = qrs(i, k, 1)
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max41**(3./4.)
+        d = EXP(-(alpha*max6))*pwr1*max27*pwr2
+        IF (vt2r - vt2s .GE. 0.) THEN
+          abs0 = vt2r - vt2s
+        ELSE
+          abs0 = -(vt2r-vt2s)
+        END IF
+        pracs1 = pracs_a*a*abs0*(pracs_b*b+pracs_c*c+pracs_d*d)
+        IF (pracs1 .GT. qrs(i, k, 2)/dtcld) THEN
+          pracs(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          pracs(i, k) = pracs1
+        END IF
+        pracs(i, k) = fsupcol*pracs(i, k)
+        IF (pracs(i, k) .GE. 0.) THEN
+          abs1 = pracs(i, k)
+        ELSE
+          abs1 = -pracs(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) pracs(i, k) = 0.
+        IF (qrs(i, k, 2) - pracs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) - pracs(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pracs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pracs(i, k)*dtcld
+        END IF
+        pracs(i, k) = 0.
 !-------------------------------------------------------------
 ! psacr: Accretion of rain by snow [LFO 28]
 !         (T< T0: R->S or R->G)                 min=0.,max=qrs(i,k,1)/dtcld
 !         (T>=T0: S->R enhance melting of snow) min=0.,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k, 2) .GT. qcrmin) &
-&       THEN
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,0.,fsupcol,'t0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
+!call smoothif(qrs(i,k,2),qcrmin,fqs,'q0')
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          pwy1 = (bvtr-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtr/4.
-          pwr2 = qrs(i, k, 1)**pwy2
-          vt2r = vt2r_a*pwr1*pwr2
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y6 = t0c - t(i, k)
-          ELSE
-            y6 = 90.
-          END IF
-          IF (0. .LT. y6) THEN
-            max6 = y6
-          ELSE
-            max6 = 0.
-          END IF
-          pwy1 = (bvts-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvts/4.
-          pwr2 = qrs(i, k, 2)**pwy2
-          arg1 = -(alpha*bvts*max6/4.)
-          vt2s = vt2s_a*pwr1*pwr2*EXP(arg1)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y7 = t0c - t(i, k)
-          ELSE
-            y7 = 90.
-          END IF
-          IF (0. .LT. y7) THEN
-            max7 = y7
-          ELSE
-            max7 = 0.
-          END IF
-          a = EXP(alpha*max7)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y8 = t0c - t(i, k)
-          ELSE
-            y8 = 90.
-          END IF
-          IF (0. .LT. y8) THEN
-            max8 = y8
-          ELSE
-            max8 = 0.
-          END IF
-          arg1 = -(alpha*max8/4.)
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 1)**(3./2.)
-          result1 = SQRT(qrs(i, k, 2))
-          result2 = SQRT(result1)
-          b = EXP(arg1)*pwr1*pwr2*result2
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y9 = t0c - t(i, k)
-          ELSE
-            y9 = 90.
-          END IF
-          IF (0. .LT. y9) THEN
-            max9 = y9
-          ELSE
-            max9 = 0.
-          END IF
-          arg1 = -(alpha*max9/2.)
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 1)**(5./4.)
-          result1 = SQRT(qrs(i, k, 2))
-          c = EXP(arg1)*pwr1*pwr2*result1
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y10 = t0c - t(i, k)
-          ELSE
-            y10 = 90.
-          END IF
-          IF (0. .LT. y10) THEN
-            max10 = y10
-          ELSE
-            max10 = 0.
-          END IF
-          arg1 = -(3.*alpha*max10/4.)
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 2)**(3./4.)
-          d = EXP(arg1)*pwr1*qrs(i, k, 1)*pwr2
-          IF (vt2r - vt2s .GE. 0.) THEN
-            abs2 = vt2r - vt2s
-          ELSE
-            abs2 = -(vt2r-vt2s)
-          END IF
-          psacr(i, k) = psacr_a*a*abs2*(psacr_b*b+psacr_c*c+psacr_d*d)
-          IF (psacr(i, k) .GE. 0.) THEN
-            abs3 = psacr(i, k)
-          ELSE
-            abs3 = -psacr(i, k)
-          END IF
-          IF (abs3 .LT. qmin/dtcld) psacr(i, k) = 0.
-!update qr qs qg
-          IF (qrs(i, k, 1) .LT. 1.e-4 .AND. qrs(i, k, 2) .LT. 1.e-4) &
-&         THEN
-            delta2 = 1.
-          ELSE
-            delta2 = 0.
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (psacr(i, k) .GT. qrs(i, k, 1)/dtcld) THEN
-              psacr(i, k) = qrs(i, k, 1)/dtcld
-            ELSE
-              psacr(i, k) = psacr(i, k)
-            END IF
-            IF (qrs(i, k, 1) - psacr(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 1) = 0.
-            ELSE
-              qrs(i, k, 1) = qrs(i, k, 1) - psacr(i, k)*dtcld
-            END IF
-            x1 = qrs(i, k, 2) + delta2*psacr(i, k)*dtcld
-            IF (x1 .LT. 0.) THEN
-              qrs(i, k, 2) = 0.
-            ELSE
-              qrs(i, k, 2) = x1
-            END IF
-            x2 = qrs(i, k, 3) + (1-delta2)*psacr(i, k)*dtcld
-            IF (x2 .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = x2
-            END IF
-            t(i, k) = t(i, k) + psacr(i, k)*dtcld*xlf/cpm(i, k)
-            psacr(i, k) = 0.
-          ELSE IF (psacr(i, k) .GT. qrs(i, k, 2)/dtcld) THEN
-            psacr(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            psacr(i, k) = psacr(i, k)
-          END IF
+        cpm(i, k) = CPMCAL(q(i, k))
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max7 = qcrmin
+        ELSE
+          max7 = qrs(i, k, 1)
         END IF
+        pwy1 = (bvtr-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtr/4.
+        pwr2 = max7**pwy2
+        vt2r = vt2r_a*pwr1*pwr2
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max8 = qcrmin
+        ELSE
+          max8 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y14 = t0c - t(i, k)
+        ELSE
+          y14 = 90.
+        END IF
+        IF (0. .LT. y14) THEN
+          max28 = y14
+        ELSE
+          max28 = 0.
+        END IF
+        pwy1 = (bvts-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvts/4.
+        pwr2 = max8**pwy2
+        arg1 = -(alpha*bvts*max28/4.)
+        vt2s = vt2s_a*pwr1*pwr2*EXP(arg1)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y5 = t0c - t(i, k)
+        ELSE
+          y5 = 90.
+        END IF
+        IF (0. .LT. y5) THEN
+          max9 = y5
+        ELSE
+          max9 = 0.
+        END IF
+        a = EXP(alpha*max9)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y6 = t0c - t(i, k)
+        ELSE
+          y6 = 90.
+        END IF
+        IF (0. .LT. y6) THEN
+          max10 = y6
+        ELSE
+          max10 = 0.
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max29 = qcrmin
+        ELSE
+          max29 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max42 = qcrmin
+        ELSE
+          max42 = qrs(i, k, 2)
+        END IF
+        arg1 = -(alpha*max10/4.)
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max29**(3./2.)
+        result1 = SQRT(max42)
+        result2 = SQRT(result1)
+        b = EXP(arg1)*pwr1*pwr2*result2
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y7 = t0c - t(i, k)
+        ELSE
+          y7 = 90.
+        END IF
+        IF (0. .LT. y7) THEN
+          max11 = y7
+        ELSE
+          max11 = 0.
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max30 = qcrmin
+        ELSE
+          max30 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max43 = qcrmin
+        ELSE
+          max43 = qrs(i, k, 2)
+        END IF
+        arg1 = -(alpha*max11/2.)
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max30**(5./4.)
+        result1 = SQRT(max43)
+        c = EXP(arg1)*pwr1*pwr2*result1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y8 = t0c - t(i, k)
+        ELSE
+          y8 = 90.
+        END IF
+        IF (0. .LT. y8) THEN
+          max12 = y8
+        ELSE
+          max12 = 0.
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max31 = qcrmin
+        ELSE
+          max31 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max44 = qcrmin
+        ELSE
+          max44 = qrs(i, k, 2)
+        END IF
+        arg1 = -(3.*alpha*max12/4.)
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max44**(3./4.)
+        d = EXP(arg1)*pwr1*max31*pwr2
+        IF (vt2r - vt2s .GE. 0.) THEN
+          abs2 = vt2r - vt2s
+        ELSE
+          abs2 = -(vt2r-vt2s)
+        END IF
+        psacr1 = psacr_a*a*abs2*(psacr_b*b+psacr_c*c+psacr_d*d)
+        IF (supcol .GT. 0.) THEN
+          IF (psacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+            psacr(i, k) = qrs(i, k, 1)/dtcld
+          ELSE
+            psacr(i, k) = psacr1
+          END IF
+        ELSE IF (psacr1 .GT. qrs(i, k, 2)/dtcld) THEN
+          psacr(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          psacr(i, k) = psacr1
+        END IF
+        IF (psacr(i, k) .GE. 0.) THEN
+          abs3 = psacr(i, k)
+        ELSE
+          abs3 = -psacr(i, k)
+        END IF
+!psacr(i,k)=fqr*fqs*psacr(i,k)
+        IF (abs3 .LT. qmin/dtcld) psacr(i, k) = 0.
+!update qr qs qg
+        IF (qrs(i, k, 1) .LT. 1.e-4 .AND. qrs(i, k, 2) .LT. 1.e-4) THEN
+          delta2 = 1.
+        ELSE
+          delta2 = 0.
+        END IF
+        IF (qrs(i, k, 1) - fsupcol*psacr(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - fsupcol*psacr(i, k)*dtcld
+        END IF
+        x1 = qrs(i, k, 2) + fsupcol*delta2*psacr(i, k)*dtcld
+        IF (x1 .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = x1
+        END IF
+        x2 = qrs(i, k, 3) + fsupcol*(1-delta2)*psacr(i, k)*dtcld
+        IF (x2 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x2
+        END IF
+        t(i, k) = t(i, k) + fsupcol*psacr(i, k)*dtcld*xlf/cpm(i, k)
+! t>=t0 pseml 
+        psacr(i, k) = (1-fsupcol)*psacr(i, k)
 !-------------------------------------------------------------
 ! pgacr: Accretion of rain by graupel [LFO 42]
 !         (T< T0: R->G)                            min=0.,max=qrs(i,k,1)/dtcld
 !         (T>=T0: G->R enhance melting of graupel) min=0.,max=qrs(i,k,3)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k, 3) .GT. qcrmin) &
-&       THEN
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          pwy1 = (bvtr-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtr/4.
-          pwr2 = qrs(i, k, 1)**pwy2
-          vt2r = vt2r_a*pwr1*pwr2
-          pwy1 = (bvtg-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtg/4.
-          pwr2 = qrs(i, k, 3)**pwy2
-          vt2g = vt2g_a*pwr1*pwr2
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 1)**(3./2.)
-          result1 = SQRT(qrs(i, k, 3))
-          result2 = SQRT(result1)
-          b = pwr1*pwr2*result2
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 1)**(5./4.)
-          result1 = SQRT(qrs(i, k, 3))
-          c = pwr1*pwr2*result1
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 3)**(3./4.)
-          d = pwr1*qrs(i, k, 1)*pwr2
-          IF (vt2r - vt2g .GE. 0.) THEN
-            abs4 = vt2r - vt2g
-          ELSE
-            abs4 = -(vt2r-vt2g)
-          END IF
-          pgacr(i, k) = pgacr_a*abs4*(pgacr_b*b+pgacr_c*c+pgacr_d*d)
-          IF (pgacr(i, k) .GE. 0.) THEN
-            abs5 = pgacr(i, k)
-          ELSE
-            abs5 = -pgacr(i, k)
-          END IF
-          IF (abs5 .LT. qmin/dtcld) pgacr(i, k) = 0.
-! update qr,qg,t
-          IF (supcol .GT. 0.) THEN
-            IF (pgacr(i, k) .GT. qrs(i, k, 1)/dtcld) THEN
-              pgacr(i, k) = qrs(i, k, 1)/dtcld
-            ELSE
-              pgacr(i, k) = pgacr(i, k)
-            END IF
-            IF (qrs(i, k, 1) - pgacr(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 1) = 0.
-            ELSE
-              qrs(i, k, 1) = qrs(i, k, 1) - pgacr(i, k)*dtcld
-            END IF
-            IF (qrs(i, k, 3) + pgacr(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = qrs(i, k, 3) + pgacr(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + pgacr(i, k)*dtcld*xlf/cpm(i, k)
-            pgacr(i, k) = 0.
-          ELSE IF (pgacr(i, k) .GT. qrs(i, k, 3)/dtcld) THEN
-            pgacr(i, k) = qrs(i, k, 3)/dtcld
-          ELSE
-            pgacr(i, k) = pgacr(i, k)
-          END IF
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max13 = qcrmin
+        ELSE
+          max13 = qrs(i, k, 1)
         END IF
+        pwy1 = (bvtr-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtr/4.
+        pwr2 = max13**pwy2
+        vt2r = vt2r_a*pwr1*pwr2
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max14 = qcrmin
+        ELSE
+          max14 = qrs(i, k, 3)
+        END IF
+        pwy1 = (bvtg-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtg/4.
+        pwr2 = max14**pwy2
+        vt2g = vt2g_a*pwr1*pwr2
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max15 = qcrmin
+        ELSE
+          max15 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max32 = qcrmin
+        ELSE
+          max32 = qrs(i, k, 3)
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max15**(3./2.)
+        result1 = SQRT(max32)
+        result2 = SQRT(result1)
+        b = pwr1*pwr2*result2
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max16 = qcrmin
+        ELSE
+          max16 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max33 = qcrmin
+        ELSE
+          max33 = qrs(i, k, 3)
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max16**(5./4.)
+        result1 = SQRT(max33)
+        c = pwr1*pwr2*result1
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max17 = qcrmin
+        ELSE
+          max17 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max34 = qcrmin
+        ELSE
+          max34 = qrs(i, k, 3)
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max34**(3./4.)
+        d = pwr1*max17*pwr2
+        IF (vt2r - vt2g .GE. 0.) THEN
+          abs4 = vt2r - vt2g
+        ELSE
+          abs4 = -(vt2r-vt2g)
+        END IF
+        pgacr1 = pgacr_a*abs4*(pgacr_b*b+pgacr_c*c+pgacr_d*d)
+        IF (supcol .GT. 0.) THEN
+          IF (pgacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+            pgacr(i, k) = qrs(i, k, 1)/dtcld
+          ELSE
+            pgacr(i, k) = pgacr1
+          END IF
+        ELSE IF (pgacr1 .GT. qrs(i, k, 3)/dtcld) THEN
+          pgacr(i, k) = qrs(i, k, 3)/dtcld
+        ELSE
+          pgacr(i, k) = pgacr1
+        END IF
+        IF (pgacr(i, k) .GE. 0.) THEN
+          abs5 = pgacr(i, k)
+        ELSE
+          abs5 = -pgacr(i, k)
+        END IF
+!pgacr(i,k)=fqg*fqr*pgacr(i,k)
+        IF (abs5 .LT. qmin/dtcld) pgacr(i, k) = 0.
+        IF (qrs(i, k, 1) - fsupcol*pgacr(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - fsupcol*pgacr(i, k)*dtcld
+        END IF
+        x3 = qrs(i, k, 3) + fsupcol*pgacr(i, k)*dtcld
+        IF (x3 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x3
+        END IF
+        t(i, k) = t(i, k) + fsupcol*pgacr(i, k)*dtcld*xlf/cpm(i, k)
+! t>=t0 pgeml 
+        pgacr(i, k) = (1-fsupcol)*pgacr(i, k)
 !-------------------------------------------------------------
 ! pgacs: Accretion of snow by graupel [LFO 29]
 !        (S->G) min=0,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (qrs(i, k, 2) .GT. qcrmin .AND. qrs(i, k, 3) .GT. qcrmin) &
-&       THEN
-          x3 = EXP(-(0.09*supcol))
-          IF (x3 .GT. 1.) THEN
-            egs = 1.
-          ELSE
-            egs = x3
-          END IF
-          pwy1 = (bvtg-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvtg/4.
-          pwr2 = qrs(i, k, 3)**pwy2
-          vt2g = vt2g_a*pwr1*pwr2
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y11 = t0c - t(i, k)
-          ELSE
-            y11 = 90.
-          END IF
-          IF (0. .LT. y11) THEN
-            max11 = y11
-          ELSE
-            max11 = 0.
-          END IF
-          pwy1 = (bvts-2.)/4.
-          pwr1 = den(i, k)**pwy1
-          pwy2 = bvts/4.
-          pwr2 = qrs(i, k, 2)**pwy2
-          arg1 = -(alpha*bvts*max11/4.)
-          vt2s = vt2s_a*pwr1*pwr2*EXP(arg1)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y12 = t0c - t(i, k)
-          ELSE
-            y12 = 90.
-          END IF
-          IF (0. .LT. y12) THEN
-            max12 = y12
-          ELSE
-            max12 = 0.
-          END IF
-          a = EXP(alpha*max12)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y13 = t0c - t(i, k)
-          ELSE
-            y13 = 90.
-          END IF
-          IF (0. .LT. y13) THEN
-            max13 = y13
-          ELSE
-            max13 = 0.
-          END IF
-          arg1 = -(3.*alpha*max13/2.)
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 2)**(3./2.)
-          result1 = SQRT(qrs(i, k, 3))
-          result2 = SQRT(result1)
-          b = EXP(arg1)*pwr1*pwr2*result2
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y14 = t0c - t(i, k)
-          ELSE
-            y14 = 90.
-          END IF
-          IF (0. .LT. y14) THEN
-            max14 = y14
-          ELSE
-            max14 = 0.
-          END IF
-          arg1 = -(5.*alpha*max14/4.)
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 2)**(5./4.)
-          result1 = SQRT(qrs(i, k, 3))
-          c = EXP(arg1)*pwr1*pwr2*result1
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y15 = t0c - t(i, k)
-          ELSE
-            y15 = 90.
-          END IF
-          IF (0. .LT. y15) THEN
-            max15 = y15
-          ELSE
-            max15 = 0.
-          END IF
-          pwr1 = den(i, k)**(3./4.)
-          pwr2 = qrs(i, k, 3)**(3./4.)
-          d = EXP(-(alpha*max15))*pwr1*qrs(i, k, 2)*pwr2
-          IF (vt2g - vt2s .GE. 0.) THEN
-            abs6 = vt2g - vt2s
-          ELSE
-            abs6 = -(vt2g-vt2s)
-          END IF
-          pgacs1 = pgacs_a*a*abs6*(pgacs_b*b+pgacs_c*c+pgacs_d*d)*egs
-          IF (pgacs1 .GT. qrs(i, k, 2)/dtcld) THEN
-            pgacs(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            pgacs(i, k) = pgacs1
-          END IF
-          IF (pgacs(i, k) .GE. 0.) THEN
-            abs7 = pgacs(i, k)
-          ELSE
-            abs7 = -pgacs(i, k)
-          END IF
-          IF (abs7 .LT. qmin/dtcld) pgacs(i, k) = 0.
-          IF (qrs(i, k, 2) - pgacs(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) - pgacs(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgacs(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgacs(i, k)*dtcld
-          END IF
-          pgacs(i, k) = 0.
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        x4 = EXP(-(0.09*supcol))
+        IF (x4 .GT. 1.) THEN
+          egs = 1.
+        ELSE
+          egs = x4
         END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max18 = qcrmin
+        ELSE
+          max18 = qrs(i, k, 3)
+        END IF
+        pwy1 = (bvtg-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvtg/4.
+        pwr2 = max18**pwy2
+        vt2g = vt2g_a*pwr1*pwr2
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max19 = qcrmin
+        ELSE
+          max19 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y15 = t0c - t(i, k)
+        ELSE
+          y15 = 90.
+        END IF
+        IF (0. .LT. y15) THEN
+          max35 = y15
+        ELSE
+          max35 = 0.
+        END IF
+        pwy1 = (bvts-2.)/4.
+        pwr1 = den(i, k)**pwy1
+        pwy2 = bvts/4.
+        pwr2 = max19**pwy2
+        arg1 = -(alpha*bvts*max35/4.)
+        vt2s = vt2s_a*pwr1*pwr2*EXP(arg1)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y9 = t0c - t(i, k)
+        ELSE
+          y9 = 90.
+        END IF
+        IF (0. .LT. y9) THEN
+          max20 = y9
+        ELSE
+          max20 = 0.
+        END IF
+        a = EXP(alpha*max20)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y10 = t0c - t(i, k)
+        ELSE
+          y10 = 90.
+        END IF
+        IF (0. .LT. y10) THEN
+          max21 = y10
+        ELSE
+          max21 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max36 = qcrmin
+        ELSE
+          max36 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max45 = qcrmin
+        ELSE
+          max45 = qrs(i, k, 3)
+        END IF
+        arg1 = -(3.*alpha*max21/2.)
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max36**(3./2.)
+        result1 = SQRT(max45)
+        result2 = SQRT(result1)
+        b = EXP(arg1)*pwr1*pwr2*result2
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y11 = t0c - t(i, k)
+        ELSE
+          y11 = 90.
+        END IF
+        IF (0. .LT. y11) THEN
+          max22 = y11
+        ELSE
+          max22 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max37 = qcrmin
+        ELSE
+          max37 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max46 = qcrmin
+        ELSE
+          max46 = qrs(i, k, 3)
+        END IF
+        arg1 = -(5.*alpha*max22/4.)
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max37**(5./4.)
+        result1 = SQRT(max46)
+        c = EXP(arg1)*pwr1*pwr2*result1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y12 = t0c - t(i, k)
+        ELSE
+          y12 = 90.
+        END IF
+        IF (0. .LT. y12) THEN
+          max23 = y12
+        ELSE
+          max23 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max38 = qcrmin
+        ELSE
+          max38 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max47 = qcrmin
+        ELSE
+          max47 = qrs(i, k, 3)
+        END IF
+        pwr1 = den(i, k)**(3./4.)
+        pwr2 = max47**(3./4.)
+        d = EXP(-(alpha*max23))*pwr1*max38*pwr2
+        IF (vt2g - vt2s .GE. 0.) THEN
+          abs6 = vt2g - vt2s
+        ELSE
+          abs6 = -(vt2g-vt2s)
+        END IF
+        pgacs1 = pgacs_a*a*abs6*(pgacs_b*b+pgacs_c*c+pgacs_d*d)*egs
+        IF (pgacs1 .GT. qrs(i, k, 2)/dtcld) THEN
+          pgacs(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          pgacs(i, k) = pgacs1
+        END IF
+        IF (pgacs(i, k) .GE. 0.) THEN
+          abs7 = pgacs(i, k)
+        ELSE
+          abs7 = -pgacs(i, k)
+        END IF
+!pgacs(i,k)=fqg*fqs*pgacs(i,k)
+        IF (abs7 .LT. qmin/dtcld) pgacs(i, k) = 0.
+        IF (qrs(i, k, 2) - pgacs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) - pgacs(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgacs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgacs(i, k)*dtcld
+        END IF
+        pgacs(i, k) = 0.
 !-------------------------------------------------------------
 ! pseml: Enhanced melting of snow by accretion of water
 !        (T>=T0: S->R) pseml<0 max=0,min=-qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 2) .GT. 0.) THEN
+!         supcol = t0c-t(i,k) ! not change
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          x6 = cliq*supcol*(psacw(i, k)+psacr(i, k))/xlf
-          IF (x6 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-            x4 = -(qrs(i, k, 2)/dtcld)
-          ELSE
-            x4 = x6
-          END IF
-          IF (x4 .GT. 0.) THEN
-            pseml(i, k) = 0.
-          ELSE
-            pseml(i, k) = x4
-          END IF
-          IF (pseml(i, k) .GE. 0.) THEN
-            abs8 = pseml(i, k)
-          ELSE
-            abs8 = -pseml(i, k)
-          END IF
-          IF (abs8 .LT. qmin/dtcld) pseml(i, k) = 0.
-          IF (qrs(i, k, 1) - pseml(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) - pseml(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + pseml(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) + pseml(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + pseml(i, k)*dtcld*xlf/cpm(i, k)
-          pseml(i, k) = 0.
-          psacw(i, k) = 0.
-          psacr(i, k) = 0.
+!         cpm(i,k)=cpmcal(q(i,k)) ! not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        CALL SMOOTHIF(qrs(i, k, 2), 0., fqs, 'q+')
+        x7 = cliq*supcol*(psacw(i, k)+psacr(i, k))/xlf
+        IF (x7 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+          x5 = -(qrs(i, k, 2)/dtcld)
+        ELSE
+          x5 = x7
         END IF
+        IF (x5 .GT. 0.) THEN
+          pseml(i, k) = 0.
+        ELSE
+          pseml(i, k) = x5
+        END IF
+        pseml(i, k) = ft0*fqs*pseml(i, k)
+        IF (pseml(i, k) .GE. 0.) THEN
+          abs8 = pseml(i, k)
+        ELSE
+          abs8 = -pseml(i, k)
+        END IF
+        IF (abs8 .LT. qmin/dtcld) pseml(i, k) = 0.
+        IF (qrs(i, k, 1) - pseml(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - pseml(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + pseml(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + pseml(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pseml(i, k)*dtcld*xlf/cpm(i, k)
+        pseml(i, k) = 0.
+        psacw(i, k) = 0.
+        psacr(i, k) = 0.
 !-------------------------------------------------------------
 ! pgeml: Enhanced melting of graupel by accretion of water [RH84 A21-A22]
 !        (T>=T0: G->R) pgeml<0 max=0,min=-qrs(i,k,3)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 3) .GT. 0.) THEN
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          x7 = cliq*supcol*(pgacw(i, k)+pgacr(i, k))/xlf
-          IF (x7 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-            x5 = -(qrs(i, k, 3)/dtcld)
-          ELSE
-            x5 = x7
-          END IF
-          IF (x5 .GT. 0.) THEN
-            pgeml(i, k) = 0.
-          ELSE
-            pgeml(i, k) = x5
-          END IF
-          IF (pgeml(i, k) .GE. 0.) THEN
-            abs9 = pgeml(i, k)
-          ELSE
-            abs9 = -pgeml(i, k)
-          END IF
-          IF (abs9 .LT. qmin/dtcld) pgeml(i, k) = 0.
-          IF (qrs(i, k, 1) - pgeml(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) - pgeml(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgeml(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgeml(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + pgeml(i, k)*dtcld*xlf/cpm(i, k)
-          pgeml(i, k) = 0.
-          pgacw(i, k) = 0.
-          pgacr(i, k) = 0.
+!         cpm(i,k)=cpmcal(q(i,k)) ! not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        CALL SMOOTHIF(qrs(i, k, 3), 0., fqg, 'q+')
+        x8 = cliq*supcol*(pgacw(i, k)+pgacr(i, k))/xlf
+        IF (x8 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+          x6 = -(qrs(i, k, 3)/dtcld)
+        ELSE
+          x6 = x8
         END IF
+        IF (x6 .GT. 0.) THEN
+          pgeml(i, k) = 0.
+        ELSE
+          pgeml(i, k) = x6
+        END IF
+        pgeml(i, k) = ft0*fqg*pgeml(i, k)
+        IF (pgeml(i, k) .GE. 0.) THEN
+          abs9 = pgeml(i, k)
+        ELSE
+          abs9 = -pgeml(i, k)
+        END IF
+        IF (abs9 .LT. qmin/dtcld) pgeml(i, k) = 0.
+        IF (qrs(i, k, 1) - pgeml(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - pgeml(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgeml(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgeml(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pgeml(i, k)*dtcld*xlf/cpm(i, k)
+        pgeml(i, k) = 0.
+        pgacw(i, k) = 0.
+        pgacr(i, k) = 0.
       END DO
     END DO
   END SUBROUTINE ACCRET2
@@ -6589,9 +7640,10 @@ CONTAINS
     REAL :: g_pidep0, g_psdep0, g_pgdep3, g_pigen0, g_psevp0, g_pgevp0
     REAL :: temp0, temp, xmi
     INTEGER :: i, k
-    REAL :: qi0, pidep2
-    REAL :: g_qi0
-    REAL :: a, b, c, d, e, f, g
+    REAL :: fqi, fqr, fqv, fqs, fqg, frh, ft0, fpidep, fpsdep, fpgdep, &
+&   fsupcol, fsupsat, pidep2
+    REAL :: g_ft0, g_fsupcol, g_fsupsat
+    REAL :: value01, factor01, source01, vice, a, b, c, d, e, f, g
     REAL :: g_a, g_b, g_c, g_d, g_e
     INTRINSIC MAX
     INTRINSIC MIN
@@ -6632,18 +7684,34 @@ CONTAINS
     REAL :: max2
     REAL :: g_max2
     REAL :: abs1
-    REAL :: abs2
-    REAL :: abs3
-    REAL :: abs4
-    REAL :: abs5
     REAL :: max3
     REAL :: g_max3
     REAL :: max4
     REAL :: g_max4
-    REAL :: abs6
-    REAL :: abs7
+    REAL :: abs2
+    REAL :: abs3
+    REAL :: abs4
+    REAL :: abs5
     REAL :: max5
     REAL :: g_max5
+    REAL :: max6
+    REAL :: g_max6
+    REAL :: abs6
+    REAL :: max7
+    REAL :: g_max7
+    REAL :: max8
+    REAL :: g_max8
+    REAL :: abs7
+    REAL :: max9
+    REAL :: g_max9
+    REAL :: max10
+    REAL :: g_max10
+    REAL :: max11
+    REAL :: g_max11
+    REAL :: max12
+    REAL :: g_max12
+    REAL :: max13
+    REAL :: g_max13
     REAL :: pwx1
     REAL :: g_pwx1
     REAL :: pwr1
@@ -6680,20 +7748,22 @@ CONTAINS
 !       rh(i,k,2)<1.,pidep<0: I->V, min=-qi/dtcld,max=0,                  
 !-------------------------------------------------------------
 !update supcol
+        g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qci(i, k, 2) .GT. 0.) THEN
 !update rh qs
-          CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k)&
-&                 , g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), &
-&                 g_qs(i, k, :))
+        CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k), &
+&               g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), g_qs&
+&               (i, k, :))
 !update satdt
-          g_supsat = g_q(i, k) - g_qs(i, k, 2)
-          supsat = q(i, k) - qs(i, k, 2)
-          g_satdt = g_supsat/dtcld
-          satdt = supsat/dtcld
+        g_supsat = g_q(i, k) - g_qs(i, k, 2)
+        supsat = q(i, k) - qs(i, k, 2)
+        g_satdt = g_supsat/dtcld
+        satdt = supsat/dtcld
 !update xl, cpm
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't+')
+        IF (qci(i, k, 2) .GT. 0.) THEN
           temp1 = diffac_a*(xls*xls)
           temp2 = rv*t(i, k)**3.5
           temp3 = den(i, k)*(t(i, k)+120.)/temp2
@@ -6720,67 +7790,72 @@ CONTAINS
           pwr1 = pwx1**(7./8.)
           g_pidep0 = pidep_a*(pwr1*g_a+a*g_pwr1)
           pidep0 = pidep_a*a*pwr1
-          IF (pidep0 .LT. 0.) THEN
-            IF (pidep0 .LT. -(qci(i, k, 2)/dtcld)) THEN
-              g_x1 = -(g_qci(i, k, 2)/dtcld)
-              x1 = -(qci(i, k, 2)/dtcld)
-            ELSE
-              g_x1 = g_pidep0
-              x1 = pidep0
-            END IF
-            IF (x1 .GT. 0.) THEN
-              g_pidep(i, k) = 0.0_8
-              pidep(i, k) = 0.
-            ELSE
-              g_pidep(i, k) = g_x1
-              pidep(i, k) = x1
-            END IF
+        ELSE
+          pidep0 = 0.
+          g_pidep0 = 0.0_8
+        END IF
+        IF (pidep0 .LT. 0.) THEN
+          IF (pidep0 .LT. -(qci(i, k, 2)/dtcld)) THEN
+            g_x1 = -(g_qci(i, k, 2)/dtcld)
+            x1 = -(qci(i, k, 2)/dtcld)
           ELSE
-            IF (pidep0 .GT. satdt) THEN
-              g_x2 = g_satdt
-              x2 = satdt
-            ELSE
-              g_x2 = g_pidep0
-              x2 = pidep0
-            END IF
-            IF (x2 .LT. 0.) THEN
-              g_pidep(i, k) = 0.0_8
-              pidep(i, k) = 0.
-            ELSE
-              g_pidep(i, k) = g_x2
-              pidep(i, k) = x2
-            END IF
+            g_x1 = g_pidep0
+            x1 = pidep0
           END IF
-          IF (pidep(i, k) .GE. 0.) THEN
-            abs0 = pidep(i, k)
-          ELSE
-            abs0 = -pidep(i, k)
-          END IF
-          IF (abs0 .LT. qmin/dtcld) THEN
+          IF (x1 .GT. 0.) THEN
             g_pidep(i, k) = 0.0_8
             pidep(i, k) = 0.
-          END IF
-          IF (q(i, k) - pidep(i, k)*dtcld .LT. 0.) THEN
-            g_q(i, k) = 0.0_8
-            q(i, k) = 0.
           ELSE
-            g_q(i, k) = g_q(i, k) - dtcld*g_pidep(i, k)
-            q(i, k) = q(i, k) - pidep(i, k)*dtcld
+            g_pidep(i, k) = g_x1
+            pidep(i, k) = x1
           END IF
-          IF (qci(i, k, 2) + pidep(i, k)*dtcld .LT. 0.) THEN
-            g_qci(i, k, 2) = 0.0_8
-            qci(i, k, 2) = 0.
+        ELSE
+          IF (pidep0 .GT. satdt) THEN
+            g_x2 = g_satdt
+            x2 = satdt
           ELSE
-            g_qci(i, k, 2) = g_qci(i, k, 2) + dtcld*g_pidep(i, k)
-            qci(i, k, 2) = qci(i, k, 2) + pidep(i, k)*dtcld
+            g_x2 = g_pidep0
+            x2 = pidep0
           END IF
-          temp3 = pidep(i, k)/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + dtcld*xls*(g_pidep(i, k)-temp3*g_cpm(i&
-&           , k))/cpm(i, k)
-          t(i, k) = t(i, k) + dtcld*xls*temp3
+          IF (x2 .LT. 0.) THEN
+            g_pidep(i, k) = 0.0_8
+            pidep(i, k) = 0.
+          ELSE
+            g_pidep(i, k) = g_x2
+            pidep(i, k) = x2
+          END IF
+        END IF
+        g_pidep(i, k) = pidep(i, k)*g_fsupcol + fsupcol*g_pidep(i, k)
+        pidep(i, k) = fsupcol*pidep(i, k)
+        IF (pidep(i, k) .GE. 0.) THEN
+          abs0 = pidep(i, k)
+        ELSE
+          abs0 = -pidep(i, k)
+        END IF
+        IF (abs0 .LT. qmin/dtcld) THEN
           g_pidep(i, k) = 0.0_8
           pidep(i, k) = 0.
         END IF
+        IF (q(i, k) - pidep(i, k)*dtcld .LT. 0.) THEN
+          g_q(i, k) = 0.0_8
+          q(i, k) = 0.
+        ELSE
+          g_q(i, k) = g_q(i, k) - dtcld*g_pidep(i, k)
+          q(i, k) = q(i, k) - pidep(i, k)*dtcld
+        END IF
+        IF (qci(i, k, 2) + pidep(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 2) = 0.0_8
+          qci(i, k, 2) = 0.
+        ELSE
+          g_qci(i, k, 2) = g_qci(i, k, 2) + dtcld*g_pidep(i, k)
+          qci(i, k, 2) = qci(i, k, 2) + pidep(i, k)*dtcld
+        END IF
+        temp3 = pidep(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*xls*(g_pidep(i, k)-temp3*g_cpm(i, &
+&         k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*xls*temp3
+        g_pidep(i, k) = 0.0_8
+        pidep(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! psdep: deposition/sublimation rate of snow [HDC 14] 
@@ -6789,189 +7864,207 @@ CONTAINS
 !       rh(i,k,2)<1.,psdep<0: S->V, min=-qs/dtcld,max=0,                  
 !-------------------------------------------------------------
 !update supcol
+        g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 2) .GT. qcrmin) THEN
 !update rh qs
-          CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k)&
-&                 , g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), &
-&                 g_qs(i, k, :))
+        CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k), &
+&               g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), g_qs&
+&               (i, k, :))
 !update satdt
-          g_supsat = g_q(i, k) - g_qs(i, k, 2)
-          supsat = q(i, k) - qs(i, k, 2)
-          g_satdt = g_supsat/dtcld
-          satdt = supsat/dtcld
+        g_supsat = g_q(i, k) - g_qs(i, k, 2)
+        supsat = q(i, k) - qs(i, k, 2)
+        g_satdt = g_supsat/dtcld
+        satdt = supsat/dtcld
 !update xl, cpm
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y1 = -g_t(i, k)
-            y1 = t0c - t(i, k)
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't+')
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y1 = -g_t(i, k)
+          y1 = t0c - t(i, k)
+        ELSE
+          y1 = 90.
+          g_y1 = 0.0_8
+        END IF
+        IF (0. .LT. y1) THEN
+          g_max1 = g_y1
+          max1 = y1
+        ELSE
+          max1 = 0.
+          g_max1 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max9 = qcrmin
+          g_max9 = 0.0_8
+        ELSE
+          g_max9 = g_qrs(i, k, 2)
+          max9 = qrs(i, k, 2)
+        END IF
+!         call smoothif(qrs(i,k,2),0.,fqs,'q+')
+!         call smoothif(q  (i,k  ),0.,fqv,'q+')
+        g_arg1 = alpha*g_max1/2.
+        arg1 = alpha*max1/2.
+        g_arg2 = max9*g_den(i, k) + den(i, k)*g_max9
+        arg2 = den(i, k)*max9
+        temp3 = SQRT(arg2)
+        IF (arg2 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_arg2/(2.0*temp3)
+        END IF
+        result1 = temp3
+        temp3 = EXP(arg1)
+        g_a = result1*EXP(arg1)*g_arg1 + temp3*g_result1
+        a = temp3*result1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y2 = -g_t(i, k)
+          y2 = t0c - t(i, k)
+        ELSE
+          y2 = 90.
+          g_y2 = 0.0_8
+        END IF
+        IF (0. .LT. y2) THEN
+          g_max2 = g_y2
+          max2 = y2
+        ELSE
+          max2 = 0.
+          g_max2 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max10 = qcrmin
+          g_max10 = 0.0_8
+        ELSE
+          g_max10 = g_qrs(i, k, 2)
+          max10 = qrs(i, k, 2)
+        END IF
+        g_arg1 = (3.-bvts)*alpha*g_max2/8.
+        arg1 = (3.-bvts)*alpha*max2/8.
+        g_pwx1 = g_t(i, k)
+        pwx1 = t(i, k) + 120.
+        IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. .NE. &
+&           INT(1.0/6.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
+        END IF
+        pwr1 = pwx1**(1./6.)
+        IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/6. &
+&           .NE. INT(5.12/6.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
+        END IF
+        pwr2 = t(i, k)**(5.12/6.)
+        IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. .NE.&
+&           INT(1.0/3.))) THEN
+          g_pwr3 = 0.0_8
+        ELSE
+          g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
+        END IF
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvts)/24.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 .NE. &
+&           INT(pwy4))) THEN
+          g_pwr4 = 0.0_8
+        ELSE
+          g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
+        END IF
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvts)/8.
+        IF (max10 .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5 .NE. INT(&
+&           pwy5))) THEN
+          g_pwr5 = 0.0_8
+        ELSE
+          g_pwr5 = pwy5*max10**(pwy5-1)*g_max10
+        END IF
+        pwr5 = max10**pwy5
+        temp3 = pwr1*pwr3/pwr2
+        temp2 = temp3*pwr4*pwr5
+        temp1 = EXP(arg1)
+        g_b = temp2*EXP(arg1)*g_arg1 + temp1*(pwr4*pwr5*(pwr3*g_pwr1+&
+&         pwr1*g_pwr3-temp3*g_pwr2)/pwr2+temp3*(pwr5*g_pwr4+pwr4*g_pwr5)&
+&         )
+        b = temp1*temp2
+        temp3 = diffac_a*(xls*xls)
+        temp2 = rv*t(i, k)**3.5
+        temp1 = den(i, k)*(t(i, k)+120.)/temp2
+        g_c = temp3*((t(i, k)+120.)*g_den(i, k)+(den(i, k)-temp1*rv*3.5*&
+&         t(i, k)**2.5)*g_t(i, k))/temp2
+        c = temp3*temp1
+        temp3 = t(i, k)**1.81
+        temp2 = temp3*qs(i, k, 2)
+        temp1 = p(i, k)/temp2
+        g_d = diffac_b*(g_p(i, k)-temp1*(qs(i, k, 2)*1.81*t(i, k)**0.81*&
+&         g_t(i, k)+temp3*g_qs(i, k, 2)))/temp2
+        d = diffac_b*temp1
+        temp3 = (rh(i, k, 2)-1.)/(c+d)
+        g_e = (g_rh(i, k, 2)-temp3*(g_c+g_d))/(c+d)
+        e = temp3
+        temp3 = psdep_a*a + psdep_b*b
+        g_psdep0 = temp3*g_e + e*(psdep_a*g_a+psdep_b*g_b)
+        psdep0 = e*temp3
+        IF (psdep0 .LT. 0.) THEN
+          IF (psdep0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+            g_x3 = -(g_qrs(i, k, 2)/dtcld)
+            x3 = -(qrs(i, k, 2)/dtcld)
           ELSE
-            y1 = 90.
-            g_y1 = 0.0_8
+            g_x3 = g_psdep0
+            x3 = psdep0
           END IF
-          IF (0. .LT. y1) THEN
-            g_max1 = g_y1
-            max1 = y1
-          ELSE
-            max1 = 0.
-            g_max1 = 0.0_8
-          END IF
-          g_arg1 = alpha*g_max1/2.
-          arg1 = alpha*max1/2.
-          g_arg2 = qrs(i, k, 2)*g_den(i, k) + den(i, k)*g_qrs(i, k, 2)
-          arg2 = den(i, k)*qrs(i, k, 2)
-          temp3 = SQRT(arg2)
-          IF (arg2 .EQ. 0.0_8) THEN
-            g_result1 = 0.0_8
-          ELSE
-            g_result1 = g_arg2/(2.0*temp3)
-          END IF
-          result1 = temp3
-          temp3 = EXP(arg1)
-          g_a = result1*EXP(arg1)*g_arg1 + temp3*g_result1
-          a = temp3*result1
-          IF (90. .GT. t0c - t(i, k)) THEN
-            g_y2 = -g_t(i, k)
-            y2 = t0c - t(i, k)
-          ELSE
-            y2 = 90.
-            g_y2 = 0.0_8
-          END IF
-          IF (0. .LT. y2) THEN
-            g_max2 = g_y2
-            max2 = y2
-          ELSE
-            max2 = 0.
-            g_max2 = 0.0_8
-          END IF
-          g_arg1 = (3.-bvts)*alpha*g_max2/8.
-          arg1 = (3.-bvts)*alpha*max2/8.
-          g_pwx1 = g_t(i, k)
-          pwx1 = t(i, k) + 120.
-          IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. .NE. &
-&             INT(1.0/6.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
-          END IF
-          pwr1 = pwx1**(1./6.)
-          IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/6. &
-&             .NE. INT(5.12/6.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
-          END IF
-          pwr2 = t(i, k)**(5.12/6.)
-          IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. &
-&             .NE. INT(1.0/3.))) THEN
-            g_pwr3 = 0.0_8
-          ELSE
-            g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
-          END IF
-          pwr3 = p(i, k)**(1./3.)
-          pwy4 = (13.+3.*bvts)/24.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 .NE.&
-&             INT(pwy4))) THEN
-            g_pwr4 = 0.0_8
-          ELSE
-            g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
-          END IF
-          pwr4 = den(i, k)**pwy4
-          pwy5 = (5.+bvts)/8.
-          IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5 &
-&             .NE. INT(pwy5))) THEN
-            g_pwr5 = 0.0_8
-          ELSE
-            g_pwr5 = pwy5*qrs(i, k, 2)**(pwy5-1)*g_qrs(i, k, 2)
-          END IF
-          pwr5 = qrs(i, k, 2)**pwy5
-          temp3 = pwr1*pwr3/pwr2
-          temp2 = temp3*pwr4*pwr5
-          temp1 = EXP(arg1)
-          g_b = temp2*EXP(arg1)*g_arg1 + temp1*(pwr4*pwr5*(pwr3*g_pwr1+&
-&           pwr1*g_pwr3-temp3*g_pwr2)/pwr2+temp3*(pwr5*g_pwr4+pwr4*&
-&           g_pwr5))
-          b = temp1*temp2
-          temp3 = diffac_a*(xls*xls)
-          temp2 = rv*t(i, k)**3.5
-          temp1 = den(i, k)*(t(i, k)+120.)/temp2
-          g_c = temp3*((t(i, k)+120.)*g_den(i, k)+(den(i, k)-temp1*rv*&
-&           3.5*t(i, k)**2.5)*g_t(i, k))/temp2
-          c = temp3*temp1
-          temp3 = t(i, k)**1.81
-          temp2 = temp3*qs(i, k, 2)
-          temp1 = p(i, k)/temp2
-          g_d = diffac_b*(g_p(i, k)-temp1*(qs(i, k, 2)*1.81*t(i, k)**&
-&           0.81*g_t(i, k)+temp3*g_qs(i, k, 2)))/temp2
-          d = diffac_b*temp1
-          temp3 = (rh(i, k, 2)-1.)/(c+d)
-          g_e = (g_rh(i, k, 2)-temp3*(g_c+g_d))/(c+d)
-          e = temp3
-          temp3 = psdep_a*a + psdep_b*b
-          g_psdep0 = temp3*g_e + e*(psdep_a*g_a+psdep_b*g_b)
-          psdep0 = e*temp3
-          IF (psdep0 .LT. 0.) THEN
-            IF (psdep0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-              g_x3 = -(g_qrs(i, k, 2)/dtcld)
-              x3 = -(qrs(i, k, 2)/dtcld)
-            ELSE
-              g_x3 = g_psdep0
-              x3 = psdep0
-            END IF
-            IF (x3 .GT. 0.) THEN
-              g_psdep(i, k) = 0.0_8
-              psdep(i, k) = 0.
-            ELSE
-              g_psdep(i, k) = g_x3
-              psdep(i, k) = x3
-            END IF
-          ELSE
-            IF (psdep0 .GT. satdt) THEN
-              g_x4 = g_satdt
-              x4 = satdt
-            ELSE
-              g_x4 = g_psdep0
-              x4 = psdep0
-            END IF
-            IF (x4 .LT. 0.) THEN
-              g_psdep(i, k) = 0.0_8
-              psdep(i, k) = 0.
-            ELSE
-              g_psdep(i, k) = g_x4
-              psdep(i, k) = x4
-            END IF
-          END IF
-          IF (psdep(i, k) .GE. 0.) THEN
-            abs1 = psdep(i, k)
-          ELSE
-            abs1 = -psdep(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) THEN
+          IF (x3 .GT. 0.) THEN
             g_psdep(i, k) = 0.0_8
             psdep(i, k) = 0.
-          END IF
-          IF (q(i, k) - psdep(i, k)*dtcld .LT. 0.) THEN
-            g_q(i, k) = 0.0_8
-            q(i, k) = 0.
           ELSE
-            g_q(i, k) = g_q(i, k) - dtcld*g_psdep(i, k)
-            q(i, k) = q(i, k) - psdep(i, k)*dtcld
+            g_psdep(i, k) = g_x3
+            psdep(i, k) = x3
           END IF
-          IF (qrs(i, k, 2) + psdep(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 2) = 0.0_8
-            qrs(i, k, 2) = 0.
+        ELSE
+          IF (psdep0 .GT. satdt) THEN
+            g_x4 = g_satdt
+            x4 = satdt
           ELSE
-            g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_psdep(i, k)
-            qrs(i, k, 2) = qrs(i, k, 2) + psdep(i, k)*dtcld
+            g_x4 = g_psdep0
+            x4 = psdep0
           END IF
-          temp3 = psdep(i, k)/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + dtcld*xls*(g_psdep(i, k)-temp3*g_cpm(i&
-&           , k))/cpm(i, k)
-          t(i, k) = t(i, k) + dtcld*xls*temp3
+          IF (x4 .LT. 0.) THEN
+            g_psdep(i, k) = 0.0_8
+            psdep(i, k) = 0.
+          ELSE
+            g_psdep(i, k) = g_x4
+            psdep(i, k) = x4
+          END IF
+        END IF
+        g_psdep(i, k) = psdep(i, k)*g_fsupcol + fsupcol*g_psdep(i, k)
+        psdep(i, k) = fsupcol*psdep(i, k)
+        IF (psdep(i, k) .GE. 0.) THEN
+          abs1 = psdep(i, k)
+        ELSE
+          abs1 = -psdep(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) THEN
           g_psdep(i, k) = 0.0_8
           psdep(i, k) = 0.
         END IF
+        IF (q(i, k) - psdep(i, k)*dtcld .LT. 0.) THEN
+          g_q(i, k) = 0.0_8
+          q(i, k) = 0.
+        ELSE
+          g_q(i, k) = g_q(i, k) - dtcld*g_psdep(i, k)
+          q(i, k) = q(i, k) - psdep(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psdep(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_psdep(i, k)
+          qrs(i, k, 2) = qrs(i, k, 2) + psdep(i, k)*dtcld
+        END IF
+        temp3 = psdep(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*xls*(g_psdep(i, k)-temp3*g_cpm(i, &
+&         k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*xls*temp3
+        g_psdep(i, k) = 0.0_8
+        psdep(i, k) = 0.
 !
 !------------------------------------------------------------
 ! pgdep: deposition/sublimation rate of graupel [LFO 46] 
@@ -6980,151 +8073,168 @@ CONTAINS
 !       rh(i,k,2)<1.,pgdep<0: G->V, min=-qg/dtcld,max=0,                  
 !------------------------------------------------------------
 !update supcol
+        g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update rh qs
-          CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k)&
-&                 , g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), &
-&                 g_qs(i, k, :))
+        CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k), &
+&               g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), g_qs&
+&               (i, k, :))
 !update satdt
-          g_supsat = g_q(i, k) - g_qs(i, k, 2)
-          supsat = q(i, k) - qs(i, k, 2)
-          g_satdt = g_supsat/dtcld
-          satdt = supsat/dtcld
+        g_supsat = g_q(i, k) - g_qs(i, k, 2)
+        supsat = q(i, k) - qs(i, k, 2)
+        g_satdt = g_supsat/dtcld
+        satdt = supsat/dtcld
 !update xl, cpm
-          g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-          g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-          g_arg1 = qrs(i, k, 3)*g_den(i, k) + den(i, k)*g_qrs(i, k, 3)
-          arg1 = den(i, k)*qrs(i, k, 3)
-          temp3 = SQRT(arg1)
-          IF (arg1 .EQ. 0.0_8) THEN
-            g_a = 0.0_8
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't+')
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max3 = qcrmin
+          g_max3 = 0.0_8
+        ELSE
+          g_max3 = g_qrs(i, k, 3)
+          max3 = qrs(i, k, 3)
+        END IF
+!         call smoothif(qrs(i,k,3),0.,fqg,'q+')
+!         call smoothif(q  (i,k  ),0.,fqv,'q+')
+        temp3 = den(i, k)*max3
+        temp2 = SQRT(temp3)
+        IF (temp3 .EQ. 0.0_8) THEN
+          g_a = 0.0_8
+        ELSE
+          g_a = (max3*g_den(i, k)+den(i, k)*g_max3)/(2.0*temp2)
+        END IF
+        a = temp2
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max4 = qcrmin
+          g_max4 = 0.0_8
+        ELSE
+          g_max4 = g_qrs(i, k, 3)
+          max4 = qrs(i, k, 3)
+        END IF
+        g_pwx1 = g_t(i, k)
+        pwx1 = t(i, k) + 120.
+        IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. .NE. &
+&           INT(1.0/6.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
+        END IF
+        pwr1 = pwx1**(1./6.)
+        IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/6. &
+&           .NE. INT(5.12/6.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
+        END IF
+        pwr2 = t(i, k)**(5.12/6.)
+        IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. .NE.&
+&           INT(1.0/3.))) THEN
+          g_pwr3 = 0.0_8
+        ELSE
+          g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
+        END IF
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvtg)/24.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 .NE. &
+&           INT(pwy4))) THEN
+          g_pwr4 = 0.0_8
+        ELSE
+          g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
+        END IF
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvtg)/8.
+        IF (max4 .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5 .NE. INT(&
+&           pwy5))) THEN
+          g_pwr5 = 0.0_8
+        ELSE
+          g_pwr5 = pwy5*max4**(pwy5-1)*g_max4
+        END IF
+        pwr5 = max4**pwy5
+        temp3 = pwr1*pwr3/pwr2
+        g_b = pwr4*pwr5*(pwr3*g_pwr1+pwr1*g_pwr3-temp3*g_pwr2)/pwr2 + &
+&         temp3*(pwr5*g_pwr4+pwr4*g_pwr5)
+        b = temp3*(pwr4*pwr5)
+        temp3 = diffac_a*(xls*xls)
+        temp2 = rv*t(i, k)**3.5
+        temp1 = den(i, k)*(t(i, k)+120.)/temp2
+        g_c = temp3*((t(i, k)+120.)*g_den(i, k)+(den(i, k)-temp1*rv*3.5*&
+&         t(i, k)**2.5)*g_t(i, k))/temp2
+        c = temp3*temp1
+        temp3 = t(i, k)**1.81
+        temp2 = temp3*qs(i, k, 2)
+        temp1 = p(i, k)/temp2
+        g_d = diffac_b*(g_p(i, k)-temp1*(qs(i, k, 2)*1.81*t(i, k)**0.81*&
+&         g_t(i, k)+temp3*g_qs(i, k, 2)))/temp2
+        d = diffac_b*temp1
+        temp3 = (rh(i, k, 2)-1.)/(c+d)
+        g_e = (g_rh(i, k, 2)-temp3*(g_c+g_d))/(c+d)
+        e = temp3
+        temp3 = pgdep_a*a + pgdep_b*b
+        g_pgdep3 = temp3*g_e + e*(pgdep_a*g_a+pgdep_b*g_b)
+        pgdep3 = e*temp3
+        IF (pgdep3 .LT. 0.) THEN
+          IF (pgdep3 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+            g_x5 = -(g_qrs(i, k, 3)/dtcld)
+            x5 = -(qrs(i, k, 3)/dtcld)
           ELSE
-            g_a = g_arg1/(2.0*temp3)
+            g_x5 = g_pgdep3
+            x5 = pgdep3
           END IF
-          a = temp3
-          g_pwx1 = g_t(i, k)
-          pwx1 = t(i, k) + 120.
-          IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. .NE. &
-&             INT(1.0/6.))) THEN
-            g_pwr1 = 0.0_8
-          ELSE
-            g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
-          END IF
-          pwr1 = pwx1**(1./6.)
-          IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/6. &
-&             .NE. INT(5.12/6.))) THEN
-            g_pwr2 = 0.0_8
-          ELSE
-            g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
-          END IF
-          pwr2 = t(i, k)**(5.12/6.)
-          IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. &
-&             .NE. INT(1.0/3.))) THEN
-            g_pwr3 = 0.0_8
-          ELSE
-            g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
-          END IF
-          pwr3 = p(i, k)**(1./3.)
-          pwy4 = (13.+3.*bvtg)/24.
-          IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 .NE.&
-&             INT(pwy4))) THEN
-            g_pwr4 = 0.0_8
-          ELSE
-            g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
-          END IF
-          pwr4 = den(i, k)**pwy4
-          pwy5 = (5.+bvtg)/8.
-          IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5 &
-&             .NE. INT(pwy5))) THEN
-            g_pwr5 = 0.0_8
-          ELSE
-            g_pwr5 = pwy5*qrs(i, k, 3)**(pwy5-1)*g_qrs(i, k, 3)
-          END IF
-          pwr5 = qrs(i, k, 3)**pwy5
-          temp3 = pwr1*pwr3/pwr2
-          g_b = pwr4*pwr5*(pwr3*g_pwr1+pwr1*g_pwr3-temp3*g_pwr2)/pwr2 + &
-&           temp3*(pwr5*g_pwr4+pwr4*g_pwr5)
-          b = temp3*(pwr4*pwr5)
-          temp3 = diffac_a*(xls*xls)
-          temp2 = rv*t(i, k)**3.5
-          temp1 = den(i, k)*(t(i, k)+120.)/temp2
-          g_c = temp3*((t(i, k)+120.)*g_den(i, k)+(den(i, k)-temp1*rv*&
-&           3.5*t(i, k)**2.5)*g_t(i, k))/temp2
-          c = temp3*temp1
-          temp3 = t(i, k)**1.81
-          temp2 = temp3*qs(i, k, 2)
-          temp1 = p(i, k)/temp2
-          g_d = diffac_b*(g_p(i, k)-temp1*(qs(i, k, 2)*1.81*t(i, k)**&
-&           0.81*g_t(i, k)+temp3*g_qs(i, k, 2)))/temp2
-          d = diffac_b*temp1
-          temp3 = (rh(i, k, 2)-1.)/(c+d)
-          g_e = (g_rh(i, k, 2)-temp3*(g_c+g_d))/(c+d)
-          e = temp3
-          temp3 = pgdep_a*a + pgdep_b*b
-          g_pgdep3 = temp3*g_e + e*(pgdep_a*g_a+pgdep_b*g_b)
-          pgdep3 = e*temp3
-          IF (pgdep3 .LT. 0.) THEN
-            IF (pgdep3 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-              g_x5 = -(g_qrs(i, k, 3)/dtcld)
-              x5 = -(qrs(i, k, 3)/dtcld)
-            ELSE
-              g_x5 = g_pgdep3
-              x5 = pgdep3
-            END IF
-            IF (x5 .GT. 0.) THEN
-              g_pgdep(i, k) = 0.0_8
-              pgdep(i, k) = 0.
-            ELSE
-              g_pgdep(i, k) = g_x5
-              pgdep(i, k) = x5
-            END IF
-          ELSE
-            IF (pgdep3 .GT. satdt) THEN
-              g_x6 = g_satdt
-              x6 = satdt
-            ELSE
-              g_x6 = g_pgdep3
-              x6 = pgdep3
-            END IF
-            IF (x6 .LT. 0.) THEN
-              g_pgdep(i, k) = 0.0_8
-              pgdep(i, k) = 0.
-            ELSE
-              g_pgdep(i, k) = g_x6
-              pgdep(i, k) = x6
-            END IF
-          END IF
-          IF (pgdep(i, k) .GE. 0.) THEN
-            abs2 = pgdep(i, k)
-          ELSE
-            abs2 = -pgdep(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) THEN
+          IF (x5 .GT. 0.) THEN
             g_pgdep(i, k) = 0.0_8
             pgdep(i, k) = 0.
-          END IF
-          IF (q(i, k) - pgdep(i, k)*dtcld .LT. 0.) THEN
-            g_q(i, k) = 0.0_8
-            q(i, k) = 0.
           ELSE
-            g_q(i, k) = g_q(i, k) - dtcld*g_pgdep(i, k)
-            q(i, k) = q(i, k) - pgdep(i, k)*dtcld
+            g_pgdep(i, k) = g_x5
+            pgdep(i, k) = x5
           END IF
-          IF (qrs(i, k, 3) + pgdep(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 3) = 0.0_8
-            qrs(i, k, 3) = 0.
+        ELSE
+          IF (pgdep3 .GT. satdt) THEN
+            g_x6 = g_satdt
+            x6 = satdt
           ELSE
-            g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgdep(i, k)
-            qrs(i, k, 3) = qrs(i, k, 3) + pgdep(i, k)*dtcld
+            g_x6 = g_pgdep3
+            x6 = pgdep3
           END IF
-          temp3 = pgdep(i, k)/cpm(i, k)
-          g_t(i, k) = g_t(i, k) + dtcld*xls*(g_pgdep(i, k)-temp3*g_cpm(i&
-&           , k))/cpm(i, k)
-          t(i, k) = t(i, k) + dtcld*xls*temp3
+          IF (x6 .LT. 0.) THEN
+            g_pgdep(i, k) = 0.0_8
+            pgdep(i, k) = 0.
+          ELSE
+            g_pgdep(i, k) = g_x6
+            pgdep(i, k) = x6
+          END IF
+        END IF
+        g_pgdep(i, k) = pgdep(i, k)*g_fsupcol + fsupcol*g_pgdep(i, k)
+        pgdep(i, k) = fsupcol*pgdep(i, k)
+        IF (pgdep(i, k) .GE. 0.) THEN
+          abs2 = pgdep(i, k)
+        ELSE
+          abs2 = -pgdep(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) THEN
           g_pgdep(i, k) = 0.0_8
           pgdep(i, k) = 0.
         END IF
+        IF (q(i, k) - pgdep(i, k)*dtcld .LT. 0.) THEN
+          g_q(i, k) = 0.0_8
+          q(i, k) = 0.
+        ELSE
+          g_q(i, k) = g_q(i, k) - dtcld*g_pgdep(i, k)
+          q(i, k) = q(i, k) - pgdep(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgdep(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgdep(i, k)
+          qrs(i, k, 3) = qrs(i, k, 3) + pgdep(i, k)*dtcld
+        END IF
+        temp3 = pgdep(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*xls*(g_pgdep(i, k)-temp3*g_cpm(i, &
+&         k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*xls*temp3
+        g_pgdep(i, k) = 0.0_8
+        pgdep(i, k) = 0.
 !-------------------------------------------------------------
 ! pigen: generation(nucleation) of ice from vapor [HDC 7-8]
 !       (T<T0: V->I) min=0,max=min(roqi0/den(i,k)-max(qci(i,k,2),0.))/dtcld,satdt)
@@ -7132,479 +8242,504 @@ CONTAINS
 !update supcol
         g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. q(i, k) .GT. qmin .AND. qci(i, k, 2) &
-&           .GT. qmin) THEN
+        g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
 !update rh qs
-          CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k)&
-&                 , g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), &
-&                 g_qs(i, k, :))
+        CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k), &
+&               g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), g_qs&
+&               (i, k, :))
 !update satdt
-          g_supsat = g_q(i, k) - g_qs(i, k, 2)
-          supsat = q(i, k) - qs(i, k, 2)
-          g_satdt = g_supsat/dtcld
-          satdt = supsat/dtcld
-          IF (supsat .GT. 0. .AND. qs(i, k, 2) .GT. qmin) THEN
-            g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-            g_xni0 = 1.e3*EXP(0.1*supcol)*0.1*g_supcol
-            xni0 = 1.e3*EXP(0.1*supcol)
-            g_roqi0 = 4.92e-11*1.33*xni0**0.33*g_xni0
-            roqi0 = 4.92e-11*xni0**1.33
-            temp3 = roqi0/den(i, k)
-            g_qi0 = (g_roqi0-temp3*g_den(i, k))/den(i, k)
-            qi0 = temp3
-            IF (qci(i, k, 2) .GT. qmin*qi0) THEN
-              IF (qci(i, k, 2) .LT. 0.) THEN
-                max5 = 0.
-                g_max5 = 0.0_8
-              ELSE
-                g_max5 = g_qci(i, k, 2)
-                max5 = qci(i, k, 2)
-              END IF
-              g_x7 = (g_qi0-g_max5)/dtcld
-              x7 = (qi0-max5)/dtcld
-              IF (x7 .GT. satdt) THEN
-                g_pigen0 = g_satdt
-                pigen0 = satdt
-              ELSE
-                g_pigen0 = g_x7
-                pigen0 = x7
-              END IF
-              IF (pigen0 .LT. 0.) THEN
-                g_pigen(i, k) = 0.0_8
-                pigen(i, k) = 0.
-              ELSE
-                g_pigen(i, k) = g_pigen0
-                pigen(i, k) = pigen0
-              END IF
-              IF (pigen(i, k) .GE. 0.) THEN
-                abs3 = pigen(i, k)
-              ELSE
-                abs3 = -pigen(i, k)
-              END IF
-              IF (abs3 .LT. qmin/dtcld) THEN
-                g_pigen(i, k) = 0.0_8
-                pigen(i, k) = 0.
-              END IF
-              IF (q(i, k) - pigen(i, k)*dtcld .LT. 0.) THEN
-                g_q(i, k) = 0.0_8
-                q(i, k) = 0.
-              ELSE
-                g_q(i, k) = g_q(i, k) - dtcld*g_pigen(i, k)
-                q(i, k) = q(i, k) - pigen(i, k)*dtcld
-              END IF
-              IF (qci(i, k, 2) + pigen(i, k)*dtcld .LT. 0.) THEN
-                g_qci(i, k, 2) = 0.0_8
-                qci(i, k, 2) = 0.
-              ELSE
-                g_qci(i, k, 2) = g_qci(i, k, 2) + dtcld*g_pigen(i, k)
-                qci(i, k, 2) = qci(i, k, 2) + pigen(i, k)*dtcld
-              END IF
-              temp3 = pigen(i, k)/cpm(i, k)
-              g_t(i, k) = g_t(i, k) + dtcld*xls*(g_pigen(i, k)-temp3*&
-&               g_cpm(i, k))/cpm(i, k)
-              t(i, k) = t(i, k) + dtcld*xls*temp3
-              g_pigen(i, k) = 0.0_8
-              pigen(i, k) = 0.
-            END IF
-          END IF
+        g_supsat = g_q(i, k) - g_qs(i, k, 2)
+        supsat = q(i, k) - qs(i, k, 2)
+        g_satdt = g_supsat/dtcld
+        satdt = supsat/dtcld
+        CALL G_SMOOTHIF(supsat, g_supsat, 0., fsupsat, g_fsupsat, 'q+')
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't+')
+        g_xni0 = 1.e3*EXP(0.1*supcol)*0.1*g_supcol
+        xni0 = 1.e3*EXP(0.1*supcol)
+        g_roqi0 = 4.92e-11*1.33*xni0**0.33*g_xni0
+        roqi0 = 4.92e-11*xni0**1.33
+        IF (qci(i, k, 2) .LT. 0.) THEN
+          max11 = 0.
+          g_max11 = 0.0_8
+        ELSE
+          g_max11 = g_qci(i, k, 2)
+          max11 = qci(i, k, 2)
         END IF
+        temp3 = roqi0/den(i, k)
+        g_x7 = ((g_roqi0-temp3*g_den(i, k))/den(i, k)-g_max11)/dtcld
+        x7 = (temp3-max11)/dtcld
+        IF (x7 .GT. satdt) THEN
+          g_pigen0 = g_satdt
+          pigen0 = satdt
+        ELSE
+          g_pigen0 = g_x7
+          pigen0 = x7
+        END IF
+        IF (pigen0 .LT. 0.) THEN
+          g_pigen(i, k) = 0.0_8
+          pigen(i, k) = 0.
+        ELSE
+          g_pigen(i, k) = g_pigen0
+          pigen(i, k) = pigen0
+        END IF
+        g_pigen(i, k) = pigen(i, k)*(fsupsat*g_fsupcol+fsupcol*g_fsupsat&
+&         ) + fsupcol*fsupsat*g_pigen(i, k)
+        pigen(i, k) = fsupcol*fsupsat*pigen(i, k)
+        IF (pigen(i, k) .GE. 0.) THEN
+          abs3 = pigen(i, k)
+        ELSE
+          abs3 = -pigen(i, k)
+        END IF
+        IF (abs3 .LT. qmin/dtcld) THEN
+          g_pigen(i, k) = 0.0_8
+          pigen(i, k) = 0.
+        END IF
+        IF (q(i, k) - pigen(i, k)*dtcld .LT. 0.) THEN
+          g_q(i, k) = 0.0_8
+          q(i, k) = 0.
+        ELSE
+          g_q(i, k) = g_q(i, k) - dtcld*g_pigen(i, k)
+          q(i, k) = q(i, k) - pigen(i, k)*dtcld
+        END IF
+        IF (qci(i, k, 2) + pigen(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 2) = 0.0_8
+          qci(i, k, 2) = 0.
+        ELSE
+          g_qci(i, k, 2) = g_qci(i, k, 2) + dtcld*g_pigen(i, k)
+          qci(i, k, 2) = qci(i, k, 2) + pigen(i, k)*dtcld
+        END IF
+        temp3 = pigen(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*xls*(g_pigen(i, k)-temp3*g_cpm(i, &
+&         k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*xls*temp3
+        g_pigen(i, k) = 0.0_8
+        pigen(i, k) = 0.
 !
 !------------------------------------------------------------
 ! psaut: conversion(aggregation) of ice to snow [HDC 12] 
 !        (T<T0: I->S) psaut>0, min=0,max=(qci(i,k,2)-qimax)/dtcld
 !-------------------------------------------------------------
 !update supcol
+        g_supcol = -g_t(i, k)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qci(i, k, 2) .GT. 0.) THEN
-          temp3 = roqimax/den(i, k)
-          g_qimax = -(temp3*g_den(i, k)/den(i, k))
-          qimax = temp3
-          IF (0. .LT. (qci(i, k, 2)-qimax)/dtcld) THEN
-            g_psaut(i, k) = (g_qci(i, k, 2)-g_qimax)/dtcld
-            psaut(i, k) = (qci(i, k, 2)-qimax)/dtcld
-          ELSE
-            g_psaut(i, k) = 0.0_8
-            psaut(i, k) = 0.
-          END IF
-          IF (psaut(i, k) .GE. 0.) THEN
-            abs4 = psaut(i, k)
-          ELSE
-            abs4 = -psaut(i, k)
-          END IF
-          IF (abs4 .LT. qmin/dtcld) THEN
-            g_psaut(i, k) = 0.0_8
-            psaut(i, k) = 0.
-          END IF
-          IF (qci(i, k, 2) - psaut(i, k)*dtcld .LT. 0.) THEN
-            g_qci(i, k, 2) = 0.0_8
-            qci(i, k, 2) = 0.
-          ELSE
-            g_qci(i, k, 2) = g_qci(i, k, 2) - dtcld*g_psaut(i, k)
-            qci(i, k, 2) = qci(i, k, 2) - psaut(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + psaut(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 2) = 0.0_8
-            qrs(i, k, 2) = 0.
-          ELSE
-            g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_psaut(i, k)
-            qrs(i, k, 2) = qrs(i, k, 2) + psaut(i, k)*dtcld
-          END IF
+        CALL G_SMOOTHIF(supcol, g_supcol, 0., fsupcol, g_fsupcol, 't+')
+!         call smoothif(qci(i,k,2),0.,fqi,'q+')
+        temp3 = roqimax/den(i, k)
+        g_qimax = -(temp3*g_den(i, k)/den(i, k))
+        qimax = temp3
+        IF (0. .LT. (qci(i, k, 2)-qimax)/dtcld) THEN
+          g_psaut(i, k) = (g_qci(i, k, 2)-g_qimax)/dtcld
+          psaut(i, k) = (qci(i, k, 2)-qimax)/dtcld
+        ELSE
           g_psaut(i, k) = 0.0_8
           psaut(i, k) = 0.
         END IF
+        g_psaut(i, k) = psaut(i, k)*g_fsupcol + fsupcol*g_psaut(i, k)
+        psaut(i, k) = fsupcol*psaut(i, k)
+        IF (psaut(i, k) .GE. 0.) THEN
+          abs4 = psaut(i, k)
+        ELSE
+          abs4 = -psaut(i, k)
+        END IF
+        IF (abs4 .LT. qmin/dtcld) THEN
+          g_psaut(i, k) = 0.0_8
+          psaut(i, k) = 0.
+        END IF
+        IF (qci(i, k, 2) - psaut(i, k)*dtcld .LT. 0.) THEN
+          g_qci(i, k, 2) = 0.0_8
+          qci(i, k, 2) = 0.
+        ELSE
+          g_qci(i, k, 2) = g_qci(i, k, 2) - dtcld*g_psaut(i, k)
+          qci(i, k, 2) = qci(i, k, 2) - psaut(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psaut(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_psaut(i, k)
+          qrs(i, k, 2) = qrs(i, k, 2) + psaut(i, k)*dtcld
+        END IF
+        g_psaut(i, k) = 0.0_8
+        psaut(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! pgaut: conversion(aggregation) of snow to graupel [LFO 37] 
 !        (T<T0: S->G) pgaut>0 min=0.,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
 !update supcol
-        g_supcol = -g_t(i, k)
-        supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 2) .GT. 0.) THEN
-          g_alpha2 = -(1.e-3*EXP(-(0.09*supcol))*0.09*g_supcol)
-          alpha2 = 1.e-3*EXP(0.09*(-supcol))
-          IF (0. .LT. alpha2*(qrs(i, k, 2)-qs0)) THEN
-            g_x8 = (qrs(i, k, 2)-qs0)*g_alpha2 + alpha2*g_qrs(i, k, 2)
-            x8 = alpha2*(qrs(i, k, 2)-qs0)
-          ELSE
-            x8 = 0.
-            g_x8 = 0.0_8
-          END IF
-          IF (x8 .GT. qrs(i, k, 2)/dtcld) THEN
-            g_pgaut(i, k) = g_qrs(i, k, 2)/dtcld
-            pgaut(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            g_pgaut(i, k) = g_x8
-            pgaut(i, k) = x8
-          END IF
-          IF (pgaut(i, k) .GE. 0.) THEN
-            abs5 = pgaut(i, k)
-          ELSE
-            abs5 = -pgaut(i, k)
-          END IF
-          IF (abs5 .LT. qmin/dtcld) THEN
-            g_pgaut(i, k) = 0.0_8
-            pgaut(i, k) = 0.
-          END IF
-          IF (qrs(i, k, 2) - pgaut(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 2) = 0.0_8
-            qrs(i, k, 2) = 0.
-          ELSE
-            g_qrs(i, k, 2) = g_qrs(i, k, 2) - dtcld*g_pgaut(i, k)
-            qrs(i, k, 2) = qrs(i, k, 2) - pgaut(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgaut(i, k)*dtcld .LT. 0.) THEN
-            g_qrs(i, k, 3) = 0.0_8
-            qrs(i, k, 3) = 0.
-          ELSE
-            g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgaut(i, k)
-            qrs(i, k, 3) = qrs(i, k, 3) + pgaut(i, k)*dtcld
-          END IF
+!         supcol = t0c-t(i,k) ! not change
+!         call smoothif(supcol,0.,fsupcol,'t0')     
+!         call smoothif(qrs(i,k,2),0.,fqs,'q+')
+        g_alpha2 = -(1.e-3*EXP(-(0.09*supcol))*0.09*g_supcol)
+        alpha2 = 1.e-3*EXP(0.09*(-supcol))
+        IF (0. .LT. alpha2*(qrs(i, k, 2)-qs0)) THEN
+          g_x8 = (qrs(i, k, 2)-qs0)*g_alpha2 + alpha2*g_qrs(i, k, 2)
+          x8 = alpha2*(qrs(i, k, 2)-qs0)
+        ELSE
+          x8 = 0.
+          g_x8 = 0.0_8
+        END IF
+        IF (x8 .GT. qrs(i, k, 2)/dtcld) THEN
+          g_pgaut(i, k) = g_qrs(i, k, 2)/dtcld
+          pgaut(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          g_pgaut(i, k) = g_x8
+          pgaut(i, k) = x8
+        END IF
+        g_pgaut(i, k) = pgaut(i, k)*g_fsupcol + fsupcol*g_pgaut(i, k)
+        pgaut(i, k) = fsupcol*pgaut(i, k)
+        IF (pgaut(i, k) .GE. 0.) THEN
+          abs5 = pgaut(i, k)
+        ELSE
+          abs5 = -pgaut(i, k)
+        END IF
+        IF (abs5 .LT. qmin/dtcld) THEN
           g_pgaut(i, k) = 0.0_8
           pgaut(i, k) = 0.
         END IF
+        IF (qrs(i, k, 2) - pgaut(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_qrs(i, k, 2) - dtcld*g_pgaut(i, k)
+          qrs(i, k, 2) = qrs(i, k, 2) - pgaut(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgaut(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgaut(i, k)
+          qrs(i, k, 3) = qrs(i, k, 3) + pgaut(i, k)*dtcld
+        END IF
+        g_pgaut(i, k) = 0.0_8
+        pgaut(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! psevp: Evaporation of melting snow [RH83 A27] 
 !       (T>=T0: S->V) rh<1., psevp<0, min=-qrs(i,k,2)/dtcld, max=0.
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 2) .GT. qcrmin) THEN
+!         supcol = t0c-t(i,k) ! not change
 !update rh qs
-          CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k)&
-&                 , g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), &
-&                 g_qs(i, k, :))
-          IF (rh(i, k, 1) .LT. 1.) THEN
+        CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k), &
+&               g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), g_qs&
+&               (i, k, :))
 !update xl, cpm
-            g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-            g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-            IF (90. .GT. t0c - t(i, k)) THEN
-              g_y3 = -g_t(i, k)
-              y3 = t0c - t(i, k)
-            ELSE
-              y3 = 90.
-              g_y3 = 0.0_8
-            END IF
-            IF (0. .LT. y3) THEN
-              g_max3 = g_y3
-              max3 = y3
-            ELSE
-              max3 = 0.
-              g_max3 = 0.0_8
-            END IF
-            g_arg1 = alpha*g_max3/2.
-            arg1 = alpha*max3/2.
-            g_arg2 = qrs(i, k, 2)*g_den(i, k) + den(i, k)*g_qrs(i, k, 2)
-            arg2 = den(i, k)*qrs(i, k, 2)
-            temp3 = SQRT(arg2)
-            IF (arg2 .EQ. 0.0_8) THEN
-              g_result1 = 0.0_8
-            ELSE
-              g_result1 = g_arg2/(2.0*temp3)
-            END IF
-            result1 = temp3
-            temp3 = EXP(arg1)
-            g_a = result1*EXP(arg1)*g_arg1 + temp3*g_result1
-            a = temp3*result1
-            IF (90. .GT. t0c - t(i, k)) THEN
-              g_y4 = -g_t(i, k)
-              y4 = t0c - t(i, k)
-            ELSE
-              y4 = 90.
-              g_y4 = 0.0_8
-            END IF
-            IF (0. .LT. y4) THEN
-              g_max4 = g_y4
-              max4 = y4
-            ELSE
-              max4 = 0.
-              g_max4 = 0.0_8
-            END IF
-            g_arg1 = (3.-bvts)*alpha*g_max4/8.
-            arg1 = (3.-bvts)*alpha*max4/8.
-            g_pwx1 = g_t(i, k)
-            pwx1 = t(i, k) + 120.
-            IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. &
-&               .NE. INT(1.0/6.))) THEN
-              g_pwr1 = 0.0_8
-            ELSE
-              g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
-            END IF
-            pwr1 = pwx1**(1./6.)
-            IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/&
-&               6. .NE. INT(5.12/6.))) THEN
-              g_pwr2 = 0.0_8
-            ELSE
-              g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
-            END IF
-            pwr2 = t(i, k)**(5.12/6.)
-            IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. &
-&               .NE. INT(1.0/3.))) THEN
-              g_pwr3 = 0.0_8
-            ELSE
-              g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
-            END IF
-            pwr3 = p(i, k)**(1./3.)
-            pwy4 = (13.+3.*bvts)/24.
-            IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 &
-&               .NE. INT(pwy4))) THEN
-              g_pwr4 = 0.0_8
-            ELSE
-              g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
-            END IF
-            pwr4 = den(i, k)**pwy4
-            pwy5 = (5.+bvts)/8.
-            IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5&
-&               .NE. INT(pwy5))) THEN
-              g_pwr5 = 0.0_8
-            ELSE
-              g_pwr5 = pwy5*qrs(i, k, 2)**(pwy5-1)*g_qrs(i, k, 2)
-            END IF
-            pwr5 = qrs(i, k, 2)**pwy5
-            temp3 = pwr1*pwr3/pwr2
-            temp2 = temp3*pwr4*pwr5
-            temp1 = EXP(arg1)
-            g_b = temp2*EXP(arg1)*g_arg1 + temp1*(pwr4*pwr5*(pwr3*g_pwr1&
-&             +pwr1*g_pwr3-temp3*g_pwr2)/pwr2+temp3*(pwr5*g_pwr4+pwr4*&
-&             g_pwr5))
-            b = temp1*temp2
-            temp3 = rv*t(i, k)**3.5
-            temp2 = den(i, k)*(t(i, k)+120.)
-            temp1 = xl(i, k)*xl(i, k)
-            temp4 = temp1*temp2/temp3
-            g_c = diffac_a*(temp2*2*xl(i, k)*g_xl(i, k)+temp1*((t(i, k)+&
-&             120.)*g_den(i, k)+den(i, k)*g_t(i, k))-temp4*rv*3.5*t(i, k&
-&             )**2.5*g_t(i, k))/temp3
-            c = diffac_a*temp4
-            temp4 = t(i, k)**1.81
-            temp3 = temp4*qs(i, k, 1)
-            temp2 = p(i, k)/temp3
-            g_d = diffac_b*(g_p(i, k)-temp2*(qs(i, k, 1)*1.81*t(i, k)**&
-&             0.81*g_t(i, k)+temp4*g_qs(i, k, 1)))/temp3
-            d = diffac_b*temp2
-            temp4 = (rh(i, k, 1)-1.)/(c+d)
-            g_e = (g_rh(i, k, 1)-temp4*(g_c+g_d))/(c+d)
-            e = temp4
-            temp4 = psevp_a*a + psevp_b*b
-            g_psevp0 = temp4*g_e + e*(psevp_a*g_a+psevp_b*g_b)
-            psevp0 = e*temp4
-            IF (psevp0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-              g_x9 = -(g_qrs(i, k, 2)/dtcld)
-              x9 = -(qrs(i, k, 2)/dtcld)
-            ELSE
-              g_x9 = g_psevp0
-              x9 = psevp0
-            END IF
-            IF (x9 .GT. 0.) THEN
-              g_psevp(i, k) = 0.0_8
-              psevp(i, k) = 0.
-            ELSE
-              g_psevp(i, k) = g_x9
-              psevp(i, k) = x9
-            END IF
-            IF (psevp(i, k) .GE. 0.) THEN
-              abs6 = psevp(i, k)
-            ELSE
-              abs6 = -psevp(i, k)
-            END IF
-            IF (abs6 .LT. qmin/dtcld) THEN
-              g_psevp(i, k) = 0.0_8
-              psevp(i, k) = 0.
-            END IF
-            IF (q(i, k) - psevp(i, k)*dtcld .LT. 0.) THEN
-              g_q(i, k) = 0.0_8
-              q(i, k) = 0.
-            ELSE
-              g_q(i, k) = g_q(i, k) - dtcld*g_psevp(i, k)
-              q(i, k) = q(i, k) - psevp(i, k)*dtcld
-            END IF
-            IF (qrs(i, k, 2) + psevp(i, k)*dtcld .LT. 0.) THEN
-              g_qrs(i, k, 2) = 0.0_8
-              qrs(i, k, 2) = 0.
-            ELSE
-              g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_psevp(i, k)
-              qrs(i, k, 2) = qrs(i, k, 2) + psevp(i, k)*dtcld
-            END IF
-            temp4 = psevp(i, k)/cpm(i, k)
-            g_t(i, k) = g_t(i, k) + dtcld*xls*(g_psevp(i, k)-temp4*g_cpm&
-&             (i, k))/cpm(i, k)
-            t(i, k) = t(i, k) + dtcld*xls*temp4
-            g_psevp(i, k) = 0.0_8
-            psevp(i, k) = 0.
-          END IF
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        CALL G_SMOOTHIF(t(i, k), g_t(i, k), t0c, ft0, g_ft0, 't+')
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y3 = -g_t(i, k)
+          y3 = t0c - t(i, k)
+        ELSE
+          y3 = 90.
+          g_y3 = 0.0_8
         END IF
+        IF (0. .LT. y3) THEN
+          g_max5 = g_y3
+          max5 = y3
+        ELSE
+          max5 = 0.
+          g_max5 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max12 = qcrmin
+          g_max12 = 0.0_8
+        ELSE
+          g_max12 = g_qrs(i, k, 2)
+          max12 = qrs(i, k, 2)
+        END IF
+        g_arg1 = alpha*g_max5/2.
+        arg1 = alpha*max5/2.
+        g_arg2 = max12*g_den(i, k) + den(i, k)*g_max12
+        arg2 = den(i, k)*max12
+        temp3 = SQRT(arg2)
+        IF (arg2 .EQ. 0.0_8) THEN
+          g_result1 = 0.0_8
+        ELSE
+          g_result1 = g_arg2/(2.0*temp3)
+        END IF
+        result1 = temp3
+        temp3 = EXP(arg1)
+        g_a = result1*EXP(arg1)*g_arg1 + temp3*g_result1
+        a = temp3*result1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          g_y4 = -g_t(i, k)
+          y4 = t0c - t(i, k)
+        ELSE
+          y4 = 90.
+          g_y4 = 0.0_8
+        END IF
+        IF (0. .LT. y4) THEN
+          g_max6 = g_y4
+          max6 = y4
+        ELSE
+          max6 = 0.
+          g_max6 = 0.0_8
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max13 = qcrmin
+          g_max13 = 0.0_8
+        ELSE
+          g_max13 = g_qrs(i, k, 2)
+          max13 = qrs(i, k, 2)
+        END IF
+        g_arg1 = (3.-bvts)*alpha*g_max6/8.
+        arg1 = (3.-bvts)*alpha*max6/8.
+        g_pwx1 = g_t(i, k)
+        pwx1 = t(i, k) + 120.
+        IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. .NE. &
+&           INT(1.0/6.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
+        END IF
+        pwr1 = pwx1**(1./6.)
+        IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/6. &
+&           .NE. INT(5.12/6.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
+        END IF
+        pwr2 = t(i, k)**(5.12/6.)
+        IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. .NE.&
+&           INT(1.0/3.))) THEN
+          g_pwr3 = 0.0_8
+        ELSE
+          g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
+        END IF
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvts)/24.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 .NE. &
+&           INT(pwy4))) THEN
+          g_pwr4 = 0.0_8
+        ELSE
+          g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
+        END IF
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvts)/8.
+        IF (max13 .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5 .NE. INT(&
+&           pwy5))) THEN
+          g_pwr5 = 0.0_8
+        ELSE
+          g_pwr5 = pwy5*max13**(pwy5-1)*g_max13
+        END IF
+        pwr5 = max13**pwy5
+        temp3 = pwr1*pwr3/pwr2
+        temp2 = temp3*pwr4*pwr5
+        temp1 = EXP(arg1)
+        g_b = temp2*EXP(arg1)*g_arg1 + temp1*(pwr4*pwr5*(pwr3*g_pwr1+&
+&         pwr1*g_pwr3-temp3*g_pwr2)/pwr2+temp3*(pwr5*g_pwr4+pwr4*g_pwr5)&
+&         )
+        b = temp1*temp2
+        temp3 = rv*t(i, k)**3.5
+        temp2 = den(i, k)*(t(i, k)+120.)
+        temp1 = xl(i, k)*xl(i, k)
+        temp4 = temp1*temp2/temp3
+        g_c = diffac_a*(temp2*2*xl(i, k)*g_xl(i, k)+temp1*((t(i, k)+120.&
+&         )*g_den(i, k)+den(i, k)*g_t(i, k))-temp4*rv*3.5*t(i, k)**2.5*&
+&         g_t(i, k))/temp3
+        c = diffac_a*temp4
+        temp4 = t(i, k)**1.81
+        temp3 = temp4*qs(i, k, 1)
+        temp2 = p(i, k)/temp3
+        g_d = diffac_b*(g_p(i, k)-temp2*(qs(i, k, 1)*1.81*t(i, k)**0.81*&
+&         g_t(i, k)+temp4*g_qs(i, k, 1)))/temp3
+        d = diffac_b*temp2
+        temp4 = (rh(i, k, 1)-1.)/(c+d)
+        g_e = (g_rh(i, k, 1)-temp4*(g_c+g_d))/(c+d)
+        e = temp4
+        temp4 = psevp_a*a + psevp_b*b
+        g_psevp0 = temp4*g_e + e*(psevp_a*g_a+psevp_b*g_b)
+        psevp0 = e*temp4
+        IF (psevp0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+          g_x9 = -(g_qrs(i, k, 2)/dtcld)
+          x9 = -(qrs(i, k, 2)/dtcld)
+        ELSE
+          g_x9 = g_psevp0
+          x9 = psevp0
+        END IF
+        IF (x9 .GT. 0.) THEN
+          g_psevp(i, k) = 0.0_8
+          psevp(i, k) = 0.
+        ELSE
+          g_psevp(i, k) = g_x9
+          psevp(i, k) = x9
+        END IF
+        g_psevp(i, k) = psevp(i, k)*g_ft0 + ft0*g_psevp(i, k)
+        psevp(i, k) = ft0*psevp(i, k)
+        IF (psevp(i, k) .GE. 0.) THEN
+          abs6 = psevp(i, k)
+        ELSE
+          abs6 = -psevp(i, k)
+        END IF
+        IF (abs6 .LT. qmin/dtcld) THEN
+          g_psevp(i, k) = 0.0_8
+          psevp(i, k) = 0.
+        END IF
+        IF (q(i, k) - psevp(i, k)*dtcld .LT. 0.) THEN
+          g_q(i, k) = 0.0_8
+          q(i, k) = 0.
+        ELSE
+          g_q(i, k) = g_q(i, k) - dtcld*g_psevp(i, k)
+          q(i, k) = q(i, k) - psevp(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psevp(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 2) = 0.0_8
+          qrs(i, k, 2) = 0.
+        ELSE
+          g_qrs(i, k, 2) = g_qrs(i, k, 2) + dtcld*g_psevp(i, k)
+          qrs(i, k, 2) = qrs(i, k, 2) + psevp(i, k)*dtcld
+        END IF
+        temp4 = psevp(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*xls*(g_psevp(i, k)-temp4*g_cpm(i, &
+&         k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*xls*temp4
+        g_psevp(i, k) = 0.0_8
+        psevp(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! pgevp: Evaporation of melting graupel [RH84 A19]
 !       (T>=T0: G->V) rh<1., pgevp<0, min=-qrs(i,k,3)/dtcld, max=0.
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update rh qs
-          CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k)&
-&                 , g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), &
-&                 g_qs(i, k, :))
-          IF (rh(i, k, 1) .LT. 1.) THEN
+        CALL G_CALCRH(t(i, k), g_t(i, k), p(i, k), g_p(i, k), q(i, k), &
+&               g_q(i, k), rh(i, k, :), g_rh(i, k, :), qs(i, k, :), g_qs&
+&               (i, k, :))
 !update xl, cpm
-            g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
-            g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
-            g_arg1 = qrs(i, k, 3)*g_den(i, k) + den(i, k)*g_qrs(i, k, 3)
-            arg1 = den(i, k)*qrs(i, k, 3)
-            temp4 = SQRT(arg1)
-            IF (arg1 .EQ. 0.0_8) THEN
-              g_a = 0.0_8
-            ELSE
-              g_a = g_arg1/(2.0*temp4)
-            END IF
-            a = temp4
-            g_pwx1 = g_t(i, k)
-            pwx1 = t(i, k) + 120.
-            IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. &
-&               .NE. INT(1.0/6.))) THEN
-              g_pwr1 = 0.0_8
-            ELSE
-              g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
-            END IF
-            pwr1 = pwx1**(1./6.)
-            IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/&
-&               6. .NE. INT(5.12/6.))) THEN
-              g_pwr2 = 0.0_8
-            ELSE
-              g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
-            END IF
-            pwr2 = t(i, k)**(5.12/6.)
-            IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. &
-&               .NE. INT(1.0/3.))) THEN
-              g_pwr3 = 0.0_8
-            ELSE
-              g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
-            END IF
-            pwr3 = p(i, k)**(1./3.)
-            pwy4 = (13.+3.*bvtg)/24.
-            IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 &
-&               .NE. INT(pwy4))) THEN
-              g_pwr4 = 0.0_8
-            ELSE
-              g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
-            END IF
-            pwr4 = den(i, k)**pwy4
-            pwy5 = (5.+bvtg)/8.
-            IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5&
-&               .NE. INT(pwy5))) THEN
-              g_pwr5 = 0.0_8
-            ELSE
-              g_pwr5 = pwy5*qrs(i, k, 3)**(pwy5-1)*g_qrs(i, k, 3)
-            END IF
-            pwr5 = qrs(i, k, 3)**pwy5
-            temp4 = pwr1*pwr3/pwr2
-            g_b = pwr4*pwr5*(pwr3*g_pwr1+pwr1*g_pwr3-temp4*g_pwr2)/pwr2 &
-&             + temp4*(pwr5*g_pwr4+pwr4*g_pwr5)
-            b = temp4*(pwr4*pwr5)
-            temp4 = rv*t(i, k)**3.5
-            temp3 = den(i, k)*(t(i, k)+120.)
-            temp2 = xl(i, k)*xl(i, k)
-            temp1 = temp2*temp3/temp4
-            g_c = diffac_a*(temp3*2*xl(i, k)*g_xl(i, k)+temp2*((t(i, k)+&
-&             120.)*g_den(i, k)+den(i, k)*g_t(i, k))-temp1*rv*3.5*t(i, k&
-&             )**2.5*g_t(i, k))/temp4
-            c = diffac_a*temp1
-            temp4 = t(i, k)**1.81
-            temp3 = temp4*qs(i, k, 1)
-            temp2 = p(i, k)/temp3
-            g_d = diffac_b*(g_p(i, k)-temp2*(qs(i, k, 1)*1.81*t(i, k)**&
-&             0.81*g_t(i, k)+temp4*g_qs(i, k, 1)))/temp3
-            d = diffac_b*temp2
-            temp4 = (rh(i, k, 1)-1.)/(c+d)
-            g_e = (g_rh(i, k, 1)-temp4*(g_c+g_d))/(c+d)
-            e = temp4
-            temp4 = pgevp_a*a + pgevp_b*b
-            g_pgevp0 = temp4*g_e + e*(pgevp_a*g_a+pgevp_b*g_b)
-            pgevp0 = e*temp4
-            IF (pgevp0 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-              g_x10 = -(g_qrs(i, k, 3)/dtcld)
-              x10 = -(qrs(i, k, 3)/dtcld)
-            ELSE
-              g_x10 = g_pgevp0
-              x10 = pgevp0
-            END IF
-            IF (x10 .GT. 0.) THEN
-              g_pgevp(i, k) = 0.0_8
-              pgevp(i, k) = 0.
-            ELSE
-              g_pgevp(i, k) = g_x10
-              pgevp(i, k) = x10
-            END IF
-            IF (pgevp(i, k) .GE. 0.) THEN
-              abs7 = pgevp(i, k)
-            ELSE
-              abs7 = -pgevp(i, k)
-            END IF
-            IF (abs7 .LT. qmin/dtcld) THEN
-              g_pgevp(i, k) = 0.0_8
-              pgevp(i, k) = 0.
-            END IF
-            IF (q(i, k) - pgevp(i, k)*dtcld .LT. 0.) THEN
-              g_q(i, k) = 0.0_8
-              q(i, k) = 0.
-            ELSE
-              g_q(i, k) = g_q(i, k) - dtcld*g_pgevp(i, k)
-              q(i, k) = q(i, k) - pgevp(i, k)*dtcld
-            END IF
-            IF (qrs(i, k, 3) + pgevp(i, k)*dtcld .LT. 0.) THEN
-              g_qrs(i, k, 3) = 0.0_8
-              qrs(i, k, 3) = 0.
-            ELSE
-              g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgevp(i, k)
-              qrs(i, k, 3) = qrs(i, k, 3) + pgevp(i, k)*dtcld
-            END IF
-            temp4 = pgevp(i, k)/cpm(i, k)
-            g_t(i, k) = g_t(i, k) + dtcld*xls*(g_pgevp(i, k)-temp4*g_cpm&
-&             (i, k))/cpm(i, k)
-            t(i, k) = t(i, k) + dtcld*xls*temp4
-            g_pgevp(i, k) = 0.0_8
-            pgevp(i, k) = 0.
-          END IF
+        g_xl(i, k) = G_XLCAL(t(i, k), g_t(i, k), xl(i, k))
+        g_cpm(i, k) = G_CPMCAL(q(i, k), g_q(i, k), cpm(i, k))
+        CALL G_SMOOTHIF(t(i, k), g_t(i, k), t0c, ft0, g_ft0, 't0')
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max7 = qcrmin
+          g_max7 = 0.0_8
+        ELSE
+          g_max7 = g_qrs(i, k, 3)
+          max7 = qrs(i, k, 3)
         END IF
+        temp4 = den(i, k)*max7
+        temp3 = SQRT(temp4)
+        IF (temp4 .EQ. 0.0_8) THEN
+          g_a = 0.0_8
+        ELSE
+          g_a = (max7*g_den(i, k)+den(i, k)*g_max7)/(2.0*temp3)
+        END IF
+        a = temp3
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max8 = qcrmin
+          g_max8 = 0.0_8
+        ELSE
+          g_max8 = g_qrs(i, k, 3)
+          max8 = qrs(i, k, 3)
+        END IF
+        g_pwx1 = g_t(i, k)
+        pwx1 = t(i, k) + 120.
+        IF (pwx1 .LE. 0.0_8 .AND. (1.0/6. .EQ. 0.0_8 .OR. 1.0/6. .NE. &
+&           INT(1.0/6.))) THEN
+          g_pwr1 = 0.0_8
+        ELSE
+          g_pwr1 = pwx1**(1.0/6.-1)*g_pwx1/6.
+        END IF
+        pwr1 = pwx1**(1./6.)
+        IF (t(i, k) .LE. 0.0_8 .AND. (5.12/6. .EQ. 0.0_8 .OR. 5.12/6. &
+&           .NE. INT(5.12/6.))) THEN
+          g_pwr2 = 0.0_8
+        ELSE
+          g_pwr2 = 5.12*t(i, k)**(5.12/6.-1)*g_t(i, k)/6.
+        END IF
+        pwr2 = t(i, k)**(5.12/6.)
+        IF (p(i, k) .LE. 0.0_8 .AND. (1.0/3. .EQ. 0.0_8 .OR. 1.0/3. .NE.&
+&           INT(1.0/3.))) THEN
+          g_pwr3 = 0.0_8
+        ELSE
+          g_pwr3 = p(i, k)**(1.0/3.-1)*g_p(i, k)/3.
+        END IF
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvtg)/24.
+        IF (den(i, k) .LE. 0.0_8 .AND. (pwy4 .EQ. 0.0_8 .OR. pwy4 .NE. &
+&           INT(pwy4))) THEN
+          g_pwr4 = 0.0_8
+        ELSE
+          g_pwr4 = pwy4*den(i, k)**(pwy4-1)*g_den(i, k)
+        END IF
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvtg)/8.
+        IF (max8 .LE. 0.0_8 .AND. (pwy5 .EQ. 0.0_8 .OR. pwy5 .NE. INT(&
+&           pwy5))) THEN
+          g_pwr5 = 0.0_8
+        ELSE
+          g_pwr5 = pwy5*max8**(pwy5-1)*g_max8
+        END IF
+        pwr5 = max8**pwy5
+        temp4 = pwr1*pwr3/pwr2
+        g_b = pwr4*pwr5*(pwr3*g_pwr1+pwr1*g_pwr3-temp4*g_pwr2)/pwr2 + &
+&         temp4*(pwr5*g_pwr4+pwr4*g_pwr5)
+        b = temp4*(pwr4*pwr5)
+        temp4 = rv*t(i, k)**3.5
+        temp3 = den(i, k)*(t(i, k)+120.)
+        temp2 = xl(i, k)*xl(i, k)
+        temp1 = temp2*temp3/temp4
+        g_c = diffac_a*(temp3*2*xl(i, k)*g_xl(i, k)+temp2*((t(i, k)+120.&
+&         )*g_den(i, k)+den(i, k)*g_t(i, k))-temp1*rv*3.5*t(i, k)**2.5*&
+&         g_t(i, k))/temp4
+        c = diffac_a*temp1
+        temp4 = t(i, k)**1.81
+        temp3 = temp4*qs(i, k, 1)
+        temp2 = p(i, k)/temp3
+        g_d = diffac_b*(g_p(i, k)-temp2*(qs(i, k, 1)*1.81*t(i, k)**0.81*&
+&         g_t(i, k)+temp4*g_qs(i, k, 1)))/temp3
+        d = diffac_b*temp2
+        temp4 = (rh(i, k, 1)-1.)/(c+d)
+        g_e = (g_rh(i, k, 1)-temp4*(g_c+g_d))/(c+d)
+        e = temp4
+        temp4 = pgevp_a*a + pgevp_b*b
+        g_pgevp0 = temp4*g_e + e*(pgevp_a*g_a+pgevp_b*g_b)
+        pgevp0 = e*temp4
+        IF (pgevp0 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+          g_x10 = -(g_qrs(i, k, 3)/dtcld)
+          x10 = -(qrs(i, k, 3)/dtcld)
+        ELSE
+          g_x10 = g_pgevp0
+          x10 = pgevp0
+        END IF
+        IF (x10 .GT. 0.) THEN
+          g_pgevp(i, k) = 0.0_8
+          pgevp(i, k) = 0.
+        ELSE
+          g_pgevp(i, k) = g_x10
+          pgevp(i, k) = x10
+        END IF
+        g_pgevp(i, k) = pgevp(i, k)*g_ft0 + ft0*g_pgevp(i, k)
+        pgevp(i, k) = ft0*pgevp(i, k)
+        IF (pgevp(i, k) .GE. 0.) THEN
+          abs7 = pgevp(i, k)
+        ELSE
+          abs7 = -pgevp(i, k)
+        END IF
+        IF (abs7 .LT. qmin/dtcld) THEN
+          g_pgevp(i, k) = 0.0_8
+          pgevp(i, k) = 0.
+        END IF
+        IF (q(i, k) - pgevp(i, k)*dtcld .LT. 0.) THEN
+          g_q(i, k) = 0.0_8
+          q(i, k) = 0.
+        ELSE
+          g_q(i, k) = g_q(i, k) - dtcld*g_pgevp(i, k)
+          q(i, k) = q(i, k) - pgevp(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgevp(i, k)*dtcld .LT. 0.) THEN
+          g_qrs(i, k, 3) = 0.0_8
+          qrs(i, k, 3) = 0.
+        ELSE
+          g_qrs(i, k, 3) = g_qrs(i, k, 3) + dtcld*g_pgevp(i, k)
+          qrs(i, k, 3) = qrs(i, k, 3) + pgevp(i, k)*dtcld
+        END IF
+        temp4 = pgevp(i, k)/cpm(i, k)
+        g_t(i, k) = g_t(i, k) + dtcld*xls*(g_pgevp(i, k)-temp4*g_cpm(i, &
+&         k))/cpm(i, k)
+        t(i, k) = t(i, k) + dtcld*xls*temp4
+        g_pgevp(i, k) = 0.0_8
+        pgevp(i, k) = 0.
       END DO
     END DO
   END SUBROUTINE G_ACCRET3
@@ -7629,8 +8764,9 @@ CONTAINS
 &   coeres1, coeres2, coeres3, coeres4
     REAL :: temp0, temp, xmi
     INTEGER :: i, k
-    REAL :: qi0, pidep2
-    REAL :: a, b, c, d, e, f, g
+    REAL :: fqi, fqr, fqv, fqs, fqg, frh, ft0, fpidep, fpsdep, fpgdep, &
+&   fsupcol, fsupsat, pidep2
+    REAL :: value01, factor01, source01, vice, a, b, c, d, e, f, g
     INTRINSIC MAX
     INTRINSIC MIN
     INTRINSIC ABS
@@ -7654,15 +8790,23 @@ CONTAINS
     REAL :: max1
     REAL :: max2
     REAL :: abs1
+    REAL :: max3
+    REAL :: max4
     REAL :: abs2
     REAL :: abs3
     REAL :: abs4
     REAL :: abs5
-    REAL :: max3
-    REAL :: max4
-    REAL :: abs6
-    REAL :: abs7
     REAL :: max5
+    REAL :: max6
+    REAL :: abs6
+    REAL :: max7
+    REAL :: max8
+    REAL :: abs7
+    REAL :: max9
+    REAL :: max10
+    REAL :: max11
+    REAL :: max12
+    REAL :: max13
     REAL :: pwx1
     REAL :: pwr1
     REAL :: arg1
@@ -7685,64 +8829,67 @@ CONTAINS
 !-------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qci(i, k, 2) .GT. 0.) THEN
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        IF (qci(i, k, 2) .GT. 0.) THEN
           b = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
           c = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
           a = (rh(i, k, 2)-1.)/(b+c)
           pwx1 = den(i, k)*qci(i, k, 2)
           pwr1 = pwx1**(7./8.)
           pidep0 = pidep_a*a*pwr1
-          IF (pidep0 .LT. 0.) THEN
-            IF (pidep0 .LT. -(qci(i, k, 2)/dtcld)) THEN
-              x1 = -(qci(i, k, 2)/dtcld)
-            ELSE
-              x1 = pidep0
-            END IF
-            IF (x1 .GT. 0.) THEN
-              pidep(i, k) = 0.
-            ELSE
-              pidep(i, k) = x1
-            END IF
-          ELSE
-            IF (pidep0 .GT. satdt) THEN
-              x2 = satdt
-            ELSE
-              x2 = pidep0
-            END IF
-            IF (x2 .LT. 0.) THEN
-              pidep(i, k) = 0.
-            ELSE
-              pidep(i, k) = x2
-            END IF
-          END IF
-          IF (pidep(i, k) .GE. 0.) THEN
-            abs0 = pidep(i, k)
-          ELSE
-            abs0 = -pidep(i, k)
-          END IF
-          IF (abs0 .LT. qmin/dtcld) pidep(i, k) = 0.
-          IF (q(i, k) - pidep(i, k)*dtcld .LT. 0.) THEN
-            q(i, k) = 0.
-          ELSE
-            q(i, k) = q(i, k) - pidep(i, k)*dtcld
-          END IF
-          IF (qci(i, k, 2) + pidep(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) + pidep(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + pidep(i, k)*dtcld*xls/cpm(i, k)
-          pidep(i, k) = 0.
+        ELSE
+          pidep0 = 0.
         END IF
+        IF (pidep0 .LT. 0.) THEN
+          IF (pidep0 .LT. -(qci(i, k, 2)/dtcld)) THEN
+            x1 = -(qci(i, k, 2)/dtcld)
+          ELSE
+            x1 = pidep0
+          END IF
+          IF (x1 .GT. 0.) THEN
+            pidep(i, k) = 0.
+          ELSE
+            pidep(i, k) = x1
+          END IF
+        ELSE
+          IF (pidep0 .GT. satdt) THEN
+            x2 = satdt
+          ELSE
+            x2 = pidep0
+          END IF
+          IF (x2 .LT. 0.) THEN
+            pidep(i, k) = 0.
+          ELSE
+            pidep(i, k) = x2
+          END IF
+        END IF
+        pidep(i, k) = fsupcol*pidep(i, k)
+        IF (pidep(i, k) .GE. 0.) THEN
+          abs0 = pidep(i, k)
+        ELSE
+          abs0 = -pidep(i, k)
+        END IF
+        IF (abs0 .LT. qmin/dtcld) pidep(i, k) = 0.
+        IF (q(i, k) - pidep(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - pidep(i, k)*dtcld
+        END IF
+        IF (qci(i, k, 2) + pidep(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) + pidep(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pidep(i, k)*dtcld*xls/cpm(i, k)
+        pidep(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! psdep: deposition/sublimation rate of snow [HDC 14] 
@@ -7752,96 +8899,107 @@ CONTAINS
 !-------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 2) .GT. qcrmin) THEN
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y1 = t0c - t(i, k)
-          ELSE
-            y1 = 90.
-          END IF
-          IF (0. .LT. y1) THEN
-            max1 = y1
-          ELSE
-            max1 = 0.
-          END IF
-          arg1 = alpha*max1/2.
-          arg2 = den(i, k)*qrs(i, k, 2)
-          result1 = SQRT(arg2)
-          a = EXP(arg1)*result1
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y2 = t0c - t(i, k)
-          ELSE
-            y2 = 90.
-          END IF
-          IF (0. .LT. y2) THEN
-            max2 = y2
-          ELSE
-            max2 = 0.
-          END IF
-          arg1 = (3.-bvts)*alpha*max2/8.
-          pwx1 = t(i, k) + 120.
-          pwr1 = pwx1**(1./6.)
-          pwr2 = t(i, k)**(5.12/6.)
-          pwr3 = p(i, k)**(1./3.)
-          pwy4 = (13.+3.*bvts)/24.
-          pwr4 = den(i, k)**pwy4
-          pwy5 = (5.+bvts)/8.
-          pwr5 = qrs(i, k, 2)**pwy5
-          b = EXP(arg1)*pwr1/pwr2*pwr3*pwr4*pwr5
-          c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
-          e = (rh(i, k, 2)-1.)/(c+d)
-          psdep0 = e*(psdep_a*a+psdep_b*b)
-          IF (psdep0 .LT. 0.) THEN
-            IF (psdep0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-              x3 = -(qrs(i, k, 2)/dtcld)
-            ELSE
-              x3 = psdep0
-            END IF
-            IF (x3 .GT. 0.) THEN
-              psdep(i, k) = 0.
-            ELSE
-              psdep(i, k) = x3
-            END IF
-          ELSE
-            IF (psdep0 .GT. satdt) THEN
-              x4 = satdt
-            ELSE
-              x4 = psdep0
-            END IF
-            IF (x4 .LT. 0.) THEN
-              psdep(i, k) = 0.
-            ELSE
-              psdep(i, k) = x4
-            END IF
-          END IF
-          IF (psdep(i, k) .GE. 0.) THEN
-            abs1 = psdep(i, k)
-          ELSE
-            abs1 = -psdep(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) psdep(i, k) = 0.
-          IF (q(i, k) - psdep(i, k)*dtcld .LT. 0.) THEN
-            q(i, k) = 0.
-          ELSE
-            q(i, k) = q(i, k) - psdep(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + psdep(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) + psdep(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + psdep(i, k)*dtcld*xls/cpm(i, k)
-          psdep(i, k) = 0.
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y1 = t0c - t(i, k)
+        ELSE
+          y1 = 90.
         END IF
+        IF (0. .LT. y1) THEN
+          max1 = y1
+        ELSE
+          max1 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max9 = qcrmin
+        ELSE
+          max9 = qrs(i, k, 2)
+        END IF
+!         call smoothif(qrs(i,k,2),0.,fqs,'q+')
+!         call smoothif(q  (i,k  ),0.,fqv,'q+')
+        arg1 = alpha*max1/2.
+        arg2 = den(i, k)*max9
+        result1 = SQRT(arg2)
+        a = EXP(arg1)*result1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y2 = t0c - t(i, k)
+        ELSE
+          y2 = 90.
+        END IF
+        IF (0. .LT. y2) THEN
+          max2 = y2
+        ELSE
+          max2 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max10 = qcrmin
+        ELSE
+          max10 = qrs(i, k, 2)
+        END IF
+        arg1 = (3.-bvts)*alpha*max2/8.
+        pwx1 = t(i, k) + 120.
+        pwr1 = pwx1**(1./6.)
+        pwr2 = t(i, k)**(5.12/6.)
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvts)/24.
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvts)/8.
+        pwr5 = max10**pwy5
+        b = EXP(arg1)*pwr1/pwr2*pwr3*pwr4*pwr5
+        c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
+        e = (rh(i, k, 2)-1.)/(c+d)
+        psdep0 = e*(psdep_a*a+psdep_b*b)
+        IF (psdep0 .LT. 0.) THEN
+          IF (psdep0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+            x3 = -(qrs(i, k, 2)/dtcld)
+          ELSE
+            x3 = psdep0
+          END IF
+          IF (x3 .GT. 0.) THEN
+            psdep(i, k) = 0.
+          ELSE
+            psdep(i, k) = x3
+          END IF
+        ELSE
+          IF (psdep0 .GT. satdt) THEN
+            x4 = satdt
+          ELSE
+            x4 = psdep0
+          END IF
+          IF (x4 .LT. 0.) THEN
+            psdep(i, k) = 0.
+          ELSE
+            psdep(i, k) = x4
+          END IF
+        END IF
+        psdep(i, k) = fsupcol*psdep(i, k)
+        IF (psdep(i, k) .GE. 0.) THEN
+          abs1 = psdep(i, k)
+        ELSE
+          abs1 = -psdep(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) psdep(i, k) = 0.
+        IF (q(i, k) - psdep(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - psdep(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psdep(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psdep(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + psdep(i, k)*dtcld*xls/cpm(i, k)
+        psdep(i, k) = 0.
 !
 !------------------------------------------------------------
 ! pgdep: deposition/sublimation rate of graupel [LFO 46] 
@@ -7851,130 +9009,134 @@ CONTAINS
 !------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          arg1 = den(i, k)*qrs(i, k, 3)
-          a = SQRT(arg1)
-          pwx1 = t(i, k) + 120.
-          pwr1 = pwx1**(1./6.)
-          pwr2 = t(i, k)**(5.12/6.)
-          pwr3 = p(i, k)**(1./3.)
-          pwy4 = (13.+3.*bvtg)/24.
-          pwr4 = den(i, k)**pwy4
-          pwy5 = (5.+bvtg)/8.
-          pwr5 = qrs(i, k, 3)**pwy5
-          b = pwr1/pwr2*pwr3*pwr4*pwr5
-          c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
-          e = (rh(i, k, 2)-1.)/(c+d)
-          pgdep3 = e*(pgdep_a*a+pgdep_b*b)
-          IF (pgdep3 .LT. 0.) THEN
-            IF (pgdep3 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-              x5 = -(qrs(i, k, 3)/dtcld)
-            ELSE
-              x5 = pgdep3
-            END IF
-            IF (x5 .GT. 0.) THEN
-              pgdep(i, k) = 0.
-            ELSE
-              pgdep(i, k) = x5
-            END IF
-          ELSE
-            IF (pgdep3 .GT. satdt) THEN
-              x6 = satdt
-            ELSE
-              x6 = pgdep3
-            END IF
-            IF (x6 .LT. 0.) THEN
-              pgdep(i, k) = 0.
-            ELSE
-              pgdep(i, k) = x6
-            END IF
-          END IF
-          IF (pgdep(i, k) .GE. 0.) THEN
-            abs2 = pgdep(i, k)
-          ELSE
-            abs2 = -pgdep(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) pgdep(i, k) = 0.
-          IF (q(i, k) - pgdep(i, k)*dtcld .LT. 0.) THEN
-            q(i, k) = 0.
-          ELSE
-            q(i, k) = q(i, k) - pgdep(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgdep(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgdep(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + pgdep(i, k)*dtcld*xls/cpm(i, k)
-          pgdep(i, k) = 0.
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max3 = qcrmin
+        ELSE
+          max3 = qrs(i, k, 3)
         END IF
+!         call smoothif(qrs(i,k,3),0.,fqg,'q+')
+!         call smoothif(q  (i,k  ),0.,fqv,'q+')
+        a = SQRT(den(i, k)*max3)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max4 = qcrmin
+        ELSE
+          max4 = qrs(i, k, 3)
+        END IF
+        pwx1 = t(i, k) + 120.
+        pwr1 = pwx1**(1./6.)
+        pwr2 = t(i, k)**(5.12/6.)
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvtg)/24.
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvtg)/8.
+        pwr5 = max4**pwy5
+        b = pwr1/pwr2*pwr3*pwr4*pwr5
+        c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
+        e = (rh(i, k, 2)-1.)/(c+d)
+        pgdep3 = e*(pgdep_a*a+pgdep_b*b)
+        IF (pgdep3 .LT. 0.) THEN
+          IF (pgdep3 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+            x5 = -(qrs(i, k, 3)/dtcld)
+          ELSE
+            x5 = pgdep3
+          END IF
+          IF (x5 .GT. 0.) THEN
+            pgdep(i, k) = 0.
+          ELSE
+            pgdep(i, k) = x5
+          END IF
+        ELSE
+          IF (pgdep3 .GT. satdt) THEN
+            x6 = satdt
+          ELSE
+            x6 = pgdep3
+          END IF
+          IF (x6 .LT. 0.) THEN
+            pgdep(i, k) = 0.
+          ELSE
+            pgdep(i, k) = x6
+          END IF
+        END IF
+        pgdep(i, k) = fsupcol*pgdep(i, k)
+        IF (pgdep(i, k) .GE. 0.) THEN
+          abs2 = pgdep(i, k)
+        ELSE
+          abs2 = -pgdep(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) pgdep(i, k) = 0.
+        IF (q(i, k) - pgdep(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - pgdep(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgdep(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgdep(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pgdep(i, k)*dtcld*xls/cpm(i, k)
+        pgdep(i, k) = 0.
 !-------------------------------------------------------------
 ! pigen: generation(nucleation) of ice from vapor [HDC 7-8]
 !       (T<T0: V->I) min=0,max=min(roqi0/den(i,k)-max(qci(i,k,2),0.))/dtcld,satdt)
 !-------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. q(i, k) .GT. qmin .AND. qci(i, k, 2) &
-&           .GT. qmin) THEN
+        cpm(i, k) = CPMCAL(q(i, k))
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
-          IF (supsat .GT. 0. .AND. qs(i, k, 2) .GT. qmin) THEN
-            cpm(i, k) = CPMCAL(q(i, k))
-            xni0 = 1.e3*EXP(0.1*supcol)
-            roqi0 = 4.92e-11*xni0**1.33
-            qi0 = roqi0/den(i, k)
-            IF (qci(i, k, 2) .GT. qmin*qi0) THEN
-              IF (qci(i, k, 2) .LT. 0.) THEN
-                max5 = 0.
-              ELSE
-                max5 = qci(i, k, 2)
-              END IF
-              x7 = (qi0-max5)/dtcld
-              IF (x7 .GT. satdt) THEN
-                pigen0 = satdt
-              ELSE
-                pigen0 = x7
-              END IF
-              IF (pigen0 .LT. 0.) THEN
-                pigen(i, k) = 0.
-              ELSE
-                pigen(i, k) = pigen0
-              END IF
-              IF (pigen(i, k) .GE. 0.) THEN
-                abs3 = pigen(i, k)
-              ELSE
-                abs3 = -pigen(i, k)
-              END IF
-              IF (abs3 .LT. qmin/dtcld) pigen(i, k) = 0.
-              IF (q(i, k) - pigen(i, k)*dtcld .LT. 0.) THEN
-                q(i, k) = 0.
-              ELSE
-                q(i, k) = q(i, k) - pigen(i, k)*dtcld
-              END IF
-              IF (qci(i, k, 2) + pigen(i, k)*dtcld .LT. 0.) THEN
-                qci(i, k, 2) = 0.
-              ELSE
-                qci(i, k, 2) = qci(i, k, 2) + pigen(i, k)*dtcld
-              END IF
-              t(i, k) = t(i, k) + pigen(i, k)*dtcld*xls/cpm(i, k)
-              pigen(i, k) = 0.
-            END IF
-          END IF
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
+        CALL SMOOTHIF(supsat, 0., fsupsat, 'q+')
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        xni0 = 1.e3*EXP(0.1*supcol)
+        roqi0 = 4.92e-11*xni0**1.33
+        IF (qci(i, k, 2) .LT. 0.) THEN
+          max11 = 0.
+        ELSE
+          max11 = qci(i, k, 2)
         END IF
+        x7 = (roqi0/den(i, k)-max11)/dtcld
+        IF (x7 .GT. satdt) THEN
+          pigen0 = satdt
+        ELSE
+          pigen0 = x7
+        END IF
+        IF (pigen0 .LT. 0.) THEN
+          pigen(i, k) = 0.
+        ELSE
+          pigen(i, k) = pigen0
+        END IF
+        pigen(i, k) = fsupcol*fsupsat*pigen(i, k)
+        IF (pigen(i, k) .GE. 0.) THEN
+          abs3 = pigen(i, k)
+        ELSE
+          abs3 = -pigen(i, k)
+        END IF
+        IF (abs3 .LT. qmin/dtcld) pigen(i, k) = 0.
+        IF (q(i, k) - pigen(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - pigen(i, k)*dtcld
+        END IF
+        IF (qci(i, k, 2) + pigen(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) + pigen(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pigen(i, k)*dtcld*xls/cpm(i, k)
+        pigen(i, k) = 0.
 !
 !------------------------------------------------------------
 ! psaut: conversion(aggregation) of ice to snow [HDC 12] 
@@ -7982,211 +9144,226 @@ CONTAINS
 !-------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qci(i, k, 2) .GT. 0.) THEN
-          qimax = roqimax/den(i, k)
-          IF (0. .LT. (qci(i, k, 2)-qimax)/dtcld) THEN
-            psaut(i, k) = (qci(i, k, 2)-qimax)/dtcld
-          ELSE
-            psaut(i, k) = 0.
-          END IF
-          IF (psaut(i, k) .GE. 0.) THEN
-            abs4 = psaut(i, k)
-          ELSE
-            abs4 = -psaut(i, k)
-          END IF
-          IF (abs4 .LT. qmin/dtcld) psaut(i, k) = 0.
-          IF (qci(i, k, 2) - psaut(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - psaut(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + psaut(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) + psaut(i, k)*dtcld
-          END IF
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+!         call smoothif(qci(i,k,2),0.,fqi,'q+')
+        qimax = roqimax/den(i, k)
+        IF (0. .LT. (qci(i, k, 2)-qimax)/dtcld) THEN
+          psaut(i, k) = (qci(i, k, 2)-qimax)/dtcld
+        ELSE
           psaut(i, k) = 0.
         END IF
+        psaut(i, k) = fsupcol*psaut(i, k)
+        IF (psaut(i, k) .GE. 0.) THEN
+          abs4 = psaut(i, k)
+        ELSE
+          abs4 = -psaut(i, k)
+        END IF
+        IF (abs4 .LT. qmin/dtcld) psaut(i, k) = 0.
+        IF (qci(i, k, 2) - psaut(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - psaut(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psaut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psaut(i, k)*dtcld
+        END IF
+        psaut(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! pgaut: conversion(aggregation) of snow to graupel [LFO 37] 
 !        (T<T0: S->G) pgaut>0 min=0.,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
 !update supcol
-        supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 2) .GT. 0.) THEN
-          alpha2 = 1.e-3*EXP(0.09*(-supcol))
-          IF (0. .LT. alpha2*(qrs(i, k, 2)-qs0)) THEN
-            x8 = alpha2*(qrs(i, k, 2)-qs0)
-          ELSE
-            x8 = 0.
-          END IF
-          IF (x8 .GT. qrs(i, k, 2)/dtcld) THEN
-            pgaut(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            pgaut(i, k) = x8
-          END IF
-          IF (pgaut(i, k) .GE. 0.) THEN
-            abs5 = pgaut(i, k)
-          ELSE
-            abs5 = -pgaut(i, k)
-          END IF
-          IF (abs5 .LT. qmin/dtcld) pgaut(i, k) = 0.
-          IF (qrs(i, k, 2) - pgaut(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) - pgaut(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgaut(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgaut(i, k)*dtcld
-          END IF
-          pgaut(i, k) = 0.
+!         supcol = t0c-t(i,k) ! not change
+!         call smoothif(supcol,0.,fsupcol,'t0')     
+!         call smoothif(qrs(i,k,2),0.,fqs,'q+')
+        alpha2 = 1.e-3*EXP(0.09*(-supcol))
+        IF (0. .LT. alpha2*(qrs(i, k, 2)-qs0)) THEN
+          x8 = alpha2*(qrs(i, k, 2)-qs0)
+        ELSE
+          x8 = 0.
         END IF
+        IF (x8 .GT. qrs(i, k, 2)/dtcld) THEN
+          pgaut(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          pgaut(i, k) = x8
+        END IF
+        pgaut(i, k) = fsupcol*pgaut(i, k)
+        IF (pgaut(i, k) .GE. 0.) THEN
+          abs5 = pgaut(i, k)
+        ELSE
+          abs5 = -pgaut(i, k)
+        END IF
+        IF (abs5 .LT. qmin/dtcld) pgaut(i, k) = 0.
+        IF (qrs(i, k, 2) - pgaut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) - pgaut(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgaut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgaut(i, k)*dtcld
+        END IF
+        pgaut(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! psevp: Evaporation of melting snow [RH83 A27] 
 !       (T>=T0: S->V) rh<1., psevp<0, min=-qrs(i,k,2)/dtcld, max=0.
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 2) .GT. qcrmin) THEN
+!         supcol = t0c-t(i,k) ! not change
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
-          IF (rh(i, k, 1) .LT. 1.) THEN
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
-            xl(i, k) = XLCAL(t(i, k))
-            cpm(i, k) = CPMCAL(q(i, k))
-            IF (90. .GT. t0c - t(i, k)) THEN
-              y3 = t0c - t(i, k)
-            ELSE
-              y3 = 90.
-            END IF
-            IF (0. .LT. y3) THEN
-              max3 = y3
-            ELSE
-              max3 = 0.
-            END IF
-            arg1 = alpha*max3/2.
-            arg2 = den(i, k)*qrs(i, k, 2)
-            result1 = SQRT(arg2)
-            a = EXP(arg1)*result1
-            IF (90. .GT. t0c - t(i, k)) THEN
-              y4 = t0c - t(i, k)
-            ELSE
-              y4 = 90.
-            END IF
-            IF (0. .LT. y4) THEN
-              max4 = y4
-            ELSE
-              max4 = 0.
-            END IF
-            arg1 = (3.-bvts)*alpha*max4/8.
-            pwx1 = t(i, k) + 120.
-            pwr1 = pwx1**(1./6.)
-            pwr2 = t(i, k)**(5.12/6.)
-            pwr3 = p(i, k)**(1./3.)
-            pwy4 = (13.+3.*bvts)/24.
-            pwr4 = den(i, k)**pwy4
-            pwy5 = (5.+bvts)/8.
-            pwr5 = qrs(i, k, 2)**pwy5
-            b = EXP(arg1)*pwr1/pwr2*pwr3*pwr4*pwr5
-            c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t&
-&             (i, k)**3.5
-            d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-            e = (rh(i, k, 1)-1.)/(c+d)
-            psevp0 = e*(psevp_a*a+psevp_b*b)
-            IF (psevp0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-              x9 = -(qrs(i, k, 2)/dtcld)
-            ELSE
-              x9 = psevp0
-            END IF
-            IF (x9 .GT. 0.) THEN
-              psevp(i, k) = 0.
-            ELSE
-              psevp(i, k) = x9
-            END IF
-            IF (psevp(i, k) .GE. 0.) THEN
-              abs6 = psevp(i, k)
-            ELSE
-              abs6 = -psevp(i, k)
-            END IF
-            IF (abs6 .LT. qmin/dtcld) psevp(i, k) = 0.
-            IF (q(i, k) - psevp(i, k)*dtcld .LT. 0.) THEN
-              q(i, k) = 0.
-            ELSE
-              q(i, k) = q(i, k) - psevp(i, k)*dtcld
-            END IF
-            IF (qrs(i, k, 2) + psevp(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 2) = 0.
-            ELSE
-              qrs(i, k, 2) = qrs(i, k, 2) + psevp(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + psevp(i, k)*dtcld*xls/cpm(i, k)
-            psevp(i, k) = 0.
-          END IF
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't+')
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y3 = t0c - t(i, k)
+        ELSE
+          y3 = 90.
         END IF
+        IF (0. .LT. y3) THEN
+          max5 = y3
+        ELSE
+          max5 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max12 = qcrmin
+        ELSE
+          max12 = qrs(i, k, 2)
+        END IF
+        arg1 = alpha*max5/2.
+        arg2 = den(i, k)*max12
+        result1 = SQRT(arg2)
+        a = EXP(arg1)*result1
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y4 = t0c - t(i, k)
+        ELSE
+          y4 = 90.
+        END IF
+        IF (0. .LT. y4) THEN
+          max6 = y4
+        ELSE
+          max6 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max13 = qcrmin
+        ELSE
+          max13 = qrs(i, k, 2)
+        END IF
+        arg1 = (3.-bvts)*alpha*max6/8.
+        pwx1 = t(i, k) + 120.
+        pwr1 = pwx1**(1./6.)
+        pwr2 = t(i, k)**(5.12/6.)
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvts)/24.
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvts)/8.
+        pwr5 = max13**pwy5
+        b = EXP(arg1)*pwr1/pwr2*pwr3*pwr4*pwr5
+        c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i, &
+&         k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        psevp0 = e*(psevp_a*a+psevp_b*b)
+        IF (psevp0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+          x9 = -(qrs(i, k, 2)/dtcld)
+        ELSE
+          x9 = psevp0
+        END IF
+        IF (x9 .GT. 0.) THEN
+          psevp(i, k) = 0.
+        ELSE
+          psevp(i, k) = x9
+        END IF
+        psevp(i, k) = ft0*psevp(i, k)
+        IF (psevp(i, k) .GE. 0.) THEN
+          abs6 = psevp(i, k)
+        ELSE
+          abs6 = -psevp(i, k)
+        END IF
+        IF (abs6 .LT. qmin/dtcld) psevp(i, k) = 0.
+        IF (q(i, k) - psevp(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - psevp(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psevp(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psevp(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + psevp(i, k)*dtcld*xls/cpm(i, k)
+        psevp(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! pgevp: Evaporation of melting graupel [RH84 A19]
 !       (T>=T0: G->V) rh<1., pgevp<0, min=-qrs(i,k,3)/dtcld, max=0.
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
-          IF (rh(i, k, 1) .LT. 1.) THEN
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
-            xl(i, k) = XLCAL(t(i, k))
-            cpm(i, k) = CPMCAL(q(i, k))
-            arg1 = den(i, k)*qrs(i, k, 3)
-            a = SQRT(arg1)
-            pwx1 = t(i, k) + 120.
-            pwr1 = pwx1**(1./6.)
-            pwr2 = t(i, k)**(5.12/6.)
-            pwr3 = p(i, k)**(1./3.)
-            pwy4 = (13.+3.*bvtg)/24.
-            pwr4 = den(i, k)**pwy4
-            pwy5 = (5.+bvtg)/8.
-            pwr5 = qrs(i, k, 3)**pwy5
-            b = pwr1/pwr2*pwr3*pwr4*pwr5
-            c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t&
-&             (i, k)**3.5
-            d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-            e = (rh(i, k, 1)-1.)/(c+d)
-            pgevp0 = e*(pgevp_a*a+pgevp_b*b)
-            IF (pgevp0 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-              x10 = -(qrs(i, k, 3)/dtcld)
-            ELSE
-              x10 = pgevp0
-            END IF
-            IF (x10 .GT. 0.) THEN
-              pgevp(i, k) = 0.
-            ELSE
-              pgevp(i, k) = x10
-            END IF
-            IF (pgevp(i, k) .GE. 0.) THEN
-              abs7 = pgevp(i, k)
-            ELSE
-              abs7 = -pgevp(i, k)
-            END IF
-            IF (abs7 .LT. qmin/dtcld) pgevp(i, k) = 0.
-            IF (q(i, k) - pgevp(i, k)*dtcld .LT. 0.) THEN
-              q(i, k) = 0.
-            ELSE
-              q(i, k) = q(i, k) - pgevp(i, k)*dtcld
-            END IF
-            IF (qrs(i, k, 3) + pgevp(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = qrs(i, k, 3) + pgevp(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + pgevp(i, k)*dtcld*xls/cpm(i, k)
-            pgevp(i, k) = 0.
-          END IF
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max7 = qcrmin
+        ELSE
+          max7 = qrs(i, k, 3)
         END IF
+        a = SQRT(den(i, k)*max7)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max8 = qcrmin
+        ELSE
+          max8 = qrs(i, k, 3)
+        END IF
+        pwx1 = t(i, k) + 120.
+        pwr1 = pwx1**(1./6.)
+        pwr2 = t(i, k)**(5.12/6.)
+        pwr3 = p(i, k)**(1./3.)
+        pwy4 = (13.+3.*bvtg)/24.
+        pwr4 = den(i, k)**pwy4
+        pwy5 = (5.+bvtg)/8.
+        pwr5 = max8**pwy5
+        b = pwr1/pwr2*pwr3*pwr4*pwr5
+        c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i, &
+&         k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        pgevp0 = e*(pgevp_a*a+pgevp_b*b)
+        IF (pgevp0 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+          x10 = -(qrs(i, k, 3)/dtcld)
+        ELSE
+          x10 = pgevp0
+        END IF
+        IF (x10 .GT. 0.) THEN
+          pgevp(i, k) = 0.
+        ELSE
+          pgevp(i, k) = x10
+        END IF
+        pgevp(i, k) = ft0*pgevp(i, k)
+        IF (pgevp(i, k) .GE. 0.) THEN
+          abs7 = pgevp(i, k)
+        ELSE
+          abs7 = -pgevp(i, k)
+        END IF
+        IF (abs7 .LT. qmin/dtcld) pgevp(i, k) = 0.
+        IF (q(i, k) - pgevp(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - pgevp(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgevp(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgevp(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pgevp(i, k)*dtcld*xls/cpm(i, k)
+        pgevp(i, k) = 0.
       END DO
     END DO
   END SUBROUTINE ACCRET3
@@ -8385,6 +9562,78 @@ CONTAINS
     END DO
   END SUBROUTINE PCONADD
 
+!  Differentiation of smoothif in forward (tangent) mode (with options r8):
+!   variations   of useful results: f
+!   with respect to varying inputs: x
+!=======================================================================
+!
+!=======================================================================
+  SUBROUTINE G_SMOOTHIF(x, g_x, a, f, g_f, opt)
+    IMPLICIT NONE
+    REAL, INTENT(IN) :: x, a
+    REAL, INTENT(IN) :: g_x
+    CHARACTER(len=2), INTENT(IN) :: opt
+    REAL, INTENT(OUT) :: f
+    REAL, INTENT(OUT) :: g_f
+    REAL(kind=8) :: k1, a1, x1, c1, f1, k, b
+    REAL(kind=8) :: g_x1, g_f1, g_k
+    INTRINSIC EXP
+    INTRINSIC REAL
+    REAL(kind=8) :: temp1, temp2
+    g_x1 = g_x
+    x1 = x
+    a1 = a
+    IF (opt(1:1) .EQ. 'q') THEN
+      c1 = 1.e-15
+    ELSE
+      c1 = 1.e-9
+    END IF
+!f=1/(1+exp(-k*(x-b))
+    k1 = 747./c1
+    IF (opt(2:2) .EQ. '+') THEN
+      b = a1 + 710./k1
+    ELSE
+      b = a1
+    END IF
+    g_k = -(k1*g_x1)
+    k = -(k1*(x1-b))
+    temp1 = 1.0/(EXP(k)+1.)
+    temp2 = 1.0/(EXP(-k)+1.)
+    g_f1 = -(temp1*temp2*g_k)
+    f1 = temp1
+    g_f = g_f1 !REAL(g_f1, 4)
+    f = f1 !REAL(f1, 4)
+  END SUBROUTINE G_SMOOTHIF
+
+!=======================================================================
+!
+!=======================================================================
+  SUBROUTINE SMOOTHIF(x, a, f, opt)
+    IMPLICIT NONE
+    REAL, INTENT(IN) :: x, a
+    CHARACTER(len=2), INTENT(IN) :: opt
+    REAL, INTENT(OUT) :: f
+    REAL(kind=8) :: k1, a1, x1, c1, f1, k, b
+    INTRINSIC EXP
+    x1 = x
+    a1 = a
+    IF (opt(1:1) .EQ. 'q') THEN
+      c1 = 1.e-15
+    ELSE
+      c1 = 1.e-9
+    END IF
+    k1 = 747./c1
+    IF (opt(2:2) .EQ. '+') THEN
+      b = a1 + 710./k1
+    ELSE
+      b = a1
+    END IF
+    k = -(k1*(x1-b))
+    f1 = 1./(1.+EXP(k))
+    f = f1
+  END SUBROUTINE SMOOTHIF
+
+!
 !
 !=======================================================================
 !

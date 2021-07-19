@@ -447,6 +447,7 @@ CONTAINS
       CALL PUSHREAL8ARRAY(falk, (ite-its+1)*(kte-kts+1)*3)
       CALL PUSHREAL8ARRAY(qrs, (ite-its+1)*(kte-kts+1)*3)
       CALL PUSHREAL8ARRAY(t, (ite-its+1)*(kte-kts+1))
+      CALL PUSHREAL8ARRAY(cpm, (ite-its+1)*(kte-kts+1))
       CALL FALLK(cpm, t, p, q, den, qrs, delz, dtcld, falk, fall, kte, &
 &          kts, its, ite, kme, kms, ims, ime)
       CALL PUSHREAL8ARRAY(qci, (ite-its+1)*(kte-kts+1)*2)
@@ -475,8 +476,6 @@ CONTAINS
       CALL ACCRET1(qci, den, qrs, t, q, dtcld, praci, piacr, psaci, &
 &            pgaci, psacw, pgacw, ims, ime, kms, kme, its, ite, kts, kte&
 &           )
-      CALL PUSHREAL8ARRAY(pgacr, (ite-its+1)*(kte-kts+1))
-      CALL PUSHREAL8ARRAY(psacr, (ite-its+1)*(kte-kts+1))
       CALL PUSHREAL8ARRAY(pgacw, (ite-its+1)*(kte-kts+1))
       CALL PUSHREAL8ARRAY(psacw, (ite-its+1)*(kte-kts+1))
       CALL PUSHREAL8ARRAY(t, (ite-its+1)*(kte-kts+1))
@@ -493,6 +492,7 @@ CONTAINS
       CALL ACCRET3(qrs, qci, rh, t, p, den, dtcld, q, qs, psdep, pgdep, &
 &            pigen, psaut, pgaut, psevp, pgevp, pidep, ims, ime, kms, &
 &            kme, its, ite, kts, kte)
+      CALL PUSHREAL8ARRAY(cpm, (ite-its+1)*(kte-kts+1))
       CALL PUSHREAL8ARRAY(qs, (ite-its+1)*(kte-kts+1)*3)
       CALL PUSHREAL8ARRAY(qci, (ite-its+1)*(kte-kts+1)*2)
       CALL PUSHREAL8ARRAY(q, (ime-ims+1)*(kme-kms+1))
@@ -535,6 +535,7 @@ CONTAINS
       CALL POPREAL8ARRAY(q, (ime-ims+1)*(kme-kms+1))
       CALL POPREAL8ARRAY(qci, (ite-its+1)*(kte-kts+1)*2)
       CALL POPREAL8ARRAY(qs, (ite-its+1)*(kte-kts+1)*3)
+      CALL POPREAL8ARRAY(cpm, (ite-its+1)*(kte-kts+1))
       CALL A_PCONADD(t, a_t, p, a_p, q, a_q, qci, a_qci, qs, a_qs, xl, &
 &              a_xl, cpm, a_cpm, dtcld, kte, kts, its, ite, kme, kms, &
 &              ims, ime)
@@ -553,8 +554,6 @@ CONTAINS
       CALL POPREAL8ARRAY(t, (ite-its+1)*(kte-kts+1))
       CALL POPREAL8ARRAY(psacw, (ite-its+1)*(kte-kts+1))
       CALL POPREAL8ARRAY(pgacw, (ite-its+1)*(kte-kts+1))
-      CALL POPREAL8ARRAY(psacr, (ite-its+1)*(kte-kts+1))
-      CALL POPREAL8ARRAY(pgacr, (ite-its+1)*(kte-kts+1))
       CALL A_ACCRET2(qrs, a_qrs, t, a_t, q, a_q, den, a_den, dtcld, &
 &              psacw, a_psacw, pgacw, a_pgacw, pracs, a_pracs, psacr, &
 &              a_psacr, pgacr, a_pgacr, pgacs, a_pgacs, pseml, a_pseml, &
@@ -580,12 +579,13 @@ CONTAINS
       CALL POPREAL8ARRAY(qci, (ite-its+1)*(kte-kts+1)*2)
       CALL POPREAL8ARRAY(qrs, (ite-its+1)*(kte-kts+1)*3)
       CALL A_RAINSC(fall, a_fall, fallc, a_fallc, xl, a_xl, t, a_t, q, &
-&             a_q, qci, a_qci, cpm, a_cpm, den, a_den, qrs, a_qrs, delz&
-&             , a_delz, rain, a_rain, rainncv, a_rainncv, dtcld, kte, &
-&             kts, its, ite, kme, kms, ims, ime)
+&             qci, a_qci, cpm, a_cpm, den, a_den, qrs, a_qrs, delz, &
+&             a_delz, rain, a_rain, rainncv, a_rainncv, dtcld, kte, kts&
+&             , its, ite, kme, kms, ims, ime)
       CALL POPREAL8ARRAY(qci, (ite-its+1)*(kte-kts+1)*2)
       CALL A_FALLKC(qci, a_qci, fallc, a_fallc, den, a_den, delz, a_delz&
 &             , dtcld, kte, kts, its, ite, kme, kms, ims, ime)
+      CALL POPREAL8ARRAY(cpm, (ite-its+1)*(kte-kts+1))
       CALL POPREAL8ARRAY(t, (ite-its+1)*(kte-kts+1))
       CALL POPREAL8ARRAY(qrs, (ite-its+1)*(kte-kts+1)*3)
       CALL POPREAL8ARRAY(falk, (ite-its+1)*(kte-kts+1)*3)
@@ -1146,7 +1146,7 @@ CONTAINS
     REAL :: a_tmp1, a_tmp2, a_tmp3, a_tmp4, a_tmp5, a_tmp6, a_tmp7, &
 &   a_tmp8
     INTEGER :: mstepmax, k, i, n, nw, jj
-    REAL :: supcol, a, b, c, d
+    REAL :: fqs, fqg, supcol, a, b, c, d
     REAL :: a_a, a_b, a_c, a_d
     INTRINSIC MAX
     INTRINSIC MIN
@@ -1174,10 +1174,18 @@ CONTAINS
     REAL :: a_max4
     REAL :: max5
     REAL :: a_max5
-    REAL :: abs2
-    REAL :: abs3
     REAL :: max6
     REAL :: a_max6
+    REAL :: abs2
+    REAL :: max7
+    REAL :: a_max7
+    REAL :: abs3
+    REAL :: max8
+    REAL :: a_max8
+    REAL :: max9
+    REAL :: a_max9
+    REAL :: max10
+    REAL :: a_max10
     REAL :: temp
     REAL :: temp0
     REAL :: temp1
@@ -1188,9 +1196,9 @@ CONTAINS
     REAL :: a_temp0
     REAL :: a_temp1
     REAL :: a_temp2
+    REAL :: a_temp3
     REAL :: temp5
     REAL :: temp6
-    REAL :: a_temp3
     REAL :: temp7
     REAL :: temp8
     REAL :: temp9
@@ -1201,24 +1209,24 @@ CONTAINS
     mstepmax = 1
     DO k=kte,kts,-1
       DO i=its,ite
-        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+        IF (qcrmin .LT. qrs(i, k, 1)) THEN
           CALL PUSHREAL8(max1)
-          max1 = qcrmin
+          max1 = qrs(i, k, 1)
           CALL PUSHCONTROL1B(0)
         ELSE
           CALL PUSHREAL8(max1)
-          max1 = qrs(i, k, 1)
+          max1 = qcrmin
           CALL PUSHCONTROL1B(1)
         END IF
         work1(i, k, 1) = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max1**(bvtr/4.&
 &         )/delz(i, k)
-        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+        IF (qcrmin .LT. qrs(i, k, 2)) THEN
           CALL PUSHREAL8(max2)
-          max2 = qcrmin
+          max2 = qrs(i, k, 2)
           CALL PUSHCONTROL1B(0)
         ELSE
           CALL PUSHREAL8(max2)
-          max2 = qrs(i, k, 2)
+          max2 = qcrmin
           CALL PUSHCONTROL1B(1)
         END IF
         IF (90. .GT. t0c - t(i, k)) THEN
@@ -1229,23 +1237,23 @@ CONTAINS
           y3 = 90.
         END IF
         IF (0. .LT. y3) THEN
-          CALL PUSHREAL8(max6)
-          max6 = y3
+          CALL PUSHREAL8(max8)
+          max8 = y3
           CALL PUSHCONTROL1B(0)
         ELSE
-          CALL PUSHREAL8(max6)
-          max6 = 0.
+          CALL PUSHREAL8(max8)
+          max8 = 0.
           CALL PUSHCONTROL1B(1)
         END IF
         work1(i, k, 2) = vt2s_a*den(i, k)**((bvts-2.)/4.)*max2**(bvts/4.&
-&         )/delz(i, k)*EXP(-(bvts*alpha*max6/4.))
-        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+&         )/delz(i, k)*EXP(-(bvts*alpha*max8/4.))
+        IF (qcrmin .LT. qrs(i, k, 3)) THEN
           CALL PUSHREAL8(max3)
-          max3 = qcrmin
+          max3 = qrs(i, k, 3)
           CALL PUSHCONTROL1B(0)
         ELSE
           CALL PUSHREAL8(max3)
-          max3 = qrs(i, k, 3)
+          max3 = qcrmin
           CALL PUSHCONTROL1B(1)
         END IF
         work1(i, k, 3) = vt2g_a*den(i, k)**((bvtg-2.)/4.)*max3**(bvtg/4.&
@@ -1374,109 +1382,122 @@ CONTAINS
 ! psmlt: melting of snow [RH83 A25]
 !       (T>T0: S->R) psmlt<0: min=-qrs(i,k,2), max=0
 !---------------------------------------------------------------
-            IF (t(i, k) .GT. t0c .AND. qrs(i, k, 2) .GT. qcrmin) THEN
 !update xl, cpm
-              CALL PUSHREAL8(cpm(i, k))
-              cpm(i, k) = CPMCAL(q(i, k))
-              xlf = xlf0
-              IF (90. .GT. t0c - t(i, k)) THEN
-                y1 = t0c - t(i, k)
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                CALL PUSHCONTROL1B(1)
-                y1 = 90.
-              END IF
-              IF (0. .LT. y1) THEN
-                CALL PUSHREAL8(max4)
-                max4 = y1
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                CALL PUSHREAL8(max4)
-                max4 = 0.
-                CALL PUSHCONTROL1B(1)
-              END IF
-              CALL PUSHREAL8(a)
-              a = EXP(alpha*max4/2.)
-              IF (90. .GT. t0c - t(i, k)) THEN
-                y2 = t0c - t(i, k)
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                CALL PUSHCONTROL1B(1)
-                y2 = 90.
-              END IF
-              IF (0. .LT. y2) THEN
-                CALL PUSHREAL8(max5)
-                max5 = y2
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                CALL PUSHREAL8(max5)
-                max5 = 0.
-                CALL PUSHCONTROL1B(1)
-              END IF
-              CALL PUSHREAL8(b)
-              b = EXP(alpha*max5*(3-bvts)/8.)
-              c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
-              CALL PUSHREAL8(d)
-              d = t(i, k)**(3.88/6.)*(t0c-t(i, k))/(t(i, k)+120.)**(5./&
-&               6.)
-              psmlt0 = psmlt_a*a*c*SQRT(den(i, k)*qrs(i, k, 2)) + &
-&               psmlt_b*b*d*p(i, k)**(1./3.)*den(i, k)**((13.+3*bvts)/&
-&               24.)*qrs(i, k, 2)**((5.+bvts)/8.)
-              tmp3 = psmlt0*dtcld/mstep(i)
-              tmp4 = -(qrs(i, k, 2)/mstep(i))
-              IF (tmp3 .GT. tmp4) THEN
-                tmp5 = tmp3
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                tmp5 = tmp4
-                CALL PUSHCONTROL1B(1)
-              END IF
-              IF (tmp5 .LT. 0.) THEN
-                CALL PUSHREAL8(psmlt(i, k))
-                psmlt(i, k) = tmp5
-                CALL PUSHCONTROL1B(1)
-              ELSE
-                CALL PUSHREAL8(psmlt(i, k))
-                psmlt(i, k) = 0.
-                CALL PUSHCONTROL1B(0)
-              END IF
-              IF (psmlt(i, k) .GE. 0.) THEN
-                abs2 = psmlt(i, k)
-              ELSE
-                abs2 = -psmlt(i, k)
-              END IF
-              IF (abs2 .LT. qmin) THEN
-                psmlt(i, k) = 0.
-                CALL PUSHCONTROL1B(1)
-              ELSE
-                CALL PUSHCONTROL1B(0)
-              END IF
-              IF (qrs(i, k, 2) + psmlt(i, k) .LT. 0.) THEN
-                CALL PUSHREAL8(qrs(i, k, 2))
-                qrs(i, k, 2) = 0.
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                CALL PUSHREAL8(qrs(i, k, 2))
-                qrs(i, k, 2) = qrs(i, k, 2) + psmlt(i, k)
-                CALL PUSHCONTROL1B(1)
-              END IF
-              IF (qrs(i, k, 1) - psmlt(i, k) .LT. 0.) THEN
-                CALL PUSHREAL8(qrs(i, k, 1))
-                qrs(i, k, 1) = 0.
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                CALL PUSHREAL8(qrs(i, k, 1))
-                qrs(i, k, 1) = qrs(i, k, 1) - psmlt(i, k)
-                CALL PUSHCONTROL1B(1)
-              END IF
-              CALL PUSHREAL8(t(i, k))
-              t(i, k) = t(i, k) + xlf/cpm(i, k)*psmlt(i, k)
-              CALL PUSHCONTROL2B(2)
+            CALL PUSHREAL8(cpm(i, k))
+            cpm(i, k) = CPMCAL(q(i, k))
+            xlf = xlf0
+            IF (90. .GT. t0c - t(i, k)) THEN
+              y1 = t0c - t(i, k)
+              CALL PUSHCONTROL1B(0)
             ELSE
-              CALL PUSHCONTROL2B(1)
+              CALL PUSHCONTROL1B(1)
+              y1 = 90.
             END IF
+            IF (0. .LT. y1) THEN
+              CALL PUSHREAL8(max4)
+              max4 = y1
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max4)
+              max4 = 0.
+              CALL PUSHCONTROL1B(1)
+            END IF
+            CALL PUSHREAL8(a)
+            a = EXP(alpha*max4/2.)
+            IF (90. .GT. t0c - t(i, k)) THEN
+              y2 = t0c - t(i, k)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+              y2 = 90.
+            END IF
+            IF (0. .LT. y2) THEN
+              CALL PUSHREAL8(max5)
+              max5 = y2
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max5)
+              max5 = 0.
+              CALL PUSHCONTROL1B(1)
+            END IF
+            CALL PUSHREAL8(b)
+            b = EXP(alpha*max5*(3-bvts)/8.)
+            c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
+            CALL PUSHREAL8(d)
+            d = t(i, k)**(3.88/6.)*(t0c-t(i, k))/(t(i, k)+120.)**(5./6.)
+            IF (qrs(i, k, 2) .LT. qcrmin) THEN
+              CALL PUSHREAL8(max6)
+              max6 = qcrmin
+              CALL PUSHCONTROL1B(1)
+            ELSE
+              CALL PUSHREAL8(max6)
+              max6 = qrs(i, k, 2)
+              CALL PUSHCONTROL1B(0)
+            END IF
+            IF (qrs(i, k, 2) .LT. qcrmin) THEN
+              CALL PUSHREAL8(max9)
+              max9 = qcrmin
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max9)
+              max9 = qrs(i, k, 2)
+              CALL PUSHCONTROL1B(1)
+            END IF
+            psmlt0 = psmlt_a*a*c*SQRT(den(i, k)*max6) + psmlt_b*b*d*p(i&
+&             , k)**(1./3.)*den(i, k)**((13.+3*bvts)/24.)*max9**((5.+&
+&             bvts)/8.)
+            tmp3 = psmlt0*dtcld/mstep(i)
+            tmp4 = -(qrs(i, k, 2)/mstep(i))
+            IF (tmp3 .GT. tmp4) THEN
+              tmp5 = tmp3
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              tmp5 = tmp4
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (tmp5 .LT. 0.) THEN
+              CALL PUSHREAL8(psmlt(i, k))
+              psmlt(i, k) = tmp5
+              CALL PUSHCONTROL1B(1)
+            ELSE
+              CALL PUSHREAL8(psmlt(i, k))
+              psmlt(i, k) = 0.
+              CALL PUSHCONTROL1B(0)
+            END IF
+            IF (psmlt(i, k) .GE. 0.) THEN
+              abs2 = psmlt(i, k)
+            ELSE
+              abs2 = -psmlt(i, k)
+            END IF
+            IF (abs2 .LT. qmin) THEN
+              psmlt(i, k) = 0.
+              CALL PUSHCONTROL1B(1)
+            ELSE
+              CALL PUSHCONTROL1B(0)
+            END IF
+            IF (qrs(i, k, 2) + psmlt(i, k) .LT. 0.) THEN
+              CALL PUSHREAL8(qrs(i, k, 2))
+              qrs(i, k, 2) = 0.
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(qrs(i, k, 2))
+              qrs(i, k, 2) = qrs(i, k, 2) + psmlt(i, k)
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (qrs(i, k, 1) - psmlt(i, k) .LT. 0.) THEN
+              CALL PUSHREAL8(qrs(i, k, 1))
+              qrs(i, k, 1) = 0.
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(qrs(i, k, 1))
+              qrs(i, k, 1) = qrs(i, k, 1) - psmlt(i, k)
+              CALL PUSHCONTROL1B(1)
+            END IF
+            CALL PUSHREAL8(t(i, k))
+            t(i, k) = t(i, k) + xlf/cpm(i, k)*psmlt(i, k)
+            CALL PUSHCONTROL1B(1)
           ELSE
-            CALL PUSHCONTROL2B(0)
+            CALL PUSHCONTROL1B(0)
           END IF
         END DO
       END DO
@@ -1487,73 +1508,85 @@ CONTAINS
       DO k=kte,kts,-1
         DO i=its,ite
           IF (n .LE. mstep(i)) THEN
-            IF (t(i, k) .GT. t0c .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update xl, cpm
-              xlf = xlf0
-              CALL PUSHREAL8(cpm(i, k))
-              cpm(i, k) = CPMCAL(q(i, k))
-              c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
-              CALL PUSHREAL8(d)
-              d = t(i, k)**(3.88/6.)*(t0c-t(i, k))/(t(i, k)+120.)**(5./&
-&               6.)
-              pgmlt0 = pgmlt_a*c*SQRT(den(i, k)*qrs(i, k, 3)) + pgmlt_b*&
-&               d*p(i, k)**(1./3.)*den(i, k)**((13.+3*bvtg)/24.)*qrs(i, &
-&               k, 3)**((5.+bvtg)/8.)
-              tmp6 = pgmlt0*dtcld/mstep(i)
-              tmp7 = -(qrs(i, k, 3)/mstep(i))
-              IF (tmp6 .GT. tmp7) THEN
-                tmp8 = tmp6
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                tmp8 = tmp7
-                CALL PUSHCONTROL1B(1)
-              END IF
-              IF (tmp8 .LT. 0.) THEN
-                CALL PUSHREAL8(pgmlt(i, k))
-                pgmlt(i, k) = tmp8
-                CALL PUSHCONTROL1B(1)
-              ELSE
-                CALL PUSHREAL8(pgmlt(i, k))
-                pgmlt(i, k) = 0.
-                CALL PUSHCONTROL1B(0)
-              END IF
-              IF (pgmlt(i, k) .GE. 0.) THEN
-                abs3 = pgmlt(i, k)
-              ELSE
-                abs3 = -pgmlt(i, k)
-              END IF
-              IF (abs3 .LT. qmin) THEN
-                pgmlt(i, k) = 0.
-                CALL PUSHCONTROL1B(1)
-              ELSE
-                CALL PUSHCONTROL1B(0)
-              END IF
-              IF (qrs(i, k, 3) + pgmlt(i, k) .LT. 0.) THEN
-                CALL PUSHREAL8(qrs(i, k, 3))
-                qrs(i, k, 3) = 0.
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                CALL PUSHREAL8(qrs(i, k, 3))
-                qrs(i, k, 3) = qrs(i, k, 3) + pgmlt(i, k)
-                CALL PUSHCONTROL1B(1)
-              END IF
-              IF (qrs(i, k, 1) - pgmlt(i, k) .LT. 0.) THEN
-                CALL PUSHREAL8(qrs(i, k, 1))
-                qrs(i, k, 1) = 0.
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                CALL PUSHREAL8(qrs(i, k, 1))
-                qrs(i, k, 1) = qrs(i, k, 1) - pgmlt(i, k)
-                CALL PUSHCONTROL1B(1)
-              END IF
-              CALL PUSHREAL8(t(i, k))
-              t(i, k) = t(i, k) + xlf/cpm(i, k)*pgmlt(i, k)
-              CALL PUSHCONTROL2B(2)
+            xlf = xlf0
+!               cpm(i,k)=cpmcal(q(i,k)) ! not change
+            c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
+            CALL PUSHREAL8(d)
+            d = t(i, k)**(3.88/6.)*(t0c-t(i, k))/(t(i, k)+120.)**(5./6.)
+            IF (qrs(i, k, 3) .LT. qcrmin) THEN
+              CALL PUSHREAL8(max7)
+              max7 = qcrmin
+              CALL PUSHCONTROL1B(1)
             ELSE
-              CALL PUSHCONTROL2B(1)
+              CALL PUSHREAL8(max7)
+              max7 = qrs(i, k, 3)
+              CALL PUSHCONTROL1B(0)
             END IF
+            IF (qrs(i, k, 3) .LT. qcrmin) THEN
+              CALL PUSHREAL8(max10)
+              max10 = qcrmin
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max10)
+              max10 = qrs(i, k, 3)
+              CALL PUSHCONTROL1B(1)
+            END IF
+            pgmlt0 = pgmlt_a*c*SQRT(den(i, k)*max7) + pgmlt_b*d*p(i, k)&
+&             **(1./3.)*den(i, k)**((13.+3*bvtg)/24.)*max10**((5.+bvtg)/&
+&             8.)
+            tmp6 = pgmlt0*dtcld/mstep(i)
+            tmp7 = -(qrs(i, k, 3)/mstep(i))
+            IF (tmp6 .GT. tmp7) THEN
+              tmp8 = tmp6
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              tmp8 = tmp7
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (tmp8 .LT. 0.) THEN
+              CALL PUSHREAL8(pgmlt(i, k))
+              pgmlt(i, k) = tmp8
+              CALL PUSHCONTROL1B(1)
+            ELSE
+              CALL PUSHREAL8(pgmlt(i, k))
+              pgmlt(i, k) = 0.
+              CALL PUSHCONTROL1B(0)
+            END IF
+            IF (pgmlt(i, k) .GE. 0.) THEN
+              abs3 = pgmlt(i, k)
+            ELSE
+              abs3 = -pgmlt(i, k)
+            END IF
+            IF (abs3 .LT. qmin) THEN
+              pgmlt(i, k) = 0.
+              CALL PUSHCONTROL1B(1)
+            ELSE
+              CALL PUSHCONTROL1B(0)
+            END IF
+            IF (qrs(i, k, 3) + pgmlt(i, k) .LT. 0.) THEN
+              CALL PUSHREAL8(qrs(i, k, 3))
+              qrs(i, k, 3) = 0.
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(qrs(i, k, 3))
+              qrs(i, k, 3) = qrs(i, k, 3) + pgmlt(i, k)
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (qrs(i, k, 1) - pgmlt(i, k) .LT. 0.) THEN
+              CALL PUSHREAL8(qrs(i, k, 1))
+              qrs(i, k, 1) = 0.
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(qrs(i, k, 1))
+              qrs(i, k, 1) = qrs(i, k, 1) - pgmlt(i, k)
+              CALL PUSHCONTROL1B(1)
+            END IF
+            CALL PUSHREAL8(t(i, k))
+            t(i, k) = t(i, k) + xlf/cpm(i, k)*pgmlt(i, k)
+            CALL PUSHCONTROL1B(1)
           ELSE
-            CALL PUSHCONTROL2B(0)
+            CALL PUSHCONTROL1B(0)
           END IF
         END DO
       END DO
@@ -1564,249 +1597,267 @@ CONTAINS
     DO n=mstepmax,1,-1
       DO k=kts,kte,1
         DO i=ite,its,-1
-          CALL POPCONTROL2B(branch)
+          CALL POPCONTROL1B(branch)
           IF (branch .NE. 0) THEN
-            IF (branch .NE. 1) THEN
-              xlf = xlf0
-              CALL POPREAL8(t(i, k))
-              a_temp4 = xlf*a_t(i, k)/cpm(i, k)
-              a_pgmlt(i, k) = a_pgmlt(i, k) + a_temp4
-              a_cpm(i, k) = a_cpm(i, k) - pgmlt(i, k)*a_temp4/cpm(i, k)
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                CALL POPREAL8(qrs(i, k, 1))
-                a_qrs(i, k, 1) = 0.0_8
-              ELSE
-                CALL POPREAL8(qrs(i, k, 1))
-                a_pgmlt(i, k) = a_pgmlt(i, k) - a_qrs(i, k, 1)
-              END IF
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                CALL POPREAL8(qrs(i, k, 3))
-                a_qrs(i, k, 3) = 0.0_8
-              ELSE
-                CALL POPREAL8(qrs(i, k, 3))
-                a_pgmlt(i, k) = a_pgmlt(i, k) + a_qrs(i, k, 3)
-              END IF
-              CALL POPCONTROL1B(branch)
-              IF (branch .NE. 0) a_pgmlt(i, k) = 0.0_8
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                CALL POPREAL8(pgmlt(i, k))
-                a_pgmlt(i, k) = 0.0_8
-                a_tmp8 = 0.0_8
-              ELSE
-                CALL POPREAL8(pgmlt(i, k))
-                a_tmp8 = a_pgmlt(i, k)
-                a_pgmlt(i, k) = 0.0_8
-              END IF
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                a_tmp6 = a_tmp8
-                a_tmp7 = 0.0_8
-              ELSE
-                a_tmp7 = a_tmp8
-                a_tmp6 = 0.0_8
-              END IF
-              a_pgmlt0 = dtcld*a_tmp6/mstep(i)
-              c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
-              temp9 = den(i, k)*qrs(i, k, 3)
-              temp8 = SQRT(temp9)
-              temp7 = (3*bvtg+13.)/24.
-              temp5 = (bvtg+5.)/8.
-              temp3 = 1.0/3.
-              temp2 = p(i, k)**temp3
-              IF (temp9 .EQ. 0.0_8) THEN
-                a_temp4 = 0.0_8
-              ELSE
-                a_temp4 = c*pgmlt_a*a_pgmlt0/(2.0*temp8)
-              END IF
-              a_temp3 = den(i, k)**temp7*pgmlt_b*a_pgmlt0
-              IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
-&                 temp5 .NE. INT(temp5))) THEN
-                a_qrs(i, k, 3) = a_qrs(i, k, 3) + den(i, k)*a_temp4 - &
-&                 a_tmp7/mstep(i)
-              ELSE
-                a_qrs(i, k, 3) = a_qrs(i, k, 3) + temp5*qrs(i, k, 3)**(&
-&                 temp5-1)*d*temp2*a_temp3 - a_tmp7/mstep(i) + den(i, k)&
-&                 *a_temp4
-              END IF
-              temp4 = qrs(i, k, 3)**temp5
-              a_c = temp8*pgmlt_a*a_pgmlt0
-              IF (den(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
-&                 temp7 .NE. INT(temp7))) THEN
-                a_den(i, k) = a_den(i, k) + qrs(i, k, 3)*a_temp4
-              ELSE
-                a_den(i, k) = a_den(i, k) + temp7*den(i, k)**(temp7-1)*d&
-&                 *temp2*temp4*pgmlt_b*a_pgmlt0 + qrs(i, k, 3)*a_temp4
-              END IF
-              a_d = temp2*temp4*a_temp3
-              IF (.NOT.(p(i, k) .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR. &
-&                 temp3 .NE. INT(temp3)))) a_p(i, k) = a_p(i, k) + temp3&
-&                 *p(i, k)**(temp3-1)*d*temp4*a_temp3
-              CALL POPREAL8(d)
-              temp9 = 5./6.
-              temp8 = (t(i, k)+120.)**temp9
-              temp6 = 3.88/6.
-              temp5 = t(i, k)**temp6
-              a_temp5 = a_d/temp8
-              IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. &
-&                 temp6 .NE. INT(temp6)))) a_t(i, k) = a_t(i, k) + temp6&
-&                 *t(i, k)**(temp6-1)*(t0c-t(i, k))*a_temp5
-              IF (t(i, k) + 120. .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR.&
-&                 temp9 .NE. INT(temp9))) THEN
-                a_t(i, k) = a_t(i, k) - temp5*a_temp5
-              ELSE
-                a_t(i, k) = a_t(i, k) - (temp5+temp9*(t(i, k)+120.)**(&
-&                 temp9-1)*temp5*(t0c-t(i, k))/temp8)*a_temp5
-              END IF
-              temp9 = (t0c-t(i, k))/(t(i, k)+120.)
-              a_temp4 = t(i, k)**1.5*a_c/(t(i, k)+120.)
-              a_t(i, k) = a_t(i, k) + 1.5*t(i, k)**0.5*temp9*a_c - (&
-&               temp9+1.0)*a_temp4
-              CALL POPREAL8(cpm(i, k))
-              CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-              a_cpm(i, k) = 0.0_8
+            xlf = xlf0
+            CALL POPREAL8(t(i, k))
+            a_temp4 = xlf*a_t(i, k)/cpm(i, k)
+            a_pgmlt(i, k) = a_pgmlt(i, k) + a_temp4
+            a_cpm(i, k) = a_cpm(i, k) - pgmlt(i, k)*a_temp4/cpm(i, k)
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(qrs(i, k, 1))
+              a_qrs(i, k, 1) = 0.0_8
+            ELSE
+              CALL POPREAL8(qrs(i, k, 1))
+              a_pgmlt(i, k) = a_pgmlt(i, k) - a_qrs(i, k, 1)
             END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(qrs(i, k, 3))
+              a_qrs(i, k, 3) = 0.0_8
+            ELSE
+              CALL POPREAL8(qrs(i, k, 3))
+              a_pgmlt(i, k) = a_pgmlt(i, k) + a_qrs(i, k, 3)
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .NE. 0) a_pgmlt(i, k) = 0.0_8
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(pgmlt(i, k))
+              a_pgmlt(i, k) = 0.0_8
+              a_tmp8 = 0.0_8
+            ELSE
+              CALL POPREAL8(pgmlt(i, k))
+              a_tmp8 = a_pgmlt(i, k)
+              a_pgmlt(i, k) = 0.0_8
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              a_tmp6 = a_tmp8
+              a_tmp7 = 0.0_8
+            ELSE
+              a_tmp7 = a_tmp8
+              a_tmp6 = 0.0_8
+            END IF
+            a_qrs(i, k, 3) = a_qrs(i, k, 3) - a_tmp7/mstep(i)
+            a_pgmlt0 = dtcld*a_tmp6/mstep(i)
+            c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
+            temp9 = den(i, k)*max7
+            temp8 = SQRT(temp9)
+            temp7 = (bvtg+5.)/8.
+            temp6 = max10**temp7
+            temp5 = 1.0/3.
+            temp4 = p(i, k)**temp5
+            temp3 = (3*bvtg+13.)/24.
+            a_c = temp8*pgmlt_a*a_pgmlt0
+            IF (temp9 .EQ. 0.0_8) THEN
+              a_temp4 = 0.0_8
+            ELSE
+              a_temp4 = c*pgmlt_a*a_pgmlt0/(2.0*temp8)
+            END IF
+            IF (den(i, k) .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR. temp3 &
+&               .NE. INT(temp3))) THEN
+              a_den(i, k) = a_den(i, k) + max7*a_temp4
+            ELSE
+              a_den(i, k) = a_den(i, k) + temp3*den(i, k)**(temp3-1)*&
+&               temp4*d*temp6*pgmlt_b*a_pgmlt0 + max7*a_temp4
+            END IF
+            a_temp0 = den(i, k)**temp3*pgmlt_b*a_pgmlt0
+            IF (.NOT.(p(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
+&               temp5 .NE. INT(temp5)))) a_p(i, k) = a_p(i, k) + temp5*p&
+&               (i, k)**(temp5-1)*d*temp6*a_temp0
+            a_d = temp6*temp4*a_temp0
+            IF (max10 .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. temp7 .NE.&
+&               INT(temp7))) THEN
+              a_max10 = 0.0_8
+            ELSE
+              a_max10 = temp7*max10**(temp7-1)*d*temp4*a_temp0
+            END IF
+            a_max7 = den(i, k)*a_temp4
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max10)
+            ELSE
+              CALL POPREAL8(max10)
+              a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max10
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max7)
+              a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max7
+            ELSE
+              CALL POPREAL8(max7)
+            END IF
+            a_temp4 = t(i, k)**1.5*a_c/(t(i, k)+120.)
+            CALL POPREAL8(d)
+            temp9 = 5./6.
+            temp8 = (t(i, k)+120.)**temp9
+            temp6 = 3.88/6.
+            temp5 = t(i, k)**temp6
+            a_temp5 = a_d/temp8
+            IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. &
+&               temp6 .NE. INT(temp6)))) a_t(i, k) = a_t(i, k) + temp6*t&
+&               (i, k)**(temp6-1)*(t0c-t(i, k))*a_temp5
+            IF (t(i, k) + 120. .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. &
+&               temp9 .NE. INT(temp9))) THEN
+              a_t(i, k) = a_t(i, k) - temp5*a_temp5
+            ELSE
+              a_t(i, k) = a_t(i, k) - (temp5+temp9*(t(i, k)+120.)**(&
+&               temp9-1)*temp5*(t0c-t(i, k))/temp8)*a_temp5
+            END IF
+            temp9 = (t0c-t(i, k))/(t(i, k)+120.)
+            a_t(i, k) = a_t(i, k) + 1.5*t(i, k)**0.5*temp9*a_c - (temp9+&
+&             1.0)*a_temp4
           END IF
         END DO
       END DO
       DO k=kts,kte,1
         DO i=ite,its,-1
-          CALL POPCONTROL2B(branch)
+          CALL POPCONTROL1B(branch)
           IF (branch .NE. 0) THEN
-            IF (branch .NE. 1) THEN
-              xlf = xlf0
-              CALL POPREAL8(t(i, k))
-              a_temp4 = xlf*a_t(i, k)/cpm(i, k)
-              a_psmlt(i, k) = a_psmlt(i, k) + a_temp4
-              a_cpm(i, k) = a_cpm(i, k) - psmlt(i, k)*a_temp4/cpm(i, k)
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                CALL POPREAL8(qrs(i, k, 1))
-                a_qrs(i, k, 1) = 0.0_8
-              ELSE
-                CALL POPREAL8(qrs(i, k, 1))
-                a_psmlt(i, k) = a_psmlt(i, k) - a_qrs(i, k, 1)
-              END IF
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                CALL POPREAL8(qrs(i, k, 2))
-                a_qrs(i, k, 2) = 0.0_8
-              ELSE
-                CALL POPREAL8(qrs(i, k, 2))
-                a_psmlt(i, k) = a_psmlt(i, k) + a_qrs(i, k, 2)
-              END IF
-              CALL POPCONTROL1B(branch)
-              IF (branch .NE. 0) a_psmlt(i, k) = 0.0_8
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                CALL POPREAL8(psmlt(i, k))
-                a_psmlt(i, k) = 0.0_8
-                a_tmp5 = 0.0_8
-              ELSE
-                CALL POPREAL8(psmlt(i, k))
-                a_tmp5 = a_psmlt(i, k)
-                a_psmlt(i, k) = 0.0_8
-              END IF
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                a_tmp3 = a_tmp5
-                a_tmp4 = 0.0_8
-              ELSE
-                a_tmp4 = a_tmp5
-                a_tmp3 = 0.0_8
-              END IF
-              a_psmlt0 = dtcld*a_tmp3/mstep(i)
-              c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
-              temp3 = den(i, k)*qrs(i, k, 2)
-              temp2 = SQRT(temp3)
-              temp1 = (bvts+5.)/8.
-              temp = (3*bvts+13.)/24.
-              temp5 = den(i, k)**temp
-              temp7 = 1.0/3.
-              temp8 = p(i, k)**temp7
-              a_temp2 = psmlt_a*a_psmlt0
-              a_temp4 = b*d*temp8*psmlt_b*a_psmlt0
-              IF (temp3 .EQ. 0.0_8) THEN
-                a_temp1 = 0.0_8
-              ELSE
-                a_temp1 = a*c*a_temp2/(2.0*temp2)
-              END IF
-              IF (qrs(i, k, 2) .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. &
-&                 temp1 .NE. INT(temp1))) THEN
-                a_qrs(i, k, 2) = a_qrs(i, k, 2) + den(i, k)*a_temp1 - &
-&                 a_tmp4/mstep(i)
-              ELSE
-                a_qrs(i, k, 2) = a_qrs(i, k, 2) + temp1*qrs(i, k, 2)**(&
-&                 temp1-1)*temp5*a_temp4 - a_tmp4/mstep(i) + den(i, k)*&
-&                 a_temp1
-              END IF
-              temp0 = qrs(i, k, 2)**temp1
-              a_temp3 = temp5*temp0*psmlt_b*a_psmlt0
-              IF (den(i, k) .LE. 0.0_8 .AND. (temp .EQ. 0.0_8 .OR. temp &
-&                 .NE. INT(temp))) THEN
-                a_den(i, k) = a_den(i, k) + qrs(i, k, 2)*a_temp1
-              ELSE
-                a_den(i, k) = a_den(i, k) + temp*den(i, k)**(temp-1)*&
-&                 temp0*a_temp4 + qrs(i, k, 2)*a_temp1
-              END IF
-              a_b = d*temp8*a_temp3
-              a_d = b*temp8*a_temp3
-              IF (.NOT.(p(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
-&                 temp7 .NE. INT(temp7)))) a_p(i, k) = a_p(i, k) + temp7&
-&                 *p(i, k)**(temp7-1)*b*d*a_temp3
-              a_a = c*temp2*a_temp2
-              a_c = a*temp2*a_temp2
-              CALL POPREAL8(d)
-              temp4 = 5./6.
-              temp3 = (t(i, k)+120.)**temp4
-              temp1 = 3.88/6.
-              temp0 = t(i, k)**temp1
-              a_temp0 = a_d/temp3
-              IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. &
-&                 temp1 .NE. INT(temp1)))) a_t(i, k) = a_t(i, k) + temp1&
-&                 *t(i, k)**(temp1-1)*(t0c-t(i, k))*a_temp0
-              IF (t(i, k) + 120. .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR.&
-&                 temp4 .NE. INT(temp4))) THEN
-                a_t(i, k) = a_t(i, k) - temp0*a_temp0
-              ELSE
-                a_t(i, k) = a_t(i, k) - (temp0+temp4*(t(i, k)+120.)**(&
-&                 temp4-1)*temp0*(t0c-t(i, k))/temp3)*a_temp0
-              END IF
-              temp4 = (t0c-t(i, k))/(t(i, k)+120.)
-              a_temp2 = t(i, k)**1.5*a_c/(t(i, k)+120.)
-              a_t(i, k) = a_t(i, k) + 1.5*t(i, k)**0.5*temp4*a_c - (&
-&               temp4+1.0)*a_temp2
-              CALL POPREAL8(b)
-              a_max5 = alpha*(3-bvts)*EXP(alpha*(3-bvts)*(max5/8.))*a_b/&
-&               8.
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                CALL POPREAL8(max5)
-                a_y2 = a_max5
-              ELSE
-                CALL POPREAL8(max5)
-                a_y2 = 0.0_8
-              END IF
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y2
-              CALL POPREAL8(a)
-              a_max4 = alpha*EXP(alpha*(max4/2.))*a_a/2.
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) THEN
-                CALL POPREAL8(max4)
-                a_y1 = a_max4
-              ELSE
-                CALL POPREAL8(max4)
-                a_y1 = 0.0_8
-              END IF
-              CALL POPCONTROL1B(branch)
-              IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y1
-              CALL POPREAL8(cpm(i, k))
-              CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-              a_cpm(i, k) = 0.0_8
+            xlf = xlf0
+            CALL POPREAL8(t(i, k))
+            a_temp4 = xlf*a_t(i, k)/cpm(i, k)
+            a_psmlt(i, k) = a_psmlt(i, k) + a_temp4
+            a_cpm(i, k) = a_cpm(i, k) - psmlt(i, k)*a_temp4/cpm(i, k)
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(qrs(i, k, 1))
+              a_qrs(i, k, 1) = 0.0_8
+            ELSE
+              CALL POPREAL8(qrs(i, k, 1))
+              a_psmlt(i, k) = a_psmlt(i, k) - a_qrs(i, k, 1)
             END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(qrs(i, k, 2))
+              a_qrs(i, k, 2) = 0.0_8
+            ELSE
+              CALL POPREAL8(qrs(i, k, 2))
+              a_psmlt(i, k) = a_psmlt(i, k) + a_qrs(i, k, 2)
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .NE. 0) a_psmlt(i, k) = 0.0_8
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(psmlt(i, k))
+              a_psmlt(i, k) = 0.0_8
+              a_tmp5 = 0.0_8
+            ELSE
+              CALL POPREAL8(psmlt(i, k))
+              a_tmp5 = a_psmlt(i, k)
+              a_psmlt(i, k) = 0.0_8
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              a_tmp3 = a_tmp5
+              a_tmp4 = 0.0_8
+            ELSE
+              a_tmp4 = a_tmp5
+              a_tmp3 = 0.0_8
+            END IF
+            a_qrs(i, k, 2) = a_qrs(i, k, 2) - a_tmp4/mstep(i)
+            a_psmlt0 = dtcld*a_tmp3/mstep(i)
+            c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
+            temp3 = den(i, k)*max6
+            temp2 = SQRT(temp3)
+            temp1 = (bvts+5.)/8.
+            temp0 = max9**temp1
+            temp5 = (3*bvts+13.)/24.
+            temp6 = den(i, k)**temp5
+            temp7 = 1.0/3.
+            temp8 = p(i, k)**temp7
+            a_temp2 = psmlt_a*a_psmlt0
+            a_temp3 = b*d*temp0*psmlt_b*a_psmlt0
+            a_temp4 = temp8*temp6*psmlt_b*a_psmlt0
+            a_b = d*temp0*a_temp4
+            a_d = b*temp0*a_temp4
+            IF (max9 .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1 .NE. &
+&               INT(temp1))) THEN
+              a_max9 = 0.0_8
+            ELSE
+              a_max9 = temp1*max9**(temp1-1)*b*d*a_temp4
+            END IF
+            IF (.NOT.(p(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
+&               temp7 .NE. INT(temp7)))) a_p(i, k) = a_p(i, k) + temp7*p&
+&               (i, k)**(temp7-1)*temp6*a_temp3
+            a_a = c*temp2*a_temp2
+            a_c = a*temp2*a_temp2
+            IF (temp3 .EQ. 0.0_8) THEN
+              a_temp1 = 0.0_8
+            ELSE
+              a_temp1 = a*c*a_temp2/(2.0*temp2)
+            END IF
+            IF (den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. temp5 &
+&               .NE. INT(temp5))) THEN
+              a_den(i, k) = a_den(i, k) + max6*a_temp1
+            ELSE
+              a_den(i, k) = a_den(i, k) + temp5*den(i, k)**(temp5-1)*&
+&               temp8*a_temp3 + max6*a_temp1
+            END IF
+            a_max6 = den(i, k)*a_temp1
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max9)
+            ELSE
+              CALL POPREAL8(max9)
+              a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max9
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max6)
+              a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max6
+            ELSE
+              CALL POPREAL8(max6)
+            END IF
+            a_temp2 = t(i, k)**1.5*a_c/(t(i, k)+120.)
+            CALL POPREAL8(d)
+            temp4 = 5./6.
+            temp3 = (t(i, k)+120.)**temp4
+            temp1 = 3.88/6.
+            temp0 = t(i, k)**temp1
+            a_temp0 = a_d/temp3
+            IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. &
+&               temp1 .NE. INT(temp1)))) a_t(i, k) = a_t(i, k) + temp1*t&
+&               (i, k)**(temp1-1)*(t0c-t(i, k))*a_temp0
+            IF (t(i, k) + 120. .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. &
+&               temp4 .NE. INT(temp4))) THEN
+              a_t(i, k) = a_t(i, k) - temp0*a_temp0
+            ELSE
+              a_t(i, k) = a_t(i, k) - (temp0+temp4*(t(i, k)+120.)**(&
+&               temp4-1)*temp0*(t0c-t(i, k))/temp3)*a_temp0
+            END IF
+            temp4 = (t0c-t(i, k))/(t(i, k)+120.)
+            a_t(i, k) = a_t(i, k) + 1.5*t(i, k)**0.5*temp4*a_c - (temp4+&
+&             1.0)*a_temp2
+            CALL POPREAL8(b)
+            a_max5 = alpha*(3-bvts)*EXP(alpha*(3-bvts)*(max5/8.))*a_b/8.
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max5)
+              a_y2 = a_max5
+            ELSE
+              CALL POPREAL8(max5)
+              a_y2 = 0.0_8
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y2
+            CALL POPREAL8(a)
+            a_max4 = alpha*EXP(alpha*(max4/2.))*a_a/2.
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max4)
+              a_y1 = a_max4
+            ELSE
+              CALL POPREAL8(max4)
+              a_y1 = 0.0_8
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y1
+            CALL POPREAL8(cpm(i, k))
+            CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
+            a_cpm(i, k) = 0.0_8
           END IF
         END DO
       END DO
@@ -1930,17 +1981,17 @@ CONTAINS
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
           CALL POPREAL8(max3)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max3
         ELSE
           CALL POPREAL8(max3)
-          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max3
         END IF
-        temp1 = -(bvts*alpha*max6/4.)
+        temp1 = -(bvts*alpha*max8/4.)
         temp = bvts/4.
         temp2 = max2**temp/delz(i, k)
         temp3 = (bvts-2.)/4.
         temp4 = den(i, k)**temp3
         a_temp = EXP(temp1)*vt2s_a*a_work1(i, k, 2)
-        a_max6 = -(bvts*alpha*EXP(temp1)*temp4*temp2*vt2s_a*a_work1(i, k&
+        a_max8 = -(bvts*alpha*EXP(temp1)*temp4*temp2*vt2s_a*a_work1(i, k&
 &         , 2)/4.)
         a_work1(i, k, 2) = 0.0_8
         IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR. &
@@ -1956,10 +2007,10 @@ CONTAINS
         a_delz(i, k) = a_delz(i, k) - temp2*a_temp0
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          CALL POPREAL8(max6)
-          a_y3 = a_max6
+          CALL POPREAL8(max8)
+          a_y3 = a_max8
         ELSE
-          CALL POPREAL8(max6)
+          CALL POPREAL8(max8)
           a_y3 = 0.0_8
         END IF
         CALL POPCONTROL1B(branch)
@@ -1967,9 +2018,9 @@ CONTAINS
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
           CALL POPREAL8(max2)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max2
         ELSE
           CALL POPREAL8(max2)
-          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max2
         END IF
         temp = bvtr/4.
         temp0 = max1**temp/delz(i, k)
@@ -1989,9 +2040,9 @@ CONTAINS
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
           CALL POPREAL8(max1)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max1
         ELSE
           CALL POPREAL8(max1)
-          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max1
         END IF
       END DO
     END DO
@@ -2012,7 +2063,7 @@ CONTAINS
 &   pgmlt0, help_i, help_h, w1
     REAL :: tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8
     INTEGER :: mstepmax, k, i, n, nw, jj
-    REAL :: supcol, a, b, c, d
+    REAL :: fqs, fqg, supcol, a, b, c, d
     INTRINSIC MAX
     INTRINSIC MIN
     INTRINSIC EXP
@@ -2030,25 +2081,29 @@ CONTAINS
     REAL :: abs1
     REAL :: max4
     REAL :: max5
-    REAL :: abs2
-    REAL :: abs3
     REAL :: max6
+    REAL :: abs2
+    REAL :: max7
+    REAL :: abs3
+    REAL :: max8
+    REAL :: max9
+    REAL :: max10
     mstep = 1
     mstepmax = 1
     numdt = 1
     DO k=kte,kts,-1
       DO i=its,ite
-        IF (qrs(i, k, 1) .LT. qcrmin) THEN
-          max1 = qcrmin
-        ELSE
+        IF (qcrmin .LT. qrs(i, k, 1)) THEN
           max1 = qrs(i, k, 1)
+        ELSE
+          max1 = qcrmin
         END IF
         work1(i, k, 1) = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max1**(bvtr/4.&
 &         )/delz(i, k)
-        IF (qrs(i, k, 2) .LT. qcrmin) THEN
-          max2 = qcrmin
-        ELSE
+        IF (qcrmin .LT. qrs(i, k, 2)) THEN
           max2 = qrs(i, k, 2)
+        ELSE
+          max2 = qcrmin
         END IF
         IF (90. .GT. t0c - t(i, k)) THEN
           y3 = t0c - t(i, k)
@@ -2056,16 +2111,16 @@ CONTAINS
           y3 = 90.
         END IF
         IF (0. .LT. y3) THEN
-          max6 = y3
+          max8 = y3
         ELSE
-          max6 = 0.
+          max8 = 0.
         END IF
         work1(i, k, 2) = vt2s_a*den(i, k)**((bvts-2.)/4.)*max2**(bvts/4.&
-&         )/delz(i, k)*EXP(-(bvts*alpha*max6/4.))
-        IF (qrs(i, k, 3) .LT. qcrmin) THEN
-          max3 = qcrmin
-        ELSE
+&         )/delz(i, k)*EXP(-(bvts*alpha*max8/4.))
+        IF (qcrmin .LT. qrs(i, k, 3)) THEN
           max3 = qrs(i, k, 3)
+        ELSE
+          max3 = qcrmin
         END IF
         work1(i, k, 3) = vt2g_a*den(i, k)**((bvtg-2.)/4.)*max3**(bvtg/4.&
 &         )/delz(i, k)
@@ -2156,68 +2211,75 @@ CONTAINS
 ! psmlt: melting of snow [RH83 A25]
 !       (T>T0: S->R) psmlt<0: min=-qrs(i,k,2), max=0
 !---------------------------------------------------------------
-            IF (t(i, k) .GT. t0c .AND. qrs(i, k, 2) .GT. qcrmin) THEN
 !update xl, cpm
-              cpm(i, k) = CPMCAL(q(i, k))
-              xlf = xlf0
-              IF (90. .GT. t0c - t(i, k)) THEN
-                y1 = t0c - t(i, k)
-              ELSE
-                y1 = 90.
-              END IF
-              IF (0. .LT. y1) THEN
-                max4 = y1
-              ELSE
-                max4 = 0.
-              END IF
-              a = EXP(alpha*max4/2.)
-              IF (90. .GT. t0c - t(i, k)) THEN
-                y2 = t0c - t(i, k)
-              ELSE
-                y2 = 90.
-              END IF
-              IF (0. .LT. y2) THEN
-                max5 = y2
-              ELSE
-                max5 = 0.
-              END IF
-              b = EXP(alpha*max5*(3-bvts)/8.)
-              c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
-              d = t(i, k)**(3.88/6.)*(t0c-t(i, k))/(t(i, k)+120.)**(5./&
-&               6.)
-              psmlt0 = psmlt_a*a*c*SQRT(den(i, k)*qrs(i, k, 2)) + &
-&               psmlt_b*b*d*p(i, k)**(1./3.)*den(i, k)**((13.+3*bvts)/&
-&               24.)*qrs(i, k, 2)**((5.+bvts)/8.)
-              tmp3 = psmlt0*dtcld/mstep(i)
-              tmp4 = -(qrs(i, k, 2)/mstep(i))
-              IF (tmp3 .GT. tmp4) THEN
-                tmp5 = tmp3
-              ELSE
-                tmp5 = tmp4
-              END IF
-              IF (tmp5 .LT. 0.) THEN
-                psmlt(i, k) = tmp5
-              ELSE
-                psmlt(i, k) = 0.
-              END IF
-              IF (psmlt(i, k) .GE. 0.) THEN
-                abs2 = psmlt(i, k)
-              ELSE
-                abs2 = -psmlt(i, k)
-              END IF
-              IF (abs2 .LT. qmin) psmlt(i, k) = 0.
-              IF (qrs(i, k, 2) + psmlt(i, k) .LT. 0.) THEN
-                qrs(i, k, 2) = 0.
-              ELSE
-                qrs(i, k, 2) = qrs(i, k, 2) + psmlt(i, k)
-              END IF
-              IF (qrs(i, k, 1) - psmlt(i, k) .LT. 0.) THEN
-                qrs(i, k, 1) = 0.
-              ELSE
-                qrs(i, k, 1) = qrs(i, k, 1) - psmlt(i, k)
-              END IF
-              t(i, k) = t(i, k) + xlf/cpm(i, k)*psmlt(i, k)
+            cpm(i, k) = CPMCAL(q(i, k))
+            xlf = xlf0
+            IF (90. .GT. t0c - t(i, k)) THEN
+              y1 = t0c - t(i, k)
+            ELSE
+              y1 = 90.
             END IF
+            IF (0. .LT. y1) THEN
+              max4 = y1
+            ELSE
+              max4 = 0.
+            END IF
+            a = EXP(alpha*max4/2.)
+            IF (90. .GT. t0c - t(i, k)) THEN
+              y2 = t0c - t(i, k)
+            ELSE
+              y2 = 90.
+            END IF
+            IF (0. .LT. y2) THEN
+              max5 = y2
+            ELSE
+              max5 = 0.
+            END IF
+            b = EXP(alpha*max5*(3-bvts)/8.)
+            c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
+            d = t(i, k)**(3.88/6.)*(t0c-t(i, k))/(t(i, k)+120.)**(5./6.)
+            IF (qrs(i, k, 2) .LT. qcrmin) THEN
+              max6 = qcrmin
+            ELSE
+              max6 = qrs(i, k, 2)
+            END IF
+            IF (qrs(i, k, 2) .LT. qcrmin) THEN
+              max9 = qcrmin
+            ELSE
+              max9 = qrs(i, k, 2)
+            END IF
+            psmlt0 = psmlt_a*a*c*SQRT(den(i, k)*max6) + psmlt_b*b*d*p(i&
+&             , k)**(1./3.)*den(i, k)**((13.+3*bvts)/24.)*max9**((5.+&
+&             bvts)/8.)
+            tmp3 = psmlt0*dtcld/mstep(i)
+            tmp4 = -(qrs(i, k, 2)/mstep(i))
+            IF (tmp3 .GT. tmp4) THEN
+              tmp5 = tmp3
+            ELSE
+              tmp5 = tmp4
+            END IF
+            IF (tmp5 .LT. 0.) THEN
+              psmlt(i, k) = tmp5
+            ELSE
+              psmlt(i, k) = 0.
+            END IF
+            IF (psmlt(i, k) .GE. 0.) THEN
+              abs2 = psmlt(i, k)
+            ELSE
+              abs2 = -psmlt(i, k)
+            END IF
+            IF (abs2 .LT. qmin) psmlt(i, k) = 0.
+            IF (qrs(i, k, 2) + psmlt(i, k) .LT. 0.) THEN
+              qrs(i, k, 2) = 0.
+            ELSE
+              qrs(i, k, 2) = qrs(i, k, 2) + psmlt(i, k)
+            END IF
+            IF (qrs(i, k, 1) - psmlt(i, k) .LT. 0.) THEN
+              qrs(i, k, 1) = 0.
+            ELSE
+              qrs(i, k, 1) = qrs(i, k, 1) - psmlt(i, k)
+            END IF
+            t(i, k) = t(i, k) + xlf/cpm(i, k)*psmlt(i, k)
           END IF
         END DO
       END DO
@@ -2228,46 +2290,53 @@ CONTAINS
       DO k=kte,kts,-1
         DO i=its,ite
           IF (n .LE. mstep(i)) THEN
-            IF (t(i, k) .GT. t0c .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update xl, cpm
-              xlf = xlf0
-              cpm(i, k) = CPMCAL(q(i, k))
-              c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
-              d = t(i, k)**(3.88/6.)*(t0c-t(i, k))/(t(i, k)+120.)**(5./&
-&               6.)
-              pgmlt0 = pgmlt_a*c*SQRT(den(i, k)*qrs(i, k, 3)) + pgmlt_b*&
-&               d*p(i, k)**(1./3.)*den(i, k)**((13.+3*bvtg)/24.)*qrs(i, &
-&               k, 3)**((5.+bvtg)/8.)
-              tmp6 = pgmlt0*dtcld/mstep(i)
-              tmp7 = -(qrs(i, k, 3)/mstep(i))
-              IF (tmp6 .GT. tmp7) THEN
-                tmp8 = tmp6
-              ELSE
-                tmp8 = tmp7
-              END IF
-              IF (tmp8 .LT. 0.) THEN
-                pgmlt(i, k) = tmp8
-              ELSE
-                pgmlt(i, k) = 0.
-              END IF
-              IF (pgmlt(i, k) .GE. 0.) THEN
-                abs3 = pgmlt(i, k)
-              ELSE
-                abs3 = -pgmlt(i, k)
-              END IF
-              IF (abs3 .LT. qmin) pgmlt(i, k) = 0.
-              IF (qrs(i, k, 3) + pgmlt(i, k) .LT. 0.) THEN
-                qrs(i, k, 3) = 0.
-              ELSE
-                qrs(i, k, 3) = qrs(i, k, 3) + pgmlt(i, k)
-              END IF
-              IF (qrs(i, k, 1) - pgmlt(i, k) .LT. 0.) THEN
-                qrs(i, k, 1) = 0.
-              ELSE
-                qrs(i, k, 1) = qrs(i, k, 1) - pgmlt(i, k)
-              END IF
-              t(i, k) = t(i, k) + xlf/cpm(i, k)*pgmlt(i, k)
+            xlf = xlf0
+!               cpm(i,k)=cpmcal(q(i,k)) ! not change
+            c = t(i, k)**1.5*(t0c-t(i, k))/(t(i, k)+120.)
+            d = t(i, k)**(3.88/6.)*(t0c-t(i, k))/(t(i, k)+120.)**(5./6.)
+            IF (qrs(i, k, 3) .LT. qcrmin) THEN
+              max7 = qcrmin
+            ELSE
+              max7 = qrs(i, k, 3)
             END IF
+            IF (qrs(i, k, 3) .LT. qcrmin) THEN
+              max10 = qcrmin
+            ELSE
+              max10 = qrs(i, k, 3)
+            END IF
+            pgmlt0 = pgmlt_a*c*SQRT(den(i, k)*max7) + pgmlt_b*d*p(i, k)&
+&             **(1./3.)*den(i, k)**((13.+3*bvtg)/24.)*max10**((5.+bvtg)/&
+&             8.)
+            tmp6 = pgmlt0*dtcld/mstep(i)
+            tmp7 = -(qrs(i, k, 3)/mstep(i))
+            IF (tmp6 .GT. tmp7) THEN
+              tmp8 = tmp6
+            ELSE
+              tmp8 = tmp7
+            END IF
+            IF (tmp8 .LT. 0.) THEN
+              pgmlt(i, k) = tmp8
+            ELSE
+              pgmlt(i, k) = 0.
+            END IF
+            IF (pgmlt(i, k) .GE. 0.) THEN
+              abs3 = pgmlt(i, k)
+            ELSE
+              abs3 = -pgmlt(i, k)
+            END IF
+            IF (abs3 .LT. qmin) pgmlt(i, k) = 0.
+            IF (qrs(i, k, 3) + pgmlt(i, k) .LT. 0.) THEN
+              qrs(i, k, 3) = 0.
+            ELSE
+              qrs(i, k, 3) = qrs(i, k, 3) + pgmlt(i, k)
+            END IF
+            IF (qrs(i, k, 1) - pgmlt(i, k) .LT. 0.) THEN
+              qrs(i, k, 1) = 0.
+            ELSE
+              qrs(i, k, 1) = qrs(i, k, 1) - pgmlt(i, k)
+            END IF
+            t(i, k) = t(i, k) + xlf/cpm(i, k)*pgmlt(i, k)
           END IF
         END DO
       END DO
@@ -2592,17 +2661,17 @@ CONTAINS
   END SUBROUTINE FALLKC
 
 !  Differentiation of rainsc in reverse (adjoint) mode (with options r8):
-!   gradient     of useful results: fallc q t cpm xl delz den qrs
+!   gradient     of useful results: fallc t cpm xl delz den qrs
 !                fall rain qci rainncv
-!   with respect to varying inputs: fallc q t cpm xl delz den qrs
+!   with respect to varying inputs: fallc t cpm xl delz den qrs
 !                fall rain qci rainncv
 !=======================================================================
 !
 !=======================================================================
   SUBROUTINE A_RAINSC(fall, a_fall, fallc, a_fallc, xl, a_xl, t, a_t, q&
-&   , a_q, qci, a_qci, cpm, a_cpm, den, a_den, qrs, a_qrs, delz, a_delz&
-&   , rain, a_rain, rainncv, a_rainncv, dtcld, kte, kts, its, ite, kme, &
-&   kms, ims, ime)
+&   , qci, a_qci, cpm, a_cpm, den, a_den, qrs, a_qrs, delz, a_delz, rain&
+&   , a_rain, rainncv, a_rainncv, dtcld, kte, kts, its, ite, kme, kms, &
+&   ims, ime)
     IMPLICIT NONE
     INTEGER :: kte, kts, its, ite, kme, kms, ims, ime
     REAL, DIMENSION(its:ite, kts:kte, 3) :: qrs, fall
@@ -2610,7 +2679,7 @@ CONTAINS
     REAL, DIMENSION(its:ite, kts:kte, 2) :: qci
     REAL, DIMENSION(its:ite, kts:kte, 2) :: a_qci
     REAL, DIMENSION(ims:ime, kms:kme) :: delz, den, q
-    REAL, DIMENSION(ims:ime, kms:kme) :: a_delz, a_den, a_q
+    REAL, DIMENSION(ims:ime, kms:kme) :: a_delz, a_den
     REAL, DIMENSION(its:ite, kts:kte) :: xl, t, cpm, fallc
     REAL, DIMENSION(its:ite, kts:kte) :: a_xl, a_t, a_cpm, a_fallc
     REAL, DIMENSION(ims:ime) :: rain, rainncv
@@ -2618,20 +2687,24 @@ CONTAINS
     INTEGER :: k, i
     REAL :: dtcld, fallsum, supcol, xlf, temp, temp0, pfrzdtr, pfrzdtc
     REAL :: a_fallsum, a_supcol, a_xlf, a_temp, a_pfrzdtr, a_pfrzdtc
-    REAL :: qtmp
-    REAL :: a_qtmp
+    REAL :: ft0, ft40, fsupcol, fqc, fqi, fqr, qtmp
+    REAL :: a_ft0, a_ft40, a_qtmp
     INTRINSIC MAX
     INTRINSIC ABS
     INTRINSIC EXP
     INTRINSIC MIN
     REAL :: x1
     REAL :: a_x1
+    REAL :: max1
+    REAL :: a_max1
     REAL :: abs0
     REAL :: abs1
     REAL :: abs2
     REAL :: abs3
     REAL :: temp1
     REAL :: a_temp0
+    REAL :: arg0
+    REAL :: a_arg0
     REAL :: temp2
     REAL :: temp3
     REAL :: temp4
@@ -2655,285 +2728,293 @@ CONTAINS
 ! pimlt: instantaneous melting of cloud ice [RH83 A28]
 !       (T>T0: I->C) pimlt=qci(i,k,2) t-
 !---------------------------------------------------------------
-        IF (t(i, k) .GT. t0c .AND. qci(i, k, 2) .GT. 0.) THEN
 !update xl, cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          CALL PUSHREAL8(xlf)
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) THEN
           xlf = xlf0
-          IF (qci(i, k, 2) .LT. 0.) THEN
-            CALL PUSHREAL8(qtmp)
-            qtmp = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qtmp)
-            qtmp = qci(i, k, 2)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs0 = qtmp
-          ELSE
-            abs0 = -qtmp
-          END IF
-          IF (abs0 .LT. qmin) THEN
-            qtmp = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 1) + qtmp .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) + qtmp
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qci(i, k, 2) - qtmp .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - qtmp
-            CALL PUSHCONTROL1B(1)
-          END IF
-          t(i, k) = t(i, k) - xlf/cpm(i, k)*qtmp
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        CALL PUSHREAL8(ft0)
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        IF (qci(i, k, 2) .LT. 0.) THEN
+          CALL PUSHREAL8(max1)
+          max1 = 0.
           CALL PUSHCONTROL1B(0)
         ELSE
+          CALL PUSHREAL8(max1)
+          max1 = qci(i, k, 2)
           CALL PUSHCONTROL1B(1)
         END IF
+        CALL PUSHREAL8(qtmp)
+        qtmp = ft0*max1
+        IF (qtmp .GE. 0.) THEN
+          abs0 = qtmp
+        ELSE
+          abs0 = -qtmp
+        END IF
+        IF (abs0 .LT. qmin) THEN
+          qtmp = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 1) + qtmp .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) + qtmp
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qci(i, k, 2) - qtmp .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - qtmp
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(t(i, k))
+        t(i, k) = t(i, k) - xlf/cpm(i, k)*qtmp
 !---------------------------------------------------------------
 ! pihmf: homogeneous freezing of cloud water below -40c
 !        (T<-40C: C->I) min=0,pihmf=qci(i,k,1) t+
 !---------------------------------------------------------------
 !update xl, cpm
-        IF (t(i, k) .LT. t0c - 40. .AND. qci(i, k, 1) .GT. 0.) THEN
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          CALL PUSHREAL8(supcol)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 1) .LT. 0.) THEN
-            CALL PUSHREAL8(qtmp)
-            qtmp = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qtmp)
-            qtmp = qci(i, k, 1)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs1 = qtmp
-          ELSE
-            abs1 = -qtmp
-          END IF
-!update qc, qi, t
-          IF (abs1 .LT. qmin) THEN
-            qtmp = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) + qtmp
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - qtmp
-            CALL PUSHCONTROL1B(1)
-          END IF
-          t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        CALL PUSHREAL8(ft40)
+        CALL SMOOTHIF(supcol, 40., ft40, 't0')
+        IF (ft40*qci(i, k, 1) .LT. 0.) THEN
+          CALL PUSHREAL8(qtmp)
+          qtmp = 0.
           CALL PUSHCONTROL1B(0)
         ELSE
+          CALL PUSHREAL8(qtmp)
+          qtmp = ft40*qci(i, k, 1)
           CALL PUSHCONTROL1B(1)
         END IF
+        IF (qtmp .GE. 0.) THEN
+          abs1 = qtmp
+        ELSE
+          abs1 = -qtmp
+        END IF
+!update qc, qi, t
+        IF (abs1 .LT. qmin) THEN
+          qtmp = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = qci(i, k, 2) + qtmp
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
+          CALL PUSHREAL8(qci(i, k, 1))
+          qci(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qci(i, k, 1))
+          qci(i, k, 1) = qci(i, k, 1) - qtmp
+          CALL PUSHCONTROL1B(1)
+        END IF
+        t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
 !---------------------------------------------------------------
 ! pihtf: heterogeneous freezing of cloud water
 !        (T0>T>-40C: C->I) max=qci(i,k,1),min=0. t+
 !---------------------------------------------------------------
-        IF (t(i, k) .GT. t0c - 40. .AND. t(i, k) .LT. t0c .AND. qci(i, k&
-&           , 1) .GT. 0.) THEN
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          CALL PUSHREAL8(supcol)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          x1 = pfrz1*(EXP(pfrz2*supcol)-1.)*den(i, k)/denr/xncr*qci(i, k&
-&           , 1)*qci(i, k, 1)*dtcld
-          IF (x1 .GT. qci(i, k, 1)) THEN
-            pfrzdtc = qci(i, k, 1)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pfrzdtc = x1
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pfrzdtc .LT. 0.) THEN
-            CALL PUSHREAL8(qtmp)
-            qtmp = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qtmp)
-            qtmp = pfrzdtc
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs2 = qtmp
-          ELSE
-            abs2 = -qtmp
-          END IF
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        CALL PUSHREAL8(supcol)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+!t>-40C=t0c-40,t0c-t<40, supcol<40,-supcol>-40
+        arg0 = -supcol
+        CALL PUSHREAL8(ft40)
+        CALL SMOOTHIF(arg0, -40., ft40, 't0')
+        x1 = pfrz1*(EXP(pfrz2*supcol)-1.)*den(i, k)/denr/xncr*qci(i, k, &
+&         1)*qci(i, k, 1)*dtcld
+        IF (x1 .GT. qci(i, k, 1)) THEN
+          CALL PUSHREAL8(pfrzdtc)
+          pfrzdtc = qci(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(pfrzdtc)
+          pfrzdtc = x1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (ft40*pfrzdtc .LT. 0.) THEN
+          CALL PUSHREAL8(qtmp)
+          qtmp = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qtmp)
+          qtmp = ft40*pfrzdtc
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qtmp .GE. 0.) THEN
+          abs2 = qtmp
+        ELSE
+          abs2 = -qtmp
+        END IF
 !update qc, qi, t
-          IF (abs2 .LT. qmin) THEN
-            qtmp = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = qci(i, k, 2) + qtmp
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
+        IF (abs2 .LT. qmin) THEN
+          qtmp = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = qci(i, k, 2) + qtmp
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
           CALL PUSHCONTROL1B(0)
         ELSE
           CALL PUSHCONTROL1B(1)
         END IF
+        t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
 !---------------------------------------------------------------
 ! pgfrz: freezing of rain water [LFO 45] 
 !        (T<T0, R->G) max=qrs(i,k,1),min=0. t+
 !---------------------------------------------------------------
-        IF (t(i, k) .LT. t0c .AND. qrs(i, k, 1) .GT. 0.) THEN
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          CALL PUSHREAL8(supcol)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k))!not change
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        CALL PUSHREAL8(supcol)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 1) .GT. 0.) THEN
           temp = pgfrz_a*(EXP(pfrz2*supcol)-1.)*den(i, k)**(3./4.)*qrs(i&
 &           , k, 1)**(7./4.)
-          IF (temp*dtcld .GT. qrs(i, k, 1)) THEN
-            pfrzdtr = qrs(i, k, 1)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pfrzdtr = temp*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pfrzdtr .LT. 0.) THEN
-            CALL PUSHREAL8(qtmp)
-            qtmp = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qtmp)
-            qtmp = pfrzdtr
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs3 = qtmp
-          ELSE
-            abs3 = -qtmp
-          END IF
-          IF (abs3 .LT. qmin) THEN
-            qtmp = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qrs(i, k, 3) + qtmp .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = qrs(i, k, 3) + qtmp
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 1) - qtmp .LT. 0.) THEN
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          temp = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (temp*dtcld .GT. qrs(i, k, 1)) THEN
+          pfrzdtr = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pfrzdtr = temp*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (pfrzdtr .LT. 0.) THEN
+          CALL PUSHREAL8(qtmp)
+          qtmp = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qtmp)
+          qtmp = pfrzdtr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qtmp .GE. 0.) THEN
+          abs3 = qtmp
+        ELSE
+          abs3 = -qtmp
+        END IF
+        IF (abs3 .LT. qmin) THEN
+          qtmp = 0.
           CALL PUSHCONTROL1B(1)
         ELSE
           CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 3) + qtmp .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = qrs(i, k, 3) + qtmp
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 1) - qtmp .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
         END IF
       END DO
     END DO
     DO k=kte,kts,-1
       DO i=ite,its,-1
+        a_temp3 = a_t(i, k)/cpm(i, k)
+        a_xlf = qtmp*a_temp3
+        a_qtmp = xlf*a_temp3
+        a_cpm(i, k) = a_cpm(i, k) - xlf*qtmp*a_temp3/cpm(i, k)
         CALL POPCONTROL1B(branch)
-        IF (branch .NE. 0) THEN
-          a_temp3 = a_t(i, k)/cpm(i, k)
-          a_xlf = qtmp*a_temp3
-          a_qtmp = xlf*a_temp3
-          a_cpm(i, k) = a_cpm(i, k) - xlf*qtmp*a_temp3/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 1) = 0.0_8
-          ELSE
-            a_qtmp = a_qtmp - a_qrs(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 3))
-            a_qrs(i, k, 3) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 3))
-            a_qtmp = a_qtmp + a_qrs(i, k, 3)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_qtmp = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qtmp)
-            a_pfrzdtr = 0.0_8
-          ELSE
-            CALL POPREAL8(qtmp)
-            a_pfrzdtr = a_qtmp
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_pfrzdtr
-            a_temp = 0.0_8
-          ELSE
-            a_temp = dtcld*a_pfrzdtr
-          END IF
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 1) = 0.0_8
+        ELSE
+          a_qtmp = a_qtmp - a_qrs(i, k, 1)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 3))
+          a_qrs(i, k, 3) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 3))
+          a_qtmp = a_qtmp + a_qrs(i, k, 3)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_qtmp = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qtmp)
+          a_pfrzdtr = 0.0_8
+        ELSE
+          CALL POPREAL8(qtmp)
+          a_pfrzdtr = a_qtmp
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_pfrzdtr
+          a_temp = 0.0_8
+        ELSE
+          a_temp = dtcld*a_pfrzdtr
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_supcol = 0.0_8
+        ELSE
           supcol = t0c - t(i, k)
           temp4 = 7./4.
           temp2 = 3./4.
@@ -2947,143 +3028,151 @@ CONTAINS
           IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
 &             temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + temp2&
 &             *den(i, k)**(temp2-1)*temp5*a_temp2
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_xlf = 0.0_8
-          CALL POPREAL8(supcol)
-          a_t(i, k) = a_t(i, k) - a_supcol
-          CALL POPREAL8(xlf)
-          a_xl(i, k) = a_xl(i, k) - a_xlf
-          CALL POPREAL8(cpm(i, k))
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_xlf = 0.0_8
+        CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(xlf)
+        a_xl(i, k) = a_xl(i, k) - a_xlf
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
+        a_temp1 = a_t(i, k)/cpm(i, k)
+        a_xlf = qtmp*a_temp1
+        a_qtmp = xlf*a_temp1
+        a_cpm(i, k) = a_cpm(i, k) - xlf*qtmp*a_temp1/cpm(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 1) = 0.0_8
+        ELSE
+          a_qtmp = a_qtmp - a_qci(i, k, 1)
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_temp1 = a_t(i, k)/cpm(i, k)
-          a_xlf = qtmp*a_temp1
-          a_qtmp = xlf*a_temp1
-          a_cpm(i, k) = a_cpm(i, k) - xlf*qtmp*a_temp1/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 1) = 0.0_8
-          ELSE
-            a_qtmp = a_qtmp - a_qci(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qci(i, k, 2))
-            a_qci(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qci(i, k, 2))
-            a_qtmp = a_qtmp + a_qci(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_qtmp = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qtmp)
-            a_pfrzdtc = 0.0_8
-          ELSE
-            CALL POPREAL8(qtmp)
-            a_pfrzdtc = a_qtmp
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 1) = a_qci(i, k, 1) + a_pfrzdtc
-            a_x1 = 0.0_8
-          ELSE
-            a_x1 = a_pfrzdtc
-          END IF
-          temp2 = den(i, k)/(denr*xncr)
-          temp3 = qci(i, k, 1)
-          a_temp0 = pfrz1*dtcld*a_x1
-          a_supcol = pfrz2*EXP(pfrz2*supcol)*temp3**2*temp2*a_temp0
-          a_temp1 = (EXP(pfrz2*supcol)-1.)*a_temp0
-          a_qci(i, k, 1) = a_qci(i, k, 1) + 2*temp3*temp2*a_temp1
-          a_den(i, k) = a_den(i, k) + temp3**2*a_temp1/(denr*xncr)
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_xlf = 0.0_8
-          CALL POPREAL8(supcol)
-          a_t(i, k) = a_t(i, k) - a_supcol
-          CALL POPREAL8(xlf)
-          a_xl(i, k) = a_xl(i, k) - a_xlf
-          CALL POPREAL8(cpm(i, k))
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
+          CALL POPREAL8(qci(i, k, 2))
+          a_qci(i, k, 2) = 0.0_8
+        ELSE
+          CALL POPREAL8(qci(i, k, 2))
+          a_qtmp = a_qtmp + a_qci(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_qtmp = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qtmp)
+          a_ft40 = 0.0_8
+          a_pfrzdtc = 0.0_8
+        ELSE
+          CALL POPREAL8(qtmp)
+          a_ft40 = pfrzdtc*a_qtmp
+          a_pfrzdtc = ft40*a_qtmp
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_temp0 = a_t(i, k)/cpm(i, k)
-          a_xlf = qtmp*a_temp0
-          a_qtmp = xlf*a_temp0
-          a_cpm(i, k) = a_cpm(i, k) - xlf*qtmp*a_temp0/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 1) = 0.0_8
-          ELSE
-            a_qtmp = a_qtmp - a_qci(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 2) = 0.0_8
-          ELSE
-            a_qtmp = a_qtmp + a_qci(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_qtmp = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qtmp)
-          ELSE
-            CALL POPREAL8(qtmp)
-            a_qci(i, k, 1) = a_qci(i, k, 1) + a_qtmp
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_xlf = 0.0_8
-          CALL POPREAL8(supcol)
-          CALL POPREAL8(xlf)
-          a_xl(i, k) = a_xl(i, k) - a_xlf
-          CALL POPREAL8(cpm(i, k))
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
+          CALL POPREAL8(pfrzdtc)
+          a_qci(i, k, 1) = a_qci(i, k, 1) + a_pfrzdtc
+          a_x1 = 0.0_8
+        ELSE
+          CALL POPREAL8(pfrzdtc)
+          a_x1 = a_pfrzdtc
+        END IF
+        temp2 = den(i, k)/(denr*xncr)
+        temp3 = qci(i, k, 1)
+        a_temp0 = pfrz1*dtcld*a_x1
+        a_supcol = pfrz2*EXP(pfrz2*supcol)*temp3**2*temp2*a_temp0
+        a_temp1 = (EXP(pfrz2*supcol)-1.)*a_temp0
+        a_qci(i, k, 1) = a_qci(i, k, 1) + 2*temp3*temp2*a_temp1
+        a_den(i, k) = a_den(i, k) + temp3**2*a_temp1/(denr*xncr)
+        CALL POPREAL8(ft40)
+        a_arg0 = 0.0_8
+        CALL A_SMOOTHIF(arg0, a_arg0, -40., ft40, a_ft40, 't0')
+        a_supcol = a_supcol - a_arg0
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_xlf = 0.0_8
+        CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(xlf)
+        a_xl(i, k) = a_xl(i, k) - a_xlf
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
+        a_temp0 = a_t(i, k)/cpm(i, k)
+        a_xlf = qtmp*a_temp0
+        a_qtmp = xlf*a_temp0
+        a_cpm(i, k) = a_cpm(i, k) - xlf*qtmp*a_temp0/cpm(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qci(i, k, 1))
+          a_qci(i, k, 1) = 0.0_8
+        ELSE
+          CALL POPREAL8(qci(i, k, 1))
+          a_qtmp = a_qtmp - a_qci(i, k, 1)
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          xlf = xlf0
-          a_temp0 = -(xlf*a_t(i, k)/cpm(i, k))
-          a_qtmp = a_temp0
-          a_cpm(i, k) = a_cpm(i, k) - qtmp*a_temp0/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 2) = 0.0_8
-          ELSE
-            a_qtmp = a_qtmp - a_qci(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 1) = 0.0_8
-          ELSE
-            a_qtmp = a_qtmp + a_qci(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_qtmp = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qtmp)
-          ELSE
-            CALL POPREAL8(qtmp)
-            a_qci(i, k, 2) = a_qci(i, k, 2) + a_qtmp
-          END IF
-          CALL POPREAL8(xlf)
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
+          CALL POPREAL8(qci(i, k, 2))
+          a_qci(i, k, 2) = 0.0_8
+        ELSE
+          CALL POPREAL8(qci(i, k, 2))
+          a_qtmp = a_qtmp + a_qci(i, k, 2)
         END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_qtmp = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qtmp)
+          a_ft40 = 0.0_8
+        ELSE
+          CALL POPREAL8(qtmp)
+          a_ft40 = qci(i, k, 1)*a_qtmp
+          a_qci(i, k, 1) = a_qci(i, k, 1) + ft40*a_qtmp
+        END IF
+        CALL POPREAL8(ft40)
+        a_supcol = 0.0_8
+        CALL A_SMOOTHIF(supcol, a_supcol, 40., ft40, a_ft40, 't0')
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_xlf = 0.0_8
+        a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(xlf)
+        a_xl(i, k) = a_xl(i, k) - a_xlf
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
+        CALL POPREAL8(t(i, k))
+        a_temp0 = -(a_t(i, k)/cpm(i, k))
+        a_xlf = qtmp*a_temp0
+        a_qtmp = xlf*a_temp0
+        a_cpm(i, k) = a_cpm(i, k) - xlf*qtmp*a_temp0/cpm(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 2) = 0.0_8
+        ELSE
+          a_qtmp = a_qtmp - a_qci(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 1) = 0.0_8
+        ELSE
+          a_qtmp = a_qtmp + a_qci(i, k, 1)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_qtmp = 0.0_8
+        CALL POPREAL8(qtmp)
+        a_ft0 = max1*a_qtmp
+        a_max1 = ft0*a_qtmp
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max1)
+        ELSE
+          CALL POPREAL8(max1)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max1
+        END IF
+        CALL POPREAL8(ft0)
+        CALL A_SMOOTHIF(t(i, k), a_t(i, k), t0c, ft0, a_ft0, 't0')
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_xlf = 0.0_8
+        CALL POPREAL8(xlf)
+        a_xl(i, k) = a_xl(i, k) - a_xlf
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
       END DO
     END DO
     DO i=ite,its,-1
@@ -3122,12 +3211,13 @@ CONTAINS
     REAL, DIMENSION(ims:ime) :: rain, rainncv
     INTEGER :: k, i
     REAL :: dtcld, fallsum, supcol, xlf, temp, temp0, pfrzdtr, pfrzdtc
-    REAL :: qtmp
+    REAL :: ft0, ft40, fsupcol, fqc, fqi, fqr, qtmp
     INTRINSIC MAX
     INTRINSIC ABS
     INTRINSIC EXP
     INTRINSIC MIN
     REAL :: x1
+    REAL :: max1
     REAL :: abs0
     REAL :: abs1
     REAL :: abs2
@@ -3147,152 +3237,155 @@ CONTAINS
 ! pimlt: instantaneous melting of cloud ice [RH83 A28]
 !       (T>T0: I->C) pimlt=qci(i,k,2) t-
 !---------------------------------------------------------------
-        IF (t(i, k) .GT. t0c .AND. qci(i, k, 2) .GT. 0.) THEN
 !update xl, cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xlf = xlf0
-          IF (qci(i, k, 2) .LT. 0.) THEN
-            qtmp = 0.
-          ELSE
-            qtmp = qci(i, k, 2)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs0 = qtmp
-          ELSE
-            abs0 = -qtmp
-          END IF
-          IF (abs0 .LT. qmin) qtmp = 0.
-          IF (qci(i, k, 1) + qtmp .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) + qtmp
-          END IF
-          IF (qci(i, k, 2) - qtmp .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - qtmp
-          END IF
-          t(i, k) = t(i, k) - xlf/cpm(i, k)*qtmp
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        IF (qci(i, k, 2) .LT. 0.) THEN
+          max1 = 0.
+        ELSE
+          max1 = qci(i, k, 2)
         END IF
+        qtmp = ft0*max1
+        IF (qtmp .GE. 0.) THEN
+          abs0 = qtmp
+        ELSE
+          abs0 = -qtmp
+        END IF
+        IF (abs0 .LT. qmin) qtmp = 0.
+        IF (qci(i, k, 1) + qtmp .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) + qtmp
+        END IF
+        IF (qci(i, k, 2) - qtmp .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - qtmp
+        END IF
+        t(i, k) = t(i, k) - xlf/cpm(i, k)*qtmp
 !---------------------------------------------------------------
 ! pihmf: homogeneous freezing of cloud water below -40c
 !        (T<-40C: C->I) min=0,pihmf=qci(i,k,1) t+
 !---------------------------------------------------------------
 !update xl, cpm
-        IF (t(i, k) .LT. t0c - 40. .AND. qci(i, k, 1) .GT. 0.) THEN
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xlf = xls - xl(i, k)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          IF (qci(i, k, 1) .LT. 0.) THEN
-            qtmp = 0.
-          ELSE
-            qtmp = qci(i, k, 1)
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs1 = qtmp
-          ELSE
-            abs1 = -qtmp
-          END IF
-!update qc, qi, t
-          IF (abs1 .LT. qmin) qtmp = 0.
-          IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) + qtmp
-          END IF
-          IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - qtmp
-          END IF
-          t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        CALL SMOOTHIF(supcol, 40., ft40, 't0')
+        IF (ft40*qci(i, k, 1) .LT. 0.) THEN
+          qtmp = 0.
+        ELSE
+          qtmp = ft40*qci(i, k, 1)
         END IF
+        IF (qtmp .GE. 0.) THEN
+          abs1 = qtmp
+        ELSE
+          abs1 = -qtmp
+        END IF
+!update qc, qi, t
+        IF (abs1 .LT. qmin) qtmp = 0.
+        IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) + qtmp
+        END IF
+        IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - qtmp
+        END IF
+        t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
 !---------------------------------------------------------------
 ! pihtf: heterogeneous freezing of cloud water
 !        (T0>T>-40C: C->I) max=qci(i,k,1),min=0. t+
 !---------------------------------------------------------------
-        IF (t(i, k) .GT. t0c - 40. .AND. t(i, k) .LT. t0c .AND. qci(i, k&
-&           , 1) .GT. 0.) THEN
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xlf = xls - xl(i, k)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          x1 = pfrz1*(EXP(pfrz2*supcol)-1.)*den(i, k)/denr/xncr*qci(i, k&
-&           , 1)*qci(i, k, 1)*dtcld
-          IF (x1 .GT. qci(i, k, 1)) THEN
-            pfrzdtc = qci(i, k, 1)
-          ELSE
-            pfrzdtc = x1
-          END IF
-          IF (pfrzdtc .LT. 0.) THEN
-            qtmp = 0.
-          ELSE
-            qtmp = pfrzdtc
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs2 = qtmp
-          ELSE
-            abs2 = -qtmp
-          END IF
-!update qc, qi, t
-          IF (abs2 .LT. qmin) qtmp = 0.
-          IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) + qtmp
-          END IF
-          IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - qtmp
-          END IF
-          t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+!t>-40C=t0c-40,t0c-t<40, supcol<40,-supcol>-40
+        CALL SMOOTHIF(-supcol, -40., ft40, 't0')
+        x1 = pfrz1*(EXP(pfrz2*supcol)-1.)*den(i, k)/denr/xncr*qci(i, k, &
+&         1)*qci(i, k, 1)*dtcld
+        IF (x1 .GT. qci(i, k, 1)) THEN
+          pfrzdtc = qci(i, k, 1)
+        ELSE
+          pfrzdtc = x1
         END IF
+        IF (ft40*pfrzdtc .LT. 0.) THEN
+          qtmp = 0.
+        ELSE
+          qtmp = ft40*pfrzdtc
+        END IF
+        IF (qtmp .GE. 0.) THEN
+          abs2 = qtmp
+        ELSE
+          abs2 = -qtmp
+        END IF
+!update qc, qi, t
+        IF (abs2 .LT. qmin) qtmp = 0.
+        IF (qci(i, k, 2) + qtmp .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) + qtmp
+        END IF
+        IF (qci(i, k, 1) - qtmp .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - qtmp
+        END IF
+        t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
 !---------------------------------------------------------------
 ! pgfrz: freezing of rain water [LFO 45] 
 !        (T<T0, R->G) max=qrs(i,k,1),min=0. t+
 !---------------------------------------------------------------
-        IF (t(i, k) .LT. t0c .AND. qrs(i, k, 1) .GT. 0.) THEN
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xlf = xls - xl(i, k)
-          supcol = t0c - t(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
+        xl(i, k) = XLCAL(t(i, k))
+!         cpm(i,k)=cpmcal(q(i,k))!not change
+        xlf = xls - xl(i, k)
+        supcol = t0c - t(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 1) .GT. 0.) THEN
           temp = pgfrz_a*(EXP(pfrz2*supcol)-1.)*den(i, k)**(3./4.)*qrs(i&
 &           , k, 1)**(7./4.)
-          IF (temp*dtcld .GT. qrs(i, k, 1)) THEN
-            pfrzdtr = qrs(i, k, 1)
-          ELSE
-            pfrzdtr = temp*dtcld
-          END IF
-          IF (pfrzdtr .LT. 0.) THEN
-            qtmp = 0.
-          ELSE
-            qtmp = pfrzdtr
-          END IF
-          IF (qtmp .GE. 0.) THEN
-            abs3 = qtmp
-          ELSE
-            abs3 = -qtmp
-          END IF
-          IF (abs3 .LT. qmin) qtmp = 0.
-          IF (qrs(i, k, 3) + qtmp .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + qtmp
-          END IF
-          IF (qrs(i, k, 1) - qtmp .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) - qtmp
-          END IF
-          t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
+        ELSE
+          temp = 0.
         END IF
+        IF (temp*dtcld .GT. qrs(i, k, 1)) THEN
+          pfrzdtr = qrs(i, k, 1)
+        ELSE
+          pfrzdtr = temp*dtcld
+        END IF
+        IF (pfrzdtr .LT. 0.) THEN
+          qtmp = 0.
+        ELSE
+          qtmp = pfrzdtr
+        END IF
+        IF (qtmp .GE. 0.) THEN
+          abs3 = qtmp
+        ELSE
+          abs3 = -qtmp
+        END IF
+        IF (abs3 .LT. qmin) qtmp = 0.
+        IF (qrs(i, k, 3) + qtmp .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + qtmp
+        END IF
+        IF (qrs(i, k, 1) - qtmp .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - qtmp
+        END IF
+        t(i, k) = t(i, k) + xlf/cpm(i, k)*qtmp
       END DO
     END DO
   END SUBROUTINE RAINSC
@@ -3324,8 +3417,9 @@ CONTAINS
     REAL :: coeres, supsat, satdt, dtcld, praut1
     REAL :: a_supsat, a_satdt, a_praut1
     INTEGER :: i, k
-    REAL :: prevp0, prevp1, temp, a, b, c, d, e
-    REAL :: a_a, a_b, a_c, a_d, a_e
+    REAL :: fqv, fqc, fqr, fqc0, fprevp, prevp0, prevp1, temp, a, b, c, &
+&   d, e
+    REAL :: a_fqc0, a_a, a_b, a_c, a_d, a_e
     INTRINSIC LOG
     INTRINSIC EXP
     INTRINSIC MIN
@@ -3340,6 +3434,10 @@ CONTAINS
     REAL :: a_x3
     REAL :: abs0
     REAL :: abs1
+    REAL :: max1
+    REAL :: a_max1
+    REAL :: max2
+    REAL :: a_max2
     REAL :: abs2
     REAL :: temp0
     REAL :: temp1
@@ -3349,16 +3447,15 @@ CONTAINS
     REAL :: a_temp0
     REAL :: temp4
     REAL :: temp5
-    REAL :: a_temp1
     REAL :: temp6
     REAL :: temp7
     REAL :: temp8
     REAL :: temp9
+    REAL :: a_temp1
     REAL :: temp10
+    REAL :: temp11
     REAL :: a_temp2
     REAL :: a_temp3
-    REAL :: a_temp4
-    REAL :: a_temp5
     INTEGER :: branch
     DO k=kts,kte
       DO i=its,ite
@@ -3366,95 +3463,103 @@ CONTAINS
 ! praut: auto conversion rate from cloud to rain [HDC 16]
 !        (C->R) praut>0 max=qci(i,k,1)/dtcld, min=0.
 !---------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qc0) THEN
+        CALL PUSHREAL8(fqc0)
+        CALL SMOOTHIF(qci(i, k, 1), qc0, fqc0, 'q0')
+!qc0=5.03e-4
+        IF (qci(i, k, 1) .GT. 0.) THEN
+! x**a need x>0
 !(qci(i,k,1)**(7./3.))
-          praut1 = qck1*EXP(LOG(qci(i, k, 1))*(7./3.))
-          IF (praut1 .GT. qci(i, k, 1)/dtcld) THEN
-            praut(i, k) = qci(i, k, 1)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            praut(i, k) = praut1
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (praut(i, k) .GE. 0.) THEN
-            abs0 = praut(i, k)
-          ELSE
-            abs0 = -praut(i, k)
-          END IF
-          IF (abs0 .LT. qmin/dtcld) THEN
-            praut(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 1) - praut(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qci(i, k, 1))
-            qci(i, k, 1) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qci(i, k, 1))
-            qci(i, k, 1) = qci(i, k, 1) - praut(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 1) + praut(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + praut(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
+          praut1 = fqc0*qck1*EXP(LOG(qci(i, k, 1))*(7./3.))
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          praut1 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (praut1 .GT. qci(i, k, 1)/dtcld) THEN
+          praut(i, k) = qci(i, k, 1)/dtcld
           CALL PUSHCONTROL1B(0)
         ELSE
+          praut(i, k) = praut1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (praut(i, k) .GE. 0.) THEN
+          abs0 = praut(i, k)
+        ELSE
+          abs0 = -praut(i, k)
+        END IF
+        IF (abs0 .LT. qmin/dtcld) THEN
+          praut(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 1) - praut(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qci(i, k, 1))
+          qci(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qci(i, k, 1))
+          qci(i, k, 1) = qci(i, k, 1) - praut(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 1) + praut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) + praut(i, k)*dtcld
           CALL PUSHCONTROL1B(1)
         END IF
 !---------------------------------------------------------------
 ! pracw: accretion of cloud water by rain [LFO 51]
 !        (C->R) max=qci(i,k,1)/dtcld, min=0.
 !---------------------------------------------------------------
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
         IF (qrs(i, k, 1) .GT. 0 .AND. qci(i, k, 1) .GT. 0.) THEN
           pracw(i, k) = pracw_a*den(i, k)**((1.+bvtr)/4.)*qrs(i, k, 1)**&
 &           ((3.+bvtr)/4.)*qci(i, k, 1)
-          IF (pracw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            x1 = qci(i, k, 1)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            x1 = pracw(i, k)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (x1 .LT. 0.) THEN
-            pracw(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pracw(i, k) = x1
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pracw(i, k) .GE. 0.) THEN
-            abs1 = pracw(i, k)
-          ELSE
-            abs1 = -pracw(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) THEN
-            pracw(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 1) - pracw(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 1) + pracw(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = qrs(i, k, 1) + pracw(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
           CALL PUSHCONTROL1B(0)
         ELSE
+          pracw(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (pracw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          x1 = qci(i, k, 1)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          x1 = pracw(i, k)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (x1 .LT. 0.) THEN
+          pracw(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pracw(i, k) = x1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (pracw(i, k) .GE. 0.) THEN
+          abs1 = pracw(i, k)
+        ELSE
+          abs1 = -pracw(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) THEN
+          pracw(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 1) - pracw(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 1) + pracw(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = qrs(i, k, 1) + pracw(i, k)*dtcld
           CALL PUSHCONTROL1B(1)
         END IF
 !
@@ -3463,259 +3568,279 @@ CONTAINS
 !        (V->R or R->V) rh(i,k,1)>1., prevp>0, V->R, min=0.,                max=satdt ;
 !                       rh(i,k,1)<1., prevp<0, R->V, min=-qrs(i,k,1)/dtcld, max=0.
 !---------------------------------------------------------------
-        IF (qrs(i, k, 1) .GT. qcrmin) THEN
 !update rh
-          CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          supsat = q(i, k) - qs(i, k, 1)
-          satdt = supsat/dtcld
-          CALL PUSHREAL8(a)
-          a = SQRT(den(i, k)*qrs(i, k, 1))
-          CALL PUSHREAL8(b)
-          b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.&
-&           )*den(i, k)**((13.+3.*bvtr)/24.)*qrs(i, k, 1)**((5.+bvtr)/8.&
-&           )
-          CALL PUSHREAL8(c)
-          c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i&
-&           , k)**3.5
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-          e = (rh(i, k, 1)-1.)/(c+d)
-          prevp(i, k) = (prevp_a*a+prevp_b*b)*e
-          IF (prevp(i, k) .LT. 0.) THEN
-            IF (prevp(i, k) .LT. -(qrs(i, k, 1)/dtcld)) THEN
-              x2 = -(qrs(i, k, 1)/dtcld)
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x2 = prevp(i, k)
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x2 .GT. 0.) THEN
-              prevp(i, k) = 0.
-              CALL PUSHCONTROL2B(1)
-            ELSE
-              prevp(i, k) = x2
-              CALL PUSHCONTROL2B(0)
-            END IF
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        supsat = q(i, k) - qs(i, k, 1)
+        satdt = supsat/dtcld
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max1)
+          max1 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max1)
+          max1 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(a)
+        a = SQRT(den(i, k)*max1)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max2)
+          max2 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max2)
+          max2 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.)*&
+&         den(i, k)**((13.+3.*bvtr)/24.)*max2**((5.+bvtr)/8.)
+        CALL PUSHREAL8(c)
+        c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i, &
+&         k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        prevp(i, k) = (prevp_a*a+prevp_b*b)*e
+        IF (prevp(i, k) .LT. 0.) THEN
+          IF (prevp(i, k) .LT. -(qrs(i, k, 1)/dtcld)) THEN
+            x2 = -(qrs(i, k, 1)/dtcld)
+            CALL PUSHCONTROL1B(0)
           ELSE
-            IF (prevp(i, k) .GT. satdt) THEN
-              x3 = satdt
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x3 = prevp(i, k)
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x3 .LT. 0.) THEN
-              prevp(i, k) = 0.
-              CALL PUSHCONTROL2B(3)
-            ELSE
-              prevp(i, k) = x3
-              CALL PUSHCONTROL2B(2)
-            END IF
+            x2 = prevp(i, k)
+            CALL PUSHCONTROL1B(1)
           END IF
-          IF (prevp(i, k) .GE. 0.) THEN
-            abs2 = prevp(i, k)
-          ELSE
-            abs2 = -prevp(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) THEN
+          IF (x2 .GT. 0.) THEN
             prevp(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
+            CALL PUSHCONTROL2B(1)
           ELSE
-            CALL PUSHCONTROL1B(0)
+            prevp(i, k) = x2
+            CALL PUSHCONTROL2B(0)
           END IF
-          IF (q(i, k) - prevp(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 1) + prevp(i, k)*dtcld .LT. 0.) THEN
+        ELSE
+          IF (prevp(i, k) .GT. satdt) THEN
+            x3 = satdt
             CALL PUSHCONTROL1B(0)
           ELSE
+            x3 = prevp(i, k)
             CALL PUSHCONTROL1B(1)
           END IF
+          IF (x3 .LT. 0.) THEN
+            prevp(i, k) = 0.
+            CALL PUSHCONTROL2B(3)
+          ELSE
+            prevp(i, k) = x3
+            CALL PUSHCONTROL2B(2)
+          END IF
+        END IF
+        IF (prevp(i, k) .GE. 0.) THEN
+          abs2 = prevp(i, k)
+        ELSE
+          abs2 = -prevp(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) THEN
+          prevp(i, k) = 0.
           CALL PUSHCONTROL1B(1)
         ELSE
           CALL PUSHCONTROL1B(0)
+        END IF
+        IF (q(i, k) - prevp(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 1) + prevp(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
         END IF
       END DO
     END DO
     a_cpm = 0.0_8
     DO k=kte,kts,-1
       DO i=ite,its,-1
+        a_temp2 = dtcld*a_t(i, k)/cpm(i, k)
+        a_prevp(i, k) = xl(i, k)*a_temp2
+        a_xl(i, k) = a_xl(i, k) + prevp(i, k)*a_temp2
+        a_cpm(i, k) = a_cpm(i, k) - prevp(i, k)*xl(i, k)*a_temp2/cpm(i, &
+&         k)
         CALL POPCONTROL1B(branch)
-        IF (branch .NE. 0) THEN
-          a_temp2 = dtcld*a_t(i, k)/cpm(i, k)
-          a_prevp(i, k) = xl(i, k)*a_temp2
-          a_xl(i, k) = a_xl(i, k) + prevp(i, k)*a_temp2
-          a_cpm(i, k) = a_cpm(i, k) - prevp(i, k)*xl(i, k)*a_temp2/cpm(i&
-&           , k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 1) = 0.0_8
-          ELSE
-            a_prevp(i, k) = a_prevp(i, k) + dtcld*a_qrs(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_q(i, k) = 0.0_8
-          ELSE
-            a_prevp(i, k) = a_prevp(i, k) - dtcld*a_q(i, k)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_prevp(i, k) = 0.0_8
-          CALL POPCONTROL2B(branch)
-          IF (branch .LT. 2) THEN
-            IF (branch .EQ. 0) THEN
-              a_x2 = a_prevp(i, k)
-              a_prevp(i, k) = 0.0_8
-            ELSE
-              a_prevp(i, k) = 0.0_8
-              a_x2 = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_qrs(i, k, 1) = a_qrs(i, k, 1) - a_x2/dtcld
-            ELSE
-              a_prevp(i, k) = a_prevp(i, k) + a_x2
-            END IF
-            a_satdt = 0.0_8
-          ELSE
-            IF (branch .EQ. 2) THEN
-              a_x3 = a_prevp(i, k)
-              a_prevp(i, k) = 0.0_8
-            ELSE
-              a_prevp(i, k) = 0.0_8
-              a_x3 = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_satdt = a_x3
-            ELSE
-              a_prevp(i, k) = a_prevp(i, k) + a_x3
-              a_satdt = 0.0_8
-            END IF
-          END IF
-          a_supsat = a_satdt/dtcld
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-          e = (rh(i, k, 1)-1.)/(c+d)
-          a_a = prevp_a*e*a_prevp(i, k)
-          a_b = prevp_b*e*a_prevp(i, k)
-          a_e = (prevp_a*a+prevp_b*b)*a_prevp(i, k)
-          a_prevp(i, k) = 0.0_8
-          a_temp2 = a_e/(c+d)
-          a_rh(i, k, 1) = a_rh(i, k, 1) + a_temp2
-          a_temp4 = -((rh(i, k, 1)-1.)*a_temp2/(c+d))
-          a_c = a_temp4
-          a_d = a_temp4
-          temp10 = t(i, k)**1.81
-          temp9 = temp10*qs(i, k, 1)
-          a_temp5 = diffac_b*a_d/temp9
-          a_temp4 = -(p(i, k)*a_temp5/temp9)
-          a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 1)*a_temp4
-          a_qs(i, k, 1) = a_qs(i, k, 1) + temp10*a_temp4 - a_supsat
-          CALL POPREAL8(c)
-          temp10 = rv*t(i, k)**3.5
-          temp8 = den(i, k)*(t(i, k)+120.)
-          temp7 = xl(i, k)*xl(i, k)
-          a_temp4 = diffac_a*a_c/temp10
-          a_xl(i, k) = a_xl(i, k) + 2*xl(i, k)*temp8*a_temp4
-          a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*temp7*a_temp4
-          a_t(i, k) = a_t(i, k) + (den(i, k)*temp7-3.5*t(i, k)**2.5*rv*&
-&           temp7*temp8/temp10)*a_temp4
-          CALL POPREAL8(b)
-          temp3 = 5.12/6.
-          temp2 = t(i, k)**temp3
-          temp1 = 1.0/3.
-          temp0 = p(i, k)**temp1/temp2
-          temp4 = (3.*bvtr+13.)/24.
-          temp5 = den(i, k)**temp4
-          temp6 = (bvtr+5.)/8.
-          temp7 = qrs(i, k, 1)**temp6
-          temp8 = 1.0/6.
-          temp9 = (t(i, k)+120.)**temp8
-          a_temp1 = temp5*temp0*a_b
-          a_temp2 = temp9*temp7*a_b
-          a_temp3 = temp5*a_temp2/temp2
-          IF (p(i, k) .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1 .NE.&
-&             INT(temp1))) THEN
-            a_p(i, k) = a_p(i, k) + a_temp5
-          ELSE
-            a_p(i, k) = a_p(i, k) + a_temp5 + temp1*p(i, k)**(temp1-1)*&
-&             a_temp3
-          END IF
-          IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR. &
-&             temp3 .NE. INT(temp3)))) a_t(i, k) = a_t(i, k) - temp3*t(i&
-&             , k)**(temp3-1)*temp0*a_temp3
-          IF (.NOT.(t(i, k) + 120. .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 &
-&             .OR. temp8 .NE. INT(temp8)))) a_t(i, k) = a_t(i, k) + &
-&             temp8*(t(i, k)+120.)**(temp8-1)*temp7*a_temp1
-          CALL POPREAL8(a)
-          IF (den(i, k)*qrs(i, k, 1) .EQ. 0.0_8) THEN
-            a_temp0 = 0.0_8
-          ELSE
-            a_temp0 = a_a/(2.0*SQRT(den(i, k)*qrs(i, k, 1)))
-          END IF
-          IF (den(i, k) .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. temp4 &
-&             .NE. INT(temp4))) THEN
-            a_den(i, k) = a_den(i, k) + qrs(i, k, 1)*a_temp0
-          ELSE
-            a_den(i, k) = a_den(i, k) + temp4*den(i, k)**(temp4-1)*temp0&
-&             *a_temp2 + qrs(i, k, 1)*a_temp0
-          END IF
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. temp6&
-&             .NE. INT(temp6))) THEN
-            a_qrs(i, k, 1) = a_qrs(i, k, 1) + den(i, k)*a_temp0
-          ELSE
-            a_qrs(i, k, 1) = a_qrs(i, k, 1) + temp6*qrs(i, k, 1)**(temp6&
-&             -1)*temp9*a_temp1 + den(i, k)*a_temp0
-          END IF
-          a_q(i, k) = a_q(i, k) + a_supsat
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
-          CALL POPREAL8ARRAY(qs(i, k, :), 3)
-          CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k)&
-&                 , a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), &
-&                 a_qs(i, k, :))
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 1) = 0.0_8
+        ELSE
+          a_prevp(i, k) = a_prevp(i, k) + dtcld*a_qrs(i, k, 1)
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
+          a_q(i, k) = 0.0_8
+        ELSE
+          a_prevp(i, k) = a_prevp(i, k) - dtcld*a_q(i, k)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_prevp(i, k) = 0.0_8
+        CALL POPCONTROL2B(branch)
+        IF (branch .LT. 2) THEN
+          IF (branch .EQ. 0) THEN
+            a_x2 = a_prevp(i, k)
+            a_prevp(i, k) = 0.0_8
+          ELSE
+            a_prevp(i, k) = 0.0_8
+            a_x2 = 0.0_8
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            a_qrs(i, k, 1) = a_qrs(i, k, 1) - a_x2/dtcld
+          ELSE
+            a_prevp(i, k) = a_prevp(i, k) + a_x2
+          END IF
+          a_satdt = 0.0_8
+        ELSE
+          IF (branch .EQ. 2) THEN
+            a_x3 = a_prevp(i, k)
+            a_prevp(i, k) = 0.0_8
+          ELSE
+            a_prevp(i, k) = 0.0_8
+            a_x3 = 0.0_8
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            a_satdt = a_x3
+          ELSE
+            a_prevp(i, k) = a_prevp(i, k) + a_x3
+            a_satdt = 0.0_8
+          END IF
+        END IF
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        a_a = prevp_a*e*a_prevp(i, k)
+        a_b = prevp_b*e*a_prevp(i, k)
+        a_e = (prevp_a*a+prevp_b*b)*a_prevp(i, k)
+        a_prevp(i, k) = 0.0_8
+        a_temp2 = a_e/(c+d)
+        a_rh(i, k, 1) = a_rh(i, k, 1) + a_temp2
+        a_temp3 = -((rh(i, k, 1)-1.)*a_temp2/(c+d))
+        a_c = a_temp3
+        a_d = a_temp3
+        temp11 = t(i, k)**1.81
+        temp10 = temp11*qs(i, k, 1)
+        a_temp1 = diffac_b*a_d/temp10
+        a_temp3 = -(p(i, k)*a_temp1/temp10)
+        a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 1)*a_temp3
+        a_qs(i, k, 1) = a_qs(i, k, 1) + temp11*a_temp3
+        CALL POPREAL8(c)
+        temp11 = rv*t(i, k)**3.5
+        temp9 = den(i, k)*(t(i, k)+120.)
+        temp8 = xl(i, k)*xl(i, k)
+        a_temp3 = diffac_a*a_c/temp11
+        a_xl(i, k) = a_xl(i, k) + 2*xl(i, k)*temp9*a_temp3
+        a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*temp8*a_temp3
+        a_t(i, k) = a_t(i, k) + (den(i, k)*temp8-3.5*t(i, k)**2.5*rv*&
+&         temp8*temp9/temp11)*a_temp3
+        CALL POPREAL8(b)
+        temp3 = (3.*bvtr+13.)/24.
+        temp2 = den(i, k)**temp3
+        temp1 = (bvtr+5.)/8.
+        temp0 = max2**temp1
+        temp4 = 1.0/3.
+        temp5 = p(i, k)**temp4
+        temp6 = temp5*temp0
+        temp7 = 5.12/6.
+        temp8 = t(i, k)**temp7
+        temp10 = 1.0/6.
+        temp9 = (t(i, k)+120.)**temp10/temp8
+        a_temp2 = temp9*a_b
+        IF (p(i, k) .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. temp4 .NE. &
+&           INT(temp4))) THEN
+          a_p(i, k) = a_p(i, k) + a_temp1
+        ELSE
+          a_p(i, k) = a_p(i, k) + a_temp1 + temp4*p(i, k)**(temp4-1)*&
+&           temp0*temp2*a_temp2
+        END IF
+        a_temp1 = temp6*temp2*a_b/temp8
+        IF (max2 .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1 .NE. INT(&
+&           temp1))) THEN
+          a_max2 = 0.0_8
+        ELSE
+          a_max2 = temp1*max2**(temp1-1)*temp5*temp2*a_temp2
+        END IF
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR. &
+&           temp3 .NE. INT(temp3)))) a_den(i, k) = a_den(i, k) + temp3*&
+&           den(i, k)**(temp3-1)*temp6*a_temp2
+        IF (.NOT.(t(i, k) + 120. .LE. 0.0_8 .AND. (temp10 .EQ. 0.0_8 &
+&           .OR. temp10 .NE. INT(temp10)))) a_t(i, k) = a_t(i, k) + &
+&           temp10*(t(i, k)+120.)**(temp10-1)*a_temp1
+        IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. temp7 &
+&           .NE. INT(temp7)))) a_t(i, k) = a_t(i, k) - temp7*t(i, k)**(&
+&           temp7-1)*temp9*a_temp1
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max2)
+        ELSE
+          CALL POPREAL8(max2)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max2
+        END IF
+        CALL POPREAL8(a)
+        IF (den(i, k)*max1 .EQ. 0.0_8) THEN
+          a_temp0 = 0.0_8
+        ELSE
+          a_temp0 = a_a/(2.0*SQRT(den(i, k)*max1))
+        END IF
+        a_den(i, k) = a_den(i, k) + max1*a_temp0
+        a_max1 = den(i, k)*a_temp0
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max1)
+        ELSE
+          CALL POPREAL8(max1)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max1
+        END IF
+        a_supsat = a_satdt/dtcld
+        a_q(i, k) = a_q(i, k) + a_supsat
+        a_qs(i, k, 1) = a_qs(i, k, 1) - a_supsat
+        CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
+        a_cpm(i, k) = 0.0_8
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
+        CALL POPREAL8ARRAY(qs(i, k, :), 3)
+        CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k), &
+&               a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), a_qs&
+&               (i, k, :))
+        a_pracw(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 1))
+          a_qrs(i, k, 1) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 1))
+          a_pracw(i, k) = a_pracw(i, k) + dtcld*a_qrs(i, k, 1)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 1) = 0.0_8
+        ELSE
+          a_pracw(i, k) = a_pracw(i, k) - dtcld*a_qci(i, k, 1)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pracw(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
           a_pracw(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 1))
-            a_qrs(i, k, 1) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 1))
-            a_pracw(i, k) = a_pracw(i, k) + dtcld*a_qrs(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 1) = 0.0_8
-          ELSE
-            a_pracw(i, k) = a_pracw(i, k) - dtcld*a_qci(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_pracw(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_pracw(i, k) = 0.0_8
-            a_x1 = 0.0_8
-          ELSE
-            a_x1 = a_pracw(i, k)
-            a_pracw(i, k) = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 1) = a_qci(i, k, 1) + a_x1/dtcld
-          ELSE
-            a_pracw(i, k) = a_pracw(i, k) + a_x1
-          END IF
+          a_x1 = 0.0_8
+        ELSE
+          a_x1 = a_pracw(i, k)
+          a_pracw(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 1) = a_qci(i, k, 1) + a_x1/dtcld
+        ELSE
+          a_pracw(i, k) = a_pracw(i, k) + a_x1
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
           temp0 = (bvtr+3.)/4.
           temp2 = (bvtr+1.)/4.
           temp3 = den(i, k)**temp2
@@ -3729,38 +3854,47 @@ CONTAINS
 &             temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + temp2&
 &             *den(i, k)**(temp2-1)*qci(i, k, 1)*a_temp
           a_qci(i, k, 1) = a_qci(i, k, 1) + temp3*a_temp
+        ELSE
+          a_pracw(i, k) = 0.0_8
+        END IF
+        a_praut(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 1) = 0.0_8
+        ELSE
+          a_praut(i, k) = a_praut(i, k) + dtcld*a_qrs(i, k, 1)
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_praut(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 1) = 0.0_8
-          ELSE
-            a_praut(i, k) = a_praut(i, k) + dtcld*a_qrs(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qci(i, k, 1))
-            a_qci(i, k, 1) = 0.0_8
-          ELSE
-            CALL POPREAL8(qci(i, k, 1))
-            a_praut(i, k) = a_praut(i, k) - dtcld*a_qci(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_praut(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 1) = a_qci(i, k, 1) + a_praut(i, k)/dtcld
-            a_praut(i, k) = 0.0_8
-            a_praut1 = 0.0_8
-          ELSE
-            a_praut1 = a_praut(i, k)
-            a_praut(i, k) = 0.0_8
-          END IF
-          a_qci(i, k, 1) = a_qci(i, k, 1) + 7.*EXP(7.*(LOG(qci(i, k, 1))&
-&           /3.))*qck1*a_praut1/(qci(i, k, 1)*3.)
+          CALL POPREAL8(qci(i, k, 1))
+          a_qci(i, k, 1) = 0.0_8
+        ELSE
+          CALL POPREAL8(qci(i, k, 1))
+          a_praut(i, k) = a_praut(i, k) - dtcld*a_qci(i, k, 1)
         END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_praut(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 1) = a_qci(i, k, 1) + a_praut(i, k)/dtcld
+          a_praut(i, k) = 0.0_8
+          a_praut1 = 0.0_8
+        ELSE
+          a_praut1 = a_praut(i, k)
+          a_praut(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_fqc0 = 0.0_8
+        ELSE
+          temp0 = 7.*LOG(qci(i, k, 1))/3.
+          a_fqc0 = EXP(temp0)*qck1*a_praut1
+          a_qci(i, k, 1) = a_qci(i, k, 1) + 7.*EXP(temp0)*fqc0*qck1*&
+&           a_praut1/(qci(i, k, 1)*3.)
+        END IF
+        CALL POPREAL8(fqc0)
+        CALL A_SMOOTHIF(qci(i, k, 1), a_qci(i, k, 1), qc0, fqc0, a_fqc0&
+&                 , 'q0')
       END DO
     END DO
   END SUBROUTINE A_WARMR
@@ -3780,7 +3914,8 @@ CONTAINS
 &   , t, cpm
     REAL :: coeres, supsat, satdt, dtcld, praut1
     INTEGER :: i, k
-    REAL :: prevp0, prevp1, temp, a, b, c, d, e
+    REAL :: fqv, fqc, fqr, fqc0, fprevp, prevp0, prevp1, temp, a, b, c, &
+&   d, e
     INTRINSIC LOG
     INTRINSIC EXP
     INTRINSIC MIN
@@ -3792,6 +3927,8 @@ CONTAINS
     REAL :: x3
     REAL :: abs0
     REAL :: abs1
+    REAL :: max1
+    REAL :: max2
     REAL :: abs2
     DO k=kts,kte
       DO i=its,ite
@@ -3799,133 +3936,148 @@ CONTAINS
 ! praut: auto conversion rate from cloud to rain [HDC 16]
 !        (C->R) praut>0 max=qci(i,k,1)/dtcld, min=0.
 !---------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qc0) THEN
+        CALL SMOOTHIF(qci(i, k, 1), qc0, fqc0, 'q0')
+!qc0=5.03e-4
+        IF (qci(i, k, 1) .GT. 0.) THEN
+! x**a need x>0
 !(qci(i,k,1)**(7./3.))
-          praut1 = qck1*EXP(LOG(qci(i, k, 1))*(7./3.))
-          IF (praut1 .GT. qci(i, k, 1)/dtcld) THEN
-            praut(i, k) = qci(i, k, 1)/dtcld
-          ELSE
-            praut(i, k) = praut1
-          END IF
-          IF (praut(i, k) .GE. 0.) THEN
-            abs0 = praut(i, k)
-          ELSE
-            abs0 = -praut(i, k)
-          END IF
-          IF (abs0 .LT. qmin/dtcld) praut(i, k) = 0.
-          IF (qci(i, k, 1) - praut(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - praut(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 1) + praut(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + praut(i, k)*dtcld
-          END IF
-          praut(i, k) = 0.
+          praut1 = fqc0*qck1*EXP(LOG(qci(i, k, 1))*(7./3.))
+        ELSE
+          praut1 = 0.
         END IF
+        IF (praut1 .GT. qci(i, k, 1)/dtcld) THEN
+          praut(i, k) = qci(i, k, 1)/dtcld
+        ELSE
+          praut(i, k) = praut1
+        END IF
+        IF (praut(i, k) .GE. 0.) THEN
+          abs0 = praut(i, k)
+        ELSE
+          abs0 = -praut(i, k)
+        END IF
+        IF (abs0 .LT. qmin/dtcld) praut(i, k) = 0.
+        IF (qci(i, k, 1) - praut(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - praut(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 1) + praut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) + praut(i, k)*dtcld
+        END IF
+        praut(i, k) = 0.
 !---------------------------------------------------------------
 ! pracw: accretion of cloud water by rain [LFO 51]
 !        (C->R) max=qci(i,k,1)/dtcld, min=0.
 !---------------------------------------------------------------
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
         IF (qrs(i, k, 1) .GT. 0 .AND. qci(i, k, 1) .GT. 0.) THEN
           pracw(i, k) = pracw_a*den(i, k)**((1.+bvtr)/4.)*qrs(i, k, 1)**&
 &           ((3.+bvtr)/4.)*qci(i, k, 1)
-          IF (pracw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            x1 = qci(i, k, 1)/dtcld
-          ELSE
-            x1 = pracw(i, k)
-          END IF
-          IF (x1 .LT. 0.) THEN
-            pracw(i, k) = 0.
-          ELSE
-            pracw(i, k) = x1
-          END IF
-          IF (pracw(i, k) .GE. 0.) THEN
-            abs1 = pracw(i, k)
-          ELSE
-            abs1 = -pracw(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) pracw(i, k) = 0.
-          IF (qci(i, k, 1) - pracw(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - pracw(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 1) + pracw(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + pracw(i, k)*dtcld
-          END IF
+        ELSE
           pracw(i, k) = 0.
         END IF
+        IF (pracw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          x1 = qci(i, k, 1)/dtcld
+        ELSE
+          x1 = pracw(i, k)
+        END IF
+        IF (x1 .LT. 0.) THEN
+          pracw(i, k) = 0.
+        ELSE
+          pracw(i, k) = x1
+        END IF
+        IF (pracw(i, k) .GE. 0.) THEN
+          abs1 = pracw(i, k)
+        ELSE
+          abs1 = -pracw(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) pracw(i, k) = 0.
+        IF (qci(i, k, 1) - pracw(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - pracw(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 1) + pracw(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) + pracw(i, k)*dtcld
+        END IF
+        pracw(i, k) = 0.
 !
 !---------------------------------------------------------------
 ! prevp: evaporation/condensation rate of rain [HDC 14] 
 !        (V->R or R->V) rh(i,k,1)>1., prevp>0, V->R, min=0.,                max=satdt ;
 !                       rh(i,k,1)<1., prevp<0, R->V, min=-qrs(i,k,1)/dtcld, max=0.
 !---------------------------------------------------------------
-        IF (qrs(i, k, 1) .GT. qcrmin) THEN
 !update rh
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          supsat = q(i, k) - qs(i, k, 1)
-          satdt = supsat/dtcld
-          a = SQRT(den(i, k)*qrs(i, k, 1))
-          b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.&
-&           )*den(i, k)**((13.+3.*bvtr)/24.)*qrs(i, k, 1)**((5.+bvtr)/8.&
-&           )
-          c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i&
-&           , k)**3.5
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-          e = (rh(i, k, 1)-1.)/(c+d)
-          prevp(i, k) = (prevp_a*a+prevp_b*b)*e
-          IF (prevp(i, k) .LT. 0.) THEN
-            IF (prevp(i, k) .LT. -(qrs(i, k, 1)/dtcld)) THEN
-              x2 = -(qrs(i, k, 1)/dtcld)
-            ELSE
-              x2 = prevp(i, k)
-            END IF
-            IF (x2 .GT. 0.) THEN
-              prevp(i, k) = 0.
-            ELSE
-              prevp(i, k) = x2
-            END IF
-          ELSE
-            IF (prevp(i, k) .GT. satdt) THEN
-              x3 = satdt
-            ELSE
-              x3 = prevp(i, k)
-            END IF
-            IF (x3 .LT. 0.) THEN
-              prevp(i, k) = 0.
-            ELSE
-              prevp(i, k) = x3
-            END IF
-          END IF
-          IF (prevp(i, k) .GE. 0.) THEN
-            abs2 = prevp(i, k)
-          ELSE
-            abs2 = -prevp(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) prevp(i, k) = 0.
-          IF (q(i, k) - prevp(i, k)*dtcld .LT. 0.) THEN
-            q(i, k) = 0.
-          ELSE
-            q(i, k) = q(i, k) - prevp(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 1) + prevp(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + prevp(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + prevp(i, k)*dtcld*xl(i, k)/cpm(i, k)
-          prevp(i, k) = 0.
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        supsat = q(i, k) - qs(i, k, 1)
+        satdt = supsat/dtcld
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max1 = qcrmin
+        ELSE
+          max1 = qrs(i, k, 1)
         END IF
+        a = SQRT(den(i, k)*max1)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max2 = qcrmin
+        ELSE
+          max2 = qrs(i, k, 1)
+        END IF
+        b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.)*&
+&         den(i, k)**((13.+3.*bvtr)/24.)*max2**((5.+bvtr)/8.)
+        c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i, &
+&         k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        prevp(i, k) = (prevp_a*a+prevp_b*b)*e
+        IF (prevp(i, k) .LT. 0.) THEN
+          IF (prevp(i, k) .LT. -(qrs(i, k, 1)/dtcld)) THEN
+            x2 = -(qrs(i, k, 1)/dtcld)
+          ELSE
+            x2 = prevp(i, k)
+          END IF
+          IF (x2 .GT. 0.) THEN
+            prevp(i, k) = 0.
+          ELSE
+            prevp(i, k) = x2
+          END IF
+        ELSE
+          IF (prevp(i, k) .GT. satdt) THEN
+            x3 = satdt
+          ELSE
+            x3 = prevp(i, k)
+          END IF
+          IF (x3 .LT. 0.) THEN
+            prevp(i, k) = 0.
+          ELSE
+            prevp(i, k) = x3
+          END IF
+        END IF
+        IF (prevp(i, k) .GE. 0.) THEN
+          abs2 = prevp(i, k)
+        ELSE
+          abs2 = -prevp(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) prevp(i, k) = 0.
+        IF (q(i, k) - prevp(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - prevp(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 1) + prevp(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) + prevp(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + prevp(i, k)*dtcld*xl(i, k)/cpm(i, k)
+        prevp(i, k) = 0.
       END DO
     END DO
   END SUBROUTINE WARMR
@@ -3958,12 +4110,12 @@ CONTAINS
     REAL :: a_supcol, a_eacrs, a_egi, a_praci1, a_piacr1, a_psaci1, &
 &   a_pgaci1
     INTEGER :: i, k
-    REAL :: delta3, xlf, a, b, c, d, e
-    REAL :: a_xlf, a_a, a_b, a_c, a_d
+    REAL :: fsupcol, fqc, fqi, fqr, fqs, fqg, delta3, xlf, a, b, c, d, e
+    REAL :: a_fsupcol, a_xlf, a_a, a_b, a_c, a_d
+    INTRINSIC MAX
     INTRINSIC SQRT
     INTRINSIC ABS
     INTRINSIC MIN
-    INTRINSIC MAX
     INTRINSIC EXP
     REAL :: x1
     REAL :: a_x1
@@ -3985,16 +4137,20 @@ CONTAINS
     REAL :: a_y4
     REAL :: y5
     REAL :: a_y5
-    REAL :: y6
-    REAL :: a_y6
     REAL :: x6
     REAL :: a_x6
     REAL :: x7
     REAL :: a_x7
-    REAL :: abs0
-    REAL :: a_abs0
-    REAL :: abs1
-    REAL :: abs2
+    REAL :: x8
+    REAL :: a_x8
+    REAL :: x9
+    REAL :: a_x9
+    REAL :: x10
+    REAL :: a_x10
+    REAL :: x11
+    REAL :: a_x11
+    REAL :: y6
+    REAL :: a_y6
     REAL :: max1
     REAL :: a_max1
     REAL :: max2
@@ -4005,31 +4161,83 @@ CONTAINS
     REAL :: a_max4
     REAL :: max5
     REAL :: a_max5
+    REAL :: abs0
+    REAL :: a_abs0
+    REAL :: abs1
+    REAL :: abs2
+    REAL :: max6
+    REAL :: a_max6
+    REAL :: max7
+    REAL :: a_max7
+    REAL :: max8
+    REAL :: a_max8
+    REAL :: max9
+    REAL :: a_max9
+    REAL :: max10
+    REAL :: a_max10
+    REAL :: max11
+    REAL :: a_max11
     REAL :: abs3
     REAL :: a_abs3
     REAL :: abs4
+    REAL :: max12
+    REAL :: a_max12
+    REAL :: max13
+    REAL :: a_max13
+    REAL :: max14
+    REAL :: a_max14
+    REAL :: max15
+    REAL :: a_max15
+    REAL :: max16
+    REAL :: a_max16
     REAL :: abs5
     REAL :: a_abs5
     REAL :: abs6
-    REAL :: max6
-    REAL :: a_max6
+    REAL :: max17
+    REAL :: a_max17
     REAL :: abs7
     REAL :: abs8
+    REAL :: max18
+    REAL :: a_max18
+    REAL :: max19
+    REAL :: a_max19
+    REAL :: max20
+    REAL :: a_max20
+    REAL :: max21
+    REAL :: a_max21
+    REAL :: max22
+    REAL :: a_max22
+    REAL :: max23
+    REAL :: a_max23
+    REAL :: max24
+    REAL :: a_max24
+    REAL :: max25
+    REAL :: a_max25
+    REAL :: max26
+    REAL :: a_max26
+    REAL :: max27
+    REAL :: a_max27
+    REAL :: max28
+    REAL :: a_max28
+    REAL :: max29
+    REAL :: a_max29
+    REAL :: max30
+    REAL :: a_max30
     REAL :: temp1
     REAL :: temp2
     REAL :: a_temp
-    REAL :: a_temp0
     REAL :: temp3
     REAL :: temp4
     REAL :: temp5
+    REAL :: a_temp0
     REAL :: a_temp1
-    REAL :: a_temp2
     REAL :: temp6
+    REAL :: a_temp2
     REAL :: a_temp3
-    REAL :: a_temp4
     REAL :: temp7
     REAL :: temp8
     REAL :: temp9
+    REAL :: a_temp4
     REAL :: a_temp5
     REAL :: a_temp6
     INTEGER :: branch
@@ -4039,272 +4247,630 @@ CONTAINS
 ! praci: Accretion of cloud ice by rain [LFO 25]
 !        (T<T0: I->S or I->G) praci: min=0,max=qci(i,k,2)/dtcld
 !-------------------------------------------------------------
-        CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 1) .GT. qcrmin .AND. qci(i, k&
-&           , 2) .GT. qmin) THEN
-          vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*qrs(i, k, 1)**(bvtr/4.&
-&           )
-          vt2i = vt2i_a*(den(i, k)*qci(i, k, 2))**(1.31/8.)
-          CALL PUSHREAL8(b)
-          b = (den(i, k)*qrs(i, k, 1))**(3./4.)*qci(i, k, 2)
-          CALL PUSHREAL8(c)
-          c = den(i, k)**(5./8.)*SQRT(qrs(i, k, 1))*qci(i, k, 2)**(9./8.&
-&           )
-          CALL PUSHREAL8(d)
-          d = SQRT(den(i, k))*SQRT(SQRT(qrs(i, k, 1)))*qci(i, k, 2)**(5.&
-&           /4.)
-          IF (vt2r - vt2i .GE. 0.) THEN
-            CALL PUSHREAL8(abs0)
-            abs0 = vt2r - vt2i
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(abs0)
-            abs0 = -(vt2r-vt2i)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          praci1 = praci_a*abs0*(praci_b*b+praci_c*c+praci_d*d)
-          IF (praci1 .GT. qci(i, k, 2)/dtcld) THEN
-            praci(i, k) = qci(i, k, 2)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            praci(i, k) = praci1
-            CALL PUSHCONTROL1B(1)
-          END IF
-!update qi, qs, qg
-          IF (qrs(i, k, 1) .LT. 1.e-4) THEN
-            CALL PUSHREAL8(delta3)
-            delta3 = 1.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHREAL8(delta3)
-            delta3 = 0.
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (praci(i, k) .GE. 0.) THEN
-            abs1 = praci(i, k)
-          ELSE
-            abs1 = -praci(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) THEN
-            praci(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 2) - praci(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = qci(i, k, 2) - praci(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          x1 = qrs(i, k, 2) + praci(i, k)*delta3*dtcld
-          IF (x1 .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = x1
-            CALL PUSHCONTROL1B(1)
-          END IF
-          x2 = qrs(i, k, 3) + praci(i, k)*(1-delta3)*dtcld
-          IF (x2 .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = x2
-            CALL PUSHCONTROL1B(1)
-          END IF
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max1)
+          max1 = qcrmin
           CALL PUSHCONTROL1B(0)
         ELSE
+          CALL PUSHREAL8(max1)
+          max1 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max1**(bvtr/4.)
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max2)
+          max2 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max2)
+          max2 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2i = vt2i_a*(den(i, k)*max2)**(1.31/8.)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max3)
+          max3 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max3)
+          max3 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max18)
+          max18 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max18)
+          max18 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = (den(i, k)*max3)**(3./4.)*max18
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max4)
+          max4 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max4)
+          max4 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max19)
+          max19 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max19)
+          max19 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(c)
+        c = den(i, k)**(5./8.)*SQRT(max4)*max19**(9./8.)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max5)
+          max5 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max5)
+          max5 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max20)
+          max20 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max20)
+          max20 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(d)
+        d = SQRT(den(i, k))*SQRT(SQRT(max5))*max20**(5./4.)
+        IF (vt2r - vt2i .GE. 0.) THEN
+          CALL PUSHREAL8(abs0)
+          abs0 = vt2r - vt2i
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(abs0)
+          abs0 = -(vt2r-vt2i)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        praci1 = praci_a*abs0*(praci_b*b+praci_c*c+praci_d*d)
+        IF (praci1 .GT. qci(i, k, 2)/dtcld) THEN
+          praci(i, k) = qci(i, k, 2)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          praci(i, k) = praci1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(praci(i, k))
+        praci(i, k) = fsupcol*praci(i, k)
+!update qi, qs, qg
+        IF (qrs(i, k, 1) .LT. 1.e-4) THEN
+          CALL PUSHREAL8(delta3)
+          delta3 = 1.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(delta3)
+          delta3 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (praci(i, k) .GE. 0.) THEN
+          abs1 = praci(i, k)
+        ELSE
+          abs1 = -praci(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) THEN
+          praci(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) - praci(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - praci(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x1 = qrs(i, k, 2) + praci(i, k)*delta3*dtcld
+        IF (x1 .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 2) = x1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x2 = qrs(i, k, 3) + praci(i, k)*(1-delta3)*dtcld
+        IF (x2 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 3) = x2
           CALL PUSHCONTROL1B(1)
         END IF
 !-------------------------------------------------------------
 ! piacr: Accretion of rain by cloud ice [LFO 26]
 !        (T<T0: R->S or R->G) piacr: min=0,max=qrs(i,k,1)/dtcld
 !-------------------------------------------------------------
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 1&
-&           ) .GT. qcrmin) THEN
+!         supcol = t0c-t(i,k) !not change
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+!call smoothif(qci(i,k,2),qmin  ,fqi,'q0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qci(i, k, 2) .GT. 0. .AND. qrs(i, k, 1) .GT. 0.) THEN
-!piacr_a=1.75e5
-            piacr1 = piacr_a*den(i, k)**((3.+bvtr)/4.)*qci(i, k, 2)**&
-&             0.75*qrs(i, k, 1)**((6.+bvtr)/4.)
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-            piacr1 = 0.
-          END IF
-          IF (piacr1 .GT. qrs(i, k, 1)/dtcld) THEN
-            piacr(i, k) = qrs(i, k, 1)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            piacr(i, k) = piacr1
-            CALL PUSHCONTROL1B(1)
-          END IF
-! update qr,qs,qg,t
-          IF (qrs(i, k, 1) .LT. 1.e-4) THEN
-            CALL PUSHREAL8(delta3)
-            delta3 = 1.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHREAL8(delta3)
-            delta3 = 0.
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (piacr(i, k) .GE. 0.) THEN
-            abs2 = piacr(i, k)
-          ELSE
-            abs2 = -piacr(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) THEN
-            piacr(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qrs(i, k, 1) - piacr(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = qrs(i, k, 1) - piacr(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          x3 = qrs(i, k, 2) + piacr(i, k)*delta3*dtcld
-          IF (x3 .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = x3
-            CALL PUSHCONTROL1B(1)
-          END IF
-          x4 = qrs(i, k, 3) + piacr(i, k)*(1-delta3)*dtcld
-          IF (x4 .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = x4
-            CALL PUSHCONTROL1B(1)
-          END IF
-          t(i, k) = t(i, k) + piacr(i, k)*dtcld*xlf/cpm(i, k)
+        cpm(i, k) = CPMCAL(q(i, k))
+        xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
           CALL PUSHCONTROL1B(0)
         ELSE
           CALL PUSHCONTROL1B(1)
         END IF
+        IF (qci(i, k, 2) .GT. 0. .AND. qrs(i, k, 1) .GT. 0.) THEN
+!piacr_a=1.75e5
+          piacr1 = piacr_a*den(i, k)**((3.+bvtr)/4.)*qci(i, k, 2)**0.75*&
+&           qrs(i, k, 1)**((6.+bvtr)/4.)
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+          piacr1 = 0.
+        END IF
+        IF (piacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+          piacr(i, k) = qrs(i, k, 1)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          piacr(i, k) = piacr1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(piacr(i, k))
+        piacr(i, k) = fsupcol*piacr(i, k)
+! update qr,qs,qg,t
+        IF (qrs(i, k, 1) .LT. 1.e-4) THEN
+          CALL PUSHREAL8(delta3)
+          delta3 = 1.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(delta3)
+          delta3 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (piacr(i, k) .GE. 0.) THEN
+          abs2 = piacr(i, k)
+        ELSE
+          abs2 = -piacr(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) THEN
+          piacr(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) - piacr(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = qrs(i, k, 1) - piacr(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x3 = qrs(i, k, 2) + piacr(i, k)*delta3*dtcld
+        IF (x3 .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = x3
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x4 = qrs(i, k, 3) + piacr(i, k)*(1-delta3)*dtcld
+        IF (x4 .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = x4
+          CALL PUSHCONTROL1B(1)
+        END IF
+        t(i, k) = t(i, k) + piacr(i, k)*dtcld*xlf/cpm(i, k)
 !-------------------------------------------------------------
 ! psaci: Accretion of cloud ice by snow [HDC 10]
 !        (T<T0: I->S) psaci: min=0, max=qci(i,k,2)/dtcld
 !-------------------------------------------------------------
+        CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 2&
-&           ) .GT. qcrmin) THEN
-          x5 = EXP(0.07*(-supcol))
-          IF (x5 .GT. 1.) THEN
-            CALL PUSHREAL8(eacrs)
-            eacrs = 1.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(eacrs)
-            eacrs = x5
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y1 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y1 = 90.
-          END IF
-          IF (0. .LT. y1) THEN
-            CALL PUSHREAL8(max1)
-            max1 = y1
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max1)
-            max1 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*qrs(i, k, 2)**(bvts/4.&
-&           )*EXP(-(alpha*bvts*max1/4.))
-          vt2i = vt2i_a*(den(i, k)*qci(i, k, 2))**(1.31/8.)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y2 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y2 = 90.
-          END IF
-          IF (0. .LT. y2) THEN
-            CALL PUSHREAL8(max2)
-            max2 = y2
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max2)
-            max2 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(a)
-          a = EXP(alpha*max2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y3 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y3 = 90.
-          END IF
-          IF (0. .LT. y3) THEN
-            CALL PUSHREAL8(max3)
-            max3 = y3
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max3)
-            max3 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(b)
-          b = EXP(-(3.*alpha*max3/4.))*(den(i, k)*qrs(i, k, 2))**(3./4.)&
-&           *qci(i, k, 2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y4 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y4 = 90.
-          END IF
-          IF (0. .LT. y4) THEN
-            CALL PUSHREAL8(max4)
-            max4 = y4
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max4)
-            max4 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(c)
-          c = EXP(-(alpha*max4/2.))*den(i, k)**(5./8.)*SQRT(qrs(i, k, 2)&
-&           )*qci(i, k, 2)**(9./8.)
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        x5 = EXP(0.07*(-supcol))
+        IF (x5 .GT. 1.) THEN
+          CALL PUSHREAL8(eacrs)
+          eacrs = 1.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(eacrs)
+          eacrs = x5
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max6)
+          max6 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max6)
+          max6 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y6 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y6 = 90.
+        END IF
+        IF (0. .LT. y6) THEN
+          CALL PUSHREAL8(max21)
+          max21 = y6
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max21)
+          max21 = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*max6**(bvts/4.)*EXP(-(&
+&         alpha*bvts*max21/4.))
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max7)
+          max7 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max7)
+          max7 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2i = vt2i_a*(den(i, k)*max7)**(1.31/8.)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y1 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y1 = 90.
+        END IF
+        IF (0. .LT. y1) THEN
+          CALL PUSHREAL8(max8)
+          max8 = y1
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max8)
+          max8 = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(a)
+        a = EXP(alpha*max8)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y2 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y2 = 90.
+        END IF
+        IF (0. .LT. y2) THEN
+          CALL PUSHREAL8(max9)
+          max9 = y2
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max9)
+          max9 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max22)
+          max22 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max22)
+          max22 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max28)
+          max28 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max28)
+          max28 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        b = EXP(-(3.*alpha*max9/4.))*(den(i, k)*max22)**(3./4.)*max28
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y3 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y3 = 90.
+        END IF
+        IF (0. .LT. y3) THEN
+          CALL PUSHREAL8(max10)
+          max10 = y3
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max10)
+          max10 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max23)
+          max23 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max23)
+          max23 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max29)
+          max29 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max29)
+          max29 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(c)
+        c = EXP(-(alpha*max10/2.))*den(i, k)**(5./8.)*SQRT(max23)*max29&
+&         **(9./8.)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y4 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y4 = 90.
+        END IF
+        IF (0. .LT. y4) THEN
+          CALL PUSHREAL8(max11)
+          max11 = y4
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max11)
+          max11 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max24)
+          max24 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max24)
+          max24 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max30)
+          max30 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max30)
+          max30 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(d)
+        d = EXP(-(alpha*max11/4.))*SQRT(den(i, k))*SQRT(SQRT(max24))*&
+&         max30**(5./4.)
+        IF (vt2s - vt2i .GE. 0.) THEN
+          CALL PUSHREAL8(abs3)
+          abs3 = vt2s - vt2i
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(abs3)
+          abs3 = -(vt2s-vt2i)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        psaci1 = psaci_a*a*abs3*(psaci_b*b+psaci_c*c+psaci_d*d)*eacrs
+        IF (psaci1 .GT. qci(i, k, 2)/dtcld) THEN
+          psaci(i, k) = qci(i, k, 2)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          psaci(i, k) = psaci1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(psaci(i, k))
+        psaci(i, k) = fsupcol*psaci(i, k)
+        IF (psaci(i, k) .GE. 0.) THEN
+          abs4 = psaci(i, k)
+        ELSE
+          abs4 = -psaci(i, k)
+        END IF
+        IF (abs4 .LT. qmin/dtcld) THEN
+          psaci(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) - psaci(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = qci(i, k, 2) - psaci(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 2) + psaci(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = qrs(i, k, 2) + psaci(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+!-------------------------------------------------------------
+! pgaci: Accretion of cloud ice by graupel [LFO 41]
+!        (T<T0: I->G) pgaci:min=0,max=qci(i,k,2)/dtcld
+!-------------------------------------------------------------
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,    0.,fsupcol,'t0')
+!call smoothif(qci(i,k,2),qmin  ,fqi,'q0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!min(exp(0.07*(-supcol)),1.)
+        CALL PUSHREAL8(egi)
+        egi = eacrs
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max12)
+          max12 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max12)
+          max12 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*max12**(bvtg/4.)
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max13)
+          max13 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max13)
+          max13 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2i = vt2i_a*(den(i, k)*max13)**(1.31/8.)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max14)
+          max14 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max14)
+          max14 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max25)
+          max25 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max25)
+          max25 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = (den(i, k)*max14)**(3./4.)*max25
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max15)
+          max15 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max15)
+          max15 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max26)
+          max26 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max26)
+          max26 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(c)
+        c = den(i, k)**(5./8.)*SQRT(max15)*max26**(9./8.)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max16)
+          max16 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max16)
+          max16 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          CALL PUSHREAL8(max27)
+          max27 = qmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max27)
+          max27 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(d)
+        d = SQRT(den(i, k))*SQRT(SQRT(max16))*max27**(5./4.)
+        IF (vt2g - vt2i .GE. 0.) THEN
+          CALL PUSHREAL8(abs5)
+          abs5 = vt2g - vt2i
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(abs5)
+          abs5 = -(vt2g-vt2i)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        pgaci1 = pgaci_a*abs5*(pgaci_b*b+pgaci_c*c+pgaci_d*d)*egi
+        IF (pgaci1 .GT. qci(i, k, 2)/dtcld) THEN
+          pgaci(i, k) = qci(i, k, 2)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pgaci(i, k) = pgaci1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(pgaci(i, k))
+        pgaci(i, k) = fsupcol*pgaci(i, k)
+        IF (pgaci(i, k) .GE. 0.) THEN
+          abs6 = pgaci(i, k)
+        ELSE
+          abs6 = -pgaci(i, k)
+        END IF
+        IF (abs6 .LT. qmin/dtcld) THEN
+          pgaci(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) - pgaci(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = qci(i, k, 2) - pgaci(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 3) + pgaci(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = qrs(i, k, 3) + pgaci(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+!-------------------------------------------------------------
+! psacw: Accretion of cloud water by snow  [LFO 24]
+!        (T<T0: C->G, and T>=T0: C->R) psacw:min=0,max=qci(i,k,1)/dtcld
+!-------------------------------------------------------------
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,    0.,fsupcol,'t0')
+!call smoothif(qrs(i,k,2),qcrmin,fqs,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
+!update cpm
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 2) .GT. 0. .AND. qci(i, k, 1) .GT. 0.) THEN
           IF (90. .GT. t0c - t(i, k)) THEN
             y5 = t0c - t(i, k)
             CALL PUSHCONTROL1B(0)
@@ -4313,330 +4879,194 @@ CONTAINS
             y5 = 90.
           END IF
           IF (0. .LT. y5) THEN
-            CALL PUSHREAL8(max5)
-            max5 = y5
+            CALL PUSHREAL8(max17)
+            max17 = y5
             CALL PUSHCONTROL1B(0)
           ELSE
-            CALL PUSHREAL8(max5)
-            max5 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(d)
-          d = EXP(-(alpha*max5/4.))*SQRT(den(i, k))*SQRT(SQRT(qrs(i, k, &
-&           2)))*qci(i, k, 2)**(5./4.)
-          IF (vt2s - vt2i .GE. 0.) THEN
-            CALL PUSHREAL8(abs3)
-            abs3 = vt2s - vt2i
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(abs3)
-            abs3 = -(vt2s-vt2i)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          psaci1 = psaci_a*a*abs3*(psaci_b*b+psaci_c*c+psaci_d*d)*eacrs
-          IF (psaci1 .GT. qci(i, k, 2)/dtcld) THEN
-            psaci(i, k) = qci(i, k, 2)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            psaci(i, k) = psaci1
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (psaci(i, k) .GE. 0.) THEN
-            abs4 = psaci(i, k)
-          ELSE
-            abs4 = -psaci(i, k)
-          END IF
-          IF (abs4 .LT. qmin/dtcld) THEN
-            psaci(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 2) - psaci(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = qci(i, k, 2) - psaci(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 2) + psaci(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = qrs(i, k, 2) + psaci(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHCONTROL1B(0)
-        ELSE
-          CALL PUSHCONTROL1B(1)
-        END IF
-!-------------------------------------------------------------
-! pgaci: Accretion of cloud ice by graupel [LFO 41]
-!        (T<T0: I->G) pgaci:min=0,max=qci(i,k,2)/dtcld
-!-------------------------------------------------------------
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 3&
-&           ) .GT. qcrmin) THEN
-!min(exp(0.07*(-supcol)),1.)
-          CALL PUSHREAL8(egi)
-          egi = eacrs
-          vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*qrs(i, k, 3)**(bvtg/4.&
-&           )
-          vt2i = vt2i_a*(den(i, k)*qci(i, k, 2))**(1.31/8.)
-          CALL PUSHREAL8(b)
-          b = (den(i, k)*qrs(i, k, 3))**(3./4.)*qci(i, k, 2)
-          CALL PUSHREAL8(c)
-          c = den(i, k)**(5./8.)*SQRT(qrs(i, k, 3))*qci(i, k, 2)**(9./8.&
-&           )
-          CALL PUSHREAL8(d)
-          d = SQRT(den(i, k))*SQRT(SQRT(qrs(i, k, 3)))*qci(i, k, 2)**(5.&
-&           /4.)
-          IF (vt2g - vt2i .GE. 0.) THEN
-            CALL PUSHREAL8(abs5)
-            abs5 = vt2g - vt2i
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(abs5)
-            abs5 = -(vt2g-vt2i)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          pgaci1 = pgaci_a*abs5*(pgaci_b*b+pgaci_c*c+pgaci_d*d)*egi
-          IF (pgaci1 .GT. qci(i, k, 2)/dtcld) THEN
-            pgaci(i, k) = qci(i, k, 2)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pgaci(i, k) = pgaci1
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pgaci(i, k) .GE. 0.) THEN
-            abs6 = pgaci(i, k)
-          ELSE
-            abs6 = -pgaci(i, k)
-          END IF
-          IF (abs6 .LT. qmin/dtcld) THEN
-            pgaci(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 2) - pgaci(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = qci(i, k, 2) - pgaci(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 3) + pgaci(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = qrs(i, k, 3) + pgaci(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHCONTROL1B(0)
-        ELSE
-          CALL PUSHCONTROL1B(1)
-        END IF
-!-------------------------------------------------------------
-! psacw: Accretion of cloud water by snow  [LFO 24]
-!        (T<T0: C->G, and T>=T0: C->R) psacw:min=0,max=qci(i,k,1)/dtcld
-!-------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qmin .AND. qrs(i, k, 2) .GT. qcrmin) THEN
-          CALL PUSHREAL8(supcol)
-          supcol = t0c - t(i, k)
-!update cpm
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y6 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y6 = 90.
-          END IF
-          IF (0. .LT. y6) THEN
-            CALL PUSHREAL8(max6)
-            max6 = y6
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max6)
-            max6 = 0.
+            CALL PUSHREAL8(max17)
+            max17 = 0.
             CALL PUSHCONTROL1B(1)
           END IF
           CALL PUSHREAL8(a)
-          a = EXP((1.-bvts)*alpha*max6/4.)
+          a = EXP((1.-bvts)*alpha*max17/4.)
           psacw(i, k) = psacw_a*a*den(i, k)**((1.+bvts)/4.)*qrs(i, k, 2)&
 &           **((3.+bvts)/4.)*qci(i, k, 1)
-          IF (psacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            x6 = qci(i, k, 1)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            x6 = psacw(i, k)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (x6 .LT. 0.) THEN
-            psacw(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            psacw(i, k) = x6
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (psacw(i, k) .GE. 0.) THEN
-            abs7 = psacw(i, k)
-          ELSE
-            abs7 = -psacw(i, k)
-          END IF
-          IF (abs7 .LT. qmin/dtcld) THEN
-            psacw(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 1) - psacw(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qci(i, k, 1))
-            qci(i, k, 1) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qci(i, k, 1))
-            qci(i, k, 1) = qci(i, k, 1) - psacw(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (qrs(i, k, 3) + psacw(i, k)*dtcld .LT. 0.) THEN
-              CALL PUSHREAL8(qrs(i, k, 3))
-              qrs(i, k, 3) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(qrs(i, k, 3))
-              qrs(i, k, 3) = qrs(i, k, 3) + psacw(i, k)*dtcld
-              CALL PUSHCONTROL1B(1)
-            END IF
-            t(i, k) = t(i, k) + psacw(i, k)*dtcld*xlf/cpm(i, k)
-            CALL PUSHCONTROL2B(0)
-          ELSE IF (qrs(i, k, 1) + psacw(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = 0.
-            CALL PUSHCONTROL2B(3)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = qrs(i, k, 1) + psacw(i, k)*dtcld
-            CALL PUSHCONTROL2B(2)
-          END IF
+          CALL PUSHCONTROL1B(0)
         ELSE
-          CALL PUSHCONTROL2B(1)
+          psacw(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
         END IF
+        IF (psacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          x6 = qci(i, k, 1)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          x6 = psacw(i, k)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (x6 .LT. 0.) THEN
+          psacw(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          psacw(i, k) = x6
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(psacw(i, k))
+        psacw(i, k) = fsupcol*psacw(i, k)
+        IF (psacw(i, k) .GE. 0.) THEN
+          abs7 = psacw(i, k)
+        ELSE
+          abs7 = -psacw(i, k)
+        END IF
+        IF (abs7 .LT. qmin/dtcld) THEN
+          psacw(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 1) - psacw(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qci(i, k, 1))
+          qci(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qci(i, k, 1))
+          qci(i, k, 1) = qci(i, k, 1) - psacw(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x7 = qrs(i, k, 1) + (1.-fsupcol)*psacw(i, k)*dtcld
+        IF (x7 .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = x7
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x8 = qrs(i, k, 3) + fsupcol*psacw(i, k)*dtcld
+        IF (x8 .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = x8
+          CALL PUSHCONTROL1B(1)
+        END IF
+        t(i, k) = t(i, k) + fsupcol*psacw(i, k)*dtcld*xlf/cpm(i, k)
+!t>=t0 pseml
 !-------------------------------------------------------------
 ! pgacw: Accretion of cloud water by graupel [LFO 40]
 !        (T<T0: C->G, and T>=T0: C->R) pgacw:min=0.,max=qci(i,k,1)/dtcld
 !-------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qmin .AND. qrs(i, k, 3) .GT. qcrmin) THEN
-          CALL PUSHREAL8(supcol)
-          supcol = t0c - t(i, k)
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
+        CALL PUSHREAL8(supcol)
+        supcol = t0c - t(i, k)
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 3) .GT. 0. .AND. qci(i, k, 1) .GT. 0.) THEN
           pgacw(i, k) = pgacw_a*den(i, k)**((1.+bvtg)/4.)*qrs(i, k, 3)**&
 &           ((3.+bvtg)/4.)*qci(i, k, 1)
-          IF (pgacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            x7 = qci(i, k, 1)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            x7 = pgacw(i, k)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (x7 .LT. 0.) THEN
-            pgacw(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pgacw(i, k) = x7
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pgacw(i, k) .GE. 0.) THEN
-            abs8 = pgacw(i, k)
-          ELSE
-            abs8 = -pgacw(i, k)
-          END IF
-          IF (abs8 .LT. qmin/dtcld) THEN
-            pgacw(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 1) - pgacw(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (qrs(i, k, 3) + pgacw(i, k)*dtcld .LT. 0.) THEN
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHCONTROL1B(1)
-            END IF
-            CALL PUSHCONTROL2B(3)
-          ELSE IF (qrs(i, k, 1) + pgacw(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHCONTROL2B(1)
-          ELSE
-            CALL PUSHCONTROL2B(2)
-          END IF
+          CALL PUSHCONTROL1B(0)
         ELSE
-          CALL PUSHCONTROL2B(0)
+          pgacw(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (pgacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          x9 = qci(i, k, 1)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          x9 = pgacw(i, k)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (x9 .LT. 0.) THEN
+          pgacw(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pgacw(i, k) = x9
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (pgacw(i, k) .GE. 0.) THEN
+          abs8 = pgacw(i, k)
+        ELSE
+          abs8 = -pgacw(i, k)
+        END IF
+!pgacw(i,k)=fqg*fqc*pgacw(i,k)
+        IF (abs8 .LT. qmin/dtcld) THEN
+          pgacw(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 1) - pgacw(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x10 = qrs(i, k, 1) + (1.-fsupcol)*pgacw(i, k)*dtcld
+        IF (x10 .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = x10
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x11 = qrs(i, k, 3) + fsupcol*pgacw(i, k)*dtcld
+        IF (x11 .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
         END IF
       END DO
     END DO
     a_cpm = 0.0_8
     a_xl = 0.0_8
-    a_eacrs = 0.0_8
     DO k=kte,kts,-1
       DO i=ite,its,-1
-        CALL POPCONTROL2B(branch)
-        IF (branch .LT. 2) THEN
-          IF (branch .EQ. 0) THEN
-            GOTO 110
-          ELSE
-            a_qrs(i, k, 1) = 0.0_8
-          END IF
-        ELSE IF (branch .EQ. 2) THEN
-          a_pgacw(i, k) = a_pgacw(i, k) + dtcld*a_qrs(i, k, 1)
+        a_temp4 = dtcld*a_t(i, k)
+        a_temp6 = fsupcol*xlf*a_temp4/cpm(i, k)
+        temp8 = pgacw(i, k)/cpm(i, k)
+        a_fsupcol = xlf*temp8*a_temp4 - pgacw(i, k)*a_pgacw(i, k)
+        a_pgacw(i, k) = (1-fsupcol)*a_pgacw(i, k) + a_temp6
+        a_xlf = fsupcol*temp8*a_temp4
+        a_cpm(i, k) = a_cpm(i, k) - temp8*a_temp6
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 3) = 0.0_8
+          a_x11 = 0.0_8
         ELSE
-          a_temp5 = dtcld*a_t(i, k)/cpm(i, k)
-          a_pgacw(i, k) = xlf*a_temp5
-          a_xlf = pgacw(i, k)*a_temp5
-          a_cpm(i, k) = a_cpm(i, k) - pgacw(i, k)*xlf*a_temp5/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 3) = 0.0_8
-          ELSE
-            a_pgacw(i, k) = a_pgacw(i, k) + dtcld*a_qrs(i, k, 3)
-          END IF
-          GOTO 100
+          a_x11 = a_qrs(i, k, 3)
+          a_qrs(i, k, 3) = 0.0_8
         END IF
-        a_xlf = 0.0_8
- 100    CALL POPCONTROL1B(branch)
+        a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_x11
+        a_fsupcol = a_fsupcol + pgacw(i, k)*dtcld*a_x11
+        a_pgacw(i, k) = a_pgacw(i, k) + fsupcol*dtcld*a_x11
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 1))
+          a_qrs(i, k, 1) = 0.0_8
+          a_x10 = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 1))
+          a_x10 = a_qrs(i, k, 1)
+          a_qrs(i, k, 1) = 0.0_8
+        END IF
+        a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_x10
+        a_fsupcol = a_fsupcol - pgacw(i, k)*dtcld*a_x10
+        a_pgacw(i, k) = a_pgacw(i, k) + (1.-fsupcol)*dtcld*a_x10
+        CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
           a_qci(i, k, 1) = 0.0_8
         ELSE
@@ -4647,69 +5077,80 @@ CONTAINS
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
           a_pgacw(i, k) = 0.0_8
-          a_x7 = 0.0_8
+          a_x9 = 0.0_8
         ELSE
-          a_x7 = a_pgacw(i, k)
+          a_x9 = a_pgacw(i, k)
           a_pgacw(i, k) = 0.0_8
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_qci(i, k, 1) = a_qci(i, k, 1) + a_x7/dtcld
+          a_qci(i, k, 1) = a_qci(i, k, 1) + a_x9/dtcld
         ELSE
-          a_pgacw(i, k) = a_pgacw(i, k) + a_x7
+          a_pgacw(i, k) = a_pgacw(i, k) + a_x9
         END IF
-        temp9 = (bvtg+3.)/4.
-        temp7 = (bvtg+1.)/4.
-        temp6 = den(i, k)**temp7
-        a_temp6 = qrs(i, k, 3)**temp9*pgacw_a*a_pgacw(i, k)
-        IF (.NOT.(qrs(i, k, 3) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. &
-&           temp9 .NE. INT(temp9)))) a_qrs(i, k, 3) = a_qrs(i, k, 3) + &
-&           temp9*qrs(i, k, 3)**(temp9-1)*temp6*qci(i, k, 1)*pgacw_a*&
-&           a_pgacw(i, k)
-        a_pgacw(i, k) = 0.0_8
-        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
-&           temp7 .NE. INT(temp7)))) a_den(i, k) = a_den(i, k) + temp7*&
-&           den(i, k)**(temp7-1)*qci(i, k, 1)*a_temp6
-        a_qci(i, k, 1) = a_qci(i, k, 1) + temp6*a_temp6
         CALL POPCONTROL1B(branch)
-        IF (branch .NE. 0) a_xlf = 0.0_8
+        IF (branch .EQ. 0) THEN
+          temp9 = (bvtg+3.)/4.
+          temp7 = (bvtg+1.)/4.
+          temp6 = den(i, k)**temp7
+          a_temp6 = qrs(i, k, 3)**temp9*pgacw_a*a_pgacw(i, k)
+          IF (.NOT.(qrs(i, k, 3) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR.&
+&             temp9 .NE. INT(temp9)))) a_qrs(i, k, 3) = a_qrs(i, k, 3) +&
+&             temp9*qrs(i, k, 3)**(temp9-1)*temp6*qci(i, k, 1)*pgacw_a*&
+&             a_pgacw(i, k)
+          a_pgacw(i, k) = 0.0_8
+          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
+&             temp7 .NE. INT(temp7)))) a_den(i, k) = a_den(i, k) + temp7&
+&             *den(i, k)**(temp7-1)*qci(i, k, 1)*a_temp6
+          a_qci(i, k, 1) = a_qci(i, k, 1) + temp6*a_temp6
+        ELSE
+          a_pgacw(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_xlf = 0.0_8
+        supcol = t0c - t(i, k)
         CALL POPREAL8(xlf)
         a_xl(i, k) = a_xl(i, k) - a_xlf
         CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
         a_xl(i, k) = 0.0_8
-        CALL POPREAL8(cpm(i, k))
-        CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-        a_cpm(i, k) = 0.0_8
+        CALL POPREAL8(fsupcol)
+        a_supcol = 0.0_8
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't0')
         CALL POPREAL8(supcol)
- 110    CALL POPCONTROL2B(branch)
-        IF (branch .LT. 2) THEN
-          IF (branch .EQ. 0) THEN
-            a_temp5 = dtcld*a_t(i, k)/cpm(i, k)
-            a_psacw(i, k) = xlf*a_temp5
-            a_xlf = psacw(i, k)*a_temp5
-            a_cpm(i, k) = a_cpm(i, k) - psacw(i, k)*xlf*a_temp5/cpm(i, k&
-&             )
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              CALL POPREAL8(qrs(i, k, 3))
-              a_qrs(i, k, 3) = 0.0_8
-            ELSE
-              CALL POPREAL8(qrs(i, k, 3))
-              a_psacw(i, k) = a_psacw(i, k) + dtcld*a_qrs(i, k, 3)
-            END IF
-          ELSE
-            GOTO 120
-          END IF
+        a_t(i, k) = a_t(i, k) - a_supcol
+        temp8 = psacw(i, k)/cpm(i, k)
+        a_temp4 = dtcld*a_t(i, k)
+        a_fsupcol = xlf*temp8*a_temp4 - psacw(i, k)*a_psacw(i, k)
+        a_xlf = fsupcol*temp8*a_temp4
+        a_temp6 = fsupcol*xlf*a_temp4/cpm(i, k)
+        a_psacw(i, k) = (1-fsupcol)*a_psacw(i, k) + a_temp6
+        a_cpm(i, k) = a_cpm(i, k) - temp8*a_temp6
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 3))
+          a_qrs(i, k, 3) = 0.0_8
+          a_x8 = 0.0_8
         ELSE
-          IF (branch .EQ. 2) THEN
-            CALL POPREAL8(qrs(i, k, 1))
-            a_psacw(i, k) = a_psacw(i, k) + dtcld*a_qrs(i, k, 1)
-          ELSE
-            CALL POPREAL8(qrs(i, k, 1))
-            a_qrs(i, k, 1) = 0.0_8
-          END IF
-          a_xlf = 0.0_8
+          CALL POPREAL8(qrs(i, k, 3))
+          a_x8 = a_qrs(i, k, 3)
+          a_qrs(i, k, 3) = 0.0_8
         END IF
+        a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_x8
+        a_fsupcol = a_fsupcol + psacw(i, k)*dtcld*a_x8
+        a_psacw(i, k) = a_psacw(i, k) + fsupcol*dtcld*a_x8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 1))
+          a_qrs(i, k, 1) = 0.0_8
+          a_x7 = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 1))
+          a_x7 = a_qrs(i, k, 1)
+          a_qrs(i, k, 1) = 0.0_8
+        END IF
+        a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_x7
+        a_fsupcol = a_fsupcol - psacw(i, k)*dtcld*a_x7
+        a_psacw(i, k) = a_psacw(i, k) + (1.-fsupcol)*dtcld*a_x7
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
           CALL POPREAL8(qci(i, k, 1))
@@ -4720,6 +5161,9 @@ CONTAINS
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .NE. 0) a_psacw(i, k) = 0.0_8
+        CALL POPREAL8(psacw(i, k))
+        a_fsupcol = a_fsupcol + psacw(i, k)*a_psacw(i, k)
+        a_psacw(i, k) = fsupcol*a_psacw(i, k)
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
           a_psacw(i, k) = 0.0_8
@@ -4734,568 +5178,755 @@ CONTAINS
         ELSE
           a_psacw(i, k) = a_psacw(i, k) + a_x6
         END IF
-        temp9 = (bvts+3.)/4.
-        temp7 = a*qci(i, k, 1)
-        temp6 = (bvts+1.)/4.
-        temp5 = den(i, k)**temp6
-        a_temp6 = qrs(i, k, 2)**temp9*psacw_a*a_psacw(i, k)
-        IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. &
-&           temp9 .NE. INT(temp9)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) + &
-&           temp9*qrs(i, k, 2)**(temp9-1)*temp5*temp7*psacw_a*a_psacw(i&
-&           , k)
-        a_psacw(i, k) = 0.0_8
-        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. &
-&           temp6 .NE. INT(temp6)))) a_den(i, k) = a_den(i, k) + temp6*&
-&           den(i, k)**(temp6-1)*temp7*a_temp6
-        a_a = qci(i, k, 1)*temp5*a_temp6
-        a_qci(i, k, 1) = a_qci(i, k, 1) + a*temp5*a_temp6
-        CALL POPREAL8(a)
-        a_max6 = (1.-bvts)*alpha*EXP((1.-bvts)*alpha*(max6/4.))*a_a/4.
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          CALL POPREAL8(max6)
-          a_y6 = a_max6
+          temp9 = (bvts+3.)/4.
+          temp7 = a*qci(i, k, 1)
+          temp6 = (bvts+1.)/4.
+          temp5 = den(i, k)**temp6
+          a_temp6 = qrs(i, k, 2)**temp9*psacw_a*a_psacw(i, k)
+          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR.&
+&             temp9 .NE. INT(temp9)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) +&
+&             temp9*qrs(i, k, 2)**(temp9-1)*temp5*temp7*psacw_a*a_psacw(&
+&             i, k)
+          a_psacw(i, k) = 0.0_8
+          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. &
+&             temp6 .NE. INT(temp6)))) a_den(i, k) = a_den(i, k) + temp6&
+&             *den(i, k)**(temp6-1)*temp7*a_temp6
+          a_a = qci(i, k, 1)*temp5*a_temp6
+          a_qci(i, k, 1) = a_qci(i, k, 1) + a*temp5*a_temp6
+          CALL POPREAL8(a)
+          a_max17 = (1.-bvts)*alpha*EXP((1.-bvts)*alpha*(max17/4.))*a_a/&
+&           4.
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max17)
+            a_y5 = a_max17
+          ELSE
+            CALL POPREAL8(max17)
+            a_y5 = 0.0_8
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y5
         ELSE
-          CALL POPREAL8(max6)
-          a_y6 = 0.0_8
+          a_psacw(i, k) = 0.0_8
         END IF
-        CALL POPCONTROL1B(branch)
-        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y6
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) a_xlf = 0.0_8
         CALL POPREAL8(xlf)
         a_xl(i, k) = a_xl(i, k) - a_xlf
         CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
         a_xl(i, k) = 0.0_8
-        CALL POPREAL8(cpm(i, k))
+        a_pgaci(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 3))
+          a_qrs(i, k, 3) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 3))
+          a_pgaci(i, k) = a_pgaci(i, k) + dtcld*a_qrs(i, k, 3)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qci(i, k, 2))
+          a_qci(i, k, 2) = 0.0_8
+        ELSE
+          CALL POPREAL8(qci(i, k, 2))
+          a_pgaci(i, k) = a_pgaci(i, k) - dtcld*a_qci(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pgaci(i, k) = 0.0_8
+        CALL POPREAL8(pgaci(i, k))
+        a_fsupcol = a_fsupcol + pgaci(i, k)*a_pgaci(i, k)
+        a_pgaci(i, k) = fsupcol*a_pgaci(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_pgaci(i, k)/dtcld
+          a_pgaci(i, k) = 0.0_8
+          a_pgaci1 = 0.0_8
+        ELSE
+          a_pgaci1 = a_pgaci(i, k)
+          a_pgaci(i, k) = 0.0_8
+        END IF
+        a_temp4 = abs5*egi*pgaci_a*a_pgaci1
+        a_temp6 = (pgaci_b*b+pgaci_c*c+pgaci_d*d)*pgaci_a*a_pgaci1
+        a_abs5 = egi*a_temp6
+        a_egi = abs5*a_temp6
+        a_b = pgaci_b*a_temp4
+        a_c = pgaci_c*a_temp4
+        a_d = pgaci_d*a_temp4
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(abs5)
+          a_vt2g = a_abs5
+          a_vt2i = -a_abs5
+        ELSE
+          CALL POPREAL8(abs5)
+          a_vt2i = a_abs5
+          a_vt2g = -a_abs5
+        END IF
+        CALL POPREAL8(d)
+        temp9 = SQRT(max16)
+        temp8 = SQRT(temp9)
+        temp7 = 5./4.
+        temp6 = max27**temp7
+        temp5 = SQRT(den(i, k))
+        IF (.NOT.den(i, k) .EQ. 0.0_8) a_den(i, k) = a_den(i, k) + temp6&
+&           *temp8*a_d/(2.0*temp5)
+        IF (max27 .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. temp7 .NE. INT&
+&           (temp7))) THEN
+          a_max27 = 0.0_8
+        ELSE
+          a_max27 = temp7*max27**(temp7-1)*temp5*temp8*a_d
+        END IF
+        IF (max16 .EQ. 0.0_8 .OR. temp9 .EQ. 0.0_8) THEN
+          a_max16 = 0.0_8
+        ELSE
+          a_max16 = temp5*temp6*a_d/(2.0**2*temp9*temp8)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max27)
+        ELSE
+          CALL POPREAL8(max27)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max27
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max16)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max16
+        ELSE
+          CALL POPREAL8(max16)
+        END IF
+        CALL POPREAL8(c)
+        temp9 = 9./8.
+        temp8 = max26**temp9
+        temp7 = SQRT(max15)
+        temp6 = 5./8.
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. &
+&           temp6 .NE. INT(temp6)))) a_den(i, k) = a_den(i, k) + temp6*&
+&           den(i, k)**(temp6-1)*temp7*temp8*a_c
+        a_temp0 = den(i, k)**temp6*a_c
+        IF (max15 .EQ. 0.0_8) THEN
+          a_max15 = 0.0_8
+        ELSE
+          a_max15 = temp8*a_temp0/(2.0*temp7)
+        END IF
+        IF (max26 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT&
+&           (temp9))) THEN
+          a_max26 = 0.0_8
+        ELSE
+          a_max26 = temp9*max26**(temp9-1)*temp7*a_temp0
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max26)
+        ELSE
+          CALL POPREAL8(max26)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max26
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max15)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max15
+        ELSE
+          CALL POPREAL8(max15)
+        END IF
+        CALL POPREAL8(b)
+        temp9 = den(i, k)*max14
+        temp8 = 3./4.
+        IF (temp9 .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8 .NE. INT&
+&           (temp8))) THEN
+          a_temp4 = 0.0_8
+        ELSE
+          a_temp4 = temp8*temp9**(temp8-1)*max25*a_b
+        END IF
+        a_max25 = temp9**temp8*a_b
+        a_den(i, k) = a_den(i, k) + max14*a_temp4
+        a_max14 = den(i, k)*a_temp4
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max25)
+        ELSE
+          CALL POPREAL8(max25)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max25
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max14)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max14
+        ELSE
+          CALL POPREAL8(max14)
+        END IF
+        IF (den(i, k)*max13 .LE. 0.0_8 .AND. (1.31/8. .EQ. 0.0_8 .OR. &
+&           1.31/8. .NE. INT(1.31/8.))) THEN
+          a_temp4 = 0.0_8
+        ELSE
+          a_temp4 = 1.31*(den(i, k)*max13)**(1.31/8.-1)*vt2i_a*a_vt2i/8.
+        END IF
+        a_den(i, k) = a_den(i, k) + max13*a_temp4
+        a_max13 = den(i, k)*a_temp4
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max13)
+        ELSE
+          CALL POPREAL8(max13)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max13
+        END IF
+        temp9 = bvtg/4.
+        temp8 = (bvtg-2.)/4.
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
+&           temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8*&
+&           den(i, k)**(temp8-1)*max12**temp9*vt2g_a*a_vt2g
+        IF (max12 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT&
+&           (temp9))) THEN
+          a_max12 = 0.0_8
+        ELSE
+          a_max12 = temp9*max12**(temp9-1)*den(i, k)**temp8*vt2g_a*&
+&           a_vt2g
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max12)
+        ELSE
+          CALL POPREAL8(max12)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max12
+        END IF
+        CALL POPREAL8(egi)
+        a_eacrs = a_egi
+        a_psaci(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 2))
+          a_qrs(i, k, 2) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 2))
+          a_psaci(i, k) = a_psaci(i, k) + dtcld*a_qrs(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qci(i, k, 2))
+          a_qci(i, k, 2) = 0.0_8
+        ELSE
+          CALL POPREAL8(qci(i, k, 2))
+          a_psaci(i, k) = a_psaci(i, k) - dtcld*a_qci(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_psaci(i, k) = 0.0_8
+        CALL POPREAL8(psaci(i, k))
+        a_fsupcol = a_fsupcol + psaci(i, k)*a_psaci(i, k)
+        a_psaci(i, k) = fsupcol*a_psaci(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_psaci(i, k)/dtcld
+          a_psaci(i, k) = 0.0_8
+          a_psaci1 = 0.0_8
+        ELSE
+          a_psaci1 = a_psaci(i, k)
+          a_psaci(i, k) = 0.0_8
+        END IF
+        a_temp4 = (psaci_b*b+psaci_c*c+psaci_d*d)*psaci_a*a_psaci1
+        a_temp6 = a*abs3*eacrs*psaci_a*a_psaci1
+        a_b = psaci_b*a_temp6
+        a_c = psaci_c*a_temp6
+        a_d = psaci_d*a_temp6
+        a_a = abs3*eacrs*a_temp4
+        a_abs3 = a*eacrs*a_temp4
+        a_eacrs = a_eacrs + a*abs3*a_temp4
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(abs3)
+          a_vt2s = a_abs3
+          a_vt2i = -a_abs3
+        ELSE
+          CALL POPREAL8(abs3)
+          a_vt2i = a_abs3
+          a_vt2s = -a_abs3
+        END IF
+        CALL POPREAL8(d)
+        temp9 = SQRT(max24)
+        temp8 = SQRT(temp9)
+        temp7 = -(alpha*max11/4.)
+        temp6 = EXP(temp7)
+        temp4 = 5./4.
+        temp3 = max30**temp4
+        temp2 = SQRT(den(i, k))
+        a_temp0 = temp6*temp8*a_d
+        a_temp5 = temp2*temp3*a_d
+        a_max11 = -(alpha*EXP(temp7)*temp8*a_temp5/4.)
+        IF (max24 .EQ. 0.0_8 .OR. temp9 .EQ. 0.0_8) THEN
+          a_max24 = 0.0_8
+        ELSE
+          a_max24 = temp6*a_temp5/(2.0**2*temp9*temp8)
+        END IF
+        IF (.NOT.den(i, k) .EQ. 0.0_8) a_den(i, k) = a_den(i, k) + temp3&
+&           *a_temp0/(2.0*temp2)
+        IF (max30 .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. temp4 .NE. INT&
+&           (temp4))) THEN
+          a_max30 = 0.0_8
+        ELSE
+          a_max30 = temp4*max30**(temp4-1)*temp2*a_temp0
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max30)
+        ELSE
+          CALL POPREAL8(max30)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max30
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max24)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max24
+        ELSE
+          CALL POPREAL8(max24)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max11)
+          a_y4 = 0.0_8
+        ELSE
+          CALL POPREAL8(max11)
+          a_y4 = a_max11
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y4
+        CALL POPREAL8(c)
+        temp6 = 9./8.
+        temp5 = max29**temp6
+        temp4 = SQRT(max23)
+        temp2 = 5./8.
+        temp1 = den(i, k)**temp2
+        temp7 = -(alpha*max10/2.)
+        temp8 = EXP(temp7)
+        a_temp3 = temp4*temp5*a_c
+        a_temp4 = temp8*temp1*a_c
+        IF (max23 .EQ. 0.0_8) THEN
+          a_max23 = 0.0_8
+        ELSE
+          a_max23 = temp5*a_temp4/(2.0*temp4)
+        END IF
+        IF (max29 .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. temp6 .NE. INT&
+&           (temp6))) THEN
+          a_max29 = 0.0_8
+        ELSE
+          a_max29 = temp6*max29**(temp6-1)*temp4*a_temp4
+        END IF
+        a_max10 = -(alpha*EXP(temp7)*temp1*a_temp3/2.)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
+&           temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + temp2*&
+&           den(i, k)**(temp2-1)*temp8*a_temp3
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max29)
+        ELSE
+          CALL POPREAL8(max29)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max29
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max23)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max23
+        ELSE
+          CALL POPREAL8(max23)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max10)
+          a_y3 = 0.0_8
+        ELSE
+          CALL POPREAL8(max10)
+          a_y3 = a_max10
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y3
+        temp6 = 3./4.
+        temp5 = den(i, k)*max22
+        temp4 = temp5**temp6
+        temp3 = -(3.*alpha*max9/4.)
+        a_max9 = -(alpha*3.*EXP(temp3)*temp4*max28*a_b/4.)
+        a_temp = EXP(temp3)*a_b
+        IF (temp5 .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. temp6 .NE. INT&
+&           (temp6))) THEN
+          a_temp0 = 0.0_8
+        ELSE
+          a_temp0 = temp6*temp5**(temp6-1)*max28*a_temp
+        END IF
+        a_max28 = temp4*a_temp
+        a_den(i, k) = a_den(i, k) + max22*a_temp0
+        a_max22 = den(i, k)*a_temp0
+        b = (den(i, k)*max3)**(3./4.)*max18
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max28)
+        ELSE
+          CALL POPREAL8(max28)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max28
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max22)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max22
+        ELSE
+          CALL POPREAL8(max22)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max9)
+          a_y2 = 0.0_8
+        ELSE
+          CALL POPREAL8(max9)
+          a_y2 = a_max9
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y2
+        CALL POPREAL8(a)
+        a_max8 = alpha*EXP(alpha*max8)*a_a
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max8)
+          a_y1 = a_max8
+        ELSE
+          CALL POPREAL8(max8)
+          a_y1 = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y1
+        IF (den(i, k)*max7 .LE. 0.0_8 .AND. (1.31/8. .EQ. 0.0_8 .OR. &
+&           1.31/8. .NE. INT(1.31/8.))) THEN
+          a_temp2 = 0.0_8
+        ELSE
+          a_temp2 = 1.31*(den(i, k)*max7)**(1.31/8.-1)*vt2i_a*a_vt2i/8.
+        END IF
+        a_den(i, k) = a_den(i, k) + max7*a_temp2
+        a_max7 = den(i, k)*a_temp2
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max7)
+        ELSE
+          CALL POPREAL8(max7)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max7
+        END IF
+        temp5 = -(alpha*bvts*max21/4.)
+        temp3 = bvts/4.
+        temp2 = max6**temp3
+        temp1 = (bvts-2.)/4.
+        temp6 = den(i, k)**temp1
+        a_temp1 = EXP(temp5)*vt2s_a*a_vt2s
+        a_max21 = -(alpha*bvts*EXP(temp5)*temp6*temp2*vt2s_a*a_vt2s/4.)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. &
+&           temp1 .NE. INT(temp1)))) a_den(i, k) = a_den(i, k) + temp1*&
+&           den(i, k)**(temp1-1)*temp2*a_temp1
+        IF (max6 .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR. temp3 .NE. INT(&
+&           temp3))) THEN
+          a_max6 = 0.0_8
+        ELSE
+          a_max6 = temp3*max6**(temp3-1)*temp6*a_temp1
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max21)
+          a_y6 = a_max21
+        ELSE
+          CALL POPREAL8(max21)
+          a_y6 = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y6
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max6)
+        ELSE
+          CALL POPREAL8(max6)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max6
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(eacrs)
+          a_x5 = 0.0_8
+        ELSE
+          CALL POPREAL8(eacrs)
+          a_x5 = a_eacrs
+        END IF
+        a_supcol = -(0.07*EXP(-(0.07*supcol))*a_x5)
+        CALL POPREAL8(fsupcol)
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't0')
+        CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
+        a_temp0 = dtcld*a_t(i, k)/cpm(i, k)
+        a_piacr(i, k) = xlf*a_temp0
+        a_xlf = piacr(i, k)*a_temp0
+        a_cpm(i, k) = a_cpm(i, k) - piacr(i, k)*xlf*a_temp0/cpm(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 3))
+          a_qrs(i, k, 3) = 0.0_8
+          a_x4 = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 3))
+          a_x4 = a_qrs(i, k, 3)
+          a_qrs(i, k, 3) = 0.0_8
+        END IF
+        a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_x4
+        a_piacr(i, k) = a_piacr(i, k) + (1-delta3)*dtcld*a_x4
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 2))
+          a_qrs(i, k, 2) = 0.0_8
+          a_x3 = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 2))
+          a_x3 = a_qrs(i, k, 2)
+          a_qrs(i, k, 2) = 0.0_8
+        END IF
+        a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_x3
+        a_piacr(i, k) = a_piacr(i, k) + delta3*dtcld*a_x3
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 1))
+          a_qrs(i, k, 1) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 1))
+          a_piacr(i, k) = a_piacr(i, k) - dtcld*a_qrs(i, k, 1)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_piacr(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(delta3)
+        ELSE
+          CALL POPREAL8(delta3)
+        END IF
+        CALL POPREAL8(piacr(i, k))
+        a_fsupcol = piacr(i, k)*a_piacr(i, k)
+        a_piacr(i, k) = fsupcol*a_piacr(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_piacr(i, k)/dtcld
+          a_piacr(i, k) = 0.0_8
+          a_piacr1 = 0.0_8
+        ELSE
+          a_piacr1 = a_piacr(i, k)
+          a_piacr(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) THEN
+          temp5 = (bvtr+6.)/4.
+          temp3 = qci(i, k, 2)**0.75
+          temp2 = (bvtr+3.)/4.
+          temp1 = den(i, k)**temp2
+          a_temp1 = qrs(i, k, 1)**temp5*piacr_a*a_piacr1
+          IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR.&
+&             temp5 .NE. INT(temp5)))) a_qrs(i, k, 1) = a_qrs(i, k, 1) +&
+&             temp5*qrs(i, k, 1)**(temp5-1)*temp1*temp3*piacr_a*a_piacr1
+          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
+&             temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + temp2&
+&             *den(i, k)**(temp2-1)*temp3*a_temp1
+          a_qci(i, k, 2) = a_qci(i, k, 2) + 0.75*qci(i, k, 2)**(-0.25)*&
+&           temp1*a_temp1
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_xlf = 0.0_8
+        CALL POPREAL8(xlf)
+        a_xl(i, k) = a_xl(i, k) - a_xlf
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
         CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
         a_cpm(i, k) = 0.0_8
-        CALL POPREAL8(supcol)
- 120    CALL POPCONTROL1B(branch)
-        IF (branch .EQ. 0) THEN
-          a_pgaci(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 3))
-            a_qrs(i, k, 3) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 3))
-            a_pgaci(i, k) = a_pgaci(i, k) + dtcld*a_qrs(i, k, 3)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qci(i, k, 2))
-            a_qci(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qci(i, k, 2))
-            a_pgaci(i, k) = a_pgaci(i, k) - dtcld*a_qci(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_pgaci(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 2) = a_qci(i, k, 2) + a_pgaci(i, k)/dtcld
-            a_pgaci(i, k) = 0.0_8
-            a_pgaci1 = 0.0_8
-          ELSE
-            a_pgaci1 = a_pgaci(i, k)
-            a_pgaci(i, k) = 0.0_8
-          END IF
-          a_temp5 = abs5*egi*pgaci_a*a_pgaci1
-          a_temp6 = (pgaci_b*b+pgaci_c*c+pgaci_d*d)*pgaci_a*a_pgaci1
-          a_abs5 = egi*a_temp6
-          a_egi = abs5*a_temp6
-          a_b = pgaci_b*a_temp5
-          a_c = pgaci_c*a_temp5
-          a_d = pgaci_d*a_temp5
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(abs5)
-            a_vt2g = a_abs5
-            a_vt2i = -a_abs5
-          ELSE
-            CALL POPREAL8(abs5)
-            a_vt2i = a_abs5
-            a_vt2g = -a_abs5
-          END IF
-          CALL POPREAL8(d)
-          temp9 = 5./4.
-          temp8 = qci(i, k, 2)**temp9
-          temp7 = SQRT(den(i, k))
-          temp6 = SQRT(qrs(i, k, 3))
-          temp5 = SQRT(temp6)
-          IF (.NOT.(qrs(i, k, 3) .EQ. 0.0_8 .OR. temp6 .EQ. 0.0_8)) &
-&           a_qrs(i, k, 3) = a_qrs(i, k, 3) + temp7*temp8*a_d/(2.0**2*&
-&             temp6*temp5)
-          IF (.NOT.den(i, k) .EQ. 0.0_8) a_den(i, k) = a_den(i, k) + &
-&             temp8*temp5*a_d/(2.0*temp7)
-          IF (.NOT.(qci(i, k, 2) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR.&
-&             temp9 .NE. INT(temp9)))) a_qci(i, k, 2) = a_qci(i, k, 2) +&
-&             temp9*qci(i, k, 2)**(temp9-1)*temp7*temp5*a_d
-          CALL POPREAL8(c)
-          temp9 = 9./8.
-          temp7 = SQRT(qrs(i, k, 3))
-          temp6 = 5./8.
-          temp5 = den(i, k)**temp6
-          a_temp6 = qci(i, k, 2)**temp9*a_c
-          IF (.NOT.(qci(i, k, 2) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR.&
-&             temp9 .NE. INT(temp9)))) a_qci(i, k, 2) = a_qci(i, k, 2) +&
-&             temp9*qci(i, k, 2)**(temp9-1)*temp5*temp7*a_c
-          IF (.NOT.qrs(i, k, 3) .EQ. 0.0_8) a_qrs(i, k, 3) = a_qrs(i, k&
-&             , 3) + temp5*a_temp6/(2.0*temp7)
-          CALL POPREAL8(b)
-          temp9 = den(i, k)*qrs(i, k, 3)
-          temp8 = 3./4.
-          IF (temp9 .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8 .NE. &
-&             INT(temp8))) THEN
-            a_temp5 = 0.0_8
-          ELSE
-            a_temp5 = temp8*temp9**(temp8-1)*qci(i, k, 2)*a_b
-          END IF
-          IF (den(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. temp6 &
-&             .NE. INT(temp6))) THEN
-            a_den(i, k) = a_den(i, k) + qrs(i, k, 3)*a_temp5
-          ELSE
-            a_den(i, k) = a_den(i, k) + temp6*den(i, k)**(temp6-1)*temp7&
-&             *a_temp6 + qrs(i, k, 3)*a_temp5
-          END IF
-          a_qci(i, k, 2) = a_qci(i, k, 2) + temp9**temp8*a_b
-          temp9 = bvtg/4.
-          temp8 = (bvtg-2.)/4.
-          IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9&
-&             .NE. INT(temp9))) THEN
-            a_qrs(i, k, 3) = a_qrs(i, k, 3) + den(i, k)*a_temp5
-          ELSE
-            a_qrs(i, k, 3) = a_qrs(i, k, 3) + den(i, k)*a_temp5 + temp9*&
-&             qrs(i, k, 3)**(temp9-1)*den(i, k)**temp8*vt2g_a*a_vt2g
-          END IF
-          IF (den(i, k)*qci(i, k, 2) .LE. 0.0_8 .AND. (1.31/8. .EQ. &
-&             0.0_8 .OR. 1.31/8. .NE. INT(1.31/8.))) THEN
-            a_temp5 = 0.0_8
-          ELSE
-            a_temp5 = 1.31*(den(i, k)*qci(i, k, 2))**(1.31/8.-1)*vt2i_a*&
-&             a_vt2i/8.
-          END IF
-          IF (den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8 &
-&             .NE. INT(temp8))) THEN
-            a_den(i, k) = a_den(i, k) + qci(i, k, 2)*a_temp5
-          ELSE
-            a_den(i, k) = a_den(i, k) + qci(i, k, 2)*a_temp5 + temp8*den&
-&             (i, k)**(temp8-1)*qrs(i, k, 3)**temp9*vt2g_a*a_vt2g
-          END IF
-          a_qci(i, k, 2) = a_qci(i, k, 2) + den(i, k)*a_temp5
-          CALL POPREAL8(egi)
-          a_eacrs = a_eacrs + a_egi
-        END IF
+        CALL POPREAL8(fsupcol)
+        a_supcol = 0.0_8
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't0')
+        a_praci(i, k) = 0.0_8
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_psaci(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_psaci(i, k) = a_psaci(i, k) + dtcld*a_qrs(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qci(i, k, 2))
-            a_qci(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qci(i, k, 2))
-            a_psaci(i, k) = a_psaci(i, k) - dtcld*a_qci(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_psaci(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 2) = a_qci(i, k, 2) + a_psaci(i, k)/dtcld
-            a_psaci(i, k) = 0.0_8
-            a_psaci1 = 0.0_8
-          ELSE
-            a_psaci1 = a_psaci(i, k)
-            a_psaci(i, k) = 0.0_8
-          END IF
-          a_temp5 = (psaci_b*b+psaci_c*c+psaci_d*d)*psaci_a*a_psaci1
-          a_temp6 = a*abs3*eacrs*psaci_a*a_psaci1
-          a_b = psaci_b*a_temp6
-          a_c = psaci_c*a_temp6
-          a_d = psaci_d*a_temp6
-          a_a = abs3*eacrs*a_temp5
-          a_abs3 = a*eacrs*a_temp5
-          a_eacrs = a_eacrs + a*abs3*a_temp5
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(abs3)
-            a_vt2s = a_abs3
-            a_vt2i = -a_abs3
-          ELSE
-            CALL POPREAL8(abs3)
-            a_vt2i = a_abs3
-            a_vt2s = -a_abs3
-          END IF
-          CALL POPREAL8(d)
-          temp9 = 5./4.
-          temp8 = qci(i, k, 2)**temp9
-          temp7 = SQRT(den(i, k))
-          temp5 = SQRT(qrs(i, k, 2))
-          temp4 = SQRT(temp5)
-          temp3 = -(alpha*max5/4.)
-          temp2 = EXP(temp3)
-          a_temp3 = temp7*temp8*a_d
-          a_temp0 = temp2*temp4*a_d
-          IF (.NOT.den(i, k) .EQ. 0.0_8) a_den(i, k) = a_den(i, k) + &
-&             temp8*a_temp0/(2.0*temp7)
-          IF (.NOT.(qci(i, k, 2) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR.&
-&             temp9 .NE. INT(temp9)))) a_qci(i, k, 2) = a_qci(i, k, 2) +&
-&             temp9*qci(i, k, 2)**(temp9-1)*temp7*a_temp0
-          a_max5 = -(alpha*EXP(temp3)*temp4*a_temp3/4.)
-          IF (.NOT.(qrs(i, k, 2) .EQ. 0.0_8 .OR. temp5 .EQ. 0.0_8)) &
-&           a_qrs(i, k, 2) = a_qrs(i, k, 2) + temp2*a_temp3/(2.0**2*&
-&             temp5*temp4)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max5)
-            a_y5 = a_max5
-          ELSE
-            CALL POPREAL8(max5)
-            a_y5 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y5
-          CALL POPREAL8(c)
-          temp6 = SQRT(qrs(i, k, 2))
-          temp5 = 5./8.
-          temp4 = den(i, k)**temp5
-          temp2 = 9./8.
-          temp1 = qci(i, k, 2)**temp2
-          temp7 = -(alpha*max4/2.)
-          temp8 = EXP(temp7)
-          a_temp4 = temp4*temp6*a_c
-          a_temp5 = temp8*temp1*a_c
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
-&             temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5&
-&             *den(i, k)**(temp5-1)*temp6*a_temp5
-          IF (.NOT.qrs(i, k, 2) .EQ. 0.0_8) a_qrs(i, k, 2) = a_qrs(i, k&
-&             , 2) + temp4*a_temp5/(2.0*temp6)
-          a_max4 = -(alpha*EXP(temp7)*temp1*a_temp4/2.)
-          IF (.NOT.(qci(i, k, 2) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR.&
-&             temp2 .NE. INT(temp2)))) a_qci(i, k, 2) = a_qci(i, k, 2) +&
-&             temp2*qci(i, k, 2)**(temp2-1)*temp8*a_temp4
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max4)
-            a_y4 = a_max4
-          ELSE
-            CALL POPREAL8(max4)
-            a_y4 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y4
-          CALL POPREAL8(b)
-          temp6 = 3./4.
-          temp5 = den(i, k)*qrs(i, k, 2)
-          temp4 = temp5**temp6
-          temp3 = -(3.*alpha*max3/4.)
-          a_max3 = -(alpha*3.*EXP(temp3)*temp4*qci(i, k, 2)*a_b/4.)
-          a_temp = EXP(temp3)*a_b
-          IF (temp5 .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. temp6 .NE. &
-&             INT(temp6))) THEN
-            a_temp1 = 0.0_8
-          ELSE
-            a_temp1 = temp6*temp5**(temp6-1)*qci(i, k, 2)*a_temp
-          END IF
-          a_qci(i, k, 2) = a_qci(i, k, 2) + temp4*a_temp
-          a_den(i, k) = a_den(i, k) + qrs(i, k, 2)*a_temp1
-          a_qrs(i, k, 2) = a_qrs(i, k, 2) + den(i, k)*a_temp1
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max3)
-            a_y3 = a_max3
-          ELSE
-            CALL POPREAL8(max3)
-            a_y3 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y3
-          CALL POPREAL8(a)
-          a_max2 = alpha*EXP(alpha*max2)*a_a
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max2)
-            a_y2 = a_max2
-          ELSE
-            CALL POPREAL8(max2)
-            a_y2 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y2
-          temp5 = -(alpha*bvts*max1/4.)
-          temp3 = bvts/4.
-          temp2 = qrs(i, k, 2)**temp3
-          temp1 = (bvts-2.)/4.
-          a_temp2 = EXP(temp5)*vt2s_a*a_vt2s
-          IF (den(i, k)*qci(i, k, 2) .LE. 0.0_8 .AND. (1.31/8. .EQ. &
-&             0.0_8 .OR. 1.31/8. .NE. INT(1.31/8.))) THEN
-            a_temp3 = 0.0_8
-          ELSE
-            a_temp3 = 1.31*(den(i, k)*qci(i, k, 2))**(1.31/8.-1)*vt2i_a*&
-&             a_vt2i/8.
-          END IF
-          IF (den(i, k) .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1 &
-&             .NE. INT(temp1))) THEN
-            a_den(i, k) = a_den(i, k) + qci(i, k, 2)*a_temp3
-          ELSE
-            a_den(i, k) = a_den(i, k) + qci(i, k, 2)*a_temp3 + temp1*den&
-&             (i, k)**(temp1-1)*temp2*a_temp2
-          END IF
-          a_qci(i, k, 2) = a_qci(i, k, 2) + den(i, k)*a_temp3
-          temp6 = den(i, k)**temp1
-          a_max1 = -(alpha*bvts*EXP(temp5)*temp6*temp2*vt2s_a*a_vt2s/4.)
-          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR.&
-&             temp3 .NE. INT(temp3)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) +&
-&             temp3*qrs(i, k, 2)**(temp3-1)*temp6*a_temp2
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max1)
-            a_y1 = a_max1
-          ELSE
-            CALL POPREAL8(max1)
-            a_y1 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y1
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(eacrs)
-            a_x5 = 0.0_8
-          ELSE
-            CALL POPREAL8(eacrs)
-            a_x5 = a_eacrs
-          END IF
-          a_supcol = -(0.07*EXP(-(0.07*supcol))*a_x5)
-          a_eacrs = 0.0_8
+          a_qrs(i, k, 3) = 0.0_8
+          a_x2 = 0.0_8
         ELSE
-          a_supcol = 0.0_8
+          a_x2 = a_qrs(i, k, 3)
+          a_qrs(i, k, 3) = 0.0_8
         END IF
-        a_t(i, k) = a_t(i, k) - a_supcol
+        a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_x2
+        a_praci(i, k) = a_praci(i, k) + (1-delta3)*dtcld*a_x2
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_temp1 = dtcld*a_t(i, k)/cpm(i, k)
-          a_piacr(i, k) = xlf*a_temp1
-          a_xlf = piacr(i, k)*a_temp1
-          a_cpm(i, k) = a_cpm(i, k) - piacr(i, k)*xlf*a_temp1/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 3))
-            a_qrs(i, k, 3) = 0.0_8
-            a_x4 = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 3))
-            a_x4 = a_qrs(i, k, 3)
-            a_qrs(i, k, 3) = 0.0_8
-          END IF
-          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_x4
-          a_piacr(i, k) = a_piacr(i, k) + (1-delta3)*dtcld*a_x4
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-            a_x3 = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_x3 = a_qrs(i, k, 2)
-            a_qrs(i, k, 2) = 0.0_8
-          END IF
-          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_x3
-          a_piacr(i, k) = a_piacr(i, k) + delta3*dtcld*a_x3
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 1))
-            a_qrs(i, k, 1) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 1))
-            a_piacr(i, k) = a_piacr(i, k) - dtcld*a_qrs(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_piacr(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(delta3)
-          ELSE
-            CALL POPREAL8(delta3)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_piacr(i, k)/dtcld
-            a_piacr(i, k) = 0.0_8
-            a_piacr1 = 0.0_8
-          ELSE
-            a_piacr1 = a_piacr(i, k)
-            a_piacr(i, k) = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) THEN
-            temp5 = (bvtr+6.)/4.
-            temp3 = qci(i, k, 2)**0.75
-            temp2 = (bvtr+3.)/4.
-            temp1 = den(i, k)**temp2
-            a_temp2 = qrs(i, k, 1)**temp5*piacr_a*a_piacr1
-            IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 &
-&               .OR. temp5 .NE. INT(temp5)))) a_qrs(i, k, 1) = a_qrs(i, &
-&               k, 1) + temp5*qrs(i, k, 1)**(temp5-1)*temp1*temp3*&
-&               piacr_a*a_piacr1
-            IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
-&               temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + &
-&               temp2*den(i, k)**(temp2-1)*temp3*a_temp2
-            a_qci(i, k, 2) = a_qci(i, k, 2) + 0.75*qci(i, k, 2)**(-0.25)&
-&             *temp1*a_temp2
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_xlf = 0.0_8
-          CALL POPREAL8(xlf)
-          a_xl(i, k) = a_xl(i, k) - a_xlf
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
+          a_qrs(i, k, 2) = 0.0_8
+          a_x1 = 0.0_8
+        ELSE
+          a_x1 = a_qrs(i, k, 2)
+          a_qrs(i, k, 2) = 0.0_8
         END IF
+        a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_x1
+        a_praci(i, k) = a_praci(i, k) + delta3*dtcld*a_x1
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
+          a_qci(i, k, 2) = 0.0_8
+        ELSE
+          a_praci(i, k) = a_praci(i, k) - dtcld*a_qci(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_praci(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(delta3)
+        ELSE
+          CALL POPREAL8(delta3)
+        END IF
+        CALL POPREAL8(praci(i, k))
+        a_fsupcol = praci(i, k)*a_praci(i, k)
+        a_praci(i, k) = fsupcol*a_praci(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_praci(i, k)/dtcld
           a_praci(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 3))
-            a_qrs(i, k, 3) = 0.0_8
-            a_x2 = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 3))
-            a_x2 = a_qrs(i, k, 3)
-            a_qrs(i, k, 3) = 0.0_8
-          END IF
-          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_x2
-          a_praci(i, k) = a_praci(i, k) + (1-delta3)*dtcld*a_x2
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-            a_x1 = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_x1 = a_qrs(i, k, 2)
-            a_qrs(i, k, 2) = 0.0_8
-          END IF
-          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_x1
-          a_praci(i, k) = a_praci(i, k) + delta3*dtcld*a_x1
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qci(i, k, 2))
-            a_qci(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qci(i, k, 2))
-            a_praci(i, k) = a_praci(i, k) - dtcld*a_qci(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_praci(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(delta3)
-          ELSE
-            CALL POPREAL8(delta3)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 2) = a_qci(i, k, 2) + a_praci(i, k)/dtcld
-            a_praci(i, k) = 0.0_8
-            a_praci1 = 0.0_8
-          ELSE
-            a_praci1 = a_praci(i, k)
-            a_praci(i, k) = 0.0_8
-          END IF
-          a_abs0 = (praci_b*b+praci_c*c+praci_d*d)*praci_a*a_praci1
-          a_temp1 = abs0*praci_a*a_praci1
-          a_b = praci_b*a_temp1
-          a_c = praci_c*a_temp1
-          a_d = praci_d*a_temp1
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(abs0)
-            a_vt2r = a_abs0
-            a_vt2i = -a_abs0
-          ELSE
-            CALL POPREAL8(abs0)
-            a_vt2i = a_abs0
-            a_vt2r = -a_abs0
-          END IF
-          CALL POPREAL8(d)
-          temp5 = 5./4.
-          temp4 = qci(i, k, 2)**temp5
-          temp3 = SQRT(den(i, k))
-          temp2 = SQRT(qrs(i, k, 1))
-          temp1 = SQRT(temp2)
-          IF (.NOT.(qrs(i, k, 1) .EQ. 0.0_8 .OR. temp2 .EQ. 0.0_8)) &
-&           a_qrs(i, k, 1) = a_qrs(i, k, 1) + temp3*temp4*a_d/(2.0**2*&
-&             temp2*temp1)
-          IF (.NOT.den(i, k) .EQ. 0.0_8) a_den(i, k) = a_den(i, k) + &
-&             temp4*temp1*a_d/(2.0*temp3)
-          IF (.NOT.(qci(i, k, 2) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR.&
-&             temp5 .NE. INT(temp5)))) a_qci(i, k, 2) = a_qci(i, k, 2) +&
-&             temp5*qci(i, k, 2)**(temp5-1)*temp3*temp1*a_d
-          CALL POPREAL8(c)
-          temp2 = 9./8.
-          temp3 = SQRT(qrs(i, k, 1))
-          temp4 = 5./8.
-          temp5 = den(i, k)**temp4
-          a_temp0 = qci(i, k, 2)**temp2*a_c
-          IF (.NOT.(qci(i, k, 2) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR.&
-&             temp2 .NE. INT(temp2)))) a_qci(i, k, 2) = a_qci(i, k, 2) +&
-&             temp2*qci(i, k, 2)**(temp2-1)*temp5*temp3*a_c
-          IF (.NOT.qrs(i, k, 1) .EQ. 0.0_8) a_qrs(i, k, 1) = a_qrs(i, k&
-&             , 1) + temp5*a_temp0/(2.0*temp3)
-          CALL POPREAL8(b)
-          temp2 = den(i, k)*qrs(i, k, 1)
-          temp1 = 3./4.
-          IF (temp2 .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1 .NE. &
-&             INT(temp1))) THEN
-            a_temp = 0.0_8
-          ELSE
-            a_temp = temp1*temp2**(temp1-1)*qci(i, k, 2)*a_b
-          END IF
-          IF (den(i, k) .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. temp4 &
-&             .NE. INT(temp4))) THEN
-            a_den(i, k) = a_den(i, k) + qrs(i, k, 1)*a_temp
-          ELSE
-            a_den(i, k) = a_den(i, k) + temp4*den(i, k)**(temp4-1)*temp3&
-&             *a_temp0 + qrs(i, k, 1)*a_temp
-          END IF
-          a_qci(i, k, 2) = a_qci(i, k, 2) + temp2**temp1*a_b
-          temp1 = bvtr/4.
-          temp2 = (bvtr-2.)/4.
-          IF (qrs(i, k, 1) .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1&
-&             .NE. INT(temp1))) THEN
-            a_qrs(i, k, 1) = a_qrs(i, k, 1) + den(i, k)*a_temp
-          ELSE
-            a_qrs(i, k, 1) = a_qrs(i, k, 1) + den(i, k)*a_temp + temp1*&
-&             qrs(i, k, 1)**(temp1-1)*den(i, k)**temp2*vt2r_a*a_vt2r
-          END IF
-          IF (den(i, k)*qci(i, k, 2) .LE. 0.0_8 .AND. (1.31/8. .EQ. &
-&             0.0_8 .OR. 1.31/8. .NE. INT(1.31/8.))) THEN
-            a_temp = 0.0_8
-          ELSE
-            a_temp = 1.31*(den(i, k)*qci(i, k, 2))**(1.31/8.-1)*vt2i_a*&
-&             a_vt2i/8.
-          END IF
-          IF (den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. temp2 &
-&             .NE. INT(temp2))) THEN
-            a_den(i, k) = a_den(i, k) + qci(i, k, 2)*a_temp
-          ELSE
-            a_den(i, k) = a_den(i, k) + qci(i, k, 2)*a_temp + temp2*den(&
-&             i, k)**(temp2-1)*qrs(i, k, 1)**temp1*vt2r_a*a_vt2r
-          END IF
-          a_qci(i, k, 2) = a_qci(i, k, 2) + den(i, k)*a_temp
+          a_praci1 = 0.0_8
+        ELSE
+          a_praci1 = a_praci(i, k)
+          a_praci(i, k) = 0.0_8
         END IF
-        CALL POPREAL8(supcol)
+        a_abs0 = (praci_b*b+praci_c*c+praci_d*d)*praci_a*a_praci1
+        a_temp0 = abs0*praci_a*a_praci1
+        a_b = praci_b*a_temp0
+        a_c = praci_c*a_temp0
+        a_d = praci_d*a_temp0
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(abs0)
+          a_vt2r = a_abs0
+          a_vt2i = -a_abs0
+        ELSE
+          CALL POPREAL8(abs0)
+          a_vt2i = a_abs0
+          a_vt2r = -a_abs0
+        END IF
+        CALL POPREAL8(d)
+        temp5 = SQRT(max5)
+        temp4 = SQRT(temp5)
+        temp3 = 5./4.
+        temp2 = max20**temp3
+        temp1 = SQRT(den(i, k))
+        IF (.NOT.den(i, k) .EQ. 0.0_8) a_den(i, k) = a_den(i, k) + temp2&
+&           *temp4*a_d/(2.0*temp1)
+        IF (max20 .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR. temp3 .NE. INT&
+&           (temp3))) THEN
+          a_max20 = 0.0_8
+        ELSE
+          a_max20 = temp3*max20**(temp3-1)*temp1*temp4*a_d
+        END IF
+        IF (max5 .EQ. 0.0_8 .OR. temp5 .EQ. 0.0_8) THEN
+          a_max5 = 0.0_8
+        ELSE
+          a_max5 = temp1*temp2*a_d/(2.0**2*temp5*temp4)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max20)
+        ELSE
+          CALL POPREAL8(max20)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max20
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max5)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max5
+        ELSE
+          CALL POPREAL8(max5)
+        END IF
+        CALL POPREAL8(c)
+        temp2 = 9./8.
+        temp1 = max19**temp2
+        temp3 = SQRT(max4)
+        temp4 = 5./8.
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. &
+&           temp4 .NE. INT(temp4)))) a_den(i, k) = a_den(i, k) + temp4*&
+&           den(i, k)**(temp4-1)*temp3*temp1*a_c
+        a_temp0 = den(i, k)**temp4*a_c
+        IF (max4 .EQ. 0.0_8) THEN
+          a_max4 = 0.0_8
+        ELSE
+          a_max4 = temp1*a_temp0/(2.0*temp3)
+        END IF
+        IF (max19 .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. temp2 .NE. INT&
+&           (temp2))) THEN
+          a_max19 = 0.0_8
+        ELSE
+          a_max19 = temp2*max19**(temp2-1)*temp3*a_temp0
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max19)
+        ELSE
+          CALL POPREAL8(max19)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max19
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max4)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max4
+        ELSE
+          CALL POPREAL8(max4)
+        END IF
+        CALL POPREAL8(b)
+        temp2 = den(i, k)*max3
+        temp1 = 3./4.
+        IF (temp2 .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1 .NE. INT&
+&           (temp1))) THEN
+          a_temp = 0.0_8
+        ELSE
+          a_temp = temp1*temp2**(temp1-1)*max18*a_b
+        END IF
+        a_max18 = temp2**temp1*a_b
+        a_den(i, k) = a_den(i, k) + max3*a_temp
+        a_max3 = den(i, k)*a_temp
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max18)
+        ELSE
+          CALL POPREAL8(max18)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max18
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max3)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max3
+        ELSE
+          CALL POPREAL8(max3)
+        END IF
+        IF (den(i, k)*max2 .LE. 0.0_8 .AND. (1.31/8. .EQ. 0.0_8 .OR. &
+&           1.31/8. .NE. INT(1.31/8.))) THEN
+          a_temp = 0.0_8
+        ELSE
+          a_temp = 1.31*(den(i, k)*max2)**(1.31/8.-1)*vt2i_a*a_vt2i/8.
+        END IF
+        a_den(i, k) = a_den(i, k) + max2*a_temp
+        a_max2 = den(i, k)*a_temp
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max2)
+        ELSE
+          CALL POPREAL8(max2)
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_max2
+        END IF
+        temp1 = bvtr/4.
+        temp2 = (bvtr-2.)/4.
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
+&           temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + temp2*&
+&           den(i, k)**(temp2-1)*max1**temp1*vt2r_a*a_vt2r
+        IF (max1 .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1 .NE. INT(&
+&           temp1))) THEN
+          a_max1 = 0.0_8
+        ELSE
+          a_max1 = temp1*max1**(temp1-1)*den(i, k)**temp2*vt2r_a*a_vt2r
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max1)
+        ELSE
+          CALL POPREAL8(max1)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max1
+        END IF
+        CALL POPREAL8(fsupcol)
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't0')
+        a_t(i, k) = a_t(i, k) - a_supcol
       END DO
     END DO
   END SUBROUTINE A_ACCRET1
@@ -5314,11 +5945,11 @@ CONTAINS
     REAL :: supcol, dtcld, eacrs, egi, praci1, piacr1, psaci1, pgaci1, &
 &   temp, temp0
     INTEGER :: i, k
-    REAL :: delta3, xlf, a, b, c, d, e
+    REAL :: fsupcol, fqc, fqi, fqr, fqs, fqg, delta3, xlf, a, b, c, d, e
+    INTRINSIC MAX
     INTRINSIC SQRT
     INTRINSIC ABS
     INTRINSIC MIN
-    INTRINSIC MAX
     INTRINSIC EXP
     REAL :: x1
     REAL :: x2
@@ -5330,24 +5961,52 @@ CONTAINS
     REAL :: y3
     REAL :: y4
     REAL :: y5
-    REAL :: y6
     REAL :: x6
     REAL :: x7
-    REAL :: abs0
-    REAL :: abs1
-    REAL :: abs2
+    REAL :: x8
+    REAL :: x9
+    REAL :: x10
+    REAL :: x11
+    REAL :: y6
     REAL :: max1
     REAL :: max2
     REAL :: max3
     REAL :: max4
     REAL :: max5
+    REAL :: abs0
+    REAL :: abs1
+    REAL :: abs2
+    REAL :: max6
+    REAL :: max7
+    REAL :: max8
+    REAL :: max9
+    REAL :: max10
+    REAL :: max11
     REAL :: abs3
     REAL :: abs4
+    REAL :: max12
+    REAL :: max13
+    REAL :: max14
+    REAL :: max15
+    REAL :: max16
     REAL :: abs5
     REAL :: abs6
-    REAL :: max6
+    REAL :: max17
     REAL :: abs7
     REAL :: abs8
+    REAL :: max18
+    REAL :: max19
+    REAL :: max20
+    REAL :: max21
+    REAL :: max22
+    REAL :: max23
+    REAL :: max24
+    REAL :: max25
+    REAL :: max26
+    REAL :: max27
+    REAL :: max28
+    REAL :: max29
+    REAL :: max30
     DO k=kts,kte
       DO i=its,ite
 !-------------------------------------------------------------
@@ -5355,366 +6014,497 @@ CONTAINS
 !        (T<T0: I->S or I->G) praci: min=0,max=qci(i,k,2)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 1) .GT. qcrmin .AND. qci(i, k&
-&           , 2) .GT. qmin) THEN
-          vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*qrs(i, k, 1)**(bvtr/4.&
-&           )
-          vt2i = vt2i_a*(den(i, k)*qci(i, k, 2))**(1.31/8.)
-          b = (den(i, k)*qrs(i, k, 1))**(3./4.)*qci(i, k, 2)
-          c = den(i, k)**(5./8.)*SQRT(qrs(i, k, 1))*qci(i, k, 2)**(9./8.&
-&           )
-          d = SQRT(den(i, k))*SQRT(SQRT(qrs(i, k, 1)))*qci(i, k, 2)**(5.&
-&           /4.)
-          IF (vt2r - vt2i .GE. 0.) THEN
-            abs0 = vt2r - vt2i
-          ELSE
-            abs0 = -(vt2r-vt2i)
-          END IF
-          praci1 = praci_a*abs0*(praci_b*b+praci_c*c+praci_d*d)
-          IF (praci1 .GT. qci(i, k, 2)/dtcld) THEN
-            praci(i, k) = qci(i, k, 2)/dtcld
-          ELSE
-            praci(i, k) = praci1
-          END IF
-!update qi, qs, qg
-          IF (qrs(i, k, 1) .LT. 1.e-4) THEN
-            delta3 = 1.
-          ELSE
-            delta3 = 0.
-          END IF
-          IF (praci(i, k) .GE. 0.) THEN
-            abs1 = praci(i, k)
-          ELSE
-            abs1 = -praci(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) praci(i, k) = 0.
-          IF (qci(i, k, 2) - praci(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - praci(i, k)*dtcld
-          END IF
-          x1 = qrs(i, k, 2) + praci(i, k)*delta3*dtcld
-          IF (x1 .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = x1
-          END IF
-          x2 = qrs(i, k, 3) + praci(i, k)*(1-delta3)*dtcld
-          IF (x2 .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = x2
-          END IF
-          praci(i, k) = 0.
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max1 = qcrmin
+        ELSE
+          max1 = qrs(i, k, 1)
         END IF
+        vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max1**(bvtr/4.)
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max2 = qmin
+        ELSE
+          max2 = qci(i, k, 2)
+        END IF
+        vt2i = vt2i_a*(den(i, k)*max2)**(1.31/8.)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max3 = qcrmin
+        ELSE
+          max3 = qrs(i, k, 1)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max18 = qmin
+        ELSE
+          max18 = qci(i, k, 2)
+        END IF
+        b = (den(i, k)*max3)**(3./4.)*max18
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max4 = qcrmin
+        ELSE
+          max4 = qrs(i, k, 1)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max19 = qmin
+        ELSE
+          max19 = qci(i, k, 2)
+        END IF
+        c = den(i, k)**(5./8.)*SQRT(max4)*max19**(9./8.)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max5 = qcrmin
+        ELSE
+          max5 = qrs(i, k, 1)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max20 = qmin
+        ELSE
+          max20 = qci(i, k, 2)
+        END IF
+        d = SQRT(den(i, k))*SQRT(SQRT(max5))*max20**(5./4.)
+        IF (vt2r - vt2i .GE. 0.) THEN
+          abs0 = vt2r - vt2i
+        ELSE
+          abs0 = -(vt2r-vt2i)
+        END IF
+        praci1 = praci_a*abs0*(praci_b*b+praci_c*c+praci_d*d)
+        IF (praci1 .GT. qci(i, k, 2)/dtcld) THEN
+          praci(i, k) = qci(i, k, 2)/dtcld
+        ELSE
+          praci(i, k) = praci1
+        END IF
+        praci(i, k) = fsupcol*praci(i, k)
+!update qi, qs, qg
+        IF (qrs(i, k, 1) .LT. 1.e-4) THEN
+          delta3 = 1.
+        ELSE
+          delta3 = 0.
+        END IF
+        IF (praci(i, k) .GE. 0.) THEN
+          abs1 = praci(i, k)
+        ELSE
+          abs1 = -praci(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) praci(i, k) = 0.
+        IF (qci(i, k, 2) - praci(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - praci(i, k)*dtcld
+        END IF
+        x1 = qrs(i, k, 2) + praci(i, k)*delta3*dtcld
+        IF (x1 .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = x1
+        END IF
+        x2 = qrs(i, k, 3) + praci(i, k)*(1-delta3)*dtcld
+        IF (x2 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x2
+        END IF
+        praci(i, k) = 0.
 !-------------------------------------------------------------
 ! piacr: Accretion of rain by cloud ice [LFO 26]
 !        (T<T0: R->S or R->G) piacr: min=0,max=qrs(i,k,1)/dtcld
 !-------------------------------------------------------------
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 1&
-&           ) .GT. qcrmin) THEN
+!         supcol = t0c-t(i,k) !not change
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+!call smoothif(qci(i,k,2),qmin  ,fqi,'q0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          IF (qci(i, k, 2) .GT. 0. .AND. qrs(i, k, 1) .GT. 0.) THEN
+        cpm(i, k) = CPMCAL(q(i, k))
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qci(i, k, 2) .GT. 0. .AND. qrs(i, k, 1) .GT. 0.) THEN
 !piacr_a=1.75e5
-            piacr1 = piacr_a*den(i, k)**((3.+bvtr)/4.)*qci(i, k, 2)**&
-&             0.75*qrs(i, k, 1)**((6.+bvtr)/4.)
-          ELSE
-            piacr1 = 0.
-          END IF
-          IF (piacr1 .GT. qrs(i, k, 1)/dtcld) THEN
-            piacr(i, k) = qrs(i, k, 1)/dtcld
-          ELSE
-            piacr(i, k) = piacr1
-          END IF
-! update qr,qs,qg,t
-          IF (qrs(i, k, 1) .LT. 1.e-4) THEN
-            delta3 = 1.
-          ELSE
-            delta3 = 0.
-          END IF
-          IF (piacr(i, k) .GE. 0.) THEN
-            abs2 = piacr(i, k)
-          ELSE
-            abs2 = -piacr(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) piacr(i, k) = 0.
-          IF (qrs(i, k, 1) - piacr(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) - piacr(i, k)*dtcld
-          END IF
-          x3 = qrs(i, k, 2) + piacr(i, k)*delta3*dtcld
-          IF (x3 .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = x3
-          END IF
-          x4 = qrs(i, k, 3) + piacr(i, k)*(1-delta3)*dtcld
-          IF (x4 .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = x4
-          END IF
-          t(i, k) = t(i, k) + piacr(i, k)*dtcld*xlf/cpm(i, k)
-          piacr(i, k) = 0.
+          piacr1 = piacr_a*den(i, k)**((3.+bvtr)/4.)*qci(i, k, 2)**0.75*&
+&           qrs(i, k, 1)**((6.+bvtr)/4.)
+        ELSE
+          piacr1 = 0.
         END IF
+        IF (piacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+          piacr(i, k) = qrs(i, k, 1)/dtcld
+        ELSE
+          piacr(i, k) = piacr1
+        END IF
+        piacr(i, k) = fsupcol*piacr(i, k)
+! update qr,qs,qg,t
+        IF (qrs(i, k, 1) .LT. 1.e-4) THEN
+          delta3 = 1.
+        ELSE
+          delta3 = 0.
+        END IF
+        IF (piacr(i, k) .GE. 0.) THEN
+          abs2 = piacr(i, k)
+        ELSE
+          abs2 = -piacr(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) piacr(i, k) = 0.
+        IF (qrs(i, k, 1) - piacr(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - piacr(i, k)*dtcld
+        END IF
+        x3 = qrs(i, k, 2) + piacr(i, k)*delta3*dtcld
+        IF (x3 .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = x3
+        END IF
+        x4 = qrs(i, k, 3) + piacr(i, k)*(1-delta3)*dtcld
+        IF (x4 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x4
+        END IF
+        t(i, k) = t(i, k) + piacr(i, k)*dtcld*xlf/cpm(i, k)
+        piacr(i, k) = 0.
 !-------------------------------------------------------------
 ! psaci: Accretion of cloud ice by snow [HDC 10]
 !        (T<T0: I->S) psaci: min=0, max=qci(i,k,2)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 2&
-&           ) .GT. qcrmin) THEN
-          x5 = EXP(0.07*(-supcol))
-          IF (x5 .GT. 1.) THEN
-            eacrs = 1.
-          ELSE
-            eacrs = x5
-          END IF
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y1 = t0c - t(i, k)
-          ELSE
-            y1 = 90.
-          END IF
-          IF (0. .LT. y1) THEN
-            max1 = y1
-          ELSE
-            max1 = 0.
-          END IF
-          vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*qrs(i, k, 2)**(bvts/4.&
-&           )*EXP(-(alpha*bvts*max1/4.))
-          vt2i = vt2i_a*(den(i, k)*qci(i, k, 2))**(1.31/8.)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y2 = t0c - t(i, k)
-          ELSE
-            y2 = 90.
-          END IF
-          IF (0. .LT. y2) THEN
-            max2 = y2
-          ELSE
-            max2 = 0.
-          END IF
-          a = EXP(alpha*max2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y3 = t0c - t(i, k)
-          ELSE
-            y3 = 90.
-          END IF
-          IF (0. .LT. y3) THEN
-            max3 = y3
-          ELSE
-            max3 = 0.
-          END IF
-          b = EXP(-(3.*alpha*max3/4.))*(den(i, k)*qrs(i, k, 2))**(3./4.)&
-&           *qci(i, k, 2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y4 = t0c - t(i, k)
-          ELSE
-            y4 = 90.
-          END IF
-          IF (0. .LT. y4) THEN
-            max4 = y4
-          ELSE
-            max4 = 0.
-          END IF
-          c = EXP(-(alpha*max4/2.))*den(i, k)**(5./8.)*SQRT(qrs(i, k, 2)&
-&           )*qci(i, k, 2)**(9./8.)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        x5 = EXP(0.07*(-supcol))
+        IF (x5 .GT. 1.) THEN
+          eacrs = 1.
+        ELSE
+          eacrs = x5
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max6 = qcrmin
+        ELSE
+          max6 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y6 = t0c - t(i, k)
+        ELSE
+          y6 = 90.
+        END IF
+        IF (0. .LT. y6) THEN
+          max21 = y6
+        ELSE
+          max21 = 0.
+        END IF
+        vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*max6**(bvts/4.)*EXP(-(&
+&         alpha*bvts*max21/4.))
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max7 = qmin
+        ELSE
+          max7 = qci(i, k, 2)
+        END IF
+        vt2i = vt2i_a*(den(i, k)*max7)**(1.31/8.)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y1 = t0c - t(i, k)
+        ELSE
+          y1 = 90.
+        END IF
+        IF (0. .LT. y1) THEN
+          max8 = y1
+        ELSE
+          max8 = 0.
+        END IF
+        a = EXP(alpha*max8)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y2 = t0c - t(i, k)
+        ELSE
+          y2 = 90.
+        END IF
+        IF (0. .LT. y2) THEN
+          max9 = y2
+        ELSE
+          max9 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max22 = qcrmin
+        ELSE
+          max22 = qrs(i, k, 2)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max28 = qmin
+        ELSE
+          max28 = qci(i, k, 2)
+        END IF
+        b = EXP(-(3.*alpha*max9/4.))*(den(i, k)*max22)**(3./4.)*max28
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y3 = t0c - t(i, k)
+        ELSE
+          y3 = 90.
+        END IF
+        IF (0. .LT. y3) THEN
+          max10 = y3
+        ELSE
+          max10 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max23 = qcrmin
+        ELSE
+          max23 = qrs(i, k, 2)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max29 = qmin
+        ELSE
+          max29 = qci(i, k, 2)
+        END IF
+        c = EXP(-(alpha*max10/2.))*den(i, k)**(5./8.)*SQRT(max23)*max29&
+&         **(9./8.)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y4 = t0c - t(i, k)
+        ELSE
+          y4 = 90.
+        END IF
+        IF (0. .LT. y4) THEN
+          max11 = y4
+        ELSE
+          max11 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max24 = qcrmin
+        ELSE
+          max24 = qrs(i, k, 2)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max30 = qmin
+        ELSE
+          max30 = qci(i, k, 2)
+        END IF
+        d = EXP(-(alpha*max11/4.))*SQRT(den(i, k))*SQRT(SQRT(max24))*&
+&         max30**(5./4.)
+        IF (vt2s - vt2i .GE. 0.) THEN
+          abs3 = vt2s - vt2i
+        ELSE
+          abs3 = -(vt2s-vt2i)
+        END IF
+        psaci1 = psaci_a*a*abs3*(psaci_b*b+psaci_c*c+psaci_d*d)*eacrs
+        IF (psaci1 .GT. qci(i, k, 2)/dtcld) THEN
+          psaci(i, k) = qci(i, k, 2)/dtcld
+        ELSE
+          psaci(i, k) = psaci1
+        END IF
+        psaci(i, k) = fsupcol*psaci(i, k)
+        IF (psaci(i, k) .GE. 0.) THEN
+          abs4 = psaci(i, k)
+        ELSE
+          abs4 = -psaci(i, k)
+        END IF
+        IF (abs4 .LT. qmin/dtcld) psaci(i, k) = 0.
+        IF (qci(i, k, 2) - psaci(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - psaci(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psaci(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psaci(i, k)*dtcld
+        END IF
+        psaci(i, k) = 0.
+!-------------------------------------------------------------
+! pgaci: Accretion of cloud ice by graupel [LFO 41]
+!        (T<T0: I->G) pgaci:min=0,max=qci(i,k,2)/dtcld
+!-------------------------------------------------------------
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,    0.,fsupcol,'t0')
+!call smoothif(qci(i,k,2),qmin  ,fqi,'q0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!min(exp(0.07*(-supcol)),1.)
+        egi = eacrs
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max12 = qcrmin
+        ELSE
+          max12 = qrs(i, k, 3)
+        END IF
+        vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*max12**(bvtg/4.)
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max13 = qmin
+        ELSE
+          max13 = qci(i, k, 2)
+        END IF
+        vt2i = vt2i_a*(den(i, k)*max13)**(1.31/8.)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max14 = qcrmin
+        ELSE
+          max14 = qrs(i, k, 3)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max25 = qmin
+        ELSE
+          max25 = qci(i, k, 2)
+        END IF
+        b = (den(i, k)*max14)**(3./4.)*max25
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max15 = qcrmin
+        ELSE
+          max15 = qrs(i, k, 3)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max26 = qmin
+        ELSE
+          max26 = qci(i, k, 2)
+        END IF
+        c = den(i, k)**(5./8.)*SQRT(max15)*max26**(9./8.)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max16 = qcrmin
+        ELSE
+          max16 = qrs(i, k, 3)
+        END IF
+        IF (qci(i, k, 2) .LT. qmin) THEN
+          max27 = qmin
+        ELSE
+          max27 = qci(i, k, 2)
+        END IF
+        d = SQRT(den(i, k))*SQRT(SQRT(max16))*max27**(5./4.)
+        IF (vt2g - vt2i .GE. 0.) THEN
+          abs5 = vt2g - vt2i
+        ELSE
+          abs5 = -(vt2g-vt2i)
+        END IF
+        pgaci1 = pgaci_a*abs5*(pgaci_b*b+pgaci_c*c+pgaci_d*d)*egi
+        IF (pgaci1 .GT. qci(i, k, 2)/dtcld) THEN
+          pgaci(i, k) = qci(i, k, 2)/dtcld
+        ELSE
+          pgaci(i, k) = pgaci1
+        END IF
+        pgaci(i, k) = fsupcol*pgaci(i, k)
+        IF (pgaci(i, k) .GE. 0.) THEN
+          abs6 = pgaci(i, k)
+        ELSE
+          abs6 = -pgaci(i, k)
+        END IF
+        IF (abs6 .LT. qmin/dtcld) pgaci(i, k) = 0.
+        IF (qci(i, k, 2) - pgaci(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - pgaci(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgaci(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgaci(i, k)*dtcld
+        END IF
+        pgaci(i, k) = 0.
+!-------------------------------------------------------------
+! psacw: Accretion of cloud water by snow  [LFO 24]
+!        (T<T0: C->G, and T>=T0: C->R) psacw:min=0,max=qci(i,k,1)/dtcld
+!-------------------------------------------------------------
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,    0.,fsupcol,'t0')
+!call smoothif(qrs(i,k,2),qcrmin,fqs,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
+!update cpm
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 2) .GT. 0. .AND. qci(i, k, 1) .GT. 0.) THEN
           IF (90. .GT. t0c - t(i, k)) THEN
             y5 = t0c - t(i, k)
           ELSE
             y5 = 90.
           END IF
           IF (0. .LT. y5) THEN
-            max5 = y5
+            max17 = y5
           ELSE
-            max5 = 0.
+            max17 = 0.
           END IF
-          d = EXP(-(alpha*max5/4.))*SQRT(den(i, k))*SQRT(SQRT(qrs(i, k, &
-&           2)))*qci(i, k, 2)**(5./4.)
-          IF (vt2s - vt2i .GE. 0.) THEN
-            abs3 = vt2s - vt2i
-          ELSE
-            abs3 = -(vt2s-vt2i)
-          END IF
-          psaci1 = psaci_a*a*abs3*(psaci_b*b+psaci_c*c+psaci_d*d)*eacrs
-          IF (psaci1 .GT. qci(i, k, 2)/dtcld) THEN
-            psaci(i, k) = qci(i, k, 2)/dtcld
-          ELSE
-            psaci(i, k) = psaci1
-          END IF
-          IF (psaci(i, k) .GE. 0.) THEN
-            abs4 = psaci(i, k)
-          ELSE
-            abs4 = -psaci(i, k)
-          END IF
-          IF (abs4 .LT. qmin/dtcld) psaci(i, k) = 0.
-          IF (qci(i, k, 2) - psaci(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - psaci(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + psaci(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) + psaci(i, k)*dtcld
-          END IF
-          psaci(i, k) = 0.
-        END IF
-!-------------------------------------------------------------
-! pgaci: Accretion of cloud ice by graupel [LFO 41]
-!        (T<T0: I->G) pgaci:min=0,max=qci(i,k,2)/dtcld
-!-------------------------------------------------------------
-        IF (supcol .GT. 0 .AND. qci(i, k, 2) .GT. qmin .AND. qrs(i, k, 3&
-&           ) .GT. qcrmin) THEN
-!min(exp(0.07*(-supcol)),1.)
-          egi = eacrs
-          vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*qrs(i, k, 3)**(bvtg/4.&
-&           )
-          vt2i = vt2i_a*(den(i, k)*qci(i, k, 2))**(1.31/8.)
-          b = (den(i, k)*qrs(i, k, 3))**(3./4.)*qci(i, k, 2)
-          c = den(i, k)**(5./8.)*SQRT(qrs(i, k, 3))*qci(i, k, 2)**(9./8.&
-&           )
-          d = SQRT(den(i, k))*SQRT(SQRT(qrs(i, k, 3)))*qci(i, k, 2)**(5.&
-&           /4.)
-          IF (vt2g - vt2i .GE. 0.) THEN
-            abs5 = vt2g - vt2i
-          ELSE
-            abs5 = -(vt2g-vt2i)
-          END IF
-          pgaci1 = pgaci_a*abs5*(pgaci_b*b+pgaci_c*c+pgaci_d*d)*egi
-          IF (pgaci1 .GT. qci(i, k, 2)/dtcld) THEN
-            pgaci(i, k) = qci(i, k, 2)/dtcld
-          ELSE
-            pgaci(i, k) = pgaci1
-          END IF
-          IF (pgaci(i, k) .GE. 0.) THEN
-            abs6 = pgaci(i, k)
-          ELSE
-            abs6 = -pgaci(i, k)
-          END IF
-          IF (abs6 .LT. qmin/dtcld) pgaci(i, k) = 0.
-          IF (qci(i, k, 2) - pgaci(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - pgaci(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgaci(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgaci(i, k)*dtcld
-          END IF
-          pgaci(i, k) = 0.
-        END IF
-!-------------------------------------------------------------
-! psacw: Accretion of cloud water by snow  [LFO 24]
-!        (T<T0: C->G, and T>=T0: C->R) psacw:min=0,max=qci(i,k,1)/dtcld
-!-------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qmin .AND. qrs(i, k, 2) .GT. qcrmin) THEN
-          supcol = t0c - t(i, k)
-!update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y6 = t0c - t(i, k)
-          ELSE
-            y6 = 90.
-          END IF
-          IF (0. .LT. y6) THEN
-            max6 = y6
-          ELSE
-            max6 = 0.
-          END IF
-          a = EXP((1.-bvts)*alpha*max6/4.)
+          a = EXP((1.-bvts)*alpha*max17/4.)
           psacw(i, k) = psacw_a*a*den(i, k)**((1.+bvts)/4.)*qrs(i, k, 2)&
 &           **((3.+bvts)/4.)*qci(i, k, 1)
-          IF (psacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            x6 = qci(i, k, 1)/dtcld
-          ELSE
-            x6 = psacw(i, k)
-          END IF
-          IF (x6 .LT. 0.) THEN
-            psacw(i, k) = 0.
-          ELSE
-            psacw(i, k) = x6
-          END IF
-          IF (psacw(i, k) .GE. 0.) THEN
-            abs7 = psacw(i, k)
-          ELSE
-            abs7 = -psacw(i, k)
-          END IF
-          IF (abs7 .LT. qmin/dtcld) psacw(i, k) = 0.
-          IF (qci(i, k, 1) - psacw(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - psacw(i, k)*dtcld
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (qrs(i, k, 3) + psacw(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = qrs(i, k, 3) + psacw(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + psacw(i, k)*dtcld*xlf/cpm(i, k)
-            psacw(i, k) = 0.
-          ELSE IF (qrs(i, k, 1) + psacw(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + psacw(i, k)*dtcld
-          END IF
+        ELSE
+          psacw(i, k) = 0.
         END IF
+        IF (psacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          x6 = qci(i, k, 1)/dtcld
+        ELSE
+          x6 = psacw(i, k)
+        END IF
+        IF (x6 .LT. 0.) THEN
+          psacw(i, k) = 0.
+        ELSE
+          psacw(i, k) = x6
+        END IF
+        psacw(i, k) = fsupcol*psacw(i, k)
+        IF (psacw(i, k) .GE. 0.) THEN
+          abs7 = psacw(i, k)
+        ELSE
+          abs7 = -psacw(i, k)
+        END IF
+        IF (abs7 .LT. qmin/dtcld) psacw(i, k) = 0.
+        IF (qci(i, k, 1) - psacw(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - psacw(i, k)*dtcld
+        END IF
+        x7 = qrs(i, k, 1) + (1.-fsupcol)*psacw(i, k)*dtcld
+        IF (x7 .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = x7
+        END IF
+        x8 = qrs(i, k, 3) + fsupcol*psacw(i, k)*dtcld
+        IF (x8 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x8
+        END IF
+        t(i, k) = t(i, k) + fsupcol*psacw(i, k)*dtcld*xlf/cpm(i, k)
+!t>=t0 pseml
+        psacw(i, k) = (1-fsupcol)*psacw(i, k)
 !-------------------------------------------------------------
 ! pgacw: Accretion of cloud water by graupel [LFO 40]
 !        (T<T0: C->G, and T>=T0: C->R) pgacw:min=0.,max=qci(i,k,1)/dtcld
 !-------------------------------------------------------------
-        IF (qci(i, k, 1) .GT. qmin .AND. qrs(i, k, 3) .GT. qcrmin) THEN
-          supcol = t0c - t(i, k)
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
+        supcol = t0c - t(i, k)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!call smoothif(qci(i,k,1),qmin  ,fqc,'q0')
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 3) .GT. 0. .AND. qci(i, k, 1) .GT. 0.) THEN
           pgacw(i, k) = pgacw_a*den(i, k)**((1.+bvtg)/4.)*qrs(i, k, 3)**&
 &           ((3.+bvtg)/4.)*qci(i, k, 1)
-          IF (pgacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
-            x7 = qci(i, k, 1)/dtcld
-          ELSE
-            x7 = pgacw(i, k)
-          END IF
-          IF (x7 .LT. 0.) THEN
-            pgacw(i, k) = 0.
-          ELSE
-            pgacw(i, k) = x7
-          END IF
-          IF (pgacw(i, k) .GE. 0.) THEN
-            abs8 = pgacw(i, k)
-          ELSE
-            abs8 = -pgacw(i, k)
-          END IF
-          IF (abs8 .LT. qmin/dtcld) pgacw(i, k) = 0.
-          IF (qci(i, k, 1) - pgacw(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 1) = 0.
-          ELSE
-            qci(i, k, 1) = qci(i, k, 1) - pgacw(i, k)*dtcld
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (qrs(i, k, 3) + pgacw(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = qrs(i, k, 3) + pgacw(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + pgacw(i, k)*dtcld*xlf/cpm(i, k)
-            pgacw(i, k) = 0.
-          ELSE IF (qrs(i, k, 1) + pgacw(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) + pgacw(i, k)*dtcld
-          END IF
+        ELSE
+          pgacw(i, k) = 0.
         END IF
+        IF (pgacw(i, k) .GT. qci(i, k, 1)/dtcld) THEN
+          x9 = qci(i, k, 1)/dtcld
+        ELSE
+          x9 = pgacw(i, k)
+        END IF
+        IF (x9 .LT. 0.) THEN
+          pgacw(i, k) = 0.
+        ELSE
+          pgacw(i, k) = x9
+        END IF
+        IF (pgacw(i, k) .GE. 0.) THEN
+          abs8 = pgacw(i, k)
+        ELSE
+          abs8 = -pgacw(i, k)
+        END IF
+!pgacw(i,k)=fqg*fqc*pgacw(i,k)
+        IF (abs8 .LT. qmin/dtcld) pgacw(i, k) = 0.
+        IF (qci(i, k, 1) - pgacw(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 1) = 0.
+        ELSE
+          qci(i, k, 1) = qci(i, k, 1) - pgacw(i, k)*dtcld
+        END IF
+        x10 = qrs(i, k, 1) + (1.-fsupcol)*pgacw(i, k)*dtcld
+        IF (x10 .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = x10
+        END IF
+        x11 = qrs(i, k, 3) + fsupcol*pgacw(i, k)*dtcld
+        IF (x11 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x11
+        END IF
+        t(i, k) = t(i, k) + fsupcol*pgacw(i, k)*dtcld*xlf/cpm(i, k)
+! t>=t0 pgeml
+        pgacw(i, k) = (1-fsupcol)*pgacw(i, k)
       END DO
     END DO
   END SUBROUTINE ACCRET1
@@ -5746,12 +6536,12 @@ CONTAINS
     REAL :: a_supcol, a_vt2r, a_vt2s, a_vt2g, a_xlf, a_egs
     REAL :: acrfac1, acrfac2, acrfac3, acrfac4, pracs1, psacr1, pgacr1, &
 &   pgacs1
-    REAL :: a_pracs1, a_pgacs1
+    REAL :: a_pracs1, a_psacr1, a_pgacr1, a_pgacs1
     INTEGER :: i, k
-    REAL :: temp1, delta2, a, b, c, d
-    REAL :: a_a, a_b, a_c, a_d
-    INTRINSIC MIN
+    REAL :: fsupcol, ft0, fqr, fqs, fqg, temp1, delta2, a, b, c, d
+    REAL :: a_fsupcol, a_ft0, a_fqs, a_fqg, a_a, a_b, a_c, a_d
     INTRINSIC MAX
+    INTRINSIC MIN
     INTRINSIC EXP
     INTRINSIC SQRT
     INTRINSIC ABS
@@ -5771,34 +6561,36 @@ CONTAINS
     REAL :: a_y7
     REAL :: y8
     REAL :: a_y8
-    REAL :: y9
-    REAL :: a_y9
-    REAL :: y10
-    REAL :: a_y10
     REAL :: x1
     REAL :: a_x1
     REAL :: x2
     REAL :: a_x2
     REAL :: x3
     REAL :: a_x3
+    REAL :: x4
+    REAL :: a_x4
+    REAL :: y9
+    REAL :: a_y9
+    REAL :: y10
+    REAL :: a_y10
     REAL :: y11
     REAL :: a_y11
     REAL :: y12
     REAL :: a_y12
+    REAL :: x5
+    REAL :: a_x5
+    REAL :: x6
+    REAL :: a_x6
     REAL :: y13
     REAL :: a_y13
     REAL :: y14
     REAL :: a_y14
     REAL :: y15
     REAL :: a_y15
-    REAL :: x4
-    REAL :: a_x4
-    REAL :: x5
-    REAL :: a_x5
-    REAL :: x6
-    REAL :: a_x6
     REAL :: x7
     REAL :: a_x7
+    REAL :: x8
+    REAL :: a_x8
     REAL :: max1
     REAL :: a_max1
     REAL :: max2
@@ -5809,11 +6601,11 @@ CONTAINS
     REAL :: a_max4
     REAL :: max5
     REAL :: a_max5
+    REAL :: max6
+    REAL :: a_max6
     REAL :: abs0
     REAL :: a_abs0
     REAL :: abs1
-    REAL :: max6
-    REAL :: a_max6
     REAL :: max7
     REAL :: a_max7
     REAL :: max8
@@ -5822,27 +6614,91 @@ CONTAINS
     REAL :: a_max9
     REAL :: max10
     REAL :: a_max10
-    REAL :: abs2
-    REAL :: a_abs2
-    REAL :: abs3
-    REAL :: abs4
-    REAL :: a_abs4
-    REAL :: abs5
     REAL :: max11
     REAL :: a_max11
     REAL :: max12
     REAL :: a_max12
+    REAL :: abs2
+    REAL :: a_abs2
+    REAL :: abs3
     REAL :: max13
     REAL :: a_max13
     REAL :: max14
     REAL :: a_max14
     REAL :: max15
     REAL :: a_max15
+    REAL :: max16
+    REAL :: a_max16
+    REAL :: max17
+    REAL :: a_max17
+    REAL :: abs4
+    REAL :: a_abs4
+    REAL :: abs5
+    REAL :: max18
+    REAL :: a_max18
+    REAL :: max19
+    REAL :: a_max19
+    REAL :: max20
+    REAL :: a_max20
+    REAL :: max21
+    REAL :: a_max21
+    REAL :: max22
+    REAL :: a_max22
+    REAL :: max23
+    REAL :: a_max23
     REAL :: abs6
     REAL :: a_abs6
     REAL :: abs7
     REAL :: abs8
     REAL :: abs9
+    REAL :: max24
+    REAL :: a_max24
+    REAL :: max25
+    REAL :: a_max25
+    REAL :: max26
+    REAL :: a_max26
+    REAL :: max27
+    REAL :: a_max27
+    REAL :: max28
+    REAL :: a_max28
+    REAL :: max29
+    REAL :: a_max29
+    REAL :: max30
+    REAL :: a_max30
+    REAL :: max31
+    REAL :: a_max31
+    REAL :: max32
+    REAL :: a_max32
+    REAL :: max33
+    REAL :: a_max33
+    REAL :: max34
+    REAL :: a_max34
+    REAL :: max35
+    REAL :: a_max35
+    REAL :: max36
+    REAL :: a_max36
+    REAL :: max37
+    REAL :: a_max37
+    REAL :: max38
+    REAL :: a_max38
+    REAL :: max39
+    REAL :: a_max39
+    REAL :: max40
+    REAL :: a_max40
+    REAL :: max41
+    REAL :: a_max41
+    REAL :: max42
+    REAL :: a_max42
+    REAL :: max43
+    REAL :: a_max43
+    REAL :: max44
+    REAL :: a_max44
+    REAL :: max45
+    REAL :: a_max45
+    REAL :: max46
+    REAL :: a_max46
+    REAL :: max47
+    REAL :: a_max47
     REAL :: temp
     REAL :: temp0
     REAL :: a_temp
@@ -5860,6 +6716,8 @@ CONTAINS
     REAL :: a_temp3
     REAL :: a_temp4
     REAL :: a_temp5
+    REAL :: a_temp6
+    REAL :: a_temp7
     INTEGER :: branch
     DO k=kts,kte
       DO i=its,ite
@@ -5869,151 +6727,217 @@ CONTAINS
 !-------------------------------------------------------------
         CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k&
-&           , 2) .GT. qcrmin) THEN
-          vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*qrs(i, k, 1)**(bvtr/4.&
-&           )
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y1 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y1 = 90.
-          END IF
-          IF (0. .LT. y1) THEN
-            CALL PUSHREAL8(max1)
-            max1 = y1
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max1)
-            max1 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*qrs(i, k, 2)**(bvts/4.&
-&           )*EXP(-(alpha*bvts*max1/4.))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y2 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y2 = 90.
-          END IF
-          IF (0. .LT. y2) THEN
-            CALL PUSHREAL8(max2)
-            max2 = y2
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max2)
-            max2 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(a)
-          a = EXP(alpha*max2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y3 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y3 = 90.
-          END IF
-          IF (0. .LT. y3) THEN
-            CALL PUSHREAL8(max3)
-            max3 = y3
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max3)
-            max3 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(b)
-          b = EXP(-(3.*alpha*max3/2.))*den(i, k)**(3./4.)*qrs(i, k, 2)**&
-&           (3./2.)*SQRT(SQRT(qrs(i, k, 1)))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y4 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y4 = 90.
-          END IF
-          IF (0. .LT. y4) THEN
-            CALL PUSHREAL8(max4)
-            max4 = y4
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max4)
-            max4 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(c)
-          c = EXP(-(5.*alpha*max4/4.))*den(i, k)**(3./4.)*qrs(i, k, 2)**&
-&           (5./4.)*SQRT(qrs(i, k, 1))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y5 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y5 = 90.
-          END IF
-          IF (0. .LT. y5) THEN
-            CALL PUSHREAL8(max5)
-            max5 = y5
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max5)
-            max5 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(d)
-          d = EXP(-(alpha*max5))*den(i, k)**(3./4.)*qrs(i, k, 2)*qrs(i, &
-&           k, 1)**(3./4.)
-          IF (vt2r - vt2s .GE. 0.) THEN
-            CALL PUSHREAL8(abs0)
-            abs0 = vt2r - vt2s
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(abs0)
-            abs0 = -(vt2r-vt2s)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          pracs1 = pracs_a*a*abs0*(pracs_b*b+pracs_c*c+pracs_d*d)
-          IF (pracs1 .GT. qrs(i, k, 2)/dtcld) THEN
-            pracs(i, k) = qrs(i, k, 2)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pracs(i, k) = pracs1
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pracs(i, k) .GE. 0.) THEN
-            abs1 = pracs(i, k)
-          ELSE
-            abs1 = -pracs(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) THEN
-            pracs(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qrs(i, k, 2) - pracs(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = qrs(i, k, 2) - pracs(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 3) + pracs(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = qrs(i, k, 3) + pracs(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max1)
+          max1 = qcrmin
           CALL PUSHCONTROL1B(0)
         ELSE
+          CALL PUSHREAL8(max1)
+          max1 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+!call smoothif(qrs(i,k,1),1.e-4,fqr,'q0')
+!call smoothif(qrs(i,k,2),1.e-4,fqs,'q0')
+        vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max1**(bvtr/4.)
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max2)
+          max2 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max2)
+          max2 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y13 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y13 = 90.
+        END IF
+        IF (0. .LT. y13) THEN
+          CALL PUSHREAL8(max24)
+          max24 = y13
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max24)
+          max24 = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*max2**(bvts/4.)*EXP(-(&
+&         alpha*bvts*max24/4.))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y1 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y1 = 90.
+        END IF
+        IF (0. .LT. y1) THEN
+          CALL PUSHREAL8(max3)
+          max3 = y1
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max3)
+          max3 = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(a)
+        a = EXP(alpha*max3)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y2 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y2 = 90.
+        END IF
+        IF (0. .LT. y2) THEN
+          CALL PUSHREAL8(max4)
+          max4 = y2
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max4)
+          max4 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max25)
+          max25 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max25)
+          max25 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max39)
+          max39 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max39)
+          max39 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = EXP(-(3.*alpha*max4/2.))*den(i, k)**(3./4.)*max25**(3./2.)*&
+&         SQRT(SQRT(max39))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y3 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y3 = 90.
+        END IF
+        IF (0. .LT. y3) THEN
+          CALL PUSHREAL8(max5)
+          max5 = y3
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max5)
+          max5 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max26)
+          max26 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max26)
+          max26 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max40)
+          max40 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max40)
+          max40 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(c)
+        c = EXP(-(5.*alpha*max5/4.))*den(i, k)**(3./4.)*max26**(5./4.)*&
+&         SQRT(max40)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y4 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y4 = 90.
+        END IF
+        IF (0. .LT. y4) THEN
+          CALL PUSHREAL8(max6)
+          max6 = y4
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max6)
+          max6 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max27)
+          max27 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max27)
+          max27 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max41)
+          max41 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max41)
+          max41 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(d)
+        d = EXP(-(alpha*max6))*den(i, k)**(3./4.)*max27*max41**(3./4.)
+        IF (vt2r - vt2s .GE. 0.) THEN
+          CALL PUSHREAL8(abs0)
+          abs0 = vt2r - vt2s
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(abs0)
+          abs0 = -(vt2r-vt2s)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        pracs1 = pracs_a*a*abs0*(pracs_b*b+pracs_c*c+pracs_d*d)
+        IF (pracs1 .GT. qrs(i, k, 2)/dtcld) THEN
+          pracs(i, k) = qrs(i, k, 2)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pracs(i, k) = pracs1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(pracs(i, k))
+        pracs(i, k) = fsupcol*pracs(i, k)
+        IF (pracs(i, k) .GE. 0.) THEN
+          abs1 = pracs(i, k)
+        ELSE
+          abs1 = -pracs(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) THEN
+          pracs(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) - pracs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) - pracs(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 3) + pracs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pracs(i, k)*dtcld
           CALL PUSHCONTROL1B(1)
         END IF
 !-------------------------------------------------------------
@@ -6021,584 +6945,772 @@ CONTAINS
 !         (T< T0: R->S or R->G)                 min=0.,max=qrs(i,k,1)/dtcld
 !         (T>=T0: S->R enhance melting of snow) min=0.,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k, 2) .GT. qcrmin) &
-&       THEN
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,0.,fsupcol,'t0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
+!call smoothif(qrs(i,k,2),qcrmin,fqs,'q0')
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*qrs(i, k, 1)**(bvtr/4.&
-&           )
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y6 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y6 = 90.
-          END IF
-          IF (0. .LT. y6) THEN
-            CALL PUSHREAL8(max6)
-            max6 = y6
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max6)
-            max6 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*qrs(i, k, 2)**(bvts/4.&
-&           )*EXP(-(alpha*bvts*max6/4.))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y7 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y7 = 90.
-          END IF
-          IF (0. .LT. y7) THEN
-            CALL PUSHREAL8(max7)
-            max7 = y7
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max7)
-            max7 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(a)
-          a = EXP(alpha*max7)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y8 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y8 = 90.
-          END IF
-          IF (0. .LT. y8) THEN
-            CALL PUSHREAL8(max8)
-            max8 = y8
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max8)
-            max8 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(b)
-          b = EXP(-(alpha*max8/4.))*den(i, k)**(3./4.)*qrs(i, k, 1)**(3.&
-&           /2.)*SQRT(SQRT(qrs(i, k, 2)))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y9 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y9 = 90.
-          END IF
-          IF (0. .LT. y9) THEN
-            CALL PUSHREAL8(max9)
-            max9 = y9
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max9)
-            max9 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(c)
-          c = EXP(-(alpha*max9/2.))*den(i, k)**(3./4.)*qrs(i, k, 1)**(5.&
-&           /4.)*SQRT(qrs(i, k, 2))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y10 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y10 = 90.
-          END IF
-          IF (0. .LT. y10) THEN
-            CALL PUSHREAL8(max10)
-            max10 = y10
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max10)
-            max10 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(d)
-          d = EXP(-(3.*alpha*max10/4.))*den(i, k)**(3./4.)*qrs(i, k, 1)*&
-&           qrs(i, k, 2)**(3./4.)
-          IF (vt2r - vt2s .GE. 0.) THEN
-            CALL PUSHREAL8(abs2)
-            abs2 = vt2r - vt2s
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(abs2)
-            abs2 = -(vt2r-vt2s)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          psacr(i, k) = psacr_a*a*abs2*(psacr_b*b+psacr_c*c+psacr_d*d)
-          IF (psacr(i, k) .GE. 0.) THEN
-            abs3 = psacr(i, k)
-          ELSE
-            abs3 = -psacr(i, k)
-          END IF
-          IF (abs3 .LT. qmin/dtcld) THEN
-            psacr(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-!update qr qs qg
-          IF (qrs(i, k, 1) .LT. 1.e-4 .AND. qrs(i, k, 2) .LT. 1.e-4) &
-&         THEN
-            CALL PUSHREAL8(delta2)
-            delta2 = 1.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(delta2)
-            delta2 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (psacr(i, k) .GT. qrs(i, k, 1)/dtcld) THEN
-              psacr(i, k) = qrs(i, k, 1)/dtcld
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHCONTROL1B(1)
-              psacr(i, k) = psacr(i, k)
-            END IF
-            IF (qrs(i, k, 1) - psacr(i, k)*dtcld .LT. 0.) THEN
-              CALL PUSHREAL8(qrs(i, k, 1))
-              qrs(i, k, 1) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(qrs(i, k, 1))
-              qrs(i, k, 1) = qrs(i, k, 1) - psacr(i, k)*dtcld
-              CALL PUSHCONTROL1B(1)
-            END IF
-            x1 = qrs(i, k, 2) + delta2*psacr(i, k)*dtcld
-            IF (x1 .LT. 0.) THEN
-              CALL PUSHREAL8(qrs(i, k, 2))
-              qrs(i, k, 2) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(qrs(i, k, 2))
-              qrs(i, k, 2) = x1
-              CALL PUSHCONTROL1B(1)
-            END IF
-            x2 = qrs(i, k, 3) + (1-delta2)*psacr(i, k)*dtcld
-            IF (x2 .LT. 0.) THEN
-              CALL PUSHREAL8(qrs(i, k, 3))
-              qrs(i, k, 3) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(qrs(i, k, 3))
-              qrs(i, k, 3) = x2
-              CALL PUSHCONTROL1B(1)
-            END IF
-            t(i, k) = t(i, k) + psacr(i, k)*dtcld*xlf/cpm(i, k)
-            CALL PUSHREAL8(psacr(i, k))
-            psacr(i, k) = 0.
-            CALL PUSHCONTROL2B(0)
-          ELSE IF (psacr(i, k) .GT. qrs(i, k, 2)/dtcld) THEN
-            psacr(i, k) = qrs(i, k, 2)/dtcld
-            CALL PUSHCONTROL2B(3)
-          ELSE
-            CALL PUSHCONTROL2B(2)
-            psacr(i, k) = psacr(i, k)
-          END IF
+        cpm(i, k) = CPMCAL(q(i, k))
+        xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          CALL PUSHCONTROL1B(1)
         ELSE
-          CALL PUSHCONTROL2B(1)
+          CALL PUSHCONTROL1B(0)
         END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max7)
+          max7 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max7)
+          max7 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max7**(bvtr/4.)
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max8)
+          max8 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max8)
+          max8 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y14 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y14 = 90.
+        END IF
+        IF (0. .LT. y14) THEN
+          CALL PUSHREAL8(max28)
+          max28 = y14
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max28)
+          max28 = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*max8**(bvts/4.)*EXP(-(&
+&         alpha*bvts*max28/4.))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y5 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y5 = 90.
+        END IF
+        IF (0. .LT. y5) THEN
+          CALL PUSHREAL8(max9)
+          max9 = y5
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max9)
+          max9 = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(a)
+        a = EXP(alpha*max9)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y6 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y6 = 90.
+        END IF
+        IF (0. .LT. y6) THEN
+          CALL PUSHREAL8(max10)
+          max10 = y6
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max10)
+          max10 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max29)
+          max29 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max29)
+          max29 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max42)
+          max42 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max42)
+          max42 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = EXP(-(alpha*max10/4.))*den(i, k)**(3./4.)*max29**(3./2.)*&
+&         SQRT(SQRT(max42))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y7 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y7 = 90.
+        END IF
+        IF (0. .LT. y7) THEN
+          CALL PUSHREAL8(max11)
+          max11 = y7
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max11)
+          max11 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max30)
+          max30 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max30)
+          max30 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max43)
+          max43 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max43)
+          max43 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(c)
+        c = EXP(-(alpha*max11/2.))*den(i, k)**(3./4.)*max30**(5./4.)*&
+&         SQRT(max43)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y8 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y8 = 90.
+        END IF
+        IF (0. .LT. y8) THEN
+          CALL PUSHREAL8(max12)
+          max12 = y8
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max12)
+          max12 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max31)
+          max31 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max31)
+          max31 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max44)
+          max44 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max44)
+          max44 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(d)
+        d = EXP(-(3.*alpha*max12/4.))*den(i, k)**(3./4.)*max31*max44**(&
+&         3./4.)
+        IF (vt2r - vt2s .GE. 0.) THEN
+          CALL PUSHREAL8(abs2)
+          abs2 = vt2r - vt2s
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(abs2)
+          abs2 = -(vt2r-vt2s)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        psacr1 = psacr_a*a*abs2*(psacr_b*b+psacr_c*c+psacr_d*d)
+        IF (supcol .GT. 0.) THEN
+          IF (psacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+            psacr(i, k) = qrs(i, k, 1)/dtcld
+            CALL PUSHCONTROL2B(1)
+          ELSE
+            psacr(i, k) = psacr1
+            CALL PUSHCONTROL2B(0)
+          END IF
+        ELSE IF (psacr1 .GT. qrs(i, k, 2)/dtcld) THEN
+          psacr(i, k) = qrs(i, k, 2)/dtcld
+          CALL PUSHCONTROL2B(3)
+        ELSE
+          psacr(i, k) = psacr1
+          CALL PUSHCONTROL2B(2)
+        END IF
+        IF (psacr(i, k) .GE. 0.) THEN
+          abs3 = psacr(i, k)
+        ELSE
+          abs3 = -psacr(i, k)
+        END IF
+!psacr(i,k)=fqr*fqs*psacr(i,k)
+        IF (abs3 .LT. qmin/dtcld) THEN
+          psacr(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+        END IF
+!update qr qs qg
+        IF (qrs(i, k, 1) .LT. 1.e-4 .AND. qrs(i, k, 2) .LT. 1.e-4) THEN
+          CALL PUSHREAL8(delta2)
+          delta2 = 1.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(delta2)
+          delta2 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) - fsupcol*psacr(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - fsupcol*psacr(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x1 = qrs(i, k, 2) + fsupcol*delta2*psacr(i, k)*dtcld
+        IF (x1 .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 2) = x1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x2 = qrs(i, k, 3) + fsupcol*(1-delta2)*psacr(i, k)*dtcld
+        IF (x2 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 3) = x2
+          CALL PUSHCONTROL1B(1)
+        END IF
+        t(i, k) = t(i, k) + fsupcol*psacr(i, k)*dtcld*xlf/cpm(i, k)
+! t>=t0 pseml 
+        CALL PUSHREAL8(psacr(i, k))
+        psacr(i, k) = (1-fsupcol)*psacr(i, k)
 !-------------------------------------------------------------
 ! pgacr: Accretion of rain by graupel [LFO 42]
 !         (T< T0: R->G)                            min=0.,max=qrs(i,k,1)/dtcld
 !         (T>=T0: G->R enhance melting of graupel) min=0.,max=qrs(i,k,3)/dtcld
 !-------------------------------------------------------------
+        CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k, 3) .GT. qcrmin) &
-&       THEN
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
 !update cpm
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*qrs(i, k, 1)**(bvtr/4.&
-&           )
-          vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*qrs(i, k, 3)**(bvtg/4.&
-&           )
-          CALL PUSHREAL8(b)
-          b = den(i, k)**(3./4.)*qrs(i, k, 1)**(3./2.)*SQRT(SQRT(qrs(i, &
-&           k, 3)))
-          CALL PUSHREAL8(c)
-          c = den(i, k)**(3./4.)*qrs(i, k, 1)**(5./4.)*SQRT(qrs(i, k, 3)&
-&           )
-          CALL PUSHREAL8(d)
-          d = den(i, k)**(3./4.)*qrs(i, k, 1)*qrs(i, k, 3)**(3./4.)
-          IF (vt2r - vt2g .GE. 0.) THEN
-            CALL PUSHREAL8(abs4)
-            abs4 = vt2r - vt2g
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(abs4)
-            abs4 = -(vt2r-vt2g)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          pgacr(i, k) = pgacr_a*abs4*(pgacr_b*b+pgacr_c*c+pgacr_d*d)
-          IF (pgacr(i, k) .GE. 0.) THEN
-            abs5 = pgacr(i, k)
-          ELSE
-            abs5 = -pgacr(i, k)
-          END IF
-          IF (abs5 .LT. qmin/dtcld) THEN
-            pgacr(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-! update qr,qg,t
-          IF (supcol .GT. 0.) THEN
-            IF (pgacr(i, k) .GT. qrs(i, k, 1)/dtcld) THEN
-              pgacr(i, k) = qrs(i, k, 1)/dtcld
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHCONTROL1B(1)
-              pgacr(i, k) = pgacr(i, k)
-            END IF
-            IF (qrs(i, k, 1) - pgacr(i, k)*dtcld .LT. 0.) THEN
-              CALL PUSHREAL8(qrs(i, k, 1))
-              qrs(i, k, 1) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(qrs(i, k, 1))
-              qrs(i, k, 1) = qrs(i, k, 1) - pgacr(i, k)*dtcld
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (qrs(i, k, 3) + pgacr(i, k)*dtcld .LT. 0.) THEN
-              CALL PUSHREAL8(qrs(i, k, 3))
-              qrs(i, k, 3) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(qrs(i, k, 3))
-              qrs(i, k, 3) = qrs(i, k, 3) + pgacr(i, k)*dtcld
-              CALL PUSHCONTROL1B(1)
-            END IF
-            t(i, k) = t(i, k) + pgacr(i, k)*dtcld*xlf/cpm(i, k)
-            CALL PUSHREAL8(pgacr(i, k))
-            pgacr(i, k) = 0.
-            CALL PUSHCONTROL2B(0)
-          ELSE IF (pgacr(i, k) .GT. qrs(i, k, 3)/dtcld) THEN
-            pgacr(i, k) = qrs(i, k, 3)/dtcld
-            CALL PUSHCONTROL2B(3)
-          ELSE
-            CALL PUSHCONTROL2B(2)
-            pgacr(i, k) = pgacr(i, k)
-          END IF
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          CALL PUSHCONTROL1B(1)
         ELSE
-          CALL PUSHCONTROL2B(1)
+          CALL PUSHCONTROL1B(0)
         END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max13)
+          max13 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max13)
+          max13 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max13**(bvtr/4.)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max14)
+          max14 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max14)
+          max14 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*max14**(bvtg/4.)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max15)
+          max15 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max15)
+          max15 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max32)
+          max32 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max32)
+          max32 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = den(i, k)**(3./4.)*max15**(3./2.)*SQRT(SQRT(max32))
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max16)
+          max16 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max16)
+          max16 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max33)
+          max33 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max33)
+          max33 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(c)
+        c = den(i, k)**(3./4.)*max16**(5./4.)*SQRT(max33)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max17)
+          max17 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max17)
+          max17 = qrs(i, k, 1)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max34)
+          max34 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max34)
+          max34 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(d)
+        d = den(i, k)**(3./4.)*max17*max34**(3./4.)
+        IF (vt2r - vt2g .GE. 0.) THEN
+          CALL PUSHREAL8(abs4)
+          abs4 = vt2r - vt2g
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(abs4)
+          abs4 = -(vt2r-vt2g)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        pgacr1 = pgacr_a*abs4*(pgacr_b*b+pgacr_c*c+pgacr_d*d)
+        IF (supcol .GT. 0.) THEN
+          IF (pgacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+            pgacr(i, k) = qrs(i, k, 1)/dtcld
+            CALL PUSHCONTROL2B(1)
+          ELSE
+            pgacr(i, k) = pgacr1
+            CALL PUSHCONTROL2B(0)
+          END IF
+        ELSE IF (pgacr1 .GT. qrs(i, k, 3)/dtcld) THEN
+          pgacr(i, k) = qrs(i, k, 3)/dtcld
+          CALL PUSHCONTROL2B(3)
+        ELSE
+          pgacr(i, k) = pgacr1
+          CALL PUSHCONTROL2B(2)
+        END IF
+        IF (pgacr(i, k) .GE. 0.) THEN
+          abs5 = pgacr(i, k)
+        ELSE
+          abs5 = -pgacr(i, k)
+        END IF
+!pgacr(i,k)=fqg*fqr*pgacr(i,k)
+        IF (abs5 .LT. qmin/dtcld) THEN
+          pgacr(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) - fsupcol*pgacr(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - fsupcol*pgacr(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        x3 = qrs(i, k, 3) + fsupcol*pgacr(i, k)*dtcld
+        IF (x3 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 3) = x3
+          CALL PUSHCONTROL1B(1)
+        END IF
+        t(i, k) = t(i, k) + fsupcol*pgacr(i, k)*dtcld*xlf/cpm(i, k)
+! t>=t0 pgeml 
+        CALL PUSHREAL8(pgacr(i, k))
+        pgacr(i, k) = (1-fsupcol)*pgacr(i, k)
 !-------------------------------------------------------------
 ! pgacs: Accretion of snow by graupel [LFO 29]
 !        (S->G) min=0,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
+        CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (qrs(i, k, 2) .GT. qcrmin .AND. qrs(i, k, 3) .GT. qcrmin) &
-&       THEN
-          x3 = EXP(-(0.09*supcol))
-          IF (x3 .GT. 1.) THEN
-            CALL PUSHREAL8(egs)
-            egs = 1.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(egs)
-            egs = x3
-            CALL PUSHCONTROL1B(1)
-          END IF
-          vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*qrs(i, k, 3)**(bvtg/4.&
-&           )
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y11 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y11 = 90.
-          END IF
-          IF (0. .LT. y11) THEN
-            CALL PUSHREAL8(max11)
-            max11 = y11
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max11)
-            max11 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*qrs(i, k, 2)**(bvts/4.&
-&           )*EXP(-(alpha*bvts*max11/4.))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y12 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y12 = 90.
-          END IF
-          IF (0. .LT. y12) THEN
-            CALL PUSHREAL8(max12)
-            max12 = y12
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max12)
-            max12 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(a)
-          a = EXP(alpha*max12)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y13 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y13 = 90.
-          END IF
-          IF (0. .LT. y13) THEN
-            CALL PUSHREAL8(max13)
-            max13 = y13
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max13)
-            max13 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(b)
-          b = EXP(-(3.*alpha*max13/2.))*den(i, k)**(3./4.)*qrs(i, k, 2)&
-&           **(3./2.)*SQRT(SQRT(qrs(i, k, 3)))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y14 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y14 = 90.
-          END IF
-          IF (0. .LT. y14) THEN
-            CALL PUSHREAL8(max14)
-            max14 = y14
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max14)
-            max14 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(c)
-          c = EXP(-(5.*alpha*max14/4.))*den(i, k)**(3./4.)*qrs(i, k, 2)&
-&           **(5./4.)*SQRT(qrs(i, k, 3))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y15 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y15 = 90.
-          END IF
-          IF (0. .LT. y15) THEN
-            CALL PUSHREAL8(max15)
-            max15 = y15
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max15)
-            max15 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(d)
-          d = EXP(-(alpha*max15))*den(i, k)**(3./4.)*qrs(i, k, 2)*qrs(i&
-&           , k, 3)**(3./4.)
-          IF (vt2g - vt2s .GE. 0.) THEN
-            CALL PUSHREAL8(abs6)
-            abs6 = vt2g - vt2s
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(abs6)
-            abs6 = -(vt2g-vt2s)
-            CALL PUSHCONTROL1B(1)
-          END IF
-          pgacs1 = pgacs_a*a*abs6*(pgacs_b*b+pgacs_c*c+pgacs_d*d)*egs
-          IF (pgacs1 .GT. qrs(i, k, 2)/dtcld) THEN
-            pgacs(i, k) = qrs(i, k, 2)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pgacs(i, k) = pgacs1
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pgacs(i, k) .GE. 0.) THEN
-            abs7 = pgacs(i, k)
-          ELSE
-            abs7 = -pgacs(i, k)
-          END IF
-          IF (abs7 .LT. qmin/dtcld) THEN
-            pgacs(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qrs(i, k, 2) - pgacs(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = qrs(i, k, 2) - pgacs(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 3) + pgacs(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = qrs(i, k, 3) + pgacs(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
+        x4 = EXP(-(0.09*supcol))
+        IF (x4 .GT. 1.) THEN
+          CALL PUSHREAL8(egs)
+          egs = 1.
           CALL PUSHCONTROL1B(0)
         ELSE
+          CALL PUSHREAL8(egs)
+          egs = x4
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max18)
+          max18 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max18)
+          max18 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*max18**(bvtg/4.)
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max19)
+          max19 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max19)
+          max19 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y15 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y15 = 90.
+        END IF
+        IF (0. .LT. y15) THEN
+          CALL PUSHREAL8(max35)
+          max35 = y15
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max35)
+          max35 = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*max19**(bvts/4.)*EXP(-(&
+&         alpha*bvts*max35/4.))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y9 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y9 = 90.
+        END IF
+        IF (0. .LT. y9) THEN
+          CALL PUSHREAL8(max20)
+          max20 = y9
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max20)
+          max20 = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(a)
+        a = EXP(alpha*max20)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y10 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y10 = 90.
+        END IF
+        IF (0. .LT. y10) THEN
+          CALL PUSHREAL8(max21)
+          max21 = y10
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max21)
+          max21 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max36)
+          max36 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max36)
+          max36 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max45)
+          max45 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max45)
+          max45 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = EXP(-(3.*alpha*max21/2.))*den(i, k)**(3./4.)*max36**(3./2.)*&
+&         SQRT(SQRT(max45))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y11 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y11 = 90.
+        END IF
+        IF (0. .LT. y11) THEN
+          CALL PUSHREAL8(max22)
+          max22 = y11
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max22)
+          max22 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max37)
+          max37 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max37)
+          max37 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max46)
+          max46 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max46)
+          max46 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(c)
+        c = EXP(-(5.*alpha*max22/4.))*den(i, k)**(3./4.)*max37**(5./4.)*&
+&         SQRT(max46)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y12 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y12 = 90.
+        END IF
+        IF (0. .LT. y12) THEN
+          CALL PUSHREAL8(max23)
+          max23 = y12
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max23)
+          max23 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max38)
+          max38 = qcrmin
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max38)
+          max38 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max47)
+          max47 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max47)
+          max47 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        d = EXP(-(alpha*max23))*den(i, k)**(3./4.)*max38*max47**(3./4.)
+        IF (vt2g - vt2s .GE. 0.) THEN
+          CALL PUSHREAL8(abs6)
+          abs6 = vt2g - vt2s
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(abs6)
+          abs6 = -(vt2g-vt2s)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        pgacs1 = pgacs_a*a*abs6*(pgacs_b*b+pgacs_c*c+pgacs_d*d)*egs
+        IF (pgacs1 .GT. qrs(i, k, 2)/dtcld) THEN
+          pgacs(i, k) = qrs(i, k, 2)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pgacs(i, k) = pgacs1
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (pgacs(i, k) .GE. 0.) THEN
+          abs7 = pgacs(i, k)
+        ELSE
+          abs7 = -pgacs(i, k)
+        END IF
+!pgacs(i,k)=fqg*fqs*pgacs(i,k)
+        IF (abs7 .LT. qmin/dtcld) THEN
+          pgacs(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) - pgacs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) - pgacs(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 3) + pgacs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgacs(i, k)*dtcld
           CALL PUSHCONTROL1B(1)
         END IF
 !-------------------------------------------------------------
 ! pseml: Enhanced melting of snow by accretion of water
 !        (T>=T0: S->R) pseml<0 max=0,min=-qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
-        CALL PUSHREAL8(supcol)
-        supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 2) .GT. 0.) THEN
+!         supcol = t0c-t(i,k) ! not change
 !update cpm
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          x6 = cliq*supcol*(psacw(i, k)+psacr(i, k))/xlf
-          IF (x6 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-            x4 = -(qrs(i, k, 2)/dtcld)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            x4 = x6
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (x4 .GT. 0.) THEN
-            pseml(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pseml(i, k) = x4
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pseml(i, k) .GE. 0.) THEN
-            abs8 = pseml(i, k)
-          ELSE
-            abs8 = -pseml(i, k)
-          END IF
-          IF (abs8 .LT. qmin/dtcld) THEN
-            pseml(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qrs(i, k, 1) - pseml(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = qrs(i, k, 1) - pseml(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 2) + pseml(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = qrs(i, k, 2) + pseml(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          t(i, k) = t(i, k) + pseml(i, k)*dtcld*xlf/cpm(i, k)
+!         cpm(i,k)=cpmcal(q(i,k)) ! not change
+        xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        CALL PUSHREAL8(ft0)
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        CALL PUSHREAL8(fqs)
+        CALL SMOOTHIF(qrs(i, k, 2), 0., fqs, 'q+')
+        x7 = cliq*supcol*(psacw(i, k)+psacr(i, k))/xlf
+        IF (x7 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+          x5 = -(qrs(i, k, 2)/dtcld)
           CALL PUSHCONTROL1B(0)
         ELSE
+          x5 = x7
           CALL PUSHCONTROL1B(1)
         END IF
+        IF (x5 .GT. 0.) THEN
+          pseml(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pseml(i, k) = x5
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(pseml(i, k))
+        pseml(i, k) = ft0*fqs*pseml(i, k)
+        IF (pseml(i, k) .GE. 0.) THEN
+          abs8 = pseml(i, k)
+        ELSE
+          abs8 = -pseml(i, k)
+        END IF
+        IF (abs8 .LT. qmin/dtcld) THEN
+          pseml(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) - pseml(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = qrs(i, k, 1) - pseml(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 2) + pseml(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = qrs(i, k, 2) + pseml(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(t(i, k))
+        t(i, k) = t(i, k) + pseml(i, k)*dtcld*xlf/cpm(i, k)
 !-------------------------------------------------------------
 ! pgeml: Enhanced melting of graupel by accretion of water [RH84 A21-A22]
 !        (T>=T0: G->R) pgeml<0 max=0,min=-qrs(i,k,3)/dtcld
 !-------------------------------------------------------------
         CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 3) .GT. 0.) THEN
 !update cpm
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          CALL PUSHREAL8(xlf)
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) THEN
-            xlf = xlf0
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          x7 = cliq*supcol*(pgacw(i, k)+pgacr(i, k))/xlf
-          IF (x7 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-            x5 = -(qrs(i, k, 3)/dtcld)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            x5 = x7
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (x5 .GT. 0.) THEN
-            pgeml(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pgeml(i, k) = x5
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pgeml(i, k) .GE. 0.) THEN
-            abs9 = pgeml(i, k)
-          ELSE
-            abs9 = -pgeml(i, k)
-          END IF
-          IF (abs9 .LT. qmin/dtcld) THEN
-            pgeml(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qrs(i, k, 1) - pgeml(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 1))
-            qrs(i, k, 1) = qrs(i, k, 1) - pgeml(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 3) + pgeml(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
+!         cpm(i,k)=cpmcal(q(i,k)) ! not change
+        xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(xlf)
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) THEN
+          xlf = xlf0
           CALL PUSHCONTROL1B(1)
         ELSE
           CALL PUSHCONTROL1B(0)
+        END IF
+        CALL PUSHREAL8(ft0)
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        CALL PUSHREAL8(fqg)
+        CALL SMOOTHIF(qrs(i, k, 3), 0., fqg, 'q+')
+        x8 = cliq*supcol*(pgacw(i, k)+pgacr(i, k))/xlf
+        IF (x8 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+          x6 = -(qrs(i, k, 3)/dtcld)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          x6 = x8
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (x6 .GT. 0.) THEN
+          pgeml(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pgeml(i, k) = x6
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(pgeml(i, k))
+        pgeml(i, k) = ft0*fqg*pgeml(i, k)
+        IF (pgeml(i, k) .GE. 0.) THEN
+          abs9 = pgeml(i, k)
+        ELSE
+          abs9 = -pgeml(i, k)
+        END IF
+        IF (abs9 .LT. qmin/dtcld) THEN
+          pgeml(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 1) - pgeml(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 1))
+          qrs(i, k, 1) = qrs(i, k, 1) - pgeml(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 3) + pgeml(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
         END IF
       END DO
     END DO
@@ -6606,364 +7718,436 @@ CONTAINS
     a_xl = 0.0_8
     DO k=kte,kts,-1
       DO i=ite,its,-1
+        a_temp1 = dtcld*a_t(i, k)/cpm(i, k)
+        a_pgacr(i, k) = 0.0_8
+        a_pgacw(i, k) = 0.0_8
+        a_pgeml(i, k) = xlf*a_temp1
+        a_xlf = pgeml(i, k)*a_temp1
+        a_cpm(i, k) = a_cpm(i, k) - pgeml(i, k)*xlf*a_temp1/cpm(i, k)
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_supcol = 0.0_8
+          a_qrs(i, k, 3) = 0.0_8
         ELSE
-          a_temp1 = dtcld*a_t(i, k)/cpm(i, k)
-          a_pgacr(i, k) = 0.0_8
-          a_pgacw(i, k) = 0.0_8
-          a_pgeml(i, k) = xlf*a_temp1
-          a_xlf = pgeml(i, k)*a_temp1
-          a_cpm(i, k) = a_cpm(i, k) - pgeml(i, k)*xlf*a_temp1/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 3) = 0.0_8
-          ELSE
-            a_pgeml(i, k) = a_pgeml(i, k) + dtcld*a_qrs(i, k, 3)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 1))
-            a_qrs(i, k, 1) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 1))
-            a_pgeml(i, k) = a_pgeml(i, k) - dtcld*a_qrs(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_pgeml(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_pgeml(i, k) = 0.0_8
-            a_x5 = 0.0_8
-          ELSE
-            a_x5 = a_pgeml(i, k)
-            a_pgeml(i, k) = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 3) = a_qrs(i, k, 3) - a_x5/dtcld
-            a_x7 = 0.0_8
-          ELSE
-            a_x7 = a_x5
-          END IF
-          a_temp1 = supcol*cliq*a_x7/xlf
-          a_temp4 = (pgacw(i, k)+pgacr(i, k))*cliq*a_x7/xlf
-          a_supcol = a_temp4
-          a_xlf = a_xlf - supcol*a_temp4/xlf
-          a_pgacw(i, k) = a_pgacw(i, k) + a_temp1
-          a_pgacr(i, k) = a_pgacr(i, k) + a_temp1
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_xlf = 0.0_8
-          CALL POPREAL8(xlf)
-          a_xl(i, k) = a_xl(i, k) - a_xlf
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
-          CALL POPREAL8(cpm(i, k))
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
+          a_pgeml(i, k) = a_pgeml(i, k) + dtcld*a_qrs(i, k, 3)
         END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 1))
+          a_qrs(i, k, 1) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 1))
+          a_pgeml(i, k) = a_pgeml(i, k) - dtcld*a_qrs(i, k, 1)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pgeml(i, k) = 0.0_8
+        CALL POPREAL8(pgeml(i, k))
+        a_temp1 = pgeml(i, k)*a_pgeml(i, k)
+        a_pgeml(i, k) = ft0*fqg*a_pgeml(i, k)
+        a_ft0 = fqg*a_temp1
+        a_fqg = ft0*a_temp1
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_pgeml(i, k) = 0.0_8
+          a_x6 = 0.0_8
+        ELSE
+          a_x6 = a_pgeml(i, k)
+          a_pgeml(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) - a_x6/dtcld
+          a_x8 = 0.0_8
+        ELSE
+          a_x8 = a_x6
+        END IF
+        a_temp1 = supcol*cliq*a_x8/xlf
+        a_temp5 = (pgacw(i, k)+pgacr(i, k))*cliq*a_x8/xlf
+        a_supcol = a_temp5
+        a_xlf = a_xlf - supcol*a_temp5/xlf
+        a_pgacw(i, k) = a_pgacw(i, k) + a_temp1
+        a_pgacr(i, k) = a_pgacr(i, k) + a_temp1
+        CALL POPREAL8(fqg)
+        CALL A_SMOOTHIF(qrs(i, k, 3), a_qrs(i, k, 3), 0., fqg, a_fqg, &
+&                 'q+')
+        CALL POPREAL8(ft0)
+        CALL A_SMOOTHIF(t(i, k), a_t(i, k), t0c, ft0, a_ft0, 't0')
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_xlf = 0.0_8
+        CALL POPREAL8(xlf)
+        a_xl(i, k) = a_xl(i, k) - a_xlf
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
         CALL POPREAL8(supcol)
         a_t(i, k) = a_t(i, k) - a_supcol
+        a_psacr(i, k) = 0.0_8
+        a_psacw(i, k) = 0.0_8
+        CALL POPREAL8(t(i, k))
+        a_temp1 = dtcld*a_t(i, k)/cpm(i, k)
+        a_pseml(i, k) = xlf*a_temp1
+        a_xlf = pseml(i, k)*a_temp1
+        a_cpm(i, k) = a_cpm(i, k) - pseml(i, k)*xlf*a_temp1/cpm(i, k)
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_temp1 = dtcld*a_t(i, k)/cpm(i, k)
-          a_psacr(i, k) = 0.0_8
-          a_psacw(i, k) = 0.0_8
-          a_pseml(i, k) = xlf*a_temp1
-          a_xlf = pseml(i, k)*a_temp1
-          a_cpm(i, k) = a_cpm(i, k) - pseml(i, k)*xlf*a_temp1/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_pseml(i, k) = a_pseml(i, k) + dtcld*a_qrs(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 1))
-            a_qrs(i, k, 1) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 1))
-            a_pseml(i, k) = a_pseml(i, k) - dtcld*a_qrs(i, k, 1)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_pseml(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_pseml(i, k) = 0.0_8
-            a_x4 = 0.0_8
-          ELSE
-            a_x4 = a_pseml(i, k)
-            a_pseml(i, k) = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 2) = a_qrs(i, k, 2) - a_x4/dtcld
-            a_x6 = 0.0_8
-          ELSE
-            a_x6 = a_x4
-          END IF
-          a_temp1 = supcol*cliq*a_x6/xlf
-          a_temp4 = (psacw(i, k)+psacr(i, k))*cliq*a_x6/xlf
-          a_supcol = a_temp4
-          a_xlf = a_xlf - supcol*a_temp4/xlf
-          a_psacw(i, k) = a_psacw(i, k) + a_temp1
-          a_psacr(i, k) = a_psacr(i, k) + a_temp1
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_xlf = 0.0_8
-          CALL POPREAL8(xlf)
-          a_xl(i, k) = a_xl(i, k) - a_xlf
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
-          CALL POPREAL8(cpm(i, k))
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
+          CALL POPREAL8(qrs(i, k, 2))
+          a_qrs(i, k, 2) = 0.0_8
         ELSE
-          a_supcol = 0.0_8
+          CALL POPREAL8(qrs(i, k, 2))
+          a_pseml(i, k) = a_pseml(i, k) + dtcld*a_qrs(i, k, 2)
         END IF
-        CALL POPREAL8(supcol)
-        a_t(i, k) = a_t(i, k) - a_supcol
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 1))
+          a_qrs(i, k, 1) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 1))
+          a_pseml(i, k) = a_pseml(i, k) - dtcld*a_qrs(i, k, 1)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pseml(i, k) = 0.0_8
+        CALL POPREAL8(pseml(i, k))
+        a_temp1 = pseml(i, k)*a_pseml(i, k)
+        a_pseml(i, k) = ft0*fqs*a_pseml(i, k)
+        a_ft0 = fqs*a_temp1
+        a_fqs = ft0*a_temp1
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_pseml(i, k) = 0.0_8
+          a_x5 = 0.0_8
+        ELSE
+          a_x5 = a_pseml(i, k)
+          a_pseml(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) - a_x5/dtcld
+          a_x7 = 0.0_8
+        ELSE
+          a_x7 = a_x5
+        END IF
+        a_temp1 = supcol*cliq*a_x7/xlf
+        a_temp5 = (psacw(i, k)+psacr(i, k))*cliq*a_x7/xlf
+        a_supcol = a_temp5
+        a_xlf = a_xlf - supcol*a_temp5/xlf
+        a_psacw(i, k) = a_psacw(i, k) + a_temp1
+        a_psacr(i, k) = a_psacr(i, k) + a_temp1
+        CALL POPREAL8(fqs)
+        CALL A_SMOOTHIF(qrs(i, k, 2), a_qrs(i, k, 2), 0., fqs, a_fqs, &
+&                 'q+')
+        CALL POPREAL8(ft0)
+        CALL A_SMOOTHIF(t(i, k), a_t(i, k), t0c, ft0, a_ft0, 't0')
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_xlf = 0.0_8
+        CALL POPREAL8(xlf)
+        a_xl(i, k) = a_xl(i, k) - a_xlf
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
+        a_pgacs(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 3) = 0.0_8
+        ELSE
+          a_pgacs(i, k) = a_pgacs(i, k) + dtcld*a_qrs(i, k, 3)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 2) = 0.0_8
+        ELSE
+          a_pgacs(i, k) = a_pgacs(i, k) - dtcld*a_qrs(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pgacs(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_pgacs(i, k)/dtcld
           a_pgacs(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 3))
-            a_qrs(i, k, 3) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 3))
-            a_pgacs(i, k) = a_pgacs(i, k) + dtcld*a_qrs(i, k, 3)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_pgacs(i, k) = a_pgacs(i, k) - dtcld*a_qrs(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_pgacs(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_pgacs(i, k)/dtcld
-            a_pgacs(i, k) = 0.0_8
-            a_pgacs1 = 0.0_8
-          ELSE
-            a_pgacs1 = a_pgacs(i, k)
-            a_pgacs(i, k) = 0.0_8
-          END IF
-          a_temp1 = (pgacs_b*b+pgacs_c*c+pgacs_d*d)*pgacs_a*a_pgacs1
-          a_temp4 = a*abs6*egs*pgacs_a*a_pgacs1
-          a_b = pgacs_b*a_temp4
-          a_c = pgacs_c*a_temp4
-          a_d = pgacs_d*a_temp4
-          a_a = abs6*egs*a_temp1
-          a_abs6 = a*egs*a_temp1
-          a_egs = a*abs6*a_temp1
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(abs6)
-            a_vt2g = a_abs6
-            a_vt2s = -a_abs6
-          ELSE
-            CALL POPREAL8(abs6)
-            a_vt2s = a_abs6
-            a_vt2g = -a_abs6
-          END IF
-          CALL POPREAL8(d)
-          temp9 = 3./4.
-          temp8 = qrs(i, k, 3)**temp9
-          temp7 = EXP(-(alpha*max15))
-          temp5 = 3./4.
-          temp4 = den(i, k)**temp5
-          a_temp2 = temp7*temp8*a_d
-          a_temp3 = temp4*qrs(i, k, 2)*a_d
-          a_max15 = -(alpha*EXP(-(alpha*max15))*temp8*a_temp3)
-          IF (.NOT.(qrs(i, k, 3) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR.&
-&             temp9 .NE. INT(temp9)))) a_qrs(i, k, 3) = a_qrs(i, k, 3) +&
-&             temp9*qrs(i, k, 3)**(temp9-1)*temp7*a_temp3
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
-&             temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5&
-&             *den(i, k)**(temp5-1)*qrs(i, k, 2)*a_temp2
-          a_qrs(i, k, 2) = a_qrs(i, k, 2) + temp4*a_temp2
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max15)
-            a_y15 = a_max15
-          ELSE
-            CALL POPREAL8(max15)
-            a_y15 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y15
-          CALL POPREAL8(c)
-          temp9 = SQRT(qrs(i, k, 3))
-          temp8 = 3./4.
-          temp7 = den(i, k)**temp8
-          temp5 = 5./4.
-          temp4 = qrs(i, k, 2)**temp5
-          temp3 = -(5.*alpha*max14/4.)
-          temp2 = EXP(temp3)
-          a_temp2 = temp7*temp9*a_c
-          a_temp0 = temp2*temp4*a_c
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
-&             temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8&
-&             *den(i, k)**(temp8-1)*temp9*a_temp0
-          IF (.NOT.qrs(i, k, 3) .EQ. 0.0_8) a_qrs(i, k, 3) = a_qrs(i, k&
-&             , 3) + temp7*a_temp0/(2.0*temp9)
-          a_max14 = -(alpha*5.*EXP(temp3)*temp4*a_temp2/4.)
-          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR.&
-&             temp5 .NE. INT(temp5)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) +&
-&             temp5*qrs(i, k, 2)**(temp5-1)*temp2*a_temp2
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max14)
-            a_y14 = a_max14
-          ELSE
-            CALL POPREAL8(max14)
-            a_y14 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y14
-          CALL POPREAL8(b)
-          temp9 = SQRT(qrs(i, k, 3))
-          temp8 = SQRT(temp9)
-          temp7 = -(3.*alpha*max13/2.)
-          temp6 = EXP(temp7)
-          temp4 = 3./2.
-          temp3 = qrs(i, k, 2)**temp4
-          temp2 = 3./4.
-          temp0 = den(i, k)**temp2
-          a_temp5 = temp6*temp8*a_b
-          a_temp = temp0*temp3*a_b
-          a_max13 = -(alpha*3.*EXP(temp7)*temp8*a_temp/2.)
-          IF (.NOT.(qrs(i, k, 3) .EQ. 0.0_8 .OR. temp9 .EQ. 0.0_8)) &
-&           a_qrs(i, k, 3) = a_qrs(i, k, 3) + temp6*a_temp/(2.0**2*temp9&
-&             *temp8)
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
-&             temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + temp2&
-&             *den(i, k)**(temp2-1)*temp3*a_temp5
-          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR.&
-&             temp4 .NE. INT(temp4)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) +&
-&             temp4*qrs(i, k, 2)**(temp4-1)*temp0*a_temp5
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max13)
-            a_y13 = a_max13
-          ELSE
-            CALL POPREAL8(max13)
-            a_y13 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y13
-          CALL POPREAL8(a)
-          a_max12 = alpha*EXP(alpha*max12)*a_a
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max12)
-            a_y12 = a_max12
-          ELSE
-            CALL POPREAL8(max12)
-            a_y12 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y12
-          temp9 = -(alpha*bvts*max11/4.)
-          temp7 = bvts/4.
-          temp6 = qrs(i, k, 2)**temp7
-          temp5 = (bvts-2.)/4.
-          temp4 = den(i, k)**temp5
-          a_temp4 = EXP(temp9)*vt2s_a*a_vt2s
-          a_max11 = -(alpha*bvts*EXP(temp9)*temp4*temp6*vt2s_a*a_vt2s/4.&
-&           )
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
-&             temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5&
-&             *den(i, k)**(temp5-1)*temp6*a_temp4
-          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR.&
-&             temp7 .NE. INT(temp7)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) +&
-&             temp7*qrs(i, k, 2)**(temp7-1)*temp4*a_temp4
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max11)
-            a_y11 = a_max11
-          ELSE
-            CALL POPREAL8(max11)
-            a_y11 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y11
-          temp9 = bvtg/4.
-          temp8 = (bvtg-2.)/4.
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
-&             temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8&
-&             *den(i, k)**(temp8-1)*qrs(i, k, 3)**temp9*vt2g_a*a_vt2g
-          IF (.NOT.(qrs(i, k, 3) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR.&
-&             temp9 .NE. INT(temp9)))) a_qrs(i, k, 3) = a_qrs(i, k, 3) +&
-&             temp9*qrs(i, k, 3)**(temp9-1)*den(i, k)**temp8*vt2g_a*&
-&             a_vt2g
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(egs)
-            a_x3 = 0.0_8
-          ELSE
-            CALL POPREAL8(egs)
-            a_x3 = a_egs
-          END IF
-          a_supcol = -(0.09*EXP(-(0.09*supcol))*a_x3)
+          a_pgacs1 = 0.0_8
         ELSE
-          a_supcol = 0.0_8
+          a_pgacs1 = a_pgacs(i, k)
+          a_pgacs(i, k) = 0.0_8
         END IF
+        a_temp1 = (pgacs_b*b+pgacs_c*c+pgacs_d*d)*pgacs_a*a_pgacs1
+        a_temp5 = a*abs6*egs*pgacs_a*a_pgacs1
+        a_b = pgacs_b*a_temp5
+        a_c = pgacs_c*a_temp5
+        a_d = pgacs_d*a_temp5
+        a_a = abs6*egs*a_temp1
+        a_abs6 = a*egs*a_temp1
+        a_egs = a*abs6*a_temp1
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(abs6)
+          a_vt2g = a_abs6
+          a_vt2s = -a_abs6
+        ELSE
+          CALL POPREAL8(abs6)
+          a_vt2s = a_abs6
+          a_vt2g = -a_abs6
+        END IF
+        temp9 = 3./4.
+        temp8 = max47**temp9
+        temp6 = 3./4.
+        temp5 = den(i, k)**temp6
+        temp4 = EXP(-(alpha*max23))
+        a_temp3 = max38*temp8*a_d
+        a_temp4 = temp4*temp5*a_d
+        a_max38 = temp8*a_temp4
+        IF (max47 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT&
+&           (temp9))) THEN
+          a_max47 = 0.0_8
+        ELSE
+          a_max47 = temp9*max47**(temp9-1)*max38*a_temp4
+        END IF
+        a_max23 = -(alpha*EXP(-(alpha*max23))*temp5*a_temp3)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. &
+&           temp6 .NE. INT(temp6)))) a_den(i, k) = a_den(i, k) + temp6*&
+&           den(i, k)**(temp6-1)*temp4*a_temp3
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max47)
+        ELSE
+          CALL POPREAL8(max47)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max47
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max38)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max38
+        ELSE
+          CALL POPREAL8(max38)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max23)
+          a_y12 = 0.0_8
+        ELSE
+          CALL POPREAL8(max23)
+          a_y12 = a_max23
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y12
+        CALL POPREAL8(c)
+        temp9 = SQRT(max46)
+        temp8 = 5./4.
+        temp7 = max37**temp8
+        temp5 = 3./4.
+        temp4 = den(i, k)**temp5
+        temp3 = -(5.*alpha*max22/4.)
+        temp2 = EXP(temp3)
+        a_temp2 = temp7*temp9*a_c
+        a_temp0 = temp2*temp4*a_c
+        IF (max37 .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8 .NE. INT&
+&           (temp8))) THEN
+          a_max37 = 0.0_8
+        ELSE
+          a_max37 = temp8*max37**(temp8-1)*temp9*a_temp0
+        END IF
+        IF (max46 .EQ. 0.0_8) THEN
+          a_max46 = 0.0_8
+        ELSE
+          a_max46 = temp7*a_temp0/(2.0*temp9)
+        END IF
+        a_max22 = -(alpha*5.*EXP(temp3)*temp4*a_temp2/4.)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
+&           temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5*&
+&           den(i, k)**(temp5-1)*temp2*a_temp2
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max46)
+        ELSE
+          CALL POPREAL8(max46)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max46
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max37)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max37
+        ELSE
+          CALL POPREAL8(max37)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max22)
+          a_y11 = 0.0_8
+        ELSE
+          CALL POPREAL8(max22)
+          a_y11 = a_max22
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y11
+        d = den(i, k)**(3./4.)*max17*max34**(3./4.)
+        CALL POPREAL8(b)
+        temp9 = SQRT(max45)
+        temp8 = SQRT(temp9)
+        temp7 = -(3.*alpha*max21/2.)
+        temp6 = EXP(temp7)
+        temp4 = 3./2.
+        temp3 = max36**temp4
+        temp2 = 3./4.
+        temp0 = den(i, k)**temp2
+        a_temp6 = temp6*temp8*a_b
+        a_temp = temp0*temp3*a_b
+        a_max21 = -(alpha*3.*EXP(temp7)*temp8*a_temp/2.)
+        IF (max45 .EQ. 0.0_8 .OR. temp9 .EQ. 0.0_8) THEN
+          a_max45 = 0.0_8
+        ELSE
+          a_max45 = temp6*a_temp/(2.0**2*temp9*temp8)
+        END IF
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
+&           temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + temp2*&
+&           den(i, k)**(temp2-1)*temp3*a_temp6
+        IF (max36 .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. temp4 .NE. INT&
+&           (temp4))) THEN
+          a_max36 = 0.0_8
+        ELSE
+          a_max36 = temp4*max36**(temp4-1)*temp0*a_temp6
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max45)
+        ELSE
+          CALL POPREAL8(max45)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max45
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max36)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max36
+        ELSE
+          CALL POPREAL8(max36)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max21)
+          a_y10 = 0.0_8
+        ELSE
+          CALL POPREAL8(max21)
+          a_y10 = a_max21
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y10
+        CALL POPREAL8(a)
+        a_max20 = alpha*EXP(alpha*max20)*a_a
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max20)
+          a_y9 = a_max20
+        ELSE
+          CALL POPREAL8(max20)
+          a_y9 = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y9
+        temp9 = -(alpha*bvts*max35/4.)
+        temp7 = bvts/4.
+        temp6 = max19**temp7
+        temp5 = (bvts-2.)/4.
+        temp4 = den(i, k)**temp5
+        a_temp5 = EXP(temp9)*vt2s_a*a_vt2s
+        a_max35 = -(alpha*bvts*EXP(temp9)*temp4*temp6*vt2s_a*a_vt2s/4.)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
+&           temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5*&
+&           den(i, k)**(temp5-1)*temp6*a_temp5
+        IF (max19 .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. temp7 .NE. INT&
+&           (temp7))) THEN
+          a_max19 = 0.0_8
+        ELSE
+          a_max19 = temp7*max19**(temp7-1)*temp4*a_temp5
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max35)
+          a_y15 = a_max35
+        ELSE
+          CALL POPREAL8(max35)
+          a_y15 = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y15
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max19)
+        ELSE
+          CALL POPREAL8(max19)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max19
+        END IF
+        temp9 = bvtg/4.
+        temp8 = (bvtg-2.)/4.
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
+&           temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8*&
+&           den(i, k)**(temp8-1)*max18**temp9*vt2g_a*a_vt2g
+        IF (max18 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT&
+&           (temp9))) THEN
+          a_max18 = 0.0_8
+        ELSE
+          a_max18 = temp9*max18**(temp9-1)*den(i, k)**temp8*vt2g_a*&
+&           a_vt2g
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max18)
+        ELSE
+          CALL POPREAL8(max18)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max18
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(egs)
+          a_x4 = 0.0_8
+        ELSE
+          CALL POPREAL8(egs)
+          a_x4 = a_egs
+        END IF
+        a_supcol = a_supcol - 0.09*EXP(-(0.09*supcol))*a_x4
+        CALL POPREAL8(supcol)
         a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(pgacr(i, k))
+        temp8 = pgacr(i, k)/cpm(i, k)
+        a_temp1 = dtcld*a_t(i, k)
+        a_fsupcol = xlf*temp8*a_temp1 - pgacr(i, k)*a_pgacr(i, k)
+        a_xlf = fsupcol*temp8*a_temp1
+        a_temp5 = fsupcol*xlf*a_temp1/cpm(i, k)
+        a_pgacr(i, k) = (1-fsupcol)*a_pgacr(i, k) + a_temp5
+        a_cpm(i, k) = a_cpm(i, k) - temp8*a_temp5
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 3) = 0.0_8
+          a_x3 = 0.0_8
+        ELSE
+          a_x3 = a_qrs(i, k, 3)
+          a_qrs(i, k, 3) = 0.0_8
+        END IF
+        a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_x3
+        a_fsupcol = a_fsupcol + pgacr(i, k)*dtcld*a_x3
+        a_pgacr(i, k) = a_pgacr(i, k) + fsupcol*dtcld*a_x3
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 1) = 0.0_8
+        ELSE
+          a_fsupcol = a_fsupcol - pgacr(i, k)*dtcld*a_qrs(i, k, 1)
+          a_pgacr(i, k) = a_pgacr(i, k) - fsupcol*dtcld*a_qrs(i, k, 1)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pgacr(i, k) = 0.0_8
         CALL POPCONTROL2B(branch)
         IF (branch .LT. 2) THEN
           IF (branch .EQ. 0) THEN
-            a_temp1 = dtcld*a_t(i, k)/cpm(i, k)
-            CALL POPREAL8(pgacr(i, k))
-            a_pgacr(i, k) = xlf*a_temp1
-            a_xlf = pgacr(i, k)*a_temp1
-            a_cpm(i, k) = a_cpm(i, k) - pgacr(i, k)*xlf*a_temp1/cpm(i, k&
-&             )
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              CALL POPREAL8(qrs(i, k, 3))
-              a_qrs(i, k, 3) = 0.0_8
-            ELSE
-              CALL POPREAL8(qrs(i, k, 3))
-              a_pgacr(i, k) = a_pgacr(i, k) + dtcld*a_qrs(i, k, 3)
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              CALL POPREAL8(qrs(i, k, 1))
-              a_qrs(i, k, 1) = 0.0_8
-            ELSE
-              CALL POPREAL8(qrs(i, k, 1))
-              a_pgacr(i, k) = a_pgacr(i, k) - dtcld*a_qrs(i, k, 1)
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_pgacr(i, k)/dtcld
-              a_pgacr(i, k) = 0.0_8
-            END IF
-          ELSE
-            GOTO 100
-          END IF
-        ELSE
-          IF (branch .NE. 2) THEN
-            a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_pgacr(i, k)/dtcld
+            a_pgacr1 = a_pgacr(i, k)
             a_pgacr(i, k) = 0.0_8
+          ELSE
+            a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_pgacr(i, k)/dtcld
+            a_pgacr(i, k) = 0.0_8
+            a_pgacr1 = 0.0_8
           END IF
-          a_xlf = 0.0_8
+        ELSE IF (branch .EQ. 2) THEN
+          a_pgacr1 = a_pgacr(i, k)
+          a_pgacr(i, k) = 0.0_8
+        ELSE
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_pgacr(i, k)/dtcld
+          a_pgacr(i, k) = 0.0_8
+          a_pgacr1 = 0.0_8
         END IF
-        CALL POPCONTROL1B(branch)
-        IF (branch .EQ. 0) a_pgacr(i, k) = 0.0_8
-        d = den(i, k)**(3./4.)*qrs(i, k, 1)*qrs(i, k, 3)**(3./4.)
-        a_abs4 = (pgacr_b*b+pgacr_c*c+pgacr_d*d)*pgacr_a*a_pgacr(i, k)
-        a_temp1 = abs4*pgacr_a*a_pgacr(i, k)
-        a_pgacr(i, k) = 0.0_8
+        a_abs4 = (pgacr_b*b+pgacr_c*c+pgacr_d*d)*pgacr_a*a_pgacr1
+        a_temp1 = abs4*pgacr_a*a_pgacr1
         a_b = pgacr_b*a_temp1
         a_c = pgacr_c*a_temp1
         a_d = pgacr_d*a_temp1
@@ -6979,126 +8163,189 @@ CONTAINS
         END IF
         CALL POPREAL8(d)
         temp9 = 3./4.
+        temp8 = max34**temp9
         temp7 = 3./4.
-        temp6 = den(i, k)**temp7
-        a_temp4 = qrs(i, k, 3)**temp9*a_d
-        IF (.NOT.(qrs(i, k, 3) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. &
-&           temp9 .NE. INT(temp9)))) a_qrs(i, k, 3) = a_qrs(i, k, 3) + &
-&           temp9*qrs(i, k, 3)**(temp9-1)*temp6*qrs(i, k, 1)*a_d
         IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
 &           temp7 .NE. INT(temp7)))) a_den(i, k) = a_den(i, k) + temp7*&
-&           den(i, k)**(temp7-1)*qrs(i, k, 1)*a_temp4
-        a_qrs(i, k, 1) = a_qrs(i, k, 1) + temp6*a_temp4
+&           den(i, k)**(temp7-1)*max17*temp8*a_d
+        a_temp2 = den(i, k)**temp7*a_d
+        a_max17 = temp8*a_temp2
+        IF (max34 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT&
+&           (temp9))) THEN
+          a_max34 = 0.0_8
+        ELSE
+          a_max34 = temp9*max34**(temp9-1)*max17*a_temp2
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max34)
+        ELSE
+          CALL POPREAL8(max34)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max34
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max17)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max17
+        ELSE
+          CALL POPREAL8(max17)
+        END IF
         CALL POPREAL8(c)
-        temp9 = SQRT(qrs(i, k, 3))
-        temp8 = 3./4.
-        temp7 = den(i, k)**temp8
-        temp6 = 5./4.
-        IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. &
-&           temp6 .NE. INT(temp6)))) a_qrs(i, k, 1) = a_qrs(i, k, 1) + &
-&           temp6*qrs(i, k, 1)**(temp6-1)*temp7*temp9*a_c
-        a_temp5 = qrs(i, k, 1)**temp6*a_c
-        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
-&           temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8*&
-&           den(i, k)**(temp8-1)*temp9*a_temp5
-        IF (.NOT.qrs(i, k, 3) .EQ. 0.0_8) a_qrs(i, k, 3) = a_qrs(i, k, 3&
-&           ) + temp7*a_temp5/(2.0*temp9)
+        temp9 = SQRT(max33)
+        temp8 = 5./4.
+        temp7 = max16**temp8
+        temp6 = 3./4.
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. &
+&           temp6 .NE. INT(temp6)))) a_den(i, k) = a_den(i, k) + temp6*&
+&           den(i, k)**(temp6-1)*temp7*temp9*a_c
+        a_temp6 = den(i, k)**temp6*a_c
+        IF (max16 .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8 .NE. INT&
+&           (temp8))) THEN
+          a_max16 = 0.0_8
+        ELSE
+          a_max16 = temp8*max16**(temp8-1)*temp9*a_temp6
+        END IF
+        IF (max33 .EQ. 0.0_8) THEN
+          a_max33 = 0.0_8
+        ELSE
+          a_max33 = temp7*a_temp6/(2.0*temp9)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max33)
+        ELSE
+          CALL POPREAL8(max33)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max33
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max16)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max16
+        ELSE
+          CALL POPREAL8(max16)
+        END IF
         CALL POPREAL8(b)
-        temp9 = SQRT(qrs(i, k, 3))
+        temp9 = SQRT(max32)
         temp8 = SQRT(temp9)
         temp7 = 3./2.
-        temp6 = qrs(i, k, 1)**temp7
+        temp6 = max15**temp7
         temp5 = 3./4.
         temp4 = den(i, k)**temp5
         IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
 &           temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5*&
 &           den(i, k)**(temp5-1)*temp6*temp8*a_b
-        IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
-&           temp7 .NE. INT(temp7)))) a_qrs(i, k, 1) = a_qrs(i, k, 1) + &
-&           temp7*qrs(i, k, 1)**(temp7-1)*temp4*temp8*a_b
-        IF (.NOT.(qrs(i, k, 3) .EQ. 0.0_8 .OR. temp9 .EQ. 0.0_8)) a_qrs(&
-&         i, k, 3) = a_qrs(i, k, 3) + temp4*temp6*a_b/(2.0**2*temp9*&
-&           temp8)
+        IF (max15 .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. temp7 .NE. INT&
+&           (temp7))) THEN
+          a_max15 = 0.0_8
+        ELSE
+          a_max15 = temp7*max15**(temp7-1)*temp4*temp8*a_b
+        END IF
+        IF (max32 .EQ. 0.0_8 .OR. temp9 .EQ. 0.0_8) THEN
+          a_max32 = 0.0_8
+        ELSE
+          a_max32 = temp4*temp6*a_b/(2.0**2*temp9*temp8)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max32)
+        ELSE
+          CALL POPREAL8(max32)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max32
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max15)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max15
+        ELSE
+          CALL POPREAL8(max15)
+        END IF
         temp9 = bvtg/4.
         temp8 = (bvtg-2.)/4.
         IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
 &           temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8*&
-&           den(i, k)**(temp8-1)*qrs(i, k, 3)**temp9*vt2g_a*a_vt2g
-        IF (.NOT.(qrs(i, k, 3) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. &
-&           temp9 .NE. INT(temp9)))) a_qrs(i, k, 3) = a_qrs(i, k, 3) + &
-&           temp9*qrs(i, k, 3)**(temp9-1)*den(i, k)**temp8*vt2g_a*a_vt2g
+&           den(i, k)**(temp8-1)*max14**temp9*vt2g_a*a_vt2g
+        IF (max14 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT&
+&           (temp9))) THEN
+          a_max14 = 0.0_8
+        ELSE
+          a_max14 = temp9*max14**(temp9-1)*den(i, k)**temp8*vt2g_a*&
+&           a_vt2g
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max14)
+        ELSE
+          CALL POPREAL8(max14)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max14
+        END IF
         temp9 = bvtr/4.
         temp8 = (bvtr-2.)/4.
         IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
 &           temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8*&
-&           den(i, k)**(temp8-1)*qrs(i, k, 1)**temp9*vt2r_a*a_vt2r
-        IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. &
-&           temp9 .NE. INT(temp9)))) a_qrs(i, k, 1) = a_qrs(i, k, 1) + &
-&           temp9*qrs(i, k, 1)**(temp9-1)*den(i, k)**temp8*vt2r_a*a_vt2r
+&           den(i, k)**(temp8-1)*max13**temp9*vt2r_a*a_vt2r
+        IF (max13 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT&
+&           (temp9))) THEN
+          a_max13 = 0.0_8
+        ELSE
+          a_max13 = temp9*max13**(temp9-1)*den(i, k)**temp8*vt2r_a*&
+&           a_vt2r
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max13)
+        ELSE
+          CALL POPREAL8(max13)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max13
+        END IF
         CALL POPCONTROL1B(branch)
         IF (branch .NE. 0) a_xlf = 0.0_8
         CALL POPREAL8(xlf)
         a_xl(i, k) = a_xl(i, k) - a_xlf
         CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
         a_xl(i, k) = 0.0_8
-        CALL POPREAL8(cpm(i, k))
-        CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-        a_cpm(i, k) = 0.0_8
- 100    CALL POPCONTROL2B(branch)
-        IF (branch .LT. 2) THEN
-          IF (branch .EQ. 0) THEN
-            a_temp1 = dtcld*a_t(i, k)/cpm(i, k)
-            CALL POPREAL8(psacr(i, k))
-            a_psacr(i, k) = xlf*a_temp1
-            a_xlf = psacr(i, k)*a_temp1
-            a_cpm(i, k) = a_cpm(i, k) - psacr(i, k)*xlf*a_temp1/cpm(i, k&
-&             )
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              CALL POPREAL8(qrs(i, k, 3))
-              a_qrs(i, k, 3) = 0.0_8
-              a_x2 = 0.0_8
-            ELSE
-              CALL POPREAL8(qrs(i, k, 3))
-              a_x2 = a_qrs(i, k, 3)
-              a_qrs(i, k, 3) = 0.0_8
-            END IF
-            a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_x2
-            a_psacr(i, k) = a_psacr(i, k) + (1-delta2)*dtcld*a_x2
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              CALL POPREAL8(qrs(i, k, 2))
-              a_qrs(i, k, 2) = 0.0_8
-              a_x1 = 0.0_8
-            ELSE
-              CALL POPREAL8(qrs(i, k, 2))
-              a_x1 = a_qrs(i, k, 2)
-              a_qrs(i, k, 2) = 0.0_8
-            END IF
-            a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_x1
-            a_psacr(i, k) = a_psacr(i, k) + delta2*dtcld*a_x1
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              CALL POPREAL8(qrs(i, k, 1))
-              a_qrs(i, k, 1) = 0.0_8
-            ELSE
-              CALL POPREAL8(qrs(i, k, 1))
-              a_psacr(i, k) = a_psacr(i, k) - dtcld*a_qrs(i, k, 1)
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_psacr(i, k)/dtcld
-              a_psacr(i, k) = 0.0_8
-            END IF
-          ELSE
-            GOTO 110
-          END IF
+        CALL POPREAL8(fsupcol)
+        a_supcol = 0.0_8
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't0')
+        CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(psacr(i, k))
+        temp8 = psacr(i, k)/cpm(i, k)
+        a_temp1 = dtcld*a_t(i, k)
+        a_fsupcol = xlf*temp8*a_temp1 - psacr(i, k)*a_psacr(i, k)
+        a_xlf = fsupcol*temp8*a_temp1
+        a_temp5 = fsupcol*xlf*a_temp1/cpm(i, k)
+        a_psacr(i, k) = (1-fsupcol)*a_psacr(i, k) + a_temp5
+        a_cpm(i, k) = a_cpm(i, k) - temp8*a_temp5
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 3) = 0.0_8
+          a_x2 = 0.0_8
         ELSE
-          IF (branch .NE. 2) THEN
-            a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_psacr(i, k)/dtcld
-            a_psacr(i, k) = 0.0_8
-          END IF
-          a_xlf = 0.0_8
+          a_x2 = a_qrs(i, k, 3)
+          a_qrs(i, k, 3) = 0.0_8
+        END IF
+        a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_x2
+        a_temp1 = (1-delta2)*dtcld*a_x2
+        a_fsupcol = a_fsupcol + psacr(i, k)*a_temp1
+        a_psacr(i, k) = a_psacr(i, k) + fsupcol*a_temp1
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 2) = 0.0_8
+          a_x1 = 0.0_8
+        ELSE
+          a_x1 = a_qrs(i, k, 2)
+          a_qrs(i, k, 2) = 0.0_8
+        END IF
+        a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_x1
+        a_temp1 = delta2*dtcld*a_x1
+        a_fsupcol = a_fsupcol + psacr(i, k)*a_temp1
+        a_psacr(i, k) = a_psacr(i, k) + fsupcol*a_temp1
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 1) = 0.0_8
+        ELSE
+          a_fsupcol = a_fsupcol - psacr(i, k)*dtcld*a_qrs(i, k, 1)
+          a_psacr(i, k) = a_psacr(i, k) - fsupcol*dtcld*a_qrs(i, k, 1)
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
@@ -7108,12 +8355,29 @@ CONTAINS
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) a_psacr(i, k) = 0.0_8
-        a_temp1 = (psacr_b*b+psacr_c*c+psacr_d*d)*psacr_a*a_psacr(i, k)
-        a_temp4 = a*abs2*psacr_a*a_psacr(i, k)
-        a_psacr(i, k) = 0.0_8
-        a_b = psacr_b*a_temp4
-        a_c = psacr_c*a_temp4
-        a_d = psacr_d*a_temp4
+        CALL POPCONTROL2B(branch)
+        IF (branch .LT. 2) THEN
+          IF (branch .EQ. 0) THEN
+            a_psacr1 = a_psacr(i, k)
+            a_psacr(i, k) = 0.0_8
+          ELSE
+            a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_psacr(i, k)/dtcld
+            a_psacr(i, k) = 0.0_8
+            a_psacr1 = 0.0_8
+          END IF
+        ELSE IF (branch .EQ. 2) THEN
+          a_psacr1 = a_psacr(i, k)
+          a_psacr(i, k) = 0.0_8
+        ELSE
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_psacr(i, k)/dtcld
+          a_psacr(i, k) = 0.0_8
+          a_psacr1 = 0.0_8
+        END IF
+        a_temp1 = (psacr_b*b+psacr_c*c+psacr_d*d)*psacr_a*a_psacr1
+        a_temp5 = a*abs2*psacr_a*a_psacr1
+        a_b = psacr_b*a_temp5
+        a_c = psacr_c*a_temp5
+        a_d = psacr_d*a_temp5
         a_a = abs2*a_temp1
         a_abs2 = a*a_temp1
         CALL POPCONTROL1B(branch)
@@ -7128,132 +8392,208 @@ CONTAINS
         END IF
         CALL POPREAL8(d)
         temp9 = 3./4.
-        temp8 = qrs(i, k, 2)**temp9
+        temp8 = max44**temp9
         temp7 = 3./4.
         temp6 = den(i, k)**temp7
-        temp5 = temp6*qrs(i, k, 1)
-        temp4 = -(3.*alpha*max10/4.)
-        a_max10 = -(alpha*3.*EXP(temp4)*temp5*temp8*a_d/4.)
-        a_temp3 = EXP(temp4)*a_d
+        temp5 = -(3.*alpha*max12/4.)
+        a_max12 = -(alpha*3.*EXP(temp5)*temp6*max31*temp8*a_d/4.)
+        a_temp7 = EXP(temp5)*a_d
         IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
 &           temp7 .NE. INT(temp7)))) a_den(i, k) = a_den(i, k) + temp7*&
-&           den(i, k)**(temp7-1)*qrs(i, k, 1)*temp8*a_temp3
-        a_qrs(i, k, 1) = a_qrs(i, k, 1) + temp6*temp8*a_temp3
-        IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. &
-&           temp9 .NE. INT(temp9)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) + &
-&           temp9*qrs(i, k, 2)**(temp9-1)*temp5*a_temp3
-        CALL POPCONTROL1B(branch)
-        IF (branch .EQ. 0) THEN
-          CALL POPREAL8(max10)
-          a_y10 = a_max10
+&           den(i, k)**(temp7-1)*max31*temp8*a_temp7
+        a_max31 = temp8*temp6*a_temp7
+        IF (max44 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT&
+&           (temp9))) THEN
+          a_max44 = 0.0_8
         ELSE
-          CALL POPREAL8(max10)
-          a_y10 = 0.0_8
+          a_max44 = temp9*max44**(temp9-1)*max31*temp6*a_temp7
         END IF
         CALL POPCONTROL1B(branch)
-        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y10
-        CALL POPREAL8(c)
-        temp9 = SQRT(qrs(i, k, 2))
-        temp8 = 3./4.
-        temp7 = den(i, k)**temp8
-        temp5 = 5./4.
-        temp4 = qrs(i, k, 1)**temp5
-        temp3 = -(alpha*max9/2.)
-        temp2 = EXP(temp3)
-        a_temp2 = temp7*temp9*a_c
-        a_temp0 = temp2*temp4*a_c
-        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
-&           temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8*&
-&           den(i, k)**(temp8-1)*temp9*a_temp0
-        IF (.NOT.qrs(i, k, 2) .EQ. 0.0_8) a_qrs(i, k, 2) = a_qrs(i, k, 2&
-&           ) + temp7*a_temp0/(2.0*temp9)
-        a_max9 = -(alpha*EXP(temp3)*temp4*a_temp2/2.)
-        IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
-&           temp5 .NE. INT(temp5)))) a_qrs(i, k, 1) = a_qrs(i, k, 1) + &
-&           temp5*qrs(i, k, 1)**(temp5-1)*temp2*a_temp2
-        CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          CALL POPREAL8(max9)
-          a_y9 = a_max9
+          CALL POPREAL8(max44)
         ELSE
-          CALL POPREAL8(max9)
-          a_y9 = 0.0_8
+          CALL POPREAL8(max44)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max44
         END IF
         CALL POPCONTROL1B(branch)
-        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y9
-        CALL POPREAL8(b)
-        temp9 = SQRT(qrs(i, k, 2))
-        temp8 = SQRT(temp9)
-        temp7 = -(alpha*max8/4.)
-        temp6 = EXP(temp7)
-        temp4 = 3./2.
-        temp3 = qrs(i, k, 1)**temp4
-        temp2 = 3./4.
-        temp0 = den(i, k)**temp2
-        a_temp5 = temp6*temp8*a_b
-        a_temp = temp0*temp3*a_b
-        a_max8 = -(alpha*EXP(temp7)*temp8*a_temp/4.)
-        IF (.NOT.(qrs(i, k, 2) .EQ. 0.0_8 .OR. temp9 .EQ. 0.0_8)) a_qrs(&
-&         i, k, 2) = a_qrs(i, k, 2) + temp6*a_temp/(2.0**2*temp9*temp8)
-        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
-&           temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + temp2*&
-&           den(i, k)**(temp2-1)*temp3*a_temp5
-        IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. &
-&           temp4 .NE. INT(temp4)))) a_qrs(i, k, 1) = a_qrs(i, k, 1) + &
-&           temp4*qrs(i, k, 1)**(temp4-1)*temp0*a_temp5
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max31)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max31
+        ELSE
+          CALL POPREAL8(max31)
+        END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          CALL POPREAL8(max8)
-          a_y8 = a_max8
-        ELSE
-          CALL POPREAL8(max8)
+          CALL POPREAL8(max12)
           a_y8 = 0.0_8
+        ELSE
+          CALL POPREAL8(max12)
+          a_y8 = a_max12
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y8
-        CALL POPREAL8(a)
-        a_max7 = alpha*EXP(alpha*max7)*a_a
+        CALL POPREAL8(c)
+        temp9 = SQRT(max43)
+        temp8 = 5./4.
+        temp7 = max30**temp8
+        temp5 = 3./4.
+        temp4 = den(i, k)**temp5
+        temp3 = -(alpha*max11/2.)
+        temp2 = EXP(temp3)
+        a_temp2 = temp7*temp9*a_c
+        a_temp0 = temp2*temp4*a_c
+        IF (max30 .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8 .NE. INT&
+&           (temp8))) THEN
+          a_max30 = 0.0_8
+        ELSE
+          a_max30 = temp8*max30**(temp8-1)*temp9*a_temp0
+        END IF
+        IF (max43 .EQ. 0.0_8) THEN
+          a_max43 = 0.0_8
+        ELSE
+          a_max43 = temp7*a_temp0/(2.0*temp9)
+        END IF
+        a_max11 = -(alpha*EXP(temp3)*temp4*a_temp2/2.)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
+&           temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5*&
+&           den(i, k)**(temp5-1)*temp2*a_temp2
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          CALL POPREAL8(max7)
-          a_y7 = a_max7
+          CALL POPREAL8(max43)
         ELSE
-          CALL POPREAL8(max7)
+          CALL POPREAL8(max43)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max43
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max30)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max30
+        ELSE
+          CALL POPREAL8(max30)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max11)
           a_y7 = 0.0_8
+        ELSE
+          CALL POPREAL8(max11)
+          a_y7 = a_max11
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y7
-        temp9 = -(alpha*bvts*max6/4.)
-        temp7 = bvts/4.
-        temp6 = qrs(i, k, 2)**temp7
-        temp5 = (bvts-2.)/4.
-        temp4 = den(i, k)**temp5
-        a_temp4 = EXP(temp9)*vt2s_a*a_vt2s
-        a_max6 = -(alpha*bvts*EXP(temp9)*temp4*temp6*vt2s_a*a_vt2s/4.)
-        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
-&           temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5*&
-&           den(i, k)**(temp5-1)*temp6*a_temp4
-        IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
-&           temp7 .NE. INT(temp7)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) + &
-&           temp7*qrs(i, k, 2)**(temp7-1)*temp4*a_temp4
+        CALL POPREAL8(b)
+        temp9 = SQRT(max42)
+        temp8 = SQRT(temp9)
+        temp7 = -(alpha*max10/4.)
+        temp6 = EXP(temp7)
+        temp4 = 3./2.
+        temp3 = max29**temp4
+        temp2 = 3./4.
+        temp0 = den(i, k)**temp2
+        a_temp6 = temp6*temp8*a_b
+        a_temp = temp0*temp3*a_b
+        a_max10 = -(alpha*EXP(temp7)*temp8*a_temp/4.)
+        IF (max42 .EQ. 0.0_8 .OR. temp9 .EQ. 0.0_8) THEN
+          a_max42 = 0.0_8
+        ELSE
+          a_max42 = temp6*a_temp/(2.0**2*temp9*temp8)
+        END IF
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
+&           temp2 .NE. INT(temp2)))) a_den(i, k) = a_den(i, k) + temp2*&
+&           den(i, k)**(temp2-1)*temp3*a_temp6
+        IF (max29 .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. temp4 .NE. INT&
+&           (temp4))) THEN
+          a_max29 = 0.0_8
+        ELSE
+          a_max29 = temp4*max29**(temp4-1)*temp0*a_temp6
+        END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          CALL POPREAL8(max6)
-          a_y6 = a_max6
+          CALL POPREAL8(max42)
         ELSE
-          CALL POPREAL8(max6)
+          CALL POPREAL8(max42)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max42
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max29)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max29
+        ELSE
+          CALL POPREAL8(max29)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max10)
           a_y6 = 0.0_8
+        ELSE
+          CALL POPREAL8(max10)
+          a_y6 = a_max10
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y6
+        CALL POPREAL8(a)
+        a_max9 = alpha*EXP(alpha*max9)*a_a
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max9)
+          a_y5 = a_max9
+        ELSE
+          CALL POPREAL8(max9)
+          a_y5 = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y5
+        temp9 = -(alpha*bvts*max28/4.)
+        temp7 = bvts/4.
+        temp6 = max8**temp7
+        temp5 = (bvts-2.)/4.
+        temp4 = den(i, k)**temp5
+        a_temp5 = EXP(temp9)*vt2s_a*a_vt2s
+        a_max28 = -(alpha*bvts*EXP(temp9)*temp4*temp6*vt2s_a*a_vt2s/4.)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
+&           temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5*&
+&           den(i, k)**(temp5-1)*temp6*a_temp5
+        IF (max8 .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. temp7 .NE. INT(&
+&           temp7))) THEN
+          a_max8 = 0.0_8
+        ELSE
+          a_max8 = temp7*max8**(temp7-1)*temp4*a_temp5
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max28)
+          a_y14 = a_max28
+        ELSE
+          CALL POPREAL8(max28)
+          a_y14 = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y14
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max8)
+        ELSE
+          CALL POPREAL8(max8)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max8
+        END IF
         temp9 = bvtr/4.
         temp8 = (bvtr-2.)/4.
         IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
 &           temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8*&
-&           den(i, k)**(temp8-1)*qrs(i, k, 1)**temp9*vt2r_a*a_vt2r
-        IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. &
-&           temp9 .NE. INT(temp9)))) a_qrs(i, k, 1) = a_qrs(i, k, 1) + &
-&           temp9*qrs(i, k, 1)**(temp9-1)*den(i, k)**temp8*vt2r_a*a_vt2r
+&           den(i, k)**(temp8-1)*max7**temp9*vt2r_a*a_vt2r
+        IF (max7 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT(&
+&           temp9))) THEN
+          a_max7 = 0.0_8
+        ELSE
+          a_max7 = temp9*max7**(temp9-1)*den(i, k)**temp8*vt2r_a*a_vt2r
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max7)
+        ELSE
+          CALL POPREAL8(max7)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max7
+        END IF
         CALL POPCONTROL1B(branch)
         IF (branch .NE. 0) a_xlf = 0.0_8
         CALL POPREAL8(xlf)
@@ -7262,184 +8602,260 @@ CONTAINS
         a_xl(i, k) = 0.0_8
         CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
         a_cpm(i, k) = 0.0_8
- 110    CALL POPCONTROL1B(branch)
+        a_pracs(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_pracs(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 3))
-            a_qrs(i, k, 3) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 3))
-            a_pracs(i, k) = a_pracs(i, k) + dtcld*a_qrs(i, k, 3)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_pracs(i, k) = a_pracs(i, k) - dtcld*a_qrs(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_pracs(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_pracs(i, k)/dtcld
-            a_pracs(i, k) = 0.0_8
-            a_pracs1 = 0.0_8
-          ELSE
-            a_pracs1 = a_pracs(i, k)
-            a_pracs(i, k) = 0.0_8
-          END IF
-          a_temp1 = (pracs_b*b+pracs_c*c+pracs_d*d)*pracs_a*a_pracs1
-          a_temp4 = a*abs0*pracs_a*a_pracs1
-          a_b = pracs_b*a_temp4
-          a_c = pracs_c*a_temp4
-          a_d = pracs_d*a_temp4
-          a_a = abs0*a_temp1
-          a_abs0 = a*a_temp1
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(abs0)
-            a_vt2r = a_abs0
-            a_vt2s = -a_abs0
-          ELSE
-            CALL POPREAL8(abs0)
-            a_vt2s = a_abs0
-            a_vt2r = -a_abs0
-          END IF
-          CALL POPREAL8(d)
-          temp9 = 3./4.
-          temp8 = qrs(i, k, 1)**temp9
-          temp7 = EXP(-(alpha*max5))
-          temp5 = 3./4.
-          temp4 = den(i, k)**temp5
-          a_temp2 = temp7*temp8*a_d
-          a_temp3 = temp4*qrs(i, k, 2)*a_d
-          a_max5 = -(alpha*EXP(-(alpha*max5))*temp8*a_temp3)
-          IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR.&
-&             temp9 .NE. INT(temp9)))) a_qrs(i, k, 1) = a_qrs(i, k, 1) +&
-&             temp9*qrs(i, k, 1)**(temp9-1)*temp7*a_temp3
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
-&             temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5&
-&             *den(i, k)**(temp5-1)*qrs(i, k, 2)*a_temp2
-          a_qrs(i, k, 2) = a_qrs(i, k, 2) + temp4*a_temp2
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max5)
-            a_y5 = a_max5
-          ELSE
-            CALL POPREAL8(max5)
-            a_y5 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y5
-          CALL POPREAL8(c)
-          temp9 = SQRT(qrs(i, k, 1))
-          temp8 = 3./4.
-          temp7 = den(i, k)**temp8
-          temp5 = 5./4.
-          temp4 = qrs(i, k, 2)**temp5
-          temp3 = -(5.*alpha*max4/4.)
-          temp2 = EXP(temp3)
-          a_temp2 = temp7*temp9*a_c
-          a_temp0 = temp2*temp4*a_c
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
-&             temp8 .NE. INT(temp8)))) a_den(i, k) = a_den(i, k) + temp8&
-&             *den(i, k)**(temp8-1)*temp9*a_temp0
-          IF (.NOT.qrs(i, k, 1) .EQ. 0.0_8) a_qrs(i, k, 1) = a_qrs(i, k&
-&             , 1) + temp7*a_temp0/(2.0*temp9)
-          a_max4 = -(alpha*5.*EXP(temp3)*temp4*a_temp2/4.)
-          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR.&
-&             temp5 .NE. INT(temp5)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) +&
-&             temp5*qrs(i, k, 2)**(temp5-1)*temp2*a_temp2
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max4)
-            a_y4 = a_max4
-          ELSE
-            CALL POPREAL8(max4)
-            a_y4 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y4
-          CALL POPREAL8(b)
-          temp5 = SQRT(qrs(i, k, 1))
-          temp4 = SQRT(temp5)
-          temp3 = -(3.*alpha*max3/2.)
-          temp2 = EXP(temp3)
-          temp = 3./2.
-          temp6 = qrs(i, k, 2)**temp
-          temp7 = 3./4.
-          temp8 = den(i, k)**temp7
-          a_temp0 = temp2*temp4*a_b
-          a_temp1 = temp8*temp6*a_b
-          a_max3 = -(alpha*3.*EXP(temp3)*temp4*a_temp1/2.)
-          IF (.NOT.(qrs(i, k, 1) .EQ. 0.0_8 .OR. temp5 .EQ. 0.0_8)) &
-&           a_qrs(i, k, 1) = a_qrs(i, k, 1) + temp2*a_temp1/(2.0**2*&
-&             temp5*temp4)
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
-&             temp7 .NE. INT(temp7)))) a_den(i, k) = a_den(i, k) + temp7&
-&             *den(i, k)**(temp7-1)*temp6*a_temp0
-          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp .EQ. 0.0_8 .OR. &
-&             temp .NE. INT(temp)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) + &
-&             temp*qrs(i, k, 2)**(temp-1)*temp8*a_temp0
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max3)
-            a_y3 = a_max3
-          ELSE
-            CALL POPREAL8(max3)
-            a_y3 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y3
-          CALL POPREAL8(a)
-          a_max2 = alpha*EXP(alpha*max2)*a_a
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max2)
-            a_y2 = a_max2
-          ELSE
-            CALL POPREAL8(max2)
-            a_y2 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y2
-          temp0 = -(alpha*bvts*max1/4.)
-          temp2 = bvts/4.
-          temp3 = qrs(i, k, 2)**temp2
-          temp4 = (bvts-2.)/4.
-          temp5 = den(i, k)**temp4
-          a_temp = EXP(temp0)*vt2s_a*a_vt2s
-          a_max1 = -(alpha*bvts*EXP(temp0)*temp5*temp3*vt2s_a*a_vt2s/4.)
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. &
-&             temp4 .NE. INT(temp4)))) a_den(i, k) = a_den(i, k) + temp4&
-&             *den(i, k)**(temp4-1)*temp3*a_temp
-          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR.&
-&             temp2 .NE. INT(temp2)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) +&
-&             temp2*qrs(i, k, 2)**(temp2-1)*temp5*a_temp
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max1)
-            a_y1 = a_max1
-          ELSE
-            CALL POPREAL8(max1)
-            a_y1 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y1
-          temp = bvtr/4.
-          temp0 = (bvtr-2.)/4.
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp0 .EQ. 0.0_8 .OR. &
-&             temp0 .NE. INT(temp0)))) a_den(i, k) = a_den(i, k) + temp0&
-&             *den(i, k)**(temp0-1)*qrs(i, k, 1)**temp*vt2r_a*a_vt2r
-          IF (.NOT.(qrs(i, k, 1) .LE. 0.0_8 .AND. (temp .EQ. 0.0_8 .OR. &
-&             temp .NE. INT(temp)))) a_qrs(i, k, 1) = a_qrs(i, k, 1) + &
-&             temp*qrs(i, k, 1)**(temp-1)*den(i, k)**temp0*vt2r_a*a_vt2r
+          a_qrs(i, k, 3) = 0.0_8
+        ELSE
+          a_pracs(i, k) = a_pracs(i, k) + dtcld*a_qrs(i, k, 3)
         END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 2) = 0.0_8
+        ELSE
+          a_pracs(i, k) = a_pracs(i, k) - dtcld*a_qrs(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pracs(i, k) = 0.0_8
+        CALL POPREAL8(pracs(i, k))
+        a_fsupcol = a_fsupcol + pracs(i, k)*a_pracs(i, k)
+        a_pracs(i, k) = fsupcol*a_pracs(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_pracs(i, k)/dtcld
+          a_pracs(i, k) = 0.0_8
+          a_pracs1 = 0.0_8
+        ELSE
+          a_pracs1 = a_pracs(i, k)
+          a_pracs(i, k) = 0.0_8
+        END IF
+        a_temp1 = (pracs_b*b+pracs_c*c+pracs_d*d)*pracs_a*a_pracs1
+        a_temp5 = a*abs0*pracs_a*a_pracs1
+        a_b = pracs_b*a_temp5
+        a_c = pracs_c*a_temp5
+        a_d = pracs_d*a_temp5
+        a_a = abs0*a_temp1
+        a_abs0 = a*a_temp1
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(abs0)
+          a_vt2r = a_abs0
+          a_vt2s = -a_abs0
+        ELSE
+          CALL POPREAL8(abs0)
+          a_vt2s = a_abs0
+          a_vt2r = -a_abs0
+        END IF
+        CALL POPREAL8(d)
+        temp9 = 3./4.
+        temp8 = max41**temp9
+        temp6 = 3./4.
+        temp5 = den(i, k)**temp6
+        temp4 = EXP(-(alpha*max6))
+        a_temp3 = max27*temp8*a_d
+        a_temp4 = temp4*temp5*a_d
+        a_max27 = temp8*a_temp4
+        IF (max41 .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 .OR. temp9 .NE. INT&
+&           (temp9))) THEN
+          a_max41 = 0.0_8
+        ELSE
+          a_max41 = temp9*max41**(temp9-1)*max27*a_temp4
+        END IF
+        a_max6 = -(alpha*EXP(-(alpha*max6))*temp5*a_temp3)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. &
+&           temp6 .NE. INT(temp6)))) a_den(i, k) = a_den(i, k) + temp6*&
+&           den(i, k)**(temp6-1)*temp4*a_temp3
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max41)
+        ELSE
+          CALL POPREAL8(max41)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max41
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max27)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max27
+        ELSE
+          CALL POPREAL8(max27)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max6)
+          a_y4 = 0.0_8
+        ELSE
+          CALL POPREAL8(max6)
+          a_y4 = a_max6
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y4
+        CALL POPREAL8(c)
+        temp9 = SQRT(max40)
+        temp8 = 5./4.
+        temp7 = max26**temp8
+        temp5 = 3./4.
+        temp4 = den(i, k)**temp5
+        temp3 = -(5.*alpha*max5/4.)
+        temp2 = EXP(temp3)
+        a_temp2 = temp7*temp9*a_c
+        a_temp0 = temp2*temp4*a_c
+        IF (max26 .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8 .NE. INT&
+&           (temp8))) THEN
+          a_max26 = 0.0_8
+        ELSE
+          a_max26 = temp8*max26**(temp8-1)*temp9*a_temp0
+        END IF
+        IF (max40 .EQ. 0.0_8) THEN
+          a_max40 = 0.0_8
+        ELSE
+          a_max40 = temp7*a_temp0/(2.0*temp9)
+        END IF
+        a_max5 = -(alpha*5.*EXP(temp3)*temp4*a_temp2/4.)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
+&           temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5*&
+&           den(i, k)**(temp5-1)*temp2*a_temp2
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max40)
+        ELSE
+          CALL POPREAL8(max40)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max40
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max26)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max26
+        ELSE
+          CALL POPREAL8(max26)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max5)
+          a_y3 = 0.0_8
+        ELSE
+          CALL POPREAL8(max5)
+          a_y3 = a_max5
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y3
+        CALL POPREAL8(b)
+        temp5 = SQRT(max39)
+        temp4 = SQRT(temp5)
+        temp3 = -(3.*alpha*max4/2.)
+        temp2 = EXP(temp3)
+        temp = 3./2.
+        temp6 = max25**temp
+        temp7 = 3./4.
+        temp8 = den(i, k)**temp7
+        a_temp0 = temp2*temp4*a_b
+        a_temp1 = temp8*temp6*a_b
+        a_max4 = -(alpha*3.*EXP(temp3)*temp4*a_temp1/2.)
+        IF (max39 .EQ. 0.0_8 .OR. temp5 .EQ. 0.0_8) THEN
+          a_max39 = 0.0_8
+        ELSE
+          a_max39 = temp2*a_temp1/(2.0**2*temp5*temp4)
+        END IF
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
+&           temp7 .NE. INT(temp7)))) a_den(i, k) = a_den(i, k) + temp7*&
+&           den(i, k)**(temp7-1)*temp6*a_temp0
+        IF (max25 .LE. 0.0_8 .AND. (temp .EQ. 0.0_8 .OR. temp .NE. INT(&
+&           temp))) THEN
+          a_max25 = 0.0_8
+        ELSE
+          a_max25 = temp*max25**(temp-1)*temp8*a_temp0
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max39)
+        ELSE
+          CALL POPREAL8(max39)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max39
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max25)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max25
+        ELSE
+          CALL POPREAL8(max25)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max4)
+          a_y2 = 0.0_8
+        ELSE
+          CALL POPREAL8(max4)
+          a_y2 = a_max4
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y2
+        CALL POPREAL8(a)
+        a_max3 = alpha*EXP(alpha*max3)*a_a
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max3)
+          a_y1 = a_max3
+        ELSE
+          CALL POPREAL8(max3)
+          a_y1 = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y1
+        temp0 = -(alpha*bvts*max24/4.)
+        temp2 = bvts/4.
+        temp3 = max2**temp2
+        temp4 = (bvts-2.)/4.
+        temp5 = den(i, k)**temp4
+        a_temp = EXP(temp0)*vt2s_a*a_vt2s
+        a_max24 = -(alpha*bvts*EXP(temp0)*temp5*temp3*vt2s_a*a_vt2s/4.)
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. &
+&           temp4 .NE. INT(temp4)))) a_den(i, k) = a_den(i, k) + temp4*&
+&           den(i, k)**(temp4-1)*temp3*a_temp
+        IF (max2 .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. temp2 .NE. INT(&
+&           temp2))) THEN
+          a_max2 = 0.0_8
+        ELSE
+          a_max2 = temp2*max2**(temp2-1)*temp5*a_temp
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max24)
+          a_y13 = a_max24
+        ELSE
+          CALL POPREAL8(max24)
+          a_y13 = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y13
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max2)
+        ELSE
+          CALL POPREAL8(max2)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max2
+        END IF
+        temp = bvtr/4.
+        temp0 = (bvtr-2.)/4.
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp0 .EQ. 0.0_8 .OR. &
+&           temp0 .NE. INT(temp0)))) a_den(i, k) = a_den(i, k) + temp0*&
+&           den(i, k)**(temp0-1)*max1**temp*vt2r_a*a_vt2r
+        IF (max1 .LE. 0.0_8 .AND. (temp .EQ. 0.0_8 .OR. temp .NE. INT(&
+&           temp))) THEN
+          a_max1 = 0.0_8
+        ELSE
+          a_max1 = temp*max1**(temp-1)*den(i, k)**temp0*vt2r_a*a_vt2r
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max1)
+        ELSE
+          CALL POPREAL8(max1)
+          a_qrs(i, k, 1) = a_qrs(i, k, 1) + a_max1
+        END IF
+        CALL POPREAL8(fsupcol)
+        a_supcol = 0.0_8
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't0')
         CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
       END DO
     END DO
   END SUBROUTINE A_ACCRET2
@@ -7460,9 +8876,9 @@ CONTAINS
     REAL :: acrfac1, acrfac2, acrfac3, acrfac4, pracs1, psacr1, pgacr1, &
 &   pgacs1
     INTEGER :: i, k
-    REAL :: temp1, delta2, a, b, c, d
-    INTRINSIC MIN
+    REAL :: fsupcol, ft0, fqr, fqs, fqg, temp1, delta2, a, b, c, d
     INTRINSIC MAX
+    INTRINSIC MIN
     INTRINSIC EXP
     INTRINSIC SQRT
     INTRINSIC ABS
@@ -7474,45 +8890,78 @@ CONTAINS
     REAL :: y6
     REAL :: y7
     REAL :: y8
-    REAL :: y9
-    REAL :: y10
     REAL :: x1
     REAL :: x2
     REAL :: x3
+    REAL :: x4
+    REAL :: y9
+    REAL :: y10
     REAL :: y11
     REAL :: y12
+    REAL :: x5
+    REAL :: x6
     REAL :: y13
     REAL :: y14
     REAL :: y15
-    REAL :: x4
-    REAL :: x5
-    REAL :: x6
     REAL :: x7
+    REAL :: x8
     REAL :: max1
     REAL :: max2
     REAL :: max3
     REAL :: max4
     REAL :: max5
+    REAL :: max6
     REAL :: abs0
     REAL :: abs1
-    REAL :: max6
     REAL :: max7
     REAL :: max8
     REAL :: max9
     REAL :: max10
-    REAL :: abs2
-    REAL :: abs3
-    REAL :: abs4
-    REAL :: abs5
     REAL :: max11
     REAL :: max12
+    REAL :: abs2
+    REAL :: abs3
     REAL :: max13
     REAL :: max14
     REAL :: max15
+    REAL :: max16
+    REAL :: max17
+    REAL :: abs4
+    REAL :: abs5
+    REAL :: max18
+    REAL :: max19
+    REAL :: max20
+    REAL :: max21
+    REAL :: max22
+    REAL :: max23
     REAL :: abs6
     REAL :: abs7
     REAL :: abs8
     REAL :: abs9
+    REAL :: max24
+    REAL :: max25
+    REAL :: max26
+    REAL :: max27
+    REAL :: max28
+    REAL :: max29
+    REAL :: max30
+    REAL :: max31
+    REAL :: max32
+    REAL :: max33
+    REAL :: max34
+    REAL :: max35
+    REAL :: max36
+    REAL :: max37
+    REAL :: max38
+    REAL :: max39
+    REAL :: max40
+    REAL :: max41
+    REAL :: max42
+    REAL :: max43
+    REAL :: max44
+    REAL :: max45
+    REAL :: max46
+    REAL :: max47
     DO k=kts,kte
       DO i=its,ite
 !-------------------------------------------------------------
@@ -7520,470 +8969,626 @@ CONTAINS
 !         (T<T0: S->G) pracs: min=0., max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k&
-&           , 2) .GT. qcrmin) THEN
-          vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*qrs(i, k, 1)**(bvtr/4.&
-&           )
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y1 = t0c - t(i, k)
-          ELSE
-            y1 = 90.
-          END IF
-          IF (0. .LT. y1) THEN
-            max1 = y1
-          ELSE
-            max1 = 0.
-          END IF
-          vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*qrs(i, k, 2)**(bvts/4.&
-&           )*EXP(-(alpha*bvts*max1/4.))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y2 = t0c - t(i, k)
-          ELSE
-            y2 = 90.
-          END IF
-          IF (0. .LT. y2) THEN
-            max2 = y2
-          ELSE
-            max2 = 0.
-          END IF
-          a = EXP(alpha*max2)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y3 = t0c - t(i, k)
-          ELSE
-            y3 = 90.
-          END IF
-          IF (0. .LT. y3) THEN
-            max3 = y3
-          ELSE
-            max3 = 0.
-          END IF
-          b = EXP(-(3.*alpha*max3/2.))*den(i, k)**(3./4.)*qrs(i, k, 2)**&
-&           (3./2.)*SQRT(SQRT(qrs(i, k, 1)))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y4 = t0c - t(i, k)
-          ELSE
-            y4 = 90.
-          END IF
-          IF (0. .LT. y4) THEN
-            max4 = y4
-          ELSE
-            max4 = 0.
-          END IF
-          c = EXP(-(5.*alpha*max4/4.))*den(i, k)**(3./4.)*qrs(i, k, 2)**&
-&           (5./4.)*SQRT(qrs(i, k, 1))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y5 = t0c - t(i, k)
-          ELSE
-            y5 = 90.
-          END IF
-          IF (0. .LT. y5) THEN
-            max5 = y5
-          ELSE
-            max5 = 0.
-          END IF
-          d = EXP(-(alpha*max5))*den(i, k)**(3./4.)*qrs(i, k, 2)*qrs(i, &
-&           k, 1)**(3./4.)
-          IF (vt2r - vt2s .GE. 0.) THEN
-            abs0 = vt2r - vt2s
-          ELSE
-            abs0 = -(vt2r-vt2s)
-          END IF
-          pracs1 = pracs_a*a*abs0*(pracs_b*b+pracs_c*c+pracs_d*d)
-          IF (pracs1 .GT. qrs(i, k, 2)/dtcld) THEN
-            pracs(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            pracs(i, k) = pracs1
-          END IF
-          IF (pracs(i, k) .GE. 0.) THEN
-            abs1 = pracs(i, k)
-          ELSE
-            abs1 = -pracs(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) pracs(i, k) = 0.
-          IF (qrs(i, k, 2) - pracs(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) - pracs(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pracs(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pracs(i, k)*dtcld
-          END IF
-          pracs(i, k) = 0.
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max1 = qcrmin
+        ELSE
+          max1 = qrs(i, k, 1)
         END IF
+!call smoothif(qrs(i,k,1),1.e-4,fqr,'q0')
+!call smoothif(qrs(i,k,2),1.e-4,fqs,'q0')
+        vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max1**(bvtr/4.)
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max2 = qcrmin
+        ELSE
+          max2 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y13 = t0c - t(i, k)
+        ELSE
+          y13 = 90.
+        END IF
+        IF (0. .LT. y13) THEN
+          max24 = y13
+        ELSE
+          max24 = 0.
+        END IF
+        vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*max2**(bvts/4.)*EXP(-(&
+&         alpha*bvts*max24/4.))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y1 = t0c - t(i, k)
+        ELSE
+          y1 = 90.
+        END IF
+        IF (0. .LT. y1) THEN
+          max3 = y1
+        ELSE
+          max3 = 0.
+        END IF
+        a = EXP(alpha*max3)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y2 = t0c - t(i, k)
+        ELSE
+          y2 = 90.
+        END IF
+        IF (0. .LT. y2) THEN
+          max4 = y2
+        ELSE
+          max4 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max25 = qcrmin
+        ELSE
+          max25 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max39 = qcrmin
+        ELSE
+          max39 = qrs(i, k, 1)
+        END IF
+        b = EXP(-(3.*alpha*max4/2.))*den(i, k)**(3./4.)*max25**(3./2.)*&
+&         SQRT(SQRT(max39))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y3 = t0c - t(i, k)
+        ELSE
+          y3 = 90.
+        END IF
+        IF (0. .LT. y3) THEN
+          max5 = y3
+        ELSE
+          max5 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max26 = qcrmin
+        ELSE
+          max26 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max40 = qcrmin
+        ELSE
+          max40 = qrs(i, k, 1)
+        END IF
+        c = EXP(-(5.*alpha*max5/4.))*den(i, k)**(3./4.)*max26**(5./4.)*&
+&         SQRT(max40)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y4 = t0c - t(i, k)
+        ELSE
+          y4 = 90.
+        END IF
+        IF (0. .LT. y4) THEN
+          max6 = y4
+        ELSE
+          max6 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max27 = qcrmin
+        ELSE
+          max27 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max41 = qcrmin
+        ELSE
+          max41 = qrs(i, k, 1)
+        END IF
+        d = EXP(-(alpha*max6))*den(i, k)**(3./4.)*max27*max41**(3./4.)
+        IF (vt2r - vt2s .GE. 0.) THEN
+          abs0 = vt2r - vt2s
+        ELSE
+          abs0 = -(vt2r-vt2s)
+        END IF
+        pracs1 = pracs_a*a*abs0*(pracs_b*b+pracs_c*c+pracs_d*d)
+        IF (pracs1 .GT. qrs(i, k, 2)/dtcld) THEN
+          pracs(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          pracs(i, k) = pracs1
+        END IF
+        pracs(i, k) = fsupcol*pracs(i, k)
+        IF (pracs(i, k) .GE. 0.) THEN
+          abs1 = pracs(i, k)
+        ELSE
+          abs1 = -pracs(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) pracs(i, k) = 0.
+        IF (qrs(i, k, 2) - pracs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) - pracs(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pracs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pracs(i, k)*dtcld
+        END IF
+        pracs(i, k) = 0.
 !-------------------------------------------------------------
 ! psacr: Accretion of rain by snow [LFO 28]
 !         (T< T0: R->S or R->G)                 min=0.,max=qrs(i,k,1)/dtcld
 !         (T>=T0: S->R enhance melting of snow) min=0.,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k, 2) .GT. qcrmin) &
-&       THEN
+!         supcol = t0c-t(i,k) !not change
+!         call smoothif(supcol,0.,fsupcol,'t0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
+!call smoothif(qrs(i,k,2),qcrmin,fqs,'q0')
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*qrs(i, k, 1)**(bvtr/4.&
-&           )
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y6 = t0c - t(i, k)
-          ELSE
-            y6 = 90.
-          END IF
-          IF (0. .LT. y6) THEN
-            max6 = y6
-          ELSE
-            max6 = 0.
-          END IF
-          vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*qrs(i, k, 2)**(bvts/4.&
-&           )*EXP(-(alpha*bvts*max6/4.))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y7 = t0c - t(i, k)
-          ELSE
-            y7 = 90.
-          END IF
-          IF (0. .LT. y7) THEN
-            max7 = y7
-          ELSE
-            max7 = 0.
-          END IF
-          a = EXP(alpha*max7)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y8 = t0c - t(i, k)
-          ELSE
-            y8 = 90.
-          END IF
-          IF (0. .LT. y8) THEN
-            max8 = y8
-          ELSE
-            max8 = 0.
-          END IF
-          b = EXP(-(alpha*max8/4.))*den(i, k)**(3./4.)*qrs(i, k, 1)**(3.&
-&           /2.)*SQRT(SQRT(qrs(i, k, 2)))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y9 = t0c - t(i, k)
-          ELSE
-            y9 = 90.
-          END IF
-          IF (0. .LT. y9) THEN
-            max9 = y9
-          ELSE
-            max9 = 0.
-          END IF
-          c = EXP(-(alpha*max9/2.))*den(i, k)**(3./4.)*qrs(i, k, 1)**(5.&
-&           /4.)*SQRT(qrs(i, k, 2))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y10 = t0c - t(i, k)
-          ELSE
-            y10 = 90.
-          END IF
-          IF (0. .LT. y10) THEN
-            max10 = y10
-          ELSE
-            max10 = 0.
-          END IF
-          d = EXP(-(3.*alpha*max10/4.))*den(i, k)**(3./4.)*qrs(i, k, 1)*&
-&           qrs(i, k, 2)**(3./4.)
-          IF (vt2r - vt2s .GE. 0.) THEN
-            abs2 = vt2r - vt2s
-          ELSE
-            abs2 = -(vt2r-vt2s)
-          END IF
-          psacr(i, k) = psacr_a*a*abs2*(psacr_b*b+psacr_c*c+psacr_d*d)
-          IF (psacr(i, k) .GE. 0.) THEN
-            abs3 = psacr(i, k)
-          ELSE
-            abs3 = -psacr(i, k)
-          END IF
-          IF (abs3 .LT. qmin/dtcld) psacr(i, k) = 0.
-!update qr qs qg
-          IF (qrs(i, k, 1) .LT. 1.e-4 .AND. qrs(i, k, 2) .LT. 1.e-4) &
-&         THEN
-            delta2 = 1.
-          ELSE
-            delta2 = 0.
-          END IF
-          IF (supcol .GT. 0.) THEN
-            IF (psacr(i, k) .GT. qrs(i, k, 1)/dtcld) THEN
-              psacr(i, k) = qrs(i, k, 1)/dtcld
-            ELSE
-              psacr(i, k) = psacr(i, k)
-            END IF
-            IF (qrs(i, k, 1) - psacr(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 1) = 0.
-            ELSE
-              qrs(i, k, 1) = qrs(i, k, 1) - psacr(i, k)*dtcld
-            END IF
-            x1 = qrs(i, k, 2) + delta2*psacr(i, k)*dtcld
-            IF (x1 .LT. 0.) THEN
-              qrs(i, k, 2) = 0.
-            ELSE
-              qrs(i, k, 2) = x1
-            END IF
-            x2 = qrs(i, k, 3) + (1-delta2)*psacr(i, k)*dtcld
-            IF (x2 .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = x2
-            END IF
-            t(i, k) = t(i, k) + psacr(i, k)*dtcld*xlf/cpm(i, k)
-            psacr(i, k) = 0.
-          ELSE IF (psacr(i, k) .GT. qrs(i, k, 2)/dtcld) THEN
-            psacr(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            psacr(i, k) = psacr(i, k)
-          END IF
+        cpm(i, k) = CPMCAL(q(i, k))
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max7 = qcrmin
+        ELSE
+          max7 = qrs(i, k, 1)
         END IF
+        vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max7**(bvtr/4.)
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max8 = qcrmin
+        ELSE
+          max8 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y14 = t0c - t(i, k)
+        ELSE
+          y14 = 90.
+        END IF
+        IF (0. .LT. y14) THEN
+          max28 = y14
+        ELSE
+          max28 = 0.
+        END IF
+        vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*max8**(bvts/4.)*EXP(-(&
+&         alpha*bvts*max28/4.))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y5 = t0c - t(i, k)
+        ELSE
+          y5 = 90.
+        END IF
+        IF (0. .LT. y5) THEN
+          max9 = y5
+        ELSE
+          max9 = 0.
+        END IF
+        a = EXP(alpha*max9)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y6 = t0c - t(i, k)
+        ELSE
+          y6 = 90.
+        END IF
+        IF (0. .LT. y6) THEN
+          max10 = y6
+        ELSE
+          max10 = 0.
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max29 = qcrmin
+        ELSE
+          max29 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max42 = qcrmin
+        ELSE
+          max42 = qrs(i, k, 2)
+        END IF
+        b = EXP(-(alpha*max10/4.))*den(i, k)**(3./4.)*max29**(3./2.)*&
+&         SQRT(SQRT(max42))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y7 = t0c - t(i, k)
+        ELSE
+          y7 = 90.
+        END IF
+        IF (0. .LT. y7) THEN
+          max11 = y7
+        ELSE
+          max11 = 0.
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max30 = qcrmin
+        ELSE
+          max30 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max43 = qcrmin
+        ELSE
+          max43 = qrs(i, k, 2)
+        END IF
+        c = EXP(-(alpha*max11/2.))*den(i, k)**(3./4.)*max30**(5./4.)*&
+&         SQRT(max43)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y8 = t0c - t(i, k)
+        ELSE
+          y8 = 90.
+        END IF
+        IF (0. .LT. y8) THEN
+          max12 = y8
+        ELSE
+          max12 = 0.
+        END IF
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max31 = qcrmin
+        ELSE
+          max31 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max44 = qcrmin
+        ELSE
+          max44 = qrs(i, k, 2)
+        END IF
+        d = EXP(-(3.*alpha*max12/4.))*den(i, k)**(3./4.)*max31*max44**(&
+&         3./4.)
+        IF (vt2r - vt2s .GE. 0.) THEN
+          abs2 = vt2r - vt2s
+        ELSE
+          abs2 = -(vt2r-vt2s)
+        END IF
+        psacr1 = psacr_a*a*abs2*(psacr_b*b+psacr_c*c+psacr_d*d)
+        IF (supcol .GT. 0.) THEN
+          IF (psacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+            psacr(i, k) = qrs(i, k, 1)/dtcld
+          ELSE
+            psacr(i, k) = psacr1
+          END IF
+        ELSE IF (psacr1 .GT. qrs(i, k, 2)/dtcld) THEN
+          psacr(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          psacr(i, k) = psacr1
+        END IF
+        IF (psacr(i, k) .GE. 0.) THEN
+          abs3 = psacr(i, k)
+        ELSE
+          abs3 = -psacr(i, k)
+        END IF
+!psacr(i,k)=fqr*fqs*psacr(i,k)
+        IF (abs3 .LT. qmin/dtcld) psacr(i, k) = 0.
+!update qr qs qg
+        IF (qrs(i, k, 1) .LT. 1.e-4 .AND. qrs(i, k, 2) .LT. 1.e-4) THEN
+          delta2 = 1.
+        ELSE
+          delta2 = 0.
+        END IF
+        IF (qrs(i, k, 1) - fsupcol*psacr(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - fsupcol*psacr(i, k)*dtcld
+        END IF
+        x1 = qrs(i, k, 2) + fsupcol*delta2*psacr(i, k)*dtcld
+        IF (x1 .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = x1
+        END IF
+        x2 = qrs(i, k, 3) + fsupcol*(1-delta2)*psacr(i, k)*dtcld
+        IF (x2 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x2
+        END IF
+        t(i, k) = t(i, k) + fsupcol*psacr(i, k)*dtcld*xlf/cpm(i, k)
+! t>=t0 pseml 
+        psacr(i, k) = (1-fsupcol)*psacr(i, k)
 !-------------------------------------------------------------
 ! pgacr: Accretion of rain by graupel [LFO 42]
 !         (T< T0: R->G)                            min=0.,max=qrs(i,k,1)/dtcld
 !         (T>=T0: G->R enhance melting of graupel) min=0.,max=qrs(i,k,3)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (qrs(i, k, 1) .GT. qcrmin .AND. qrs(i, k, 3) .GT. qcrmin) &
-&       THEN
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+!call smoothif(qrs(i,k,3),qcrmin,fqg,'q0')
+!call smoothif(qrs(i,k,1),qcrmin,fqr,'q0')
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*qrs(i, k, 1)**(bvtr/4.&
-&           )
-          vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*qrs(i, k, 3)**(bvtg/4.&
-&           )
-          b = den(i, k)**(3./4.)*qrs(i, k, 1)**(3./2.)*SQRT(SQRT(qrs(i, &
-&           k, 3)))
-          c = den(i, k)**(3./4.)*qrs(i, k, 1)**(5./4.)*SQRT(qrs(i, k, 3)&
-&           )
-          d = den(i, k)**(3./4.)*qrs(i, k, 1)*qrs(i, k, 3)**(3./4.)
-          IF (vt2r - vt2g .GE. 0.) THEN
-            abs4 = vt2r - vt2g
-          ELSE
-            abs4 = -(vt2r-vt2g)
-          END IF
-          pgacr(i, k) = pgacr_a*abs4*(pgacr_b*b+pgacr_c*c+pgacr_d*d)
-          IF (pgacr(i, k) .GE. 0.) THEN
-            abs5 = pgacr(i, k)
-          ELSE
-            abs5 = -pgacr(i, k)
-          END IF
-          IF (abs5 .LT. qmin/dtcld) pgacr(i, k) = 0.
-! update qr,qg,t
-          IF (supcol .GT. 0.) THEN
-            IF (pgacr(i, k) .GT. qrs(i, k, 1)/dtcld) THEN
-              pgacr(i, k) = qrs(i, k, 1)/dtcld
-            ELSE
-              pgacr(i, k) = pgacr(i, k)
-            END IF
-            IF (qrs(i, k, 1) - pgacr(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 1) = 0.
-            ELSE
-              qrs(i, k, 1) = qrs(i, k, 1) - pgacr(i, k)*dtcld
-            END IF
-            IF (qrs(i, k, 3) + pgacr(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = qrs(i, k, 3) + pgacr(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + pgacr(i, k)*dtcld*xlf/cpm(i, k)
-            pgacr(i, k) = 0.
-          ELSE IF (pgacr(i, k) .GT. qrs(i, k, 3)/dtcld) THEN
-            pgacr(i, k) = qrs(i, k, 3)/dtcld
-          ELSE
-            pgacr(i, k) = pgacr(i, k)
-          END IF
+!         cpm(i,k)=cpmcal(q(i,k)) !not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max13 = qcrmin
+        ELSE
+          max13 = qrs(i, k, 1)
         END IF
+        vt2r = vt2r_a*den(i, k)**((bvtr-2.)/4.)*max13**(bvtr/4.)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max14 = qcrmin
+        ELSE
+          max14 = qrs(i, k, 3)
+        END IF
+        vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*max14**(bvtg/4.)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max15 = qcrmin
+        ELSE
+          max15 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max32 = qcrmin
+        ELSE
+          max32 = qrs(i, k, 3)
+        END IF
+        b = den(i, k)**(3./4.)*max15**(3./2.)*SQRT(SQRT(max32))
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max16 = qcrmin
+        ELSE
+          max16 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max33 = qcrmin
+        ELSE
+          max33 = qrs(i, k, 3)
+        END IF
+        c = den(i, k)**(3./4.)*max16**(5./4.)*SQRT(max33)
+        IF (qrs(i, k, 1) .LT. qcrmin) THEN
+          max17 = qcrmin
+        ELSE
+          max17 = qrs(i, k, 1)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max34 = qcrmin
+        ELSE
+          max34 = qrs(i, k, 3)
+        END IF
+        d = den(i, k)**(3./4.)*max17*max34**(3./4.)
+        IF (vt2r - vt2g .GE. 0.) THEN
+          abs4 = vt2r - vt2g
+        ELSE
+          abs4 = -(vt2r-vt2g)
+        END IF
+        pgacr1 = pgacr_a*abs4*(pgacr_b*b+pgacr_c*c+pgacr_d*d)
+        IF (supcol .GT. 0.) THEN
+          IF (pgacr1 .GT. qrs(i, k, 1)/dtcld) THEN
+            pgacr(i, k) = qrs(i, k, 1)/dtcld
+          ELSE
+            pgacr(i, k) = pgacr1
+          END IF
+        ELSE IF (pgacr1 .GT. qrs(i, k, 3)/dtcld) THEN
+          pgacr(i, k) = qrs(i, k, 3)/dtcld
+        ELSE
+          pgacr(i, k) = pgacr1
+        END IF
+        IF (pgacr(i, k) .GE. 0.) THEN
+          abs5 = pgacr(i, k)
+        ELSE
+          abs5 = -pgacr(i, k)
+        END IF
+!pgacr(i,k)=fqg*fqr*pgacr(i,k)
+        IF (abs5 .LT. qmin/dtcld) pgacr(i, k) = 0.
+        IF (qrs(i, k, 1) - fsupcol*pgacr(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - fsupcol*pgacr(i, k)*dtcld
+        END IF
+        x3 = qrs(i, k, 3) + fsupcol*pgacr(i, k)*dtcld
+        IF (x3 .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = x3
+        END IF
+        t(i, k) = t(i, k) + fsupcol*pgacr(i, k)*dtcld*xlf/cpm(i, k)
+! t>=t0 pgeml 
+        pgacr(i, k) = (1-fsupcol)*pgacr(i, k)
 !-------------------------------------------------------------
 ! pgacs: Accretion of snow by graupel [LFO 29]
 !        (S->G) min=0,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (qrs(i, k, 2) .GT. qcrmin .AND. qrs(i, k, 3) .GT. qcrmin) &
-&       THEN
-          x3 = EXP(-(0.09*supcol))
-          IF (x3 .GT. 1.) THEN
-            egs = 1.
-          ELSE
-            egs = x3
-          END IF
-          vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*qrs(i, k, 3)**(bvtg/4.&
-&           )
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y11 = t0c - t(i, k)
-          ELSE
-            y11 = 90.
-          END IF
-          IF (0. .LT. y11) THEN
-            max11 = y11
-          ELSE
-            max11 = 0.
-          END IF
-          vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*qrs(i, k, 2)**(bvts/4.&
-&           )*EXP(-(alpha*bvts*max11/4.))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y12 = t0c - t(i, k)
-          ELSE
-            y12 = 90.
-          END IF
-          IF (0. .LT. y12) THEN
-            max12 = y12
-          ELSE
-            max12 = 0.
-          END IF
-          a = EXP(alpha*max12)
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y13 = t0c - t(i, k)
-          ELSE
-            y13 = 90.
-          END IF
-          IF (0. .LT. y13) THEN
-            max13 = y13
-          ELSE
-            max13 = 0.
-          END IF
-          b = EXP(-(3.*alpha*max13/2.))*den(i, k)**(3./4.)*qrs(i, k, 2)&
-&           **(3./2.)*SQRT(SQRT(qrs(i, k, 3)))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y14 = t0c - t(i, k)
-          ELSE
-            y14 = 90.
-          END IF
-          IF (0. .LT. y14) THEN
-            max14 = y14
-          ELSE
-            max14 = 0.
-          END IF
-          c = EXP(-(5.*alpha*max14/4.))*den(i, k)**(3./4.)*qrs(i, k, 2)&
-&           **(5./4.)*SQRT(qrs(i, k, 3))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y15 = t0c - t(i, k)
-          ELSE
-            y15 = 90.
-          END IF
-          IF (0. .LT. y15) THEN
-            max15 = y15
-          ELSE
-            max15 = 0.
-          END IF
-          d = EXP(-(alpha*max15))*den(i, k)**(3./4.)*qrs(i, k, 2)*qrs(i&
-&           , k, 3)**(3./4.)
-          IF (vt2g - vt2s .GE. 0.) THEN
-            abs6 = vt2g - vt2s
-          ELSE
-            abs6 = -(vt2g-vt2s)
-          END IF
-          pgacs1 = pgacs_a*a*abs6*(pgacs_b*b+pgacs_c*c+pgacs_d*d)*egs
-          IF (pgacs1 .GT. qrs(i, k, 2)/dtcld) THEN
-            pgacs(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            pgacs(i, k) = pgacs1
-          END IF
-          IF (pgacs(i, k) .GE. 0.) THEN
-            abs7 = pgacs(i, k)
-          ELSE
-            abs7 = -pgacs(i, k)
-          END IF
-          IF (abs7 .LT. qmin/dtcld) pgacs(i, k) = 0.
-          IF (qrs(i, k, 2) - pgacs(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) - pgacs(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgacs(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgacs(i, k)*dtcld
-          END IF
-          pgacs(i, k) = 0.
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't0')
+        x4 = EXP(-(0.09*supcol))
+        IF (x4 .GT. 1.) THEN
+          egs = 1.
+        ELSE
+          egs = x4
         END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max18 = qcrmin
+        ELSE
+          max18 = qrs(i, k, 3)
+        END IF
+        vt2g = vt2g_a*den(i, k)**((bvtg-2.)/4.)*max18**(bvtg/4.)
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max19 = qcrmin
+        ELSE
+          max19 = qrs(i, k, 2)
+        END IF
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y15 = t0c - t(i, k)
+        ELSE
+          y15 = 90.
+        END IF
+        IF (0. .LT. y15) THEN
+          max35 = y15
+        ELSE
+          max35 = 0.
+        END IF
+        vt2s = vt2s_a*den(i, k)**((bvts-2.)/4.)*max19**(bvts/4.)*EXP(-(&
+&         alpha*bvts*max35/4.))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y9 = t0c - t(i, k)
+        ELSE
+          y9 = 90.
+        END IF
+        IF (0. .LT. y9) THEN
+          max20 = y9
+        ELSE
+          max20 = 0.
+        END IF
+        a = EXP(alpha*max20)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y10 = t0c - t(i, k)
+        ELSE
+          y10 = 90.
+        END IF
+        IF (0. .LT. y10) THEN
+          max21 = y10
+        ELSE
+          max21 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max36 = qcrmin
+        ELSE
+          max36 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max45 = qcrmin
+        ELSE
+          max45 = qrs(i, k, 3)
+        END IF
+        b = EXP(-(3.*alpha*max21/2.))*den(i, k)**(3./4.)*max36**(3./2.)*&
+&         SQRT(SQRT(max45))
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y11 = t0c - t(i, k)
+        ELSE
+          y11 = 90.
+        END IF
+        IF (0. .LT. y11) THEN
+          max22 = y11
+        ELSE
+          max22 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max37 = qcrmin
+        ELSE
+          max37 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max46 = qcrmin
+        ELSE
+          max46 = qrs(i, k, 3)
+        END IF
+        c = EXP(-(5.*alpha*max22/4.))*den(i, k)**(3./4.)*max37**(5./4.)*&
+&         SQRT(max46)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y12 = t0c - t(i, k)
+        ELSE
+          y12 = 90.
+        END IF
+        IF (0. .LT. y12) THEN
+          max23 = y12
+        ELSE
+          max23 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max38 = qcrmin
+        ELSE
+          max38 = qrs(i, k, 2)
+        END IF
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max47 = qcrmin
+        ELSE
+          max47 = qrs(i, k, 3)
+        END IF
+        d = EXP(-(alpha*max23))*den(i, k)**(3./4.)*max38*max47**(3./4.)
+        IF (vt2g - vt2s .GE. 0.) THEN
+          abs6 = vt2g - vt2s
+        ELSE
+          abs6 = -(vt2g-vt2s)
+        END IF
+        pgacs1 = pgacs_a*a*abs6*(pgacs_b*b+pgacs_c*c+pgacs_d*d)*egs
+        IF (pgacs1 .GT. qrs(i, k, 2)/dtcld) THEN
+          pgacs(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          pgacs(i, k) = pgacs1
+        END IF
+        IF (pgacs(i, k) .GE. 0.) THEN
+          abs7 = pgacs(i, k)
+        ELSE
+          abs7 = -pgacs(i, k)
+        END IF
+!pgacs(i,k)=fqg*fqs*pgacs(i,k)
+        IF (abs7 .LT. qmin/dtcld) pgacs(i, k) = 0.
+        IF (qrs(i, k, 2) - pgacs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) - pgacs(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgacs(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgacs(i, k)*dtcld
+        END IF
+        pgacs(i, k) = 0.
 !-------------------------------------------------------------
 ! pseml: Enhanced melting of snow by accretion of water
 !        (T>=T0: S->R) pseml<0 max=0,min=-qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 2) .GT. 0.) THEN
+!         supcol = t0c-t(i,k) ! not change
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          x6 = cliq*supcol*(psacw(i, k)+psacr(i, k))/xlf
-          IF (x6 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-            x4 = -(qrs(i, k, 2)/dtcld)
-          ELSE
-            x4 = x6
-          END IF
-          IF (x4 .GT. 0.) THEN
-            pseml(i, k) = 0.
-          ELSE
-            pseml(i, k) = x4
-          END IF
-          IF (pseml(i, k) .GE. 0.) THEN
-            abs8 = pseml(i, k)
-          ELSE
-            abs8 = -pseml(i, k)
-          END IF
-          IF (abs8 .LT. qmin/dtcld) pseml(i, k) = 0.
-          IF (qrs(i, k, 1) - pseml(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) - pseml(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + pseml(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) + pseml(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + pseml(i, k)*dtcld*xlf/cpm(i, k)
-          pseml(i, k) = 0.
-          psacw(i, k) = 0.
-          psacr(i, k) = 0.
+!         cpm(i,k)=cpmcal(q(i,k)) ! not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        CALL SMOOTHIF(qrs(i, k, 2), 0., fqs, 'q+')
+        x7 = cliq*supcol*(psacw(i, k)+psacr(i, k))/xlf
+        IF (x7 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+          x5 = -(qrs(i, k, 2)/dtcld)
+        ELSE
+          x5 = x7
         END IF
+        IF (x5 .GT. 0.) THEN
+          pseml(i, k) = 0.
+        ELSE
+          pseml(i, k) = x5
+        END IF
+        pseml(i, k) = ft0*fqs*pseml(i, k)
+        IF (pseml(i, k) .GE. 0.) THEN
+          abs8 = pseml(i, k)
+        ELSE
+          abs8 = -pseml(i, k)
+        END IF
+        IF (abs8 .LT. qmin/dtcld) pseml(i, k) = 0.
+        IF (qrs(i, k, 1) - pseml(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - pseml(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + pseml(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + pseml(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pseml(i, k)*dtcld*xlf/cpm(i, k)
+        pseml(i, k) = 0.
+        psacw(i, k) = 0.
+        psacr(i, k) = 0.
 !-------------------------------------------------------------
 ! pgeml: Enhanced melting of graupel by accretion of water [RH84 A21-A22]
 !        (T>=T0: G->R) pgeml<0 max=0,min=-qrs(i,k,3)/dtcld
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 3) .GT. 0.) THEN
 !update cpm
-          cpm(i, k) = CPMCAL(q(i, k))
-          xl(i, k) = XLCAL(t(i, k))
-          xlf = xls - xl(i, k)
-          IF (supcol .LT. 0.) xlf = xlf0
-          x7 = cliq*supcol*(pgacw(i, k)+pgacr(i, k))/xlf
-          IF (x7 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-            x5 = -(qrs(i, k, 3)/dtcld)
-          ELSE
-            x5 = x7
-          END IF
-          IF (x5 .GT. 0.) THEN
-            pgeml(i, k) = 0.
-          ELSE
-            pgeml(i, k) = x5
-          END IF
-          IF (pgeml(i, k) .GE. 0.) THEN
-            abs9 = pgeml(i, k)
-          ELSE
-            abs9 = -pgeml(i, k)
-          END IF
-          IF (abs9 .LT. qmin/dtcld) pgeml(i, k) = 0.
-          IF (qrs(i, k, 1) - pgeml(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 1) = 0.
-          ELSE
-            qrs(i, k, 1) = qrs(i, k, 1) - pgeml(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgeml(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgeml(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + pgeml(i, k)*dtcld*xlf/cpm(i, k)
-          pgeml(i, k) = 0.
-          pgacw(i, k) = 0.
-          pgacr(i, k) = 0.
+!         cpm(i,k)=cpmcal(q(i,k)) ! not change
+        xl(i, k) = XLCAL(t(i, k))
+        xlf = xls - xl(i, k)
+        IF (supcol .LT. 0.) xlf = xlf0
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        CALL SMOOTHIF(qrs(i, k, 3), 0., fqg, 'q+')
+        x8 = cliq*supcol*(pgacw(i, k)+pgacr(i, k))/xlf
+        IF (x8 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+          x6 = -(qrs(i, k, 3)/dtcld)
+        ELSE
+          x6 = x8
         END IF
+        IF (x6 .GT. 0.) THEN
+          pgeml(i, k) = 0.
+        ELSE
+          pgeml(i, k) = x6
+        END IF
+        pgeml(i, k) = ft0*fqg*pgeml(i, k)
+        IF (pgeml(i, k) .GE. 0.) THEN
+          abs9 = pgeml(i, k)
+        ELSE
+          abs9 = -pgeml(i, k)
+        END IF
+        IF (abs9 .LT. qmin/dtcld) pgeml(i, k) = 0.
+        IF (qrs(i, k, 1) - pgeml(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 1) = 0.
+        ELSE
+          qrs(i, k, 1) = qrs(i, k, 1) - pgeml(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgeml(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgeml(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pgeml(i, k)*dtcld*xlf/cpm(i, k)
+        pgeml(i, k) = 0.
+        pgacw(i, k) = 0.
+        pgacr(i, k) = 0.
       END DO
     END DO
   END SUBROUTINE ACCRET2
@@ -8023,9 +9628,10 @@ CONTAINS
     REAL :: a_pidep0, a_psdep0, a_pgdep3, a_pigen0, a_psevp0, a_pgevp0
     REAL :: temp0, temp, xmi
     INTEGER :: i, k
-    REAL :: qi0, pidep2
-    REAL :: a_qi0
-    REAL :: a, b, c, d, e, f, g
+    REAL :: fqi, fqr, fqv, fqs, fqg, frh, ft0, fpidep, fpsdep, fpgdep, &
+&   fsupcol, fsupsat, pidep2
+    REAL :: a_ft0, a_fsupcol, a_fsupsat
+    REAL :: value01, factor01, source01, vice, a, b, c, d, e, f, g
     REAL :: a_a, a_b, a_c, a_d, a_e
     INTRINSIC MAX
     INTRINSIC MIN
@@ -8066,18 +9672,34 @@ CONTAINS
     REAL :: max2
     REAL :: a_max2
     REAL :: abs1
-    REAL :: abs2
-    REAL :: abs3
-    REAL :: abs4
-    REAL :: abs5
     REAL :: max3
     REAL :: a_max3
     REAL :: max4
     REAL :: a_max4
-    REAL :: abs6
-    REAL :: abs7
+    REAL :: abs2
+    REAL :: abs3
+    REAL :: abs4
+    REAL :: abs5
     REAL :: max5
     REAL :: a_max5
+    REAL :: max6
+    REAL :: a_max6
+    REAL :: abs6
+    REAL :: max7
+    REAL :: a_max7
+    REAL :: max8
+    REAL :: a_max8
+    REAL :: abs7
+    REAL :: max9
+    REAL :: a_max9
+    REAL :: max10
+    REAL :: a_max10
+    REAL :: max11
+    REAL :: a_max11
+    REAL :: max12
+    REAL :: a_max12
+    REAL :: max13
+    REAL :: a_max13
     REAL :: temp1
     REAL :: temp2
     REAL :: a_temp
@@ -8115,17 +9737,20 @@ CONTAINS
 !       rh(i,k,2)<1.,pidep<0: I->V, min=-qi/dtcld,max=0,                  
 !-------------------------------------------------------------
 !update supcol
+        CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qci(i, k, 2) .GT. 0.) THEN
 !update rh qs
-          CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
+        CALL PUSHREAL8(supsat)
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
 !update xl, cpm
-          cpm(i, k) = CPMCAL(q(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        IF (qci(i, k, 2) .GT. 0.) THEN
           CALL PUSHREAL8(b)
           b = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
           CALL PUSHREAL8(c)
@@ -8133,72 +9758,75 @@ CONTAINS
           CALL PUSHREAL8(a)
           a = (rh(i, k, 2)-1.)/(b+c)
           pidep0 = pidep_a*a*(den(i, k)*qci(i, k, 2))**(7./8.)
-          IF (pidep0 .LT. 0.) THEN
-            IF (pidep0 .LT. -(qci(i, k, 2)/dtcld)) THEN
-              x1 = -(qci(i, k, 2)/dtcld)
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x1 = pidep0
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x1 .GT. 0.) THEN
-              pidep(i, k) = 0.
-              CALL PUSHCONTROL2B(1)
-            ELSE
-              pidep(i, k) = x1
-              CALL PUSHCONTROL2B(0)
-            END IF
-          ELSE
-            IF (pidep0 .GT. satdt) THEN
-              x2 = satdt
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x2 = pidep0
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x2 .LT. 0.) THEN
-              pidep(i, k) = 0.
-              CALL PUSHCONTROL2B(3)
-            ELSE
-              pidep(i, k) = x2
-              CALL PUSHCONTROL2B(2)
-            END IF
-          END IF
-          IF (pidep(i, k) .GE. 0.) THEN
-            abs0 = pidep(i, k)
-          ELSE
-            abs0 = -pidep(i, k)
-          END IF
-          IF (abs0 .LT. qmin/dtcld) THEN
-            pidep(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (q(i, k) - pidep(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(q(i, k))
-            q(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(q(i, k))
-            q(i, k) = q(i, k) - pidep(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qci(i, k, 2) + pidep(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qci(i, k, 2))
-            qci(i, k, 2) = qci(i, k, 2) + pidep(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(t(i, k))
-          t(i, k) = t(i, k) + pidep(i, k)*dtcld*xls/cpm(i, k)
           CALL PUSHCONTROL1B(0)
         ELSE
           CALL PUSHCONTROL1B(1)
+          pidep0 = 0.
         END IF
+        IF (pidep0 .LT. 0.) THEN
+          IF (pidep0 .LT. -(qci(i, k, 2)/dtcld)) THEN
+            x1 = -(qci(i, k, 2)/dtcld)
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            x1 = pidep0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (x1 .GT. 0.) THEN
+            pidep(i, k) = 0.
+            CALL PUSHCONTROL2B(1)
+          ELSE
+            pidep(i, k) = x1
+            CALL PUSHCONTROL2B(0)
+          END IF
+        ELSE
+          IF (pidep0 .GT. satdt) THEN
+            x2 = satdt
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            x2 = pidep0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (x2 .LT. 0.) THEN
+            pidep(i, k) = 0.
+            CALL PUSHCONTROL2B(3)
+          ELSE
+            pidep(i, k) = x2
+            CALL PUSHCONTROL2B(2)
+          END IF
+        END IF
+        CALL PUSHREAL8(pidep(i, k))
+        pidep(i, k) = fsupcol*pidep(i, k)
+        IF (pidep(i, k) .GE. 0.) THEN
+          abs0 = pidep(i, k)
+        ELSE
+          abs0 = -pidep(i, k)
+        END IF
+        IF (abs0 .LT. qmin/dtcld) THEN
+          pidep(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (q(i, k) - pidep(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = q(i, k) - pidep(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qci(i, k, 2) + pidep(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qci(i, k, 2))
+          qci(i, k, 2) = qci(i, k, 2) + pidep(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(t(i, k))
+        t(i, k) = t(i, k) + pidep(i, k)*dtcld*xls/cpm(i, k)
 !
 !-------------------------------------------------------------
 ! psdep: deposition/sublimation rate of snow [HDC 14] 
@@ -8207,130 +9835,147 @@ CONTAINS
 !       rh(i,k,2)<1.,psdep<0: S->V, min=-qs/dtcld,max=0,                  
 !-------------------------------------------------------------
 !update supcol
+        CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 2) .GT. qcrmin) THEN
 !update rh qs
-          CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
-          CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
+        CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
 !update xl, cpm
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y1 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y1 = 90.
-          END IF
-          IF (0. .LT. y1) THEN
-            CALL PUSHREAL8(max1)
-            max1 = y1
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max1)
-            max1 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(a)
-          a = EXP(alpha*max1/2.)*SQRT(den(i, k)*qrs(i, k, 2))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y2 = t0c - t(i, k)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-            y2 = 90.
-          END IF
-          IF (0. .LT. y2) THEN
-            CALL PUSHREAL8(max2)
-            max2 = y2
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(max2)
-            max2 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(b)
-          b = EXP((3.-bvts)*alpha*max2/8.)*(t(i, k)+120.)**(1./6.)/t(i, &
-&           k)**(5.12/6.)*p(i, k)**(1./3.)*den(i, k)**((13.+3.*bvts)/24.&
-&           )*qrs(i, k, 2)**((5.+bvts)/8.)
-          CALL PUSHREAL8(c)
-          c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
-          CALL PUSHREAL8(d)
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
-          CALL PUSHREAL8(e)
-          e = (rh(i, k, 2)-1.)/(c+d)
-          psdep0 = e*(psdep_a*a+psdep_b*b)
-          IF (psdep0 .LT. 0.) THEN
-            IF (psdep0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-              x3 = -(qrs(i, k, 2)/dtcld)
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x3 = psdep0
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x3 .GT. 0.) THEN
-              psdep(i, k) = 0.
-              CALL PUSHCONTROL2B(1)
-            ELSE
-              psdep(i, k) = x3
-              CALL PUSHCONTROL2B(0)
-            END IF
-          ELSE
-            IF (psdep0 .GT. satdt) THEN
-              x4 = satdt
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x4 = psdep0
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x4 .LT. 0.) THEN
-              psdep(i, k) = 0.
-              CALL PUSHCONTROL2B(3)
-            ELSE
-              psdep(i, k) = x4
-              CALL PUSHCONTROL2B(2)
-            END IF
-          END IF
-          IF (psdep(i, k) .GE. 0.) THEN
-            abs1 = psdep(i, k)
-          ELSE
-            abs1 = -psdep(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) THEN
-            psdep(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (q(i, k) - psdep(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(q(i, k))
-            q(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(q(i, k))
-            q(i, k) = q(i, k) - psdep(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 2) + psdep(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = qrs(i, k, 2) + psdep(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(t(i, k))
-          t(i, k) = t(i, k) + psdep(i, k)*dtcld*xls/cpm(i, k)
+        CALL PUSHREAL8(cpm(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y1 = t0c - t(i, k)
           CALL PUSHCONTROL1B(0)
         ELSE
           CALL PUSHCONTROL1B(1)
+          y1 = 90.
         END IF
+        IF (0. .LT. y1) THEN
+          CALL PUSHREAL8(max1)
+          max1 = y1
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max1)
+          max1 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max9)
+          max9 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max9)
+          max9 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+!         call smoothif(qrs(i,k,2),0.,fqs,'q+')
+!         call smoothif(q  (i,k  ),0.,fqv,'q+')
+        CALL PUSHREAL8(a)
+        a = EXP(alpha*max1/2.)*SQRT(den(i, k)*max9)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y2 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y2 = 90.
+        END IF
+        IF (0. .LT. y2) THEN
+          CALL PUSHREAL8(max2)
+          max2 = y2
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max2)
+          max2 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max10)
+          max10 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max10)
+          max10 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = EXP((3.-bvts)*alpha*max2/8.)*(t(i, k)+120.)**(1./6.)/t(i, k)&
+&         **(5.12/6.)*p(i, k)**(1./3.)*den(i, k)**((13.+3.*bvts)/24.)*&
+&         max10**((5.+bvts)/8.)
+        CALL PUSHREAL8(c)
+        c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
+        CALL PUSHREAL8(d)
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
+        CALL PUSHREAL8(e)
+        e = (rh(i, k, 2)-1.)/(c+d)
+        psdep0 = e*(psdep_a*a+psdep_b*b)
+        IF (psdep0 .LT. 0.) THEN
+          IF (psdep0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+            x3 = -(qrs(i, k, 2)/dtcld)
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            x3 = psdep0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (x3 .GT. 0.) THEN
+            psdep(i, k) = 0.
+            CALL PUSHCONTROL2B(1)
+          ELSE
+            psdep(i, k) = x3
+            CALL PUSHCONTROL2B(0)
+          END IF
+        ELSE
+          IF (psdep0 .GT. satdt) THEN
+            x4 = satdt
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            x4 = psdep0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (x4 .LT. 0.) THEN
+            psdep(i, k) = 0.
+            CALL PUSHCONTROL2B(3)
+          ELSE
+            psdep(i, k) = x4
+            CALL PUSHCONTROL2B(2)
+          END IF
+        END IF
+        CALL PUSHREAL8(psdep(i, k))
+        psdep(i, k) = fsupcol*psdep(i, k)
+        IF (psdep(i, k) .GE. 0.) THEN
+          abs1 = psdep(i, k)
+        ELSE
+          abs1 = -psdep(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) THEN
+          psdep(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (q(i, k) - psdep(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = q(i, k) - psdep(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 2) + psdep(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psdep(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(t(i, k))
+        t(i, k) = t(i, k) + psdep(i, k)*dtcld*xls/cpm(i, k)
 !
 !------------------------------------------------------------
 ! pgdep: deposition/sublimation rate of graupel [LFO 46] 
@@ -8339,184 +9984,190 @@ CONTAINS
 !       rh(i,k,2)<1.,pgdep<0: G->V, min=-qg/dtcld,max=0,                  
 !------------------------------------------------------------
 !update supcol
+        CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update rh qs
-          CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
-          CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
+        CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
 !update xl, cpm
-          CALL PUSHREAL8(cpm(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          CALL PUSHREAL8(a)
-          a = SQRT(den(i, k)*qrs(i, k, 3))
-          CALL PUSHREAL8(b)
-          b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.&
-&           )*den(i, k)**((13.+3.*bvtg)/24.)*qrs(i, k, 3)**((5.+bvtg)/8.&
-&           )
-          CALL PUSHREAL8(c)
-          c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
-          CALL PUSHREAL8(d)
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
-          CALL PUSHREAL8(e)
-          e = (rh(i, k, 2)-1.)/(c+d)
-          pgdep3 = e*(pgdep_a*a+pgdep_b*b)
-          IF (pgdep3 .LT. 0.) THEN
-            IF (pgdep3 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-              x5 = -(qrs(i, k, 3)/dtcld)
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x5 = pgdep3
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x5 .GT. 0.) THEN
-              pgdep(i, k) = 0.
-              CALL PUSHCONTROL2B(1)
-            ELSE
-              pgdep(i, k) = x5
-              CALL PUSHCONTROL2B(0)
-            END IF
-          ELSE
-            IF (pgdep3 .GT. satdt) THEN
-              x6 = satdt
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x6 = pgdep3
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x6 .LT. 0.) THEN
-              pgdep(i, k) = 0.
-              CALL PUSHCONTROL2B(3)
-            ELSE
-              pgdep(i, k) = x6
-              CALL PUSHCONTROL2B(2)
-            END IF
-          END IF
-          IF (pgdep(i, k) .GE. 0.) THEN
-            abs2 = pgdep(i, k)
-          ELSE
-            abs2 = -pgdep(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) THEN
-            pgdep(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (q(i, k) - pgdep(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(q(i, k))
-            q(i, k) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(q(i, k))
-            q(i, k) = q(i, k) - pgdep(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 3) + pgdep(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = qrs(i, k, 3) + pgdep(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(t(i, k))
-          t(i, k) = t(i, k) + pgdep(i, k)*dtcld*xls/cpm(i, k)
+        CALL PUSHREAL8(cpm(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max3)
+          max3 = qcrmin
           CALL PUSHCONTROL1B(0)
         ELSE
+          CALL PUSHREAL8(max3)
+          max3 = qrs(i, k, 3)
           CALL PUSHCONTROL1B(1)
         END IF
+!         call smoothif(qrs(i,k,3),0.,fqg,'q+')
+!         call smoothif(q  (i,k  ),0.,fqv,'q+')
+        CALL PUSHREAL8(a)
+        a = SQRT(den(i, k)*max3)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max4)
+          max4 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max4)
+          max4 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.)*&
+&         den(i, k)**((13.+3.*bvtg)/24.)*max4**((5.+bvtg)/8.)
+        CALL PUSHREAL8(c)
+        c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
+        CALL PUSHREAL8(d)
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
+        CALL PUSHREAL8(e)
+        e = (rh(i, k, 2)-1.)/(c+d)
+        pgdep3 = e*(pgdep_a*a+pgdep_b*b)
+        IF (pgdep3 .LT. 0.) THEN
+          IF (pgdep3 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+            x5 = -(qrs(i, k, 3)/dtcld)
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            x5 = pgdep3
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (x5 .GT. 0.) THEN
+            pgdep(i, k) = 0.
+            CALL PUSHCONTROL2B(1)
+          ELSE
+            pgdep(i, k) = x5
+            CALL PUSHCONTROL2B(0)
+          END IF
+        ELSE
+          IF (pgdep3 .GT. satdt) THEN
+            x6 = satdt
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            x6 = pgdep3
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (x6 .LT. 0.) THEN
+            pgdep(i, k) = 0.
+            CALL PUSHCONTROL2B(3)
+          ELSE
+            pgdep(i, k) = x6
+            CALL PUSHCONTROL2B(2)
+          END IF
+        END IF
+        CALL PUSHREAL8(pgdep(i, k))
+        pgdep(i, k) = fsupcol*pgdep(i, k)
+        IF (pgdep(i, k) .GE. 0.) THEN
+          abs2 = pgdep(i, k)
+        ELSE
+          abs2 = -pgdep(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) THEN
+          pgdep(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (q(i, k) - pgdep(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = q(i, k) - pgdep(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 3) + pgdep(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgdep(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(t(i, k))
+        t(i, k) = t(i, k) + pgdep(i, k)*dtcld*xls/cpm(i, k)
 !-------------------------------------------------------------
 ! pigen: generation(nucleation) of ice from vapor [HDC 7-8]
 !       (T<T0: V->I) min=0,max=min(roqi0/den(i,k)-max(qci(i,k,2),0.))/dtcld,satdt)
 !-------------------------------------------------------------
 !update supcol
+        CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. q(i, k) .GT. qmin .AND. qci(i, k, 2) &
-&           .GT. qmin) THEN
+        CALL PUSHREAL8(cpm(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
 !update rh qs
-          CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
-          CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
+        CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
-          IF (supsat .GT. 0. .AND. qs(i, k, 2) .GT. qmin) THEN
-            CALL PUSHREAL8(cpm(i, k))
-            cpm(i, k) = CPMCAL(q(i, k))
-            CALL PUSHREAL8(xni0)
-            xni0 = 1.e3*EXP(0.1*supcol)
-            CALL PUSHREAL8(roqi0)
-            roqi0 = 4.92e-11*xni0**1.33
-            qi0 = roqi0/den(i, k)
-            IF (qci(i, k, 2) .GT. qmin*qi0) THEN
-              IF (qci(i, k, 2) .LT. 0.) THEN
-                CALL PUSHCONTROL1B(0)
-                max5 = 0.
-              ELSE
-                max5 = qci(i, k, 2)
-                CALL PUSHCONTROL1B(1)
-              END IF
-              x7 = (qi0-max5)/dtcld
-              IF (x7 .GT. satdt) THEN
-                pigen0 = satdt
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                pigen0 = x7
-                CALL PUSHCONTROL1B(1)
-              END IF
-              IF (pigen0 .LT. 0.) THEN
-                pigen(i, k) = 0.
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                pigen(i, k) = pigen0
-                CALL PUSHCONTROL1B(1)
-              END IF
-              IF (pigen(i, k) .GE. 0.) THEN
-                abs3 = pigen(i, k)
-              ELSE
-                abs3 = -pigen(i, k)
-              END IF
-              IF (abs3 .LT. qmin/dtcld) THEN
-                pigen(i, k) = 0.
-                CALL PUSHCONTROL1B(1)
-              ELSE
-                CALL PUSHCONTROL1B(0)
-              END IF
-              IF (q(i, k) - pigen(i, k)*dtcld .LT. 0.) THEN
-                CALL PUSHREAL8(q(i, k))
-                q(i, k) = 0.
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                CALL PUSHREAL8(q(i, k))
-                q(i, k) = q(i, k) - pigen(i, k)*dtcld
-                CALL PUSHCONTROL1B(1)
-              END IF
-              IF (qci(i, k, 2) + pigen(i, k)*dtcld .LT. 0.) THEN
-                qci(i, k, 2) = 0.
-                CALL PUSHCONTROL1B(0)
-              ELSE
-                qci(i, k, 2) = qci(i, k, 2) + pigen(i, k)*dtcld
-                CALL PUSHCONTROL1B(1)
-              END IF
-              CALL PUSHREAL8(t(i, k))
-              t(i, k) = t(i, k) + pigen(i, k)*dtcld*xls/cpm(i, k)
-              CALL PUSHCONTROL2B(0)
-            ELSE
-              CALL PUSHCONTROL2B(1)
-            END IF
-          ELSE
-            CALL PUSHCONTROL2B(2)
-          END IF
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
+        CALL PUSHREAL8(fsupsat)
+        CALL SMOOTHIF(supsat, 0., fsupsat, 'q+')
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        CALL PUSHREAL8(xni0)
+        xni0 = 1.e3*EXP(0.1*supcol)
+        roqi0 = 4.92e-11*xni0**1.33
+        IF (qci(i, k, 2) .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+          max11 = 0.
         ELSE
-          CALL PUSHCONTROL2B(3)
+          max11 = qci(i, k, 2)
+          CALL PUSHCONTROL1B(1)
         END IF
+        x7 = (roqi0/den(i, k)-max11)/dtcld
+        IF (x7 .GT. satdt) THEN
+          pigen0 = satdt
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pigen0 = x7
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (pigen0 .LT. 0.) THEN
+          pigen(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pigen(i, k) = pigen0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(pigen(i, k))
+        pigen(i, k) = fsupcol*fsupsat*pigen(i, k)
+        IF (pigen(i, k) .GE. 0.) THEN
+          abs3 = pigen(i, k)
+        ELSE
+          abs3 = -pigen(i, k)
+        END IF
+        IF (abs3 .LT. qmin/dtcld) THEN
+          pigen(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (q(i, k) - pigen(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = q(i, k) - pigen(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qci(i, k, 2) + pigen(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) + pigen(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(t(i, k))
+        t(i, k) = t(i, k) + pigen(i, k)*dtcld*xls/cpm(i, k)
 !
 !------------------------------------------------------------
 ! psaut: conversion(aggregation) of ice to snow [HDC 12] 
@@ -8525,42 +10176,40 @@ CONTAINS
 !update supcol
         CALL PUSHREAL8(supcol)
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qci(i, k, 2) .GT. 0.) THEN
-          qimax = roqimax/den(i, k)
-          IF (0. .LT. (qci(i, k, 2)-qimax)/dtcld) THEN
-            psaut(i, k) = (qci(i, k, 2)-qimax)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            psaut(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (psaut(i, k) .GE. 0.) THEN
-            abs4 = psaut(i, k)
-          ELSE
-            abs4 = -psaut(i, k)
-          END IF
-          IF (abs4 .LT. qmin/dtcld) THEN
-            psaut(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qci(i, k, 2) - psaut(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 2) + psaut(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = qrs(i, k, 2) + psaut(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
+        CALL PUSHREAL8(fsupcol)
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+!         call smoothif(qci(i,k,2),0.,fqi,'q+')
+        qimax = roqimax/den(i, k)
+        IF (0. .LT. (qci(i, k, 2)-qimax)/dtcld) THEN
+          psaut(i, k) = (qci(i, k, 2)-qimax)/dtcld
           CALL PUSHCONTROL1B(0)
         ELSE
+          psaut(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(psaut(i, k))
+        psaut(i, k) = fsupcol*psaut(i, k)
+        IF (psaut(i, k) .GE. 0.) THEN
+          abs4 = psaut(i, k)
+        ELSE
+          abs4 = -psaut(i, k)
+        END IF
+        IF (abs4 .LT. qmin/dtcld) THEN
+          psaut(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qci(i, k, 2) - psaut(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 2) + psaut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psaut(i, k)*dtcld
           CALL PUSHCONTROL1B(1)
         END IF
 !
@@ -8569,55 +10218,54 @@ CONTAINS
 !        (T<T0: S->G) pgaut>0 min=0.,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
 !update supcol
-        supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 2) .GT. 0.) THEN
-          CALL PUSHREAL8(alpha2)
-          alpha2 = 1.e-3*EXP(0.09*(-supcol))
-          IF (0. .LT. alpha2*(qrs(i, k, 2)-qs0)) THEN
-            x8 = alpha2*(qrs(i, k, 2)-qs0)
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            x8 = 0.
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (x8 .GT. qrs(i, k, 2)/dtcld) THEN
-            pgaut(i, k) = qrs(i, k, 2)/dtcld
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            pgaut(i, k) = x8
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (pgaut(i, k) .GE. 0.) THEN
-            abs5 = pgaut(i, k)
-          ELSE
-            abs5 = -pgaut(i, k)
-          END IF
-          IF (abs5 .LT. qmin/dtcld) THEN
-            pgaut(i, k) = 0.
-            CALL PUSHCONTROL1B(1)
-          ELSE
-            CALL PUSHCONTROL1B(0)
-          END IF
-          IF (qrs(i, k, 2) - pgaut(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 2))
-            qrs(i, k, 2) = qrs(i, k, 2) - pgaut(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
-          IF (qrs(i, k, 3) + pgaut(i, k)*dtcld .LT. 0.) THEN
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = 0.
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHREAL8(qrs(i, k, 3))
-            qrs(i, k, 3) = qrs(i, k, 3) + pgaut(i, k)*dtcld
-            CALL PUSHCONTROL1B(1)
-          END IF
+!         supcol = t0c-t(i,k) ! not change
+!         call smoothif(supcol,0.,fsupcol,'t0')     
+!         call smoothif(qrs(i,k,2),0.,fqs,'q+')
+        CALL PUSHREAL8(alpha2)
+        alpha2 = 1.e-3*EXP(0.09*(-supcol))
+        IF (0. .LT. alpha2*(qrs(i, k, 2)-qs0)) THEN
+          x8 = alpha2*(qrs(i, k, 2)-qs0)
           CALL PUSHCONTROL1B(0)
         ELSE
+          x8 = 0.
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (x8 .GT. qrs(i, k, 2)/dtcld) THEN
+          pgaut(i, k) = qrs(i, k, 2)/dtcld
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pgaut(i, k) = x8
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(pgaut(i, k))
+        pgaut(i, k) = fsupcol*pgaut(i, k)
+        IF (pgaut(i, k) .GE. 0.) THEN
+          abs5 = pgaut(i, k)
+        ELSE
+          abs5 = -pgaut(i, k)
+        END IF
+        IF (abs5 .LT. qmin/dtcld) THEN
+          pgaut(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) - pgaut(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = qrs(i, k, 2) - pgaut(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 3) + pgaut(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 3))
+          qrs(i, k, 3) = qrs(i, k, 3) + pgaut(i, k)*dtcld
           CALL PUSHCONTROL1B(1)
         END IF
 !
@@ -8625,189 +10273,211 @@ CONTAINS
 ! psevp: Evaporation of melting snow [RH83 A27] 
 !       (T>=T0: S->V) rh<1., psevp<0, min=-qrs(i,k,2)/dtcld, max=0.
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 2) .GT. qcrmin) THEN
+!         supcol = t0c-t(i,k) ! not change
 !update rh qs
-          CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
-          CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
-          IF (rh(i, k, 1) .LT. 1.) THEN
+        CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
+        CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
-            xl(i, k) = XLCAL(t(i, k))
-            CALL PUSHREAL8(cpm(i, k))
-            cpm(i, k) = CPMCAL(q(i, k))
-            IF (90. .GT. t0c - t(i, k)) THEN
-              y3 = t0c - t(i, k)
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHCONTROL1B(1)
-              y3 = 90.
-            END IF
-            IF (0. .LT. y3) THEN
-              CALL PUSHREAL8(max3)
-              max3 = y3
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(max3)
-              max3 = 0.
-              CALL PUSHCONTROL1B(1)
-            END IF
-            CALL PUSHREAL8(a)
-            a = EXP(alpha*max3/2.)*SQRT(den(i, k)*qrs(i, k, 2))
-            IF (90. .GT. t0c - t(i, k)) THEN
-              y4 = t0c - t(i, k)
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHCONTROL1B(1)
-              y4 = 90.
-            END IF
-            IF (0. .LT. y4) THEN
-              CALL PUSHREAL8(max4)
-              max4 = y4
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(max4)
-              max4 = 0.
-              CALL PUSHCONTROL1B(1)
-            END IF
-            CALL PUSHREAL8(b)
-            b = EXP((3.-bvts)*alpha*max4/8.)*(t(i, k)+120.)**(1./6.)/t(i&
-&             , k)**(5.12/6.)*p(i, k)**(1./3.)*den(i, k)**((13.+3.*bvts)&
-&             /24.)*qrs(i, k, 2)**((5.+bvts)/8.)
-            CALL PUSHREAL8(c)
-            c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t&
-&             (i, k)**3.5
-            CALL PUSHREAL8(d)
-            d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-            CALL PUSHREAL8(e)
-            e = (rh(i, k, 1)-1.)/(c+d)
-            psevp0 = e*(psevp_a*a+psevp_b*b)
-            IF (psevp0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-              x9 = -(qrs(i, k, 2)/dtcld)
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x9 = psevp0
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x9 .GT. 0.) THEN
-              psevp(i, k) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              psevp(i, k) = x9
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (psevp(i, k) .GE. 0.) THEN
-              abs6 = psevp(i, k)
-            ELSE
-              abs6 = -psevp(i, k)
-            END IF
-            IF (abs6 .LT. qmin/dtcld) THEN
-              psevp(i, k) = 0.
-              CALL PUSHCONTROL1B(1)
-            ELSE
-              CALL PUSHCONTROL1B(0)
-            END IF
-            IF (q(i, k) - psevp(i, k)*dtcld .LT. 0.) THEN
-              CALL PUSHREAL8(q(i, k))
-              q(i, k) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(q(i, k))
-              q(i, k) = q(i, k) - psevp(i, k)*dtcld
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (qrs(i, k, 2) + psevp(i, k)*dtcld .LT. 0.) THEN
-              CALL PUSHREAL8(qrs(i, k, 2))
-              qrs(i, k, 2) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHREAL8(qrs(i, k, 2))
-              qrs(i, k, 2) = qrs(i, k, 2) + psevp(i, k)*dtcld
-              CALL PUSHCONTROL1B(1)
-            END IF
-            CALL PUSHREAL8(t(i, k))
-            t(i, k) = t(i, k) + psevp(i, k)*dtcld*xls/cpm(i, k)
-            CALL PUSHCONTROL2B(0)
-          ELSE
-            CALL PUSHCONTROL2B(1)
-          END IF
+        xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(cpm(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL PUSHREAL8(ft0)
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't+')
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y3 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
         ELSE
-          CALL PUSHCONTROL2B(2)
+          CALL PUSHCONTROL1B(1)
+          y3 = 90.
         END IF
+        IF (0. .LT. y3) THEN
+          CALL PUSHREAL8(max5)
+          max5 = y3
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max5)
+          max5 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max12)
+          max12 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max12)
+          max12 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(a)
+        a = EXP(alpha*max5/2.)*SQRT(den(i, k)*max12)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y4 = t0c - t(i, k)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+          y4 = 90.
+        END IF
+        IF (0. .LT. y4) THEN
+          CALL PUSHREAL8(max6)
+          max6 = y4
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHREAL8(max6)
+          max6 = 0.
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max13)
+          max13 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max13)
+          max13 = qrs(i, k, 2)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = EXP((3.-bvts)*alpha*max6/8.)*(t(i, k)+120.)**(1./6.)/t(i, k)&
+&         **(5.12/6.)*p(i, k)**(1./3.)*den(i, k)**((13.+3.*bvts)/24.)*&
+&         max13**((5.+bvts)/8.)
+        CALL PUSHREAL8(c)
+        c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i, &
+&         k)**3.5
+        CALL PUSHREAL8(d)
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        CALL PUSHREAL8(e)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        psevp0 = e*(psevp_a*a+psevp_b*b)
+        IF (psevp0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+          x9 = -(qrs(i, k, 2)/dtcld)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          x9 = psevp0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (x9 .GT. 0.) THEN
+          psevp(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          psevp(i, k) = x9
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(psevp(i, k))
+        psevp(i, k) = ft0*psevp(i, k)
+        IF (psevp(i, k) .GE. 0.) THEN
+          abs6 = psevp(i, k)
+        ELSE
+          abs6 = -psevp(i, k)
+        END IF
+        IF (abs6 .LT. qmin/dtcld) THEN
+          psevp(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (q(i, k) - psevp(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(q(i, k))
+          q(i, k) = q(i, k) - psevp(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 2) + psevp(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(qrs(i, k, 2))
+          qrs(i, k, 2) = qrs(i, k, 2) + psevp(i, k)*dtcld
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(t(i, k))
+        t(i, k) = t(i, k) + psevp(i, k)*dtcld*xls/cpm(i, k)
 !
 !-------------------------------------------------------------
 ! pgevp: Evaporation of melting graupel [RH84 A19]
 !       (T>=T0: G->V) rh<1., pgevp<0, min=-qrs(i,k,3)/dtcld, max=0.
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update rh qs
-          CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
-          CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
-          IF (rh(i, k, 1) .LT. 1.) THEN
+        CALL PUSHREAL8ARRAY(qs(i, k, :), 3)
+        CALL PUSHREAL8ARRAY(rh(i, k, :), 3)
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
-            CALL PUSHREAL8(xl(i, k))
-            xl(i, k) = XLCAL(t(i, k))
-            CALL PUSHREAL8(cpm(i, k))
-            cpm(i, k) = CPMCAL(q(i, k))
-            CALL PUSHREAL8(a)
-            a = SQRT(den(i, k)*qrs(i, k, 3))
-            CALL PUSHREAL8(b)
-            b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./&
-&             3.)*den(i, k)**((13.+3.*bvtg)/24.)*qrs(i, k, 3)**((5.+bvtg&
-&             )/8.)
-            CALL PUSHREAL8(c)
-            c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t&
-&             (i, k)**3.5
-            CALL PUSHREAL8(d)
-            d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-            CALL PUSHREAL8(e)
-            e = (rh(i, k, 1)-1.)/(c+d)
-            pgevp0 = e*(pgevp_a*a+pgevp_b*b)
-            IF (pgevp0 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-              x10 = -(qrs(i, k, 3)/dtcld)
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              x10 = pgevp0
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (x10 .GT. 0.) THEN
-              pgevp(i, k) = 0.
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              pgevp(i, k) = x10
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (pgevp(i, k) .GE. 0.) THEN
-              abs7 = pgevp(i, k)
-            ELSE
-              abs7 = -pgevp(i, k)
-            END IF
-            IF (abs7 .LT. qmin/dtcld) THEN
-              pgevp(i, k) = 0.
-              CALL PUSHCONTROL1B(1)
-            ELSE
-              CALL PUSHCONTROL1B(0)
-            END IF
-            IF (q(i, k) - pgevp(i, k)*dtcld .LT. 0.) THEN
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHCONTROL1B(1)
-            END IF
-            IF (qrs(i, k, 3) + pgevp(i, k)*dtcld .LT. 0.) THEN
-              CALL PUSHCONTROL1B(0)
-            ELSE
-              CALL PUSHCONTROL1B(1)
-            END IF
-            CALL PUSHCONTROL2B(2)
-          ELSE
-            CALL PUSHCONTROL2B(1)
-          END IF
+        CALL PUSHREAL8(xl(i, k))
+        xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(cpm(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL PUSHREAL8(ft0)
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max7)
+          max7 = qcrmin
+          CALL PUSHCONTROL1B(0)
         ELSE
-          CALL PUSHCONTROL2B(0)
+          CALL PUSHREAL8(max7)
+          max7 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(a)
+        a = SQRT(den(i, k)*max7)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          CALL PUSHREAL8(max8)
+          max8 = qcrmin
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max8)
+          max8 = qrs(i, k, 3)
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(b)
+        b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.)*&
+&         den(i, k)**((13.+3.*bvtg)/24.)*max8**((5.+bvtg)/8.)
+        CALL PUSHREAL8(c)
+        c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i, &
+&         k)**3.5
+        CALL PUSHREAL8(d)
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        CALL PUSHREAL8(e)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        pgevp0 = e*(pgevp_a*a+pgevp_b*b)
+        IF (pgevp0 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+          x10 = -(qrs(i, k, 3)/dtcld)
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          x10 = pgevp0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (x10 .GT. 0.) THEN
+          pgevp(i, k) = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          pgevp(i, k) = x10
+          CALL PUSHCONTROL1B(1)
+        END IF
+        CALL PUSHREAL8(pgevp(i, k))
+        pgevp(i, k) = ft0*pgevp(i, k)
+        IF (pgevp(i, k) .GE. 0.) THEN
+          abs7 = pgevp(i, k)
+        ELSE
+          abs7 = -pgevp(i, k)
+        END IF
+        IF (abs7 .LT. qmin/dtcld) THEN
+          pgevp(i, k) = 0.
+          CALL PUSHCONTROL1B(1)
+        ELSE
+          CALL PUSHCONTROL1B(0)
+        END IF
+        IF (q(i, k) - pgevp(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (qrs(i, k, 3) + pgevp(i, k)*dtcld .LT. 0.) THEN
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHCONTROL1B(1)
         END IF
       END DO
     END DO
@@ -8815,413 +10485,589 @@ CONTAINS
     a_xl = 0.0_8
     DO k=kte,kts,-1
       DO i=ite,its,-1
-        CALL POPCONTROL2B(branch)
-        IF (branch .NE. 0) THEN
-          IF (branch .NE. 1) THEN
-            a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
-            a_pgevp(i, k) = a_temp3
-            a_cpm(i, k) = a_cpm(i, k) - pgevp(i, k)*a_temp3/cpm(i, k)
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_qrs(i, k, 3) = 0.0_8
-            ELSE
-              a_pgevp(i, k) = a_pgevp(i, k) + dtcld*a_qrs(i, k, 3)
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_q(i, k) = 0.0_8
-            ELSE
-              a_pgevp(i, k) = a_pgevp(i, k) - dtcld*a_q(i, k)
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .NE. 0) a_pgevp(i, k) = 0.0_8
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_pgevp(i, k) = 0.0_8
-              a_x10 = 0.0_8
-            ELSE
-              a_x10 = a_pgevp(i, k)
-              a_pgevp(i, k) = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_qrs(i, k, 3) = a_qrs(i, k, 3) - a_x10/dtcld
-              a_pgevp0 = 0.0_8
-            ELSE
-              a_pgevp0 = a_x10
-            END IF
-            a_e = (pgevp_a*a+pgevp_b*b)*a_pgevp0
-            a_a = pgevp_a*e*a_pgevp0
-            a_b = pgevp_b*e*a_pgevp0
-            CALL POPREAL8(e)
-            a_temp3 = a_e/(c+d)
-            a_rh(i, k, 1) = a_rh(i, k, 1) + a_temp3
-            a_temp5 = -((rh(i, k, 1)-1.)*a_temp3/(c+d))
-            a_c = a_temp5
-            a_d = a_temp5
-            CALL POPREAL8(d)
-            temp15 = t(i, k)**1.81
-            temp14 = temp15*qs(i, k, 1)
-            a_temp6 = diffac_b*a_d/temp14
-            a_temp5 = -(p(i, k)*a_temp6/temp14)
-            a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 1)*&
-&             a_temp5
-            a_qs(i, k, 1) = a_qs(i, k, 1) + temp15*a_temp5
-            CALL POPREAL8(c)
-            temp15 = rv*t(i, k)**3.5
-            temp13 = den(i, k)*(t(i, k)+120.)
-            temp12 = xl(i, k)*xl(i, k)
-            a_temp5 = diffac_a*a_c/temp15
-            a_xl(i, k) = a_xl(i, k) + 2*xl(i, k)*temp13*a_temp5
-            a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*temp12*a_temp5
-            a_t(i, k) = a_t(i, k) + (den(i, k)*temp12-3.5*t(i, k)**2.5*&
-&             rv*temp12*temp13/temp15)*a_temp5
-            CALL POPREAL8(b)
-            temp15 = 5.12/6.
-            temp14 = t(i, k)**temp15
-            temp13 = 1.0/3.
-            temp12 = p(i, k)**temp13/temp14
-            temp11 = (3.*bvtg+13.)/24.
-            temp10 = den(i, k)**temp11
-            temp8 = (bvtg+5.)/8.
-            temp7 = qrs(i, k, 3)**temp8
-            temp6 = 1.0/6.
-            temp5 = (t(i, k)+120.)**temp6
-            a_temp7 = temp10*temp12*a_b
-            a_temp4 = temp5*temp7*a_b
-            a_temp8 = temp10*a_temp4/temp14
-            IF (p(i, k) .LE. 0.0_8 .AND. (temp13 .EQ. 0.0_8 .OR. temp13 &
-&               .NE. INT(temp13))) THEN
-              a_p(i, k) = a_p(i, k) + a_temp6
-            ELSE
-              a_p(i, k) = a_p(i, k) + a_temp6 + temp13*p(i, k)**(temp13-&
-&               1)*a_temp8
-            END IF
-            IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp15 .EQ. 0.0_8 .OR. &
-&               temp15 .NE. INT(temp15)))) a_t(i, k) = a_t(i, k) - &
-&               temp15*t(i, k)**(temp15-1)*temp12*a_temp8
-            IF (.NOT.(t(i, k) + 120. .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 &
-&               .OR. temp6 .NE. INT(temp6)))) a_t(i, k) = a_t(i, k) + &
-&               temp6*(t(i, k)+120.)**(temp6-1)*temp7*a_temp7
-            CALL POPREAL8(a)
-            IF (den(i, k)*qrs(i, k, 3) .EQ. 0.0_8) THEN
-              a_temp3 = 0.0_8
-            ELSE
-              a_temp3 = a_a/(2.0*SQRT(den(i, k)*qrs(i, k, 3)))
-            END IF
-            IF (den(i, k) .LE. 0.0_8 .AND. (temp11 .EQ. 0.0_8 .OR. &
-&               temp11 .NE. INT(temp11))) THEN
-              a_den(i, k) = a_den(i, k) + qrs(i, k, 3)*a_temp3
-            ELSE
-              a_den(i, k) = a_den(i, k) + temp11*den(i, k)**(temp11-1)*&
-&               temp12*a_temp4 + qrs(i, k, 3)*a_temp3
-            END IF
-            IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. &
-&               temp8 .NE. INT(temp8))) THEN
-              a_qrs(i, k, 3) = a_qrs(i, k, 3) + den(i, k)*a_temp3
-            ELSE
-              a_qrs(i, k, 3) = a_qrs(i, k, 3) + temp8*qrs(i, k, 3)**(&
-&               temp8-1)*temp5*a_temp7 + den(i, k)*a_temp3
-            END IF
-            CALL POPREAL8(cpm(i, k))
-            CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-            a_cpm(i, k) = 0.0_8
-            CALL POPREAL8(xl(i, k))
-            CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-            a_xl(i, k) = 0.0_8
-          END IF
-          CALL POPREAL8ARRAY(rh(i, k, :), 3)
-          CALL POPREAL8ARRAY(qs(i, k, :), 3)
-          CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k)&
-&                 , a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), &
-&                 a_qs(i, k, :))
-        END IF
-        CALL POPCONTROL2B(branch)
+        a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
+        a_pgevp(i, k) = a_temp3
+        a_cpm(i, k) = a_cpm(i, k) - pgevp(i, k)*a_temp3/cpm(i, k)
+        CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
-          a_psevp(i, k) = a_temp3
-          CALL POPREAL8(t(i, k))
-          a_cpm(i, k) = a_cpm(i, k) - psevp(i, k)*a_temp3/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_psevp(i, k) = a_psevp(i, k) + dtcld*a_qrs(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(q(i, k))
-            a_q(i, k) = 0.0_8
-          ELSE
-            CALL POPREAL8(q(i, k))
-            a_psevp(i, k) = a_psevp(i, k) - dtcld*a_q(i, k)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_psevp(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_psevp(i, k) = 0.0_8
-            a_x9 = 0.0_8
-          ELSE
-            a_x9 = a_psevp(i, k)
-            a_psevp(i, k) = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 2) = a_qrs(i, k, 2) - a_x9/dtcld
-            a_psevp0 = 0.0_8
-          ELSE
-            a_psevp0 = a_x9
-          END IF
-          a_e = (psevp_a*a+psevp_b*b)*a_psevp0
-          a_a = psevp_a*e*a_psevp0
-          a_b = psevp_b*e*a_psevp0
-          CALL POPREAL8(e)
-          a_temp3 = a_e/(c+d)
-          a_rh(i, k, 1) = a_rh(i, k, 1) + a_temp3
-          a_temp5 = -((rh(i, k, 1)-1.)*a_temp3/(c+d))
-          a_c = a_temp5
-          a_d = a_temp5
-          CALL POPREAL8(d)
-          temp15 = t(i, k)**1.81
-          temp14 = temp15*qs(i, k, 1)
-          a_temp6 = diffac_b*a_d/temp14
-          a_temp5 = -(p(i, k)*a_temp6/temp14)
-          a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 1)*a_temp5
-          a_qs(i, k, 1) = a_qs(i, k, 1) + temp15*a_temp5
-          CALL POPREAL8(c)
-          temp15 = rv*t(i, k)**3.5
-          temp13 = den(i, k)*(t(i, k)+120.)
-          temp12 = xl(i, k)*xl(i, k)
-          a_temp5 = diffac_a*a_c/temp15
-          a_xl(i, k) = a_xl(i, k) + 2*xl(i, k)*temp13*a_temp5
-          a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*temp12*a_temp5
-          a_t(i, k) = a_t(i, k) + (den(i, k)*temp12-3.5*t(i, k)**2.5*rv*&
-&           temp12*temp13/temp15)*a_temp5
-          CALL POPREAL8(b)
-          temp15 = 5.12/6.
-          temp14 = t(i, k)**temp15
-          temp13 = 1.0/3.
-          temp12 = p(i, k)**temp13/temp14
-          temp11 = (bvts+5.)/8.
-          temp10 = qrs(i, k, 2)**temp11
-          temp9 = 1.0/6.
-          temp8 = (t(i, k)+120.)**temp9
-          temp7 = temp8*temp10
-          temp5 = (3.*bvts+13.)/24.
-          temp4 = den(i, k)**temp5
-          temp3 = (-bvts+3.)*alpha*max4/8.
-          temp2 = EXP(temp3)
-          a_temp9 = temp7*temp12*a_b
-          a_temp1 = temp2*temp4*a_b
-          IF (.NOT.(t(i, k) + 120. .LE. 0.0_8 .AND. (temp9 .EQ. 0.0_8 &
-&             .OR. temp9 .NE. INT(temp9)))) a_t(i, k) = a_t(i, k) + &
-&             temp9*(t(i, k)+120.)**(temp9-1)*temp10*temp12*a_temp1
-          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp11 .EQ. 0.0_8 &
-&             .OR. temp11 .NE. INT(temp11)))) a_qrs(i, k, 2) = a_qrs(i, &
-&             k, 2) + temp11*qrs(i, k, 2)**(temp11-1)*temp8*temp12*&
-&             a_temp1
-          a_temp8 = temp7*a_temp1/temp14
-          IF (p(i, k) .LE. 0.0_8 .AND. (temp13 .EQ. 0.0_8 .OR. temp13 &
-&             .NE. INT(temp13))) THEN
-            a_p(i, k) = a_p(i, k) + a_temp6
-          ELSE
-            a_p(i, k) = a_p(i, k) + a_temp6 + temp13*p(i, k)**(temp13-1)&
-&             *a_temp8
-          END IF
-          IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp15 .EQ. 0.0_8 .OR. &
-&             temp15 .NE. INT(temp15)))) a_t(i, k) = a_t(i, k) - temp15*&
-&             t(i, k)**(temp15-1)*temp12*a_temp8
-          a_max4 = (3.-bvts)*alpha*EXP(temp3)*temp4*a_temp9/8.
-          IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
-&             temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5&
-&             *den(i, k)**(temp5-1)*temp2*a_temp9
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max4)
-            a_y4 = a_max4
-          ELSE
-            CALL POPREAL8(max4)
-            a_y4 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y4
-          CALL POPREAL8(a)
-          temp15 = den(i, k)*qrs(i, k, 2)
-          temp14 = SQRT(temp15)
-          temp13 = alpha*max3/2.
-          a_max3 = alpha*EXP(temp13)*temp14*a_a/2.
-          IF (temp15 .EQ. 0.0_8) THEN
-            a_temp3 = 0.0_8
-          ELSE
-            a_temp3 = EXP(temp13)*a_a/(2.0*temp14)
-          END IF
-          a_den(i, k) = a_den(i, k) + qrs(i, k, 2)*a_temp3
-          a_qrs(i, k, 2) = a_qrs(i, k, 2) + den(i, k)*a_temp3
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max3)
-            a_y3 = a_max3
-          ELSE
-            CALL POPREAL8(max3)
-            a_y3 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y3
-          CALL POPREAL8(cpm(i, k))
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
-        ELSE IF (branch .NE. 1) THEN
-          GOTO 100
+          a_qrs(i, k, 3) = 0.0_8
+        ELSE
+          a_pgevp(i, k) = a_pgevp(i, k) + dtcld*a_qrs(i, k, 3)
         END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_q(i, k) = 0.0_8
+        ELSE
+          a_pgevp(i, k) = a_pgevp(i, k) - dtcld*a_q(i, k)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pgevp(i, k) = 0.0_8
+        CALL POPREAL8(pgevp(i, k))
+        a_ft0 = pgevp(i, k)*a_pgevp(i, k)
+        a_pgevp(i, k) = ft0*a_pgevp(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_pgevp(i, k) = 0.0_8
+          a_x10 = 0.0_8
+        ELSE
+          a_x10 = a_pgevp(i, k)
+          a_pgevp(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) - a_x10/dtcld
+          a_pgevp0 = 0.0_8
+        ELSE
+          a_pgevp0 = a_x10
+        END IF
+        a_e = (pgevp_a*a+pgevp_b*b)*a_pgevp0
+        a_a = pgevp_a*e*a_pgevp0
+        a_b = pgevp_b*e*a_pgevp0
+        CALL POPREAL8(e)
+        a_temp3 = a_e/(c+d)
+        a_rh(i, k, 1) = a_rh(i, k, 1) + a_temp3
+        a_temp5 = -((rh(i, k, 1)-1.)*a_temp3/(c+d))
+        a_c = a_temp5
+        a_d = a_temp5
+        CALL POPREAL8(d)
+        temp15 = t(i, k)**1.81
+        temp14 = temp15*qs(i, k, 1)
+        a_temp6 = diffac_b*a_d/temp14
+        a_temp5 = -(p(i, k)*a_temp6/temp14)
+        a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 1)*a_temp5
+        a_qs(i, k, 1) = a_qs(i, k, 1) + temp15*a_temp5
+        CALL POPREAL8(c)
+        temp15 = rv*t(i, k)**3.5
+        temp13 = den(i, k)*(t(i, k)+120.)
+        temp12 = xl(i, k)*xl(i, k)
+        a_temp5 = diffac_a*a_c/temp15
+        a_xl(i, k) = a_xl(i, k) + 2*xl(i, k)*temp13*a_temp5
+        a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*temp12*a_temp5
+        a_t(i, k) = a_t(i, k) + (den(i, k)*temp12-3.5*t(i, k)**2.5*rv*&
+&         temp12*temp13/temp15)*a_temp5
+        CALL POPREAL8(b)
+        temp15 = (3.*bvtg+13.)/24.
+        temp14 = den(i, k)**temp15
+        temp13 = (bvtg+5.)/8.
+        temp12 = max8**temp13
+        temp11 = 1.0/3.
+        temp10 = p(i, k)**temp11
+        temp9 = temp10*temp12
+        temp8 = 5.12/6.
+        temp7 = t(i, k)**temp8
+        temp5 = 1.0/6.
+        temp6 = (t(i, k)+120.)**temp5/temp7
+        a_temp7 = temp9*temp14*a_b/temp7
+        a_temp8 = temp6*a_b
+        IF (p(i, k) .LE. 0.0_8 .AND. (temp11 .EQ. 0.0_8 .OR. temp11 .NE.&
+&           INT(temp11))) THEN
+          a_p(i, k) = a_p(i, k) + a_temp6
+        ELSE
+          a_p(i, k) = a_p(i, k) + a_temp6 + temp11*p(i, k)**(temp11-1)*&
+&           temp12*temp14*a_temp8
+        END IF
+        IF (max8 .LE. 0.0_8 .AND. (temp13 .EQ. 0.0_8 .OR. temp13 .NE. &
+&           INT(temp13))) THEN
+          a_max8 = 0.0_8
+        ELSE
+          a_max8 = temp13*max8**(temp13-1)*temp10*temp14*a_temp8
+        END IF
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp15 .EQ. 0.0_8 .OR. &
+&           temp15 .NE. INT(temp15)))) a_den(i, k) = a_den(i, k) + &
+&           temp15*den(i, k)**(temp15-1)*temp9*a_temp8
+        IF (.NOT.(t(i, k) + 120. .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR.&
+&           temp5 .NE. INT(temp5)))) a_t(i, k) = a_t(i, k) + temp5*(t(i&
+&           , k)+120.)**(temp5-1)*a_temp7
+        IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8 &
+&           .NE. INT(temp8)))) a_t(i, k) = a_t(i, k) - temp8*t(i, k)**(&
+&           temp8-1)*temp6*a_temp7
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max8)
+        ELSE
+          CALL POPREAL8(max8)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max8
+        END IF
+        CALL POPREAL8(a)
+        IF (den(i, k)*max7 .EQ. 0.0_8) THEN
+          a_temp3 = 0.0_8
+        ELSE
+          a_temp3 = a_a/(2.0*SQRT(den(i, k)*max7))
+        END IF
+        a_den(i, k) = a_den(i, k) + max7*a_temp3
+        a_max7 = den(i, k)*a_temp3
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max7)
+        ELSE
+          CALL POPREAL8(max7)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max7
+        END IF
+        CALL POPREAL8(ft0)
+        CALL A_SMOOTHIF(t(i, k), a_t(i, k), t0c, ft0, a_ft0, 't0')
+        CALL POPREAL8(cpm(i, k))
+        CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
+        a_cpm(i, k) = 0.0_8
+        CALL POPREAL8(xl(i, k))
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
         CALL POPREAL8ARRAY(rh(i, k, :), 3)
         CALL POPREAL8ARRAY(qs(i, k, :), 3)
         CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k), &
 &               a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), a_qs&
 &               (i, k, :))
- 100    CALL POPCONTROL1B(branch)
-        IF (branch .EQ. 0) THEN
-          a_pgaut(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 3))
-            a_qrs(i, k, 3) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 3))
-            a_pgaut(i, k) = a_pgaut(i, k) + dtcld*a_qrs(i, k, 3)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_pgaut(i, k) = a_pgaut(i, k) - dtcld*a_qrs(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_pgaut(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_pgaut(i, k)/dtcld
-            a_pgaut(i, k) = 0.0_8
-            a_x8 = 0.0_8
-          ELSE
-            a_x8 = a_pgaut(i, k)
-            a_pgaut(i, k) = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_alpha2 = (qrs(i, k, 2)-qs0)*a_x8
-            a_qrs(i, k, 2) = a_qrs(i, k, 2) + alpha2*a_x8
-          ELSE
-            a_alpha2 = 0.0_8
-          END IF
-          supcol = t0c - t(i, k)
-          CALL POPREAL8(alpha2)
-          a_supcol = -(0.09*EXP(-(0.09*supcol))*1.e-3*a_alpha2)
-        ELSE
-          a_supcol = 0.0_8
-        END IF
-        a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(t(i, k))
+        a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
+        a_psevp(i, k) = a_temp3
+        a_cpm(i, k) = a_cpm(i, k) - psevp(i, k)*a_temp3/cpm(i, k)
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_psaut(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_psaut(i, k) = a_psaut(i, k) + dtcld*a_qrs(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 2) = 0.0_8
-          ELSE
-            a_psaut(i, k) = a_psaut(i, k) - dtcld*a_qci(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_psaut(i, k) = 0.0_8
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            a_qci(i, k, 2) = a_qci(i, k, 2) + a_psaut(i, k)/dtcld
-            a_qimax = -(a_psaut(i, k)/dtcld)
-            a_psaut(i, k) = 0.0_8
-          ELSE
-            a_psaut(i, k) = 0.0_8
-            a_qimax = 0.0_8
-          END IF
-          a_den(i, k) = a_den(i, k) - roqimax*a_qimax/den(i, k)**2
+          CALL POPREAL8(qrs(i, k, 2))
+          a_qrs(i, k, 2) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 2))
+          a_psevp(i, k) = a_psevp(i, k) + dtcld*a_qrs(i, k, 2)
         END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(q(i, k))
+          a_q(i, k) = 0.0_8
+        ELSE
+          CALL POPREAL8(q(i, k))
+          a_psevp(i, k) = a_psevp(i, k) - dtcld*a_q(i, k)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_psevp(i, k) = 0.0_8
+        CALL POPREAL8(psevp(i, k))
+        a_ft0 = psevp(i, k)*a_psevp(i, k)
+        a_psevp(i, k) = ft0*a_psevp(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_psevp(i, k) = 0.0_8
+          a_x9 = 0.0_8
+        ELSE
+          a_x9 = a_psevp(i, k)
+          a_psevp(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) - a_x9/dtcld
+          a_psevp0 = 0.0_8
+        ELSE
+          a_psevp0 = a_x9
+        END IF
+        a_e = (psevp_a*a+psevp_b*b)*a_psevp0
+        a_a = psevp_a*e*a_psevp0
+        a_b = psevp_b*e*a_psevp0
+        CALL POPREAL8(e)
+        a_temp3 = a_e/(c+d)
+        a_rh(i, k, 1) = a_rh(i, k, 1) + a_temp3
+        a_temp5 = -((rh(i, k, 1)-1.)*a_temp3/(c+d))
+        a_c = a_temp5
+        a_d = a_temp5
+        CALL POPREAL8(d)
+        temp15 = t(i, k)**1.81
+        temp14 = temp15*qs(i, k, 1)
+        a_temp6 = diffac_b*a_d/temp14
+        a_temp5 = -(p(i, k)*a_temp6/temp14)
+        a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 1)*a_temp5
+        a_qs(i, k, 1) = a_qs(i, k, 1) + temp15*a_temp5
+        CALL POPREAL8(c)
+        temp15 = rv*t(i, k)**3.5
+        temp13 = den(i, k)*(t(i, k)+120.)
+        temp12 = xl(i, k)*xl(i, k)
+        a_temp5 = diffac_a*a_c/temp15
+        a_xl(i, k) = a_xl(i, k) + 2*xl(i, k)*temp13*a_temp5
+        a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*temp12*a_temp5
+        a_t(i, k) = a_t(i, k) + (den(i, k)*temp12-3.5*t(i, k)**2.5*rv*&
+&         temp12*temp13/temp15)*a_temp5
+        CALL POPREAL8(b)
+        temp15 = (bvts+5.)/8.
+        temp14 = max13**temp15
+        temp13 = 1.0/3.
+        temp12 = p(i, k)**temp13
+        temp11 = temp12*temp14
+        temp10 = 5.12/6.
+        temp9 = t(i, k)**temp10
+        temp8 = 1.0/6.
+        temp7 = (t(i, k)+120.)**temp8/temp9
+        temp5 = (3.*bvts+13.)/24.
+        temp4 = den(i, k)**temp5
+        temp3 = (-bvts+3.)*alpha*max6/8.
+        temp2 = EXP(temp3)
+        a_temp7 = temp7*temp11*a_b
+        a_temp1 = temp2*temp4*a_b
+        IF (p(i, k) .LE. 0.0_8 .AND. (temp13 .EQ. 0.0_8 .OR. temp13 .NE.&
+&           INT(temp13))) THEN
+          a_p(i, k) = a_p(i, k) + a_temp6
+        ELSE
+          a_p(i, k) = a_p(i, k) + a_temp6 + temp13*p(i, k)**(temp13-1)*&
+&           temp14*temp7*a_temp1
+        END IF
+        a_temp9 = temp11*a_temp1/temp9
+        IF (max13 .LE. 0.0_8 .AND. (temp15 .EQ. 0.0_8 .OR. temp15 .NE. &
+&           INT(temp15))) THEN
+          a_max13 = 0.0_8
+        ELSE
+          a_max13 = temp15*max13**(temp15-1)*temp12*temp7*a_temp1
+        END IF
+        IF (.NOT.(t(i, k) + 120. .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR.&
+&           temp8 .NE. INT(temp8)))) a_t(i, k) = a_t(i, k) + temp8*(t(i&
+&           , k)+120.)**(temp8-1)*a_temp9
+        IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp10 .EQ. 0.0_8 .OR. &
+&           temp10 .NE. INT(temp10)))) a_t(i, k) = a_t(i, k) - temp10*t(&
+&           i, k)**(temp10-1)*temp7*a_temp9
+        a_max6 = (3.-bvts)*alpha*EXP(temp3)*temp4*a_temp7/8.
+        IF (.NOT.(den(i, k) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR. &
+&           temp5 .NE. INT(temp5)))) a_den(i, k) = a_den(i, k) + temp5*&
+&           den(i, k)**(temp5-1)*temp2*a_temp7
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max13)
+        ELSE
+          CALL POPREAL8(max13)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max13
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max6)
+          a_y4 = 0.0_8
+        ELSE
+          CALL POPREAL8(max6)
+          a_y4 = a_max6
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y4
+        CALL POPREAL8(a)
+        temp15 = den(i, k)*max12
+        temp14 = SQRT(temp15)
+        temp13 = alpha*max5/2.
+        a_max5 = alpha*EXP(temp13)*temp14*a_a/2.
+        IF (temp15 .EQ. 0.0_8) THEN
+          a_temp3 = 0.0_8
+        ELSE
+          a_temp3 = EXP(temp13)*a_a/(2.0*temp14)
+        END IF
+        a_den(i, k) = a_den(i, k) + max12*a_temp3
+        a_max12 = den(i, k)*a_temp3
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max12)
+        ELSE
+          CALL POPREAL8(max12)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max12
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max5)
+          a_y3 = 0.0_8
+        ELSE
+          CALL POPREAL8(max5)
+          a_y3 = a_max5
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y3
+        CALL POPREAL8(ft0)
+        CALL A_SMOOTHIF(t(i, k), a_t(i, k), t0c, ft0, a_ft0, 't+')
+        CALL POPREAL8(cpm(i, k))
+        CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
+        a_cpm(i, k) = 0.0_8
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
+        CALL POPREAL8ARRAY(rh(i, k, :), 3)
+        CALL POPREAL8ARRAY(qs(i, k, :), 3)
+        CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k), &
+&               a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), a_qs&
+&               (i, k, :))
+        a_pgaut(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 3))
+          a_qrs(i, k, 3) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 3))
+          a_pgaut(i, k) = a_pgaut(i, k) + dtcld*a_qrs(i, k, 3)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qrs(i, k, 2))
+          a_qrs(i, k, 2) = 0.0_8
+        ELSE
+          CALL POPREAL8(qrs(i, k, 2))
+          a_pgaut(i, k) = a_pgaut(i, k) - dtcld*a_qrs(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pgaut(i, k) = 0.0_8
+        CALL POPREAL8(pgaut(i, k))
+        a_fsupcol = pgaut(i, k)*a_pgaut(i, k)
+        a_pgaut(i, k) = fsupcol*a_pgaut(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_pgaut(i, k)/dtcld
+          a_pgaut(i, k) = 0.0_8
+          a_x8 = 0.0_8
+        ELSE
+          a_x8 = a_pgaut(i, k)
+          a_pgaut(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_alpha2 = (qrs(i, k, 2)-qs0)*a_x8
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + alpha2*a_x8
+        ELSE
+          a_alpha2 = 0.0_8
+        END IF
+        CALL POPREAL8(alpha2)
+        a_supcol = -(0.09*EXP(-(0.09*supcol))*1.e-3*a_alpha2)
+        a_psaut(i, k) = 0.0_8
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 2) = 0.0_8
+        ELSE
+          a_psaut(i, k) = a_psaut(i, k) + dtcld*a_qrs(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 2) = 0.0_8
+        ELSE
+          a_psaut(i, k) = a_psaut(i, k) - dtcld*a_qci(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_psaut(i, k) = 0.0_8
+        CALL POPREAL8(psaut(i, k))
+        a_fsupcol = a_fsupcol + psaut(i, k)*a_psaut(i, k)
+        a_psaut(i, k) = fsupcol*a_psaut(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 2) = a_qci(i, k, 2) + a_psaut(i, k)/dtcld
+          a_qimax = -(a_psaut(i, k)/dtcld)
+          a_psaut(i, k) = 0.0_8
+        ELSE
+          a_psaut(i, k) = 0.0_8
+          a_qimax = 0.0_8
+        END IF
+        a_den(i, k) = a_den(i, k) - roqimax*a_qimax/den(i, k)**2
+        CALL POPREAL8(fsupcol)
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't+')
         CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(t(i, k))
+        a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
+        a_pigen(i, k) = a_temp3
+        a_cpm(i, k) = a_cpm(i, k) - pigen(i, k)*a_temp3/cpm(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qci(i, k, 2) = 0.0_8
+        ELSE
+          a_pigen(i, k) = a_pigen(i, k) + dtcld*a_qci(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(q(i, k))
+          a_q(i, k) = 0.0_8
+        ELSE
+          CALL POPREAL8(q(i, k))
+          a_pigen(i, k) = a_pigen(i, k) - dtcld*a_q(i, k)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pigen(i, k) = 0.0_8
+        CALL POPREAL8(pigen(i, k))
+        a_temp3 = pigen(i, k)*a_pigen(i, k)
+        a_pigen(i, k) = fsupcol*fsupsat*a_pigen(i, k)
+        a_fsupcol = fsupsat*a_temp3
+        a_fsupsat = fsupcol*a_temp3
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_pigen(i, k) = 0.0_8
+          a_pigen0 = 0.0_8
+        ELSE
+          a_pigen0 = a_pigen(i, k)
+          a_pigen(i, k) = 0.0_8
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_satdt = a_pigen0
+          a_x7 = 0.0_8
+        ELSE
+          a_x7 = a_pigen0
+          a_satdt = 0.0_8
+        END IF
+        roqi0 = 4.92e-11*xni0**1.33
+        a_temp3 = a_x7/(den(i, k)*dtcld)
+        a_max11 = -(a_x7/dtcld)
+        a_roqi0 = a_temp3
+        a_den(i, k) = a_den(i, k) - roqi0*a_temp3/den(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_qci(i, k, 2) = a_qci(i, k, 2) + a_max11
+        a_xni0 = 1.33*xni0**0.33*4.92e-11*a_roqi0
+        CALL POPREAL8(xni0)
+        a_supcol = 0.1*EXP(0.1*supcol)*1.e3*a_xni0
+        CALL POPREAL8(fsupcol)
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't+')
+        CALL POPREAL8(fsupsat)
+        a_supsat = 0.0_8
+        CALL A_SMOOTHIF(supsat, a_supsat, 0., fsupsat, a_fsupsat, 'q+')
+        a_supsat = a_supsat + a_satdt/dtcld
+        a_q(i, k) = a_q(i, k) + a_supsat
+        a_qs(i, k, 2) = a_qs(i, k, 2) - a_supsat
+        CALL POPREAL8ARRAY(rh(i, k, :), 3)
+        CALL POPREAL8ARRAY(qs(i, k, :), 3)
+        CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k), &
+&               a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), a_qs&
+&               (i, k, :))
+        CALL POPREAL8(cpm(i, k))
+        CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
+        a_cpm(i, k) = 0.0_8
+        CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(t(i, k))
+        a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
+        a_pgdep(i, k) = a_temp3
+        a_cpm(i, k) = a_cpm(i, k) - pgdep(i, k)*a_temp3/cpm(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          a_qrs(i, k, 3) = 0.0_8
+        ELSE
+          a_pgdep(i, k) = a_pgdep(i, k) + dtcld*a_qrs(i, k, 3)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(q(i, k))
+          a_q(i, k) = 0.0_8
+        ELSE
+          CALL POPREAL8(q(i, k))
+          a_pgdep(i, k) = a_pgdep(i, k) - dtcld*a_q(i, k)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pgdep(i, k) = 0.0_8
+        CALL POPREAL8(pgdep(i, k))
+        a_fsupcol = pgdep(i, k)*a_pgdep(i, k)
+        a_pgdep(i, k) = fsupcol*a_pgdep(i, k)
         CALL POPCONTROL2B(branch)
         IF (branch .LT. 2) THEN
           IF (branch .EQ. 0) THEN
-            a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
-            a_pigen(i, k) = a_temp3
-            CALL POPREAL8(t(i, k))
-            a_cpm(i, k) = a_cpm(i, k) - pigen(i, k)*a_temp3/cpm(i, k)
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_qci(i, k, 2) = 0.0_8
-            ELSE
-              a_pigen(i, k) = a_pigen(i, k) + dtcld*a_qci(i, k, 2)
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              CALL POPREAL8(q(i, k))
-              a_q(i, k) = 0.0_8
-            ELSE
-              CALL POPREAL8(q(i, k))
-              a_pigen(i, k) = a_pigen(i, k) - dtcld*a_q(i, k)
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .NE. 0) a_pigen(i, k) = 0.0_8
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_pigen(i, k) = 0.0_8
-              a_pigen0 = 0.0_8
-            ELSE
-              a_pigen0 = a_pigen(i, k)
-              a_pigen(i, k) = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_satdt = a_pigen0
-              a_x7 = 0.0_8
-            ELSE
-              a_x7 = a_pigen0
-              a_satdt = 0.0_8
-            END IF
-            a_qi0 = a_x7/dtcld
-            a_max5 = -(a_x7/dtcld)
-            CALL POPCONTROL1B(branch)
-            IF (branch .NE. 0) a_qci(i, k, 2) = a_qci(i, k, 2) + a_max5
+            a_x5 = a_pgdep(i, k)
+            a_pgdep(i, k) = 0.0_8
           ELSE
-            a_satdt = 0.0_8
-            a_qi0 = 0.0_8
+            a_pgdep(i, k) = 0.0_8
+            a_x5 = 0.0_8
           END IF
-          a_temp3 = a_qi0/den(i, k)
-          a_roqi0 = a_temp3
-          a_den(i, k) = a_den(i, k) - roqi0*a_temp3/den(i, k)
-          CALL POPREAL8(roqi0)
-          a_xni0 = 1.33*xni0**0.33*4.92e-11*a_roqi0
-          CALL POPREAL8(xni0)
-          a_supcol = 0.1*EXP(0.1*supcol)*1.e3*a_xni0
-          CALL POPREAL8(cpm(i, k))
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
-        ELSE IF (branch .EQ. 2) THEN
-          a_supcol = 0.0_8
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            a_qrs(i, k, 3) = a_qrs(i, k, 3) - a_x5/dtcld
+            a_pgdep3 = 0.0_8
+          ELSE
+            a_pgdep3 = a_x5
+          END IF
           a_satdt = 0.0_8
         ELSE
-          a_supcol = 0.0_8
-          GOTO 110
+          IF (branch .EQ. 2) THEN
+            a_x6 = a_pgdep(i, k)
+            a_pgdep(i, k) = 0.0_8
+          ELSE
+            a_pgdep(i, k) = 0.0_8
+            a_x6 = 0.0_8
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            a_satdt = a_x6
+            a_pgdep3 = 0.0_8
+          ELSE
+            a_pgdep3 = a_x6
+            a_satdt = 0.0_8
+          END IF
         END IF
+        a_e = (pgdep_a*a+pgdep_b*b)*a_pgdep3
+        a_a = pgdep_a*e*a_pgdep3
+        a_b = pgdep_b*e*a_pgdep3
+        CALL POPREAL8(e)
+        a_temp3 = a_e/(c+d)
+        a_rh(i, k, 2) = a_rh(i, k, 2) + a_temp3
+        a_temp5 = -((rh(i, k, 2)-1.)*a_temp3/(c+d))
+        a_c = a_temp5
+        a_d = a_temp5
+        CALL POPREAL8(d)
+        temp15 = t(i, k)**1.81
+        temp14 = temp15*qs(i, k, 2)
+        a_temp6 = diffac_b*a_d/temp14
+        a_temp5 = -(p(i, k)*a_temp6/temp14)
+        a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 2)*a_temp5
+        a_qs(i, k, 2) = a_qs(i, k, 2) + temp15*a_temp5
+        CALL POPREAL8(c)
+        temp15 = rv*t(i, k)**3.5
+        a_temp5 = diffac_a*xls**2*a_c/temp15
+        a_t(i, k) = a_t(i, k) + (den(i, k)-3.5*t(i, k)**2.5*rv*den(i, k)&
+&         *(t(i, k)+120.)/temp15)*a_temp5
+        CALL POPREAL8(b)
+        temp15 = (3.*bvtg+13.)/24.
+        temp14 = den(i, k)**temp15
+        temp13 = (bvtg+5.)/8.
+        temp12 = max4**temp13
+        temp11 = 1.0/3.
+        temp10 = p(i, k)**temp11
+        temp9 = temp10*temp12
+        temp8 = 5.12/6.
+        temp7 = t(i, k)**temp8
+        temp5 = 1.0/6.
+        temp6 = (t(i, k)+120.)**temp5/temp7
+        a_temp7 = temp9*temp14*a_b/temp7
+        a_temp8 = temp6*a_b
+        IF (p(i, k) .LE. 0.0_8 .AND. (temp11 .EQ. 0.0_8 .OR. temp11 .NE.&
+&           INT(temp11))) THEN
+          a_p(i, k) = a_p(i, k) + a_temp6
+        ELSE
+          a_p(i, k) = a_p(i, k) + a_temp6 + temp11*p(i, k)**(temp11-1)*&
+&           temp12*temp14*a_temp8
+        END IF
+        IF (den(i, k) .LE. 0.0_8 .AND. (temp15 .EQ. 0.0_8 .OR. temp15 &
+&           .NE. INT(temp15))) THEN
+          a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*a_temp5
+        ELSE
+          a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*a_temp5 + temp15*&
+&           den(i, k)**(temp15-1)*temp9*a_temp8
+        END IF
+        IF (max4 .LE. 0.0_8 .AND. (temp13 .EQ. 0.0_8 .OR. temp13 .NE. &
+&           INT(temp13))) THEN
+          a_max4 = 0.0_8
+        ELSE
+          a_max4 = temp13*max4**(temp13-1)*temp10*temp14*a_temp8
+        END IF
+        IF (.NOT.(t(i, k) + 120. .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR.&
+&           temp5 .NE. INT(temp5)))) a_t(i, k) = a_t(i, k) + temp5*(t(i&
+&           , k)+120.)**(temp5-1)*a_temp7
+        IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8 &
+&           .NE. INT(temp8)))) a_t(i, k) = a_t(i, k) - temp8*t(i, k)**(&
+&           temp8-1)*temp6*a_temp7
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max4)
+        ELSE
+          CALL POPREAL8(max4)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max4
+        END IF
+        CALL POPREAL8(a)
+        IF (den(i, k)*max3 .EQ. 0.0_8) THEN
+          a_temp3 = 0.0_8
+        ELSE
+          a_temp3 = a_a/(2.0*SQRT(den(i, k)*max3))
+        END IF
+        a_den(i, k) = a_den(i, k) + max3*a_temp3
+        a_max3 = den(i, k)*a_temp3
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max3)
+        ELSE
+          CALL POPREAL8(max3)
+          a_qrs(i, k, 3) = a_qrs(i, k, 3) + a_max3
+        END IF
+        CALL POPREAL8(fsupcol)
+        a_supcol = 0.0_8
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't+')
+        CALL POPREAL8(cpm(i, k))
+        CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
+        a_cpm(i, k) = 0.0_8
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
         a_supsat = a_satdt/dtcld
         a_q(i, k) = a_q(i, k) + a_supsat
         a_qs(i, k, 2) = a_qs(i, k, 2) - a_supsat
@@ -9230,381 +11076,259 @@ CONTAINS
         CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k), &
 &               a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), a_qs&
 &               (i, k, :))
- 110    a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(t(i, k))
+        a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
+        a_psdep(i, k) = a_temp3
+        a_cpm(i, k) = a_cpm(i, k) - psdep(i, k)*a_temp3/cpm(i, k)
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
-          a_pgdep(i, k) = a_temp3
-          CALL POPREAL8(t(i, k))
-          a_cpm(i, k) = a_cpm(i, k) - pgdep(i, k)*a_temp3/cpm(i, k)
-          CALL POPCONTROL1B(branch)
+          a_qrs(i, k, 2) = 0.0_8
+        ELSE
+          a_psdep(i, k) = a_psdep(i, k) + dtcld*a_qrs(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(q(i, k))
+          a_q(i, k) = 0.0_8
+        ELSE
+          CALL POPREAL8(q(i, k))
+          a_psdep(i, k) = a_psdep(i, k) - dtcld*a_q(i, k)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_psdep(i, k) = 0.0_8
+        CALL POPREAL8(psdep(i, k))
+        a_fsupcol = psdep(i, k)*a_psdep(i, k)
+        a_psdep(i, k) = fsupcol*a_psdep(i, k)
+        CALL POPCONTROL2B(branch)
+        IF (branch .LT. 2) THEN
           IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 3))
-            a_qrs(i, k, 3) = 0.0_8
+            a_x3 = a_psdep(i, k)
+            a_psdep(i, k) = 0.0_8
           ELSE
-            CALL POPREAL8(qrs(i, k, 3))
-            a_pgdep(i, k) = a_pgdep(i, k) + dtcld*a_qrs(i, k, 3)
+            a_psdep(i, k) = 0.0_8
+            a_x3 = 0.0_8
           END IF
           CALL POPCONTROL1B(branch)
           IF (branch .EQ. 0) THEN
-            CALL POPREAL8(q(i, k))
-            a_q(i, k) = 0.0_8
+            a_qrs(i, k, 2) = a_qrs(i, k, 2) - a_x3/dtcld
+            a_psdep0 = 0.0_8
           ELSE
-            CALL POPREAL8(q(i, k))
-            a_pgdep(i, k) = a_pgdep(i, k) - dtcld*a_q(i, k)
+            a_psdep0 = a_x3
+          END IF
+          a_satdt = 0.0_8
+        ELSE
+          IF (branch .EQ. 2) THEN
+            a_x4 = a_psdep(i, k)
+            a_psdep(i, k) = 0.0_8
+          ELSE
+            a_psdep(i, k) = 0.0_8
+            a_x4 = 0.0_8
           END IF
           CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_pgdep(i, k) = 0.0_8
-          CALL POPCONTROL2B(branch)
-          IF (branch .LT. 2) THEN
-            IF (branch .EQ. 0) THEN
-              a_x5 = a_pgdep(i, k)
-              a_pgdep(i, k) = 0.0_8
-            ELSE
-              a_pgdep(i, k) = 0.0_8
-              a_x5 = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_qrs(i, k, 3) = a_qrs(i, k, 3) - a_x5/dtcld
-              a_pgdep3 = 0.0_8
-            ELSE
-              a_pgdep3 = a_x5
-            END IF
+          IF (branch .EQ. 0) THEN
+            a_satdt = a_x4
+            a_psdep0 = 0.0_8
+          ELSE
+            a_psdep0 = a_x4
             a_satdt = 0.0_8
-          ELSE
-            IF (branch .EQ. 2) THEN
-              a_x6 = a_pgdep(i, k)
-              a_pgdep(i, k) = 0.0_8
-            ELSE
-              a_pgdep(i, k) = 0.0_8
-              a_x6 = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_satdt = a_x6
-              a_pgdep3 = 0.0_8
-            ELSE
-              a_pgdep3 = a_x6
-              a_satdt = 0.0_8
-            END IF
           END IF
-          a_supsat = a_satdt/dtcld
-          a_e = (pgdep_a*a+pgdep_b*b)*a_pgdep3
-          a_a = pgdep_a*e*a_pgdep3
-          a_b = pgdep_b*e*a_pgdep3
-          CALL POPREAL8(e)
-          a_temp3 = a_e/(c+d)
-          a_rh(i, k, 2) = a_rh(i, k, 2) + a_temp3
-          a_temp5 = -((rh(i, k, 2)-1.)*a_temp3/(c+d))
-          a_c = a_temp5
-          a_d = a_temp5
-          CALL POPREAL8(d)
-          temp15 = t(i, k)**1.81
-          temp14 = temp15*qs(i, k, 2)
-          a_temp6 = diffac_b*a_d/temp14
-          a_temp5 = -(p(i, k)*a_temp6/temp14)
-          a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 2)*a_temp5
-          a_qs(i, k, 2) = a_qs(i, k, 2) + temp15*a_temp5 - a_supsat
-          CALL POPREAL8(c)
-          temp15 = rv*t(i, k)**3.5
-          a_temp5 = diffac_a*xls**2*a_c/temp15
+        END IF
+        a_e = (psdep_a*a+psdep_b*b)*a_psdep0
+        a_a = psdep_a*e*a_psdep0
+        a_b = psdep_b*e*a_psdep0
+        CALL POPREAL8(e)
+        a_temp3 = a_e/(c+d)
+        a_rh(i, k, 2) = a_rh(i, k, 2) + a_temp3
+        a_temp5 = -((rh(i, k, 2)-1.)*a_temp3/(c+d))
+        a_c = a_temp5
+        a_d = a_temp5
+        CALL POPREAL8(d)
+        temp15 = t(i, k)**1.81
+        temp14 = temp15*qs(i, k, 2)
+        a_temp6 = diffac_b*a_d/temp14
+        a_temp5 = -(p(i, k)*a_temp6/temp14)
+        a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 2)*a_temp5
+        a_qs(i, k, 2) = a_qs(i, k, 2) + temp15*a_temp5
+        CALL POPREAL8(c)
+        temp15 = rv*t(i, k)**3.5
+        a_temp5 = diffac_a*xls**2*a_c/temp15
+        CALL POPREAL8(b)
+        temp3 = (bvts+5.)/8.
+        temp2 = max10**temp3
+        temp1 = 1.0/3.
+        temp4 = p(i, k)**temp1
+        temp5 = temp4*temp2
+        temp6 = 5.12/6.
+        temp7 = t(i, k)**temp6
+        temp8 = 1.0/6.
+        temp9 = (t(i, k)+120.)**temp8/temp7
+        temp11 = (3.*bvts+13.)/24.
+        temp12 = den(i, k)**temp11
+        temp13 = (-bvts+3.)*alpha*max2/8.
+        temp14 = EXP(temp13)
+        a_temp2 = temp9*temp5*a_b
+        IF (den(i, k) .LE. 0.0_8 .AND. (temp11 .EQ. 0.0_8 .OR. temp11 &
+&           .NE. INT(temp11))) THEN
+          a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*a_temp5
+        ELSE
+          a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*a_temp5 + temp11*&
+&           den(i, k)**(temp11-1)*temp14*a_temp2
+        END IF
+        a_temp3 = temp14*temp12*a_b
+        IF (p(i, k) .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1 .NE. &
+&           INT(temp1))) THEN
+          a_p(i, k) = a_p(i, k) + a_temp6
+        ELSE
+          a_p(i, k) = a_p(i, k) + a_temp6 + temp1*p(i, k)**(temp1-1)*&
+&           temp2*temp9*a_temp3
+        END IF
+        a_temp4 = temp5*a_temp3/temp7
+        IF (t(i, k) + 120. .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8&
+&           .NE. INT(temp8))) THEN
           a_t(i, k) = a_t(i, k) + (den(i, k)-3.5*t(i, k)**2.5*rv*den(i, &
 &           k)*(t(i, k)+120.)/temp15)*a_temp5
-          CALL POPREAL8(b)
-          temp15 = 5.12/6.
-          temp14 = t(i, k)**temp15
-          temp13 = 1.0/3.
-          temp12 = p(i, k)**temp13/temp14
-          temp11 = (3.*bvtg+13.)/24.
-          temp10 = den(i, k)**temp11
-          temp8 = (bvtg+5.)/8.
-          temp7 = qrs(i, k, 3)**temp8
-          temp6 = 1.0/6.
-          temp5 = (t(i, k)+120.)**temp6
-          a_temp7 = temp10*temp12*a_b
-          a_temp4 = temp5*temp7*a_b
-          a_temp8 = temp10*a_temp4/temp14
-          IF (p(i, k) .LE. 0.0_8 .AND. (temp13 .EQ. 0.0_8 .OR. temp13 &
-&             .NE. INT(temp13))) THEN
-            a_p(i, k) = a_p(i, k) + a_temp6
-          ELSE
-            a_p(i, k) = a_p(i, k) + a_temp6 + temp13*p(i, k)**(temp13-1)&
-&             *a_temp8
-          END IF
-          IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp15 .EQ. 0.0_8 .OR. &
-&             temp15 .NE. INT(temp15)))) a_t(i, k) = a_t(i, k) - temp15*&
-&             t(i, k)**(temp15-1)*temp12*a_temp8
-          IF (.NOT.(t(i, k) + 120. .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 &
-&             .OR. temp6 .NE. INT(temp6)))) a_t(i, k) = a_t(i, k) + &
-&             temp6*(t(i, k)+120.)**(temp6-1)*temp7*a_temp7
-          CALL POPREAL8(a)
-          IF (den(i, k)*qrs(i, k, 3) .EQ. 0.0_8) THEN
-            a_temp3 = 0.0_8
-          ELSE
-            a_temp3 = a_a/(2.0*SQRT(den(i, k)*qrs(i, k, 3)))
-          END IF
-          IF (den(i, k) .LE. 0.0_8 .AND. (temp11 .EQ. 0.0_8 .OR. temp11 &
-&             .NE. INT(temp11))) THEN
-            a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*a_temp5 + qrs(i, &
-&             k, 3)*a_temp3
-          ELSE
-            a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*a_temp5 + temp11*&
-&             den(i, k)**(temp11-1)*temp12*a_temp4 + qrs(i, k, 3)*&
-&             a_temp3
-          END IF
-          IF (qrs(i, k, 3) .LE. 0.0_8 .AND. (temp8 .EQ. 0.0_8 .OR. temp8&
-&             .NE. INT(temp8))) THEN
-            a_qrs(i, k, 3) = a_qrs(i, k, 3) + den(i, k)*a_temp3
-          ELSE
-            a_qrs(i, k, 3) = a_qrs(i, k, 3) + temp8*qrs(i, k, 3)**(temp8&
-&             -1)*temp5*a_temp7 + den(i, k)*a_temp3
-          END IF
-          CALL POPREAL8(cpm(i, k))
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
-          a_q(i, k) = a_q(i, k) + a_supsat
-          CALL POPREAL8ARRAY(rh(i, k, :), 3)
-          CALL POPREAL8ARRAY(qs(i, k, :), 3)
-          CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k)&
-&                 , a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), &
-&                 a_qs(i, k, :))
+        ELSE
+          a_t(i, k) = a_t(i, k) + (den(i, k)-3.5*t(i, k)**2.5*rv*den(i, &
+&           k)*(t(i, k)+120.)/temp15)*a_temp5 + temp8*(t(i, k)+120.)**(&
+&           temp8-1)*a_temp4
+        END IF
+        IF (max10 .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR. temp3 .NE. INT&
+&           (temp3))) THEN
+          a_max10 = 0.0_8
+        ELSE
+          a_max10 = temp3*max10**(temp3-1)*temp4*temp9*a_temp3
+        END IF
+        IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp6 .EQ. 0.0_8 .OR. temp6 &
+&           .NE. INT(temp6)))) a_t(i, k) = a_t(i, k) - temp6*t(i, k)**(&
+&           temp6-1)*temp9*a_temp4
+        a_max2 = (3.-bvts)*alpha*EXP(temp13)*temp12*a_temp2/8.
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max10)
+        ELSE
+          CALL POPREAL8(max10)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max10
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_temp3 = dtcld*xls*a_t(i, k)/cpm(i, k)
-          a_psdep(i, k) = a_temp3
-          CALL POPREAL8(t(i, k))
-          a_cpm(i, k) = a_cpm(i, k) - psdep(i, k)*a_temp3/cpm(i, k)
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(qrs(i, k, 2))
-            a_qrs(i, k, 2) = 0.0_8
-          ELSE
-            CALL POPREAL8(qrs(i, k, 2))
-            a_psdep(i, k) = a_psdep(i, k) + dtcld*a_qrs(i, k, 2)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(q(i, k))
-            a_q(i, k) = 0.0_8
-          ELSE
-            CALL POPREAL8(q(i, k))
-            a_psdep(i, k) = a_psdep(i, k) - dtcld*a_q(i, k)
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_psdep(i, k) = 0.0_8
-          CALL POPCONTROL2B(branch)
-          IF (branch .LT. 2) THEN
-            IF (branch .EQ. 0) THEN
-              a_x3 = a_psdep(i, k)
-              a_psdep(i, k) = 0.0_8
-            ELSE
-              a_psdep(i, k) = 0.0_8
-              a_x3 = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_qrs(i, k, 2) = a_qrs(i, k, 2) - a_x3/dtcld
-              a_psdep0 = 0.0_8
-            ELSE
-              a_psdep0 = a_x3
-            END IF
-            a_satdt = 0.0_8
-          ELSE
-            IF (branch .EQ. 2) THEN
-              a_x4 = a_psdep(i, k)
-              a_psdep(i, k) = 0.0_8
-            ELSE
-              a_psdep(i, k) = 0.0_8
-              a_x4 = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_satdt = a_x4
-              a_psdep0 = 0.0_8
-            ELSE
-              a_psdep0 = a_x4
-              a_satdt = 0.0_8
-            END IF
-          END IF
-          a_e = (psdep_a*a+psdep_b*b)*a_psdep0
-          a_a = psdep_a*e*a_psdep0
-          a_b = psdep_b*e*a_psdep0
-          CALL POPREAL8(e)
-          a_temp3 = a_e/(c+d)
-          a_rh(i, k, 2) = a_rh(i, k, 2) + a_temp3
-          a_temp5 = -((rh(i, k, 2)-1.)*a_temp3/(c+d))
-          a_c = a_temp5
-          a_d = a_temp5
-          CALL POPREAL8(d)
-          temp15 = t(i, k)**1.81
-          temp14 = temp15*qs(i, k, 2)
-          a_temp6 = diffac_b*a_d/temp14
-          a_temp5 = -(p(i, k)*a_temp6/temp14)
-          a_t(i, k) = a_t(i, k) + 1.81*t(i, k)**0.81*qs(i, k, 2)*a_temp5
-          a_qs(i, k, 2) = a_qs(i, k, 2) + temp15*a_temp5
-          CALL POPREAL8(c)
-          temp15 = rv*t(i, k)**3.5
-          a_temp5 = diffac_a*xls**2*a_c/temp15
-          CALL POPREAL8(b)
-          temp3 = 5.12/6.
-          temp2 = t(i, k)**temp3
-          temp1 = 1.0/3.
-          temp4 = p(i, k)**temp1/temp2
-          temp5 = (bvts+5.)/8.
-          temp6 = qrs(i, k, 2)**temp5
-          temp7 = 1.0/6.
-          temp8 = (t(i, k)+120.)**temp7
-          temp9 = temp8*temp6
-          temp11 = (3.*bvts+13.)/24.
-          temp12 = den(i, k)**temp11
-          temp13 = (-bvts+3.)*alpha*max2/8.
-          temp14 = EXP(temp13)
-          a_temp2 = temp9*temp4*a_b
-          IF (den(i, k) .LE. 0.0_8 .AND. (temp11 .EQ. 0.0_8 .OR. temp11 &
-&             .NE. INT(temp11))) THEN
-            a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*a_temp5
-          ELSE
-            a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*a_temp5 + temp11*&
-&             den(i, k)**(temp11-1)*temp14*a_temp2
-          END IF
-          a_temp3 = temp14*temp12*a_b
-          IF (t(i, k) + 120. .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
-&             temp7 .NE. INT(temp7))) THEN
-            a_t(i, k) = a_t(i, k) + (den(i, k)-3.5*t(i, k)**2.5*rv*den(i&
-&             , k)*(t(i, k)+120.)/temp15)*a_temp5
-          ELSE
-            a_t(i, k) = a_t(i, k) + (den(i, k)-3.5*t(i, k)**2.5*rv*den(i&
-&             , k)*(t(i, k)+120.)/temp15)*a_temp5 + temp7*(t(i, k)+120.)&
-&             **(temp7-1)*temp6*temp4*a_temp3
-          END IF
-          IF (.NOT.(qrs(i, k, 2) .LE. 0.0_8 .AND. (temp5 .EQ. 0.0_8 .OR.&
-&             temp5 .NE. INT(temp5)))) a_qrs(i, k, 2) = a_qrs(i, k, 2) +&
-&             temp5*qrs(i, k, 2)**(temp5-1)*temp8*temp4*a_temp3
-          a_temp4 = temp9*a_temp3/temp2
-          IF (p(i, k) .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. temp1 .NE.&
-&             INT(temp1))) THEN
-            a_p(i, k) = a_p(i, k) + a_temp6
-          ELSE
-            a_p(i, k) = a_p(i, k) + a_temp6 + temp1*p(i, k)**(temp1-1)*&
-&             a_temp4
-          END IF
-          IF (.NOT.(t(i, k) .LE. 0.0_8 .AND. (temp3 .EQ. 0.0_8 .OR. &
-&             temp3 .NE. INT(temp3)))) a_t(i, k) = a_t(i, k) - temp3*t(i&
-&             , k)**(temp3-1)*temp4*a_temp4
-          a_max2 = (3.-bvts)*alpha*EXP(temp13)*temp12*a_temp2/8.
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max2)
-            a_y2 = a_max2
-          ELSE
-            CALL POPREAL8(max2)
-            a_y2 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y2
-          CALL POPREAL8(a)
-          temp3 = den(i, k)*qrs(i, k, 2)
-          temp2 = SQRT(temp3)
-          temp1 = alpha*max1/2.
-          a_max1 = alpha*EXP(temp1)*temp2*a_a/2.
-          IF (temp3 .EQ. 0.0_8) THEN
-            a_temp0 = 0.0_8
-          ELSE
-            a_temp0 = EXP(temp1)*a_a/(2.0*temp2)
-          END IF
-          a_den(i, k) = a_den(i, k) + qrs(i, k, 2)*a_temp0
-          a_qrs(i, k, 2) = a_qrs(i, k, 2) + den(i, k)*a_temp0
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(max1)
-            a_y1 = a_max1
-          ELSE
-            CALL POPREAL8(max1)
-            a_y1 = 0.0_8
-          END IF
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y1
-          CALL POPREAL8(cpm(i, k))
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
-          a_supsat = a_satdt/dtcld
-          a_q(i, k) = a_q(i, k) + a_supsat
-          a_qs(i, k, 2) = a_qs(i, k, 2) - a_supsat
-          CALL POPREAL8ARRAY(rh(i, k, :), 3)
-          CALL POPREAL8ARRAY(qs(i, k, :), 3)
-          CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k)&
-&                 , a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), &
-&                 a_qs(i, k, :))
+          CALL POPREAL8(max2)
+          a_y2 = 0.0_8
+        ELSE
+          CALL POPREAL8(max2)
+          a_y2 = a_max2
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y2
+        CALL POPREAL8(a)
+        temp3 = den(i, k)*max9
+        temp2 = SQRT(temp3)
+        temp1 = alpha*max1/2.
+        a_max1 = alpha*EXP(temp1)*temp2*a_a/2.
+        IF (temp3 .EQ. 0.0_8) THEN
+          a_temp0 = 0.0_8
+        ELSE
+          a_temp0 = EXP(temp1)*a_a/(2.0*temp2)
+        END IF
+        a_den(i, k) = a_den(i, k) + max9*a_temp0
+        a_max9 = den(i, k)*a_temp0
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max9)
+        ELSE
+          CALL POPREAL8(max9)
+          a_qrs(i, k, 2) = a_qrs(i, k, 2) + a_max9
         END IF
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
-          a_temp0 = dtcld*xls*a_t(i, k)/cpm(i, k)
-          a_pidep(i, k) = a_temp0
-          CALL POPREAL8(t(i, k))
-          a_cpm(i, k) = a_cpm(i, k) - pidep(i, k)*a_temp0/cpm(i, k)
-          CALL POPCONTROL1B(branch)
+          CALL POPREAL8(max1)
+          a_y1 = 0.0_8
+        ELSE
+          CALL POPREAL8(max1)
+          a_y1 = a_max1
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) a_t(i, k) = a_t(i, k) - a_y1
+        CALL POPREAL8(fsupcol)
+        a_supcol = 0.0_8
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't+')
+        CALL POPREAL8(cpm(i, k))
+        CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
+        a_cpm(i, k) = 0.0_8
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
+        a_supsat = a_satdt/dtcld
+        a_q(i, k) = a_q(i, k) + a_supsat
+        a_qs(i, k, 2) = a_qs(i, k, 2) - a_supsat
+        CALL POPREAL8ARRAY(rh(i, k, :), 3)
+        CALL POPREAL8ARRAY(qs(i, k, :), 3)
+        CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k), &
+&               a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), a_qs&
+&               (i, k, :))
+        CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
+        CALL POPREAL8(t(i, k))
+        a_temp0 = dtcld*xls*a_t(i, k)/cpm(i, k)
+        a_pidep(i, k) = a_temp0
+        a_cpm(i, k) = a_cpm(i, k) - pidep(i, k)*a_temp0/cpm(i, k)
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(qci(i, k, 2))
+          a_qci(i, k, 2) = 0.0_8
+        ELSE
+          CALL POPREAL8(qci(i, k, 2))
+          a_pidep(i, k) = a_pidep(i, k) + dtcld*a_qci(i, k, 2)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(q(i, k))
+          a_q(i, k) = 0.0_8
+        ELSE
+          CALL POPREAL8(q(i, k))
+          a_pidep(i, k) = a_pidep(i, k) - dtcld*a_q(i, k)
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) a_pidep(i, k) = 0.0_8
+        CALL POPREAL8(pidep(i, k))
+        a_fsupcol = pidep(i, k)*a_pidep(i, k)
+        a_pidep(i, k) = fsupcol*a_pidep(i, k)
+        CALL POPCONTROL2B(branch)
+        IF (branch .LT. 2) THEN
           IF (branch .EQ. 0) THEN
-            c = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
-            a = (rh(i, k, 2)-1.)/(b+c)
-            CALL POPREAL8(qci(i, k, 2))
-            a_qci(i, k, 2) = 0.0_8
+            a_x1 = a_pidep(i, k)
+            a_pidep(i, k) = 0.0_8
           ELSE
-            c = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
-            a = (rh(i, k, 2)-1.)/(b+c)
-            CALL POPREAL8(qci(i, k, 2))
-            a_pidep(i, k) = a_pidep(i, k) + dtcld*a_qci(i, k, 2)
+            a_pidep(i, k) = 0.0_8
+            a_x1 = 0.0_8
           END IF
           CALL POPCONTROL1B(branch)
           IF (branch .EQ. 0) THEN
-            CALL POPREAL8(q(i, k))
-            a_q(i, k) = 0.0_8
+            a_qci(i, k, 2) = a_qci(i, k, 2) - a_x1/dtcld
+            a_pidep0 = 0.0_8
           ELSE
-            CALL POPREAL8(q(i, k))
-            a_pidep(i, k) = a_pidep(i, k) - dtcld*a_q(i, k)
+            a_pidep0 = a_x1
+          END IF
+          a_satdt = 0.0_8
+        ELSE
+          IF (branch .EQ. 2) THEN
+            a_x2 = a_pidep(i, k)
+            a_pidep(i, k) = 0.0_8
+          ELSE
+            a_pidep(i, k) = 0.0_8
+            a_x2 = 0.0_8
           END IF
           CALL POPCONTROL1B(branch)
-          IF (branch .NE. 0) a_pidep(i, k) = 0.0_8
-          CALL POPCONTROL2B(branch)
-          IF (branch .LT. 2) THEN
-            IF (branch .EQ. 0) THEN
-              a_x1 = a_pidep(i, k)
-              a_pidep(i, k) = 0.0_8
-            ELSE
-              a_pidep(i, k) = 0.0_8
-              a_x1 = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_qci(i, k, 2) = a_qci(i, k, 2) - a_x1/dtcld
-              a_pidep0 = 0.0_8
-            ELSE
-              a_pidep0 = a_x1
-            END IF
+          IF (branch .EQ. 0) THEN
+            a_satdt = a_x2
+            a_pidep0 = 0.0_8
+          ELSE
+            a_pidep0 = a_x2
             a_satdt = 0.0_8
-          ELSE
-            IF (branch .EQ. 2) THEN
-              a_x2 = a_pidep(i, k)
-              a_pidep(i, k) = 0.0_8
-            ELSE
-              a_pidep(i, k) = 0.0_8
-              a_x2 = 0.0_8
-            END IF
-            CALL POPCONTROL1B(branch)
-            IF (branch .EQ. 0) THEN
-              a_satdt = a_x2
-              a_pidep0 = 0.0_8
-            ELSE
-              a_pidep0 = a_x2
-              a_satdt = 0.0_8
-            END IF
           END IF
-          a_supsat = a_satdt/dtcld
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
           temp3 = 7./8.
           temp2 = den(i, k)*qci(i, k, 2)
           a_a = temp2**temp3*pidep_a*a_pidep0
@@ -9628,7 +11352,7 @@ CONTAINS
           a_temp0 = diffac_b*a_c/temp1
           a_p(i, k) = a_p(i, k) + a_temp0
           a_temp1 = -(p(i, k)*a_temp0/temp1)
-          a_qs(i, k, 2) = a_qs(i, k, 2) + temp2*a_temp1 - a_supsat
+          a_qs(i, k, 2) = a_qs(i, k, 2) + temp2*a_temp1
           CALL POPREAL8(b)
           temp1 = rv*t(i, k)**3.5
           a_temp = diffac_a*xls**2*a_b/temp1
@@ -9636,16 +11360,24 @@ CONTAINS
 &           + (den(i, k)-3.5*t(i, k)**2.5*rv*den(i, k)*(t(i, k)+120.)/&
 &           temp1)*a_temp
           a_den(i, k) = a_den(i, k) + (t(i, k)+120.)*a_temp
-          CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
-          a_cpm(i, k) = 0.0_8
-          CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
-          a_xl(i, k) = 0.0_8
-          a_q(i, k) = a_q(i, k) + a_supsat
-          CALL POPREAL8ARRAY(qs(i, k, :), 3)
-          CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k)&
-&                 , a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), &
-&                 a_qs(i, k, :))
         END IF
+        CALL POPREAL8(fsupcol)
+        a_supcol = 0.0_8
+        CALL A_SMOOTHIF(supcol, a_supcol, 0., fsupcol, a_fsupcol, 't+')
+        CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
+        a_cpm(i, k) = 0.0_8
+        CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
+        a_xl(i, k) = 0.0_8
+        a_supsat = a_satdt/dtcld
+        CALL POPREAL8(supsat)
+        a_q(i, k) = a_q(i, k) + a_supsat
+        a_qs(i, k, 2) = a_qs(i, k, 2) - a_supsat
+        CALL POPREAL8ARRAY(qs(i, k, :), 3)
+        CALL A_CALCRH(t(i, k), a_t(i, k), p(i, k), a_p(i, k), q(i, k), &
+&               a_q(i, k), rh(i, k, :), a_rh(i, k, :), qs(i, k, :), a_qs&
+&               (i, k, :))
+        CALL POPREAL8(supcol)
+        a_t(i, k) = a_t(i, k) - a_supcol
       END DO
     END DO
   END SUBROUTINE A_ACCRET3
@@ -9670,8 +11402,9 @@ CONTAINS
 &   coeres1, coeres2, coeres3, coeres4
     REAL :: temp0, temp, xmi
     INTEGER :: i, k
-    REAL :: qi0, pidep2
-    REAL :: a, b, c, d, e, f, g
+    REAL :: fqi, fqr, fqv, fqs, fqg, frh, ft0, fpidep, fpsdep, fpgdep, &
+&   fsupcol, fsupsat, pidep2
+    REAL :: value01, factor01, source01, vice, a, b, c, d, e, f, g
     INTRINSIC MAX
     INTRINSIC MIN
     INTRINSIC ABS
@@ -9695,15 +11428,23 @@ CONTAINS
     REAL :: max1
     REAL :: max2
     REAL :: abs1
+    REAL :: max3
+    REAL :: max4
     REAL :: abs2
     REAL :: abs3
     REAL :: abs4
     REAL :: abs5
-    REAL :: max3
-    REAL :: max4
-    REAL :: abs6
-    REAL :: abs7
     REAL :: max5
+    REAL :: max6
+    REAL :: abs6
+    REAL :: max7
+    REAL :: max8
+    REAL :: abs7
+    REAL :: max9
+    REAL :: max10
+    REAL :: max11
+    REAL :: max12
+    REAL :: max13
     DO k=kts,kte
       DO i=its,ite
 !
@@ -9715,62 +11456,65 @@ CONTAINS
 !-------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qci(i, k, 2) .GT. 0.) THEN
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        IF (qci(i, k, 2) .GT. 0.) THEN
           b = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
           c = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
           a = (rh(i, k, 2)-1.)/(b+c)
           pidep0 = pidep_a*a*(den(i, k)*qci(i, k, 2))**(7./8.)
-          IF (pidep0 .LT. 0.) THEN
-            IF (pidep0 .LT. -(qci(i, k, 2)/dtcld)) THEN
-              x1 = -(qci(i, k, 2)/dtcld)
-            ELSE
-              x1 = pidep0
-            END IF
-            IF (x1 .GT. 0.) THEN
-              pidep(i, k) = 0.
-            ELSE
-              pidep(i, k) = x1
-            END IF
-          ELSE
-            IF (pidep0 .GT. satdt) THEN
-              x2 = satdt
-            ELSE
-              x2 = pidep0
-            END IF
-            IF (x2 .LT. 0.) THEN
-              pidep(i, k) = 0.
-            ELSE
-              pidep(i, k) = x2
-            END IF
-          END IF
-          IF (pidep(i, k) .GE. 0.) THEN
-            abs0 = pidep(i, k)
-          ELSE
-            abs0 = -pidep(i, k)
-          END IF
-          IF (abs0 .LT. qmin/dtcld) pidep(i, k) = 0.
-          IF (q(i, k) - pidep(i, k)*dtcld .LT. 0.) THEN
-            q(i, k) = 0.
-          ELSE
-            q(i, k) = q(i, k) - pidep(i, k)*dtcld
-          END IF
-          IF (qci(i, k, 2) + pidep(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) + pidep(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + pidep(i, k)*dtcld*xls/cpm(i, k)
-          pidep(i, k) = 0.
+        ELSE
+          pidep0 = 0.
         END IF
+        IF (pidep0 .LT. 0.) THEN
+          IF (pidep0 .LT. -(qci(i, k, 2)/dtcld)) THEN
+            x1 = -(qci(i, k, 2)/dtcld)
+          ELSE
+            x1 = pidep0
+          END IF
+          IF (x1 .GT. 0.) THEN
+            pidep(i, k) = 0.
+          ELSE
+            pidep(i, k) = x1
+          END IF
+        ELSE
+          IF (pidep0 .GT. satdt) THEN
+            x2 = satdt
+          ELSE
+            x2 = pidep0
+          END IF
+          IF (x2 .LT. 0.) THEN
+            pidep(i, k) = 0.
+          ELSE
+            pidep(i, k) = x2
+          END IF
+        END IF
+        pidep(i, k) = fsupcol*pidep(i, k)
+        IF (pidep(i, k) .GE. 0.) THEN
+          abs0 = pidep(i, k)
+        ELSE
+          abs0 = -pidep(i, k)
+        END IF
+        IF (abs0 .LT. qmin/dtcld) pidep(i, k) = 0.
+        IF (q(i, k) - pidep(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - pidep(i, k)*dtcld
+        END IF
+        IF (qci(i, k, 2) + pidep(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) + pidep(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pidep(i, k)*dtcld*xls/cpm(i, k)
+        pidep(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! psdep: deposition/sublimation rate of snow [HDC 14] 
@@ -9780,86 +11524,97 @@ CONTAINS
 !-------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 2) .GT. qcrmin) THEN
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y1 = t0c - t(i, k)
-          ELSE
-            y1 = 90.
-          END IF
-          IF (0. .LT. y1) THEN
-            max1 = y1
-          ELSE
-            max1 = 0.
-          END IF
-          a = EXP(alpha*max1/2.)*SQRT(den(i, k)*qrs(i, k, 2))
-          IF (90. .GT. t0c - t(i, k)) THEN
-            y2 = t0c - t(i, k)
-          ELSE
-            y2 = 90.
-          END IF
-          IF (0. .LT. y2) THEN
-            max2 = y2
-          ELSE
-            max2 = 0.
-          END IF
-          b = EXP((3.-bvts)*alpha*max2/8.)*(t(i, k)+120.)**(1./6.)/t(i, &
-&           k)**(5.12/6.)*p(i, k)**(1./3.)*den(i, k)**((13.+3.*bvts)/24.&
-&           )*qrs(i, k, 2)**((5.+bvts)/8.)
-          c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
-          e = (rh(i, k, 2)-1.)/(c+d)
-          psdep0 = e*(psdep_a*a+psdep_b*b)
-          IF (psdep0 .LT. 0.) THEN
-            IF (psdep0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-              x3 = -(qrs(i, k, 2)/dtcld)
-            ELSE
-              x3 = psdep0
-            END IF
-            IF (x3 .GT. 0.) THEN
-              psdep(i, k) = 0.
-            ELSE
-              psdep(i, k) = x3
-            END IF
-          ELSE
-            IF (psdep0 .GT. satdt) THEN
-              x4 = satdt
-            ELSE
-              x4 = psdep0
-            END IF
-            IF (x4 .LT. 0.) THEN
-              psdep(i, k) = 0.
-            ELSE
-              psdep(i, k) = x4
-            END IF
-          END IF
-          IF (psdep(i, k) .GE. 0.) THEN
-            abs1 = psdep(i, k)
-          ELSE
-            abs1 = -psdep(i, k)
-          END IF
-          IF (abs1 .LT. qmin/dtcld) psdep(i, k) = 0.
-          IF (q(i, k) - psdep(i, k)*dtcld .LT. 0.) THEN
-            q(i, k) = 0.
-          ELSE
-            q(i, k) = q(i, k) - psdep(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + psdep(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) + psdep(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + psdep(i, k)*dtcld*xls/cpm(i, k)
-          psdep(i, k) = 0.
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y1 = t0c - t(i, k)
+        ELSE
+          y1 = 90.
         END IF
+        IF (0. .LT. y1) THEN
+          max1 = y1
+        ELSE
+          max1 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max9 = qcrmin
+        ELSE
+          max9 = qrs(i, k, 2)
+        END IF
+!         call smoothif(qrs(i,k,2),0.,fqs,'q+')
+!         call smoothif(q  (i,k  ),0.,fqv,'q+')
+        a = EXP(alpha*max1/2.)*SQRT(den(i, k)*max9)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y2 = t0c - t(i, k)
+        ELSE
+          y2 = 90.
+        END IF
+        IF (0. .LT. y2) THEN
+          max2 = y2
+        ELSE
+          max2 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max10 = qcrmin
+        ELSE
+          max10 = qrs(i, k, 2)
+        END IF
+        b = EXP((3.-bvts)*alpha*max2/8.)*(t(i, k)+120.)**(1./6.)/t(i, k)&
+&         **(5.12/6.)*p(i, k)**(1./3.)*den(i, k)**((13.+3.*bvts)/24.)*&
+&         max10**((5.+bvts)/8.)
+        c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
+        e = (rh(i, k, 2)-1.)/(c+d)
+        psdep0 = e*(psdep_a*a+psdep_b*b)
+        IF (psdep0 .LT. 0.) THEN
+          IF (psdep0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+            x3 = -(qrs(i, k, 2)/dtcld)
+          ELSE
+            x3 = psdep0
+          END IF
+          IF (x3 .GT. 0.) THEN
+            psdep(i, k) = 0.
+          ELSE
+            psdep(i, k) = x3
+          END IF
+        ELSE
+          IF (psdep0 .GT. satdt) THEN
+            x4 = satdt
+          ELSE
+            x4 = psdep0
+          END IF
+          IF (x4 .LT. 0.) THEN
+            psdep(i, k) = 0.
+          ELSE
+            psdep(i, k) = x4
+          END IF
+        END IF
+        psdep(i, k) = fsupcol*psdep(i, k)
+        IF (psdep(i, k) .GE. 0.) THEN
+          abs1 = psdep(i, k)
+        ELSE
+          abs1 = -psdep(i, k)
+        END IF
+        IF (abs1 .LT. qmin/dtcld) psdep(i, k) = 0.
+        IF (q(i, k) - psdep(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - psdep(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psdep(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psdep(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + psdep(i, k)*dtcld*xls/cpm(i, k)
+        psdep(i, k) = 0.
 !
 !------------------------------------------------------------
 ! pgdep: deposition/sublimation rate of graupel [LFO 46] 
@@ -9869,123 +11624,127 @@ CONTAINS
 !------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
 !update xl, cpm
-          xl(i, k) = XLCAL(t(i, k))
-          cpm(i, k) = CPMCAL(q(i, k))
-          a = SQRT(den(i, k)*qrs(i, k, 3))
-          b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.&
-&           )*den(i, k)**((13.+3.*bvtg)/24.)*qrs(i, k, 3)**((5.+bvtg)/8.&
-&           )
-          c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
-          d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
-          e = (rh(i, k, 2)-1.)/(c+d)
-          pgdep3 = e*(pgdep_a*a+pgdep_b*b)
-          IF (pgdep3 .LT. 0.) THEN
-            IF (pgdep3 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-              x5 = -(qrs(i, k, 3)/dtcld)
-            ELSE
-              x5 = pgdep3
-            END IF
-            IF (x5 .GT. 0.) THEN
-              pgdep(i, k) = 0.
-            ELSE
-              pgdep(i, k) = x5
-            END IF
-          ELSE
-            IF (pgdep3 .GT. satdt) THEN
-              x6 = satdt
-            ELSE
-              x6 = pgdep3
-            END IF
-            IF (x6 .LT. 0.) THEN
-              pgdep(i, k) = 0.
-            ELSE
-              pgdep(i, k) = x6
-            END IF
-          END IF
-          IF (pgdep(i, k) .GE. 0.) THEN
-            abs2 = pgdep(i, k)
-          ELSE
-            abs2 = -pgdep(i, k)
-          END IF
-          IF (abs2 .LT. qmin/dtcld) pgdep(i, k) = 0.
-          IF (q(i, k) - pgdep(i, k)*dtcld .LT. 0.) THEN
-            q(i, k) = 0.
-          ELSE
-            q(i, k) = q(i, k) - pgdep(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgdep(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgdep(i, k)*dtcld
-          END IF
-          t(i, k) = t(i, k) + pgdep(i, k)*dtcld*xls/cpm(i, k)
-          pgdep(i, k) = 0.
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max3 = qcrmin
+        ELSE
+          max3 = qrs(i, k, 3)
         END IF
+!         call smoothif(qrs(i,k,3),0.,fqg,'q+')
+!         call smoothif(q  (i,k  ),0.,fqv,'q+')
+        a = SQRT(den(i, k)*max3)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max4 = qcrmin
+        ELSE
+          max4 = qrs(i, k, 3)
+        END IF
+        b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.)*&
+&         den(i, k)**((13.+3.*bvtg)/24.)*max4**((5.+bvtg)/8.)
+        c = diffac_a*den(i, k)*xls*xls*(t(i, k)+120.)/rv/t(i, k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 2)
+        e = (rh(i, k, 2)-1.)/(c+d)
+        pgdep3 = e*(pgdep_a*a+pgdep_b*b)
+        IF (pgdep3 .LT. 0.) THEN
+          IF (pgdep3 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+            x5 = -(qrs(i, k, 3)/dtcld)
+          ELSE
+            x5 = pgdep3
+          END IF
+          IF (x5 .GT. 0.) THEN
+            pgdep(i, k) = 0.
+          ELSE
+            pgdep(i, k) = x5
+          END IF
+        ELSE
+          IF (pgdep3 .GT. satdt) THEN
+            x6 = satdt
+          ELSE
+            x6 = pgdep3
+          END IF
+          IF (x6 .LT. 0.) THEN
+            pgdep(i, k) = 0.
+          ELSE
+            pgdep(i, k) = x6
+          END IF
+        END IF
+        pgdep(i, k) = fsupcol*pgdep(i, k)
+        IF (pgdep(i, k) .GE. 0.) THEN
+          abs2 = pgdep(i, k)
+        ELSE
+          abs2 = -pgdep(i, k)
+        END IF
+        IF (abs2 .LT. qmin/dtcld) pgdep(i, k) = 0.
+        IF (q(i, k) - pgdep(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - pgdep(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgdep(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgdep(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pgdep(i, k)*dtcld*xls/cpm(i, k)
+        pgdep(i, k) = 0.
 !-------------------------------------------------------------
 ! pigen: generation(nucleation) of ice from vapor [HDC 7-8]
 !       (T<T0: V->I) min=0,max=min(roqi0/den(i,k)-max(qci(i,k,2),0.))/dtcld,satdt)
 !-------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. q(i, k) .GT. qmin .AND. qci(i, k, 2) &
-&           .GT. qmin) THEN
+        cpm(i, k) = CPMCAL(q(i, k))
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update satdt
-          supsat = q(i, k) - qs(i, k, 2)
-          satdt = supsat/dtcld
-          IF (supsat .GT. 0. .AND. qs(i, k, 2) .GT. qmin) THEN
-            cpm(i, k) = CPMCAL(q(i, k))
-            xni0 = 1.e3*EXP(0.1*supcol)
-            roqi0 = 4.92e-11*xni0**1.33
-            qi0 = roqi0/den(i, k)
-            IF (qci(i, k, 2) .GT. qmin*qi0) THEN
-              IF (qci(i, k, 2) .LT. 0.) THEN
-                max5 = 0.
-              ELSE
-                max5 = qci(i, k, 2)
-              END IF
-              x7 = (qi0-max5)/dtcld
-              IF (x7 .GT. satdt) THEN
-                pigen0 = satdt
-              ELSE
-                pigen0 = x7
-              END IF
-              IF (pigen0 .LT. 0.) THEN
-                pigen(i, k) = 0.
-              ELSE
-                pigen(i, k) = pigen0
-              END IF
-              IF (pigen(i, k) .GE. 0.) THEN
-                abs3 = pigen(i, k)
-              ELSE
-                abs3 = -pigen(i, k)
-              END IF
-              IF (abs3 .LT. qmin/dtcld) pigen(i, k) = 0.
-              IF (q(i, k) - pigen(i, k)*dtcld .LT. 0.) THEN
-                q(i, k) = 0.
-              ELSE
-                q(i, k) = q(i, k) - pigen(i, k)*dtcld
-              END IF
-              IF (qci(i, k, 2) + pigen(i, k)*dtcld .LT. 0.) THEN
-                qci(i, k, 2) = 0.
-              ELSE
-                qci(i, k, 2) = qci(i, k, 2) + pigen(i, k)*dtcld
-              END IF
-              t(i, k) = t(i, k) + pigen(i, k)*dtcld*xls/cpm(i, k)
-              pigen(i, k) = 0.
-            END IF
-          END IF
+        supsat = q(i, k) - qs(i, k, 2)
+        satdt = supsat/dtcld
+        CALL SMOOTHIF(supsat, 0., fsupsat, 'q+')
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+        xni0 = 1.e3*EXP(0.1*supcol)
+        roqi0 = 4.92e-11*xni0**1.33
+        IF (qci(i, k, 2) .LT. 0.) THEN
+          max11 = 0.
+        ELSE
+          max11 = qci(i, k, 2)
         END IF
+        x7 = (roqi0/den(i, k)-max11)/dtcld
+        IF (x7 .GT. satdt) THEN
+          pigen0 = satdt
+        ELSE
+          pigen0 = x7
+        END IF
+        IF (pigen0 .LT. 0.) THEN
+          pigen(i, k) = 0.
+        ELSE
+          pigen(i, k) = pigen0
+        END IF
+        pigen(i, k) = fsupcol*fsupsat*pigen(i, k)
+        IF (pigen(i, k) .GE. 0.) THEN
+          abs3 = pigen(i, k)
+        ELSE
+          abs3 = -pigen(i, k)
+        END IF
+        IF (abs3 .LT. qmin/dtcld) pigen(i, k) = 0.
+        IF (q(i, k) - pigen(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - pigen(i, k)*dtcld
+        END IF
+        IF (qci(i, k, 2) + pigen(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) + pigen(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pigen(i, k)*dtcld*xls/cpm(i, k)
+        pigen(i, k) = 0.
 !
 !------------------------------------------------------------
 ! psaut: conversion(aggregation) of ice to snow [HDC 12] 
@@ -9993,194 +11752,209 @@ CONTAINS
 !-------------------------------------------------------------
 !update supcol
         supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qci(i, k, 2) .GT. 0.) THEN
-          qimax = roqimax/den(i, k)
-          IF (0. .LT. (qci(i, k, 2)-qimax)/dtcld) THEN
-            psaut(i, k) = (qci(i, k, 2)-qimax)/dtcld
-          ELSE
-            psaut(i, k) = 0.
-          END IF
-          IF (psaut(i, k) .GE. 0.) THEN
-            abs4 = psaut(i, k)
-          ELSE
-            abs4 = -psaut(i, k)
-          END IF
-          IF (abs4 .LT. qmin/dtcld) psaut(i, k) = 0.
-          IF (qci(i, k, 2) - psaut(i, k)*dtcld .LT. 0.) THEN
-            qci(i, k, 2) = 0.
-          ELSE
-            qci(i, k, 2) = qci(i, k, 2) - psaut(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 2) + psaut(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) + psaut(i, k)*dtcld
-          END IF
+        CALL SMOOTHIF(supcol, 0., fsupcol, 't+')
+!         call smoothif(qci(i,k,2),0.,fqi,'q+')
+        qimax = roqimax/den(i, k)
+        IF (0. .LT. (qci(i, k, 2)-qimax)/dtcld) THEN
+          psaut(i, k) = (qci(i, k, 2)-qimax)/dtcld
+        ELSE
           psaut(i, k) = 0.
         END IF
+        psaut(i, k) = fsupcol*psaut(i, k)
+        IF (psaut(i, k) .GE. 0.) THEN
+          abs4 = psaut(i, k)
+        ELSE
+          abs4 = -psaut(i, k)
+        END IF
+        IF (abs4 .LT. qmin/dtcld) psaut(i, k) = 0.
+        IF (qci(i, k, 2) - psaut(i, k)*dtcld .LT. 0.) THEN
+          qci(i, k, 2) = 0.
+        ELSE
+          qci(i, k, 2) = qci(i, k, 2) - psaut(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psaut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psaut(i, k)*dtcld
+        END IF
+        psaut(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! pgaut: conversion(aggregation) of snow to graupel [LFO 37] 
 !        (T<T0: S->G) pgaut>0 min=0.,max=qrs(i,k,2)/dtcld
 !-------------------------------------------------------------
 !update supcol
-        supcol = t0c - t(i, k)
-        IF (supcol .GT. 0. .AND. qrs(i, k, 2) .GT. 0.) THEN
-          alpha2 = 1.e-3*EXP(0.09*(-supcol))
-          IF (0. .LT. alpha2*(qrs(i, k, 2)-qs0)) THEN
-            x8 = alpha2*(qrs(i, k, 2)-qs0)
-          ELSE
-            x8 = 0.
-          END IF
-          IF (x8 .GT. qrs(i, k, 2)/dtcld) THEN
-            pgaut(i, k) = qrs(i, k, 2)/dtcld
-          ELSE
-            pgaut(i, k) = x8
-          END IF
-          IF (pgaut(i, k) .GE. 0.) THEN
-            abs5 = pgaut(i, k)
-          ELSE
-            abs5 = -pgaut(i, k)
-          END IF
-          IF (abs5 .LT. qmin/dtcld) pgaut(i, k) = 0.
-          IF (qrs(i, k, 2) - pgaut(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 2) = 0.
-          ELSE
-            qrs(i, k, 2) = qrs(i, k, 2) - pgaut(i, k)*dtcld
-          END IF
-          IF (qrs(i, k, 3) + pgaut(i, k)*dtcld .LT. 0.) THEN
-            qrs(i, k, 3) = 0.
-          ELSE
-            qrs(i, k, 3) = qrs(i, k, 3) + pgaut(i, k)*dtcld
-          END IF
-          pgaut(i, k) = 0.
+!         supcol = t0c-t(i,k) ! not change
+!         call smoothif(supcol,0.,fsupcol,'t0')     
+!         call smoothif(qrs(i,k,2),0.,fqs,'q+')
+        alpha2 = 1.e-3*EXP(0.09*(-supcol))
+        IF (0. .LT. alpha2*(qrs(i, k, 2)-qs0)) THEN
+          x8 = alpha2*(qrs(i, k, 2)-qs0)
+        ELSE
+          x8 = 0.
         END IF
+        IF (x8 .GT. qrs(i, k, 2)/dtcld) THEN
+          pgaut(i, k) = qrs(i, k, 2)/dtcld
+        ELSE
+          pgaut(i, k) = x8
+        END IF
+        pgaut(i, k) = fsupcol*pgaut(i, k)
+        IF (pgaut(i, k) .GE. 0.) THEN
+          abs5 = pgaut(i, k)
+        ELSE
+          abs5 = -pgaut(i, k)
+        END IF
+        IF (abs5 .LT. qmin/dtcld) pgaut(i, k) = 0.
+        IF (qrs(i, k, 2) - pgaut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) - pgaut(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgaut(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgaut(i, k)*dtcld
+        END IF
+        pgaut(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! psevp: Evaporation of melting snow [RH83 A27] 
 !       (T>=T0: S->V) rh<1., psevp<0, min=-qrs(i,k,2)/dtcld, max=0.
 !-------------------------------------------------------------
-        supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 2) .GT. qcrmin) THEN
+!         supcol = t0c-t(i,k) ! not change
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
-          IF (rh(i, k, 1) .LT. 1.) THEN
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
-            xl(i, k) = XLCAL(t(i, k))
-            cpm(i, k) = CPMCAL(q(i, k))
-            IF (90. .GT. t0c - t(i, k)) THEN
-              y3 = t0c - t(i, k)
-            ELSE
-              y3 = 90.
-            END IF
-            IF (0. .LT. y3) THEN
-              max3 = y3
-            ELSE
-              max3 = 0.
-            END IF
-            a = EXP(alpha*max3/2.)*SQRT(den(i, k)*qrs(i, k, 2))
-            IF (90. .GT. t0c - t(i, k)) THEN
-              y4 = t0c - t(i, k)
-            ELSE
-              y4 = 90.
-            END IF
-            IF (0. .LT. y4) THEN
-              max4 = y4
-            ELSE
-              max4 = 0.
-            END IF
-            b = EXP((3.-bvts)*alpha*max4/8.)*(t(i, k)+120.)**(1./6.)/t(i&
-&             , k)**(5.12/6.)*p(i, k)**(1./3.)*den(i, k)**((13.+3.*bvts)&
-&             /24.)*qrs(i, k, 2)**((5.+bvts)/8.)
-            c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t&
-&             (i, k)**3.5
-            d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-            e = (rh(i, k, 1)-1.)/(c+d)
-            psevp0 = e*(psevp_a*a+psevp_b*b)
-            IF (psevp0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
-              x9 = -(qrs(i, k, 2)/dtcld)
-            ELSE
-              x9 = psevp0
-            END IF
-            IF (x9 .GT. 0.) THEN
-              psevp(i, k) = 0.
-            ELSE
-              psevp(i, k) = x9
-            END IF
-            IF (psevp(i, k) .GE. 0.) THEN
-              abs6 = psevp(i, k)
-            ELSE
-              abs6 = -psevp(i, k)
-            END IF
-            IF (abs6 .LT. qmin/dtcld) psevp(i, k) = 0.
-            IF (q(i, k) - psevp(i, k)*dtcld .LT. 0.) THEN
-              q(i, k) = 0.
-            ELSE
-              q(i, k) = q(i, k) - psevp(i, k)*dtcld
-            END IF
-            IF (qrs(i, k, 2) + psevp(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 2) = 0.
-            ELSE
-              qrs(i, k, 2) = qrs(i, k, 2) + psevp(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + psevp(i, k)*dtcld*xls/cpm(i, k)
-            psevp(i, k) = 0.
-          END IF
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't+')
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y3 = t0c - t(i, k)
+        ELSE
+          y3 = 90.
         END IF
+        IF (0. .LT. y3) THEN
+          max5 = y3
+        ELSE
+          max5 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max12 = qcrmin
+        ELSE
+          max12 = qrs(i, k, 2)
+        END IF
+        a = EXP(alpha*max5/2.)*SQRT(den(i, k)*max12)
+        IF (90. .GT. t0c - t(i, k)) THEN
+          y4 = t0c - t(i, k)
+        ELSE
+          y4 = 90.
+        END IF
+        IF (0. .LT. y4) THEN
+          max6 = y4
+        ELSE
+          max6 = 0.
+        END IF
+        IF (qrs(i, k, 2) .LT. qcrmin) THEN
+          max13 = qcrmin
+        ELSE
+          max13 = qrs(i, k, 2)
+        END IF
+        b = EXP((3.-bvts)*alpha*max6/8.)*(t(i, k)+120.)**(1./6.)/t(i, k)&
+&         **(5.12/6.)*p(i, k)**(1./3.)*den(i, k)**((13.+3.*bvts)/24.)*&
+&         max13**((5.+bvts)/8.)
+        c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i, &
+&         k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        psevp0 = e*(psevp_a*a+psevp_b*b)
+        IF (psevp0 .LT. -(qrs(i, k, 2)/dtcld)) THEN
+          x9 = -(qrs(i, k, 2)/dtcld)
+        ELSE
+          x9 = psevp0
+        END IF
+        IF (x9 .GT. 0.) THEN
+          psevp(i, k) = 0.
+        ELSE
+          psevp(i, k) = x9
+        END IF
+        psevp(i, k) = ft0*psevp(i, k)
+        IF (psevp(i, k) .GE. 0.) THEN
+          abs6 = psevp(i, k)
+        ELSE
+          abs6 = -psevp(i, k)
+        END IF
+        IF (abs6 .LT. qmin/dtcld) psevp(i, k) = 0.
+        IF (q(i, k) - psevp(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - psevp(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 2) + psevp(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 2) = 0.
+        ELSE
+          qrs(i, k, 2) = qrs(i, k, 2) + psevp(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + psevp(i, k)*dtcld*xls/cpm(i, k)
+        psevp(i, k) = 0.
 !
 !-------------------------------------------------------------
 ! pgevp: Evaporation of melting graupel [RH84 A19]
 !       (T>=T0: G->V) rh<1., pgevp<0, min=-qrs(i,k,3)/dtcld, max=0.
 !-------------------------------------------------------------
         supcol = t0c - t(i, k)
-        IF (supcol .LT. 0. .AND. qrs(i, k, 3) .GT. qcrmin) THEN
 !update rh qs
-          CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :&
-&               ))
-          IF (rh(i, k, 1) .LT. 1.) THEN
+        CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
-            xl(i, k) = XLCAL(t(i, k))
-            cpm(i, k) = CPMCAL(q(i, k))
-            a = SQRT(den(i, k)*qrs(i, k, 3))
-            b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./&
-&             3.)*den(i, k)**((13.+3.*bvtg)/24.)*qrs(i, k, 3)**((5.+bvtg&
-&             )/8.)
-            c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t&
-&             (i, k)**3.5
-            d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
-            e = (rh(i, k, 1)-1.)/(c+d)
-            pgevp0 = e*(pgevp_a*a+pgevp_b*b)
-            IF (pgevp0 .LT. -(qrs(i, k, 3)/dtcld)) THEN
-              x10 = -(qrs(i, k, 3)/dtcld)
-            ELSE
-              x10 = pgevp0
-            END IF
-            IF (x10 .GT. 0.) THEN
-              pgevp(i, k) = 0.
-            ELSE
-              pgevp(i, k) = x10
-            END IF
-            IF (pgevp(i, k) .GE. 0.) THEN
-              abs7 = pgevp(i, k)
-            ELSE
-              abs7 = -pgevp(i, k)
-            END IF
-            IF (abs7 .LT. qmin/dtcld) pgevp(i, k) = 0.
-            IF (q(i, k) - pgevp(i, k)*dtcld .LT. 0.) THEN
-              q(i, k) = 0.
-            ELSE
-              q(i, k) = q(i, k) - pgevp(i, k)*dtcld
-            END IF
-            IF (qrs(i, k, 3) + pgevp(i, k)*dtcld .LT. 0.) THEN
-              qrs(i, k, 3) = 0.
-            ELSE
-              qrs(i, k, 3) = qrs(i, k, 3) + pgevp(i, k)*dtcld
-            END IF
-            t(i, k) = t(i, k) + pgevp(i, k)*dtcld*xls/cpm(i, k)
-            pgevp(i, k) = 0.
-          END IF
+        xl(i, k) = XLCAL(t(i, k))
+        cpm(i, k) = CPMCAL(q(i, k))
+        CALL SMOOTHIF(t(i, k), t0c, ft0, 't0')
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max7 = qcrmin
+        ELSE
+          max7 = qrs(i, k, 3)
         END IF
+        a = SQRT(den(i, k)*max7)
+        IF (qrs(i, k, 3) .LT. qcrmin) THEN
+          max8 = qcrmin
+        ELSE
+          max8 = qrs(i, k, 3)
+        END IF
+        b = (t(i, k)+120.)**(1./6.)/t(i, k)**(5.12/6.)*p(i, k)**(1./3.)*&
+&         den(i, k)**((13.+3.*bvtg)/24.)*max8**((5.+bvtg)/8.)
+        c = diffac_a*den(i, k)*xl(i, k)*xl(i, k)*(t(i, k)+120.)/rv/t(i, &
+&         k)**3.5
+        d = diffac_b*p(i, k)/t(i, k)**1.81/qs(i, k, 1)
+        e = (rh(i, k, 1)-1.)/(c+d)
+        pgevp0 = e*(pgevp_a*a+pgevp_b*b)
+        IF (pgevp0 .LT. -(qrs(i, k, 3)/dtcld)) THEN
+          x10 = -(qrs(i, k, 3)/dtcld)
+        ELSE
+          x10 = pgevp0
+        END IF
+        IF (x10 .GT. 0.) THEN
+          pgevp(i, k) = 0.
+        ELSE
+          pgevp(i, k) = x10
+        END IF
+        pgevp(i, k) = ft0*pgevp(i, k)
+        IF (pgevp(i, k) .GE. 0.) THEN
+          abs7 = pgevp(i, k)
+        ELSE
+          abs7 = -pgevp(i, k)
+        END IF
+        IF (abs7 .LT. qmin/dtcld) pgevp(i, k) = 0.
+        IF (q(i, k) - pgevp(i, k)*dtcld .LT. 0.) THEN
+          q(i, k) = 0.
+        ELSE
+          q(i, k) = q(i, k) - pgevp(i, k)*dtcld
+        END IF
+        IF (qrs(i, k, 3) + pgevp(i, k)*dtcld .LT. 0.) THEN
+          qrs(i, k, 3) = 0.
+        ELSE
+          qrs(i, k, 3) = qrs(i, k, 3) + pgevp(i, k)*dtcld
+        END IF
+        t(i, k) = t(i, k) + pgevp(i, k)*dtcld*xls/cpm(i, k)
+        pgevp(i, k) = 0.
       END DO
     END DO
   END SUBROUTINE ACCRET3
@@ -10226,6 +12000,7 @@ CONTAINS
         CALL CALCRH(t(i, k), p(i, k), q(i, k), rh(i, k, :), qs(i, k, :))
 !update xl, cpm
         xl(i, k) = XLCAL(t(i, k))
+        CALL PUSHREAL8(cpm(i, k))
         cpm(i, k) = CPMCAL(q(i, k))
 !----------------------------------------------------------------
 !  pcond: condensational/evaporational rate of cloud water [RH83 A6]
@@ -10336,6 +12111,7 @@ CONTAINS
 &                1), a_qs(i, k, 1), xl(i, k), a_xl(i, k), cpm(i, k), &
 &                a_cpm(i, k), a_work1(i, k, 1))
         a_work1(i, k, 1) = 0.0_8
+        CALL POPREAL8(cpm(i, k))
         CALL A_CPMCAL0(q(i, k), a_q(i, k), a_cpm(i, k))
         a_cpm(i, k) = 0.0_8
         CALL A_XLCAL0(t(i, k), a_t(i, k), a_xl(i, k))
@@ -10428,6 +12204,75 @@ CONTAINS
     END DO
   END SUBROUTINE PCONADD
 
+!  Differentiation of smoothif in reverse (adjoint) mode (with options r8):
+!   gradient     of useful results: f x
+!   with respect to varying inputs: x
+!=======================================================================
+!
+!=======================================================================
+  SUBROUTINE A_SMOOTHIF(x, a_x, a, f, a_f, opt)
+    IMPLICIT NONE
+    REAL, INTENT(IN) :: x, a
+    REAL :: a_x
+    CHARACTER(len=2), INTENT(IN) :: opt
+    REAL :: f
+    REAL :: a_f
+    REAL(kind=8) :: k1, a1, x1, c1, f1, k, b
+    REAL(kind=8) :: a_x1, a_f1, a_k
+    INTRINSIC EXP
+    REAL(kind=8) :: temp1, temp2
+    x1 = x
+    a1 = a
+    IF (opt(1:1) .EQ. 'q') THEN
+      c1 = 1.e-15
+    ELSE
+      c1 = 1.e-9
+    END IF
+!f=1/(1+exp(-k*(x-b))
+    k1 = 747./c1
+    IF (opt(2:2) .EQ. '+') THEN
+      b = a1 + 710./k1
+    ELSE
+      b = a1
+    END IF
+    k = -(k1*(x1-b))
+    a_f1 = a_f
+    temp1 = 1/( EXP(k) + 1.)
+    temp2 = 1/( EXP(-k) + 1.)
+    a_k = -(temp1*temp2*a_f1)
+    a_x1 = -(k1*a_k)
+    a_x = a_x + a_x1
+  END SUBROUTINE A_SMOOTHIF
+
+!=======================================================================
+!
+!=======================================================================
+  SUBROUTINE SMOOTHIF(x, a, f, opt)
+    IMPLICIT NONE
+    REAL, INTENT(IN) :: x, a
+    CHARACTER(len=2), INTENT(IN) :: opt
+    REAL, INTENT(OUT) :: f
+    REAL(kind=8) :: k1, a1, x1, c1, f1, k, b
+    INTRINSIC EXP
+    x1 = x
+    a1 = a
+    IF (opt(1:1) .EQ. 'q') THEN
+      c1 = 1.e-15
+    ELSE
+      c1 = 1.e-9
+    END IF
+    k1 = 747./c1
+    IF (opt(2:2) .EQ. '+') THEN
+      b = a1 + 710./k1
+    ELSE
+      b = a1
+    END IF
+    k = -(k1*(x1-b))
+    f1 = 1./(1.+EXP(k))
+    f = f1
+  END SUBROUTINE SMOOTHIF
+
+!
 !
 !=======================================================================
 !

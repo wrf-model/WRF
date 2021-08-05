@@ -3717,7 +3717,12 @@ subroutine da_setup_be_regional(xb, be, grid)
    end if
 #endif
    if ( use_cv_w ) then
-      be%cv_mz(num_cv_3d_basic+num_cv_3d_extra+num_cv_2d) = be%v11%mz
+      if (be%ncv_mz ==8 .or. be%ncv_mz ==13 ) then
+        be%cv_mz(be%ncv_mz-2) = be%v11%mz
+      else
+        be%cv_mz(num_cv_3d_basic+num_cv_3d_extra+num_cv_2d) = be%v11%mz
+      end if
+      !be%cv_mz(num_cv_3d_basic+num_cv_3d_extra+num_cv_2d) = be%v11%mz   ! This is a bug. (Soyoung on Aug-2021)
    end if
    be%cv_mz(be%ncv_mz-1) = be%alpha%mz
    be%cv_mz(be%ncv_mz)   = be%ne

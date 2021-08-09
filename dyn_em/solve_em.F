@@ -46,7 +46,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
                  ,period_em_f_sub,period_em_g_sub                                          &
                  ,halo_em_f_1_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub &
-                 ,halo_em_d_pv_sub, halo_firebrand_spotting_3_sub, halo_firebrand_spotting_5_sub
+                 ,halo_em_d_pv_sub, halo_firebrand_spotting_5_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -4751,7 +4751,7 @@ BENCH_END(bc_2d_tim)
 
    
 !-----------------------------------------------------------------------
-! fire spotting (passive Lagrangian particle transport, tracks firebrand physics properties)
+! firebrand spotting (passive Lagrangian particle transport, tracks firebrand physics properties)
 !-----------------------------------------------------------------------
 ! M. Frediani
 
@@ -4761,13 +4761,12 @@ BENCH_END(bc_2d_tim)
        ! Check if this is the inner most grid
        config_flags%max_dom == grid%id) THEN 
 
-       !BENCH_START(fire_driver_tim)
+#ifdef DM_PARALLEL
+       CALL wrf_debug ( 200 , ' call HALO_FIREBRAND_SPOTTING' )
+#      include "HALO_FIREBRAND_SPOTTING_5.inc"
+#endif
 
        CALL wrf_debug ( 3 , 'solve: calling firebrand_spotting_em_driver...' )
-
-#      include "HALO_FIREBRAND_SPOTTING_3.inc"
-#      include "HALO_FIREBRAND_SPOTTING_5.inc"
-
        CALL firebrand_spotting_em_driver (  &
                cf            = config_flags,        &
                grid          = grid,                &
@@ -4795,7 +4794,7 @@ BENCH_END(bc_2d_tim)
                fs_count_reset        = grid%fs_count_reset)
 
    ENDIF
-
+! end of firebrand spotting
 !-----------------------------------------------------------------------
 
 !  Max values of CFL for adaptive time step scheme

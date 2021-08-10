@@ -980,10 +980,16 @@ CONTAINS
       DO 360 I=its,ite
         IF((XLAND(I)-1.5).GE.0)THEN                                            
 !         ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
-! Since V3.7 (ref: EC Physics document for Cy36r1)
-          ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
-! V3.9: Add limit as in isftcflx = 1,2
-          ZNT(I)=MIN(ZNT(I),2.85e-3)
+          ! PSH - formulation for depth-dependent roughness from
+          ! ... Jimenez and Dudhia, 2018
+          IF ( shalwater_rough .eq. 1 ) THEN
+             ZNT(I) = depth_dependent_z0(water_depth(I),ZNT(I),UST(I))
+          ELSE
+              ! Since V3.7 (ref: EC Physics document for Cy36r1)
+              ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
+              ! V3.9: Add limit as in isftcflx = 1,2
+              ZNT(I)=MIN(ZNT(I),2.85e-3)
+          ENDIF
 ! COARE 3.5 (Edson et al. 2013)
 !         CZC = 0.0017*WSPD(I)-0.005
 !         CZC = min(CZC,0.028)
@@ -1258,6 +1264,20 @@ CONTAINS
       return
       end function
 
+      function depth_dependent_z0(water_depth,z0,UST)
+      real :: depth_b
+      real :: effective_depth
+         IF ( water_depth .lt. 10.0 ) THEN
+           effective_depth = 10.0
+         ELSEIF ( water_depth .gt. 100.0 ) THEN
+           effective_depth = 100.0
+         ENDIF
+ 
+         depth_b = 1 / 30.0 * log (1260.0 / effective_depth)
+         depth_dependent_z0 = exp((2.7 * ust - 1.8 / depth_b) / (ust + 0.17 / depth_b) )
+         depth_dependent_z0 = MIN(z0,0.1)
+     return
+     end function
 !-------------------------------------------------------------------          
 
 END MODULE module_sf_sfclayrev

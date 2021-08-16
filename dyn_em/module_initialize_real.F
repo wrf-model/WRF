@@ -225,13 +225,6 @@ integer::oops1,oops2
             geogrid_flag_error = geogrid_flag_error + 1
          END IF
 
-         !! PSH
-         !IF ( ( config_flags%shalwater_rough      .EQ. 1           ) .AND. ( flag_bathymetry .EQ. 0 ) .AND. (config_flags%shalwater_depth .EQ. 0.0) ) THEN
-         !   CALL wrf_message ( '----- ERROR: shalwater_rough = 1 but no bathymetry data found. Need to download geog data or set shalwater_depth.' )
-         !   geogrid_flag_error = geogrid_flag_error + 1
-         !END IF
-         !! END PSH
-
          IF ( ( config_flags%sf_surface_physics .EQ. pxlsmscheme  ) .AND. ( flag_imperv    .EQ. 0 ) ) THEN
             CALL wrf_message ( '----- ERROR: sf_surface_physics = 7 AND flag_imperv     = 0 ' )
             geogrid_flag_error = geogrid_flag_error + 1

@@ -887,7 +887,7 @@ state    real   lake_depth            ij     misc        1    -     i012rd=(inte
 # PSH - begin
 state    real     water_depth      ij     misc        1       -     i0rhd  "water_depth"  "global water depth" "m"
 rconfig  integer  shalwater_rough         namelist,physics      max_domains   0         rh    "shallow water roughness flag"     ""      ""
-rconfig  real     shalwater_depth         namelist,physics      1   0.0       rh    "water depth for shallow water scheme"     ""      ""
+rconfig  real     shalwater_depth         namelist,physics      1   -1.0       rh    "water depth for shallow water scheme"     ""      ""
 # PSH - end  
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
 # Ocean surface currents

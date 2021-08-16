@@ -986,10 +986,8 @@ CONTAINS
           ! ... Jimenez and Dudhia, 2018
           IF ( shalwater_rough .eq. 1 ) THEN
              ZNT(I) = depth_dependent_z0(water_depth(I),ZNT(I),UST(I))
-             print*,'PSH - shallow_water ',water_depth(I),ZNT(I)
           ELSE
              ! Since V3.7 (ref: EC Physics document for Cy36r1)
-             print*,'PSH - Charnock'
              ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
              ! V3.9: Add limit as in isftcflx = 1,2
              ZNT(I)=MIN(ZNT(I),2.85e-3)

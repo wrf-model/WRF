@@ -336,53 +336,34 @@ integer::oops1,oops2
       IF ( grid%shalwater_rough   .EQ. 1 ) THEN
          grid%bathymetry_flag = flag_bathymetry
          IF ( flag_bathymetry .EQ. 0 ) THEN
-            !IF ( grid%shalwater_depth .EQ. 0.0 ) THEN
-                CALL wrf_message ( " Warning: No bathymetry data found for shallow water roughness model. Filling." )
-                IF ( grid%shalwater_depth .LE. 0.0 ) THEN
-                   CALL wrf_message ( " Warning: shalwater_depth must be greater than 0.0 for WRF to run." )
-                END IF
-                DO j = jts, MIN(jde-1,jte)
-                   DO i = its, MIN(ide-1,ite)
-                      grid%water_depth(i,j) = 0.0 
-                   END DO
-                END DO
-            !ELSE
-            !    DO j = jts, MIN(jde-1,jte)
-            !       DO i = its, MIN(ide-1,ite)
-            !          grid%water_depth(i,j) = grid%shalwater_depth
-            !       END DO
-            !    END DO
-            !END IF
-
+            CALL wrf_message ( " Warning: No bathymetry data found for shallow water roughness model. Filling." )
+            IF ( grid%shalwater_depth .LE. 0.0 ) THEN
+               CALL wrf_message ( " Warning: shalwater_depth must be greater than 0.0 for WRF to run." )
+            END IF
+            DO j = jts, MIN(jde-1,jte)
+               DO i = its, MIN(ide-1,ite)
+                  grid%water_depth(i,j) = 0.0 
+               END DO
+            END DO
          ELSE
-            !IF ( grid%shalwater_depth .NE. 0.0 ) THEN
-            !    DO j = jts, MIN(jde-1,jte)
-            !       DO i = its, MIN(ide-1,ite)
-            !          grid%water_depth(i,j) = grid%shalwater_depth
-            !       END DO
-            !    END DO
-            !ELSE
-                !  Set water_depth over land to be 2 m. Set water_depth over lakes to be lake depth..
-                !  This was done to re-create the LAKE_DEPTH field, but with ocean depth.
-
-                DO j = jts, MIN(jde-1,jte)
-                   DO i = its, MIN(ide-1,ite)
-                      grid%water_depth(i,j) = grid%bathymetry(i,j)
-                      IF      ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
-                         grid%water_depth(i,j) = -10
-                      ELSE IF   ( grid%lu_index(i,j) .EQ. grid%islake ) THEN
-                         grid%water_depth(i,j) = grid%bathymetry(i,j) - grid%ht_gc(i,j)
-                      END IF
-                      grid%water_depth(i,j) = grid%water_depth(i,j)*-1.0
-                      IF (grid%water_depth(i,j) .LT. 0.1) THEN
-                         grid%water_depth(i,j) = 0.1
-                      END IF
-                   END DO
-                END DO
-             !END IF
+            DO j = jts, MIN(jde-1,jte)
+               DO i = its, MIN(ide-1,ite)
+                  grid%water_depth(i,j) = grid%bathymetry(i,j)
+                  IF      ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
+                     grid%water_depth(i,j) = -10
+                  ELSE IF   ( grid%lu_index(i,j) .EQ. grid%islake ) THEN
+                     grid%water_depth(i,j) = grid%bathymetry(i,j) - grid%ht_gc(i,j)
+                  END IF
+                  grid%water_depth(i,j) = grid%water_depth(i,j)*-1.0
+                  IF (grid%water_depth(i,j) .LT. 0.1) THEN
+                     grid%water_depth(i,j) = 0.1
+                  END IF
+               END DO
+            END DO
          END IF
       END IF
       ! END PSH
+
       !  Send out a quick message about the time steps based on the map scale factors.
 
       IF ( ( internal_time_loop .EQ. 1 ) .AND. ( grid%id .EQ. 1 ) .AND. &

@@ -90,7 +90,7 @@ CONTAINS
 #if (EM_CORE==1)
      &          ,ch,fgdp,dfgdp,vdfg,grav_settling                       & ! Katata - fog dep
 #endif
-     &          ,shalwater_rough,water_depth                             & ! PSH
+     &          ,shalwater_rough,water_depth,shalwater_depth             & ! PSH
      &          ,lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d       & !lake
      &          ,snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d & !lake
      &          ,z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d   & !lake
@@ -1414,7 +1414,8 @@ CONTAINS
                                                                                tkdry3d,        &
                                                                                tksatu3d
     INTEGER , OPTIONAL , INTENT(IN)                            :: shalwater_rough ! PSH
-    real, OPTIONAL , dimension(ims:ime,jms:jme ),intent(in)    :: water_depth ! PSH
+    REAL,     OPTIONAL , INTENT(IN)                            :: shalwater_depth ! PSH
+    real, OPTIONAL , dimension(ims:ime,jms:jme ),intent(inout) :: water_depth ! PSH
     real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
 #if (EM_CORE==1)
     real ,    dimension(ims:ime,jms:jme )  ::  lakemask
@@ -2101,6 +2102,33 @@ CONTAINS
            PRESENT(mol)        .AND.  PRESENT(regime)  .AND.    &
                                                       .TRUE. ) THEN
          CALL wrf_debug( 100, 'in SFCLAY' )
+         ! PSH
+         IF ( shalwater_rough .EQ. 1 ) THEN
+            IF ( ( MAXVAL(MAXVAL(water_depth(:,:),1),1) .EQ. 0.0 ) .AND. &
+                 ( MINVAL(MINVAL(water_depth(:,:),1),1) .EQ. 0.0 ) ) THEN
+                IF ( shalwater_depth .LE. 0.0 ) THEN
+                   CALL wrf_error_fatal('No bathymetry data detected and shalwater_depth not valid.')
+                ELSE
+                   DO j = j_start(ij),j_end(ij)
+                      DO i = i_start(ij),i_end(ij)
+                        water_depth(i,j) = shalwater_depth
+                      end do
+                   end do
+                ENDIF
+            ELSE
+
+                IF ( ( MAXVAL(MAXVAL(water_depth(i_start(ij):i_end(ij),j_start(ij):j_end(ij)),1),1) .NE. shalwater_depth ) .AND. &
+                     ( MINVAL(MINVAL(water_depth(i_start(ij):i_end(ij),j_start(ij):j_end(ij)),1),1) .NE. shalwater_depth ) .AND. &
+                     ( shalwater_depth .GT. 0.0 ) ) THEN
+                   DO j = j_start(ij),j_end(ij)
+                      DO i = i_start(ij),i_end(ij)
+                        water_depth(i,j) = shalwater_depth
+                      end do
+                   end do
+                ENDIF
+            ENDIF
+         ENDIF
+         ! PSH - END
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
             CALL SFCLAYREV_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
                  p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
@@ -2118,8 +2146,8 @@ CONTAINS
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
-                 shalwater_rough,water_depth,scm_force_flux,         & ! PSH
-                 sf_surface_physics  )
+                 shalwater_rough,water_depth,shalwater_depth,        & ! PSH
+                 scm_force_flux,sf_surface_physics  )
          ELSE
          CALL SFCLAYREV(u_phytmp,v_phytmp,t_phy,qv_curr,&
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
@@ -2133,7 +2161,8 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
                ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
-               shalwater_rough,water_depth,scm_force_flux          ) ! PSH
+               shalwater_rough,water_depth,shalwater_depth,        & ! PSH
+               scm_force_flux          ) 
 #if ( EM_CORE==1)
            DO j = j_start(ij),j_end(ij)
            DO i = i_start(ij),i_end(ij)
@@ -5841,8 +5870,8 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
-                     shalwater_rough,water_depth,scm_force_flux,   & ! PSH
-                     sf_surface_physics                            )
+                     shalwater_rough,water_depth,shalwater_depth,  & ! PSH
+                     scm_force_flux,sf_surface_physics             )
 
      USE module_sf_sfclayrev
      implicit none
@@ -5919,6 +5948,7 @@ CONTAINS
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     shalwater_rough ! PSH
+     REAL,     OPTIONAL,  INTENT(IN )   ::     shalwater_depth ! PSH
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ) , INTENT(IN ) :: water_depth ! PSH
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 
@@ -6096,7 +6126,8 @@ CONTAINS
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
-                 shalwater_rough,water_depth,scm_force_flux    ) ! PSH
+                 shalwater_rough,water_depth,shalwater_depth,  & ! PSH
+                 scm_force_flux    )
 !
 !Restore land-point values calculated by SSiB (fds 12/2010)
      IF (itimestep .gt. 1 .and. sf_surface_physics .EQ. 8) then
@@ -6189,7 +6220,8 @@ CONTAINS
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
                  ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd,&
-                 shalwater_rough,water_depth,scm_force_flux    ) ! PSH
+                 shalwater_rough,water_depth,shalwater_depth,  & ! PSH
+                 scm_force_flux    ) 
 !
      DO j = JTS , JTE
         DO i = ITS, ITE

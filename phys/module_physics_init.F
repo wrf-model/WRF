@@ -189,6 +189,7 @@ CONTAINS
 #endif
                          lake_depth_flag, use_lakedepth,                         & !lake
                          water_depth, bathymetry_flag, shalwater_rough,       & ! PSH -bathymetry
+                         shalwater_depth,                                    & ! PSH - bathymetry
                          sf_surface_mosaic, mosaic_cat, NLCAT,               & ! Noah tiling
 !CLM variables
                          maxpatch,                                           &
@@ -767,6 +768,7 @@ CONTAINS
   INTEGER, INTENT(IN)      ::   use_lakedepth
   INTEGER, INTENT(INOUT)   ::   bathymetry_flag ! PSH
   INTEGER, INTENT(IN)      ::   shalwater_rough  ! PSH
+  REAL,    INTENT(IN)      ::   shalwater_depth  ! PSH
  
 
 !CLM
@@ -1451,6 +1453,7 @@ CONTAINS
 #endif
                 lake_depth_flag, use_lakedepth,                        & !lake
                 water_depth, bathymetry_flag, shalwater_rough,   & ! PSH
+                shalwater_depth,                                 & ! PSH
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -2476,6 +2479,7 @@ CONTAINS
 #endif
                 lake_depth_flag, use_lakedepth,                          & !lake
                 water_depth,bathymetry_flag, shalwater_rough,    & ! PSH
+                shalwater_depth,                                 & ! PSH
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -2953,6 +2957,7 @@ CONTAINS
   INTEGER, INTENT(IN)      ::   use_lakedepth
   INTEGER, INTENT(INOUT)      ::   lake_depth_flag
   INTEGER, INTENT(IN)      ::   shalwater_rough  ! PSH
+  REAL,    INTENT(IN)      ::   shalwater_depth  ! PSH
   INTEGER, INTENT(INOUT)   ::   bathymetry_flag ! PSH
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                         ::  HT
 

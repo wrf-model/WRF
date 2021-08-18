@@ -1184,7 +1184,7 @@ CONTAINS
       IF ( shalwater_depth .GT. 0.0 ) THEN
          overwrite_water_depth = .True.
       ELSE
-         CALL wrf_error_fatal('No bathymetry data detected and shalwater_depth not greater than 0.0.')
+         CALL wrf_error_fatal('No bathymetry data detected and shalwater_depth not greater than 0.0. Re-run WPS to get bathymetry data or set shalwater_depth > 0.0')
       END IF
    END IF
 

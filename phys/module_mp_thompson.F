@@ -419,7 +419,7 @@
 
 
       INTEGER:: i, j, k, l, m, n
-      REAL:: h_01, airmass, niIN3, niCCN3, max_test, z1 !mchen
+      REAL:: h_01, airmass, niIN3, niCCN3, max_test, z1
       LOGICAL:: micro_init, has_CCN, has_IN
 
       is_aerosol_aware = .FALSE.

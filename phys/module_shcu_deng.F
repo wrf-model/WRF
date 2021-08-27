@@ -33,6 +33,12 @@ CONTAINS
              ,cldliqa, cldliqb, cldfra_sh, ca_rad, cw_rad, wub    & ! inout 3D
              ,RUSHTEN, RVSHTEN, RTHSHTEN, RQVSHTEN, RQCSHTEN      & ! inout 3D
              ,RQRSHTEN, RDCASHTEN, RQCDCSHTEN                     & ! inout 3D
+   ! WRF-Solar EPS
+             ,multi_perturb                                       &
+             ,pert_deng                                           &
+             ,perts_qvapor, perts_qcloud, perts_th, perts_w       &
+             ,pert_deng_qv, pert_deng_qc, pert_deng_t             &
+             ,pert_deng_w                                         &
                                                            )
 !-------------------------------------------------------------
    IMPLICIT NONE
@@ -53,6 +59,12 @@ CONTAINS
                  INTENT(IN   ) ::  U, V, W, TH, T, QV, QR, dz8w, Pcps, &
                                    rho, z_at_w, pi, tke,            &
                                    kth, bbls, ten_radl, ten_rads
+   integer, intent (in):: multi_perturb
+   logical, intent (in) :: pert_deng
+   real, intent (in) :: pert_deng_qv, pert_deng_qc, pert_deng_t, pert_deng_w
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_w
+
 !  ------------ INOUT ------------------------------------------
    REAL,         DIMENSION( ims:ime , jms:jme ),                           &
                  INTENT(INOUT) :: RAINSHV, RAINSH, pblmax, cldtopb, clddpthb,  &
@@ -101,6 +113,7 @@ CONTAINS
    REAL,  DIMENSION(kte+1) :: th_full
 #endif
    INTEGER :: kx, kxp1, kl
+   real :: t_tmp
 
    dxsq = dx*dx
    dt2  = 2.0*dt
@@ -130,14 +143,27 @@ CONTAINS
 !
   IF( if_avg_w == 1 ) THEN
     time_period_avg_min = 10.0
-    DO J = jts,jte
-    DO I = its,ite
-    DO k = kts,kte
-       w_at_half(i,k,j) = 0.5* ( w(i,k,j) + w(i,k+1,j) ) 
-       w_at_half_mean(i,k,j) = w0avg(i,k,j)
-    ENDDO
-    ENDDO
-    ENDDO
+    if (pert_deng .and. multi_perturb == 1) then
+      DO J = jts,jte
+      DO I = its,ite
+      DO k = kts,kte
+        w_at_half(i,k,j) = 0.5 * ((1.0 + perts_w(i, k, j) * pert_deng_w) * w(i, k, j) + &
+            (1.0 + perts_w(i, k + 1, j) * pert_deng_w) * w(i, k + 1, j) )
+        w_at_half_mean(i,k,j) = w0avg(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+    else
+      DO J = jts,jte
+      DO I = its,ite
+      DO k = kts,kte
+        w_at_half(i,k,j) = 0.5* ( w(i,k,j) + w(i,k+1,j) ) 
+        w_at_half_mean(i,k,j) = w0avg(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+    end if
+
     CALL time_avg_3d( dt, ADAPT_STEP_FLAG, time_period_avg_min &
                ,w_at_half, w_at_half_mean                      &
                ,its,ite, jts,jte, kts,kte                      &
@@ -150,14 +176,26 @@ CONTAINS
     ENDDO
     ENDDO
   ELSE
-    DO J = jts,jte
-    DO I = its,ite
-    DO k = kts,kte
-       w_at_half(i,k,j) = 0.5* ( w(i,k,j) + w(i,k+1,j) )
-       w0avg(i,k,j) = w_at_half(i,k,j)
-    ENDDO
-    ENDDO
-    ENDDO
+    if (pert_deng .and. multi_perturb == 1) then
+      DO J = jts,jte
+      DO I = its,ite
+      DO k = kts,kte
+        w_at_half(i,k,j) = 0.5 * ((1.0 + perts_w(i, k, j) * pert_deng_w) * w(i, k, j) + &
+            (1.0 + perts_w(i, k + 1, j) * pert_deng_w) * w(i, k + 1, j))
+         w0avg(i,k,j) = w_at_half(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+    else
+      DO J = jts,jte
+      DO I = its,ite
+      DO k = kts,kte
+         w_at_half(i,k,j) = 0.5* ( w(i,k,j) + w(i,k+1,j) )
+         w0avg(i,k,j) = w_at_half(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+    end if
   ENDIF
 !
 ! Time averaging PBLH
@@ -233,20 +271,42 @@ CONTAINS
   DO J = jts,jte
   DO I = its,ite
   DO k = kts,kte
-     IF( T(i,k,j) .GE. TO ) THEN
-       ES=1.E3*SVP1*EXP(SVP2*(T(i,k,j)-SVPT0)/(T(i,k,j)-SVP3))
-     ELSE
-       ES=611.0*EXP(22.514-6.15E3/T(i,k,j))
-     ENDIF
+!     IF( T(i,k,j) .GE. TO ) THEN
+!       ES=1.E3*SVP1*EXP(SVP2*(T(i,k,j)-SVPT0)/(T(i,k,j)-SVP3))
+!     ELSE
+!       ES=611.0*EXP(22.514-6.15E3/T(i,k,j))
+!     ENDIF
+     if (pert_deng .and. multi_perturb == 1) then
+       t_tmp = (1.0 + perts_th(i, k, j) * pert_deng_t) * T(i, k, j)
+       IF (t_tmp >= TO ) THEN
+         ES = 1.E3 * SVP1 * EXP (SVP2 * (t_tmp - SVPT0) / (t_tmp - SVP3))
+       ELSE
+         ES = 611.0 * EXP (22.514 - 6.15E3 / t_tmp)
+       ENDIF
+     else
+       IF( T(i,k,j) .GE. TO ) THEN
+         ES=1.E3*SVP1*EXP(SVP2*(T(i,k,j)-SVPT0)/(T(i,k,j)-SVP3))
+       ELSE
+         ES=611.0*EXP(22.514-6.15E3/(T(i,k,j)))
+       ENDIF
+     end if
      QES = 0.622*ES/(PCPS(i,k,j)-ES)
-     RH(i,k,j)=AMAX1(QV(i,k,j)/QES,1.0E-25)
+     if (pert_deng .and. multi_perturb == 1) then
+       RH(i, k, j) = AMAX1 ((1.0 + perts_qvapor(i, k, j) * pert_deng_qv) * QV(i, k, j) / QES, 1.0E-25)
+     else
+       RH(i,k,j)=AMAX1( QV(i,k,j)/QES,1.0E-25) 
+     endif
 
      alf1 = 0.25
      alf2 = 0.49
      alf3 = 100.0
      IF( RH(I,K,J) .LT. 0.999) THEN
        C1=(1.0-RH(I,K,J))*QES**alf2
-       QCTOT=CLDLIQA(I,K,J)*CLDAREAA(I,K,J)+QC(I,K,J)
+       if (pert_deng .and. multi_perturb == 1) then
+         QCTOT = CLDLIQA(i, k, j) * CLDAREAA(i, k, j) + (1.0 + perts_qvapor(i, k, j) * pert_deng_qc) * QC(i, k, j)
+       else
+         QCTOT=CLDLIQA(I,K,J)*CLDAREAA(I,K,J)+QC(I,K,J)
+       endif
        C2=-alf3*QCTOT/C1
        CS=RH(I,K,J)**alf1*(1.0-EXP(C2))
      ELSE
@@ -277,16 +337,23 @@ CONTAINS
                U1D(K) =U(I,K,J)
                V1D(K) =V(I,K,J)
                TH1D(K) =TH(I,K,J)
-               T1D(K) =T(I,K,J)
+               if (pert_deng .and. multi_perturb == 1) then
+                 T1D(k) =(1.0 + perts_th(i, k, j) * pert_deng_t) * T(i, k, j)
+                 QV1D(k) = (1.0 + perts_qvapor(i, k, j) * pert_deng_qv) * QV(i, k, j)
+                 QV1D(k) = MAX (QV1D(k), 1.0E-12)
+                 QC1D(k) = (1.0 + perts_qcloud(i, k, j) * pert_deng_qc) * QC(i,k,j)
+               else 
+                 T1D(K) = T(I,K,J)
+                 QV1D(K)=MAX(QV(I,K,J),1.E-12)
+                 QC1D(K)=QC(I,K,J)
+               endif
                W0AVG1D(k) = W0AVG(i,k,j)
                tke1d(k)  = tkeavg(i,k,j)
                RHO1D(K) =rho(I,K,J)
-               QV1D(K)=MAX(QV(I,K,J),1.E-12)
                RH1D(K)=RH(I,K,J)
 #ifdef DENG_SHCU1D
                ca_rad1d(k) = ca_rad(i,k,j)
 #endif
-               QC1D(K)=QC(I,K,J)
                QR1D(K)=QR(I,K,J)
                P1D(K) =Pcps(I,K,J)
                DZ1D(k)=dz8w(I,K,J)

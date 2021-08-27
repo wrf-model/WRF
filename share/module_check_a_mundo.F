@@ -574,6 +574,17 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If couple_farms is true, swint_opt must be 2
+!-----------------------------------------------------------------------
+      IF ( model_config_rec%couple_farms .AND. model_config_rec%swint_opt /= 2 ) THEN
+         wrf_err_message = '--- ERROR: Options couple_farms = T requires swint_opt  = 2'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Change either one in namelist.input and rerun the model'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! For ARW users, a request for CU=4 (SAS) should be switched to option
 ! CU = 95. The option CU = 4 is a scaleaware scheme used by NMM.
 !-----------------------------------------------------------------------

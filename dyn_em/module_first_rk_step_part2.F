@@ -138,6 +138,7 @@ CONTAINS
     INTEGER  num_road_layers
     INTEGER  iswater
     INTEGER  rk_step 
+    INTEGER  n
 
 #if ( WRF_DFI_RADAR == 1 )
     INTEGER  i_start,i_end,j_start,j_end,i,j,k
@@ -254,6 +255,32 @@ CONTAINS
                            grid%stddev_cutoff_rand_pert,grid%gridpt_stddev_rand_pert, & 
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !rand_perturb_on
+
+      If_multi_perturb: if ((config_flags%multi_perturb==1).and.(grid%id .EQ. 1 )) then
+        Loop_multi_perturb: DO n = 2, config_flags%num_pert_3d
+           CALL RAND_PERT_UPDATE(grid,'T',                                     &
+                           grid%SPFORCS3d(:,:,n),grid%SPFORCC3d(:,:,n),        &
+                           grid%SP_AMP3d(:,:,n),grid%ALPH_RAND3d(n),           &
+                           ips, ipe, jps, jpe, kps, kpe,                       &
+                           ids, ide, jds, jde, kds, kde,                       &
+                           ims, ime, jms, jme, kms, kme,                       &
+                           k_start, k_end,                                     &
+                           imsx,imex,jmsx,jmex,kmsx,kmex,                      &
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,                      &
+                           imsy,imey,jmsy,jmey,kmsy,kmey,                      &
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           config_flags%restart, grid%iseedarr_mult3d(:,n),    &
+                           config_flags%seed_dim,                              &
+                           grid%DX,grid%DY,grid%mult3d_vertstruc(n),           &
+                           grid%PERT3D(:,:,:,n),                               &
+                           grid%stddev_cutoff_mult3d(n),                       &
+                           grid%gridpt_stddev_mult3d(n),                       &
+                           grid%VERTSTRUCC3d(:,:,:,n),grid%VERTSTRUCS3d(:,:,:,n),grid%VERTAMPT3d(:,n)       )
+        END DO Loop_multi_perturb
+      ENDIF If_multi_perturb
+
       if ((grid%spp_conv==1).and.(grid%id .EQ. 1 )) then
            CALL RAND_PERT_UPDATE(grid,'T',                                     &
                            grid%SPFORCS2,grid%SPFORCC2,                        &

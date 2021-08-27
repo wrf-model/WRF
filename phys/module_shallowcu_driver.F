@@ -65,6 +65,14 @@ CONTAINS
                      ,dnw, xtime, xtime1, gmt                         &
                      ,qke,PBLHAVG, TKEAVG                             &
                      ,bl_pbl_physics                                  &
+                     ,multi_perturb                                   &
+                     ,pert_deng                                       &
+                     ,perts_qvapor                                    &
+                     ,perts_qcloud                                    &
+                     ,perts_th                                        &
+                     ,perts_w                                         &
+                     ,pert_deng_qv, pert_deng_qc, pert_deng_t         &
+                     ,pert_deng_w                                     &
                                                                       )
 !----------------------------------------------------------------------
    USE module_model_constants
@@ -414,6 +422,14 @@ CONTAINS
                                  ainckfsa
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  :: tke_scr, kth_scr, bbls_scr
+
+    ! WRF-Solar EPS
+  integer, intent (in) :: multi_perturb 
+  logical, intent (in) :: pert_deng
+  real, intent(in) :: pert_deng_qv, pert_deng_qc, pert_deng_t, pert_deng_w
+  real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(inout) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_w 
+
 !
 ! End PSU-DENG Shallow cu variables
 !
@@ -633,6 +649,13 @@ CONTAINS
            ,RUSHTEN=rushten, RVSHTEN=rvshten, RTHSHTEN=rthshten          &
            ,RQVSHTEN=rqvshten, RQCSHTEN=rqcshten, RQRSHTEN=rqrshten      &
            ,RDCASHTEN=RDCASHTEN, RQCDCSHTEN=RQCDCSHTEN                   &
+   ! WRF-Solar EPS
+           ,multi_perturb=multi_perturb                                  &
+           ,pert_deng=pert_deng                                          &
+           ,perts_qvapor=perts_qvapor, perts_qcloud=perts_qcloud         &
+           ,perts_th=perts_th, perts_w=perts_w                           &
+           ,pert_deng_qv=pert_deng_qv, pert_deng_qc=pert_deng_qc         &
+           ,pert_deng_t=pert_deng_t, pert_deng_w=pert_deng_w             &
                                                                          )
 
 

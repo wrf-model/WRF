@@ -314,6 +314,11 @@ CONTAINS
      &          ,spp_lsm,pattern_spp_lsm,field_sf                     &  !SPP
      &          ,spp_pbl,pattern_spp_pbl                              &  !SPP
      &          ,XLAIDYN                                              &
+  ! WRF-Solar EPS
+     &          ,multi_perturb                                        & 
+     &          ,pert_noah, perts_qvapor, perts_th, perts_smois       &
+     &          ,perts_tsoil, pert_noah_qv, pert_noah_t               &
+     &          ,pert_noah_smois, pert_noah_tslb                      &
      &          ,irrigation,sf_surf_irr_scheme, irr_daily_amount      & !IRRIG
      &          ,irr_start_hour,irr_num_hours,irr_start_julianday     &
      &          ,irr_end_julianday,irr_freq,irr_ph,irr_rand_field     &
@@ -666,6 +671,13 @@ CONTAINS
    INTEGER, INTENT(IN ),OPTIONAL ::   YR
    REAL , INTENT(IN )::   U_FRAME
    REAL , INTENT(IN )::   V_FRAME
+
+     ! WRF-Solar EPS
+   integer, intent(in) :: multi_perturb 
+   logical, intent(in) :: pert_noah
+   real, intent(in):: pert_noah_qv,pert_noah_t, pert_noah_smois,pert_noah_tslb
+   real, dimension (ims:ime, kms:kme, jms:jme) ,intent(inout), optional :: perts_qvapor, perts_th, &
+       perts_smois, perts_tsoil
 
   !added by Wei Yu for WRF_HYDRO 
    real ::  HYDRO_dt
@@ -2934,7 +2946,12 @@ CONTAINS
 !
 !  END FASDAS
 !
-                ,RS,XLAIDYN,IRRIGATION_CHANNEL)
+                ,RS,XLAIDYN,IRRIGATION_CHANNEL     &
+! WRF-Solar EPS
+                ,multi_perturb, pert_noah                              &
+                ,perts_qvapor, perts_th, perts_smois, perts_tsoil      &
+                ,pert_noah_qv, pert_noah_t, pert_noah_smois            &
+                ,pert_noah_tslb )
          ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &

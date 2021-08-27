@@ -151,6 +151,11 @@ SUBROUTINE microphysics_driver(                                          &
                       ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           &
                       ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,mskf_refl_10cm     &
 # endif
+                      ,multi_perturb                                     &
+                      ,pert_thom, perts_qvapor, perts_qcloud, perts_qice &
+                      ,perts_qsnow, perts_ni                             &
+                      ,pert_thom_qv,pert_thom_qc,pert_thom_qi            &
+                      ,pert_thom_qs,pert_thom_ni                         &
                                                                          )
 
 ! Framework
@@ -497,6 +502,13 @@ SUBROUTINE microphysics_driver(                                          &
         INTENT(IN), OPTIONAL ::                                                 &
                                                                  qfx, &    !Moisture flux at surface (kg m-2 s-1)
                                                                  rliq      !Vertically-integrated reserved cloud condensate(m/s)
+
+! WRF-Solar EPS
+   integer, intent (in) :: multi_perturb 
+   logical, intent (in) :: pert_thom
+   real, intent (in) :: pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, pert_thom_ni
+   real, dimension(ims:ime, kms:kme, jms:jme ), intent (in), optional :: perts_qvapor, perts_qcloud, perts_qice, &
+       perts_qsnow, perts_ni 
  
  !3D variables required for CAMMGMP scheme
  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
@@ -1061,6 +1073,19 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      has_reqc=has_reqc,                  & ! G. Thompson
                      has_reqi=has_reqi,                  & ! G. Thompson
                      has_reqs=has_reqs,                  & ! G. Thompson
+  ! WRF-Solar EPS
+                     multi_perturb=multi_perturb,        &
+                     pert_thom=pert_thom,                &
+                     perts_qvapor=perts_qvapor,          &
+                     perts_qcloud=perts_qcloud,          &
+                     perts_qice=perts_qice,              &
+                     perts_qsnow=perts_qsnow,            &
+                     perts_ni=perts_ni,                  &
+                     pert_thom_qv=pert_thom_qv,          &
+                     pert_thom_qc=pert_thom_qc,          &
+                     pert_thom_qi=pert_thom_qi,          &
+                     pert_thom_qs=pert_thom_qs,          &
+                     pert_thom_ni=pert_thom_ni,          &
                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
@@ -1121,6 +1146,19 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      has_reqc=has_reqc,                  & ! G. Thompson
                      has_reqi=has_reqi,                  & ! G. Thompson
                      has_reqs=has_reqs,                  & ! G. Thompson
+  ! WRF-Solar EPS
+                     multi_perturb=multi_perturb,        & 
+                     pert_thom=pert_thom,                & 
+                     perts_qvapor=perts_qvapor,          &
+                     perts_qcloud=perts_qcloud,          &
+                     perts_qice=perts_qice,              &
+                     perts_qsnow=perts_qsnow,            &
+                     perts_ni=perts_ni,                  &
+                     pert_thom_qv=pert_thom_qv,          & 
+                     pert_thom_qc=pert_thom_qc,          & 
+                     pert_thom_qi=pert_thom_qi,          & 
+                     pert_thom_qs=pert_thom_qs,          & 
+                     pert_thom_ni=pert_thom_ni,          &
                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)

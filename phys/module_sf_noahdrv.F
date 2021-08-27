@@ -119,6 +119,10 @@ CONTAINS
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                         &
                  ,IRR_CHAN                                          &
+                 ! WRF-Solar EPS
+                 ,multi_perturb, pert_noah, perts_qvapor            &
+                 ,perts_th, perts_smois, perts_tsoil                &
+                 ,pert_noah_qv, pert_noah_t, pert_noah_smois, pert_noah_tslb &
                  )
 
 !----------------------------------------------------------------
@@ -375,6 +379,14 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHGR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMC_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHC_SFCDIF
+
+     ! WRF-Solar EPS
+   integer, intent (in) :: multi_perturb 
+   logical, intent (in) :: pert_noah
+   real, intent (in) :: pert_noah_qv, pert_noah_t, pert_noah_smois, pert_noah_tslb
+   real, dimension (ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_th, perts_smois, perts_tsoil
+
 ! Local variables (moved here from driver to make routine thread safe, 20031007 jm)
 
       REAL, DIMENSION(1:num_soil_layers) ::  ET
@@ -699,6 +711,7 @@ CONTAINS
    REAL                    ::  HFX_PHY, QFX_PHY
    REAL                    ::  DZQ
    REAL                    ::  HCPCT_FASDAS
+   real :: qv_tmp
 
    REAL,OPTIONAL,INTENT(IN),DIMENSION( ims:ime, jms:jme )       :: IRR_CHAN
    REAL       ::  IRRIGATION_CHANNEL
@@ -787,7 +800,14 @@ CONTAINS
 ! pressure in middle of lowest layer
         SFCPRS=(P8W3D(I,KTS+1,j)+P8W3D(i,KTS,j))*0.5
 ! convert from mixing ratio to specific humidity
-         Q2K=QV3D(i,1,j)/(1.0+QV3D(i,1,j))
+         if (pert_noah .and. multi_perturb == 1) then
+           qv_tmp = (1.0 + perts_qvapor(i, 1, j) * pert_noah_qv) * QV3D(i, 1, j)
+           Q2K = qv_tmp /(1.0 + qv_tmp)
+           SFCTMP = (1.0 + perts_th(i, 1, j) * pert_noah_t) * T3D(i, 1, j) 
+         else
+           Q2K=QV3D(i,1,j)/(1.0+QV3D(i,1,j))
+           SFCTMP=T3D(i,1,j)
+         endif
 !
 !         Q2SAT=QGH(I,j)
          Q2SAT=QGH(I,J)/(1.0+QGH(I,J))        ! Q2SAT is sp humidity
@@ -801,7 +821,6 @@ CONTAINS
           CHKLOWQ(I,J)=1.
         ENDIF
 
-        SFCTMP=T3D(i,1,j)
         ZLVL=0.5*DZ8W(i,1,j)
 
 !        TH2=SFCTMP+(0.0097545*ZLVL)
@@ -936,8 +955,13 @@ CONTAINS
 !FEI: temporaray arrays above need to be changed later by using SI
 
           DO NS=1,NSOIL
-            SMC(NS)=SMOIS(I,NS,J)
-            STC(NS)=TSLB(I,NS,J)                                          !STEMP
+            if (pert_noah .and. multi_perturb == 1) then
+              SMC(NS) = (1.0 + perts_smois(I, NS, J) * pert_noah_smois) * SMOIS(I, NS, J)
+              STC(NS) = (1.0 + perts_tsoil(I, NS, J) * pert_noah_tslb) * TSLB(I, NS, J)
+            else
+              SMC(NS)=SMOIS(I,NS,J)
+              STC(NS)=TSLB(I,NS,J)                                          !STEMP
+            endif
             SWC(NS)=SH2O(I,NS,J)
           ENDDO
 !
@@ -1260,8 +1284,13 @@ CONTAINS
 ! Calculate momentum flux from rural surface for use with multi-layer UCM (Martilli et al. 2002)
 
           DO 80 NS=1,NSOIL
-           SMOIS(I,NS,J)=SMC(NS)
-           TSLB(I,NS,J)=STC(NS)                                        !  STEMP
+            if (pert_noah .and. multi_perturb == 1) then
+              SMOIS(I, NS, J) = max (SMC(NS) - perts_smois(I, NS, J) * pert_noah_smois * SMOIS(I, NS, J), 0.0)
+              TSLB(I, NS, J) = STC(NS) - perts_tsoil(I, NS, J) * pert_noah_tslb * TSLB(I, NS, J) 
+            else
+              SMOIS(I,NS,J)=SMC(NS)
+              TSLB(I,NS,J)=STC(NS)                                        !  STEMP
+            endif
            SH2O(I,NS,J)=SWC(NS)
    80     CONTINUE
 !       ENDIF

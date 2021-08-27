@@ -124,6 +124,14 @@ CONTAINS
                ,frac_up,rc_mf                                      & 
 ! Wind Turbine Parameterizations
                ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id                 &
+! WRF-Solar EPS
+                 ,multi_perturb, pert_mynn                         &
+                 ,perts_qvapor                                     &
+                 ,perts_qcloud                                     &
+                 ,perts_th                                         &
+                 ,perts_tke                                        &
+                 ,pert_mynn_qv, pert_mynn_qc, pert_mynn_t          &
+                 ,pert_mynn_qke                                    &
 ! variables required for camuwpbl scheme
                , z_at_w,cldfra_old_mp,cldfra, rthratenlw             &
                , tauresx2d,tauresy2d                                 &
@@ -473,6 +481,13 @@ CONTAINS
                                                             dz8w, &
                                                                z, &
                                                           th_phy
+
+! WRF-Solar EPS
+   integer, intent (in) :: multi_perturb
+   LOGICAL, intent (in) :: pert_mynn
+   real, intent (in) :: pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_tke
 
 !1D variables required for CAMUWPBL scheme
    REAL , DIMENSION( kms:kme ) ,                                      &
@@ -1782,6 +1797,17 @@ CONTAINS
                    &,FLAG_QC=flag_qc,FLAG_QI=flag_qi                     &
                    &,FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni                 &
                    &,FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa         &
+  ! WRF-Solar EPS
+                   ,multi_perturb=multi_perturb                          &
+                   ,pert_mynn=pert_mynn                                  &
+                   ,perts_qvapor=perts_qvapor                            &
+                   ,perts_qcloud=perts_qcloud                            &
+                   ,perts_th=perts_th                                    &
+                   ,perts_tke=perts_tke                                  &
+                   ,pert_mynn_qv=pert_mynn_qv                            &
+                   ,pert_mynn_qc=pert_mynn_qc                            &
+                   ,pert_mynn_t=pert_mynn_t                              &
+                   ,pert_mynn_qke=pert_mynn_qke                          &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &

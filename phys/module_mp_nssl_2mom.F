@@ -77,7 +77,7 @@
 !---------------------------------------------------------------------
 ! Sept. 2021:
 ! Fixes:
-!   Restored previous formulation of snow reflectivity, as it was realized that the last change incorrectly assumed a fixed density independent of size. Generally low reflectivity values as a result (no effect on microphysics)
+!   Restored previous formulation of snow reflectivity, as it was realized that the last change incorrectly assumed a fixed density independent of size. Generally lower snow reflectivity values as a result (no effect on microphysics)
 ! Other:
 !   Generic fall speed coeffecients (axx,bxx) to accomodate future frozen drops category (no effect)
 !   Reordered collection coefficients (dab1lh) to be consistent (no effect)

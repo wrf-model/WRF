@@ -3917,14 +3917,6 @@ ENDIF
        &RTHRATEN,                       &
        &FLAG_QC,FLAG_QI,FLAG_QNC,       &
        &FLAG_QNI,FLAG_QNWFA,FLAG_QNIFA  &
- ! WRF-Solar EPS
-       &,multi_perturb,pert_mynn        &
-       &,perts_qvapor                   &
-       &,perts_qcloud                   &
-       &,perts_th                       &
-       &,perts_tke                      &
-       &,pert_mynn_qv,pert_mynn_qc      &
-       &,pert_mynn_t,pert_mynn_qke      &
        &,IDS,IDE,JDS,JDE,KDS,KDE        &
        &,IMS,IME,JMS,JME,KMS,KME        &
        &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -4038,13 +4030,6 @@ ENDIF
     INTEGER ic
 #endif
 
-! WRF-Solar EPS
-    integer, intent (in) :: multi_perturb 
-    logical, intent (in) :: pert_mynn
-    real, intent (in) :: pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke
-    real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
-        perts_qcloud, perts_th, perts_tke
-
 !local vars
     INTEGER :: ITF,JTF,KTF, IMD,JMD
     INTEGER :: i,j,k
@@ -4096,8 +4081,6 @@ ENDIF
      INTEGER,  INTENT(IN)                                               ::spp_pbl
      REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN),OPTIONAL  ::pattern_spp_pbl
      REAL, DIMENSION(KTS:KTE)                         ::    rstoch_col
-
-     real :: val_tmp1, val_tmp2
 
 
     IF ( debug_code ) THEN
@@ -4211,34 +4194,21 @@ ENDIF
                 u1(k) = u(i,k,j)
                 v1(k) = v(i,k,j)
                 w1(k) = w(i,k,j)
+                th1(k)=th(i,k,j)
                 tk1(k)=T3D(i,k,j)
                 rho1(k)=rho(i,k,j)
-                if (pert_mynn .and. multi_perturb == 1) then
-                  val_tmp1 = (1.0 + perts_qcloud(i, k, j) * pert_mynn_qc) * qc(i, k, j)
-                  val_tmp2 = (1.0 + perts_qvapor(i, k, j) * pert_mynn_qv) * qv(i, k, j)
-                  sqc(k) = val_tmp1 / (1.0 + val_tmp2)
-                  sqv(k) = val_tmp2 / (1.0 + val_tmp2)
-                  th1(k) = (1.0 + perts_th(i, k, j) * pert_mynn_t) * th(i, k, j)
-                else
-                  th1(k)=th(i,k,j)
-                  sqc(k)=qc(i,k,j)/(1.+qv(i,k,j))
-                  sqv(k)=qv(i,k,j)/(1.+qv(i,k,j))
-                end if
-                thetav(k) = th1(k) * (1.0 + 0.61 * sqv(k))
-
+                sqc(k)=qc(i,k,j)/(1.+qv(i,k,j))
+                sqv(k)=qv(i,k,j)/(1.+qv(i,k,j))
+                thetav(k)=th(i,k,j)*(1.+0.61*sqv(k))
                 IF (icloud_bl > 0) THEN
                    CLDFRA_BL1D(k)=CLDFRA_BL(i,k,j)
                    QC_BL1D(k)=QC_BL(i,k,j)
                    QI_BL1D(k)=QI_BL(i,k,j)
                 ENDIF
                 IF (PRESENT(qi) .AND. FLAG_QI ) THEN
-                if (pert_mynn .and. multi_perturb == 1) then
-                  sqi(k)=qi(i,k,j) / (1.0 + (1.0 + perts_qvapor(i, k, j) * pert_mynn_qv) * qv(i, k, j))
-                else
-                  sqi(k)=qi(i,k,j)/(1.+qv(i,k,j))
-                end if
+                   sqi(k)=qi(i,k,j)/(1.+qv(i,k,j))
                    sqw(k)=sqv(k)+sqc(k)+sqi(k)
-                   thl(k)=th1(k)- xlvcp/exner(i,k,j)*sqc(k) &
+                   thl(k)=th(i,k,j)- xlvcp/exner(i,k,j)*sqc(k) &
                        &           - xlscp/exner(i,k,j)*sqi(k)
                    !Use form from Tripoli and Cotton (1981) with their
                    !suggested min temperature to improve accuracy.
@@ -4252,12 +4222,12 @@ ENDIF
                       sqc9=sqc(k)
                       sqi9=sqi(k)
                    ENDIF
-                   thlsg(k)=th1(k)- xlvcp/exner(i,k,j)*sqc9 &
+                   thlsg(k)=th(i,k,j)- xlvcp/exner(i,k,j)*sqc9 &
                          &           - xlscp/exner(i,k,j)*sqi9
                 ELSE
                    sqi(k)=0.0
                    sqw(k)=sqv(k)+sqc(k)
-                   thl(k)=th1(k)-xlvcp/exner(i,k,j)*sqc(k)
+                   thl(k)=th(i,k,j)-xlvcp/exner(i,k,j)*sqc(k)
                    !Use form from Tripoli and Cotton (1981) with their 
                    !suggested min temperature to improve accuracy.      
                    !thl(k)=th(i,k,j)*(1.- xlvcp/MAX(tk1(k),TKmin)*sqc(k))
@@ -4269,7 +4239,7 @@ ENDIF
                       sqc9=sqc(k)
                       sqi9=0.0
                    ENDIF
-                   thlsg(k)=th1(k)- xlvcp/exner(i,k,j)*sqc9 &
+                   thlsg(k)=th(i,k,j)- xlvcp/exner(i,k,j)*sqc9 &
                          &           - xlscp/exner(i,k,j)*sqi9
                 ENDIF
                 thvl(k)=thlsg(k)*(1.+0.61*sqv(k))
@@ -4287,8 +4257,6 @@ ENDIF
                 ELSE
                    qke1(k)=qke(i,k,j)
                 ENDIF
-                if (pert_mynn .and. multi_perturb == 1) &
-                    qke1(k) = (1.0 + perts_tke(i, k, j) * pert_mynn_qke) * qke1(k)
                 el(k)=el_pbl(i,k,j)
                 sh(k)=Sh3D(i,k,j)
                 tsq1(k)=tsq(i,k,j)
@@ -4331,12 +4299,7 @@ ENDIF
              DO k=KTS,KTE !KTF
                 el_pbl(i,k,j)=el(k)
                 sh3d(i,k,j)=sh(k)
-                if (pert_mynn .and. multi_perturb == 1) then
-                  qke(i, k, j) = qke1(k) - perts_tke(i, k, j) * pert_mynn_qke * qke1(k)
-                  if (qke(i, k, j) .lt. 1.e-4) qke(i, k, j) = 1.e-4
-                else
-                  qke(i,k,j)=qke1(k)
-                end if
+                qke(i,k,j)=qke1(k)
                 tsq(i,k,j)=tsq1(k)
                 qsq(i,k,j)=qsq1(k)
                 cov(i,k,j)=cov1(k)
@@ -4386,22 +4349,13 @@ ENDIF
              u1(k) = u(i,k,j)
              v1(k) = v(i,k,j)
              w1(k) = w(i,k,j)
+             th1(k)= th(i,k,j)
              tk1(k)=T3D(i,k,j)
              rho1(k)=rho(i,k,j)
-             if (pert_mynn .and. multi_perturb == 1) then
-               th1(k) = (1.0 + perts_th(i, k, j) * pert_mynn_t) * th(i, k, j)
-               qv1(k) = (1.0 + perts_qvapor(i, k, j) * pert_mynn_qv) * qv(i, k, j)
-               qc1(k) = (1.0 + perts_qcloud(i, k, j) * pert_mynn_qc) * qc(i, k, j)
-               sqv(k) = qv1(k) / (1.0 + qv1(k))
-               sqc(k) = qc1(k) / (1.0 + qv1(k))
-             else
-               th1(k)= th(i,k,j)
-               qv1(k)= qv(i,k,j)
-               qc1(k)= qc(i,k,j)
-               sqv(k)= qv(i,k,j)/(1.+qv(i,k,j))
-               sqc(k)= qc(i,k,j)/(1.+qv(i,k,j))
-             end if
-
+             qv1(k)= qv(i,k,j)
+             qc1(k)= qc(i,k,j)
+             sqv(k)= qv(i,k,j)/(1.+qv(i,k,j))
+             sqc(k)= qc(i,k,j)/(1.+qv(i,k,j))
              dqc1(k)=0.0
              dqi1(k)=0.0
              dqni1(k)=0.0
@@ -4410,13 +4364,9 @@ ENDIF
              dqnifa1(k)=0.0
              IF(PRESENT(qi) .AND. FLAG_QI)THEN
                 qi1(k)= qi(i,k,j)
-             if (pert_mynn .and. multi_perturb == 1) then
-                sqi(k)= qi(i,k,j) / (1.0 + (1.0 + perts_qvapor(i, k, j) * pert_mynn_qv) * qv(i,k,j))
-             else
                 sqi(k)= qi(i,k,j)/(1.+qv(i,k,j))
-             end if
                 sqw(k)= sqv(k)+sqc(k)+sqi(k)
-                thl(k)= th1(k) - xlvcp/exner(i,k,j)*sqc(k) &
+                thl(k)= th(i,k,j) - xlvcp/exner(i,k,j)*sqc(k) &
                      &            - xlscp/exner(i,k,j)*sqi(k)
                 !Use form from Tripoli and Cotton (1981) with their
                 !suggested min temperature to improve accuracy.    
@@ -4430,13 +4380,13 @@ ENDIF
                    sqc9=sqc(k)
                    sqi9=sqi(k)
                 ENDIF
-                thlsg(k)=th1(k)- xlvcp/exner(i,k,j)*sqc9 &
+                thlsg(k)=th(i,k,j)- xlvcp/exner(i,k,j)*sqc9 &
                       &           - xlscp/exner(i,k,j)*sqi9
              ELSE
                 qi1(k)=0.0
                 sqi(k)=0.0
                 sqw(k)= sqv(k)+sqc(k)
-                thl(k)= th1(k)-xlvcp/exner(i,k,j)*sqc(k)
+                thl(k)= th(i,k,j)-xlvcp/exner(i,k,j)*sqc(k)
                 !Use form from Tripoli and Cotton (1981) with their
                 !suggested min temperature to improve accuracy.    
                 !thl(k)=th(i,k,j)*(1.- xlvcp/MAX(tk1(k),TKmin)*sqc(k))
@@ -4448,10 +4398,10 @@ ENDIF
                    sqc9=sqc(k)
                    sqi9=0.0
                 ENDIF
-                thlsg(k)=th1(k)- xlvcp/exner(i,k,j)*sqc9 &
+                thlsg(k)=th(i,k,j)- xlvcp/exner(i,k,j)*sqc9 &
                       &           - xlscp/exner(i,k,j)*sqi9 
             ENDIF
-            thetav(k)=th1(k)*(1.+0.608*sqv(k))
+            thetav(k)=th(i,k,j)*(1.+0.608*sqv(k))
             thvl(k)=thlsg(k)*(1.+0.61*sqv(k))
 
              IF (PRESENT(qni) .AND. FLAG_QNI ) THEN
@@ -4477,11 +4427,7 @@ ENDIF
              p1(k) = p(i,k,j)
              ex1(k)= exner(i,k,j)
              el(k) = el_pbl(i,k,j)
-             if (pert_mynn .and. multi_perturb == 1) then
-               qke1(k) = (1.0 + perts_tke(i, k, j) * pert_mynn_qke) * qke(i, k, j)
-             else
-               qke1(k) = qke(i, k, j)
-             end if
+             qke1(k)=qke(i,k,j)
              sh(k) = sh3d(i,k,j)
              tsq1(k)=tsq(i,k,j)
              qsq1(k)=qsq(i,k,j)
@@ -4585,7 +4531,7 @@ ENDIF
           ENDIF
 
           sqcg= 0.0   !JOE, it was: qcg(i,j)/(1.+qcg(i,j))
-          cpm = cp * (1.0 + 0.84 * qv1(kts))
+          cpm=cp*(1.+0.84*qv(i,kts,j))
           exnerg=(ps(i,j)/p1000mb)**rcp
 
           !-----------------------------------------------------
@@ -4929,12 +4875,7 @@ ENDIF
              ENDIF
 
              el_pbl(i,k,j)=el(k)
-             if (pert_mynn .and. multi_perturb == 1) then
-               qke(i, k, j) = qke1(k) - perts_tke(i, k, j) * pert_mynn_qke * qke1(k)
-             else
-               qke(i,k,j)=qke1(k)
-             endif
-             if (qke(i, k, j) .lt. 1.e-4) qke(i, k, j) = 1.e-4 
+             qke(i,k,j)=qke1(k)
              tsq(i,k,j)=tsq1(k)
              qsq(i,k,j)=qsq1(k)
              cov(i,k,j)=cov1(k)

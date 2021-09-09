@@ -159,6 +159,17 @@ if test -n "$PERL" ; then
     
 fi
 
+
+if [ -n "$NETCDFPAR" ] ; then
+  echo "Will use NETCDFPAR in dir: $NETCDFPAR, which should be the same as $NETCDF"
+  NETCDF="$NETCDFPAR"
+  NETCDF4="1"
+  USENETCDFPAR="1"
+  export NETCDF
+  export NETCDF4
+  export USENETCDFPAR
+fi
+
 if  test -z "$NETCDF"  ; then
   echo ' '
   echo '*****************************************************************************'
@@ -552,7 +563,7 @@ if test -n "$PERL" ; then
    srch=`grep -i "^#ARCH.*$os" arch/configure.defaults | grep -i "$mach"`
    if [ -n "$srch" ] ; then
      $PERL arch/Config.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
-          -netcdf=$NETCDF -pnetcdf=$PNETCDF -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
+          -netcdf=$NETCDF -pnetcdf=$PNETCDF -netcdfpar=$NETCDFPAR -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
           -time=$FORTRAN_COMPILER_TIMER -tfl="$TFL" -cfl="$CFL" -config_line="$config_line" \
           -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -dep_lib_path="$DEP_LIB_PATH"
@@ -1052,7 +1063,7 @@ if [ -n "$NETCDF4" ] ; then
       echo "!!! configure.wrf has been REMOVED !!!"
       echo
       echo "*****************************************************************************"
-      rm -f configure.wrf
+      # rm -f configure.wrf
     else
       echo "*****************************************************************************"
       echo "This build of WRF will use NETCDF4 with HDF5 compression"

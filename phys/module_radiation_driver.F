@@ -927,9 +927,6 @@ CONTAINS
      INTEGER, PARAMETER:: taer_ssa_opt = 3                               !  input option for aerosol ssa
      INTEGER, PARAMETER:: taer_asy_opt = 3                               !  input option for aerosol asy
 
-! WRF-Solar EPS
-   real, dimension (kts:kte) :: perts_qvapor_1d, perts_th_1d
-
 
 #if ( HWRF == 1 )
    CHARACTER(len=255) :: wrf_err_message
@@ -1377,29 +1374,26 @@ CONTAINS
 
              DO k = kts,kte
                 p_1d(k) = p(i,k,j)
-                t_1d(k) = t(i,k,j)
-                qv_1d(k) = qv(i,k,j)
+                if (pert_cld3 .and. multi_perturb == 1) then
+                  t_1d(k) = (1.0 + perts_th(i, k, j) * pert_cld3_t) * t(i, k, j)
+                  qv_1d(k) = max (0.0, (1.0 + perts_qvapor(i, k, j) * pert_cld3_qv) * qv(i, k, j))
+                else
+                  t_1d(k) = t(i,k,j)
+                  qv_1d(k) = qv(i,k,j)
+                end if
                 qc_1d(k) = qc(i,k,j)
                 qi_1d(k) = qi(i,k,j)
                 qs_1d(k) = qs(i,k,j)
                 Dz_1d(k) = dz8w(i,k,j)
                 cf_1d(k) = cldfra(i,k,j)
              ENDDO
-             if (present (perts_qvapor) .and. present (perts_th)) then
-               do k = kts, kte
-                 perts_qvapor_1d(k) = perts_qvapor(i, k, j)
-                 perts_th_1d(k) = perts_th(i, k, j)
-               end do
-             end if
 
              WRITE (wrf_err_message,*) 'DEBUG: calling cal_cldfra3 at (i,j): ', i,j, kms,kme,kts,kte
              CALL wrf_debug (150, wrf_err_message)
 
              CALL cal_cldfra3(cf_1d, qv_1d, qc_1d, qi_1d, qs_1d, Dz_1d, &
      &                          p_1d, t_1d, XLAND(i,j), gridkm,         &
-     &                          .false., 1.5, kts, kte, .false.,        &
-     &                          multi_perturb, pert_cld3, perts_qvapor_1d,     &
-     &                          perts_th_1d, pert_cld3_qv, pert_cld3_t)
+     &                          .false., 1.5, kts, kte, .false.)
 
              DO k = kts,kte
                 qc(i,k,j) = qc_1d(k)
@@ -3837,55 +3831,31 @@ CONTAINS
 !
 !+---+-----------------------------------------------------------------+
 
-      SUBROUTINE cal_cldfra3(CLDFRA, qv_in, qc, qi, qs, dz,             &
-     &                 p, t_in, XLAND, gridkm,                          &
+      SUBROUTINE cal_cldfra3(CLDFRA, qv, qc, qi, qs, dz,                &
+     &                 p, t, XLAND, gridkm,                             &
      &                 modify_qvapor, max_relh,                         &
-     &                 kts,kte, debug_flag,                             &
-     &                 multi_perturb,                                   &
-     &                 pert_cld3, perts_qvapor_1d, perts_th_1d,         &
-     &                 pert_cld3_qv, pert_cld3_t                        &
-                                                      )
+     &                 kts,kte, debug_flag)
 !
       USE module_mp_thompson   , ONLY : rsif, rslf
       IMPLICIT NONE
 !
       INTEGER, INTENT(IN):: kts, kte
       LOGICAL, INTENT(IN):: modify_qvapor
-      REAL, DIMENSION(kts:kte), INTENT(INOUT):: qv_in, qc, qi, cldfra
-      REAL, DIMENSION(kts:kte), INTENT(IN):: p, t_in, dz, qs
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: qv, qc, qi, cldfra
+      REAL, DIMENSION(kts:kte), INTENT(IN):: p, t, dz, qs
       REAL, INTENT(IN):: gridkm, XLAND, max_relh
       LOGICAL, INTENT(IN):: debug_flag
-
-        ! WRF-Solar EPS
-      integer, intent (in), optional :: multi_perturb 
-      logical, intent (in), optional :: pert_cld3
-      real, intent (in), optional :: pert_cld3_qv, pert_cld3_t
-      real, dimension(kts:kte), optional, intent (in) :: perts_qvapor_1d, perts_th_1d
 
 !..Local vars.
       REAL:: RH_00L, RH_00O, RH_00
       REAL:: entrmnt=0.5
       INTEGER:: k
       REAL:: TC, qvsi, qvsw, RHUM, delz
-      REAL, DIMENSION(kts:kte):: qvs, rh, rhoa, t, qv
+      REAL, DIMENSION(kts:kte):: qvs, rh, rhoa
 
       character*512 dbg_msg
 
 !+---+
-
-! Introduce random perturbations if needed
-         if (pert_cld3 .and. multi_perturb == 1 .and. .not. modify_qvapor) then
-           do k = kts, kte
-             t(k) = t_in(k) * (1.0 + perts_th_1d(k) * pert_cld3_t)
-             qv(k) = max (qv_in(k) * (1.0 + perts_qvapor_1d(k) * pert_cld3_qv), 0.0)
-           end do
-         else
-           do k = kts, kte
-             t(k) = t_in(k)
-             qv(k) = qv_in(k)
-           end do
-         end if
-
 
 !..Initialize cloud fraction, compute RH, and rho-air.
 
@@ -3907,12 +3877,10 @@ CONTAINS
             if (modify_qvapor) then
                if (qc(k).gt.1.E-8) then
                   qv(k) = MAX(qv(k), qvsw)
-                  qv_in(k) = qv(k)
                   qvs(k) = qvsw
                endif
                if (qc(k).le.1.E-8 .and. qi(k).ge.1.E-9) then
                   qv(k) = MAX(qv(k), qvsi*1.005)    !..To ensure a tiny bit ice supersaturation
-                  qv_in(k) = qv(k)
                   qvs(k) = qvsi
                endif
             endif
@@ -4008,7 +3976,7 @@ CONTAINS
       if (modify_qvapor) then
          DO k = kts,kte
             if (cldfra(k).gt.0.20 .and. cldfra(k).lt.1.0) then
-               qv_in(k) = MAX(qv(k),qvs(k))
+               qv(k) = MAX(qv(k),qvs(k))
             endif
          ENDDO
       endif

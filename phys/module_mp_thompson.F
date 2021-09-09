@@ -986,11 +986,6 @@
                               refl_10cm, diagflag, ke_diag, do_radar_ref,      &
                               re_cloud, re_ice, re_snow,              &
                               has_reqc, has_reqi, has_reqs,           &
-                              multi_perturb, pert_thom,               &
-                              perts_qvapor, perts_qcloud, perts_qice, &
-                              perts_qsnow, perts_ni,                  &
-                              pert_thom_qv,pert_thom_qc,pert_thom_qi, &
-                              pert_thom_qs, pert_thom_ni,             &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
                               its,ite, jts,jte, kts,kte)               ! tile dims
@@ -1026,13 +1021,6 @@
 #if ( WRF_CHEM == 1 )
       LOGICAL, INTENT(in) :: wetscav_on
 #endif
-        ! WRF-Solar EPS
-      integer, intent (in):: multi_perturb 
-      logical, intent (in):: pert_thom
-      real, intent(in) :: pert_thom_qv,pert_thom_qc,pert_thom_qi,  &
-          pert_thom_qs, pert_thom_ni
-      real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(in) :: perts_qvapor, &
-          perts_qcloud, perts_qice, perts_qsnow, perts_ni
 
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
@@ -1136,21 +1124,13 @@
             p1d(k) = p(i,k,j)
             w1d(k) = w(i,k,j)
             dz1d(k) = dz(i,k,j)
-            if (pert_thom .and. multi_perturb == 1) then
-              qv1d(k) = (1.0 + perts_qvapor(i, k, j) * pert_thom_qv) * qv(i, k, j)
-              qc1d(k) = (1.0 + perts_qcloud(i, k, j) * pert_thom_qc) * qc(i, k, j)
-              qi1d(k) = (1.0 + perts_qice(i, k, j) * pert_thom_qi) * qi(i, k, j)
-              qs1d(k) = (1.0 + perts_qsnow(i, k, j) * pert_thom_qs) * qs(i, k, j)
-              ni1d(k) = (1.0 + perts_ni(i, k, j) * pert_thom_ni) * ni(i, k, j)
-            else
-              qv1d(k) = qv(i,k,j)
-              qc1d(k) = qc(i,k,j)
-              qi1d(k) = qi(i,k,j)
-              qs1d(k) = qs(i,k,j)
-              ni1d(k) = ni(i,k,j)
-            end if
+            qv1d(k) = qv(i,k,j)
+            qc1d(k) = qc(i,k,j)
+            qi1d(k) = qi(i,k,j)
             qr1d(k) = qr(i,k,j)
+            qs1d(k) = qs(i,k,j)
             qg1d(k) = qg(i,k,j)
+            ni1d(k) = ni(i,k,j)
             nr1d(k) = nr(i,k,j)
             rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
          enddo
@@ -1212,28 +1192,13 @@
          endif
 
          do k = kts, kte
-            if (pert_thom .and. multi_perturb == 1) then
-              qv(i, k, j) = qv1d(k) - perts_qvapor(i, k, j) * pert_thom_qv * qv(i, k, j)
-              qc(i, k, j) = qc1d(k) - perts_qcloud(i, k, j) * pert_thom_qc * qc(i, k, j)
-              qi(i, k, j) = qi1d(k) - perts_qice(i, k, j) * pert_thom_qi * qi(i, k, j)
-              qs(i, k, j) = qs1d(k) - perts_qsnow(i, k, j) * pert_thom_qs * qs(i, k, j)
-              ni(i, k, j) = ni1d(k) - perts_ni(i, k, j) * pert_thom_ni * ni(i, k, j)
-            else
-              qv(i,k,j) = qv1d(k)
-              qc(i,k,j) = qc1d(k)
-              qi(i,k,j) = qi1d(k)
-              qs(i,k,j) = qs1d(k)
-              ni(i,k,j) = ni1d(k)
-            endif
-
-            if (qv(i,k,j) .le. R1) qv(i,k,j) = 0.0
-            if (qc(i,k,j) .le. R1) qc(i,k,j) = 0.0
-            if (qi(i,k,j) .le. R1) qi(i,k,j) = 0.0
-            if (qs(i,k,j) .le. R1) qs(i,k,j) = 0.0
-            if (ni(i,k,j) .le. R2) ni(i,k,j) = 0.0
-
+            qv(i,k,j) = qv1d(k)
+            qc(i,k,j) = qc1d(k)
+            qi(i,k,j) = qi1d(k)
             qr(i,k,j) = qr1d(k)
+            qs(i,k,j) = qs1d(k)
             qg(i,k,j) = qg1d(k)
+            ni(i,k,j) = ni1d(k)
             nr(i,k,j) = nr1d(k)
             th(i,k,j) = t1d(k)/pii(i,k,j)
 #if ( WRF_CHEM == 1 )

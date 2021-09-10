@@ -1,7 +1,8 @@
 Using parallel IO through the netCDF-4 interface (io_form = 13)
 
 If you don't need variable-level compression, stop and go use pnetcdf 
-(parallel-netcdf-1.9.0), which will have better IO performance.
+(parallel-netcdf-1.9.0), which will have better IO performance. (Also 
+should be using a parallel file system to gain benefits.)
 
 To use parallel netcdf-4, set the environment variable NETCDFPAR to the 
 directory containingthe lib and include directories, e.g.,
@@ -17,6 +18,14 @@ faster.) This in turn requires HDF5 1.10.3 or later. Netcdf-c can be build
 with or without pnetcdf enabled, but it is not used here through the netcdf-4 
 interface. (There is a separate IO option for PNETCDF that can be used).
 
+Usage: io_form is 13, and must turn off colons from the filename (as for pnetcdf)
+For example:
+
+&time_control
+ nocolons = .true.
+ io_form_history                     = 13
+
+
 Tests for development used the following:
 
 parallel-netcdf 1.9.0 (--enable-relax-coord-bound --disable-cxx)
@@ -30,4 +39,6 @@ IO output form for parallel netcdf-4 is 13 (io_netcdfpar=13 in Registry).
 
 Performance seems to vary with how 'regular' the domain decomposition is 
 (i.e., patch size). Some experimentation with manually setting the decomposition
-may be needed for optimal writing times.
+may be needed for optimal writing times. Also pay attention to file system 
+striping (Lustre), where setting the number stripes should not exceed the
+number of nodes used by the job.

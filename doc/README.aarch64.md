@@ -1,4 +1,5 @@
-# WRF 4.2 Porting Guide(CentOS 7.6)
+# Installing WRF on aarch64
+
 ## Introduction
 The Weather Research and Forecasting (WRF) Model can be used for fine-scale weather simulation and forecasting, which is one of the important application scenarios of high-performance computing (HPC).
 
@@ -11,7 +12,7 @@ Brief description: mesoscale weather forecasting model
 Open-source protocol: public domain
 
 ##### Recommended Version
-The recommended version is WRF V4.2
+The recommended version is WRF V4.2.
 
 ## Environment Requirements
 

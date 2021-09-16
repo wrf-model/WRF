@@ -2022,3 +2022,4 @@ CC_TOOLS        =      /usr/bin/gcc -Wall
 #insert new stanza before the Fujitsu block, keep Fujitsu at the end of the list
 ###########################################################
 #ARCH  NULL
+

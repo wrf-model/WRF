@@ -93,12 +93,17 @@ Radiation
 RRTM (ra_lw_physics Option 1): 
 	RRTM_DATA
 	RRTM_DATA_DBL
-        (if compiled with -DCLWRFGHG)
+        (if compiled with -DCLWRFGHG, rename/link one of the following to CAMtr_volume_mixing_ratio)
 	        CAMtr_volume_mixing_ratio.A1B
         	CAMtr_volume_mixing_ratio.A2
         	CAMtr_volume_mixing_ratio.RCP4.5
         	CAMtr_volume_mixing_ratio.RCP6
         	CAMtr_volume_mixing_ratio.RCP8.5
+        	CAMtr_volume_mixing_ratio.SSP119
+        	CAMtr_volume_mixing_ratio.SSP126
+        	CAMtr_volume_mixing_ratio.SSP245
+        	CAMtr_volume_mixing_ratio.SSP370
+        	CAMtr_volume_mixing_ratio.SSP585
 
 CAM (Option 3):
         aerosol.formatted
@@ -111,12 +116,17 @@ CAM (Option 3):
         	ozone.formatted
         	ozone_lat.formatted
         	ozone_plev.formatted
-        (if compiled with -DCLWRFGHG)
+        (if compiled with -DCLWRFGHG, rename/link one of the following to CAMtr_volume_mixing_ratio)
         	CAMtr_volume_mixing_ratio.A1B
         	CAMtr_volume_mixing_ratio.A2
         	CAMtr_volume_mixing_ratio.RCP4.5
         	CAMtr_volume_mixing_ratio.RCP6
         	CAMtr_volume_mixing_ratio.RCP8.5
+        	CAMtr_volume_mixing_ratio.SSP119
+        	CAMtr_volume_mixing_ratio.SSP126
+        	CAMtr_volume_mixing_ratio.SSP245
+        	CAMtr_volume_mixing_ratio.SSP370
+        	CAMtr_volume_mixing_ratio.SSP585
 
 RRTMG (Option 4,24,14):
 	RRTMG_LW_DATA
@@ -131,12 +141,17 @@ RRTMG (Option 4,24,14):
         	ozone.formatted
         	ozone_lat.formatted
         	ozone_plev.formatted
-        (if compiled with -DCLWRFGHG)
+        (if compiled with -DCLWRFGHG, rename/link one of the following to CAMtr_volume_mixing_ratio)
         	CAMtr_volume_mixing_ratio.A1B
         	CAMtr_volume_mixing_ratio.A2
         	CAMtr_volume_mixing_ratio.RCP4.5
         	CAMtr_volume_mixing_ratio.RCP6
         	CAMtr_volume_mixing_ratio.RCP8.5
+        	CAMtr_volume_mixing_ratio.SSP119
+        	CAMtr_volume_mixing_ratio.SSP126
+        	CAMtr_volume_mixing_ratio.SSP245
+        	CAMtr_volume_mixing_ratio.SSP370
+        	CAMtr_volume_mixing_ratio.SSP585
 
 Goddard (Option 5):
 	BROADBAND_CLOUD_GODDARD.bin

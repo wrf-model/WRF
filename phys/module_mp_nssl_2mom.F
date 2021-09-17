@@ -10527,8 +10527,8 @@ END SUBROUTINE nssl_2mom_driver
       real ::  rimdn(ngs,li:lhab)
       real ::  raindn(ngs,li:lhab)
       real ::  alpha(ngs,lc:lhab)
-      real ::  dab0lh(ngs,lc:lhab,lr:lhab)
-      real ::  dab1lh(ngs,lc:lhab,lr:lhab)
+      real ::  dab0lh(ngs,lc:lhab,lc:lhab)
+      real ::  dab1lh(ngs,lc:lhab,lc:lhab)
 
       real :: qsimxdep(ngs) ! max sublimation of qi+qs+qis
       real :: qsimxsub(ngs) ! max depositionof qi+qs+qis
@@ -11581,12 +11581,12 @@ END SUBROUTINE nssl_2mom_driver
         alpha(:,ls) = xnu(ls)
       ENDIF
       
-      DO il = lc,lhab
+      DO il = lr,lhab
       do mgs = 1,ngscnt
         IF ( il .ge. lg ) alpha(mgs,il) = dnu(il)
 
 
-        DO ic = lr,lhab
+        DO ic = lc,lhab
         dab0lh(mgs,il,ic) =  dab0(il,ic) ! dab0(ic,il)
         dab1lh(mgs,il,ic) =  dab1(il,ic) ! dab1(ic,il)
         ENDDO

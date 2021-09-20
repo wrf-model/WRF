@@ -19,8 +19,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       4.2.2                                                                     !
-! Last updated:  2021-MAY                                                                  !
+! Version:       4.2.3                                                                     !
+! Last updated:  2021-SEP                                                                  !
 !__________________________________________________________________________________________!
 
  MODULE MODULE_MP_P3
@@ -118,7 +118,7 @@
 
 ! Local variables and parameters:
  logical, save                  :: is_init = .false.
- character(len=1024), parameter :: version_p3                    = '4.2.2' 
+ character(len=1024), parameter :: version_p3                    = '4.2.3' 
  character(len=1024), parameter :: version_intended_table_1_2mom = '5.3-2momI'
  character(len=1024), parameter :: version_intended_table_1_3mom = '5.3-3momI'
  character(len=1024), parameter :: version_intended_table_2      = '2momI_v5.2.2'
@@ -404,8 +404,8 @@
 !                 itabcoll(jj,ii,i,j,1) = sngl(dlog10(max(dp_dum1,1.d-90)))
 !                 itabcoll(jj,ii,i,j,2) = sngl(dlog10(max(dp_dum2,1.d-90)))
                 read(10,*) dum,dum,dum, dp_dum1,dp_dum2
-                itabcoll(jj,ii,i,j,1) = sngl(dlog10(max(dp_dum1,1.d-90)))
-                itabcoll(jj,ii,i,j,2) = sngl(dlog10(max(dp_dum2,1.d-90)))
+                itabcoll(jj,ii,i,j,1) = dp_dum1
+                itabcoll(jj,ii,i,j,2) = dp_dum2
              enddo
           enddo
        enddo  !ii
@@ -473,8 +473,8 @@
                 do j = 1,rcollsize
 !                  read(10,*) dum,dum,dum,dum,dum,dp_dum1,dp_dum2                  
                    read(10,*) dum,dum,dum, dp_dum1,dp_dum2                  
-                   itabcoll_3mom(zz,jj,ii,i,j,1) = sngl(dlog10(max(dp_dum1,1.d-90)))
-                   itabcoll_3mom(zz,jj,ii,i,j,2) = sngl(dlog10(max(dp_dum2,1.d-90)))
+                   itabcoll_3mom(zz,jj,ii,i,j,1) = dp_dum1
+                   itabcoll_3mom(zz,jj,ii,i,j,2) = dp_dum2
                 enddo
              enddo
           enddo  !ii

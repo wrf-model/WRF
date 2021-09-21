@@ -92,6 +92,7 @@ state real      timescale_mult3d          {pertn3d}      misc     1    -  r   "p
 state integer   mult3d_vertstruc          {pertn3d}      misc     1    -  r   "pert3d_ivs"  "vertical structure for mult3d: 0=constant, 1=random phase" ""
 state integer   iseed_mult3d              {pertn3d}      misc     1    -  r   "pert3d_isd"  "RANDOM SEED FOR mult3d "  ""
 state integer   ISEEDARR_mult3d           k{pertn3d}      misc     1    -  r   "ISEEDARR_MULT3D" "Array to hold seed for restart, MULT3D_PERT" "" ""
+state integer   stepsp                       -           misc     1   -  r   "stepsp" "Update perturbation every STEPSP time steps"
 
 # Namelist variables for multi-pert option
 rconfig integer multi_perturb             namelist,stoch      max_domains    0         - "stochastic forcing option: 0=none, 1=multi-perturbation option"
@@ -127,6 +128,7 @@ rconfig real    pert_thom_ni              namelist,stoch      max_domains    0.0
 rconfig logical pert_cld3                 namelist,stoch      max_domains    .false.    - "adding perturbations to CLD3 scheme"
 rconfig real    pert_cld3_qv              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
 rconfig real    pert_cld3_t               namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    spdt                      namelist,stoch      max_domains   -1.0       - "Mins to update perts. If spdt<=0 => every time step."
 
 # Perturbation arrays for multi-pert option
 state    real  SPFORCC3d        ij{pertn3d}   misc   1 XY  r       "SPFORCC3d"        "real  spect. coeff. of random perturbation field" "" ""
@@ -263,5 +265,5 @@ package  random_perturb  rand_perturb_on==1   -   state:rand_pert,SPFORCS,SPFORC
 
 package  stoch_param_perturb spp_on==1        -   state:pattern_spp_conv,field_conv,SPFORCS2,SPFORCC2,SP_AMP2,pattern_spp_pbl,field_pbl,SPFORCS3,SPFORCC3,SP_AMP3,pattern_spp_lsm,field_sf,SPFORCS4,SPFORCC4,SP_AMP4,VERTSTRUCC,VERTSTRUCS,VERTAMPT,RAND_REAL,RAND_IMAG,RAND_REAL_xxx,RAND_REAL_yyy,RAND_IMAG_xxx,RAND_IMAG_yyy
 
-package  multi_perturb  multi_perturb==1   -      state:SPFORCS3d,SPFORCC3d,SP_AMP3d,VERTSTRUCC3d,VERTSTRUCS3d,VERTAMPT3d,RAND_REAL,RAND_IMAG,RAND_REAL_xxx,RAND_REAL_yyy,RAND_IMAG_xxx,RAND_IMAG_yyy;pert3d:palbedo,paod,pangstrom,passymfac,pqvapor,pqcloud,pqice,pqsnow,pni,pth,ptke,psmois,ptsoil,pw
+package  multi_perturb  multi_perturb==1   -      state:SPFORCS3d,SPFORCC3d,SP_AMP3d,VERTSTRUCC3d,VERTSTRUCS3d,VERTAMPT3d,RAND_REAL,RAND_IMAG,RAND_REAL_xxx,RAND_REAL_yyy,RAND_IMAG_xxx,RAND_IMAG_yyy,stepsp;pert3d:palbedo,paod,pangstrom,passymfac,pqvapor,pqcloud,pqice,pqsnow,pni,pth,ptke,psmois,ptsoil,pw
 

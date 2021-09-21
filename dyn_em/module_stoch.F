@@ -272,6 +272,11 @@ IF (grid%sppt_on==1) then
 
        ! Initialize MULTI_PERTURB
      If_multi_perturb: IF (config_flags%multi_perturb == 1) then
+         ! Set frequency to update perturbations: spdt is in min and dt is in s
+       grid%stepsp = nint (config_flags%spdt * 60.0 / grid%dt)
+       grid%stepsp = max (grid%stepsp, 1)
+
+         ! Initialize perturbations
        stochpert_unit = 97
        IF ( wrf_dm_on_monitor() ) THEN
          OPEN(stochpert_unit, FILE='STOCHPERT.TBL',FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr)
@@ -379,7 +384,7 @@ IF (grid%sppt_on==1) then
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%stepsp * grid%time_step,grid%DX,grid%DY,      &
                        grid%gridpt_stddev_mult3d(n),                      &
                        grid%lengthscale_mult3d(n),                        &
                        grid%timescale_mult3d(n),                          &

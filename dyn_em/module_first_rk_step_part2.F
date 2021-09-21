@@ -256,7 +256,8 @@ CONTAINS
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !rand_perturb_on
 
-      If_multi_perturb: if ((config_flags%multi_perturb==1).and.(grid%id .EQ. 1 )) then
+      If_multi_perturb: if ((config_flags%multi_perturb==1).and.(grid%id == 1) .and. &
+          ((MOD(grid%itimestep, grid%stepsp) == 0) .or. grid%itimestep == 1)) then
         Loop_multi_perturb: DO n = 2, config_flags%num_pert_3d
            CALL RAND_PERT_UPDATE(grid,'T',                                     &
                            grid%SPFORCS3d(:,:,n),grid%SPFORCC3d(:,:,n),        &

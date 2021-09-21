@@ -340,6 +340,18 @@
          count_fatal_error = count_fatal_error + 1
       END IF
 
+!-----------------------------------------------------------------------
+! Check that multi_perturb and adptive time setp are not both activated
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+      IF ((model_config_rec%multi_perturb(i) == 1) .and. model_config_rec%use_adaptive_time_step) then
+            wrf_err_message = '--- ERROR: multi_perturb and adpative time step are not compatible.'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that SMS-3DTKE scheme (km_opt=5) Must work with diff_opt=2

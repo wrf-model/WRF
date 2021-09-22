@@ -2,6 +2,8 @@
 ! *** add new modules of schemes here
 !
 MODULE module_microphysics_driver
+  real, private, parameter :: QX_MIN = 1.E-12
+  real, private, parameter :: NI_MIN = 1.E-6
 CONTAINS
 
 SUBROUTINE microphysics_driver(                                          &
@@ -509,6 +511,7 @@ SUBROUTINE microphysics_driver(                                          &
    real, intent (in) :: pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, pert_thom_ni
    real, dimension(ims:ime, kms:kme, jms:jme ), intent (in), optional :: perts_qvapor, perts_qcloud, perts_qice, &
        perts_qsnow, perts_ni 
+  real, dimension(:, :, :), allocatable :: qv_tmp, qc_tmp, qi_tmp, qs_tmp, qni_tmp
  
  !3D variables required for CAMMGMP scheme
  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
@@ -1013,11 +1016,18 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
 !
         CASE (THOMPSONAERO)
-              if (pert_thom .and. multi_perturb == 1) &
-                  call Add_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, &
+              if (pert_thom .and. multi_perturb == 1) then
+                allocate (qv_tmp(its:ite, kts:kte, jts:jte))
+                allocate (qc_tmp(its:ite, kts:kte, jts:jte))
+                allocate (qi_tmp(its:ite, kts:kte, jts:jte))
+                allocate (qs_tmp(its:ite, kts:kte, jts:jte))
+                allocate (qni_tmp(its:ite, kts:kte, jts:jte))
+
+                call Add_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, &
                   perts_qsnow, perts_ni, pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, &
-                  pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, its, ite, jts, jte, &
-                  ims, ime, jms, jme, kms, kme, kts, kte)
+                  pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, qv_tmp, qc_tmp, qi_tmp, &
+                  qs_tmp, qni_tmp, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte)
+              end if
 
              CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR )   .AND.  &
@@ -1083,11 +1093,17 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
 
-              if (pert_thom .and. multi_perturb == 1) &
-                  call Remove_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, &
+              if (pert_thom .and. multi_perturb == 1) then
+                call Remove_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, &
                   perts_qsnow, perts_ni, pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, &
-                  pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, its, ite, jts, jte, &
-                  ims, ime, jms, jme, kms, kme, kts, kte)
+                  pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, qv_tmp, qc_tmp, qi_tmp, &
+                  qs_tmp, qni_tmp, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte)
+                deallocate (qv_tmp)
+                deallocate (qc_tmp)
+                deallocate (qi_tmp)
+                deallocate (qs_tmp)
+                deallocate (qni_tmp)
+              end if
 
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
@@ -1108,11 +1124,18 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
                  qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
 #endif
-              if (pert_thom .and. multi_perturb == 1) &
-                  call Add_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, &
+              if (pert_thom .and. multi_perturb == 1) then
+                allocate (qv_tmp(its:ite, kts:kte, jts:jte))
+                allocate (qc_tmp(its:ite, kts:kte, jts:jte))
+                allocate (qi_tmp(its:ite, kts:kte, jts:jte))
+                allocate (qs_tmp(its:ite, kts:kte, jts:jte))
+                allocate (qni_tmp(its:ite, kts:kte, jts:jte))
+
+                call Add_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, &
                   perts_qsnow, perts_ni, pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, &
-                  pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, its, ite, jts, jte, &
-                  ims, ime, jms, jme, kms, kme, kts, kte)
+                  pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, qv_tmp, qc_tmp, qi_tmp, &
+                  qs_tmp, qni_tmp, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte)
+              end if
 
              CALL mp_gt_driver(                          &
                      QV=qv_curr,                         &
@@ -1156,11 +1179,17 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
 
-              if (pert_thom .and. multi_perturb == 1) &
-                  call Remove_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, & 
+              if (pert_thom .and. multi_perturb == 1) then
+                call Remove_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, & 
                   perts_qsnow, perts_ni, pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, &
-                  pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, its, ite, jts, jte, &
-                  ims, ime, jms, jme, kms, kme, kts, kte)
+                  pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, qv_tmp, qc_tmp, qi_tmp, &
+                  qs_tmp, qni_tmp, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte)
+                deallocate (qv_tmp)
+                deallocate (qc_tmp)
+                deallocate (qi_tmp)
+                deallocate (qs_tmp)
+                deallocate (qni_tmp)
+              end if
 
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
@@ -2933,8 +2962,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    subroutine Add_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, &
        perts_qsnow, perts_ni, pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, &
-       pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, its, ite, jts, jte, &
-       ims, ime, jms, jme, kms, kme, kts, kte)
+       pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, qv_tmp, qc_tmp, qi_tmp, &
+       qs_tmp, qni_tmp, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte)
 
      implicit none
 
@@ -2943,20 +2972,24 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
      real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, perts_qcloud, perts_qice, &
          perts_qsnow, perts_ni
      real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: qv_curr, qc_curr, qi_curr, qs_curr, qni_curr
+     real, dimension (its:ite, kts:kte, jts:jte), intent (out) :: qv_tmp, qc_tmp, qi_tmp, qs_tmp, qni_tmp
 
-     real, parameter :: R1 = 1.E-12
-     real, parameter :: R2 = 1.E-6
      integer :: i, j, k
 
 
      do j = jts, jte
        do k = kts, kte
          do i = its, ite
-           qv_curr(i, k, j) = max (R1, (1.0 + perts_qvapor(i, k, j) * pert_thom_qv) * qv_curr(i, k, j))
-           qc_curr(i, k, j) = max (R1, (1.0 + perts_qcloud(i, k, j) * pert_thom_qc) * qc_curr(i, k, j))
-           qi_curr(i, k, j) = max (R1, (1.0 + perts_qice(i, k, j) * pert_thom_qi) * qi_curr(i, k, j))
-           qs_curr(i, k, j) = max (R1, (1.0 + perts_qsnow(i, k, j) * pert_thom_qs) * qs_curr(i, k, j))
-           qni_curr(i, k, j) = max (R2, (1.0 + perts_ni(i, k, j) * pert_thom_ni) * qni_curr(i, k, j))
+           qv_tmp(i, k, j) = qv_curr(i, k, j)
+           qv_curr(i, k, j) = max (QX_MIN, (1.0 + perts_qvapor(i, k, j) * pert_thom_qv) * qv_curr(i, k, j))
+           qc_tmp(i, k, j) = qc_curr(i, k, j)
+           qc_curr(i, k, j) = max (QX_MIN, (1.0 + perts_qcloud(i, k, j) * pert_thom_qc) * qc_curr(i, k, j))
+           qi_tmp(i, k, j) = qi_curr(i, k, j)
+           qi_curr(i, k, j) = max (QX_MIN, (1.0 + perts_qice(i, k, j) * pert_thom_qi) * qi_curr(i, k, j))
+           qs_tmp(i, k, j) = qs_curr(i, k, j)
+           qs_curr(i, k, j) = max (QX_MIN, (1.0 + perts_qsnow(i, k, j) * pert_thom_qs) * qs_curr(i, k, j))
+           qni_tmp(i, k, j) = qni_curr(i, k, j)
+           qni_curr(i, k, j) = max (NI_MIN, (1.0 + perts_ni(i, k, j) * pert_thom_ni) * qni_curr(i, k, j))
          end do
        end do
      end do
@@ -2965,8 +2998,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    subroutine Remove_multi_perturb_mp_perturbations (perts_qvapor, perts_qcloud, perts_qice, &
        perts_qsnow, perts_ni, pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, &
-       pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, its, ite, jts, jte, &
-       ims, ime, jms, jme, kms, kme, kts, kte)
+       pert_thom_ni, qv_curr, qc_curr, qi_curr, qs_curr, qni_curr, qv_tmp, qc_tmp, qi_tmp, &
+       qs_tmp, qni_tmp, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte)
 
      implicit none
 
@@ -2975,21 +3008,19 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
      real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, perts_qcloud, perts_qice, &
          perts_qsnow, perts_ni
      real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: qv_curr, qc_curr, qi_curr, qs_curr, qni_curr
+     real, dimension (its:ite, kts:kte, jts:jte), intent (in) :: qv_tmp, qc_tmp, qi_tmp, qs_tmp, qni_tmp
 
-     real, parameter :: R1 = 1.E-12
-     real, parameter :: R2 = 1.E-6
      integer :: i, j, k
 
 
      do j = jts, jte
        do k = kts, kte
          do i = its, ite
-             ! R1 and R2 are available through module association with thompson microphysics
-           qv_curr(i, k, j) = max (R1, qv_curr(i, k, j) - perts_qvapor(i, k, j) * pert_thom_qv * qv_curr(i, k, j))
-           qc_curr(i, k, j) = max (R1, qc_curr(i, k, j) - perts_qcloud(i, k, j) * pert_thom_qc * qc_curr(i, k, j))
-           qi_curr(i, k, j) = max (R1, qi_curr(i, k, j) - perts_qice(i, k, j) * pert_thom_qi * qi_curr(i, k, j))
-           qs_curr(i, k, j) = max (R1, qs_curr(i, k, j) - perts_qsnow(i, k, j) * pert_thom_qs * qs_curr(i, k, j))
-           qni_curr(i, k, j) = max (R2, qni_curr(i, k, j) - perts_ni(i, k, j) * pert_thom_ni * qni_curr(i, k, j))
+           qv_curr(i, k, j) = max (QX_MIN, qv_curr(i, k, j) - perts_qvapor(i, k, j) * pert_thom_qv * qv_tmp(i, k, j))
+           qc_curr(i, k, j) = max (QX_MIN, qc_curr(i, k, j) - perts_qcloud(i, k, j) * pert_thom_qc * qc_tmp(i, k, j))
+           qi_curr(i, k, j) = max (QX_MIN, qi_curr(i, k, j) - perts_qice(i, k, j) * pert_thom_qi * qi_tmp(i, k, j))
+           qs_curr(i, k, j) = max (QX_MIN, qs_curr(i, k, j) - perts_qsnow(i, k, j) * pert_thom_qs * qs_tmp(i, k, j))
+           qni_curr(i, k, j) = max (NI_MIN, qni_curr(i, k, j) - perts_ni(i, k, j) * pert_thom_ni * qni_tmp(i, k, j))
          end do
        end do
      end do

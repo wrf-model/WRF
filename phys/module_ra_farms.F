@@ -26,7 +26,6 @@
     real, parameter :: DE_ICE_MIN = 5.0, DE_ICE_MAX = 140.0
     real, parameter :: DE_CLOUD_MIN = 5.0, DE_CLOUD_MAX = 120.0
     real, parameter :: TAU_MIN = 0.0001, TAU_MAX = 300.0
-    real, parameter :: AOD550_VAL = 0.12, ANGEXP_VAL = 1.3, AERSSA_VAL = 0.85, AERASY_VAL = 0.9
     real, parameter :: RE_CLOUD_CLIM = 8.E-6, RE_ICE_CLIM = 24.E-6, RE_SNOW_CLIM = 24.E-6
 
   contains
@@ -35,11 +34,6 @@
            p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
            coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
            julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2, &
-           multi_perturb, pert_farms,                                                &
-           perts_albedo, perts_aod, perts_angstrom, perts_assymfac, perts_qvapor,    &
-           perts_qcloud, perts_qsnow,                                                &
-           pert_farms_albedo, pert_farms_aod, pert_farms_angexp, pert_farms_aerasy,  &
-           pert_farms_qv, pert_farms_qc, pert_farms_qs,                              &
            has_reqc, has_reqi, has_reqs, cldfra)
 
       implicit None
@@ -49,13 +43,6 @@
 
       integer, intent(in) :: aer_opt, has_reqc, has_reqi, has_reqs
       real,    intent(in) :: julian
-      integer,    intent(in) :: multi_perturb
-      logical,    intent(in) :: pert_farms
-      real,    intent(in) :: pert_farms_albedo, pert_farms_aod,                  &
-          pert_farms_angexp, pert_farms_aerasy, pert_farms_qv, pert_farms_qc,    &
-          pert_farms_qs
-      real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(in) :: perts_albedo, perts_aod, &
-          perts_angstrom, perts_assymfac, perts_qvapor, perts_qcloud, perts_qsnow
 
       real, dimension(ims:ime, jms:jme), intent(in) :: albedo, coszen_loc
 
@@ -73,8 +60,6 @@
       real    :: tau_qv, tau_qi, tau_qs, pmw, swp, iwp, lwp, beta
       real    :: re_cloud_path, re_ice_path, re_snow_path, q_aux, cldfra_h
       real, dimension(kms:kme) :: rhodz, re_cloud_k, re_ice_k, re_snow_k
-      real, dimension(its:ite, jts:jte) :: albedo_local, aod5502d_local, angexp2d_local, aerasy2d_local
-      real, dimension(its:ite, kms:kme, jts:jte) :: qv_local, qc_local, qs_local
 
 
       j_loop: do j = jts, jte
@@ -87,25 +72,7 @@
              swdownc2(i, j) = 0.0
              swddnic2(i, j) = 0.0
            else
-             if (pert_farms .and. multi_perturb == 1) then
-               albedo_local(i, j) = (1.0 + perts_albedo(i, 1, j) * pert_farms_albedo) * albedo(i, j)
-               aod5502d_local(i, j) = (1.0 + perts_aod(i, 1, j) * pert_farms_aod) * aod5502d(i, j)
-               angexp2d_local(i, j) = (1.0 + perts_angstrom(i, 1, j) * pert_farms_angexp) * angexp2d(i, j)
-               aerasy2d_local(i, j) = (1.0 + perts_assymfac(i, 1, j) * pert_farms_aerasy) * aerasy2d(i, j)
-               qv_local(i, :, j) = (1.0 + perts_qvapor(i, :, j) * pert_farms_qv) * qv(i, :, j)
-               qc_local(i, :, j) = (1.0 + perts_qcloud(i, :, j) * pert_farms_qc) * qc(i, :, j)
-               qs_local(i, :, j) = (1.0 + perts_qsnow(i, :, j) * pert_farms_qs) * qs(i, :, j)
-             else
-               albedo_local(i, j) = albedo(i, j)
-               aod5502d_local(i, j) = aod5502d(i, j)
-               angexp2d_local(i, j) = angexp2d(i, j)
-               aerasy2d_local(i, j) = aerasy2d(i, j)
-               qv_local(i, :, j) = qv(i, :, j)
-               qc_local(i, :, j) = qc(i, :, j)
-               qs_local(i, :, j) = qs(i, :, j)
-             endif
-
-             rhodz(:) = rho(i, :, j) * dz8w(i, :, j) / (1. + qv_local(i, :, j))
+             rhodz(:) = rho(i, :, j) * dz8w(i, :, j) / (1. + qv(i, :, j))
              re_cloud_k(:) = re_cloud(i, :, j)
              re_ice_k(:) = re_ice(i, :, j)
              re_snow_k(:) = re_snow(i, :, j)
@@ -135,14 +102,14 @@
              end if
 
                ! PMW
-             pmw = integrate_1var (rhodz, qv_local(i, :, j), kms, kme, kts, kte)
+             pmw = integrate_1var (rhodz, qv(i, :, j), kms, kme, kts, kte)
 
                ! Calc effective radius water
-             q_aux = integrate_1var (rhodz, qc_local(i, :, j), kms, kme, kts, kte)
+             q_aux = integrate_1var (rhodz, qc(i, :, j), kms, kme, kts, kte)
              lwp = q_aux
 
              if (q_aux > 0.0) then
-               re_cloud_path = integrate_2var (rhodz, qc_local(i, :, j), &
+               re_cloud_path = integrate_2var (rhodz, qc(i, :, j), &
                    re_cloud_k, kms, kme, kts, kte)
                re_cloud_path = re_cloud_path / q_aux
              else
@@ -162,11 +129,11 @@
              end if
 
                ! Calc effective radius snow
-             q_aux = integrate_1var (rhodz, qs_local(i, :, j), kms, kme, kts, kte)
+             q_aux = integrate_1var (rhodz, qs(i, :, j), kms, kme, kts, kte)
              swp = q_aux
 
              if (q_aux > 0.0) then
-               re_snow_path = integrate_2var (rhodz, qs_local(i, :, j), &
+               re_snow_path = integrate_2var (rhodz, qs(i, :, j), &
                    re_snow_k, kms, kme, kts, kte)
                re_snow_path = re_snow_path / q_aux
              else
@@ -174,9 +141,9 @@
              end if
 
              ! Calculate horizontal cloud fraction 
-             q_aux = integrate_1var (rhodz, qc_local(i, :, j) + qi(i, :, j) + qs_local(i, :, j), kms, kme, kts, kte)
+             q_aux = integrate_1var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), kms, kme, kts, kte)
              if (q_aux > 0.0) then
-               cldfra_h = integrate_2var (rhodz, qc_local(i, :, j) + qi(i, :, j) + qs_local(i, :, j), &
+               cldfra_h = integrate_2var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), &
                    cldfra(i, :, j), kms, kme, kts, kte)
                cldfra_h = cldfra_h / q_aux
              else
@@ -214,33 +181,11 @@
                tau_qs = 0.0
              end if
 
-               ! Aerosols
-             if (aer_opt == 1) then
-               if (pert_farms .and. multi_perturb == 1) then
-                 aod5502d_local(i, j) = (1.0 + perts_aod(i, 1, j) * pert_farms_aod) * AOD550_VAL
-                 angexp2d_local(i, j) = (1.0 + perts_angstrom(i, 1, j) * pert_farms_angexp) * ANGEXP_VAL
-                 aerasy2d_local(i, j) = (1.0 + perts_assymfac(i, 1, j) * pert_farms_aerasy) * AERASY_VAL
-               else
-                   ! The AOD was initialized in the radiation driver
-                 angexp2d(i, j) = ANGEXP_VAL
-                 aerasy2d(i, j) = AERASY_VAL
-                 aod5502d_local(i, j) = aod5502d(i, j)
-                 angexp2d_local(i, j) = angexp2d(i, j)
-                 aerasy2d_local(i, j) = aerasy2d(i, j)
-               end if
-               aerssa2d(i, j) = AERSSA_VAL
-             else if (aer_opt == 0) then
-                aod5502d(i, j) = 0.0
-                angexp2d(i, j) = 0.0
-                aerssa2d(i, j) = 0.0
-                aerasy2d(i, j) = 0.0
-             end if
+             beta = aod5502d(i, j) * (1000.0/ 550.0) ** (- angexp2d(i, j))
 
-             beta = aod5502d_local(i, j) * (1000.0/ 550.0) ** (- angexp2d_local(i, j))
-
-             Call Farms (p8w(i, 1, j), albedo_local(i, j), aerssa2d(i, j),         &
-                 aerasy2d_local(i, j), coszen_loc(i, j), beta,                     &
-                 angexp2d_local(i, j), pmw, tau_qv, tau_qi, tau_qs, cldfra_h,      &
+             Call Farms (p8w(i, 1, j), albedo(i, j), aerssa2d(i, j),         &
+                 aerasy2d(i, j), coszen_loc(i, j), beta,                     &
+                 angexp2d(i, j), pmw, tau_qv, tau_qi, tau_qs, cldfra_h,      &
                  re_cloud_path, re_ice_path, re_snow_path, int(julian),      &
                  swdown2(i, j), swddni2(i, j), swddif2(i, j), swddir2(i, j), &
                  swdownc2(i, j), swddnic2(i, j))

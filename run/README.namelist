@@ -1200,6 +1200,7 @@ Stochastically perturbed parameter scheme (SPP) (spp=1)
 
 Multiple perturbations for WRF-Solar EPS (multi_perturb = 1)
  multi_perturb         = 0        ! 1) WRF-Solar EPS: turns on stochastic perturbations tailored for solar energy applications
+ spdt                  = -1.0     ! Frequency to update the stochastic perturbations [minutes]. A negative value indicates for every time step
  pert_farms            = .false.  ! Activates perturbations to the FARMS parameterization
  pert_farms_albedo     = 0.0      ! 1.0) Perturbs the albedo, 0.0) no perturbations. Similar for other entries below
  pert_farms_aod        = 0.0

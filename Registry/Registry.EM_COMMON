@@ -883,8 +883,8 @@ state    real   XLAIDYN          ij     misc        1         -     -         "X
 state    real   SSTSK            ij     misc        1         -     rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)   "SSTSK"              "SKIN SEA SURFACE TEMPERATURE" "K"
 state    real   lake_depth            ij     misc        1    -     i012rd=(interp_mask_water_field:lu_index,islake)   "lake_depth"              "lake depth" "m"
 state    real     water_depth      ij     misc        1       -     i0rhd  "water_depth"  "global water depth" "m"
-rconfig  integer  shalwater_rough         namelist,physics      max_domains   0         rh    "shallow water roughness flag"     ""      ""
-rconfig  real     shalwater_depth         namelist,physics      1   -1.0       rh    "water depth for shallow water scheme"     ""      ""
+rconfig  integer  shalwater_rough         namelist,physics      max_domains   0         rh    "shalwater_rough"     "shallow water roughness flag"      ""
+rconfig  real     shalwater_depth         namelist,physics      1   -1.0       rh    "shalwater_depth"     "water depth for shallow water scheme"      "m"
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
 # Ocean surface currents
 state    real   UOCE            ij     misc        1         -     i0124rd=(interp_mask_water_field:lu_index,iswater)  "UOCE"  "SEA SURFACE ZONAL CURRENTS" "m s-1"

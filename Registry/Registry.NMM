@@ -91,7 +91,7 @@ package tracer_option_2 ntracers==4 - szj:szj1,szj2,szj3,szj4;s1z:s1z1,s1z2,s1z3
 # used by the script use_registry to generate module_state_descript.F                                           
 # and other files.  Also see documentation in use_registry.                                             
 #
-# It is reauired that LU_INDEX appears before any variable that is
+# It is required that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
 #
 state    real  LU_INDEX         ij      misc        1         f     irhd=(DownNear)u=(UpNear)   "LU_INDEX"              "LAND USE CATEGORY"         ""

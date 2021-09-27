@@ -1464,7 +1464,7 @@ state   real    lon_lr_d       -       dyn_em       -         -     ir       "lo
 #BSINGH -ENDS
 
 state   real    t00            -       misc         -         -     i02rh     "t00"                   "BASE STATE TEMPERATURE   "  "K"
-state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESURE"         "Pa"
+state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESSURE"         "Pa"
 state   real    tlp            -       misc         -         -     i02rh     "tlp"                   "BASE STATE LAPSE RATE    "  ""
 state   real    tiso           -       misc         -         -     i02rh     "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
 state   real    tlp_strat      -       misc         -         -     i02rh     "tlp_strat"             "BASE STATE LAPSE RATE (DT/D(LN(P)) IN STRATOSPHERE"  "K"

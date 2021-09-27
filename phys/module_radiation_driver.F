@@ -2649,7 +2649,8 @@ CONTAINS
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
                      obscur=obscur_loc,                                 & 
-                     xcoszen=coszen,yr=yr,julian=julian,mp_physics=mp_physics, &   ! jararias 2013/08/14
+                     xcoszen=coszen,yr=yr,julian=julian,                & ! jararias 2013/08/14
+		     mp_physics=mp_physics,                             & ! jararias 2013/08/14
                      proceed_twoway_sw=proceed_twoway_sw,               & ! WRF-CMAQ coupled model
                      nmode=3,                                           & ! WRF-CMAQ coupled model
                      mass_ws_i=mass_ws_i,                               & ! WRF-CMAQ coupled model

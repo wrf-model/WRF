@@ -212,7 +212,7 @@ MODULE module_mp_nssl_2mom
   integer  :: iusewetgraupel = 1 ! =1 to turn on use of QHW for graupel reflectivity (only for ZVDM -- mixedphase)
                                  ! =2 turn on for graupel density less than 300. only 
   integer  :: iusewethail = 0 ! =1 to turn on use of QHW for graupel reflectivity (only for ZVDM -- mixedphase)
-  integer  :: iusewetsnow = 1 ! =1 to turn on diagnosed bright band
+  integer  :: iusewetsnow = 1 ! =1 to turn on diagnosed bright band; =2 'old' snow reflectivity (dry), =3 'old' snow dbz + brightband
 
 ! microphysics
 
@@ -7551,8 +7551,8 @@ END SUBROUTINE nssl_2mom_driver
              if (lsw .gt. 1) THEN 
                qxw = an(ix,jy,kz,lsw)
                qxw1 = 0.0
-             ELSEIF ( iusewetsnow == 1 .and. temk(ix,jy,kz) .gt. tfr+1. .and. an(ix,jy,kz,ls) > an(ix,jy,kz,lr) &
-     &              .and. an(ix,jy,kz,lr) > qsmin) THEN
+             ELSEIF ( ( iusewetsnow == 1 .or. iusewetsnow == 3) .and. temk(ix,jy,kz) .gt. tfr+1. & 
+     &                  .and. an(ix,jy,kz,ls) > an(ix,jy,kz,lr) .and. an(ix,jy,kz,lr) > qsmin) THEN
                qxw = Min(0.5*an(ix,jy,kz,ls), an(ix,jy,kz,lr))
                qxw1 = qxw
              ENDIF
@@ -7563,7 +7563,7 @@ END SUBROUTINE nssl_2mom_driver
              ksq = 0.189 ! Smith (1984, JAMC) for equiv. ice sphere
              IF ( an(ix,jy,kz,lns) .gt. 1.e-7 ) THEN
      !          IF ( .true. ) THEN
-               IF ( qxw > qsmin ) THEN ! old version
+               IF ( qxw > qsmin .or. iusewetsnow >= 2 ) THEN ! old version
 !                gtmp(ix,kz) = 3.6e18*(snu+2.)*( 0.224*an(ix,jy,kz,ls) + 0.776*qxw)*an(ix,jy,kz,ls)/ &
 !     &              (an(ix,jy,kz,lns)*(snu+1.)*rwdn**2)*db(ix,jy,kz)**2
                 gtmp(ix,kz) = 3.6e18*(snu+2.)*( 0.224*(an(ix,jy,kz,ls)+qxw1) + 0.776*qxw)*(an(ix,jy,kz,ls)+qxw1)/ &

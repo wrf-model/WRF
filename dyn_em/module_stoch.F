@@ -253,8 +253,8 @@ IF (grid%sppt_on==1) then
                            config_flags%seed_dim,                              &
                            grid%DX,grid%DY,grid%rand_pert_vertstruc,           &
                            grid%RAND_PERT,                                     &
+                           grid%stddev_cutoff_rand_pert,                       &
                            grid%gridpt_stddev_rand_pert,                       &
-                           grid%lengthscale_rand_pert,                         &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
          enddo
        ENDIF !rand_perturb_on

@@ -1251,7 +1251,7 @@
               !  While the lateral BC time is less than the restart time, advance forward to the next LBC time.
 
               icount = 0
-              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 10000 ) ) 
+              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 60000 ) ) 
                   CALL wrf_get_next_time(fid, current_date , ierr)
                   IF ( ierr .NE. 0 ) THEN
                      CALL wrf_debug ( 0, '---- ERROR: Cannot find a valid time to start the LBC during this restart, likely ran out of time periods to test' )

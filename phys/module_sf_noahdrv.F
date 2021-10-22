@@ -711,12 +711,6 @@ CONTAINS
 !
 !  END FASDAS
 !
-  FLX4  = 0.0 !BSINGH - Initialized to 0.0
-  FVB   = 0.0 !BSINGH - Initialized to 0.0
-  FBUR  = 0.0 !BSINGH - Initialized to 0.0
-  FGSN  = 0.0 !BSINGH - Initialized to 0.0
-  SOILW = 0.0 !BSINGH - Initialized to 0.0
-
   sigma_sb=5.67e-08
 
 ! MEK MAY 2007
@@ -788,6 +782,12 @@ CONTAINS
         SFCPRS=(P8W3D(I,KTS+1,j)+P8W3D(i,KTS,j))*0.5
 ! convert from mixing ratio to specific humidity
          Q2K=QV3D(i,1,j)/(1.0+QV3D(i,1,j))
+! initializing local variables
+        SOILW=0.
+        FLX4=0.
+        FVB=0.
+        FBUR=0.
+        FGSN=0.
 !
 !         Q2SAT=QGH(I,j)
          Q2SAT=QGH(I,J)/(1.0+QGH(I,J))        ! Q2SAT is sp humidity
@@ -3106,6 +3106,13 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 !-----------------------------------------------------------------------
       ILOOP : DO I=its,ite
       
+! initializing local variables
+         SOILW = 0.
+         FLX4  = 0.
+         FVB   = 0.
+         FBUR  = 0.
+         FGSN  = 0.
+
          IF (((XLAND(I,J)-1.5).LT.0.) .AND. (XICE(I,J) < XICE_THRESHOLD) ) THEN
                
                IVGTYP_dominant(I,J)=IVGTYP(I,J)                                   ! save this

@@ -9,7 +9,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! Driver layer modules
    USE module_state_description
    USE module_domain, ONLY : &
-                  domain, get_ijk_from_grid, get_ijk_from_subgrid                          &
+                  domain, get_ijk_from_grid, get_ijk_from_subgrid                          & 
                  ,domain_get_current_time, domain_get_start_time                           &
                  ,domain_get_sim_start_time, domain_clock_get,is_alarm_tstep
    USE module_domain_type, ONLY : history_alarm, restart_alarm, auxinput4_alarm            &

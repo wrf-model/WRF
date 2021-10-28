@@ -419,7 +419,7 @@
 
 
       INTEGER:: i, j, k, l, m, n
-      REAL:: h_01, airmass, niIN3, niCCN3, max_test
+      REAL:: h_01, niIN3, niCCN3, max_test, z1
       LOGICAL:: micro_init, has_CCN, has_IN
 
       is_aerosol_aware = .FALSE.
@@ -463,8 +463,8 @@
             endif
             niCCN3 = -1.0*ALOG(naCCN1/naCCN0)/h_01
             nwfa(i,1,j) = naCCN1+naCCN0*exp(-((hgt(i,2,j)-hgt(i,1,j))/1000.)*niCCN3)
-            airmass = 1./orho(i,1,j) * (hgt(i,2,j)-hgt(i,1,j))*dx*dy      ! kg
-            nwfa2d(i,j) = nwfa(i,1,j) * 0.000196 * (airmass*5.E-11)
+            z1=hgt(i,2,j)-hgt(i,1,j)
+            nwfa2d(i,j) = nwfa(i,1,j) * 0.000196 * (50./z1)
             do k = 2, kte
                nwfa(i,k,j) = naCCN1+naCCN0*exp(-((hgt(i,k,j)-hgt(i,1,j))/1000.)*niCCN3)
             enddo

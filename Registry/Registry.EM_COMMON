@@ -654,9 +654,9 @@ state   real    qrcn           ikjftb   scalar      1         -     \
 state   real    qnin           ikjftb   scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)  "QNIN"           "Potential ice nuclei number mixing ratio" "# kg-1"
 state   real    fi             ikjftb   scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)  "FI"             "Shape moment mixing ratio for pristine ice" "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "FI"             "Shape moment mixing ratio for pristine ice" "m^3 kg-1"
 state   real    fs             ikjftb   scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)  "FS"             "Shape moment mixing ratio for snow-aggregates" "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "FS"             "Shape moment mixing ratio for snow-aggregates" "m^3 kg-1"
 state   real    vi             ikjftb   scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)  "VI"             "Volume moment mixing ratio for pristine ice" "m^3 kg-1"
 state   real    vs             ikjftb   scalar      1         -     \
@@ -664,15 +664,15 @@ state   real    vs             ikjftb   scalar      1         -     \
 state   real    vg             ikjftb   scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)  "VG"             "Volume moment mixing ratio for rimed ice" "m^3 kg-1"
 state   real    ai             ikjftb   scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)  "AI"             "Second moment mixing ratio for pristine ice" "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "AI"             "Second moment mixing ratio for pristine ice" "m^2 kg-1"
 state   real    as             ikjftb   scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)  "AS"             "Second moment mixing ratio for snow-aggregates" "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "AS"             "Second moment mixing ratio for snow-aggregates" "m^2 kg-1"
 state   real    ag             ikjftb   scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)  "AG"             "Second moment mixing ratio for rimed ice" "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "AG"             "Second moment mixing ratio for rimed ice" "m^2 kg-1"
 state   real    ah             ikjftb   scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)  "AH"             "Second moment mixing ratio for hail" "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "AH"             "Second moment mixing ratio for hail" "m^2 kg-1"
 state   real    i3m            ikjftb   scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)  "I3M"            "Third moment mixing ratio for pristine ice" "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "I3M"            "Third moment mixing ratio for pristine ice" "m^3 kg-1"
 
 state   real    dfi_qdcn       ikjftb   dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)     "DFI_QDCN"      "Mass mixing ratio for dry CN" "kg kg-1"
@@ -685,9 +685,9 @@ state   real    dfi_qrcn       ikjftb   dfi_scalar      1         -     \
 state   real    dfi_qnin       ikjftb   dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)     "DFI_QNIN"      "Potential ice nuclei number mixing ratio" "# kg-1"
 state   real    dfi_fi         ikjftb   dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)     "DFI_FI"        "Shape moment mixing ratio for pristine ice" "kg kg-1"
+   rusdf=(bdy_interp:dt)     "DFI_FI"        "Shape moment mixing ratio for pristine ice" "m^3 kg-1"
 state   real    dfi_fs         ikjftb   dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)     "DFI_FS"        "Shape moment mixing ratio for snow-aggregates" "kg kg-1"
+   rusdf=(bdy_interp:dt)     "DFI_FS"        "Shape moment mixing ratio for snow-aggregates" "m^3 kg-1"
 state   real    dfi_vi         ikjftb   dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)     "DFI_VI"        "Volume moment mixing ratio for pristine ice" "m^3 kg-1"
 state   real    dfi_vs         ikjftb   dfi_scalar      1         -     \
@@ -695,15 +695,15 @@ state   real    dfi_vs         ikjftb   dfi_scalar      1         -     \
 state   real    dfi_vg         ikjftb   dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)     "DFI_VG"        "Volume moment mixing ratio for rimed ice" "m^3 kg-1"
 state   real    dfi_ai         ikjftb   dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)     "DFI_AI"        "Second moment mixing ratio for pristine ice" "kg kg-1"
+   rusdf=(bdy_interp:dt)     "DFI_AI"        "Second moment mixing ratio for pristine ice" "m^2 kg-1"
 state   real    dfi_as         ikjftb   dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)     "DFI_AS"        "Second moment mixing ratio for snow-aggregates" "kg kg-1"
+   rusdf=(bdy_interp:dt)     "DFI_AS"        "Second moment mixing ratio for snow-aggregates" "m^2 kg-1"
 state   real    dfi_ag         ikjftb   dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)     "DFI_AG"        "Second moment mixing ratio for rimed ice" "kg kg-1"
+   rusdf=(bdy_interp:dt)     "DFI_AG"        "Second moment mixing ratio for rimed ice" "m^2 kg-1"
 state   real    dfi_ah         ikjftb   dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)     "DFI_AH"        "Second moment mixing ratio for hail" "kg kg-1"
+   rusdf=(bdy_interp:dt)     "DFI_AH"        "Second moment mixing ratio for hail" "m^2 kg-1"
 state   real    dfi_i3m        ikjftb   dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)     "DFI_I3M"       "Third moment mixing ratio for pristine ice" "kg kg-1"
+   rusdf=(bdy_interp:dt)     "DFI_I3M"       "Third moment mixing ratio for pristine ice" "m^3 kg-1"
 #-------------------------------------for ntu3m----------------------------------------------------------
 #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1425,9 +1425,8 @@ state logical just_read_auxinput4  -      misc      -         -     r    "we_jus
 state logical just_read_boundary   -      misc      -         -     r    "we_just_d01_LBC"           "1=BOUNDARY  ALARM RINGING, 0=NO BOUNDARY  ALARM"  "-"
 state   real    mf_fft         -       misc         -         -     r        "mf_fft"                "Mass point map factor at equatorward FFT filter location"  ""
 state   real    p_top          -       misc         -         -     irh       "p_top"                "PRESSURE TOP OF THE MODEL"  "Pa"
-state logical got_var_sso	-	misc	    -	      -     i02r  "got_var_sso"		     "whether VAR_SSO was included in WPS output (beginning V3.4)" ""
+state logical got_var_sso      -       misc         -         -     i02rh    "got_var_sso"           "whether VAR_SSO was included in WPS output (beginning V3.4)" ""
 state logical v4_metgrid 	-	misc	    -	      -     -     "v4_metgrid"		     "for real, T/F: identify if this is v4 metgrid data" ""
-
 
 #BSINGH - Adding all these variables for CuP scheme[any var before t00]
 state   real    lat_ll_t       -       dyn_em       -         -     ir       "lat_ll_t"              "latitude lower left, temp point" "degrees"
@@ -1465,7 +1464,7 @@ state   real    lon_lr_d       -       dyn_em       -         -     ir       "lo
 #BSINGH -ENDS
 
 state   real    t00            -       misc         -         -     i02rh     "t00"                   "BASE STATE TEMPERATURE   "  "K"
-state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESURE"         "Pa"
+state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESSURE"         "Pa"
 state   real    tlp            -       misc         -         -     i02rh     "tlp"                   "BASE STATE LAPSE RATE    "  ""
 state   real    tiso           -       misc         -         -     i02rh     "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
 state   real    tlp_strat      -       misc         -         -     i02rh     "tlp_strat"             "BASE STATE LAPSE RATE (DT/D(LN(P)) IN STRATOSPHERE"  "K"

@@ -2550,14 +2550,14 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    integer :: total
    REAL :: msfuxt , msfxffl
    
-   REAL    :: w_damp_on     = 1.0
+   REAL    :: w_damp_on
    REAL    :: w_crit_cfl    = 2.0
    REAL    :: w_flag_cfl    = 1.2
-   LOGICAL :: wflags_differ = .false.
    LOGICAL :: print_flag    = .true.
    SAVE    :: print_flag
    INTEGER :: some1       ! Now have two catagories of CFL information, hence some1 & some2
    INTEGER :: some2        
+   INTEGER :: ieva
 
 !<DESCRIPTION>
 !
@@ -2574,27 +2574,11 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 !
 !-----
 !
-!  W_damp modified to be more flexible with IEVA capability. Two things changed.
-!  First, the value of the W-CFL where damping is turned on can now be set in the namelist
-!  using "w_crit_cfl".  Second, the code has been modified to report two levels of
-!  W-CFL information.  Previously, both damping and W-CFL information was
-!  printed at a W-CFL == 1.2.  This new capability does not need IEVA on to run.
+!  W_damp modified to be more flexible with IEVA capability. 
+!  When IEVA is on, the value of the W-CFL where damping is turned on can now be set 
+!  in the namelist using "w_crit_cfl". 
 !
-!  We keep the old level reporting (for consistency), but use "w_flag_cfl" to flag 
-!  and print information from those points.  "w_flag_cfl" is set here in w_damp.  
-!  A second level of print occurs, which is useful for when we run
-!  IEVA, because many points can run with W-CFL > 1.2.  We now print this
-!  second level separately, as these points might make the model blow up.
-!  and where we now want Rayleigh damping turned on.  The default value "w_crit_cfl" 
-!  which replaced "w_beta" in the old code, is set in the namelist/Registery
-!  turn on w_damp at 1.2 consistent with the WRFV3/4 (before this) code.
-!
-!  Summary
-!  -------
-!  W_damp will write out CFL information when the vertical courant number is > w_flag_cfl,
-!  and W_damp will also turn on Rayleigh damping if vertical courant number > w_crit_cfl.
-!
-!  Typical settings for non-IEVA use:  w_crit_cfl = 1.2
+!  Typical settings for non-IEVA use:  w_crit_cfl = 1.0
 !  Typical settings for     IEVA use:  w_crit_cfl = 2.0
 !
 !  I also commented out a lot of code put in 8-13 years ago for timing assuming that
@@ -2615,17 +2599,18 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    total = 0
 
    w_crit_cfl = config_flags%w_crit_cfl
+   ieva       = config_flags%zadvect_implicit
 
-   IF( abs(w_crit_cfl - w_flag_cfl) > 0.1 ) THEN
-     wflags_differ = .true.
+   IF( ieva .gt. 0 ) THEN
+     w_damp_on = w_crit_cfl
    ELSE
-     wflags_differ = .false.
+     w_damp_on = w_beta
    ENDIF
 
    IF( print_flag ) THEN
      write(wrf_err_message,*) '----------------------------------------'
      CALL wrf_debug( 0, wrf_err_message )
-     WRITE(temp,*) 'W-DAMPING  BEGINS AT W-COURANT NUMBER = ',w_crit_cfl
+     WRITE(temp,*) 'W-DAMPING  BEGINS AT W-COURANT NUMBER = ',w_damp_on
      CALL wrf_debug ( 0 , TRIM(temp) )
      write(wrf_err_message,*) '----------------------------------------'
      CALL wrf_debug( 0, wrf_err_message )
@@ -2687,7 +2672,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 ! This internal write is costly on newer Xeon processors because it breaks
 ! vectorization.  (J. Michalakes for L. Meadows at Intel, 12/13/2012)
 
-         IF (vert_cfl .gt. w_crit_cfl) THEN
+         IF (vert_cfl .gt. 2.) THEN
 
            some1 = some1 + 1
 
@@ -2697,18 +2682,9 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 
          ENDIF
 
-         IF ((vert_cfl .gt. w_flag_cfl) .and. wflags_differ) THEN
-
-           some2 = some2 + 1
-
-           WRITE(temp,FMT="(3(1x,i5,1x),'w-flag_cfl: ',f7.4,2x,'w-cfl: ',f7.4,2x,'dETA: ',f7.4)") &
-                                         i,j,k,vert_cfl,w(i,k,j),-1./rdnw(k)
-           CALL wrf_debug ( 100 , TRIM(temp) )
-
-         ENDIF
 #endif
 
-         IF ((vert_cfl .gt. w_crit_cfl) .and. (config_flags%w_damping == 1) ) THEN
+         IF ((vert_cfl .gt. w_damp_on) .and. (config_flags%w_damping == 1) ) THEN
 
            rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_crit_cfl)*(c1f(k)*mut(i,j)+c2f(k))
 
@@ -2722,7 +2698,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      CALL get_current_time_string( time_str )
      CALL get_current_grid_name( grid_str )
      WRITE(temp,*) some1,                                            &
-            ' points exceeded w_critical_cfl in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
+            ' points exceeded v_cfl = 2 in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
      CALL wrf_debug ( 0 , TRIM(temp) )
      WRITE(temp,FMT="('Max   W: ',3(1x,i5,1x),'W: ',f7.2,2x,'w-cfl: ',f7.2,2x,'dETA: ',f7.2)") &
                             maxi, maxj, maxk, maxdub, max_vert_cfl, maxdeta
@@ -2730,14 +2706,6 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 !    WRITE(temp,FMT="('Max U/V: ',3(1x,i5,1x),'U: ',f7.2,2x,'u-cfl: ',f7.2,2x,'V: ',f7.2,2x,'v-cfl: ',f7.2)") & 
 !          maxi, maxj, maxk, u(maxi,maxk,maxj), dt*u(maxi,maxk,maxj)*rdx, v(maxi,maxk,maxj), dt*v(maxi,maxk,maxj)*rdy
 !    CALL wrf_debug ( 0 , TRIM(temp) )
-   ENDIF
-
-   IF ( some2 .GT. 0 ) THEN   
-     CALL get_current_time_string( time_str )
-     CALL get_current_grid_name( grid_str )
-     WRITE(temp,*) some2,                                            &
-            ' points exceeded w_flag_cfl in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
-     CALL wrf_debug ( 0 , TRIM(temp) )
    ENDIF
 
 END SUBROUTINE W_DAMP

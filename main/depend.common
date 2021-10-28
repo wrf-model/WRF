@@ -720,6 +720,7 @@ module_radiation_driver.o: \
 		module_ra_hs.o \
 		module_ra_goddard.o \
                 module_ra_flg.o \
+                module_ra_eclipse.o \
                 module_ra_aerosol.o \
                 module_mp_thompson.o \
 		../frame/module_driver_constants.o \

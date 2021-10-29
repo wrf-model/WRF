@@ -121,9 +121,9 @@ wrf : framework_only
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
-	if [ ! -f run/p3_lookupTable_1.dat-3momI_v5.1.6 ] ; then \
-	  ( cd run ; cp p3_lookupTable_1.dat-3momI_v5.1.6.gz hold.gz ; \
-	    gunzip hold.gz ; mv hold p3_lookupTable_1.dat-3momI_v5.1.6 ) ; \
+	if [ ! -f run/p3_lookupTable_1.dat-5.3-3momI ] ; then \
+	  ( cd run ; cp p3_lookupTable_1.dat-5.3-3momI.gz hold.gz ; \
+	    gunzip hold.gz ; mv hold p3_lookupTable_1.dat-5.3-3momI ) ; \
 	fi
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -575,9 +575,9 @@ em_real : wrf
                ln -sf ../../run/aerosol_plev.formatted . ;             \
                ln -sf ../../run/eclipse_besselian_elements.dat . ;     \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-               ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
-               ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
-               ln -sf ../../run/p3_lookupTable_2.dat-4.1 . ;         \
+               ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;     \
+               ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;     \
+               ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ;  \
                ln -sf ../../run/HLC.TBL . ;                            \
                ln -sf ../../run/wind-turbine-1.tbl . ;                 \
                ln -sf ../../run/ishmael-gamma-tab.bin . ;              \
@@ -650,9 +650,9 @@ em_real : wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
-             ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
-             ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
-             ln -sf ../../run/p3_lookupTable_2.dat-4.1 . ;         \
+             ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;    \
+             ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;    \
+             ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ; \
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
              ln -sf ../../run/ishmael-gamma-tab.bin . ;             \
@@ -947,9 +947,9 @@ nmm_real : nmm_wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
-             ln -sf ../../run/p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax . ; \
-             ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.6 . ;  \
-             ln -sf ../../run/p3_lookupTable_2.dat-4.1 . ;         \
+             ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;    \
+             ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;    \
+             ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ; \
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
              ln -sf ../../run/ishmael-gamma-tab.bin . ;             \

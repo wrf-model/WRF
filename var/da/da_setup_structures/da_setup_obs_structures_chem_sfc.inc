@@ -27,7 +27,7 @@ subroutine da_setup_obs_structures_chem_sfc(ob, iv, grid)
    !--------------------------------------------------------------------------
    call da_scan_obs_chem_sfc(iv, filename, grid)
 
-   iv%time = 1      !!! Added by Soyoung Ha (June-2021)
+   iv%time = 1      !!! Fixed by Soyoung Ha (June-2021)
    iv%info(chemic_surf)%plocal(iv%time) = iv%info(chemic_surf)%nlocal
    iv%info(chemic_surf)%ptotal(iv%time) = iv%info(chemic_surf)%ntotal
 

@@ -20,7 +20,7 @@ subroutine da_write_obs_chem_sfc(it,ob, iv, re)
    character(len=120) :: fmt_chem4 = '(i8,2x,a6,2f11.6,4(2f12.3,i8,2f12.3))'  ! 4 gas species
    integer :: itime, ifgat
    integer :: ipcc, jpcc, ic
-   integer, parameter :: ngas = 4
+   integer, parameter       :: ngas = 4
    integer, dimension(ngas) :: ipc
    ipc = (/p_chemsi_so2, p_chemsi_no2, p_chemsi_o3, p_chemsi_co/)
 
@@ -98,10 +98,12 @@ subroutine da_write_obs_chem_sfc(it,ob, iv, re)
 
          if (iv%info(chemic_surf)%proc_domain(1,n)) then
             num_obs = num_obs + 1
-            !write(ounit,'(2i8)') 1, ifgat
-            !if (chemicda_opt == 5) then
-            !  write(ounit2,'(2i8)') 1, ifgat
-            !end if
+            if (chem_cv_options > 1 .and. chem_cv_options < 108) then
+             write(ounit,'(2i8)') 1, ifgat
+             if (chemicda_opt == 5) then
+               write(ounit2,'(2i8)') 1, ifgat
+             end if
+            end if !  if (chem_cv_options > 1 .and. chem_cv_options < 108)
 
             ipcc = p_chemsi_pm25
             jpcc = p_chemsi_pm10

@@ -1,0 +1,182 @@
+ &wrfvar1
+ PRINT_DETAIL_BE=false,
+ PRINT_DETAIL_OBS=false,
+ WRITE_GTS_OMB_OMA=true,
+ /
+ &wrfvar2
+ /
+ &wrfvar3
+ ob_format=1,
+ num_fgat_time=1,
+ /
+ &wrfvar4
+ thin_conv=false,
+ use_synopobs=true,
+ use_shipsobs=true,
+ use_metarobs=true,
+ use_pilotobs=true,
+ use_profilerobs=true,
+ use_buoyobs=true,
+ use_soundobs=true,
+ use_bogusobs=true,
+ use_geoamvobs=true,
+ use_polaramvobs=true,
+ use_airepobs=true,
+ use_tamdarobs=true,
+ use_gpspwobs=true,
+ use_gpsrefobs=false,
+ use_qscatobs=true,
+ /
+ &wrfvar5
+ MAX_ERROR_T =    5.000000000000000     ,
+ MAX_ERROR_UV =    5.000000000000000     ,
+ MAX_ERROR_PW =    5.000000000000000     ,
+ MAX_ERROR_REF =   5.000000000000000     ,
+ MAX_ERROR_Q =    5.000000000000000     ,
+ MAX_ERROR_P =    5.000000000000000     ,
+ /
+ &wrfvar6
+ max_ext_its=1,
+ ntmax=50,
+ eps=0.001,
+ /
+ &wrfvar7
+ cv_options=7,
+ use_cv_w=true,
+ /
+ &wrfvar8
+ /
+ &wrfvar9
+ trace_use=false,
+ trace_use_frequent=false,
+ trace_use_dull=false,
+ trace_memory=false,
+ trace_csv=false,
+ /
+ &wrfvar10
+ test_transforms=.false.,
+ test_gradient=.false.,
+ test_dm_exact=.false.,
+ /
+ &wrfvar11
+ sfc_assi_options=1,
+ calculate_cg_cost_fn=.true.,
+ write_detail_grad_fn=.true.,
+ /
+ &wrfvar12
+ /
+ &wrfvar13
+ /
+ &wrfvar14
+ rtminit_nsensor=0,
+ rtminit_platform=29
+ rtminit_satid=1
+ rtminit_sensor=63
+ thinning_mesh=60.0
+ thinning=false,
+ qc_rad=true,
+ write_iv_rad_ascii=false,
+ write_oa_rad_ascii=false,
+ rtm_option=2,
+ crtm_cloud=false,
+ only_sea_rad=.true,
+ use_varbc=.true.
+ varbc_factor=1.0,
+ varbc_nbgerr=5000,
+ varbc_nobsmin=500,
+ use_crtm_kmatrix=.true.
+ airs_warmest_fov=.true.
+ /
+ &wrfvar15
+ /
+ &wrfvar16
+ /
+ &wrfvar17
+ analysis_type="3D-VAR"
+ /
+ &wrfvar18
+ analysis_date="2019-03-04_00:00:00",
+ /
+ &wrfvar19
+ /
+ &wrfvar20
+ /
+ &wrfvar21
+ time_window_min="2019-03-03_23:00:00",
+ /
+ &wrfvar22
+ time_window_max="2019-03-04_01:00:00",
+ /
+ &time_control
+ start_year=2019,
+ start_month=03,
+ start_day=04,
+ start_hour=00,
+ end_year=2019,
+ end_month=03,
+ end_day=04,
+ end_hour=00,
+ force_use_old_data=T,
+ debug_level=0,
+ /
+ &dfi_control
+ /
+ &wrfvarchem
+ chemicda_opt = 5,
+ chem_cv_options = 108,
+ use_chemic_surfobs = .true.,
+ /
+ &fdda
+ /
+ &dynamics
+ hybrid_opt = 0,
+ use_theta_m = 0,
+ etac=0.0,
+ /
+ &domains
+ s_we                                = 1,1,1,
+ e_we                                = 175,
+ s_sn                                = 1, 1, 1,
+ e_sn                                = 127,
+ s_vert                              = 1, 1, 1,
+ e_vert                              = 31,
+ dx                                  = 27000,
+ dy                                  = 27000,
+ /
+
+ &physics
+ mp_physics                          = 2,     2,     2,
+ ra_lw_physics                       = 2*4,
+ ra_sw_physics                       = 5,     5,     1,
+ radt                                = 30,    30,    30,
+ sf_sfclay_physics                   = 1,     1,     1,
+ sf_surface_physics                  = 2,     2,     1,
+ bl_pbl_physics                      = 1,     1,     1,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 5,     5,     0,
+ cu_diag                             = 1,     1,     0,
+ cudt                                = 5,     5,     5,
+ ishallow                            = 1,
+ isfflx                              = 1,
+ ifsnow                              = 1,
+ icloud                              = 1,
+ surface_input_source                = 1,
+ num_soil_layers                     = 4,
+ sf_urban_physics                    = 0,     0,     0,
+ mp_zero_out                         = 2,
+ mp_zero_out_thresh                  = 1.e-12
+ num_land_cat                        = 21,
+ cu_rad_feedback                     = .true.,
+ /
+ &bdy_control
+ spec_bdy_width                      = 5,
+ spec_zone                           = 1,
+ relax_zone                          = 4,
+ specified                           = .true., .false., .false.,
+ nested                              = .false., .true., .true.,
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /

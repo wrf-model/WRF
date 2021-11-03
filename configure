@@ -159,10 +159,31 @@ if test -n "$PERL" ; then
     
 fi
 
-
+PROBS=FALSE
 if [ -n "$NETCDFPAR" ] ; then
-  echo "Will use NETCDFPAR in dir: $NETCDFPAR, which should be the same as $NETCDF"
   NETCDF="$NETCDFPAR"
+  if [ ! -e $NETCDF/bin/nc-config ] ; then
+    PROBS=TRUE
+  else
+    ncversion=`nc-config --version | awk '{print $2}'`
+    ncversiona=`echo $ncversion | cut -c 1`
+    ncversionb=`echo $ncversion | cut -c 3`
+    ncversionc=`echo $ncversion | cut -c 5`
+    ncversiona=`expr $ncversiona \* 100`
+    ncversionb=`expr $ncversionb \* 10`
+    ncversionabc=`expr $ncversiona   + $ncversionb`
+    ncversionabc=`expr $ncversionabc + $ncversionc`
+    if [ $ncversionabc -lt 474 ] ; then
+      PROBS=TRUE
+    fi
+  fi
+  if [ "$PROBS" == "TRUE" ] ; then
+    echo
+    echo Cannot activate NETCDFPAR with this version of NetCDF: $ncversion
+    echo Need NetCDF v4.7.4 or greater
+    echo
+    exit
+  fi
   NETCDF4="1"
   USENETCDFPAR="1"
   export NETCDF
@@ -908,6 +929,16 @@ EOF
       echo "                 C compiler is $SCC_arch"
       echo "           Fortran compiler is $SFC_arch"
       echo "              It will build in $netcdf_arch"
+      echo " "
+      if [ -e $NETCDF/bin/nc-config ] ; then
+        echo "NetCDF version: ${ncversion}"
+        echo "Enabled NetCDF-4/HDF-5: `nc-config --has-nc4`"
+        echo "NetCDF built with PnetCDF: `nc-config --has-pnetcdf`"
+        if [ "$USENETCDFPAR" == "1" ] ; then
+          echo "Using parallel NetCDF via NETCDFPAR option"
+        fi
+        echo " "
+      fi
     fi
     echo
   fi
@@ -1022,11 +1053,9 @@ fi
 if [ -f /usr/include/rpc/types.h ] ; then
   sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=1/' configure.wrf > configure.wrf.edit
   mv configure.wrf.edit configure.wrf
-echo standard location of RPC
 elif [ -f /usr/include/tirpc/rpc/types.h ] ; then
   sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=2/' configure.wrf > configure.wrf.edit
   mv configure.wrf.edit configure.wrf
-echo newer location of RPC
 else
   echo "************************** W A R N I N G ************************************"
   echo " "

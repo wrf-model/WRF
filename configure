@@ -180,7 +180,7 @@ if [ -n "$NETCDFPAR" ] ; then
   if [ "$PROBS" == "TRUE" ] ; then
     echo
     echo Cannot activate NETCDFPAR with this version of NetCDF: $ncversion
-    echo Need NetCDF v4.7.4 or greater
+    echo You need NetCDF v4.7.4 or newer
     echo
     exit
   fi

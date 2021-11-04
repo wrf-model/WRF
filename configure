@@ -181,6 +181,7 @@ if [ -n "$NETCDFPAR" ] ; then
     echo
     echo Cannot activate NETCDFPAR with this version of NetCDF: $ncversion
     echo You need NetCDF version 4.7.4 or newer
+    echo Use a newer version of NetCDF, or unset the env variable NETCDFPAR
     echo
     exit
   fi

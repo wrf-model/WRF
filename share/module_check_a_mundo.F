@@ -386,6 +386,24 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that MYNN PBL on a coarse grid is not paired with LES PBL
+! on a fine grid. This MYNN PBL + LES PBL is not permitted.
+!-----------------------------------------------------------------------
+      IF ( ( model_config_rec % bl_pbl_physics(1) .EQ. mynnpblscheme2 ) .OR. &
+           ( model_config_rec % bl_pbl_physics(1) .EQ. mynnpblscheme3 ) ) THEN
+         DO i = 2, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+            IF ( model_config_rec % bl_pbl_physics(i) .EQ. LESscheme ) THEN
+               wrf_err_message = '--- ERROR: MYNN-PBL schemes do not work with LES PBL on a finer domain'
+               CALL wrf_message ( TRIM( wrf_err_message ) )
+               wrf_err_message = '--- ERROR: Fix bl_pbl_physics in namelist.input.'
+               CALL wrf_message ( TRIM( wrf_err_message ) )
+               count_fatal_error = count_fatal_error + 1
+            END IF
+         ENDDO
+      END IF 
+
+!-----------------------------------------------------------------------
 ! Check that SMS-3DTKE scheme Must work with Revised MM5 surface layer 
 ! scheme (sf_sfclay_physics = 1), MYNN surface (sf_sfclay_physics = 5)
 ! and old MM5 surface scheme (sf_sfclay_physics = 91). Also, SMS-3DTKE

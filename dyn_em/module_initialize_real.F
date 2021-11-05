@@ -665,6 +665,16 @@ integer::oops1,oops2
          !  coarse grid since we are going to make the interface consistent
          !  in the model betwixt the CG and FG domains.
 
+         !  An important point is to inform the user if their request cannot
+         !  be satisfied. Do not skip over this quietly.
+
+         IF ( ( config_flags%smooth_cg_topo ) .AND. &
+              ( internal_time_loop .EQ. 1 ) .AND. &
+              ( grid%id .EQ. 1 ) .AND. &
+              ( flag_soilhgt .NE. 1) ) THEN
+            CALL wrf_error_fatal(' --- ERROR: NML option smooth_cg_topo=T, but no first guess soil elevation data')
+         END IF
+
          IF ( ( config_flags%smooth_cg_topo ) .AND. &
               ( internal_time_loop .EQ. 1 ) .AND. &
               ( grid%id .EQ. 1 ) .AND. &

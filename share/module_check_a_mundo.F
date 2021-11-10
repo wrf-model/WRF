@@ -407,6 +407,37 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Handle the behind the scenes shuffling of the PBL package info, 
+! in support of generalizing usage of the LES PBL option on the FG.
+!-----------------------------------------------------------------------
+      exists = .FALSE.
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         model_config_rec % bl_pbl_physics_proxy(i) = model_config_rec % bl_pbl_physics(i) 
+         IF ( model_config_rec % bl_pbl_physics(i) .EQ. lesscheme ) THEN
+            exists = .TRUE.
+         END IF
+      ENDDO
+      IF ( ( exists ) .AND. (  model_config_rec % bl_pbl_physics(1) .NE. lesscheme ) ) THEN
+         DO i = 2, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+            IF ( model_config_rec % bl_pbl_physics(i) .EQ. lesscheme ) THEN
+               model_config_rec % bl_pbl_physics_proxy(i) = model_config_rec % bl_pbl_physics_proxy(1) 
+            END IF
+         ENDDO
+      END IF
+print *,'            DAVE TEST'
+print *,'          PBL      PBL ' 
+print *,'         PROXY   PHYSICS'
+print *,'         (mem)   (scheme)'
+print *,'        ------------------'
+DO i = 1, model_config_rec % max_dom
+print *,model_config_rec % bl_pbl_physics_proxy(i),model_config_rec % bl_pbl_physics(i)
+ENDDO
+print *,'        ------------------'
+stop
+
+!-----------------------------------------------------------------------
 ! Urban physics set up. If the run-time option for use_wudapt_lcz = 0,
 ! then the number of urban classes is 3. Else, if the use_wudapt_lcz = 1, 
 ! then the number increases to 11. The seemingly local variable 

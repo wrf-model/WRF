@@ -3191,7 +3191,7 @@ endif
       return
     endif
     if (DH%R4OnOutput .and. FieldTypeIn == WRF_DOUBLE) then
-       call TransposeToR4('write',MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
+       call TransposeToR4a('write',MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
                                                 ,XField,x1,x2,y1,y2,z1,z2 &
                                                    ,i1,i2,j1,j2,k1,k2 )
     else

@@ -386,17 +386,22 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-! Check that MYNN PBL on a coarse grid is not paired with LES PBL
-! on a fine grid. This MYNN PBL + LES PBL is not permitted.
+! Check that LES PBL is only paired with acceptable other PBL options.
+! Currently OK: YSU(1), MYJ(2), ShinHong(11)
 !-----------------------------------------------------------------------
-      IF ( ( model_config_rec % bl_pbl_physics(1) .EQ. mynnpblscheme2 ) .OR. &
-           ( model_config_rec % bl_pbl_physics(1) .EQ. mynnpblscheme3 ) ) THEN
+      IF ( ( model_config_rec % bl_pbl_physics(1) .NE. ysuscheme      ) .AND. &
+           ( model_config_rec % bl_pbl_physics(1) .NE. myjpblscheme   ) .AND. &
+           ( model_config_rec % bl_pbl_physics(1) .NE. shinhongscheme ) ) THEN 
          DO i = 2, model_config_rec % max_dom
             IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
             IF ( model_config_rec % bl_pbl_physics(i) .EQ. LESscheme ) THEN
-               wrf_err_message = '--- ERROR: MYNN-PBL schemes do not work with LES PBL on a finer domain'
+               WRITE(wrf_err_message,fmt='(a,i2)') '--- ERROR: LES PBL on fine grid does not work with CG PBL option ',model_config_rec % bl_pbl_physics(1)
+               CALL wrf_message ( TRIM( wrf_err_message ) )
+               wrf_err_message = '--- ERROR: Only YSU(1), MYJPBL(2), and ShinHong(11) are acceptable options for LES PBL on the fine grid'
                CALL wrf_message ( TRIM( wrf_err_message ) )
                wrf_err_message = '--- ERROR: Fix bl_pbl_physics in namelist.input.'
+               CALL wrf_message ( TRIM( wrf_err_message ) )
+               wrf_err_message = '--- ERROR: Alternatively, remove all of the packaged variables from the CG PBL selection'
                CALL wrf_message ( TRIM( wrf_err_message ) )
                count_fatal_error = count_fatal_error + 1
             END IF

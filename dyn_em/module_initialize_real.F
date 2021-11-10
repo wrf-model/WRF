@@ -672,7 +672,8 @@ integer::oops1,oops2
               ( internal_time_loop .EQ. 1 ) .AND. &
               ( grid%id .EQ. 1 ) .AND. &
               ( flag_soilhgt .NE. 1) ) THEN
-            CALL wrf_error_fatal(' --- ERROR: NML option smooth_cg_topo=T, but found no soil elevation data in metgrid files')
+            CALL wrf_message    (' --- ERROR: NML option smooth_cg_topo=T, but found no soil elevation data in metgrid files')
+            CALL wrf_error_fatal('            If using ERA5 data, requires including additional time invariant data files')
          END IF
 
          IF ( ( config_flags%smooth_cg_topo ) .AND. &

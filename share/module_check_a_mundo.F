@@ -435,7 +435,6 @@ DO i = 1, model_config_rec % max_dom
 print *,model_config_rec % bl_pbl_physics_proxy(i),model_config_rec % bl_pbl_physics(i)
 ENDDO
 print *,'        ------------------'
-stop
 
 !-----------------------------------------------------------------------
 ! Urban physics set up. If the run-time option for use_wudapt_lcz = 0,

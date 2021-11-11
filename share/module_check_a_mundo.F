@@ -389,7 +389,8 @@
 ! Check that LES PBL is only paired with acceptable other PBL options.
 ! Currently OK: YSU(1), MYJ(2), ShinHong(11)
 !-----------------------------------------------------------------------
-      IF ( ( model_config_rec % bl_pbl_physics(1) .NE. ysuscheme      ) .AND. &
+      IF ( ( model_config_rec % bl_pbl_physics(1) .NE. lesscheme      ) .AND. &
+           ( model_config_rec % bl_pbl_physics(1) .NE. ysuscheme      ) .AND. &
            ( model_config_rec % bl_pbl_physics(1) .NE. myjpblscheme   ) .AND. &
            ( model_config_rec % bl_pbl_physics(1) .NE. shinhongscheme ) ) THEN 
          DO i = 2, model_config_rec % max_dom

@@ -1,5 +1,5 @@
 !  Create an initial data set for the WRF model based on real data.  This 
-!  program is specifically set up for the NMM core. 28
+!  program is specifically set up for the NMM core. 29
 
 PROGRAM real_data
 

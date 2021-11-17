@@ -278,7 +278,9 @@ CONTAINS
                            grid%PERT3D(:,:,:,n),                               &
                            grid%stddev_cutoff_mult3d(n),                       &
                            grid%gridpt_stddev_mult3d(n),                       &
-                           grid%VERTSTRUCC3d(:,:,:,n),grid%VERTSTRUCS3d(:,:,:,n),grid%VERTAMPT3d(:,n)       )
+                           grid%VERTSTRUCC3d(:,:,:,n),                         &
+                           grid%VERTSTRUCS3d(:,:,:,n),                         &
+                           grid%VERTAMPT3d(:,n)                                )
         END DO Loop_multi_perturb
       ENDIF If_multi_perturb
 

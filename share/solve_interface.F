@@ -18,9 +18,6 @@ SUBROUTINE solve_interface ( grid )
 #if (EM_CORE == 1 && DA_CORE != 1)
 # include  "solve_em.int"
 #endif
-#if (NMM_CORE == 1)
-# include  "solve_nmm.int"
-#endif
    END INTERFACE
 
    TYPE(domain) , INTENT(INOUT)  :: grid
@@ -79,24 +76,6 @@ SUBROUTINE solve_interface ( grid )
      call wrf_debug( 200,trim(dbg_msg) )
    endif
 # endif
-
-#if (NMM_CORE == 1)
-   CALL solve_nmm  ( grid , config_flags   &
-!
-# include "actual_new_args.inc"
-!
-               )
-# if ( WRF_CHEM == 1 )
-   IF ( config_flags%chem_opt > 0  ) THEN
-
-     CALL chem_driver  ( grid , config_flags  &
-!
-# include "actual_new_args.inc"
-!  
-               )
-   ENDIF
-# endif
-#endif
 
 END SUBROUTINE solve_interface
 

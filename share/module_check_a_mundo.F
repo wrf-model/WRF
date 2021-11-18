@@ -124,22 +124,6 @@
    model_config_rec % wrf_hydro = 0
 #endif
 
-#if (NMM_CORE == 1) && (NMM_NEST == 1)
-!-----------------------------------------------------------------------
-! Ensure that minimum NMM corral distances are supplied for all domains.
-!-----------------------------------------------------------------------
-   do i=1,model_config_rec%max_dom
-      if(model_config_rec%corral_x(i)<5) then
-         call wrf_message("Corral X distance must be at least 5 due to intermediate domain halos.")
-         model_config_rec%corral_x(i)=5
-      endif
-      if(model_config_rec%corral_y(i)<5) then
-         call wrf_message("Corral Y distance must be at least 5 due to intermediate domain halos.")
-         model_config_rec%corral_y(i)=5
-      endif
-    enddo
-#endif
-
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
 ! AFWA diagnostics require each domain is treated the same. If
@@ -575,7 +559,7 @@
 
 !-----------------------------------------------------------------------
 ! For ARW users, a request for CU=4 (SAS) should be switched to option
-! CU = 95. The option CU = 4 is a scaleaware scheme used by NMM.
+! CU = 95.
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
@@ -630,27 +614,6 @@
          END IF
       ENDDO
 
-#endif
-
-!-----------------------------------------------------------------------
-! Check that some microphysics is not allowed for WRF-NMM run
-!-----------------------------------------------------------------------
-#if (NMM_CORE == 1) || (HWRF == 1)
-      DO i = 1, model_config_rec % max_dom
-         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec % mp_physics(i) == nuwrf4icescheme .OR. &
-              model_config_rec % mp_physics(i) == nssl_2mom .OR. &
-              model_config_rec % mp_physics(i) == nssl_2momccn .OR. &
-              model_config_rec % mp_physics(i) == nssl_1mom .OR. &
-              model_config_rec % mp_physics(i) == nssl_1momlfo .OR. &
-              model_config_rec % mp_physics(i) == nssl_2momg ) THEN
-            wrf_err_message = '--- ERROR: Chosen microphysics scheme cannot run with WRF-NMM '
-            CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '--- Fix mp_physics in namelist.input '
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-         END IF
-      ENDDO
 #endif
 
 !-----------------------------------------------------------------------
@@ -964,24 +927,6 @@
 
 #endif
 
-#if (NMM_CORE == 1) || (HWRF == 1)
-!-----------------------------------------------------------------------
-!           Check that NOAH-MP LSM is not allowed for WRF-NMM run
-!-----------------------------------------------------------------------
-      DO i = 1, model_config_rec % max_dom
-         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
-            WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
-            CALL wrf_message ( TRIM ( wrf_err_message ) )
-            WRITE(wrf_err_message, '("              does not work with NMM ")')
-            CALL wrf_message ( TRIM ( wrf_err_message ) )
-            WRITE(wrf_err_message, '("Select a different LSM scheme ")')
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-         END IF
-      END DO
-#endif
-
 !-----------------------------------------------------------------------
 !           Check that NSAS shallow convection is not allowed to turn on simultaneously with NSAS
 !-----------------------------------------------------------------------
@@ -1228,15 +1173,6 @@
       END IF
    END IF
 
-#elif( NMM_CORE == 1 )
-!----------------------------------------------------------------------------
-! If NMM core and trajectories are on then halt.
-!----------------------------------------------------------------------------
-   IF ( model_config_rec%traj_opt /= 0 ) THEN
-         wrf_err_message = 'Trajectories not supported in NMM core '
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-   END IF
 #endif
 
 #if (EM_CORE == 1)
@@ -3054,7 +2990,7 @@
 
       END IF     
       
-#if ( (NMM_CORE != 1) && (DA_CORE != 1) )
+#if (DA_CORE != 1)
 !-----------------------------------------------------------------------
 ! How big to allocate random seed arrays.
 !-----------------------------------------------------------------------
@@ -3207,7 +3143,7 @@
 ! sf_surface_physics
 !-----------------------------------------------------------------------
 
-#if ((EM_CORE == 1) || (NMM_CORE == 1))
+#if (EM_CORE == 1)
       IF      (   model_config_rec % sf_surface_physics(1) .EQ. NOLSMSCHEME  ) THEN
          model_config_rec % num_soil_layers = 5
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SLABSCHEME   ) THEN
@@ -3228,17 +3164,11 @@
          model_config_rec % num_soil_layers = 2
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME    ) THEN
          model_config_rec % num_soil_layers = 10
-#if (EM_CORE == 1)
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CTSMSCHEME    ) THEN
          ! Using 4 for the sake of the sea ice scheme
          model_config_rec % num_soil_layers = 4
-#endif
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SSIBSCHEME   ) THEN
          model_config_rec % num_soil_layers = 3
-#if (NMM_CORE == 1)
-      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. GFDLSLAB     ) THEN
-         model_config_rec % num_soil_layers = 4
-#endif
       ELSE
          CALL wrf_debug       ( 0 , '--- ERROR: Unknown sf_surface_physics has no associated number of soil levels' )
          WRITE (wrf_err_message, FMT='(A,I6)') '--- ERROR: sf_surface_physics = ' , model_config_rec % sf_surface_physics(1)

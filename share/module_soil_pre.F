@@ -1,5 +1,3 @@
-#if ( ! NMM_CORE == 1 )
-
 MODULE module_soil_pre
 
    USE module_date_time

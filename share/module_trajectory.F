@@ -5,36 +5,6 @@
 #if( EM_CORE == 1 )
    use module_state_description, only : num_chem
 #endif
-#if( NMM_CORE == 1 )
-   CONTAINS
-
-   subroutine trajectory_init( grid, config_flags, &
-                               ims,ime, jms,jme, kms,kme )
-
-   use module_domain
-   use module_configure,         only : grid_config_rec_type
-
-!-----------------------------------------------------------------------------
-!  dummy arguments
-!-----------------------------------------------------------------------------
-   integer, intent(in)      :: ims,ime, jms,jme, kms,kme
-   type(domain), intent(inout)            :: grid
-   type(grid_config_rec_type), intent(in) :: config_flags
-
-   end subroutine trajectory_init
-
-   subroutine trajectory_driver( grid )
-
-   use module_domain
-
-!-----------------------------------------------------------------------------
-!  dummy arguments
-!-----------------------------------------------------------------------------
-   type(domain), intent(in) :: grid
-
-   end subroutine trajectory_driver
-
-#elif( EM_CORE == 1 )
 
    implicit none
 
@@ -3052,7 +3022,5 @@ include 'netcdf.inc'
    end do
 
    end subroutine UPCASE
-
-#endif
 
    end module module_trajectory

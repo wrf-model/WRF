@@ -231,7 +231,7 @@ TARGETDIR    =  ./
 
 $(LIBTARGET) :
 	$(MAKE) $(J) non_nmm ; \
-	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
+	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
 		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM)
 
 include ../configure.wrf

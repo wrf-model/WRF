@@ -31,7 +31,6 @@ MODULES =       module_driver_constants.o  \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
                 module_io_quilt.o          \
-		module_intermediate_nmm.o  \
 		module_cpl.o               \
 		module_cpl_oasis3.o        \
 		module_clear_halos.o

@@ -159,7 +159,6 @@
       END IF
 #endif
 
-#if ( NMM_CORE != 1 )
     IF ( .NOT. dryrun ) THEN
    
        !  Does this file exist?
@@ -188,9 +187,7 @@
           CALL wrf_error_fatal( wrf_err_message )
        END IF
     END IF
-#endif
 
-#if ( NMM_CORE != 1 )
     ! Verify feature consistency between model input and model nml settings
 
     IF ( .NOT. dryrun ) THEN
@@ -231,7 +228,6 @@
         END IF
       END IF
     END IF
-#endif
 
       ! INPUT ONLY (KK)
 
@@ -551,8 +547,6 @@
     CALL wrf_debug ( 300 , wrf_err_message )
     CALL nl_set_stand_lon ( grid%id , config_flags%stand_lon )
 
-#if ( NMM_CORE != 1 )
-
     CALL wrf_get_dom_ti_real ( fid , 'POLE_LAT' ,  config_flags%pole_lat , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for POLE_LAT returns ',config_flags%pole_lat
     CALL wrf_debug ( 300 , wrf_err_message )
@@ -576,7 +570,6 @@
       WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for P_TOP returns ',grid%p_top
       CALL wrf_debug ( 300 , wrf_err_message )
     ENDIF
-#endif
 
     IF ( switch .NE. boundary_only ) THEN
       CALL wrf_get_dom_ti_real ( fid , 'GMT' ,  config_flags%gmt , 1 , icnt , ierr )
@@ -740,10 +733,8 @@
                    ! All is well.  Noah-MP and Noah have compatible wrfinput files.
                 ELSE IF ( ( config_flags%sf_surface_physics == NOAHMPSCHEME ) .and. ( itmp == LSMSCHEME ) ) then
                    ! All is well.  Noah-MP and Noah have compatible wrfinput files.
-#if ( NMM_CORE != 1 )
                 ELSE IF ( ( config_flags%sf_surface_physics == CTSMSCHEME ) ) then
                    ! All is well.  CTSM doesn't care about the wrfinput file.
-#endif
                 ELSE
                    call wrf_message("----------------- ERROR -------------------")
                    WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
@@ -982,8 +973,6 @@
 
 #endif
 
-#if (NMM_CORE == 1)
-
     IF      ( ( switch .EQ. auxinput1_only  ) .AND. &
               ( config_flags%auxinput1_inname(1:8) .EQ. 'wrf_real' ) ) THEN
 
@@ -1018,7 +1007,6 @@
          ENDIF
        ENDIF
 
-#endif
 
 #if (DA_CORE == 1)
     ! Test here to check that config_flags%hypsometric_opt in namelist
@@ -1160,11 +1148,9 @@
         WRITE(wrf_err_message,*) '---- ERROR: Ran out of valid boundary conditions in file ',TRIM(fname)
         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       ELSE
-#if ( NMM_CORE != 1 )
         WRITE(wrf_err_message,*) '---- ERROR: Could not find matching time in input file ',TRIM(fname)
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
         count_fatal_error = count_fatal_error + 1
-#endif
       ENDIF
     ELSE IF ( ierr .NE. WRF_WARN_NOTSUPPORTED .AND. ierr .NE. WRF_WARN_DRYRUN_READ) THEN
 !
@@ -1888,7 +1874,6 @@
     RETURN
   END SUBROUTINE input_wrf
     
-#if ( NMM_CORE != 1 )
   SUBROUTINE is_this_data_ok_to_use ( fid , yes_use_this_data )
 
     USE module_io
@@ -1979,5 +1964,3 @@
       count = count +1
     END DO
   END FUNCTION check_which_switch
-
-#endif

@@ -471,11 +471,6 @@ endif
     END IF
 #endif
 
-#if (NMM_CORE == 1)
-    CALL wrf_put_dom_ti_real ( fid , 'WBD0' , grid%wbd0 , 1 , ierr )
-    CALL wrf_put_dom_ti_real ( fid , 'SBD0' , grid%sbd0 , 1 , ierr )
-#endif
-
     CALL wrf_put_dom_ti_integer( fid, 'AERCU_OPT'          , config_flags%aercu_opt          , 1, ierr )
     CALL wrf_put_dom_ti_real   ( fid, 'AERCU_FCT'          , config_flags%aercu_fct          , 1, ierr )
 #if (EM_CORE == 1)
@@ -613,9 +608,6 @@ endif
 #endif
 
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
-#if (NMM_CORE == 1)
-          CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'E' , ierr )
-#endif
 #if (EM_CORE == 1)
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'C' , ierr )
 #endif

@@ -41,12 +41,8 @@ DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
 
 #### 3.d.   add macros to specify the modules for this core
 
-NMM_MODULE_DIR = -I../dyn_nmm
-NMM_MODULES =  $(NMM_MODULE_DIR)
-
 ALL_MODULES =                           \
                $(EM_MODULE_DIR)         \
-               $(NMM_MODULES)           \
                $(INCLUDE_MODULES)
 
 configcheck:
@@ -114,7 +110,6 @@ wrf : framework_only
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
-	if [ $(WRF_NMM_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" nmm_core ; fi
 	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
@@ -175,9 +170,6 @@ gen_be :
 	( cd var/build; make depend; $(MAKE) $(J) gen_be )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
-
-
-nmm_wrf : wrf
 
 
 #  Eulerian mass coordinate initializations
@@ -884,104 +876,6 @@ gocart_conv : wrf
 		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 
 
-#### nmm converter
-
-### Idealized NMM tropical cyclone case
-nmm_tropical_cyclone : nmm_wrf
-	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=tropical_cyclone nmm_ideal )
-	( cd test/nmm_tropical_cyclone ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	( cd test/nmm_tropical_cyclone ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
-	( cd test/nmm_tropical_cyclone ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
-	( cd run ; if test -f namelist.input ; then \
-		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
-		/bin/rm -f namelist.input ; cp ../test/nmm_tropical_cyclone/namelist.input . )
-	@echo "build started:   $(START_OF_COMPILE)"
-	@echo "build completed:" `date`
-
-nmm_real : nmm_wrf
-	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=real real_nmm )
-	( cd test/nmm_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	( cd test/nmm_real ; /bin/rm -f real_nmm.exe ; ln -s ../../main/real_nmm.exe . )
-	( cd test/nmm_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/nmm_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA ;    \
-             ln -sf ../../run/ETAMPNEW_DATA . ;                     \
-             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
-             ln -sf ../../run/RRTM_DATA . ;                         \
-             ln -sf ../../run/RRTMG_LW_DATA . ;                     \
-             ln -sf ../../run/RRTMG_SW_DATA . ;                     \
-             ln -sf ../../run/CAM_ABS_DATA . ;                      \
-             ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;  \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;  \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;  \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;  \
-             ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \
-             ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;              \
-             ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;              \
-             ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;              \
-             ln -sf ../../run/CLM_DRDSDT0_DATA . ;                  \
-             ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;              \
-             ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;              \
-             ln -sf ../../run/CLM_KAPPA_DATA . ;                    \
-             ln -sf ../../run/CLM_TAU_DATA . ;                      \
-             ln -sf ../../run/ozone.formatted . ;                   \
-             ln -sf ../../run/ozone_lat.formatted . ;               \
-             ln -sf ../../run/ozone_plev.formatted . ;              \
-             ln -sf ../../run/aerosol.formatted . ;                 \
-             ln -sf ../../run/aerosol_lat.formatted . ;             \
-             ln -sf ../../run/aerosol_lon.formatted . ;             \
-             ln -sf ../../run/aerosol_plev.formatted . ;            \
-             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
-             ln -sf ../../run/capacity.asc . ;                      \
-             ln -sf ../../run/coeff_p.asc . ;                       \
-             ln -sf ../../run/coeff_q.asc . ;                       \
-             ln -sf ../../run/constants.asc . ;                     \
-             ln -sf ../../run/masses.asc . ;                        \
-             ln -sf ../../run/termvels.asc . ;                      \
-             ln -sf ../../run/kernels.asc_s_0_03_0_9 . ;            \
-             ln -sf ../../run/kernels_z.asc . ;                     \
-             ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
-             ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
-             ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
-             ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;    \
-             ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;    \
-             ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ; \
-             ln -sf ../../run/HLC.TBL . ;                           \
-             ln -sf ../../run/wind-turbine-1.tbl . ;                \
-             ln -sf ../../run/ishmael-gamma-tab.bin . ;             \
-             ln -sf ../../run/ishmael-qi-qc.bin . ;                 \
-             ln -sf ../../run/ishmael-qi-qr.bin . ;                 \
-             ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;       \
-	     if [ $(RWORDSIZE) -eq 8 ] ; then                       \
-	        ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
-                ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
-	        ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
-	     fi )
-	( cd test/nmm_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
-	( cd test/nmm_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
-	( cd test/nmm_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
-	( cd test/nmm_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
-	( cd test/nmm_real ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . )
-	( cd test/nmm_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
-	( cd test/nmm_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )
-	( cd test/nmm_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )
-	( cd test/nmm_real ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/nmm_real ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
-	( cd test/nmm_real ; /bin/rm -f co2_trans ; ln -s ../../run/co2_trans . )
-	( cd run ; /bin/rm -f real_nmm.exe ; ln -s ../main/real_nmm.exe . )
-	( cd run ; if test -f namelist.input ; then \
-		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
-		/bin/rm -f namelist.input ; cp ../test/nmm_real/namelist.input . )
-
-
-
-# semi-Lagrangian initializations
-
-
 io :
 	@ echo '--------------------------------------'
 	( cd tools ; $(MAKE) standard.exe )
@@ -1154,14 +1048,6 @@ fortran_2003_fflush_test:
 # rule used by configure to test if Fortran 2008 gamma intrinsic function is available
 fortran_2008_gamma_test:
 	@cd tools ; /bin/rm -f fortran_2008_gamma_test.{exe,o} ; $(SFC) -o fortran_2008_gamma_test.exe fortran_2008_gamma_test.F ; cd ..
-
-nmm_core :
-	@ echo '--------------------------------------'
-	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
-	  ( cd dyn_nmm ; $(MAKE) -j 16 ) ;  \
-	else \
-	  ( cd dyn_nmm ; $(MAKE) $(J) ) ;  \
-	fi
 
 toolsdir :
 	@ echo '--------------------------------------'

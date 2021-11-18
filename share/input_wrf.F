@@ -562,8 +562,6 @@
 ! written by SI have P_TOP as a metadata item; the real program and wrf model have it as a
 ! state variable. This test is to supress non-fatal but confusing messages from the model complaining
 ! that P_TOP cannot be read from the metadata for this dataset.  JM 20040905
-!
-! Note, P_TOP is not defined in the NMM core.
 
     IF ( program_name(1:7) .EQ. "REAL_EM" ) THEN
       CALL wrf_get_dom_ti_real ( fid , 'P_TOP' ,  grid%p_top , 1 , icnt , ierr )

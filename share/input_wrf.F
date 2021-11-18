@@ -971,41 +971,6 @@
 
 #endif
 
-    IF      ( ( switch .EQ. auxinput1_only  ) .AND. &
-              ( config_flags%auxinput1_inname(1:8) .EQ. 'wrf_real' ) ) THEN
-
-       CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 )
-
-       !  Test to make sure that the input data is the right size.
-
-       IF ( ( ide-1 .NE. ide_compare    ) .OR. &
-            ( kde   .NE. kde_compare    ) .OR. &
-            ( jde-1 .NE. jde_compare    ) .AND. ierr3 .EQ. 0 ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide-1,jde-1,kde=',ide-1,jde-1,kde,&
-                                  '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
-          CALL wrf_debug( 100, wrf_err_message )
-       ENDIF
-
-       ELSEIF ( switch .EQ. auxinput1_only ) THEN          ! assume just WPS in this branch
-         IF ( ( ide-1                           .NE. ide_compare ) .OR. &
-            ( config_flags%num_metgrid_levels .NE. kde_compare ) .OR. &
-            ( jde-1                             .NE. jde_compare ) .AND. ierr3 .EQ. 0 ) THEN
-                WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  ',&
-                 'namelist ide-1,jde-1,num_metgrid_levels=',ide-1,jde-1,config_flags%num_metgrid_levels,&
-                 '; input data ide,jde,num_metgrid_levels=',ide_compare , jde_compare , kde_compare
-                IF (ide-1 .eq. ide_compare .AND. jde-1 .EQ. jde_compare) THEN
-                  CALL wrf_message(wrf_err_message)
-                  CALL wrf_debug ( 0, "---- ERROR: appears that the vertical dimension is wrong - quitting" )
-                  count_fatal_error = count_fatal_error + 1
-                ELSE
-                  CALL wrf_message(wrf_err_message)
-                  CALL wrf_debug ( 0, "---- ERROR: appears that I or J dimensions are wrong - quitting" )
-                  count_fatal_error = count_fatal_error + 1
-                ENDIF
-         ENDIF
-       ENDIF
-
-
 #if (DA_CORE == 1)
     ! Test here to check that config_flags%hypsometric_opt in namelist
     ! is equal to what is in the global attributes of the wrfinput files

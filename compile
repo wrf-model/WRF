@@ -133,7 +133,7 @@ else
      endif
   endif
 
-# temporary - until all vestiges of NMM ifdefs are gone from WRF source
+# temporary - until all vestiges of NMM ifdefs are gone from WRF source: 1
   setenv WRF_NMM_CORE 0
   setenv WRF_NMM_NEST 0
   setenv HWRF 0

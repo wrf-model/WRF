@@ -5,7 +5,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
    USE module_timing, only: now_time
    USE module_domain
    USE module_configure
-   USE module_intermediate_nmm
+!   USE module_intermediate_nmm
 #ifdef DM_PARALLEL
    USE module_dm, ONLY: local_communicator, intercomm_active
 #else

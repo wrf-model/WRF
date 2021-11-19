@@ -1111,7 +1111,7 @@ module da_define_structures
    type be_subtype
       integer           :: mz          ! Vertical truncation of errors.
       integer           :: max_wave    ! Global only - horizontal spectral truncation.
-      character*5       :: name        ! Variable name.
+      character*10      :: name        ! Variable name.
       real*8, pointer   :: rf_alpha(:) ! RF scale length.
       real*8, pointer   :: val(:,:)    ! Local Standard dev./sqrt(eigenvalue).
       real*8, pointer   :: evec(:,:,:) ! Local Vertical eigenvectors.

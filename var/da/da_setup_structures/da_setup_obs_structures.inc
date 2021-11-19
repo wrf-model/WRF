@@ -323,13 +323,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 
    write(unit=stdout, fmt='(a)')  'Observation summary'
    do i=1,num_fgat_time
-      write(unit=stdout, fmt='(3x,a,i2)') 'ob time ', i
+      write(unit=stdout, fmt='(3x,2(a,i3))') 'ob time', i,' num_ob_indexes=',num_ob_indexes
       do j=1,num_ob_indexes
-         if(j.eq.27 &
-#if (WRF_CHEM == 1)
-            .or. j.eq.29 .or. j.eq.30 &
-#endif
-         )cycle
+         if(j.eq.27) cycle        ! skip tamdar_sfc (HA)
          if (use_gpsztdobs .and.obs_names(j) == 'gpspw         ' ) then
             ob_name = 'gpsztd        '
          else
@@ -344,10 +340,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
                iv%info(j)%thin_plocal(i) - iv%info(j)%thin_plocal(i-1), ' local (post-thinning)'
          else
 #if (WRF_CHEM == 1)
-            write(unit=stdout, fmt='(6x,a,i10,a,i8,a,i8,a,i8,a)') &
-               ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
+            write(unit=stdout, fmt='(i3,3x,a,i10,a,i8,a,i8,a,i8,a)') &
+               j,ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
                iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local', &
-               iv%info(chemic_surf)%ntotal, 'chem total', iv%info(chemic_surf)%nlocal, 'chem local'
+               iv%info(chemic_surf)%ntotal, ' chem total', iv%info(chemic_surf)%nlocal, ' chem local'
 #else
             write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
                ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &

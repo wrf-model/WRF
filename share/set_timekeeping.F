@@ -13,12 +13,6 @@ SUBROUTINE Setup_Timekeeping ( grid )
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
    INTEGER :: vortex_interval
-#if ( HWRF == 1 )
-!zhang's doing
-   real (kind=8) :: day_in_sec
-   REAL :: tstart
-!end of zhang's doing
-#endif
 
 ! #if (EM_CORE == 1)
    INTEGER :: dfi_fwdstop_year,dfi_fwdstop_month,dfi_fwdstop_day,dfi_fwdstop_hour,dfi_fwdstop_minute,dfi_fwdstop_second
@@ -85,14 +79,6 @@ SUBROUTINE Setup_Timekeeping ( grid )
       CALL nl_get_start_hour(grid%id,start_hour)
       CALL nl_get_start_minute(grid%id,start_minute)
       CALL nl_get_start_second(grid%id,start_second)
-#if ( HWRF == 1 )
-!zhang's doing - check with zhan before adding this bit
-!   CALL nl_get_tstart ( grid%id , tstart )
-!   CALL jdn_sec(day_in_sec,start_year,start_month,start_day,start_hour,start_minute,start_second)
-!   day_in_sec = day_in_sec + tstart*3600.
-!   CALL jdn_ymd_hms(day_in_sec,start_year,start_month,start_day,start_hour,start_minute,start_second)
-!end of zhang's doing
-#endif
       CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
                                    H=start_hour, M=start_minute, S=start_second,&
                                    rc=rc)

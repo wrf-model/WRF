@@ -345,11 +345,7 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
-#if ( HWRF == 1 )
-    ELSE
-#else
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
-#endif
        CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
        CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
        CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
@@ -947,11 +943,7 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
-!For HWRF: zhang
-#if ( HWRF == 1 )
-    CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
-    CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
-#elif ! defined(EM_CORE)
+#if ! defined(EM_CORE)
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  config_flags%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  config_flags%j_parent_start  , 1 , ierr )
 #endif

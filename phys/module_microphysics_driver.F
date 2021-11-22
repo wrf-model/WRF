@@ -243,7 +243,6 @@ SUBROUTINE microphysics_driver(                                          &
 !  USE module_mp_milbrandt3mom
    USE module_mp_nssl_2mom
 
-   USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
 ! For checking model timestep is history time (for radar reflectivity)

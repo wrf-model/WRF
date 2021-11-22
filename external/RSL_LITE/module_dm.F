@@ -1295,8 +1295,6 @@ CONTAINS
    END SUBROUTINE wrf_dm_min_reals
 
    FUNCTION wrf_dm_sum_real8 ( inval )
-     ! Forced eight byte real sum needed for calculating an accurate
-     ! mean motion in HWRF moduel_tracker.
       IMPLICIT NONE
 #ifndef STUBMPI
       REAL*8 inval, retval, wrf_dm_sum_real8
@@ -1364,60 +1362,6 @@ CONTAINS
 #endif
    END SUBROUTINE wrf_dm_sum_integers
 
-#if ( HWRF == 1 )
-   SUBROUTINE wrf_dm_minloc_real ( val, lat, lon, z, idex, jdex )
-#ifndef STUBMPI
-      IMPLICIT NONE
-      REAL val, lat, lon, z
-      INTEGER idex, jdex, ierr, mrank, comm
-      REAL inreduce(2), outreduce(2), bcast(5)
-
-      inreduce=(/ val, real(mytask) /)
-      CALL wrf_get_dm_communicator(comm)
-      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,MPI_MINLOC,&
-           comm,ierr)
-      val=outreduce(1)
-      mrank=outreduce(2)
-      bcast=(/ lat,lon,z,real(idex),real(jdex) /)
-      call MPI_Bcast(bcast,5,MPI_REAL,mrank,comm,ierr)
-      lat=bcast(1)
-      lon=bcast(2)
-      z=bcast(3)
-      idex=bcast(4)
-      jdex=bcast(5)
-#else
-      IMPLICIT NONE
-      REAL val,lat,lon,z
-      INTEGER idex, jdex
-#endif
-   END SUBROUTINE wrf_dm_minloc_real
-   SUBROUTINE wrf_dm_maxloc_real ( val, lat, lon, z, idex, jdex )
-#ifndef STUBMPI
-      IMPLICIT NONE
-      REAL val, lat, lon, z
-      INTEGER idex, jdex, ierr, mrank, comm
-      REAL inreduce(2), outreduce(2), bcast(5)
-
-      inreduce=(/ val, real(mytask) /)
-      CALL wrf_get_dm_communicator(comm)
-      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,MPI_MAXLOC,&
-           comm,ierr)
-      val=outreduce(1)
-      mrank=outreduce(2)
-      bcast=(/ lat,lon,z,real(idex),real(jdex) /)
-      call MPI_Bcast(bcast,5,MPI_REAL,mrank,comm,ierr)
-      lat=bcast(1)
-      lon=bcast(2)
-      z=bcast(3)
-      idex=bcast(4)
-      jdex=bcast(5)
-#else
-      IMPLICIT NONE
-      REAL val,lat,lon,z
-      INTEGER idex, jdex
-#endif
-   END SUBROUTINE wrf_dm_maxloc_real
-#endif
 
    INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
       IMPLICIT NONE
@@ -1617,26 +1561,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
     END SUBROUTINE wrf_dm_minval_integer
 
    SUBROUTINE hwrf_coupler_init
-#if ( HWRF == 1 )
-# ifndef STUBMPI
-      IMPLICIT NONE
-      LOGICAL mpi_inited
-      INTEGER mpi_comm_here,ierr
-      CALL MPI_INITIALIZED( mpi_inited, ierr )
-      IF ( .NOT. mpi_inited ) THEN
-        IF ( coupler_on ) THEN
-           CALL cpl_init( mpi_comm_here )
-        ELSE
-           CALL mpi_init ( ierr )
-           mpi_comm_here = MPI_COMM_WORLD
-        END IF
-        CALL atm_cmp_start( mpi_comm_here )
-        CALL wrf_set_dm_communicator( mpi_comm_here )
-        CALL wrf_termio_dup( mpi_comm_here )
-      END IF
-      RETURN
-# endif
-#endif
    END SUBROUTINE hwrf_coupler_init
 
    SUBROUTINE split_communicator
@@ -1734,10 +1658,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
         END IF
 #endif
 # endif
-#if ( HWRF == 1 )
-!!!!! jm 20150807 note that for HWRF, this will not be called here because of the call to hwrf_coupler_init (defined above) in init_modules
-!!!!        CALL atm_cmp_start( mpi_comm_here )   ! atmospheric side of HWRF coupler will split MPI_COMM_WORLD and return communicator as argument
-#endif
         CALL wrf_set_dm_communicator( mpi_comm_here )
         CALL wrf_termio_dup( mpi_comm_here )
 #if (WRFPLUS == 1)
@@ -1767,23 +1687,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
       CALL mpi_bcast( nio_groups , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
       CALL mpi_bcast( max_dom, 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
       CALL mpi_bcast( parent_id, max_domains , MPI_INTEGER , 0 , mpi_comm_here, ierr )
-#if ( HWRF == 1 )
-! check to make sure that if nio_tasks_per_group is non-zero for any domain it has to be non-zero for all of them
-      i = MAXVAL(nio_tasks_per_group(1:max_dom))
-      IF ( i .GT. 0 .AND. nio_groups .GT. 0 ) THEN
-        DO id = 1, max_dom
-          IF ( nio_tasks_per_group(id) .LE. 0 ) THEN
-             CALL wrf_error_fatal( &
-'If nio_tasks_per_group in namelist.input is non-zero for any domain, every active domain must have a non-zero value in nio_tasks_per_group')
-          END IF
-        END DO
-      END IF
-
-      num_io_tasks = 0
-      DO id = 1, max_dom
-        num_io_tasks = num_io_tasks + nio_tasks_per_group(id)*nio_groups
-      END DO
-#else
       CALL quilting_disabled( quilting_is_turned_off )
       IF ( quilting_is_turned_off ) THEN
         num_io_tasks = 0
@@ -1792,7 +1695,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
       ELSE
         num_io_tasks = nio_tasks_per_group(1)*nio_groups
       END IF
-#endif
       CALL nl_set_max_dom(1,max_dom)  ! quilting wants to see this too
 
       IF ( mytask_local .EQ. 0 ) THEN
@@ -1810,11 +1712,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
         nest_pes_x = 0    ! dimensions of communicator in X and y
         nest_pes_y = 0
         IF ( nproc_x .EQ. -1 .OR. nproc_y .EQ. -1 ) THEN
-#if ( HWRF == 1 )
-          CALL compute_mesh( ntasks_local, n_x, n_y )
-#else
           CALL compute_mesh( ntasks_local-num_io_tasks, n_x, n_y )
-#endif
         ELSE
           n_x = nproc_x
           n_y = nproc_y
@@ -1917,9 +1815,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 
 ! assign domains to communicators
         local_communicator = MPI_UNDEFINED
-#if ( HWRF != 1 )
         CALL wrf_set_dm_quilt_comm( mpi_comm_here )   ! used by module_io_quilt_old.F
-#endif
         DO i = 1, max_dom
           local_communicator_store(i) = comms_i_am_in(i)
           domain_active_this_task(i) = ( local_communicator_store(i) .NE. MPI_UNDEFINED )

@@ -13,7 +13,9 @@ subroutine da_read_obs_hdf5gmi (iv, infile_tb, infile_clw)
    !           2017/02/17   Modification     Wenying He
    !           2021/11/10   Modification     Dongmei Xu
    ! METHODS, 
-   !Shen, et al.，2021: Assimilation of GPM Microwave Imager Radiance data with the WRF Hybrid 3DEnVar System for the Prediction of Typhoon Chan-hom (2015), Atmospheric Research. 251, 105422.
+   !Shen, et al.，2021: Assimilation of GPM Microwave Imager Radiance data with
+   ! the WRF Hybrid 3DEnVar System for the Prediction of Typhoon Chan-hom (2015),
+   ! Atmospheric Research. 251, 105422.
    !------------------------------------------------------------------------------
 
    implicit none

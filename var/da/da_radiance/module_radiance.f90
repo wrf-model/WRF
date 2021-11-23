@@ -76,15 +76,15 @@ module module_radiance
   ! cf. RTTOV-11 Users Guide Table 2
   ! index 19 is sentinel3 in Table 2, here we keep it as tiros for 
   ! WRFDA backward compatibility
-  Character (len=8), Parameter :: rttov_platform_name(1:35) =          &
+  Character (len=8), Parameter :: rttov_platform_name(1:37) =          &
      & (/ 'noaa    ', 'dmsp    ', 'meteosat', 'goes    ', 'gms     ',  &
         & 'fy2     ', 'trmm    ', 'ers     ', 'eos     ', 'metop   ',  &
         & 'envisat ', 'msg     ', 'fy1     ', 'adeos   ', 'mtsat   ',  &
         & 'coriolis', 'jpss    ', 'gifts   ', 'tiros   ', 'meghatr ',  &
         & 'kalpana ', 'reserved', 'fy3     ', 'coms    ', 'meteor-m',  &
         & 'gosat   ', 'calipso ', 'reserved', 'gcom-w  ', 'nimbus  ',  &
-        & 'himawari', 'mtg     ', 'saral   ', 'metop-ng', 'landsat '/)
-
+        & 'himawari', 'mtg     ', 'saral   ', 'metop-ng', 'landsat ',  &
+        & 'jason   ', 'gpm     '/)
   ! cf. RTTOV-11 Users Guide Table 3
   ! List of instruments  !!!! HIRS is number 0
   CHARACTER(LEN=8), dimension(0:88):: rttov_inst_name =                &
@@ -113,15 +113,15 @@ module module_radiance
   ! For satellite names that can not be directly mapped here to names
   ! used in crtm coeff names, they will be re-set in
   ! da_crtm_sensor_descriptor.inc
-  Character (len=8), Parameter :: crtm_platform_name(1:35) =           &
+  Character (len=8), Parameter :: crtm_platform_name(1:37) =           &
      & (/ 'n       ', 'f       ', 'm       ', 'g       ', 'gms     ',  &
         & 'xxxxxxxx', 'trmm    ', 'ers     ', 'eos     ', 'metop   ',  &
         & 'envisat ', 'msg     ', 'xxxxxxxx', 'xxxxxxxx', 'mt      ',  &
         & 'coriolis', 'npp     ', 'gifts   ', 'tiros   ', 'meghat  ',  &
         & 'kalpana ', 'tiros   ', 'fy3     ', 'coms    ', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'reserved', 'gcom-w  ', 'xxxxxxxx',  &
-        & 'himawari', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx'/)
-
+        & 'himawari', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'gpm     '/)
   ! cf. rttov_inst_name above and CRTM: v2.1.3 User Guide Table B.1
   ! List of instruments  !!!! HIRS is number 0
   ! xxxxxxxx means crtm does not have corresponding coefficient file.
@@ -143,7 +143,7 @@ module module_radiance
         & 'xxxxxxxx', 'ahi     ', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'amsr2   ', 'vissr   ',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
-        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'mwhs2   ', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'gmi     ', 'xxxxxxxx', 'mwhs2   ', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx'/)

@@ -198,9 +198,6 @@ CONTAINS
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ                      &
-#if ( HWRF == 1 )
-                                       ,HWRFSWSCHEME, HWRFLWSCHEME  &
-#endif
                                        ,goddardswscheme             & !NUWRF
                                        ,goddardlwscheme             & !NUWRF
 # if (EM_CORE == 1)
@@ -220,9 +217,7 @@ CONTAINS
                                        ,ECLIPSESCHEME
 
    USE module_model_constants
-#ifndef HWRF
    USE module_wrf_error , ONLY : wrf_err_message
-#endif
    USE module_state_description, ONLY : nuwrf4icescheme
 
 ! *** add new modules of schemes here
@@ -241,9 +236,6 @@ CONTAINS
 #endif
    USE module_ra_cam        , ONLY : camrad
    USE module_ra_gfdleta    , ONLY : etara
-#if ( HWRF == 1 )
-   USE module_ra_hwrf
-#endif
    USE module_ra_hs         , ONLY : hsrad
    
    USE module_ra_goddard    , ONLY : goddardrad
@@ -908,14 +900,10 @@ CONTAINS
      INTEGER, PARAMETER:: taer_asy_opt = 3                               !  input option for aerosol asy
 
 
-#if ( HWRF == 1 )
-   CHARACTER(len=255) :: wrf_err_message
-#endif
-
 !---------- local test vars 
 !   real, dimension(ims:ime, kms:kme, jms:jme) ::  hlw, hsw
 
-   ! This allows radiation schemes (mainly HWRF) to correctly
+   ! This allows radiation schemes to correctly
    ! interface with the convection scheme when convection is only
    ! enabled in some domains:
    if(present(explicit_convection)) then
@@ -1133,16 +1121,6 @@ CONTAINS
            ENDDO
            ENDDO
          endif
-! Remove this - to match NAM operational (affects GFDL and HWRF schemes)
-!    if( F_QR ) then
-!       DO j=jts,jte
-!       DO k=kts,kte
-!       DO i=its,ite
-!          qc_temp(I,K,J) = qc_temp(I,K,J) + qr(I,K,J)
-!       ENDDO
-!       ENDDO
-!       ENDDO
-!    endif
 !
 ! temporarily modify hydrometeors (this is for GD scheme and WRF-Chem)
 !
@@ -1723,8 +1701,6 @@ CONTAINS
 
              IF ( PRESENT(p_top) ) THEN
                 p_top_dummy = p_top
-             ELSE
-                p_top_dummy = -1. ! not used by NMM
              END IF
 
              CALL RRTMLWRAD(                                        &
@@ -1846,32 +1822,6 @@ CONTAINS
                CALL wrf_error_fatal('Can not call ETARA (1b). Missing moisture fields.')
              ENDIF
 
-#if ( HWRF == 1 )
-       CASE (HWRFLWSCHEME)
-
-             CALL wrf_debug (100, 'CALL hwrflw')
-
-             gfdl_lw  = .true.
-
-               CALL HWRFRA(explicit_convection=expl_conv, &
-                    DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
-                        XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
-                        QV=qv,QW=qc_temp,QI=Qi,                      &
-                        TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
-                        TOTSWDN=swdown,TOTLWDN=glw,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean,        & !Added
-                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,htopr=htopr,hbotr=hbotr,ALBEDO=albedo,CUPPT=cuppt,&
-                        VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt,                           & !Modified
-                        NSTEPRA=stepra,NPHS=nphs,itimestep=itimestep,                       & !Modified
-                        julyr=julyr,julday=julday,gfdl_lw=gfdl_lw,gfdl_sw=gfdl_sw,                &
-                        CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach,                        & !Added
-                        ACFRST=acfrst,NCFRST=ncfrst,ACFRCV=acfrcv,NCFRCV=ncfrcv,                 & !Added
-                        ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,                   &
-                        ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                   &
-                        its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte                    )
-
-
-#endif
-
         CASE (CAMLWSCHEME)
 
              CALL wrf_debug(100, 'CALL camrad lw')
@@ -1940,10 +1890,8 @@ CONTAINS
              !subroutine RRTMLWRAD.
              IF ( PRESENT(p_top) ) THEN
                 p_top_dummy = p_top
-             ELSE
-                p_top_dummy = -1. ! not used by NMM
              END IF
-             IF ( p_top_dummy .GT. 0 ) THEN ! flag value for NMM = -1
+             IF ( p_top_dummy .GT. 0 ) THEN !
                 !NLAYERS is recalculated
                 !every time the radiation scheme is called. This is
                 !necessary if e_vert parent .NE. e_vert nest since
@@ -2164,7 +2112,7 @@ CONTAINS
         DO k=kts,kte
         DO i=its,ite
            RTHRATENLW(I,K,J)=RTHRATEN(I,K,J)
-! OLR ALSO WILL CONTAIN OUTGOING LONGWAVE FOR RRTM (NMM HAS NO OLR ARRAY)
+! OLR ALSO WILL CONTAIN OUTGOING LONGWAVE FOR RRTM 
            IF(PRESENT(OLR) .AND. K .EQ. 1)OLR(I,J)=RLWTOA(I,J)
         ENDDO
         ENDDO
@@ -2640,30 +2588,6 @@ CONTAINS
                CALL wrf_error_fatal('Can not call ETARA (2b). Missing moisture fields.')
              ENDIF
 
-#if ( HWRF == 1 )
-
-      CASE (HWRFSWSCHEME)
-
-             CALL wrf_debug (100, 'CALL hwrfsw')
-
-             gfdl_sw = .true.
-               CALL HWRFRA(explicit_convection=expl_conv, &
-                        DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
-                        XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
-                        QV=qv,QW=qc_temp,QI=Qi,                      &
-                        TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
-                        TOTSWDN=swdown,TOTLWDN=glw,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean,        & !Added
-                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,htopr=htopr,hbotr=hbotr,ALBEDO=albedo,CUPPT=cuppt,            &
-                        VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt,                           & !Modified
-                        NSTEPRA=stepra,NPHS=nphs,itimestep=itimestep,                       & !Modified
-                        julyr=julyr,julday=julday,gfdl_lw=gfdl_lw,gfdl_sw=gfdl_sw,                &
-                        CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach,                        & !Added
-                        ACFRST=acfrst,NCFRST=ncfrst,ACFRCV=acfrcv,NCFRCV=ncfrcv,                 & !Added
-                        ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,                   &
-                        ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                   &
-                        its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte                    )
-#endif
-
         CASE (0)
 
            ! Here in case we don't want to call a sw radiation scheme
@@ -2935,12 +2859,8 @@ CONTAINS
 #endif
           )
    IF(PRESENT(LWUPTC))THEN
-!  NMM calls the driver every RADT time steps, EM calls every DT
-#if (EM_CORE == 1)
+!  EM calls every DT
    DTaccum = DT
-#else
-   DTaccum = RADT*60
-#endif
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
 
@@ -2980,12 +2900,8 @@ CONTAINS
 #endif
           )
    IF(PRESENT(SWUPTC))THEN
-!  NMM calls the driver every RADT time steps, EM calls every DT
-#if (EM_CORE == 1)
+!  EM calls the driver every DT
    DTaccum = DT
-#else
-   DTaccum = RADT*60
-#endif
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
 
@@ -3531,11 +3447,7 @@ CONTAINS
           its,ite, jts,jte, kts,kte                                  )
      USE module_state_description, ONLY : KFCUPSCHEME, KFETASCHEME       !wig, CuP 4-Fb-2008 !BSINGH - For WRFCuP scheme
 
-#if (HWRF == 1)
-   USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT, ETAMP_HWRF 
-#else
    USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT
-#endif
 !---------------------------------------------------------------------
    IMPLICIT NONE
 !---------------------------------------------------------------------
@@ -3690,16 +3602,9 @@ CONTAINS
               weight = F_ICE_PHY(i,k,j)
            ENDIF
          ENDIF
-!BSF - For HWRF MP option; (qc = liquid, qi = cloud ice+snow)
 !         IF ( F_QC .and. F_QI .and. .not. F_QS ) THEN
-#if (HWRF == 1)
-         IF ( mp_physics .eq. FER_MP_HIRES .or. &
-	      mp_physics .eq. FER_MP_HIRES_ADVECT .or. &
-	      mp_physics .eq. ETAMP_HWRF) THEN
-#else
          IF ( mp_physics .eq. FER_MP_HIRES .or. &
               mp_physics==fer_mp_hires_advect) THEN
-#endif
            QIMID = QI(i,k,j)     !- total ice (cloud ice + snow)
            QWMID = QC(i,k,j)     !- cloud water
            QCLD=QWMID+QIMID      !- cloud water + total ice

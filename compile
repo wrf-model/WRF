@@ -95,7 +95,7 @@ else
   unsetenv A1DCASE
   setenv A1DCASE `echo $arglist | grep scm`
 
-  if ( ! (   $?WRF_EM_CORE  ||  $?WRF_PLUS_CORE )) then 
+  if ( ! ( $?WRF_EM_CORE || $?WRF_PLUS_CORE ) ) then 
     echo 'Neither WRF_EM_CORE or WRF_PLUS_CORE'
     echo '        specified in shell environment.... '
     setenv WRF_EM_CORE 1

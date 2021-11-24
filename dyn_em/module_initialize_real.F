@@ -1,4 +1,4 @@
-!REAL:MODEL_LAYER:INITIALIZATION
+!REAL:MODEL_LAYER:INITIALIZATION 1
 
 #ifndef VERT_UNIT
 !  This MODULE holds the routines which are used to perform various initializations

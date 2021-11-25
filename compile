@@ -97,7 +97,7 @@ else
 
   if ( ! ( $?WRF_EM_CORE || $?WRF_PLUS_CORE ) ) then 
     echo 'Neither WRF_EM_CORE nor WRF_PLUS_CORE'
-    echo '        specified in shell environment.... '
+    echo '        are explicitly specified in shell environment.... '
     setenv WRF_EM_CORE 1
     setenv WRF_COAMPS_CORE 0
     setenv WRF_EXP_CORE 0

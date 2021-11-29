@@ -673,7 +673,7 @@ integer::oops1,oops2
               ( grid%id .EQ. 1 ) .AND. &
               ( flag_soilhgt .NE. 1) ) THEN
             CALL wrf_message    (' --- ERROR: NML option smooth_cg_topo=T')
-            CALL wrf_message    ('            But found no soil elevation / terrain / topography data in metgrid files)
+            CALL wrf_message    ('            But found no soil elevation / terrain / topography data in metgrid files')
             CALL wrf_message    ('            The field SOILHGT is required when smoothing the CG topography on d01')
             CALL wrf_error_fatal('            If using ERA5 data, possibly need to add more time invariant fields')
          END IF

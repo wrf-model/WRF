@@ -606,6 +606,9 @@ Namelist variables for controlling the adaptive time step option:
                                               use the same value for all nests.                      
  cldovrlp                            = 2,   ! cloud overlapping option for RRTMG only. 1=random, 2=maximum-random (default), 
                                               3=maximum, 4=exponential, 5=exponential-random
+ idcor                               = 0,   ! decorrelation length flag for cldovrlp=4 or 5
+                                              0 = constant decorrelation length, 2500 m;
+                                              1 = latitude-varying decorrelation length
  ra_sw_eclipse                       = 0,   ! eclipse effect on shortwave radiation. 0: off, 1: on. 
                                               Applies to RRTMG, Goddard, old Goddard and Dudhia schemes
 

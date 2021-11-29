@@ -341,8 +341,6 @@ module_cu_ntiedtke.o: ../share/module_model_constants.o
 module_ra_gfdleta.o:  ../frame/module_dm.o \
 		module_mp_etanew.o
 
-module_ra_HWRF.o:   ../frame/module_dm.o module_mp_HWRF.o
-
 module_ra_rrtm.o: ../frame/module_wrf_error.o \
 		module_ra_clWRF_support.o \
 		../frame/module_dm.o
@@ -523,7 +521,6 @@ module_physics_init.o : \
 		module_ra_sw.o			\
 		module_ra_gsfcsw.o		\
 		module_ra_gfdleta.o		\
-		module_ra_HWRF.o		\
 		module_ra_hs.o			\
                 module_ra_flg.o                 \
 		module_sf_sfclay.o		\
@@ -582,7 +579,6 @@ module_physics_init.o : \
 		module_mp_wsm6.o		\
 		module_mp_etanew.o		\
 		module_mp_fer_hires.o 		\
-		module_mp_HWRF.o		\
 		module_mp_fast_sbm.o		\
 		module_fdda_psufddagd.o		\
 		module_fdda_spnudging.o         \
@@ -618,7 +614,7 @@ module_microphysics_driver.o: \
 		$(PHYS_MP) \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
-		module_mp_fer_hires.o module_mp_HWRF.o  \
+		module_mp_fer_hires.o \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
 		module_mp_gsfcgce_4ice_nuwrf.o  \
@@ -716,7 +712,6 @@ module_radiation_driver.o: \
 		module_ra_cam.o \
 		module_ra_farms.o \
 		module_ra_gfdleta.o \
-		module_ra_HWRF.o \
 		module_ra_hs.o \
 		module_ra_goddard.o \
                 module_ra_flg.o \
@@ -1213,17 +1208,6 @@ module_random.o: bobrand.o
 
 # DEPENDENCIES for main
 
-convert_nmm.o: \
-	../frame/module_machine.o \
-	../frame/module_domain.o \
-	../frame/module_driver_constants.o \
-	../frame/module_configure.o \
-	../frame/module_timing.o \
-	../frame/module_dm.o \
-	../share/module_bc.o \
-	../share/module_io_domain.o \
-	$(ESMF_MOD_DEPENDENCE)
-
 convert_em.o: \
 	../frame/module_machine.o \
 	../frame/module_domain.o \
@@ -1245,12 +1229,6 @@ ideal_em.o: \
 	../share/module_io_domain.o \
 	../dyn_$(SOLVER)/$(CASE_MODULE) \
 	$(ESMF_MOD_DEPENDENCE)
-
-ideal_nmm.o: \
-	../dyn_$(SOLVER)/$(CASE_MODULE) \
-	../share/module_optional_input.o \
-	../share/module_io_domain.o \
-	../share/input_wrf.o 
 
 ndown_em.o: \
 	../frame/module_machine.o \

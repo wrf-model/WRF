@@ -22,9 +22,6 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #    include "../wrftladj/start_domain_em_tl.int"
 #    include "../wrftladj/start_domain_em_ad.int"
 #endif
-#if (NMM_CORE == 1)
-#    include "start_domain_nmm.int"
-#endif
 #if (DA_CORE != 1)
       SUBROUTINE calc_ts_locations( grid )
          USE module_domain
@@ -68,13 +65,6 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
    ENDIF
 #endif
 
-#endif
-#if (NMM_CORE == 1) 
-   CALL start_domain_nmm( grid, allowed_to_read   &
-!
-# include "actual_new_args.inc"
-!
-                         )
 #endif
 
 #if (DA_CORE != 1)

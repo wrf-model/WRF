@@ -1,10 +1,3 @@
-#if NMM_CORE==1
-#define copy_fcnm UpNear
-#define copy_fcn UpCopy
-#define interp_fcn DownCopy
-#define copy_fcni UpINear
-#endif
-
 #define NEST_FULL_INFLUENCE(A,B) A=B
 MODULE module_dm
 
@@ -23,11 +16,7 @@ MODULE module_dm
    INTEGER, PARAMETER :: MPI_UNDEFINED = -1
 #endif
 
-#if ( NMM_CORE == 1 ) || ( WRF_CHEM == 1 )
-   INTEGER, PARAMETER :: max_halo_width = 6
-#else
    INTEGER, PARAMETER :: max_halo_width = 6 ! 5
-#endif
 
    INTEGER :: ips_save, ipe_save, jps_save, jpe_save, itrace
    INTEGER :: lats_to_mic, minx, miny
@@ -150,9 +139,7 @@ CONTAINS
      INTEGER lats_to_mic
      CALL nl_get_nproc_x ( 1, ntasks_x )
      CALL nl_get_nproc_y ( 1, ntasks_y )
-#ifndef NMM_CORE
      CALL nl_get_lats_to_mic ( 1, lats_to_mic )
-#endif
 ! check if user has specified in the namelist
      IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
        ! if only ntasks_x is specified then make it 1-d decomp in i
@@ -167,7 +154,6 @@ CONTAINS
          WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL_LITE): nproc_x * nproc_y in namelist ne ',ntasks
          CALL wrf_error_fatal ( wrf_err_message )
        END IF
-#ifndef NMM_CORE
      ELSE IF ( lats_to_mic .GT. 0 ) THEN
        ntasks_x = ntasks / 2
        ntasks_y = 2
@@ -177,7 +163,6 @@ CONTAINS
            ') in namelist ne ',ntasks
          CALL wrf_error_fatal ( wrf_err_message )
        END IF
-#endif
      ELSE
        ! When neither is specified, work out mesh with MPASPECT
        ! Pass nproc_ln and nproc_nt so that number of procs in
@@ -317,9 +302,7 @@ CONTAINS
       INTEGER lats_to_mic
 
      lats_to_mic=0
-#ifndef NMM_CORE
      CALL nl_get_lats_to_mic( 1, lats_to_mic )
-#endif
       IF ( lats_to_mic .GT. 0 ) THEN
         minx = -99  ! code to task_for_point to do split decomposition over MIC and host
         miny = lats_to_mic  ! number of latitudes that should be assigned to MIC
@@ -962,8 +945,6 @@ CONTAINS
 
     INTEGER Px, Py, P, i, j, k, ierr
 
-#if ( ! NMM_CORE == 1 )
-
 ! xy decomposition
 
     ips = -1
@@ -1145,46 +1126,6 @@ CONTAINS
     END IF
 
 
-#else
-
-! In case of NMM CORE, the domain only ever runs from ids..ide-1 and jds..jde-1 so
-! adjust decomposition to reflect.  20051020 JM
-    ips = -1
-    j = jds
-    ierr = 0
-    DO i = ids, ide-1
-!jm       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, nest_pes_x(id), nest_pes_y(id), Px, Py, &
-                             minx, miny, ierr )
-       IF ( Px .EQ. mytask_x ) THEN
-          ipe = i
-!          IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
-          IF ( Px .EQ. nest_pes_x(id)-1 ) ipe = ipe + 1
-          IF ( ips .EQ. -1 ) ips = i
-       END IF
-    END DO
-    IF ( ierr .NE. 0 ) THEN
-       CALL tfp_message("<stdin>",__LINE__)
-    END IF
-    jps = -1
-    i = ids ;
-    ierr = 0
-    DO j = jds, jde-1
-!jm       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, nest_pes_x(id), nest_pes_y(id), Px, Py, &
-                             minx, miny, ierr )
-       IF ( Py .EQ. mytask_y ) THEN
-          jpe = j
-!          IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
-          IF ( Py .EQ. nest_pes_y(id)-1 ) jpe = jpe + 1
-          IF ( jps .EQ. -1 ) jps = j
-       END IF
-    END DO
-    IF ( ierr .NE. 0 ) THEN
-       CALL tfp_message("<stdin>",__LINE__)
-    END IF
-#endif
-
 ! extend the patch dimensions out shw along edges of domain
     IF ( ips < ipe .and. jps < jpe ) THEN           !wig; 11-Mar-2008
        IF ( mytask_x .EQ. 0 ) THEN
@@ -1354,8 +1295,6 @@ CONTAINS
    END SUBROUTINE wrf_dm_min_reals
 
    FUNCTION wrf_dm_sum_real8 ( inval )
-     ! Forced eight byte real sum needed for calculating an accurate
-     ! mean motion in HWRF moduel_tracker.
       IMPLICIT NONE
 #ifndef STUBMPI
       REAL*8 inval, retval, wrf_dm_sum_real8
@@ -1423,60 +1362,6 @@ CONTAINS
 #endif
    END SUBROUTINE wrf_dm_sum_integers
 
-#if ( HWRF == 1 )
-   SUBROUTINE wrf_dm_minloc_real ( val, lat, lon, z, idex, jdex )
-#ifndef STUBMPI
-      IMPLICIT NONE
-      REAL val, lat, lon, z
-      INTEGER idex, jdex, ierr, mrank, comm
-      REAL inreduce(2), outreduce(2), bcast(5)
-
-      inreduce=(/ val, real(mytask) /)
-      CALL wrf_get_dm_communicator(comm)
-      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,MPI_MINLOC,&
-           comm,ierr)
-      val=outreduce(1)
-      mrank=outreduce(2)
-      bcast=(/ lat,lon,z,real(idex),real(jdex) /)
-      call MPI_Bcast(bcast,5,MPI_REAL,mrank,comm,ierr)
-      lat=bcast(1)
-      lon=bcast(2)
-      z=bcast(3)
-      idex=bcast(4)
-      jdex=bcast(5)
-#else
-      IMPLICIT NONE
-      REAL val,lat,lon,z
-      INTEGER idex, jdex
-#endif
-   END SUBROUTINE wrf_dm_minloc_real
-   SUBROUTINE wrf_dm_maxloc_real ( val, lat, lon, z, idex, jdex )
-#ifndef STUBMPI
-      IMPLICIT NONE
-      REAL val, lat, lon, z
-      INTEGER idex, jdex, ierr, mrank, comm
-      REAL inreduce(2), outreduce(2), bcast(5)
-
-      inreduce=(/ val, real(mytask) /)
-      CALL wrf_get_dm_communicator(comm)
-      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,MPI_MAXLOC,&
-           comm,ierr)
-      val=outreduce(1)
-      mrank=outreduce(2)
-      bcast=(/ lat,lon,z,real(idex),real(jdex) /)
-      call MPI_Bcast(bcast,5,MPI_REAL,mrank,comm,ierr)
-      lat=bcast(1)
-      lon=bcast(2)
-      z=bcast(3)
-      idex=bcast(4)
-      jdex=bcast(5)
-#else
-      IMPLICIT NONE
-      REAL val,lat,lon,z
-      INTEGER idex, jdex
-#endif
-   END SUBROUTINE wrf_dm_maxloc_real
-#endif
 
    INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
       IMPLICIT NONE
@@ -1676,26 +1561,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
     END SUBROUTINE wrf_dm_minval_integer
 
    SUBROUTINE hwrf_coupler_init
-#if ( HWRF == 1 )
-# ifndef STUBMPI
-      IMPLICIT NONE
-      LOGICAL mpi_inited
-      INTEGER mpi_comm_here,ierr
-      CALL MPI_INITIALIZED( mpi_inited, ierr )
-      IF ( .NOT. mpi_inited ) THEN
-        IF ( coupler_on ) THEN
-           CALL cpl_init( mpi_comm_here )
-        ELSE
-           CALL mpi_init ( ierr )
-           mpi_comm_here = MPI_COMM_WORLD
-        END IF
-        CALL atm_cmp_start( mpi_comm_here )
-        CALL wrf_set_dm_communicator( mpi_comm_here )
-        CALL wrf_termio_dup( mpi_comm_here )
-      END IF
-      RETURN
-# endif
-#endif
    END SUBROUTINE hwrf_coupler_init
 
    SUBROUTINE split_communicator
@@ -1793,10 +1658,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
         END IF
 #endif
 # endif
-#if ( HWRF == 1 )
-!!!!! jm 20150807 note that for HWRF, this will not be called here because of the call to hwrf_coupler_init (defined above) in init_modules
-!!!!        CALL atm_cmp_start( mpi_comm_here )   ! atmospheric side of HWRF coupler will split MPI_COMM_WORLD and return communicator as argument
-#endif
         CALL wrf_set_dm_communicator( mpi_comm_here )
         CALL wrf_termio_dup( mpi_comm_here )
 #if (WRFPLUS == 1)
@@ -1826,23 +1687,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
       CALL mpi_bcast( nio_groups , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
       CALL mpi_bcast( max_dom, 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
       CALL mpi_bcast( parent_id, max_domains , MPI_INTEGER , 0 , mpi_comm_here, ierr )
-#if ( HWRF == 1 )
-! check to make sure that if nio_tasks_per_group is non-zero for any domain it has to be non-zero for all of them
-      i = MAXVAL(nio_tasks_per_group(1:max_dom))
-      IF ( i .GT. 0 .AND. nio_groups .GT. 0 ) THEN
-        DO id = 1, max_dom
-          IF ( nio_tasks_per_group(id) .LE. 0 ) THEN
-             CALL wrf_error_fatal( &
-'If nio_tasks_per_group in namelist.input is non-zero for any domain, every active domain must have a non-zero value in nio_tasks_per_group')
-          END IF
-        END DO
-      END IF
-
-      num_io_tasks = 0
-      DO id = 1, max_dom
-        num_io_tasks = num_io_tasks + nio_tasks_per_group(id)*nio_groups
-      END DO
-#else
       CALL quilting_disabled( quilting_is_turned_off )
       IF ( quilting_is_turned_off ) THEN
         num_io_tasks = 0
@@ -1851,7 +1695,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
       ELSE
         num_io_tasks = nio_tasks_per_group(1)*nio_groups
       END IF
-#endif
       CALL nl_set_max_dom(1,max_dom)  ! quilting wants to see this too
 
       IF ( mytask_local .EQ. 0 ) THEN
@@ -1869,11 +1712,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
         nest_pes_x = 0    ! dimensions of communicator in X and y
         nest_pes_y = 0
         IF ( nproc_x .EQ. -1 .OR. nproc_y .EQ. -1 ) THEN
-#if ( HWRF == 1 )
-          CALL compute_mesh( ntasks_local, n_x, n_y )
-#else
           CALL compute_mesh( ntasks_local-num_io_tasks, n_x, n_y )
-#endif
         ELSE
           n_x = nproc_x
           n_y = nproc_y
@@ -1976,9 +1815,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 
 ! assign domains to communicators
         local_communicator = MPI_UNDEFINED
-#if ( HWRF != 1 )
         CALL wrf_set_dm_quilt_comm( mpi_comm_here )   ! used by module_io_quilt_old.F
-#endif
         DO i = 1, max_dom
           local_communicator_store(i) = comms_i_am_in(i)
           domain_active_this_task(i) = ( local_communicator_store(i) .NE. MPI_UNDEFINED )
@@ -2941,13 +2778,7 @@ END
       COMMON /rcii/ iter, plus_send_start, plus_recv_start, &
                           minus_send_start, minus_recv_start
 
-#if (NMM_CORE == 1 )
-! In case of NMM CORE, the domain only ever runs from ids..ide-1 and jds..jde-1 so
-! adjust decomposition to reflect.  20081206 JM
-      de = de_in - 1
-#else
       de = de_in
-#endif
       ntx = nest_pes_x(id)
       nty = nest_pes_y(id)
       IF ( xy .EQ. 1 ) THEN  ! X/I axis
@@ -5398,972 +5229,6 @@ END IF
    END SUBROUTINE feedback_domain_em_part2
 #endif
 
-#if ( NMM_CORE == 1 && NMM_NEST == 1 )
-!==============================================================================
-! NMM nesting infrastructure extended from EM core. This is gopal's doing.
-!==============================================================================
-
-   SUBROUTINE before_interp_halos_nmm(grid,config_flags &
-!
-#include "dummy_new_args.inc"
-!
-      )
-     ! This is called before interp_domain_nmm_part1 to do
-     ! pre-interpolation halo communication on the nest.
-     ! Author: Sam Trahan, February 2011
-      USE module_state_description
-      USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width,  &
-                            nest_pes_x, nest_pes_y !,                                         &
-                             !push_communicators_for_domain, pop_communicators_for_domain
-      USE module_comm_dm, ONLY : HALO_NMM_WEIGHTS_sub
-
-      IMPLICIT NONE
-!
-      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE (grid_config_rec_type)            :: config_flags
-#include "dummy_new_decl.inc"
-     INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE, &
-                IMS,IME,JMS,JME,KMS,KME, &
-                IPS,IPE,JPS,JPE,KPS,KPE
-
-!#ifdef DEREF_KLUDGE
-!!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-!   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-!   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-!   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-!#endif
-#include "deref_kludge.h"
-
-!#define COPY_IN
-
-     ! FIXME: Don't initialize these to -1; it is a waste.
-     ! Initialization is only for debugging purposes.
-      IDS=-1; IDE=-1; JDS=-1; JDE=-1; KDS=-1; KDE=-1
-      IMS=-1; IME=-1; JMS=-1; JME=-1; KMS=-1; KME=-1
-      IPS=-1; IPE=-1; JPS=-1; JPE=-1; KPS=-1; KPE=-1
-      CALL GET_IJK_FROM_GRID(GRID                                       &
-     &                      ,IDS,IDE,JDS,JDE,KDS,KDE                    &
-     &                      ,IMS,IME,JMS,JME,KMS,KME                    &
-     &                      ,IPS,IPE,JPS,JPE,KPS,KPE )
-
-     CALL push_communicators_for_domain(grid%id)
-#include "HALO_NMM_WEIGHTS.inc"
-     CALL pop_communicators_for_domain
-
-   END SUBROUTINE before_interp_halos_nmm
-
-   SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-                 )
-      USE module_state_description
-      USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width,  &
-                            nest_pes_x, nest_pes_y
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, local_communicator, mytask, &
-                            nest_pes_x, nest_pes_y,                                 &
-                            intercomm_active, nest_task_offsets,                    &
-                            mpi_comm_to_mom, mpi_comm_to_kid, which_kid !,            &
-                             !push_communicators_for_domain,pop_communicators_for_domain
-
-      USE module_timing
-      IMPLICIT NONE
-!
-      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE(domain), POINTER :: intermediate_grid
-      TYPE(domain), POINTER :: ngrid
-#include "dummy_new_decl.inc"
-      INTEGER nlev, msize
-      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
-      INTEGER iparstrt,jparstrt,sw
-      TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
-      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe
-      INTEGER       ::          iids, iide, ijds, ijde, ikds, ikde,    &
-                                iims, iime, ijms, ijme, ikms, ikme,    &
-                                iips, iipe, ijps, ijpe, ikps, ikpe
-      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe
-
-      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-      LOGICAL feedback_flag, feedback_flag_v
-      INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr
-      INTEGER local_comm, ioffset, myproc, nproc, ierr
-      INTEGER thisdomain_max_halo_width
-
-      LOGICAL interp_mp
-      interp_mp=grid%interp_mp .or. ngrid%interp_mp
-
-      CALL wrf_get_dm_communicator ( local_comm )
-      CALL wrf_get_myproc( myproc )
-      CALL wrf_get_nproc( nproc )
-
-      CALL get_ijk_from_grid (  grid ,                   &
-                                cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe    )
-      CALL get_ijk_from_grid (  intermediate_grid ,              &
-                                iids, iide, ijds, ijde, ikds, ikde,    &
-                                iims, iime, ijms, ijme, ikms, ikme,    &
-                                iips, iipe, ijps, ijpe, ikps, ikpe    )
-      CALL get_ijk_from_grid (  ngrid ,              &
-                                nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe    )
-
-      CALL nl_get_parent_grid_ratio ( ngrid%id, pgr )
-      CALL nl_get_i_parent_start ( intermediate_grid%id, iparstrt )
-      CALL nl_get_j_parent_start ( intermediate_grid%id, jparstrt )
-      CALL nl_get_shw            ( intermediate_grid%id, sw )
-      icoord =    iparstrt - sw
-      jcoord =    jparstrt - sw
-      idim_cd = iide - iids + 1
-      jdim_cd = ijde - ijds + 1
-
-      nlev  = ckde - ckds + 1
-
-      ! get max_halo_width for parent. It may be smaller if it is moad
-      CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
-
-      IF ( grid%active_this_task ) THEN
-#include "nest_interpdown_pack.inc"
-      END IF
-
-      ! determine which communicator and offset to use
-      IF ( intercomm_active( grid%id ) ) THEN        ! I am parent
-        local_comm = mpi_comm_to_kid( which_kid(ngrid%id), grid%id )
-        ioffset = nest_task_offsets(ngrid%id)
-      ELSE IF ( intercomm_active( ngrid%id ) ) THEN  ! I am nest
-        local_comm = mpi_comm_to_mom( ngrid%id )
-        ioffset = nest_task_offsets(ngrid%id)
-      END IF
-
-      IF ( grid%active_this_task .OR. ngrid%active_this_task ) THEN
-#ifndef STUBMPI
-        CALL mpi_comm_rank(local_comm,myproc,ierr)
-        CALL mpi_comm_size(local_comm,nproc,ierr)
-#endif
-!CALL tracebackqq()
-        CALL rsl_lite_bcast_msgs( myproc, nest_pes_x(grid%id)*nest_pes_y(grid%id),         &
-                                        nest_pes_x(ngrid%id)*nest_pes_y(ngrid%id),       &
-                                        ioffset, local_comm )
-      END IF
-
-      RETURN
-   END SUBROUTINE interp_domain_nmm_part1
-
-!------------------------------------------------------------------
-
-   SUBROUTINE interp_domain_nmm_part2 ( grid, ngrid, config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-                 )
-      USE module_state_description
-      USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width ,  &
-                            nest_task_offsets
-                             !push_communicators_for_domain,pop_communicators_for_domain,     &
-      USE module_comm_nesting_dm, ONLY : halo_interp_down_sub
-      IMPLICIT NONE
-!
-      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE(domain), POINTER :: ngrid
-#include "dummy_new_decl.inc"
-      INTEGER nlev, msize
-      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
-      TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
-      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe
-      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe
-      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe
-
-      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-      LOGICAL feedback_flag, feedback_flag_v
-      INTEGER myproc
-      INTEGER ierr
-
-      integer, parameter :: EConst=0, ECopy=1, EExtrap=2 ! MUST match module_interp_nmm
-      LOGICAL interp_mp
-#include "deref_kludge.h"
-
-! interp_mp is set unconditionally in alloc_and_configure_domain (module_domain.F),
-! regardless of active_this_task
-      interp_mp=grid%interp_mp .or. ngrid%interp_mp
-
-      IF ( ngrid%active_this_task ) THEN
-
-        CALL get_ijk_from_grid (  grid ,                   &
-                                  cids, cide, cjds, cjde, ckds, ckde,    &
-                                  cims, cime, cjms, cjme, ckms, ckme,    &
-                                  cips, cipe, cjps, cjpe, ckps, ckpe    )
-        CALL get_ijk_from_grid (  ngrid ,              &
-                                  nids, nide, njds, njde, nkds, nkde,    &
-                                  nims, nime, njms, njme, nkms, nkme,    &
-                                  nips, nipe, njps, njpe, nkps, nkpe    )
-
-
-        nlev  = ckde - ckds + 1
-
-#include "nest_interpdown_unpack.inc"
-
-        CALL get_ijk_from_grid (  grid ,              &
-                                  ids, ide, jds, jde, kds, kde,    &
-                                  ims, ime, jms, jme, kms, kme,    &
-                                  ips, ipe, jps, jpe, kps, kpe    )
-
-        CALL push_communicators_for_domain( grid%id )
-#include "HALO_INTERP_DOWN.inc"
-
-      ! Generate interpolation information and interpolate Q, T and
-      ! possibly PD while we're at it:
-
-! Grid is set to ngrid%intermediate_grid in the call from med_interp_domain
-! (share/mediation_interp_domain.F) so if one is active_this_task, so is the other
-        call store_interp_info(ngrid,grid)
-        call ext_c2n_fulldom(ngrid%IIH,ngrid%JJH,ngrid%HBWGT1, &
-             ngrid%HBWGT2,ngrid%HBWGT3,ngrid%HBWGT4,         &
-             ngrid%deta1,ngrid%deta2,ngrid%eta1,             &
-             ngrid%eta2,ngrid%pt,ngrid%pdtop,                &
-             grid%pint,grid%t,grid%pd,grid%q,       &
-             cims, cime, cjms, cjme, ckms, ckme,             &
-             ngrid%pint,ngrid%t,ngrid%pd,ngrid%q,&
-             ngrid%iinfo,ngrid%winfo,ngrid%imask_nostag, &
-             nids, nide, njds, njde, nkds, nkde,             &
-             nims, nime, njms, njme, nkms, nkme,             &
-             nips, nipe, njps, njpe, nkps, nkpe)
-
-#include "nest_interpdown_interp.inc"
-
-
-        CALL pop_communicators_for_domain
-
-      END IF
-
-      RETURN
-   END SUBROUTINE interp_domain_nmm_part2
-
-!------------------------------------------------------------------
-
-   SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-                 )
-      USE module_state_description
-      USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width,  &
-                            nest_pes_x, nest_pes_y,                                 &
-                            intercomm_active, nest_task_offsets,                    &
-                            mpi_comm_to_mom, mpi_comm_to_kid, which_kid !,            &
-                            !push_communicators_for_domain,pop_communicators_for_domain
-
-      USE module_timing
-      IMPLICIT NONE
-!
-      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE(domain), POINTER :: intermediate_grid
-      TYPE(domain), POINTER :: ngrid
-#include "dummy_new_decl.inc"
-      INTEGER nlev, msize
-      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
-      INTEGER iparstrt,jparstrt,sw
-      TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
-      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe
-      INTEGER       ::          iids, iide, ijds, ijde, ikds, ikde,    &
-                                iims, iime, ijms, ijme, ikms, ikme,    &
-                                iips, iipe, ijps, ijpe, ikps, ikpe
-      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe
-
-      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-      LOGICAL feedback_flag, feedback_flag_v
-      INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr
-      INTEGER local_comm, ioffset, myproc, nproc, ierr
-      INTEGER thisdomain_max_halo_width
-      LOGICAL interp_mp
-
-      interp_mp=grid%interp_mp .or. ngrid%interp_mp
-
-      CALL wrf_get_dm_communicator ( local_comm )
-      CALL wrf_get_myproc( myproc )
-      CALL wrf_get_nproc( nproc )
-
-      CALL get_ijk_from_grid (  grid ,                   &
-                                cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe    )
-      CALL get_ijk_from_grid (  intermediate_grid ,              &
-                                iids, iide, ijds, ijde, ikds, ikde,    &
-                                iims, iime, ijms, ijme, ikms, ikme,    &
-                                iips, iipe, ijps, ijpe, ikps, ikpe    )
-      CALL get_ijk_from_grid (  ngrid ,              &
-                                nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe    )
-
-      CALL nl_get_parent_grid_ratio ( ngrid%id, pgr )
-      CALL nl_get_i_parent_start ( intermediate_grid%id, iparstrt )
-      CALL nl_get_j_parent_start ( intermediate_grid%id, jparstrt )
-      CALL nl_get_shw            ( intermediate_grid%id, sw )
-      icoord =    iparstrt - sw
-      jcoord =    jparstrt - sw
-      idim_cd = iide - iids + 1
-      jdim_cd = ijde - ijds + 1
-
-      nlev  = ckde - ckds + 1
-
-      CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
-
-      IF ( grid%active_this_task ) THEN
-#include "nest_forcedown_pack.inc"
-      END IF
-
-      ! determine which communicator and offset to use
-      IF ( intercomm_active( grid%id ) ) THEN        ! I am parent
-        local_comm = mpi_comm_to_kid( which_kid(ngrid%id), grid%id )
-        ioffset = nest_task_offsets(ngrid%id)
-      ELSE IF ( intercomm_active( ngrid%id ) ) THEN  ! I am nest
-        local_comm = mpi_comm_to_mom( ngrid%id )
-        ioffset = nest_task_offsets(ngrid%id)
-      END IF
-
-      IF ( grid%active_this_task .OR. ngrid%active_this_task ) THEN
-#ifndef STUBMPI
-        CALL mpi_comm_rank(local_comm,myproc,ierr)
-        CALL mpi_comm_size(local_comm,nproc,ierr)
-#endif
-        CALL rsl_lite_bcast_msgs( myproc, nest_pes_x(grid%id)*nest_pes_y(grid%id),         &
-                                        nest_pes_x(ngrid%id)*nest_pes_y(ngrid%id),       &
-                                        ioffset, local_comm )
-      END IF
-
-      RETURN
-      END SUBROUTINE force_domain_nmm_part1
-
-!==============================================================================================
-
-   SUBROUTINE force_domain_nmm_part2 ( grid, ngrid, config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-                 )
-      USE module_state_description
-      USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width,  &
-                            nest_pes_x, nest_pes_y !,                                         &
-                             !push_communicators_for_domain,pop_communicators_for_domain
-
-#if (NMM_NEST == 1)
-      USE module_comm_nesting_dm, ONLY : halo_force_down_sub
-      use module_comm_dm, only: HALO_NMM_INTERP_INFO_sub
-# if ( HWRF == 1 )
-      use module_comm_dm, only: HALO_NMM_FORCE_DOWN_SST_sub
-# endif
-#endif
-      IMPLICIT NONE
-!
-      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE(domain), POINTER :: ngrid,cgrid
-#include "dummy_new_decl.inc"
-      INTEGER nlev, msize
-      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
-      TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
-      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe
-      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe
-      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe
-
-      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-      REAL  dummy_xs, dummy_xe, dummy_ys, dummy_ye
-      LOGICAL feedback_flag, feedback_flag_v
-
-      LOGICAL interp_mp
-      integer, parameter :: EConst=0, ECopy=1, EExtrap=2 ! MUST match module_interp_nmm
-
-#include "deref_kludge.h"
-      interp_mp=grid%interp_mp .or. ngrid%interp_mp
-
-IF ( ngrid%active_this_task ) THEN
-      CALL get_ijk_from_grid (  grid ,                   &
-                                cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe    )
-      CALL get_ijk_from_grid (  ngrid ,              &
-                                nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe    )
-
-!jm as far as I can tell, grid is ngrid%intermediate_domain, so they
-!jm should both have the same id, both be active_this_task (if one is)
-!jm and use the same communicator.  But just to be safe, some extra
-!jm pushes and pops of domain communicators littered here.
-
-      cgrid=>grid
-      nlev  = ckde - ckds + 1
-
-#include "nest_forcedown_unpack.inc"
-
-      CALL get_ijk_from_grid (  grid ,              &
-                                ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe    )
-
-      CALL push_communicators_for_domain( grid%id )
-
-#if ( HWRF == 1 )
-        IF(ngrid%force_sst(1) == 1) then
-# include "HALO_NMM_FORCE_DOWN_SST.inc"
-        END IF
-#endif
-
-#include "HALO_FORCE_DOWN.inc"
-      CALL pop_communicators_for_domain
-
-      call store_interp_info(ngrid,grid)
-
-
-      call ext_c2b_fulldom(ngrid%IIH,ngrid%JJH,ngrid%HBWGT1, &
-           ngrid%HBWGT2,ngrid%HBWGT3,ngrid%HBWGT4,         &
-           ngrid%deta1,ngrid%deta2,ngrid%eta1,             &
-           ngrid%eta2,ngrid%pt,ngrid%pdtop,                &
-           grid%pint,grid%t,grid%pd,grid%q,                &
-           cims, cime, cjms, cjme, ckms, ckme,             &
-           nids, nide, njds, njde, nkds, nkde,             &
-           nims, nime, njms, njme, nkms, nkme,             &
-           nips, nipe, njps, njpe, nkps, nkpe,             &
-           ngrid%iinfo_bxs, ngrid%iinfo_bxe,               &
-           ngrid%iinfo_bys, ngrid%iinfo_bye,               &
-           ngrid%winfo_bxs, ngrid%winfo_bxe,               &
-           ngrid%winfo_bys, ngrid%winfo_bye,               &
-           ngrid%pd_bxs, ngrid%pd_bxe,             &
-           ngrid%pd_bys, ngrid%pd_bye,             &
-           ngrid%t_bxs, ngrid%t_bxe,               &
-           ngrid%t_bys, ngrid%t_bye,               &
-           ngrid%q_bxs, ngrid%q_bxe,               &
-           ngrid%q_bys, ngrid%q_bye)
-
-      ! Need a halo for interpolation information due to how V grid
-      ! interpolation works:
-      grid=>ngrid
-      CALL get_ijk_from_grid (  grid ,              &
-                                ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe    )
-      CALL push_communicators_for_domain( grid%id )
-#include "HALO_NMM_INTERP_INFO.inc"
-      CALL pop_communicators_for_domain
-
-      grid=>cgrid
-      CALL get_ijk_from_grid (  grid ,              &
-                                ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe    )
-
-
-      ! code here to interpolate the data into the nested domain
-      CALL push_communicators_for_domain( grid%id )
-#include "nest_forcedown_interp.inc"
-      CALL pop_communicators_for_domain
-
-END IF
-
-      RETURN
-   END SUBROUTINE force_domain_nmm_part2
-
-!================================================================================
-!
-! This routine exists only to call a halo on a domain (the nest)
-! gets called from feedback_domain_em_part1, below.  This is needed
-! because the halo code expects the fields being exchanged to have
-! been dereferenced from the grid data structure, but in feedback_domain_em_part1
-! the grid data structure points to the coarse domain, not the nest.
-! And we want the halo exchange on the nest, so that the code in
-! em_nest_feedbackup_interp.inc will work correctly on multi-p. JM 20040308
-!
-
-   SUBROUTINE feedback_nest_prep_nmm ( grid, config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-)
-      USE module_state_description
-      USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width,  &
-                            nest_pes_x, nest_pes_y
-                            !push_communicators_for_domain, pop_communicators_for_domain,    &
-      USE module_comm_dm, ONLY : HALO_NMM_WEIGHTS_sub
-      USE module_comm_nesting_dm, ONLY : HALO_INTERP_UP_sub
-
-      IMPLICIT NONE
-!
-      TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE (grid_config_rec_type) :: config_flags ! configureation flags, has vertical dim of
-                                                  ! soil temp, moisture, etc., has vertical dim
-                                                  ! of soil categories
-#include "dummy_new_decl.inc"
-
-      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe
-
-      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-
-      INTEGER       :: idum1, idum2
-      LOGICAL :: interp_mp
-      interp_mp=.true.
-
-#include "deref_kludge.h"
-
-      CALL get_ijk_from_grid (  grid ,              &
-                                ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe    )
-    IF ( grid%active_this_task ) THEN
-      CALL push_communicators_for_domain( grid%id )
-#ifdef DM_PARALLEL
-#include "HALO_INTERP_UP.inc"
-#include "HALO_NMM_WEIGHTS.inc"
-#endif
-      CALL pop_communicators_for_domain
-    END IF
-
-   END SUBROUTINE feedback_nest_prep_nmm
-
-!------------------------------------------------------------------
-
-
-!==============================================================================================
-
-   SUBROUTINE force_intermediate_nmm ( grid, ngrid, config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-                 )
-      USE module_state_description
-      USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
-#if ( NMM_NEST == 1 )
-      USE module_comm_nesting_dm, ONLY : halo_force_down_sub
-#endif
-      IMPLICIT NONE
-!
-      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE(domain), POINTER :: cgrid
-      TYPE(domain), POINTER :: ngrid
-#include "dummy_new_decl.inc"
-      INTEGER nlev, msize
-      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
-      TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
-      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe
-      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe
-      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe
-
-      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-      REAL  dummy_xs, dummy_xe, dummy_ys, dummy_ye
-      LOGICAL feedback_flag, feedback_flag_v
-
-integer myproc
-      LOGICAL interp_mp
-
-!#ifdef DEREF_KLUDGE
-!!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-!   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-!   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-!   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-!#endif
-#include "deref_kludge.h"
-
-      interp_mp=grid%interp_mp .or. ngrid%interp_mp
-
-!#define COPY_IN
-      CALL get_ijk_from_grid (  grid ,                   &
-                                cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe    )
-      CALL get_ijk_from_grid (  ngrid ,              &
-                                nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe    )
-
-      cgrid=>grid
-      nlev  = ckde - ckds + 1
-
-#include "nest_interpdown_unpack.inc"
-
-      CALL get_ijk_from_grid (  grid ,              &
-                                ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe    )
-
-#include "HALO_FORCE_DOWN.inc"
-
-      RETURN
-    END SUBROUTINE force_intermediate_nmm
-
-! ----------------------------------------------------------------------
-
-   SUBROUTINE feedback_domain_nmm_part1 ( grid, ngrid, config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-                 )
-      USE module_state_description
-      USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width,  &
-                            nest_pes_x, nest_pes_y
-      IMPLICIT NONE
-!
-      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE(domain), POINTER :: ngrid
-#include "dummy_new_decl.inc"
-      INTEGER nlev, msize, i_parent_start, j_parent_start
-      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
-      TYPE(domain), POINTER :: xgrid
-      TYPE (grid_config_rec_type)            :: config_flags, nconfig_flags
-      REAL xv(2000)
-      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe
-      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe
-
-      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-
-      INTEGER local_comm, myproc, nproc, idum1, idum2
-
-      integer, parameter :: EConst=0, ECopy=1, EExtrap=2 ! MUST match module_interp_nmm
-
-      LOGICAL interp_mp
-
-      INTERFACE
-          SUBROUTINE feedback_nest_prep_nmm ( grid, config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-)
-             USE module_state_description
-             USE module_domain, ONLY : domain
-             USE module_configure, ONLY : grid_config_rec_type
-!
-             TYPE (grid_config_rec_type)            :: config_flags
-             TYPE(domain), TARGET                   :: grid
-#include "dummy_new_decl.inc"
-          END SUBROUTINE feedback_nest_prep_nmm
-      END INTERFACE
-!
-
-      interp_mp=grid%interp_mp .or. ngrid%interp_mp
-      CALL wrf_get_dm_communicator ( local_comm )
-      CALL wrf_get_myproc( myproc )
-      CALL wrf_get_nproc( nproc )
-
-
-!
-! intermediate grid
-      CALL get_ijk_from_grid (  grid ,                   &
-                                cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe    )
-! nest grid
-      CALL get_ijk_from_grid (  ngrid ,                  &
-                                nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe    )
-
-      nlev  = ckde - ckds + 1
-
-      ips_save = ngrid%i_parent_start  ! +1 not used in ipe_save & jpe_save
-      jps_save = ngrid%j_parent_start  !  because of one extra namelist point
-      ipe_save = ngrid%i_parent_start + (nide-nids) / ngrid%parent_grid_ratio - 1
-      jpe_save = ngrid%j_parent_start + (njde-njds) / ngrid%parent_grid_ratio - 1
-
-! feedback_nest_prep invokes a halo exchange on the ngrid. It is done this way
-! in a separate routine because the HALOs need the data to be dereference from the
-! grid data structure and, in this routine, the dereferenced fields are related to
-! the intermediate domain, not the nest itself. Save the current grid pointer to intermediate
-! domain, switch grid to point to ngrid, invoke feedback_nest_prep,  then restore grid
-! to point to intermediate domain.
-
-      CALL model_to_grid_config_rec ( ngrid%id , model_config_rec , nconfig_flags )
-      CALL set_scalar_indices_from_config ( ngrid%id , idum1 , idum2 )
-      xgrid => grid
-      grid => ngrid
-#include "deref_kludge.h"
-      CALL feedback_nest_prep_nmm ( grid, config_flags    &
-!
-#include "actual_new_args.inc"
-!
-)
-
-! put things back so grid is intermediate grid
-
-      grid => xgrid
-      CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
-
-! "interp" (basically copy) ngrid onto intermediate grid
-
-      ! Generate interpolation information and interpolate Q, T and
-      ! possibly PD while we're at it:
-
-      call store_interp_info(ngrid,grid)
-      call ext_n2c_fulldom(&
-           ngrid%deta1,ngrid%deta2,ngrid%eta1,             &
-           ngrid%eta2,ngrid%pt,ngrid%pdtop,                &
-           grid%pint,grid%t,grid%pd,grid%q,                &
-           cids, cide, cjds, cjde, ckds, ckde,             &
-           cims, cime, cjms, cjme, ckms, ckme,             &
-           cips, cipe, cjps, cjpe, ckps, ckpe,             &
-           ngrid%pint,ngrid%t,                             &
-           ngrid%pd,ngrid%q,                               &
-           ngrid%i_parent_start, ngrid%j_parent_start,     &
-           grid%iinfo,grid%winfo,                          &
-           nids, nide, njds, njde, nkds, nkde,             &
-           nims, nime, njms, njme, nkms, nkme,             &
-           nips, nipe, njps, njpe, nkps, nkpe)
-
-
-      ! "interp" ngrid onto intermediate grid
-#include "nest_feedbackup_interp.inc"
-
-      RETURN
-   END SUBROUTINE feedback_domain_nmm_part1
-
-!------------------------------------------------------------------
-
-   SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid, ngrid , config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-                 )
-      USE module_state_description
-      USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : get_dm_max_halo_width, ips_save, ipe_save,              &
-                            jps_save, jpe_save, ntasks, mytask, ntasks_x, ntasks_y, &
-                            local_communicator, itrace,                             &
-                            nest_pes_x, nest_pes_y,                                 &
-                            intercomm_active, nest_task_offsets,                    &
-                            mpi_comm_to_mom, mpi_comm_to_kid, which_kid !  ,            &
-                            ! push_communicators_for_domain, pop_communicators_for_domain
-
-      USE module_comm_nesting_dm, ONLY : halo_interp_up_sub
-      USE module_utility
-      IMPLICIT NONE
-
-!
-      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE(domain), POINTER :: intermediate_grid
-      TYPE(domain), POINTER :: ngrid
-      TYPE(domain), POINTER :: parent_grid
-
-#include "dummy_new_decl.inc"
-      INTEGER nlev, msize
-      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
-      TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
-      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe
-      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe
-      INTEGER       ::          xids, xide, xjds, xjde, xkds, xkde,    &
-                                xims, xime, xjms, xjme, xkms, xkme,    &
-                                xips, xipe, xjps, xjpe, xkps, xkpe
-      INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe
-
-      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-
-      INTEGER icoord, jcoord, idim_cd, jdim_cd
-      INTEGER local_comm, myproc, nproc
-      INTEGER iparstrt, jparstrt, sw
-      INTEGER thisdomain_max_halo_width
-
-      character*256 :: timestr
-      integer ioffset, ierr
-
-      REAL    nest_influence
-      LOGICAL feedback_flag, feedback_flag_v
-      LOGICAL, EXTERNAL  :: cd_feedback_mask
-      LOGICAL, EXTERNAL  :: cd_feedback_mask_v
-
-      LOGICAL interp_mp
-
-! On entry to this routine,
-!  "grid" refers to the parent domain
-!  "intermediate_grid" refers to local copy of parent domain that overlies this patch of nest
-!  "ngrid" refers to the nest, which is only needed for smoothing on the parent because
-!          the nest feedback data has already been transferred during em_nest_feedbackup_interp
-!          in part1, above.
-! The way these settings c and n dimensions are set, below, looks backwards but from the point
-! of view of the RSL routine rsl_lite_to_parent_info(), call to which is included by
-! em_nest_feedbackup_pack, the "n" domain represents the parent domain and the "c" domain
-! represents the intermediate domain. The backwards lookingness should be fixed in the gen_comms.c
-! registry routine that accompanies RSL_LITE but, just as it's sometimes easier to put up a road
-! sign that says "DIP" than fix the dip,  at this point it was easier just to write this comment. JM
-!
-
-      interp_mp=grid%interp_mp .or. ngrid%interp_mp
-      nest_influence = 0.5
-#define NEST_INFLUENCE(A,B) A = nest_influence*(B) + (1.0-nest_influence)*(A)
-
-
-      CALL domain_clock_get( grid, current_timestr=timestr )
-
-      CALL get_ijk_from_grid (  intermediate_grid ,                   &
-                                cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe    )
-      CALL get_ijk_from_grid (  grid ,              &
-                                nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe    )
-      CALL get_ijk_from_grid (  ngrid ,              &
-                                xids, xide, xjds, xjde, xkds, xkde,    &
-                                xims, xime, xjms, xjme, xkms, xkme,    &
-                                xips, xipe, xjps, xjpe, xkps, xkpe    )
-
-      ips_save = ngrid%i_parent_start
-      jps_save = ngrid%j_parent_start
-      ipe_save = ngrid%i_parent_start + (xide-xids) / ngrid%parent_grid_ratio - 1
-      jpe_save = ngrid%j_parent_start + (xjde-xjds) / ngrid%parent_grid_ratio - 1
-
-
-      nide = nide - 1   !dusan
-      njde = njde - 1   !dusan
-
-IF ( ngrid%active_this_task ) THEN
-    CALL push_communicators_for_domain( ngrid%id )
-      CALL nl_get_i_parent_start ( intermediate_grid%id, iparstrt )
-      CALL nl_get_j_parent_start ( intermediate_grid%id, jparstrt )
-      CALL nl_get_shw            ( intermediate_grid%id, sw )
-      icoord =    iparstrt  - sw
-      jcoord =    jparstrt  - sw
-      idim_cd = cide - cids + 1
-      jdim_cd = cjde - cjds + 1
-
-      nlev  = ckde - ckds + 1
-
-      CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
-      parent_grid => grid
-      grid => ngrid
-#include "nest_feedbackup_pack.inc"
-      grid => parent_grid
-    CALL pop_communicators_for_domain
-END IF
-
-!      CALL wrf_get_dm_communicator ( local_comm )
-!      CALL wrf_get_myproc( myproc )
-!      CALL wrf_get_nproc( nproc )
-
-      ! determine which communicator and offset to use
-      IF ( intercomm_active( grid%id ) ) THEN        ! I am parent
-        local_comm = mpi_comm_to_kid( which_kid(ngrid%id), grid%id )
-        ioffset = nest_task_offsets(ngrid%id)
-      ELSE IF ( intercomm_active( ngrid%id ) ) THEN  ! I am nest
-        local_comm = mpi_comm_to_mom( ngrid%id )
-        ioffset = nest_task_offsets(ngrid%id)
-      END IF
-
-      IF ( grid%active_this_task .OR. ngrid%active_this_task ) THEN
-#ifndef STUBMPI
-        CALL mpi_comm_rank(local_comm,myproc,ierr)
-        CALL mpi_comm_size(local_comm,nproc,ierr)
-#endif
-        CALL rsl_lite_merge_msgs( myproc, nest_pes_x(grid%id)*nest_pes_y(grid%id),         &
-                                          nest_pes_x(ngrid%id)*nest_pes_y(ngrid%id),       &
-                                          ioffset, local_comm )
-      END IF
-
-IF ( grid%active_this_task ) THEN
-    CALL push_communicators_for_domain( grid%id )
-
-#include "nest_feedbackup_unpack.inc"
-
-
-      ! smooth coarse grid
-
-      CALL get_ijk_from_grid (  ngrid,                                 &
-                                nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe     )
-      CALL get_ijk_from_grid (  grid ,              &
-                                ids, ide, jds, jde, kds, kde,    &
-                                ims, ime, jms, jme, kms, kme,    &
-                                ips, ipe, jps, jpe, kps, kpe    )
-
-     before_smooth_halo: if(config_flags%smooth_option/=0) then
-#include "HALO_INTERP_UP.inc"
-     endif before_smooth_halo
-
-      CALL get_ijk_from_grid (  grid ,                   &
-                                cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe    )
-
-     smoothr: if(config_flags%smooth_option/=0) then
-#include "nest_feedbackup_smooth.inc"
-     endif smoothr
-
-    CALL pop_communicators_for_domain
-END IF
-
-
-      RETURN
-   END SUBROUTINE feedback_domain_nmm_part2
-
-!=================================================================================
-!   End of gopal's doing
-!=================================================================================
-#endif
 
 !------------------------------------------------------------------
 

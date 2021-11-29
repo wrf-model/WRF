@@ -345,14 +345,6 @@ gen_halos ( char * dirname , char * incname , node_t * halos, int split )
     } 
   } 
 
-#if (NMM_CORE==1)
-  if (    !strcmp(commname,"HALO_INTERP_DOWN")
-       || !strcmp(commname,"HALO_FORCE_DOWN")
-       || !strcmp(commname,"HALO_INTERP_UP") 
-       || !strcmp(commname,"HALO_INTERP_SMOOTH") )
-    always_interp_mp=0;
-#endif
-
   ihalo = 0 ;
   for ( p = halos ; p != NULL ; p = p->next )
   {
@@ -2723,12 +2715,7 @@ gen_nest_pack ( char * dirname )
       d3 = d3_mp = 0 ;
       node = Domain.fields ;
 
-#if (NMM_CORE==1)
-      count_fields ( node, &d2,    &d3,    fourd_names,    down_path[ipath], 0, 1);
-      count_fields ( node, &d2_mp, &d3_mp, fourd_names_mp, down_path[ipath], 1, 0);
-#else
       count_fields ( node , &d2 , &d3 , fourd_names, down_path[ipath] ,0,0) ;
-#endif
       parent= "" ;
       if ( !strcmp(fn,"nest_feedbackup_pack.inc") ) parent="parent_" ; 
 
@@ -2745,12 +2732,6 @@ gen_nest_pack ( char * dirname )
         }
 
         fprintf(fp,"msize = (%d + %s )* nlev + %d\n", d3, fourd_names, d2 ) ;
-#if (NMM_CORE==1)
-        fprintf(fp,"IF(interp_mp .eqv. .true.) then\n"
-                "    msize=msize + (%d + %s )*nlev+%d\n"
-                "ENDIF\n",
-                d3_mp,fourd_names_mp,d2_mp);
-#endif
 
 /*        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;  */
         fprintf(fp,"CALL %s( msize*RWORDSIZE                               &\n",info_name ) ;
@@ -2843,12 +2824,6 @@ gen_nest_unpack ( char * dirname )
 
         fprintf(fp,"CALL %s(pig,pjg,retval)\n", info_name ) ;
         fprintf(fp,"DO while ( retval .eq. 1 )\n") ;
-#if (NMM_CORE == 1)
-        if(down_path[ipath]==INTERP_UP) {
-          fprintf(fp,"feedback_flag=cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, .FALSE., .FALSE. )\n");
-          fprintf(fp,"feedback_flag_v=cd_feedback_mask_v( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, .FALSE., .FALSE. )\n");
-        }
-#endif
         gen_nest_packunpack ( fp , Domain.fields, UNPACKIT, down_path[ipath] ) ;
         fprintf(fp,"CALL %s(pig,pjg,retval)\n", info_name ) ;
         fprintf(fp,"ENDDO\n") ;
@@ -2985,25 +2960,9 @@ fprintf(fp,"CALL rsl_lite_from_child_msg(((%s)-(%s)+1)*RWORDSIZE,xv) ;\n",ddim[z
             } else {
 fprintf(fp,"CALL rsl_lite_from_child_msg(RWORDSIZE,xv)\n" ) ;
             }
-#if (NMM_CORE == 1)
-                  if(p->stag_x || p->stag_y) {
-#endif
 fprintf(fp,"IF ( cd_feedback_mask%s( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, %s, %s ) ) THEN\n",
                  sjl ,
                  p->stag_x?".TRUE.":".FALSE." ,p->stag_y?".TRUE.":".FALSE." ) ;
-#if ( NMM_CORE == 1)
-                  } else {
-                    fprintf(fp,"IF(feedback_flag%s) THEN\n",sjl);
-                  }
-#endif
-
-#if ( NMM_CORE == 1)
-            if ( node->full_feedback ) {
-                feed="NEST_FULL_INFLUENCE";
-            } else {
-                feed="NEST_INFLUENCE";
-            }
-#endif
             if ( zdex >= 0 ) {
 fprintf(fp,"DO k = %s,%s\n%s(%s%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], feed, grid, vname ) ;
             } else {

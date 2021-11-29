@@ -17,14 +17,7 @@ CONTAINS
      &          ,ifndalbsi, ifndicedepth, ifndsnowsi                  &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
-#if (NMM_CORE==1)
-     &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
-     &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,iwavecpl,lcurr_sf & !for gfdl-sf drag
-     &          ,pert_Cd, ens_random_seed, ens_Cdamp                  &
-     &          ,cd_out,ch_out                                        &
-#else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
-#endif
      &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff ,acrunoff         &
      &          ,smois,smstav,smstot,snoalb,snow,snowc,snowh,stepbl   &
      &          ,smcrel                                               &
@@ -34,16 +27,9 @@ CONTAINS
      &          ,u_frame,u_phy,v10,vegfra,u10e,v10e,uoce,voce         &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt    &
      &          ,max_edom,cplmask                                     &
-#if (HWRF==1)
-     &          ,mznt                                                 &
-#endif
      &          ,zs                                                   & 
      &          ,albsi, icedepth,snowsi                               &
-#if (NMM_CORE==1)
-     &          ,xicem,isice,iswater,ct,tke_pbl,sfenth                &
-#else
      &          ,xicem,isice,iswater,ct,tke_pbl                       &
-#endif
      &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
      &          ,flqc,flhc,psfc,sst,sst_input,sstsk,dtw,sst_update,sst_skin     &
      &          ,scm_force_skintemp,scm_force_flux,t2,emiss           &
@@ -319,7 +305,6 @@ CONTAINS
      &          ,irr_end_julianday,irr_freq,irr_ph,irr_rand_field     &
      &                                                             )
 
-#if ( ! NMM_CORE == 1 )
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
                                        ,MYJSFCSCHEME              &
@@ -343,29 +328,9 @@ CONTAINS
                                        ,PWP3DSCHEME               &
                                        ,DRIP                      &
                                        ,CHANNEL                   
-#else
-   USE module_state_description, ONLY : SFCLAYSCHEME              &
-                                       ,SFCLAYREVSCHEME           &
-                                       ,MYJSFCSCHEME              &
-                                       ,QNSESFCSCHEME             &
-                                       ,MYJPBLSCHEME              &
-                                       ,QNSEPBLSCHEME             &
-                                       ,GFSSFCSCHEME              &
-                                       ,PXSFCSCHEME               &
-                                       ,NOAHMPSCHEME              &
-                                       ,SLABSCHEME                &
-                                       ,LSMSCHEME                 &
-                                       ,RUCLSMSCHEME              &
-                                       ,CLMSCHEME                 &
-                                       ,PXLSMSCHEME               &
-                                       ,TEMFSFCSCHEME             &
-                                       ,GFDLSFCSCHEME             &
-                                       ,SSIBSCHEME                & ! ssib
-                                       ,GFDLSLAB                   
 
 
 
-#endif
    USE module_model_constants
 ! *** add new modules of schemes here
    USE module_irrigation
@@ -399,10 +364,6 @@ CONTAINS
 #endif
    USE module_sf_scmflux       
    USE module_sf_scmskintemp
-
-#if ( NMM_CORE == 1 )
-   USE module_sf_gfdl
-#endif
 
    USE module_sf_slab
 !
@@ -671,15 +632,6 @@ CONTAINS
    real ::  HYDRO_dt
    REAL, DIMENSION( ims:ime , jms:jme ):: sfcheadrt,INFXSRT, soldrain
 
-#if (NMM_CORE==1)
-   real , intent(IN )::   SFENTH
-   INTEGER, INTENT(IN)::   ICOEF_SF
-   INTEGER, INTENT(IN)::   IWAVECPL
-   LOGICAL, INTENT(IN)::   LCURR_SF
-   logical,intent(in),optional  :: pert_Cd
-   integer,intent(in),optional  :: ens_random_seed
-   real,intent(in),optional     :: ens_Cdamp
-#endif
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(OUT)  ::   SMCREL
@@ -722,12 +674,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   PBLH
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   Q2
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QFX
-#if (NMM_CORE==1)
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: TAUX
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: TAUY
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: cd_out
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: ch_out
-#endif
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QSFC
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QZ0
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SFCRUNOFF
@@ -746,9 +692,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   VZ0
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   WSPD
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ZNT
-#if (HWRF==1)
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   MZNT
-#endif
 !-----fds (06/2010)---------------------------------------------
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(OUT)::   SSIB_LHF ! SSiB output
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(OUT)::   SSIB_SHF ! SSiB output
@@ -835,10 +778,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BIO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BLO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   HO4     ! ssib-snow
-#if (NMM_CORE==1)
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)::    CHARN, MSANG, SCURX, SCURY
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   RIBN, ZKMAX
-#endif
 !----------------------------------------------------------
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
@@ -1551,10 +1490,6 @@ CONTAINS
          CHS(i,j) = 0.
          CPM(i,j) = 0.
          CHS2(i,j) = 0.
-#if (NMM_CORE==1)
-         Cd_out(i,j) = 0.
-         Ch_out(i,j) = 0.
-#endif
       ENDDO
     ENDDO
   ENDDO
@@ -2143,7 +2078,6 @@ CONTAINS
        ENDIF
 
      CASE (PXSFCSCHEME)
-#if (NMM_CORE != 1)
        IF (PRESENT(qv_curr)                            .AND.    &
            PRESENT(mol)        .AND.  PRESENT(regime)  .AND.    &
                                                       .TRUE. ) THEN
@@ -2177,9 +2111,6 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for PX Surface Layer in surface driver')
        ENDIF
-#else
-       CALL wrf_error_fatal('PX Surface Layer scheme cannot be used with NMM')
-#endif
 
       CASE (MYJSFCSCHEME)
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
@@ -2228,8 +2159,6 @@ CONTAINS
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
         ENDIF
-#if ( EM_CORE==1)
-!       ustm is not available in NMM
 !       ustm is needed for LES tke calculation (ustm is ust used in friction)
          DO j = j_start(ij),j_end(ij)
             DO i = i_start(ij),i_end(ij)
@@ -2238,7 +2167,6 @@ CONTAINS
                ch(i,j) = chs (i,j)
             END DO
          END DO
-#endif
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')
        ENDIF
@@ -2468,42 +2396,6 @@ CONTAINS
        ENDIF
 #endif
 
-#if (NMM_CORE==1)
-
-    CASE (GFDLSFCSCHEME)
-       CALL wrf_debug( 100, 'in GFDLSFC' )
-
-      IF(sf_surface_physics .eq. 88)THEN
-        GFDL_NTSFLG=1
-      ELSE
-        GFDL_NTSFLG=0
-      ENDIF
-
-      CALL SF_GFDL(u_phytmp,v_phytmp,t_phy,qv_curr,p_phy, &
-                   CP,RCP,R_d,XLV,PSFC,CHS,CHS2,CQS2,CPM,                 &
-                   DTBL, SMOIS,num_soil_layers,ISLTYP,ZNT,                &
-#if (HWRF==1)
-                   MZNT,                                                  &
-#endif
-                   UST,PSIM,PSIH,                                         &  
-                   XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
-                   QGH,QSFC,U10,V10,                              &
-                   ICOEF_SF,IWAVECPL,LCURR_SF,CHARN, MSANG, SCURX, SCURY, &
-                   pert_Cd, ens_random_seed, ens_Cdamp,           &
-                   GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,                  &
-                   EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
-                   cd_out, ch_out,                                &
-                   ids,ide, jds,jde, kds,kde,                     &
-                   ims,ime, jms,jme, kms,kme,                             &
-                   i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte    )
-           RIBN = BR
-           DO j=j_start(ij),j_end(ij)
-           DO i=i_start(ij),i_end(ij)
-              CHKLOWQ(I,J)= 1.0
-           ENDDO
-           ENDDO
-
-#endif
      CASE DEFAULT
 
        WRITE( message , * )                                &

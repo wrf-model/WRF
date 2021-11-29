@@ -280,8 +280,6 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
 
     INTEGER Px, Py, P, i, j, k, ierr
 
-#if ( ! NMM_CORE == 1 )
-
 ! xy decomposition
 
     ips = -1
@@ -452,43 +450,6 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
        ipey = -1
        ipsy = 0
     ENDIF
-
-
-#else
-
-! In case of NMM CORE, the domain only ever runs from ids..ide-1 and jds..jde-1 so
-! adjust decomposition to reflect.  20051020 JM
-    ips = -1
-    j = jds
-    ierr = 0
-    DO i = ids, ide-1
-       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             maxhalowidth, maxhalowidth , ierr )
-       IF ( Px .EQ. mytask_x ) THEN
-          ipe = i
-          IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
-          IF ( ips .EQ. -1 ) ips = i
-       ENDIF
-    ENDDO
-    IF ( ierr .NE. 0 ) THEN
-       CALL tfp_message(__FILE__,__LINE__)
-    ENDIF 
-    jps = -1
-    i = ids ;
-    ierr = 0
-    DO j = jds, jde-1
-       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             maxhalowidth , maxhalowidth , ierr )
-       IF ( Py .EQ. mytask_y ) THEN
-          jpe = j
-          IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
-          IF ( jps .EQ. -1 ) jps = j
-       ENDIF
-    ENDDO
-    IF ( ierr .NE. 0 ) THEN
-       CALL tfp_message(__FILE__,__LINE__)
-    ENDIF 
-#endif
 
 ! extend the patch dimensions out shw along edges of domain
     IF ( ips < ipe .and. jps < jpe ) THEN           !wig; 11-Mar-2008

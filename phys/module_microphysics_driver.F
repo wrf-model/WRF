@@ -154,16 +154,6 @@ SUBROUTINE microphysics_driver(                                          &
                                                                          )
 
 ! Framework
-#if(NMM_CORE==1)
-   USE module_state_description, ONLY :                                  &
-                     KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, etamp_HWRF,THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG, MADWRF_MP  &
-                    ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
-                    ,WSM7SCHEME, WDM7SCHEME &
-                    ,NUWRF4ICESCHEME & 
-                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL !, P3_2CATEGORY ,MILBRANDT3MOM
-#else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN_SHPUND, MORR_TWO_MOMENT     &
@@ -175,7 +165,6 @@ SUBROUTINE microphysics_driver(                                          &
                     ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU !,MILBRANDT3MOM
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
-#endif
 #endif
 #if ( WRF_CHEM == 1 )
 ! NUWRF
@@ -243,7 +232,6 @@ SUBROUTINE microphysics_driver(                                          &
 !  USE module_mp_milbrandt3mom
    USE module_mp_nssl_2mom
 
-   USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
 ! For checking model timestep is history time (for radar reflectivity)
@@ -2642,34 +2630,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                CALL wrf_error_fatal ( 'arguments not present for calling wdm7')
              ENDIF
 
-#if(NMM_CORE==1)
-        CASE (ETAMP_HWRF)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew_HWRF')
-
-             IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
-                  PRESENT( mp_restart_state )                  .AND. &
-                  PRESENT( tbpvs_state )                      .AND. &
-                  PRESENT( tbpvs0_state )                       ) THEN
-
-               CALL ETAMP_NEW_HWRF(                                      &
-                  ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy, GID=id &
-                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
-                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
-                 ,QV=qv_curr                                        &
-                 ,QT=qt_curr                                        &
-                 ,LOWLYR=LOWLYR,SR=SR                               &
-                 ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
-                 ,F_RIMEF_PHY=F_RIMEF_PHY                           &
-                 ,QC=qc_curr,QR=Qr_curr,QI=Qi_curr                  &
-                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                                                                    )
-             ELSE
-                CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
-             ENDIF
-#endif
         CASE (ETAMPNEW)    !-- Operational 4-km High-Resolution Window (HRW) version
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
 

@@ -31,7 +31,6 @@ MODULES =       module_driver_constants.o  \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
                 module_io_quilt.o          \
-		module_intermediate_nmm.o  \
 		module_cpl.o               \
 		module_cpl_oasis3.o        \
 		module_clear_halos.o
@@ -166,7 +165,7 @@ clean:
 module_state_description.F : ../Registry/$(REGISTRY)
 		  ( cd .. ; tools/registry $(ARCHFLAGS) $(ENVCOMPDEFS) -DNEW_BDYS Registry/$(REGISTRY) ) ; 
 
-module_io_quilt.o : module_io_quilt.F module_io_quilt_new.F module_io_quilt_old.F
+module_io_quilt.o : module_io_quilt.F module_io_quilt_old.F
 
 md_calls.inc : md_calls.m4
 	if [ "$(M4)" = NA ] ; then \

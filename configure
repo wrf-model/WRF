@@ -30,7 +30,6 @@ while [ $# -ge 1 ]; do
       wrfda) wrf_core=DA_CORE ;;
       4dvar) wrf_core=4D_DA_CORE ;;
       arw) wrf_core=EM_CORE  ;;
-      nmm) wrf_core=NMM_CORE  ;;
       coamps) wrf_core=COAMPS_CORE  ;;
       titan) WRF_TITAN=1 ; break ;;
       mars) WRF_MARS=1 ; break ;;
@@ -455,27 +454,6 @@ if [ -n "$PNETCDF_QUILT" ]; then
   echo Enabling quilt_pnc I/O server implementation.
   compileflags="${compileflags}!-DPNETCDF_QUILT=1"
 fi
-if [ -n "$WRF_NMM_CORE" ]; then
-  if [ $WRF_NMM_CORE = 1 ]; then
-    export WRF_NMM_NEST=1
-    if [ -n "$HWRF" ]; then
-      if [ $HWRF = 1 ]; then
-        echo building WRF with HWRF option
-        compileflags="${compileflags}!-DHWRF=1"
-        if [ -n "$IDEAL_NMM_TC" ]; then
-          echo building WRF with NMM Idealized Tropical Cyclone option
-          compileflags="${compileflags}!-DIDEAL_NMM_TC=1"
-        fi
-      fi
-    fi
-    if [ -n "$IBM_REDUCE_BUG_WORKAROUND" ]; then
-      if [ $IBM_REDUCE_BUG_WORKAROUND = 1 ]; then
-        echo adding IBM_REDUCE_BUG_WORKAROUND flag for some IBM systems
-        compileflags="${compileflags}!-DIBM_REDUCE_BUG_WORKAROUND"
-      fi
-    fi
-  fi
-fi
 if [ -n "$WRF_DFI_RADAR" ] ; then
   if [ $WRF_DFI_RADAR = 1 ] ; then
     echo building WRF with radar dfi option
@@ -504,16 +482,6 @@ if [ -n "$WRFPLUS" ] ; then
     echo building WRF for TL and AD
     compileflags="!-DWRFPLUS"
     echo $compileflags
-  fi
-fi
-
-if [ -n "$WRF_NMM_CORE" -a -n "$WRF_CHEM" ]; then
-  if [ $WRF_NMM_CORE = 1  -a  $WRF_CHEM = 1 ]; then
-    echo
-    echo "NMM is no longer compatible with the Chemistry option."
-    echo
-    # alphabetically: c=3, o=15, so co2 = 3+15+2 = 20
-    exit 20
   fi
 fi
 

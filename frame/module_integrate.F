@@ -386,9 +386,6 @@ ENDIF ! active_this_task
 
             grid_ptr => grid
             DO WHILE ( ASSOCIATED( grid_ptr ) )
-#if ( NMM_CORE == 1 )
-                  grid_ptr%mvnest = .FALSE.
-#endif
 IF ( grid_ptr%active_this_task ) THEN
                   CALL set_current_grid_ptr( grid_ptr )
                   CALL wrf_debug( 100 , 'module_integrate: calling solve interface ' )

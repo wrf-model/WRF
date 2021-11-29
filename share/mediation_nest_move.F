@@ -378,7 +378,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 !  De-reference dimension information stored in the grid data structure.
 !
 !  From the hybrid, construct the GPMs on isobaric surfaces and then interpolate those
-!  values on to the nested domain. 23 standard prssure levels are assumed here. For
+!  values on to the nested domain. 23 standard pressure levels are assumed here. For
 !  levels below ground, lapse rate atmosphere is assumed before the use of vertical
 !  spline interpolation
 !

@@ -18,12 +18,11 @@
 
  Note about precision:
    For write_ep = .true. application, the code should be compiled with real-4.
-   For gen_be applications, especially cv_options=5, real-4 works, but real-8 is recommended if memory is not an issue.
-   Hopefully the gen_be_v3 code will be updated in the future to better handle the variable declaration.
+   For generating be (background error) files, especially for cv_options=5, real-8 is the best practice if memory is not an issue.
 
 2. To run:
 
-      (1) Edit namelist.gen_be_v3 (examples are shown below)
+      (1) Edit namelist.gen_be_v3 (examples for ep and be applications are shown separately below)
       (2) Prepare a text file that contains a list of wrfout files (full path) to be processed.
             Either a list of WRF ensembles,
             or a list of WRF forecasts with proper forecast lengths (for example: 24-h and 12-h forecasts).
@@ -31,7 +30,7 @@
             The code can be built and run with MPI, however serial code should have good enough
             performance by submitting/running each variable separately (in different working directory).
 
-(a) namelist.gen_be_v3 for generating ensemble perturbations to be used in WRFDA
+(a) namelist.gen_be_v3 for generating ensemble perturbations (ep) to be used in WRFDA
 
 &gen_be_nml
    nc_list_file = 'flist.txt'  ! flist.txt contains a list of wrfout files in full path
@@ -42,21 +41,22 @@
                                         ! 'qcloud', 'qrain', 'qice', 'qsnow', 'qgraup' are ep_format=1 cloud names.
    do_pert_calc = .true.
    do_slen_calc = .false.  ! can be set to .true. to also generate BE from ensembles.
+   verbose = .true.        ! can be useful for checking the list of wrf files that are actually used in the code
 /
 &ens_nml
-   nens = 10               ! number of ensembles, can be smaller than what is available from flist.txt
+   nens = 10               ! number of ensembles
    write_ep = .true.
    write_ens_stdv = .true. ! can be .false. to not write out stdv in the output, since the stdv info
                            ! is not used in WRFDA.
    ep_format=2             !  1: each member in separate file (real*8), the same format as the current gen_be_ep2.exe output.
-                           ! 11: each member in separate file (real*4)
+                           ! 11: each member in separate file (real*4) (recommended for large domains/ensembles, when the code fails for ep_format=2 or 3 due to memory limitation for MPI communications)
                            !  2: (real*4) all members in one file (full-domain) (recommended)
                            !  3: (real*4) all members in one file (sub-domain), need to specify nproc_out
                            !     NOTE that ep_format=3 does not work yet for dual-resolution EnVar application.
    nproc_out=32            ! for ep_format=3 only. The number of processors that WRFDA will be running with.
 /
 
-(b) namelist.gen_be_v3 for generating background error statistics to be used in WRFDA
+(b) namelist.gen_be_v3 for generating background error (be) statistics to be used in WRFDA
 
 &gen_be_nml
    nc_list_file = 'flist.txt' ! flist.txt contains a list of wrfout files in full path
@@ -84,10 +84,12 @@
 
       Each variable is in separate output file.
 
+      For cv_options=7 purpose, util/combine_be_cv7.f90 can be used to combine be_[T/U/V/RH/PSFC].dat into be.dat that WRFDA can read.
+
       For cv_options=7 and cloud_cv_options=2 purpose, util/combine_be_cv7_ccv2.f90 can be used to
           combine be_[T/U/V/RH/PSFC/QCLOUD/QRAIN/QICE/QSNOW/QGRAUP/W].dat into be.dat that WRFDA can read.
 
-      For cv_options=5 purpose, util/combine_be_cv5.f90 can be used to combine be_[PSI/CHI_U/T_U/RH/PSFC_U].dat and regcoeff[1/2/3].dat into be.dat that WRFDA can read.
+      For cv_options=5 purpose, util/combine_be_cv5.f90 can be used to combine be_[PSI/CHI_U/T_U/RH/PSFC_U].dat and regcoeff[1/2/3].dat into be.dat that WRFDA can read. Note that the provided util/combine_be_cv5.f90 works for output files from gen_be_v3 real-8 build only. Modify lines 33-35 to specify real*4 for regcoeff[1/2/3] if gen_be_v3 is compiled with real-4.
 
       pert* [psi.*] files are intermediate output that can be removed after the successful execution.
 

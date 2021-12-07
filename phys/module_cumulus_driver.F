@@ -20,7 +20,7 @@ CONTAINS
                      ,ccldfra,convcld,qcconv,qiconv                   &
                      ,bmj_rad_feedback                                & 
                      ,rainc,raincv,pratec,nca                         &
-                     ,cldfra_dp,cldfra_sh,w_up                        & !ckay for subgrid cloud
+                     ,cldfra_dp,cldfra_sh                             &
                      ,udr_kf,ddr_kf,uer_kf,der_kf,timec_kf,kf_edrates & !kf_edrates
                      ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
@@ -477,9 +477,6 @@ CONTAINS
           timec_kf
 
    INTEGER, INTENT(IN   )        ::   kf_edrates
-
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         INTENT(INOUT ),OPTIONAL ::                        w_up
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
           GSW,HT,XLAND
@@ -1078,7 +1075,6 @@ CONTAINS
                ,F_QI=f_qi,F_QS=f_qs                             &
                ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
                ,CLDFRA_SH_KF=cldfra_sh                          &
-               ,W_UP=w_up                                       & ! ckay
                ,QC_KF=QC_CU,QI_KF=QI_CU,QR_KF=QR_CU,QS_KF=QS_CU &
                ,NC_KF=NC_CU,NI_KF=NI_CU,NR_KF=NR_CU,NS_KF=NS_CU &
                ,CCN_KF=CCN_CU,AINC_FRAC=CU_UAF                  &
@@ -1117,13 +1113,8 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
-#endif
                ,RTHRATEN=RTHRATEN,RTHBLTEN=RTHBLTEN             &
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,RQVBLTEN=RQVBLTEN                               &
@@ -1184,10 +1175,6 @@ CONTAINS
                ,P_QC=p_qc                                       &
                ,MOMMIX=MOMMIX  &
                ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
-#if (HWRF==1)
-               ,pert_sas=pert_sas,ens_random_seed=ens_random_seed   &
-               ,ens_sasamp=ens_sasamp &
-#endif
                ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
@@ -1268,14 +1255,9 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
                ,rqvblten=rqvblten,rthblten=rthblten             &
-#endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
@@ -1322,16 +1304,10 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 ) 
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RTHRATEN=RTHRATEN                               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RTHRATEN=RTHRATEN                               &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
                ,rqvblten=rqvblten,rthblten=rthblten             &
-#endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,dudt_phy=rucuten, dvdt_phy=rvcuten              &
 #if ( WRF_DFI_RADAR == 1 )
@@ -1423,11 +1399,7 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,QVFTEN=FORCEQ                                   &
-#else
                ,QVFTEN=RQVFTEN                                  &
-#endif
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
                ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
@@ -1455,11 +1427,7 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,QVFTEN=FORCEQ, THFTEN=FORCET                    &
-#else
                ,QVFTEN=RQVFTEN,THFTEN=RTHFTEN                   &
-#endif
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
                ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &

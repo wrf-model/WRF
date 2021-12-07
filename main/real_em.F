@@ -982,15 +982,6 @@ real::t1,t2
                CALL wrf_error_fatal( 'REAL: error opening wrffdda for writing' )
             END IF
          END IF
-      ELSE
-         
-         !  Advance the clock to the next time period.
-
-         IF ( .NOT. domain_clockisstoptime(grid) ) THEN
-            CALL domain_clockadvance( grid )
-            CALL domain_clockprint ( 150, grid, &
-                   'DEBUG assemble_output:  clock after ClockAdvance,' )
-         END IF
       END IF
 
       !  If the lateral boundary conditions are split, then open the file with a 

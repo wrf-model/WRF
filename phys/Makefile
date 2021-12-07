@@ -90,7 +90,6 @@ MODULES = \
 	module_mp_wsm7.o \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
-	module_mp_HWRF.o \
 	module_mp_thompson.o \
 	module_mp_SBM_polar_radar.o \
 	module_mp_full_sbm.o \
@@ -125,7 +124,6 @@ MODULES = \
         module_ra_cam.o \
 	module_ra_gfdleta.o \
         module_ra_flg.o \
-	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_ra_eclipse.o \
 	module_ra_aerosol.o  \
@@ -224,32 +222,17 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_trad_fields.o \
         module_diag_solar.o
   
-DIAGNOSTIC_MODULES_NMM = \
-	module_diag_refl.o
-
 OBJS    =
-
-NMM_MODULES =  
 
 LIBTARGET    =  physics
 TARGETDIR    =  ./
 
 $(LIBTARGET) :
-		if [ $(WRF_NMM_CORE) -eq 1 ] ; then \
-                  $(MAKE) $(J) nmm_contrib  ; \
-                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
-                                   $(NMM_OBJS) $(NMM_MODULES) \
-                                   $(DIAGNOSTIC_MODULES_NMM) ; \
-                else                                                         \
-                  $(MAKE) $(J) non_nmm      ; \
-                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
-                                   $(FIRE_MODULES) \
-                                   $(DIAGNOSTIC_MODULES_EM)  ; \
-                fi
+	$(MAKE) $(J) non_nmm ; \
+	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
+		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM)
 
 include ../configure.wrf
-
-nmm_contrib : $(NMM_OBJS) $(NMM_MODULES) $(MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_NMM)
 
 non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
 

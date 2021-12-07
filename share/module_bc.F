@@ -1585,7 +1585,7 @@ CONTAINS
 
 
       REAL,  DIMENSION( ims:ime , kms:kme       , jms:jme ), INTENT(INOUT  ) :: field_tend
-      REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:kme ), INTENT(IN   )   :: field_tend_perturb
+      REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:jme ), INTENT(IN   )   :: field_tend_perturb
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: mu_2
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: mub
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: msf
@@ -1750,7 +1750,7 @@ CONTAINS
       CHARACTER,    INTENT(IN   )    :: variable_in
       LOGICAL,      INTENT(IN   )    :: periodic_x
 
-      REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:kme ) , INTENT(IN   ) :: field_scalar_perturb
+      REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:jme ) , INTENT(IN   ) :: field_scalar_perturb
       REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: field_bdy_tend_xs, field_bdy_tend_xe
       REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: field_bdy_tend_ys, field_bdy_tend_ye
 

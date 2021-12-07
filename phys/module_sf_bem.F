@@ -20,7 +20,7 @@ MODULE module_sf_bem
         real hum_rat            !power of the A.C. drying/moistening the indoor air [(Kg/kg)/s]
         parameter(hum_rat=1.e-06)
 
-        real,parameter :: effpv=0.15  ! Efficiency of PV panels installed at the roofs, typical values [0.10,0.15] 
+        real,parameter :: effpv=0.19  ! Efficiency of PV panels installed at the roofs, typical values [0.10,0.15] 
 
     CONTAINS
 
@@ -33,7 +33,7 @@ MODULE module_sf_bem
                        latent,sigma,albwal,albwin,albrof,              &
      		       emrof,emwal,emwin,rswal,rlwal,rair,cp,          &
      		       rhoout,tout,humout,press,                       &
-     		       rs,rl,dzwal,cswal,kwal,pwin,cop,beta,sw_cond,   &
+     		       rs,swddif,rl,dzwal,cswal,kwal,pwin,cop,beta,sw_cond,   &
                        timeon,timeoff,targtemp,gaptemp,targhum,gaphum, &
                        perflo,gr_frac_roof,pv_frac_roof,gr_flag, & 
                        uout,vout,                                        &
@@ -153,8 +153,8 @@ MODULE module_sf_bem
         real tr_av 
 	real latent                      !latent heat of evaporation [J/Kg]	
 
-
-	real rs				!external short wave radiation [W/m2]
+        real swddif
+   	real rs				!external short wave radiation [W/m2]
 	real rl				!external long wave radiation [W/m2]
 	real rswal(4,nzcanm)		!short wave radiation reaching the exterior walls [W/m2]
         real rlwal(4,nzcanm)		!long wave radiation reaching the walls [W/m2]	
@@ -417,7 +417,7 @@ MODULE module_sf_bem
            call radfluxs(radflux,albrof,rs,emrof,rl,sigma,tr_av)
           hrrof=radflux
           else
-            call radfluxspv(nzcanm,nlev,albrof,rs,emrof,rl,tr_av,tout,sigma,radflux,pv_frac_roof,tpv)
+            call radfluxspv(nzcanm,nlev,albrof,rs,swddif,emrof,rl,tr_av,tout,sigma,radflux,pv_frac_roof,tpv)
             hrrof=radflux
         endif
 
@@ -625,7 +625,7 @@ MODULE module_sf_bem
 
 
       if(pv_frac_roof.gt.0)then
-      call hsfluxpv(nzcanm,nlev,bl,bw,albrof,rs,emrof,rl,tr_av,tout,sigma,hspv,eppv,pv_frac_roof,uout,vout,tpv)
+      call hsfluxpv(nzcanm,nlev,bl,bw,albrof,rs,swddif,emrof,rl,tr_av,tout,sigma,hspv,eppv,pv_frac_roof,uout,vout,tpv,dt)
       sfpv=hspv
       tpv_print=tpv
       endif       
@@ -813,7 +813,7 @@ MODULE module_sf_bem
       end subroutine BEM
 !====6=8===============================================================72  
 !====6=8===============================================================72  
-      subroutine hsfluxpv(nz,n,bl,bw,albr,rs,emr,rl,tr,tair,sigma,hspv,eppv,pv_frac_roof,uout,vout,tpv)
+      subroutine hsfluxpv(nz,n,bl,bw,albr,rs,swddif,emr,rl,tr,tair,sigma,hspv,eppv,pv_frac_roof,uout,vout,tpv,dt)
 !
       implicit none
 !
@@ -833,6 +833,8 @@ MODULE module_sf_bem
       integer,intent(in) :: n  !number of floors in the building
       real,intent(in), dimension(1:nz) :: uout		
       real,intent(in), dimension(1:nz) :: vout
+      real,intent(in)  :: dt
+      real,intent(in)  :: swddif
 ! Output variables
 !
       real,intent(inout) :: hspv ! Sensible heat flux from the PV panels to the atmosphere [W/m2]
@@ -842,12 +844,22 @@ MODULE module_sf_bem
 ! Local variables
 !
       real,parameter :: albpv=0.11 ! albedo of the PV panels
-      real,parameter :: empv=0.93  ! emissivity of the PV panels
+      real,parameter :: empv_down=0.95  ! emissivity of the PV panels
+      real,parameter :: empv_up=0.79
       real, parameter :: T_amb=25
       real, parameter :: tiltangle=0.
-      real, parameter :: a=0.286 
-      real, parameter :: b=0.286
+      real, parameter :: a=3.8
+      real, parameter :: b=6.9
 
+      real, parameter :: r1=2330.
+      real, parameter :: r2=1200.
+      real, parameter :: r3=3000.
+      real, parameter :: c1=677.
+      real, parameter :: c2=1250.
+      real, parameter :: c3=500.
+      real, parameter :: d1=0.0003
+      real, parameter :: d2=0.0005
+      real, parameter :: d3=0.003
       real, parameter :: F12=1.
       real :: lwuppv     !Long-wave emitted by the PV panels to the sky [W/m2]
       real :: lwdwr      !Long-wave incoming radiation on the roof [W/m2]
@@ -857,67 +869,31 @@ MODULE module_sf_bem
       real :: sw_d
       real :: lw_d
       real :: lwpv_out
-      real :: f
-      real :: f_prime
       real :: tpv_new
       real :: hdown
       real :: hup
       real :: deltat
       real :: uroof
       real :: hrad
-      
-      hrad=sigma/((1-empv)/empv+1/F12+(1-emr)/emr)
-
-      uroof=(uout(n+1)**2+vout(n+1)**2)**0.5
-      tpv=tair(n+1)
-      tpv_new=tpv+1
-    if(pv_frac_roof.gt.0)then
-      do while(abs(tpv-tpv_new).gt.1E-3)
-     deltat=-tpv_new+tair(n+1)
-    if(deltat.lt.0)then
-    hc=9.842*abs(deltat)**(1/3)/(7.283-abs(cos(tiltangle)))
-    hup=sqrt(hc**2+(a*uroof**b)**2)
-    hc=1.810*abs(deltat)**(1/3)/(1.382+abs(cos(tiltangle)))
-    hdown=sqrt(hc**2+(a*uroof**b)**2)
-   ! hup=2.8+3.8*uroof
-   ! hdown=2.8+3.8*uroof
-    else
-    hc=9.842*abs(deltat)**(1/3)/(7.283-abs(cos(tiltangle)))
-    hdown=sqrt(hc**2+(a*uroof**b)**2)
-    hc=1.810*abs(deltat)**(1/3)/(1.382+abs(cos(tiltangle)))
-    hup=sqrt(hc**2+(a*uroof**b)**2)
-   ! hup=2.8+3.8*uroof
-   ! hdown=2.8+3.8*uroof
-    endif
-    tpv=tpv_new
+      real :: Cm      
+      real :: hf
+       Cm=r1*c1*d1+r2*c2*d2+r3*c3*d3
+       hrad=sigma/((1-empv_down)/empv_down+1/F12+(1-emr)/emr)
+       uroof=(uout(n+1)**2+vout(n+1)**2)**0.5
+      deltat=tpv-tair(n+1)
+    hf=2.5*(40./100.*uroof)**(0.5)
+    hc=9.842*abs(deltat)**(1./3.)/(7.283-abs(cos(tiltangle)))
+    hup=sqrt(hc**2.+(hf)**2.)
+    hc=1.810*abs(deltat)**(1./3.)/(1.382+abs(cos(tiltangle)))
+    hdown=sqrt(hc**2.+(hf)**2.)
     enerpv=effpv*rs*min(1.,1.-0.005*(tpv-(T_amb+273.15)))
-    sw_d=(1-albpv)*rs;
-    lw_d=empv*rl;
-    lwpv_out=empv*sigma*tpv**4+(1-empv)*rl
-    lwupr=hrad*(tr**4-tpv**4)
-    f=(sw_d+lw_d+lwupr-lwpv_out-enerpv-(hup+hdown)*(tpv-tair(n+1)));
-    if(min(1.,1.-0.005*(tpv-(T_amb+273.15))).eq.1)then
-    f_prime=-4.*sigma*empv*tpv**3-(hup+hdown)-4*hrad*tpv**3
-    else
-    f_prime=-4.*sigma*empv*tpv**3-(hup+hdown)-4*hrad*tpv**3-effpv*rs*(1-0.005)
-    endif
-    if(f_prime.eq.0)then
-    tpv_new=tair(n+1)
-    else
-    tpv_new = tpv_new -f/f_prime;
-    endif
-       end do
-     tpv=tpv_new
-    if(tpv_new.lt.250.or.tpv_new.gt.400)then
-     tpv=tair(n+1)
-    endif
+    sw_d=(1-albpv)*(rs)
+    lw_d=empv_up*rl
+    lwpv_out=empv_up*sigma*tpv**4.
+    lwupr=hrad*(tr**4-tpv**4.)
     hspv=(hup+hdown)*(tpv-tair(n+1))
+    tpv=tpv+(sw_d+lw_d-lwpv_out+lwupr-hspv-enerpv)/Cm*dt
     eppv=enerpv*pv_frac_roof*bl*bw
-    else
-    tpv=0
-    hspv=0
-    eppv=0
-    endif
      return
       end subroutine hsfluxpv 
 !====6=8===============================================================72
@@ -2557,7 +2533,7 @@ MODULE module_sf_bem
       end subroutine radfluxs
 !====6=8===============================================================72  
 !====6=8===============================================================72
-      subroutine radfluxspv(nz,n,alb,rs,em,rl,twal,tair,sigma,radflux,pv_frac_roof,tpv)
+      subroutine radfluxspv(nz,n,alb,rs,swddif,em,rl,twal,tair,sigma,radflux,pv_frac_roof,tpv)
 !
       implicit none
 !
@@ -2573,6 +2549,7 @@ MODULE module_sf_bem
       integer,intent(in) :: nz !Maximum number of vertical levels in the urban grid
       real,intent(in) :: alb	!albedo of the surface
       real,intent(in) :: rs	!shortwave radiation [W m-2]
+      real,intent(in) :: swddif
       real,intent(in) :: em	!emissivity of the surface
       real,intent(in) :: rl 	!longwave radiation [W m-2]
       real,intent(in) :: twal	!surface temperature [K]
@@ -2590,7 +2567,7 @@ MODULE module_sf_bem
 !     
 ! Local variables
       F12=1. 
-      empv=0.93	
+      empv=0.95	
       hrad=sigma/((1-empv)/empv+1/F12+(1-em)/em)
       if ((n+1).gt.nz) then
          write(*,*) 'Increase maximum number of vertical levels in the urban grid'

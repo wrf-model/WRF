@@ -1715,7 +1715,7 @@ do iz= kts,kte
                    sfrbpv(1,ibui),                                           &
                    latent,sigma,albw,albwin,albr,                            &
                    emr,emw,emwind,rsw,rlw,r,cp_u,                            &
-                   da_u,tmp_u,qv_u,pr_u,rs,rld,dzw,csw,alaw,pwin_u(iurb),    &
+                   da_u,tmp_u,qv_u,pr_u,rs,swddif,rld,dzw,csw,alaw,pwin_u(iurb),    &
                    cop_u(iurb),beta_u(iurb),sw_cond_u(iurb),time_on_u(iurb), &
                    time_off_u(iurb),targtemp_u(iurb),gaptemp_u(iurb),        &
                    targhum_u(iurb),gaphum_u(iurb),perflo_u(iurb),            &
@@ -4290,8 +4290,8 @@ do iz= kts,kte
 
       data dzg_u /0.2,0.12,0.08,0.05,0.03,0.02,0.02,0.01,0.005,0.0025/
       
-      real gx,iz,dzg_tot
-      integer gr_type
+      real gx,dzg_tot
+      integer gr_type,iz
 ! ----------------------------------------------------------------------
 ! END VARIABLES DEFINITIONS
 ! ----------------------------------------------------------------------
@@ -4490,8 +4490,8 @@ do iz= kts,kte
 
       data dzgr_u /0.1,0.003,0.06,0.003,0.05,0.04,0.02,0.0125,0.005,0.0025/
 
-      real gx,iz,dzgr_tot
-      integer gr_type
+      real gx,dzgr_tot
+      integer gr_type,iz
 ! ----------------------------------------------------------------------
 ! END VARIABLES DEFINITIONS
 
@@ -5312,13 +5312,13 @@ do iz= kts,kte
          grdflx_urb=grdflx_urb-gfl*ws(id)/(ws(id)+bs(id))/ndu  
  
          do iz=2,nzu
-            rl_emit=rl_emit-(emr_u*sigma*((1.-pv_frac_roof)*tr_av(id,iz)**4.+pv_frac_roof*tpvlev(id,iz)**4)+ &
-             (1-emr_u)*rld)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
-            rl_inc=rl_inc+(1-pv_frac_roof*rld+pv_frac_roof*emr_u*sigma*tpvlev(id,iz)**4)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
-            rs_abs=rs_abs+((1.-albr_u)*rs*(1.-pv_frac_roof))*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
-            gfl=(1.-albr_u)*rs*(1-pv_frac_roof)+emr_u*rld*((1-pv_frac_roof)+pv_frac_roof*emr_u*sigma*tpvlev(id,iz)**4) &
+             rl_emit=rl_emit-(emr_u*sigma*(1.-pv_frac_roof)*tr_av(id,iz)**4.+0.79*sigma*pv_frac_roof*tpvlev(id,iz)**4+ &
+                     (1-emr_u)*rld*(1.-pv_frac_roof)+(1-0.79)*pv_frac_roof*rld)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
+             rl_inc=rl_inc+rld*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
+             rs_abs=rs_abs+((1.-albr_u)*rs*(1.-pv_frac_roof)+(1.-0.11)*rs*pv_frac_roof)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
+             gfl=(1.-albr_u)*rs*(1-pv_frac_roof)+emr_u*rld*((1-pv_frac_roof)+pv_frac_roof*emr_u*sigma*tpvlev(id,iz)**4) &
                 -emr_u*sigma*(tr_av(id,iz)**4.)+(1-gr_frac_roof)*sfr(id,iz)+(sfrv(id,iz)+lfrv(id,iz))*gr_frac_roof+(1.-gr_frac_roof)*lfr(id,iz)
-            grdflx_urb=grdflx_urb-gfl*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
+             grdflx_urb=grdflx_urb-gfl*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu  
          enddo
            
          do iz=1,nzu 

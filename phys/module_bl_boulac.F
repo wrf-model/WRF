@@ -430,11 +430,11 @@ MODULE module_bl_boulac
 ! compute the tendencies
                              
          do iz= kts,kte
-          rthblten(ix,iz,iy)=rthblten(ix,iz,iy)+(th1D(iz)-th_phy(ix,iz,iy))/dt
-          rqvblten(ix,iz,iy)=rqvblten(ix,iz,iy)+(q1D(iz)-qv_curr(ix,iz,iy))/dt
-          rqcblten(ix,iz,iy)=rqcblten(ix,iz,iy)+(qc1D(iz)-qc_curr(ix,iz,iy))/dt
-          rublten(ix,iz,iy)=rublten(ix,iz,iy)+(u1D(iz)-u_phy(ix,iz,iy))/dt
-          rvblten(ix,iz,iy)=rvblten(ix,iz,iy)+(v1D(iz)-v_phy(ix,iz,iy))/dt  
+          rthblten(ix,iz,iy)=(th1D(iz)-th_phy(ix,iz,iy))/dt
+          rqvblten(ix,iz,iy)=(q1D(iz)-qv_curr(ix,iz,iy))/dt
+          rqcblten(ix,iz,iy)=(qc1D(iz)-qc_curr(ix,iz,iy))/dt
+          rublten(ix,iz,iy)=(u1D(iz)-u_phy(ix,iz,iy))/dt
+          rvblten(ix,iz,iy)=(v1D(iz)-v_phy(ix,iz,iy))/dt  
           wu(ix,iz,iy)=wu1D(iz)
           wv(ix,iz,iy)=wv1D(iz) 
           wt(ix,iz,iy)=wt1D(iz)

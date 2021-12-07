@@ -262,6 +262,15 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          !end if
          !write(unit=stdout,fmt='(a)') 'Finish reading goesimg data'
       end if
+      if (use_gmiobs) then
+#if defined(HDF5)
+         write(unit=stdout,fmt='(a)') 'Reading GMI data in HDF5 format'
+         call da_read_obs_hdf5gmi (iv, '1B.GPM.GMI','2A.GPM.GMI')
+#else
+         message(1)='To read GMI data, WRFDA must be compiled with HDF5'
+         call da_error(__FILE__,__LINE__,message(1:1))
+#endif
+      end if
    end if
 
    if ( use_filtered_rad ) then

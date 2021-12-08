@@ -2647,7 +2647,7 @@ ENDIF
 !m
 !FS   FRC_URB2D(I,J)=0.
       UTYPE_URB2D(I,J)=0
-      SWITCH_URB=0
+      SWITCH_URB=1
 
             IF( IVGTYP(I,J) == ISURBAN)  THEN
                IF(use_wudapt_lcz==0) THEN
@@ -2655,12 +2655,10 @@ ENDIF
                ELSE
                   UTYPE_URB2D(I,J) = 5  ! for default. high-intensity
                ENDIF
-
-               SWITCH_URB=1
             ELSE IF( IVGTYP(I,J) == LCZ_1) THEN
                UTYPE_URB2D(I,J) = 1  ! high-intensity
-
-               SWITCH_URB=1
+            ELSE
+               SWITCH_URB=0
             ENDIF
 
             IF (SWITCH_URB == 1) THEN

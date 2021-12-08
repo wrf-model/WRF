@@ -2656,7 +2656,27 @@ ENDIF
                   UTYPE_URB2D(I,J) = 5  ! for default. high-intensity
                ENDIF
             ELSE IF( IVGTYP(I,J) == LCZ_1) THEN
-               UTYPE_URB2D(I,J) = 1  ! high-intensity
+               UTYPE_URB2D(I,J) = 1
+            ELSE IF( IVGTYP(I,J) == LCZ_2) THEN
+               UTYPE_URB2D(I,J) = 2
+            ELSE IF( IVGTYP(I,J) == LCZ_3) THEN
+               UTYPE_URB2D(I,J) = 3
+            ELSE IF( IVGTYP(I,J) == LCZ_4) THEN
+               UTYPE_URB2D(I,J) = 4
+            ELSE IF( IVGTYP(I,J) == LCZ_5) THEN
+               UTYPE_URB2D(I,J) = 5
+            ELSE IF( IVGTYP(I,J) == LCZ_6) THEN
+               UTYPE_URB2D(I,J) = 6
+            ELSE IF( IVGTYP(I,J) == LCZ_7) THEN
+               UTYPE_URB2D(I,J) = 7
+            ELSE IF( IVGTYP(I,J) == LCZ_8) THEN
+               UTYPE_URB2D(I,J) = 8
+            ELSE IF( IVGTYP(I,J) == LCZ_9) THEN
+               UTYPE_URB2D(I,J) = 9
+            ELSE IF( IVGTYP(I,J) == LCZ_10) THEN
+               UTYPE_URB2D(I,J) = 10
+            ELSE IF( IVGTYP(I,J) == LCZ_11) THEN
+               UTYPE_URB2D(I,J) = 11
             ELSE
                SWITCH_URB=0
             ENDIF

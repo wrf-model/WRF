@@ -2663,7 +2663,7 @@ ENDIF
                SWITCH_URB=1
             ENDIF
 
-            IF( IVGTYP(I,J) == ISURBAN)  THEN
+            IF (SWITCH_URB == 1) THEN
                UTYPE_URB = UTYPE_URB2D(I,J)  ! for default. high-intensity
                IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
@@ -2695,41 +2695,6 @@ ENDIF
                   FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
                 ENDIF           
             ENDIF 
-   
-!!!!!
-           IF( IVGTYP(I,J) == LCZ_1) THEN
-               UTYPE_URB = UTYPE_URB2D(I,J)  ! high-intensity
-              IF (HGT_URB2D(I,J)>0.) THEN
-                  CONTINUE
-               ELSE
-                  WRITE(mesg,*) 'USING DEFAULT URBAN MORPHOLOGY'
-                  WRITE_MESSAGE(mesg)
-                  LP_URB2D(I,J)=0.
-                  LB_URB2D(I,J)=0.
-                  HGT_URB2D(I,J)=0.
-                  IF ( sf_urban_physics == 1 ) THEN
-                     MH_URB2D(I,J)=0.
-                     STDH_URB2D(I,J)=0.
-                     DO K=1,4
-                       LF_URB2D(I,K,J)=0.
-                     ENDDO
-                  ELSE IF ( ( sf_urban_physics == 2 ) .or. ( sf_urban_physics == 3 ) ) THEN
-                     DO K=1,num_urban_hi
-                        HI_URB2D(I,K,J)=0.
-                     ENDDO
-                  ENDIF
-               ENDIF
-                IF (FRC_URB2D(I,J)>0.and.FRC_URB2D(I,J)<=1.) THEN
-                  CONTINUE
-                ELSE
-                  WRITE(mesg,*) 'WARNING, FRC_URB2D = 0 BUT IVGTYP IS URBAN'
-                  WRITE_MESSAGE(mesg)
-                  WRITE(mesg,*) 'WARNING, THE URBAN FRACTION WILL BE READ FROM URBPARM.TBL'
-                  WRITE_MESSAGE(mesg)
-                  FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
-                ENDIF
-            ENDIF
-!!!!!
  
             IF (SWITCH_URB==1) THEN
                 CONTINUE

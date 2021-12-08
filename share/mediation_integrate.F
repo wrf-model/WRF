@@ -2367,7 +2367,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
                            config_flags , insub , n2, ierr )
    ENDIF
    IF ( ierr .NE. 0 ) THEN
-     WRITE ( message , '("open_aux_u : error opening ",A," for reading. ",I3)') &
+     WRITE ( message , '("open_aux_u : error opening ",A," for reading. ",I5)') &
        TRIM ( fname ), ierr
      CALL wrf_message( message )
    ENDIF
@@ -2463,8 +2463,8 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
                            config_flags , outsub , n2, ierr )
    ENDIF
    IF ( ierr .NE. 0 ) THEN
-     WRITE ( message , '("open_hist_w : error opening ",A," for writing. ",I3)') &
-       TRIM ( fname ), ierr
+     WRITE ( message , '("open_hist_w : error opening ",A," for writing. ",I5)') &
+        TRIM ( fname ), ierr
      CALL wrf_message( message )
    ENDIF
 

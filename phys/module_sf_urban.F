@@ -2655,6 +2655,15 @@ ENDIF
                ELSE
                   UTYPE_URB2D(I,J) = 5  ! for default. high-intensity
                ENDIF
+
+               SWITCH_URB=1
+            ELSE IF( IVGTYP(I,J) == LCZ_1) THEN
+               UTYPE_URB2D(I,J) = 1  ! high-intensity
+
+               SWITCH_URB=1
+            ENDIF
+
+            IF( IVGTYP(I,J) == ISURBAN)  THEN
                UTYPE_URB = UTYPE_URB2D(I,J)  ! for default. high-intensity
                IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
@@ -2685,12 +2694,10 @@ ENDIF
                   WRITE_MESSAGE(mesg)
                   FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
                 ENDIF           
-               SWITCH_URB=1
             ENDIF 
    
 !!!!!
            IF( IVGTYP(I,J) == LCZ_1) THEN
-               UTYPE_URB2D(I,J) = 1  ! high-intensity
                UTYPE_URB = UTYPE_URB2D(I,J)  ! high-intensity
               IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
@@ -2721,7 +2728,6 @@ ENDIF
                   WRITE_MESSAGE(mesg)
                   FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
                 ENDIF
-              SWITCH_URB=1
             ENDIF
 !!!!!
  

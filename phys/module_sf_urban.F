@@ -2693,11 +2693,7 @@ ENDIF
                   WRITE(mesg,*) 'WARNING, THE URBAN FRACTION WILL BE READ FROM URBPARM.TBL'
                   WRITE_MESSAGE(mesg)
                   FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
-                ENDIF           
-            ENDIF 
- 
-            IF (SWITCH_URB==1) THEN
-                CONTINUE
+                ENDIF
             ELSE
                 FRC_URB2D(I,J)=0.
                 LP_URB2D(I,J)=0.

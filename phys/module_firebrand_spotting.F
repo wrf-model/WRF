@@ -50,7 +50,7 @@ MODULE module_firebrand_spotting
     REAL,    PARAMETER :: grav = 9.80616_dp    ! gravity (m/s2)
     REAL,    PARAMETER :: rdry = 287.04_dp     ! dry air (J/Kg-K)
     REAL,    PARAMETER :: p2jm = 100.0_dp      ! mb to j/m3
-    REAL,    PARAMETER :: rcd  = 0.45_dp      ! drag constant
+    REAL,    PARAMETER :: rcd  = 0.45_dp       ! drag constant
     REAL,    PARAMETER :: rd   = 287.15_dp    ! gas constant dry air (J / kg K)
     REAL,    PARAMETER :: rv   = 461.6_dp
     REAL,    PARAMETER :: t0   = 300.0_dp

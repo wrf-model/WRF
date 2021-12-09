@@ -10,7 +10,7 @@ MODULE module_sf_mynn
 !1) Calculation of stability parameter (z/L) taken from Li et al. (2010 BLM)
 !   for first iteration of first time step; afterwards, exact calculation
 !   using a brute force iterative method described in Olson et al. (2021 NOAA
-!   Tech memorandum). This method repaces iterative technique used in 
+!   Tech memorandum). This method replaces the iterative technique used in 
 !   module_sf_sfclayrev.F (Jimenez et al. 2013) with mods. Either technique
 !   gives about the same result. The former technique is retained in this
 !   module (commented out) for potential subsequent benchmarking.

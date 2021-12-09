@@ -2177,9 +2177,9 @@ if(config_flags%ifire.eq.2)then
    CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
 
 !-----------------------------------------------------------------------
-! fire spotting (passive Lagrangian particle transport, tracks firebrand physics properties)
+! fire spotting (passive Lagrangian particle transport, tracks 
+! firebrand physics properties)
 !-----------------------------------------------------------------------
-! M. Frediani
 
    IF (config_flags%fs_firebrand_gen_lim > 0) THEN
 

@@ -2003,7 +2003,7 @@ CFLAGS_LOCAL    =       -w -O3 -c -march=native
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =
 ESMF_LDFLAG     =      $(CPLUSPLUSLIB)
-FCOPTIM         =       -O3 -ftree-vectorize -funroll-loops -march=armv8.2-a
+FCOPTIM         =       -O3 -ftree-vectorize -funroll-loops -march=native
 FCREDUCEDOPT    =       $(FCOPTIM)
 FCNOOPT         =       -O0
 FCDEBUG         =       # -g $(FCNOOPT)  # -fbacktrace -ggdb-fcheck=bounds,do,mem,pointer -ffpe-trap=invalid,zero,overflow

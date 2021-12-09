@@ -4751,9 +4751,9 @@ BENCH_END(bc_2d_tim)
 
    
 !-----------------------------------------------------------------------
-! firebrand spotting (passive Lagrangian particle transport, tracks firebrand physics properties)
+! firebrand spotting (passive Lagrangian particle transport, 
+! tracks firebrand physics properties)
 !-----------------------------------------------------------------------
-! M. Frediani
 
    IF(config_flags%ifire == 2 .AND. &
        ! Check if spotting is on

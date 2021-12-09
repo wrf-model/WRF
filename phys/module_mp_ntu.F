@@ -6220,7 +6220,7 @@
             ENDIF
             IF (AH1D.GE.ASMALL) THEN
                AhCLsh = (MVDX**2.-MVDH**2.)*NCLS1*ESH*VTASH*NH1D*(     &
-                        SASR2*GS3*+SASR1*2.*GH2*GS2+GH3)
+                        SASR2*GS3 +SASR1*2.*GH2*GS2+GH3)
             ENDIF
          ENDIF
          IF (QS1D.GE.QSMALL.AND.MVDS.GE.2.E-4) THEN

@@ -2227,7 +2227,8 @@ integer::oops1,oops2
                !  NOTE: The input pressure is not vertically interpolated, but the other two input   
                !  fields (QNWFA, QNIFA) are interpolated to the WRF eta coordinate.
 
-            if_pres: if (config_flags%use_aero_icbc .and. (flag_qnwfa .EQ. 1 .or. flag_qnifa .EQ. 1)) then
+            if_pres: if ( ( config_flags%use_aero_icbc ) .and. &
+                          ( (flag_qnwfa .EQ. 1 ) .or. ( flag_qnifa .EQ. 1) ) ) then
 
                IF ( grid%p_wif_jan(its,config_flags%num_wif_levels/2-1,jts) - &
                     grid%p_wif_jan(its,config_flags%num_wif_levels/2+1,jts) .LT. 0 ) THEN

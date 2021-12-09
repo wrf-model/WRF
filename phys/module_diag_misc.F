@@ -228,7 +228,7 @@ CONTAINS
 
       IF (mod(curr_secs2, history_interval*60.) == 0.) THEN
          WRITE(outstring,*) 'Reseting accumulation to 0'
-         CALL wrf_message ( TRIM(outstring) )
+         CALL wrf_debug ( 10, TRIM(outstring) )
          DO j=j_start(ij),j_end(ij)
          DO k=kps,kpe
          DO i=i_start(ij),i_end(ij)

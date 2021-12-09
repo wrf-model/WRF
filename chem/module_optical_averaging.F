@@ -4695,12 +4695,11 @@ END subroutine optical_prep_modal_soa_vbs
                 endif
           !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-! add bug fix for refr and refi outside lookup table range to prevent unstable extrapolation 'binterp' below
+! check for refr and refi outside of lookup table range to prevent unstable extrapolation 'binterp' below
           if (refr < refrtabsw(1,ns))     refr = refrtabsw(1,ns)
           if (refr > refrtabsw(prefr,ns)) refr = refrtabsw(prefr,ns)
           if (refi < refitabsw(1,ns))     refi = refitabsw(1,ns)
           if (refi > refitabsw(prefi,ns)) refi = refitabsw(prefi,ns)
-! end bug fix
 
 ! interpolate coefficients linear in refractive index
 ! first call calcs itab,jtab,ttab,utab

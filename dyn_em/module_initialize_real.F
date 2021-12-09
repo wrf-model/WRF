@@ -2218,8 +2218,9 @@ integer::oops1,oops2
             !  QNWFA - Number concentration water-friendly aerosols
             !  QNIFA - Number concentration ice-friendly aerosols
 
-            if_thompsonaero: IF (config_flags%mp_physics .EQ. THOMPSONAERO .AND. &
-                config_flags%wif_input_opt .EQ. 1 .and. (config_flags%use_aero_icbc .or. config_flags%use_rap_aero_icbc)) THEN
+            if_thompsonaero: IF ( ( config_flags%mp_physics .EQ. THOMPSONAERO ) .AND. &
+                                  ( config_flags%wif_input_opt .EQ. 1         ) .AND. & 
+                                  ( config_flags%use_aero_icbc .or. config_flags%use_rap_aero_icbc ) ) THEN
 
                !  First, get the pressure temporally interpolated to the correct date/time since
                !  this is a hybrid coordinate (not isobaric), and the pressure changes by month.

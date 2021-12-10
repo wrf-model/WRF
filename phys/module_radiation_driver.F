@@ -302,7 +302,6 @@ CONTAINS
    USE module_ra_aerosol    , ONLY : calc_aerosol_goddard_sw, &
                                      calc_aerosol_rrtmg_sw
    USE module_ra_farms      , ONLY : farms_driver
-
 ! amontornes-bcodina 2015/09 solar eclipses
    USE module_ra_eclipse    , ONLY : solar_eclipse
 

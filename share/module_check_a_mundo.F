@@ -406,6 +406,34 @@
          END IF
       ENDDO
 
+
+!-----------------------------------------------------------------------
+! Check that LES PBL is only paired with acceptable other PBL options.
+! Currently, problems occur with any CG PBL option that has a packaged 
+! scalar (as opposed to state) component: MYNN2, MYNN3, EEPS.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % bl_pbl_physics(i) .EQ. LESscheme ) THEN
+            exists = .TRUE.
+         END IF
+      END DO
+      IF ( ( exists ) .AND. &
+           ( ( model_config_rec % bl_pbl_physics(1) .EQ. MYNNPBLSCHEME2 ) .OR. &
+             ( model_config_rec % bl_pbl_physics(1) .EQ. MYNNPBLSCHEME3 ) .OR. &
+             ( model_config_rec % bl_pbl_physics(1) .EQ. EEPSSCHEME     ) ) ) THEN
+         WRITE(wrf_err_message,fmt='(a,i2)') '--- ERROR: LES PBL on fine grid does not work with CG PBL option ',model_config_rec % bl_pbl_physics(1)
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '           Choose a CG PBL option without any scalar components'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '           Fix bl_pbl_physics in namelist.input'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '           Alternatively, remove all of the packaged variables from the CG PBL selection'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF 
+
+
 !-----------------------------------------------------------------------
 ! Urban physics set up. If the run-time option for use_wudapt_lcz = 0,
 ! then the number of urban classes is 3. Else, if the use_wudapt_lcz = 1, 

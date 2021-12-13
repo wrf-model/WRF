@@ -1980,6 +1980,49 @@ LIB_BUNDLED     = \
                      $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o
 
+###########################################################
+#ARCH   Linux   armv7l aarch64, gnu OpenMPI #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       GNU ($SFC/$SCC)
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
+SFC             =       gfortran
+SCC             =       gcc
+CCOMP           =       gcc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       #-fdefault-real-8
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  CONFIGURE_D_CTSM
+CFLAGS_LOCAL    =       -w -O3 -c -march=native # -DRSL0_ONLY
+LDFLAGS_LOCAL   =
+CPLUSPLUSLIB    =
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O3 -ftree-vectorize -funroll-loops -march=native
+FCREDUCEDOPT    =       $(FCOPTIM)
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)  # -fbacktrace -ggdb -fcheck=bounds,do,mem,pointer -ffpe-trap=invalid,zero,overflow
+FORMAT_FIXED    =       -ffixed-form
+FORMAT_FREE     =       -ffree-form -ffree-line-length-none
+FCSUFFIX        =
+BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(FCCOMPAT)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -G
+RANLIB          =      ranlib
+RLFLAGS         =
+CC_TOOLS        =      $(SCC)
+
 #insert new stanza here
 
 ###########################################################

@@ -11525,7 +11525,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
     real:: corr
 
 #ifdef CLWRFGHG
-      REAL(8)                                      :: co2, n2o, ch4, cfc11, cfc12
+    real(kind=8)                                 :: co2, n2o, ch4, cfc11, cfc12
 #else
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2

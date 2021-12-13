@@ -410,7 +410,8 @@
 !-----------------------------------------------------------------------
 ! Check that LES PBL is only paired with acceptable other PBL options.
 ! Currently, problems occur with any CG PBL option that has a packaged 
-! scalar component: MYNN2, MYNN3, EEPS.
+! scalar component: MYNN2, MYNN3, EEPS. This test is also if a user 
+! chooses to not run a PBL scheme.
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE

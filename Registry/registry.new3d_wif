@@ -13,8 +13,12 @@
 
 dimspec  wif    2     namelist=num_wif_levels          z     num_wif_levels
 
-rconfig   integer num_wif_levels    namelist,domains	   1              27      irh    "num_wif_levels" "number of levels in the Thompson Water Ice Friendly Aerosols" ""
-rconfig   integer wif_input_opt     namelist,domains       1              0       irh    "wif_input_opt"  "0=do not process the Water Ice Friendly Aerosol input from metgrid"
+rconfig   integer num_wif_levels    namelist,domains	   1              30      irh    "num_wif_levels" "number of levels in the Thompson Water Ice Friendly Aerosols" ""
+rconfig   integer wif_input_opt     namelist,domains       1              1       irh    "wif_input_opt"  "0=do not process the Water Ice Friendly Aerosol input from metgrid"
+
+state    real       qnwfa_gc       i{wif}j      dyn_em      1        Z     i1         "QNWFA"   "water-friendly aerosol  num concentration"   "# kg-1"
+state    real       qnifa_gc       i{wif}j      dyn_em      1        Z     i1         "QNIFA"   "water-friendly aerosol  num concentration"   "# kg-1"
+state    real       p_wif_gc       i{wif}j      dyn_em      1        Z     i1         "P_WIF"       "Pressure for first guess aerosol fields from metgrid"   "Pa" 
 
 state    real       p_wif_now      i{wif}j      dyn_em      1        Z     -          "P_WIF_NOW"   "Pressure for Water Ice Friendly Aerosols Now"   "Pa"
 state    real       p_wif_jan      i{wif}j      dyn_em      1        Z     i1         "P_WIF_JAN"   "Pressure for Water Ice Friendly Aerosols Jan"   "Pa"
@@ -58,7 +62,7 @@ state    real       i_wif_oct      i{wif}j      dyn_em      1        Z     i1   
 state    real       i_wif_nov      i{wif}j      dyn_em      1        Z     i1         "I_WIF_NOV"   "Background Ice   Friendly Aerosol option Nov"   "# kg-1"
 state    real       i_wif_dec      i{wif}j      dyn_em      1        Z     i1         "I_WIF_DEC"   "Background Ice   Friendly Aerosol option Dec"   "# kg-1"
 
-package   use_wif_input       wif_input_opt==1             -             state:p_wif_now,p_wif_jan,p_wif_feb,p_wif_mar,p_wif_apr,p_wif_may,p_wif_jun,p_wif_jul,p_wif_aug,p_wif_sep,p_wif_oct,p_wif_nov,p_wif_dec,w_wif_now,w_wif_jan,w_wif_feb,w_wif_mar,w_wif_apr,w_wif_may,w_wif_jun,w_wif_jul,w_wif_aug,w_wif_sep,w_wif_oct,w_wif_nov,w_wif_dec,i_wif_now,i_wif_jan,i_wif_feb,i_wif_mar,i_wif_apr,i_wif_may,i_wif_jun,i_wif_jul,i_wif_aug,i_wif_sep,i_wif_oct,i_wif_nov,i_wif_dec
+package   use_wif_input       wif_input_opt==1             -             state:p_wif_gc,p_wif_now,p_wif_jan,p_wif_feb,p_wif_mar,p_wif_apr,p_wif_may,p_wif_jun,p_wif_jul,p_wif_aug,p_wif_sep,p_wif_oct,p_wif_nov,p_wif_dec,qnwfa_gc,w_wif_now,w_wif_jan,w_wif_feb,w_wif_mar,w_wif_apr,w_wif_may,w_wif_jun,w_wif_jul,w_wif_aug,w_wif_sep,w_wif_oct,w_wif_nov,w_wif_dec,qnifa_gc,i_wif_now,i_wif_jan,i_wif_feb,i_wif_mar,i_wif_apr,i_wif_may,i_wif_jun,i_wif_jul,i_wif_aug,i_wif_sep,i_wif_oct,i_wif_nov,i_wif_dec
 
 state   real    qnwfa          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNWFA"         "water-friendly aerosol number con" "# kg(-1)"

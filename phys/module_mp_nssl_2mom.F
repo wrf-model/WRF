@@ -1208,7 +1208,7 @@ MODULE module_mp_nssl_2mom
         write(0,*) 'READ_NAMELIST: PROBLEM WITH NSSL_MP_PARAMS namelist: not found or bad token'
       ENDIF
         IF ( wrf_dm_on_monitor() .and. .not. wrote_namelist ) THEN
-          open(15,file='namelist.output',status='old',action='readwrite', access='append',form='formatted')
+          open(15,file='namelist.output',status='old',action='readwrite', position='append',form='formatted')
           write(15,NML=nssl_mp_params)
           close(15)
           wrote_namelist = .true.

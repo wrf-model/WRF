@@ -723,7 +723,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                ,CCN5_GS, CCN6_GS, CCN7_GS, NR_CU        & ! TWG add
                ,QR_CU, NS_CU, QS_CU, CU_UAF             & ! TWG add
 !jdf           ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
-               ,rainprod, evapprod                      &
+               ,wetscav_on, rainprod, evapprod                      &
                ,QLSINK,PRECR,PRECI,PRECS,PRECG          & ! HM ADD, WRF-CHEM
                                            )
  
@@ -834,6 +834,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                           EFCG, EFIG, EFSG, WACT, CCN1_GS,  &
         CCN2_GS, CCN3_GS, CCN4_GS, CCN5_GS, CCN6_GS, CCN7_GS
 
+   LOGICAL, optional, INTENT(IN) :: wetscav_on
 
    ! LOCAL VARIABLES
 
@@ -895,12 +896,20 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
   REAL, DIMENSION(kts:kte, no_src_types_cu) :: maerosol, naer
 ! TWG END
 
+  LOGICAL :: has_wetscav
+
 ! below for wrf-chem
    flag_qndrop = .false.
    IF ( PRESENT ( f_qndrop ) ) flag_qndrop = f_qndrop
 !!!!!!!!!!!!!!!!!!!!!!
 
-   ! Initialize tendencies (all set to 0) and transfer
+   IF ( PRESENT ( wetscav_on ) ) THEN
+     has_wetscav = wetscav_on
+   ELSE
+     has_wetscav = .false.
+   ENDIF
+   
+! Initialize tendencies (all set to 0) and transfer
    ! array to local variables
    DT = DT_IN   
 
@@ -1086,7 +1095,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                                  nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
                                  ,no_src_types_cu,maerosol,naer                          & !TWG add prescribed aerosol
 #if (WRF_CHEM == 1)
-                                 ,rainprod1d, evapprod1d                                 & !wrf-chem
+                                 ,has_wetscav, rainprod1d, evapprod1d                    & !wrf-chem
 #endif
                        )
    !
@@ -1154,8 +1163,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 !          EFFIS(I,K,J)     = MAX(EFFIS(I,K,J),13.)
 
 #if ( WRF_CHEM == 1)
+         IF ( has_wetscav ) THEN
            IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
            IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
+         ENDIF
 #endif
 
       end do
@@ -1213,7 +1224,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
                         ,no_src_types_cu,maerosol,naer & ! TWG add
 
 #if (WRF_CHEM == 1)
-        ,rainprod, evapprod &
+        ,has_wetscav,rainprod, evapprod &
 #endif
                         )
 
@@ -1541,6 +1552,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 	REAL, DIMENSION(KTS:KTE)::C2PREC,CSED,ISED,SSED,GSED,RSED
 #if (WRF_CHEM == 1)
     REAL, DIMENSION(KTS:KTE), INTENT(INOUT) :: rainprod, evapprod
+    LOGICAL, INTENT(IN)                     :: has_wetscav
 #endif
     REAL, DIMENSION(KTS:KTE)                :: tqimelt ! melting of cloud ice (tendency)
 
@@ -2362,8 +2374,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
       QC3DTEN(K) = QC3DTEN(K)+PCC(K)
 
 #if (WRF_CHEM == 1)
+       IF ( has_wetscav ) THEN
          evapprod(k) = - PRE(K) - EVPMS(K) - EVPMG(K)
          rainprod(k) = PRA(K) + PRC(K) + tqimelt(K)
+       ENDIF
 #endif
 
 !.......................................................................
@@ -4246,10 +4260,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
          NR3DTEN(K) = NR3DTEN(K)+NSUBR(K)
 
 #if (WRF_CHEM == 1)
+       IF ( has_wetscav ) THEN
          evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
          rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
                        + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K) + &
                        + PRDS(K) + PRDG(K)
+       ENDIF
 #endif
 
          END IF !!!!!! TEMPERATURE

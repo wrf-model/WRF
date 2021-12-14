@@ -216,9 +216,6 @@ CONTAINS
           TH1D(i)   =TH3D(i,1,j)
         ENDDO
         
-        
-        !  TST, WST, MOLENGTH, USTM need to be recaculated or passed in
-        
         CALL PXSFCLAY1D(J,U1D,V1D,T1D,TH1D,QV1D,P1D,dz8w1d,          &
                 CP,G,ROVCP,R,XLV,PSFC(ims,j),CHS(ims,j),CHS2(ims,j), &
                 CQS2(ims,j),CPM(ims,j),PBLH(ims,j), RMOL(ims,j),   &
@@ -351,7 +348,6 @@ CONTAINS
 !-------------------------------Exicutable starts here-------------------- 
 
       DO i = its,ite
-! PSFC cb
         PSFC(I)   = PSFCPA(I)/1000.
         TVCON     = 1.0 + EP1 * QV1D(I)
         THETAV1(I)= THETA1(I) * TVCON
@@ -364,28 +360,27 @@ CONTAINS
       DO I=its,ite
         IF (TG(I) .LT. 273.15) THEN
            !SATURATION VAPOR PRESSURE WRT ICE (SVP1=.6112; 10*mb)
-           E1=SVP1*EXP(4648*(1./273.15 - 1./TG(I)) - &
+           E1= SVP1*EXP(4648*(1./273.15 - 1./TG(I)) - &
            & 11.64*LOG(273.15/TG(I)) + 0.02265*(273.15 - TG(I)))
         ELSE
            !SATURATION VAPOR PRESSURE WRT WATER (Bolton 1980)
-           E1=SVP1*EXP( SVP2*(TG(I)-SVPT0)/(TG(I)-SVP3) )  
+           E1= SVP1*EXP( SVP2*(TG(I)-SVPT0)/(TG(I)-SVP3) )  
         ENDIF
 !-- If water or initial timestep use saturation MR for qsfc, otherwise use from LSM
         IF (xland(i).gt.1.5 .or. QSFC(i).le.0.0.or.itimestep.eq.1) THEN                     
-           QSFC(I)=EP2*E1/(PSFC(I)-E1)
+           QSFC(I)= EP2*E1/(PSFC(I)-E1)
         ENDIF
         
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
-        E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))  
-        PL = P1D(I)/1000.                     
-        QGH(I)=EP2*E1/(PL-E1)                                                 
-        CPM(I)=CP*(1.+0.8*QV1D(I))                                   
+        E1    = SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))  
+        PL    = P1D(I)/1000.                     
+        QGH(I)= EP2*E1/(PL-E1)                                                 
+        CPM(I)= CP*(1.+0.8*QV1D(I))                                   
       ENDDO                                                                   
 
 !.......... compute the thetav at ground
       DO I = its, ite
-!        TV0       = TG(I) * (1.0 + EP1 * QSFC(I)*MAVAIL(I))
         TV0       = TG(I) * (1.0 + EP1 * QSFC(I))
         CPOT      = (100./PSFC(I))**ROVCP 
         TH0(I)    = TV0 * CPOT
@@ -399,7 +394,7 @@ CONTAINS
 !    half sigma level
       DO I = its,ite
         ZA(I) = 0.5 * DZ8W1D(I)                                
-        WS(I)   = SQRT(US(I) * US(I) + VS(I) * VS(I))
+        WS(I) = SQRT(US(I) * US(I) + VS(I) * VS(I))
       ENDDO                                                                   
 !
 !-----CALCULATE BULK RICHARDSON NO. OF SURFACE LAYER, ACCORDING TO
@@ -409,16 +404,16 @@ CONTAINS
 
       DO i = its,ite
         GZ1OZ0(I) = ALOG(ZA(I) / ZNT(I))
-        DTHVDZ      = THETAV1(I) - TH0(I)
-        fluxc = max(hfx(i)/rhox(i)/cp                    &
-              + ep1*TH0(I)*qfx(i)/rhox(i),0.)
-        VCONV = vconvc*(g/tg(i)*pblh(i)*fluxc)**.33
-        VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
-        WSPD(I)=SQRT(WS(I)*WS(I)+VCONV*VCONV+vsgd*vsgd)
+        DTHVDZ    = THETAV1(I) - TH0(I)
+        fluxc     = max(hfx(i)/rhox(i)/cp                    &
+                    + ep1*TH0(I)*qfx(i)/rhox(i),0.)
+        VCONV     = vconvc*(g/tg(i)*pblh(i)*fluxc)**.33
+        VSGD      = 0.32 * (max(dx/5000.-1.,0.))**.33
+        WSPD(I)   = SQRT(WS(I)*WS(I)+VCONV*VCONV+vsgd*vsgd)
         WSPD(I)   = AMAX1(WSPD(I),0.1)
-        GOVRTH(I)   = G / THETA1(I)
+        GOVRTH(I) = G / THETA1(I)
         BR(I)     = GOVRTH(I) * ZA(I) * DTHVDZ / (WSPD(I) * WSPD(I))
-        RICUT(I)    = 1.0 / (RICRITI + GZ1OZ0(I))
+        RICUT(I)  = 1.0 / (RICRITI + GZ1OZ0(I))
       ENDDO
 
       DO I = its,ite
@@ -441,43 +436,41 @@ CONTAINS
         ELSE
 !        ----- CLASS 3 or 4; UNSTABLE:
 !        ----- CLASS 4 IS FOR ACM NON-LOCAL CONVECTION (H/L < -3)
-            REGIME(I) = 3.0   ! Regime will be reset to 4 if ACM is used
-            AM          = 0.031 + 0.276 * ALOG(GZ1OZ0(I))
-            AH          = 0.04 + 0.355 * ALOG(GZ1OZ0(I))
-            SQLNZZ0     = SQRT(GZ1OZ0(I))
+            REGIME(I) = 3.0 
+            AM        = 0.031 + 0.276 * ALOG(GZ1OZ0(I))
+            AH        = 0.04 + 0.355 * ALOG(GZ1OZ0(I))
+            SQLNZZ0   = SQRT(GZ1OZ0(I))
             PSIM(I)   = AM * ALOG(1.0 - BM * SQLNZZ0 * BR(I))
             PSIH(I)   = AH * ALOG(1.0 - BH * SQLNZZ0 * BR(I))
 
         ENDIF
       ENDDO
-!
+
 !     -------- COMPUTE THE FRICTIONAL VELOCITY AND SURFACE FLUXES:
       DO I = its,ite
         DTG       = THETA1(I) - THETAG(I)
         PSIX      = GZ1OZ0(I) - PSIM(I)
-        UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX                                             
-        USTM(I) = UST(I)
+        UST(I)    = 0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX                                             
+        USTM(I)   = UST(I)
 
 !      ------- OVER WATER, ALTER ROUGHNESS LENGTH (Z0) ACCORDING TO WIND (UST).
-!
         IF ((XLAND(I)-1.5) .GE. 0.0) THEN
-          ZNT(I) = CZO * USTM(I) * USTM(I) / G + OZO
+          ZNT(I)    = CZO * USTM(I) * USTM(I) / G + OZO
           GZ1OZ0(I) = ALOG(ZA(I) / ZNT(I))
           PSIX      = GZ1OZ0(I) - PSIM(I)
-          UST(I)  = KARMAN * WSPD(I) / PSIX
-          USTM(I) = UST(I)
+          UST(I)    = KARMAN * WSPD(I) / PSIX
+          USTM(I)   = UST(I)
         ENDIF 
 
-        RA(I)  = PR0 * (GZ1OZ0(I) - PSIH(I)) / (KARMAN * UST(I))
-        RBH    = 5.0 / UST(I)                ! 5/U*  ! WESELY AND HICKS (1977)
-!       ------- RB FOR WATER VAPOR =  5*(0.606/0.709)^2/3 /UST = 4.503/UST    hi               
-        RBW    = 4.503/UST(I)                                       
-        CHS(I) = 1./(RA(I) + RBH)
-        CQS    = 1./(RA(I) + RBW)
-        MOL(I) = DTG * CHS(I) / UST(I)
-        TMPVTCON  = 1.0 + EP1 * QV1D(i)
-        TST = DTG * CHS(I)/UST(i)
-        TSTV  = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I) 
+        RA(I)       = PR0 * (GZ1OZ0(I) - PSIH(I)) / (KARMAN * UST(I))
+        RBH         = 5.0 / UST(I)
+        RBW         = 4.503/UST(I)                                       
+        CHS(I)      = 1./(RA(I) + RBH)
+        CQS         = 1./(RA(I) + RBW)
+        MOL(I)      = DTG * CHS(I) / UST(I)
+        TMPVTCON    = 1.0 + EP1 * QV1D(i)
+        TST         = DTG * CHS(I)/UST(i)
+        TSTV        = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I) 
         IF (ABS(TSTV) .LT. 1.E-5)  TSTV = 1.E-5 
         MOLENGTH(I) = THETAV1(I) * UST(I) * UST(I) / (KARMAN * G * TSTV)
 
@@ -485,24 +478,24 @@ CONTAINS
         XMOL = MOLENGTH(I)
         IF(MOLENGTH(I).GT.0.0) XMOL = AMAX1(MOLENGTH(I),2.0)       
         RMOL(I) = 1/XMOL                                           
-        ZOL(I)   = ZA(I)*RMOL(I)                                                        
-        ZOBOL = 1.5*RMOL(I)  
-        Z10OL = 10.0*RMOL(I)                                                      
-        ZNTOL = ZNT(I)*RMOL(I)                                                  
+        ZOL(I)  = ZA(I)*RMOL(I)                                                        
+        ZOBOL   = 1.5*RMOL(I)  
+        Z10OL   = 10.0*RMOL(I)                                                      
+        ZNTOL   = ZNT(I)*RMOL(I)                                                  
         IF(XMOL.LT.0.0) THEN
-          YNT = ( 1.0 - GAMAH * ZNTOL )**0.5
-          YOB = ( 1.0 - GAMAH * ZOBOL )**0.5
-          PSIH2 =  2. * ALOG((YOB+1.0)/(YNT+1.0))
-          x1   = (1.0 - gamam * z10ol)**0.25
-          x2   = (1.0 - gamam * zntol)**0.25
+          YNT    = ( 1.0 - GAMAH * ZNTOL )**0.5
+          YOB    = ( 1.0 - GAMAH * ZOBOL )**0.5
+          PSIH2  = 2. * ALOG((YOB+1.0)/(YNT+1.0))
+          x1     = (1.0 - gamam * z10ol)**0.25
+          x2     = (1.0 - gamam * zntol)**0.25
           psim10 = 2.0 * ALOG( (1.0+x1) / (1.0+x2) ) +        &
                          ALOG( (1.0+x1*x1) / (1.0+x2*x2)) -   &
                          2.0 * ATAN(x1) + 2.0 * ATAN(x2)
         ELSE 
           IF((ZOBOL-ZNTOL).LE.1.0) THEN                                       
-            PSIH2 = -BETAH*(ZOBOL-ZNTOL)                                     
+            PSIH2  = -BETAH*(ZOBOL-ZNTOL)                                     
           ELSE                                                                
-            PSIH2 = 1.-BETAH-(ZOBOL-ZNTOL)                                   
+            PSIH2  = 1.-BETAH-(ZOBOL-ZNTOL)                                   
           ENDIF                                                               
           IF((Z10OL-ZNTOL).LE.1.0) THEN                                       
             PSIM10 = -BETAM*(Z10OL-ZNTOL)                                     
@@ -510,25 +503,25 @@ CONTAINS
             PSIM10 = 1.-BETAM-(Z10OL-ZNTOL)                                   
           ENDIF                                                               
         ENDIF 
-        G2OZ0  = ALOG(1.5 / ZNT(I))
-        G10OZ0 = ALOG(10.0 / ZNT(I))
-        RA2  = PR0 * (G2OZ0 - PSIH2) / (KARMAN * UST(I))
+        G2OZ0   = ALOG(1.5 / ZNT(I))
+        G10OZ0  = ALOG(10.0 / ZNT(I))
+        RA2     = PR0 * (G2OZ0 - PSIH2) / (KARMAN * UST(I))
         CHS2(I) = 1.0/(RA2 + RBH)
         CQS2(I) = 1.0/(RA2 + RBW) 
         U10(I)  = US(I)*(G10OZ0-PSIM10)/PSIX                                    
         V10(I)  = VS(I)*(G10OZ0-PSIM10)/PSIX                                            
 
 !       -----COMPUTE SURFACE HEAT AND MOIST FLUX:                                                
-        FLHC(i)=CPM(I)*RHOX(I)*CHS(I)
-        FLQC(i)=RHOX(I)*CQS*MAVAIL(I)
-        QFX(I)=FLQC(I)*(QSFC(I)-QV1D(I))                                     
-        QFX(I)=AMAX1(QFX(I),0.)                                            
-        LH(I)=XLV*QFX(I)
+        FLHC(i)= CPM(I)*RHOX(I)*CHS(I)
+        FLQC(i)= RHOX(I)*CQS*MAVAIL(I)
+        QFX(I) = FLQC(I)*(QSFC(I)-QV1D(I))                                     
+        QFX(I) = AMAX1(QFX(I),0.)                                            
+        LH(I)  = XLV*QFX(I)
         IF(XLAND(I)-1.5.GT.0.)THEN                                           
-          HFX(I)=-FLHC(I)*DTG                               
+          HFX(I)= -FLHC(I)*DTG                               
         ELSEIF(XLAND(I)-1.5.LT.0.)THEN                                       
-          HFX(I)=-FLHC(I)*DTG                               
-          HFX(I)=AMAX1(HFX(I),-250.)                                       
+          HFX(I)= -FLHC(I)*DTG                               
+          HFX(I)= AMAX1(HFX(I),-250.)                                       
         ENDIF      
       ENDDO                                           
 

@@ -107,6 +107,6 @@ module da_physics
 #include "da_integrat_dz.inc"
 #include "da_uv_to_sd_lin.inc"
 #include "da_uv_to_sd_adj.inc"
-
+#include "da_trop_wmo.inc"
 end module da_physics
 

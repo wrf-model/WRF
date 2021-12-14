@@ -207,6 +207,12 @@ CONTAINS
                          +ebu(i,k,j,p_ebu_xyl)*conv_rho
         chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &
                          +ebu(i,k,j,p_ebu_ket)*conv_rho
+        chem(i,k,j,p_ch4)  =  chem(i,k,j,p_ch4)                        &
+                          +ebu(i,k,j,p_ebu_ch4)*conv_rho
+        chem(i,k,j,p_co2)  =  chem(i,k,j,p_co2)                        &
+                          +ebu(i,k,j,p_ebu_co2)*conv_rho
+        chem(i,k,j,p_nh3)  =  chem(i,k,j,p_nh3)                        &
+                         +ebu(i,k,j,p_ebu_nh3)*conv_rho
         enddo
         enddo
         enddo

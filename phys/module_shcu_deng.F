@@ -281,7 +281,7 @@ CONTAINS
                W0AVG1D(k) = W0AVG(i,k,j)
                tke1d(k)  = tkeavg(i,k,j)
                RHO1D(K) =rho(I,K,J)
-               QV1D(K)=QV(I,K,J)
+               QV1D(K)=MAX(QV(I,K,J),1.E-12)
                RH1D(K)=RH(I,K,J)
 #ifdef DENG_SHCU1D
                ca_rad1d(k) = ca_rad(i,k,j)
@@ -1359,7 +1359,7 @@ CONTAINS
 ! WHERE LTOP1 IS THE KAIN-FRITSCH UPDRAFT TOP AND LTOP2 IS THE HEIGHT CALCULATED
 ! USING THE EQUATION: CTP2=CLDTOPB(I,J)+0.2*WUMAX*DT2/2.0
 !
-      LTOP1=NK
+      LTOP1=MIN(NK,KLM)
       CTP1=Z0(LTOP1)
 
       WUMAX=WU(1)

@@ -6,6 +6,7 @@ RM      =       rm -f
 
 
 MODULES = \
+	module_bep_bem_helper.o \
 	module_cam_shr_kind_mod.o \
 	module_cam_support.o \
 	module_cam_shr_const_mod.o \
@@ -43,11 +44,13 @@ MODULES = \
 	module_bl_mynn.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
+	module_bl_gwdo_gsl.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
 	module_checkerror.o \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
+	module_bl_eepsilon.o \
 	module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
 	module_shcu_deng.o          \
@@ -65,6 +68,7 @@ MODULES = \
 	module_cu_tiedtke.o\
 	module_cu_ntiedtke.o\
 	module_cu_gd.o \
+        module_cu_gf_ctrans.o \
 	module_cu_gf_wrfdrv.o \
 	module_cu_gf_deep.o \
 	module_cu_gf_sh.o \
@@ -75,6 +79,7 @@ MODULES = \
 	module_cu_scalesas.o \
 	module_cu_osas.o \
 	module_cu_kfcup.o \
+	module_madwrf.o \
 	module_mp_radar.o \
 	module_mp_kessler.o \
 	module_mp_lin.o  \
@@ -102,6 +107,7 @@ MODULES = \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
 	module_mp_wdm7.o \
+	module_mp_ntu.o \
 	module_mp_cammgmp_driver.o \
 	module_ra_sw.o  \
 	module_ra_clWRF_support.o  \
@@ -121,6 +127,7 @@ MODULES = \
         module_ra_flg.o \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
+	module_ra_eclipse.o \
 	module_ra_aerosol.o  \
 	module_ra_farms.o  \
 	module_sf_sfclay.o \
@@ -132,6 +139,7 @@ MODULES = \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
 	module_sf_clm.o  \
+	module_sf_ctsm.o \
         module_sf_ssib.o  \
 	module_sf_noah_seaice.o \
 	module_sf_noah_seaice_drv.o \

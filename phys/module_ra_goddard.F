@@ -1034,6 +1034,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
                    ,sflxd                                         & !optional for sw
                    ,swddir,swddni,swddif                          & !optinal for sw
                    ,coszen                                        & !optional for sw
+                   ,obscur                                        & ! amontornes-bcodina 2015/09 solar eclipses
 #if (WRF_CHEM == 1)
                    ,aod2d_out,atop2d_out                          & !optional for sw  
                    ,aero                                          & 
@@ -1270,6 +1271,10 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
   real, optional, dimension(ims:ime, jms:jme), intent(in) :: &        
          coszen    ! cosine of the solar zenith angle
 
+! amontornes-bcodina 2015/09 solar eclipses
+!  obscur --> degree of obscuration for solar eclipses prediction (2D)
+real, dimension( ims:ime, jms:jme ), intent(in)  :: &
+        obscur
 
 
 !------- Local variables ----------------------------------------------
@@ -2079,7 +2084,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
       do kt=kts-1,kte !full level ( kts -1 = TOA, kte = BOA )
         DO ic=1,min(CHUNK,ite-ii+1)
         if(lmask(ic) .eqv. .true.) then
-         flx(ic,kt) = flx(ic,kt) * solcon * cosz(ic)
+         flx(ic,kt) = flx(ic,kt) * solcon * cosz(ic)* ( 1 - obscur(i,j) ) ! amontornes-bcodina 2015/09 solar eclipses
         endif
         ENDDO
       enddo
@@ -2151,7 +2156,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
      DO ic=1,min(CHUNK,ite-ii+1)
      if(lmask(ic) .eqv. .true.) then
        i = ii+ic-1
-       gsf(i:ie(ic),j:je(ic)) = (1. - rsuvbm(ic)) * flxd(ic,kte) * solcon * cosz(ic)
+       gsf(i:ie(ic),j:je(ic)) = (1. - rsuvbm(ic)) * flxd(ic,kte) * solcon * cosz(ic) * (1 - obscur(i,j) ) ! amontornes-bcodina 2015/09 solar eclipses
      endif
      ENDDO
 
@@ -2172,17 +2177,17 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
      DO ic=1,min(CHUNK,ite-ii+1)
      if(lmask(ic) .eqv. .true.) then
        i = ii+ic-1
-       if(present(swddni)) swddni(i:ie(ic),j:je(ic)) = (flxd_surf(ic,1)+flxd_surf(ic,3)) * solcon !total SW direct radiation at normal direction [W/m2]
+       if(present(swddni)) swddni(i:ie(ic),j:je(ic)) = (flxd_surf(ic,1)+flxd_surf(ic,3)) * solcon * ( 1 - obscur(i,j) ) !total SW direct radiation at normal direction [W/m2] ! amontornes-bcodina 2015/09 solar eclipses
        if(present(swddir)) swddir(i:ie(ic),j:je(ic)) = swddni(i,j) * cosz(ic)                   !total SW direct radiation [W/m2]    
-       if(present(swddif)) swddif(i:ie(ic),j:je(ic)) = (flxd_surf(ic,2)+flxd_surf(ic,4)) * solcon * cosz(ic) !total SW diffuse radiation [W/m2]
+       if(present(swddif)) swddif(i:ie(ic),j:je(ic)) = (flxd_surf(ic,2)+flxd_surf(ic,4)) * solcon * cosz(ic) * ( 1 - obscur(i,j) )  !total SW diffuse radiation [W/m2] ! amontornes-bcodina 2015/09 solar eclipses
 
 !
 ! extra output for earth radiation budget
 !       
-       ERBE_out(i:ie(ic),j:je(ic),5) = flxd(ic,kts-1) * solcon * cosz(ic)  ! TOA SW downwelling flux [W/m2] 
-       ERBE_out(i:ie(ic),j:je(ic),6) = flxu(ic,kts-1) * solcon * cosz(ic)  ! TOA SW upwelling flux   [W/m2]
-       ERBE_out(i:ie(ic),j:je(ic),7) = flxd(ic,kte)   * solcon * cosz(ic)  ! surface SW downwelling flux [W/m2]
-       ERBE_out(i:ie(ic),j:je(ic),8) = flxu(ic,kte)   * solcon * cosz(ic)  ! surface SW upwelling flux   [W/m2]
+       ERBE_out(i:ie(ic),j:je(ic),5) = flxd(ic,kts-1) * solcon * cosz(ic) * (1 - obscur(i,j) )  ! TOA SW downwelling flux [W/m2] 
+       ERBE_out(i:ie(ic),j:je(ic),6) = flxu(ic,kts-1) * solcon * cosz(ic) * (1 - obscur(i,j) ) ! TOA SW upwelling flux   [W/m2]
+       ERBE_out(i:ie(ic),j:je(ic),7) = flxd(ic,kte)   * solcon * cosz(ic) * (1 - obscur(i,j) ) ! surface SW downwelling flux [W/m2]
+       ERBE_out(i:ie(ic),j:je(ic),8) = flxu(ic,kte)   * solcon * cosz(ic) * (1 - obscur(i,j) ) ! surface SW upwelling flux   [W/m2]
      endif
      ENDDO
 

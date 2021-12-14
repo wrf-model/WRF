@@ -224,7 +224,12 @@ CONTAINS
 
          CASE ( SLABSCHEME )
 
+#ifdef WRF_USE_CTSM 
+         CASE ( LSMSCHEME , NOAHMPSCHEME , CLMSCHEME, CTSMSCHEME, SSIBSCHEME )  !mchen add for ssib
+#else
          CASE ( LSMSCHEME , NOAHMPSCHEME , CLMSCHEME, SSIBSCHEME )   !mchen add for ssib
+#endif
+
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 

@@ -60,6 +60,7 @@
  cudt                                = 0,     0,     0,
  icloud                              = 1,
  num_land_cat                        = 21,
+ fractional_seaice                   = 1,
  /
 
  &fdda

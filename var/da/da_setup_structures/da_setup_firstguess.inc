@@ -116,6 +116,9 @@ subroutine da_setup_firstguess(xbx, grid, config_flags, ens )
 #endif
 #ifdef DM_PARALLEL
 #include "HALO_INIT.inc"
+#if (WRF_CHEM == 1)
+#include "HALO_CHEM_INIT.inc"
+#endif
 #endif
 
 #ifdef A2C

@@ -6,6 +6,10 @@ MODULE qf03
 ! Modify the code for WRF_chem
 !
 ! M. Klose, 2010-2015 Modifications
+
+! A. Ukhov, 11 March 2021, Now "bems" is dust emission (kg/m2) per dt.
+! Before was instantenious flux (kg m^-2 s^-1).
+
 !-----------------------------------------------------------------------------------
 ! Calculate sediment flux for multi-particle size soils as a weighted average of Q(d) 
 !           dust emission F(d) for covered and moisture soil
@@ -351,8 +355,8 @@ MODULE qf03
       
       do n = 1, nbins
 ! fbin : [kg/m2/s],  dz_lowest : [m],  rho : [kg/m3],  dt : [s] -> tc : [kg/kg-dryair]
-         tc(n) = tc(n) + cell_fbin(n)/dz_lowest/rho*dt     ![kg/kg-dryair]
-         bems(n) = cell_fbin(n)     ![kg/m2/s]
+         tc(n) = tc(n) + cell_fbin(n)/dz_lowest/rho*dt     ! (kg/kg)
+         bems(n) = cell_fbin(n)*dt      ! diagnostic (kg/m2) per dt
       enddo
 
 

@@ -9969,6 +9969,7 @@ CONTAINS
                        obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
                        )
 !------------------------------------------------------------------
+   USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
@@ -10251,6 +10252,10 @@ CONTAINS
     integer:: idx_rei
     real:: corr
 
+#ifdef CLWRFGHG
+! Using data from CAMtr_volume_mixing_ratio data file
+    real(kind=8)                                 :: co2, n2o, ch4, cfc11, cfc12
+#else
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
@@ -10261,6 +10266,7 @@ CONTAINS
 ! nitrous oxide (319 ppbv)
     real :: n2o
     data n2o / 319.e-9 / 
+#endif
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -10350,6 +10356,11 @@ CONTAINS
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
+#ifdef CLWRFGHG
+! Read time-varying trace gases concentrations and interpolate them to run date
+   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+#endif
+
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
 

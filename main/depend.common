@@ -497,9 +497,7 @@ module_ra_rrtmg_lw.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
 module_ra_rrtmg_lwf.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
-module_ra_rrtmg_lwk.o: ../share/module_model_constants.o \
-                 module_ra_clWRF_support.o
-
+module_ra_rrtmg_lwk.o: ../share/module_model_constants.o
 
 
 module_physics_addtendc.o: \

@@ -1044,8 +1044,8 @@ if [ -n "$NETCDF4" ] ; then
       echo "--enable-netcdf4                                                             "
       echo
       echo "OR set NETCDF_classic variable                                               "
-      echo "   bash/ksh : export NETCDF_classic=1
-      echo "        csh : setenv NETCDF_classic 1
+      echo "   bash/ksh : export NETCDF_classic=1                                        "
+      echo "        csh : setenv NETCDF_classic 1                                        "
       echo 
       echo "Then re-run this configure script                                            "
       echo

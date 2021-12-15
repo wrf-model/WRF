@@ -7919,8 +7919,8 @@ ENDIF   ! CROPTYPE == 0
       SMCAVL = 0.0
       SMCLIM = 0.0
       ! estimate available water and field capacity for the root zone
-      SMCAVL = (SH2O(1)-parameters%SMCWLT(1))*-1*ZSOIL(1)              ! current soil water (m) 
-      SMCLIM = (parameters%SMCREF(1)-parameters%SMCWLT(1))*-1*ZSOIL(1) ! available water (m)
+      SMCAVL = (SH2O(1)-parameters%SMCWLT(1))*(-1)*ZSOIL(1)              ! current soil water (m) 
+      SMCLIM = (parameters%SMCREF(1)-parameters%SMCWLT(1))*(-1)*ZSOIL(1) ! available water (m)
       DO K = 2, parameters%NROOT
          SMCAVL = SMCAVL + (SH2O(K)-parameters%SMCWLT(K))*(ZSOIL(K-1) - ZSOIL(K))
          SMCLIM = SMCLIM + (parameters%SMCREF(K)-parameters%SMCWLT(K))*(ZSOIL(K-1) - ZSOIL(K))

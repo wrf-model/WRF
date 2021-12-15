@@ -12,7 +12,10 @@ MODULE module_firebrand_spotting
     USE module_domain,       ONLY : get_ijk_from_grid, domain               ! grid
     USE module_configure,    ONLY : grid_config_rec_type                    ! config_flags
     USE module_symbols_util, ONLY : WRFU_TimeInterval, WRFU_TimeIntervalGet, WRFU_TimeIntervalSet
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
     USE MPI 
+#endif
+
     !USE module_firebrand_spotting_mpi,       ONLY: neighbors, my_id, task_id, mpiprocs
 
     IMPLICIT NONE
@@ -176,9 +179,9 @@ CONTAINS
         fs_frac_landed)
 
 !=============================================================
-
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
         USE module_firebrand_spotting_mpi,            ONLY: fs_mpi_init
-
+#endif
         !-------------------------------------------------------------------------------
         ! Initialize all I/O and variables declared in the registry
         !-------------------------------------------------------------------------------
@@ -285,7 +288,8 @@ CONTAINS
 
         ENDIF
 
-#ifdef DM_PARALLEL
+
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
         CALL fs_mpi_init(grid)
 #endif
 
@@ -1503,11 +1507,12 @@ END FUNCTION order_val
 
         USE module_domain,            ONLY: domain_get_time_since_sim_start, &
                                             domain_clock_get, is_alarm_tstep
-        USE module_dm,                ONLY: wrf_dm_max_real, wrf_dm_sum_integer, local_communicator
+!        USE module_dm,                ONLY: wrf_dm_max_real, wrf_dm_sum_integer, local_communicator
         USE module_domain_type,       ONLY: HISTORY_ALARM, restart_alarm, AUXHIST23_ALARM
         USE module_state_description, ONLY: p_qv, num_moist, param_first_scalar
         USE module_utility,           ONLY: WRFU_Alarm !WRFU_Clock, 
-        USE module_firebrand_spotting_mpi,            ONLY: fs_mpi_init, &
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+        USE module_firebrand_spotting_mpi,  ONLY: fs_mpi_init, &
                                             fs_mpi_sendbuff1_int,      &
                                             fs_mpi_sendbuff1_real,     &
                                             fs_mpi_recvbuff1_int,      &
@@ -1522,15 +1527,17 @@ END FUNCTION order_val
                                             fs_mpi_recvfrompatch_real, &
                                             fs_mpi_sendbuff_real,      &
                                             fs_mpi_checkreceive,       &
-                                            fs_mpi_recv,               &
-                                            neighbors, my_id, task_id, mpiprocs, &
+                                            fs_mpi_recv
+        USE module_firebrand_spotting_mpi,  ONLY: neighbors, my_id, task_id, mpiprocs,  &
                                             left_id, right_id, up_id, down_id, &
                                             upleft_id, upright_id, downleft_id, downright_id
+#endif
 
 
         IMPLICIT NONE
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
         LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-
+#endif
         !-------------------------------------------------------------------------------
         ! WRF variables
         !-------------------------------------------------------------------------------
@@ -1637,6 +1644,7 @@ END FUNCTION order_val
         !-------------------------------------------------------------------------------
 
         INTEGER, SAVE :: MasterId = 0
+        INTEGER, SAVE :: ntiles = 0
         LOGICAL, SAVE :: IamMaster = .FALSE. 
 
         INTEGER, ALLOCATABLE, DIMENSION(:) :: nbr_id, r_id, r_dt
@@ -1659,14 +1667,19 @@ END FUNCTION order_val
         ! Begin
         !===============================================================================
 
-#ifdef DM_PARALLEL
+
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
         IF (mpiprocs == 0) & 
             CALL fs_mpi_init(grid) ! should be called in fspotting_init (?)
 
+        ntiles = mpiprocs
         IF ( wrf_dm_on_monitor() ) THEN 
             IamMaster = .TRUE. 
             MasterId = my_id
         ENDIF
+#else
+        IamMaster = .TRUE.  ! initialized with FALSE. It should be TRUE in serial compilation
+        ntiles = 1 ! used to allocate the arrays for incomming mpi comms. ntiles=1 in serial builds
 #endif
 
         hist_flag = .FALSE. 
@@ -1871,6 +1884,7 @@ END FUNCTION order_val
             ENDIF ! (firepts > 0)
             !-------------------------------------------------------------------------------
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
             IF (.NOT. (IamMaster)) THEN
 
                 ! nbr > 0 indicates there's fire on tile and RelPot > 0, not the array size to receive in next mpi comm
@@ -1883,6 +1897,7 @@ END FUNCTION order_val
                     ! CALL wrf_debug (wrfdbg, 'SPFire_rel mpi_send Npts,Meanpot: '//msg)
                 ENDIF
             ENDIF
+#endif
 
             !===============================================================================
             ! Firebrand Generation - Release Firebrands - Part 2
@@ -1904,8 +1919,9 @@ END FUNCTION order_val
                 rel_ratio = ZERO_dp
                 cdf_coeff = ZERO_dp
 
-                ALLOCATE(np_Ngrdpts(mpiprocs)) ! Number of fuel cat actively burning in each mpiproc
-                ALLOCATE(np_MeanPot(mpiprocs))
+                
+                ALLOCATE(np_Ngrdpts(ntiles)) ! Number of fuel cat actively burning in each mpiproc
+                ALLOCATE(np_MeanPot(ntiles)) 
                 np_MeanPot(:) = ZERO_dp
                 np_Ngrdpts(:) = 0
 
@@ -1915,18 +1931,21 @@ END FUNCTION order_val
                 !-------------------------------------------------------------------------------
                 ! Receive release potential data from procs
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+
                 DO kk=2, mpiprocs ! kk=1 is Master, MPI-IDs begin at 0
                     np_Ngrdpts(kk) = fs_mpi_recvbuff1_int(fromid=kk-1)  ! Comm receive: Number of pts with RelPot>0
 
                     IF (np_Ngrdpts(kk) > 0) THEN 
-
                         np_MeanPot(kk) = fs_mpi_recvbuff1_real(fromid=kk-1)
-                        TotPot = np_MeanPot(kk) * REAL(np_Ngrdpts(kk)) + TotPot 
-
                         ! WRITE(msg, '(3(i8,1x), 2(f14.6,1x))') my_id, kk-1, np_Ngrdpts(kk), np_Meanpot(kk), TotPot
                         ! CALL wrf_debug (wrfdbg, 'SPFire_rel master proc Ngrdpts, MeanPot, TotPot: '//msg)
-
                     ENDIF
+                ENDDO
+#endif
+
+                DO kk=1, ntiles ! at least 1 for serial compile 
+                   TotPot = np_MeanPot(kk) * REAL(np_Ngrdpts(kk)) + TotPot 
                 ENDDO
 
                 !-------------------------------------------------------------------------------
@@ -1957,6 +1976,8 @@ END FUNCTION order_val
                     !-------------------------------------------------------------------------------
                     ! Send dat to procs
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+
                     DO kk=2, mpiprocs ! kk=1 is Master
                         IF (np_Ngrdpts(kk) > 0) THEN
                             CALL fs_mpi_sendbuff1_real(sendto=kk-1, nbr=PotThr)
@@ -1964,7 +1985,7 @@ END FUNCTION order_val
                             ! CALL wrf_debug (wrfdbg, 'SPFire_rel_master mpi_send PotThr: '//msg)
                         ENDIF
                     ENDDO
-
+#endif
                 ENDIF ! npts_total > 0
                 !-------------------------------------------------------------------------------
 
@@ -1981,12 +2002,14 @@ END FUNCTION order_val
                 !-------------------------------------------------------------------------------
                 ! Receive Potential Threshold from Master 
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
                 IF (.NOT.(IamMaster)) THEN
                     PotThr = ZERO_dp 
                     PotThr = fs_mpi_recvbuff1_real(fromid=MasterId) 
                     ! WRITE(msg, '((i4,1x), (f14.6,1x))')  my_id, PotThr
                     ! CALL wrf_debug (wrfdbg, 'SPFire_rel receive potential threshold: '//msg)
                 ENDIF
+#endif
 
                 !------------------------------------------------------------------------------- 
                 ! Assign release from the various fuel cat to corresponding gridpts
@@ -2116,6 +2139,7 @@ END FUNCTION order_val
         ! Nothing to transport: MPI Wait
         !-------------------------------------------------------------------------------        
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
         IF ((active_br == 0))  THEN
 
             CALL fs_mpi_nothing2send(sendto=left_id)
@@ -2130,7 +2154,7 @@ END FUNCTION order_val
             !CALL wrf_debug (wrfdbg, 'SPFire_driver: no fires or active brands in patch. MPI signal sent.')
 
         ENDIF
-
+#endif
         !===============================================================================
         !===============================================================================
 
@@ -2405,7 +2429,8 @@ END FUNCTION order_val
             !-------------------------------------------------------------------------------
             ! interrupt before MPI
             ! IF (COUNT(sparse_mask) > 0) CALL wrf_error_fatal( "MPI called") 
-            
+
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )            
             CALL fs_mpi_send2neighbors(task_id=task_id,&
                     mask=sparse_mask,&
                     p_x  = fs_p_x,   &
@@ -2418,11 +2443,13 @@ END FUNCTION order_val
                     fs_p_e = fs_p_effd, &
                     fs_p_t = fs_p_temp, &
                     fs_p_v = fs_p_tvel)
-
+#endif
             !-------------------------------------------------------------------------------
             ! Reset
             !-------------------------------------------------------------------------------                
             ! CALL wrf_debug (wrfdbg, 'SPFire_driver reset particles sent away')
+
+            ! In serial compilation, firebrands outside the domain limits will be removed
             WHERE(sparse_mask) fs_p_id= 0
 
         !===============================================================================            
@@ -2593,6 +2620,7 @@ END FUNCTION order_val
                     landing_cnt = PACK(fs_count_landed_hist(is:ie,js:je), landing_mask(is:ie,js:je))
                     landed_risk = PACK(fs_fuel_spotting_risk(is:ie,js:je), landing_mask(is:ie,js:je))
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
                     IF (.NOT. (IamMaster)) THEN
 
                         CALL fs_mpi_sendbuffsize(sendto=MasterId, nbr=ndep) ! Comm send >0: BuffSz
@@ -2600,14 +2628,16 @@ END FUNCTION order_val
                         CALL fs_mpi_sendbuff_real(sendto=MasterId, bsz=ndep, buff=landed_risk(1:ndep))
                             
                     ENDIF
+#endif
                 ENDIF ! (fs_count_landed_hist > 0 .AND. fire_area == 0)
             ENDIF ! SUM(fs_count_landed_hist) > 0
 
             !-------------------------------------------------------------------------------
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
             IF ((ndep == 0) .AND. .NOT.(IamMaster)) &
                 CALL fs_mpi_nothing2send(sendto=MasterId) ! Comm send 0: BuffSz
-
+#endif
             !-------------------------------------------------------------------------------
             ! Master: Calculate Likelihood Field
             !-------------------------------------------------------------------------------
@@ -2617,16 +2647,17 @@ END FUNCTION order_val
                 !-------------------------------------------------------------------------------
                 ! Declare arrays to receive data
 
-                ALLOCATE(np_nlanded(mpiprocs))
+                ALLOCATE(np_nlanded(ntiles)) 
                 np_nlanded(:) = 0
                 np_nlanded(1) = ndep ! Array index for Master is 1
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
                 DO kk=2, mpiprocs ! kk=1 is Master, MPI-IDs begin at 0
                     np_nlanded(kk) = fs_mpi_recvbuffsize(fromid=kk-1)  ! Comm receive: BuffSz
                     ! WRITE(msg, '(2(i8,1x))') kk,np_nlanded(kk)
                     ! CALL wrf_debug (wrfdbg, 'SPFire_lkhd proc deposit: '//msg)
                 ENDDO
-
+#endif
                 !-------------------------------------------------------------------------------
                 ! Communicate deposits between Master and procs
 
@@ -2646,6 +2677,8 @@ END FUNCTION order_val
                     ! Receive deposit data from procs
 
                     kk1 = ndep + 1 ! index start after master's 
+
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
                     DO kk=2, mpiprocs ! kk=1 is Master
 
                         IF (np_nlanded(kk) > 0) THEN 
@@ -2659,6 +2692,7 @@ END FUNCTION order_val
                             kk1 = kk1 + np_nlanded(kk)
                         ENDIF
                     ENDDO
+#endif
 
                     !-------------------------------------------------------------------------------
                     ! Calculate ratio and lkhd 
@@ -2680,6 +2714,8 @@ END FUNCTION order_val
                     ! Send dat to procs
 
                     kk1 = ndep + 1 ! index start after master's 
+
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
                     DO kk=2, mpiprocs ! kk=1 is Master
 
                         IF (np_nlanded(kk) > 0) THEN 
@@ -2691,9 +2727,8 @@ END FUNCTION order_val
 
                             kk1 = kk1 + np_nlanded(kk)
                         ENDIF
-
                     ENDDO
-
+#endif
                 ENDIF ! SUM(np_nlanded) > 0
                 !-------------------------------------------------------------------------------
 
@@ -2701,6 +2736,7 @@ END FUNCTION order_val
 
             !-------------------------------------------------------------------------------
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
             IF (.NOT.(IamMaster) .AND. (ndep > 0)) THEN
 
                 recv_frac_landed = fs_mpi_recvfrompatch_real(bsz=ndep, fromid=MasterId) 
@@ -2710,6 +2746,7 @@ END FUNCTION order_val
                 fs_spotting_lkhd(is:ie,js:je) = UNPACK(recv_spot_lkhd, MASK=landing_mask(is:ie,js:je), FIELD=ZERO_dp)
 
             ENDIF
+#endif
 
             IF ((IamMaster) .AND. (ndep > 0)) THEN
 
@@ -2740,8 +2777,10 @@ END FUNCTION order_val
 
 
         !-------------------------------------------------------------------------------
-        ! Anything to receive?
+        ! Anything to receive? This part is only needed when compiled in parallel
         !-------------------------------------------------------------------------------
+
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
 
         ALLOCATE(nbr_id(neighbors))
         nbr_id(:)=fs_mpi_checkreceive(task_list=task_id, np=neighbors)
@@ -2820,7 +2859,7 @@ END FUNCTION order_val
         !-------------------------------------------------------------------------------
         ! DONE :)
         !-------------------------------------------------------------------------------
-
+#endif
         !===============================================================================
         ! Check history interval 
         !===============================================================================

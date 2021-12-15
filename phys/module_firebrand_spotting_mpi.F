@@ -20,11 +20,14 @@ MODULE module_firebrand_spotting_mpi
     USE module_domain,       ONLY : get_ijk_from_grid, domain               ! grid
     USE module_configure,    ONLY : grid_config_rec_type                    ! config_flags
     !USE module_symbols_util, ONLY : WRFU_TimeInterval, WRFU_TimeIntervalGet, WRFU_TimeIntervalSet
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
     USE MPI 
-
+#endif
     IMPLICIT NONE
 
     PRIVATE
+
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
     PUBLIC &
         ! Module Variables:
         neighbors, my_id, task_id, mpiprocs, &
@@ -47,6 +50,7 @@ MODULE module_firebrand_spotting_mpi
         fs_mpi_sendbuffsize, &
         fs_mpi_sendbuff1_real, &
         fs_mpi_sendbuff1_int
+#endif
 
     ! THESE VARIABLES ARE IN MODULE SCOPE ! Careful with reassignments - don't reassign
     ! SAVE attribute is default
@@ -65,10 +69,10 @@ MODULE module_firebrand_spotting_mpi
     ! Fixed parameters ***MODULE SCOPE***
     !-------------------------------------------------------------------------------
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
     INTEGER, PARAMETER :: wrfdbg = 0    
 
     INTEGER, PARAMETER :: dp = KIND(0.d0)      ! double precision
-
     REAL,    PARAMETER :: ZERO_dp = 0.0_dp ! this is a real type variable, not a double precision type
     REAL,    PARAMETER :: dp05 = 0.5_dp
     REAL,    PARAMETER :: dp1 = 1.0_dp
@@ -95,8 +99,6 @@ MODULE module_firebrand_spotting_mpi
     INTEGER, SAVE, DIMENSION(neighbors) :: task_id
 
     INTEGER, SAVE :: mpiprocs = 0
-
-
     !-------------------------------------------------------------------------------
     ! grid and cf are not here because dimensions are given at runtime (derived types)
     ! grid values change at every interaction,
@@ -111,9 +113,10 @@ MODULE module_firebrand_spotting_mpi
     INTEGER, SAVE :: ims, jms, ime, jme, kms, kme ! memory bounds
     INTEGER, SAVE :: is, ie, js, je, ks, ke       ! patch start/end 
     INTEGER, SAVE :: ifps, jfps, ifpe, jfpe       ! refined fire grid bounds
+#endif
 
 CONTAINS
-
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
 !=============================================================
 !=============================================================
 
@@ -793,6 +796,6 @@ CONTAINS
 
 !=============================================================
 !=============================================================
-
+#endif
 END MODULE module_firebrand_spotting_mpi
 

@@ -2629,7 +2629,7 @@ rconfig   integer morr_rimed_ice          namelist,physics      1              1
 
 rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"
 rconfig   integer calc_clean_atm_diag     derived               1              0       -     "calc_clean_atm_diag" "carries decision on using clean sky diagnostics"       "flag"
-rconfig   integer acc_phy_tend            namelist,physics      1              0       rh    "acc_phy_tend"       "option to output accumulated physics tendencies"   "flag"
+rconfig   integer acc_phy_tend            namelist,physics      max_domains    0       rh    "acc_phy_tend"       "option to output accumulated physics tendencies"   "flag"
 
 # MAD-WRF
 rconfig   integer madwrf_opt          namelist,physics      1              0       rh    "madwrf_opt" "MAD-WRF model" "0: off, 1: Advect/diffuse hydromets, 2: Nudge advected/diffused hydrometes to model state"

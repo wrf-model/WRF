@@ -246,6 +246,7 @@ contains
 #include "da_qc_seviri.inc"
 #include "da_qc_amsr2.inc"
 #include "da_qc_ahi.inc"
+#include "da_qc_gmi.inc"
 #include "da_qc_goesimg.inc"
 #include "da_write_iv_rad_ascii.inc"
 #include "da_write_iv_rad_for_multi_inc.inc"

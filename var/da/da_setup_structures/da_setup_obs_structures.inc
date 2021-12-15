@@ -95,7 +95,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_ssmisobs .OR. use_hirs4obs .OR. use_mhsobs .OR. use_pseudo_rad .OR. &
       use_mwtsobs  .OR. use_mwhsobs .OR. use_atmsobs .OR. use_simulated_rad .OR. &
       use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs .OR. use_goesimgobs .OR. &
-      use_ahiobs .OR. use_mwhs2obs) then
+      use_ahiobs .OR. use_mwhs2obs .OR. use_gmiobs) then
       use_rad = .true.
    else
       use_rad = .false.
@@ -309,6 +309,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       if ( use_amsr2obs ) then
          call da_message((/'Using AMSR2 radiance input in HDF5 format'/))
       end if
+      if ( use_gmiobs ) then
+         call da_message((/'Using GMI radiance input in HDF5 format'/))
+      end if
       call da_setup_radiance_structures(grid, ob, iv)
 #else
       call da_error(__FILE__,__LINE__,(/"options to use radiance data are turned on in wrfvar4 namelist, the code needs to be compiled with CRTM or RTTOV library"/))
@@ -323,13 +326,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 
    write(unit=stdout, fmt='(a)')  'Observation summary'
    do i=1,num_fgat_time
-      write(unit=stdout, fmt='(3x,a,i2)') 'ob time ', i
+      write(unit=stdout, fmt='(3x,2(a,i3))') 'ob time', i,' num_ob_indexes=',num_ob_indexes
       do j=1,num_ob_indexes
-         if(j.eq.27 &
-#if (WRF_CHEM == 1)
-            .or. j.eq.29 .or. j.eq.30 &
-#endif
-         )cycle
+         if(j.eq.27) cycle        ! skip tamdar_sfc (HA)
          if (use_gpsztdobs .and.obs_names(j) == 'gpspw         ' ) then
             ob_name = 'gpsztd        '
          else
@@ -344,10 +343,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
                iv%info(j)%thin_plocal(i) - iv%info(j)%thin_plocal(i-1), ' local (post-thinning)'
          else
 #if (WRF_CHEM == 1)
-            write(unit=stdout, fmt='(6x,a,i10,a,i8,a,i8,a,i8,a)') &
-               ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
+            write(unit=stdout, fmt='(i3,3x,a,i10,a,i8,a,i8,a,i8,a)') &
+               j,ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
                iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local', &
-               iv%info(chemic_surf)%ntotal, 'chem total', iv%info(chemic_surf)%nlocal, 'chem local'
+               iv%info(chemic_surf)%ntotal, ' chem total', iv%info(chemic_surf)%nlocal, ' chem local'
 #else
             write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
                ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &

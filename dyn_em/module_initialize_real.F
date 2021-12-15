@@ -125,7 +125,7 @@ CONTAINS
       REAL , DIMENSION(max_eta) :: eta_levels
 
       INTEGER :: auto_levels_opt
-      REAL :: max_dz, dzbot, dzstretch_s, dzstretch_u, z1, airmass
+      REAL :: max_dz, dzbot, dzstretch_s, dzstretch_u, z1
 
       INTEGER:: i_end, j_end
       REAL, ALLOCATABLE, DIMENSION(:):: temp_P, temp_T, temp_R, temp_Dz
@@ -666,6 +666,19 @@ integer::oops1,oops2
          !  model and the hi-res topo from WPS.  We only do this for the
          !  coarse grid since we are going to make the interface consistent
          !  in the model betwixt the CG and FG domains.
+
+         !  An important point is to inform the user if their request cannot
+         !  be satisfied. Do not skip over this quietly.
+
+         IF ( ( config_flags%smooth_cg_topo ) .AND. &
+              ( internal_time_loop .EQ. 1 ) .AND. &
+              ( grid%id .EQ. 1 ) .AND. &
+              ( flag_soilhgt .NE. 1) ) THEN
+            CALL wrf_message    (' --- ERROR: NML option smooth_cg_topo=T')
+            CALL wrf_message    ('            But found no soil elevation / terrain / topography data in metgrid files')
+            CALL wrf_message    ('            The field SOILHGT is required when smoothing the CG topography on d01')
+            CALL wrf_error_fatal('            If using ERA5 data, possibly need to add more time invariant fields')
+         END IF
 
          IF ( ( config_flags%smooth_cg_topo ) .AND. &
               ( internal_time_loop .EQ. 1 ) .AND. &
@@ -4283,12 +4296,7 @@ endif
                   do j = jts, min(jde-1,jte)
                   do i = its, min(ide-1,ite)
                      z1 = (grid%phb(i,2,j)-grid%phb(i,1,j))/g
-                     airmass = 1./grid%alt(i,1,j) * z1 * config_flags%dx*config_flags%dy          ! kg
-                     grid%qnwfa2d(i,j) = grid%w_wif_now(i,1,j) * 0.000196 * (airmass*5.E-11)
-                     if(i.eq.its .and. j.eq.jts) then
-                        write(a_message,*) 'aero_sfc_flux: ', i,j,z1,1./grid%alt(i,1,j),airmass,grid%w_wif_now(i,1,j),grid%qnwfa2d(i,j)
-                        CALL wrf_debug (1, a_message)
-                     endif
+                     grid%qnwfa2d(i,j) = grid%w_wif_now(i,1,j) * 0.000196 * (50./z1)
                   enddo
                   enddo
 

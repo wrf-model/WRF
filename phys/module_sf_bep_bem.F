@@ -1715,7 +1715,7 @@ do iz= kts,kte
                    sfrbpv(1,ibui),                                           &
                    latent,sigma,albw,albwin,albr,                            &
                    emr,emw,emwind,rsw,rlw,r,cp_u,                            &
-                   da_u,tmp_u,qv_u,pr_u,rs,rld,dzw,csw,alaw,pwin_u(iurb),    &
+                   da_u,tmp_u,qv_u,pr_u,rs,swddif,rld,dzw,csw,alaw,pwin_u(iurb),    &
                    cop_u(iurb),beta_u(iurb),sw_cond_u(iurb),time_on_u(iurb), &
                    time_off_u(iurb),targtemp_u(iurb),gaptemp_u(iurb),        &
                    targhum_u(iurb),gaphum_u(iurb),perflo_u(iurb),            &

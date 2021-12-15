@@ -38,15 +38,6 @@ convert_em : convert_em.o
 	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)
 	$(LD) -o convert_em.exe $(LDFLAGS) convert_em.o $(LIBWRFLIB) $(LIB)
 
-convert_nmm : convert_nmm.o
-	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)
-	$(FC) -o convert_nmm.exe $(LDFLAGS) convert_nmm.o $(LIBWRFLIB) $(LIB)
-
-real_nmm : real_nmm.o
-	( cd ../dyn_nmm ;  $(MAKE) module_initialize_real.o )
-	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)
-	$(FC) -o real_nmm.exe $(LDFLAGS) real_nmm.o $(LIBWRFLIB) $(LIB)
-
 module_initialize : ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o
 #	( cd ../dyn_$(SOLVER) ;  $(MAKE) module_initialize_$(IDEAL_CASE).o )
 

@@ -207,7 +207,7 @@ state    real  dustload_1    ij       misc         1         -       r      "dus
 state    real  dustload_2    ij       misc         1         -       r      "dustload_2"     "dust loading for size 2"        "ug/m2"
 state    real  dustload_3    ij       misc         1         -       r      "dustload_3"     "dust loading for size 3"        "ug/m2"
 state    real  dustload_4    ij       misc         1         -       r      "dustload_4"     "dust loading for size 4"        "ug/m2"
-state    real  dustload_5    ij       misc         1         -       r      "dustload_5"     "total dust loading"             "ug/m2"
+state    real  dustload_5    ij       misc         1         -       r      "dustload_5"     "dust loading for size 5"        "ug/m2"
 state    real  depvelocity   ij       misc         1         -       rh      "drydepvel"    "dust dry deposition velocity "         "m/s"
 state    real  setvel_1      ij       misc         1         -       r      "setvel_1"     "dust gravitational settling velocity for size 1"    "m/s"
 state    real  setvel_2      ij       misc         1         -       r      "setvel_2"     "dust gravitational settling velocity for size 2"    "m/s"
@@ -1342,7 +1342,7 @@ state    real  ph_pan          ikj     misc        1         -      r        "PH
 state    real  ph_acet         ikj     misc        1         -      r        "PHOTR102"              "acetone photolysis rate" "min{-1}"
 state    real  ph_mglo         ikj     misc        1         -      r        "PHOTR103"              "mglo photolysis rate" "min{-1}"
 state    real  ph_hno4_2       ikj     misc        1         -      r        "PHOTR104"              "mglo photolysis rate" "min{-1}"
-state    real  ph_clno2        ikj     misc        1         -      rh        "PHOTR204"                "CLNO2 Photolysis Rate" "min{-1}"
+state    real  ph_clno2        ikj     misc        1         -      r        "PHOTR204"                "CLNO2 Photolysis Rate" "min{-1}"
 # mozart photolysis rates
 state    real  ph_n2o          ikj     misc        1         -      r        "PHOTR114"              "n2o photolysis rate" "min{-1}"
 state    real  ph_pooh         ikj     misc        1         -      r        "PHOTR118"              "pooh photolysis rate" "min{-1}"
@@ -1365,9 +1365,9 @@ state    real  ph_mekooh       ikj     misc        1         -      r        "PH
 state    real  ph_tolooh       ikj     misc        1         -      r        "PHOTR133"              "tolooh photolysis rate" "min{-1}"
 state    real  ph_terpooh      ikj     misc        1         -      r        "PHOTR134"              "terpooh photolysis rate" "min{-1}"
 # cb05cl photolysis rates
-state    real  ph_cl2          ikj     misc        1         -      rh       "PHOTR201"              "cl2 photolysis rate" "min{-1}"
-state    real  ph_hocl         ikj     misc        1         -      rh       "PHOTR202"              "hocl photolysis rate" "min{-1}"
-state    real  ph_fmcl         ikj     misc        1         -      rh       "PHOTR203"              "fmcl photolysis rate" "min{-1}"
+state    real  ph_cl2          ikj     misc        1         -      r        "PHOTR201"              "cl2 photolysis rate" "min{-1}"
+state    real  ph_hocl         ikj     misc        1         -      r        "PHOTR202"              "hocl photolysis rate" "min{-1}"
+state    real  ph_fmcl         ikj     misc        1         -      r        "PHOTR203"              "fmcl photolysis rate" "min{-1}"
 # photolysis rad field diagnostic variables
 state    real  ph_par          ikj     misc        1         -      -        "ph_par"                "Photosynthetic Active Radiation"  "W m-2"
 state    real  ph_erythema     ikj     misc        1         -      -        "ph_erythema"           "Erythema Action Spectrum"         "W m-2"

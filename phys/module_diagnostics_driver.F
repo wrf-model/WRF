@@ -1,10 +1,3 @@
-#if (NMM_CORE == 1)
-MODULE module_diagnostics_driver
-CONTAINS
-   SUBROUTINE diagnostics_driver_stub
-   END SUBROUTINE diagnostics_driver_stub
-END MODULE module_diagnostics_driver
-#else
 !WRF:MODEL_LAYER:PHYSICS
 
 MODULE module_diagnostics_driver
@@ -1171,4 +1164,3 @@ CONTAINS
    END SUBROUTINE update_phys_fields
 
 END MODULE module_diagnostics_driver
-#endif

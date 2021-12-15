@@ -4316,8 +4316,7 @@ endif
                      do j = jts, min(jde-1,jte)
                      do i = its, min(ide-1,ite)
                         z1 = (grid%phb(i,2,j)-grid%phb(i,1,j))/g
-                        airmass = grid%alt(i,1,j) / (z1 * config_flags%dx*config_flags%dy)          ! kg-1
-                        grid%qnwfa2d(i,j) = grid%qnwfa2d(i,j) * config_flags%dx*config_flags%dy * airmass
+                        grid%qnwfa2d(i,j) = grid%qnwfa2d(i,j) * grid%alt(i,1,j) / z1
                      enddo
                      enddo
                   else
@@ -4336,8 +4335,7 @@ endif
                      do j = jts, min(jde-1,jte)
                      do i = its, min(ide-1,ite)
                         z1 = (grid%phb(i,2,j)-grid%phb(i,1,j))/g
-                        airmass = grid%alt(i,1,j) / (z1 * config_flags%dx*config_flags%dy)          ! kg-1
-                        grid%qnifa2d(i,j) = grid%qnifa2d(i,j) * config_flags%dx*config_flags%dy * airmass
+                        grid%qnifa2d(i,j) = grid%qnifa2d(i,j) * grid%alt(i,1,j) / z1
                      enddo
                      enddo
                   else

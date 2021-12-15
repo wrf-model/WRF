@@ -2573,7 +2573,7 @@ rconfig   integer scalar_pblmix           namelist,physics      max_domains  0  
 rconfig   integer tracer_pblmix           namelist,physics      max_domains  1         h    "mix 4d tracer variables with pbl scheme 0=no 1=yes" ""
 rconfig   logical use_aero_icbc           namelist,physics     	1              .false. rh    "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
 rconfig   logical use_rap_aero_icbc       namelist,physics      1              .false. r     "use_rap_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero from RAP"  "logical flag"
-rconfig   integer aer_init_opt            namelist,physics      1              0       irh   "aer_init_opt"   "surrogate to handle aerosol IC/BC data in Thompson-MP-Aero: 0=no IC/BC aerosol, 1=climo, 2=first guess"
+rconfig   integer aer_init_opt            derived               1              0       irh   "aer_init_opt"   "surrogate to handle aerosol IC/BC data in Thompson-MP-Aero: 0=no IC/BC aerosol, 1=climo, 2=first guess"
 rconfig   integer use_mp_re               namelist,physics     	1              1       h     "use_mp_re"  "use effective radii computed in some mp schemes in RRTMG"  "flag"
 rconfig   logical insert_init_cloud       namelist,physics      1              .false. irh   "insert_init_cloud" "Insert diagnostic initial cloud using icloud=3 method (Thompson)"  "logical flag"
 

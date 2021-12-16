@@ -466,6 +466,15 @@ module da_control
                                            ! data calibration
       Other_check             =  88        ! passed other quality check
 
+   ! QC flags for gpsref
+   integer, parameter :: qcflag_pcnt_below  = -31
+   integer, parameter :: qcflag_pcnt_middle = -32
+   integer, parameter :: qcflag_pcnt_above  = -33
+   integer, parameter :: qcflag_dndz        = -34
+   integer, parameter :: qcflag_dndz2       = -35
+   integer, parameter :: qcflag_cutoff      = -36
+   integer, parameter :: qcflag_height      = -77
+
    ! Observations:
 
    integer                :: num_procs            ! Number of total processors.

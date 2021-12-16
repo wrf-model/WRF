@@ -59,6 +59,7 @@
    character(len=13) :: vpfile ! vp_input.0001
    integer   :: i1,i2,i3,i4,i5,i6
    logical :: ex
+   logical :: offline_varbc
 
    character(len=10) :: this_time
    character(len=8)  :: this_date
@@ -494,6 +495,9 @@
    if (use_background_errors .and. multi_inc /= 1) then
       call da_setup_background_errors (grid, be)
    else
+      be%ncv_mz = 5
+      allocate(be%cv_mz(5))
+      be%cv_mz(:) = 0
       be % ne = ensdim_alpha
       be % v1 % mz = 0
       be % v2 % mz = 0
@@ -521,6 +525,12 @@
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad .and. (use_varbc.or.freeze_varbc)) call da_varbc_init(iv, be)
 #endif
+
+   if ( be%cv%size_jb == 0 .and. be%cv%size_je == 0 .and. be%cv%size_jp > 0 ) then
+      offline_varbc = .true.
+   else
+      offline_varbc = .false.
+   end if
 
    if (use_tamdarobs .and. use_varbc_tamdar) then
         call da_varbc_tamdar_init(iv)
@@ -1088,6 +1098,7 @@
       ! [8.10] Output WRFVAR analysis and analysis increments:
       !------------------------------------------------------------------------
 
+      if ( .not. offline_varbc ) &
       call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
 
      if ( it < max_ext_its .and. print_detail_outerloop ) then
@@ -1116,6 +1127,7 @@
 
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
+      if ( .not. offline_varbc ) &
       call da_update_firstguess(input_grid)
 #ifdef VAR4D
       !if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)

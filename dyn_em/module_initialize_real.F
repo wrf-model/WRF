@@ -2227,7 +2227,7 @@ integer::oops1,oops2
             !       Pressure name (assumed to end with _jan, _feb, _mar, ..., _nov, _dec): p_wif
             !       Number of vertical levels: num_wif_levels
             !       Variable names (assumed to end with _jan, _feb, _mar, ..., _nov, _dec): w_wif, i_wif
-            !       Option to interpolate data: wif_input_opt = 1 [water and ice friendly aerosols]
+            !       Option to interpolate data: wif_input_opt = 1 (water and ice friendly aerosols)
             !       Stored in scalar arrays, tested and assumed to be upside down.
             !  There are two data fields plus pressure - they are 3d, so no easy way to loop over them.
             !  QNWFA - Number concentration water-friendly aerosols

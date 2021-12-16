@@ -590,7 +590,7 @@
 
          call date_and_time(date=this_date, time=this_time)
          write(unit=message(1),fmt='(a,a8,1x,a12)') &
-            '  Fihish reading ensemble perturbations at ', this_date, &
+            '  Finish reading ensemble perturbations at ', this_date, &
             this_time(1:2)//':'//this_time(3:4)//' '//this_time(5:10)
          call da_message(message(1:1))
 
@@ -1010,12 +1010,12 @@
             write(unit=message(1),fmt='(a)')    ''
             write(unit=message(2),fmt='(a,i3)') 'Applying ensemble contribution to FGAT time: ', ifgat_ana
             call da_message(message(1:2))
-            call da_transform_vpatox (grid,be,grid%ep,grid%vp,ifgat_ana)
+            call da_transform_vpatox (grid,be%ne,grid%ep,grid%vp,ifgat_ana)
             call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
          end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
-         call da_transform_vpatox (grid,be,grid%ep,grid%vp)
+         call da_transform_vpatox (grid,be%ne,grid%ep,grid%vp)
       endif
 
 ! mri-4dvar--------------------------
@@ -1162,7 +1162,7 @@
    if (var4d .and. use_rainobs) deallocate(fgat_rain_flags)
    call da_deallocate_observations (iv)
    call da_deallocate_y (ob)
-   if (use_background_errors) call da_deallocate_background_errors (be)
+   if (use_background_errors .and. jb_factor>0.0) call da_deallocate_background_errors (be)
 
    if (xbx%pad_num > 0) then
       deallocate (xbx%pad_loc)

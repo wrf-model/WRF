@@ -40,6 +40,7 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp &
    ! [1.0]: Perform vv = u_h cv transform:
    !----------------------------------------------------------------------
 
+if ( cv_size > 0 ) then
    if (global) then
       call da_transform_vtovv_global(cv_size, xbx, be, cv, vv)
    else if ( (fg_format == fg_format_wrf_arw_regional .or.   &
@@ -55,6 +56,7 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp &
       end if
 #endif
    end if
+end if
 
    !----------------------------------------------------------------------
    ! [2.0]: Perform vp = u_v vv transform:

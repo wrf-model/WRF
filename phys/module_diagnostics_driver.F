@@ -365,6 +365,22 @@ CONTAINS
          ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
          ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
          ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+           ,athmp=grid%athmpten     ,aqvmp=grid%aqvmpten             &
+           ,athcu=grid%athcuten     ,aqvcu=grid%aqvcuten             &
+           ,aucu=grid%aucuten       ,avcu=grid%avcuten               &
+           ,athsh=grid%athshten     ,aqvsh=grid%aqvshten             &
+           ,aush=grid%aushten       ,avsh=grid%avshten               &
+           ,athbl=grid%athblten     ,aqvbl=grid%aqvblten             &
+           ,aubl=grid%aublten       ,avbl=grid%avblten               &
+           ,athralw=grid%athratenlw ,athrasw=grid%athratensw         &
+           ,h_diabatic=grid%h_diabatic ,qv_diabatic=grid%qv_diabatic &
+           ,rthcuten=grid%rthcuten  ,rqvcuten=grid%rqvcuten          &
+           ,rucuten=grid%rucuten    ,rvcuten=grid%rvcuten            &
+           ,rthshten=grid%rthshten  ,rqvshten=grid%rqvshten          &
+           ,rushten=grid%rushten    ,rvshten=grid%rvshten            &
+           ,rthblten=grid%rthblten  ,rqvblten=grid%rqvblten          &
+           ,rublten=grid%rublten    ,rvblten=grid%rvblten            &
+           ,rthratenlw=grid%rthratenlw  ,rthratensw=grid%rthratensw  &
       ! Selection flag 
                 ,DIAG_PRINT=config_flags%diag_print                  &
                 ,BUCKET_MM=config_flags%bucket_mm                    &
@@ -376,6 +392,9 @@ CONTAINS
                 ,CURR_SECS2=curr_secs2                               &
                 ,HISTORY_INTERVAL=grid%history_interval              &
                 ,ITIMESTEP=grid%itimestep                            &
+                ,cu_used=grid%cu_used                                &
+                ,shcu_used=grid%shcu_used                            &
+                ,acc_phy_tend=grid%acc_phy_tend                      &
       ! Dimension arguments
                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &

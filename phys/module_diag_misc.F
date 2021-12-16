@@ -28,6 +28,16 @@ CONTAINS
                      ,I_ACSWUPB,I_ACSWUPBC,I_ACSWDNB,I_ACSWDNBC       & ! Optional
                      ,I_ACLWUPT,I_ACLWUPTC,I_ACLWDNT,I_ACLWDNTC       & ! Optional
                      ,I_ACLWUPB,I_ACLWUPBC,I_ACLWDNB,I_ACLWDNBC       & ! Optional
+                     ,athmp, aqvmp                                    &
+                     ,athcu, aqvcu, aucu, avcu                        &
+                     ,athsh, aqvsh, aush, avsh                        &
+                     ,athbl, aqvbl, aubl, avbl                        &
+                     ,athralw, athrasw                                &
+                     ,h_diabatic, qv_diabatic                         &
+                     ,rthcuten, rqvcuten, rucuten, rvcuten            &
+                     ,rthshten, rqvshten, rushten, rvshten            &
+                     ,rthblten, rqvblten, rublten, rvblten            &
+                     ,rthratenlw, rthratensw                          &
                      ,dt,xtime                                        &
                      ,diag_print                                      &
                      ,bucket_mm, bucket_J                             &
@@ -35,6 +45,7 @@ CONTAINS
                      ,snowncv, prec_acc_dt, curr_secs2                &
                      ,history_interval                                &
                      ,itimestep                                       &
+                     ,cu_used, shcu_used, acc_phy_tend                &
                                                                       )
 !----------------------------------------------------------------------
 
@@ -47,6 +58,38 @@ CONTAINS
 !-- DIAG_PRINT    print control: 0 - no diagnostics; 1 - dmudt only; 2 - all
 !-- DT            time step (second)
 !-- XTIME         forecast time
+!-- ACSWUPT
+!-- ACSWUPTC
+!-- ACSWDNT
+!-- ACSWDNTC
+!-- ACSWUPB
+!-- ACSWUPBC
+!-- ACSWDNB
+!-- ACSWDNBC
+!-- ACLWUPT
+!-- ACLWUPTC
+!-- ACLWDNT
+!-- ACLWDNTC
+!-- ACLWUPB
+!-- ACLWUPBC
+!-- ACLWDNB
+!-- ACLWDNBC
+!-- ATHMPTEN      Accumulated theta tendency from microphysics
+!-- AQVMPTEN      Accumulated qv tendency from microphysics
+!-- ATHCUTEN      Accumulated theta tendency from cumulus physics
+!-- AQVCUTEN      Accumulated qv tendency from cumulus physics
+!-- AUCUTEN       Accumulated u-wind tendency from cumulus physics
+!-- AVCUTEN       Accumulated v-wind tendency from cumulus physics
+!-- ATHSHTEN      Accumulated theta tendency from shallow cumulus
+!-- AQVSHTEN      Accumulated qv tendency from shallow cumulus
+!-- AUSHTEN       Accumulated u-wind tendency from shallow cumulus
+!-- AVSHTEN       Accumulated v-wind tendency from shallow cumulus
+!-- ATHBLTEN      Accumulated theta tendency from pbl physics
+!-- AQVBLTEN      Accumulated qv tendency from pbl physics
+!-- AUBLTEN       Accumulated u-wind tendency from pbl physics
+!-- AVBLTEN       Accumulated v-wind tendency from pbl physics
+!-- ATHRATENLW    Accumulated theta tendency from longwave radiation
+!-- ATHRATENSW    Accumulated theta tendency from shortwave radiation
 !-- P8W           3D pressure array at full eta levels
 !-- MU            dry column hydrostatic pressure
 !-- RAINC         cumulus scheme precipitation since hour 0
@@ -124,6 +167,21 @@ CONTAINS
                                                     ,      PK1M
  
    REAL,  INTENT(IN   ) :: DT, XTIME
+   INTEGER,  INTENT(IN   )  ::  cu_used, shcu_used, acc_phy_tend
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::&
+                                                    athmp,aqvmp  &
+                                         ,athcu,aqvcu,aucu,avcu  &
+                                         ,athsh,aqvsh,aush,avsh  &
+                                         ,athbl,aqvbl,aubl,avbl  &
+                                               ,athralw,athrasw
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::   &
+                                         h_diabatic,qv_diabatic  &
+                             ,rthcuten,rqvcuten,rucuten,rvcuten  &
+                             ,rthshten,rqvshten,rushten,rvshten  &
+                             ,rthblten,rqvblten,rublten,rvblten  &
+                                         ,rthratenlw,rthratensw
+
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) ::     &
                                                        I_RAINC,  &
                                                        I_RAINNC
@@ -158,6 +216,74 @@ CONTAINS
                                      history_interval,itimestep
 
    INTEGER :: idump
+
+!-----------------------------------------------------------------
+! Compute physics tendency accumulations in a given time window
+
+   IF ( acc_phy_tend .gt. 0 ) THEN
+
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+   DO ij = 1 , num_tiles
+
+      IF (mod(curr_secs2, history_interval*60.) == 0.) THEN
+         WRITE(outstring,*) 'Reseting accumulation to 0'
+         CALL wrf_debug ( 10, TRIM(outstring) )
+         DO j=j_start(ij),j_end(ij)
+         DO k=kps,kpe
+         DO i=i_start(ij),i_end(ij)
+            athmp(i,k,j) = 0.
+            aqvmp(i,k,j) = 0.
+            IF ( cu_used == 1 ) THEN
+            athcu(i,k,j) = 0.
+            aqvcu(i,k,j) = 0.
+             aucu(i,k,j) = 0.
+             avcu(i,k,j) = 0.
+            END IF
+            IF ( shcu_used == 1 ) THEN
+            athsh(i,k,j) = 0.
+            aqvsh(i,k,j) = 0.
+             aush(i,k,j) = 0.
+             avsh(i,k,j) = 0.
+            END IF
+            athbl(i,k,j) = 0.
+            aqvbl(i,k,j) = 0.
+             aubl(i,k,j) = 0.
+             avbl(i,k,j) = 0.
+          athralw(i,k,j) = 0.
+          athrasw(i,k,j) = 0.
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+      DO j=j_start(ij),j_end(ij)
+      DO k=kps,kpe
+      DO i=i_start(ij),i_end(ij)
+         athmp(i,k,j)  = athmp(i,k,j)  +  h_diabatic(i,k,j)*dt
+         aqvmp(i,k,j)  = aqvmp(i,k,j)  +  qv_diabatic(i,k,j)*dt
+         IF ( cu_used == 1 ) THEN
+         athcu(i,k,j)  = athcu(i,k,j)  +  rthcuten(i,k,j)*dt
+         aqvcu(i,k,j)  = aqvcu(i,k,j)  +  rqvcuten(i,k,j)*dt
+          aucu(i,k,j)  =  aucu(i,k,j)  +  rucuten(i,k,j)*dt
+          avcu(i,k,j)  =  avcu(i,k,j)  +  rvcuten(i,k,j)*dt
+         END IF
+         IF ( shcu_used == 1 ) THEN
+         athsh(i,k,j)  = athsh(i,k,j)  +  rthshten(i,k,j)*dt
+         aqvsh(i,k,j)  = aqvsh(i,k,j)  +  rqvshten(i,k,j)*dt
+          aush(i,k,j)  =  aush(i,k,j)  +  rushten(i,k,j)*dt
+          avsh(i,k,j)  =  avsh(i,k,j)  +  rvshten(i,k,j)*dt
+         END IF
+         athbl(i,k,j)  = athbl(i,k,j)  +  rthblten(i,k,j)*dt
+         aqvbl(i,k,j)  = aqvbl(i,k,j)  +  rqvblten(i,k,j)*dt
+          aubl(i,k,j)  =  aubl(i,k,j)  +  rublten(i,k,j)*dt
+          avbl(i,k,j)  =  avbl(i,k,j)  +  rvblten(i,k,j)*dt
+       athralw(i,k,j)  =  athralw(i,k,j)  +  rthratenlw(i,k,j)*dt
+       athrasw(i,k,j)  =  athrasw(i,k,j)  +  rthratensw(i,k,j)*dt
+      ENDDO
+      ENDDO
+      ENDDO
+    ENDDO
+   ENDIF
 
 !-----------------------------------------------------------------
 ! Handle accumulations with buckets to prevent round-off truncation in long runs

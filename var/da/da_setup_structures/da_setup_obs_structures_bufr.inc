@@ -70,6 +70,12 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
 
       allocate(thinning_grid_conv(num_ob_indexes))
       do n = 1, num_ob_indexes
+         if ( .not. obs_use(n) .or. &
+              n == gpseph      .or. &
+              n == gpsref      .or. &
+              n == radar       .or. &
+              n == radiance    .or. &
+              n == rain ) cycle
          call make3grids (n,thin_mesh_conv(n))
       end do
    end if
@@ -93,6 +99,12 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
 
    if ( thin_conv ) then
       do n = 1, num_ob_indexes
+         if ( .not. obs_use(n) .or. &
+              n == gpseph      .or. &
+              n == gpsref      .or. &
+              n == radar       .or. &
+              n == radiance    .or. &
+              n == rain ) cycle
          call destroygrids_conv (n)
       end do
       deallocate(thinning_grid_conv)

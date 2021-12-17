@@ -70,7 +70,11 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
       allocate(thinning_grid_conv(num_ob_indexes))
       do n = 1, num_ob_indexes
-         if (n == radar) cycle
+         if ( .not. obs_use(n) .or. &
+              n == gpseph      .or. &
+              n == radar       .or. &
+              n == radiance    .or. &
+              n == rain ) cycle
          if( n == airep .or. n == tamdar ) then
             thin_3d=.true.
             call make3grids (n,thin_mesh_conv(n), thin_3d)
@@ -228,7 +232,11 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
    if ( thin_conv_ascii ) then
       do n = 1, num_ob_indexes
-         if (n == radar) cycle
+         if ( .not. obs_use(n) .or. &
+              n == gpseph      .or. &
+              n == radar       .or. &
+              n == radiance    .or. &
+              n == rain ) cycle
          if( n == airep .or. n==tamdar ) then
             thin_3d=.true.
             call destroygrids_conv (n, thin_3d)

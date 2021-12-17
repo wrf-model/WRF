@@ -2302,6 +2302,23 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  Set aer_init_opt for Thompson-MP-Aero (mp_physics=28)
+!-----------------------------------------------------------------------
+     DO i = 1, model_config_rec % max_dom
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+         IF ( model_config_rec%use_aero_icbc ) THEN
+           model_config_rec%aer_init_opt = 1
+         ELSE IF ( model_config_rec%use_rap_aero_icbc ) THEN
+           model_config_rec%aer_init_opt = 2
+         END IF
+       END IF
+     END DO
+
+     IF ( model_config_rec%aer_init_opt > 0 ) THEN
+       model_config_rec%wif_input_opt = 1
+     END IF
+
+!-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.
 !-----------------------------------------------------------------------
      DO i=1,model_config_rec%max_dom

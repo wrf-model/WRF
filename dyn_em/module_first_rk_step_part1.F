@@ -369,7 +369,8 @@ BENCH_START(rad_driver_tim)
      &        , CLDFRA_DP=grid%cldfra_dp                                  & ! ckay for subgrid cloud
      &        , CLDFRA_SH=grid%cldfra_sh                                  &
      &        , icloud_bl=config_flags%icloud_bl                          &
-     &        , cldovrlp=config_flags%cldovrlp                            & ! J. Henderson AER: cldovrlp namelist value
+     &        , cldovrlp=config_flags%cldovrlp                            &
+     &        , idcor=config_flags%idcor                                  &
      &        , qc_bl=grid%qc_bl,qi_bl=grid%qi_bl,cldfra_bl=grid%cldfra_bl&
      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
      &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson

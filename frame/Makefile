@@ -163,7 +163,7 @@ clean:
 	@ echo 'use the clean script'
 
 module_state_description.F : ../Registry/$(REGISTRY)
-		  ( cd .. ; tools/registry $(ARCHFLAGS) $(ENVCOMPDEFS) -DNEW_BDYS Registry/$(REGISTRY) ) ; 
+		  ( cd .. ; tools/registry $(ARCHFLAGS) $(ENVCOMPDEFS) -DNEW_BDYS Registry/$(REGISTRY) ; true ) ; 
 
 module_io_quilt.o : module_io_quilt.F module_io_quilt_old.F
 

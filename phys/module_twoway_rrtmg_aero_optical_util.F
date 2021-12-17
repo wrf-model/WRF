@@ -1688,7 +1688,7 @@ MODULE rrtmg_aero_optical_util_module
      SUCCESS = .TRUE.      
 
 #if ( RWORDSIZE == 8 )
-     II = c_set(0.0, 1.0)
+     II = c_set(0.0E0, 1.0E0)
 #else
      II = c_set(0.0D0, 1.0D0)
 #endif

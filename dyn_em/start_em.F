@@ -873,6 +873,10 @@
       DO k = kts,kte
          DO i = its, min(ite,ide-1)
             z_at_q(i,k,j)=(grid%ph_2(i,k,j)+grid%phb(i,k,j))/g
+         ENDDO
+      ENDDO
+      DO k = kts,kte-1
+         DO i = its, min(ite,ide-1)
             PRES(i,k,j) = grid%p(i,k,j)+grid%pb(i,k,j)              ! ntu3m
             RHOA(i,k,j) = 1./grid%alt(i,k,j)*(1.+moist(i,k,j,P_QV)) ! ntu3m
          ENDDO

@@ -761,6 +761,8 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'YSU_TOPDOWN_PBLMIX', ysu_topdown_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'GRAV_SETTLING', grav_settling , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'CLDOVRLP', config_flags%cldovrlp , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'IDCOR',    config_flags%idcor ,    1 , ierr )
 
 #endif
 

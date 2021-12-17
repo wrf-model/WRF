@@ -2302,13 +2302,14 @@ CONTAINS
 
          IF (FRACTIONAL_SEAICE == 1) THEN
           CALL MYNN_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
-               p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
+               p_phy,dz8w,th_phy,rho,                              &
+               cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm,            &
                znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,SNOWH,                            &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
-               itimestep,ch,th_phy,pi_phy,qc_curr,rho,qcg,         &
+               itimestep,ch,qcg,                                   &
                spp_pbl,pattern_spp_pbl,                            &
                XICE,SST,TSK_SEA,                                   &
                CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,&
@@ -2320,13 +2321,14 @@ CONTAINS
                ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
          ELSE
           CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,        &
-               p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
+               p_phy,dz8w,th_phy,rho,                              &
+               cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm,            &
                znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,SNOWH,                            &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
-               itimestep,ch,th_phy,pi_phy,qc_curr,rho,qcg,         &
+               itimestep,ch,qcg,                                   &
                spp_pbl,pattern_spp_pbl,                            &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
@@ -2335,7 +2337,6 @@ CONTAINS
          ENDIF
        ELSE
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
-
        ENDIF
 #endif
 
@@ -5133,13 +5134,14 @@ CONTAINS
 !-------------------------------------------------------------------------
 
    SUBROUTINE mynn_seaice_wrapper(U3D,V3D,T3D,QV3D,                &
-              P3D,dz8w,CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,    &
+              P3D,dz8w,th3d,rho,                                   &
+              CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,             &
               ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,        &
               XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL,        &
               U10,V10,TH2,T2,Q2,SNOWH,                             &
               GZ1OZ0,WSPD,BR,ISFFLX,DX,                            &
               SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                 &
-              &itimestep,ch,th3d,pi3d,qc3d,rho,qcg,                &
+              &itimestep,ch,qcg,                                   &
               &spp_pbl,pattern_spp_pbl,                            &
               XICE,SST,TSK_SEA,                                    &
               CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA, &
@@ -5172,10 +5174,9 @@ CONTAINS
                                                             QV3D, &
                                                              P3D, &
                                                              T3D, &
-                                                            QC3D, &
                                                              U3D, &
                                                              V3D, &
-                                                   rho,th3d,pi3d
+                                                        rho,th3d
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(IN   )               ::             MAVAIL, &
@@ -5315,20 +5316,19 @@ CONTAINS
      ! for weighting after the second call to SFCLAY.
 
      ! land/frozen-water call
-     CALL SFCLAY_mynn(U3D,V3D,T3D,QV3D,P3D,dz8w,              &
+     CALL SFCLAY_mynn(U3D,V3D,T3D,QV3D,P3D,dz8w,th3d,rho,     &
           CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,            &
           ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,       &
           XLAND,HFX,QFX,LH,TSK_LOCAL,FLHC,FLQC,QGH,QSFC,RMOL, &
           U10,V10,TH2,T2,Q2,SNOWH,                            &
           GZ1OZ0,WSPD,BR,ISFFLX,DX,                           &
           SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                &
-          itimestep,ch,th3d,pi3d,qc3d,rho,qcg,                &
+          itimestep,ch,qcg,                                   &
           spp_pbl,pattern_spp_pbl,                            &
           ids,ide, jds,jde, kds,kde,                          &
           ims,ime, jms,jme, kms,kme,                          &
           its,ite, jts,jte, kts,kte,                          &
           ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
-
 
      ! Set up lower boundary conditions to force an open-water call
       DO j = JTS , JTE
@@ -5375,7 +5375,7 @@ CONTAINS
 
 
      ! open-water call
-          CALL SFCLAY_mynn(U3D,V3D,T3D,QV3D,P3D,dz8w,              &
+          CALL SFCLAY_mynn(U3D,V3D,T3D,QV3D,P3D,dz8w,th3d,rho,     &
                CP,G,ROVCP,R,XLV,PSFC,                              &
                CHS_SEA,CHS2_SEA,CQS2_SEA,CPM_SEA,                  &
                ZNT_SEA,UST_SEA,                                    &
@@ -5389,8 +5389,8 @@ CONTAINS
                GZ1OZ0_SEA,WSPD_SEA,BR_SEA,                         &
                ISFFLX,DX,                                          &
                SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                &
-               &itimestep,CH_SEA,th3d,pi3d,qc3d,rho,qcg,           &
-               &spp_pbl,pattern_spp_pbl,                           &
+               itimestep,CH_SEA,qcg,                               &
+               spp_pbl,pattern_spp_pbl,                            &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                its,ite, jts,jte, kts,kte,                          &

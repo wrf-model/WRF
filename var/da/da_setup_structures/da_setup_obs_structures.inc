@@ -169,6 +169,38 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       rtminit_sensor   = pseudo_rad_senid
    end if
 
+   obs_use(1:num_ob_indexes) = .false.
+   if ( use_airepobs ) obs_use(airep) = .true.
+   if ( use_bogusobs ) obs_use(bogus) = .true.
+   if ( use_buoyobs ) obs_use(buoy) = .true.
+   if ( use_geoamvobs ) obs_use(geoamv) = .true.
+   if ( use_gpsephobs ) obs_use(gpseph) = .true.
+   if ( use_gpsrefobs ) obs_use(gpsref) = .true.
+   if ( use_gpsztdobs .or. use_gpspwobs ) obs_use(gpspw) = .true.
+   if ( use_metarobs ) obs_use(metar) = .true.
+   if ( use_mtgirsobs ) obs_use(mtgirs) = .true.
+   if ( use_pilotobs ) obs_use(pilot) = .true.
+   if ( use_polaramvobs ) obs_use(polaramv) = .true.
+   if ( use_profilerobs ) obs_use(profiler) = .true.
+   if ( use_qscatobs ) obs_use(qscat) = .true.
+   if ( use_radarobs ) obs_use(radar) = .true.
+   if ( use_rainobs ) obs_use(rain) = .true.
+   if ( use_satemobs ) obs_use(satem) = .true.
+   if ( use_shipsobs ) obs_use(ships) = .true.
+   if ( use_soundobs ) then
+      obs_use(sound) = .true.
+      obs_use(sonde_sfc) = .true.
+   end if
+   if ( use_ssmiretrievalobs ) obs_use(ssmi_rv) = .true.
+   if ( use_ssmitbobs ) obs_use(ssmi_tb) = .true.
+   if ( use_ssmt1obs ) obs_use(ssmt1) = .true.
+   if ( use_ssmt2obs ) obs_use(ssmt2) = .true.
+   if ( use_synopobs ) obs_use(synop) = .true.
+   if ( use_tamdarobs ) then
+      obs_use(tamdar) = .true.
+      obs_use(tamdar_sfc) = .true.
+   end if
+
    if (sfc_assi_options < 1 .OR. sfc_assi_options > 2) then
       write(unit=message(1),fmt='(A,I3)') &
          'Invalid sfc_assi_option = ', sfc_assi_options

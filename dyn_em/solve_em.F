@@ -263,6 +263,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 #include "bench_solve_em_init.h"
 
 #if (WRF_CMAQ == 1)
+!DAVE This will break OpenMP parallelism, as this introduces a race condition
    if (firstime) then
       CALL nl_get_feedback_restart ( .false., feedback_restart )
       if (feedback_restart) then

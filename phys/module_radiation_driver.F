@@ -181,6 +181,52 @@ CONTAINS
               ,chem_opt                                                   &
               ,gsfcrad_gocart_coupling                                    &
 #endif
+              ,feedback_is_ready                                          & ! WRF-CMAQ twoway coupled model
+              ,mass_ws_i                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_ws_j                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_ws_k                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_in_i                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_in_j                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_in_k                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_ec_i                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_ec_j                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_ec_k                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_ss_i                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_ss_j                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_ss_k                                                  & ! WRF-CMAQ twoway coupled model
+              ,mass_h2o_i                                                 & ! WRF-CMAQ twoway coupled model
+              ,mass_h2o_j                                                 & ! WRF-CMAQ twoway coupled model
+              ,mass_h2o_k                                                 & ! WRF-CMAQ twoway coupled model
+              ,dgn_i                                                      & ! WRF-CMAQ twoway coupled model
+              ,dgn_j                                                      & ! WRF-CMAQ twoway coupled model
+              ,dgn_k                                                      & ! WRF-CMAQ twoway coupled model
+              ,sig_i                                                      & ! WRF-CMAQ twoway coupled model
+              ,sig_j                                                      & ! WRF-CMAQ twoway coupled model
+              ,sig_k                                                      & ! WRF-CMAQ twoway coupled model
+              ,sw_gtauxar_01                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_gtauxar_02                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_gtauxar_03                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_gtauxar_04                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_gtauxar_05                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_ttauxar_01                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_ttauxar_02                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_ttauxar_03                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_ttauxar_04                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_ttauxar_05                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_asy_fac_01                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_asy_fac_02                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_asy_fac_03                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_asy_fac_04                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_asy_fac_05                                              & ! WRF-CMAQ twoway coupled model
+              ,sw_ssa_01                                                  & ! WRF-CMAQ twoway coupled model
+              ,sw_ssa_02                                                  & ! WRF-CMAQ twoway coupled model
+              ,sw_ssa_03                                                  & ! WRF-CMAQ twoway coupled model
+              ,sw_ssa_04                                                  & ! WRF-CMAQ twoway coupled model
+              ,sw_ssa_05                                                  & ! WRF-CMAQ twoway coupled model
+              ,ozone                                                      & ! WRF-CMAQ twoway coupled model
+              ,sw_zbbcddir                                                & ! WRF-CMAQ twoway coupled model
+              ,sw_dirdflux                                                & ! WRF-CMAQ twoway coupled model
+              ,sw_difdflux                                                & ! WRF-CMAQ twoway coupled model
                                                                           )
 
 
@@ -221,6 +267,10 @@ CONTAINS
    USE module_state_description, ONLY : nuwrf4icescheme
 
 ! *** add new modules of schemes here
+
+#if ( WRF_CMAQ == 1)
+   USE module_twoway_ra_rrtmg_sw
+#endif
 
    USE module_ra_sw         , ONLY : swrad
    USE module_ra_gsfcsw     , ONLY : gsfcswrad
@@ -827,6 +877,46 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                       o3rad
 
+   ! begin WRF-CMAQ coupled model block
+   REAL, DIMENSION (ims:ime, kms:kme, jms:jme ), optional,       &
+         INTENT(INOUT)  ::  mass_ws_i, mass_ws_j, mass_ws_k,     &
+                            mass_in_i, mass_in_j, mass_in_k,     &
+                            mass_ec_i, mass_ec_j, mass_ec_k,     &
+                            mass_ss_i, mass_ss_j, mass_ss_k,     &
+                            mass_h2o_i, mass_h2o_j, mass_h2o_k,  &
+                            dgn_i, dgn_j, dgn_k,                 &
+                            sig_i, sig_j, sig_k
+
+   REAL, DIMENSION (ims:ime, kms:kme, jms:jme ), optional, INTENT(OUT) :: sw_gtauxar_01, &
+                                                                          sw_gtauxar_02, &
+                                                                          sw_gtauxar_03, &
+                                                                          sw_gtauxar_04, &
+                                                                          sw_gtauxar_05, &
+                                                                          sw_asy_fac_01, &
+                                                                          sw_asy_fac_02, &
+                                                                          sw_asy_fac_03, &
+                                                                          sw_asy_fac_04, &
+                                                                          sw_asy_fac_05, &
+                                                                          sw_ssa_01,     &
+                                                                          sw_ssa_02,     &
+                                                                          sw_ssa_03,     &
+                                                                          sw_ssa_04,     &
+                                                                          sw_ssa_05
+
+   REAL, DIMENSION( ims:ime, jms:jme ), optional, INTENT(OUT) :: sw_ttauxar_01, &
+                                                                 sw_ttauxar_02, &
+                                                                 sw_ttauxar_03, &
+                                                                 sw_ttauxar_04, &
+                                                                 sw_ttauxar_05
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), optional, INTENT(IN) :: ozone
+   REAL, DIMENSION( ims:ime, jms:jme ), optional, INTENT(OUT)         :: sw_zbbcddir, &
+                                                                         sw_dirdflux, &
+                                                                         sw_difdflux
+
+   LOGICAL, INTENT(IN) :: feedback_is_ready
+   ! end WRF-CMAQ coupled model block
+
    ! vert nesting
    REAL, OPTIONAL , INTENT(IN   ) :: p_top
    REAL                           :: p_top_dummy
@@ -902,6 +992,22 @@ CONTAINS
 
 !---------- local test vars 
 !   real, dimension(ims:ime, kms:kme, jms:jme) ::  hlw, hsw
+
+   LOGICAL :: proceed_twoway_sw
+
+   logical, save :: firstime = .true.
+   logical, save :: feedback_restart, direct_sw_feedback
+
+#if ( WRF_CMAQ == 1 )
+   if (firstime) then
+      firstime = .false.
+      CALL nl_get_direct_sw_feedback ( .false. , direct_sw_feedback )
+      CALL nl_get_feedback_restart   ( .false. , feedback_restart )
+   end if
+#else
+   direct_sw_feedback = .false.
+   feedback_restart   = .false.
+#endif
 
    ! This allows radiation schemes to correctly
    ! interface with the convection scheme when convection is only
@@ -2391,6 +2497,43 @@ CONTAINS
 
              CALL wrf_debug(100, 'CALL rrtmg_sw')
 
+             if ( direct_sw_feedback .and. feedback_is_ready ) then
+                proceed_twoway_sw = .true.
+
+                if (present(mass_ws_i)) then
+
+                   mass_ws_i(:,kte+1,:) = mass_ws_i(:,kte,:)
+                   mass_ws_j(:,kte+1,:) = mass_ws_j(:,kte,:)
+                   mass_ws_k(:,kte+1,:) = mass_ws_k(:,kte,:)
+
+                   mass_in_i(:,kte+1,:) = mass_in_i(:,kte,:)
+                   mass_in_j(:,kte+1,:) = mass_in_j(:,kte,:)
+                   mass_in_k(:,kte+1,:) = mass_in_k(:,kte,:)
+
+                   mass_ec_i(:,kte+1,:) = mass_ec_i(:,kte,:)
+                   mass_ec_j(:,kte+1,:) = mass_ec_j(:,kte,:)
+                   mass_ec_k(:,kte+1,:) = mass_ec_k(:,kte,:)
+
+                   mass_ss_i(:,kte+1,:) = mass_ss_i(:,kte,:)
+                   mass_ss_j(:,kte+1,:) = mass_ss_j(:,kte,:)
+                   mass_ss_k(:,kte+1,:) = mass_ss_k(:,kte,:)
+
+                   mass_h2o_i(:,kte+1,:) = mass_h2o_i(:,kte,:)
+                   mass_h2o_j(:,kte+1,:) = mass_h2o_j(:,kte,:)
+                   mass_h2o_k(:,kte+1,:) = mass_h2o_k(:,kte,:)
+
+                   dgn_i(:,kte+1,:) = dgn_i(:,kte,:)
+                   dgn_j(:,kte+1,:) = dgn_j(:,kte,:)
+                   dgn_k(:,kte+1,:) = dgn_k(:,kte,:)
+
+                   sig_i(:,kte+1,:) = sig_i(:,kte,:)
+                   sig_j(:,kte+1,:) = sig_j(:,kte,:)
+                   sig_k(:,kte+1,:) = sig_k(:,kte,:)
+                end if
+             else
+                proceed_twoway_sw = .false.
+             end if
+
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
                      RTHRATENSWC=RTHRATENSWC,                          &
@@ -2453,7 +2596,63 @@ CONTAINS
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
                      obscur=obscur_loc,                                 & 
-                     xcoszen=coszen,yr=yr,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
+                     xcoszen=coszen,yr=yr,julian=julian,                & ! jararias 2013/08/14
+		     mp_physics=mp_physics,                             & ! jararias 2013/08/14
+                     proceed_twoway_sw=proceed_twoway_sw,               & ! WRF-CMAQ coupled model
+                     nmode=3,                                           & ! WRF-CMAQ coupled model
+                     mass_ws_i=mass_ws_i,                               & ! WRF-CMAQ coupled model
+                     mass_ws_j=mass_ws_j,                               & ! WRF-CMAQ coupled model
+                     mass_ws_k=mass_ws_k,                               & ! WRF-CMAQ coupled model
+                     mass_in_i=mass_in_i,                               & ! WRF-CMAQ coupled model
+                     mass_in_j=mass_in_j,                               & ! WRF-CMAQ coupled model
+                     mass_in_k=mass_in_k,                               & ! WRF-CMAQ coupled model
+                     mass_ec_i=mass_ec_i,                               & ! WRF-CMAQ coupled model
+                     mass_ec_j=mass_ec_j,                               & ! WRF-CMAQ coupled model
+                     mass_ec_k=mass_ec_k,                               & ! WRF-CMAQ coupled model
+                     mass_ss_i=mass_ss_i,                               & ! WRF-CMAQ coupled model
+                     mass_ss_j=mass_ss_j,                               & ! WRF-CMAQ coupled model
+                     mass_ss_k=mass_ss_k,                               & ! WRF-CMAQ coupled model
+                     mass_h2o_i=mass_h2o_i,                             & ! WRF-CMAQ coupled model
+                     mass_h2o_j=mass_h2o_j,                             & ! WRF-CMAQ coupled model
+                     mass_h2o_k=mass_h2o_k,                             & ! WRF-CMAQ coupled model
+                     dgn_i=dgn_i,                                       & ! WRF-CMAQ coupled model
+                     dgn_j=dgn_j,                                       & ! WRF-CMAQ coupled model
+                     dgn_k=dgn_k,                                       & ! WRF-CMAQ coupled model
+                     sig_i=sig_i,                                       & ! WRF-CMAQ coupled model
+                     sig_j=sig_j,                                       & ! WRF-CMAQ coupled model
+                     sig_k=sig_k,                                       & ! WRF-CMAQ coupled model
+                     gtauxar_01=sw_gtauxar_01,                          & ! WRF-CMAQ coupled model
+                     gtauxar_02=sw_gtauxar_02,                          & ! WRF-CMAQ coupled model
+                     gtauxar_03=sw_gtauxar_03,                          & ! WRF-CMAQ coupled model
+                     gtauxar_04=sw_gtauxar_04,                          & ! WRF-CMAQ coupled model
+                     gtauxar_05=sw_gtauxar_05,                          & ! WRF-CMAQ coupled model
+                     asy_fac_01=sw_asy_fac_01,                          & ! WRF-CMAQ coupled model
+                     asy_fac_02=sw_asy_fac_02,                          & ! WRF-CMAQ coupled model
+                     asy_fac_03=sw_asy_fac_03,                          & ! WRF-CMAQ coupled model
+                     asy_fac_04=sw_asy_fac_04,                          & ! WRF-CMAQ coupled model
+                     asy_fac_05=sw_asy_fac_05,                          & ! WRF-CMAQ coupled model
+                     ssa_01=sw_ssa_01,                                  & ! WRF-CMAQ coupled model
+                     ssa_02=sw_ssa_02,                                  & ! WRF-CMAQ coupled model
+                     ssa_03=sw_ssa_03,                                  & ! WRF-CMAQ coupled model
+                     ssa_04=sw_ssa_04,                                  & ! WRF-CMAQ coupled model
+                     ssa_05=sw_ssa_05,                                  & ! WRF-CMAQ coupled model
+                     sw_zbbcddir=sw_zbbcddir,                           & ! WRF-CMAQ coupled model
+                     sw_dirdflux=sw_dirdflux,                           & ! WRF-CMAQ coupled model
+                     sw_difdflux=sw_difdflux                            & ! WRF-CMAQ coupled model
+                                                                        )
+
+             ! = WRF-CMAQ twoway coupled model
+             if (proceed_twoway_sw) then
+                DO j=jts,jte
+                   DO i=its,ite
+                      sw_ttauxar_01(i,j) = sum(sw_gtauxar_01(i,:,j))
+                      sw_ttauxar_02(i,j) = sum(sw_gtauxar_02(i,:,j))
+                      sw_ttauxar_03(i,j) = sum(sw_gtauxar_03(i,:,j))
+                      sw_ttauxar_04(i,j) = sum(sw_gtauxar_04(i,:,j))
+                      sw_ttauxar_05(i,j) = sum(sw_gtauxar_05(i,:,j))
+                   END DO
+                END DO
+             end if
 
              DO j=jts,jte
              DO k=kts,kte

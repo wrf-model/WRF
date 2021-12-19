@@ -78,6 +78,9 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_llxy, ONLY : proj_cassini
    USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
    USE module_cpl, ONLY : coupler_on, cpl_settime, cpl_store_input
+#if (WRF_CMAQ == 1)
+   use twoway_data_module
+#endif
 
    IMPLICIT NONE
 
@@ -118,6 +121,29 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
    REAL                            :: t_new, time_duration_of_lbcs
    
+! begin WRF-CMAQ twoway coupled model block
+   integer       :: twoway_jdate,    &  ! CMAQ current job date
+                    twoway_jtime,    &  ! CMAQ current job time
+                    met_file_tstep      ! MCIP like MET file time step
+
+   integer, save :: cmaq_nstep,      &  ! total number of CMAQ steps
+                    wrf_end_step,    &  ! WRF ending step #
+                    counter = -1,    &  ! step counter
+                    wrf_cmaq_freq,   &  ! call frequency between WRF and CMAQ
+                    wrf_cmaq_option     ! WRF-CMAQ coupled model option
+                                        ! 0 = run WRF only
+                                        ! 1 = run WRF only               w   producing MCIP like GRID and MET files
+                                        ! 2 = run WRF-CMAQ coupled model w/o producing MCIP like GRID and MET files
+                                        ! 3 = run WRF-CMAQ coupled model w   producing MCIP like GRID and MET files
+
+   logical       :: cmaq_step           ! CMAQ step number
+
+   logical, save :: firstime = .true.,   &  ! logical variable indicating first time
+                    feedback_is_ready,   &  ! logical variable indicating feedback process can proceed
+                    feedback_restart,    &  ! logical variable indicating feedback information is available
+                    direct_sw_feedback      ! logical variable indicating direct aerosol sw feedback is on or not
+! end WRF-CMAQ twoway coupled model block
+
    ! Changes in tendency at this timestep
    real ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) :: h_tendency, &
                                                                                    z_tendency
@@ -181,6 +207,20 @@ SUBROUTINE solve_em ( grid , config_flags  &
    INTEGER                                    :: num, den
    TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval
 
+#if (WRF_CMAQ == 1)
+   interface
+      SUBROUTINE CMAQ_DRIVER ( MODEL_STDATE, MODEL_STTIME, MODEL_TSTEP,  &
+                               MODEL_JDATE, MODEL_JTIME, LAST_STEP,      &
+                               COUPLE_TSTEP, NCOLS_IN, NLAYS_IN)
+        INTEGER, INTENT( IN )  :: MODEL_STDATE, MODEL_STTIME, MODEL_TSTEP
+        INTEGER, INTENT( OUT ) :: MODEL_JDATE, MODEL_JTIME
+        LOGICAL, INTENT( IN )  :: LAST_STEP
+        INTEGER, INTENT( IN ), OPTIONAL :: COUPLE_TSTEP
+        INTEGER, INTENT( IN ), OPTIONAL :: NCOLS_IN, NLAYS_IN
+      END SUBROUTINE CMAQ_DRIVER
+   end interface
+#endif
+
 ! Define benchmarking timers if -DBENCH is compiled
 #include "bench_solve_em_def.h"
 
@@ -221,6 +261,20 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
 ! Initialize timers if compiled with -DBENCH
 #include "bench_solve_em_init.h"
+
+#if (WRF_CMAQ == 1)
+!DAVE This will break OpenMP parallelism, as this introduces a race condition
+   if (firstime) then
+      CALL nl_get_feedback_restart ( .false., feedback_restart )
+      if (feedback_restart) then
+         feedback_is_ready = .true.
+      else
+         feedback_is_ready = .false.
+      end if
+   end if
+#else
+   feedback_is_ready = .false.
+#endif
 
 !  set runge-kutta solver (2nd or 3rd order)
 
@@ -773,6 +827,7 @@ BENCH_START(calc_p_rho_tim)
                              , f_flux                           &
                              , aerocu                           &
                              , restart_flag                     &
+                             , feedback_is_ready=feedback_is_ready    &
                             )
 
 #ifdef DM_PARALLEL
@@ -4762,6 +4817,93 @@ BENCH_END(bc_2d_tim)
 
 ! Finish timers if compiled with -DBENCH.
 #include "bench_solve_em_end.h"
+
+#if (WRF_CMAQ == 1)
+   if (firstime) then
+      CALL nl_get_wrf_cmaq_option ( 1, wrf_cmaq_option )
+      CALL nl_get_wrf_cmaq_freq ( 1, wrf_cmaq_freq )
+      CALL nl_get_direct_sw_feedback ( .false., direct_sw_feedback )
+      CALL nl_get_met_file_tstep ( 1, met_file_tstep )
+
+      cmaq_wrf_feedback = direct_sw_feedback
+
+      if (wrf_cmaq_option .gt. 0) then
+         cmaq_nstep = ((grid%run_days * 24 + grid%run_hours) * 3600 + grid%run_minutes * 60 + grid%run_seconds) / &
+                       (grid%time_step * WRF_CMAQ_FREQ)
+
+         wrf_end_step = cmaq_nstep * WRF_CMAQ_FREQ - 1
+      end if
+   end if
+
+   if (wrf_cmaq_option .gt. 0) then
+      COUNTER = COUNTER + 1
+
+      if ( .not. cmaq_wrf_feedback .and. firstime) then
+         grid%prev_rainnc = 0.0
+         grid%prev_rainc  = 0.0
+      end if
+
+      CMAQ_STEP = (mod(COUNTER, WRF_CMAQ_FREQ) .EQ. 0)
+
+      if (CMAQ_STEP) then
+         CALL aqprep (grid, config_flags, grid%t_phy, p_phy,       &
+                      grid%rho, grid%z_at_w, dz8w, p8w, t8w,       &
+                      model_config_rec%num_land_cat, 'V4.1.1',     &
+                      wrf_cmaq_option, wrf_cmaq_freq,              &
+                      ids, ide, jds, jde, kds, kde,                &
+                      ims, ime, jms, jme, kms, kme,                &
+                      ips, ipe, jps, jpe, kps, kpe,                &
+                      moist(:,:,:,p_qv),                           &  !  optional
+                      moist(:,:,:,p_qc),                           &  !  optional
+                      moist(:,:,:,p_qr),                           &  !  optional
+                      moist(:,:,:,p_qi),                           &  !  optional
+                      moist(:,:,:,p_qs),                           &  !  optional
+                      moist(:,:,:,p_qg)                            &  !  optional
+                     )
+         grid%prev_rainnc = grid%rainnc
+         grid%prev_rainc  = grid%rainc
+      end if
+
+      if ((counter >= 1) .and. (CMAQ_STEP) .and. (wrf_cmaq_option .gt. 1)) then
+
+         CALL CMAQ_DRIVER (cmaq_sdate, cmaq_stime, grid%time_step*WRF_CMAQ_FREQ,  &
+                           twoway_jdate, twoway_jtime, .false.)
+
+         if (direct_sw_feedback) then
+            CALL FEEDBACK_READ (grid, twoway_jdate, twoway_jtime)
+            feedback_is_ready = .true.
+         end if
+
+      end if
+
+! call aqprep and cmaq one last time before the entire twoway model ends
+      if (wrf_end_step == counter) then
+         CALL aqprep (grid, config_flags, grid%t_phy, p_phy,       &
+                      grid%rho, grid%z_at_w, dz8w, p8w, t8w,       &
+                      model_config_rec%num_land_cat, 'V4.1.1',     &
+                      wrf_cmaq_option, wrf_cmaq_freq,              &
+                      ids, ide, jds, jde, kds, kde,                &
+                      ims, ime, jms, jme, kms, kme,                &
+                      ips, ipe, jps, jpe, kps, kpe,                &
+                      moist(:,:,:,p_qv),                           &  !  optional
+                      moist(:,:,:,p_qc),                           &  !  optional
+                      moist(:,:,:,p_qr),                           &  !  optional
+                      moist(:,:,:,p_qi),                           &  !  optional
+                      moist(:,:,:,p_qs),                           &  !  optional
+                      moist(:,:,:,p_qg)                            &  !  optional
+                     )
+
+         if (wrf_cmaq_option .gt. 1) then
+
+            CALL CMAQ_DRIVER (cmaq_sdate, cmaq_stime, grid%time_step*WRF_CMAQ_FREQ, &
+                              twoway_jdate, twoway_jtime, .true.)
+         end if
+
+      end if
+
+   end if
+   firstime = .false.
+#endif
 
    RETURN
 

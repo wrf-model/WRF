@@ -29,7 +29,7 @@ wrf_io.o:               wrf_io.F90 $(CODE)
 			if [ $$a -a "$$WRFIO_NCD_LARGE_FILE_SUPPORT" = "1" ] ; then \
                           $(CPP1) -DWRFIO_NCD_LARGE_FILE_SUPPORT -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f ; \
                         else \
-                          $(CPP1) -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f ; \
+                          $(CPP1) -DWRFIO_NCD_LARGE_FILE_SUPPORT -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f ; \
                         fi
 			$(FC) -o $@ $(FFLAGS) -c wrf_io.f
 

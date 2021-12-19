@@ -139,6 +139,7 @@ CONTAINS
     INTEGER  iswater
     INTEGER  rk_step 
     INTEGER  n
+    LOGICAL :: stepsp_test
 
 #if ( WRF_DFI_RADAR == 1 )
     INTEGER  i_start,i_end,j_start,j_end,i,j,k
@@ -256,8 +257,15 @@ CONTAINS
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !rand_perturb_on
 
+!     If_multi_perturb: if ((config_flags%multi_perturb==1).and.(grid%id == 1) .and. &
+!         ((MOD(grid%itimestep, grid%stepsp) == 0) .or. grid%itimestep == 1)) then
+      IF ( grid%stepsp .NE. 0 ) THEN
+         stepsp_test = ( MOD(grid%itimestep, grid%stepsp) == 0 )
+      ELSE
+         stepsp_test = .FALSE.
+      END IF
       If_multi_perturb: if ((config_flags%multi_perturb==1).and.(grid%id == 1) .and. &
-          ((MOD(grid%itimestep, grid%stepsp) == 0) .or. grid%itimestep == 1)) then
+          (stepsp_test .or. grid%itimestep == 1)) then
         Loop_multi_perturb: DO n = 2, config_flags%num_pert_3d
            CALL RAND_PERT_UPDATE(grid,'T',                                     &
                            grid%SPFORCS3d(:,:,n),grid%SPFORCC3d(:,:,n),        &

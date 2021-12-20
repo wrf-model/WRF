@@ -28,12 +28,13 @@ state   real    tau_qi        ij     dyn_em       1         -     h      "TAU_QI
 state   real    tau_qs        ij     dyn_em       1         -     h      "TAU_QS"       "MASS-WEIGHTED SNOW OPTICAL THICKNESS"                       " "
 state   real    tau_qc_tot    ij     dyn_em       1         -     h      "TAU_QC_TOT"   "MASS-WEIGHTED LIQUID CLOUD OPTICAL THICKNESS RES + UNRES"   " "
 state   real    tau_qi_tot    ij     dyn_em       1         -     h      "TAU_QI_TOT"   "MASS-WEIGHTED ICE OPTICAL THICKNESS RES + UNRES"            " "
-state   real    cbaseht       ij     dyn_em       1         -     h      "CBASEHT"      "CLOUD BASE HEIGHT"                                          "m"
-state   real    ctopht        ij     dyn_em       1         -     h      "CTOPHT"       "CLOUD TOP HEIGHT"                                           "m"
-state   real    cbaseht_tot   ij     dyn_em       1         -     h      "CBASEHT_TOT"  "CLOUD BASE HEIGHT RES + UNRES"                              "m"
-state   real    ctopht_tot    ij     dyn_em       1         -     h      "CTOPHT_TOT"   "CLOUD TOP HEIGHT RES + UNRES"                               "m"
+state   real    cbaseht       ij     dyn_em       1         -     h      "CBASEHT"      "CLOUD BASE HEIGHT"                                          "m agl"
+state   real    ctopht        ij     dyn_em       1         -     h      "CTOPHT"       "CLOUD TOP HEIGHT"                                           "m agl"
+state   real    cbaseht_tot   ij     dyn_em       1         -     h      "CBASEHT_TOT"  "CLOUD BASE HEIGHT RES + UNRES"                              "m agl"
+state   real    ctopht_tot    ij     dyn_em       1         -     h      "CTOPHT_TOT"   "CLOUD TOP HEIGHT RES + UNRES"                               "m agl"
 state   real    clrnidx       ij     dyn_em       1         -     h      "CLRNIDX"      "CLEARNESS INDEX"                                            " "
-state   real    sza           ij     dyn_em       1         -     h      "SZA"          "SOLAR ZENITH ANGLE"                                        "deg"
+state   real    sza           ij     dyn_em       1         -     h      "SZA"          "SOLAR ZENITH ANGLE"                                         "deg"
+state   real    ghi_accum     ij     dyn_em       1         -     h      "GHI_ACCUM"    "ACCUMULATED GHI"                                            "J m-2"
 
 #  Time series variables
 state    real   ts_cldfrac2d    ?!       misc       -         -     -      "TS_CLDFRAC2D"    "2-D MAX CLOUD FRACTION"
@@ -61,6 +62,7 @@ state    real   ts_cbaseht_tot  ?!       misc       -         -     -      "TS_C
 state    real   ts_ctopht_tot   ?!       misc       -         -     -      "TS_CTOPHT_TOT"   "CLOUD TOP HEIGHT RES + UNRES"
 state    real   ts_clrnidx      ?!       misc       -         -     -      "TS_CLRNIDX"      "CLEARNESS INDEX"
 state    real   ts_sza          ?!       misc       -         -     -      "TS_SZA"          "SOLAR ZENITH ANGLE"
+state    real   ts_ghi_accum    ?!       misc       -         -     -      "TS_GHI_ACCUM"    "ACCUMULATED GHI"
 state    real   ts_swdown       ?!       misc       -         -     -      "TS_SWDOWN"       "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"
 state    real   ts_swddni       ?!       misc       -         -     -      "TS_SWDDNI"       "SHORTWAVE SURFACE DOWNWARD DIRECT NORMAL IRRADIANCE"
 state    real   ts_swddif       ?!       misc       -         -     -      "TS_SWDDIF"       "SHORTWAVE SURFACE DOWNWARD DIFFUSE IRRADIANCE"
@@ -75,4 +77,4 @@ state    real   ts_swddnic2     ?!       misc       -         -     -      "TS_S
 #  Package declarations
 
 package   skip_solar_output     solar_diagnostics==0            -       -
-package     do_solar_output     solar_diagnostics==1            -       state:cldfrac2d,wvp,lwp,iwp,swp,wp_sum,lwp_tot,iwp_tot,wp_tot_sum,re_qc,re_qi,re_qs,re_qc_tot,re_qi_tot,tau_qc,tau_qi,tau_qs,tau_qc_tot,tau_qi_tot,cbaseht,ctopht,cbaseht_tot,ctopht_tot,clrnidx,sza
+package     do_solar_output     solar_diagnostics==1            -       state:cldfrac2d,wvp,lwp,iwp,swp,wp_sum,lwp_tot,iwp_tot,wp_tot_sum,re_qc,re_qi,re_qs,re_qc_tot,re_qi_tot,tau_qc,tau_qi,tau_qs,tau_qc_tot,tau_qi_tot,cbaseht,ctopht,cbaseht_tot,ctopht_tot,clrnidx,sza,ghi_accum

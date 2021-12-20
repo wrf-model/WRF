@@ -28,10 +28,10 @@ CONTAINS
 !                                                                                        !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE solar_diag (rho, dz8w, ph, phb, cldfrac3d, coszen, swdnb, swdnt, &
+   SUBROUTINE solar_diag (is_first_timestep, dt, rho, dz8w, ph, phb, cldfrac3d, coszen, swdnb, swdnt, &
              param_first_scalar, p_qc, p_qi, p_qs, qv, qc, qi, qs, &
              qc_tot, qi_tot, has_reqc, has_reqi, has_reqs, f_qv, f_qc, f_qi, f_qs, &
-             re_cloud, re_ice, re_snow, clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, &
+             re_cloud, re_ice, re_snow, clrnidx, sza, ghi_accum, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, &
              wp2d_sum, lwp2d_tot, iwp2d_tot, wp2d_tot_sum, re_cloud_path, re_ice_path, re_snow_path, &
              re_cloud_path_tot, re_ice_path_tot, tau_qc, tau_qi, tau_qs, tau_qc_tot, tau_qi_tot, &
              cbase, ctop, cbase_tot, ctop_tot, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, &
@@ -43,12 +43,14 @@ CONTAINS
 
      IMPLICIT NONE
 
+     LOGICAL, INTENT(IN) :: is_first_timestep
+     REAL, INTENT(IN) :: dt
      REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: coszen, swdnb, swdnt
      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: ph, phb, cldfrac3d, qv, qc, qi, qs, qc_tot, qi_tot, &
           re_cloud, re_ice, re_snow, rho, dz8w
      INTEGER, INTENT(IN) :: param_first_scalar, p_qc, p_qi, p_qs, has_reqc, has_reqi, has_reqs
      LOGICAL, INTENT(IN) :: f_qv, f_qc, f_qi, f_qs
-     REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, wp2d_sum, &
+     REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: clrnidx, sza, ghi_accum, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, wp2d_sum, &
           lwp2d_tot, iwp2d_tot, wp2d_tot_sum, re_cloud_path, re_ice_path, re_snow_path, re_cloud_path_tot, re_ice_path_tot, &
           tau_qc, tau_qi, tau_qs, tau_qc_tot, tau_qi_tot, cbase, ctop, cbase_tot, ctop_tot
      INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, &
@@ -86,6 +88,13 @@ CONTAINS
                clrnidx(i, j) = swdnb(i, j) / swdnt(i, j)
              else
                clrnidx(i, j) = MISSING
+             end if
+
+             !!! ACCUMULATED GHI
+             if (is_first_timestep) then
+               ghi_accum(i, j) = 0.0
+             else
+               ghi_accum(i, j) = ghi_accum(i, j) + swdnb(i, j) * dt
              end if
 
              !!! 2-D CLOUD FRACTION

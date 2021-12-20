@@ -62,7 +62,8 @@ CONTAINS
                                    model_config_rec
 
       USE module_streams
-      USE module_utility, ONLY : WRFU_Time 
+!      USE module_utility, ONLY : WRFU_Time, WRFU_TimeInterval 
+      USE module_utility
 
       !=============================================================
       !  USE Association for the Diagnostic Packages
@@ -168,9 +169,15 @@ CONTAINS
 
       INTEGER :: k_start, k_end
 
-      ! Current time associated with current simulation step (RASM_DIAGS)
+      ! Current time associated with current simulation step (RASM_DIAGS and SOLAR_FIELDS)
 
       TYPE(WRFU_Time) :: currentTime
+
+      ! Additional domain clock info for SOLAR_FIELDS
+      TYPE(WRFU_Time) :: startTime
+      TYPE(WRFU_TimeInterval) :: dtint
+      CHARACTER*256 :: timestr
+      LOGICAL :: is_first_timestep
 
       !=============================================================
       !  Start of executable code
@@ -1094,7 +1101,18 @@ CONTAINS
 
       SOLAR_FIELDS: IF (config_flags%solar_diagnostics == do_solar_output) THEN
           CALL wrf_debug (100 , '--> CALL DIAGNOSTICS PACKAGE: SOLAR_DIAG')
-          CALL solar_diag (                                                 &
+
+          ! Get domain clock
+          ! ----------------
+          CALL domain_clock_get ( grid, current_time=currentTime, &
+               simulationStartTime=startTime, &
+               current_timestr=timestr, time_step=dtint )
+
+          ! Check if first time step to prepare for accumulation of GHI
+          ! ----------------
+          is_first_timestep = ( currentTime .eq. startTime)
+
+          CALL solar_diag (is_first_timestep=is_first_timestep, dt=grid%dt, &
               rho=grid%rho, dz8w=dz8w, ph=grid%ph_2, phb=grid%phb,          &
               cldfrac3d=grid%cldfra, coszen=grid%coszen, swdnb=grid%swdnb,  &
               swdnt=grid%swdnt, param_first_scalar=param_first_scalar,      &
@@ -1116,7 +1134,7 @@ CONTAINS
               tau_qc_tot=grid%tau_qc_tot, tau_qi_tot=grid%tau_qi_tot,       &
               cbase=grid%cbaseht, ctop=grid%ctopht,                         &
               cbase_tot=grid%cbaseht_tot, ctop_tot=grid%ctopht_tot,         &
-              clrnidx=grid%clrnidx, sza=grid%sza,                           &
+              clrnidx=grid%clrnidx, sza=grid%sza, ghi_accum=grid%ghi_accum, &
               ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde,         &
               ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme,         &
               ips=ips, ipe=ipe, jps=jps, jpe=jpe, kps=kps, kpe=kpe,         &

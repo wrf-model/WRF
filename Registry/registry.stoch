@@ -131,9 +131,9 @@ rconfig real    pert_cld3_t               namelist,stoch      max_domains    0.0
 rconfig real    spdt                      namelist,stoch      max_domains   -1.0       - "Mins to update perts. If spdt<=0 => every time step."
 
 # Perturbation arrays for multi-pert option
-state    real  SPFORCC3d        ij{pertn3d}   misc   1 XY  r       "SPFORCC3d"        "real  spect. coeff. of random perturbation field" "" ""
-state    real  SPFORCS3d        ij{pertn3d}   misc   1 XY  r       "SPFORCS3d"        "imag. spect. coeff. of random perturbation field" "" ""
-state    real  SP_AMP3d         ij{pertn3d}   misc   1 -   r       "SP_AMP3d"         "amplitude of random perturbation field" "" ""
+state    real  SPFORCC3d        i{pertn3d}j   misc   1 XY  r       "SPFORCC3d"        "real  spect. coeff. of random perturbation field" "" ""
+state    real  SPFORCS3d        i{pertn3d}j   misc   1 XY  r       "SPFORCS3d"        "imag. spect. coeff. of random perturbation field" "" ""
+state    real  SP_AMP3d         i{pertn3d}j   misc   1 -   r       "SP_AMP3d"         "amplitude of random perturbation field" "" ""
 state    real  ALPH_RAND3d     {pertn3d}      misc   1 -   -       "ALPH_RAND3d"      "autoregressive coeff. for generic rand. pert."  ""
 state    real  VERTSTRUCC3d    ikj{pertn3d}  dyn_em 1 -   r       "VERTSTRUCC3d"     "vertical structure for stoch. pert. forcing " ""
 state    real  VERTSTRUCS3d    ikj{pertn3d}  dyn_em 1 -   r       "VERTSTRUCS3d"     "vertical structure for stoch. pert. forcing " ""

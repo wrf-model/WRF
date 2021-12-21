@@ -2044,7 +2044,8 @@ CONTAINS
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
-                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
+                  GHG_INPUT=GHG_INPUT                               &
                                                                     )
 
 #endif
@@ -2538,7 +2539,7 @@ CONTAINS
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
-                     xcoszen=coszen,yr=yr,julian=julian,ghg_iput=ghg_input  ) ! jararias 2013/08/14
+                     xcoszen=coszen,yr=yr,julian=julian,ghg_input=ghg_input  ) ! jararias 2013/08/14
 
              DO j=jts,jte
              DO k=kts,kte

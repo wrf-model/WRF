@@ -15323,7 +15323,7 @@ integer,external :: omp_get_thread_num
                                                             XICE, &
                                                             SNOW
 !ccc Added for time-varying trace gases.
-   INTEGER, INTENT(IN    ) ::                             ghg_iput
+   INTEGER, INTENT(IN    ) ::                             ghg_input
    INTEGER, INTENT(IN    ) ::                                 yr
    REAL, INTENT(IN    ) ::                                julian
    REAL, INTENT(IN    ) ::                                xtime
@@ -15494,7 +15494,7 @@ integer,external :: omp_get_thread_num
 !ccc To add time-varying trace gases (CO2, N2O and CH4). Read the conc.  from file
 ! then interpolate to date of run.
       REAL(8), SAVE                                :: clco2, cln2o, clch4, clcfc11, clcfc12
-      REAL(8)                                      :: cfc11, cfc12
+!      REAL(8)                                      :: cfc11, cfc12
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
@@ -15644,7 +15644,7 @@ integer,external :: omp_get_thread_num
 !ccc Read time-varying trace gases concentrations and interpolate them to run date.
 !
 IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
- IF(ghg_inout.eq.1) THEN
+ IF(ghg_input.eq.1) THEN
    CALL read_CAMgases(yr,julian,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
  ENDIF
 ENDIF

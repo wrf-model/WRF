@@ -62,8 +62,7 @@ CONTAINS
                                    model_config_rec
 
       USE module_streams
-!      USE module_utility, ONLY : WRFU_Time, WRFU_TimeInterval 
-      USE module_utility
+      USE module_utility, ONLY : WRFU_Time
 
       !=============================================================
       !  USE Association for the Diagnostic Packages
@@ -169,15 +168,9 @@ CONTAINS
 
       INTEGER :: k_start, k_end
 
-      ! Current time associated with current simulation step (RASM_DIAGS and SOLAR_FIELDS)
+      ! Current time associated with current simulation step (RASM_DIAGS)
 
       TYPE(WRFU_Time) :: currentTime
-
-      ! Additional domain clock info for SOLAR_FIELDS
-      TYPE(WRFU_Time) :: startTime
-      TYPE(WRFU_TimeInterval) :: dtint
-      CHARACTER*256 :: timestr
-      LOGICAL :: is_first_timestep
 
       !=============================================================
       !  Start of executable code
@@ -1102,17 +1095,7 @@ CONTAINS
       SOLAR_FIELDS: IF (config_flags%solar_diagnostics == do_solar_output) THEN
           CALL wrf_debug (100 , '--> CALL DIAGNOSTICS PACKAGE: SOLAR_DIAG')
 
-          ! Get domain clock
-          ! ----------------
-          CALL domain_clock_get ( grid, current_time=currentTime, &
-               simulationStartTime=startTime, &
-               current_timestr=timestr, time_step=dtint )
-
-          ! Check if first time step to prepare for accumulation of GHI
-          ! ----------------
-          is_first_timestep = ( currentTime .eq. startTime)
-
-          CALL solar_diag (is_first_timestep=is_first_timestep, dt=grid%dt, &
+          CALL solar_diag (dt=grid%dt, &
               rho=grid%rho, dz8w=dz8w, ph=grid%ph_2, phb=grid%phb,          &
               cldfrac3d=grid%cldfra, coszen=grid%coszen, swdnb=grid%swdnb,  &
               swdnt=grid%swdnt, param_first_scalar=param_first_scalar,      &

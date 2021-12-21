@@ -443,11 +443,12 @@ BENCH_START(rad_driver_tim)
      &         ,obscur=grid%ECOBSC, mask=grid%ECMASK                       &
      &         ,elat_track=grid%elat_track,elon_track=grid%elon_track      &
      &         ,SW_ECLIPSE=config_flags%ra_sw_eclipse                      &         
-     &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    &
-     &         ,cw_rad=grid%cw_rad                     &
+     &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used                     &
+     &         ,cw_rad=grid%cw_rad                                         &
      &         ,shcu_physics=config_flags%shcu_physics                     &
-     &         ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS        &
-     &         ,EFCG=grid%EFCG,EFCS=grid%EFCS,EFIG=grid%EFIG &
+     &         ,ghg_input=config_flags%ghg_input                           &
+     &         ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS                         &
+     &         ,EFCG=grid%EFCG,EFCS=grid%EFCS,EFIG=grid%EFIG               &
      &         ,EFIS=grid%EFIS,EFSG=grid%EFSG,aercu_opt=config_flags%aercu_opt & 
      &         ,EFSS=grid%EFSS,QS_CU=grid%QS_CU)
 

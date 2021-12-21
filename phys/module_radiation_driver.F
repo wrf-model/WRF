@@ -168,6 +168,7 @@ CONTAINS
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
               ,cw_rad, shcu_physics                                       &
+              ,ghg_input                                                  &
               ,obscur,mask,elat_track,elon_track                          &
               ,taod5502d, taod5503d                                       &
               ,mp_physics                                                 &
@@ -429,7 +430,7 @@ CONTAINS
                                        num_tiles
 
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics, sw_eclipse
-   INTEGER, INTENT(IN)            :: o3input, aer_opt
+   INTEGER, INTENT(IN)            :: o3input, aer_opt, ghg_input
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
    integer, intent(in), OPTIONAL  :: solar_opt
@@ -1719,7 +1720,7 @@ CONTAINS
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
 !ccc Added for time-varying trace gases.
-                 ,YR=YR,JULIAN=JULIAN                               &
+                 ,YR=YR,JULIAN=JULIAN,XTIME=XTIME, GHG_INPUT=GHG_INPUT &
 !ccc
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -1872,7 +1873,7 @@ CONTAINS
                      GMT=GMT,JULDAY=JULDAY,JULIAN=JULIAN,YR=YR,DT=DT,XTIME=XTIME,DECLIN=DECLIN,  &
                      SOLCON=SOLCON,RADT=RADT,DEGRAD=DEGRAD,n_cldadv=3  &
                    ,abstot_3d=abstot,absnxt_3d=absnxt,emstot_3d=emstot &
-                   ,doabsems=doabsems                               &
+                   ,doabsems=doabsems, ghg_input=ghg_input             &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -1948,7 +1949,7 @@ CONTAINS
                   calc_clean_atm_diag=calc_clean_atm_diag,          &
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
-                  YR=YR,JULIAN=JULIAN,                              &
+                  GHG_INPUT=GHG_INPUT, YR=YR,JULIAN=JULIAN,XTIME=XTIME, &
 !ccc
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
@@ -2037,7 +2038,7 @@ CONTAINS
 #endif
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
-                  YR=YR,JULIAN=JULIAN,                              &
+                  YR=YR,JULIAN=JULIAN,XTIME=XTIME,                  &
 !ccc
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
@@ -2371,7 +2372,7 @@ CONTAINS
                      GMT=GMT,JULDAY=JULDAY,JULIAN=JULIAN,YR=YR,DT=DT,XTIME=XTIME,DECLIN=DECLIN,  &
                      SOLCON=SOLCON,RADT=RADT,DEGRAD=DEGRAD,n_cldadv=3  &
                    ,abstot_3d=abstot,absnxt_3d=absnxt,emstot_3d=emstot &
-                   ,doabsems=doabsems                               &
+                   ,doabsems=doabsems,ghg_input=ghg_input              &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -2453,7 +2454,7 @@ CONTAINS
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
                      obscur=obscur_loc,                                 & 
-                     xcoszen=coszen,yr=yr,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
+                     xcoszen=coszen,yr=yr,julian=julian,ghg_input=ghg_input,mp_physics=mp_physics ) ! jararias 2013/08/14
 
              DO j=jts,jte
              DO k=kts,kte
@@ -2537,7 +2538,7 @@ CONTAINS
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
-                     xcoszen=coszen,yr=yr,julian=julian                 ) ! jararias 2013/08/14
+                     xcoszen=coszen,yr=yr,julian=julian,ghg_iput=ghg_input  ) ! jararias 2013/08/14
 
              DO j=jts,jte
              DO k=kts,kte

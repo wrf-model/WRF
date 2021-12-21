@@ -11256,7 +11256,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,yr,julian                          & ! jararias 2013/08
+                       xcoszen,yr,julian, ghg_input               & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
       USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
@@ -11330,8 +11330,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
          swddnic, & ! Clear ski DNI
          swddirc    ! Clear ski direct horizontal irradiance
    integer, intent(in)        :: yr
-   real, optional, intent(in) :: &
-         julian      ! julian day (1-366)
+   real, optional, intent(in) :: julian      ! julian day (1-366)
+   integer, intent(in)        :: ghg_input
    real, dimension(ims:ime,jms:jme), optional, intent(in) :: &
          xcoszen     ! cosine of the solar zenith angle
    real, dimension(:,:,:,:), pointer :: tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw
@@ -11524,9 +11524,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
     integer:: idx_rei
     real:: corr
 
-#ifdef CLWRFGHG
-    real(kind=8)                                 :: co2, n2o, ch4, cfc11, cfc12
-#else
+    real(kind=8), SAVE                           :: clco2, cln2o, clch4, clcfc11, clcfc12
+    real(kind=8)                                 :: cfc11, cfc12
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
@@ -11537,7 +11536,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! nitrous oxide (319 ppbv)
     real :: n2o
     data n2o / 319.e-9 / 
-#endif
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -11649,10 +11647,20 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
 !
-#ifdef CLWRFGHG
+IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
+ IF(ghg_input.eq.1) THEN
 ! Read time-varying trace gases concentrations and interpolate them to run date.
-   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
-#endif
+   CALL read_CAMgases(yr,julian,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
+ ENDIF
+ENDIF
+
+ IF(ghg_input.eq.1) THEN
+   co2 = clco2
+   n2o = cln2o
+   ch4 = clch4
+   cfc11 = clcfc11
+   cfc12 = clcfc12
+ ENDIF
 
 ! jararias, 14/08/2013
       if (present(xcoszen)) then

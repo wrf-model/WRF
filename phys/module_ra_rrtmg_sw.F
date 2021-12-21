@@ -9965,7 +9965,7 @@ CONTAINS
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,yr,julian,                          & ! jararias 2013/08
+                       xcoszen,yr,julian, ghg_input,             & ! jararias 2013/08
                        obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
                        )
 !------------------------------------------------------------------
@@ -10000,6 +10000,7 @@ CONTAINS
                                                             SWCF, &
                                                            COSZR
 
+   INTEGER, INTENT(IN  )     ::                        GHG_INPUT
    INTEGER, INTENT(IN  )     ::                           JULDAY
    REAL, INTENT(IN    )      ::                      RADT,DEGRAD, &
                                          XTIME,DECLIN,SOLCON,GMT
@@ -10252,10 +10253,9 @@ CONTAINS
     integer:: idx_rei
     real:: corr
 
-#ifdef CLWRFGHG
 ! Using data from CAMtr_volume_mixing_ratio data file
-    real(kind=8)                                 :: co2, n2o, ch4, cfc11, cfc12
-#else
+    real(kind=8), SAVE                           :: clco2, cln2o, clch4, clcfc11, clcfc12
+    real(kind=8)                                 :: cfc11, cfc12
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
@@ -10266,7 +10266,6 @@ CONTAINS
 ! nitrous oxide (319 ppbv)
     real :: n2o
     data n2o / 319.e-9 / 
-#endif
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -10356,10 +10355,20 @@ CONTAINS
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
-#ifdef CLWRFGHG
+IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
+ IF(ghg_input.eq.1) then
 ! Read time-varying trace gases concentrations and interpolate them to run date
-   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
-#endif
+   CALL read_CAMgases(yr,julian,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
+ ENDIF
+ENDIF
+
+ IF(ghg_input.eq.1) then
+   co2 = clco2
+   n2o = cln2o
+   ch4 = clch4
+   cfc11 = clcfc11
+   cfc12 = clcfc12
+ ENDIF
 
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb

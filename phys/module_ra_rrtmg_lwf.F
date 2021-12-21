@@ -15273,7 +15273,7 @@ integer,external :: omp_get_thread_num
                        progn,                                     & !czhao
                        qndrop3d,f_qndrop,                         & !czhao
 !ccc added for time varying gases.
-                       yr,julian,                                 &
+                       ghg_input, yr,julian, xtime,               &
 !ccc
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
@@ -15323,8 +15323,10 @@ integer,external :: omp_get_thread_num
                                                             XICE, &
                                                             SNOW
 !ccc Added for time-varying trace gases.
+   INTEGER, INTENT(IN    ) ::                             ghg_iput
    INTEGER, INTENT(IN    ) ::                                 yr
    REAL, INTENT(IN    ) ::                                julian
+   REAL, INTENT(IN    ) ::                                xtime
 !ccc
 
 !
@@ -15491,10 +15493,8 @@ integer,external :: omp_get_thread_num
 
 !ccc To add time-varying trace gases (CO2, N2O and CH4). Read the conc.  from file
 ! then interpolate to date of run.
-#ifdef CLWRFGHG
-! CLWRF-UC June.09
-      REAL(8)                                      :: co2, n2o, ch4, cfc11, cfc12
-#else
+      REAL(8), SAVE                                :: clco2, cln2o, clch4, clcfc11, clcfc12
+      REAL(8)                                      :: cfc11, cfc12
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
@@ -15512,7 +15512,6 @@ integer,external :: omp_get_thread_num
 ! cfc-12 (538 ppt)
     real :: cfc12
     data cfc12 / 0.538e-9 / 
-#endif
 ! cfc-22 (169 ppt)
     real :: cfc22
     data cfc22 / 0.169e-9 / 
@@ -15644,18 +15643,25 @@ integer,external :: omp_get_thread_num
 !
 !ccc Read time-varying trace gases concentrations and interpolate them to run date.
 !
-#ifdef CLWRFGHG
+IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
+ IF(ghg_inout.eq.1) THEN
+   CALL read_CAMgases(yr,julian,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
+ ENDIF
+ENDIF
 
-   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
-
+ IF(ghg_input.eq.1) THEN
+   co2=clco2
+   n2o=cln2o
+   ch4=clch4
+   cfc11=clcfc11
+   cfc12=clcfc12
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
      call wrf_debug( 100, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
      call wrf_debug( 100, message)
    ENDIF
-
-#endif
+ ENDIF
 !ccc
 
    ncol = (jte-jts+1)*(ite-its+1)

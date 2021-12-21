@@ -690,4 +690,10 @@ module da_control
 
    logical, allocatable :: fgat_rain_flags(:)
 
+   integer, parameter :: no_thin           = 0
+   integer, parameter :: thin_single       = 1
+   integer, parameter :: thin_multi        = 2
+   integer, parameter :: thin_superob      = 3
+   integer, parameter :: thin_superob_hv   = 4
+
 end module da_control

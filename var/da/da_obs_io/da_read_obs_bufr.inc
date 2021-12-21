@@ -874,7 +874,8 @@ bufrfile:  do ibufr=1,numbufr
                if (n==1) iv%info(sonde_sfc)%ntotal = iv%info(sonde_sfc)%ntotal + 1
                
                if (outside) cycle reports
-               if ( thin_conv ) then
+               if ( thin_conv_opt(sound) > no_thin .or. &
+                    thin_conv_opt(sonde_sfc) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(sound,dlat_earth,dlon_earth,crit,iv%info(sound)%nlocal,itx,1,itt,iout,iuse)
                   call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,iv%info(sonde_sfc)%nlocal,itx,1,itt,iout,iuse)
@@ -893,7 +894,7 @@ bufrfile:  do ibufr=1,numbufr
                if (.not.use_pilotobs) cycle reports
                if (n==1) iv%info(pilot)%ntotal = iv%info(pilot)%ntotal + 1
                if (outside) cycle reports
-               if ( thin_conv ) then
+               if ( thin_conv_opt(pilot) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,iv%info(pilot)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -914,7 +915,7 @@ bufrfile:  do ibufr=1,numbufr
                if (.not.use_airepobs) cycle reports
                if (n==1) iv%info(airep)%ntotal = iv%info(airep)%ntotal + 1
                if (outside)  cycle reports
-               if ( thin_conv ) then
+               if ( thin_conv_opt(airep) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(airep,dlat_earth,dlon_earth,crit,iv%info(airep)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -930,7 +931,7 @@ bufrfile:  do ibufr=1,numbufr
                if (.not.use_shipsobs) cycle reports
                if (n==1) iv%info(ships)%ntotal = iv%info(ships)%ntotal + 1
                if (outside) cycle reports
-               if ( thin_conv ) then
+               if ( thin_conv_opt(ships) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(ships,dlat_earth,dlon_earth,crit,iv%info(ships)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -947,7 +948,7 @@ bufrfile:  do ibufr=1,numbufr
                if (n==1) iv%info(buoy)%ntotal = iv%info(buoy)%ntotal + 1
                if (outside) cycle reports
                
-               if ( thin_conv ) then
+               if ( thin_conv_opt(buoy) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,iv%info(buoy)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -965,7 +966,7 @@ bufrfile:  do ibufr=1,numbufr
                
                if (n==1) iv%info(synop)%ntotal = iv%info(synop)%ntotal + 1
                if (outside) cycle reports
-               if ( thin_conv ) then
+               if ( thin_conv_opt(synop) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(synop,dlat_earth,dlon_earth,crit,iv%info(synop)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -984,7 +985,7 @@ bufrfile:  do ibufr=1,numbufr
                if (n==1) iv%info(metar)%ntotal = iv%info(metar)%ntotal + 1
                if (outside) cycle reports
                
-               if ( thin_conv ) then
+               if ( thin_conv_opt(metar) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(metar,dlat_earth,dlon_earth,crit,iv%info(metar)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1003,7 +1004,7 @@ bufrfile:  do ibufr=1,numbufr
                if (n==1) iv%info(geoamv)%ntotal = iv%info(geoamv)%ntotal + 1
                if (outside) cycle reports
                
-               if ( thin_conv ) then
+               if ( thin_conv_opt(geoamv) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,iv%info(geoamv)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1021,7 +1022,7 @@ bufrfile:  do ibufr=1,numbufr
                if (n==1) iv%info(qscat)%ntotal = iv%info(qscat)%ntotal + 1
                if (outside) cycle reports
                
-               if ( thin_conv ) then
+               if ( thin_conv_opt(qscat) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,iv%info(qscat)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1039,7 +1040,7 @@ bufrfile:  do ibufr=1,numbufr
                if (n==1) iv%info(gpspw)%ntotal = iv%info(gpspw)%ntotal + 1
                if (outside) cycle reports
                
-               if ( thin_conv ) then
+               if ( thin_conv_opt(gpspw) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,iv%info(gpspw)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1057,7 +1058,7 @@ bufrfile:  do ibufr=1,numbufr
                if (n==1) iv%info(profiler)%ntotal = iv%info(profiler)%ntotal + 1
                if (outside) cycle reports
                
-               if ( thin_conv ) then
+               if ( thin_conv_opt(profiler) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,iv%info(profiler)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1075,7 +1076,7 @@ bufrfile:  do ibufr=1,numbufr
                if (n==1) iv%info(ssmi_rv)%ntotal = iv%info(ssmi_rv)%ntotal + 1
                if (outside) cycle reports
                
-               if ( thin_conv ) then
+               if ( thin_conv_opt(ssmi_rv) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(ssmi_rv,dlat_earth,dlon_earth,crit,iv%info(ssmi_rv)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1096,7 +1097,7 @@ bufrfile:  do ibufr=1,numbufr
                if (n==1) iv%info(bogus)%ntotal = iv%info(bogus)%ntotal + 1
                if (outside) cycle reports
                
-               if ( thin_conv ) then
+               if ( thin_conv_opt(bogus) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,iv%info(bogus)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1168,6 +1169,7 @@ end do bufrfile
     do kk=1,num_fgat_time
       if ( thin_conv ) then
          do n = 1, num_ob_indexes
+            if ( .not. allocated(thinning_grid_conv(n)%icount) ) cycle
             call cleangrids_conv(n)
          end do
       end if
@@ -1215,7 +1217,8 @@ end do bufrfile
                     plink => plink%next
                     cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(sound) > no_thin .or. &
+                    thin_conv_opt(sonde_sfc) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(sound,dlat_earth,dlon_earth,crit,iv%info(sound)%nlocal,itx,1,itt,iout,iuse)
                   call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,iv%info(sonde_sfc)%nlocal,itx,1,itt,iout,iuse)
@@ -1241,7 +1244,7 @@ end do bufrfile
                    plink => plink%next
                    cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(pilot) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,iv%info(pilot)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1269,7 +1272,7 @@ end do bufrfile
                     plink => plink%next
                     cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(airep) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(airep,dlat_earth,dlon_earth,crit,iv%info(airep)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1292,7 +1295,7 @@ end do bufrfile
                   plink => plink%next
                   cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(ships) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(ships,dlat_earth,dlon_earth,crit,iv%info(ships)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1315,7 +1318,7 @@ end do bufrfile
                      plink => plink%next
                      cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(buoy) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,iv%info(buoy)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1339,7 +1342,7 @@ end do bufrfile
                      plink => plink%next
                      cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(synop) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(synop,dlat_earth,dlon_earth,crit,iv%info(synop)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1363,7 +1366,7 @@ end do bufrfile
                     plink => plink%next
                     cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(metar) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(metar,dlat_earth,dlon_earth,crit,iv%info(metar)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1387,7 +1390,7 @@ end do bufrfile
                   plink => plink%next
                   cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(geoamv) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,iv%info(geoamv)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1410,7 +1413,7 @@ end do bufrfile
                    plink => plink%next
                    cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(qscat) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,iv%info(qscat)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1433,7 +1436,7 @@ end do bufrfile
                    plink => plink%next
                    cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(gpspw) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,iv%info(gpspw)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1456,7 +1459,7 @@ end do bufrfile
                   plink => plink%next
                   cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(profiler) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,iv%info(profiler)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1479,7 +1482,7 @@ end do bufrfile
                     plink => plink%next
                     cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(ssmi_rv) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(ssmi_rv,dlat_earth,dlon_earth,crit,iv%info(ssmi_rv)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1505,7 +1508,7 @@ end do bufrfile
                   plink => plink%next
                   cycle reports2
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(bogus) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,iv%info(bogus)%nlocal,itx,1,itt,iout,iuse)
                   if ( .not. iuse ) then
@@ -1564,6 +1567,7 @@ end if
 
        if ( thin_conv ) then
           do n = 1, num_ob_indexes
+             if ( .not. allocated(thinning_grid_conv(n)%icount) ) cycle
              call cleangrids_conv(n)
           end do
        end if
@@ -1606,7 +1610,8 @@ end if
                     plink => plink%next
                     cycle reports3
                end if
-                if ( thin_conv ) then
+                if ( thin_conv_opt(sound) > no_thin .or. &
+                     thin_conv_opt(sonde_sfc) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(sound,dlat_earth,dlon_earth,crit,nlocal(sound),itx,1,itt,ilocal(sound),iuse)
                   call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,nlocal(sonde_sfc),itx,1,itt,ilocal(sonde_sfc),iuse)
@@ -1699,7 +1704,7 @@ end if
                    plink => plink%next
                    cycle reports3
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(pilot) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,nlocal(pilot),itx,1,itt,ilocal(pilot),iuse)
                   if ( .not. iuse ) then
@@ -1740,7 +1745,7 @@ end if
                     plink => plink%next
                     cycle reports3
                end if
-            if ( thin_conv ) then
+            if ( thin_conv_opt(airep) > no_thin ) then
                crit = tdiff
                call map2grids_conv(airep,dlat_earth,dlon_earth,crit,nlocal(airep),itx,1,itt,ilocal(airep),iuse)
                if ( .not. iuse ) then
@@ -1780,7 +1785,7 @@ end if
                   plink => plink%next
                   cycle reports3
                end if
-            if ( thin_conv ) then
+            if ( thin_conv_opt(ships) > no_thin ) then
                crit = tdiff
                call map2grids_conv(ships,dlat_earth,dlon_earth,crit,nlocal(ships),itx,1,itt,ilocal(ships),iuse)
                 if ( .not. iuse ) then
@@ -1811,7 +1816,7 @@ end if
                 plink => plink%next
                 cycle reports3
                end if
-            if ( thin_conv ) then
+            if ( thin_conv_opt(buoy) > no_thin ) then
                crit = tdiff
                call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,nlocal(buoy),itx,1,itt,ilocal(buoy),iuse)
                if ( .not. iuse ) then
@@ -1850,7 +1855,7 @@ end if
                plink => plink%next
                cycle reports3
             end if
-            if ( thin_conv ) then
+            if ( thin_conv_opt(synop) > no_thin ) then
                crit = tdiff
                call map2grids_conv(synop,dlat_earth,dlon_earth,crit,nlocal(synop),itx,1,itt,ilocal(synop),iuse)
                 if ( .not. iuse ) then
@@ -1884,7 +1889,7 @@ end if
                    plink => plink%next
                    cycle reports3
                end if
-            if ( thin_conv ) then
+            if ( thin_conv_opt(metar) > no_thin ) then
                crit = tdiff
                call map2grids_conv(metar,dlat_earth,dlon_earth,crit,nlocal(metar),itx,1,itt,ilocal(metar),iuse)
                 if ( .not. iuse ) then
@@ -1917,7 +1922,7 @@ end if
                    plink => plink%next
                    cycle reports3
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(geoamv) > no_thin ) then
                crit = tdiff
                call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,nlocal(geoamv),itx,1,itt,ilocal(geoamv),iuse)
                 if ( .not. iuse ) then
@@ -1954,7 +1959,7 @@ end if
                    plink => plink%next
                    cycle reports3
                end if
-            if ( thin_conv ) then
+            if ( thin_conv_opt(qscat) > no_thin ) then
                crit = tdiff
                call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,nlocal(qscat),itx,1,itt,ilocal(qscat),iuse)
                if ( .not. iuse ) then
@@ -1987,7 +1992,7 @@ end if
                    plink => plink%next
                    cycle reports3
                end if
-            if ( thin_conv ) then
+            if ( thin_conv_opt(gpspw) > no_thin ) then
                crit = tdiff
                call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,nlocal(gpspw),itx,1,itt,ilocal(gpspw),iuse)
                 if ( .not. iuse ) then
@@ -2013,7 +2018,7 @@ end if
                    plink => plink%next
                    cycle reports3
                end if
-               if ( thin_conv ) then
+               if ( thin_conv_opt(profiler) > no_thin ) then
                crit = tdiff
                call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,nlocal(profiler),itx,1,itt,ilocal(profiler),iuse)
                 if ( .not. iuse ) then
@@ -2051,7 +2056,7 @@ end if
                    plink => plink%next
                    cycle reports3
                end if
-            if ( thin_conv ) then
+            if ( thin_conv_opt(ssmi_rv) > no_thin ) then
                crit = tdiff
                call map2grids_conv(ssmi_rv,dlat_earth,dlon_earth,crit,nlocal(ssmi_rv),itx,1,itt,ilocal(ssmi_rv),iuse)
                 if ( .not. iuse ) then
@@ -2102,7 +2107,7 @@ end if
                    plink => plink%next
                    cycle reports3
                end if
-                if ( thin_conv ) then
+                if ( thin_conv_opt(bogus) > no_thin ) then
                   crit = tdiff
                   call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,nlocal(bogus),itx,1,itt,ilocal(bogus),iuse)
                   if ( .not. iuse ) then
@@ -2220,6 +2225,8 @@ end if
    if ( thin_conv ) then
       do n = 1, num_ob_indexes
 
+        if ( thin_conv_opt(n) <= no_thin ) cycle
+
         if ( ntotal(n)>0 ) then
 
             allocate ( in  (thinning_grid_conv(n)%itxmax) )
@@ -2283,6 +2290,7 @@ end if
 
 if ( thin_conv ) then
     do n = 1, num_ob_indexes
+        if ( thin_conv_opt(n) <= no_thin ) cycle
         if ( ntotal(n)>0 ) then
             if ( nlocal(n) > 0 ) then
                if ( ANY(iv%info(n)%thinned(:,:)) ) then

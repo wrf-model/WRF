@@ -16,8 +16,6 @@ MODULE module_firebrand_spotting
     USE MPI 
 #endif
 
-    !USE module_firebrand_spotting_mpi,       ONLY: neighbors, my_id, task_id, mpiprocs
-
     IMPLICIT NONE
 
     PRIVATE
@@ -1507,7 +1505,6 @@ END FUNCTION order_val
 
         USE module_domain,            ONLY: domain_get_time_since_sim_start, &
                                             domain_clock_get, is_alarm_tstep
-!        USE module_dm,                ONLY: wrf_dm_max_real, wrf_dm_sum_integer, local_communicator
         USE module_domain_type,       ONLY: HISTORY_ALARM, restart_alarm, AUXHIST23_ALARM
         USE module_state_description, ONLY: p_qv, num_moist, param_first_scalar
         USE module_utility,           ONLY: WRFU_Alarm !WRFU_Clock, 
@@ -1656,12 +1653,10 @@ END FUNCTION order_val
 
 
         !-------------------------------------------------------------------------------
-        ! Dummy variable - fuel moisture is not implemented in wrf-v4.0.1
+        ! It was a dummy variable back when fuel moisture was not implemented in wrf-v4.0.1
         !-------------------------------------------------------------------------------
 
-        REAL,  DIMENSION(ifps:ifpe,jfps:jfpe)  :: dummy_fmcg2df
-
-        dummy_fmcg2df(ifps:ifpe,jfps:jfpe) = 0.09
+        REAL,  DIMENSION(ifps:ifpe,jfps:jfpe)  :: fmcg_2df        
 
         !===============================================================================
         ! Begin
@@ -1753,6 +1748,12 @@ END FUNCTION order_val
         firepts = 0
         fs_fire_ROSdt(ifps:ifpe, jfps:jfpe) = fs_fire_ROSdt(ifps:ifpe, jfps:jfpe) + grid%burnt_area_dt(ifps:ifpe,jfps:jfpe)
 
+        !-------------------------------------------------------------------------------
+        ! Updated fuel moisture from WRF-fire
+        !-------------------------------------------------------------------------------
+
+        fmcg_2df(ifps:ifpe,jfps:jfpe) = grid%fmc_g(ifps:ifpe,jfps:jfpe)
+
         !===============================================================================
         ! Firebrand Generation - Release Firebrands - Part 1
         !===============================================================================
@@ -1791,7 +1792,7 @@ END FUNCTION order_val
 
                 RelPot(ifps:ifpe,jfps:jfpe) = RESHAPE(firebrand_gen_potential(&
                                                              fuel_fgi=grid%fgip(ifps:ifpe,jfps:jfpe), &
-                                                             fuel_mcg=dummy_fmcg2df(ifps:ifpe,jfps:jfpe), & 
+                                                             fuel_mcg=fmcg_2df(ifps:ifpe,jfps:jfpe), & 
                                                              !fuel_mcg=grid%fmcg2df(ifps:ifpe,jfps:jfpe), & 
                                                              factor=fcat_factor(ifps:ifpe,jfps:jfpe),&
                                                              fire_rate=fs_fire_ROSdt(ifps:ifpe,jfps:jfpe)), &
@@ -2601,7 +2602,7 @@ END FUNCTION order_val
                     fuel_spotting_risk_fr(ifps:ifpe,jfps:jfpe) = RESHAPE(&
                                                         fuel_spotting_risk(&
                                                              fuel_fgi=grid%fgip(ifps:ifpe,jfps:jfpe), &
-                                                             fuel_mcg=dummy_fmcg2df(ifps:ifpe,jfps:jfpe), & 
+                                                             fuel_mcg=fmcg_2df(ifps:ifpe,jfps:jfpe), & 
                                                              !fuel_mcg=grid%fmcg2df(ifps:ifpe,jfps:jfpe), & 
                                                              factor=spotthreat_fr(ifps:ifpe,jfps:jfpe)), &
                                                              SHAPE(fuel_spotting_risk_fr)) !, fuel_mcg=grid%fmcg2df)

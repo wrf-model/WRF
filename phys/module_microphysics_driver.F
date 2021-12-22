@@ -29,7 +29,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,gmt,xtime                                         &
 !======================
                       !Variables required for CAMMGMP Scheme
-                      ,dlf,dlf2,t_phy,p_hyd,p8w_hyd,tke_pbl,z_at_w,qfx   &
+                      ,dlf,dlf2,t_phy,p_hyd,p8w_hyd,tke_pbl,pblh         &
+                      ,z_at_mass,z_at_w,qfx                              &
                       ,rliq,turbtype3d,smaw3d,wsedl3d,cldfra_old_mp      &
                       ,cldfra_mp,cldfra_mp_all,lradius,iradius           &
                       ,cldfrai,cldfral,cldfra_conv                       &
@@ -49,8 +50,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qndrop_curr,qni_curr,qh_curr,qnh_curr             &
                       ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr      &
                       ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr      &
-                      ,qnwfa_curr,qnifa_curr                             & ! for water/ice-friendly aerosols
-                      ,f_qnwfa,f_qnifa                                   & ! for water/ice-friendly aerosols
+                      ,qnwfa_curr,qnifa_curr,qnbca_curr                  & ! for water/ice-friendly/black carbon aerosols
+                      ,f_qnwfa,f_qnifa,f_qnbca                           & ! for water/ice-friendly/black carbon aerosols
                       ,qvolg_curr,qvolh_curr                             &
                       ,qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr           & ! for ntu3m
                       ,qnin_curr,fi_curr,fs_curr,vi_curr,vs_curr         & ! for ntu3m
@@ -105,7 +106,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,rainprod, evapprod                                &
                       ,qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp                &
 #endif
-                      ,qnwfa2d, qnifa2d                                  & ! for water/ice-friendly aerosols
+                      ,qnwfa2d, qnifa2d, qnbca2d                         & ! for water/ice-friendly/black carbon aerosols
+                      ,qnocbb2d, qnbcbb2d                                & ! for biomass burning aerosols
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
                       ,vmi3d                                             & ! for P3 
                       ,di3d                                              & ! for P3 
@@ -494,8 +496,10 @@ SUBROUTINE microphysics_driver(                                          &
                                                                t_phy, &    !Temprature at the mid points (K)
                                                                p_hyd, &    !Hydrostatic pressure(Pa)
                                                              p8w_hyd, &    !Hydrostatic Pressure at level interface (Pa)
+                                                           z_at_mass, &    !Height above sea level at grid cell center (m)
                                                               z_at_w, &    !Height above sea level at layer interfaces (m) 
                                                              tke_pbl, &    !Turbulence kinetic energy
+                                                                pblh, &    !Planetary boundary layer height (m)
                                                           turbtype3d, &    !Turbulent interface types [ no unit ]
                                                               smaw3d, &    !Normalized Galperin instability function for momentum [no units]
                                                                  alt, &    !inverse density(m3/kg)
@@ -590,7 +594,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                                          itype,itype_2,itype_3             ! for Jensen ISHMAEL
    LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
    REAL, OPTIONAL,  INTENT(INOUT   ) :: naer  ! aerosol number concentration (/kg)
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) , OPTIONAL :: qnwfa2d, qnifa2d
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) , OPTIONAL :: qnwfa2d, qnifa2d, qnbca2d, &
+                                                                    qnocbb2d, qnbcbb2d
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
@@ -614,7 +619,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,kext_qic,kext_qip,kext_qid,tempc,height      &
                  ,kext_ft_qic,kext_ft_qip,kext_ft_qid &
                  ,kext_ft_qs,kext_ft_qg                           &
-                 ,qnwfa_curr,qnifa_curr                           & ! Added by G. Thompson
+                 ,qnwfa_curr,qnifa_curr,qnbca_curr                & ! Added by G. Thompson
                  ,qvolg_curr,qvolh_curr, qrimef_curr
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
@@ -690,7 +695,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                        ,f_qvoli,f_qaoli                                      & ! for Jensen ISHMAEL
                        ,f_qvoli2,f_qaoli2                                    & ! for Jensen ISHMAEL
                        ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                       & ! for Jensen ISHMAEL
-                       ,f_qnwfa, f_qnifa                         ! Added by G. Thompson
+                       ,f_qnwfa, f_qnifa, f_qnbca                         ! Added by G. Thompson
 
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
@@ -1018,12 +1023,22 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      NC=qnc_curr,                        &
                      NWFA=qnwfa_curr,                    &
                      NIFA=qnifa_curr,                    &
+                     NBCA=qnbca_curr,                    &
                      NWFA2D=qnwfa2d,                     &
                      NIFA2D=qnifa2d,                     &
+                     NBCA2D=qnbca2d,                     &
+                     NOCBB2D=qnocbb2d,                   &
+                     NBCBB2D=qnbcbb2d,                   &
+                     aer_init_opt=config_flags%aer_init_opt,   &
+                     wif_input_opt=config_flags%wif_input_opt, &
+                     aer_fire_emit_opt=config_flags%aer_fire_emit_opt, &
+                     wif_fire_inj=config_flags%wif_fire_inj,   &
                      TH=th,                              &
                      PII=pi_phy,                         &
                      P=p,                                &
                      W=w,                                &
+                     PBLH=PBLH,                          &
+                     z_at_mass=z_at_mass,                &
                      DZ=dz8w,                            &
                      DT_IN=dt,                           &
                      ITIMESTEP=itimestep,                &

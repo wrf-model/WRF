@@ -87,6 +87,7 @@ CONTAINS
              !  Optional aerosol
                  ,qnwfa_curr,f_qnwfa                               &
                  ,qnifa_curr,f_qnifa                               &
+                 ,qnbca_curr,f_qnbca                               &
              !  Optional moisture tracer flags
                  ,f_qv,f_qc,f_qr                                   &
                  ,f_qi,f_qs,f_qg                                   &
@@ -142,7 +143,7 @@ CONTAINS
                    FITCHSCHEME,SHINHONGSCHEME,                       &
                    TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,                  &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar,& !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
-                   p_qnwfa,p_qnifa
+                   p_qnwfa,p_qnifa,p_qnbca
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : SURFDRAGSCHEME
 #endif
@@ -564,7 +565,7 @@ CONTAINS
         &    INTENT(OUT) ::                               maxMF
 
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
-           INTENT(INOUT) ::         qnwfa_curr,qnifa_curr
+           INTENT(INOUT) ::         qnwfa_curr,qnifa_curr,qnbca_curr
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) ::  exch_tke      ! for GBM PBL scheme
@@ -656,7 +657,8 @@ CONTAINS
                                                      ,f_qnc     & !used in CAMUWPBL
                                                      ,f_qni     & !used in CAMUWPBL
                                                      ,f_qnwfa   &
-                                                     ,f_qnifa
+                                                     ,f_qnifa   &
+                                                     ,f_qnbca
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
@@ -669,7 +671,7 @@ CONTAINS
                      ,rqiblten,rqsblten,rqgblten,rqniblten         !rqniblten  used in CAMUWPBL
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::   & !local: added for MYNN
-                      rqncblten,rqnwfablten,rqnifablten
+                      rqncblten,rqnwfablten,rqnifablten,rqnbcablten
 
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                OPTIONAL                                         , &
@@ -783,7 +785,7 @@ CONTAINS
    LOGICAL :: flag_bep
    LOGICAL :: flag_myjsfc
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg, &
-              flag_qnc,flag_qni, flag_qnwfa, flag_qnifa
+              flag_qnc,flag_qni, flag_qnwfa, flag_qnifa, flag_qnbca
    CHARACTER*256 :: message
    REAL    :: next_bl_time
    LOGICAL :: run_param , doing_adapt_dt , decided
@@ -829,6 +831,7 @@ CONTAINS
   flag_qni = .FALSE. ; IF ( PRESENT( F_QNI ) ) flag_qni = F_QNI !Used in CAMUWPBL
   flag_qnwfa = .FALSE. ; IF ( PRESENT( F_QNWFA ) ) flag_qnwfa = F_QNWFA
   flag_qnifa = .FALSE. ; IF ( PRESENT( F_QNIFA ) ) flag_qnifa = F_QNIFA
+  flag_qnbca = .FALSE. ; IF ( PRESENT( F_QNBCA ) ) flag_qnbca = F_QNBCA
 
   if (bl_pbl_physics .eq. 0) return
 
@@ -1605,7 +1608,7 @@ CONTAINS
                    &u=u_phy,v=v_phy,w=w,th=th_phy,qv=qv_curr,            &
                    &qc=qc_curr,qi=qi_curr,                               &
                    &qnc=qnc_curr,qni=qni_curr,                           &
-                   &QNWFA=qnwfa_curr,QNIFA=qnifa_curr,                   &
+                   &QNWFA=qnwfa_curr,QNIFA=qnifa_curr,QNBCA=qnbca_curr,  &
                    &p=p_phy,exner=pi_phy,rho=rho,T3D=t_phy,              &
                    &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,        &
                    &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,   &
@@ -1622,6 +1625,7 @@ CONTAINS
                    &RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten,&
                    &RQNCBLTEN=rqncblten,RQNIBLTEN=rqniblten,             &
                    &RQNWFABLTEN=rqnwfablten,RQNIFABLTEN=rqnifablten,     &
+                   &RQNBCABLTEN=rqnbcablten,                             &
                    &EXCH_H=exch_h,EXCH_M=exch_m,                         &
                    &pblh=pblh,KPBL=KPBL                                  &
                    &,el_pbl=el_pbl                                       &
@@ -1651,6 +1655,7 @@ CONTAINS
                    &,FLAG_QC=flag_qc,FLAG_QI=flag_qi                     &
                    &,FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni                 &
                    &,FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa         &
+                   &,FLAG_QNBCA=flag_qnbca                               &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -1741,6 +1746,16 @@ CONTAINS
                 DO k=kts,kte
                 DO i=i_start(ij),i_end(ij)
                    scalar_tend(i,k,j,P_QNIFA)=RQNIFABLTEN(i,k,j)
+                enddo
+                enddo
+                enddo
+              ENDIF
+              IF (PRESENT( qnbca_curr ) .AND. Flag_qnbca) THEN
+                !print*,"Updating qnbca after mynn-edmf",P_QNBCA
+                DO j=j_start(ij),j_end(ij)
+                DO k=kts,kte
+                DO i=i_start(ij),i_end(ij)
+                   scalar_tend(i,k,j,P_QNBCA)=RQNBCABLTEN(i,k,j)
                 enddo
                 enddo
                 enddo

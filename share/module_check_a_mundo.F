@@ -411,10 +411,11 @@
 ! Check that LES PBL is only paired with acceptable other PBL options.
 ! Currently, problems occur with any CG PBL option that has a packaged 
 ! scalar component: MYNN2, MYNN3, EEPS. This test is also if a user 
-! chooses to not run a PBL scheme on a finer domain, wbut use a PBL 
+! chooses to not run a PBL scheme on a finer domain, but use a PBL 
 ! parameterized scheme on a coarser domain (obviously, just for testing 
 ! purposes).
 !-----------------------------------------------------------------------
+      exists = .FALSE.
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % bl_pbl_physics(i) .EQ. LESscheme ) THEN

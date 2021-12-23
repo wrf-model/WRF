@@ -487,7 +487,7 @@ use module_wrf_error
 ! 261-304
 !
 ! F. Salamanca and A. Martilli, 2009: 'A new Building Energy Model coupled 
-! with an Urban Canopy Parameterization for urban climate simulationsâ€”part II. 
+! with an Urban Canopy Parameterization for urban climate simulations - part II. 
 ! Validation with one dimension off-line simulations'. Theor Appl Climatol
 ! DOI 10.1007/s00704-009-0143-8 
 !------------------------------------------------------------------------
@@ -1419,18 +1419,18 @@ do iz= kts,kte
       real alaf(nf_u+1)     ! Floor thermal diffusivity at each wall layers [W/m K]     
       real alagb(ngb_u+1)   ! Ground thermal diffusivity below the building at each wall layer [W/m K] 
 
-      real sfrb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/mÂ²]
+      real sfrb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/m2]
       real sfrbpv(ndm,nbui_max)      ! Sensible heat flux from PV panels [W/m2]
       real sfrpv(ndm,nz_um)          ! Sensible heat flux from PV panels [W/m2]
-      real sfrvb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/mÂ²]
-      real lfrvb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/mÂ²]
-      real lfrb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/mÂ²]
+      real sfrvb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/m2]
+      real lfrvb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/m2]
+      real lfrb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/m2]
   
-      real gfrb(ndm,nbui_max)        ! Heat flux flowing inside the roofs [W/mÂ²]
-      real sfwb1D(2*ndm,nz_um)    !Sensible heat flux from the walls [W/mÂ²] 
-      real sfwin(2*ndm,nz_um,nbui_max)!Sensible heat flux from windows [W/mÂ²]
-      real sfwinb1D(2*ndm,nz_um)  !Sensible heat flux from windows [W/mÂ²]
-      real gfwb1D(2*ndm,nz_um)    !Heat flux flowing inside the walls [W/mÂ²]
+      real gfrb(ndm,nbui_max)        ! Heat flux flowing inside the roofs [W/m2]
+      real sfwb1D(2*ndm,nz_um)    !Sensible heat flux from the walls [W/m2] 
+      real sfwin(2*ndm,nz_um,nbui_max)!Sensible heat flux from windows [W/m2]
+      real sfwinb1D(2*ndm,nz_um)  !Sensible heat flux from windows [W/m2]
+      real gfwb1D(2*ndm,nz_um)    !Heat flux flowing inside the walls [W/m2]
 
       real qlev(nz_um,nbui_max)      !specific humidity [kg/kg]
       real qlevb1D(nz_um)         !specific humidity [kg/kg] 
@@ -1455,7 +1455,7 @@ do iz= kts,kte
       real consumlev1D(nz_um)     ! consumption due to the air conditioning systems [W]
       real eppvlev(nz_um)         ! Electricity production of PV panels [W]
 	   real tpvlev(ndm,nz_um)
-      real tpvlevb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/mÂ²]
+      real tpvlevb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/m2]
       real sfvlev(nz_um,nz_um)    ! sensible heat flux due to ventilation [W]
       real lfvlev(nz_um,nz_um)    ! latent heat flux due to ventilation [W]
       real sfvlev1D(nz_um)        ! sensible heat flux due to ventilation [W]
@@ -1614,7 +1614,7 @@ do iz= kts,kte
        gfrb=0.     !Heat flux flowing inside the roof
        sfwb1D=0.   !Sensible heat flux from walls
        sfwinb1D=0. !Sensible heat flux from windows
-       gfwb1D=0.   !Heat flux flowing inside the walls[W/mÂ²]
+       gfwb1D=0.   !Heat flux flowing inside the walls[W/m2]
 
 
        twb1D=0.    !Wall temperature
@@ -1715,7 +1715,7 @@ do iz= kts,kte
                    sfrbpv(1,ibui),                                           &
                    latent,sigma,albw,albwin,albr,                            &
                    emr,emw,emwind,rsw,rlw,r,cp_u,                            &
-                   da_u,tmp_u,qv_u,pr_u,rs,rld,dzw,csw,alaw,pwin_u(iurb),    &
+                   da_u,tmp_u,qv_u,pr_u,rs,swddif,rld,dzw,csw,alaw,pwin_u(iurb),    &
                    cop_u(iurb),beta_u(iurb),sw_cond_u(iurb),time_on_u(iurb), &
                    time_off_u(iurb),targtemp_u(iurb),gaptemp_u(iurb),        &
                    targhum_u(iurb),gaphum_u(iurb),perflo_u(iurb),            &
@@ -4290,8 +4290,8 @@ do iz= kts,kte
 
       data dzg_u /0.2,0.12,0.08,0.05,0.03,0.02,0.02,0.01,0.005,0.0025/
       
-      real gx,iz,dzg_tot
-      integer gr_type
+      real gx,dzg_tot
+      integer gr_type,iz
 ! ----------------------------------------------------------------------
 ! END VARIABLES DEFINITIONS
 ! ----------------------------------------------------------------------
@@ -4490,8 +4490,8 @@ do iz= kts,kte
 
       data dzgr_u /0.1,0.003,0.06,0.003,0.05,0.04,0.02,0.0125,0.005,0.0025/
 
-      real gx,iz,dzgr_tot
-      integer gr_type
+      real gx,dzgr_tot
+      integer gr_type,iz
 ! ----------------------------------------------------------------------
 ! END VARIABLES DEFINITIONS
 
@@ -5234,16 +5234,16 @@ do iz= kts,kte
       real rlw(2*ndm,nz_um)         ! Long wave radiation at the walls for a given canyon direction [W/m2]
       real rsg(ndm)                   ! Short wave radiation at the canyon for a given canyon direction [W/m2]
       real rlg(ndm)                   ! Long wave radiation at the ground for a given canyon direction [W/m2]
-      real rs                        ! Short wave radiation at the horizontal surface from the sun [W/mÂ²]  
-      real sfw(2*ndm,nz_um)      ! Sensible heat flux from walls [W/mÂ²]
-      real sfg(ndm)              ! Sensible heat flux from ground (road) [W/mÂ²]
+      real rs                        ! Short wave radiation at the horizontal surface from the sun [W/m2]  
+      real sfw(2*ndm,nz_um)      ! Sensible heat flux from walls [W/m2]
+      real sfg(ndm)              ! Sensible heat flux from ground (road) [W/m2]
       real lfg(ndm)
-      real sfr(ndm,nz_um)      ! Sensible heat flux from roofs [W/mÂ²]   
+      real sfr(ndm,nz_um)      ! Sensible heat flux from roofs [W/m2]   
       real lfr(ndm,nz_um)
       real lfrv(ndm,nz_um)
       real sfrv(ndm,nz_um)
       real gr_frac_roof
-      real rld                        ! Long wave radiation from the sky [W/mÂ²]
+      real rld                        ! Long wave radiation from the sky [W/m2]
       real albg_u                    ! albedo of the ground/street
       real albw_u                    ! albedo of the walls
       real albr_u                    ! albedo of the roof 
@@ -5272,7 +5272,7 @@ do iz= kts,kte
       real twlev(2*ndm,nz_um)   !Averaged Temperature of the windows 
       real pwin                 !Coverage area fraction of the windows
       real gflwin               !Heat stored for the windows
-      real sfwind(2*ndm,nz_um)  !Sensible heat flux from windows [W/mÂ²]
+      real sfwind(2*ndm,nz_um)  !Sensible heat flux from windows [W/m2]
 
 !OUTPUT/INPUT
       real rs_abs  ! absrobed solar radiationfor this street direction
@@ -5312,13 +5312,13 @@ do iz= kts,kte
          grdflx_urb=grdflx_urb-gfl*ws(id)/(ws(id)+bs(id))/ndu  
  
          do iz=2,nzu
-            rl_emit=rl_emit-(emr_u*sigma*((1.-pv_frac_roof)*tr_av(id,iz)**4.+pv_frac_roof*tpvlev(id,iz)**4)+ &
-             (1-emr_u)*rld)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
-            rl_inc=rl_inc+(1-pv_frac_roof*rld+pv_frac_roof*emr_u*sigma*tpvlev(id,iz)**4)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
-            rs_abs=rs_abs+((1.-albr_u)*rs*(1.-pv_frac_roof))*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
-            gfl=(1.-albr_u)*rs*(1-pv_frac_roof)+emr_u*rld*((1-pv_frac_roof)+pv_frac_roof*emr_u*sigma*tpvlev(id,iz)**4) &
+             rl_emit=rl_emit-(emr_u*sigma*(1.-pv_frac_roof)*tr_av(id,iz)**4.+0.79*sigma*pv_frac_roof*tpvlev(id,iz)**4+ &
+                     (1-emr_u)*rld*(1.-pv_frac_roof)+(1-0.79)*pv_frac_roof*rld)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
+             rl_inc=rl_inc+rld*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
+             rs_abs=rs_abs+((1.-albr_u)*rs*(1.-pv_frac_roof)+(1.-0.11)*rs*pv_frac_roof)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
+             gfl=(1.-albr_u)*rs*(1-pv_frac_roof)+emr_u*rld*((1-pv_frac_roof)+pv_frac_roof*emr_u*sigma*tpvlev(id,iz)**4) &
                 -emr_u*sigma*(tr_av(id,iz)**4.)+(1-gr_frac_roof)*sfr(id,iz)+(sfrv(id,iz)+lfrv(id,iz))*gr_frac_roof+(1.-gr_frac_roof)*lfr(id,iz)
-            grdflx_urb=grdflx_urb-gfl*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
+             grdflx_urb=grdflx_urb-gfl*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu  
          enddo
            
          do iz=1,nzu 

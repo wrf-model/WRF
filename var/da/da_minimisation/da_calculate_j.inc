@@ -324,7 +324,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    if (use_divc) then
       call da_transform_vtox(grid, cv_size, xbx, be, grid%ep, xhat+cv, grid%vv, grid%vp)
       if ( be%ne > 0 .and. alphacv_method == alphacv_method_xa ) then
-         call da_transform_vpatox(grid, be, grid%ep, grid%vp)
+         call da_transform_vpatox(grid, be%ne, grid%ep, grid%vp)
          call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
       end if
       call da_transform_xtoxa(grid)

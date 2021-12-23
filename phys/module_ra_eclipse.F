@@ -5,9 +5,9 @@ contains
 !--------------------------------------------
 ! Solar eclipse prediction moduel
 !
-! Alex Montornès and Bernat Codina. University of Barcelona. 2015
+! Alex Montornes and Bernat Codina. University of Barcelona. 2015
 !
-! Based on Montornès A., Codina B., Zack J., Sola, Y.: Implementation of the 
+! Based on Montornes A., Codina B., Zack J., Sola, Y.: Implementation of the 
 ! Bessel's method for solar eclipses prediction in the WRF-ARW model. 2015
 !
 ! This key point of this subroutine is the evaluation of the degree of obscuration,
@@ -292,7 +292,7 @@ subroutine solar_eclipse(ims,ime,jms,jme,its,ite,jts,jte,    &
 	eta1   = sin_lat1 * cos(rd1) * E - cos_lat1 * sin(rd1) * cos(H)
 	zeta1  = sin_lat1 * sin(rd2) * E + cos_lat1 * cos(rd2) * cos(H)
 
-	!-- Correct cy (sembla que no és necessari)
+	!-- Correct cy (sembla que no es necessari)
 	cy1  = cy/rho1
 
         !-- Distance to the shadow axis

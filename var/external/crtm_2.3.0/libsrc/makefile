@@ -57,3 +57,10 @@ Sort_Utility.o:
            $(SFC) -c $(FCFLAGS_CRTM) $*.f90 ; \
         fi
 
+SOI_Module.o:
+	x=`echo "$(SFC)" | awk '{print $$1}'` ; export x ; \
+        if [ $$x = "ftn" ] ; then \
+           $(SFC) -c $(FCFLAGS_CRTM) -O1 $*.f90 ; \
+        else \
+           $(SFC) -c $(FCFLAGS_CRTM) $*.f90 ; \
+        fi

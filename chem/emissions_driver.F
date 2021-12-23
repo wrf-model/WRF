@@ -5,6 +5,9 @@
 !                   Saulo Freitas (CPTEC), and Georg Grell
 !
 !
+! A. Ukhov, 11 March 2021, remove unused parameters in gocart_dust_driver(),
+! gocart_dust_afwa_driver(), and uoc_dust_driver() subroutines.
+
 MODULE module_emissions_driver
    IMPLICIT NONE
 CONTAINS
@@ -721,18 +724,18 @@ CONTAINS
       dust_select:  SELECT CASE(config_flags%dust_opt)
       CASE (DUSTGOCART)
         CALL wrf_debug(15,'Gocart dust emissions')
-        call gocart_dust_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,           &
-         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,        &
+        call gocart_dust_driver(dtstep,config_flags,alt,t_phy,u_phy,  &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,erod,dustin,           &
+         isltyp,xland,g,emis_dust,        &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
       CASE (DUSTGOCARTAFWA)
         CALL wrf_debug(15,'AFWA modified Gocart dust emissions')
-        call gocart_dust_afwa_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,erod_dri,dustin,snowh,zs,   &
-         ivgtyp,isltyp,vegfra,lai_vegmask,xland,xlat,xlong,gsw,dx,g,emis_dust,      &
-         ust,znt,clayfrac,sandfrac,clayfrac_nga,sandfrac_nga,afwa_dustloft,         &!EDH
+        call gocart_dust_afwa_driver(dtstep,config_flags,alt,             &
+         chem,rho_phy,smois,u10,v10,p8w,dz8w,erod,erod_dri,dustin,snowh,  &
+         isltyp,vegfra,lai_vegmask,xland,dx,g,emis_dust,                  &
+         ust,znt,clayfrac,sandfrac,clayfrac_nga,sandfrac_nga,afwa_dustloft,&!EDH
          tot_dust,tot_edust,vis_dust,dust_alpha,dust_gamma,dust_smtune,dust_ustune, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
@@ -750,7 +753,7 @@ CONTAINS
        CASE DEFAULT
         imod = 2
        END SELECT scheme_select
-       call uoc_dust_driver (ktau,dtstep,config_flags,                     &
+       call uoc_dust_driver (dtstep,config_flags,                     &
          chem,rho_phy,dz8w,smois,ust, isltyp,vegfra,g,emis_dust,           &
          ust_t, imod, rough_cor, smois_cor, soil_top_cat, erod,            &
          ids,ide, jds,jde, kds,kde,                                        &

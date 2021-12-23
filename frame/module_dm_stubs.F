@@ -359,11 +359,6 @@ SUBROUTINE wrf_global_to_patch_LOGICAL (globbuf,buf,domdesc,ndim,&
    RETURN
 END SUBROUTINE wrf_global_to_patch_LOGICAL
 
-#if ( HWRF == 1 )
-   SUBROUTINE hwrf_coupler_init
-   END SUBROUTINE hwrf_coupler_init
-#endif
-
    SUBROUTINE push_communicators_for_domain( id )
       IMPLICIT NONE
       INTEGER, OPTIONAL, INTENT(IN) :: id   ! if specified also does an instate for grid id

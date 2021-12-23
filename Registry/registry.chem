@@ -207,7 +207,7 @@ state    real  dustload_1    ij       misc         1         -       r      "dus
 state    real  dustload_2    ij       misc         1         -       r      "dustload_2"     "dust loading for size 2"        "ug/m2"
 state    real  dustload_3    ij       misc         1         -       r      "dustload_3"     "dust loading for size 3"        "ug/m2"
 state    real  dustload_4    ij       misc         1         -       r      "dustload_4"     "dust loading for size 4"        "ug/m2"
-state    real  dustload_5    ij       misc         1         -       r      "dustload_5"     "total dust loading"             "ug/m2"
+state    real  dustload_5    ij       misc         1         -       r      "dustload_5"     "dust loading for size 5"        "ug/m2"
 state    real  depvelocity   ij       misc         1         -       rh      "drydepvel"    "dust dry deposition velocity "         "m/s"
 state    real  setvel_1      ij       misc         1         -       r      "setvel_1"     "dust gravitational settling velocity for size 1"    "m/s"
 state    real  setvel_2      ij       misc         1         -       r      "setvel_2"     "dust gravitational settling velocity for size 2"    "m/s"
@@ -314,11 +314,11 @@ state    real  e_hum          i+jf     emis_ant     1         Z      i5     "E_H
 
 # dust and seas emission arrays
 state   real     -          i{dust}jf      emis_dust      -        -        -         -                    "Dust Emissions"         ""
-state    real  edust1       i{dust}jf      emis_dust      1         Z      -     "EDUST1"         "DUST emissions bin1"  ""
-state    real  edust2       i{dust}jf      emis_dust      1         Z      -     "EDUST2"         "DUST emissions bin2"  ""
-state    real  edust3       i{dust}jf      emis_dust      1         Z      -     "EDUST3"         "DUST emissions bin3"  ""
-state    real  edust4       i{dust}jf      emis_dust      1         Z      -     "EDUST4"         "DUST emissions bin4"  ""
-state    real  edust5       i{dust}jf      emis_dust      1         Z      -     "EDUST5"         "DUST emissions bin5"  ""
+state    real  edust1       i{dust}jf      emis_dust      1         Z      -     "EDUST1"         "Accumulated DUST emissions bin1"  "kg/m2"
+state    real  edust2       i{dust}jf      emis_dust      1         Z      -     "EDUST2"         "Accumulated DUST emissions bin2"  "kg/m2"
+state    real  edust3       i{dust}jf      emis_dust      1         Z      -     "EDUST3"         "Accumulated DUST emissions bin3"  "kg/m2"
+state    real  edust4       i{dust}jf      emis_dust      1         Z      -     "EDUST4"         "Accumulated DUST emissions bin4"  "kg/m2"
+state    real  edust5       i{dust}jf      emis_dust      1         Z      -     "EDUST5"         "Accumulated DUST emissions bin5"  "kg/m2"
 state   real     -          i{dust}jf      emis_seas      -        -        -         -                    "Sea-Salt Emissions"         ""
 state    real  eseas1       i{dust}jf      emis_seas      1         Z      -     "ESEAS1"         "Sea-Salt emissions bin1 "  ""
 state    real  eseas2       i{dust}jf      emis_seas      1         Z      -     "ESEAS2"         "Sea-Salt emissions bin2 "  ""
@@ -684,8 +684,8 @@ state    real  sandfrac       ij      misc        1         -      i01r    "SAND
 state    real  clayfrac_nga   ij      misc        1         -      i01r    "CLAYFRAC_NGA"        "Clay fraction in each grid cell (0-1)"                                     "none"
 state    real  sandfrac_nga   ij      misc        1         -      i01r    "SANDFRAC_NGA"        "Sand fraction in each grid cell (0-1)"                                     "none"
 state    real  afwa_dustloft  ij      misc        1         -      h02     "AFWA_DUSTLOFT"       "AFWA Diagnostic dust lofting potential (U10-U10t)"                         "m s^-1"
-state    real  tot_dust       ikj     misc        1         -      h02     "TOT_DUST"            "Total dust concentration (0.1-20 um)"                                      "ug m^-3"
-state    real  tot_edust      ij      misc        1         -      h02     "TOT_EDUST"           "Total dust emission flux (0.1-20 um)"                                      "g m^-2 s^-1"
+state    real  tot_dust       ikj     misc        1         -      h02     "TOT_DUST"            "Total dust concentration (0.2-20 um)"                                      "ug m^-3"
+state    real  tot_edust      ij      misc        1         -      h02     "TOT_EDUST"           "Total accumulated dust emission (0.2-20 um)"                               "kg m^-2"
 state    real  vis_dust       ikj     misc        1         -      h02     "VIS_DUST"            "Visibility due to dust only"                                               "m"
 
 # These 3D arrays are output from the SOA module for different purposes
@@ -1342,7 +1342,7 @@ state    real  ph_pan          ikj     misc        1         -      r        "PH
 state    real  ph_acet         ikj     misc        1         -      r        "PHOTR102"              "acetone photolysis rate" "min{-1}"
 state    real  ph_mglo         ikj     misc        1         -      r        "PHOTR103"              "mglo photolysis rate" "min{-1}"
 state    real  ph_hno4_2       ikj     misc        1         -      r        "PHOTR104"              "mglo photolysis rate" "min{-1}"
-state    real  ph_clno2        ikj     misc        1         -      rh        "PHOTR204"                "CLNO2 Photolysis Rate" "min{-1}"
+state    real  ph_clno2        ikj     misc        1         -      r        "PHOTR204"                "CLNO2 Photolysis Rate" "min{-1}"
 # mozart photolysis rates
 state    real  ph_n2o          ikj     misc        1         -      r        "PHOTR114"              "n2o photolysis rate" "min{-1}"
 state    real  ph_pooh         ikj     misc        1         -      r        "PHOTR118"              "pooh photolysis rate" "min{-1}"
@@ -1365,9 +1365,9 @@ state    real  ph_mekooh       ikj     misc        1         -      r        "PH
 state    real  ph_tolooh       ikj     misc        1         -      r        "PHOTR133"              "tolooh photolysis rate" "min{-1}"
 state    real  ph_terpooh      ikj     misc        1         -      r        "PHOTR134"              "terpooh photolysis rate" "min{-1}"
 # cb05cl photolysis rates
-state    real  ph_cl2          ikj     misc        1         -      rh       "PHOTR201"              "cl2 photolysis rate" "min{-1}"
-state    real  ph_hocl         ikj     misc        1         -      rh       "PHOTR202"              "hocl photolysis rate" "min{-1}"
-state    real  ph_fmcl         ikj     misc        1         -      rh       "PHOTR203"              "fmcl photolysis rate" "min{-1}"
+state    real  ph_cl2          ikj     misc        1         -      r        "PHOTR201"              "cl2 photolysis rate" "min{-1}"
+state    real  ph_hocl         ikj     misc        1         -      r        "PHOTR202"              "hocl photolysis rate" "min{-1}"
+state    real  ph_fmcl         ikj     misc        1         -      r        "PHOTR203"              "fmcl photolysis rate" "min{-1}"
 # photolysis rad field diagnostic variables
 state    real  ph_par          ikj     misc        1         -      -        "ph_par"                "Photosynthetic Active Radiation"  "W m-2"
 state    real  ph_erythema     ikj     misc        1         -      -        "ph_erythema"           "Erythema Action Spectrum"         "W m-2"

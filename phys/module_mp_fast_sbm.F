@@ -6141,8 +6141,8 @@ enddo
     BRKWEIGHT = 0.0d0
  	 CALL BREAKINIT_KS(PKIJ,QKJ,ECOALMASSM,BRKWEIGHT,XL,DROPRADII,BR_MAX,JBREAK,JMAX,NKR,VR1) ! Rain Spontanous Breakup
 #if (defined(DM_PARALLEL))
- 	 	DM_BCAST_MACRO_R4 (PKIJ)
-    DM_BCAST_MACRO_R4 (QKJ)
+ 	 	DM_BCAST_MACRO_R4(PKIJ)
+    DM_BCAST_MACRO_R4(QKJ)
 #endif
  	  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading BREAKINIT_KS" '
     CALL wrf_debug(000, errmess)
@@ -9064,7 +9064,7 @@ end if
 
      PI=3.1415927d0
      rho=1.0d0            ! Water Density,[rho]=g/cm^3
-     sigma=72.8d0         ! Surf. Tension,(H2O,20°C)=7.28d-2 N/m
+     sigma=72.8d0         ! Surf. Tension,(H2O,20C)=7.28d-2 N/m
                       ! [sigma]=g/s^2
      ak10=rho*PI/12.0d0
 

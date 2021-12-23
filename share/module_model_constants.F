@@ -16,13 +16,8 @@
 ! JM NOTE -- can we name this grav instead?
    REAL    , PARAMETER :: g = 9.81  ! acceleration due to gravity (m {s}^-2)
 
-#if ( NMM_CORE == 1 )
-   REAL    , PARAMETER :: r_d          = 287.04     ! gas constant for dry air (J deg^-1 kg^-1)
-   REAL    , PARAMETER :: cp           = 1004.6     ! Specific heat of dry air at constant pressure (J deg^-1 kg^-1)
-#else
    REAL    , PARAMETER :: r_d          = 287.       ! gas constant of dry air (J deg^-1 kg^-1)
    REAL    , PARAMETER :: cp           = 7.*r_d/2.  ! 
-#endif
 
    REAL    , PARAMETER :: r_v          = 461.6      ! gas constant for water vapor (J deg^-1 kg^-1)
    REAL    , PARAMETER :: cv           = cp-r_d     ! Specific heat of air at contant volume (J deg^-1 kg^-1)
@@ -97,7 +92,6 @@
        REAL , PARAMETER ::  a4=35.86
        REAL , PARAMETER ::  epsq=1.e-12      ! threshold specified for SPECIFIC HUMIDITY calculation in BMJ cumulus scheme (kg kg^-1)
        REAL , PARAMETER ::  p608=rvovrd-1.
-!#if ( NMM_CORE == 1 )
        REAL , PARAMETER ::  climit=1.e-20
        REAL , PARAMETER ::  cm1=2937.4
        REAL , PARAMETER ::  cm2=4.9283
@@ -109,11 +103,7 @@
        REAL , PARAMETER ::  epsfc=1./1.05
        REAL , PARAMETER ::  epswet=0.0
        REAL , PARAMETER ::  fcdif=1./3.
-#if ( HWRF == 1 )
-       REAL , PARAMETER ::  fcm=0.0
-#else
        REAL , PARAMETER ::  fcm=0.00003
-#endif
        REAL , PARAMETER ::  gma=-r_d*(1.-rcp)*0.5
        REAL , PARAMETER ::  p400=40000.0
        REAL , PARAMETER ::  phitp=15000.0
@@ -134,13 +124,8 @@
        REAL , PARAMETER ::  wght=0.35
        REAL , PARAMETER ::  wpc=0.075
        REAL , PARAMETER ::  z0land=0.10    ! surface roughness length over land (m)
-#if ( HWRF == 1 ) 
-       REAL , PARAMETER ::  z0max=0.01     ! maximum roughness length (m)
-#else
        REAL , PARAMETER ::  z0max=0.008    !  maximum roughness length (m)
-#endif
        REAL , PARAMETER ::  z0sea=0.001   ! roughness length over ocean (m)
-!#endif
 
 
    !  Earth

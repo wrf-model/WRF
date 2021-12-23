@@ -758,7 +758,7 @@ CONTAINS
   LOGICAL, DIMENSION( ims:ime, jms:jme ),intent(out)                      :: lake2d
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                      ::  HT
   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  lake_depth
-  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  water_depth 
+  REAL,              DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  water_depth 
   real, intent(in)      ::      lakedepth_default, lake_min_elev
 #if ( EM_CORE == 1 )
   REAL,              dimension(ims:ime,jms:jme )      ::  lakemask
@@ -2949,7 +2949,7 @@ CONTAINS
  
   logical,    dimension(ims:ime,jms:jme ),intent(out)                        :: lake2d
   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  lake_depth
-  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  water_depth 
+  REAL,              DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  water_depth 
 #if ( EM_CORE == 1 )
   REAL,              dimension(ims:ime,jms:jme ),intent(inout)      ::  lakemask
   INTEGER, INTENT(IN)      ::  lakeflag

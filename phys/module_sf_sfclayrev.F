@@ -193,9 +193,9 @@ CONTAINS
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 
-      INTEGER,  OPTIONAL,  INTENT(IN )   ::     shalwater_rough 
-      REAL,     OPTIONAL,  INTENT(IN )   ::     shalwater_depth 
-      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: water_depth 
+      INTEGER,  INTENT(IN )   ::     shalwater_rough 
+      REAL,     INTENT(IN )   ::     shalwater_depth 
+      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: water_depth 
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite ) ::                       U1D, &
@@ -329,9 +329,9 @@ CONTAINS
                                     
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
-      INTEGER,  OPTIONAL,  INTENT(IN )   ::     shalwater_rough 
-      REAL,     OPTIONAL,  INTENT(IN )   ::     shalwater_depth 
-      REAL, OPTIONAL, DIMENSION( ims:ime ), INTENT(IN)  :: water_depth 
+      INTEGER,  INTENT(IN )   ::     shalwater_rough 
+      REAL,     INTENT(IN )   ::     shalwater_depth 
+      REAL,     DIMENSION( ims:ime ), INTENT(IN)  :: water_depth 
 ! MODULE-LOCAL VARIABLES, DEFINED IN SUBROUTINE SFCLAY
       REAL,     DIMENSION( its:ite ),  INTENT(IN   )   ::  dz8w1d
 

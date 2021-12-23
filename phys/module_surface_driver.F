@@ -1413,9 +1413,9 @@ CONTAINS
                                                                                tkmg3d,         &
                                                                                tkdry3d,        &
                                                                                tksatu3d
-    INTEGER , OPTIONAL , INTENT(IN)                            :: shalwater_rough 
-    REAL,     OPTIONAL , INTENT(IN)                            :: shalwater_depth 
-    real, OPTIONAL , dimension(ims:ime,jms:jme ),intent(inout) :: water_depth 
+    INTEGER, INTENT(IN)                            :: shalwater_rough 
+    REAL,    INTENT(IN)                            :: shalwater_depth 
+    real,    dimension(ims:ime,jms:jme ),intent(inout) :: water_depth 
     real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
 #if (EM_CORE==1)
     real ,    dimension(ims:ime,jms:jme )  ::  lakemask
@@ -5921,9 +5921,9 @@ CONTAINS
                INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
-     INTEGER,  OPTIONAL,  INTENT(IN )   ::     shalwater_rough 
-     REAL,     OPTIONAL,  INTENT(IN )   ::     shalwater_depth 
-     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ) , INTENT(IN ) :: water_depth 
+     INTEGER,  INTENT(IN )   ::     shalwater_rough 
+     REAL,     INTENT(IN )   ::     shalwater_depth 
+     REAL,     DIMENSION( ims:ime, jms:jme ) , INTENT(IN ) :: water_depth 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 
 !--------------------------------------------------------------------

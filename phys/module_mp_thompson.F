@@ -1472,7 +1472,7 @@
       implicit none
 
 !..Sub arguments
-      INTEGER, INTENT(IN):: aer_init_opt, wif_input_opt
+      INTEGER, OPTIONAL, INTENT(IN):: aer_init_opt, wif_input_opt
       INTEGER, INTENT(IN):: kts, kte, ii, jj
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
@@ -2083,12 +2083,14 @@
                          *((lamr+fv_r)**(-cre(9)))
           pnd_rcd(k) = MIN(DBLE(nifa(k)*odts), pnd_rcd(k))
 
-          if (wif_input_opt .eq. 2) then
-            Ef_ra = Eff_aero(mvd_r(k),0.0236E-6, &
-                               visco(k),rho(k),temp(k),'r')
-            pnb_rcb(k) = rhof(k)*t1_qr_qc*Ef_ra*nbca(k)*N0_r(k)         &
-                           *((lamr+fv_r)**(-cre(9)))
-            pnb_rcb(k) = MIN(DBLE(nbca(k)*odts), pnb_rcb(k))
+          if (present(wif_input_opt)) then
+            if (wif_input_opt .eq. 2) then
+              Ef_ra = Eff_aero(mvd_r(k),0.0236E-6, &
+                                 visco(k),rho(k),temp(k),'r')
+              pnb_rcb(k) = rhof(k)*t1_qr_qc*Ef_ra*nbca(k)*N0_r(k)       &
+                             *((lamr+fv_r)**(-cre(9)))
+              pnb_rcb(k) = MIN(DBLE(nbca(k)*odts), pnb_rcb(k))
+            endif
           endif
          endif
 
@@ -2297,10 +2299,12 @@
           pnd_scd(k) = rhof(k)*t1_qs_qc*Ef_sa*nifa(k)*smoe(k)
           pnd_scd(k) = MIN(DBLE(nifa(k)*odts), pnd_scd(k))
 
-          if (wif_input_opt .eq. 2) then
-             Ef_sa = Eff_aero(xDs,0.0236E-6,visco(k),rho(k),temp(k),'s')
-             pnb_scb(k) = rhof(k)*t1_qs_qc*Ef_sa*nbca(k)*smoe(k)
-             pnb_scb(k) = MIN(DBLE(nbca(k)*odts), pnb_scb(k))
+          if (present(wif_input_opt)) then
+            if (wif_input_opt .eq. 2) then
+              Ef_sa = Eff_aero(xDs,0.0236E-6,visco(k),rho(k),temp(k),'s')
+              pnb_scb(k) = rhof(k)*t1_qs_qc*Ef_sa*nbca(k)*smoe(k)
+              pnb_scb(k) = MIN(DBLE(nbca(k)*odts), pnb_scb(k))
+            endif
           endif
          endif
          if (rg(k) .gt. r_g(1)) then
@@ -2315,11 +2319,13 @@
                         *ilamg(k)**cge(9)
           pnd_gcd(k) = MIN(DBLE(nifa(k)*odts), pnd_gcd(k))
 
-          if (wif_input_opt .eq. 2) then
-             Ef_ga = Eff_aero(xDg,0.0236E-6,visco(k),rho(k),temp(k),'g')
-             pnb_gcb(k) = rhof(k)*t1_qg_qc*Ef_ga*nbca(k)*N0_g(k)        &
-                           *ilamg(k)**cge(9)
-             pnb_gcb(k) = MIN(DBLE(nbca(k)*odts), pnb_gcb(k))
+          if (present(wif_input_opt)) then
+            if (wif_input_opt .eq. 2) then
+              Ef_ga = Eff_aero(xDg,0.0236E-6,visco(k),rho(k),temp(k),'g')
+              pnb_gcb(k) = rhof(k)*t1_qg_qc*Ef_ga*nbca(k)*N0_g(k)       &
+                            *ilamg(k)**cge(9)
+              pnb_gcb(k) = MIN(DBLE(nbca(k)*odts), pnb_gcb(k))
+            endif
           endif
          endif
 

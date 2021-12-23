@@ -2598,7 +2598,7 @@ rconfig   logical use_aero_icbc           namelist,physics     	1              .
 rconfig   logical use_rap_aero_icbc       namelist,physics      1              .false. r     "use_rap_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero from RAP"  "logical flag"
 rconfig   integer aer_init_opt            derived               1              0       irh   "aer_init_opt"   "surrogate to handle aerosol IC/BC data in Thompson-MP-Aero: 0=no IC/BC aerosol, 1=climo, 2=first guess"
 rconfig   logical wif_fire_emit           namelist,physics      1              .false. irh   "wif_fire_emit"  "Activate biomass burning emissionsu in Thompson-MP-Aero"  " "
-rconfig   integer aer_fire_emit_opt       derived               1              0       irh   "aer_fire_emit_opt"   "surrogate to handle aerosol fire emissions in Thompson-MP-Aero: 0=no fire emissions, 1=OC only, 2=OC+BC"
+rconfig   integer aer_fire_emit_opt       derived               1              0       irh   "aer_fire_emit_opt"   "surrogate to handle aerosol fire emissions in Thompson-MP-Aero: 0=no fire emissions, 1=OC only, 2=OC+BC"  " "
 rconfig   integer wif_fire_inj            namelist,physics      max_domains    1       irh   "wif_fire_inj"   "Vertically distribute biomass burning emissions in Thompson-MP-Aero"  " "
 rconfig   integer use_mp_re               namelist,physics     	1              1       h     "use_mp_re"  "use effective radii computed in some mp schemes in RRTMG"  "flag"
 rconfig   logical insert_init_cloud       namelist,physics      1              .false. irh   "insert_init_cloud" "Insert diagnostic initial cloud using icloud=3 method (Thompson)"  "logical flag"

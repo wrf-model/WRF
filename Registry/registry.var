@@ -135,6 +135,7 @@ rconfig   integer   ob_format_gpsro         namelist,wrfvar3  1  2        - "ob_
 rconfig   integer   num_fgat_time           namelist,wrfvar3  1  1        - "num_fgat_time"            ""  ""
 rconfig   logical   thin_conv               namelist,wrfvar4  1  .true.   - "thin_conv"                ""  ""
 rconfig   logical   thin_conv_ascii         namelist,wrfvar4  1  .false.  - "thin_conv_ascii"          ""  ""
+rconfig   integer   thin_conv_opt           namelist,wrfvar4  num_ob_indexes 1      - "thin_conv_opt"  ""  "0=no thinning, >0:thinning on"
 rconfig   real      thin_mesh_conv          namelist,wrfvar4  num_ob_indexes 20.0   - "thin_mesh_conv"            ""  ""
 rconfig   logical   thin_rainobs            namelist,wrfvar4  1  .true.   - "thin_rainobs"             ""  ""
 rconfig   logical   use_synopobs            namelist,wrfvar4  1  .true.   - "use_synopobs"             ""  ""

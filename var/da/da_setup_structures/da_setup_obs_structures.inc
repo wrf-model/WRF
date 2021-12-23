@@ -14,6 +14,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    integer :: i,j,icode
    character (len=14)   :: ob_name
 
+   ! thinning variables
+   integer  :: istart,iend,jstart,jend
+   real     :: rlonlat(4)
+
    if (trace_use) call da_trace_entry("da_setup_obs_structures")
 
 ! Default values for fmt_info, fmt_srfc, and fmt_each(YRG, 02/25/2009):
@@ -267,6 +271,70 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       !to avoid errors when writing out filtered_obs for undefined variables
       anal_type_qcobs = .false.
    end if
+
+   if ( thin_conv .or. thin_conv_ascii ) then
+     thin_conv_opt(gpseph) = no_thin
+     thin_conv_opt(radar) = no_thin
+     thin_conv_opt(radiance) = no_thin
+     thin_conv_opt(rain) = no_thin
+     if ( thin_conv .and. ob_format==ob_format_bufr ) then
+        ! gpsref horizontal thinning is not implemented for bufr input
+        thin_conv_opt(gpsref) = no_thin
+     end if
+     do i = 1, num_ob_indexes
+        ! resetting thin_conv_opt to no_thin for ob types that are not used
+        if ( thin_conv_opt(i) > no_thin .and. &
+             (.not. obs_use(i)) ) then
+           thin_conv_opt(i) = no_thin
+        end if
+     end do
+     if ( thin_conv .and. ob_format==ob_format_bufr .and. &
+          all(thin_conv_opt(:) <= no_thin) ) thin_conv = .false.
+     if ( thin_conv_ascii .and. ob_format==ob_format_ascii .and. &
+          all(thin_conv_opt(:) <= no_thin) ) thin_conv_ascii = .false.
+   end if
+   if ( ((.not. thin_conv) .and. ob_format==ob_format_bufr) .or. &
+        ((.not. thin_conv_ascii) .and. ob_format==ob_format_ascii) ) then
+     thin_conv_opt(:) = no_thin
+   end if
+
+   ! get lat/lon info (rlat_min,rlat_max,rlon_min,rlon_max,dlat_grid,dlon_grid)
+   ! to be used for making thinning grids for conv (ascii/bufr), radiance and rain ob types.
+   call init_constants_derived
+   rlat_min =  r999
+   rlat_max = -r999
+   rlon_min =  r999
+   rlon_max = -r999
+   istart=MINVAL( grid%i_start(1:grid%num_tiles) )
+   iend  =MAXVAL( grid%i_end  (1:grid%num_tiles) )
+   jstart=MINVAL( grid%j_start(1:grid%num_tiles) )
+   jend  =MAXVAL( grid%j_end  (1:grid%num_tiles) )
+   do i = istart, iend
+      do j = jstart, jend
+         rlat_min=min(rlat_min, grid%xb%lat(i,j))
+         rlat_max=max(rlat_max, grid%xb%lat(i,j))
+         if( grid%xb%lon(i,j) < 0.0) then
+           rlon_min=min(rlon_min, (r360+grid%xb%lon(i,j)))
+           rlon_max=max(rlon_max, (r360+grid%xb%lon(i,j)))
+         else
+           rlon_min=min(rlon_min, grid%xb%lon(i,j))
+           rlon_max=max(rlon_max, grid%xb%lon(i,j))
+         endif
+      enddo
+   enddo
+#ifdef DM_PARALLEL
+   call mpi_reduce(rlat_min, rlonlat(1), 1, true_mpi_real, mpi_min, root, comm, ierr)
+   call mpi_reduce(rlon_min, rlonlat(2), 1, true_mpi_real, mpi_min, root, comm, ierr)
+   call mpi_reduce(rlat_max, rlonlat(3), 1, true_mpi_real, mpi_max, root, comm, ierr)
+   call mpi_reduce(rlon_max, rlonlat(4), 1, true_mpi_real, mpi_max, root, comm, ierr)
+   CALL mpi_bcast( rlonlat, 4 , true_mpi_real , root , comm, ierr )
+   rlat_min = rlonlat(1)
+   rlon_min = rlonlat(2)
+   rlat_max = rlonlat(3)
+   rlon_max = rlonlat(4)
+#endif
+   dlat_grid = rlat_max - rlat_min
+   dlon_grid = rlon_max - rlon_min
 
    !---------------------------------------------------------------------------      
    ! [1.0] Setup and read in fields from first guess:

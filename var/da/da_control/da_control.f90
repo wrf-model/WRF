@@ -690,4 +690,6 @@ module da_control
 
    logical, allocatable :: fgat_rain_flags(:)
 
+   integer, parameter :: no_thin           = 0
+
 end module da_control

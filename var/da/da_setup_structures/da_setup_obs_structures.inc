@@ -297,6 +297,8 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
         ((.not. thin_conv_ascii) .and. ob_format==ob_format_ascii) ) then
      thin_conv_opt(:) = no_thin
    end if
+   write(message(1),'(a,30i2)') 'thin_conv_opt = ', thin_conv_opt(:)
+   call da_message(message(1:1))
 
    ! get lat/lon info (rlat_min,rlat_max,rlon_min,rlon_max,dlat_grid,dlon_grid)
    ! to be used for making thinning grids for conv (ascii/bufr), radiance and rain ob types.

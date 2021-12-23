@@ -1167,7 +1167,6 @@ CONTAINS
 
    IF ( bathymetry_flag .eq. 1 ) THEN
       IF ( shalwater_depth .LE. 0.0 ) THEN
-         CALL wrf_message ( " Bathymetry dataset from GEBCO Compilation Group. Please acknowledge the following in presentations and publications: GEBCO Compilation Group (2021) GEBCO 2021 Grid (doi:10     .5285/c6612cbe-50b3-0cff-e053-6c86abc09f8f)." )
          IF ( LakeModel .ge. 1 ) THEN
             DO j = jts,jte
                DO i = its,ite

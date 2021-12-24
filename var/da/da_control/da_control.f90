@@ -690,6 +690,12 @@ module da_control
 
    logical, allocatable :: fgat_rain_flags(:)
 
-   integer, parameter :: no_thin           = 0
+   integer, parameter :: no_thin           = 0  ! no thinning
+   integer, parameter :: thin_single       = 1  ! keep one ob within a thinning box
+   integer, parameter :: thin_multi        = 2  ! keep multiple obs within a thinning box
+   integer, parameter :: thin_superob      = 3  ! superob in 2-D thinning boxes
+   integer, parameter :: thin_superob_hv   = 4  ! superob in horizontal and vertical
+
+   integer, parameter :: error_opt_nml     = 1  ! ob error specified in namelist
 
 end module da_control

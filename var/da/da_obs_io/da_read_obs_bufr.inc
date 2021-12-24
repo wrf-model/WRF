@@ -73,7 +73,6 @@ subroutine da_read_obs_bufr (iv)
 
    logical                      :: use_errtable
    integer              :: junit, itype, ivar
-   real                 :: oetab(300,33,6)  ! 300 ob types, 33 levels (rows), 6 variables (columns)
    real                 :: err_uv, err_t, err_p, err_q, err_pw, coef
    integer              :: ibufr
    integer              :: num_outside_all, num_outside_time, num_thinned,num_p,numbufr
@@ -199,29 +198,6 @@ bufrfile:  do ibufr=1,numbufr
             cycle bufrfile
          end if
       end if
-   ! open observation error table if provided.
-   call da_get_unit(junit)
-   open (unit=junit, file='obs_errtable', form='formatted', status='old', &
-         iostat=iost)
-   if ( iost /= 0 ) then
-      use_errtable = .false.
-      call da_free_unit(junit)
-   else
-      use_errtable = .true.
-      write(unit=message(1),fmt='(A)') &
-            "obs_errtable file is found. Will use user-provided obs errors."
-      call da_message(message(1:1))
-   end if
-   if ( use_errtable ) then
-      read_loop: do
-         read (junit,'(1x,i3)',iostat=iost) itype
-         if ( iost /=0 ) exit read_loop
-         do k = 1, 33
-            read (junit,'(1x,6e12.5)',iostat=iost) (oetab(itype,k,ivar),ivar=1,6)
-            if ( iost /=0 ) exit read_loop
-         end do
-      end do read_loop
-   end if
 
    hdstr='SID XOB YOB DHR TYP ELV T29'
    obstr='POB QOB TOB ZOB UOB VOB PWO CAT' ! observation
@@ -246,6 +222,8 @@ bufrfile:  do ibufr=1,numbufr
    write(unit=message(1),fmt='(a,i10)') 'BUFR file date is: ', idate
    call da_message(message(1:1))
 
+   ! oetab(300,33,6) processed in da_setup_obs_structures_bufr.inc
+   use_errtable = allocated(oetab)
 
 !  2.0 read data
 !  scan reports first
@@ -1152,10 +1130,6 @@ bufrfile:  do ibufr=1,numbufr
     
 call closbf(iunit)
 close(iunit)
-if ( use_errtable ) then
-  close(junit)
-  call da_free_unit(junit)
-end if
 
 end do bufrfile   
 

@@ -28,10 +28,10 @@ CONTAINS
 !                                                                                        !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE solar_diag (rho, dz8w, ph, phb, cldfrac3d, coszen, swdnb, swdnt, &
+   SUBROUTINE solar_diag (dt, rho, dz8w, ph, phb, cldfrac3d, coszen, swdnb, swdnt, &
              param_first_scalar, p_qc, p_qi, p_qs, qv, qc, qi, qs, &
              qc_tot, qi_tot, has_reqc, has_reqi, has_reqs, f_qv, f_qc, f_qi, f_qs, &
-             re_cloud, re_ice, re_snow, clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, &
+             re_cloud, re_ice, re_snow, clrnidx, sza, ghi_accum, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, &
              wp2d_sum, lwp2d_tot, iwp2d_tot, wp2d_tot_sum, re_cloud_path, re_ice_path, re_snow_path, &
              re_cloud_path_tot, re_ice_path_tot, tau_qc, tau_qi, tau_qs, tau_qc_tot, tau_qi_tot, &
              cbase, ctop, cbase_tot, ctop_tot, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, &
@@ -43,6 +43,7 @@ CONTAINS
 
      IMPLICIT NONE
 
+     REAL, INTENT(IN) :: dt
      REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: coszen, swdnb, swdnt
      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: ph, phb, cldfrac3d, qv, qc, qi, qs, qc_tot, qi_tot, &
           re_cloud, re_ice, re_snow, rho, dz8w
@@ -51,6 +52,7 @@ CONTAINS
      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: clrnidx, sza, cldfrac2d, wvp2d, lwp2d, iwp2d, swp2d, wp2d_sum, &
           lwp2d_tot, iwp2d_tot, wp2d_tot_sum, re_cloud_path, re_ice_path, re_snow_path, re_cloud_path_tot, re_ice_path_tot, &
           tau_qc, tau_qi, tau_qs, tau_qc_tot, tau_qi_tot, cbase, ctop, cbase_tot, ctop_tot
+     REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: ghi_accum
      INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, &
              ips, ipe, jps, jpe, kps, kpe, kts, kte, num_tiles
      INTEGER, DIMENSION(num_tiles), INTENT(IN) :: i_start, i_end, j_start, j_end
@@ -87,6 +89,9 @@ CONTAINS
              else
                clrnidx(i, j) = MISSING
              end if
+
+             !!! ACCUMULATED GHI
+             ghi_accum(i, j) = ghi_accum(i, j) + swdnb(i, j) * dt
 
              !!! 2-D CLOUD FRACTION
              cldfrac2d(i, j) = MAXVAL( cldfrac3d(i, kts:kte-1, j) )

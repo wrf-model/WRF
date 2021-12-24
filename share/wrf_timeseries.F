@@ -507,6 +507,7 @@ SUBROUTINE calc_ts( grid )
             grid%ts_ctopht_tot(n,i) = grid%ctopht_tot(ix,iy)
             grid%ts_clrnidx(n,i) = grid%clrnidx(ix,iy)
             grid%ts_sza(n,i) = grid%sza(ix,iy)
+            grid%ts_ghi_accum(n,i) = grid%ghi_accum(ix,iy)
             grid%ts_swdown(n,i) = grid%swdown(ix,iy)
             grid%ts_swddni(n,i) = grid%swddni(ix,iy)
             grid%ts_swddif(n,i) = grid%swddif(ix,iy)
@@ -602,6 +603,7 @@ SUBROUTINE calc_ts( grid )
             grid%ts_ctopht_tot(n,i) = 1.E30
             grid%ts_clrnidx(n,i) = 1.E30
             grid%ts_sza(n,i) = 1.E30
+            grid%ts_ghi_accum(n,i) = 1.E30
             grid%ts_swdown(n,i) = 1.E30
             grid%ts_swddni(n,i) = 1.E30
             grid%ts_swddif(n,i) = 1.E30
@@ -820,6 +822,9 @@ SUBROUTINE write_ts( grid )
       ts_buf(:,:) = grid%ts_sza(:,:)
       CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_sza(:,:),grid%ts_buf_size*grid%max_ts_locs)
 
+      ts_buf(:,:) = grid%ts_ghi_accum(:,:)
+      CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_ghi_accum(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
       ts_buf(:,:) = grid%ts_swdown(:,:)
       CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swdown(:,:),grid%ts_buf_size*grid%max_ts_locs)
 
@@ -940,6 +945,7 @@ SUBROUTINE write_ts( grid )
                                  grid%ts_ctopht_tot(n,i),                   &
                                  grid%ts_clrnidx(n,i),                      &
                                  grid%ts_sza(n,i),                          &
+                                 grid%ts_ghi_accum(n,i),                    &
                                  grid%ts_swdown(n,i),                       &
                                  grid%ts_swddni(n,i),                       &
                                  grid%ts_swddif(n,i),                       &

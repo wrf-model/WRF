@@ -62,7 +62,7 @@ CONTAINS
                                    model_config_rec
 
       USE module_streams
-      USE module_utility, ONLY : WRFU_Time 
+      USE module_utility, ONLY : WRFU_Time
 
       !=============================================================
       !  USE Association for the Diagnostic Packages
@@ -1094,7 +1094,8 @@ CONTAINS
 
       SOLAR_FIELDS: IF (config_flags%solar_diagnostics == do_solar_output) THEN
           CALL wrf_debug (100 , '--> CALL DIAGNOSTICS PACKAGE: SOLAR_DIAG')
-          CALL solar_diag (                                                 &
+
+          CALL solar_diag (dt=grid%dt, &
               rho=grid%rho, dz8w=dz8w, ph=grid%ph_2, phb=grid%phb,          &
               cldfrac3d=grid%cldfra, coszen=grid%coszen, swdnb=grid%swdnb,  &
               swdnt=grid%swdnt, param_first_scalar=param_first_scalar,      &
@@ -1116,7 +1117,7 @@ CONTAINS
               tau_qc_tot=grid%tau_qc_tot, tau_qi_tot=grid%tau_qi_tot,       &
               cbase=grid%cbaseht, ctop=grid%ctopht,                         &
               cbase_tot=grid%cbaseht_tot, ctop_tot=grid%ctopht_tot,         &
-              clrnidx=grid%clrnidx, sza=grid%sza,                           &
+              clrnidx=grid%clrnidx, sza=grid%sza, ghi_accum=grid%ghi_accum, &
               ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde,         &
               ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme,         &
               ips=ips, ipe=ipe, jps=jps, jpe=jpe, kps=kps, kpe=kpe,         &

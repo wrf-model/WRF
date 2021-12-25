@@ -22,7 +22,7 @@
                last_chem_time_year, last_chem_time_month,            &
                last_chem_time_day, last_chem_time_hour,              &
                last_chem_time_minute, last_chem_time_second,         &
-               chem_in_opt, kemit, num_vert_mix,                     &
+               chem_in_opt, kemit, num_vert_mix, numgas_out,         &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -47,13 +47,12 @@
    USE module_cbmz_initmixrats, only:     cbmz_init_wrf_mixrats
    USE module_mosaic_driver, only:        init_data_mosaic_asect
    USE module_mosaic_initmixrats, only:   mosaic_init_wrf_mixrats
-   USE module_input_chem_data, only:      get_last_gas,              &
-                                          gasprofile_init_pnnl,      &
+   USE module_input_chem_data, only:      gasprofile_init_pnnl,      &
                                           mozcart_lbc_init,          &
                                           last_chem_time,            &
                                           setup_gasprofile_maps,     &
                                           initial_pvo3
-
+   USE module_chem_share, only: get_last_gas
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
    USE module_upper_bc_driver, only: upper_bc_init
    USE module_tropopause,      only: tropopause_init
@@ -77,6 +76,7 @@
    INTEGER,      INTENT(IN   ) :: plumerisefire_frq
    INTEGER,      INTENT(IN   ) :: chem_in_opt
    INTEGER,      INTENT(INOUT) :: num_vert_mix
+   INTEGER,      INTENT(INOUT) :: numgas_out
    INTEGER,      INTENT(IN   ) :: id,julday,kemit,                   &
                                   last_chem_time_year,               &
                                   last_chem_time_month,              &
@@ -151,6 +151,7 @@
    real :: xtime,xhour,xmin,gmtp,xlonn,rlat
    logical :: is_moz_chm
 #include "version_decl"
+#include "commit_decl"
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
 #endif
@@ -158,6 +159,7 @@
 
 call wrf_message("*********************************************************************")
 call wrf_message(program_name)
+call wrf_message(commit_version)
 call wrf_message("*                                                                   *")
 call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF-Chem HELP at                     *")
 call wrf_message("*                                                                   *")
@@ -166,6 +168,7 @@ call wrf_message("*                                                             
 call wrf_message("*********************************************************************")
 
     numgas = get_last_gas(config_flags%chem_opt)
+    numgas_out = numgas
  
    chem_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCART_SIMPLE)
@@ -391,7 +394,7 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%cu_diag == 1) then
-   !BSINGH (12/17/2013): Added Kain–Fritsch Cumulus Potential (KF-CuP) scheme (cu_physics = 10)
+   !BSINGH (12/17/2013): Added Kain-Fritsch Cumulus Potential (KF-CuP) scheme (cu_physics = 10)
    !HSBADR (02/12/2019): Added Grell-Devenyi (GD) ensemble scheme (cu_physics = 93)
    if ( config_flags%cu_physics /= 3 .AND. config_flags%cu_physics /= 5 .AND. &
         config_flags%cu_physics /= 10 .AND. config_flags%cu_physics /= 93 ) then
@@ -451,7 +454,7 @@ call wrf_message("**************************************************************
             (config_flags%chem_opt >= 31  .AND. config_flags%chem_opt <= 34)  .OR. &
              config_flags%chem_opt == 170 .OR.  config_flags%chem_opt == 198  .OR. &
              config_flags%chem_opt == 199 .OR.  config_flags%chem_opt == 201  .OR. &
-             config_flags%chem_opt == 203 .OR.                                     &
+             config_flags%chem_opt == 202 .OR.  config_flags%chem_opt == 203  .OR. &
              config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611 ) then
             call wrf_debug( 15, 'using N2O5 heterogeneous chemistry without Cl- pathway')
         else
@@ -1944,7 +1947,11 @@ ENDIF ghg_block
 !
    drydep_select: SELECT CASE(config_flags%gas_drydep_opt)
      CASE (WESELY)
-       CALL wrf_debug(15,'initializing dry dep (wesely)')
+        IF (numgas .eq. 0) THEN
+            CALL wrf_error_fatal("ERROR: numgas = 0, SELECTED CHEM OPT IS &
+            &NOT COMPATIBLE WITH WESELY DRY DEPOSITION")
+        ENDIF
+        CALL wrf_debug(15,'initializing dry dep (wesely)') 
 
         call dep_init( id, config_flags, numgas, mminlu_loc, &
                       its, ite, jts, jte, ide, jde )

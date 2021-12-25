@@ -196,7 +196,6 @@
                                                         SWVISDIF, &
                                                         SWNIRDIR, &
                                                         SWNIRDIF
-
 !
 !..Additions for coupling cloud physics effective radii and radiation.  G. Thompson
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: re_cloud, re_ice, re_snow
@@ -235,7 +234,8 @@
      &                                          ,P8W,P_PHY,PI_PHY       &
      &                                          ,RR,T8W                 &
      &                                          ,THRATENLW,THRATENSW    &
-     &                                          ,TH_PHY,T_PHY,Z_PHY
+     &                                          ,TH_PHY,T_PHY,Z_PHY     &
+     &                                          ,RTHRATENLWC,RTHRATENSWC
 !
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
@@ -313,6 +313,8 @@
      &                 /(P_PHY(I,K,J)*G)
 !
           RTHRATEN(I,K,J)=0.
+          RTHRATENLWC(I,K,J)=0.
+          RTHRATENSWC(I,K,J)=0.
           THRATENLW(I,K,J)=0.
           THRATENSW(I,K,J)=0.
 !         PM2_5_DRY(I,K,J)=0.
@@ -424,6 +426,7 @@
      &       ,aer_ssa_opt=config_flags%aer_ssa_opt,aer_ssa_val=config_flags%aer_ssa_val             &
      &       ,aer_asy_opt=config_flags%aer_asy_opt,aer_asy_val=config_flags%aer_asy_val             &
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
+     &                 ,RTHRATENLWC=RTHRATENLWC,RTHRATENSWC=RTHRATENSWC  &
      &                 ,RTHRATEN=RTHRATEN                               &
      &                 ,CEN_LAT=grid%cen_lat                            &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
@@ -503,6 +506,7 @@
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,LWCF=LWCF,SWCF=SWCF                             &
      & ,O3INPUT=config_flags%O3INPUT,AER_OPT=config_flags%AER_OPT,O3RAD=grid%o3rad  &
+     &                 ,SW_ECLIPSE=config_flags%ra_sw_eclipse           &
      &                 ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &
@@ -1501,6 +1505,7 @@
      &          ,urban_map_wd  = config_flags%urban_map_wd              & !multi-layer urban
      &          ,urban_map_gbd = config_flags%urban_map_gbd             & !multi-layer urban
      &          ,urban_map_fbd = config_flags%urban_map_fbd             & !multi-layer urban
+     &          ,urban_map_zgrd = config_flags%urban_map_zgrd             & !multi-layer urban
      &          ,NUM_URBAN_HI=config_flags%num_urban_hi                 & !multi-layer urban
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &
@@ -1557,12 +1562,14 @@
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
      &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
      &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo &
-     &        ,iopt_crop=config_flags%opt_crop
+     &        ,iopt_crop=config_flags%opt_crop, iopt_irr=config_flags%opt_irr  &
+     &        ,iopt_irrm=config_flags%opt_irrm                                      &     
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
      &        ,  fwetxy=grid%fwetxy   ,sneqvoxy=grid%sneqvoxy,alboldxy=grid%alboldxy &
-     &        , qsnowxy=grid%qsnowxy  ,wslakexy=grid%wslakexy,   zwtxy=grid%zwtxy    &
+     &        , qsnowxy=grid%qsnowxy  ,qrainxy=grid%qrainxy  ,wslakexy=grid%wslakexy &
+     &        , zwtxy=grid%zwtxy                                                     &
      &        ,    waxy=grid%waxy     ,    wtxy=grid%wtxy    ,  tsnoxy=grid%tsnoxy   &
      &        , zsnsoxy=grid%zsnsoxy  , snicexy=grid%snicexy , snliqxy=grid%snliqxy  &
      &        ,lfmassxy=grid%lfmassxy ,rtmassxy=grid%rtmassxy,stmassxy=grid%stmassxy &
@@ -1590,6 +1597,12 @@
      &        ,   irbxy=grid%irbxy    ,    trxy=grid%trxy    ,   evcxy=grid%evcxy    &
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
+! Noah-MP irrigation
+     &        , IRFRACT=grid%IRFRACT  , SIFRACT=grid%SIFRACT ,MIFRACT=grid%MIFRACT   &
+     &        , FIFRACT=grid%FIFRACT  , IRNUMSI=grid%IRNUMSI ,IRNUMMI=grid%IRNUMMI   &
+     &        , IRNUMFI=grid%IRNUMFI  , IRWATSI=grid%IRWATSI ,IRWATMI=grid%IRWATMI   &   
+     &        , IRWATFI=grid%IRWATFI  , IRELOSS=grid%IRELOSS ,IRSIVOL=grid%IRSIVOL   &
+     &        , IRMIVOL=grid%IRMIVOL  , IRFIVOL=grid%IRFIVOL ,IRRSPLH=grid%IRRSPLH   &
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
      &        ,gecros_state=grid%gecros_state                                        &   ! Optional gecros crop
@@ -1606,7 +1619,7 @@
      &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev  &
 ! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
-     &        ,fasdas=fasdas
+     &        ,fasdas=fasdas,do_bioe=.false.,do_meganfile=.false.,num_pft_input=grid%num_pft_clm                             &
      &                                                          )
 !
 !-----------------------------------------------------------------------

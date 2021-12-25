@@ -47,6 +47,12 @@ else
 PRECIP_DOUBLE = 
 endif
 
+ifeq ($(NWM_META),1)
+NWM_META = -DNWM_META
+else
+NWM_META =
+endif
+
 ifeq ($(NCEP_WCOSS),1)
 NCEP_WCOSS = -DNCEP_WCOSS
 else
@@ -61,7 +67,7 @@ F90FLAGS    = -O2 -g -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT
 MODFLAG	    = -I./ -I ../../MPP -I ../MPP -I ../mod
 LDFLAGS	    =
 CPPINVOKE   = -fpp
-CPPFLAGS    = -DMPP_LAND -I ../Data_Rec $(HYDRO_D) $(SPATIAL_SOIL) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE) $(NCEP_WCOSS)
+CPPFLAGS    = -DMPP_LAND -I ../Data_Rec $(HYDRO_D) $(SPATIAL_SOIL) $(NWM_META) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE) $(NCEP_WCOSS)
 LIBS 	    =	
 NETCDFINC   = $(NETCDF_INC)
 NETCDFLIB   = -L$(NETCDF_LIB) -lnetcdff -lnetcdf

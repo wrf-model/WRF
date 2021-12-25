@@ -47,7 +47,7 @@ end type fire_params
 !***    with common ancestor as submitted to V3.3 in 01/2017 commit 3f78267b38e0f0a3 ***!
 !*** Reference: J. Mandel, S. Amram, J.D. Beezley, G. Kelman, A.K. Kochanski, V.Y.   ***!
 !***    Kondratenko, B.H. Lynn, B. Regev, M. Vejmelka, Recent advances and           ***!
-!***    applications of WRF–SFIRE. Natural Hazards and Earth System Science, 14,     ***!
+!***    applications of WRF-SFIRE. Natural Hazards and Earth System Science, 14,     ***!
 !***    2829-2845, 2014, doi:10.5194/nhess-14-2829-2014                              ***!
 !***************************************************************************************!
 
@@ -709,7 +709,7 @@ IF ( wrf_dm_on_monitor() ) THEN
     fmc_gc_initial_value(1)=fmc_1h
     fmc_gc_initial_value(2)=fmc_10h
     fmc_gc_initial_value(3)=fmc_100h
-    fmc_gc_initial_value(3)=fmc_1000h
+    fmc_gc_initial_value(4)=fmc_1000h
     fmc_gc_initial_value(5)=fmc_live
     !
     ! end initialization from scalars tied to a particular model with 5 fuel moisture classes

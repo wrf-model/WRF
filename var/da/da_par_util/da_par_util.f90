@@ -7,7 +7,11 @@ module da_par_util
    !---------------------------------------------------------------------------
 
    use da_control, only: use_rf
+#if (WRF_CHEM != 1)
    use module_domain, only : domain, xpose_type
+#else
+   use module_domain, only : domain, xpose_type, xchem_type
+#endif
 
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator_x, &
@@ -18,6 +22,10 @@ module da_par_util
 !     mpi_minloc, mpi_sum
 #else
    use da_reporting, only : message
+#endif
+
+#if (WRF_CHEM == 1)
+   use module_state_description, only :  num_chem, PARAM_FIRST_SCALAR
 #endif
 
    use da_define_structures, only : be_subtype, &

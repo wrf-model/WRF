@@ -492,13 +492,48 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
 
 
 
-** Using U. Miami Forward Lagrangian trajectory calculation 
-  (add it in namelist record &physics):
-&domain
+** Using the ACOM Forward Lagrangian trajectory calculation:
+
+&domains
  num_traj                            = 25,
 
 &physics
  traj_opt                            = 1,
+ dm_has_traj                         = .true.,  ..true.,  .true.
+ 
+
+For domain #1, the file must "wrfinput_traj_d01" exist in the working directory. Similarly for domain 2, 3, etc. Each domain
+has a separate file for a namelist.
+
+&traj_default
+ traj_def%start_time        = '2000-01-24_12:00:00',
+ traj_def%stop_time         = '2000-01-25_12:00:00',
+ traj_def%dyn_name(1:6)     = 'p', 'T', 'z', 'u', 'v', 'w',
+ traj_def%hyd_name(1)       = 'QVAPOR',
+/
+  
+&traj_spec
+ traj_type%start_time = '2000-01-24_12:00:00',  '2000-01-24_12:00:00',  
+                        '2000-01-24_12:00:00',  '2000-01-24_12:00:00',  
+                        '2000-01-24_12:00:00',  '2000-01-24_12:00:00',  
+                        '2000-01-24_12:00:00',  '2000-01-24_12:00:00',  
+                        '2000-01-24_12:00:00',  '2000-01-24_12:00:00',  
+                        '2000-01-24_12:00:00',  
+ traj_type%stop_time  = '2000-01-25_12:00:00',  '2000-01-25_12:00:00',  
+                        '2000-01-25_12:00:00',  '2000-01-25_12:00:00',  
+                        '2000-01-25_12:00:00',  '2000-01-25_12:00:00',  
+                        '2000-01-25_12:00:00',  '2000-01-25_12:00:00',  
+                        '2000-01-25_12:00:00',  '2000-01-25_12:00:00',  
+                        '2000-01-25_12:00:00',  
+ traj_type%lev        = 60., 60., 60., 60., 60., 60., 60., 60., 60., 60., 60., 
+ traj_type%lon        = -79.88470, -79.74551, -79.60422, -79.46072, 
+                        -79.31503, -79.16708, -79.01682, -78.86417, 
+                        -78.70911, -78.55151, -78.39142,
+ traj_type%lat        =  29.18063,  29.70515,  30.23069,  30.75718,  
+                         31.28461,  31.81292,  32.34208,  32.87204,  
+                         33.40276,  33.93421,  34.46631,
+/
+
 
 
 ** Vertical nesting

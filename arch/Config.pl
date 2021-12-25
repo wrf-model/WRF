@@ -15,6 +15,7 @@ $sw_jasperlib_path="";
 $sw_jasperinc_path=""; 
 $sw_esmflib_path="";
 $sw_esmfinc_path="";
+$sw_ctsm_mkfile_path="";
 $sw_ldflags=""; 
 $sw_compileflags=""; 
 $sw_opt_level=""; 
@@ -321,6 +322,20 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
    $sw_esmf_ldflag = "yes" ;
    }
 
+# A separately-installed CTSM library and its dependencies are required
+# to build WRF with the CTSM land surface model (the next generation of
+# the CLM model, coupled via LILAC). The user must set the environment
+# variable WRF_CTSM_MKFILE, which should be a path to a make-formatted
+# file containing settings of CTSM_INCLUDES and CTSM_LIBS. When this
+# environment variable is set, this also triggers adding -DWRF_USE_CTSM;
+# when this env var is not set, then we instead use -DWRF_USE_CLM, which
+# builds an old version of CLM that is included in the WRF source code.
+# (We currently cannot build with both at once because of namespace
+# collisions at link time.)
+if ( $ENV{WRF_CTSM_MKFILE} ) {
+   $sw_ctsm_mkfile_path = $ENV{WRF_CTSM_MKFILE};
+}
+
 # parse the configure.wrf file
 
 $validresponse = 0 ;
@@ -584,6 +599,19 @@ while ( <CONFIGURE_DEFAULTS> )
            $_ =~ s:ESMFIOEXTLIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90 -lesmf_time:g ;
         }
       }
+
+    # CTSM substitutions in configure.defaults and postamble
+    if ( $sw_ctsm_mkfile_path ) {
+       $_ =~ s:CONFIGURE_D_CTSM:-DWRF_USE_CTSM:g ;
+       $_ =~ s:CONFIGURE_CTSM_INC:\$\(CTSM_INCLUDES\):g ;
+       $_ =~ s:CONFIGURE_CTSM_LIB:\$\(CTSM_LIBS\):g ;
+    }
+    else {
+       $_ =~ s:CONFIGURE_D_CTSM:-DWRF_USE_CLM:g ;
+       $_ =~ s:CONFIGURE_CTSM_INC::g ;
+       $_ =~ s:CONFIGURE_CTSM_LIB::g ;
+    }
+
      if ( $ENV{HWRF} )
        {
         $_ =~ s:CONFIGURE_ATMOCN_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn  -latm_ocn:g ;
@@ -779,6 +807,12 @@ while ( <ARCH_PREAMBLE> )
     $_ =~ s:ESMFIODEFS::g ;
     $_ =~ s:ESMFTARGET:esmf_time:g ;
     }
+
+  # CTSM substitutions in preamble
+  if ( $sw_ctsm_mkfile_path ) {
+     $_ =~ s:\# CTSMINCLUDEGOESHERE:include $sw_ctsm_mkfile_path: ;
+  }
+
   if ( $ENV{HWRF} )
     {
     $_ =~ s:CONFIGURE_ATMOCN_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn  -latm_ocn:g ;

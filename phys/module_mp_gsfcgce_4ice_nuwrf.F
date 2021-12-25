@@ -2151,7 +2151,7 @@ CONTAINS
 !   Stephen E. Lang, Wei-Kuo Tao, Jiun-Dar Chern, Di Wu,                  c
 !   and Xiaowen Li, 2014: Benefits of a Fourth Ice Class                  c
 !   in the Simulated Radar Reflectivities of Convective Systems           c
-!   Using a Bulk Microphysics Scheme. J. Atmos. Sci., 71, 3583–3612.      c
+!   Using a Bulk Microphysics Scheme. J. Atmos. Sci., 71, 3583-3612.      c
 !   doi: http://dx.doi.org/10.1175/JAS-D-13-0330.1                        c
 !                                                                         c
 !   Lang, S., W.-K. Tao, J.-D. Chern, D. Wu, and X. Li, 2014:             c

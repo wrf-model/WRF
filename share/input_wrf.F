@@ -740,6 +740,10 @@
                    ! All is well.  Noah-MP and Noah have compatible wrfinput files.
                 ELSE IF ( ( config_flags%sf_surface_physics == NOAHMPSCHEME ) .and. ( itmp == LSMSCHEME ) ) then
                    ! All is well.  Noah-MP and Noah have compatible wrfinput files.
+#if ( NMM_CORE != 1 )
+                ELSE IF ( ( config_flags%sf_surface_physics == CTSMSCHEME ) ) then
+                   ! All is well.  CTSM doesn't care about the wrfinput file.
+#endif
                 ELSE
                    call wrf_message("----------------- ERROR -------------------")
                    WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
@@ -1247,7 +1251,7 @@
               !  While the lateral BC time is less than the restart time, advance forward to the next LBC time.
 
               icount = 0
-              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 10000 ) ) 
+              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 60000 ) ) 
                   CALL wrf_get_next_time(fid, current_date , ierr)
                   IF ( ierr .NE. 0 ) THEN
                      CALL wrf_debug ( 0, '---- ERROR: Cannot find a valid time to start the LBC during this restart, likely ran out of time periods to test' )
@@ -1899,8 +1903,6 @@
     CHARACTER (LEN=1024) :: input_title_char
     LOGICAL :: skip_rigorous_and_return_right_away
     INTEGER :: ierr
-
-#include "version_decl"
 
     !  Make sure that the input data is consistent with the current code.
 

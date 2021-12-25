@@ -273,6 +273,8 @@ integer, intent(in):: &
 real, intent(out),dimension(ifms:ifme,jfms:jfme)::fxlong,fxlat
 ! local
 integer::i,j
+                ! could we not just as easily get something that
+                ! that looks like a lat/lon 
                 ! set fake  coordinates, in m 
                 do j=jfts,jfte
                     do i=ifts,ifte

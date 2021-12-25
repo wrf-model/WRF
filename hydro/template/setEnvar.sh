@@ -14,8 +14,11 @@ export SPATIAL_SOIL=0
 # RAPID model: 0=Off, 1=On.
 export WRF_HYDRO_RAPID=0
 
-# WCOSS file units: 0=Off, 1=On. 
+# WCOSS file units: 0=Off, 1=On.
 export NCEP_WCOSS=0
+
+# NWM output metadata: 0=Off, 1=On.
+export NWM_META=0
 
 # Streamflow nudging: 0=Off, 1=On.
 export WRF_HYDRO_NUDGING=0

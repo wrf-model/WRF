@@ -525,11 +525,14 @@ CONTAINS
                 ifms,ifme,jfms,jfme,  &
                 ifts,ifte,jfts,jfte,  &
                 grid%fxlong,grid%fxlat          )
-  call set_ideal_coord( grid%dx,grid%dy, &
-                ids,ide,jds,jde,  &
-                ims,ime,jms,jme,  &
-                its,ite,jts,jte,  &
-                grid%xlong,grid%xlat          )
+! Avoid setting atmospheric coordinates when using nested domains ME
+  if (config_flags%max_dom.eq.1) then
+      call set_ideal_coord( grid%dx,grid%dy, &
+                  ids,ide,jds,jde,  &
+                  ims,ime,jms,jme,  &
+                  its,ite,jts,jte,  &
+                  grid%xlong,grid%xlat          )
+  endif
 
 ! set terrain height
 

@@ -1,6 +1,6 @@
-subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
+subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    !--------------------------------------------------------
-   !  Purpose: read in JAXA AHI Level-1 and Level-2 data in NETCDF4 format
+   !  Purpose: read in JAXA AHI Level-1 data in NETCDF4 format for different times
    !           and form innovation structure
    !
    !   METHOD: use F90 sequantial data structure to avoid read the file twice
@@ -10,6 +10,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
    !                  and deallocate sequential data structure
    !
    !  HISTORY: 2016/10/22 - Creation         Yuanbing Wang, NUIST/CAS, NCAR/NESL/MMM/DAS
+   !  HISTORY: 2020/03/01 - Add clear sky cloud detection procedures   Dongmei Xu, NUIST, NCAR/MMM  
    !  To be devoloped: 1.time information; 2.dimension sequence
    !------------------------------------------------------------------------------
    
@@ -17,7 +18,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
    
    implicit none
 
-   character(len=*), intent(in)    :: infile_tb, infile_clp
+   character(len=*), intent(in)    :: infile_tb, infile_tbp
    type(iv_type),    intent(inout) :: iv
 
 ! fixed parameter values
@@ -34,8 +35,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
    real(4), allocatable :: vlongitude(:) !  value for longitude
 
    real(4), allocatable    :: tbb(:,:,:)  ! tb for band 7-16
-   real(4), allocatable    :: sat_zenith(:,:)
-   integer(2), allocatable    :: cloud_type(:,:)
+   real(4), allocatable    :: sat_zenith(:,:),sat_azi(:,:),sol_azi(:,:),sol_zenith(:,:)
    
    real(r_kind),parameter  :: tbmin  = 50._r_kind
    real(r_kind),parameter  :: tbmax  = 550._r_kind
@@ -54,6 +54,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
    logical           :: outside, outside_all, iuse
 
    integer           :: i,j,k,l,m,n, ifile, landsea_mask
+
    logical           :: found, head_found, head_allocated
 
 ! Other work variables
@@ -65,16 +66,30 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
    character(80)    :: filename1,filename2
    integer          :: nchan,nlongitude,nlatitude,ilongitude,ilatitude,ichannels
    integer          :: LatDimID,LonDimID
-   integer          :: latid,lonid,tbb_id,sazid,cltyid
+   integer          :: latid,lonid,tbb_id,sazid,cltyid,ter_id
    integer          :: nfile
-   character(80)    :: fname_tb(nfile_max),fname_clp(nfile_max)
+   character(80)    :: fname_tb(nfile_max),fname_tbp(nfile_max)
    logical          :: fexist, got_clp_file
-   
+
+! for qc stuff
+   integer, parameter :: ch7  = 1
+   integer, parameter :: ch10 = 4
+   integer, parameter :: ch13 = 7  
+   integer, parameter :: ch14 = 8
+   integer, parameter :: ch15 = 9    
+   integer            :: superob_width ! Must be ≥ 0
+   integer            :: first_boxcenter, last_boxcenter_x, last_boxcenter_y, box_bottom, box_upper, box_left, box_right
+   integer            :: isup, jsup, ixsup, iysup, ibox, jbox, nkeep
+   real(4), allocatable    :: tbbp(:,:,:)  ! tb for band 7-16   
+   real(r_kind), allocatable       :: tbb_temp1(:,:), tbb_temp2(:,:)
+   real(r_kind), allocatable       :: rtct(:,:), rtct2(:,:),rtmt(:,:)
+   real(r_kind), allocatable       :: tempir(:,:),cwvt1(:,:)
+   real(r_kind), allocatable    :: ter_sat(:,:),SDob_10(:,:),SDob_13(:,:),SDob_14(:,:)
+   character(200)    :: filenameStatic
 ! Allocatable arrays
    integer(i_kind),allocatable  :: ptotal(:)
    real,allocatable             :: in(:), out(:)
-   real(r_kind),allocatable     :: data_all(:)
-   
+   real(r_kind)                 :: temp1 = 0.0
    character(len=80) tbb_name(10)
    data tbb_name/'tbb_07','tbb_08','tbb_09','tbb_10','tbb_11', &
                  'tbb_12','tbb_13','tbb_14','tbb_15','tbb_16'/   
@@ -114,7 +129,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
 
    nchan = iv%instid(inst)%nchan
    write(unit=stdout,fmt=*)'AHI nchan: ',nchan
-   allocate(data_all(1:nchan))
+   superob_width = 2*ahi_superob_halfwidth+1
 
 ! 1.0 Assign file names and prepare to read ahi files
 !-------------------------------------------------------------------------
@@ -123,24 +138,24 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
    
    ! first check if ahi nc file is available
    filename1 = trim(infile_tb)
-   filename2 = trim(infile_clp) 
+   filename2 = trim(infile_tbp) 
    inquire (file=filename1, exist=fexist)
    if ( fexist ) then
       nfile = 1
       fname_tb(nfile)  = filename1
-	  fname_clp(nfile) = filename2
+	  fname_tbp(nfile) = filename2
    else
       ! check if netcdf4 files are available for multiple input files
       ! here 0x is the input file sequence number
       ! do not confuse it with fgat time slot index
       do i = 1, nfile_max
          write(filename1,fmt='(A,A,I2.2,A)') trim(infile_tb),'-',i
-		 write(filename2,fmt='(A,A,I2.2,A)') trim(infile_clp),'-',i
+		 write(filename2,fmt='(A,A,I2.2,A)') trim(infile_tbp),'-',i
          inquire (file=filename1, exist=fexist)
          if ( fexist ) then
             nfile = nfile + 1
             fname_tb(nfile)  = filename1
-			fname_clp(nfile) = filename2
+			fname_tbp(nfile) = filename2
          else
             exit
          end if
@@ -159,7 +174,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
       num_ahi_local_local   = 0
       num_ahi_global_local  = 0
 
-   ! open NETCDF4 L1 file for read
+   ! open NETCDF4 L1 file for read for the current time
       iret = nf90_open(fname_tb(ifile), NF90_NOWRITE, ncid)
       if(iret /= 0)then
          call da_warning(__FILE__,__LINE__, &
@@ -221,6 +236,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
 		do j=1,nlatitude
 		  do i=1,nlongitude
 			  tbb(i,j,k)=tbb(i,j,k) * scale_factor_tb + add_offset_tb
+              if( tbb(i,j,k) < tbmin .or. tbb(i,j,k) > tbmax ) tbb(i,j,k) = missing_r			  
 		  end do
 		end do	
 	   ! sample display
@@ -245,32 +261,187 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
    ! sample display
       write(unit=stdout,fmt=*)&
          'satellite zenith angle(pixel=1,scan=1): ',sat_zenith(1,1)
- 
+		 
+		 
+   ! read array: satellite azimuth angle
+   ! read
+	  iret = nf90_inq_varid(ncid, 'SAA', sazid)	  
+	  allocate( sat_azi(nlongitude,nlatitude))
+	  iret = nf90_get_var(ncid, sazid, sat_azi)
+      if(iret /= 0)then
+         call da_warning(__FILE__,__LINE__, &
+            (/"NETCDF4 read error for: satellite azimuth angle"/))
+      endif
+		do j=1,nlatitude
+			do i=1,nlongitude
+				sat_azi(i,j)=sat_azi(i,j) * scale_factor_tb
+			end do
+		end do	  	  	  
+   ! sample display
+      write(unit=stdout,fmt=*)&
+         'satellite azimuth angle(pixel=1,scan=1): ',sat_azi(1,1)
+		 
+   ! read array: solar zenith angle
+   ! read
+	  iret = nf90_inq_varid(ncid, 'SOZ', sazid)	  
+	  allocate( sol_zenith(nlongitude,nlatitude))
+	  iret = nf90_get_var(ncid, sazid, sol_zenith)
+      if(iret /= 0)then
+         call da_warning(__FILE__,__LINE__, &
+            (/"NETCDF4 read error for: satellite zenith angle"/))
+      endif
+		do j=1,nlatitude
+			do i=1,nlongitude
+				sol_zenith(i,j)=sol_zenith(i,j) * scale_factor_tb
+			end do
+		end do	  	  	  
+   ! sample display
+      write(unit=stdout,fmt=*)&
+         'solar zenith angle(pixel=1,scan=1): ',sol_zenith(1,1)
+		 
+		 
+   ! read array: solar azimuth angle
+   ! read
+	  iret = nf90_inq_varid(ncid, 'SOA', sazid)	  
+	  allocate( sol_azi(nlongitude,nlatitude))
+	  iret = nf90_get_var(ncid, sazid, sol_azi)
+      if(iret /= 0)then
+         call da_warning(__FILE__,__LINE__, &
+            (/"NETCDF4 read error for: satellite azimuth angle"/))
+      endif
+		do j=1,nlatitude
+			do i=1,nlongitude
+				sol_azi(i,j)=sol_azi(i,j) * scale_factor_tb
+			end do
+		end do	  	  	  
+   ! sample display
+      write(unit=stdout,fmt=*)&
+         'solar azimuth angle(pixel=1,scan=1): ',sol_azi(1,1)		 		  
    ! close infile_tb file 		 
       iret = nf90_close(ncid)
-	  
-     !open infile_clp file 
-      got_clp_file = .false.
-      iret = nf90_open(fname_clp(ifile), NF90_NOWRITE, ncid)
-      if ( iret == 0 ) then
-         got_clp_file = .true.
-      endif
-	  
-      if ( got_clp_file ) then
-		! read array: satellite zenith angle 
-          rcode = nf90_inq_varid(ncid, 'CLTYPE', cltyid)
-          allocate( cloud_type(nlongitude,nlatitude))
-		  iret = nf90_get_var(ncid, cltyid, cloud_type)
-          if(iret /= 0)then
-            call da_warning(__FILE__,__LINE__,(/"NETCDF4 read error for: CLTYPE data"/))
-          endif
-        ! sample display
-          write(unit=stdout,fmt=*)'cloud_type(pixel=1,scan=1): ',cloud_type(1,1)
-		 
-		! close infile_clp file 		 
-		  iret = nf90_close(ncid)		 	 
-      end if   
+      allocate( tbbp(nlongitude,nlatitude,nchan)) 	  
+      allocate( ter_sat(nlongitude,nlatitude))
+      allocate( SDob_10(nlongitude,nlatitude))
+      allocate( SDob_13(nlongitude,nlatitude))
+      allocate( SDob_14(nlongitude,nlatitude))
+      allocate( rtct(nlongitude,nlatitude))
+      allocate( rtct2(nlongitude,nlatitude))
+      allocate( rtmt(nlongitude,nlatitude))
+      allocate( tempir(nlongitude,nlatitude))
+      allocate( cwvt1(nlongitude,nlatitude))	  
+      allocate( tbb_temp1(nlongitude,nlatitude))
+      allocate( tbb_temp2(nlongitude,nlatitude)) 	
+   
+   if (use_clddet_zz) then	  
+! --------------------------
+! 0-call read static data: terrain and landmask   ?????
+! --------------------------
+   ! open NETCDF4 L1 file for read for the previous time
+      iret = nf90_open(fname_tbp(ifile), NF90_NOWRITE, ncid)
+      if(iret /= 0)then
+         call da_warning(__FILE__,__LINE__, &
+              (/"Cannot open NETCDF4 file "//trim(fname_tbp(ifile))/))
+         cycle infile_loop
+      endif 	   
 
+   ! read array: tb for band 7-16
+   ! read	 
+
+      do k=1,nchan	  
+		iret = nf90_inq_varid(ncid, tbb_name(k), tbb_id)	  
+		iret = nf90_get_var(ncid, tbb_id, tbbp(:,:,k))
+		if(iret /= 0)then
+		  call da_warning(__FILE__,__LINE__, &
+			   (/"NETCDF4 read error for: Brightness Temperature"/))
+		endif	  
+		do j=1,nlatitude
+		  do i=1,nlongitude
+			  tbbp(i,j,k)=tbbp(i,j,k) * scale_factor_tb + add_offset_tb
+              if( tbbp(i,j,k) < tbmin .or. tbbp(i,j,k) > tbmax ) tbbp(i,j,k) = missing_r			  
+		  end do
+		end do	
+	   ! sample display
+		   write(unit=stdout,fmt=*)&
+			'tbbp(pixel=1,scan=1,chan=',k,'): ', tbbp(1,1,k)		
+      end do		
+ 
+   ! close infile_tbp file 		 
+      iret = nf90_close(ncid)
+
+! --------------------------
+! 1-call read static data: terrain and landmask   ?????
+! --------------------------
+
+
+      filenameStatic="static_ahi.nc"
+      iret = nf90_open(filenameStatic, nf90_NOWRITE, ncid)
+      if(iret /= 0)then
+         print*,"Cannot open NETCDF4 file "//trim(filenameStatic)
+      endif
+      iret = nf90_inq_varid(ncid, "AhiTer", ter_id)
+      iret = nf90_get_var(ncid, ter_id, ter_sat(:,:))
+      if(iret /= 0) print*,"NETCDF4 read error for: SatTer"
+      where (ter_sat == -999.) ter_sat = missing_r
+      iret = nf90_close(ncid)
+    !  print *, 'ter_sat',maxval(ter_sat),	minval(ter_sat)		
+	  
+!!2- ZZ test0-SDob		
+	  
+	  tbb_temp1 = missing_r
+      tbb_temp1 = tbb(:,:,ch13)   ! 10.4um	  
+	  SDob_13=missing_r
+      call qc_SDob(nlongitude,nlatitude,tbb_temp1,SDob_13)
+      !print *, 'SDob_13',maxval(SDob_13),	minval(SDob_13)
+
+	  !!!!!!!!!! for ZZ test6
+	  tbb_temp1 = missing_r		  	  
+      tbb_temp1 = tbb(:,:,ch10)   ! 7.3um
+	  SDob_10=missing_r	  
+      call qc_SDob(nlongitude,nlatitude,tbb_temp1,SDob_10)
+!print *, 'SDob_10',maxval(SDob_10),	minval(SDob_10)	 
+	  tbb_temp1 = missing_r		   
+      tbb_temp1 = tbb(:,:,ch14)   ! 11.2umum	
+	  SDob_14=missing_r	  
+      call qc_SDob(nlongitude,nlatitude,tbb_temp1,SDob_14)	  
+!print *, 'SDob_14',maxval(SDob_14),	minval(SDob_14)
+
+!! ZZ test1- RTCT	
+	  tbb_temp1 = missing_r		    
+      tbb_temp1 = tbb(:,:,ch14)   ! 11.2um
+      rtct=0.1	
+      call qc_RTCT(nlongitude,nlatitude,tbb_temp1,ter_sat,rtct,rtct2)
+   
+!! ZZ test5-RFMFT
+
+	  tbb_temp1 = missing_r	
+ 	  tbb_temp2 = missing_r		  	  
+      tbb_temp1 = tbb(:,:,ch14);  tbb_temp2 = tbb(:,:,ch15)   ! 11.2um and 12.4um
+	  rtmt=missing_r		  
+      call qc_rtmt(nlongitude,nlatitude,tbb_temp1,tbb_temp2,rtmt)
+!print *, 'rtmt',maxval(rtmt),	minval(rtmt)
+
+!! ZZ test6-CIRH2O
+	  tbb_temp1 = missing_r	
+ 	  tbb_temp2 = missing_r		
+	  tbb_temp1 = tbb(:,:,ch10)
+	  tbb_temp2 = tbb(:,:,ch14)   ! 7.3um and 11.2um
+	  cwvt1=missing_r		  
+      call qc_cwvt(nlongitude,nlatitude,tbb_temp1,tbb_temp2,cwvt1)
+!print *, 'cwvt1',maxval(cwvt1),	minval(cwvt1)
+
+	  
+!! ZZ test10- TEMPIR
+	  tbb_temp1 = missing_r	
+ 	  tbb_temp2 = missing_r		  
+      tbb_temp1 = tbbp(:,:,ch14);  tbb_temp2 = tbb(:,:,ch14)   ! 11.2um 		  
+      where(tbb_temp1 /=missing_r .and. tbb_temp2 /= missing_r) tempir = tbb_temp1-tbb_temp2	  
+      where(tbb_temp1 ==missing_r .or.  tbb_temp2 == missing_r) tempir = missing_r	
+!print *, 'tempir',maxval(tempir),	minval(tempir),nlongitude,nlatitude	  	  
+end if 
+	  
+
+  
+  
 ! 2.0 Loop to read netcdf and assign information to a sequential structure
 !-------------------------------------------------------------------------   
    ! Allocate arrays to hold data
@@ -280,10 +451,13 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
          p => head
          head_allocated = .true.
       end if
-
    ! start scan_loop
-      scan_loop:     do ilatitude=1, nlatitude
-	  
+
+      first_boxcenter = ahi_superob_halfwidth + 1
+      last_boxcenter_y = superob_width * (nlatitude / superob_width) - ahi_superob_halfwidth
+      last_boxcenter_x = superob_width * (nlongitude / superob_width) - ahi_superob_halfwidth
+
+      scan_loop:     do ilatitude=first_boxcenter, nlatitude, superob_width
          call da_get_julian_time(idate5(1),idate5(2),idate5(3),idate5(4),idate5(5),obs_time)
          if ( obs_time < time_slots(0) .or.  &
             obs_time >= time_slots(num_fgat_time) ) cycle scan_loop
@@ -291,25 +465,31 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
             if ( obs_time >= time_slots(ifgat-1) .and.  &
                obs_time  < time_slots(ifgat) ) exit
          end do
-
       ! start fov_loop
-         fov_loop:      do ilongitude=1, nlongitude
-			
-			if ( sat_zenith(ilongitude,ilatitude) > 65.0 ) cycle fov_loop
-			
+
+         jbox = ilatitude/superob_width + 1
+         if ( ahi_superob_halfwidth .gt. 0 ) then
+            box_bottom = superob_width * (jbox-1) +1
+            box_upper  = superob_width * jbox
+         else
+            box_bottom = superob_width * (jbox-1)
+            box_upper  = superob_width * (jbox-1)
+         end if
+
+         fov_loop:      do ilongitude=first_boxcenter, nlongitude, superob_width
+
+            if ( sat_zenith(ilongitude,ilatitude) > 65.0 ) cycle fov_loop
+
             num_ahi_file       = num_ahi_file + 1
             num_ahi_file_local = num_ahi_file_local + 1
             info%lat  =  vlatitude(ilatitude)
             info%lon  =  vlongitude(ilongitude)
-
             call da_llxy (info, loc, outside, outside_all)
             if (outside_all) cycle fov_loop
-
             num_ahi_global       = num_ahi_global + 1
             num_ahi_global_local = num_ahi_global_local + 1
             ptotal(ifgat) = ptotal(ifgat) + 1
             if (outside) cycle fov_loop   ! No good for this PE
-
             num_ahi_local       = num_ahi_local + 1
             num_ahi_local_local = num_ahi_local_local + 1
             write(unit=info%date_char, &
@@ -318,9 +498,9 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
                ':', idate5(5), ':', idate5(6)
             info%elv = 0.0
 
-! 3.0  Make Thinning
-! Map obs to thinning grid
-!-------------------------------------------------------------------
+            ! 3.0  Make Thinning
+            ! Map obs to thinning grid
+            !-------------------------------------------------------------------
             if (thinning) then
                dlat_earth = info%lat !degree
                dlon_earth = info%lon
@@ -335,49 +515,116 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
                   cycle fov_loop
                end if
             end if
-
             num_ahi_used = num_ahi_used + 1
-            data_all = missing_r		
 
-            do k=1,nchan
-               tb = tbb(ilongitude,ilatitude,k)
-               if( tb < tbmin .or. tb > tbmax ) tb = missing_r
-               data_all(k)= tb
-            end do
-			
-! 4.0 assign information to sequential radiance structure
-!--------------------------------------------------------------------------
-            allocate ( p % tb_inv (1:nchan ))
+            ibox = ilongitude/superob_width + 1
+            if ( ahi_superob_halfwidth .gt. 0 ) then
+               box_left  = superob_width * (ibox-1) +1 ! will exceed nlatitude/nlongitude if ahi_superob_halfwidth = 0
+               box_right = superob_width * ibox
+            else
+               box_left  = superob_width * (ibox-1)
+               box_right = superob_width * (ibox-1)
+            end if
+
+            ! Super-ob BT for this channel
+
+            allocate ( p % tb_inv (1:nchan) )
+            p % tb_inv = missing_r
+
+            do k = 1, nchan
+               nkeep = count(tbb(box_left:box_right,box_bottom:box_upper,k) > 0.0 )
+               temp1 = sum ( tbb(box_left:box_right,box_bottom:box_upper,k), &
+                             tbb(box_left:box_right,box_bottom:box_upper,k) > 0.0 )
+
+               if (ahi_superob_halfwidth .gt.0 .and. nkeep .gt. 0) then
+                  tb = temp1 / real(nkeep,8)
+               else
+                  ! Extract single pixel BT and radiance value for this channel
+                  tb = tbb(ilongitude,ilatitude,k)
+               end if
+
+               if (tb > 0.0)   p % tb_inv(k) = tb
+
+             end do
+
+            ! Preprocessing for cloud detection including
+            ! extracting Tb values from cloud QC buffer
+
+            if (use_clddet_zz) then
+
+               if (.not. allocated(p % superob)) then
+                  allocate( p % superob(superob_width,superob_width) )
+               end if
+
+               ! Loops over superob pixels
+               do jsup = 1, superob_width
+               do isup = 1, superob_width
+                  iysup = ilatitude + jsup-1-ahi_superob_halfwidth
+                  ixsup = ilongitude + isup-1-ahi_superob_halfwidth
+                  if (ixsup < 1 .or. ixsup > nlongitude .or. iysup < 1 .or. iysup > nlatitude ) then
+                     cycle
+                  end if
+                  if ( .not. allocated(p % superob(isup,jsup) % tb_obs ) ) then
+                     allocate ( p % superob(isup,jsup) % tb_obs  (1:nchan,1) )
+                     allocate ( p % superob(isup,jsup) % cld_qc(1) )
+                  end if
+                  p % superob(isup,jsup) % tb_obs(1:nchan,1)      = tbb( ixsup, iysup, 1:nchan )
+                  p % superob(isup,jsup) % cld_qc(1) % TEMPIR        = tempir(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % RTCT          = rtct(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % RFMFT         = rtmt(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % CIRH2O        = cwvt1(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % tb_stddev_10  = SDob_10(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % tb_stddev_13  = SDob_13(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % tb_stddev_14  = SDob_14(ixsup, iysup)
+                  p % superob(isup,jsup) % cld_qc(1) % terr_hgt      = ter_sat(ixsup, iysup)
+
+               end do !isup
+               end do !jsup
+
+            end if
+            ! 4.0 assign information to sequential radiance structure
+            !--------------------------------------------------------------------------
             p%info             = info
             p%loc              = loc
             p%landsea_mask     = 1
             p%scanpos          = ilongitude !nint(sat_zenith(ilongitude,ilatitude))+1.001_r_kind !
             p%satzen           = sat_zenith(ilongitude,ilatitude)
-            p%satazi           = 0
-            p%solzen           = 0
-            p%solazi           = 0
-            p%tb_inv(1:nchan)  = data_all(1:nchan)
+            p%satazi           = sat_azi(ilongitude,ilatitude)
+            p%solzen           = sol_zenith(ilongitude,ilatitude)
+            p%solazi           = sol_azi(ilongitude,ilatitude)
             p%sensor_index     = inst
             p%ifgat            = ifgat
-			p%cloudflag        = cloud_type(ilongitude,ilatitude)
-
-            allocate (p%next)   ! add next data
-            p => p%next
+            allocate (p%next)   ! add next data			
+            p => p%next			
             nullify (p%next)
          end do fov_loop
       end do scan_loop
-
       write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_ahi_file    : ',num_ahi_file_local
       write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_ahi_global  : ',num_ahi_global_local
       write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_ahi_local   : ',num_ahi_local_local
-   end do infile_loop
 
-   deallocate(data_all) ! Deallocate data arrays
+
    deallocate(vlatitude)
    deallocate(vlongitude)
    deallocate(tbb) 
    deallocate(sat_zenith)
-   if( got_clp_file ) deallocate(cloud_type)
+   deallocate(sol_zenith)
+   deallocate(sat_azi)
+   deallocate(sol_azi)
+   if( use_clddet_zz ) deallocate(tbbp)
+   if( use_clddet_zz ) deallocate(ter_sat)
+   if( use_clddet_zz ) deallocate(SDob_10)
+   if( use_clddet_zz ) deallocate(SDob_13)
+   if( use_clddet_zz ) deallocate(SDob_14)
+   if( use_clddet_zz ) deallocate(rtct)
+   if( use_clddet_zz ) deallocate(rtct2)
+   if( use_clddet_zz ) deallocate(rtmt)
+   if( use_clddet_zz ) deallocate(tempir)
+   if( use_clddet_zz ) deallocate(cwvt1)
+   if( use_clddet_zz ) deallocate(tbb_temp1)
+   if( use_clddet_zz ) deallocate(tbb_temp2)
+   
+   end do infile_loop
 
    if (thinning .and. num_ahi_global > 0 ) then
 #ifdef DM_PARALLEL
@@ -442,6 +689,15 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
                prev => p
             end if
             deallocate ( current % tb_inv )
+            if ( allocated ( current % superob ) ) then
+               do jsup = 1, superob_width
+               do isup = 1, superob_width
+                  deallocate ( current % superob(isup,jsup) % tb_obs )
+                  deallocate ( current % superob(isup,jsup) % cld_qc )
+               end do
+               end do
+               deallocate ( current % superob )
+            end if
             deallocate ( current )
             num_ahi_thinned = num_ahi_thinned + 1
             num_ahi_used = num_ahi_used - 1
@@ -464,7 +720,6 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
       end do
 
    end if  ! End of thinning
-
    iv%total_rad_pixel   = iv%total_rad_pixel + num_ahi_used
    iv%total_rad_channel = iv%total_rad_channel + num_ahi_used*nchan
 
@@ -511,6 +766,15 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
       p => p%next
    ! free current data
       deallocate ( current % tb_inv )
+      if ( allocated ( current % superob ) ) then
+         do jsup = 1, superob_width
+         do isup = 1, superob_width
+            deallocate ( current % superob(isup,jsup) % tb_obs )
+            deallocate ( current % superob(isup,jsup) % cld_qc )
+         end do
+         end do
+         deallocate ( current % superob )
+      end if
       deallocate ( current )
    end do
    deallocate ( p )
@@ -519,3 +783,4 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_clp)
    if (trace_use) call da_trace_exit("da_read_obs_netcdf4ahi_jaxa")
    
 end subroutine da_read_obs_netcdf4ahi_jaxa
+

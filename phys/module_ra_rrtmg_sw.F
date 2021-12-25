@@ -3290,6 +3290,10 @@
 
 !jm not thread safe      hvrtau = '$Revision: 1.3 $'
 
+! Initialize sfluxzen to 0.0 to prevent junk values when nlayers = laytrop
+
+      sfluxzen(:) = 0.0
+
 ! Calculate gaseous optical depth and planck fractions for each spectral band.
 
       call taumol16
@@ -9917,6 +9921,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_SWRAD(                                        &
                        rthratensw,                                &
+                       rthratenswc,                               &
                        swupt, swuptc, swuptcln, swdnt, swdntc, swdntcln, &
                        swupb, swupbc, swupbcln, swdnb, swdnbc, swdnbcln, &
 !                      swupflx, swupflxc, swdnflx, swdnflxc,      &
@@ -9960,9 +9965,11 @@ CONTAINS
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,yr,julian                          & ! jararias 2013/08
-                                                                  )
+                       xcoszen,yr,julian,                          & ! jararias 2013/08
+                       obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
+                       )
 !------------------------------------------------------------------
+   USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
@@ -9985,7 +9992,8 @@ CONTAINS
                                                            rho3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         INTENT(INOUT)  ::                            RTHRATENSW
+         INTENT(INOUT)  ::                            RTHRATENSW, &
+                                                      RTHRATENSWC
 
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GSW, &
@@ -10125,6 +10133,10 @@ CONTAINS
                                SWUPFLX,SWUPFLXC,                  &
                                SWDNFLX,SWDNFLXC
 
+! amontornes-bcodina 2015/09 solar eclipses
+!  obscur --> degree of obscuration for solar eclipses prediction (2D)
+                               REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: obscur	
+
 !  LOCAL VARS
  
    REAL, DIMENSION( kts:kte+1 ) ::                          Pw1D, &
@@ -10240,6 +10252,10 @@ CONTAINS
     integer:: idx_rei
     real:: corr
 
+#ifdef CLWRFGHG
+! Using data from CAMtr_volume_mixing_ratio data file
+    real(kind=8)                                 :: co2, n2o, ch4, cfc11, cfc12
+#else
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
@@ -10250,6 +10266,7 @@ CONTAINS
 ! nitrous oxide (319 ppbv)
     real :: n2o
     data n2o / 319.e-9 / 
+#endif
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -10339,6 +10356,11 @@ CONTAINS
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
+#ifdef CLWRFGHG
+! Read time-varying trace gases concentrations and interpolate them to run date
+   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+#endif
+
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
 
@@ -10636,8 +10658,11 @@ CONTAINS
 
 ! Set cosine of solar zenith angle
          coszen(ncol) = coszrs
-! Set solar constant
-         scon = solcon
+! Set solar constant (original) amontornes-bcodina 2015/09
+!         scon = solcon
+! amontornes-bcodina 2015/09 solar eclipses
+         scon = solcon*(1-obscur(i,j))
+         
 ! For Earth/Sun distance adjustment in RRTMG
 !         dyofyr = julday
 !         adjes = 0.0 
@@ -11214,6 +11239,8 @@ CONTAINS
          do k=kts,kte 
             tten1d(k) = swhr(ncol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
+            tten1d(k) = swhrc(ncol,k)/86400.
+            rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
       else
          if (present(swupt)) then 

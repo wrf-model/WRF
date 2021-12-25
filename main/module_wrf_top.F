@@ -156,6 +156,7 @@ CONTAINS
      include "mpif.h"
 #endif
 #include "version_decl"
+#include "commit_decl"
 
 
 !<DESCRIPTION>
@@ -355,6 +356,7 @@ CONTAINS
 ! 
 !</DESCRIPTION>
    CALL       wrf_message ( program_name )
+   CALL       wrf_message ( commit_version )
    CALL       wrf_debug ( 100 , 'wrf: calling alloc_and_configure_domain ' )
    CALL alloc_and_configure_domain ( domain_id  = 1 ,                  &
                                active_this_task = domain_active_this_task(1), &

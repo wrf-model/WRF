@@ -413,7 +413,7 @@ subroutine mixactivate(  msectional,            &
        (/0.02,0.05,0.1,0.2,0.5,1.0/)
   real super(psat) ! supersaturation
   real, parameter :: surften = 0.076 ! surface tension of water w/respect to air (N/m)
-  real :: ccnfact(psat,maxd_asize, maxd_atype)
+  real :: ccnfact
   real :: amcube(maxd_asize, maxd_atype) ! cube of dry mode radius (m)
   real :: argfactor(maxd_asize, maxd_atype)
   real aten ! surface tension parameter
@@ -432,6 +432,8 @@ subroutine mixactivate(  msectional,            &
   real :: colmass_worst( 0:maxd_acomp, maxd_asize, maxd_atype )
   real :: colmass_maxworst_r
   real :: rhodz( kts:kte ), rhodzsum
+  real :: tmp_amcube, tmp_dpvolmean, tmp_npv, tmp_num_mr
+  real :: tmp_vol_mr( kts:kte )
 
 !!$#if (defined AIX)
 !!$#define ERF erf
@@ -1163,36 +1165,64 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
               chem(i,kts:kte,j,lnumcw)= raercol(kts:kte,lnumcw,nnew)*scale
               chem(i,kts:kte,j,lnum)= raercol(kts:kte,lnum,nnew)*scale
            endif
+           tmp_vol_mr(kts:kte) = 0.0
            do l=1,ncomp(n)
               lmass=massptr_aer(l,m,n,ai_phase)
               lmasscw=massptr_aer(l,m,n,cw_phase)
-!          scale = mwdry/mw_aer(l,n)
               scale = 1.e9
               chem(i,kts:kte,j,lmasscw)=raercol(kts:kte,lmasscw,nnew)*scale ! ug/kg
               chem(i,kts:kte,j,lmass)=raercol(kts:kte,lmass,nnew)*scale ! ug/kg
+              tmp_vol_mr(kts:kte) = tmp_vol_mr(kts:kte) + &
+                 (raercol(kts:kte,lmass,nnew) + raercol(kts:kte,lmasscw,nnew))/(1.0e-3*dens_aer(l,n))
+                 ! (kg_dmap/kg_air)/(kg_dmap/cm3_dvap) = (cm3_dvap/kg_air)
+                 ! note:  dmap (or dvap) means dry mass (or volume) of aerosol particles
            enddo
            lwater=waterptr_aer(m,n)
            if(lwater>0)chem(i,kts:kte,j,lwater)=raercol(kts:kte,lwater,nnew) ! don't convert units
+
+           exp45logsig=exp(4.5*alogsig(m,n)*alogsig(m,n))
            do k=kts,kte
-              sm=2.*aten*sqrt(aten/(27.*hygro(i,k,j,m,n)*amcube(m,n)))
+              if (lnum > 0) then
+                 tmp_num_mr = raercol(k,lnum,nnew) + raercol(k,lnumcw,nnew) ! (num_ap/kg_air)
+                 if (tmp_num_mr .lt. 1.0e-14) then  ! this is about 1e-20 num_ap/cm3_air
+                    sm=2.*aten*sqrt(aten/(27.*hygro(i,k,j,m,n)*amcube(m,n)))
+                 else
+                    ! rce 2020/09/24 - calculate sm using the actual dgnum (that varies in
+                    !     space & time) rather than the default value in dgnum_aer(m,n)
+                    tmp_dpvolmean = (1.90985*tmp_vol_mr(k)/tmp_num_mr)**0.3333333  ! (cm)
+                    tmp_dpvolmean = max( dlo_sect(m,n), min( dhi_sect(m,n), tmp_dpvolmean ) )
+                    tmp_npv = 6./(pi*((0.01*tmp_dpvolmean)**3))  ! (num_ap/m3_dvap)
+                    tmp_amcube = 3./(4.*pi*exp45logsig*tmp_npv)  ! tmp_amcube = (0.5*dgnum)**3 in m3
+                    sm=2.*aten*sqrt(aten/(27.*hygro(i,k,j,m,n)*tmp_amcube))
+                    ! sm = critical supersaturation for diameter = dgnum                  
+                 endif
+              else
+                 tmp_num_mr = (tmp_vol_mr(k)*1.0e-6)*npv(m,n) ! (num_ap/kg_air)
+                 sm=2.*aten*sqrt(aten/(27.*hygro(i,k,j,m,n)*amcube(m,n)))
+              end if
+
+! calculate ccn concentrations (num_ap/cm3_air) as diagnostics
+! assume same hygroscopicity and ccnfact for cloud-phase and aerosol phase particles
               do l=1,psat
                  arg=argfactor(m,n)*log(sm/super(l))
+                 ! since scrit is proportional to dry_diam**(-3/2)
+                 !    arg = (log(dp_for_super_l) - log(dgnum))/(sqrt(2)*alogsig)
+                 !    where dp_for_super_l is diameter at which scrit = super(l)
                  if(arg<2)then
                     if(arg<-2)then
-                       ccnfact(l,m,n)=1.e-6 ! convert from #/m3 to #/cm3
+                       ccnfact =1.0
                     else
-                       ccnfact(l,m,n)=1.e-6*0.5*ERFC_NUM_RECIPES(arg)
+                       ccnfact = 0.5*ERFC_NUM_RECIPES(arg) ! fraction of particles in bin/mode with scrit < super(l) ! fraction of particles in bin/mode with scrit < super(l)
                     endif
                  else
-                    ccnfact(l,m,n) = 0.
+                    ccnfact = 0.0
                  endif
-!                 ccn concentration as diagnostic
-!                 assume same hygroscopicity and ccnfact for cloud-phase and aerosol phase particles
-                 ccn(k,l)=ccn(k,l)+(raercol(k,lnum,nnew)+raercol(k,lnumcw,nnew))*cs(k)*ccnfact(l,m,n)
-              enddo
-           enddo
-        enddo
-     enddo
+                 ccn(k,l) = ccn(k,l) + (tmp_num_mr*ccnfact)*cs(k)*1.0e-6
+              enddo ! l
+           enddo ! k
+
+        enddo ! m
+     enddo ! n
      do l=1,psat
         !wig, 22-Nov-2006: added vertical bounds to prevent out-of-bounds at top
         if(l.eq.1)ccn1(i,kts:kte,j)=ccn(:,l)

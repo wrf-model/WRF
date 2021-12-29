@@ -10249,48 +10249,6 @@ CONTAINS
                                SWUPFLX,SWUPFLXC,                  &
                                SWDNFLX,SWDNFLXC
 
-! begin WRF-CMAQ twoway coupled model block
-   LOGICAL, INTENT(IN) :: proceed_twoway_sw
-
-! ** FSB items needed for new aerosol code from CMAQ
-   integer, optional, intent(in)  ::  nmode  ! number of log-normal modes
-
-   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(in) :: &
-         mass_ws_i, mass_ws_j, mass_ws_k,                  & ! mass cocentrations in [ ug/m**3 ] for water
-                                                             ! soluble species in each mode
-         mass_in_i, mass_in_j, mass_in_k,                  & ! mass cocentrations in [ ug/m**3 ] for water
-                                                             ! insoluble species in each mode
-         mass_ec_i, mass_ec_j, mass_ec_k,                  & ! mass cocentrations in [ ug/m**3 ] for elemental
-                                                             ! carbon species in each mode
-         mass_ss_i, mass_ss_j, mass_ss_k,                  & ! mass cocentrations in [ ug/m**3 ] for aerosol
-                                                             ! water species in each mode
-         mass_h2o_i, mass_h2o_j, mass_h2o_k,               & ! mass cocentrations in [ ug/m**3 ] for sea
-                                                             ! salt species in each mode
-         dgn_i, dgn_j, dgn_k,                              & ! geometric mean diameter of each mode  [ m ]
-         sig_i, sig_j, sig_k                                 ! geometric standard deviation of each mode
-
-   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(out) :: &
-         gtauxar_01,                                       & ! Aerosol optical depth of RRTMG SW band 11
-         gtauxar_02,                                       & ! Aerosol optical depth of RRTMG SW band 10
-         gtauxar_03,                                       & ! Aerosol optical depth of RRTMG SW band  9
-         gtauxar_04,                                       & ! Aerosol optical depth of RRTMG SW band  8
-         gtauxar_05,                                       & ! Aerosol optical depth of RRTMG SW band  7
-         asy_fac_01,                                       & ! asymmetry factor of RRTMG SW band 11
-         asy_fac_02,                                       & ! asymmetry factor of RRTMG SW band 10
-         asy_fac_03,                                       & ! asymmetry factor of RRTMG SW band  9
-         asy_fac_04,                                       & ! asymmetry factor of RRTMG SW band  8
-         asy_fac_05,                                       & ! asymmetry factor of RRTMG SW band  7
-         ssa_01,                                           & ! single scattering albedo of RRTMG SW band 11
-         ssa_02,                                           & ! single scattering albedo of RRTMG SW band 10
-         ssa_03,                                           & ! single scattering albedo of RRTMG SW band  9
-         ssa_04,                                           & ! single scattering albedo of RRTMG SW band  8
-         ssa_05                                              ! single scattering albedo of RRTMG SW band  7
-
-   REAL, DIMENSION( ims:ime, jms:jme ), optional, INTENT(OUT) :: &
-         sw_zbbcddir,                                      &  ! clearsky downward direct shortwave flux (w/m2)
-         sw_dirdflux,                                      &  ! Direct downward shortwave surface flux
-         sw_difdflux                                          ! Diffuse downward shortwave surface flux
-! end WRF-CMAQ twoway coupled model block
 ! amontornes-bcodina 2015/09 solar eclipses
 !  obscur --> degree of obscuration for solar eclipses prediction (2D)
                                REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: obscur	

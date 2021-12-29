@@ -448,13 +448,13 @@ $latchon = 0 ;
 while ( <CONFIGURE_DEFAULTS> )
 {
   if ( $_ =~ /ifort compiler/ )
-     { $lioapi = 'Linux2_x86_64ifort';
+     { $lioapi_temp = 'Linux2_x86_64ifort';
      }
   elsif ( $_ =~ /PGI compiler/ )
-     { $lioapi = 'Linux2_x86_64pg';
+     { $lioapi_temp = 'Linux2_x86_64pg';
      }
   elsif ( $_ =~ /gfortran compiler/ )
-     { $lioapi = 'Linux2_x86_64gfort';
+     { $lioapi_temp = 'Linux2_x86_64gfort';
      }
 
   if ( substr( $_, 0, 5 ) eq "#ARCH" && $latchon == 1 )
@@ -842,6 +842,7 @@ while ( <CONFIGURE_DEFAULTS> )
                printf "Compile for nesting? (1=basic, 2=preset moves, 3=vortex following) [default 1]: " ;
              }
              $response = <STDIN> ;
+             $lioapi = $lioapi_temp;
           } 
           printf "\n" ;
           lc $response ;

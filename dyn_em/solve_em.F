@@ -46,7 +46,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
                  ,period_em_f_sub,period_em_g_sub                                          &
                  ,halo_em_f_1_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub &
-                 ,halo_em_d_pv_sub, halo_firebrand_spotting_5_sub
+                 ,halo_em_d_pv_sub,halo_firebrand_spotting_5_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -79,8 +79,6 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
    USE module_cpl, ONLY : coupler_on, cpl_settime, cpl_store_input
    USE module_firebrand_spotting, ONLY : firebrand_spotting_em_driver
-
-
 
    IMPLICIT NONE
 

@@ -11744,11 +11744,12 @@ CONTAINS
 ! then interpolate to date of run.
 ! CLWRF-UC June.09
       REAL(8), SAVE             :: clco2, cln2o, clch4, clcfc11, clcfc12
+!      real(kind=8)              :: cfc11, cfc12
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
-!   data co2 / 379.e-6 / 
+   data co2 / 379.e-6 / 
 ! methane (1774 ppbv)
     real :: ch4
     data ch4 / 1774.e-9 / 
@@ -11770,6 +11771,7 @@ CONTAINS
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
+
 
     integer :: iplon, irng, permuteseed
     integer :: nb
@@ -11889,15 +11891,21 @@ CONTAINS
 ! Pressures are in mb
 !
 ! Annual function for co2 in WRF v4.2
-      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+!      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
 
 !ccc Read time-varying trace gases concentrations and interpolate them to run date.
 !
-IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
+!IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
  IF(ghg_input.eq.1) then
    CALL read_CAMgases(yr,julian,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
+     call wrf_debug( 100, message)
+     WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
+     call wrf_debug( 100, message)
+   ENDIF
  ENDIF
-ENDIF
+!ENDIF
 
  IF(ghg_input.eq.1) then
       co2=clco2
@@ -11905,12 +11913,6 @@ ENDIF
       ch4=clch4
       cfc11=clcfc11
       cfc12=clcfc12
-   IF ( wrf_dm_on_monitor() ) THEN
-     WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
-     call wrf_debug( 100, message)
-     WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
-     call wrf_debug( 100, message)
-   ENDIF
  ENDIF
 !ccc
 

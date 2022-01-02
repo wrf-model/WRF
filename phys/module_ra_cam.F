@@ -483,7 +483,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,RTHRATENLWC,RTHRATENSWC,   &
 ! assume that day of year is 1 for all input data
 !
 
- IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN  
+! IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN  
    IF (ghg_input.eq.1) then
        CALL read_CAMgases(yr,julian,"CAM",co2vmr,n2ovmr,ch4vmr,f11vmr,f12vmr)
        IF ( wrf_dm_on_monitor() ) THEN
@@ -511,7 +511,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,RTHRATENLWC,RTHRATENSWC,   &
          call wrf_debug( 100, message)
        ENDIF
   ENDIF
-ENDIF
+!ENDIF
 !mchen check
        IF ( wrf_dm_on_monitor() ) THEN
          WRITE(message,*)'CAM: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr

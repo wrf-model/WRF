@@ -15508,10 +15508,10 @@ integer,external :: omp_get_thread_num
     data n2o / 319.e-9 / 
 ! cfc-11 (251 ppt)
     real :: cfc11
-    data cfc11 / 0.251e-9 / 
+!    data cfc11 / 0.251e-9 / 
 ! cfc-12 (538 ppt)
     real :: cfc12
-    data cfc12 / 0.538e-9 / 
+!    data cfc12 / 0.538e-9 / 
 ! cfc-22 (169 ppt)
     real :: cfc22
     data cfc22 / 0.169e-9 / 
@@ -15638,23 +15638,12 @@ integer,external :: omp_get_thread_num
 !                                                              
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
-! Annual function for co2 in WRF v4.2
-      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
 !
 !ccc Read time-varying trace gases concentrations and interpolate them to run date.
 !
-IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
+!IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
  IF(ghg_input.eq.1) THEN
    CALL read_CAMgases(yr,julian,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
- ENDIF
-ENDIF
-
- IF(ghg_input.eq.1) THEN
-   co2=clco2
-   n2o=cln2o
-   ch4=clch4
-   cfc11=clcfc11
-   cfc12=clcfc12
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
      call wrf_debug( 100, message)
@@ -15662,7 +15651,25 @@ ENDIF
      call wrf_debug( 100, message)
    ENDIF
  ENDIF
+!ENDIF
+
+ IF(ghg_input.eq.1) THEN
+   co2=clco2
+   n2o=cln2o
+   ch4=clch4
+   cfc11=clcfc11
+   cfc12=clcfc12
+ ELSE
+!    co2 = 379.e-6
+    co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+    ch4 = 1774.e-9
+    n2o = 319.e-9
+    cfc11 = 0.251e-9
+    cfc12 = 0.538e-9
+ ENDIF
 !ccc
+! Annual function for co2 in WRF v4.2
+!   co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
 
    ncol = (jte-jts+1)*(ite-its+1)
 

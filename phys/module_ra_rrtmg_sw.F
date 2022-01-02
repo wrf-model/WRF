@@ -10355,12 +10355,12 @@ CONTAINS
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
-IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
+!IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
  IF(ghg_input.eq.1) then
 ! Read time-varying trace gases concentrations and interpolate them to run date
    CALL read_CAMgases(yr,julian,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
  ENDIF
-ENDIF
+!ENDIF
 
  IF(ghg_input.eq.1) then
    co2 = clco2

@@ -1853,13 +1853,8 @@ CONTAINS
 !ccc
  IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
    IF(ghg_input.eq.1) THEN
-   CALL read_CAMgases(yr,julian,"RRTM",co2vmr,n2ovmr,ch4vmr)
+   CALL read_CAMgases(yr,julian,xtime,"RRTM",co2vmr,n2ovmr,ch4vmr)
    ELSE
-! values used in pre-V3.5
-!  co2vmr = 330.e-6
-!  n2ovmr = 0.
-!  ch4vmr = 0.
-! values updated to RRTMG in V3.5
    co2vmr = 379.e-6
    n2ovmr = 319.e-9
    ch4vmr = 1774.e-9

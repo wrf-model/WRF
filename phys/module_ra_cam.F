@@ -485,9 +485,9 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,RTHRATENLWC,RTHRATENSWC,   &
 
 ! IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN  
    IF (ghg_input.eq.1) then
-       CALL read_CAMgases(yr,julian,"CAM",co2vmr,n2ovmr,ch4vmr,f11vmr,f12vmr)
+       CALL read_CAMgases(yr,julian,xtime,"CAM",co2vmr,n2ovmr,ch4vmr,f11vmr,f12vmr)
        IF ( wrf_dm_on_monitor() ) THEN
-         WRITE(message,*)'write 1 CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
+         WRITE(message,*)'write  CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
          call wrf_debug( 100, message)
          WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:'&
            ,f11vmr,' cfc12:',f12vmr
@@ -503,20 +503,8 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,RTHRATENLWC,RTHRATENSWC,   &
        fact1    = (doydatap - doymodel)/deltat
        fact2    = (doymodel - doydatam)/deltat
        co2vmr = (co2(nyrm)*fact1 + co2(nyrp)*fact2)*1.e-06
-       IF ( wrf_dm_on_monitor() ) THEN
-         WRITE(message,*)'CAM interpolated values_____ year:',yr,' julian day:',julian
-         call wrf_debug( 100, message)
-         WRITE(message,*)'CAM co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:',f11vmr,&
-       '     cfc12:',f12vmr
-         call wrf_debug( 100, message)
-       ENDIF
   ENDIF
 !ENDIF
-!mchen check
-       IF ( wrf_dm_on_monitor() ) THEN
-         WRITE(message,*)'CAM: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr
-         call wrf_debug( 0, message)
-       ENDIF
 
    co2mmr=co2vmr*mwco2/mwdry
 !

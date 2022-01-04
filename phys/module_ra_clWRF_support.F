@@ -97,10 +97,10 @@ MODULE module_ra_clWRF_support
 
 CONTAINS
   
-  SUBROUTINE read_CAMgases(yr, julian, model, co2vmr, n2ovmr, ch4vmr, cfc11vmr, cfc12vmr) 
+  SUBROUTINE read_CAMgases(yr, julian, xtime,model, co2vmr, n2ovmr, ch4vmr, cfc11vmr, cfc12vmr) 
 
     INTEGER, INTENT(IN)            :: yr
-    REAL, INTENT(IN)               :: julian
+    REAL, INTENT(IN)               :: julian, xtime
     CHARACTER(LEN=*), INTENT(IN)   :: model           ! Radiation scheme name
     REAL(r8), OPTIONAL, INTENT(OUT)    :: co2vmr, n2ovmr, ch4vmr, cfc11vmr, cfc12vmr
 
@@ -118,18 +118,19 @@ CONTAINS
     integer                                          :: nyrm, nyrp, njulm, njulp
     LOGICAL                                          :: exists
     LOGICAL, SAVE                                    :: READtrFILE=.FALSE.
+!    LOGICAL, SAVE                                    :: READtrFILE=.TRUE.
     CHARACTER(LEN=256)                               :: message
     INTEGER                                   :: monday(13)=(/0,31,28,31,30,31,30,31,31,30,31,30,31/)
     INTEGER                                   :: mondayi(13)
     INTEGER                                   :: my1,my2,my3, tot_valid
-    
 ! CLWRF-UC June.09  (Copy from share/wrf_tsin.F)
-    IF ( .NOT. READtrFILE ) THEN
-       READtrFILE= .TRUE.
+ !   IF ( .NOT. READtrFILE ) THEN
+    IF ( xtime.eq.0 ) THEN
+     READtrFILE=.TRUE.
        
        INQUIRE(FILE='CAMtr_volume_mixing_ratio', EXIST=exists)
        
-       IF (exists) THEN
+       IF (exists) THEN ! 2
           iunit = get_unused_unit()
           IF ( iunit <= 0 ) THEN
              IF ( wrf_dm_on_monitor() ) THEN
@@ -141,7 +142,7 @@ CONTAINS
           OPEN(UNIT=iunit, FILE='CAMtr_volume_mixing_ratio', FORM='formatted', &
                STATUS='old', IOSTAT=istatus)
           
-          IF (istatus == 0) THEN
+          IF (istatus == 0) THEN ! 1
              ! Ignore first two lines which constitute a header
              READ(UNIT=iunit, FMT='(1X)')
              READ(UNIT=iunit, FMT='(1X)')
@@ -180,7 +181,7 @@ CONTAINS
                 IF(MY1.EQ.0.AND.MY2.NE.0.OR.MY3.EQ.0) mondayi(3)=29
                 juldata(idata) = sum(mondayi(1:mondata(idata)))+real(mondayi(mondata(idata)+1))/2.-0.5   ! 1st Jan 00:00 = 0 julian day
              ENDDO
-          ENDIF
+          ENDIF ! 1
        ELSE
           max_years = VARCAM_in_years ! Set max number of years to the table size
                                       ! used for CAM.
@@ -194,7 +195,7 @@ CONTAINS
 
        ENDIF ! CAMtr_volume_mixing_ratio exists
        
-    ENDIF ! File already opened and read 
+    ENDIF !  2 File already opened and read 
     
     found_yearIN=0
     iyear=1
@@ -231,6 +232,7 @@ CONTAINS
        if (found_yearIN /= 0) then
           ! Interpolate data only if we have at least 2 valid concentrations.
           tot_valid = count(co2r(1:max_years) > 0)
+        print*, 'mchen line 234 ' , found_yearIN, tot_valid, max_years
           IF (tot_valid >= 2 ) THEN
              CALL valid_years(yearIN, co2r, max_years,yr1, yr2)
 
@@ -241,12 +243,14 @@ CONTAINS
              njulp = juldata(yr2)
 
              CALL interpolate_CAMgases(yr, julian, nyrm, njulm, yr1, yr2, nyrp, njulp, co2r, co2vmr)
+          print*, 'mchen line 245 ', yr1, yr2, nyrm, njulm, nyrp, njulp, co2r, co2vmr 
           ENDIF
        endif
        ! Verification of interpolated values. In case of no value 
        ! original values extracted from ghg_surfvals.F90 module
 
        IF (co2vmr < 0. .or. found_yearIN == 0) THEN
+        print*, 'mchen line 250 ' , co2vmr, found_yearIN, yr, julian
           CALL orig_val("CO2",model,co2vmr)
        ELSE
           ! If extrapolation, need to bound the data to pre-industrial concentrations

@@ -11897,7 +11897,12 @@ CONTAINS
 !
 !IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
  IF(ghg_input.eq.1) then
-   CALL read_CAMgases(yr,julian,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
+   CALL read_CAMgases(yr,julian,xtime,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
+      co2=clco2
+      n2o=cln2o
+      ch4=clch4
+      cfc11=clcfc11
+      cfc12=clcfc12
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
      call wrf_debug( 100, message)
@@ -11907,13 +11912,6 @@ CONTAINS
  ENDIF
 !ENDIF
 
- IF(ghg_input.eq.1) then
-      co2=clco2
-      n2o=cln2o
-      ch4=clch4
-      cfc11=clcfc11
-      cfc12=clcfc12
- ENDIF
 !ccc
 
 ! latitude loop

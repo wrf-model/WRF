@@ -11650,17 +11650,15 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
  IF(ghg_input.eq.1) THEN
 ! Read time-varying trace gases concentrations and interpolate them to run date.
-   CALL read_CAMgases(yr,julian,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
- ENDIF
-!ENDIF
-
- IF(ghg_input.eq.1) THEN
+   CALL read_CAMgases(yr,julian,xtime,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
    co2 = clco2
    n2o = cln2o
    ch4 = clch4
    cfc11 = clcfc11
    cfc12 = clcfc12
  ENDIF
+!ENDIF
+
 
 ! jararias, 14/08/2013
       if (present(xcoszen)) then

@@ -1,0 +1,44 @@
+Using parallel IO through the netCDF-4 interface (io_form = 13)
+
+If you don't need variable-level compression, stop and go use pnetcdf 
+(parallel-netcdf-1.9.0), which will have better IO performance. (Also 
+should be using a parallel file system to gain benefits.)
+
+To use parallel netcdf-4, set the environment variable NETCDFPAR to the 
+directory containingthe lib and include directories, e.g.,
+
+setenv NETCDFPAR /usr/local/netcdf474par
+
+(This will also cause configure to set NETCDF = NETCDFPAR to prevent 
+conflicting libraries, and also will force NETCDF4=1 and USENETCDFPAR=1)
+
+The code assumes you want compression turned on, so netcdf-c version 4.7.4 
+or later is required. (Because otherwise just use pnetcdf since it is 
+faster.) This in turn requires HDF5 1.10.3 or later. Netcdf-c can be build 
+with or without pnetcdf enabled, but it is not used here through the netcdf-4 
+interface. (There is a separate IO option for PNETCDF that can be used).
+
+Usage: io_form is 13, and must turn off colons from the filename (as for pnetcdf)
+For example:
+
+&time_control
+ nocolons = .true.
+ io_form_history                     = 13
+
+
+Tests for development used the following:
+
+parallel-netcdf 1.9.0 (--enable-relax-coord-bound --disable-cxx)
+Hdf5 version 1.10.7 (--enable-fortran --enable-parallel)
+netcdf-c 4.7.4 (--enable-netcdf-4 --enable-pnetcdf --disable-dap)
+netcdf-fortran 4.5.3 (--enable-parallel-tests)
+
+Other options as needed: FC=mpif90 F90=mpif90 CC=mpicc F77=mpif90 
+
+IO output form for parallel netcdf-4 is 13 (io_netcdfpar=13 in Registry). 
+
+Performance seems to vary with how 'regular' the domain decomposition is 
+(i.e., patch size). Some experimentation with manually setting the decomposition
+may be needed for optimal writing times. Also pay attention to file system 
+striping (Lustre), where setting the number stripes should not exceed the
+number of nodes used by the job.

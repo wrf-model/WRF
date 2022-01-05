@@ -640,6 +640,7 @@ endif
 
     ! added netcdf-specific metadata:
     IF ( ( use_package( io_form ) == IO_NETCDF ) .OR. &
+         ( use_package( io_form ) == IO_NETCDFPAR  ) .OR. &
          ( use_package( io_form ) == IO_PHDF5  ) .OR. &
          ( use_package( io_form ) == IO_PIO    ) .OR. &
          ( use_package( io_form ) == IO_PNETCDF ) ) THEN

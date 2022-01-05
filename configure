@@ -158,6 +158,39 @@ if test -n "$PERL" ; then
     
 fi
 
+PROBS=FALSE
+if [ -n "$NETCDFPAR" ] ; then
+  NETCDF="$NETCDFPAR"
+  if [ ! -e $NETCDF/bin/nc-config ] ; then
+    PROBS=TRUE
+  else
+    ncversion=`nc-config --version | awk '{print $2}'`
+    ncversiona=`echo $ncversion | cut -c 1`
+    ncversionb=`echo $ncversion | cut -c 3`
+    ncversionc=`echo $ncversion | cut -c 5`
+    ncversiona=`expr $ncversiona \* 100`
+    ncversionb=`expr $ncversionb \* 10`
+    ncversionabc=`expr $ncversiona   + $ncversionb`
+    ncversionabc=`expr $ncversionabc + $ncversionc`
+    if [ $ncversionabc -lt 474 ] ; then
+      PROBS=TRUE
+    fi
+  fi
+  if [ "$PROBS" == "TRUE" ] ; then
+    echo
+    echo Cannot activate NETCDFPAR with this version of NetCDF: $ncversion
+    echo You need NetCDF version 4.7.4 or newer
+    echo Use a newer version of NetCDF, or unset the env variable NETCDFPAR
+    echo
+    exit
+  fi
+  NETCDF4="1"
+  USENETCDFPAR="1"
+  export NETCDF
+  export NETCDF4
+  export USENETCDFPAR
+fi
+
 if  test -z "$NETCDF"  ; then
   echo ' '
   echo '*****************************************************************************'
@@ -520,7 +553,7 @@ if test -n "$PERL" ; then
    srch=`grep -i "^#ARCH.*$os" arch/configure.defaults | grep -i "$mach"`
    if [ -n "$srch" ] ; then
      $PERL arch/Config.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
-          -netcdf=$NETCDF -pnetcdf=$PNETCDF -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
+          -netcdf=$NETCDF -pnetcdf=$PNETCDF -netcdfpar=$NETCDFPAR -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
           -time=$FORTRAN_COMPILER_TIMER -tfl="$TFL" -cfl="$CFL" -config_line="$config_line" \
           -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -dep_lib_path="$DEP_LIB_PATH"
@@ -865,6 +898,16 @@ EOF
       echo "                 C compiler is $SCC_arch"
       echo "           Fortran compiler is $SFC_arch"
       echo "              It will build in $netcdf_arch"
+      echo " "
+      if [ -e $NETCDF/bin/nc-config ] ; then
+        echo "NetCDF version: ${ncversion}"
+        echo "Enabled NetCDF-4/HDF-5: `nc-config --has-nc4`"
+        echo "NetCDF built with PnetCDF: `nc-config --has-pnetcdf`"
+        if [ "$USENETCDFPAR" == "1" ] ; then
+          echo "Using parallel NetCDF via NETCDFPAR option"
+        fi
+        echo " "
+      fi
     fi
     echo
   fi
@@ -979,11 +1022,9 @@ fi
 if [ -f /usr/include/rpc/types.h ] ; then
   sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=1/' configure.wrf > configure.wrf.edit
   mv configure.wrf.edit configure.wrf
-echo standard location of RPC
 elif [ -f /usr/include/tirpc/rpc/types.h ] ; then
   sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=2/' configure.wrf > configure.wrf.edit
   mv configure.wrf.edit configure.wrf
-echo newer location of RPC
 else
   echo "************************** W A R N I N G ************************************"
   echo " "

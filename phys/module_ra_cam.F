@@ -445,7 +445,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,RTHRATENLWC,RTHRATENSWC,   &
    CHARACTER(LEN=256) :: msgstr
 
 !ccc
-   REAL(r8), SAVE                                   :: co2vmr, n2ovmr, ch4vmr, f11vmr, f12vmr
+   REAL(r8)                                         :: co2vmr, n2ovmr, ch4vmr, f11vmr, f12vmr
    LOGICAL, EXTERNAL                                :: wrf_dm_on_monitor
    CHARACTER(LEN=256)                               :: message
 

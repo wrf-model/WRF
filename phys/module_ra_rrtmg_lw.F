@@ -11743,25 +11743,10 @@ CONTAINS
 !ccc To add time-varying trace gases (CO2, N2O and CH4). Read the conc.  from file
 ! then interpolate to date of run.
 ! CLWRF-UC June.09
-      REAL(8), SAVE             :: clco2, cln2o, clch4, clcfc11, clcfc12
-!      real(kind=8)              :: cfc11, cfc12
+      REAL(8)                    :: co2, n2o, ch4, cfc11, cfc12
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
-    real :: co2
-   data co2 / 379.e-6 / 
-! methane (1774 ppbv)
-    real :: ch4
-    data ch4 / 1774.e-9 / 
-! nitrous oxide (319 ppbv)
-    real :: n2o
-    data n2o / 319.e-9 / 
-! cfc-11 (251 ppt)
-    real :: cfc11
-    data cfc11 / 0.251e-9 / 
-! cfc-12 (538 ppt)
-    real :: cfc12
-    data cfc12 / 0.538e-9 / 
 ! cfc-22 (169 ppt)
     real :: cfc22
     data cfc22 / 0.169e-9 / 
@@ -11897,18 +11882,19 @@ CONTAINS
 !
 !IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
  IF(ghg_input.eq.1) then
-   CALL read_CAMgases(yr,julian,xtime,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
-      co2=clco2
-      n2o=cln2o
-      ch4=clch4
-      cfc11=clcfc11
-      cfc12=clcfc12
+   CALL read_CAMgases(yr,julian,xtime,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
      call wrf_debug( 100, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
      call wrf_debug( 100, message)
    ENDIF
+ ELSE
+     co2 = 379.e-6
+     ch4 = 1774.e-9
+     n2o = 319.e-9
+     cfc11 = 0.251e-9
+     cfc12 = 0.538e-9
  ENDIF
 !ENDIF
 

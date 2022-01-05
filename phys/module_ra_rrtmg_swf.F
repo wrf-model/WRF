@@ -11524,18 +11524,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
     integer:: idx_rei
     real:: corr
 
-    real(kind=8), SAVE                           :: clco2, cln2o, clch4, clcfc11, clcfc12
-    real(kind=8)                                 :: cfc11, cfc12
+    real(kind=8)                           :: co2, n2o, ch4, cfc11, cfc12
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
-    real :: co2
-!   data co2 / 379.e-6 /
-! methane (1774 ppbv)
-    real :: ch4
-    data ch4 / 1774.e-9 / 
-! nitrous oxide (319 ppbv)
-    real :: n2o
-    data n2o / 319.e-9 / 
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -11650,12 +11641,13 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
  IF(ghg_input.eq.1) THEN
 ! Read time-varying trace gases concentrations and interpolate them to run date.
-   CALL read_CAMgases(yr,julian,xtime,"RRTMG",clco2,cln2o,clch4,clcfc11,clcfc12)
-   co2 = clco2
-   n2o = cln2o
-   ch4 = clch4
-   cfc11 = clcfc11
-   cfc12 = clcfc12
+   CALL read_CAMgases(yr,julian,xtime,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+ ELSE
+   co2 = 379.e-6
+   ch4 = 1774.e-9
+   n2o = 319.e-9
+   cfc11 = 0.251e-9
+   cfc12 = 0.538e-9
  ENDIF
 !ENDIF
 

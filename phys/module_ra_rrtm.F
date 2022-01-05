@@ -1828,7 +1828,7 @@ CONTAINS
     LOGICAL :: predicate
 
 ! Add variables for variable trace gas concentrations (ccc)
-    REAL(8), SAVE  :: co2vmr, n2ovmr, ch4vmr
+    REAL(8)           :: co2vmr, n2ovmr, ch4vmr
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
     CHARACTER(LEN=256) :: message
 

@@ -1828,7 +1828,7 @@ CONTAINS
     LOGICAL :: predicate
 
 ! Add variables for variable trace gas concentrations (ccc)
-    REAL(8)           :: co2vmr, n2ovmr, ch4vmr
+    REAL(8)           :: co2vmr, n2ovmr, ch4vmr, cfc11, cfc12
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
     CHARACTER(LEN=256) :: message
 
@@ -1853,7 +1853,7 @@ CONTAINS
 !ccc
  IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
    IF(ghg_input.eq.1) THEN
-   CALL read_CAMgases(yr,julian,xtime,"RRTM",co2vmr,n2ovmr,ch4vmr)
+   CALL read_CAMgases(yr,julian,xtime,"RRTM",co2vmr,n2ovmr,ch4vmr, cfc11, cfc12)
    ELSE
    co2vmr = 379.e-6
    n2ovmr = 319.e-9

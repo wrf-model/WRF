@@ -1851,14 +1851,13 @@ CONTAINS
 
 !----- Calculate the trace gas concentrations from file.
 !ccc
- IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
-   IF(ghg_input.eq.1) THEN
+ 
+ IF(ghg_input.eq.1) THEN
    CALL read_CAMgases(yr,julian,xtime,"RRTM",co2vmr,n2ovmr,ch4vmr, cfc11, cfc12)
-   ELSE
+ ELSE
    co2vmr = 379.e-6
    n2ovmr = 319.e-9
    ch4vmr = 1774.e-9
-   ENDIF
  ENDIF
  
   IF ( wrf_dm_on_monitor() ) THEN

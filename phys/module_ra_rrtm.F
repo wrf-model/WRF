@@ -1850,25 +1850,21 @@ CONTAINS
     END IF
 
 !----- Calculate the trace gas concentrations from file.
-!ccc
-! IF(xtime.eq.0 .or. (mod(xtime,1440.).eq.0)) THEN
-   IF(ghg_input.eq.1) THEN
-   CALL read_CAMgases(yr,julian,xtime,"RRTM",co2vmr,n2ovmr,ch4vmr, cfc11, cfc12)
-   ELSE
-   co2vmr = 379.e-6
-   n2ovmr = 319.e-9
-   ch4vmr = 1774.e-9
-   ENDIF
-! ENDIF
  
-  IF ( wrf_dm_on_monitor() ) THEN
+ IF(ghg_input.eq.1) THEN
+   CALL read_CAMgases(yr,julian,xtime,"RRTM",co2vmr,n2ovmr,ch4vmr, cfc11, cfc12)
+   IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
      call wrf_debug( 100, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr
      call wrf_debug( 100, message)
    ENDIF
-
-
+ ELSE
+   co2vmr = 379.e-6
+   n2ovmr = 319.e-9
+   ch4vmr = 1774.e-9
+ ENDIF
+ 
 !-----CALCULATE LONG WAVE RADIATION
 !                                                              
    j_loop: DO J=jts,jte

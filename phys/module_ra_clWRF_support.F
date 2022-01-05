@@ -126,7 +126,7 @@ CONTAINS
 ! CLWRF-UC June.09  (Copy from share/wrf_tsin.F)
  !   IF ( .NOT. READtrFILE ) THEN
     IF ( xtime.eq.0 ) THEN
-     READtrFILE=.TRUE.
+ !    READtrFILE=.TRUE.
        
        INQUIRE(FILE='CAMtr_volume_mixing_ratio', EXIST=exists)
        

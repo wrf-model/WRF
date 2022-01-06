@@ -441,9 +441,10 @@ has_daylight : &
                  if ( config_flags%phot_blcld .and. config_flags%icloud_bl == 1 ) then
                     call cldfrac_fractional( cldfrac(kts:kte), &
                                         moist(i,kts:kte,j,p_qv), &
-                                        moist(i,kts:kte,j,p_qc) + gd_cloud(i,kts:kte,j),  &
+                                        moist(i,kts:kte,j,p_qc) + gd_cloud(i,kts:kte,j)  + &
+                                        bl_cld(i,kts:kte,j),  &
                                         moist(i,kts:kte,j,p_qi) + gd_cloud2(i,kts:kte,j) + &
-                                        bl_cld(i,kts:kte,j) + bl_cld2(i,kts:kte,j),  &
+                                        bl_cld2(i,kts:kte,j),  &
                                         moist(i,kts:kte,j,p_qs), &
                                         p_phy(i,kts:kte,j), t_phy(i,kts:kte,j), kts, kte )
                  else

@@ -16,6 +16,7 @@ MODULE module_physics_init
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
    USE module_dm, ONLY : wrf_dm_max_real
 #endif
+   USE module_ra_clWRF_support
 
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
@@ -910,6 +911,11 @@ CONTAINS
   INTEGER, OPTIONAL :: irr_ph,irr_freq 
 !-----------------------------------------------------------------
 
+! Climate GHG file read for radiation
+REAL(KIND=8) :: co2dum,n2odum,ch4dum,f11dum,f12dum
+CHARACTER(LEN=8) :: name
+!-----------------------------------------------------------------
+
 #if ( EM_CORE == 1 )
 
    !  Compute 2d grid distance and 2d grid cell area. For use with
@@ -925,6 +931,20 @@ CONTAINS
       end if
    end if
 #endif
+
+   name = "        "
+   IF ( config_flags%ghg_input .EQ. 1 ) THEN
+      IF      ( config_flags%ra_lw_physics .EQ. RRTMSCHEME          ) THEN
+         name = "RRTM"
+      ELSE IF ( config_flags%ra_lw_physics .EQ. CAMLWSCHEME         ) THEN
+         name = "CAM"
+      ELSE IF ( config_flags%ra_lw_physics .EQ. RRTMG_LWSCHEME      ) THEN
+         name = "RRTMG"
+      ELSE IF ( config_flags%ra_lw_physics .EQ. RRTMG_LWSCHEME_FAST ) THEN
+         name = "RRTMG"
+      END IF
+      CALL read_CAMgases(2000,1.,.true.,TRIM(name),co2dum,n2odum,ch4dum,f11dum,f12dum)
+   END IF
 
    aercu_opt=config_flags%aercu_opt !PSH/TWG 06/10/16
    aercu_fct=config_flags%aercu_fct !PSH/TWG 06/10/16

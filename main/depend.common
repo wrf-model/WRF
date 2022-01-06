@@ -516,6 +516,7 @@ module_physics_init.o : \
 		module_ra_cam.o		\
 		$(PHYS_CU) $(PHYS_BL) \
 		module_ra_cam_support.o		\
+		module_ra_clWRF_support.o	\
 		module_ra_sw.o			\
 		module_ra_gsfcsw.o		\
 		module_ra_gfdleta.o		\

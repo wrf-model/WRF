@@ -11651,7 +11651,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !
 #ifdef CLWRFGHG
 ! Read time-varying trace gases concentrations and interpolate them to run date.
-   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+   CALL read_CAMgases(yr,julian,.false.,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
 #endif
 
 ! jararias, 14/08/2013

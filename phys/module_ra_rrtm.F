@@ -1827,6 +1827,7 @@ CONTAINS
 
 ! Add variables for variable trace gas concentrations (ccc)
     REAL(8)  :: co2vmr, n2ovmr, ch4vmr
+    REAL(8)  :: cfc11vmr, cfc12vmr ! NOT USED
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
     CHARACTER(LEN=256) :: message
 
@@ -1850,7 +1851,7 @@ CONTAINS
 !----- Calculate the trace gas concentrations from file.
 !ccc
 #ifdef CLWRFGHG
-   CALL read_CAMgases(yr,julian,"RRTM",co2vmr,n2ovmr,ch4vmr)
+   CALL read_CAMgases(yr,julian,.false.,"RRTM",co2vmr,n2ovmr,ch4vmr,cfc11vmr,cfc12vmr)
 #else
 ! values used in pre-V3.5
 !  co2vmr = 330.e-6

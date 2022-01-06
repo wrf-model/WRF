@@ -11988,7 +11988,7 @@ CONTAINS
 !
 #ifdef CLWRFGHG
 
-   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+   CALL read_CAMgases(yr,julian,.false.,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
 
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian

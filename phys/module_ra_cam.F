@@ -488,7 +488,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,RTHRATENLWC,RTHRATENSWC,   &
 #ifdef CLWRFGHG
 ! CLWRF-UC June.09  (Copy from share/wrf_tsin.F)
 
-   CALL read_CAMgases(yr,julian,"CAM",co2vmr,n2ovmr,ch4vmr,f11vmr,f12vmr)
+   CALL read_CAMgases(yr,julian,.false.,"CAM",co2vmr,n2ovmr,ch4vmr,f11vmr,f12vmr)
 
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'write 1 CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian

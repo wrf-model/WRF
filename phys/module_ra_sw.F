@@ -10,7 +10,7 @@ CONTAINS
    SUBROUTINE SWRAD(dt,RTHRATEN,GSW,XLAT,XLONG,ALBEDO,            &
                     rho_phy,T3D,QV3D,QC3D,QR3D,                   &
                     QI3D,QS3D,QG3D,P3D,pi3D,dz8w,GMT,             &
-                    R,CP,G,JULDAY,                                &
+                    R,CP,G,JULDAY,GHG_INPUT,                      &
                     XTIME,DECLIN,SOLCON,                          &
                     F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,                &
                     pm2_5_dry,pm2_5_water,pm2_5_dry_ec,           &
@@ -28,7 +28,7 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte
 
    LOGICAL,    INTENT(IN   ) ::        warm_rain
-   INTEGER,    INTENT(IN   ) ::        icloud
+   INTEGER,    INTENT(IN   ) ::        icloud,ghg_input
 
    REAL, INTENT(IN    )      ::        RADFRQ,DEGRAD,             &
                                        XTIME,DECLIN,SOLCON

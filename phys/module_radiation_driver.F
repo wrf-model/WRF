@@ -173,6 +173,7 @@ CONTAINS
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
               ,EFSS,QS_CU                                                 &
+              ,GHG_INPUT                                                  &
 #if (WRF_CHEM == 1)
               ,chem                                                       &
               ,aod_out                                                    &
@@ -429,6 +430,7 @@ CONTAINS
                                        num_tiles
 
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics, sw_eclipse
+   INTEGER, INTENT(IN)            :: ghg_input
    INTEGER, INTENT(IN)            :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
@@ -1719,7 +1721,7 @@ CONTAINS
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
 !ccc Added for time-varying trace gases.
-                 ,YR=YR,JULIAN=JULIAN                               &
+                 ,YR=YR,JULIAN=JULIAN,GHG_INPUT=GHG_INPUT           &
 !ccc
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -2208,6 +2210,7 @@ CONTAINS
                     ,RHO_PHY=rho,T3D=t                                 &
                     ,P3D=p,PI3D=pi,DZ8W=dz8w,GMT=gmt                   &
                     ,R=r_d,CP=cp,G=g,JULDAY=julday                     &
+                    ,GHG_INPUT=ghg_input                               &
                     ,XTIME=xtime,DECLIN=declin,SOLCON=solcon           &
                     ,RADFRQ=radt,ICLOUD=icloud,DEGRAD=degrad           &
                     ,warm_rain=warm_rain                               &

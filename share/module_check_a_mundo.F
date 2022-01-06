@@ -1587,9 +1587,8 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- ERROR: Need MYNN PBL for icloud_bl = 1'
-         CALL wrf_message(wrf_err_message)
-         count_fatal_error = count_fatal_error + 1
+         wrf_err_message = '--- NOTE: Need MYNN PBL for icloud_bl = 1'
+         CALL wrf_debug(1,wrf_err_message)
       END IF
 
 #if (WRF_CHEM == 1)

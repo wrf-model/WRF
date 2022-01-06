@@ -40,6 +40,7 @@ CONTAINS
                          RUBLTEN,RVBLTEN,RTHBLTEN,               &
                          RQVBLTEN,RQCBLTEN,RQIBLTEN,             &
                          RTHRATEN,RTHRATENLW,RTHRATENSW,         &
+                         this_is_an_ideal_run,                   &
 #if ( EM_CORE == 1 )
                          !BSINGH - For WRFCuP scheme(11/12/2013)
                          cupflag,cldfra_cup,cldfratend_cup,      & !wig, 18-Sep-2006
@@ -309,7 +310,7 @@ CONTAINS
    INTEGER , INTENT(OUT) ,OPTIONAL      :: nyear
    REAL    , INTENT(OUT) ,OPTIONAL      :: nday
 
-   LOGICAL,  INTENT(IN)        :: start_of_simulation
+   LOGICAL,  INTENT(IN)        :: start_of_simulation, this_is_an_ideal_run
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: DX2D, AREA2D
    LOGICAL,  INTENT(IN)        :: restart
@@ -933,7 +934,8 @@ CHARACTER(LEN=8) :: name
 #endif
 
    name = "        "
-   IF ( config_flags%ghg_input .EQ. 1 ) THEN
+   IF ( ( config_flags%ghg_input .EQ. 1 ) .AND. &
+        ( .NOT. this_is_an_ideal_run ) )   THEN
       IF      ( config_flags%ra_lw_physics .EQ. RRTMSCHEME          ) THEN
          name = "RRTM"
       ELSE IF ( config_flags%ra_lw_physics .EQ. CAMLWSCHEME         ) THEN

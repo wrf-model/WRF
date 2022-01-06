@@ -1950,7 +1950,7 @@ CONTAINS
                   calc_clean_atm_diag=calc_clean_atm_diag,          &
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
-                  YR=YR,JULIAN=JULIAN,                              &
+                  YR=YR,JULIAN=JULIAN,GHG_INPUT=GHG_INPUT,          &
 !ccc
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
@@ -2407,7 +2407,7 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,GHG_INPUT=GHG_INPUT,    &
 #if (EM_CORE == 1)
                      LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif

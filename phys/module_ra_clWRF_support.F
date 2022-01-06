@@ -154,7 +154,7 @@ CONTAINS
              CLOSE(iunit)
 
              IF ( wrf_dm_on_monitor() ) THEN
-                WRITE(message,*)'Climate GHG input from file from year ',yrdata(1),' to ',yrdata(idata-2),'.'
+                WRITE(message,*)'Climate GHG input from file from year ',yrdata(1),' to ',yrdata(idata-2)
                 CALL wrf_message( message) 
                 WRITE(message,*)'CO2   range = ',co2r  (1),co2r  (idata-2),' ppm'
                 CALL wrf_message( message) 

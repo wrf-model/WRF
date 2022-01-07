@@ -119,7 +119,7 @@ CONTAINS
       INTEGER :: IICOUNT, icount
 
       REAL :: p_top_requested , temp
-      INTEGER :: num_metgrid_levels
+      INTEGER :: num_metgrid_levels,num_o3_gfs_levels
       REAL , DIMENSION(max_eta) :: eta_levels
 
       INTEGER :: auto_levels_opt
@@ -164,6 +164,18 @@ integer::oops1,oops2
       !  Vert interpolation in WRF
 
       INTEGER :: k_max_p , k_min_p
+      REAL, PARAMETER :: mw_o3  = 48.0
+      REAL, PARAMETER :: mw_air = 28.966
+      REAL, PARAMETER, DIMENSION(24) :: p_o3gfs_old = (/0.1000E+06, 0.8500E+05, 0.7000E+05, &
+              0.5000E+05, 0.4000E+05, 0.3500E+05, 0.3000E+05, 0.2500E+05, 0.2000E+05, &
+              0.1500E+05, 0.1000E+05, 7000., 5000., 4000., 3000., 2000., 1500., &
+              1000., 700., 500., 300., 200., 100., 40./)
+      REAL, PARAMETER, DIMENSION(41) :: p_o3gfs_new = (/0.1000E+06, 0.9750E+05, 0.9500E+05, &
+              0.9250E+05, 0.9000E+05, 0.8500E+05, 0.8000E+05, 0.7500E+05, 0.7000E+05, &
+              0.6500E+05, 0.6000E+05, 0.5500E+05, 0.5000E+05, 0.4500E+05, 0.4000E+05, &
+              0.3500E+05, 0.3000E+05, 0.2500E+05, 0.2000E+05, 0.1500E+05, 0.1000E+05, &
+              7000., 5000., 4000., 3000., 2000., 1500., &
+              1000., 700., 500., 300., 200., 100., 70., 40., 20., 10., 7., 4., 2.,1. /)
 
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
@@ -580,6 +592,7 @@ integer::oops1,oops2
       IF ( flag_metgrid .EQ. 1 ) THEN  !   <----- START OF VERTICAL INTERPOLATION PART ---->
 
          num_metgrid_levels = grid%num_metgrid_levels
+         IF ( config_flags%gfs_ozone .GT. 0 ) num_o3_gfs_levels  = grid%num_o3_gfs_levels
 
          IF ( config_flags%nest_interp_coord .EQ. 1 ) THEN
 
@@ -2385,6 +2398,45 @@ integer::oops1,oops2
          END IF
 #endif
 
+         IF ( config_flags%gfs_ozone .GT. 0 ) THEN
+! GFS Ozone, first fill isobaric grid with pressure depending on number of levels / GFS version
+            DO j=jts,jte
+             DO k = 1,num_o3_gfs_levels
+               DO i=its,ite
+                  if ( num_o3_gfs_levels .lt. 30 ) then
+                    grid%p_ib(i,k,j) = p_o3gfs_old(k)
+                  else
+                    grid%p_ib(i,k,j) = p_o3gfs_new(k)
+                  endif
+               ENDDO
+             ENDDO
+            ENDDO
+
+            CALL vert_interp ( grid%o3_inp , grid%p_ib, grid%o3_gfs , grid%pb , &
+                               grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop ,&
+                               grid%pmaxwnn , grid%ptropnn , &
+                               0 , 0 , &
+                               config_flags%maxw_horiz_pres_diff ,config_flags%trop_horiz_pres_diff , &
+                               config_flags%maxw_above_this_level , &
+                               num_o3_gfs_levels , 'Q' , &
+                               interp_type , linear_interp , extrap_type , &
+                               .false., use_levels_below_ground , use_surface , &
+                               zap_close_levels, force_sfc_in_vinterp , grid%id , &     ! RAR: I set zap_* option =10. for smoke interpolation
+                               ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte )
+! Create scaling factor for total GFS column vs. total column interpolated to WRF grid
+           if ( config_flags%scale_o3_to_gfstotal .gt. 0 ) then
+             do j = jts, jte
+               do i = its, ite
+                 grid%o3_gfs_sf(i,j) = sum(grid%o3_inp(i,:,j))/sum(grid%o3_gfs(i,:,j))
+               enddo
+             enddo
+           endif
+! Convert to mixing ratio
+           grid%o3_inp = grid%o3_inp * 1.e6 * mw_air / mw_o3
+
+         ENDIF
          !  Do we have the old data that came in on the same vertical levels as the other
          !  met variables? If so, we can skip all of this interpolation, as the pressure field
          !  is allocated, but all zeros.

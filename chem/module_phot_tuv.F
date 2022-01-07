@@ -86,6 +86,7 @@
                ph_glyald,ph_mek,ph_gly,                                   &
                pm2_5_dry,pm2_5_water,uvrad,                               &
                dt_cld,af_dir,af_dn,af_up,par,erythema,                    &
+               o3_gfs_sf,                                                 &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte )
@@ -154,6 +155,9 @@
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,    &     
           INTENT(INOUT   ) ::                        uvrad
    REAL,     INTENT(IN   ) ::                        gmt
+
+   REAL, DIMENSION( ims:ime, jme:jme ),                         &
+         OPTIONAL,INTENT(IN ) :: o3_gfs_sf
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
@@ -504,8 +508,11 @@ has_daylight : &
          dens_air(ktsm1:kte) = xair_kg*rhoa(ktsm1:kte)                  ! air num.(molecules/cm^3)
          call z_interp( z_air_dens_data, air_dens_data, n_air_dens_data, &
                         tuv_z(kte+1:n_tuv_z), dens_air(kte+1:n_tuv_z) )
-
-         o33(kts:kte) = ppm2vmr*chem(i,kts:kte,j,p_o3)*dens_air(kts:kte)
+         if ( config_flags%scale_o3_to_gfstotal ) then
+           o33(kts:kte) = o3_gfs_sf(i,j) * ppm2vmr * chem(i,kts:kte,j,p_o3) * dens_air(kts:kte)
+         else
+           o33(kts:kte) = ppm2vmr * chem(i,kts:kte,j,p_o3) * dens_air(kts:kte)
+         endif
          o33(ktsm1)   = o33(kts)
          call z_interp( z_o3_data, o3_data, n_o3_data, &
                         tuv_z(kte+1:n_tuv_z), o33(kte+1:n_tuv_z) )

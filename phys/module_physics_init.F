@@ -945,7 +945,21 @@ CHARACTER(LEN=8) :: name
       ELSE IF ( config_flags%ra_lw_physics .EQ. RRTMG_LWSCHEME_FAST ) THEN
          name = "RRTMG"
       END IF
-      CALL read_CAMgases(2000,1.,.true.,TRIM(name),co2dum,n2odum,ch4dum,f11dum,f12dum)
+      CALL read_CAMgases(julyr,float(julday),.true.,TRIM(name),co2dum,n2odum,ch4dum,f11dum,f12dum)
+      WRITE(message,*) 'GHG annual values from CAM trace gas file'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'Year = ',julyr,', Julian day = ',julday
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CO2   = ',co2dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'N2O   = ',n2odum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CH4   = ',ch4dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CFC11 = ',f11dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CFC12 = ',f12dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
    END IF
 
    aercu_opt=config_flags%aercu_opt !PSH/TWG 06/10/16

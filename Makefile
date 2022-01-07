@@ -549,6 +549,11 @@ em_real : wrf
                ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP119 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP126 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP245 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP370 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP585 . ;   \
                ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;               \
                ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;               \
                ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;               \
@@ -614,6 +619,11 @@ em_real : wrf
              ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;  \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP119 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP126 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP245 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP370 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP585 . ;  \
              ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \
              ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;              \
              ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;              \

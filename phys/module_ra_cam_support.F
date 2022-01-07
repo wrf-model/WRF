@@ -2048,7 +2048,7 @@ subroutine get_int_scales(scales)
   return
 end subroutine get_int_scales
 
-subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, n, AEROSOL_mmr, pcols, pver, pverp, ncol,ghg_input, c)
+subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, n, AEROSOL_mmr, pcols, pver, pverp, ncol, c)
 !--------------------------------------------------------------------
 ! Input: match surface pressure, cam interface pressure,
 !        month index, number of columns, chunk index
@@ -2064,7 +2064,7 @@ subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, 
 
 !  use physconst,     only: gravit
 
-   integer, intent(in)  :: paerlev,naer_c,pcols,pver,pverp,ghg_input
+   integer, intent(in)  :: paerlev,naer_c,pcols,pver,pverp
    real(r8), intent(out) :: AEROSOL_mmr(pcols,pver,naer)  ! aerosol mmr from MATCH
    real(r8), intent(in) :: Match_ps(pcols)                ! surface pressure at a particular month
    real(r8), intent(in) :: pint(pcols,pverp)              ! interface pressure from CAM
@@ -2220,9 +2220,7 @@ subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, 
                write(6,*)'vert_interpolate: aerosol(k),(k+1)',AEROSOL(i,k,m),AEROSOL(i,k+1,m)
                write(6,*)'vert_interpolate: pint(k+1),(k)',pint(i,k+1),pint(i,k)
                write(6,*)'n,c',n,c
-               if(ghg_input.eq.1) then
-                 CALL wrf_error_fatal('CLWRF-module_ra_cam_support. vert_interpolate: ERROR -- error -- Error of computation pint=NaN')
-               endif
+               CALL wrf_error_fatal('CLWRF-module_ra_cam_support. vert_interpolate: ERROR -- error -- Error of computation pint=NaN')
                call endrun()
             end if
          end do

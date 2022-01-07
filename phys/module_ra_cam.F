@@ -1102,7 +1102,7 @@ subroutine oznint(julday,julian,dt,gmt,xtime,ozmixmj,ozmix,levsiz,num_months,pco
 END subroutine oznint
 
 
-subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, ghg_input, aerosoljp, &
+subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, &
   aerosoljn, m_hybi, paerlev, naer_c, pint, pcols, pver, pverp, pverr, pverrp, AEROSOLt, scale)
 !------------------------------------------------------------------
 !
@@ -1144,7 +1144,6 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, ghg_inpu
    real(r8), intent(in   )   ::        m_hybi(paerlev)
 
    real(r8), intent(out) :: AEROSOLt(pcols, pver, naer_all) ! aerosols
-   INTEGER, INTENT(IN )  :: GHG_INPUT
 !
 ! Local workspace
 !
@@ -1230,8 +1229,8 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, ghg_inpu
 !  call vert_interpolate (M_ps_cam_col(1,c,nm), pint, nm, AEROSOLm, ncol, c)
 !  call vert_interpolate (M_ps_cam_col(1,c,np), pint, np, AEROSOLp, ncol, c)
 
-   call vert_interpolate (m_psp, aerosoljp, m_hybi, paerlev, naer_c, pint, nm, AEROSOLm, pcols, pver, pverp, ncol, ghg_input,c)
-   call vert_interpolate (m_psn, aerosoljn, m_hybi, paerlev, naer_c, pint, np, AEROSOLp, pcols, pver, pverp, ncol, ghg_input,c)
+   call vert_interpolate (m_psp, aerosoljp, m_hybi, paerlev, naer_c, pint, nm, AEROSOLm, pcols, pver, pverp, ncol, c)
+   call vert_interpolate (m_psn, aerosoljn, m_hybi, paerlev, naer_c, pint, np, AEROSOLp, pcols, pver, pverp, ncol, c)
 
 !
 ! Time interpolate.
@@ -1273,11 +1272,9 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, ghg_inpu
             if (AEROSOLt(i, k, m) < speciesmin(m)) then
                write(6,*) 'AEROSOL_INTERPOLATE: negative mass mixing ratio, exiting'
                write(6,*) 'm, column, pver',m, i, k ,AEROSOLt(i, k, m)
-               if(ghg_input.eq.1) then
-                 print *,'naer:',naer,' pver:',pver,' ncol:',ncol
-                 PRINT *,'ERROR -- error -- ERROR -- error -- ERROR -- error'
-                 CALL wrf_error_fatal('CLWRF-module_ra_cam. : AEROSOLt=NaN')
-               endif
+               print *,'naer:',naer,' pver:',pver,' ncol:',ncol
+               PRINT *,'ERROR -- error -- ERROR -- error -- ERROR -- error'
+               CALL wrf_error_fatal('CLWRF-module_ra_cam. : AEROSOLt=NaN')
                call endrun ()
             end if
          end do
@@ -1806,7 +1803,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 
          call get_rf_scales(scales)
 
-         call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, ghg_input, aerosoljp, &
+         call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, &
            aerosoljn, m_hybi, paerlev, naer, pint, pcols, pver, pverp, pverr, pverrp, aerosol, scales)
 
          ! overwrite with prognostics aerosols
@@ -1858,7 +1855,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 
       call get_int_scales(scales)
 
-      call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, ghg_input, aerosoljp, aerosoljn, &
+      call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, aerosoljn, &
              m_hybi, paerlev, naer, pint, pcols, pver, pverp, pverr, pverrp, aerosol, scales)
 
       ! overwrite with prognostics aerosols
@@ -1962,7 +1959,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 
       call get_int_scales(scales)
 
-      call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, ghg_input, aerosoljp, aerosoljn, &
+      call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, aerosoljn, &
              m_hybi, paerlev, naer, pint, pcols, pver, pverp, pverr, pverrp, aerosol, scales)
 
 !

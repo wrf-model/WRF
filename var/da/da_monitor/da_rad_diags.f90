@@ -22,12 +22,6 @@ program da_rad_diags
 !
 ! namelist variables
 !
-   namelist /record1/ nproc, instid, file_prefix, start_date, end_date, cycle_period
-           ! nproc: number of processsors used when writing out inv files
-           ! instid, eg dmsp-16-ssmis
-           ! file_prefix, inv or oma
-           ! start_date, end_date, eg 2006100100, 2006102800
-           ! cycle_period (hours) between dates, eg 6 or 12
    integer, parameter                     :: maxnum = 20, maxlvl = 100
    integer                                :: nml_unit = 87
    integer                                :: nproc, nlev, ilev, ich
@@ -35,6 +29,12 @@ program da_rad_diags
    character(len=20), dimension(maxnum)   :: instid
    character(len=6)                       :: file_prefix
    character(len=10)                      :: start_date, end_date
+   namelist /record1/ nproc, instid, file_prefix, start_date, end_date, cycle_period
+           ! nproc: number of processsors used when writing out inv files
+           ! instid, eg dmsp-16-ssmis
+           ! file_prefix, inv or oma
+           ! start_date, end_date, eg 2006100100, 2006102800
+           ! cycle_period (hours) between dates, eg 6 or 12
 !
 ! netcdf variables
 !

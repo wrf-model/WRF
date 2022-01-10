@@ -258,6 +258,7 @@ CONTAINS
                          ,ccn_conc                             & ! RAS
                          ,QKE                                  & !for MYNN
                          ,pep                                  & ! EEPS
+                         ,ghi_accum                            & ! Solar diagnostics
                          ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
                          ,TSK_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic                                     & ! danli mosaic
                          ,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic                                 & ! danli mosaic
@@ -480,6 +481,8 @@ CONTAINS
                                                    ,rv_up, rc_up, u_up, v_up    &
                                                    ,frac_up
 
+! Solar diagnostics
+   REAL,     DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: ghi_accum
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              cugd_tten,cugd_ttens,cugd_qvten,                &
@@ -1367,7 +1370,6 @@ CONTAINS
     CALL init_module_wind_fitch(id,config_flags,xlong,xlat,windfarm_initialized,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
   ENDIF
 
-
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )
 
    CALL ra_init(id=id,STEPRA=STEPRA,RADT=RADT,DT=DT,RTHRATEN=RTHRATEN,RTHRATENLW=RTHRATENLW,             &
@@ -2004,6 +2006,7 @@ CONTAINS
                       alevsiz,no_src_types,                           &
                       cldfra_dp,cldfra_sh,                            & ! Optional for subgrid cloud by ckay
                       cldfra_old,                                     & ! Optional
+                      ghi_accum,                                      & ! Optional
                       ozmixm,pin,                                     & ! Optional
                       aerodm,pina,                                    & ! Optional
                       m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
@@ -2090,6 +2093,8 @@ CONTAINS
                                                           cldfra_dp, &
                                                           cldfra_sh
 
+   REAL , DIMENSION( ims:ime ,jms:jme ) , OPTIONAL, INTENT(INOUT) :: ghi_accum  ! Solar diagnostics
+
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: &!BSINGH(PNNL)- should be declared inout
                                                          CLDFRA_OLD
 
@@ -2149,6 +2154,14 @@ CONTAINS
         ENDDO
         ENDDO
      end if
+
+     IF( PRESENT(ghi_accum) ) THEN
+        DO j=jts,jtf
+        DO i=its,itf
+           ghi_accum(i,j) = 0.
+        ENDDO
+        ENDDO
+     ENDIF
    ENDIF
 
 !-- ww: attempt to use CAM ozone and some aerosol profiles in all rad schemes

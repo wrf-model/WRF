@@ -278,6 +278,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_get_dom_ti_double ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status )
+#  else
+        CALL ext_ncdpar_get_dom_ti_real ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -481,6 +492,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_get_dom_ti_double ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status )
+#  else
+        CALL ext_ncdpar_get_dom_ti_real ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -686,6 +708,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_put_dom_ti_double ( Hndl, Element,   Data, &
+                              locCount,  Status )
+#  else
+        CALL ext_ncdpar_put_dom_ti_real ( Hndl, Element,   Data, &
+                              locCount,  Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -889,6 +922,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_put_dom_ti_double ( Hndl, Element,   Data, &
+                              locCount,  Status )
+#  else
+        CALL ext_ncdpar_put_dom_ti_real ( Hndl, Element,   Data, &
+                              locCount,  Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -1089,6 +1133,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_ti_double ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_ti_double ( Hndl, Element,   Data, &
@@ -1247,6 +1297,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_ti_double ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_ti_double ( Hndl, Element,   Data, &
@@ -1407,6 +1463,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_ti_double ( Hndl, Element,   Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_ti_double ( Hndl, Element,   Data, &
@@ -1565,6 +1627,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_ti_double ( Hndl, Element,   Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_ti_double ( Hndl, Element,   Data, &
@@ -1725,6 +1793,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_ti_integer ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_ti_integer ( Hndl, Element,   Data, &
@@ -1883,6 +1957,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_ti_integer ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_ti_integer ( Hndl, Element,   Data, &
@@ -2043,6 +2123,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_ti_integer ( Hndl, Element,   Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_ti_integer ( Hndl, Element,   Data, &
@@ -2201,6 +2287,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_ti_integer ( Hndl, Element,   Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_ti_integer ( Hndl, Element,   Data, &
@@ -2361,6 +2453,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_ti_logical ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_ti_logical ( Hndl, Element,   Data, &
@@ -2519,6 +2617,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_ti_logical ( Hndl, Element,   Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_ti_logical ( Hndl, Element,   Data, &
@@ -2679,6 +2783,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_ti_logical ( Hndl, Element,   Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_ti_logical ( Hndl, Element,   Data, &
@@ -2837,6 +2947,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_ti_logical ( Hndl, Element,   Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_ti_logical ( Hndl, Element,   Data, &
@@ -2997,6 +3113,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_ti_char ( Hndl, Element,   Data, &
+                               Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_ti_char ( Hndl, Element,   Data, &
@@ -3157,6 +3279,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_ti_char ( Hndl, Element,   Data, &
+                               Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_ti_char ( Hndl, Element,   Data, &
@@ -3323,6 +3451,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_get_dom_td_double ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status )
+#  else
+        CALL ext_ncdpar_get_dom_td_real ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -3526,6 +3665,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_get_dom_td_double ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status )
+#  else
+        CALL ext_ncdpar_get_dom_td_real ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -3731,6 +3881,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_put_dom_td_double ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status )
+#  else
+        CALL ext_ncdpar_put_dom_td_real ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -3934,6 +4095,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_put_dom_td_double ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status )
+#  else
+        CALL ext_ncdpar_put_dom_td_real ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -4134,6 +4306,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_td_double ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_td_double ( Hndl, Element, DateStr,  Data, &
@@ -4292,6 +4470,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_td_double ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_td_double ( Hndl, Element, DateStr,  Data, &
@@ -4452,6 +4636,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_td_double ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_td_double ( Hndl, Element, DateStr,  Data, &
@@ -4610,6 +4800,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_td_double ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_td_double ( Hndl, Element, DateStr,  Data, &
@@ -4770,6 +4966,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_td_integer ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_td_integer ( Hndl, Element, DateStr,  Data, &
@@ -4928,6 +5130,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_td_integer ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_td_integer ( Hndl, Element, DateStr,  Data, &
@@ -5088,6 +5296,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_td_integer ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_td_integer ( Hndl, Element, DateStr,  Data, &
@@ -5246,6 +5460,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_td_integer ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_td_integer ( Hndl, Element, DateStr,  Data, &
@@ -5406,6 +5626,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_td_logical ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_td_logical ( Hndl, Element, DateStr,  Data, &
@@ -5564,6 +5790,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_td_logical ( Hndl, Element, DateStr,  Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_td_logical ( Hndl, Element, DateStr,  Data, &
@@ -5724,6 +5956,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_td_logical ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_td_logical ( Hndl, Element, DateStr,  Data, &
@@ -5882,6 +6120,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_td_logical ( Hndl, Element, DateStr,  Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_td_logical ( Hndl, Element, DateStr,  Data, &
@@ -6042,6 +6286,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_dom_td_char ( Hndl, Element, DateStr,  Data, &
+                               Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_dom_td_char ( Hndl, Element, DateStr,  Data, &
@@ -6202,6 +6452,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_dom_td_char ( Hndl, Element, DateStr,  Data, &
+                               Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_dom_td_char ( Hndl, Element, DateStr,  Data, &
@@ -6368,6 +6624,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_get_var_ti_double ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status )
+#  else
+        CALL ext_ncdpar_get_var_ti_real ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -6571,8 +6838,29 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_get_var_ti_double ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status )
+#  else
+        CALL ext_ncdpar_get_var_ti_real ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_pnc_get_var_ti_double ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status )
+#  else
+        CALL ext_pnc_get_var_ti_real ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status )
+#  endif
+#endif
+#ifdef PIO
+      CASE ( IO_PIO )
 #  if ( RWORDSIZE == DWORDSIZE )
         CALL ext_pnc_get_var_ti_double ( Hndl, Element,  Varname, Data, &
                               locCount, Outcount, Status )
@@ -6776,6 +7064,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_put_var_ti_double ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status )
+#  else
+        CALL ext_ncdpar_put_var_ti_real ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -6979,6 +7278,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_put_var_ti_double ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status )
+#  else
+        CALL ext_ncdpar_put_var_ti_real ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -7179,6 +7489,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_ti_double ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_ti_double ( Hndl, Element,  Varname, Data, &
@@ -7337,6 +7653,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_ti_double ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_ti_double ( Hndl, Element,  Varname, Data, &
@@ -7497,6 +7819,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_ti_double ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_ti_double ( Hndl, Element,  Varname, Data, &
@@ -7655,6 +7983,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_ti_double ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_ti_double ( Hndl, Element,  Varname, Data, &
@@ -7815,6 +8149,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_ti_integer ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_ti_integer ( Hndl, Element,  Varname, Data, &
@@ -7973,6 +8313,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_ti_integer ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_ti_integer ( Hndl, Element,  Varname, Data, &
@@ -8133,6 +8479,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_ti_integer ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_ti_integer ( Hndl, Element,  Varname, Data, &
@@ -8291,6 +8643,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_ti_integer ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_ti_integer ( Hndl, Element,  Varname, Data, &
@@ -8451,6 +8809,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_ti_logical ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_ti_logical ( Hndl, Element,  Varname, Data, &
@@ -8609,6 +8973,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_ti_logical ( Hndl, Element,  Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_ti_logical ( Hndl, Element,  Varname, Data, &
@@ -8769,6 +9139,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_ti_logical ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_ti_logical ( Hndl, Element,  Varname, Data, &
@@ -8927,6 +9303,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_ti_logical ( Hndl, Element,  Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_ti_logical ( Hndl, Element,  Varname, Data, &
@@ -9087,6 +9469,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_ti_char ( Hndl, Element,  Varname, Data, &
+                               Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_ti_char ( Hndl, Element,  Varname, Data, &
@@ -9247,6 +9635,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_ti_char ( Hndl, Element,  Varname, Data, &
+                               Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_ti_char ( Hndl, Element,  Varname, Data, &
@@ -9413,6 +9807,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_get_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status )
+#  else
+        CALL ext_ncdpar_get_var_td_real ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -9616,6 +10021,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_get_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status )
+#  else
+        CALL ext_ncdpar_get_var_td_real ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -9821,6 +10237,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_put_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status )
+#  else
+        CALL ext_ncdpar_put_var_td_real ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -10024,6 +10451,17 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_ncdpar_put_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status )
+#  else
+        CALL ext_ncdpar_put_var_td_real ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status )
+#  endif
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 #  if ( RWORDSIZE == DWORDSIZE )
@@ -10224,6 +10662,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
@@ -10382,6 +10826,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
@@ -10542,6 +10992,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
@@ -10700,6 +11156,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
@@ -10860,6 +11322,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
@@ -11018,6 +11486,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
@@ -11178,6 +11652,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
@@ -11336,6 +11816,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
@@ -11496,6 +11982,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
@@ -11654,6 +12146,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount, Outcount, Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
@@ -11814,6 +12312,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
@@ -11972,6 +12476,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
+                              locCount,  Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
@@ -12132,6 +12642,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_get_var_td_char ( Hndl, Element, DateStr, Varname, Data, &
+                               Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_get_var_td_char ( Hndl, Element, DateStr, Varname, Data, &
@@ -12292,6 +12808,12 @@ IF ( Hndl .GT. -1 ) THEN
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
         ENDIF
 #endif
+#ifdef NETCDFPAR
+      CASE ( IO_NETCDFPAR   )
+        CALL ext_ncdpar_put_var_td_char ( Hndl, Element, DateStr, Varname, Data, &
+                               Status ) 
+#endif
+
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_put_var_td_char ( Hndl, Element, DateStr, Varname, Data, &

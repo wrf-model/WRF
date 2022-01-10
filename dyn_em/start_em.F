@@ -1255,6 +1255,7 @@ endif
                       ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
                       ,grid%pep_pbl                                           & ! EEPS
+                      ,grid%ghi_accum                                         & ! Solar diagnostics
                       ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic
                       ,grid%TSK_mosaic,grid%TSLB_mosaic,grid%SMOIS_mosaic,grid%SH2O_mosaic           & ! danli mosaic
                       ,grid%CANWAT_mosaic,grid%SNOW_mosaic,grid%SNOWH_mosaic,grid%SNOWC_mosaic       & ! danli mosaic

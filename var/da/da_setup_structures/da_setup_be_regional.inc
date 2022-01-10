@@ -180,6 +180,12 @@ subroutine da_setup_be_regional(xb, be, grid)
 !===========for interpolating CV5==============================================================
 
    if (trace_use) call da_trace_entry("da_setup_be_regional")
+
+   ix = xb % mix
+   jy = xb % mjy
+   kz = xb % mkz
+
+if ( jb_factor > 0.0 ) then
    if( (cv_options == 5) .or. (cv_options == 6) .or. (cv_options == 7) ) then
       write (unit=message(1),fmt='(A,I3)') &
          'Set up background errors for regional application for cv_options = ',cv_options
@@ -203,10 +209,6 @@ subroutine da_setup_be_regional(xb, be, grid)
       write (unit=message(1),fmt='(a)') 'cv_options should be 5, 6, or 7'
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
-
-   ix = xb % mix
-   jy = xb % mjy
-   kz = xb % mkz
 
    be_rf_unit    = unit_end + 1
    be_print_unit = unit_end + 2
@@ -3616,6 +3618,23 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    deallocate (bin)
    deallocate (bin2d)
+
+else ! jb_factor <= 0.0
+   ni = ix
+   nj = jy
+   nk = kz
+   be %  v1 % mz = 0
+   be %  v2 % mz = 0
+   be %  v3 % mz = 0
+   be %  v4 % mz = 0
+   be %  v5 % mz = 0
+   be %  v6 % mz = 0
+   be %  v7 % mz = 0
+   be %  v8 % mz = 0
+   be %  v9 % mz = 0
+   be % v10 % mz = 0
+   be % v11 % mz = 0
+end if ! jb_factor > 0.0
 
    if (be % ne > 0) then
       be % alpha % name = 'alpha'

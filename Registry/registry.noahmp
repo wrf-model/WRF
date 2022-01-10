@@ -99,7 +99,6 @@ state    real   soilcl3    ij      -       1      -     i012rd=(interp_mask_fiel
 state    real   soilcl4    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SOILCL4"     "soil texture class - level 4"       "cat"
 
 # Crop model only
-
 state    real   grainxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"        "mass of grain"                       "g/m2"
 state    real   gddxy      ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"          "growing degree days"                 ""
 state    real   croptype i{crop}j  -       1      Z     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "croptype"     "crop type"                           "fraction"
@@ -111,6 +110,10 @@ state integer   pgsxy      ij      -       1      -     rh                      
 
 # Gecros crop model only
 state    real    gecros_state i{gecros}j  -       1      Z     rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "gecros"      "gecros state array"         "-"
+
+# NoahMP tile drainage
+state    real   TD_FRACTION  ij    -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "TD_FRACTION"     "Tile drainage fraction"            ""
+state    real   QTDRAIN    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "QTDRAIN"         "Accumulated tile drainage flux"    "mm"
 
 #Noah-MP Irrigation
 state    real   IRFRACT    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "IRFRACT"     "Irrigation fraction"            ""

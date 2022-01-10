@@ -515,6 +515,7 @@ BENCH_START(surf_driver_tim)
       CALL surface_driver(                                                &
      &        HYDRO_dt=HYDRO_dt,  sfcheadrt=grid%sfcheadrt,               &
      &        INFXSRT=grid%INFXSRT,  soldrain=grid%soldrain,              &
+     &        qtiledrain=grid%qtiledrain,ZWATBLE2D=grid%ZWATBLE2D,        & ! tile drainage for WRF-Hydro
      &         ACGRDFLX=grid%acgrdflx  ,ACHFX=grid%achfx        ,ACLHF=grid%aclhf        &
      &        ,ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
@@ -840,7 +841,8 @@ BENCH_START(surf_driver_tim)
      &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
      &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo &
      &        ,iopt_crop=config_flags%opt_crop, iopt_irr=config_flags%opt_irr   &
-     &        ,iopt_irrm=config_flags%opt_irrm                                       &
+     &        ,iopt_irrm=config_flags%opt_irrm                                  &
+     &        ,iopt_infdv=config_flags%opt_infdv,iopt_tdrn=config_flags%opt_tdrn&
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -880,6 +882,8 @@ BENCH_START(surf_driver_tim)
      &        , IRNUMFI=grid%IRNUMFI  , IRWATSI=grid%IRWATSI ,IRWATMI=grid%IRWATMI   &
      &        , IRWATFI=grid%IRWATFI  , IRELOSS=grid%IRELOSS ,IRSIVOL=grid%IRSIVOL   &
      &        , IRMIVOL=grid%IRMIVOL  , IRFIVOL=grid%IRFIVOL ,IRRSPLH=grid%IRRSPLH   &                       
+           !Noah-MP tile drainage
+     &        , QTDRAIN=grid%QTDRAIN  , TD_FRACTION=grid%TD_FRACTION                 &
            !Optional hydro variables in NOAHMP
      &        ,smcwtdxy=grid%smcwtdxy ,rechxy=grid%rechxy ,deeprechxy=grid%deeprechxy &
      &        ,fdepthxy=grid%fdepthxy, areaxy=grid%areaxy, rivercondxy=grid%rivercondxy  &

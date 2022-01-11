@@ -1314,9 +1314,9 @@ state    real  asmpsoa_a03      ikj     misc          1         -      -        
 state    real  asmpsoa_a04      ikj     misc          1         -      -         "asmpsoa_a04"             "asmpsoa_a04"                              "ug m^-3"
 
 # photolysis rates
-state    real  ph_o31d         ikj     misc        1         -      r        "PHOTR2"                "O31D Photolysis Rate" "min{-1}"
+state    real  ph_o31d         ikj     misc        1         -      rh       "PHOTR2"                "O31D Photolysis Rate" "min{-1}"
 state    real  ph_o33p         ikj     misc        1         -      r        "PHOTR3"                "O33P Photolysis Rate" "min{-1}"
-state    real  ph_no2          ikj     misc        1         -      r        "PHOTR4"                "NO2 Photolysis Rate" "min{-1}"
+state    real  ph_no2          ikj     misc        1         -      rh       "PHOTR4"                "NO2 Photolysis Rate" "min{-1}"
 state    real  ph_no3o2        ikj     misc        1         -      r        "PHOTR5"                "NO3O2 Photolysis Rate" "min{-1}"
 state    real  ph_no3o         ikj     misc        1         -      r        "PHOTR6"                "NO3O Photolysis Rate" "min{-1}"
 state    real  ph_hno2         ikj     misc        1         -      r        "PHOTR7"                "HNO2 Photolysis Rate" "min{-1}"
@@ -3901,6 +3901,9 @@ rconfig   integer   mosaic_aerchem_optaa  namelist,chem          1              
 # control for AF wavelength
 rconfig   real        af_lambda_start     namelist,chem          max_domains    200.    rh    "start wavelength for AF output" "nm"      ""
 rconfig   real        af_lambda_end       namelist,chem          max_domains    340.    rh    "end   wavelength for AF output" "nm"      ""
+# Control for ISORROPIA in MADE/SORGAM schemes
+rconfig   logical     do_isorropia        namelist,chem          1              .false. rh    "flag to use ISORROPIA"
+
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #

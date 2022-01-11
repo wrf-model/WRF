@@ -32,7 +32,7 @@
 
              varbc_param_tl(:) = 0.0
 
-             do ipred = 1, iv%varbc_tamdar%npred
+             do ipred = 1, npred
                 varbc_param_tl(ipred) = &
 	                   SUM( cv(iv%varbc_tamdar%index(1:npred,iphase,iflt)) * &
                                 iv%varbc_tamdar%vtox(ipred,1:npred,iphase,iflt) )

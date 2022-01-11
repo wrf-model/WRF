@@ -134,7 +134,7 @@ CONTAINS
                          iopt_irr, iopt_irrm,                             &   
                          IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,     &   ! Optional Noah-MP
                          IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,     &   ! Optional Noah-MP
-                         IRRSPLH,                                         &
+                         IRRSPLH, qtdrain,                                &
                          gecros_state,                                    & ! Optional gecros crop
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
@@ -578,6 +578,8 @@ CONTAINS
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMSI
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMMI
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMFI
+! tile drainage
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: qtdrain
                                                                 
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
 
@@ -1426,7 +1428,7 @@ CONTAINS
                 iopt_irr, iopt_irrm,                            &
                 IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,    & ! Noah-MP Irrigation
                 IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,    & ! Noah-MP Irrigation
-                IRRSPLH,                                        & ! Noah-MP Irrigation
+                IRRSPLH, qtdrain,                               & ! Noah-MP Irrigation
                 gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
@@ -2461,7 +2463,7 @@ CONTAINS
                 iopt_irr, iopt_irrm,                            &
                 IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,    & ! Noah-MP Irrigation
                 IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,    & ! Noah-MP Irrigation
-                IRRSPLH,                                        &
+                IRRSPLH, qtdrain,                               &
                 gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
@@ -2816,6 +2818,8 @@ CONTAINS
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMSI
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMMI
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMFI 
+! tile drainage
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: qtdrain
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -3375,7 +3379,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 &
 #if (EM_CORE == 1)
-                     ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy ,dx, dy, msftx, msfty,&
+                     ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, qtdrain, areaxy ,dx, dy, msftx, msfty,&
                      wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
                      fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy,              &
                      rechclim,                  &

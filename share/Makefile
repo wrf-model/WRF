@@ -9,7 +9,14 @@ MODULES1=                               \
         module_bc_time_utilities.o      \
         module_get_file_names.o         \
         module_compute_geop.o           \
+<<<<<<< HEAD
         module_check_a_mundo.o          \
+=======
+        module_chem_share.o             \
+        module_check_a_mundo.o          \
+        module_HLaw.o                   \
+        module_ctrans_aqchem.o          \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         module_random.o                 \
         module_llxy.o                   \
         module_interp_nmm.o             \

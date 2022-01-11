@@ -5,9 +5,23 @@
 
 include ../macros
 
+<<<<<<< HEAD
 OBJS =  CPL_WRF.o mpp_land.o module_mpp_ReachLS.o module_mpp_GWBUCKET.o
 
 all:	$(OBJS)
+=======
+OBJS =  hashtable.o CPL_WRF.o mpp_land.o module_mpp_ReachLS.o module_mpp_GWBUCKET.o
+
+all:	$(OBJS)
+
+hashtable.o: hashtable.F
+	@echo ""
+	$(RMD) $(*).o $(*).mod $(*).stb *~
+	$(COMPILER90) -O3 -g $(F90FLAGS) $(LDFLAGS) -c $(*).F
+	cp hashtable.mod ../mod
+	ar -r ../lib/libHYDRO.a $(@)
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 mpp_land.o: mpp_land.F
 	@echo ""
 	$(RMD) $(*).o $(*).mod $(*).stb *~

@@ -15246,6 +15246,10 @@ integer,external :: omp_get_thread_num
 !------------------------------------------------------------------
       SUBROUTINE RRTMG_LWRAD_FAST(                                &
                        rthratenlw,                                &
+<<<<<<< HEAD
+=======
+                       rthratenlwc,                               &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                        lwupt, lwuptc, lwdnt, lwdntc,              &
                        lwupb, lwupbc, lwdnb, lwdnbc,              &
 !                      lwupflx, lwupflxc, lwdnflx, lwdnflxc,      &
@@ -15304,8 +15308,13 @@ integer,external :: omp_get_thread_num
                                                            rho3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+<<<<<<< HEAD
          INTENT(INOUT)  ::                            RTHRATENLW
 
+=======
+         INTENT(INOUT)  ::                            RTHRATENLW, &
+                                                      RTHRATENLWC
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GLW, &
                                                              OLR, &
@@ -16443,6 +16452,11 @@ integer,external :: omp_get_thread_num
          do k=kts,kte
             tten1d(k) = hr(icol,k)/86400.
             rthratenlw(i,k,j) = tten1d(k)/pi3d(i,k,j)
+<<<<<<< HEAD
+=======
+            tten1d(k) = hrc(icol,k)/86400.
+            rthratenlwc(i,k,j) = tten1d(k)/pi3d(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          enddo
 !
       end do i_loop2

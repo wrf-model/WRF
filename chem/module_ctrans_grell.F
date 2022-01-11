@@ -1476,7 +1476,11 @@ END subroutine cup_env_clev_tr
                                       RACM_SOA_VBS_HET_KPP,                              &
                                       CB05_SORG_VBS_AQ_KPP
   USE module_ctrans_aqchem
+<<<<<<< HEAD
   USE module_input_chem_data, only: get_last_gas
+=======
+  USE module_chem_share, only: get_last_gas
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   USE module_HLawConst, only: HLC
         implicit none
 ! Aqeuous species pointers INCLUDE File

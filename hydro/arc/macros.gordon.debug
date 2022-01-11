@@ -33,7 +33,11 @@ F90FLAGS        += -g -traceback
 MODFLAG         = -I./ -I../../MPP -I../MPP -I../mod
 LDFLAGS         =
 CPPINVOKE       = -fpp
+<<<<<<< HEAD
 CPPFLAGS        = -DMPP_LAND -I../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
+=======
+CPPFLAGS        = -DMPP_LAND -I../Data_Rec $(HYDRO_D)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 LIBS            =
 NETCDFINC       = $(NETCDF_INC)
 NETCDFLIB       = -L$(NETCDF_LIB) -lnetcdff -lnetcdf

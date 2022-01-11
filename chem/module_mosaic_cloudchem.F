@@ -33,7 +33,11 @@
 	    id, ktau, ktauc, dtstepc, config_flags,   &
 	    p_phy, t_phy, rho_phy, alt,   &
 	    cldfra, ph_no2,   &
+<<<<<<< HEAD
 	    moist, chem,   &
+=======
+	    moist, chem, ph_cw,          &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	    gas_aqfrac, numgas_aqfrac,   &
 	    ids,ide, jds,jde, kds,kde,   &
 	    ims,ime, jms,jme, kms,kme,   &
@@ -107,6 +111,12 @@
                 gas_aqfrac
 !   gas_aqfrac - fraction (0-1) of gas that is dissolved in cloud water
 
+<<<<<<< HEAD
+=======
+        real, intent(out),   &
+                dimension( ims:ime, kms:kme, jms:jme ) :: &
+                ph_cw 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !   local variables
 	integer :: it, jt, kt, kpeg, k_pegshift, l, mpeg
@@ -146,6 +156,17 @@
 !   following line turns aqueous radical chem off unconditionally
 	iradical_onoff = 0
 
+<<<<<<< HEAD
+=======
+!   Initialize pH of CW ph_cw to a FillValue value
+        do jt = jts, jte
+          do kt = kts, kte
+            do it = its, ite
+              ph_cw(it,kt,jt) = -9999.
+            end do
+          end do
+        end do
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 	do 3920 jt = jts, jte
 	do 3910 it = its, ite
@@ -204,7 +225,11 @@
 		t_phy, p_phy, rho_phy                         )
 
 	gas_aqfrac(it,kt,jt,:) = gas_aqfrac_box(:) 
+<<<<<<< HEAD
 
+=======
+        ph_cw(it,kt,jt)        = ph_aq_box
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 3800	continue
 

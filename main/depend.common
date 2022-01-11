@@ -157,6 +157,13 @@ module_clear_halos.o: module_configure.o \
 
 # DEPENDENCIES for phys
 
+<<<<<<< HEAD
+=======
+module_madwrf.o: ../share/module_model_constants.o \
+		../share/module_soil_pre.o \
+		../phys/module_mp_thompson.o
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 module_bl_myjpbl.o: ../share/module_model_constants.o
 
 module_bl_myjurb.o: ../share/module_model_constants.o
@@ -449,6 +456,13 @@ module_sf_clm.o: module_cam_shr_kind_mod.o \
 		 ../frame/module_wrf_error.o  \
 		../frame/module_configure.o
 
+<<<<<<< HEAD
+=======
+module_sf_ctsm.o: ../frame/module_dm.o \
+                  ../frame/module_configure.o \
+                  ../frame/module_wrf_error.o
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 module_sf_ssib.o: ../share/module_model_constants.o  
 
 module_sf_noah_seaice_drv.o:	module_sf_noah_seaice.o
@@ -471,9 +485,15 @@ module_sf_noahmplsm.o:	../share/module_model_constants.o \
 
 module_sf_noahmp_groundwater.o:	module_sf_noahmplsm.o
 
+<<<<<<< HEAD
 module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o
 
 module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o
+=======
+module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o module_bep_bem_helper.o
+
+module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o module_bep_bem_helper.o
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 module_sf_bem.o: ../share/module_model_constants.o
 
@@ -489,9 +509,13 @@ module_ra_rrtmg_lw.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
 module_ra_rrtmg_lwf.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
+<<<<<<< HEAD
 module_ra_rrtmg_lwk.o: ../share/module_model_constants.o \
                  module_ra_clWRF_support.o
 
+=======
+module_ra_rrtmg_lwk.o: ../share/module_model_constants.o
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 
 module_physics_addtendc.o: \
@@ -530,6 +554,10 @@ module_physics_init.o : \
 		module_sf_noahlsm.o		\
 		module_sf_noahdrv.o		\
 		module_sf_clm.o			\
+<<<<<<< HEAD
+=======
+                module_sf_ctsm.o                \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 module_sf_ssib.o                \
 		module_sf_noahmplsm.o		\
 		module_sf_noahmpdrv.o		\
@@ -680,6 +708,10 @@ module_pbl_driver.o:  \
 		module_bl_mynn.o \
 		module_bl_fogdes.o \
 		module_bl_gwdo.o \
+<<<<<<< HEAD
+=======
+		module_bl_gwdo_gsl.o \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
 		$(PHYS_BL) \
@@ -710,6 +742,10 @@ module_radiation_driver.o: \
 		module_ra_hs.o \
 		module_ra_goddard.o \
                 module_ra_flg.o \
+<<<<<<< HEAD
+=======
+                module_ra_eclipse.o \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 module_ra_aerosol.o \
                 module_mp_thompson.o \
 		../frame/module_driver_constants.o \
@@ -734,6 +770,10 @@ module_surface_driver.o: \
                 module_sf_noahmp_groundwater.o  \
 		module_sf_noahdrv.o		\
 		module_sf_clm.o			\
+<<<<<<< HEAD
+=======
+                module_sf_ctsm.o                \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 module_sf_ssib.o                \
 		module_sf_noahmpdrv.o		\
 		module_sf_ruclsm.o		\
@@ -1022,7 +1062,12 @@ module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
 
 module_check_a_mundo.o: ../frame/module_configure.o ../frame/module_wrf_error.o \
 		../frame/module_state_description.o \
+<<<<<<< HEAD
 		../share/module_model_constants.o
+=======
+		../share/module_model_constants.o \
+		../phys/module_bep_bem_helper.o
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
 		../frame/module_state_description.o \

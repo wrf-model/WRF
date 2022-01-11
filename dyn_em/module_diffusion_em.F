@@ -2160,9 +2160,24 @@ END SUBROUTINE smag2d_km
 ! tke_seed if the drag and flux are off.
 
     c_k = config_flags%c_k
+<<<<<<< HEAD
     tke_seed = tke_seed_value
     if( (config_flags%tke_drag_coefficient .gt. epsilon) .or.  &
         (config_flags%tke_heat_flux .gt. epsilon)  ) tke_seed = 0.
+=======
+    tke_seed = 0.
+    IF (config_flags%isfflx .eq. 0) THEN
+      IF ((config_flags%diff_opt .eq. 2) .and. (config_flags%bl_pbl_physics .eq. 0)) THEN
+        IF( (config_flags%tke_drag_coefficient .lt. epsilon) .and.  &
+            (config_flags%tke_heat_flux .lt. epsilon)  )  THEN
+          tke_seed = tke_seed_value
+        ENDIF
+      ELSE
+        !tke_drag_coefficient and tke_heat_flux are irrelevant here
+        tke_seed = tke_seed_value
+      ENDIF
+    ENDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
     DO j = j_start, j_end
     DO k = kts+1, ktf-1
@@ -4282,11 +4297,21 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     DO i = i_start, i_end
        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
        hfx(i,j)=heat_flux*cpm*rho(i,kts,j)         ! provided for output only
+<<<<<<< HEAD
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*heat_flux*rho(i,kts,j)/dnw(kts)
        if(config_flags%use_theta_m == 1)THEN
          rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+=======
+       if(config_flags%use_theta_m == 1)THEN
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*heat_flux*(1.+rvovrd*moist(i,kts,j,P_QV))*rho(i,kts,j)/dnw(kts) &
+             -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+       ELSE
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*heat_flux*rho(i,kts,j)/dnw(kts)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        ENDIF
     ENDDO
     ENDDO
@@ -4297,11 +4322,21 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 
        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
        heat_flux = hfx(i,j)/cpm
+<<<<<<< HEAD
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
             -g*heat_flux/dnw(kts)
        if(config_flags%use_theta_m == 1)THEN
          rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+=======
+       if(config_flags%use_theta_m == 1)THEN
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*heat_flux*(1.+rvovrd*moist(i,kts,j,P_QV))/dnw(kts) &
+             -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+       ELSE
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*heat_flux/dnw(kts)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        ENDIF
 
     ENDDO
@@ -5108,7 +5143,11 @@ END SUBROUTINE vertical_diffusion_s
   DO j = j_start, j_end
   DO i = i_start, i_end
      IF(hpbl(i,j).LT.zq(i,2,j)) kpbl(i,j) = 1
+<<<<<<< HEAD
      IF(kpbl(i,j).LT.1) pblflg(i,j) = .false.
+=======
+     IF(kpbl(i,j).LE.1) pblflg(i,j) = .false.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   ENDDO
   ENDDO
 
@@ -5133,7 +5172,11 @@ END SUBROUTINE vertical_diffusion_s
   DO i = i_start, i_end
       delxy = sqrt(dx/msftx(i,j)*dy/msfty(i,j))
       pu1=pu(delxy,hpbl(i,j))
+<<<<<<< HEAD
       IF(sfcflg(i,j).and.sflux(i,j).GT.0.0)THEN
+=======
+      IF((sfcflg(i,j).and.sflux(i,j).GT.0.0) .and. (hpbl(i,j) .GT. 0)) THEN
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !nonlocal momentum flux based on Brown and Grant (1997)
        brint = -sm*ust(i,j)*ust(i,j)*wstar3(i,j)/(hpbl(i,j)*wscale(i,j)**4)
        gamu(i,j) = pu1 * brint*u_phy(i,1,j)/wspd(i,j)
@@ -5162,11 +5205,23 @@ END SUBROUTINE vertical_diffusion_s
        delb          = govrth(i,j)*dthv(i,j)
  
        deltaoh(i,j)  = d1*hpbl(i,j) + d2*wm2(i,j)/delb
+<<<<<<< HEAD
        deltaoh(i,j)  = max(ezfac*deltaoh(i,j),hpbl(i,j)-za(i,kpbl(i,j)-1,j)-1.)
        deltaoh(i,j)  = min(deltaoh(i,j), hpbl(i,j))
  
        rigs(i,j)     = govrth(i,j)*dthv(i,j)*deltaoh(i,j)/(du**2.+dv**2.)
        rigs(i,j)     = max(min(rigs(i,j), rigsmax),rimin)
+=======
+       deltaoh(i,j)  = max(ezfac*deltaoh(i,j),hpbl(i,j)-za(i,k,j)-1.)
+       deltaoh(i,j)  = min(deltaoh(i,j), hpbl(i,j))
+ 
+       if ((du .ne. 0) .or. (dv .ne. 0)) then
+           rigs(i,j) = govrth(i,j)*dthv(i,j)*deltaoh(i,j)/(du**2.+dv**2.)
+           rigs(i,j) = max(min(rigs(i,j), rigsmax),rimin)
+       else
+           rigs(i,j) = rigsmax
+       endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        enlfrac2(i,j) = max(min(wm3/wstar3(i,j)/(1.+cpent/rigs(i,j)),entfmax),entfmin)
        enlfrac2(i,j) = enlfrac2(i,j)*enlfrac
      ENDIF
@@ -5182,6 +5237,7 @@ END SUBROUTINE vertical_diffusion_s
   ENDDO
   ENDDO
   ENDDO
+<<<<<<< HEAD
  
   DO j = j_start, j_end
   DO i = i_start, i_end
@@ -5220,6 +5276,43 @@ END SUBROUTINE vertical_diffusion_s
          nlflux(i,k,j) = nlflux(i,k,j)*pth1
        ENDIF
     ENDDO
+=======
+
+  DO j = j_start, j_end
+  DO i = i_start, i_end
+     IF (pblflg(i,j)) THEN
+         deltaoh(i,j) = deltaoh(i,j)/hpbl(i,j)
+         delxy = sqrt(dx/msftx(i,j)*dy/msfty(i,j))
+         mlfrac        = mltop-deltaoh(i,j)
+         ezfrac        = mltop+deltaoh(i,j)
+         zfacmf(i,1,j) = min(max((zq(i,2,j)/hpbl(i,j)),zfmin),1.)
+         sfcfracn      = max(sfcfracn1,zfacmf(i,1,j))
+    !
+         sflux0      = (a11+a12*sfcfracn)*sflux(i,j)
+         snlflux0    = nlfrac*sflux0
+         amf1        = snlflux0/sfcfracn
+         amf2        = -snlflux0/(mlfrac-sfcfracn)
+         bmf2        = -mlfrac*amf2
+         amf3        = snlflux0*enlfrac2(i,j)/deltaoh(i,j)
+         bmf3        = -amf3*mlfrac
+         hfxpbl(i,j) = amf3+bmf3
+         pth1        = pthnl(delxy,hpbl(i,j))
+         hfxpbl(i,j) = hfxpbl(i,j)*pth1
+
+        DO k = kts, ktf
+           zfacmf(i,k,j) = max((zq(i,k+1,j)/hpbl(i,j)),zfmin)
+           IF(k.LT.kpbl(i,j)) THEN
+             IF(zfacmf(i,k,j).LE.sfcfracn) THEN
+               nlflux(i,k,j) =  amf1*zfacmf(i,k,j)
+             ELSE IF (zfacmf(i,k,j).LE.mlfrac) THEN
+               nlflux(i,k,j) =  amf2*zfacmf(i,k,j)+bmf2
+             ENDIF
+             nlflux(i,k,j) = nlflux(i,k,j) + hfxpbl(i,j)*exp(-entfacmf(i,k,j))
+             nlflux(i,k,j) = nlflux(i,k,j)*pth1
+           ENDIF
+        ENDDO
+    ENDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   ENDDO
   ENDDO
 END SUBROUTINE nonlocal_flux
@@ -5237,10 +5330,22 @@ END SUBROUTINE nonlocal_flux
    REAL,PARAMETER :: b1 = 2.0, b2 = 0.875
    real           :: d,h,doh,num,den
 
+<<<<<<< HEAD
    doh   = d/h
    num   = a1*(doh)**b1 + a2*(doh)**b2+a3
    den   = a4*(doh)**b1 + a5*(doh)**b2+a6
    pthnl = a7*num/den + (1. - a7)
+=======
+   if (h .ne. 0) then
+      doh   = d/h
+      num   = a1*(doh)**b1 + a2*(doh)**b2+a3
+      den   = a4*(doh)**b1 + a5*(doh)**b2+a6
+      pthnl = a7*num/den + (1. - a7)
+   else
+      pthnl = 1.
+   endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    pthnl = max(pthnl,pmin)
    pthnl = min(pthnl,pmax)
 
@@ -5261,10 +5366,21 @@ END SUBROUTINE nonlocal_flux
    REAL,PARAMETER :: b1 = 2.0, b2 = 0.5
    REAL           :: d,h,doh,num,den
 
+<<<<<<< HEAD
    doh  = d/h
    num  = a1*(doh)**b1 + a2*(doh)**b2+a3
    den  = a4*(doh)**b1 + a5*(doh)**b2+a6
    pthl = a7*num/den+(1. - a7)
+=======
+   if (h .ne. 0) then
+      doh  = d/h
+      num  = a1*(doh)**b1 + a2*(doh)**b2+a3
+      den  = a4*(doh)**b1 + a5*(doh)**b2+a6
+      pthl = a7*num/den+(1. - a7)
+   else
+      pthl = 1.
+   endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    pthl = max(pthl,pmin)
    pthl = min(pthl,pmax)
 
@@ -5284,10 +5400,21 @@ END SUBROUTINE nonlocal_flux
    REAL,PARAMETER :: b1 = 2.0, b2 = 0.6666667
    REAL           :: d,h,doh,num,den
 
+<<<<<<< HEAD
    doh = d/h
    num = a1*(doh)**b1 + a2*(doh)**b2
    den = a3*(doh)**b1 + a4*(doh)**b2+a5
    pu  = num/den
+=======
+   if (h .ne. 0) then
+      doh = d/h
+      num = a1*(doh)**b1 + a2*(doh)**b2
+      den = a3*(doh)**b1 + a4*(doh)**b2+a5
+      pu  = num/den
+   else
+      pu = 1.
+   endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    pu  = max(pu,pmin)
    pu  = min(pu,pmax)
 
@@ -5478,7 +5605,11 @@ END SUBROUTINE nonlocal_flux
     :: i, j, k, ktf, i_start, i_end, j_start, j_end
 
     REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 )  &
+<<<<<<< HEAD
     :: xkxavg
+=======
+    :: xkxavg, rhoavg
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -5511,10 +5642,18 @@ END SUBROUTINE nonlocal_flux
     DO j = j_start, j_end
     DO k = kts, ktf
     DO i = i_start, i_end
+<<<<<<< HEAD
       xkxavg(i,k,j) = 0.25 * ( xkx(i-1,k,j  ) + xkx(i,k,j  ) +  &
                                xkx(i-1,k,j-1) + xkx(i,k,j-1) )
       xkxavg(i,k,j) = xkxavg(i,k,j) * .25 * ( rho(i-1,k,j  ) + rho(i,k,j  )  +  &
                                               rho(i-1,k,j-1) + rho(i,k,j-1) )
+=======
+      rhoavg(i,k,j) = 0.25 * ( rho(i-1,k,j  ) + rho(i,k,j  ) +  &
+                               rho(i-1,k,j-1) + rho(i,k,j-1) )
+      xkxavg(i,k,j) = rhoavg(i,k,j) *                           &
+                      0.25 * ( xkx(i-1,k,j  ) + xkx(i,k,j  ) +  &
+                               xkx(i-1,k,j-1) + xkx(i,k,j-1) )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     END DO
     END DO
     END DO
@@ -5527,7 +5666,11 @@ END SUBROUTINE nonlocal_flux
       DO k = kts, ktf
       DO i = i_start, i_end
 
+<<<<<<< HEAD
         titau(i,k,j) = rho(i,k,j) * mtau(i,k,j)
+=======
+        titau(i,k,j) = rhoavg(i,k,j) * mtau(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       END DO
       END DO
@@ -5541,7 +5684,11 @@ END SUBROUTINE nonlocal_flux
         DO k = kts, ktf
         DO i = i_start, i_end
           titau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)
+<<<<<<< HEAD
           mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rho(i,k,j)
+=======
+          mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rhoavg(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
         END DO
         END DO
@@ -5623,7 +5770,11 @@ END SUBROUTINE nonlocal_flux
     :: i, j, k, ktf, i_start, i_end, j_start, j_end
 
     REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 )  &
+<<<<<<< HEAD
     :: xkxavg
+=======
+    :: xkxavg, rhoavg
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -5656,10 +5807,18 @@ END SUBROUTINE nonlocal_flux
     DO j = j_start, j_end
     DO k = kts+1, ktf
     DO i = i_start, i_end
+<<<<<<< HEAD
       xkxavg(i,k,j) = 0.5 * ( fnm(k) * ( xkx(i,k  ,j) + xkx(i-1,k  ,j) ) +  &
                               fnp(k) * ( xkx(i,k-1,j) + xkx(i-1,k-1,j) ) )
       xkxavg(i,k,j) = xkxavg(i,k,j) * 0.5 * ( fnm(k) * ( rho(i-1,k  ,j) + rho(i,k  ,j) ) + &
                                               fnp(k) * ( rho(i-1,k-1,j) + rho(i,k-1,j) ) )
+=======
+      rhoavg(i,k,j) = 0.5 * ( fnm(k) * ( rho(i-1,k  ,j) + rho(i,k  ,j) ) + &
+                              fnp(k) * ( rho(i-1,k-1,j) + rho(i,k-1,j) ) )
+      xkxavg(i,k,j) = rhoavg(i,k,j)  *                                     &
+                      0.5 * ( fnm(k) * ( xkx(i,k  ,j) + xkx(i-1,k  ,j) ) + &
+                              fnp(k) * ( xkx(i,k-1,j) + xkx(i-1,k-1,j) ) )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     END DO
     END DO
     END DO
@@ -5669,7 +5828,11 @@ END SUBROUTINE nonlocal_flux
       DO j = j_start, j_end
       DO k = kts+1, ktf
       DO i = i_start, i_end
+<<<<<<< HEAD
          titau(i,k,j) = rho(i,k,j) * mtau(i,k,j)
+=======
+         titau(i,k,j) = rhoavg(i,k,j) * mtau(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ENDDO
       ENDDO
       ENDDO
@@ -5683,7 +5846,11 @@ END SUBROUTINE nonlocal_flux
         DO i = i_start, i_end
 
           titau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)
+<<<<<<< HEAD
           mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rho(i,k,j)
+=======
+          mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rhoavg(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
         ENDDO
         ENDDO
@@ -5772,7 +5939,11 @@ END SUBROUTINE nonlocal_flux
     :: i, j, k, ktf, i_start, i_end, j_start, j_end
 
     REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 )  &
+<<<<<<< HEAD
     :: xkxavg
+=======
+    :: xkxavg, rhoavg
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -5805,10 +5976,18 @@ END SUBROUTINE nonlocal_flux
     DO j = j_start, j_end
     DO k = kts+1, ktf
     DO i = i_start, i_end
+<<<<<<< HEAD
       xkxavg(i,k,j) = 0.5 * ( fnm(k) * ( xkx(i,k  ,j) + xkx(i,k  ,j-1) ) +  &
                               fnp(k) * ( xkx(i,k-1,j) + xkx(i,k-1,j-1) ) )
       xkxavg(i,k,j) = xkxavg(i,k,j) * 0.5 * ( fnm(k) * ( rho(i,k  ,j) + rho(i,k  ,j-1) ) +  &
                                               fnp(k) * ( rho(i,k-1,j) + rho(i,k-1,j-1) ) )
+=======
+      rhoavg(i,k,j) = 0.5 * ( fnm(k) * ( rho(i,k  ,j) + rho(i,k  ,j-1) ) + &
+                              fnp(k) * ( rho(i,k-1,j) + rho(i,k-1,j-1) ) )
+      xkxavg(i,k,j) = rhoavg(i,k,j)  *                                     &
+                      0.5 * ( fnm(k) * ( xkx(i,k  ,j) + xkx(i,k  ,j-1) ) + &
+                              fnp(k) * ( xkx(i,k-1,j) + xkx(i,k-1,j-1) ) )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     END DO
     END DO
     END DO
@@ -5819,7 +5998,11 @@ END SUBROUTINE nonlocal_flux
       DO k = kts+1, ktf
       DO i = i_start, i_end
 
+<<<<<<< HEAD
         titau(i,k,j) =  rho(i,k,j) * mtau(i,k,j)
+=======
+        titau(i,k,j) =  rhoavg(i,k,j) * mtau(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       END DO
       END DO
@@ -5834,7 +6017,11 @@ END SUBROUTINE nonlocal_flux
         DO i = i_start, i_end
 
           titau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)
+<<<<<<< HEAD
           mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rho(i,k,j)
+=======
+          mtau(i,k,j) = - xkxavg(i,k,j) * defor(i,k,j)  / rhoavg(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
         END DO
         END DO
@@ -7717,7 +7904,11 @@ END SUBROUTINE phy_bc
    INTEGER :: i_start, i_end, j_start, j_end
  
    REAL :: V0_u,V0_v,ustar,beta
+<<<<<<< HEAD
    REAL :: heat_flux, moist_flux
+=======
+   REAL :: heat_flux, moist_flux, qfac
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL :: cpm,rdz_w,rhoavg_u,rhoavg_v,rdz_z
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -8069,6 +8260,7 @@ END SUBROUTINE phy_bc
     ENDDO
  
   CASE (1) ! use surface heat flux computed from surface routine
+<<<<<<< HEAD
     DO j = j_start, j_end
     DO i = i_start, i_end
        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
@@ -8076,6 +8268,9 @@ END SUBROUTINE phy_bc
     ENDDO
     ENDDO
  
+=======
+    ! do nothing
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
   END SELECT hflux
@@ -8094,17 +8289,35 @@ END SUBROUTINE phy_bc
                   - dt*rdz_w*nlflux_rho(i,k+1,j)        &
                   + dt*rdz_w*hfx(i,j)/cpm
           ELSE
+<<<<<<< HEAD
              d(k) = var_mix(i,kts,j)                    &
                   - dt*rdz_w*nlflux_rho(i,k+1,j)        &
                   + dt*rdz_w*(hfx(i,j)/cpm+1.61*theta(i,kts,j)*qfx(i,j))
           ENDIF
  
+=======
+             qfac = 1.+rvovrd*moist(i,kts,j,P_QV)
+             d(k) = var_mix(i,kts,j)                    &
+                  - dt*rdz_w*nlflux_rho(i,k+1,j)*qfac   &
+                  + dt*rdz_w*(qfac*hfx(i,j)/cpm+1.61*theta(i,kts,j)*qfx(i,j))
+          ENDIF
+ 
+          IF(config_flags%use_theta_m == 1)THEN
+              qfac = 1.+rvovrd*moist(i,kts,j,P_QV)
+          ELSE
+              qfac = 1.
+          ENDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           DO  k = kts+1, ktf-1
             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j) + c2h(k))
             a(k)  = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
             b(k)  = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
             c(k)  = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+<<<<<<< HEAD
             d(k)  = -rdz_w*(nlflux_rho(i,k+1,j)-nlflux_rho(i,k,j))*dt + var_mix(i,k,j)
+=======
+            d(k)  = -rdz_w*(nlflux_rho(i,k+1,j)-nlflux_rho(i,k,j))*qfac*dt + var_mix(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           ENDDO
  
             a(ktf) = 0.
@@ -8146,15 +8359,30 @@ END SUBROUTINE phy_bc
     DO  i = i_start, i_end
         DO  k = kts, ktf-1
            rdz_w = - g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+<<<<<<< HEAD
            beta  =   1.5*sqrt(tke(i,k,j))/l_diss(i,k,j)
+=======
+           IF (l_diss(i,k,j) .ne. 0) THEN
+               beta  =   1.5*sqrt(tke(i,k,j))/l_diss(i,k,j)
+           ELSE
+               beta  =   0.
+           ENDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            a(k)  = - 2.0*xkxavg(i,k,j)*dt*rdz_w*rdz(i,k,j)
            b(k)  =   1.0 + 2.0*dt*rdz_w*(rdz(i,k,j)*xkxavg(i,k,j)    &
                    + rdz(i,k+1,j)*xkxavg(i,k+1,j))                   &
                    + dt*beta
            c(k)  = - 2.0*xkxavg(i,k+1,j)*dt*rdz(i,k+1,j)*rdz_w
  
+<<<<<<< HEAD
            d(k)  =   tke(i,k,j)                                  &
                    + 0.5*dt*tke(i,k,j)**1.5/l_diss(i,k,j)
+=======
+           d(k)  =   tke(i,k,j)
+           IF (l_diss(i,k,j) .ne. 0) THEN
+               d(k) = d(k) + 0.5*dt*tke(i,k,j)**1.5/l_diss(i,k,j)
+           ENDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         ENDDO
  
            a(ktf) = 0. !-1 

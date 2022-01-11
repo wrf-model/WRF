@@ -19,7 +19,10 @@ include registry.ssib
 include registry.noahmp
 include registry.sbm
 include registry.polrad
+<<<<<<< HEAD
 include registry.diags
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 include registry.afwa
 include registry.rasm_diag
 include registry.elec
@@ -28,3 +31,7 @@ include registry.hyb_coord
 include registry.new3d_wif
 include registry.trad_fields
 include registry.solar_fields
+<<<<<<< HEAD
+=======
+include registry.diags
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656

@@ -10,8 +10,12 @@ MODULE module_sf_noahdrv
       &                         SALP_DATA, REFDK_DATA, REFKDT_DATA, FRZK_DATA, ZBOT_DATA, CZIL_DATA,        &
       &                         SMLOW_DATA, SMHIGH_DATA, LVCOEF_DATA, NSLOPE, &
       &                         FRH2O,ZTOPVTBL,ZBOTVTBL, &
+<<<<<<< HEAD
       &                         LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
 
+=======
+      &                         LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   USE module_sf_urban,    only: urban, oasis, IRI_SCHEME
   USE module_sf_noahlsm_glacial_only, only: sflx_glacial
   USE module_sf_bep,      only: bep
@@ -37,7 +41,12 @@ CONTAINS
 ! Urban related variable are added to arguments - urban
 !----------------------------------------------------------------
    SUBROUTINE lsm(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
+<<<<<<< HEAD
                   HFX,QFX,LH,GRDFLX, QGH,GSW,SWDOWN,GLW,SMSTAV,SMSTOT, &
+=======
+                  HFX,QFX,LH,GRDFLX, QGH,GSW,SWDOWN,SWDDIR,SWDDIF,&
+                  GLW,SMSTAV,SMSTOT, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   SFCRUNOFF, UDRUNOFF,IVGTYP,ISLTYP,ISURBAN,ISICE,VEGFRA,    &
                   ALBEDO,ALBBCK,ZNT,Z0,TMN,XLAND,XICE,EMISS,EMBCK,   &
                   SNOWC,QSFC,RAINBL,MMINLU,                     &
@@ -62,7 +71,11 @@ CONTAINS
                   ids,ide, jds,jde, kds,kde,                    &
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
+<<<<<<< HEAD
                   sf_urban_physics,ahe_scheme,ahe24,ahucm,      &
+=======
+                  sf_urban_physics,                             &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,  &
                   CMGR_SFCDIF,CHGR_SFCDIF,                      &
 !Optional Urban
@@ -93,6 +106,10 @@ CONTAINS
                   urban_map_wd,                                 & !I multi-layer urban
                   urban_map_gbd,                                & !I multi-layer urban
                   urban_map_fbd,                                & !I multi-layer urban
+<<<<<<< HEAD
+=======
+                  urban_map_zgrd,                                & !I multi-layer urban
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   num_urban_hi,                                 & !I multi-layer urban
                   tsk_rural_bep,                                & !H multi-layer urban
                   trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,      & !H multi-layer urban
@@ -103,6 +120,13 @@ CONTAINS
                   sfvent_urb3d,lfvent_urb3d,                    & !H multi-layer urban
                   sfwin1_urb3d,sfwin2_urb3d,                    & !H multi-layer urban
                   sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,    & !H multi-layer urban
+<<<<<<< HEAD
+=======
+                  ep_pv_urb3d,t_pv_urb3d,                         & !RMS
+                  trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,         & !RMS
+                  drain_urb4d,draingr_urb3d,sfrv_urb3d,           & !RMS
+                  lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !RMS
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,         & !H multi-layer urban
                   mh_urb2d,stdh_urb2d,lf_urb2d,                 & !SLUCM
                   th_phy,rho,p_phy,ust,                         & !I multi-layer urban
@@ -262,12 +286,15 @@ CONTAINS
    INTEGER,  INTENT(IN   )   ::  isurban
    INTEGER,  INTENT(IN   )   ::  isice
    INTEGER,  INTENT(IN   )   ::  julian, julyr                  !urban
+<<<<<<< HEAD
    INTEGER,  INTENT(IN   )   :: ahe_scheme
    REAL, INTENT(IN), DIMENSION( 0:23, ims:ime, jms:jme ),       &
                     OPTIONAL :: ahe24
    REAL, INTENT(OUT), DIMENSION( ims:ime,jms:jme) :: ahucm
    REAL, DIMENSION(0:23) :: AH24
    REAL :: AH
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !added by Wei Yu  for routing
     REAL,    DIMENSION( ims:ime, jms:jme )                     , &
@@ -290,7 +317,13 @@ CONTAINS
                                                            GLW, &
                                                         RAINBL, &
                                                         EMBCK,  &
+<<<<<<< HEAD
                                                         SR
+=======
+                                                           SR,  &
+                                                       SWDDIR,  &
+                                                       SWDDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                         ALBBCK, &
@@ -602,6 +635,10 @@ CONTAINS
    INTEGER, INTENT(IN  ) ::                               urban_map_wd
    INTEGER, INTENT(IN  ) ::                               urban_map_gbd
    INTEGER, INTENT(IN  ) ::                               urban_map_fbd
+<<<<<<< HEAD
+=======
+   INTEGER, INTENT(IN  ) ::                               urban_map_zgrd
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    INTEGER, INTENT(IN  ) ::                               NUM_URBAN_HI
    REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural_bep
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: trb_urb4d
@@ -625,6 +662,24 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ), INTENT(INOUT) :: sfw2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: sfr_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: sfg_urb3d
+<<<<<<< HEAD
+=======
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ep_pv_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: t_pv_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme ),INTENT(INOUT) :: trv_urb4d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme ),INTENT(INOUT) :: qr_urb4d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime,jms:jme ), INTENT(INOUT) :: qgr_urb3d  !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime,jms:jme ), INTENT(INOUT) :: tgr_urb3d  !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: drain_urb4d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: draingr_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: sfrv_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: lfrv_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: dgr_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: dg_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: lfr_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: lfg_urb3d !GRZ
+   
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN) :: hi_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lp_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lb_urb2d
@@ -694,12 +749,15 @@ CONTAINS
 !
 !  END FASDAS
 !
+<<<<<<< HEAD
   FLX4  = 0.0 !BSINGH - Initialized to 0.0
   FVB   = 0.0 !BSINGH - Initialized to 0.0
   FBUR  = 0.0 !BSINGH - Initialized to 0.0
   FGSN  = 0.0 !BSINGH - Initialized to 0.0
   SOILW = 0.0 !BSINGH - Initialized to 0.0
 
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   sigma_sb=5.67e-08
 
 ! MEK MAY 2007
@@ -771,6 +829,15 @@ CONTAINS
         SFCPRS=(P8W3D(I,KTS+1,j)+P8W3D(i,KTS,j))*0.5
 ! convert from mixing ratio to specific humidity
          Q2K=QV3D(i,1,j)/(1.0+QV3D(i,1,j))
+<<<<<<< HEAD
+=======
+! initializing local variables
+        SOILW=0.
+        FLX4=0.
+        FVB=0.
+        FBUR=0.
+        FGSN=0.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 !         Q2SAT=QGH(I,j)
          Q2SAT=QGH(I,J)/(1.0+QGH(I,J))        ! Q2SAT is sp humidity
@@ -931,10 +998,19 @@ CONTAINS
 
 !Fei: urban. for urban surface, if calling UCM, redefine the natural surface in cities as
 ! the "NATURAL" category in the VEGPARM.TBL
+<<<<<<< HEAD
 	
 	   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                   IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
+=======
+                  IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
+                  IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                      IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                      IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                      IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+	
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 		 VEGTYP = NATURAL
                  SHDFAC = SHDTBL(NATURAL)
                  ALBEDOK =0.2         !  0.2
@@ -951,10 +1027,20 @@ CONTAINS
                  ENDIF
                 ENDIF
            ELSE
+<<<<<<< HEAD
                  IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                   IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
                   VEGTYP = ISURBAN
            	 ENDIF
+=======
+            IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+                  VEGTYP = ISURBAN
+                 ENDIF
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            ENDIF
 
 !===Yang, 2014/10/08, hydrological processes for urban vegetation in single layer UCM===
@@ -968,9 +1054,17 @@ CONTAINS
            if (tloc.lt.0) tloc=tloc+24
            if (tloc==0) tloc=24
            CALL cal_mon_day(julian,julyr,jmonth,jday) 
+<<<<<<< HEAD
            IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                 IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
             AOASIS = oasis  ! urban oasis effect
+=======
+             IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                 IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                 IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                 IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+                AOASIS = oasis  ! urban oasis effect
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    IF (IRIOPTION ==1) THEN
                    IF (tloc==21 .or. tloc==22) THEN  !irrigation on vegetaion in urban area, MAY-SEP, 9-10pm
                    IF (jmonth==5 .or. jmonth==6 .or. jmonth==7 .or. jmonth==8 .or. jmonth==9) THEN
@@ -1267,9 +1361,17 @@ CONTAINS
 !--------------------------------------
 ! Input variables lsm --> urban
 
+<<<<<<< HEAD
 
           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
               IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN
+=======
+           IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+               IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+               IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+               IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! Call urban
 
@@ -1368,12 +1470,15 @@ CONTAINS
             if (I.eq.73.and.J.eq.125)THEN
                check = 1
             end if
+<<<<<<< HEAD
 	    
 	    IF(PRESENT(ahe24))THEN
 	       AH24 = ahe24(:,I,J)
 	    ELSE
 	       AH24 = 0.0
 	    ENDIF
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! Call urban
             CALL cal_mon_day(julian,julyr,jmonth,jday)
@@ -1397,8 +1502,12 @@ CONTAINS
                        hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                        TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                        DRELR_URB,DRELB_URB,                             & ! H
+<<<<<<< HEAD
                        DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
 		       AHE_SCHEME,AH24,AH)                            
+=======
+                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)                            
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 #if 0
           IF(IPRINT) THEN
@@ -1426,7 +1535,11 @@ CONTAINS
           'Q2_URB',Q2_URB,'CHS_URB',CHS_URB,'CHS2_URB',CHS2_URB
            endif
 #endif
+<<<<<<< HEAD
             AHUCM(I,J) = AH
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             TS_URB2D(I,J) = TS_URB
 
             ALBEDO(I,J) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*ALBEDOK   ![-]
@@ -1597,15 +1710,29 @@ CONTAINS
        CALL BEP_BEM(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy, &
                 th_phy,rho,p_phy,swdown,glw,                           &
                 gmt,julday,xlong,xlat,declin_urb,cosz_urb2d,omg_urb2d, &
+<<<<<<< HEAD
            num_urban_ndm, urban_map_zrd, urban_map_zwd, urban_map_gd,  &
             urban_map_zd, urban_map_zdf,  urban_map_bd, urban_map_wd,  &
            urban_map_gbd, urban_map_fbd,  num_urban_hi,                &
+=======
+                num_urban_ndm, urban_map_zrd, urban_map_zwd, urban_map_gd,  &
+                urban_map_zd, urban_map_zdf,  urban_map_bd, urban_map_wd,  &
+                urban_map_gbd, urban_map_fbd, urban_map_zgrd, num_urban_hi, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,               &
                 tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,       &
                 tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,       &
                 cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,                 &
                 sfwin1_urb3d,sfwin2_urb3d,                             &
                 sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,             &
+<<<<<<< HEAD
+=======
+                ep_pv_urb3d,t_pv_urb3d,                                & !RMS
+                trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,                & !RMS
+                drain_urb4d,draingr_urb3d,sfrv_urb3d,                  & !RMS
+                lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,     & !RMS
+                rainbl,swddir,swddif,                                  & !RMS
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,                  &
                 a_u_bep,a_v_bep,a_t_bep,                               &
                 a_e_bep,b_u_bep,b_v_bep,                               &
@@ -1712,6 +1839,7 @@ CONTAINS
               G_URB2D(I,J)     = 0.
               RN_URB2D(I,J)    = 0.
             endif
+<<<<<<< HEAD
 !          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
 !                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
 !                    print*,'ivgtyp, qfx, hfx',ivgtyp(i,j),hfx_rural(i,j),qfx_rural(i,j)
@@ -1725,6 +1853,11 @@ CONTAINS
         enddo
 
 
+=======
+        enddo
+        enddo
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        endif                                                           !Bep end
 
 !------------------------------------------------------
@@ -2075,6 +2208,7 @@ CONTAINS
           IF ( a_string(1:21) .EQ. 'Vegetation Parameters' ) THEN
              CALL wrf_message     ("Expected low and high density residential, and high density industrial information in VEGPARM.TBL")
              CALL wrf_error_fatal ("This could be caused by using an older VEGPARM.TBL file with a newer WRF source code.")
+<<<<<<< HEAD
           ENDIF
           READ (19,*)LOW_DENSITY_RESIDENTIAL
           READ (19,*)
@@ -2083,6 +2217,31 @@ CONTAINS
           READ (19,*)HIGH_INTENSITY_INDUSTRIAL
         ENDIF
 !
+=======
+        ENDIF
+         READ (19,*)LCZ_1
+          READ (19,*)
+          READ (19,*)LCZ_2
+          READ (19,*)
+          READ (19,*)LCZ_3
+          READ (19,*)
+          READ (19,*)LCZ_4
+          READ (19,*)
+          READ (19,*)LCZ_5
+          READ (19,*)
+          READ (19,*)LCZ_6
+          READ (19,*)
+          READ (19,*)LCZ_7
+          READ (19,*)
+          READ (19,*)LCZ_8
+          READ (19,*)
+          READ (19,*)LCZ_9
+          READ (19,*)
+          READ (19,*)LCZ_10
+          READ (19,*)
+          READ (19,*)LCZ_11
+        ENDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
  2002   CONTINUE
 
         CLOSE (19)
@@ -2118,9 +2277,23 @@ CONTAINS
       CALL wrf_dm_bcast_real    ( RSMAX_DATA  , 1 )
       CALL wrf_dm_bcast_integer ( BARE    , 1 )
       CALL wrf_dm_bcast_integer ( NATURAL , 1 )
+<<<<<<< HEAD
       CALL wrf_dm_bcast_integer ( LOW_DENSITY_RESIDENTIAL , 1 )
       CALL wrf_dm_bcast_integer ( HIGH_DENSITY_RESIDENTIAL , 1 )
       CALL wrf_dm_bcast_integer ( HIGH_INTENSITY_INDUSTRIAL , 1 )
+=======
+      CALL wrf_dm_bcast_integer ( LCZ_1 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_2 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_3 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_4 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_5 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_6 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_7 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_8 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_9 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_10 , 1 )
+      CALL wrf_dm_bcast_integer ( LCZ_11 , 1 )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !
 !-----READ IN SOIL PROPERTIES FROM SOILPARM.TBL
@@ -2313,7 +2486,11 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   ids,ide, jds,jde, kds,kde,                    &
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
+<<<<<<< HEAD
                   sf_urban_physics,ahe_scheme,ahe24,ahucm,      &
+=======
+                  sf_urban_physics,                             &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,  &
                   CMGR_SFCDIF,CHGR_SFCDIF,                      &
 !Optional Urban
@@ -2353,6 +2530,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   urban_map_wd,                                 & !I multi-layer urban
                   urban_map_gbd,                                & !I multi-layer urban
                   urban_map_fbd,                                & !I multi-layer urban
+<<<<<<< HEAD
+=======
+                  urban_map_zgrd,                               & !I multi-layer urban
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   num_urban_hi,                                 & !I multi-layer urban
                   tsk_rural_bep,                                & !H multi-layer urban
                   trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,      & !H multi-layer urban
@@ -2363,6 +2544,13 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   sfvent_urb3d,lfvent_urb3d,                    & !H multi-layer urban
                   sfwin1_urb3d,sfwin2_urb3d,                    & !H multi-layer urban
                   sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,    & !H multi-layer urban
+<<<<<<< HEAD
+=======
+                  ep_pv_urb3d,t_pv_urb3d,                         & !RMS
+                  trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,         & !RMS
+                  drain_urb4d,draingr_urb3d,sfrv_urb3d,           & !RMS
+                  lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !RMS
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,         & !H multi-layer urban
                   mh_urb2d,stdh_urb2d,lf_urb2d,                 & !SLUCM
                   th_phy,rho,p_phy,ust,                         & !I multi-layer urban
@@ -2521,12 +2709,15 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    INTEGER,  INTENT(IN   )   ::  isurban
    INTEGER,  INTENT(IN   )   ::  isice
    INTEGER,  INTENT(IN   )   ::  julian,julyr
+<<<<<<< HEAD
    INTEGER,  INTENT(IN   )   :: ahe_scheme
    REAL, INTENT(IN), DIMENSION( 0:23, ims:ime, jms:jme ),       &
                     OPTIONAL :: ahe24
    REAL, INTENT(OUT), DIMENSION(ims:ime,jms:jme) :: ahucm
    REAL, DIMENSION(0:23) :: AH24
    REAL :: AH
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !added by Wei Yu  for routing
     REAL,    DIMENSION( ims:ime, jms:jme )                     , &
@@ -2547,7 +2738,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                                                            GLW, &
                                                         RAINBL, &
                                                         SR
+<<<<<<< HEAD
 
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                         ALBBCK, &
                                                             Z0, &
@@ -2860,6 +3054,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    INTEGER, INTENT(IN  ) ::                               urban_map_wd
    INTEGER, INTENT(IN  ) ::                               urban_map_gbd
    INTEGER, INTENT(IN  ) ::                               urban_map_fbd
+<<<<<<< HEAD
+=======
+   INTEGER, INTENT(IN  ) ::                               urban_map_zgrd
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    INTEGER, INTENT(IN  ) ::                               NUM_URBAN_HI
    REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural_bep
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: trb_urb4d
@@ -2883,6 +3081,23 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ), INTENT(INOUT) :: sfw2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: sfr_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: sfg_urb3d
+<<<<<<< HEAD
+=======
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ep_pv_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: t_pv_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme ),INTENT(INOUT) :: trv_urb4d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme ),INTENT(INOUT) :: qr_urb4d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime,jms:jme ), INTENT(INOUT) :: qgr_urb3d  !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime,jms:jme ), INTENT(INOUT) :: tgr_urb3d  !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: drain_urb4d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: draingr_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: sfrv_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: lfrv_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: dgr_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: dg_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: lfr_urb3d !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: lfg_urb3d !GRZ
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN) :: hi_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lp_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lb_urb2d
@@ -3056,6 +3271,16 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 !-----------------------------------------------------------------------
       ILOOP : DO I=its,ite
       
+<<<<<<< HEAD
+=======
+! initializing local variables
+         SOILW = 0.
+         FLX4  = 0.
+         FVB   = 0.
+         FBUR  = 0.
+         FGSN  = 0.
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          IF (((XLAND(I,J)-1.5).LT.0.) .AND. (XICE(I,J) < XICE_THRESHOLD) ) THEN
                
                IVGTYP_dominant(I,J)=IVGTYP(I,J)                                   ! save this
@@ -3332,9 +3557,17 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
             Noah_call=.TRUE.
       
             If ( SF_URBAN_PHYSICS == 0 ) THEN   ! ONLY NOAH
+<<<<<<< HEAD
       
                  IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                        IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
+=======
+             IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                 IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                 IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                 IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+ 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                        Noah_call = .TRUE.                 
                        VEGTYP = ISURBAN
                  ENDIF
@@ -3343,9 +3576,16 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
             
             IF(SF_URBAN_PHYSICS == 1) THEN
       
+<<<<<<< HEAD
                  IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                        IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN   
               	
+=======
+               IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                   IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                   IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                   IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN	
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                        Noah_call = .TRUE.                       
               	       VEGTYP = NATURAL                                              
                        SHDFAC = SHDTBL(NATURAL)
@@ -3370,9 +3610,18 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
            if (tloc==0) tloc=24
            CALL cal_mon_day(julian,julyr,jmonth,jday) 
 	  IF(SF_URBAN_PHYSICS == 1) THEN
+<<<<<<< HEAD
            IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                 IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
             AOASIS = oasis  ! urban oasis effect
+=======
+             IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                 IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                 IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                 IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+
+                   AOASIS = oasis  ! urban oasis effect
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    IF (IRIOPTION ==1) THEN
                    IF (tloc==21 .or. tloc==22) THEN  !irrigation on vegetaion in urban area, MAY-SEP, 9-10pm
                    IF (jmonth==5 .or. jmonth==6 .or. jmonth==7 .or. jmonth==8 .or. jmonth==9) THEN
@@ -3613,6 +3862,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       ! URBAN CANOPY MODEL START - urban
       !--------------------------------------
       ! Input variables lsm --> urban
+<<<<<<< HEAD
       
                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                     IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN            
@@ -3629,6 +3879,42 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                 IF(UTYPE_URB==2) FRC_URB2D(I,J)=0.9
                 IF(UTYPE_URB==3) FRC_URB2D(I,J)=0.95
       
+=======
+                 IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                     IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                     IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                     IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+ 
+      
+                !  UTYPE_URB = UTYPE_URB2D(I,J) !urban type (low, high or industrial)
+                !  this need to be changed in the mosaic danli
+                IF(IVGTYP(I,J)==ISURBAN) UTYPE_URB=5
+                IF(IVGTYP(I,J)==LCZ_1) UTYPE_URB=1
+                IF(IVGTYP(I,J)==LCZ_2) UTYPE_URB=2
+                IF(IVGTYP(I,J)==LCZ_3) UTYPE_URB=3
+                IF(IVGTYP(I,J)==LCZ_4) UTYPE_URB=4
+                IF(IVGTYP(I,J)==LCZ_5) UTYPE_URB=5
+                IF(IVGTYP(I,J)==LCZ_6) UTYPE_URB=6
+                IF(IVGTYP(I,J)==LCZ_7) UTYPE_URB=7
+                IF(IVGTYP(I,J)==LCZ_8) UTYPE_URB=8
+                IF(IVGTYP(I,J)==LCZ_9) UTYPE_URB=9
+                IF(IVGTYP(I,J)==LCZ_10) UTYPE_URB=10
+                IF(IVGTYP(I,J)==LCZ_11) UTYPE_URB=11
+ 
+                        
+                IF(UTYPE_URB==1) FRC_URB2D(I,J)=1.
+                IF(UTYPE_URB==2) FRC_URB2D(I,J)=0.99
+                IF(UTYPE_URB==3) FRC_URB2D(I,J)=1.00
+                IF(UTYPE_URB==4) FRC_URB2D(I,J)=0.65
+                IF(UTYPE_URB==5) FRC_URB2D(I,J)=0.7
+                IF(UTYPE_URB==6) FRC_URB2D(I,J)=0.65
+                IF(UTYPE_URB==7) FRC_URB2D(I,J)=0.3
+                IF(UTYPE_URB==8) FRC_URB2D(I,J)=0.85
+                IF(UTYPE_URB==9) FRC_URB2D(I,J)=0.3
+                IF(UTYPE_URB==10) FRC_URB2D(I,J)=0.55
+                IF(UTYPE_URB==11) FRC_URB2D(I,J)=1.
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   TA_URB    = SFCTMP           ! [K]
                   QA_URB    = Q2K              ! [kg/kg]
                   UA_URB    = SQRT(U_PHY(I,1,J)**2.+V_PHY(I,1,J)**2.)
@@ -3742,12 +4028,15 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   if (I.eq.73.and.J.eq.125)THEN
                      check = 1
                   end if
+<<<<<<< HEAD
 
 	          IF(PRESENT(ahe24))THEN
 	             AH24 = ahe24(:,I,J)
 	          ELSE
 	             AH24 = 0.0
 	          ENDIF
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       !
       ! Call urban
                   CALL cal_mon_day(julian,julyr,jmonth,jday)      
@@ -3771,8 +4060,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
+<<<<<<< HEAD
                              DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
 			     AHE_SCHEME, AH24, AH)     
+=======
+                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)     
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       
 #if 0
                 IF(IPRINT) THEN
@@ -3799,8 +4092,13 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                'U10_URB',U10_URB,'V10_URB',V10_URB,'TH2_URB',TH2_URB,      &
                 'Q2_URB',Q2_URB,'CHS_URB',CHS_URB,'CHS2_URB',CHS2_URB
                  endif
+<<<<<<< HEAD
 #endif 
                   AHUCM(I,J) = AH
+=======
+#endif
+      
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   TS_URB2D(I,J) = TS_URB
       
                   ALBEDO(I,J) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*ALBEDOK   ![-]
@@ -4230,10 +4528,20 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       
       !Fei: urban. for urban surface, if calling UCM, redefine the natural surface in cities as
       ! the "NATURAL" category in the VEGPARM.TBL
+<<<<<<< HEAD
       	
       	   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
                       IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                         IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
+=======
+                 IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
+
+                IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                    IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                    IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                    IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+	
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       		 VEGTYP = NATURAL
                        SHDFAC = SHDTBL(NATURAL)
                        ALBEDOK =0.2         !  0.2
@@ -4250,8 +4558,15 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        ENDIF
                       ENDIF
                  ELSE
+<<<<<<< HEAD
                        IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                         IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
+=======
+                         IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                             IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                             IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                             IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                         VEGTYP = ISURBAN
                  	 ENDIF
                  ENDIF
@@ -4268,9 +4583,18 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
            if (tloc==0) tloc=24
            CALL cal_mon_day(julian,julyr,jmonth,jday) 
 	  IF(SF_URBAN_PHYSICS == 1) THEN
+<<<<<<< HEAD
            IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                 IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
             AOASIS = oasis  ! urban oasis effect
+=======
+                          IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                             IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                             IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                             IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+
+                AOASIS = oasis  ! urban oasis effect
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    IF (IRIOPTION ==1) THEN
                    IF (tloc==21 .or. tloc==22) THEN  !irrigation on vegetaion in urban area, MAY-SEP, 9-10pm
                    IF (jmonth==5 .or. jmonth==6 .or. jmonth==7 .or. jmonth==8 .or. jmonth==9) THEN
@@ -4504,9 +4828,17 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       ! URBAN CANOPY MODEL START - urban
       !--------------------------------------
       ! Input variables lsm --> urban
+<<<<<<< HEAD
       
                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
                     IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) ==  HIGH_INTENSITY_INDUSTRIAL) THEN
+=======
+                  IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+                      IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+                      IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+                      IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+ 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       
       ! Call urban
       !
@@ -4603,12 +4935,15 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   if (I.eq.73.and.J.eq.125)THEN
                      check = 1
                   end if
+<<<<<<< HEAD
 
 	          IF(PRESENT(ahe24))THEN
 	             AH24 = ahe24(:,I,J)
 	          ELSE
 	             AH24 = 0.0
 	          ENDIF
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       !
       ! Call urban
                   CALL cal_mon_day(julian,julyr,jmonth,jday)        
@@ -4632,12 +4967,20 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
+<<<<<<< HEAD
                              DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
 			     AHE_SCHEME,AH24,AH)  
       
 #if 0
                 IF(IPRINT) THEN
 
+=======
+                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)  
+      
+#if 0
+                IF(IPRINT) THEN
+      
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              print*, 'AFTER CALL URBAN'
              print*,'num_roof_layers',num_roof_layers, 'num_wall_layers',  &
               num_wall_layers,                                             &
@@ -4661,7 +5004,11 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                 'Q2_URB',Q2_URB,'CHS_URB',CHS_URB,'CHS2_URB',CHS2_URB
                  endif
 #endif
+<<<<<<< HEAD
                   AHUCM(I,J) = AH
+=======
+      
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   TS_URB2D(I,J) = TS_URB
       
                   ALBEDO(I,J) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*ALBEDOK   ![-]

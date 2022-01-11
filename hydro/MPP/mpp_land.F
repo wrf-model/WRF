@@ -2,20 +2,32 @@
 !  Author(s)/Contact(s):
 !  Abstract:
 !  History Log:
+<<<<<<< HEAD
 ! 
+=======
+!
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !  Usage:
 !  Parameters: <Specify typical arguments passed>
 !  Input Files:
 !        <list file names and briefly describe the data they include>
 !  Output Files:
 !        <list file names and briefly describe the information they include>
+<<<<<<< HEAD
 ! 
+=======
+!
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !  Condition codes:
 !        <list exit condition or error codes returned >
 !        If appropriate, descriptive troubleshooting instructions or
 !        likely causes for failures could be mentioned here with the
 !        appropriate error code
+<<<<<<< HEAD
 ! 
+=======
+!
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !  User controllable options: <if applicable>
 
 !#### This is a module for parallel Land model.
@@ -23,7 +35,11 @@ MODULE MODULE_MPP_LAND
 
   use MODULE_CPL_LAND
   use mpi
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   IMPLICIT NONE
   !integer, public :: HYDRO_COMM_WORLD ! communicator for WRF-Hydro - moved to MODULE_CPL_LAND
   integer, public :: left_id,right_id,up_id,down_id,my_id
@@ -60,6 +76,7 @@ MODULE MODULE_MPP_LAND
      module procedure mpp_land_bcast_real8_1d
      module procedure mpp_land_bcast_real1
      module procedure mpp_land_bcast_real1_double
+<<<<<<< HEAD
      module procedure mpp_land_bcast_char1d 
      module procedure mpp_land_bcast_char1
      module procedure mpp_land_bcast_int1 
@@ -69,17 +86,36 @@ MODULE MODULE_MPP_LAND
      
   end interface
  
+=======
+     module procedure mpp_land_bcast_char1d
+     module procedure mpp_land_bcast_char1
+     module procedure mpp_land_bcast_int1
+     module procedure mpp_land_bcast_int1d
+     module procedure mpp_land_bcast_int2d
+     module procedure mpp_land_bcast_logical
+
+  end interface
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   contains
 
   subroutine LOG_MAP2d()
     implicit none
     integer :: ndim, ierr
     integer, dimension(0:1) :: dims, coords
+<<<<<<< HEAD
     
     logical cyclic(0:1), reorder
     data cyclic/.false.,.false./  ! not cyclic
     data reorder/.false./
     
+=======
+
+    logical cyclic(0:1), reorder
+    data cyclic/.false.,.false./  ! not cyclic
+    data reorder/.false./
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call MPI_COMM_RANK( HYDRO_COMM_WORLD, my_id, ierr )
       call MPI_COMM_SIZE( HYDRO_COMM_WORLD, numprocs, ierr )
 
@@ -101,6 +137,7 @@ MODULE MODULE_MPP_LAND
 
 !   ### get the neighbors.  -1 means no neighbor.
         down_id = my_id - left_right_np
+<<<<<<< HEAD
         up_id =   my_id + left_right_np 
         if( up_down_p .eq. 0) down_id = -1
         if( up_down_p .eq. (up_down_np-1) ) up_id = -1
@@ -110,6 +147,17 @@ MODULE MODULE_MPP_LAND
         if( left_right_p .eq. 0) left_id = -1
         if( left_right_p .eq. (left_right_np-1) ) right_id =-1
     
+=======
+        up_id =   my_id + left_right_np
+        if( up_down_p .eq. 0) down_id = -1
+        if( up_down_p .eq. (up_down_np-1) ) up_id = -1
+
+        left_id = my_id - 1
+        right_id = my_id + 1
+        if( left_right_p .eq. 0) left_id = -1
+        if( left_right_p .eq. (left_right_np-1) ) right_id =-1
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !    ### the IO node is the last processor.
 !yw        IO_id = numprocs - 1
          IO_id = 0
@@ -124,6 +172,7 @@ MODULE MODULE_MPP_LAND
 !
      call MPI_Cart_create(HYDRO_COMM_WORLD, ndim, dims, &
                           cyclic, reorder, cartGridComm, ierr)
+<<<<<<< HEAD
      
      call MPI_CART_GET(cartGridComm, 2, dims, cyclic, coords, ierr)
      
@@ -136,29 +185,64 @@ MODULE MODULE_MPP_LAND
      call mpp_land_sync()
 
   return 
+=======
+
+     call MPI_CART_GET(cartGridComm, 2, dims, cyclic, coords, ierr)
+
+     p_up_down = coords(0)
+     p_left_right = coords(1)
+     np_up_down = up_down_np
+     np_left_right = left_right_np
+
+
+     call mpp_land_sync()
+
+  return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end  subroutine log_map2d
 
 
   !old subroutine MPP_LAND_INIT(flag, ew_numprocs, sn_numprocs)
+<<<<<<< HEAD
   subroutine MPP_LAND_INIT()
 !    ### initialize the land model logically based on the two D method. 
 !    ### Call this function directly if it is nested with WRF.
     implicit none
+=======
+  subroutine MPP_LAND_INIT(in_global_nx,in_global_ny)
+!    ### initialize the land model logically based on the two D method. 
+!    ### Call this function directly if it is nested with WRF.
+    implicit none
+    integer, optional :: in_global_nx, in_global_ny
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     integer :: ierr, provided
     integer :: ew_numprocs, sn_numprocs  ! input the processors in x and y direction.
     logical mpi_inited
 
+<<<<<<< HEAD
+=======
+    global_nx = in_global_nx
+    global_ny = in_global_ny 
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     ! left_right_np = ew_numprocs
     ! up_down_np  = sn_numprocs
 
     call mpi_initialized( mpi_inited, ierr )
     if ( .not. mpi_inited ) then
+<<<<<<< HEAD
        call MPI_INIT_THREAD( MPI_THREAD_FUNNELED, provided, ierr )
        if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_INIT failed")
     endif
     if (HYDRO_COMM_WORLD == MPI_COMM_NULL) then
        call MPI_COMM_DUP(MPI_COMM_WORLD, HYDRO_COMM_WORLD, ierr)
        if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_COMM_DUP failed")
+=======
+      call MPI_INIT_THREAD( MPI_THREAD_FUNNELED, provided, ierr )
+      if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_INIT failed")
+      call MPI_COMM_DUP(MPI_COMM_WORLD, HYDRO_COMM_WORLD, ierr)
+      if (ierr /= MPI_SUCCESS) call fatal_error_stop("MPI Error: MPI_COMM_DUP failed")
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     endif
 
     call MPI_COMM_RANK( HYDRO_COMM_WORLD, my_id, ierr )
@@ -177,17 +261,29 @@ MODULE MODULE_MPP_LAND
         integer :: i
 
         global_nx = in_global_nx
+<<<<<<< HEAD
         global_ny = in_global_ny 
+=======
+        global_ny = in_global_ny
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         rt_AGGFACTRT = AGGFACTRT
         global_rt_nx = in_global_nx*AGGFACTRT
         global_rt_ny = in_global_ny *AGGFACTRT
         !overlap_n = 1
+<<<<<<< HEAD
 !ywold        local_nx = global_nx / left_right_np 
+=======
+!ywold        local_nx = global_nx / left_right_np
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !ywold        if(left_right_p .eq. (left_right_np-1) ) then
 !ywold              local_nx = global_nx   &
 !ywold                    -int(global_nx/left_right_np)*(left_right_np-1)
 !ywold        end if
+<<<<<<< HEAD
 !ywold        local_ny = global_ny / up_down_np 
+=======
+!ywold        local_ny = global_ny / up_down_np
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !ywold        if(  up_down_p .eq. (up_down_np-1) ) then
 !ywold           local_ny = global_ny  &
 !ywold                 -int(global_ny/up_down_np)*(up_down_np -1)
@@ -212,7 +308,11 @@ MODULE MODULE_MPP_LAND
                  end if
             end do
         end if
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         local_rt_nx=local_nx*AGGFACTRT+2
         local_rt_ny=local_ny*AGGFACTRT+2
         if(left_id.lt.0) local_rt_nx = local_rt_nx -1
@@ -222,7 +322,11 @@ MODULE MODULE_MPP_LAND
 
         call get_local_size(local_nx, local_ny,local_rt_nx,local_rt_ny)
         call calculate_start_p()
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         in_global_nx = local_nx
         in_global_ny = local_ny
 #ifdef HYDRO_D
@@ -231,7 +335,11 @@ MODULE MODULE_MPP_LAND
         write(6,*) "my_id=",my_id,"global_nx=",global_nx
         write(6,*) "my_id=",my_id,"global_nx=",global_ny
 #endif
+<<<<<<< HEAD
         return 
+=======
+        return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         end  subroutine MPP_LAND_PAR_INI
 
   subroutine MPP_LAND_LR_COM(in_out_data,NX,NY,flag)
@@ -241,9 +349,15 @@ MODULE MODULE_MPP_LAND
     integer count,size,tag,  ierr
     integer flag   ! 99 replace the boundary, else get the sum.
 
+<<<<<<< HEAD
     if(flag .eq. 99) then ! replace the data  
        if(right_id .ge. 0) then  !   ### send to right first.
            tag = 11 
+=======
+    if(flag .eq. 99) then ! replace the data
+       if(right_id .ge. 0) then  !   ### send to right first.
+           tag = 11
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            size = ny
            call mpi_send(in_out_data(nx-1,:),size,MPI_REAL,   &
              right_id,tag,HYDRO_COMM_WORLD,ierr)
@@ -253,17 +367,28 @@ MODULE MODULE_MPP_LAND
            size = ny
            call mpi_recv(in_out_data(1,:),size,MPI_REAL,  &
               left_id,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+<<<<<<< HEAD
        endif 
 
       if(left_id .ge. 0 ) then !   ### send to left second.
           size = ny 
+=======
+       endif
+
+      if(left_id .ge. 0 ) then !   ### send to left second.
+          size = ny
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           tag = 21
           call mpi_send(in_out_data(2,:),size,MPI_REAL,   &
              left_id,tag,HYDRO_COMM_WORLD,ierr)
       endif
       if(right_id .ge. 0) then !   receive from  right
           tag = 21
+<<<<<<< HEAD
           size = ny 
+=======
+          size = ny
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           call mpi_recv(in_out_data(nx,:),size,MPI_REAL,&
              right_id,tag,HYDRO_COMM_WORLD, mpp_status,ierr)
       endif
@@ -272,7 +397,11 @@ MODULE MODULE_MPP_LAND
 
        if(right_id .ge. 0) then !   ### send to right first.
          tag = 11
+<<<<<<< HEAD
          size = 2*ny 
+=======
+         size = 2*ny
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call mpi_send(in_out_data(nx-1:nx,:),size,MPI_REAL,   &
              right_id,tag,HYDRO_COMM_WORLD,ierr)
        end if
@@ -283,7 +412,11 @@ MODULE MODULE_MPP_LAND
                HYDRO_COMM_WORLD,mpp_status,ierr)
           in_out_data(1,:) = in_out_data(1,:) + data_r(1,:)
           in_out_data(2,:) = in_out_data(2,:) + data_r(2,:)
+<<<<<<< HEAD
        endif 
+=======
+       endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       if(left_id .ge. 0 ) then !   ### send to left second.
           size = 2*ny
@@ -309,9 +442,15 @@ MODULE MODULE_MPP_LAND
     integer count,size,tag,  ierr
     integer flag   ! 99 replace the boundary, else get the sum.
 
+<<<<<<< HEAD
     if(flag .eq. 99) then ! replace the data  
        if(right_id .ge. 0) then  !   ### send to right first.
            tag = 11 
+=======
+    if(flag .eq. 99) then ! replace the data
+       if(right_id .ge. 0) then  !   ### send to right first.
+           tag = 11
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            size = ny
            call mpi_send(in_out_data(nx-1,:),size,MPI_DOUBLE_PRECISION,   &
              right_id,tag,HYDRO_COMM_WORLD,ierr)
@@ -321,17 +460,28 @@ MODULE MODULE_MPP_LAND
            size = ny
            call mpi_recv(in_out_data(1,:),size,MPI_DOUBLE_PRECISION,  &
               left_id,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+<<<<<<< HEAD
        endif 
 
       if(left_id .ge. 0 ) then !   ### send to left second.
           size = ny 
+=======
+       endif
+
+      if(left_id .ge. 0 ) then !   ### send to left second.
+          size = ny
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           tag = 21
           call mpi_send(in_out_data(2,:),size,MPI_DOUBLE_PRECISION,   &
              left_id,tag,HYDRO_COMM_WORLD,ierr)
       endif
       if(right_id .ge. 0) then !   receive from  right
           tag = 21
+<<<<<<< HEAD
           size = ny 
+=======
+          size = ny
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           call mpi_recv(in_out_data(nx,:),size,MPI_DOUBLE_PRECISION,&
              right_id,tag,HYDRO_COMM_WORLD, mpp_status,ierr)
       endif
@@ -340,7 +490,11 @@ MODULE MODULE_MPP_LAND
 
        if(right_id .ge. 0) then !   ### send to right first.
          tag = 11
+<<<<<<< HEAD
          size = 2*ny 
+=======
+         size = 2*ny
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call mpi_send(in_out_data(nx-1:nx,:),size,MPI_DOUBLE_PRECISION,   &
              right_id,tag,HYDRO_COMM_WORLD,ierr)
        end if
@@ -351,7 +505,11 @@ MODULE MODULE_MPP_LAND
                HYDRO_COMM_WORLD,mpp_status,ierr)
           in_out_data(1,:) = in_out_data(1,:) + data_r(1,:)
           in_out_data(2,:) = in_out_data(2,:) + data_r(2,:)
+<<<<<<< HEAD
        endif 
+=======
+       endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       if(left_id .ge. 0 ) then !   ### send to left second.
           size = 2*ny
@@ -369,12 +527,18 @@ MODULE MODULE_MPP_LAND
 
     return
   end subroutine MPP_LAND_LR_COM8
+<<<<<<< HEAD
   
   
+=======
+
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   subroutine get_local_size(local_nx, local_ny,rt_nx,rt_ny)
     integer local_nx, local_ny, rt_nx,rt_ny
     integer i,status,ierr, tag
     integer tmp_nx,tmp_ny
+<<<<<<< HEAD
 !   ### if it is IO node, get the local_size of the x and y direction 
 !   ### for all other tasks.
     integer s_r(2)
@@ -384,16 +548,35 @@ MODULE MODULE_MPP_LAND
        if(.not. allocated(local_ny_size) ) allocate(local_ny_size(numprocs),stat = status) 
        if(.not. allocated(local_rt_nx_size) ) allocate(local_rt_nx_size(numprocs),stat = status) 
        if(.not. allocated(local_rt_ny_size) ) allocate(local_rt_ny_size(numprocs),stat = status) 
+=======
+!   ### if it is IO node, get the local_size of the x and y direction
+!   ### for all other tasks.
+    integer s_r(2)
+
+!   if(my_id .eq. IO_id) then
+       if(.not. allocated(local_nx_size) ) allocate(local_nx_size(numprocs),stat = status)
+       if(.not. allocated(local_ny_size) ) allocate(local_ny_size(numprocs),stat = status)
+       if(.not. allocated(local_rt_nx_size) ) allocate(local_rt_nx_size(numprocs),stat = status)
+       if(.not. allocated(local_rt_ny_size) ) allocate(local_rt_ny_size(numprocs),stat = status)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !   end if
 
        call mpp_land_sync()
 
        if(my_id .eq. IO_id) then
+<<<<<<< HEAD
            do i = 0, numprocs - 1 
               if(i .ne. my_id) then
                  !block receive  from other node.
                  tag = 1
                  call mpi_recv(s_r,2,MPI_INTEGER,i, & 
+=======
+           do i = 0, numprocs - 1
+              if(i .ne. my_id) then
+                 !block receive  from other node.
+                 tag = 1
+                 call mpi_recv(s_r,2,MPI_INTEGER,i, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                       tag,HYDRO_COMM_WORLD,mpp_status,ierr)
                  local_nx_size(i+1) = s_r(1)
                  local_ny_size(i+1) = s_r(2)
@@ -402,14 +585,20 @@ MODULE MODULE_MPP_LAND
                    local_ny_size(i+1) = local_ny
                end if
            end do
+<<<<<<< HEAD
        else 
            tag =  1  
+=======
+       else
+           tag =  1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            s_r(1) = local_nx
            s_r(2) = local_ny
            call mpi_send(s_r,2,MPI_INTEGER, IO_id,     &
                tag,HYDRO_COMM_WORLD,ierr)
        end if
 
+<<<<<<< HEAD
  
        if(my_id .eq. IO_id) then
            do i = 0, numprocs - 1 
@@ -417,6 +606,15 @@ MODULE MODULE_MPP_LAND
                  !block receive  from other node.
                  tag = 2
                  call mpi_recv(s_r,2,MPI_INTEGER,i, & 
+=======
+
+       if(my_id .eq. IO_id) then
+           do i = 0, numprocs - 1
+              if(i .ne. my_id) then
+                 !block receive  from other node.
+                 tag = 2
+                 call mpi_recv(s_r,2,MPI_INTEGER,i, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                       tag,HYDRO_COMM_WORLD,mpp_status,ierr)
                  local_rt_nx_size(i+1) = s_r(1)
                  local_rt_ny_size(i+1) = s_r(2)
@@ -425,15 +623,24 @@ MODULE MODULE_MPP_LAND
                    local_rt_ny_size(i+1) = rt_ny
                end if
            end do
+<<<<<<< HEAD
        else 
            tag =  2  
+=======
+       else
+           tag =  2
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            s_r(1) = rt_nx
            s_r(2) = rt_ny
            call mpi_send(s_r,2,MPI_INTEGER, IO_id,     &
                tag,HYDRO_COMM_WORLD,ierr)
        end if
        call mpp_land_sync()
+<<<<<<< HEAD
        return 
+=======
+       return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end  subroutine get_local_size
 
 
@@ -453,27 +660,46 @@ MODULE MODULE_MPP_LAND
            call mpi_send(in_out_data(:,ny-1),size,MPI_REAL,   &
                up_id,tag,HYDRO_COMM_WORLD,ierr)
        endif
+<<<<<<< HEAD
        if(down_id .ge. 0 ) then !   receive from down 
            tag = 31 
+=======
+       if(down_id .ge. 0 ) then !   receive from down
+           tag = 31
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            size = nx
            call mpi_recv(in_out_data(:,1),size,MPI_REAL, &
               down_id,tag,HYDRO_COMM_WORLD, mpp_status,ierr)
        endif
+<<<<<<< HEAD
    
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        if(down_id .ge. 0 ) then !   send down.
            tag = 41
            size = nx
            call mpi_send(in_out_data(:,2),size,MPI_REAL,      &
                 down_id,tag,HYDRO_COMM_WORLD,ierr)
        endif
+<<<<<<< HEAD
        if(up_id .ge. 0 ) then !   receive from upper 
            tag = 41 
+=======
+       if(up_id .ge. 0 ) then !   receive from upper
+           tag = 41
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            size = nx
            call mpi_recv(in_out_data(:,ny),size,MPI_REAL, &
                up_id,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
        endif
+<<<<<<< HEAD
      
     else  ! flag = 1 
+=======
+
+    else  ! flag = 1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
        if(up_id .ge. 0 ) then !   ### send to up first.
            tag = 31
@@ -522,27 +748,46 @@ MODULE MODULE_MPP_LAND
            call mpi_send(in_out_data(:,ny-1),size,MPI_DOUBLE_PRECISION,   &
                up_id,tag,HYDRO_COMM_WORLD,ierr)
        endif
+<<<<<<< HEAD
        if(down_id .ge. 0 ) then !   receive from down 
            tag = 31 
+=======
+       if(down_id .ge. 0 ) then !   receive from down
+           tag = 31
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            size = nx
            call mpi_recv(in_out_data(:,1),size,MPI_DOUBLE_PRECISION, &
               down_id,tag,HYDRO_COMM_WORLD, mpp_status,ierr)
        endif
+<<<<<<< HEAD
    
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        if(down_id .ge. 0 ) then !   send down.
            tag = 41
            size = nx
            call mpi_send(in_out_data(:,2),size,MPI_DOUBLE_PRECISION,      &
                 down_id,tag,HYDRO_COMM_WORLD,ierr)
        endif
+<<<<<<< HEAD
        if(up_id .ge. 0 ) then !   receive from upper 
            tag = 41 
+=======
+       if(up_id .ge. 0 ) then !   receive from upper
+           tag = 41
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            size = nx
            call mpi_recv(in_out_data(:,ny),size,MPI_DOUBLE_PRECISION, &
                up_id,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
        endif
+<<<<<<< HEAD
      
     else  ! flag = 1 
+=======
+
+    else  ! flag = 1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
        if(up_id .ge. 0 ) then !   ### send to up first.
            tag = 31
@@ -574,18 +819,30 @@ MODULE MODULE_MPP_LAND
     endif  ! end of block  flag
     return
   end  subroutine MPP_LAND_UB_COM8
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   subroutine calculate_start_p()
 ! calculate startx and starty
     integer :: i,status, ierr, tag
     integer :: r_s(2)
     integer ::  t_nx, t_ny
 
+<<<<<<< HEAD
     if(.not. allocated(starty) ) allocate(starty(numprocs),stat = ierr) 
     if(.not. allocated(startx) ) allocate(startx(numprocs),stat = ierr)
 
     local_startx = int(global_nx/left_right_np) * left_right_p+1 
     local_starty = int(global_ny/up_down_np) * up_down_p+1 
+=======
+    if(.not. allocated(starty) ) allocate(starty(numprocs),stat = ierr)
+    if(.not. allocated(startx) ) allocate(startx(numprocs),stat = ierr)
+
+    local_startx = int(global_nx/left_right_np) * left_right_p+1
+    local_starty = int(global_ny/up_down_np) * up_down_p+1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !ywold
     t_nx = 0
@@ -674,7 +931,11 @@ MODULE MODULE_MPP_LAND
             iend   = startx(i+1)+local_nx_size(i+1) -1
             jbegin = starty(i+1)
             jend   = starty(i+1)+local_ny_size(i+1) -1
+<<<<<<< HEAD
           
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(my_id .eq. i) then
                out_buff=in_buff(ibegin:iend,jbegin:jend)
             else
@@ -684,7 +945,11 @@ MODULE MODULE_MPP_LAND
                   MPI_REAL, i,tag,HYDRO_COMM_WORLD,ierr)
             end if
          end do
+<<<<<<< HEAD
       else 
+=======
+      else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          size = local_nx*local_ny
          call mpi_recv(out_buff,size,MPI_REAL,IO_id, &
                 tag,HYDRO_COMM_WORLD,mpp_status,ierr)
@@ -699,7 +964,11 @@ MODULE MODULE_MPP_LAND
       integer,dimension(:,:) ::  in_buff,out_buff
       integer tag, i, status, ierr,size
       integer ibegin,iend,jbegin,jend
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       tag = 2
       if(my_id .eq. IO_id) then
          do i = 0, numprocs - 1
@@ -716,7 +985,11 @@ MODULE MODULE_MPP_LAND
                   MPI_INTEGER, i,tag,HYDRO_COMM_WORLD,ierr)
             end if
          end do
+<<<<<<< HEAD
       else 
+=======
+      else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          size = local_nx*local_ny
          call mpi_recv(out_buff,size,MPI_INTEGER,IO_id, &
                 tag,HYDRO_COMM_WORLD,mpp_status,ierr)
@@ -741,8 +1014,13 @@ MODULE MODULE_MPP_LAND
             jbegin = starty(i+1)
             jend   = starty(i+1)+local_ny_size(i+1) -1
             if(i .eq. IO_id) then
+<<<<<<< HEAD
                out_buff(ibegin:iend,jbegin:jend) = in_buff 
             else 
+=======
+               out_buff(ibegin:iend,jbegin:jend) = in_buff
+            else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                size = local_nx_size(i+1)*local_ny_size(i+1)
                tag = 2
                call mpi_recv(out_buff(ibegin:iend,jbegin:jend),size,&
@@ -755,6 +1033,7 @@ MODULE MODULE_MPP_LAND
 
   subroutine write_IO_char_head(in, out, imageHead)
   !! JLM 2015-11-30
+<<<<<<< HEAD
   !! for i is image number (starting from 0), 
   !! this routine writes 
   !! in(1:imageHead(i+1)) 
@@ -762,12 +1041,25 @@ MODULE MODULE_MPP_LAND
   !! out( (sum(imageHead(i+1-1))+1) : ((sum(imageHead(i+1-1))+1)+imageHead(i+1)) )
   !! where out is on the IO node.
       character(len=*), intent(in),  dimension(:) :: in 
+=======
+  !! for i is image number (starting from 0),
+  !! this routine writes
+  !! in(1:imageHead(i+1))
+  !! to
+  !! out( (sum(imageHead(i+1-1))+1) : ((sum(imageHead(i+1-1))+1)+imageHead(i+1)) )
+  !! where out is on the IO node.
+      character(len=*), intent(in),  dimension(:) :: in
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       character(len=*), intent(out), dimension(:) :: out
       integer,   intent(in),  dimension(:) :: imageHead
       integer :: tag, i, status, ierr, size
       integer :: ibegin,iend,jbegin,jend
       integer :: lenSize, theStart, theEnd
+<<<<<<< HEAD
       tag = 2 
+=======
+      tag = 2
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       if(my_id .ne. IO_id) then
          lenSize = imageHead(my_id+1)*len(in(1))  !! some times necessary for character arrays?
          if(lenSize .eq. 0) return
@@ -778,13 +1070,21 @@ MODULE MODULE_MPP_LAND
             if(lenSize .eq. 0) cycle
             if(i .eq. 0) then
                theStart = 1
+<<<<<<< HEAD
             else 
+=======
+            else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                theStart = sum(imageHead(1:(i+1-1))) +1
             end if
             theEnd   = theStart + imageHead(i+1) -1
             if(i .eq. IO_id) then
                out(theStart:theEnd) = in(1:imageHead(i+1))
+<<<<<<< HEAD
             else 
+=======
+            else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                call mpi_recv(out(theStart:theEnd),lenSize,&
                     MPI_CHARACTER,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
             end if
@@ -820,8 +1120,13 @@ MODULE MODULE_MPP_LAND
             jbegin = starty(i+1)
             jend   = starty(i+1)+local_ny_size(i+1) -1
             if(i .eq. IO_id) then
+<<<<<<< HEAD
                out_buff(ibegin:iend,jbegin:jend) = in_buff 
             else 
+=======
+               out_buff(ibegin:iend,jbegin:jend) = in_buff
+            else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                size = local_nx_size(i+1)*local_ny_size(i+1)
                tag = 2
                call mpi_recv(out_buff(ibegin:iend,jbegin:jend),size,&
@@ -844,15 +1149,24 @@ MODULE MODULE_MPP_LAND
                 tag,HYDRO_COMM_WORLD,ierr)
       else
           do i = 0, numprocs - 1
+<<<<<<< HEAD
             ibegin = startx(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1) 
+=======
+            ibegin = startx(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(ibegin.gt.1) ibegin=ibegin - 1
             iend   = ibegin + local_rt_nx_size(i+1) -1
             jbegin = starty(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
             if(jbegin.gt.1) jbegin=jbegin - 1
             jend   = jbegin + local_rt_ny_size(i+1) -1
             if(i .eq. IO_id) then
+<<<<<<< HEAD
                out_buff(ibegin:iend,jbegin:jend) = in_buff 
             else 
+=======
+               out_buff(ibegin:iend,jbegin:jend) = in_buff
+            else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                size = local_rt_nx_size(i+1)*local_rt_ny_size(i+1)
                tag = 2
                call mpi_recv(out_buff(ibegin:iend,jbegin:jend),size,&
@@ -877,15 +1191,24 @@ MODULE MODULE_MPP_LAND
                 tag,HYDRO_COMM_WORLD,ierr)
       else
           do i = 0, numprocs - 1
+<<<<<<< HEAD
             ibegin = startx(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1) 
+=======
+            ibegin = startx(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(ibegin.gt.1) ibegin=ibegin - 1
             iend   = ibegin + local_rt_nx_size(i+1) -1
             jbegin = starty(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
             if(jbegin.gt.1) jbegin=jbegin - 1
             jend   = jbegin + local_rt_ny_size(i+1) -1
             if(i .eq. IO_id) then
+<<<<<<< HEAD
                out_buff(ibegin:iend,jbegin:jend) = in_buff 
             else 
+=======
+               out_buff(ibegin:iend,jbegin:jend) = in_buff
+            else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                size = local_rt_nx_size(i+1)*local_rt_ny_size(i+1)
                tag = 2
                call mpi_recv(out_buff(ibegin:iend,jbegin:jend),size,&
@@ -902,7 +1225,11 @@ MODULE MODULE_MPP_LAND
         call mpi_bcast(inout,1,MPI_LOGICAL,   &
             IO_id,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
+<<<<<<< HEAD
     return 
+=======
+    return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_land_bcast_log1
 
 
@@ -913,29 +1240,49 @@ MODULE MODULE_MPP_LAND
         call mpi_bcast(inout,size,MPI_INTEGER,   &
             IO_id,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
+<<<<<<< HEAD
     return 
   end subroutine mpp_land_bcast_int
 
   subroutine mpp_land_bcast_int1d(inout)
       integer len 
+=======
+    return
+  end subroutine mpp_land_bcast_int
+
+  subroutine mpp_land_bcast_int1d(inout)
+      integer len
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       integer inout(:)
      integer ierr
       len = size(inout,1)
         call mpi_bcast(inout,len,MPI_INTEGER,   &
             IO_id,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
+<<<<<<< HEAD
     return 
   end subroutine mpp_land_bcast_int1d
 
   subroutine mpp_land_bcast_int1d_root(inout, rootId)
      integer len 
+=======
+    return
+  end subroutine mpp_land_bcast_int1d
+
+  subroutine mpp_land_bcast_int1d_root(inout, rootId)
+     integer len
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      integer inout(:)
      integer, intent(in) :: rootId
      integer ierr
       len = size(inout,1)
         call mpi_bcast(inout,len,MPI_INTEGER,rootId,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
+<<<<<<< HEAD
     return 
+=======
+    return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_land_bcast_int1d_root
 
   subroutine mpp_land_bcast_int1(inout)
@@ -944,7 +1291,11 @@ MODULE MODULE_MPP_LAND
         call mpi_bcast(inout,1,MPI_INTEGER,   &
             IO_id,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
+<<<<<<< HEAD
     return 
+=======
+    return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_land_bcast_int1
 
   subroutine mpp_land_bcast_int1_root(inout, rootId)
@@ -953,7 +1304,11 @@ MODULE MODULE_MPP_LAND
       integer, intent(in) :: rootId
         call mpi_bcast(inout,1,MPI_INTEGER,rootId,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
+<<<<<<< HEAD
     return 
+=======
+    return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_land_bcast_int1_root
 
   subroutine mpp_land_bcast_logical(inout)
@@ -962,7 +1317,11 @@ MODULE MODULE_MPP_LAND
         call mpi_bcast(inout,1,MPI_LOGICAL,   &
             IO_id,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
+<<<<<<< HEAD
     return 
+=======
+    return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_land_bcast_logical
 
   subroutine mpp_land_bcast_logical_root(inout, rootId)
@@ -971,7 +1330,11 @@ MODULE MODULE_MPP_LAND
       integer ierr
         call mpi_bcast(inout,1,MPI_LOGICAL,rootId,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
+<<<<<<< HEAD
     return 
+=======
+    return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_land_bcast_logical_root
 
 
@@ -981,7 +1344,11 @@ MODULE MODULE_MPP_LAND
         call mpi_bcast(inout,1,MPI_REAL,   &
             IO_id,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
+<<<<<<< HEAD
     return 
+=======
+    return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_land_bcast_real1
 
   subroutine mpp_land_bcast_real1_double(inout)
@@ -997,7 +1364,11 @@ MODULE MODULE_MPP_LAND
       integer len
       real inout(:)
       integer ierr
+<<<<<<< HEAD
       len = size(inout,1) 
+=======
+      len = size(inout,1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         call mpi_bcast(inout,len,MPI_real,   &
             IO_id,HYDRO_COMM_WORLD,ierr)
       call mpp_land_sync()
@@ -1084,7 +1455,11 @@ MODULE MODULE_MPP_LAND
       call mpp_land_sync()
     return
   end subroutine mpp_land_bcast_real3d
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   subroutine mpp_land_bcast_rd(size,inout)
       integer size
       real*8 inout(size)
@@ -1149,7 +1524,11 @@ MODULE MODULE_MPP_LAND
     return
   end subroutine mpp_land_bcast_char1
 
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   subroutine MPP_LAND_COM_REAL(in_out_data,NX,NY,flag)
 !   ### Communicate message on left right and up bottom directions.
     integer NX,NY
@@ -1191,7 +1570,11 @@ MODULE MODULE_MPP_LAND
 
     return
   end subroutine MPP_LAND_COM_INTEGER
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      subroutine read_restart_3(unit,nz,out)
         integer unit,nz,i
         real buf3(global_nx,global_ny,nz),&
@@ -1298,7 +1681,11 @@ MODULE MODULE_MPP_LAND
       tag = 2
       if(my_id .eq. IO_id) then
          do i = 0, numprocs - 1
+<<<<<<< HEAD
             ibegin = startx(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1) 
+=======
+            ibegin = startx(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(ibegin.gt.1) ibegin=ibegin - 1
             iend   = ibegin + local_rt_nx_size(i+1) -1
             jbegin = starty(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
@@ -1359,14 +1746,28 @@ MODULE MODULE_MPP_LAND
       return
   end subroutine decompose_RT_int
 
+<<<<<<< HEAD
   subroutine getNX_NY(nprocs, nx,ny)
   ! calculate the nx and ny based on the total nprocs.
     integer nprocs, nx, ny
     integer i,j, max
+=======
+  subroutine getNX_NY(nprocs,nx,ny)
+  ! calculate the nx and ny based on the total nprocs.
+    integer nprocs, nx, ny, n
+    integer i, j, max
+
+    n = global_nx * global_ny
+    if( nprocs .ge. n ) then
+       call fatal_error_stop("Error: number of processes greater than number of cells in the land grid")
+    end if
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     max = nprocs
     do j = 1, nprocs
        if( mod(nprocs,j) .eq. 0 ) then
            i = nprocs/j
+<<<<<<< HEAD
            if( abs(i-j) .lt. max) then
                max = abs(i-j)
                nx = i 
@@ -1375,6 +1776,20 @@ MODULE MODULE_MPP_LAND
        end if
     end do
   return 
+=======
+           if( i .le. global_nx ) then
+               if( abs(i-j) .lt. max) then
+                   if( j .le. global_ny ) then
+                       max = abs(i-j)
+                       nx = i
+                       ny = j
+                   end if
+               end if
+           end if
+       end if
+    end do
+  return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine getNX_NY
 
      subroutine pack_global_22(in,   &
@@ -1385,7 +1800,11 @@ MODULE MODULE_MPP_LAND
         do i = 1, k
           call write_IO_real(in(:,:,i),out(:,:,i))
         enddo
+<<<<<<< HEAD
      return 
+=======
+     return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      end subroutine pack_global_22
 
 
@@ -1400,7 +1819,11 @@ MODULE MODULE_MPP_LAND
       call MPI_COMM_SIZE( HYDRO_COMM_WORLD, numprocs, ierr )
 
       if(numprocs .ne. total_pe) then
+<<<<<<< HEAD
          write(6,*) "FATAL ERROR: In wrf_LAND_set_INIT() - numprocs .ne. total_pe ",numprocs, total_pe 
+=======
+         write(6,*) "FATAL ERROR: In wrf_LAND_set_INIT() - numprocs .ne. total_pe ",numprocs, total_pe
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call mpp_land_abort()
       endif
 
@@ -1412,17 +1835,29 @@ MODULE MODULE_MPP_LAND
       down_id = info(5,my_id+1)
       IO_id = 0
 
+<<<<<<< HEAD
        allocate(local_nx_size(numprocs),stat = status) 
        allocate(local_ny_size(numprocs),stat = status) 
        allocate(local_rt_nx_size(numprocs),stat = status) 
        allocate(local_rt_ny_size(numprocs),stat = status) 
        allocate(starty(numprocs),stat = ierr) 
+=======
+       allocate(local_nx_size(numprocs),stat = status)
+       allocate(local_ny_size(numprocs),stat = status)
+       allocate(local_rt_nx_size(numprocs),stat = status)
+       allocate(local_rt_ny_size(numprocs),stat = status)
+       allocate(starty(numprocs),stat = ierr)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        allocate(startx(numprocs),stat = ierr)
 
        i = my_id + 1
        local_nx = info(7,i) - info(6,i) + 1
        local_ny = info(9,i) - info(8,i) + 1
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        global_nx = 0
        global_ny = 0
        do i = 1, numprocs
@@ -1441,11 +1876,19 @@ MODULE MODULE_MPP_LAND
        global_rt_ny = global_ny*AGGFACTRT
        rt_AGGFACTRT = AGGFACTRT
 
+<<<<<<< HEAD
        do i =1,numprocs 
           local_nx_size(i) = info(7,i) - info(6,i) + 1
           local_ny_size(i) = info(9,i) - info(8,i) + 1
           startx(i)        = info(6,i) 
           starty(i)        = info(8,i) 
+=======
+       do i =1,numprocs
+          local_nx_size(i) = info(7,i) - info(6,i) + 1
+          local_ny_size(i) = info(9,i) - info(8,i) + 1
+          startx(i)        = info(6,i)
+          starty(i)        = info(8,i)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
           local_rt_nx_size(i) = (info(7,i) - info(6,i) + 1)*AGGFACTRT+2
           local_rt_ny_size(i) = (info(9,i) - info(8,i) + 1 )*AGGFACTRT+2
@@ -1454,7 +1897,11 @@ MODULE MODULE_MPP_LAND
           if(info(4,i).lt.0) local_rt_ny_size(i) = local_rt_ny_size(i) -1
           if(info(5,i).lt.0) local_rt_ny_size(i) = local_rt_ny_size(i) -1
        enddo
+<<<<<<< HEAD
       return 
+=======
+      return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       end   subroutine wrf_LAND_set_INIT
 
       subroutine getMy_global_id()
@@ -1473,12 +1920,20 @@ MODULE MODULE_MPP_LAND
 
       tmp_inout = -999
 
+<<<<<<< HEAD
       if(size .eq. 0) then  
+=======
+      if(size .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             tmp_inout = -999
       else
 
          !     map the Link_V data to tmp_inout(ix,jy)
+<<<<<<< HEAD
          do i = 1,ix 
+=======
+         do i = 1,ix
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(Link_location(i,1) .gt. 0) &
                tmp_inout(i,1) = Link_V(Link_location(i,1))
             if(Link_location(i,2) .gt. 0) &
@@ -1488,7 +1943,11 @@ MODULE MODULE_MPP_LAND
             if(Link_location(i,jy) .gt. 0) &
                tmp_inout(i,jy) = Link_V(Link_location(i,jy))
           enddo
+<<<<<<< HEAD
          do j = 1,jy 
+=======
+         do j = 1,jy
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(Link_location(1,j) .gt. 0) &
                tmp_inout(1,j) = Link_V(Link_location(1,j))
             if(Link_location(2,j) .gt. 0) &
@@ -1505,7 +1964,11 @@ MODULE MODULE_MPP_LAND
 
 !map the data back to Link_V
     if(size .eq. 0) return
+<<<<<<< HEAD
       do j = 1,jy 
+=======
+      do j = 1,jy
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if( (Link_location(1,j) .gt. 0) .and. (tmp_inout(1,j) .ne. -999) ) &
                Link_V(Link_location(1,j)) = tmp_inout(1,j)
             if((Link_location(2,j) .gt. 0) .and. (tmp_inout(2,j) .ne. -999) ) &
@@ -1515,7 +1978,11 @@ MODULE MODULE_MPP_LAND
             if((Link_location(ix,j) .gt. 0) .and. (tmp_inout(ix,j) .ne. -999) )&
                Link_V(Link_location(ix,j)) = tmp_inout(ix,j)
       enddo
+<<<<<<< HEAD
       do i = 1,ix 
+=======
+      do i = 1,ix
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if((Link_location(i,1) .gt. 0) .and. (tmp_inout(i,1) .ne. -999) )&
                Link_V(Link_location(i,1)) = tmp_inout(i,1)
             if( (Link_location(i,2) .gt. 0) .and. (tmp_inout(i,2) .ne. -999) )&
@@ -1538,12 +2005,20 @@ MODULE MODULE_MPP_LAND
 
       tmp_inout = -999
 
+<<<<<<< HEAD
       if(size .eq. 0) then  
+=======
+      if(size .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             tmp_inout = -999
       else
 
          !     map the Link_V data to tmp_inout(ix,jy)
+<<<<<<< HEAD
          do i = 1,ix 
+=======
+         do i = 1,ix
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(Link_location(i,1) .gt. 0) &
                tmp_inout(i,1) = Link_V(Link_location(i,1))
             if(Link_location(i,2) .gt. 0) &
@@ -1553,7 +2028,11 @@ MODULE MODULE_MPP_LAND
             if(Link_location(i,jy) .gt. 0) &
                tmp_inout(i,jy) = Link_V(Link_location(i,jy))
           enddo
+<<<<<<< HEAD
          do j = 1,jy 
+=======
+         do j = 1,jy
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(Link_location(1,j) .gt. 0) &
                tmp_inout(1,j) = Link_V(Link_location(1,j))
             if(Link_location(2,j) .gt. 0) &
@@ -1570,7 +2049,11 @@ MODULE MODULE_MPP_LAND
 
 !map the data back to Link_V
     if(size .eq. 0) return
+<<<<<<< HEAD
       do j = 1,jy 
+=======
+      do j = 1,jy
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if( (Link_location(1,j) .gt. 0) .and. (tmp_inout(1,j) .ne. -999) ) &
                Link_V(Link_location(1,j)) = tmp_inout(1,j)
             if((Link_location(2,j) .gt. 0) .and. (tmp_inout(2,j) .ne. -999) ) &
@@ -1580,7 +2063,11 @@ MODULE MODULE_MPP_LAND
             if((Link_location(ix,j) .gt. 0) .and. (tmp_inout(ix,j) .ne. -999) )&
                Link_V(Link_location(ix,j)) = tmp_inout(ix,j)
       enddo
+<<<<<<< HEAD
       do i = 1,ix 
+=======
+      do i = 1,ix
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if((Link_location(i,1) .gt. 0) .and. (tmp_inout(i,1) .ne. -999) )&
                Link_V(Link_location(i,1)) = tmp_inout(i,1)
             if( (Link_location(i,2) .gt. 0) .and. (tmp_inout(i,2) .ne. -999) )&
@@ -1600,12 +2087,20 @@ MODULE MODULE_MPP_LAND
       integer i,j, flag
       integer Link_V(size), tmp_inout(ix,jy)
 
+<<<<<<< HEAD
       if(size .eq. 0) then  
+=======
+      if(size .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            tmp_inout = -999
       else
 
          !     map the Link_V data to tmp_inout(ix,jy)
+<<<<<<< HEAD
          do i = 1,ix 
+=======
+         do i = 1,ix
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(Link_location(i,1) .gt. 0) &
                tmp_inout(i,1) = Link_V(Link_location(i,1))
             if(Link_location(i,2) .gt. 0) &
@@ -1615,7 +2110,11 @@ MODULE MODULE_MPP_LAND
             if(Link_location(i,jy) .gt. 0) &
                tmp_inout(i,jy) = Link_V(Link_location(i,jy))
           enddo
+<<<<<<< HEAD
          do j = 1,jy 
+=======
+         do j = 1,jy
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(Link_location(1,j) .gt. 0) &
                tmp_inout(1,j) = Link_V(Link_location(1,j))
             if(Link_location(2,j) .gt. 0) &
@@ -1632,7 +2131,11 @@ MODULE MODULE_MPP_LAND
 
 !map the data back to Link_V
     if(size .eq. 0) return
+<<<<<<< HEAD
       do j = 1,jy 
+=======
+      do j = 1,jy
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if( (Link_location(1,j) .gt. 0) .and. (tmp_inout(1,j) .ne. -999) ) &
                Link_V(Link_location(1,j)) = tmp_inout(1,j)
             if((Link_location(2,j) .gt. 0) .and. (tmp_inout(2,j) .ne. -999) ) &
@@ -1642,7 +2145,11 @@ MODULE MODULE_MPP_LAND
             if((Link_location(ix,j) .gt. 0) .and. (tmp_inout(ix,j) .ne. -999) )&
                Link_V(Link_location(ix,j)) = tmp_inout(ix,j)
       enddo
+<<<<<<< HEAD
       do i = 1,ix 
+=======
+      do i = 1,ix
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if((Link_location(i,1) .gt. 0) .and. (tmp_inout(i,1) .ne. -999) )&
                Link_V(Link_location(i,1)) = tmp_inout(i,1)
             if( (Link_location(i,2) .gt. 0) .and. (tmp_inout(i,2) .ne. -999) )&
@@ -1684,7 +2191,11 @@ MODULE MODULE_MPP_LAND
                  tag = 101
                  call mpi_recv(r1,1,MPI_INTEGER,i, &
                       tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+<<<<<<< HEAD
                  if(max <= r1) max = r1 
+=======
+                 if(max <= r1) max = r1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               end if
            end do
        else
@@ -1696,7 +2207,11 @@ MODULE MODULE_MPP_LAND
        v = max
        return
      end subroutine mpp_land_max_int1
+<<<<<<< HEAD
      
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      subroutine mpp_land_max_real1(v)
         implicit none
         real v, r1, max
@@ -1709,7 +2224,11 @@ MODULE MODULE_MPP_LAND
                  tag = 101
                  call mpi_recv(r1,1,MPI_REAL,i, &
                       tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+<<<<<<< HEAD
                  if(max <= r1) max = r1 
+=======
+                 if(max <= r1) max = r1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               end if
            end do
        else
@@ -1722,7 +2241,11 @@ MODULE MODULE_MPP_LAND
        return
      end subroutine mpp_land_max_real1
 
+<<<<<<< HEAD
      subroutine mpp_same_int1(v)   
+=======
+     subroutine mpp_same_int1(v)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         implicit none
         integer v,r1
         integer i, ierr, tag
@@ -1733,7 +2256,11 @@ MODULE MODULE_MPP_LAND
                  tag = 109
                  call mpi_recv(r1,1,MPI_INTEGER,i, &
                       tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+<<<<<<< HEAD
                  if(v .ne. r1) v = -99  
+=======
+                 if(v .ne. r1) v = -99
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               end if
            end do
        else
@@ -1746,7 +2273,11 @@ MODULE MODULE_MPP_LAND
 
 
 
+<<<<<<< HEAD
      subroutine write_chanel_real(v,map_l2g,gnlinks,nlinks,g_v)   
+=======
+     subroutine write_chanel_real(v,map_l2g,gnlinks,nlinks,g_v)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         implicit none
         integer  gnlinks,nlinks, map_l2g(nlinks)
         real recv(nlinks), v(nlinks)
@@ -1785,7 +2316,11 @@ MODULE MODULE_MPP_LAND
                    tag,HYDRO_COMM_WORLD,mpp_status,ierr)
 
                  do k = 1,message_len
+<<<<<<< HEAD
                     node = tmp_map(k) 
+=======
+                    node = tmp_map(k)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                     if(node .gt. 0) then
                       g_v(node) = tmp_v(k)
                     else
@@ -1796,17 +2331,29 @@ MODULE MODULE_MPP_LAND
                  enddo
               else
                  do k = 1,nlinks
+<<<<<<< HEAD
                     node = map_l2g(k) 
+=======
+                    node = map_l2g(k)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                     if(node .gt. 0) then
                       g_v(node) = v(k)
                     else
 #ifdef HYDRO_D
+<<<<<<< HEAD
                       write(6,*) "local Maping infor k=",k," node=",node 
+=======
+                      write(6,*) "local Maping infor k=",k," node=",node
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                     endif
                  enddo
               end if
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            end do
         else
            tag =  109
@@ -1821,7 +2368,11 @@ MODULE MODULE_MPP_LAND
            if(allocated(tmp_v)) deallocate(tmp_v)
      end subroutine write_chanel_real
 
+<<<<<<< HEAD
      subroutine write_chanel_int(v,map_l2g,gnlinks,nlinks,g_v)   
+=======
+     subroutine write_chanel_int(v,map_l2g,gnlinks,nlinks,g_v)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         implicit none
         integer gnlinks,nlinks, map_l2g(nlinks)
         integer ::  recv(nlinks), v(nlinks)
@@ -1860,9 +2411,15 @@ MODULE MODULE_MPP_LAND
 
                  do k = 1,message_len
                     if(tmp_map(k) .gt. 0) then
+<<<<<<< HEAD
                       node = tmp_map(k) 
                       g_v(node) = tmp_v(k)
                     else 
+=======
+                      node = tmp_map(k)
+                      g_v(node) = tmp_v(k)
+                    else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef HYDRO_D
                       write(6,*) "Maping infor k=",k," node=",tmp_v(k)
 #endif
@@ -1871,7 +2428,11 @@ MODULE MODULE_MPP_LAND
               else
                  do k = 1,nlinks
                     if(map_l2g(k) .gt. 0) then
+<<<<<<< HEAD
                       node = map_l2g(k) 
+=======
+                      node = map_l2g(k)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                       g_v(node) = v(k)
                     else
 #ifdef HYDRO_D
@@ -1880,7 +2441,11 @@ MODULE MODULE_MPP_LAND
                     endif
                  enddo
               end if
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            end do
         else
            tag =  109
@@ -1895,8 +2460,12 @@ MODULE MODULE_MPP_LAND
      end subroutine write_chanel_int
 
 
+<<<<<<< HEAD
 
      subroutine write_lake_real(v,nodelist_in,nlakes)   
+=======
+     subroutine write_lake_real(v,nodelist_in,nlakes)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         implicit none
         real recv(nlakes), v(nlakes)
         integer nodelist(nlakes), nlakes, nodelist_in(nlakes)
@@ -1917,11 +2486,19 @@ MODULE MODULE_MPP_LAND
 
                  do k = 1,nlakes
                     if(nodelist(k) .gt. -99) then
+<<<<<<< HEAD
                        node = nodelist(k) 
                        v(node) = recv(node)
                     endif
                  enddo
               end if            
+=======
+                       node = nodelist(k)
+                       v(node) = recv(node)
+                    endif
+                 enddo
+              end if
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            end do
         else
            tag =  129
@@ -1933,6 +2510,50 @@ MODULE MODULE_MPP_LAND
         end if
      end subroutine write_lake_real
 
+<<<<<<< HEAD
+=======
+
+     subroutine write_lake_char(v,nodelist_in,nlakes)
+        implicit none
+        character(len=256) recv(nlakes), v(nlakes)
+        integer nodelist(nlakes), nlakes, nodelist_in(nlakes)
+        integer i, ierr, tag, k, in_len
+        integer length, node
+
+        in_len = size(v, 1)*len(v)
+
+        nodelist = nodelist_in
+        if(my_id .eq. IO_id) then
+           do i = 0, numprocs - 1
+              if(i .ne. my_id) then
+                 !block receive  from other node.
+                 tag = 129
+                 call mpi_recv(nodelist,nlakes,MPI_INTEGER,i, &
+                      tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+                   tag = 139
+                 call mpi_recv(recv(:),in_len,MPI_CHARACTER,i,  &
+                   tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+
+                 do k = 1,nlakes
+                    if(nodelist(k) .gt. -99) then
+                       node = nodelist(k)
+                       v(node) = recv(node)
+                    endif
+                 enddo
+              end if
+           end do
+        else
+           tag =  129
+           call mpi_send(nodelist,nlakes,MPI_INTEGER, IO_id,     &
+               tag,HYDRO_COMM_WORLD,ierr)
+           tag = 139
+           call mpi_send(v,in_len,MPI_CHARACTER,IO_id,   &
+               tag,HYDRO_COMM_WORLD,ierr)
+        end if
+     end subroutine write_lake_char
+
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      subroutine read_rst_crt_r(unit,out,size)
          implicit none
         integer unit, size, ierr,ierr2
@@ -1947,7 +2568,11 @@ MODULE MODULE_MPP_LAND
         call mpi_bcast(out,size,MPI_REAL,   &
             IO_id,HYDRO_COMM_WORLD,ierr)
      return
+<<<<<<< HEAD
      end subroutine read_rst_crt_r  
+=======
+     end subroutine read_rst_crt_r
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
          subroutine write_rst_crt_r(unit,cd,map_l2g,gnlinks,nlinks)
          integer :: unit,gnlinks,nlinks,map_l2g(nlinks)
@@ -1976,7 +2601,11 @@ MODULE MODULE_MPP_LAND
              call mpi_send(vin,nsize,MPI_INTEGER,IO_id,   &
                   tag,HYDRO_COMM_WORLD,ierr)
        endif
+<<<<<<< HEAD
        call mpp_land_bcast_int1d(vin) 
+=======
+       call mpp_land_bcast_int1d(vin)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        return
     end subroutine sum_int1d
 
@@ -2013,7 +2642,11 @@ MODULE MODULE_MPP_LAND
        real,dimension(nsize) :: vin
        real*8,dimension(nsize) :: vin8
        vin8=vin
+<<<<<<< HEAD
        call sum_real8(vin8,nsize) 
+=======
+       call sum_real8(vin8,nsize)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        vin=vin8
     end subroutine sum_real1d
 
@@ -2021,7 +2654,11 @@ MODULE MODULE_MPP_LAND
        implicit none
        integer nsize,i,j,tag,ierr
        real*8, dimension(nsize):: vin,recv
+<<<<<<< HEAD
        real, dimension(nsize):: v 
+=======
+       real, dimension(nsize):: v
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        tag = 319
        if(my_id .eq. IO_id) then
           do i = 0, numprocs - 1
@@ -2036,7 +2673,11 @@ MODULE MODULE_MPP_LAND
              call mpi_send(vin,nsize,MPI_DOUBLE_PRECISION,IO_id,   &
                   tag,HYDRO_COMM_WORLD,ierr)
        endif
+<<<<<<< HEAD
        call mpp_land_bcast_real(nsize,v) 
+=======
+       call mpp_land_bcast_real(nsize,v)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        vin = v
        return
     end subroutine sum_real8
@@ -2068,12 +2709,17 @@ MODULE MODULE_MPP_LAND
     s = s_in
     e = e_in
 
+<<<<<<< HEAD
     if(my_id .eq. IO_id) then 
+=======
+    if(my_id .eq. IO_id) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         vg(s:e) = vl
     end if
 
      index_s(1) = s
      index_s(2) = e
+<<<<<<< HEAD
      size = e - s + 1 
 
     if(my_id .eq. IO_id) then
@@ -2082,27 +2728,53 @@ MODULE MODULE_MPP_LAND
                  !block receive  from other node.
                  tag = 202
                  call mpi_recv(index_s,2,MPI_INTEGER,i, & 
+=======
+     size = e - s + 1
+
+    if(my_id .eq. IO_id) then
+         do i = 0, numprocs - 1
+              if(i .ne. my_id) then
+                 !block receive  from other node.
+                 tag = 202
+                 call mpi_recv(index_s,2,MPI_INTEGER,i, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                       tag,HYDRO_COMM_WORLD,mpp_status,ierr)
 
                  tag = 203
                  e = index_s(2)
                  s = index_s(1)
+<<<<<<< HEAD
                  size = e - s + 1 
+=======
+                 size = e - s + 1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  call mpi_recv(vg(s:e),size,MPI_REAL,  &
                     i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
               endif
          end do
+<<<<<<< HEAD
      else 
+=======
+     else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            tag =  202
            call mpi_send(index_s,2,MPI_INTEGER, IO_id,     &
                tag,HYDRO_COMM_WORLD,ierr)
 
+<<<<<<< HEAD
            tag =  203  
+=======
+           tag =  203
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            call mpi_send(vl,size,MPI_REAL,IO_id,   &
                tag,HYDRO_COMM_WORLD,ierr)
      end if
 
+<<<<<<< HEAD
      return 
+=======
+     return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end  subroutine gather_1d_real_tmp
 
   subroutine sum_real1(inout)
@@ -2111,7 +2783,11 @@ MODULE MODULE_MPP_LAND
       integer :: ierr
       send = inout
       CALL MPI_ALLREDUCE(send,inout,1,MPI_REAL,MPI_SUM,HYDRO_COMM_WORLD,ierr)
+<<<<<<< HEAD
   end subroutine sum_real1 
+=======
+  end subroutine sum_real1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
   subroutine sum_double(inout)
       implicit none
@@ -2127,7 +2803,11 @@ MODULE MODULE_MPP_LAND
        implicit none
        integer :: nlinks
        integer :: i, ierr, status, tag
+<<<<<<< HEAD
        allocate(mpp_nlinks(numprocs),stat = status) 
+=======
+       allocate(mpp_nlinks(numprocs),stat = status)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  tag = 138
        mpp_nlinks = 0
        if(my_id .eq. IO_id) then
@@ -2144,7 +2824,11 @@ MODULE MODULE_MPP_LAND
                tag,HYDRO_COMM_WORLD,ierr)
        endif
 
+<<<<<<< HEAD
      
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_chrt_nlinks_collect
 
      subroutine  getLocalXY(ix,jx,startx,starty,endx,endy)
@@ -2181,9 +2865,15 @@ MODULE MODULE_MPP_LAND
         integer :: unit
         real :: inVar(:,:)
         real :: g_var(global_nx,global_ny)
+<<<<<<< HEAD
         call write_io_real(inVar,g_var) 
         if(my_id .eq. IO_id) then
            write(unit,*) g_var 
+=======
+        call write_io_real(inVar,g_var)
+        if(my_id .eq. IO_id) then
+           write(unit,*) g_var
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            call flush(unit)
         endif
      end subroutine check_landreal2d
@@ -2195,7 +2885,11 @@ MODULE MODULE_MPP_LAND
         real :: g_var(global_nx,global_ny)
         klevel = size(inVar,2)
         do k = 1, klevel
+<<<<<<< HEAD
            call write_io_real(inVar(:,k,:),g_var) 
+=======
+           call write_io_real(inVar(:,k,:),g_var)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            if(my_id .eq. IO_id) then
               write(unit,*) g_var
               call flush(unit)
@@ -2226,7 +2920,11 @@ MODULE MODULE_MPP_LAND
        endif
        call mpp_land_sync()
        call mpp_land_bcast_int1d(vinout)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_collect_1d_int
 
   subroutine mpp_collect_1d_int_mem(nlinks,vinout)
@@ -2260,14 +2958,24 @@ MODULE MODULE_MPP_LAND
             end if
           end do
           if(allocated(tmpBuf)) deallocate(tmpBuf)
+<<<<<<< HEAD
        else 
+=======
+       else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            lsize = 0
            do k = 1, nlinks
                if(vinout(k) .gt. 0) then
                   lsize = lsize + 1
+<<<<<<< HEAD
                   tmpIn(lsize) = k        
                end if
            end do 
+=======
+                  tmpIn(lsize) = k
+               end if
+           end do
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            tag = 120
            call mpi_send(lsize,1,MPI_INTEGER, IO_id,     &
                  tag,HYDRO_COMM_WORLD,ierr)
@@ -2279,7 +2987,11 @@ MODULE MODULE_MPP_LAND
        endif
        call mpp_land_sync()
        call mpp_land_bcast_int1d(vinout)
+<<<<<<< HEAD
    
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   end subroutine mpp_collect_1d_int_mem
 
      subroutine updateLake_seqInt(in,nsize,in0)
@@ -2300,14 +3012,22 @@ MODULE MODULE_MPP_LAND
             if(i .ne. IO_id) then
                call mpi_recv(tmp,nsize,&
                    MPI_INTEGER,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+<<<<<<< HEAD
                do k = 1, nsize 
+=======
+               do k = 1, nsize
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   if(in0(k) .ne. tmp(k)) in(k) = tmp(k)
                end do
             end if
           end do
        end if
        call mpp_land_bcast_int1d(in)
+<<<<<<< HEAD
      
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      end subroutine updateLake_seqInt
 
      subroutine updateLake_seq(in,nsize,in0)
@@ -2328,16 +3048,58 @@ MODULE MODULE_MPP_LAND
             if(i .ne. IO_id) then
                call mpi_recv(tmp,nsize,&
                    MPI_REAL,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+<<<<<<< HEAD
                do k = 1, nsize 
+=======
+               do k = 1, nsize
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   if(in0(k) .ne. tmp(k)) in(k) = tmp(k)
                end do
             end if
           end do
        end if
        call mpp_land_bcast_real_1d(in)
+<<<<<<< HEAD
      
      end subroutine updateLake_seq
 
+=======
+
+     end subroutine updateLake_seq
+
+
+     subroutine updateLake_seq_char(in,nsize,in0)
+       implicit none
+       integer :: nsize
+       character(len=256), dimension(nsize) :: in
+       character(len=256), dimension(nsize) :: tmp
+       character(len=256), dimension(:) :: in0
+       integer tag, i, status, ierr, k, in_len
+       if(nsize .le. 0) return
+
+       in_len = size(in, 1)*len(in)
+
+       tag = 29
+       if(my_id .ne. IO_id) then
+          call mpi_send(in,in_len,MPI_CHARACTER, IO_id,     &
+                tag,HYDRO_COMM_WORLD,ierr)
+       else
+          do i = 0, numprocs - 1
+            if(i .ne. IO_id) then
+               call mpi_recv(tmp,in_len,&
+                   MPI_CHARACTER,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+               do k = 1, nsize
+                  if(in0(k) .ne. tmp(k)) in(k) = tmp(k)
+               end do
+            end if
+          end do
+       end if
+       call mpp_land_bcast_char1d(in)
+
+     end subroutine updateLake_seq_char
+
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      subroutine updateLake_grid(in,nsize,lake_index)
        implicit none
        integer :: nsize
@@ -2363,14 +3125,22 @@ MODULE MODULE_MPP_LAND
                tag = 30
                call mpi_recv(lake_index,nsize,&
                    MPI_INTEGER,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+<<<<<<< HEAD
                do k = 1, nsize 
+=======
+               do k = 1, nsize
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   if(lake_index(k) .gt. 0) in(k) = tmp(k)
                end do
             end if
           end do
        end if
        call mpp_land_bcast_real_1d(in)
+<<<<<<< HEAD
      
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      end subroutine updateLake_grid
 
 
@@ -2388,14 +3158,22 @@ MODULE MODULE_MPP_LAND
              if(i .ne. my_id) then
                call mpi_recv(recv,nsize,MPI_INTEGER,i,  &
                     tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+<<<<<<< HEAD
                do k = 1, nsize 
+=======
+               do k = 1, nsize
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  if(recv(k) .eq. flag) vin(k) = flag
                  if(vin(k) .ne. flag) then
                    if(vin(k) .gt. 0 .and. recv(k) .gt. 0) then
                        vin(k) = flag
                    else
                        if(recv(k) .gt. 0) vin(k) = recv(k)
+<<<<<<< HEAD
                    endif 
+=======
+                   endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  endif
                end do
              endif
@@ -2403,9 +3181,15 @@ MODULE MODULE_MPP_LAND
        else
              call mpi_send(vin,nsize,MPI_INTEGER,IO_id,   &
                   tag,HYDRO_COMM_WORLD,ierr)
+<<<<<<< HEAD
        endif   
        call mpp_land_bcast_int1d(vin)
        return  
+=======
+       endif
+       call mpp_land_bcast_int1d(vin)
+       return
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     end subroutine match1dLake
 
         subroutine mpp_land_abort()
@@ -2428,7 +3212,11 @@ MODULE MODULE_MPP_LAND
     real,    intent(inout) :: scalar
     integer, intent(in)    :: fromImage, toImage
     integer:: ierr, tag
+<<<<<<< HEAD
     tag=2   
+=======
+    tag=2
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     if(my_id .eq. fromImage) &
          call mpi_send(scalar, 1, MPI_REAL, &
                        toImage, tag, HYDRO_COMM_WORLD, ierr)
@@ -2452,14 +3240,22 @@ MODULE MODULE_MPP_LAND
                        fromImage, tag, HYDRO_COMM_WORLD, mpp_status, ierr)
     end subroutine mpp_comm_scalar_char
 
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     subroutine mpp_comm_1d_real(vector, fromImage, toImage)
     implicit none
     real,    dimension(:), intent(inout) :: vector
     integer,               intent(in)    :: fromImage, toImage
     integer:: ierr, tag
     integer:: my_id,numprocs
+<<<<<<< HEAD
     tag=2   
+=======
+    tag=2
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     call MPI_COMM_RANK(HYDRO_COMM_WORLD,my_id,ierr)
     call MPI_COMM_SIZE(HYDRO_COMM_WORLD,numprocs,ierr)
     if(numprocs > 1) then
@@ -2493,7 +3289,11 @@ MODULE MODULE_MPP_LAND
     endif
     end subroutine mpp_comm_1d_char
 
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 END MODULE MODULE_MPP_LAND
 
 

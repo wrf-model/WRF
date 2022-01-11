@@ -76,6 +76,11 @@
 ! 1) changes and cleanup of code comments
 ! 2) correction to universal gas constant (very small change)
 
+<<<<<<< HEAD
+=======
+! CHANGES FOR WRFV4.3
+! 1) fix to saturation vapor pressure polysvp to work at T < -80 C
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
@@ -86,7 +91,11 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
    USE     module_wrf_error
    USE module_mp_radar
 
+<<<<<<< HEAD
 ! USE WRF PHYSICS CONSTANTS
+=======
+!  USE WRF PHYSICS CONSTANTS
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   use module_model_constants, ONLY: CP, G, R => r_d, RV => r_v, EP_2
 
 !  USE module_state_description
@@ -570,7 +579,11 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                ,IMS,IME, JMS,JME, KMS,KME               & ! memory dims
                ,ITS,ITE, JTS,JTE, KTS,KTE               & ! tile   dims            )
 !jdf		   ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
+<<<<<<< HEAD
                ,rainprod, evapprod                      &
+=======
+               ,wetscav_on, rainprod, evapprod                      &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 		   ,QLSINK,PRECR,PRECI,PRECS,PRECG &        ! HM ADD, WRF-CHEM
                                             )
  
@@ -671,6 +684,11 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
 
+<<<<<<< HEAD
+=======
+   LOGICAL, optional, INTENT(IN) :: wetscav_on
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! LOCAL VARIABLES
 
    REAL, DIMENSION(its:ite, kts:kte, jts:jte)::                     &
@@ -717,11 +735,25 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
 
+<<<<<<< HEAD
+=======
+   LOGICAL :: has_wetscav
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! below for wrf-chem
    flag_qndrop = .false.
    IF ( PRESENT ( f_qndrop ) ) flag_qndrop = f_qndrop
 !!!!!!!!!!!!!!!!!!!!!!
 
+<<<<<<< HEAD
+=======
+   IF( PRESENT( wetscav_on ) ) THEN
+     has_wetscav = wetscav_on
+   ELSE
+     has_wetscav = .false.
+   ENDIF
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Initialize tendencies (all set to 0) and transfer
    ! array to local variables
    DT = DT_IN   
@@ -820,7 +852,11 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                                   QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
                                   nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
 #if (WRF_CHEM == 1)
+<<<<<<< HEAD
                                   ,rainprod1d, evapprod1d & !wrf-chem
+=======
+                                  ,has_wetscav,rainprod1d, evapprod1d & !wrf-chem
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                        )
 
@@ -877,8 +913,15 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 !          EFFIS(I,K,J)     = MAX(EFFIS(I,K,J),13.)
 
 #if ( WRF_CHEM == 1)
+<<<<<<< HEAD
            IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
            IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
+=======
+           IF ( has_wetscav ) THEN
+             IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
+             IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
+           ENDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
       end do
@@ -924,7 +967,11 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                         nc3d,nc3dten,iinum, & ! wrf-chem
 				c2prec,CSED,ISED,SSED,GSED,RSED  &  ! hm added, wrf-chem
 #if (WRF_CHEM == 1)
+<<<<<<< HEAD
         ,rainprod, evapprod &
+=======
+        ,has_wetscav,rainprod, evapprod &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                         )
 
@@ -1022,6 +1069,14 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
         REAL DT         ! MODEL TIME STEP (SEC)
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+      LOGICAL, INTENT(IN) :: has_wetscav
+#endif
+
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !.....................................................................................................
 ! LOCAL VARIABLES: ALL PARAMETERS BELOW ARE LOCAL TO SCHEME AND DON'T NEED TO COMMUNICATE WITH THE
 ! REST OF THE MODEL.
@@ -1287,6 +1342,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! SATURATION VAPOR PRESSURE AND MIXING RATIO
 
 ! hm, add fix for low pressure, 5/12/10
+<<<<<<< HEAD
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             EVS(K) = min(0.99*pres(k),POLYSVP(T3D(K),0))   ! PA
             EIS(K) = min(0.99*pres(k),POLYSVP(T3D(K),1))   ! PA
 
@@ -2050,8 +2109,15 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       QC3DTEN(K) = QC3DTEN(K)+PCC(K)
 
 #if (WRF_CHEM == 1)
+<<<<<<< HEAD
          evapprod(k) = - PRE(K) - EVPMS(K) - EVPMG(K)
          rainprod(k) = PRA(K) + PRC(K) + tqimelt(K)
+=======
+      IF( has_wetscav ) THEN
+         evapprod(k) = - PRE(K) - EVPMS(K) - EVPMG(K)
+         rainprod(k) = PRA(K) + PRC(K) + tqimelt(K)
+      END IF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
 !.......................................................................
@@ -3294,10 +3360,18 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
          NR3DTEN(K) = NR3DTEN(K)+NSUBR(K)
 
 #if (WRF_CHEM == 1)
+<<<<<<< HEAD
+=======
+      IF( has_wetscav ) THEN
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
          rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
                        + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K)  &
                        + PRDS(K) + PRDG(K)
+<<<<<<< HEAD
+=======
+      ENDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
          END IF !!!!!! TEMPERATURE
@@ -4080,11 +4154,26 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 !         POLYSVP = 10.**(-9.09718*(273.16/T-1.)-3.56654*                &
 !          LOG10(273.16/T)+0.876793*(1.-T/273.16)+						&
 !          LOG10(6.1071))*100.
+<<<<<<< HEAD
 
 
       dt = max(-80.,t-273.16)
       polysvp = a0i + dt*(a1i+dt*(a2i+dt*(a3i+dt*(a4i+dt*(a5i+dt*(a6i+dt*(a7i+a8i*dt))))))) 
       polysvp = polysvp*100.
+=======
+! hm 11/16/20, use Goff-Gratch for T < 195.8 K and Flatau et al. equal or above 195.8 K
+      if (t.ge.195.8) then
+         dt=t-273.15
+         polysvp = a0i + dt*(a1i+dt*(a2i+dt*(a3i+dt*(a4i+dt*(a5i+dt*(a6i+dt*(a7i+a8i*dt))))))) 
+         polysvp = polysvp*100.
+      else
+
+         polysvp = 10.**(-9.09718*(273.16/t-1.)-3.56654* &
+          alog10(273.16/t)+0.876793*(1.-t/273.16)+ &
+          alog10(6.1071))*100.
+
+      end if
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       END IF
 
@@ -4092,17 +4181,39 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
       IF (TYPE.EQ.0) THEN
 
+<<<<<<< HEAD
        dt = max(-80.,t-273.16)
        polysvp = a0 + dt*(a1+dt*(a2+dt*(a3+dt*(a4+dt*(a5+dt*(a6+dt*(a7+a8*dt)))))))
        polysvp = polysvp*100.
 
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !         POLYSVP = 10.**(-7.90298*(373.16/T-1.)+                        &
 !             5.02808*LOG10(373.16/T)-									&
 !             1.3816E-7*(10**(11.344*(1.-T/373.16))-1.)+				&
 !             8.1328E-3*(10**(-3.49149*(373.16/T-1.))-1.)+				&
 !             LOG10(1013.246))*100.
+<<<<<<< HEAD
 
          END IF
+=======
+! hm 11/16/20, use Goff-Gratch for T < 202.0 K and Flatau et al. equal or above 202.0 K
+      if (t.ge.202.0) then
+         dt = t-273.15
+         polysvp = a0 + dt*(a1+dt*(a2+dt*(a3+dt*(a4+dt*(a5+dt*(a6+dt*(a7+a8*dt)))))))
+         polysvp = polysvp*100.
+      else
+
+! note: uncertain below -70 C, but produces physical values (non-negative) unlike flatau
+         polysvp = 10.**(-7.90298*(373.16/t-1.)+ &
+             5.02808*alog10(373.16/t)- &
+             1.3816e-7*(10**(11.344*(1.-t/373.16))-1.)+ &
+             8.1328e-3*(10**(-3.49149*(373.16/t-1.))-1.)+ &
+             alog10(1013.246))*100.                      
+      end if
+
+      END IF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 
       END FUNCTION POLYSVP

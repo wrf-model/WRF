@@ -165,6 +165,10 @@ PROGRAM convert_emissions
 #endif
 
 #include "version_decl"
+<<<<<<< HEAD
+=======
+#include "commit_decl"
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 #define DM_BCAST_MACRO(A) CALL wrf_dm_bcast_bytes ( A , size ( A ) * rnum8 )
 
@@ -212,6 +216,10 @@ PROGRAM convert_emissions
    NULLIFY( null_domain )
    
    CALL  wrf_message ( program_name )
+<<<<<<< HEAD
+=======
+   CALL  wrf_message ( commit_version )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    write(message,FMT='(A)') ' allocate for wrfinput_d01 '
    CALL alloc_and_configure_domain ( domain_id  = 1           , &
                                      grid       = head_grid   , &

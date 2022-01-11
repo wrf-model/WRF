@@ -52,6 +52,14 @@ subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
    if (iv%info(airsr)%nlocal          > 0) call da_transform_xtoy_airsr    (grid, iv, y)
    if (iv%info(pseudo)%nlocal         > 0) call da_transform_xtoy_pseudo   (grid, iv, y)
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   if (iv%info(chemic_surf)%nlocal      > 0) &
+         call da_transform_xtoy_chem_sfc (grid, iv, y)
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if (use_rad) then
       if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV

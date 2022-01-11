@@ -1,5 +1,10 @@
+<<<<<<< HEAD
    TYPE namelist_rt_field  
       
+=======
+   TYPE namelist_rt_field
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        integer :: nsoil, SOLVEG_INITSWC
        real,allocatable,dimension(:) :: ZSOIL8
        real*8 :: out_dt, rst_dt
@@ -17,7 +22,11 @@
        integer ::  order_to_write, rst_typ
        character(len=256)  :: upmap_file = ""    ! user defined mapping file for NHDPLUS
        character(len=256)  :: hydrotbl_f = ""    ! hydrotbl file
+<<<<<<< HEAD
        
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !      additional character
        character :: hgrid
        character(len=19) :: olddate="123456"
@@ -26,21 +35,46 @@
 
        integer :: io_config_outputs  ! used for NCEP REALTIME OUTPUT
        integer :: io_form_outputs ! Flag to turn specify level of internal compression
+<<<<<<< HEAD
        integer :: t0OutputFlag  
+=======
+       integer :: t0OutputFlag
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        integer :: channel_only, channelBucket_only
        integer :: output_channelBucket_influx ! used for FORCE_TYPE 9 and 10
 
           integer:: RT_OPTION, CHANRTSWCRT, channel_option, &
+<<<<<<< HEAD
                   SUBRTSWCRT,OVRTSWCRT,AGGFACTRT, &
                   GWBASESWCRT,  GW_RESTART,RSTRT_SWC,TERADJ_SOLAR, &
                   sys_cpl, gwChanCondSw, GwPreCycles, GwSpinCycles, GwPreDiagInterval, &
                   gwsoilcpl, UDMP_OPT
+=======
+                  SUBRTSWCRT, OVRTSWCRT, AGGFACTRT, &
+                  GWBASESWCRT, GW_RESTART,RSTRT_SWC,TERADJ_SOLAR, &
+                  sys_cpl, gwChanCondSw, GwPreCycles, GwSpinCycles, GwPreDiagInterval, &
+                  gwsoilcpl, UDMP_OPT, bucket_loss
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           logical:: GwPreDiag, GwSpinUp
           real:: DTRT_TER,DTRT_CH, DTCT, dxrt0,  gwChanCondConstIn, gwChanCondConstOut, gwIhShift
           character(len=256) :: route_topo_f=""
           character(len=256) :: route_chan_f=""
           character(len=256) :: route_link_f=""
           character(len=256) :: route_lake_f=""
+<<<<<<< HEAD
+=======
+          logical            :: reservoir_persistence_usgs
+          logical            :: reservoir_persistence_usace
+          character(len=256) :: reservoir_parameter_file=""
+          character(len=256) :: reservoir_usgs_timeslice_path=""
+          character(len=256) :: reservoir_usace_timeslice_path=""
+          integer            :: reservoir_observation_lookback_hours
+          integer            :: reservoir_observation_update_time_interval_seconds
+          logical            :: reservoir_rfc_forecasts
+          character(len=256) :: reservoir_rfc_forecasts_time_series_path=""
+          integer            :: reservoir_rfc_forecasts_lookback_hours
+          logical            :: reservoir_type_specified
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           character(len=256) :: route_direction_f=""
           character(len=256) :: route_order_f=""
           character(len=256) :: gwbasmskfil =""
@@ -48,7 +82,11 @@
           character(len=256) :: geo_finegrid_flnm =""
           character(len=256) :: udmap_file =""
           character(len=256) :: GWBUCKPARM_file = ""
+<<<<<<< HEAD
           integer :: reservoir_data_ingest ! STUB FOR USE OF REALTIME RESERVOIR DISCHARGE DATA. CURRENTLY NOT IN USE. 
+=======
+          integer :: reservoir_data_ingest ! STUB FOR USE OF REALTIME RESERVOIR DISCHARGE DATA. CURRENTLY NOT IN USE.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           character(len=1024) :: reservoir_obs_dir = ""
 
           logical :: compound_channel
@@ -74,11 +112,19 @@
        integer            :: minNumPairsBiasPersist
        integer            :: maxAgePairsBiasPersist
        logical            :: invDistTimeWeightBias
+<<<<<<< HEAD
        logical            :: noConstInterfBias  
+=======
+       logical            :: noConstInterfBias
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        character(len=256) :: timeSlicePath
        integer            :: nLastObs
 !#endif
 
 
+<<<<<<< HEAD
    END TYPE namelist_rt_field 
+=======
+   END TYPE namelist_rt_field
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 

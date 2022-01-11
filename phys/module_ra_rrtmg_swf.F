@@ -11215,6 +11215,10 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !------------------------------------------------------------------
       SUBROUTINE RRTMG_SWRAD_FAST(                                &
                        rthratensw,                                &
+<<<<<<< HEAD
+=======
+                       rthratenswc,                               &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                        swupt, swuptc, swdnt, swdntc,              &
                        swupb, swupbc, swdnb, swdnbc,              &
 !                      swupflx, swupflxc, swdnflx, swdnflxc,      &
@@ -11258,6 +11262,10 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                        xcoszen,yr,julian                          & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
+<<<<<<< HEAD
+=======
+      USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
@@ -11279,7 +11287,12 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                                            rho3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+<<<<<<< HEAD
          INTENT(INOUT)  ::                            RTHRATENSW
+=======
+         INTENT(INOUT)  ::                            RTHRATENSW,&
+                                                      RTHRATENSWC
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GSW, &
@@ -11521,6 +11534,12 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
     integer:: idx_rei
     real:: corr
 
+<<<<<<< HEAD
+=======
+#ifdef CLWRFGHG
+    real(kind=8)                                 :: co2, n2o, ch4, cfc11, cfc12
+#else
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
@@ -11531,6 +11550,10 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! nitrous oxide (319 ppbv)
     real :: n2o
     data n2o / 319.e-9 / 
+<<<<<<< HEAD
+=======
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -11641,6 +11664,14 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !                                                              
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
+<<<<<<< HEAD
+=======
+!
+#ifdef CLWRFGHG
+! Read time-varying trace gases concentrations and interpolate them to run date.
+   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! jararias, 14/08/2013
       if (present(xcoszen)) then
@@ -12514,6 +12545,11 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
          do k=kts,kte 
             tten1d(k) = swhr(icol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
+<<<<<<< HEAD
+=======
+            tten1d(k) = swhrc(icol,k)/86400.
+            rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          enddo
 
       else

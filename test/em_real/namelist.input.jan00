@@ -61,6 +61,10 @@
  cu_rad_feedback                     = .true.,.true.,.false.,
  num_land_cat                        = 21,
  sf_urban_physics                    = 0,     0,     0,
+<<<<<<< HEAD
+=======
+ fractional_seaice                   = 1,
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
  /
 
  &fdda

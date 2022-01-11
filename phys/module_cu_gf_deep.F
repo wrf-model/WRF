@@ -1,4 +1,11 @@
 MODULE module_cu_gf_deep
+<<<<<<< HEAD
+=======
+
+#if ( WRF_CHEM == 1)
+     USE module_cu_gf_ctrans,only: ctrans_gf
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      real, parameter::g=9.81
      real, parameter:: cp=1004.
      real, parameter:: xlv=2.5e6
@@ -97,6 +104,16 @@ contains
 #if ( WRF_DFI_RADAR == 1 )
               ,do_capsuppress,cap_suppress_j    &             
 #endif
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1 )
+              ,num_chem,chem2d,outchemt         &
+              ,num_tracer,tracer2d,outtracert   &
+              ,numgas,chemopt,traceropt         &
+              ,conv_tr_wetscav,conv_tr_aqchem   &
+              ,chem_conv_tr                   &
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ,k22                              &
               ,jmin)
 
@@ -171,6 +188,25 @@ contains
         ,intent (in   )                   ::                           &
         dtime
 
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1 )
+       INTEGER,INTENT(IN   ) ::                                        &
+              num_chem,num_tracer,numgas,chemopt,traceropt,            &
+              conv_tr_wetscav,conv_tr_aqchem,chem_conv_tr
+       REAL,DIMENSION(its:ite , kts:kte , num_chem),INTENT(IN)::       &
+                        tracer2d
+       REAL,DIMENSION(its:ite , kts:kte , num_chem),INTENT(IN)::       &
+                        chem2d
+       REAL,DIMENSION(its:ite , kts:kte , num_tracer),INTENT(INOUT)::  &
+                        outtracert
+       REAL,DIMENSION(its:ite , kts:kte , num_tracer),INTENT(INOUT)::  &
+                        outchemt
+       INTEGER :: nv
+       real,dimension(its:ite,kts:kte) ::  tempco
+
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !
 !  local ensemble dependent variables in this routine
@@ -1793,6 +1829,49 @@ contains
           endif
       enddo
 
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1 )
+!--- calculate in-cloud/updraft air temperature
+    do i=its,itf
+      if (ierr(i)==0) then
+        do k=kts,ktf
+          tempco(i,k)=(1./cp)*(hco(i,k)-g*zo_cup(i,k)-xlv*qco(i,k))
+        enddo
+      else
+        do k=kts,ktf
+          tempco(i,k)=tn_cup(i,k)
+        enddo
+      endif
+    enddo
+    if ((chem_conv_tr>0).and.(chemopt>0)) then
+      call ctrans_gf(numgas,num_chem,chem2d,chemopt,0  &
+                     ,outchemt,conv_tr_wetscav,conv_tr_aqchem &
+                     ,po,po_cup,zo_cup &
+                     ,zuo,zdo,pwo,pwdo,pwevo,pwavo &
+                     ,up_massentro,up_massdetro &
+                     ,dd_massentro,dd_massdetro &
+                     ,tempco,clw_all  &
+                     ,ktop,k22,kbcon,jmin  &
+                     ,xmb,ierr,edto  &
+                     ,itf,ktf,its,ite,kts,kte  &
+                     ,0)
+    endif
+    if ((chem_conv_tr>0).and.(traceropt>0)) then
+      call ctrans_gf(0,num_tracer,tracer2d,0,traceropt  &
+                     ,outtracert,0,0        &
+                     ,po,po_cup,zo_cup &
+                     ,zuo,zdo,pwo,pwdo,pwevo,pwavo &
+                     ,up_massentro,up_massdetro &
+                     ,dd_massentro,dd_massdetro &
+                     ,tempco,clw_all  &
+                     ,ktop,k22,kbcon,jmin  &
+                     ,xmb,ierr,edto  &
+                     ,itf,ktf,its,ite,kts,kte  &
+                     ,0)
+    endif
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !
 !---------------------------done------------------------------
@@ -3374,7 +3453,11 @@ contains
 !
         prop_b(kts:kte)=0
         iall=0
+<<<<<<< HEAD
         c0=.002
+=======
+        c0=.004 ! Han et al. (2016); Li et al., (2019), updated from 0.002
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         bdsp=BDISPM
 !
 !--- no precip for small clouds
@@ -3427,6 +3510,10 @@ contains
 !
 !            if(name == "deep" )then
             DO k=k22(i)+1,kbcon(i)
+<<<<<<< HEAD
+=======
+              if (t(i,k).lt.273.15) c0=c0*exp(0.07*(t(i,k)-273.15))  ! Han et al. (2016); Li et al. (2019)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               qc(i,k)=   (qc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)* qc(i,k-1)+ &
                          up_massentr(i,k-1)*q(i,k-1))   /                       &
                          (zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
@@ -3448,7 +3535,11 @@ contains
 !
             DO k=kbcon(i)+1,ktop(i)
                c0=.004
+<<<<<<< HEAD
                if(t(i,k).lt.270.)c0=.002
+=======
+               if (t(i,k).lt.273.15) c0=c0*exp(0.07*(t(i,k)-273.15))  ! Han et al. (2016); Li et al. (2019)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                denom=zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1)
                if(denom.lt.1.e-8)then
                      ierr(i)=51

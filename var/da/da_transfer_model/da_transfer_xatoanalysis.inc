@@ -4,17 +4,35 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
    ! Purpose: Transfer xb and xa (increments) to analysis.
    !---------------------------------------------------------------------------
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   USE module_state_description, ONLY :                                 &
+                     num_chem                                           & !inline gocart
+                    ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2    & !inline gocart
+                    ,p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co      &
+                    ,p_chem_ic_p10,  p_chem_ic_p25,  p_chem_ic_sulf  
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    implicit none
 
    integer,         intent(in)    :: it    ! outer-loop index
    type (xbx_type), intent(out)   :: xbx    ! Header & non-gridded vars.
    type(domain),    intent(inout) :: grid
+<<<<<<< HEAD
 
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    type (grid_config_rec_type), intent(inout) :: config_flags
 
    character*4 filnam
    character(len=256) ::  timestr
 
+<<<<<<< HEAD
+=======
+   integer n,ichem
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if (trace_use) call da_trace_entry("da_transfer_xatoanalysis")
 
    !---------------------------------------------------------------------------
@@ -32,6 +50,12 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
 
       if (it < max_ext_its) then
          call da_transfer_wrftoxb(xbx, grid, config_flags)
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+         call da_transfer_wrftoxb_chem(grid)
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       end if
    else if (fg_format == fg_format_wrf_arw_global) then
       if( var4d) then

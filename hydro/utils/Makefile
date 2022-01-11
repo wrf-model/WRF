@@ -13,7 +13,12 @@ NWM_VERSION=\"$(nwm_version)\"
 F90FLAGS += -DNWM_VERSION=$(NWM_VERSION) -DWRF_HYDRO_VERSION=$(WRF_HYDRO_VERSION)
 
 OBJS = \
+<<<<<<< HEAD
 	module_version.o
+=======
+	module_version.o \
+	module_hydro_stop.o
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 all:	$(OBJS)
 

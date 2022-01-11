@@ -353,7 +353,10 @@ module clm_varpar
   integer, parameter :: ndst        =   4   ! number of dust size classes (BGC only)
   integer, parameter :: dst_src_nbr =   3   ! number of size distns in src soil (BGC only)
   integer, parameter :: sz_nbr      = 200   ! number of sub-grid bins in large bin of dust size distribution (BGC only)
+<<<<<<< HEAD
   integer, parameter :: nvoc        =   5   ! number of voc categories (BGC only)
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !Not found in CLM3.5, putting back in from CLM3
 !ylu remove
   integer, parameter :: numcol      =   8   !number of soil color types
@@ -2383,7 +2386,11 @@ end type pft_nflux_type
 !----------------------------------------------------
 type, public :: pft_vflux_type
    real(r8), pointer :: vocflx_tot(:)     !total VOC flux into atmosphere [ug C m-2 h-1]
+<<<<<<< HEAD
    real(r8), pointer :: vocflx(:,:)       !(nvoc) VOC flux [ug C m-2 h-1]
+=======
+   real(r8), pointer :: vocflx(:,:)       ! VOC flux [ug C m-2 h-1]
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    real(r8), pointer :: vocflx_1(:)       !vocflx(1) (for history output) [ug C m-2 h-1]
    real(r8), pointer :: vocflx_2(:)       !vocflx(2) (for history output) [ug C m-2 h-1]
    real(r8), pointer :: vocflx_3(:)       !vocflx(3) (for history output) [ug C m-2 h-1]
@@ -3793,6 +3800,7 @@ character(len=8), parameter, public :: allrof = 'allrof'    ! name of rtm, runof
 
 
 end module clmtype  
+<<<<<<< HEAD
 MODULE module_sf_clm
 
 !October 15, 2012
@@ -6098,6 +6106,1828 @@ END IF
  END SUBROUTINE clminit
 !------------------------------------------------------------------------------
 END MODULE module_sf_clm
+=======
+
+module pftvarcon
+
+!----------------------------------------------------------------------- 
+!BOP
+!
+! !MODULE: pftvarcon
+! 
+! !DESCRIPTION: 
+! Module containing vegetation constants and method to 
+! eads and initialize vegetation (PFT) constants.
+!
+! !USES:
+  use shr_kind_mod, only: r8 => shr_kind_r8
+  use clm_varpar,only : numpft, numrad
+  USE module_date_time
+  USE module_sf_urban, only: urban
+  USE module_sf_noahlsm, only: LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
+  USE module_ra_gfdleta,  only: cal_mon_day
+  USE module_configure
+
+!
+! !PUBLIC TYPES:
+  implicit none
+  save
+!
+! Vegetation type constants
+!ylu add
+! Set specific vegetation type values
+
+
+  integer,parameter :: noveg                  = 0                 !value for not vegetated 
+  integer,parameter :: ndllf_evr_tmp_tree     = 1  !value for Needleleaf evergreen temperate tree
+  integer,parameter :: ndllf_evr_brl_tree     = 2  !value for Needleleaf evergreen boreal tree
+  integer,parameter :: ndllf_dcd_brl_tree     = 3  !value for Needleleaf deciduous boreal tree
+  integer,parameter :: nbrdlf_evr_trp_tree    = 4  !value for Broadleaf evergreen tropical tree
+  integer,parameter :: nbrdlf_evr_tmp_tree    = 5  !value for Broadleaf evergreen temperate tree
+  integer,parameter :: nbrdlf_dcd_trp_tree    = 6  !value for Broadleaf deciduous tropical tree
+  integer,parameter :: nbrdlf_dcd_tmp_tree    = 7  !value for Broadleaf deciduous temperate tree
+  integer,parameter :: nbrdlf_dcd_brl_tree    = 8  !value for Broadleaf deciduous boreal tree
+  integer :: ntree                  !value for last type of tree
+  integer,parameter :: nbrdlf_evr_shrub       = 9  !value for Broadleaf evergreen shrub
+  integer,parameter :: nbrdlf_dcd_tmp_shrub   = 10 !value for Broadleaf deciduous temperate shrub
+  integer,parameter :: nbrdlf_dcd_brl_shrub   = 11 !value for Broadleaf deciduous boreal shrub
+  integer,parameter :: nc3_arctic_grass       = 12 !value for C3 arctic grass
+  integer,parameter :: nc3_nonarctic_grass    = 13 !value for C3 non-arctic grass
+  integer,parameter :: nc4_grass              = 14 !value for C4 grass
+  integer,parameter :: nc3crop                = 15 !value for generic C3 crop
+  integer,parameter :: nc4crop                = 16 !value for generic C4 crop
+#if (defined CROP)
+  integer :: npcropmin              !value for first crop
+  integer,parameter :: ncorn                  = 17 !value for corn
+  integer,parameter :: nswheat                = 18 !value for spring wheat
+  integer,parameter :: nwwheat                = 19 !value for winter wheat
+  integer,parameter :: nsoybean               = 20 !value for soybean
+  integer :: npcropmax              !value for last prognostic crop in list
+  real(r8):: mxtmp(0:numpft)        !parameter used in accFlds
+  real(r8):: baset(0:numpft)        !parameter used in accFlds
+  real(r8):: declfact(0:numpft)     !parameter used in CNAllocation
+  real(r8):: bfact(0:numpft)        !parameter used in CNAllocation
+  real(r8):: aleaff(0:numpft)       !parameter used in CNAllocation
+  real(r8):: arootf(0:numpft)       !parameter used in CNAllocation
+  real(r8):: astemf(0:numpft)       !parameter used in CNAllocation
+  real(r8):: arooti(0:numpft)       !parameter used in CNAllocation
+  real(r8):: fleafi(0:numpft)       !parameter used in CNAllocation
+  real(r8):: allconsl(0:numpft)     !parameter used in CNAllocation
+  real(r8):: allconss(0:numpft)     !parameter used in CNAllocation
+  real(r8):: ztopmx(0:numpft)       !parameter used in CNVegStructUpdate
+  real(r8):: laimx(0:numpft)        !parameter used in CNVegStructUpdate
+  real(r8):: gddmin(0:numpft)       !parameter used in CNPhenology
+  real(r8):: hybgdd(0:numpft)       !parameter used in CNPhenology
+  real(r8):: lfemerg(0:numpft)      !parameter used in CNPhenology
+  real(r8):: grnfill(0:numpft)      !parameter used in CNPhenology
+  integer :: mxmat(0:numpft)        !parameter used in CNPhenology
+#endif
+
+  real(r8):: crop(0:numpft)        ! crop pft: 0. = not crop, 1. = crop pft
+
+!-----------------------------------------------------------------------
+  character(len=40) pftname(0:numpft)
+  real(r8):: dleaf(0:numpft)       !characteristic leaf dimension (m)
+  real(r8):: c3psn(0:numpft)       !photosynthetic pathway: 0. = c4, 1. = c3
+  real(r8):: vcmx25(0:numpft)      !max rate of carboxylation at 25C (umol CO2/m**2/s)
+  real(r8):: mp(0:numpft)          !slope of conductance-to-photosynthesis relationship
+  real(r8):: qe25(0:numpft)        !quantum efficiency at 25C (umol CO2 / umol photon)
+  real(r8):: xl(0:numpft)          !leaf/stem orientation index
+  real(r8):: rhol(0:numpft,numrad) !leaf reflectance: 1=vis, 2=nir
+  real(r8):: rhos(0:numpft,numrad) !stem reflectance: 1=vis, 2=nir
+  real(r8):: taul(0:numpft,numrad) !leaf transmittance: 1=vis, 2=nir
+  real(r8):: taus(0:numpft,numrad) !stem transmittance: 1=vis, 2=nir
+  real(r8):: z0mr(0:numpft)        !ratio of momentum roughness length to canopy top height (-)
+  real(r8):: displar(0:numpft)     !ratio of displacement height to canopy top height (-)
+  real(r8):: roota_par(0:numpft)   !CLM rooting distribution parameter [1/m]
+  real(r8):: rootb_par(0:numpft)   !CLM rooting distribution parameter [1/m]
+  real(r8):: slatop(0:numpft)      !SLA at top of canopy [m^2/gC]
+  real(r8):: dsladlai(0:numpft)    !dSLA/dLAI [m^2/gC]
+  real(r8):: leafcn(0:numpft)      !leaf C:N [gC/gN]
+  real(r8):: flnr(0:numpft)        !fraction of leaf N in Rubisco [no units]
+  real(r8):: smpso(0:numpft)       !soil water potential at full stomatal opening (mm)
+  real(r8):: smpsc(0:numpft)       !soil water potential at full stomatal closure (mm)
+  real(r8):: fnitr(0:numpft)       !foliage nitrogen limitation factor (-)
+  real(r8):: woody(0:numpft)       !woody lifeform flag (0 or 1)
+  real(r8):: lflitcn(0:numpft)      !leaf litter C:N (gC/gN)
+  real(r8):: frootcn(0:numpft)      !fine root C:N (gC/gN)
+  real(r8):: livewdcn(0:numpft)     !live wood (phloem and ray parenchyma) C:N (gC/gN)
+  real(r8):: deadwdcn(0:numpft)     !dead wood (xylem and heartwood) C:N (gC/gN)
+  real(r8):: froot_leaf(0:numpft)   !allocation parameter: new fine root C per new leaf C (gC/gC) 
+  real(r8):: stem_leaf(0:numpft)    !allocation parameter: new stem c per new leaf C (gC/gC)
+  real(r8):: croot_stem(0:numpft)   !allocation parameter: new coarse root C per new stem C (gC/gC)
+  real(r8):: flivewd(0:numpft)      !allocation parameter: fraction of new wood that is live (phloem and ray parenchyma) (no units)
+  real(r8):: fcur(0:numpft)         !allocation parameter: fraction of allocation that goes to currently displayed growth, remainder to storage
+  real(r8):: lf_flab(0:numpft)      !leaf litter labile fraction
+  real(r8):: lf_fcel(0:numpft)      !leaf litter cellulose fraction
+  real(r8):: lf_flig(0:numpft)      !leaf litter lignin fraction
+  real(r8):: fr_flab(0:numpft)      !fine root litter labile fraction
+  real(r8):: fr_fcel(0:numpft)      !fine root litter cellulose fraction
+  real(r8):: fr_flig(0:numpft)      !fine root litter lignin fraction
+  real(r8):: dw_fcel(0:numpft)      !dead wood cellulose fraction
+  real(r8):: dw_flig(0:numpft)      !dead wood lignin fraction
+  real(r8):: leaf_long(0:numpft)    !leaf longevity (yrs)
+  real(r8):: evergreen(0:numpft)    !binary flag for evergreen leaf habit (0 or 1)
+  real(r8):: stress_decid(0:numpft) !binary flag for stress-deciduous leaf habit (0 or 1)
+  real(r8):: season_decid(0:numpft) !binary flag for seasonal-deciduous leaf habit (0 or 1)
+  ! new pft parameters for CN-fire code
+  real(r8):: resist(0:numpft)       !resistance to fire (no units)
+  real(r8):: pftpar20(0:numpft)       !tree maximum crown area (m2)
+  real(r8):: pftpar28(0:numpft)       !min coldest monthly mean temperature
+  real(r8):: pftpar29(0:numpft)       !max coldest monthly mean temperature
+  real(r8):: pftpar30(0:numpft)       !min growing degree days (>= 5 deg C)
+  real(r8):: pftpar31(0:numpft)       !upper limit of temperature of the warmest month (twmax)
+  ! for crop
+  real(r8):: graincn(0:numpft)      !grain C:N (gC/gN)
+ 
+
+  real(r8), parameter :: reinickerp = 1.6_r8 !parameter in allometric equation
+  real(r8), parameter :: dwood  = 2.5e5_r8   !cn wood density (gC/m3); lpj:2.0e5
+  real(r8), parameter :: allom1 = 100.0_r8   !parameters in
+  real(r8), parameter :: allom2 =  40.0_r8   !...allometric
+  real(r8), parameter :: allom3 =   0.5_r8   !...equations
+  real(r8), parameter :: allom1s = 250.0_r8  !modified for shrubs by
+  real(r8), parameter :: allom2s =   8.0_r8  !X.D.Z
+
+
+
+! Created by Sam Levis (put into module form by Mariana Vertenstein)
+
+    character(len=40) expected_pftnames(0:numpft) 
+
+    integer, private :: i  ! loop index
+
+
+
+
+
+   data (expected_pftnames(i),i=1,numpft) / &
+                 'needleleaf_evergreen_temperate_tree'  &
+               , 'needleleaf_evergreen_boreal_tree   '  &
+               , 'needleleaf_deciduous_boreal_tree   '  &
+               , 'broadleaf_evergreen_tropical_tree  '  &
+               , 'broadleaf_evergreen_temperate_tree '  &
+               , 'broadleaf_deciduous_tropical_tree  '  &
+               , 'broadleaf_deciduous_temperate_tree '  &
+               , 'broadleaf_deciduous_boreal_tree    '  &
+               , 'broadleaf_evergreen_shrub          '  &
+               , 'broadleaf_deciduous_temperate_shrub'  &
+               , 'broadleaf_deciduous_boreal_shrub   '  &
+               , 'c3_arctic_grass                    '  &
+               , 'c3_non-arctic_grass                '  &
+               , 'c4_grass                           '  &
+               , 'c3_crop                            '  &
+               , 'c4_crop                            '  &
+#if (defined CROP)
+               , 'corn                               '  &
+               , 'spring_wheat                       '  &
+               , 'winter_wheat                       '  &
+               , 'soybean                            '  &
+#endif
+    /
+
+!ylu 10/18/10 add new physiology data for CLM4 and CROP
+
+data (pftname(i),i=1,numpft)/'needleleaf_evergreen_temperate_tree'&
+               , 'needleleaf_evergreen_boreal_tree   '  &
+               , 'needleleaf_deciduous_boreal_tree   '  &
+               , 'broadleaf_evergreen_tropical_tree  '  &
+               , 'broadleaf_evergreen_temperate_tree '  &
+               , 'broadleaf_deciduous_tropical_tree  '  &
+               , 'broadleaf_deciduous_temperate_tree '  &
+               , 'broadleaf_deciduous_boreal_tree    '  &
+               , 'broadleaf_evergreen_shrub          '  &
+               , 'broadleaf_deciduous_temperate_shrub'  &
+               , 'broadleaf_deciduous_boreal_shrub   '  &
+               , 'c3_arctic_grass                    '  &
+               , 'c3_non-arctic_grass                '  &
+               , 'c4_grass                           '  &
+               , 'c3_crop                            '  &
+               , 'c4_crop                            '  &
+#if (defined CROP)
+               , 'corn                               '  &
+               , 'spring_wheat                       '  &
+               , 'winter_wheat                       '  &
+               , 'soybean                            '  &
+#endif
+    /
+
+  data (z0mr(i),i=1,numpft)/ 0.055,0.055,0.055,0.075,0.075,&
+         0.055,0.055,0.055,0.120,0.120,0.120,0.120,0.120,&
+         0.120,0.120,0.120&
+#if (defined CROP)
+         ,0.120,0.120,0.120,0.120/
+#else      
+         /
+#endif
+
+  data (displar(i),i=1,numpft)/0.67,0.67,0.67,0.67,0.67,0.67,&
+         0.67,0.67,0.68,0.68,0.68,0.68,0.68,0.68,0.68,0.68&
+#if (defined CROP)
+         ,0.68,0.68,0.68,0.68/
+#else      
+         /
+#endif
+
+  data (dleaf(i),i=1,numpft)/ 0.04,0.04,0.04,0.04,0.04,0.04,&
+         0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04&
+#if (defined CROP)
+         ,0.04,0.04,0.04,0.04/
+#else      
+         /
+#endif
+
+  data (c3psn(i),i=1,numpft)/1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1&
+#if (defined CROP)
+       ,0,1,1,1 /
+#else      
+         /
+#endif 
+
+  data (vcmx25(i),i=1,numpft)/51,43,51,75,69,40,51,51,17,17,&
+         33,43,43,24,50,50&
+#if (defined CROP)
+        ,50,50,50,50 /
+#else      
+         /
+#endif 
+
+  data (mp(i),i=1,numpft)/6,6,6,9,9,9,9,9,9,9,9,9,9,5,9,9&
+#if (defined CROP)
+      ,4,9,9,9/
+#else      
+         /
+#endif
+
+  data (qe25(i),i=1,numpft)/ 0.06,0.06,0.06,0.06,0.06,0.06,&
+       0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.04,0.06,0.06&
+#if (defined CROP)
+      ,0.04,0.06,0.06,0.06/
+#else      
+         /
+#endif
+
+  data (rhol(i,1),i=1,numpft)/0.07,0.07,0.07,0.10,0.10,0.10,&
+       0.10,0.10,0.07,0.10,0.10,0.11,0.11,0.11,0.11,0.11&
+#if (defined CROP)
+      ,0.11,0.11,0.11,0.11/
+#else      
+         /
+#endif
+
+
+  data (rhol(i,2),i=1,numpft)/ 0.35,0.35,0.35,0.45,0.45,0.45,&
+        0.45,0.45,0.35,0.45,0.45,0.35,0.35,0.35,0.35,0.35&
+#if (defined CROP)
+        ,0.35,0.35,0.35,0.35/
+#else      
+         /
+#endif
+
+  data (rhos(i,1),i=1,numpft) /0.16,0.16,0.16,0.16,0.16,0.16,&
+       0.16,0.16,0.16,0.16,0.16,0.31,0.31,0.31,0.31,0.31&
+#if (defined CROP)
+       ,0.31,0.31,0.31,0.31/  
+#else      
+         /
+#endif
+
+
+  data (rhos(i,2),i=1,numpft)/0.39,0.39,0.39,0.39,0.39,0.39,&
+       0.39,0.39,0.39,0.39,0.39,0.53,0.53,0.53,0.53,0.53&
+#if (defined CROP)
+      ,0.53,0.53,0.53,0.53/
+#else      
+         /
+#endif
+
+  data (taul(i,1),i=1,numpft)/0.05,0.05,0.05,0.05,0.05,0.05,&
+       0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05&
+#if (defined CROP)
+      ,0.05,0.05,0.05,0.05/
+#else      
+         /
+#endif
+
+
+  data (taul(i,2),i=1,numpft)/0.10,0.10,0.10,0.25,0.25,0.25,&
+      0.25,0.25,0.10,0.25,0.25,0.34,0.34,0.34,0.34,0.34&
+#if (defined CROP)
+      ,0.34,0.34,0.34,0.34/
+#else      
+         /
+#endif
+
+
+  data (taus(i,1),i=1,numpft)/0.001,0.001,0.001,0.001,0.001,&
+      0.001,0.001,0.001,0.001,0.001,0.001,0.120,0.120,0.120,0.120,0.120&
+#if (defined CROP) 
+     ,0.120,0.120,0.120,0.120/
+#else      
+         /
+#endif
+
+
+  data (taus(i,2),i=1,numpft)/ 0.001,0.001,0.001,0.001,0.001,0.001,&
+     0.001,0.001,0.001,0.001,0.001,0.250,0.250,0.250,0.250,0.250&
+#if (defined CROP)
+,0.250,0.250,0.250,0.250/
+#else      
+         /
+#endif
+
+  data (xl(i),i=1,numpft)/0.01, 0.01, 0.01, 0.10, 0.10, 0.01,&
+     0.25, 0.25, 0.01, 0.25, 0.25,-0.30,-0.30,-0.30,-0.30,-0.30&
+#if (defined CROP)
+    ,-0.50, 0.65, 0.65,-0.50/
+#else      
+         /
+#endif
+
+  data (roota_par(i),i=1,numpft)/ 7, 7, 7, 7, 7, 6, 6, 6, 7,&
+       7, 7,11,11,11, 6, 6&
+#if (defined CROP)
+      , 6, 6, 6, 6/
+#else      
+         /
+#endif
+
+  data (rootb_par(i),i=1,numpft)/ 2.0,2.0,2.0,1.0,1.0,2.0,2.0,&
+       2.0,1.5,1.5,1.5,2.0,2.0,2.0,3.0,3.0&
+#if (defined CROP)
+      ,3.0,3.0,3.0,3.0/
+#else      
+         /
+#endif 
+
+  data (slatop(i),i=1,numpft)/0.010,0.008,0.024,0.012,0.012,0.030,&
+       0.030,0.030,0.012,0.030,0.030,0.030,0.030,0.030,0.030,0.030&
+#if (defined CROP)
+      ,0.050,0.070,0.070,0.070/
+#else      
+         /
+#endif 
+
+  data (dsladlai(i),i=1,numpft)/0.00125,0.00100,0.00300,0.00150,0.00150,&
+       0.00400,0.00400,0.00400,0.00000,0.00000,0.00000,0.00000,0.00000,&
+       0.00000,0.00000,0.00000&
+#if (defined CROP)
+       ,0.00000,0.00000,0.00000,0.00000/
+#else      
+         /
+#endif 
+
+  data (leafcn(i),i=1,numpft)/35,40,25,30,30,25,25,25,30,25,25,&
+       25,25,25,25,25&
+#if (defined CROP)
+      ,25,25,25,25/
+#else      
+         /
+#endif
+
+ data (flnr(i),i=1,numpft)/0.05,0.04,0.08,0.06,0.06,0.09,0.09,0.09,&
+      0.06,0.09,0.09,0.09,0.09,0.09,0.10,0.10&
+#if (defined CROP)
+     ,0.10,0.20,0.20,0.10/
+#else      
+         /
+#endif
+
+ data (smpso(i),i=1,numpft)/-66000,-66000,-66000,-66000,-66000,-35000,&
+     -35000,-35000,-83000,-83000,-83000,-74000,-74000,-74000,-74000,-74000&
+#if (defined CROP)
+      ,-74000,-74000,-74000,-74000/
+#else      
+         /
+#endif
+
+ data (smpsc(i),i=1,numpft)/-255000,-255000,-255000,-255000,-255000,-224000,&
+     -224000,-224000,-428000,-428000,-428000,-275000,-275000,-275000,-275000,-275000&
+#if (defined CROP)
+     ,-275000,-275000,-275000,-275000/
+#else      
+         /
+#endif
+
+ data(fnitr(i),i=1,numpft)/0.72,0.78,0.79,0.83,0.71,0.66,0.64,0.70,0.62,&
+     0.60,0.76,0.68,0.61,0.64,0.61,0.61&
+#if (defined CROP)
+    ,0.61,0.61,0.61,0.61/
+#else       
+         /
+#endif
+
+
+ data(woody(i),i=1,numpft)/1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0&
+#if (defined CROP)
+     ,0,0,0,0/
+#else      
+         /
+#endif
+
+
+ data(lflitcn(i),i=1,numpft)/70,80,50,60,60,50,50,50,60,50,50,50,50,50,50,50&
+#if (defined CROP)
+  ,25,25,25,25/ 
+#else      
+         /
+#endif
+
+
+ data(frootcn(i),i=1,numpft)/42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42&
+#if (defined CROP)
+   ,42,42,42,42/
+#else      
+         /
+#endif
+
+ data(livewdcn(i),i=1,numpft)/50,50,50,50,50,50,50,50,50,50,50, 50, 50, 50, 50, 50&
+#if (defined CROP)
+   ,50,50,50,50/
+#else      
+         /
+#endif
+
+ data(deadwdcn(i),i=1,numpft)/500,500,500,500,500,500,500,500,500,500,500,&
+       500,  500,  500,  500,  500&
+#if (defined CROP)
+     ,500,500,500,500/
+#else      
+         /
+#endif
+
+
+ data(froot_leaf(i),i=1,numpft)/1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2&
+#if (defined CROP)
+      ,2,2,2,2/
+#else      
+         /
+#endif
+
+ data(stem_leaf(i),i=1,numpft)/-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,&
+       0.2, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0&
+#if (defined CROP)
+     , 0.0, 0.0, 0.0, 0.0/
+#else      
+         /
+#endif
+
+
+ data(croot_stem(i),i=1,numpft)/0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,&
+       0.3,0.0,0.0,0.0,0.0,0.0&
+#if (defined CROP)
+       ,0.0,0.0,0.0,0.0/
+#else      
+         /
+#endif
+
+ data(flivewd(i),i=1,numpft)/0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.5,0.5,0.1,&
+       0.0,0.0,0.0,0.0,0.0&
+#if (defined CROP)
+      ,1.0,1.0,1.0,1.0/
+#else      
+         /
+#endif
+
+
+ data(fcur(i),i=1,numpft)/1,1,0,1,1,0,0,0,1,0,0,0,0,0,0,0&
+#if (defined CROP)   
+   ,1,1,1,1/
+#else      
+         /
+#endif
+
+ data(lf_flab(i),i=1,numpft)/0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,&
+      0.25,0.25,0.25,0.25,0.25,0.25,0.25&
+#if (defined CROP) 
+     ,0.25,0.25,0.25,0.25/
+#else      
+         /
+#endif
+
+ data(lf_fcel(i),i=1,numpft)/0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,&
+      0.5,0.5,0.5,0.5,0.5&
+#if (defined CROP)     
+     ,0.5,0.5,0.5,0.5/
+#else      
+         /
+#endif
+
+ data(lf_flig(i),i=1,numpft)/0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,&
+      0.25,0.25,0.25,0.25,0.25,0.25,0.25&
+#if (defined CROP) 
+     ,0.25,0.25,0.25,0.25/
+#else      
+         /
+#endif
+
+ data(fr_flab(i),i=1,numpft)/0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,&
+      0.25,0.25,0.25,0.25,0.25,0.25,0.25&
+#if (defined CROP)
+      ,0.25,0.25,0.25,0.25/
+#else      
+         /
+#endif
+
+ data(fr_fcel(i),i=1,numpft)/0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,&
+      0.5,0.5,0.5,0.5,0.5&
+#if (defined CROP)  
+     ,0.5,0.5,0.5,0.5/
+#else      
+         /
+#endif
+
+ data(fr_flig(i),i=1,numpft)/0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,&
+      0.25,0.25,0.25,0.25,0.25,0.25,0.25&
+#if (defined CROP)
+     ,0.25,0.25,0.25,0.25/
+#else       
+         /
+#endif
+
+ data(dw_fcel(i),i=1,numpft)/0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,&
+      0.75,0.75,0.75,0.75,0.75,0.75,0.75&
+#if (defined CROP)
+     ,0.75,0.75,0.75,0.75/
+#else      
+         /
+#endif
+
+
+ data(dw_flig(i),i=1,numpft)/0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,&
+      0.25,0.25,0.25,0.25,0.25,0.25,0.25&
+#if (defined CROP)     
+     ,0.25,0.25,0.25,0.25/
+#else      
+         /
+#endif
+
+
+ data(leaf_long(i),i=1,numpft)/3.0,6.0,1.0,1.5,1.5,1.0,1.0,1.0,1.5,1.0,1.0,&
+       1.0,1.0,1.0,1.0,1.0&
+#if (defined CROP)   
+      ,1.0,1.0,1.0,1.0/
+#else      
+         /
+#endif
+
+ 
+ data(evergreen(i),i=1,numpft)/1,1,0,1,1,0,0,0,1,0,0,0,0,0,0,0&
+#if (defined CROP) 
+    ,0,0,0,0/
+#else      
+         /
+#endif
+
+ 
+ data(stress_decid(i),i=1,numpft)/0,0,0,0,0,1,0,0,0,1,1,1,1,1,1,1&
+#if (defined CROP)
+    ,0,0,0,0/
+#else      
+         /
+#endif
+
+ 
+ data(season_decid(i),i=1,numpft)/0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0&
+#if (defined CROP)    
+    ,0,0,0,0/
+#else      
+         /
+#endif
+
+ data(resist(i),i=1,numpft)/0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,&
+     0.12,0.12,0.12,0.12,0.12,0.12,1.00,1.00&
+#if (defined CROP)
+    ,1.00,1.00,1.00,1.00/
+#else      
+         /
+#endif
+
+
+ data(pftpar20(i),i=1,numpft)/15,15,15,15,15,15,15,15, 5, 5, 5, 0, 0, 0, 0, 0&
+#if (defined CROP)
+    , 0, 0, 0, 0/
+#else      
+         /
+#endif
+
+
+ data(pftpar28(i),i=1,numpft)/ -2.0,  -32.5, 9999.9,   15.5,    3.0,   15.5,&
+       -17.0,-1000.0, 9999.9,  -17.0,-1000.0,-1000.0,  -17.0,15.5, 9999.9, 9999.9&
+#if (defined CROP)
+   , 9999.9, 9999.9, 9999.9, 9999.9/
+#else      
+         /
+#endif
+
+
+ data(pftpar29(i),i=1,numpft)/ 22.0,  -2.0,  -2.0,1000.0,  18.8,1000.0,  15.5,&
+      -2.0,1000.0,1000.0,  -2.0, -17.0,  15.5,1000.0,1000.0,1000.0&
+#if (defined CROP)
+     ,1000.0,1000.0,1000.0,1000.0/
+#else      
+         /
+#endif
+
+ data(pftpar30(i),i=1,numpft)/900, 600, 350,   0,1200,   0,1200, 350,   0,1200,&
+       350,   0,   0,   0,   0,   0&
+#if (defined CROP)
+    ,   0,   0,   0,   0/
+#else      
+         /
+#endif
+
+
+ data(pftpar31(i),i=1,numpft)/1000,  23,  23,1000,1000,1000,1000,  23,1000,1000,&
+       23,1000,1000,1000,1000,1000&
+#if (defined CROP)
+      ,1000,1000,1000,1000/
+#else      
+         /
+#endif
+
+
+ data(graincn(i),i=1,numpft)/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0&
+#if (defined CROP)    
+     ,50,50,50,50/
+#else      
+         /
+#endif
+
+
+
+  public :: pftconrd ! Read and initialize vegetation (PFT) constants 
+
+
+!
+!EOP
+!----------------------------------------------------------------------- 
+
+contains
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: pftconrd
+!
+! !INTERFACE:
+  subroutine pftconrd
+
+    use nanMod    , only : inf
+
+
+
+!
+! !DESCRIPTION: 
+! Read and initialize vegetation (PFT) constants 
+!
+! !USES:
+!
+! !ARGUMENTS:
+    implicit none
+!
+! !CALLED FROM:
+! routine initialize in module initializeMod
+!
+! !REVISION HISTORY:
+! Created by Gordon Bonan
+!
+!EOP
+!
+! !LOCAL VARIABLES:
+    integer :: i,n              !loop indices
+    integer :: ier              !error code
+!-----------------------------------------------------------------------
+
+
+    ! Set value for last type of tree
+
+    ntree = nbrdlf_dcd_brl_tree  !value for last type of tree
+
+    ! Set value for non-vegetated
+
+!ylu moved to top    noveg = 0  !value
+
+
+!ylu add
+
+#if (defined CROP)
+    npcropmin            = ncorn                ! first prognostic crop
+    npcropmax            = nsoybean             ! last prognostic crop in list
+#endif
+
+
+    ! Assign unit number to file. Get local file. 
+    ! Open file and read PFT's.
+    ! Close and release file.
+
+    crop(:)  = 0
+    crop(nc3crop:numpft) = 1
+  
+!  crop(15) = 1
+!    crop(16) = 1
+
+
+#if (defined CROP)
+       mxtmp(:)                      =  0._r8
+       mxtmp(ncorn)                  = 30._r8
+       mxtmp(nswheat)                = 26._r8
+       mxtmp(nwwheat)                = 26._r8
+       mxtmp(nsoybean)               = 30._r8
+
+       baset(:)                      =  0._r8
+       baset(ncorn)                  =  8._r8
+       baset(nswheat)                =  0._r8
+       baset(nwwheat)                =  0._r8
+       baset(nsoybean)               = 10._r8
+
+       declfact(:)                   = 0.00_r8
+     declfact(npcropmin:npcropmax) = 1.05_r8
+
+       bfact(:)                      = 0.00_r8
+       bfact(npcropmin:npcropmax)    = 0.10_r8
+
+       aleaff(:)                     = 0._r8
+
+       arootf(:)                     = 0.00_r8
+       arootf(ncorn)                 = 0.05_r8
+       arootf(nsoybean)              = 0.20_r8
+
+       astemf(:)                     = 0.00_r8
+       astemf(nswheat)               = 0.05_r8
+       astemf(nwwheat)               = 0.05_r8
+       astemf(nsoybean)              = 0.30_r8
+
+       arooti(:)                     = 0.0_r8
+       arooti(ncorn)                 = 0.4_r8
+       arooti(nswheat)               = 0.3_r8
+       arooti(nwwheat)               = 0.3_r8
+       arooti(nsoybean)              = 0.5_r8
+
+       fleafi(:)                     = 0.000_r8
+       fleafi(ncorn)                 = 0.800_r8
+       fleafi(nswheat)               = 0.750_r8
+       fleafi(nwwheat)               = 0.425_r8
+       fleafi(nsoybean)              = 0.850_r8
+
+       allconsl(:)                   = 0._r8
+       allconsl(ncorn)               = 5._r8
+       allconsl(nswheat)             = 3._r8
+       allconsl(nwwheat)             = 3._r8
+       allconsl(nsoybean)            = 2._r8
+
+       allconss(:)                   = 0._r8
+       allconss(ncorn)               = 2._r8
+       allconss(nswheat)             = 1._r8
+       allconss(nwwheat)             = 1._r8
+       allconss(nsoybean)            = 5._r8
+
+       ztopmx(:)                     = 0.00_r8
+       ztopmx(ncorn)                 = 2.50_r8
+       ztopmx(nswheat)               = 1.20_r8
+       ztopmx(nwwheat)               = 1.20_r8
+       ztopmx(nsoybean)              = 0.75_r8
+
+       laimx(:)                      = 0._r8
+       laimx(ncorn)                  = 5._r8
+       laimx(nswheat)                = 7._r8
+       laimx(nwwheat)                = 7._r8
+       laimx(nsoybean)               = 6._r8
+
+       gddmin(:)                     =  0._r8
+       gddmin(ncorn)                 = 50._r8
+       gddmin(nswheat)               = 50._r8
+       gddmin(nwwheat)               = 50._r8
+       gddmin(nsoybean)              = 50._r8
+
+       hybgdd(:)                     =    0._r8
+       hybgdd(ncorn)                 = 1700._r8
+       hybgdd(nswheat)               = 1700._r8
+       hybgdd(nwwheat)               = 1700._r8
+       hybgdd(nsoybean)              = 1900._r8
+
+       lfemerg(:)                    = 0.00_r8
+       lfemerg(ncorn)                = 0.03_r8
+       lfemerg(nswheat)              = 0.05_r8
+       lfemerg(nwwheat)              = 0.05_r8
+       lfemerg(nsoybean)             = 0.03_r8
+       grnfill(:)                    = 0.00_r8
+       grnfill(ncorn)                = 0.65_r8
+       grnfill(nswheat)              = 0.60_r8
+       grnfill(nwwheat)              = 0.40_r8
+       grnfill(nsoybean)             = 0.70_r8
+
+       mxmat(:)                      = 0
+       mxmat(ncorn)                  = 165
+       mxmat(nswheat)                = 150
+       mxmat(nwwheat)                = 265
+       mxmat(nsoybean)               = 150
+#endif
+
+    pftname(noveg)      = 'not_vegetated'
+       z0mr(noveg)         = 0._r8
+       displar(noveg)      = 0._r8
+       dleaf(noveg)        = 0._r8
+       c3psn(noveg)        = 1._r8
+       vcmx25(noveg)       = 0._r8
+       mp(noveg)           = 9._r8
+       qe25(noveg)         = 0._r8
+       rhol(noveg,1)       = 0._r8
+       rhol(noveg,2)       = 0._r8
+       rhos(noveg,1)       = 0._r8
+       rhos(noveg,2)       = 0._r8
+       taul(noveg,1)       = 0._r8
+       taul(noveg,2)       = 0._r8
+       taus(noveg,1)       = 0._r8
+       taus(noveg,2)       = 0._r8
+       xl(noveg)           = 0._r8
+       roota_par(noveg)    = 0._r8
+       rootb_par(noveg)    = 0._r8
+       crop(noveg)         = 0._r8
+       smpso(noveg)        = 0._r8
+       smpsc(noveg)        = 0._r8
+       fnitr(noveg)        = 0._r8
+       slatop(noveg)       = 0._r8
+       dsladlai(noveg)     = 0._r8
+       leafcn(noveg)       = 1._r8
+       flnr(noveg)         = 0._r8
+       ! begin variables used only for CN code
+       woody(noveg)        = 0._r8
+       lflitcn(noveg)      = 1._r8
+       frootcn(noveg)      = 1._r8
+       livewdcn(noveg)     = 1._r8
+       deadwdcn(noveg)     = 1._r8
+#if (defined CROP)
+       ! begin variables used only for CROP
+       graincn(noveg)      = 1._r8
+       mxtmp(noveg)        = 0._r8
+       baset(noveg)        = 0._r8
+       declfact(noveg)     = 0._r8
+       bfact(noveg)        = 0._r8
+       aleaff(noveg)       = 0._r8
+       arootf(noveg)       = 0._r8
+       astemf(noveg)       = 0._r8
+       arooti(noveg)       = 0._r8
+       fleafi(noveg)       = 0._r8
+       allconsl(noveg)     = 0._r8
+       allconss(noveg)     = 0._r8
+       ztopmx(noveg)       = 0._r8
+       laimx(noveg)        = 0._r8
+       gddmin(noveg)       = 0._r8
+       hybgdd(noveg)       = 0._r8
+       lfemerg(noveg)      = 0._r8
+       grnfill(noveg)      = 0._r8
+       mxmat(noveg)        = 0
+       ! end variables used only for CROP
+#endif
+       froot_leaf(noveg)   = 0._r8
+       stem_leaf(noveg)    = 0._r8
+       croot_stem(noveg)   = 0._r8
+       flivewd(noveg)      = 0._r8
+       fcur(noveg)         = 0._r8
+       lf_flab(noveg)      = 0._r8
+       lf_fcel(noveg)      = 0._r8
+       lf_flig(noveg)      = 0._r8
+       fr_flab(noveg)      = 0._r8
+       fr_fcel(noveg)      = 0._r8
+       fr_flig(noveg)      = 0._r8
+       dw_fcel(noveg)      = 0._r8
+       dw_flig(noveg)      = 0._r8
+       leaf_long(noveg)    = 0._r8
+       evergreen(noveg)    = 0._r8
+       stress_decid(noveg) = 0._r8
+       season_decid(noveg) = 0._r8
+       resist(noveg)       = 1._r8
+       pftpar20(noveg) = inf
+       pftpar28(noveg) = 9999.9_r8
+       pftpar29(noveg) = 1000.0_r8
+       pftpar30(noveg) =    0.0_r8
+       pftpar31(noveg) = 1000.0_r8
+
+
+  end subroutine pftconrd
+
+end module pftvarcon
+
+module MEGANFactorsMod
+!-----------------------------------------------------------------------
+!BOP
+!
+! !MODULE: MEGANFactorsMod
+!
+! !DESCRIPTION:
+! Manages input of MEGAN emissions factors from netCDF file
+!
+! !USES:
+  use shr_kind_mod, only : r8 => shr_kind_r8
+
+  implicit none
+  private
+  save
+!
+! !PUBLIC MEMBERS:
+  public :: megan_factors_init
+  public :: megan_factors_chk
+  public :: megan_factors_get
+  public :: comp_names
+!
+! !PUBLIC DATA:
+  real(r8), public, allocatable :: LDF(:)  ! light dependent fraction
+  real(r8), public, allocatable :: Agro(:) ! growing leaf age factor
+  real(r8), public, allocatable :: Amat(:) ! mature leaf age factor
+  real(r8), public, allocatable :: Anew(:) ! new leaf age factor
+  real(r8), public, allocatable :: Aold(:) ! old leaf age factor
+  real(r8), public, allocatable :: betaT(:)! temperature factor
+  real(r8), public, allocatable :: ct1(:)  ! temperature coefficient 1
+  real(r8), public, allocatable :: ct2(:)  ! temperature coefficient 2
+  real(r8), public, allocatable :: Ceo(:)  ! Eopt coefficient
+!
+! !PRIVATE MEMBERS:
+  integer :: npfts ! number of plant function types
+!
+  type emis_eff_t
+     real(r8), pointer :: eff(:) ! emissions efficiency factor
+     real(r8) :: wght            ! molecular weight
+     integer :: class_num        ! MEGAN class number
+  endtype emis_eff_t
+!
+  type(emis_eff_t), pointer :: comp_factors_table(:)  ! hash table of MEGAN factors (points to an array of pointers)
+  integer, pointer :: hash_table_indices(:)           ! pointer to hash table indices
+  integer, parameter :: tbl_hash_sz = 2**16           ! hash table size
+!
+  character(len=32), allocatable :: comp_names(:)     ! MEGAN compound names
+  real(r8),          allocatable :: comp_molecwghts(:)! MEGAN compound molecular weights
+!
+! !REVISION HISTORY:
+!  28 Oct 2011: Created by Francis Vitt
+!
+!EOP
+!-----------------------------------------------------------------------
+
+contains
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: megan_factors_get
+!
+! !INTERFACE:
+  subroutine megan_factors_get( comp_name, factors, class_n, molecwght )
+!
+! !DESCRIPTION:
+! Method for getting MEGAN information for a named compound 
+!
+! !ARGUMENTS:
+    character(len=*),intent(in)  :: comp_name      ! MEGAN compound name
+    real(r8),        intent(out) :: factors(npfts) ! vegitation type factors for the compound of intrest
+    integer,         intent(out) :: class_n        ! MEGAN class number for the compound of intrest
+    real(r8),        intent(out) :: molecwght      ! molecular weight of the compound of intrest
+!
+!EOP
+!-----------------------------------------------------------------------
+! local vars:
+    integer :: hashkey, ndx
+    character(len=120) :: errmes
+
+    hashkey = gen_hashkey(comp_name)
+    ndx = hash_table_indices(hashkey)
+
+    if( ndx >= 1 ) then 
+      factors(:) = comp_factors_table( ndx )%eff(:)
+      class_n    = comp_factors_table( ndx )%class_num
+      molecwght  = comp_factors_table( ndx )%wght
+    else
+      errmes = 'megan_factors_get: '//trim(comp_name)//' compound not found in MEGAN table'
+      call wrf_error_fatal( trim(errmes) )
+    endif
+
+  end subroutine megan_factors_get
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: megan_factors_chk
+!
+! !INTERFACE:
+  subroutine megan_factors_chk( comp_name )
+!
+! !DESCRIPTION:
+! Method for getting MEGAN information for a named compound 
+!
+! !ARGUMENTS:
+    character(len=*),intent(in)  :: comp_name      ! MEGAN compound name
+!
+!EOP
+!-----------------------------------------------------------------------
+! local vars:
+    integer :: hashkey, ndx
+    character(len=120) :: errmes
+
+    hashkey = gen_hashkey(comp_name)
+    ndx     = hash_table_indices(hashkey)
+
+    if( ndx < 1 ) then 
+      errmes = 'megan_factors_chk: '//trim(comp_name)//' compound not found in MEGAN table'
+      call wrf_error_fatal( trim(errmes) )
+    endif
+
+  end subroutine megan_factors_chk
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: megan_factors_init
+!
+! !INTERFACE:
+  subroutine megan_factors_init( filename )
+!
+! !DESCRIPTION:
+! Initializes the MEGAN factors using data from input file 
+!
+!
+! !ARGUMENTS:
+    character(len=*),intent(in) :: filename ! MEGAN factors input file
+
+!EOP
+!-----------------------------------------------------------------------
+!
+    integer :: ncid             ! netcdf id
+    integer :: start(2), count(2)
+
+    integer :: i, vid
+    integer :: dimid, n_comps, n_classes, n_pfts
+    integer :: class_ef_vid,comp_ef_vid,comp_name_vid,class_num_vid
+    integer :: comp_mw_vid
+    integer, allocatable :: class_nums(:)
+
+    real(r8),allocatable :: factors(:,:)
+    real(r8),allocatable :: comp_factors(:)
+    real(r8),allocatable :: class_factors(:)
+
+    character(len=132) :: err_msg
+
+    logical, external :: wrf_dm_on_monitor
+
+#ifdef NETCDF
+include 'netcdf.inc'
+#else
+    call wrf_error_fatal( 'megan_factors_init: clm megan2.1 requires netcdf' )
+#endif
+
+    allocate( comp_factors_table(150) )
+    allocate( hash_table_indices(tbl_hash_sz) )
+
+!-----------------------------------------------------------------------
+!   read dimensions from megan factors file
+!-----------------------------------------------------------------------
+    if( wrf_dm_on_monitor() ) then
+
+      err_msg = 'megan_factors_init: failed to open file ' // trim(filename)
+      call handle_ncerr( nf_open( trim(filename), nf_noclobber, ncid ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get Comp_num id'
+      call handle_ncerr( nf_inq_dimid( ncid, 'Comp_Num', dimid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to get Comp_Num'
+      call handle_ncerr( nf_inq_dimlen( ncid, dimid, n_comps ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get Class_Num id'
+      call handle_ncerr( nf_inq_dimid( ncid, 'Class_Num', dimid ), trim(err_msg) ) 
+      err_msg = 'ftuv_init: failed to get Class_Num'
+      call handle_ncerr( nf_inq_dimlen( ncid, dimid, n_classes ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get PFT_Num id'
+      call handle_ncerr( nf_inq_dimid( ncid, 'PFT_Num', dimid ), trim(err_msg) ) 
+      err_msg = 'ftuv_init: failed to get PFT_Num'
+      call handle_ncerr( nf_inq_dimlen( ncid, dimid, n_pfts ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get Class_EF id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Class_EF', class_ef_vid ), trim(err_msg) ) 
+
+      err_msg = 'megan_factors_init: failed to get Comp_EF id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Comp_EF', comp_ef_vid ), trim(err_msg) ) 
+
+      err_msg = 'megan_factors_init: failed to get Comp_Name id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Comp_Name', comp_name_vid ), trim(err_msg) ) 
+
+      err_msg = 'megan_factors_init: failed to get Class_Num id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Class_Num', class_num_vid ), trim(err_msg) ) 
+
+      err_msg = 'megan_factors_init: failed to get Comp_MW id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Comp_MW', comp_mw_vid ), trim(err_msg) ) 
+    endif
+
+!-----------------------------------------------------------------------
+!   bcast dimensions from megan factors file
+!-----------------------------------------------------------------------
+    CALL wrf_dm_bcast_bytes ( n_pfts , IWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( n_classes , IWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( n_comps , IWORDSIZE )
+
+    write(err_msg,'('' megan_factors_init: n_{pts,classes,comps} = '',3i4)') &
+           n_pfts, n_classes, n_comps
+    CALL wrf_message( trim(err_msg) )
+
+    npfts = n_pfts
+
+    allocate( factors(n_pfts,n_comps) )
+
+    allocate( comp_names(n_comps) )
+    allocate( comp_molecwghts(n_comps) )
+    allocate( class_nums(n_comps) )
+
+    if( wrf_dm_on_monitor() ) then
+      err_msg = 'megan_factors_init: failed to read comp_names variable'
+      call handle_ncerr( nf_get_var_text( ncid, comp_name_vid, comp_names ), trim(err_msg) )
+      err_msg = 'megan_factors_init: failed to read comp_molecwghts variable'
+      call handle_ncerr( nf_get_var_double( ncid, comp_mw_vid, comp_molecwghts ), trim(err_msg) )
+      err_msg = 'megan_factors_init: failed to read class_nums variable'
+      call handle_ncerr( nf_get_var_int( ncid, class_num_vid, class_nums ), trim(err_msg) )
+    endif
+
+    CALL wrf_dm_bcast_bytes ( comp_names , n_comps*32 )
+    CALL wrf_dm_bcast_bytes ( comp_molecwghts , n_comps*DWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( class_nums , n_comps*IWORDSIZE )
+
+    CALL wrf_message( "megan_factors_init: class_nums" )
+    do i = 1,n_comps,10
+      write(err_msg,'(10i4)') class_nums(i:min(i+9,n_comps))
+      CALL wrf_message( trim(err_msg) )
+    end do
+
+    CALL wrf_message( "megan_factors_init: megan comp names" )
+    do i = 1,n_comps
+      CALL wrf_message( trim(comp_names(i)) )
+    end do
+ 
+!-----------------------------------------------------------------------
+!   set up hash table where data is stored
+!-----------------------------------------------------------------------
+    call  bld_hash_table_indices( comp_names )
+    CALL wrf_message( "megan_factors_init: finished bld_hash_table_indices" )
+
+   if( wrf_dm_on_monitor() ) then
+      allocate( comp_factors(n_pfts) )
+      allocate( class_factors(n_pfts) )
+      do i = 1,n_comps
+        start = (/i,1/)
+        count = (/1,16/)
+        err_msg = 'megan_factors_init: failed to read comp_factors variable'
+        call handle_ncerr( nf_get_vara_double( ncid, comp_ef_vid, start, count, comp_factors ), trim(err_msg) )
+        start = (/class_nums(i),1/)
+        err_msg = 'megan_factors_init: failed to read class_factors variable'
+        call handle_ncerr( nf_get_vara_double( ncid, class_ef_vid, start, count, class_factors ), trim(err_msg) )
+        factors(:,i) = comp_factors(:)*class_factors(:)
+      enddo
+      deallocate( comp_factors, class_factors )
+    endif
+
+    CALL wrf_dm_bcast_bytes ( factors , n_comps*n_pfts*DWORDSIZE )
+
+    do i = 1,n_comps
+      call enter_hash_data( trim(comp_names(i)), factors(:,i), class_nums(i), comp_molecwghts(i) )
+    end do
+
+    CALL wrf_message( "megan_factors_init: after hash table loop" )
+
+    allocate( LDF(n_classes) )
+    allocate( Agro(n_classes) )
+    allocate( Amat(n_classes) )
+    allocate( Anew(n_classes) )
+    allocate( Aold(n_classes) )
+    allocate( betaT(n_classes) )
+    allocate( ct1(n_classes) )
+    allocate( ct2(n_classes) )
+    allocate( Ceo(n_classes) )
+
+    if( wrf_dm_on_monitor() ) then
+      err_msg = 'megan_factors_init: failed to get LDF id'
+      call handle_ncerr( nf_inq_varid( ncid, 'LDF', vid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to read LDF variable'
+      call handle_ncerr( nf_get_var_double( ncid, vid, LDF ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get Agro id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Agro', vid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to read Agro variable'
+      call handle_ncerr( nf_get_var_double( ncid, vid, Agro ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get Amat id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Amat', vid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to read Amat variable'
+      call handle_ncerr( nf_get_var_double( ncid, vid, Amat ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get Anew id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Anew', vid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to read Anew variable'
+      call handle_ncerr( nf_get_var_double( ncid, vid, Anew ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get Aold id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Aold', vid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to read Aold variable'
+      call handle_ncerr( nf_get_var_double( ncid, vid, Aold ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get betaT id'
+      call handle_ncerr( nf_inq_varid( ncid, 'betaT', vid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to read betaT variable'
+      call handle_ncerr( nf_get_var_double( ncid, vid, betaT ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get ct1 id'
+      call handle_ncerr( nf_inq_varid( ncid, 'ct1', vid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to read ct1 variable'
+      call handle_ncerr( nf_get_var_double( ncid, vid, ct1 ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get ct2 id'
+      call handle_ncerr( nf_inq_varid( ncid, 'ct2', vid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to read ct2 variable'
+      call handle_ncerr( nf_get_var_double( ncid, vid, ct2 ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to get Ceo id'
+      call handle_ncerr( nf_inq_varid( ncid, 'Ceo', vid ), trim(err_msg) ) 
+      err_msg = 'megan_factors_init: failed to read Ceo variable'
+      call handle_ncerr( nf_get_var_double( ncid, vid, Ceo ), trim(err_msg) )
+
+      err_msg = 'megan_factors_init: failed to close megan factors file'
+      call handle_ncerr( nf_close( ncid ), trim(err_msg) )
+    endif
+
+    CALL wrf_dm_bcast_bytes ( LDF , n_classes*DWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( Agro , n_classes*DWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( Amat , n_classes*DWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( Anew , n_classes*DWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( Aold , n_classes*DWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( betaT , n_classes*DWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( ct1 , n_classes*DWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( ct2 , n_classes*DWORDSIZE )
+    CALL wrf_dm_bcast_bytes ( Ceo , n_classes*DWORDSIZE )
+
+    deallocate( class_nums, factors )
+
+  end subroutine megan_factors_init
+!-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  ! Private methods...
+
+  !-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
+  subroutine bld_hash_table_indices( names )
+    character(len=*),intent(in) :: names(:)
+
+    integer :: n, i, hashkey
+
+    hash_table_indices(:) = 0
+
+    n = size(names)
+    do i=1,n
+       hashkey = gen_hashkey(names(i))
+       hash_table_indices(hashkey) = i
+    enddo
+
+  end subroutine bld_hash_table_indices
+
+  !-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
+  subroutine enter_hash_data( name, data, class_n, molec_wght )
+    character(len=*), intent(in) :: name
+    real(r8), intent(in) :: data(:)
+    integer,  intent(in) :: class_n
+    real(r8), intent(in) :: molec_wght
+
+    integer :: hashkey, ndx
+    integer :: nfactors
+
+    hashkey = gen_hashkey(name)
+    nfactors = size(data)
+
+    ndx = hash_table_indices(hashkey)
+    if( ndx < 1 .or. ndx > 150 ) then
+      call wrf_error_fatal( " enter_has_data: hash key out of range" )
+    endif
+
+    allocate (comp_factors_table(ndx)%eff(nfactors))
+
+    comp_factors_table(ndx)%eff(:) = data(:)
+    comp_factors_table(ndx)%class_num = class_n
+    comp_factors_table(ndx)%wght = molec_wght
+
+  end subroutine enter_hash_data
+
+  !-----------------------------------------------------------------------
+  !from cam_history
+  !
+  ! Purpose: Generate a hash key on the interval [0 .. tbl_hash_sz-1]
+  !          given a character string.
+  !
+  ! Algorithm is a variant of perl's internal hashing function.
+  !
+  !-----------------------------------------------------------------------
+  integer function gen_hashkey(string)
+
+    implicit none
+    !
+    !  Arguments:
+    !
+    character(len=*), intent(in) :: string
+    !
+    !  Local vars
+    !
+    integer :: hash
+    integer :: i
+
+    integer, parameter :: tbl_max_idx = 15  ! 2**N - 1
+    integer, parameter :: gen_hash_key_offset = z'000053db'
+    integer, dimension(0:tbl_max_idx) :: tbl_gen_hash_key =  (/61,59,53,47,43,41,37,31,29,23,17,13,11,7,3,1/)
+
+    hash = gen_hash_key_offset
+
+    if ( len(string) /= 19 ) then
+       !
+       ! Process arbitrary string length.
+       !
+       do i = 1, len(string)
+          hash = ieor(hash , (ichar(string(i:i)) * tbl_gen_hash_key(iand(i-1,tbl_max_idx))))
+       end do
+    else
+       !
+       ! Special case string length = 19
+       !
+       do i = 1, tbl_max_idx+1
+          hash = ieor(hash , ichar(string(i:i))   * tbl_gen_hash_key(i-1)) 
+       end do
+       do i = tbl_max_idx+2, len(string)
+          hash = ieor(hash , ichar(string(i:i))   * tbl_gen_hash_key(i-tbl_max_idx-2)) 
+       end do
+    end if
+
+    gen_hashkey = iand(hash, tbl_hash_sz-1)
+
+    return
+
+  end function gen_hashkey
+
+#ifdef NETCDF
+  subroutine handle_ncerr( ret, mes )
+!---------------------------------------------------------------------
+!	... netcdf error handling routine
+!---------------------------------------------------------------------
+
+  implicit none
+
+!---------------------------------------------------------------------
+!	... dummy arguments
+!---------------------------------------------------------------------
+  integer, intent(in) :: ret
+  character(len=*), intent(in) :: mes
+
+include 'netcdf.inc'
+
+  if( ret /= nf_noerr ) then
+    call wrf_message( trim(mes) )
+    call wrf_message( trim(nf_strerror(ret)) )
+    call wrf_abort
+  end if
+
+  end subroutine handle_ncerr
+#endif
+
+end module MEGANFactorsMod
+
+!================================================================================
+! Handles MEGAN VOC emissions metadata for CLM produced chemical emissions
+! MEGAN = Model of Emissions of Gases and Aerosols from Nature
+!
+! This reads the megan_emis_nl namelist in drv_flds_in and makes the relavent 
+! information available to CAM, CLM, and driver. The driver sets up CLM to CAM 
+! communication for the  VOC flux fields. CLM needs to know what specific VOC
+! fluxes need to be passed to the coupler and how to assimble the fluxes.  
+! CAM needs to know what specific VOC fluxes to expect from CLM.
+!
+! Francis Vitt -- 26 Oct 2011
+!================================================================================
+module shr_megan_mod
+
+  use shr_kind_mod,only : r8 => shr_kind_r8
+  use shr_kind_mod,only : CL => SHR_KIND_CL, CX => SHR_KIND_CX, CS => SHR_KIND_CS
+
+  implicit none
+
+  save
+  private
+
+  public :: shr_megan_init
+  public :: wrf_spc_chk
+  public :: shr_megan_mechcomps        ! points to an array of chemical compounds (in CAM-Chem mechanism) than have MEGAN emissions
+  public :: shr_megan_mechcomps_n      ! number of unique compounds in the CAM chemical mechanism  than have MEGAN emissions
+  public :: shr_megan_megcomps_n       ! number of unique MEGAN compounds
+  public :: shr_megan_megcomp_t        ! MEGAN compound data type
+  public :: shr_megan_mechcomp_t       ! data type for chemical compound in CAM mechanism than has MEGAN emissions
+  public :: shr_megan_linkedlist       ! points to linked list of shr_megan_comp_t objects
+  public :: shr_megan_mapped_emisfctrs ! switch to use mapped emission factors
+  public :: shr_megan_comp_ptr
+
+  character(len=CS), public :: shr_megan_fields_token = ''   ! First drydep fields token
+  character(len=CL), public :: shr_megan_factors_file = ''
+
+  ! MEGAN compound data structure (or user defined type)
+  type shr_megan_megcomp_t
+     character(len=16)     :: name            ! MEGAN compound name (in MEGAN input table)
+     integer               :: index
+     real(r8), pointer     :: emis_factors(:) ! function of plant-function-type (PFT)
+     integer               :: class_number    ! MEGAN class number
+     real(r8)              :: molec_weight    ! molecular weight of the MEGAN compound (g/mole)
+     type(shr_megan_megcomp_t), pointer :: next_megcomp ! points to next member in the linked list
+  endtype shr_megan_megcomp_t
+
+  type shr_megan_comp_ptr
+    type(shr_megan_megcomp_t), pointer :: ptr
+  endtype shr_megan_comp_ptr
+
+  ! chemical compound in CAM mechanism than has MEGAN emissions
+  type shr_megan_mechcomp_t
+     character(len=16)             :: name           ! compound name
+     integer                       :: index          ! WRF spc index
+     type(shr_megan_comp_ptr), pointer :: megan_comps(:) ! an array of pointers to megan emis compounds 
+     integer                       :: n_megan_comps  ! number of megan emis compounds than make up the emissions for this mechanis compound
+     !czhao add 
+     real,pointer                       :: megan_comps_ratio(:)  ! ratio of megan emis compounds to each mechanis compound
+  end type shr_megan_mechcomp_t
+
+  type(shr_megan_mechcomp_t), pointer :: shr_megan_mechcomps(:) ! array of chemical compounds (in CAM mechanism) than have MEGAN emissions
+  type(shr_megan_megcomp_t),  pointer :: shr_megan_linkedlist   ! points to linked list top
+
+  integer :: shr_megan_megcomps_n  = 0          ! number of unique megan compounds
+  integer :: shr_megan_mechcomps_n = 0          ! number of unique compounds in the CAM chemical mechanism  than have MEGAN emissions
+
+  ! switch to use mapped emission factors
+  logical :: shr_megan_mapped_emisfctrs = .false.
+
+  ! private data 
+  type parser_items_t
+     character(len=16),pointer :: megan_comp_names(:)
+     character(len=16) :: mech_comp_name
+     integer :: n_megan_comps
+     real,pointer :: megan_comp_factors(:)
+  end type parser_items_t
+
+contains
+
+  !-------------------------------------------------------------------------
+  ! 
+  ! This reads the megan_emis_nl namelist group in drv_flds_in and parses the
+  ! namelist information for the driver, CLM, and CAM.
+  !
+  ! Namelist variables:
+  !   megan_specifier, megan_mapped_emisfctrs, megan_factors_file
+  !
+  ! megan_specifier is a series of strings where each string contains one 
+  !  CAM chemistry constituent name (left of = sign) and one or more MEGAN 
+  !  compounds (seperated by + sign if more than one).  The specification of 
+  !  the MEGAN compounds to the right of the = signs tells the MEGAN VOC 
+  !  model within CLM how to construct the VOC fluxes using the factors in 
+  !  megan_factors_file and land surface state.
+  !
+  ! megan_factors_file read by CLM contains valid MEGAN compound names,
+  !  MEGAN class groupings and scalar emission factors
+  ! 
+  ! megan_mapped_emisfctrs switch is used to tell the MEGAN model to use 
+  !  mapped emission factors read in from the CLM surface data input file
+  !  rather than the scalar factors from megan_factors_file
+  !
+  ! Example:
+  ! &megan_emis_nl
+  !  megan_specifier = 'ISOP = isoprene',
+  !     'C10H16 = myrcene + sabinene + limonene + carene_3 + ocimene_t_b + pinene_b + ...',
+  !     'CH3OH = methanol',
+  !     'C2H5OH = ethanol',
+  !     'CH2O = formaldehyde',
+  !     'CH3CHO = acetaldehyde',
+  ! ...
+  !  megan_factors_file = '$datapath/megan_emis_factors.nc'
+  ! /
+  !-------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------
+! module data initializer
+!-------------------------------------------------------------------------
+  subroutine shr_megan_init( specifier, factors_file, mapped_emisfctrs )
+
+  use MEGANFactorsMod, only : megan_factors_chk
+
+!-------------------------------------------------------------------------
+! dummy arguments
+!-------------------------------------------------------------------------
+    character(len=*), intent(in) :: specifier(:)
+    character(len=*), intent(in) :: factors_file
+    logical, intent(in)          :: mapped_emisfctrs
+
+!-------------------------------------------------------------------------
+! local variables
+!-------------------------------------------------------------------------
+    integer :: n_entries
+    integer :: i, j, jl, k, m, n
+    integer :: ndx
+    integer :: spc_len
+    logical :: cont
+    type(parser_items_t), pointer :: items
+    type(parser_items_t), pointer :: items_list(:)
+
+    character(len=132) :: mess
+    character(len=16), allocatable,target :: meg_names(:)
+    character(len=12) :: token   ! megan field name to add
+
+    type(shr_megan_megcomp_t), pointer  :: list_comp
+    type(shr_megan_comp_ptr),  pointer  :: wrk_list_comp(:)
+
+    nullify(shr_megan_linkedlist)
+
+    shr_megan_factors_file     = factors_file
+    shr_megan_mapped_emisfctrs = mapped_emisfctrs
+
+    n_entries = size(specifier)
+    allocate(shr_megan_mechcomps(n_entries),items_list(n_entries))
+    shr_megan_mechcomps(:)%n_megan_comps = 0
+
+!-------------------------------------------------------------------------
+!  scan and remove continuation "lines"
+!-------------------------------------------------------------------------
+    do i = 1,n_entries
+       spc_len=len_trim(specifier(i))
+       if ( spc_len > 0 ) then
+         items => get_parser_items( specifier(i) )
+         items_list(i) = items
+         do k = 1,i-1
+           if ( trim(items_list(k)%mech_comp_name) == trim(items_list(i)%mech_comp_name) ) then
+             m = items_list(k)%n_megan_comps
+             n = items_list(i)%n_megan_comps + m
+             allocate(meg_names(m))
+             meg_names(:m) = items_list(k)%megan_comp_names(:m)
+             deallocate(items_list(k)%megan_comp_names)
+             allocate(items_list(k)%megan_comp_names(n))
+             items_list(k)%megan_comp_names(:m) = meg_names(:m) 
+             deallocate(meg_names)
+             items_list(k)%megan_comp_names(m+1:n) = items_list(i)%megan_comp_names(:) 
+             items_list(k)%n_megan_comps = n
+             exit
+           endif
+         end do
+       endif
+    end do
+
+mech_loop : &
+    do i = 1,n_entries
+       spc_len=len_trim(specifier(i))
+       if ( spc_len > 0 ) then
+
+          items => items_list(i)
+
+          do k=1,shr_megan_mechcomps_n
+             if ( trim(shr_megan_mechcomps(k)%name) == trim(items%mech_comp_name) ) then
+!               call shr_sys_abort( 'shr_megan_init : duplicate compound names : '//trim(items%mech_comp_name))
+             cycle mech_loop
+             endif
+          enddo
+
+          shr_megan_mechcomps(i)%name = items%mech_comp_name
+          shr_megan_mechcomps(i)%n_megan_comps = items%n_megan_comps
+          allocate(shr_megan_mechcomps(i)%megan_comps(items%n_megan_comps))
+
+          allocate(shr_megan_mechcomps(i)%megan_comps_ratio(items%n_megan_comps))
+          shr_megan_mechcomps(i)%megan_comps_ratio(:) = items%megan_comp_factors(:)
+
+          do j = 1,items%n_megan_comps
+             shr_megan_mechcomps(i)%megan_comps(j)%ptr => add_megan_comp( items%megan_comp_names(j) )
+          enddo
+          shr_megan_mechcomps_n = shr_megan_mechcomps_n+1
+
+!         call destroy_parser_items( items_list(i) )
+          deallocate( items_list(i)%megan_comp_names )
+
+!         write(token,333) shr_megan_mechcomps_n
+
+       endif
+    enddo mech_loop
+
+    deallocate(items_list)
+
+    write(mess,'('' mechcomps_n, megcomps_n = '',2i4)') shr_megan_mechcomps_n, shr_megan_megcomps_n
+    call wrf_message( trim(mess) )
+  !-------------------------------------------------------------------------
+  ! enumerate the wrfchem compounds with megan emissions
+  !-------------------------------------------------------------------------
+    call wrf_message( 'Mechanism compounds with megan emiss' )
+    do j = 1,shr_megan_mechcomps_n
+      write(mess,'('' WRF cmpd '',a,'' has '',i4,'' megan components'')') &
+            shr_megan_mechcomps(j)%name,shr_megan_mechcomps(j)%n_megan_comps
+      call wrf_message( trim(mess) )
+      call wrf_message( 'Mechanism megan compounds:' )
+      do k = 1,shr_megan_mechcomps(j)%n_megan_comps
+        call wrf_message( trim(shr_megan_mechcomps(j)%megan_comps(k)%ptr%name) )
+      end do
+    end do
+  !-------------------------------------------------------------------------
+  ! enumerate the megan compounds
+  !-------------------------------------------------------------------------
+    call wrf_message( 'Megan compounds' )
+    list_comp => shr_megan_linkedlist
+    do while( associated(list_comp) )
+      write(mess,'('' megan cmpd '',a,'' is ndx '',i4)') list_comp%name,list_comp%index
+      call wrf_message( trim(mess) )
+      call megan_factors_chk( trim(list_comp%name) )
+      list_comp => list_comp%next_megcomp
+    end do
+
+    ! Need to explicitly add Fl_ based on naming convention
+333 format ('Fall_voc',i3.3)
+
+  end subroutine shr_megan_init
+
+  subroutine wrf_spc_chk( numgas )
+!-------------------------------------------------------------------------
+! check the wrf species with clm megan emissions for validity
+!-------------------------------------------------------------------------
+
+  use module_configure, only     : param_first_scalar
+  use module_scalar_tables, only : chem_dname_table
+
+  integer, intent(in) :: numgas
+
+  integer :: m, n
+  logical :: found
+  character(len=132) :: msg
+
+  do n = 1,shr_megan_mechcomps_n
+    do m = param_first_scalar,numgas
+      found = trim(shr_megan_mechcomps(n)%name) == trim(chem_dname_table(1,m))
+      if( found ) then
+        shr_megan_mechcomps(n)%index = m - 1
+        exit
+      endif
+    end do
+    if( .not. found ) then
+      msg = 'wrf_spc_chk: ' // trim(shr_megan_mechcomps(n)%name) // ' is not a WRF species'
+      call wrf_error_fatal( trim(msg) )
+    endif
+  end do
+
+  end subroutine wrf_spc_chk
+
+  !-------------------------------------------------------------------------
+  ! private methods...
+  !-------------------------------------------------------------------------
+  function get_parser_items( spec_entry ) result(items)
+
+    character(len=*), intent(in) :: spec_entry
+
+    type(parser_items_t), pointer :: items ! items returned
+
+    integer :: ndxs1(512),ndxs2(512),ndxs0
+    integer :: nelem, j, i,j1,j0
+    !czhao
+    !character(len=CL) :: tmp_str,tmp_str1,tmp_str0
+    character(len=2000) :: tmp_str,tmp_str1,tmp_str0
+    real :: factors(512)
+
+    factors=1.0
+
+
+    j = scan( spec_entry, '=' )
+
+    nelem = 1
+    ndxs1(nelem) = j
+    ndxs0=j
+
+    j0=j
+    tmp_str = trim( spec_entry(j+1:) )
+    j = scan( tmp_str, '+' )
+
+    do while(j>0)
+
+    tmp_str1 = trim(tmp_str(:j))
+    j1=scan( tmp_str1, '*' )
+
+
+       ndxs2(nelem) = ndxs1(nelem)+j
+       if (j1.gt.0) then 
+        ndxs1(nelem)=ndxs1(nelem)+j1
+        read(tmp_str1(:j1-1),*) factors(nelem) 
+       endif
+       nelem = nelem+1
+
+       ndxs1(nelem) = ndxs2(nelem-1) 
+       j0=j
+       tmp_str = tmp_str(j+1:)
+       j = scan( tmp_str, '+' )
+       tmp_str1 = trim(tmp_str(:j))
+       j1=scan( tmp_str1, '*' )
+
+    enddo
+
+    ndxs2(nelem) = len(spec_entry)+1
+
+    tmp_str = trim(spec_entry(ndxs1(nelem)+1:))
+    tmp_str1 = trim(tmp_str)
+    j1=scan( tmp_str1, '*' )
+
+       if (j1.gt.0) then
+        ndxs1(nelem)=ndxs1(nelem)+j1
+        read(tmp_str1(:j1-1),*) factors(nelem)
+       endif
+
+    allocate(items)
+    allocate(items%megan_comp_names(nelem))
+    allocate(items%megan_comp_factors(nelem))
+    items%mech_comp_name = trim(adjustl( spec_entry(:ndxs0-1)))
+    items%n_megan_comps = nelem
+    do i = 1,nelem 
+       items%megan_comp_names(i) = trim(adjustl( spec_entry(ndxs1(i)+1:ndxs2(i)-1)))
+       items%megan_comp_factors(i) = factors(i) 
+    enddo
+
+  endfunction get_parser_items
+
+  !-------------------------------------------------------------------------
+  !-------------------------------------------------------------------------
+  subroutine destroy_parser_items( items )
+    type(parser_items_t), pointer :: items
+
+    deallocate( items%megan_comp_names )
+    deallocate( items )
+    nullify( items )
+  endsubroutine destroy_parser_items
+
+  !-------------------------------------------------------------------------
+  !-------------------------------------------------------------------------
+  function add_megan_comp( name ) result(megan_comp)
+
+    character(len=16), intent(in) :: name
+    type(shr_megan_megcomp_t), pointer :: megan_comp
+
+    megan_comp => get_megan_comp_by_name(shr_megan_linkedlist, name)
+    if(associated(megan_comp)) then
+       ! already in the list so return...
+       return
+    endif
+
+    ! create new megan compound and add it to the list
+    allocate(megan_comp)
+
+    !    element%index = lookup_element( name )
+    !    element%emis_factors = get_factors( list_elem%index )
+
+    megan_comp%index = shr_megan_megcomps_n+1
+    megan_comp%name = trim(name)
+
+    nullify(megan_comp%next_megcomp)
+
+    call add_megan_comp_to_list(megan_comp)
+
+  end function add_megan_comp
+
+  !-------------------------------------------------------------------------
+  !-------------------------------------------------------------------------
+  recursive function get_megan_comp_by_name(list_comp, name) result(megan_comp)
+
+    type(shr_megan_megcomp_t), pointer  :: list_comp
+    character(len=*), intent(in) :: name  ! variable name
+    type(shr_megan_megcomp_t), pointer  :: megan_comp ! returned object
+
+    if(associated(list_comp)) then
+       if(list_comp%name .eq. name) then
+          megan_comp => list_comp
+       else
+          megan_comp => get_megan_comp_by_name(list_comp%next_megcomp, name)
+       end if
+    else
+       nullify(megan_comp)
+    end if
+
+  end function get_megan_comp_by_name
+
+  !-------------------------------------------------------------------------
+  !-------------------------------------------------------------------------
+  subroutine add_megan_comp_to_list( new_megan_comp )
+
+    type(shr_megan_megcomp_t), target, intent(in) :: new_megan_comp
+
+    type(shr_megan_megcomp_t), pointer :: list_comp
+
+    if(associated(shr_megan_linkedlist)) then
+       list_comp => shr_megan_linkedlist
+       do while(associated(list_comp%next_megcomp))
+          list_comp => list_comp%next_megcomp
+       end do
+       list_comp%next_megcomp => new_megan_comp
+    else
+       shr_megan_linkedlist => new_megan_comp
+    end if
+
+    shr_megan_megcomps_n = shr_megan_megcomps_n + 1
+
+  end subroutine add_megan_comp_to_list
+
+end module shr_megan_mod
+
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 module decompMod
 !------------------------------------------------------------------------------
 !BOP
@@ -6279,6 +8109,7 @@ contains
 
      ! Initialize pfts, columns and landunits counters for gridcell
 
+<<<<<<< HEAD
      ipfts   = 0
      icols   = 0
      ilunits = 0
@@ -6325,6 +8156,58 @@ contains
         end do
         if (nvegc > 0) ilunits = ilunits + 1
         if (nvegc > 0) icols = icols + nvegc
+=======
+     icols   = 0
+     ilunits = 0
+
+!------------------------------------------------------------------------------
+! Set total number of pfts in gridcell
+!------------------------------------------------------------------------------
+     ipfts = count( wtxy(g,:maxpatch) > 0._r8 )
+
+!------------------------------------------------------------------------------
+! Set naturally vegetated landunit
+!------------------------------------------------------------------------------
+     nvegl  = count( wtxy(g,:maxpatch_pft) > 0._r8 )
+     wtvegl = sum( wtxy(g,:maxpatch_pft),mask=wtxy(g,:maxpatch_pft)>0._r8 )
+
+     if (nvegl > 0) then
+       ilunits = ilunits + 1
+#if defined(NOCOMPETE)
+       icols = icols + nvegl ! each pft on vegetated landunit has its own column
+#else
+       icols = icols + 1     ! the vegetated landunit has one column
+#endif
+     endif
+
+!------------------------------------------------------------------------------
+! Set special landunits
+!------------------------------------------------------------------------------
+     do m = npatch_urban, npatch_glacier
+       if (wtxy(g,m) > 0._r8) then
+         ilunits = ilunits + 1
+         icols   = icols + 1
+       endif
+     end do
+
+!------------------------------------------------------------------------------
+! Set crop landunit if appropriate
+!------------------------------------------------------------------------------
+     nvegc  = 0
+     wtvegc = 0._r8
+
+     do m = npatch_glacier+1, npatch_crop
+       if (wtxy(g,m) > 0._r8) then
+         nvegc = nvegc + 1
+         wtvegc = wtvegc + wtxy(g,m)
+       end if
+     end do
+
+     if (nvegc > 0) then
+       ilunits = ilunits + 1
+       icols   = icols + nvegc
+     endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
      if (present(nlunits)) nlunits = ilunits
      if (present(ncols))   ncols   = icols
@@ -6452,7 +8335,11 @@ module clmtypeInitMod
   use nanMod      , only : nan, bigint
   use clmtype
   use clm_varpar  , only : maxpatch_pft, nlevsno, nlevgrnd, numrad, nlevlak, &
+<<<<<<< HEAD
                            numpft, ndst, nvoc, nlevurb, nlevsoi
+=======
+                           numpft, ndst, nlevurb, nlevsoi
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! !PUBLIC TYPES:
   implicit none
@@ -9090,6 +10977,10 @@ contains
 ! Initialize pft VOC flux variables
 !
     use clm_varcon, only : spval
+<<<<<<< HEAD
+=======
+    use shr_megan_mod, only : shr_megan_mechcomps_n
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! !ARGUMENTS:
     implicit none
     integer, intent(in) :: beg, end
@@ -9103,7 +10994,11 @@ contains
 !------------------------------------------------------------------------
 
     allocate(pvf%vocflx_tot(beg:end))
+<<<<<<< HEAD
     allocate(pvf%vocflx(beg:end,1:nvoc))
+=======
+    allocate(pvf%vocflx(beg:end,1:shr_megan_mechcomps_n))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     allocate(pvf%vocflx_1(beg:end))
     allocate(pvf%vocflx_2(beg:end))
     allocate(pvf%vocflx_3(beg:end))
@@ -9127,7 +11022,11 @@ contains
     allocate(pvf%gammaS_out(beg:end))
 
     pvf%vocflx_tot(beg:end) = spval
+<<<<<<< HEAD
     pvf%vocflx(beg:end,1:nvoc) = spval
+=======
+    pvf%vocflx(beg:end,1:shr_megan_mechcomps_n) = spval
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     pvf%vocflx_1(beg:end) = spval
     pvf%vocflx_2(beg:end) = spval
     pvf%vocflx_3(beg:end) = spval
@@ -13528,6 +15427,7 @@ end subroutine clmtype_dealloc
 
 
 end module clmtypeInitMod
+<<<<<<< HEAD
 module pftvarcon
 
 !----------------------------------------------------------------------- 
@@ -16202,6 +18102,1787 @@ contains
 	deallocate(conv_nflux)
 	deallocate(prod10_nflux)
 	deallocate(prod100_nflux)
+=======
+
+
+module pftdynMod
+
+!---------------------------------------------------------------------------
+!BOP
+!
+! !MODULE: pftdynMod
+!
+! !USES:
+  use clmtype
+  use decompMod   , only : get_proc_bounds
+  use clm_varpar  , only : max_pft_per_col
+  use shr_kind_mod, only : r8 => shr_kind_r8
+  use module_cam_support, only: endrun
+!
+! !DESCRIPTION:
+! Determine pft weights at current time using dynamic landuse datasets.
+! ASSUMES that only have one dynamic landuse dataset.
+!
+! !PUBLIC TYPES:
+! implicit none
+  private
+  save
+  public :: pftdyn_init            !not used 02/23/11 ylu
+  public :: pftdyn_interp          !not used 02/23/11 ylu
+  public :: pftdyn_wbal_init       !not used 02/23/11 ylu
+  public :: pftdyn_wbal            !not used 02/23/11 ylu
+#ifdef CN
+  public :: pftdyn_cnbal           !Call in driver.F
+#ifdef CNDV
+  public :: pftwt_init             !not used 02/23/11 ylu
+  public :: pftwt_interp           !not used 02/23/11 ylu 
+#endif
+  public :: CNHarvest              !Call in CNEcosystemDynMod.F
+  public :: CNHarvestPftToColumn   !not used 02/23/11 ylu
+#endif
+!
+! !REVISION HISTORY:
+! Created by Peter Thornton
+! slevis modified to handle CNDV and CROP
+! 19 May 2009: PET - modified to handle harvest fluxes
+!
+!EOP
+!
+! ! PRIVATE TYPES
+  real(r8), parameter :: days_per_year = 365._r8
+  integer , pointer   :: yearspft(:)
+  real(r8), pointer   :: wtpft1(:,:)   
+  real(r8), pointer   :: wtpft2(:,:)
+  real(r8), pointer   :: harvest(:)   
+  real(r8), pointer   :: wtcol_old(:)
+  integer :: nt1
+  integer :: nt2
+  integer :: ntimes
+  logical :: do_harvest
+  integer :: ncid
+!---------------------------------------------------------------------------
+
+contains
+  
+  
+#ifdef CN
+!-----------------------------------------------------------------------
+!BOP
+!
+! !ROUTINE: pftdyn_cnbal
+!
+! !INTERFACE:
+  subroutine pftdyn_cnbal()
+!
+! !DESCRIPTION:
+! modify pft-level state and flux variables to maintain carbon and nitrogen balance with
+! dynamic pft-weights.
+!
+! !USES:
+    use shr_kind_mod, only : r8 => shr_kind_r8
+    use shr_const_mod,only : SHR_CONST_PDB
+    use decompMod   , only : get_proc_bounds
+    use clm_varcon  , only : istsoil
+#ifdef CROP
+    use clm_varcon  , only : istcrop
+#endif
+    use clm_varpar  , only : numveg, numpft
+#if (defined C13)
+    use clm_varcon  , only : c13ratio
+#endif
+!    use clm_time_manager, only : get_step_size
+    use globals     , only: dt
+!
+! !ARGUMENTS:
+    implicit none
+!
+!
+! !LOCAL VARIABLES:
+!EOP
+    integer  :: begp, endp    ! proc beginning and ending pft indices
+    integer  :: begc, endc    ! proc beginning and ending column indices
+    integer  :: begl, endl    ! proc beginning and ending landunit indices
+    integer  :: begg, endg    ! proc beginning and ending gridcell indices
+    integer  :: pi,p,c,l,g    ! indices
+    integer  :: ier           ! error code
+    real(r8) :: dwt           ! change in pft weight (relative to column)
+!    real(r8) :: dt            ! land model time step (sec)
+    real(r8) :: init_h2ocan   ! initial canopy water mass
+    real(r8) :: new_h2ocan    ! canopy water mass after weight shift
+    real(r8), allocatable :: dwt_leafc_seed(:)       ! pft-level mass gain due to seeding of new area
+    real(r8), allocatable :: dwt_leafn_seed(:)       ! pft-level mass gain due to seeding of new area
+#if (defined C13)
+    real(r8), allocatable :: dwt_leafc13_seed(:)     ! pft-level mass gain due to seeding of new area
+#endif
+    real(r8), allocatable :: dwt_deadstemc_seed(:)       ! pft-level mass gain due to seeding of new area
+    real(r8), allocatable :: dwt_deadstemn_seed(:)       ! pft-level mass gain due to seeding of new area
+#if (defined C13)
+    real(r8), allocatable :: dwt_deadstemc13_seed(:)     ! pft-level mass gain due to seeding of new area
+#endif
+    real(r8), allocatable :: dwt_frootc_to_litter(:)       ! pft-level mass loss due to weight shift
+    real(r8), allocatable :: dwt_livecrootc_to_litter(:)   ! pft-level mass loss due to weight shift
+    real(r8), allocatable :: dwt_deadcrootc_to_litter(:)   ! pft-level mass loss due to weight shift
+#if (defined C13)
+    real(r8), allocatable, target :: dwt_frootc13_to_litter(:)     ! pft-level mass loss due to weight shift
+    real(r8), allocatable, target :: dwt_livecrootc13_to_litter(:) ! pft-level mass loss due to weight shift
+    real(r8), allocatable, target :: dwt_deadcrootc13_to_litter(:) ! pft-level mass loss due to weight shift
+#endif
+    real(r8), allocatable, target :: dwt_frootn_to_litter(:)       ! pft-level mass loss due to weight shift
+    real(r8), allocatable, target :: dwt_livecrootn_to_litter(:)   ! pft-level mass loss due to weight shift
+    real(r8), allocatable, target :: dwt_deadcrootn_to_litter(:)   ! pft-level mass loss due to weight shift
+    real(r8), allocatable :: conv_cflux(:)         ! pft-level mass loss due to weight shift
+    real(r8), allocatable :: prod10_cflux(:)       ! pft-level mass loss due to weight shift
+    real(r8), allocatable :: prod100_cflux(:)      ! pft-level mass loss due to weight shift
+#if (defined C13)
+    real(r8), allocatable, target :: conv_c13flux(:)       ! pft-level mass loss due to weight shift
+    real(r8), allocatable, target :: prod10_c13flux(:)     ! pft-level mass loss due to weight shift
+    real(r8), allocatable, target :: prod100_c13flux(:)    ! pft-level mass loss due to weight shift
+#endif
+    real(r8), allocatable, target :: conv_nflux(:)         ! pft-level mass loss due to weight shift
+    real(r8), allocatable, target :: prod10_nflux(:)       ! pft-level mass loss due to weight shift
+    real(r8), allocatable, target :: prod100_nflux(:)      ! pft-level mass loss due to weight shift
+#if (defined C13)
+    real(r8) :: c3_del13c     ! typical del13C for C3 photosynthesis (permil, relative to PDB)
+    real(r8) :: c4_del13c     ! typical del13C for C4 photosynthesis (permil, relative to PDB)
+    real(r8) :: c3_r1         ! isotope ratio (13c/12c) for C3 photosynthesis
+    real(r8) :: c4_r1         ! isotope ratio (13c/12c) for C4 photosynthesis
+    real(r8) :: c3_r2         ! isotope ratio (13c/[12c+13c]) for C3 photosynthesis
+    real(r8) :: c4_r2         ! isotope ratio (13c/[12c+13c]) for C4 photosynthesis
+#endif
+    real(r8) :: t1,t2,wt_new,wt_old
+    real(r8) :: init_state, change_state, new_state
+	real(r8) :: tot_leaf, pleaf, pstor, pxfer
+	real(r8) :: leafc_seed, leafn_seed
+	real(r8) :: deadstemc_seed, deadstemn_seed
+#if (defined C13)
+        real(r8) :: leafc13_seed, deadstemc13_seed
+#endif
+    real(r8), pointer :: dwt_ptr0, dwt_ptr1, dwt_ptr2, dwt_ptr3, ptr
+    real(r8) :: pconv(0:numpft)    ! proportion of deadstem to conversion flux
+    real(r8) :: pprod10(0:numpft)  ! proportion of deadstem to 10-yr product pool
+    real(r8) :: pprod100(0:numpft) ! proportion of deadstem to 100-yr product pool
+    type(landunit_type), pointer :: lptr         ! pointer to landunit derived subtype
+    type(column_type),   pointer :: cptr         ! pointer to column derived subtype
+    type(pft_type)   ,   pointer :: pptr         ! pointer to pft derived subtype
+    character(len=32) :: subname='pftdyn_cbal' ! subroutine name
+!-----------------------------------------------------------------------
+    
+    ! (dangerous hardwiring) (should put this into pftphysiology file)
+    ! set deadstem proportions
+    ! veg type:      0       1       2       3       4       5       6       7       8       9      10      11      12     &
+    !                13      14      15      16
+    pconv(0:numveg)   = &
+                 (/0.0_r8, 0.6_r8, 0.6_r8, 0.6_r8, 0.6_r8, 0.6_r8, 0.6_r8, 0.6_r8, 0.6_r8, 0.8_r8, 0.8_r8, 0.8_r8, 1.0_r8, &
+                   1.0_r8, 1.0_r8, 1.0_r8, 1.0_r8/)
+    pprod10(0:numveg) = &
+                 (/0.0_r8, 0.3_r8, 0.3_r8, 0.3_r8, 0.4_r8, 0.3_r8, 0.4_r8, 0.3_r8, 0.3_r8, 0.2_r8, 0.2_r8, 0.2_r8, 0.0_r8, &
+                   0.0_r8, 0.0_r8, 0.0_r8, 0.0_r8/)
+    pprod100(0:numveg) = &
+                 (/0.0_r8, 0.1_r8, 0.1_r8, 0.1_r8, 0.0_r8, 0.1_r8, 0.0_r8, 0.1_r8, 0.1_r8, 0.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, &
+                   0.0_r8, 0.0_r8, 0.0_r8, 0.0_r8/)
+#ifdef CROP
+    !                17 - 20 (dangerous hardwiring)
+    pconv(numveg+1:numpft)   =    0.0_r8
+    pprod10(numveg+1:numpft) =    0.0_r8
+    pprod100(numveg+1:numpft) =   0.0_r8
+#endif
+    
+    ! Set pointers into derived type
+
+    lptr => clm3%g%l
+    cptr => clm3%g%l%c
+    pptr => clm3%g%l%c%p
+
+    ! Get relevant sizes
+
+    call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
+
+    ! Allocate pft-level mass loss arrays
+    allocate(dwt_leafc_seed(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_leafc_seed'; call endrun()
+    end if
+    allocate(dwt_leafn_seed(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_leafn_seed'; call endrun()
+    end if
+#if (defined C13)
+    allocate(dwt_leafc13_seed(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_leafc13_seed'; call endrun()
+    end if
+#endif
+    allocate(dwt_deadstemc_seed(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_deadstemc_seed'; call endrun()
+    end if
+    allocate(dwt_deadstemn_seed(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_deadstemn_seed'; call endrun()
+    end if
+#if (defined C13)
+    allocate(dwt_deadstemc13_seed(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_deadstemc13_seed'; call endrun()
+    end if
+#endif
+    allocate(dwt_frootc_to_litter(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_frootc_to_litter'; call endrun()
+    end if
+    allocate(dwt_livecrootc_to_litter(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_livecrootc_to_litter'; call endrun()
+    end if
+    allocate(dwt_deadcrootc_to_litter(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_deadcrootc_to_litter'; call endrun()
+    end if
+#if (defined C13)
+    allocate(dwt_frootc13_to_litter(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_frootc13_to_litter'; call endrun()
+    end if
+    allocate(dwt_livecrootc13_to_litter(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_livecrootc13_to_litter'; call endrun()
+    end if
+    allocate(dwt_deadcrootc13_to_litter(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_deadcrootc13_to_litter'; call endrun()
+    end if
+#endif
+    allocate(dwt_frootn_to_litter(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_frootn_to_litter'; call endrun()
+    end if
+    allocate(dwt_livecrootn_to_litter(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_livecrootn_to_litter'; call endrun()
+    end if
+    allocate(dwt_deadcrootn_to_litter(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for dwt_deadcrootn_to_litter'; call endrun()
+    end if
+    allocate(conv_cflux(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for conv_cflux'; call endrun()
+    end if
+    allocate(prod10_cflux(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for prod10_cflux'; call endrun()
+    end if
+    allocate(prod100_cflux(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for prod100_cflux'; call endrun()
+    end if
+#if (defined C13)
+    allocate(conv_c13flux(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for conv_c13flux'; call endrun()
+    end if
+    allocate(prod10_c13flux(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for prod10_c13flux'; call endrun()
+    end if
+    allocate(prod100_c13flux(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for prod100_c13flux'; call endrun()
+    end if
+#endif
+    allocate(conv_nflux(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for conv_nflux'; call endrun()
+    end if
+    allocate(prod10_nflux(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for prod10_nflux'; call endrun()
+    end if
+    allocate(prod100_nflux(begp:endp), stat=ier)
+    if (ier /= 0) then
+          write(6,*)subname,' allocation error for prod100_nflux'; call endrun()
+    end if
+
+    ! Get time step
+!    dt = real( get_step_size(), r8 )
+
+	do p = begp,endp
+		! initialize all the pft-level local flux arrays
+		dwt_leafc_seed(p) = 0._r8
+		dwt_leafn_seed(p) = 0._r8
+#if (defined C13)
+		dwt_leafc13_seed(p) = 0._r8
+#endif
+		dwt_deadstemc_seed(p) = 0._r8
+		dwt_deadstemn_seed(p) = 0._r8
+#if (defined C13)
+		dwt_deadstemc13_seed(p) = 0._r8
+#endif
+		dwt_frootc_to_litter(p) = 0._r8
+		dwt_livecrootc_to_litter(p) = 0._r8
+		dwt_deadcrootc_to_litter(p) = 0._r8
+#if (defined C13)
+		dwt_frootc13_to_litter(p) = 0._r8
+		dwt_livecrootc13_to_litter(p) = 0._r8
+		dwt_deadcrootc13_to_litter(p) = 0._r8
+#endif
+		dwt_frootn_to_litter(p) = 0._r8
+		dwt_livecrootn_to_litter(p) = 0._r8
+		dwt_deadcrootn_to_litter(p) = 0._r8
+		conv_cflux(p) = 0._r8
+		prod10_cflux(p) = 0._r8
+		prod100_cflux(p) = 0._r8
+#if (defined C13)
+		conv_c13flux(p) = 0._r8
+		prod10_c13flux(p) = 0._r8
+		prod100_c13flux(p) = 0._r8
+#endif
+		conv_nflux(p) = 0._r8
+		prod10_nflux(p) = 0._r8
+		prod100_nflux(p) = 0._r8
+       
+		l = pptr%landunit(p)
+		c = pptr%column(p)
+#if (defined CNDV) || (! defined CROP)
+		if (lptr%itype(l) == istsoil) then ! CNDV incompatible with dynLU
+#else
+		if (lptr%itype(l) == istsoil .or. lptr%itype(l) == istcrop) then
+#endif
+
+			! calculate the change in weight for the timestep
+			dwt = pptr%wtcol(p)-wtcol_old(p)
+
+			! PFTs for which weight increases on this timestep
+			if (dwt > 0._r8) then
+
+				! first identify PFTs that are initiating on this timestep
+				! and set all the necessary state and flux variables
+				if (wtcol_old(p) == 0._r8) then
+
+					! set initial conditions for PFT that is being initiated
+					! in this time step.  Based on the settings in cnIniTimeVar.
+
+					! pft-level carbon state variables
+					pptr%pcs%leafc(p)              = 0._r8
+					pptr%pcs%leafc_storage(p)      = 0._r8
+					pptr%pcs%leafc_xfer(p)         = 0._r8
+					pptr%pcs%frootc(p)             = 0._r8
+					pptr%pcs%frootc_storage(p)     = 0._r8
+					pptr%pcs%frootc_xfer(p)        = 0._r8
+					pptr%pcs%livestemc(p)          = 0._r8
+					pptr%pcs%livestemc_storage(p)  = 0._r8
+					pptr%pcs%livestemc_xfer(p)     = 0._r8
+					pptr%pcs%deadstemc(p)          = 0._r8
+					pptr%pcs%deadstemc_storage(p)  = 0._r8
+					pptr%pcs%deadstemc_xfer(p)     = 0._r8
+					pptr%pcs%livecrootc(p)         = 0._r8
+					pptr%pcs%livecrootc_storage(p) = 0._r8
+					pptr%pcs%livecrootc_xfer(p)    = 0._r8
+					pptr%pcs%deadcrootc(p)         = 0._r8
+					pptr%pcs%deadcrootc_storage(p) = 0._r8
+					pptr%pcs%deadcrootc_xfer(p)    = 0._r8
+					pptr%pcs%gresp_storage(p)      = 0._r8
+					pptr%pcs%gresp_xfer(p)         = 0._r8
+					pptr%pcs%cpool(p)              = 0._r8
+					pptr%pcs%xsmrpool(p)           = 0._r8
+					pptr%pcs%pft_ctrunc(p)         = 0._r8
+					pptr%pcs%dispvegc(p)           = 0._r8
+					pptr%pcs%storvegc(p)           = 0._r8
+					pptr%pcs%totvegc(p)            = 0._r8
+					pptr%pcs%totpftc(p)            = 0._r8
+
+#if (defined C13)
+					! pft-level carbon-13 state variables
+					pptr%pc13s%leafc(p)              = 0._r8
+					pptr%pc13s%leafc_storage(p)      = 0._r8
+					pptr%pc13s%leafc_xfer(p)         = 0._r8
+					pptr%pc13s%frootc(p)             = 0._r8
+					pptr%pc13s%frootc_storage(p)     = 0._r8
+					pptr%pc13s%frootc_xfer(p)        = 0._r8
+					pptr%pc13s%livestemc(p)          = 0._r8
+					pptr%pc13s%livestemc_storage(p)  = 0._r8
+					pptr%pc13s%livestemc_xfer(p)     = 0._r8
+					pptr%pc13s%deadstemc(p)          = 0._r8
+					pptr%pc13s%deadstemc_storage(p)  = 0._r8
+					pptr%pc13s%deadstemc_xfer(p)     = 0._r8
+					pptr%pc13s%livecrootc(p)         = 0._r8
+					pptr%pc13s%livecrootc_storage(p) = 0._r8
+					pptr%pc13s%livecrootc_xfer(p)    = 0._r8
+					pptr%pc13s%deadcrootc(p)         = 0._r8
+					pptr%pc13s%deadcrootc_storage(p) = 0._r8
+					pptr%pc13s%deadcrootc_xfer(p)    = 0._r8
+					pptr%pc13s%gresp_storage(p)      = 0._r8
+					pptr%pc13s%gresp_xfer(p)         = 0._r8
+					pptr%pc13s%cpool(p)              = 0._r8
+					pptr%pc13s%xsmrpool(p)           = 0._r8
+					pptr%pc13s%pft_ctrunc(p)         = 0._r8
+					pptr%pc13s%dispvegc(p)           = 0._r8
+					pptr%pc13s%storvegc(p)           = 0._r8
+					pptr%pc13s%totvegc(p)            = 0._r8
+					pptr%pc13s%totpftc(p)            = 0._r8
+#endif
+
+					! pft-level nitrogen state variables
+					pptr%pns%leafn(p)	           = 0._r8
+					pptr%pns%leafn_storage(p)      = 0._r8
+					pptr%pns%leafn_xfer(p)         = 0._r8
+					pptr%pns%frootn(p)	           = 0._r8
+					pptr%pns%frootn_storage(p)     = 0._r8
+					pptr%pns%frootn_xfer(p)        = 0._r8
+					pptr%pns%livestemn(p)	       = 0._r8
+					pptr%pns%livestemn_storage(p)  = 0._r8
+					pptr%pns%livestemn_xfer(p)     = 0._r8
+					pptr%pns%deadstemn(p)	       = 0._r8
+					pptr%pns%deadstemn_storage(p)  = 0._r8
+					pptr%pns%deadstemn_xfer(p)     = 0._r8
+					pptr%pns%livecrootn(p)         = 0._r8
+					pptr%pns%livecrootn_storage(p) = 0._r8
+					pptr%pns%livecrootn_xfer(p)    = 0._r8
+					pptr%pns%deadcrootn(p)         = 0._r8
+					pptr%pns%deadcrootn_storage(p) = 0._r8
+					pptr%pns%deadcrootn_xfer(p)    = 0._r8
+					pptr%pns%retransn(p)	       = 0._r8
+					pptr%pns%npool(p)	           = 0._r8
+					pptr%pns%pft_ntrunc(p)         = 0._r8
+					pptr%pns%dispvegn(p)           = 0._r8
+					pptr%pns%storvegn(p)           = 0._r8
+					pptr%pns%totvegn(p)            = 0._r8
+					pptr%pns%totpftn (p)           = 0._r8
+
+					! initialize same flux and epv variables that are set
+					! in CNiniTimeVar
+					pptr%pcf%psnsun(p) = 0._r8
+					pptr%pcf%psnsha(p) = 0._r8
+#if (defined C13)
+					pptr%pc13f%psnsun(p) = 0._r8
+					pptr%pc13f%psnsha(p) = 0._r8
+#endif
+					pptr%pps%laisun(p) = 0._r8
+					pptr%pps%laisha(p) = 0._r8
+					pptr%pps%lncsun(p) = 0._r8
+					pptr%pps%lncsha(p) = 0._r8
+					pptr%pps%vcmxsun(p) = 0._r8
+					pptr%pps%vcmxsha(p) = 0._r8
+#if (defined C13)
+					pptr%pps%alphapsnsun(p) = 0._r8
+					pptr%pps%alphapsnsha(p) = 0._r8
+#endif
+
+					pptr%pepv%dormant_flag(p) = 1._r8
+					pptr%pepv%days_active(p) = 0._r8
+					pptr%pepv%onset_flag(p) = 0._r8
+					pptr%pepv%onset_counter(p) = 0._r8
+					pptr%pepv%onset_gddflag(p) = 0._r8
+					pptr%pepv%onset_fdd(p) = 0._r8
+					pptr%pepv%onset_gdd(p) = 0._r8
+					pptr%pepv%onset_swi(p) = 0.0_r8
+					pptr%pepv%offset_flag(p) = 0._r8
+					pptr%pepv%offset_counter(p) = 0._r8
+					pptr%pepv%offset_fdd(p) = 0._r8
+					pptr%pepv%offset_swi(p) = 0._r8
+					pptr%pepv%lgsf(p) = 0._r8
+					pptr%pepv%bglfr(p) = 0._r8
+					pptr%pepv%bgtr(p) = 0._r8
+					! difference from CNiniTimeVar: using column-level
+					! information to initialize annavg_t2m.
+					pptr%pepv%annavg_t2m(p) = cptr%cps%cannavg_t2m(c)
+					pptr%pepv%tempavg_t2m(p) = 0._r8
+					pptr%pepv%gpp(p) = 0._r8
+					pptr%pepv%availc(p) = 0._r8
+					pptr%pepv%xsmrpool_recover(p) = 0._r8
+#if (defined C13)
+					pptr%pepv%xsmrpool_c13ratio(p) = c13ratio
+#endif
+					pptr%pepv%alloc_pnow(p) = 1._r8
+					pptr%pepv%c_allometry(p) = 0._r8
+					pptr%pepv%n_allometry(p) = 0._r8
+					pptr%pepv%plant_ndemand(p) = 0._r8
+					pptr%pepv%tempsum_potential_gpp(p) = 0._r8
+					pptr%pepv%annsum_potential_gpp(p) = 0._r8
+					pptr%pepv%tempmax_retransn(p) = 0._r8
+					pptr%pepv%annmax_retransn(p) = 0._r8
+					pptr%pepv%avail_retransn(p) = 0._r8
+					pptr%pepv%plant_nalloc(p) = 0._r8
+					pptr%pepv%plant_calloc(p) = 0._r8
+					pptr%pepv%excess_cflux(p) = 0._r8
+					pptr%pepv%downreg(p) = 0._r8
+					pptr%pepv%prev_leafc_to_litter(p) = 0._r8
+					pptr%pepv%prev_frootc_to_litter(p) = 0._r8
+					pptr%pepv%tempsum_npp(p) = 0._r8
+					pptr%pepv%annsum_npp(p) = 0._r8
+#if (defined C13)
+					pptr%pepv%rc13_canair(p) = 0._r8
+					pptr%pepv%rc13_psnsun(p) = 0._r8
+					pptr%pepv%rc13_psnsha(p) = 0._r8
+#endif
+
+				end if  ! end initialization of new pft
+
+				! (still in dwt > 0 block)
+
+				! set the seed sources for leaf and deadstem
+				! leaf source is split later between leaf, leaf_storage, leaf_xfer
+				leafc_seed   = 0._r8
+				leafn_seed   = 0._r8
+#if (defined C13)
+				leafc13_seed = 0._r8
+#endif
+				deadstemc_seed   = 0._r8
+				deadstemn_seed   = 0._r8
+#if (defined C13)
+				deadstemc13_seed = 0._r8
+#endif
+				if (pptr%itype(p) /= 0) then
+					leafc_seed = 1._r8
+					leafn_seed  = leafc_seed / pftcon%leafcn(pptr%itype(p))
+					if (pftcon%woody(pptr%itype(p)) == 1._r8) then
+						deadstemc_seed = 0.1_r8
+						deadstemn_seed = deadstemc_seed / pftcon%deadwdcn(pptr%itype(p))
+					end if
+
+#if (defined C13)
+					! 13c state is initialized assuming del13c = -28 permil for C3, and -13 permil for C4.
+					! That translates to ratios of (13c/(12c+13c)) of 0.01080455 for C3, and 0.01096945 for C4
+					! based on the following formulae: 
+					! r1 (13/12) = PDB + (del13c * PDB)/1000.0
+					! r2 (13/(13+12)) = r1/(1+r1)
+					! PDB = 0.0112372_R8  (ratio of 13C/12C in Pee Dee Belemnite, C isotope standard)
+					c3_del13c = -28._r8
+					c4_del13c = -13._r8
+					c3_r1 = SHR_CONST_PDB + ((c3_del13c*SHR_CONST_PDB)/1000._r8)
+					c3_r2 = c3_r1/(1._r8 + c3_r1)
+					c4_r1 = SHR_CONST_PDB + ((c4_del13c*SHR_CONST_PDB)/1000._r8)
+					c4_r2 = c4_r1/(1._r8 + c4_r1)
+
+					if (pftcon%c3psn(pptr%itype(p)) == 1._r8) then
+						leafc13_seed     = leafc_seed     * c3_r2
+						deadstemc13_seed = deadstemc_seed * c3_r2
+					else
+						leafc13_seed     = leafc_seed     * c4_r2
+						deadstemc13_seed = deadstemc_seed * c4_r2
+					end if 
+#endif
+				end if
+
+				! When PFT area expands (dwt > 0), the pft-level mass density 
+				! is modified to conserve the original pft mass distributed
+				! over the new (larger) area, plus a term to account for the 
+				! introduction of new seed source for leaf and deadstem
+				t1 = wtcol_old(p)/pptr%wtcol(p)
+				t2 = dwt/pptr%wtcol(p)
+
+				tot_leaf = pptr%pcs%leafc(p) + pptr%pcs%leafc_storage(p) + pptr%pcs%leafc_xfer(p)
+				pleaf = 0._r8
+				pstor = 0._r8
+				pxfer = 0._r8
+				if (tot_leaf /= 0._r8) then
+					! when adding seed source to non-zero leaf state, use current proportions
+					pleaf = pptr%pcs%leafc(p)/tot_leaf
+					pstor = pptr%pcs%leafc_storage(p)/tot_leaf
+					pxfer = pptr%pcs%leafc_xfer(p)/tot_leaf
+				else
+					! when initiating from zero leaf state, use evergreen flag to set proportions
+					if (pftcon%evergreen(pptr%itype(p)) == 1._r8) then
+						pleaf = 1._r8
+					else
+						pstor = 1._r8
+					end if
+				end if 
+				pptr%pcs%leafc(p)         = pptr%pcs%leafc(p)*t1         + leafc_seed*pleaf*t2
+				pptr%pcs%leafc_storage(p) = pptr%pcs%leafc_storage(p)*t1 + leafc_seed*pstor*t2
+				pptr%pcs%leafc_xfer(p)    = pptr%pcs%leafc_xfer(p)*t1    + leafc_seed*pxfer*t2
+				pptr%pcs%frootc(p)  		   = pptr%pcs%frootc(p) 			* t1
+				pptr%pcs%frootc_storage(p)     = pptr%pcs%frootc_storage(p) 	* t1
+				pptr%pcs%frootc_xfer(p) 	   = pptr%pcs%frootc_xfer(p)		* t1
+				pptr%pcs%livestemc(p)		   = pptr%pcs%livestemc(p)  		* t1
+				pptr%pcs%livestemc_storage(p)  = pptr%pcs%livestemc_storage(p)  * t1
+				pptr%pcs%livestemc_xfer(p)     = pptr%pcs%livestemc_xfer(p) 	* t1
+				pptr%pcs%deadstemc(p)     = pptr%pcs%deadstemc(p)*t1     + deadstemc_seed*t2
+				pptr%pcs%deadstemc_storage(p)  = pptr%pcs%deadstemc_storage(p)  * t1
+				pptr%pcs%deadstemc_xfer(p)     = pptr%pcs%deadstemc_xfer(p) 	* t1
+				pptr%pcs%livecrootc(p)  	   = pptr%pcs%livecrootc(p) 		* t1
+				pptr%pcs%livecrootc_storage(p) = pptr%pcs%livecrootc_storage(p) * t1
+				pptr%pcs%livecrootc_xfer(p)    = pptr%pcs%livecrootc_xfer(p)	* t1
+				pptr%pcs%deadcrootc(p)  	   = pptr%pcs%deadcrootc(p) 		* t1
+				pptr%pcs%deadcrootc_storage(p) = pptr%pcs%deadcrootc_storage(p) * t1
+				pptr%pcs%deadcrootc_xfer(p)    = pptr%pcs%deadcrootc_xfer(p)	* t1
+				pptr%pcs%gresp_storage(p)	   = pptr%pcs%gresp_storage(p)  	* t1
+				pptr%pcs%gresp_xfer(p)  	   = pptr%pcs%gresp_xfer(p) 		* t1
+				pptr%pcs%cpool(p)			   = pptr%pcs%cpool(p)  			* t1
+				pptr%pcs%xsmrpool(p)		   = pptr%pcs%xsmrpool(p)			* t1
+				pptr%pcs%pft_ctrunc(p)  	   = pptr%pcs%pft_ctrunc(p) 		* t1
+				pptr%pcs%dispvegc(p)		   = pptr%pcs%dispvegc(p)			* t1
+				pptr%pcs%storvegc(p)		   = pptr%pcs%storvegc(p)			* t1
+				pptr%pcs%totvegc(p) 		   = pptr%pcs%totvegc(p)			* t1
+				pptr%pcs%totpftc(p) 		   = pptr%pcs%totpftc(p)			* t1
+
+#if (defined C13)
+				! pft-level carbon-13 state variables 
+				tot_leaf = pptr%pc13s%leafc(p) + pptr%pc13s%leafc_storage(p) + pptr%pc13s%leafc_xfer(p)
+				pleaf = 0._r8
+				pstor = 0._r8
+				pxfer = 0._r8
+				if (tot_leaf /= 0._r8) then
+					pleaf = pptr%pc13s%leafc(p)/tot_leaf
+					pstor = pptr%pc13s%leafc_storage(p)/tot_leaf
+					pxfer = pptr%pc13s%leafc_xfer(p)/tot_leaf
+				else
+					! when initiating from zero leaf state, use evergreen flag to set proportions
+					if (pftcon%evergreen(pptr%itype(p)) == 1._r8) then
+						pleaf = 1._r8
+					else
+						pstor = 1._r8
+					end if
+				end if 
+				pptr%pc13s%leafc(p)         = pptr%pc13s%leafc(p)*t1         + leafc13_seed*pleaf*t2
+				pptr%pc13s%leafc_storage(p) = pptr%pc13s%leafc_storage(p)*t1 + leafc13_seed*pstor*t2
+				pptr%pc13s%leafc_xfer(p)    = pptr%pc13s%leafc_xfer(p)*t1    + leafc13_seed*pxfer*t2
+				pptr%pc13s%frootc(p)			 = pptr%pc13s%frootc(p) 		* t1
+				pptr%pc13s%frootc_storage(p)	         = pptr%pc13s%frootc_storage(p) 	* t1
+				pptr%pc13s%frootc_xfer(p)		 = pptr%pc13s%frootc_xfer(p)		* t1
+				pptr%pc13s%livestemc(p) 		 = pptr%pc13s%livestemc(p)  		* t1
+				pptr%pc13s%livestemc_storage(p)          = pptr%pc13s%livestemc_storage(p)      * t1
+				pptr%pc13s%livestemc_xfer(p)	         = pptr%pc13s%livestemc_xfer(p) 	* t1
+				pptr%pc13s%deadstemc(p)                  = pptr%pc13s%deadstemc(p)*t1     + deadstemc13_seed*t2
+				pptr%pc13s%deadstemc_storage(p)          = pptr%pc13s%deadstemc_storage(p)      * t1
+				pptr%pc13s%deadstemc_xfer(p)	         = pptr%pc13s%deadstemc_xfer(p) 	* t1
+				pptr%pc13s%livecrootc(p)		 = pptr%pc13s%livecrootc(p) 		* t1
+				pptr%pc13s%livecrootc_storage(p)         = pptr%pc13s%livecrootc_storage(p)     * t1
+				pptr%pc13s%livecrootc_xfer(p)	         = pptr%pc13s%livecrootc_xfer(p)	* t1
+				pptr%pc13s%deadcrootc(p)		 = pptr%pc13s%deadcrootc(p) 		* t1
+				pptr%pc13s%deadcrootc_storage(p)         = pptr%pc13s%deadcrootc_storage(p)     * t1
+				pptr%pc13s%deadcrootc_xfer(p)	         = pptr%pc13s%deadcrootc_xfer(p)	* t1
+				pptr%pc13s%gresp_storage(p) 	         = pptr%pc13s%gresp_storage(p)  	* t1
+				pptr%pc13s%gresp_xfer(p)		 = pptr%pc13s%gresp_xfer(p) 		* t1
+				pptr%pc13s%cpool(p) 			 = pptr%pc13s%cpool(p)  		* t1
+				pptr%pc13s%xsmrpool(p)  		 = pptr%pc13s%xsmrpool(p)		* t1
+				pptr%pc13s%pft_ctrunc(p)		 = pptr%pc13s%pft_ctrunc(p) 		* t1
+				pptr%pc13s%dispvegc(p)  		 = pptr%pc13s%dispvegc(p)		* t1
+				pptr%pc13s%storvegc(p)  		 = pptr%pc13s%storvegc(p)		* t1
+				pptr%pc13s%totvegc(p)			 = pptr%pc13s%totvegc(p)		* t1
+				pptr%pc13s%totpftc(p)			 = pptr%pc13s%totpftc(p)		* t1
+#endif
+
+				tot_leaf = pptr%pns%leafn(p) + pptr%pns%leafn_storage(p) + pptr%pns%leafn_xfer(p)
+				pleaf = 0._r8
+				pstor = 0._r8
+				pxfer = 0._r8
+				if (tot_leaf /= 0._r8) then
+					pleaf = pptr%pns%leafn(p)/tot_leaf
+					pstor = pptr%pns%leafn_storage(p)/tot_leaf
+					pxfer = pptr%pns%leafn_xfer(p)/tot_leaf
+				else
+					! when initiating from zero leaf state, use evergreen flag to set proportions
+					if (pftcon%evergreen(pptr%itype(p)) == 1._r8) then
+						pleaf = 1._r8
+					else
+						pstor = 1._r8
+					end if
+				end if 
+				! pft-level nitrogen state variables
+				pptr%pns%leafn(p)         = pptr%pns%leafn(p)*t1         + leafn_seed*pleaf*t2
+				pptr%pns%leafn_storage(p) = pptr%pns%leafn_storage(p)*t1 + leafn_seed*pstor*t2
+				pptr%pns%leafn_xfer(p)    = pptr%pns%leafn_xfer(p)*t1    + leafn_seed*pxfer*t2
+				pptr%pns%frootn(p)  		   = pptr%pns%frootn(p) 		* t1
+				pptr%pns%frootn_storage(p)         = pptr%pns%frootn_storage(p) 	* t1
+				pptr%pns%frootn_xfer(p) 	   = pptr%pns%frootn_xfer(p)		* t1
+				pptr%pns%livestemn(p)		   = pptr%pns%livestemn(p)  		* t1
+				pptr%pns%livestemn_storage(p)      = pptr%pns%livestemn_storage(p)      * t1
+				pptr%pns%livestemn_xfer(p)         = pptr%pns%livestemn_xfer(p) 	* t1
+				pptr%pns%deadstemn(p)              = pptr%pns%deadstemn(p)*t1     + deadstemn_seed*t2
+				pptr%pns%deadstemn_storage(p)      = pptr%pns%deadstemn_storage(p)      * t1
+				pptr%pns%deadstemn_xfer(p)         = pptr%pns%deadstemn_xfer(p) 	* t1
+				pptr%pns%livecrootn(p)  	   = pptr%pns%livecrootn(p) 		* t1
+				pptr%pns%livecrootn_storage(p)     = pptr%pns%livecrootn_storage(p)     * t1
+				pptr%pns%livecrootn_xfer(p)        = pptr%pns%livecrootn_xfer(p)	* t1
+				pptr%pns%deadcrootn(p)  	   = pptr%pns%deadcrootn(p) 		* t1
+				pptr%pns%deadcrootn_storage(p)     = pptr%pns%deadcrootn_storage(p)     * t1
+				pptr%pns%deadcrootn_xfer(p)        = pptr%pns%deadcrootn_xfer(p)        * t1
+				pptr%pns%retransn(p)		   = pptr%pns%retransn(p)		* t1
+				pptr%pns%npool(p)		   = pptr%pns%npool(p)  		* t1
+				pptr%pns%pft_ntrunc(p)  	   = pptr%pns%pft_ntrunc(p)        	* t1
+				pptr%pns%dispvegn(p)		   = pptr%pns%dispvegn(p)		* t1
+				pptr%pns%storvegn(p)		   = pptr%pns%storvegn(p)		* t1
+				pptr%pns%totvegn(p) 		   = pptr%pns%totvegn(p)		* t1
+				pptr%pns%totpftn(p) 		   = pptr%pns%totpftn(p)		* t1
+
+				! update temporary seed source arrays
+				! These are calculated in terms of the required contributions from
+				! column-level seed source
+				dwt_leafc_seed(p)   = leafc_seed   * dwt
+#if (defined C13)
+				dwt_leafc13_seed(p) = leafc13_seed * dwt
+#endif
+				dwt_leafn_seed(p)   = leafn_seed   * dwt
+				dwt_deadstemc_seed(p)   = deadstemc_seed   * dwt
+#if (defined C13)
+				dwt_deadstemc13_seed(p) = deadstemc13_seed * dwt
+#endif
+				dwt_deadstemn_seed(p)   = deadstemn_seed   * dwt
+
+			else if (dwt < 0._r8) then
+
+				! if the pft lost weight on the timestep, then the carbon and nitrogen state
+				! variables are directed to litter, CWD, and wood product pools.
+
+				! N.B. : the conv_cflux, prod10_cflux, and prod100_cflux fluxes are accumulated
+				! as negative values, but the fluxes for pft-to-litter are accumulated as 
+				! positive values
+
+				! set local weight variables for this pft
+				wt_new = pptr%wtcol(p)
+				wt_old = wtcol_old(p)
+
+				!---------------
+				! C state update
+				!---------------
+
+				! leafc 
+				ptr => pptr%pcs%leafc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! leafc_storage 
+				ptr => pptr%pcs%leafc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! leafc_xfer 
+				ptr => pptr%pcs%leafc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! frootc 
+				ptr => pptr%pcs%frootc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_frootc_to_litter(p) = dwt_frootc_to_litter(p) - change_state
+				else
+					ptr = 0._r8
+					dwt_frootc_to_litter(p) = dwt_frootc_to_litter(p) + init_state
+				end if
+
+				! frootc_storage 
+				ptr => pptr%pcs%frootc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! frootc_xfer 
+				ptr => pptr%pcs%frootc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! livestemc 
+				ptr => pptr%pcs%livestemc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! livestemc_storage 
+				ptr => pptr%pcs%livestemc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! livestemc_xfer 
+				ptr => pptr%pcs%livestemc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! deadstemc 
+				ptr => pptr%pcs%deadstemc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state*pconv(pptr%itype(p))
+					prod10_cflux(p) = prod10_cflux(p) + change_state*pprod10(pptr%itype(p))
+					prod100_cflux(p) = prod100_cflux(p) + change_state*pprod100(pptr%itype(p))
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state*pconv(pptr%itype(p))
+					prod10_cflux(p) = prod10_cflux(p) - init_state*pprod10(pptr%itype(p))
+					prod100_cflux(p) = prod100_cflux(p) - init_state*pprod100(pptr%itype(p))
+				end if
+
+				! deadstemc_storage 
+				ptr => pptr%pcs%deadstemc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! deadstemc_xfer 
+				ptr => pptr%pcs%deadstemc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! livecrootc 
+				ptr => pptr%pcs%livecrootc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_livecrootc_to_litter(p) = dwt_livecrootc_to_litter(p) - change_state
+				else
+					ptr = 0._r8
+					dwt_livecrootc_to_litter(p) = dwt_livecrootc_to_litter(p) + init_state
+				end if
+
+				! livecrootc_storage 
+				ptr => pptr%pcs%livecrootc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! livecrootc_xfer 
+				ptr => pptr%pcs%livecrootc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! deadcrootc 
+				ptr => pptr%pcs%deadcrootc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_deadcrootc_to_litter(p) = dwt_deadcrootc_to_litter(p) - change_state
+				else
+					ptr = 0._r8
+					dwt_deadcrootc_to_litter(p) = dwt_deadcrootc_to_litter(p) + init_state
+				end if
+
+				! deadcrootc_storage 
+				ptr => pptr%pcs%deadcrootc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! deadcrootc_xfer 
+				ptr => pptr%pcs%deadcrootc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! gresp_storage 
+				ptr => pptr%pcs%gresp_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! gresp_xfer 
+				ptr => pptr%pcs%gresp_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! cpool 
+				ptr => pptr%pcs%cpool(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! xsmrpool 
+				ptr => pptr%pcs%xsmrpool(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+				! pft_ctrunc 
+				ptr => pptr%pcs%pft_ctrunc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					conv_cflux(p) = conv_cflux(p) + change_state
+				else
+					ptr = 0._r8
+					conv_cflux(p) = conv_cflux(p) - init_state
+				end if
+
+#if (defined C13)
+				!-----------------
+				! C13 state update
+				!-----------------
+
+				! set pointers to the conversion and product pool fluxes for this pft
+				! dwt_ptr0 is reserved for local assignment to dwt_xxx_to_litter fluxes
+				dwt_ptr1 => conv_c13flux(p)
+				dwt_ptr2 => prod10_c13flux(p)
+				dwt_ptr3 => prod100_c13flux(p)
+
+				! leafc 
+				ptr => pptr%pc13s%leafc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! leafc_storage 
+				ptr => pptr%pc13s%leafc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! leafc_xfer 
+				ptr => pptr%pc13s%leafc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! frootc 
+				ptr => pptr%pc13s%frootc(p)
+				dwt_ptr0 => dwt_frootc13_to_litter(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr0 = dwt_ptr0 - change_state
+				else
+					ptr = 0._r8
+					dwt_ptr0 = dwt_ptr0 + init_state
+				end if
+
+				! frootc_storage 
+				ptr => pptr%pc13s%frootc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! frootc_xfer 
+				ptr => pptr%pc13s%frootc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livestemc 
+				ptr => pptr%pc13s%livestemc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livestemc_storage 
+				ptr => pptr%pc13s%livestemc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livestemc_xfer 
+				ptr => pptr%pc13s%livestemc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! deadstemc 
+				ptr => pptr%pc13s%deadstemc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state*pconv(pptr%itype(p))
+					dwt_ptr2 = dwt_ptr2 + change_state*pprod10(pptr%itype(p))
+					dwt_ptr3 = dwt_ptr3 + change_state*pprod100(pptr%itype(p))
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state*pconv(pptr%itype(p))
+					dwt_ptr2 = dwt_ptr2 - init_state*pprod10(pptr%itype(p))
+					dwt_ptr3 = dwt_ptr3 - init_state*pprod100(pptr%itype(p))
+				end if
+
+				! deadstemc_storage 
+				ptr => pptr%pc13s%deadstemc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! deadstemc_xfer 
+				ptr => pptr%pc13s%deadstemc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livecrootc 
+				ptr => pptr%pc13s%livecrootc(p)
+				dwt_ptr0 => dwt_livecrootc13_to_litter(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr0 = dwt_ptr0 - change_state
+				else
+					ptr = 0._r8
+					dwt_ptr0 = dwt_ptr0 + init_state
+				end if
+
+				! livecrootc_storage 
+				ptr => pptr%pc13s%livecrootc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livecrootc_xfer 
+				ptr => pptr%pc13s%livecrootc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! deadcrootc 
+				ptr => pptr%pc13s%deadcrootc(p)
+				dwt_ptr0 => dwt_deadcrootc13_to_litter(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr0 = dwt_ptr0 - change_state
+				else
+					ptr = 0._r8
+					dwt_ptr0 = dwt_ptr0 + init_state
+				end if
+
+				! deadcrootc_storage 
+				ptr => pptr%pc13s%deadcrootc_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! deadcrootc_xfer 
+				ptr => pptr%pc13s%deadcrootc_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! gresp_storage 
+				ptr => pptr%pc13s%gresp_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! gresp_xfer 
+				ptr => pptr%pc13s%gresp_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! cpool 
+				ptr => pptr%pc13s%cpool(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! pft_ctrunc 
+				ptr => pptr%pc13s%pft_ctrunc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+#endif
+
+				!---------------
+				! N state update
+				!---------------
+
+				! set pointers to the conversion and product pool fluxes for this pft
+				! dwt_ptr0 is reserved for local assignment to dwt_xxx_to_litter fluxes
+				dwt_ptr1 => conv_nflux(p)
+				dwt_ptr2 => prod10_nflux(p)
+				dwt_ptr3 => prod100_nflux(p)
+
+				! leafn 
+				ptr => pptr%pns%leafn(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! leafn_storage  
+				ptr => pptr%pns%leafn_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! leafn_xfer  
+				ptr => pptr%pns%leafn_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! frootn 
+				ptr => pptr%pns%frootn(p)
+				dwt_ptr0 => dwt_frootn_to_litter(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr0 = dwt_ptr0 - change_state
+				else
+					ptr = 0._r8
+					dwt_ptr0 = dwt_ptr0 + init_state
+				end if
+
+				! frootn_storage 
+				ptr => pptr%pns%frootn_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! frootn_xfer  
+				ptr => pptr%pns%frootn_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livestemn  
+				ptr => pptr%pns%livestemn(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livestemn_storage 
+				ptr => pptr%pns%livestemn_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livestemn_xfer 
+				ptr => pptr%pns%livestemn_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! deadstemn 
+				ptr => pptr%pns%deadstemn(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state*pconv(pptr%itype(p))
+					dwt_ptr2 = dwt_ptr2 + change_state*pprod10(pptr%itype(p))
+					dwt_ptr3 = dwt_ptr3 + change_state*pprod100(pptr%itype(p))
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state*pconv(pptr%itype(p))
+					dwt_ptr2 = dwt_ptr2 - init_state*pprod10(pptr%itype(p))
+					dwt_ptr3 = dwt_ptr3 - init_state*pprod100(pptr%itype(p))
+				end if
+
+				! deadstemn_storage 
+				ptr => pptr%pns%deadstemn_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! deadstemn_xfer 
+				ptr => pptr%pns%deadstemn_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livecrootn 
+				ptr => pptr%pns%livecrootn(p)
+				dwt_ptr0 => dwt_livecrootn_to_litter(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr0 = dwt_ptr0 - change_state
+				else
+					ptr = 0._r8
+					dwt_ptr0 = dwt_ptr0 + init_state
+				end if
+
+				! livecrootn_storage  
+				ptr => pptr%pns%livecrootn_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! livecrootn_xfer  
+				ptr => pptr%pns%livecrootn_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! deadcrootn 
+				ptr => pptr%pns%deadcrootn(p)
+				dwt_ptr0 => dwt_deadcrootn_to_litter(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr0 = dwt_ptr0 - change_state
+				else
+					ptr = 0._r8
+					dwt_ptr0 = dwt_ptr0 + init_state
+				end if
+
+				! deadcrootn_storage  
+				ptr => pptr%pns%deadcrootn_storage(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! deadcrootn_xfer  
+				ptr => pptr%pns%deadcrootn_xfer(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! retransn  
+				ptr => pptr%pns%retransn(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+
+				! npool  
+				ptr => pptr%pns%npool(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+				
+				! pft_ntrunc  
+				ptr => pptr%pns%pft_ntrunc(p)
+				init_state = ptr*wt_old
+				change_state = ptr*dwt
+				new_state = init_state+change_state
+				if (wt_new /= 0._r8) then
+					ptr = new_state/wt_new
+					dwt_ptr1 = dwt_ptr1 + change_state
+				else
+					ptr = 0._r8
+					dwt_ptr1 = dwt_ptr1 - init_state
+				end if
+				
+			end if       ! weight decreasing
+		end if           ! is soil
+	end do               ! pft loop
+    
+	! calculate column-level seeding fluxes
+	do pi = 1,max_pft_per_col
+		do c = begc, endc
+			if ( pi <=  cptr%npfts(c) ) then
+				p = cptr%pfti(c) + pi - 1
+				
+				! C fluxes
+				cptr%ccf%dwt_seedc_to_leaf(c) = cptr%ccf%dwt_seedc_to_leaf(c) + dwt_leafc_seed(p)/dt
+				cptr%ccf%dwt_seedc_to_deadstem(c) = cptr%ccf%dwt_seedc_to_deadstem(c) &
+                                                                    + dwt_deadstemc_seed(p)/dt
+				
+#if (defined C13)
+				! C13 fluxes
+                                cptr%cc13f%dwt_seedc_to_leaf(c) = cptr%cc13f%dwt_seedc_to_leaf(c) + dwt_leafc13_seed(p)/dt
+                                cptr%cc13f%dwt_seedc_to_deadstem(c) = cptr%cc13f%dwt_seedc_to_deadstem(c) &
+                                                                      + dwt_deadstemc13_seed(p)/dt
+#endif
+				
+				! N fluxes
+				cptr%cnf%dwt_seedn_to_leaf(c) = cptr%cnf%dwt_seedn_to_leaf(c) + dwt_leafn_seed(p)/dt
+				cptr%cnf%dwt_seedn_to_deadstem(c) = cptr%cnf%dwt_seedn_to_deadstem(c) &
+                                                                    + dwt_deadstemn_seed(p)/dt
+			end if
+		end do
+	end do
+
+
+	! calculate pft-to-column for fluxes into litter and CWD pools
+	do pi = 1,max_pft_per_col
+		do c = begc, endc
+			if ( pi <=  cptr%npfts(c) ) then
+				p = cptr%pfti(c) + pi - 1
+
+				! fine root litter carbon fluxes
+				cptr%ccf%dwt_frootc_to_litr1c(c) = cptr%ccf%dwt_frootc_to_litr1c(c) + &
+                                                            (dwt_frootc_to_litter(p)*pftcon%fr_flab(pptr%itype(p)))/dt
+				cptr%ccf%dwt_frootc_to_litr2c(c) = cptr%ccf%dwt_frootc_to_litr2c(c) + &
+                                                            (dwt_frootc_to_litter(p)*pftcon%fr_fcel(pptr%itype(p)))/dt
+				cptr%ccf%dwt_frootc_to_litr3c(c) = cptr%ccf%dwt_frootc_to_litr3c(c) + &
+                                                            (dwt_frootc_to_litter(p)*pftcon%fr_flig(pptr%itype(p)))/dt
+
+#if (defined C13)
+				! fine root litter C13 fluxes
+				cptr%cc13f%dwt_frootc_to_litr1c(c) = cptr%cc13f%dwt_frootc_to_litr1c(c) + &
+                                                            (dwt_frootc13_to_litter(p)*pftcon%fr_flab(pptr%itype(p)))/dt
+				cptr%cc13f%dwt_frootc_to_litr2c(c) = cptr%cc13f%dwt_frootc_to_litr2c(c) + &
+                                                            (dwt_frootc13_to_litter(p)*pftcon%fr_fcel(pptr%itype(p)))/dt
+				cptr%cc13f%dwt_frootc_to_litr3c(c) = cptr%cc13f%dwt_frootc_to_litr3c(c) + &
+                                                            (dwt_frootc13_to_litter(p)*pftcon%fr_flig(pptr%itype(p)))/dt
+#endif
+
+				! fine root litter nitrogen fluxes
+				cptr%cnf%dwt_frootn_to_litr1n(c) = cptr%cnf%dwt_frootn_to_litr1n(c) + &
+                                                            (dwt_frootn_to_litter(p)*pftcon%fr_flab(pptr%itype(p)))/dt
+				cptr%cnf%dwt_frootn_to_litr2n(c) = cptr%cnf%dwt_frootn_to_litr2n(c) + &
+                                                            (dwt_frootn_to_litter(p)*pftcon%fr_fcel(pptr%itype(p)))/dt
+				cptr%cnf%dwt_frootn_to_litr3n(c) = cptr%cnf%dwt_frootn_to_litr3n(c) + &
+                                                            (dwt_frootn_to_litter(p)*pftcon%fr_flig(pptr%itype(p)))/dt
+
+				! livecroot fluxes to cwd
+				cptr%ccf%dwt_livecrootc_to_cwdc(c) = cptr%ccf%dwt_livecrootc_to_cwdc(c) + &
+                                                            (dwt_livecrootc_to_litter(p))/dt
+#if (defined C13)
+				cptr%cc13f%dwt_livecrootc_to_cwdc(c) = cptr%cc13f%dwt_livecrootc_to_cwdc(c) + &
+                                                            (dwt_livecrootc13_to_litter(p))/dt
+#endif
+				cptr%cnf%dwt_livecrootn_to_cwdn(c) = cptr%cnf%dwt_livecrootn_to_cwdn(c) + &
+                                                            (dwt_livecrootn_to_litter(p))/dt
+
+				! deadcroot fluxes to cwd
+				cptr%ccf%dwt_deadcrootc_to_cwdc(c) = cptr%ccf%dwt_deadcrootc_to_cwdc(c) + &
+                                                            (dwt_deadcrootc_to_litter(p))/dt
+#if (defined C13)
+				cptr%cc13f%dwt_deadcrootc_to_cwdc(c) = cptr%cc13f%dwt_deadcrootc_to_cwdc(c) + &
+                                                            (dwt_deadcrootc13_to_litter(p))/dt
+#endif
+				cptr%cnf%dwt_deadcrootn_to_cwdn(c) = cptr%cnf%dwt_deadcrootn_to_cwdn(c) + &
+                                                            (dwt_deadcrootn_to_litter(p))/dt
+			end if
+		end do
+	end do
+
+	! calculate pft-to-column for fluxes into product pools and conversion flux
+	do pi = 1,max_pft_per_col
+		do c = begc,endc
+			if (pi <= cptr%npfts(c)) then
+				p = cptr%pfti(c) + pi - 1
+
+				! column-level fluxes are accumulated as positive fluxes.
+				! column-level C flux updates
+				cptr%ccf%dwt_conv_cflux(c) = cptr%ccf%dwt_conv_cflux(c) - conv_cflux(p)/dt
+				cptr%ccf%dwt_prod10c_gain(c) = cptr%ccf%dwt_prod10c_gain(c) - prod10_cflux(p)/dt
+				cptr%ccf%dwt_prod100c_gain(c) = cptr%ccf%dwt_prod100c_gain(c) - prod100_cflux(p)/dt
+
+#if (defined C13)
+				! column-level C13 flux updates
+				cptr%cc13f%dwt_conv_cflux(c) = cptr%cc13f%dwt_conv_cflux(c) - conv_c13flux(p)/dt
+				cptr%cc13f%dwt_prod10c_gain(c) = cptr%cc13f%dwt_prod10c_gain(c) - prod10_c13flux(p)/dt
+				cptr%cc13f%dwt_prod100c_gain(c) = cptr%cc13f%dwt_prod100c_gain(c) - prod100_c13flux(p)/dt
+#endif
+
+				! column-level N flux updates
+				cptr%cnf%dwt_conv_nflux(c) = cptr%cnf%dwt_conv_nflux(c) - conv_nflux(p)/dt
+				cptr%cnf%dwt_prod10n_gain(c) = cptr%cnf%dwt_prod10n_gain(c) - prod10_nflux(p)/dt
+				cptr%cnf%dwt_prod100n_gain(c) = cptr%cnf%dwt_prod100n_gain(c) - prod100_nflux(p)/dt
+
+			end if
+		end do
+	end do
+
+	! Deallocate pft-level flux arrays
+        deallocate(dwt_leafc_seed)
+        deallocate(dwt_leafn_seed)
+#if (defined C13)
+        deallocate(dwt_leafc13_seed)
+#endif
+        deallocate(dwt_deadstemc_seed)
+        deallocate(dwt_deadstemn_seed)
+#if (defined C13)
+        deallocate(dwt_deadstemc13_seed)
+#endif
+	deallocate(dwt_frootc_to_litter)
+	deallocate(dwt_livecrootc_to_litter)
+	deallocate(dwt_deadcrootc_to_litter)
+#if (defined C13)
+	deallocate(dwt_frootc13_to_litter)
+	deallocate(dwt_livecrootc13_to_litter)
+	deallocate(dwt_deadcrootc13_to_litter)
+#endif
+	deallocate(dwt_frootn_to_litter)
+	deallocate(dwt_livecrootn_to_litter)
+	deallocate(dwt_deadcrootn_to_litter)
+	deallocate(conv_cflux)
+	deallocate(prod10_cflux)
+	deallocate(prod100_cflux)
+#if (defined C13)
+	deallocate(conv_c13flux)
+	deallocate(prod10_c13flux)
+	deallocate(prod100_c13flux)
+#endif
+	deallocate(conv_nflux)
+	deallocate(prod10_nflux)
+	deallocate(prod100_nflux)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     
 end subroutine pftdyn_cnbal
 #endif
@@ -18373,8 +22054,13 @@ contains
   call CLMDebug('mark0')
 !       gptr%itype(gi)  = 1
       !gptr%wtglob(g)  = gptr%area(g)/clm3%area
+<<<<<<< HEAD
        gptr%lat(gi)    = latixy(gi) * pie/180.
        gptr%lon(gi)    = longxy(gi) * pie/180.
+=======
+       gptr%lat(gi)    = latixy(gi) * pie/180._r8
+       gptr%lon(gi)    = longxy(gi) * pie/180._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        gptr%latdeg(gi) = latixy(gi)
        gptr%londeg(gi) = longxy(gi)
 !      gptr%landfrac(gi) = landfrac(i,j)
@@ -18438,7 +22124,11 @@ contains
        ! Determine special landunits (urban, lake, wetland, glacier).
 
        do m = npatch_urban, npatch_glacier
+<<<<<<< HEAD
           if (wtxy(gi,m) > 0.) call landunit_special(i, j, m, gi, li, ci, pi)
+=======
+          if (wtxy(gi,m) > 0._r8) call landunit_special(i, j, m, gi, li, ci, pi)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        end do
 
     end do
@@ -19776,14 +23466,22 @@ module VOCEmissionMod
 ! Volatile organic compound emission
 !
 ! !USES:
+<<<<<<< HEAD
   use module_cam_support, only: endrun
+=======
+  use shr_kind_mod , only : r8 => shr_kind_r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! !PUBLIC TYPES:
   implicit none
   save
 !
 ! !PUBLIC MEMBER FUNCTIONS:
+<<<<<<< HEAD
   public :: VOCEmission
+=======
+  public :: VOCEmission, VOCEmission_init
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! !REVISION HISTORY:
 ! Created by Mariana Vertenstein
@@ -19799,6 +23497,7 @@ contains
 ! !IROUTINE: VOCEmission
 !
 ! !INTERFACE:
+<<<<<<< HEAD
   subroutine VOCEmission (lbp, ubp, num_soilp, filter_soilp )
 !
 ! ! NEW DESCRIPTION
@@ -19836,6 +23535,39 @@ contains
     use shr_kind_mod , only : r8 => shr_kind_r8
     use clmtype
     use clm_varpar   , only : nvoc, numpft
+=======
+  subroutine VOCEmission (lbp, ubp, ilx, jlx, rho, mbio_emis, num_soilp, filter_soilp )
+!
+! ! NEW DESCRIPTION-updated by Chun Zhao from CLM4.0 in CESM
+! Volatile organic compound emission
+! This code simulates volatile organic compound emissions following
+! MEGAN (Model of Emissions of Gases and Aerosols from Nature) v2.1 
+! for 20 compound classes. The original description of this
+! algorithm (for isoprene only) can be found in Guenther et al., 2006
+! (we follow equations 2-9, 16-17, 20 for explicit canopy).
+! The model scheme came be described as:
+!    E= epsilon * gamma * rho
+! VOC flux (E) [ug m-2 h-1] is calculated from baseline emission
+! factors (epsilon) [ug m-2 h-1] which are specified for each of the 16
+! CLM PFTs (in input file) OR in the case of isoprene, from
+! mapped EFs for each PFT which reflect species divergence of emissions,
+! particularly in North America. 
+! The emission activity factor (gamma) [unitless] for includes 
+! dependence on PPFT, temperature, LAI, leaf age and soil moisture.
+! For isoprene only we also include the effect of CO2 inhibition as
+! described by Heald et al., 2009. 
+! The canopy environment constant was calculated offline for CLM+CAM at 
+! standard conditions.
+! We assume that the escape efficiency (rho) here is unity following
+! Guenther et al., 2006.
+! Guenther, Heald et al., 2012 describes MEGAN 2.1 and the implementation in CLM 
+! Subroutine written to operate at the patch level.
+
+!
+! !USES:
+    use clmtype
+    use clm_varpar   , only : numpft
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     use shr_const_mod, only : SHR_CONST_RGAS
     use clm_varcon   , only : denice
     use clm_varpar   , only : nlevsoi
@@ -19845,12 +23577,28 @@ contains
                               nbrdlf_dcd_trp_tree, nbrdlf_dcd_tmp_tree,   &
                               nbrdlf_dcd_brl_tree, nbrdlf_evr_shrub,      &
                               nc3_arctic_grass,    nc4_grass,    noveg
+<<<<<<< HEAD
+=======
+    use shr_megan_mod,  only : shr_megan_megcomps_n, shr_megan_megcomp_t, shr_megan_linkedlist
+    use shr_megan_mod,  only : shr_megan_mechcomps_n, shr_megan_mechcomps, shr_megan_mapped_emisfctrs
+    use MEGANFactorsMod,only : betaT, ct1, ct2, LDF, Ceo
+    use decompMod,      only : get_gcell_info
+    use shr_kind_mod,   only : r4 => shr_kind_r4
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! !ARGUMENTS:
     implicit none
     integer, intent(in) :: lbp, ubp                    ! pft bounds
+<<<<<<< HEAD
     integer, intent(in) :: num_soilp                   ! number of columns in soil pft filter
     integer, intent(in) :: filter_soilp(num_soilp)     ! pft filter for soil
+=======
+    integer, intent(in) :: ilx, jlx                    ! grid cell x,y indices
+    integer, intent(in) :: num_soilp                   ! number of columns in soil pft filter
+    integer, intent(in) :: filter_soilp(num_soilp)     ! pft filter for soil
+    real(r8), intent(in)    :: rho
+    real(r8), intent(inout) :: mbio_emis(:)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! !CALLED FROM:
 !
@@ -19866,6 +23614,10 @@ contains
     integer , pointer :: pgridcell(:)     ! gridcell index of corresponding pft
     integer , pointer :: pcolumn(:)       ! column index of corresponding pft
     integer , pointer :: ivt(:)           ! pft vegetation type for current
+<<<<<<< HEAD
+=======
+    real(r8), pointer :: wtgcell(:)       ! wght of the pfts
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     real(r8), pointer :: t_veg(:)         ! pft vegetation temperature (Kelvin)
     real(r8), pointer :: fsun(:)          ! sunlit fraction of canopy
     real(r8), pointer :: elai(:)          ! one-sided leaf area index with burying by snow
@@ -19891,11 +23643,22 @@ contains
     real(r8), pointer :: bsw(:,:)         ! Clapp and Hornberger "b" (nlevgrnd)
     real(r8), pointer :: watsat(:,:)      ! volumetric soil water at saturation (porosity) (nlevgrnd)
     real(r8), pointer :: sucsat(:,:)      ! minimum soil suction (mm) (nlevgrnd)
+<<<<<<< HEAD
 
     real(r8), parameter :: smpmax = 2.57e5_r8 ! maximum soil matrix potential
 !
 ! local pointers to original implicit out arrays
 !
+=======
+    real(r8), pointer :: cisun(:)         ! sunlit intracellular CO2 (Pa)
+    real(r8), pointer :: cisha(:)         ! shaded intracellular CO2 (Pa)
+    real(r8), pointer :: forc_pbot(:)     ! atmospheric pressure (Pa)
+
+    real(r8), parameter :: smpmax = 2.57e5_r8 ! maximum soil matrix potential
+!-----------------------------------------------------------------------
+! local pointers to original implicit out arrays
+!-----------------------------------------------------------------------
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     real(r8), pointer :: vocflx(:,:)      ! VOC flux [ug C m-2 h-1]
     real(r8), pointer :: vocflx_tot(:)    ! VOC flux [ug C m-2 h-1]
     real(r8), pointer :: vocflx_1(:)      ! VOC flux(1) [ug C m-2 h-1]
@@ -19924,6 +23687,7 @@ contains
 ! !OTHER LOCAL VARIABLES:
 !EOP
 !
+<<<<<<< HEAD
     integer  :: fp,p,g,c,n,j            ! indices
     integer  :: ct_bad
     real(r8) :: epsilon(lbp:ubp)        ! emission factor [ugC m-2 h-1]
@@ -19932,31 +23696,67 @@ contains
     real(r8) :: par240                  ! temporary
     real(r8) :: density                 ! source density factor [g dry wgt foliar mass/m2 ground]
     real(r8) :: gamma(lbp:ubp)          ! activity factor (accounting for light, T, age, LAI conditions)
+=======
+    integer  :: fp,p,g,n,j              ! indices
+    integer  :: ct_bad
+    integer  :: class_num, n_meg_comps, imech, imeg, ii
+    real(r8) :: epsilon                 ! emission factor [ugC m-2 h-1]
+    real(r8) :: par                     ! temporary
+    real(r8) :: par24                   ! temporary
+    real(r8) :: par240                  ! temporary
+    real(r8) :: par_sun                 ! temporary
+    real(r8) :: par24_sun               ! temporary
+    real(r8) :: par240_sun              ! temporary
+    real(r8) :: par_sha                 ! temporary
+    real(r8) :: par24_sha               ! temporary
+    real(r8) :: par240_sha              ! temporary
+    real(r8) :: density                 ! source density factor [g dry wgt foliar mass/m2 ground]
+    real(r8) :: gamma                   ! activity factor (accounting for light, T, age, LAI conditions)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     real(r8) :: gamma_p                 ! activity factor for PPFD
     real(r8) :: gamma_l                 ! activity factor for PPFD & LAI
     real(r8) :: gamma_t                 ! activity factor for temperature
     real(r8) :: gamma_a                 ! activity factor for leaf age
+<<<<<<< HEAD
     real(r8) :: gamma_sm                ! activity factor for soil moisture
     real(r8) :: x                       ! temporary 
     real(r8) :: Eopt                    ! temporary 
     real(r8) :: topt                    ! temporary 
     real(r8) :: cp                      ! temporary
     real(r8) :: alpha                   ! temporary
+=======
+    real(r8) :: gamma_c
+    real(r8) :: gamma_sm                ! activity factor for soil moisture
+    real(r8) :: x                       ! temporary 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     real(r8) :: elai_prev               ! lai for previous timestep
     real(r8) :: fnew, fgro, fmat, fsen  ! fractions of leaves at different phenological stages
     real(r8) :: nl                      ! temporary number of soil levels
     real(r8) :: theta_ice               ! water content in ice in m3/m3
     real(r8) :: wilt                    ! wilting point in m3/m3
     real(r8) :: theta1                  ! temporary
+<<<<<<< HEAD
 !
 ! Constants
 !
+=======
+    real(r8) :: wtveg                   ! temporary
+    real(r8) :: vocflx_meg(shr_megan_megcomps_n)
+!-----------------------------------------------------------------------
+! Constants
+!-----------------------------------------------------------------------
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     real(r8), parameter :: R   = SHR_CONST_RGAS*0.001_r8 ! univ. gas constant [J K-1 mol-1]
     real(r8), parameter :: scale_mw =0.882_r8            ! conversion factor for isoprene -> carbon
     real(r8), parameter :: alpha_fix = 0.001_r8          ! empirical coefficient
     real(r8), parameter :: cp_fix = 1.21_r8              ! empirical coefficient
+<<<<<<< HEAD
     real(r8), parameter :: ct1 = 95.0_r8                 ! empirical coefficient (70 in User's Guide)
     real(r8), parameter :: ct2 = 230.0_r8                ! empirical coefficient  (200 in User's Guide)
+=======
+!   real(r8), parameter :: ct1 = 95.0_r8                 ! empirical coefficient (70 in User's Guide)
+!   real(r8), parameter :: ct2 = 230.0_r8                ! empirical coefficient  (200 in User's Guide)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     real(r8), parameter :: ct3 = 0.00831_r8              ! empirical coefficient (0.0083 in User's Guide)
     real(r8), parameter :: topt_fix = 317._r8            ! std temperature [K]
     real(r8), parameter :: Eopt_fix = 2.26_r8            ! empirical coefficient
@@ -19982,6 +23782,7 @@ contains
     real(r8), parameter :: co4 = 0.05_r8                 ! empirical coefficient
     real(r8), parameter :: tstd0 = 297_r8                ! std temperature [K]
     real(r8), parameter :: deltheta1=0.06_r8             ! empirical coefficient
+<<<<<<< HEAD
 !
 ! These are the values from version of genesis-ibis / 1000.
 ! CN calculates its own sla [m2 leaf g-1 C]
@@ -19998,6 +23799,27 @@ contains
     efisop     => clm3%g%gve%efisop
 
     ! Assign local pointers to derived subtypes components (column-level)
+=======
+! factor used convert MEGAN units [micro-grams/m2/hr] to WRF srf emis units [ppm-m/min]
+    real(r8), parameter :: megemis_units_factor = .02897_r8/60._r8
+
+    type(shr_megan_megcomp_t), pointer :: meg_cmp
+    character(len=132) :: msg
+
+    real :: megan_ratio
+
+!-----------------------------------------------------------------------
+! Assign local pointers to derived type members (gridcell-level)
+!-----------------------------------------------------------------------
+    forc_solad => clm_a2l%forc_solad
+    forc_solai => clm_a2l%forc_solai
+    forc_pbot  => clm_a2l%forc_pbot
+    efisop     => clm3%g%gve%efisop
+
+!-----------------------------------------------------------------------
+! Assign local pointers to derived subtypes components (column-level)
+!-----------------------------------------------------------------------
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     h2osoi_vol       => clm3%g%l%c%cws%h2osoi_vol
     h2osoi_ice       => clm3%g%l%c%cws%h2osoi_ice
     dz               => clm3%g%l%c%cps%dz
@@ -20005,15 +23827,29 @@ contains
     watsat           => clm3%g%l%c%cps%watsat
     sucsat           => clm3%g%l%c%cps%sucsat
 
+<<<<<<< HEAD
     ! Assign local pointers to derived subtypes components (pft-level)
     pgridcell        => clm3%g%l%c%p%gridcell
     pcolumn          => clm3%g%l%c%p%column
+=======
+!-----------------------------------------------------------------------
+! Assign local pointers to derived subtypes components (pft-level)
+!-----------------------------------------------------------------------
+    pgridcell        => clm3%g%l%c%p%gridcell
+    pcolumn          => clm3%g%l%c%p%column
+    wtgcell          => clm3%g%l%c%p%wtgcell
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     ivt              => clm3%g%l%c%p%itype
     t_veg            => clm3%g%l%c%p%pes%t_veg
     fsun             => clm3%g%l%c%p%pps%fsun
     elai             => clm3%g%l%c%p%pps%elai
     clayfrac         => clm3%g%l%c%p%pps%clayfrac
     sandfrac         => clm3%g%l%c%p%pps%sandfrac
+<<<<<<< HEAD
+=======
+    cisun            => clm3%g%l%c%p%pps%cisun
+    cisha            => clm3%g%l%c%p%pps%cisha
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     vocflx           => clm3%g%l%c%p%pvf%vocflx
     vocflx_tot       => clm3%g%l%c%p%pvf%vocflx_tot
     vocflx_1         => clm3%g%l%c%p%pvf%vocflx_1
@@ -20049,6 +23885,7 @@ contains
     fsun240          => clm3%g%l%c%p%pvs%fsun240
     elai_p           => clm3%g%l%c%p%pvs%elai_p
 
+<<<<<<< HEAD
     hardwire_sla(noveg)                                    = 0._r8     ! bare-soil
 
     hardwire_sla(ndllf_evr_tmp_tree)                       = 0.0125_r8 !needleleaf
@@ -20450,6 +24287,783 @@ contains
     end do
 
   end subroutine VOCEmission
+=======
+!-----------------------------------------------------------------------
+! initialize variables which get passed to the atmosphere
+!-----------------------------------------------------------------------
+    vocflx(lbp:ubp,:) = 0._r8
+    vocflx_meg(:) = 0._r8
+
+#if defined(CLM_DIAGS)
+    call wrf_message( '=========================================================================' )
+    write(msg,'(''VOCEmission: num_soilp @ ('',i3,'','',i3,'') = '',i3)') ilx,jlx,num_soilp
+    call wrf_message( trim(msg) )
+    call wrf_message( 'VOCEmission: enumerate the p,g indices' )
+#endif
+    do fp = 1,num_soilp
+       p = filter_soilp(fp)
+       g = pgridcell(p)
+#if defined(CLM_DIAGS)
+       write(msg,'(''fp,p,g,ivt = '',4i5)') fp,p,g,ivt(p)
+       call wrf_message( trim(msg) )
+#endif
+    end do
+!-----------------------------------------------------------------------
+! Loop over pft types
+!-----------------------------------------------------------------------
+fp_loop : &
+    do fp = 1,num_soilp
+       p = filter_soilp(fp)
+       g = pgridcell(p)
+
+       epsilon = 0._r8
+!-----------------------------------------------------------------------
+! calculate VOC emissions for non-bare ground PFTs
+!-----------------------------------------------------------------------
+has_veg : &
+       if (ivt(p) > 0 .and. elai(p) > 0._r8) then 
+          gamma = 0._r8
+!-----------------------------------------------------------------------
+! Calculate PAR: multiply w/m2 by 4.6 to get umol/m2/s for par (added 8/14/02)
+!-----------------------------------------------------------------------
+! SUN:
+!-----------------------------------------------------------------------
+          par_sun = (forc_solad(g,1) + fsun(p) * forc_solai(g,1)) * 4.6_r8
+          par24_sun = (forc_solad24(p) + fsun24(p) * forc_solai24(p)) * 4.6_r8
+          par240_sun = (forc_solad240(p) + fsun240(p) * forc_solai240(p)) * 4.6_r8
+!-----------------------------------------------------------------------
+! SHADE:
+!-----------------------------------------------------------------------
+          par_sha = ((1._r8 - fsun(p)) * forc_solai(g,1)) * 4.6_r8
+          par24_sha = ((1._r8 - fsun24(p)) * forc_solai24(p)) * 4.6_r8
+          par240_sha = ((1._r8 - fsun240(p)) * forc_solai240(p)) * 4.6_r8
+
+#if defined(CLM_DIAGS)
+       write(msg,'(''VOCEmission: parm diagnostics @ fp,p,g = '',3i5)') fp,p,g
+       call wrf_message( trim(msg) )
+       call wrf_message( 'fsu{n,n24,n240}' )
+       write(msg,'(1p3g15.7)') fsun(p),fsun24(p),fsun240(p)
+       call wrf_message( trim(msg) )
+       call wrf_message( 'forc_sola{d,d24,d240}' )
+       write(msg,'(1p3g15.7)') forc_solad(g,1),forc_solad24(p),forc_solad240(p)
+       call wrf_message( trim(msg) )
+       call wrf_message( 'forc_sola{i,i24,i240}' )
+       write(msg,'(1p3g15.7)') forc_solai(g,1),forc_solai24(p),forc_solai240(p)
+       call wrf_message( trim(msg) )
+       call wrf_message( 'tve{g,g24,g240}' )
+       write(msg,'(1p3g15.7)') t_veg(p),t_veg24(p),t_veg240(p)
+       call wrf_message( trim(msg) )
+       call wrf_message( 'elai,cisun,cisha,par_sun,par_sha,forc_pbot' )
+       write(msg,'(1p6g15.7)') elai(p),cisun(p),cisha(p),par_sun,par_sha,forc_pbot(g)
+       call wrf_message( trim(msg) )
+       call wrf_message( '=========================================================================' )
+#endif
+
+!-----------------------------------------------------------------------
+! Activity factor for LAI (Guenther et al., 2006): all species
+!-----------------------------------------------------------------------
+          gamma_l = get_gamma_L(fsun240(p), elai(p))
+
+!-----------------------------------------------------------------------
+! Activity factor for soil moisture: all species (commented out for now)
+!-----------------------------------------------------------------------
+!          gamma_sm = get_gamma_SM(clayfrac(p), sandfrac(p), h2osoi_vol(c,:), h2osoi_ice(c,:), &
+!               dz(c,:), bsw(c,:), watsat(c,:), sucsat(c,:), root_depth(ivt(p)))
+          gamma_sm = 1.0_r8
+
+!-----------------------------------------------------------------------
+! Loop through VOCs for light, temperature and leaf age activity factor & apply
+! all final activity factors to baseline emission factors
+!-----------------------------------------------------------------------
+! loop over megan compounds
+!-----------------------------------------------------------------------
+          meg_cmp => shr_megan_linkedlist
+          meg_cmp_loop: do while(associated(meg_cmp))
+             imeg = meg_cmp%index
+
+!-----------------------------------------------------------------------
+! set emis factor
+! if specified, set EF for isoprene with mapped values
+!-----------------------------------------------------------------------
+             if ( trim(meg_cmp%name) == 'isoprene' .and. shr_megan_mapped_emisfctrs) then
+                epsilon = get_map_EF(ivt(p),g)
+             else
+                epsilon = meg_cmp%emis_factors(ivt(p))
+             end if
+
+             class_num = meg_cmp%class_number
+
+!-----------------------------------------------------------------------
+! Activity factor for PPFD
+!-----------------------------------------------------------------------
+             gamma_p = get_gamma_P(par_sun, par24_sun, par240_sun, par_sha, par24_sha, par240_sha, &
+                  fsun(p), fsun240(p), forc_solad240(p),forc_solai240(p), LDF(class_num) )
+
+!-----------------------------------------------------------------------
+! Activity factor for T
+!-----------------------------------------------------------------------
+             gamma_t = get_gamma_T(t_veg240(p), t_veg24(p),t_veg(p), ct1(class_num), ct2(class_num),&
+                                   betaT(class_num),LDF(class_num), Ceo(class_num) )
+
+!-----------------------------------------------------------------------
+! Activity factor for Leaf Age
+!-----------------------------------------------------------------------
+             gamma_a = get_gamma_A(ivt(p), elai_p(p),elai(p),class_num)
+
+!-----------------------------------------------------------------------
+! Activity factor for CO2 (only for isoprene)
+! as of CLM4.5 gamma_c is set to 1. even for isoprene
+!-----------------------------------------------------------------------
+!            if (trim(meg_cmp%name) == 'isoprene') then 
+!               gamma_c = get_gamma_C(cisun(p),cisha(p),forc_pbot(g),fsun(p))
+!            else
+!               gamma_c = 1._r8
+!            end if
+             gamma_c = 1._r8
+
+!-----------------------------------------------------------------------
+! Calculate total scaling factor
+!-----------------------------------------------------------------------
+             gamma = gamma_l * gamma_sm * gamma_a * gamma_p * gamma_T * gamma_c
+
+             if ( gamma >= 0._r8 .and. gamma < 100._r8 ) then
+               vocflx_meg(imeg) = epsilon * gamma * megemis_units_factor / (rho*meg_cmp%molec_weight) ! ppm-m/min
+             endif
+
+             meg_cmp => meg_cmp%next_megcomp
+          enddo meg_cmp_loop
+
+!-----------------------------------------------------------------------
+! sum up the megan compound fluxes for the fluxes of chem mechanism compounds 
+!-----------------------------------------------------------------------
+          do imech = 1,shr_megan_mechcomps_n
+             n_meg_comps = shr_megan_mechcomps(imech)%n_megan_comps
+             do imeg = 1,n_meg_comps ! loop over number of megan compounds that make up the nth mechanism compoud
+                ii = shr_megan_mechcomps(imech)%megan_comps(imeg)%ptr%index
+                megan_ratio=shr_megan_mechcomps(imech)%megan_comps_ratio(imeg)
+                !czhao
+                !vocflx(p,imech) = vocflx(p,imech) + vocflx_meg(ii)
+                vocflx(p,imech) = vocflx(p,imech) + vocflx_meg(ii)*megan_ratio
+             enddo
+             !czhao
+             !vocflx_tot(p) = vocflx_tot(p) + vocflx(p,imech) ! moles/m2/sec
+             vocflx_tot(p) = vocflx_tot(p) + vocflx(p,imech) ! ppm m/min 
+          enddo
+
+       endif has_veg
+
+    end do fp_loop
+
+!-----------------------------------------------------------------------
+! wght by grid cell pft wght
+!-----------------------------------------------------------------------
+fp_loop_2 : &
+    do fp = 1,num_soilp
+       p = filter_soilp(fp)
+       g = pgridcell(p)
+       call get_gcell_info (g, wtveg=wtveg )
+       if( wtveg /= 0._r8 ) then
+         vocflx(p,:) = vocflx(p,:) * wtgcell(p)/wtveg
+       endif
+    end do fp_loop_2
+
+!-----------------------------------------------------------------------
+! sum up the pfts for each wrf species with megan bio emissions
+!-----------------------------------------------------------------------
+    print*,'jdf 3',shr_megan_mechcomps_n
+    do imech = 1,shr_megan_mechcomps_n
+      ii = shr_megan_mechcomps(imech)%index
+      mbio_emis(ii) = real( sum( vocflx(:,imech) ),kind=r4 )
+      print*,'jdf 3',imech,ii,mbio_emis(ii)
+    end do
+
+
+  end subroutine VOCEmission
+
+  subroutine VOCEmission_init()
+!-----------------------------------------------------------------------
+! Interface to set all input parameters for 20 VOC compound classes.
+! including EFs for 16(+1 bare ground) PFTs.
+! For now set all specified values, in future to be replaced with values
+! read in from file.  (heald, 04/27/11)
+!-----------------------------------------------------------------------
+
+  use clm_varpar   , only   : numpft
+  use shr_megan_mod, only   : shr_megan_mechcomps_n, shr_megan_megcomp_t
+  use shr_megan_mod, only   : shr_megan_linkedlist
+  use MEGANFactorsMod, only : megan_factors_get
+    
+! !CALLED FROM: VOCEmission
+!
+! !REVISION HISTORY:
+! Author: Colette L. Heald (4/27/11)
+!
+! !USES
+!
+! !ARGUMENTS:
+
+    implicit none
+
+!-----------------------------------------------------------------------
+! !LOCAL VARIABLES:
+!-----------------------------------------------------------------------
+    type(shr_megan_megcomp_t), pointer :: meg_cmp
+
+    integer  :: class_num
+    real(r8) :: factors(numpft)
+    real(r8) :: molec_wght
+    character(len=132) :: mess
+
+    write(mess,'('' VOCEmission_init: # mechanism components = '',i4)') shr_megan_mechcomps_n
+    call wrf_message( trim(mess) )
+
+    if ( shr_megan_mechcomps_n >= 1) then
+
+      meg_cmp => shr_megan_linkedlist
+      do while(associated(meg_cmp))
+        allocate(meg_cmp%emis_factors(numpft))
+        call megan_factors_get( trim(meg_cmp%name), factors, class_num, molec_wght )
+        meg_cmp%emis_factors(:) = factors(:)
+        meg_cmp%class_number = class_num
+        meg_cmp%molec_weight = molec_wght
+        write(mess,'('' VOCEmission_init: mechanism '',a,'' class = '',i4)') &
+           trim(meg_cmp%name),meg_cmp%class_number
+        call wrf_message( trim(mess) )
+        meg_cmp => meg_cmp%next_megcomp
+      enddo
+
+    endif
+
+  end subroutine VOCEmission_init
+
+!-----------------------------------------------------------------------
+! FUNCTION: get_map_EF
+!
+! !INTERFACE:
+function get_map_EF(ivt_in,g_in)
+!
+! Get mapped EF for isoprene
+! Use gridded values for 6 PFTs specified by MEGAN following
+! Guenther et al. (2006).  Map the numpft CLM PFTs to these 6.
+! Units: [ug m-2 h-1] 
+!
+! !CALLED FROM: VOCEmission
+!
+! !REVISION HISTORY:
+! Author: Colette L. Heald (4/27/11)
+!-----------------------------------------------------------------------
+
+! !USES:
+  use clmtype
+  use pftvarcon    , only : ndllf_evr_tmp_tree,  ndllf_evr_brl_tree,    &
+                            ndllf_dcd_brl_tree,  nbrdlf_evr_trp_tree,   &
+                            nbrdlf_evr_tmp_tree, nbrdlf_dcd_brl_shrub,  &
+                            nbrdlf_dcd_trp_tree, nbrdlf_dcd_tmp_tree,   &
+                            nbrdlf_dcd_brl_tree, nbrdlf_evr_shrub,      &
+                            nc3_arctic_grass,    nc4_grass,             &
+                            nc3crop, noveg
+!
+! !ARGUMENTS:
+    implicit none
+!
+! !LOCAL VARIABLES:
+
+    ! varibles in
+    integer, intent(in) :: ivt_in
+    integer, intent(in) :: g_in
+    real(r8)            :: get_map_EF
+
+    real(r8), pointer :: efisop(:,:)      ! emission factors for isoprene for each pft [ug m-2 h-1]
+
+    ! assign local pointer
+    efisop     => clm3%g%gve%efisop
+!-----------------------------------------------------------------------
+    get_map_EF = 0._r8
+    
+    if( ivt_in >= nc3crop ) then
+      get_map_EF = efisop(6,g_in)
+    else
+      select case( ivt_in )
+        case( ndllf_evr_tmp_tree,ndllf_evr_brl_tree )
+          get_map_EF = efisop(2,g_in)
+        case( ndllf_dcd_brl_tree )
+          get_map_EF = efisop(3,g_in)
+        case( nbrdlf_evr_trp_tree:nbrdlf_dcd_brl_tree )
+          get_map_EF = efisop(1,g_in)
+        case( nbrdlf_evr_shrub:nbrdlf_dcd_brl_shrub )
+          get_map_EF = efisop(4,g_in)
+        case( nc3_arctic_grass:nc4_grass )
+          get_map_EF = efisop(5,g_in)
+      end select
+    endif
+
+end function get_map_EF
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! FUNCTION: get_gamma_P
+!
+! !INTERFACE:
+  function get_gamma_P( par_sun_in, par24_sun_in, par240_sun_in, par_sha_in, par24_sha_in, &
+                        par240_sha_in, fsun_in, fsun240_in, forc_solad240_in, forc_solai240_in, &
+                        LDF_in )
+  
+! Activity factor for PPFD (Guenther et al., 2006): all light dependent species
+!-------------------------
+! With distinction between sunlit and shaded leafs, weight scalings by
+! fsun and fshade 
+! Scale total incident par by fraction of sunlit leaves (added on 1/2002)
+    
+! fvitt -- forc_solad240, forc_solai240 can be zero when CLM finidat is specified
+!          which will cause par240 to be zero and produce NaNs via log(par240)
+! dml   -- fsun240 can be equal to or greater than one before 10 day averages are
+!           set on startup or if a new pft comes online during land cover change.
+!           Avoid this problem by only doing calculations with fsun240 when fsun240 is
+!           between 0 and 1
+!
+! !CALLED FROM: VOCEmission
+!
+! !REVISION HISTORY:
+! Author: Colette L. Heald (4/27/11)
+!
+!
+!  ARGUMENTS:
+    implicit none
+
+    ! varibles in
+    real(r8),intent(in) :: par_sun_in
+    real(r8),intent(in) :: par24_sun_in
+    real(r8),intent(in) :: par240_sun_in
+    real(r8),intent(in) :: par_sha_in
+    real(r8),intent(in) :: par24_sha_in
+    real(r8),intent(in) :: par240_sha_in
+    real(r8),intent(in) :: fsun_in
+    real(r8),intent(in) :: fsun240_in
+    real(r8),intent(in) :: forc_solad240_in
+    real(r8),intent(in) :: forc_solai240_in
+    real(r8),intent(in) :: LDF_in
+
+!  LOCAL VARIABLES:
+
+    real(r8), parameter :: ca1 = 0.004_r8                  ! empirical coefficent for alpha
+    real(r8), parameter :: ca2 = 0.0005_r8                 ! empirical coefficent for alpha
+    real(r8), parameter :: ca3 = 0.0468_r8                 ! empirical coefficent for cp
+    real(r8), parameter :: par0_sun = 200._r8              ! std conditions for past 24 hrs [umol/m2/s]
+    real(r8), parameter :: par0_shade = 50._r8             ! std conditions for past 24 hrs [umol/m2/s]
+    real(r8), parameter :: alpha_fix = 0.001_r8            ! empirical coefficient
+    real(r8), parameter :: cp_fix = 1.21_r8                ! empirical coefficient
+
+    real(r8) :: gamma_p_LDF             ! activity factor for PPFD
+    real(r8) :: get_gamma_P             ! return value
+    real(r8) :: cp                      ! temporary
+    real(r8) :: alpha                   ! temporary
+
+  if ( (fsun240_in > 0._r8) .and. (fsun240_in < 1._r8) &
+                            .and. (forc_solad240_in > 0._r8) &
+                            .and. (forc_solai240_in > 0._r8) ) then
+     ! With alpha and cp calculated based on eq 6 and 7:
+     ! Note indexing for accumulated variables is all at pft level
+     ! SUN:
+     alpha = ca1 - ca2 * log(par240_sun_in)
+     cp = ca3 * exp(ca2 * (par24_sun_in-par0_sun))*par240_sun_in**(0.6_r8)
+     gamma_p_LDF = fsun_in * ( cp * alpha * par_sun_in * (1._r8 + alpha*alpha*par_sun_in*par_sun_in)**(-0.5_r8) )
+     ! SHADE:
+     alpha = ca1 - ca2 * log(par240_sha_in)
+     cp = ca3 * exp(ca2 * (par_sha_in-par0_shade))*par240_sha_in**(0.6_r8)
+     gamma_p_LDF = gamma_p_LDF + (1._r8-fsun_in) * (cp*alpha*par_sha_in*(1._r8 + alpha*alpha*par_sha_in*par_sha_in)**(-0.5_r8))
+  else
+     ! With fixed alpha and cp (from MEGAN User's Guide):
+     ! SUN: direct + diffuse  
+     alpha = alpha_fix
+     cp = cp_fix
+     gamma_p_LDF = fsun_in * ( cp * alpha*par_sun_in * (1._r8 + alpha*alpha*par_sun_in*par_sun_in)**(-0.5_r8) )
+     ! SHADE: diffuse 
+     gamma_p_LDF = gamma_p_LDF + (1._r8-fsun_in) * (cp*alpha*par_sha_in*(1._r8 + alpha*alpha*par_sha_in*par_sha_in)**(-0.5_r8))
+  end if
+  
+  ! Calculate total activity factor for PPFD accounting for light-dependent fraction
+  get_gamma_P = (1._r8 - LDF_in) + LDF_in * gamma_p_LDF
+
+end function get_gamma_P
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! FUNCTION: get_gamma_L
+!
+! !INTERFACE:
+function get_gamma_L(fsun240_in,elai_in)
+!
+! Activity factor for LAI (Guenther et al., 2006): all species
+! Guenther et al., 2006 eq 3
+!
+! !CALLED FROM: VOCEmission
+!
+! !REVISION HISTORY:
+! Author: Colette L. Heald (4/27/11)
+!
+
+! !USES:
+    use clm_varcon   , only : denice
+    use clm_varpar   , only : nlevsoi
+!
+! !ARGUMENTS:
+    implicit none
+!
+! !LOCAL VARIABLES:
+
+    ! varibles in
+    real(r8),intent(in) :: fsun240_in
+    real(r8),intent(in) :: elai_in
+    real(r8)            :: get_gamma_L             ! return value
+ 
+
+    ! parameters
+    real(r8), parameter :: cce = 0.30_r8                   ! factor to set emissions to unity @ std
+    real(r8), parameter :: cce1 = 0.24_r8                  ! same as Cce but for non-accumulated vars
+!-----------------------------------------------------------------------
+    if ( (fsun240_in > 0.0_r8) .and. (fsun240_in < 1.e30_r8) ) then 
+       get_gamma_L = cce * elai_in
+    else
+       get_gamma_L = cce1 * elai_in
+    end if
+
+end function get_gamma_L
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! FUNCTION: get_gamma_SM
+!
+! !INTERFACE:
+function get_gamma_SM(clayfrac_in, sandfrac_in, h2osoi_vol_in, h2osoi_ice_in, dz_in, &
+     bsw_in, watsat_in, sucsat_in, root_depth_in)
+!
+! Activity factor for soil moisture (Guenther et al., 2006): all species
+!----------------------------------
+! Calculate the mean scaling factor throughout the root depth.
+! wilting point potential is in units of matric potential (mm) 
+! (1 J/Kg = 0.001 MPa, approx = 0.1 m)
+! convert to volumetric soil water using equation 7.118 of the CLM4 Technical Note
+!
+! !CALLED FROM: VOCEmission
+!
+! !REVISION HISTORY:
+! Author: Colette L. Heald (4/27/11)
+!
+
+! !USES:
+    use clm_varcon   , only : denice
+    use clm_varpar   , only : nlevsoi
+!
+! !ARGUMENTS:
+    implicit none
+!
+! !LOCAL VARIABLES:
+
+    ! varibles in
+    real(r8),intent(in) :: clayfrac_in
+    real(r8),intent(in) :: sandfrac_in
+    real(r8),intent(in) :: h2osoi_vol_in(nlevsoi)
+    real(r8),intent(in) :: h2osoi_ice_in(nlevsoi)
+    real(r8),intent(in) :: dz_in(nlevsoi)
+    real(r8),intent(in) :: bsw_in(nlevsoi)
+    real(r8),intent(in) :: watsat_in(nlevsoi)
+    real(r8),intent(in) :: sucsat_in(nlevsoi)
+    real(r8),intent(in) :: root_depth_in
+ 
+    real(r8)            :: get_gamma_SM
+
+    ! local variables
+    integer  :: j
+    real(r8) :: nl                      ! temporary number of soil levels
+    real(r8) :: theta_ice               ! water content in ice in m3/m3
+    real(r8) :: wilt                    ! wilting point in m3/m3
+    real(r8) :: theta1                  ! temporary
+
+    ! parameters
+    real(r8), parameter :: deltheta1=0.06_r8               ! empirical coefficient
+    real(r8), parameter :: smpmax = 2.57e5_r8              ! maximum soil matrix potential
+
+    if ((clayfrac_in > 0) .and. (sandfrac_in > 0)) then 
+       get_gamma_SM = 0._r8
+       nl=0._r8
+       
+       do j = 1,nlevsoi
+          if  (sum(dz_in(1:j)) < root_depth_in)  then
+             theta_ice = h2osoi_ice_in(j)/(dz_in(j)*denice)
+             wilt = ((smpmax/sucsat_in(j))**(-1._r8/bsw_in(j))) * (watsat_in(j) - theta_ice)
+             theta1 = wilt + deltheta1
+             if (h2osoi_vol_in(j) >= theta1) then 
+                get_gamma_SM = get_gamma_SM + 1._r8
+             else if ( (h2osoi_vol_in(j) > wilt) .and. (h2osoi_vol_in(j) < theta1) ) then
+                get_gamma_SM = get_gamma_SM + ( h2osoi_vol_in(j) - wilt ) / deltheta1
+             else
+                get_gamma_SM = get_gamma_SM + 0._r8
+             end if
+             nl=nl+1._r8
+          end if
+       end do
+       
+       if (nl > 0._r8) then
+          get_gamma_SM = get_gamma_SM/nl
+       endif
+
+       if (get_gamma_SM > 1.0_r8) then 
+          get_gamma_SM=1.0_r8
+       endif
+
+    else
+       get_gamma_SM = 1.0_r8
+    end if
+
+
+end function get_gamma_SM
+!-----------------------------------------------------------------------
+  
+!-----------------------------------------------------------------------
+! FUNCTION: get_gamma_T
+!
+! !INTERFACE:
+function get_gamma_T(t_veg240_in, t_veg24_in,t_veg_in, ct1_in, ct2_in, betaT_in, LDF_in, Ceo_in )
+
+! Activity factor for temperature 
+!--------------------------------
+! Calculate both a light-dependent fraction as in Guenther et al., 2006 for isoprene
+! of a max saturation type form. Also caculate a light-independent fraction of the
+! form of an exponential. Final activity factor depends on light dependent fraction
+! of compound type.
+!
+! !CALLED FROM: VOCEmission
+!
+! !REVISION HISTORY:
+! Author: Colette L. Heald (4/27/11)
+!
+! !ARGUMENTS:
+    implicit none
+
+    ! varibles in
+    real(r8),intent(in) :: t_veg240_in
+    real(r8),intent(in) :: t_veg24_in
+    real(r8),intent(in) :: t_veg_in
+    real(r8),intent(in) :: ct1_in
+    real(r8),intent(in) :: ct2_in
+    real(r8),intent(in) :: betaT_in
+    real(r8),intent(in) :: LDF_in
+    real(r8),intent(in) :: Ceo_in
+
+    ! local variables
+
+    ! parameters
+    real(r8), parameter :: co1 = 313._r8                   ! empirical coefficient
+    real(r8), parameter :: co2 = 0.6_r8                    ! empirical coefficient
+    real(r8), parameter :: co4 = 0.05_r8                   ! empirical coefficient
+    real(r8), parameter :: tstd0 = 297_r8                  ! std temperature [K]
+    real(r8), parameter :: topt_fix = 317._r8              ! std temperature [K]
+    real(r8), parameter :: Eopt_fix = 2.26_r8              ! empirical coefficient
+    real(r8), parameter :: ct3 = 0.00831_r8                ! empirical coefficient (0.0083 in User's Guide)
+    real(r8), parameter :: tstd = 303.15_r8                ! std temperature [K]
+    real(r8), parameter :: bet = 0.09_r8                   ! beta empirical coefficient [K-1]
+
+    real(r8) :: get_gamma_T
+    real(r8) :: gamma_t_LDF             ! activity factor for temperature
+    real(r8) :: gamma_t_LIF             ! activity factor for temperature
+    real(r8) :: x                       ! temporary 
+    real(r8) :: Eopt                    ! temporary 
+    real(r8) :: topt                    ! temporary 
+!-----------------------------------------------------------------------
+
+    ! Light dependent fraction (Guenther et al., 2006)
+    if ( (t_veg240_in > 0.0_r8) .and. (t_veg240_in < 1.e30_r8) ) then 
+       ! topt and Eopt from eq 8 and 9:
+       topt = co1 + (co2 * (t_veg240_in-tstd0))
+       Eopt = Ceo_in * exp (co4 * (t_veg24_in-tstd0)) * exp(co4 * (t_veg240_in -tstd0))
+    else
+       topt = topt_fix
+       Eopt = Eopt_fix
+    endif
+    x = ( (1._r8/topt) - (1._r8/(t_veg_in)) ) / ct3
+    gamma_t_LDF = Eopt * ( ct2_in * exp(ct1_in * x)/(ct2_in - ct1_in * (1._r8 - exp(ct2_in * x))) )
+    
+    
+    ! Light independent fraction (of exp(beta T) form)
+    gamma_t_LIF = exp(betaT_in * (t_veg_in - tstd))
+    
+    ! Calculate total activity factor for light as a function of light-dependent fraction
+    !--------------------------------
+    get_gamma_T = (1-LDF_in)*gamma_T_LIF + LDF_in*gamma_T_LDF 
+
+end function get_gamma_T
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! FUNCTION: get_gamma_A
+!
+! !INTERFACE:
+function get_gamma_A(ivt_in, elai_p_in,elai_in,nclass_in)
+
+  use pftvarcon    , only    : ndllf_dcd_brl_tree,  nbrdlf_dcd_trp_tree
+  use MEGANFactorsMod , only : Anew, Aold, Agro, Amat
+
+! Activity factor for leaf age (Guenther et al., 2006)
+!-----------------------------
+! If not CNDV elai is constant therefore gamma_a=1.0
+! gamma_a set to unity for evergreens (PFTs 1, 2, 4, 5)
+! Note that we assume here that the time step is shorter than the number of 
+!days after budbreak required to induce isoprene emissions (ti=12 days) and 
+! the number of days after budbreak to reach peak emission (tm=28 days)
+!
+! !CALLED FROM: VOCEmission
+!
+! !REVISION HISTORY:
+! Author: Colette L. Heald (4/27/11)
+!
+! !ARGUMENTS:
+    implicit none
+! !LOCAL VARIABLES:
+
+    ! varibles in
+    integer,intent(in)  :: ivt_in
+    integer,intent(in)  :: nclass_in
+    real(r8),intent(in) :: elai_p_in
+    real(r8),intent(in) :: elai_in
+
+    real(r8)            :: get_gamma_A
+
+    ! local variables
+    real(r8) :: elai_prev               ! lai for previous timestep
+    real(r8) :: fnew, fgro, fmat, fold  ! fractions of leaves at different phenological stages
+    !-----------------------------------------------------------------------
+    if ( (ivt_in == ndllf_dcd_brl_tree) .or. (ivt_in >= nbrdlf_dcd_trp_tree) ) then  ! non-evergreen
+       
+       if ( (elai_p_in > 0.0_r8) .and. (elai_p_in < 1.e30_r8) )then 
+          elai_prev = 2._r8*elai_p_in-elai_in  ! have accumulated average lai over last timestep
+          if (elai_prev == elai_in) then
+             fnew = 0.0_r8
+             fgro = 0.0_r8
+             fmat = 1.0_r8
+             fold = 0.0_r8
+          else if (elai_prev > elai_in) then
+             fnew = 0.0_r8
+             fgro = 0.0_r8
+             fmat = 1.0_r8 - (elai_prev - elai_in)/elai_prev
+             fold = (elai_prev - elai_in)/elai_prev
+          else if (elai_prev < elai_in) then
+             fnew = 1 - (elai_prev / elai_in)
+             fgro = 0.0_r8
+             fmat = (elai_prev / elai_in)
+             fold = 0.0_r8
+          end if
+          
+          get_gamma_A = fnew*Anew(nclass_in) + fgro*Agro(nclass_in) + fmat*Amat(nclass_in) + fold*Aold(nclass_in)
+
+       else
+          get_gamma_A = 1.0_r8
+       end if
+       
+    else
+       get_gamma_A = 1.0_r8
+    end if
+    
+
+  end function get_gamma_A
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! FUNCTION: get_gamma_C
+!
+! !INTERFACE:
+function get_gamma_C(cisun_in,cisha_in,forc_pbot_in,fsun_in)
+
+  use clm_varcon, only : co2_ppmv => pco2
+
+! Activity factor for instantaneous CO2 changes (Heald et al., 2009)
+!-------------------------
+! With distinction between sunlit and shaded leafs, weight scalings by
+! fsun and fshade 
+!
+! !CALLED FROM: VOCEmission
+!
+! !REVISION HISTORY:
+! Author: Colette L. Heald (11/30/11)
+!
+! !USES:
+
+! !ARGUMENTS:
+    implicit none
+! !LOCAL VARIABLES:
+
+    ! varibles in
+    real(r8),intent(in) :: cisun_in
+    real(r8),intent(in) :: cisha_in
+    real(r8),intent(in) :: forc_pbot_in
+    real(r8),intent(in) :: fsun_in
+
+    real(r8)            :: get_gamma_C
+
+    ! local variables
+    real(r8)            :: IEmin            ! empirical coeff for CO2 
+    real(r8)            :: IEmax            ! empirical coeff for CO2 
+    real(r8)            :: ECi50            ! empirical coeff for CO2 
+    real(r8)            :: Cislope          ! empirical coeff for CO2 
+    real(r8)            :: fint             ! interpolation fraction for CO2
+    real(r8)            :: ci               ! temporary sunlight/shade weighted cisun & cisha (umolCO2/mol)
+
+    !-----------------------------------------------------------------------
+
+    ! Determine long-term CO2 growth environment (ie. ambient CO2) and interpolate
+    ! parameters
+    if ( co2_ppmv < 400._r8 ) then
+       IEmin   = 0.7301_r8
+       IEmax   = 1.0542_r8
+       ECi50   = 457._r8
+       Cislope = 3.1665_r8
+    else if ( (co2_ppmv > 400._r8) .and. (co2_ppmv < 500._r8) ) then
+       fint    = (co2_ppmv - 400._r8)/100._r8
+       IEmin   = fint*0.7301_r8 + (1._r8 - fint)*0.7034_r8
+       IEmax   = fint*1.0542_r8 + (1._r8 - fint)*0.9897_r8
+       ECi50   = fint*457._r8 + (1._r8 - fint)*472._r8
+       Cislope = fint*3.1665_r8 + (1._r8 - fint)*3.0652_r8
+    else if ( (co2_ppmv > 500._r8) .and. (co2_ppmv < 600._r8) ) then
+       fint = (co2_ppmv - 500._r8)/100._r8
+       IEmin   = fint*0.7034_r8 + (1._r8 - fint)*0.6768_r8
+       IEmax   = fint*0.9897_r8 + (1._r8 - fint)*0.9253_r8
+       ECi50   = fint*472._r8 + (1._r8 - fint)*488._r8
+       Cislope = fint*3.0652_r8 + (1._r8 - fint)*2.9321_r8
+    else if ( (co2_ppmv > 600._r8) .and. (co2_ppmv < 700._r8) ) then
+       fint = (co2_ppmv - 600._r8)/100._r8
+       IEmin   = fint*0.6768_r8 + (1._r8 - fint)*0.6500_r8
+       IEmax   = fint*0.9253_r8 + (1._r8 - fint)*0.8611_r8
+       ECi50   = fint*488._r8 + (1._r8 - fint)*508._r8
+       Cislope = fint*2.9321_r8 + (1._r8 - fint)*2.7497_r8
+    else if ( (co2_ppmv > 700._r8) .and. (co2_ppmv < 800._r8) ) then
+       fint = (co2_ppmv - 700._r8)/100._r8
+       IEmin   = fint*0.6500_r8 + (1._r8 - fint)*0.6063_r8
+       IEmax   = fint*0.8611_r8 + (1._r8 - fint)*0.7976_r8
+       ECi50   = fint*508._r8 + (1._r8 - fint)*575._r8
+       Cislope = fint*2.7497_r8 + (1._r8 - fint)*2.3643_r8
+    else if ( co2_ppmv > 800._r8 ) then
+       IEmin   = 0.6063_r8
+       IEmax   = 0.7976_r8
+       ECi50   = 575._r8
+       Cislope = 2.3643_r8
+    end if
+
+    ! Intracellular CO2 concentrations (ci) given in Pa, divide by atmos
+    ! pressure to get mixing ratio (umolCO2/mol)
+    if ( (cisun_in > 0._r8) .and. (cisha_in > 0._r8) .and. (forc_pbot_in > 0._r8) .and. (fsun_in > 0._r8) ) then
+       ci = ( fsun_in*cisun_in + (1._r8-fsun_in)*cisha_in )/forc_pbot_in * 1.e6_r8
+       get_gamma_C = IEmin + ( (IEmax-IEmin)/(1._r8+(ci/ECi50)**Cislope) )
+    else if ( (cisha_in > 0._r8) .and. (forc_pbot_in > 0._r8) ) then
+       ci = cisha_in/forc_pbot_in * 1.e6_r8
+       get_gamma_C = IEmin + ( (IEmax-IEmin)/(1._r8+(ci/ECi50)**Cislope) )
+    else if ( (cisun_in > 0._r8) .and. (forc_pbot_in > 0._r8) ) then
+       ci = cisun_in/forc_pbot_in * 1.e6_r8
+       get_gamma_C = IEmin + ( (IEmax-IEmin)/(1._r8+(ci/ECi50)**Cislope) )
+    else
+       get_gamma_C = 1._r8
+    end if
+
+  end function get_gamma_C
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 end module VOCEmissionMod
 module dynlandMod
@@ -23718,7 +28332,11 @@ contains
 !
 ! !INTERFACE:
 !Yaqiong Lu 01/13/2009
+<<<<<<< HEAD
   subroutine surfrd(organicxy,efisopxy,gtixy,ilx,jlx,iveg,isl,lndmsk)
+=======
+  subroutine surfrd(organicxy,efisopxy,gtixy,ilx,jlx,iveg,isl,lndmsk,nlcat,landusef1d,num_pft_input,pct_pft1d0,input_pft_flag,do_meganfile)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! !DESCRIPTION: 
 ! Read the surface dataset and create subgrid weights.
@@ -23781,20 +28399,36 @@ contains
     use shr_kind_mod, only: r8 => shr_kind_r8
     use clm_varpar                      !parameters
     !use clm_varsur                      !surface data  !BSINGH:02/04/2013: Commented out this use statement as it is repeated below
+<<<<<<< HEAD
     use pftvarcon, only : noveg, crop  !vegetation type (PFT) 
+=======
+    use pftvarcon, only : noveg, nc3crop,crop  !vegetation type (PFT) 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     use clm_varcon,only : sand,clay,soic,plant,cover
     use clm_varsur      , only :gti, wtxy,vegxy,soic2d,sand3d,clay3d,organic3d,efisop2d &
                                  ,pctgla,pctlak,pctwet,pcturb     !surface data 
     use decompMod , only: get_proc_bounds
     use module_cam_support, only: endrun
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! !ARGUMENTS:
     implicit none
 !!ylu add new variables:
+<<<<<<< HEAD
     integer :: ilx,jlx
     real(r8) :: organicxy(maxpatch)
     real(r8) :: efisopxy(6)
     real(r8) :: gtixy
+=======
+    integer, intent(in)  :: ilx,jlx
+    real(r8), intent(in) :: organicxy(maxpatch)
+    real(r8), intent(in) :: efisopxy(6)
+    real(r8), intent(in) :: gtixy
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! !CALLED FROM:
 ! subroutine initialize in module initializeMod
@@ -23805,7 +28439,19 @@ contains
 !EOP
 !   variables from MM5 11/25/2003 Jiming Jin
 
+<<<<<<< HEAD
     integer  :: iveg,isl,lndmsk
+=======
+    integer, intent(in)  :: iveg, isl, lndmsk
+
+    integer, intent(in)  :: nlcat 
+    real(r8), intent(in)  :: landusef1d(nlcat) 
+
+    integer, intent(in)  :: num_pft_input
+    real(r8), intent(in)  :: pct_pft1d0(num_pft_input) 
+    real(r8) :: pct_pft1d (num_pft_input) 
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! !LOCAL VARIABLES:
     integer  :: g,k,m,k1,k2,begg,endg                            ! indices
@@ -23830,8 +28476,26 @@ contains
     real(r8) :: sumpct                                   ! sum of %pft over maxpatch_pft
     real(r8) :: diff                                     ! the difference (wst_sum - sumpct)
     real(r8) :: rmax                                     ! maximum patch cover
+<<<<<<< HEAD
 !ylu 01/16/2009
     integer  :: pftid
+=======
+!czhao 
+    real(r8) :: pftfrac(0:numpft) 
+    real(r8) :: temppft
+    integer  :: indpft(0:numpft)
+    integer  :: tempind
+!ylu 01/16/2009
+    integer  :: pftid
+    character(len=132) :: msg
+    integer  :: nn,mm
+    logical  :: input_pft_flag
+
+!   New arguments BJG 3/28/19
+    logical,  intent(in)   ::     do_meganfile
+!   End modification
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !!-------------------------------------------------------------------------
        ! Initialize surface data to fill value
   call CLMDebug('surfrd-mark1')
@@ -23894,6 +28558,7 @@ contains
 !              pctgla(g)      = 100.0
 !           end if
 !----------------------------------------------------
+<<<<<<< HEAD
            do m=1,maxpatch_pft
                pft(g,m) = plant(iveg,m)
                if(cover(iveg,m).ne.0.0) then
@@ -23901,6 +28566,89 @@ contains
                end if
            end do
 
+=======
+
+           ! Use MEGANv2.1-based method if wrfchem has been compiled and megan2 is explicitly requested. 
+           ! Otherwise retain default method.   BJG 3/28/19
+        if (do_meganfile) then
+           !   end modification
+
+!czhao add fraction information, assume g is always 1
+!czhao +++
+          pftfrac(:) = 0.0
+          do nn=0,numpft
+            indpft(nn)=nn
+          enddo
+
+          !pct_pft1d could be all zero if no vegetation covered
+          !assign other landunit to baresoil
+          pct_pft1d = pct_pft1d0
+          pct_pft1d(1) = pct_pft1d(1)+(100.-sum(pct_pft1d(:)))   
+
+          !normalize to 100%
+          !pct_pft1d(:) = pct_pft1d(:)*(100._r8/sum(pct_pft1d(:)))
+
+          !not allow 100% crop
+          if (pct_pft1d(nc3crop+1) .ge. 99.999) then
+           pct_pft1d(nc3crop+1) = 99.9
+           pct_pft1d(1)  = 0.1
+          endif
+
+          if (input_pft_flag) then 
+           pftfrac(0:numpft) = pct_pft1d(1:num_pft_input) 
+          else 
+           if (nlcat.ne.24) then 
+            call wrf_error_fatal('nlcat must be 24 USGS types for now')
+           stop
+           endif
+
+           do nn=1,nlcat
+            if (landusef1d(nn).gt.0) then 
+            do m=1,maxpatch_pft
+             pftfrac(plant(nn,m)) = pftfrac(plant(nn,m))+cover(nn,m)*landusef1d(nn) 
+            enddo 
+            endif
+           enddo 
+          endif 
+
+           !ascending sorting function
+           do nn=1,numpft 
+            temppft=pftfrac(nn)
+            tempind=indpft(nn)
+             do m=nn-1,0,-1
+              if (pftfrac(m)<=temppft) goto 911 
+              pftfrac(m+1)=pftfrac(m)
+              indpft(m+1)=indpft(m)
+             enddo
+             m=-1
+911          CONTINUE
+             pftfrac(m+1)=temppft
+             indpft(m+1)=tempind
+           enddo
+
+           !assign the top four pft's
+           do m=1,maxpatch_pft
+               pft(g,m) = indpft(numpft-m+1) !select the dominant(maximum) four pft's
+               pctpft(g,pft(g,m)) = pftfrac(numpft-m+1) !select the dominant(maximum) four pft's 
+           end do
+
+           !normalize to 100%
+               pctpft(g,:) = pctpft(g,:)*(100./sum(pctpft(g,:)))
+!czhao ---
+
+!   do_meganfile is false, so use default method    BJG 3/28/19
+        else
+          do m=1,maxpatch_pft
+              pft(g,m) = plant(iveg,m)
+              if( cover(iveg,m) /= 0._r8 ) then
+               pctpft(g,pft(g,m)) = cover(iveg,m)
+              end if
+          end do
+        endif
+
+
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !CLM caculates urban separately. See module_sf_clm
 !             pcturb(g) = 0
 !             if(pctgla(g) .eq. 100 .or. pctlak(g) .eq. 100 .or.pctwet(g) .eq. 100) then
@@ -23915,7 +28663,11 @@ contains
        ! Error check: valid PFTs and sum of cover must equal 100
 
 #ifndef DGVM
+<<<<<<< HEAD
        sumvec(:) = abs(sum(pctpft,dim=2)-100.)
+=======
+       sumvec(:) = abs(sum(pctpft,dim=2)-100._r8)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           do g=begg,endg
              do m = 1, maxpatch_pft
               if (pft(g,m)<0 .or. pft(g,m)>numpft) then
@@ -23924,7 +28676,11 @@ contains
                 end if
              end do
 !ylu
+<<<<<<< HEAD
               if (sumvec(g)>1.e-04 .and. pftid == 0) then 
+=======
+              if (sumvec(g)>1.e-04_r8 .and. pftid == 0) then 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                write(6,*)'SURFRD error: PFT cover ne 100 for g=',ilx,jlx
                 do m=1,maxpatch_pft
                    write(6,*)'m= ',m,' pft= ',pft(g,m)
@@ -23942,12 +28698,21 @@ contains
 
            do g=begg,endg 
                cft(g,:) = 0
+<<<<<<< HEAD
                 pctcft_lunit(g,:) = 0.
                 cropcount = 0
                 pctspec1 = pcturb(g) + pctgla(g) + pctlak(g) + pctwet(g)
                 if (pctspec1 < 100.) then
                    do m = 0, numpft
                       if (crop(m) == 1. .and. pctpft(g,m) > 0.) then
+=======
+                pctcft_lunit(g,:) = 0._r8
+                cropcount = 0
+                pctspec1 = pcturb(g) + pctgla(g) + pctlak(g) + pctwet(g)
+                if (pctspec1 < 100._r8) then
+                   do m = 0, numpft
+                      if (crop(m) == 1._r8 .and. pctpft(g,m) > 0._r8) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                          cropcount = cropcount + 1
                          if (cropcount > maxpatch_cft) then
                             write(6,*) 'ERROR surfFileMod: cropcount>maxpatch_cft'
@@ -23955,6 +28720,7 @@ contains
                          end if
                          cft(g,cropcount) = m
                          pctcft_lunit(g,cropcount) = pctpft(g,m) !* 100./(100.-pctspec)
+<<<<<<< HEAD
                          pctpft(g,m) = 0.0
                       else if (crop(m) == 0.) then
                          pctpft(g,m) = pctpft(g,m) !* 100./(100.-pctspec)
@@ -23963,6 +28729,16 @@ contains
                 else if (pctspec1 == 100.) then
                    pctpft(g,0)        = 100.
                    pctpft(g,1:numpft) =   0.
+=======
+                         pctpft(g,m) = 0.0_r8
+                      else if (crop(m) == 0._r8) then
+                         pctpft(g,m) = pctpft(g,m) !* 100./(100.-pctspec)
+                       end if
+                   end do
+                else if (pctspec1 == 100._r8) then
+                   pctpft(g,0)        = 100._r8
+                   pctpft(g,1:numpft) =   0._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 end if
              end do
           
@@ -23972,8 +28748,13 @@ contains
 
              do g=begg,endg
 
+<<<<<<< HEAD
                 wst_sum = 0.
                 sumpct = 0
+=======
+                wst_sum = 0._r8
+                sumpct = 0._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 do m = 0, numpft
                    wst(m) = pctpft(g,m)
                    wst_sum = wst_sum + pctpft(g,m)
@@ -23999,14 +28780,22 @@ contains
                           pctpft_lunit(g,m) = wst(wsti(m))
                        else
                          pft(g,m) = noveg
+<<<<<<< HEAD
                          pctpft_lunit(g,m) = 0.
+=======
+                         pctpft_lunit(g,m) = 0._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                        end if
                       sumpct = sumpct + pctpft_lunit(g,m)
                    end do
                 else                       ! grid with other type =100        ! model grid wants ocean
                    do m = 1, maxpatch_pft
                       pft(g,m) = 0
+<<<<<<< HEAD
                       pctpft_lunit(g,m) = 0.
+=======
+                      pctpft_lunit(g,m) = 0._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    end do
                 end if
           call CLMDebug('surfrd--mark6')
@@ -24015,7 +28804,11 @@ contains
 
                 if (sumpct < wst_sum) then
                    diff  = wst_sum - sumpct
+<<<<<<< HEAD
                    sumpct = 0.
+=======
+                   sumpct = 0._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    do m = 1, maxpatch_pft
                       pctpft_lunit(g,m) = pctpft_lunit(g,m) + diff/maxpatch_pft
                       sumpct = sumpct + pctpft_lunit(g,m)
@@ -24045,7 +28838,11 @@ contains
                 ! Make sure sum of PFT cover == 100 for land points. If not,
                 ! subtract excess from most dominant PFT.
           call CLMDebug('surfrd--mark7')
+<<<<<<< HEAD
                 rmax = -9999.
+=======
+                rmax = -9999._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 k1 = -9999
                 k2 = -9999
                 sumpct = 0.
@@ -24070,15 +28867,23 @@ contains
                    if (sumpct < 95 .or. sumpct > 105.) then
                       write(6,*)'surfrd error: sum of PFT cover =',sumpct,' at g=',ilx,jlx
                       call endrun()
+<<<<<<< HEAD
                    else if (sumpct /= 100. .and. k2 /= -9999) then
                       pctcft_lunit(g,k2) = pctcft_lunit(g,k2) - (sumpct-100.)
                    else if (sumpct /= 100.) then
                       pctpft_lunit(g,k1) = pctpft_lunit(g,k1) - (sumpct-100.)
+=======
+                   else if (sumpct /= 100._r8 .and. k2 /= -9999) then
+                      pctcft_lunit(g,k2) = pctcft_lunit(g,k2) - (sumpct-100._r8)
+                   else if (sumpct /= 100._r8) then
+                      pctpft_lunit(g,k1) = pctpft_lunit(g,k1) - (sumpct-100._r8)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    end if
                 end if
 
                 ! Error check: make sure PFTs sum to 100% cover
 
+<<<<<<< HEAD
                 sumpct = 0.
                 do m = 1, maxpatch_pft
                    sumpct = sumpct + pctpft_lunit(g,m)
@@ -24088,11 +28893,28 @@ contains
                 end do
               if (pftid == 0) then    
                    if (abs(sumpct - 100.) > 0.000001) then
+=======
+!               sumpct = 0._r8
+                sumpct = sum( pctpft_lunit(g,:maxpatch_pft) ) + &
+                         sum( pctcft_lunit(g,:maxpatch_cft) )
+!               do m = 1, maxpatch_pft
+!                  sumpct = sumpct + pctpft_lunit(g,m)
+!               end do
+!               do m = 1, maxpatch_cft
+!                  sumpct = sumpct + pctcft_lunit(g,m)
+!               end do
+              if (pftid == 0) then    
+                   if (abs(sumpct - 100._r8) > 0.000001_r8) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                       write(6,*)'surfFileMod error: sum(pct) over maxpatch_pft is not = 100.'
                       write(6,*)sumpct, g
                       call endrun()
                    end if
+<<<<<<< HEAD
                    if (sumpct < -0.000001) then
+=======
+                   if (sumpct < -0.000001_r8) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                       write(6,*)'surfFileMod error: sum(pct) over maxpatch_pft is < 0.'
                       write(6,*)sumpct, g
                       call endrun()
@@ -24108,7 +28930,11 @@ contains
        found = .false.
           do g=begg,endg
              sumscl = pctlak(g)+pctwet(g)+pcturb(g)+pctgla(g)
+<<<<<<< HEAD
              if (sumscl > 100.+1.e-04) then
+=======
+             if (sumscl > 100._r8+1.e-04_r8) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 found = .true.
                 iindx = ilx
                 jindx = jlx
@@ -24148,7 +28974,11 @@ contains
     ! Next, fill in urban, lake, wetland, and glacier patches.
 
     vegxy(:,:) = 0
+<<<<<<< HEAD
     wtxy(:,:)  = 0.
+=======
+    wtxy(:,:)  = 0._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        do g=begg,endg
           if (lndmsk == 1) then
              sumscl = pcturb(g)+pctlak(g)+pctwet(g)+pctgla(g)
@@ -24170,6 +29000,7 @@ contains
 !                wtxy(g,m) = 1.0/maxpatch_pft * (100.-sumscl)/100.
 #else
                 vegxy(g,m) = pft(g,m)
+<<<<<<< HEAD
                 wtxy(g,m) = pctpft_lunit(g,m) * (100.-sumscl)/10000.
 #endif
              end do
@@ -24181,23 +29012,49 @@ contains
              wtxy(g,npatch_wet)   = pctwet(g)/100.
              vegxy(g,npatch_glacier) = noveg
              wtxy(g,npatch_glacier) = pctgla(g)/100.
+=======
+                wtxy(g,m) = pctpft_lunit(g,m) * (100._r8-sumscl)/10000._r8
+#endif
+             end do
+             vegxy(g,npatch_urban) = noveg
+             wtxy(g,npatch_urban) = pcturb(g)/100._r8
+             vegxy(g,npatch_lake)  = noveg
+             wtxy(g,npatch_lake)  = pctlak(g)/100._r8
+             vegxy(g,npatch_wet)   = noveg
+             wtxy(g,npatch_wet)   = pctwet(g)/100._r8
+             vegxy(g,npatch_glacier) = noveg
+             wtxy(g,npatch_glacier) = pctgla(g)/100._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
              do m = 1,maxpatch_cft
 #ifdef DGVM
                    vegxy(g,npatch_glacier+m) = noveg ! currently assume crop=0 if DGVM mode
+<<<<<<< HEAD
                    wtxy(g,npatch_glacier+m)= 0.
 #else
                    vegxy(g,npatch_glacier+m) = cft(g,m)
                    wtxy(g,npatch_glacier+m)= pctcft_lunit(g,m) * (100.-sumscl)/10000.
+=======
+                   wtxy(g,npatch_glacier+m)= 0._r8
+#else
+                   vegxy(g,npatch_glacier+m) = cft(g,m)
+                   wtxy(g,npatch_glacier+m)= pctcft_lunit(g,m) * (100._r8-sumscl)/10000._r8
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
             end do
           end if
     end do
 
     found = .false.
+<<<<<<< HEAD
     sumvec(:) = abs(sum(wtxy,dim=2)-1.)
       do g=begg,endg
           if (sumvec(g) > 1.e-06 .and. lndmsk==1) then
+=======
+    sumvec(:) = abs(sum(wtxy,dim=2)-1._r8)
+      do g=begg,endg
+          if (sumvec(g) > 1.e-06_r8 .and. lndmsk==1) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              found = .true.
              iindx = ilx
              jindx = jlx
@@ -34555,12 +39412,21 @@ contains
           fb = 1. - ol / max(1.e-06_r8, htop(p)-hbot(p))
           elai(p) = max(tlai(p)*fb, 0.0_r8)
           esai(p) = max(tsai(p)*fb, 0.0_r8)
+<<<<<<< HEAD
           if (elai(p) < 0.05) elai(p) = 0._r8
           if (esai(p) < 0.05) esai(p) = 0._r8
 
           ! Fraction of vegetation free of snow
 
           if ((elai(p) + esai(p)) >= 0.05) then
+=======
+          if (elai(p) < 0.05_r8) elai(p) = 0._r8
+          if (esai(p) < 0.05_r8) esai(p) = 0._r8
+
+          ! Fraction of vegetation free of snow
+
+          if ((elai(p) + esai(p)) >= 0.05_r8) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              frac_veg_nosno_alb(p) = 1
           else
              frac_veg_nosno_alb(p) = 0
@@ -34594,10 +39460,18 @@ contains
 !
 !EOP
 !
+<<<<<<< HEAD
 ! LOCAL VARIABLES:
     integer :: kyr         ! year (0, ...) for nstep+1
     integer :: kmo         ! month (1, ..., 12)
     integer :: kda         ! day of month (1, ..., 31)
+=======
+    integer, intent(in)  :: kmo         ! month (1, ..., 12)
+    integer, intent(in)  :: kda         ! day of month (1, ..., 31)
+
+! LOCAL VARIABLES:
+    integer :: kyr         ! year (0, ...) for nstep+1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     integer :: ksec        ! seconds into current date for nstep+1
     real(r8):: dtime       ! land model time step (sec)
     real(r8):: t           ! a fraction: kda/ndaypm
@@ -34607,18 +39481,28 @@ contains
          (/31,28,31,30,31,30,31,31,30,31,30,31/) !days per month
 !-----------------------------------------------------------------------
 
+<<<<<<< HEAD
     t = (kda-0.5) / ndaypm(kmo)
     it(1) = t + 0.5
+=======
+    t = (real(kda,kind=r8) - 0.5_r8) / real(ndaypm(kmo),kind=r8)
+    it(1) = int( t + 0.5_r8 )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     it(2) = it(1) + 1
     months(1) = kmo + it(1) - 1
     months(2) = kmo + it(2) - 1
     if (months(1) <  1) months(1) = 12
     if (months(2) > 12) months(2) = 1
+<<<<<<< HEAD
     timwt(1) = (it(1)+0.5) - t
     timwt(2) = 1.-timwt(1)
 
      
 
+=======
+    timwt(1) = (real(it(1),kind=r8) + 0.5_r8) - t
+    timwt(2) = 1._r8 - timwt(1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
        call CLMDebug(' call readMonthlyVegetation')
        call readMonthlyVegetation(kmo, kda, months)
@@ -36707,6 +41591,13 @@ contains
    real(r8) :: dayl                  ! daylength (s)
    real(r8) :: temp                  ! temporary, for daylength calculation
    real(r8) :: dayl_factor(lbp:ubp)  ! scalar (0-1) for daylength effect on Vcmax
+<<<<<<< HEAD
+=======
+
+   character(len=132) :: msg
+
+   logical, external :: wrf_dm_on_monitor
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !------------------------------------------------------------------------------
 
    ! Assign local pointers to derived type members (gridcell-level)
@@ -36850,6 +41741,23 @@ contains
       wtaq0(p)  = 0._r8
       obuold(p) = 0._r8
       btran(p)  = btran0
+<<<<<<< HEAD
+=======
+      if( t_veg(p) <= 0._r8 ) then
+        c = pcolumn(p)
+        if( wrf_dm_on_monitor() ) then
+          write(msg,'(''CanopyFluxes: setting t_veg @ p,c = '',2i3)') p,c
+          call wrf_message( trim(msg) )
+        endif
+#if defined(VANCOUVER)
+        t_veg(p) = 297.56_r8
+#elif defined(MEXICOCITY)
+        t_veg(p) = 289.46_r8
+#else
+        t_veg(p) = 283._r8
+#endif
+      endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    end do
    
    ! calculate daylength control for Vcmax
@@ -38025,16 +42933,50 @@ subroutine biophy_to_wrf(snl      ,snowdp  ,dzclm      ,zclm        ,&
 ! !ARGUMENTS:
     implicit none
 
+<<<<<<< HEAD
 ! The following vraiables for a WRF restart run
     integer   :: snl(maxpatch)
     integer   :: frac_veg_nosno_alb(maxpatch)
     real(r8)  :: snowdp(maxpatch)
+=======
+! The following variables for a WRF restart run
+    integer, intent(inout)   :: numc, nump
+    integer, intent(inout)   :: snl(maxpatch)
+    real(r8), intent(inout)  :: snowdp(maxpatch)
+    real(r8), intent(inout)  :: h2osno(maxpatch)
+    real(r8), intent(inout)  :: t_grnd(maxpatch)
+    real(r8), intent(inout)  :: tsai(maxpatch)
+    real(r8), intent(inout)  :: htop(maxpatch)
+    real(r8), intent(inout)  :: t_veg(maxpatch)
+    real(r8), intent(inout)  :: h2ocan(maxpatch)
+    real(r8), intent(inout)  :: h2ocan_col(maxpatch)
+    real(r8), intent(inout)  :: wtc(maxpatch)
+    real(r8), intent(inout)  :: wtp(maxpatch)
+
+    real(r8), intent(inout)  :: snw_rds(maxpatch,-nlevsno+1:0)
+    real(r8), intent(inout)  :: t_lake(maxpatch,nlevlak)
+    real(r8), intent(inout)  :: t_soisno(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8), intent(inout)  :: h2osoi_liq(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8), intent(inout)  :: h2osoi_ice(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8), intent(inout)  :: dzclm(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8), intent(inout)  :: zclm(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8), intent(inout)  :: ziclm(maxpatch,-nlevsno:nlevgrnd)
+    real(r8), intent(inout)  :: h2osoi_vol(maxpatch,nlevgrnd)
+
+    real(r8), intent(inout)  :: t_ref2m(maxpatch)
+    real(r8), intent(inout)  :: q_ref2m(maxpatch)
+    real(r8), intent(inout)  :: znt(maxpatch)
+
+! !LOCAL VARIABLES:
+    integer   :: frac_veg_nosno_alb(maxpatch)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !    real(r8)  :: snowage(maxpatch)
     real(r8)  :: frac_sno(maxpatch)
     real(r8)  :: albd(numrad,maxpatch)
     real(r8)  :: albi(numrad,maxpatch)
     real(r8)  :: albgrd(numrad,maxpatch)
     real(r8)  :: albgri(numrad,maxpatch)
+<<<<<<< HEAD
     real(r8)  :: h2osno(maxpatch)
     real(r8)  :: t_grnd(maxpatch)
     real(r8)  :: fwet(maxpatch)
@@ -38044,12 +42986,20 @@ subroutine biophy_to_wrf(snl      ,snowdp  ,dzclm      ,zclm        ,&
     real(r8)  :: esai(maxpatch)
     real(r8)  :: fsun(maxpatch)
     real(r8)  :: htop(maxpatch)
+=======
+    real(r8)  :: fwet(maxpatch)
+    real(r8)  :: tlai(maxpatch)
+    real(r8)  :: elai(maxpatch)
+    real(r8)  :: esai(maxpatch)
+    real(r8)  :: fsun(maxpatch)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     real(r8)  :: hbot(maxpatch)
     real(r8)  :: fabd(numrad,maxpatch)
     real(r8)  :: fabi(numrad,maxpatch)
     real(r8)  :: ftdd(numrad,maxpatch)
     real(r8)  :: ftid(numrad,maxpatch)
     real(r8)  :: ftii(numrad,maxpatch)
+<<<<<<< HEAD
     real(r8)  :: t_veg(maxpatch)
     real(r8)  :: h2ocan(maxpatch)
     real(r8)  :: h2ocan_col(maxpatch)
@@ -38072,13 +43022,19 @@ subroutine biophy_to_wrf(snl      ,snowdp  ,dzclm      ,zclm        ,&
     real(r8)  :: znt(maxpatch)
 !
 ! !LOCAL VARIABLES:
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     integer :: g,l,c,p,j    ! indices
     real(r8):: pftsum       ! temporary used for pft averaging for columns
     integer :: begp, endp   ! per-proc beginning and ending pft indices
     integer :: begc, endc   ! per-proc beginning and ending column indices
     integer :: begl, endl   ! per-proc beginning and ending landunit indices
     integer :: begg, endg   ! per-proc gridcell ending gridcell indices
+<<<<<<< HEAD
     integer :: numc, nump
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-----------------------------------------------------------------------
     call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
 
@@ -51154,6 +56110,391 @@ subroutine CropPhenology(num_pcropp, filter_pcropp)
 
          ! background litterfall and transfer rates; long growing season factor
 
+<<<<<<< HEAD
+         bglfr(p) = 0._r8 ! this value changes later in a crop's life cycle
+         bgtr(p)  = 0._r8
+         lgsf(p)  = 0._r8
+
+         ! ---------------------------------
+         ! from AgroIBIS subroutine planting
+         ! ---------------------------------
+
+         ! in order to allow a crop to be planted only once each year
+         ! initialize cropplant = 0, but hold it = 1 through the end of the year
+
+         ! initialize other variables that are calculated for crops
+         ! on an annual basis in cropresidue subroutine
+
+         if ((jday ==   1 .and. mcsec == 0 .and. latdeg(g) >= 0._r8) .or. & ! NH
+             (jday == 182 .and. mcsec == 0 .and. latdeg(g) < 0._r8 )) then  ! SH
+
+            ! make sure variables aren't changed at beginning of the year
+            ! for a crop that is currently planted (e.g. winter wheat)
+
+            if (croplive(p) == 0)  then
+               cropplant(p) = 0
+               idop(p)      = 999
+
+               ! keep next for continuous, annual winter wheat type crop;
+               ! if we removed elseif,
+               ! winter wheat grown continuously would amount to a wheat/fallow
+               ! rotation because wheat would only be planted every other year
+
+            else if (croplive(p) == 1 .and. ivt(p) == nwwheat) then
+               cropplant(p) = 0
+!           else ! not possible to have croplive==1 and ivt==cornORsoy? (slevis)
+            end if
+
+         end if
+
+         if (croplive(p) == 0 .and. cropplant(p) == 0) then
+
+            ! gdd needed for * chosen crop and a likely hybrid (for that region) *
+            ! to reach full physiological maturity
+
+            ! based on accumulated seasonal average growing degree days from
+            ! April 1 - Sept 30 (inclusive)
+            ! for corn and soybeans in the United States -
+            ! decided upon by what the typical average growing season length is
+            ! and the gdd needed to reach maturity in those regions
+
+            ! first choice is used for spring wheat and/or soybeans and maize
+
+            ! slevis: ibis reads xinpdate in io.f from control.crops.nc variable name 'plantdate'
+            !         According to Chris Kucharik, the dataset of
+            !         xinpdate was generated from a previous model run at 0.5 deg resolution
+
+            ! winter wheat : use gdd0 as a limit to plant winter wheat
+
+            if (ivt(p) == nwwheat) then
+
+               ! minimum temperature required for crop planting and vegetative growth
+               ! from EPIC model parameterizations
+
+               ! the planting range in the US for maize is typically from April 10 - May 10
+               ! the most active planting date in US for soybean is typically May 15 - June 20
+               ! spring wheat planting dates are typically early April through mid-May
+               ! in line with maize
+               ! winter wheat is from Sept. 1 through early Nov., and is typically planted
+               ! within 10-14 days of the first likely frost event.
+
+               ! typically winter wheat is planted when ave min temperature gets
+               ! to about 40 F and is planted no later than November
+
+               ! slevis: added distinction between NH and SH
+
+               if (latdeg(g) >= 0._r8) then
+                  pmmin = 9
+                  pmmax = 11
+               else
+                  pmmin = 3
+                  pmmax = 5
+               end if
+               pdmin    = 1
+               pdmax    = 30
+               pmintemp = tfrz + 5._r8
+
+               ! add check to only plant winter wheat after other crops (soybean, maize)
+               ! have been harvested
+
+               ! *** remember order of planting is crucial - in terms of which crops you want
+               ! to be grown in what order ***
+
+               ! in this case, corn or soybeans are assumed to be planted before
+               ! wheat would be in any particular year that both pfts are allowed
+               ! to grow in the same grid cell (e.g., double-cropping)
+
+               ! slevis: harvdate below needs cropplant(p)==0 above to be cropplant(p,ivt(p))==0
+               !         where ivt(p) has rotated to winter wheat because
+               !         cropplant == 1 through the end of the year for a harvested crop.
+               !         Also harvdate(p) should be harvdate(p,ivt(p)) and should be
+               !         updated on Jan 1st instead of at harvest (slevis)
+               if (a5tmin(p)             <= pmintemp .and. &
+                   kmo                   >= pmmin    .and. &
+                   kda                   >= pdmin    .and.(&
+                   irotation            == 0       ).and. &
+                   gdd020(p)             >= gddmin(ivt(p))) then
+
+                  cumvd(p)       = 0._r8
+                  hdidx(p)       = 0._r8
+                  vf(p)          = 0._r8
+                  croplive(p)    = 1
+                  cropplant(p)   = 1
+                  idop(p)        = jday
+                  harvdate(p)    = 999
+                  gddmaturity(p) = hybgdd(ivt(p))
+                  leafc_xfer(p) = 1._r8 ! initial seed at planting to appear
+                  leafn_xfer(p) = leafc_xfer(p) / leafcn(ivt(p)) ! with onset
+                  dwt_seedc_to_leaf(c) = dwt_seedc_to_leaf(c) + leafc_xfer(p)/dt
+                  dwt_seedn_to_leaf(c) = dwt_seedn_to_leaf(c) + leafn_xfer(p)/dt
+
+                  ! latest possible date to plant winter wheat and after all other crops were harvested for that year
+                  ! slevis: same comments concerning cropplant & harvdate
+                  ! slevis: this is not how I would have written this if-elseif statement
+                  !         to plant winter wheat between Sep 1st and Nov 30th. Chris
+                  !         explains that the else if ensures winter wheat planting by
+                  !         Nov 30th if the a5tmin limit is not achieved. I'm probably stuck
+                  !         on the kmo>= and kda>= which suggest to me any date after Nov 29th.
+                  !         I think they could have been kmo== and kda== and worked the same.
+                  !         It may also reduce confusion to separate parts of the if statement.
+                  !         Eg, harvdate, irotation, and gdd020 do not change as the kmo and kda
+                  !         statements switch from false to true and are common to the if part
+                  !         of the statement.
+
+               else if (kmo                   >=  pmmax .and. &
+                        kda                   >=  pdmax .and.(&
+                         irotation            == 0     ).and. &
+                        gdd020(p)             >= gddmin(ivt(p))) then
+
+                  cumvd(p)       = 0._r8
+                  hdidx(p)       = 0._r8
+                  vf(p)          = 0._r8
+                  croplive(p)    = 1
+                  cropplant(p)   = 1
+                  idop(p)        = jday
+                  harvdate(p)    = 999
+                  gddmaturity(p) = hybgdd(ivt(p))
+                  leafc_xfer(p) = 1._r8 ! initial seed at planting to appear
+                  leafn_xfer(p) = leafc_xfer(p) / leafcn(ivt(p)) ! with onset
+                  dwt_seedc_to_leaf(c) = dwt_seedc_to_leaf(c) + leafc_xfer(p)/dt
+                  dwt_seedn_to_leaf(c) = dwt_seedn_to_leaf(c) + leafn_xfer(p)/dt
+               else
+                  gddmaturity(p) = 0._r8
+               end if
+
+            else ! not winter wheat... slevis: added distinction between NH and SH
+               if (ivt(p) == nsoybean) then
+                  if (latdeg(g) >= 0._r8) then
+                     pmmin = 5
+                     pmmax = 6
+                  else
+                     pmmin = 11
+                     pmmax = 12
+                  end if
+                  pmintemp = tfrz + 6._r8
+                  ptemp = tfrz + 13._r8
+               else if (ivt(p) == ncorn) then
+                  if (latdeg(g) >= 0._r8) then
+                     pmmin = 4
+                     pmmax = 6
+                  else
+                     pmmin = 10
+                     pmmax = 12
+                  end if
+                  pmintemp = tfrz + 6._r8
+                  ptemp = tfrz + 10._r8
+               else if (ivt(p) == nswheat) then
+                  if (latdeg(g) >= 0._r8) then
+                     pmmin = 4
+                     pmmax = 6
+                  else
+                     pmmin = 10
+                     pmmax = 12
+                  end if
+                  pmintemp = tfrz - 1._r8
+                  ptemp = tfrz + 7._r8
+               end if
+               pdmin = 1
+               pdmax = 15
+
+               ! slevis: the jday if statement confused me in a similar way to the one before.
+               !         The idea is that jday will equal idop sooner or later in the year
+               !         while the gdd part is either true or false for the year.
+               !         Replace the jday if statement with the more complete but commented out one from AgroIBIS
+               if (t10(p) > ptemp .and. a10tmin(p) > pmintemp .and. &
+                   kmo >= pmmin .and. kda >= pdmin .and.            &
+                   kmo <= pmmax .and. gdd820(p) >= gddmin(ivt(p))) then
+
+                  ! impose limit on growing season length needed
+                  ! for crop maturity - for cold weather constraints
+                  croplive(p)  = 1
+                  cropplant(p) = 1
+                  idop(p)      = jday
+                  harvdate(p)  = 999
+
+                  ! go a specified amount of time before/after
+                  ! climatological date
+                  if (ivt(p)==nsoybean) gddmaturity(p)=min(gdd1020(p),hybgdd(ivt(p)))
+                  if (ivt(p)==ncorn) then
+                     gddmaturity(p)=max(950._r8, min(gdd820(p)*0.85_r8, hybgdd(ivt(p))))
+                     gddmaturity(p)=max(950._r8, min(gddmaturity(p)+150._r8,1850._r8))
+                  end if
+                  if (ivt(p)==nswheat) gddmaturity(p)=min(gdd020(p),hybgdd(ivt(p)))
+
+                  leafc_xfer(p) = 1._r8 ! initial seed at planting to appear
+                  leafn_xfer(p) = leafc_xfer(p) / leafcn(ivt(p)) ! with onset
+                  dwt_seedc_to_leaf(c) = dwt_seedc_to_leaf(c) + leafc_xfer(p)/dt
+                  dwt_seedn_to_leaf(c) = dwt_seedn_to_leaf(c) + leafn_xfer(p)/dt
+
+               else if (kmo == pmmax .and. kda == pdmax .and. gdd820(p) > 0._r8) then
+                  croplive(p)  = 1
+                  cropplant(p) = 1
+                  idop(p)      = jday
+                  harvdate(p)  = 999
+
+                  if (ivt(p)==nsoybean) gddmaturity(p)=min(gdd1020(p),hybgdd(ivt(p)))
+                  if (ivt(p)==ncorn) gddmaturity(p)=max(950._r8, min(gdd820(p)*0.85_r8, hybgdd(ivt(p))))
+                  if (ivt(p)==nswheat) gddmaturity(p)=min(gdd020(p),hybgdd(ivt(p)))
+
+                  leafc_xfer(p) = 1._r8 ! initial seed at planting to appear
+                  leafn_xfer(p) = leafc_xfer(p) / leafcn(ivt(p)) ! with onset
+                  dwt_seedc_to_leaf(c) = dwt_seedc_to_leaf(c) + leafc_xfer(p)/dt
+                  dwt_seedn_to_leaf(c) = dwt_seedn_to_leaf(c) + leafn_xfer(p)/dt
+
+               else
+                  gddmaturity(p) = 0._r8
+               end if
+            end if ! crop pft distinction
+
+            ! crop phenology (gdd thresholds) controlled by gdd needed for
+            ! maturity (physiological) which is based on the average gdd
+            ! accumulation and hybrids in United States from April 1 - Sept 30
+
+            ! calculate threshold from phase 1 to phase 2:
+            ! threshold for attaining leaf emergence (based on fraction of
+            ! gdd(i) -- climatological average)
+            ! Hayhoe and Dwyer, 1990, Can. J. Soil Sci 70:493-497
+            ! Carlson and Gage, 1989, Agric. For. Met., 45: 313-324
+            ! J.T. Ritchie, 1991: Modeling Plant and Soil systems
+
+            huileaf(p) = lfemerg(ivt(p)) * gddmaturity(p) ! 3-7% in wheat
+
+            ! calculate threshhold from phase 2 to phase 3:
+            ! from leaf emergence to beginning of grain-fill period
+            ! this hypothetically occurs at the end of tassling, not the beginning
+            ! tassel initiation typically begins at 0.5-0.55 * gddmaturity
+
+            ! calculate linear relationship between huigrain fraction and relative
+            ! maturity rating for maize
+
+            if (ivt(p) == ncorn) then
+               crmcorn = max(73._r8, min(135._r8, (gddmaturity(p)+ 53.683_r8)/13.882_r8))
+               huigrain(p) = -0.002_r8  * (crmcorn - 73._r8) + grnfill(ivt(p))
+               huigrain(p) = min(max(huigrain(p), grnfill(ivt(p))-0.1_r8), grnfill(ivt(p)))
+               huigrain(p) = huigrain(p) * gddmaturity(p)     ! Cabelguenne et
+            else
+               huigrain(p) = grnfill(ivt(p)) * gddmaturity(p) ! al. 1999
+            end if
+
+         end if ! crop not live nor planted
+
+         ! ----------------------------------
+         ! from AgroIBIS subroutine phenocrop
+         ! ----------------------------------
+
+         ! all of the phenology changes are based on the total number of gdd needed
+         ! to change to the next phase - based on fractions of the total gdd typical
+         ! for  that region based on the April 1 - Sept 30 window of development
+
+         ! crop phenology (gdd thresholds) controlled by gdd needed for
+         ! maturity (physiological) which is based on the average gdd
+         ! accumulation and hybrids in United States from April 1 - Sept 30
+         
+         ! Phase 1: Planting to leaf emergence (now in CNAllocation)
+         ! Phase 2: Leaf emergence to beginning of grain fill (general LAI accumulation)
+         ! Phase 3: Grain fill to physiological maturity and harvest (LAI decline)
+         ! Harvest: if gdd past grain fill initiation exceeds limit
+         ! or number of days past planting reaches a maximum, the crop has
+         ! reached physiological maturity and plant is harvested;
+         ! crop could be live or dead at this stage - these limits
+         ! could lead to reaching physiological maturity or determining
+         ! a harvest date for a crop killed by an early frost (see next comments)
+         ! --- --- ---
+         ! keeping comments without the code (slevis):
+         ! if minimum temperature, t_ref2m_min <= freeze kill threshold, tkill
+         ! for 3 consecutive days and lai is above a minimum,
+         ! plant will be damaged/killed. This function is more for spring freeze events
+         ! or for early fall freeze events
+
+         ! spring wheat is affected by this, winter wheat kill function
+         ! is determined in crops.f - is a more elaborate function of
+         ! cold hardening of the plant
+
+         ! currently simulates too many grid cells killed by freezing temperatures
+
+         ! removed on March 12 2002 - C. Kucharik
+         ! until it can be a bit more refined, or used at a smaller scale.
+         ! we really have no way of validating this routine
+         ! too difficult to implement on 0.5 degree scale grid cells
+         ! --- --- ---
+
+         onset_flag(p)  = 0._r8 ! CN terminology to trigger certain
+         offset_flag(p) = 0._r8 ! carbon and nitrogen transfers
+
+         if (croplive(p) == 1) then
+
+            ! call vernalization if winter wheat planted, living, and the
+            ! vernalization factor is not 1;
+            ! vf affects the calculation of gddtsoi & gddplant
+
+            if (t_ref2m_min(p) < 1.e30_r8 .and. vf(p) /= 1._r8 .and. ivt(p) == nwwheat) then
+               call vernalization(p)
+            end if
+
+            ! days past planting may determine harvest
+
+            if (jday >= idop(p)) then
+               idpp = jday - idop(p)
+            else
+               idpp = 365+jday - idop(p)
+            end if
+
+            ! onset_counter initialized to zero when croplive == 0
+            ! offset_counter relevant only at time step of harvest
+
+            onset_counter(p) = onset_counter(p) - dt
+
+            ! enter phase 2 onset for one time step:
+            ! transfer seed carbon to leaf emergence
+
+            if (leafout(p) >= huileaf(p) .and. hui(p) < huigrain(p) .and. idpp < mxmat(ivt(p))) then
+               if (abs(onset_counter(p)) > 1.e-6_r8) then
+                  onset_flag(p)    = 1._r8
+                  onset_counter(p) = dt
+               else
+                  onset_counter(p) = dt ! ensure no re-entry to onset of phase2
+               end if
+
+            ! enter harvest for one time step:
+            ! - transfer live biomass to litter and to crop yield
+            ! - send xsmrpool to the atmosphere
+            ! if onset and harvest needed to last longer than one timestep
+            ! the onset_counter would change from dt and you'd need to make
+            ! changes to the offset subroutine below
+
+            else if (hui(p) >= gddmaturity(p) .or. idpp >= mxmat(ivt(p))) then
+               if (harvdate(p) == 999) harvdate(p) = jday
+               croplive(p) = 0           ! no re-entry in greater if-block
+               if (tlai(p) > 0._r8) then ! plant had emerged before harvest
+                  offset_flag(p) = 1._r8
+                  offset_counter(p) = dt
+               else                      ! plant never emerged from the ground
+                  dwt_seedc_to_leaf(c) = dwt_seedc_to_leaf(c) - leafc_xfer(p)/dt
+                  dwt_seedn_to_leaf(c) = dwt_seedn_to_leaf(c) - leafn_xfer(p)/dt
+                  leafc_xfer(p) = 0._r8  ! revert planting transfers
+                  leafn_xfer(p) = leafc_xfer(p) / leafcn(ivt(p))
+               end if
+
+            ! enter phase 3 while previous criteria fail and next is true;
+            ! in terms of order, phase 3 occurs before harvest, but when
+            ! harvest *can* occur, we want it to have first priority.
+            ! AgroIBIS uses a complex formula for lai decline.
+            ! Use CN's simple formula at least as a place holder (slevis)
+
+            else if (hui(p) >= huigrain(p)) then
+               bglfr(p) = 1._r8/(leaf_long(ivt(p))*365._r8*86400._r8)
+            end if
+
+         else   ! crop not live
+            onset_counter(p) = 0._r8
+            leafc_xfer(p) = 0._r8
+            leafn_xfer(p) = leafc_xfer(p) / leafcn(ivt(p))
+         end if ! croplive is 1 or 0
+
+      end do ! prognostic crops loop
+
+end subroutine CropPhenology
+=======
          bglfr(p) = 0._r8 ! this value changes later in a crop's life cycle
          bgtr(p)  = 0._r8
          lgsf(p)  = 0._r8
@@ -52192,11 +57533,137 @@ subroutine CNOffsetLitterfall (num_soilp, filter_soilp)
    end do ! end pft loop
 
 end subroutine CNOffsetLitterfall
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
 !BOP
 !
+<<<<<<< HEAD
+! !IROUTINE: rotation
+!
+! !INTERFACE:
+  subroutine rotation() ! uncomment when ready (slevis)
+
+! subroutine used to plant different crop types in different years
+! to simulate typical crop rotations in the United States
+! could be modified in future if rotations would include natural
+! vegetation types such as grasslands or biofuel (switchgrass) crops
+!
+! currently three main types of rotations are used
+! if irotation ==
+! 2: maize/soybean rotation (alternating)
+! 3: maize/soybean/spring wheat
+! 4: soybean/winter wheat/maize
+!
+! note: by doing continuous winter wheat, land is fallow
+! only from harvest (june-july) through planting (Sept-Nov).
+
+    !USES:
+!   use clm_time_manager, only : get_curr_date
+
+! local variables
+
+!     real(r8) xfrac
+
+!     integer  kyr    ! year
+!     integer  kmo    ! month (1, ..., 12)
+!     integer  kda    ! day of month (1, ..., 31)
+!     integer  mcsec  ! current seconds of current date (0, ..., 86400)
+!     integer  iyrrot
+!     integer  idiv
+!     integer  p
+
+!     integer irotation
+
+! pointers
+
+!     integer , pointer :: ivt(:) !plant functional type (value from 0:numpft)
+
+!     ivt        => clm3%g%l%c%p%itype
+
+! begin grid
+! in this case, irotation also is the number of crops in a specified rotation
+! slevis: except when irotation = 4
+!
+! assumes that natural vegetation existence arrays are set to 0.0
+! in climate.f (existence)
+
+! look at the fraction remainder to determine which crop should
+! be planted
+
+!     if (irotation == 1) idiv = 3
+!     if (irotation == 2) idiv = 2
+!     if (irotation == 3) idiv = 3
+!     if (irotation == 4) idiv = 3
+
+! In orig code, if not restart, iyrrot=1950. Why? Fert data starts at 1945.
+! Else iyrrot=irstyear, but why not = base year?
+! With iyrrot=irstyear I think xfrac will reset at every restart.
+! In any case, we need to get irstyear to calc xfrac. (slevis)
+
+!     write(11,*) 'irstyear =', irstyear
+!     call shr_sys_flush(11)
+!     iyrrot = irstyear
+!     call get_curr_date(kyr, kmo, kda, mcsec)
+!     xfrac = mod ((kyr - iyrrot), idiv)
+
+!     do p = begp, endp ! replace two lines with crop filter
+!        if (crop(ivt(p)) == 1.) then
+
+! 2:
+! two-crop rotation (standard soybean/corn)
+! alternate between even / odd years
+
+!           if (irotation == 2) then
+!              if (xfrac == 0.0) then
+!                 ivt(p) = ncorn
+!              else
+!                 ivt(p) = nsoybean
+!              end if
+! 3:
+! rotation with 3 crops (corn, soybean, spring wheat)
+
+!           else if (irotation == 3) then
+!              if (xfrac == 0.0) then
+!                 ivt(p) = nsoybean
+!              else if (xfrac == 1.0) then
+!                 ivt(p) = ncorn
+!              else
+!                 ivt(p) = nswheat
+!              end if
+
+! 4:
+! 3 crop rotation with winter wheat and soybean planted in same year
+! winter wheat harvested in year 2
+! maize grown in year 3
+
+!           else if (irotation == 4) then
+
+! soybean planted/harvested
+! winter wheat planted
+
+!              if (xfrac == 0.0) then
+!                 ivt(p) = nsoybean ! NB: ivt(p) (+ other vars?) must change at
+!!                ivt(p) = nwwheat  !     harvest of the first crop; slevis
+                                    !     FOR NOW irotation=4 NOT USED
+! winter wheat harvested in year 2
+
+!              else if (xfrac == 1.0) then
+!                 ivt(p) = nwwheat
+
+! maize planted/harvested in year 3
+
+!              else
+!                 ivt(p) = ncorn
+!              end if
+
+!           end if
+!        end if
+!     end do
+
+  end subroutine rotation
+=======
 ! !IROUTINE: CNBackgroundLitterfall
 !
 ! !INTERFACE:
@@ -52412,11 +57879,365 @@ subroutine CNLivewoodTurnover (num_soilp, filter_soilp)
    end do
 
 end subroutine CNLivewoodTurnover
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
 !BOP
 !
+<<<<<<< HEAD
+! !IROUTINE: vernalization
+!
+! !INTERFACE:
+  subroutine vernalization(p)
+
+! * * * only call for winter wheat * * *
+!
+! subroutine calculates vernalization and photoperiod effects on
+! gdd accumulation in winter wheat varieties. Thermal time accumulation
+! is reduced in 1st period until plant is fully vernalized. During this
+! time of emergence to spikelet formation, photoperiod can also have a
+! drastic effect on plant development.
+
+! local variables
+
+      real(r8) p1d, p1v
+      real(r8) tcrown
+      real(r8) vd, vd1, vd2
+      real(r8) tkil, tbase
+      real(r8) hti
+
+      integer  c,g
+      integer, intent(in) :: p
+
+! pointers
+
+      integer , pointer :: pcolumn(:)  ! pft's column index
+      integer , pointer :: croplive(:)
+      real(r8), pointer :: hdidx(:)
+      real(r8), pointer :: cumvd(:)
+      real(r8), pointer :: vf(:)
+      real(r8), pointer :: gddmaturity(:) ! gdd needed to harvest
+      real(r8), pointer :: huigrain(:)    ! heat unit index needed to reach vegetative maturity
+      real(r8), pointer :: tlai(:)        ! one-sided leaf area index, no burying by snow
+      real(r8), pointer :: t_ref2m(:)
+      real(r8), pointer :: t_ref2m_min(:)
+      real(r8), pointer :: t_ref2m_max(:)
+      real(r8), pointer :: snowdp(:)
+
+      pcolumn     => clm3%g%l%c%p%column
+      croplive    => clm3%g%l%c%p%pps%croplive
+      hdidx       => clm3%g%l%c%p%pps%hdidx
+      cumvd       => clm3%g%l%c%p%pps%cumvd
+      vf          => clm3%g%l%c%p%pps%vf
+      gddmaturity => clm3%g%l%c%p%pps%gddmaturity
+      huigrain    => clm3%g%l%c%p%pps%huigrain
+      tlai        => clm3%g%l%c%p%pps%tlai
+      t_ref2m     => clm3%g%l%c%p%pes%t_ref2m
+      t_ref2m_min => clm3%g%l%c%p%pes%t_ref2m_min
+      t_ref2m_max => clm3%g%l%c%p%pes%t_ref2m_max
+      snowdp      => clm3%g%l%c%cps%snowdp
+
+      ! photoperiod factor calculation
+      ! genetic constant - can be modified
+
+        p1d = 0.004_r8  ! average for genotypes from Ritchey, 1991.
+                        ! Modeling plant & soil systems: Wheat phasic developmt
+        p1v = 0.003_r8  ! average for genotypes from Ritchey, 1991.
+
+        c = pcolumn(p)
+
+        ! for all equations - temperatures must be in degrees (C)
+        ! calculate temperature of crown of crop (e.g., 3 cm soil temperature)
+        ! snow depth in centimeters
+
+        if (t_ref2m(p) < tfrz) then !slevis: t_ref2m inst of td=daily avg (K)
+           tcrown = 2._r8 + (t_ref2m(p) - tfrz) * (0.4_r8 + 0.0018_r8 * &
+                    (min(snowdp(c)*100._r8, 15._r8) - 15._r8)**2)
+        else !slevis: snowdp inst of adsnod=daily average (m)
+           tcrown = t_ref2m(p) - tfrz
+        end if
+
+        ! vernalization factor calculation
+        ! if vf(p) = 1.  then plant is fully vernalized - and thermal time
+        ! accumulation in phase 1 will be unaffected
+        ! refers to gddtsoi & gddplant, defined in the accumulation routines (slevis)
+        ! reset vf, cumvd, and hdidx to 0 at planting of crop (slevis)
+
+        if (t_ref2m_max(p) > tfrz) then
+           if (t_ref2m_min(p) <= tfrz+15._r8) then
+             vd1      = 1.4_r8 - 0.0778_r8 * tcrown
+             vd2      = 0.5_r8 + 13.44_r8 / ((t_ref2m_max(p)-t_ref2m_min(p)+3._r8)**2) * tcrown
+             vd       = max(0._r8, min(1._r8, vd1, vd2))
+             cumvd(p) = cumvd(p) + vd
+           end if
+
+           if (cumvd(p) < 10._r8 .and. t_ref2m_max(p) > tfrz+30._r8) then
+             cumvd(p) = cumvd(p) - 0.5_r8 * (t_ref2m_max(p) - tfrz - 30._r8)
+           end if
+           cumvd(p) = max(0._r8, cumvd(p))       ! must be > 0
+
+           vf(p) = 1._r8 - p1v * (50._r8 - cumvd(p))
+           vf(p) = max(0._r8, min(vf(p), 1._r8)) ! must be between 0 - 1
+        end if
+
+        ! calculate cold hardening of plant
+        ! determines for winter wheat varieties whether the plant has completed
+        ! a period of cold hardening to protect it from freezing temperatures. If
+        ! not, then exposure could result in death or killing of plants.
+
+        ! there are two distinct phases of hardening
+
+        tbase = 0._r8
+        hti = 1._r8
+        if (t_ref2m_min(p) <= tfrz-3._r8 .or. hdidx(p) /= 0._r8) then
+           if (hdidx(p) >= hti) then   ! done with phase 1
+              hdidx(p) = hdidx(p) + 0.083_r8
+              hdidx(p) = min(hdidx(p), hti*2._r8)
+           end if
+
+           if (t_ref2m_max(p) >= tbase + tfrz + 10._r8) then
+              hdidx(p) = hdidx(p) - 0.02_r8 * (t_ref2m_max(p)-tbase-tfrz-10._r8)
+              if (hdidx(p) > hti) hdidx(p) = hdidx(p) - 0.02_r8 * (t_ref2m_max(p)-tbase-tfrz-10._r8)
+              hdidx(p) = max(0._r8, hdidx(p))
+           end if
+
+        else if (tcrown >= tbase-1._r8) then
+           if (tcrown <= tbase+8._r8) then
+              hdidx(p) = hdidx(p) + 0.1_r8 - (tcrown-tbase+3.5_r8)**2 / 506._r8
+              if (hdidx(p) >= hti .and. tcrown <= tbase + 0._r8) then
+                 hdidx(p) = hdidx(p) + 0.083_r8
+                 hdidx(p) = min(hdidx(p), hti*2._r8)
+              end if
+           end if
+
+           if (t_ref2m_max(p) >= tbase + tfrz + 10._r8) then
+              hdidx(p) = hdidx(p) - 0.02_r8 * (t_ref2m_max(p)-tbase-tfrz-10._r8)
+              if (hdidx(p) > hti) hdidx(p) = hdidx(p) - 0.02_r8 * (t_ref2m_max(p)-tbase-tfrz-10._r8)
+              hdidx(p) = max(0._r8, hdidx(p))
+           end if
+        end if
+
+        ! calculate what the wheat killing temperature
+        ! there is a linear inverse relationship between
+        ! hardening of the plant and the killing temperature or
+        ! threshold that the plant can withstand
+        ! when plant is fully-hardened (hdidx = 2), the killing threshold is -18 C
+
+        ! will have to develop some type of relationship that reduces LAI and
+        ! biomass pools in response to cold damaged crop
+
+        if (t_ref2m_min(p) <= tfrz - 6._r8) then
+           tkil = (tbase - 6._r8) - 6._r8 * hdidx(p)
+           if (tkil >= tcrown) then
+              if ((0.95_r8 - 0.02_r8 * (tcrown - tkil)**2) >= 0.02_r8) then
+                 write (6,*)  'crop damaged by cold temperatures at p,c =', p,c
+              else if (tlai(p) > 0._r8) then ! slevis: kill if past phase1
+                 gddmaturity(p) = 0._r8      !         by forcing through
+                 huigrain(p)    = 0._r8      !         harvest
+                 write (6,*)  '95% of crop killed by cold temperatures at p,c =', p,c
+              end if
+           end if
+        end if
+
+  end subroutine vernalization
+#endif
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: CNOnsetGrowth
+!
+! !INTERFACE:
+subroutine CNOnsetGrowth (num_soilp, filter_soilp)
+!
+! !DESCRIPTION:
+! Determines the flux of stored C and N from transfer pools to display
+! pools during the phenological onset period.
+!
+! !USES:
+!ylu removed
+!   use clm_time_manager, only: get_step_size
+     use globals, only: dt
+#ifdef CROP
+   use pftvarcon       , only: npcropmin
+#endif
+
+!
+! !ARGUMENTS:
+   integer, intent(in) :: num_soilp       ! number of soil pfts in filter
+   integer, intent(in) :: filter_soilp(:) ! filter for soil pfts
+!
+! !CALLED FROM:
+! subroutine CNPhenology
+!
+! !REVISION HISTORY:
+! 10/27/03: Created by Peter Thornton
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+!
+   integer , pointer :: ivt(:)             ! pft vegetation type
+   real(r8), pointer :: onset_flag(:)      ! onset flag
+   real(r8), pointer :: onset_counter(:)   ! onset days counter
+   real(r8), pointer :: leafc_xfer(:)      ! (kgC/m2) leaf C transfer
+   real(r8), pointer :: frootc_xfer(:)     ! (kgC/m2) fine root C transfer
+   real(r8), pointer :: livestemc_xfer(:)  ! (kgC/m2) live stem C transfer
+   real(r8), pointer :: deadstemc_xfer(:)  ! (kgC/m2) dead stem C transfer
+   real(r8), pointer :: livecrootc_xfer(:) ! (kgC/m2) live coarse root C transfer
+   real(r8), pointer :: deadcrootc_xfer(:) ! (kgC/m2) dead coarse root C transfer
+   real(r8), pointer :: leafn_xfer(:)      ! (kgN/m2) leaf N transfer
+   real(r8), pointer :: frootn_xfer(:)     ! (kgN/m2) fine root N transfer
+   real(r8), pointer :: livestemn_xfer(:)  ! (kgN/m2) live stem N transfer
+   real(r8), pointer :: deadstemn_xfer(:)  ! (kgN/m2) dead stem N transfer
+   real(r8), pointer :: livecrootn_xfer(:) ! (kgN/m2) live coarse root N transfer
+   real(r8), pointer :: deadcrootn_xfer(:) ! (kgN/m2) dead coarse root N transfer
+   real(r8), pointer :: woody(:)           ! binary flag for woody lifeform (1=woody, 0=not woody)
+   real(r8), pointer :: bgtr(:)            ! background transfer growth rate (1/s)
+!
+! local pointers to implicit in/out scalars
+!
+   real(r8), pointer :: leafc_xfer_to_leafc(:)
+   real(r8), pointer :: frootc_xfer_to_frootc(:)
+   real(r8), pointer :: livestemc_xfer_to_livestemc(:)
+   real(r8), pointer :: deadstemc_xfer_to_deadstemc(:)
+   real(r8), pointer :: livecrootc_xfer_to_livecrootc(:)
+   real(r8), pointer :: deadcrootc_xfer_to_deadcrootc(:)
+   real(r8), pointer :: leafn_xfer_to_leafn(:)
+   real(r8), pointer :: frootn_xfer_to_frootn(:)
+   real(r8), pointer :: livestemn_xfer_to_livestemn(:)
+#if (defined CROP) 
+   real(r8), pointer :: grainn_xfer_to_grainn(:)
+   real(r8), pointer :: grainn_xfer(:)
+#endif  
+
+   real(r8), pointer :: deadstemn_xfer_to_deadstemn(:)
+   real(r8), pointer :: livecrootn_xfer_to_livecrootn(:)
+   real(r8), pointer :: deadcrootn_xfer_to_deadcrootn(:)
+!
+! local pointers to implicit out scalars
+!
+! !OTHER LOCAL VARIABLES:
+   integer :: p            ! indices
+   integer :: fp           ! lake filter pft index
+!   real(r8):: dt           ! radiation time step delta t (seconds)
+   real(r8):: t1           ! temporary variable
+
+!EOP
+!-----------------------------------------------------------------------
+   ! assign local pointers to derived type arrays (in)
+    ivt                            => clm3%g%l%c%p%itype
+    onset_flag                     => clm3%g%l%c%p%pepv%onset_flag
+    onset_counter                  => clm3%g%l%c%p%pepv%onset_counter
+    leafc_xfer                     => clm3%g%l%c%p%pcs%leafc_xfer
+    frootc_xfer                    => clm3%g%l%c%p%pcs%frootc_xfer
+    livestemc_xfer                 => clm3%g%l%c%p%pcs%livestemc_xfer
+    deadstemc_xfer                 => clm3%g%l%c%p%pcs%deadstemc_xfer
+    livecrootc_xfer                => clm3%g%l%c%p%pcs%livecrootc_xfer
+    deadcrootc_xfer                => clm3%g%l%c%p%pcs%deadcrootc_xfer
+    leafn_xfer                     => clm3%g%l%c%p%pns%leafn_xfer
+    frootn_xfer                    => clm3%g%l%c%p%pns%frootn_xfer
+    livestemn_xfer                 => clm3%g%l%c%p%pns%livestemn_xfer
+    deadstemn_xfer                 => clm3%g%l%c%p%pns%deadstemn_xfer
+    livecrootn_xfer                => clm3%g%l%c%p%pns%livecrootn_xfer
+    deadcrootn_xfer                => clm3%g%l%c%p%pns%deadcrootn_xfer
+    bgtr                           => clm3%g%l%c%p%pepv%bgtr
+    woody                          => pftcon%woody
+
+   ! assign local pointers to derived type arrays (out)
+    leafc_xfer_to_leafc            => clm3%g%l%c%p%pcf%leafc_xfer_to_leafc
+    frootc_xfer_to_frootc          => clm3%g%l%c%p%pcf%frootc_xfer_to_frootc
+    livestemc_xfer_to_livestemc    => clm3%g%l%c%p%pcf%livestemc_xfer_to_livestemc
+    deadstemc_xfer_to_deadstemc    => clm3%g%l%c%p%pcf%deadstemc_xfer_to_deadstemc
+    livecrootc_xfer_to_livecrootc  => clm3%g%l%c%p%pcf%livecrootc_xfer_to_livecrootc
+    deadcrootc_xfer_to_deadcrootc  => clm3%g%l%c%p%pcf%deadcrootc_xfer_to_deadcrootc
+    leafn_xfer_to_leafn            => clm3%g%l%c%p%pnf%leafn_xfer_to_leafn
+    frootn_xfer_to_frootn          => clm3%g%l%c%p%pnf%frootn_xfer_to_frootn
+    livestemn_xfer_to_livestemn    => clm3%g%l%c%p%pnf%livestemn_xfer_to_livestemn
+    deadstemn_xfer_to_deadstemn    => clm3%g%l%c%p%pnf%deadstemn_xfer_to_deadstemn
+    livecrootn_xfer_to_livecrootn  => clm3%g%l%c%p%pnf%livecrootn_xfer_to_livecrootn
+    deadcrootn_xfer_to_deadcrootn  => clm3%g%l%c%p%pnf%deadcrootn_xfer_to_deadcrootn
+#if (defined CROP)
+    grainn_xfer_to_grainn          => clm3%g%l%c%p%pnf%grainn_xfer_to_grainn
+    grainn_xfer                    => clm3%g%l%c%p%pns%grainn_xfer
+#endif
+
+   ! set time steps
+!   dt = real( get_step_size(), r8 )
+
+   ! pft loop
+   do fp = 1,num_soilp
+      p = filter_soilp(fp)
+
+      ! only calculate these fluxes during onset period
+      if (onset_flag(p) == 1._r8) then
+
+         ! The transfer rate is a linearly decreasing function of time,
+         ! going to zero on the last timestep of the onset period
+
+         if (onset_counter(p) == dt) then
+             t1 = 1.0_r8 / dt
+         else
+             t1 = 2.0_r8 / (onset_counter(p))
+         end if
+         leafc_xfer_to_leafc(p)   = t1 * leafc_xfer(p)
+         frootc_xfer_to_frootc(p) = t1 * frootc_xfer(p)
+         leafn_xfer_to_leafn(p)   = t1 * leafn_xfer(p)
+         frootn_xfer_to_frootn(p) = t1 * frootn_xfer(p)
+         if (woody(ivt(p)) == 1.0_r8) then
+             livestemc_xfer_to_livestemc(p)   = t1 * livestemc_xfer(p)
+             deadstemc_xfer_to_deadstemc(p)   = t1 * deadstemc_xfer(p)
+             livecrootc_xfer_to_livecrootc(p) = t1 * livecrootc_xfer(p)
+             deadcrootc_xfer_to_deadcrootc(p) = t1 * deadcrootc_xfer(p)
+             livestemn_xfer_to_livestemn(p)   = t1 * livestemn_xfer(p)
+             deadstemn_xfer_to_deadstemn(p)   = t1 * deadstemn_xfer(p)
+             livecrootn_xfer_to_livecrootn(p) = t1 * livecrootn_xfer(p)
+             deadcrootn_xfer_to_deadcrootn(p) = t1 * deadcrootn_xfer(p)
+          end if
+!ylu add calculation on grainn_xfer_to_grainn,need to check with Sam
+#if (defined CROP)
+      if (ivt(p) >= npcropmin) then 
+             grainn_xfer_to_grainn(p) = t1 * grainn_xfer(p)
+      end if
+#endif
+
+      end if ! end if onset period
+
+      ! calculate the background rate of transfer growth (used for stress
+      ! deciduous algorithm). In this case, all of the mass in the transfer
+      ! pools should be moved to displayed growth in each timestep.
+
+      if (bgtr(p) > 0._r8) then
+         leafc_xfer_to_leafc(p)   = leafc_xfer(p) / dt
+         frootc_xfer_to_frootc(p) = frootc_xfer(p) / dt
+         leafn_xfer_to_leafn(p)   = leafn_xfer(p) / dt
+         frootn_xfer_to_frootn(p) = frootn_xfer(p) / dt
+         if (woody(ivt(p)) == 1.0_r8) then
+             livestemc_xfer_to_livestemc(p)   = livestemc_xfer(p) / dt
+             deadstemc_xfer_to_deadstemc(p)   = deadstemc_xfer(p) / dt
+             livecrootc_xfer_to_livecrootc(p) = livecrootc_xfer(p) / dt
+             deadcrootc_xfer_to_deadcrootc(p) = deadcrootc_xfer(p) / dt
+             livestemn_xfer_to_livestemn(p)   = livestemn_xfer(p) / dt
+             deadstemn_xfer_to_deadstemn(p)   = deadstemn_xfer(p) / dt
+             livecrootn_xfer_to_livecrootn(p) = livecrootn_xfer(p) / dt
+             deadcrootn_xfer_to_deadcrootn(p) = deadcrootn_xfer(p) / dt
+         end if
+!ylu add calculation on grainn_xfer_to_grainn,need to check with Sam
+#if (defined CROP)
+      if (ivt(p) >= npcropmin) then
+             grainn_xfer_to_grainn(p) = grainn_xfer(p) / dt
+      end if
+#endif
+
+
+      end if ! end if bgtr
+
+   end do ! end pft loop
+
+end subroutine CNOnsetGrowth
+!-----------------------------------------------------------------------
+=======
 ! !IROUTINE: CNLitterToColumn
 !
 ! !INTERFACE:
@@ -53459,6 +59280,2671 @@ end module CNPrecisionControlMod
 module CNSummaryMod
 
 #ifdef CN
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+
+!-----------------------------------------------------------------------
+!BOP
+!
+<<<<<<< HEAD
+! !IROUTINE: CNOffsetLitterfall
+!
+! !INTERFACE:
+subroutine CNOffsetLitterfall (num_soilp, filter_soilp)
+!
+! !DESCRIPTION:
+! Determines the flux of C and N from displayed pools to litter
+! pools during the phenological offset period.
+!
+! !USES:
+!ylu removed
+!   use clm_time_manager, only: get_step_size
+ use globals, only: dt
+#ifdef CROP
+   use pftvarcon       , only: npcropmin
+#endif
+!
+! !ARGUMENTS:
+   integer, intent(in) :: num_soilp       ! number of soil pfts in filter
+   integer, intent(in) :: filter_soilp(:) ! filter for soil pfts
+!
+! !CALLED FROM:
+! subroutine CNPhenology
+!
+! !REVISION HISTORY:
+! 10/27/03: Created by Peter Thornton
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+!
+   integer , pointer :: ivt(:)                   ! pft vegetation type
+   real(r8), pointer :: offset_flag(:)           ! offset flag
+   real(r8), pointer :: offset_counter(:)        ! offset days counter
+   real(r8), pointer :: leafc(:)                 ! (kgC/m2) leaf C
+   real(r8), pointer :: frootc(:)                ! (kgC/m2) fine root C
+   real(r8), pointer :: cpool_to_leafc(:)
+   real(r8), pointer :: cpool_to_frootc(:)
+#if (defined CROP)
+!  integer , pointer :: pcolumn(:)               ! pft's column index
+   real(r8), pointer :: grainc(:)                ! (kgC/m2) grain C
+   real(r8), pointer :: livestemc(:)             ! (kgC/m2) livestem C
+   real(r8), pointer :: cpool_to_grainc(:)
+   real(r8), pointer :: cpool_to_livestemc(:)
+   real(r8), pointer :: livewdcn(:)              ! live wood C:N (gC/gN)
+   real(r8), pointer :: graincn(:)               ! grain C:N (gC/gN)
+#endif
+   real(r8), pointer :: leafcn(:)                ! leaf C:N (gC/gN)
+   real(r8), pointer :: lflitcn(:)               ! leaf litter C:N (gC/gN)
+   real(r8), pointer :: frootcn(:)               ! fine root C:N (gC/gN)
+!
+! local pointers to implicit in/out scalars
+!
+   real(r8), pointer :: prev_leafc_to_litter(:)  ! previous timestep leaf C litterfall flux (gC/m2/s)
+   real(r8), pointer :: prev_frootc_to_litter(:) ! previous timestep froot C litterfall flux (gC/m2/s)
+   real(r8), pointer :: leafc_to_litter(:)
+   real(r8), pointer :: frootc_to_litter(:)
+   real(r8), pointer :: leafn_to_litter(:)
+   real(r8), pointer :: leafn_to_retransn(:)
+   real(r8), pointer :: frootn_to_litter(:)
+#if (defined CROP)
+   real(r8), pointer :: livestemc_to_litter(:)
+   real(r8), pointer :: grainc_to_food(:)
+   real(r8), pointer :: livestemn_to_litter(:)
+   real(r8), pointer :: grainn_to_food(:)
+#endif
+!
+! local pointers to implicit out scalars
+!
+!
+! !OTHER LOCAL VARIABLES:
+   integer :: p, c         ! indices
+   integer :: fp           ! lake filter pft index
+!   real(r8):: dt           ! radiation time step delta t (seconds)
+   real(r8):: t1           ! temporary variable
+
+!EOP
+!-----------------------------------------------------------------------
+   ! assign local pointers to derived type arrays (in)
+    ivt                            => clm3%g%l%c%p%itype
+    offset_flag                    => clm3%g%l%c%p%pepv%offset_flag
+    offset_counter                 => clm3%g%l%c%p%pepv%offset_counter
+    leafc                          => clm3%g%l%c%p%pcs%leafc
+    frootc                         => clm3%g%l%c%p%pcs%frootc
+#if (defined CROP)
+    grainc                         => clm3%g%l%c%p%pcs%grainc
+    livestemc                      => clm3%g%l%c%p%pcs%livestemc
+    cpool_to_grainc                => clm3%g%l%c%p%pcf%cpool_to_grainc
+    cpool_to_livestemc             => clm3%g%l%c%p%pcf%cpool_to_livestemc
+#endif
+    cpool_to_leafc                 => clm3%g%l%c%p%pcf%cpool_to_leafc
+    cpool_to_frootc                => clm3%g%l%c%p%pcf%cpool_to_frootc
+    leafcn                         => pftcon%leafcn
+    lflitcn                        => pftcon%lflitcn
+    frootcn                        => pftcon%frootcn
+#if (defined CROP)
+    livewdcn                       => pftcon%livewdcn
+    graincn                        => pftcon%graincn
+#endif
+
+   ! assign local pointers to derived type arrays (out)
+    prev_leafc_to_litter           => clm3%g%l%c%p%pepv%prev_leafc_to_litter
+    prev_frootc_to_litter          => clm3%g%l%c%p%pepv%prev_frootc_to_litter
+    leafc_to_litter                => clm3%g%l%c%p%pcf%leafc_to_litter
+    frootc_to_litter               => clm3%g%l%c%p%pcf%frootc_to_litter
+#if (defined CROP)
+    livestemc_to_litter            => clm3%g%l%c%p%pcf%livestemc_to_litter
+    grainc_to_food                 => clm3%g%l%c%p%pcf%grainc_to_food
+    livestemn_to_litter            => clm3%g%l%c%p%pnf%livestemn_to_litter
+    grainn_to_food                 => clm3%g%l%c%p%pnf%grainn_to_food
+#endif
+    leafn_to_litter                => clm3%g%l%c%p%pnf%leafn_to_litter
+    leafn_to_retransn              => clm3%g%l%c%p%pnf%leafn_to_retransn
+    frootn_to_litter               => clm3%g%l%c%p%pnf%frootn_to_litter
+
+   ! set time steps
+!   dt = real( get_step_size(), r8 )
+
+   ! The litterfall transfer rate starts at 0.0 and increases linearly
+   ! over time, with displayed growth going to 0.0 on the last day of litterfall
+
+   do fp = 1,num_soilp
+      p = filter_soilp(fp)
+
+      ! only calculate fluxes during offset period
+      if (offset_flag(p) == 1._r8) then
+
+         if (offset_counter(p) == dt) then
+             t1 = 1.0_r8 / dt
+             leafc_to_litter(p)  = t1 * leafc(p)  + cpool_to_leafc(p)
+             frootc_to_litter(p) = t1 * frootc(p) + cpool_to_frootc(p)
+#if (defined CROP)
+             ! this assumes that offset_counter == dt for crops
+             ! if this were ever changed, we'd need to add code to the "else"
+             if (ivt(p) >= npcropmin) then
+                grainc_to_food(p) = t1 * grainc(p)  + cpool_to_grainc(p) 
+                livestemc_to_litter(p) = t1 * livestemc(p)  + cpool_to_livestemc(p)
+             end if
+#endif
+         else
+             t1 = dt * 2.0_r8 / (offset_counter(p) * offset_counter(p))
+             leafc_to_litter(p)  = prev_leafc_to_litter(p)  + t1*(leafc(p)  - prev_leafc_to_litter(p)*offset_counter(p))
+             frootc_to_litter(p) = prev_frootc_to_litter(p) + t1*(frootc(p) - prev_frootc_to_litter(p)*offset_counter(p))
+         end if
+
+         ! calculate the leaf N litterfall and retranslocation
+         leafn_to_litter(p)   = leafc_to_litter(p)  / lflitcn(ivt(p))
+         leafn_to_retransn(p) = (leafc_to_litter(p) / leafcn(ivt(p))) - leafn_to_litter(p)
+
+         ! calculate fine root N litterfall (no retranslocation of fine root N)
+         frootn_to_litter(p) = frootc_to_litter(p) / frootcn(ivt(p))
+
+#if (defined CROP)
+         if (ivt(p) >= npcropmin) then
+            livestemn_to_litter(p) = livestemc_to_litter(p) / livewdcn(ivt(p))
+            grainn_to_food(p) = grainc_to_food(p) / graincn(ivt(p))
+         end if
+#endif
+
+         ! save the current litterfall fluxes
+         prev_leafc_to_litter(p)  = leafc_to_litter(p)
+         prev_frootc_to_litter(p) = frootc_to_litter(p)
+
+      end if ! end if offset period
+
+   end do ! end pft loop
+
+end subroutine CNOffsetLitterfall
+!-----------------------------------------------------------------------
+=======
+! !MODULE: CNSummaryMod
+!
+! !DESCRIPTION:
+! Module for carbon and nitrogen summary calculations
+!
+! !USES:
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    implicit none
+    save
+    private
+! !PUBLIC MEMBER FUNCTIONS:
+    public :: CSummary
+    public :: NSummary
+!
+! !REVISION HISTORY:
+! 4/23/2004: Created by Peter Thornton
+!
+!EOP
+!-----------------------------------------------------------------------
+
+contains
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+
+!-----------------------------------------------------------------------
+!BOP
+!
+<<<<<<< HEAD
+! !IROUTINE: CNBackgroundLitterfall
+!
+! !INTERFACE:
+subroutine CNBackgroundLitterfall (num_soilp, filter_soilp)
+!
+! !DESCRIPTION:
+! Determines the flux of C and N from displayed pools to litter
+! pools as the result of background litter fall.
+!
+! !USES:
+!ylu removed
+!   use clm_time_manager, only: get_step_size
+ use globals, only: dt
+!
+! !ARGUMENTS:
+=======
+! !IROUTINE: CSummary
+!
+! !INTERFACE:
+subroutine CSummary(num_soilc, filter_soilc, num_soilp, filter_soilp)
+!
+! !DESCRIPTION:
+! On the radiation time step, perform pft and column-level carbon
+! summary calculations
+!
+! !USES:
+   use clmtype
+!ylu changed
+!   use pft2colMod, only: p2c
+   use subgridAveMod, only : p2c
+!ylu remove
+!   use clm_varctl, only: iulog
+!   use shr_sys_mod, only: shr_sys_flush
+!
+! !ARGUMENTS:
+   implicit none
+   integer, intent(in) :: num_soilc       ! number of soil columns in filter
+   integer, intent(in) :: filter_soilc(:) ! filter for soil columns
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+   integer, intent(in) :: num_soilp       ! number of soil pfts in filter
+   integer, intent(in) :: filter_soilp(:) ! filter for soil pfts
+!
+! !CALLED FROM:
+<<<<<<< HEAD
+! subroutine CNPhenology
+!
+! !REVISION HISTORY:
+! 10/2/03: Created by Peter Thornton
+! 10/24/03, Peter Thornton: migrated to vector data structures
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+!
+   ! pft level
+   integer , pointer :: ivt(:)       ! pft vegetation type
+   real(r8), pointer :: bglfr(:)     ! background litterfall rate (1/s)
+   real(r8), pointer :: leafc(:)     ! (kgC/m2) leaf C
+   real(r8), pointer :: frootc(:)    ! (kgC/m2) fine root C
+   ! ecophysiological constants
+   real(r8), pointer :: leafcn(:)    ! leaf C:N (gC/gN)
+   real(r8), pointer :: lflitcn(:)   ! leaf litter C:N (gC/gN)
+   real(r8), pointer :: frootcn(:)   ! fine root C:N (gC/gN)
+!
+! local pointers to implicit in/out scalars
+!
+   real(r8), pointer :: leafc_to_litter(:)
+   real(r8), pointer :: frootc_to_litter(:)
+   real(r8), pointer :: leafn_to_litter(:)
+   real(r8), pointer :: leafn_to_retransn(:)
+   real(r8), pointer :: frootn_to_litter(:)
+=======
+! subroutine CNEcosystemDyn
+!
+! !REVISION HISTORY:
+! 12/9/03: Created by Peter Thornton
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+   real(r8), pointer :: col_fire_closs(:)     ! (gC/m2/s) total column-level fire C loss
+   real(r8), pointer :: er(:)                 ! (gC/m2/s) total ecosystem respiration, autotrophic + heterotrophic
+   real(r8), pointer :: hr(:)                 ! (gC/m2/s) total heterotrophic respiration
+   real(r8), pointer :: litfire(:)            ! (gC/m2/s) litter fire losses
+   real(r8), pointer :: lithr(:)              ! (gC/m2/s) litter heterotrophic respiration 
+   real(r8), pointer :: litr1_hr(:)       
+   real(r8), pointer :: litr2_hr(:)        
+   real(r8), pointer :: litr3_hr(:)        
+   real(r8), pointer :: m_cwdc_to_fire(:)
+   real(r8), pointer :: m_litr1c_to_fire(:)             
+   real(r8), pointer :: m_litr2c_to_fire(:)             
+   real(r8), pointer :: m_litr3c_to_fire(:)             
+   real(r8), pointer :: nee(:)                ! (gC/m2/s) net ecosystem exchange of carbon, includes fire, land-use, harvest, and hrv_xsmrpool flux, positive for source
+   real(r8), pointer :: nep(:)                ! (gC/m2/s) net ecosystem production, excludes fire, land-use, and harvest flux, positive for sink
+   real(r8), pointer :: nbp(:)                ! (gC/m2/s) net biome production, includes fire, land-use, and harvest flux, positive for sink
+   real(r8), pointer :: col_ar(:)             ! (gC/m2/s) autotrophic respiration (MR + GR)
+   real(r8), pointer :: col_gpp(:)            ! GPP flux before downregulation (gC/m2/s)
+   real(r8), pointer :: col_npp(:)            ! (gC/m2/s) net primary production
+   real(r8), pointer :: col_pft_fire_closs(:) ! (gC/m2/s) total pft-level fire C loss 
+   real(r8), pointer :: col_litfall(:)        ! (gC/m2/s) total pft-level litterfall C loss 
+   real(r8), pointer :: col_rr(:)             ! (gC/m2/s) root respiration (fine root MR + total root GR)
+   real(r8), pointer :: col_vegfire(:)        ! (gC/m2/s) pft-level fire loss (obsolete, mark for removal)
+   real(r8), pointer :: col_wood_harvestc(:)
+   real(r8), pointer :: soil1_hr(:)        
+   real(r8), pointer :: soil2_hr(:)        
+   real(r8), pointer :: soil3_hr(:) 
+   real(r8), pointer :: soil4_hr(:) 
+   real(r8), pointer :: somfire(:)            ! (gC/m2/s) soil organic matter fire losses
+   real(r8), pointer :: somhr(:)              ! (gC/m2/s) soil organic matter heterotrophic respiration
+   real(r8), pointer :: sr(:)                 ! (gC/m2/s) total soil respiration (HR + root resp)
+   real(r8), pointer :: totfire(:)            ! (gC/m2/s) total ecosystem fire losses
+   real(r8), pointer :: cwdc(:)               ! (gC/m2) coarse woody debris C
+   real(r8), pointer :: litr1c(:)             ! (gC/m2) litter labile C
+   real(r8), pointer :: litr2c(:)             ! (gC/m2) litter cellulose C
+   real(r8), pointer :: litr3c(:)             ! (gC/m2) litter lignin C
+   real(r8), pointer :: col_totpftc(:)        ! (gC/m2) total pft-level carbon, including cpool
+   real(r8), pointer :: col_totvegc(:)        ! (gC/m2) total vegetation carbon, excluding cpool
+   real(r8), pointer :: soil1c(:)             ! (gC/m2) soil organic matter C (fast pool)
+   real(r8), pointer :: soil2c(:)             ! (gC/m2) soil organic matter C (medium pool)
+   real(r8), pointer :: soil3c(:)             ! (gC/m2) soil organic matter C (slow pool)
+   real(r8), pointer :: soil4c(:)             ! (gC/m2) soil organic matter C (slowest pool)
+   real(r8), pointer :: col_ctrunc(:)         ! (gC/m2) column-level sink for C truncation
+   real(r8), pointer :: totcolc(:)            ! (gC/m2) total column carbon, incl veg and cpool
+   real(r8), pointer :: totecosysc(:)         ! (gC/m2) total ecosystem carbon, incl veg but excl cpool
+   real(r8), pointer :: totlitc(:)            ! (gC/m2) total litter carbon
+   real(r8), pointer :: totsomc(:)            ! (gC/m2) total soil organic matter carbon
+   real(r8), pointer :: agnpp(:)              ! (gC/m2/s) aboveground NPP
+   real(r8), pointer :: ar(:)                 ! (gC/m2/s) autotrophic respiration (MR + GR)
+   real(r8), pointer :: bgnpp(:)              ! (gC/m2/s) belowground NPP
+#if (defined CROP)
+   real(r8), pointer :: xsmrpool_to_atm(:)         
+   real(r8), pointer :: cpool_grain_gr(:)         
+   real(r8), pointer :: cpool_grain_storage_gr(:) 
+   real(r8), pointer :: cpool_to_grainc(:)         
+   real(r8), pointer :: grainc_xfer_to_grainc(:) 
+   real(r8), pointer :: transfer_grain_gr(:)      
+   real(r8), pointer :: grainc_to_food(:)      
+   real(r8), pointer :: livestemc_to_litter(:)      
+   real(r8), pointer :: grainc(:)             ! (gC/m2) grain C
+   real(r8), pointer :: grainc_storage(:)     ! (gC/m2) grain C storage
+   real(r8), pointer :: grainc_xfer(:)        ! (gC/m2) grain C transfer
+#endif
+   real(r8), pointer :: cpool_deadcroot_gr(:)        
+   real(r8), pointer :: cpool_deadcroot_storage_gr(:)
+   real(r8), pointer :: cpool_deadstem_gr(:)         
+   real(r8), pointer :: cpool_deadstem_storage_gr(:) 
+   real(r8), pointer :: cpool_froot_gr(:)            
+   real(r8), pointer :: cpool_froot_storage_gr(:)    
+   real(r8), pointer :: cpool_leaf_gr(:)             
+   real(r8), pointer :: cpool_leaf_storage_gr(:)     
+   real(r8), pointer :: cpool_livecroot_gr(:)        
+   real(r8), pointer :: cpool_livecroot_storage_gr(:)
+   real(r8), pointer :: cpool_livestem_gr(:)         
+   real(r8), pointer :: cpool_livestem_storage_gr(:) 
+   real(r8), pointer :: cpool_to_deadcrootc(:)        
+   real(r8), pointer :: cpool_to_deadstemc(:)         
+   real(r8), pointer :: cpool_to_frootc(:)            
+   real(r8), pointer :: cpool_to_leafc(:)             
+   real(r8), pointer :: cpool_to_livecrootc(:)        
+   real(r8), pointer :: cpool_to_livestemc(:)         
+   real(r8), pointer :: current_gr(:)         ! (gC/m2/s) growth resp for new growth displayed in this timestep
+   real(r8), pointer :: deadcrootc_xfer_to_deadcrootc(:)
+   real(r8), pointer :: deadstemc_xfer_to_deadstemc(:) 
+   real(r8), pointer :: frootc_to_litter(:)
+   real(r8), pointer :: frootc_xfer_to_frootc(:)       
+   real(r8), pointer :: froot_mr(:)     
+   real(r8), pointer :: gpp(:)                !GPP flux before downregulation (gC/m2/s)
+   real(r8), pointer :: gr(:)                 ! (gC/m2/s) total growth respiration
+   real(r8), pointer :: leafc_to_litter(:)
+   real(r8), pointer :: leafc_xfer_to_leafc(:)         
+   real(r8), pointer :: leaf_mr(:)
+   real(r8), pointer :: litfall(:)            ! (gC/m2/s) litterfall (leaves and fine roots)
+   real(r8), pointer :: livecrootc_xfer_to_livecrootc(:)
+   real(r8), pointer :: livecroot_mr(:)
+   real(r8), pointer :: livestemc_xfer_to_livestemc(:) 
+   real(r8), pointer :: livestem_mr(:)  
+   real(r8), pointer :: m_deadcrootc_storage_to_fire(:) 
+   real(r8), pointer :: m_deadcrootc_storage_to_litter(:) 
+   real(r8), pointer :: m_deadcrootc_to_fire(:)         
+   real(r8), pointer :: m_deadcrootc_to_litter(:)           
+   real(r8), pointer :: m_deadcrootc_to_litter_fire(:)         
+   real(r8), pointer :: m_deadcrootc_xfer_to_fire(:)
+   real(r8), pointer :: m_deadcrootc_xfer_to_litter(:)
+   real(r8), pointer :: m_deadstemc_storage_to_fire(:)  
+   real(r8), pointer :: m_deadstemc_storage_to_litter(:)  
+   real(r8), pointer :: m_deadstemc_to_fire(:)
+   real(r8), pointer :: m_deadstemc_to_litter(:)            
+   real(r8), pointer :: m_deadstemc_to_litter_fire(:)
+   real(r8), pointer :: m_deadstemc_xfer_to_fire(:) 
+   real(r8), pointer :: m_deadstemc_xfer_to_litter(:) 
+   real(r8), pointer :: m_frootc_storage_to_fire(:)     
+   real(r8), pointer :: m_frootc_storage_to_litter(:)     
+   real(r8), pointer :: m_frootc_to_fire(:)             
+   real(r8), pointer :: m_frootc_to_litter(:)             
+   real(r8), pointer :: m_frootc_xfer_to_fire(:)    
+   real(r8), pointer :: m_frootc_xfer_to_litter(:)    
+   real(r8), pointer :: m_gresp_storage_to_fire(:)      
+   real(r8), pointer :: m_gresp_storage_to_litter(:)      
+   real(r8), pointer :: m_gresp_xfer_to_fire(:)    
+   real(r8), pointer :: m_gresp_xfer_to_litter(:)
+   real(r8), pointer :: m_leafc_storage_to_fire(:)      
+   real(r8), pointer :: m_leafc_storage_to_litter(:)      
+   real(r8), pointer :: m_leafc_to_fire(:)             
+   real(r8), pointer :: m_leafc_to_litter(:)
+   real(r8), pointer :: m_leafc_xfer_to_fire(:)     
+   real(r8), pointer :: m_leafc_xfer_to_litter(:)    
+   real(r8), pointer :: m_livecrootc_storage_to_fire(:) 
+   real(r8), pointer :: m_livecrootc_storage_to_litter(:) 
+   real(r8), pointer :: m_livecrootc_to_fire(:)         
+   real(r8), pointer :: m_livecrootc_to_litter(:)           
+   real(r8), pointer :: m_livecrootc_xfer_to_fire(:)
+   real(r8), pointer :: m_livecrootc_xfer_to_litter(:)
+   real(r8), pointer :: m_livestemc_storage_to_fire(:)  
+   real(r8), pointer :: m_livestemc_storage_to_litter(:)  
+   real(r8), pointer :: m_livestemc_to_fire(:)          
+   real(r8), pointer :: m_livestemc_to_litter(:)            
+   real(r8), pointer :: m_livestemc_xfer_to_fire(:) 
+   real(r8), pointer :: m_livestemc_xfer_to_litter(:) 
+   real(r8), pointer :: hrv_leafc_to_litter(:)              
+   real(r8), pointer :: hrv_leafc_storage_to_litter(:)      
+   real(r8), pointer :: hrv_leafc_xfer_to_litter(:)         
+   real(r8), pointer :: hrv_frootc_to_litter(:)             
+   real(r8), pointer :: hrv_frootc_storage_to_litter(:)     
+   real(r8), pointer :: hrv_frootc_xfer_to_litter(:)        
+   real(r8), pointer :: hrv_livestemc_to_litter(:)          
+   real(r8), pointer :: hrv_livestemc_storage_to_litter(:)  
+   real(r8), pointer :: hrv_livestemc_xfer_to_litter(:)     
+   real(r8), pointer :: hrv_deadstemc_to_prod10c(:)         
+   real(r8), pointer :: hrv_deadstemc_to_prod100c(:)        
+   real(r8), pointer :: hrv_deadstemc_storage_to_litter(:)  
+   real(r8), pointer :: hrv_deadstemc_xfer_to_litter(:)     
+   real(r8), pointer :: hrv_livecrootc_to_litter(:)         
+   real(r8), pointer :: hrv_livecrootc_storage_to_litter(:) 
+   real(r8), pointer :: hrv_livecrootc_xfer_to_litter(:)    
+   real(r8), pointer :: hrv_deadcrootc_to_litter(:)         
+   real(r8), pointer :: hrv_deadcrootc_storage_to_litter(:) 
+   real(r8), pointer :: hrv_deadcrootc_xfer_to_litter(:)    
+   real(r8), pointer :: hrv_gresp_storage_to_litter(:)      
+   real(r8), pointer :: hrv_gresp_xfer_to_litter(:)         
+   real(r8), pointer :: hrv_xsmrpool_to_atm(:)              
+   real(r8), pointer :: col_hrv_xsmrpool_to_atm(:)              
+   real(r8), pointer :: mr(:)                 ! (gC/m2/s) maintenance respiration
+   real(r8), pointer :: npp(:)                ! (gC/m2/s) net primary production
+   real(r8), pointer :: pft_fire_closs(:)     ! (gC/m2/s) total pft-level fire C loss 
+   real(r8), pointer :: psnshade_to_cpool(:)
+   real(r8), pointer :: psnsun_to_cpool(:) 
+   real(r8), pointer :: rr(:)                 ! (gC/m2/s) root respiration (fine root MR + total root GR)
+   real(r8), pointer :: storage_gr(:)         ! (gC/m2/s) growth resp for growth sent to storage for later display
+   real(r8), pointer :: transfer_deadcroot_gr(:)
+   real(r8), pointer :: transfer_deadstem_gr(:)      
+   real(r8), pointer :: transfer_froot_gr(:)         
+   real(r8), pointer :: transfer_gr(:)        ! (gC/m2/s) growth resp for transfer growth displayed in this timestep
+   real(r8), pointer :: transfer_leaf_gr(:)          
+   real(r8), pointer :: transfer_livecroot_gr(:)     
+   real(r8), pointer :: transfer_livestem_gr(:)      
+   real(r8), pointer :: wood_harvestc(:)      ! (gC/m2/s) pft-level wood harvest (to product pools)
+   real(r8), pointer :: vegfire(:)            ! (gC/m2/s) pft-level fire loss (obsolete, mark for removal)
+   real(r8), pointer :: cpool(:)              ! (gC/m2) temporary photosynthate C pool
+   real(r8), pointer :: xsmrpool(:)           ! (gC/m2) temporary photosynthate C pool
+   real(r8), pointer :: pft_ctrunc(:)         ! (gC/m2) pft-level sink for C truncation
+   real(r8), pointer :: deadcrootc(:)         ! (gC/m2) dead coarse root C
+   real(r8), pointer :: deadcrootc_storage(:) ! (gC/m2) dead coarse root C storage
+   real(r8), pointer :: deadcrootc_xfer(:)    ! (gC/m2) dead coarse root C transfer
+   real(r8), pointer :: deadstemc(:)          ! (gC/m2) dead stem C
+   real(r8), pointer :: deadstemc_storage(:)  ! (gC/m2) dead stem C storage
+   real(r8), pointer :: deadstemc_xfer(:)     ! (gC/m2) dead stem C transfer
+   real(r8), pointer :: dispvegc(:)           ! (gC/m2) displayed veg carbon, excluding storage and cpool
+   real(r8), pointer :: frootc(:)             ! (gC/m2) fine root C
+   real(r8), pointer :: frootc_storage(:)     ! (gC/m2) fine root C storage
+   real(r8), pointer :: frootc_xfer(:)        ! (gC/m2) fine root C transfer
+   real(r8), pointer :: gresp_storage(:)      ! (gC/m2) growth respiration storage
+   real(r8), pointer :: gresp_xfer(:)         ! (gC/m2) growth respiration transfer
+   real(r8), pointer :: leafc(:)              ! (gC/m2) leaf C
+   real(r8), pointer :: leafc_storage(:)      ! (gC/m2) leaf C storage
+   real(r8), pointer :: leafc_xfer(:)         ! (gC/m2) leaf C transfer
+   real(r8), pointer :: livecrootc(:)         ! (gC/m2) live coarse root C
+   real(r8), pointer :: livecrootc_storage(:) ! (gC/m2) live coarse root C storage
+   real(r8), pointer :: livecrootc_xfer(:)    ! (gC/m2) live coarse root C transfer
+   real(r8), pointer :: livestemc(:)          ! (gC/m2) live stem C
+   real(r8), pointer :: livestemc_storage(:)  ! (gC/m2) live stem C storage
+   real(r8), pointer :: livestemc_xfer(:)     ! (gC/m2) live stem C transfer
+   real(r8), pointer :: storvegc(:)           ! (gC/m2) stored vegetation carbon, excluding cpool
+   real(r8), pointer :: totpftc(:)            ! (gC/m2) total pft-level carbon, including cpool
+   real(r8), pointer :: totvegc(:)            ! (gC/m2) total vegetation carbon, excluding cpool
+   real(r8), pointer :: tempsum_npp(:)        ! temporary annual sum of NPP (gC/m2/yr)
+#if (defined CNDV)
+   real(r8), pointer :: tempsum_litfall(:)      !temporary annual sum of litfall (gC/m2/yr)
+#endif
+   ! for landcover change
+   real(r8), pointer :: landuseflux(:)        ! (gC/m2/s) dwt_closs+product_closs
+   real(r8), pointer :: landuptake(:)         ! (gC/m2/s) nee-landuseflux
+   real(r8), pointer :: dwt_closs(:)          ! (gC/m2/s) total carbon loss from land cover conversion
+   real(r8), pointer :: dwt_conv_cflux(:)     ! (gC/m2/s) conversion C flux (immediate loss to atm)
+   real(r8), pointer :: prod10c_loss(:)       ! (gC/m2/s) loss from 10-yr wood product pool
+   real(r8), pointer :: prod100c_loss(:)      ! (gC/m2/s) loss from 100-yr wood product pool
+   real(r8), pointer :: product_closs(:)      ! (gC/m2/s) total wood product carbon loss
+   real(r8), pointer :: seedc(:)              ! (gC/m2) column-level pool for seeding new PFTs
+   real(r8), pointer :: prod10c(:)            ! (gC/m2) wood product C pool, 10-year lifespan
+   real(r8), pointer :: prod100c(:)           ! (gC/m2) wood product C pool, 100-year lifespan
+   real(r8), pointer :: totprodc(:)           ! (gC/m2) total wood product C
+
+
+#if (defined CLAMP)
+   ! CLAMP
+   real(r8), pointer :: frootc_alloc(:)       ! fine root C allocation (gC/m2/s)
+   real(r8), pointer :: frootc_loss(:)        ! fine root C loss (gC/m2/s)
+   real(r8), pointer :: leafc_alloc(:)        ! leaf C allocation (gC/m2/s)
+   real(r8), pointer :: leafc_loss(:)         ! leaf C loss (gC/m2/s)
+   real(r8), pointer :: woodc(:)              ! wood C (gC/m2)
+   real(r8), pointer :: woodc_alloc(:)        ! wood C allocation (gC/m2/s)
+   real(r8), pointer :: woodc_loss(:)         ! wood C loss (gC/m2/s)
+   real(r8), pointer :: cwdc_hr(:)            ! coarse woody debris C heterotrophic respiration (gC/m2/s)
+   real(r8), pointer :: cwdc_loss(:)          ! coarse woody debris C loss (gC/m2/s)
+   real(r8), pointer :: litterc_loss(:)       ! litter C loss (gC/m2/s)
+   real(r8), pointer :: litr1c_to_soil1c(:)   ! litter1 C loss to soil1 (gC/m2/s)
+   real(r8), pointer :: litr2c_to_soil2c(:)   ! litter2 C loss to soil2 (gC/m2/s)
+   real(r8), pointer :: litr3c_to_soil3c(:)   ! litter3 C loss to soil3 (gC/m2/s)
+   !  Added for CLAMP
+   real(r8), pointer :: cwdc_to_litr2c(:)     ! cwdc C to soil2 (gC/m2/s)
+   real(r8), pointer :: cwdc_to_litr3c(:)     ! cwdc C to soil3 (gC/m2/s)
+#endif
+!
+!
+! local pointers to implicit in/out scalars
+!
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+!
+! local pointers to implicit out scalars
+!
+!
+! !OTHER LOCAL VARIABLES:
+<<<<<<< HEAD
+   integer :: p            ! indices
+   integer :: fp           ! lake filter pft index
+!   real(r8):: dt           ! decomp timestep (seconds)
+
+!EOP
+!-----------------------------------------------------------------------
+   ! assign local pointers to derived type arrays (in)
+    ivt                            => clm3%g%l%c%p%itype
+    bglfr                          => clm3%g%l%c%p%pepv%bglfr
+    leafc                          => clm3%g%l%c%p%pcs%leafc
+    frootc                         => clm3%g%l%c%p%pcs%frootc
+    leafcn                         => pftcon%leafcn
+    lflitcn                        => pftcon%lflitcn
+    frootcn                        => pftcon%frootcn
+
+   ! assign local pointers to derived type arrays (out)
+    leafc_to_litter                => clm3%g%l%c%p%pcf%leafc_to_litter
+    frootc_to_litter               => clm3%g%l%c%p%pcf%frootc_to_litter
+    leafn_to_litter                => clm3%g%l%c%p%pnf%leafn_to_litter
+    leafn_to_retransn              => clm3%g%l%c%p%pnf%leafn_to_retransn
+    frootn_to_litter               => clm3%g%l%c%p%pnf%frootn_to_litter
+
+   ! set time steps
+!   dt = real( get_step_size(), r8 )
+=======
+   integer :: c,p          ! indices
+   integer :: fp,fc        ! lake filter indices
+
+!EOP
+!-----------------------------------------------------------------------
+   ! assign local pointers
+    col_fire_closs                 => clm3%g%l%c%ccf%col_fire_closs
+    er                             => clm3%g%l%c%ccf%er
+    hr                             => clm3%g%l%c%ccf%hr
+    litfire                        => clm3%g%l%c%ccf%litfire
+    lithr                          => clm3%g%l%c%ccf%lithr
+    litr1_hr                       => clm3%g%l%c%ccf%litr1_hr
+    litr2_hr                       => clm3%g%l%c%ccf%litr2_hr
+    litr3_hr                       => clm3%g%l%c%ccf%litr3_hr
+    m_cwdc_to_fire                 => clm3%g%l%c%ccf%m_cwdc_to_fire
+    m_litr1c_to_fire               => clm3%g%l%c%ccf%m_litr1c_to_fire
+    m_litr2c_to_fire               => clm3%g%l%c%ccf%m_litr2c_to_fire
+    m_litr3c_to_fire               => clm3%g%l%c%ccf%m_litr3c_to_fire
+#if (defined CLAMP)
+    !  Added for CLAMP
+    cwdc_to_litr2c                 => clm3%g%l%c%ccf%cwdc_to_litr2c
+    cwdc_to_litr3c                 => clm3%g%l%c%ccf%cwdc_to_litr3c
+    ! CLAMP
+    litr1c_to_soil1c               => clm3%g%l%c%ccf%litr1c_to_soil1c
+    litr2c_to_soil2c               => clm3%g%l%c%ccf%litr2c_to_soil2c
+    litr3c_to_soil3c               => clm3%g%l%c%ccf%litr3c_to_soil3c
+#endif
+    nee                            => clm3%g%l%c%ccf%nee
+    nep                            => clm3%g%l%c%ccf%nep
+    nbp                            => clm3%g%l%c%ccf%nbp
+    col_ar                         => clm3%g%l%c%ccf%pcf_a%ar
+    col_gpp                        => clm3%g%l%c%ccf%pcf_a%gpp
+    col_npp                        => clm3%g%l%c%ccf%pcf_a%npp
+    col_pft_fire_closs             => clm3%g%l%c%ccf%pcf_a%pft_fire_closs
+    col_litfall                    => clm3%g%l%c%ccf%pcf_a%litfall
+    col_rr                         => clm3%g%l%c%ccf%pcf_a%rr
+    col_vegfire                    => clm3%g%l%c%ccf%pcf_a%vegfire
+    col_wood_harvestc              => clm3%g%l%c%ccf%pcf_a%wood_harvestc
+    soil1_hr                       => clm3%g%l%c%ccf%soil1_hr
+    soil2_hr                       => clm3%g%l%c%ccf%soil2_hr
+    soil3_hr                       => clm3%g%l%c%ccf%soil3_hr
+    soil4_hr                       => clm3%g%l%c%ccf%soil4_hr
+    somfire                        => clm3%g%l%c%ccf%somfire
+    somhr                          => clm3%g%l%c%ccf%somhr
+    sr                             => clm3%g%l%c%ccf%sr
+    totfire                        => clm3%g%l%c%ccf%totfire
+#if (defined CLAMP)
+    cwdc_hr                        => clm3%g%l%c%ccf%cwdc_hr
+    cwdc_loss                      => clm3%g%l%c%ccf%cwdc_loss
+    litterc_loss                   => clm3%g%l%c%ccf%litterc_loss
+#endif
+    ! dynamic landcover pointers
+    dwt_closs                      => clm3%g%l%c%ccf%dwt_closs
+    landuseflux                    => clm3%g%l%c%ccf%landuseflux
+    landuptake                     => clm3%g%l%c%ccf%landuptake
+    dwt_conv_cflux                 => clm3%g%l%c%ccf%dwt_conv_cflux
+    seedc                          => clm3%g%l%c%ccs%seedc
+    
+    ! wood product pointers
+    prod10c_loss                   => clm3%g%l%c%ccf%prod10c_loss
+    prod100c_loss                  => clm3%g%l%c%ccf%prod100c_loss
+    product_closs                  => clm3%g%l%c%ccf%product_closs
+    prod10c                        => clm3%g%l%c%ccs%prod10c
+    prod100c                       => clm3%g%l%c%ccs%prod100c
+    totprodc                       => clm3%g%l%c%ccs%totprodc
+    
+    cwdc                           => clm3%g%l%c%ccs%cwdc
+    litr1c                         => clm3%g%l%c%ccs%litr1c
+    litr2c                         => clm3%g%l%c%ccs%litr2c
+    litr3c                         => clm3%g%l%c%ccs%litr3c
+    col_totpftc                    => clm3%g%l%c%ccs%pcs_a%totpftc
+    col_totvegc                    => clm3%g%l%c%ccs%pcs_a%totvegc
+    soil1c                         => clm3%g%l%c%ccs%soil1c
+    soil2c                         => clm3%g%l%c%ccs%soil2c
+    soil3c                         => clm3%g%l%c%ccs%soil3c
+    soil4c                         => clm3%g%l%c%ccs%soil4c
+    col_ctrunc                     => clm3%g%l%c%ccs%col_ctrunc
+    totcolc                        => clm3%g%l%c%ccs%totcolc
+    totecosysc                     => clm3%g%l%c%ccs%totecosysc
+    totlitc                        => clm3%g%l%c%ccs%totlitc
+    totsomc                        => clm3%g%l%c%ccs%totsomc
+    agnpp                          => clm3%g%l%c%p%pcf%agnpp
+    ar                             => clm3%g%l%c%p%pcf%ar
+    bgnpp                          => clm3%g%l%c%p%pcf%bgnpp
+#if (defined CROP)
+    xsmrpool_to_atm                => clm3%g%l%c%p%pcf%xsmrpool_to_atm
+    cpool_grain_gr                 => clm3%g%l%c%p%pcf%cpool_grain_gr
+    cpool_grain_storage_gr         => clm3%g%l%c%p%pcf%cpool_grain_storage_gr
+    cpool_to_grainc                => clm3%g%l%c%p%pcf%cpool_to_grainc
+    grainc_xfer_to_grainc          => clm3%g%l%c%p%pcf%grainc_xfer_to_grainc
+    transfer_grain_gr              => clm3%g%l%c%p%pcf%transfer_grain_gr
+    grainc_to_food                 => clm3%g%l%c%p%pcf%grainc_to_food
+    livestemc_to_litter            => clm3%g%l%c%p%pcf%livestemc_to_litter
+    grainc                         => clm3%g%l%c%p%pcs%grainc
+    grainc_storage                 => clm3%g%l%c%p%pcs%grainc_storage
+    grainc_xfer                    => clm3%g%l%c%p%pcs%grainc_xfer
+#endif
+    cpool_deadcroot_gr             => clm3%g%l%c%p%pcf%cpool_deadcroot_gr
+    cpool_deadcroot_storage_gr     => clm3%g%l%c%p%pcf%cpool_deadcroot_storage_gr
+    cpool_deadstem_gr              => clm3%g%l%c%p%pcf%cpool_deadstem_gr
+    cpool_deadstem_storage_gr      => clm3%g%l%c%p%pcf%cpool_deadstem_storage_gr
+    cpool_froot_gr                 => clm3%g%l%c%p%pcf%cpool_froot_gr
+    cpool_froot_storage_gr         => clm3%g%l%c%p%pcf%cpool_froot_storage_gr
+    cpool_leaf_gr                  => clm3%g%l%c%p%pcf%cpool_leaf_gr
+    cpool_leaf_storage_gr          => clm3%g%l%c%p%pcf%cpool_leaf_storage_gr
+    cpool_livecroot_gr             => clm3%g%l%c%p%pcf%cpool_livecroot_gr
+    cpool_livecroot_storage_gr     => clm3%g%l%c%p%pcf%cpool_livecroot_storage_gr
+    cpool_livestem_gr              => clm3%g%l%c%p%pcf%cpool_livestem_gr
+    cpool_livestem_storage_gr      => clm3%g%l%c%p%pcf%cpool_livestem_storage_gr
+    cpool_to_deadcrootc            => clm3%g%l%c%p%pcf%cpool_to_deadcrootc
+    cpool_to_deadstemc             => clm3%g%l%c%p%pcf%cpool_to_deadstemc
+    cpool_to_frootc                => clm3%g%l%c%p%pcf%cpool_to_frootc
+    cpool_to_leafc                 => clm3%g%l%c%p%pcf%cpool_to_leafc
+    cpool_to_livecrootc            => clm3%g%l%c%p%pcf%cpool_to_livecrootc
+    cpool_to_livestemc             => clm3%g%l%c%p%pcf%cpool_to_livestemc
+    current_gr                     => clm3%g%l%c%p%pcf%current_gr
+    deadcrootc_xfer_to_deadcrootc  => clm3%g%l%c%p%pcf%deadcrootc_xfer_to_deadcrootc
+    deadstemc_xfer_to_deadstemc    => clm3%g%l%c%p%pcf%deadstemc_xfer_to_deadstemc
+    frootc_to_litter               => clm3%g%l%c%p%pcf%frootc_to_litter
+    frootc_xfer_to_frootc          => clm3%g%l%c%p%pcf%frootc_xfer_to_frootc
+    froot_mr                       => clm3%g%l%c%p%pcf%froot_mr
+    gpp                            => clm3%g%l%c%p%pcf%gpp
+    gr                             => clm3%g%l%c%p%pcf%gr
+    leafc_to_litter                => clm3%g%l%c%p%pcf%leafc_to_litter
+    leafc_xfer_to_leafc            => clm3%g%l%c%p%pcf%leafc_xfer_to_leafc
+    leaf_mr                        => clm3%g%l%c%p%pcf%leaf_mr
+    litfall                        => clm3%g%l%c%p%pcf%litfall
+    livecrootc_xfer_to_livecrootc  => clm3%g%l%c%p%pcf%livecrootc_xfer_to_livecrootc
+    livecroot_mr                   => clm3%g%l%c%p%pcf%livecroot_mr
+    livestemc_xfer_to_livestemc    => clm3%g%l%c%p%pcf%livestemc_xfer_to_livestemc
+    livestem_mr                    => clm3%g%l%c%p%pcf%livestem_mr
+    m_deadcrootc_storage_to_fire   => clm3%g%l%c%p%pcf%m_deadcrootc_storage_to_fire
+    m_deadcrootc_storage_to_litter => clm3%g%l%c%p%pcf%m_deadcrootc_storage_to_litter
+    m_deadcrootc_to_fire           => clm3%g%l%c%p%pcf%m_deadcrootc_to_fire
+    m_deadcrootc_to_litter         => clm3%g%l%c%p%pcf%m_deadcrootc_to_litter
+    m_deadcrootc_to_litter_fire    => clm3%g%l%c%p%pcf%m_deadcrootc_to_litter_fire
+    m_deadcrootc_xfer_to_fire      => clm3%g%l%c%p%pcf%m_deadcrootc_xfer_to_fire
+    m_deadcrootc_xfer_to_litter    => clm3%g%l%c%p%pcf%m_deadcrootc_xfer_to_litter
+    m_deadstemc_storage_to_fire    => clm3%g%l%c%p%pcf%m_deadstemc_storage_to_fire
+    m_deadstemc_storage_to_litter  => clm3%g%l%c%p%pcf%m_deadstemc_storage_to_litter
+    m_deadstemc_to_fire            => clm3%g%l%c%p%pcf%m_deadstemc_to_fire
+    m_deadstemc_to_litter          => clm3%g%l%c%p%pcf%m_deadstemc_to_litter
+    m_deadstemc_to_litter_fire     => clm3%g%l%c%p%pcf%m_deadstemc_to_litter_fire
+    m_deadstemc_xfer_to_fire       => clm3%g%l%c%p%pcf%m_deadstemc_xfer_to_fire
+    m_deadstemc_xfer_to_litter     => clm3%g%l%c%p%pcf%m_deadstemc_xfer_to_litter
+    m_frootc_storage_to_fire       => clm3%g%l%c%p%pcf%m_frootc_storage_to_fire
+    m_frootc_storage_to_litter     => clm3%g%l%c%p%pcf%m_frootc_storage_to_litter
+    m_frootc_to_fire               => clm3%g%l%c%p%pcf%m_frootc_to_fire
+    m_frootc_to_litter             => clm3%g%l%c%p%pcf%m_frootc_to_litter
+    m_frootc_xfer_to_fire          => clm3%g%l%c%p%pcf%m_frootc_xfer_to_fire
+    m_frootc_xfer_to_litter        => clm3%g%l%c%p%pcf%m_frootc_xfer_to_litter
+    m_gresp_storage_to_fire        => clm3%g%l%c%p%pcf%m_gresp_storage_to_fire
+    m_gresp_storage_to_litter      => clm3%g%l%c%p%pcf%m_gresp_storage_to_litter
+    m_gresp_xfer_to_fire           => clm3%g%l%c%p%pcf%m_gresp_xfer_to_fire
+    m_gresp_xfer_to_litter         => clm3%g%l%c%p%pcf%m_gresp_xfer_to_litter
+    m_leafc_storage_to_fire        => clm3%g%l%c%p%pcf%m_leafc_storage_to_fire
+    m_leafc_storage_to_litter      => clm3%g%l%c%p%pcf%m_leafc_storage_to_litter
+    m_leafc_to_fire                => clm3%g%l%c%p%pcf%m_leafc_to_fire
+    m_leafc_to_litter              => clm3%g%l%c%p%pcf%m_leafc_to_litter
+    m_leafc_xfer_to_fire           => clm3%g%l%c%p%pcf%m_leafc_xfer_to_fire
+    m_leafc_xfer_to_litter         => clm3%g%l%c%p%pcf%m_leafc_xfer_to_litter
+    m_livecrootc_storage_to_fire   => clm3%g%l%c%p%pcf%m_livecrootc_storage_to_fire
+    m_livecrootc_storage_to_litter => clm3%g%l%c%p%pcf%m_livecrootc_storage_to_litter
+    m_livecrootc_to_fire           => clm3%g%l%c%p%pcf%m_livecrootc_to_fire
+    m_livecrootc_to_litter         => clm3%g%l%c%p%pcf%m_livecrootc_to_litter
+    m_livecrootc_xfer_to_fire      => clm3%g%l%c%p%pcf%m_livecrootc_xfer_to_fire
+    m_livecrootc_xfer_to_litter    => clm3%g%l%c%p%pcf%m_livecrootc_xfer_to_litter
+    m_livestemc_storage_to_fire    => clm3%g%l%c%p%pcf%m_livestemc_storage_to_fire
+    m_livestemc_storage_to_litter  => clm3%g%l%c%p%pcf%m_livestemc_storage_to_litter
+    m_livestemc_to_fire            => clm3%g%l%c%p%pcf%m_livestemc_to_fire
+    m_livestemc_to_litter          => clm3%g%l%c%p%pcf%m_livestemc_to_litter
+    m_livestemc_xfer_to_fire       => clm3%g%l%c%p%pcf%m_livestemc_xfer_to_fire
+    m_livestemc_xfer_to_litter     => clm3%g%l%c%p%pcf%m_livestemc_xfer_to_litter
+    hrv_leafc_to_litter               => clm3%g%l%c%p%pcf%hrv_leafc_to_litter               
+    hrv_leafc_storage_to_litter       => clm3%g%l%c%p%pcf%hrv_leafc_storage_to_litter     
+    hrv_leafc_xfer_to_litter          => clm3%g%l%c%p%pcf%hrv_leafc_xfer_to_litter        
+    hrv_frootc_to_litter              => clm3%g%l%c%p%pcf%hrv_frootc_to_litter            
+    hrv_frootc_storage_to_litter      => clm3%g%l%c%p%pcf%hrv_frootc_storage_to_litter    
+    hrv_frootc_xfer_to_litter         => clm3%g%l%c%p%pcf%hrv_frootc_xfer_to_litter       
+    hrv_livestemc_to_litter           => clm3%g%l%c%p%pcf%hrv_livestemc_to_litter         
+    hrv_livestemc_storage_to_litter   => clm3%g%l%c%p%pcf%hrv_livestemc_storage_to_litter 
+    hrv_livestemc_xfer_to_litter      => clm3%g%l%c%p%pcf%hrv_livestemc_xfer_to_litter    
+    hrv_deadstemc_to_prod10c          => clm3%g%l%c%p%pcf%hrv_deadstemc_to_prod10c        
+    hrv_deadstemc_to_prod100c         => clm3%g%l%c%p%pcf%hrv_deadstemc_to_prod100c       
+    hrv_deadstemc_storage_to_litter   => clm3%g%l%c%p%pcf%hrv_deadstemc_storage_to_litter 
+    hrv_deadstemc_xfer_to_litter      => clm3%g%l%c%p%pcf%hrv_deadstemc_xfer_to_litter    
+    hrv_livecrootc_to_litter          => clm3%g%l%c%p%pcf%hrv_livecrootc_to_litter        
+    hrv_livecrootc_storage_to_litter  => clm3%g%l%c%p%pcf%hrv_livecrootc_storage_to_litter
+    hrv_livecrootc_xfer_to_litter     => clm3%g%l%c%p%pcf%hrv_livecrootc_xfer_to_litter   
+    hrv_deadcrootc_to_litter          => clm3%g%l%c%p%pcf%hrv_deadcrootc_to_litter        
+    hrv_deadcrootc_storage_to_litter  => clm3%g%l%c%p%pcf%hrv_deadcrootc_storage_to_litter
+    hrv_deadcrootc_xfer_to_litter     => clm3%g%l%c%p%pcf%hrv_deadcrootc_xfer_to_litter   
+    hrv_gresp_storage_to_litter       => clm3%g%l%c%p%pcf%hrv_gresp_storage_to_litter     
+    hrv_gresp_xfer_to_litter          => clm3%g%l%c%p%pcf%hrv_gresp_xfer_to_litter        
+    hrv_xsmrpool_to_atm               => clm3%g%l%c%p%pcf%hrv_xsmrpool_to_atm             
+    col_hrv_xsmrpool_to_atm           => clm3%g%l%c%ccf%pcf_a%hrv_xsmrpool_to_atm             
+    mr                             => clm3%g%l%c%p%pcf%mr
+    npp                            => clm3%g%l%c%p%pcf%npp
+    pft_fire_closs                 => clm3%g%l%c%p%pcf%pft_fire_closs
+    psnshade_to_cpool              => clm3%g%l%c%p%pcf%psnshade_to_cpool
+    psnsun_to_cpool                => clm3%g%l%c%p%pcf%psnsun_to_cpool
+    rr                             => clm3%g%l%c%p%pcf%rr
+    storage_gr                     => clm3%g%l%c%p%pcf%storage_gr
+    transfer_deadcroot_gr          => clm3%g%l%c%p%pcf%transfer_deadcroot_gr
+    transfer_deadstem_gr           => clm3%g%l%c%p%pcf%transfer_deadstem_gr
+    transfer_froot_gr              => clm3%g%l%c%p%pcf%transfer_froot_gr
+    transfer_gr                    => clm3%g%l%c%p%pcf%transfer_gr
+    transfer_leaf_gr               => clm3%g%l%c%p%pcf%transfer_leaf_gr
+    transfer_livecroot_gr          => clm3%g%l%c%p%pcf%transfer_livecroot_gr
+    transfer_livestem_gr           => clm3%g%l%c%p%pcf%transfer_livestem_gr
+    vegfire                        => clm3%g%l%c%p%pcf%vegfire
+    wood_harvestc                  => clm3%g%l%c%p%pcf%wood_harvestc
+#if (defined CLAMP)
+    !CLAMP
+    frootc_alloc                   => clm3%g%l%c%p%pcf%frootc_alloc
+    frootc_loss                    => clm3%g%l%c%p%pcf%frootc_loss
+    leafc_alloc                    => clm3%g%l%c%p%pcf%leafc_alloc
+    leafc_loss                     => clm3%g%l%c%p%pcf%leafc_loss
+    woodc_alloc                    => clm3%g%l%c%p%pcf%woodc_alloc
+    woodc_loss                     => clm3%g%l%c%p%pcf%woodc_loss
+#endif
+    cpool                          => clm3%g%l%c%p%pcs%cpool
+    xsmrpool                       => clm3%g%l%c%p%pcs%xsmrpool
+	pft_ctrunc                     => clm3%g%l%c%p%pcs%pft_ctrunc
+    deadcrootc                     => clm3%g%l%c%p%pcs%deadcrootc
+    deadcrootc_storage             => clm3%g%l%c%p%pcs%deadcrootc_storage
+    deadcrootc_xfer                => clm3%g%l%c%p%pcs%deadcrootc_xfer
+    deadstemc                      => clm3%g%l%c%p%pcs%deadstemc
+    deadstemc_storage              => clm3%g%l%c%p%pcs%deadstemc_storage
+    deadstemc_xfer                 => clm3%g%l%c%p%pcs%deadstemc_xfer
+    dispvegc                       => clm3%g%l%c%p%pcs%dispvegc
+    frootc                         => clm3%g%l%c%p%pcs%frootc
+    frootc_storage                 => clm3%g%l%c%p%pcs%frootc_storage
+    frootc_xfer                    => clm3%g%l%c%p%pcs%frootc_xfer
+    gresp_storage                  => clm3%g%l%c%p%pcs%gresp_storage
+    gresp_xfer                     => clm3%g%l%c%p%pcs%gresp_xfer
+    leafc                          => clm3%g%l%c%p%pcs%leafc
+    leafc_storage                  => clm3%g%l%c%p%pcs%leafc_storage
+    leafc_xfer                     => clm3%g%l%c%p%pcs%leafc_xfer
+    livecrootc                     => clm3%g%l%c%p%pcs%livecrootc
+    livecrootc_storage             => clm3%g%l%c%p%pcs%livecrootc_storage
+    livecrootc_xfer                => clm3%g%l%c%p%pcs%livecrootc_xfer
+    livestemc                      => clm3%g%l%c%p%pcs%livestemc
+    livestemc_storage              => clm3%g%l%c%p%pcs%livestemc_storage
+    livestemc_xfer                 => clm3%g%l%c%p%pcs%livestemc_xfer
+    storvegc                       => clm3%g%l%c%p%pcs%storvegc
+    totpftc                        => clm3%g%l%c%p%pcs%totpftc
+    totvegc                        => clm3%g%l%c%p%pcs%totvegc
+#if (defined CLAMP)
+    woodc                          => clm3%g%l%c%p%pcs%woodc
+#endif
+    tempsum_npp                    => clm3%g%l%c%p%pepv%tempsum_npp
+#if (defined CNDV)
+    tempsum_litfall                => clm3%g%l%c%p%pepv%tempsum_litfall
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+
+   ! pft loop
+   do fp = 1,num_soilp
+      p = filter_soilp(fp)
+
+<<<<<<< HEAD
+      ! only calculate these fluxes if the background litterfall rate is non-zero
+      if (bglfr(p) > 0._r8) then
+         ! units for bglfr are already 1/s
+         leafc_to_litter(p)  = bglfr(p) * leafc(p)
+         frootc_to_litter(p) = bglfr(p) * frootc(p)
+
+         ! calculate the leaf N litterfall and retranslocation
+         leafn_to_litter(p)   = leafc_to_litter(p)  / lflitcn(ivt(p))
+         leafn_to_retransn(p) = (leafc_to_litter(p) / leafcn(ivt(p))) - leafn_to_litter(p)
+
+         ! calculate fine root N litterfall (no retranslocation of fine root N)
+         frootn_to_litter(p) = frootc_to_litter(p) / frootcn(ivt(p))
+
+      end if
+
+   end do
+
+end subroutine CNBackgroundLitterfall
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: CNLivewoodTurnover
+!
+! !INTERFACE:
+subroutine CNLivewoodTurnover (num_soilp, filter_soilp)
+!
+! !DESCRIPTION:
+! Determines the flux of C and N from live wood to
+! dead wood pools, for stem and coarse root.
+!
+! !USES:
+!ylu removed
+!   use clm_time_manager, only: get_step_size
+ use globals, only: dt
+!
+! !ARGUMENTS:
+   integer, intent(in) :: num_soilp       ! number of soil pfts in filter
+   integer, intent(in) :: filter_soilp(:) ! filter for soil pfts
+!
+! !CALLED FROM:
+! subroutine CNPhenology
+!
+! !REVISION HISTORY:
+! 12/5/03: created by Peter Thornton
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+!
+   ! pft level
+   integer , pointer :: ivt(:)         ! pft vegetation type
+   real(r8), pointer :: livestemc(:)   ! (gC/m2) live stem C
+   real(r8), pointer :: livecrootc(:)  ! (gC/m2) live coarse root C
+   real(r8), pointer :: livestemn(:)   ! (gN/m2) live stem N
+   real(r8), pointer :: livecrootn(:)  ! (gN/m2) live coarse root N
+   ! ecophysiological constants
+   real(r8), pointer :: woody(:)       ! binary flag for woody lifeform (1=woody, 0=not woody)
+   real(r8), pointer :: livewdcn(:)    ! live wood (phloem and ray parenchyma) C:N (gC/gN)
+   real(r8), pointer :: deadwdcn(:)    ! dead wood (xylem and heartwood) C:N (gC/gN)
+!
+! local pointers to implicit in/out scalars
+!
+   real(r8), pointer :: livestemc_to_deadstemc(:)
+   real(r8), pointer :: livecrootc_to_deadcrootc(:)
+   real(r8), pointer :: livestemn_to_deadstemn(:)
+   real(r8), pointer :: livestemn_to_retransn(:)
+   real(r8), pointer :: livecrootn_to_deadcrootn(:)
+   real(r8), pointer :: livecrootn_to_retransn(:)
+!
+! local pointers to implicit out scalars
+!
+!
+! !OTHER LOCAL VARIABLES:
+   integer :: p            ! indices
+   integer :: fp           ! lake filter pft index
+!   real(r8):: dt           ! decomp timestep (seconds)
+   real(r8):: lwtop        ! live wood turnover proportion (annual fraction)
+   real(r8):: ctovr        ! temporary variable for carbon turnover
+   real(r8):: ntovr        ! temporary variable for nitrogen turnover
+
+!EOP
+!-----------------------------------------------------------------------
+   ! assign local pointers to derived type arrays (in)
+    ivt                            => clm3%g%l%c%p%itype
+    livestemc                      => clm3%g%l%c%p%pcs%livestemc
+    livecrootc                     => clm3%g%l%c%p%pcs%livecrootc
+    livestemn                      => clm3%g%l%c%p%pns%livestemn
+    livecrootn                     => clm3%g%l%c%p%pns%livecrootn
+    woody                          => pftcon%woody
+    livewdcn                       => pftcon%livewdcn
+    deadwdcn                       => pftcon%deadwdcn
+
+   ! assign local pointers to derived type arrays (out)
+    livestemc_to_deadstemc         => clm3%g%l%c%p%pcf%livestemc_to_deadstemc
+    livecrootc_to_deadcrootc       => clm3%g%l%c%p%pcf%livecrootc_to_deadcrootc
+    livestemn_to_deadstemn         => clm3%g%l%c%p%pnf%livestemn_to_deadstemn
+    livestemn_to_retransn          => clm3%g%l%c%p%pnf%livestemn_to_retransn
+    livecrootn_to_deadcrootn       => clm3%g%l%c%p%pnf%livecrootn_to_deadcrootn
+    livecrootn_to_retransn         => clm3%g%l%c%p%pnf%livecrootn_to_retransn
+
+   ! set time steps
+!   dt = real( get_step_size(), r8 )
+
+   ! set the global parameter for livewood turnover rate
+   ! define as an annual fraction (0.7), and convert to fraction per second
+   lwtop = 0.7_r8 / 31536000.0_r8
+
+   ! pft loop
+   do fp = 1,num_soilp
+      p = filter_soilp(fp)
+
+      ! only calculate these fluxes for woody types
+      if (woody(ivt(p)) > 0._r8) then
+
+         ! live stem to dead stem turnover
+
+         ctovr = livestemc(p) * lwtop
+         ntovr = ctovr / livewdcn(ivt(p))
+         livestemc_to_deadstemc(p) = ctovr
+         livestemn_to_deadstemn(p) = ctovr / deadwdcn(ivt(p))
+         livestemn_to_retransn(p)  = ntovr - livestemn_to_deadstemn(p)
+
+         ! live coarse root to dead coarse root turnover
+
+         ctovr = livecrootc(p) * lwtop
+         ntovr = ctovr / livewdcn(ivt(p))
+         livecrootc_to_deadcrootc(p) = ctovr
+         livecrootn_to_deadcrootn(p) = ctovr / deadwdcn(ivt(p))
+         livecrootn_to_retransn(p)  = ntovr - livecrootn_to_deadcrootn(p)
+
+      end if
+
+   end do
+
+end subroutine CNLivewoodTurnover
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: CNLitterToColumn
+!
+! !INTERFACE:
+subroutine CNLitterToColumn (num_soilc, filter_soilc)
+!
+! !DESCRIPTION:
+! called at the end of cn_phenology to gather all pft-level litterfall fluxes
+! to the column level and assign them to the three litter pools
+!
+! !USES:
+  use clm_varpar, only : max_pft_per_col
+#ifdef CROP
+  use pftvarcon , only : npcropmin
+#endif
+!
+! !ARGUMENTS:
+  integer, intent(in) :: num_soilc       ! number of soil columns in filter
+  integer, intent(in) :: filter_soilc(:) ! filter for soil columns
+!
+! !CALLED FROM:
+! subroutine CNPhenology
+!
+! !REVISION HISTORY:
+! 9/8/03: Created by Peter Thornton
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+!
+   integer , pointer :: ivt(:)          ! pft vegetation type
+   real(r8), pointer :: wtcol(:)        ! weight (relative to column) for this pft (0-1)
+   real(r8), pointer :: pwtgcell(:)     ! weight of pft relative to corresponding gridcell
+   real(r8), pointer :: leafc_to_litter(:)
+   real(r8), pointer :: frootc_to_litter(:)
+#if (defined CROP)
+   real(r8), pointer :: livestemc_to_litter(:)
+   real(r8), pointer :: grainc_to_food(:)
+   real(r8), pointer :: livestemn_to_litter(:)
+   real(r8), pointer :: grainn_to_food(:)
+#endif
+   real(r8), pointer :: leafn_to_litter(:)
+   real(r8), pointer :: frootn_to_litter(:)
+   real(r8), pointer :: lf_flab(:)      ! leaf litter labile fraction
+   real(r8), pointer :: lf_fcel(:)      ! leaf litter cellulose fraction
+   real(r8), pointer :: lf_flig(:)      ! leaf litter lignin fraction
+   real(r8), pointer :: fr_flab(:)      ! fine root litter labile fraction
+   real(r8), pointer :: fr_fcel(:)      ! fine root litter cellulose fraction
+   real(r8), pointer :: fr_flig(:)      ! fine root litter lignin fraction
+   integer , pointer :: npfts(:)        ! number of pfts for each column
+   integer , pointer :: pfti(:)         ! beginning pft index for each column
+!
+! local pointers to implicit in/out scalars
+!
+   real(r8), pointer :: leafc_to_litr1c(:)
+   real(r8), pointer :: leafc_to_litr2c(:)
+   real(r8), pointer :: leafc_to_litr3c(:)
+   real(r8), pointer :: frootc_to_litr1c(:)
+   real(r8), pointer :: frootc_to_litr2c(:)
+   real(r8), pointer :: frootc_to_litr3c(:)
+#if (defined CROP)
+   real(r8), pointer :: livestemc_to_litr1c(:)
+   real(r8), pointer :: livestemc_to_litr2c(:)
+   real(r8), pointer :: livestemc_to_litr3c(:)
+   real(r8), pointer :: livestemn_to_litr1n(:)
+   real(r8), pointer :: livestemn_to_litr2n(:)
+   real(r8), pointer :: livestemn_to_litr3n(:)
+   real(r8), pointer :: grainc_to_litr1c(:)
+   real(r8), pointer :: grainc_to_litr2c(:)
+   real(r8), pointer :: grainc_to_litr3c(:)
+   real(r8), pointer :: grainn_to_litr1n(:)
+   real(r8), pointer :: grainn_to_litr2n(:)
+   real(r8), pointer :: grainn_to_litr3n(:)
+#endif
+   real(r8), pointer :: leafn_to_litr1n(:)
+   real(r8), pointer :: leafn_to_litr2n(:)
+   real(r8), pointer :: leafn_to_litr3n(:)
+   real(r8), pointer :: frootn_to_litr1n(:)
+   real(r8), pointer :: frootn_to_litr2n(:)
+   real(r8), pointer :: frootn_to_litr3n(:)
+!
+! local pointers to implicit out scalars
+!
+!
+! !OTHER LOCAL VARIABLES:
+    integer :: fc,c,pi,p
+!EOP
+!-----------------------------------------------------------------------
+   ! assign local pointers to derived type arrays (in)
+    ivt                            => clm3%g%l%c%p%itype
+    wtcol                          => clm3%g%l%c%p%wtcol
+    pwtgcell                       => clm3%g%l%c%p%wtgcell  
+    leafc_to_litter                => clm3%g%l%c%p%pcf%leafc_to_litter
+    frootc_to_litter               => clm3%g%l%c%p%pcf%frootc_to_litter
+#if (defined CROP)
+    livestemc_to_litter            => clm3%g%l%c%p%pcf%livestemc_to_litter
+    grainc_to_food                 => clm3%g%l%c%p%pcf%grainc_to_food
+    livestemn_to_litter            => clm3%g%l%c%p%pnf%livestemn_to_litter
+    grainn_to_food                 => clm3%g%l%c%p%pnf%grainn_to_food
+#endif
+    leafn_to_litter                => clm3%g%l%c%p%pnf%leafn_to_litter
+    frootn_to_litter               => clm3%g%l%c%p%pnf%frootn_to_litter
+    npfts                          => clm3%g%l%c%npfts
+    pfti                           => clm3%g%l%c%pfti
+    lf_flab                        => pftcon%lf_flab
+    lf_fcel                        => pftcon%lf_fcel
+    lf_flig                        => pftcon%lf_flig
+    fr_flab                        => pftcon%fr_flab
+    fr_fcel                        => pftcon%fr_fcel
+    fr_flig                        => pftcon%fr_flig
+
+   ! assign local pointers to derived type arrays (out)
+    leafc_to_litr1c                => clm3%g%l%c%ccf%leafc_to_litr1c
+    leafc_to_litr2c                => clm3%g%l%c%ccf%leafc_to_litr2c
+    leafc_to_litr3c                => clm3%g%l%c%ccf%leafc_to_litr3c
+    frootc_to_litr1c               => clm3%g%l%c%ccf%frootc_to_litr1c
+    frootc_to_litr2c               => clm3%g%l%c%ccf%frootc_to_litr2c
+    frootc_to_litr3c               => clm3%g%l%c%ccf%frootc_to_litr3c
+#if (defined CROP)
+    grainc_to_litr1c               => clm3%g%l%c%ccf%grainc_to_litr1c
+    grainc_to_litr2c               => clm3%g%l%c%ccf%grainc_to_litr2c
+    grainc_to_litr3c               => clm3%g%l%c%ccf%grainc_to_litr3c
+    livestemc_to_litr1c            => clm3%g%l%c%ccf%livestemc_to_litr1c
+    livestemc_to_litr2c            => clm3%g%l%c%ccf%livestemc_to_litr2c
+    livestemc_to_litr3c            => clm3%g%l%c%ccf%livestemc_to_litr3c
+    livestemn_to_litr1n            => clm3%g%l%c%cnf%livestemn_to_litr1n
+    livestemn_to_litr2n            => clm3%g%l%c%cnf%livestemn_to_litr2n
+    livestemn_to_litr3n            => clm3%g%l%c%cnf%livestemn_to_litr3n
+    grainn_to_litr1n               => clm3%g%l%c%cnf%grainn_to_litr1n
+    grainn_to_litr2n               => clm3%g%l%c%cnf%grainn_to_litr2n
+    grainn_to_litr3n               => clm3%g%l%c%cnf%grainn_to_litr3n
+#endif
+    leafn_to_litr1n                => clm3%g%l%c%cnf%leafn_to_litr1n
+    leafn_to_litr2n                => clm3%g%l%c%cnf%leafn_to_litr2n
+    leafn_to_litr3n                => clm3%g%l%c%cnf%leafn_to_litr3n
+    frootn_to_litr1n               => clm3%g%l%c%cnf%frootn_to_litr1n
+    frootn_to_litr2n               => clm3%g%l%c%cnf%frootn_to_litr2n
+    frootn_to_litr3n               => clm3%g%l%c%cnf%frootn_to_litr3n
+
+   do pi = 1,max_pft_per_col
+      do fc = 1,num_soilc
+         c = filter_soilc(fc)
+
+         if ( pi <=  npfts(c) ) then
+            p = pfti(c) + pi - 1
+            if (pwtgcell(p)>0._r8) then
+
+               ! leaf litter carbon fluxes
+               leafc_to_litr1c(c) = leafc_to_litr1c(c) + leafc_to_litter(p) * lf_flab(ivt(p)) * wtcol(p)
+               leafc_to_litr2c(c) = leafc_to_litr2c(c) + leafc_to_litter(p) * lf_fcel(ivt(p)) * wtcol(p)
+               leafc_to_litr3c(c) = leafc_to_litr3c(c) + leafc_to_litter(p) * lf_flig(ivt(p)) * wtcol(p)
+
+               ! leaf litter nitrogen fluxes
+               leafn_to_litr1n(c) = leafn_to_litr1n(c) + leafn_to_litter(p) * lf_flab(ivt(p)) * wtcol(p)
+               leafn_to_litr2n(c) = leafn_to_litr2n(c) + leafn_to_litter(p) * lf_fcel(ivt(p)) * wtcol(p)
+               leafn_to_litr3n(c) = leafn_to_litr3n(c) + leafn_to_litter(p) * lf_flig(ivt(p)) * wtcol(p)
+
+               ! fine root litter carbon fluxes
+               frootc_to_litr1c(c) = frootc_to_litr1c(c) + frootc_to_litter(p) * fr_flab(ivt(p)) * wtcol(p)
+               frootc_to_litr2c(c) = frootc_to_litr2c(c) + frootc_to_litter(p) * fr_fcel(ivt(p)) * wtcol(p)
+               frootc_to_litr3c(c) = frootc_to_litr3c(c) + frootc_to_litter(p) * fr_flig(ivt(p)) * wtcol(p)
+
+               ! fine root litter nitrogen fluxes
+               frootn_to_litr1n(c) = frootn_to_litr1n(c) + frootn_to_litter(p) * fr_flab(ivt(p)) * wtcol(p)
+               frootn_to_litr2n(c) = frootn_to_litr2n(c) + frootn_to_litter(p) * fr_fcel(ivt(p)) * wtcol(p)
+               frootn_to_litr3n(c) = frootn_to_litr3n(c) + frootn_to_litter(p) * fr_flig(ivt(p)) * wtcol(p)
+
+
+#if (defined CROP)
+               ! agroibis puts crop stem litter together with leaf litter
+               ! so I've used the leaf lf_f* parameters instead of making
+               ! new ones for now (slevis)
+               ! also for simplicity I've put "food" into the litter pools
+               if (ivt(p) >= npcropmin) then ! add livestemc to litter
+                  ! stem litter carbon fluxes
+                  livestemc_to_litr1c(c) = livestemc_to_litr1c(c) + livestemc_to_litter(p) * lf_flab(ivt(p)) * wtcol(p)
+                  livestemc_to_litr2c(c) = livestemc_to_litr2c(c) + livestemc_to_litter(p) * lf_fcel(ivt(p)) * wtcol(p)
+                  livestemc_to_litr3c(c) = livestemc_to_litr3c(c) + livestemc_to_litter(p) * lf_flig(ivt(p)) * wtcol(p)
+
+                  ! stem litter nitrogen fluxes
+                  livestemn_to_litr1n(c) = livestemn_to_litr1n(c) + livestemn_to_litter(p) * lf_flab(ivt(p)) * wtcol(p)
+                  livestemn_to_litr2n(c) = livestemn_to_litr2n(c) + livestemn_to_litter(p) * lf_fcel(ivt(p)) * wtcol(p)
+                  livestemn_to_litr3n(c) = livestemn_to_litr3n(c) + livestemn_to_litter(p) * lf_flig(ivt(p)) * wtcol(p)
+
+                  ! grain litter carbon fluxes
+                  grainc_to_litr1c(c) = grainc_to_litr1c(c) + grainc_to_food(p) * lf_flab(ivt(p)) * wtcol(p)
+                  grainc_to_litr2c(c) = grainc_to_litr2c(c) + grainc_to_food(p) * lf_fcel(ivt(p)) * wtcol(p)
+                  grainc_to_litr3c(c) = grainc_to_litr3c(c) + grainc_to_food(p) * lf_flig(ivt(p)) * wtcol(p)
+
+                  ! grain litter nitrogen fluxes
+                  grainn_to_litr1n(c) = grainn_to_litr1n(c) + grainn_to_food(p) * lf_flab(ivt(p)) * wtcol(p)
+                  grainn_to_litr2n(c) = grainn_to_litr2n(c) + grainn_to_food(p) * lf_fcel(ivt(p)) * wtcol(p)
+                  grainn_to_litr3n(c) = grainn_to_litr3n(c) + grainn_to_food(p) * lf_flig(ivt(p)) * wtcol(p)
+               end if
+#endif
+            end if
+         end if
+
+      end do
+
+   end do
+
+end subroutine CNLitterToColumn
+!-----------------------------------------------------------------------
+#endif
+
+end module CNPhenologyMod
+module CNPrecisionControlMod
+
+#ifdef CN
+
+!----------------------------------------------------------------------- 
+!BOP
+!
+! !MODULE: CNPrecisionControlMod
+! 
+! !DESCRIPTION:
+! controls on very low values in critical state variables 
+! 
+! !USES:
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    implicit none
+    save
+    private
+! !PUBLIC MEMBER FUNCTIONS:
+    public:: CNPrecisionControl
+!
+! !REVISION HISTORY:
+! 4/23/2004: Created by Peter Thornton
+!
+!EOP
+!----------------------------------------------------------------------- 
+
+contains
+=======
+      ! calculate pft-level summary carbon fluxes and states
+
+      ! gross primary production (GPP)
+      gpp(p) = &
+         psnsun_to_cpool(p) + &
+         psnshade_to_cpool(p)
+      write(6,*) 'check gpp'
+      write(6,*) 'gpp(',p,')=',gpp(p)
+      write(6,*) 'psnsun_to_cpool(',p,')=',psnsun_to_cpool(p)
+      write(6,*) 'psnshade_to_cpool(',p,')=',psnshade_to_cpool(p)
+
+      ! maintenance respiration (MR)
+      mr(p)  = &
+         leaf_mr(p)     + &
+         froot_mr(p)    + &
+         livestem_mr(p) + &
+         livecroot_mr(p)
+       write(6,*) 'check mr'
+       write(6,*) 'mr(',p,')=',mr(p)
+       write(6,*) 'leaf_mr(',p,')=',leaf_mr(p)
+       write(6,*) 'froot_mr(',p,')=',froot_mr(p)
+       write(6,*) 'livecroot_mr(',p,')=',livecroot_mr(p)
+      ! growth respiration (GR)
+      ! current GR is respired this time step for new growth displayed in this timestep
+      current_gr(p) = &
+         cpool_leaf_gr(p)      + &
+         cpool_froot_gr(p)     + &
+         cpool_livestem_gr(p)  + &
+#if (defined CROP)
+         cpool_grain_gr(p)  + &
+#endif
+         cpool_deadstem_gr(p)  + &
+         cpool_livecroot_gr(p) + &
+         cpool_deadcroot_gr(p)
+
+      ! transfer GR is respired this time step for transfer growth displayed in this timestep
+      transfer_gr(p) = &
+         transfer_leaf_gr(p)      + &
+         transfer_froot_gr(p)     + &
+         transfer_livestem_gr(p)  + &
+#if (defined CROP)
+         transfer_grain_gr(p)  + &
+#endif
+         transfer_deadstem_gr(p)  + &
+         transfer_livecroot_gr(p) + &
+         transfer_deadcroot_gr(p)
+
+      ! storage GR is respired this time step for growth sent to storage for later display
+      storage_gr(p) = &
+         cpool_leaf_storage_gr(p)      + &
+         cpool_froot_storage_gr(p)     + &
+         cpool_livestem_storage_gr(p)  + &
+#if (defined CROP)
+         cpool_grain_storage_gr(p)  + &
+#endif
+         cpool_deadstem_storage_gr(p)  + &
+         cpool_livecroot_storage_gr(p) + &
+         cpool_deadcroot_storage_gr(p)
+
+      ! GR is the sum of current + transfer + storage GR
+      gr(p) = &
+         current_gr(p)  + &
+         transfer_gr(p) + &
+         storage_gr(p)
+
+      ! autotrophic respiration (AR)
+#if (defined CROP)
+      ar(p) = mr(p) + gr(p) + xsmrpool_to_atm(p) ! xsmr... is -ve (slevis)
+      write(6,*) 'to check ar'
+      write(6,*) 'ar(',p,')=',ar(p)
+      write(6,*) 'CSummary,mr(',p,')=',mr(p)
+      write(6,*) 'CSummary,gr(',p,')=',gr(p)
+      write(6,*) 'CSummary,xsmrpool_to_atm(',p,')=', xsmrpool_to_atm(p)
+#else
+      ar(p) = mr(p) + gr(p)
+#endif
+
+      ! root respiration (RR)
+      rr(p) = &
+         froot_mr(p) + &
+         cpool_froot_gr(p) + &
+         cpool_livecroot_gr(p) + &
+         cpool_deadcroot_gr(p) + &
+         transfer_froot_gr(p) + &
+         transfer_livecroot_gr(p) + &
+         transfer_deadcroot_gr(p) + &
+         cpool_froot_storage_gr(p) + &
+         cpool_livecroot_storage_gr(p) + &
+         cpool_deadcroot_storage_gr(p)
+
+      ! net primary production (NPP)
+      npp(p) = gpp(p) - ar(p)
+
+      ! update the annual NPP accumulator, for use in allocation code
+      tempsum_npp(p) = tempsum_npp(p) + npp(p)
+
+      ! aboveground NPP: leaf, live stem, dead stem (AGNPP)
+      ! This is supposed to correspond as closely as possible to
+      ! field measurements of AGNPP, so it ignores the storage pools
+      ! and only treats the fluxes into displayed pools.
+      agnpp(p) = &
+         cpool_to_leafc(p)                  + &
+         leafc_xfer_to_leafc(p)             + &
+         cpool_to_livestemc(p)              + &
+         livestemc_xfer_to_livestemc(p)     + &
+#if (defined CROP)
+         cpool_to_grainc(p)           + &
+         grainc_xfer_to_grainc(p)     + &
+#endif
+         cpool_to_deadstemc(p)              + &
+         deadstemc_xfer_to_deadstemc(p)
+
+     ! belowground NPP: fine root, live coarse root, dead coarse root (BGNPP)
+      ! This is supposed to correspond as closely as possible to
+      ! field measurements of BGNPP, so it ignores the storage pools
+      ! and only treats the fluxes into displayed pools.
+      bgnpp(p) = &
+         cpool_to_frootc(p)                   + &
+         frootc_xfer_to_frootc(p)             + &
+         cpool_to_livecrootc(p)               + &
+         livecrootc_xfer_to_livecrootc(p)     + &
+         cpool_to_deadcrootc(p)               + &
+         deadcrootc_xfer_to_deadcrootc(p)
+
+      ! litterfall (LITFALL)
+      litfall(p) = &
+         leafc_to_litter(p)                 + &
+         frootc_to_litter(p)                + &
+#if (defined CROP)
+         livestemc_to_litter(p)           + &
+         grainc_to_food(p)                + &
+#endif
+         m_leafc_to_litter(p)               + &
+         m_leafc_storage_to_litter(p)       + &
+         m_leafc_xfer_to_litter(p)          + &
+         m_frootc_to_litter(p)              + &
+         m_frootc_storage_to_litter(p)      + &
+         m_frootc_xfer_to_litter(p)         + &
+         m_livestemc_to_litter(p)           + &
+         m_livestemc_storage_to_litter(p)   + &
+         m_livestemc_xfer_to_litter(p)      + &
+         m_deadstemc_to_litter(p)           + &
+         m_deadstemc_storage_to_litter(p)   + &
+         m_deadstemc_xfer_to_litter(p)      + &
+         m_livecrootc_to_litter(p)          + &
+         m_livecrootc_storage_to_litter(p)  + &
+         m_livecrootc_xfer_to_litter(p)     + &
+         m_deadcrootc_to_litter(p)          + &
+         m_deadcrootc_storage_to_litter(p)  + &
+         m_deadcrootc_xfer_to_litter(p)     + &
+         m_gresp_storage_to_litter(p)       + &
+         m_gresp_xfer_to_litter(p)          + &
+         m_deadstemc_to_litter_fire(p)      + &
+         m_deadcrootc_to_litter_fire(p)     + &
+         hrv_leafc_to_litter(p)             + &
+         hrv_leafc_storage_to_litter(p)     + &
+         hrv_leafc_xfer_to_litter(p)        + &
+         hrv_frootc_to_litter(p)            + &
+         hrv_frootc_storage_to_litter(p)    + &
+         hrv_frootc_xfer_to_litter(p)       + &
+         hrv_livestemc_to_litter(p)         + &
+         hrv_livestemc_storage_to_litter(p) + &
+         hrv_livestemc_xfer_to_litter(p)    + &
+         hrv_deadstemc_storage_to_litter(p) + &
+         hrv_deadstemc_xfer_to_litter(p)    + &
+         hrv_livecrootc_to_litter(p)        + &
+         hrv_livecrootc_storage_to_litter(p)+ &
+         hrv_livecrootc_xfer_to_litter(p)   + &
+         hrv_deadcrootc_to_litter(p)        + &
+         hrv_deadcrootc_storage_to_litter(p)+ &
+         hrv_deadcrootc_xfer_to_litter(p)   + &
+         hrv_gresp_storage_to_litter(p)     + &
+         hrv_gresp_xfer_to_litter(p)
+                 
+#if (defined CNDV)
+      ! update the annual litfall accumulator, for use in mortality code
+      tempsum_litfall(p) = tempsum_litfall(p) + leafc_to_litter(p) + frootc_to_litter(p)
+#endif
+
+      ! pft-level fire losses (VEGFIRE)
+      vegfire(p) = 0._r8
+      
+      ! pft-level wood harvest
+      wood_harvestc(p) = &
+         hrv_deadstemc_to_prod10c(p) + &
+         hrv_deadstemc_to_prod100c(p)
+
+      ! pft-level carbon losses to fire
+      pft_fire_closs(p) = &
+         m_leafc_to_fire(p)                + &
+         m_leafc_storage_to_fire(p)        + &
+         m_leafc_xfer_to_fire(p)           + &
+         m_frootc_to_fire(p)               + &
+         m_frootc_storage_to_fire(p)       + &
+         m_frootc_xfer_to_fire(p)          + &
+         m_livestemc_to_fire(p)            + &
+         m_livestemc_storage_to_fire(p)    + &
+         m_livestemc_xfer_to_fire(p)       + &
+         m_deadstemc_to_fire(p)            + &
+         m_deadstemc_storage_to_fire(p)    + &
+         m_deadstemc_xfer_to_fire(p)       + &
+         m_livecrootc_to_fire(p)           + &
+         m_livecrootc_storage_to_fire(p)   + &
+         m_livecrootc_xfer_to_fire(p)      + &
+         m_deadcrootc_to_fire(p)           + &
+         m_deadcrootc_storage_to_fire(p)   + &
+         m_deadcrootc_xfer_to_fire(p)      + &
+         m_gresp_storage_to_fire(p)        + &
+         m_gresp_xfer_to_fire(p)
+
+      ! displayed vegetation carbon, excluding storage and cpool (DISPVEGC)
+      dispvegc(p) = &
+         leafc(p)      + &
+         frootc(p)     + &
+         livestemc(p)  + &
+#if (defined CROP)
+         grainc(p)  + &
+#endif
+         deadstemc(p)  + &
+         livecrootc(p) + &
+         deadcrootc(p)
+
+      ! stored vegetation carbon, excluding cpool (STORVEGC)
+      storvegc(p) = &
+      	cpool(p)              + &
+         leafc_storage(p)      + &
+         frootc_storage(p)     + &
+         livestemc_storage(p)  + &
+         deadstemc_storage(p)  + &
+         livecrootc_storage(p) + &
+         deadcrootc_storage(p) + &
+#if (defined CROP)
+         grainc_storage(p)  + &
+         grainc_xfer(p)     + &
+#endif
+         leafc_xfer(p)         + &
+         frootc_xfer(p)        + &
+         livestemc_xfer(p)     + &
+         deadstemc_xfer(p)     + &
+         livecrootc_xfer(p)    + &
+         deadcrootc_xfer(p)    + &
+         gresp_storage(p)      + &
+         gresp_xfer(p)
+
+      ! total vegetation carbon, excluding cpool (TOTVEGC)
+      totvegc(p) = dispvegc(p) + storvegc(p)
+
+      ! total pft-level carbon, including xsmrpool, ctrunc
+      totpftc(p) = totvegc(p) + xsmrpool(p) + pft_ctrunc(p)
+       write(6,*) 'check totpftc'
+      write(6,*) 'CSummary,totvegc(',p,')=',totvegc(p)
+      write(6,*) 'CSummary,xsmrpool(',p,')=',xsmrpool(p) 
+      write(6,*) 'CSummary,pft_ctrunc(',p,')=',pft_ctrunc(p)
+      
+#if (defined CLAMP)
+      ! new summary variables for CLAMP
+      
+      ! (FROOTC_ALLOC) - fine root C allocation
+      frootc_alloc(p) = &
+        frootc_xfer_to_frootc(p)    + &
+        cpool_to_frootc(p)     
+              
+      ! (FROOTC_LOSS) - fine root C loss
+      frootc_loss(p) = &
+        m_frootc_to_litter(p)   + &
+        m_frootc_to_fire(p)     + &
+        hrv_frootc_to_litter(p) + &
+        frootc_to_litter(p)
+      
+      ! (LEAFC_ALLOC) - leaf C allocation
+      leafc_alloc(p) = &
+        leafc_xfer_to_leafc(p)    + &
+        cpool_to_leafc(p)     
+
+      ! (LEAFC_LOSS) - leaf C loss
+      leafc_loss(p) = &
+        m_leafc_to_litter(p)   + &
+        m_leafc_to_fire(p)     + &
+        hrv_leafc_to_litter(p) + &
+        leafc_to_litter(p)
+      
+      ! (WOODC) - wood C
+      woodc(p) = &
+        deadstemc(p)    + &
+        livestemc(p)    + &
+        deadcrootc(p)   + &
+        livecrootc(p)
+      
+      ! (WOODC_ALLOC) - wood C allocation
+      woodc_alloc(p) = &
+        livestemc_xfer_to_livestemc(p)  + &
+        deadstemc_xfer_to_deadstemc(p)  + &
+        livecrootc_xfer_to_livecrootc(p)    + &
+        deadcrootc_xfer_to_deadcrootc(p)    + &
+        cpool_to_livestemc(p)   + &
+        cpool_to_deadstemc(p)   + &
+        cpool_to_livecrootc(p)  + &
+        cpool_to_deadcrootc(p)
+      
+      ! (WOODC_LOSS) - wood C loss
+      woodc_loss(p) = &
+        m_livestemc_to_litter(p)    + &
+        m_deadstemc_to_litter(p)    + &
+        m_livecrootc_to_litter(p)   + &
+        m_deadcrootc_to_litter(p)   + &
+        m_livestemc_to_fire(p)      + &
+        m_deadstemc_to_fire(p)      + &
+        m_livecrootc_to_fire(p)     + &
+        m_deadcrootc_to_fire(p)     + &
+        hrv_livestemc_to_litter(p)  + &
+        hrv_livestemc_storage_to_litter(p) + &
+        hrv_livestemc_xfer_to_litter(p)    + &
+        hrv_deadstemc_to_prod10c(p)        + &
+        hrv_deadstemc_to_prod100c(p)       + &
+        hrv_deadstemc_storage_to_litter(p) + &
+        hrv_deadstemc_xfer_to_litter(p)    + &
+        hrv_livecrootc_to_litter(p)        + &
+        hrv_livecrootc_storage_to_litter(p)+ &
+        hrv_livecrootc_xfer_to_litter(p)   + &
+        hrv_deadcrootc_to_litter(p)        + &
+        hrv_deadcrootc_storage_to_litter(p)+ &
+        hrv_deadcrootc_xfer_to_litter(p)   
+#endif
+
+  write(6,*) 'CSummary, gpp(',p,')=',gpp(p)
+  write(6,*) 'CSummary, ar(',p,')=',ar(p)
+  write(6,*) 'CSummary, rr(',p,')=',rr(p)
+  write(6,*) 'CSummary, npp(',p,')=',npp(p)
+  write(6,*) 'CSummary,  vegfire(',p,')=',vegfire(p)
+  write(6,*) 'CSummary,  wood_harvestc(',p,')=',wood_harvestc(p)
+  write(6,*) 'CSummary,  totvegc(',p,')=',totvegc(p)
+  write(6,*) 'CSummary,  totpftc(',p,')=',totpftc(p)
+  write(6,*) 'CSummary,  pft_fire_closs(',p,')=',pft_fire_closs(p) 
+  write(6,*) 'CSummary,  litfall(',p,')=',litfall(p)
+  write(6,*) 'CSummary,  hrv_xsmrpool_to_atm(',p,')=',hrv_xsmrpool_to_atm(p)
+   end do  ! end of pfts loop
+
+   ! use p2c routine to get selected column-average pft-level fluxes and states
+   call p2c(num_soilc, filter_soilc, gpp, col_gpp)
+   call p2c(num_soilc, filter_soilc, ar, col_ar)
+   call p2c(num_soilc, filter_soilc, rr, col_rr)
+   call p2c(num_soilc, filter_soilc, npp, col_npp)
+   call p2c(num_soilc, filter_soilc, vegfire, col_vegfire)
+   call p2c(num_soilc, filter_soilc, wood_harvestc, col_wood_harvestc)
+   call p2c(num_soilc, filter_soilc, totvegc, col_totvegc)
+   call p2c(num_soilc, filter_soilc, totpftc, col_totpftc)
+   call p2c(num_soilc, filter_soilc, pft_fire_closs, col_pft_fire_closs)
+   call p2c(num_soilc, filter_soilc, litfall, col_litfall)
+   call p2c(num_soilc, filter_soilc, hrv_xsmrpool_to_atm, col_hrv_xsmrpool_to_atm)
+   ! column loop
+   do fc = 1,num_soilc
+      c = filter_soilc(fc)
+
+      ! litter heterotrophic respiration (LITHR)
+      lithr(c) = &
+         litr1_hr(c) + &
+         litr2_hr(c) + &
+         litr3_hr(c)
+
+      ! soil organic matter heterotrophic respiration (SOMHR)
+      somhr(c) = &
+         soil1_hr(c) + &
+         soil2_hr(c) + &
+         soil3_hr(c) + &
+         soil4_hr(c)
+
+      ! total heterotrophic respiration (HR)
+      hr(c) = lithr(c) + somhr(c)
+
+      ! total soil respiration, heterotrophic + root respiration (SR)
+      sr(c) = col_rr(c) + hr(c)
+
+      ! total ecosystem respiration, autotrophic + heterotrophic (ER)
+      er(c) = col_ar(c) + hr(c)
+
+      ! litter fire losses (LITFIRE)
+      litfire(c) = 0._r8
+      
+      ! total wood product loss
+      product_closs(c) = &
+         prod10c_loss(c) + &
+         prod100c_loss(c) 
+
+      ! soil organic matter fire losses (SOMFIRE)
+      somfire(c) = 0._r8
+
+      ! total ecosystem fire losses (TOTFIRE)
+      totfire(c) = &
+         litfire(c) + &
+         somfire(c) + &
+         col_vegfire(c)
+
+      ! column-level carbon losses to fire, including pft losses
+      col_fire_closs(c) = &
+         m_litr1c_to_fire(c)  + &
+         m_litr2c_to_fire(c)  + &
+         m_litr3c_to_fire(c)  + &
+         m_cwdc_to_fire(c)    + &
+         col_pft_fire_closs(c)
+      
+      ! column-level carbon losses due to landcover change
+      dwt_closs(c) = &
+         dwt_conv_cflux(c)
+
+      ! net ecosystem production, excludes fire flux, landcover change, and loss from wood products, positive for sink (NEP)
+      nep(c) = col_gpp(c) - er(c)
+
+      ! net biome production of carbon, includes depletion from: fire flux, landcover change flux, and loss
+      ! from wood products pools, positive for sink (NBP)
+      nbp(c) = nep(c) - col_fire_closs(c) - dwt_closs(c) - product_closs(c)
+
+      ! net ecosystem exchange of carbon, includes fire flux, landcover change flux, loss
+      ! from wood products pools, and hrv_xsmrpool flux, positive for source (NEE)
+      nee(c) = -nep(c) + col_fire_closs(c) + dwt_closs(c) + product_closs(c) + col_hrv_xsmrpool_to_atm(c)
+      ! land use flux and land uptake
+      landuseflux(c) = dwt_closs(c) + product_closs(c)
+      landuptake(c) = nee(c) - landuseflux(c)
+
+      ! total litter carbon (TOTLITC)
+      totlitc(c) = &
+         litr1c(c) + &
+         litr2c(c) + &
+         litr3c(c)
+
+      ! total soil organic matter carbon (TOTSOMC)
+      totsomc(c) = &
+         soil1c(c) + &
+         soil2c(c) + &
+         soil3c(c) + &
+         soil4c(c)
+      
+      ! total wood product carbon
+      totprodc(c) = &
+         prod10c(c) + &
+	      prod100c(c)	 
+
+      ! total ecosystem carbon, including veg but excluding cpool (TOTECOSYSC)
+      totecosysc(c) = &
+         cwdc(c) + &
+         totlitc(c) + &
+         totsomc(c) + &
+	      totprodc(c) + &
+         col_totvegc(c)
+
+      ! total column carbon, including veg and cpool (TOTCOLC)
+	  ! adding col_ctrunc, seedc
+      totcolc(c) = &
+         col_totpftc(c) + &
+         cwdc(c) + &
+         totlitc(c) + &
+         totsomc(c) + &
+	      totprodc(c) + &
+		   seedc(c) + &
+		   col_ctrunc(c)
+
+#if (defined CLAMP)
+      ! new summary variables for CLAMP
+      
+      ! (CWDC_HR) - coarse woody debris heterotrophic respiration
+      cwdc_hr(c) = 0._r8
+      
+      ! (CWDC_LOSS) - coarse woody debris C loss
+      cwdc_loss(c) = & 
+        m_cwdc_to_fire(c) + &
+        cwdc_to_litr2c(c) + &
+        cwdc_to_litr3c(c)
+      
+      ! (LITTERC_LOSS) - litter C loss
+      litterc_loss(c) = &
+        lithr(c)            + &
+        m_litr1c_to_fire(c) + &
+        m_litr2c_to_fire(c) + &
+        m_litr3c_to_fire(c) + &
+        litr1c_to_soil1c(c) + &
+        litr2c_to_soil2c(c) + &
+        litr3c_to_soil3c(c)
+#endif
+      
+   end do ! end of columns loop
+
+
+end subroutine CSummary
+!-----------------------------------------------------------------------
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+
+!-----------------------------------------------------------------------
+!BOP
+!
+<<<<<<< HEAD
+! !IROUTINE: CNPrecisionControl
+!
+! !INTERFACE:
+subroutine CNPrecisionControl(num_soilc, filter_soilc, num_soilp, filter_soilp)
+!
+! !DESCRIPTION: 
+! On the radiation time step, force leaf and deadstem c and n to 0 if
+! they get too small.
+!
+! !USES:
+   use clmtype
+!   use abortutils,   only: endrun
+!   use clm_varctl,   only: iulog
+   use module_cam_support, only: endrun
+=======
+! !IROUTINE: NSummary
+!
+! !INTERFACE:
+subroutine NSummary(num_soilc, filter_soilc, num_soilp, filter_soilp)
+!
+! !DESCRIPTION:
+! On the radiation time step, perform pft and column-level nitrogen
+! summary calculations
+!
+! !USES:
+   use clmtype
+!ylu changed
+!   use pft2colMod, only: p2c
+  use subgridAveMod, only : p2c
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+!
+! !ARGUMENTS:
+   implicit none
+   integer, intent(in) :: num_soilc       ! number of soil columns in filter
+   integer, intent(in) :: filter_soilc(:) ! filter for soil columns
+   integer, intent(in) :: num_soilp       ! number of soil pfts in filter
+   integer, intent(in) :: filter_soilp(:) ! filter for soil pfts
+!
+! !CALLED FROM:
+! subroutine CNEcosystemDyn
+!
+! !REVISION HISTORY:
+<<<<<<< HEAD
+! 8/1/03: Created by Peter Thornton
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+   real(r8), pointer :: col_ctrunc(:)         ! (gC/m2) column-level sink for C truncation
+   real(r8), pointer :: cwdc(:)               ! (gC/m2) coarse woody debris C
+   real(r8), pointer :: litr1c(:)             ! (gC/m2) litter labile C
+   real(r8), pointer :: litr2c(:)             ! (gC/m2) litter cellulose C
+   real(r8), pointer :: litr3c(:)             ! (gC/m2) litter lignin C
+   real(r8), pointer :: soil1c(:)             ! (gC/m2) soil organic matter C (fast pool)
+   real(r8), pointer :: soil2c(:)             ! (gC/m2) soil organic matter C (medium pool)
+   real(r8), pointer :: soil3c(:)             ! (gC/m2) soil organic matter C (slow pool)
+   real(r8), pointer :: soil4c(:)             ! (gC/m2) soil organic matter C (slowest pool)
+#if (defined C13)
+   real(r8), pointer :: c13_col_ctrunc(:)     ! (gC/m2) column-level sink for C truncation
+   real(r8), pointer :: c13_cwdc(:)           ! (gC/m2) coarse woody debris C
+   real(r8), pointer :: c13_litr1c(:)         ! (gC/m2) litter labile C
+   real(r8), pointer :: c13_litr2c(:)         ! (gC/m2) litter cellulose C
+   real(r8), pointer :: c13_litr3c(:)         ! (gC/m2) litter lignin C
+   real(r8), pointer :: c13_soil1c(:)         ! (gC/m2) soil organic matter C (fast pool)
+   real(r8), pointer :: c13_soil2c(:)         ! (gC/m2) soil organic matter C (medium pool)
+   real(r8), pointer :: c13_soil3c(:)         ! (gC/m2) soil organic matter C (slow pool)
+   real(r8), pointer :: c13_soil4c(:)         ! (gC/m2) soil organic matter C (slowest pool)
+#endif
+   real(r8), pointer :: col_ntrunc(:)         ! (gN/m2) column-level sink for N truncation
+=======
+! 6/28/04: Created by Peter Thornton
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+   real(r8), pointer :: col_fire_nloss(:) ! (gN/m2/s) total column-level fire N loss
+   real(r8), pointer :: col_wood_harvestn(:)
+   real(r8), pointer :: denit(:)
+   real(r8), pointer :: m_cwdn_to_fire(:)              
+   real(r8), pointer :: m_litr1n_to_fire(:)             
+   real(r8), pointer :: m_litr2n_to_fire(:)             
+   real(r8), pointer :: m_litr3n_to_fire(:)             
+   real(r8), pointer :: col_pft_fire_nloss(:) ! (gN/m2/s) total pft-level fire C loss 
+   real(r8), pointer :: sminn_to_denit_excess(:)
+   real(r8), pointer :: sminn_to_denit_l1s1(:)
+   real(r8), pointer :: sminn_to_denit_l2s2(:)
+   real(r8), pointer :: sminn_to_denit_l3s3(:)
+   real(r8), pointer :: sminn_to_denit_s1s2(:)
+   real(r8), pointer :: sminn_to_denit_s2s3(:)
+   real(r8), pointer :: sminn_to_denit_s3s4(:)
+   real(r8), pointer :: sminn_to_denit_s4(:)  
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+   real(r8), pointer :: cwdn(:)               ! (gN/m2) coarse woody debris N
+   real(r8), pointer :: litr1n(:)             ! (gN/m2) litter labile N
+   real(r8), pointer :: litr2n(:)             ! (gN/m2) litter cellulose N
+   real(r8), pointer :: litr3n(:)             ! (gN/m2) litter lignin N
+<<<<<<< HEAD
+=======
+   real(r8), pointer :: col_totpftn(:)        ! (gN/m2) total pft-level nitrogen
+   real(r8), pointer :: col_totvegn(:)            ! (gN/m2) total vegetation nitrogen
+   real(r8), pointer :: sminn(:)              ! (gN/m2) soil mineral N
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+   real(r8), pointer :: soil1n(:)             ! (gN/m2) soil organic matter N (fast pool)
+   real(r8), pointer :: soil2n(:)             ! (gN/m2) soil organic matter N (medium pool)
+   real(r8), pointer :: soil3n(:)             ! (gN/m2) soil orgainc matter N (slow pool)
+   real(r8), pointer :: soil4n(:)             ! (gN/m2) soil orgainc matter N (slowest pool)
+<<<<<<< HEAD
+   real(r8), pointer :: cpool(:)              ! (gC/m2) temporary photosynthate C pool
+   real(r8), pointer :: deadcrootc(:)         ! (gC/m2) dead coarse root C
+   real(r8), pointer :: deadcrootc_storage(:) ! (gC/m2) dead coarse root C storage
+   real(r8), pointer :: deadcrootc_xfer(:)    ! (gC/m2) dead coarse root C transfer
+   real(r8), pointer :: deadstemc(:)          ! (gC/m2) dead stem C
+   real(r8), pointer :: deadstemc_storage(:)  ! (gC/m2) dead stem C storage
+   real(r8), pointer :: deadstemc_xfer(:)     ! (gC/m2) dead stem C transfer
+   real(r8), pointer :: frootc(:)             ! (gC/m2) fine root C
+   real(r8), pointer :: frootc_storage(:)     ! (gC/m2) fine root C storage
+   real(r8), pointer :: frootc_xfer(:)        ! (gC/m2) fine root C transfer
+   real(r8), pointer :: gresp_storage(:)      ! (gC/m2) growth respiration storage
+   real(r8), pointer :: gresp_xfer(:)         ! (gC/m2) growth respiration transfer
+   real(r8), pointer :: leafc(:)              ! (gC/m2) leaf C
+   real(r8), pointer :: leafc_storage(:)      ! (gC/m2) leaf C storage
+   real(r8), pointer :: leafc_xfer(:)         ! (gC/m2) leaf C transfer
+   real(r8), pointer :: livecrootc(:)         ! (gC/m2) live coarse root C
+   real(r8), pointer :: livecrootc_storage(:) ! (gC/m2) live coarse root C storage
+   real(r8), pointer :: livecrootc_xfer(:)    ! (gC/m2) live coarse root C transfer
+   real(r8), pointer :: livestemc(:)          ! (gC/m2) live stem C
+   real(r8), pointer :: livestemc_storage(:)  ! (gC/m2) live stem C storage
+   real(r8), pointer :: livestemc_xfer(:)     ! (gC/m2) live stem C transfer
+   real(r8), pointer :: pft_ctrunc(:)         ! (gC/m2) pft-level sink for C truncation
+#if (defined CROP)
+   real(r8), pointer :: xsmrpool(:)           ! (gC/m2) execss maint resp C pool
+   real(r8), pointer :: grainc(:)             ! (gC/m2) grain C
+   real(r8), pointer :: grainc_storage(:)     ! (gC/m2) grain C storage
+   real(r8), pointer :: grainc_xfer(:)        ! (gC/m2) grain C transfer
+#if (defined C13)
+   real(r8), pointer :: c13_xsmrpool(:)           ! (gC/m2) execss maint resp C pool
+   real(r8), pointer :: c13_grainc(:)             ! (gC/m2) grain C
+   real(r8), pointer :: c13_grainc_storage(:)     ! (gC/m2) grain C storage
+   real(r8), pointer :: c13_grainc_xfer(:)        ! (gC/m2) grain C transfer
+#endif
+#endif
+#if (defined C13)
+   real(r8), pointer :: c13_cpool(:)              ! (gC/m2) temporary photosynthate C pool
+   real(r8), pointer :: c13_deadcrootc(:)         ! (gC/m2) dead coarse root C
+   real(r8), pointer :: c13_deadcrootc_storage(:) ! (gC/m2) dead coarse root C storage
+   real(r8), pointer :: c13_deadcrootc_xfer(:)    ! (gC/m2) dead coarse root C transfer
+   real(r8), pointer :: c13_deadstemc(:)          ! (gC/m2) dead stem C
+   real(r8), pointer :: c13_deadstemc_storage(:)  ! (gC/m2) dead stem C storage
+   real(r8), pointer :: c13_deadstemc_xfer(:)     ! (gC/m2) dead stem C transfer
+   real(r8), pointer :: c13_frootc(:)             ! (gC/m2) fine root C
+   real(r8), pointer :: c13_frootc_storage(:)     ! (gC/m2) fine root C storage
+   real(r8), pointer :: c13_frootc_xfer(:)        ! (gC/m2) fine root C transfer
+   real(r8), pointer :: c13_gresp_storage(:)      ! (gC/m2) growth respiration storage
+   real(r8), pointer :: c13_gresp_xfer(:)         ! (gC/m2) growth respiration transfer
+   real(r8), pointer :: c13_leafc(:)              ! (gC/m2) leaf C
+   real(r8), pointer :: c13_leafc_storage(:)      ! (gC/m2) leaf C storage
+   real(r8), pointer :: c13_leafc_xfer(:)         ! (gC/m2) leaf C transfer
+   real(r8), pointer :: c13_livecrootc(:)         ! (gC/m2) live coarse root C
+   real(r8), pointer :: c13_livecrootc_storage(:) ! (gC/m2) live coarse root C storage
+   real(r8), pointer :: c13_livecrootc_xfer(:)    ! (gC/m2) live coarse root C transfer
+   real(r8), pointer :: c13_livestemc(:)          ! (gC/m2) live stem C
+   real(r8), pointer :: c13_livestemc_storage(:)  ! (gC/m2) live stem C storage
+   real(r8), pointer :: c13_livestemc_xfer(:)     ! (gC/m2) live stem C transfer
+   real(r8), pointer :: c13_pft_ctrunc(:)         ! (gC/m2) pft-level sink for C truncation
+#endif
+=======
+   real(r8), pointer :: col_ntrunc(:)         ! (gN/m2) column-level sink for N truncation
+   real(r8), pointer :: totcoln(:)            ! (gN/m2) total column nitrogen, incl veg
+   real(r8), pointer :: totecosysn(:)         ! (gN/m2) total ecosystem nitrogen, incl veg 
+   real(r8), pointer :: totlitn(:)            ! (gN/m2) total litter nitrogen
+   real(r8), pointer :: totsomn(:)            ! (gN/m2) total soil organic matter nitrogen
+   real(r8), pointer :: m_deadcrootn_storage_to_fire(:) 
+   real(r8), pointer :: m_deadcrootn_to_fire(:)         
+   real(r8), pointer :: m_deadcrootn_xfer_to_fire(:)
+   real(r8), pointer :: m_deadstemn_storage_to_fire(:)  
+   real(r8), pointer :: m_deadstemn_to_fire(:)          
+   real(r8), pointer :: m_deadstemn_xfer_to_fire(:) 
+   real(r8), pointer :: m_frootn_storage_to_fire(:)     
+   real(r8), pointer :: m_frootn_to_fire(:)             
+   real(r8), pointer :: m_frootn_xfer_to_fire(:)    
+   real(r8), pointer :: m_leafn_storage_to_fire(:)      
+   real(r8), pointer :: m_leafn_to_fire(:)              
+   real(r8), pointer :: m_leafn_xfer_to_fire(:)     
+   real(r8), pointer :: m_livecrootn_storage_to_fire(:) 
+   real(r8), pointer :: m_livecrootn_to_fire(:)         
+   real(r8), pointer :: m_livecrootn_xfer_to_fire(:)
+   real(r8), pointer :: m_livestemn_storage_to_fire(:)  
+   real(r8), pointer :: m_livestemn_to_fire(:)          
+   real(r8), pointer :: m_livestemn_xfer_to_fire(:) 
+   real(r8), pointer :: m_retransn_to_fire(:)           
+   real(r8), pointer :: hrv_deadstemn_to_prod10n(:)        
+   real(r8), pointer :: hrv_deadstemn_to_prod100n(:)       
+   real(r8), pointer :: ndeploy(:)
+   real(r8), pointer :: pft_fire_nloss(:) ! (gN/m2/s) total pft-level fire C loss 
+   real(r8), pointer :: retransn_to_npool(:)          
+   real(r8), pointer :: sminn_to_npool(:)             
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+   real(r8), pointer :: deadcrootn(:)         ! (gN/m2) dead coarse root N
+   real(r8), pointer :: deadcrootn_storage(:) ! (gN/m2) dead coarse root N storage
+   real(r8), pointer :: deadcrootn_xfer(:)    ! (gN/m2) dead coarse root N transfer
+   real(r8), pointer :: deadstemn(:)          ! (gN/m2) dead stem N
+   real(r8), pointer :: deadstemn_storage(:)  ! (gN/m2) dead stem N storage
+   real(r8), pointer :: deadstemn_xfer(:)     ! (gN/m2) dead stem N transfer
+<<<<<<< HEAD
+=======
+   real(r8), pointer :: dispvegn(:)           ! (gN/m2) displayed veg nitrogen, excluding storage
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+   real(r8), pointer :: frootn(:)             ! (gN/m2) fine root N
+   real(r8), pointer :: frootn_storage(:)     ! (gN/m2) fine root N storage
+   real(r8), pointer :: frootn_xfer(:)        ! (gN/m2) fine root N transfer
+   real(r8), pointer :: leafn(:)              ! (gN/m2) leaf N 
+   real(r8), pointer :: leafn_storage(:)      ! (gN/m2) leaf N storage
+   real(r8), pointer :: leafn_xfer(:)         ! (gN/m2) leaf N transfer
+   real(r8), pointer :: livecrootn(:)         ! (gN/m2) live coarse root N
+   real(r8), pointer :: livecrootn_storage(:) ! (gN/m2) live coarse root N storage
+   real(r8), pointer :: livecrootn_xfer(:)    ! (gN/m2) live coarse root N transfer
+#if (defined CROP)
+<<<<<<< HEAD
+   real(r8), pointer :: grainn(:)             ! (gC/m2) grain N
+   real(r8), pointer :: grainn_storage(:)     ! (gC/m2) grain N storage
+   real(r8), pointer :: grainn_xfer(:)        ! (gC/m2) grain N transfer
+=======
+   real(r8), pointer :: grainn(:)             ! (gN/m2) grain N
+   real(r8), pointer :: grainn_storage(:)     ! (gN/m2) grain N storage
+   real(r8), pointer :: grainn_xfer(:)        ! (gN/m2) grain N transfer
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+#endif
+   real(r8), pointer :: livestemn(:)          ! (gN/m2) live stem N
+   real(r8), pointer :: livestemn_storage(:)  ! (gN/m2) live stem N storage
+   real(r8), pointer :: livestemn_xfer(:)     ! (gN/m2) live stem N transfer
+<<<<<<< HEAD
+   real(r8), pointer :: npool(:)              ! (gN/m2) temporary plant N pool
+   real(r8), pointer :: pft_ntrunc(:)         ! (gN/m2) pft-level sink for N truncation
+   real(r8), pointer :: retransn(:)           ! (gN/m2) plant pool of retranslocated N
+=======
+   real(r8), pointer :: retransn(:)           ! (gN/m2) plant pool of retranslocated N
+   real(r8), pointer :: npool(:)              ! (gN/m2) temporary plant N pool
+   real(r8), pointer :: pft_ntrunc(:)         ! (gN/m2) pft-level sink for N truncation
+   real(r8), pointer :: storvegn(:)           ! (gN/m2) stored vegetation nitrogen
+   real(r8), pointer :: totpftn(:)            ! (gN/m2) total pft-level nitrogen
+   real(r8), pointer :: totvegn(:)            ! (gN/m2) total vegetation nitrogen
+   ! for landcover change
+   real(r8), pointer :: wood_harvestn(:)                    ! total N losses to wood product pools (gN/m2/s)
+   real(r8), pointer :: dwt_nloss(:)          ! (gN/m2/s) total nitrogen loss from product pools and conversion
+   real(r8), pointer :: dwt_conv_nflux(:)     ! (gN/m2/s) conversion N flux (immediate loss to atm)
+   real(r8), pointer :: seedn(:)              ! (gN/m2) column-level pool for seeding new PFTs
+   real(r8), pointer :: prod10n_loss(:)       ! (gN/m2/s) loss from 10-yr wood product pool
+   real(r8), pointer :: prod100n_loss(:)      ! (gN/m2/s) loss from 100-yr wood product pool
+   real(r8), pointer :: product_nloss(:)      ! (gN/m2/s) total wood product nitrogen loss
+   real(r8), pointer :: prod10n(:)            ! (gN/m2) wood product N pool, 10-year lifespan
+   real(r8), pointer :: prod100n(:)           ! (gN/m2) wood product N pool, 100-year lifespan
+   real(r8), pointer :: totprodn(:)           ! (gN/m2) total wood product N
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+!
+! local pointers to implicit in/out scalars
+!
+! local pointers to implicit out scalars
+!
+! !OTHER LOCAL VARIABLES:
+<<<<<<< HEAD
+   integer :: c,p      ! indices
+   integer :: fp,fc    ! lake filter indices
+   real(r8):: pc,pn    ! truncation terms for pft-level corrections
+   real(r8):: cc,cn    ! truncation terms for column-level corrections
+#if (defined C13)
+   real(r8):: pc13     ! truncation terms for pft-level corrections
+   real(r8):: cc13     ! truncation terms for column-level corrections
+#endif
+   real(r8):: ccrit    ! critical carbon state value for truncation
+   real(r8):: ncrit    ! critical nitrogen state value for truncation
+    
+!EOP
+!-----------------------------------------------------------------------
+    ! assign local pointers at the column level
+    col_ctrunc                     => clm3%g%l%c%ccs%col_ctrunc
+    cwdc                           => clm3%g%l%c%ccs%cwdc
+    litr1c                         => clm3%g%l%c%ccs%litr1c
+    litr2c                         => clm3%g%l%c%ccs%litr2c
+    litr3c                         => clm3%g%l%c%ccs%litr3c
+    soil1c                         => clm3%g%l%c%ccs%soil1c
+    soil2c                         => clm3%g%l%c%ccs%soil2c
+    soil3c                         => clm3%g%l%c%ccs%soil3c
+    soil4c                         => clm3%g%l%c%ccs%soil4c
+#if (defined C13)
+    c13_col_ctrunc                     => clm3%g%l%c%cc13s%col_ctrunc
+    c13_cwdc                           => clm3%g%l%c%cc13s%cwdc
+    c13_litr1c                         => clm3%g%l%c%cc13s%litr1c
+    c13_litr2c                         => clm3%g%l%c%cc13s%litr2c
+    c13_litr3c                         => clm3%g%l%c%cc13s%litr3c
+    c13_soil1c                         => clm3%g%l%c%cc13s%soil1c
+    c13_soil2c                         => clm3%g%l%c%cc13s%soil2c
+    c13_soil3c                         => clm3%g%l%c%cc13s%soil3c
+    c13_soil4c                         => clm3%g%l%c%cc13s%soil4c
+#endif
+    col_ntrunc                     => clm3%g%l%c%cns%col_ntrunc
+=======
+   integer :: c,p         ! indices
+   integer :: fp,fc       ! lake filter indices
+
+!EOP
+!-----------------------------------------------------------------------
+    ! assign local pointers
+    col_fire_nloss                 => clm3%g%l%c%cnf%col_fire_nloss
+    denit                          => clm3%g%l%c%cnf%denit
+    m_cwdn_to_fire                 => clm3%g%l%c%cnf%m_cwdn_to_fire
+    m_litr1n_to_fire               => clm3%g%l%c%cnf%m_litr1n_to_fire
+    m_litr2n_to_fire               => clm3%g%l%c%cnf%m_litr2n_to_fire
+    m_litr3n_to_fire               => clm3%g%l%c%cnf%m_litr3n_to_fire
+    col_pft_fire_nloss             => clm3%g%l%c%cnf%pnf_a%pft_fire_nloss
+    sminn_to_denit_excess          => clm3%g%l%c%cnf%sminn_to_denit_excess
+    sminn_to_denit_l1s1            => clm3%g%l%c%cnf%sminn_to_denit_l1s1
+    sminn_to_denit_l2s2            => clm3%g%l%c%cnf%sminn_to_denit_l2s2
+    sminn_to_denit_l3s3            => clm3%g%l%c%cnf%sminn_to_denit_l3s3
+    sminn_to_denit_s1s2            => clm3%g%l%c%cnf%sminn_to_denit_s1s2
+    sminn_to_denit_s2s3            => clm3%g%l%c%cnf%sminn_to_denit_s2s3
+    sminn_to_denit_s3s4            => clm3%g%l%c%cnf%sminn_to_denit_s3s4
+    sminn_to_denit_s4              => clm3%g%l%c%cnf%sminn_to_denit_s4
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+    cwdn                           => clm3%g%l%c%cns%cwdn
+    litr1n                         => clm3%g%l%c%cns%litr1n
+    litr2n                         => clm3%g%l%c%cns%litr2n
+    litr3n                         => clm3%g%l%c%cns%litr3n
+<<<<<<< HEAD
+=======
+    col_totpftn                    => clm3%g%l%c%cns%pns_a%totpftn
+    col_totvegn                    => clm3%g%l%c%cns%pns_a%totvegn
+    sminn                          => clm3%g%l%c%cns%sminn
+    col_ntrunc                     => clm3%g%l%c%cns%col_ntrunc
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+    soil1n                         => clm3%g%l%c%cns%soil1n
+    soil2n                         => clm3%g%l%c%cns%soil2n
+    soil3n                         => clm3%g%l%c%cns%soil3n
+    soil4n                         => clm3%g%l%c%cns%soil4n
+<<<<<<< HEAD
+
+    ! assign local pointers at the pft level
+    cpool                          => clm3%g%l%c%p%pcs%cpool
+    deadcrootc                     => clm3%g%l%c%p%pcs%deadcrootc
+    deadcrootc_storage             => clm3%g%l%c%p%pcs%deadcrootc_storage
+    deadcrootc_xfer                => clm3%g%l%c%p%pcs%deadcrootc_xfer
+    deadstemc                      => clm3%g%l%c%p%pcs%deadstemc
+    deadstemc_storage              => clm3%g%l%c%p%pcs%deadstemc_storage
+    deadstemc_xfer                 => clm3%g%l%c%p%pcs%deadstemc_xfer
+    frootc                         => clm3%g%l%c%p%pcs%frootc
+    frootc_storage                 => clm3%g%l%c%p%pcs%frootc_storage
+    frootc_xfer                    => clm3%g%l%c%p%pcs%frootc_xfer
+    gresp_storage                  => clm3%g%l%c%p%pcs%gresp_storage
+    gresp_xfer                     => clm3%g%l%c%p%pcs%gresp_xfer
+    leafc                          => clm3%g%l%c%p%pcs%leafc
+    leafc_storage                  => clm3%g%l%c%p%pcs%leafc_storage
+    leafc_xfer                     => clm3%g%l%c%p%pcs%leafc_xfer
+    livecrootc                     => clm3%g%l%c%p%pcs%livecrootc
+    livecrootc_storage             => clm3%g%l%c%p%pcs%livecrootc_storage
+    livecrootc_xfer                => clm3%g%l%c%p%pcs%livecrootc_xfer
+    livestemc                      => clm3%g%l%c%p%pcs%livestemc
+    livestemc_storage              => clm3%g%l%c%p%pcs%livestemc_storage
+    livestemc_xfer                 => clm3%g%l%c%p%pcs%livestemc_xfer
+    pft_ctrunc                     => clm3%g%l%c%p%pcs%pft_ctrunc
+#if (defined CROP)
+    xsmrpool                       => clm3%g%l%c%p%pcs%xsmrpool
+    grainc                         => clm3%g%l%c%p%pcs%grainc
+    grainc_storage                 => clm3%g%l%c%p%pcs%grainc_storage
+    grainc_xfer                    => clm3%g%l%c%p%pcs%grainc_xfer
+#if (defined C13)
+    c13_xsmrpool                       => clm3%g%l%c%p%pc13s%xsmrpool
+    c13_grainc                         => clm3%g%l%c%p%pc13s%grainc
+    c13_grainc_storage                 => clm3%g%l%c%p%pc13s%grainc_storage
+    c13_grainc_xfer                    => clm3%g%l%c%p%pc13s%grainc_xfer
+#endif
+#endif
+#if (defined C13)
+    c13_cpool                          => clm3%g%l%c%p%pc13s%cpool
+    c13_deadcrootc                     => clm3%g%l%c%p%pc13s%deadcrootc
+    c13_deadcrootc_storage             => clm3%g%l%c%p%pc13s%deadcrootc_storage
+    c13_deadcrootc_xfer                => clm3%g%l%c%p%pc13s%deadcrootc_xfer
+    c13_deadstemc                      => clm3%g%l%c%p%pc13s%deadstemc
+    c13_deadstemc_storage              => clm3%g%l%c%p%pc13s%deadstemc_storage
+    c13_deadstemc_xfer                 => clm3%g%l%c%p%pc13s%deadstemc_xfer
+    c13_frootc                         => clm3%g%l%c%p%pc13s%frootc
+    c13_frootc_storage                 => clm3%g%l%c%p%pc13s%frootc_storage
+    c13_frootc_xfer                    => clm3%g%l%c%p%pc13s%frootc_xfer
+    c13_gresp_storage                  => clm3%g%l%c%p%pc13s%gresp_storage
+    c13_gresp_xfer                     => clm3%g%l%c%p%pc13s%gresp_xfer
+    c13_leafc                          => clm3%g%l%c%p%pc13s%leafc
+    c13_leafc_storage                  => clm3%g%l%c%p%pc13s%leafc_storage
+    c13_leafc_xfer                     => clm3%g%l%c%p%pc13s%leafc_xfer
+    c13_livecrootc                     => clm3%g%l%c%p%pc13s%livecrootc
+    c13_livecrootc_storage             => clm3%g%l%c%p%pc13s%livecrootc_storage
+    c13_livecrootc_xfer                => clm3%g%l%c%p%pc13s%livecrootc_xfer
+    c13_livestemc                      => clm3%g%l%c%p%pc13s%livestemc
+    c13_livestemc_storage              => clm3%g%l%c%p%pc13s%livestemc_storage
+    c13_livestemc_xfer                 => clm3%g%l%c%p%pc13s%livestemc_xfer
+    c13_pft_ctrunc                     => clm3%g%l%c%p%pc13s%pft_ctrunc
+#endif
+=======
+    totcoln                        => clm3%g%l%c%cns%totcoln
+    totecosysn                     => clm3%g%l%c%cns%totecosysn
+    totlitn                        => clm3%g%l%c%cns%totlitn
+    totsomn                        => clm3%g%l%c%cns%totsomn
+    m_deadcrootn_storage_to_fire   => clm3%g%l%c%p%pnf%m_deadcrootn_storage_to_fire
+    m_deadcrootn_to_fire           => clm3%g%l%c%p%pnf%m_deadcrootn_to_fire
+    m_deadcrootn_xfer_to_fire      => clm3%g%l%c%p%pnf%m_deadcrootn_xfer_to_fire
+    m_deadstemn_storage_to_fire    => clm3%g%l%c%p%pnf%m_deadstemn_storage_to_fire
+    m_deadstemn_to_fire            => clm3%g%l%c%p%pnf%m_deadstemn_to_fire
+    m_deadstemn_xfer_to_fire       => clm3%g%l%c%p%pnf%m_deadstemn_xfer_to_fire
+    m_frootn_storage_to_fire       => clm3%g%l%c%p%pnf%m_frootn_storage_to_fire
+    m_frootn_to_fire               => clm3%g%l%c%p%pnf%m_frootn_to_fire
+    m_frootn_xfer_to_fire          => clm3%g%l%c%p%pnf%m_frootn_xfer_to_fire
+    m_leafn_storage_to_fire        => clm3%g%l%c%p%pnf%m_leafn_storage_to_fire
+    m_leafn_to_fire                => clm3%g%l%c%p%pnf%m_leafn_to_fire
+    m_leafn_xfer_to_fire           => clm3%g%l%c%p%pnf%m_leafn_xfer_to_fire
+    m_livecrootn_storage_to_fire   => clm3%g%l%c%p%pnf%m_livecrootn_storage_to_fire
+    m_livecrootn_to_fire           => clm3%g%l%c%p%pnf%m_livecrootn_to_fire
+    m_livecrootn_xfer_to_fire      => clm3%g%l%c%p%pnf%m_livecrootn_xfer_to_fire
+    m_livestemn_storage_to_fire    => clm3%g%l%c%p%pnf%m_livestemn_storage_to_fire
+    m_livestemn_to_fire            => clm3%g%l%c%p%pnf%m_livestemn_to_fire
+    m_livestemn_xfer_to_fire       => clm3%g%l%c%p%pnf%m_livestemn_xfer_to_fire
+    m_retransn_to_fire             => clm3%g%l%c%p%pnf%m_retransn_to_fire
+    hrv_deadstemn_to_prod10n         => clm3%g%l%c%p%pnf%hrv_deadstemn_to_prod10n        
+    hrv_deadstemn_to_prod100n        => clm3%g%l%c%p%pnf%hrv_deadstemn_to_prod100n       
+    ndeploy                        => clm3%g%l%c%p%pnf%ndeploy
+    pft_fire_nloss                 => clm3%g%l%c%p%pnf%pft_fire_nloss
+    retransn_to_npool              => clm3%g%l%c%p%pnf%retransn_to_npool
+    sminn_to_npool                 => clm3%g%l%c%p%pnf%sminn_to_npool
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+    deadcrootn                     => clm3%g%l%c%p%pns%deadcrootn
+    deadcrootn_storage             => clm3%g%l%c%p%pns%deadcrootn_storage
+    deadcrootn_xfer                => clm3%g%l%c%p%pns%deadcrootn_xfer
+    deadstemn                      => clm3%g%l%c%p%pns%deadstemn
+    deadstemn_storage              => clm3%g%l%c%p%pns%deadstemn_storage
+    deadstemn_xfer                 => clm3%g%l%c%p%pns%deadstemn_xfer
+<<<<<<< HEAD
+=======
+    dispvegn                       => clm3%g%l%c%p%pns%dispvegn
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+    frootn                         => clm3%g%l%c%p%pns%frootn
+    frootn_storage                 => clm3%g%l%c%p%pns%frootn_storage
+    frootn_xfer                    => clm3%g%l%c%p%pns%frootn_xfer
+    leafn                          => clm3%g%l%c%p%pns%leafn
+    leafn_storage                  => clm3%g%l%c%p%pns%leafn_storage
+    leafn_xfer                     => clm3%g%l%c%p%pns%leafn_xfer
+    livecrootn                     => clm3%g%l%c%p%pns%livecrootn
+    livecrootn_storage             => clm3%g%l%c%p%pns%livecrootn_storage
+    livecrootn_xfer                => clm3%g%l%c%p%pns%livecrootn_xfer
+#if (defined CROP)
+    grainn                         => clm3%g%l%c%p%pns%grainn
+    grainn_storage                 => clm3%g%l%c%p%pns%grainn_storage
+    grainn_xfer                    => clm3%g%l%c%p%pns%grainn_xfer
+#endif
+    livestemn                      => clm3%g%l%c%p%pns%livestemn
+    livestemn_storage              => clm3%g%l%c%p%pns%livestemn_storage
+    livestemn_xfer                 => clm3%g%l%c%p%pns%livestemn_xfer
+<<<<<<< HEAD
+    npool                          => clm3%g%l%c%p%pns%npool
+    pft_ntrunc                     => clm3%g%l%c%p%pns%pft_ntrunc
+    retransn                       => clm3%g%l%c%p%pns%retransn
+   
+   ! set the critical carbon state value for truncation (gC/m2)
+   ccrit = 1.e-8_r8
+   ! set the critical nitrogen state value for truncation (gN/m2)
+   ncrit = 1.e-8_r8
+   
+   ! pft loop
+   do fp = 1,num_soilp
+      p = filter_soilp(fp)
+      
+      ! initialize the pft-level C and N truncation terms
+      pc = 0._r8
+#if (defined C13)
+      pc13 = 0._r8
+#endif
+      pn = 0._r8
+      
+      ! do tests on state variables for precision control
+      ! for linked C-N state variables, perform precision test on
+      ! the C component, but truncate C, C13, and N components
+      write(6,*) '******************************************'     
+      write(6,*) 'CHECK cn variables in CNPrecisionControl'
+      write(6,*) '******************************************'    
+      write(6,*) 'leafc(',p,')=',leafc(p)   
+      write(6,*) 'leafn(',p,')=',leafn(p)
+      write(6,*) 'leafc_storage(',p,')=',leafc_storage(p)
+      write(6,*) 'leafn_storage(',p,')=',leafn_storage(p)
+      write(6,*) 'leafc_xfer(',p,')=',leafc_xfer(p)
+      write(6,*) 'leafn_xfer(',p,')=',leafn_xfer(p)
+      write(6,*) 'frootc(',p,')=',frootc(p)
+      write(6,*) 'frootc_storage(',p,')=',frootc_storage(p)
+      write(6,*) 'frootn(',p,')=',frootn(p)
+      write(6,*) 'frootn_storage(',p,')=',frootn_storage(p)
+      write(6,*) 'frootc_xfer(',p,')=',frootc_xfer(p)
+      write(6,*) 'frootn_xfer(',p,')=',frootn_xfer(p)
+      write(6,*) 'grainc(',p,')=',grainc(p)
+      write(6,*) 'grainc_storage(',p,')=',grainc_storage(p) 
+      write(6,*) 'grainc_xfer(',p,')=',grainc_xfer(p)
+      write(6,*) 'grainn(',p,')=',grainn(p)
+      write(6,*) 'grainn_storage(',p,')=',grainn_storage(p)
+      write(6,*) 'grainn_xfer(',p,')=',grainn_xfer(p)
+      write(6,*) 'livestemc(',p,')=',livestemc(p)
+      write(6,*) 'livestemc_storage(',p,')=',livestemc_storage(p)
+      write(6,*) 'livestemc_xfer(',p,')=',livestemc_xfer(p)
+      write(6,*) 'livestemn(',p,')=',livestemn(p)
+      write(6,*) 'livestemn_storage(',p,')=',livestemn_storage(p)
+      write(6,*) 'livestemn_xfer(',p,')=',livestemn_xfer(p)
+      write(6,*) 'deadstemc(',p,')=',deadstemc(p)
+      write(6,*) 'deadstemc_storage(',p,')=',deadstemc_storage(p)
+      write(6,*) 'deadstemc_xfer(',p,')=',deadstemc_xfer(p)
+      write(6,*) 'deadstemn(',p,')=',deadstemn(p)
+      write(6,*) 'deadstemn_storage(',p,')=',deadstemn_storage(p)
+      write(6,*) 'deadstemn_xfer(',p,')=',deadstemn_xfer(p)
+      write(6,*) 'livecrootc(',p,')=',livecrootc(p)
+      write(6,*) 'livecrootc_storage(',p,')=',livecrootc_storage(p)
+      write(6,*) 'livecrootc_xfer(',p,')=',livecrootc_xfer(p)
+      write(6,*) 'livecrootn(',p,')=',livecrootn(p)
+      write(6,*) 'livecrootn_storage(',p,')=',livecrootn_storage(p)
+      write(6,*) 'livecrootn_xfer(',p,')=',livecrootn_xfer(p)
+      write(6,*) 'deadcrootc(',p,')=',deadcrootc(p)
+      write(6,*) 'deadcrootc_storage(',p,')=',deadcrootc_storage(p)
+      write(6,*) 'deadcrootc_xfer(',p,')=',deadcrootc_xfer(p)
+      write(6,*) 'deadcrootn(',p,')=',deadcrootn(p)
+      write(6,*) 'deadcrootn_storage(',p,')=',deadcrootn_storage(p)
+      write(6,*) 'deadcrootn_xfer(',p,')=',deadcrootn_xfer(p)
+      write(6,*) 'gresp_storage(',p,')=',gresp_storage(p)
+      write(6,*) 'gresp_xfer(',p,')=',gresp_xfer(p)
+      write(6,*) 'cpool(',p,')=',cpool(p)
+      write(6,*) 'npool(',p,')=',npool(p)
+      write(6,*) 'xsmrpool(',p,')=',xsmrpool(p)
+      write(6,*) 'retransn(',p,')=',retransn(p)
+      write(6,*) '******************************************'
+
+ 
+
+
+
+      ! leaf C and N
+      if (abs(leafc(p)) < ccrit) then
+          pc = pc + leafc(p)
+          leafc(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_leafc(p)
+          c13_leafc(p) = 0._r8
+#endif
+          pn = pn + leafn(p)
+          leafn(p) = 0._r8
+      end if
+
+      ! leaf storage C and N
+      if (abs(leafc_storage(p)) < ccrit) then
+          pc = pc + leafc_storage(p)
+          leafc_storage(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_leafc_storage(p)
+          c13_leafc_storage(p) = 0._r8
+#endif
+          pn = pn + leafn_storage(p)
+          leafn_storage(p) = 0._r8
+      end if
+          
+      ! leaf transfer C and N
+      if (abs(leafc_xfer(p)) < ccrit) then
+          pc = pc + leafc_xfer(p)
+          leafc_xfer(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_leafc_xfer(p)
+          c13_leafc_xfer(p) = 0._r8
+#endif
+          pn = pn + leafn_xfer(p)
+          leafn_xfer(p) = 0._r8
+      end if
+          
+      ! froot C and N
+      if (abs(frootc(p)) < ccrit) then
+          pc = pc + frootc(p)
+          frootc(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_frootc(p)
+          c13_frootc(p) = 0._r8
+#endif
+          pn = pn + frootn(p)
+          frootn(p) = 0._r8
+      end if
+
+      ! froot storage C and N
+      if (abs(frootc_storage(p)) < ccrit) then
+          pc = pc + frootc_storage(p)
+          frootc_storage(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_frootc_storage(p)
+          c13_frootc_storage(p) = 0._r8
+#endif
+          pn = pn + frootn_storage(p)
+          frootn_storage(p) = 0._r8
+      end if
+          
+      ! froot transfer C and N
+      if (abs(frootc_xfer(p)) < ccrit) then
+          pc = pc + frootc_xfer(p)
+          frootc_xfer(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_frootc_xfer(p)
+          c13_frootc_xfer(p) = 0._r8
+#endif
+          pn = pn + frootn_xfer(p)
+          frootn_xfer(p) = 0._r8
+      end if
+          
+#if (defined CROP)
+      ! grain C and N
+      if (abs(grainc(p)) < ccrit) then
+          pc = pc + grainc(p)
+          grainc(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_grainc(p)
+          c13_grainc(p) = 0._r8
+#endif
+          pn = pn + grainn(p)
+          grainn(p) = 0._r8
+      end if
+
+      ! grain storage C and N
+      if (abs(grainc_storage(p)) < ccrit) then
+          pc = pc + grainc_storage(p)
+          grainc_storage(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_grainc_storage(p)
+          c13_grainc_storage(p) = 0._r8
+#endif
+          pn = pn + grainn_storage(p)
+          grainn_storage(p) = 0._r8
+      end if
+          
+      ! grain transfer C and N
+      if (abs(grainc_xfer(p)) < ccrit) then
+          pc = pc + grainc_xfer(p)
+          grainc_xfer(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_grainc_xfer(p)
+          c13_grainc_xfer(p) = 0._r8
+#endif
+          pn = pn + grainn_xfer(p)
+          grainn_xfer(p) = 0._r8
+      end if
+#endif
+          
+      ! livestem C and N
+      if (abs(livestemc(p)) < ccrit) then
+          pc = pc + livestemc(p)
+          livestemc(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_livestemc(p)
+          c13_livestemc(p) = 0._r8
+#endif
+          pn = pn + livestemn(p)
+          livestemn(p) = 0._r8
+      end if
+
+      ! livestem storage C and N
+      if (abs(livestemc_storage(p)) < ccrit) then
+          pc = pc + livestemc_storage(p)
+          livestemc_storage(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_livestemc_storage(p)
+          c13_livestemc_storage(p) = 0._r8
+#endif
+          pn = pn + livestemn_storage(p)
+          livestemn_storage(p) = 0._r8
+      end if
+          
+      ! livestem transfer C and N
+      if (abs(livestemc_xfer(p)) < ccrit) then
+          pc = pc + livestemc_xfer(p)
+          livestemc_xfer(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_livestemc_xfer(p)
+          c13_livestemc_xfer(p) = 0._r8
+#endif
+          pn = pn + livestemn_xfer(p)
+          livestemn_xfer(p) = 0._r8
+      end if
+          
+      ! deadstem C and N
+      if (abs(deadstemc(p)) < ccrit) then
+          pc = pc + deadstemc(p)
+          deadstemc(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_deadstemc(p)
+          c13_deadstemc(p) = 0._r8
+#endif
+          pn = pn + deadstemn(p)
+          deadstemn(p) = 0._r8
+      end if
+
+      ! deadstem storage C and N
+      if (abs(deadstemc_storage(p)) < ccrit) then
+          pc = pc + deadstemc_storage(p)
+          deadstemc_storage(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_deadstemc_storage(p)
+          c13_deadstemc_storage(p) = 0._r8
+#endif
+          pn = pn + deadstemn_storage(p)
+          deadstemn_storage(p) = 0._r8
+      end if
+          
+      ! deadstem transfer C and N
+      if (abs(deadstemc_xfer(p)) < ccrit) then
+          pc = pc + deadstemc_xfer(p)
+          deadstemc_xfer(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_deadstemc_xfer(p)
+          c13_deadstemc_xfer(p) = 0._r8
+#endif
+          pn = pn + deadstemn_xfer(p)
+          deadstemn_xfer(p) = 0._r8
+      end if
+          
+      ! livecroot C and N
+      if (abs(livecrootc(p)) < ccrit) then
+          pc = pc + livecrootc(p)
+          livecrootc(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_livecrootc(p)
+          c13_livecrootc(p) = 0._r8
+#endif
+          pn = pn + livecrootn(p)
+          livecrootn(p) = 0._r8
+      end if
+
+      ! livecroot storage C and N
+      if (abs(livecrootc_storage(p)) < ccrit) then
+          pc = pc + livecrootc_storage(p)
+          livecrootc_storage(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_livecrootc_storage(p)
+          c13_livecrootc_storage(p) = 0._r8
+#endif
+          pn = pn + livecrootn_storage(p)
+          livecrootn_storage(p) = 0._r8
+      end if
+          
+      ! livecroot transfer C and N
+      if (abs(livecrootc_xfer(p)) < ccrit) then
+          pc = pc + livecrootc_xfer(p)
+          livecrootc_xfer(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_livecrootc_xfer(p)
+          c13_livecrootc_xfer(p) = 0._r8
+#endif
+          pn = pn + livecrootn_xfer(p)
+          livecrootn_xfer(p) = 0._r8
+      end if
+          
+      ! deadcroot C and N
+      if (abs(deadcrootc(p)) < ccrit) then
+          pc = pc + deadcrootc(p)
+          deadcrootc(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_deadcrootc(p)
+          c13_deadcrootc(p) = 0._r8
+#endif
+          pn = pn + deadcrootn(p)
+          deadcrootn(p) = 0._r8
+      end if
+
+      ! deadcroot storage C and N
+      if (abs(deadcrootc_storage(p)) < ccrit) then
+          pc = pc + deadcrootc_storage(p)
+          deadcrootc_storage(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_deadcrootc_storage(p)
+          c13_deadcrootc_storage(p) = 0._r8
+#endif
+          pn = pn + deadcrootn_storage(p)
+          deadcrootn_storage(p) = 0._r8
+      end if
+          
+      ! deadcroot transfer C and N
+      if (abs(deadcrootc_xfer(p)) < ccrit) then
+          pc = pc + deadcrootc_xfer(p)
+          deadcrootc_xfer(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_deadcrootc_xfer(p)
+          c13_deadcrootc_xfer(p) = 0._r8
+#endif
+          pn = pn + deadcrootn_xfer(p)
+          deadcrootn_xfer(p) = 0._r8
+      end if
+          
+      ! gresp_storage (C only)
+      if (abs(gresp_storage(p)) < ccrit) then
+          pc = pc + gresp_storage(p)
+          gresp_storage(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_gresp_storage(p)
+          c13_gresp_storage(p) = 0._r8
+#endif
+      end if
+
+      ! gresp_xfer (C only)
+      if (abs(gresp_xfer(p)) < ccrit) then
+          pc = pc + gresp_xfer(p)
+          gresp_xfer(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_gresp_xfer(p)
+          c13_gresp_xfer(p) = 0._r8
+#endif
+      end if
+          
+      ! cpool (C only)
+      if (abs(cpool(p)) < ccrit) then
+          pc = pc + cpool(p)
+          cpool(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_cpool(p)
+          c13_cpool(p) = 0._r8
+#endif
+      end if
+          
+#if (defined CROP)
+      ! xsmrpool (C only)
+      if (abs(xsmrpool(p)) < ccrit) then
+          pc = pc + xsmrpool(p)
+          xsmrpool(p) = 0._r8
+#if (defined C13)
+          pc13 = pc13 + c13_xsmrpool(p)
+          c13_xsmrpool(p) = 0._r8
+#endif
+      end if
+#endif
+          
+      ! retransn (N only)
+      if (abs(retransn(p)) < ncrit) then
+          pn = pn + retransn(p)
+          retransn(p) = 0._r8
+      end if
+          
+      ! npool (N only)
+      if (abs(npool(p)) < ncrit) then
+          pn = pn + npool(p)
+          npool(p) = 0._r8
+      end if
+      
+       write(6,*) 'before pft_ctrunc(',p,')=',pft_ctrunc(p)
+      pft_ctrunc(p) = pft_ctrunc(p) + pc
+      write(6,*) 'in CNPrecisionControl,check pft_ctrunc'
+      write(6,*) 'pc=',pc
+      write(6,*) 'after pft_ctrunc(',p,')=',pft_ctrunc(p)
+
+#if (defined C13)
+      c13_pft_ctrunc(p) = c13_pft_ctrunc(p) + pc13
+#endif
+      pft_ntrunc(p) = pft_ntrunc(p) + pn
+          
+   end do ! end of pft loop
+
+   ! column loop
+   do fc = 1,num_soilc
+      c = filter_soilc(fc)
+      
+      ! initialize the column-level C and N truncation terms
+      cc = 0._r8
+#if (defined C13)
+      cc13 = 0._r8
+#endif
+      cn = 0._r8
+      
+      ! do tests on state variables for precision control
+      ! for linked C-N state variables, perform precision test on
+      ! the C component, but truncate both C and N components
+      
+      ! coarse woody debris C and N
+      if (abs(cwdc(c)) < ccrit) then
+          cc = cc + cwdc(c)
+          cwdc(c) = 0._r8
+#if (defined C13)
+          cc13 = cc13 + c13_cwdc(c)
+          c13_cwdc(c) = 0._r8
+#endif
+          cn = cn + cwdn(c)
+          cwdn(c) = 0._r8
+      end if
+
+      ! litr1 C and N
+      if (abs(litr1c(c)) < ccrit) then
+          cc = cc + litr1c(c)
+          litr1c(c) = 0._r8
+#if (defined C13)
+          cc13 = cc13 + c13_litr1c(c)
+          c13_litr1c(c) = 0._r8
+#endif
+          cn = cn + litr1n(c)
+          litr1n(c) = 0._r8
+      end if
+
+      ! litr2 C and N
+      if (abs(litr2c(c)) < ccrit) then
+          cc = cc + litr2c(c)
+          litr2c(c) = 0._r8
+#if (defined C13)
+          cc13 = cc13 + c13_litr2c(c)
+          c13_litr2c(c) = 0._r8
+#endif
+          cn = cn + litr2n(c)
+          litr2n(c) = 0._r8
+      end if
+
+      ! litr3 C and N
+      if (abs(litr3c(c)) < ccrit) then
+          cc = cc + litr3c(c)
+          litr3c(c) = 0._r8
+#if (defined C13)
+          cc13 = cc13 + c13_litr3c(c)
+          c13_litr3c(c) = 0._r8
+#endif
+          cn = cn + litr3n(c)
+          litr3n(c) = 0._r8
+      end if
+
+      ! soil1 C and N
+      if (abs(soil1c(c)) < ccrit) then
+          cc = cc + soil1c(c)
+          soil1c(c) = 0._r8
+#if (defined C13)
+          cc13 = cc13 + c13_soil1c(c)
+          c13_soil1c(c) = 0._r8
+#endif
+          cn = cn + soil1n(c)
+          soil1n(c) = 0._r8
+      end if
+
+      ! soil2 C and N
+      if (abs(soil2c(c)) < ccrit) then
+          cc = cc + soil2c(c)
+          soil2c(c) = 0._r8
+#if (defined C13)
+          cc13 = cc13 + c13_soil2c(c)
+          c13_soil2c(c) = 0._r8
+#endif
+          cn = cn + soil2n(c)
+          soil2n(c) = 0._r8
+      end if
+
+      ! soil3 C and N
+      if (abs(soil3c(c)) < ccrit) then
+          cc = cc + soil3c(c)
+          soil3c(c) = 0._r8
+#if (defined C13)
+          cc13 = cc13 + c13_soil3c(c)
+          c13_soil3c(c) = 0._r8
+#endif
+          cn = cn + soil3n(c)
+          soil3n(c) = 0._r8
+      end if
+      
+      ! soil4 C and N
+      if (abs(soil4c(c)) < ccrit) then
+          cc = cc + soil4c(c)
+          soil4c(c) = 0._r8
+#if (defined C13)
+          cc13 = cc13 + c13_soil4c(c)
+          c13_soil4c(c) = 0._r8
+#endif
+          cn = cn + soil4n(c)
+          soil4n(c) = 0._r8
+      end if
+      
+      ! not doing precision control on soil mineral N, since it will
+      ! be getting the N truncation flux anyway.
+      
+      col_ctrunc(c) = col_ctrunc(c) + cc
+#if (defined C13)
+      c13_col_ctrunc(c) = c13_col_ctrunc(c) + cc13
+#endif
+      col_ntrunc(c) = col_ntrunc(c) + cn
+      
+   end do   ! end of column loop
+
+end subroutine CNPrecisionControl
+!-----------------------------------------------------------------------
+#endif
+
+end module CNPrecisionControlMod
+module CNSummaryMod
+
+#ifdef CN
 
 !-----------------------------------------------------------------------
 !BOP
@@ -53766,11 +62252,304 @@ subroutine CSummary(num_soilc, filter_soilc, num_soilp, filter_soilp)
 !
 ! local pointers to implicit in/out scalars
 !
+=======
+    retransn                       => clm3%g%l%c%p%pns%retransn
+    npool                          => clm3%g%l%c%p%pns%npool
+    pft_ntrunc                     => clm3%g%l%c%p%pns%pft_ntrunc
+    storvegn                       => clm3%g%l%c%p%pns%storvegn
+    totpftn                        => clm3%g%l%c%p%pns%totpftn
+    totvegn                        => clm3%g%l%c%p%pns%totvegn
+    ! dynamic landcover pointers
+    wood_harvestn                  => clm3%g%l%c%p%pnf%wood_harvestn
+    col_wood_harvestn              => clm3%g%l%c%cnf%pnf_a%wood_harvestn 
+    dwt_nloss                      => clm3%g%l%c%cnf%dwt_nloss
+    dwt_conv_nflux                 => clm3%g%l%c%cnf%dwt_conv_nflux
+    prod10n_loss                   => clm3%g%l%c%cnf%prod10n_loss
+    prod100n_loss                  => clm3%g%l%c%cnf%prod100n_loss
+    product_nloss                  => clm3%g%l%c%cnf%product_nloss
+    seedn                          => clm3%g%l%c%cns%seedn
+    prod10n                        => clm3%g%l%c%cns%prod10n
+    prod100n                       => clm3%g%l%c%cns%prod100n
+    totprodn                       => clm3%g%l%c%cns%totprodn
+
+   ! pft loop
+   do fp = 1,num_soilp
+      p = filter_soilp(fp)
+
+      ! calculate pft-level summary nitrogen fluxes and states
+
+      ! total N deployment (from sminn and retranslocated N pool) (NDEPLOY)
+      ndeploy(p) = &
+         sminn_to_npool(p) + &
+         retransn_to_npool(p)
+
+      ! pft-level wood harvest
+      wood_harvestn(p) = &
+         hrv_deadstemn_to_prod10n(p) + &
+         hrv_deadstemn_to_prod100n(p)
+
+      ! total pft-level fire N losses
+      pft_fire_nloss(p) = &
+         m_leafn_to_fire(p)               + &
+         m_leafn_storage_to_fire(p)       + &
+         m_leafn_xfer_to_fire(p)          + &
+         m_frootn_to_fire(p)              + &
+         m_frootn_storage_to_fire(p)      + &
+         m_frootn_xfer_to_fire(p)         + &
+         m_livestemn_to_fire(p)           + &
+         m_livestemn_storage_to_fire(p)   + &
+         m_livestemn_xfer_to_fire(p)      + &
+         m_deadstemn_to_fire(p)           + &
+         m_deadstemn_storage_to_fire(p)   + &
+         m_deadstemn_xfer_to_fire(p)      + &
+         m_livecrootn_to_fire(p)          + &
+         m_livecrootn_storage_to_fire(p)  + &
+         m_livecrootn_xfer_to_fire(p)     + &
+         m_deadcrootn_to_fire(p)          + &
+         m_deadcrootn_storage_to_fire(p)  + &
+         m_deadcrootn_xfer_to_fire(p)     + &
+         m_retransn_to_fire(p)
+
+      ! displayed vegetation nitrogen, excluding storage (DISPVEGN)
+      dispvegn(p) = &
+         leafn(p)      + &
+         frootn(p)     + &
+#if (defined CROP)
+         grainn(p)     + &
+#endif
+         livestemn(p)  + &
+         deadstemn(p)  + &
+         livecrootn(p) + &
+         deadcrootn(p)
+
+      ! stored vegetation nitrogen, including retranslocated N pool (STORVEGN)
+      storvegn(p) = &
+         leafn_storage(p)      + &
+         frootn_storage(p)     + &
+         livestemn_storage(p)  + &
+         deadstemn_storage(p)  + &
+         livecrootn_storage(p) + &
+         deadcrootn_storage(p) + &
+#if (defined CROP)
+         grainn_storage(p)     + &
+         grainn_xfer(p)        + &
+#endif
+         leafn_xfer(p)         + &
+         frootn_xfer(p)        + &
+         livestemn_xfer(p)     + &
+         deadstemn_xfer(p)     + &
+         livecrootn_xfer(p)    + &
+         deadcrootn_xfer(p)    + &
+		 npool(p)              + &
+         retransn(p)
+
+      ! total vegetation nitrogen (TOTVEGN)
+      totvegn(p) = dispvegn(p) + storvegn(p)
+
+      ! total pft-level carbon (add pft_ntrunc)
+      totpftn(p) = totvegn(p) + pft_ntrunc(p)
+   
+   write(6,*) 'NSummary, pft_fire_nloss(',p,')=',pft_fire_nloss(p)
+   write(6,*) 'NSummary, wood_harvestn(',p,')=',wood_harvestn(p)
+   write(6,*) 'NSummary, totvegn(',p,')=',totvegn(p)
+   write(6,*) 'NSummary, totpftn(',p,')=',totpftn(p)
+
+   end do  ! end of pfts loop
+
+   ! use p2c routine to get selected column-average pft-level fluxes and states
+   call p2c(num_soilc, filter_soilc, pft_fire_nloss, col_pft_fire_nloss)
+   call p2c(num_soilc, filter_soilc, wood_harvestn, col_wood_harvestn)
+   call p2c(num_soilc, filter_soilc, totvegn, col_totvegn)
+   call p2c(num_soilc, filter_soilc, totpftn, col_totpftn)
+
+   ! column loop
+   do fc = 1,num_soilc
+      c = filter_soilc(fc)
+
+      ! total N denitrification (DENIT)
+      denit(c) = &
+         sminn_to_denit_l1s1(c) + &
+         sminn_to_denit_l2s2(c) + &
+         sminn_to_denit_l3s3(c) + &
+         sminn_to_denit_s1s2(c) + &
+         sminn_to_denit_s2s3(c) + &
+         sminn_to_denit_s3s4(c) + &
+         sminn_to_denit_s4(c) + &
+         sminn_to_denit_excess(c)
+
+      ! total column-level fire N losses
+      col_fire_nloss(c) = &
+         m_litr1n_to_fire(c) + &
+         m_litr2n_to_fire(c) + &
+         m_litr3n_to_fire(c) + &
+         m_cwdn_to_fire(c)   + &
+         col_pft_fire_nloss(c)
+
+      ! column-level N losses due to landcover change
+      dwt_nloss(c) = &
+         dwt_conv_nflux(c)
+         
+      ! total wood product N loss
+      product_nloss(c) = &
+         prod10n_loss(c) + &
+         prod100n_loss(c) 
+
+      ! total litter nitrogen (TOTLITN)
+      totlitn(c) = &
+         litr1n(c) + &
+         litr2n(c) + &
+         litr3n(c)
+
+      ! total soil organic matter nitrogen (TOTSOMN)
+      totsomn(c) = &
+         soil1n(c) + &
+         soil2n(c) + &
+         soil3n(c) + &
+         soil4n(c)
+
+      ! total wood product nitrogen
+      totprodn(c) = &
+         prod10n(c) + &
+	     prod100n(c)	 
+
+      ! total ecosystem nitrogen, including veg (TOTECOSYSN)
+      totecosysn(c) = &
+         cwdn(c) + &
+         totlitn(c) + &
+         totsomn(c) + &
+         sminn(c) + &
+	     totprodn(c) + &
+         col_totvegn(c)
+
+      ! total column nitrogen, including pft (TOTCOLN)
+      totcoln(c) = &
+         col_totpftn(c) + &
+         cwdn(c) + &
+         totlitn(c) + &
+         totsomn(c) + &
+         sminn(c) + &
+	     totprodn(c) + &
+		 seedn(c) + &
+		 col_ntrunc(c)
+
+   end do ! end of columns loop
+
+
+end subroutine NSummary
+!-----------------------------------------------------------------------
+
+#endif
+
+end module CNSummaryMod
+module CNVegStructUpdateMod
+
+#ifdef CN
+!-----------------------------------------------------------------------
+!BOP
+!
+! !MODULE: CNVegStructUpdateMod
+!
+! !DESCRIPTION:
+! Module for vegetation structure updates (LAI, SAI, htop, hbot)
+!
+! !USES:
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    implicit none
+    save
+    private
+! !PUBLIC MEMBER FUNCTIONS:
+    public :: CNVegStructUpdate
+!
+! !REVISION HISTORY:
+! 4/23/2004: Created by Peter Thornton
+!
+!EOP
+!-----------------------------------------------------------------------
+
+contains
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: CNVegStructUpdate
+!
+! !INTERFACE:
+subroutine CNVegStructUpdate(num_soilp, filter_soilp)
+!
+! !DESCRIPTION:
+! On the radiation time step, use C state variables and epc to diagnose
+! vegetation structure (LAI, SAI, height)
+!
+! !USES:
+   use clmtype
+!ylu remove   use clm_atmlnd   , only: clm_a2l
+   use pftvarcon    , only: noveg, nc3crop, nc4crop, nbrdlf_evr_shrub, nbrdlf_dcd_brl_shrub
+#if (defined CROP)
+   use pftvarcon    , only: ncorn, npcropmin, ztopmx, laimx
+!   use clm_varctl   , only: iulog
+!ylu remove   use shr_sys_mod  , only: shr_sys_flush
+#endif
+   use shr_const_mod, only: SHR_CONST_PI
+!   use clm_time_manager , only : get_rad_step_size
+   use globals , only: dt
+!
+! !ARGUMENTS:
+   implicit none
+   integer, intent(in) :: num_soilp                 ! number of column soil points in pft filter
+   integer, intent(in) :: filter_soilp(:)   ! pft filter for soil points
+!
+! !CALLED FROM:
+! subroutine CNEcosystemDyn
+!
+! !REVISION HISTORY:
+! 10/28/03: Created by Peter Thornton
+! 2/29/08, David Lawrence: revised snow burial fraction for short vegetation
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+!
+#if (defined CNDV)
+   real(r8), pointer :: allom2(:)     ! ecophys const
+   real(r8), pointer :: allom3(:)     ! ecophys const
+   real(r8), pointer :: nind(:)       ! number of individuals (#/m**2)
+   real(r8), pointer :: fpcgrid(:)    ! fractional area of pft (pft area/nat veg area)
+#endif
+   integer , pointer :: ivt(:)        ! pft vegetation type
+   integer , pointer :: pcolumn(:)    ! column index associated with each pft
+   integer , pointer :: pgridcell(:)  ! pft's gridcell index
+   real(r8), pointer :: snowdp(:)     ! snow height (m)
+   real(r8), pointer :: leafc(:)      ! (kgC/m2) leaf C
+   real(r8), pointer :: deadstemc(:)  ! (kgC/m2) dead stem C
+   real(r8), pointer :: woody(:)      !binary flag for woody lifeform (1=woody, 0=not woody)
+   real(r8), pointer :: slatop(:)     !specific leaf area at top of canopy, projected area basis [m^2/gC]
+   real(r8), pointer :: dsladlai(:)   !dSLA/dLAI, projected area basis [m^2/gC]
+   real(r8), pointer :: z0mr(:)       !ratio of momentum roughness length to canopy top height (-)
+   real(r8), pointer :: displar(:)    !ratio of displacement height to canopy top height (-)
+   real(r8), pointer :: forc_hgt_u_pft(:) ! observational height of wind at pft-level [m]
+   real(r8), pointer :: dwood(:)      ! density of wood (kgC/m^3)
+!
+! local pointers to implicit in/out scalars
+!
+   integer , pointer :: frac_veg_nosno_alb(:) ! frac of vegetation not covered by snow [-]
+   real(r8), pointer :: tlai(:) !one-sided leaf area index, no burying by snow
+   real(r8), pointer :: tsai(:) !one-sided stem area index, no burying by snow
+   real(r8), pointer :: htop(:) !canopy top (m)
+   real(r8), pointer :: hbot(:) !canopy bottom (m)
+   real(r8), pointer :: elai(:)     ! one-sided leaf area index with burying by snow
+   real(r8), pointer :: esai(:)     ! one-sided stem area index with burying by snow
+#if (defined CROP)
+   real(r8), pointer :: htmx(:)     ! max hgt attained by a crop during yr
+   integer , pointer :: peaklai(:)  ! 1: max allowed lai; 0: not at max
+   integer , pointer :: harvdate(:) ! harvest date
+
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! local pointers to implicit out scalars
 !
 !
 ! !OTHER LOCAL VARIABLES:
+<<<<<<< HEAD
    integer :: c,p          ! indices
    integer :: fp,fc        ! lake filter indices
 
@@ -54622,418 +63401,7 @@ subroutine NSummary(num_soilc, filter_soilc, num_soilp, filter_soilp)
    real(r8), pointer :: livecrootn(:)         ! (gN/m2) live coarse root N
    real(r8), pointer :: livecrootn_storage(:) ! (gN/m2) live coarse root N storage
    real(r8), pointer :: livecrootn_xfer(:)    ! (gN/m2) live coarse root N transfer
-#if (defined CROP)
-   real(r8), pointer :: grainn(:)             ! (gN/m2) grain N
-   real(r8), pointer :: grainn_storage(:)     ! (gN/m2) grain N storage
-   real(r8), pointer :: grainn_xfer(:)        ! (gN/m2) grain N transfer
-#endif
-   real(r8), pointer :: livestemn(:)          ! (gN/m2) live stem N
-   real(r8), pointer :: livestemn_storage(:)  ! (gN/m2) live stem N storage
-   real(r8), pointer :: livestemn_xfer(:)     ! (gN/m2) live stem N transfer
-   real(r8), pointer :: retransn(:)           ! (gN/m2) plant pool of retranslocated N
-   real(r8), pointer :: npool(:)              ! (gN/m2) temporary plant N pool
-   real(r8), pointer :: pft_ntrunc(:)         ! (gN/m2) pft-level sink for N truncation
-   real(r8), pointer :: storvegn(:)           ! (gN/m2) stored vegetation nitrogen
-   real(r8), pointer :: totpftn(:)            ! (gN/m2) total pft-level nitrogen
-   real(r8), pointer :: totvegn(:)            ! (gN/m2) total vegetation nitrogen
-   ! for landcover change
-   real(r8), pointer :: wood_harvestn(:)                    ! total N losses to wood product pools (gN/m2/s)
-   real(r8), pointer :: dwt_nloss(:)          ! (gN/m2/s) total nitrogen loss from product pools and conversion
-   real(r8), pointer :: dwt_conv_nflux(:)     ! (gN/m2/s) conversion N flux (immediate loss to atm)
-   real(r8), pointer :: seedn(:)              ! (gN/m2) column-level pool for seeding new PFTs
-   real(r8), pointer :: prod10n_loss(:)       ! (gN/m2/s) loss from 10-yr wood product pool
-   real(r8), pointer :: prod100n_loss(:)      ! (gN/m2/s) loss from 100-yr wood product pool
-   real(r8), pointer :: product_nloss(:)      ! (gN/m2/s) total wood product nitrogen loss
-   real(r8), pointer :: prod10n(:)            ! (gN/m2) wood product N pool, 10-year lifespan
-   real(r8), pointer :: prod100n(:)           ! (gN/m2) wood product N pool, 100-year lifespan
-   real(r8), pointer :: totprodn(:)           ! (gN/m2) total wood product N
-!
-! local pointers to implicit in/out scalars
-!
-! local pointers to implicit out scalars
-!
-! !OTHER LOCAL VARIABLES:
-   integer :: c,p         ! indices
-   integer :: fp,fc       ! lake filter indices
-
-!EOP
-!-----------------------------------------------------------------------
-    ! assign local pointers
-    col_fire_nloss                 => clm3%g%l%c%cnf%col_fire_nloss
-    denit                          => clm3%g%l%c%cnf%denit
-    m_cwdn_to_fire                 => clm3%g%l%c%cnf%m_cwdn_to_fire
-    m_litr1n_to_fire               => clm3%g%l%c%cnf%m_litr1n_to_fire
-    m_litr2n_to_fire               => clm3%g%l%c%cnf%m_litr2n_to_fire
-    m_litr3n_to_fire               => clm3%g%l%c%cnf%m_litr3n_to_fire
-    col_pft_fire_nloss             => clm3%g%l%c%cnf%pnf_a%pft_fire_nloss
-    sminn_to_denit_excess          => clm3%g%l%c%cnf%sminn_to_denit_excess
-    sminn_to_denit_l1s1            => clm3%g%l%c%cnf%sminn_to_denit_l1s1
-    sminn_to_denit_l2s2            => clm3%g%l%c%cnf%sminn_to_denit_l2s2
-    sminn_to_denit_l3s3            => clm3%g%l%c%cnf%sminn_to_denit_l3s3
-    sminn_to_denit_s1s2            => clm3%g%l%c%cnf%sminn_to_denit_s1s2
-    sminn_to_denit_s2s3            => clm3%g%l%c%cnf%sminn_to_denit_s2s3
-    sminn_to_denit_s3s4            => clm3%g%l%c%cnf%sminn_to_denit_s3s4
-    sminn_to_denit_s4              => clm3%g%l%c%cnf%sminn_to_denit_s4
-    cwdn                           => clm3%g%l%c%cns%cwdn
-    litr1n                         => clm3%g%l%c%cns%litr1n
-    litr2n                         => clm3%g%l%c%cns%litr2n
-    litr3n                         => clm3%g%l%c%cns%litr3n
-    col_totpftn                    => clm3%g%l%c%cns%pns_a%totpftn
-    col_totvegn                    => clm3%g%l%c%cns%pns_a%totvegn
-    sminn                          => clm3%g%l%c%cns%sminn
-    col_ntrunc                     => clm3%g%l%c%cns%col_ntrunc
-    soil1n                         => clm3%g%l%c%cns%soil1n
-    soil2n                         => clm3%g%l%c%cns%soil2n
-    soil3n                         => clm3%g%l%c%cns%soil3n
-    soil4n                         => clm3%g%l%c%cns%soil4n
-    totcoln                        => clm3%g%l%c%cns%totcoln
-    totecosysn                     => clm3%g%l%c%cns%totecosysn
-    totlitn                        => clm3%g%l%c%cns%totlitn
-    totsomn                        => clm3%g%l%c%cns%totsomn
-    m_deadcrootn_storage_to_fire   => clm3%g%l%c%p%pnf%m_deadcrootn_storage_to_fire
-    m_deadcrootn_to_fire           => clm3%g%l%c%p%pnf%m_deadcrootn_to_fire
-    m_deadcrootn_xfer_to_fire      => clm3%g%l%c%p%pnf%m_deadcrootn_xfer_to_fire
-    m_deadstemn_storage_to_fire    => clm3%g%l%c%p%pnf%m_deadstemn_storage_to_fire
-    m_deadstemn_to_fire            => clm3%g%l%c%p%pnf%m_deadstemn_to_fire
-    m_deadstemn_xfer_to_fire       => clm3%g%l%c%p%pnf%m_deadstemn_xfer_to_fire
-    m_frootn_storage_to_fire       => clm3%g%l%c%p%pnf%m_frootn_storage_to_fire
-    m_frootn_to_fire               => clm3%g%l%c%p%pnf%m_frootn_to_fire
-    m_frootn_xfer_to_fire          => clm3%g%l%c%p%pnf%m_frootn_xfer_to_fire
-    m_leafn_storage_to_fire        => clm3%g%l%c%p%pnf%m_leafn_storage_to_fire
-    m_leafn_to_fire                => clm3%g%l%c%p%pnf%m_leafn_to_fire
-    m_leafn_xfer_to_fire           => clm3%g%l%c%p%pnf%m_leafn_xfer_to_fire
-    m_livecrootn_storage_to_fire   => clm3%g%l%c%p%pnf%m_livecrootn_storage_to_fire
-    m_livecrootn_to_fire           => clm3%g%l%c%p%pnf%m_livecrootn_to_fire
-    m_livecrootn_xfer_to_fire      => clm3%g%l%c%p%pnf%m_livecrootn_xfer_to_fire
-    m_livestemn_storage_to_fire    => clm3%g%l%c%p%pnf%m_livestemn_storage_to_fire
-    m_livestemn_to_fire            => clm3%g%l%c%p%pnf%m_livestemn_to_fire
-    m_livestemn_xfer_to_fire       => clm3%g%l%c%p%pnf%m_livestemn_xfer_to_fire
-    m_retransn_to_fire             => clm3%g%l%c%p%pnf%m_retransn_to_fire
-    hrv_deadstemn_to_prod10n         => clm3%g%l%c%p%pnf%hrv_deadstemn_to_prod10n        
-    hrv_deadstemn_to_prod100n        => clm3%g%l%c%p%pnf%hrv_deadstemn_to_prod100n       
-    ndeploy                        => clm3%g%l%c%p%pnf%ndeploy
-    pft_fire_nloss                 => clm3%g%l%c%p%pnf%pft_fire_nloss
-    retransn_to_npool              => clm3%g%l%c%p%pnf%retransn_to_npool
-    sminn_to_npool                 => clm3%g%l%c%p%pnf%sminn_to_npool
-    deadcrootn                     => clm3%g%l%c%p%pns%deadcrootn
-    deadcrootn_storage             => clm3%g%l%c%p%pns%deadcrootn_storage
-    deadcrootn_xfer                => clm3%g%l%c%p%pns%deadcrootn_xfer
-    deadstemn                      => clm3%g%l%c%p%pns%deadstemn
-    deadstemn_storage              => clm3%g%l%c%p%pns%deadstemn_storage
-    deadstemn_xfer                 => clm3%g%l%c%p%pns%deadstemn_xfer
-    dispvegn                       => clm3%g%l%c%p%pns%dispvegn
-    frootn                         => clm3%g%l%c%p%pns%frootn
-    frootn_storage                 => clm3%g%l%c%p%pns%frootn_storage
-    frootn_xfer                    => clm3%g%l%c%p%pns%frootn_xfer
-    leafn                          => clm3%g%l%c%p%pns%leafn
-    leafn_storage                  => clm3%g%l%c%p%pns%leafn_storage
-    leafn_xfer                     => clm3%g%l%c%p%pns%leafn_xfer
-    livecrootn                     => clm3%g%l%c%p%pns%livecrootn
-    livecrootn_storage             => clm3%g%l%c%p%pns%livecrootn_storage
-    livecrootn_xfer                => clm3%g%l%c%p%pns%livecrootn_xfer
-#if (defined CROP)
-    grainn                         => clm3%g%l%c%p%pns%grainn
-    grainn_storage                 => clm3%g%l%c%p%pns%grainn_storage
-    grainn_xfer                    => clm3%g%l%c%p%pns%grainn_xfer
-#endif
-    livestemn                      => clm3%g%l%c%p%pns%livestemn
-    livestemn_storage              => clm3%g%l%c%p%pns%livestemn_storage
-    livestemn_xfer                 => clm3%g%l%c%p%pns%livestemn_xfer
-    retransn                       => clm3%g%l%c%p%pns%retransn
-    npool                          => clm3%g%l%c%p%pns%npool
-    pft_ntrunc                     => clm3%g%l%c%p%pns%pft_ntrunc
-    storvegn                       => clm3%g%l%c%p%pns%storvegn
-    totpftn                        => clm3%g%l%c%p%pns%totpftn
-    totvegn                        => clm3%g%l%c%p%pns%totvegn
-    ! dynamic landcover pointers
-    wood_harvestn                  => clm3%g%l%c%p%pnf%wood_harvestn
-    col_wood_harvestn              => clm3%g%l%c%cnf%pnf_a%wood_harvestn 
-    dwt_nloss                      => clm3%g%l%c%cnf%dwt_nloss
-    dwt_conv_nflux                 => clm3%g%l%c%cnf%dwt_conv_nflux
-    prod10n_loss                   => clm3%g%l%c%cnf%prod10n_loss
-    prod100n_loss                  => clm3%g%l%c%cnf%prod100n_loss
-    product_nloss                  => clm3%g%l%c%cnf%product_nloss
-    seedn                          => clm3%g%l%c%cns%seedn
-    prod10n                        => clm3%g%l%c%cns%prod10n
-    prod100n                       => clm3%g%l%c%cns%prod100n
-    totprodn                       => clm3%g%l%c%cns%totprodn
-
-   ! pft loop
-   do fp = 1,num_soilp
-      p = filter_soilp(fp)
-
-      ! calculate pft-level summary nitrogen fluxes and states
-
-      ! total N deployment (from sminn and retranslocated N pool) (NDEPLOY)
-      ndeploy(p) = &
-         sminn_to_npool(p) + &
-         retransn_to_npool(p)
-
-      ! pft-level wood harvest
-      wood_harvestn(p) = &
-         hrv_deadstemn_to_prod10n(p) + &
-         hrv_deadstemn_to_prod100n(p)
-
-      ! total pft-level fire N losses
-      pft_fire_nloss(p) = &
-         m_leafn_to_fire(p)               + &
-         m_leafn_storage_to_fire(p)       + &
-         m_leafn_xfer_to_fire(p)          + &
-         m_frootn_to_fire(p)              + &
-         m_frootn_storage_to_fire(p)      + &
-         m_frootn_xfer_to_fire(p)         + &
-         m_livestemn_to_fire(p)           + &
-         m_livestemn_storage_to_fire(p)   + &
-         m_livestemn_xfer_to_fire(p)      + &
-         m_deadstemn_to_fire(p)           + &
-         m_deadstemn_storage_to_fire(p)   + &
-         m_deadstemn_xfer_to_fire(p)      + &
-         m_livecrootn_to_fire(p)          + &
-         m_livecrootn_storage_to_fire(p)  + &
-         m_livecrootn_xfer_to_fire(p)     + &
-         m_deadcrootn_to_fire(p)          + &
-         m_deadcrootn_storage_to_fire(p)  + &
-         m_deadcrootn_xfer_to_fire(p)     + &
-         m_retransn_to_fire(p)
-
-      ! displayed vegetation nitrogen, excluding storage (DISPVEGN)
-      dispvegn(p) = &
-         leafn(p)      + &
-         frootn(p)     + &
-#if (defined CROP)
-         grainn(p)     + &
-#endif
-         livestemn(p)  + &
-         deadstemn(p)  + &
-         livecrootn(p) + &
-         deadcrootn(p)
-
-      ! stored vegetation nitrogen, including retranslocated N pool (STORVEGN)
-      storvegn(p) = &
-         leafn_storage(p)      + &
-         frootn_storage(p)     + &
-         livestemn_storage(p)  + &
-         deadstemn_storage(p)  + &
-         livecrootn_storage(p) + &
-         deadcrootn_storage(p) + &
-#if (defined CROP)
-         grainn_storage(p)     + &
-         grainn_xfer(p)        + &
-#endif
-         leafn_xfer(p)         + &
-         frootn_xfer(p)        + &
-         livestemn_xfer(p)     + &
-         deadstemn_xfer(p)     + &
-         livecrootn_xfer(p)    + &
-         deadcrootn_xfer(p)    + &
-		 npool(p)              + &
-         retransn(p)
-
-      ! total vegetation nitrogen (TOTVEGN)
-      totvegn(p) = dispvegn(p) + storvegn(p)
-
-      ! total pft-level carbon (add pft_ntrunc)
-      totpftn(p) = totvegn(p) + pft_ntrunc(p)
-   
-   write(6,*) 'NSummary, pft_fire_nloss(',p,')=',pft_fire_nloss(p)
-   write(6,*) 'NSummary, wood_harvestn(',p,')=',wood_harvestn(p)
-   write(6,*) 'NSummary, totvegn(',p,')=',totvegn(p)
-   write(6,*) 'NSummary, totpftn(',p,')=',totpftn(p)
-
-   end do  ! end of pfts loop
-
-   ! use p2c routine to get selected column-average pft-level fluxes and states
-   call p2c(num_soilc, filter_soilc, pft_fire_nloss, col_pft_fire_nloss)
-   call p2c(num_soilc, filter_soilc, wood_harvestn, col_wood_harvestn)
-   call p2c(num_soilc, filter_soilc, totvegn, col_totvegn)
-   call p2c(num_soilc, filter_soilc, totpftn, col_totpftn)
-
-   ! column loop
-   do fc = 1,num_soilc
-      c = filter_soilc(fc)
-
-      ! total N denitrification (DENIT)
-      denit(c) = &
-         sminn_to_denit_l1s1(c) + &
-         sminn_to_denit_l2s2(c) + &
-         sminn_to_denit_l3s3(c) + &
-         sminn_to_denit_s1s2(c) + &
-         sminn_to_denit_s2s3(c) + &
-         sminn_to_denit_s3s4(c) + &
-         sminn_to_denit_s4(c) + &
-         sminn_to_denit_excess(c)
-
-      ! total column-level fire N losses
-      col_fire_nloss(c) = &
-         m_litr1n_to_fire(c) + &
-         m_litr2n_to_fire(c) + &
-         m_litr3n_to_fire(c) + &
-         m_cwdn_to_fire(c)   + &
-         col_pft_fire_nloss(c)
-
-      ! column-level N losses due to landcover change
-      dwt_nloss(c) = &
-         dwt_conv_nflux(c)
-         
-      ! total wood product N loss
-      product_nloss(c) = &
-         prod10n_loss(c) + &
-         prod100n_loss(c) 
-
-      ! total litter nitrogen (TOTLITN)
-      totlitn(c) = &
-         litr1n(c) + &
-         litr2n(c) + &
-         litr3n(c)
-
-      ! total soil organic matter nitrogen (TOTSOMN)
-      totsomn(c) = &
-         soil1n(c) + &
-         soil2n(c) + &
-         soil3n(c) + &
-         soil4n(c)
-
-      ! total wood product nitrogen
-      totprodn(c) = &
-         prod10n(c) + &
-	     prod100n(c)	 
-
-      ! total ecosystem nitrogen, including veg (TOTECOSYSN)
-      totecosysn(c) = &
-         cwdn(c) + &
-         totlitn(c) + &
-         totsomn(c) + &
-         sminn(c) + &
-	     totprodn(c) + &
-         col_totvegn(c)
-
-      ! total column nitrogen, including pft (TOTCOLN)
-      totcoln(c) = &
-         col_totpftn(c) + &
-         cwdn(c) + &
-         totlitn(c) + &
-         totsomn(c) + &
-         sminn(c) + &
-	     totprodn(c) + &
-		 seedn(c) + &
-		 col_ntrunc(c)
-
-   end do ! end of columns loop
-
-
-end subroutine NSummary
-!-----------------------------------------------------------------------
-
-#endif
-
-end module CNSummaryMod
-module CNVegStructUpdateMod
-
-#ifdef CN
-!-----------------------------------------------------------------------
-!BOP
-!
-! !MODULE: CNVegStructUpdateMod
-!
-! !DESCRIPTION:
-! Module for vegetation structure updates (LAI, SAI, htop, hbot)
-!
-! !USES:
-    use shr_kind_mod, only: r8 => shr_kind_r8
-    implicit none
-    save
-    private
-! !PUBLIC MEMBER FUNCTIONS:
-    public :: CNVegStructUpdate
-!
-! !REVISION HISTORY:
-! 4/23/2004: Created by Peter Thornton
-!
-!EOP
-!-----------------------------------------------------------------------
-
-contains
-
-!-----------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE: CNVegStructUpdate
-!
-! !INTERFACE:
-subroutine CNVegStructUpdate(num_soilp, filter_soilp)
-!
-! !DESCRIPTION:
-! On the radiation time step, use C state variables and epc to diagnose
-! vegetation structure (LAI, SAI, height)
-!
-! !USES:
-   use clmtype
-!ylu remove   use clm_atmlnd   , only: clm_a2l
-   use pftvarcon    , only: noveg, nc3crop, nc4crop, nbrdlf_evr_shrub, nbrdlf_dcd_brl_shrub
-#if (defined CROP)
-   use pftvarcon    , only: ncorn, npcropmin, ztopmx, laimx
-!   use clm_varctl   , only: iulog
-!ylu remove   use shr_sys_mod  , only: shr_sys_flush
-#endif
-   use shr_const_mod, only: SHR_CONST_PI
-!   use clm_time_manager , only : get_rad_step_size
-   use globals , only: dt
-!
-! !ARGUMENTS:
-   implicit none
-   integer, intent(in) :: num_soilp                 ! number of column soil points in pft filter
-   integer, intent(in) :: filter_soilp(:)   ! pft filter for soil points
-!
-! !CALLED FROM:
-! subroutine CNEcosystemDyn
-!
-! !REVISION HISTORY:
-! 10/28/03: Created by Peter Thornton
-! 2/29/08, David Lawrence: revised snow burial fraction for short vegetation
-!
-! !LOCAL VARIABLES:
-! local pointers to implicit in scalars
-!
-#if (defined CNDV)
-   real(r8), pointer :: allom2(:)     ! ecophys const
-   real(r8), pointer :: allom3(:)     ! ecophys const
-   real(r8), pointer :: nind(:)       ! number of individuals (#/m**2)
-   real(r8), pointer :: fpcgrid(:)    ! fractional area of pft (pft area/nat veg area)
-#endif
-   integer , pointer :: ivt(:)        ! pft vegetation type
-   integer , pointer :: pcolumn(:)    ! column index associated with each pft
-   integer , pointer :: pgridcell(:)  ! pft's gridcell index
-   real(r8), pointer :: snowdp(:)     ! snow height (m)
-   real(r8), pointer :: leafc(:)      ! (kgC/m2) leaf C
-   real(r8), pointer :: deadstemc(:)  ! (kgC/m2) dead stem C
-   real(r8), pointer :: woody(:)      !binary flag for woody lifeform (1=woody, 0=not woody)
-   real(r8), pointer :: slatop(:)     !specific leaf area at top of canopy, projected area basis [m^2/gC]
-   real(r8), pointer :: dsladlai(:)   !dSLA/dLAI, projected area basis [m^2/gC]
-   real(r8), pointer :: z0mr(:)       !ratio of momentum roughness length to canopy top height (-)
-   real(r8), pointer :: displar(:)    !ratio of displacement height to canopy top height (-)
-   real(r8), pointer :: forc_hgt_u_pft(:) ! observational height of wind at pft-level [m]
-   real(r8), pointer :: dwood(:)      ! density of wood (kgC/m^3)
-!
-! local pointers to implicit in/out scalars
-!
-   integer , pointer :: frac_veg_nosno_alb(:) ! frac of vegetation not covered by snow [-]
-   real(r8), pointer :: tlai(:) !one-sided leaf area index, no burying by snow
-   real(r8), pointer :: tsai(:) !one-sided stem area index, no burying by snow
-   real(r8), pointer :: htop(:) !canopy top (m)
-   real(r8), pointer :: hbot(:) !canopy bottom (m)
-   real(r8), pointer :: elai(:)     ! one-sided leaf area index with burying by snow
-   real(r8), pointer :: esai(:)     ! one-sided stem area index with burying by snow
-#if (defined CROP)
-   real(r8), pointer :: htmx(:)     ! max hgt attained by a crop during yr
-   integer , pointer :: peaklai(:)  ! 1: max allowed lai; 0: not at max
-   integer , pointer :: harvdate(:) ! harvest date
-
-#endif
-!
-! local pointers to implicit out scalars
-!
-!
-! !OTHER LOCAL VARIABLES:
+=======
    integer :: p,c,g        !indices
    integer :: fp           !lake filter indices
    real(r8):: taper        ! ratio of height:radius_breast_height (tree allometry)
@@ -55791,6 +64159,2361 @@ subroutine CNiniTimeVar(htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,
    real(r8), pointer :: leafn(:)              ! (gN/m2) leaf N
    real(r8), pointer :: leafn_storage(:)      ! (gN/m2) leaf N storage
    real(r8), pointer :: leafn_xfer(:)         ! (gN/m2) leaf N transfer
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+#if (defined CROP)
+   real(r8), pointer :: grainn(:)             ! (gN/m2) grain N
+   real(r8), pointer :: grainn_storage(:)     ! (gN/m2) grain N storage
+   real(r8), pointer :: grainn_xfer(:)        ! (gN/m2) grain N transfer
+#endif
+<<<<<<< HEAD
+   real(r8), pointer :: livestemn(:)          ! (gN/m2) live stem N
+   real(r8), pointer :: livestemn_storage(:)  ! (gN/m2) live stem N storage
+   real(r8), pointer :: livestemn_xfer(:)     ! (gN/m2) live stem N transfer
+   real(r8), pointer :: retransn(:)           ! (gN/m2) plant pool of retranslocated N
+   real(r8), pointer :: npool(:)              ! (gN/m2) temporary plant N pool
+=======
+   real(r8), pointer :: frootn(:)             ! (gN/m2) fine root N
+   real(r8), pointer :: frootn_storage(:)     ! (gN/m2) fine root N storage
+   real(r8), pointer :: frootn_xfer(:)        ! (gN/m2) fine root N transfer
+   real(r8), pointer :: livestemn(:)          ! (gN/m2) live stem N
+   real(r8), pointer :: livestemn_storage(:)  ! (gN/m2) live stem N storage
+   real(r8), pointer :: livestemn_xfer(:)     ! (gN/m2) live stem N transfer
+   real(r8), pointer :: deadstemn(:)          ! (gN/m2) dead stem N
+   real(r8), pointer :: deadstemn_storage(:)  ! (gN/m2) dead stem N storage
+   real(r8), pointer :: deadstemn_xfer(:)     ! (gN/m2) dead stem N transfer
+   real(r8), pointer :: livecrootn(:)         ! (gN/m2) live coarse root N
+   real(r8), pointer :: livecrootn_storage(:) ! (gN/m2) live coarse root N storage
+   real(r8), pointer :: livecrootn_xfer(:)    ! (gN/m2) live coarse root N transfer
+   real(r8), pointer :: deadcrootn(:)         ! (gN/m2) dead coarse root N
+   real(r8), pointer :: deadcrootn_storage(:) ! (gN/m2) dead coarse root N storage
+   real(r8), pointer :: deadcrootn_xfer(:)    ! (gN/m2) dead coarse root N transfer
+   real(r8), pointer :: retransn(:)           ! (gN/m2) plant pool of retranslocated N
+   real(r8), pointer :: npool(:)              ! (gN/m2) temporary plant N pool
+   real(r8), pointer :: psnsun(:)             ! sunlit leaf photosynthesis (umol CO2 /m**2/ s)
+   real(r8), pointer :: psnsha(:)             ! shaded leaf photosynthesis (umol CO2 /m**2/ s)
+#if (defined C13)
+   real(r8), pointer :: c13_psnsun(:)             ! sunlit leaf photosynthesis (umol CO2 /m**2/ s)
+   real(r8), pointer :: c13_psnsha(:)             ! shaded leaf photosynthesis (umol CO2 /m**2/ s)
+#endif
+   real(r8), pointer :: laisun(:)             ! sunlit projected leaf area index
+   real(r8), pointer :: laisha(:)             ! shaded projected leaf area index
+   real(r8), pointer :: dormant_flag(:)       ! dormancy flag
+   real(r8), pointer :: days_active(:)        ! number of days since last dormancy
+   real(r8), pointer :: onset_flag(:)         ! onset flag
+   real(r8), pointer :: onset_counter(:)      ! onset days counter
+   real(r8), pointer :: onset_gddflag(:)      ! onset flag for growing degree day sum
+   real(r8), pointer :: onset_fdd(:)          ! onset freezing degree days counter
+   real(r8), pointer :: onset_gdd(:)          ! onset growing degree days
+   real(r8), pointer :: onset_swi(:)          ! onset soil water index
+   real(r8), pointer :: offset_flag(:)        ! offset flag
+   real(r8), pointer :: offset_counter(:)     ! offset days counter
+   real(r8), pointer :: offset_fdd(:)         ! offset freezing degree days counter
+   real(r8), pointer :: offset_swi(:)         ! offset soil water index
+   real(r8), pointer :: lgsf(:)               ! long growing season factor [0-1]
+   real(r8), pointer :: bglfr(:)              ! background litterfall rate (1/s)
+   real(r8), pointer :: bgtr(:)               ! background transfer rate (1/s)
+   real(r8), pointer :: dayl(:)               ! daylength (seconds)
+   real(r8), pointer :: prev_dayl(:)          ! daylength from previous timestep (seconds)
+   real(r8), pointer :: annavg_t2m(:)         ! annual average 2m air temperature (K)
+   real(r8), pointer :: tempavg_t2m(:)        ! temporary average 2m air temperature (K)
+   real(r8), pointer :: gpp(:)                ! GPP flux before downregulation (gC/m2/s)
+   real(r8), pointer :: availc(:)             ! C flux available for allocation (gC/m2/s)
+   real(r8), pointer :: xsmrpool_recover(:)   ! C flux assigned to recovery of negative cpool (gC/m2/s)
+#if (defined C13)
+   real(r8), pointer :: xsmrpool_c13ratio(:)  ! C flux assigned to recovery of negative cpool (gC/m2/s)
+#endif
+   real(r8), pointer :: alloc_pnow(:)         ! fraction of current allocation to display as new growth (DIM)
+   real(r8), pointer :: c_allometry(:)        ! C allocation index (DIM)
+   real(r8), pointer :: n_allometry(:)        ! N allocation index (DIM)
+   real(r8), pointer :: plant_ndemand(:)      ! N flux required to support initial GPP (gN/m2/s)
+   real(r8), pointer :: tempsum_potential_gpp(:) ! temporary annual sum of plant_ndemand
+   real(r8), pointer :: annsum_potential_gpp(:)  ! annual sum of plant_ndemand
+   real(r8), pointer :: tempmax_retransn(:)   ! temporary max of retranslocated N pool (gN/m2)
+   real(r8), pointer :: annmax_retransn(:)    ! annual max of retranslocated N pool (gN/m2)
+   real(r8), pointer :: avail_retransn(:)     ! N flux available from retranslocation pool (gN/m2/s)
+   real(r8), pointer :: plant_nalloc(:)       ! total allocated N flux (gN/m2/s)
+   real(r8), pointer :: plant_calloc(:)       ! total allocated C flux (gC/m2/s)
+   real(r8), pointer :: excess_cflux(:)       ! C flux not allocated due to downregulation (gC/m2/s)
+   real(r8), pointer :: downreg(:)            ! fractional reduction in GPP due to N limitation (DIM)
+   real(r8), pointer :: tempsum_npp(:)        ! temporary annual sum of NPP
+   real(r8), pointer :: annsum_npp(:)         ! annual sum of NPP
+#if (defined CNDV)
+   real(r8), pointer :: tempsum_litfall(:)    ! temporary annual sum of litfall
+   real(r8), pointer :: annsum_litfall(:)     ! annual sum of litfall
+#endif
+#if (defined C13)
+   real(r8), pointer :: rc13_canair(:)        !C13O2/C12O2 in canopy air
+   real(r8), pointer :: rc13_psnsun(:)        !C13O2/C12O2 in sunlit canopy psn flux
+   real(r8), pointer :: rc13_psnsha(:)        !C13O2/C12O2 in shaded canopy psn flux
+   real(r8), pointer :: alphapsnsun(:)        !sunlit 13c fractionation ([])
+   real(r8), pointer :: alphapsnsha(:)        !shaded 13c fractionation ([])
+#endif
+   real(r8), pointer :: qflx_drain(:)         ! sub-surface runoff (mm H2O /s)
+   ! new variables for fire
+   real(r8), pointer :: wf(:)                 ! soil moisture in top 0.5 m
+   real(r8), pointer :: me(:)                 ! moisture of extinction (proportion)
+   real(r8), pointer :: fire_prob(:)          ! daily fire probability (0-1)
+   real(r8), pointer :: mean_fire_prob(:)     ! e-folding mean of daily fire probability (0-1)
+   real(r8), pointer :: fireseasonl(:)        ! annual fire season length (days, <= 365)
+   real(r8), pointer :: farea_burned(:)       ! timestep fractional area burned (proportion)
+   real(r8), pointer :: ann_farea_burned(:)   ! annual total fractional area burned (proportion)
+   real(r8), pointer :: col_ctrunc(:)         ! (gC/m2) column-level sink for C truncation
+   real(r8), pointer :: totcolc(:)            ! (gC/m2) total column carbon, incl veg and cpool
+   real(r8), pointer :: totecosysc(:)         ! (gC/m2) total ecosystem carbon, incl veg but excl cpool
+   real(r8), pointer :: totlitc(:)            ! (gC/m2) total litter carbon
+   real(r8), pointer :: totsomc(:)            ! (gC/m2) total soil organic matter carbon
+
+#if (defined CLAMP)
+   ! new CLAMP state variables
+   real(r8), pointer :: woodc(:)              ! (gC/m2) pft-level wood C
+#endif
+
+   real(r8), pointer :: col_ntrunc(:)         ! (gN/m2) column-level sink for N truncation
+   real(r8), pointer :: totcoln(:)            ! (gN/m2) total column nitrogen, incl veg
+   real(r8), pointer :: totecosysn(:)         ! (gN/m2) total ecosystem nitrogen, incl veg
+   real(r8), pointer :: totlitn(:)            ! (gN/m2) total litter nitrogen
+   real(r8), pointer :: totsomn(:)            ! (gN/m2) total soil organic matter nitrogen
+   real(r8), pointer :: dispvegc(:)           ! (gC/m2) displayed veg carbon, excluding storage and cpool
+   real(r8), pointer :: pft_ctrunc(:)         ! (gC/m2) pft-level sink for C truncation
+   real(r8), pointer :: storvegc(:)           ! (gC/m2) stored vegetation carbon, excluding cpool
+   real(r8), pointer :: totpftc(:)            ! (gC/m2) total pft-level carbon, including cpool
+   real(r8), pointer :: totvegc(:)            ! (gC/m2) total vegetation carbon, excluding cpool
+   real(r8), pointer :: prev_frootc_to_litter(:)!previous timestep froot C litterfall flux (gC/m2/s)
+   real(r8), pointer :: prev_leafc_to_litter(:) !previous timestep leaf C litterfall flux (gC/m2/s)
+   real(r8), pointer :: dispvegn(:)           ! (gN/m2) displayed veg nitrogen, excluding storage
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+   real(r8), pointer :: pft_ntrunc(:)         ! (gN/m2) pft-level sink for N truncation
+   real(r8), pointer :: storvegn(:)           ! (gN/m2) stored vegetation nitrogen
+   real(r8), pointer :: totpftn(:)            ! (gN/m2) total pft-level nitrogen
+   real(r8), pointer :: totvegn(:)            ! (gN/m2) total vegetation nitrogen
+<<<<<<< HEAD
+   ! for landcover change
+   real(r8), pointer :: wood_harvestn(:)                    ! total N losses to wood product pools (gN/m2/s)
+   real(r8), pointer :: dwt_nloss(:)          ! (gN/m2/s) total nitrogen loss from product pools and conversion
+   real(r8), pointer :: dwt_conv_nflux(:)     ! (gN/m2/s) conversion N flux (immediate loss to atm)
+   real(r8), pointer :: seedn(:)              ! (gN/m2) column-level pool for seeding new PFTs
+   real(r8), pointer :: prod10n_loss(:)       ! (gN/m2/s) loss from 10-yr wood product pool
+   real(r8), pointer :: prod100n_loss(:)      ! (gN/m2/s) loss from 100-yr wood product pool
+   real(r8), pointer :: product_nloss(:)      ! (gN/m2/s) total wood product nitrogen loss
+   real(r8), pointer :: prod10n(:)            ! (gN/m2) wood product N pool, 10-year lifespan
+   real(r8), pointer :: prod100n(:)           ! (gN/m2) wood product N pool, 100-year lifespan
+   real(r8), pointer :: totprodn(:)           ! (gN/m2) total wood product N
+!
+! local pointers to implicit in/out scalars
+!
+! local pointers to implicit out scalars
+!
+! !OTHER LOCAL VARIABLES:
+   integer :: c,p         ! indices
+   integer :: fp,fc       ! lake filter indices
+
+!EOP
+!-----------------------------------------------------------------------
+    ! assign local pointers
+    col_fire_nloss                 => clm3%g%l%c%cnf%col_fire_nloss
+    denit                          => clm3%g%l%c%cnf%denit
+    m_cwdn_to_fire                 => clm3%g%l%c%cnf%m_cwdn_to_fire
+    m_litr1n_to_fire               => clm3%g%l%c%cnf%m_litr1n_to_fire
+    m_litr2n_to_fire               => clm3%g%l%c%cnf%m_litr2n_to_fire
+    m_litr3n_to_fire               => clm3%g%l%c%cnf%m_litr3n_to_fire
+    col_pft_fire_nloss             => clm3%g%l%c%cnf%pnf_a%pft_fire_nloss
+    sminn_to_denit_excess          => clm3%g%l%c%cnf%sminn_to_denit_excess
+    sminn_to_denit_l1s1            => clm3%g%l%c%cnf%sminn_to_denit_l1s1
+    sminn_to_denit_l2s2            => clm3%g%l%c%cnf%sminn_to_denit_l2s2
+    sminn_to_denit_l3s3            => clm3%g%l%c%cnf%sminn_to_denit_l3s3
+    sminn_to_denit_s1s2            => clm3%g%l%c%cnf%sminn_to_denit_s1s2
+    sminn_to_denit_s2s3            => clm3%g%l%c%cnf%sminn_to_denit_s2s3
+    sminn_to_denit_s3s4            => clm3%g%l%c%cnf%sminn_to_denit_s3s4
+    sminn_to_denit_s4              => clm3%g%l%c%cnf%sminn_to_denit_s4
+=======
+   real(r8), pointer :: lncsha(:)             ! leaf N concentration per unit projected LAI (gN leaf/m^2)
+   real(r8), pointer :: lncsun(:)             ! leaf N concentration per unit projected LAI (gN leaf/m^2)
+   real(r8), pointer :: vcmxsha(:)            ! shaded leaf Vcmax (umolCO2/m^2/s)
+   real(r8), pointer :: vcmxsun(:)            ! sunlit leaf Vcmax (umolCO2/m^2/s)
+#if (defined C13)
+   ! 4/14/05: PET
+   ! Adding isotope code
+   real(r8), pointer :: cwdc13(:)               ! (gC/m2) coarse woody debris C
+   real(r8), pointer :: litr1c13(:)             ! (gC/m2) litter labile C
+   real(r8), pointer :: litr2c13(:)             ! (gC/m2) litter cellulose C
+   real(r8), pointer :: litr3c13(:)             ! (gC/m2) litter lignin C
+   real(r8), pointer :: soil1c13(:)             ! (gC/m2) soil organic matter C (fast pool)
+   real(r8), pointer :: soil2c13(:)             ! (gC/m2) soil organic matter C (medium pool)
+   real(r8), pointer :: soil3c13(:)             ! (gC/m2) soil organic matter C (slow pool)
+   real(r8), pointer :: soil4c13(:)             ! (gC/m2) soil organic matter C (slowest pool)
+   real(r8), pointer :: c13_col_ctrunc(:)       ! (gC/m2) C truncation term
+   real(r8), pointer :: leafc13(:)              ! (gC/m2) leaf C
+   real(r8), pointer :: leafc13_storage(:)      ! (gC/m2) leaf C storage
+   real(r8), pointer :: leafc13_xfer(:)         ! (gC/m2) leaf C transfer
+#if (defined CROP)
+   real(r8), pointer :: grainc13(:)             ! (gC/m2) grain C
+   real(r8), pointer :: grainc13_storage(:)     ! (gC/m2) grain C storage
+   real(r8), pointer :: grainc13_xfer(:)        ! (gC/m2) grain C transfer
+#endif
+   real(r8), pointer :: frootc13(:)             ! (gC/m2) fine root C
+   real(r8), pointer :: frootc13_storage(:)     ! (gC/m2) fine root C storage
+   real(r8), pointer :: frootc13_xfer(:)        ! (gC/m2) fine root C transfer
+   real(r8), pointer :: livestemc13(:)          ! (gC/m2) live stem C
+   real(r8), pointer :: livestemc13_storage(:)  ! (gC/m2) live stem C storage
+   real(r8), pointer :: livestemc13_xfer(:)     ! (gC/m2) live stem C transfer
+   real(r8), pointer :: deadstemc13(:)          ! (gC/m2) dead stem C
+   real(r8), pointer :: deadstemc13_storage(:)  ! (gC/m2) dead stem C storage
+   real(r8), pointer :: deadstemc13_xfer(:)     ! (gC/m2) dead stem C transfer
+   real(r8), pointer :: livecrootc13(:)         ! (gC/m2) live coarse root C
+   real(r8), pointer :: livecrootc13_storage(:) ! (gC/m2) live coarse root C storage
+   real(r8), pointer :: livecrootc13_xfer(:)    ! (gC/m2) live coarse root C transfer
+   real(r8), pointer :: deadcrootc13(:)         ! (gC/m2) dead coarse root C
+   real(r8), pointer :: deadcrootc13_storage(:) ! (gC/m2) dead coarse root C storage
+   real(r8), pointer :: deadcrootc13_xfer(:)    ! (gC/m2) dead coarse root C transfer
+   real(r8), pointer :: c13_gresp_storage(:)    ! (gC/m2) growth respiration storage
+   real(r8), pointer :: c13_gresp_xfer(:)       ! (gC/m2) growth respiration transfer
+   real(r8), pointer :: c13pool(:)              ! (gC/m2) temporary photosynthate C pool
+   real(r8), pointer :: c13xsmrpool(:)          ! (gC/m2) temporary photosynthate C pool
+   real(r8), pointer :: c13_pft_ctrunc(:)       ! (gC/m2) C truncation term
+   real(r8), pointer :: totvegc13(:)            ! (gC/m2) total vegetation carbon, excluding cpool
+#endif
+   ! dynamic landuse variables
+   real(r8), pointer :: seedc(:)              ! (gC/m2) column-level pool for seeding new PFTs
+   real(r8), pointer :: prod10c(:)            ! (gC/m2) wood product C pool, 10-year lifespan
+   real(r8), pointer :: prod100c(:)           ! (gC/m2) wood product C pool, 100-year lifespan
+   real(r8), pointer :: totprodc(:)           ! (gC/m2) total wood product C
+#if (defined C13)
+   real(r8), pointer :: seedc13(:)              ! (gC/m2) column-level pool for seeding new PFTs
+   real(r8), pointer :: prod10c13(:)          ! (gC/m2) wood product C13 pool, 10-year lifespan
+   real(r8), pointer :: prod100c13(:)         ! (gC/m2) wood product C13 pool, 100-year lifespan
+   real(r8), pointer :: totprodc13(:)         ! (gC/m2) total wood product C13
+#endif
+   real(r8), pointer :: seedn(:)              ! (gN/m2) column-level pool for seeding new PFTs
+   real(r8), pointer :: prod10n(:)            ! (gN/m2) wood product N pool, 10-year lifespan
+   real(r8), pointer :: prod100n(:)           ! (gN/m2) wood product N pool, 100-year lifespan
+   real(r8), pointer :: totprodn(:)           ! (gN/m2) total wood product N
+
+
+
+!CN CROP vars
+!CROP&CN buf variables
+  integer,dimension(maxpatch) :: croplive_buf
+   real(r8), dimension(maxpatch)  ::  &
+                 htmx_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+                ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
+                ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
+                ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
+                ,dayl_buf,annavg_t2m_buf,tempavg_t2m_buf,tempsum_potential_gpp_buf          &
+                ,annsum_potential_gpp_buf,tempmax_retransn_buf,annmax_retransn_buf      &
+                ,prev_leafc_to_litter_buf,prev_frootc_to_litter_buf,tempsum_npp_buf     &
+                ,annsum_npp_buf,leafc_buf,leafc_storage_buf,leafc_xfer_buf,frootc_buf           &
+                ,frootc_storage_buf,frootc_xfer_buf,livestemc_buf,livestemc_storage_buf     &
+                ,livestemc_xfer_buf,deadstemc_buf,deadstemc_storage_buf,deadstemc_xfer_buf  &
+                ,livecrootc_buf,livecrootc_storage_buf,livecrootc_xfer_buf,deadcrootc_buf   &
+                ,deadcrootc_storage_buf,deadcrootc_xfer_buf,cpool_buf,pft_ctrunc_buf        &
+                ,leafn_buf,leafn_storage_buf,leafn_xfer_buf,frootn_buf,frootn_storage_buf       &
+                ,frootn_xfer_buf,livestemn_buf,livestemn_storage_buf,livestemn_xfer_buf     &
+                ,deadstemn_buf,deadstemn_storage_buf,deadstemn_xfer_buf,livecrootn_buf      &
+                ,livecrootn_storage_buf,livecrootn_xfer_buf,deadcrootn_buf              &
+                ,deadcrootn_storage_buf,deadcrootn_xfer_buf,npool_buf,pft_ntrunc_buf        &
+                ,gresp_storage_buf,gresp_xfer_buf,xsmrpool_buf,annsum_counter_buf           &
+                ,cannsum_npp_buf,cannavg_t2m_buf,wf_buf,me_buf,mean_fire_prob_buf,cwdc_buf,litr1c_buf   &
+                ,litr2c_buf,litr3c_buf,soil1c_buf,soil2c_buf,soil3c_buf,soil4c_buf,seedc_buf,col_ctrunc_buf &
+                ,prod10c_buf,prod100c_buf,cwdn_buf,litr1n_buf,litr2n_buf,litr3n_buf,soil1n_buf,soil2n_buf   &
+                ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf &
+                ,totlitc_buf,dwt_seedc_to_leaf_buf,dwt_seedc_to_deadstem_buf,dwt_conv_cflux_buf &
+                ,dwt_prod10c_gain_buf,dwt_prod100c_gain_buf,prod100c_loss_buf,dwt_frootc_to_litr1c_buf &
+                ,dwt_frootc_to_litr2c_buf,dwt_frootc_to_litr3c_buf,dwt_livecrootc_to_cwdc_buf &
+                ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
+                ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
+                ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf
+
+
+
+!
+! !LOCAL VARIABLES:
+   integer :: g,l,c,p      ! indices
+   integer :: begp, endp   ! per-clump/proc beginning and ending pft indices
+   integer :: begc, endc   ! per-clump/proc beginning and ending column indices
+   integer :: begl, endl   ! per-clump/proc beginning and ending landunit indices
+   integer :: begg, endg   ! per-clump/proc gridcell ending gridcell indices
+!EOP
+!-----------------------------------------------------------------------
+
+    ! assign local pointers at the gridcell level
+
+    ! assign local pointers at the landunit level
+    lakpoi                         => clm3%g%l%lakpoi
+    itypelun                       => clm3%g%l%itype
+
+    ! assign local pointers at the column level
+    clandunit                      => clm3%g%l%c%landunit
+    annsum_counter                 => clm3%g%l%c%cps%annsum_counter
+    cannsum_npp                    => clm3%g%l%c%cps%cannsum_npp
+    cannavg_t2m                    => clm3%g%l%c%cps%cannavg_t2m
+    wf                             => clm3%g%l%c%cps%wf
+    me                             => clm3%g%l%c%cps%me
+    fire_prob                      => clm3%g%l%c%cps%fire_prob
+    mean_fire_prob                 => clm3%g%l%c%cps%mean_fire_prob
+    fireseasonl                    => clm3%g%l%c%cps%fireseasonl
+    farea_burned                   => clm3%g%l%c%cps%farea_burned
+    ann_farea_burned               => clm3%g%l%c%cps%ann_farea_burned
+    qflx_drain                     => clm3%g%l%c%cwf%qflx_drain
+    cwdc                           => clm3%g%l%c%ccs%cwdc
+    litr1c                         => clm3%g%l%c%ccs%litr1c
+    litr2c                         => clm3%g%l%c%ccs%litr2c
+    litr3c                         => clm3%g%l%c%ccs%litr3c
+    soil1c                         => clm3%g%l%c%ccs%soil1c
+    soil2c                         => clm3%g%l%c%ccs%soil2c
+    soil3c                         => clm3%g%l%c%ccs%soil3c
+    soil4c                         => clm3%g%l%c%ccs%soil4c
+    
+    ! dynamic landuse variables
+    seedc                          => clm3%g%l%c%ccs%seedc
+    prod10c                        => clm3%g%l%c%ccs%prod10c
+    prod100c                       => clm3%g%l%c%ccs%prod100c
+    totprodc                       => clm3%g%l%c%ccs%totprodc
+#if (defined C13)
+    seedc13                        => clm3%g%l%c%cc13s%seedc
+    prod10c13                      => clm3%g%l%c%cc13s%prod10c
+    prod100c13                     => clm3%g%l%c%cc13s%prod100c
+    totprodc13                     => clm3%g%l%c%cc13s%totprodc
+#endif
+    seedn                          => clm3%g%l%c%cns%seedn
+    prod10n                        => clm3%g%l%c%cns%prod10n
+    prod100n                       => clm3%g%l%c%cns%prod100n
+    totprodn                       => clm3%g%l%c%cns%totprodn
+    
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+    cwdn                           => clm3%g%l%c%cns%cwdn
+    litr1n                         => clm3%g%l%c%cns%litr1n
+    litr2n                         => clm3%g%l%c%cns%litr2n
+    litr3n                         => clm3%g%l%c%cns%litr3n
+<<<<<<< HEAD
+    col_totpftn                    => clm3%g%l%c%cns%pns_a%totpftn
+    col_totvegn                    => clm3%g%l%c%cns%pns_a%totvegn
+    sminn                          => clm3%g%l%c%cns%sminn
+    col_ntrunc                     => clm3%g%l%c%cns%col_ntrunc
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+    soil1n                         => clm3%g%l%c%cns%soil1n
+    soil2n                         => clm3%g%l%c%cns%soil2n
+    soil3n                         => clm3%g%l%c%cns%soil3n
+    soil4n                         => clm3%g%l%c%cns%soil4n
+<<<<<<< HEAD
+=======
+    sminn                          => clm3%g%l%c%cns%sminn
+    col_ctrunc                     => clm3%g%l%c%ccs%col_ctrunc
+    totcolc                        => clm3%g%l%c%ccs%totcolc
+    totecosysc                     => clm3%g%l%c%ccs%totecosysc
+    totlitc                        => clm3%g%l%c%ccs%totlitc
+    totsomc                        => clm3%g%l%c%ccs%totsomc
+
+    col_ntrunc                     => clm3%g%l%c%cns%col_ntrunc
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+    totcoln                        => clm3%g%l%c%cns%totcoln
+    totecosysn                     => clm3%g%l%c%cns%totecosysn
+    totlitn                        => clm3%g%l%c%cns%totlitn
+    totsomn                        => clm3%g%l%c%cns%totsomn
+<<<<<<< HEAD
+    m_deadcrootn_storage_to_fire   => clm3%g%l%c%p%pnf%m_deadcrootn_storage_to_fire
+    m_deadcrootn_to_fire           => clm3%g%l%c%p%pnf%m_deadcrootn_to_fire
+    m_deadcrootn_xfer_to_fire      => clm3%g%l%c%p%pnf%m_deadcrootn_xfer_to_fire
+    m_deadstemn_storage_to_fire    => clm3%g%l%c%p%pnf%m_deadstemn_storage_to_fire
+    m_deadstemn_to_fire            => clm3%g%l%c%p%pnf%m_deadstemn_to_fire
+    m_deadstemn_xfer_to_fire       => clm3%g%l%c%p%pnf%m_deadstemn_xfer_to_fire
+    m_frootn_storage_to_fire       => clm3%g%l%c%p%pnf%m_frootn_storage_to_fire
+    m_frootn_to_fire               => clm3%g%l%c%p%pnf%m_frootn_to_fire
+    m_frootn_xfer_to_fire          => clm3%g%l%c%p%pnf%m_frootn_xfer_to_fire
+    m_leafn_storage_to_fire        => clm3%g%l%c%p%pnf%m_leafn_storage_to_fire
+    m_leafn_to_fire                => clm3%g%l%c%p%pnf%m_leafn_to_fire
+    m_leafn_xfer_to_fire           => clm3%g%l%c%p%pnf%m_leafn_xfer_to_fire
+    m_livecrootn_storage_to_fire   => clm3%g%l%c%p%pnf%m_livecrootn_storage_to_fire
+    m_livecrootn_to_fire           => clm3%g%l%c%p%pnf%m_livecrootn_to_fire
+    m_livecrootn_xfer_to_fire      => clm3%g%l%c%p%pnf%m_livecrootn_xfer_to_fire
+    m_livestemn_storage_to_fire    => clm3%g%l%c%p%pnf%m_livestemn_storage_to_fire
+    m_livestemn_to_fire            => clm3%g%l%c%p%pnf%m_livestemn_to_fire
+    m_livestemn_xfer_to_fire       => clm3%g%l%c%p%pnf%m_livestemn_xfer_to_fire
+    m_retransn_to_fire             => clm3%g%l%c%p%pnf%m_retransn_to_fire
+    hrv_deadstemn_to_prod10n         => clm3%g%l%c%p%pnf%hrv_deadstemn_to_prod10n        
+    hrv_deadstemn_to_prod100n        => clm3%g%l%c%p%pnf%hrv_deadstemn_to_prod100n       
+    ndeploy                        => clm3%g%l%c%p%pnf%ndeploy
+    pft_fire_nloss                 => clm3%g%l%c%p%pnf%pft_fire_nloss
+    retransn_to_npool              => clm3%g%l%c%p%pnf%retransn_to_npool
+    sminn_to_npool                 => clm3%g%l%c%p%pnf%sminn_to_npool
+    deadcrootn                     => clm3%g%l%c%p%pns%deadcrootn
+    deadcrootn_storage             => clm3%g%l%c%p%pns%deadcrootn_storage
+    deadcrootn_xfer                => clm3%g%l%c%p%pns%deadcrootn_xfer
+    deadstemn                      => clm3%g%l%c%p%pns%deadstemn
+    deadstemn_storage              => clm3%g%l%c%p%pns%deadstemn_storage
+    deadstemn_xfer                 => clm3%g%l%c%p%pns%deadstemn_xfer
+    dispvegn                       => clm3%g%l%c%p%pns%dispvegn
+    frootn                         => clm3%g%l%c%p%pns%frootn
+    frootn_storage                 => clm3%g%l%c%p%pns%frootn_storage
+    frootn_xfer                    => clm3%g%l%c%p%pns%frootn_xfer
+    leafn                          => clm3%g%l%c%p%pns%leafn
+    leafn_storage                  => clm3%g%l%c%p%pns%leafn_storage
+    leafn_xfer                     => clm3%g%l%c%p%pns%leafn_xfer
+    livecrootn                     => clm3%g%l%c%p%pns%livecrootn
+    livecrootn_storage             => clm3%g%l%c%p%pns%livecrootn_storage
+    livecrootn_xfer                => clm3%g%l%c%p%pns%livecrootn_xfer
+=======
+#if (defined C13)
+   ! 4/14/05: PET
+   ! Adding isotope code
+    cwdc13                           => clm3%g%l%c%cc13s%cwdc
+    litr1c13                         => clm3%g%l%c%cc13s%litr1c
+    litr2c13                         => clm3%g%l%c%cc13s%litr2c
+    litr3c13                         => clm3%g%l%c%cc13s%litr3c
+    soil1c13                         => clm3%g%l%c%cc13s%soil1c
+    soil2c13                         => clm3%g%l%c%cc13s%soil2c
+    soil3c13                         => clm3%g%l%c%cc13s%soil3c
+    soil4c13                         => clm3%g%l%c%cc13s%soil4c
+    c13_col_ctrunc                   => clm3%g%l%c%cc13s%col_ctrunc
+#endif
+
+    ! assign local pointers at the pft level
+    ivt                            => clm3%g%l%c%p%itype
+    plandunit                      => clm3%g%l%c%p%landunit
+    leafc                          => clm3%g%l%c%p%pcs%leafc
+    leafc_storage                  => clm3%g%l%c%p%pcs%leafc_storage
+    leafc_xfer                     => clm3%g%l%c%p%pcs%leafc_xfer
+#if (defined CROP)
+    grainc                         => clm3%g%l%c%p%pcs%grainc
+    grainc_storage                 => clm3%g%l%c%p%pcs%grainc_storage
+    grainc_xfer                    => clm3%g%l%c%p%pcs%grainc_xfer
+    gdd020                        => clm3%g%l%c%p%pps%gdd020
+    gdd820                        => clm3%g%l%c%p%pps%gdd820
+    gdd1020                       => clm3%g%l%c%p%pps%gdd1020
+    croplive   => clm3%g%l%c%p%pps%croplive
+    htmx       => clm3%g%l%c%p%pps%htmx
+    harvdate   => clm3%g%l%c%p%pps%harvdate
+    peaklai    => clm3%g%l%c%p%pps%peaklai
+    cropplant  => clm3%g%l%c%p%pps%cropplant
+    vf         => clm3%g%l%c%p%pps%vf
+#endif
+    frootc                         => clm3%g%l%c%p%pcs%frootc
+    frootc_storage                 => clm3%g%l%c%p%pcs%frootc_storage
+    frootc_xfer                    => clm3%g%l%c%p%pcs%frootc_xfer
+    livestemc                      => clm3%g%l%c%p%pcs%livestemc
+    livestemc_storage              => clm3%g%l%c%p%pcs%livestemc_storage
+    livestemc_xfer                 => clm3%g%l%c%p%pcs%livestemc_xfer
+    deadstemc                      => clm3%g%l%c%p%pcs%deadstemc
+    deadstemc_storage              => clm3%g%l%c%p%pcs%deadstemc_storage
+    deadstemc_xfer                 => clm3%g%l%c%p%pcs%deadstemc_xfer
+    livecrootc                     => clm3%g%l%c%p%pcs%livecrootc
+    livecrootc_storage             => clm3%g%l%c%p%pcs%livecrootc_storage
+    livecrootc_xfer                => clm3%g%l%c%p%pcs%livecrootc_xfer
+    deadcrootc                     => clm3%g%l%c%p%pcs%deadcrootc
+    deadcrootc_storage             => clm3%g%l%c%p%pcs%deadcrootc_storage
+    deadcrootc_xfer                => clm3%g%l%c%p%pcs%deadcrootc_xfer
+    gresp_storage                  => clm3%g%l%c%p%pcs%gresp_storage
+    gresp_xfer                     => clm3%g%l%c%p%pcs%gresp_xfer
+    cpool                          => clm3%g%l%c%p%pcs%cpool
+    xsmrpool                       => clm3%g%l%c%p%pcs%xsmrpool
+    forc_hgt_u_pft                 => clm3%g%l%c%p%pps%forc_hgt_u_pft
+
+#if (defined CLAMP)
+    ! CLAMP variable
+    woodc                          => clm3%g%l%c%p%pcs%woodc
+#endif
+
+    leafn                          => clm3%g%l%c%p%pns%leafn
+    leafn_storage                  => clm3%g%l%c%p%pns%leafn_storage
+    leafn_xfer                     => clm3%g%l%c%p%pns%leafn_xfer
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+#if (defined CROP)
+    grainn                         => clm3%g%l%c%p%pns%grainn
+    grainn_storage                 => clm3%g%l%c%p%pns%grainn_storage
+    grainn_xfer                    => clm3%g%l%c%p%pns%grainn_xfer
+#endif
+<<<<<<< HEAD
+    livestemn                      => clm3%g%l%c%p%pns%livestemn
+    livestemn_storage              => clm3%g%l%c%p%pns%livestemn_storage
+    livestemn_xfer                 => clm3%g%l%c%p%pns%livestemn_xfer
+    retransn                       => clm3%g%l%c%p%pns%retransn
+    npool                          => clm3%g%l%c%p%pns%npool
+=======
+    frootn                         => clm3%g%l%c%p%pns%frootn
+    frootn_storage                 => clm3%g%l%c%p%pns%frootn_storage
+    frootn_xfer                    => clm3%g%l%c%p%pns%frootn_xfer
+    livestemn                      => clm3%g%l%c%p%pns%livestemn
+    livestemn_storage              => clm3%g%l%c%p%pns%livestemn_storage
+    livestemn_xfer                 => clm3%g%l%c%p%pns%livestemn_xfer
+    deadstemn                      => clm3%g%l%c%p%pns%deadstemn
+    deadstemn_storage              => clm3%g%l%c%p%pns%deadstemn_storage
+    deadstemn_xfer                 => clm3%g%l%c%p%pns%deadstemn_xfer
+    livecrootn                     => clm3%g%l%c%p%pns%livecrootn
+    livecrootn_storage             => clm3%g%l%c%p%pns%livecrootn_storage
+    livecrootn_xfer                => clm3%g%l%c%p%pns%livecrootn_xfer
+    deadcrootn                     => clm3%g%l%c%p%pns%deadcrootn
+    deadcrootn_storage             => clm3%g%l%c%p%pns%deadcrootn_storage
+    deadcrootn_xfer                => clm3%g%l%c%p%pns%deadcrootn_xfer
+    retransn                       => clm3%g%l%c%p%pns%retransn
+    npool                          => clm3%g%l%c%p%pns%npool
+    psnsun                         => clm3%g%l%c%p%pcf%psnsun
+    psnsha                         => clm3%g%l%c%p%pcf%psnsha
+#if (defined C13)
+    c13_psnsun                     => clm3%g%l%c%p%pc13f%psnsun
+    c13_psnsha                     => clm3%g%l%c%p%pc13f%psnsha
+#endif
+    laisun                         => clm3%g%l%c%p%pps%laisun
+    laisha                         => clm3%g%l%c%p%pps%laisha
+    dormant_flag                   => clm3%g%l%c%p%pepv%dormant_flag
+    days_active                    => clm3%g%l%c%p%pepv%days_active
+    onset_flag                     => clm3%g%l%c%p%pepv%onset_flag
+    onset_counter                  => clm3%g%l%c%p%pepv%onset_counter
+    onset_gddflag                  => clm3%g%l%c%p%pepv%onset_gddflag
+    onset_fdd                      => clm3%g%l%c%p%pepv%onset_fdd
+    onset_gdd                      => clm3%g%l%c%p%pepv%onset_gdd
+    onset_swi                      => clm3%g%l%c%p%pepv%onset_swi
+    offset_flag                    => clm3%g%l%c%p%pepv%offset_flag
+    offset_counter                 => clm3%g%l%c%p%pepv%offset_counter
+    offset_fdd                     => clm3%g%l%c%p%pepv%offset_fdd
+    offset_swi                     => clm3%g%l%c%p%pepv%offset_swi
+    lgsf                           => clm3%g%l%c%p%pepv%lgsf
+    bglfr                          => clm3%g%l%c%p%pepv%bglfr
+    bgtr                           => clm3%g%l%c%p%pepv%bgtr
+    dayl                           => clm3%g%l%c%p%pepv%dayl
+    prev_dayl                      => clm3%g%l%c%p%pepv%prev_dayl
+    annavg_t2m                     => clm3%g%l%c%p%pepv%annavg_t2m
+    tempavg_t2m                    => clm3%g%l%c%p%pepv%tempavg_t2m
+    gpp                            => clm3%g%l%c%p%pepv%gpp
+    availc                         => clm3%g%l%c%p%pepv%availc
+    xsmrpool_recover                  => clm3%g%l%c%p%pepv%xsmrpool_recover
+#if (defined C13)
+    xsmrpool_c13ratio                  => clm3%g%l%c%p%pepv%xsmrpool_c13ratio
+#endif
+    alloc_pnow                     => clm3%g%l%c%p%pepv%alloc_pnow
+    c_allometry                    => clm3%g%l%c%p%pepv%c_allometry
+    n_allometry                    => clm3%g%l%c%p%pepv%n_allometry
+    plant_ndemand                  => clm3%g%l%c%p%pepv%plant_ndemand
+    tempsum_potential_gpp          => clm3%g%l%c%p%pepv%tempsum_potential_gpp
+    annsum_potential_gpp           => clm3%g%l%c%p%pepv%annsum_potential_gpp
+    tempmax_retransn               => clm3%g%l%c%p%pepv%tempmax_retransn
+    annmax_retransn                => clm3%g%l%c%p%pepv%annmax_retransn
+    avail_retransn                 => clm3%g%l%c%p%pepv%avail_retransn
+    plant_nalloc                   => clm3%g%l%c%p%pepv%plant_nalloc
+    plant_calloc                   => clm3%g%l%c%p%pepv%plant_calloc
+    excess_cflux                   => clm3%g%l%c%p%pepv%excess_cflux
+    downreg                        => clm3%g%l%c%p%pepv%downreg
+    tempsum_npp                    => clm3%g%l%c%p%pepv%tempsum_npp
+    annsum_npp                     => clm3%g%l%c%p%pepv%annsum_npp
+#if (defined CNDV)
+    tempsum_litfall                => clm3%g%l%c%p%pepv%tempsum_litfall
+    annsum_litfall                 => clm3%g%l%c%p%pepv%annsum_litfall
+#endif
+    dispvegc                       => clm3%g%l%c%p%pcs%dispvegc
+    pft_ctrunc                     => clm3%g%l%c%p%pcs%pft_ctrunc
+    storvegc                       => clm3%g%l%c%p%pcs%storvegc
+    totpftc                        => clm3%g%l%c%p%pcs%totpftc
+    totvegc                        => clm3%g%l%c%p%pcs%totvegc
+    prev_frootc_to_litter          => clm3%g%l%c%p%pepv%prev_frootc_to_litter
+    prev_leafc_to_litter           => clm3%g%l%c%p%pepv%prev_leafc_to_litter
+    dispvegn                       => clm3%g%l%c%p%pns%dispvegn
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+    pft_ntrunc                     => clm3%g%l%c%p%pns%pft_ntrunc
+    storvegn                       => clm3%g%l%c%p%pns%storvegn
+    totpftn                        => clm3%g%l%c%p%pns%totpftn
+    totvegn                        => clm3%g%l%c%p%pns%totvegn
+<<<<<<< HEAD
+    ! dynamic landcover pointers
+    wood_harvestn                  => clm3%g%l%c%p%pnf%wood_harvestn
+    col_wood_harvestn              => clm3%g%l%c%cnf%pnf_a%wood_harvestn 
+    dwt_nloss                      => clm3%g%l%c%cnf%dwt_nloss
+    dwt_conv_nflux                 => clm3%g%l%c%cnf%dwt_conv_nflux
+    prod10n_loss                   => clm3%g%l%c%cnf%prod10n_loss
+    prod100n_loss                  => clm3%g%l%c%cnf%prod100n_loss
+    product_nloss                  => clm3%g%l%c%cnf%product_nloss
+    seedn                          => clm3%g%l%c%cns%seedn
+    prod10n                        => clm3%g%l%c%cns%prod10n
+    prod100n                       => clm3%g%l%c%cns%prod100n
+    totprodn                       => clm3%g%l%c%cns%totprodn
+
+   ! pft loop
+   do fp = 1,num_soilp
+      p = filter_soilp(fp)
+
+      ! calculate pft-level summary nitrogen fluxes and states
+
+      ! total N deployment (from sminn and retranslocated N pool) (NDEPLOY)
+      ndeploy(p) = &
+         sminn_to_npool(p) + &
+         retransn_to_npool(p)
+
+      ! pft-level wood harvest
+      wood_harvestn(p) = &
+         hrv_deadstemn_to_prod10n(p) + &
+         hrv_deadstemn_to_prod100n(p)
+
+      ! total pft-level fire N losses
+      pft_fire_nloss(p) = &
+         m_leafn_to_fire(p)               + &
+         m_leafn_storage_to_fire(p)       + &
+         m_leafn_xfer_to_fire(p)          + &
+         m_frootn_to_fire(p)              + &
+         m_frootn_storage_to_fire(p)      + &
+         m_frootn_xfer_to_fire(p)         + &
+         m_livestemn_to_fire(p)           + &
+         m_livestemn_storage_to_fire(p)   + &
+         m_livestemn_xfer_to_fire(p)      + &
+         m_deadstemn_to_fire(p)           + &
+         m_deadstemn_storage_to_fire(p)   + &
+         m_deadstemn_xfer_to_fire(p)      + &
+         m_livecrootn_to_fire(p)          + &
+         m_livecrootn_storage_to_fire(p)  + &
+         m_livecrootn_xfer_to_fire(p)     + &
+         m_deadcrootn_to_fire(p)          + &
+         m_deadcrootn_storage_to_fire(p)  + &
+         m_deadcrootn_xfer_to_fire(p)     + &
+         m_retransn_to_fire(p)
+
+      ! displayed vegetation nitrogen, excluding storage (DISPVEGN)
+      dispvegn(p) = &
+         leafn(p)      + &
+         frootn(p)     + &
+#if (defined CROP)
+         grainn(p)     + &
+#endif
+         livestemn(p)  + &
+         deadstemn(p)  + &
+         livecrootn(p) + &
+         deadcrootn(p)
+
+      ! stored vegetation nitrogen, including retranslocated N pool (STORVEGN)
+      storvegn(p) = &
+         leafn_storage(p)      + &
+         frootn_storage(p)     + &
+         livestemn_storage(p)  + &
+         deadstemn_storage(p)  + &
+         livecrootn_storage(p) + &
+         deadcrootn_storage(p) + &
+#if (defined CROP)
+         grainn_storage(p)     + &
+         grainn_xfer(p)        + &
+#endif
+         leafn_xfer(p)         + &
+         frootn_xfer(p)        + &
+         livestemn_xfer(p)     + &
+         deadstemn_xfer(p)     + &
+         livecrootn_xfer(p)    + &
+         deadcrootn_xfer(p)    + &
+		 npool(p)              + &
+         retransn(p)
+
+      ! total vegetation nitrogen (TOTVEGN)
+      totvegn(p) = dispvegn(p) + storvegn(p)
+
+      ! total pft-level carbon (add pft_ntrunc)
+      totpftn(p) = totvegn(p) + pft_ntrunc(p)
+   
+   write(6,*) 'NSummary, pft_fire_nloss(',p,')=',pft_fire_nloss(p)
+   write(6,*) 'NSummary, wood_harvestn(',p,')=',wood_harvestn(p)
+   write(6,*) 'NSummary, totvegn(',p,')=',totvegn(p)
+   write(6,*) 'NSummary, totpftn(',p,')=',totpftn(p)
+
+   end do  ! end of pfts loop
+
+   ! use p2c routine to get selected column-average pft-level fluxes and states
+   call p2c(num_soilc, filter_soilc, pft_fire_nloss, col_pft_fire_nloss)
+   call p2c(num_soilc, filter_soilc, wood_harvestn, col_wood_harvestn)
+   call p2c(num_soilc, filter_soilc, totvegn, col_totvegn)
+   call p2c(num_soilc, filter_soilc, totpftn, col_totpftn)
+
+   ! column loop
+   do fc = 1,num_soilc
+      c = filter_soilc(fc)
+
+      ! total N denitrification (DENIT)
+      denit(c) = &
+         sminn_to_denit_l1s1(c) + &
+         sminn_to_denit_l2s2(c) + &
+         sminn_to_denit_l3s3(c) + &
+         sminn_to_denit_s1s2(c) + &
+         sminn_to_denit_s2s3(c) + &
+         sminn_to_denit_s3s4(c) + &
+         sminn_to_denit_s4(c) + &
+         sminn_to_denit_excess(c)
+
+      ! total column-level fire N losses
+      col_fire_nloss(c) = &
+         m_litr1n_to_fire(c) + &
+         m_litr2n_to_fire(c) + &
+         m_litr3n_to_fire(c) + &
+         m_cwdn_to_fire(c)   + &
+         col_pft_fire_nloss(c)
+
+      ! column-level N losses due to landcover change
+      dwt_nloss(c) = &
+         dwt_conv_nflux(c)
+         
+      ! total wood product N loss
+      product_nloss(c) = &
+         prod10n_loss(c) + &
+         prod100n_loss(c) 
+
+      ! total litter nitrogen (TOTLITN)
+      totlitn(c) = &
+         litr1n(c) + &
+         litr2n(c) + &
+         litr3n(c)
+
+      ! total soil organic matter nitrogen (TOTSOMN)
+      totsomn(c) = &
+         soil1n(c) + &
+         soil2n(c) + &
+         soil3n(c) + &
+         soil4n(c)
+
+      ! total wood product nitrogen
+      totprodn(c) = &
+         prod10n(c) + &
+	     prod100n(c)	 
+
+      ! total ecosystem nitrogen, including veg (TOTECOSYSN)
+      totecosysn(c) = &
+         cwdn(c) + &
+         totlitn(c) + &
+         totsomn(c) + &
+         sminn(c) + &
+	     totprodn(c) + &
+         col_totvegn(c)
+
+      ! total column nitrogen, including pft (TOTCOLN)
+      totcoln(c) = &
+         col_totpftn(c) + &
+         cwdn(c) + &
+         totlitn(c) + &
+         totsomn(c) + &
+         sminn(c) + &
+	     totprodn(c) + &
+		 seedn(c) + &
+		 col_ntrunc(c)
+
+   end do ! end of columns loop
+
+
+end subroutine NSummary
+!-----------------------------------------------------------------------
+
+#endif
+
+end module CNSummaryMod
+module CNVegStructUpdateMod
+
+#ifdef CN
+!-----------------------------------------------------------------------
+!BOP
+!
+! !MODULE: CNVegStructUpdateMod
+!
+! !DESCRIPTION:
+! Module for vegetation structure updates (LAI, SAI, htop, hbot)
+!
+! !USES:
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    implicit none
+    save
+    private
+! !PUBLIC MEMBER FUNCTIONS:
+    public :: CNVegStructUpdate
+!
+! !REVISION HISTORY:
+! 4/23/2004: Created by Peter Thornton
+!
+!EOP
+!-----------------------------------------------------------------------
+
+contains
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: CNVegStructUpdate
+!
+! !INTERFACE:
+subroutine CNVegStructUpdate(num_soilp, filter_soilp)
+!
+! !DESCRIPTION:
+! On the radiation time step, use C state variables and epc to diagnose
+! vegetation structure (LAI, SAI, height)
+!
+! !USES:
+   use clmtype
+!ylu remove   use clm_atmlnd   , only: clm_a2l
+   use pftvarcon    , only: noveg, nc3crop, nc4crop, nbrdlf_evr_shrub, nbrdlf_dcd_brl_shrub
+#if (defined CROP)
+   use pftvarcon    , only: ncorn, npcropmin, ztopmx, laimx
+!   use clm_varctl   , only: iulog
+!ylu remove   use shr_sys_mod  , only: shr_sys_flush
+#endif
+   use shr_const_mod, only: SHR_CONST_PI
+!   use clm_time_manager , only : get_rad_step_size
+   use globals , only: dt
+!
+! !ARGUMENTS:
+   implicit none
+   integer, intent(in) :: num_soilp                 ! number of column soil points in pft filter
+   integer, intent(in) :: filter_soilp(:)   ! pft filter for soil points
+!
+! !CALLED FROM:
+! subroutine CNEcosystemDyn
+!
+! !REVISION HISTORY:
+! 10/28/03: Created by Peter Thornton
+! 2/29/08, David Lawrence: revised snow burial fraction for short vegetation
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in scalars
+!
+#if (defined CNDV)
+   real(r8), pointer :: allom2(:)     ! ecophys const
+   real(r8), pointer :: allom3(:)     ! ecophys const
+   real(r8), pointer :: nind(:)       ! number of individuals (#/m**2)
+   real(r8), pointer :: fpcgrid(:)    ! fractional area of pft (pft area/nat veg area)
+#endif
+   integer , pointer :: ivt(:)        ! pft vegetation type
+   integer , pointer :: pcolumn(:)    ! column index associated with each pft
+   integer , pointer :: pgridcell(:)  ! pft's gridcell index
+   real(r8), pointer :: snowdp(:)     ! snow height (m)
+   real(r8), pointer :: leafc(:)      ! (kgC/m2) leaf C
+   real(r8), pointer :: deadstemc(:)  ! (kgC/m2) dead stem C
+   real(r8), pointer :: woody(:)      !binary flag for woody lifeform (1=woody, 0=not woody)
+   real(r8), pointer :: slatop(:)     !specific leaf area at top of canopy, projected area basis [m^2/gC]
+   real(r8), pointer :: dsladlai(:)   !dSLA/dLAI, projected area basis [m^2/gC]
+   real(r8), pointer :: z0mr(:)       !ratio of momentum roughness length to canopy top height (-)
+   real(r8), pointer :: displar(:)    !ratio of displacement height to canopy top height (-)
+   real(r8), pointer :: forc_hgt_u_pft(:) ! observational height of wind at pft-level [m]
+   real(r8), pointer :: dwood(:)      ! density of wood (kgC/m^3)
+!
+! local pointers to implicit in/out scalars
+!
+   integer , pointer :: frac_veg_nosno_alb(:) ! frac of vegetation not covered by snow [-]
+   real(r8), pointer :: tlai(:) !one-sided leaf area index, no burying by snow
+   real(r8), pointer :: tsai(:) !one-sided stem area index, no burying by snow
+   real(r8), pointer :: htop(:) !canopy top (m)
+   real(r8), pointer :: hbot(:) !canopy bottom (m)
+   real(r8), pointer :: elai(:)     ! one-sided leaf area index with burying by snow
+   real(r8), pointer :: esai(:)     ! one-sided stem area index with burying by snow
+#if (defined CROP)
+   real(r8), pointer :: htmx(:)     ! max hgt attained by a crop during yr
+   integer , pointer :: peaklai(:)  ! 1: max allowed lai; 0: not at max
+   integer , pointer :: harvdate(:) ! harvest date
+
+#endif
+!
+! local pointers to implicit out scalars
+!
+!
+! !OTHER LOCAL VARIABLES:
+   integer :: p,c,g        !indices
+   integer :: fp           !lake filter indices
+   real(r8):: taper        ! ratio of height:radius_breast_height (tree allometry)
+   real(r8):: stocking     ! #stems / ha (stocking density)
+   real(r8):: ol           ! thickness of canopy layer covered by snow (m)
+   real(r8):: fb           ! fraction of canopy layer covered by snow
+   real(r8) :: tlai_old    ! for use in Zeng tsai formula
+   real(r8) :: tsai_old    ! for use in Zeng tsai formula
+   real(r8) :: tsai_min    ! PFT derived minimum tsai
+   real(r8) :: tsai_alpha  ! monthly decay rate of tsai
+!   real(r8) dt             ! radiation time step (sec)
+
+   real(r8), parameter :: dtsmonth = 2592000._r8 ! number of seconds in a 30 day month (60x60x24x30)
+!EOP
+!-----------------------------------------------------------------------
+! tsai formula from Zeng et. al. 2002, Journal of Climate, p1835
+!
+! tsai(p) = max( tsai_alpha(ivt(p))*tsai_old + max(tlai_old-tlai(p),0_r8), tsai_min(ivt(p)) )
+! notes:
+! * RHS tsai & tlai are from previous timestep
+! * should create tsai_alpha(ivt(p)) & tsai_min(ivt(p)) in pftvarcon.F90 - slevis
+! * all non-crop pfts use same values:
+!   crop    tsai_alpha,tsai_min = 0.0,0.1
+!   noncrop tsai_alpha,tsai_min = 0.5,1.0  (includes bare soil and urban)
+!-------------------------------------------------------------------------------
+
+   ! assign local pointers to derived type arrays (in)
+#if (defined CNDV)
+    allom2                         => dgv_pftcon%allom2
+    allom3                         => dgv_pftcon%allom3
+    nind                           => clm3%g%l%c%p%pdgvs%nind
+    fpcgrid                        => clm3%g%l%c%p%pdgvs%fpcgrid
+#endif
+    ivt                            => clm3%g%l%c%p%itype
+    pcolumn                        => clm3%g%l%c%p%column
+    pgridcell                      => clm3%g%l%c%p%gridcell
+    leafc                          => clm3%g%l%c%p%pcs%leafc
+    deadstemc                      => clm3%g%l%c%p%pcs%deadstemc
+    snowdp                         => clm3%g%l%c%cps%snowdp
+    woody                          => pftcon%woody
+    slatop                         => pftcon%slatop
+    dsladlai                       => pftcon%dsladlai
+    z0mr                           => pftcon%z0mr
+    displar                        => pftcon%displar
+    dwood                          => pftcon%dwood
+
+   ! assign local pointers to derived type arrays (out)
+    tlai                           => clm3%g%l%c%p%pps%tlai
+    tsai                           => clm3%g%l%c%p%pps%tsai
+    htop                           => clm3%g%l%c%p%pps%htop
+    hbot                           => clm3%g%l%c%p%pps%hbot
+    elai                           => clm3%g%l%c%p%pps%elai
+    esai                           => clm3%g%l%c%p%pps%esai
+    frac_veg_nosno_alb             => clm3%g%l%c%p%pps%frac_veg_nosno_alb
+#if (defined CROP)
+    htmx                           => clm3%g%l%c%p%pps%htmx
+    peaklai                        => clm3%g%l%c%p%pps%peaklai
+    harvdate                       => clm3%g%l%c%p%pps%harvdate
+#endif
+    forc_hgt_u_pft                 => clm3%g%l%c%p%pps%forc_hgt_u_pft
+
+!   dt = real( get_rad_step_size(), r8 )
+
+   ! constant allometric parameters
+   taper = 200._r8
+   stocking = 1000._r8
+
+   ! convert from stems/ha -> stems/m^2
+   stocking = stocking / 10000._r8
+
+   ! pft loop
+   do fp = 1,num_soilp
+      p = filter_soilp(fp)
+      c = pcolumn(p)
+      g = pgridcell(p)
+
+      if (ivt(p) /= noveg) then
+
+          tlai_old = tlai(p) ! n-1 value
+          tsai_old = tsai(p) ! n-1 value
+
+          ! update the leaf area index based on leafC and SLA
+          ! Eq 3 from Thornton and Zimmerman, 2007, J Clim, 20, 3902-3923. 
+          if (dsladlai(ivt(p)) > 0._r8) then
+             tlai(p) = (slatop(ivt(p))*(exp(leafc(p)*dsladlai(ivt(p))) - 1._r8))/dsladlai(ivt(p))
+          else
+             tlai(p) = slatop(ivt(p)) * leafc(p)
+          end if
+          tlai(p) = max(0._r8, tlai(p))
+
+          ! update the stem area index and height based on LAI, stem mass, and veg type.
+          ! With the exception of htop for woody vegetation, this follows the DGVM logic.
+
+          ! tsai formula from Zeng et. al. 2002, Journal of Climate, p1835 (see notes)
+          ! Assumes doalb time step .eq. CLM time step, SAI min and monthly decay factor
+          ! alpha are set by PFT, and alpha is scaled to CLM time step by multiplying by
+          ! dt and dividing by dtsmonth (seconds in average 30 day month)
+          ! tsai_min scaled by 0.5 to match MODIS satellite derived values
+          if (ivt(p) == nc3crop .or. ivt(p) == nc4crop) then    ! crops
+
+             tsai_alpha = 1.0_r8-1.0_r8*dt/dtsmonth
+             tsai_min = 0.1_r8
+          else
+             tsai_alpha = 1.0_r8-0.5_r8*dt/dtsmonth
+             tsai_min = 1.0_r8
+          end if
+          tsai_min = tsai_min * 0.5_r8
+          tsai(p) = max(tsai_alpha*tsai_old+max(tlai_old-tlai(p),0._r8),tsai_min)
+
+          if (woody(ivt(p)) == 1._r8) then
+
+             ! trees and shrubs
+
+             ! if shrubs have a squat taper 
+             if (ivt(p) >= nbrdlf_evr_shrub .and. ivt(p) <= nbrdlf_dcd_brl_shrub) then
+                taper = 10._r8
+             ! otherwise have a tall taper
+             else
+                taper = 200._r8
+             end if
+
+             ! trees and shrubs for now have a very simple allometry, with hard-wired
+             ! stem taper (height:radius) and hard-wired stocking density (#individuals/area)
+#if (defined CNDV)
+             if (fpcgrid(p) > 0._r8 .and. nind(p) > 0._r8) then
+                stocking = nind(p)/fpcgrid(p) !#ind/m2 nat veg area -> #ind/m2 pft area
+                htop(p) = allom2(ivt(p)) * ( (24._r8 * deadstemc(p) / &
+                  (SHR_CONST_PI * stocking * dwood(ivt(p)) * taper))**(1._r8/3._r8) )**allom3(ivt(p)) ! lpj's htop w/ cn's stemdiam
+             else
+                htop(p) = 0._r8
+             end if
+#else
+                htop(p) = ((3._r8 * deadstemc(p) * taper * taper)/ &
+                  (SHR_CONST_PI * stocking * dwood(ivt(p))))**(1._r8/3._r8)
+#endif
+
+             ! Peter Thornton, 5/3/2004
+             ! Adding test to keep htop from getting too close to forcing height for windspeed
+             ! Also added for grass, below, although it is not likely to ever be an issue.
+             htop(p) = min(htop(p),(forc_hgt_u_pft(p)/(displar(ivt(p))+z0mr(ivt(p))))-3._r8)
+
+             ! Peter Thornton, 8/11/2004
+             ! Adding constraint to keep htop from going to 0.0.
+             ! This becomes an issue when fire mortality is pushing deadstemc
+             ! to 0.0.
+             htop(p) = max(htop(p), 0.01_r8)
+
+             hbot(p) = max(0._r8, min(3._r8, htop(p)-1._r8))
+
+#if (defined CROP)
+          else if (ivt(p) >= npcropmin) then ! prognostic crops
+
+             if (tlai(p) >= laimx(ivt(p))) peaklai(p) = 1 ! used in CNAllocation
+
+             if (ivt(p) == ncorn) then
+                tsai(p) = 0.1_r8 * tlai(p)
+             else
+                tsai(p) = 0.2_r8 * tlai(p)
+             end if
+
+             ! "stubble" after harvest
+             if (harvdate(p) < 999 .and. tlai(p) == 0._r8) then
+                tsai(p) = 0.25_r8
+                htmx(p) = 0._r8
+                peaklai(p) = 0
+             end if
+             if (harvdate(p) < 999 .and. tlai(p) > 0._r8) write(6,*) 'CNVegStructUpdate: tlai>0 after harvest!' ! remove after initial debugging?
+
+             ! canopy top and bottom heights
+             htop(p) = ztopmx(ivt(p)) * (min(tlai(p)/(laimx(ivt(p))-1._r8),1._r8))**2
+             htmx(p) = max(htmx(p), htop(p))
+             htop(p) = max(0.05_r8, max(htmx(p),htop(p)))
+             hbot(p) = 0.02_r8
+#endif
+          else ! generic crops and ...
+             ! grasses
+
+             ! height for grasses depends only on LAI
+             htop(p) = max(0.25_r8, tlai(p) * 0.25_r8)
+
+             htop(p) = min(htop(p),(forc_hgt_u_pft(p)/(displar(ivt(p))+z0mr(ivt(p))))-3._r8)
+
+             ! Peter Thornton, 8/11/2004
+             ! Adding constraint to keep htop from going to 0.0.
+             htop(p) = max(htop(p), 0.01_r8)
+
+             hbot(p) = max(0.0_r8, min(0.05_r8, htop(p)-0.20_r8))
+          end if
+
+      else
+          tlai(p) = 0._r8
+          tsai(p) = 0._r8
+          htop(p) = 0._r8
+          hbot(p) = 0._r8
+      end if
+      
+      ! adjust lai and sai for burying by snow. 
+
+      ! snow burial fraction for short vegetation (e.g. grasses) as in
+      ! Wang and Zeng, 2007.
+      if (ivt(p) > noveg .and. ivt(p) <= nbrdlf_dcd_brl_shrub ) then
+         ol = min( max(snowdp(c)-hbot(p), 0._r8), htop(p)-hbot(p))
+         fb = 1._r8 - ol / max(1.e-06_r8, htop(p)-hbot(p))
+      else
+         fb = 1._r8 - max(min(snowdp(c),0.2_r8),0._r8)/0.2_r8   ! 0.2m is assumed
+              !depth of snow required for complete burial of grasses
+      endif
+
+      elai(p) = max(tlai(p)*fb, 0.0_r8)
+      esai(p) = max(tsai(p)*fb, 0.0_r8)
+
+      ! Fraction of vegetation free of snow
+      if ((elai(p) + esai(p)) > 0._r8) then
+         frac_veg_nosno_alb(p) = 1
+      else
+         frac_veg_nosno_alb(p) = 0
+      end if
+
+   end do
+
+end subroutine CNVegStructUpdate
+!-----------------------------------------------------------------------
+#endif
+
+end module CNVegStructUpdateMod
+module CNWoodProductsMod
+=======
+    lncsha                         => clm3%g%l%c%p%pps%lncsha
+    lncsun                         => clm3%g%l%c%p%pps%lncsun
+    vcmxsha                        => clm3%g%l%c%p%pps%vcmxsha
+    vcmxsun                        => clm3%g%l%c%p%pps%vcmxsun
+#if (defined C13)
+    ! 4/14/05: PET
+    ! Adding isotope code
+    alphapsnsun                      => clm3%g%l%c%p%pps%alphapsnsun
+    alphapsnsha                      => clm3%g%l%c%p%pps%alphapsnsha
+    leafc13                          => clm3%g%l%c%p%pc13s%leafc
+    leafc13_storage                  => clm3%g%l%c%p%pc13s%leafc_storage
+    leafc13_xfer                     => clm3%g%l%c%p%pc13s%leafc_xfer
+#if (defined CROP)
+    grainc13                         => clm3%g%l%c%p%pc13s%grainc
+    grainc13_storage                 => clm3%g%l%c%p%pc13s%grainc_storage
+    grainc13_xfer                    => clm3%g%l%c%p%pc13s%grainc_xfer
+#endif
+    frootc13                         => clm3%g%l%c%p%pc13s%frootc
+    frootc13_storage                 => clm3%g%l%c%p%pc13s%frootc_storage
+    frootc13_xfer                    => clm3%g%l%c%p%pc13s%frootc_xfer
+    livestemc13                      => clm3%g%l%c%p%pc13s%livestemc
+    livestemc13_storage              => clm3%g%l%c%p%pc13s%livestemc_storage
+    livestemc13_xfer                 => clm3%g%l%c%p%pc13s%livestemc_xfer
+    deadstemc13                      => clm3%g%l%c%p%pc13s%deadstemc
+    deadstemc13_storage              => clm3%g%l%c%p%pc13s%deadstemc_storage
+    deadstemc13_xfer                 => clm3%g%l%c%p%pc13s%deadstemc_xfer
+    livecrootc13                     => clm3%g%l%c%p%pc13s%livecrootc
+    livecrootc13_storage             => clm3%g%l%c%p%pc13s%livecrootc_storage
+    livecrootc13_xfer                => clm3%g%l%c%p%pc13s%livecrootc_xfer
+    deadcrootc13                     => clm3%g%l%c%p%pc13s%deadcrootc
+    deadcrootc13_storage             => clm3%g%l%c%p%pc13s%deadcrootc_storage
+    deadcrootc13_xfer                => clm3%g%l%c%p%pc13s%deadcrootc_xfer
+    c13_gresp_storage                => clm3%g%l%c%p%pc13s%gresp_storage
+    c13_gresp_xfer                   => clm3%g%l%c%p%pc13s%gresp_xfer
+    c13pool                          => clm3%g%l%c%p%pc13s%cpool
+    c13xsmrpool                      => clm3%g%l%c%p%pc13s%xsmrpool
+    c13_pft_ctrunc                   => clm3%g%l%c%p%pc13s%pft_ctrunc
+    totvegc13                        => clm3%g%l%c%p%pc13s%totvegc
+    rc13_canair                      => clm3%g%l%c%p%pepv%rc13_canair
+    rc13_psnsun                      => clm3%g%l%c%p%pepv%rc13_psnsun
+    rc13_psnsha                      => clm3%g%l%c%p%pepv%rc13_psnsha
+#endif
+    
+    ! assign local pointers for ecophysiological constants
+    evergreen                      => pftcon%evergreen
+    woody                          => pftcon%woody
+    leafcn                         => pftcon%leafcn
+    deadwdcn                       => pftcon%deadwdcn
+
+   ! Determine subgrid bounds on this processor
+   call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
+
+   ! Added 5/4/04, PET: initialize forc_hgt_u (gridcell-level),
+   ! since this is not initialized before first call to CNVegStructUpdate,
+   ! and it is required to set the upper bound for canopy top height.
+   ! Changed 3/21/08, KO: still needed but don't have sufficient information 
+   ! to set this properly (e.g., pft-level displacement height and roughness 
+   ! length). So leave at 30m.
+!dir$ concurrent
+!cdir nodep
+
+
+!if this is the first time step, then initiate all variable to the start up value
+write(6,*) 'in CNiniTimeVar,nstep=',nstep
+
+IF(nstep == 1) THEN
+
+   do p = begp, endp
+      forc_hgt_u_pft(p) = 30._r8
+   end do
+
+   ! initialize column-level variables
+!dir$ concurrent
+!cdir nodep
+   do c = begc, endc
+      l = clandunit(c)
+#ifndef CROP
+      if (itypelun(l) == istsoil) then
+#else
+      if (itypelun(l) == istsoil .or. itypelun(l) == istcrop) then
+#endif
+
+         ! column physical state variables
+         annsum_counter(c) = 0._r8
+         cannsum_npp(c)    = 0._r8
+         cannavg_t2m(c)    = 280._r8
+         wf(c) = 1.0_r8  ! it needs to be non zero so the first time step has no fires
+         me(c) = 0._r8
+         fire_prob(c) = 0._r8
+         mean_fire_prob(c) = 0._r8
+         fireseasonl(c) = 0._r8
+         farea_burned(c) = 0._r8
+         ann_farea_burned(c) = 0._r8
+         
+         ! needed for CNNLeaching
+         qflx_drain(c) = 0._r8
+
+         ! column carbon state variable initialization
+         cwdc(c)   = 0._r8
+         litr1c(c) = 0._r8
+         litr2c(c) = 0._r8
+         litr3c(c) = 0._r8
+         soil1c(c) = 0._r8
+         soil2c(c) = 0._r8
+         soil3c(c) = 0._r8
+         soil4c(c) = 10._r8
+         col_ctrunc(c) = 0._r8
+         totlitc(c)    = 0._r8
+         totsomc(c)    = 0._r8
+         totecosysc(c) = 0._r8
+         totcolc(c)    = 0._r8
+
+#if (defined C13)
+         ! 4/14/05: PET
+         ! Adding isotope code
+         cwdc13(c)   = cwdc(c)   * c13ratio
+         litr1c13(c) = litr1c(c) * c13ratio
+         litr2c13(c) = litr2c(c) * c13ratio
+         litr3c13(c) = litr3c(c) * c13ratio
+         soil1c13(c) = soil1c(c) * c13ratio
+         soil2c13(c) = soil2c(c) * c13ratio
+         soil3c13(c) = soil3c(c) * c13ratio
+         soil4c13(c) = soil4c(c) * c13ratio
+         c13_col_ctrunc(c) = col_ctrunc(c) * c13ratio
+#endif
+
+         ! column nitrogen state variables
+         cwdn(c)   = cwdc(c) / 500._r8
+         litr1n(c) = litr1c(c) / 90._r8
+         litr2n(c) = litr2c(c) / 90._r8
+         litr3n(c) = litr3c(c) / 90._r8
+         soil1n(c) = soil1c(c) / 12._r8
+         soil2n(c) = soil2c(c) / 12._r8
+         soil3n(c) = soil3c(c) / 10._r8
+         soil4n(c) = soil4c(c) / 10._r8
+         sminn(c) = 0._r8
+         col_ntrunc(c) = 0._r8
+         totlitn(c)    = 0._r8
+         totsomn(c)    = 0._r8
+         totecosysn(c) = 0._r8
+         totcoln(c)    = 0._r8
+
+	 ! dynamic landcover state variables
+     seedc(c)  = 0._r8
+	 prod10c(c)    = 0._r8
+	 prod100c(c)   = 0._r8
+	 totprodc(c)   = 0._r8
+#if (defined C13)
+     seedc13(c)    = 0._r8
+	 prod10c13(c)  = 0._r8
+	 prod100c13(c) = 0._r8
+	 totprodc13(c) = 0._r8
+#endif
+	 seedn(c)      = 0._r8
+	 prod10n(c)    = 0._r8
+	 prod100n(c)   = 0._r8
+	 totprodn(c)   = 0._r8
+	 
+	 ! also initialize dynamic landcover fluxes so that they have
+	 ! real values on first timestep, prior to calling pftdyn_cnbal
+	 clm3%g%l%c%ccf%dwt_seedc_to_leaf(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_seedc_to_deadstem(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_conv_cflux(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_prod10c_gain(c) = 0._r8
+	 clm3%g%l%c%ccf%prod10c_loss(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_prod100c_gain(c) = 0._r8
+	 clm3%g%l%c%ccf%prod100c_loss(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_frootc_to_litr1c(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_frootc_to_litr2c(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_frootc_to_litr3c(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_livecrootc_to_cwdc(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_deadcrootc_to_cwdc(c) = 0._r8
+	 clm3%g%l%c%ccf%dwt_closs(c) = 0._r8
+#if (defined C13)
+	 clm3%g%l%c%cc13f%dwt_seedc_to_leaf(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_seedc_to_deadstem(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_conv_cflux(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_prod10c_gain(c) = 0._r8
+	 clm3%g%l%c%cc13f%prod10c_loss(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_prod100c_gain(c) = 0._r8
+	 clm3%g%l%c%cc13f%prod100c_loss(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_frootc_to_litr1c(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_frootc_to_litr2c(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_frootc_to_litr3c(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_livecrootc_to_cwdc(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_deadcrootc_to_cwdc(c) = 0._r8
+	 clm3%g%l%c%cc13f%dwt_closs(c) = 0._r8
+#endif
+	 clm3%g%l%c%cnf%dwt_seedn_to_leaf(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_seedn_to_deadstem(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_conv_nflux(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_prod10n_gain(c) = 0._r8
+	 clm3%g%l%c%cnf%prod10n_loss(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_prod100n_gain(c) = 0._r8
+	 clm3%g%l%c%cnf%prod100n_loss(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_frootn_to_litr1n(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_frootn_to_litr2n(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_frootn_to_litr3n(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_livecrootn_to_cwdn(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_deadcrootn_to_cwdn(c) = 0._r8
+	 clm3%g%l%c%cnf%dwt_nloss(c) = 0._r8
+      end if
+   end do
+
+   ! initialize pft-level variables
+!dir$ concurrent
+!cdir nodep
+   do p = begp, endp
+      l = plandunit(p)
+#ifndef CROP
+      if (itypelun(l) == istsoil) then
+#else
+      if (itypelun(l) == istsoil .or. itypelun(l) == istcrop) then
+#endif
+         
+         ! carbon state variables
+         if (ivt(p) == noveg) then
+            leafc(p) = 0._r8
+            leafc_storage(p) = 0._r8
+         else
+            if (evergreen(ivt(p)) == 1._r8) then
+               leafc(p) = 1._r8
+               leafc_storage(p) = 0._r8
+#if (defined CROP)
+            else if (ivt(p) >= npcropmin) then ! prognostic crop types
+               leafc(p) = 0._r8
+               leafc_storage(p) = 0._r8
+#endif
+            else
+               leafc(p) = 0._r8
+               leafc_storage(p) = 1._r8
+            end if
+         end if
+         
+         leafc_xfer(p) = 0._r8
+#if (defined CROP)
+         grainc(p) = 0._r8
+         grainc_storage(p) = 0._r8
+         grainc_xfer(p) = 0._r8
+         htmx(p)      = 0._r8! max hgt attained by a crop during yr
+         vf(p)        = 0._r8! vernalization factor for wheat
+         croplive(p)  = 0._r8! added the rest here to avoid nans in non-crop
+         cropplant(p) = 0._r8! pfts in output files (slevis)
+         harvdate(p)  = 999  
+         peaklai(p)   = 0    ! 1: max allowed lai; 0: not at max
+#endif
+         frootc(p) = 0._r8
+         frootc_storage(p) = 0._r8
+         frootc_xfer(p) = 0._r8
+         livestemc(p) = 0._r8
+         livestemc_storage(p) = 0._r8
+         livestemc_xfer(p) = 0._r8
+
+         ! tree types need to be initialized with some stem mass so that
+         ! roughness length is not zero in canopy flux calculation
+
+         if (woody(ivt(p)) == 1._r8) then
+            deadstemc(p) = 0.1_r8
+         else
+            deadstemc(p) = 0._r8
+         end if
+
+         write(6,*) 'in CNiniTimeVar, deadstemc(',p,')=',deadstemc(p)
+
+         deadstemc_storage(p) = 0._r8
+         deadstemc_xfer(p) = 0._r8
+         livecrootc(p) = 0._r8
+         livecrootc_storage(p) = 0._r8
+         livecrootc_xfer(p) = 0._r8
+         deadcrootc(p) = 0._r8
+         deadcrootc_storage(p) = 0._r8
+         deadcrootc_xfer(p) = 0._r8
+         gresp_storage(p) = 0._r8
+         gresp_xfer(p) = 0._r8
+         cpool(p) = 0._r8
+         xsmrpool(p) = 0._r8
+         pft_ctrunc(p) = 0._r8
+         dispvegc(p) = 0._r8
+         storvegc(p) = 0._r8
+         totpftc(p)  = 0._r8
+         ! calculate totvegc explicitly so that it is available for the isotope 
+         ! code on the first time step.
+         totvegc(p)  = leafc(p) + leafc_storage(p) + leafc_xfer(p) + frootc(p) +  &
+            frootc_storage(p) + frootc_xfer(p) + livestemc(p) + livestemc_storage(p) +  &
+            livestemc_xfer(p) + deadstemc(p) + deadstemc_storage(p) + deadstemc_xfer(p) +  &
+            livecrootc(p) + livecrootc_storage(p) + livecrootc_xfer(p) + deadcrootc(p) +  &
+            deadcrootc_storage(p) + deadcrootc_xfer(p) + gresp_storage(p) +  &
+            gresp_xfer(p) + cpool(p)
+
+#if (defined CLAMP)
+         ! CLAMP variables
+         woodc(p)    = 0._r8
+#endif
+
+#if (defined C13)
+         ! 4/14/05: PET
+         ! Adding isotope code
+         leafc13(p)               = leafc(p)               * c13ratio
+         leafc13_storage(p)       = leafc_storage(p)       * c13ratio
+         leafc13_xfer(p)          = leafc_xfer(p)          * c13ratio
+#if (defined CROP)
+         grainc13(p)              = grainc(p)              * c13ratio
+         grainc13_storage(p)      = grainc_storage(p)      * c13ratio
+         grainc13_xfer(p)         = grainc_xfer(p)         * c13ratio
+#endif
+         frootc13(p)              = frootc(p)              * c13ratio
+         frootc13_storage(p)      = frootc_storage(p)      * c13ratio
+         frootc13_xfer(p)         = frootc_xfer(p)         * c13ratio
+         livestemc13(p)           = livestemc(p)           * c13ratio
+         livestemc13_storage(p)   = livestemc_storage(p)   * c13ratio
+         livestemc13_xfer(p)      = livestemc_xfer(p)      * c13ratio
+         deadstemc13(p)           = deadstemc(p)           * c13ratio
+         deadstemc13_storage(p)   = deadstemc_storage(p)   * c13ratio
+         deadstemc13_xfer(p)      = deadstemc_xfer(p)      * c13ratio
+         livecrootc13(p)          = livecrootc(p)          * c13ratio
+         livecrootc13_storage(p)  = livecrootc_storage(p)  * c13ratio
+         livecrootc13_xfer(p)     = livecrootc_xfer(p)     * c13ratio
+         deadcrootc13(p)          = deadcrootc(p)          * c13ratio
+         deadcrootc13_storage(p)  = deadcrootc_storage(p)  * c13ratio
+         deadcrootc13_xfer(p)     = deadcrootc_xfer(p)     * c13ratio
+         c13_gresp_storage(p)     = gresp_storage(p)       * c13ratio
+         c13_gresp_xfer(p)        = gresp_xfer(p)          * c13ratio
+         c13pool(p)               = cpool(p)               * c13ratio
+         c13xsmrpool(p)           = xsmrpool(p)            * c13ratio
+         c13_pft_ctrunc(p)        = pft_ctrunc(p)          * c13ratio
+
+         ! calculate totvegc explicitly so that it is available for the isotope 
+         ! code on the first time step.
+         totvegc13(p)  = leafc13(p) + leafc13_storage(p) + leafc13_xfer(p) + frootc13(p) +  &
+            frootc13_storage(p) + frootc13_xfer(p) + livestemc13(p) + livestemc13_storage(p) +  &
+            livestemc13_xfer(p) + deadstemc13(p) + deadstemc13_storage(p) + deadstemc13_xfer(p) +  &
+            livecrootc13(p) + livecrootc13_storage(p) + livecrootc13_xfer(p) + deadcrootc13(p) +  &
+            deadcrootc13_storage(p) + deadcrootc13_xfer(p) + c13_gresp_storage(p) +  &
+            c13_gresp_xfer(p) + c13pool(p)
+#endif
+                                
+         ! nitrogen state variables
+         if (ivt(p) == noveg) then
+            leafn(p) = 0._r8
+            leafn_storage(p) = 0._r8
+         else
+            leafn(p) = leafc(p) / leafcn(ivt(p))
+            leafn_storage(p) = leafc_storage(p) / leafcn(ivt(p))
+         end if
+
+         leafn_xfer(p) = 0._r8
+#if (defined CROP)
+         grainn(p) = 0._r8
+         grainn_storage(p) = 0._r8
+         grainn_xfer(p) = 0._r8
+#endif
+         frootn(p) = 0._r8
+         frootn_storage(p) = 0._r8
+         frootn_xfer(p) = 0._r8
+         livestemn(p) = 0._r8
+         livestemn_storage(p) = 0._r8
+         livestemn_xfer(p) = 0._r8
+
+         ! tree types need to be initialized with some stem mass so that
+         ! roughness length is not zero in canopy flux calculation
+
+         if (woody(ivt(p)) == 1._r8) then
+            deadstemn(p) = deadstemc(p) / deadwdcn(ivt(p))
+            write(6,*) 'in CNiniTimeVar,deadwdcn(',ivt(p),')=', deadwdcn(ivt(p))
+         else
+            deadstemn(p) = 0._r8
+         end if
+
+         write(6,*) 'in CNiniTimeVar, deadstemn(',p,')=',deadstemn(p)
+
+         deadstemn_storage(p) = 0._r8
+         deadstemn_xfer(p) = 0._r8
+         livecrootn(p) = 0._r8
+         livecrootn_storage(p) = 0._r8
+         livecrootn_xfer(p) = 0._r8
+         deadcrootn(p) = 0._r8
+         deadcrootn_storage(p) = 0._r8
+         deadcrootn_xfer(p) = 0._r8
+         retransn(p) = 0._r8
+         npool(p) = 0._r8
+         pft_ntrunc(p) = 0._r8
+         dispvegn(p) = 0._r8
+         storvegn(p) = 0._r8
+         totvegn(p)  = 0._r8
+         totpftn(p)  = 0._r8
+
+         ! initialization for psnsun and psnsha required for
+         ! proper arbitrary initialization of allocation routine
+         ! in initial ecosysdyn call
+
+         psnsun(p) = 0._r8
+         psnsha(p) = 0._r8
+#if (defined C13)
+         c13_psnsun(p) = 0._r8
+         c13_psnsha(p) = 0._r8
+#endif
+         laisun(p) = 0._r8
+         laisha(p) = 0._r8
+         lncsun(p) = 0._r8
+         lncsha(p) = 0._r8
+         vcmxsun(p) = 0._r8
+         vcmxsha(p) = 0._r8
+
+         ! ecophysiological variables
+         ! phenology variables
+         dormant_flag(p) = 1._r8
+         days_active(p) = 0._r8
+         onset_flag(p) = 0._r8
+         onset_counter(p) = 0._r8
+         onset_gddflag(p) = 0._r8
+         onset_fdd(p) = 0._r8
+         onset_gdd(p) = 0._r8
+         onset_swi(p) = 0.0_r8
+         offset_flag(p) = 0._r8
+         offset_counter(p) = 0._r8
+         offset_fdd(p) = 0._r8
+         offset_swi(p) = 0._r8
+         lgsf(p) = 0._r8
+         bglfr(p) = 0._r8
+         bgtr(p) = 0._r8
+         annavg_t2m(p) = 280._r8
+         tempavg_t2m(p) = 0._r8
+
+         ! non-phenology variables
+         gpp(p) = 0._r8
+         availc(p) = 0._r8
+         xsmrpool_recover(p) = 0._r8
+#if (defined C13)
+         xsmrpool_c13ratio(p) = c13ratio
+#endif
+         alloc_pnow(p) = 1._r8
+         c_allometry(p) = 0._r8
+         n_allometry(p) = 0._r8
+         plant_ndemand(p) = 0._r8
+         tempsum_potential_gpp(p) = 0._r8
+         annsum_potential_gpp(p) = 0._r8
+         tempmax_retransn(p) = 0._r8
+         annmax_retransn(p) = 0._r8
+         avail_retransn(p) = 0._r8
+         plant_nalloc(p) = 0._r8
+         plant_calloc(p) = 0._r8
+         excess_cflux(p) = 0._r8
+         downreg(p) = 0._r8
+         prev_leafc_to_litter(p) = 0._r8
+         prev_frootc_to_litter(p) = 0._r8
+         tempsum_npp(p) = 0._r8
+         annsum_npp(p) = 0._r8
+#if (defined CNDV)
+         tempsum_litfall(p) = 0._r8
+         annsum_litfall(p) = 0._r8
+#endif
+#if (defined C13)
+         rc13_canair(p) = 0._r8
+         rc13_psnsun(p) = 0._r8
+         rc13_psnsha(p) = 0._r8
+         alphapsnsun(p) = 0._r8
+         alphapsnsha(p) = 0._r8
+#endif
+		 
+		 
+
+      end if   ! end of if-istsoil block
+   end do   ! end of loop over pfts  
+
+   END IF
+
+
+!for other time step, assinge current value to the previous step value 
+   IF(nstep .ne. 1) THEN
+   do c = begc, endc
+      l = clandunit(c) 
+#ifndef CROP
+      if (itypelun(l) == istsoil) then
+#else
+      if (itypelun(l) == istsoil .or. itypelun(l) == istcrop) then
+#endif
+
+                    annsum_counter(c)              = annsum_counter_buf(c)
+                    cannsum_npp(c)                 = cannsum_npp_buf(c)
+                    cannavg_t2m(c)                 = cannavg_t2m_buf(c)
+                    wf(c)                          = wf_buf(c)
+                    me(c)                          = me_buf(c)
+                    mean_fire_prob(c)              = mean_fire_prob_buf(c)
+                    cwdc(c)                        = cwdc_buf(c)
+                    litr1c(c)                      = litr1c_buf(c)
+                    litr2c(c)                      = litr2c_buf(c)
+                    litr3c(c)                      = litr3c_buf(c)
+                    soil1c(c)                      = soil1c_buf(c)
+                    soil2c(c)                      = soil2c_buf(c)
+                    soil3c(c)                      = soil3c_buf(c)
+                    soil4c(c)                      = soil4c_buf(c)
+                    col_ctrunc(c)                  = col_ctrunc_buf(c)
+                    cwdn(c)                        = cwdn_buf(c)
+                    litr1n(c)                      = litr1n_buf(c)
+                    litr2n(c)                      = litr2n_buf(c)
+                    litr3n(c)                      = litr3n_buf(c)
+                    soil1n(c)                      = soil1n_buf(c)
+                    soil2n(c)                      = soil2n_buf(c)
+                    soil3n(c)                      = soil3n_buf(c)
+                    soil4n(c)                      = soil4n_buf(c)
+                    sminn(c)                       = sminn_buf(c)
+                    col_ntrunc(c)                  = col_ntrunc_buf(c)
+                    seedc(c)                       = seedc_buf(c)
+                    prod10c(c)                     = prod10c_buf(c)
+                    prod100c(c)                    = prod100c_buf(c)
+                    seedn(c)                       = seedn_buf(c)
+                    prod10n(c)                     = prod10n_buf(c)
+                    prod100n(c)                    = prod100n_buf(c)
+
+                    totlitc(c)                     = totlitc_buf(c)
+         clm3%g%l%c%ccf%dwt_seedc_to_leaf(c) = dwt_seedc_to_leaf_buf(c)
+         clm3%g%l%c%ccf%dwt_seedc_to_deadstem(c) = dwt_seedc_to_deadstem_buf(c)
+         clm3%g%l%c%ccf%dwt_conv_cflux(c) = dwt_conv_cflux_buf(c)
+         clm3%g%l%c%ccf%dwt_prod10c_gain(c) = dwt_prod10c_gain_buf(c)
+         clm3%g%l%c%ccf%prod10c_loss(c) = 0._r8
+         clm3%g%l%c%ccf%dwt_prod100c_gain(c) = dwt_prod100c_gain_buf(c)
+         clm3%g%l%c%ccf%prod100c_loss(c) = prod100c_loss_buf(c)
+         clm3%g%l%c%ccf%dwt_frootc_to_litr1c(c) = dwt_frootc_to_litr1c_buf(c)
+         clm3%g%l%c%ccf%dwt_frootc_to_litr2c(c) = dwt_frootc_to_litr2c_buf(c)
+         clm3%g%l%c%ccf%dwt_frootc_to_litr3c(c) = dwt_frootc_to_litr3c_buf(c)
+         clm3%g%l%c%ccf%dwt_livecrootc_to_cwdc(c) = dwt_livecrootc_to_cwdc_buf(c)
+         clm3%g%l%c%ccf%dwt_deadcrootc_to_cwdc(c) = dwt_deadcrootc_to_cwdc_buf(c)
+         clm3%g%l%c%ccf%dwt_closs(c) = 0._r8
+         clm3%g%l%c%cnf%dwt_seedn_to_leaf(c) = dwt_seedn_to_leaf_buf(c)
+         clm3%g%l%c%cnf%dwt_seedn_to_deadstem(c) = dwt_seedn_to_deadstem_buf(c)
+         clm3%g%l%c%cnf%dwt_conv_nflux(c) = dwt_conv_nflux_buf(c)
+         clm3%g%l%c%cnf%dwt_prod10n_gain(c) = dwt_prod10n_gain_buf(c)
+         clm3%g%l%c%cnf%prod10n_loss(c) = 0._r8
+         clm3%g%l%c%cnf%dwt_prod100n_gain(c) = dwt_prod100n_gain_buf(c)
+         clm3%g%l%c%cnf%prod100n_loss(c) = prod100n_loss_buf(c)
+         clm3%g%l%c%cnf%dwt_frootn_to_litr1n(c) = dwt_frootn_to_litr1n_buf(c)
+         clm3%g%l%c%cnf%dwt_frootn_to_litr2n(c) = dwt_frootn_to_litr2n_buf(c)
+         clm3%g%l%c%cnf%dwt_frootn_to_litr3n(c) = dwt_frootn_to_litr3n_buf(c)
+         clm3%g%l%c%cnf%dwt_livecrootn_to_cwdn(c) = dwt_livecrootn_to_cwdn_buf(c)
+         clm3%g%l%c%cnf%dwt_deadcrootn_to_cwdn(c) = dwt_deadcrootn_to_cwdn_buf(c)
+         clm3%g%l%c%cnf%dwt_nloss(c) = 0._r8
+  
+
+         fire_prob(c) = 0._r8
+         fireseasonl(c) = 0._r8
+         farea_burned(c) = 0._r8
+         ann_farea_burned(c) = 0._r8
+
+         ! needed for CNNLeaching
+         qflx_drain(c) = 0._r8
+         totsomc(c)    = 0._r8
+         totecosysc(c) = 0._r8
+         totcolc(c)    = 0._r8
+
+         totlitn(c)    = 0._r8
+         totsomn(c)    = 0._r8
+         totecosysn(c) = 0._r8
+         totcoln(c)    = 0._r8
+         totprodc(c)   = 0._r8
+         totprodn(c)   = 0._r8
+
+
+
+      end if
+   end do
+ 
+ 
+
+   do p = begp, endp   
+      l = plandunit(p) 
+#ifndef CROP
+      if (itypelun(l) == istsoil) then
+#else
+      if (itypelun(l) == istsoil .or. itypelun(l) == istcrop) then
+#endif
+
+                    leafc(p)                       = annsum_npp_buf(p)
+                    leafc_storage(p)               = leafc_storage_buf(p)
+                    leafc_xfer(p)                  = leafc_xfer_buf(p)
+
+#if (defined CROP)
+                    htmx(p)                        = htmx_buf(p)
+                    croplive(p)                    = croplive_buf(p)
+                    gdd1020(p)                     = gdd1020_buf(p)
+                    gdd820(p)                      = gdd820_buf(p)
+                    gdd020(p)                      = gdd020_buf(p)
+                    grainc(p)                      = grainc_buf(p)
+                    grainc_storage(p)              = grainc_storage_buf(p)
+                    grainc_xfer(p)                 = grainc_xfer_buf(p)
+#endif
+
+                    frootc(p)                      = frootc_buf(p)
+                    frootc_storage(p)              = frootc_storage_buf(p)
+                    frootc_xfer(p)                 = frootc_xfer_buf(p)
+                    livestemc(p)                   = livestemc_buf(p)
+                    livestemc_storage(p)           = livestemc_storage_buf(p)
+                    livestemc_xfer(p)              = livestemc_xfer_buf(p)
+                    deadstemc(p)                   = deadstemc_buf(p)
+                    
+              write(6,*) 'CNiniTimeVar, nstep>1,deadstemc(',p,')=',deadstemc(p)
+
+                    deadstemc_storage(p)           = deadstemc_storage_buf(p)
+                    deadstemc_xfer(p)              = deadstemc_xfer_buf(p)
+                    livecrootc(p)                  = livecrootc_buf(p)
+                    livecrootc_storage(p)          = livecrootc_storage_buf(p)
+                    livecrootc_xfer(p)             = livecrootc_xfer_buf(p)
+                    deadcrootc(p)                  = deadcrootc_buf(p)
+                    deadcrootc_storage(p)          = deadcrootc_storage_buf(p)
+                    deadcrootc_xfer(p)             = deadcrootc_xfer_buf(p)
+                     gresp_storage(p)               = gresp_storage_buf(p)
+                    gresp_xfer(p)                  = gresp_xfer_buf(p)
+                     cpool(p)                       = cpool_buf(p)
+                    xsmrpool(p)                    = xsmrpool_buf(p)
+                    pft_ctrunc(p)                  = pft_ctrunc_buf(p)
+                    leafn(p)                       = leafn_buf(p)
+                    leafn_storage(p)               = leafn_storage_buf(p)
+                    leafn_xfer(p)                  = leafn_xfer_buf(p)
+                    frootn(p)                      = frootn_buf(p)
+                    frootn_storage(p)              = frootn_storage_buf(p)
+                    frootn_xfer(p)                 = frootn_xfer_buf(p)
+                    livestemn(p)                   = livestemn_buf(p)
+                    livestemn_storage(p)           = livestemn_storage_buf(p)
+                    livestemn_xfer(p)              = livestemn_xfer_buf(p)
+                    deadstemn(p)                   = deadstemn_buf(p)
+                    deadstemn_storage(p)           = deadstemn_storage_buf(p)
+                    deadstemn_xfer(p)              = deadstemn_xfer_buf(p)
+                    livecrootn(p)                  = livecrootn_buf(p)
+                    livecrootn_storage(p)          = livecrootn_storage_buf(p)
+                    livecrootn_xfer(p)             = livecrootn_xfer_buf(p)
+                    deadcrootn(p)                  = deadcrootn_buf(p)
+                    deadcrootn_storage(p)          = deadcrootn_storage_buf(p)
+                    deadcrootn_xfer(p)             = deadcrootn_xfer_buf(p)
+                    npool(p)                       = npool_buf(p)
+                    pft_ntrunc(p)                  = pft_ntrunc_buf(p)
+#if (defined CROP)
+                   grainn(p)                      = grainn_buf(p)
+                    grainn_storage(p)              = grainn_storage_buf(p)
+                    grainn_xfer(p)                 = grainn_xfer_buf(p)
+#endif 
+                    days_active(p)                 = days_active_buf(p)
+                    onset_flag(p)                  = onset_flag_buf(p)
+                    onset_counter(p)               = onset_counter_buf(p)
+                    onset_gddflag(p)               = onset_gddflag_buf(p)
+                    onset_fdd(p)                   = onset_fdd_buf(p)
+                    onset_gdd(p)                   = onset_gdd_buf(p)
+                    onset_swi(p)                   = onset_swi_buf(p)
+                    offset_flag(p)                 = offset_flag_buf(p)
+                    offset_counter(p)              = offset_counter_buf(p)
+                    offset_fdd(p)                  = offset_fdd_buf(p)
+                    offset_swi(p)                  = offset_swi_buf(p)
+                    dayl(p)                        = dayl_buf(p)
+                    annavg_t2m(p)                  = annavg_t2m_buf(p)
+                    tempavg_t2m(p)                 = tempavg_t2m_buf(p)
+                    tempsum_potential_gpp(p)       = tempsum_potential_gpp_buf(p)
+                    annsum_potential_gpp(p)        = annsum_potential_gpp_buf(p)
+                    tempmax_retransn(p)            = tempmax_retransn_buf(p)
+                    annmax_retransn(p)             = annmax_retransn_buf(p)
+                    prev_leafc_to_litter(p)        = prev_leafc_to_litter_buf(p)
+                    prev_frootc_to_litter(p)       = prev_frootc_to_litter_buf(p)
+                    tempsum_npp(p)                 = tempsum_npp_buf(p)
+                    annsum_npp(p)                  = annsum_npp_buf(p)
+                    retransn(p)                    = retransn_buf(p)
+
+
+         dispvegc(p) = 0._r8
+         storvegc(p) = 0._r8
+         totpftc(p)  = 0._r8
+         totvegc(p)  = leafc(p) + leafc_storage(p) + leafc_xfer(p) + frootc(p) +  &
+            frootc_storage(p) + frootc_xfer(p) + livestemc(p) + livestemc_storage(p) +  &
+            livestemc_xfer(p) + deadstemc(p) + deadstemc_storage(p) + deadstemc_xfer(p) +  &
+            livecrootc(p) + livecrootc_storage(p) + livecrootc_xfer(p) + deadcrootc(p) +  &
+            deadcrootc_storage(p) + deadcrootc_xfer(p) + gresp_storage(p) +  &
+            gresp_xfer(p) + cpool(p)
+         dispvegn(p) = 0._r8
+         storvegn(p) = 0._r8
+         totvegn(p)  = 0._r8
+         totpftn(p)  = 0._r8
+
+         ! initialization for psnsun and psnsha required for 
+         ! proper arbitrary initialization of allocation routine
+         ! in initial ecosysdyn call
+
+         psnsun(p) = 0._r8
+         psnsha(p) = 0._r8
+         laisun(p) = 0._r8
+         laisha(p) = 0._r8
+         lncsun(p) = 0._r8
+         lncsha(p) = 0._r8
+         vcmxsun(p) = 0._r8
+         vcmxsha(p) = 0._r8
+
+         ! ecophysiological variables
+         ! phenology variables 
+         dormant_flag(p) = 1._r8
+         lgsf(p) = 0._r8
+         bglfr(p) = 0._r8 
+         bgtr(p) = 0._r8
+         gpp(p) = 0._r8
+         availc(p) = 0._r8
+         xsmrpool_recover(p) = 0._r8 
+         alloc_pnow(p) = 1._r8
+         c_allometry(p) = 0._r8
+         n_allometry(p) = 0._r8 
+         plant_ndemand(p) = 0._r8
+         avail_retransn(p) = 0._r8
+         plant_nalloc(p) = 0._r8
+         plant_calloc(p) = 0._r8
+         excess_cflux(p) = 0._r8
+         downreg(p) = 0._r8
+
+
+
+       end if   ! end of if-istsoil block
+   end do   ! end of loop over pfts  
+
+
+
+
+
+
+
+
+    END IF
+
+
+
+#endif
+
+end subroutine CNiniTimeVar
+module CNEcosystemDynMod
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+#ifdef CN
+
+!-----------------------------------------------------------------------
+!BOP
+!
+<<<<<<< HEAD
+! !MODULE: CNWoodProductsMod
+!
+! !DESCRIPTION:
+! Calculate loss fluxes from wood products pools, and update product pool state variables
+!
+! !USES:
+! ylu remove
+!   use decompMod   , only : get_proc_bounds
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    use clm_varcon  , only: istsoil
+! ylu remove
+!    use spmdMod     , only: masterproc
+    implicit none
+    save
+    private
+! !PUBLIC MEMBER FUNCTIONS:
+    public:: CNWoodProducts
+!
+! !REVISION HISTORY:
+! 5/20/2009: Created by Peter Thornton
+!
+=======
+! !MODULE: CNEcosystemDynMod
+!
+! !DESCRIPTION:
+! Ecosystem dynamics: phenology, vegetation
+!
+! !USES:
+  use shr_kind_mod, only: r8 => shr_kind_r8
+  use clm_varcon  , only: fpftdyn   !Yaqiong Lu removed
+!
+! !PUBLIC TYPES:
+  implicit none
+  save
+!
+! !PUBLIC MEMBER FUNCTIONS:
+  public :: CNEcosystemDyn   ! Ecosystem dynamics: phenology, vegetation
+!
+! !REVISION HISTORY:
+! Created by Peter Thornton
+! 19 May 2009: PET - modified to include call to harvest routine
+!
+!
+! !PRIVATE MEMBER FUNCTIONS:
+!
+! !PRIVATE TYPES:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
+!EOP
+!-----------------------------------------------------------------------
+
+contains
+
+!-----------------------------------------------------------------------
+!BOP
+!
+<<<<<<< HEAD
+! !IROUTINE: CNWoodProducts
+!
+! !INTERFACE:
+subroutine CNWoodProducts(num_soilc, filter_soilc)
+!
+! !DESCRIPTION:
+! Update all loss fluxes from wood product pools, and update product pool state variables
+! for both loss and gain terms.  Gain terms are calculated in pftdyn_cnbal() for gains associated
+! with changes in landcover, and in CNHarvest(), for gains associated with wood harvest.
+!
+! !USES:
+   use clmtype
+!ylu removed
+!   use clm_time_manager, only: get_step_size
+  use globals , only: dt
+!
+! !ARGUMENTS:
+   implicit none
+   integer, intent(in) :: num_soilc       ! number of soil columns in filter
+   integer, intent(in) :: filter_soilc(:) ! filter for soil columns
+!
+! !CALLED FROM:
+! subroutine CNEcosystemDyn
+!
+! !REVISION HISTORY:
+! 5/21/09: Created by Peter Thornton
+!
+! !LOCAL VARIABLES:
+
+   integer :: fc        ! lake filter indices
+   integer :: c         ! indices
+!   real(r8):: dt        ! time step (seconds)
+   type(column_type),   pointer :: cptr         ! pointer to column derived subtype
+   real(r8) :: kprod10       ! decay constant for 10-year product pool
+   real(r8) :: kprod100      ! decay constant for 100-year product pool
+
+!EOP
+!-----------------------------------------------------------------------
+
+   cptr => clm3%g%l%c
+	
+   ! calculate column-level losses from product pools
+	! the following (1/s) rate constants result in ~90% loss of initial state over 10 and 100 years,
+	! respectively, using a discrete-time fractional decay algorithm.
+	kprod10 = 7.2e-9
+	kprod100 = 7.2e-10
+
+!dir$ concurrent
+!cdir nodep
+   do fc = 1,num_soilc
+      c = filter_soilc(fc)
+
+		! calculate fluxes (1/sec)
+		cptr%ccf%prod10c_loss(c)    = cptr%ccs%prod10c(c)    * kprod10
+		cptr%ccf%prod100c_loss(c)   = cptr%ccs%prod100c(c)   * kprod100
+#if (defined C13)
+		cptr%cc13f%prod10c_loss(c)  = cptr%cc13s%prod10c(c)  * kprod10
+		cptr%cc13f%prod100c_loss(c) = cptr%cc13s%prod100c(c) * kprod100
+#endif
+		cptr%cnf%prod10n_loss(c)    = cptr%cns%prod10n(c)    * kprod10
+		cptr%cnf%prod100n_loss(c)   = cptr%cns%prod100n(c)   * kprod100
+	end do
+
+   ! set time steps
+!   dt = real( get_step_size(), r8 )
+
+   ! update wood product state variables
+   ! column loop
+!dir$ concurrent
+!cdir nodep
+   do fc = 1,num_soilc
+      c = filter_soilc(fc)
+
+      ! column-level fluxes
+
+      ! fluxes into wood product pools, from landcover change
+      cptr%ccs%prod10c(c)    = cptr%ccs%prod10c(c)    + cptr%ccf%dwt_prod10c_gain(c)*dt
+      cptr%ccs%prod100c(c)   = cptr%ccs%prod100c(c)   + cptr%ccf%dwt_prod100c_gain(c)*dt
+#if (defined C13)
+      cptr%cc13s%prod10c(c)  = cptr%cc13s%prod10c(c)  + cptr%cc13f%dwt_prod10c_gain(c)*dt
+      cptr%cc13s%prod100c(c) = cptr%cc13s%prod100c(c) + cptr%cc13f%dwt_prod100c_gain(c)*dt
+#endif
+      cptr%cns%prod10n(c)    = cptr%cns%prod10n(c)    + cptr%cnf%dwt_prod10n_gain(c)*dt
+      cptr%cns%prod100n(c)   = cptr%cns%prod100n(c)   + cptr%cnf%dwt_prod100n_gain(c)*dt
+
+      ! fluxes into wood product pools, from harvest
+      cptr%ccs%prod10c(c)    = cptr%ccs%prod10c(c)    + cptr%ccf%hrv_deadstemc_to_prod10c(c)*dt
+      cptr%ccs%prod100c(c)   = cptr%ccs%prod100c(c)   + cptr%ccf%hrv_deadstemc_to_prod100c(c)*dt
+#if (defined C13)
+      cptr%cc13s%prod10c(c)  = cptr%cc13s%prod10c(c)  + cptr%cc13f%hrv_deadstemc_to_prod10c(c)*dt
+      cptr%cc13s%prod100c(c) = cptr%cc13s%prod100c(c) + cptr%cc13f%hrv_deadstemc_to_prod100c(c)*dt
+#endif
+      cptr%cns%prod10n(c)    = cptr%cns%prod10n(c)    + cptr%cnf%hrv_deadstemn_to_prod10n(c)*dt
+      cptr%cns%prod100n(c)   = cptr%cns%prod100n(c)   + cptr%cnf%hrv_deadstemn_to_prod100n(c)*dt
+     
+      ! fluxes out of wood product pools, from decomposition
+      cptr%ccs%prod10c(c)    = cptr%ccs%prod10c(c)    - cptr%ccf%prod10c_loss(c)*dt
+      cptr%ccs%prod100c(c)   = cptr%ccs%prod100c(c)   - cptr%ccf%prod100c_loss(c)*dt
+#if (defined C13)
+      cptr%cc13s%prod10c(c)  = cptr%cc13s%prod10c(c)  - cptr%cc13f%prod10c_loss(c)*dt
+      cptr%cc13s%prod100c(c) = cptr%cc13s%prod100c(c) - cptr%cc13f%prod100c_loss(c)*dt
+#endif
+      cptr%cns%prod10n(c)    = cptr%cns%prod10n(c)    - cptr%cnf%prod10n_loss(c)*dt
+      cptr%cns%prod100n(c)   = cptr%cns%prod100n(c)   - cptr%cnf%prod100n_loss(c)*dt
+ 
+   end do ! end of column loop
+
+end subroutine CNWoodProducts
+!-----------------------------------------------------------------------
+
+#endif
+
+end module CNWoodProductsMod
+!#include "misc.h"
+!#include "preproc.h"
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: CNiniSpecial
+!
+! !INTERFACE:
+subroutine CNiniSpecial ()
+
+#ifdef CN
+!
+! !DESCRIPTION:
+! One-time initialization of CN variables for special landunits
+!
+! !USES:
+   use shr_kind_mod, only: r8 => shr_kind_r8
+   use pftvarcon   , only: noveg
+   use decompMod   , only: get_proc_bounds
+   use clm_varcon  , only: spval
+!   use clm_varctl  , only: iulog
+   use clmtype
+   use CNSetValueMod
+!
+! !ARGUMENTS:
+   implicit none
+!
+! !CALLED FROM:
+! subroutine iniTimeConst in file iniTimeConst.F90
+!
+! !REVISION HISTORY:
+! 11/13/03: Created by Peter Thornton
+!
+!
+! local pointers to implicit in arguments
+!
+  integer , pointer :: clandunit(:)    ! landunit index of corresponding column
+  integer , pointer :: plandunit(:)    ! landunit index of corresponding pft
+  logical , pointer :: ifspecial(:)    ! BOOL: true=>landunit is wetland,ice,lake, or urban
+!
+! local pointers to implicit out arguments
+!
+! !LOCAL VARIABLES:
+!EOP
+   integer :: fc,fp,l,c,p  ! indices
+   integer :: begp, endp   ! per-clump/proc beginning and ending pft indices
+   integer :: begc, endc   ! per-clump/proc beginning and ending column indices
+   integer :: begl, endl   ! per-clump/proc beginning and ending landunit indices
+   integer :: begg, endg   ! per-clump/proc gridcell ending gridcell indices
+   integer :: num_specialc ! number of good values in specialc filter
+   integer :: num_specialp ! number of good values in specialp filter
+   integer, allocatable :: specialc(:) ! special landunit filter - columns
+   integer, allocatable :: specialp(:) ! special landunit filter - pfts
+!-----------------------------------------------------------------------
+
+    call CLMDebug('Enter CNiniSpecial()')
+
+   ! assign local pointers at the landunit level
+   ifspecial => clm3%g%l%ifspecial
+
+   ! assign local pointers at the column level
+   clandunit => clm3%g%l%c%landunit
+
+   ! assign local pointers at the pft level
+   plandunit => clm3%g%l%c%p%landunit
+
+   ! Determine subgrid bounds on this processor
+   call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
+
+   ! allocate special landunit filters
+   allocate(specialc(endc-begc+1))
+   allocate(specialp(endp-begp+1))
+
+   ! fill special landunit filters
+   num_specialc = 0
+   do c = begc, endc
+      l = clandunit(c)
+      if (ifspecial(l)) then
+         num_specialc = num_specialc + 1
+         specialc(num_specialc) = c
+      end if
+   end do
+
+   num_specialp = 0
+   do p = begp, endp
+      l = plandunit(p)
+      if (ifspecial(l)) then
+         num_specialp = num_specialp + 1
+         specialp(num_specialp) = p
+      end if
+   end do
+
+   ! initialize column-level fields
+   call CLMDebug('start call CNSetCps()')
+   call CNSetCps(num_specialc, specialc, spval, clm3%g%l%c%cps)
+   call CNSetCcs(num_specialc, specialc, 0._r8, clm3%g%l%c%ccs)
+   call CNSetCns(num_specialc, specialc, 0._r8, clm3%g%l%c%cns)
+   call CNSetCcf(num_specialc, specialc, 0._r8, clm3%g%l%c%ccf)
+   call CNSetCnf(num_specialc, specialc, 0._r8, clm3%g%l%c%cnf)
+#if (defined C13)
+   ! 4/14/05: PET
+   ! adding isotope code
+   call CNSetCcs(num_specialc, specialc, 0._r8, clm3%g%l%c%cc13s)
+   call CNSetCcf(num_specialc, specialc, 0._r8, clm3%g%l%c%cc13f)
+#endif
+
+   ! initialize column-average pft fields
+   call CNSetPps(num_specialc, specialc, spval, clm3%g%l%c%cps%pps_a)
+   call CNSetPcs(num_specialc, specialc, 0._r8, clm3%g%l%c%ccs%pcs_a)
+   call CNSetPns(num_specialc, specialc, 0._r8, clm3%g%l%c%cns%pns_a)
+   call CNSetPcf(num_specialc, specialc, 0._r8, clm3%g%l%c%ccf%pcf_a)
+   call CNSetPnf(num_specialc, specialc, 0._r8, clm3%g%l%c%cnf%pnf_a)
+
+   ! initialize pft-level fields
+   call CNSetPepv(num_specialp, specialp, spval, clm3%g%l%c%p%pepv)
+   call CNSetPps(num_specialp, specialp, spval, clm3%g%l%c%p%pps)
+   call CNSetPcs(num_specialp, specialp, 0._r8, clm3%g%l%c%p%pcs)
+   call CNSetPns(num_specialp, specialp, 0._r8, clm3%g%l%c%p%pns)
+   call CNSetPcf(num_specialp, specialp, 0._r8, clm3%g%l%c%p%pcf)
+   call CNSetPnf(num_specialp, specialp, 0._r8, clm3%g%l%c%p%pnf)
+#if (defined C13)
+   ! 4/14/05: PET
+   ! adding isotope code
+   call CNSetPcs(num_specialp, specialp, 0._r8, clm3%g%l%c%p%pc13s)
+   call CNSetPcf(num_specialp, specialp, 0._r8, clm3%g%l%c%p%pc13f)
+#endif
+   call CLMDebug('All CNSet call are right')
+   ! now loop through special filters and explicitly set the variables that
+   ! have to be in place for SurfaceAlbedo and biogeophysics
+   ! also set pcf%psnsun and pcf%psnsha to 0 (not included in CNSetPcf())
+
+!dir$ concurrent
+!cdir nodep
+   do fp = 1,num_specialp
+      p = specialp(fp)
+      clm3%g%l%c%p%pps%tlai(p) = 0._r8
+      clm3%g%l%c%p%pps%tsai(p) = 0._r8
+      clm3%g%l%c%p%pps%elai(p) = 0._r8
+      clm3%g%l%c%p%pps%esai(p) = 0._r8
+      clm3%g%l%c%p%pps%htop(p) = 0._r8
+      clm3%g%l%c%p%pps%hbot(p) = 0._r8
+      clm3%g%l%c%p%pps%fwet(p) = 0._r8
+      clm3%g%l%c%p%pps%fdry(p) = 0._r8
+      clm3%g%l%c%p%pps%frac_veg_nosno_alb(p) = 0._r8
+      clm3%g%l%c%p%pps%frac_veg_nosno(p) = 0._r8
+      clm3%g%l%c%p%pcf%psnsun(p) = 0._r8
+      clm3%g%l%c%p%pcf%psnsha(p) = 0._r8
+#if (defined C13)
+      ! 4/14/05: PET
+      ! Adding isotope code
+      clm3%g%l%c%p%pc13f%psnsun(p) = 0._r8
+      clm3%g%l%c%p%pc13f%psnsha(p) = 0._r8
+#endif
+      
+   end do
+
+!dir$ concurrent
+!cdir nodep
+   do fc = 1,num_specialc
+      c = specialc(fc)
+      clm3%g%l%c%ccf%pcf_a%psnsun(c) = 0._r8
+      clm3%g%l%c%ccf%pcf_a%psnsha(c) = 0._r8
+#if (defined C13)
+      ! 8/17/05: PET
+      ! Adding isotope code
+      clm3%g%l%c%cc13f%pcf_a%psnsun(c) = 0._r8
+      clm3%g%l%c%cc13f%pcf_a%psnsha(c) = 0._r8
+#endif
+      
+	  ! adding dynpft code
+	  clm3%g%l%c%ccs%seedc(c) = 0._r8
+	  clm3%g%l%c%ccs%prod10c(c) = 0._r8	  
+	  clm3%g%l%c%ccs%prod100c(c) = 0._r8	  
+	  clm3%g%l%c%ccs%totprodc(c) = 0._r8	  
+#if (defined C13)
+	  clm3%g%l%c%cc13s%seedc(c) = 0._r8
+	  clm3%g%l%c%cc13s%prod10c(c) = 0._r8	  
+	  clm3%g%l%c%cc13s%prod100c(c) = 0._r8	  
+	  clm3%g%l%c%cc13s%totprodc(c) = 0._r8	  
+#endif
+	  clm3%g%l%c%cns%seedn(c) = 0._r8
+	  clm3%g%l%c%cns%prod10n(c) = 0._r8	  
+	  clm3%g%l%c%cns%prod100n(c) = 0._r8	  
+	  clm3%g%l%c%cns%totprodn(c) = 0._r8	  
+	  clm3%g%l%c%ccf%dwt_seedc_to_leaf(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_seedc_to_deadstem(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_conv_cflux(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_prod10c_gain(c) = 0._r8
+	  clm3%g%l%c%ccf%prod10c_loss(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_prod100c_gain(c) = 0._r8
+	  clm3%g%l%c%ccf%prod100c_loss(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_frootc_to_litr1c(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_frootc_to_litr2c(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_frootc_to_litr3c(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_livecrootc_to_cwdc(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_deadcrootc_to_cwdc(c) = 0._r8
+	  clm3%g%l%c%ccf%dwt_closs(c) = 0._r8
+	  clm3%g%l%c%ccf%landuseflux(c) = 0._r8
+	  clm3%g%l%c%ccf%landuptake(c) = 0._r8
+#if (defined C13)
+	  clm3%g%l%c%cc13f%dwt_seedc_to_leaf(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_seedc_to_deadstem(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_conv_cflux(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_prod10c_gain(c) = 0._r8
+	  clm3%g%l%c%cc13f%prod10c_loss(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_prod100c_gain(c) = 0._r8
+	  clm3%g%l%c%cc13f%prod100c_loss(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_frootc_to_litr1c(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_frootc_to_litr2c(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_frootc_to_litr3c(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_livecrootc_to_cwdc(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_deadcrootc_to_cwdc(c) = 0._r8
+	  clm3%g%l%c%cc13f%dwt_closs(c) = 0._r8
+#endif
+	  clm3%g%l%c%cnf%dwt_seedn_to_leaf(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_seedn_to_deadstem(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_conv_nflux(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_prod10n_gain(c) = 0._r8
+	  clm3%g%l%c%cnf%prod10n_loss(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_prod100n_gain(c) = 0._r8
+	  clm3%g%l%c%cnf%prod100n_loss(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_frootn_to_litr1n(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_frootn_to_litr2n(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_frootn_to_litr3n(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_livecrootn_to_cwdn(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_deadcrootn_to_cwdn(c) = 0._r8
+	  clm3%g%l%c%cnf%dwt_nloss(c) = 0._r8
+      
+   end do
+
+   ! deallocate special landunit filters
+   deallocate(specialc)
+   deallocate(specialp)
+
+#endif
+
+end subroutine CNiniSpecial
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: CNiniTimeVar
+!
+! !INTERFACE:
+subroutine CNiniTimeVar(htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+                ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
+                ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
+                ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
+                ,dayl_buf,annavg_t2m_buf,tempavg_t2m_buf,tempsum_potential_gpp_buf          &
+                ,annsum_potential_gpp_buf,tempmax_retransn_buf,annmax_retransn_buf      &
+                ,prev_leafc_to_litter_buf,prev_frootc_to_litter_buf,tempsum_npp_buf     &
+                ,annsum_npp_buf,leafc_buf,leafc_storage_buf,leafc_xfer_buf,frootc_buf           &
+                ,frootc_storage_buf,frootc_xfer_buf,livestemc_buf,livestemc_storage_buf     &
+                ,livestemc_xfer_buf,deadstemc_buf,deadstemc_storage_buf,deadstemc_xfer_buf  &
+                ,livecrootc_buf,livecrootc_storage_buf,livecrootc_xfer_buf,deadcrootc_buf   &
+                ,deadcrootc_storage_buf,deadcrootc_xfer_buf,cpool_buf,pft_ctrunc_buf        &
+                ,leafn_buf,leafn_storage_buf,leafn_xfer_buf,frootn_buf,frootn_storage_buf       &
+                ,frootn_xfer_buf,livestemn_buf,livestemn_storage_buf,livestemn_xfer_buf     &
+                ,deadstemn_buf,deadstemn_storage_buf,deadstemn_xfer_buf,livecrootn_buf      &
+                ,livecrootn_storage_buf,livecrootn_xfer_buf,deadcrootn_buf              &
+                ,deadcrootn_storage_buf,deadcrootn_xfer_buf,npool_buf,pft_ntrunc_buf        &
+                ,gresp_storage_buf,gresp_xfer_buf,xsmrpool_buf,annsum_counter_buf           &
+                ,cannsum_npp_buf,cannavg_t2m_buf,wf_buf,me_buf,mean_fire_prob_buf,cwdc_buf,litr1c_buf   &
+                ,litr2c_buf,litr3c_buf,soil1c_buf,soil2c_buf,soil3c_buf,soil4c_buf,seedc_buf,col_ctrunc_buf &
+                ,prod10c_buf,prod100c_buf,cwdn_buf,litr1n_buf,litr2n_buf,litr3n_buf,soil1n_buf,soil2n_buf   &
+                ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf &
+                ,totlitc_buf,dwt_seedc_to_leaf_buf,dwt_seedc_to_deadstem_buf,dwt_conv_cflux_buf &
+                ,dwt_prod10c_gain_buf,dwt_prod100c_gain_buf,prod100c_loss_buf,dwt_frootc_to_litr1c_buf &
+                ,dwt_frootc_to_litr2c_buf,dwt_frootc_to_litr3c_buf,dwt_livecrootc_to_cwdc_buf &
+                ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
+                ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
+                ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf &
+                        )
+
+#ifdef CN
+!
+! !DESCRIPTION:
+! Initializes time varying variables used only in
+! coupled carbon-nitrogen mode (CN):
+!
+! !USES:
+   use clmtype
+!   use clm_atmlnd  , only: clm_a2l  !removed for coupling purpose Yaqiong Lu 01/25/11
+   use shr_kind_mod, only: r8 => shr_kind_r8
+   use clm_varcon  , only: istsoil
+#ifdef CROP
+   use clm_varcon  , only: istcrop
+#endif
+#if (defined C13)
+   use clm_varcon  , only: c13ratio
+#endif
+   use pftvarcon   , only: noveg
+#if (defined CROP)
+   use pftvarcon   , only: npcropmin
+#endif
+   use decompMod   , only: get_proc_bounds
+   use globals     , only: nstep
+   use clm_varpar  , only: maxpatch
+!
+! !ARGUMENTS:
+   implicit none
+!
+! !CALLED FROM:
+! subroutine iniTimeVar in file iniTimeVar.F90
+!
+! !REVISION HISTORY:
+! 10/21/03: Created by Peter Thornton
+!
+!
+! local pointers to implicit in arguments
+!
+   real(r8), pointer :: evergreen(:) ! binary flag for evergreen leaf habit (0 or 1)
+   real(r8), pointer :: woody(:)     ! binary flag for woody lifeform (1=woody, 0=not woody)
+   real(r8), pointer :: leafcn(:)    ! leaf C:N (gC/gN)
+   real(r8), pointer :: deadwdcn(:)  ! dead wood (xylem and heartwood) C:N (gC/gN)
+   integer , pointer :: ivt(:)       ! pft vegetation type
+   logical , pointer :: lakpoi(:)    ! true => landunit is a lake point
+   integer , pointer :: plandunit(:) ! landunit index associated with each pft
+   integer , pointer :: clandunit(:) ! landunit index associated with each column
+   integer , pointer :: itypelun(:)  ! landunit type
+!
+! local pointers to implicit out arguments
+!
+   real(r8), pointer :: forc_hgt_u_pft(:)    !observational height of wind at pft-level [m]
+   real(r8), pointer :: annsum_counter(:) ! seconds since last annual accumulator turnover
+   real(r8), pointer :: cannsum_npp(:)    ! annual sum of NPP, averaged from pft-level (gC/m2/yr)
+   real(r8), pointer :: cannavg_t2m(:)    !annual average of 2m air temperature, averaged from pft-level (K)
+   real(r8), pointer :: cwdc(:)               ! (gC/m2) coarse woody debris C
+   real(r8), pointer :: litr1c(:)             ! (gC/m2) litter labile C
+   real(r8), pointer :: litr2c(:)             ! (gC/m2) litter cellulose C
+   real(r8), pointer :: litr3c(:)             ! (gC/m2) litter lignin C
+   real(r8), pointer :: soil1c(:)             ! (gC/m2) soil organic matter C (fast pool)
+   real(r8), pointer :: soil2c(:)             ! (gC/m2) soil organic matter C (medium pool)
+   real(r8), pointer :: soil3c(:)             ! (gC/m2) soil organic matter C (slow pool)
+   real(r8), pointer :: soil4c(:)             ! (gC/m2) soil organic matter C (slowest pool)
+   real(r8), pointer :: cwdn(:)               ! (gN/m2) coarse woody debris N
+   real(r8), pointer :: litr1n(:)             ! (gN/m2) litter labile N
+   real(r8), pointer :: litr2n(:)             ! (gN/m2) litter cellulose N
+   real(r8), pointer :: litr3n(:)             ! (gN/m2) litter lignin N
+   real(r8), pointer :: soil1n(:)             ! (gN/m2) soil organic matter N (fast pool)
+   real(r8), pointer :: soil2n(:)             ! (gN/m2) soil organic matter N (medium pool)
+   real(r8), pointer :: soil3n(:)             ! (gN/m2) soil orgainc matter N (slow pool)
+   real(r8), pointer :: soil4n(:)             ! (gN/m2) soil orgainc matter N (slowest pool)
+   real(r8), pointer :: sminn(:)              ! (gN/m2) soil mineral N
+   real(r8), pointer :: leafc(:)              ! (gC/m2) leaf C
+   real(r8), pointer :: leafc_storage(:)      ! (gC/m2) leaf C storage
+   real(r8), pointer :: leafc_xfer(:)         ! (gC/m2) leaf C transfer
+#if (defined CROP)
+   real(r8), pointer :: grainc(:)             ! (gC/m2) grain C
+   real(r8), pointer :: grainc_storage(:)     ! (gC/m2) grain C storage
+   real(r8), pointer :: grainc_xfer(:)        ! (gC/m2) grain C transfer
+   integer , pointer :: croplive(:)  ! post planting+pre harvest+live=1; else 0
+   real(r8), pointer :: htmx(:)      ! max hgt attained by a crop during yr
+   real(r8), pointer :: gdd020(:)          ! 20-yr means of same variables
+   real(r8), pointer :: gdd820(:)
+   real(r8), pointer :: gdd1020(:)
+   integer , pointer :: harvdate(:)
+   integer , pointer :: peaklai(:)   ! 1: max allowed lai; 0: not at max
+   integer , pointer :: cropplant(:) ! field can be planted = 0; else 1
+   real(r8), pointer :: vf(:)        ! vernalization factor for wheat
+#endif
+   real(r8), pointer :: frootc(:)             ! (gC/m2) fine root C
+   real(r8), pointer :: frootc_storage(:)     ! (gC/m2) fine root C storage
+   real(r8), pointer :: frootc_xfer(:)        ! (gC/m2) fine root C transfer
+   real(r8), pointer :: livestemc(:)          ! (gC/m2) live stem C
+   real(r8), pointer :: livestemc_storage(:)  ! (gC/m2) live stem C storage
+   real(r8), pointer :: livestemc_xfer(:)     ! (gC/m2) live stem C transfer
+   real(r8), pointer :: deadstemc(:)          ! (gC/m2) dead stem C
+   real(r8), pointer :: deadstemc_storage(:)  ! (gC/m2) dead stem C storage
+   real(r8), pointer :: deadstemc_xfer(:)     ! (gC/m2) dead stem C transfer
+   real(r8), pointer :: livecrootc(:)         ! (gC/m2) live coarse root C
+   real(r8), pointer :: livecrootc_storage(:) ! (gC/m2) live coarse root C storage
+   real(r8), pointer :: livecrootc_xfer(:)    ! (gC/m2) live coarse root C transfer
+   real(r8), pointer :: deadcrootc(:)         ! (gC/m2) dead coarse root C
+   real(r8), pointer :: deadcrootc_storage(:) ! (gC/m2) dead coarse root C storage
+   real(r8), pointer :: deadcrootc_xfer(:)    ! (gC/m2) dead coarse root C transfer
+   real(r8), pointer :: gresp_storage(:)      ! (gC/m2) growth respiration storage
+   real(r8), pointer :: gresp_xfer(:)         ! (gC/m2) growth respiration transfer
+   real(r8), pointer :: cpool(:)              ! (gC/m2) temporary photosynthate C pool
+   real(r8), pointer :: xsmrpool(:)           ! (gC/m2) abstract C pool to meet excess MR demand
+   real(r8), pointer :: leafn(:)              ! (gN/m2) leaf N
+   real(r8), pointer :: leafn_storage(:)      ! (gN/m2) leaf N storage
+   real(r8), pointer :: leafn_xfer(:)         ! (gN/m2) leaf N transfer
 #if (defined CROP)
    real(r8), pointer :: grainn(:)             ! (gN/m2) grain N
    real(r8), pointer :: grainn_storage(:)     ! (gN/m2) grain N storage
@@ -55978,6 +66701,590 @@ subroutine CNiniTimeVar(htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,
   integer,dimension(maxpatch) :: croplive_buf
    real(r8), dimension(maxpatch)  ::  &
                  htmx_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+=======
+! !IROUTINE: CNEcosystemDyn
+!
+! !INTERFACE:
+#if (defined CROP)
+  subroutine CNEcosystemDyn(lbc, ubc, lbp, ubp, num_soilc, filter_soilc, &
+                     num_soilp, filter_soilp, num_pcropp, filter_pcropp, doalb)
+#else
+  subroutine CNEcosystemDyn(lbc, ubc, lbp, ubp, num_soilc, filter_soilc, &
+                     num_soilp, filter_soilp, doalb)
+#endif
+!
+! !DESCRIPTION:
+! The core CN code is executed here. Calculates fluxes for maintenance
+! respiration, decomposition, allocation, phenology, and growth respiration.
+! These routines happen on the radiation time step so that canopy structure
+! stays synchronized with albedo calculations.
+!
+! !USES:
+    use clmtype
+!ylu remove    use spmdMod              , only: masterproc
+    use CNSetValueMod        , only: CNZeroFluxes
+    use CNNDynamicsMod       , only: CNNDeposition,CNNFixation, CNNLeaching
+    use CNMRespMod           , only: CNMResp
+    use CNDecompMod          , only: CNDecompAlloc
+    use CNPhenologyMod       , only: CNPhenology
+    use CNGRespMod           , only: CNGResp
+    use CNCStateUpdate1Mod   , only: CStateUpdate1,CStateUpdate0
+    use CNNStateUpdate1Mod   , only: NStateUpdate1
+    use CNGapMortalityMod    , only: CNGapMortality
+    use CNCStateUpdate2Mod   , only: CStateUpdate2, CStateUpdate2h
+    use CNNStateUpdate2Mod   , only: NStateUpdate2, NStateUpdate2h
+    use CNFireMod            , only: CNFireArea, CNFireFluxes
+    use CNCStateUpdate3Mod   , only: CStateUpdate3
+    use CNNStateUpdate3Mod   , only: NStateUpdate3
+    use CNBalanceCheckMod    , only: CBalanceCheck, NBalanceCheck
+    use CNPrecisionControlMod, only: CNPrecisionControl
+    use CNVegStructUpdateMod , only: CNVegStructUpdate
+    use CNAnnualUpdateMod    , only: CNAnnualUpdate
+    use CNSummaryMod         , only: CSummary, NSummary
+#if (defined C13)
+    use CNC13StateUpdate1Mod , only: C13StateUpdate1,C13StateUpdate0
+    use CNC13StateUpdate2Mod , only: C13StateUpdate2, C13StateUpdate2h
+    use CNC13StateUpdate3Mod , only: C13StateUpdate3
+    use CNC13FluxMod         , only: C13Flux1, C13Flux2, C13Flux2h, C13Flux3
+    use C13SummaryMod        , only: C13Summary
+#endif
+    use pftdynMod               , only: CNHarvest
+    use CNWoodProductsMod    , only: CNWoodProducts
+!
+! !ARGUMENTS:
+    implicit none
+    integer, intent(in) :: lbc, ubc        ! column bounds
+    integer, intent(in) :: lbp, ubp        ! pft bounds
+    integer, intent(in) :: num_soilc       ! number of soil columns in filter
+    integer, intent(in) :: filter_soilc(ubc-lbc+1) ! filter for soil columns
+    integer, intent(in) :: num_soilp       ! number of soil pfts in filter
+    integer, intent(in) :: filter_soilp(ubp-lbp+1) ! filter for soil pfts
+#if (defined CROP)
+    integer, intent(in) :: num_pcropp      ! number of prog. crop pfts in filter
+    integer, intent(in) :: filter_pcropp(:)! filter for prognostic crop pfts
+#endif
+    logical, intent(in) :: doalb           ! true = surface albedo calculation time step
+!
+! !CALLED FROM:
+!
+! !REVISION HISTORY:
+! 10/22/03, Peter Thornton: created from EcosystemDyn during migration to
+!                           new vector code.
+! 11/3/03, Peter Thornton: removed update of elai, esai, frac_veg_nosno_alb.
+!     These are now done in CNVegStructUpdate(), which is called
+!     prior to SurfaceAlbedo().
+! 11/13/03, Peter Thornton: switched from nolake to soil filtering.
+!
+! !LOCAL VARIABLES:
+!
+! local pointers to implicit in arguments
+!
+! local pointers to implicit out arguments
+!
+! !OTHER LOCAL VARIABLES:
+!
+!EOP
+!-----------------------------------------------------------------------
+
+ !   if (doalb) then
+
+       ! Call the main CN routines
+!       call CLMDebug('Begin CNZeroFluxes')
+!       call CNZeroFluxes(num_soilc, filter_soilc, num_soilp, filter_soilp)  ! CNSetValueMod.F
+
+       call CLMDebug('Begin CNNDeposition')
+       call CNNDeposition(lbc, ubc)  !CNNDynamicsMod.F
+
+       call CLMDebug('Begin CNFixation')
+       call CNNFixation(num_soilc,filter_soilc)  !CNNDynamicsMod.F
+
+       call CLMDebug('Begin CNMResp')
+       call CNMResp(lbc, ubc, num_soilc, filter_soilc, num_soilp, filter_soilp)  !CNMRespMod.F
+
+       call CLMDebug('Begin CNNDecompAlloc')
+       call CNDecompAlloc(lbp, ubp, lbc, ubc, num_soilc, filter_soilc, num_soilp, filter_soilp) !CNDecompMod.F
+
+       ! CNphenology needs to be called after CNdecompAlloc, becuase it
+       ! depends on current time-step fluxes to new growth on the last
+       ! litterfall timestep in deciduous systems
+
+#if (defined CROP)
+       call CLMDebug('Begin CNPhenology')
+       call CNPhenology(num_soilc, filter_soilc, num_soilp, filter_soilp, num_pcropp, filter_pcropp) !CNPhenologyMod.F
+#else
+       call CNPhenology(num_soilc, filter_soilc, num_soilp, filter_soilp)
+#endif
+
+       call CLMDebug('Begin CNGResp')
+       call CNGResp(num_soilp, filter_soilp) !CNGRespMod.F
+       
+       call CLMDebug('Begin CStateUpdate')
+       call CStateUpdate0(num_soilp, filter_soilp) !CNCStateUpdate1Mod.F
+
+#if (defined C13)
+       call C13StateUpdate0(num_soilp, filter_soilp)
+
+       call C13Flux1(num_soilc, filter_soilc, num_soilp, filter_soilp)
+#endif
+       call CLMDebug('Begin CStateUpdate1')
+       call CStateUpdate1(num_soilc, filter_soilc, num_soilp, filter_soilp)  !CNCStateUpdate1Mod.F
+
+#if (defined C13)
+       call C13StateUpdate1(num_soilc, filter_soilc, num_soilp, filter_soilp)
+#endif
+       
+       call CLMDebug('Begin NStateUpdate1')
+       call NStateUpdate1(num_soilc, filter_soilc, num_soilp, filter_soilp)  ! CNNStateUpdate1Mod.F
+
+       call CLMDebug('Begin CNGapMortality')
+       call CNGapMortality(num_soilc, filter_soilc, num_soilp, filter_soilp) ! CNGapMortalityMod.F
+
+#if (defined C13)
+       call C13Flux2(num_soilc, filter_soilc, num_soilp, filter_soilp) 
+#endif
+
+       call CLMDebug('Begin CStateUpdate2')
+       call CStateUpdate2(num_soilc, filter_soilc, num_soilp, filter_soilp) ! CNCStateUpdate2Mod.F 
+
+#if (defined C13)
+       call C13StateUpdate2(num_soilc, filter_soilc, num_soilp, filter_soilp)
+#endif
+
+       call CLMDebug('Begin NStateUpdate2')
+       call NStateUpdate2(num_soilc, filter_soilc, num_soilp, filter_soilp) !CNNStateUpdate2Mod
+       
+       if (fpftdyn /= ' ') then  !Yaqiong Lu removed 
+!fpftdyn /= ' ' means there is dynamic land use data sets used
+       call CLMDebug('Begin CNHarvest')
+          call CNHarvest(num_soilc, filter_soilc, num_soilp, filter_soilp)  !pftdynMod.F
+       end if 
+
+#if (defined C13)
+       call C13Flux2h(num_soilc, filter_soilc, num_soilp, filter_soilp)
+#endif
+
+       call CLMDebug('Begin CStateUpdate2h')
+       call CStateUpdate2h(num_soilc, filter_soilc, num_soilp, filter_soilp)  !CNCStateUpdate2Mod.F
+
+#if (defined C13)
+       call C13StateUpdate2h(num_soilc, filter_soilc, num_soilp, filter_soilp)
+#endif
+
+       call CLMDebug('Begin NStateUpdate2h')
+       call NStateUpdate2h(num_soilc, filter_soilc, num_soilp, filter_soilp)  ! CNNStateUpdate2Mod.F
+       
+       call CLMDebug('Begin CNWoodProducts')
+       call CNWoodProducts(num_soilc, filter_soilc) ! CNWoodProductsMod.F 
+       
+       call CLMDebug('Begin CNFireArea')
+       call CNFireArea(num_soilc, filter_soilc) !CNFireMod.F
+
+       call CLMDebug('Begin CNFireFluxes')
+       call CNFireFluxes(num_soilc, filter_soilc, num_soilp, filter_soilp)   !CNFireMod.F
+
+       call CLMDebug('Begin CNNLeaching')
+       call CNNLeaching(lbc, ubc, num_soilc, filter_soilc)  !CNNDynamicsMod.F
+
+#if (defined C13)
+       call C13Flux3(num_soilc, filter_soilc, num_soilp, filter_soilp)
+#endif
+
+       call CLMDebug('Begin CStateUpdate3')
+       call CStateUpdate3(num_soilc, filter_soilc, num_soilp, filter_soilp) ! CNCStateUpdate3Mod.F
+
+#if (defined C13)
+       call C13StateUpdate3(num_soilc, filter_soilc, num_soilp, filter_soilp)
+#endif
+
+       call CLMDebug('Begin NStateUpdate3')
+       call NStateUpdate3(num_soilc, filter_soilc, num_soilp, filter_soilp) !CNNStateUpdate3Mod.F
+
+       call CLMDebug('Begin CNPrecisionControl')
+       call CNPrecisionControl(num_soilc, filter_soilc, num_soilp, filter_soilp)  !CNPrecisionControlMod.F
+
+    if (doalb) then   
+       call CLMDebug('Begin CNVegStructUpdate')
+       call CNVegStructUpdate(num_soilp, filter_soilp)  ! CNVegStructUpdateMod.F
+    end if
+
+!       call CNAnnualUpdate(num_soilc, filter_soilc, num_soilp, filter_soilp)
+       
+       call CLMDebug('Begin CSummary')
+       call CSummary(num_soilc, filter_soilc, num_soilp, filter_soilp)  !CNSummaryMod.F
+       
+#if (defined C13)
+       call C13Summary(num_soilc, filter_soilc, num_soilp, filter_soilp)  
+#endif
+       
+       call CLMDebug('Begin NSummary')
+       call NSummary(num_soilc, filter_soilc, num_soilp, filter_soilp)  !CNSummaryMod.F
+
+!    end if  !end of if-doalb block
+
+  end subroutine CNEcosystemDyn
+#endif
+!-----------------------------------------------------------------------
+end  module CNEcosystemDynMod
+!-----------------------------------------------------------------------
+!BOP
+!
+! !ROUTINE: iniTimeVar  !This subroutine was used in CLM3.0, but not in CLM3.5&CLM4.0
+!
+! !INTERFACE:
+subroutine iniTimeVar(snlx     ,snowdpx ,dzclmx  ,zclmx      ,&
+                     ziclmx    ,h2osnox ,h2osoi_liqx,h2osoi_icex,t_grndx,&
+                     t_soisnox ,t_lakex ,t_vegx    ,h2ocanx ,h2ocan_colx,&
+                     h2osoi_volx,declin,t_ref2mx,xlat,xlon)
+!
+! !DESCRIPTION:
+! Initializes the following time varying variables:
+! water : h2osno, h2ocan, h2osoi_liq, h2osoi_ice, h2osoi_vol
+! snow : snowdp, snowage, snl, dz, z, zi
+! temperature: t_soisno, t_veg, t_grnd
+! The variable, h2osoi_vol, is needed by the soil albedo routine - this is not needed
+! on restart since it is computed before the soil albedo computation is called.
+! The remaining variables are initialized by calls to ecosystem dynamics and
+! albedo subroutines.
+!
+! !USES:
+  use shr_kind_mod         , only : r8 => shr_kind_r8
+  use clmtype
+  use decompMod            , only : get_proc_bounds
+  use filterMod            , only : filter
+  use clm_varpar           , only : nlevsoi,nlevgrnd, nlevsno, nlevlak,maxpatch
+  use clm_varcon           , only : denice, denh2o, zlnd,istsoil,isturb
+  use FracWetMod           , only : FracWet
+  use SurfaceAlbedoMod     , only : SurfaceAlbedo
+  use globals              , only : month, day, calday
+#if (defined CN)
+  use CNEcosystemDynMod    , only : CNEcosystemDyn
+#endif
+
+#if (!defined CN)
+  use STATICEcosysDynMod, only : EcosystemDyn, interpMonthlyVeg
+#endif
+  use shr_const_mod, only : SHR_CONST_PI
+
+!
+! !ARGUMENTS:
+  implicit none
+!
+! !CALLED FROM:
+! subroutine initialize in module initializeMod
+!
+! !REVISION HISTORY:
+! Created by Mariana Vertenstein
+
+! The following vraiables for MM5 and restart run
+
+    real(r8)  :: xlon
+    real(r8)  :: xlat
+
+    integer   :: snlx(maxpatch)
+    real(r8)  :: snowdpx(maxpatch)
+!    real(r8)  :: snowagex(maxpatch)
+    real(r8)  :: h2osnox(maxpatch)
+    real(r8)  :: t_grndx(maxpatch)
+    real(r8)  :: t_vegx(maxpatch)
+    real(r8)  :: h2ocanx(maxpatch)
+    real(r8)  :: h2ocan_colx(maxpatch)
+    real(r8)  :: t_ref2mx(maxpatch)
+    real(r8)  :: t_lakex(maxpatch,nlevlak)
+    real(r8)  :: t_soisnox(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: h2osoi_liqx(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: h2osoi_icex(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: dzclmx(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: zclmx(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: ziclmx(maxpatch,-nlevsno:nlevgrnd)
+    real(r8)  :: h2osoi_volx(maxpatch,nlevgrnd)
+
+!
+! !LOCAL VARIABLES:
+!
+! local pointers to implicit in arguments
+!
+  integer , pointer :: plandunit(:)      ! landunit index associated with each pft
+  logical , pointer :: lakpoi(:)         ! true => landunit is a lake point
+  real(r8), pointer :: dz(:,:)           ! layer thickness depth (m)
+  real(r8), pointer :: h2osoi_ice(:,:)   ! ice lens (kg/m2)
+  real(r8), pointer :: h2osoi_liq(:,:)   ! liquid water (kg/m2)
+  integer , pointer :: frac_veg_nosno_alb(:) ! fraction of vegetation not covered by snow (0 OR 1) [-]
+!
+! local pointers to implicit out arguments
+!
+  real(r8), pointer :: h2osoi_vol(:,:)   ! volumetric soil water (0<=h2osoi_vol<=watsat) [m3/m3]
+  real(r8), pointer :: snowdp(:)         ! snow height (m)
+  real(r8), pointer :: frac_sno(:)       ! fraction of ground covered by snow (0 to 1)
+  integer , pointer :: frac_veg_nosno(:) ! fraction of vegetation not covered by snow (0 OR 1) [-]
+  real(r8), pointer :: fwet(:)           ! fraction of canopy that is wet (0 to 1) (pft-level)
+!
+! local pointers to implicit out arguments (lake points only)
+!
+  real(r8), pointer :: fdry(:)     ! fraction of foliage that is green and dry [-] (new)
+  real(r8), pointer :: tlai(:)     ! one-sided leaf area index, no burying by snow
+  real(r8), pointer :: tsai(:)     ! one-sided stem area index, no burying by snow
+  real(r8), pointer :: htop(:)     ! canopy top (m)
+  real(r8), pointer :: hbot(:)     ! canopy bottom (m)
+  real(r8), pointer :: elai(:)     ! one-sided leaf area index with burying by snow
+  real(r8), pointer :: esai(:)     ! one-sided stem area index with burying by snow
+
+
+  real(r8) :: declin      ! solar declination angle in radians for nstep
+
+!
+!EOP
+!
+    real(r8):: snowbd        ! temporary calculation of snow bulk density (kg/m3)
+    real(r8):: fmelt         ! snowbd/100
+   integer , pointer :: clandunit(:)      ! landunit index associated with each column
+    integer , pointer :: itypelun(:)       ! landunit type
+
+
+! !OTHER LOCAL VARIABLES:
+  integer :: g,nc,j,l,c,p,fp,fc  ! indices
+  integer :: begp, endp   ! per-clump beginning and ending pft indices
+  integer :: begc, endc   ! per-clump beginning and ending column indices
+  integer :: begl, endl   ! per-clump beginning and ending landunit indices
+  integer :: begg, endg   ! per-clump gridcell ending gridcell indices
+
+#if (defined DGVM)
+  integer , pointer :: clandunit(:)     ! column's landunit
+  integer , pointer :: pcolumn(:)        ! column index of corresponding pft
+  integer , pointer :: ityplun(:)       ! landunit type
+  
+  real(r8), pointer :: z(:,:)            ! (m)
+  real(r8), pointer :: tsoi25(:)         ! soil temperature to 0.25 m (Kelvin)
+  real(r8), pointer :: t_soisno(:,:)     ! soil temperature (Kelvin)  (-nlevsno+1:nlevsoi)
+  real(r8), pointer :: watsat(:,:)      ! volumetric soil water at saturation (porosity)
+  real(r8), pointer :: sucsat(:,:)      ! minimum soil suction (mm)
+  real(r8), pointer :: bsw(:,:)         ! Clapp and Hornberger "b"
+  real(r8), pointer :: wf(:)            ! soil water as frac. of whc for top 0.5 m
+
+  real(r8) ,allocatable :: tsoi(:) ! temporary
+  real(r8) ,allocatable :: dep(:)  ! temporary
+  real(r8) ,allocatable :: rwat(:) ! soil water wgted by depth to maximum depth of 0.5 m
+  real(r8) ,allocatable :: swat(:) ! same as rwat but at saturation
+  real(r8) ,allocatable :: rz(:)   ! thickness of soil layers contributing to rwat (m)
+  
+  real(r8) :: watdry                     ! temporary
+  real(r8) :: tsw                        ! volumetric soil water to 0.5 m
+  real(r8) :: stsw                       ! volumetric soil water to 0.5 m at saturation
+#endif
+!-----------------------------------------------------------------------
+
+  ! Assign local pointers to derived subtypes components (landunit-level)
+
+  lakpoi              => clm3%g%l%lakpoi
+  itypelun            => clm3%g%l%itype
+
+
+  ! Assign local pointers to derived subtypes components (column-level)
+
+  dz                  => clm3%g%l%c%cps%dz
+  h2osoi_ice          => clm3%g%l%c%cws%h2osoi_ice
+  h2osoi_liq          => clm3%g%l%c%cws%h2osoi_liq
+  h2osoi_vol          => clm3%g%l%c%cws%h2osoi_vol
+  snowdp              => clm3%g%l%c%cps%snowdp
+  frac_sno            => clm3%g%l%c%cps%frac_sno
+
+    clandunit           => clm3%g%l%c%landunit
+
+
+  ! Assign local pointers to derived subtypes components (pft-level)
+
+  plandunit          => clm3%g%l%c%p%landunit
+  frac_veg_nosno_alb => clm3%g%l%c%p%pps%frac_veg_nosno_alb
+  frac_veg_nosno     => clm3%g%l%c%p%pps%frac_veg_nosno
+  fwet               => clm3%g%l%c%p%pps%fwet
+
+  ! Assign local pointers to derived subtypes components (pft-level)
+  ! The folowing pointers will only be used for lake points in this routine
+  htop               => clm3%g%l%c%p%pps%htop
+  hbot               => clm3%g%l%c%p%pps%hbot
+  tlai               => clm3%g%l%c%p%pps%tlai
+  tsai               => clm3%g%l%c%p%pps%tsai
+  elai               => clm3%g%l%c%p%pps%elai
+  esai               => clm3%g%l%c%p%pps%esai
+  fdry               => clm3%g%l%c%p%pps%fdry
+!#endif
+
+  ! ========================================================================
+  ! Initialize water and temperature based on:
+  ! readini = true : read initial data set -- requires netCDF codes
+  ! readini = false: arbitrary initialization
+  ! ========================================================================
+!moved to initialize.F
+!    call mkarbinit(snlx     ,snowdpx, snowagex ,dzclmx  ,zclmx      ,&
+!                  ziclmx    ,h2osnox ,h2osoi_liqx,h2osoi_icex,t_grndx,&
+!                  t_soisnox ,t_lakex ,t_vegx    ,h2ocanx ,h2ocan_colx,&
+!                  h2osoi_volx,t_ref2mx)
+
+  ! after this subroutine, t_soisno has values -- Jiming Jin
+  ! ========================================================================
+  ! Remaining variables are initialized by calls to ecosystem dynamics and
+  ! albedo subroutines.
+  ! Note: elai, esai, frac_veg_nosno_alb are computed in
+  ! Ecosysdyn and needed by routines FracWet and SurfaceAlbedo
+  ! frac_veg_nosno is needed by FracWet
+  ! fwet is needed in routine TwoStream (called by SurfaceAlbedo)
+  ! frac_sno is needed by SoilAlbedo (called by SurfaceAlbedo)
+  ! ========================================================================
+  call CLMDebug('iniTimeVar mark0')
+
+
+#if (!defined CN)
+  ! Read monthly vegetation data for interpolation to daily values
+  call CLMDebug('call interpMonthlyVeg')
+  call interpMonthlyVeg(month, day)
+#endif
+
+
+     call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
+
+    do g = begg, endg
+       clm3%g%lat_a(g)               = xlat*(SHR_CONST_PI/180._r8)  ! redians "atm" latitude (radians) for albedo
+       clm3%g%lon_a(g)               = xlon*(SHR_CONST_PI/180._r8)
+    end do
+
+
+
+     ! Determine variables needed by SurfaceAlbedo for lake points
+
+!dir$ concurrent
+!cdir nodep
+!For lake point, set all the following value=0     
+   do p = begp,endp
+        l = plandunit(p)
+        if (lakpoi(l)) then
+           fwet(p) = 0.
+           fdry(p) = 0.
+           elai(p) = 0.
+           esai(p) = 0.
+           htop(p) = 0.
+           hbot(p) = 0.
+           tlai(p) = 0.
+           tsai(p) = 0.
+           frac_veg_nosno_alb(p) = 0.
+           frac_veg_nosno(p) = 0.
+        end if
+     end do
+    call CLMDebug('iniTimeVar mark1')
+
+#if (defined CN)
+
+#if (defined CROP)
+       call CNEcosystemDyn(begc, endc, begp, endp, filter%num_soilc, filter%soilc, &
+            filter%num_soilp, filter%soilp, &
+            filter%num_pcropp, filter%pcropp, doalb=.true.)
+#else 
+       call CNEcosystemDyn(begc, endc, begp, endp, filter%num_soilc, filter%soilc, &
+            filter%num_soilp, filter%soilp, doalb=.true.)
+#endif
+
+#else 
+     call EcosystemDyn(begp, endp, filter%num_nolakep, filter%nolakep, &
+                       doalb=.true.)
+#endif
+
+!dir$ concurrent
+!cdir nodep
+     do p = begp, endp
+        l = plandunit(p)
+        if (.not. lakpoi(l)) then
+           frac_veg_nosno(p) = frac_veg_nosno_alb(p)
+           fwet(p) = 0.
+        end if
+     end do
+
+     call CLMDebug('call FracWet')
+     call FracWet(filter%num_nolakep, filter%nolakep)
+  
+
+     ! Compute Surface Albedo - all land points (including lake)
+     ! Needs as input fracion of soil covered by snow (Z.-L. Yang U. Texas)
+
+!dir$ concurrent
+!cdir nodep
+!     do c = begc, endc
+!        snowdp(c)  = snowdpx(c)
+!        frac_sno(c) = snowdp(c)/(10.*zlnd + snowdp(c))
+!     end do
+
+      ! Compute Surface Albedo - all land points (including lake) other than urban
+       ! Needs as input fracion of soil covered by snow (Z.-L. Yang U. Texas)
+
+       do c = begc, endc
+           snowdp(c)  = snowdpx(c)
+          l = clandunit(c)
+          if (itypelun(l) == isturb) then
+             ! From Bonan 1996 (LSM technical note)
+             frac_sno(c) = min( snowdp(c)/0.05_r8, 1._r8)
+          else
+             frac_sno(c) = 0._r8
+                 ! snow cover fraction as in Niu and Yang 2007
+             if(snowdp(c) .gt. 0.0 .and. h2osnox(c) .gt. 0.0)  then
+                snowbd   = min(800._r8,h2osnox(c)/snowdp(c)) !bulk density of snow (kg/m3)
+                fmelt    = (snowbd/100.)**1.
+                ! 100 is the assumed fresh snow density; 1 is a melting factor that could be
+                ! reconsidered, optimal value of 1.5 in Niu et al., 2007
+                frac_sno(c) = tanh( snowdp(c) /(2.5 * zlnd * fmelt) )
+             endif
+          end if
+       end do
+
+     call SurfaceAlbedo(begg, endg, begc, endc, begp, endp,filter%num_nourbanc, filter%nourbanc, &
+                           filter%num_nourbanp, filter%nourbanp, calday,declin)
+
+
+
+end subroutine iniTimeVar
+
+module initializeMod
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !MODULE: initializeMod
+!
+! !DESCRIPTION:
+! Performs land model initialization
+!
+! !PUBLIC TYPES:
+  implicit none
+  save
+!
+! !PUBLIC MEMBER FUNCTIONS:
+  public :: initialize
+!
+! !REVISION HISTORY:
+! Created by Gordon Bonan, Sam Levis and Mariana Vertenstein
+! In CLM4.0, DGVM option changed to CNDV--ylu 01/21/2011
+!
+!EOP
+!
+! !PRIVATE MEMBER FUNCTIONS:
+!-----------------------------------------------------------------------
+
+contains
+
+!-----------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: initialize
+!
+! !INTERFACE:
+  subroutine initialize(snl    ,snowdp  ,dzclm     ,zclm        &
+                  ,ziclm       ,h2osno  ,h2osoi_liq,h2osoi_ice,t_grnd      &
+                  ,t_soisno    ,t_lake  ,t_veg     ,h2ocan    ,h2ocan_col  &
+                  ,h2osoi_vol  ,xlat    ,xlon      ,areaxy    ,nlcat,landusef1d,num_pft_input,pct_pft1d,input_pft_flag,iveg        &
+                  ,isl         ,lndmsk  ,id                                &
+                  ,t_ref2m ,ilx    ,jlx,calday,declin,declinp1 &
+!  New argument BJG 3/28/19         ,  organicxy, efisopxy,gtixy ,snw_rdsx    &
+                  ,  organicxy, efisopxy,gtixy ,snw_rdsx, do_meganfile    &
+#ifdef CN
+                ,tlai        ,tsai    ,htop      ,hbot                &
+                ,htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
                 ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
                 ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
@@ -56005,6 +67312,7 @@ subroutine CNiniTimeVar(htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,
                 ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
                 ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
                 ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+<<<<<<< HEAD
                 , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf
 
 
@@ -57256,10 +68564,1370 @@ subroutine iniTimeVar(snlx     ,snowdpx ,dzclmx  ,zclmx      ,&
   use STATICEcosysDynMod, only : EcosystemDyn, interpMonthlyVeg
 #endif
   use shr_const_mod, only : SHR_CONST_PI
+=======
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf &
+#endif                  
+                                                         )
+!
+! !DESCRIPTION:
+! Land model initialization.
+! o Initializes run control variables via the [clmexp] namelist.
+! o Reads surface data on model grid.
+! o Defines the multiple plant types and fraction areas for each surface type.
+! o Builds the appropriate subgrid <-> grid mapping indices and weights.
+! o Set up parallel processing.
+! o Initializes time constant variables.
+! o Reads restart data for a restart or branch run.
+! o Reads initial data and initializes the time variant variables for an initial run.
+! o Initializes history file output.
+! o Initializes river routing model.
+! o Initializes accumulation variables.
+!
+! !USES:
+    use shr_kind_mod    , only : r8 => shr_kind_r8
+    use clmtypeInitMod  , only : initClmtype
+    use initGridCellsMod, only : initGridCells
+    use clm_varpar      , only : lsmlon, lsmlat, maxpatch,nlevgrnd,nlevsno,&
+                                 nlevlak
+    use clm_varsur      , only : varsur_alloc, longxy,latixy,&
+                                 area
+    use filterMod       , only : filter,allocFilters,setFilters
+    use decompMod       , only : initDecomp
+!    use accFldsMod      , only : initAccFlds, initAccClmtype
+    use surfFileMod     , only : surfrd
+    use pftvarcon       , only : pftconrd
+#ifdef CN
+    use CNSetValueMod       , only : CNZeroFluxes_dwt,CNZeroFluxes
+#endif
+    use decompMod        , only: get_proc_bounds
+!CLM4 
+!    use ndepFileMod     , only : ndepdyn_init, ndepdyn_interp
+!Yaqiong Lu changed add new from CLM4--01/21/11
+!#if (defined DGVM)
+!    use DGVMEcosystemDynMod, only : DGVMEcosystemDynini
+!#else
+!    use STATICEcosysDynMod , only : EcosystemDynini
+!#endif
+
+!#if (defined DGVM)
+!    use DGVMMod            , only : resetTimeConstDGVM
+!#endif
+!
+#if (defined CNDV)
+    use pftdynMod             , only : pftwt_init, pftwt_interp
+    use CNDVEcosystemDyniniMod, only : CNDVEcosystemDynini
+#elif (!defined CN)
+    use STATICEcosysDynMod , only : EcosystemDynini
+#endif
+#if (defined DUST) 
+    use DustMod         , only : Dustini
+#endif
+#if (defined CASA)
+    use CASAMod         , only : initCASA
+    use CASAPhenologyMod, only : initCASAPhenology 
+#if (defined CLAMP)
+    use CASAiniTimeVarMod,only : CASAiniTimeVar
+#endif
+#endif
+#if (defined RTM) 
+    use RtmMod          , only : Rtmini
+#endif
+! use globals           , only: nstep
+ use clm_varcon      , only : var_par
+ use aerdepMOD          , only : aerdepini
+
+!!!
+
+
+
+
+! !ARGUMENTS:
+    implicit none
+!
+! !REVISION HISTORY:
+! Created by Gordon Bonan, Sam Levis and Mariana Vertenstein
+!
+!EOP
+!
+    
+! !LOCAL VARIABLES:
+    integer  :: i,j,k                 !indices
+    integer  :: yr                    !current year (0, ...)
+    integer  :: mon                   !current month (1 -> 12)
+    integer  :: day                   !current day (1 -> 31)
+    integer  :: ncsec                 !current time of day [seconds]
+    logical  :: readini               !true if read in initial data set
+    integer  :: ier
+!ylu add new 01/13/2009
+    integer, intent(in)  :: id                   ! grid id
+    real(r8),intent(in) :: gtixy
+    real(r8), intent(in) :: calday               ! calendar day for declin
+    real(r8), intent(in) :: declin               ! declination angle (radians) for calday
+    real(r8), intent(in), optional :: declinp1   ! declination angle (radians) for caldaym1
+
+
+!   New arguments BJG 3/28/19
+    logical,  intent(in)   ::     do_meganfile
+!   End modification
+
+
+
+
+    real(r8) :: organicxy(maxpatch)
+    real(r8) :: efisopxy(6)
+!add ilx,jlx
+    integer  :: ilx,jlx
+    integer  :: begc,endc
+    integer   :: snl(maxpatch)
+    real(r8)  :: snowdp(maxpatch)
+!    real(r8)  :: snowage(maxpatch)
+    real(r8)  :: h2osno(maxpatch)
+    real(r8)  :: t_grnd(maxpatch)
+    real(r8)  :: t_veg(maxpatch)
+    real(r8)  :: h2ocan(maxpatch)
+    real(r8)  :: h2ocan_col(maxpatch)
+
+#ifdef CN
+    real(r8)  :: tlai(maxpatch)
+    real(r8)  :: tsai(maxpatch)
+    real(r8)  :: htop(maxpatch)
+    real(r8)  :: hbot(maxpatch)
+#endif
+
+
+    real(r8)  :: t_lake(maxpatch,nlevlak)
+    real(r8)  :: t_soisno(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: h2osoi_liq(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: h2osoi_ice(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: dzclm(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: zclm(maxpatch,-nlevsno+1:nlevgrnd)
+    real(r8)  :: ziclm(maxpatch,-nlevsno:nlevgrnd)
+    real(r8)  :: h2osoi_vol(maxpatch,nlevgrnd)
+    real(r8)  :: snw_rdsx(maxpatch,-nlevsno+1:0)
+
+    real(r8)  :: xlon
+    real(r8)  :: xlat
+    real(r8)  :: areaxy
+
+    integer :: nlcat
+    real(r8)  :: landusef1d(nlcat)
+
+    logical  :: input_pft_flag
+    integer :: num_pft_input 
+    real(r8)  :: pct_pft1d(num_pft_input)
+
+    integer   :: iveg
+    integer   :: isl
+    integer   :: lndmsk
+
+
+
+    real(r8) :: t_ref2m(maxpatch)
+
+#ifdef CN
+!CN CROP vars
+!CROP&CN buf variables
+  integer,dimension(maxpatch) :: croplive_buf
+   real(r8), dimension(maxpatch)  ::  &
+                 htmx_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+                ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
+                ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
+                ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
+                ,dayl_buf,annavg_t2m_buf,tempavg_t2m_buf,tempsum_potential_gpp_buf          &
+                ,annsum_potential_gpp_buf,tempmax_retransn_buf,annmax_retransn_buf      &
+                ,prev_leafc_to_litter_buf,prev_frootc_to_litter_buf,tempsum_npp_buf     &
+                ,annsum_npp_buf,leafc_buf,leafc_storage_buf,leafc_xfer_buf,frootc_buf           &
+                ,frootc_storage_buf,frootc_xfer_buf,livestemc_buf,livestemc_storage_buf     &
+                ,livestemc_xfer_buf,deadstemc_buf,deadstemc_storage_buf,deadstemc_xfer_buf  &
+                ,livecrootc_buf,livecrootc_storage_buf,livecrootc_xfer_buf,deadcrootc_buf   &
+                ,deadcrootc_storage_buf,deadcrootc_xfer_buf,cpool_buf,pft_ctrunc_buf        &
+                ,leafn_buf,leafn_storage_buf,leafn_xfer_buf,frootn_buf,frootn_storage_buf       &
+                ,frootn_xfer_buf,livestemn_buf,livestemn_storage_buf,livestemn_xfer_buf     &
+                ,deadstemn_buf,deadstemn_storage_buf,deadstemn_xfer_buf,livecrootn_buf      &
+                ,livecrootn_storage_buf,livecrootn_xfer_buf,deadcrootn_buf              &
+                ,deadcrootn_storage_buf,deadcrootn_xfer_buf,npool_buf,pft_ntrunc_buf        &
+                ,gresp_storage_buf,gresp_xfer_buf,xsmrpool_buf,annsum_counter_buf           &
+                ,cannsum_npp_buf,cannavg_t2m_buf,wf_buf,me_buf,mean_fire_prob_buf,cwdc_buf,litr1c_buf   &
+                ,litr2c_buf,litr3c_buf,soil1c_buf,soil2c_buf,soil3c_buf,soil4c_buf,seedc_buf,col_ctrunc_buf &
+                ,prod10c_buf,prod100c_buf,cwdn_buf,litr1n_buf,litr2n_buf,litr3n_buf,soil1n_buf,soil2n_buf   &
+                ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf &
+                ,totlitc_buf,dwt_seedc_to_leaf_buf,dwt_seedc_to_deadstem_buf,dwt_conv_cflux_buf &
+                ,dwt_prod10c_gain_buf,dwt_prod100c_gain_buf,prod100c_loss_buf,dwt_frootc_to_litr1c_buf &
+                ,dwt_frootc_to_litr2c_buf,dwt_frootc_to_litr3c_buf,dwt_livecrootc_to_cwdc_buf &
+                ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
+                ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
+                ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf
+#endif
+
+
+
+    call CLMDebug('Now in Initialize. Next call varsur_alloc.')
+
+!-----------------------------------------------------------------------
+           longxy(1) = xlon
+           latixy(1) = xlat
+           area(1)   = areaxy
+!-----------------------------------------------------------------------
+
+    ! Allocate surface grid dynamic memory
+
+     call varsur_alloc ()   !subroution in CLM3.0, but not in CLM3.5&CLM4.0--Yaqiong Lu
+
+     ! Read list of PFTs and their corresponding parameter values
+     ! This is independent of the model resolution
+
+     call CLMDebug('call pftconrd')
+     call pftconrd ()    
+
+     ! If no surface dataset name is specified then make surface dataset
+     ! from original data sources. Always read surface boundary data in.
+     ! This insures that bit for bit results are obtained for a run where a
+     ! surface dataset file is generated and a run where a surface dataset
+     ! is specified and read in. Set up vegetation type [veg] and weight [wt]
+     ! arrays for [maxpatch] subgrid patches.
+ 
+     call var_par()
+
+!   Added new argument BJG 3/28/19
+     call CLMDebug('call surfrd')
+     call surfrd (organicxy,efisopxy,gtixy,ilx,jlx, iveg, isl, lndmsk,nlcat,landusef1d,num_pft_input,pct_pft1d,input_pft_flag,do_meganfile)
+!   End modification
+
+    ! Initialize clump and processor decomposition
+    call CLMDebug('call initDecomp')
+    call initDecomp()
+! Is this is actually necessary?  Probably only for multiple gridcells. Or maybenot...
+
+    ! Allocate memory and initialize values of clmtype data structures
+    call CLMDebug('initClmtype')
+    call initClmtype()
+
+    ! Build hierarchy and topological info for derived typees
+
+    call CLMDebug('call initGridCells')
+    call initGridCells()
+
+    call CLMDebug('call allocFilters')
+    ! Initialize filters
+    call allocFilters()
+    call CLMDebug('call setFilters')
+    call setFilters()
+
+#if (defined CN)
+   call CNZeroFluxes_dwt()               !CNSetValueMod.F
+   call CNZeroFluxes(filter%num_soilc, filter%soilc, filter%num_soilp, filter%soilp)
+#endif
+
+
+    ! Initialize time constant variables
+
+    call CLMDebug('call iniTimeConst')
+    call iniTimeConst()
+
+
+    call mkarbinit(snl     ,snowdp, dzclm  ,zclm      ,&
+                  ziclm    ,h2osno ,h2osoi_liq,h2osoi_ice,t_grnd,&
+                  t_soisno ,t_lake ,t_veg    ,h2ocan ,h2ocan_col,&
+                  h2osoi_vol,t_ref2m ,snw_rdsx &
+#ifdef CN
+                 ,tlai,tsai,htop,hbot &
+#endif                 
+                 )
+
+!    call iniTimeVar(snl      ,snowdp  ,dzclm     ,zclm      ,&
+!                   ziclm     ,h2osno  ,h2osoi_liq,h2osoi_ice,t_grnd    ,&
+!                   t_soisno  ,t_lake  ,t_veg     ,h2ocan    ,h2ocan_col,&
+!                   h2osoi_vol,declin,t_ref2m)
+
+
+     ! Initialize Ecosystem Dynamics
+!In CLM4, DGVM option changed to CNDV option--Yaqiong Lu
+!#if (defined DGVM)
+#if (defined CNDV)
+ call CNDVEcosystemDynini(t_mo_min   ,annpsn     ,annpsnpot  ,fmicr     ,&
+                          bm_inc     ,afmicr     ,t10min     ,tmomin20  ,&
+                          agdd20     ,fpcgrid    ,lai_ind    ,crownarea ,&
+                          dphen      ,leafon     ,leafof     ,firelength,&
+                          litterag   ,litterbg   ,cpool_fast ,cpool_slow,&
+                          k_fast_ave ,k_slow_ave ,nind       ,lm_ind    ,&
+                          sm_ind     ,hm_ind     ,rm_ind     ,present   ,&
+                          htop       ,tsai       ,litter_decom_ave)
+!New in CLM4 --ylu 01/21/2011
+#elif (!defined CN)
+    call CLMDebug('init_ecosys') !in CLM4,CLMDebug() subroution changed to t_startf()&t_stopf()
+    call EcosystemDynini()       !but for coupled version, we still use CLMDebug()
+#endif
+
+
+#if (defined CN)
+    call CLMDebug('init_cninitim')
+!    if (nsrest == 0) then  !only call for if not restart run.
+       call CNiniTimeVar(htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+                ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
+                ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
+                ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
+                ,dayl_buf,annavg_t2m_buf,tempavg_t2m_buf,tempsum_potential_gpp_buf          &
+                ,annsum_potential_gpp_buf,tempmax_retransn_buf,annmax_retransn_buf      &
+                ,prev_leafc_to_litter_buf,prev_frootc_to_litter_buf,tempsum_npp_buf     &
+                ,annsum_npp_buf,leafc_buf,leafc_storage_buf,leafc_xfer_buf,frootc_buf           &
+                ,frootc_storage_buf,frootc_xfer_buf,livestemc_buf,livestemc_storage_buf     &
+                ,livestemc_xfer_buf,deadstemc_buf,deadstemc_storage_buf,deadstemc_xfer_buf  &
+                ,livecrootc_buf,livecrootc_storage_buf,livecrootc_xfer_buf,deadcrootc_buf   &
+                ,deadcrootc_storage_buf,deadcrootc_xfer_buf,cpool_buf,pft_ctrunc_buf        &
+                ,leafn_buf,leafn_storage_buf,leafn_xfer_buf,frootn_buf,frootn_storage_buf       &
+                ,frootn_xfer_buf,livestemn_buf,livestemn_storage_buf,livestemn_xfer_buf     &
+                ,deadstemn_buf,deadstemn_storage_buf,deadstemn_xfer_buf,livecrootn_buf      &
+                ,livecrootn_storage_buf,livecrootn_xfer_buf,deadcrootn_buf              &
+                ,deadcrootn_storage_buf,deadcrootn_xfer_buf,npool_buf,pft_ntrunc_buf        &
+                ,gresp_storage_buf,gresp_xfer_buf,xsmrpool_buf,annsum_counter_buf           &
+                ,cannsum_npp_buf,cannavg_t2m_buf,wf_buf,me_buf,mean_fire_prob_buf,cwdc_buf,litr1c_buf   &
+                ,litr2c_buf,litr3c_buf,soil1c_buf,soil2c_buf,soil3c_buf,soil4c_buf,seedc_buf,col_ctrunc_buf &
+                ,prod10c_buf,prod100c_buf,cwdn_buf,litr1n_buf,litr2n_buf,litr3n_buf,soil1n_buf,soil2n_buf   &
+                ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf &
+                ,totlitc_buf,dwt_seedc_to_leaf_buf,dwt_seedc_to_deadstem_buf,dwt_conv_cflux_buf &
+                ,dwt_prod10c_gain_buf,dwt_prod100c_gain_buf,prod100c_loss_buf,dwt_frootc_to_litr1c_buf &
+                ,dwt_frootc_to_litr2c_buf,dwt_frootc_to_litr3c_buf,dwt_livecrootc_to_cwdc_buf &
+                ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
+                ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
+                ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf &
+           )
+!    end if
+#endif
+
+!#if (defined CROP)
+!    call initialcrop()  !removed,already added to CNiniTimeVar.F
+!#endif
+
+    ! Initialize dust emissions model  
+    
+#if (defined DUST) 
+    call CLMDebug('init_dust')
+    call Dustini()
+!    call t_stopf('init_dust')
+#endif
+
+
+     call aerdepini()
+
+
+!#else
+! call CLMDebug('EcosystemDynini')
+! call EcosystemDynini()
+!#endif
+
+
+    ! Initialize accumulator fields to be time accumulated for various purposes.
+!    call CLMDebug('call  initAccFlds')
+!    call  initAccFlds() 
+
+    
+    ! ------------------------------------------------------------------------
+    ! Initialization of dynamic pft weights
+    ! ------------------------------------------------------------------------
+
+    ! Determine correct pft weights (interpolate pftdyn dataset if initial run)
+    ! Otherwise these are read in for a restart run
+    
+!#if (defined CNDV)
+!    call pftwt_init()
+!#else
+!    if (fpftdyn /= ' ') then
+!       call CLMDebug('init_pftdyn')
+!       call pftdyn_init()
+!       call pftdyn_interp( )
+!    end if
+!#endif
+!!!
+
+!CLM4 -ylu 09 Feb 2011 The coupling model will read the NDEP_year at same level as LAI,SAI
+!therefor remove this part and even ndepFileMod.F
+   ! ------------------------------------------------------------------------
+    ! Initialize dynamic nitrogen deposition
+    ! ------------------------------------------------------------------------
+
+!    if (fndepdyn /= ' ') then
+!       call CLMDebug('init_ndepdyn')
+!       call ndepdyn_init()
+!       call ndepdyn_interp()
+!    end if
+!!!!!
+
+   ! ------------------------------------------------------------------------
+    ! Initialization for Urban or CASA options--add here is needed.
+    ! ------------------------------------------------------------------------
+
+    call CLMDebug('call iniTimeVar')
+    call iniTimeVar(snl      ,snowdp  ,dzclm     ,zclm      ,&
+                   ziclm     ,h2osno  ,h2osoi_liq,h2osoi_ice,t_grnd    ,&
+                   t_soisno  ,t_lake  ,t_veg     ,h2ocan    ,h2ocan_col,&
+                   h2osoi_vol,declin,t_ref2m,xlat,xlon)
+
+  
+
+    ! Initialize clmtype variables that are obtained from accumulated fields.
+    ! This routine is called in an initial run at nstep=0 for cam and csm mode
+    ! and at nstep=1 for offline mode. This routine is also always called for a
+    ! restart run and must therefore be called after the restart file is read in
+!    call CLMDebug('call initAccClmtype')
+!    call initAccClmtype()
+
+
+
+    ! Deallocate surface grid dynamic memory
+
+!    call CLMDebug('entering varsurdealloc')
+!    call varsur_dealloc()
+!    call CLMDebug('done varsurdealloc')
+    ! End initialization
+
+!    call CLMDebug('call initSurfalb')
+!    call initSurfalb( calday, declin, declinp1)
+
+  end subroutine initialize
+
+end module initializeMod
+
+  module clmMod
+
+  private
+  public :: clm
+
+  contains
+
+    subroutine clm(forc_txy        ,forc_uxy           ,forc_vxy      &
+                  ,forc_qxy        ,zgcmxy             ,precxy        &
+                  ,flwdsxy         ,forc_solsxy        ,forc_sollxy   &
+                  ,forc_solsdxy    ,forc_solldxy       ,forc_pbotxy   &
+                  ,forc_psrfxy     ,iveg               ,isl           &
+                  ,lndmsk          ,xlat               ,xlon          &
+                  ,areaxy          ,dt1                ,yr            &
+                  ,mnth            ,dy                 ,nsec          &
+                  ,cxday           ,yr1                ,mnp1          &
+                  ,dyp1            ,nsec1              ,cxday1        &
+                  ,mbdate          ,qsfxy              ,qdnxy         &
+                  ,snl             ,snowdp             ,snw_rdsxy     &
+                  ,dzclm           ,zclm               ,ziclm         &
+                  ,h2osno          ,h2osoi_liq         ,h2osoi_ice    &
+                  ,t_grnd          ,t_soisno           ,t_lake        &
+                  ,t_veg           ,h2ocan             ,h2ocan_col    &
+                  ,h2osoi_vol      ,wtc                ,wtp           &
+                  ,numc            ,nump               ,rho           &
+                  ,t_ref2m         ,albxy        , tsxy,  trefxy      &
+                  ,shxy            ,lhxy               ,nstp          &
+                  ,inest           ,ilx                ,jlx           &
+                  ,soiflx          ,sabv               ,sabg          &
+                  ,lwupxy          ,znt0               ,q_ref2m       &
+                  ,rhoxy                                              &
+                  ,nlcat,landusef1d,num_pft_input,pct_pft1d,input_pft_flag    &
+                  ,ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid     &
+                  ,Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid     &
+                  ,SWUPsubgrid ,LHsoi,LHveg,LHtran,organicxy,efisopxy,gtixy &
+                  ,alswnirdir  ,alswnirdif, alswvisdir,alswvisdif     &
+                  ,t_veg24, t_veg240, fsun24, fsun240                 &
+                  ,fsd24, fsd240, fsi24, fsi240, laip                 &
+! New argument BJG 3/28/19         ,mbio_emis   ,do_bioe, id                           &
+                  ,mbio_emis   ,do_bioe, do_meganfile, id           &
+#ifdef CN
+!CROP and CN restart and outputs
+                ,forc_ndepxy,tlaixy,tsaixy,htopxy,hbotxy  &  
+                ,htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+                ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
+                ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
+                ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
+                ,dayl_buf,annavg_t2m_buf,tempavg_t2m_buf,tempsum_potential_gpp_buf          &
+                ,annsum_potential_gpp_buf,tempmax_retransn_buf,annmax_retransn_buf      &
+                ,prev_leafc_to_litter_buf,prev_frootc_to_litter_buf,tempsum_npp_buf     &
+                ,annsum_npp_buf,leafc_buf,leafc_storage_buf,leafc_xfer_buf,frootc_buf           &
+                ,frootc_storage_buf,frootc_xfer_buf,livestemc_buf,livestemc_storage_buf     &
+                ,livestemc_xfer_buf,deadstemc_buf,deadstemc_storage_buf,deadstemc_xfer_buf  &
+                ,livecrootc_buf,livecrootc_storage_buf,livecrootc_xfer_buf,deadcrootc_buf   &
+                ,deadcrootc_storage_buf,deadcrootc_xfer_buf,cpool_buf,pft_ctrunc_buf        &
+                ,leafn_buf,leafn_storage_buf,leafn_xfer_buf,frootn_buf,frootn_storage_buf       &
+                ,frootn_xfer_buf,livestemn_buf,livestemn_storage_buf,livestemn_xfer_buf     &
+                ,deadstemn_buf,deadstemn_storage_buf,deadstemn_xfer_buf,livecrootn_buf      &
+                ,livecrootn_storage_buf,livecrootn_xfer_buf,deadcrootn_buf              &
+                ,deadcrootn_storage_buf,deadcrootn_xfer_buf,npool_buf,pft_ntrunc_buf        &
+                ,gresp_storage_buf,gresp_xfer_buf,xsmrpool_buf,annsum_counter_buf           &
+                ,cannsum_npp_buf,cannavg_t2m_buf,wf_buf,me_buf,mean_fire_prob_buf,cwdc_buf,litr1c_buf   &
+                ,litr2c_buf,litr3c_buf,soil1c_buf,soil2c_buf,soil3c_buf,soil4c_buf,seedc_buf,col_ctrunc_buf &
+                ,prod10c_buf,prod100c_buf,cwdn_buf,litr1n_buf,litr2n_buf,litr3n_buf,soil1n_buf,soil2n_buf   &
+                ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf &
+                ,totlitc_buf,dwt_seedc_to_leaf_buf,dwt_seedc_to_deadstem_buf,dwt_conv_cflux_buf &
+                ,dwt_prod10c_gain_buf,dwt_prod100c_gain_buf,prod100c_loss_buf,dwt_frootc_to_litr1c_buf &
+                ,dwt_frootc_to_litr2c_buf,dwt_frootc_to_litr3c_buf,dwt_livecrootc_to_cwdc_buf &
+                ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
+                ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
+                ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf &
+#endif         
+                                                            )
+!-----------------------------------------------------------------------
+!
+! !USES:
+  use shr_kind_mod , only : r8 => shr_kind_r8
+  use clm_varpar, only : nlevgrnd,nlevsoi,numrad,maxpatch,&
+                         nlevsno,nlevlak,lsmlon,lsmlat
+  use initializeMod
+  use nanMod
+  use clmtype
+  use clm_varcon  , only : rair, cpair, po2, pco2, tcrit,tfrz,pstd,sb,cday
+  use globals
+  use decompMod   , only : get_proc_bounds
+  use clmtypeInitMod
+  use shr_orb_mod
+  use shr_const_mod, only : SHR_CONST_PI
+  use filterMod, only : filters_dealloc
+  use clm_varsur      , only :varsur_dealloc
+
+
+!
+! !PUBLIC TYPES:
+  implicit none
+  save
+!
+! !REVISION HISTORY:
+! Created by Gordon Bonan, Sam Levis and Mariana Vertenstein
+!
+!EOP
+! atmospheric forcing variables on land model grid
+!
+  real(r8) :: gtixy
+  real(r8) :: forc_txy          !atm bottom level temperature (Kelvin)
+  real(r8) :: forc_uxy          !atm bottom level zonal wind (m/s)
+  real(r8) :: forc_vxy          !atm bottom level meridional wind (m/s)
+  real(r8) :: forc_qxy          !atm bottom level specific humidity (kg/kg)
+  real(r8) :: zgcmxy            !atm bottom level height above surface (m)
+  real(r8) :: precxy            !precipitation rate (mm H2O/s)
+  real(r8) :: flwdsxy           !downward longwave rad onto surface (W/m**2)
+  real(r8) :: forc_solsxy       !vis direct beam solar rad onto srf (W/m**2)
+  real(r8) :: forc_sollxy       !nir direct beam solar rad onto srf (W/m**2)
+  real(r8) :: forc_solsdxy      !vis diffuse solar rad onto srf (W/m**2)
+  real(r8) :: forc_solldxy      !nir diffuse solar rad onto srf(W/m**2)
+  real(r8) :: forc_pbotxy       !atm bottom level pressure (Pa)
+  real(r8) :: forc_psrfxy       !atm surface pressure (Pa)
+!ADD_NEW_VAR
+  real(r8) :: forc_ndepxy       !nitrogen deposition rate (gN/m2/s)
+!!!
+ real(r8) :: alswnirdir  ,alswnirdif, alswvisdir,alswvisdif
+ real(r8) :: swdall
+
+! atmosphere grid to land model surface grid mapping for each land grid cell:
+!=======================================================================
+
+! !DESCRIPTION:
+! This code reads in atmospheric fields from an input file and generates
+! the required atmospheric forcing. These data files have [atmmin] minute
+! average data for each month. Input data files are named in month-year
+! format (e.g., 09-0001 contains 240 3-hour time slices of data, 30*8, for
+! September of year one). The model will cycle through however many full
+! years of data are available [pyr]. At least one full year of data is
+! necessary for cycling. The model may start on any base date, as long as
+! this date corresponds to an existing data file. A run need not be an
+! exact multiple of a year.
+!
+! ============================
+! Possible atmospheric fields:
+! ============================
+! Name     Description                              Required/Optional
+! -----------------------------------------------------------------------------
+! TBOT     temperature (K)                          Required
+! WIND     wind:sqrt(u**2+v**2) (m/s)               Required
+! QBOT     specific humidity (kg/kg)                Required
+! Tdew     dewpoint temperature (K)                 Alternative to Q
+! RH       relative humidity (percent)              Alternative to Q
+! ZBOT     reference height (m)                     optional
+! PSRF     surface pressure (Pa)                    optional
+! FSDS     total incident solar radiation (W/m**2)  Required
+! FSDSdir  direct incident solar radiation (W/m**2) optional (replaces FSDS)
+! FSDSdif  diffuse incident solar rad (W/m**2)      optional (replaces FSDS)
+! FLDS     incident longwave radiation (W/m**2)     optional
+! PRECTmms total precipitation (mm H2O / sec)       Required
+! PRECCmms convective precipitation (mm H2O / sec)  optional (replaces PRECT)
+! PRECLmms large-scale precipitation (mm H2O / sec) optional (replaces PRECT)
+!
+! LOCAL VARIABLES:
+    integer :: i,j,k,g,p,c  !indices
+    integer :: begp, endp   ! per-proc beginning and ending pft indices
+    integer :: begc, endc   ! per-proc beginning and ending column indices
+    integer :: begl, endl   ! per-proc beginning and ending landunit indices
+    integer :: begg, endg   ! per-proc gridcell ending gridcell indices
+    type(gridcell_type), pointer :: gptr  ! pointer to gridcell derived subtype
+!------------------------------------------------------------------------
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#if (defined DGVM)
+! The following vraiables for MM5 and restart run
+    real(r8):: t_mo_min(maxpatch)            !annual min of t_mo (Kelvin)
+    real(r8):: annpsn(maxpatch)              !annual photosynthesis (umol CO2 /m**2)
+    real(r8):: annpsnpot(maxpatch)           !annual potential photosynthesis (same units)
+    real(r8):: fmicr(maxpatch)               !microbial respiration (umol CO2 /m**2 /s)
+    real(r8):: bm_inc(maxpatch)              !biomass increment
+    real(r8):: afmicr(maxpatch)              !microbial respiration (Rh) for each naturally-vegetated pft
+    real(r8):: t10min(maxpatch)              !annual minimum of 10-day running mean (K)
+    real(r8):: tmomin20(maxpatch)            !20-yr running mean of tmomin
+    real(r8):: agdd20(maxpatch)              !20-yr running mean of agdd
+    real(r8):: fpcgrid(maxpatch)             !foliar projective cover on gridcell (fraction)
+    real(r8):: lai_ind(maxpatch)             !LAI per individual
+    real(r8):: crownarea(maxpatch)           !area that each individual tree takes up (m^2)
+    real(r8):: dphen(maxpatch)               !phenology [0 to 1]
+    real(r8):: leafon(maxpatch)              !leafon days
+    real(r8):: leafof(maxpatch)              !leafoff days
+    real(r8):: firelength(maxpatch)          !fire season in days
+    real(r8):: litterag(maxpatch)            !above ground litter
+    real(r8):: litterbg(maxpatch)            !below ground litter
+    real(r8):: cpool_fast(maxpatch)          !fast carbon pool
+    real(r8):: cpool_slow(maxpatch)          !slow carbon pool
+    real(r8):: k_fast_ave(maxpatch)          !decomposition rate
+    real(r8):: k_slow_ave(maxpatch)          !decomposition rate
+    real(r8):: litter_decom_ave(maxpatch)    !decomposition rate
+    real(r8):: nind(maxpatch)                !number of individuals (#/m**2)
+    real(r8):: lm_ind(maxpatch)              !individual leaf mass
+    real(r8):: sm_ind(maxpatch)              !individual sapwood mass
+    real(r8):: hm_ind(maxpatch)              !individual heartwood mass
+    real(r8):: rm_ind(maxpatch)              !individual root mass
+    logical :: present(maxpatch)             !whether PFT present in patch
+
+    real(r8) :: tda(maxpatch)
+    real(r8) :: t10(maxpatch)
+    real(r8) :: fnpsn10(maxpatch)
+    real(r8) :: prec365(maxpatch)
+    real(r8) :: agdd0(maxpatch)
+    real(r8) :: agdd5(maxpatch)
+    real(r8) :: agddtw(maxpatch)
+    real(r8) :: agdd(maxpatch)
+#endif
+
+  integer   :: snl(maxpatch)
+  real(r8)  :: snowdp(maxpatch)
+!  real(r8)  :: snowage(maxpatch)
+  real(r8)  :: h2osno(maxpatch)
+  real(r8)  :: t_grnd(maxpatch)
+  real(r8)  :: t_veg(maxpatch)
+  real(r8)  :: h2ocan(maxpatch)
+  real(r8)  :: h2ocan_col(maxpatch)
+  real(r8)  :: wtc(maxpatch)
+  real(r8)  :: wtp(maxpatch)
+  integer   :: numc,nump
+  real(r8)  :: htop(maxpatch)
+  real(r8)  :: tsai(maxpatch)
+  real(r8), intent(in)  :: rho
+
+    real(r8) :: efisopxy(6)
+
+
+  real(r8)  :: t_lake(maxpatch,nlevlak)
+  real(r8),dimension(maxpatch,-nlevsno+1:nlevgrnd) :: t_soisno
+  real(r8)  :: h2osoi_liq(maxpatch,-nlevsno+1:nlevgrnd)
+  real(r8)  :: h2osoi_ice(maxpatch,-nlevsno+1:nlevgrnd)
+  real(r8)  :: dzclm(maxpatch,-nlevsno+1:nlevgrnd)
+  real(r8)  :: zclm(maxpatch,-nlevsno+1:nlevgrnd)
+  real(r8)  :: ziclm(maxpatch,-nlevsno:nlevgrnd)
+  real(r8)  :: h2osoi_vol(maxpatch,nlevgrnd)
+  real(r8)  :: snw_rdsxy(maxpatch,-nlevsno+1:0)
+  real(r8)  :: t_ref2m(maxpatch)
+!New PFT-level output variables
+  real(r8), dimension(1:maxpatch), intent(out) ::  ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid,LHsoi,LHveg,LHtran
+  real(r8)  :: znt(maxpatch),organicxy(maxpatch)
+  real(r8)  :: q_ref2m(maxpatch)
+  real(r8), intent(inout) :: t_veg24(:), t_veg240(:), fsun24(:), fsun240(:)
+  real(r8), intent(inout) :: fsd24(:), fsd240(:), fsi24(:), fsi240(:), laip(:)
+
+#ifdef CN
+   real(r8),dimension(maxpatch) :: tlaixy,tsaixy,htopxy,hbotxy
+
+!CROP&CN buf variables
+  integer,dimension(maxpatch) :: croplive_buf
+   real(r8), dimension(maxpatch)  ::  &
+                 htmx_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+                ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
+                ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
+                ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
+                ,dayl_buf,annavg_t2m_buf,tempavg_t2m_buf,tempsum_potential_gpp_buf          &
+                ,annsum_potential_gpp_buf,tempmax_retransn_buf,annmax_retransn_buf      &
+                ,prev_leafc_to_litter_buf,prev_frootc_to_litter_buf,tempsum_npp_buf     &
+                ,annsum_npp_buf,leafc_buf,leafc_storage_buf,leafc_xfer_buf,frootc_buf           &
+                ,frootc_storage_buf,frootc_xfer_buf,livestemc_buf,livestemc_storage_buf     &
+                ,livestemc_xfer_buf,deadstemc_buf,deadstemc_storage_buf,deadstemc_xfer_buf  &
+                ,livecrootc_buf,livecrootc_storage_buf,livecrootc_xfer_buf,deadcrootc_buf   &
+                ,deadcrootc_storage_buf,deadcrootc_xfer_buf,cpool_buf,pft_ctrunc_buf        &
+                ,leafn_buf,leafn_storage_buf,leafn_xfer_buf,frootn_buf,frootn_storage_buf       &
+                ,frootn_xfer_buf,livestemn_buf,livestemn_storage_buf,livestemn_xfer_buf     &
+                ,deadstemn_buf,deadstemn_storage_buf,deadstemn_xfer_buf,livecrootn_buf      &
+                ,livecrootn_storage_buf,livecrootn_xfer_buf,deadcrootn_buf              &
+                ,deadcrootn_storage_buf,deadcrootn_xfer_buf,npool_buf,pft_ntrunc_buf        &
+                ,gresp_storage_buf,gresp_xfer_buf,xsmrpool_buf,annsum_counter_buf           &
+                ,cannsum_npp_buf,cannavg_t2m_buf,wf_buf,me_buf,mean_fire_prob_buf,cwdc_buf,litr1c_buf   &
+                ,litr2c_buf,litr3c_buf,soil1c_buf,soil2c_buf,soil3c_buf,soil4c_buf,seedc_buf,col_ctrunc_buf &
+                ,prod10c_buf,prod100c_buf,cwdn_buf,litr1n_buf,litr2n_buf,litr3n_buf,soil1n_buf,soil2n_buf   &
+                ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf &
+                ,totlitc_buf,dwt_seedc_to_leaf_buf,dwt_seedc_to_deadstem_buf,dwt_conv_cflux_buf &
+                ,dwt_prod10c_gain_buf,dwt_prod100c_gain_buf,prod100c_loss_buf,dwt_frootc_to_litr1c_buf &
+                ,dwt_frootc_to_litr2c_buf,dwt_frootc_to_litr3c_buf,dwt_livecrootc_to_cwdc_buf &
+                ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
+                ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
+                ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf 
+              
+#endif 
+
+   integer :: nlcat
+   real(r8) :: landusef1d(nlcat)   !landusef -czhao 
+   logical  ::  input_pft_flag
+   integer :: num_pft_input
+   real(r8) :: pct_pft1d(num_pft_input)   !pft -czhao 
+
+  logical doalb     !true if surface albedo calculation time step
+
+  real(r8)  :: albxy,albixy(numrad),albdxy(numrad) &
+!For new output variables
+              ,albedotemp(maxpatch, numrad)
+  real(r8)  :: trefxy,tsxy
+  real(r8)  :: shxy
+  real(r8)  :: lhxy
+  real(r8)  :: lwupxy
+  real(r8)  :: qsfxy
+  real(r8)  :: qdnxy
+  real(r8)  :: soiflx
+  real(r8)  :: sabv
+  real(r8)  :: sabg
+  real(r8)  :: znt0
+  real(r8),intent(out)  :: rhoxy
+  real(r8),intent(inout)  :: mbio_emis(:)
+  logical, intent(in)   :: do_bioe
+!  New flag added   BJG 3/28/19
+  logical, intent(in)   :: do_meganfile
+  integer   :: nstp
+!ylu add albedo coefficients
+ real(r8),dimension(1:numrad) :: cof_dir,cof_dif  !1=visible, 2=nir
+
+
+  real(r8) :: areaxy           !gridcell area (km^2)
+  real(r8) :: dt1
+  real(r8) :: cxday
+  real(r8) :: cxday1
+  real(r8) :: xlat
+  real(r8) :: xlon
+  real(r8) :: acc_per24
+  real(r8) :: acc_per240
+
+  integer, intent(in)  :: id
+  integer  :: period
+  integer  :: iveg
+  integer  :: isl
+  integer  :: lndmsk
+  integer  :: yr
+  integer  :: mnth
+  integer  :: dy
+  integer  :: nsec
+  integer  :: yr1
+  integer  :: mnp1
+  integer  :: dyp1
+  integer  :: nsec1
+  integer  :: mbdate
+  integer  :: inest
+  integer  :: ilx,jlx
+
+  real(r8)  :: t2m,dsq,dsqmin
+  character*256 :: msg
+!ylu add for calculate orbit parameters and decline
+   real(r8) :: eccen     ! orbital eccentricity
+   real(r8) :: obliq     ! obliquity in degrees
+   real(r8) :: mvelp     ! moving vernal equinox long
+   integer  :: orb_iyear_AD  ! Year to calculate orbit for
+   real(r8) :: obliqr    ! Earths obliquity in rad
+   real(r8) :: lambm0    ! Mean long of perihelion at
+                                                   ! vernal equinox (radians)
+   real(r8) :: mvelpp    ! moving vernal equinox long
+                                                   ! of perihelion plus pi (rad)
+   real(r8) :: declinp1              ! solar declination angle in radians for nstep+1
+   real(r8) :: declin      ! solar declination angle in radians for nstep
+   real(r8) :: eccf        ! earth orbit eccentricity factor
+
+   logical, external :: wrf_dm_on_monitor
+
+
+!------------------------------------------------------------------------
+
+       call CLMDebug('Starting clm3.F')
+       msg= ''
+       write(msg, *) 'At i,j = ', ilx, ', ', jlx, '.'
+       call CLMDebug(msg)
+       msg = ''
+       write(msg, *) 't_grnd(1) = ', t_grnd(1), '.' 
+       call CLMDebug(msg)
+
+! setup the  step, monthn and day
+       call clmtype_mod
+       call globals_mod
+       dtime    = dt1
+       dt       = dt1
+       year     = yr
+       month    = mnth
+       day      = dy
+       secs     = nsec
+       calday   = cxday
+
+       yrp1     = yr1
+       monp1    = mnp1
+       dayp1    = dyp1
+       secp1    = nsec1
+       caldayp1 = cxday1
+
+       nbdate   = mbdate
+       nstep    = nstp
+
+       if(mod(year,4)==0) then
+          day_per_year = 366
+       else
+          day_per_year = 365
+       end if     
+
+       orb_iyear_AD = 1990    !according to buildnml of CCSM_crop
+!------------------------------------------------------------------------
+!set albedo coefficients -- ylu
+!------------------------------------------------------------------------ 
+
+     swdall = forc_sollxy+forc_solsxy+forc_solsdxy+forc_solldxy
+    if(swdall /= 0._r8) then   ! if daytime
+      cof_dir(2) = forc_sollxy/swdall
+      cof_dif(2) = forc_solldxy/swdall
+      cof_dir(1) = forc_solsxy/swdall
+      cof_dif(1) = forc_solsdxy/swdall
+    else    !if night
+      cof_dir(2) = 0.35_r8    !it doesn't matter what values for night, albedo equal to 1 anyway in CLM.
+      cof_dif(2) = 0.15_r8    !here I use the value from old version of WRF-CLM  --ylu
+      cof_dir(1) = 0.35_r8
+      cof_dif(1) = 0.15_r8
+   end if
+!-------------------------------------------------
+!Yaqiong Lu 03/07/2011
+    call CLMDebug('Start shr_orb_params')   
+     call shr_orb_params(orb_iyear_AD, eccen, obliq, mvelp, &             !get orbit parameres
+                           obliqr, lambm0, mvelpp) 
+     call shr_orb_decl(calday, eccen, mvelpp, lambm0, obliqr, declin, eccf ) !get decline for current step
+     call shr_orb_decl(caldayp1, eccen, mvelpp, lambm0, obliqr, declinp1, eccf )  !get decline for next step
+    call CLMDebug('End shr_orb_params & decl')    
+    call CLMDebug('Start initialize()') 
+    call wrf_debug( 300,'clm: B4 initialize' )
+
+   !  write(6,*) 'in clm3, t_soisno=',t_soisno
+    call  initialize(snl    ,snowdp  ,dzclm     ,zclm         &
+                  ,ziclm       ,h2osno  ,h2osoi_liq,h2osoi_ice,t_grnd      &
+                  ,t_soisno    ,t_lake  ,t_veg     ,h2ocan    ,h2ocan_col  &
+                  ,h2osoi_vol  ,xlat    ,xlon      ,areaxy    ,nlcat,landusef1d,num_pft_input,pct_pft1d,input_pft_flag,iveg        &
+                  ,isl         ,lndmsk  ,id   &
+                  ,t_ref2m ,ilx,jlx,calday,declin,declinp1&
+!  New argument BJG 3/28/19               ,organicxy, efisopxy,gtixy, snw_rdsxy   &
+                  ,organicxy, efisopxy,gtixy, snw_rdsxy, do_meganfile   &
+#ifdef CN
+                ,tlaixy   ,tsaixy  ,htopxy    ,hbotxy                & 
+                ,htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+                ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
+                ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
+                ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
+                ,dayl_buf,annavg_t2m_buf,tempavg_t2m_buf,tempsum_potential_gpp_buf          &
+                ,annsum_potential_gpp_buf,tempmax_retransn_buf,annmax_retransn_buf      &
+                ,prev_leafc_to_litter_buf,prev_frootc_to_litter_buf,tempsum_npp_buf     &
+                ,annsum_npp_buf,leafc_buf,leafc_storage_buf,leafc_xfer_buf,frootc_buf           &
+                ,frootc_storage_buf,frootc_xfer_buf,livestemc_buf,livestemc_storage_buf     &
+                ,livestemc_xfer_buf,deadstemc_buf,deadstemc_storage_buf,deadstemc_xfer_buf  &
+                ,livecrootc_buf,livecrootc_storage_buf,livecrootc_xfer_buf,deadcrootc_buf   &
+                ,deadcrootc_storage_buf,deadcrootc_xfer_buf,cpool_buf,pft_ctrunc_buf        &
+                ,leafn_buf,leafn_storage_buf,leafn_xfer_buf,frootn_buf,frootn_storage_buf       &
+                ,frootn_xfer_buf,livestemn_buf,livestemn_storage_buf,livestemn_xfer_buf     &
+                ,deadstemn_buf,deadstemn_storage_buf,deadstemn_xfer_buf,livecrootn_buf      &
+                ,livecrootn_storage_buf,livecrootn_xfer_buf,deadcrootn_buf              &
+                ,deadcrootn_storage_buf,deadcrootn_xfer_buf,npool_buf,pft_ntrunc_buf        &
+                ,gresp_storage_buf,gresp_xfer_buf,xsmrpool_buf,annsum_counter_buf           &
+                ,cannsum_npp_buf,cannavg_t2m_buf,wf_buf,me_buf,mean_fire_prob_buf,cwdc_buf,litr1c_buf   &
+                ,litr2c_buf,litr3c_buf,soil1c_buf,soil2c_buf,soil3c_buf,soil4c_buf,seedc_buf,col_ctrunc_buf &
+                ,prod10c_buf,prod100c_buf,cwdn_buf,litr1n_buf,litr2n_buf,litr3n_buf,soil1n_buf,soil2n_buf   &
+                ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf &
+                ,totlitc_buf,dwt_seedc_to_leaf_buf,dwt_seedc_to_deadstem_buf,dwt_conv_cflux_buf &
+                ,dwt_prod10c_gain_buf,dwt_prod100c_gain_buf,prod100c_loss_buf,dwt_frootc_to_litr1c_buf &
+                ,dwt_frootc_to_litr2c_buf,dwt_frootc_to_litr3c_buf,dwt_livecrootc_to_cwdc_buf &
+                ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
+                ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
+                ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf &
+#endif    
+                                                                      )
+    call CLMDebug('initialize done. Back in clm3')
+    call wrf_debug( 300,'clm: AF initialize' )
+#if defined(CLM_DIAGS)
+    if( wrf_dm_on_monitor() ) then
+      write(msg,'('' clm: t_veg diags @ ('',i2,'','',i2,'')'')') ilx,jlx
+      call wrf_message( trim(msg) )
+      write(msg,'(1p10g12.4)') t_veg(:)
+      call wrf_message( trim(msg) )
+    endif
+#endif    
+
+    ! Determine necessary indices
+
+    call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
+
+#if defined(CLM_DIAGS)
+    write(msg,'('' clm: maxpatch = '',i5)') maxpatch
+    call wrf_message( trim(msg) )
+    write(msg,'('' clm: get_proc_bounds @ i,j = '',2i4)') ilx,jlx
+    call wrf_message( trim(msg) )
+    write(msg,'('' clm: glcp = '',8i4)') begg, endg, begl, endl, begc, endc, begp, endp
+    call wrf_message( trim(msg) )
+#endif    
+
+    ! Set pointers into derived type
+
+       gptr => clm3%g
+
+       do g = begg, endg
+          !i = gptr%ixy(g)
+          !j = gptr%jxy(g)
+          !lat and lon
+       clm3%g%latdeg(g)            = xlat  !degree
+       clm3%g%londeg(g)            = xlon 
+
+       clm3%g%lat(g)               = xlat*(SHR_CONST_PI/180._r8)  ! redians
+       clm3%g%lon(g)               = xlon*(SHR_CONST_PI/180._r8)
+
+       clm3%g%latdeg_a(g)            = xlat  !degree "atm" latitude (degrees) for albedo
+       clm3%g%londeg_a(g)            = xlon
+
+       clm3%g%lat_a(g)               = xlat*(SHR_CONST_PI/180._r8)  ! redians "atm" latitude (radians) for albedo
+       clm3%g%lon_a(g)               = xlon*(SHR_CONST_PI/180._r8)
+
+          !States
+
+          clm_a2l%forc_t(g) = forc_txy
+          clm_a2l%forc_u(g) = forc_uxy
+          clm_a2l%forc_v(g) = forc_vxy
+          clm_a2l%forc_wind(g) = sqrt(forc_uxy**2 + forc_vxy**2)
+          clm_a2l%forc_q(g) = forc_qxy
+          clm_a2l%forc_hgt(g) = zgcmxy
+          clm_a2l%forc_hgt_u(g) = zgcmxy !observational height of wind [m]
+          clm_a2l%forc_hgt_t(g) = zgcmxy !observational height of temp [m]
+          clm_a2l%forc_hgt_q(g) = zgcmxy !observational height of humidity [m]
+
+          clm_a2l%forc_pbot(g) = forc_pbotxy
+          clm_a2l%forc_psrf(g) = forc_psrfxy
+          clm_a2l%forc_th(g)  = clm_a2l%forc_t(g) * (clm_a2l%forc_psrf(g) &
+               / clm_a2l%forc_pbot(g))**(rair/cpair)
+          clm_a2l%forc_vp(g)  = clm_a2l%forc_q(g) * clm_a2l%forc_pbot(g) &
+               / (0.622_r8 + 0.378_r8 * clm_a2l%forc_q(g))
+          clm_a2l%forc_rho(g) = (clm_a2l%forc_pbot(g) - 0.378_r8 * clm_a2l%forc_vp(g)) &
+               / (rair * clm_a2l%forc_t(g))
+
+          clm_a2l%forc_pco2(g) = pco2 * clm_a2l%forc_pbot(g)
+          clm_a2l%forc_po2(g)  = po2 * clm_a2l%forc_pbot(g)
+#ifdef CN
+!ADD_NEW_VAR
+          clm_a2l%forc_ndep(g) =forc_ndepxy
+!!!
+#endif
+          !Fluxes
+
+          clm_a2l%forc_lwrad(g) = flwdsxy
+          clm_a2l%forc_solad(g,1) = forc_solsxy
+          clm_a2l%forc_solad(g,2) = forc_sollxy
+          clm_a2l%forc_solai(g,1) = forc_solsdxy
+          clm_a2l%forc_solai(g,2) = forc_solldxy
+          clm_a2l%forc_solar(g) = forc_solsxy + forc_sollxy &
+               + forc_solsdxy + forc_solldxy
+
+          ! Snow and Rain
+          ! Set upper limit of air temperature for snowfall at 275.65K.
+          ! This cut-off was selected based on Fig. 1, Plate 3-1, of Snow
+          ! Hydrology (1956).
+
+          if (precxy > 0._r8) then
+             if (clm_a2l%forc_t(g) > (tfrz + tcrit)) then
+                clm_a2l%forc_rain(g) = precxy
+                clm_a2l%forc_snow(g) = 0._r8
+             !   clm_a2l%flfall(g) = 1._r8
+             else
+                clm_a2l%forc_rain(g) = 0._r8
+                clm_a2l%forc_snow(g) = precxy
+
+                if (clm_a2l%forc_t(g) <= tfrz) then
+             !      clm_a2l%flfall(g) = 0.
+                else if (clm_a2l%forc_t(g) <= tfrz+2._r8) then
+             !      clm_a2l%flfall(g) = -54.632_r8 + 0.2_r8 * clm_a2l%forc_t(g)
+                else
+             !      clm_a2l%flfall(g) = 0.4_r8
+                endif
+             endif
+          else
+             clm_a2l%forc_rain(g) = 0._r8
+             clm_a2l%forc_snow(g) = 0._r8
+            ! clm_a2l%flfall(g) = 1._r8
+          endif
+          rhoxy = clm_a2l%forc_rho(g) ! here assume that g is always 1
+         
+          clm_a2l%rainf(g) = clm_a2l%forc_rain(g)+clm_a2l%forc_snow(g)
+!------------------------------------------------------------------------ 
+! running mean voce variables
+!------------------------------------------------------------------------ 
+          clm3%g%l%c%p%pvs%t_veg24(begp:endp)  = t_veg24(begp:endp)
+          clm3%g%l%c%p%pvs%t_veg240(begp:endp) = t_veg240(begp:endp)
+          clm3%g%l%c%p%pvs%fsun24(begp:endp)   = fsun24(begp:endp)
+          clm3%g%l%c%p%pvs%fsun240(begp:endp)  = fsun240(begp:endp)
+          clm3%g%l%c%p%pvs%fsd24(begp:endp)    = fsd24(begp:endp)
+          clm3%g%l%c%p%pvs%fsd240(begp:endp)   = fsd240(begp:endp)
+          clm3%g%l%c%p%pvs%fsi24(begp:endp)    = fsi24(begp:endp)
+          clm3%g%l%c%p%pvs%fsi240(begp:endp)   = fsi240(begp:endp)
+          clm3%g%l%c%p%pvs%elai_p(begp:endp)   = laip(begp:endp)
+       end do
+
+
+     ! doalb is true when the next time step is a radiation time step
+     ! this allows for the fact that an atmospheric model may not do
+     ! the radiative calculations every time step. for example:
+     !      nstep dorad doalb
+     !        1     F     F
+     !        2     F     T
+     !        3     T     F
+!Yaqiong Lu 03/07/2011
+!    call CLMDebug('Start shr_orb_params')   
+!     call shr_orb_params(orb_iyear_AD, eccen, obliq, mvelp, &             !get orbit parameres
+!                           obliqr, lambm0, mvelpp) 
+!     call shr_orb_decl(calday, eccen, mvelpp, lambm0, obliqr, declin, eccf ) !get decline for current step
+!     call shr_orb_decl(caldayp1, eccen, mvelpp, lambm0, obliqr, declinp1, eccf )  !get decline for next step
+!    call CLMDebug('End shr_orb_params & decl')    
+!!
+     doalb = .true.
+
+     ! Call land surface model driver
+     ! Note that surface fields used by the atmospheric model are zero for
+     ! non-land points and must be set by the appropriate surface model
+
+     call wrf_debug( 300,'clm: Calling Driver' )
+     call driver (doalb,ilx,jlx,caldayp1, declinp1, declin, &
+                  rho, mbio_emis, do_bioe, id)
+     call wrf_debug( 300,'clm: Driver done' )
+
+!-------------------------------------------------------------------------
+     call CLMDebug('biophy_to_wrf')
+     call biophy_to_wrf(snl      ,snowdp  ,dzclm      ,zclm        ,&
+                     ziclm       ,h2osno  ,h2osoi_liq   ,h2osoi_ice ,t_grnd      ,&
+                     t_soisno    ,t_lake  ,t_veg        ,h2ocan     ,h2ocan_col  ,&
+                     h2osoi_vol  ,wtc     ,wtp          ,numc       ,nump        ,&
+                     htop        ,tsai        &
+                     ,t_ref2m ,znt          ,q_ref2m, snw_rdsxy)
+ 
+
+#if (defined CN)
+     call biochem_to_wrf(htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+                ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
+                ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
+                ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
+                ,dayl_buf,annavg_t2m_buf,tempavg_t2m_buf,tempsum_potential_gpp_buf          &
+                ,annsum_potential_gpp_buf,tempmax_retransn_buf,annmax_retransn_buf      &
+                ,prev_leafc_to_litter_buf,prev_frootc_to_litter_buf,tempsum_npp_buf     &
+                ,annsum_npp_buf,leafc_buf,leafc_storage_buf,leafc_xfer_buf,frootc_buf           &
+                ,frootc_storage_buf,frootc_xfer_buf,livestemc_buf,livestemc_storage_buf     &
+                ,livestemc_xfer_buf,deadstemc_buf,deadstemc_storage_buf,deadstemc_xfer_buf  &
+                ,livecrootc_buf,livecrootc_storage_buf,livecrootc_xfer_buf,deadcrootc_buf   &
+                ,deadcrootc_storage_buf,deadcrootc_xfer_buf,cpool_buf,pft_ctrunc_buf        &
+                ,leafn_buf,leafn_storage_buf,leafn_xfer_buf,frootn_buf,frootn_storage_buf       &
+                ,frootn_xfer_buf,livestemn_buf,livestemn_storage_buf,livestemn_xfer_buf     &
+                ,deadstemn_buf,deadstemn_storage_buf,deadstemn_xfer_buf,livecrootn_buf      &
+                ,livecrootn_storage_buf,livecrootn_xfer_buf,deadcrootn_buf              &
+                ,deadcrootn_storage_buf,deadcrootn_xfer_buf,npool_buf,pft_ntrunc_buf        &
+                ,gresp_storage_buf,gresp_xfer_buf,xsmrpool_buf,annsum_counter_buf           &
+                ,cannsum_npp_buf,cannavg_t2m_buf,wf_buf,me_buf,mean_fire_prob_buf,cwdc_buf,litr1c_buf   &
+                ,litr2c_buf,litr3c_buf,soil1c_buf,soil2c_buf,soil3c_buf,soil4c_buf,seedc_buf,col_ctrunc_buf &
+                ,prod10c_buf,prod100c_buf,cwdn_buf,litr1n_buf,litr2n_buf,litr3n_buf,soil1n_buf,soil2n_buf   &
+                ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf &
+               ,totlitc_buf,dwt_seedc_to_leaf_buf,dwt_seedc_to_deadstem_buf,dwt_conv_cflux_buf &
+                ,dwt_prod10c_gain_buf,dwt_prod100c_gain_buf,prod100c_loss_buf,dwt_frootc_to_litr1c_buf &
+                ,dwt_frootc_to_litr2c_buf,dwt_frootc_to_litr3c_buf,dwt_livecrootc_to_cwdc_buf &
+                ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
+                ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
+                ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf &
+                  )
+#endif
+
+      call CLMDebug('start accumulate in clm3.F')
+
+    albxy = 0._r8
+
+    do j = 1,numrad
+       do p = begp,endp
+         
+          albxy =albxy +  clm3%g%l%c%p%pps%albd(p,j)*wtp(p)*cof_dir(j) + clm3%g%l%c%p%pps%albi(p,j)*wtp(p)*cof_dif(j)
+          albedosubgrid(p) = clm3%g%l%c%p%pps%albd(p,j)*cof_dir(j)+clm3%g%l%c%p%pps%albi(p,j)*cof_dif(j)
+     
+       end do
+    end do
+
+    msg = ''
+    write(msg,*) 'Calculated albedo is ', albxy, '.'
+    call CLMDebug(msg)
+
+    lwupxy= 0._r8
+    shxy  = 0._r8
+    lhxy  = 0._r8
+    soiflx= 0._r8
+    sabv  = 0._r8
+    sabg  = 0._r8
+    trefxy  = 0._r8
+    tsxy = 0._r8
+    znt0  = 0._r8
+    alswvisdir = 0._r8
+    alswvisdif = 0._r8
+    alswnirdir = 0._r8
+    alswnirdif = 0._r8
+!!
+  
+    do p = begp,endp 
+       lwupxy= lwupxy+ clm3%g%l%c%p%pef%eflx_lwrad_out(p)*wtp(p)
+       shxy  = shxy  + clm3%g%l%c%p%pef%eflx_sh_tot(p)*wtp(p)
+       lhxy  = lhxy  + clm3%g%l%c%p%pef%eflx_lh_tot(p)*wtp(p)
+       soiflx= soiflx+ clm3%g%l%c%p%pef%eflx_soil_grnd(p)*wtp(p) ! [+ into soil]
+       sabv  = sabv  + clm3%g%l%c%p%pef%sabv(p)*wtp(p)
+       sabg  = sabg  + clm3%g%l%c%p%pef%sabg(p)*wtp(p)
+       tsxy  = tsxy  + clm3%g%l%c%p%pes%t_veg(p)*wtp(p) 
+       trefxy  = trefxy  + clm3%g%l%c%p%pes%t_ref2m(p)*wtp(p) 
+       !over lakes and bare soils, t_veg = t_grnd
+       znt0  = znt0 + znt(p)*wtp(p)
+
+        
+       alswvisdir = alswvisdir + clm3%g%l%c%p%pps%albd(p,1)*wtp(p)
+       alswvisdif = alswvisdif + clm3%g%l%c%p%pps%albi(p,1)*wtp(p)
+       alswnirdir = alswnirdir + clm3%g%l%c%p%pps%albd(p,2)*wtp(p)  !1=visible, 2=nir
+       alswnirdif = alswnirdif + clm3%g%l%c%p%pps%albi(p,2)*wtp(p) 
+
+!!PFT-level outputs
+       if ( wtp(p) > 0.001_r8 ) then
+          lhsubgrid(p)   = clm3%g%l%c%p%pef%eflx_lh_tot(p)
+          hfxsubgrid(p)  = clm3%g%l%c%p%pef%eflx_sh_tot(p)
+          lwupsubgrid(p) = clm3%g%l%c%p%pef%eflx_lwrad_out(p)
+          q2subgrid(p)   = q_ref2m(p)
+          sabvsubgrid(p) = clm3%g%l%c%p%pef%sabv(p)   !solar radiation absorbed by vegetation
+          sabgsubgrid(p) = clm3%g%l%c%p%pef%sabg(p)   !solar radiation absorbed by ground
+          nrasubgrid(p)  = clm3%g%l%c%p%pef%fsa(p)    !solar radiation absorbed total=net radiation
+          swupsubgrid(p)  = clm3%g%l%c%p%pef%fsr(p)    !solar radiation reflected      
+          lhsoi(p)      = clm3%g%l%c%p%pef%eflx_lh_grnd(p)
+          lhveg(p)      = clm3%g%l%c%p%pef%eflx_lh_vege(p)
+          lhtran(p)     = clm3%g%l%c%p%pef%eflx_lh_vegt(p)
+#ifdef CN       
+          tlaixy(p)     = clm3%g%l%c%p%pps%tlai(p)
+          tsaixy(p)     = clm3%g%l%c%p%pps%tsai(p)
+          htopxy(p)     = clm3%g%l%c%p%pps%htop(p)
+          hbotxy(p)     = clm3%g%l%c%p%pps%hbot(p) 
+#endif
+       endif
+!!
+    end do
+
+!Debug
+    msg = ''
+    write(msg,*) 'LWUP is', lwupxy, '.'
+    call CLMDebug(msg)
+
+    qsfxy  = 0._r8
+    qdnxy  = 0._r8
+    do c = begc,endc
+       qsfxy = qsfxy + clm3%g%l%c%cwf%qflx_surf(c)*wtc(c)*dtime
+       qdnxy = qdnxy + clm3%g%l%c%cwf%qflx_drain(c)*wtc(c)*dtime
+    end do
+
+!-------------------------------------------------------------------------
+!  Update the voce running means
+!-------------------------------------------------------------------------
+    period    = nint( cday/dtime )
+    acc_per24 = real( min( nstep,period ),kind=r8 )
+    period    = 10*nint( cday/dtime )
+    acc_per240 = real( min( nstep,period ),kind=r8 )
+    t_veg24(begp:endp) = &
+      ((acc_per24 - 1.)*t_veg24(begp:endp) + real( t_veg(begp:endp),kind=r8 ))/acc_per24
+    t_veg240(begp:endp) = &
+      ((acc_per240 - 1.)*t_veg240(begp:endp) + real( t_veg(begp:endp),kind=r8 ))/acc_per240
+    fsun24(begp:endp) = &
+      ((acc_per24 - 1.)*fsun24(begp:endp) + clm3%g%l%c%p%pps%fsun(begp:endp))/acc_per24
+    fsun240(begp:endp) = &
+      ((acc_per240 - 1.)*fsun240(begp:endp) + clm3%g%l%c%p%pps%fsun(begp:endp))/acc_per240
+    fsd24(begp:endp) = &
+      ((acc_per24 - 1.)*fsd24(begp:endp) + forc_solsxy)/acc_per24
+    fsd240(begp:endp) = &
+      ((acc_per240 - 1.)*fsd240(begp:endp) + forc_solsxy)/acc_per240
+    fsi24(begp:endp) = &
+      ((acc_per24 - 1.)*fsi24(begp:endp) + forc_solsdxy)/acc_per24
+    fsi240(begp:endp) = &
+      ((acc_per240 - 1.)*fsi240(begp:endp) + forc_solsdxy)/acc_per240
+    laip(begp:endp) = clm3%g%l%c%p%pps%elai(begp:endp)
+
+!-------------------------------------------------------------------------
+    call CLMDebug('call clmtype_dealloc')
+    call clmtype_dealloc()
+    call CLMDebug('call filters_dealloc')
+    call filters_dealloc()
+    call CLMDebug('entering varsurdealloc')
+    call varsur_dealloc()
+
+!-------------------------------------------------------------------------
+ call CLMDebug('done clm()')
+
+  end subroutine clm
+!-----------------------------------------------------------------------
+!BOP
+!
+! !ROUTINE: driver
+!
+! !INTERFACE:
+subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
+                   rho, mbio_emis, do_bioe, id)
+!
+! !DESCRIPTION:
+! This subroutine provides the main CLM driver calling sequence.  Most
+! computations occurs over ``clumps'' of gridcells (and associated subgrid
+! scale entities) assigned to each MPI process.  Computation is further
+! parallelized by looping over clumps on each process using shared memory
+! OpenMP or Cray Streaming Directives.
+!
+! The main CLM driver calling sequence is as follows:
+! \begin{verbatim}
+! * Communicate with flux coupler [COUP_CSM]
+! + interpMonthlyVeg      interpolate monthly vegetation data [!DGVM]
+!   + readMonthlyVegetation read vegetation data for two months [!DGVM]
+! ==== Begin Loop 1 over clumps ====
+!  -> DriverInit          save of variables from previous time step
+!  -> Hydrology1          canopy interception and precip on ground
+!     -> FracWet          fraction of wet vegetated surface and dry elai
+!  -> SurfaceRadiation    surface solar radiation
+!  -> Biogeophysics1      leaf temperature and surface fluxes
+!  -> BareGroundFluxes    surface fluxes for bare soil or snow-covered
+!                         vegetation patches
+!     -> MoninObukIni     first-guess Monin-Obukhov length and wind speed
+!     -> FrictionVelocity friction velocity and potential temperature and
+!                         humidity profiles
+!  -> CanopyFluxes        leaf temperature and surface fluxes for vegetated
+!                         patches
+!     -> QSat             saturated vapor pressure, specific humidity, &
+!                         derivatives at leaf surface
+!     -> MoninObukIni     first-guess Monin-Obukhov length and wind speed
+!     -> FrictionVelocity friction velocity and potential temperature and
+!                         humidity profiles
+!     -> Stomata          stomatal resistance and photosynthesis for
+!                         sunlit leaves
+!     -> Stomata          stomatal resistance and photosynthesis for
+!                         shaded leaves
+!     -> QSat             recalculation of saturated vapor pressure,
+!                         specific humidity, & derivatives at leaf surface
+!  -> Biogeophysics_Lake  lake temperature and surface fluxes
+!   + VOCEmission         compute VOC emission [VOC]
+!   + DGVMRespiration     CO2 respriation and plant production [DGVM]
+!   + DGVMEcosystemDyn    DGVM ecosystem dynamics: vegetation phenology [!DGVM]
+!  -> EcosystemDyn        "static" ecosystem dynamics: vegetation phenology
+!                         and soil carbon [!DGVM]
+!  -> SurfaceAlbedo       albedos for next time step
+!  -> Biogeophysics2      soil/snow & ground temp and update surface fluxes
+!  -> pft2col             Average from PFT level to column level
+!  ====  End Loop 1 over clumps  ====
+! * Average fluxes over time interval and send to flux coupler [COUP_CSM]
+!  ==== Begin Loop 2 over clumps ====
+!  -> Hydrology2          surface and soil hydrology
+!  -> Hydrology_Lake      lake hydrology
+!  -> SnowAge             update snow age for surface albedo calcualtion
+!  -> BalanceCheck        check for errors in energy and water balances
+!  ====  End Loop 2 over clumps  ====
+!  -> write_diagnostic    output diagnostic if appropriate
+!   + Rtmriverflux        calls RTM river routing model [RTM]
+!  -> updateAccFlds       update accumulated fields
+!  -> update_hbuf         accumulate history fields for time interval
+!  Begin DGVM calculations at end of model year [DGVM]
+!    ==== Begin Loop over clumps ====
+!     + lpj                 LPJ ecosystem dynamics: reproduction, turnover,
+!                           kill, allocation, light, mortality, fire
+!     + lpjreset1           reset variables & initialize for next year
+!    ====  End Loop over clumps  ====
+!  End DGVM calculations at end of model year [DGVM]
+!  -> htapes_wrapup       write history tapes if appropriate
+!  Begin DGVM calculations at end of model year [DGVM]
+!    ==== Begin Loop over clumps ====
+!     + lpjreset2           reset variables and patch weights
+!    ====  End Loop over clumps  ====
+!  End DGVM calculations at end of model year [DGVM]
+!  -> restart             write restart file if appropriate
+!  -> inicfile            write initial file if appropriate
+! \end{verbatim}
+! Optional subroutines are denoted by an plus (+) with the associated
+! CPP variable in brackets at the end of the line.  Coupler communication
+! when coupled with CCSM components is denoted by an asterisk (*).
+!
+! !USES:
+  use shr_kind_mod, only: r8 => shr_kind_r8
+  use globals  
+  use clmtype
+!ylu add new from CLM4
+!  use clm_varctl          , only : fpftdyn, fndepdyn !ylu removed wrtdia
+  use decompMod           , only : get_proc_bounds
+  use filterMod           , only : filter
+#if (defined CNDV)
+  use CNDVMod             , only : dv, histCNDV
+  use pftdynMod           , only : pftwt_interp
+#endif
+  use pftdynMod           , only : pftdyn_interp, pftdyn_wbal_init, pftdyn_wbal
+#ifdef CN
+  use pftdynMod           , only : pftdyn_cnbal
+#endif
+  use dynlandMod          , only : dynland_hwcontent
+  use clm_varcon          , only : set_caerdep_from_file,set_dustdep_from_file,zlnd, isturb, fpftdyn, fndepdyn !move  fpftdyn, fndepdyn to clm_varcon.F
+  use DriverInitMod       , only : DriverInit
+  use BalanceCheckMod     , only : BalanceCheck, BeginWaterBalance
+  use SurfaceRadiationMod , only : SurfaceRadiation
+  use Hydrology1Mod       , only : Hydrology1
+  use Hydrology2Mod       , only : Hydrology2
+  use HydrologyLakeMod    , only : HydrologyLake
+  use Biogeophysics1Mod   , only : Biogeophysics1
+  use BareGroundFluxesMod , only : BareGroundFluxes
+  use CanopyFluxesMod     , only : CanopyFluxes
+  use Biogeophysics2Mod   , only : Biogeophysics2
+  use BiogeophysicsLakeMod, only : BiogeophysicsLake
+  use SurfaceAlbedoMod    , only : SurfaceAlbedo
+  use pft2colMod          , only : pft2col
+!  use accFldsMod          , only : updateAccFlds
+!  use accumulMod          , only : accum_dealloc
+
+#if (defined CN)
+!ylu begin 1
+  use pftdynMod           , only : pftdyn_cnbal
+  use CNSetValueMod       , only : CNZeroFluxes_dwt
+  use CNEcosystemDynMod   , only : CNEcosystemDyn
+  use CNAnnualUpdateMod   , only : CNAnnualUpdate
+  use CNBalanceCheckMod   , only : BeginCBalance, BeginNBalance, &
+                                   CBalanceCheck, NBalanceCheck
+! use ndepFileMod         , only : ndepdyn_interp !ndep data will be passed from module_surface_driver.F
+#else
+  use STATICEcosysDynMod  , only : EcosystemDyn, interpMonthlyVeg, EcosystemDyn_dealloc
+!ylu end 1
+#endif
+
+#if (defined DUST)
+  use DUSTMod             , only : DustDryDep, DustEmission
+#endif
+  use VOCEmissionMod      , only : VOCEmission
+!  use DryDepVelocity      , only : depvel_compute   !may need add later ylu
+#if (defined CASA)
+  use CASAMod             , only : Casa_ecosystemDyn
+#endif
+#if (defined RTM)
+  use RtmMod              , only : Rtmriverflux
+#endif
+!  use UrbanMod            , only : UrbanAlbedo, UrbanRadiation, UrbanFluxes
+  use SNICARMod           , only : SnowAge_grain
+  use aerdepMod           , only : interpMonthlyAerdep
+  
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !
 ! !ARGUMENTS:
   implicit none
+<<<<<<< HEAD
 !
 ! !CALLED FROM:
 ! subroutine initialize in module initializeMod
@@ -58411,6 +71079,1062 @@ end module initializeMod
 #ifdef CN
                 ,tlaixy   ,tsaixy  ,htopxy    ,hbotxy                & 
                 ,htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+=======
+  integer , intent(in) :: id     ! grid id
+  logical , intent(in) :: doalb  !true if time for surface albedo
+                                 !calculation
+  logical , intent(in) :: do_bioe  !true if time for megan bio emission calc
+  real(r8), intent(in)    :: rho
+  real(r8), intent(inout) :: mbio_emis(:)
+
+!
+! !REVISION HISTORY:
+! 2002.10.01  Mariana Vertenstein latest update to new data structures
+!
+!EOP
+!
+! !LOCAL VARIABLES:
+! local pointers to implicit in arguments
+!
+  integer , pointer :: clandunit(:) ! landunit index associated with each column
+  integer , pointer :: itypelun(:)  ! landunit type
+!
+! !OTHER LOCAL VARIABLES:
+
+
+  integer  :: ilx,jlx
+  integer  :: c,g,l         ! indices
+  integer  :: ncdate        ! current date
+  integer  :: kyr           ! thousand years, equals 2 at end of first year
+  integer  :: begp, endp    ! clump beginning and ending pft indices
+  integer  :: begc, endc    ! clump beginning and ending column indices
+  integer  :: begl, endl    ! clump beginning and ending landunit indices
+  integer  :: begg, endg    ! clump beginning and ending gridcell indices
+  type(column_type)  , pointer :: cptr    ! pointer to column derived subtype
+! logical, external :: do_restwrite ! determine if time to write restart
+  real(r8), intent(in) :: nextsw_cday                   ! calendar day at Greenwich (1.00, ..., 365.99)
+  real(r8), intent(in) :: declinp1                   ! declination angle (radians) for next time step
+  real(r8), intent(in) :: declin      ! declination angle for current time step
+
+!temp value
+  real(r8), pointer :: t_soisno(:,:)
+
+  character(len=132) :: msg
+
+  logical, external :: wrf_dm_on_monitor
+
+      t_soisno      => clm3%g%l%c%ces%t_soisno
+
+
+!-----------------------------------------------------------------------
+  ! Assign local pointers to derived subtypes components (landunit-level)
+
+  itypelun            => clm3%g%l%itype
+
+  ! Assign local pointers to derived subtypes components (column-level)
+
+  clandunit           => clm3%g%l%c%landunit
+
+  ! Set pointers into derived type
+
+  cptr => clm3%g%l%c
+
+#if defined(CLM_DIAGS)
+  if( wrf_dm_on_monitor() ) then
+    call wrf_message( ' driver: on entry' )
+    write(msg,'('' driver: t_veg diags @ ('',i2,'','',i2,'')'')') ilx,jlx
+    call wrf_message( trim(msg) )
+    write(msg,'(1p10g12.4)') clm3%g%l%c%p%pes%t_veg(:)
+    call wrf_message( trim(msg) )
+  endif
+#endif
+
+  ! ============================================================================
+  ! Calendar information for next time step
+  ! o caldayp1 = calendar day (1.00 -> 365.99) for cosine solar zenith angle
+  !   calday is based on Greenwich time
+  ! o get_curr_calday in the cam time manager know about perpetual mode
+  !   and perpetual model is only used within cam
+  ! ============================================================================
+
+#if (!defined CN)
+  ! ============================================================================
+  ! Determine weights for time interpolation of monthly vegetation data.
+  ! This also determines whether it is time to read new monthly vegetation and
+  ! obtain updated leaf area index [mlai1,mlai2], stem area index [msai1,msai2],
+  ! vegetation top [mhvt1,mhvt2] and vegetation bottom [mhvb1,mhvb2]. The
+  ! weights obtained here are used in subroutine ecosystemdyn to obtain time
+  ! interpolated values.
+  ! ============================================================================
+
+  if (doalb) call interpMonthlyVeg (monp1,dayp1)  !STATICEcosysDynMod.F
+#endif
+
+  ! ============================================================================
+  ! interpolate aerosol deposition data, and read in new monthly data if need be.
+  ! ============================================================================
+  if ( (set_caerdep_from_file) .or. (set_dustdep_from_file) ) then
+     call interpMonthlyAerdep(monp1,dayp1)
+  endif
+
+
+
+  ! ============================================================================
+  ! Loop1
+  ! ============================================================================
+
+     ! ============================================================================
+     ! Determine clump boundaries
+     ! ============================================================================
+
+     call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)  !decompMod.F
+
+
+     ! ============================================================================
+     ! change pft weights and compute associated heat & water fluxes
+     ! ============================================================================
+
+
+!ylu add new in clm_driver.F for CLM4 10-22-2010
+     do g = begg,endg
+        clm3%g%gwf%qflx_liq_dynbal(g) = 0._r8
+        clm3%g%gws%gc_liq2(g)         = 0._r8
+        clm3%g%gws%gc_liq1(g)         = 0._r8
+        clm3%g%gwf%qflx_ice_dynbal(g) = 0._r8
+        clm3%g%gws%gc_ice2(g)         = 0._r8
+        clm3%g%gws%gc_ice1(g)         = 0._r8
+        clm3%g%gef%eflx_dynbal(g)     = 0._r8
+        clm3%g%ges%gc_heat2(g)        = 0._r8
+        clm3%g%ges%gc_heat1(g)        = 0._r8
+     enddo
+
+     !--- get initial heat,water content ---
+      call dynland_hwcontent( begg, endg, clm3%g%gws%gc_liq1(begg:endg), &   !dynlandMod.F
+                              clm3%g%gws%gc_ice1(begg:endg), clm3%g%ges%gc_heat1(begg:endg) )
+
+!#if (!defined CNDV)
+!   if (fpftdyn /= ' ') then
+!      call pftdyn_interp  ! change the pft weights
+! 
+! !DESCRIPTION:
+! Time interpolate dynamic landuse data to get pft weights for model time
+! Note that harvest data are stored as rates (not weights) and so time interpolation is 
+! not necessary - the harvest rate is held constant through the year.  This is consistent with
+! the treatment of changing PFT weights, where interpolation of the annual endpoint weights leads to 
+! a constant rate of change in PFT weight through the year, with abrupt changes in the rate at
+! annual boundaries. This routine is still used to get the next harvest time slice, when needed.
+! This routine is also used to turn off the harvest switch when the model year runs past the end of
+! the dynpft time series.
+!
+
+
+
+
+
+     call CLMDebug('BeginWaterBalance')
+     call BeginWaterBalance(begc, endc, begp, endp, &
+          filter%num_nolakec, filter%nolakec, filter%num_lakec, filter%lakec, &
+          filter%num_hydrologyc, filter%hydrologyc)
+
+!ylu begin 2
+#if (defined CN)
+!call t_startf('begcnbal')
+     call CLMDebug('BeginCBalance') 
+     call BeginCBalance(begc, endc, filter%num_soilc, filter%soilc)  !CNBalanceCheckMod.F
+     call CLMDebug('BeginNBalance')
+     call BeginNBalance(begc, endc, filter%num_soilc, filter%soilc)  !CNBalanceCheckMod.F
+!     call t_stopf('begcnbal')
+#endif
+
+!Leaving out pftdyn_wbal_init and canopy water loss
+
+!!!!!!!!
+  call CLMDebug('pftdyn_wbal_init')
+  call pftdyn_wbal_init()                                            !pftdynMod.F
+
+#if (defined CNDV)
+! if (doalb) then ! Currently CNDV and fpftdyn /= ' ' are incompatible
+     call CLMDebug('Begin CNZeroFluxes')
+     call CNZeroFluxes_dwt()                                         !CNSetValueMod.F
+     call CLMDebug('Begin pftwt_interp')
+     call pftwt_interp()                                             !pftdynMod.F 
+     call CLMDebug('Begin pftdyn_wbal')
+     call pftdyn_wbal( begg, endg, begc, endc, begp, endp )          !pftdynMod.F
+     call CLMDebug('Begin pftdyn_cnbal')
+     call pftdyn_cnbal()                                             !pftdynMod.F
+     call CLMDebug('Begin setFilters')
+     call setFilters()
+! end if
+#else
+  ! ============================================================================
+  ! Update weights and reset filters if dynamic land use
+  ! This needs to be done outside the clumps loop, but after BeginWaterBalance()
+  ! The call to CNZeroFluxes_dwt() is needed regardless of fpftdyn
+  ! ============================================================================
+
+!#if (defined CN)
+!   call CLMDebug('Begin CNZeroFluxes')
+!   call CNZeroFluxes_dwt()               !CNSetValueMod.F
+!#endif
+
+   if (fpftdyn /= ' ') then
+#if (defined CN)
+     call CLMDebug('Begin pftdyn_cnbal')
+     call pftdyn_cnbal()                 !pftdynMod.F
+#endif
+                   
+   end if
+#endif
+
+
+!#if (defined CN)
+  ! ============================================================================
+  ! Update dynamic N deposition field, on albedo timestep 
+  ! currently being done outside clumps loop, but no reason why it couldn't be
+  ! re-written to go inside.
+  ! ============================================================================
+! PET: switching CN timestep
+!  if (fndepdyn /= ' ') then
+!     call ndepdyn_interp()   !ndepFileMod.F not finish, need to modify the part read nitrogen deposition data.
+!  end if
+!#endif       
+
+!ylu end
+
+     ! ============================================================================
+     ! Initialize variables from previous time step and
+     ! Determine canopy interception and precipitation onto ground surface.
+     ! Determine the fraction of foliage covered by water and the fraction
+     ! of foliage that is dry and transpiring. Initialize snow layer if the
+     ! snow accumulation exceeds 10 mm.
+     ! ============================================================================
+!ylu add from CLM4
+!       call get_clump_bounds(nc, begg, endg, begl, endl, begc, endc, begp, endp)
+ 
+
+!      do c = begc,endc
+!        clm3%g%l%c%cps%decl(c) = declin
+!      end do
+!ylu end
+
+!ylu add
+     ! initialize declination for current timestep
+     do c = begc,endc
+        clm3%g%l%c%cps%decl(c) = declin
+     end do
+!!
+
+     call CLMDebug('DriverInit')  !This module was not changed in CLM4
+     call DriverInit(begc, endc, begp, endp, &
+          filter%num_nolakec, filter%nolakec, &
+          filter%num_lakec, filter%lakec)
+
+     ! ============================================================================
+     ! Hydrology1
+     ! ============================================================================
+
+     call CLMDebug('Hydrology1')  !checked and modified according to CLM4
+     call Hydrology1(begc, endc, begp, endp, &
+                     filter%num_nolakec, filter%nolakec, &
+                     filter%num_nolakep, filter%nolakep)
+
+     ! ============================================================================
+     ! Surface Radiation
+     ! ============================================================================
+
+     call CLMDebug('SurfaceRadiation') !checked and modified according to CLM4
+     call SurfaceRadiation(begp, endp, filter%num_nourbanp, filter%nourbanp)
+
+
+!ylu add  urban module from CLM4
+!     call CLMDebug('UrbanRadiation')  ! added the new module from CLM4
+!     call UrbanRadiation(begl, endl, begc, endc, begp, endp, &
+!                         filter%num_nourbanl, filter%nourbanl, &
+!                         filter%num_urbanl, filter%urbanl, &
+!                         filter%num_urbanc, filter%urbanc, &
+!                         filter%num_urbanp, filter%urbanp)
+
+     ! ============================================================================
+     ! Determine leaf temperature and surface fluxes based on ground
+     ! temperature from previous time step.
+     ! ============================================================================
+
+     call CLMDebug('Biogeophysics1') !checked and modified according to CLM4
+     call Biogeophysics1(begg, endg, begc, endc, begp, endp, &
+                         filter%num_nolakec, filter%nolakec, &
+                         filter%num_nolakep, filter%nolakep)
+
+     ! ============================================================================
+     ! Determine bare soil or snow-covered vegetation surface temperature and fluxes
+     ! Calculate Ground fluxes (frac_veg_nosno is either 1 or 0)
+     ! ============================================================================
+
+#if defined(CLM_DIAGS)
+  if( wrf_dm_on_monitor() ) then
+    call wrf_message( ' driver: B4 BareGroundFluxes' )
+    write(msg,'('' driver: t_veg diags @ ('',i2,'','',i2,'')'')') ilx,jlx
+    call wrf_message( trim(msg) )
+    write(msg,'(1p10g12.4)') clm3%g%l%c%p%pes%t_veg(:)
+    call wrf_message( trim(msg) )
+  endif
+#endif
+
+     call CLMDebug('BareGroundFluxes')  !checked and modified according to CLM4
+     call BareGroundFluxes(begp, endp, &
+                           filter%num_nolakeurbanp, filter%nolakeurbanp)
+#if defined(CLM_DIAGS)
+  if( wrf_dm_on_monitor() ) then
+    call wrf_message( ' driver: AF BareGroundFluxes' )
+    write(msg,'('' driver: t_veg diags @ ('',i2,'','',i2,'')'')') ilx,jlx
+    call wrf_message( trim(msg) )
+    write(msg,'(1p10g12.4)') clm3%g%l%c%p%pes%t_veg(:)
+    call wrf_message( trim(msg) )
+  endif
+#endif
+     ! ============================================================================
+     ! Determine non snow-covered vegetation surface temperature and fluxes
+     ! Calculate canopy temperature, latent and sensible fluxes from the canopy,
+     ! and leaf water change by evapotranspiration
+     ! ============================================================================
+
+!ylu add from CLM4
+!     call CLMDebug('UrbanFluxes')  ! added the new module from CLM4
+!        call UrbanFluxes(begp, endp, begl, endl, begc, endc, &
+!                      filter%num_nourbanl, filter%nourbanl, &
+!                      filter%num_urbanl, filter%urbanl, &
+!                      filter%num_urbanc, filter%urbanc, &
+!                      filter%num_urbanp, filter%urbanp)
+!end
+
+#if defined(CLM_DIAGS)
+  if( wrf_dm_on_monitor() ) then
+    call wrf_message( ' driver: B4 CanopyFluxes' )
+    write(msg,'('' driver: t_veg diags @ ('',i2,'','',i2,'')'')') ilx,jlx
+    call wrf_message( trim(msg) )
+    write(msg,'(1p10g12.4)') clm3%g%l%c%p%pes%t_veg(:)
+    call wrf_message( trim(msg) )
+  endif
+#endif
+
+     call CLMDebug('CanopyFluxes')  !checked and modified according to CLM4
+     call CanopyFluxes(begg, endg, begc, endc, begp, endp, &
+                       filter%num_nolakep, filter%nolakep)
+#if defined(CLM_DIAGS)
+  if( wrf_dm_on_monitor() ) then
+    call wrf_message( ' driver: AF CanopyFluxes' )
+    write(msg,'('' driver: dt_veg diags @ ('',i2,'','',i2,'')'')') ilx,jlx
+    call wrf_message( trim(msg) )
+    write(msg,'(1p10g12.4)') clm3%g%l%c%p%pps%dt_veg(:)
+    call wrf_message( trim(msg) )
+    write(msg,'('' driver: t_veg diags @ ('',i2,'','',i2,'')'')') ilx,jlx
+    call wrf_message( trim(msg) )
+    write(msg,'(1p10g12.4)') clm3%g%l%c%p%pes%t_veg(:)
+    call wrf_message( trim(msg) )
+  endif
+#endif
+     ! ============================================================================
+     ! Determine lake temperature and surface fluxes
+     ! ============================================================================
+
+     call CLMDebug('BiogeophysicsLake')   !checked and modified according to CLM4
+     call BiogeophysicsLake(begc, endc, begp, endp, &
+                            filter%num_lakec, filter%lakec, &
+                            filter%num_lakep, filter%lakep)
+#if defined(CLM_DIAGS)
+  if( wrf_dm_on_monitor() ) then
+    call wrf_message( ' driver: AF BiogeophysicsLake' )
+    write(msg,'('' driver: t_veg diags @ ('',i2,'','',i2,'')'')') ilx,jlx
+    call wrf_message( trim(msg) )
+    write(msg,'(1p10g12.4)') clm3%g%l%c%p%pes%t_veg(:)
+    call wrf_message( trim(msg) )
+  endif
+#endif
+
+#if (defined DUST)
+     ! Dust mobilization (C. Zender's modified codes)
+     call DustEmission(begp, endp, begc, endc, begl, endl, & ! added the new module from CLM4
+                       filter%num_nolakep, filter%nolakep)
+
+     ! Dust dry deposition (C. Zender's modified codes)
+     call DustDryDep(begp, endp)    ! added the new module from CLM4
+#endif
+
+
+     ! ============================================================================
+     ! Determine VOC and DGVM Respiration if appropriate
+     ! ============================================================================
+   if( do_bioe ) then
+     call CLMDebug('Begin VOCEmission')
+     call VOCEmission(begp, endp, ilx, jlx, rho, mbio_emis, &  
+                      filter%num_soilp, filter%soilp)   !CLM4  !checked and modified according to CLM4
+   endif
+!#endif
+
+     ! ============================================================================
+     ! Ecosystem dynamics: phenology, vegetation, soil carbon, snow fraction
+     ! ============================================================================
+
+!#if (defined DGVM)
+     ! Surface biogeochemical fluxes: co2 respiration and plant production
+!     call DGVMRespiration(begc, endc, begp, endp, &
+!                          filter%num_nolakec, filter%nolakec, &
+!                          filter%num_nolakep, filter%nolakep)
+
+!     call DGVMEcosystemDyn(begp, endp, &
+!                       filter%num_nolakep, filter%nolakep, &
+!                       doalb, endofyr=.false.)
+!#elif call CNEcosystemDyn
+!#else
+!     call CLMDebug('EcosystemDyn')
+!     call EcosystemDyn(begp, endp, &
+!                       filter%num_nolakep, filter%nolakep, &
+!                       doalb)
+!#endif
+
+     ! ============================================================================
+     ! Determine albedos for next time step
+     ! ============================================================================
+
+!     if (doalb) then
+!        call CLMDebug('SurfaceAlbedo')
+!        call SurfaceAlbedo(begg, endg, begc, endc, begp, endp, caldayp1)
+!     end if
+
+     ! ============================================================================
+     ! Determine soil/snow temperatures including ground temperature and
+     ! update surface fluxes for new ground temperature.
+     ! ============================================================================
+
+     call CLMDebug('Biogeophysics2')
+!     call Biogeophysics2(begc, endc, begp, endp, &
+!                         filter%num_nolakec, filter%nolakec, &
+!                         filter%num_nolakep, filter%nolakep)      !CLM3.5
+   call Biogeophysics2(begl, endl, begc, endc, begp, endp, &
+                         filter%num_urbanl,  filter%urbanl, &
+                         filter%num_nolakec, filter%nolakec, &
+                         filter%num_nolakep, filter%nolakep)   !changed according to CLM4
+
+
+     ! ============================================================================
+     ! Perform averaging from PFT level to column level
+     ! ============================================================================
+
+     call CLMDebug('pft2col')     !changed according to CLM4
+     call pft2col(begc, endc, filter%num_nolakec, filter%nolakec)
+
+
+
+
+     ! ============================================================================
+     ! Vertical (column) soil and surface hydrology
+     ! ============================================================================
+
+     call CLMDebug('Hydrology2')
+!CLM4 -- ylu changed
+     call Hydrology2(begc, endc, begp, endp, &
+                     filter%num_nolakec, filter%nolakec, &
+                     filter%num_hydrologyc, filter%hydrologyc, &
+                     filter%num_urbanc, filter%urbanc, &
+                     filter%num_snowc, filter%snowc, &
+                     filter%num_nosnowc, filter%nosnowc)
+
+!     call Hydrology2(begc, endc, ilx ,jlx, &
+!New in 3.5
+
+!                     begp, endp, &
+!                     filter%num_nolakec, filter%nolakec, &
+!                     filter%num_soilc, filter%soilc, &
+!                     filter%num_snowc, filter%snowc, &
+!                     filter%num_nosnowc, filter%nosnowc)
+
+     ! ============================================================================
+     ! Lake hydrology
+     ! ============================================================================
+
+     call CLMDebug('HydrologyLake')  !ylu modified according to CLM4
+     call HydrologyLake(begp, endp, &
+                        filter%num_lakep, filter%lakep)
+
+     ! ============================================================================
+     ! Update Snow Age (needed for surface albedo calculation
+     ! ============================================================================
+!ylu add new from CLM4
+     ! ============================================================================
+     ! ! Fraction of soil covered by snow (Z.-L. Yang U. Texas)
+     ! ============================================================================
+
+     do c = begc,endc
+        l = clandunit(c)
+        if (itypelun(l) == isturb) then
+           ! Urban landunit use Bonan 1996 (LSM Technical Note)
+           cptr%cps%frac_sno(c) = min( cptr%cps%snowdp(c)/0.05_r8, 1._r8)
+        else
+           ! snow cover fraction in Niu et al. 2007
+           cptr%cps%frac_sno(c) = 0.0_r8
+           if(cptr%cps%snowdp(c) .gt. 0.0_r8)  then
+             cptr%cps%frac_sno(c) = tanh(cptr%cps%snowdp(c)/(2.5_r8*zlnd* &
+               (min(800._r8,cptr%cws%h2osno(c)/cptr%cps%snowdp(c))/100._r8)**1._r8) )
+           endif
+        end if
+     end do
+
+     ! ============================================================================
+     ! Snow aging routine based on Flanner and Zender (2006), Linking snowpack 
+     ! microphysics and albedo evolution, JGR, and Brun (1989), Investigation of 
+     ! wet-snow metamorphism in respect of liquid-water content, Ann. Glaciol.
+     ! ============================================================================
+!     call CLMDebug('Begin SnowAge_grain')
+!    call SnowAge_grain(begc, endc, &         !SNICARMod.F new module in CLM4 -- ylu
+!          filter%num_snowc, filter%snowc, &
+!          filter%num_nosnowc, filter%nosnowc)
+
+     call CLMDebug('SnowAge_grain')
+     call SnowAge_grain(begc, endc, &
+          filter%num_snowc, filter%snowc, &
+          filter%num_nosnowc, filter%nosnowc)
+
+!     call SnowAge(begc, endc)
+
+     ! ============================================================================
+     ! ! Fraction of soil covered by snow (Z.-L. Yang U. Texas)
+     ! ============================================================================
+
+!     do c = begc,endc
+!        cptr%cps%frac_sno(c) = cptr%cps%snowdp(c) / (10.*zlnd + cptr%cps%snowdp(c))
+!     end do
+
+!Added for CLM3.5
+     ! ============================================================================
+     ! Ecosystem dynamics: Uses CN, DGVM, or static parameterizations
+     ! ============================================================================
+!ylu begin 3
+#if (defined CN)
+     ! fully prognostic canopy structure and C-N biogeochemistry
+     ! - CNDV defined: prognostic biogeography; else prescribed
+     ! - CROP defined: crop algorithms called from within CNEcosystemDyn
+#if (defined CROP)
+!ylu change filter(nc) to filter
+     call CLMDebug('Begin CNEcosystemDyn')  
+    call CNEcosystemDyn(begc,endc,begp,endp,filter%num_soilc,&  !Checked and looks right so far --Yaqiong Lu 11/09/10
+                  filter%soilc, filter%num_soilp, &
+                  filter%soilp, filter%num_pcropp, &
+                  filter%pcropp, doalb)
+#else
+     call CNEcosystemDyn(begc,endc,begp,endp,filter%num_soilc,&
+                  filter%soilc, filter%num_soilp, &
+                  filter%soilp, doalb)
+#endif
+     call CLMDebug('Begin CNAnnualUpdate')
+     call CNAnnualUpdate(begc,endc,begp,endp,filter%num_soilc,&  !Add the new code from CLM4 --Yaqiong Lu 11/04/2010
+                  filter%soilc, filter%num_soilp, &
+                  filter%soilp)
+!the CASA option is not currently used in the coupled model
+#elif (defined CASA)  
+     ! Prescribed biogeography,  
+     ! prescribed canopy structure, some prognostic carbon fluxes
+     call casa_ecosystemDyn(begc, endc, begp, endp, &
+               filter%num_soilc, filter%soilc, &
+               filter%num_soilp, filter%soilp, doalb)
+     call EcosystemDyn(begp, endp, &
+                       filter%num_nolakep, filter%nolakep, &
+                       doalb)
+#else
+     ! Prescribed biogeography,
+     ! prescribed canopy structure, some prognostic carbon fluxes
+     ! The coupled model will use CN option, so this code is not add into our coupled model
+     call CLMDebug('Begin EcosystemDyn')
+     call EcosystemDyn(begp, endp, &                         
+                       filter%num_nolakep, filter%nolakep, &
+                       doalb)
+#endif
+
+
+     ! Dry Deposition of chemical tracers (Wesely (1998) parameterizaion)
+!     call depvel_compute(begp,endp)
+
+
+!ylu end 3
+
+
+
+     ! ============================================================================
+     ! Check the energy and water balance
+     ! ============================================================================
+
+     call CLMDebug('BalanceCheck')   !Yaqiong Lu add this new code from CLM4
+     call BalanceCheck(begp, endp, begc, endc, begl, endl, begg, endg)
+
+
+!ylu add
+#if (defined CN)
+!     nstep = get_nstep()
+     if (nstep > 2) then
+!        call t_startf('cnbalchk')
+       call CLMDebug('CBalanceCheck')
+        call CBalanceCheck(begc, endc, filter%num_soilc, filter%soilc)
+       call CLMDebug('NBalanceCheck')
+        call NBalanceCheck(begc, endc, filter%num_soilc, filter%soilc)
+!        call t_stopf('cnbalchk')
+     end if
+#endif
+!end add
+
+     ! ============================================================================
+     ! Update accumulators
+     ! ============================================================================
+
+
+
+    if (doalb) then
+
+        ! Albedos for non-urban columns
+        call CLMDebug('SurfaceAlbedo')  !checed and modified accoring to CLM4 --ylu
+        call SurfaceAlbedo(begg, endg, begc, endc, begp, endp, &
+                           filter%num_nourbanc, filter%nourbanc, &
+                           filter%num_nourbanp, filter%nourbanp,nextsw_cday ,declinp1)
+
+
+        ! Albedos for urban columns
+
+!        if (filter%num_urbanl > 0) then
+!           call CLMDebug('UrbanAlbedo')  !Yaqiong Lu add this new code from CLM4
+!           call UrbanAlbedo(begl, endl, begc, endc, begp, endp,   &
+!                            filter%num_urbanl, filter%urbanl, &
+!                            filter%num_urbanc, filter%urbanc, &
+!                            filter%num_urbanp, filter%urbanp)
+!        end if
+
+     end if
+
+!     call CLMDebug('updateAccFlds')
+!     call updateAccFlds()
+
+
+!  call accum_dealloc
+!  call filters_dealloc
+#if (!defined CN)
+  call EcosystemDyn_dealloc
+#endif
+
+end subroutine driver
+
+end module clmMod
+
+MODULE module_sf_clm
+
+!October 15, 2012
+!Jiming Jin: initial coupling WRF with CLM 
+!Yaqiong Lu and Jiming Jin:  CLM version 4.0 update with WRF
+!
+!------------------------------------------------------
+  use shr_kind_mod, only: r8 => shr_kind_r8
+  use clm_varpar, only: numpft, clm_varpar_mod,nlevgrnd, nlevsoi,nlevlak,nlevsno,maxpatch_pft
+  use clm_varcon, only: hvap, hsub,tfrz, vkc, sb  ,&
+                        snowage_drdt0,ndep,organic,fmax,efisop
+  use clmMod,     only: clm
+  use module_cam_support, only: endrun
+
+!sw++
+  logical, allocatable :: dm_initialized(:)
+!sw--
+  
+!
+CONTAINS
+!
+    subroutine clmdrv(zgcmxy     ,forc_qxy   ,ps   ,forc_txy    ,tsxy  &  
+                   ,shxy       ,qfx        ,lhxy        ,soiflx      ,qgh       &
+                   ,gsw, swdown,ra_sw_physics &   
+                   ,history_interval ,flwdsxy    ,smstav      ,smstot      ,qsfxy     &
+                   ,qdnxy      ,ivgtyp     ,isltyp      ,vegfra      ,albxy     &
+                   ,znt        ,z0         ,tmn         ,xland       ,xice      &
+                   ,emiss      ,snowc      ,qsfc        ,prec        ,maxpatch  &
+                   ,num_soil_layers        ,dt          ,xtime      ,dtwrf ,dzs &
+                   ,smois      ,tslb       ,snow        ,canwat      ,chs       &
+                   ,chs2                                                        &
+                   ,sh2o       ,snowh      ,forc_uxy    ,forc_vxy    ,rho       &
+                   ,shdmin    &
+                   ,shdmax     ,acsnom     ,acsnow      ,dx          ,xlat      &
+!  these variables only passed in if WRF_CHEM compiled.       BJG 3/28/19
+!                   ,xlong,ht,bio_emiss_opt,ne_area,e_bio                        &   
+                   ,xlong,ht                                                     &
+#if ( WRF_CHEM == 1 )   
+                   ,ne_area,e_bio                                                &   
+#endif
+!  end modification
+                   ,ids,ide, jds,jde, kds,kde                    &
+                   ,ims,ime, jms,jme, kms,kme                    &
+                   ,its,ite, jts,jte, kts,kte                    &
+!  Add new flag  BJG 3/28/19
+!                   ,inest, sf_urban_physics,do_bioe,id,          &
+                   ,inest, sf_urban_physics,do_bioe,do_meganfile,id,  &
+!  End modification
+!Optional urban
+                CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,   &
+                CMGR_SFCDIF,CHGR_SFCDIF,                       &
+                tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
+                uc_urb2d,                                       & !H urban
+                xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
+                trl_urb3d,tbl_urb3d,tgl_urb3d,                  & !H urban
+                sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d,    & !H urban
+                psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
+                GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban
+                th2_urb2d,q2_urb2d,ust_urb2d,                   & !O urban
+               declin_urb,cosz_urb2d,omg_urb2d,                & !I urban
+                xlat_urb2d,                                     & !I urban
+                num_roof_layers, num_wall_layers,               & !I urban
+                num_road_layers, DZR, DZB, DZG,                 & !I urban
+                FRC_URB2D, UTYPE_URB2D,                         & ! urban
+                cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d,      & ! urban
+                drelr_urb2d,drelb_urb2d,drelg_urb2d,            & ! urban
+                flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,      &
+! subgrids
+               numc,nump,sabv,sabg,lwup,snl, &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,    &
+                t_ref2m,h2osoi_liq_s1,                 &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                q_ref2m,                                   &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid,&
+                LHsoi,LHveg,LHtran,&
+                alswvisdir, alswvisdif, alswnirdir, alswnirdif,      & ! clm
+                swvisdir, swvisdif, swnirdir, swnirdif               & ! clm
+                ,t_veg24, t_veg240, fsun24, fsun240,                 &
+                fsd24, fsd240, fsi24, fsi240, laip                   &
+#ifdef CN
+!CROP&CN restart and outputs
+                ,dyntlai,dyntsai,dyntop,dynbot &
+                ,htmx,croplive,gdd1020,gdd820,gdd020,grainc,grainc_storage  &
+                ,grainc_xfer,grainn,grainn_storage,grainn_xfer,days_active  &
+                ,onset_flag,onset_counter,onset_gddflag,onset_fdd,onset_gdd &
+                ,onset_swi,offset_flag,offset_counter,offset_fdd,offset_swi &
+                ,dayl,annavg_t2m,tempavg_t2m,tempsum_potential_gpp          &
+                ,annsum_potential_gpp,tempmax_retransn,annmax_retransn      &
+                ,prev_leafc_to_litter,prev_frootc_to_litter,tempsum_npp     &
+                ,annsum_npp,leafc,leafc_storage,leafc_xfer,frootc           &
+                ,frootc_storage,frootc_xfer,livestemc,livestemc_storage     &
+                ,livestemc_xfer,deadstemc,deadstemc_storage,deadstemc_xfer  &
+                ,livecrootc,livecrootc_storage,livecrootc_xfer,deadcrootc   &
+                ,deadcrootc_storage,deadcrootc_xfer,cpool,pft_ctrunc        &
+                ,leafn,leafn_storage,leafn_xfer,frootn,frootn_storage       &
+                ,frootn_xfer,livestemn,livestemn_storage,livestemn_xfer     &  
+                ,deadstemn,deadstemn_storage,deadstemn_xfer,livecrootn      &
+                ,livecrootn_storage,livecrootn_xfer,deadcrootn              &
+                ,deadcrootn_storage,deadcrootn_xfer,npool,pft_ntrunc        &
+                ,gresp_storage,gresp_xfer,xsmrpool,annsum_counter           &
+                ,cannsum_npp,cannavg_t2m,wf,me,mean_fire_prob,cwdc,litr1c   &
+                ,litr2c,litr3c,soil1c,soil2c,soil3c,soil4c,seedc,col_ctrunc &
+                ,prod10c,prod100c,cwdn,litr1n,litr2n,litr3n,soil1n,soil2n   &
+                ,soil3n,soil4n,seedn,col_ntrunc,prod10n,prod100n,sminn      &
+                ,totlitc,dwt_seedc_to_leaf,dwt_seedc_to_deadstem,dwt_conv_cflux &
+                ,dwt_prod10c_gain,dwt_prod100c_gain,prod100c_loss,dwt_frootc_to_litr1c &
+                ,dwt_frootc_to_litr2c,dwt_frootc_to_litr3c,dwt_livecrootc_to_cwdc &
+                ,dwt_deadcrootc_to_cwdc,dwt_seedn_to_leaf,dwt_seedn_to_deadstem &
+                ,dwt_conv_nflux,dwt_prod10n_gain,dwt_prod100n_gain,prod100n_loss &
+                ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
+                , dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
+#endif
+                ,nlcat,landusef,num_pft_input,pct_pft_input,input_pft_flag  &
+                 )
+
+
+  USE module_date_time
+  USE module_sf_urban, only: urban
+  USE module_sf_noahlsm, only: LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
+  USE module_ra_gfdleta,  only: cal_mon_day
+  USE module_configure
+  USE module_state_description, ONLY : CAMSWSCHEME
+
+  implicit none
+
+  integer,  intent(in)       ::     id                              ! grid id
+  integer,  intent(in)       ::     ids,ide, jds,jde, kds,kde,  &
+                                    ims,ime, jms,jme, kms,kme,  &
+                                    its,ite, jts,jte, kts,kte
+
+  integer,intent(in)  :: num_soil_layers,maxpatch,sf_urban_physics,&
+                         ra_sw_physics,history_interval
+!  Following only need to be declared if WRF_Chem is compiled     BJG 3/29/19
+#if ( WRF_CHEM == 1 )
+  integer,intent(in)  :: ne_area
+  real, dimension(ims:ime,jms:jme,1:ne_area),intent(inout) ::&
+                   e_bio
+  real(r8) :: mbio_emis(ne_area)
+!  If WRF_Chem not compiled, create dummy arrays to
+!  replace those above.  Do not have ne_area in this case either.
+!  Arrays not actually used unless WRF_Chem is compiled.
+!  BJG 3/29/19
+#else
+  real, dimension(ims:ime,jms:jme,1:1) :: e_bio
+  real(r8) :: mbio_emis(1)
+#endif
+  logical,intent(in)  :: do_bioe
+  logical,intent(in)  :: do_meganfile
+!   End modification
+  real,dimension(ims:ime,1:num_soil_layers,jms:jme ),intent(inout) ::&
+                                                         smois, & ! total soil moisture
+                                                         sh2o,  & ! new soil liquid
+                                                         tslb     ! TSLB     STEMP
+
+   integer,intent(in)  :: nlcat
+  real,intent(in) :: dt,dx
+  real,intent(in) :: xtime, dtwrf   !fchen
+  real(r8) :: dtt
+  real, dimension(1:num_soil_layers), intent(in)::dzs
+
+  real,dimension(ims:ime,jms:jme ),intent(inout) ::&
+                    smstav     ,smstot                &
+                   ,znt        ,snowc      ,qsfc       ,snow        ,snowh &
+                   ,canwat     ,acsnom     ,acsnow,   emiss, z0
+
+  real,dimension(ims:ime,jms:jme ),intent(in) ::&
+                 vegfra, tmn,shdmin,shdmax
+
+  real,dimension(ims:ime,jms:jme ),intent(in) ::&
+                   qgh,chs,chs2
+!  Commented out here because assigned above.  BJG 3/29/19
+
+!  real,dimension(ims:ime,jms:jme,1:ne_area),intent(inout) ::&
+!                   e_bio
+
+  real(r8) :: efisop_buf(6)
+  logical :: found = .false.
+  integer,   dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
+  real,  dimension(ims:ime,jms:jme ),intent(inout) :: soiflx,sabv,sabg,lwup,t2m_max,t2m_min
+  integer,  dimension(ims:ime,1:maxpatch,jms:jme ) :: snl,snl1
+  real,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,     &
+                t_ref2m,h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                q_ref2m,                                            &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                SWUPsubgrid,LHsoi,LHveg,LHtran
+
+ real(r8) :: gti_buf
+
+#ifdef CN
+ real, dimension(ims:ime,1:maxpatch,jms:jme),intent(in) :: dyntlai,dyntsai,dyntop,dynbot
+
+!ADD_NEW_VAR
+  integer,   dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: croplive
+  real,dimension(ims:ime,1:maxpatch,jms:jme),intent(inout) :: &
+                 htmx,gdd1020,gdd820,gdd020,grainc,grainc_storage  &
+                ,grainc_xfer,grainn,grainn_storage,grainn_xfer,days_active  &
+                ,onset_flag,onset_counter,onset_gddflag,onset_fdd,onset_gdd &
+                ,onset_swi,offset_flag,offset_counter,offset_fdd,offset_swi &
+                ,dayl,annavg_t2m,tempavg_t2m,tempsum_potential_gpp          &
+                ,annsum_potential_gpp,tempmax_retransn,annmax_retransn      &
+                ,prev_leafc_to_litter,prev_frootc_to_litter,tempsum_npp     &
+                ,annsum_npp,leafc,leafc_storage,leafc_xfer,frootc           &
+                ,frootc_storage,frootc_xfer,livestemc,livestemc_storage     &
+                ,livestemc_xfer,deadstemc,deadstemc_storage,deadstemc_xfer  &
+                ,livecrootc,livecrootc_storage,livecrootc_xfer,deadcrootc   &
+                ,deadcrootc_storage,deadcrootc_xfer,cpool,pft_ctrunc        &
+                ,leafn,leafn_storage,leafn_xfer,frootn,frootn_storage       &
+                ,frootn_xfer,livestemn,livestemn_storage,livestemn_xfer     &
+                ,deadstemn,deadstemn_storage,deadstemn_xfer,livecrootn      &
+                ,livecrootn_storage,livecrootn_xfer,deadcrootn              &
+                ,deadcrootn_storage,deadcrootn_xfer,npool,pft_ntrunc        &
+                ,gresp_storage,gresp_xfer,xsmrpool,annsum_counter           &
+                ,cannsum_npp,cannavg_t2m,wf,me,mean_fire_prob,cwdc,litr1c   &
+                ,litr2c,litr3c,soil1c,soil2c,soil3c,soil4c,seedc,col_ctrunc &
+                ,prod10c,prod100c,cwdn,litr1n,litr2n,litr3n,soil1n,soil2n   &
+                ,soil3n,soil4n,seedn,col_ntrunc,prod10n,prod100n,sminn      &
+                ,totlitc,dwt_seedc_to_leaf,dwt_seedc_to_deadstem,dwt_conv_cflux &
+                ,dwt_prod10c_gain,dwt_prod100c_gain,prod100c_loss,dwt_frootc_to_litr1c &
+                ,dwt_frootc_to_litr2c,dwt_frootc_to_litr3c,dwt_livecrootc_to_cwdc &
+                ,dwt_deadcrootc_to_cwdc,dwt_seedn_to_leaf,dwt_seedn_to_deadstem & 
+                ,dwt_conv_nflux,dwt_prod10n_gain,dwt_prod100n_gain,prod100n_loss &
+                ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
+                , dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn 
+
+#endif
+!!!
+
+  REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , OPTIONAL, INTENT(IN):: &
+  landusef 
+
+  LOGICAL, OPTIONAL, INTENT(IN)   ::  input_pft_flag 
+
+  INTEGER, INTENT(IN)::  num_pft_input
+
+  REAL, DIMENSION(ims:ime, num_pft_input, jms:jme) , OPTIONAL, INTENT(IN):: &
+  pct_pft_input 
+
+
+  real(r8), dimension(nlcat)  :: landusef_buf
+  real(r8), dimension(num_pft_input)  :: pct_pft_input_buf
+
+  integer  :: nstep   !fchen
+  integer  :: i,j,m,inest,k
+  real, dimension(ims:ime, kms:kme,jms:jme),intent(in) ::&
+            forc_txy,forc_uxy,forc_vxy,forc_qxy,zgcmxy,ps
+  real, dimension(ims:ime, kms:kme,jms:jme),intent(in) :: &
+            rho
+
+  real :: flwdsxy(ims:ime,jms:jme)           !downward longwave rad onto surface (W/m**2)
+  real :: gsw(ims:ime,jms:jme)               !downward solar rad onto surface (W/m**2)
+
+  real :: swdown(ims:ime,jms:jme)
+  real, dimension(ims:ime,jms:jme),intent(in) :: swvisdir, swvisdif, swnirdir,swnirdif
+  real, dimension(ims:ime,jms:jme),intent(out):: alswvisdir,alswvisdif,alswnirdir,alswnirdif
+
+!jdf
+  real, dimension(ims:ime,1:maxpatch,jms:jme), intent(inout) :: t_veg24    ! voce accum variable
+  real, dimension(ims:ime,1:maxpatch,jms:jme), intent(inout) :: t_veg240
+  real, dimension(ims:ime,1:maxpatch,jms:jme), intent(inout) :: fsun24
+  real, dimension(ims:ime,1:maxpatch,jms:jme), intent(inout) :: fsun240
+  real, dimension(ims:ime,1:maxpatch,jms:jme), intent(inout) :: fsd24
+  real, dimension(ims:ime,1:maxpatch,jms:jme), intent(inout) :: fsd240
+  real, dimension(ims:ime,1:maxpatch,jms:jme), intent(inout) :: fsi24
+  real, dimension(ims:ime,1:maxpatch,jms:jme), intent(inout) :: fsi240
+  real, dimension(ims:ime,1:maxpatch,jms:jme), intent(inout) :: laip
+  real(r8) :: t_veg24_d(ims:ime,1:maxpatch,jms:jme)      ! voce accum variable
+  real(r8) :: t_veg240_d(ims:ime,1:maxpatch,jms:jme)
+  real(r8) :: fsun24_d(ims:ime,1:maxpatch,jms:jme)
+  real(r8) :: fsun240_d(ims:ime,1:maxpatch,jms:jme)
+  real(r8) :: fsd24_d(ims:ime,1:maxpatch,jms:jme)
+  real(r8) :: fsd240_d(ims:ime,1:maxpatch,jms:jme)
+  real(r8) :: fsi24_d(ims:ime,1:maxpatch,jms:jme)
+  real(r8) :: fsi240_d(ims:ime,1:maxpatch,jms:jme)
+  real(r8) :: laip_d(ims:ime,1:maxpatch,jms:jme)
+!jdf
+
+  real :: xlat (ims:ime,jms:jme)
+  real :: xlong(ims:ime,jms:jme)
+  real :: ht(ims:ime,jms:jme)
+  real :: xland (ims:ime,jms:jme)
+  real :: xice (ims:ime,jms:jme)
+  real :: prec (ims:ime,jms:jme)              !total precipitation rate (mm; accumlated precipitation within DT)
+  integer  :: ivgtyp(ims:ime,jms:jme)
+  integer  :: isltyp (ims:ime,jms:jme)
+
+  real :: albxy(ims:ime,jms:jme)           
+  real :: tsxy(ims:ime,jms:jme)           
+  real :: t2clm(ims:ime,jms:jme)
+  real :: shxy(ims:ime,jms:jme)           
+  real :: lhxy(ims:ime,jms:jme)           
+  real :: qfx(ims:ime,jms:jme)   ! kg/(sm^2) =>mm/s       
+  real :: qsfxy(ims:ime,jms:jme) 
+  real :: qdnxy(ims:ime,jms:jme) 
+
+  real(r8) :: alswvisdir_buf,alswvisdif_buf,alswnirdir_buf,alswnirdif_buf
+  real(r8) :: swvisdir_buf,swvisdif_buf,swnirdir_buf,swnirdif_buf
+
+  real(r8) :: albxy_buf
+  real(r8) :: tsxy_buf,trefxy_buf
+  real(r8) :: shxy_buf
+  real(r8) :: lhxy_buf
+  real(r8) :: qsfxy_buf
+  real(r8) :: qdnxy_buf
+  real(r8) :: soiflx_buf
+  real(r8) :: sabv_buf
+  real(r8) :: sabg_buf
+  real(r8) :: lwup_buf
+  real(r8) :: znt_buf
+  real(r8) :: rhoxy_buf
+
+  real(r8) :: swd_buf
+  real(r8) :: forc_sols_buf
+  real(r8) :: forc_soll_buf
+  real(r8) :: forc_solsd_buf
+  real(r8) :: forc_solld_buf
+  real(r8) :: area_buf
+  real(r8) :: forc_pbot_buf
+  real(r8) :: forc_txy_buf
+  real(r8) :: forc_uxy_buf
+  real(r8) :: forc_vxy_buf
+  real(r8) :: forc_qxy_buf
+  real(r8) :: zgcmxy_buf
+  real(r8) :: prec_buf
+  real(r8) :: flwdsxy_buf
+  real(r8) :: forc_psrfxy_buf
+!  Commented out here because defined above.
+!  BJG 3/29/19
+
+!  real(r8) :: mbio_emis(ne_area)
+
+!ADD_NEW_VAR
+  real(r8) :: forc_ndepxy_buf
+!!!
+
+  real(r8) :: xlat_buf 
+  real(r8) :: xlon_buf
+  real(r8) :: rho_in
+
+  real(r8),dimension(maxpatch,-nlevsno+1:nlevgrnd) :: dzclm
+  real(r8),dimension(maxpatch,-nlevsno+1:nlevgrnd) :: zclm
+  real(r8),dimension(maxpatch,-nlevsno:nlevgrnd)   :: ziclm
+
+  real(r8),dimension(maxpatch,-nlevsno+1:nlevgrnd)   :: &
+                          h2osoi_liq_buf, &
+                          h2osoi_ice_buf, &
+                          t_soisno_buf
+
+  real(r8),dimension(maxpatch,-nlevsno+1:0) ::snw_rds_buf
+
+      
+  real(r8),dimension(maxpatch,1:num_soil_layers)   :: &
+                         t_lake_buf, h2osoi_vol_buf
+  integer  :: lndmsk
+!------------------------------------------------------------------------
+ real(r8),dimension(maxpatch) :: organic_buf
+
+  real(r8), dimension(maxpatch)  ::                 &
+                snowdp_buf,wtc_buf,wtp_buf,h2osno_buf,t_grnd_buf,t_veg_buf,         & 
+                h2ocan_buf,h2ocan_col_buf,     &
+                t_ref2m_buf, q_ref2m_buf,                          &
+                albedosubgrid_buf, lhsubgrid_buf, hfxsubgrid_buf, lwupsubgrid_buf, &
+                q2subgrid_buf,sabgsubgrid_buf,sabvsubgrid_buf,nrasubgrid_buf,swupsubgrid_buf,&
+                lhsoi_buf,lhveg_buf,lhtran_buf,tlai_buf,tsai_buf,htop_buf,hbot_buf
+#ifdef CN
+!CROP&CN buf variables
+  integer,dimension(maxpatch) :: croplive_buf
+   real(r8), dimension(maxpatch)  ::  &
+                 htmx_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
                 ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
                 ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
@@ -58431,13 +72155,18 @@ end module initializeMod
                 ,cannsum_npp_buf,cannavg_t2m_buf,wf_buf,me_buf,mean_fire_prob_buf,cwdc_buf,litr1c_buf   &
                 ,litr2c_buf,litr3c_buf,soil1c_buf,soil2c_buf,soil3c_buf,soil4c_buf,seedc_buf,col_ctrunc_buf &
                 ,prod10c_buf,prod100c_buf,cwdn_buf,litr1n_buf,litr2n_buf,litr3n_buf,soil1n_buf,soil2n_buf   &
+<<<<<<< HEAD
                 ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf &
+=======
+                ,soil3n_buf,soil4n_buf,seedn_buf,col_ntrunc_buf,prod10n_buf,prod100n_buf,sminn_buf&
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 ,totlitc_buf,dwt_seedc_to_leaf_buf,dwt_seedc_to_deadstem_buf,dwt_conv_cflux_buf &
                 ,dwt_prod10c_gain_buf,dwt_prod100c_gain_buf,prod100c_loss_buf,dwt_frootc_to_litr1c_buf &
                 ,dwt_frootc_to_litr2c_buf,dwt_frootc_to_litr3c_buf,dwt_livecrootc_to_cwdc_buf &
                 ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
                 ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
                 ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+<<<<<<< HEAD
                 , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf &
 #endif    
                                                                       )
@@ -58575,6 +72304,682 @@ end module initializeMod
 
 #if (defined CN)
      call biochem_to_wrf(htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+=======
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf  
+#endif
+! ----------------------------------------------------------------------
+! DECLARATIONS START - urban
+! ----------------------------------------------------------------------
+
+! input variables surface_driver --> lsm 
+     INTEGER, INTENT(IN) :: num_roof_layers
+     INTEGER, INTENT(IN) :: num_wall_layers
+     INTEGER, INTENT(IN) :: num_road_layers
+     REAL, OPTIONAL, DIMENSION(1:num_roof_layers), INTENT(IN) :: DZR
+     REAL, OPTIONAL, DIMENSION(1:num_wall_layers), INTENT(IN) :: DZB
+     REAL, OPTIONAL, DIMENSION(1:num_road_layers), INTENT(IN) :: DZG
+     REAL, OPTIONAL, INTENT(IN) :: DECLIN_URB
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZ_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: OMG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: XLAT_URB2D
+
+! input variables lsm --> urban
+     INTEGER :: UTYPE_URB ! urban type [urban=1, suburban=2, rural=3]
+     REAL :: TA_URB       ! potential temp at 1st atmospheric level [K]
+     REAL :: QA_URB       ! mixing ratio at 1st atmospheric level  [kg/kg]
+     REAL :: UA_URB       ! wind speed at 1st atmospheric level    [m/s]
+     REAL :: U1_URB       ! u at 1st atmospheric level             [m/s]
+     REAL :: V1_URB       ! v at 1st atmospheric level             [m/s]
+     REAL :: SSG_URB      ! downward total short wave radiation    [W/m/m]
+     REAL :: LLG_URB      ! downward long wave radiation           [W/m/m]
+     REAL :: RAIN_URB     ! precipitation                          [mm/h]
+     REAL :: RHOO_URB     ! air density                            [kg/m^3]
+     REAL :: ZA_URB       ! first atmospheric level                [m]
+     REAL :: DELT_URB     ! time step                              [s]
+     REAL :: SSGD_URB     ! downward direct short wave radiation   [W/m/m]
+     REAL :: SSGQ_URB     ! downward diffuse short wave radiation  [W/m/m]
+     REAL :: XLAT_URB     ! latitude                               [deg]
+     REAL :: COSZ_URB     ! cosz
+     REAL :: OMG_URB      ! hour angle
+     REAL :: ZNT_URB      ! roughness length                       [m]
+     REAL :: TR_URB
+     REAL :: TB_URB
+     REAL :: TG_URB
+     REAL :: TC_URB
+     REAL :: QC_URB
+     REAL :: UC_URB
+     REAL :: XXXR_URB
+     REAL :: XXXB_URB
+     REAL :: XXXG_URB
+     REAL :: XXXC_URB
+     REAL, DIMENSION(1:num_roof_layers) :: TRL_URB  ! roof layer temp [K]
+     REAL, DIMENSION(1:num_wall_layers) :: TBL_URB  ! wall layer temp [K]
+     REAL, DIMENSION(1:num_road_layers) :: TGL_URB  ! road layer temp [K]
+     LOGICAL  :: LSOLAR_URB
+     
+!===Yang,2014/10/08,hydrological variable for single layer UCM===
+     INTEGER :: jmonth, jday
+     REAL :: DRELR_URB
+     REAL :: DRELB_URB
+     REAL :: DRELG_URB
+     REAL :: FLXHUMR_URB
+     REAL :: FLXHUMB_URB
+     REAL :: FLXHUMG_URB
+     REAL :: CMCR_URB
+     REAL :: TGR_URB
+     REAL, DIMENSION(1:num_roof_layers) :: SMR_URB  ! green roof layer moisture
+     REAL, DIMENSION(1:num_roof_layers) :: TGRL_URB ! green roof layer temp [K]
+
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TGRL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: SMR_URB3D
+
+! state variable surface_driver <--> lsm <--> urban
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TC_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: QC_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UC_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXC_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SH_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LH_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: G_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: RN_URB2D
+!
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D
+
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TRL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_wall_layers, jms:jme ), INTENT(INOUT) :: TBL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D
+
+   REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB, CMGR_URB, CHGR_URB
+
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMGR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHGR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMC_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHC_SFCDIF
+
+! output variable lsm --> surface_driver
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: PSIM_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: PSIH_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: GZ1OZ0_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: U10_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: V10_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: TH2_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: Q2_URB2D
+!
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: AKMS_URB2D
+!
+     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: UST_URB2D
+     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: FRC_URB2D
+     INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: UTYPE_URB2D
+
+
+! output variables urban --> lsm
+     REAL :: TS_URB     ! surface radiative temperature    [K]
+     REAL :: QS_URB     ! surface humidity                 [-]
+     REAL :: SH_URB     ! sensible heat flux               [W/m/m]
+     REAL :: LH_URB     ! latent heat flux                 [W/m/m]
+     REAL :: LH_KINEMATIC_URB ! latent heat flux, kinetic  [kg/m/m/s]
+     REAL :: SW_URB     ! upward short wave radiation flux [W/m/m]
+     REAL :: ALB_URB    ! time-varying albedo            [fraction]
+     REAL :: LW_URB     ! upward long wave radiation flux  [W/m/m]
+     REAL :: G_URB      ! heat flux into the ground        [W/m/m]
+     REAL :: RN_URB     ! net radiation                    [W/m/m]
+     REAL :: PSIM_URB   ! shear f for momentum             [-]
+     REAL :: PSIH_URB   ! shear f for heat                 [-]
+     REAL :: GZ1OZ0_URB   ! shear f for heat                 [-]
+     REAL :: U10_URB    ! wind u component at 10 m         [m/s]
+     REAL :: V10_URB    ! wind v component at 10 m         [m/s]
+     REAL :: TH2_URB    ! potential temperature at 2 m     [K]
+     REAL :: Q2_URB     ! humidity at 2 m                  [-]
+     REAL :: CHS_URB
+     REAL :: CHS2_URB
+     REAL :: UST_URB
+! ----------------------------------------------------------------------
+! DECLARATIONS END - urban
+! ----------------------------------------------------------------------
+ CHARACTER(len=24) ::  nextstep_date, cdate,simulation_start_date
+ INTEGER simulation_start_year   , &
+         simulation_start_month  , &
+         simulation_start_day    , &
+         simulation_start_hour   , &
+         simulation_start_minute , &
+         simulation_start_second
+
+ integer  :: myr,mon,mday,mhr,mint,msc,mtsec,myr1,mon1,mday1,mhr1,mint1,msc1,mtsec1
+ integer  :: myrs,mons,mdays,mhrs,mints,mscs,mtsecs
+ integer  :: julyr,julday, julyr1,julday1
+ integer  :: mbdate
+ integer  :: msec,msec1
+ integer  :: ns
+ real(r8) :: calday,calday1
+ real     :: gmt,gmt1
+ integer(selected_int_kind(12))  :: idts
+ integer  :: idt
+ real(r8) :: dsqmin, dsq
+ character*256 :: msg
+ real :: mh_urb,stdh_urb,lp_urb,hgt_urb,frc_urb,lb_urb,check
+ real, dimension(4) :: lf_urb
+
+ logical, external :: wrf_dm_on_monitor
+ 
+! ----------------------------------------------------------------------
+   call clm_varpar_mod(nlcat)
+
+   call CLMDebug('Now in clmdrv')
+
+!  if((nlevsoi /= num_soil_layers) .or. (nlevlak/= num_soil_layers)) then
+!    print*,'nlevsoi and nlevlak must be equal to num_soil_layers in CLM; Stop in module_sf_clm.F'
+!    call endrun() 
+!  end if
+  nstep = nint( (xtime*60. + dtwrf) / dt)
+  if( nstep .le. 1 ) nstep = 1
+
+  dtt = dt
+  
+   write(msg,*) 'dt=',dt,'jts=',jts,'jte=',jte,'its=',its,'ite=',ite
+   call CLMDebug(msg)
+
+  CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
+  CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
+  CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
+  CALL nl_get_simulation_start_hour   ( 1, simulation_start_hour   )
+  CALL nl_get_simulation_start_minute ( 1, simulation_start_minute )
+  CALL nl_get_simulation_start_second ( 1, simulation_start_second )
+  WRITE ( simulation_start_date(1:19) , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
+           simulation_start_year,simulation_start_month,simulation_start_day,&
+           simulation_start_hour,simulation_start_minute,simulation_start_second
+  simulation_start_date(1:24) = simulation_start_date(1:19)//'.0000'
+
+  CALL split_date_char (simulation_start_date, myrs, mons, mdays, mhrs, mints, mscs, mtsecs) 
+
+  idt  = nint(dtt)*nstep
+  idts = nint(dtt)*nstep
+  if(idt/=idts) then
+     print*,'The integer idt and idts is too large; Stop in module_sf_clm.F', idt,idts
+     call endrun()
+  end if
+  CALL geth_newdate (cdate(1:19), simulation_start_date(1:19), idt) ! dt in seconds
+  cdate(1:24) = cdate(1:19)//'.0000'
+  CALL split_date_char (cdate, myr, mon, mday, mhr, mint, msc, mtsec )
+  CALL geth_newdate (nextstep_date(1:19), cdate(1:19), nint(dtt)) ! dtt in seconds
+  nextstep_date(1:24) = nextstep_date(1:19)//'.0000'
+  CALL split_date_char (nextstep_date, myr1, mon1, mday1, mhr1, mint1, msc1, mtsec1) 
+  CALL get_julgmt(cdate,julyr,julday, gmt)   !module_date_time.F ../share/
+  CALL get_julgmt(nextstep_date,julyr1,julday1, gmt1)
+
+  msec  = mhr*3600  + mint*60
+  msec1 = mhr1*3600 + mint1*60
+  calday = julday  + gmt/24.0
+  calday1= julday1 + gmt1/24.0
+  mbdate = myrs*10000 + mons*100 + mdays
+
+
+!write(6,*) 'at nstep=',nstep,'snowage_drdt0(1,31,8)=',snowage_drdt0(1,31,8)
+
+  if( do_bioe ) then
+    e_bio(:,:,:) = 0.
+  endif
+
+!jdf
+  do j=jts,jte
+  do m=1,maxpatch
+  do i=its,ite
+     t_veg24_d(i,m,j)=DBLE(t_veg24(i,m,j))
+     t_veg240_d(i,m,j)=DBLE(t_veg240(i,m,j))
+     fsun24_d(i,m,j)=DBLE(fsun24(i,m,j))
+     fsun240_d(i,m,j)=DBLE(fsun240(i,m,j))
+     fsd24_d(i,m,j)=DBLE(fsd24(i,m,j))
+     fsd240_d(i,m,j)=DBLE(fsd240(i,m,j))
+     fsi24_d(i,m,j)=DBLE(fsi24(i,m,j))
+     fsi240_d(i,m,j)=DBLE(fsi240(i,m,j))
+     laip_d(i,m,j)=DBLE(laip(i,m,j))
+  enddo
+  enddo
+  enddo
+!jdf
+j_loop : &
+  do j=jts,jte
+i_loop : &
+   do i=its,ite
+      if(xland(i,j) == 1.0) then
+        lndmsk = 1
+      else
+        lndmsk = 0
+      end if
+
+is_land : &
+    if(lndmsk == 1) then
+      landusef_buf(:) = real(landusef(i,:,j),kind=r8)
+      pct_pft_input_buf(:) = real(pct_pft_input(i,:,j),kind=r8)
+      qsfxy_buf       = real( qsfxy(i,j),kind=r8 )
+      qdnxy_buf       = real( qdnxy(i,j),kind=r8 )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      xlon_buf       = real( xlong(i,j),kind=r8 ) + 360.0_r8
+      xlat_buf       = real( xlat(i,j),kind=r8 )
+      albxy_buf      = real( albxy(i,j),kind=r8 )
+      if(gsw(i,j) > 0. .and. albxy_buf < 0.99_r8 .and. albxy_buf > 0._r8 )then
+         swd_buf     = real(gsw(i,j),kind=r8)/(1._r8 - albxy_buf)
+         swdown(i,j) = real(gsw(i,j),kind=r8)/(1._r8 - albxy_buf)
+      else
+         swd_buf     = 0._r8
+         swdown(i,j) = 0._r8
+      end if
+
+!   if( ra_sw_physics /= 3 ) then   !if not CAM scheme, the use 0.35/0.15 for coupling --ylu
+    if( ra_sw_physics /= CAMSWSCHEME ) then   !if not CAM scheme, the use 0.35/0.15 for coupling --ylu
+      forc_sols_buf  = swd_buf*0.35_r8
+      forc_soll_buf  = swd_buf*0.35_r8
+      forc_solsd_buf = swd_buf*0.15_r8
+      forc_solld_buf = swd_buf*0.15_r8
+    else                            !if use cam radiation, then we can directly use the seperate swd --ylu
+      forc_sols_buf  = real( swvisdir(i,j),kind=r8 )
+      forc_soll_buf  = real( swnirdir(i,j),kind=r8 )
+      forc_solsd_buf = real( swvisdif(i,j),kind=r8 )
+      forc_solld_buf = real( swnirdif(i,j),kind=r8 )
+    end if
+   
+
+      area_buf       = real(dx,kind=r8)
+      area_buf       = area_buf*area_buf/1.e6_r8 !(km^2)
+      forc_pbot_buf  = real( ps(i,1,j),kind=r8 ) !Pa
+      forc_txy_buf   = real( forc_txy(i,1,j),kind=r8 )
+      forc_uxy_buf   = real( forc_uxy(i,1,j),kind=r8 )
+      forc_vxy_buf   = real( forc_vxy(i,1,j),kind=r8 )
+ 
+! convert mixing raitio to specific humdity -- Jiming Jin 7/10/2013
+      forc_qxy_buf   = real(forc_qxy(i,1,j),kind=r8)/(1._r8 + real(forc_qxy(i,1,j),kind=r8))
+
+      zgcmxy_buf     = real( zgcmxy(i,1,j),kind=r8 )
+      prec_buf       = real(prec(i,j),kind=r8)/dtt ! mm/s
+      flwdsxy_buf    = real( flwdsxy(i,j),kind=r8 )
+      forc_psrfxy_buf= real( ps(i,1,j),kind=r8 ) ! Pa
+!ADD_NEW_VAR
+      forc_ndepxy_buf=ndep/(86400._r8 * 365._r8)
+!!!
+
+      efisop_buf(1:6) = efisop(1:6)
+      gti_buf      = fmax
+
+
+      soiflx(i,j) = 0.0
+      sabv(i,j)   = 0.0
+      sabg(i,j)   = 0.0
+      lwup(i,j)   = 0.0
+      soiflx_buf  = 0.0_r8
+      sabv_buf    = 0.0_r8
+      sabg_buf    = 0.0_r8
+      lwup_buf    = 0.0_r8
+
+     swvisdir_buf = real(swvisdir(i,j),kind=r8)
+     swvisdif_buf = real(swvisdif(i,j),kind=r8)
+     swnirdir_buf = real(swnirdir(i,j),kind=r8)
+     swnirdif_buf = real(swnirdif(i,j),kind=r8)
+
+patch_loop_1 : &
+     do m=1,maxpatch
+      do k =1,nlevgrnd 
+        zclm(m,k) =  0.025_r8*(exp(0.5_r8*(real(k,kind=r8) - 0.5_r8)) - 1._r8)
+      end do
+
+       dzclm(m,1) = 0.5_r8*(zclm(m,1)+zclm(m,2))
+       do k = 2,nlevgrnd-1
+         dzclm(m,k)= 0.5_r8*(zclm(m,k+1)-zclm(m,k-1))
+       enddo
+       dzclm(m,nlevgrnd) = zclm(m,nlevgrnd)-zclm(m,nlevgrnd-1)
+
+      ziclm(m,0) = 0._r8
+      do k =1,nlevgrnd-1 
+        ziclm(m,k) =  0.5_r8*(zclm(m,k) + zclm(m,k+1)) 
+      end do
+
+      ziclm(m,nlevgrnd) =  zclm(m,nlevgrnd) + 0.5_r8*dzclm(m,nlevgrnd)
+
+      dzclm(m,-4) = dzsnow5(i,m,j)
+      dzclm(m,-3) = dzsnow4(i,m,j)
+      dzclm(m,-2) = dzsnow3(i,m,j)
+      dzclm(m,-1) = dzsnow2(i,m,j)
+      dzclm(m,0)  = dzsnow1(i,m,j)
+
+
+      do k=0,-nlevsno+1, -1
+        zclm(m,k)     = ziclm(m,k) - 0.5_r8*dzclm(m,k)
+        ziclm(m,k-1)  = ziclm(m,k) - dzclm(m,k)
+      end do
+
+      snl1(i,m,j) = snl(i,m,j)
+      snowdp_buf(m)     = snowdp(i,m,j)
+!     snowage_buf(m)    = snowage(i,m,j)
+      snw_rds_buf(m,-4) = snowrds5(i,m,j)
+      snw_rds_buf(m,-3) = snowrds4(i,m,j)
+      snw_rds_buf(m,-2) = snowrds3(i,m,j)
+      snw_rds_buf(m,-1) = snowrds2(i,m,j)
+      snw_rds_buf(m,0) = snowrds1(i,m,j)
+
+      h2osoi_liq_buf(m,-4) = h2osoi_liq_s5(i,m,j)
+      h2osoi_liq_buf(m,-3) = h2osoi_liq_s4(i,m,j)
+      h2osoi_liq_buf(m,-2) = h2osoi_liq_s3(i,m,j)
+      h2osoi_liq_buf(m,-1) = h2osoi_liq_s2(i,m,j)
+      h2osoi_liq_buf(m,0)  = h2osoi_liq_s1(i,m,j)
+      h2osoi_liq_buf(m,1)  = h2osoi_liq1(i,m,j)
+      h2osoi_liq_buf(m,2)  = h2osoi_liq2(i,m,j)
+      h2osoi_liq_buf(m,3)  = h2osoi_liq3(i,m,j)
+      h2osoi_liq_buf(m,4)  = h2osoi_liq4(i,m,j)
+      h2osoi_liq_buf(m,5)  = h2osoi_liq5(i,m,j)
+      h2osoi_liq_buf(m,6)  = h2osoi_liq6(i,m,j)
+      h2osoi_liq_buf(m,7)  = h2osoi_liq7(i,m,j)
+      h2osoi_liq_buf(m,8)  = h2osoi_liq8(i,m,j)
+      h2osoi_liq_buf(m,9)  = h2osoi_liq9(i,m,j)
+      h2osoi_liq_buf(m,10) = h2osoi_liq10(i,m,j)
+
+      h2osoi_ice_buf(m,-4) = h2osoi_ice_s5(i,m,j)
+      h2osoi_ice_buf(m,-3) = h2osoi_ice_s4(i,m,j)
+      h2osoi_ice_buf(m,-2) = h2osoi_ice_s3(i,m,j)
+      h2osoi_ice_buf(m,-1) = h2osoi_ice_s2(i,m,j)
+      h2osoi_ice_buf(m,0)  = h2osoi_ice_s1(i,m,j)
+      h2osoi_ice_buf(m,1)  = h2osoi_ice1(i,m,j)
+      h2osoi_ice_buf(m,2)  = h2osoi_ice2(i,m,j)
+      h2osoi_ice_buf(m,3)  = h2osoi_ice3(i,m,j)
+      h2osoi_ice_buf(m,4)  = h2osoi_ice4(i,m,j)
+      h2osoi_ice_buf(m,5)  = h2osoi_ice5(i,m,j)
+      h2osoi_ice_buf(m,6)  = h2osoi_ice6(i,m,j)
+      h2osoi_ice_buf(m,7)  = h2osoi_ice7(i,m,j)
+      h2osoi_ice_buf(m,8)  = h2osoi_ice8(i,m,j)
+      h2osoi_ice_buf(m,9)  = h2osoi_ice9(i,m,j)
+      h2osoi_ice_buf(m,10) = h2osoi_ice10(i,m,j)
+
+      t_soisno_buf(m,-4) = t_soisno_s5(i,m,j)
+      t_soisno_buf(m,-3) = t_soisno_s4(i,m,j)
+      t_soisno_buf(m,-2) = t_soisno_s3(i,m,j)
+      t_soisno_buf(m,-1) = t_soisno_s2(i,m,j)
+      t_soisno_buf(m,0)  = t_soisno_s1(i,m,j)
+      t_soisno_buf(m,1)  = t_soisno1(i,m,j)
+      t_soisno_buf(m,2)  = t_soisno2(i,m,j)
+      t_soisno_buf(m,3)  = t_soisno3(i,m,j)
+      t_soisno_buf(m,4)  = t_soisno4(i,m,j)
+      t_soisno_buf(m,5)  = t_soisno5(i,m,j)
+      t_soisno_buf(m,6)  = t_soisno6(i,m,j)
+      t_soisno_buf(m,7)  = t_soisno7(i,m,j)
+      t_soisno_buf(m,8)  = t_soisno8(i,m,j)
+      t_soisno_buf(m,9)  = t_soisno9(i,m,j)
+      t_soisno_buf(m,10) = t_soisno10(i,m,j)
+
+
+      t_lake_buf(m,1)  = t_lake1(i,m,j)
+      t_lake_buf(m,2)  = t_lake2(i,m,j)
+      t_lake_buf(m,3)  = t_lake3(i,m,j)
+      t_lake_buf(m,4)  = t_lake4(i,m,j)
+      t_lake_buf(m,5)  = t_lake5(i,m,j)
+      t_lake_buf(m,6)  = t_lake6(i,m,j)
+      t_lake_buf(m,7)  = t_lake7(i,m,j)
+      t_lake_buf(m,8)  = t_lake8(i,m,j)
+      t_lake_buf(m,9)  = t_lake9(i,m,j)
+      t_lake_buf(m,10) = t_lake10(i,m,j)
+
+      h2osoi_vol_buf(m,1)  = h2osoi_vol1(i,m,j)
+      h2osoi_vol_buf(m,2)  = h2osoi_vol2(i,m,j)
+      h2osoi_vol_buf(m,3)  = h2osoi_vol3(i,m,j)
+      h2osoi_vol_buf(m,4)  = h2osoi_vol4(i,m,j)
+      h2osoi_vol_buf(m,5)  = h2osoi_vol5(i,m,j)
+      h2osoi_vol_buf(m,6)  = h2osoi_vol6(i,m,j)
+      h2osoi_vol_buf(m,7)  = h2osoi_vol7(i,m,j)
+      h2osoi_vol_buf(m,8)  = h2osoi_vol8(i,m,j)
+      h2osoi_vol_buf(m,9)  = h2osoi_vol9(i,m,j)
+      h2osoi_vol_buf(m,10) = h2osoi_vol10(i,m,j)
+
+      t_grnd_buf(m)     = t_grnd(i,m,j)
+      t_veg_buf(m)      = t_veg(i,m,j)
+      h2ocan_buf(m)     = h2ocan(i,m,j)
+      h2ocan_col_buf(m) = h2ocan_col(i,m,j)
+      h2osno_buf(m)     = h2osno(i,m,j)
+      albedosubgrid_buf(m) = albedosubgrid(i,m,j)
+      lhsubgrid_buf(m)  = lhsubgrid(i,m,j)
+      hfxsubgrid_buf(m) = hfxsubgrid(i,m,j)
+      lwupsubgrid_buf(m)= lwupsubgrid(i,m,j)
+      q2subgrid_buf(m)  = q2subgrid(i,m,j)
+!ylu 01/14/09
+      sabvsubgrid_buf(m) = sabvsubgrid(i,m,j)
+      sabgsubgrid_buf(m) = sabgsubgrid(i,m,j)
+      nrasubgrid_buf(m) = nrasubgrid(i,m,j)
+      swupsubgrid_buf(m) = swupsubgrid(i,m,j)      
+!ylu 04/07/09 add three component of LH to output file
+     lhsoi_buf(m) = lhsoi(i,m,j)
+     lhveg_buf(m) = lhveg(i,m,j)
+     lhtran_buf(m) = lhtran(i,m,j) 
+!!!
+#ifdef CN
+!ADD_NEW_VAR 02/14/2011
+     tlai_buf(m) = dyntlai(i,m,j)
+     tsai_buf(m) = dyntsai(i,m,j)
+     htop_buf(m) = dyntop(i,m,j)
+     hbot_buf(m) = dynbot(i,m,j)
+#endif
+
+     organic_buf(m) = organic(m)
+
+      t_ref2m_buf(m)    = t_ref2m(i,m,j)
+      q_ref2m_buf(m)    = q_ref2m(i,m,j)
+
+      !czhao add and check wtp_buf   -czhao +++++ 
+        wtc_buf(m)=wtc(i,m,j)        
+        wtp_buf(m)=wtp(i,m,j)         
+      !czhao ----------
+
+#ifdef CN
+!CROP CN VARS
+!ylu 05/31/11
+      htmx_buf(m)                   = htmx(i,m,j)
+      croplive_buf(m)               = croplive(i,m,j)
+      gdd1020_buf(m)                = gdd1020(i,m,j)
+      gdd820_buf(m)                 = gdd820(i,m,j)
+      gdd020_buf(m)                 = gdd020(i,m,j)
+      grainc_buf(m)                 = grainc(i,m,j)
+      grainc_storage_buf(m)         = grainc_storage(i,m,j)
+      grainc_xfer_buf(m)            = grainc_xfer(i,m,j)
+      grainn_buf(m)                 = grainn(i,m,j)
+      grainn_storage_buf(m)         = grainn_storage(i,m,j)
+      grainn_xfer_buf(m)            = grainn_xfer(i,m,j)
+      days_active_buf(m)            = days_active(i,m,j)
+      onset_flag_buf(m)             = onset_flag(i,m,j)
+      onset_counter_buf(m)          = onset_counter(i,m,j)
+      onset_gddflag_buf(m)          = onset_gddflag(i,m,j)
+      onset_fdd_buf(m)              = onset_fdd(i,m,j) 
+      onset_gdd_buf(m)              = onset_gdd(i,m,j)
+      onset_swi_buf(m)              = onset_swi(i,m,j)
+      offset_flag_buf(m)            = offset_flag(i,m,j)
+      offset_counter_buf(m)         = offset_counter(i,m,j)
+      offset_fdd_buf(m)             = offset_fdd(i,m,j)
+      offset_swi_buf(m)             = offset_swi(i,m,j)
+      dayl_buf(m)                   = dayl(i,m,j)
+      annavg_t2m_buf(m)             = annavg_t2m(i,m,j)
+      tempavg_t2m_buf(m)            = tempavg_t2m(i,m,j)
+      tempsum_potential_gpp_buf(m)  = tempsum_potential_gpp(i,m,j)
+      annsum_potential_gpp_buf(m)   = annsum_potential_gpp(i,m,j)
+      tempmax_retransn_buf(m)       = tempmax_retransn(i,m,j)
+      annmax_retransn_buf(m)        = annmax_retransn(i,m,j)
+      prev_leafc_to_litter_buf(m)   = prev_leafc_to_litter(i,m,j)
+      prev_frootc_to_litter_buf(m)  = prev_frootc_to_litter(i,m,j)
+      tempsum_npp_buf(m)            = tempsum_npp(i,m,j)
+      annsum_npp_buf(m)             = annsum_npp(i,m,j)
+      leafc_buf(m)                  = leafc(i,m,j)
+      leafc_storage_buf(m)          = leafc_storage(i,m,j)
+      leafc_xfer_buf(m)             = leafc_xfer(i,m,j)
+      frootc_buf(m)                 = frootc(i,m,j)
+      frootc_storage_buf(m)         = frootc_storage(i,m,j)
+      frootc_xfer_buf(m)            = frootc_xfer(i,m,j)
+      livestemc_buf(m)              = livestemc(i,m,j)
+      livestemc_storage_buf(m)      = livestemc_storage(i,m,j)
+      livestemc_xfer_buf(m)         = livestemc_xfer(i,m,j)
+      deadstemc_buf(m)              = deadstemc(i,m,j)
+      deadstemc_storage_buf(m)      = deadstemc_storage(i,m,j)
+      deadstemc_xfer_buf(m)         = deadstemc_xfer(i,m,j)
+      livecrootc_buf(m)             = livecrootc(i,m,j)
+      livecrootc_storage_buf(m)     = livecrootc_storage(i,m,j)
+      livecrootc_xfer_buf(m)        = livecrootc_xfer(i,m,j)
+      deadcrootc_buf(m)             = deadcrootc(i,m,j)
+      deadcrootc_storage_buf(m)     = deadcrootc_storage(i,m,j)
+      deadcrootc_xfer_buf(m)        = deadcrootc_xfer(i,m,j)
+      cpool_buf(m)                  = cpool(i,m,j)
+      pft_ctrunc_buf(m)             = pft_ctrunc(i,m,j)
+      leafn_buf(m)                  = leafn(i,m,j)
+      leafn_storage_buf(m)          = leafn_storage(i,m,j)
+      leafn_xfer_buf(m)             = leafn_xfer(i,m,j)
+      frootn_buf(m)                 = frootn(i,m,j)
+      frootn_storage_buf(m)         = frootn_storage(i,m,j)
+      frootn_xfer_buf(m)            = frootn_xfer(i,m,j)
+      livestemn_buf(m)              = livestemn(i,m,j)
+      livestemn_storage_buf(m)      = livestemn_storage(i,m,j)
+      livestemn_xfer_buf(m)         = livestemn_xfer(i,m,j)
+      deadstemn_buf(m)              = deadstemn(i,m,j)
+      deadstemn_storage_buf(m)      = deadstemn_storage(i,m,j)
+      deadstemn_xfer_buf(m)         = deadstemn_xfer(i,m,j)
+      livecrootn_buf(m)             = livecrootn(i,m,j)
+      livecrootn_storage_buf(m)     = livecrootn_storage(i,m,j)
+      livecrootn_xfer_buf(m)        = livecrootn_xfer(i,m,j)
+      deadcrootn_buf(m)             = deadcrootn(i,m,j)
+      deadcrootn_storage_buf(m)     = deadcrootn_storage(i,m,j)
+      deadcrootn_xfer_buf(m)        = deadcrootn_xfer(i,m,j)
+      npool_buf(m)                  = npool(i,m,j)
+      pft_ntrunc_buf(m)             = pft_ntrunc(i,m,j)
+      gresp_storage_buf(m)          = gresp_storage(i,m,j)
+      gresp_xfer_buf(m)             = gresp_xfer(i,m,j)
+      xsmrpool_buf(m)               = xsmrpool(i,m,j)
+      annsum_counter_buf(m)         = annsum_counter(i,m,j)
+      cannsum_npp_buf(m)            = cannsum_npp(i,m,j)
+      cannavg_t2m_buf(m)            = cannavg_t2m(i,m,j)
+      wf_buf(m)                     = wf(i,m,j)
+      me_buf(m)                     = me(i,m,j)
+      mean_fire_prob_buf(m)         = mean_fire_prob(i,m,j)
+      cwdc_buf(m)                   = cwdc(i,m,j)
+      litr1c_buf(m)                 = litr1c(i,m,j)
+      litr2c_buf(m)                 = litr2c(i,m,j)
+      litr3c_buf(m)                 = litr3c(i,m,j)
+      soil1c_buf(m)                 = soil1c(i,m,j)
+      soil2c_buf(m)                 = soil2c(i,m,j)
+      soil3c_buf(m)                 = soil3c(i,m,j)
+      soil4c_buf(m)                 = soil4c(i,m,j)
+      seedc_buf(m)                  = seedc(i,m,j)
+      col_ctrunc_buf(m)             = col_ctrunc(i,m,j)
+      prod10c_buf(m)                = prod10c(i,m,j)
+      prod100c_buf(m)               = prod100c(i,m,j)
+      cwdn_buf(m)                   = cwdn(i,m,j)
+      litr1n_buf(m)                 = litr1n(i,m,j)
+      litr2n_buf(m)                 = litr2n(i,m,j)
+      litr3n_buf(m)                 = litr3n(i,m,j)
+      soil1n_buf(m)                 = soil1n(i,m,j)
+      soil2n_buf(m)                 = soil2n(i,m,j)
+      soil3n_buf(m)                 = soil3n(i,m,j)
+      soil4n_buf(m)                 = soil4n(i,m,j)
+      seedn_buf(m)                  = seedn(i,m,j)
+      col_ntrunc_buf(m)             = col_ntrunc(i,m,j)
+      prod10n_buf(m)                = prod10n(i,m,j)
+      prod100n_buf(m)               = prod100n(i,m,j)
+      sminn_buf(m)                  = sminn(i,m,j)
+
+      totlitc_buf(m)                = totlitc(i,m,j)
+      dwt_seedc_to_leaf_buf(m)      = dwt_seedc_to_leaf(i,m,j)
+      dwt_seedc_to_deadstem_buf(m)  = dwt_seedc_to_deadstem(i,m,j)
+      dwt_conv_cflux_buf(m)         = dwt_conv_cflux(i,m,j) 
+      dwt_prod10c_gain_buf(m)       = dwt_prod10c_gain(i,m,j)
+      dwt_prod100c_gain_buf(m)      = dwt_prod100c_gain(i,m,j)
+      prod100c_loss_buf(m)          = prod100c_loss(i,m,j)
+      dwt_frootc_to_litr1c_buf(m)   = dwt_frootc_to_litr1c(i,m,j)
+      dwt_frootc_to_litr2c_buf(m)   = dwt_frootc_to_litr2c(i,m,j)
+      dwt_frootc_to_litr3c_buf(m)   = dwt_frootc_to_litr3c(i,m,j)
+      dwt_livecrootc_to_cwdc_buf(m) = dwt_livecrootc_to_cwdc(i,m,j)
+      dwt_deadcrootc_to_cwdc_buf(m) = dwt_deadcrootc_to_cwdc(i,m,j)
+      dwt_seedn_to_leaf_buf(m)      = dwt_seedn_to_leaf(i,m,j)
+      dwt_seedn_to_deadstem_buf(m)  = dwt_seedn_to_deadstem(i,m,j)
+      dwt_conv_nflux_buf(m)         = dwt_conv_nflux(i,m,j)
+      dwt_prod10n_gain_buf(m)       = dwt_prod10n_gain(i,m,j)
+      dwt_prod100n_gain_buf(m)      = dwt_prod100n_gain(i,m,j)
+      prod100n_loss_buf(m)          = prod100n_loss(i,m,j)
+      dwt_frootn_to_litr1n_buf(m)   = dwt_frootn_to_litr1n(i,m,j)
+      dwt_frootn_to_litr2n_buf(m)   = dwt_frootn_to_litr2n(i,m,j)
+      dwt_frootn_to_litr3n_buf(m)   = dwt_frootn_to_litr3n(i,m,j)
+      dwt_livecrootn_to_cwdn_buf(m) = dwt_livecrootn_to_cwdn(i,m,j)
+      dwt_deadcrootn_to_cwdn_buf(m) = dwt_deadcrootn_to_cwdn(i,m,j)
+      retransn_buf(m)               = retransn(i,m,j)
+#endif
+
+    end do patch_loop_1
+       
+#if defined(CLM_DIAGS)
+    if( wrf_dm_on_monitor() ) then
+      write(msg,'('' clmdrv: t_veg diags @ ('',i2,'','',i2,'')'')') i,j
+      call wrf_message( trim(msg) )
+      write(msg,'(1p10g12.4)') t_veg_buf(:)
+      call wrf_message( trim(msg) )
+    endif
+#endif
+
+          print*,'jdf 1', do_bioe
+          if( do_bioe ) then
+            mbio_emis(:) = 0._r8
+            rho_in = real( rho(i,kts,j),kind=r8 )
+          endif
+
+          call wrf_debug( 300,'clmdrv: B4 call to clm' )
+          print*,'jdf before call to clm'
+          call clm(forc_txy_buf        ,forc_uxy_buf           ,forc_vxy_buf    &
+                  ,forc_qxy_buf        ,zgcmxy_buf             ,prec_buf        &
+                  ,flwdsxy_buf         ,forc_sols_buf          ,forc_soll_buf   &
+                  ,forc_solsd_buf      ,forc_solld_buf         ,forc_pbot_buf   &
+                  ,forc_psrfxy_buf     ,ivgtyp(i,j)            ,isltyp(i,j)     &
+                  ,lndmsk              ,xlat_buf               ,xlon_buf        &
+                  ,area_buf            ,dtt                    ,myr             &
+                  ,mon                 ,mday                   ,msec            &
+                  ,calday              ,myr1                   ,mon1            &
+                  ,mday1               ,msec1                  ,calday1         &
+                  ,mbdate              ,qsfxy_buf              ,qdnxy_buf       &
+                  ,snl1(i,:,j)          ,snowdp_buf            ,snw_rds_buf     & 
+                  ,dzclm               ,zclm                   ,ziclm           &
+                  ,h2osno_buf          ,h2osoi_liq_buf         ,h2osoi_ice_buf  &
+                  ,t_grnd_buf          ,t_soisno_buf           ,t_lake_buf      &
+                  ,t_veg_buf           ,h2ocan_buf             ,h2ocan_col_buf  &
+                  ,h2osoi_vol_buf      ,wtc_buf                ,wtp_buf         &
+                  ,numc(i,j)           ,nump(i,j)              ,rho_in          &
+                  ,t_ref2m_buf         ,albxy_buf        ,tsxy_buf,  trefxy_buf &
+                  ,shxy_buf            ,lhxy_buf               ,nstep           &
+                  ,inest               ,i                      ,j               &
+                  ,soiflx_buf          ,sabv_buf               ,sabg_buf        &
+                  ,lwup_buf            ,znt_buf                ,q_ref2m_buf     &
+                  ,rhoxy_buf                                                    &
+                  ,nlcat,landusef_buf,num_pft_input,pct_pft_input_buf,input_pft_flag     &
+                  ,albedosubgrid_buf   ,lhsubgrid_buf          ,hfxsubgrid_buf  &
+                  ,lwupsubgrid_buf     ,q2subgrid_buf          ,sabvsubgrid_buf &
+                  ,sabgsubgrid_buf     ,nrasubgrid_buf         ,swupsubgrid_buf &
+                  ,lhsoi_buf          ,lhveg_buf               ,lhtran_buf      &
+                  ,organic_buf        ,efisop_buf              ,gti_buf         &
+                  ,alswnirdir_buf  ,alswnirdif_buf,alswvisdir_buf,alswvisdif_buf&
+!jdf
+                  ,t_veg24_d(i,:,j), t_veg240_d(i,:,j)                              &
+                  ,fsun24_d(i,:,j), fsun240_d(i,:,j)                                &
+                  ,fsd24_d(i,:,j), fsd240_d(i,:,j), fsi24_d(i,:,j), fsi240_d(i,:,j)     &
+                  ,laip_d(i,:,j)                                                  &
+!jdf
+!  New argument BJG 3/28/19                  ,mbio_emis, do_bioe, id                                  &
+                  ,mbio_emis, do_bioe, do_meganfile, id                               &
+#ifdef CN
+!CROP and CN restart and outputs
+                ,forc_ndepxy_buf    ,organic_buf  ,tlai_buf ,tsai_buf,htop_buf,hbot_buf    &  !ADD_NEW_VAR
+                ,htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 ,grainc_xfer_buf,grainn_buf,grainn_storage_buf,grainn_xfer_buf,days_active_buf  &
                 ,onset_flag_buf,onset_counter_buf,onset_gddflag_buf,onset_fdd_buf,onset_gdd_buf &
                 ,onset_swi_buf,offset_flag_buf,offset_counter_buf,offset_fdd_buf,offset_swi_buf &
@@ -58602,6 +73007,7 @@ end module initializeMod
                 ,dwt_deadcrootc_to_cwdc_buf,dwt_seedn_to_leaf_buf,dwt_seedn_to_deadstem_buf &
                 ,dwt_conv_nflux_buf,dwt_prod10n_gain_buf,dwt_prod100n_gain_buf,prod100n_loss_buf &
                 ,dwt_frootn_to_litr1n_buf,dwt_frootn_to_litr2n_buf, dwt_frootn_to_litr3n_buf &
+<<<<<<< HEAD
                 , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf &
                   )
 #endif
@@ -59433,5 +73839,1609 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin)
 
 
 end subroutine driver
+=======
+                , dwt_livecrootn_to_cwdn_buf,dwt_deadcrootn_to_cwdn_buf,retransn_buf &                                                 
+#endif
+                  )
+
+          call wrf_debug( 300,'clmdrv: Af call to clm' )
+                 
+                 print*,'jdf 2', do_bioe
+                 if( do_bioe ) then
+                   print*,'jdf mbio_emis to e_bio'
+                   e_bio(i,j,:) = mbio_emis(:)
+                 endif
+
+                 if(albxy_buf ==  1) albxy_buf = 0.991_r8
+
+                  albxy(i,j)          = albxy_buf
+                  call CLMDebug('get albxy')
+                  snowh(i,j)          = sum(snowdp_buf(1:numc(i,j))*wtc_buf(1:numc(i,j)))
+                  call CLMDebug('get snowh')
+                  snow(i,j)           = sum(h2osno_buf(1:numc(i,j))*wtc_buf(1:numc(i,j)))
+                  call CLMDebug('get snow')
+                  canwat(i,j)         = sum(h2ocan_buf(1:nump(i,j))*wtp_buf(1:nump(i,j)))
+                 call CLMDebug('get canwat') 
+              if (ivgtyp(i,j) /= 16 .and. ivgtyp(i,j) /= 24) then
+                  do k=1,nlevgrnd
+                     smois(i,k,j)     = sum(h2osoi_vol_buf(1:numc(i,j),k)*wtc_buf(1:numc(i,j)))
+                     tslb (i,k,j)     = sum(t_soisno_buf(1:numc(i,j),k)*wtc_buf(1:numc(i,j)))
+                  end do !over levels
+              end if
+                  call CLMDebug('get tslb')
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                  tsxy(i,j)           = tsxy_buf
+                  qsfxy(i,j)          = qsfxy_buf
+                  qdnxy(i,j)          = qdnxy_buf
+                  soiflx(i,j)         = soiflx_buf
+                  sabv(i,j)           = sabv_buf
+                  sabg(i,j)           = sabg_buf
+                  lwup(i,j)           = lwup_buf
+                  znt(i,j)            = znt_buf
+                  z0(i,j)             = znt(i,j)
+                  alswvisdir(i,j)     = alswvisdir_buf
+                  alswvisdif(i,j)     = alswvisdif_buf
+                  alswnirdir(i,j)     = alswnirdir_buf
+                  alswnirdif(i,j)     = alswnirdif_buf
+
+                  t2clm(i,j)       = trefxy_buf
+!Accumulate T2 MAX/MIN between history interval --Yaqiong Lu
+!!!  Commented out since history_interval can be zero.  BJG 4/8/2019
+!!!                  if(mod(dt*(nstep-1),60.*history_interval)==0) then 
+                    t2m_max(i,j) = 0.0
+                    t2m_min(i,j) = 999.0
+!!!                  else
+!!!                    t2m_max(i,j) = max(t2m_max(i,j),t2clm(i,j)) !the t2m_max/min will save the max/min along each history interval chunk.  
+!!!                    t2m_min(i,j) = min(t2m_min(i,j),t2clm(i,j))
+!!!                  end if
+             call CLMDebug('module clm mark1')
+                  emiss(i,j) = lwup(i,j)/(sb * tsxy(i,j)**4)
+                  shxy(i,j)           = shxy_buf
+                  lhxy(i,j)           = lhxy_buf
+                  if(tsxy(i,j)>=tfrz) then
+                    qfx(i,j)          = lhxy_buf/hvap ! heat flux (W/m^2)=>mass flux(kg/(sm^2))
+                  else
+                    qfx(i,j)          = lhxy_buf/hsub ! heat flux (W/m^2)=>mass flux(kg/(sm^2))     
+                  end if
+                  
+                  qsfc(i,j)  = forc_qxy(i,1,j) + qfx(i,j)/(real(rhoxy_buf)*chs(i,j))
+
+patch_loop_2 : &
+              do m=1,maxpatch
+                  snowdp(i,m,j)       = snowdp_buf(m)
+      !            snowage(i,m,j)      = snowage_buf(m)
+ 
+                  snl(i,m,j)         = snl1(i,m,j)
+
+                  dzsnow5(i,m,j)      = dzclm(m,-4)
+                  dzsnow4(i,m,j)      = dzclm(m,-3)
+                  dzsnow3(i,m,j)      = dzclm(m,-2)
+                  dzsnow2(i,m,j)      = dzclm(m,-1)
+                  dzsnow1(i,m,j)      = dzclm(m,0)
+
+                  snowrds5(i,m,j)     = snw_rds_buf(m,-4)
+                  snowrds4(i,m,j)     = snw_rds_buf(m,-3)
+                  snowrds3(i,m,j)     = snw_rds_buf(m,-2)
+                  snowrds2(i,m,j)     = snw_rds_buf(m,-1)
+                  snowrds1(i,m,j)     = snw_rds_buf(m,0)
+
+                  h2osno(i,m,j)       = h2osno_buf(m)
+                  t_grnd(i,m,j)       = t_grnd_buf(m)
+                  t_veg(i,m,j)        = t_veg_buf(m)
+                  h2ocan(i,m,j)       = h2ocan_buf(m)
+                  h2ocan_col(i,m,j)   = h2ocan_col_buf(m)
+                  wtc(i,m,j)          = wtc_buf(m)
+                  wtp(i,m,j)          = wtp_buf(m)
+            call CLMDebug('module clm mark2')
+                  
+                  h2osoi_liq_s5(i,m,j) = h2osoi_liq_buf(m,-4)
+                  h2osoi_liq_s4(i,m,j) = h2osoi_liq_buf(m,-3)
+                  h2osoi_liq_s3(i,m,j) = h2osoi_liq_buf(m,-2)
+                  h2osoi_liq_s2(i,m,j) = h2osoi_liq_buf(m,-1)
+                  h2osoi_liq_s1(i,m,j) = h2osoi_liq_buf(m,0)
+                  h2osoi_liq1(i,m,j)   = h2osoi_liq_buf(m,1)
+                  h2osoi_liq2(i,m,j)   = h2osoi_liq_buf(m,2)
+                  h2osoi_liq3(i,m,j)   = h2osoi_liq_buf(m,3)
+                  h2osoi_liq4(i,m,j)   = h2osoi_liq_buf(m,4)
+                  h2osoi_liq5(i,m,j)   = h2osoi_liq_buf(m,5)
+                  h2osoi_liq6(i,m,j)   = h2osoi_liq_buf(m,6)
+                  h2osoi_liq7(i,m,j)   = h2osoi_liq_buf(m,7)
+                  h2osoi_liq8(i,m,j)   = h2osoi_liq_buf(m,8)
+                  h2osoi_liq9(i,m,j)   = h2osoi_liq_buf(m,9)
+                  h2osoi_liq10(i,m,j)  = h2osoi_liq_buf(m,10)
+
+                  h2osoi_ice_s5(i,m,j) = h2osoi_ice_buf(m,-4)
+                  h2osoi_ice_s4(i,m,j) = h2osoi_ice_buf(m,-3)
+                  h2osoi_ice_s3(i,m,j) = h2osoi_ice_buf(m,-2)
+                  h2osoi_ice_s2(i,m,j) = h2osoi_ice_buf(m,-1)
+                  h2osoi_ice_s1(i,m,j) = h2osoi_ice_buf(m,0)
+                  h2osoi_ice1(i,m,j)   = h2osoi_ice_buf(m,1)
+                  h2osoi_ice2(i,m,j)   = h2osoi_ice_buf(m,2)
+                  h2osoi_ice3(i,m,j)   = h2osoi_ice_buf(m,3)
+                  h2osoi_ice4(i,m,j)   = h2osoi_ice_buf(m,4)
+                  h2osoi_ice5(i,m,j)   = h2osoi_ice_buf(m,5)
+                  h2osoi_ice6(i,m,j)   = h2osoi_ice_buf(m,6)
+                  h2osoi_ice7(i,m,j)   = h2osoi_ice_buf(m,7)
+                  h2osoi_ice8(i,m,j)   = h2osoi_ice_buf(m,8)
+                  h2osoi_ice9(i,m,j)   = h2osoi_ice_buf(m,9)
+                  h2osoi_ice10(i,m,j)  = h2osoi_ice_buf(m,10)
+
+            call CLMDebug('module clm mark3')
+
+                  t_soisno_s5(i,m,j) = t_soisno_buf(m,-4)
+                  t_soisno_s4(i,m,j) = t_soisno_buf(m,-3)
+                  t_soisno_s3(i,m,j) = t_soisno_buf(m,-2)
+                  t_soisno_s2(i,m,j) = t_soisno_buf(m,-1)
+                  t_soisno_s1(i,m,j) = t_soisno_buf(m,0)
+                  t_soisno1(i,m,j)   = t_soisno_buf(m,1)
+                  t_soisno2(i,m,j)   = t_soisno_buf(m,2)
+                  t_soisno3(i,m,j)   = t_soisno_buf(m,3)
+                  t_soisno4(i,m,j)   = t_soisno_buf(m,4)
+                  t_soisno5(i,m,j)   = t_soisno_buf(m,5)
+                  t_soisno6(i,m,j)   = t_soisno_buf(m,6)
+                  t_soisno7(i,m,j)   = t_soisno_buf(m,7)
+                  t_soisno8(i,m,j)   = t_soisno_buf(m,8)
+                  t_soisno9(i,m,j)   = t_soisno_buf(m,9)
+                  t_soisno10(i,m,j)  = t_soisno_buf(m,10)
+
+
+                  t_lake1(i,m,j)   = t_lake_buf(m,1)
+                  t_lake2(i,m,j)   = t_lake_buf(m,2)
+                  t_lake3(i,m,j)   = t_lake_buf(m,3)
+                  t_lake4(i,m,j)   = t_lake_buf(m,4)
+                  t_lake5(i,m,j)   = t_lake_buf(m,5)
+                  t_lake6(i,m,j)   = t_lake_buf(m,6)
+                  t_lake7(i,m,j)   = t_lake_buf(m,7)
+                  t_lake8(i,m,j)   = t_lake_buf(m,8)
+                  t_lake9(i,m,j)   = t_lake_buf(m,9)
+                  t_lake10(i,m,j)  = t_lake_buf(m,10)
+
+                  h2osoi_vol1(i,m,j)   = h2osoi_vol_buf(m,1)
+                  h2osoi_vol2(i,m,j)   = h2osoi_vol_buf(m,2)
+                  h2osoi_vol3(i,m,j)   = h2osoi_vol_buf(m,3)
+                  h2osoi_vol4(i,m,j)   = h2osoi_vol_buf(m,4)
+                  h2osoi_vol5(i,m,j)   = h2osoi_vol_buf(m,5)
+                  h2osoi_vol6(i,m,j)   = h2osoi_vol_buf(m,6)
+                  h2osoi_vol7(i,m,j)   = h2osoi_vol_buf(m,7)
+                  h2osoi_vol8(i,m,j)   = h2osoi_vol_buf(m,8)
+                  h2osoi_vol9(i,m,j)   = h2osoi_vol_buf(m,9)
+                  h2osoi_vol10(i,m,j)  = h2osoi_vol_buf(m,10)
+
+            call CLMDebug('module clm mark4')
+
+                  t_ref2m(i,m,j)      = t_ref2m_buf(m)    
+                  q_ref2m(i,m,j)      = q_ref2m_buf(m)
+!!!!New patch-level variables
+                  albedosubgrid(i,m,j)= albedosubgrid_buf(m)
+                  lhsubgrid(i,m,j)    = lhsubgrid_buf(m)
+                  hfxsubgrid(i,m,j)   = hfxsubgrid_buf(m)
+                  lwupsubgrid(i,m,j)  = lwupsubgrid_buf(m)
+                  q2subgrid(i,m,j)    = q2subgrid_buf(m)
+!!ylu 01/14/09
+                  sabvsubgrid(i,m,j)  = sabvsubgrid_buf(m)
+                  sabgsubgrid(i,m,j)  = sabgsubgrid_buf(m)
+                  nrasubgrid(i,m,j)   = nrasubgrid_buf(m)
+                  swupsubgrid(i,m,j)  = swupsubgrid_buf(m)
+!ylu 04/07/09
+                  lhsoi(i,m,j)       = lhsoi_buf(m)
+                  lhveg(i,m,j)       = lhveg_buf(m)
+                  lhtran(i,m,j)      = lhtran_buf(m)
+#ifdef CN                  
+                  dyntlai(i,m,j)     = tlai_buf(m)
+                  dyntsai(i,m,j)     = tsai_buf(m)
+                  dyntop(i,m,j)      = htop_buf(m)
+                  dynbot(i,m,j)      = hbot_buf(m)
+
+            call CLMDebug('module clm mark5')
+!CROP CN VARS
+!ylu 05/31/11
+                    htmx(i,m,j)                        = htmx_buf(m)
+                    croplive(i,m,j)                    = croplive_buf(m)
+                    gdd1020(i,m,j)                     = gdd1020_buf(m)
+                    gdd820(i,m,j)                      = gdd820_buf(m)
+                    gdd020(i,m,j)                      = gdd020_buf(m)
+                    grainc(i,m,j)                      = grainc_buf(m)
+                    grainc_storage(i,m,j)              = grainc_storage_buf(m) 
+                    grainc_xfer(i,m,j)                 = grainc_xfer_buf(m)
+                    grainn(i,m,j)                      = grainn_buf(m)
+                    grainn_storage(i,m,j)              = grainn_storage_buf(m)
+                    grainn_xfer(i,m,j)                 = grainn_xfer_buf(m)
+                    days_active(i,m,j)                 = days_active_buf(m)
+                    onset_flag(i,m,j)                  = onset_flag_buf(m)
+                    onset_counter(i,m,j)               = onset_counter_buf(m)
+                    onset_gddflag(i,m,j)               = onset_gddflag_buf(m)
+                    onset_fdd(i,m,j)                   = onset_fdd_buf(m)
+                    onset_gdd(i,m,j)                   = onset_gdd_buf(m)
+                    onset_swi(i,m,j)                   = onset_swi_buf(m)
+                    offset_flag(i,m,j)                 = offset_flag_buf(m) 
+                    offset_counter(i,m,j)              = offset_counter_buf(m)
+                    offset_fdd(i,m,j)                  = offset_fdd_buf(m)
+                    offset_swi(i,m,j)                  = offset_swi_buf(m)
+                    dayl(i,m,j)                        = dayl_buf(m)
+                    annavg_t2m(i,m,j)                  = annavg_t2m_buf(m)
+                    tempavg_t2m(i,m,j)                 = tempavg_t2m_buf(m)
+                    tempsum_potential_gpp(i,m,j)       = tempsum_potential_gpp_buf(m)
+                    annsum_potential_gpp(i,m,j)        = annsum_potential_gpp_buf(m)
+                    tempmax_retransn(i,m,j)            = tempmax_retransn_buf(m)
+                    annmax_retransn(i,m,j)             = annmax_retransn_buf(m) 
+                    prev_leafc_to_litter(i,m,j)        = prev_leafc_to_litter_buf(m)
+                    prev_frootc_to_litter(i,m,j)       = prev_frootc_to_litter_buf(m)
+                    tempsum_npp(i,m,j)                 = tempsum_npp_buf(m)
+                    annsum_npp(i,m,j)                  = annsum_npp_buf(m)
+                    leafc(i,m,j)                       = annsum_npp_buf(m)
+                    leafc_storage(i,m,j)               = leafc_storage_buf(m)
+                    leafc_xfer(i,m,j)                  = leafc_xfer_buf(m)
+                    frootc(i,m,j)                      = frootc_buf(m)
+                    frootc_storage(i,m,j)              = frootc_storage_buf(m)
+                    frootc_xfer(i,m,j)                 = frootc_xfer_buf(m)
+                    livestemc(i,m,j)                   = livestemc_buf(m)
+                    livestemc_storage(i,m,j)           = livestemc_storage_buf(m)
+                    livestemc_xfer(i,m,j)              = livestemc_xfer_buf(m)
+                    deadstemc(i,m,j)                   = deadstemc_buf(m)
+                    deadstemc_storage(i,m,j)           = deadstemc_storage_buf(m)
+                    deadstemc_xfer(i,m,j)              = deadstemc_xfer_buf(m)
+                    livecrootc(i,m,j)                  = livecrootc_buf(m)
+                    livecrootc_storage(i,m,j)          = livecrootc_storage_buf(m)
+                    livecrootc_xfer(i,m,j)             = livecrootc_xfer_buf(m)
+                    deadcrootc(i,m,j)                  = deadcrootc_buf(m)
+                    deadcrootc_storage(i,m,j)          = deadcrootc_storage_buf(m)
+                    deadcrootc_xfer(i,m,j)             = deadcrootc_xfer_buf(m)
+                    cpool(i,m,j)                       = cpool_buf(m)
+                    pft_ctrunc(i,m,j)                  = pft_ctrunc_buf(m)
+                    leafn(i,m,j)                       = leafn_buf(m)
+                    leafn_storage(i,m,j)               = leafn_storage_buf(m)
+                    leafn_xfer(i,m,j)                  = leafn_xfer_buf(m)
+                    frootn(i,m,j)                      = frootn_buf(m)
+                    frootn_storage(i,m,j)              = frootn_storage_buf(m)
+                    frootn_xfer(i,m,j)                 = frootn_xfer_buf(m)
+                    livestemn(i,m,j)                   = livestemn_buf(m)
+                    livestemn_storage(i,m,j)           = livestemn_storage_buf(m)
+                    livestemn_xfer(i,m,j)              = livestemn_xfer_buf(m)
+                    deadstemn(i,m,j)                   = deadstemn_buf(m)
+                    deadstemn_storage(i,m,j)           = deadstemn_storage_buf(m)
+                    deadstemn_xfer(i,m,j)              = deadstemn_xfer_buf(m)
+                    livecrootn(i,m,j)                  = livecrootn_buf(m)
+                    livecrootn_storage(i,m,j)          = livecrootn_storage_buf(m)
+                    livecrootn_xfer(i,m,j)             = livecrootn_xfer_buf(m)
+                    deadcrootn(i,m,j)                  = deadcrootn_buf(m)
+                    deadcrootn_storage(i,m,j)          = deadcrootn_storage_buf(m)
+                    deadcrootn_xfer(i,m,j)             = deadcrootn_xfer_buf(m)
+                    npool(i,m,j)                       = npool_buf(m)
+                    pft_ntrunc(i,m,j)                  = pft_ntrunc_buf(m)
+                    gresp_storage(i,m,j)               = gresp_storage_buf(m)
+                    gresp_xfer(i,m,j)                  = gresp_xfer_buf(m) 
+                    xsmrpool(i,m,j)                    = xsmrpool_buf(m)
+                    annsum_counter(i,m,j)              = annsum_counter_buf(m)
+                    cannsum_npp(i,m,j)                 = cannsum_npp_buf(m)
+                    cannavg_t2m(i,m,j)                 = cannavg_t2m_buf(m)
+                    wf(i,m,j)                          = wf_buf(m)
+                    me(i,m,j)                          = me_buf(m)
+                    mean_fire_prob(i,m,j)              = mean_fire_prob_buf(m)
+                    cwdc(i,m,j)                        = cwdc_buf(m)
+                    litr1c(i,m,j)                      = litr1c_buf(m)
+                    litr2c(i,m,j)                      = litr2c_buf(m)
+                    litr3c(i,m,j)                      = litr3c_buf(m) 
+                    soil1c(i,m,j)                      = soil1c_buf(m)
+                    soil2c(i,m,j)                      = soil2c_buf(m)
+                    soil3c(i,m,j)                      = soil3c_buf(m)
+                    soil4c(i,m,j)                      = soil4c_buf(m)
+                    seedc(i,m,j)                       = seedc_buf(m)
+                    col_ctrunc(i,m,j)                  = col_ctrunc_buf(m)
+                    prod10c(i,m,j)                     = prod10c_buf(m)
+                    prod100c(i,m,j)                    = prod100c_buf(m)
+                    cwdn(i,m,j)                        = cwdn_buf(m)
+                    litr1n(i,m,j)                      = litr1n_buf(m) 
+                    litr2n(i,m,j)                      = litr2n_buf(m)
+                    litr3n(i,m,j)                      = litr3n_buf(m) 
+                    soil1n(i,m,j)                      = soil1n_buf(m)
+                    soil2n(i,m,j)                      = soil2n_buf(m)
+                    soil3n(i,m,j)                      = soil3n_buf(m)
+                    soil4n(i,m,j)                      = soil4n_buf(m)
+                    seedn(i,m,j)                       = seedn_buf(m)
+                    col_ntrunc(i,m,j)                  = col_ntrunc_buf(m)
+                    prod10n(i,m,j)                     = prod10n_buf(m)
+                    prod100n(i,m,j)                    = prod100n_buf(m)
+                    sminn(i,m,j)                       = sminn_buf(m) 
+                    totlitc(i,m,j)                     = totlitc_buf(m)
+                    dwt_seedc_to_leaf(i,m,j)           = dwt_seedc_to_leaf_buf(m)
+                    dwt_seedc_to_deadstem(i,m,j)       = dwt_seedc_to_deadstem_buf(m)
+                    dwt_conv_cflux(i,m,j)              = dwt_conv_cflux_buf(m)
+                    dwt_prod10c_gain(i,m,j)            = dwt_prod10c_gain_buf(m)
+                    dwt_prod100c_gain(i,m,j)           = dwt_prod100c_gain_buf(m)
+                    prod100c_loss(i,m,j)               = prod100c_loss_buf(m)
+                    dwt_frootc_to_litr1c(i,m,j)        = dwt_frootc_to_litr1c_buf(m)
+                    dwt_frootc_to_litr2c(i,m,j)        = dwt_frootc_to_litr2c_buf(m)
+                    dwt_frootc_to_litr3c(i,m,j)        = dwt_frootc_to_litr3c_buf(m)
+                    dwt_livecrootc_to_cwdc(i,m,j)      = dwt_livecrootc_to_cwdc_buf(m)
+                    dwt_deadcrootc_to_cwdc(i,m,j)      = dwt_deadcrootc_to_cwdc_buf(m)
+                    dwt_seedn_to_leaf(i,m,j)           = dwt_seedn_to_leaf_buf(m)
+                    dwt_seedn_to_deadstem(i,m,j)       = dwt_seedn_to_deadstem_buf(m)
+                    dwt_conv_nflux(i,m,j)              = dwt_conv_nflux_buf(m)
+                    dwt_prod10n_gain(i,m,j)            = dwt_prod10n_gain_buf(m)
+                    dwt_prod100n_gain(i,m,j)           = dwt_prod100n_gain_buf(m)
+                    prod100n_loss(i,m,j)               = prod100n_loss_buf(m)
+                    dwt_frootn_to_litr1n(i,m,j)        = dwt_frootn_to_litr1n_buf(m)
+                    dwt_frootn_to_litr2n(i,m,j)        = dwt_frootn_to_litr2n_buf(m)
+                    dwt_frootn_to_litr3n(i,m,j)        = dwt_frootn_to_litr3n_buf(m)
+                    dwt_livecrootn_to_cwdn(i,m,j)      =  dwt_livecrootn_to_cwdn_buf(m)
+                    dwt_deadcrootn_to_cwdn(i,m,j)      = dwt_deadcrootn_to_cwdn_buf(m)
+                    retransn(i,m,j)                    = retransn_buf(m)
+#endif
+
+              end do patch_loop_2
+
+      end if is_land
+        call CLMDebug('good before call urban')
+has_urban_physics : &
+        IF (sf_urban_physics == 1 ) THEN                  ! Beginning of UCM CALL if block
+!--------------------------------------
+! URBAN CANOPY MODEL START - urban
+!--------------------------------------
+! Input variables lsm --> urban
+ IF( IVGTYP(I,J) == 1    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
+     IVGTYP(I,J) == LCZ_3.or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
+     IVGTYP(I,J) == LCZ_6.or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
+     IVGTYP(I,J) == LCZ_9.or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
+
+! Call urban
+      forc_sols_buf  = swd_buf*0.35_r8
+      forc_soll_buf  = swd_buf*0.35_r8
+      forc_solsd_buf = swd_buf*0.15_r8
+      forc_solld_buf = swd_buf*0.15_r8
+      area_buf       = real(dx,kind=r8)
+      area_buf       = area_buf*area_buf/1.e6_r8 !(km^2)
+      forc_pbot_buf  = real( ps(i,1,j),kind=r8 ) ! Pa
+      forc_txy_buf   = real( forc_txy(i,1,j),kind=r8 )
+      forc_uxy_buf   = real( forc_uxy(i,1,j),kind=r8 )
+      forc_vxy_buf   = real( forc_vxy(i,1,j),kind=r8 )
+      forc_qxy_buf   = real( forc_qxy(i,1,j),kind=r8)
+      zgcmxy_buf     = real( zgcmxy(i,1,j),kind=r8 )
+      prec_buf       = real(prec(i,j),kind=r8)/dtt ! mm/s
+      flwdsxy_buf    = real( flwdsxy(i,j),kind=r8 )
+      forc_psrfxy_buf= real( ps(i,1,j),kind=r8 ) !  Pa
+!
+            UTYPE_URB = UTYPE_URB2D(I,J) !urban type (low, high or industrial)
+
+            TA_URB    = forc_txy(i,1,j)  ! [K]
+            QA_URB    = forc_qxy(i,1,j)  ! [kg/kg]
+            UA_URB    = SQRT(forc_uxy(i,1,j)**2.+forc_vxy(i,1,j)**2.)
+            U1_URB    = forc_uxy(i,1,j)
+            V1_URB    = forc_vxy(i,1,j)
+!           IF(UA_URB < 1.) UA_URB=1.    ! [m/s]
+            UA_URB = max( UA_URB,1. )      ! [m/s]
+            SSG_URB   = swd_buf            ! [W/m/m]
+            SSGD_URB  = 0.8*swd_buf        ! [W/m/m]
+            SSGQ_URB  = SSG_URB-SSGD_URB ! [W/m/m]
+            LLG_URB   = flwdsxy(i,j)    ! [W/m/m]
+            RAIN_URB  = prec(i,j)      ! [mm]
+            RHOO_URB  = ps(i,1,j)/(287.04 * forc_txy(i,1,j) * (1.0+ 0.61 * forc_qxy(i,1,j))) ![kg/m/m/m]
+            ZA_URB    = real(zgcmxy_buf)            ! [m]
+            DELT_URB  = DT               ! [sec]
+            XLAT_URB  = XLAT_URB2D(I,J)  ! [deg]
+            COSZ_URB  = COSZ_URB2D(I,J)  !
+            OMG_URB   = OMG_URB2D(I,J)   !
+            ZNT_URB   = ZNT(I,J)
+
+            LSOLAR_URB = .FALSE.
+
+            TR_URB = TR_URB2D(I,J)
+            TB_URB = TB_URB2D(I,J)
+            TG_URB = TG_URB2D(I,J)
+            TC_URB = TC_URB2D(I,J)
+            QC_URB = QC_URB2D(I,J)
+            UC_URB = UC_URB2D(I,J)
+
+            DO K = 1,num_roof_layers
+              TRL_URB(K) = TRL_URB3D(I,K,J)
+!sw++
+              SMR_URB(K)  = SMR_URB3D(I,K,J)
+              TGRL_URB(K) = TGRL_URB3D(I,K,J)
+!sw--
+            END DO
+            DO K = 1,num_wall_layers
+              TBL_URB(K) = TBL_URB3D(I,K,J)
+            END DO
+            DO K = 1,num_road_layers
+              TGL_URB(K) = TGL_URB3D(I,K,J)
+            END DO
+!sw++
+            TGR_URB   = TGR_URB2D(I,J)
+            CMCR_URB  = CMCR_URB2D(I,J)
+            FLXHUMR_URB = FLXHUMR_URB2D(I,J)
+            FLXHUMB_URB = FLXHUMB_URB2D(I,J)
+            FLXHUMG_URB = FLXHUMG_URB2D(I,J)
+            DRELR_URB = DRELR_URB2D(I,J)
+            DRELB_URB = DRELB_URB2D(I,J)
+            DRELG_URB = DRELG_URB2D(I,J)
+!sw--
+
+            XXXR_URB = XXXR_URB2D(I,J)
+            XXXB_URB = XXXB_URB2D(I,J)
+            XXXG_URB = XXXG_URB2D(I,J)
+            XXXC_URB = XXXC_URB2D(I,J)
+!
+            CHS_URB  = CHS(I,J)
+            CHS2_URB = CHS2(I,J)
+! Jin
+            IF (PRESENT(CMR_SFCDIF)) THEN
+               CMR_URB = CMR_SFCDIF(I,J)
+               CHR_URB = CHR_SFCDIF(I,J)
+!sw++
+               CMGR_URB = CMGR_SFCDIF(I,J)
+               CHGR_URB = CHGR_SFCDIF(I,J)
+!sw--
+               CMC_URB = CMC_SFCDIF(I,J)
+               CHC_URB = CHC_SFCDIF(I,J)
+            ENDIF
+! initialize NUDAPT variables to zero
+            lp_urb = 0.
+            lb_urb = 0.
+            hgt_urb = 0.
+            mh_urb = 0.
+            stdh_urb = 0.
+            do k = 1,4
+              lf_urb(k) = 0.
+            enddo
+            frc_urb = FRC_URB2D(I,J)
+            check = 0.
+!
+
+! Call urban
+!sw++
+            CALL cal_mon_day(julday,julyr,jmonth,jday)
+!sw--
+            CALL urban(LSOLAR_URB,                                      & ! I
+                       num_roof_layers,num_wall_layers,num_road_layers, & ! C
+                       DZR,DZB,DZG,                                     & ! C
+                       UTYPE_URB,TA_URB,QA_URB,UA_URB,U1_URB,V1_URB,SSG_URB, & ! I
+                       SSGD_URB,SSGQ_URB,LLG_URB,RAIN_URB,RHOO_URB,     & ! I
+                       ZA_URB,DECLIN_URB,COSZ_URB,OMG_URB,              & ! I
+                       XLAT_URB,DELT_URB,ZNT_URB,                       & ! I
+                       CHS_URB, CHS2_URB,                               & ! I
+                       TR_URB, TB_URB, TG_URB, TC_URB, QC_URB,UC_URB,   & ! H
+                       TRL_URB,TBL_URB,TGL_URB,                         & ! H
+                       XXXR_URB, XXXB_URB, XXXG_URB, XXXC_URB,          & ! H
+                       TS_URB,QS_URB,SH_URB,LH_URB,LH_KINEMATIC_URB,    & ! O
+                       SW_URB,ALB_URB,LW_URB,G_URB,RN_URB,PSIM_URB,PSIH_URB, & ! O
+                       GZ1OZ0_URB,                                      & !O
+                       CMR_URB, CHR_URB, CMC_URB, CHC_URB,              &
+                       U10_URB, V10_URB, TH2_URB, Q2_URB,               & ! O
+                       UST_URB,mh_urb, stdh_urb, lf_urb, lp_urb,        & ! 0
+!sw++
+!                      hgt_urb,frc_urb,lb_urb, check)
+                       hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
+                       TGRL_URB,SMR_URB,CMGR_URB, CHGR_URB, jmonth,     & ! H
+                       DRELR_URB,DRELB_URB,                             & ! H
+                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)    
+!sw--
+
+            TS_URB2D(I,J) = TS_URB
+
+            albxy(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxy_buf   ![-]
+            shxy(i,j)  = FRC_URB2D(I,J)*SH_URB+(1-FRC_URB2D(I,J))*shxy_buf     ![W/m/m]
+            qfx(i,j)   = FRC_URB2D(I,J)*LH_KINEMATIC_URB &
+                     + (1-FRC_URB2D(I,J))*qfx(i,j)                ![kg/m/m/s]
+            lhxy(i,j) = FRC_URB2D(I,J)*LH_URB+(1-FRC_URB2D(I,J))*lhxy_buf     ![W/m/m]
+            soiflx(i,j) = FRC_URB2D(I,J)*G_URB+(1-FRC_URB2D(I,J))*soiflx_buf  ![W/m/m]
+            tsxy(i,j)  = FRC_URB2D(I,J)*TS_URB+(1-FRC_URB2D(I,J))*tsxy_buf          ![K]
+            qsfc(i,j)  = FRC_URB2D(I,J)*QS_URB+(1-FRC_URB2D(I,J))*qsfc(i,j)         ![-]
+
+! Renew Urban State Varialbes
+
+            TR_URB2D(I,J) = TR_URB
+            TB_URB2D(I,J) = TB_URB
+            TG_URB2D(I,J) = TG_URB
+            TC_URB2D(I,J) = TC_URB
+            QC_URB2D(I,J) = QC_URB
+            UC_URB2D(I,J) = UC_URB
+
+            DO K = 1,num_roof_layers
+              TRL_URB3D(I,K,J) = TRL_URB(K)
+!sw++
+              SMR_URB3D(I,K,J)  = SMR_URB(K)
+              TGRL_URB3D(I,K,J) = TGRL_URB(K)
+!sw--
+            END DO
+            DO K = 1,num_wall_layers
+              TBL_URB3D(I,K,J) = TBL_URB(K)
+            END DO
+            DO K = 1,num_road_layers
+              TGL_URB3D(I,K,J) = TGL_URB(K)
+            END DO
+!sw++
+            TGR_URB2D(I,J)  = TGR_URB 
+            CMCR_URB2D(I,J) = CMCR_URB
+            FLXHUMR_URB2D(I,J) = FLXHUMR_URB 
+            FLXHUMB_URB2D(I,J) = FLXHUMB_URB
+            FLXHUMG_URB2D(I,J) = FLXHUMG_URB
+            DRELR_URB2D(I,J) = DRELR_URB 
+            DRELB_URB2D(I,J) = DRELB_URB 
+            DRELG_URB2D(I,J) = DRELG_URB
+!sw--
+            XXXR_URB2D(I,J) = XXXR_URB
+            XXXB_URB2D(I,J) = XXXB_URB
+            XXXG_URB2D(I,J) = XXXG_URB
+            XXXC_URB2D(I,J) = XXXC_URB
+
+            SH_URB2D(I,J)    = SH_URB
+            LH_URB2D(I,J)    = LH_URB
+            G_URB2D(I,J)     = G_URB
+            RN_URB2D(I,J)    = RN_URB
+            PSIM_URB2D(I,J)  = PSIM_URB
+            PSIH_URB2D(I,J)  = PSIH_URB
+            GZ1OZ0_URB2D(I,J)= GZ1OZ0_URB
+            U10_URB2D(I,J)   = U10_URB
+            V10_URB2D(I,J)   = V10_URB
+            TH2_URB2D(I,J)   = TH2_URB
+            Q2_URB2D(I,J)    = Q2_URB
+            UST_URB2D(I,J)   = UST_URB
+            AKMS_URB2D(I,J)  = vkc * UST_URB2D(I,J)/(GZ1OZ0_URB2D(I,J)-PSIM_URB2D(I,J))
+            IF (PRESENT(CMR_SFCDIF)) THEN
+               CMR_SFCDIF(I,J) = CMR_URB
+               CHR_SFCDIF(I,J) = CHR_URB
+!sw++
+               CMGR_SFCDIF(I,J) = CMGR_URB
+               CHGR_SFCDIF(I,J) = CHGR_URB
+!sw--
+               CMC_SFCDIF(I,J) = CMC_URB
+               CHC_SFCDIF(I,J) = CHC_URB
+            ENDIF
+          END IF
+
+         ENDIF has_urban_physics
+
+
+    do m=1,maxpatch
+!     if(snl(i,m,j)<-10 .or. snl(i,m,j) >10) found=.true. 
+      found = abs( snl(i,m,j) ) > 10
+      if( found ) then
+        exit
+      endif
+    end do
+  
+   if(found) then
+     write(6,*) 'clmdrv: found snl ERROR! at i,m,j = ',i,m,j
+   end if
+
+  end do i_loop
+  end do j_loop
+!jdf
+  do j=jts,jte
+  do m=1,maxpatch
+  do i=its,ite
+     t_veg24(i,m,j)=REAL(t_veg24_d(i,m,j))
+     t_veg240(i,m,j)=REAL(t_veg240_d(i,m,j))
+     fsun24(i,m,j)=REAL(fsun24_d(i,m,j))
+     fsun240(i,m,j)=REAL(fsun240_d(i,m,j))
+     fsd24(i,m,j)=REAL(fsd24_d(i,m,j))
+     fsd240(i,m,j)=REAL(fsd240_d(i,m,j))
+     fsi24(i,m,j)=REAL(fsi24_d(i,m,j))
+     fsi240(i,m,j)=REAL(fsi240_d(i,m,j))
+     laip(i,m,j)=REAL(laip_d(i,m,j))
+  enddo
+  enddo
+  enddo
+!jdf
+
+   do i=its,ite
+    do j=jts,jte
+     do m=1,maxpatch
+      if(snl(i,m,j)<-10 .or. snl(i,m,j) >10) found=.true.
+     end do 
+      if(found) then
+        write(6,*) 'in module_sf_clm, finish all clm loop, found snl ERROR! at i=',i,'j=',j
+        write(6,*) 'snl(',i,':',j,')=',snl(i,:,j)
+        found=.false.
+       end if
+
+    end do
+  end do
+
+
+        call CLMDebug('clmdrv() success finished')   !DEL 
+end subroutine clmdrv
+!------------------------------------------------------------------------
+  subroutine clminit(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,        &
+                     SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,            &
+                     ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS,  &
+                     FNDSOILW, FNDSNOWH,                           &
+                     num_soil_layers, restart,                     &
+!  Use flag instead.  BJG 3/29/19
+!                     allowed_to_read, id, bio_emiss_opt,           &
+                     allowed_to_read, id, do_readmeganfile,         &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+                     its,ite, jts,jte, kts,kte,                    &
+#if ( WRF_CHEM == 1) 
+                     megan_specifier0, megan_mapped_emisfctrs,     &
+                     megan_factors_file,                           &
+#endif
+                     dt,maxpatch                                   &
+                    ,numc,nump,snl,                                      &
+                     snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                     h2ocan,h2ocan_col,t2m_max,t2m_min,     &
+                     t_ref2m,h2osoi_liq_s1,              &
+                     h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                     h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                     h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                     h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                     h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                     h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                     h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                     h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                     h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                     t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                     t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                     t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                     t_soisno8,t_soisno9,t_soisno10,                     &
+                     dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                     snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                     t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                     t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                     h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                     h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                     h2osoi_vol7,h2osoi_vol8,                            &
+                     h2osoi_vol9,h2osoi_vol10,                           &
+                     ht,xland,xice                                        &
+                    ,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid &
+                    ,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid,      &
+                    lhsoi,lhveg,lhtran,chem_opt &
+!#ifdef CN 
+!                    ,dyntlai,dyntsai,dyntop,dynbot &  !ADD_NEW_VAR
+!#endif
+                                                                         )
+
+  USE module_wrf_error
+#if ( WRF_CHEM == 1)
+  USE module_state_description, only : MEGAN2_CLM, &
+           CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
+           CBMZ_MOSAIC_8BIN_AQ,CBMZ_MOSAIC_DMS_4BIN, &
+           CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+           SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+           SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP, &
+           RADM2SORG,RADM2SORG_KPP,RADM2SORG_AQ,RADM2SORG_AQCHEM, &
+           MOZCART_KPP,MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP
+#endif
+
+  USE shr_megan_mod, only   : shr_megan_init
+  USE MEGANFactorsMod, only : megan_factors_init
+  USE VOCEmissionMod, only  : VOCEmission_init
+  USE globals,        only  : dtime
+   use clm_varcon, only :snowage_tau,snowage_kappa,snowage_drdt0            &
+                        ,ss_alb_snw_drc,asm_prm_snw_drc                     &
+                        ,ext_cff_mss_snw_drc,ss_alb_snw_dfs,asm_prm_snw_dfs &
+                        ,ext_cff_mss_snw_dfs      &
+                        ,xx_ss_alb_snw_drc        &
+                        ,xx_asm_prm_snw_drc       &
+                        ,xx_ext_cff_mss_snw_drc   &
+                        ,xx_ss_alb_snw_dfs        &
+                        ,xx_asm_prm_snw_dfs       &
+                        ,xx_ext_cff_mss_snw_dfs   &
+                        ,xx_snowage_tau           &
+                        ,xx_snowage_kappa         &
+                        ,xx_snowage_drdt0         &
+                        ,idx_Mie_snw_mx           &
+                        ,idx_T_max                &
+                        ,idx_Tgrd_max             &
+                        ,idx_rhos_max             &
+                        ,numrad_snw 
+
+!New in CLM4_crop
+!#if (defined CROP)
+!    USE  CropIniMod      , only : initialcrop
+!#endif
+
+  implicit none
+
+  INTEGER,  INTENT(IN   )   ::     chem_opt 
+  INTEGER,  INTENT(IN   )   ::     id
+!  Use flag instead   BJG  3/29/19
+!  INTEGER,  INTENT(IN   )   ::     bio_emiss_opt
+  LOGICAL,  INTENT(IN   )   ::     do_readmeganfile
+  INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
+                                   ims,ime, jms,jme, kms,kme,  &
+                                   its,ite, jts,jte, kts,kte
+
+  logical, external :: wrf_dm_on_monitor
+  integer :: ix
+
+  INTEGER, INTENT(IN)       ::     num_soil_layers,maxpatch
+    
+   LOGICAL , INTENT(IN) :: restart , allowed_to_read
+
+   REAL                                                :: dt
+   REAL,    DIMENSION( num_soil_layers), INTENT(INOUT) :: zs, dzs
+
+   REAL,    DIMENSION( ims:ime, num_soil_layers, jms:jme )    , &
+            INTENT(INOUT)    ::                          SMOIS, &  !Total soil moisture
+                                                         SH2O,  &  !liquid soil moisture
+                                                         TSLB      !STEMP
+     
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(INOUT)    ::                           SNOW, & 
+                                                         SNOWH, &
+                                                         SNOWC, &
+                                                        CANWAT, &
+                                                        SMSTAV, &
+                                                        SMSTOT, &
+                                                     SFCRUNOFF, &
+                                                      UDRUNOFF, &
+                                                        ACSNOW, &
+                                                        VEGFRA, &
+                                                        ACSNOM
+
+   REAL,  DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: HT
+   INTEGER, DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(IN)       ::                         IVGTYP, &
+                                                        ISLTYP
+   REAL, DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(IN)       ::                         XLAND,xice
+   LOGICAL, DIMENSION( ims:ime, jms:jme ) :: lake
+
+   LOGICAL, INTENT(IN)       ::                      FNDSOILW , &
+                                                     FNDSNOWH
+
+  integer,   dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
+  integer,   dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
+  real,  dimension(ims:ime,jms:jme ),intent(inout) :: t2m_max,t2m_min
+  real,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,   &
+                t_ref2m,h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid,&
+                LHsoi,LHveg,LHtran
+#ifdef CN
+     real,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: dyntlai,dyntsai,dyntop,dynbot    !ADD_NEW_VAR                                       
+#endif
+#if ( WRF_CHEM == 1)
+     character(len=*), intent(in) :: megan_specifier0(:)
+     !czhao add megan_specifier to replace namelist input
+     character(len=2000) :: megan_specifier(100)
+     character(len=*), intent(in) :: megan_factors_file
+     logical, intent(in)          :: megan_mapped_emisfctrs
+#endif
+!sw++
+!    character(len=256) :: term1,term2,term3,term4,term5,term6,term7,term8 
+     character(len=300) :: term1,term2,term3,term4,term5,term6,term7,term8 
+!sw--
+
+
+   INTEGER                   :: L
+   REAL                      :: BX, SMCMAX, PSISAT, FREE
+   INTEGER                   :: errflag
+   INTEGER                   :: itf,jtf,j,i,k,m
+   LOGICAL                   :: opened
+   CHARACTER(len=256)        :: msg
+
+   integer                   :: lu_unit
+   integer                   :: max_dom
+
+
+   write(msg,'(''clminit: beginning for domain = '',i2)') id
+   call wrf_debug( 0,trim(msg) )
+!sw++
+   if( id == 1 .and. .not. allocated(dm_initialized) ) then
+     call nl_get_max_dom( 1,max_dom ) 
+     allocate( dm_initialized(max_dom),stat=errflag )
+     if( errflag /= 0 ) then
+       call wrf_error_fatal( "clminit: failed to allocate dm_initialized array")
+     endif
+     dm_initialized(:) = .false.
+   endif
+
+   if( dm_initialized(id) ) then
+     return
+   endif
+!sw--
+
+   !************************megan speciation by Chun Zhao****************************!
+#if ( WRF_CHEM == 1)
+   if (chem_opt > 0 .and. id == 1) then 
+     megan_specifier(:)=' '
+   chemmech_select: SELECT CASE(chem_opt)
+     CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
+           CBMZ_MOSAIC_8BIN_AQ,CBMZ_MOSAIC_DMS_4BIN, &
+           CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
+      term1='iso=isoprene+2.0*myrcene+2.0*sabinene+2.0*limonene+carene_3+2.0*ocimene_t_b+2.0*pinene_b+2.0*pinene_a+2.0*2met_styrene+2.0*cymene_p+2.0*cymene_o+2.0*phellandrene_a+2.0*thujene_a+2.0*terpinene_a+2.0*terpinene_g+2.0*terpinolene'
+      term2='2.0*phellandrene_b+2.0*camphene+2.0*bornene+2.0*fenchene_a+2.0*ocimene_al+2.0*ocimene_c_b+2.0*tricyclene+2.0*estragole+2.0*camphor+2.0*fenchone+2.0*piperitone+2.0*thujone_a+2.0*thujone_b+2.0*cineole_1_8+2.0*borneol+2.0*linalool'
+      term3='2.0*terpineol_4+2.0*terpineol_a+2.0*linalool_OXD_c+2.0*linalool_OXD_t+3.0*ionone_b+2.0*bornyl_ACT+3.0*farnescene_a+3.0*caryophyllene_b+3.0*acoradiene+3.0*aromadendrene+3.0*bergamotene_a+3.0*bergamotene_b+3.0*bisabolene_a'
+      term4='3.0*bisabolene_b+3.0*bourbonene_b+3.0*cadinene_d+3.0*cadinene_g+3.0*cedrene_a+3.0*copaene_a+3.0*cubebene_a+3.0*cubebene_b+3.0*elemene_b+3.0*farnescene_b+3.0*germacrene_B+3.0*germacrene_D+3.0*gurjunene_b+3.0*humulene_a+3.0*humulene_g'
+      term5='3.0*isolongifolene+3.0*longifolene+3.0*longipinene+3.0*muurolene_a+3.0*muurolene_g+3.0*selinene_b+3.0*selinene_d+3.0*nerolidol_c+3.0*nerolidol_t+3.0*cedrol+3.0*geranyl_acetone+2.0*terpinyl_ACT_a+2.0*2met_nonatriene+2.0*jasmone'
+      term6='3.0*met_jasmonate+3.0*3met_3DCTT'
+      megan_specifier(1)=trim(term1)//'+'//trim(term2)//'+'//trim(term3)//'+'//trim(term4)//'+'//trim(term5)//'+'//trim(term6)
+      megan_specifier(2)='olt=MBO_2m3e2ol+dodecene_1+met_heptenone+octenol_1e3ol+tetradecene_1+butene+propene+2.0*diallyl_2s'
+      term1='par=3.0*MBO_2m3e2ol+3.0*MBO_3m2e1ol+4.0*MBO_3m3e1ol+butanone_2+8.*decanal+10.*dodecene_1+5*heptanal+7*heptane+6*hexane+3*met_heptenone+8*neryl_acetone+7*nonanal+6*nonenal+6*octanal+8*octanol+6*octenol_1e3ol+3*oxopentanal'
+      term2='5*pentane+12*tetradecene_1+2*butene+3*propane+propene+2*diallyl_2s+met_mercaptan+2*PPPP_2s+4*hexanal+6*hexanol_1+3*hexenal_c3+6*hexenal_t2+5*hexenol_c3+3*hexenyl_ACT_c3'
+      megan_specifier(3)=trim(term1)//'+'//trim(term2)
+      megan_specifier(4)='ch3oh=methanol'
+      megan_specifier(5)='ket=acetone+butanone_2+met_heptenone+neryl_acetone+pyruvic_acid+hexenyl_ACT_c3'
+      megan_specifier(6)='nh3=ammonia'
+      megan_specifier(7)='no=nitric_OXD'
+      megan_specifier(8)='ald=acetaldehyde+MBO_3m2e1ol+decanal+heptanal+nonanal+nonenal+octanal+oxopentanal+phenyl_CCO+hexanal+hexenal_c3+hexenal_t2'
+      megan_specifier(9)='c2h5oh=ethanol'
+      megan_specifier(10)='ora1=formic_acid+pyruvic_acid'
+      megan_specifier(11)='hcho=formaldehyde+MBO_3m3e1ol'
+      megan_specifier(12)='ora2=acetic_acid'
+      megan_specifier(13)='tol=benzaldehyde+met_benzoate+phenyl_CCO+toluene+met_salicylate+indole'
+      megan_specifier(14)='co=carbon_monoxide'
+      megan_specifier(15)='eth=ethane'
+      megan_specifier(16)='ol2=ethene'
+      megan_specifier(17)='dms=diallyl_2s+2met_2s+2met_s+met_propenyl_2s+PPPP_2s'
+
+     CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+           SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP)
+      print*,'jdf megan_specifier'
+      megan_specifier(1)='isoprene=isoprene+MBO_2m3e2ol+MBO_3m2e1ol+MBO_3m3e1ol'
+      term1='myrcene+sabinene+limonene+carene_3+ocimene_t_b+pinene_b+pinene_a+phellandrene_a+thujene_a+terpinene_a+terpinene_g+terpinolene+phellandrene_b+camphene'
+      term2='bornene+fenchene_a+ocimene_al+ocimene_c_b+estragole+camphor+piperitone+linalool+terpineol_4+terpineol_a+linalool_OXD_c+linalool_OXD_t+ionone_b+acoradiene'
+      term3='geranyl_acetone+terpinyl_ACT_a+2met_nonatriene+jasmone+met_jasmonate+3met_3DCTT'
+      megan_specifier(2)='terp='//trim(term1)//'+'//trim(term2)//'+'//trim(term3)
+      term1='2met_styrene+met_heptenone+neryl_acetone+hexenal_c3+hexenal_t2+hexenol_c3+hexenyl_ACT_c3'
+      megan_specifier(3)='ole2='//trim(term1)
+      term1='cymene_p+cymene_o+indole'
+      megan_specifier(4)='aro2='//trim(term1)
+      term1='tricyclene+fenchone+thujone_a+thujone_b+cineole_1_8+borneol+bornyl_ACT+heptane+octanol+2met_2s+met_mercaptan+hexanol_1'
+      megan_specifier(5)='alk5='//trim(term1)
+      term1='farnescene_a+caryophyllene_b+aromadendrene+bergamotene_a+bergamotene_b+bisabolene_a+bisabolene_b+bourbonene_b'
+      term2='cadinene_d+cadinene_g+cedrene_a+copaene_a+cubebene_a+cubebene_b+elemene_b+farnescene_b+germacrene_B+germacrene_D+gurjunene_b+humulene_a'
+      term3='humulene_g+isolongifolene+longifolene+longipinene+muurolene_a+muurolene_g+selinene_b+selinene_d+nerolidol_c+nerolidol_t+cedrol'
+      megan_specifier(6)='sesq='//trim(term1)//'+'//trim(term2)//'+'//trim(term3)
+      megan_specifier(7)='meoh=methanol'
+      megan_specifier(8)='acet=acetone'
+      megan_specifier(9)='ch4=methane'
+      megan_specifier(10)='no=nitric_OXD'
+      megan_specifier(11)='ccho=acetaldehyde'
+      megan_specifier(12)='alk3=ethanol'
+      megan_specifier(13)='hcooh=formic_acid'
+      megan_specifier(14)='hcho=formaldehyde'
+      megan_specifier(15)='cco_oh=acetic_acid'
+      megan_specifier(16)='bald=benzaldehyde'
+      megan_specifier(17)='mek=butanone_2'
+      megan_specifier(18)='rcho=decanal+heptanal+nonanal+octanal+oxopentanal+hexanal'
+      megan_specifier(19)='ole1=dodecene_1+nonenal+octenol_1e3ol+tetradecene_1+butene+diallyl_2s+met_propenyl_2s+PPPP_2s'
+      megan_specifier(20)='alk4=hexane+pentane+2met_s'
+      megan_specifier(21)='aro1=met_benzoate+phenyl_CCO+toluene+met_salicylate'
+      megan_specifier(22)='rco_oh=pyruvic_acid'
+      megan_specifier(23)='co=carbon_monoxide'
+      megan_specifier(24)='c2h6=ethane'
+      megan_specifier(25)='ethene=ethene'
+      megan_specifier(26)='c3h8=propane'
+      megan_specifier(27)='c3h6=propene'
+
+     CASE (RADM2SORG,RADM2SORG_KPP,RADM2SORG_AQ,RADM2SORG_AQCHEM) 
+      megan_specifier(1)='iso=isoprene+MBO_2m3e2ol+MBO_3m2e1ol+MBO_3m3e1ol'
+
+      term1='0.5*myrcene+sabinene+limonene+0.5*ocimene_t_b+pinene_b+0.5*phellandrene_b+camphene'
+      term2='fenchene_a+0.5*ocimene_c_b+estragole+piperitone+0.5*linalool+linalool_OXD_c+linalool_OXD_t+0.5*farnescene_a+0.5*caryophyllene_b+0.5*acoradiene+aromadendrene'
+      term3='0.5*bergamotene_b+0.5*bisabolene_b+bourbonene_b+0.5*cadinene_g+cubebene_b+elemene_b+0.5*farnescene_b+0.5*germacrene_d+longifolene+0.5*muurolene_g'
+      term4='selinene_b+0.5*nerolidol_c+0.5*nerolidol_t+dodecene_1+octenol_1e3ol+tetradecene_1+butene+propene+0.5*2met_nonatriene+0.5*3met_3DCTT+hexenol_c3'
+      megan_specifier(2)='olt='//trim(term1)//'+'//trim(term2)//'+'//trim(term3)//'+'//trim(term4)
+
+      term1='myrcene+0.5*limonene+carene_3+0.5*ocimene_t_b+pinene_a+phellandrene_a+thujene_a+terpinene_a+terpinene_g+terpinolene+0.5*phellandrene_b+bornene+ocimene_al+ocimene_c_b+0.5*linalool'
+      term2='terpineol_4+terpineol_a+ionone_b+0.5*farnescene_a+0.5*caryophyllene_b+0.5*acoradiene+bergamotene_a+0.5*bergamotene_b+bisabolene_a+0.5*bisabolene_b+cadinene_d+0.5*cadinene_g+cedrene_a+copaene_a+cubebene_a+0.5*farnescene_b'
+      term3='germacrene_b+0.5*germacrene_d+gurjunene_b+humulene_a+humulene_g+isolongifolene+longipinene+muurolene_a+0.5*muurolene_g+selinene_d+0.5*nerolidol_c+0.5*nerolidol_t'
+      term4='geranyl_acetone+met_heptenone+neryl_acetone+terpinyl_ACT_a+diallyl_2s+met_propenyl_2s+PPPP_2s+0.5*2met_nonatriene+jasmone+met_jasmonate+3met_3DCTT+hexenal_c3+hexenyl_act_c3'
+      megan_specifier(3)='oli='//trim(term1)//'+'//trim(term2)//'+'//trim(term3)//'+'//trim(term4)
+
+      megan_specifier(4)='tol=2met_styrene+cymene_p+cymene_o+toluene'
+
+      term1='0.388*camphor+0.755*cineole_1_8+met_benzoate+nonenal+1.119*octanol+met_salicylate+1.238*indole'
+      megan_specifier(5)='hc8='//trim(term1)
+
+      term1='0.402*methanol+1.198*ethanol+0.519*propane'
+      megan_specifier(6)='hc3='//trim(term1)
+
+      megan_specifier(7)='ket=0.253*acetone+butanone_2'
+      megan_specifier(8)='nh3=ammonia'
+      megan_specifier(9)='no2=nitrous_OXD'
+      megan_specifier(10)='no=nitric_OXD'
+      megan_specifier(11)='ald=acetaldehyde+decanal+heptanal+nonanal+nonenal+octanal+oxopentanal+hexanal'
+      megan_specifier(12)='ora1=formic_acid'
+      megan_specifier(13)='hcho=formaldehyde'
+      megan_specifier(14)='hcho=formaldehyde'
+      megan_specifier(15)='ora2=acetic_acid+pyruvic_acid'
+      megan_specifier(16)='hc5=1.226*heptane+1.049*hexane+0.847*pentane+1.697*hexanol_1'
+      megan_specifier(17)='co=carbon_monoxide'
+      megan_specifier(18)='eth=ethane+2met_2s+2met_s'
+      megan_specifier(19)='ol2=ethene'
+      megan_specifier(20)='so2=2*diallyl_2s+2met_2s+2met_s+hydrogen_s+met_mercaptan+2*met_propenyl_2s+2*PPPP_2s'
+      megan_specifier(21)='hno3=indole'
+
+     CASE (MOZCART_KPP,MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP)
+      megan_specifier(1)='isopr=isoprene+2.4*MBO_2m3e2ol+1.25*MBO_3m2e1ol+1.25*MBO_3m3e1ol'
+
+      term1='myrcene+sabinene+limonene+carene_3+ocimene_t_b+pinene_b+pinene_a+2met_styrene+phellandrene_a+thujene_a+terpinene_a+terpinene_g+terpinolene+phellandrene_b+camphene'
+      term2='bornene+fenchene_a+ocimene_al+ocimene_c_b+tricyclene+estragole+piperitone+linalool+terpineol_4+terpineol_a+1.25*linalool_OXD_c+1.25*linalool_OXD_t+1.4*ionone_b+1.5*farnescene_a+1.5*caryophyllene_b+1.5*acoradiene'
+      term3='1.5*aromadendrene+1.5*bergamotene_a+1.5*bergamotene_b+1.5*bisabolene_a+1.5*bisabolene_b+1.5*bourbonene_b+1.5*cadinene_d+1.5*cadinene_g' &
+            // '+1.5*cedrene_a+1.5*copaene_a+1.5*cubebene_a+1.5*cubebene_b+1.5*elemene_b+1.5*farnescene_b+1.5*germacrene_B+1.5*germacrene_D'
+      term4='1.5*gurjunene_b+1.5*humulene_a+1.5*humulene_g+1.5*isolongifolene+1.5*longifolene+1.5*longipinene+1.5*muurolene_a+1.5*muurolene_g' &
+            // '+1.5*selinene_b+1.5*selinene_d+1.5*nerolidol_c+1.5*nerolidol_t+1.4*geranyl_acetone+1.4*terpinyl_ACT_a+1.1*2met_nonatriene+1.2*jasmone+1.6*met_jasmonate'
+      megan_specifier(2)='c10h16='//trim(term1)//'+'//trim(term2)//'+'//trim(term3)//'+'//trim(term4)
+
+      term1='1.5*cymene_p+1.5*cymene_o+1.1*benzaldehyde+1.5*met_benzoate+1.0*toluene+1.3*phenyl_CCO+1.6*met_salicylate'
+      megan_specifier(3)='tol='//trim(term1)
+
+      term1='2.0*camphor+2.0*fenchone+2.0*thujone_a+2.0*thujone_b+2.0*cineole_1_8+2.0*borneol+2.7*bornyl_ACT+3.0*cedrol+3.0*decanal+2.0*heptanal+2.0*heptane+1.5*hexane+2.5*nonanal+2.3*octanal+2.3*octanol+1.25*pentane+1.8*hexanal+1.8*hexanol_1'
+      megan_specifier(4)='bigalk='//trim(term1)
+
+      megan_specifier(5)='ch3oh=methanol'
+      megan_specifier(6)='acet=acetone'
+      megan_specifier(7)='nh3=ammonia'
+      megan_specifier(8)='no=nitric_OXD'
+      megan_specifier(9)='ald=acetaldehyde'
+      megan_specifier(10)='c2h5oh=ethanol'
+      megan_specifier(11)='hcho=formaldehyde'
+      megan_specifier(12)='ch3cooh=acetic_acid'
+      megan_specifier(13)='mek=butanone_2+1.4*oxopentanal'
+      megan_specifier(14)='bigene=2.25*dodecene_1+1.75*met_heptenone+2.7*neryl_acetone+2.0*nonenal+1.7*octenol_1e3ol+3.5*tetradecene_1+0.8*butene+0.66*diallyl_2s+1.4*hexenal_c3+1.4*hexenal_t2+1.4*hexenol_c3+2.0*hexenyl_ACT_c3'
+      megan_specifier(15)='co=carbon_monoxide'
+      megan_specifier(16)='c2h6=ethane+2met_2s'
+      megan_specifier(17)='c2h4=ethene'
+      megan_specifier(18)='c3h8=propane'
+      megan_specifier(19)='c3h6=propene+2.8*met_propenyl_2s+3.5*PPPP_2s'
+      megan_specifier(20)='so2=1.53*diallyl_2s+2met_2s+0.5*hydrogen_s+0.75*met_mercaptan+1.8*met_propenyl_2s+2.3*PPPP_2s'
+      megan_specifier(21)='dms=2met_s'
+
+
+     CASE DEFAULT 
+       call wrf_error_fatal( "selected wrong gas chemistry mechanism for CLM-MEGAN! check chem_opt!" )
+     END SELECT chemmech_select 
+     endif
+#endif
+
+   call CLMDebug('Now in clminit.')
+
+IF ( wrf_dm_on_monitor() ) THEN
+     DO i=10,99
+        INQUIRE ( i , OPENED = opened )
+          IF ( .NOT. opened ) THEN
+                lu_unit=i
+                GOTO 2011
+            ENDIF
+         ENDDO
+         lu_unit = -1
+ 2011   CONTINUE
+
+        if(lu_unit<0) then
+          write(6,*) 'Can not assign unit to read CLM input data in clminit'
+          call endrun()
+        end if
+
+  open(lu_unit,file='CLM_ALB_ICE_DRC_DATA')
+  read(lu_unit,*) ((ss_alb_snw_drc(i,j),j=1,numrad_snw),i=1,idx_Mie_snw_mx)
+  close(lu_unit)
+
+  open(lu_unit,file='CLM_ASM_ICE_DRC_DATA')
+  read(lu_unit,*) ((asm_prm_snw_drc(i,j),j=1,numrad_snw),i=1,idx_Mie_snw_mx)
+  close(lu_unit)
+
+  open(lu_unit,file='CLM_EXT_ICE_DRC_DATA')
+  read(lu_unit,*) ((ext_cff_mss_snw_drc(i,j),j=1,numrad_snw),i=1,idx_Mie_snw_mx)
+  close(lu_unit)
+
+  open(lu_unit,file='CLM_ALB_ICE_DFS_DATA')
+  read(lu_unit,*) ((ss_alb_snw_dfs(i,j),j=1,numrad_snw),i=1,idx_Mie_snw_mx)
+  close(lu_unit)
+
+  open(lu_unit,file='CLM_ASM_ICE_DFS_DATA')
+  read(lu_unit,*) ((asm_prm_snw_dfs(i,j),j=1,numrad_snw),i=1,idx_Mie_snw_mx)
+  close(lu_unit)
+
+  open(lu_unit,file='CLM_EXT_ICE_DFS_DATA')
+  read(lu_unit,*) ((ext_cff_mss_snw_dfs(i,j),j=1,numrad_snw),i=1,idx_Mie_snw_mx)
+  close(lu_unit)
+
+  open(lu_unit,file='CLM_TAU_DATA')
+  read(lu_unit,*) &
+  (((snowage_tau(i,j,k),i=1,idx_T_max),j=1,idx_Tgrd_max),k=1,idx_rhos_max)
+  close(lu_unit)
+
+  open(lu_unit,file='CLM_KAPPA_DATA')
+  read(lu_unit,*) &
+  (((snowage_kappa(i,j,k),i=1,idx_T_max),j=1,idx_Tgrd_max),k=1,idx_rhos_max)
+  close(lu_unit)
+
+  open(lu_unit,file='CLM_DRDSDT0_DATA')
+  read(lu_unit,*)&
+  (((snowage_drdt0(i,j,k),i=1,idx_T_max),j=1,idx_Tgrd_max),k=1,idx_rhos_max)
+  close(lu_unit)
+END IF
+
+#if ( WRF_CHEM == 1 )
+!  Use flag instead.   BJG 3/29/19
+!   if( bio_emiss_opt == MEGAN2_CLM .and. id == 1 ) then
+   if( do_readmeganfile .and. id == 1 ) then
+     call wrf_message( "megan_specifier diagnostic in clminit" )
+     call wrf_message( "megan_specifier(1)" )
+     call wrf_message( trim(megan_specifier(1)) )
+     call wrf_message( "megan_specifier(2)" )
+     call wrf_message( trim(megan_specifier(2)) )
+     call wrf_message( "megan_specifier(10)" )
+     call wrf_message( trim(megan_specifier(10)) )
+     call wrf_message( "megan_specifier(20)" )
+     call wrf_message( trim(megan_specifier(20)) )
+     call wrf_message( "megan_factors_file" )
+     call wrf_message( trim(megan_factors_file) )
+!------------------------------------------------------------------------------
+!  Read the CLM Megan2.1 factors
+!------------------------------------------------------------------------------
+     CALL wrf_message( 'clminit: B4 call to megan_factors_init' )
+     CALL megan_factors_init( megan_factors_file )
+!------------------------------------------------------------------------------
+!  Initialize the CLM Megan2.1 factors and maps
+!------------------------------------------------------------------------------
+
+     CALL shr_megan_init( megan_specifier, megan_factors_file, megan_mapped_emisfctrs )
+     CALL wrf_message( 'clminit: done shr_megan_init' )
+!------------------------------------------------------------------------------
+!  Initialize WRF VOC emissions
+!------------------------------------------------------------------------------
+     CALL VOCEmission_init
+     CALL wrf_message( 'clminit: done VOCEmission_init' )
+   endif
+#endif
+
+  ix = 0
+  do i=1, idx_Mie_snw_mx
+  do j=1, numrad_snw
+    ix = ix + 1
+    xx_ss_alb_snw_drc(ix)      = ss_alb_snw_drc(i,j)
+    xx_asm_prm_snw_drc(ix)     = asm_prm_snw_drc(i,j)
+    xx_ext_cff_mss_snw_drc(ix) = ext_cff_mss_snw_drc(i,j)
+    xx_ss_alb_snw_dfs(ix)      = ss_alb_snw_dfs(i,j)
+    xx_asm_prm_snw_dfs(ix)     = asm_prm_snw_dfs(i,j)
+    xx_ext_cff_mss_snw_dfs(ix) = ext_cff_mss_snw_dfs(i,j)
+  end do
+  end do
+
+
+ ix = 0
+ do i=1,idx_T_max
+ do j=1,idx_Tgrd_max
+ do k=1,idx_rhos_max
+    ix = ix + 1
+    xx_snowage_tau(ix)   = snowage_tau(i,j,k)
+    xx_snowage_kappa(ix) = snowage_kappa(i,j,k)
+    xx_snowage_drdt0(ix) = snowage_drdt0(i,j,k)
+ end do
+ end do
+ end do
+
+  CALL wrf_dm_bcast_real(xx_ss_alb_snw_drc,      numrad_snw*idx_Mie_snw_mx )
+  CALL wrf_dm_bcast_real(xx_asm_prm_snw_drc,     numrad_snw*idx_Mie_snw_mx )
+  CALL wrf_dm_bcast_real(xx_ext_cff_mss_snw_drc, numrad_snw*idx_Mie_snw_mx )
+
+  CALL wrf_dm_bcast_real(xx_ss_alb_snw_dfs,      numrad_snw*idx_Mie_snw_mx )
+  CALL wrf_dm_bcast_real(xx_asm_prm_snw_dfs,     numrad_snw*idx_Mie_snw_mx )
+  CALL wrf_dm_bcast_real(xx_ext_cff_mss_snw_dfs, numrad_snw*idx_Mie_snw_mx )
+
+  CALL wrf_dm_bcast_real(xx_snowage_tau,  idx_T_max*idx_Tgrd_max*idx_rhos_max)
+  CALL wrf_dm_bcast_real(xx_snowage_kappa,idx_T_max*idx_Tgrd_max*idx_rhos_max)
+  CALL wrf_dm_bcast_real(xx_snowage_drdt0,idx_T_max*idx_Tgrd_max*idx_rhos_max)
+
+
+ IF(restart) then
+   return
+ ENDIF
+
+   itf=min(ite,ide-1)
+   jtf=min(jte,jde-1)
+
+
+   errflag = 0
+   DO j = jts,jtf
+     DO i = its,itf
+       IF ( ISLTYP( i,j ) .LT. 1 ) THEN
+         errflag = 1
+         WRITE(wrf_err_message,*)"CLM: clminit: out of range ISLTYP ",i,j,ISLTYP( i,j )
+         CALL wrf_message(wrf_err_message)
+       ENDIF
+     ENDDO
+   ENDDO
+   IF ( errflag .EQ. 1 ) THEN
+      CALL wrf_error_fatal( "CLM: clminit: out of range value "// &
+                            "of ISLTYP. Is this field in the input?" )
+   ENDIF
+!------------------------------------------------------------------------------
+          DO j = jts,jtf
+          DO i = its,itf
+
+
+          if((xland(i,j)-1.5).ge.0.)then
+
+             If(xice(i,j).eq.1)print*,' SEA-ICE AT WATER POINT, i=',i,'j=',j
+  
+              smstav(i,j)=1.0
+              smstot(i,j)=1.0
+              smois(i,:,j)=1.0
+              tslb(i,:,j)=273.16
+            else if(xice(i,j).eq.1.)then
+
+              smstav(i,j)=1.0
+              smstot(i,j)=1.0
+              smois(i,:,j)=1.0
+            endif
+
+            snowh(i,j)=snow(i,j)*0.005               ! SNOW in kg/m^2 and SNOWH in m
+
+            snowdp(i,:,j) = snowh(i,j)
+
+          ENDDO
+          ENDDO
+
+       do i=its,itf
+       do j=jts,jtf
+           snl(i,:,j) = 0                  !-999.0 
+           h2osoi_liq_s5(i,:,j) = -999.0 
+           h2osoi_liq_s4(i,:,j) = -999.0 
+           h2osoi_liq_s3(i,:,j) = -999.0 
+           h2osoi_liq_s2(i,:,j) = -999.0 
+           h2osoi_liq_s1(i,:,j) = -999.0 
+           h2osoi_liq1(i,:,j)   = -999.0 
+           h2osoi_liq2(i,:,j)   = -999.0 
+           h2osoi_liq3(i,:,j)   = -999.0 
+           h2osoi_liq4(i,:,j)   = -999.0 
+           h2osoi_liq5(i,:,j)   = -999.0 
+           h2osoi_liq6(i,:,j)   = -999.0 
+           h2osoi_liq7(i,:,j)   = -999.0 
+           h2osoi_liq8(i,:,j)   = -999.0 
+           h2osoi_liq9(i,:,j)   = -999.0 
+           h2osoi_liq10(i,:,j)  = -999.0 
+
+           h2osoi_ice_s5(i,:,j) = -999.0 
+           h2osoi_ice_s4(i,:,j) = -999.0 
+           h2osoi_ice_s3(i,:,j) = -999.0 
+           h2osoi_ice_s2(i,:,j) = -999.0 
+           h2osoi_ice_s1(i,:,j) = -999.0 
+           h2osoi_ice1(i,:,j)   = -999.0 
+           h2osoi_ice2(i,:,j)   = -999.0 
+           h2osoi_ice3(i,:,j)   = -999.0 
+           h2osoi_ice4(i,:,j)   = -999.0 
+           h2osoi_ice5(i,:,j)   = -999.0 
+           h2osoi_ice6(i,:,j)   = -999.0 
+           h2osoi_ice7(i,:,j)   = -999.0 
+           h2osoi_ice8(i,:,j)   = -999.0 
+           h2osoi_ice9(i,:,j)   = -999.0 
+           h2osoi_ice10(i,:,j)  = -999.0 
+
+        !   snowage(i,:,j)= 0.0
+!Could this be the snow bug?
+!           if(ivgtyp(i,j).eq.24) then
+!             h2osno(i,:,j) = 1000.0 ! mm
+!           else
+             h2osno(i,:,j) = snow(i,j) ! mm
+!           end if
+       end do
+       end do
+
+     !  write(6,*) '-------in clminit--------'
+     !  write(6,*) 'snl=',snl
+     !  call CLMDebug('clminit mark1')
+!------------------------------------------------------------------------------
+       do i=its,itf
+       do j=jts,jtf
+         numc(i,j) = 0
+         nump(i,j) = 0
+         wtc(i,:,j) = 0.0
+         wtp(i,:,j) = 0.0
+#ifdef CN
+         dyntlai(i,:,j) = 0.0
+         dyntsai(i,:,j) = 0.0
+         dyntop(i,:,j) = 0.0
+         dynbot(i,:,j) = 0.0
+#endif
+       end do
+       end do
+!------------------------------------------------------------------------------
+       do i=its,itf
+         do j=jts,jtf
+!            if(ivgtyp(i,j)==16.and.ht(i,j)>=1.e-5) then
+!!!!!!Lakes Disabled.  See comments above.
+            if(0 == 1) then
+!!!!!!
+                lake(i,j)  = .true.
+            else
+                lake(i,j)  = .false.
+            end if
+        end do
+       end do
+!------------------------------------------------------------------------------
+! for snow
+      do m=1,maxpatch
+      do i=its,itf
+      do j=jts,jtf
+               dzsnow1(i,m,j) = 0.0
+               dzsnow2(i,m,j) = 0.0
+               dzsnow3(i,m,j) = 0.0
+               dzsnow4(i,m,j) = 0.0
+               dzsnow5(i,m,j) = 0.0
+               if(snowdp(i,m,j).lt.0.01) then
+                     snl(i,m,j) = 0
+                     dzsnow1(i,m,j) = 0.0
+                     dzsnow2(i,m,j) = 0.0
+                     dzsnow3(i,m,j) = 0.0
+                     dzsnow4(i,m,j) = 0.0
+                     dzsnow5(i,m,j) = 0.0
+               else
+                if(snowdp(i,m,j).ge.0.01.and.snowdp(i,m,j).le.0.03) then
+                   snl(i,m,j) = -1
+                   dzsnow1(i,m,j) = snowdp(i,m,j)
+                else if(snowdp(i,m,j).gt.0.03.and.snowdp(i,m,j).le.0.04) then
+                   snl(i,m,j) = -2
+                   dzsnow2(i,m,j) = snowdp(i,m,j)/2.
+                   dzsnow1(i,m,j) = snowdp(i,m,j)/2.
+                else if(snowdp(i,m,j).gt.0.04.and.snowdp(i,m,j).le.0.07) then
+                   snl(i,m,j) = -2
+                   dzsnow2(i,m,j) = 0.02
+                   dzsnow1(i,m,j) = snowdp(i,m,j)- dzsnow2(i,m,j)
+                else if(snowdp(i,m,j).gt.0.07.and.snowdp(i,m,j).le.0.12) then
+                   snl(i,m,j) = -3
+                   dzsnow3(i,m,j) = 0.02
+                   dzsnow2(i,m,j) = (snowdp(i,m,j) - 0.02)/2.0
+                   dzsnow1(i,m,j) = (snowdp(i,m,j) - 0.02)/2.0
+                else if(snowdp(i,m,j).gt.0.12.and.snowdp(i,m,j).le.0.18) then
+                   snl(i,m,j) = -3
+                   dzsnow3(i,m,j) = 0.02
+                   dzsnow2(i,m,j) = 0.05
+                   dzsnow1(i,m,j)= snowdp(i,m,j)-dzsnow3(i,m,j)-dzsnow2(i,m,j)
+                else if(snowdp(i,m,j).gt.0.18.and.snowdp(i,m,j).le.0.29) then
+                   snl(i,m,j) = -4
+                   dzsnow4(i,m,j) = 0.02
+                   dzsnow3(i,m,j) = 0.05
+                   dzsnow2(i,m,j) = (snowdp(i,m,j)-dzsnow4(i,m,j)-dzsnow3(i,m,j))/2.0
+                   dzsnow1(i,m,j) = dzsnow2(i,m,j)
+                else if(snowdp(i,m,j).gt.0.29.and.snowdp(i,m,j).le.0.41) then
+                   snl(i,m,j) = -4
+                   dzsnow4(i,m,j) = 0.02
+                   dzsnow3(i,m,j) = 0.05
+                   dzsnow2(i,m,j) = 0.11
+                   dzsnow1(i,m,j) = snowdp(i,m,j)-dzsnow4(i,m,j)-dzsnow3(i,m,j)-dzsnow2(i,m,j)
+                else if(snowdp(i,m,j).gt.0.41.and.snowdp(i,m,j).le.0.64) then
+                   snl(i,m,j) = -5
+                   dzsnow5(i,m,j) = 0.02
+                   dzsnow4(i,m,j) = 0.05
+                   dzsnow3(i,m,j) = 0.11
+                   dzsnow2(i,m,j) = (snowdp(i,m,j)-dzsnow5(i,m,j)-dzsnow4(i,m,j)-dzsnow3(i,m,j))/2.0
+                   dzsnow1(i,m,j) = (snowdp(i,m,j)-dzsnow5(i,m,j)-dzsnow4(i,m,j)-dzsnow3(i,m,j))/2.0
+                else if(snowdp(i,m,j).gt.0.64) then
+                   snl(i,m,j) = -5
+                   dzsnow5(i,m,j) = 0.02
+                   dzsnow4(i,m,j)= 0.05
+                   dzsnow3(i,m,j) = 0.11
+                   dzsnow2(i,m,j) = 0.23
+                   dzsnow1(i,m,j) = snowdp(i,m,j)-dzsnow5(i,m,j)-dzsnow4(i,m,j)-dzsnow3(i,m,j)-dzsnow2(i,m,j)
+                end if
+            end if ! start from snowdp(i,m,j).lt.0.01
+       end do
+       end do
+       end do
+ 
+      !write(6,*) 'after assign snl=',snl
+
+!------------------------------------------------------------------------------
+!snow radius
+    do m=1,maxpatch
+      do i=its,itf
+        do j=jts,jtf
+          if(snl(i,m,j) == -5) then
+          snowrds1(i,m,j) = 54.526    !snw_rds_min = 54.526
+          snowrds2(i,m,j) = 54.526
+          snowrds3(i,m,j) = 54.526
+          snowrds4(i,m,j) = 54.526
+          snowrds5(i,m,j) = 54.526
+          else if(snl(i,m,j) == -4) then
+          snowrds1(i,m,j) = 54.526
+          snowrds2(i,m,j) = 54.526
+          snowrds3(i,m,j) = 54.526
+          snowrds4(i,m,j) = 54.526
+          snowrds5(i,m,j) = 0.0
+           else if(snl(i,m,j) == -3) then
+          snowrds1(i,m,j) = 54.526    
+          snowrds2(i,m,j) = 54.526
+          snowrds3(i,m,j) = 54.526
+          snowrds4(i,m,j) = 0.0
+          snowrds5(i,m,j) = 0.0
+          else if(snl(i,m,j) == -2) then
+          snowrds1(i,m,j) = 54.526
+          snowrds2(i,m,j) = 54.526
+          snowrds3(i,m,j) = 0.0
+          snowrds4(i,m,j) = 0.0
+          snowrds5(i,m,j) = 0.0
+          else if(snl(i,m,j) == -1) then
+          snowrds1(i,m,j) = 54.526
+          snowrds2(i,m,j) = 0.0
+          snowrds3(i,m,j) = 0.0
+          snowrds4(i,m,j) = 0.0
+          snowrds5(i,m,j) = 0.0
+          else if(snl(i,m,j) == 0) then
+          snowrds1(i,m,j) = 0.0
+          snowrds2(i,m,j) = 0.0
+          snowrds3(i,m,j) = 0.0
+          snowrds4(i,m,j) = 0.0
+          snowrds5(i,m,j) = 0.0
+         end if
+        end do
+       end do
+    end do
+
+
+!------------------------------------------------------------------------------
+       do i=its,itf
+          do j=jts,jtf
+              h2ocan(i,:,j) = 0.0
+              h2ocan_col(i,:,j) = 0.0
+              sfcrunoff(i,j) = 0.0 
+              udrunoff(i,j) = 0.0
+          end do
+       end do
+!------------------------------------------------------------------------------
+! initialize temperature and moisture
+      do i=its,itf
+      do j=jts,jtf
+           t_soisno_s5(i,:,j) = -999.0 
+           t_soisno_s4(i,:,j) = -999.0 
+           t_soisno_s3(i,:,j) = -999.0 
+           t_soisno_s2(i,:,j) = -999.0 
+           t_soisno_s1(i,:,j) = -999.0 
+           t_soisno1(i,:,j)   = -999.0 
+           t_soisno2(i,:,j)   = -999.0 
+           t_soisno3(i,:,j)   = -999.0 
+           t_soisno4(i,:,j)   = -999.0 
+           t_soisno5(i,:,j)   = -999.0 
+           t_soisno6(i,:,j)   = -999.0 
+           t_soisno7(i,:,j)   = -999.0 
+           t_soisno8(i,:,j)   = -999.0 
+           t_soisno9(i,:,j)   = -999.0 
+           t_soisno10(i,:,j)  = -999.0 
+
+           t_lake1(i,:,j)     = -999.0 
+           t_lake2(i,:,j)     = -999.0 
+           t_lake3(i,:,j)     = -999.0 
+           t_lake4(i,:,j)     = -999.0 
+           t_lake5(i,:,j)     = -999.0 
+           t_lake6(i,:,j)     = -999.0 
+           t_lake7(i,:,j)     = -999.0 
+           t_lake8(i,:,j)     = -999.0 
+           t_lake9(i,:,j)     = -999.0 
+           t_lake10(i,:,j)    = -999.0 
+      end do
+      end do
+
+     do j=jts,jtf
+        do k=1,num_soil_layers
+          where( ivgtyp(its:ite,j) == 24 .and. tslb(its:ite,k,j) > tfrz )
+            tslb(its:ite,k,j) = tfrz
+          endwhere
+        end do
+      end do
+
+
+      do i=its,itf
+      do j=jts,jtf
+           t_soisno_s5(i,:,j) = tslb(i,1,j)
+           t_soisno_s4(i,:,j) = tslb(i,1,j)
+           t_soisno_s3(i,:,j) = tslb(i,1,j)
+           t_soisno_s2(i,:,j) = tslb(i,1,j)
+           t_soisno_s1(i,:,j) = tslb(i,1,j)
+           t_soisno1(i,:,j) = tslb(i,1,j)
+           t_soisno2(i,:,j) = tslb(i,2,j)
+           t_soisno3(i,:,j) = tslb(i,3,j)
+           t_soisno4(i,:,j) = tslb(i,4,j)
+           t_soisno5(i,:,j) = tslb(i,5,j)
+           t_soisno6(i,:,j) = tslb(i,6,j)
+           t_soisno7(i,:,j) = tslb(i,7,j)
+           t_soisno8(i,:,j) = tslb(i,8,j)
+           t_soisno9(i,:,j) = tslb(i,9,j)
+           t_soisno10(i,:,j)= tslb(i,10,j)
+
+           t_grnd(i,:,j) = tslb(i,1,j)
+           t_veg(i,:,j)  = tslb(i,1,j)
+      end do 
+      end do 
+
+      do i=its,itf
+      do j=jts,jtf
+        if(lake(i,j)) then
+              t_lake1(i,:,j)     = 277.0 
+              t_lake2(i,:,j)     = 277.0 
+              t_lake3(i,:,j)     = 277.0 
+              t_lake4(i,:,j)     = 277.0 
+              t_lake5(i,:,j)     = 277.0 
+              t_lake6(i,:,j)     = 277.0 
+              t_lake7(i,:,j)     = 277.0 
+              t_lake8(i,:,j)     = 277.0 
+              t_lake9(i,:,j)     = 277.0 
+              t_lake10(i,:,j)    = 277.0 
+              t_grnd(i,:,j)      = 277.0
+        end if
+      end do
+      end do
+
+        call CLMDebug('clminit mark2')
+! for moisture
+
+      do i=its,itf
+      do j=jts,jtf
+         h2osoi_vol1(i,:,j)   = smois(i,1,j)
+         h2osoi_vol2(i,:,j)   = smois(i,2,j)
+         h2osoi_vol3(i,:,j)   = smois(i,3,j)
+         h2osoi_vol4(i,:,j)   = smois(i,4,j)
+         h2osoi_vol5(i,:,j)   = smois(i,5,j)
+         h2osoi_vol6(i,:,j)   = smois(i,6,j)
+         h2osoi_vol7(i,:,j)   = smois(i,7,j)
+         h2osoi_vol8(i,:,j)   = smois(i,8,j)
+         h2osoi_vol9(i,:,j)   = smois(i,9,j)
+         h2osoi_vol10(i,:,j)  = smois(i,10,j)
+
+         h2osoi_liq_s5(i,:,j) = 0.0
+         h2osoi_liq_s4(i,:,j) = 0.0
+         h2osoi_liq_s3(i,:,j) = 0.0
+         h2osoi_liq_s2(i,:,j) = 0.0
+         h2osoi_liq_s1(i,:,j) = 0.0
+         h2osoi_ice_s5(i,:,j) = 1.0 
+         h2osoi_ice_s4(i,:,j) = 1.0 
+         h2osoi_ice_s3(i,:,j) = 1.0 
+         h2osoi_ice_s2(i,:,j) = 1.0 
+         h2osoi_ice_s1(i,:,j) = 1.0 
+
+         do m = 1, maxpatch
+          if(t_soisno1(i,m,j) <tfrz.and.t_soisno1(i,m,j)/=-999.0) then
+             h2osoi_ice1(i,m,j)   = dzs(1)*0.917e3*h2osoi_vol1(i,m,j)
+             h2osoi_liq1(i,m,j)   = 0.0
+          else if (t_soisno1(i,m,j) >= tfrz) then
+             h2osoi_ice1(i,m,j)   = 0.0
+             h2osoi_liq1(i,m,j)   = dzs(1)*1000.0*h2osoi_vol1(i,m,j)
+          end if
+
+          if(t_soisno2(i,m,j) <tfrz.and.t_soisno2(i,m,j)/=-999.0) then
+             h2osoi_ice2(i,m,j)   = dzs(2)*0.917e3*h2osoi_vol2(i,m,j)
+             h2osoi_liq2(i,m,j)   = 0.0
+          else if (t_soisno2(i,m,j) >= tfrz) then
+             h2osoi_ice2(i,m,j)   = 0.0
+             h2osoi_liq2(i,m,j)   = dzs(2)*1000.0*h2osoi_vol2(i,m,j)
+          end if
+
+          if(t_soisno3(i,m,j) <tfrz.and.t_soisno3(i,m,j)/=-999.0) then
+             h2osoi_ice3(i,m,j)   = dzs(3)*0.917e3*h2osoi_vol3(i,m,j)
+             h2osoi_liq3(i,m,j)   = 0.0
+          else if (t_soisno3(i,m,j) >= tfrz) then
+             h2osoi_ice3(i,m,j)   = 0.0
+             h2osoi_liq3(i,m,j)   = dzs(3)*1000.0*h2osoi_vol3(i,m,j)
+          end if
+
+          if(t_soisno4(i,m,j) <tfrz.and.t_soisno4(i,m,j)/=-999.0) then
+             h2osoi_ice4(i,m,j)   = dzs(4)*0.917e4*h2osoi_vol4(i,m,j)
+             h2osoi_liq4(i,m,j)   = 0.0
+          else if (t_soisno4(i,m,j) >= tfrz) then
+             h2osoi_ice4(i,m,j)   = 0.0
+             h2osoi_liq4(i,m,j)   = dzs(4)*1000.0*h2osoi_vol4(i,m,j)
+          end if
+
+          if(t_soisno5(i,m,j) <tfrz.and.t_soisno5(i,m,j)/=-999.0) then
+             h2osoi_ice5(i,m,j)   = dzs(5)*0.917e4*h2osoi_vol5(i,m,j)
+             h2osoi_liq5(i,m,j)   = 0.0
+          else if (t_soisno5(i,m,j) >= tfrz) then
+             h2osoi_ice5(i,m,j)   = 0.0
+             h2osoi_liq5(i,m,j)   = dzs(5)*1000.0*h2osoi_vol5(i,m,j)
+          end if
+
+          if(t_soisno6(i,m,j) <tfrz.and.t_soisno6(i,m,j)/=-999.0) then
+             h2osoi_ice6(i,m,j)   = dzs(6)*0.917e4*h2osoi_vol6(i,m,j)
+             h2osoi_liq6(i,m,j)   = 0.0
+          else if (t_soisno6(i,m,j) >= tfrz) then
+             h2osoi_ice6(i,m,j)   = 0.0
+             h2osoi_liq6(i,m,j)   = dzs(6)*1000.0*h2osoi_vol6(i,m,j)
+          end if
+
+          if(t_soisno7(i,m,j) <tfrz.and.t_soisno7(i,m,j)/=-999.0) then
+             h2osoi_ice7(i,m,j)   = dzs(7)*0.917e4*h2osoi_vol7(i,m,j)
+             h2osoi_liq7(i,m,j)   = 0.0
+          else if (t_soisno7(i,m,j) >= tfrz) then
+             h2osoi_ice7(i,m,j)   = 0.0
+             h2osoi_liq7(i,m,j)   = dzs(7)*1000.0*h2osoi_vol7(i,m,j)
+          end if
+
+          if(t_soisno8(i,m,j) <tfrz.and.t_soisno8(i,m,j)/=-999.0) then
+             h2osoi_ice8(i,m,j)   = dzs(8)*0.917e4*h2osoi_vol8(i,m,j)
+             h2osoi_liq8(i,m,j)   = 0.0
+          else if (t_soisno8(i,m,j) >= tfrz) then
+             h2osoi_ice8(i,m,j)   = 0.0
+             h2osoi_liq8(i,m,j)   = dzs(8)*1000.0*h2osoi_vol8(i,m,j)
+          end if
+
+          if(t_soisno9(i,m,j) <tfrz.and.t_soisno9(i,m,j)/=-999.0) then
+             h2osoi_ice9(i,m,j)   = dzs(9)*0.917e4*h2osoi_vol9(i,m,j)
+             h2osoi_liq9(i,m,j)   = 0.0
+          else if (t_soisno9(i,m,j) >= tfrz) then
+             h2osoi_ice9(i,m,j)   = 0.0
+             h2osoi_liq9(i,m,j)   = dzs(9)*1000.0*h2osoi_vol9(i,m,j)
+          end if
+
+          if(t_soisno10(i,m,j) <tfrz.and.t_soisno10(i,m,j)/=-999.0) then
+             h2osoi_ice10(i,m,j)   = dzs(10)*0.917e4*h2osoi_vol10(i,m,j)
+             h2osoi_liq10(i,m,j)   = 0.0
+          else if (t_soisno10(i,m,j) >= tfrz) then
+             h2osoi_ice10(i,m,j)   = 0.0
+             h2osoi_liq10(i,m,j)   = dzs(10)*1000.0*h2osoi_vol10(i,m,j)
+          end if
+        end do
+
+      end do
+      end do
+!------------------------------------------------------------------------------
+ 
+      call CLMDebug('clminit mark 4') 
+      do i=its,itf
+      do j=jts,jtf
+        t2m_max(i,j)             = tslb(i,1,j)
+        t2m_min(i,j)             = tslb(i,1,j)
+        t_ref2m(i,:,j)           = tslb(i,1,j)
+        albedosubgrid(i,:,j) = 0.0
+        lhsubgrid(i,:,j)     = 0.0
+        hfxsubgrid(i,:,j)    = 0.0
+        lwupsubgrid(i,:,j)   = 0.0
+        q2subgrid(i,:,j)     = 0.0
+        sabvsubgrid(i,:,j)   = 0.0
+        sabgsubgrid(i,:,j)   = 0.0
+        nrasubgrid(i,:,j)    = 0.0
+        swupsubgrid(i,:,j)   = 0.0
+!!
+        lhsoi(i,:,j)  = 0.0
+        lhveg(i,:,j)  = 0.0
+        lhtran(i,:,j) = 0.0 
+      end do
+      end do
+
+      do i=its,itf
+      do j=jts,jtf
+       do k=1, num_soil_layers
+          if(tslb(i,k,j) >= tfrz )  then
+            sh2o(i,k,j) = smois(i,k,j)
+          else
+            sh2o(i,k,j) = 0.0
+          end if
+       end do
+      end do
+      end do
+
+!  Use flag instead.   BJG 3/29/19
+!      if( bio_emiss_opt == MEGAN2_CLM ) then
+      if( do_readmeganfile ) then
+
+        dtime = dt
+      endif
+
+   call CLMDebug('clminit done')
+
+   dm_initialized(id) = .true.
+
+!------------------------------------------------------------------------------
+ END SUBROUTINE clminit
+!------------------------------------------------------------------------------
+END MODULE module_sf_clm
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 #endif

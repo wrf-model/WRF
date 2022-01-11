@@ -234,7 +234,12 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          end if
          if (data_format==3) then		 
             write(unit=stdout,fmt='(a)') 'Reading AHI data from JAXA NETCDF4'
+<<<<<<< HEAD
             call da_read_obs_netcdf4ahi_jaxa (iv, 'L1AHITBR', 'L2AHICLP')
+=======
+!            call da_read_obs_netcdf4ahi_jaxa (iv, 'L1AHITBR', 'L2AHICLP')
+			call da_read_obs_netcdf4ahi_jaxa (iv, 'L1AHITBR', 'L1AHITBRP')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          end if		
          !if (data_format==4) then		 
             !filename = 'ahi'

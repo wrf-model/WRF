@@ -9,6 +9,15 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    !
    !       Implementation of multi-variate BE for cv_options=6
    !       Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 02/01/2010
+<<<<<<< HEAD
+=======
+   !------------------------
+   !    Zhiquan (Jake) Liu, NCAR/MMM, 2015-09
+   !     re-order transforms to avoid local chi_u and store full variables in vp
+   !     full vp will be written out and used as input of inverse U transform
+   !     for multi-resolution incremental 4DVAR
+   !   order: v4 (rh), v3 (T), v5 (Ps), v2 (Chi_u -> Chi)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    !-----------------------------------------------------------------------
 
    implicit none
@@ -21,7 +30,11 @@ subroutine da_transform_vptox(grid, vp, be, ep)
 !   integer, intent(in), optional         :: nobwin
 
    integer :: i, k, j, k1, ij            ! Loop counters.
+<<<<<<< HEAD
    real, allocatable          :: chi_u(:,:,:)  ! Unbalanced chi
+=======
+   !real, allocatable          :: chi_u(:,:,:)  ! Unbalanced chi
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    if (trace_use) call da_trace_entry("da_transform_vptox") 
 
@@ -41,6 +54,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    !$OMP PRIVATE ( ij, k1, k, j, i)
    do ij = 1 , grid%num_tiles
 
+<<<<<<< HEAD
    if ( cv_options == 6 ) then
       allocate (chi_u(its:ite,grid%j_start(ij):grid%j_end(ij),kts:kte) )
       do k = kts, kte
@@ -58,10 +72,32 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          do j = grid%j_start(ij), grid%j_end(ij)
             do i = its, ite
                vp%v2(i,j,k) = vp%v2(i,j,k) + be%reg_psi_chi(j,k)* vp%v1(i,j,k)
+=======
+   ! 2.1 Pseudo rh_u to Pseudo rh (only for cv6)
+   ! do moisture first to avoid local (chi_u,t_t,Ps_u) variables
+   !--------------------------------------------------------------
+   if ( cv_options == 6 ) then
+      do k1 = kts, kte
+         do k = kts, kte
+            do j = grid%j_start(ij), grid%j_end(ij)
+               do i = its, ite
+                  vp%v4(i,j,k1) = vp%v4(i,j,k1) + be%reg_psi_rh(j,k1,k)*vp%v1(i,j,k) + &
+                  be%reg_chi_u_rh(j,k1,k)*vp%v2(i,j,k) + be%reg_t_u_rh(j,k1,k)*vp%v3(i,j,k)
+               end do
+            end do
+         end do
+      end do
+!
+      do k = kts, kte
+         do j = grid%j_start(ij), grid%j_end(ij)
+            do i = its, ite
+               vp%v4(i,j,k) = vp%v4(i,j,k) + be%reg_ps_u_rh(j,k)*vp%v5(i,j,1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             end do
          end do
       end do
    end if
+<<<<<<< HEAD
   
    ! Temperature:
    do k = kts, kte
@@ -72,12 +108,21 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       end do
    end do
 
+=======
+
+   ! 2.2 t_u --> t, do this before chi_u --> chi
+   !----------------------------------------------
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if (cv_options /= 7) then
       do k1 = kts, kte
          do k = kts, kte
             do j = grid%j_start(ij), grid%j_end(ij)
                do i = its, ite
+<<<<<<< HEAD
                   grid%xa%t(i,j,k) = grid%xa%t(i,j,k) + be%reg_psi_t(j,k,k1)*vp%v1(i,j,k1)
+=======
+                  vp%v3(i,j,k) = vp%v3(i,j,k) + be%reg_psi_t(j,k,k1)*vp%v1(i,j,k1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                end do
             end do
          end do
@@ -89,13 +134,18 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          do k = kts, kte
             do j = grid%j_start(ij), grid%j_end(ij)
                do i = its, ite
+<<<<<<< HEAD
                   grid%xa%t(i,j,k) = grid%xa%t(i,j,k) + be%reg_chi_u_t(j,k,k1)*chi_u(i,j,k1)
+=======
+                  vp%v3(i,j,k) = vp%v3(i,j,k) + be%reg_chi_u_t(j,k,k1)*vp%v2(i,j,k1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                end do
             end do
          end do
       end do
    end if
 
+<<<<<<< HEAD
    ! Surface Pressure
    do j = grid%j_start(ij), grid%j_end(ij)
       do i = its, ite
@@ -103,11 +153,27 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       end do
    end do
 
+=======
+   do k = kts, kte
+      do j = grid%j_start(ij), grid%j_end(ij)
+         do i = its, ite
+            grid%xa%t(i,j,k) = vp%v3(i,j,k)
+         end do
+      end do
+   end do
+
+   ! 2.3 Ps_u --> Ps, do this before chi_u --> chi
+   !-------------------------------------------------
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if (cv_options /= 7) then
       do k = kts,kte
          do j = grid%j_start(ij), grid%j_end(ij)
             do i = its, ite
+<<<<<<< HEAD
                grid%xa%psfc(i,j) = grid%xa%psfc(i,j) + be%reg_psi_ps(j,k)*vp%v1(i,j,k)
+=======
+               vp%v5(i,j,1) = vp%v5(i,j,1) + be%reg_psi_ps(j,k)*vp%v1(i,j,k)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             end do
          end do
       end do
@@ -117,12 +183,17 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       do k = kts,kte
          do j = grid%j_start(ij), grid%j_end(ij)
             do i = its, ite
+<<<<<<< HEAD
                grid%xa%psfc(i,j) = grid%xa%psfc(i,j) + be%reg_chi_u_ps(j,k)*chi_u(i,j,k)
+=======
+               vp%v5(i,j,1) = vp%v5(i,j,1) + be%reg_chi_u_ps(j,k)*vp%v2(i,j,k)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             end do
          end do
       end do
    end if
 
+<<<<<<< HEAD
    ! Moisture
    if ( cv_options == 6 ) then
       do k1 = kts, kte
@@ -140,13 +211,33 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          do j = grid%j_start(ij), grid%j_end(ij)
             do i = its, ite
                vp%v4(i,j,k) = vp%v4(i,j,k) + be%reg_ps_u_rh(j,k)*vp%v5(i,j,1)
+=======
+   do j = grid%j_start(ij), grid%j_end(ij)
+      do i = its, ite
+         grid%xa%psfc(i,j) = vp%v5(i,j,1)
+      end do
+   end do
+
+   ! 2.4 Chi_u --> Chi, do this last
+   !-----------------------------------
+   if (cv_options /= 7) then
+      do k = kts, kte
+         do j = grid%j_start(ij), grid%j_end(ij)
+            do i = its, ite
+               vp%v2(i,j,k) = vp%v2(i,j,k) + be%reg_psi_chi(j,k)* vp%v1(i,j,k)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             end do
          end do
       end do
    end if
+<<<<<<< HEAD
 
 !
    if ( cv_options == 6 ) deallocate (chi_u )
+=======
+!
+!   if ( cv_options == 6 ) deallocate (chi_u )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    end do
    !$OMP END PARALLEL DO

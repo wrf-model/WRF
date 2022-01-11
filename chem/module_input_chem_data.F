@@ -52,7 +52,12 @@ MODULE module_input_chem_data
    USE module_data_sorgam, ONLY : conmin, rgasuniv, epsilc, grav
    USE module_get_file_names, ONLY : eligible_file_name, number_of_eligible_files, unix_ls
    USE module_model_constants
+<<<<<<< HEAD
 
+=======
+   USE module_chem_share, ONLY : get_last_gas
+   
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    IMPLICIT NONE
 
 !  REAL :: grav = 9.8104
@@ -2388,6 +2393,7 @@ END SUBROUTINE bdy_chem_value_ghg
 
    END SUBROUTINE cv_mmdd_jday
 
+<<<<<<< HEAD
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    integer FUNCTION get_last_gas(chem_opt)
@@ -2474,6 +2480,8 @@ END SUBROUTINE bdy_chem_value_ghg
    END FUNCTION get_last_gas
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !****************************************************************
 !                                                               *
 !   SUBROUTINE TO SET AEROSOL BC VALUES USING THE               *

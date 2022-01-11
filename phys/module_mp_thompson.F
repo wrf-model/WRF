@@ -49,6 +49,10 @@
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       USE module_dm, ONLY : wrf_dm_max_real
 #endif
+<<<<<<< HEAD
+=======
+      USE module_model_constants, only : RE_QC_BG, RE_QI_BG, RE_QS_BG
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       IMPLICIT NONE
 
@@ -107,8 +111,13 @@
 !.. mixing ratio.  Also, when mu_g is non-zero, these become equiv
 !.. y-intercept for an exponential distrib and proper values are
 !.. computed based on same mixing ratio and total number concentration.
+<<<<<<< HEAD
       REAL, PARAMETER, PRIVATE:: gonv_min = 1.E3
       REAL, PARAMETER, PRIVATE:: gonv_max = 9.E6
+=======
+      REAL, PARAMETER, PRIVATE:: gonv_min = 1.E2
+      REAL, PARAMETER, PRIVATE:: gonv_max = 1.E6
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !..Mass power law relations:  mass = am*D**bm
 !.. Snow from Field et al. (2005), others assume spherical form.
@@ -288,11 +297,19 @@
 
 !..Lookup tables for graupel y-intercept parameter (/m**4).
       REAL, DIMENSION(ntb_g1), PARAMETER, PRIVATE:: &
+<<<<<<< HEAD
       N0g_exp = (/1.e3,2.e3,3.e3,4.e3,5.e3,6.e3,7.e3,8.e3,9.e3, &
                   1.e4,2.e4,3.e4,4.e4,5.e4,6.e4,7.e4,8.e4,9.e4, &
                   1.e5,2.e5,3.e5,4.e5,5.e5,6.e5,7.e5,8.e5,9.e5, &
                   1.e6,2.e6,3.e6,4.e6,5.e6,6.e6,7.e6,8.e6,9.e6, &
                   1.e7/)
+=======
+      N0g_exp = (/1.e2,2.e2,3.e2,4.e2,5.e2,6.e2,7.e2,8.e2,9.e2, &
+                  1.e3,2.e3,3.e3,4.e3,5.e3,6.e3,7.e3,8.e3,9.e3, &
+                  1.e4,2.e4,3.e4,4.e4,5.e4,6.e4,7.e4,8.e4,9.e4, &
+                  1.e5,2.e5,3.e5,4.e5,5.e5,6.e5,7.e5,8.e5,9.e5, &
+                  1.e6/)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !..Lookup tables for ice number concentration (/m**3).
       REAL, DIMENSION(ntb_i1), PARAMETER, PRIVATE:: &
@@ -418,7 +435,11 @@
 
 
       INTEGER:: i, j, k, l, m, n
+<<<<<<< HEAD
       REAL:: h_01, airmass, niIN3, niCCN3, max_test
+=======
+      REAL:: h_01, niIN3, niCCN3, max_test, z1
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       LOGICAL:: micro_init, has_CCN, has_IN
 
       is_aerosol_aware = .FALSE.
@@ -462,8 +483,13 @@
             endif
             niCCN3 = -1.0*ALOG(naCCN1/naCCN0)/h_01
             nwfa(i,1,j) = naCCN1+naCCN0*exp(-((hgt(i,2,j)-hgt(i,1,j))/1000.)*niCCN3)
+<<<<<<< HEAD
             airmass = 1./orho(i,1,j) * (hgt(i,2,j)-hgt(i,1,j))*dx*dy     ! kg
             nwfa2d(i,j) = nwfa(i,1,j) * 0.000196 * (airmass*2.E-10)
+=======
+            z1=hgt(i,2,j)-hgt(i,1,j)
+            nwfa2d(i,j) = nwfa(i,1,j) * 0.000196 * (50./z1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             do k = 2, kte
                nwfa(i,k,j) = naCCN1+naCCN0*exp(-((hgt(i,k,j)-hgt(i,1,j))/1000.)*niCCN3)
             enddo
@@ -980,7 +1006,11 @@
                               SNOWNC, SNOWNCV, &
                               GRAUPELNC, GRAUPELNCV, SR, &
 #if ( WRF_CHEM == 1 )
+<<<<<<< HEAD
                               rainprod, evapprod, &
+=======
+                              wetscav_on, rainprod, evapprod, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                               refl_10cm, diagflag, ke_diag, do_radar_ref,      &
                               re_cloud, re_ice, re_snow,              &
@@ -1017,6 +1047,12 @@
                           refl_10cm
       REAL, INTENT(IN):: dt_in
       INTEGER, INTENT(IN):: itimestep
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1 )
+      LOGICAL, INTENT(in) :: wetscav_on
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
@@ -1150,7 +1186,11 @@
                       nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dz1d,  &
                       pptrain, pptsnow, pptgraul, pptice, &
 #if ( WRF_CHEM == 1 )
+<<<<<<< HEAD
                       rainprod1d, evapprod1d, &
+=======
+                      wetscav_on, rainprod1d, evapprod1d, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                       kts, kte, dt, i, j)
 
@@ -1198,8 +1238,15 @@
             nr(i,k,j) = nr1d(k)
             th(i,k,j) = t1d(k)/pii(i,k,j)
 #if ( WRF_CHEM == 1 )
+<<<<<<< HEAD
             rainprod(i,k,j) = rainprod1d(k)
             evapprod(i,k,j) = evapprod1d(k)
+=======
+          IF ( wetscav_on ) THEN
+            rainprod(i,k,j) = rainprod1d(k)
+            evapprod(i,k,j) = evapprod1d(k)
+          ENDIF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
             if (qc1d(k) .gt. qc_max) then
              imax_qc = i
@@ -1304,16 +1351,28 @@
 
          IF (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) THEN
           do k = kts, kte
+<<<<<<< HEAD
              re_qc1d(k) = 2.49E-6
              re_qi1d(k) = 4.99E-6
              re_qs1d(k) = 9.99E-6
+=======
+             re_qc1d(k) = RE_QC_BG
+             re_qi1d(k) = RE_QI_BG
+             re_qs1d(k) = RE_QS_BG
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           enddo
           call calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,  &
                       re_qc1d, re_qi1d, re_qs1d, kts, kte)
           do k = kts, kte
+<<<<<<< HEAD
              re_cloud(i,k,j) = MAX(2.49E-6, MIN(re_qc1d(k), 50.E-6))
              re_ice(i,k,j)   = MAX(4.99E-6, MIN(re_qi1d(k), 125.E-6))
              re_snow(i,k,j)  = MAX(9.99E-6, MIN(re_qs1d(k), 999.E-6))
+=======
+             re_cloud(i,k,j) = MAX(RE_QC_BG, MIN(re_qc1d(k), 50.E-6))
+             re_ice(i,k,j)   = MAX(RE_QI_BG, MIN(re_qi1d(k), 125.E-6))
+             re_snow(i,k,j)  = MAX(RE_QS_BG, MIN(re_qs1d(k), 999.E-6))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           enddo
          ENDIF
 
@@ -1353,7 +1412,11 @@
                           nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dzq, &
                           pptrain, pptsnow, pptgraul, pptice, &
 #if ( WRF_CHEM == 1 )
+<<<<<<< HEAD
                           rainprod, evapprod, &
+=======
+                          wetscav_on, rainprod, evapprod, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                           kts, kte, dt, ii, jj)
 
@@ -1370,6 +1433,10 @@
 #if ( WRF_CHEM == 1 )
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           rainprod, evapprod
+<<<<<<< HEAD
+=======
+      LOGICAL, INTENT(IN) :: wetscav_on
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
 !..Local variables
@@ -1571,13 +1638,24 @@
          pnd_gcd(k) = 0.
       enddo
 #if ( WRF_CHEM == 1 )
+<<<<<<< HEAD
+=======
+    if ( wetscav_on ) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       do k = kts, kte
          rainprod(k) = 0.
          evapprod(k) = 0.
       enddo
+<<<<<<< HEAD
 #endif
 
 !..Bug fix (2016Jun15), prevent use of uninitialized value(s) of snow moments.
+=======
+    endif
+#endif
+
+!..Bug fix (2016Jun15), prevent use of uninitialized value(s).
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       do k = kts, kte
          smo0(k) = 0.
          smo1(k) = 0.
@@ -1587,6 +1665,11 @@
          smod(k) = 0.
          smoe(k) = 0.
          smof(k) = 0.
+<<<<<<< HEAD
+=======
+         mvd_r(k) = 0.
+         mvd_c(k) = 0.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       enddo
 
 !+---+-----------------------------------------------------------------+
@@ -1848,8 +1931,13 @@
 
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
+<<<<<<< HEAD
          zans1 = (3.5 + 2./7. * (ygra1+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
+=======
+         zans1 = 3.0 + 2./7.*(ygra1+8.)
+         zans1 = MAX(2., MIN(zans1, 6.))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
@@ -2909,8 +2997,13 @@
 
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
+<<<<<<< HEAD
          zans1 = (3.5 + 2./7. * (ygra1+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
+=======
+         zans1 = 3.0 + 2./7.*(ygra1+8.)
+         zans1 = MAX(2., MIN(zans1, 6.))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
@@ -3008,7 +3101,11 @@
            !           -tpc_wev(idx_d, idx_c, idx_n)*orho*odt)
             prw_vcd(k) = MAX(DBLE(-rc(k)*0.99*orho*odt), prw_vcd(k))
             pnc_wcd(k) = MAX(DBLE(-nc(k)*0.99*orho*odt),                &
+<<<<<<< HEAD
                        -tnc_wev(idx_d, idx_c, idx_n)*orho*odt)
+=======
+                         DBLE(-tnc_wev(idx_d, idx_c, idx_n)*orho*odt))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
            endif
           else
@@ -3115,6 +3212,7 @@
          endif
       enddo
 #if ( WRF_CHEM == 1 )
+<<<<<<< HEAD
       do k = kts, kte
          evapprod(k) = prv_rev(k) - (min(zeroD0,prs_sde(k)) + &
                                      min(zeroD0,prg_gde(k)))
@@ -3123,6 +3221,18 @@
                                     prg_gcw(k) + prs_sci(k) + &
                                     pri_rci(k)
       enddo
+=======
+      if( wetscav_on ) then
+        do k = kts, kte
+          evapprod(k) = prv_rev(k) - (min(zeroD0,prs_sde(k)) + &
+                                      min(zeroD0,prg_gde(k)))
+          rainprod(k) = prr_wau(k) + prr_rcw(k) + prs_scw(k) + &
+                                     prg_scw(k) + prs_iau(k) + &
+                                     prg_gcw(k) + prs_sci(k) + &
+                                     pri_rci(k)
+        enddo
+      endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
 !+---+-----------------------------------------------------------------+
@@ -3578,10 +3688,17 @@
 
       good = 0
       IF ( wrf_dm_on_monitor() ) THEN
+<<<<<<< HEAD
         INQUIRE(FILE="qr_acr_qgV2.dat",EXIST=lexist)
         IF ( lexist ) THEN
           CALL wrf_message("ThompMP: read qr_acr_qgV2.dat instead of computing")
           OPEN(63,file="qr_acr_qgV2.dat",form="unformatted",err=1234)
+=======
+        INQUIRE(FILE="qr_acr_qgV3.dat",EXIST=lexist)
+        IF ( lexist ) THEN
+          CALL wrf_message("ThompMP: read qr_acr_qgV3.dat instead of computing")
+          OPEN(63,file="qr_acr_qgV3.dat",form="unformatted",err=1234)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           READ(63,err=1234) tcg_racg
           READ(63,err=1234) tmr_racg
           READ(63,err=1234) tcr_gacr
@@ -3594,12 +3711,20 @@
             INQUIRE(63,opened=lopen)
             IF (lopen) THEN
               IF( force_read_thompson ) THEN
+<<<<<<< HEAD
                 CALL wrf_error_fatal("Error reading qr_acr_qgV2.dat. Aborting because force_read_thompson is .true.")
+=======
+                CALL wrf_error_fatal("Error reading qr_acr_qgV3.dat. Aborting because force_read_thompson is .true.")
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ENDIF
               CLOSE(63)
             ELSE
               IF( force_read_thompson ) THEN
+<<<<<<< HEAD
                 CALL wrf_error_fatal("Error opening qr_acr_qgV2.dat. Aborting because force_read_thompson is .true.")
+=======
+                CALL wrf_error_fatal("Error opening qr_acr_qgV3.dat. Aborting because force_read_thompson is .true.")
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ENDIF
             ENDIF
           ELSE
@@ -3610,7 +3735,11 @@
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN
+<<<<<<< HEAD
             CALL wrf_error_fatal("Non-existent qr_acr_qgV2.dat. Aborting because force_read_thompson is .true.")
+=======
+            CALL wrf_error_fatal("Non-existent qr_acr_qgV3.dat. Aborting because force_read_thompson is .true.")
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           ENDIF
         ENDIF
       ENDIF
@@ -3722,8 +3851,13 @@
 #endif
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
+<<<<<<< HEAD
           CALL wrf_message("Writing qr_acr_qgV2.dat in Thompson MP init")
           OPEN(63,file="qr_acr_qgV2.dat",form="unformatted",err=9234)
+=======
+          CALL wrf_message("Writing qr_acr_qgV3.dat in Thompson MP init")
+          OPEN(63,file="qr_acr_qgV3.dat",form="unformatted",err=9234)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           WRITE(63,err=9234) tcg_racg
           WRITE(63,err=9234) tmr_racg
           WRITE(63,err=9234) tcr_gacr
@@ -5065,7 +5199,11 @@
 
       if (has_qc) then
       do k = kts, kte
+<<<<<<< HEAD
          re_qc1d(k) = 2.49E-6
+=======
+         re_qc1d(k) = RE_QC_BG
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          if (rc(k).le.R1 .or. nc(k).le.R2) CYCLE
          if (nc(k).lt.100) then
             inu_c = 15
@@ -5081,16 +5219,27 @@
 
       if (has_qi) then
       do k = kts, kte
+<<<<<<< HEAD
          re_qi1d(k) = 2.49E-6
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
          re_qi1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+=======
+         re_qi1d(k) = RE_QI_BG
+         if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
+         lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
+         re_qi1d(k) = MAX(5.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       enddo
       endif
 
       if (has_qs) then
       do k = kts, kte
+<<<<<<< HEAD
          re_qs1d(k) = 4.99E-6
+=======
+         re_qs1d(k) = RE_QS_BG
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          if (rs(k).le.R1) CYCLE
          tc0 = MIN(-0.1, t1d(k)-273.15)
          smob = rs(k)*oams
@@ -5125,7 +5274,11 @@
      &        + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
      &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
          smoc = a_ * smo2**b_
+<<<<<<< HEAD
          re_qs1d(k) = MAX(5.01E-6, MIN(0.5*(smoc/smob), 999.E-6))
+=======
+         re_qs1d(k) = MAX(10.01E-6, MIN(0.5*(smoc/smob), 999.E-6))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       enddo
       endif
 
@@ -5294,8 +5447,13 @@
       if (ANY(L_qg .eqv. .true.)) then
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
+<<<<<<< HEAD
          zans1 = (3.5 + 2./7. * (ygra1+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
+=======
+         zans1 = 3.0 + 2./7.*(ygra1+8.)
+         zans1 = MAX(2., MIN(zans1, 6.))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          N0_exp = 10.**(zans1)
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg

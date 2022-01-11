@@ -2,27 +2,44 @@
 !  Author(s)/Contact(s):
 !  Abstract:
 !  History Log:
+<<<<<<< HEAD
 ! 
+=======
+!
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !  Usage:
 !  Parameters: <Specify typical arguments passed>
 !  Input Files:
 !        <list file names and briefly describe the data they include>
 !  Output Files:
 !        <list file names and briefly describe the information they include>
+<<<<<<< HEAD
 ! 
+=======
+!
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !  Condition codes:
 !        <list exit condition or error codes returned >
 !        If appropriate, descriptive troubleshooting instructions or
 !        likely causes for failures could be mentioned here with the
 !        appropriate error code
+<<<<<<< HEAD
 ! 
 !  User controllable options: <if applicable>
 
 module module_date_utils_nudging
+=======
+!
+!  User controllable options: <if applicable>
+
+module module_date_utils_nudging
+    use module_hydro_stop, only: HYDRO_stop
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 contains
 
 !===================================================================================================
 ! Subroutine Name: geth_newdate
+<<<<<<< HEAD
 ! Author(s)/Contact(s): 
 !   Wei Yu? or NoahMP developers?
 !   James L McCreight, jamesmcc><ucar><edu
@@ -48,11 +65,42 @@ contains
 !   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
 !   There are some advantages to having a separate copy here, both compiling and 
 !   tailored needs. 
+=======
+! Author(s)/Contact(s):
+!   Wei Yu? or NoahMP developers?
+!   James L McCreight, jamesmcc><ucar><edu
+! Abstract:
+!   Calculate a time difference from two time strings: idts=newdate-olddate
+! History Log:
+!   7/22/15 -Header Created, JLM
+! Usage:
+!   call geth_newdate(ndate, odate, idt)
+! Parameters:
+!   newdate : the resulting date: odate+idt
+!   olddate : the start time for the sum: odate+id
+!   idts    : the time increment in seconds: odate+id
+! Input Files:
+!   None.
+! Output Files:
+!   None.
+! Condition codes:
+!   call hydro_stop("geth_newdate") is used.
+! User controllable options:
+!   None.
+! Notes:
+!   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
+!   There are some advantages to having a separate copy here, both compiling and
+!   tailored needs.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 subroutine geth_newdate (ndate, odate, idt)
 implicit none
 
+<<<<<<< HEAD
 !  From old date ("YYYY-MM-DD HH:MM:SS.ffff" or "YYYYMMDDHHMMSSffff") and 
+=======
+!  From old date ("YYYY-MM-DD HH:MM:SS.ffff" or "YYYYMMDDHHMMSSffff") and
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !  delta-time, compute the new date.
 
 !  on entry     -  odate  -  the old hdate.
@@ -502,6 +550,7 @@ end subroutine geth_newdate
 
 !===================================================================================================
 ! Subroutine Name: geth_idts
+<<<<<<< HEAD
 ! Author(s)/Contact(s): 
 !   Wei Yu? or NoahMP developers?
 !   James L McCreight, jamesmcc><ucar><edu
@@ -527,11 +576,42 @@ end subroutine geth_newdate
 !   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
 !   There are some advantages to having a separate copy here, both compiling and 
 !   tailored needs. 
+=======
+! Author(s)/Contact(s):
+!   Wei Yu? or NoahMP developers?
+!   James L McCreight, jamesmcc><ucar><edu
+! Abstract:
+!   Calculate a time difference from two time strings: idts=newdate-olddate
+! History Log:
+!   7/22/15 -Header Created, JLM
+! Usage:
+!   call geth_idts(newdate, olddate, idt)
+! Parameters:
+!   newdate : first date in difference  (newdate-olddate).
+!   olddate : second date in difference (newdate-olddate).
+!   idts    : difference with units dependent on input resolution.
+! Input Files:
+!   None.
+! Output Files:
+!   None.
+! Condition codes:
+!   Currently incomplete error handling.
+! User controllable options:
+!   None.
+! Notes:
+!   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
+!   There are some advantages to having a separate copy here, both compiling and
+!   tailored needs.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 subroutine geth_idts(newdate, olddate, idt)
 
 implicit none
 
+<<<<<<< HEAD
 !  From 2 input mdates ('YYYY-MM-DD HH:MM:SS.ffff'), 
+=======
+!  From 2 input mdates ('YYYY-MM-DD HH:MM:SS.ffff'),
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !  compute the time difference.
 !  on entry     -  newdate  -  the new hdate.
 !                  olddate  -  the old hdate.
@@ -954,6 +1034,7 @@ end subroutine geth_idts
 
 !===================================================================================================
 ! Function Name: get_idts_elemental
+<<<<<<< HEAD
 ! Author(s)/Contact(s): 
 !   James L McCreight, jamesmcc><ucar><edu
 ! Abstract: 
@@ -974,6 +1055,28 @@ end subroutine geth_idts
 ! User controllable options: 
 !   None. 
 ! Notes: 
+=======
+! Author(s)/Contact(s):
+!   James L McCreight, jamesmcc><ucar><edu
+! Abstract:
+!   get_idts on a vector.
+!
+! History Log:
+!   10/11/16 -Header Created, JLM
+! Usage:
+!
+! Parameters:
+!
+! Input Files:
+!   None.
+! Output Files:
+!   None.
+! Condition codes:
+!
+! User controllable options:
+!   None.
+! Notes:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !elemental subroutine geth_idts_elemental(newdate, olddate, idt)
 !end
 
@@ -981,6 +1084,7 @@ end subroutine geth_idts
 
 !===================================================================================================
 ! Function Name: nfeb
+<<<<<<< HEAD
 ! Author(s)/Contact(s): 
 !   Wei Yu? or NoahMP developers?
 !   James L McCreight, jamesmcc><ucar><edu
@@ -1004,6 +1108,31 @@ end subroutine geth_idts
 !   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
 !   There are some advantages to having a separate copy here, both compiling and 
 !   tailored needs. 
+=======
+! Author(s)/Contact(s):
+!   Wei Yu? or NoahMP developers?
+!   James L McCreight, jamesmcc><ucar><edu
+! Abstract:
+!
+! History Log:
+!   7/22/15 -Header Created, JLM
+! Usage:
+!
+! Parameters:
+!
+! Input Files:
+!   None.
+! Output Files:
+!   None.
+! Condition codes:
+!
+! User controllable options:
+!   None.
+! Notes:
+!   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
+!   There are some advantages to having a separate copy here, both compiling and
+!   tailored needs.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 integer function nfeb(year)
 !
@@ -1013,7 +1142,11 @@ implicit none
 integer, intent(in) :: year ! Four-digit year
 
 nfeb = 28 ! By default, February has 28 days ...
+<<<<<<< HEAD
 if (mod(year,4).eq.0) then  
+=======
+if (mod(year,4).eq.0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    nfeb = 29  ! But every four years, it has 29 days ...
    if (mod(year,100).eq.0) then
       nfeb = 28  ! Except every 100 years, when it has 28 days ...
@@ -1029,6 +1162,7 @@ end function nfeb
 
 !===================================================================================================
 ! Function Name: nmdays
+<<<<<<< HEAD
 ! Author(s)/Contact(s): 
 !   Wei Yu? or NoahMP developers?
 !   James L McCreight, jamesmcc><ucar><edu
@@ -1052,6 +1186,31 @@ end function nfeb
 !   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
 !   There are some advantages to having a separate copy here, both compiling and 
 !   tailored needs. 
+=======
+! Author(s)/Contact(s):
+!   Wei Yu? or NoahMP developers?
+!   James L McCreight, jamesmcc><ucar><edu
+! Abstract:
+!
+! History Log:
+!   7/22/15 -Header Created, JLM
+! Usage:
+!
+! Parameters:
+!
+! Input Files:
+!   None.
+! Output Files:
+!   None.
+! Condition codes:
+!
+! User controllable options:
+!   None.
+! Notes:
+!   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
+!   There are some advantages to having a separate copy here, both compiling and
+!   tailored needs.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 integer function nmdays(hdate)
 !
@@ -1074,6 +1233,7 @@ end function nmdays
 
 !===================================================================================================
 ! Function Name: monthabbr_to_mm
+<<<<<<< HEAD
 ! Author(s)/Contact(s): 
 !   Wei Yu? or NoahMP developers?
 !   James L McCreight, jamesmcc><ucar><edu
@@ -1097,6 +1257,31 @@ end function nmdays
 !   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
 !   There are some advantages to having a separate copy here, both compiling and 
 !   tailored needs. 
+=======
+! Author(s)/Contact(s):
+!   Wei Yu? or NoahMP developers?
+!   James L McCreight, jamesmcc><ucar><edu
+! Abstract:
+!
+! History Log:
+!   7/22/15 -Header Created, JLM
+! Usage:
+!
+! Parameters:
+!
+! Input Files:
+!   None.
+! Output Files:
+!   None.
+! Condition codes:
+!
+! User controllable options:
+!   None.
+! Notes:
+!   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
+!   There are some advantages to having a separate copy here, both compiling and
+!   tailored needs.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 function monthabbr_to_mm(mon) result(mm)
 implicit none
@@ -1140,6 +1325,7 @@ end function monthabbr_to_mm
 
 !===================================================================================================
 ! Subroutine Name: swap_date_format
+<<<<<<< HEAD
 ! Author(s)/Contact(s): 
 !   Wei Yu? or NoahMP developers?
 !   James L McCreight, jamesmcc><ucar><edu
@@ -1163,6 +1349,31 @@ end function monthabbr_to_mm
 !   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
 !   There are some advantages to having a separate copy here, both compiling and 
 !   tailored needs. 
+=======
+! Author(s)/Contact(s):
+!   Wei Yu? or NoahMP developers?
+!   James L McCreight, jamesmcc><ucar><edu
+! Abstract:
+!
+! History Log:
+!   7/22/15 -Header Created, JLM
+! Usage:
+!
+! Parameters:
+!
+! Input Files:
+!   None.
+! Output Files:
+!   None.
+! Condition codes:
+!
+! User controllable options:
+!   None.
+! Notes:
+!   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
+!   There are some advantages to having a separate copy here, both compiling and
+!   tailored needs.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 subroutine swap_date_format(indate, outdate)
 implicit none
@@ -1229,6 +1440,7 @@ end subroutine swap_date_format
 
 !===================================================================================================
 ! Function Name: mm_to_monthabbr
+<<<<<<< HEAD
 ! Author(s)/Contact(s): 
 !   Wei Yu? or NoahMP developers?
 !   James L McCreight, jamesmcc><ucar><edu
@@ -1252,6 +1464,31 @@ end subroutine swap_date_format
 !   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
 !   There are some advantages to having a separate copy here, both compiling and 
 !   tailored needs. 
+=======
+! Author(s)/Contact(s):
+!   Wei Yu? or NoahMP developers?
+!   James L McCreight, jamesmcc><ucar><edu
+! Abstract:
+!
+! History Log:
+!   7/22/15 -Header Created, JLM
+! Usage:
+!
+! Parameters:
+!
+! Input Files:
+!   None.
+! Output Files:
+!   None.
+! Condition codes:
+!
+! User controllable options:
+!   None.
+! Notes:
+!   This routine was copied from ../LandModel/Utility_routines/module_date_utilities.F
+!   There are some advantages to having a separate copy here, both compiling and
+!   tailored needs.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 character(len=3) function mm_to_monthabbr(ii) result(mon)
 implicit none
@@ -1271,12 +1508,17 @@ end function mm_to_monthabbr
 
 !===================================================================================================
 ! Function Name: round_resolution_minute
+<<<<<<< HEAD
 ! Author(s)/Contact(s): 
+=======
+! Author(s)/Contact(s):
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !   James L McCreight, jamesmcc><ucar><edu
 ! Abstract: Round a time to some time resolution specified in minutes:
 !           1) the resolution evenly divides 60
 !           2) the first time chunk in a hour is centered on 0 minutes and
 !              subesquent chunks are centered on N*resoluton (mod 60).
+<<<<<<< HEAD
 ! History Log: 
 !   7/29/15 -Header Created, JLM
 ! Usage: 
@@ -1291,6 +1533,22 @@ end function mm_to_monthabbr
 !   None.
 ! User controllable options: 
 !   None. 
+=======
+! History Log:
+!   7/29/15 -Header Created, JLM
+! Usage:
+!
+! Parameters:
+!
+! Input Files:
+!   None.
+! Output Files:
+!   None.
+! Condition codes:
+!   None.
+! User controllable options:
+!   None.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Notes: Some tests:
 ! print*,round_resolution_minute('2003-02-01_01:00:00', 5)
 ! print*,round_resolution_minute('2003-02-01_01:02:29', 5)
@@ -1322,7 +1580,11 @@ read(time(15:16),*) theMinute
 read(time(18:19),*) theSecond
 theMinute = theMinute + (theSecond/60.)
 ! What fraction of the time resolution is the current time?
+<<<<<<< HEAD
 resMin = (theMinute * resolutionInv) 
+=======
+resMin = (theMinute * resolutionInv)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Round to the time resolution.
 ! nint doesnt document its rounding rule on gfortran! boo.
 if(resMin - floor(resMin) .ge. .5) resMin=ceiling(resMin)
@@ -1332,7 +1594,11 @@ resMin = resMin / resolutionInv
 ! To get the exact right time, some floor/ceil operations are helpful.
 timeCopy = time
 timeCopy(18:19) = '00' ! Floor of theMinute in string form
+<<<<<<< HEAD
 ! nint is needed b/c resMin is real and often slightly off integer, 
+=======
+! nint is needed b/c resMin is real and often slightly off integer,
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! and this is exacerbated by *60
 diffMin = (nint(resMin) - floor(theMinute))*60
 !print*, nint(resMin), floor(theMinute), timeCopy, diffMin

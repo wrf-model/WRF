@@ -73,6 +73,13 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    inc_div = 0.0
 
    call da_allocate_y(iv, jo_grad_y)
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   call da_allocate_y_chem_sfc(iv, jo_grad_y)
+   call da_allocate_y_chem_sfc(iv, y)
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    !-------------------------------------------------------------------------
    ! [1.0] calculate jo:
@@ -88,7 +95,16 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 #else
       call da_transform_vtoy(cv_size, be, grid%ep, xhat, iv, grid%vp, grid%vv,&
                               xbx, y,                                         &
+<<<<<<< HEAD
                               grid, config_flags)
+=======
+                              grid, config_flags &
+!!When vch includes initial conditions, need to add vch=grid%vch at end of this call
+#if (WRF_CHEM == 1)
+              , vchem=grid%vchem &
+#endif
+              )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
    end if
 
@@ -149,7 +165,15 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    j % jb = 0.0
    if (cv_size_jb > 0) then
       cv_xhat_jb(1:cv_size_jb) = cv(1:cv_size_jb) + xhat(1:cv_size_jb)
+<<<<<<< HEAD
       j % jb = jb_factor * 0.5 * da_dot_cv(cv_size_jb,  cv_xhat_jb, cv_xhat_jb, grid, be%cv_mz, be%ncv_mz)
+=======
+      j % jb = jb_factor * 0.5 * da_dot_cv(cv_size_jb,  cv_xhat_jb, cv_xhat_jb, grid, be%cv_mz, be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    end if
 
    !-------------------------------------------------------------------------
@@ -159,10 +183,20 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    j % je = 0.0
    if (be % ne > 0) then
       cv_xhat_je(1:cv_size_je) = cv(je_start:je_end) + xhat(je_start:je_end)
+<<<<<<< HEAD
       j % je = je_factor * 0.5 * da_dot_cv(cv_size_je, cv_xhat_je, cv_xhat_je, grid, be%cv_mz, be%ncv_mz)
    end if
 
 
+=======
+      j % je = je_factor * 0.5 * da_dot_cv(cv_size_je, cv_xhat_je, cv_xhat_je, grid, be%cv_mz, be%ncv_mz &
+#if (WRF_CHEM == 1)
+               ,be%cv_mz_chemic &
+#endif
+               )
+   end if
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    !----------------------------------------------------------------------
    ![1.0.1] calculate grad_v (jd):
    !----------------------------------------------------------------------

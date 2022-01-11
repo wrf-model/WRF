@@ -1,4 +1,12 @@
+<<<<<<< HEAD
 subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
+=======
+subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
+#if (WRF_CHEM == 1)
+                        , vchem &
+#endif
+                        )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    !--------------------------------------------------------------------------
    ! Purpose: Control variable transform Adjoint
@@ -15,6 +23,13 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
    type(vp_type),  intent(out)   :: vv   ! grdipt/eof cv (local).
    real,           intent(inout) :: cv(1:cv_size) ! control variables.
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   type(xchem_type), optional, intent(out) :: vchem   ! Grid point/EOF equivalent.
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    if (.not. use_background_errors) return
 
@@ -27,7 +42,18 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
       call da_apply_be_adj( be, cv, vp, grid)
 
    else
+<<<<<<< HEAD
   
+=======
+
+#if (WRF_CHEM == 1)
+   if ( chem_cv_options >= 10 .and. present(vchem) ) then
+      call da_zero_xchem_type (vchem)
+      call da_transform_vchemtox_adj(grid, vchem, be)   
+   end if
+#endif
+ 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    !-------------------------------------------------------------------------
    ! [3.0]: Perform x = u_p vp transform::
    !-------------------------------------------------------------------------
@@ -36,7 +62,10 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
    !call da_zero_vp_type (vp)
    call da_transform_vptox_adj(grid, vp, be, ep)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    !-------------------------------------------------------------------------
    ! [2.0]: Perform vp = u_v vv transform:
    !-------------------------------------------------------------------------
@@ -71,7 +100,11 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
          vp % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne)
       end if
    end if
+<<<<<<< HEAD
    
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    end if
 
    !-------------------------------------------------------------------------
@@ -83,7 +116,20 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
    else if ( (fg_format == fg_format_wrf_arw_regional .or. &
               fg_format == fg_format_wrf_nmm_regional) .and. &
               (.not. cv_options == 3) ) then
+<<<<<<< HEAD
       call da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
+=======
+#if (WRF_CHEM == 1)
+!        if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
+      if (present(vchem)) then
+         call da_transform_vtovv_adj(grid, cv_size, be, cv, vv, vchem=vchem)
+      else
+#endif
+         call da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
+#if (WRF_CHEM == 1)
+      end if
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    end if
 
    if (trace_use) call da_trace_exit("da_transform_vtox_adj")

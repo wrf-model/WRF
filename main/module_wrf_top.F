@@ -156,6 +156,10 @@ CONTAINS
      include "mpif.h"
 #endif
 #include "version_decl"
+<<<<<<< HEAD
+=======
+#include "commit_decl"
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 
 !<DESCRIPTION>
@@ -355,6 +359,10 @@ CONTAINS
 ! 
 !</DESCRIPTION>
    CALL       wrf_message ( program_name )
+<<<<<<< HEAD
+=======
+   CALL       wrf_message ( commit_version )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    CALL       wrf_debug ( 100 , 'wrf: calling alloc_and_configure_domain ' )
    CALL alloc_and_configure_domain ( domain_id  = 1 ,                  &
                                active_this_task = domain_active_this_task(1), &

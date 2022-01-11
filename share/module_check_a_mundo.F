@@ -48,6 +48,11 @@
 !
 !</DESCRIPTION>
 
+<<<<<<< HEAD
+=======
+      USE module_bep_bem_helper, ONLY: nurbm
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       IMPLICIT NONE
 
       LOGICAL :: exists, vnest
@@ -105,8 +110,16 @@
 
          INTEGER FUNCTION bep_bem_nbui_max() 
          END FUNCTION bep_bem_nbui_max
+<<<<<<< HEAD
       END INTERFACE
 
+=======
+         
+         INTEGER FUNCTION bep_bem_ngr_u()
+         END FUNCTION bep_bem_ngr_u
+
+      END INTERFACE
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
@@ -367,6 +380,23 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+<<<<<<< HEAD
+=======
+! Check  MAD-WRF configuration
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % madwrf_opt .EQ. 1 .AND.     &
+             (model_config_rec % mp_physics(i) .NE. 96 .or. &
+              model_config_rec % use_mp_re /= 0)) THEN
+            wrf_err_message = '--- ERROR: madwrf_opt = 1 requires mp_physics=96 and use_mp_re=0'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Check that SMS-3DTKE scheme Must work with Revised MM5 surface layer 
 ! scheme (sf_sfclay_physics = 1), MYNN surface (sf_sfclay_physics = 5)
 ! and old MM5 surface scheme (sf_sfclay_physics = 91). Also, SMS-3DTKE
@@ -387,6 +417,51 @@
          END IF
       ENDDO
 
+<<<<<<< HEAD
+=======
+
+!-----------------------------------------------------------------------
+! Check that LES PBL is only paired with acceptable other PBL options.
+! Currently, problems occur with any CG PBL option that has a packaged 
+! scalar component: MYNN2, MYNN3, EEPS. This test is also if a user 
+! chooses to not run a PBL scheme on a finer domain, wbut use a PBL 
+! parameterized scheme on a coarser domain (obviously, just for testing 
+! purposes).
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % bl_pbl_physics(i) .EQ. LESscheme ) THEN
+            exists = .TRUE.
+         END IF
+      END DO
+      IF ( ( exists ) .AND. &
+           ( ( model_config_rec % bl_pbl_physics(1) .EQ. MYNNPBLSCHEME2 ) .OR. &
+             ( model_config_rec % bl_pbl_physics(1) .EQ. MYNNPBLSCHEME3 ) .OR. &
+             ( model_config_rec % bl_pbl_physics(1) .EQ. EEPSSCHEME     ) ) ) THEN
+         WRITE(wrf_err_message,fmt='(a,i2)') '--- ERROR: LES PBL on fine grid does not work with CG PBL option ',model_config_rec % bl_pbl_physics(1)
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '           Fix bl_pbl_physics in namelist.input: choose a CG PBL option without any scalar components'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '           Alternatively, remove all of the packaged variables from the CG PBL selection'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF 
+
+
+!-----------------------------------------------------------------------
+! Urban physics set up. If the run-time option for use_wudapt_lcz = 0,
+! then the number of urban classes is 3. Else, if the use_wudapt_lcz = 1, 
+! then the number increases to 11. The seemingly local variable 
+! assignment, "nurbm", is actually USE associated from the BEP BEM 
+! helper module.
+!-----------------------------------------------------------------------
+      IF      ( model_config_rec%use_wudapt_lcz .EQ. 0 ) THEN
+         nurbm = 3
+      ELSE IF ( model_config_rec%use_wudapt_lcz .EQ. 1 ) THEN
+         nurbm = 11
+      END IF
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-----------------------------------------------------------------------
 ! Assign the dimensions for the urban options to the values defined in 
 ! each of those respective modules.
@@ -407,6 +482,11 @@
            model_config_rec % num_urban_nf   = bep_bem_nf_u()
            model_config_rec % num_urban_ngb  = bep_bem_ngb_u()
            model_config_rec % num_urban_nbui = bep_bem_nbui_max()
+<<<<<<< HEAD
+=======
+           model_config_rec % num_urban_ngr  = bep_bem_ngr_u()
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          END IF
       ENDDO
 
@@ -520,6 +600,29 @@
       END IF
 
 !-----------------------------------------------------------------------
+<<<<<<< HEAD
+=======
+! If Deng Shallow Convection is on, icloud_bl cannot be 1
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec%shcu_physics(i) .EQ. dengshcuscheme ) .AND. &
+              ( model_config_rec%icloud_bl .EQ. 1 ) ) THEN
+              oops = oops + 1
+         END IF
+      ENDDO
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: Options shcu_physics = 5 and icloud_bl = 1 should not be used together'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Choose either one in namelist.input and rerun the model'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! For ARW users, a request for CU=4 (SAS) should be switched to option
 ! CU = 95. The option CU = 4 is a scaleaware scheme used by NMM.
 !-----------------------------------------------------------------------
@@ -576,6 +679,7 @@
          END IF
       ENDDO
 
+<<<<<<< HEAD
 !-----------------------------------------------------------------------
 ! The FARMS radiation option (swint_opt==2) requires both effective radii
 ! and mass for cloud, ice, and snow. A run-time option is available to 
@@ -594,6 +698,8 @@
          count_fatal_error = count_fatal_error + 1
       END IF
 
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
 !-----------------------------------------------------------------------
@@ -777,6 +883,24 @@
          END IF
       ENDDO
 
+<<<<<<< HEAD
+=======
+!-----------------------------------------------------------------------
+! Check that all values of gwd_opt are the same for all domains
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % gwd_opt(i) .NE. model_config_rec % gwd_opt(1) ) .AND. &
+              ( model_config_rec % gwd_opt(i) .NE. 0                             ) ) THEN 
+            wrf_err_message = '--- ERROR: gwd_opt must be equal for all domains (or = zero)'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix gwd_opt in namelist.input '
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !-----------------------------------------------------------------------
 ! Check that all values of cu_physics are the same for all domains
@@ -828,6 +952,23 @@
       END IF
 
 !-----------------------------------------------------------------------
+<<<<<<< HEAD
+=======
+! If fractional_seaice == 1, cannot have the simple land model slab 
+! scheme activated.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec%fractional_seaice     .EQ. 1          ) .AND. &
+           ( model_config_rec%sf_surface_physics(1) .EQ. SLABSCHEME ) ) THEN
+         wrf_err_message = '--- ERROR: fractional seaice does not work with simple slab thermal diffusion land model'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '--- ERROR: Change either fractional_seaice=1 OR sf_surface_physics=1'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Check that if fine_input_stream /= 0, io_form_auxinput2 must also be in use
 !-----------------------------------------------------------------------
 
@@ -1617,17 +1758,43 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+<<<<<<< HEAD
 !  We need to know if the orographic gravity wave drag scheme is active 
 !  on any domains. This allows the model to allocate space.
+=======
+!  We need to know if the any of the orographic gravity wave drag schemes
+!  are active on any domains. This allows the model to allocate space.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-----------------------------------------------------------------------
 
       model_config_rec%gwd_used = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+<<<<<<< HEAD
          IF ( model_config_rec%gwd_opt(i) .NE. NOGWDOPT ) THEN
             model_config_rec%gwd_used = 1
          END IF
       ENDDO
+=======
+         IF ( model_config_rec%gwd_opt(i) .EQ. 1 ) THEN
+            model_config_rec%gwd_used = 1
+         END IF
+      ENDDO
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%gwd_opt(i) .EQ. 3 ) THEN
+            model_config_rec%gwd_used = 3
+         END IF
+      ENDDO
+      ! Check if user is requesting extra gravity-wave-drag diagnostics
+      ! for a given GWD scheme
+      ! Only assigned to gwd_opts that have diagnostics available
+      model_config_rec%gwd_diags_used = 0
+      IF ( model_config_rec%gwd_used .EQ. 3 .AND.     &
+           model_config_rec%gwd_diags .EQ. 1 ) THEN
+         model_config_rec%gwd_diags_used = 3
+      END IF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !-----------------------------------------------------------------------
 ! Make sure microphysics option without QICE array cannot be used with icloud=3
@@ -1961,7 +2128,11 @@
                 CALL wrf_message ( wrf_err_message )
                 wrf_err_message = '---          Grell 3D (G3) CU scheme'
                 CALL wrf_message ( wrf_err_message )
+<<<<<<< HEAD
                 wrf_err_message = '---          Kain–Fritsch Cumulus Potential (KF-CuP) CU scheme'
+=======
+                wrf_err_message = '---          Kain-Fritsch Cumulus Potential (KF-CuP) CU scheme'
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 CALL wrf_message ( wrf_err_message )
                 wrf_err_message = '---          Grell-Devenyi (GD) CU scheme'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
@@ -2088,7 +2259,30 @@
 !  to be run if the code is not available.
 !-----------------------------------------------------------------------
 
+<<<<<<< HEAD
 #if !defined ( WRF_USE_CLM )
+=======
+!#if !defined ( WRF_USE_CLM )
+!      oops = 0
+!      DO i = 1, model_config_rec % max_dom
+!         IF ( model_config_rec%sf_surface_physics(i) .EQ. CLMSCHEME ) THEN
+!            oops = oops + 1 
+!         END IF
+!      ENDDO      ! Loop over domains
+!      IF ( oops .GT. 0 ) THEN
+!         wrf_err_message = '--- ERROR: The CLM surface scheme was requested in the namelist.input file.'
+!         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+!         wrf_err_message = '--- ERROR: However, the WRF CLM scheme was not compiled in WRF.'
+!         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+!         wrf_err_message = '--- ERROR: Please place the -DWRF_USE_CLM option in configure.wrf file, and recompile.'
+!         ! CALL wrf_error_fatal ( wrf_err_message )
+!         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+!         fatal_error = .true.
+!         count_fatal_error = count_fatal_error + 1
+!      END IF
+!#endif
+#if (WRF_USE_CLM != 1)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
@@ -2105,6 +2299,85 @@
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1)
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%bio_emiss_opt(i) == MEGAN2_CLM ) THEN
+            oops = oops + 1 
+         END IF
+      ENDDO
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: The CLM Megan2.1 bio emission scheme was requested in the namelist.input file.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: However, the WRF CLM scheme was not compiled in WRF.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: Please place the -DWRF_USE_CLM option in configure.wrf file, and recompile.'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+#else
+!-----------------------------------------------------------------------
+!  The CLM scheme has been compiled.
+!  Check for possible logic errors with namelist settings.
+!-----------------------------------------------------------------------
+#if ( WRF_CHEM == 1 )
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+        IF ( model_config_rec%bio_emiss_opt(i) == MEGAN2_CLM .and. &
+             model_config_rec%sf_surface_physics(i) /= CLMSCHEME ) THEN
+            oops = oops + 1 
+        END IF
+      ENDDO
+      IF ( oops .GT. 0 ) THEN
+        wrf_err_message = '--- ERROR: The CLM Megan2.1 bio emission scheme was requested in the namelist.input file.'
+        CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+        wrf_err_message = '--- ERROR: However, the CLM surface physics scheme was not requested in the namelist.input file.'
+        CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+        wrf_err_message = '--- ERROR: Please set the physics namelist variable sf_surface_physics to 5 in the namelist.input file.'
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+        IF ( model_config_rec%SF_SURFACE_PHYSICS(i) == CLMSCHEME .and. &
+             model_config_rec%SF_URBAN_PHYSICS(i) >= 1 .and. &
+             model_config_rec%SF_URBAN_PHYSICS(i) <= 3 ) THEN
+        ENDIF
+      ENDDO
+      IF ( oops .GT. 0 ) THEN
+        wrf_err_message = '--- ERROR: CLM does not work with any URBAN PHYSICS SCHEME'
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
+!-----------------------------------------------------------------------
+!  The CTSM scheme may not even be compiled, so make sure it is not allowed
+!  to be run if the code is not available.
+!-----------------------------------------------------------------------
+
+#if !defined ( WRF_USE_CTSM ) 
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%sf_surface_physics(i) .EQ. CTSMSCHEME ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: The CTSM surface scheme was requested in the namelist.input file.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: However, the WRF CTSM scheme was not compiled in WRF.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: Please read doc/README.CTSM for how to compile WRF with CTSM.'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
 !-----------------------------------------------------------------------
@@ -2278,40 +2551,64 @@
 
 !-----------------------------------------------------------------------
 !  Consistency checks for vertical refinement:
+<<<<<<< HEAD
 !  must use the terrain following vertical coordinate
+=======
+!  feedback has to be turned off
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-----------------------------------------------------------------------
       oops = 0 
       DO i = 2, model_config_rec % max_dom
         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
         IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+<<<<<<< HEAD
           IF ( model_config_rec%hybrid_opt .NE. 0 ) THEN
+=======
+          IF ( model_config_rec%feedback .NE. 0 ) THEN
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             oops = oops + 1
           END IF
         END IF
       END DO
 
       IF ( oops .GT. 0 ) THEN
+<<<<<<< HEAD
         wrf_err_message = '--- ERROR: vert_refine_method=2 only works with hybrid_opt = 0 '
+=======
+        wrf_err_message = '--- ERROR: vert_refine_method=2 only works with feedback = 0 '
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
         count_fatal_error = count_fatal_error + 1
       END IF
 
 !-----------------------------------------------------------------------
 !  Consistency checks for vertical refinement:
+<<<<<<< HEAD
 !  feedback has to be turned off
+=======
+!  rebalance must be set to 1 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-----------------------------------------------------------------------
       oops = 0 
       DO i = 2, model_config_rec % max_dom
         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
         IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+<<<<<<< HEAD
           IF ( model_config_rec%feedback .NE. 0 ) THEN
+=======
+          IF ( model_config_rec%rebalance .NE. 1 ) THEN
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             oops = oops + 1
           END IF
         END IF
       END DO
 
       IF ( oops .GT. 0 ) THEN
+<<<<<<< HEAD
         wrf_err_message = '--- ERROR: vert_refine_method=2 only works with feedback = 0 '
+=======
+        wrf_err_message = '--- ERROR: vert_refine_method=2 only works with rebalance=1 '
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
         count_fatal_error = count_fatal_error + 1
       END IF
@@ -2485,6 +2782,31 @@
          CALL wrf_debug ( 1, wrf_err_message )
       END IF
 
+<<<<<<< HEAD
+=======
+!-----------------------------------------------------------------------
+!  Consistency checks between eclipse option and shortwave radiation
+!  scheme selection. Eclipse option only applies to
+!  RRTMG_SWSCHEME, SWRADSCHEME, GSFCSWSCHEME and GODDARDSWSCHEME
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+        IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%ra_sw_eclipse == 1 ) THEN
+          IF ( ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) .OR. &
+               ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
+               ( model_config_rec%ra_sw_physics(i) .EQ. GSFCSWSCHEME        ) .OR. &
+               ( model_config_rec%ra_sw_physics(i) .EQ. GODDARDSWSCHEME     ) ) THEN
+             !  We are OK, these sw radiation schemes have eclipse physics
+          ELSE
+            wrf_err_message = '--- ERROR: ra_sw_eclipse=1 only works with ra_sw_physics=1 (Dudhia), ' // &
+                              '=2 (Old Goddard), =4 (RRTMG) and =5 (new Goddard) '
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+          END IF
+         END IF
+      END DO
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #if (WRF_CHEM == 1 && WRF_KPP == 1 )
 !-----------------------------------------------------------------------
 ! Check for consistent chem_opt and irr_opt
@@ -2835,6 +3157,12 @@
                                           (model_config_rec%num_urban_nz - 1)  * &
                                           model_config_rec%num_urban_nf        * &
                                           model_config_rec%num_urban_nbui
+<<<<<<< HEAD
+=======
+        model_config_rec%urban_map_zgrd = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_ngr  * &
+                                          model_config_rec%num_urban_nz
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       END IF     
       
@@ -3029,6 +3357,14 @@
          model_config_rec % num_soil_layers = 2
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME    ) THEN
          model_config_rec % num_soil_layers = 10
+<<<<<<< HEAD
+=======
+#if (EM_CORE == 1)
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CTSMSCHEME    ) THEN
+         ! Using 4 for the sake of the sea ice scheme
+         model_config_rec % num_soil_layers = 4
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SSIBSCHEME   ) THEN
          model_config_rec % num_soil_layers = 3
 #if (NMM_CORE == 1)

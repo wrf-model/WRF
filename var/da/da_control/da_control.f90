@@ -6,6 +6,10 @@ module da_control
 
    use module_driver_constants, only : max_domains, max_eta, max_moves, max_bogus, &
                                        max_outer_iterations, max_instruments, max_plevs, &
+<<<<<<< HEAD
+=======
+                                       max_zlevs, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                        max_ocean, num_ob_indexes
 
    implicit none
@@ -274,7 +278,11 @@ module da_control
    ! Do not use get_unit/free_unit because tracing is too low level
    integer, parameter :: trace_csv_unit = 8
 
+<<<<<<< HEAD
    integer :: y_unit, yp_unit, cost_unit, grad_unit, stats_unit, jo_unit
+=======
+   integer :: y_unit, yp_unit, cost_unit, grad_unit, stats_unit, jo_unit, stats_unit2
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: check_max_iv_unit, check_buddy_unit, rand_unit, omb_unit, &
               filtered_obs_unit
    integer :: biasprep_unit, qcstat_conv_unit
@@ -515,6 +523,12 @@ module da_control
    integer, parameter :: tamdar_sfc = 27
    integer, parameter :: rain      = 28
    integer, parameter :: gpseph    = 29
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   integer, parameter :: chemic_surf = 30
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    character(len=14), parameter :: obs_names(num_ob_indexes) = (/ &
       "sound         ", &
@@ -546,6 +560,12 @@ module da_control
       "tamdar_sfc    ", &
       "rain          ", &
       "gpseph        "  &
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+     ,"chemic_surf   " &
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    /)
 
    logical :: pseudo_tpw

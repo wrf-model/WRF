@@ -29,14 +29,23 @@ subroutine da_setup_background_errors(grid, be)
             max_vert_var3 = 0
             max_vert_var4 = 0
             max_vert_var5 = 0
+<<<<<<< HEAD
 !#ifdef CLOUD_CV
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             max_vert_var6 = 0
             max_vert_var7 = 0
             max_vert_var8 = 0
             max_vert_var9 = 0
             max_vert_var10 = 0
             max_vert_var11 = 0
+<<<<<<< HEAD
 !#endif
+=======
+#if (WRF_CHEM == 1)
+            max_vert_var12 = 0
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       end if
       sigma_alpha = alpha_std_dev
       write(6,'(a,4f15.5)')' jb_factor, je_factor, alpha_std_dev, sigma_alpha = ', &
@@ -75,6 +84,28 @@ subroutine da_setup_background_errors(grid, be)
    be % v10% mz = 0
    be % v11% mz = 0
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   num_cv_3d_basic = 0
+   num_cv_3d_extra = 0
+   num_cv_2d = 0
+
+   if (num_chem >= PARAM_FIRST_SCALAR) then
+!      allocate (be%v12 (num_chem) )
+!      do ic = 1, num_chem
+!         be % v12(ic) % mz = 0
+!      end do
+      allocate (be%cv%sizechemic (num_chem) )
+   end if
+
+   be % ncv_mz_chemic  = num_cv_3d_basic + num_cv_3d_extra + num_cv_2d
+   allocate ( be%cv_mz_chemic(1:be%ncv_mz_chemic) )
+   be%cv_mz_chemic(:) = 0 ! initialize
+
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if (global) then
       call da_setup_be_global(be)
    else if(fg_format == fg_format_wrf_arw_regional) then    

@@ -592,7 +592,11 @@
 !     rates at tropospheric conditions,
 !       j. geophys. res., 112, d15207, doi:10.1029/2006jd0027977
 !
+<<<<<<< HEAD
 !    vehkamäki, h., m. kulmala, i. napari, k.e.j. lehtinen,
+=======
+!    vehkamaki, h., m. kulmala, i. napari, k.e.j. lehtinen,
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !       c. timmreck, m. noppel and a. laaksonen, 2002,
 !       an improved parameterization for sulfuric acid-water nucleation
 !       rates for tropospheric and stratospheric conditions,
@@ -1204,7 +1208,11 @@
 !
 ! calculates binary nucleation rate and critical cluster size
 ! using the parameterization in  
+<<<<<<< HEAD
 !     vehkamäki, h., m. kulmala, i. napari, k.e.j. lehtinen,
+=======
+!     vehkamaki, h., m. kulmala, i. napari, k.e.j. lehtinen,
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !        c. timmreck, m. noppel and a. laaksonen, 2002,
 !        an improved parameterization for sulfuric acid-water nucleation
 !        rates for tropospheric and stratospheric conditions,

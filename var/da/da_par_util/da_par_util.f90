@@ -7,7 +7,15 @@ module da_par_util
    !---------------------------------------------------------------------------
 
    use da_control, only: use_rf
+<<<<<<< HEAD
    use module_domain, only : domain, xpose_type
+=======
+#if (WRF_CHEM != 1)
+   use module_domain, only : domain, xpose_type
+#else
+   use module_domain, only : domain, xpose_type, xchem_type
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator_x, &
@@ -20,6 +28,13 @@ module da_par_util
    use da_reporting, only : message
 #endif
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   use module_state_description, only :  num_chem, PARAM_FIRST_SCALAR
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use da_define_structures, only : be_subtype, &
       x_type, vp_type, residual_synop_type, residual_sound_type, iv_type, &
       y_type, count_obs_number_type, maxmin_field_type

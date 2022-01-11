@@ -13,7 +13,11 @@ CONTAINS
 
    SUBROUTINE after_all_rk_steps ( grid, config_flags,                  &
                                    moist, chem, tracer, scalar,         &
+<<<<<<< HEAD
                                    th_phy, pi_phy, p_phy, rho_phy,      & 
+=======
+                                   th_phy, pi_phy, p_phy,               & 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                    p8w, t8w, dz8w,                      &
                                    curr_secs, curr_secs2,               &
                                    diag_flag,                           &
@@ -92,7 +96,10 @@ CONTAINS
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme)            , INTENT(IN) :: th_phy  , &
                                                                            p_phy   , &
                                                                            pi_phy  , &
+<<<<<<< HEAD
                                                                            rho_phy , &
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                                            dz8w    , &
                                                                            p8w     , &
                                                                            t8w
@@ -151,7 +158,11 @@ CONTAINS
 
       CALL diagnostics_driver ( grid, config_flags,               &
                                 moist, chem, tracer, scalar,         &
+<<<<<<< HEAD
                                 th_phy, pi_phy, p_phy, rho_phy,      & 
+=======
+                                th_phy, pi_phy, p_phy,               & 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                 p8w, t8w, dz8w,                      &
                                 curr_secs, curr_secs2,               &
                                 diag_flag,                           &

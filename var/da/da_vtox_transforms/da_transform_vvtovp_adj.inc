@@ -31,7 +31,11 @@ subroutine da_transform_vvtovp_adj(grid, evec, eval, vertical_wgt, vp, vv, mz, l
    end if
 
    !-------------------------------------------------------------------
+<<<<<<< HEAD
    ! [2.0] Perform vp(i,j,k) = E L^{1/2} vv(i,j,m) transform:
+=======
+   ! [2.0] Perform vv(i,j,m) = L^{1/2} E^T vp(i,j,k) transform:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    !------------------------------------------------------------------- 
 
    !$OMP PARALLEL DO &

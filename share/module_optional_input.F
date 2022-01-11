@@ -42,6 +42,11 @@ MODULE module_optional_input
    INTEGER :: flag_canfra   , flag_clayfrac   , flag_erod     , flag_frc_urb2d , flag_imperv , &
               flag_lai12m   , flag_lake_depth , flag_sandfrac , flag_urb_param , flag_var_sso
 
+<<<<<<< HEAD
+=======
+   integer :: flag_cldmask, flag_cldbasez, flag_cldtopz, flag_brtemp
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    INTEGER                  :: num_soil_levels_input
    INTEGER                  :: num_st_levels_input , num_sm_levels_input , num_sw_levels_input
    INTEGER                  :: num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
@@ -328,6 +333,13 @@ USE module_io_domain
       flag_sh       = 0
       flag_speccldl = 0
       flag_speccldf = 0
+<<<<<<< HEAD
+=======
+      flag_cldmask  = 0
+      flag_cldbasez = 0
+      flag_cldtopz  = 0
+      flag_brtemp   = 0
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       flag_name(1:8) = 'QV      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -419,6 +431,29 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_speccldf = itmp
       END IF
+<<<<<<< HEAD
+=======
+      flag_name(1:8) = 'CLDMASK '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_cldmask = itmp
+      END IF
+      flag_name(1:8) = 'CLDBASEZ'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_cldbasez = itmp
+      END IF
+      flag_name(1:8) = 'CLDTOPZ '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_cldtopz = itmp
+      END IF
+      flag_name(1:8) = 'BRTEMP  '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_brtemp = itmp
+      END IF
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     
    END SUBROUTINE optional_moist
 

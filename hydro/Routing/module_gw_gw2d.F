@@ -31,7 +31,11 @@ module module_gw_gw2d
 #endif
    use module_gw_gw2d_data, only: gw2d
    use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist
+=======
+   use config_base, only: nlst
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    
    implicit none
 
@@ -60,7 +64,11 @@ module module_gw_gw2d
      
     
 
+<<<<<<< HEAD
       itermax = nlst_rt(did)%GwPreCycles
+=======
+      itermax = nlst(did)%GwPreCycles
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	   gw2d(did)%dx=dx
            gw2d(did)%dt=dt
            
@@ -90,6 +98,7 @@ module module_gw_gw2d
 	   
 	     gw2d(did)%ho = gw2d(did)%h
 	     
+<<<<<<< HEAD
 	  if((nlst_rt(did)%GwPreDiag .and. iter==1) .or. &
 	      nlst_rt(did)%GwPreDiag .and. (mod(iter, nlst_rt(did)%GwPreDiagInterval) .eq. 0) ) then
            call output_gw_spinup(nlst_rt(did)%igrid, 1000000,                &
@@ -100,6 +109,18 @@ module module_gw_gw2d
                             RT_DOMAIN(did)%LATVAL,        &
                             RT_DOMAIN(did)%LONVAL,rt_domain(did)%overland%properties%distance_to_neighbor,          &
                             nlst_rt(did)%output_gw)
+=======
+	  if((nlst(did)%GwPreDiag .and. iter==1) .or. &
+	      nlst(did)%GwPreDiag .and. (mod(iter, nlst(did)%GwPreDiagInterval) .eq. 0) ) then
+           call output_gw_spinup(nlst(did)%igrid, 1000000,                &
+                            RT_DOMAIN(did)%ixrt, RT_DOMAIN(did)%jxrt,   &
+                            nlst(did)%startdate, nlst(did)%olddate, &
+                            gw2d(did)%ho, gw2d(did)%convgw, gw2d(did)%excess,  &
+                            nlst(did)%geo_finegrid_flnm,nlst(did)%DT,     &
+                            RT_DOMAIN(did)%LATVAL,        &
+                            RT_DOMAIN(did)%LONVAL,rt_domain(did)%overland%properties%distance_to_neighbor,          &
+                            nlst(did)%output_gw)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	   end if
 	  
   
@@ -263,7 +284,11 @@ module module_gw_gw2d
       integer            :: its, ite, jts, jte, ifs, ife, jfs, jfe, &
                             xdim, ydim, fxdim, fydim
                           
+<<<<<<< HEAD
 ! die müssen noch sortiert, geprüft und aufgeräumt werden
+=======
+! die mussen noch sortiert, gepruft und aufgerumt werden
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       integer ::                &
         iter,                   &
         j,                      &
@@ -1005,13 +1030,22 @@ subroutine gwSoilFlux(did)
 ! Step 1, collect data
 
 ! relative soil moisture content of lowest soil layer (1 = saturated)
+<<<<<<< HEAD
   nsoil = nlst_rt(did)%nsoil
   smcrel = RT_DOMAIN(did)%SMCRT(:,:,nsoil) / RT_DOMAIN(did)%SMCMAXRT(:,:,nsoil)
+=======
+  nsoil = nlst(did)%nsoil
+  smcrel = rt_domain(did)%subsurface%grid_transform%smcrt(:,:,nsoil) / RT_DOMAIN(did)%subsurface%grid_transform%smcmaxrt(:,:,nsoil)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! depth of transition zone from lowest soil layer to groundwater head (in cm)
 ! postivie ztrans -> head below LSM soil layer 
 ! negative ztrans -> head within LSM soil layers
+<<<<<<< HEAD
   ztrans = (rt_domain(did)%elrt + nlst_rt(did)%zsoil8(nsoil)) - gw2d(did)%ho
+=======
+  ztrans = (rt_domain(did)%elrt + nlst(did)%zsoil8(nsoil)) - gw2d(did)%ho
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   ztrans = ztrans * 100
   
   ! darcyGwSoil not defined for ztran = 0
@@ -1042,6 +1076,7 @@ subroutine gwSoilFlux(did)
 	  zres = -ztrans(i,j)
 	  do k=nsoil,1,-1
 	     
+<<<<<<< HEAD
 	     if(zres >= rt_domain(did)%sldpth(k)*100.) then
 	     ! complete filling of a LSM soil layer if groundwater head > layer top
 	       
@@ -1052,10 +1087,23 @@ subroutine gwSoilFlux(did)
 	       RT_DOMAIN(did)%SMCRT(i,j,k) = RT_DOMAIN(did)%SMCMAXRT(i,j,k)
 	       
 	       zres = zres - rt_domain(did)%sldpth(k)*100.
+=======
+	     if(zres >= rt_domain(did)%subsurface%properties%sldpth(k)*100.) then
+	     ! complete filling of a LSM soil layer if groundwater head > layer top
+	       
+! 	       gw2d(did)%qsgwrt(i,j) = (rt_domain(did)%subsurface%properties%sldpth(k) &
+! 	                               * (rt_domain(did)%subsurface%grid_transform%smcmaxrt(i,j,k) - RT_DOMAIN(did)%subsurface%grid_transform%smcrt(i,j,k)) &
+! 				       + gw2d(did)%qsgwrt(i,j)) / gw2d(did)%dt
+				       
+	       rt_domain(did)%subsurface%grid_transform%smcrt(i,j,k) = RT_DOMAIN(did)%subsurface%grid_transform%smcmaxrt(i,j,k)
+	       
+	       zres = zres - rt_domain(did)%subsurface%properties%sldpth(k)*100.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	       
 	     else
 	     ! partial filling of a soil layer if not completely below groundwater head
 	     
+<<<<<<< HEAD
 	       if(zres > (0.5 * rt_domain(did)%sldpth(k)*100.)) then
 		 
 		 frac = zres / (rt_domain(did)%sldpth(k) * 100.)
@@ -1066,6 +1114,18 @@ subroutine gwSoilFlux(did)
 ! 					* frac + gw2d(did)%qsgwrt(i,j)) / gw2d(did)%dt
 	       
 	          RT_DOMAIN(did)%SMCRT(i,j,k) = RT_DOMAIN(did)%SMCMAXRT(i,j,k) * frac
+=======
+	       if(zres > (0.5 * rt_domain(did)%subsurface%properties%sldpth(k)*100.)) then
+		 
+		 frac = zres / (rt_domain(did)%subsurface%properties%sldpth(k) * 100.)
+	       
+	       
+! 	          gw2d(did)%qsgwrt(i,j) = (rt_domain(did)%subsurface%properties%sldpth(k) &
+! 	                                * (rt_domain(did)%subsurface%grid_transform%smcmaxrt(i,j,k) - RT_DOMAIN(did)%subsurface%grid_transform%smcrt(i,j,k)) &
+! 					* frac + gw2d(did)%qsgwrt(i,j)) / gw2d(did)%dt
+	       
+	          rt_domain(did)%subsurface%grid_transform%smcrt(i,j,k) = RT_DOMAIN(did)%subsurface%grid_transform%smcmaxrt(i,j,k) * frac
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	          
 	       end if
 	       
@@ -1176,12 +1236,21 @@ subroutine aggregateQsgw(did)
 
        agg= 0.
        
+<<<<<<< HEAD
        do m=nlst_rt(did)%aggfactRT-1,0,-1
          do n=nlst_rt(did)%aggfactRT-1,0,-1
 
 
 	    ixxRT = i * nlst_rt(did)%aggfactRT-n
 	    jyyRT = j * nlst_rt(did)%aggfactRT-m
+=======
+       do m=nlst(did)%aggfactRT-1,0,-1
+         do n=nlst(did)%aggfactRT-1,0,-1
+
+
+	    ixxRT = i * nlst(did)%aggfactRT-n
+	    jyyRT = j * nlst(did)%aggfactRT-m
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
            
 #ifdef MPP_LAND
@@ -1192,7 +1261,11 @@ subroutine aggregateQsgw(did)
            end do
          end do
 	
+<<<<<<< HEAD
             gw2d(did)%qsgw(i,j) = agg/(nlst_rt(did)%aggfactRT**2)
+=======
+            gw2d(did)%qsgw(i,j) = agg/(nlst(did)%aggfactRT**2)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        end do
      end do
 

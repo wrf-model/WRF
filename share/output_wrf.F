@@ -601,13 +601,20 @@ endif
      IF ( config_flags%perturb_bdy .NE. 0 ) THEN
           CALL wrf_put_dom_ti_integer( fid, 'PERTURB_BDY',        config_flags%perturb_bdy, 1, ierr )
      END IF
+<<<<<<< HEAD
      CALL wrf_put_dom_ti_integer( fid, 'SPEC_BDY_FINAL_MU',  config_flags%spec_bdy_final_mu, 1, ierr )
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      CALL wrf_put_dom_ti_integer( fid, 'USE_Q_DIABATIC',     config_flags%use_q_diabatic,    1, ierr )
     END IF
 #endif
 
 ! added by SYHA (09-19-2014)
+<<<<<<< HEAD
 #if ((WRF_CHEM == 1) &&  (EM_CORE == 1))
+=======
+#if ((WRF_CHEM == 1) &&  (EM_CORE == 1) && (DA_CORE != 1))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      IF ( config_flags%perturb_chem_bdy .NE. 0 ) THEN
           CALL wrf_put_dom_ti_integer( fid, 'PERTURB_CHEM_BDY', config_flags%perturb_chem_bdy, 1, ierr )
      END IF
@@ -795,6 +802,11 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SOIL',    config_flags%opt_soil    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_PEDO',    config_flags%opt_pedo    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_CROP',    config_flags%opt_crop    , 1 , ierr )
+<<<<<<< HEAD
+=======
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_IRR',     config_flags%opt_irr     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_IRRM',    config_flags%opt_irrm    , 1 , ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ENDIF
 
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr )

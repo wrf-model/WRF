@@ -1090,7 +1090,11 @@ SUBROUTINE compute_vcoord_1d_coeffs ( ht, etac, znw, &
          c3f(k) = znw(k)*sin(0.5*3.14159*znw(k))**2
          IF      ( k .EQ. kds ) THEN
             c3f(k) = 1.
+<<<<<<< HEAD
          ELSE IF ( k .EQ. kds ) THEN
+=======
+         ELSE IF ( k .EQ. kde ) THEN
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             c3f(kde) = 0.
          END IF
       ELSE

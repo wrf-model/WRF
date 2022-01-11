@@ -8,7 +8,13 @@ use module_gfs_physcons, g => con_g,                           &
                          r_v => con_rv
 use module_cu_gf_deep, only: cup_gf,neg_check,autoconv,aeroevap
 use module_cu_gf_sh, only: cup_gf_sh
+<<<<<<< HEAD
 
+=======
+#if ( WRF_CHEM == 1 )
+use module_cu_gf_ctrans, only: neg_check_chem
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     This convective parameterization is build to attempt     !
@@ -54,7 +60,16 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option
               ,do_capsuppress,cap_suppress_loc                  &
+<<<<<<< HEAD
 #endif                                 
+=======
+#endif
+#if ( WRF_CHEM == 1 )
+              ,chem,tracer,numgas                               &
+              ,num_chem,chemopt,num_tracer,traceropt            &
+              ,conv_tr_wetscav,conv_tr_aqchem,chem_conv_tr      &
+#endif                                     
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                                 )
 !-------------------------------------------------------------
    IMPLICIT NONE
@@ -134,6 +149,33 @@ CONTAINS
          OPTIONAL,                                              &
          INTENT(INOUT) ::                          DUDT_PHY,    &
                                                    DVDT_PHY
+<<<<<<< HEAD
+=======
+
+#if ( WRF_CHEM == 1 )
+   INTEGER,INTENT(IN   ) ::                                     &
+                                 numgas,chemopt,traceropt,      &
+                                 num_tracer,num_chem,           &
+                                 conv_tr_wetscav,conv_tr_aqchem,&
+                                 chem_conv_tr
+   REAL,DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ),     &
+         INTENT(INOUT) ::                                       &
+                                   chem
+   REAL,DIMENSION( ims:ime , kms:kme , jms:jme, num_tracer ),   &
+         INTENT(INOUT) ::                                       &
+                                   tracer
+!local
+   REAL,DIMENSION( its:ite , kts:kte , num_chem )::             &
+                        chem2d,outchemts,outchemtm,             &
+                        outchemt,totchemt
+   REAL,DIMENSION( its:ite , kts:kte , num_tracer )::           &
+                        tracer2d,outtracerts,outtracertm,       &
+                        outtracert,tottracert
+   INTEGER :: nv,iopt
+   REAL:: epsilc
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !  Stochastic
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),OPTIONAL  ::pattern_spp_conv,field_conv
    REAL, DIMENSION( its:ite, 4 )                 ::   rstochcol !,fieldcol_conv
@@ -219,8 +261,15 @@ CONTAINS
      integer, dimension (its:ite) :: cactiv
      real,    dimension (its:ite,kts:kte) ::  qcheck
 
+<<<<<<< HEAD
 
 
+=======
+#if ( WRF_CHEM == 1 )
+   epsilc=1.e-30
+   iopt=0
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    tcrit=258.
    ipr=0 !639
    jpr=0 !141
@@ -403,6 +452,23 @@ CONTAINS
          cupclw(i,k) = 0.
          cupclwm(i,k) = 0.
          qcheck(i,k) = 0.
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1 )
+         do nv=2,num_chem
+           outchemts(I,K,nv)=0.
+           outchemtm(I,K,nv)=0.
+           outchemt(I,K,nv)=0.
+           chem2d(I,K,nv)=max(epsilc,chem(i,k,j,nv))
+         enddo
+         do nv=2,num_tracer
+           outtracerts(I,K,nv)=0.
+           outtracertm(I,K,nv)=0.
+           outtracert(I,K,nv)=0.
+           tracer2d(I,K,nv)=max(epsilc,tracer(i,k,j,nv))
+         enddo
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      ENDDO
      ENDDO
 #if (NMM_CORE==1)
@@ -465,6 +531,16 @@ CONTAINS
               zus,xmbs,kbcons,ktops,k22s,ierrs,ierrcs,    &
 ! output tendencies
               outts,outqs,outqcs,cnvwt,prets,cupclws,             &
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1 )
+              num_chem,chem2d,outchemts,          &
+              num_tracer,tracer2d,outtracerts,    &
+              numgas,chemopt,traceropt,           &
+              conv_tr_wetscav,conv_tr_aqchem,     &
+              chem_conv_tr,                       &
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! dimesnional variables
               itf,ktf,its,ite, kts,kte,ipr)
           do i=its,itf
@@ -543,6 +619,16 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
               ,do_capsuppress,cap_suppress_j &
 #endif
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1 )
+              ,num_chem,chem2d,outchemtm       &
+              ,num_tracer,tracer2d,outtracertm &
+              ,numgas,chemopt,traceropt        &
+              ,conv_tr_wetscav,conv_tr_aqchem  &
+              ,chem_conv_tr                    &
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ,k22m          &
               ,jminm)
 
@@ -628,6 +714,16 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
               ,do_capsuppress,cap_suppress_j &
 #endif
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1 )
+              ,num_chem,chem2d,outchemt        &
+              ,num_tracer,tracer2d,outtracert  &
+              ,numgas,chemopt,traceropt        &
+              ,conv_tr_wetscav,conv_tr_aqchem  &
+              ,chem_conv_tr                    & 
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ,k22          &
               ,jmin)
         jpr=0
@@ -684,6 +780,52 @@ CONTAINS
                DVDT_PHY(I,K,J)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i)
             ENDDO
             ENDDO
+<<<<<<< HEAD
+=======
+#if ( WRF_CHEM == 1 )
+            DO I=ibegc,iendc
+            DO K=kts,ktf
+               if ((chemopt>0) .and. (chem_conv_tr>0)) then
+               do nv=2,num_chem
+                 totchemt(i,k,nv)=outchemts(i,k,nv)*cutens(i)+ &
+                                  outchemtm(i,k,nv)*cutenm(i)+ &
+                                  outchemt(i,k,nv)*cuten(i)
+               enddo ! nv
+               endif
+               if ((traceropt>0) .and. (chem_conv_tr>0)) then
+               do nv=2,num_tracer
+                 tottracert(I,K,nv)=outtracerts(i,k,nv)*cutens(i)+ &
+                                    outtracertm(i,k,nv)*cutenm(i)+ &
+                                    outtracert(i,k,nv)*cuten(i)
+               enddo
+               endif
+            ENDDO
+            ENDDO
+!neg_check
+            if ((chemopt>0) .and. (chem_conv_tr>0)) then
+              call neg_check_chem(ktop,dt,chem2d,totchemt,iopt,num_chem,    &
+                                   its,ite,kts,kte,itf)
+              DO I=ibegc,iendc
+              DO K=kts,ktf
+              do nv=2,num_tracer
+                chem(I,K,J,nv)=max(epsilc,chem(i,k,j,nv)+totchemt(i,k,nv)*dt)
+              enddo
+              ENDDO
+              ENDDO
+            endif
+            if ((traceropt>0) .and. (chem_conv_tr>0)) then
+               call neg_check_chem(ktop,dt,tracer2d,tottracert,iopt,num_chem, &
+                                   its,ite,kts,kte,itf)
+              DO I=ibegc,iendc
+              DO K=kts,ktf
+              do nv=2,num_chem
+                 tracer(I,K,J,nv)=max(epsilc,tracer(i,k,j,nv)+tottracert(i,k,nv)*dt)
+              enddo ! nv
+              ENDDO
+              ENDDO
+            endif ! tracer_opt
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
             DO I=ibegc,iendc
               if(pret(i).gt.0. .or. pretm(i).gt.0. .or. prets(i).gt.0.)then

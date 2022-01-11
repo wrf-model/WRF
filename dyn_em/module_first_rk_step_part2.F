@@ -689,12 +689,21 @@ ENDIF
 #      include "HALO_EM_PHYS_DIFFUSION.inc"
        ENDIF
 
+<<<<<<< HEAD
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
 #       include "HALO_EM_TKE_3.inc"
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
 #       include "HALO_EM_TKE_5.inc"
        ELSE
          WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+=======
+       IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
+#       include "HALO_EM_TKE_3.inc"
+       ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
+#       include "HALO_EM_TKE_5.inc"
+       ELSE
+         WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          CALL wrf_error_fatal(TRIM(wrf_err_message))
        ENDIF
 #endif

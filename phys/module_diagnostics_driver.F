@@ -16,7 +16,11 @@ CONTAINS
 
    SUBROUTINE diagnostics_driver ( grid, config_flags,                  &
                                    moist, chem, tracer, scalar,         &
+<<<<<<< HEAD
                                    th_phy, pi_phy, p_phy, rho_phy,      & 
+=======
+                                   th_phy, pi_phy, p_phy,               & 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                    p8w, t8w, dz8w,                      &
                                    curr_secs, curr_secs2,               &
                                    diag_flag,                           &
@@ -39,6 +43,10 @@ CONTAINS
                                           SKIP_PRESS_DIAGS, SKIP_Z_DIAGS,              &
                                           DO_TRAD_FIELDS,                              &
                                           DO_SOLAR_OUTPUT,                             &
+<<<<<<< HEAD
+=======
+                                          PARAM_FIRST_SCALAR,                          &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                           P_QG, P_QH, P_QV, P_QC, P_QI, P_QS,          &
                                           P_QNG, P_QH, P_QNH, P_QR, P_QNR,             &
                                           F_QV, F_QC, F_QI, F_QS,                      &
@@ -116,7 +124,10 @@ CONTAINS
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme)            , INTENT(IN) :: th_phy  , &
                                                                            p_phy   , &
                                                                            pi_phy  , &
+<<<<<<< HEAD
                                                                            rho_phy , &
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                                            dz8w    , &
                                                                            p8w     , &
                                                                            t8w
@@ -910,6 +921,10 @@ CONTAINS
                       ,s_zl  = grid%s_zl                                    &
                       ,td_zl = grid%td_zl                                   &
                       ,q_zl = grid%q_zl                                     &
+<<<<<<< HEAD
+=======
+                      ,p_zl = grid%p_zl                                     &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                !  Dimension arguments
                       ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
@@ -946,7 +961,11 @@ CONTAINS
                          ,chem                                                &
                          ,th_phy , pi_phy , p_phy                             &
                          ,grid%u_phy , grid%v_phy                             &
+<<<<<<< HEAD
                          ,dz8w , p8w , t8w , rho_phy, grid%rho                &
+=======
+                         ,dz8w , p8w , t8w , grid%rho                         &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                          ,ids, ide, jds, jde, kds, kde                        &
                          ,ims, ime, jms, jme, kms, kme                        &
                          ,ips, ipe, jps, jpe, kps, kpe                        &
@@ -1084,7 +1103,12 @@ CONTAINS
           CALL solar_diag (                                                 &
               rho=grid%rho, dz8w=dz8w, ph=grid%ph_2, phb=grid%phb,          &
               cldfrac3d=grid%cldfra, coszen=grid%coszen, swdnb=grid%swdnb,  &
+<<<<<<< HEAD
               swdnt=grid%swdnt, qv=moist(ims,kms,jms,P_QV),                 &
+=======
+              swdnt=grid%swdnt, param_first_scalar=param_first_scalar,      &
+              p_qc=p_qc, p_qi=p_qi, p_qs=p_qs, qv=moist(ims,kms,jms,P_QV),  &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               qc=moist(ims,kms,jms,P_QC), qi=moist(ims,kms,jms,P_QI),       &
               qs=moist(ims,kms,jms,P_QS), qc_tot=grid%qc_tot,               &
               qi_tot=grid%qi_tot,                                           &

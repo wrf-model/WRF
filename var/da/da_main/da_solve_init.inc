@@ -84,6 +84,14 @@ subroutine da_solve_init(grid &
 #include "HALO_2D_WORK.inc"
 #include "HALO_RADAR_XA_W.inc"
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+#include "HALO_CHEM_INIT.inc"
+#include "HALO_CHEM_XA.inc"
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if (trace_use) call da_trace("da_solve_init", &
       Message="Copy domain and transpose descriptors")
 

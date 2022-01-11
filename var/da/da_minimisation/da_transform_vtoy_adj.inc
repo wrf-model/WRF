@@ -1,6 +1,14 @@
 subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
+<<<<<<< HEAD
    grid, config_flags, jcdf_flag, vp6, vv6)
 
+=======
+   grid, config_flags, jcdf_flag, vp6, vv6 &
+#if (WRF_CHEM == 1)
+                        , vchem &
+#endif
+                        )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    !-------------------------------------------------------------------------
    ! Purpose:  Does Adjoint of control variable (V) transform to Obs-space(Y)
    !-------------------------------------------------------------------------
@@ -14,6 +22,12 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   type(xchem_type), optional, intent(out) :: vchem   ! CHEM_IC CV
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
@@ -200,7 +214,11 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
       call da_zero_vp_type (vp) !as of V3.9, zero out vp here
       call da_transform_vpatox_adj(grid, be, ep, vp)
       call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       if (num_fgat_time > 1 .and. use_rainobs) then
          deallocate (a_hr_rainc )
          deallocate (a_hr_rainnc)
@@ -236,15 +254,39 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
             end if
          end if !4denvar
          call da_zero_x(grid%xa)
+<<<<<<< HEAD
          call da_transform_xtoy_adj(cv_size, cv_local, grid, iv, y, grid%xa)
+=======
+#if (WRF_CHEM == 1)
+         call da_zero_xchem_type(grid%xachem)
+         call da_transform_xtoy_adj(cv_size, cv_local, grid, iv, y, grid%xa, grid%xachem)
+#else
+         call da_transform_xtoy_adj(cv_size, cv_local, grid, iv, y, grid%xa)
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call da_transform_xtoxa_adj(grid)
          call da_zero_vp_type (vp)
          call da_transform_vpatox_adj(grid, be, ep, vp, nobwin)
          !as of V3.9, the calculation of vp%alpha is taken out of vptox_adj.
          !da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
          !in order to pass in vp%alpha
+<<<<<<< HEAD
          call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv_local)
          cv = cv + cv_local
+=======
+
+#if (WRF_CHEM == 1)
+      if (present(vchem)) then
+         call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv_local, vchem=vchem)
+         cv = cv + cv_local
+      else
+#endif
+         call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv_local)
+         cv = cv + cv_local
+#if (WRF_CHEM == 1)
+      end if
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       end do
 
    end if ! var4d

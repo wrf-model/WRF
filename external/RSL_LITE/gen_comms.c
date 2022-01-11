@@ -77,7 +77,13 @@ int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration
                 {
 /* explicit dummy or actual arguments for 4D arrays */
 if ( q->mark == 0 ) {
+<<<<<<< HEAD
   fprintf(fp,"  num_%s, &\n",q->name) ;
+=======
+if (strcmp("xbchem%chem_ic",varref) != 0 && strcmp("xachem%chem_ic",varref) != 0) {
+  fprintf(fp,"  num_%s, &\n",q->name) ;
+}
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   for ( d = 3 ; d < q->ndims ; d++ ) {
     char *colon, r[80],tx[80] ;
     strcpy(r,"") ;
@@ -100,7 +106,15 @@ if ( nta == 1 ) {
 }
 if ( nta == 2 ) fprintf(fp,"  a_%s, &\n",varref) ;
 #else
+<<<<<<< HEAD
    fprintf(fp,"  %s, &\n",varref) ;
+=======
+if (strcmp("xbchem%chem_ic",varref) != 0 && strcmp("xachem%chem_ic",varref) != 0) {
+   fprintf(fp,"  %s, &\n",varref) ;
+} else {
+   fprintf(fp,"  num_%s, &\n","chem") ;
+}
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                 }
                 else
@@ -137,8 +151,17 @@ fprintf(fp,"  %s, INTENT(INOUT) :: a_%s ( grid%%sm31:grid%%em31,grid%%sm32:grid%
                      q->type->name , varref , moredims, q->name ) ;
 #else
               dimspec=dimension_with_ranges( "grid%","",-1,tmp3,q,"","" ) ;
+<<<<<<< HEAD
 fprintf(fp,"  %s, INTENT(INOUT) :: %s ( %s %snum_%s)\n",
                      q->type->name , varref , dimspec, moredims, q->name ) ;
+=======
+if (strcmp("xbchem%chem_ic",varref) != 0 && strcmp("xachem%chem_ic",varref) != 0) {
+fprintf(fp,"  %s, INTENT(INOUT) :: %s ( %s %snum_%s)\n",
+                     q->type->name , varref , dimspec, moredims, q->name ) ;
+} else {
+fprintf(fp,"  INTEGER, INTENT(IN) :: num_%s\n","chem") ;
+}
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                 }
               }
@@ -576,7 +599,15 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
+<<<<<<< HEAD
 	fprintf(fp,"   + num_%s   &\n", name_4d[i] ) ;
+=======
+	if (strcmp("chem_ic",name_4d[i]) != 0) {
+		fprintf(fp,"   + num_%s   &\n", name_4d[i] ) ;
+	} else {
+		fprintf(fp,"   + num_%s   &\n", "chem" ) ;
+	}
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       }
       fprintf(fp,"     , %d, RWORDSIZE, &\n", n2dR ) ;
     } else {
@@ -625,7 +656,15 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
+<<<<<<< HEAD
         fprintf(fp,"   + num_%s   &\n", name_4d[i] ) ;
+=======
+        if (strcmp("chem_ic",name_4d[i]) != 0) {
+                fprintf(fp,"   + num_%s   &\n", name_4d[i] ) ;
+        } else {
+                fprintf(fp,"   + num_%s   &\n", "chem" ) ;
+        }
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       }
       fprintf(fp,"     , %d, RWORDSIZE, &\n", n2dR ) ;
     } else {
@@ -1281,7 +1320,15 @@ gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu 
                 char sd[256], ed[256] , sm[256], em[256] , sp[256], ep[256] ;
 
                 set_mem_order( q->members, memord , 3 ) ;
+<<<<<<< HEAD
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
+=======
+if (strcmp("xbchem%chem_ic",varref) != 0 && strcmp("xachem%chem_ic",varref) != 0) {
+fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
+} else {
+fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n","chem" ) ;
+}
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 strcpy(moredims,"") ; 
                 for ( d = q->ndims-1 ; d >= 3  ; d-- ) {
 fprintf(fp,"  DO idim%d = %s_sdim%d,%s_edim%d\n",d-2,q->name,d-2,q->name,d-2 ) ;
@@ -1315,9 +1362,21 @@ fprintf(fp,"  DO idim%d = %s_sdim%d,%s_edim%d\n",d-2,q->name,d-2,q->name,d-2 ) ;
                   strcpy(sm,sd) ; strcpy(em,ed ) ;
                   strcpy(sp,sd) ; strcpy(ep,ed ) ;
                 }
+<<<<<<< HEAD
 fprintf(fp," IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
 fprintf(fp,"  CALL %s ( %s,&\n%s ( %s%sitrace),%s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n",
                        packname, commname, varref , index_with_firstelem("","grid%",-1,tmp4,q,""),moredims, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
+=======
+if (strcmp("xbchem%chem_ic",varref) != 0 && strcmp("xachem%chem_ic",varref) != 0) {
+fprintf(fp," IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ;
+fprintf(fp,"  CALL %s ( %s,&\n%s ( %s%sitrace),%s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p     , rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n",
+                       packname, commname, varref , index_with_firstelem("","grid%",-1,tmp4,q,""),moredims, shw, wordsize, xy, pu, memord, xy?(q->stag_x?     1:0):(q->stag_y?1:0) ) ; 
+} else {
+fprintf(fp," IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
+fprintf(fp,"  CALL %s ( %s,&\ngrid%%%s ( %s%sitrace),%s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p     , rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n",
+                       packname, commname, varref , index_with_firstelem("","grid%",-1,tmp4,q,""),moredims, shw, wordsize, xy, pu, memord, xy?(q->stag_x?     1:0):(q->stag_y?1:0) ) ;
+}
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
 if ( !strcmp( packname, "RSL_LITE_PACK_SWAP" ) ||
      !strcmp( packname, "RSL_LITE_PACK_CYCLE" ) ) {

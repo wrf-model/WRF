@@ -89,6 +89,10 @@ real::t1,t2
    LOGICAL :: ok_so_far
 
 #include "version_decl"
+<<<<<<< HEAD
+=======
+#include "commit_decl"
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    !  Define the name of this program (program_name defined in module_domain)
 
@@ -143,6 +147,10 @@ real::t1,t2
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
+<<<<<<< HEAD
+=======
+   CALL  wrf_message ( commit_version )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    !  Allocate the space for the mother of all domains.
 
@@ -980,6 +988,7 @@ real::t1,t2
                CALL wrf_error_fatal( 'REAL: error opening wrffdda for writing' )
             END IF
          END IF
+<<<<<<< HEAD
       ELSE
          
          !  Advance the clock to the next time period.
@@ -989,6 +998,8 @@ real::t1,t2
             CALL domain_clockprint ( 150, grid, &
                    'DEBUG assemble_output:  clock after ClockAdvance,' )
          END IF
+=======
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       END IF
 
       !  If the lateral boundary conditions are split, then open the file with a 

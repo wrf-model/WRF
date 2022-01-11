@@ -5,7 +5,11 @@ module da_radiance1
    !---------------------------------------------------------------------------
 
 #if defined(RTTOV) || defined(CRTM)
+<<<<<<< HEAD
    use module_radiance, only : satinfo,q2ppmv,rttov_inst_name
+=======
+   use module_radiance, only : satinfo,q2ppmv,rttov_inst_name,deg2rad
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef CRTM
    use module_radiance, only : CRTM_Planck_Radiance, CRTM_Planck_Temperature
 #endif
@@ -21,10 +25,18 @@ module da_radiance1
       global, gas_constant, gravity, monitor_on,kts,kte,use_rttov_kmatrix, &
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
       use_crtm_kmatrix,use_clddet, use_satcv, cv_size_domain, &
+<<<<<<< HEAD
       cv_size_domain_js, calc_weightfunc, deg_to_rad, rad_to_deg
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
       iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
       be_type
+=======
+      cv_size_domain_js, calc_weightfunc, deg_to_rad, rad_to_deg,use_clddet_zz, &
+      ahi_superob_halfwidth
+   use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
+      iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
+      be_type, clddet_geoir_type, superob_type
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
    use da_par_util, only : da_proc_stats_combine
    use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
@@ -41,13 +53,26 @@ module da_radiance1
    use da_tracing, only : da_trace
 #endif
 
+<<<<<<< HEAD
+=======
+#ifdef DM_PARALLEL
+   use da_control, only : ierr,comm,root
+   use da_par_util1, only : true_mpi_real, mpi_sum,mpi_integer
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    implicit none
    
    type datalink_type
 
       type (info_type)        :: info
       type (model_loc_type)   :: loc
+<<<<<<< HEAD
 
+=======
+      type (clddet_geoir_type)    :: cld_qc
+      type (superob_type), allocatable :: superob(:,:)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       integer   ::  ifgat, landsea_mask, rain_flag
       integer   ::  scanline, scanpos
       real      ::  satzen, satazi, solzen, solazi  !  satellite and solar angles
@@ -241,6 +266,11 @@ contains
 #include "da_qc_ahi.inc"
 #include "da_qc_goesimg.inc"
 #include "da_write_iv_rad_ascii.inc"
+<<<<<<< HEAD
+=======
+#include "da_write_iv_rad_for_multi_inc.inc"
+#include "da_read_iv_rad_for_multi_inc.inc"
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #include "da_write_oa_rad_ascii.inc"
 #include "da_detsurtyp.inc"
 #include "da_cld_eff_radius.inc"

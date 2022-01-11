@@ -194,7 +194,11 @@ subroutine da_scan_obs_radar (iv, filename, grid)
          endif
 
          call da_llxy (platform%info, platform%loc, outside, outside_all)
+<<<<<<< HEAD
          if( outside_all ) cycle reports
+=======
+         if( outside_all .and. multi_inc == 0 ) cycle reports
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
          nlevels = platform%info%levels
 

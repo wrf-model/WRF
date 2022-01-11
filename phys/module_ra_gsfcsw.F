@@ -25,6 +25,10 @@ CONTAINS
                    ,aer_ra_feedback                               &
                    ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop        &
                    ,coszen                                        & ! PAJ
+<<<<<<< HEAD
+=======
+                   ,obscur                                        & ! amontornes-bcodina 2015/09 solar eclipses                                       
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    ,ids,ide, jds,jde, kds,kde                     & 
                    ,ims,ime, jms,jme, kms,kme                     &
                    ,its,ite, jts,jte, kts,kte                     ) 
@@ -107,6 +111,13 @@ CONTAINS
 ! 
    REAL, DIMENSION( ims:ime, jms:jme), INTENT(IN) :: COSZEN
 
+<<<<<<< HEAD
+=======
+! amontornes-bcodina 2015/09 solar eclipses
+!  obscur --> degree of obscuration for solar eclipses prediction (2D)
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: obscur
+   
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! LOCAL VARS
  
    REAL, DIMENSION( its:ite ) ::                                  &
@@ -122,7 +133,16 @@ CONTAINS
 
    INTEGER, DIMENSION( its:ite ) ::                               &
                                                              ict, &
+<<<<<<< HEAD
                                                              icb   
+=======
+                                                             icb 
+
+! amontornes-bcodina 2015/09 solar eclipses
+!  obscur --> degree of obscuration for solar eclipses prediction (one row)
+   REAL, DIMENSION( its:ite ) ::                                  &
+							obscur_row
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    REAL, DIMENSION( its:ite, kts-1:kte, 2 ) ::            taucld
 
@@ -755,6 +775,11 @@ CONTAINS
       do i = its,ite
 ! PAJ: Use cos zenith angle from the radiation driver:
          cosz(i)=coszen(i,j)
+<<<<<<< HEAD
+=======
+! amontornes-bcodina 2015/09 solar eclipses :: save obscuration from for the current j
+         obscur_row(i)=obscur(i,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !        xt24 = mod(xtime + radfrq * 0.5, 1440.)
 !        tloctm = GMT + xt24 / 60. + XLONG(i,j) / 15.
 !        hrang = 15. * (tloctm - 12.) * degrad
@@ -788,7 +813,13 @@ CONTAINS
           if (cosz(i) .lt. thresh) then
             flx(i,k) = 0.
           else
+<<<<<<< HEAD
             flx(i,k) = flx(i,k) * SOLCON * cosz(i)
+=======
+            ! amontornes-bcodina 2015/09 solar eclipses: modified for considering the solar
+              !                             eclipse
+              flx(i,k) = flx(i,k) * SOLCON * cosz(i) * (1. - obscur_row(i) )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           endif
         end do
       end do
@@ -810,7 +841,13 @@ CONTAINS
         if (cosz(i) .le. thresh) then
           RSWTOA(i,j) = 0.
         else
+<<<<<<< HEAD
           RSWTOA(i,j) = flx(i,kts) - flxd(i,kts) * SOLCON * cosz(i)
+=======
+	  ! amontornes-bcodina 2015/09 solar eclipses: modified for considering the solar
+          !                             eclipse
+          RSWTOA(i,j) = flx(i,kts) - flxd(i,kts) * SOLCON * cosz(i) * (1. - obscur_row(i) )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         endif
       end do
 !
@@ -820,7 +857,13 @@ CONTAINS
         if (cosz(i) .le. thresh) then
           GSW(i,j) = 0.
         else
+<<<<<<< HEAD
           GSW(i,j) = (1. - rsuvbm(i)) * flxd(i,kte+1) * SOLCON * cosz(i)
+=======
+	  ! amontornes-bcodina 2015/09 solar eclipses: modified for considering the solar
+          !                             eclipse
+          GSW(i,j) = (1. - rsuvbm(i)) * flxd(i,kte+1) * SOLCON * cosz(i) * (1. - obscur_row(i) )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         endif
       end do
 

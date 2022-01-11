@@ -67,6 +67,10 @@ PROGRAM real_data
    REAL    :: t1,t2
 
 #include "version_decl"
+<<<<<<< HEAD
+=======
+#include "commit_decl"
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )
@@ -124,6 +128,10 @@ PROGRAM real_data
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
+<<<<<<< HEAD
+=======
+   CALL  wrf_message ( commit_version )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    !  Allocate the space for the mother of all domains.
 

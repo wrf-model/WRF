@@ -45,7 +45,11 @@ module wrf_data
 #else
   integer                , parameter      :: MaxVars          = 3000
 #endif
+<<<<<<< HEAD
   integer                , parameter      :: MaxTimes         = 10000
+=======
+  integer                , parameter      :: MaxTimes         = 60000
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   integer                , parameter      :: DateStrLen       = 19
   integer                , parameter      :: VarNameLen       = 31
   integer                , parameter      :: NO_DIM           = 0

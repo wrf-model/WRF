@@ -219,7 +219,11 @@ subroutine da_read_obs_radar (iv, filename, grid)
          endif
 
          call da_llxy (platform%info, platform%loc, outside, outside_all)
+<<<<<<< HEAD
          if( outside_all ) then
+=======
+         if( outside_all .and. multi_inc == 0 ) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if (print_detail_radar) then
                write(unit=stdout, fmt='(a)') '*** Report is outside of domain:'
                write(unit=stdout, fmt='(2x,a,2(2x,f8.3),2x,a)') &

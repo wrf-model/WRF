@@ -121,6 +121,13 @@ wrf : framework_only
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
+<<<<<<< HEAD
+=======
+	if [ ! -f run/p3_lookupTable_1.dat-5.3-3momI ] ; then \
+	  ( cd run ; cp p3_lookupTable_1.dat-5.3-3momI.gz hold.gz ; \
+	    gunzip hold.gz ; mv hold p3_lookupTable_1.dat-5.3-3momI ) ; \
+	fi
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
@@ -151,7 +158,11 @@ all_wrfvar :
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \
+<<<<<<< HEAD
 	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCOPTIM) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
+=======
+	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCOPTIM) $(FORMAT_FIXED) $(FCCOMPAT)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	fi
 ### Use 'make' to avoid '-i -r' above:
 	if [ $(WAVELET) ] ; then \
@@ -396,7 +407,13 @@ em_seabreeze2d_x : wrf
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_seabreeze2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_seabreeze2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+<<<<<<< HEAD
 	( cd test/em_seabreeze2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+=======
+	( cd test/em_seabreeze2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
+		ln -sf ../../run/LANDUSE.TBL . ; \
+		ln -sf ../../run/RRTM_DATA . )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -427,7 +444,17 @@ em_convrad : wrf
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_convrad ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_convrad ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+<<<<<<< HEAD
 	( cd test/em_convrad ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+=======
+	( cd test/em_convrad ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
+		ln -sf ../../run/LANDUSE.TBL . ; \
+		ln -sf ../../run/RRTMG_LW_DATA . ; \
+		ln -sf ../../run/RRTMG_SW_DATA . ; \
+		ln -sf ../../run/ozone.formatted . ; \
+		ln -sf ../../run/ozone_lat.formatted . ; \
+		ln -sf ../../run/ozone_plev.formatted . )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -443,7 +470,12 @@ em_tropical_cyclone : wrf
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=tropical_cyclone em_ideal )
 	( cd test/em_tropical_cyclone ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_tropical_cyclone ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+<<<<<<< HEAD
 	( cd test/em_tropical_cyclone ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+=======
+	( cd test/em_tropical_cyclone ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
+		ln -sf ../../run/LANDUSE.TBL . )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -476,7 +508,16 @@ em_scm_xy : wrf
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=scm_xy em_ideal )
 	( cd test/em_scm_xy ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_scm_xy ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+<<<<<<< HEAD
 	( cd test/em_scm_xy ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+=======
+	( cd test/em_scm_xy ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
+		ln -sf ../../run/GENPARM.TBL . ; \
+		ln -sf ../../run/LANDUSE.TBL . ; \
+		ln -sf ../../run/SOILPARM.TBL . ; \
+		ln -sf ../../run/VEGPARM.TBL . ; \
+		ln -sf ../../run/RRTM_DATA . ) 
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -555,9 +596,17 @@ em_real : wrf
                ln -sf ../../run/aerosol_lat.formatted . ;              \
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
+<<<<<<< HEAD
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
                ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;         \
                ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;         \
+=======
+               ln -sf ../../run/eclipse_besselian_elements.dat . ;     \
+               ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
+               ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;     \
+               ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;     \
+               ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ;  \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                ln -sf ../../run/HLC.TBL . ;                            \
                ln -sf ../../run/wind-turbine-1.tbl . ;                 \
                ln -sf ../../run/ishmael-gamma-tab.bin . ;              \
@@ -575,6 +624,10 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . ) ; \
+<<<<<<< HEAD
+=======
+	  ( cd test/em_esmf_exp ; /bin/rm -f URBPARM_LCZ.TBL ; ln -s ../../run/URBPARM_LCZ.TBL . ) ; \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	  ( cd test/em_esmf_exp ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . ) ; \
@@ -587,6 +640,10 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f tc.exe ; ln -s ../../main/tc.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+<<<<<<< HEAD
+=======
+	( cd test/em_real ; /bin/rm -f README.physics_files ; ln -s ../../run/README.physics_files . )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
              ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
@@ -616,6 +673,10 @@ em_real : wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
+<<<<<<< HEAD
+=======
+             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              ln -sf ../../run/capacity.asc . ;                      \
              ln -sf ../../run/coeff_p.asc . ;                       \
              ln -sf ../../run/coeff_q.asc . ;                       \
@@ -627,8 +688,14 @@ em_real : wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
+<<<<<<< HEAD
              ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;        \
              ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;        \
+=======
+             ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;    \
+             ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;    \
+             ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ; \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
              ln -sf ../../run/ishmael-gamma-tab.bin . ;             \
@@ -650,6 +717,10 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
 	( cd test/em_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . )
+<<<<<<< HEAD
+=======
+	( cd test/em_real ; /bin/rm -f URBPARM_LCZ.TBL ; ln -s ../../run/URBPARM_LCZ.TBL . )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	( cd test/em_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . )
 	( cd test/em_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
@@ -910,6 +981,10 @@ nmm_real : nmm_wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
+<<<<<<< HEAD
+=======
+             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              ln -sf ../../run/capacity.asc . ;                      \
              ln -sf ../../run/coeff_p.asc . ;                       \
              ln -sf ../../run/coeff_q.asc . ;                       \
@@ -921,8 +996,14 @@ nmm_real : nmm_wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
+<<<<<<< HEAD
              ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;        \
              ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;        \
+=======
+             ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;    \
+             ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;    \
+             ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ; \
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
              ln -sf ../../run/ishmael-gamma-tab.bin . ;             \

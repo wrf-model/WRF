@@ -1,5 +1,13 @@
 subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
+<<<<<<< HEAD
                               y, grid, config_flags, vp6, vv6)
+=======
+                              y, grid, config_flags, vp6, vv6 &
+#if (WRF_CHEM == 1)
+                        , vchem &
+#endif
+                        )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    !----------------------------------------------------------------------
    ! Purpose:  Does transform of control variable (V) to Obs-space (Y)
@@ -14,6 +22,12 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   type(xchem_type), optional, intent(out) :: vchem   ! CHEM CV
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
@@ -160,7 +174,24 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
       ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation
       ! here grid%xa contains only the static increment
+<<<<<<< HEAD
       call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
+=======
+#if (WRF_CHEM == 1)
+!      if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
+      if (present(vchem)) then
+
+        call da_zero_x (grid%xa)
+        call da_zero_xchem_type (grid%xachem)
+        call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp, vchem=vchem)
+
+      else
+#endif
+        call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
+#if (WRF_CHEM == 1)
+      end if
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       if ( use_4denvar ) then
          num_subtwindow = num_fgat_time

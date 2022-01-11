@@ -6,6 +6,11 @@
 module module_NWM_io
 
 use module_version, only: get_code_version, get_nwm_version
+<<<<<<< HEAD
+=======
+use orchestrator_base
+use module_hydro_stop, only: HYDRO_stop
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 implicit none
 
@@ -20,7 +25,11 @@ contains
 ! Abstract: Output routine for channel points for the National Water Model.
 ! History Log:
 ! 3/6/17 -Created, LRK.
+<<<<<<< HEAD
 ! Usage: 
+=======
+! Usage:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Parameters: None.
 ! Input Files: None.
 ! Output Files: None.
@@ -61,7 +70,11 @@ end function GetModelConfigType
 
 subroutine output_chrt_NWM(domainId)
    use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist, only: nlst_rt
+=======
+   use config_base, only: nlst
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use Module_Date_utilities_rt, only: geth_newdate, geth_idts
    use module_NWM_io_dict
    use netcdf
@@ -71,7 +84,11 @@ subroutine output_chrt_NWM(domainId)
 #endif
    implicit none
 
+<<<<<<< HEAD
    ! Pass in "did" value from hydro driving program. 
+=======
+   ! Pass in "did" value from hydro driving program.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer, intent(in) :: domainId
 
    ! Derived types.
@@ -83,6 +100,7 @@ subroutine output_chrt_NWM(domainId)
    integer :: minSinceEpoch1 ! Number of minutes from EPOCH to the beginning of the model simulation.
    integer :: minSinceEpoch ! Number of minutes from EPOCH to the current model valid time.
    character(len=16) :: epochDate ! EPOCH represented as a string.
+<<<<<<< HEAD
    character(len=16) :: startDate ! Start of model simulation, represented as a string. 
    character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
    integer :: iret ! NetCDF return statuses
@@ -90,6 +108,15 @@ subroutine output_chrt_NWM(domainId)
    character(len=256) :: validTime ! Global attribute time string
    character(len=256) :: initTime ! Global attribute time string
    integer :: dimId(3) ! Dimension ID values created during NetCDF created. 
+=======
+   character(len=16) :: startDate ! Start of model simulation, represented as a string.
+   character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
+   integer :: iret ! NetCDF return statuses
+   integer :: ftn ! NetCDF file handle
+   character(len=256) :: validTime ! Global attribute time string
+   character(len=256) :: initTime ! Global attribute time string
+   integer :: dimId(3) ! Dimension ID values created during NetCDF created.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: varId ! Variable ID value created as NetCDF variables are created and populated.
    integer :: timeId ! Dimension ID for the time dimension.
    integer :: refTimeId ! Dimension ID for the reference time dimension.
@@ -98,14 +125,24 @@ subroutine output_chrt_NWM(domainId)
    integer :: latVarId, lonVarId ! Lat/lon NetCDF variable id values.
    integer :: varRange(2) ! Local storage of min/max valid range values.
    real :: varRangeReal(2) ! Local storage of min/max valid range values.
+<<<<<<< HEAD
    integer :: gSize ! Global size of channel point array. 
    integer :: indVarId,ftnRt ! values related to extraction of ascending order index values from the RouteLink file.
    integer :: iTmp, indTmp ! Misc integer values. 
+=======
+   integer :: gSize ! Global size of channel point array.
+   integer :: indVarId,ftnRt ! values related to extraction of ascending order index values from the RouteLink file.
+   integer :: iTmp, indTmp ! Misc integer values.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: ierr, myId ! MPI return status, process ID
    integer :: ascFlag ! Flag for if ascendingIndex is present
    ! Establish local, allocatable arrays
    ! These are used to hold global output arrays, and global output arrays after
+<<<<<<< HEAD
    ! sorting has taken place by ascending feature_id value. 
+=======
+   ! sorting has taken place by ascending feature_id value.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    real, allocatable, dimension(:) :: strFlowLocal,velocityLocal
    real, allocatable, dimension(:,:) :: g_qlink
    integer, allocatable, dimension(:) :: g_linkid,g_order
@@ -122,12 +159,20 @@ subroutine output_chrt_NWM(domainId)
    real, allocatable, dimension(:) :: g_qBucketOut,g_qBtmVertRunoffOut,g_accBucketOut
    real*8, allocatable, dimension(:) :: g_accSfcLatRunoffOut
    real, allocatable, dimension(:,:) :: varOutReal   ! Array holding output variables in real format
+<<<<<<< HEAD
    integer, allocatable, dimension(:) :: varOutInt ! Array holding output variables after 
+=======
+   integer, allocatable, dimension(:) :: varOutInt ! Array holding output variables after
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                      ! scale_factor/add_offset have been applied.
    integer, allocatable, dimension(:) :: chIndArray ! Array of index values for
    !each channel point. feature_id will need to be sorted in ascending order once
    !data is collected into the global array. From there, the index values are
+<<<<<<< HEAD
    !re-sorted, and used to re-sort output arrays. 
+=======
+   !re-sorted, and used to re-sort output arrays.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer, allocatable, dimension(:) :: g_outInd ! Array of index values for strahler order.
    integer :: numPtsOut
    real, allocatable, dimension(:,:) :: varMetaReal
@@ -138,7 +183,11 @@ subroutine output_chrt_NWM(domainId)
    ! Initialize the ascFlag to 1
    ascFlag = 1
 
+<<<<<<< HEAD
    ! Establish macro variables to hlep guide this subroutine. 
+=======
+   ! Establish macro variables to hlep guide this subroutine.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef WRF_HYDRO_NUDGING
    nudgeFlag = 1
 #else
@@ -157,7 +206,11 @@ subroutine output_chrt_NWM(domainId)
    diagFlag = 0
 #endif
 
+<<<<<<< HEAD
    if(nlst_rt(domainId)%CHRTOUT_DOMAIN .eq. 0) then
+=======
+   if(nlst(domainId)%CHRTOUT_DOMAIN .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! No output requested here, return to parent calling program/subroutine.
       return
    endif
@@ -166,7 +219,11 @@ subroutine output_chrt_NWM(domainId)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
+<<<<<<< HEAD
       call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+=======
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -176,6 +233,7 @@ subroutine output_chrt_NWM(domainId)
    ! Initialize NWM dictionary derived type containing all the necessary metadat
    ! for the output file.
    call initChrtDict(fileMeta,diagFlag,myId)
+<<<<<<< HEAD
   
    ! Depending on the NWM forecast config, we will be outputting different
    ! varibles. DO NOT MODIFY THESE ARRAYS WITHOUT CONSULTING NCAR OR
@@ -199,12 +257,38 @@ subroutine output_chrt_NWM(domainId)
       ! Retrospective
       fileMeta%outFlag(:) = [1,0,1,1,0,0,0,0,0,0]
    else if (nlst_rt(1)%io_config_outputs .eq. 6) then
+=======
+
+   ! Depending on the NWM forecast config, we will be outputting different
+   ! varibles. DO NOT MODIFY THESE ARRAYS WITHOUT CONSULTING NCAR OR
+   ! OWP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   if (nlst(1)%io_config_outputs .eq. 0) then
+      ! All
+      fileMeta%outFlag(:) = [1,1,1,1,1,0,0,0,0,0]
+   else if (nlst(1)%io_config_outputs .eq. 1) then
+      ! Analysis and Assimilation
+      fileMeta%outFlag(:) = [1,0,0,1,0,0,0,0,0,0]
+   else if (nlst(1)%io_config_outputs .eq. 2) then
+      ! Short Range
+      fileMeta%outFlag(:) = [1,0,0,1,0,0,0,0,0,0]
+   else if (nlst(1)%io_config_outputs .eq. 3) then
+      ! Medium Range
+      fileMeta%outFlag(:) = [1,0,0,1,0,0,0,0,0,0]
+   else if (nlst(1)%io_config_outputs .eq. 4) then
+      ! Long Range
+      fileMeta%outFlag(:) = [1,0,0,1,0,0,0,0,0,0]
+   else if (nlst(1)%io_config_outputs .eq. 5) then
+      ! Retrospective
+      fileMeta%outFlag(:) = [1,0,1,1,0,0,0,0,0,0]
+   else if (nlst(1)%io_config_outputs .eq. 6) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! Diagnostics
       fileMeta%outFlag(:) = [1,0,1,1,0,0,0,0,0,0]
    else
       call nwmCheck(diagFlag,1,'ERROR: Invalid IOC flag provided by namelist file.')
    endif
 
+<<<<<<< HEAD
    ! call the GetModelConfigType function 
    modelConfigType = GetModelConfigType(nlst_rt(1)%io_config_outputs)
    
@@ -213,6 +297,16 @@ subroutine output_chrt_NWM(domainId)
    ! MPI. 
    if(mppFlag .eq. 1) then
       if(nlst_rt(domainId)%channel_option .ne. 3) then
+=======
+   ! call the GetModelConfigType function
+   modelConfigType = GetModelConfigType(nlst(1)%io_config_outputs)
+
+   ! First step is to collect and assemble all data that will be written to the
+   ! NetCDF file. If we are not using MPI, we bypass the collection step through
+   ! MPI.
+   if(mppFlag .eq. 1) then
+      if(nlst(domainId)%channel_option .ne. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          gsize = rt_domain(domainId)%gnlinksl
       else
          gsize = rt_domain(domainId)%gnlinks
@@ -295,13 +389,21 @@ subroutine output_chrt_NWM(domainId)
       endif
 
       ! Allocate local streamflow and velocity arrays. We need to do a check to
+<<<<<<< HEAD
       ! for lake_type 2. However, we cannot set the values in the global array 
+=======
+      ! for lake_type 2. However, we cannot set the values in the global array
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! to missing as this causes the model to crash.
       allocate(strFlowLocal(RT_DOMAIN(domainId)%NLINKS))
       allocate(velocityLocal(RT_DOMAIN(domainId)%NLINKS))
       strFlowLocal = RT_DOMAIN(domainId)%QLINK(:,1)
       velocityLocal = RT_DOMAIN(domainId)%velocity
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! Sync everything up before the next step.
       if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
@@ -321,9 +423,15 @@ subroutine output_chrt_NWM(domainId)
          end do
       endif
 
+<<<<<<< HEAD
       ! Collect arrays from various processors through MPI, and 
       ! assemble into global arrays previously allocated.
       if(nlst_rt(domainId)%channel_option .ne. 3) then
+=======
+      ! Collect arrays from various processors through MPI, and
+      ! assemble into global arrays previously allocated.
+      if(nlst(domainId)%channel_option .ne. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          ! Reach-based routing collection
 #ifdef MPP_LAND
          call ReachLS_write_io(strFlowLocal,g_qlink(:,1))
@@ -339,28 +447,49 @@ subroutine output_chrt_NWM(domainId)
          ! Optional outputs
          if(nudgeFlag .eq. 1)then
 #ifdef WRF_HYDRO_NUDGING
+<<<<<<< HEAD
             fileMeta%outFlag(2) = 1 ! Set output flag to on. 
+=======
+            fileMeta%outFlag(2) = 1 ! Set output flag to on.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             call ReachLS_write_io(RT_DOMAIN(domainID)%nudge,g_nudge)
 #endif
          else
             fileMeta%outFlag(2) = 0 ! Set output flag to off.
          endif
+<<<<<<< HEAD
          if(nlst_rt(domainId)%UDMP_OPT .eq. 1) then
             ! Currently, we only allow channel-only outputs to be produced for
             ! NWM configurations. 
             if(nlst_rt(domainId)%output_channelBucket_influx .eq. 1 .or. &
                nlst_rt(domainId)%output_channelBucket_influx .eq. 2) then
+=======
+         if(nlst(domainId)%UDMP_OPT .eq. 1) then
+            ! Currently, we only allow channel-only outputs to be produced for
+            ! NWM configurations.
+            if(nlst(domainId)%output_channelBucket_influx .eq. 1 .or. &
+               nlst(domainId)%output_channelBucket_influx .eq. 2) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                fileMeta%outFlag(6) = 1
                fileMeta%outFlag(7) = 1
                call ReachLS_write_io(RT_DOMAIN(domainId)%qSfcLatRunoff,g_qSfcLatRunoff)
                call ReachLS_write_io(RT_DOMAIN(domainId)%qBucket,g_qBucket)
             endif
+<<<<<<< HEAD
             if(nlst_rt(domainId)%output_channelBucket_influx .eq. 2 .and. &
                nlst_rt(domainId)%channel_only                .eq. 0         ) then
                fileMeta%outFlag(8) = 1
                call ReachLS_write_io(RT_DOMAIN(domainId)%qin_gwsubbas,g_qBtmVertRunoff)
             endif
             if(nlst_rt(domainId)%output_channelBucket_influx .eq. 3) then
+=======
+            if(nlst(domainId)%output_channelBucket_influx .eq. 2 .and. &
+               nlst(domainId)%channel_only                .eq. 0         ) then
+               fileMeta%outFlag(8) = 1
+               call ReachLS_write_io(RT_DOMAIN(domainId)%qin_gwsubbas,g_qBtmVertRunoff)
+            endif
+            if(nlst(domainId)%output_channelBucket_influx .eq. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                !! JLM: unsure the following will work... but this is caveated in namelist.
                fileMeta%outFlag(9) = 1
                fileMeta%outFlag(10) = 1
@@ -368,7 +497,11 @@ subroutine output_chrt_NWM(domainId)
                call ReachLS_write_io(RT_DOMAIN(domainId)%qBucket,g_accBucket)
             endif
          else
+<<<<<<< HEAD
             if(nlst_rt(domainId)%output_channelBucket_influx .ne. 0) then
+=======
+            if(nlst(domainId)%output_channelBucket_influx .ne. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                ! For reach-based routing (non-NWM), we currently do not support
                ! these outputs. Politely alert the user.....
                call postDiagMsg(diagFlag,'WARNING: Channel-only outputs not available for UDMPT = 0 on reach-based routing.')
@@ -387,9 +520,15 @@ subroutine output_chrt_NWM(domainId)
          call write_chanel_real(RT_DOMAIN(domainId)%ZELEV,rt_domain(domainId)%map_l2g,gSize,rt_domain(domainId)%nlinks,g_zelev)
          call write_chanel_real(RT_DOMAIN(domainId)%QLateral,rt_domain(domainId)%map_l2g,gSize,rt_domain(domainId)%nlinks,g_QLateral)
          call write_chanel_real(velocityLocal,rt_domain(domainId)%map_l2g,gSize,rt_domain(domainId)%nlinks,g_velocity)
+<<<<<<< HEAD
          if(nlst_rt(domainId)%output_channelBucket_influx .ne. 0) then
             call postDiagMsg(diagFlag,'WARNING: This channelBucket_influx only available for reach-based routing.')
          endif 
+=======
+         if(nlst(domainId)%output_channelBucket_influx .ne. 0) then
+            call postDiagMsg(diagFlag,'WARNING: This channelBucket_influx only available for reach-based routing.')
+         endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          if(nudgeFlag .eq. 1)then
 #ifdef WRF_HYDRO_NUDGING
             fileMeta%outFlag(2) = 1 ! Set output flag to on.
@@ -441,12 +580,17 @@ subroutine output_chrt_NWM(domainId)
       g_order = RT_DOMAIN(domainId)%ORDER
       g_linkid = RT_DOMAIN(domainId)%linkid
       g_hlink = RT_DOMAIN(domainId)%HLINK
+<<<<<<< HEAD
       g_qlink = RT_DOMAIN(domainId)%QLINK 
+=======
+      g_qlink = RT_DOMAIN(domainId)%QLINK
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       g_QLateral = RT_DOMAIN(domainId)%QLateral
       g_velocity = RT_DOMAIN(domainId)%velocity
       ! Optional outputs
       if(nudgeFlag .eq. 1)then
 #ifdef WRF_HYDRO_NUDGING
+<<<<<<< HEAD
          fileMeta%outFlag(2) = 1 ! Set output flag to on. 
          g_nudge = RT_DOMAIN(domainID)%nudge
 #endif
@@ -456,23 +600,46 @@ subroutine output_chrt_NWM(domainId)
          ! NWM configurations.
          if(nlst_rt(domainId)%output_channelBucket_influx .eq. 1 .or. &
             nlst_rt(domainId)%output_channelBucket_influx .eq. 2) then
+=======
+         fileMeta%outFlag(2) = 1 ! Set output flag to on.
+         g_nudge = RT_DOMAIN(domainID)%nudge
+#endif
+      endif
+      if(nlst(domainId)%UDMP_OPT .eq. 1) then
+         ! Currently, we only allow channel-only outputs to be produced for
+         ! NWM configurations.
+         if(nlst(domainId)%output_channelBucket_influx .eq. 1 .or. &
+            nlst(domainId)%output_channelBucket_influx .eq. 2) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             fileMeta%outFlag(6) = 1
             fileMeta%outFlag(7) = 1
             g_qSfcLatRunoff = RT_DOMAIN(domainId)%qSfcLatRunoff
             g_qBucket = RT_DOMAIN(domainId)%qBucket
          endif
+<<<<<<< HEAD
          if(nlst_rt(domainId)%output_channelBucket_influx .eq. 2) then
             fileMeta%outFlag(8) = 1
             g_qBtmVertRunoff = RT_DOMAIN(domainId)%qin_gwsubbas
          endif
          if(nlst_rt(domainId)%output_channelBucket_influx .eq. 3) then
+=======
+         if(nlst(domainId)%output_channelBucket_influx .eq. 2) then
+            fileMeta%outFlag(8) = 1
+            g_qBtmVertRunoff = RT_DOMAIN(domainId)%qin_gwsubbas
+         endif
+         if(nlst(domainId)%output_channelBucket_influx .eq. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             fileMeta%outFlag(9) = 1
             fileMeta%outFlag(10) = 1
             g_accSfcLatRunoff = RT_DOMAIN(domainId)%accSfcLatRunoff
             g_accBucket = RT_DOMAIN(domainId)%qBucket
          endif
       else
+<<<<<<< HEAD
          if(nlst_rt(domainId)%output_channelBucket_influx .ne. 0) then
+=======
+         if(nlst(domainId)%output_channelBucket_influx .ne. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             ! For reach-based routing (non-NWM), we currently do not support
             ! these outputs. Politely alert the user.....
             call postDiagMsg(diagFlag,'WARNING: Channel-only outputs not available for UDMPT = 0 on reach-based routing.')
@@ -483,16 +650,25 @@ subroutine output_chrt_NWM(domainId)
    ! Calculate datetime information.
    ! First compose strings of EPOCH and simulation start date.
    epochDate = trim("1970-01-01 00:00")
+<<<<<<< HEAD
    startDate = trim(nlst_rt(domainId)%startdate(1:4)//"-"//&
                     nlst_rt(domainId)%startdate(6:7)//&
                     &"-"//nlst_rt(domainId)%startdate(9:10)//" "//&
                     nlst_rt(domainId)%startdate(12:13)//":"//&
                     nlst_rt(domainId)%startdate(15:16))
+=======
+   startDate = trim(nlst(domainId)%startdate(1:4)//"-"//&
+                    nlst(domainId)%startdate(6:7)//&
+                    &"-"//nlst(domainId)%startdate(9:10)//" "//&
+                    nlst(domainId)%startdate(12:13)//":"//&
+                    nlst(domainId)%startdate(15:16))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Second, utilize NoahMP date utilities to calculate the number of minutes
    ! from EPOCH to the beginning of the model simulation.
    call geth_idts(startDate,epochDate,minSinceEpoch1)
    ! Third, calculate the number of minutes since the beginning of the
    ! simulation.
+<<<<<<< HEAD
    minSinceSim = int(nlst_rt(1)%out_dt*(rt_domain(1)%out_counts-1))
    ! Fourth, calculate the total number of minutes from EPOCH to the current
    ! model time step.
@@ -523,21 +699,67 @@ subroutine output_chrt_NWM(domainId)
    write(output_flnm, '(A12,".CHRTOUT_DOMAIN",I1)')nlst_rt(domainId)%olddate(1:4)//&
          nlst_rt(domainId)%olddate(6:7)//nlst_rt(domainId)%olddate(9:10)//&
          nlst_rt(domainId)%olddate(12:13)//nlst_rt(domainId)%olddate(15:16), nlst_rt(domainId)%igrid
+=======
+   minSinceSim = int(nlst(1)%out_dt*(rt_domain(1)%out_counts-1))
+   ! Fourth, calculate the total number of minutes from EPOCH to the current
+   ! model time step.
+   minSinceEpoch = minSinceEpoch1 + minSinceSim
+   ! Fifth, compose global attribute time strings that will be used.
+   validTime = trim(nlst(domainId)%olddate(1:4)//'-'//&
+                    nlst(domainId)%olddate(6:7)//'-'//&
+                    nlst(domainId)%olddate(9:10)//'_'//&
+                    nlst(domainId)%olddate(12:13)//':'//&
+                    nlst(domainId)%olddate(15:16)//&
+                    &':00')
+   initTime = trim(nlst(domainId)%startdate(1:4)//'-'//&
+                  nlst(domainId)%startdate(6:7)//'-'//&
+                  nlst(domainId)%startdate(9:10)//'_'//&
+                  nlst(domainId)%startdate(12:13)//':'//&
+                  nlst(domainId)%startdate(15:16)//&
+                  &':00')
+   ! Replace default values in the dictionary.
+   fileMeta%initTime = trim(initTime)
+   fileMeta%validTime = trim(validTime)
+
+   ! calculate the minimum and maximum time
+   fileMeta%timeValidMin = minSinceEpoch1 + nlst(1)%out_dt
+   fileMeta%timeValidMax = minSinceEpoch1 + int(nlst(1)%khour * 60/nlst(1)%out_dt) * nlst(1)%out_dt
+
+   ! calculate total_valid_time
+   fileMeta%totalValidTime = int(nlst(1)%khour * 60 / nlst(1)%out_dt)  ! # number of valid time (#of output files)
+
+   ! Compose output file name.
+   write(output_flnm, '(A12,".CHRTOUT_DOMAIN",I1)')nlst(domainId)%olddate(1:4)//&
+         nlst(domainId)%olddate(6:7)//nlst(domainId)%olddate(9:10)//&
+         nlst(domainId)%olddate(12:13)//nlst(domainId)%olddate(15:16), nlst(domainId)%igrid
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Only run NetCDF library calls to output data if we are on the master
    ! processor.
    if(myId .eq. 0) then
+<<<<<<< HEAD
       if(nlst_rt(domainId)%channel_option .ne. 3) then
          ! Read in index values from Routelink that will be used to sort output
          ! variables by ascending feature_id.
          iret = nf90_open(trim(nlst_rt(1)%route_link_f),NF90_NOWRITE,ncid=ftnRt)
+=======
+      if(nlst(domainId)%channel_option .ne. 3) then
+         ! Read in index values from Routelink that will be used to sort output
+         ! variables by ascending feature_id.
+         iret = orchestrator%IO_Manager%netcdf_layer%open_file(trim(nlst(1)%route_link_f),NF90_NOWRITE,ncid=ftnRt)
+         !iret = nf90_open(trim(nlst(1)%route_link_f),NF90_NOWRITE,ncid=ftnRt)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call nwmCheck(diagFlag,iret,'ERROR: Unable to open RouteLink file for index extraction')
          iret = nf90_inq_varid(ftnRt,'ascendingIndex',indVarId)
          if(iret .ne. 0) then
             call postDiagMsg(diagFlag,'WARNING: ascendingIndex not found in RouteLink file. No resorting will take place.')
             ascFlag = 0
          endif
+<<<<<<< HEAD
          if(ascFlag .eq. 1) then 
+=======
+         if(ascFlag .eq. 1) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             iret = nf90_get_var(ftnRt,indVarId,chIndArray)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to extract ascendingIndex from RouteLink file.')
          endif
@@ -550,7 +772,11 @@ subroutine output_chrt_NWM(domainId)
       ! during conversion to compressed integer format.
       if(ascFlag .eq. 1) then
          ! Sort feature_id values by ascending values using the index array
+<<<<<<< HEAD
          ! extracted from the RouteLink file. 
+=======
+         ! extracted from the RouteLink file.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          do iTmp=1,gSize
             indTmp = chIndArray(iTmp)
             indTmp = indTmp + 1 ! Python starts index values at 0, so we need to add one.
@@ -588,6 +814,7 @@ subroutine output_chrt_NWM(domainId)
          g_zelevOut = g_zelev
       endif
 
+<<<<<<< HEAD
       ! Calculate index values based on minimum strahler order to write. 
       ! Initialize the index array to 0
       g_outInd = 0
@@ -595,6 +822,15 @@ subroutine output_chrt_NWM(domainId)
       where(g_orderOut .ge. nlst_rt(domainId)%order_to_write) g_outInd = 1
       numPtsOut = sum(g_outInd)
       
+=======
+      ! Calculate index values based on minimum strahler order to write.
+      ! Initialize the index array to 0
+      g_outInd = 0
+
+      where(g_orderOut .ge. nlst(domainId)%order_to_write) g_outInd = 1
+      numPtsOut = sum(g_outInd)
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       if(numPtsOut .eq. 0) then
          ! Write warning message to user showing there are NO channel points to
          ! write. Simply return to the main calling function.
@@ -605,7 +841,11 @@ subroutine output_chrt_NWM(domainId)
       ! Loop through all channel points if we are running gridded routing.
       ! Assign an arbitrary index value as the linkid field is read in as 0 from
       ! the Fulldom file.
+<<<<<<< HEAD
       if(nlst_rt(domainId)%channel_option .eq. 3) then
+=======
+      if(nlst(domainId)%channel_option .eq. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          do iTmp=1,gSize
             g_linkidOut(iTmp) = iTmp
          end do
@@ -640,6 +880,11 @@ subroutine output_chrt_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create CHRTOUT NetCDF file.')
 
       ! Write global attributes.
+<<<<<<< HEAD
+=======
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"TITLE",trim(fileMeta%title))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create TITLE attribute')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"featureType",trim(fileMeta%fType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create featureType attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"proj4",trim(fileMeta%proj4))
@@ -662,7 +907,11 @@ subroutine output_chrt_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create conventions attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+<<<<<<< HEAD
 #ifdef NCEP_WCOSS
+=======
+#ifdef NWM_META
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
 #endif
@@ -673,6 +922,7 @@ subroutine output_chrt_NWM(domainId)
 
       ! Create global attributes specific to running output through the
       ! channel-only configuration of the model.
+<<<<<<< HEAD
       iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_OVRTSWCRT",nlst_rt(domainId)%OVRTSWCRT)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_OVRTSWCRT attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_NOAH_TIMESTEP",int(nlst_rt(domainId)%dt))
@@ -680,6 +930,15 @@ subroutine output_chrt_NWM(domainId)
       iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_channel_only",nlst_rt(domainId)%channel_only)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_channel_only attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_channelBucket_only",nlst_rt(domainId)%channelBucket_only)
+=======
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_OVRTSWCRT",nlst(domainId)%OVRTSWCRT)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_OVRTSWCRT attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_NOAH_TIMESTEP",int(nlst(domainId)%dt))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_NOAH_TIMESTEP attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_channel_only",nlst(domainId)%channel_only)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_channel_only attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_channelBucket_only",nlst(domainId)%channelBucket_only)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_channelBucket_only attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,'dev','dev_ prefix indicates development/internal meta data')
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev attribute')
@@ -715,7 +974,11 @@ subroutine output_chrt_NWM(domainId)
       iret = nf90_put_att(ftn,refTimeId,'units',trim(fileMeta%rTimeUnits))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into reference_time variable')
 
+<<<<<<< HEAD
       ! Create a crs variable. 
+=======
+      ! Create a crs variable.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! NOTE - For now, we are hard-coding in for lat/lon points. However, this
       ! may be more flexible in future iterations.
       iret = nf90_def_var(ftn,'crs',nf90_char,varid=coordVarId)
@@ -757,9 +1020,15 @@ subroutine output_chrt_NWM(domainId)
       iret = nf90_put_att(ftn,featureVarId,'cf_role',trim(fileMeta%cfRole))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place cf_role attribute into feature_id variable')
 
+<<<<<<< HEAD
 #ifndef NCEP_WCOSS
       ! Create channel lat/lon variables
       ! NOTE: NWM current operations do not permit the output of latitude and longitude for streamflow. 
+=======
+#ifndef NWM_META
+      ! Create channel lat/lon variables
+      ! NOTE: NWM current operations do not permit the output of latitude and longitude for streamflow.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_def_var(ftn,"latitude",nf90_float,dimId(1),latVarId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create latitude variable.')
       iret = nf90_put_att(ftn,latVarId,'long_name',trim(fileMeta%latLName))
@@ -798,13 +1067,18 @@ subroutine output_chrt_NWM(domainId)
 
       ! Define deflation levels for these meta-variables. For now, we are going to
       ! default to a compression level of 2. Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
       if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+      if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_def_var_deflate(ftn,timeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for time.')
          iret = nf90_def_var_deflate(ftn,featureVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for feature_id.')
          iret = nf90_def_var_deflate(ftn,refTimeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for reference_time.')
+<<<<<<< HEAD
 #ifndef NCEP_WCOSS
          iret = nf90_def_var_deflate(ftn,latVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for latitude.')
@@ -814,6 +1088,17 @@ subroutine output_chrt_NWM(domainId)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for order.')  
          iret = nf90_def_var_deflate(ftn,elevVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for elevation.')  
+=======
+#ifndef NWM_META
+         iret = nf90_def_var_deflate(ftn,latVarId,0,1,2)
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for latitude.')
+         iret = nf90_def_var_deflate(ftn,lonVarId,0,1,2)
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for longitude.')
+         iret = nf90_def_var_deflate(ftn,orderVarId,0,1,2)
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for order.')
+         iret = nf90_def_var_deflate(ftn,elevVarId,0,1,2)
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for elevation.')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
       endif
 
@@ -825,14 +1110,22 @@ subroutine output_chrt_NWM(domainId)
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             ! First create variable
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_int,dimId(1),varId)
             else
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_float,dimId(1),varId)
             endif
             call nwmCheck(diagFlag,iret,'ERROR: Unable to create variable:'//trim(fileMeta%varNames(iTmp)))
 
+<<<<<<< HEAD
             ! Extract valid range into a 1D array for placement. 
+=======
+            ! Extract valid range into a 1D array for placement.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
             varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
@@ -843,7 +1136,11 @@ subroutine output_chrt_NWM(domainId)
             ! filter off for now. Kelley Eicher did some testing with this and
             ! determined that the benefit wasn't worth the extra time spent writing
             ! output. Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var_deflate(ftn,varId,0,1,2)
                call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression for: '//trim(fileMeta%varNames(iTmp)))
             endif
@@ -857,7 +1154,11 @@ subroutine output_chrt_NWM(domainId)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place coordinates attribute into variable '//trim(fileMeta%varNames(iTmp)))
             iret = nf90_put_att(ftn,varId,'grid_mapping','crs')
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place grid_mapping attribute into variable '//trim(fileMeta%varNames(iTmp)))
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_att(ftn,varId,'_FillValue',fileMeta%fillComp(iTmp))
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place Fill value attribute into variable '//trim(fileMeta%varNames(iTmp)))
                iret = nf90_put_att(ftn,varId,'missing_value',fileMeta%missingComp(iTmp))
@@ -877,7 +1178,11 @@ subroutine output_chrt_NWM(domainId)
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place valid_range attribute into variable '//trim(fileMeta%varNames(iTmp)))
             endif
          endif
+<<<<<<< HEAD
       end do 
+=======
+      end do
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       ! Remove NetCDF file from definition mode.
       iret = nf90_enddef(ftn)
@@ -885,7 +1190,11 @@ subroutine output_chrt_NWM(domainId)
 
       ! Loop through all possible output variables, and convert floating points
       ! to integers via prescribed scale_factor/add_offset, then write to the
+<<<<<<< HEAD
       ! NetCDF variable. 
+=======
+      ! NetCDF variable.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             ! We are outputing this variable.
@@ -900,9 +1209,15 @@ subroutine output_chrt_NWM(domainId)
             ! Get NetCDF variable id.
             iret = nf90_inq_varid(ftn,trim(fileMeta%varNames(iTmp)),varId)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to find variable ID for var: '//trim(fileMeta%varNames(iTmp)))
+<<<<<<< HEAD
  
             ! Put data into NetCDF file
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+
+            ! Put data into NetCDF file
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_var(ftn,varId,varOutInt)
             else
                iret = nf90_put_var(ftn,varId,varOutReal(iTmp,:))
@@ -916,8 +1231,13 @@ subroutine output_chrt_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to locate feature_id in NetCDF file.')
       iret = nf90_put_var(ftn,varId,varMetaInt(2,:))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into feature_id output variable.')
+<<<<<<< HEAD
       
 #ifndef NCEP_WCOSS
+=======
+
+#ifndef NWM_META
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_inq_varid(ftn,'latitude',varId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to locate latitude in NetCDF file.')
       iret = nf90_put_var(ftn,varId,varMetaReal(1,:))
@@ -953,8 +1273,13 @@ subroutine output_chrt_NWM(domainId)
       iret = nf90_close(ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to close CHRTOUT file.')
 
+<<<<<<< HEAD
    endif ! End if we are on master processor. 
   
+=======
+   endif ! End if we are on master processor.
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Sync all processes up.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
@@ -1011,7 +1336,11 @@ end subroutine output_chrt_NWM
 ! Abstract: Output routine for NoahMP grids for the National Water Model.
 ! History Log:
 ! 3/6/17 -Created, LRK.
+<<<<<<< HEAD
 ! Usage: 
+=======
+! Usage:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Parameters: None.
 ! Input Files: None.
 ! Output Files: None.
@@ -1021,7 +1350,11 @@ end subroutine output_chrt_NWM
 
 subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,ixPar,jxPar,zNum,varReal,vegTyp,varInd)
    use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist, only: nlst_rt
+=======
+   use config_base, only: nlst
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use Module_Date_utilities_rt, only: geth_newdate, geth_idts
    use module_NWM_io_dict
    use netcdf
@@ -1039,7 +1372,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    character(len=19),intent(in) :: date ! Current model date
    integer, intent(in) :: ixPar,jxPar ! I/J dimensions of local grid.
    integer, intent(in) :: zNum ! Number of vertical layers (most of the time 1)
+<<<<<<< HEAD
    real, intent(in) :: varReal(ixPar,zNum,jxPar) ! Variable data to be written. 
+=======
+   real, intent(in) :: varReal(ixPar,zNum,jxPar) ! Variable data to be written.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer, intent(inout) :: vegTyp(ixPar,jxPar) ! Vegetation type grid used to mask out variables.
    integer, intent(in) :: varInd ! Variable index used to extact meta-data from.
 
@@ -1051,7 +1388,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    integer :: minSinceEpoch1 ! Number of minutes from EPOCH to the beginning of the model simulation.
    integer :: minSinceEpoch ! Number of minutes from EPOCH to the current model valid time.
    character(len=16) :: epochDate ! EPOCH represented as a string.
+<<<<<<< HEAD
    character(len=16) :: startDateTmp ! Start of model simulation, represented as a string. 
+=======
+   character(len=16) :: startDateTmp ! Start of model simulation, represented as a string.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    character(len=256) :: validTime ! Global attribute time string
    character(len=256) :: initTime ! Global attribute time string
    integer :: mppFlag, diagFlag
@@ -1070,8 +1411,14 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    integer :: iTmp,jTmp,zTmp,jTmp2,iTmp2
    integer :: ftnGeo,geoXVarId,geoYVarId
    integer :: waterVal ! Value in HRLDAS in WRFINPUT file used to define water bodies for masking
+<<<<<<< HEAD
    ! Allocatable arrays to hold global output arrays, and local arrays for
    ! conversion to integers. 
+=======
+   integer :: sfcflag
+   ! Allocatable arrays to hold global output arrays, and local arrays for
+   ! conversion to integers.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer, allocatable, dimension(:,:) :: localCompTmp, globalCompTmp
    integer, allocatable, dimension(:,:,:) :: globalOutComp
    real, allocatable, dimension(:,:,:) :: globalOutReal
@@ -1092,7 +1439,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    diagFlag = 0
 #endif
 
+<<<<<<< HEAD
    ! Sync up processes. 
+=======
+   ! Sync up processes.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
       call mpp_land_sync()
@@ -1103,7 +1454,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
+<<<<<<< HEAD
       call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+=======
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -1114,6 +1469,15 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    ! NOTE THIS MAY CHANGE IN THE FUTURE!!!!!
    waterVal = rt_domain(1)%iswater
 
+<<<<<<< HEAD
+=======
+   ! Initialize overland routing flag for SFCRNOFF outputs
+   sfcflag = 1
+   if (nlst(1)%OVRTSWCRT > 0) then 
+     sfcflag = 0
+   endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Initialize NWM dictionary derived type containing all the necessary
    ! metadata for the output file.
    call initLdasDict(fileMeta,myId,diagFlag)
@@ -1121,16 +1485,25 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    ! Calculate necessary datetime information that will go into the output file.
    ! First compose strings of EPOCH and simulation start date.
    epochDate = trim("1970-01-01 00:00")
+<<<<<<< HEAD
    startDateTmp = trim(nlst_rt(1)%startdate(1:4)//"-"//&
                        nlst_rt(1)%startdate(6:7)//&
                        &"-"//nlst_rt(1)%startdate(9:10)//" "//&
                        nlst_rt(1)%startdate(12:13)//":"//&
                        nlst_rt(1)%startdate(15:16))
+=======
+   startDateTmp = trim(nlst(1)%startdate(1:4)//"-"//&
+                       nlst(1)%startdate(6:7)//&
+                       &"-"//nlst(1)%startdate(9:10)//" "//&
+                       nlst(1)%startdate(12:13)//":"//&
+                       nlst(1)%startdate(15:16))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Second, utilize NoahMP date utilities to calculate the number of minutes
    ! from EPOCH to the beginning of the model simulation.
    call geth_idts(startDateTmp,epochDate,minSinceEpoch1)
    ! Third, calculate the number of minutes since the beginning of the
    ! simulation.
+<<<<<<< HEAD
    minSinceSim = int(itime * nlst_rt(1)%dt / 60) 
    ! Fourth, calculate the total number of minutes from EPOCH to the current
    ! model time step.
@@ -1146,10 +1519,30 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                   nlst_rt(1)%startdate(9:10)//'_'//&
                   nlst_rt(1)%startdate(12:13)//&
                   &':00:00') 
+=======
+   minSinceSim = int(itime * nlst(1)%dt / 60)
+   ! Fourth, calculate the total number of minutes from EPOCH to the current
+   ! model time step.
+   minSinceEpoch = minSinceEpoch1 + minSinceSim
+   ! Fifth, compose global attribute time strings that will be used.
+   validTime = trim(nlst(1)%olddate(1:4)//'-'//&
+                    nlst(1)%olddate(6:7)//'-'//&
+                    nlst(1)%olddate(9:10)//'_'//&
+                    nlst(1)%olddate(12:13)//':'//&
+                    nlst(1)%olddate(15:16)//&
+                    &':00')
+   initTime = trim(nlst(1)%startdate(1:4)//'-'//&
+                  nlst(1)%startdate(6:7)//'-'//&
+                  nlst(1)%startdate(9:10)//'_'//&
+                  nlst(1)%startdate(12:13)//':'//&
+                  nlst(1)%startdate(15:16)//&
+                  &':00')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
+<<<<<<< HEAD
  
    ! calculate the minimum and maximum time
    fileMeta%timeValidMin = minSinceEpoch1 + output_timestep / 60  !  output_timestep is in seconds
@@ -1210,12 +1603,113 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                              0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,&
                              1,0,1,1,1,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,&
                              0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0]
+=======
+
+   ! calculate the minimum and maximum time
+   fileMeta%timeValidMin = minSinceEpoch1 + output_timestep / 60  !  output_timestep is in seconds
+   fileMeta%timeValidMax = minSinceEpoch1 + int(nlst(1)%khour * 3600 / output_timestep ) * output_timestep / 60
+
+   ! calculate total_valid_time
+   fileMeta%totalValidTime = int(nlst(1)%khour * 3600 / output_timestep )  ! # number of valid time (#of output files)
+
+   ! Depending on the NWM forecast config, we will be outputting different
+   ! varibles. DO NOT MODIFY THESE ARRAYS WITHOUT CONSULTING NCAR OR
+   ! OWP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   if(nlst(1)%io_config_outputs .eq. 0) then
+      ! All
+      fileMeta%outFlag(:) = [1,1,1,1,1,1,1,1,1,1,& !1-10
+                             1,1,1,1,1,1,1,1,1,1,& !11-20
+                             sfcflag,1,1,1,1,1,1,1,1,1,& !21-30
+                             1,1,1,1,1,1,1,1,1,1,& !31-40
+                             1,1,1,1,1,1,1,1,1,1,& !41-50
+                             1,1,1,1,1,1,1,1,1,1,& !51-60
+                             1,1,1,1,1,1,1,1,1,1,& !61-70
+                             1,1,1,1,1,1,1,1,1,1,& !71-80
+                             1,1,1,1,1,1,1,1,1,1,& !81-90
+                             1,1,1,1,1,1,1,1]      !91-98
+   else if(nlst(1)%io_config_outputs .eq. 1) then
+      ! Analysis and Assimilation
+      fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,& !1-10
+                             0,0,0,0,0,0,1,0,0,0,& !11-20
+                             0,0,0,0,0,0,0,0,0,0,& !21-30
+                             0,0,0,0,0,0,0,0,0,0,& !31-40
+                             0,0,0,0,0,0,0,0,0,0,& !41-50
+                             0,0,0,0,0,0,0,0,1,1,& !51-60
+                             0,0,1,1,1,1,1,1,0,1,& !61-70
+                             0,0,0,0,0,0,0,0,0,0,& !71-80
+                             0,0,0,0,0,0,0,0,0,1,& !81-90
+                             0,1,1,0,1,0,0,1]      !91-98
+   else if(nlst(1)%io_config_outputs .eq. 2) then
+      ! Short Range
+      fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,& !1-10
+                             0,0,0,0,0,0,0,0,0,0,& !11-20
+                             0,0,0,0,0,0,0,0,0,0,& !21-30
+                             0,0,0,0,0,0,0,0,0,0,& !31-40
+                             0,0,0,0,0,0,0,0,0,0,& !41-50
+                             0,0,0,0,0,0,0,0,0,0,& !51-60
+                             0,0,0,1,1,0,0,1,0,0,& !61-70
+                             0,0,0,0,0,0,0,0,0,0,& !71-80
+                             0,0,0,0,0,0,0,0,0,1,& !81-90
+                             0,0,1,0,1,0,0,0]      !91-98
+   else if(nlst(1)%io_config_outputs .eq. 3) then
+      ! Medium Range
+      fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,& !1-10
+                             1,1,1,1,1,0,0,0,0,1,& !11-20
+                             0,0,0,0,0,0,0,1,1,1,& !21-30
+                             0,0,0,0,0,0,0,0,0,0,& !31-40
+                             0,0,0,0,1,0,0,0,0,0,& !41-50
+                             0,0,0,0,0,0,0,0,1,1,& !51-60
+                             0,0,1,1,1,0,1,1,0,1,& !61-70
+                             0,0,0,0,0,0,0,0,0,0,& !71-80
+                             0,0,0,0,0,0,0,0,0,1,& !81-90
+                             1,1,1,0,1,0,0,0]      !91-98
+   else if(nlst(1)%io_config_outputs .eq. 4) then
+      ! Long Range
+      fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,& !1-10
+                             0,0,0,0,0,0,0,0,0,1,& !11-20
+                             sfcflag,0,0,0,0,0,0,0,0,0,& !21-30
+                             0,0,0,0,0,0,0,0,0,0,& !31-40
+                             0,0,0,0,0,0,0,0,0,0,& !41-50
+                             0,0,0,0,0,0,0,0,0,0,& !51-60
+                             0,0,0,0,1,0,0,0,0,1,& !61-70
+                             0,0,0,0,0,0,0,0,0,0,& !71-80
+                             0,0,0,0,0,0,0,0,0,1,& !81-90
+                             1,0,1,1,0,0,0,0]      !91-98
+   else if(nlst(1)%io_config_outputs .eq. 5) then
+      ! Retrospective
+      fileMeta%outFlag(:) = [0,0,0,0,0,0,1,0,0,0,& !1-10
+                             1,1,0,1,1,0,1,1,0,1,& !11-20
+                             sfcflag,0,0,0,0,0,0,0,0,0,& !21-30
+                             0,0,0,0,0,0,0,0,0,0,& !31-40
+                             0,0,0,0,1,0,0,0,0,0,& !41-50
+                             0,0,0,0,0,0,0,0,0,0,& !51-60
+                             1,0,1,1,1,1,0,1,0,1,& !61-70
+                             0,0,0,0,0,0,0,0,0,0,& !71-80
+                             0,0,0,0,0,0,0,0,0,1,& !81-90
+                             0,0,0,0,0,1,1,1]      !91-98
+   else if(nlst(1)%io_config_outputs .eq. 6) then
+      ! Diagnostics
+      fileMeta%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,& !1-10
+                             1,1,1,1,1,0,1,0,0,1,& !11-20
+                             sfcflag,0,0,0,0,0,0,1,1,1,& !21-30
+                             0,0,0,0,0,0,0,0,0,0,& !31-40
+                             0,0,0,0,1,0,0,0,0,0,& !41-50
+                             0,0,0,0,0,0,0,0,1,1,& !51-60
+                             1,0,1,1,1,1,1,1,0,1,& !61-70
+                             0,0,0,0,0,0,0,0,0,0,& !71-80
+                             0,0,0,0,0,0,0,0,0,1,& !81-90
+                             1,1,1,1,1,0,0,1]      !91-98
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    else
       call nwmCheck(diagFlag,1,'ERROR: Invalid IOC flag provided by namelist file.')
    endif
 
    ! call the GetModelConfigType function
+<<<<<<< HEAD
    modelConfigType = GetModelConfigType(nlst_rt(1)%io_config_outputs)
+=======
+   modelConfigType = GetModelConfigType(nlst(1)%io_config_outputs)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Sync all processes up.
    if(mppFlag .eq. 1) then
@@ -1257,7 +1751,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          call nwmCheck(diagFlag,iret,'ERROR: Unable to place CF conventions attribute into LDASOUT file.')
          iret = nf90_put_att(ftnNoahMP,NF90_GLOBAL,"code_version",trim(get_code_version()))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+<<<<<<< HEAD
 #ifdef NCEP_WCOSS
+=======
+#ifdef NWM_META
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_put_att(ftnNoahMP,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
 #endif
@@ -1283,11 +1781,19 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define snow_layers dimension')
          iret = nf90_def_dim(ftnNoahMP,'reference_time',1,dimId(6))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define reference_time dimension')
+<<<<<<< HEAD
          ! Only create vis_nir if we are outputting the two snow albedo variables. 
          ! Otherwise these are unecessary dimensions.
          if ((fileMeta%outFlag(96) .eq. 1) .or. (fileMeta%outFlag(96) .eq. 1)) then
             iret = nf90_def_dim(ftnNoahMP,'vis_nir',fileMeta%numSpectrumBands,dimId(7))
             call nwmCheck(diagFlag,iret,'ERROR: Unable to define vis_nir dimension')
+=======
+         ! Only create vis_nir if we are outputting the two snow albedo variables.
+         ! Otherwise these are unecessary dimensions.
+         if ((fileMeta%outFlag(96) .eq. 1) .or. (fileMeta%outFlag(96) .eq. 1)) then
+         iret = nf90_def_dim(ftnNoahMP,'vis_nir',fileMeta%numSpectrumBands,dimId(7))
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define vis_nir dimension')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          endif
 
          ! Create and populate reference_time and time variables.
@@ -1337,7 +1843,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          end do
 
          ! Define compression if chosen.
+<<<<<<< HEAD
          if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+         if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             iret = nf90_def_var_deflate(ftn,timeId,0,1,2)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for time.')
             iret = nf90_def_var_deflate(ftn,refTimeId,0,1,2)
@@ -1363,10 +1873,17 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          end do
 
          ! Loop through all possible variables and create them, along with their
+<<<<<<< HEAD
          ! metadata attributes. 
          do iTmp=1,fileMeta%numVars
             if(fileMeta%outFlag(iTmp) .eq. 1) then
                if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then 
+=======
+         ! metadata attributes.
+         do iTmp=1,fileMeta%numVars
+            if(fileMeta%outFlag(iTmp) .eq. 1) then
+               if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   if(fileMeta%numLev(iTmp) .eq. fileMeta%numSoilLayers) then
                      iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_int,(/dimId(2),dimId(4),dimId(3),dimId(1)/),varId)
                   else if(fileMeta%numLev(iTmp) .eq. fileMeta%numSnowLayers) then
@@ -1387,8 +1904,13 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                      iret = nf90_def_var(ftnNoahMP,trim(fileMeta%varNames(iTmp)),nf90_float,(/dimId(2),dimId(3),dimId(1)/),varId)
                   endif
                endif
+<<<<<<< HEAD
                call nwmCheck(diagFlag,iret,"ERROR: Unable to create variable: "//trim(fileMeta%varNames(iTmp)))            
             
+=======
+               call nwmCheck(diagFlag,iret,"ERROR: Unable to create variable: "//trim(fileMeta%varNames(iTmp)))
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                ! Extract valid range into a 1D array for placement.
                varRange(1) = fileMeta%validMinComp(iTmp)
                varRange(2) = fileMeta%validMaxComp(iTmp)
@@ -1400,7 +1922,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                ! filter off for now. Kelley Eicher did some testing with this and
                ! determined that the benefit wasn't worth the extra time spent writing output.
                ! Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
                if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+               if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   iret = nf90_def_var_deflate(ftnNoahMP,varId,0,1,2)
                   call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression for: '//trim(fileMeta%varNames(iTmp)))
                endif
@@ -1412,7 +1938,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into variable '//trim(fileMeta%varNames(iTmp)))
                iret = nf90_put_att(ftnNoahMP,varId,'grid_mapping','crs')
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place grid_mapping attribute into variable: '//trim(fileMeta%varNames(iTmp)))
+<<<<<<< HEAD
                if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+               if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   iret = nf90_put_att(ftnNoahMP,varId,'_FillValue',fileMeta%fillComp(iTmp))
                   call nwmCheck(diagFlag,iret,'ERROR: Unable to place Fill value attribute into variable '//trim(fileMeta%varNames(iTmp)))
                   iret = nf90_put_att(ftnNoahMP,varId,'missing_value',fileMeta%missingComp(iTmp))
@@ -1444,6 +1974,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          ! Remove NetCDF file from definition mode.
          iret = nf90_enddef(ftnNoahMP)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to take LDASOUT file out of definition mode')
+<<<<<<< HEAD
  
          ! Read in coordinates from GeoGrid file. These will be placed into the
          ! output file coordinate variables. 
@@ -1451,6 +1982,15 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          allocate(yCoord(global_ny))
          allocate(yCoord2(global_ny))
          iret = nf90_open(trim(nlst_rt(1)%land_spatial_meta_flnm),NF90_NOWRITE,ncid=ftnGeo)
+=======
+
+         ! Read in coordinates from GeoGrid file. These will be placed into the
+         ! output file coordinate variables.
+         allocate(xCoord(global_nx))
+         allocate(yCoord(global_ny))
+         allocate(yCoord2(global_ny))
+         iret = nf90_open(trim(nlst(1)%land_spatial_meta_flnm),NF90_NOWRITE,ncid=ftnGeo)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          if(iret .ne. 0) then
             ! Spatial metadata file not found for land grid. Warn the user no
             ! file was found, and set x/y coordinates to -9999.0
@@ -1470,13 +2010,21 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
 
             iret = nf90_close(ftnGeo)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to close geoGrid file.')
+<<<<<<< HEAD
             ! Reverse Y coordinates. They are read in reverse. 
+=======
+            ! Reverse Y coordinates. They are read in reverse.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             jTmp2 = 0
             do jTmp = global_ny,1,-1
                jTmp2 = jTmp2 + 1
                yCoord2(jTmp2) = yCoord(jTmp)
             end do
+<<<<<<< HEAD
          endif         
+=======
+         endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
          ! Place coordinate values into output file
          iret = nf90_inq_varid(ftnNoahMP,'x',varId)
@@ -1519,6 +2067,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    !     exist.
    ! 4.) Loop through real local grid, convert floating point
    !     values to integer via scale_factor/add_offset. If
+<<<<<<< HEAD
    !     missing value found, assign FillValue caluclated 
    !     in the dictionary. 
    ! 5.) Use MPP utilities to collect local integer arrays
@@ -1526,6 +2075,15 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    ! 6.) Write global integer array into output file.
    if(fileMeta%outFlag(varInd) .eq. 1) then
       ! Output flag on for this variable. 
+=======
+   !     missing value found, assign FillValue caluclated
+   !     in the dictionary.
+   ! 5.) Use MPP utilities to collect local integer arrays
+   !     into global integer array.
+   ! 6.) Write global integer array into output file.
+   if(fileMeta%outFlag(varInd) .eq. 1) then
+      ! Output flag on for this variable.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! Allocate memory
       if(myId .eq. 0) then
          allocate(globalOutComp(global_nx,fileMeta%numLev(varInd),global_ny))
@@ -1564,7 +2122,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          where ( vegTyp .eq. waterVal) varRealTmp(:,zTmp,:) = fileMeta%fillReal(varInd)
          ! Check to see if we are on time 0. If the flag is set to 0 for time 0
          ! outputs, convert all data to a fill. If we are time 0, make sure we
+<<<<<<< HEAD
          ! don't need to fill the grid in with NDV values. 
+=======
+         ! don't need to fill the grid in with NDV values.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          if(minSinceSim .eq. 0 .and. fileMeta%timeZeroFlag(varInd) .eq. 0) then
             localCompTmp = fileMeta%fillComp(varInd)
             varRealTmp = fileMeta%fillReal(varInd)
@@ -1598,7 +2160,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
             globalOutReal(:,zTmp,:) = globalRealTmp
          endif
       end do
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! Sync up processes
       if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
@@ -1610,7 +2176,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
       if(myId .eq. 0) then
          iret = nf90_inq_varid(ftnNoahMP,trim(fileMeta%varNames(varInd)),varId)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to find variable ID for var: '//trim(fileMeta%varNames(varInd)))
+<<<<<<< HEAD
          if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+         if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(fileMeta%numLev(varInd) .eq. 1) then
                iret = nf90_put_var(ftnNoahMP,varId,globalOutComp,(/1,1,1/),(/global_nx,global_ny,1/))
             else
@@ -1626,7 +2196,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
          call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into output variable: '//trim(fileMeta%varNames(varInd)))
       endif
 
+<<<<<<< HEAD
       ! Deallocate memory for this variable. 
+=======
+      ! Deallocate memory for this variable.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       deallocate(globalOutComp)
       deallocate(globalCompTmp)
       deallocate(globalOutReal)
@@ -1644,7 +2218,11 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    endif
 
    if(myId .eq. 0) then
+<<<<<<< HEAD
       ! Only close the file if we are finished with the very last variable. 
+=======
+      ! Only close the file if we are finished with the very last variable.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       if(varInd .eq. fileMeta%numVars) then
          ! Close the output file
          iret = nf90_close(ftnNoahMP)
@@ -1658,11 +2236,19 @@ end subroutine output_NoahMP_NWM
 !==============================================================================
 ! Program Name: output_rt_NWM
 ! Author(s)/Contact(s): Logan R Karsten <karsten><ucar><edu>
+<<<<<<< HEAD
 ! Abstract: Output routine for terrain routing variables 
 !           for the National Water Model.
 ! History Log:
 ! 3/6/17 -Created, LRK.
 ! Usage: 
+=======
+! Abstract: Output routine for terrain routing variables
+!           for the National Water Model.
+! History Log:
+! 3/6/17 -Created, LRK.
+! Usage:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Parameters: None.
 ! Input Files: None.
 ! Output Files: None.
@@ -1672,7 +2258,11 @@ end subroutine output_NoahMP_NWM
 
 subroutine output_rt_NWM(domainId,iGrid)
    use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist, only: nlst_rt
+=======
+   use config_base, only: nlst
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use Module_Date_utilities_rt, only: geth_newdate, geth_idts
    use module_NWM_io_dict
    use netcdf
@@ -1694,6 +2284,7 @@ subroutine output_rt_NWM(domainId,iGrid)
    integer :: minSinceEpoch1 ! Number of minutes from EPOCH to the beginning of the model simulation.
    integer :: minSinceEpoch ! Number of minutes from EPOCH to the current model valid time.
    character(len=16) :: epochDate ! EPOCH represented as a string.
+<<<<<<< HEAD
    character(len=16) :: startDate ! Start of model simulation, represented as a string. 
    character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
    integer :: iret ! NetCDF return statuses
@@ -1701,6 +2292,15 @@ subroutine output_rt_NWM(domainId,iGrid)
    character(len=256) :: validTime ! Global attribute time string
    character(len=256) :: initTime ! Global attribute time string
    integer :: dimId(5) ! Dimension ID values created during NetCDF created. 
+=======
+   character(len=16) :: startDate ! Start of model simulation, represented as a string.
+   character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
+   integer :: iret ! NetCDF return statuses
+   integer :: ftn ! NetCDF file handle
+   character(len=256) :: validTime ! Global attribute time string
+   character(len=256) :: initTime ! Global attribute time string
+   integer :: dimId(5) ! Dimension ID values created during NetCDF created.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: varId ! Variable ID value created as NetCDF variables are created and populated.
    integer :: timeId ! Dimension ID for the time dimension.
    integer :: refTimeId ! Dimension ID for the reference time dimension.
@@ -1713,7 +2313,11 @@ subroutine output_rt_NWM(domainId,iGrid)
    integer :: ftnGeo,geoXVarId,geoYVarId
    ! Allocatable arrays to hold either x/y coordinate information,
    ! or the grid of output values to be converted to integer via scale_factor
+<<<<<<< HEAD
    ! and add_offset. 
+=======
+   ! and add_offset.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer, allocatable, dimension(:,:) :: localCompTmp
    integer, allocatable, dimension(:,:,:) :: globalOutComp
    real, allocatable, dimension(:,:) :: localRealTmp
@@ -1721,8 +2325,13 @@ subroutine output_rt_NWM(domainId,iGrid)
    real*8, allocatable, dimension(:) :: yCoord,xCoord,yCoord2
    integer :: numLev ! This will be 4 for soil moisture, and 1 for all other variables.
    character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
+<<<<<<< HEAD
 
 ! Establish macro variables to hlep guide this subroutine. 
+=======
+   real :: scaleFactorReciprocal
+! Establish macro variables to hlep guide this subroutine.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef MPP_LAND
    mppFlag = 1
 #else
@@ -1739,15 +2348,24 @@ subroutine output_rt_NWM(domainId,iGrid)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
+<<<<<<< HEAD
       call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+=======
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
       myId = 0
    endif
 
+<<<<<<< HEAD
    ! Some sanity checking here. 
    if(nlst_rt(domainId)%RTOUT_DOMAIN .eq. 0) then
+=======
+   ! Some sanity checking here.
+   if(nlst(domainId)%RTOUT_DOMAIN .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! No output requested here. Return to the parent calling program.
       return
    endif
@@ -1756,6 +2374,7 @@ subroutine output_rt_NWM(domainId,iGrid)
    ! for the output file.
    call initRtDomainDict(fileMeta,myId,diagFlag)
 
+<<<<<<< HEAD
    if(nlst_rt(domainId)%io_config_outputs .eq. 0) then
       ! All
       fileMeta%outFlag(:) = [1,1,1,1,1]
@@ -1775,6 +2394,27 @@ subroutine output_rt_NWM(domainId,iGrid)
       ! Retrospective
       fileMeta%outFlag(:) = [1,1,0,0,0]
    else if(nlst_rt(domainId)%io_config_outputs .eq. 6) then
+=======
+   if(nlst(domainId)%io_config_outputs .eq. 0) then
+      ! All
+      fileMeta%outFlag(:) = [1,1,1,1,1]
+   else if(nlst(domainId)%io_config_outputs .eq. 1) then
+      ! Analysis and Assimilation
+      fileMeta%outFlag(:) = [1,1,0,0,0]
+   else if(nlst(domainId)%io_config_outputs .eq. 2) then
+      ! Short Range
+      fileMeta%outFlag(:) = [1,1,0,0,0]
+   else if(nlst(domainId)%io_config_outputs .eq. 3) then
+      ! Medium Range
+      fileMeta%outFlag(:) = [1,1,0,0,0]
+   else if(nlst(domainId)%io_config_outputs .eq. 4) then
+      ! Long Range
+      fileMeta%outFlag(:) = [1,1,0,0,0]
+   else if(nlst(domainId)%io_config_outputs .eq. 5) then
+      ! Retrospective
+      fileMeta%outFlag(:) = [1,1,0,0,0]
+   else if(nlst(domainId)%io_config_outputs .eq. 6) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! Diagnostics
       fileMeta%outFlag(:) = [1,1,0,0,0]
    else
@@ -1782,21 +2422,34 @@ subroutine output_rt_NWM(domainId,iGrid)
    endif
 
    ! call the GetModelConfigType function
+<<<<<<< HEAD
    modelConfigType = GetModelConfigType(nlst_rt(1)%io_config_outputs)
+=======
+   modelConfigType = GetModelConfigType(nlst(1)%io_config_outputs)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Calculate datetime information.
    ! First compose strings of EPOCH and simulation start date.
    epochDate = trim("1970-01-01 00:00")
+<<<<<<< HEAD
    startDate = trim(nlst_rt(domainId)%startdate(1:4)//"-"//&
                     nlst_rt(domainId)%startdate(6:7)//&
                     &"-"//nlst_rt(domainId)%startdate(9:10)//" "//&
                     nlst_rt(domainId)%startdate(12:13)//":"//&
                     nlst_rt(domainId)%startdate(15:16))
+=======
+   startDate = trim(nlst(domainId)%startdate(1:4)//"-"//&
+                    nlst(domainId)%startdate(6:7)//&
+                    &"-"//nlst(domainId)%startdate(9:10)//" "//&
+                    nlst(domainId)%startdate(12:13)//":"//&
+                    nlst(domainId)%startdate(15:16))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Second, utilize NoahMP date utilities to calculate the number of minutes
    ! from EPOCH to the beginning of the model simulation.
    call geth_idts(startDate,epochDate,minSinceEpoch1)
    ! Third, calculate the number of minutes since the beginning of the
    ! simulation.
+<<<<<<< HEAD
    minSinceSim = int(nlst_rt(1)%out_dt*(rt_domain(1)%out_counts-1))
    ! Fourth, calculate the total number of minutes from EPOCH to the current
    ! model time step.
@@ -1812,11 +2465,31 @@ subroutine output_rt_NWM(domainId,iGrid)
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
                   nlst_rt(domainId)%startdate(12:13)//&
                   &':00:00')
+=======
+   minSinceSim = int(nlst(1)%out_dt*(rt_domain(1)%out_counts-1))
+   ! Fourth, calculate the total number of minutes from EPOCH to the current
+   ! model time step.
+   minSinceEpoch = minSinceEpoch1 + minSinceSim
+   ! Fifth, compose global attribute time strings that will be used.
+   validTime = trim(nlst(domainId)%olddate(1:4)//'-'//&
+                    nlst(domainId)%olddate(6:7)//'-'//&
+                    nlst(domainId)%olddate(9:10)//'_'//&
+                    nlst(domainId)%olddate(12:13)//':'//&
+                    nlst(domainId)%olddate(15:16)//&
+                    &':00')
+   initTime = trim(nlst(domainId)%startdate(1:4)//'-'//&
+                  nlst(domainId)%startdate(6:7)//'-'//&
+                  nlst(domainId)%startdate(9:10)//'_'//&
+                  nlst(domainId)%startdate(12:13)//':'//&
+                  nlst(domainId)%startdate(15:16)//&
+                  &':00')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
 
    ! calculate the minimum and maximum time
+<<<<<<< HEAD
    fileMeta%timeValidMin = minSinceEpoch1 + nlst_rt(1)%out_dt 
    fileMeta%timeValidMax = minSinceEpoch1 + int(nlst_rt(1)%khour * 60/nlst_rt(1)%out_dt) * nlst_rt(1)%out_dt
 
@@ -1832,10 +2505,36 @@ subroutine output_rt_NWM(domainId,iGrid)
 
    if(myId .eq. 0) then
       ! Create output NetCDF file for writing. 
+=======
+   fileMeta%timeValidMin = minSinceEpoch1 + nlst(1)%out_dt
+   fileMeta%timeValidMax = minSinceEpoch1 + int(nlst(1)%khour * 60/nlst(1)%out_dt) * nlst(1)%out_dt
+
+   ! calculate total_valid_time
+   if(nlst(domainId)%io_config_outputs .ne. 3 .and. nlst(domainId)%io_config_outputs .ne. 5) then
+       fileMeta%totalValidTime = int(nlst(1)%khour * 60 / nlst(1)%out_dt)  ! # number of valid time (#of output files)
+   else
+       fileMeta%totalValidTime = int(nlst(1)%khour * 60 / nlst(1)%out_dt / 3)  ! # number of valid time (#of output files)
+   endif
+
+   ! Create output filename
+   write(output_flnm, '(A12,".RTOUT_DOMAIN",I1)') nlst(domainId)%olddate(1:4)//&
+                       nlst(domainId)%olddate(6:7)//&
+                       nlst(domainId)%olddate(9:10)//&
+                       nlst(domainId)%olddate(12:13)//&
+                       nlst(domainId)%olddate(15:16), igrid
+
+   if(myId .eq. 0) then
+      ! Create output NetCDF file for writing.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create RT_DOMAIN NetCDF file.')
 
       ! Write global attributes
+<<<<<<< HEAD
+=======
+      iret = nf90_put_att(ftn,NF90_GLOBAL,'TITLE',trim(fileMeta%title))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create TITLE attribute')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,'model_initialization_time',trim(fileMeta%initTime))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place model init time attribute into RT_DOMAIN file.')
       iret = nf90_put_att(ftn,NF90_GLOBAL,'model_output_valid_time',trim(fileMeta%validTime))
@@ -1846,7 +2545,11 @@ subroutine output_rt_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place CF conventions attribute into RT_DOMAIN file.')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+<<<<<<< HEAD
 #ifdef NCEP_WCOSS
+=======
+#ifdef NWM_META
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
 #endif
@@ -1867,12 +2570,21 @@ subroutine output_rt_NWM(domainId,iGrid)
       iret = nf90_def_dim(ftn,'y',RT_DOMAIN(domainId)%g_jxrt,dimId(3))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to define y dimension')
       iret = nf90_def_dim(ftn,'reference_time',1,dimId(4))
+<<<<<<< HEAD
       call nwmCheck(diagFlag,iret,'ERROR: Unable to define reference_time dimension') 
       ! Only create soil layers stag dimension if we are outputting to the soil moisture grid. 
       ! Otherwise this creates unused dimensions. 
       if (fileMeta%outFlag(5) .eq. 1) then
          iret = nf90_def_dim(ftn,'soil_layers_stag',fileMeta%numSoilLayers,dimId(5))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define soil_layers_stag dimension')
+=======
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to define reference_time dimension')
+      ! Only create soil layers stag dimension if we are outputting to the soil moisture grid.
+      ! Otherwise this creates unused dimensions.
+      if (fileMeta%outFlag(5) .eq. 1) then
+      iret = nf90_def_dim(ftn,'soil_layers_stag',fileMeta%numSoilLayers,dimId(5))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to define soil_layers_stag dimension')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       endif
 
       ! Create and populate reference_time and time variables.
@@ -1920,9 +2632,15 @@ subroutine output_rt_NWM(domainId,iGrid)
          iret = nf90_put_att(ftn,yVarId,trim(fileMeta%yCharAttNames(iTmp)),trim(fileMeta%yCharAttVals(iTmp)))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to place y string point attributes into RTDOMAIN file.')
       end do
+<<<<<<< HEAD
  
       ! Define compression for meta-variables only if io_form_outputs is set to 1.
       if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+
+      ! Define compression for meta-variables only if io_form_outputs is set to 1.
+      if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_def_var_deflate(ftn,timeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for time.')
          iret = nf90_def_var_deflate(ftn,refTimeId,0,1,2)
@@ -1946,21 +2664,35 @@ subroutine output_rt_NWM(domainId,iGrid)
          iret = nf90_put_att(ftn,coordVarId,trim(fileMeta%crsCharAttNames(iTmp)),trim(fileMeta%crsCharAttVals(iTmp)))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to place crs string point attributes into RT_DOMAIN file.')
       end do
+<<<<<<< HEAD
  
       ! Loop through all possible variables and create them, along with their
       ! metadata attributes. 
+=======
+
+      ! Loop through all possible variables and create them, along with their
+      ! metadata attributes.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             if(iTmp .eq. 5) then
                ! Soil Moisture
+<<<<<<< HEAD
                if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+               if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_int,(/dimId(2),dimId(5),dimId(3),dimId(1)/),varId)
                else
                   iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_float,(/dimId(2),dimId(5),dimId(3),dimId(1)/),varId)
                endif
             else
                ! All other variables
+<<<<<<< HEAD
                if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+               if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_int,(/dimId(2),dimId(3),dimId(1)/),varId)
                else
                   iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_float,(/dimId(2),dimId(3),dimId(1)/),varId)
@@ -1979,7 +2711,11 @@ subroutine output_rt_NWM(domainId,iGrid)
             ! filter off for now. Kelley Eicher did some testing with this and
             ! determined that the benefit wasn't worth the extra time spent writing output.
             ! Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var_deflate(ftn,varId,0,1,2)
                call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression for: '//trim(fileMeta%varNames(iTmp)))
             endif
@@ -1991,7 +2727,11 @@ subroutine output_rt_NWM(domainId,iGrid)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into variable '//trim(fileMeta%varNames(iTmp)))
             iret = nf90_put_att(ftn,varId,'grid_mapping','crs')
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place grid_mapping attribute into variable: '//trim(fileMeta%varNames(iTmp)))
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_att(ftn,varId,'_FillValue',fileMeta%fillComp(iTmp))
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place Fill value attribute into variable '//trim(fileMeta%varNames(iTmp)))
                iret = nf90_put_att(ftn,varId,'missing_value',fileMeta%missingComp(iTmp))
@@ -2019,17 +2759,29 @@ subroutine output_rt_NWM(domainId,iGrid)
             end do
          endif
       end do ! end looping through variable output list.
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! Remove NetCDF file from definition mode.
       iret = nf90_enddef(ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to take RT_DOMAIN file out of definition mode')
 
       ! Read in coordinates from FullDom file. These will be placed into the
+<<<<<<< HEAD
       ! output file coordinate variables. 
       allocate(xCoord(RT_DOMAIN(domainId)%g_ixrt))
       allocate(yCoord(RT_DOMAIN(domainId)%g_jxrt))
       allocate(yCoord2(RT_DOMAIN(domainId)%g_jxrt))
       iret = nf90_open(trim(nlst_rt(domainId)%geo_finegrid_flnm),NF90_NOWRITE,ncid=ftnGeo)
+=======
+      ! output file coordinate variables.
+      allocate(xCoord(RT_DOMAIN(domainId)%g_ixrt))
+      allocate(yCoord(RT_DOMAIN(domainId)%g_jxrt))
+      allocate(yCoord2(RT_DOMAIN(domainId)%g_jxrt))
+      iret = nf90_open(trim(nlst(domainId)%geo_finegrid_flnm),NF90_NOWRITE,ncid=ftnGeo)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,iret,'ERROR: Unable to open FullDom file')
       iret = nf90_inq_varid(ftnGeo,'x',geoXVarId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to find x coordinate in FullDom file')
@@ -2042,11 +2794,19 @@ subroutine output_rt_NWM(domainId,iGrid)
       iret = nf90_close(ftnGeo)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to close geoGrid file.')
 
+<<<<<<< HEAD
       ! Reverse Y coordinates. They are read in reverse. 
       jTmp2 = 0
       do jTmp = RT_DOMAIN(domainId)%g_jxrt,1,-1
          jTmp2 = jTmp2 + 1
          yCoord2(jTmp2) = yCoord(jTmp) 
+=======
+      ! Reverse Y coordinates. They are read in reverse.
+      jTmp2 = 0
+      do jTmp = RT_DOMAIN(domainId)%g_jxrt,1,-1
+         jTmp2 = jTmp2 + 1
+         yCoord2(jTmp2) = yCoord(jTmp)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       end do
       ! Place coordinate values into output file
       iret = nf90_inq_varid(ftn,'x',varId)
@@ -2059,7 +2819,11 @@ subroutine output_rt_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into y coordinate variable')
       deallocate(xCoord)
       deallocate(yCoord)
+<<<<<<< HEAD
       deallocate(yCoord2) 
+=======
+      deallocate(yCoord2)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       ! Place time values into time variables.
       iret = nf90_inq_varid(ftn,'time',varId)
@@ -2075,7 +2839,11 @@ subroutine output_rt_NWM(domainId,iGrid)
 
    ! Synce up processes.
    if(mppFlag .eq. 1) then
+<<<<<<< HEAD
 #ifdef MPP_LAND 
+=======
+#ifdef MPP_LAND
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call mpp_land_sync()
 #endif
    endif
@@ -2091,8 +2859,15 @@ subroutine output_rt_NWM(domainId,iGrid)
          numLev = 1
       endif
 
+<<<<<<< HEAD
       if(fileMeta%outFlag(iTmp2) .eq. 1) then   
          !Allocate memory necessary 
+=======
+      scaleFactorReciprocal = 1/fileMeta%scaleFactor(iTmp2)
+
+      if(fileMeta%outFlag(iTmp2) .eq. 1) then
+         !Allocate memory necessary
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          if(myId .eq. 0) then
             allocate(globalOutComp(RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt))
             allocate(globalOutReal(RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt))
@@ -2107,7 +2882,11 @@ subroutine output_rt_NWM(domainId,iGrid)
          globalOutComp = fileMeta%fillComp(iTmp2)
          globalOutReal = fileMeta%fillReal(iTmp2)
 
+<<<<<<< HEAD
          ! Loop through the number of levels. 
+=======
+         ! Loop through the number of levels.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          do zTmp=1,numLev
             ! Initialize arrays to prescribed NDV value.
             localCompTmp = fileMeta%fillComp(iTmp2)
@@ -2121,11 +2900,19 @@ subroutine output_rt_NWM(domainId,iGrid)
             endif
 
             ! Loop through output array and convert floating point values to
+<<<<<<< HEAD
             ! integers via scale_factor/add_offset. 
             do iTmp = 1,RT_DOMAIN(domainId)%ixrt
                do jTmp = 1,RT_DOMAIN(domainId)%jxrt
                   if(iTmp2 .eq. 1) then
                      varRealTmp = RT_DOMAIN(domainId)%ZWATTABLRT(iTmp,jTmp)
+=======
+            ! integers via scale_factor/add_offset.
+            do iTmp = 1,RT_DOMAIN(domainId)%ixrt
+               do jTmp = 1,RT_DOMAIN(domainId)%jxrt
+                  if(iTmp2 .eq. 1) then
+                     varRealTmp = rt_domain(domainId)%subsurface%properties%zwattablrt(iTmp,jTmp)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   else if(iTmp2 .eq. 2) then
                      varRealTmp = RT_DOMAIN(domainId)%overland%control%surface_water_head_routing(iTmp,jTmp)
                   else if(iTmp2 .eq. 3) then
@@ -2133,7 +2920,11 @@ subroutine output_rt_NWM(domainId,iGrid)
                   else if(iTmp2 .eq. 4) then
                      varRealTmp = RT_DOMAIN(domainId)%overland%control%boundary_flux(iTmp,jTmp)
                   else if(iTmp2 .eq. 5) then
+<<<<<<< HEAD
                      varRealTmp = RT_DOMAIN(domainId)%SMCRT(iTmp,jTmp,zTmp)
+=======
+                     varRealTmp = rt_domain(domainId)%subsurface%grid_transform%smcrt(iTmp,jTmp,zTmp)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   endif
 
                   ! Run a quick gross check on values to ensure they aren't outside our
@@ -2148,7 +2939,11 @@ subroutine output_rt_NWM(domainId,iGrid)
                      varRealTmp = fileMeta%fillReal(iTmp2)
                   endif
                   ! If we are on time 0, make sure we don't need to fill in the
+<<<<<<< HEAD
                   ! grid with NDV values. 
+=======
+                  ! grid with NDV values.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   if(minSinceSim .eq. 0 .and. fileMeta%timeZeroFlag(iTmp2) .eq. 0) then
                      localCompTmp(iTmp,jTmp) = fileMeta%fillComp(iTmp2)
                      localRealTmp(iTmp,jTmp) = fileMeta%fillReal(iTmp2)
@@ -2157,14 +2952,22 @@ subroutine output_rt_NWM(domainId,iGrid)
                         localCompTmp(iTmp,jTmp) = INT(fileMeta%fillComp(iTmp2))
                         localRealTmp(iTmp,jTmp) = fileMeta%fillReal(iTmp2)
                      else
+<<<<<<< HEAD
                         localCompTmp(iTmp,jTmp) = NINT((varRealTmp-fileMeta%addOffset(iTmp2))/fileMeta%scaleFactor(iTmp2))
+=======
+                        localCompTmp(iTmp,jTmp) = NINT((varRealTmp-fileMeta%addOffset(iTmp2))*scaleFactorReciprocal)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                         localRealTmp(iTmp,jTmp) = varRealTmp
                      endif
                   endif
                end do
             end do
             ! Collect local integer arrays into the global integer grid to be
+<<<<<<< HEAD
             ! written out. 
+=======
+            ! written out.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
                call write_IO_rt_int(localCompTmp,globalOutComp(:,zTmp,:))
@@ -2183,18 +2986,30 @@ subroutine output_rt_NWM(domainId,iGrid)
             endif
          end do ! End looping through levels
 
+<<<<<<< HEAD
          ! Write output to NetCDF file. 
+=======
+         ! Write output to NetCDF file.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          if(myId .eq. 0) then
             iret = nf90_inq_varid(ftn,trim(fileMeta%varNames(iTmp2)),varId)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to find variable ID for var: '//trim(fileMeta%varNames(iTmp2)))
             if(numLev .eq. 1) then
+<<<<<<< HEAD
                if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+               if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   iret = nf90_put_var(ftn,varId,globalOutComp,(/1,1,1/),(/RT_DOMAIN(domainId)%g_ixrt,RT_DOMAIN(domainId)%g_jxrt,1/))
                else
                   iret = nf90_put_var(ftn,varId,globalOutReal,(/1,1,1/),(/RT_DOMAIN(domainId)%g_ixrt,RT_DOMAIN(domainId)%g_jxrt,1/))
                endif
             else
+<<<<<<< HEAD
                if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+               if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   iret = nf90_put_var(ftn,varId,globalOutComp,(/1,1,1,1/),(/RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt,1/))
                else
                   iret = nf90_put_var(ftn,varId,globalOutReal,(/1,1,1,1/),(/RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt,1/))
@@ -2203,7 +3018,11 @@ subroutine output_rt_NWM(domainId,iGrid)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into output variable: '//trim(fileMeta%varNames(iTmp2)))
          endif
 
+<<<<<<< HEAD
          ! Deallocate memory for this variable. 
+=======
+         ! Deallocate memory for this variable.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          deallocate(globalOutComp)
          deallocate(localCompTmp)
          deallocate(globalOutReal)
@@ -2226,7 +3045,11 @@ end subroutine output_rt_NWM
 ! Abstract: Output routine for lake points for the National Water Model.
 ! History Log:
 ! 3/6/17 -Created, LRK.
+<<<<<<< HEAD
 ! Usage: 
+=======
+! Usage:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Parameters: None.
 ! Input Files: None.
 ! Output Files: None.
@@ -2236,7 +3059,11 @@ end subroutine output_rt_NWM
 
 subroutine output_lakes_NWM(domainId,iGrid)
    use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist, only: nlst_rt
+=======
+   use config_base, only: nlst
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use Module_Date_utilities_rt, only: geth_newdate, geth_idts
    use module_NWM_io_dict
    use netcdf
@@ -2257,6 +3084,7 @@ subroutine output_lakes_NWM(domainId,iGrid)
    integer :: minSinceEpoch1 ! Number of minutes from EPOCH to the beginning of the model simulation.
    integer :: minSinceEpoch ! Number of minutes from EPOCH to the current model valid time.
    character(len=16) :: epochDate ! EPOCH represented as a string.
+<<<<<<< HEAD
    character(len=16) :: startDate ! Start of model simulation, represented as a string. 
    character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
    integer :: iret ! NetCDF return statuses
@@ -2264,11 +3092,26 @@ subroutine output_lakes_NWM(domainId,iGrid)
    character(len=256) :: validTime ! Global attribute time string
    character(len=256) :: initTime ! Global attribute time string
    integer :: dimId(3) ! Dimension ID values created during NetCDF created. 
+=======
+   character(len=16) :: startDate ! Start of model simulation, represented as a string.
+   character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
+   integer :: iret ! NetCDF return statuses
+   integer :: ftn ! NetCDF file handle
+   character(len=256) :: validTime ! Global attribute time string
+   character(len=256) :: initTime ! Global attribute time string
+   integer :: dimId(4) ! Dimension ID values created during NetCDF created.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: varId ! Variable ID value created as NetCDF variables are created and populated.
    integer :: timeId ! Dimension ID for the time dimension.
    integer :: refTimeId ! Dimension ID for the reference time dimension.
    integer :: coordVarId ! Variable to hold crs
    integer :: featureVarId ! feature_id NetCDF variable ID
+<<<<<<< HEAD
+=======
+   integer :: reservoirTypeVarId ! reservoir_type netCDF variable ID
+   integer :: reservoirAssimilatedValueVarId ! reservoir_assimilated_value netCDF variable ID
+   integer :: reservoirAssimilatedSourceFileVarId ! reservoir_assimilated_source_file netCDF variable ID
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: latVarId, lonVarId ! lat/lon NetCDF variable ID values
    integer :: elevVarId ! elevation NetCDF variable ID
    integer :: varRange(2) ! Local storage of valid min/max values
@@ -2278,6 +3121,7 @@ subroutine output_lakes_NWM(domainId,iGrid)
    integer :: ftnRt,indVarId,indTmp ! For the feature_id sorting process.
    integer :: ierr, myId ! MPI return status, process ID
    integer :: ascFlag ! Flag for resorting timeseries output by feature_id.
+<<<<<<< HEAD
    ! Allocatable arrays to hold output variables. 
    real, allocatable, dimension(:) :: g_lakeLat,g_lakeLon,g_lakeElev
    real, allocatable, dimension(:) :: g_lakeInflow,g_lakeOutflow
@@ -2287,6 +3131,22 @@ subroutine output_lakes_NWM(domainId,iGrid)
    integer, allocatable, dimension(:) :: g_lakeidOut
    real, allocatable, dimension(:,:) :: varOutReal   ! Array holding output variables in real format
    integer, allocatable, dimension(:) :: varOutInt ! Array holding output variables after 
+=======
+   ! Allocatable arrays to hold output variables.
+   real, allocatable, dimension(:) :: g_lakeLat,g_lakeLon,g_lakeElev
+   real, allocatable, dimension(:) :: g_lakeInflow,g_lakeOutflow
+   real, allocatable, dimension(:) :: g_lakeType
+   real, allocatable, dimension(:) :: g_lake_assimilated_value
+   character(len=256), allocatable, dimension(:) :: g_lake_assimilated_source_file
+   integer, allocatable, dimension(:) :: g_lakeid
+   real, allocatable, dimension(:) :: g_lakeLatOut,g_lakeLonOut,g_lakeElevOut
+   real, allocatable, dimension(:) :: g_lakeInflowOut,g_lakeOutflowOut
+   integer, allocatable, dimension(:) :: g_lakeTypeOut, g_lakeidOut
+   real, allocatable, dimension(:) :: g_lake_assimilated_valueOut
+   character(len=256), allocatable, dimension(:) :: g_lake_assimilated_source_fileOut
+   real, allocatable, dimension(:,:) :: varOutReal   ! Array holding output variables in real format
+   integer, allocatable, dimension(:) :: varOutInt ! Array holding output variables after
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                      ! scale_factor/add_offset
                                                      ! have been applied.
    integer, allocatable, dimension(:) :: chIndArray ! Array of index values for
@@ -2294,12 +3154,20 @@ subroutine output_lakes_NWM(domainId,iGrid)
 
    !each channel point. feature_id will need to be sorted in ascending order once
    !data is collected into the global array. From there, the index values are
+<<<<<<< HEAD
    !re-sorted, and used to re-sort output arrays. 
+=======
+   !re-sorted, and used to re-sort output arrays.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Initialize the ascFlag.
    ascFlag = 1
 
+<<<<<<< HEAD
    ! Establish macro variables to hlep guide this subroutine. 
+=======
+   ! Establish macro variables to hlep guide this subroutine.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef MPP_LAND
    mppFlag = 1
 #else
@@ -2316,15 +3184,24 @@ subroutine output_lakes_NWM(domainId,iGrid)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
+<<<<<<< HEAD
       call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+=======
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
       myId = 0
    endif
 
+<<<<<<< HEAD
    ! Some sanity checking here. 
    if(nlst_rt(domainId)%outlake .eq. 0) then
+=======
+   ! Some sanity checking here.
+   if(nlst(domainId)%outlake .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! No output requested here. Return to the parent calling program.
       return
    endif
@@ -2333,6 +3210,7 @@ subroutine output_lakes_NWM(domainId,iGrid)
    ! for the output file.
    call initLakeDict(fileMeta,myId,diagFlag)
 
+<<<<<<< HEAD
    if(nlst_rt(1)%io_config_outputs .eq. 0) then
       ! All
       fileMeta%outFlag(:) = [1,1] 
@@ -2352,6 +3230,27 @@ subroutine output_lakes_NWM(domainId,iGrid)
       ! Retrospective
       fileMeta%outFlag(:) = [1,1]
    else if(nlst_rt(1)%io_config_outputs .eq. 6) then
+=======
+   if(nlst(1)%io_config_outputs .eq. 0) then
+      ! All
+      fileMeta%outFlag(:) = [1,1]
+   else if(nlst(1)%io_config_outputs .eq. 1) then
+      ! Analysis and Assimilation
+      fileMeta%outFlag(:) = [1,1]
+   else if(nlst(1)%io_config_outputs .eq. 2) then
+      ! Short Range
+      fileMeta%outFlag(:) = [1,1]
+   else if(nlst(1)%io_config_outputs .eq. 3) then
+      ! Medium Range
+      fileMeta%outFlag(:) = [1,1]
+   else if(nlst(1)%io_config_outputs .eq. 4) then
+      ! Long Range
+      fileMeta%outFlag(:) = [1,1]
+   else if(nlst(1)%io_config_outputs .eq. 5) then
+      ! Retrospective
+      fileMeta%outFlag(:) = [1,1]
+   else if(nlst(1)%io_config_outputs .eq. 6) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! Diagnostics
       fileMeta%outFlag(:) = [1,1]
    else
@@ -2359,11 +3258,19 @@ subroutine output_lakes_NWM(domainId,iGrid)
    endif
 
    ! call the GetModelConfigType function
+<<<<<<< HEAD
    modelConfigType = GetModelConfigType(nlst_rt(1)%io_config_outputs)
 
    ! First step is to collect and assemble all data that will be written to the 
    ! NetCDF file. If we are not using MPI, we bypass the collection step through
    ! MPI. 
+=======
+   modelConfigType = GetModelConfigType(nlst(1)%io_config_outputs)
+
+   ! First step is to collect and assemble all data that will be written to the
+   ! NetCDF file. If we are not using MPI, we bypass the collection step through
+   ! MPI.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if(mppFlag .eq. 1) then
       gSize = rt_domain(domainId)%NLAKES
 
@@ -2379,14 +3286,30 @@ subroutine output_lakes_NWM(domainId,iGrid)
       allocate(g_lakeElev(gsize))
       allocate(g_lakeInflow(gsize))
       allocate(g_lakeOutflow(gsize))
+<<<<<<< HEAD
       allocate(g_lakeid(gsize))
       if(myId .eq. 0) then
+=======
+      allocate(g_lakeType(gsize))
+      allocate(g_lake_assimilated_value(gsize))
+      allocate(g_lake_assimilated_source_file(gsize))
+      allocate(g_lakeid(gsize))
+
+      if(myId == 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          allocate(g_lakeLonOut(gsize))
          allocate(g_lakeLatOut(gsize))
          allocate(g_lakeElevOut(gsize))
          allocate(g_lakeInflowOut(gsize))
          allocate(g_lakeOutflowOut(gsize))
+<<<<<<< HEAD
          allocate(g_lakeidOut(gsize))    
+=======
+         allocate(g_lakeTypeOut(gsize))
+         allocate(g_lake_assimilated_valueOut(gsize))
+         allocate(g_lake_assimilated_source_fileOut(gsize))
+         allocate(g_lakeidOut(gsize))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          allocate(chIndArray(gsize))
       endif
 
@@ -2396,6 +3319,12 @@ subroutine output_lakes_NWM(domainId,iGrid)
       g_lakeInflow = RT_DOMAIN(domainID)%QLAKEI
       g_lakeOutflow = RT_DOMAIN(domainID)%QLAKEO
       g_lakeid = RT_DOMAIN(domainId)%LAKEIDM
+<<<<<<< HEAD
+=======
+      g_lakeType = RT_DOMAIN(domainID)%final_reservoir_type
+      g_lake_assimilated_value = RT_DOMAIN(domainID)%reservoir_assimilated_value
+      g_lake_assimilated_source_file = RT_DOMAIN(domainID)%reservoir_assimilated_source_file
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       ! Sync everything up before the next step.
       if(mppFlag .eq. 1) then
@@ -2404,7 +3333,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
 #endif
       endif
 
+<<<<<<< HEAD
       ! Collect arrays from various processors through MPI, and 
+=======
+      ! Collect arrays from various processors through MPI, and
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! assemble into global arrays previously allocated.
 #ifdef MPP_LAND
       call write_lake_real(g_lakeLat,RT_DOMAIN(domainId)%lake_index,gsize)
@@ -2412,6 +3345,13 @@ subroutine output_lakes_NWM(domainId,iGrid)
       call write_lake_real(g_lakeElev,RT_DOMAIN(domainId)%lake_index,gsize)
       call write_lake_real(g_lakeInflow,RT_DOMAIN(domainId)%lake_index,gsize)
       call write_lake_real(g_lakeOutflow,RT_DOMAIN(domainId)%lake_index,gsize)
+<<<<<<< HEAD
+=======
+      call write_lake_real(g_lakeType,RT_DOMAIN(domainId)%lake_index,gsize)
+      call write_lake_real(g_lake_assimilated_value,RT_DOMAIN(domainId)%lake_index,gsize)
+      !call write_lake_char(g_lake_assimilated_source_file,RT_DOMAIN(domainId)%lake_index,gsize)
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
    else
       gSize = rt_domain(domainId)%NLAKES
@@ -2428,6 +3368,12 @@ subroutine output_lakes_NWM(domainId,iGrid)
       allocate(g_lakeInflowOut(gsize))
       allocate(g_lakeOutflowOut(gsize))
       allocate(g_lakeidOut(gsize))
+<<<<<<< HEAD
+=======
+      allocate(g_lakeTypeOut(gsize))
+      allocate(g_lake_assimilated_valueOut(gsize))
+      allocate(g_lake_assimilated_source_fileOut(gsize))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       allocate(chIndArray(gsize))
       g_lakeLat = RT_DOMAIN(domainID)%LATLAKE
       g_lakeLon = RT_DOMAIN(domainID)%LONLAKE
@@ -2435,6 +3381,12 @@ subroutine output_lakes_NWM(domainId,iGrid)
       g_lakeInflow = RT_DOMAIN(domainID)%QLAKEI
       g_lakeOutflow = RT_DOMAIN(domainID)%QLAKEO
       g_lakeid = RT_DOMAIN(domainId)%LAKEIDM
+<<<<<<< HEAD
+=======
+      g_lakeType = RT_DOMAIN(domainId)%final_reservoir_type
+      g_lake_assimilated_value = RT_DOMAIN(domainID)%reservoir_assimilated_value
+      g_lake_assimilated_source_file = RT_DOMAIN(domainID)%reservoir_assimilated_source_file
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    endif
 
    ! Sync all processes up.
@@ -2442,21 +3394,34 @@ subroutine output_lakes_NWM(domainId,iGrid)
 #ifdef MPP_LAND
       call mpp_land_sync()
 #endif
+<<<<<<< HEAD
    endif 
+=======
+   endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Calculate datetime information.
    ! First compose strings of EPOCH and simulation start date.
    epochDate = trim("1970-01-01 00:00")
+<<<<<<< HEAD
    startDate = trim(nlst_rt(domainId)%startdate(1:4)//"-"//&
                     nlst_rt(domainId)%startdate(6:7)//&
                     &"-"//nlst_rt(domainId)%startdate(9:10)//" "//&
                     nlst_rt(domainId)%startdate(12:13)//":"//&
                     nlst_rt(domainId)%startdate(15:16))
+=======
+   startDate = trim(nlst(domainId)%startdate(1:4)//"-"//&
+                    nlst(domainId)%startdate(6:7)//&
+                    &"-"//nlst(domainId)%startdate(9:10)//" "//&
+                    nlst(domainId)%startdate(12:13)//":"//&
+                    nlst(domainId)%startdate(15:16))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Second, utilize NoahMP date utilities to calculate the number of minutes
    ! from EPOCH to the beginning of the model simulation.
    call geth_idts(startDate,epochDate,minSinceEpoch1)
    ! Third, calculate the number of minutes since the beginning of the
    ! simulation.
+<<<<<<< HEAD
    minSinceSim = int(nlst_rt(1)%out_dt*(rt_domain(1)%out_counts-1))
    ! Fourth, calculate the total number of minutes from EPOCH to the current
    ! model time step.
@@ -2472,11 +3437,31 @@ subroutine output_lakes_NWM(domainId,iGrid)
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
                   nlst_rt(domainId)%startdate(12:13)//&
                   &':00:00')
+=======
+   minSinceSim = int(nlst(1)%out_dt*(rt_domain(1)%out_counts-1))
+   ! Fourth, calculate the total number of minutes from EPOCH to the current
+   ! model time step.
+   minSinceEpoch = minSinceEpoch1 + minSinceSim
+   ! Fifth, compose global attribute time strings that will be used.
+   validTime = trim(nlst(domainId)%olddate(1:4)//'-'//&
+                    nlst(domainId)%olddate(6:7)//'-'//&
+                    nlst(domainId)%olddate(9:10)//'_'//&
+                    nlst(domainId)%olddate(12:13)//':'//&
+                    nlst(domainId)%olddate(15:16)//&
+                    &':00')
+   initTime = trim(nlst(domainId)%startdate(1:4)//'-'//&
+                  nlst(domainId)%startdate(6:7)//'-'//&
+                  nlst(domainId)%startdate(9:10)//'_'//&
+                  nlst(domainId)%startdate(12:13)//':'//&
+                  nlst(domainId)%startdate(15:16)//&
+                  &':00')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
 
    ! calculate the minimum and maximum time
+<<<<<<< HEAD
    fileMeta%timeValidMin = minSinceEpoch1 + nlst_rt(1)%out_dt 
    fileMeta%timeValidMax = minSinceEpoch1 + int(nlst_rt(1)%khour * 60/nlst_rt(1)%out_dt) * nlst_rt(1)%out_dt
 
@@ -2487,13 +3472,29 @@ subroutine output_lakes_NWM(domainId,iGrid)
    write(output_flnm, '(A12,".LAKEOUT_DOMAIN",I1)')nlst_rt(domainId)%olddate(1:4)//&
          nlst_rt(domainId)%olddate(6:7)//nlst_rt(domainId)%olddate(9:10)//&
          nlst_rt(domainId)%olddate(12:13)//nlst_rt(domainId)%olddate(15:16),nlst_rt(domainId)%igrid
+=======
+   fileMeta%timeValidMin = minSinceEpoch1 + nlst(1)%out_dt
+   fileMeta%timeValidMax = minSinceEpoch1 + int(nlst(1)%khour * 60/nlst(1)%out_dt) * nlst(1)%out_dt
+
+   ! calculate total_valid_time
+   fileMeta%totalValidTime = int(nlst(1)%khour * 60 / nlst(1)%out_dt)  ! # number of valid time (#of output files)
+
+   ! Compose output file name.
+   write(output_flnm, '(A12,".LAKEOUT_DOMAIN",I1)')nlst(domainId)%olddate(1:4)//&
+         nlst(domainId)%olddate(6:7)//nlst(domainId)%olddate(9:10)//&
+         nlst(domainId)%olddate(12:13)//nlst(domainId)%olddate(15:16),nlst(domainId)%igrid
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Only run NetCDF library calls to output data if we are on the master
    ! processor.
    if(myId .eq. 0) then
       ! Read in index values from Routelink that will be used to sort output
       ! variables by ascending feature_id.
+<<<<<<< HEAD
       iret = nf90_open(trim(nlst_rt(1)%route_lake_f),NF90_NOWRITE,ncid=ftnRt)
+=======
+      iret = nf90_open(trim(nlst(1)%route_lake_f),NF90_NOWRITE,ncid=ftnRt)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,iret,'ERROR: Unable to open LAKEPARM file for index extraction')
       iret = nf90_inq_varid(ftnRt,'ascendingIndex',indVarId)
       if(iret .ne. 0) then
@@ -2513,7 +3514,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
       allocate(varOutInt(gSize))
       if(ascFlag .eq. 1) then
          ! Sort feature_id values by ascending values using the index array
+<<<<<<< HEAD
          ! extracted from the RouteLink file. 
+=======
+         ! extracted from the RouteLink file.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          do iTmp=1,gSize
             indTmp = chIndArray(iTmp)
             indTmp = indTmp + 1 ! Python starts index values at 0, so we need to add one.
@@ -2522,6 +3527,12 @@ subroutine output_lakes_NWM(domainId,iGrid)
             g_lakeLonOut(iTmp) = g_lakeLon(indTmp)
             g_lakeLatOut(iTmp) = g_lakeLat(indTmp)
             g_lakeElevOut(iTmp) = g_lakeElev(indTmp)
+<<<<<<< HEAD
+=======
+            g_lakeTypeOut(iTmp) = g_lakeType(indTmp)
+            g_lake_assimilated_valueOut(iTmp) = g_lake_assimilated_value(indTmp)
+            g_lake_assimilated_source_fileOut(iTmp) = g_lake_assimilated_source_file(indTmp)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             g_lakeidOut(iTmp) = g_lakeid(indTmp)
          end do
       else
@@ -2530,6 +3541,12 @@ subroutine output_lakes_NWM(domainId,iGrid)
          g_lakeLonOut = g_lakeLon
          g_lakeLatOut = g_lakeLat
          g_lakeElevOut = g_lakeElev
+<<<<<<< HEAD
+=======
+         g_lakeTypeOut = g_lakeType
+         g_lake_assimilated_valueOut = g_lake_assimilated_value
+         g_lake_assimilated_source_fileOut = g_lake_assimilated_source_file
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          g_lakeidOut = g_lakeid
       endif
       varOutReal(1,:) = g_lakeInflowOut(:)
@@ -2542,6 +3559,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create LAKEOUT NetCDF file.')
 
       ! Write global attributes.
+<<<<<<< HEAD
+=======
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"TITLE",trim(fileMeta%title))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create TITLE attribute')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"featureType",trim(fileMeta%fType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create featureType attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"proj4",trim(fileMeta%proj4))
@@ -2560,7 +3582,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create conventions attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+<<<<<<< HEAD
 #ifdef NCEP_WCOSS
+=======
+#ifdef NWM_META
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
 #endif
@@ -2576,6 +3602,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create time dimension')
       iret = nf90_def_dim(ftn,"reference_time",1,dimId(3))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create reference_time dimension')
+<<<<<<< HEAD
+=======
+      !iret = nf90_def_dim(ftn,"string_length",256,dimId(4))
+      !call nwmCheck(diagFlag,iret,'ERROR: Unable to create string length dimension')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       ! Create and populate reference_time and time variables.
       iret = nf90_def_var(ftn,"time",nf90_int,dimId(2),timeId)
@@ -2599,7 +3630,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
       iret = nf90_put_att(ftn,refTimeId,'units',trim(fileMeta%rTimeUnits))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into reference_time variable')
 
+<<<<<<< HEAD
       ! Create a crs variable. 
+=======
+      ! Create a crs variable.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! NOTE - For now, we are hard-coding in for lat/lon points. However, this
       ! may be more flexible in future iterations.
       iret = nf90_def_var(ftn,'crs',nf90_char,varid=coordVarId)
@@ -2641,6 +3676,35 @@ subroutine output_lakes_NWM(domainId,iGrid)
       iret = nf90_put_att(ftn,featureVarId,'cf_role',trim(fileMeta%cfRole))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place cf_role attribute into feature_id variable')
 
+<<<<<<< HEAD
+=======
+      ! Create reservoir_type variable
+      iret = nf90_def_var(ftn, "reservoir_type", nf90_int, dimId(1), reservoirTypeVarId)
+      call nwmCheck(diagFlag, iret, 'ERROR: Unable to create reservoir_type variable.')
+      iret = nf90_put_att(ftn, reservoirTypeVarId, 'long_name', trim(fileMeta%reservoirTypeLName))
+      call nwmCheck(diagFlag, iret, 'ERROR: Unable to place long_name attribute into reservoir_type variable')
+      iret = nf90_put_att(ftn, reservoirTypeVarId, 'flag_values', fileMeta%reservoirTypeFlagValues)
+      call nwmCheck(diagFlag, iret, 'ERROR: Unable to place flag_values attribute into reservoir_type variable')
+      iret = nf90_put_att(ftn, reservoirTypeVarId, 'flag_meanings', trim(fileMeta%reservoirTypeFlagMeanings))
+      call nwmCheck(diagFlag, iret, 'ERROR: Unable to place flag_meanings attribute into reservoir_type variable')
+
+      ! Create reservoir_assimilated_value variable
+      iret = nf90_def_var(ftn, "reservoir_assimilated_value", nf90_float, dimId(1), reservoirAssimilatedValueVarId)
+      call nwmCheck(diagFlag, iret, 'ERROR: Unable to create reservoir_assimilated_value variable.')
+      iret = nf90_put_att(ftn, reservoirAssimilatedValueVarId, 'long_name', trim(fileMeta%reservoirAssimilatedValueLName))
+      call nwmCheck(diagFlag, iret, 'ERROR: Unable to place long_name attribute into reservoir_assimilated_value variable')
+      iret = nf90_put_att(ftn,reservoirAssimilatedValueVarId,'units',trim(fileMeta%reservoirAssimilatedValueUnits))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into reservoir_assimilated_value variable')
+
+      ! Create reservoir_assimilated_source_file variable
+      !iret = nf90_def_var(ftn, "reservoir_assimilated_source_file", nf90_char, [dimId(4), dimId(1)], reservoirAssimilatedSourceFileVarId)
+      !call nwmCheck(diagFlag, iret, 'ERROR: Unable to create reservoir_assimilated_source_file variable.')
+      !iret = nf90_put_att(ftn, reservoirAssimilatedSourceFileVarId, 'long_name', trim(fileMeta%reservoirAssimilatedSourceFileLName))
+      !call nwmCheck(diagFlag, iret, 'ERROR: Unable to place long_name attribute into reservoir_assimilated_source_file variable')
+      !iret = nf90_def_var_fill(ftn, reservoirAssimilatedSourceFileVarId, 0, 0);
+      !call nwmCheck(diagFlag, iret, 'ERROR: Unable to place _FillValue attribute into reservoir_assimilated_source_file variable')
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! Create lake lat/lon variables
       iret = nf90_def_var(ftn,"latitude",nf90_float,dimId(1),latVarId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create latitude variable.')
@@ -2666,14 +3730,28 @@ subroutine output_lakes_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place long_name attribute into water_sfc_elev variable')
       iret = nf90_put_att(ftn,elevVarId,'units',trim(fileMeta%elevUnits))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into water_sfc_elev variable')
+<<<<<<< HEAD
 
       ! Define deflation levels for these meta-variables. For now, we are going to
       ! default to a compression level of 2. Only compress if io_form_outputs is set to 1.
       if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then 
+=======
+      iret = nf90_put_att(ftn,elevVarId,'comment',trim(fileMeta%elevComment))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to place comment attribute into water_sfc_elev variable')
+
+      ! Define deflation levels for these meta-variables. For now, we are going to
+      ! default to a compression level of 2. Only compress if io_form_outputs is set to 1.
+      if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_def_var_deflate(ftn,timeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for time.')
          iret = nf90_def_var_deflate(ftn,featureVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for feature_id.')
+<<<<<<< HEAD
+=======
+         iret = nf90_def_var_deflate(ftn,reservoirTypeVarId,0,1,2)
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for reservoir_type.')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_def_var_deflate(ftn,refTimeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for reference_time.')
          iret = nf90_def_var_deflate(ftn,latVarId,0,1,2)
@@ -2692,14 +3770,22 @@ subroutine output_lakes_NWM(domainId,iGrid)
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             ! First create variable
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_int,dimId(1),varId)
             else
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_float,dimId(1),varId)
             endif
             call nwmCheck(diagFlag,iret,'ERROR: Unable to create variable:'//trim(fileMeta%varNames(iTmp)))
 
+<<<<<<< HEAD
             ! Extract valid range into a 1D array for placement. 
+=======
+            ! Extract valid range into a 1D array for placement.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
             varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
@@ -2710,7 +3796,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
             ! filter off for now. Kelley Eicher did some testing with this and
             ! determined that the benefit wasn't worth the extra time spent writing output.
             ! Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var_deflate(ftn,varId,0,1,2)
                call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression for: '//trim(fileMeta%varNames(iTmp)))
             endif
@@ -2724,7 +3814,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place coordinates attribute into variable '//trim(fileMeta%varNames(iTmp)))
             iret = nf90_put_att(ftn,varId,'grid_mapping','crs')
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place grid_mapping attribute into variable '//trim(fileMeta%varNames(iTmp)))
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_att(ftn,varId,'_FillValue',fileMeta%fillComp(iTmp))
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place Fill value attribute into variable '//trim(fileMeta%varNames(iTmp)))
                iret = nf90_put_att(ftn,varId,'missing_value',fileMeta%missingComp(iTmp))
@@ -2749,14 +3843,24 @@ subroutine output_lakes_NWM(domainId,iGrid)
       ! Remove NetCDF file from definition mode.
       iret = nf90_enddef(ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to take LAKETOUT file out of definition mode')
+<<<<<<< HEAD
    
       ! Place lake ID, elevation, lat, and lon values into appropriate
       ! variables. 
+=======
+
+      ! Place lake ID, elevation, lat, and lon values into appropriate
+      ! variables.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             ! We are outputing this variable.
             ! Convert reals to integer. If we are on time 0, make sure we don't
+<<<<<<< HEAD
             ! need to fill in with NDV values. 
+=======
+            ! need to fill in with NDV values.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(minSinceSim .eq. 0 .and. fileMeta%timeZeroFlag(iTmp) .eq. 0) then
                varOutInt(:) = fileMeta%fillComp(iTmp)
                varOutReal(iTmp,:) = fileMeta%fillReal(iTmp)
@@ -2768,7 +3872,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to find variable ID for var: '//trim(fileMeta%varNames(iTmp)))
 
             ! Put data into NetCDF file
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_var(ftn,varId,varOutInt)
             else
                iret = nf90_put_var(ftn,varId,varOutReal(iTmp,:))
@@ -2783,6 +3891,29 @@ subroutine output_lakes_NWM(domainId,iGrid)
       iret = nf90_put_var(ftn,varId,g_lakeidOut)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into feature_id output variable.')
 
+<<<<<<< HEAD
+=======
+      ! Place reservoir_type values into the NetCDF file
+      iret = nf90_inq_varid(ftn,'reservoir_type',varId)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to locate reservoir_type in NetCDF file.')
+      iret = nf90_put_var(ftn,varId,g_lakeTypeOut)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into reservoir_type output variable.')
+
+      ! Place reservoir_assimilated_value values into the NetCDF file
+      iret = nf90_inq_varid(ftn,'reservoir_assimilated_value',varId)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to locate reservoir_assimilated_value in NetCDF file.')
+      iret = nf90_put_var(ftn,varId,g_lake_assimilated_valueOut)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into reservoir_assimilated_value output variable.')
+
+      ! Place reservoir_assimilated_source_file values into the NetCDF file
+      !iret = nf90_inq_varid(ftn,'reservoir_assimilated_source_file',varId)
+      !call nwmCheck(diagFlag,iret,'ERROR: Unable to locate reservoir_assimilated_source_file in NetCDF file.')
+      !do iTmp = 1, gSize
+      !   iret = nf90_put_var(ftn,varId,trim(g_lake_assimilated_source_fileOut(iTmp)), start=[1,iTmp])
+      !   call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into reservoir_assimilated_source_file output variable.')
+      !end do
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! Place lake metadata into NetCDF file
       iret = nf90_inq_varid(ftn,'water_sfc_elev',varId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to locate water_sfc_elev in NetCDF file.')
@@ -2791,7 +3922,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
 
       iret = nf90_inq_varid(ftn,'latitude',varId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to locate latitude in NetCDF file.')
+<<<<<<< HEAD
       iret = nf90_put_var(ftn,varId,g_lakeLatOut)   
+=======
+      iret = nf90_put_var(ftn,varId,g_lakeLatOut)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into latitude output variable.')
 
       iret = nf90_inq_varid(ftn,'longitude',varId)
@@ -2813,7 +3948,11 @@ subroutine output_lakes_NWM(domainId,iGrid)
       iret = nf90_close(ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to close LAKE file.')
 
+<<<<<<< HEAD
    endif ! End if we are on master processor. 
+=======
+   endif ! End if we are on master processor.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Sync all processes up.
    if(mppFlag .eq. 1) then
@@ -2833,6 +3972,13 @@ subroutine output_lakes_NWM(domainId,iGrid)
    deallocate(g_lakeInflow)
    deallocate(g_lakeOutflow)
    deallocate(g_lakeid)
+<<<<<<< HEAD
+=======
+   deallocate(g_lakeType)
+   deallocate(g_lake_assimilated_value)
+   deallocate(g_lake_assimilated_source_file)
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if(myId .eq. 0) then
       deallocate(g_lakeLonOut)
       deallocate(g_lakeLatOut)
@@ -2840,6 +3986,12 @@ subroutine output_lakes_NWM(domainId,iGrid)
       deallocate(g_lakeInflowOut)
       deallocate(g_lakeOutflowOut)
       deallocate(g_lakeidOut)
+<<<<<<< HEAD
+=======
+      deallocate(g_lakeTypeOut)
+      deallocate(g_lake_assimilated_valueOut)
+      deallocate(g_lake_assimilated_source_fileOut)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       deallocate(chIndArray)
    endif
 
@@ -2858,12 +4010,20 @@ end subroutine output_lakes_NWM
 ! Input Files: None.
 ! Output Files: None.
 ! Condition codes: None.
+<<<<<<< HEAD
 ! 
+=======
+!
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! User controllable options: None.
 
 subroutine output_chrtout_grd_NWM(domainId,iGrid)
    use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist, only: nlst_rt
+=======
+   use config_base, only: nlst
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use Module_Date_utilities_rt, only: geth_newdate, geth_idts
    use module_NWM_io_dict
    use netcdf
@@ -2873,7 +4033,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
 #endif
    implicit none
 
+<<<<<<< HEAD
    ! subroutine arguments 
+=======
+   ! subroutine arguments
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer, intent(in) :: domainId
    integer, intent(in) :: iGrid
 
@@ -2886,6 +4050,7 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
    integer :: minSinceEpoch1 ! Number of minutes from EPOCH to the beginning of the model simulation.
    integer :: minSinceEpoch ! Number of minutes from EPOCH to the current model valid time.
    character(len=16) :: epochDate ! EPOCH represented as a string.
+<<<<<<< HEAD
    character(len=16) :: startDate ! Start of model simulation, represented as a string. 
    character(len=256) :: output_flnm ! CHRTOUT_GRID filename
    integer :: iret ! NetCDF return statuses
@@ -2893,6 +4058,15 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
    character(len=256) :: validTime ! Global attribute time string
    character(len=256) :: initTime ! Global attribute time string
    integer :: dimId(4) ! Dimension ID values created during NetCDF created. 
+=======
+   character(len=16) :: startDate ! Start of model simulation, represented as a string.
+   character(len=256) :: output_flnm ! CHRTOUT_GRID filename
+   integer :: iret ! NetCDF return statuses
+   integer :: ftn ! NetCDF file handle
+   character(len=256) :: validTime ! Global attribute time string
+   character(len=256) :: initTime ! Global attribute time string
+   integer :: dimId(4) ! Dimension ID values created during NetCDF created.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: varId ! Variable ID value created as NetCDF variables are created and populated.
    integer :: timeId ! Dimension ID for the time dimension.
    integer :: refTimeId ! Dimension ID for the reference time dimension.
@@ -2918,7 +4092,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
 
    character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
 
+<<<<<<< HEAD
 ! Establish macro variables to hlep guide this subroutine. 
+=======
+! Establish macro variables to hlep guide this subroutine.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef MPP_LAND
    mppFlag = 1
 #else
@@ -2930,13 +4108,22 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
 #else
    diagFlag = 0
 #endif
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! We will print a warning to the user if they request CHRTOUT_GRID under
    ! reach-based routing. Currently, this is not supported as we don't have a
    ! way to map reaches to individual cells on the channel grid in the Fulldom
    ! file.
+<<<<<<< HEAD
    if(nlst_rt(domainId)%CHRTOUT_GRID .eq. 1) then
       if(nlst_rt(domainId)%channel_option .ne. 3) then
+=======
+   if(nlst(domainId)%CHRTOUT_GRID .eq. 1) then
+      if(nlst(domainId)%channel_option .ne. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call postDiagMsg(diagFlag,'WARNING: CHRTOUT_GRID only available for gridded channel routing, not reach-based routing.')
          return
       endif
@@ -2946,15 +4133,24 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
+<<<<<<< HEAD
       call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+=======
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
       myId = 0
    endif
 
+<<<<<<< HEAD
    ! Some sanity checking here. 
    if(nlst_rt(domainId)%CHRTOUT_GRID .eq. 0) then
+=======
+   ! Some sanity checking here.
+   if(nlst(domainId)%CHRTOUT_GRID .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! No output requested here. Return to the parent calling program.
       return
    endif
@@ -2977,7 +4173,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
       allocate(tmpFlowReal(1,1))
    endif
    ! Allocate local streamflow array. We need to do a check to
+<<<<<<< HEAD
    ! for lake_type 2. However, we cannot set the values in the global array 
+=======
+   ! for lake_type 2. However, we cannot set the values in the global array
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! to missing as this causes the model to crash.
    allocate(strFlowLocal(RT_DOMAIN(domainId)%NLINKS))
    strFlowLocal = RT_DOMAIN(domainId)%QLINK(:,1)
@@ -2991,7 +4191,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
          endif
       end do
    endif
+<<<<<<< HEAD
    if(nlst_rt(domainId)%channel_option .eq. 3) then
+=======
+   if(nlst(domainId)%channel_option .eq. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call write_chanel_real(strFlowLocal,RT_DOMAIN(domainId)%map_l2g,gNumLnks,lNumLnks,g_qlink(:,1))
       call write_chanel_real(RT_DOMAIN(domainId)%qlink(:,2),RT_DOMAIN(domainId)%map_l2g,gNumLnks,lNumLnks,g_qlink(:,2))
    endif
@@ -3001,22 +4205,35 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
    ! for the output file.
    call initChrtGrdDict(fileMeta,myId,diagFlag)
 
+<<<<<<< HEAD
    ! For now, we will default to outputting all variables until further notice. 
+=======
+   ! For now, we will default to outputting all variables until further notice.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    fileMeta%outFlag(:) = [1]
 
    ! Calculate datetime information.
    ! First compose strings of EPOCH and simulation start date.
    epochDate = trim("1970-01-01 00:00")
+<<<<<<< HEAD
    startDate = trim(nlst_rt(domainId)%startdate(1:4)//"-"//&
                     nlst_rt(domainId)%startdate(6:7)//&
                     &"-"//nlst_rt(domainId)%startdate(9:10)//" "//&
                     nlst_rt(domainId)%startdate(12:13)//":"//&
                     nlst_rt(domainId)%startdate(15:16))
+=======
+   startDate = trim(nlst(domainId)%startdate(1:4)//"-"//&
+                    nlst(domainId)%startdate(6:7)//&
+                    &"-"//nlst(domainId)%startdate(9:10)//" "//&
+                    nlst(domainId)%startdate(12:13)//":"//&
+                    nlst(domainId)%startdate(15:16))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Second, utilize NoahMP date utilities to calculate the number of minutes
    ! from EPOCH to the beginning of the model simulation.
    call geth_idts(startDate,epochDate,minSinceEpoch1)
    ! Third, calculate the number of minutes since the beginning of the
    ! simulation.
+<<<<<<< HEAD
    minSinceSim = int(nlst_rt(1)%out_dt*(rt_domain(1)%out_counts-1))
    ! Fourth, calculate the total number of minutes from EPOCH to the current
    ! model time step.
@@ -3032,11 +4249,31 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
                   nlst_rt(domainId)%startdate(12:13)//&
                   &':00:00')
+=======
+   minSinceSim = int(nlst(1)%out_dt*(rt_domain(1)%out_counts-1))
+   ! Fourth, calculate the total number of minutes from EPOCH to the current
+   ! model time step.
+   minSinceEpoch = minSinceEpoch1 + minSinceSim
+   ! Fifth, compose global attribute time strings that will be used.
+   validTime = trim(nlst(domainId)%olddate(1:4)//'-'//&
+                    nlst(domainId)%olddate(6:7)//'-'//&
+                    nlst(domainId)%olddate(9:10)//'_'//&
+                    nlst(domainId)%olddate(12:13)//':'//&
+                    nlst(domainId)%olddate(15:16)//&
+                    &':00')
+   initTime = trim(nlst(domainId)%startdate(1:4)//'-'//&
+                  nlst(domainId)%startdate(6:7)//'-'//&
+                  nlst(domainId)%startdate(9:10)//'_'//&
+                  nlst(domainId)%startdate(12:13)//':'//&
+                  nlst(domainId)%startdate(15:16)//&
+                  &':00')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
 
    ! calculate the minimum and maximum time
+<<<<<<< HEAD
    fileMeta%timeValidMin = minSinceEpoch1 + nlst_rt(1)%out_dt 
    fileMeta%timeValidMax = minSinceEpoch1 + int(nlst_rt(1)%khour * 60/nlst_rt(1)%out_dt) * nlst_rt(1)%out_dt
 
@@ -3059,6 +4296,32 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create RT_DOMAIN NetCDF file.')
   
       ! Write global attributes
+=======
+   fileMeta%timeValidMin = minSinceEpoch1 + nlst(1)%out_dt
+   fileMeta%timeValidMax = minSinceEpoch1 + int(nlst(1)%khour * 60/nlst(1)%out_dt) * nlst(1)%out_dt
+
+   ! calculate total_valid_time
+   fileMeta%totalValidTime = int(nlst(1)%khour * 60 / nlst(1)%out_dt)  ! # number of valid time (#of output files)
+
+   ! Create output filename
+   write(output_flnm, '(A12,".CHRTOUT_GRID",I1)') nlst(domainId)%olddate(1:4)//&
+                       nlst(domainId)%olddate(6:7)//&
+                       nlst(domainId)%olddate(9:10)//&
+                       nlst(domainId)%olddate(12:13)//&
+                       nlst(domainId)%olddate(15:16), igrid
+
+   ! call the GetModelConfigType function
+   modelConfigType = GetModelConfigType(nlst(1)%io_config_outputs)
+
+   if(myId .eq. 0) then
+      ! Create output NetCDF file for writing.
+      iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create RT_DOMAIN NetCDF file.')
+
+      ! Write global attributes
+      iret = nf90_put_att(ftn,NF90_GLOBAL,'TITLE',trim(fileMeta%title))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create TITLE attribute')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,'model_initialization_time',trim(fileMeta%initTime))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place model init time attribute into RT_DOMAIN file.')
       iret = nf90_put_att(ftn,NF90_GLOBAL,'model_output_valid_time',trim(fileMeta%validTime))
@@ -3069,7 +4332,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place CF conventions attribute into RT_DOMAIN file.')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+<<<<<<< HEAD
 #ifdef NCEP_WCOSS
+=======
+#ifdef NWM_META
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
 #endif
@@ -3139,7 +4406,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
       end do
 
       ! Define compression for meta-variables only if io_form_outputs is set to 1.
+<<<<<<< HEAD
       if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+      if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_def_var_deflate(ftn,timeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for time.')
          iret = nf90_def_var_deflate(ftn,refTimeId,0,1,2)
@@ -3184,16 +4455,27 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
          endif
       end do
       ! Define compression for meta-variables only if io_form_outputs is set to 1.
+<<<<<<< HEAD
       if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+      if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_def_var_deflate(ftn,indexVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for index.')
       endif
 
       ! Loop through all possible variables and create them, along with their
+<<<<<<< HEAD
       ! metadata attributes. 
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+      ! metadata attributes.
+      do iTmp=1,fileMeta%numVars
+         if(fileMeta%outFlag(iTmp) .eq. 1) then
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_int,(/dimId(2),dimId(3),dimId(1)/),varId)
             else
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_float,(/dimId(2),dimId(3),dimId(1)/),varId)
@@ -3214,7 +4496,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
             ! determined that the benefit wasn't worth the extra time spent
             ! writing output.
             ! Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var_deflate(ftn,varId,0,1,2)
                call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression for: '//trim(fileMeta%varNames(iTmp)))
             endif
@@ -3226,7 +4512,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into variable '//trim(fileMeta%varNames(iTmp)))
             iret = nf90_put_att(ftn,varId,'grid_mapping','crs')
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place grid_mapping attribute into variable: '//trim(fileMeta%varNames(iTmp)))
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_att(ftn,varId,'_FillValue',fileMeta%fillComp(iTmp))
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place Fill value attribute into variable '//trim(fileMeta%varNames(iTmp)))
                iret = nf90_put_att(ftn,varId,'missing_value',fileMeta%missingComp(iTmp))
@@ -3260,11 +4550,19 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to take RT_DOMAIN file out of definition mode')
 
       ! Read in coordinates from FullDom file. These will be placed into the
+<<<<<<< HEAD
       ! output file coordinate variables. 
       allocate(xCoord(RT_DOMAIN(domainId)%g_ixrt))
       allocate(yCoord(RT_DOMAIN(domainId)%g_jxrt))
       allocate(yCoord2(RT_DOMAIN(domainId)%g_jxrt))
       iret = nf90_open(trim(nlst_rt(domainId)%geo_finegrid_flnm),NF90_NOWRITE,ncid=ftnGeo)
+=======
+      ! output file coordinate variables.
+      allocate(xCoord(RT_DOMAIN(domainId)%g_ixrt))
+      allocate(yCoord(RT_DOMAIN(domainId)%g_jxrt))
+      allocate(yCoord2(RT_DOMAIN(domainId)%g_jxrt))
+      iret = nf90_open(trim(nlst(domainId)%geo_finegrid_flnm),NF90_NOWRITE,ncid=ftnGeo)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,iret,'ERROR: Unable to open FullDom file')
       iret = nf90_inq_varid(ftnGeo,'x',geoXVarId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to find x coordinate in FullDom file')
@@ -3277,7 +4575,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
       iret = nf90_close(ftnGeo)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to close geoGrid file.')
 
+<<<<<<< HEAD
       ! Reverse Y coordinates. They are read in reverse. 
+=======
+      ! Reverse Y coordinates. They are read in reverse.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       jTmp2 = 0
       do jTmp = RT_DOMAIN(domainId)%g_jxrt,1,-1
          jTmp2 = jTmp2 + 1
@@ -3330,7 +4632,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
       ! Place streamflow grid into output file.
       iret = nf90_inq_varid(ftn,'streamflow',varId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to locate streamflow variable.')
+<<<<<<< HEAD
       if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+      if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_put_var(ftn,varId,tmpFlow,(/1,1,1/),(/RT_DOMAIN(domainId)%g_ixrt,RT_DOMAIN(domainId)%g_jxrt,1/))
       else
          iret = nf90_put_var(ftn,varId,tmpFlowReal,(/1,1,1/),(/RT_DOMAIN(domainId)%g_ixrt,RT_DOMAIN(domainId)%g_jxrt,1/))
@@ -3341,7 +4647,11 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
 
 ! Synce up processes.
    if(mppFlag .eq. 1) then
+<<<<<<< HEAD
 #ifdef MPP_LAND 
+=======
+#ifdef MPP_LAND
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call mpp_land_sync()
 #endif
    endif
@@ -3373,6 +4683,7 @@ end subroutine output_chrtout_grd_NWM
 
 subroutine output_lsmOut_NWM(domainId)
   use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist, only: nlst_rt
    use Module_Date_utilities_rt, only: geth_newdate, geth_idts
    use module_NWM_io_dict
@@ -3381,6 +4692,16 @@ subroutine output_lsmOut_NWM(domainId)
      use module_mpp_land
 #endif
    implicit none
+=======
+  use config_base, only: nlst
+  use Module_Date_utilities_rt, only: geth_newdate, geth_idts
+  use module_NWM_io_dict
+  use netcdf
+#ifdef MPP_LAND
+  use module_mpp_land
+#endif
+  implicit none
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Subroutine arguments
    integer, intent(in) :: domainId
@@ -3393,7 +4714,11 @@ subroutine output_lsmOut_NWM(domainId)
    integer :: minSinceEpoch1 ! Number of minutes from EPOCH to the beginning of the model simulation.
    integer :: minSinceEpoch ! Number of minutes from EPOCH to the current model valid time.
    character(len=16) :: epochDate ! EPOCH represented as a string.
+<<<<<<< HEAD
    character(len=16) :: startDateTmp ! Start of model simulation, represented as a string. 
+=======
+   character(len=16) :: startDateTmp ! Start of model simulation, represented as a string.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    character(len=256) :: validTime ! Global attribute time string
    character(len=256) :: initTime ! Global attribute time string
    integer :: mppFlag, diagFlag
@@ -3431,7 +4756,11 @@ subroutine output_lsmOut_NWM(domainId)
    diagFlag = 0
 #endif
 
+<<<<<<< HEAD
    ! Sync up processes. 
+=======
+   ! Sync up processes.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
       call mpp_land_sync()
@@ -3442,15 +4771,24 @@ subroutine output_lsmOut_NWM(domainId)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
+<<<<<<< HEAD
       call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+=======
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
       myId = 0
    endif
 
+<<<<<<< HEAD
    ! Some sanity checking here. 
    if(nlst_rt(domainId)%LSMOUT_DOMAIN .eq. 0) then
+=======
+   ! Some sanity checking here.
+   if(nlst(domainId)%LSMOUT_DOMAIN .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! No output requested here. Return to the parent calling program.
       return
    endif
@@ -3464,16 +4802,25 @@ subroutine output_lsmOut_NWM(domainId)
    ! Calculate necessary datetime information that will go into the output file.
    ! First compose strings of EPOCH and simulation start date.
    epochDate = trim("1970-01-01 00:00")
+<<<<<<< HEAD
    startDateTmp = trim(nlst_rt(1)%startdate(1:4)//"-"//&
                        nlst_rt(1)%startdate(6:7)//&
                        &"-"//nlst_rt(1)%startdate(9:10)//" "//&
                        nlst_rt(1)%startdate(12:13)//":"//&
                        nlst_rt(1)%startdate(15:16))
+=======
+   startDateTmp = trim(nlst(1)%startdate(1:4)//"-"//&
+                       nlst(1)%startdate(6:7)//&
+                       &"-"//nlst(1)%startdate(9:10)//" "//&
+                       nlst(1)%startdate(12:13)//":"//&
+                       nlst(1)%startdate(15:16))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Second, utilize NoahMP date utilities to calculate the number of minutes
    ! from EPOCH to the beginning of the model simulation.
    call geth_idts(startDateTmp,epochDate,minSinceEpoch1)
    ! Third, calculate the number of minutes since the beginning of the
    ! simulation.
+<<<<<<< HEAD
    minSinceSim = int(nlst_rt(1)%out_dt*(rt_domain(1)%out_counts-1))
    ! Fourth, calculate the total number of minutes from EPOCH to the current
    ! model time step.
@@ -3489,16 +4836,43 @@ subroutine output_lsmOut_NWM(domainId)
                   nlst_rt(1)%startdate(9:10)//'_'//&
                   nlst_rt(1)%startdate(12:13)//&
                   &':00:00')
+=======
+   minSinceSim = int(nlst(1)%out_dt*(rt_domain(1)%out_counts-1))
+   ! Fourth, calculate the total number of minutes from EPOCH to the current
+   ! model time step.
+   minSinceEpoch = minSinceEpoch1 + minSinceSim
+   ! Fifth, compose global attribute time strings that will be used.
+   validTime = trim(nlst(1)%olddate(1:4)//'-'//&
+                    nlst(1)%olddate(6:7)//'-'//&
+                    nlst(1)%olddate(9:10)//'_'//&
+                    nlst(1)%olddate(12:13)//':'//&
+                    nlst(1)%olddate(15:16)//&
+                    &':00')
+   initTime = trim(nlst(1)%startdate(1:4)//'-'//&
+                  nlst(1)%startdate(6:7)//'-'//&
+                  nlst(1)%startdate(9:10)//'_'//&
+                  nlst(1)%startdate(12:13)//':'//&
+                  nlst(1)%startdate(15:16)//&
+                  &':00')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
 
    ! calculate the minimum and maximum time
+<<<<<<< HEAD
    fileMeta%timeValidMin = minSinceEpoch1 + nlst_rt(1)%out_dt
    fileMeta%timeValidMax = minSinceEpoch1 + int(nlst_rt(1)%khour * 60/nlst_rt(1)%out_dt) * nlst_rt(1)%out_dt
 
    ! calculate total_valid_time
    fileMeta%totalValidTime = int(nlst_rt(1)%khour * 60 / nlst_rt(1)%out_dt)  ! # number of valid time (#of output files)
+=======
+   fileMeta%timeValidMin = minSinceEpoch1 + nlst(1)%out_dt
+   fileMeta%timeValidMax = minSinceEpoch1 + int(nlst(1)%khour * 60/nlst(1)%out_dt) * nlst(1)%out_dt
+
+   ! calculate total_valid_time
+   fileMeta%totalValidTime = int(nlst(1)%khour * 60 / nlst(1)%out_dt)  ! # number of valid time (#of output files)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! For now, will always default to outputting all available
    ! variables since the nature of this output file is
@@ -3506,7 +4880,11 @@ subroutine output_lsmOut_NWM(domainId)
    fileMeta%outFlag(:) = [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 
    ! call the GetModelConfigType function
+<<<<<<< HEAD
    modelConfigType = GetModelConfigType(nlst_rt(1)%io_config_outputs)
+=======
+   modelConfigType = GetModelConfigType(nlst(1)%io_config_outputs)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Sync all processes up.
    if(mppFlag .eq. 1) then
@@ -3517,16 +4895,25 @@ subroutine output_lsmOut_NWM(domainId)
 
    if(myId .eq. 0) then
       ! We are on the I/O node. Create output file.
+<<<<<<< HEAD
       write(output_flnm,'(A12,".LSMOUT_DOMAIN",I1)') nlst_rt(domainId)%olddate(1:4)//&
             nlst_rt(domainId)%olddate(6:7)//nlst_rt(domainId)%olddate(9:10)//&
             nlst_rt(domainId)%olddate(12:13)//nlst_rt(domainId)%olddate(15:16)//  &
             nlst_rt(domainId)%hgrid
   
+=======
+      write(output_flnm,'(A12,".LSMOUT_DOMAIN",I1)') nlst(domainId)%olddate(1:4)//&
+            nlst(domainId)%olddate(6:7)//nlst(domainId)%olddate(9:10)//&
+            nlst(domainId)%olddate(12:13)//nlst(domainId)%olddate(15:16),&
+            nlst(domainId)%igrid
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create LSMOUT NetCDF file.')
 
       ! Write global attributes
       iret = nf90_put_att(ftn,NF90_GLOBAL,'TITLE',trim(fileMeta%title))
+<<<<<<< HEAD
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place TITLE attribute into LDASOUT file.')
       iret = nf90_put_att(ftn,NF90_GLOBAL,'model_initialization_time',trim(fileMeta%initTime))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place model init time attribute into LDASOUT file.')
@@ -3539,6 +4926,20 @@ subroutine output_lsmOut_NWM(domainId)
       iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
 #ifdef NCEP_WCOSS
+=======
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to place TITLE attribute into LSMOUT file.')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,'model_initialization_time',trim(fileMeta%initTime))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to place model init time attribute into LSMOUT file.')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,'model_output_valid_time',trim(fileMeta%validTime))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to place model output time attribute into LSMOUT file.')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,'modle_total_valid_time',fileMeta%totalValidTime)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to place model total valid time attribute into LSMOUT file.')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,'Conventions',trim(fileMeta%conventions))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to place CF conventions attribute into LSMOUT file.')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+#ifdef NWM_META
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
 #endif
@@ -3609,7 +5010,11 @@ subroutine output_lsmOut_NWM(domainId)
 
       ! Define compression for meta-variables. Only compress if io_form_outputs is set
       ! to 1.
+<<<<<<< HEAD
       if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+      if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_def_var_deflate(ftn,timeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for time.')
          iret = nf90_def_var_deflate(ftn,refTimeId,0,1,2)
@@ -3635,7 +5040,11 @@ subroutine output_lsmOut_NWM(domainId)
       end do
 
       ! Loop through all possible variables and create them, along with their
+<<<<<<< HEAD
       ! metadata attributes. 
+=======
+      ! metadata attributes.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             !iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_int,(/dimId(2),dimId(3),dimId(1)/),varId)
@@ -3651,7 +5060,11 @@ subroutine output_lsmOut_NWM(domainId)
             ! filter off for now. Kelley Eicher did some testing with this and
             ! determined that the benefit wasn't worth the extra time spent writing output.
             ! Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var_deflate(ftn,varId,0,1,2)
                call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression for: '//trim(fileMeta%varNames(iTmp)))
             endif
@@ -3682,11 +5095,19 @@ subroutine output_lsmOut_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to take LSMOUT file out of definition mode')
 
       ! Read in coordinates from GeoGrid file. These will be placed into the
+<<<<<<< HEAD
       ! output file coordinate variables. 
       allocate(xCoord(global_nx))
       allocate(yCoord(global_ny))
       allocate(yCoord2(global_ny))
       iret = nf90_open(trim(nlst_rt(1)%land_spatial_meta_flnm),NF90_NOWRITE,ncid=ftnGeo)
+=======
+      ! output file coordinate variables.
+      allocate(xCoord(global_nx))
+      allocate(yCoord(global_ny))
+      allocate(yCoord2(global_ny))
+      iret = nf90_open(trim(nlst(1)%land_spatial_meta_flnm),NF90_NOWRITE,ncid=ftnGeo)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       if(iret .ne. 0) then
          ! Spatial metadata file not found for land grid. Warn the user no
          ! file was found, and set x/y coordinates to -9999.0
@@ -3705,7 +5126,11 @@ subroutine output_lsmOut_NWM(domainId)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to extract y coordinate from geoGrid file')
          iret = nf90_close(ftnGeo)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to close geoGrid file.')
+<<<<<<< HEAD
          ! Reverse Y coordinates. They are read in reverse. 
+=======
+         ! Reverse Y coordinates. They are read in reverse.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          jTmp2 = 0
          do jTmp = global_ny,1,-1
             jTmp2 = jTmp2 + 1
@@ -3767,7 +5192,11 @@ subroutine output_lsmOut_NWM(domainId)
          endif
 
          ! Loop through the local array and convert floating point values
+<<<<<<< HEAD
          ! to integer via scale_factor/add_offset. If the pixel value 
+=======
+         ! to integer via scale_factor/add_offset. If the pixel value
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          ! falls within a water class value, leave as ndv.
          do iTmp2 = 1,rt_domain(domainId)%ix
             do jTmp2 = 1,rt_domain(domainId)%jx
@@ -3807,7 +5236,11 @@ subroutine output_lsmOut_NWM(domainId)
                localRealTmp(iTmp2,jTmp2) = varRealTmp
 
                ! If we are on time 0, make sure we don't need to fill in the
+<<<<<<< HEAD
                ! grid with NDV values. 
+=======
+               ! grid with NDV values.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                !if(minSinceSim .eq. 0 .and. fileMeta%timeZeroFlag(iTmp) .eq. 0) then
                !   localCompTmp(iTmp2,jTmp2) = fileMeta%fillComp(iTmp)
                !else
@@ -3872,7 +5305,11 @@ end subroutine output_lsmOut_NWM
 ! defined in the Fulldom file.
 ! History Log:
 ! 9/18/17 -Created, LRK.
+<<<<<<< HEAD
 ! Usage: 
+=======
+! Usage:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Parameters: None.
 ! Input Files: None.
 ! Output Files: None.
@@ -3881,7 +5318,11 @@ end subroutine output_lsmOut_NWM
 ! User controllable options: None.
 subroutine output_frxstPts(domainId)
    use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist, only: nlst_rt
+=======
+   use config_base, only: nlst
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use Module_Date_utilities_rt, only: geth_newdate, geth_idts
    use module_NWM_io_dict
 #ifdef MPP_LAND
@@ -3890,7 +5331,11 @@ subroutine output_frxstPts(domainId)
 #endif
 implicit none
 
+<<<<<<< HEAD
    ! Pass in "did" value from hydro driving program. 
+=======
+   ! Pass in "did" value from hydro driving program.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer, intent(in) :: domainId
 
    ! Local variables
@@ -3916,7 +5361,11 @@ implicit none
    diagFlag = 0
 #endif
 
+<<<<<<< HEAD
    if(nlst_rt(domainId)%frxst_pts_out .eq. 0) then
+=======
+   if(nlst(domainId)%frxst_pts_out .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! No output requested here, return to parent calling program/subroutine.
       return
    endif
@@ -3925,7 +5374,11 @@ implicit none
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
+<<<<<<< HEAD
       call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+=======
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -3933,6 +5386,7 @@ implicit none
    endif
 
    ! Calculate datetime information
+<<<<<<< HEAD
    seconds_since = int(nlst_rt(1)%out_dt*60*(rt_domain(1)%out_counts-1))
    
    ! First step is to allocate a global array of index values. This "index"
@@ -3941,6 +5395,16 @@ implicit none
    ! arrays. 
    if(mppFlag .eq. 1) then
       if(nlst_rt(domainId)%channel_option .ne. 3) then
+=======
+   seconds_since = int(nlst(1)%out_dt*60*(rt_domain(1)%out_counts-1))
+
+   ! First step is to allocate a global array of index values. This "index"
+   ! array will be used to subset after collection has taken place. Also,
+   ! the sum of this array will be used to determine the size of the output
+   ! arrays.
+   if(mppFlag .eq. 1) then
+      if(nlst(domainId)%channel_option .ne. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          gSize = rt_domain(domainId)%gnlinksl
       else
          gSize = rt_domain(domainId)%gnlinks
@@ -3975,7 +5439,11 @@ implicit none
       g_outInd = 0
 
       ! Allocate local streamflow arrays. We need to do a check to
+<<<<<<< HEAD
       ! for lake_type 2. However, we cannot set the values in the global array 
+=======
+      ! for lake_type 2. However, we cannot set the values in the global array
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! to missing as this causes the model to crash.
       allocate(strFlowLocal(RT_DOMAIN(domainId)%NLINKS))
       allocate(frxstPtsLocal(RT_DOMAIN(domainId)%NLINKS))
@@ -4003,7 +5471,11 @@ implicit none
       endif
 
       ! Collect arrays from various processors
+<<<<<<< HEAD
       if(nlst_rt(domainId)%channel_option .eq. 3) then
+=======
+      if(nlst(domainId)%channel_option .eq. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call write_chanel_int(frxstPtsLocal,rt_domain(domainId)%map_l2g,gSize,rt_domain(domainId)%nlinks,g_STRMFRXSTPTS)
          call write_chanel_real(strFlowLocal,rt_domain(domainId)%map_l2g,gSize,rt_domain(domainId)%nlinks,g_qlink(:,1))
          call write_chanel_real(RT_DOMAIN(domainId)%QLINK(:,2),rt_domain(domainId)%map_l2g,gSize,rt_domain(domainId)%nlinks,g_qlink(:,2))
@@ -4018,7 +5490,11 @@ implicit none
          call ReachLS_write_io(RT_DOMAIN(domainId)%CHLON,g_chlon)
          call ReachLS_write_io(RT_DOMAIN(domainId)%HLINK,g_hlink)
       endif
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       deallocate(strFlowLocal)
       deallocate(frxstPtsLocal)
 
@@ -4043,6 +5519,7 @@ implicit none
       g_qlink = RT_DOMAIN(domainId)%QLINK
       g_linkid = RT_DOMAIN(domainId)%linkid
    endif
+<<<<<<< HEAD
       
    if(myId .eq. 0) then
       ! Set index values to 1 where we have forecast points. 
@@ -4053,6 +5530,18 @@ implicit none
       if(nlst_rt(domainId)%channel_option .ne. 3) then
          ! Check to see if we have any gages that need to be added for reach-based
          ! routing. 
+=======
+
+   if(myId .eq. 0) then
+      ! Set index values to 1 where we have forecast points.
+      if(nlst(domainId)%channel_option .eq. 3) then
+         where(g_STRMFRXSTPTS .ne. -9999) g_outInd = 1
+      endif
+
+      if(nlst(domainId)%channel_option .ne. 3) then
+         ! Check to see if we have any gages that need to be added for reach-based
+         ! routing.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call checkRouteGages(diagFlag,gSize,g_outInd)
       endif
 
@@ -4070,7 +5559,11 @@ implicit none
          return
       endif
 
+<<<<<<< HEAD
       ! Allocate output arrays based on number of output forecast points. 
+=======
+      ! Allocate output arrays based on number of output forecast points.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       allocate(g_STRMFRXSTPTSOut(numPtsOut))
       allocate(g_chlonOut(numPtsOut))
       allocate(g_chlatOut(numPtsOut))
@@ -4089,6 +5582,7 @@ implicit none
 
       ! Open the output file.
       open (unit=55,file='frxst_pts_out.txt',status='unknown',position='append')
+<<<<<<< HEAD
    
       ! Loop through forecast points and write output.
       do iTmp=1,numPtsOut
@@ -4098,28 +5592,55 @@ implicit none
 117         FORMAT(I8,",",A10,1X,A8,",",I12,",",F10.5,",",F8.5,",",F15.3,",",F18.3,",",F6.3)
             write(55,117) seconds_since, nlst_rt(domainId)%olddate(1:18),&
                           nlst_rt(domainId)%olddate(12:19),&
+=======
+
+      ! Loop through forecast points and write output.
+      do iTmp=1,numPtsOut
+         if(nlst(domainId)%channel_option .eq. 3) then
+            ! Instead of a gage ID, we are simply going to output the forecast
+            ! point number assigned during the pre-processing.
+117         FORMAT(I8,",",A10,1X,A8,",",I12,",",F10.5,",",F8.5,",",F15.3,",",F18.3,",",F6.3)
+            write(55,117) seconds_since, nlst(domainId)%olddate(1:18),&
+                          nlst(domainId)%olddate(12:19),&
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                           g_STRMFRXSTPTSOut(iTmp),g_chlonOut(iTmp),&
                           g_chlatOut(iTmp),g_qlinkOut(iTmp,1),&
                           g_qlinkOut(iTmp,1)*35.314666711511576,&
                           g_hlinkOut(iTmp)
          else
+<<<<<<< HEAD
             write(55,117) seconds_since, nlst_rt(domainId)%olddate(1:18),&
                           nlst_rt(domainId)%olddate(12:19),&
+=======
+            write(55,117) seconds_since, nlst(domainId)%olddate(1:18),&
+                          nlst(domainId)%olddate(12:19),&
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                           g_linkidOut(iTmp),g_chlonOut(iTmp),&
                           g_chlatOut(iTmp),g_qlinkOut(iTmp,1),&
                           g_qlinkOut(iTmp,1)*35.314666711511576,&
                           g_hlinkOut(iTmp)
          endif
+<<<<<<< HEAD
       end do  
 
       ! Close the output file
       close(55) 
+=======
+      end do
+
+      ! Close the output file
+      close(55)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    else
       allocate(g_STRMFRXSTPTSOut(1))
       allocate(g_chlonOut(1))
       allocate(g_chlatOut(1))
       allocate(g_hlinkOut(1))
+<<<<<<< HEAD
       allocate(g_qlinkOut(1,2)) 
+=======
+      allocate(g_qlinkOut(1,2))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       allocate(g_linkidOut(1))
    endif
 
@@ -4146,7 +5667,11 @@ end subroutine output_frxstPts
 ! Abstract: Output routine for channel points at predefined forecast points.
 ! History Log:
 ! 9/19/17 -Created, LRK.
+<<<<<<< HEAD
 ! Usage: 
+=======
+! Usage:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Parameters: None.
 ! Input Files: None.
 ! Output Files: None.
@@ -4155,7 +5680,11 @@ end subroutine output_frxstPts
 ! User controllable options: None.
 subroutine output_chanObs_NWM(domainId)
    use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist, only: nlst_rt
+=======
+   use config_base, only: nlst
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use Module_Date_utilities_rt, only: geth_newdate, geth_idts
    use module_NWM_io_dict
    use netcdf
@@ -4165,7 +5694,11 @@ subroutine output_chanObs_NWM(domainId)
 #endif
    implicit none
 
+<<<<<<< HEAD
    ! Pass in "did" value from hydro driving program. 
+=======
+   ! Pass in "did" value from hydro driving program.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer, intent(in) :: domainId
 
    ! Derived types.
@@ -4177,6 +5710,7 @@ subroutine output_chanObs_NWM(domainId)
    integer :: minSinceEpoch1 ! Number of minutes from EPOCH to the beginning of the model simulation.
    integer :: minSinceEpoch ! Number of minutes from EPOCH to the current model valid time.
    character(len=16) :: epochDate ! EPOCH represented as a string.
+<<<<<<< HEAD
    character(len=16) :: startDate ! Start of model simulation, represented as a string. 
    character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
    integer :: iret ! NetCDF return statuses
@@ -4184,6 +5718,15 @@ subroutine output_chanObs_NWM(domainId)
    character(len=256) :: validTime ! Global attribute time string
    character(len=256) :: initTime ! Global attribute time string
    integer :: dimId(3) ! Dimension ID values created during NetCDF created. 
+=======
+   character(len=16) :: startDate ! Start of model simulation, represented as a string.
+   character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
+   integer :: iret ! NetCDF return statuses
+   integer :: ftn ! NetCDF file handle
+   character(len=256) :: validTime ! Global attribute time string
+   character(len=256) :: initTime ! Global attribute time string
+   integer :: dimId(3) ! Dimension ID values created during NetCDF created.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: varId ! Variable ID value created as NetCDF variables are created and populated.
    integer :: timeId ! Dimension ID for the time dimension.
    integer :: refTimeId ! Dimension ID for the reference time dimension.
@@ -4192,6 +5735,7 @@ subroutine output_chanObs_NWM(domainId)
    integer :: latVarId, lonVarId ! Lat/lon NetCDF variable id values.
    integer :: varRange(2) ! Local storage of min/max valid range values.
    real :: varRangeReal(2) ! Local storage of min/max valid range values.
+<<<<<<< HEAD
    integer :: gSize ! Global size of channel point array. 
    integer :: numPtsOut ! Number of forecast/gage points
    integer :: iTmp, indTmp ! Misc integer values. 
@@ -4199,6 +5743,15 @@ subroutine output_chanObs_NWM(domainId)
    ! Establish local, allocatable arrays
    ! These are used to hold global output arrays, and global output arrays after
    ! sorting has taken place by ascending feature_id value. 
+=======
+   integer :: gSize ! Global size of channel point array.
+   integer :: numPtsOut ! Number of forecast/gage points
+   integer :: iTmp, indTmp ! Misc integer values.
+   integer :: ierr, myId ! MPI return status, process ID
+   ! Establish local, allocatable arrays
+   ! These are used to hold global output arrays, and global output arrays after
+   ! sorting has taken place by ascending feature_id value.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    real, allocatable, dimension(:) :: strFlowLocal,velocityLocal
    real, allocatable, dimension(:,:) :: g_qlink
    integer, allocatable, dimension(:) :: g_linkid,g_order
@@ -4207,14 +5760,22 @@ subroutine output_chanObs_NWM(domainId)
    integer, allocatable, dimension(:) :: g_orderOut,g_linkidOut
    real, allocatable, dimension(:) :: g_chlatOut,g_chlonOut,g_hlinkOut,g_zelevOut
    real, allocatable, dimension(:,:) :: varOutReal   ! Array holding output variables in real format
+<<<<<<< HEAD
    integer, allocatable, dimension(:) :: varOutInt ! Array holding output variables after 
+=======
+   integer, allocatable, dimension(:) :: varOutInt ! Array holding output variables after
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                      ! scale_factor/add_offset
                                                      ! have been applied.
    integer, allocatable, dimension(:) :: g_STRMFRXSTPTS, g_outInd
    integer, allocatable, dimension(:) :: frxstPtsLocal, g_STRMFRXSTPTSOut
    character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
 
+<<<<<<< HEAD
    ! Establish macro variables to hlep guide this subroutine. 
+=======
+   ! Establish macro variables to hlep guide this subroutine.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef WRF_HYDRO_NUDGING
    nudgeFlag = 1
 #else
@@ -4233,7 +5794,11 @@ subroutine output_chanObs_NWM(domainId)
    diagFlag = 0
 #endif
 
+<<<<<<< HEAD
    if(nlst_rt(domainId)%CHANOBS_DOMAIN .eq. 0) then
+=======
+   if(nlst(domainId)%CHANOBS_DOMAIN .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! No output requested here, return to parent calling program/subroutine.
       return
    endif
@@ -4242,7 +5807,11 @@ subroutine output_chanObs_NWM(domainId)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
+<<<<<<< HEAD
       call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+=======
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -4259,16 +5828,25 @@ subroutine output_chanObs_NWM(domainId)
    ! Calculate datetime information.
    ! First compose strings of EPOCH and simulation start date.
    epochDate = trim("1970-01-01 00:00")
+<<<<<<< HEAD
    startDate = trim(nlst_rt(domainId)%startdate(1:4)//"-"//&
                     nlst_rt(domainId)%startdate(6:7)//&
                     &"-"//nlst_rt(domainId)%startdate(9:10)//" "//&
                     nlst_rt(domainId)%startdate(12:13)//":"//&
                     nlst_rt(domainId)%startdate(15:16))
+=======
+   startDate = trim(nlst(domainId)%startdate(1:4)//"-"//&
+                    nlst(domainId)%startdate(6:7)//&
+                    &"-"//nlst(domainId)%startdate(9:10)//" "//&
+                    nlst(domainId)%startdate(12:13)//":"//&
+                    nlst(domainId)%startdate(15:16))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Second, utilize NoahMP date utilities to calculate the number of minutes
    ! from EPOCH to the beginning of the model simulation.
    call geth_idts(startDate,epochDate,minSinceEpoch1)
    ! Third, calculate the number of minutes since the beginning of the
    ! simulation.
+<<<<<<< HEAD
    minSinceSim = int(nlst_rt(1)%out_dt*(rt_domain(1)%out_counts-1))
    ! Fourth, calculate the total number of minutes from EPOCH to the current
    ! model time step.
@@ -4284,10 +5862,30 @@ subroutine output_chanObs_NWM(domainId)
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
                   nlst_rt(domainId)%startdate(12:13)//&
                   &':00:00') 
+=======
+   minSinceSim = int(nlst(1)%out_dt*(rt_domain(1)%out_counts-1))
+   ! Fourth, calculate the total number of minutes from EPOCH to the current
+   ! model time step.
+   minSinceEpoch = minSinceEpoch1 + minSinceSim
+   ! Fifth, compose global attribute time strings that will be used.
+   validTime = trim(nlst(domainId)%olddate(1:4)//'-'//&
+                    nlst(domainId)%olddate(6:7)//'-'//&
+                    nlst(domainId)%olddate(9:10)//'_'//&
+                    nlst(domainId)%olddate(12:13)//':'//&
+                    nlst(domainId)%olddate(15:16)//&
+                    &':00')
+   initTime = trim(nlst(domainId)%startdate(1:4)//'-'//&
+                  nlst(domainId)%startdate(6:7)//'-'//&
+                  nlst(domainId)%startdate(9:10)//'_'//&
+                  nlst(domainId)%startdate(12:13)//':'//&
+                  nlst(domainId)%startdate(15:16)//&
+                  &':00')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
 
+<<<<<<< HEAD
    ! calculate the minimum and maximum time 
    fileMeta%timeValidMin = minSinceEpoch1 + nlst_rt(1)%out_dt
    fileMeta%timeValidMax = minSinceEpoch1 + int(nlst_rt(1)%khour * 60/nlst_rt(1)%out_dt) * nlst_rt(1)%out_dt
@@ -4300,14 +5898,35 @@ subroutine output_chanObs_NWM(domainId)
          nlst_rt(domainId)%olddate(6:7)//nlst_rt(domainId)%olddate(9:10)//&
          nlst_rt(domainId)%olddate(12:13)//nlst_rt(domainId)%olddate(15:16),&
          nlst_rt(domainId)%igrid
+=======
+   ! calculate the minimum and maximum time
+   fileMeta%timeValidMin = minSinceEpoch1 + nlst(1)%out_dt
+   fileMeta%timeValidMax = minSinceEpoch1 + int(nlst(1)%khour * 60/nlst(1)%out_dt) * nlst(1)%out_dt
+
+   ! calculate total_valid_time
+   fileMeta%totalValidTime = int(nlst(1)%khour * 60 / nlst(1)%out_dt)  ! # number of valid time (#of output files)
+
+   ! Compose output file name.
+   write(output_flnm,'(A12,".CHANOBS_DOMAIN",I1)')nlst(domainId)%olddate(1:4)//&
+         nlst(domainId)%olddate(6:7)//nlst(domainId)%olddate(9:10)//&
+         nlst(domainId)%olddate(12:13)//nlst(domainId)%olddate(15:16),&
+         nlst(domainId)%igrid
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 
    ! First step is to allocate a global array of index values. This "index"
    ! array will be used to subset after collection has taken place. Also,
+<<<<<<< HEAD
    ! the sum of this array will be used to determine the size of the output 
    ! arrays. 
    if(mppFlag .eq. 1) then
       if(nlst_rt(domainId)%channel_option .ne. 3) then
+=======
+   ! the sum of this array will be used to determine the size of the output
+   ! arrays.
+   if(mppFlag .eq. 1) then
+      if(nlst(domainId)%channel_option .ne. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          gSize = rt_domain(domainId)%gnlinksl
       else
          gSize = rt_domain(domainId)%gnlinks
@@ -4346,7 +5965,11 @@ subroutine output_chanObs_NWM(domainId)
       g_outInd = 0
 
       ! Allocate local streamflow arrays. We need to do a check to
+<<<<<<< HEAD
       ! for lake_type 2. However, we cannot set the values in the global array 
+=======
+      ! for lake_type 2. However, we cannot set the values in the global array
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! to missing as this causes the model to crash.
       allocate(strFlowLocal(RT_DOMAIN(domainId)%NLINKS))
       allocate(frxstPtsLocal(RT_DOMAIN(domainId)%NLINKS))
@@ -4374,7 +5997,11 @@ subroutine output_chanObs_NWM(domainId)
       endif
 
       ! Collect arrays from various processors
+<<<<<<< HEAD
       if(nlst_rt(domainId)%channel_option .eq. 3) then
+=======
+      if(nlst(domainId)%channel_option .eq. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call write_chanel_int(frxstPtsLocal,rt_domain(domainId)%map_l2g,gSize,rt_domain(domainId)%nlinks,g_STRMFRXSTPTS)
          call write_chanel_real(strFlowLocal,rt_domain(domainId)%map_l2g,gSize,rt_domain(domainId)%nlinks,g_qlink(:,1))
          call write_chanel_real(RT_DOMAIN(domainId)%QLINK(:,2),rt_domain(domainId)%map_l2g,gSize,rt_domain(domainId)%nlinks,g_qlink(:,2))
@@ -4395,7 +6022,11 @@ subroutine output_chanObs_NWM(domainId)
          call ReachLS_write_io(RT_DOMAIN(domainId)%ZELEV,g_zelev)
          call ReachLS_write_io(RT_DOMAIN(domainId)%HLINK,g_hlink)
       endif
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       deallocate(strFlowLocal)
       deallocate(frxstPtsLocal)
 
@@ -4426,6 +6057,7 @@ subroutine output_chanObs_NWM(domainId)
    endif
 
    if(myId .eq. 0) then
+<<<<<<< HEAD
       ! Set index values to 1 where we have forecast points. 
       if(nlst_rt(domainId)%channel_option .eq. 3) then
          where(g_STRMFRXSTPTS .ne. -9999) g_outInd = 1
@@ -4435,6 +6067,17 @@ subroutine output_chanObs_NWM(domainId)
          ! Check to see if we have any gages that need to be added for
          ! reach-based
          ! routing. 
+=======
+      ! Set index values to 1 where we have forecast points.
+      if(nlst(domainId)%channel_option .eq. 3) then
+         where(g_STRMFRXSTPTS .ne. -9999) g_outInd = 1
+      endif
+
+      if(nlst(domainId)%channel_option .ne. 3) then
+         ! Check to see if we have any gages that need to be added for
+         ! reach-based
+         ! routing.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call checkRouteGages(diagFlag,gSize,g_outInd)
       endif
 
@@ -4452,7 +6095,11 @@ subroutine output_chanObs_NWM(domainId)
          return
       endif
 
+<<<<<<< HEAD
       ! Allocate output arrays based on number of output forecast points. 
+=======
+      ! Allocate output arrays based on number of output forecast points.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       allocate(g_STRMFRXSTPTSOut(numPtsOut))
       allocate(g_chlonOut(numPtsOut))
       allocate(g_chlatOut(numPtsOut))
@@ -4482,13 +6129,24 @@ subroutine output_chanObs_NWM(domainId)
       where ( varOutReal == fileMeta%modelNdv ) varOutReal = -9999.0
 
      ! call the GetModelConfigType function
+<<<<<<< HEAD
      modelConfigType = GetModelConfigType(nlst_rt(1)%io_config_outputs)
+=======
+     modelConfigType = GetModelConfigType(nlst(1)%io_config_outputs)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       ! Create NetCDF for output.
       iret = nf90_create(trim(output_flnm),cmode=NF90_NETCDF4,ncid = ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create CHANOBS NetCDF file.')
+<<<<<<< HEAD
       
       ! Write global attributes.
+=======
+
+      ! Write global attributes.
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"TITLE",trim(fileMeta%title))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create TITLE attribute')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"featureType",trim(fileMeta%fType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create featureType attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"proj4",trim(fileMeta%proj4))
@@ -4511,7 +6169,11 @@ subroutine output_chanObs_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create conventions attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+<<<<<<< HEAD
 #ifdef NCEP_WCOSS
+=======
+#ifdef NWM_META
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
 #endif
@@ -4522,6 +6184,7 @@ subroutine output_chanObs_NWM(domainId)
 
       ! Create global attributes specific to running output through the
       ! channel-only configuration of the model.
+<<<<<<< HEAD
       iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_OVRTSWCRT",nlst_rt(domainId)%OVRTSWCRT)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_OVRTSWCRT attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_NOAH_TIMESTEP",int(nlst_rt(domainId)%dt))
@@ -4529,6 +6192,15 @@ subroutine output_chanObs_NWM(domainId)
       iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_channel_only",nlst_rt(domainId)%channel_only)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_channel_only attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_channelBucket_only",nlst_rt(domainId)%channelBucket_only)
+=======
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_OVRTSWCRT",nlst(domainId)%OVRTSWCRT)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_OVRTSWCRT attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_NOAH_TIMESTEP",int(nlst(domainId)%dt))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_NOAH_TIMESTEP attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_channel_only",nlst(domainId)%channel_only)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_channel_only attribute')
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"dev_channelBucket_only",nlst(domainId)%channelBucket_only)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev_channelBucket_only attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,'dev','dev_ prefix indicates development/internal meta data')
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create dev attribute')
@@ -4563,7 +6235,11 @@ subroutine output_chanObs_NWM(domainId)
       iret = nf90_put_att(ftn,refTimeId,'units',trim(fileMeta%rTimeUnits))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into reference_time variable')
 
+<<<<<<< HEAD
       ! Create a crs variable. 
+=======
+      ! Create a crs variable.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! NOTE - For now, we are hard-coding in for lat/lon points. However, this
       ! may be more flexible in future iterations.
       iret = nf90_def_var(ftn,'crs',nf90_char,varid=coordVarId)
@@ -4600,7 +6276,11 @@ subroutine output_chanObs_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create feature_id variable.')
       ! Specify these attributes based on channel routing methods specified by
       ! user.
+<<<<<<< HEAD
       if(nlst_rt(domainId)%channel_option .eq. 3) then 
+=======
+      if(nlst(domainId)%channel_option .eq. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_put_att(ftn,featureVarId,'long_name','User Specified Forecast Points')
          call nwmCheck(diagFlag,iret,'ERROR: Uanble to place long_name attribute into feature_id variable')
          iret = nf90_put_att(ftn,featureVarId,'comment','Forecast Points Specified in Fulldom file')
@@ -4648,10 +6328,18 @@ subroutine output_chanObs_NWM(domainId)
       iret = nf90_put_att(ftn,elevVarId,'standard_name',trim(fileMeta%elevStName))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place stndard_name attribute into elevation variable')
 
+<<<<<<< HEAD
       ! Define deflation levels for these meta-variables. For now, we are going
       ! to
       ! default to a compression level of 2. Only compress if io_form_outputs is set to 1.
       if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+
+      ! Define deflation levels for these meta-variables. For now, we are going
+      ! to
+      ! default to a compression level of 2. Only compress if io_form_outputs is set to 1.
+      if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_def_var_deflate(ftn,timeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for time.')
          iret = nf90_def_var_deflate(ftn,featureVarId,0,1,2)
@@ -4661,11 +6349,19 @@ subroutine output_chanObs_NWM(domainId)
          iret = nf90_def_var_deflate(ftn,latVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for latitude.')
          iret = nf90_def_var_deflate(ftn,lonVarId,0,1,2)
+<<<<<<< HEAD
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for longitude.') 
          iret = nf90_def_var_deflate(ftn,orderVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for order.')  
          iret = nf90_def_var_deflate(ftn,elevVarId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for elevation.')  
+=======
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for longitude.')
+         iret = nf90_def_var_deflate(ftn,orderVarId,0,1,2)
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for order.')
+         iret = nf90_def_var_deflate(ftn,elevVarId,0,1,2)
+         call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for elevation.')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       endif
       ! Allocate memory for the output variables, then place the real output
       ! variables into a single array. This array will be accessed throughout
@@ -4677,14 +6373,22 @@ subroutine output_chanObs_NWM(domainId)
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             ! First create variable
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_int,dimId(1),varId)
             else
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_float,dimId(1),varId)
             endif
             call nwmCheck(diagFlag,iret,'ERROR: Unable to create variable:'//trim(fileMeta%varNames(iTmp)))
 
+<<<<<<< HEAD
             ! Extract valid range into a 1D array for placement. 
+=======
+            ! Extract valid range into a 1D array for placement.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
             varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
@@ -4698,7 +6402,11 @@ subroutine output_chanObs_NWM(domainId)
             ! determined that the benefit wasn't worth the extra time spent
             ! writing
             ! output. Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var_deflate(ftn,varId,0,1,2)
                call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression for: '//trim(fileMeta%varNames(iTmp)))
             endif
@@ -4712,7 +6420,11 @@ subroutine output_chanObs_NWM(domainId)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place coordinates attribute into variable '//trim(fileMeta%varNames(iTmp)))
             iret = nf90_put_att(ftn,varId,'grid_mapping','crs')
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place grid_mapping attribute into variable '//trim(fileMeta%varNames(iTmp)))
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_att(ftn,varId,'_FillValue',fileMeta%fillComp(iTmp))
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place Fill value attribute into variable '//trim(fileMeta%varNames(iTmp)))
                iret = nf90_put_att(ftn,varId,'missing_value',fileMeta%missingComp(iTmp))
@@ -4729,10 +6441,17 @@ subroutine output_chanObs_NWM(domainId)
                iret = nf90_put_att(ftn,varId,'missing_value',fileMeta%missingReal(iTmp))
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place missing value attribute into variable '//trim(fileMeta%varNames(iTmp)))
                iret = nf90_put_att(ftn,varId,'valid_range',varRangeReal)
+<<<<<<< HEAD
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place valid_range attribute into variable '//trim(fileMeta%varNames(iTmp)))         
             endif
          endif
       end do 
+=======
+               call nwmCheck(diagFlag,iret,'ERROR: Unable to place valid_range attribute into variable '//trim(fileMeta%varNames(iTmp)))
+            endif
+         endif
+      end do
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       ! Remove NetCDF file from definition mode.
       iret = nf90_enddef(ftn)
@@ -4741,7 +6460,11 @@ subroutine output_chanObs_NWM(domainId)
       ! Loop through all possible output variables, and convert floating
       ! points
       ! to integers via prescribed scale_factor/add_offset, then write to the
+<<<<<<< HEAD
       ! NetCDF variable. 
+=======
+      ! NetCDF variable.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             ! We are outputing this variable.
@@ -4756,9 +6479,15 @@ subroutine output_chanObs_NWM(domainId)
             ! Get NetCDF variable id.
             iret = nf90_inq_varid(ftn,trim(fileMeta%varNames(iTmp)),varId)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to find variable ID for var: '//trim(fileMeta%varNames(iTmp)))
+<<<<<<< HEAD
  
             ! Put data into NetCDF file
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+
+            ! Put data into NetCDF file
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_var(ftn,varId,varOutInt)
             else
                iret = nf90_put_var(ftn,varId,varOutReal(iTmp,:))
@@ -4771,14 +6500,23 @@ subroutine output_chanObs_NWM(domainId)
       iret = nf90_inq_varid(ftn,'feature_id',varId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to locate feature_id in NetCDF file.')
       ! If we are running gridded routing, output the user-specified forecast
+<<<<<<< HEAD
       ! point numbers. Otherwise, output the reach ID values. 
       if(nlst_rt(domainId)%channel_option .eq. 3) then
+=======
+      ! point numbers. Otherwise, output the reach ID values.
+      if(nlst(domainId)%channel_option .eq. 3) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_put_var(ftn,varId,g_STRMFRXSTPTSOut)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into feature_id output variable.')
       else
          iret = nf90_put_var(ftn,varId,g_linkidOut)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into feature_id output variable.')
+<<<<<<< HEAD
       endif  
+=======
+      endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       iret = nf90_inq_varid(ftn,'latitude',varId)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to locate latitude in NetCDF file.')
@@ -4811,7 +6549,11 @@ subroutine output_chanObs_NWM(domainId)
       call nwmCheck(diagFlag,iret,'ERROR: Failure to place data into reference_time variable')
 
       ! Close the output file
+<<<<<<< HEAD
       iret = nf90_close(ftn) 
+=======
+      iret = nf90_close(ftn)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,iret,'ERROR: Unable to close CHANOBS file.')
 
       deallocate(varOutReal)
@@ -4821,7 +6563,11 @@ subroutine output_chanObs_NWM(domainId)
       allocate(g_chlonOut(1))
       allocate(g_chlatOut(1))
       allocate(g_hlinkOut(1))
+<<<<<<< HEAD
       allocate(g_qlinkOut(1,2)) 
+=======
+      allocate(g_qlinkOut(1,2))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       allocate(g_linkidOut(1))
       allocate(g_zelevOut(1))
       allocate(g_orderOut(1))
@@ -4855,7 +6601,11 @@ end subroutine output_chanObs_NWM
 ! Abstract: Output routine for groundwater buckets.
 ! History Log:
 ! 9/22/17 -Created, LRK.
+<<<<<<< HEAD
 ! Usage: 
+=======
+! Usage:
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Parameters: None.
 ! Input Files: None.
 ! Output Files: None.
@@ -4864,7 +6614,11 @@ end subroutine output_chanObs_NWM
 ! User controllable options: None.
 subroutine output_gw_NWM(domainId,iGrid)
    use module_rt_data, only: rt_domain
+<<<<<<< HEAD
    use module_namelist, only: nlst_rt
+=======
+   use config_base, only: nlst
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    use Module_Date_utilities_rt, only: geth_newdate, geth_idts
    use module_NWM_io_dict
    use netcdf
@@ -4887,6 +6641,7 @@ subroutine output_gw_NWM(domainId,iGrid)
    integer :: minSinceEpoch1 ! Number of minutes from EPOCH to the beginning of the model simulation.
    integer :: minSinceEpoch ! Number of minutes from EPOCH to the current model valid time.
    character(len=16) :: epochDate ! EPOCH represented as a string.
+<<<<<<< HEAD
    character(len=16) :: startDate ! Start of model simulation, represented as a string. 
    character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
    integer :: iret ! NetCDF return statuses
@@ -4894,6 +6649,15 @@ subroutine output_gw_NWM(domainId,iGrid)
    character(len=256) :: validTime ! Global attribute time string
    character(len=256) :: initTime ! Global attribute time string
    integer :: dimId(3) ! Dimension ID values created during NetCDF created. 
+=======
+   character(len=16) :: startDate ! Start of model simulation, represented as a string.
+   character(len=256) :: output_flnm ! CHRTOUT_DOMAIN filename
+   integer :: iret ! NetCDF return statuses
+   integer :: ftn ! NetCDF file handle
+   character(len=256) :: validTime ! Global attribute time string
+   character(len=256) :: initTime ! Global attribute time string
+   integer :: dimId(3) ! Dimension ID values created during NetCDF created.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: varId ! Variable ID value created as NetCDF variables are created and populated.
    integer :: timeId ! Dimension ID for the time dimension.
    integer :: refTimeId ! Dimension ID for the reference time dimension.
@@ -4905,16 +6669,28 @@ subroutine output_gw_NWM(domainId,iGrid)
    integer :: indVarId,indTmp ! For the feature_id sorting process.
    integer :: ierr, myId ! MPI return status, process ID
    integer :: gnbasns
+<<<<<<< HEAD
    ! Allocatable arrays to hold output variables. 
    real, allocatable, dimension(:) :: g_qin_gwsubbas,g_qout_gwsubbas,g_z_gwsubbas
    integer, allocatable, dimension(:) :: g_basnsInd
    real, allocatable, dimension(:,:) :: varOutReal   ! Array holding output variables in real format
    integer, allocatable, dimension(:) :: varOutInt ! Array holding output variables after 
+=======
+   ! Allocatable arrays to hold output variables.
+   real, allocatable, dimension(:) :: g_qin_gwsubbas,g_qout_gwsubbas,g_qloss_gwsubbas,g_z_gwsubbas
+   integer, allocatable, dimension(:) :: g_basnsInd
+   real, allocatable, dimension(:,:) :: varOutReal   ! Array holding output variables in real format
+   integer, allocatable, dimension(:) :: varOutInt ! Array holding output variables after
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                      ! scale_factor/add_offset
                                                      ! have been applied.
    character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
 
+<<<<<<< HEAD
    ! Establish macro variables to hlep guide this subroutine. 
+=======
+   ! Establish macro variables to hlep guide this subroutine.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef MPP_LAND
    mppFlag = 1
 #else
@@ -4931,15 +6707,24 @@ subroutine output_gw_NWM(domainId,iGrid)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
+<<<<<<< HEAD
       call MPI_COMM_RANK( MPI_COMM_WORLD, myId, ierr )
+=======
+      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
       myId = 0
    endif
 
+<<<<<<< HEAD
    ! Some sanity checking here. 
    if(nlst_rt(domainId)%output_gw .eq. 0) then
+=======
+   ! Some sanity checking here.
+   if(nlst(domainId)%output_gw .eq. 0) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ! No output requested here. Return to the parent calling program.
       return
    endif
@@ -4948,6 +6733,7 @@ subroutine output_gw_NWM(domainId,iGrid)
    ! for the output file.
    call initGwDict(fileMeta)
 
+<<<<<<< HEAD
    if(nlst_rt(1)%io_config_outputs .eq. 0) then
       ! All
       fileMeta%outFlag(:) = [1,1,1] 
@@ -4969,18 +6755,49 @@ subroutine output_gw_NWM(domainId,iGrid)
    else if(nlst_rt(1)%io_config_outputs .eq. 6) then
       ! Diagnostics 
       fileMeta%outFlag(:) = [1,1,1]
+=======
+   if(nlst(1)%io_config_outputs .eq. 0) then
+      ! All
+      fileMeta%outFlag(:) = [1,1,0,1]
+   else if(nlst(1)%io_config_outputs .eq. 1) then
+      ! Analysis and Assimilation
+      fileMeta%outFlag(:) = [1,1,0,1]
+   else if(nlst(1)%io_config_outputs .eq. 2) then
+      ! Short Range
+      fileMeta%outFlag(:) = [1,1,0,1]
+   else if(nlst(1)%io_config_outputs .eq. 3) then
+      ! Medium Range
+      fileMeta%outFlag(:) = [1,1,0,1]
+   else if(nlst(1)%io_config_outputs .eq. 4) then
+      ! Long Range
+      fileMeta%outFlag(:) = [1,1,0,1]
+   else if(nlst(1)%io_config_outputs .eq. 5) then
+      ! Retrospective
+      fileMeta%outFlag(:) = [1,1,0,1]
+   else if(nlst(1)%io_config_outputs .eq. 6) then
+      ! Diagnostics
+      fileMeta%outFlag(:) = [1,1,0,1]
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    else
       call nwmCheck(diagFlag,1,'ERROR: Invalid IOC flag provided by namelist file.')
    endif
 
    ! call the GetModelConfigType function
+<<<<<<< HEAD
    modelConfigType = GetModelConfigType(nlst_rt(1)%io_config_outputs)
+=======
+   modelConfigType = GetModelConfigType(nlst(1)%io_config_outputs)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    gnbasns = rt_domain(domainId)%gnumbasns
    gSize = gnbasns
 
    ! Collect and assemble local groundwater bucket arrays to a global array for
+<<<<<<< HEAD
    ! output. 
+=======
+   ! output.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if(mppFlag .eq. 1) then
       ! Sync all processes up.
       if(mppFlag .eq. 1) then
@@ -4992,25 +6809,43 @@ subroutine output_gw_NWM(domainId,iGrid)
       if(myId .eq. 0) then
          allocate(g_qin_gwsubbas(rt_domain(domainId)%gnumbasns))
          allocate(g_qout_gwsubbas(rt_domain(domainId)%gnumbasns))
+<<<<<<< HEAD
+=======
+         allocate(g_qloss_gwsubbas(rt_domain(domainId)%gnumbasns))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          allocate(g_z_gwsubbas(rt_domain(domainId)%gnumbasns))
          allocate(g_basnsInd(rt_domain(domainId)%gnumbasns))
       else
          allocate(g_qin_gwsubbas(1))
          allocate(g_qout_gwsubbas(1))
+<<<<<<< HEAD
+=======
+         allocate(g_qloss_gwsubbas(1))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          allocate(g_z_gwsubbas(1))
          allocate(g_basnsInd(1))
       endif
 
+<<<<<<< HEAD
       if(nlst_rt(domainId)%UDMP_OPT .eq. 1) then
          ! This is ONLYL for NWM configuration with NHD channel routing. NCAR
          ! reach-based routing has the GW physics initialized the same as with 
          ! gridded routing. 
          !ADCHANGE: Note units conversion from m3 to m3/s for UPDMP=1 only
          call ReachLS_write_io(rt_domain(domainId)%qin_gwsubbas/nlst_rt(domainId)%DT,g_qin_gwsubbas)
+=======
+      if(nlst(domainId)%UDMP_OPT .eq. 1) then
+         ! This is ONLY for NWM configuration with NHD channel routing. NCAR
+         ! reach-based routing has the GW physics initialized the same as with
+         ! gridded routing.
+         !ADCHANGE: Note units conversion from m3 to m3/s for UPDMP=1 only
+         call ReachLS_write_io(rt_domain(domainId)%qin_gwsubbas/nlst(domainId)%DT,g_qin_gwsubbas)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          call ReachLS_write_io(rt_domain(domainId)%qout_gwsubbas,g_qout_gwsubbas)
          !ADCHANGE: Note units conversion from m to mm for UPDMP=1 only
          call ReachLS_write_io(rt_domain(domainId)%z_gwsubbas*1000.,g_z_gwsubbas)
          call ReachLS_write_io(rt_domain(domainId)%linkid,g_basnsInd)
+<<<<<<< HEAD
       else
          call gw_write_io_real(rt_domain(domainId)%numbasns,rt_domain(domainId)%qin_gwsubbas,  &
                                rt_domain(domainId)%basnsInd,g_qin_gwsubbas)
@@ -5020,15 +6855,40 @@ subroutine output_gw_NWM(domainId,iGrid)
                                rt_domain(domainId)%basnsInd,g_z_gwsubbas)
          call gw_write_io_int(rt_domain(domainId)%numbasns,rt_domain(domainId)%basnsInd, &
                               rt_domain(domainId)%basnsInd,g_basnsInd)
+=======
+         if(nlst(domainId)%bucket_loss .eq. 1) then
+            fileMeta%outFlag(3) = 1
+            call ReachLS_write_io(rt_domain(domainId)%qloss_gwsubbas,g_qloss_gwsubbas)
+         endif
+      else
+         call gw_write_io_real(rt_domain(domainId)%numbasns,rt_domain(domainId)%qin_gwsubbas,  &
+                               rt_domain(domainId)%basnsInd,g_qin_gwsubbas)
+         call gw_write_io_real(rt_domain(domainId)%numbasns,rt_domain(domainId)%qout_gwsubbas,  &
+                               rt_domain(domainId)%basnsInd,g_qout_gwsubbas)
+         call gw_write_io_real(rt_domain(domainId)%numbasns,rt_domain(domainId)%z_gwsubbas,  &
+                               rt_domain(domainId)%basnsInd,g_z_gwsubbas)
+         call gw_write_io_int(rt_domain(domainId)%numbasns,rt_domain(domainId)%basnsInd, &
+                              rt_domain(domainId)%basnsInd,g_basnsInd)
+         if(nlst(domainId)%bucket_loss .eq. 1) then
+             fileMeta%outFlag(3) = 1
+             call gw_write_io_real(rt_domain(domainId)%numbasns,rt_domain(domainId)%qloss_gwsubbas, &
+                                   rt_domain(domainId)%basnsInd,g_qloss_gwsubbas)
+         endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       endif
 
    else
       allocate(g_qin_gwsubbas(rt_domain(domainId)%gnumbasns))
       allocate(g_qout_gwsubbas(rt_domain(domainId)%gnumbasns))
+<<<<<<< HEAD
+=======
+      allocate(g_qloss_gwsubbas(rt_domain(domainId)%gnumbasns))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       allocate(g_z_gwsubbas(rt_domain(domainId)%gnumbasns))
       allocate(g_basnsInd(rt_domain(domainId)%gnumbasns))
 
       !ADCHANGE: Note units conversion from m3 to m3/s for UPDMP=1 only
+<<<<<<< HEAD
       g_qin_gwsubbas = rt_domain(domainId)%qin_gwsubbas/nlst_rt(domainId)%DT
       g_qout_gwsubbas = rt_domain(domainId)%qout_gwsubbas
       g_z_gwsubbas = rt_domain(domainId)%z_gwsubbas
@@ -5036,12 +6896,26 @@ subroutine output_gw_NWM(domainId,iGrid)
       if(nlst_rt(domainId)%UDMP_OPT .eq. 1) g_z_gwsubbas = g_z_gwsubbas * 1000.
       g_basnsInd = rt_domain(domainId)%linkid
    endif   
+=======
+      g_qin_gwsubbas = rt_domain(domainId)%qin_gwsubbas/nlst(domainId)%DT
+      g_qout_gwsubbas = rt_domain(domainId)%qout_gwsubbas
+      g_z_gwsubbas = rt_domain(domainId)%z_gwsubbas
+      !ADCHANGE: Note units conversion from m to mm for UPDMP=1 only
+      if(nlst(domainId)%UDMP_OPT .eq. 1) g_z_gwsubbas = g_z_gwsubbas * 1000.
+      g_basnsInd = rt_domain(domainId)%linkid
+      if(nlst(domainId)%bucket_loss .eq. 1) then
+         fileMeta%outFlag(3) = 1
+         g_qloss_gwsubbas = rt_domain(domainId)%qloss_gwsubbas
+      endif
+   endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Sync all processes up.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
       call mpp_land_sync()
 #endif
+<<<<<<< HEAD
    endif 
  
    ! Calculate datetime information.
@@ -5052,11 +6926,24 @@ subroutine output_gw_NWM(domainId,iGrid)
                     &"-"//nlst_rt(domainId)%startdate(9:10)//" "//&
                     nlst_rt(domainId)%startdate(12:13)//":"//&
                     nlst_rt(domainId)%startdate(15:16))
+=======
+   endif
+
+   ! Calculate datetime information.
+   ! First compose strings of EPOCH and simulation start date.
+   epochDate = trim("1970-01-01 00:00")
+   startDate = trim(nlst(domainId)%startdate(1:4)//"-"//&
+                    nlst(domainId)%startdate(6:7)//&
+                    &"-"//nlst(domainId)%startdate(9:10)//" "//&
+                    nlst(domainId)%startdate(12:13)//":"//&
+                    nlst(domainId)%startdate(15:16))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Second, utilize NoahMP date utilities to calculate the number of minutes
    ! from EPOCH to the beginning of the model simulation.
    call geth_idts(startDate,epochDate,minSinceEpoch1)
    ! Third, calculate the number of minutes since the beginning of the
    ! simulation.
+<<<<<<< HEAD
    minSinceSim = int(nlst_rt(1)%out_dt*(rt_domain(1)%out_counts-1))
    ! Fourth, calculate the total number of minutes from EPOCH to the current
    ! model time step.
@@ -5072,11 +6959,31 @@ subroutine output_gw_NWM(domainId,iGrid)
                   nlst_rt(domainId)%startdate(9:10)//'_'//&
                   nlst_rt(domainId)%startdate(12:13)//&
                   &':00:00')
+=======
+   minSinceSim = int(nlst(1)%out_dt*(rt_domain(1)%out_counts-1))
+   ! Fourth, calculate the total number of minutes from EPOCH to the current
+   ! model time step.
+   minSinceEpoch = minSinceEpoch1 + minSinceSim
+   ! Fifth, compose global attribute time strings that will be used.
+   validTime = trim(nlst(domainId)%olddate(1:4)//'-'//&
+                    nlst(domainId)%olddate(6:7)//'-'//&
+                    nlst(domainId)%olddate(9:10)//'_'//&
+                    nlst(domainId)%olddate(12:13)//':'//&
+                    nlst(domainId)%olddate(15:16)//&
+                    &':00')
+   initTime = trim(nlst(domainId)%startdate(1:4)//'-'//&
+                  nlst(domainId)%startdate(6:7)//'-'//&
+                  nlst(domainId)%startdate(9:10)//'_'//&
+                  nlst(domainId)%startdate(12:13)//':'//&
+                  nlst(domainId)%startdate(15:16)//&
+                  &':00')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Replace default values in the dictionary.
    fileMeta%initTime = trim(initTime)
    fileMeta%validTime = trim(validTime)
 
    ! calculate the minimum and maximum time
+<<<<<<< HEAD
    fileMeta%timeValidMin = minSinceEpoch1 + nlst_rt(1)%out_dt 
    fileMeta%timeValidMax = minSinceEpoch1 + int(nlst_rt(1)%khour * 60/nlst_rt(1)%out_dt) * nlst_rt(1)%out_dt
 
@@ -5087,6 +6994,18 @@ subroutine output_gw_NWM(domainId,iGrid)
    write(output_flnm,'(A12,".GWOUT_DOMAIN",I1)')nlst_rt(domainId)%olddate(1:4)//&
          nlst_rt(domainId)%olddate(6:7)//nlst_rt(domainId)%olddate(9:10)//&
          nlst_rt(domainId)%olddate(12:13)//nlst_rt(domainId)%olddate(15:16),nlst_rt(domainId)%igrid
+=======
+   fileMeta%timeValidMin = minSinceEpoch1 + nlst(1)%out_dt
+   fileMeta%timeValidMax = minSinceEpoch1 + int(nlst(1)%khour * 60/nlst(1)%out_dt) * nlst(1)%out_dt
+
+   ! calculate total_valid_time
+   fileMeta%totalValidTime = int(nlst(1)%khour * 60 / nlst(1)%out_dt)  ! # number of valid time (#of output files)
+
+   ! Compose output file name.
+   write(output_flnm,'(A12,".GWOUT_DOMAIN",I1)')nlst(domainId)%olddate(1:4)//&
+         nlst(domainId)%olddate(6:7)//nlst(domainId)%olddate(9:10)//&
+         nlst(domainId)%olddate(12:13)//nlst(domainId)%olddate(15:16),nlst(domainId)%igrid
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Only run NetCDF library calls to output data if we are on the master
    ! processor.
@@ -5098,7 +7017,12 @@ subroutine output_gw_NWM(domainId,iGrid)
 
       varOutReal(1,:) = g_qin_gwsubbas
       varOutReal(2,:) = g_qout_gwsubbas
+<<<<<<< HEAD
       varOutReal(3,:) = g_z_gwsubbas
+=======
+      varOutReal(3,:) = g_qloss_gwsubbas
+      varOutReal(4,:) = g_z_gwsubbas
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       ! Mask out missing values
       where ( varOutReal == fileMeta%modelNdv ) varOutReal = -9999.0
@@ -5107,6 +7031,11 @@ subroutine output_gw_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create GWOUT NetCDF file.')
 
       ! Write global attributes.
+<<<<<<< HEAD
+=======
+      iret = nf90_put_att(ftn,NF90_GLOBAL,"TITLE",trim(fileMeta%title))
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to create TITLE attribute')
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"featureType",trim(fileMeta%fType))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create featureType attribute')
       !iret = nf90_put_att(ftn,NF90_GLOBAL,"proj4",trim(fileMeta%proj4))
@@ -5125,7 +7054,11 @@ subroutine output_gw_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create conventions attribute')
       iret = nf90_put_att(ftn,NF90_GLOBAL,"code_version",trim(get_code_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create code_version attribute')
+<<<<<<< HEAD
 #ifdef NCEP_WCOSS
+=======
+#ifdef NWM_META
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       iret = nf90_put_att(ftn,NF90_GLOBAL,"NWM_version_number",trim(get_nwm_version()))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to create NWM_version_number attribute')
 #endif
@@ -5171,13 +7104,21 @@ subroutine output_gw_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Uanble to place long_name attribute into feature_id variable')
       iret = nf90_put_att(ftn,featureVarId,'comment',trim(fileMeta%featureIdComment))
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place comment attribute into feature_id variable')
+<<<<<<< HEAD
       iret = nf90_put_att(ftn,featureVarId,'cf_role',trim(fileMeta%cfRole)) 
+=======
+      iret = nf90_put_att(ftn,featureVarId,'cf_role',trim(fileMeta%cfRole))
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,iret,'ERROR: Unable to place cf_role attribute into feature_id variable')
 
       ! Define deflation levels for these meta-variables. For now, we are going
       ! to
       ! default to a compression level of 2. Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
       if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then 
+=======
+      if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          iret = nf90_def_var_deflate(ftn,timeId,0,1,2)
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression level for time.')
          iret = nf90_def_var_deflate(ftn,featureVarId,0,1,2)
@@ -5196,14 +7137,22 @@ subroutine output_gw_NWM(domainId,iGrid)
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             ! First create variable
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_int,dimId(1),varId)
             else
                iret = nf90_def_var(ftn,trim(fileMeta%varNames(iTmp)),nf90_float,dimId(1),varId)
             endif
             call nwmCheck(diagFlag,iret,'ERROR: Unable to create variable:'//trim(fileMeta%varNames(iTmp)))
 
+<<<<<<< HEAD
             ! Extract valid range into a 1D array for placement. 
+=======
+            ! Extract valid range into a 1D array for placement.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             varRange(1) = fileMeta%validMinComp(iTmp)
             varRange(2) = fileMeta%validMaxComp(iTmp)
             varRangeReal(1) = real(fileMeta%validMinDbl(iTmp))
@@ -5214,7 +7163,11 @@ subroutine output_gw_NWM(domainId,iGrid)
             ! filter off for now. Kelley Eicher did some testing with this and
             ! determined that the benefit wasn't worth the extra time spent writing output.
             ! Only compress if io_form_outputs is set to 1.
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 3)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 3)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_def_var_deflate(ftn,varId,0,1,2)
                call nwmCheck(diagFlag,iret,'ERROR: Unable to define compression for: '//trim(fileMeta%varNames(iTmp)))
             endif
@@ -5224,7 +7177,11 @@ subroutine output_gw_NWM(domainId,iGrid)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place long_name attribute into variable '//trim(fileMeta%varNames(iTmp)))
             iret = nf90_put_att(ftn,varId,'units',trim(fileMeta%units(iTmp)))
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place units attribute into variable '//trim(fileMeta%varNames(iTmp)))
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_att(ftn,varId,'_FillValue',fileMeta%fillComp(iTmp))
                call nwmCheck(diagFlag,iret,'ERROR: Unable to place Fill value attribute into variable '//trim(fileMeta%varNames(iTmp)))
                iret = nf90_put_att(ftn,varId,'missing_value',fileMeta%missingComp(iTmp))
@@ -5247,16 +7204,28 @@ subroutine output_gw_NWM(domainId,iGrid)
       end do
 
       ! Remove NetCDF file from definition mode.
+<<<<<<< HEAD
       iret = nf90_enddef(ftn) 
       call nwmCheck(diagFlag,iret,'ERROR: Unable to take GWOUT file out of definition mode')
 
       ! Place groundwater bucket ID, lat, and lon values into appropriate
       ! variables. 
+=======
+      iret = nf90_enddef(ftn)
+      call nwmCheck(diagFlag,iret,'ERROR: Unable to take GWOUT file out of definition mode')
+
+      ! Place groundwater bucket ID, lat, and lon values into appropriate
+      ! variables.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
             ! We are outputing this variable.
             ! Convert reals to integer. If we are on time 0, make sure we don't
+<<<<<<< HEAD
             ! need to fill in with NDV values. 
+=======
+            ! need to fill in with NDV values.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             if(minSinceSim .eq. 0 .and. fileMeta%timeZeroFlag(iTmp) .eq. 0) then
                varOutInt(:) = fileMeta%fillComp(iTmp)
                varOutReal(iTmp,:) = fileMeta%fillReal(iTmp)
@@ -5268,7 +7237,11 @@ subroutine output_gw_NWM(domainId,iGrid)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to find variable ID for var: '//trim(fileMeta%varNames(iTmp)))
 
             ! Put data into NetCDF file
+<<<<<<< HEAD
             if((nlst_rt(1)%io_form_outputs .eq. 1) .or. (nlst_rt(1)%io_form_outputs .eq. 2)) then
+=======
+            if((nlst(1)%io_form_outputs .eq. 1) .or. (nlst(1)%io_form_outputs .eq. 2)) then
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                iret = nf90_put_var(ftn,varId,varOutInt)
             else
                iret = nf90_put_var(ftn,varId,varOutReal(iTmp,:))
@@ -5294,7 +7267,11 @@ subroutine output_gw_NWM(domainId,iGrid)
       call nwmCheck(diagFlag,iret,'ERROR: Failure to place data into reference_time variable')
 
       ! Close the output file
+<<<<<<< HEAD
       iret = nf90_close(ftn) 
+=======
+      iret = nf90_close(ftn)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       call nwmCheck(diagFlag,iret,'ERROR: Unable to close GWOUT file.')
    endif
 
@@ -5312,6 +7289,10 @@ subroutine output_gw_NWM(domainId,iGrid)
    endif
    deallocate(g_qin_gwsubbas)
    deallocate(g_qout_gwsubbas)
+<<<<<<< HEAD
+=======
+   deallocate(g_qloss_gwsubbas)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    deallocate(g_z_gwsubbas)
    deallocate(g_basnsInd)
 end subroutine output_gw_NWM
@@ -5329,10 +7310,17 @@ subroutine postDiagMsg(diagFlag,diagMsg)
       print*, trim(diagMsg)
    end if
 end subroutine postDiagMsg
+<<<<<<< HEAD
    
 subroutine nwmCheck(diagFlag,iret,msg)
    implicit none
  
+=======
+
+subroutine nwmCheck(diagFlag,iret,msg)
+   implicit none
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Subroutine arguments.
    integer, intent(in) :: diagFlag,iret
    character(len=*), intent(in) :: msg
@@ -5346,11 +7334,19 @@ subroutine nwmCheck(diagFlag,iret,msg)
 end subroutine nwmCheck
 
 subroutine checkRouteGages(diagFlag,nElements,indexArray)
+<<<<<<< HEAD
    use module_namelist, only : nlst_rt
    use netcdf
    use module_HYDRO_io, only : get_1d_netcdf_text
    implicit none
  
+=======
+  use config_base, only: nlst
+  use netcdf
+  use module_HYDRO_io, only : get_1d_netcdf_text
+  implicit none
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ! Subroutine arguments.
    integer, intent(in) :: diagFlag
    integer, intent(in) :: nElements
@@ -5363,14 +7359,22 @@ subroutine checkRouteGages(diagFlag,nElements,indexArray)
    ! This subroutine will check for a Routelink file, then check for a "gages"
    ! variable. If any gages are found, the indexArray is updated and passed back
    ! to the calling subroutine.
+<<<<<<< HEAD
    iret = nf90_open(trim(nlst_rt(1)%route_link_f),NF90_NOWRITE,ncid=ftnRt)
+=======
+   iret = nf90_open(trim(nlst(1)%route_link_f),NF90_NOWRITE,ncid=ftnRt)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if(iret .ne. 0) then
       call postDiagMsg(diagFlag,'WARNING: Did not find Routelink file for gage location in output routines.')
       ! No Routelink file found. Simply return to the parent calling subroutine.
       return
    endif
 
+<<<<<<< HEAD
    iret = nf90_inq_varid(ftnRt,'gages',gageVarId)   
+=======
+   iret = nf90_inq_varid(ftnRt,'gages',gageVarId)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if(iret .ne. 0) then
       call postDiagMsg(diagFlag,'WARNING: Did not find gages in Routelink for forecast points output.')
       ! No gages variable found. Simply return to the parent calling routine.'

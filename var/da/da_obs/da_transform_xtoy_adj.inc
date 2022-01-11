@@ -1,4 +1,12 @@
+<<<<<<< HEAD
 subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
+=======
+subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x &
+#if (WRF_CHEM == 1)
+           , jo_grad_xchem &
+#endif
+)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    !--------------------------------------------------------------------------
    ! Purpose: TBD
@@ -15,6 +23,13 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
    type (y_type),  intent(inout) :: jo_grad_y   ! grad_y(jo)
    type (x_type),  intent(inout) :: jo_grad_x   ! grad_x(jo)
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   type (xchem_type),  optional, intent(inout) :: jo_grad_xchem   ! grad_x(jo)
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: i,j,k
    real, dimension(:), allocatable :: adj_ref
    real, dimension(:), allocatable :: adj_ref_tot
@@ -54,6 +69,18 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(buoy)%nlocal     > 0) call da_transform_xtoy_buoy_adj     (grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(gpsref)%nlocal   > 0) call da_transform_xtoy_gpsref_adj   (iv, jo_grad_y, jo_grad_x)
    if (iv%info(gpseph)%nlocal   > 0) call da_transform_xtoy_gpseph_adj   (iv, jo_grad_y, jo_grad_x)
+<<<<<<< HEAD
+=======
+
+#if (WRF_CHEM == 1)
+   if( present(jo_grad_xchem) ) then
+     if (iv%info(chemic_surf)%nlocal      > 0) then
+         call da_transform_xtoy_chem_sfc_adj (grid, iv, jo_grad_y, jo_grad_xchem)
+     end if
+   end if
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    if ( use_gpsephobs ) then
 #ifdef DM_PARALLEL
       allocate ( adj_ref ((ide-ids+1)*(jde-jds+1)*(kde-kds+1)) )

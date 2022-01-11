@@ -68,7 +68,11 @@ MODULE module_domain
      MODULE PROCEDURE get_ijk_from_grid1, get_ijk_from_grid2
    END INTERFACE
 
+<<<<<<< HEAD
    INTEGER, PARAMETER :: max_hst_mods = 200
+=======
+   INTEGER, PARAMETER :: max_hst_mods = 1000
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 CONTAINS
 
@@ -1011,7 +1015,11 @@ CONTAINS
      INTEGER,       INTENT(IN)    :: noutstr  ! length of outstr
      LOGICAL,       INTENT(INOUT) :: noerr     ! status
      !local
+<<<<<<< HEAD
      INTEGER, PARAMETER :: MAX_DEXES = 100
+=======
+     INTEGER, PARAMETER :: MAX_DEXES = 1000
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      INTEGER I, PREV, IDEX
      INTEGER DEXES(MAX_DEXES)
      outstr = ""
@@ -1067,8 +1075,13 @@ CONTAINS
       TYPE(fieldlist), POINTER :: p, q
       INTEGER, PARAMETER :: read_unit = 10
       LOGICAL, EXTERNAL  :: wrf_dm_on_monitor
+<<<<<<< HEAD
       CHARACTER*256      :: fname, inln, mess, dname, t1, lookee
       CHARACTER*256      :: fieldlst
+=======
+      CHARACTER*8000     :: inln, t1, fieldlst
+      CHARACTER*256      :: fname, mess, dname, lookee
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       CHARACTER*1        :: op, strmtyp
       CHARACTER*3        :: strmid
       CHARACTER*10       :: strmtyp_name
@@ -1134,10 +1147,17 @@ CONTAINS
                     WRITE(mess,*)'W A R N I N G : invalid stream id ',istrm,' (should be 0 <= id <= ',last_history,'). Line ',lineno
                     gavewarning = .TRUE.
                   ENDIF
+<<<<<<< HEAD
                   CALL get_fieldstr(4,':',inln,fieldlst,1024,noerr) ! get list of fields
                   IF ( noerr ) THEN
                     fieldno = 1
                     CALL get_fieldstr(fieldno,',',fieldlst,t1,256,noerr)
+=======
+                  CALL get_fieldstr(4,':',inln,fieldlst,8000,noerr) ! get list of fields
+                  IF ( noerr ) THEN
+                    fieldno = 1
+                    CALL get_fieldstr(fieldno,',',fieldlst,t1,8000,noerr)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                     CALL change_to_lower_case(t1,lookee)
                     DO WHILE ( noerr )    ! linear search, blargh...
                       p => grid%head_statevars%next
@@ -1709,6 +1729,10 @@ CONTAINS
       TYPE(fieldlist), POINTER :: p, q
       p => grid%head_statevars
       DO WHILE ( ASSOCIATED( p ) )
+<<<<<<< HEAD
+=======
+        if (p%varname.eq."chem_ic")  exit
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          q => p ; p => p%next ; DEALLOCATE(q)
       ENDDO
       NULLIFY(grid%head_statevars) ; NULLIFY( grid%tail_statevars)

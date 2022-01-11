@@ -1730,7 +1730,11 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMLWRAD(                                          &
                         p_top                                     &
+<<<<<<< HEAD
                        ,rthraten,glw,olr,emiss                    &
+=======
+                       ,rthraten,rthratenc,glw,olr,emiss          &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                        ,p8w,p3d,pi3d                              &
                        ,dz8w,tsk,t3d,t8w,rho3d,r,g                &
                        ,icloud, warm_rain                         &
@@ -1768,7 +1772,12 @@ CONTAINS
                                                            rho3D
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+<<<<<<< HEAD
          INTENT(INOUT)  ::                              RTHRATEN
+=======
+         INTENT(INOUT)  ::                              RTHRATEN, &
+                                                       RTHRATENC
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(IN   )  ::                                 EMISS, &
@@ -1807,6 +1816,10 @@ CONTAINS
                                                             Tw1D
 
    REAL, DIMENSION( kts:kte ) ::                          TTEN1D, &
+<<<<<<< HEAD
+=======
+                                                         TTEN1DC, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                         CLDFRA1D, &
                                                             DZ1D, &
                                                              P1D, &
@@ -1900,6 +1913,10 @@ CONTAINS
          DO K=kts,kte
             NK=kme-1-K+kms
             TTEN1D(K)=0.
+<<<<<<< HEAD
+=======
+            TTEN1DC(K)=0.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             T1D(K)=T3D(I,NK,J)
             P1D(K)=P3D(I,NK,J)/100.
             DZ1D(K)=dz8w(I,NK,J)
@@ -1989,7 +2006,12 @@ CONTAINS
          OLR0=0. 
          TSFC=TSK(I,J)
 
+<<<<<<< HEAD
          CALL RRTM(tten1d,glw0,olr0,tsfc,cldfra1d,t1d,tw1d,qv1d,qc1d,   &
+=======
+         CALL RRTM(tten1d,tten1dc,glw0,olr0,tsfc,cldfra1d,         &
+                   t1d,tw1d,qv1d,qc1d,                             &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    qr1d,qi1d,qs1d,qg1d,p1d,pW1d,dz1d,              &
                    emiss0,r,g,                                     &
 !ccc Added for time-varying trace gases.
@@ -2003,6 +2025,10 @@ CONTAINS
          DO K=kts,kte
             nk=kme-1-k+kms
             rthraten(i,k,j)=rthraten(i,k,j)+tten1d(nk)/pi3d(i,k,j)
+<<<<<<< HEAD
+=======
+            rthratenc(i,k,j)=rthratenc(i,k,j)+tten1dc(nk)/pi3d(i,k,j)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          ENDDO
 
       END DO i_loop
@@ -2049,7 +2075,11 @@ CONTAINS
 ! *** transfer (based on a code for interface with CCM model by M. J. Iacono)    
 ! *** J. Dudhia ; March, 1999                                                    
 !---------------------------------------------------------------------
+<<<<<<< HEAD
    SUBROUTINE RRTM(TTEN,GLW,OLR,TSFC,CLDFRA,T,Tw,QV,QC,              &
+=======
+   SUBROUTINE RRTM(TTEN,TTENC,GLW,OLR,TSFC,CLDFRA,T,Tw,QV,QC,        &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    QR,QI,QS,QG,P,Pw,DZ,                              &
                    EMISS,R,G,                                        &
 !ccc Added for time-varying trace gases.
@@ -2089,7 +2119,12 @@ CONTAINS
                                                                  QS, &
                                                                  QG
 !
+<<<<<<< HEAD
       REAL, DIMENSION( kts:kte ), INTENT(INOUT)::              TTEN
+=======
+      REAL, DIMENSION( kts:kte ), INTENT(INOUT)::              TTEN, &
+                                                              TTENC
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !   
       REAL, INTENT(IN  )   ::                           R, G, EMISS
 
@@ -2145,7 +2180,12 @@ CONTAINS
                                                                  TZ, &
                                                            TOTDFLUX, &
                                                            TOTUFLUX, &
+<<<<<<< HEAD
                                                                 HTR
+=======
+                                                                HTR, &
+                                                               HTRC
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !     
       INTEGER ::  I,K,ktep1
       INTEGER ::  LAYTROP,LAYSWTCH,LAYLOW
@@ -2257,7 +2297,12 @@ CONTAINS
                                                                                  
            CALL RTRN(kts,ktep1,                                  &
                      TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, TOTDFLUX, &
+<<<<<<< HEAD
                      TOTUFLUX, HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS     )
+=======
+                     TOTUFLUX, HTR, HTRC, ICLDLYR, ITR, PFRAC,   &
+                     TBOUND,SEMISS     )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                                                  
 !  Pass total sky up and down flux profiles to CCM output arrays and             
 !  convert from mks to cgs units for CCM.  Pass clear sky TOA and surface        
@@ -2279,6 +2324,10 @@ CONTAINS
 !              qrl(k) = HTR(NLAYERS-1-k)/86400.                                  
 !              TTEN(K)=HTR(NLAYERS-1-k)/86400. 
               TTEN(K)=HTR(kte-k)/86400. 
+<<<<<<< HEAD
+=======
+              TTENC(K)=HTRC(kte-k)/86400.
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
  2450      continue                                                              
            GLW = TOTDFLUX(0)
 !           OLR = TOTUFLUX(NLAYERS)
@@ -6183,7 +6232,12 @@ CONTAINS
 !-------------------------------------------------------------------------
       SUBROUTINE RTRN(kts,ktep1,                                         &
                       TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, TOTDFLUX,        &
+<<<<<<< HEAD
                       TOTUFLUX, HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS  )
+=======
+                      TOTUFLUX, HTR, HTRC, ICLDLYR, ITR, PFRAC, TBOUND,  &
+                      SEMISS  )
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-------------------------------------------------------------------------
 !  RRTM Longwave Radiative Transfer Model                                        
 !  Atmospheric and Environmental Research, Inc., Cambridge, MA                   
@@ -6219,8 +6273,14 @@ CONTAINS
                                                 TOTDFLUX, &
                                                 TOTUFLUX
 
+<<<<<<< HEAD
       REAL, DIMENSION(   0:ktep1 ), INTENT(INOUT) ::        &
                                                      HTR  
+=======
+      REAL, DIMENSION(   0:ktep1 ), INTENT(INOUT) ::      &
+                                                     HTR, &
+                                                    HTRC
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       REAL, DIMENSION(   0:ktep1 ), INTENT(IN   ) ::      &
                                                       PZ, &
@@ -6239,8 +6299,12 @@ CONTAINS
 
       REAL, DIMENSION(   0:ktep1 )              ::        &
                                                     FNET, &
+<<<<<<< HEAD
                                                    FNETC, &
                                                     HTRC
+=======
+                                                   FNETC
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       INTEGER :: kk
      

@@ -68,7 +68,11 @@ CONTAINS
 &    , rthndgdten, rphndgdten, rqvndgdten, rmundgdten, fgdt, stepfg, &
 &    cugd_tten, cugd_ttens, cugd_qvten, cugd_qvtens, cugd_qcten, isnowxy&
 &    , zsnsoxy, tsnoxy, snicexy, snliqxy, tvxy, tgxy, canicexy, canliqxy&
+<<<<<<< HEAD
 &    , eahxy, tahxy, cmxy, chxy, fwetxy, sneqvoxy, alboldxy, qsnowxy, &
+=======
+&    , eahxy, tahxy, cmxy, chxy, fwetxy, sneqvoxy, alboldxy, qsnowxy, qrainxy,&
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 &    wslakexy, zwtxy, waxy, wtxy, lfmassxy, rtmassxy, stmassxy, woodxy, &
 &    stblcpxy, fastcpxy, xsaixy, t2mvxy, t2mbxy, chstarxy, dzr, dzb, dzg&
 &    , tr_urb2d, tb_urb2d, tg_urb2d, tc_urb2d, qc_urb2d, xxxr_urb2d, &
@@ -211,6 +215,10 @@ CONTAINS
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: sneqvoxy
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: alboldxy
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: qsnowxy
+<<<<<<< HEAD
+=======
+    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: qrainxy
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: wslakexy
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: zwtxy
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: waxy
@@ -640,7 +648,11 @@ CONTAINS
 &             rdmaxalb, znt, xland, xice, sfcevp, grdflx, TRIM(mminlu_loc&
 &             ), isnowxy, zsnsoxy, tsnoxy, snicexy, snliqxy, tvxy, tgxy, &
 &             canicexy, canliqxy, eahxy, tahxy, cmxy, chxy, fwetxy, &
+<<<<<<< HEAD
 &             sneqvoxy, alboldxy, qsnowxy, wslakexy, zwtxy, waxy, wtxy, &
+=======
+&             sneqvoxy, alboldxy, qsnowxy, qrainxy, wslakexy, zwtxy, waxy, wtxy, &
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 &             lfmassxy, rtmassxy, stmassxy, woodxy, stblcpxy, fastcpxy, &
 &             xsaixy, t2mvxy, t2mbxy, chstarxy, allowed_to_read, &
 &             start_of_simulation, te_temf, cf3d_temf, wm_temf, dzr, dzb&
@@ -724,7 +736,11 @@ CONTAINS
 &    , smfr3d, mavail, snowh, sh2o, snoalb, fndsoilw, fndsnowh, rdmaxalb&
 &    , znt, xland, xice, sfcevp, grdflx, mminlu, isnowxy, zsnsoxy, tsnoxy&
 &    , snicexy, snliqxy, tvxy, tgxy, canicexy, canliqxy, eahxy, tahxy, &
+<<<<<<< HEAD
 &    cmxy, chxy, fwetxy, sneqvoxy, alboldxy, qsnowxy, wslakexy, zwtxy, &
+=======
+&    cmxy, chxy, fwetxy, sneqvoxy, alboldxy, qsnowxy, qrainxy, wslakexy, zwtxy,&
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 &    waxy, wtxy, lfmassxy, rtmassxy, stmassxy, woodxy, stblcpxy, fastcpxy&
 &    , xsaixy, t2mvxy, t2mbxy, chstarxy, allowed_to_read, &
 &    start_of_simulation, te_temf, cf3d_temf, wm_temf, dzr, dzb, dzg, &
@@ -810,6 +826,10 @@ CONTAINS
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: sneqvoxy
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: alboldxy
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: qsnowxy
+<<<<<<< HEAD
+=======
+    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: qrainxy
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: wslakexy
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: zwtxy
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: waxy

@@ -1,4 +1,17 @@
+<<<<<<< HEAD
 subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
+=======
+subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y  &
+#if (WRF_CHEM == 1)
+                        , vchem &
+#endif
+                        )
+
+#if (WRF_CHEM == 1)
+   use module_domain, only : xchem_type
+   use da_control, only : test_transformsch
+#endif
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -18,6 +31,13 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
    type (vp_type),    intent(inout) :: vp    ! Grdipt/level CV.
    type (y_type),     intent(inout) :: y             ! y = h (xa)
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   type(xchem_type), optional, intent(out) :: vchem   ! CHEM_IC CV                                                                                        
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    integer :: sizec
    real    :: cvtest(1:cv_size)    ! background error structure.
    real    :: field(its:ite,jts:jte) ! Field for spectral transform test.
@@ -45,6 +65,15 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
 
    call da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cvtest, vv)
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   if (test_transformsch) then
+     call da_check_cvtovv_adjoint_chem(grid, cv_size, xbx, be, cvtest, vv, vchem=grid%vchem)
+   end if
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    !-------------------------------------------------------------------------
    ! vv_to_vp adjoint test:
    !-------------------------------------------------------------------------
@@ -63,6 +92,16 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
 
    call da_check_vtox_adjoint(grid, cv_size, xbx, be, ep, cvtest, vv, vp)
 
+<<<<<<< HEAD
+=======
+#if (WRF_CHEM == 1)
+   if (test_transformsch) then
+      call da_check_vchemtox_adjoint(grid, grid%vchem, be, grid%vchem2)
+      call da_check_vtox_adjoint_chem(grid, cv_size, xbx, be, ep, cvtest, vv, vp)
+   end if
+#endif
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    !----------------------------------------------------------------------------
    ! [2] Perform xtoy adjoint tests:
    !----------------------------------------------------------------------------

@@ -1,5 +1,19 @@
    TYPE RT_FIELD
    type (overland_struct) :: overland
+<<<<<<< HEAD
+=======
+   type (subsurface_struct) :: subsurface
+   type (subsurface_static_interface) :: subsurface_static
+   type (subsurface_input_interface) :: subsurface_input
+   type (subsurface_output_interface) :: subsurface_output
+
+   class (reservoir_container), allocatable, dimension(:) :: reservoirs
+   integer, allocatable, dimension(:) :: reservoir_type ! specifying type of reservoir
+   integer, allocatable, dimension(:) :: final_reservoir_type   ! resolved reservoir type (since it can change)
+   real, allocatable, dimension(:) :: reservoir_assimilated_value ! observation or forecast assimilated to reservoir discharge
+   character(len=256), allocatable, dimension(:) :: reservoir_assimilated_source_file ! source file of assimilated value
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    INTEGER :: IX, JX
    logical :: initialized
    logical :: restQSTRM
@@ -16,7 +30,11 @@
   REAL                                 :: RETDEP_CHAN  ! Channel retention depth
   INTEGER :: NLINKS  !maximum number of unique links in channel
   INTEGER :: GNLINKS  !maximum number of unique links in channel for parallel computation
+<<<<<<< HEAD
   INTEGER :: NLAKES !number of lakes modeled 
+=======
+  INTEGER :: NLAKES !number of lakes modeled
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   INTEGER :: NLINKSL !maximum number of links using linked routing
   INTEGER :: MAXORDER !maximum stream order
   integer :: timestep_flag    ! 1 cold start run else continue run
@@ -24,6 +42,10 @@
   INTEGER :: GNLINKSL, linklsS, linklsE , nlinksize  !## for reach based channel routing
 
   INTEGER :: iswater     !id for water in vegtyp
+<<<<<<< HEAD
+=======
+  INTEGER :: islake      !id for lake in vegtyp
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   INTEGER :: isurban     !id for urban in vegtyp
   INTEGER :: isoilwater  !id for water in soiltyp
 
@@ -42,18 +64,32 @@
   INTEGER, allocatable, DIMENSION(:,:)      :: LAK_1K
   INTEGER, allocatable, DIMENSION(:,:)      :: g_LAK_1K
   ! REAL,    allocatable, DIMENSION(:,:)      :: ELRT,SOXRT,SOYRT,OVROUGHRT,RETDEPRT, QSUBBDRYTRT
+<<<<<<< HEAD
   REAL :: QSUBBDRYTRT
   !REAL,    allocatable, DIMENSION(:,:)      :: ELRT,SOXRT,SOYRT,OVROUGHRT,RETDEPRT  
+=======
+  !REAL :: QSUBBDRYTRT    ! QSUBBDRYTRT moved to subsurface io module
+  !REAL,    allocatable, DIMENSION(:,:)      :: ELRT,SOXRT,SOYRT,OVROUGHRT,RETDEPRT
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   REAL,    allocatable, DIMENSION(:,:)      :: ELRT
   !REAL,    allocatable, DIMENSION(:,:,:)    :: SO8RT
   INTEGER,    allocatable, DIMENSION(:,:,:) ::  SO8LD_D ! SO8RT_D moved to overland properties module
   REAL,    allocatable, DIMENSION(:,:)      :: SO8LD_Vmax
   REAL   Vmax
+<<<<<<< HEAD
   !REAL,    allocatable, DIMENSION(:,:)      :: SFCHEADRT,INFXSRT,LKSAT,LKSATRT  ! SFCHEAD moved to overland control module
   REAL,    allocatable, DIMENSION(:,:)      :: INFXSRT,LKSAT,LKSATRT 
   !REAL,    allocatable, DIMENSION(:,:)      :: SFCHEADSUBRT,INFXSUBRT,LKSATFAC  ! SFCHEADSUBRT, INFXSUBRT moved to overland control module
   REAL,    allocatable, DIMENSION(:,:)      :: LKSATFAC
   REAL,    allocatable, DIMENSION(:,:)      :: QSUBRT,ZWATTABLRT,QSUBBDRYRT,SOLDEPRT
+=======
+  !REAL,    allocatable, DIMENSION(:,:)      :: LKSATRT !  LKSATRT moved to subsurface properties module
+  !REAL,    allocatable, DIMENSION(:,:)      :: SFCHEADRT,INFXSRT,LKSAT  ! SFCHEAD moved to overland control module
+  REAL,    allocatable, DIMENSION(:,:)      :: INFXSRT,LKSAT,LKSATRT
+  !REAL,    allocatable, DIMENSION(:,:)      :: SFCHEADSUBRT,INFXSUBRT,LKSATFAC  ! SFCHEADSUBRT, INFXSUBRT moved to overland control module
+  REAL,    allocatable, DIMENSION(:,:)      :: LKSATFAC
+  !REAL,    allocatable, DIMENSION(:,:)      :: SOLDEPRT ! QSUBRT, QSUBBDRYRT moved to subsurface io module, SOLDEPRT, ZWATTABLRT move to susurface properties
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   REAL,    allocatable, DIMENSION(:,:)      :: SUB_RESID
   REAL,    allocatable, DIMENSION(:,:)      :: q_sfcflx_x,q_sfcflx_y
   INTEGER,    allocatable, DIMENSION(:)      :: map_l2g, map_g2l
@@ -63,7 +99,11 @@
   INTEGER,    allocatable, DIMENSION(:,:)      :: gtoNode
 
 ! temp arrary cwatavail
+<<<<<<< HEAD
   real, allocatable, DIMENSION(:,:,:)      :: SMCREFRT 
+=======
+  !real, allocatable, DIMENSION(:,:,:)      :: SMCREFRT  ! SMCREFRT moved to subsurface grid_transform module
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !DJG   VARIABLES FOR GW/Baseflow
   INTEGER :: numbasns
@@ -77,24 +117,45 @@
   REAL,    allocatable, DIMENSION(:)     :: z_gwsubbas   !depth in GW bucket
   REAL,    allocatable, DIMENSION(:)     :: qin_gwsubbas !flow to GW bucket
   REAL,    allocatable, DIMENSION(:)     :: qout_gwsubbas!flow from GW bucket
+<<<<<<< HEAD
+=======
+  REAL,    allocatable, DIMENSION(:)     :: qloss_gwsubbas   !flow from GW bucket
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   REAL,    allocatable, DIMENSION(:)     :: gwbas_pix_ct !ct of strm pixels in
   REAL,    allocatable, DIMENSION(:)     :: basns_area   !basin area
   REAL,    allocatable, DIMENSION(:)     :: node_area   !nodes area
 
+<<<<<<< HEAD
   REAL,    allocatable, DIMENSION(:)     :: z_q_bas_parm !GW bucket disch params
   INTEGER, allocatable, DIMENSION(:)     :: nhdBuckMask   ! bucket mask for NHDPLUS
   INTEGER, allocatable, DIMENSION(:)     :: ct2_bas       !ct of lnd pixels in basn
+=======
+  REAL,    allocatable, DIMENSION(:)     :: z_q_bas_parm     !GW bucket parameters
+  INTEGER, allocatable, DIMENSION(:)     :: nhdBuckMask      !GW bucket mask for NHDPLUS
+  INTEGER, allocatable, DIMENSION(:)     :: ct2_bas          !ct of land pixels in basin
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   REAL,    allocatable, DIMENSION(:)     :: bas_pcp      !sub-basin avg'd pcp
   INTEGER                                :: bas
   INTEGER, allocatable, DIMENSION(:)        :: bas_id
   CHARACTER(len=19)                      :: header
   CHARACTER(len=1)                       :: jnk
+<<<<<<< HEAD
   REAL, allocatable, DIMENSION(:)        :: gw_buck_coeff,gw_buck_exp,z_max  !GW bucket parameters
+=======
+  REAL, allocatable, DIMENSION(:)        :: gw_buck_coeff    !GW bucket model coefficient
+  REAL, allocatable, DIMENSION(:)        :: gw_buck_exp      !GW bucket model exponent
+  REAL, allocatable, DIMENSION(:)        :: gw_buck_loss     !GW bucket model loss fraction
+  REAL, allocatable, DIMENSION(:)        :: z_max            !Height of GW bucket
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !DJG Switch for Deep Sat GW Init:
   INTEGER                                :: DEEPGWSPIN  !Switch to setup deep GW spinp
 !BF Variables for gw2d
   integer, allocatable, dimension(:,:)      :: soiltyp, soiltypRT
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !DJG,DNY   VARIABLES FOR CHANNEL ROUTING
 !-- channel params
@@ -122,13 +183,21 @@
   REAL, allocatable, DIMENSION(:)      :: MUSK, MUSX !muskingum params
   REAL, allocatable, DIMENSION(:)      :: CHANLEN    !link length
   REAL, allocatable, DIMENSION(:)      :: MannN      !mannings N
+<<<<<<< HEAD
   REAL, allocatable, DIMENSION(:)      :: So     !link slope and channel conductivity (m/s) 
+=======
+  REAL, allocatable, DIMENSION(:)      :: So     !link slope and channel conductivity (m/s)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   REAL, allocatable, DIMENSION(:)      :: ChSSlp ! channel side slope
   REAL, allocatable, DIMENSION(:)      :: Bw     ! Bottom width of channel
   REAL, allocatable, DIMENSION(:)      :: Tw     ! top width of channel
   REAL, allocatable, DIMENSION(:)      :: Tw_CC  ! top width of the (CC) compound channel
   REAL, allocatable, DIMENSION(:)      :: n_CC   ! mannings N of (CC) compound channel
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   REAL, allocatable, DIMENSION(:,:)    :: QLINK      !flow in link
   integer, allocatable, DIMENSION(:)   :: ascendIndex !sorting of routelink
 #ifdef WRF_HYDRO_NUDGING
@@ -140,12 +209,20 @@
   REAL,  DIMENSION(50)     :: BOTWID,TOPWID,HLINK_INIT,CHAN_SS,CHMann !Channel parms from table
   REAL,  DIMENSION(50)     :: TOPWIDCC, NCC  !topwidth and mannings n of compund
 
+<<<<<<< HEAD
+=======
+  ! VARIABLES FOR  RESERVOIRS
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   REAL, allocatable, DIMENSION(:)      :: RESHT  !reservoir height
 !-- lake params
   INTEGER, allocatable, DIMENSION(:) :: LAKEIDA     !id of lakes in routlink file
   INTEGER, allocatable, DIMENSION(:) :: LAKEIDM     !id of LAKES Modeled in LAKEPARM.nc or tbl
   REAL, allocatable, DIMENSION(:)    :: HRZAREA    !horizontal extent of lake, km^2
   REAL, allocatable, DIMENSION(:)    :: WEIRL      !overtop weir length (m)
+<<<<<<< HEAD
+=======
+  REAL, allocatable, DIMENSION(:)    :: DAML      !overtop weir length (m)
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   REAL, allocatable, DIMENSION(:)    :: ORIFICEC   !coefficient of orifice
   REAL, allocatable, DIMENSION(:)    :: ORIFICEA   !orifice opening area (m^2)
   REAL, allocatable, DIMENSION(:)    :: ORIFICEE   !orifice elevation (m)
@@ -174,7 +251,11 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !DJG   VARIABLES FOR AGGREGATION/DISAGGREGATION
+<<<<<<< HEAD
   REAL,    allocatable, DIMENSION(:,:,:)   :: SMCRT,SMCMAXRT,SMCWLTRT,SH2OWGT,SICE
+=======
+  REAL,    allocatable, DIMENSION(:,:,:)   :: SH2OWGT,SICE ! SMCRT, SMCMAXRT, SMCWLTRT moved to subsurface grid transform module
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   REAL,    allocatable, DIMENSION(:,:)     :: INFXSAGGRT
   !REAL,    allocatable, DIMENSION(:,:)     :: DHRT,QSTRMVOLRT,QBDRYRT,LAKE_INFLORT ! dhrt and qbdryrt moved to overland control qstrmvolrt and lake_inflrt moved to overland stream and lakes
   REAL,    allocatable, DIMENSION(:,:)     :: QSTRMVOLRT_TS,LAKE_INFLORT_TS
@@ -221,6 +302,7 @@
   !!! define land surface grid variables
       REAL,    allocatable, DIMENSION(:,:,:) :: SMC,STC,SH2OX
       REAL,    allocatable, DIMENSION(:,:)   :: SMCMAX1,SMCWLT1,SMCREF1
+<<<<<<< HEAD
       INTEGER, allocatable, DIMENSION(:,:)   :: VEGTYP 
       REAL, allocatable, DIMENSION(:,:)      :: OV_ROUGH2d
       REAL,    allocatable, DIMENSION(:)   :: SLDPTH
@@ -232,6 +314,19 @@
 !  his_out_counts = previous run + out_counts
     integer :: out_counts, rst_counts, his_out_counts
     
+=======
+      INTEGER, allocatable, DIMENSION(:,:)   :: VEGTYP
+      REAL, allocatable, DIMENSION(:,:)      :: OV_ROUGH2d
+      !REAL,    allocatable, DIMENSION(:)   :: SLDPTH
+
+!!! define constant/parameter
+    real ::   ov_rough(50)!, ZSOIL(100) ! ZSOIL moved to subsurface properties module
+!  out_counts: couput counts for current run.
+!  his_out_counts: used for channel routing output and  special for restart.
+!  his_out_counts = previous run + out_counts
+    integer :: out_counts, rst_counts, his_out_counts
+
+>>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     REAL,    allocatable, DIMENSION(:,:)   :: lat_lsm, lon_lsm
     REAL,    allocatable, DIMENSION(:,:,:) :: dist_lsm
 

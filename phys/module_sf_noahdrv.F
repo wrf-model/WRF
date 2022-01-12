@@ -3713,10 +3713,14 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   IF(UTYPE_URB==10) FRC_URB2D(I,J)=0.55
                   IF(UTYPE_URB==11) FRC_URB2D(I,J)=1.
                 ELSE
-                  IF(IVGTYP(I,J)==ISURBAN) THEN
-                    UTYPE_URB=2
-                    FRC_URB2D(I,J)=0.9
-                  END IF
+                  IF(IVGTYP(I,J)==ISURBAN) UTYPE_URB=2
+                  IF(IVGTYP(I,J)==LCZ_1) UTYPE_URB=1 ! LOW_DENSITY_RESIDENTIAL
+                  IF(IVGTYP(I,J)==LCZ_2) UTYPE_URB=2 ! HIGH_DENSITY_RESIDENTIAL
+                  IF(IVGTYP(I,J)==LCZ_3) UTYPE_URB=3 ! HIGH_INTENSITY_INDUSTRIAL
+
+                  IF(UTYPE_URB==1) FRC_URB2D(I,J)=0.5
+                  IF(UTYPE_URB==2) FRC_URB2D(I,J)=0.9
+                  IF(UTYPE_URB==3) FRC_URB2D(I,J)=0.95
                 END IF
 
                   TA_URB    = SFCTMP           ! [K]

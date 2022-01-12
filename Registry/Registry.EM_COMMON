@@ -593,8 +593,8 @@ state   real    qaoli3            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QAOLI3"           "Ice volume-3 times aspect ratio mixing ratio" "m(3) kg(-1)"
 state   real    o3_gfs            ikjb   dyn_em        1         -    \
    i0{12}rhusdf=(bdy_interp:dt)  "o3_gfs"       "ozone from GFS"         "kg kg -1"
-state   real    o3_gfs_sf         ij     misc          1         -    \
-   irh                           "o3_gfs_sf"    "scale factor ozone from GFS"              "unitless"
+state   real    o3_gfs_du         ij     misc          1         -    \
+   i012rh                        "o3_gfs_du"    "Total ozone from GFS"              "Dobson"
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
@@ -1324,7 +1324,7 @@ state  real   VOLC     idjf aerosolc    2    -   -     "VOLC"         "VOLC aero
 state  real   m_hybi    d     misc      1    -   -     "m_hybi"       "MATCH hybi"
 
 # GFS ozone variables
-package   gfsozone      gfs_ozone==1                 -             state:o3_gfs_sf,o3_gfs
+package   gfsozone      gfs_ozone==1                 -             state:o3_gfs_du,o3_gfs
 
 # new eta microphysics State Variables
 state   real    F_ICE_PHY      ikj     misc         1         -      rhdu     "F_ICE_PHY"            "FRACTION OF ICE"         ""
@@ -2404,7 +2404,6 @@ rconfig   character  path_to_files        namelist,physics      1             "~
 # GFS ozone
 rconfig   integer   num_o3_gfs_levels     namelist,physics       1              23    irh      "num_o3_gfs_levels"   ""                                            ""
 rconfig   integer   gfs_ozone             namelist,physics       max_domains    0      rh      "gfs_ozone_opt"       "GFS O3 opition, 1:on"                        ""
-rconfig   integer   scale_o3_to_gfstotal  namelist,physics       1              0     irh      "gfs_ozone_scale_opt" "GFS scale, option 1:on"                      ""
 
 
 rconfig   integer     gsfcgce_hail        namelist,physics      1              0       rh       "gsfcgce select hail/graupel"  ""      ""

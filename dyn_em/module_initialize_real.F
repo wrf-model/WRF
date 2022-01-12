@@ -2425,16 +2425,8 @@ integer::oops1,oops2
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte )
-! Create scaling factor for total GFS column vs. total column interpolated to WRF grid
-           if ( config_flags%scale_o3_to_gfstotal .gt. 0 ) then
-             do j = jts, jte
-               do i = its, ite
-                 grid%o3_gfs_sf(i,j) = sum(grid%o3_inp(i,:,j))/sum(grid%o3_gfs(i,:,j))
-               enddo
-             enddo
-           endif
 ! Convert to mixing ratio
-           grid%o3_inp = grid%o3_inp * 1.e6 * mw_air / mw_o3
+           grid%o3_gfs = grid%o3_gfs * 1.e6 * mw_air / mw_o3
 
          ENDIF
          !  Do we have the old data that came in on the same vertical levels as the other

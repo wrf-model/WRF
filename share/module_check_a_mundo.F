@@ -886,11 +886,11 @@
          ENDDO
 
          IF ( oops .GT. 0 ) THEN
-            wrf_err_message = '--- ERROR: ghg_input can only radiation schemes: CAM, RRTM, RRTMG, RRTMG_fast'
+            wrf_err_message = '--- ERROR: ghg_input available only for these radiation schemes: CAM, RRTM, RRTMG, RRTMG_fast'
             CALL wrf_message ( TRIM( wrf_err_message ) )
-            wrf_err_message = '           And the LW and SW schemes must be reasonably paired together'  
+            wrf_err_message = '           And the LW and SW schemes must be reasonably paired together:'  
             CALL wrf_message ( TRIM( wrf_err_message ) )
-            wrf_err_message = '           CAM LW with CAM SW; RRTM, RRTMG, RRTMG_fast LW and SW may be mixed'
+            wrf_err_message = '           OK = CAM LW with CAM SW; OK = RRTM, RRTMG, RRTMG_fast LW and SW may be mixed'
             CALL wrf_message ( TRIM( wrf_err_message ) )
          END IF
       END IF

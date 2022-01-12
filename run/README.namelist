@@ -1321,6 +1321,9 @@ Options for use with the Noah-MP Land Surface Model:
                                                      0 = No tile drainage
                                                      1 = Simple drainage
                                                      2 = Hooghoudt's equation based tile drainage
+ soiltstep                          = 0.0,      ! Noah-MP soil process timestep (seconds) for solving soil water and temperature
+                                                     0 = default, the same as main NoahMP model timestep
+                                                     N * dt_noahmp, typically 15min or 30min
  /
 
  &fdda

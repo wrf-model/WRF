@@ -17,7 +17,7 @@ CONTAINS
                  IDVEG, IOPT_CRS,  IOPT_BTR, IOPT_RUN, IOPT_SFC, IOPT_FRZ,  & ! IN : User options
               IOPT_INF, IOPT_RAD,  IOPT_ALB, IOPT_SNF,IOPT_TBOT, IOPT_STC,  & ! IN : User options
               IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP, IOPT_IRR,  & ! IN : User options
-             IOPT_IRRM, IOPT_INFDV, IOPT_TDRN,                              & ! IN : User options                 
+             IOPT_IRRM, IOPT_INFDV, IOPT_TDRN,soiltstep,                    & ! IN : User options                 
               IZ0TLND, SF_URBAN_PHYSICS,                                    & ! IN : User options
 	      SOILCOMP,  SOILCL1,  SOILCL2,   SOILCL3,  SOILCL4,            & ! IN : User options
                    T3D,     QV3D,     U_PHY,    V_PHY,   SWDOWN,     SWDDIR,&
@@ -47,6 +47,15 @@ CONTAINS
 		 SHGXY,    SHCXY,    SHBXY,     EVGXY,    EVBXY,     GHVXY, & ! OUT Noah MP only
 		 GHBXY,    IRGXY,    IRCXY,     IRBXY,     TRXY,     EVCXY, & ! OUT Noah MP only
               CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY, RS,                  & ! OUT Noah MP only
+               QINTSXY   ,QINTRXY   ,QDRIPSXY   ,&
+               QDRIPRXY  ,QTHROSXY  ,QTHRORXY   ,&
+               QSNSUBXY  ,QSNFROXY  ,QSUBCXY    ,&
+               QFROCXY   ,QEVACXY   ,QDEWCXY    ,QFRZCXY   ,QMELTCXY   ,&
+               QSNBOTXY  ,PONDINGXY ,PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
+               FPICEXY,RAINLSM,SNOWLSM,FORCTLSM ,FORCQLSM,FORCPLSM,FORCZLSM,FORCWLSM,&
+               ACC_SSOILXY, ACC_QINSURXY, ACC_QSEVAXY, ACC_ETRANIXY, EFLXBXY, &
+               SOILENERGY, SNOWENERGY, CANHSXY, &
+               ACC_DWATERXY, ACC_PRCPXY, ACC_ECANXY, ACC_ETRANXY, ACC_EDIRXY, &
 !                 BEXP_3D,SMCDRY_3D,SMCWLT_3D,SMCREF_3D,SMCMAX_3D,          & ! placeholders to activate 3D soil
 !		 DKSAT_3D,DWSAT_3D,PSISAT_3D,QUARTZ_3D,                     &
 !		 REFDK_2D,REFKDT_2D,                                        &
@@ -117,6 +126,7 @@ CONTAINS
     INTEGER,                                         INTENT(IN   ) ::  IOPT_IRRM ! irrigation method
     INTEGER,                                         INTENT(IN   ) ::  IOPT_INFDV! infiltration options for dynamic VIC infiltration (1->Philip; 2-> Green-Ampt;3->Smith-Parlange)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_TDRN ! tile drainage (0-> no tile drainage; 1-> simple tile drainage;2->Hooghoudt's)
+    REAL,                                            INTENT(IN   ) ::  soiltstep ! soil timestep (s), default:0->same as main model timestep
     INTEGER,                                         INTENT(IN   ) ::  IZ0TLND   ! option of Chen adjustment of Czil (not used)
     INTEGER,                                         INTENT(IN   ) ::  sf_urban_physics   ! urban physics option
     REAL,    DIMENSION( ims:ime,       8, jms:jme ), INTENT(IN   ) ::  SOILCOMP  ! soil sand and clay percentage
@@ -277,8 +287,8 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  GPPXY     ! gross primary assimilation [g/m2/s C]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  NPPXY     ! net primary productivity [g/m2/s C]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  FVEGXY    ! Noah-MP vegetation fraction [-]
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  RUNSFXY   ! surface runoff [mm/s]
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  RUNSBXY   ! subsurface runoff [mm/s]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  RUNSFXY   ! surface runoff [mm] per soil timestep
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  RUNSBXY   ! subsurface runoff [mm] per soil timestep
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ECANXY    ! evaporation of intercepted water (mm/s)
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  EDIRXY    ! soil surface evaporation rate (mm/s]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ETRANXY   ! transpiration rate (mm/s)
@@ -311,7 +321,50 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHLEAFXY  ! leaf exchange coefficient 
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHUCXY    ! under canopy exchange coefficient 
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHV2XY    ! veg 2m exchange coefficient 
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHB2XY    ! bare 2m exchange coefficient 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHB2XY    ! bare 2m exchange coefficient
+! additional output variables
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PAHXY     ! precipitation advected heat 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PAHGXY    ! precipitation advected heat 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PAHBXY    ! precipitation advected heat 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PAHVXY    ! precipitation advected heat 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QINTSXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QINTRXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QDRIPSXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QDRIPRXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QTHROSXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QTHRORXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QSNSUBXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QSNFROXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QSUBCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QFROCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QEVACXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QDEWCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QFRZCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QMELTCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QSNBOTXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PONDINGXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  FPICEXY    !fraction of ice in precip
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  RAINLSM     !rain rate                   (mm/s)  AJN
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  SNOWLSM     !liquid equivalent snow rate (mm/s)  AJN
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  FORCTLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  FORCQLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  FORCPLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  FORCZLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  FORCWLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_SSOILXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_QINSURXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_QSEVAXY
+    REAL,    DIMENSION( ims:ime, 1:NSOIL, jms:jme ), INTENT(INOUT) ::  ACC_ETRANIXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  EFLXBXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  SOILENERGY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  SNOWENERGY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CANHSXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_DWATERXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_PRCPXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_ECANXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_ETRANXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_EDIRXY
+ 
     INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &  ! d -> domain
          &                           ims,ime, jms,jme, kms,kme,  &  ! m -> memory
          &                           its,ite, jts,jte, kts,kte      ! t -> tile
@@ -455,8 +508,8 @@ CONTAINS
     REAL                                :: GPP          ! gross primary assimilation [g/m2/s C]
     REAL                                :: NPP          ! net primary productivity [g/m2/s C]
     REAL                                :: FVEGMP       ! greenness vegetation fraction [-]
-    REAL                                :: RUNSF        ! surface runoff [mm/s]
-    REAL                                :: RUNSB        ! subsurface runoff [mm/s]
+    REAL                                :: RUNSF        ! surface runoff [mm] per soil timestep
+    REAL                                :: RUNSB        ! subsurface runoff [mm] per soil timestep
     REAL                                :: ECAN         ! evaporation of intercepted water (mm/s)
     REAL                                :: ETRAN        ! transpiration rate (mm/s)
     REAL                                :: ESOIL        ! soil surface evaporation rate (mm/s]
@@ -494,14 +547,43 @@ CONTAINS
     REAL                                :: CHLEAF       ! leaf exchange coefficient 
     REAL                                :: CHUC         ! under canopy exchange coefficient 
     REAL                                :: CHV2         ! veg 2m exchange coefficient 
-    REAL                                :: CHB2         ! bare 2m exchange coefficient 
-  REAL   :: PAHV    !precipitation advected heat - vegetation net (W/m2)
-  REAL   :: PAHG    !precipitation advected heat - under canopy net (W/m2)
-  REAL   :: PAHB    !precipitation advected heat - bare ground net (W/m2)
-  REAL   :: PAH     !precipitation advected heat - total (W/m2)
+    REAL                                :: CHB2         ! bare 2m exchange coefficient
+    REAL                                :: QINTS
+    REAL                                :: QINTR
+    REAL                                :: QDRIPS
+    REAL                                :: QDRIPR
+    REAL                                :: QTHROS
+    REAL                                :: QTHROR
+    REAL                                :: QSNSUB
+    REAL                                :: QSNFRO
+    REAL                                :: QEVAC
+    REAL                                :: QDEWC
+    REAL                                :: QSUBC
+    REAL                                :: QFROC
+    REAL                                :: QFRZC
+    REAL                                :: QMELTC 
+    REAL                                :: PAHV    !precipitation advected heat - vegetation net (W/m2)
+    REAL                                :: PAHG    !precipitation advected heat - under canopy net (W/m2)
+    REAL                                :: PAHB    !precipitation advected heat - bare ground net (W/m2)
+    REAL                                :: PAH     !precipitation advected heat - total (W/m2)
+    REAL                                :: RAININ  !rain rate                   (mm/s) 
+    REAL                                :: SNOWIN  !liquid equivalent snow rate (mm/s) 
+    REAL                                :: ACC_SSOIL
+    REAL                                :: ACC_QINSUR
+    REAL                                :: ACC_QSEVA
+    REAL, DIMENSION( 1:NSOIL)           :: ACC_ETRANI       !transpiration rate (mm/s) [+]
+    REAL                                :: EFLXB
+    REAL                                :: XMF
+    REAL, DIMENSION( -2:NSOIL )         :: HCPCT
+    REAL                                :: DZSNSO
+    REAL                                :: CANHS   ! canopy heat storage change (w/m2)
+    REAL                                :: ACC_DWATER
+    REAL                                :: ACC_PRCP
+    REAL                                :: ACC_ECAN
+    REAL                                :: ACC_ETRAN
+    REAL                                :: ACC_EDIR
 
 ! Intermediate terms
-
     REAL                                :: FPICE        ! snow fraction of precip
     REAL                                :: FCEV         ! canopy evaporation heat (w/m2) [+ to atm]
     REAL                                :: FGEV         ! ground evaporation heat (w/m2) [+ to atm]
@@ -559,6 +641,26 @@ CONTAINS
                 IOPT_INFDV,IOPT_TDRN )
 
     IPRINT    =  .false.                     ! debug printout
+
+! for using soil update timestep difference from noahmp main timestep
+    calculate_soil = .false.
+    soil_update_steps = nint(soiltstep/DT)  ! 3600 = 1 hour
+    soil_update_steps = max(soil_update_steps,1)
+    if( soil_update_steps == 1 .or. &
+        (soil_update_steps > 1 .and. mod(itimestep,soil_update_steps) == 1) ) then
+      ACC_SSOILXY  = 0.0
+      ACC_QINSURXY = 0.0
+      ACC_QSEVAXY  = 0.0
+      ACC_ETRANIXY = 0.0
+      ACC_DWATERXY = 0.0
+      ACC_PRCPXY   = 0.0
+      ACC_ECANXY   = 0.0
+      ACC_ETRANXY  = 0.0
+      ACC_EDIRXY   = 0.0
+    end if
+
+    if (mod(itimestep,soil_update_steps) == 0) calculate_soil = .true.
+! end soil timestep
 
     YEARLEN = 365                            ! find length of year for phenology (also S Hemisphere)
     if (mod(YR,4) == 0) then
@@ -726,6 +828,15 @@ CONTAINS
        SMCWTD                = SMCWTDXY(I,J)
        RECH                  = 0.
        DEEPRECH              = 0.  
+       ACC_SSOIL             = ACC_SSOILXY (I,J)                 ! surface heat flux
+       ACC_QSEVA             = ACC_QSEVAXY (I,J)
+       ACC_QINSUR            = ACC_QINSURXY(I,J)
+       ACC_ETRANI            = ACC_ETRANIXY(I,:,J)
+       ACC_DWATER            = ACC_DWATERXY(I,J)
+       ACC_PRCP              = ACC_PRCPXY  (I,J)
+       ACC_ECAN              = ACC_ECANXY  (I,J)
+       ACC_ETRAN             = ACC_ETRANXY (I,J)
+       ACC_EDIR              = ACC_EDIRXY  (I,J)
 
 ! tile drainage
        QTLDRN                = 0.                           ! tile drainage (mm)
@@ -966,11 +1077,11 @@ CONTAINS
          GPP    = undefined_value 
          NPP    = undefined_value 
          FVEGMP = 0.0 
-         ECAN   = undefined_value 
-         ETRAN  = undefined_value 
+         ECAN   = 0.0 
+         ETRAN  = 0.0
          APAR   = undefined_value 
          PSN    = undefined_value 
-         SAV    = undefined_value 
+         SAV    = 0.0 
          RSSUN  = undefined_value 
          RSSHA  = undefined_value 
          RB     = undefined_value
@@ -982,28 +1093,52 @@ CONTAINS
          TGV    = undefined_value
          CHV    = undefined_value 
          CHB    = CH 
-         IRC    = undefined_value 
-         IRG    = undefined_value 
-         SHC    = undefined_value 
-         SHG    = undefined_value 
-         EVG    = undefined_value 
-         GHV    = undefined_value 
+         IRC    = 0.0
+         IRG    = 0.0
+         SHC    = 0.0 
+         SHG    = 0.0
+         EVG    = 0.0
+         GHV    = 0.0
+         CANHS  = 0.0
          IRB    = FIRA
          SHB    = FSH
          EVB    = FGEV
          GHB    = SSOIL
-         TR     = undefined_value 
-         EVC    = undefined_value 
+         TR     = 0.0
+         EVC    = 0.0
+         PAH    = 0.0
+         PAHG   = 0.0
+         PAHB   = 0.0
+         PAHV   = 0.0
          CHLEAF = undefined_value 
          CHUC   = undefined_value 
          CHV2   = undefined_value 
-         FCEV   = undefined_value 
-         FCTR   = undefined_value        
+         FCEV   = 0.0
+         FCTR   = 0.0
          Z0WRF  = 0.002
          QFX(I,J) = ESOIL
          LH (I,J) = FGEV
-
-
+         QINTS  = 0.0
+         QINTR  = 0.0
+         QDRIPS = 0.0
+         QDRIPR = 0.0
+         QTHROS = PRCP * FPICE
+         QTHROR = PRCP * (1.0 - FPICE)
+         QSNSUB = MAX( ESOIL, 0.)
+         QSNFRO = ABS( MIN(ESOIL, 0.))
+         QSUBC = 0.0
+         QFROC = 0.0
+         QFRZC = 0.0
+         QMELTC = 0.0
+         QEVAC = 0.0
+         QDEWC = 0.0
+         RAININ = PRCP * (1.0 - FPICE)
+         SNOWIN = PRCP * FPICE
+         CANICE = 0.0
+         CANLIQ = 0.0
+         QTLDRN = 0.0
+         RUNSF  = RUNSF * dt
+         RUNSB  = RUNSB * dt
     ELSE
          ICE=0                              ! Neither sea ice or land ice.
          CALL NOAHMP_SFLX (parameters, &
@@ -1028,7 +1163,7 @@ CONTAINS
             SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
             GECROS1D,                                                   & ! IN/OUT :
             QTLDRN  , TDFRACMP,                                         & ! IN/OUT : tile drainage
-            Z0WRF   ,                                                   &
+            Z0WRF   ,                                                   & ! OUT :
             IRCNTSI , IRCNTMI , IRCNTFI , IRAMTSI , IRAMTMI , IRAMTFI , & ! IN/OUT : Irrigation: vars
             IRSIRATE, IRMIRATE, IRFIRATE, FIRR    , EIRR    ,           & ! IN/OUT : Irrigation: vars
             FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
@@ -1041,8 +1176,14 @@ CONTAINS
             BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT : 
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
-	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , & 
-            PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB        &
+	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , & ! OUT :
+            PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB      , & ! OUT :
+            QINTS   , QINTR   , QDRIPS  , QDRIPR  , QTHROS  , QTHROR  , & ! OUT :
+            QSNSUB  , QSNFRO  , QSUBC   , QFROC   , QFRZC   , QMELTC  , & ! OUT :
+            QEVAC   , QDEWC   ,                                         & ! OUT :
+            RAININ  , SNOWIN  , ACC_SSOIL, ACC_QINSUR, ACC_QSEVA      , & ! OUT :
+            ACC_ETRANI, HCPCT , EFLXB   , CANHS   ,                     & ! OUT :
+            ACC_DWATER, ACC_PRCP, ACC_ECAN, ACC_ETRAN, ACC_EDIR         & ! INOUT
 #ifdef WRF_HYDRO
             , sfcheadrt(i,j), WATBLED                                   &
 #endif
@@ -1056,9 +1197,10 @@ CONTAINS
 #ifdef WRF_HYDRO
 !AD_CHANGE: Glacier cells can produce small negative subsurface runoff for mass balance.
 !           This will crash channel routing, so only pass along positive runoff.
-            soldrain(i,j) = max(RUNSB*dt, 0.)        !mm , underground runoff
-            INFXSRT(i,j) = RUNSF*dt        !mm , surface runoff
-            qtiledrain (i,j) = QTLDRN*dt      !mm, tile drainage
+            !soldrain(i,j) = max(RUNSB*dt, 0.0)        !mm , underground runoff
+            soldrain(i,j) = max(RUNSB, 0.0)        !mm , underground runoff
+            INFXSRT(i,j) = RUNSF   !*dt        !mm , surface runoff
+            qtiledrain (i,j) = QTLDRN   !*dt      !mm, tile drainage
 #endif
 
 
@@ -1069,9 +1211,9 @@ CONTAINS
              GRDFLX   (I,J)                = SSOIL
 	     SMSTAV   (I,J)                = 0.0  ! [maintained as Noah consistency]
              SMSTOT   (I,J)                = 0.0  ! [maintained as Noah consistency]
-             SFCRUNOFF(I,J)                = SFCRUNOFF(I,J) + RUNSF  * DT
-             UDRUNOFF (I,J)                = UDRUNOFF(I,J)  + RUNSB  * DT
-             QTDRAIN  (I,J)                = QTDRAIN (I,J)  + QTLDRN * DT
+             SFCRUNOFF(I,J)                = SFCRUNOFF(I,J) + RUNSF  !* DT
+             UDRUNOFF (I,J)                = UDRUNOFF(I,J)  + RUNSB  !* DT
+             QTDRAIN  (I,J)                = QTDRAIN (I,J)  + QTLDRN !* DT
              IF ( SALB > -999 ) THEN
                 ALBEDO(I,J)                = SALB
              ENDIF
@@ -1120,7 +1262,6 @@ CONTAINS
              TAUSSXY  (I,J)                = TAUSS
 
 ! OUTPUT
-
              Z0       (I,J)                = Z0WRF
              ZNT      (I,J)                = Z0WRF
              T2MVXY   (I,J)                = T2MV
@@ -1172,15 +1313,68 @@ CONTAINS
              SHBXY    (I,J)                = SHB
              EVBXY    (I,J)                = EVB
              GHBXY    (I,J)                = GHB
+             canhsxy  (I,J)                = CANHS
              TRXY     (I,J)                = TR
              EVCXY    (I,J)                = EVC
              CHLEAFXY (I,J)                = CHLEAF
              CHUCXY   (I,J)                = CHUC
              CHV2XY   (I,J)                = CHV2
              CHB2XY   (I,J)                = CHB2
+             PAHXY    (I,J)                = PAH
+             PAHGXY   (I,J)                = PAHG
+             PAHBXY   (I,J)                = PAHB
+             PAHVXY   (I,J)                = PAHV
+             QINTSXY  (I,J)                = QINTS
+             QINTRXY  (I,J)                = QINTR
+             QDRIPSXY (I,J)                = QDRIPS
+             QDRIPRXY (I,J)                = QDRIPR
+             QTHROSXY (I,J)                = QTHROS
+             QTHRORXY (I,J)                = QTHROR
+             QSNSUBXY (I,J)                = QSNSUB
+             QSNFROXY (I,J)                = QSNFRO
+             QSUBCXY  (I,J)                = QSUBC
+             QFROCXY  (I,J)                = QFROC
+             QEVACXY  (I,J)                = QEVAC
+             QDEWCXY  (I,J)                = QDEWC
+             QFRZCXY  (I,J)                = QFRZC
+             QMELTCXY (I,J)                = QMELTC
+             QSNBOTXY (I,J)                = QSNBOT
+             PONDINGXY (I,J)               = PONDING + PONDING1 + PONDING2
+             FPICEXY  (I,J)                = FPICE
+             RAINLSM  (I,J)                = RAININ
+             SNOWLSM  (I,J)                = SNOWIN
+             FORCTLSM (I,J)                = T_ML
+             FORCQLSM (I,J)                = Q_ML
+             FORCPLSM (I,J)                = P_ML
+             FORCZLSM (I,J)                = Z_ML
+             FORCWLSM (I,J)                = SQRT(U_ML*U_ML + V_ML*V_ML)
              RECHXY   (I,J)                = RECHXY(I,J) + RECH*1.E3 !RECHARGE TO THE WATER TABLE
              DEEPRECHXY(I,J)               = DEEPRECHXY(I,J) + DEEPRECH
              SMCWTDXY(I,J)                 = SMCWTD
+             ACC_SSOILXY (I,J)             = ACC_SSOIL
+             ACC_QINSURXY(I,J)             = ACC_QINSUR
+             ACC_QSEVAXY (I,J)             = ACC_QSEVA
+             ACC_ETRANIXY(I,:,J)           = ACC_ETRANI
+             ACC_DWATERXY(I,J)             = ACC_DWATER
+             ACC_PRCPXY  (I,J)             = ACC_PRCP
+             ACC_ECANXY  (I,J)             = ACC_ECAN
+             ACC_ETRANXY (I,J)             = ACC_ETRAN
+             ACC_EDIRXY  (I,J)             = ACC_EDIR
+             EFLXBXY (I,J)                 = EFLXB
+             SNOWENERGY(I,J)               = 0.0
+             SOILENERGY(I,J)               = 0.0
+             DO K = ISNOW+1, NSOIL
+               IF(K == ISNOW+1) THEN
+                 DZSNSO = - ZSNSO(K)
+               ELSE
+                 DZSNSO = ZSNSO(K-1) - ZSNSO(K)
+               END IF
+               IF(K >= 1) THEN
+                 SOILENERGY(I,J) = SOILENERGY(I,J) + DZSNSO * HCPCT(K) * (STC(K)-273.16) * 0.001
+               ELSE
+                 SNOWENERGY(I,J) = SNOWENERGY(I,J) + DZSNSO * HCPCT(K) * (STC(K)-273.16) * 0.001
+               END IF
+             ENDDO
 
              GRAINXY  (I,J) = GRAIN !GRAIN XING
              GDDXY    (I,J) = GDD   !XING 
@@ -2217,8 +2411,9 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
     SUBROUTINE GROUNDWATER_INIT (   &
             &            GRID, NSOIL , DZS, ISLTYP, IVGTYP, WTDDT , &
             &            FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA ,WTD ,  &
-            &            SMOIS,SH2O, SMOISEQ, SMCWTDXY, DEEPRECHXY, RECHXY ,  &
-            &            QSLATXY, QRFSXY, QSPRINGSXY,                  &
+            &            SMOIS,SH2O, SMOISEQ, SMCWTDXY,  &
+            &            QLATXY, QSLATXY, QRFXY, QRFSXY, &
+            &            DEEPRECHXY, RECHXY , QSPRINGXY, QSPRINGSXY, &
             &            rechclim  ,                                   &
             &            ids,ide, jds,jde, kds,kde,                    &
             &            ims,ime, jms,jme, kms,kme,                    &
@@ -2264,7 +2459,11 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                                                            RECHXY, &
                                                            QSLATXY, &
                                                            QRFSXY, &
-                                                           QSPRINGSXY  
+                                                           QSPRINGSXY, &
+                                                           QLATXY, &
+                                                           QRFXY, &
+                                                           QSPRINGXY
+
 ! local
     INTEGER  :: I,J,K,ITER,itf,jtf, NITER, NCOUNT,NS
     REAL :: BEXP,SMCMAX,PSISAT,SMCWLT,DWSAT,DKSAT
@@ -2490,16 +2689,19 @@ EQWTD=WTD
             ELSE
               SMOISEQ (I,1:NSOIL,J) = SMCMAX
               SMCWTDXY(I,J) = SMCMAX
-              WTD(I,J) = 0.
+              WTD(I,J) = 0.0
             ENDIF
 
 !zero out some arrays
 
-             DEEPRECHXY(I,J) = 0.
-             RECHXY(I,J) = 0.
-             QSLATXY(I,J) = 0.
-             QRFSXY(I,J) = 0.
-             QSPRINGSXY(I,J) = 0.
+             QLATXY(I,J) = 0.0
+             QSLATXY(I,J) = 0.0
+             QRFXY(I,J) = 0.0
+             QRFSXY(I,J) = 0.0
+             DEEPRECHXY(I,J) = 0.0
+             RECHXY(I,J) = 0.0
+             QSPRINGXY(I,J) = 0.0
+             QSPRINGSXY(I,J) = 0.0
 
           ENDDO
        ENDDO

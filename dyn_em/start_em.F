@@ -1285,8 +1285,9 @@ endif
                  config_flags%num_soil_layers, grid%dzs, grid%isltyp, grid%ivgtyp, config_flags%wtddt , &
                  grid%fdepthxy   , grid%ht     , grid%riverbedxy, grid%eqzwt     ,                      &
                  grid%rivercondxy, grid%pexpxy , grid%areaxy    , grid%zwtxy     ,                      &
-                 grid%smois      , grid%sh2o   , grid%smoiseq   , grid%smcwtdxy  , grid%deeprechxy,     &
-                 grid%rechxy     , grid%qslatxy, grid%qrfsxy    , grid%qspringsxy,                      &
+                 grid%smois      , grid%sh2o   , grid%smoiseq   , grid%smcwtdxy  ,                      &
+                 grid%qlatxy     , grid%qslatxy, grid%qrfxy     , grid%qrfsxy    ,                      &
+                 grid%deeprechxy , grid%rechxy , grid%qspringxy , grid%qspringsxy,                      &
                  grid%rechclim   ,                                                                      &
                  ids,ide, jds,jde, kds,kde,                                                             &
                  ims,ime, jms,jme, kms,kme,                                                             &

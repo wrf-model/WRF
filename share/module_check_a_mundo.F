@@ -890,7 +890,9 @@
             CALL wrf_message ( TRIM( wrf_err_message ) )
             wrf_err_message = '           And the LW and SW schemes must be reasonably paired together:'  
             CALL wrf_message ( TRIM( wrf_err_message ) )
-            wrf_err_message = '           OK = CAM LW with CAM SW; OK = RRTM, RRTMG, RRTMG_fast LW and SW may be mixed'
+            wrf_err_message = '           OK = CAM LW with CAM SW'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           OK = RRTM, RRTMG LW or SW, RRTMG_fast LW or SW may be mixed'
             CALL wrf_message ( TRIM( wrf_err_message ) )
          END IF
       END IF

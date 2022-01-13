@@ -1324,6 +1324,10 @@ Options for use with the Noah-MP Land Surface Model:
  soiltstep                          = 0.0,      ! Noah-MP soil process timestep (seconds) for solving soil water and temperature
                                                      0 = default, the same as main NoahMP model timestep
                                                      N * dt_noahmp, typically 15min or 30min
+ noahmp_output                      = 1,        ! Noah-MP output levels
+                                                     1 = standard output
+                                                     3 = standard output with additional water and energy budget term output
+ noahmp_acc_dt                      = 0.0,      ! Noah-MP bucket reset time interval (minutes) between outputs for accumulation (works when noahmp_output=3)
  /
 
  &fdda

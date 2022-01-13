@@ -775,8 +775,8 @@ contains
   REAL                                           :: HETERS !organic respiration (g/m2/s C)
   REAL                                           :: TROOT  !root-zone averaged temperature (k)
   REAL                                           :: BDFALL   !bulk density of new snow (kg/m3)    ! MB/AN: v3.7
-  REAL                                           :: RAIN     !rain rate                   (mm/s)  ! MB/AN: v3.7
-  REAL                                           :: SNOW     !liquid equivalent snow rate (mm/s)  ! MB/AN: v3.7
+  REAL                          , INTENT(OUT)    :: RAIN     !rain rate                   (mm/s)  ! MB/AN: v3.7
+  REAL                          , INTENT(OUT)    :: SNOW     !liquid equivalent snow rate (mm/s)  ! MB/AN: v3.7
   REAL                                           :: FP                                            ! MB/AN: v3.7
   REAL                                           :: PRCP                                          ! MB/AN: v3.7
 !more local variables for precip heat MB

@@ -841,13 +841,10 @@ contains
 ! total water storage for water balance check
       
      IF(IST == 1) THEN
-        BEG_WB = CANLIQ + CANICE + SNEQV
-        if (calculate_soil) then
-           DO IZ = 1,NSOIL
-              BEG_WB = BEG_WB + SMC(IZ) * DZSNSO(IZ) * 1000.0
-           END DO
-           BEG_WB = BEG_WB + WA
-        endif
+        BEG_WB = CANLIQ + CANICE + SNEQV + WA
+        DO IZ = 1,NSOIL
+           BEG_WB = BEG_WB + SMC(IZ) * DZSNSO(IZ) * 1000.0
+        END DO
      END IF
 
 ! vegetation phenology
@@ -1697,27 +1694,20 @@ ENDIF   ! CROPTYPE == 0
 
 ! only water balance check for soil timestep
    IF (IST == 1) THEN       !soil
-      END_WB = CANLIQ + CANICE + SNEQV
-      if (calculate_soil) then
-         DO IZ = 1,NSOIL
-            END_WB = END_WB + SMC(IZ) * DZSNSO(IZ) * 1000.0
-         END DO
-         END_WB = END_WB + WA
-      endif
+      END_WB = CANLIQ + CANICE + SNEQV + WA
+      DO IZ = 1,NSOIL
+         END_WB = END_WB + SMC(IZ) * DZSNSO(IZ) * 1000.0
+      END DO
       ! accumualted water change (only for canopy and snow during non-soil timestep)
-      if ( .not. calculate_soil )  then
-         ACC_DWATER = ACC_DWATER + (END_WB - BEG_WB) / soil_update_steps ! accumulated change in snow, canopy water
-      else
-         ACC_DWATER = ACC_DWATER + (END_WB - BEG_WB)  ! snow, canopy, and soil water change
-      endif
+      ACC_DWATER = ACC_DWATER + (END_WB - BEG_WB)  ! snow, canopy, and soil water change
       ACC_PRCP   = ACC_PRCP   + PRCP * DT        ! accumulated precip 
       ACC_ECAN   = ACC_ECAN   + ECAN * DT        ! accumulated canopy evapo
       ACC_ETRAN  = ACC_ETRAN  + ETRAN * DT       ! accumulated transpiration
       ACC_EDIR   = ACC_EDIR   + EDIR * DT        ! accumulated soil evapo
 
       if (calculate_soil) then
-         ERRWAT = ACC_DWATER - ( (ACC_PRCP + IRFIRATE*1000.0 - ACC_ECAN - &
-                  ACC_ETRAN - ACC_EDIR - RUNSRF - RUNSUB - QTLDRN) / soil_update_steps + IRMIRATE*1000.0 )
+         ERRWAT = ACC_DWATER - (ACC_PRCP + IRFIRATE*1000.0 + IRMIRATE*1000.0 - ACC_ECAN - &
+                                ACC_ETRAN - ACC_EDIR - RUNSRF - RUNSUB - QTLDRN)
 
 #ifndef WRF_HYDRO
         IF(ABS(ERRWAT) > 0.1) THEN
@@ -1729,9 +1719,9 @@ ENDIF   ! CROPTYPE == 0
            write(message, *) 'ERRWAT =',ERRWAT, "kg m{-2} timestep{-1}"
            call wrf_message(trim(message))
            WRITE(message, &
-           '("  I    J   END-BEG     PRCP     IRMIRATE     IRFIRATE      ECAN     EDIR    ETRAN   RUNSRF   RUNSUB   ZWT   QTLDRN")')
+           '("     I      J     END-BEG     PRCP     IRMIRATE     IRFIRATE      ECAN     EDIR    ETRAN   RUNSRF   RUNSUB   ZWT   QTLDRN")')
            call wrf_message(trim(message))
-           WRITE(message,'(i6,1x,i6,1x,f15.3,10f11.5)')ILOC,JLOC,ACC_DWATER,ACC_PRCP,IRMIRATE*1000.0,&
+           WRITE(message,'(i6,i6,f10.3,10f10.5)')ILOC,JLOC,ACC_DWATER,ACC_PRCP,IRMIRATE*1000.0,&
                 IRFIRATE*1000.0,ACC_ECAN,ACC_EDIR,ACC_ETRAN,RUNSRF,RUNSUB,ZWT,QTLDRN
            call wrf_message(trim(message))
            call wrf_error_fatal("Water budget problem in NOAHMP LSM")

@@ -49,7 +49,7 @@ CONTAINS
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
                vcsulf_old,                                              &
                vdrog3,                                                  &
-               kemit,brch_ratio,                                        &
+               kemit,brch_ratio,do_isorropia,                           &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
@@ -98,6 +98,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , kms:kme-0 , jms:jme )         ,         &
          INTENT(IN   ) ::   vcsulf_old
    REAL, INTENT(IN   ) ::   dtstep
+   LOGICAL, INTENT(IN ) :: do_isorropia
 
       REAL drog_in(ldrog_vbs)    ! anthropogenic AND biogenic organic aerosol precursors [ug m**-3 s**-1]
 
@@ -413,7 +414,8 @@ INTEGER :: i,j,k,l,debug_level
 ! condvap_in is removed
       CALL rpmmod3(nspcsda,blksize,k,dtstep,10.*p(k),t(k),rh0(k),nitrate_in,nh3_in, &
         vsulf_in,so4rat_in,drog_in,ldrog_vbs,ncv,nacv,eeci_in,eecj_in, &
-        eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,soilrat_in,cblk,i,j,k,brrto)
+        eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,soilrat_in,cblk,i,j,k,brrto, &
+        do_isorropia )
 
 ! calculation of brch_ratio
         brch_ratio(i,k,j)= brrto
@@ -1411,7 +1413,7 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
     epm25j,eorgi,eorgj,eeci,eecj,epmcoarse,esoil,eseas,xlm,amu,dgnuc, &
     dgacc,dgcor,pmassn,pmassa,pmassc,pdensn,pdensa,pdensc,knnuc,knacc, &
     kncor,fconcn,fconca,fconcn_org,fconca_org,dmdt,dndt,cgrn3,cgra3,urn00, &
-    ura00,brna01,c30,deltaso4a,igrid,jgrid,kgrid,brrto)
+    ura00,brna01,c30,deltaso4a,igrid,jgrid,kgrid,brrto,do_isorropia)
 
 !USE module_configure, only: grid_config_rec_type
 !TYPE (grid_config_rec_type), INTENT (in) :: config_flags
@@ -1563,7 +1565,8 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 ! rate for 0th moment                     
       REAL c30(blksize)                                                        ! by intermodal c
       REAL brrto
-
+!
+      LOGICAL do_isorropia
 ! *** other processes
 
 ! intermodal 3rd moment transfer r
@@ -1581,15 +1584,12 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
       PARAMETER (unit=20)
       integer igrid,jgrid,kgrid,isorop
 
-!liqy
-      isorop=1
-
 ! *** get water, ammonium  and nitrate content:
 !     for now, don't call if temp is below -40C (humidity
 !     for this wrf version is already limited to 10 percent)
-        if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.1)then
+        if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. do_isorropia )then
             CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh)
-        else if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.0)then
+        else if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. (.not. do_isorropia) )then
            CALL eql4(blksize,nspcsda,numcells,cblk,blkta,blkrh)
         endif
 
@@ -5135,7 +5135,7 @@ END SUBROUTINE rpmares_old
     SUBROUTINE rpmmod3(nspcsda,blksize,layer,dtsec,pres,temp,relhum, &
         nitrate_in,nh3_in,vsulf_in,so4rat_in,drog_in,ldrog_vbs,ncv, &
         nacv,eeci_in,eecj_in,eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,    &
-        soilrat_in,cblk,igrid,jgrid,kgrid,brrto)
+        soilrat_in,cblk,igrid,jgrid,kgrid,brrto,do_isorropia)
 
 !USE module_configure, only: grid_config_rec_type
 !TYPE (grid_config_rec_type), INTENT (in) :: config_flags
@@ -5205,6 +5205,7 @@ END SUBROUTINE rpmares_old
       REAL drog(blksize,ldrog_vbs)                                 ! organic aerosol precursor [ppm]
 
       REAL brrto
+      LOGICAL do_isorropia
 !bs
 ! *** Primary emissions rates: [ ug / m**3 s ]
 
@@ -5460,7 +5461,7 @@ END SUBROUTINE rpmares_old
         nacv,epm25i,epm25j,eorgi,eorgj,eeci,eecj,epmcoarse,esoil,eseas,xlm, &
         amu,dgnuc,dgacc,dgcor,pmassn,pmassa,pmassc,pdensn,pdensa,pdensc,knnuc, &
         knacc,kncor,fconcn,fconca,fconcn_org,fconca_org,dmdt,dndt,cgrn3,cgra3, &
-        urn00,ura00,brna01,brna31,deltaso4a,igrid,jgrid,kgrid,brrto)
+        urn00,ura00,brna01,brna31,deltaso4a,igrid,jgrid,kgrid,brrto,do_isorropia)
 
 ! *** write output
 !      WRITE(UNIT,*) ' AFTER AEROPROC '

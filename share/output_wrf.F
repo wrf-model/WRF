@@ -47,6 +47,7 @@
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
     INTEGER skebs_on, sppt_on, rand_perturb_on, nens,ISEED_SKEBS,ISEED_SPPT,ISEED_RAND_PERT
     INTEGER skebs_vertstruc, sppt_vertstruc, rand_pert_vertstruc
+    INTEGER ghg_input
     INTEGER LMINFORC,LMAXFORC,KMINFORC,KMAXFORC,LMINFORCT,LMAXFORCT,KMINFORCT,KMAXFORCT
     INTEGER NTASKS_X, NTASKS_Y
     REAL    gridpt_stddev_rand_pert,stddev_cutoff_rand_pert,timescale_rand_pert
@@ -177,6 +178,7 @@
     call nl_get_swrad_scat           ( 1      ,  swrad_scat           )
     call nl_get_sf_urban_physics     ( grid%id,  sf_urban_physics     )
     call nl_get_w_damping            ( 1      ,  w_damping            )
+    call nl_get_ghg_input            ( 1      ,  ghg_input            )
 
 #if (EM_CORE == 1)
     call nl_get_hypsometric_opt    ( 1, hypsometric_opt           )
@@ -646,6 +648,7 @@ endif
          ( use_package( io_form ) == IO_PNETCDF ) ) THEN
       CALL wrf_put_dom_ti_integer ( fid, 'SURFACE_INPUT_SOURCE', surface_input_source , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SST_UPDATE', sst_update , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'GHG_INPUT', ghg_input , 1 , ierr )
 #if (EM_CORE == 1)
       CALL wrf_put_dom_ti_integer ( fid, 'GRID_FDDA', grid_fdda , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'GFDDA_INTERVAL_M', gfdda_interval_m , 1 , ierr )

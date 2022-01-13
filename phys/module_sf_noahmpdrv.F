@@ -359,11 +359,11 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  SOILENERGY
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  SNOWENERGY
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CANHSXY
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_DWATERXY
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_PRCPXY
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_ECANXY
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_ETRANXY
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  ACC_EDIRXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_DWATERXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_PRCPXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_ECANXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_ETRANXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_EDIRXY
  
     INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &  ! d -> domain
          &                           ims,ime, jms,jme, kms,kme,  &  ! m -> memory

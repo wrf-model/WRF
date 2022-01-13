@@ -11481,77 +11481,8 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_LWRAD(                                        &
                        rthratenlw,                                &
-<<<<<<< HEAD
-=======
-                       rthratenlwc,                               &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-                       lwupt, lwuptc, lwuptcln, lwdnt, lwdntc, lwdntcln, &
-                       lwupb, lwupbc, lwupbcln, lwdnb, lwdnbc, lwdnbcln, &
-!                      lwupflx, lwupflxc, lwdnflx, lwdnflxc,      &
-                       glw, olr, lwcf, emiss,                     &
-                       p8w, p3d, pi3d,                            &
-                       dz8w, tsk, t3d, t8w, rho3d, r, g,          &
-                       icloud, warm_rain, cldfra3d,               &
-                       cldovrlp,                                  & 
-                       lradius,iradius,                           & 
-                       is_cammgmp_used,                           & 
-                       f_ice_phy, f_rain_phy,                     &
-                       xland, xice, snow,                         &
-                       qv3d, qc3d, qr3d,                          &
-                       qi3d, qs3d, qg3d,                          &
-                       o3input, o33d,                             &
-                       f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
-                       re_cloud, re_ice, re_snow,                 &  ! G. Thompson
-                       has_reqc, has_reqi, has_reqs,              &  ! G. Thompson
-                       tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4,   & ! czhao 
-                       tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,   & ! czhao 
-                       tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12,   & ! czhao 
-                       tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,   & ! czhao 
-                       aer_ra_feedback,                           & !czhao
-!jdfcz                 progn,prescribe,                           & !czhao
-                       progn,calc_clean_atm_diag,                 & !czhao
-                       qndrop3d,f_qndrop,                         & !czhao
-!ccc added for time varying gases.
-                       yr,julian,                                 &
-!ccc
-                       mp_physics,                                &
-                       ids,ide, jds,jde, kds,kde,                 & 
-                       ims,ime, jms,jme, kms,kme,                 &
-                       its,ite, jts,jte, kts,kte,                 &
-                       lwupflx, lwupflxc, lwdnflx, lwdnflxc       &
-                                                                  )
-!------------------------------------------------------------------
-!ccc To use clWRF time varying trace gases
-   USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
-
-   IMPLICIT NONE
-!------------------------------------------------------------------
-   LOGICAL, INTENT(IN )      ::        warm_rain
-   LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
-!
-   INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
-                                       ims,ime, jms,jme, kms,kme, &
-                                       its,ite, jts,jte, kts,kte
-
-   INTEGER, INTENT(IN )      ::        ICLOUD
-   INTEGER, INTENT(IN )      ::        MP_PHYSICS
-!
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         INTENT(IN   ) ::                                   dz8w, &
-                                                             t3d, &
-                                                             t8w, &
-                                                             p8w, &
-                                                             p3d, &
-                                                            pi3d, &
-                                                           rho3d
-
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-<<<<<<< HEAD
-         INTENT(INOUT)  ::                            RTHRATENLW
-=======
          INTENT(INOUT)  ::                            RTHRATENLW, &
                                                       RTHRATENLWC
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GLW, &
@@ -12746,11 +12677,8 @@ CONTAINS
          do k=kts,kte
             tten1d(k) = hr(ncol,k)/86400.
             rthratenlw(i,k,j) = tten1d(k)/pi3d(i,k,j)
-<<<<<<< HEAD
-=======
             tten1d(k) = hrc(ncol,k)/86400.
             rthratenlwc(i,k,j) = tten1d(k)/pi3d(i,k,j)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          enddo
 
 !

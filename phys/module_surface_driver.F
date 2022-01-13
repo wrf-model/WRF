@@ -57,20 +57,12 @@ CONTAINS
      &          ,wsat_px, clay_px, csand_px, fmsand_px                              & ! PX-LSM
      &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz     &
      &          ,iopt_inf ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot ,iopt_stc     &
-<<<<<<< HEAD
-     &          ,iopt_gla ,iopt_rsf  ,iopt_soil ,iopt_pedo ,iopt_crop               &
-     &          ,soilcomp  , soilcl1, soilcl2, soilcl3, soilcl4                     &
-     &          ,isnowxy  ,tvxy      ,tgxy      ,canicexy  ,canliqxy  ,eahxy        &
-     &          ,tahxy    ,cmxy      ,chxy      ,fwetxy    ,sneqvoxy  ,alboldxy     &
-     &          ,qsnowxy  ,wslakexy  ,zwtxy     ,waxy      ,wtxy      ,tsnoxy       &
-=======
      &          ,iopt_gla ,iopt_rsf  ,iopt_soil ,iopt_pedo ,iopt_crop ,iopt_irr     &
      &          ,iopt_irrm                                                          &
      &          ,soilcomp  , soilcl1, soilcl2, soilcl3, soilcl4                     &
      &          ,isnowxy  ,tvxy      ,tgxy      ,canicexy  ,canliqxy  ,eahxy        &
      &          ,tahxy    ,cmxy      ,chxy      ,fwetxy    ,sneqvoxy  ,alboldxy     &
      &          ,qsnowxy  ,qrainxy   ,wslakexy  ,zwtxy     ,waxy, wtxy, tsnoxy      &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      &          ,zsnsoxy  ,snicexy   ,snliqxy   ,lfmassxy  ,rtmassxy  ,stmassxy     &
      &          ,woodxy   ,stblcpxy  ,fastcpxy  ,xsaixy    ,taussxy                 &
      &          ,grainxy  ,gddxy     ,cropcat   ,pgsxy                              &
@@ -82,15 +74,11 @@ CONTAINS
      &          ,bgapxy   ,wgapxy    ,tgvxy     ,tgbxy     ,chvxy     ,chbxy        &    
      &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
      &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
-<<<<<<< HEAD
-     &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &                      
-=======
      &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &            
            ! Noah-MP irrigation
      &          ,IRFRACT  ,SIFRACT   ,MIFRACT   ,FIFRACT   ,IRNUMSI   ,IRNUMMI      &
      &          ,IRNUMFI  ,IRWATSI   ,IRWATMI   ,IRWATFI   ,IRELOSS   ,IRSIVOL      &
      &          ,IRMIVOL  ,IRFIVOL   ,IRRSPLH                                       &          
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            ! Noah-MP ground water
      &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
      &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
@@ -111,24 +99,17 @@ CONTAINS
 #if (EM_CORE==1)
  !    &          ,lakemask,  lakeflag                                  & !lake
      &          ,lakemask                                  & !lake
-<<<<<<< HEAD
-=======
                 , restart_flag                             & ! restart_flag
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
             !  cyl ocean variable
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
      &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
      &          ,XTIME,OM_TINI,OM_SINI,id,omdt                        &
-<<<<<<< HEAD
-! CLM variables
-=======
 ! CLM variables, some only included if WRF_CHEM is compiled     BJG 3/28/19
 #if ( WRF_CHEM == 1)
      &          ,e_bio,ne_area  &
 #endif
                 ,do_bioe,do_meganfile  &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      &          ,numc,nump,sabv,sabg,lwup,snl,history_interval &
      &          ,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
      &           h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,         &
@@ -158,13 +139,10 @@ CONTAINS
      &           ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
      &           Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
      &           SWUPsubgrid,LHsoi,LHveg,LHtran                      &
-<<<<<<< HEAD
-=======
 !sw++
      &           ,t_veg24, t_veg240, fsun24, fsun240,                &
      &           fsd24, fsd240, fsi24, fsi240, laip                  &
 !sw--
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef CN
 !ADD_NEW_VAR for crop and cn
      &           ,dyntlai,dyntsai,dyntop,dynbot                              &
@@ -198,12 +176,9 @@ CONTAINS
      &           ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
      &           ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
-<<<<<<< HEAD
-=======
 !sw++
                  ,pct_pft_input,num_pft_input,input_pft_flag  &
 !sw--
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             !  Optional urban
      &          ,slope_rad,topo_shading,shadowmask                    & !I solar
      &          ,swnorm,slope,slp_azi,diffuse_frac                    & !I solar
@@ -281,13 +256,9 @@ CONTAINS
              !  Optional adaptive time step
      &          ,bldt,curr_secs,adapt_step_flag,bldtacttime           & 
          ! Optional urban with BEP
-<<<<<<< HEAD
      &          ,sf_urban_physics,ahe_scheme,ahe24                    &
      &          ,ahucm                                                &
      &          ,gmt,xlat,xlong,julday                                &
-=======
-     &          ,sf_urban_physics,gmt,xlat,xlong,julday               &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      &          ,num_urban_ndm                                        & !multi-layer urban
      &          ,urban_map_zrd                                        & !multi-layer urban
      &          ,urban_map_zwd                                        & !multi-layer urban
@@ -298,10 +269,7 @@ CONTAINS
      &          ,urban_map_wd                                         & !multi-layer urban
      &          ,urban_map_gbd                                        & !multi-layer urban
      &          ,urban_map_fbd                                        & !multi-layer urban
-<<<<<<< HEAD
-=======
      &          ,urban_map_zgrd                                       & !multi-layer urban
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      &          ,num_urban_hi                                         & !multi-layer urban
      &          ,tsk_rural                                            & !multi-layer urban
      &          ,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d              & !multi-layer urban
@@ -312,8 +280,6 @@ CONTAINS
      &          ,sfvent_urb3d,lfvent_urb3d                            & !multi-layer urban 
      &          ,sfwin1_urb3d,sfwin2_urb3d                            & !multi-layer urban       
      &          ,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d            & !multi-layer urban
-<<<<<<< HEAD
-=======
      &          ,ep_pv_urb3d,t_pv_urb3d                              & !multi-layer urban GRZ
      &          ,trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d              & !multi-layer urban GRZ
      &          ,drain_urb4d,draingr_urb3d                           & !multi-layer urban GRZ
@@ -321,7 +287,6 @@ CONTAINS
      &          ,dgr_urb3d,dg_urb3d                                   & !multi-layer urb;:an GRZ
      &          ,lfr_urb3d,lfg_urb3d                                 & !multi-layer urban GRZ
      &          ,swddir,swddif                                        & !gl
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      &          ,lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d                 & !multi-layer urban
      &          ,mh_urb2d,stdh_urb2d,lf_urb2d                         &           
      &          ,a_u_bep,a_v_bep,a_t_bep,a_q_bep                      &
@@ -373,10 +338,7 @@ CONTAINS
                                        ,RUCLSMSCHEME              &
                                        ,PXLSMSCHEME               &
                                        ,CLMSCHEME                 &
-<<<<<<< HEAD
-=======
                                        ,CTSMSCHEME                &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                        ,SSIBSCHEME                & !ssib
                                        ,MYNNSFCSCHEME             &
                                        ,OMLSCHEME                 &
@@ -414,23 +376,16 @@ CONTAINS
    USE module_sf_qnsesfc
    USE module_sf_gfs
    USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted 
-<<<<<<< HEAD
-   USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
-=======
    USE module_sf_noahlsm, only : LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    USE module_sf_noahmpdrv, only : noahmplsm, noahmp_urban
    USE module_sf_noahmp_groundwater
    USE module_sf_noah_seaice_drv
 #ifdef WRF_USE_CLM
    USE module_sf_clm
 #endif
-<<<<<<< HEAD
-=======
 #ifdef WRF_USE_CTSM
    USE module_sf_ctsm, only : ctsm_run
 #endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    USE module_sf_ssib  ! ssib
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
@@ -673,11 +628,8 @@ CONTAINS
    INTEGER, INTENT(IN)::   IFNDALBSI
    INTEGER, INTENT(IN)::   IFNDICEDEPTH
    INTEGER, INTENT(IN)::   IFNDSNOWSI
-<<<<<<< HEAD
-=======
    LOGICAL, INTENT(IN)::   do_bioe
    LOGICAL, INTENT(IN)::   do_meganfile
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
@@ -689,13 +641,10 @@ CONTAINS
    INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
                           sf_urban_physics,ra_lw_physics,sst_update,  &
                           ra_sw_physics, bl_pbl_physics
-<<<<<<< HEAD
    INTEGER, INTENT(IN) :: ahe_scheme
    REAL, DIMENSION( 0:23, ims:ime, jms:jme ), INTENT(IN), OPTIONAL &
                        :: ahe24
    REAL, INTENT(OUT), DIMENSION( ims:ime, jms:jme ) :: AHUCM
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    INTEGER, INTENT(IN),OPTIONAL :: sst_skin, tmn_update,              &
                                    scm_force_skintemp, scm_force_flux 
 
@@ -966,12 +915,8 @@ CONTAINS
 
    INTEGER, OPTIONAL, INTENT(IN) ::    idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc , iopt_frz, &
                                     iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc, &
-<<<<<<< HEAD
-				    iopt_gla, iopt_rsf, iopt_soil,iopt_pedo,iopt_crop
-=======
 				    iopt_gla, iopt_rsf, iopt_soil,iopt_pedo,iopt_crop, iopt_irr, &
                                     iopt_irrm
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL,    OPTIONAL, DIMENSION(ims:ime ,8, jms:jme), INTENT(IN) :: SOILCOMP
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme)  , INTENT(IN) :: SOILCL1,SOILCL2,SOILCL3,SOILCL4
 
@@ -980,11 +925,7 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime ,-2:0,               jms:jme), INTENT(INOUT) :: TSNOXY, SNICEXY, SNLIQXY
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) ::                    &
            TVXY,    TGXY,CANICEXY,CANLIQXY,   EAHXY,   TAHXY,    CMXY,    CHXY,  FWETXY,SNEQVOXY,ALBOLDXY, &
-<<<<<<< HEAD
-        QSNOWXY,WSLAKEXY,   ZWTXY,    WAXY,    WTXY,LFMASSXY,RTMASSXY,STMASSXY,  WOODXY,STBLCPXY,FASTCPXY, &
-=======
         QSNOWXY, QRAINXY, WSLAKEXY, ZWTXY, WAXY,WTXY,LFMASSXY,RTMASSXY,STMASSXY, WOODXY,STBLCPXY,FASTCPXY, &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	GRAINXY,   GDDXY,                                                                                  &
 	 XSAIXY, TAUSSXY,  T2MVXY,  T2MBXY,  Q2MVXY,  Q2MBXY,  TRADXY,   NEEXY,   GPPXY,                   &
           NPPXY,  FVEGXY, RUNSFXY, RUNSBXY,  ECANXY,  EDIRXY, ETRANXY,   FSAXY,  FIRAXY,  APARXY,   PSNXY, &
@@ -996,15 +937,12 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: HARVEST
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: SEASON_GDD
 
-<<<<<<< HEAD
-=======
 !  NoahMP irrigation
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN)    :: IRFRACT, SIFRACT, MIFRACT, FIFRACT
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: IRWATSI, IRWATMI, IRWATFI, IRELOSS, &
                                                                      IRSIVOL, IRMIVOL, IRFIVOL, IRRSPLH
    INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: IRNUMSI, IRNUMMI, IRNUMFI
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !  NoahMP specific fields - runoff option 5
 
    INTEGER, OPTIONAL, INTENT(IN)      :: stepwtd
@@ -1035,10 +973,7 @@ CONTAINS
    INTEGER , INTENT(IN)        ::     urban_map_wd
    INTEGER , INTENT(IN)        ::     urban_map_gbd
    INTEGER , INTENT(IN)        ::     urban_map_fbd
-<<<<<<< HEAD
-=======
    INTEGER , INTENT(IN)        ::     urban_map_zgrd
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    INTEGER, INTENT(IN )::   NUM_URBAN_HI
    REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: trb_urb4d
@@ -1056,18 +991,13 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: cm_ac_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sfvent_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lfvent_urb3d
-<<<<<<< HEAD
-=======
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN ):: SWDDIR,SWDDIF
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_wd,  jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_wd,  jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd,  jms:jme ), INTENT(INOUT) :: sfw1_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd,  jms:jme ), INTENT(INOUT) :: sfw2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: sfr_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: sfg_urb3d
-<<<<<<< HEAD
-=======
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ep_pv_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: t_pv_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme ),INTENT(INOUT) :: trv_urb4d !GRZ
@@ -1082,7 +1012,6 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: dg_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: lfr_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: lfg_urb3d !GRZ
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN)  :: hi_urb2d  !urban
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: lp_urb2d  !urban
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: lb_urb2d  !urban
@@ -1218,24 +1147,18 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)          ::   ZOL
 
    INTEGER, INTENT(IN) :: MAXPATCH, inest
-<<<<<<< HEAD
-=======
 #if ( WRF_CHEM == 1 )
    INTEGER, INTENT(IN) :: ne_area
 #endif
 !   End modification
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
   integer, optional,  dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: sabv,sabg,lwup
   integer, optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) ::t2m_max,t2m_min,t2clm
-<<<<<<< HEAD
-=======
   INTEGER, INTENT(IN)         :: num_pft_input
   LOGICAL,OPTIONAL,INTENT(IN) :: input_pft_flag
   REAL, DIMENSION(ims:ime, num_pft_input,jms:jme ),OPTIONAL, INTENT(IN) ::  pct_pft_input
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   real,    optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
                 h2ocan,h2ocan_col,   &
@@ -1264,13 +1187,10 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid ,&
                 LHsoi,LHveg,LHtran
-<<<<<<< HEAD
-=======
 #if ( WRF_CHEM == 1 ) 
   real,    optional,  dimension(ims:ime,jms:jme,1:ne_area ),intent(inout) ::  &
                 e_bio
 #endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef CN
 !ylu 05/31/2011
 
@@ -1331,12 +1251,8 @@ CONTAINS
                                                              CPM, &
                                                             CHS2, &
                                                             CQS2
-<<<<<<< HEAD
-
-=======
 ! CTSM local variable
    REAL, DIMENSION( ims:ime , jms:jme ) :: xland_ctsm
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! SSIB local variables
    REAL ZDIFF
    REAL, DIMENSION( ims:ime , jms:jme ) :: XICE_save
@@ -1474,13 +1390,7 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: FLQC_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QGH_SEA
 !
-<<<<<<< HEAD
-     REAL, DIMENSION( ims:ime, jms:jme ) :: PSIH_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: PBLH_SEA
-     REAL, DIMENSION( ims:ime, jms:jme ) :: RMOL_SEA
-=======
-     REAL, DIMENSION( ims:ime, jms:jme ) :: PBLH_SEA
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      REAL, DIMENSION( ims:ime, jms:jme ) :: UST_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
@@ -1510,23 +1420,15 @@ CONTAINS
                                                                                tksatu3d
     real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
 #if (EM_CORE==1)
-<<<<<<< HEAD
-    real ,    dimension(ims:ime,jms:jme )  ::  lakemask       
-=======
     real ,    dimension(ims:ime,jms:jme )  ::  lakemask
     logical , intent(in) :: restart_flag
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !    INTEGER  :: lakeflag
 #endif
 !    logical, dimension(ims:ime,jms:jme ),intent(in)                         :: lake 
  
 !
    REAL   :: xice_threshold
-<<<<<<< HEAD
-
-=======
    CHARACTER(LEN=256) :: LLANDUSE
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! cyl 3d ocean variable 
    integer :: okms, okme
    real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(INOUT):: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH
@@ -1538,8 +1440,6 @@ CONTAINS
 !
   real,    dimension(ims:ime,1:maxpatch,jms:jme ) ::  q_ref2m   ! clm
 
-<<<<<<< HEAD
-=======
   real,  intent(inout),optional :: t_veg24(ims:ime,1:maxpatch,jms:jme)      ! voce accum variables
   real,  intent(inout),optional :: t_veg240(ims:ime,1:maxpatch,jms:jme)
   real,  intent(inout),optional :: fsun24(ims:ime,1:maxpatch,jms:jme)
@@ -1549,7 +1449,6 @@ CONTAINS
   real,  intent(inout),optional :: fsi24(ims:ime,1:maxpatch,jms:jme)
   real,  intent(inout),optional :: fsi240(ims:ime,1:maxpatch,jms:jme)
   real,  intent(inout),optional :: laip(ims:ime,1:maxpatch,jms:jme)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !------------------------------------------------------------------
    CHARACTER*256 :: message
@@ -1573,13 +1472,8 @@ CONTAINS
    REAL, PARAMETER    :: PI_GRECO=3.14159 
    INTEGER  :: end_hour, irr_start,xt24,irr_day  
    REAL :: constants_irrigation   
-<<<<<<< HEAD
-   REAL,DIMENSION( ims:ime, jms:jme ) :: IRRIGATION_CHANNEL      
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN),OPTIONAL::   IRRIGATION
-=======
    REAL, DIMENSION( ims:ime, jms:jme ) :: IRRIGATION_CHANNEL      
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)   , OPTIONAL::   IRRIGATION
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL,  INTENT(IN),OPTIONAL::  irr_daily_amount     
    INTEGER :: phase
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT),OPTIONAL :: irr_rand_field
@@ -1685,10 +1579,7 @@ CONTAINS
          IF ( PRESENT( rainshv ))RAINBL(i,j) = RAINBL(i,j) + RAINSHV(i,j)
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
 #if (EM_CORE==1)
-<<<<<<< HEAD
-=======
          IRRIGATION_CHANNEL(i,j) = 0.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          sf_surf_irr: SELECT CASE(sf_surf_irr_scheme)
             CASE(DRIP)
                CALL drip_irrigation(                                     &
@@ -2177,11 +2068,7 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-<<<<<<< HEAD
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
-=======
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux, &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  sf_surface_physics  )
          ELSE
          CALL SFCLAY(u_phytmp,v_phytmp,t_phy,qv_curr,              &
@@ -2233,11 +2120,7 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-<<<<<<< HEAD
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
-=======
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux, &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  sf_surface_physics  )
          ELSE
          CALL SFCLAYREV(u_phytmp,v_phytmp,t_phy,qv_curr,&
@@ -2350,19 +2233,6 @@ CONTAINS
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
-<<<<<<< HEAD
-#if ( EM_CORE==1)
-         DO j = j_start(ij),j_end(ij)
-            DO i = i_start(ij),i_end(ij)
-               wspd(i,j) = MAX(SQRT(u_phy(i,kts,j)**2+v_phy(i,kts,j)**2),0.001)
-               ch(i,j) = chs (i,j)
-!!           ch(i,j) = flhc(i,j)/( cpm(i,j)*rho(i,kts,j) )
-            END DO
-         END DO
-#endif         
-
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         ENDIF
 #if ( EM_CORE==1)
 !       ustm is not available in NMM
@@ -2370,11 +2240,8 @@ CONTAINS
          DO j = j_start(ij),j_end(ij)
             DO i = i_start(ij),i_end(ij)
                ustm(i,j) = ust(i,j)
-<<<<<<< HEAD
-=======
                wspd(i,j) = MAX(SQRT(u_phy(i,kts,j)**2+v_phy(i,kts,j)**2),0.001)
                ch(i,j) = chs (i,j)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             END DO
          END DO
 #endif
@@ -2452,10 +2319,7 @@ CONTAINS
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij),     &
               kts,kte,scm_force_flux    )
-<<<<<<< HEAD
-=======
            ENDIF
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #if ( EM_CORE==1)
          DO j = j_start(ij),j_end(ij)
             DO i = i_start(ij),i_end(ij)
@@ -2465,13 +2329,7 @@ CONTAINS
             END DO
          END DO
 #endif         
-<<<<<<< HEAD
-
-        ENDIF
-        ELSE
-=======
        ELSE
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          CALL wrf_error_fatal('Lacking arguments for QNSESFC in surface driver')
        ENDIF
 
@@ -2744,12 +2602,6 @@ CONTAINS
            ENDDO
            ENDDO
 
-<<<<<<< HEAD
-           IF ( FRACTIONAL_SEAICE == 1 ) THEN
-              CALL wrf_error_fatal('SLAB scheme cannot be used with fractional seaice')
-           ENDIF
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         CALL wrf_debug(100,'in SLAB')
           CALL SLAB(t_phy,qv_curr,p_phy,flhc,flqc,  &
              psfc,xland,tmn,hfx,qfx,lh,tsk,qsfc,chklowq,          &
@@ -2897,11 +2749,7 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-<<<<<<< HEAD
                 sf_urban_physics,ahe_scheme,ahe24,ahucm               &
-=======
-                sf_urban_physics                                &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !Optional urban
                 ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
                 ,cmgr_sfcdif,chgr_sfcdif                        &
@@ -2941,10 +2789,7 @@ CONTAINS
                 urban_map_wd,                                   & !I multi-layer urban
                 urban_map_gbd,                                  & !I multi-layer urban
                 urban_map_fbd,                                  & !I multi-layer urban
-<<<<<<< HEAD
-=======
                 urban_map_zgrd,                                 & !I multi-layer urban
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 num_urban_hi,                                   & !I multi-layer urban
                 tsk_rural,                                      & !H multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
@@ -2955,13 +2800,10 @@ CONTAINS
                 sfvent_urb3d,lfvent_urb3d,                      & !H multi-layer urban
                 sfwin1_urb3d,sfwin2_urb3d,                      & !H multi-layer urban
                 sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,      & !H multi-layer urban
-<<<<<<< HEAD
-=======
                  ep_pv_urb3d,t_pv_urb3d,                         & !GRZ
                 trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,         & !GRZ
                 drain_urb4d,draingr_urb3d,sfrv_urb3d,           & !GRZ
                 lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !GRZ
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,           & !H multi-layer urban
                 mh_urb2d,stdh_urb2D,lf_urb2d,                   & !SLUCM
                 th_phy,rho,p_phy,ust,                           & !I multi-layer urban
@@ -2972,11 +2814,7 @@ CONTAINS
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 ,sfcheadrt,INFXSRT, soldrain                    & !hydro
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
-<<<<<<< HEAD
-                ,RS,XLAIDYN)
-=======
                 ,RS,XLAIDYN,IRRIGATION_CHANNEL)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            ELSE
                CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
            ENDIF
@@ -3014,12 +2852,8 @@ CONTAINS
 !  END FASDAS
 !
                CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
-<<<<<<< HEAD
-                hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
-=======
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,swddir,swddif,     &
                 glw,smstav,smstot,    &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
                 albedo,albbck,znt,z0, tmn,xland,xice,emiss, embck,    &
                 snowc,qsfc,rainbl,                              &
@@ -3044,11 +2878,7 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-<<<<<<< HEAD
                 sf_urban_physics,ahe_scheme,ahe24,ahucm         &
-=======
-                sf_urban_physics                                &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !Optional urban
                 ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
                 ,cmgr_sfcdif,chgr_sfcdif                        &
@@ -3079,10 +2909,7 @@ CONTAINS
                 urban_map_wd,                                   & !I multi-layer urban
                 urban_map_gbd,                                  & !I multi-layer urban
                 urban_map_fbd,                                  & !I multi-layer urban
-<<<<<<< HEAD
-=======
                 urban_map_zgrd,                                 & !I multi-layer urban
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 num_urban_hi,                                   & !I multi-layer urban
                 tsk_rural,                                      & !H multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
@@ -3093,13 +2920,10 @@ CONTAINS
                 sfvent_urb3d,lfvent_urb3d,                      & !H multi-layer urban
                 sfwin1_urb3d,sfwin2_urb3d,                      & !H multi-layer urban
                 sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,      & !H multi-layer urban
-<<<<<<< HEAD
-=======
                 ep_pv_urb3d,t_pv_urb3d,                         & !GRZ
                 trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,         & !GRZ
                 drain_urb4d,draingr_urb3d,sfrv_urb3d,           & !GRZ
                 lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !GRZ
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,           & !H multi-layer urban
                 mh_urb2d,stdh_urb2D,lf_urb2d,                   & !SLUCM
                 th_phy,rho,p_phy,ust,                           & !I multi-layer urban
@@ -3116,11 +2940,7 @@ CONTAINS
 !
 !  END FASDAS
 !
-<<<<<<< HEAD
-                ,RS,XLAIDYN)
-=======
                 ,RS,XLAIDYN,IRRIGATION_CHANNEL)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
@@ -3209,17 +3029,10 @@ CONTAINS
      IF(SF_URBAN_PHYSICS.eq.1) THEN
        DO j=j_start(ij),j_end(ij)                             !urban
          DO i=i_start(ij),i_end(ij)                           !urban
-<<<<<<< HEAD
-          IF( IVGTYP(I,J) == ISURBAN .or. &
-	      IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. & !urban
-              IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or.&
-	      IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN  !urban
-=======
            IF(IVGTYP(I,J) == ISURBAN   .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
              IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
              IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
              IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 )THEN
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              U10(I,J)  = U10_URB2D(I,J)                       !urban
              V10(I,J)  = V10_URB2D(I,J)                       !urban
              PSIM(I,J) = PSIM_URB2D(I,J)                      !urban
@@ -3236,17 +3049,10 @@ CONTAINS
      IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
        DO j=j_start(ij),j_end(ij)                             !urban
          DO i=i_start(ij),i_end(ij)                           !urban
-<<<<<<< HEAD
-          IF( IVGTYP(I,J) == ISURBAN .or. &
-	      IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. & !urban
-              IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. &
-	      IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN !urban
-=======
             IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
              IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
              IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
              IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 )THEN
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             T2(I,J)   = TH_PHY(i,1,j)/((1.E5/PSFC(I,J))**RCP) !urban
             TH2(I,J) = TH_PHY(i,1,j) !urban
             Q2(I,J)   = qv_curr(i,1,j)  !urban
@@ -3340,11 +3146,8 @@ CONTAINS
             ENDIF
          ENDIF
 
-<<<<<<< HEAD
-=======
 !for NoahMP irrigation scheme
          LLANDUSE = MMINLU
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !added for WRF_HYDRO
 #ifdef WRF_HYDRO
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
@@ -3357,39 +3160,24 @@ CONTAINS
                PLANTING,  HARVEST,SEASON_GDD,                               &
                   IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
-<<<<<<< HEAD
-	       IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,             &
-                IZ0TLND, SF_URBAN_PHYSICS, AHE_SCHEME, AHE24,          AHUCM, &
-	       SOILCOMP,  SOILCL1,  SOILCL2,  SOILCL3,   SOILCL4,             &
-		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,        GLW, &
-		    P8W,   RAINBL,       SR,                                  &
-		    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
-=======
 	       IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,   IOPT_IRR, &
               IOPT_IRRM,                                                      &
-                IZ0TLND, SF_URBAN_PHYSICS,                                    &
+                IZ0TLND, SF_URBAN_PHYSICS, AHE_SCHEME, AHE24,          AHUCM, &
 	       SOILCOMP,  SOILCL1,  SOILCL2,  SOILCL3,   SOILCL4,             &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,    SWDDIR,  &
                 SWDDIF,     GLW,                                              &
 		    P8W,   RAINBL,       SR,                                  &
 		IRFRACT,  SIFRACT,  MIFRACT,  FIFRACT,                        &
                     TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 		 SMSTOT,SFCRUNOFF, UDRUNOFF,   ALBEDO,     SNOWC,      SMOIS, &
 		   SH2O,     TSLB,     SNOW,    SNOWH,    CANWAT,     ACSNOM, &
 		 ACSNOW,    EMISS,     QSFC,                                  &
  		     Z0,      ZNT,                                            & ! IN/OUT LSM eqv
-<<<<<<< HEAD
-		ISNOWXY,     TVXY,     TGXY, CANICEXY,  CANLIQXY,      EAHXY, &
-		  TAHXY,     CMXY,     CHXY,   FWETXY,  SNEQVOXY,   ALBOLDXY, &
-		QSNOWXY, WSLAKEXY,    ZWTXY,     WAXY,      WTXY,     TSNOXY, &
-=======
                 IRNUMSI,  IRNUMMI,  IRNUMFI,  IRWATSI,   IRWATMI,    IRWATFI, & ! IN/OUT Noah MP only
                 IRELOSS,  IRSIVOL,  IRMIVOL,  IRFIVOL,   IRRSPLH,   LLANDUSE, &
 		ISNOWXY,     TVXY,     TGXY, CANICEXY,  CANLIQXY,      EAHXY, &
 		  TAHXY,     CMXY,     CHXY,   FWETXY,  SNEQVOXY,   ALBOLDXY, &
 		QSNOWXY, QRAINXY, WSLAKEXY, ZWTXY, WAXY,    WTXY,     TSNOXY, &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
 	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,   GRAINXY,      GDDXY,PGSXY, & ! IN/OUT Noah MP only
@@ -3417,10 +3205,7 @@ CONTAINS
 	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
                                  DT,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
                               T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
-<<<<<<< HEAD
-=======
                              SWDDIR,         SWDDIF,                                        &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 		                GLW,            P8W,         RAINBL,       DZ8W,      ZNT,  & ! IN : Forcing
                                 TSK,            HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM 
 		             ALBEDO,          EMISS,           QSFC,                        & ! IN/OUT : LSM 
@@ -3448,11 +3233,7 @@ CONTAINS
                                 chs,           chs2,           cqs2,                        & !H
                       num_urban_ndm,  urban_map_zrd,  urban_map_zwd, urban_map_gd,          & !I multi-layer urban
                        urban_map_zd,  urban_map_zdf,   urban_map_bd, urban_map_wd,          & !I multi-layer urban
-<<<<<<< HEAD
-                      urban_map_gbd,  urban_map_fbd,                                        & !I multi-layer urban
-=======
                       urban_map_gbd,  urban_map_fbd, urban_map_zgrd,                        & !I multi-layer urban
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                        num_urban_hi,                                                        & !I multi-layer urban
                           trb_urb4d,      tw1_urb4d,      tw2_urb4d,  tgb_urb4d,            & !H multi-layer urban
                          tlev_urb3d,     qlev_urb3d,                                        & !H multi-layer urban
@@ -3462,13 +3243,10 @@ CONTAINS
                        sfvent_urb3d,   lfvent_urb3d,                                        & !H multi-layer urban
                        sfwin1_urb3d,   sfwin2_urb3d,                                        & !H multi-layer urban
                          sfw1_urb3d,     sfw2_urb3d,      sfr_urb3d,  sfg_urb3d,            & !H multi-layer urban
-<<<<<<< HEAD
-=======
                         ep_pv_urb3d,     t_pv_urb3d,                                        & !GRZ
                           trv_urb4d,       qr_urb4d,      qgr_urb3d,  tgr_urb3d,            & !GRZ
                         drain_urb4d,  draingr_urb3d,     sfrv_urb3d, lfrv_urb3d,            & !GRZ
                           dgr_urb3d,       dg_urb3d,      lfr_urb3d,  lfg_urb3d,            & !GRZ
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                            lp_urb2d,       hi_urb2d,       lb_urb2d,  hgt_urb2d,            & !H multi-layer urban
                            mh_urb2d,     stdh_urb2d,       lf_urb2d,                        & !SLUCM
                              th_phy,            rho,          p_phy,        ust,            & !I multi-layer urban
@@ -3476,12 +3254,8 @@ CONTAINS
                             a_u_bep,        a_v_bep,        a_t_bep,    a_q_bep,            & !O multi-layer urban
                             a_e_bep,        b_u_bep,        b_v_bep,                        & !O multi-layer urban
                             b_t_bep,        b_q_bep,        b_e_bep,    dlg_bep,            & !O multi-layer urban
-<<<<<<< HEAD
                            dl_u_bep,         sf_bep,         vl_bep,                        &!O multi-layer urban
 			   ahe_scheme, ahe24, ahucm)
-=======
-                           dl_u_bep,         sf_bep,         vl_bep)                          !O multi-layer urban
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	 
 	 ENDIF 
 
@@ -3600,20 +3374,12 @@ CONTAINS
                  ENDIF
                    TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP
 !             ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE .OR. FVEGXY(I,J) == 0.0 ) THEN
-<<<<<<< HEAD
-              ELSEIF (IVGTYP(I,J) == ISURBAN                   .or. &
-	              IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL   .or. & !urban
-                      IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL  .or. & !urban
-	              IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL .or. & !urban
-	              (IVGTYP(I,J) == ISICE .AND. XICE(I,J) .LT. XICE_THRESHOLD)) THEN
-=======
               ELSEIF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
                       IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
                       IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
                       IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 .or. &
                      (IVGTYP(I,J) == ISICE .AND. XICE(I,J) .LT. XICE_THRESHOLD)) THEN
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    Q2(I,J)  = Q2MBXY(I,J)
                    T2(I,J)  = T2MBXY(I,J)
                    TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
@@ -3636,15 +3402,10 @@ CONTAINS
          IF(SF_URBAN_PHYSICS.eq.1) THEN
            DO j=j_start(ij),j_end(ij)                             !urban
              DO i=i_start(ij),i_end(ij)                           !urban
-<<<<<<< HEAD
-              IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &  !urban
-                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN !urban
-=======
                IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
                    IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
                    IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
                    IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 )THEN
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  Q2(I,J)  = (FVEGXY(I,J)*Q2MVXY(I,J) + (1.-FVEGXY(I,J))*Q2MBXY(I,J))*(1.-FRC_URB2D(I,J)) +   &
                              Q2_URB2D(I,J)*FRC_URB2D(I,J)
                  T2(I,J)  = (FVEGXY(I,J)*T2MVXY(I,J) + (1.-FVEGXY(I,J))*T2MBXY(I,J))*(1.-FRC_URB2D(I,J)) +   &
@@ -3665,15 +3426,10 @@ CONTAINS
          IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
            DO j=j_start(ij),j_end(ij)                             !urban
              DO i=i_start(ij),i_end(ij)                           !urban
-<<<<<<< HEAD
-              IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &  !urban
-                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN !urban
-=======
                 IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1 .or. IVGTYP(I,J) == LCZ_2 .or. &
                     IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
                     IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
                     IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 )THEN
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 T2(I,J)   = TH_PHY(i,1,j)/((1.E5/PSFC(I,J))**RCP) !urban
                 TH2(I,J) = TH_PHY(i,1,j) !urban
                 Q2(I,J)   = qv_curr(i,1,j)  !urban
@@ -4022,11 +3778,6 @@ CONTAINS
             ENDIF
          ENDIF
 
-<<<<<<< HEAD
-
-       CALL wrf_debug(100,'in clmdrv')
-
-=======
        write(message,'('' surface_driver: B4 call to clmdrv with do_bioe = '',l)') do_bioe
        CALL wrf_debug( 100,trim(message) )
        CALL wrf_debug(100,'in clmdrv')
@@ -4035,7 +3786,6 @@ CONTAINS
         CALL wrf_error_fatal('CLM land surface model need num_soil_layers=10')
        endif
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        CALL clmdrv(dz8w,qv_curr,p8w, t_phy,tsk,                   &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,               &
                 ra_sw_physics,history_interval,glw,smstav,smstot, &
@@ -4045,17 +3795,6 @@ CONTAINS
                 num_soil_layers,dtbl,xtime, dt,dzs,             &
                 smois,tslb,snow,canwat,                         &
                 chs,chs2,sh2o,snowh,                            &
-<<<<<<< HEAD
-                u_phy,v_phy,                                    &
-                shdmin,shdmax,                                  &
-                acsnom,acsnow,                                  &
-                dx,xlat,xlong,ht,                               &
-                ids,ide, jds,jde, kds,kde,                      &
-                ims,ime, jms,jme, kms,kme,                      &
-                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
-                inest,sf_urban_physics, nlcat,                   &
-		ahe_scheme,ahe24,ahucm                          &
-=======
                 u_phy,v_phy,rho,                                &
                 shdmin,shdmax,                                  &
                 acsnom,acsnow,                                  &
@@ -4067,8 +3806,8 @@ CONTAINS
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
                 inest,sf_urban_physics,do_bioe,do_meganfile,id   &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !Optional urban
+               ,ahe_scheme,ahe24,ahucm,                           &
                ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
                ,cmgr_sfcdif,chgr_sfcdif                        &
                ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
@@ -4118,13 +3857,9 @@ CONTAINS
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid,&
                 LHsoi,LHveg,LHtran, &
                 alswvisdir, alswvisdif, alswnirdir, alswnirdif,      & ! clm
-<<<<<<< HEAD
-                swvisdir, swvisdif, swnirdir, swnirdif               & ! clm
-=======
                 swvisdir, swvisdif, swnirdir, swnirdif,              & ! clm
                 t_veg24, t_veg240, fsun24, fsun240,                  &
                 fsd24, fsd240, fsi24, fsi240, laip                   &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef CN
 !CROP&CN RESTART AND OUTPUTS
                 ,dyntlai,dyntsai,dyntop,dynbot &
@@ -4158,10 +3893,7 @@ CONTAINS
                 ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
                 ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
-<<<<<<< HEAD
-=======
                 ,nlcat,landusef,num_pft_input,pct_pft_input,input_pft_flag &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  )
 
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
@@ -4241,8 +3973,6 @@ CONTAINS
 ! -------------------------------------------------------------------
 #endif
 
-<<<<<<< HEAD
-=======
 #ifdef WRF_USE_CTSM
      CASE (CTSMSCHEME)
 
@@ -4445,7 +4175,6 @@ CONTAINS
 
 #endif
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      CASE (SSIBSCHEME)
      IF(PRESENT(alswvisdir))THEN
 !---Fernando De Sales (fds 06/2010)--------------------------------------
@@ -4952,11 +4681,7 @@ CONTAINS
               ! QSFC_SEA calculation as done in myjsfc for open water points
               PSFC = PINT(I,LOWLYR(I,J),J)
               QSFC_SEA(i,j) = PQ0SEA/PSFC*EXP(A2S*(TSK(i,j)-A3S)/(TSK(i,j)-A4S))
-<<<<<<< HEAD
-              QSFC(i,j) = QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j) / XICE(i,j)
-=======
               QSFC(i,j) = (QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j)) / XICE(i,j)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
               HFX_SEA(i,j)  = HFX(i,j)
               QFX_SEA(i,j)  = QFX(i,j)
@@ -4992,19 +4717,6 @@ CONTAINS
 ! the second call to MYJSFC does not double-count the effect.
 
      ! Save INTENT(INOUT) variables before the frozen-water/true-land call to MYJSFC:
-<<<<<<< HEAD
-     QSFC_HOLD  = QSFC
-     QZ0_HOLD   = QZ0
-     THZ0_HOLD  = THZ0
-     UZ0_HOLD   = UZ0
-     VZ0_HOLD   = VZ0
-     USTAR_HOLD = USTAR
-     ZNT_HOLD   = ZNT
-     PBLH_HOLD  = PBLH
-     RMOL_HOLD  = RMOL
-     AKHS_HOLD  = AKHS
-     AKMS_HOLD  = AKMS
-=======
      QSFC_HOLD(its:ite,jts:jte)  = QSFC(its:ite,jts:jte)
      QZ0_HOLD(its:ite,jts:jte)   = QZ0(its:ite,jts:jte)
      THZ0_HOLD(its:ite,jts:jte)  = THZ0(its:ite,jts:jte)
@@ -5016,7 +4728,6 @@ CONTAINS
      RMOL_HOLD(its:ite,jts:jte)  = RMOL(its:ite,jts:jte)
      AKHS_HOLD(its:ite,jts:jte)  = AKHS(its:ite,jts:jte)
      AKMS_HOLD(its:ite,jts:jte)  = AKMS(its:ite,jts:jte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! Strictly INTENT(OUT):  Set by MYJSFC
 
@@ -5085,18 +4796,6 @@ CONTAINS
         ENDDO
      ENDDO
 
-<<<<<<< HEAD
-     QZ0_SEA  = QZ0_HOLD
-     THZ0_SEA = THZ0_HOLD
-     UZ0_SEA  = UZ0_HOLD
-     VZ0_SEA  = VZ0_HOLD
-     USTAR_SEA = USTAR_HOLD
-     PBLH_SEA = PBLH_HOLD
-     RMOL_SEA = RMOL_HOLD
-     AKHS_SEA = AKHS_HOLD
-     AKMS_SEA = AKMS_HOLD
-
-=======
      QZ0_SEA(its:ite,jts:jte)  = QZ0_HOLD(its:ite,jts:jte)
      THZ0_SEA(its:ite,jts:jte) = THZ0_HOLD(its:ite,jts:jte)
      UZ0_SEA(its:ite,jts:jte)  = UZ0_HOLD(its:ite,jts:jte)
@@ -5106,7 +4805,6 @@ CONTAINS
      RMOL_SEA(its:ite,jts:jte) = RMOL_HOLD(its:ite,jts:jte)
      AKHS_SEA(its:ite,jts:jte) = AKHS_HOLD(its:ite,jts:jte)
      AKMS_SEA(its:ite,jts:jte) = AKMS_HOLD(its:ite,jts:jte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! open water call
 !
@@ -5349,11 +5047,7 @@ CONTAINS
               ! QSFC_SEA calculation as done in qnsesfc for open water points
               PSFC = PINT(I,LOWLYR(I,J),J)
               QSFC_SEA(i,j) = PQ0SEA/PSFC*EXP(A2S*(TSK(i,j)-A3S)/(TSK(i,j)-A4S))
-<<<<<<< HEAD
-              QSFC(i,j) = QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j) / XICE(i,j)
-=======
               QSFC(i,j) = (QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j)) / XICE(i,j)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
               HFX_SEA(i,j)  = HFX(i,j)
               QFX_SEA(i,j)  = QFX(i,j)
@@ -5389,19 +5083,6 @@ CONTAINS
 ! the second call to QNSESFC does not double-count the effect.
 
      ! Save INTENT(INOUT) variables before the frozen-water/true-land call to QNSESFC:
-<<<<<<< HEAD
-     QSFC_HOLD  = QSFC
-     QZ0_HOLD   = QZ0
-     THZ0_HOLD  = THZ0
-     UZ0_HOLD   = UZ0
-     VZ0_HOLD   = VZ0
-     USTAR_HOLD = USTAR
-     ZNT_HOLD   = ZNT
-     PBLH_HOLD  = PBLH
-     RMOL_HOLD  = RMOL
-     AKHS_HOLD  = AKHS
-     AKMS_HOLD  = AKMS
-=======
      QSFC_HOLD(its:ite,jts:jte)  = QSFC(its:ite,jts:jte)
      QZ0_HOLD(its:ite,jts:jte)   = QZ0(its:ite,jts:jte)
      THZ0_HOLD(its:ite,jts:jte)  = THZ0(its:ite,jts:jte)
@@ -5413,7 +5094,6 @@ CONTAINS
      RMOL_HOLD(its:ite,jts:jte)  = RMOL(its:ite,jts:jte)
      AKHS_HOLD(its:ite,jts:jte)  = AKHS(its:ite,jts:jte)
      AKMS_HOLD(its:ite,jts:jte)  = AKMS(its:ite,jts:jte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! Strictly INTENT(OUT):  Set by QNSESFC
 
@@ -5482,18 +5162,6 @@ CONTAINS
         ENDDO
      ENDDO
 
-<<<<<<< HEAD
-     QZ0_SEA  = QZ0_HOLD
-     THZ0_SEA = THZ0_HOLD
-     UZ0_SEA  = UZ0_HOLD
-     VZ0_SEA  = VZ0_HOLD
-     USTAR_SEA = USTAR_HOLD
-     PBLH_SEA = PBLH_HOLD
-     RMOL_SEA = RMOL_HOLD
-     AKHS_SEA = AKHS_HOLD
-     AKMS_SEA = AKMS_HOLD
-
-=======
      QZ0_SEA(its:ite,jts:jte)  = QZ0_HOLD(its:ite,jts:jte)
      THZ0_SEA(its:ite,jts:jte) = THZ0_HOLD(its:ite,jts:jte)
      UZ0_SEA(its:ite,jts:jte)  = UZ0_HOLD(its:ite,jts:jte)
@@ -5503,7 +5171,6 @@ CONTAINS
      RMOL_SEA(its:ite,jts:jte) = RMOL_HOLD(its:ite,jts:jte)
      AKHS_SEA(its:ite,jts:jte) = AKHS_HOLD(its:ite,jts:jte)
      AKMS_SEA(its:ite,jts:jte) = AKMS_HOLD(its:ite,jts:jte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! open water call
 !
@@ -6177,11 +5844,7 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
-<<<<<<< HEAD
-                     sf_surface_physics                             )
-=======
                      scm_force_flux,sf_surface_physics             )
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
      USE module_sf_sfclayrev
      implicit none
@@ -6257,10 +5920,7 @@ CONTAINS
                INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
-<<<<<<< HEAD
-=======
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !--------------------------------------------------------------------
 !    New for wrapper
@@ -6317,19 +5977,13 @@ CONTAINS
                                                 WSPD_HOLD,        &
                                                 ZNT_HOLD,         &
                                                 ZOL_HOLD,         &
-<<<<<<< HEAD
-=======
                                                 QSFC_HOLD,        &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                 TH2_HOLD,         & !ssib
                                                 T2_HOLD,          & !ssib
                                                 Q2_HOLD,          & !ssib
                                                 TSK_HOLD,         & !ssib
-<<<<<<< HEAD
-=======
                                                 U10_HOLD,         & !ssib
                                                 V10_HOLD,         & !ssib
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                 CD_SEA,           &
                                                 CDA_SEA,          &
                                                 CK_SEA,           &
@@ -6382,37 +6036,6 @@ CONTAINS
 
 ! INTENT (INOUT) to SFCLAY:  Save the variables before the first call
 ! (for land/frozen water) to SFCLAY, to keep from double-counting the
-<<<<<<< HEAD
-! effects of that routine
-     BR_HOLD   = BR
-     CHS2_HOLD = CHS2
-     CHS_HOLD  = CHS
-     CPM_HOLD  = CPM
-     CQS2_HOLD = CQS2
-     FLHC_HOLD = FLHC
-     FLQC_HOLD = FLQC
-     GZ1OZ0_HOLD = GZ1OZ0
-     HFX_HOLD  = HFX
-     LH_HOLD   = LH
-     MOL_HOLD  = MOL
-     PSIH_HOLD = PSIH
-     PSIM_HOLD = PSIM
-     FH_HOLD   = FH
-     FM_HOLD   = FM
-     QFX_HOLD  = QFX
-     QGH_HOLD  = QGH
-     REGIME_HOLD = REGIME
-     RMOL_HOLD = RMOL
-     UST_HOLD  = UST
-     WSPD_HOLD = WSPD
-     ZNT_HOLD  = ZNT
-     ZOL_HOLD  = ZOL
-!also save these variables for SSIB (fds 12/2010)
-     TH2_HOLD = TH2
-     T2_HOLD = T2
-     Q2_HOLD = Q2
-     TSK_HOLD = TSK
-=======
      BR_HOLD(its:ite,jts:jte)     = BR(its:ite,jts:jte)
      CHS2_HOLD(its:ite,jts:jte)   = CHS2(its:ite,jts:jte)
      CHS_HOLD(its:ite,jts:jte)    = CHS(its:ite,jts:jte)
@@ -6442,7 +6065,6 @@ CONTAINS
      TSK_HOLD(its:ite,jts:jte)    = TSK(its:ite,jts:jte)
      U10_HOLD(its:ite,jts:jte)    = U10(its:ite,jts:jte) !fds (01/2014)
      V10_HOLD(its:ite,jts:jte)    = V10(its:ite,jts:jte) !fds (01/2014)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      
 ! INTENT(OUT) from SFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to SFCLAY.
@@ -6473,11 +6095,7 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
-<<<<<<< HEAD
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
-=======
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 !Restore land-point values calculated by SSiB (fds 12/2010)
      IF (itimestep .gt. 1 .and. sf_surface_physics .EQ. 8) then
@@ -6523,30 +6141,6 @@ CONTAINS
      ENDDO
 
      ! Restore the values from before the land/frozen-water call
-<<<<<<< HEAD
-     BR_SEA   = BR_HOLD
-     CHS2_SEA = CHS2_HOLD
-     CHS_SEA  = CHS_HOLD
-     CPM_SEA  = CPM_HOLD
-     CQS2_SEA = CQS2_HOLD
-     FLHC_SEA = FLHC_HOLD
-     FLQC_SEA = FLQC_HOLD
-     GZ1OZ0_SEA = GZ1OZ0_HOLD
-     HFX_SEA  = HFX_HOLD
-     LH_SEA   = LH_HOLD
-     MOL_SEA  = MOL_HOLD
-     PSIH_SEA = PSIH_HOLD
-     PSIM_SEA = PSIM_HOLD
-     FH_SEA   = FH_HOLD
-     FM_SEA   = FM_HOLD
-     QFX_SEA  = QFX_HOLD
-     QGH_SEA  = QGH_HOLD
-     REGIME_SEA = REGIME_HOLD
-     RMOL_SEA = RMOL_HOLD
-     UST_SEA  = UST_HOLD
-     WSPD_SEA = WSPD_HOLD
-     ZOL_SEA  = ZOL_HOLD
-=======
      BR_SEA(its:ite,jts:jte)     = BR_HOLD(its:ite,jts:jte)
      CHS2_SEA(its:ite,jts:jte)   = CHS2_HOLD(its:ite,jts:jte)
      CHS_SEA(its:ite,jts:jte)    = CHS_HOLD(its:ite,jts:jte)
@@ -6571,7 +6165,6 @@ CONTAINS
      ZOL_SEA(its:ite,jts:jte)    = ZOL_HOLD(its:ite,jts:jte)
      ZNT_SEA(its:ite,jts:jte)    = ZNT_HOLD(its:ite,jts:jte)
      QSFC_SEA(its:ite,jts:jte)   = QSFC_HOLD(its:ite,jts:jte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
      ! open-water call
      call sfclayrev(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
@@ -6594,11 +6187,7 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
-<<<<<<< HEAD
-                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
-=======
                  ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd,scm_force_flux)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
      DO j = JTS , JTE
         DO i = ITS, ITE
@@ -6676,11 +6265,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
-<<<<<<< HEAD
-                     sf_surface_physics                             )
-=======
                      scm_force_flux,sf_surface_physics             )
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
      USE module_sf_sfclay
      implicit none
@@ -6758,10 +6343,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
-<<<<<<< HEAD
-=======
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !--------------------------------------------------------------------
 !    New for wrapper
@@ -6818,10 +6400,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                                                 WSPD_HOLD,        &
                                                 ZNT_HOLD,         &
                                                 ZOL_HOLD,         &
-<<<<<<< HEAD
-=======
                                                 QSFC_HOLD,        &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                 TH2_HOLD,         & !ssib
                                                 T2_HOLD,          & !ssib
                                                 Q2_HOLD,          & !ssib
@@ -6881,38 +6460,6 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
 ! INTENT (INOUT) to SFCLAY:  Save the variables before the first call
 ! (for land/frozen water) to SFCLAY, to keep from double-counting the
 ! effects of that routine
-<<<<<<< HEAD
-     BR_HOLD   = BR
-     CHS2_HOLD = CHS2
-     CHS_HOLD  = CHS
-     CPM_HOLD  = CPM
-     CQS2_HOLD = CQS2
-     FLHC_HOLD = FLHC
-     FLQC_HOLD = FLQC
-     GZ1OZ0_HOLD = GZ1OZ0
-     HFX_HOLD  = HFX
-     LH_HOLD   = LH
-     MOL_HOLD  = MOL
-     PSIH_HOLD = PSIH
-     PSIM_HOLD = PSIM
-     FH_HOLD   = FH
-     FM_HOLD   = FM
-     QFX_HOLD  = QFX
-     QGH_HOLD  = QGH
-     REGIME_HOLD = REGIME
-     RMOL_HOLD = RMOL
-     UST_HOLD  = UST
-     WSPD_HOLD = WSPD
-     ZNT_HOLD  = ZNT
-     ZOL_HOLD  = ZOL
-!also save these variables for SSIB (fds 12/2010)
-     TH2_HOLD = TH2
-     T2_HOLD = T2
-     Q2_HOLD = Q2
-     TSK_HOLD = TSK
-     U10_HOLD = U10 !fds (01/2014)
-     V10_HOLD = V10 !fds (01/2014)
-=======
      BR_HOLD(its:ite,jts:jte)     = BR(its:ite,jts:jte)
      CHS2_HOLD(its:ite,jts:jte)   = CHS2(its:ite,jts:jte)
      CHS_HOLD(its:ite,jts:jte)    = CHS(its:ite,jts:jte)
@@ -6942,7 +6489,6 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      TSK_HOLD(its:ite,jts:jte)    = TSK(its:ite,jts:jte)
      U10_HOLD(its:ite,jts:jte)    = U10(its:ite,jts:jte) !fds (01/2014)
      V10_HOLD(its:ite,jts:jte)    = V10(its:ite,jts:jte) !fds (01/2014)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      
 ! INTENT(OUT) from SFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to SFCLAY.
@@ -6973,11 +6519,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
-<<<<<<< HEAD
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
-=======
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 !Restore land-point values calculated by SSiB (fds 12/2010)
      IF (itimestep .gt. 1 .and. sf_surface_physics .EQ. 8) then
@@ -7025,30 +6567,6 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      ENDDO
 
      ! Restore the values from before the land/frozen-water call
-<<<<<<< HEAD
-     BR_SEA   = BR_HOLD
-     CHS2_SEA = CHS2_HOLD
-     CHS_SEA  = CHS_HOLD
-     CPM_SEA  = CPM_HOLD
-     CQS2_SEA = CQS2_HOLD
-     FLHC_SEA = FLHC_HOLD
-     FLQC_SEA = FLQC_HOLD
-     GZ1OZ0_SEA = GZ1OZ0_HOLD
-     HFX_SEA  = HFX_HOLD
-     LH_SEA   = LH_HOLD
-     MOL_SEA  = MOL_HOLD
-     PSIH_SEA = PSIH_HOLD
-     PSIM_SEA = PSIM_HOLD
-     FH_SEA   = FH_HOLD
-     FM_SEA   = FM_HOLD
-     QFX_SEA  = QFX_HOLD
-     QGH_SEA  = QGH_HOLD
-     REGIME_SEA = REGIME_HOLD
-     RMOL_SEA = RMOL_HOLD
-     UST_SEA  = UST_HOLD
-     WSPD_SEA = WSPD_HOLD
-     ZOL_SEA  = ZOL_HOLD
-=======
      BR_SEA(its:ite,jts:jte)     = BR_HOLD(its:ite,jts:jte)
      CHS2_SEA(its:ite,jts:jte)   = CHS2_HOLD(its:ite,jts:jte)
      CHS_SEA(its:ite,jts:jte)    = CHS_HOLD(its:ite,jts:jte)
@@ -7073,7 +6591,6 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      ZOL_SEA(its:ite,jts:jte)    = ZOL_HOLD(its:ite,jts:jte)
      ZNT_SEA(its:ite,jts:jte)    = ZNT_HOLD(its:ite,jts:jte)
      QSFC_SEA(its:ite,jts:jte)   = QSFC_HOLD(its:ite,jts:jte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
      ! open-water call
      call sfclay(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
@@ -7096,11 +6613,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
-<<<<<<< HEAD
-                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
-=======
                  ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd,scm_force_flux)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
      DO j = JTS , JTE
         DO i = ITS, ITE
@@ -7315,29 +6828,6 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 ! (for land/frozen water) to SFCLAY, to keep from double-counting the
 ! effects of that routine
 !
-<<<<<<< HEAD
-     BR_HOLD     = BR
-     CHS_HOLD    = CHS
-     CHS2_HOLD   = CHS2
-     CPM_HOLD    = CPM
-     CQS2_HOLD   = CQS2
-     FLHC_HOLD   = FLHC
-     FLQC_HOLD   = FLQC
-     GZ1OZ0_HOLD = GZ1OZ0
-     HFX_HOLD    = HFX
-     LH_HOLD     = LH
-     MOL_HOLD    = MOL
-     PSIH_HOLD   = PSIH
-     PSIM_HOLD   = PSIM
-     QFX_HOLD    = QFX
-     QGH_HOLD    = QGH
-     REGIME_HOLD = REGIME
-     RMOL_HOLD   = RMOL
-     UST_HOLD    = UST
-     WSPD_HOLD   = WSPD
-     ZNT_HOLD    = ZNT
-     ZOL_HOLD    = ZOL
-=======
      BR_HOLD(its:ite,jts:jte)     = BR(its:ite,jts:jte)
      CHS_HOLD(its:ite,jts:jte)    = CHS(its:ite,jts:jte)
      CHS2_HOLD(its:ite,jts:jte)   = CHS2(its:ite,jts:jte)
@@ -7359,7 +6849,6 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
      WSPD_HOLD(its:ite,jts:jte)   = WSPD(its:ite,jts:jte)
      ZNT_HOLD(its:ite,jts:jte)    = ZNT(its:ite,jts:jte)
      ZOL_HOLD(its:ite,jts:jte)    = ZOL(its:ite,jts:jte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! INTENT(OUT) from PXSFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to PXSFCLAY.
@@ -7401,28 +6890,6 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
      ENDDO
 
      ! INTENT(INOUT) variables held over from before the first call to PXSFCLAY:
-<<<<<<< HEAD
-     BR_SEA     = BR_HOLD
-     CHS_SEA    = CHS_HOLD
-     CHS2_SEA   = CHS2_HOLD
-     CPM_SEA    = CPM_HOLD
-     CQS2_SEA   = CQS2_HOLD
-     FLHC_SEA   = FLHC_HOLD
-     FLQC_SEA   = FLQC_HOLD
-     GZ1OZ0_SEA = GZ1OZ0_HOLD
-     HFX_SEA    = HFX_HOLD
-     LH_SEA     = LH_HOLD
-     MOL_SEA    = MOL_HOLD
-     PSIH_SEA   = PSIH_HOLD
-     PSIM_SEA   = PSIM_HOLD
-     QFX_SEA    = QFX_HOLD
-     QGH_SEA    = QGH_HOLD
-     REGIME_SEA = REGIME_HOLD
-     RMOL_SEA   = RMOL_HOLD
-     UST_SEA    = UST_HOLD
-     WSPD_SEA   = WSPD_HOLD
-     ZOL_SEA    = ZOL_HOLD
-=======
      BR_SEA(its:ite,jts:jte)     = BR_HOLD(its:ite,jts:jte)
      CHS_SEA(its:ite,jts:jte)    = CHS_HOLD(its:ite,jts:jte)
      CHS2_SEA(its:ite,jts:jte)   = CHS2_HOLD(its:ite,jts:jte)
@@ -7443,7 +6910,6 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
      UST_SEA(its:ite,jts:jte)    = UST_HOLD(its:ite,jts:jte)
      WSPD_SEA(its:ite,jts:jte)   = WSPD_HOLD(its:ite,jts:jte)
      ZOL_SEA(its:ite,jts:jte)    = ZOL_HOLD(its:ite,jts:jte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! Open-water call.
      ! Variables newly set (INTENT(OUT)) or changed (INTENT(INOUT)) by

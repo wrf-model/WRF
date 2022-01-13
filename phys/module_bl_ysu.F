@@ -29,97 +29,6 @@ contains
                   uoce,voce,                                                   &
                   rthraten,ysu_topdown_pblmix,                                 &
                   ctopo,ctopo2,                                                &
-<<<<<<< HEAD
-=======
-                  idiff,flag_bep,frc_urb2d,                                    &
-                  a_u_bep,a_v_bep,a_t_bep,                                     &
-                  a_q_bep,                                                     &
-                  a_e_bep,b_u_bep,b_v_bep,                                     &
-                  b_t_bep,b_q_bep,                                             &
-                  b_e_bep,dlg_bep,                                             &
-                  dl_u_bep,sf_bep,vl_bep,                                      &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-                  ids,ide, jds,jde, kds,kde,                                   &
-                  ims,ime, jms,jme, kms,kme,                                   &
-                  its,ite, jts,jte, kts,kte,                                   &
-                !optional
-                  regime                                                       &
-                 )
-!-------------------------------------------------------------------------------
-   implicit none
-!-------------------------------------------------------------------------------
-!-- u3d         3d u-velocity interpolated to theta points (m/s)
-!-- v3d         3d v-velocity interpolated to theta points (m/s)
-!-- th3d        3d potential temperature (k)
-!-- t3d         temperature (k)
-!-- qv3d        3d water vapor mixing ratio (kg/kg)
-!-- qc3d        3d cloud mixing ratio (kg/kg)
-!-- qi3d        3d ice mixing ratio (kg/kg)
-!               (note: if P_QI<PARAM_FIRST_SCALAR this should be zero filled)
-!-- p3d         3d pressure (pa)
-!-- p3di        3d pressure (pa) at interface level
-!-- pi3d        3d exner function (dimensionless)
-!-- rr3d        3d dry air density (kg/m^3)
-!-- rublten     u tendency due to
-!               pbl parameterization (m/s/s)
-!-- rvblten     v tendency due to
-!               pbl parameterization (m/s/s)
-!-- rthblten    theta tendency due to
-!               pbl parameterization (K/s)
-!-- rqvblten    qv tendency due to
-!               pbl parameterization (kg/kg/s)
-!-- rqcblten    qc tendency due to
-!               pbl parameterization (kg/kg/s)
-!-- rqiblten    qi tendency due to
-!               pbl parameterization (kg/kg/s)
-!-- cp          heat capacity at constant pressure for dry air (j/kg/k)
-!-- g           acceleration due to gravity (m/s^2)
-!-- rovcp       r/cp
-!-- rd          gas constant for dry air (j/kg/k)
-!-- rovg        r/g
-!-- dz8w        dz between full levels (m)
-!-- xlv         latent heat of vaporization (j/kg)
-!-- rv          gas constant for water vapor (j/kg/k)
-!-- psfc        pressure at the surface (pa)
-!-- znt         roughness length (m)
-!-- ust         u* in similarity theory (m/s)
-!-- hpbl        pbl height (m)
-!-- psim        similarity stability function for momentum
-!-- psih        similarity stability function for heat
-!-- xland       land mask (1 for land, 2 for water)
-!-- hfx         upward heat flux at the surface (w/m^2)
-!-- qfx         upward moisture flux at the surface (kg/m^2/s)
-!-- wspd        wind speed at lowest model level (m/s)
-!-- u10         u-wind speed at 10 m (m/s)
-!-- v10         v-wind speed at 10 m (m/s)
-!-- uoce        sea surface zonal currents (m s-1)
-!-- voce        sea surface meridional currents (m s-1)
-!-- br          bulk richardson number in surface layer
-!-- dt          time step (s)
-!-- rvovrd      r_v divided by r_d (dimensionless)
-!-- ep1         constant for virtual temperature (r_v/r_d - 1)
-!-- ep2         constant for specific humidity calculation
-!-- karman      von karman constant
-!-- ids         start index for i in domain
-!-- ide         end index for i in domain
-!-- jds         start index for j in domain
-!-- jde         end index for j in domain
-!-- kds         start index for k in domain
-!-- kde         end index for k in domain
-!-- ims         start index for i in memory
-!-- ime         end index for i in memory
-!-- jms         start index for j in memory
-!-- jme         end index for j in memory
-!-- kms         start index for k in memory
-!-- kme         end index for k in memory
-!-- its         start index for i in tile
-!-- ite         end index for i in tile
-!-- jts         start index for j in tile
-!-- jte         end index for j in tile
-!-- kts         start index for k in tile
-!-- kte         end index for k in tile
-<<<<<<< HEAD
-=======
 !-- idiff       diff3d BEP/BEM+BEM diffusion flag 
 !-- flag_bep    flag to use BEP/BEP+BEM
 !-- frc_urb2d   urban fraction 
@@ -137,7 +46,6 @@ contains
 !-- dl_u_bep    modified length scale Martilli et al. (2002) Eq. 22
 !-- sf_bep      fraction of vertical surface not occupied by buildings
 !-- vl_bep      volume fraction of grid cell not occupied by buildings
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-------------------------------------------------------------------------------
 !
    integer,parameter ::  ndiff = 3
@@ -210,52 +118,6 @@ contains
    integer,  dimension( ims:ime, jms:jme )                                   , &
              intent(out  )   ::                                        kpbl2d
    logical,  intent(in)      ::                                       flag_qi
-<<<<<<< HEAD
-=======
-   integer, intent(in) ::                                               idiff
-   logical, intent(in) ::                                            flag_bep
-   real,dimension(ims:ime,kms:kme,jms:jme),intent(in) ::              a_u_bep, &
-                                                              a_v_bep,a_t_bep, &
-                                                              a_e_bep,b_u_bep, &
-                                                              a_q_bep,b_q_bep, &
-                                                              b_v_bep,b_t_bep, &
-                                                              b_e_bep,dlg_bep, &
-                                                                     dl_u_bep, &
-                                                                vl_bep,sf_bep
-   real, dimension(ims:ime,jms:jme),intent(in) :: frc_urb2d
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-!
-!optional
-!
-   real,     dimension( ims:ime, jms:jme )                                   , &
-             optional                                                        , &
-             intent(inout)   ::                                        regime
-!
-   real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
-             optional                                                        , &
-             intent(inout)   ::                                       rqiblten
-!
-   real,     dimension( ims:ime, jms:jme )                                   , &
-             optional                                                        , &
-             intent(in   )   ::                                         ctopo, &
-                                                                       ctopo2
-!local
-   integer ::  i,j,k
-   real,     dimension( its:ite, kts:kte*ndiff )  ::                 rqvbl2dt, &
-                                                                         qv2d
-   real,     dimension( its:ite, kts:kte )  ::                            pdh
-   real,     dimension( its:ite, kts:kte+1 )  ::                         pdhi
-   real,     dimension( its:ite )  ::                                          &
-                                                                        dusfc, &
-                                                                        dvsfc, &
-                                                                        dtsfc, &
-                                                                        dqsfc
-<<<<<<< HEAD
-
-!
-   qv2d(its:ite,:) = 0.0
-!
-=======
    real,dimension(its:ite,kts:kte,jts:jte) :: a_u,a_v,a_t,a_e,b_u,b_v,b_t,b_e, &
                                                      a_q,b_q,dlg,dl_u,sfk,vlk
    real,dimension(its:ite,jts:jte)         :: frcurb
@@ -280,7 +142,6 @@ contains
    dlg(:,:,:)=0.0
    frcurb(:,:)=0.0   
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    do j = jts,jte
       do k = kts,kte+1
         do i = its,ite
@@ -296,63 +157,6 @@ contains
           if(flag_qi) qv2d(i,k+kte+kte) = qi3d(i,k,j)
         enddo
       enddo
-<<<<<<< HEAD
-=======
-
-      if(flag_bep) then
-        bepswitch=1.0
-        do k=kts,kte
-          do i=its,ite
-            a_u(i,k,j)=a_u_bep(i,k,j)
-            a_v(i,k,j)=a_v_bep(i,k,j)
-            a_t(i,k,j)=a_t_bep(i,k,j)
-            a_q(i,k,j)=a_q_bep(i,k,j)
-            a_e(i,k,j)=a_e_bep(i,k,j)
-            b_u(i,k,j)=b_u_bep(i,k,j)
-            b_v(i,k,j)=b_v_bep(i,k,j)
-            b_t(i,k,j)=b_t_bep(i,k,j)
-            b_q(i,k,j)=b_q_bep(i,k,j)
-            b_e(i,k,j)=b_e_bep(i,k,j)
-            sfk(i,k,j)=sf_bep(i,k,j)
-            vlk(i,k,j)=vl_bep(i,k,j)
-            dl_u(i,k,j)=dl_u_bep(i,k,j)
-            dlg(i,k,j)=dlg_bep(i,k,j)
-            frcurb(i,j)=frc_urb2d(i,j)
-          enddo
-        enddo
-      endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-!
-      call ysu2d(J=j,ux=u3d(ims,kms,j),vx=v3d(ims,kms,j)                       &
-              ,tx=t3d(ims,kms,j)                                               &
-              ,qx=qv2d(its,kts)                                                &
-              ,p2d=pdh(its,kts),p2di=pdhi(its,kts)                             &
-              ,pi2d=pi3d(ims,kms,j)                                            &
-              ,utnp=rublten(ims,kms,j),vtnp=rvblten(ims,kms,j)                 &
-              ,ttnp=rthblten(ims,kms,j),qtnp=rqvbl2dt(its,kts),ndiff=ndiff     &
-              ,cp=cp,g=g,rovcp=rovcp,rd=rd,rovg=rovg                           &    
-              ,xlv=xlv,rv=rv                                                   &
-              ,ep1=ep1,ep2=ep2,karman=karman                                   &
-              ,dz8w2d=dz8w(ims,kms,j)                                          &
-              ,psfcpa=psfc(ims,j),znt=znt(ims,j),ust=ust(ims,j)                &
-              ,hpbl=hpbl(ims,j)                                                &
-              ,regime=regime(ims,j),psim=psim(ims,j)                           &
-              ,psih=psih(ims,j),xland=xland(ims,j)                             &
-              ,hfx=hfx(ims,j),qfx=qfx(ims,j)                                   &
-              ,wspd=wspd(ims,j),br=br(ims,j)                                   &
-              ,dusfc=dusfc,dvsfc=dvsfc,dtsfc=dtsfc,dqsfc=dqsfc                 &
-              ,dt=dt,rcl=1.0,kpbl1d=kpbl2d(ims,j)                              &
-              ,exch_hx=exch_h(ims,kms,j)                                       &
-              ,exch_mx=exch_m(ims,kms,j)                                       &
-              ,wstar=wstar(ims,j)                                              &
-              ,delta=delta(ims,j)                                              &
-              ,u10=u10(ims,j),v10=v10(ims,j)                                   &
-              ,uox=uoce(ims,j),vox=voce(ims,j)                                 &
-              ,rthraten=rthraten(ims,kms,j),p2diORG=p3di(ims,kms,j)            &
-              ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
-              ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
-<<<<<<< HEAD
-=======
               ,a_u2d=a_u(its,kts,j), a_v2d=a_v(its,kts,j)                      &
               ,a_t2d=a_t(its,kts,j), a_q2d=a_q(its,kts,j)                      &
               ,b_u2d=b_u(its,kts,j), b_v2d=b_v(its,kts,j)                      &
@@ -361,7 +165,6 @@ contains
               ,sfk2d=sfk(its,kts,j), vlk2d=vlk(its,kts,j)                      &
               ,dlu2d=dl_u(its,kts,j), dlg2d=dlg(its,kts,j)                     &
               ,frc_urb1d=frcurb(its,j), bepswitch=bepswitch                    &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -396,81 +199,11 @@ contains
                   rthraten,p2diORG,                                            &
                   ysu_topdown_pblmix,                                          &
                   ctopo,ctopo2,                                                &
-<<<<<<< HEAD
-=======
-                  a_u2d, a_v2d, a_t2d, a_q2d,                                  &
-                  b_u2d, b_v2d, b_t2d, b_q2d,                                  &
-                  b_e2d, a_e2d, sfk2d, vlk2d,                                  &
-                  dlu2d, dlg2d,                                                &
-                  frc_urb1d, bepswitch,                                        &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-                  ids,ide, jds,jde, kds,kde,                                   &
-                  ims,ime, jms,jme, kms,kme,                                   &
-                  its,ite, jts,jte, kts,kte,                                   &
-                !optional
-                  regime                                                       &
-                   )
-!-------------------------------------------------------------------------------
-   implicit none
-!-------------------------------------------------------------------------------
-!
-!     this code is a revised vertical diffusion package ("ysupbl")
-!     with a nonlocal turbulent mixing in the pbl after "mrfpbl".
-!     the ysupbl (hong et al. 2006) is based on the study of noh
-!     et al.(2003) and accumulated realism of the behavior of the
-!     troen and mahrt (1986) concept implemented by hong and pan(1996).
-!     the major ingredient of the ysupbl is the inclusion of an explicit
-!     treatment of the entrainment processes at the entrainment layer.
-!     this routine uses an implicit approach for vertical flux
-!     divergence and does not require "miter" timesteps.
-!     it includes vertical diffusion in the stable atmosphere
-!     and moist vertical diffusion in clouds.
-!
-!     mrfpbl:
-!     coded by song-you hong (ncep), implemented by jimy dudhia (ncar)
-!              fall 1996
-!
-!     ysupbl:
-!     coded by song-you hong (yonsei university) and implemented by
-!              song-you hong (yonsei university) and jimy dudhia (ncar)
-!              summer 2002
-!
-!     further modifications :
-!              an enhanced stable layer mixing, april 2008
-!              ==> increase pbl height when sfc is stable (hong 2010)
-!              pressure-level diffusion, april 2009
-!              ==> negligible differences
-!              implicit forcing for momentum with clean up, july 2009
-!              ==> prevents model blowup when sfc layer is too low
-!              incresea of lamda, maximum (30, 0.1 x del z) feb 2010
-!              ==> prevents model blowup when delz is extremely large
-!              revised prandtl number at surface, peggy lemone, feb 2010
-!              ==> increase kh, decrease mixing due to counter-gradient term
-!              revised thermal, shin et al. mon. wea. rev. , songyou hong, aug 2011
-!              ==> reduce the thermal strength when z1 < 0.1 h
-!              revised prandtl number for free convection, dudhia, mar 2012
-!              ==> pr0 = 1 + bke (=0.272) when neutral, kh is reduced
-!              minimum kzo = 0.01, lo = min (30m,delz), hong, mar 2012
-!              ==> weaker mixing when stable, and les resolution in vertical
-!              gz1oz0 is removed, and psim psih are ln(z1/z0)-psim,h, hong, mar 2012
-!              ==> consider thermal z0 when differs from mechanical z0
-!              a bug fix in wscale computation in stable bl, sukanta basu, jun 2012
-!              ==> wscale becomes small with height, and less mixing in stable bl
-!              revision in background diffusion (kzo), jan 2016
-!              ==> kzo = 0.1 for momentum and = 0.01 for mass to account for
-!                  internal wave mixing of large et al. (1994), songyou hong, feb 2016
-!              ==> alleviate superious excessive mixing when delz is large
-<<<<<<< HEAD
-!
-!     references:
-!
-=======
 !              add multilayer urban canopy models of BEP and BEP+BEM, jan 2021
 !
 !     references:
 !
 !        hendricks, knievel, and wang (2020), j. appl. meteor. clim.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !        hong (2010) quart. j. roy. met. soc
 !        hong, noh, and dudhia (2006), mon. wea. rev.
 !        hong and pan (1996), mon. wea. rev.
@@ -556,11 +289,6 @@ contains
    real,     dimension( ims:ime )                                            , &
              optional                                                        , &
              intent(inout)   ::                                        regime
-<<<<<<< HEAD
-!
-! local vars
-!
-=======
 ! 
 ! local vars
 !
@@ -583,7 +311,6 @@ contains
    real,     dimension( its:ite ),                                             &
              intent(in)      ::                                      frc_urb1d
    real ::                                                           bepswitch
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    real,     dimension( its:ite )            ::                           hol
    real,     dimension( its:ite, kts:kte+1 ) ::                            zq
 !
@@ -618,12 +345,8 @@ contains
                                                                          xkzq, &
                                                                          zfac, &
                                                                         rhox2, &
-<<<<<<< HEAD
-                                                                       hgamt2
-=======
                                                                        hgamt2, &
                                                                      ad1, adm
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 !jdf added exch_hx
 !
@@ -1263,22 +986,13 @@ contains
 !
    do i = its,ite
      ad(i,1) = 1.
-<<<<<<< HEAD
-     f1(i,1) = thx(i,1)-300.+hfx(i)/cont/del(i,1)*dt2
-=======
      f1(i,1) = thx(i,1)-300.+(1.0-bepswitch)*hfx(i)/cont/del(i,1)*dt2
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    enddo
 !
    do k = kts,kte-1
      do i = its,ite
-<<<<<<< HEAD
-       dtodsd = dt2/del(i,k)
-       dtodsu = dt2/del(i,k+1)
-=======
        dtodsd = sfk2d(i,k)*dt2/del(i,k)
        dtodsu = sfk2d(i,k)*dt2/del(i,k+1)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        dsig   = p2d(i,k)-p2d(i,k+1)
        rdz    = 1./dza(i,k+1)
        tem1   = dsig*xkzh(i,k)*rdz
@@ -1297,77 +1011,15 @@ contains
        endif
        tem1   = dsig*xkzh(i,k)*rdz
        dsdz2     = tem1*rdz
-<<<<<<< HEAD
-       au(i,k)   = -dtodsd*dsdz2
-       al(i,k)   = -dtodsu*dsdz2
-=======
        au(i,k)   = -dtodsd*dsdz2/vlk2d(i,k)
        al(i,k)   = -dtodsu*dsdz2/vlk2d(i,k)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
        exch_hx(i,k+1) = xkzh(i,k)
      enddo
    enddo
 !
-<<<<<<< HEAD
-=======
-! add bep/bep+bem forcing for heat if flag_bep=.true.
-!
-   do k = kts,kte
-     do i = its,ite
-      ad(i,k) = ad(i,k) - a_t2d(i,k)*dt2
-      f1(i,k) = f1(i,k) + b_t2d(i,k)*dt2
-     enddo
-   enddo
-!
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-! copies here to avoid duplicate input args for tridin
-!
-   do k = kts,kte
-     do i = its,ite
-       cu(i,k) = au(i,k)
-       r1(i,k) = f1(i,k)
-     enddo
-   enddo
-!
-   call tridin_ysu(al,ad,cu,r1,au,f1,its,ite,kts,kte,1)
-!
-!     recover tendencies of heat
-!
-   do k = kte,kts,-1
-     do i = its,ite
-       ttend = (f1(i,k)-thx(i,k)+300.)*rdt*pi2d(i,k)
-       ttnp(i,k) = ttnp(i,k)+ttend
-       dtsfc(i) = dtsfc(i)+ttend*cont*del(i,k)/pi2d(i,k)
-     enddo
-   enddo
-!
-!     compute tridiagonal matrix elements for moisture, clouds, and gases
-!
-   do k = kts,kte
-     do i = its,ite
-       au(i,k) = 0.
-       al(i,k) = 0.
-       ad(i,k) = 0.
-     enddo
-   enddo
-!
-   do ic = 1,ndiff
-     do i = its,ite
-       do k = kts,kte
-         f3(i,k,ic) = 0.
-       enddo
-     enddo
-   enddo
-!
-   do i = its,ite
-     ad(i,1) = 1.
-<<<<<<< HEAD
-     f3(i,1,1) = qx(i,1)+qfx(i)*g/del(i,1)*dt2
-=======
      f3(i,1,1) = qx(i,1)+(1.0-bepswitch)*qfx(i)*g/del(i,1)*dt2
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    enddo
 !
    if(ndiff.ge.2) then
@@ -1389,13 +1041,8 @@ contains
 !
    do k = kts,kte-1
      do i = its,ite
-<<<<<<< HEAD
-       dtodsd = dt2/del(i,k)
-       dtodsu = dt2/del(i,k+1)
-=======
        dtodsd = sfk2d(i,k)*dt2/del(i,k)
        dtodsu = sfk2d(i,k)*dt2/del(i,k+1)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        dsig   = p2d(i,k)-p2d(i,k+1)
        rdz    = 1./dza(i,k+1)
        tem1   = dsig*xkzq(i,k)*rdz
@@ -1414,13 +1061,8 @@ contains
        endif
        tem1   = dsig*xkzq(i,k)*rdz
        dsdz2     = tem1*rdz
-<<<<<<< HEAD
-       au(i,k)   = -dtodsd*dsdz2
-       al(i,k)   = -dtodsu*dsdz2
-=======
        au(i,k)   = -dtodsd*dsdz2/vlk2d(i,k)
        al(i,k)   = -dtodsu*dsdz2/vlk2d(i,k)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
 !      exch_hx(i,k+1) = xkzh(i,k)
@@ -1438,95 +1080,7 @@ contains
      enddo
    endif
 !
-<<<<<<< HEAD
-=======
-! add bep/bep+bem forcing for water vapor if flag_bep=.true.
-!
-   do k = kts,kte
-     do i = its,ite
-      ad(i,k) = ad(i,k) - a_q2d(i,k)*dt2
-      f3(i,k,1) = f3(i,k,1) + b_q2d(i,k)*dt2
-     enddo
-   enddo
-!
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-! copies here to avoid duplicate input args for tridin
-!
-   do k = kts,kte
-     do i = its,ite
-       cu(i,k) = au(i,k)
-     enddo
-   enddo
-!
-   do ic = 1,ndiff
-     do k = kts,kte
-       do i = its,ite
-         r3(i,k,ic) = f3(i,k,ic)
-       enddo
-     enddo
-   enddo
-!
-!     solve tridiagonal problem for moisture, clouds, and gases
-!
-   call tridin_ysu(al,ad,cu,r3,au,f3,its,ite,kts,kte,ndiff)
-!
-!     recover tendencies of heat and moisture
-!
-   do k = kte,kts,-1
-     do i = its,ite
-       qtend = (f3(i,k,1)-qx(i,k))*rdt
-       qtnp(i,k) = qtnp(i,k)+qtend
-       dqsfc(i) = dqsfc(i)+qtend*conq*del(i,k)
-     enddo
-   enddo
-!
-   if(ndiff.ge.2) then
-     do ic = 2,ndiff
-       is = (ic-1) * kte
-       do k = kte,kts,-1
-         do i = its,ite
-           qtend = (f3(i,k,ic)-qx(i,k+is))*rdt
-           qtnp(i,k+is) = qtnp(i,k+is)+qtend
-         enddo
-       enddo
-     enddo
-   endif
-!
-!     compute tridiagonal matrix elements for momentum
-!
-   do i = its,ite
-     do k = kts,kte
-       au(i,k) = 0.
-       al(i,k) = 0.
-       ad(i,k) = 0.
-       f1(i,k) = 0.
-       f2(i,k) = 0.
-     enddo
-   enddo
-!
-! paj: ctopo=1 if topo_wind=0 (default)
-!raquel---paj tke code (could be replaced with shin-hong tke in future
-   do i = its,ite
-      do k= kts, kte-1
-        shear_ysu(i,k)=xkzm(i,k)*((-hgamu(i)/hpbl(i)+(ux(i,k+1)-ux(i,k))/dza(i,k+1))*(ux(i,k+1)-ux(i,k))/dza(i,k+1) &
-        + (-hgamv(i)/hpbl(i)+(vx(i,k+1)-vx(i,k))/dza(i,k+1))*(vx(i,k+1)-vx(i,k))/dza(i,k+1))
-         buoy_ysu(i,k)=xkzh(i,k)*g*(1.0/thx(i,k))*(-hgamt(i)/hpbl(i)+(thx(i,k+1)-thx(i,k))/dza(i,k+1))
-
-       zk = karman*zq(i,k+1)
- !over pbl
-       if (k.ge.kpbl(i)) then
-        rlamdz = min(max(0.1*dza(i,k+1),rlam),300.)
-        rlamdz = min(dza(i,k+1),rlamdz)
-       else
- !in pbl
-        rlamdz = 150.0
-       endif
-       el_ysu(i,k) = zk*rlamdz/(rlamdz+zk)
-<<<<<<< HEAD
-       tke_ysu(i,k)=16.6*el_ysu(i,k)*(shear_ysu(i,k)-buoy_ysu(i,k))
-=======
        tke_ysu(i,k)=16.6*el_ysu(i,k)*(shear_ysu(i,k)-buoy_ysu(i,k)+b_e2d(i,k))
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
  !q2 when q3 positive
        if(tke_ysu(i,k).le.0) then
         tke_ysu(i,k)=0.0
@@ -1538,10 +1092,6 @@ contains
  !tke is q2
       CALL GET_PBLH(KTS,KTE,pblh_ysu(i),thvx(i,kts:kte),&
       &    tke_ysu(i,kts:kte),zq(i,kts:kte+1),dzq(i,kts:kte),xland(i))
-<<<<<<< HEAD
-
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !--- end of paj tke
 ! compute vconv
 !      Use Beljaars over land
@@ -1561,17 +1111,11 @@ contains
       if(present(ctopo)) then
         vconvnew=0.9*vconvfx(i)+1.5*(max((pblh_ysu(i)-500)/1000.0,0.0))
         vconvlim = min(vconvnew,1.0)
-<<<<<<< HEAD
-        ad(i,1) = 1.+fric(i,1)*vconvlim+ctopo(i)*fric(i,1)*(1-vconvlim)
-      else
-       ad(i,1) = 1.+fric(i,1)
-=======
        ad(i,1) = 1.+(1.0-bepswitch*frc_urb1d(i))* &
                      (fric(i,1)*vconvlim+ctopo(i)*fric(i,1)*(1-vconvlim)) - &
                      fric(i,1)*bepswitch*(1-frc_urb1d(i))
       else
        ad(i,1) = 1.+(1.0-bepswitch)*fric(i,1)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       endif
      f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
      f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
@@ -1579,13 +1123,8 @@ contains
 !
    do k = kts,kte-1
      do i = its,ite
-<<<<<<< HEAD
-       dtodsd = dt2/del(i,k)
-       dtodsu = dt2/del(i,k+1)
-=======
        dtodsd = sfk2d(i,k)*dt2/del(i,k)
        dtodsu = sfk2d(i,k)*dt2/del(i,k+1)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        dsig   = p2d(i,k)-p2d(i,k+1)
        rdz    = 1./dza(i,k+1)
        tem1   = dsig*xkzm(i,k)*rdz
@@ -1609,55 +1148,15 @@ contains
        endif
        tem1   = dsig*xkzm(i,k)*rdz
        dsdz2     = tem1*rdz
-<<<<<<< HEAD
-       au(i,k)   = -dtodsd*dsdz2
-       al(i,k)   = -dtodsu*dsdz2
-=======
        au(i,k)   = -dtodsd*dsdz2/vlk2d(i,k)
        al(i,k)   = -dtodsu*dsdz2/vlk2d(i,k)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
        exch_mx(i,k+1) = xkzm(i,k)
      enddo
    enddo
 !
-<<<<<<< HEAD
-=======
-! add bep/bep+bem forcing for momentum if flag_bep=.true.
-!
-   do k = kts,kte
-     do i = its,ite
-       ad1(i,k) = ad(i,k)
-     end do
-   end do
-   do k = kts,kte
-     do i = its,ite
-       ad(i,k) = ad(i,k) - a_u2d(i,k)*dt2
-       ad1(i,k) = ad1(i,k) - a_v2d(i,k)*dt2
-       f1(i,k) = f1(i,k) + b_u2d(i,k)*dt2
-       f2(i,k) = f2(i,k) + b_v2d(i,k)*dt2
-     enddo
-   enddo
-!
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-! copies here to avoid duplicate input args for tridin
-!
-   do k = kts,kte
-     do i = its,ite
-       cu(i,k) = au(i,k)
-       r1(i,k) = f1(i,k)
-       r2(i,k) = f2(i,k)
-     enddo
-   enddo
-!
-!     solve tridiagonal problem for momentum
-!
-<<<<<<< HEAD
-   call tridi1n(al,ad,cu,r1,r2,au,f1,f2,its,ite,kts,kte,1)
-=======
     call tridi2n(al,ad,ad1,cu,r1,r2,au,f1,f2,its,ite,kts,kte,1)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 !     recover tendencies of momentum
 !
@@ -1691,11 +1190,7 @@ contains
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------
-<<<<<<< HEAD
-   subroutine tridi1n(cl,cm,cu,r1,r2,au,f1,f2,its,ite,kts,kte,nt)
-=======
    subroutine tridi2n(cl,cm,cm1,cu,r1,r2,au,f1,f2,its,ite,kts,kte,nt)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
@@ -1707,50 +1202,11 @@ contains
 !
    real, dimension( its:ite, kts:kte )                                       , &
          intent(in   )  ::                                                 cm, &
-<<<<<<< HEAD
-=======
-                                                                          cm1, &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-                                                                           r1
-   real, dimension( its:ite, kts:kte,nt )                                    , &
-         intent(in   )  ::                                                 r2
-!
-   real, dimension( its:ite, kts:kte )                                       , &
-         intent(inout)  ::                                                 au, &
-                                                                           cu, &
-                                                                           f1
-   real, dimension( its:ite, kts:kte,nt )                                    , &
-         intent(inout)  ::                                                 f2
-!
-   real    :: fk
-   integer :: i,k,l,n,it
-!
-!-------------------------------------------------------------------------------
-!
-   l = ite
-   n = kte
-!
-   do i = its,l
-     fk = 1./cm(i,1)
-     au(i,1) = fk*cu(i,1)
-     f1(i,1) = fk*r1(i,1)
-   enddo
-!
-   do it = 1,nt
-     do i = its,l
-<<<<<<< HEAD
-       fk = 1./cm(i,1)
-       f2(i,1,it) = fk*r2(i,1,it)
-     enddo
-   enddo
-!
-=======
        fk = 1./cm1(i,1)
        f2(i,1,it) = fk*r2(i,1,it)
      enddo
    enddo
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    do k = kts+1,n-1
      do i = its,l
        fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
@@ -1762,11 +1218,7 @@ contains
    do it = 1,nt
      do k = kts+1,n-1
        do i = its,l
-<<<<<<< HEAD
-         fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
-=======
          fk = 1./(cm1(i,k)-cl(i,k)*au(i,k-1))
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          f2(i,k,it) = fk*(r2(i,k,it)-cl(i,k)*f2(i,k-1,it))
        enddo
      enddo
@@ -1779,11 +1231,7 @@ contains
 !
    do it = 1,nt
      do i = its,l
-<<<<<<< HEAD
-       fk = 1./(cm(i,n)-cl(i,n)*au(i,n-1))
-=======
        fk = 1./(cm1(i,n)-cl(i,n)*au(i,n-1))
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        f2(i,n,it) = fk*(r2(i,n,it)-cl(i,n)*f2(i,n-1,it))
      enddo
    enddo
@@ -1802,11 +1250,7 @@ contains
      enddo
    enddo
 !
-<<<<<<< HEAD
-   end subroutine tridi1n
-=======
    end subroutine tridi2n
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------

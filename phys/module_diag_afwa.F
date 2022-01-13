@@ -20,11 +20,7 @@ CONTAINS
                              , chem                              &
                              , th_phy , pi_phy , p_phy           &
                              , u_phy , v_phy                     &
-<<<<<<< HEAD
-                             , dz8w , p8w , t8w , rho_phy , rho  &
-=======
                              , dz8w , p8w , t8w , rho            &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                              , ids, ide, jds, jde, kds, kde      &
                              , ims, ime, jms, jme, kms, kme      &
                              , ips, ipe, jps, jpe, kps, kpe      &
@@ -69,10 +65,6 @@ CONTAINS
                                               ,           dz8w  &
                                               ,            p8w  &
                                               ,            t8w  &
-<<<<<<< HEAD
-                                              ,        rho_phy  &
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                               ,            rho
 
     ! Local

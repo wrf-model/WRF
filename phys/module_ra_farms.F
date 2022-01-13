@@ -27,44 +27,22 @@
     real, parameter :: DE_CLOUD_MIN = 5.0, DE_CLOUD_MAX = 120.0
     real, parameter :: TAU_MIN = 0.0001, TAU_MAX = 300.0
     real, parameter :: AOD550_VAL = 0.12, ANGEXP_VAL = 1.3, AERSSA_VAL = 0.85, AERASY_VAL = 0.9
-<<<<<<< HEAD
-=======
-    real, parameter :: RE_CLOUD_CLIM = 8.E-6, RE_ICE_CLIM = 24.E-6, RE_SNOW_CLIM = 24.E-6
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-
-  contains
-
-    subroutine Farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte,  &
-           p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
-           coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,    &
-<<<<<<< HEAD
-           julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2)
-=======
            julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2, &
            has_reqc, has_reqi, has_reqs, cldfra)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       implicit None
 
       integer, intent(in) :: ims, ime, jms, jme, its, ite, jts, jte, kms, kme, &
           kts, kte
 
-<<<<<<< HEAD
-      integer, intent(in) :: aer_opt
-=======
       integer, intent(in) :: aer_opt, has_reqc, has_reqi, has_reqs
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       real,    intent(in) :: julian
 
       real, dimension(ims:ime, jms:jme), intent(in) :: albedo, coszen_loc
 
       real, dimension(ims:ime, kms:kme, jms:jme ), intent(in) :: qv, qi, qs, qc, &
-<<<<<<< HEAD
-          p8w, rho, dz8w, re_cloud, re_ice, re_snow 
-=======
           p8w, rho, dz8w, cldfra
       real, dimension(ims:ime, kms:kme, jms:jme ), intent(in) :: re_cloud, re_ice, re_snow
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       real, dimension(ims:ime, jms:jme), intent(inout) :: aerssa2d, aerasy2d, aod5502d, angexp2d
       real, dimension(ims:ime,jms:jme), intent(inout) :: swddir2, swdown2, &
@@ -72,17 +50,10 @@
                                                          swdownc2, swddnic2
 
         ! Local
-<<<<<<< HEAD
-      integer :: i, j
-      real    :: tau_qv, tau_qi, tau_qs, pmw, swp, iwp, lwp, beta
-      real    :: re_cloud_path, re_ice_path, re_snow_path, q_aux
-      real, dimension(kms:kme) :: rhodz
-=======
       integer :: i, j, k
       real    :: tau_qv, tau_qi, tau_qs, pmw, swp, iwp, lwp, beta
       real    :: re_cloud_path, re_ice_path, re_snow_path, q_aux, cldfra_h
       real, dimension(kms:kme) :: rhodz, re_cloud_k, re_ice_k, re_snow_k
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 
       j_loop: do j = jts, jte
@@ -96,51 +67,7 @@
              swddnic2(i, j) = 0.0
            else
              rhodz(:) = rho(i, :, j) * dz8w(i, :, j) / (1. + qv(i, :, j))
-<<<<<<< HEAD
-=======
-             re_cloud_k(:) = re_cloud(i, :, j)
-             re_ice_k(:) = re_ice(i, :, j)
-             re_snow_k(:) = re_snow(i, :, j)
-
-             if (has_reqc == 1) then
-               do k = kts, kte
-                 if (CLDFRA (i, k, j) > 0.0 .and. re_cloud_k(k) < 2.5E-6) re_cloud_k(k) = RE_CLOUD_CLIM
-               end do
-             else
-               re_cloud_k(:) = RE_CLOUD_CLIM
-             end if
-
-             if (has_reqi == 1) then
-               do k = kts, kte
-                 if (cldfra(i, k, j) > 0.0 .and. re_ice_k(k) < 5.0E-6) re_ice_k(k) = RE_ICE_CLIM
-               end do
-             else
-               re_ice_k(:) = RE_ICE_CLIM
-             end if
-
-             if (has_reqs == 1) then
-               do k = kts, kte
-                 if (cldfra(i, k, j) > 0.0 .and. re_snow_k(k) < 10.0E-6) re_snow_k(k) = RE_SNOW_CLIM
-               end do
-             else
-               re_snow_k(:) = RE_SNOW_CLIM
-             end if
-
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-               ! PMW
-             pmw = integrate_1var (rhodz, qv(i, :, j), kms, kme, kts, kte)
-
-               ! Calc effective radius water
-             q_aux = integrate_1var (rhodz, qc(i, :, j), kms, kme, kts, kte)
-             lwp = q_aux
-
-             if (q_aux > 0.0) then
-               re_cloud_path = integrate_2var (rhodz, qc(i, :, j), &
-<<<<<<< HEAD
-                   re_cloud(i, :, j), kms, kme, kts, kte)
-=======
                    re_cloud_k, kms, kme, kts, kte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                re_cloud_path = re_cloud_path / q_aux
              else
                re_cloud_path = 0.0
@@ -152,11 +79,7 @@
 
              if (q_aux > 0.0) then
                re_ice_path = integrate_2var (rhodz, qi(i, :, j), &
-<<<<<<< HEAD
-                   re_ice(i, :, j), kms, kme, kts, kte)
-=======
                    re_ice_k, kms, kme, kts, kte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                re_ice_path = re_ice_path / q_aux
              else
                re_ice_path = 0.0
@@ -168,86 +91,17 @@
 
              if (q_aux > 0.0) then
                re_snow_path = integrate_2var (rhodz, qs(i, :, j), &
-<<<<<<< HEAD
-                   re_snow(i, :, j), kms, kme, kts, kte)
-=======
                    re_snow_k, kms, kme, kts, kte)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                re_snow_path = re_snow_path / q_aux
              else
                re_snow_path = 0.0
              end if
 
-<<<<<<< HEAD
-=======
-             ! Calculate horizontal cloud fraction 
-             q_aux = integrate_1var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), kms, kme, kts, kte)
-             if (q_aux > 0.0) then
-               cldfra_h = integrate_2var (rhodz, qc(i, :, j) + qi(i, :, j) + qs(i, :, j), &
-                   cldfra(i, :, j), kms, kme, kts, kte)
-               cldfra_h = cldfra_h / q_aux
-             else
-               cldfra_h = 0.0
-             end if
-
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-               ! optical thickness  water
-             if (re_cloud_path > 0.0) then
-               tau_qv = THREE_OVER_TWO * lwp / re_cloud_path / 1000.0
-             else
-               tau_qv = 0.0
-             end if
-
-               ! Optical thickness ice 
-             if (re_ice_path > 0.0) then
-               if (TAU_ICE_METHOD == 1) then
-                   ! Eq 10 in Matrosov et al. (2002)
-                 tau_qi = iwp * 1000.0 * (0.02 + 4.2 / (2.0 * re_ice_path * 1.0e+6))
-               else
-                 tau_qi = iwp * 1000.0 * (-0.006656 + 3.686 / (2.0 * re_ice_path * 1.0e+6))
-               end if
-             else
-               tau_qi = 0.0
-             end if
-
-               ! Optical thickness snow 
-             if (re_snow_path > 0.0) then
-               if (TAU_ICE_METHOD == 1) then
-                   ! Eq 10 in Matrosov et al. (2002)
-                 tau_qs = swp * 1000.0 * (0.02 + 4.2 / (2.0 * re_snow_path * 1.0e+6))
-               else
-                 tau_qs = swp * 1000.0 * (-0.006656 + 3.686 / (2.0 * re_snow_path * 1.0e+6))
-               end if
-             else
-               tau_qs = 0.0
-             end if
-
-               ! Aerosols
-             if (aer_opt == 1) then
-                angexp2d(i, j) = ANGEXP_VAL
-                aerssa2d(i, j) = AERSSA_VAL
-                aerasy2d(i, j) = AERASY_VAL
-             else if (aer_opt == 0) then
-                aod5502d(i, j) = 0.0
-                angexp2d(i, j) = 0.0
-                aerssa2d(i, j) = 0.0
-                aerasy2d(i, j) = 0.0
-             end if
-
-             beta = aod5502d(i, j) * (1000.0/ 550.0) ** (- angexp2d(i, j))
-<<<<<<< HEAD
-              
-             Call Farms (p8w(i, 1, j), albedo(i, j), aerssa2d(i, j), &
-                 aerasy2d(i, j), coszen_loc(i, j), beta,   &
-                 angexp2d(i, j), pmw, tau_qv, tau_qi, tau_qs,        &
-                 re_cloud_path, re_ice_path, re_snow_path, int(julian),   &
-=======
 
              Call Farms (p8w(i, 1, j), albedo(i, j), aerssa2d(i, j),         &
                  aerasy2d(i, j), coszen_loc(i, j), beta,                     &
                  angexp2d(i, j), pmw, tau_qv, tau_qi, tau_qs, cldfra_h,      &
                  re_cloud_path, re_ice_path, re_snow_path, int(julian),      &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  swdown2(i, j), swddni2(i, j), swddif2(i, j), swddir2(i, j), &
                  swdownc2(i, j), swddnic2(i, j))
 
@@ -299,11 +153,7 @@
 
 
     subroutine FARMS (p_pa, albdo, ssa, g, solarangle, beta, alpha, w_mm, &
-<<<<<<< HEAD
-        tau_qv, tau_qi, tau_qs, re_cloud_path_m, re_ice_path_m, re_snow_path_m, &
-=======
         tau_qv, tau_qi, tau_qs, cldfra_h, re_cloud_path_m, re_ice_path_m, re_snow_path_m, &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         juday, ghi, dni, dif, dir, ghi_clear, dni_clear)
 
         !!!!!! This Fast All-sky Radiation Model for Solar applications (FARMS) was developed by
@@ -341,11 +191,7 @@
       implicit none
   
       real, intent(in) :: p_pa, albdo, ssa, g, solarangle, beta, alpha, w_mm, &
-<<<<<<< HEAD
-          tau_qv, tau_qi, tau_qs, re_cloud_path_m, re_ice_path_m, re_snow_path_m
-=======
           tau_qv, tau_qi, tau_qs, re_cloud_path_m, re_ice_path_m, re_snow_path_m, cldfra_h
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       integer, intent(in) :: juday
       real, intent(out) :: ghi, dni, dir, dif, ghi_clear, dni_clear
 
@@ -403,11 +249,7 @@
       if (tau_qv > TAU_MIN) then
         Call Watermodel (tau_tot, de_cloud2, solarangle, Tducld_water, Ruucld_water)
       else
-<<<<<<< HEAD
-        Tducld_water = 1.0
-=======
         Tducld_water = 0.0
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         Ruucld_water = 0.0
         tau_qv2 = 0.0
       end if
@@ -416,11 +258,7 @@
       if (tau_qi > TAU_MIN) then
         call Icemodel (tau_tot, de_ice2, solarangle, Tducld_ice, Ruucld_ice)
       else
-<<<<<<< HEAD
-        Tducld_ice = 1.0
-=======
         Tducld_ice = 0.0
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         Ruucld_ice = 0.0
         tau_qi2 = 0.0
       end if
@@ -429,11 +267,7 @@
       if (tau_qs > TAU_MIN) then
         call Icemodel (tau_tot, de_snow2, solarangle, Tducld_snow, Ruucld_snow)
       else
-<<<<<<< HEAD
-        Tducld_snow = 1.0
-=======
         Tducld_snow = 0.0
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         Ruucld_snow = 0.0
         tau_qs2 = 0.0
       end if
@@ -446,36 +280,9 @@
         Ruucld = (tau_qv2 * Ruucld_water + tau_qi2 * Ruucld_ice + tau_qs2 * Ruucld_snow)  / tau_tot
         Ruucld = min(Ruucld, 1.0) 
         Ruucld = max(Ruucld, 0.0) 
-<<<<<<< HEAD
-=======
-      else
-        Tducld = 0.0
-        Ruucld = 0.0
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-      end if
-
-      tau = tau_qv2 + tau_qi2 + tau_qs2 
-      tau = Min (tau, TAU_MAX)
-      tau = Max (tau, TAU_MIN)
-
-      Tddcld = exp(-tau/solarangle)
-
-      dni_clear = F0 * Tddclr
-      dni = dni_clear * Tddcld
-      dir = dni * solarangle
-
-      F1 = solarangle*F0*( Tddcld*(Tddclr+Tduclr) + Tducld*Tuuclr )
-
-      Ftotal = F1/(1.0-albdo*(Ruuclr + Ruucld*Tuuclr*Tuuclr))
-      ghi = Ftotal
-      ghi_clear =  solarangle * F0 * ((Tddclr + Tduclr) / (1.0 - albdo * Ruuclr))
-
-<<<<<<< HEAD
-=======
       ghi = cldfra_h * ghi + (1.0 - cldfra_h) * ghi_clear
       dni = cldfra_h * dni + (1.0 - cldfra_h) * dni_clear
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       dif = ghi - dir
 
     end subroutine farms
@@ -681,13 +488,8 @@
       endif
       if ( De .gt. 26.0 ) then 
         Ptau =  (2.8355 + (100.0-De)*0.006)*solarangle - 0.00612
-<<<<<<< HEAD
-        Ptau = max(Ptau, PTAU_MIN)
-      endif
-=======
       endif
       Ptau = max(Ptau, PTAU_MIN)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       PDHI = 1047.6367*solarangle**1.0883
 

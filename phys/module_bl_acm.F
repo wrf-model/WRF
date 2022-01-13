@@ -21,11 +21,7 @@ CONTAINS
                      UST,      HFX,      QFX,   TSK,                  &
                      PSFC,     EP1,      G,                           &
                      ROVCP,    RD,       CPD,                         &
-<<<<<<< HEAD
-                     PBLH,     KPBL2D,   EXCH_H, REGIME,              &
-=======
                      PBLH,     KPBL2D,   EXCH_H, EXCH_M, REGIME,      &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                      GZ1OZ0,   WSPD,     PSIM, MUT, RMOL,             &
                      RUBLTEN,  RVBLTEN,  RTHBLTEN,                    &
                      RQVBLTEN, RQCBLTEN, RQIBLTEN,                    &
@@ -54,114 +50,7 @@ CONTAINS
 !     JP        3/2013   - WRFChem version. Mixing of chemical species are added
 !     HF        5/2016   - MPAS version  
 !     JP        8/2017   - Z-coord version from MPAS version for hybrid coords  
-<<<<<<< HEAD
-=======
-!     JP        10/2020  - Fixed a bug where KSRC is now an array dimensioned ( its:ite )
-!                        - Modified the PBL height algorithm for stable conditions so
-!                          that the Richardson number is computed using windspeed in layer
-!                          k rather than wind speed difference between layer k and ksrc
-!                        - Added EXCH_M to argument list 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-!
-!**********************************************************************
-!   ARGUMENT LIST:
-!
-!... Inputs:
-!-- XTIME           Time since simulation start (min)
-!-- DTPBL           PBL time step
-!-- U3D             3D u-velocity interpolated to theta points (m/s)
-!-- V3D             3D v-velocity interpolated to theta points (m/s)
-!-- PP3D            Pressure at half levels (Pa)
-!-- DZ8W            dz between full levels (m)
-!-- TH3D            Potential Temperature (K)
-!-- T3D             Temperature (K)
-!-- QV3D            3D water vapor mixing ratio (Kg/Kg)
-!-- QC3D            3D cloud mixing ratio (Kg/Kg)
-!-- QI3D            3D ice mixing ratio (Kg/Kg)
-!-- RR3D            3D dry air density (kg/m^3)
-!-- CHEM3D          Chemical species mixing ratios (ppm)  Optional for WRFChem   
-!-- VD3D            Dry deposition velocity (m/s)         Optional for WRFChem
-!-- NCHEM           Number of chemical species            Optional for WRFChem
-!-- UST             Friction Velocity (m/s)
-!-- HFX		    Upward heat flux at the surface (w/m^2)
-!-- QFX		    Upward moisture flux at the surface (Kg/m^2/s)
-!-- TSK             Surface temperature (K)
-!-- PSFC            Pressure at the surface (Pa)
-!-- EP1             Constant for virtual temperature (r_v/r_d-1) (dimensionless)
-!-- G               Gravity (m/s^2)
-!-- ROVCP           r/cp
-!-- RD              gas constant for dry air (j/kg/k)
-!-- CPD             heat capacity at constant pressure for dry air (j/kg/k)
-!-- GZ1OZ0          log(z/z0) where z0 is roughness length
-!-- WSPD            wind speed at lowest model level (m/s)
-!-- PSIM            similarity stability function for momentum
-!-- MUT             Total Mu : Psfc - Ptop
- 
-!-- ids             start index for i in domain
-!-- ide             end index for i in domain
-!-- jds             start index for j in domain
-!-- jde             end index for j in domain
-!-- kds             start index for k in domain
-!-- kde             end index for k in domain
-!-- ims             start index for i in memory
-!-- ime             end index for i in memory
-!-- jms             start index for j in memory
-!-- jme             end index for j in memory
-!-- kms             start index for k in memory
-!-- kme             end index for k in memory
-!-- jts             start index for j in tile
-!-- jte             end index for j in tile
-!-- kts             start index for k in tile
-!-- kte             end index for k in tile
-!
-!... Outputs: 
-!-- PBLH            PBL height (m)
-!-- KPBL2D          K index for PBL layer
-!-- REGIME          Flag indicating PBL regime (stable, unstable, etc.)
-!-- RUBLTEN         U tendency due to PBL parameterization (m/s^2)
-!-- RVBLTEN         V tendency due to PBL parameterization (m/s^2)
-!-- RTHBLTEN        Theta tendency due to PBL parameterization (K/s)
-!-- RQVBLTEN        Qv tendency due to PBL parameterization (kg/kg/s)
-!-- RQCBLTEN        Qc tendency due to PBL parameterization (kg/kg/s)
-!-- RQIBLTEN        Qi tendency due to PBL parameterization (kg/kg/s)
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-     IMPLICIT NONE
-
-!.......Arguments
-! DECLARATIONS - INTEGER
-    INTEGER,  INTENT(IN   )   ::      ids,ide, jds,jde, kds,kde, &
-                                      ims,ime, jms,jme, kms,kme, &
-                                      its,ite, jts,jte, kts,kte, XTIME
-
-! DECLARATIONS - REAL
-    REAL,                                INTENT(IN)  ::  DTPBL, EP1,   &
-                                                        G, ROVCP, RD, CPD
-
-    REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),                         &
-             INTENT(IN) ::                              U3D, V3D,            &
-                                                        PP3D, DZ8W, T3D,     &
-                                                        QV3D, QC3D, QI3D,    &
-                                                        RR3D, TH3D
-
-    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: PSIM, GZ1OZ0,     &
-                                                          HFX, QFX, TSK,    &
-                                                          PSFC, WSPD, MUT
-
-    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  PBLH, REGIME, & 
-                                                              UST, RMOL
-
-    REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),                         &
-             INTENT(INOUT)   ::                         RUBLTEN, RVBLTEN,    &
-                                                        RTHBLTEN, RQVBLTEN,  &
-                                                        RQCBLTEN, RQIBLTEN
-
-   real,     dimension( ims:ime, kms:kme, jms:jme ),                         &
-<<<<<<< HEAD
-             intent(inout)   ::                         exch_h
-=======
              intent(inout)   ::                         exch_h,exch_m
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
     INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT  ) ::  KPBL2D
  
@@ -185,21 +74,6 @@ CONTAINS
     REAL,    DIMENSION( ims:ime, kdvel, ndvel ) :: VD2D
 #endif
    
-<<<<<<< HEAD
-
-
-!**************************************
-! dry air density - Hosein, June 2015
-!     do j = jts,jte
-!     do k = kts,kte
-!     do i = its,ite
-!       RR3DA(i,k,j) = RR3D(i,k,j) * (1.0 + 1.609*QV3D(i,k,j)) / (1.0 + QV3D(i,k,j))
-!     enddo
-!     enddo
-!     enddo
-!***************************************
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    RDT = 1.0 / DTPBL
 
 !==================================================
@@ -242,39 +116,6 @@ CONTAINS
               ,psfcpa=psfc(ims,j),ust=ust(ims,j)                   &
               ,pbl=pblh(ims,j)                                     &
               ,exch_hx=exch_h(ims,kms,j)                           &
-<<<<<<< HEAD
-=======
-              ,exch_mx=exch_m(ims,kms,j)                           &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-              ,regime=regime(ims,j),psim=psim(ims,j)               &
-              ,hfx=hfx(ims,j),qfx=qfx(ims,j)                       &
-              ,tg=tsk(ims,j),gz1oz0=gz1oz0(ims,j)                  &
-              ,wspd=wspd(ims,j) ,klpbl=kpbl2d(ims,j)               &
-              ,mut=mut(ims,j), rmol=rmol(ims,j)                    &
-              ,ep1=ep1,karman=karman                               &
-              ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde   &
-              ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme   &
-              ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
-#if (WRF_CHEM == 1)
-      DO L = 1, nchem
-      DO I = ims, ime
-        chem3d(i,kms:kme,j,l) = CHEM2D(i,kms:kme,l)
-      ENDDO
-      ENDDO
-#endif
-   ENDDO
-
-<<<<<<< HEAD
-
-!   write(46,*) pblh (7221,1)
-!   write(56,*) 'rublten'  , rublten (1000,6,1)
-!   write(56,*) 'rvblten'  , rvblten (1000,6,1)
-!   write(56,*) 'rthblten' , rthblten(1000,6,1)
-!   write(56,*) '==========='
-
-
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    END SUBROUTINE ACMPBL
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -290,11 +131,7 @@ CONTAINS
 #endif
               ,dzf,densx,utnp,vtnp,ttnp,qvtnp,qctnp,qitnp   &
               ,cpd,g,rovcp,rd,rdt,psfcpa,ust                &
-<<<<<<< HEAD
-              ,pbl,exch_hx,regime,psim                      &
-=======
               ,pbl,exch_hx,exch_mx,regime,psim                      &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ,hfx,qfx,tg,gz1oz0,wspd ,klpbl                &
               ,mut, rmol                                    &
               ,ep1,karman                                   &
@@ -328,11 +165,7 @@ CONTAINS
       real,     dimension( ims:ime ), intent(in)      ::   hfx, qfx
       real,     dimension( ims:ime ), intent(in)      ::   mut
       real,     dimension( ims:ime, kms:kme ),                    &
-<<<<<<< HEAD
-                intent(inout)                         ::   exch_hx
-=======
                 intent(inout)                         ::   exch_hx,exch_mx
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !... Integer
       INTEGER, DIMENSION( ims:ime ),       INTENT(OUT):: KLPBL
       INTEGER,  INTENT(IN)      ::      XTIME
@@ -349,11 +182,7 @@ CONTAINS
 !--Local 
       INTEGER I, K     
       INTEGER :: KPBLHT
-<<<<<<< HEAD
-      INTEGER, DIMENSION( its:ite ) :: KPBLH, NOCONV
-=======
       INTEGER, DIMENSION( its:ite ) :: KPBLH, NOCONV, KSRC
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !... Real
       REAL    ::  TVCON, WSS, TCONV, TH1, TOG, DTMP, WSSQ
@@ -371,11 +200,7 @@ CONTAINS
       REAL    ::  A,TST12,RL,ZFUNC,DENSF
 
 !... Integer
-<<<<<<< HEAD
-      INTEGER :: KL, jtf, ktf, itf, KMIX, KSRC
-=======
       INTEGER :: KL, jtf, ktf, itf, KMIX
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       character*512 :: message
 !-----initialize vertical tendencies and
 
@@ -435,10 +260,6 @@ CONTAINS
        DO I = its,ite
          ZF(I,K) = DZF(I,K) + ZF(I,K-1)
          ZA(I,K) = 0.5 * (ZF(I,K) + ZF(I,K-1))
-<<<<<<< HEAD
-!         write(0,*) i , k , zf, za 
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          DZH(I,K) = ZF(I,K) - ZF(I,K-1)
          DZHI(I,K)= 1./DZH(I,K)
        ENDDO
@@ -464,65 +285,38 @@ CONTAINS
 !...  COMPUTE PBL WHERE RICHARDSON NUMBER = RIC (0.25) HOLTSLAG ET AL 1990  
      DO 100 I = its,ite
        DO K = 1,kte
-<<<<<<< HEAD
-         KSRC = K
-         IF (ZF(I,K).gt.30.0) GO TO 69
-       ENDDO
-69     CONTINUE
-=======
          RIB(I,K) = 0.0
          KSRC(I) = K
          IF (ZF(I,K).gt.30.0) GO TO 69
        ENDDO
 69     CONTINUE 
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        TH1 = 0.0
        ZH1 = 0.0
        UH1 = 0.0
        VH1 = 0.0
-<<<<<<< HEAD
-       DO K = 1,KSRC
-=======
        DO K = 1,KSRC(I)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          TH1 = TH1 + THETAV(I,K)  
          ZH1 = ZH1 + ZA(I,K)
          UH1 = UH1 + US(I,K)
          VH1 = VH1 + VS(I,K)
        ENDDO  
-<<<<<<< HEAD
-       TH1 = TH1/KSRC
-       ZH1 = ZH1/KSRC
-       UH1 = UH1/KSRC
-       VH1 = VH1/KSRC
-=======
        TH1 = TH1/KSRC(I)
        ZH1 = ZH1/KSRC(I)
        UH1 = UH1/KSRC(I)
        VH1 = VH1/KSRC(I)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        IF(MOL(I).LT.0.0 .AND. XTIME.GT.1) then
          WSS   = (UST(I) ** 3 + 0.6 * WST(I) ** 3) ** 0.33333
          TCONV = -8.5 * UST(I) * TSTV(I) / WSS
          TH1   = TH1 + TCONV
        ENDIF
 
-<<<<<<< HEAD
-99     KMIX = KSRC
-       DO K = KSRC,kte
-         DTMP   = THETAV(I,K) - TH1
-         IF (DTMP.LT.0.0) KMIX = K
-       ENDDO
-       IF(KMIX.GT.KSRC) THEN
-=======
 99     KMIX = KSRC(I)
        DO K = KSRC(I),kte
          DTMP   = THETAV(I,K) - TH1
          IF (DTMP.LT.0.0) KMIX = K
        ENDDO
        IF(KMIX.GT.KSRC(I)) THEN
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          FINTT = (TH1 - THETAV(I,KMIX)) / (THETAV(I,KMIX+1)               &
                - THETAV(I,KMIX))
          ZMIX = FINTT * (ZA(I,KMIX+1)-ZA(I,KMIX)) + ZA(I,KMIX)
@@ -538,14 +332,10 @@ CONTAINS
          TOG = 0.5 * (THETAV(I,K) + TH1) / G
          WSSQ = (US(I,K)-UMIX)**2                                     &
               + (VS(I,K)-VMIX)**2
-<<<<<<< HEAD
-         IF (KMIX == KSRC) WSSQ = WSSQ + 100.*UST(I)*UST(I) 
-=======
          IF (KMIX .EQ. KSRC(I)) THEN
                WSSQ = US(I,K)**2 + VS(I,K)**2
                WSSQ = WSSQ + 100.*UST(I)*UST(I) 
          ENDIF
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          WSSQ = MAX( WSSQ, 0.1 )
          RIB(I,K) = ABS(ZA(I,K)-ZMIX) * DTMP / (TOG * WSSQ)
          IF (RIB(I,K) .GE. RIC) GO TO 201
@@ -567,11 +357,7 @@ CONTAINS
 100  CONTINUE
 
      DO I = its,ite
-<<<<<<< HEAD
-       IF (KPBLH(I) .GT. KSRC) THEN
-=======
        IF (KPBLH(I) .GT. KSRC(I)) THEN
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !---------INTERPOLATE BETWEEN LEVELS -- jp 7/93
          FINT(I) = (RIC - RIB(I,KPBLH(I)-1)) / (RIB(I,KPBLH(I)) -       &
                     RIB(I,KPBLH(I)-1))
@@ -586,13 +372,8 @@ CONTAINS
                      ZF(I,KPBLHT-1)
          KLPBL(I) = KPBLHT
        ELSE
-<<<<<<< HEAD
-         KLPBL(I) = KSRC
-         PBL(I)    = ZA(I,KSRC)                                                  
-=======
          KLPBL(I) = KSRC(I)
          PBL(I)    = ZA(I,KSRC(I))                                                  
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        ENDIF
 
      ENDDO
@@ -639,189 +420,6 @@ CONTAINS
      DO K = kts, kte-1
        DO I = its, ite
          exch_hx(I,K) = EDDYZ(I,K)
-<<<<<<< HEAD
-=======
-         exch_mx(I,K) = EDDYZM(I,K)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-       ENDDO
-     ENDDO
-
-!... Calculate tendency due to PBL parameterization
-
-     DO K = kts, kte
-       DO I = its, ite
-         UTNP(I,K)  = UTNP(I,K) + (UX(I,K) - US(I,K)) * RDT
-         VTNP(I,K)  = VTNP(I,K) + (VX(I,K) - VS(I,K)) * RDT
-         TTNP(I,K)  = TTNP(I,K) + (THETAX(I,K) - THETA(I,K)) * RDT
-         QVTNP(I,K) = QVTNP(I,K) + (QVX(I,K) - QVS(I,K)) * RDT
-         QCTNP(I,K) = QCTNP(I,K) + (QCX(I,K) - QCS(I,K)) * RDT
-         QITNP(I,K) = QITNP(I,K) + (QIX(I,K) - QIS(I,K)) * RDT
-       ENDDO
-     ENDDO
-
-   END SUBROUTINE ACM2D
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-   SUBROUTINE ACMINIT(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,           &
-                      RQCBLTEN,RQIBLTEN,P_QI,P_FIRST_SCALAR,       &
-                      restart, allowed_to_read ,                   &
-                      ids, ide, jds, jde, kds, kde,                &
-                      ims, ime, jms, jme, kms, kme,                &
-                      its, ite, jts, jte, kts, kte                 )
-!-----------------------------------------------------------------------
-!
-!    This subroutine is for preparing ACM PBL variables. 
-!    Called from module_physics_init.F
-!
-!  REVISION HISTORY:
-!     AX     3/2005 - Originally developed
-!-----------------------------------------------------------------------
-!   ARGUMENT LIST:
-!
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-     IMPLICIT NONE
-!
-   LOGICAL , INTENT(IN)          :: restart , allowed_to_read
-
-   INTEGER , INTENT(IN)          ::  ids, ide, jds, jde, kds, kde, &
-                                     ims, ime, jms, jme, kms, kme, &
-                                     its, ite, jts, jte, kts, kte
-
-   INTEGER , INTENT(IN)          ::  P_QI,P_FIRST_SCALAR
-
-!   REAL , DIMENSION( kms:kme ), INTENT(IN)  :: SHALF
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::         &
-                                                         RUBLTEN, &
-                                                         RVBLTEN, &
-                                                         RTHBLTEN, &
-                                                         RQVBLTEN, &
-                                                         RQCBLTEN, & 
-                                                         RQIBLTEN
-
-!... Local Variables
-   INTEGER :: i, j, k, itf, jtf, ktf
-
-!
-   jtf=min0(jte,jde-1)
-   ktf=min0(kte,kde-1)
-   itf=min0(ite,ide-1)
-
-   IF(.not.restart)THEN
-     DO j=jts,jtf
-     DO k=kts,ktf
-     DO i=its,itf
-        RUBLTEN(i,k,j)=0.
-        RVBLTEN(i,k,j)=0.
-        RTHBLTEN(i,k,j)=0.
-        RQVBLTEN(i,k,j)=0.
-        RQCBLTEN(i,k,j)=0.
-     ENDDO
-     ENDDO
-     ENDDO
-   ENDIF
-
-   IF (P_QI .ge. P_FIRST_SCALAR .and. .not.restart) THEN
-      DO j=jts,jtf
-      DO k=kts,ktf
-      DO i=its,itf
-         RQIBLTEN(i,k,j)=0.
-      ENDDO
-      ENDDO
-      ENDDO
-   ENDIF
-
-
-   END SUBROUTINE acminit
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!-------------------------------------------------------------------          
-   SUBROUTINE EDDYX(DTPBL, ZF,  ZA,     MOL, PBL,  UST,               &
-                    US,    VS,  TT,  THETAV, DENSX, PSTAR,            &
-                    QVS,   QCS, QIS, G, RD, CPAIR,                    &
-                    EDDYZ, EDDYZM, its,ite, kts,kte,ims,ime,kms,kme )
-
-
-!**********************************************************************
-!   Two methods for computing Kz:
-!   1.  Boundary scaling similar to Holtslag and Boville (1993)
-!   2.  Local Kz computed as function of local Richardson # and vertical 
-!       wind shear, similar to LIU & CARROLL (1996)
-!
-!**********************************************************************
-!
-!-- DTPBL           time step of the minor loop for the land-surface/pbl model
-!-- ZF              height of full level
-!-- ZA              height of half level
-!-- MOL             Monin-Obukhov length in 1D form
-!-- PBL             PBL height in 1D form
-!-- UST             friction velocity U* in 1D form (m/s)
-!-- US              U wind 
-!-- VS              V wind
-!-- TT              temperature
-!-- THETAV          potential virtual temperature
-!-- DENSX           dry air density (kg/m^3)
-!-- PSTAR           P*=Psfc-Ptop
-!-- QVS             water vapor mixing ratio (Kg/Kg)
-!-- QCS             cloud mixing ratio (Kg/Kg)
-!-- QIS             ice mixing ratio (Kg/Kg)
-!-- G               gravity
-!-- RD              gas constant for dry air (j/kg/k)
-!-- CPAIR           specific heat of moist air (M^2 S^-2 K^-1)
-!-- EDDYZ           eddy diffusivity for heat KZ
-!-- EDDYZM          eddy diffusivity for momentum KM
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-
-      IMPLICIT NONE
-
-!.......Arguments
-  
-!... Integer
-      INTEGER,  INTENT(IN)   ::    its,ite, kts,kte,ims,ime,kms,kme
-!... Real
-      REAL , DIMENSION( ims:ime ),          INTENT(IN)  :: PBL, UST
-      REAL ,                                INTENT(IN)  :: DTPBL, G, RD
-      REAL , DIMENSION( its:ite ),          INTENT(IN)  :: MOL, PSTAR, CPAIR
-
-      REAL , DIMENSION( ims:ime, kms:kme ), INTENT(IN)  :: US,VS, TT,   &
-                                                           QVS, QCS, QIS, DENSX
-      REAL, DIMENSION( its:ite, kts:kte ), INTENT(IN) :: ZA, THETAV
-      REAL, DIMENSION( its:ite, 0:kte )  , INTENT(IN) :: ZF
-      
-      REAL , DIMENSION( its:ite, kts:kte ), INTENT(OUT) :: EDDYZ,EDDYZM
-
-!.......Local variables
-
-!... Integer
-      INTEGER  :: ILX, KL, KLM, K, I
-
-!... Real
-      REAL     :: ZOVL, PHIH, WT, ZSOL, ZFUNC, DZF, SS, GOTH, EDYZ
-      REAL     :: RI, QMEAN, TMEAN, XLV, ALPH, CHI, ZK, SQL, DENSF, KZO
-      REAL     :: FH, FM
-      REAL     :: WM, EDYZM, PHIM
-!... Parameters
-      REAL, PARAMETER :: RV     = 461.5
-      REAL, PARAMETER :: RC     = 0.25
-      REAL, PARAMETER :: RLAM   = 80.0
-      REAL, PARAMETER :: GAMH   = 16.0 !Dyer74 !15.0  !  Holtslag and Boville (1993)
-      REAL, PARAMETER :: GAMM   = 16.0 !Dyer74
-      REAL, PARAMETER :: BETAH  = 5.0   !  Holtslag and Boville (1993)  BETAM = BETAH
-      REAL, PARAMETER :: KARMAN = 0.4
-      REAL, PARAMETER :: P      = 2.0   ! ZFUNC exponent
-      REAL, PARAMETER :: EDYZ0  = 0.01  ! New Min Kz
-      REAL, PARAMETER :: PR     = 0.8   ! Prandtl #
-<<<<<<< HEAD
-!      REAL, PARAMETER :: EDYZ0  = 0.1
-!--   IMVDIF      imvdif=1 for moist adiabat vertical diffusion
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       INTEGER, PARAMETER :: imvdif = 1
 !
       ILX = ite 
@@ -888,15 +486,6 @@ CONTAINS
           SQL = (ZK * RLAM / (RLAM + ZK)) ** 2
             
           IF (RI .GE. 0.0) THEN
-<<<<<<< HEAD
-!	          IF (ZF(I,K).LT.PBL(I).AND.ZOVL.GT.0.0) THEN
-!	            FH = MAX((1.-ZF(I,K)/PBL(I))**2,0.01) * PHIH **(-2)
-!                  SQL = ZK ** 2
-!	          ELSE
-!	            FH = (MAX(1.-RI/RC,0.01))**2
-!	          ENDIF
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             FH=1./(1.+10.*RI+50.*RI**2+5000.*RI**4)+0.0012  !pleim5
             FM= PR*FH + 0.00104
 
@@ -921,11 +510,7 @@ CONTAINS
       ENDDO               ! for k loop
 !
       DO I = its,ILX
-<<<<<<< HEAD
-        EDDYZ(I,KL) = 0.0 ! EDDYZ(I,KLM) -- changed jp 3/08
-=======
         EDDYZ(I,KL) = 0.0
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         EDDYZM(I,KL) = 0.0
       ENDDO
 
@@ -1043,11 +628,7 @@ CONTAINS
       REAL, DIMENSION( kts:kte, its:ite) :: MBARKS, MDWN
       REAL, DIMENSION( kts:kte )         :: XPLUS, XMINUS
       REAL  DELC
-<<<<<<< HEAD
-      REAL, DIMENSION( kts:kte )                :: AI, BI, CI, EI !, Y
-=======
       REAL, DIMENSION( kts:kte )                :: AI, BI, CI, EI
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       REAL, ALLOCATABLE, DIMENSION( : , : )     :: DI, UI    
       REAL, ALLOCATABLE, DIMENSION( : , : )     :: FS
       REAL, ALLOCATABLE, DIMENSION( : , : , : ) :: VCI

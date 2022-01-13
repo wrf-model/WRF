@@ -9,82 +9,8 @@
 MODULE module_mp_wsm6
 !
    USE module_mp_radar
-<<<<<<< HEAD
-=======
-   USE module_model_constants, only : RE_QC_BG, RE_QI_BG, RE_QS_BG
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-!
-   REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
-   REAL, PARAMETER, PRIVATE :: n0r = 8.e6         ! intercept parameter rain
-!   REAL, PARAMETER, PRIVATE :: n0g = 4.e6         ! intercept parameter graupel ! set later with hail_opt
-   REAL, PARAMETER, PRIVATE :: avtr = 841.9       ! a constant for terminal velocity of rain
-   REAL, PARAMETER, PRIVATE :: bvtr = 0.8         ! a constant for terminal velocity of rain
-   REAL, PARAMETER, PRIVATE :: r0 = .8e-5         ! 8 microm  in contrast to 10 micro m
-   REAL, PARAMETER, PRIVATE :: peaut = .55        ! collection efficiency
-   REAL, PARAMETER, PRIVATE :: xncr = 3.e8        ! maritime cloud in contrast to 3.e8 in tc80
-   REAL, PARAMETER, PRIVATE :: xmyu = 1.718e-5    ! the dynamic viscosity kgm-1s-1
-   REAL, PARAMETER, PRIVATE :: avts = 11.72       ! a constant for terminal velocity of snow
-   REAL, PARAMETER, PRIVATE :: bvts = .41         ! a constant for terminal velocity of snow
-!   REAL, PARAMETER, PRIVATE :: avtg = 330.        ! a constant for terminal velocity of graupel ! set later with hail_opt
-!   REAL, PARAMETER, PRIVATE :: bvtg = 0.8         ! a constant for terminal velocity of graupel ! set later with hail_opt
-!   REAL, PARAMETER, PRIVATE :: deng = 500.        ! density of graupel ! set later with hail_opt
-   REAL, PARAMETER, PRIVATE :: n0smax =  1.e11    ! maximum n0s (t=-90C unlimited)
-   REAL, PARAMETER, PRIVATE :: lamdarmax = 8.e4   ! limited maximum value for slope parameter of rain
-   REAL, PARAMETER, PRIVATE :: lamdasmax = 1.e5   ! limited maximum value for slope parameter of snow
-!   REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel
-   REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
-   REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
-   REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow
-   REAL, PARAMETER, PRIVATE :: alpha = .12        ! .122 exponen factor for n0s
-   REAL, PARAMETER, PRIVATE :: pfrz1 = 100.       ! constant in Biggs freezing
-   REAL, PARAMETER, PRIVATE :: pfrz2 = 0.66       ! constant in Biggs freezing
-   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimun values for qr, qs, and qg
-   REAL, PARAMETER, PRIVATE :: eacrc = 1.0        ! Snow/cloud-water collection efficiency
-   REAL, PARAMETER, PRIVATE :: dens  =  100.0     ! Density of snow
-   REAL, PARAMETER, PRIVATE :: qs0   =  6.e-4     ! threshold amount for aggretion to occur
-   REAL, SAVE ::                                      &
-             qc0, qck1, pidnc,                        & 
-             bvtr1,bvtr2,bvtr3,bvtr4,g1pbr,           &
-             g3pbr,g4pbr,g5pbro2,pvtr,eacrr,pacrr,    &
-             bvtr6,g6pbr,                             &
-             precr1,precr2,roqimax,bvts1,             &
-             bvts2,bvts3,bvts4,g1pbs,g3pbs,g4pbs,     &
-             n0g,avtg,bvtg,deng,lamdagmax,            & !RAS13.3 - set these in wsm6init
-             g5pbso2,pvts,pacrs,precs1,precs2,pidn0r, &
-             pidn0s,xlv1,pacrc,pi,                    &
-             bvtg1,bvtg2,bvtg3,bvtg4,g1pbg,           &
-             g3pbg,g4pbg,g5pbgo2,pvtg,pacrg,          &
-             precg1,precg2,pidn0g,                    &
-             rslopermax,rslopesmax,rslopegmax,        &
-             rsloperbmax,rslopesbmax,rslopegbmax,     &
-             rsloper2max,rslopes2max,rslopeg2max,     &
-             rsloper3max,rslopes3max,rslopeg3max
-CONTAINS
-!===================================================================
-!
-  SUBROUTINE wsm6(th, q, qc, qr, qi, qs, qg                        &
-                 ,den, pii, p, delz                                &
-                 ,delt,g, cpd, cpv, rd, rv, t0c                    &
-                 ,ep1, ep2, qmin                                   &
-                 ,XLS, XLV0, XLF0, den0, denr                      &
-                 ,cliq,cice,psat                                   &
-                 ,rain, rainncv                                    &
-                 ,snow, snowncv                                    &
-                 ,sr                                               &
-                 ,refl_10cm, diagflag, do_radar_ref                &
-                 ,graupel, graupelncv                              &
-                 ,has_reqc, has_reqi, has_reqs                     &  ! for radiation
-                 ,re_cloud, re_ice,   re_snow                      &  ! for radiation   
-                 ,ids,ide, jds,jde, kds,kde                        &
-                 ,ims,ime, jms,jme, kms,kme                        &
-                 ,its,ite, jts,jte, kts,kte                        &
-<<<<<<< HEAD
-#ifdef WRF_CHEM
-                 ,evapprod, rainprod                               &
-=======
 #if ( WRF_CHEM == 1)
                  ,wetscav_on, evapprod, rainprod                               &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                                                                    )
 !-------------------------------------------------------------------
@@ -152,19 +78,12 @@ CONTAINS
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
 
-<<<<<<< HEAD
-#ifdef WRF_CHEM
-  REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), INTENT(INOUT) :: &
-                                                      rainprod,   &
-                                                      evapprod
-=======
 #if ( WRF_CHEM == 1 ) 
   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), INTENT(INOUT) :: &
                                                       rainprod,   &
                                                       evapprod
   LOGICAL, INTENT(IN) ::                              wetscav_on
  
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! local variable
   REAL, DIMENSION( its:ite , kts:kte )                 ::         &
                                                       rainprod2d, &
@@ -216,13 +135,8 @@ CONTAINS
                     ,its,ite, jts,jte, kts,kte                     &
                     ,snow,snowncv                                  &
                     ,graupel,graupelncv                            &
-<<<<<<< HEAD
-#ifdef WRF_CHEM
-                   ,rainprod2d, evapprod2d                        &
-=======
 #if ( WRF_CHEM == 1) 
                     ,wetscav_on, rainprod2d, evapprod2d            &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                                                                    )
          DO K=kts,kte
@@ -260,15 +174,9 @@ CONTAINS
         if (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) then
           do i=its,ite
             do k=kts,kte
-<<<<<<< HEAD
-              re_qc(k) = 2.51E-6
-              re_qi(k) = 10.01E-6
-              re_qs(k) = 25.E-6
-=======
               re_qc(k) = RE_QC_BG
               re_qi(k) = RE_QI_BG
               re_qs(k) = RE_QS_BG
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
               t1d(k)  = th(i,k,j)*pii(i,k,j)
               den1d(k)= den(i,k,j)
@@ -280,28 +188,13 @@ CONTAINS
                                 qmin, t0c, re_qc, re_qi, re_qs,         &
                                 kts, kte, i, j)
             do k=kts,kte
-<<<<<<< HEAD
-              re_cloud(i,k,j) = MAX(2.51E-6,  MIN(re_qc(k),  50.E-6))
-              re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi(k), 125.E-6))
-              re_snow(i,k,j)  = MAX(25.E-6,   MIN(re_qs(k), 999.E-6))
-=======
               re_cloud(i,k,j) = MAX(RE_QC_BG, MIN(re_qc(k),  50.E-6))
               re_ice(i,k,j)   = MAX(RE_QI_BG, MIN(re_qi(k), 125.E-6))
               re_snow(i,k,j)  = MAX(RE_QS_BG, MIN(re_qs(k), 999.E-6))
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             enddo 
           enddo   
         endif     ! has_reqc, etc...
 !+---+-----------------------------------------------------------------+
-<<<<<<< HEAD
-#ifdef WRF_CHEM
-        do i=its,ite
-          do k=kts,kte
-            rainprod(i,k,j) = rainprod2d(i,k)
-            evapprod(i,k,j) = evapprod2d(i,k)
-          enddo
-        enddo
-=======
 #if( WRF_CHEM == 1 )
         if( wetscav_on ) then
           do i=its,ite
@@ -311,7 +204,6 @@ CONTAINS
             enddo
           enddo
         endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
       ENDDO
   END SUBROUTINE wsm6
@@ -331,13 +223,8 @@ CONTAINS
                    ,its,ite, jts,jte, kts,kte                     &
                    ,snow,snowncv                                  &
                    ,graupel,graupelncv                            &
-<<<<<<< HEAD
-#ifdef WRF_CHEM
-                   ,rainprod2d, evapprod2d                        &
-=======
 #if ( WRF_CHEM == 1 )
                    ,wetscav_on, rainprod2d, evapprod2d            &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                                                                   )
 !-------------------------------------------------------------------
@@ -431,18 +318,11 @@ CONTAINS
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
 
-<<<<<<< HEAD
-#ifdef WRF_CHEM
-  REAL, DIMENSION( its:ite , kts:kte ), INTENT(INOUT)  ::         &
-                                                      rainprod2d, &
-                                                      evapprod2d
-=======
 #if ( WRF_CHEM == 1) 
   REAL, DIMENSION( its:ite , kts:kte ), INTENT(INOUT)  ::         &
                                                       rainprod2d, &
                                                       evapprod2d
   LOGICAL, INTENT(IN) :: wetscav_on
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
 ! LOCAL VAR
@@ -1567,17 +1447,11 @@ CONTAINS
       enddo
       enddo                  ! big loops
 
-<<<<<<< HEAD
-#ifdef WRF_CHEM
-      rainprod2d = praut+pracw+praci+psaci+pgaci+psacw+pgacw+paacw+psaut
-      evapprod2d = -(prevp+psevp+pgevp+psdep+pgdep)
-=======
 #if( WRF_CHEM == 1 )
       if( wetscav_on ) then
         rainprod2d = praut+pracw+praci+psaci+pgaci+psacw+pgacw+paacw+psaut
         evapprod2d = -(prevp+psevp+pgevp+psdep+pgdep)
       endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
   END SUBROUTINE wsm62d

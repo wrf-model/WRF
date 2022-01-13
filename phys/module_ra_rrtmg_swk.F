@@ -1732,11 +1732,7 @@
                       'ERROR: SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   
              factor = (radsno - 2._rb)/3._rb
              index = int(factor)
-<<<<<<< HEAD
-             if(index.eq.167) index = 166 
-=======
              if(index.eq.46) index = 45 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              fint = factor-real(index)
              ib = ngb(ig)
              extcosno(ig) = extice3(index,ib)+fint*                            &
@@ -4312,11 +4308,7 @@
                    7700._rb, 8050._rb,12850._rb,16000._rb,22650._rb,29000._rb, &
                    38000._rb,  820._rb/)
    wavenum2(:) = (/3250._rb, 4000._rb, 4650._rb, 5150._rb, 6150._rb, 7700._rb, &
-<<<<<<< HEAD
-                   8050._rb, 2850._rb,16000._rb,22650._rb,29000._rb,38000._rb, &
-=======
                    8050._rb,12850._rb,16000._rb,22650._rb,29000._rb,38000._rb, &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    50000._rb, 2600._rb/)
    delwave(:) =  (/ 650._rb,  750._rb,  650._rb,  500._rb, 1000._rb, 1550._rb, &
                     350._rb, 4800._rb, 3150._rb, 6650._rb, 6350._rb, 9000._rb, &
@@ -10181,60 +10173,8 @@ contains
 !-------------------------------------------------------------------------------
    subroutine rad_rrtmg_driver(                                                &
                        rthratenlw,rthratensw,                                  &
-<<<<<<< HEAD
-=======
-                       rthratenlwc,rthratenswc,                                &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-                       lwupflx, lwupflxc, lwdnflx, lwdnflxc,                   &
-                       swupflx, swupflxc, swdnflx, swdnflxc,                   &
-                       lwupt, lwuptc, lwdnt, lwdntc,                           &
-                       lwupb, lwupbc, lwdnb, lwdnbc,                           &
-                       glw, olr, lwcf,                                         &
-                       swupt, swuptc, swdnt, swdntc,                           &
-                       swupb, swupbc, swdnb, swdnbc,                           &
-                       gsw, swcf, cosz, solcon,                                &
-                       albedo,                                                 &
-                       emiss,                                                  &
-                       t3d, t8w, tsk,                                          &
-                       rho3d,                                                  &
-                       p3d, p8w, cldfra3d, r, g,                               &
-                       nc3d, xland,                                            &
-                       f_qnc, f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,              &
-                       qv3d, qc3d, qr3d, qi3d, qs3d, qg3d,                     &
-!sh
-                       o3input, o33d,                                          &
-                       aer_opt, aerod, no_src,                                 &
-!sh        
-                       ids,ide, jds,jde, kds,kde,                              &
-                       ims,ime, jms,jme, kms,kme,                              &
-                       its,ite, jts,jte, kts,kte                               )
-!-------------------------------------------------------------------------------
-! abstract : unified rrtmg sw lw driver
-!
-! history log : 
-!  2016-3-10   sunghye baek initial setup 
-!  2017-1-15   sunghye baek wrf format correction
-!-------------------------------------------------------------------------------
-!
-   implicit none
-!
-   integer, parameter :: natype=5
-   real, parameter    :: qmin=0.
-
-   logical, intent(in   ) ::  f_qnc, f_qv, f_qc, f_qr, f_qi, f_qs, f_qg
-   integer, intent(in   ) ::  ids,ide, jds,jde, kds,kde              
-   integer, intent(in   ) ::  ims,ime, jms,jme, kms,kme
-   integer, intent(in   ) ::  its,ite, jts,jte, kts,kte
-   integer, intent(in   ) ::  no_src
-   integer, optional, intent(in   ) :: o3input, aer_opt
-
-   real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratensw
-   real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratenlw
-<<<<<<< HEAD
-=======
    real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratenswc
    real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratenlwc
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    real, dimension(ims:ime,kms:kme+2,jms:jme), optional, intent(inout) :: lwupflx
    real, dimension(ims:ime,kms:kme+2,jms:jme), optional, intent(inout) :: lwupflxc
    real, dimension(ims:ime,kms:kme+2,jms:jme), optional, intent(inout) :: lwdnflx
@@ -10815,46 +10755,7 @@ contains
                  visdir  ,visdif  ,nirdir  ,nirdif )
 
          rthratensw(i,kts:kte,j) = swhr(1,kts:kte)/86400.
-<<<<<<< HEAD
-=======
-         rthratenswc(i,kts:kte,j) = swhrc(1,kts:kte)/86400.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-         if(present(swupflx))then
-           swupflx(i,kts:kte+2,j) = swuflx(1,kts:kte+2)
-           swupflxc(i,kts:kte+2,j) = swuflxc(1,kts:kte+2)
-           swdnflx(i,kts:kte+2,j) = swdflx(1,kts:kte+2)
-           swdnflxc(i,kts:kte+2,j) = swdflxc(1,kts:kte+2)
-         endif
-         gsw(i,j) = swdflx(1,1) - swuflx(1,1)
-         swcf(i,j) = (swdflx(1,kte+2) - swuflx(1,kte+2)) - (swdflxc(1,kte+2)   &
-                     - swuflxc(1,kte+2)) 
-         swupt(i,j)     = swuflx(1,kte+2)
-         swuptc(i,j)    = swuflxc(1,kte+2)
-         swdnt(i,j)     = swdflx(1,kte+2)
-         swdntc(i,j)    = swdflxc(1,kte+2)
-         swupb(i,j)     = swuflx(1,1)
-         swupbc(i,j)    = swuflxc(1,1)
-         swdnb(i,j)     = swdflx(1,1)
-         swdnbc(i,j)    = swdflxc(1,1)
-       endif ! do SW
-!
-! Call RRTMG longwave radiation model
-!
-       call rrtmg_lw                                                           &
-                     (ncol, nlay, icld, play, plev , tlay,                     &
-                      tlev ,tsfc, h2ovmr, o3vmr, co2vmr, ch4vmr,               &
-                      n2ovmr, o2vmr, cfc11vmr, cfc12vmr, cfc22vmr, ccl4vmr,    &
-                      emis, inflglw, iceflglw, liqflglw, lcldfmcl,             &
-                      ltaucmcl, lciwpmcl, lclwpmcl, rei, rel,                  &
-                      lcswpmcl, res,                                           &
-                      ltauaer,                                                 &
-                      uflx, dflx, hr, uflxc, dflxc, hrc)
-!
-       rthratenlw(i,kts:kte,j) = hr(1,kts:kte)/86400.
-<<<<<<< HEAD
-=======
        rthratenlwc(i,kts:kte,j) = hrc(1,kts:kte)/86400.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        if(present(lwupflx))then
          lwupflx(i,kts:kte+2,j) = uflx(1,kts:kte+2)
          lwupflxc(i,kts:kte+2,j) = uflxc(1,kts:kte+2)

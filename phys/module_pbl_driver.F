@@ -57,11 +57,8 @@ CONTAINS
                  ,vdfg                                             &
                  ,nupdraft,maxMF,ktop_plume                        &
                  ,spp_pbl,pattern_spp_pbl                          &
-<<<<<<< HEAD
-=======
               ! EEPS
                  ,pep,pek_adv,pep_adv                              &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  ,restart,cycling                                  &
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
@@ -78,25 +75,16 @@ CONTAINS
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
-<<<<<<< HEAD
 		 ,ahe_scheme,AHE24,AME24                         &
                  ,AHE,AME,gmt,xtime                                &
              ! Optional
                  ,hol, mol, regime                                 &
              ! Optional gravity-wave drag             
-                 ,gwd_opt                                          &
-=======
-             ! Optional
-                 ,hol, mol, regime                                 &
-             ! Optional gravity-wave drag             
                  ,gwd_opt,gwd_diags                                &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  ,dtaux3d,dtauy3d                                  &
                  ,dusfcg,dvsfcg,var2d,oc12d                        &
                  ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
                  ,sina,cosa                                        &
-<<<<<<< HEAD
-=======
                  ,dtaux3d_ls,dtauy3d_ls                            &
                  ,dtaux3d_bl,dtauy3d_bl                            &
                  ,dtaux3d_ss,dtauy3d_ss                            &
@@ -109,7 +97,6 @@ CONTAINS
                  ,oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,ol3ls,ol4ls  &
                  ,var2dss,oc12dss                                  &
                  ,oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss  &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              !  Optional moisture tracers
                  ,qv_curr, qc_curr, qr_curr                        &
                  ,qi_curr, qs_curr, qg_curr                        &
@@ -173,11 +160,7 @@ CONTAINS
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    FITCHSCHEME,SHINHONGSCHEME,                       &
-<<<<<<< HEAD
-                   TEMFPBLSCHEME,GBMPBLSCHEME,                       &
-=======
                    TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,                  &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar,& !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
                    p_qnwfa,p_qnifa
 #if ( WRFPLUS == 1 )
@@ -208,10 +191,7 @@ CONTAINS
 #endif
    USE module_bl_acm
    USE module_bl_gwdo
-<<<<<<< HEAD
-=======
    USE module_bl_gwdo_gsl
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    USE module_bl_myjurb
    USE module_bl_boulac
 #if ( WRFPLUS == 1 )
@@ -223,10 +203,7 @@ CONTAINS
    USE module_bl_gbmpbl
 #if (EM_CORE==1)
    USE module_bl_mynn
-<<<<<<< HEAD
-=======
    USE module_bl_eeps
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    USE module_bl_fogdes
    USE module_wind_fitch
 #endif
@@ -511,14 +488,11 @@ CONTAINS
                                                       rthratenlw, &
                                                       wsedl3d
 
-<<<<<<< HEAD
-=======
 !For EEPS PBL scheme
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(INOUT   )    ::                        pep
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),        &
                INTENT(INOUT) ::                  pek_adv,pep_adv
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !2D Variables required by camuwpbl scheme
     REAL,       DIMENSION( ims:ime , jms:jme ),                   &
@@ -673,7 +647,6 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(IN)    :: XICE, SNOW, LH
-<<<<<<< HEAD
    
    ! Parameters for AHE consideration
    INTEGER, INTENT(IN)                      :: ahe_scheme
@@ -684,8 +657,6 @@ CONTAINS
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(OUT)                     :: AHE,  AME
    REAL,       INTENT(IN)                      :: gmt,xtime
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ! Stochastic parameter perturbations
    INTEGER,    INTENT(IN), OPTIONAL              ::             spp_pbl
@@ -773,24 +744,11 @@ CONTAINS
                OPTIONAL                                         , &
                INTENT(IN)    ::                           mut
 !
-<<<<<<< HEAD
-   INTEGER,    OPTIONAL, INTENT(IN)    ::               gwd_opt
-=======
    INTEGER,    OPTIONAL, INTENT(IN)    ::               gwd_opt,gwd_diags
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    REAL,       OPTIONAL, INTENT(IN)    ::               p_top
 !
   real,   dimension( ims:ime, kms:kme, jms:jme )                             , &
           optional                                                           , &
-<<<<<<< HEAD
-             intent(inout  )   ::                                     dtaux3d, &
-                                                                      dtauy3d
-!
-  real,   dimension( ims:ime, jms:jme )                                      , &
-          optional                                                           , &
-             intent(inout  )   ::                                      dusfcg, &
-                                                                       dvsfcg
-=======
              intent(inout  )   :: dtaux3d,dtauy3d,                             &
                                   dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                   dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
@@ -802,7 +760,6 @@ CONTAINS
                                   dusfcg_ls,dvsfcg_ls,dusfcg_bl,dvsfcg_bl,     &
                                   dusfcg_ss,dvsfcg_ss,dusfcg_fd,dvsfcg_fd
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
   real,   dimension( ims:ime, jms:jme )                                      , &
           optional                                                           , &
@@ -811,8 +768,6 @@ CONTAINS
                                                               oa1,oa2,oa3,oa4, &
                                                               ol1,ol2,ol3,ol4, &
                                                                     sina,cosa
-<<<<<<< HEAD
-=======
 
 ! Addtional topographic statistics based on 2.5min (large-scale) and 30sec orographic
 ! (small-scale) GSL drag schemes
@@ -824,7 +779,6 @@ CONTAINS
                 var2dss,oc12dss,                                               &
                 oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! paj
    REAL, OPTIONAL,   DIMENSION( ims:ime , jms:jme ),                    &  !mchen
                INTENT(IN   )    ::                        CTOPO, &
@@ -1215,7 +1169,6 @@ CONTAINS
    ENDDO
    !$OMP END PARALLEL DO
 !
-<<<<<<< HEAD
 ! Adding Anthropogenic Heat and Mositure emissions onto tendencies as sources
 !       by M.Kanda, 19 June 2007 
 ! AHE and AME makes no direct effect on MOST, but just on Ta above the ground
@@ -1231,8 +1184,6 @@ CONTAINS
         ENDDO
 !
     IGMT = MOD(INT(gmt+xtime/60.0),24)
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   !$OMP PARALLEL DO   &
   !$OMP PRIVATE ( ij, i,j,k, its, ite, jts, jte, z0, z1, z2, w1, w2, message, initflag )
   DO ij = 1 , num_tiles
@@ -1322,8 +1273,6 @@ CONTAINS
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
               ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime            &
               ,RTHRATEN=RTHRATEN                                    &
-<<<<<<< HEAD
-=======
 ! for multilayer UCM
               ,IDIFF=idiff,FLAG_BEP=flag_bep,FRC_URB2D=frc_urb2d    &
               ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep      &
@@ -1332,17 +1281,12 @@ CONTAINS
               ,B_T_BEP=b_t_bep,B_Q_BEP=b_q_bep                      &
               ,B_E_BEP=b_e_bep,DLG_BEP=dlg_bep                      &
               ,DL_U_BEP=dl_u_bep,SF_BEP=sf_bep,VL_BEP=vl_bep        &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! for grims shallow convection with ysupbl
               ,WSTAR=wstar,DELTA=delta                              &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-<<<<<<< HEAD
-                                                                    )
-=======
                                                                    )
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !
 ! FASDAS
 !
@@ -1761,12 +1705,8 @@ CONTAINS
 #endif
               ,UST=UST, HFX=HFX, QFX=QFX, TSK=tsk                               &
               ,PSFC=PSFC, EP1=EP_1, G=g, ROVCP=rcp,RD=r_D,CPD=cp                 &
-<<<<<<< HEAD
-              ,PBLH=pblh, KPBL2D=kpbl, EXCH_H=exch_h, REGIME=regime              &
-=======
               ,PBLH=pblh, KPBL2D=kpbl, EXCH_H=exch_h, EXCH_M=exch_m              &
               ,REGIME=regime                                                     &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ,GZ1OZ0=gz1oz0,WSPD=wspd,PSIM=psim, MUT=mut, RMOL=rmol             &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten                 &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten             &
@@ -1965,8 +1905,6 @@ CONTAINS
               ENDIF
            ENDIF
 
-<<<<<<< HEAD
-=======
         CASE (EEPSSCHEME)
 
               IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
@@ -2013,7 +1951,6 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call EEPS pbl')
            ENDIF
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         CASE (BOULACSCHEME)
 
              CALL wrf_debug(100,'in boulac')
@@ -2197,26 +2134,6 @@ CONTAINS
 #endif
 
 
-<<<<<<< HEAD
-   
-   IF (PRESENT(dtaux3d)) THEN
-       IF(gwd_opt .EQ. 1)THEN
-             CALL gwdo(                                              &
-               U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
-              ,QV3D=qv_curr                                         &
-              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
-              ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
-              ,DTAUX3D=dtaux3d,DTAUY3D=dtauy3d                      &
-              ,DUSFCG=dusfcg,DVSFCG=dvsfcg &
-              ,VAR2D=var2d,OC12D=oc12d     &
-              ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
-              ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
-              ,SINA=sina,COSA=cosa                      &
-              ,ZNU=znu,ZNW=znw,P_TOP=p_top                &
-              ,CP=cp,G=g,RD=r_d                           &
-              ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
-              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &
-=======
    IF (PRESENT(GWD_opt)) THEN
      IF (GWD_opt .EQ. 1) THEN
        IF (PRESENT(dtaux3d)) THEN
@@ -2235,13 +2152,10 @@ CONTAINS
               ,CP=cp,G=g,RD=r_d                                     &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                       &
               ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep        &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
        ENDIF
-<<<<<<< HEAD
-=======
      ELSEIF(gwd_opt .EQ. 3) THEN
              CALL gwdo_gsl(                                         &
                U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
@@ -2277,7 +2191,6 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
      ENDIF
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    ENDIF
 
 #if (EM_CORE==1)                                                                                                                                                                             
@@ -2362,7 +2275,6 @@ CONTAINS
           ENDIF
 
 #endif
-<<<<<<< HEAD
 ! Adding Anthropogenic Heat and Mositure emissions onto tendencies as sources
 !       by M.Kanda, 19 June 2007 
 ! AHE and AME makes no direct effect on MOST, but just on Ta above the ground
@@ -2423,8 +2335,6 @@ CONTAINS
     rqvblten(i,kkk,j)=rqvblten(i,kkk,j)+(AME(i,j)/dz8w(i,kkk,j))
       ENDDO
       ENDDO
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       
    ENDDO
    !$OMP END PARALLEL DO

@@ -25,99 +25,10 @@ CONTAINS
                    ,aer_ra_feedback                               &
                    ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop        &
                    ,coszen                                        & ! PAJ
-<<<<<<< HEAD
-=======
-                   ,obscur                                        & ! amontornes-bcodina 2015/09 solar eclipses                                       
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-                   ,ids,ide, jds,jde, kds,kde                     & 
-                   ,ims,ime, jms,jme, kms,kme                     &
-                   ,its,ite, jts,jte, kts,kte                     ) 
-!------------------------------------------------------------------
-   IMPLICIT NONE
-!------------------------------------------------------------------
-   INTEGER,    PARAMETER     ::        np    = 75
-
-   INTEGER,    INTENT(IN   ) ::        ids,ide, jds,jde, kds,kde, &
-                                       ims,ime, jms,jme, kms,kme, &
-                                       its,ite, jts,jte, kts,kte
-   LOGICAL,    INTENT(IN   ) ::        warm_rain
-
-   INTEGER,    INTENT(IN  )  ::                           JULDAY  
-
-   REAL, INTENT(IN    )      ::        SOLCON
-! PAJ: degrad and radfqr removed:      
-!  REAL, INTENT(IN    )      ::        RADFRQ,DEGRAD,             &
-! PAJ: declin and xtime removed.                 XTIME,DECLIN,SOLCON
-!
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         INTENT(IN    ) ::                                   P3D, &
-                                                           P8W3D, &
-                                                            pi3D, &
-                                                             T3D, &
-                                                            dz8w, &
-                                                         rho_phy, &
-                                                        CLDFRA3D
-
-
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         INTENT(INOUT)  ::                              RTHRATEN
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL,                                                &
-         INTENT(INOUT)  ::                               taucldi, &
-                                                         taucldc
-!
-   REAL, DIMENSION( ims:ime, jms:jme ),                           &
-         INTENT(IN   )  ::                                   ALB
-! PAJ: XLAT and XLONG no longer needed. Lines commented.
-!         INTENT(IN   )  ::                                  XLAT, &
-!                                                           XLONG, &
-!                                                             ALB
-!
-   REAL, DIMENSION( ims:ime, jms:jme ),                           &
-         INTENT(INOUT)  ::                                   GSW, &
-                                                          RSWTOA
-!
-! PAJ: GMT removed.
-!   REAL, INTENT(IN   )  ::                              GMT,CP,G
-   REAL, INTENT(IN   )  ::                              CP,G
-!
-
-!
-! Optional
-!
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
-         INTENT(IN    ) :: tauaer300,tauaer400,tauaer600,tauaer999, & ! jcb
-                                 gaer300,gaer400,gaer600,gaer999, & ! jcb
-                                 waer300,waer400,waer600,waer999    ! jcb
-
-   INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
-
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL,                                                &           
-         INTENT(IN    ) ::                                        &
-                                                            QV3D, &
-                                                            QC3D, &
-                                                            QR3D, &
-                                                            QI3D, &
-                                                            QS3D, &
-                                                            QG3D, &
-                                                        QNDROP3D
-
-   LOGICAL, OPTIONAL, INTENT(IN ) ::    &
-                                   F_QV,F_QC,F_QR,F_QI,F_QS,F_QG, &
-                                                        F_QNDROP
-!
-! ... PAJ ...
-! 
-   REAL, DIMENSION( ims:ime, jms:jme), INTENT(IN) :: COSZEN
-
-<<<<<<< HEAD
-=======
 ! amontornes-bcodina 2015/09 solar eclipses
 !  obscur --> degree of obscuration for solar eclipses prediction (2D)
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: obscur
    
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! LOCAL VARS
  
    REAL, DIMENSION( its:ite ) ::                                  &
@@ -133,16 +44,12 @@ CONTAINS
 
    INTEGER, DIMENSION( its:ite ) ::                               &
                                                              ict, &
-<<<<<<< HEAD
-                                                             icb   
-=======
                                                              icb 
 
 ! amontornes-bcodina 2015/09 solar eclipses
 !  obscur --> degree of obscuration for solar eclipses prediction (one row)
    REAL, DIMENSION( its:ite ) ::                                  &
 							obscur_row
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    REAL, DIMENSION( its:ite, kts-1:kte, 2 ) ::            taucld
 
@@ -775,51 +682,9 @@ CONTAINS
       do i = its,ite
 ! PAJ: Use cos zenith angle from the radiation driver:
          cosz(i)=coszen(i,j)
-<<<<<<< HEAD
-=======
-! amontornes-bcodina 2015/09 solar eclipses :: save obscuration from for the current j
-         obscur_row(i)=obscur(i,j)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-!        xt24 = mod(xtime + radfrq * 0.5, 1440.)
-!        tloctm = GMT + xt24 / 60. + XLONG(i,j) / 15.
-!        hrang = 15. * (tloctm - 12.) * degrad
-!        xxlat = XLAT(i,j) * degrad
-!        cosz(i) = sin(xxlat) * sin(declin) + &
-!                  cos(xxlat) * cos(declin) * cos(hrang)
-        rsuvbm(i) = ALB(i,j)
-        rsuvdf(i) = ALB(i,j)
-        rsirbm(i) = ALB(i,j)
-        rsirdf(i) = ALB(i,j)
-      end do
-                                  
-      call sorad (mix,1,1,mkx+1,p8w2D,t2D,sh2D,o3,                 &
-                  overcast,cldwater,cwc,taucld,reff,fcld2D,ict,icb,&
-                  taual,ssaal,asyal,                               &
-                  cosz,rsuvbm,rsuvdf,rsirbm,rsirdf,                &
-                  flx,flxd)
-!
-! ... Convert the units of flx and flc from fraction to w/m^2
-!
-      do k = kts, kte
-      do i = its, ite
-         nk=kme-1-k+kms
-         if(present(taucldc)) taucldc(i,nk,j)=taucld(i,k,2)
-         if(present(taucldi)) taucldi(i,nk,j)=taucld(i,k,1)
-      enddo
-      enddo
- 
-      do k = kts, kte+1
-        do i = its, ite
-          if (cosz(i) .lt. thresh) then
-            flx(i,k) = 0.
-          else
-<<<<<<< HEAD
-            flx(i,k) = flx(i,k) * SOLCON * cosz(i)
-=======
             ! amontornes-bcodina 2015/09 solar eclipses: modified for considering the solar
               !                             eclipse
               flx(i,k) = flx(i,k) * SOLCON * cosz(i) * (1. - obscur_row(i) )
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
           endif
         end do
       end do
@@ -841,13 +706,9 @@ CONTAINS
         if (cosz(i) .le. thresh) then
           RSWTOA(i,j) = 0.
         else
-<<<<<<< HEAD
-          RSWTOA(i,j) = flx(i,kts) - flxd(i,kts) * SOLCON * cosz(i)
-=======
 	  ! amontornes-bcodina 2015/09 solar eclipses: modified for considering the solar
           !                             eclipse
           RSWTOA(i,j) = flx(i,kts) - flxd(i,kts) * SOLCON * cosz(i) * (1. - obscur_row(i) )
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         endif
       end do
 !
@@ -857,13 +718,9 @@ CONTAINS
         if (cosz(i) .le. thresh) then
           GSW(i,j) = 0.
         else
-<<<<<<< HEAD
-          GSW(i,j) = (1. - rsuvbm(i)) * flxd(i,kte+1) * SOLCON * cosz(i)
-=======
 	  ! amontornes-bcodina 2015/09 solar eclipses: modified for considering the solar
           !                             eclipse
           GSW(i,j) = (1. - rsuvbm(i)) * flxd(i,kte+1) * SOLCON * cosz(i) * (1. - obscur_row(i) )
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         endif
       end do
 

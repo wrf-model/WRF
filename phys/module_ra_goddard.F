@@ -1034,253 +1034,10 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
                    ,sflxd                                         & !optional for sw
                    ,swddir,swddni,swddif                          & !optinal for sw
                    ,coszen                                        & !optional for sw
-<<<<<<< HEAD
-=======
-                   ,obscur                                        & ! amontornes-bcodina 2015/09 solar eclipses
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-#if (WRF_CHEM == 1)
-                   ,aod2d_out,atop2d_out                          & !optional for sw  
-                   ,aero                                          & 
-                   ,chem_opt                                      &
-                   ,gsfcrad_gocart_coupling                       &
-#endif
-                    )
-#ifndef NO_IEEE_MODULE
- use, intrinsic :: ieee_arithmetic
-#endif
- implicit none
-!----------------------------------------------------------------------
-!
-! Comments for vertical levels: 
-!
-! Vetical layers are reversed in this routine. 
-! in wrf, kms (smallest number) is the bottom level and kme (largest
-! number) is the top level.  in your scheme, if 1 is at the top level,
-! then you have to reverse the order in the k direction.
-!
-! And, vertical dimesion of the input parameter is defined as 
-!      kms:kme, which is equivalent to kts:kte+1
-!      e.g., if kme=61, kte = 60
-!
-!
-! For example, 
-!        Array in both full- and half-level parameters are defined (ims:ime,kms:kme,jms:jme)
-!        There is no data of k=kme for half-level parameters. 
-!
-!         kme      -   half level (no data for half level)
-!         kme    ----- full level  (top for full level)
-!         kme-1    -   half level  (top for half level)
-!         kme-1  ----- full level
-!         .
-!         .
-!         .
-!         kms+1    -   half level
-!         kms+1  ----- full level
-!         kms      -   half level  (bottom for half level)
-!         kms    ----- full level  (bottom for full level)
-!
-! However, when reversed...(and one dimensionalized) in thir routine. 
-!          Array in full-level parameters are defined (kts-1:kte)
-!          Array in half-level parameters are defined (kts  :kte) 
-!
-!         kts-1    -   half level (no data for half level)
-!         kts-1  ----- full level  (top for full level)
-!         kts      -   half level  (top for half level)
-!         kts    ----- full level
-!         .
-!         .
-!         .
-!         kte-1    -   half level
-!         kte-1  ----- full level
-!         kte      -   half level  (bottom for half level)
-!         kte    ----- full level  (bottom for full level)
-!
-! For example, kms=1 kme=51, then
-!             Layer Temp                Level Temp
-!           1 t3d(i,k,j)   302.6994     t8w(i,k,j)   302.8955
-!           2 t3d(i,k,j)   302.3034     t8w(i,k,j)   302.5020
-!           3 t3d(i,k,j)   301.2647     t8w(i,k,j)   301.7841
-!           .
-!           .
-!          49 t3d(i,k,j)   228.0565     t8w(i,k,j)   227.4076
-!          50 t3d(i,k,j)   231.9670     t8w(i,k,j)   228.7616
-!          51 t3d(i,k,j)  0.0000000E+00 t8w(i,k,j)   235.3769
-!
-!
-!             Layer Pres                Level Pres 
-!           1 p3d(i,k,j)   95409.39     p8w(i,k,j)   96129.95
-!           2 p3d(i,k,j)   93964.12     p8w(i,k,j)   94688.82
-!           3 p3d(i,k,j)   92514.72     p8w(i,k,j)   93239.42
-!           .
-!           .
-!          49 p3d(i,k,j)   1485.196     p8w(i,k,j)   1563.812
-!          50 p3d(i,k,j)   1049.190     p8w(i,k,j)   1406.580
-!          51 p3d(i,k,j)  0.0000000E+00 p8w(i,k,j)   691.8000
-! Toshi Matsui @ NASA GSFC
-!
-!-------------------------------------------------------------------------------
-
-!------------------------- I / O variables -------------------------------------
-
- character(len=2), intent(in) :: &
-   sw_or_lw   ! 'sw'=shortwave radiation,'lw'=longwave radiation
-
- real,intent(in) :: dx   !horizontal grid spacing [m]
- integer :: iskip ! 0 (no skip) 1 (skip)
- integer,    intent(in) :: &
-    ids, &    ! start index for i in domain
-    ide, &    ! end index for i in domain
-    jds, &    ! start index for j in domain
-    jde, &    ! end index for j in domain
-    kds, &    ! start index for k in domain
-    kde, &    ! end index for k in domain 
-    ims, &    ! start index for i in memory
-    ime, &    ! end index for i in memory
-    jms, &    ! start index for j in memory
-    jme, &    ! end index for j in memory
-    kms, &    ! start index for k in memory
-    kme, &    ! end index for k in memory
-    its, &    ! start index for i in tile
-    ite, &    ! end index for i in tile
-    jts, &    ! start index for j in tile
-    jte, &    ! end index for j in tile
-    kts, &    ! start index for k in tile
-    kte, &    ! end index for k in tile (kte = kms - 1 )
-   julday     ! integer of julian date  
-
- logical,    intent(in) ::  &
-   warm_rain  ! logics for warm_rain only or not
-
- REAL, INTENT(IN  )   ::       dt_in
- INTEGER, INTENT(IN  ) ::      itimestep
- LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-
- real, intent(in)      ::  &
-   radfrq, &  ! time for calling radiation (min)                
-   degrad, &  ! conversion factor for degrees to radians (pi/180.) (rad/deg)
-   xtime,  &  ! time since simulation start (min)
-   declin, &  ! solar declination angle (rad)
-   solcon, &  ! solar constant (W/m^2) 
-      gmt, &  ! greenwich mean time hour of model start (hour)
-       cp, &  ! heat capacity at constant pressure for dry air (J/kg/K)
-        g     ! acceleration due to gravity (m/s^2)
-
- real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: &
-       p3d, &  ! pressure (Pa) 
-     p8w3d, &  ! pressure at full levels (Pa)
-      pi3d, &  ! exner function (-)
-       t3d, &  ! temperature (K)
-       t8w, &  ! temperature at full levels (K)
-      dz8w, &  ! dz between full levels (m)
-   rho_phy, &  ! density (kg/m^3)
-  cldfra3d     ! cloud fraction (0-1)
-
- real, dimension( ims:ime, jms:jme ), intent(in)  :: &
-       xlat, &  ! latitude, south is negative (degree)
-      xlong, &  ! longitude, west is negative (degree)
-        alb, &  ! broadband surface albedo (between 0 and 1)
-        tsk, &  ! surface skin temperature (k)
-       emiss    ! broadband surface emissivity (between 0 and 1)
-
- real, dimension( ims:ime, kms:kme, jms:jme ),optional,intent(in) :: &
-     qv,   & ! water vapor mixing ratio (kg/kg)  (in)
-     qc,   & ! cloud water mixing ratio (kg/kg)  (in)
-     qr,   & ! rain water mixing ratio (kg/kg)   (in)
-     qi,   & ! cloud ice mixing ratio (kg/kg)    (in)
-     qs,   & ! snow mixing ratio (kg/kg)         (in)
-     qg,   & ! graupel mixing ration (kg/kg)     (in)
-     qh      ! hail mixing ration (kg/kg)     (in)
-
- real, dimension( ims:ime, kms:kme, jms:jme ),optional,intent(in) :: &
-     rec3d,   & ! cloud effective radius [micron]  (in)
-     rer3d,   & ! rain effective radius [micron]   (in)
-     rei3d,   & ! cloud ice effective radius [micron] (kg/kg)    (in)
-     res3d,   & ! snow effective radius [micron]  (in)
-     reg3d,   & ! graupel effective radius [micron]  (in)
-     reh3d      ! hail effective radius [micron]  (in)
-
-
- real, dimension( ims:ime, kms:kme, jms:jme ) :: &
-     qv3d,   & ! water vapor mixing ratio (kg/kg)  (in)
-     qc3d,   & ! cloud water mixing ratio (kg/kg)  (in)
-     qr3d,   & ! rain water mixing ratio (kg/kg)   (in)
-     qi3d,   & ! cloud ice mixing ratio (kg/kg)    (in)
-     qs3d,   & ! snow mixing ratio (kg/kg)         (in)
-     qg3d,   & ! graupel mixing ration (kg/kg)     (in)
-     qh3d      ! hail mixing ration (kg/kg)        (in)
-
-
- logical, optional, intent(in )  ::  f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qh  !hydrometeor flags 
-!
- real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout)  :: &
-  rthraten  ! theta tendency due to radiative heating (K/sec)
-
-
-
- real, dimension( ims:ime, jms:jme ), intent(inout)  ::  &
-         gsf    ! (for SW) : net short wave flux at ground surface (W/m^2) 
-                ! (for LW) : downward long wave flux at ground surface (W/m^2)
-
- real, dimension( ims:ime, jms:jme ), intent(out),optional  :: cod2d_out  !cloud optical thickness [-]
- real, dimension( ims:ime, jms:jme ), intent(out),optional  :: ctop2d_out  !cloud-top pressure [mb]
-
-
- real, dimension( ims:ime, jms:jme, 1:4 ), intent(out),optional  :: sflxd    !SW only
-       ! 1-surface downward UV+VIS beam radiation [W/m2]
-       ! 2-surface downward UV+VIS diffuse radiation [W/m2]
-       ! 3-surface downward NIR beam radiation [W/m2]
-       ! 4-surface downward NIR diffuse radiation [W/m2]
-
-! 
-! ERBE_out: Energy Budget (last dimension 1-TOA LW down, 2-TOA LW up, 3-surface LW down, 4-surface LW up)
-!                                         5-TOA SW down, 6-TOA SW up, 7-surface SW down, 8-surface SW up)
-!
-  real, dimension(ims:ime, jms:jme, 1:8),intent(out) :: ERBE_out  !earth radiation budget (W/m2)
-
-#if (WRF_CHEM == 1)
-!
-! Aerosol is assumed to be GOCART scheme  (or other similar scheme must be re-array in consistent manner)
-! Note that num_go = 14 : aerosol type (see below), and aero must be in the following order.
-!  #   
-!  1 = SO4      ! sulfur and its precure
-!  2 = BC1+BC2  ! black carbon (soot)
-!  3 = OC1      ! non hygroscopic OC
-!  4 = OC2      ! hygroscopic OC
-!  5 = SS1      ! sea-salt accumulation mode
-!  6 = SS2+SS3+SS4 !sea-salt coarse mode
-!  7 = DU1      ! dust mode 1
-!  8 = DU1      ! dust mode 2
-!  9 = DU1      ! dust mode 3
-! 10 = DU1      ! dust mode 4
-! 11 = DU2      ! dust mode 5
-! 12 = DU3      ! dust mode 6
-! 13 = DU4      ! dust mode 7
-! 14 = DU5      ! dust mode 8
-!
-  integer, parameter :: num_go = 14  ! # of gocart aerosol species (tgmx=14 defined in module_gocart_offline.F)
-  real, dimension( ims:ime, kms:kme, jms:jme, num_go), intent(in) :: aero    ! aerosol mass conc [g/m3]            
-  real, dimension(ims:ime, jms:jme),intent(out),optional :: aod2d_out        ! column Aeorosol Optical Depth (-)
-                                                                             ! at visible band (0.4-0.7 micron)
-  real, dimension(ims:ime,jms:jme),intent(out),optional :: atop2d_out        ! aerosol-top pressure [mb]
-  integer,intent(in) :: chem_opt ! EMK
-  integer,intent(in) :: gsfcrad_gocart_coupling ! EMK
-#endif        
-
-! NCAR WRF V3.5.1 modification
-  real, optional, dimension(ims:ime, jms:jme), intent(out) :: &           
-         swddir, & ! All-sky broadband surface direct horizontal irradiance
-         swddni, & ! All-sky broadband surface direct normal irradiance
-         swddif    ! All-sky braodband surface diffuse irradiance
-  real, optional, dimension(ims:ime, jms:jme), intent(in) :: &        
-         coszen    ! cosine of the solar zenith angle
-
-<<<<<<< HEAD
-=======
 ! amontornes-bcodina 2015/09 solar eclipses
 !  obscur --> degree of obscuration for solar eclipses prediction (2D)
 real, dimension( ims:ime, jms:jme ), intent(in)  :: &
         obscur
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 
 !------- Local variables ----------------------------------------------
@@ -2090,11 +1847,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
       do kt=kts-1,kte !full level ( kts -1 = TOA, kte = BOA )
         DO ic=1,min(CHUNK,ite-ii+1)
         if(lmask(ic) .eqv. .true.) then
-<<<<<<< HEAD
-         flx(ic,kt) = flx(ic,kt) * solcon * cosz(ic)
-=======
          flx(ic,kt) = flx(ic,kt) * solcon * cosz(ic)* ( 1 - obscur(i,j) ) ! amontornes-bcodina 2015/09 solar eclipses
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         endif
         ENDDO
       enddo
@@ -2166,11 +1919,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
      DO ic=1,min(CHUNK,ite-ii+1)
      if(lmask(ic) .eqv. .true.) then
        i = ii+ic-1
-<<<<<<< HEAD
-       gsf(i:ie(ic),j:je(ic)) = (1. - rsuvbm(ic)) * flxd(ic,kte) * solcon * cosz(ic)
-=======
        gsf(i:ie(ic),j:je(ic)) = (1. - rsuvbm(ic)) * flxd(ic,kte) * solcon * cosz(ic) * (1 - obscur(i,j) ) ! amontornes-bcodina 2015/09 solar eclipses
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      endif
      ENDDO
 
@@ -2191,30 +1940,17 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
      DO ic=1,min(CHUNK,ite-ii+1)
      if(lmask(ic) .eqv. .true.) then
        i = ii+ic-1
-<<<<<<< HEAD
-       if(present(swddni)) swddni(i:ie(ic),j:je(ic)) = (flxd_surf(ic,1)+flxd_surf(ic,3)) * solcon !total SW direct radiation at normal direction [W/m2]
-       if(present(swddir)) swddir(i:ie(ic),j:je(ic)) = swddni(i,j) * cosz(ic)                   !total SW direct radiation [W/m2]    
-       if(present(swddif)) swddif(i:ie(ic),j:je(ic)) = (flxd_surf(ic,2)+flxd_surf(ic,4)) * solcon * cosz(ic) !total SW diffuse radiation [W/m2]
-=======
        if(present(swddni)) swddni(i:ie(ic),j:je(ic)) = (flxd_surf(ic,1)+flxd_surf(ic,3)) * solcon * ( 1 - obscur(i,j) ) !total SW direct radiation at normal direction [W/m2] ! amontornes-bcodina 2015/09 solar eclipses
        if(present(swddir)) swddir(i:ie(ic),j:je(ic)) = swddni(i,j) * cosz(ic)                   !total SW direct radiation [W/m2]    
        if(present(swddif)) swddif(i:ie(ic),j:je(ic)) = (flxd_surf(ic,2)+flxd_surf(ic,4)) * solcon * cosz(ic) * ( 1 - obscur(i,j) )  !total SW diffuse radiation [W/m2] ! amontornes-bcodina 2015/09 solar eclipses
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !
 ! extra output for earth radiation budget
 !       
-<<<<<<< HEAD
-       ERBE_out(i:ie(ic),j:je(ic),5) = flxd(ic,kts-1) * solcon * cosz(ic)  ! TOA SW downwelling flux [W/m2] 
-       ERBE_out(i:ie(ic),j:je(ic),6) = flxu(ic,kts-1) * solcon * cosz(ic)  ! TOA SW upwelling flux   [W/m2]
-       ERBE_out(i:ie(ic),j:je(ic),7) = flxd(ic,kte)   * solcon * cosz(ic)  ! surface SW downwelling flux [W/m2]
-       ERBE_out(i:ie(ic),j:je(ic),8) = flxu(ic,kte)   * solcon * cosz(ic)  ! surface SW upwelling flux   [W/m2]
-=======
        ERBE_out(i:ie(ic),j:je(ic),5) = flxd(ic,kts-1) * solcon * cosz(ic) * (1 - obscur(i,j) )  ! TOA SW downwelling flux [W/m2] 
        ERBE_out(i:ie(ic),j:je(ic),6) = flxu(ic,kts-1) * solcon * cosz(ic) * (1 - obscur(i,j) ) ! TOA SW upwelling flux   [W/m2]
        ERBE_out(i:ie(ic),j:je(ic),7) = flxd(ic,kte)   * solcon * cosz(ic) * (1 - obscur(i,j) ) ! surface SW downwelling flux [W/m2]
        ERBE_out(i:ie(ic),j:je(ic),8) = flxu(ic,kte)   * solcon * cosz(ic) * (1 - obscur(i,j) ) ! surface SW upwelling flux   [W/m2]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      endif
      ENDDO
 
@@ -5286,11 +5022,7 @@ enddo
 !dir$ vector aligned
  DO ic=1,irestrict
  if(lmask(ic) .eqv. .true.) then
-<<<<<<< HEAD
-       df_sub(ic,k) = max(df(ic,k) - df(ic,k-1), 0.)  !df for each layer (remove negative df_sub) 
-=======
        df_sub(ic,k) = max(df(ic,k) - df(ic,k-1), 0._fp_kind)  !df for each layer (remove negative df_sub) 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
  endif
  ENDDO
  enddo
@@ -5311,11 +5043,7 @@ enddo
 !dir$ vector aligned
  DO ic=1,irestrict
  if(lmask(ic) .eqv. .true.) then
-<<<<<<< HEAD
-    flc(ic,k)=max(flc(ic,k)-df_clr(ic,k),0.)  !this filter is for small cosine zenith angle.
-=======
     flc(ic,k)=max(flc(ic,k)-df_clr(ic,k),0._fp_kind)  !this filter is for small cosine zenith angle.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
  endif
  ENDDO
  enddo
@@ -5356,11 +5084,7 @@ enddo
            i_tau = min(max(int(cld_alb*10.)+1,1),10) !1~10
            ratio = ratio_lut(i_tau,i_cos)
        else !use computed clear and cloudy flux ratio (not fast_overcast)
-<<<<<<< HEAD
-           ratio = max(0.01, min(1.,(flx(ic,k)/flc(ic,k))))
-=======
            ratio = max(0.01_fp_kind, min(1._fp_kind,(flx(ic,k)/flc(ic,k))))
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        endif
        df_sub(ic,k)  = df_sub(ic,k)*ratio  !compute cloudy-sky df_sub
     enddo !k
@@ -5384,13 +5108,8 @@ enddo
 !dir$ vector aligned
  DO ic=1,irestrict
  if(lmask(ic) .eqv. .true.) then
-<<<<<<< HEAD
-    flx(ic,k)  = max(flx(ic,k)-df_cld(ic,k) , 0.)  !this max is for small cosz
-    flxd(ic,k) = max(flxd(ic,k)-df_cld(ic,k), 0.)  !this max is for small cosz
-=======
     flx(ic,k)  = max(flx(ic,k)-df_cld(ic,k) , 0._fp_kind)  !this max is for small cosz
     flxd(ic,k) = max(flxd(ic,k)-df_cld(ic,k), 0._fp_kind)  !this max is for small cosz
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     flxu(ic,k) = flx(ic,k)-flxd(ic,k)
  endif
  ENDDO
@@ -5410,11 +5129,7 @@ enddo
    if (  (fdirir(ic)-df_cld(ic,np+1)) >= 0. ) then ! normal
     fdirir(ic)=fdirir(ic)-df_cld(ic,np+1)  ! updated 
    else ! if negative, it also reduces diffuse component.
-<<<<<<< HEAD
-    fdifir(ic) = MAX(0., fdifir(ic) + (fdirir(ic)-df_cld(ic,np+1)) )
-=======
     fdifir(ic) = max(0._fp_kind, fdifir(ic) + (fdirir(ic)-df_cld(ic,np+1)) )
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     fdirir(ic)=0.
    endif
 !
@@ -5770,11 +5485,7 @@ enddo
 
 !-----for direct incident radiation
 !     the effective layer optical properties. eqs. (6.2)-(6.4)  !modify max & min
-<<<<<<< HEAD
-           tautob(ic)=tausto(ic) + max(tauclb(ic,k,ib),0.e0)
-=======
            tautob(ic)=tausto(ic) + max(tauclb(ic,k,ib),0._fp_kind)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            ssatob(ic)=min(max((ssatau(ic)+ssacl(ic,k,ib)*tauclb(ic,k,ib))/tautob(ic) , ssa_min), ssa_max)  !SSA of cloud is unity
            asytob(ic)=min(max((asysto(ic)+asycl(ic,k,ib)*ssacl(ic,k,ib)*tauclb(ic,k,ib)) &
                          /(   max(ssatob(ic)*tautob(ic),const_tiny)   ),asy_min), asy_max)
@@ -6233,11 +5944,7 @@ enddo
 !-----compute reflectance and transmittance of the cloudy portion of a layer
 
 !-----for direct incident radiation. eqs.(6.2)-(6.4)
-<<<<<<< HEAD
-           tautob(ic,k)=tausto(ic,k)+max(tauclb(ic,k),0.e0)
-=======
            tautob(ic,k)=tausto(ic,k)+max(tauclb(ic,k),0._fp_kind)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            ssatob(ic,k)=min(max((ssatau(ic,k)+ssacl(ic,k,iv)*tauclb(ic,k))/tautob(ic,k),ssa_min),ssa_max)
            asytob(ic,k)=min(max((asysto(ic,k)+asycl(ic,k,iv)*ssacl(ic,k,iv)*tauclb(ic,k)) &
                       /(  max(ssatob(ic,k)*tautob(ic,k),const_tiny)  ),ssa_min),ssa_max)
@@ -6248,11 +5955,7 @@ enddo
              ssatof(ic,k)=ssatob(ic,k)
              asytof(ic,k)=asytob(ic,k)
            else
-<<<<<<< HEAD
-             tautof(ic,k)=tausto(ic,k)+max(tauclf(ic,k),0.e0)
-=======
              tautof(ic,k)=tausto(ic,k)+max(tauclf(ic,k),0._fp_kind)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              ssatof(ic,k)=min(max((ssatau(ic,k)+ssacl(ic,k,iv)*tauclf(ic,k))/tautof(ic,k),ssa_min),ssa_max) 
              asytof(ic,k)=min(max((asysto(ic,k)+asycl(ic,k,iv)*ssacl(ic,k,iv)*tauclf(ic,k)) &
                         /(  max(ssatof(ic,k)*tautof(ic,k),const_tiny)  ),asy_min),asy_max)
@@ -6594,11 +6297,7 @@ enddo
 !-----normalize cloud cover following eq. (7.8)
            fa=fcld(ic,k)/cc(ic,kk)
 !-----table look-up
-<<<<<<< HEAD
-           taux=min(taux,32.)
-=======
            taux=min(taux,32._fp_kind)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            fm=cosz(ic)/dm
            ft=(log10(taux)-t1)/dt
            fa=fa/da
@@ -6624,13 +6323,8 @@ enddo
            xai=xai+(-caib(im,it,ia-1)*(1.-fa)+ &
            caib(im,it,ia+1)*(1.+fa))*fa*.5+caib(im,it,ia)*(1.-fa*fa)
            xai= xai-2.*caib(im,it,ia)
-<<<<<<< HEAD
-           xai=max(xai,0.0)
-           xai=min(xai,1.0)
-=======
            xai=max(xai,0._fp_kind)
            xai=min(xai,1._fp_kind)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            tauclb(ic,k) = taux*xai
 !-----scale cloud optical thickness for diffuse radiation following eq. (7.4)
 !     the scaling factor, xai, is a function of the cloud optical
@@ -6640,13 +6334,8 @@ enddo
            xai=xai+(-caif(it,ia-1)*(1.-fa)+ &
             caif(it,ia+1)*(1.+fa))*fa*.5+caif(it,ia)*(1.-fa*fa)
            xai= xai-caif(it,ia)
-<<<<<<< HEAD
-           xai=max(xai,0.0)
-           xai=min(xai,1.0)
-=======
            xai=max(xai,0._fp_kind)
            xai=min(xai,1._fp_kind)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
            tauclf(ic,k) = taux*xai
          endif
        endif
@@ -10506,19 +10195,11 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 !new
      dp   (ic,k) = pl(ic,k+1)-pl(ic,k)
      dh2o (ic,k) = 1.02*wa(ic,k)*dp(ic,k)
-<<<<<<< HEAD
-     dh2o (ic,k) = max(dh2o (ic,k),1.e-30)
-     do3  (ic,k) = 476.*oa(ic,k)*dp(ic,k)
-     do3  (ic,k) = max(do3 (ic,k),1.e-30)
-     dco2 (ic,k) = 789.*co2*dp(ic,k)
-     dco2 (ic,k) = max(dco2 (ic,k),1.e-30)
-=======
      dh2o (ic,k) = max(dh2o (ic,k),1.e-30_fp_kind)
      do3  (ic,k) = 476.*oa(ic,k)*dp(ic,k)
      do3  (ic,k) = max(do3 (ic,k),1.e-30_fp_kind)
      dco2 (ic,k) = 789.*co2*dp(ic,k)
      dco2 (ic,k) = max(dco2 (ic,k),1.e-30_fp_kind)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      dch4 (ic,k) = 789.*ch4*dp(ic,k)
      dn2o (ic,k) = 789.*n2o*dp(ic,k)
      df11 (ic,k) = 789.*cfc11*dp(ic,k)
@@ -10663,11 +10344,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
               taux=taux*(1.-ww*ff)
 !-----compute cloud diffuse transmittance. it is approximated by using
 !     a diffusivity factor of 1.66.
-<<<<<<< HEAD
-              tauxa=max(0.,1.66*taux)
-=======
               tauxa=max(0._fp_kind,1.66*taux)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               tcldlyr(ic,k)=0.
               if(tauxa.lt.80.) tcldlyr(ic,k)=exp(-tauxa)
            endif
@@ -10976,13 +10653,8 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
        if (k2 .eq. k1+1) then
 !dir$ vector aligned
        DO ic=1,irestrict
-<<<<<<< HEAD
-         yy=min(0.999,trant(ic))
-         yy=max(0.001,yy)
-=======
          yy=min(0.999_fp_kind,trant(ic))
          yy=max(0.001_fp_kind,yy)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-hmhj use log instead of alog for default intrinsic function
          xx=(blevel(ic,k1)-blevel(ic,k2))/ log(yy)
          bu=(blevel(ic,k1)-blevel(ic,k2)*yy)/(1.0-yy)+xx
@@ -11748,15 +11420,9 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 !-----normalize we and pe
         pe=(log10(x2)-p1)/dpe
 !-----restrict the magnitudes of the normalized we and pe.
-<<<<<<< HEAD
-        we=min(we,REAL(nh-1))
-        pe=max(pe,0.0)
-        pe=min(pe,REAL(nx-1))
-=======
         we=min(we,real(nh-1,kind=fp_kind))
         pe=max(pe,0._fp_kind)
         pe=min(pe,real(nx-1,kind=fp_kind))
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !-----assign iw and ip and compute the distance of we and pe
 !     from iw and ip.
         iw=int(we+1.0)
@@ -11786,13 +11452,8 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
         t2 = ca*(1.-fw) + cb*fw
 !-----update the total transmittance between levels k1 and k2
         tran(ic)= (ax + (t1+t2*x3) * x3)*tran(ic)
-<<<<<<< HEAD
-        tran(ic)=min(tran(ic),0.9999999)
-        tran(ic)=max(tran(ic),0.0000001)
-=======
         tran(ic)=min(tran(ic),0.9999999_fp_kind)
         tran(ic)=max(tran(ic),0.0000001_fp_kind)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        else
         tran(ic)=0.9999999
        endif

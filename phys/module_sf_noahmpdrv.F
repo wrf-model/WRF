@@ -16,38 +16,24 @@ CONTAINS
 	       PLANTING,  HARVEST,SEASON_GDD,                               &
                  IDVEG, IOPT_CRS,  IOPT_BTR, IOPT_RUN, IOPT_SFC, IOPT_FRZ,  & ! IN : User options
               IOPT_INF, IOPT_RAD,  IOPT_ALB, IOPT_SNF,IOPT_TBOT, IOPT_STC,  & ! IN : User options
-<<<<<<< HEAD
-              IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,            & ! IN : User options
-              IZ0TLND, SF_URBAN_PHYSICS, AHE_SCHEME, AHE24, AHUCM,          & ! IN : User options
-	      SOILCOMP,  SOILCL1,  SOILCL2,   SOILCL3,  SOILCL4,            & ! IN : User options
-                   T3D,     QV3D,     U_PHY,    V_PHY,   SWDOWN,      GLW,  & ! IN : Forcing
-		 P8W3D,PRECIP_IN,        SR,                                & ! IN : Forcing
-=======
               IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP, IOPT_IRR,  & ! IN : User options
              IOPT_IRRM,                                                     & ! IN : User options                 
-              IZ0TLND, SF_URBAN_PHYSICS,                                    & ! IN : User options
+              IZ0TLND, SF_URBAN_PHYSICS, AHE_SCHEME, AHE24, AHUCM,          & ! IN : User options
 	      SOILCOMP,  SOILCL1,  SOILCL2,   SOILCL3,  SOILCL4,            & ! IN : User options
                    T3D,     QV3D,     U_PHY,    V_PHY,   SWDOWN,     SWDDIR,&
                 SWDDIF,      GLW,                                           & ! IN : Forcing
 		 P8W3D,PRECIP_IN,        SR,                                & ! IN : Forcing
                IRFRACT,  SIFRACT,   MIFRACT,  FIFRACT,                      & ! IN : Noah MP only
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    TSK,      HFX,      QFX,        LH,   GRDFLX,    SMSTAV, & ! IN/OUT LSM eqv
                 SMSTOT,SFCRUNOFF, UDRUNOFF,    ALBEDO,    SNOWC,     SMOIS, & ! IN/OUT LSM eqv
 		  SH2O,     TSLB,     SNOW,     SNOWH,   CANWAT,    ACSNOM, & ! IN/OUT LSM eqv
 		ACSNOW,    EMISS,     QSFC,                                 & ! IN/OUT LSM eqv
  		    Z0,      ZNT,                                           & ! IN/OUT LSM eqv
-<<<<<<< HEAD
-               ISNOWXY,     TVXY,     TGXY,  CANICEXY, CANLIQXY,     EAHXY, & ! IN/OUT Noah MP only
-	         TAHXY,     CMXY,     CHXY,    FWETXY, SNEQVOXY,  ALBOLDXY, & ! IN/OUT Noah MP only
-               QSNOWXY, WSLAKEXY,    ZWTXY,      WAXY,     WTXY,    TSNOXY, & ! IN/OUT Noah MP only
-=======
                IRNUMSI,  IRNUMMI,  IRNUMFI,   IRWATSI,  IRWATMI,   IRWATFI, & ! IN/OUT Noah MP only
                IRELOSS,  IRSIVOL,  IRMIVOL,   IRFIVOL,  IRRSPLH,  LLANDUSE, & ! IN/OUT Noah MP only
                ISNOWXY,     TVXY,     TGXY,  CANICEXY, CANLIQXY,     EAHXY, & ! IN/OUT Noah MP only
 	         TAHXY,     CMXY,     CHXY,    FWETXY, SNEQVOXY,  ALBOLDXY, & ! IN/OUT Noah MP only
                QSNOWXY, QRAINXY,  WSLAKEXY, ZWTXY,  WAXY,  WTXY,    TSNOXY, & ! IN/OUT Noah MP only
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	       ZSNSOXY,  SNICEXY,  SNLIQXY,  LFMASSXY, RTMASSXY,  STMASSXY, & ! IN/OUT Noah MP only
 	        WOODXY, STBLCPXY, FASTCPXY,    XLAIXY,   XSAIXY,   TAUSSXY, & ! IN/OUT Noah MP only
 	       SMOISEQ, SMCWTDXY,DEEPRECHXY,   RECHXY,  GRAINXY,    GDDXY,PGSXY,  & ! IN/OUT Noah MP only
@@ -63,11 +49,8 @@ CONTAINS
 !                 BEXP_3D,SMCDRY_3D,SMCWLT_3D,SMCREF_3D,SMCMAX_3D,          & ! placeholders to activate 3D soil
 !		 DKSAT_3D,DWSAT_3D,PSISAT_3D,QUARTZ_3D,                     &
 !		 REFDK_2D,REFKDT_2D,                                        &
-<<<<<<< HEAD
-=======
 !                IRR_FRAC_2D,IRR_HAR_2D,IRR_LAI_2D,IRR_MAD_2D,FILOSS_2D,      &
 !                SPRIR_RATE_2D,MICIR_RATE_2D,FIRTFAC_2D,IR_RAIN_2D,           &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #ifdef WRF_HYDRO
                sfcheadrt,INFXSRT,soldrain,                                  &
 #endif
@@ -80,13 +63,9 @@ CONTAINS
 !    USE MODULE_SF_NOAHMPLSM, only: noahmp_options, NOAHMP_SFLX, noahmp_parameters
     USE module_sf_noahmp_glacier
     USE NOAHMP_TABLES, ONLY: ISICE_TABLE, CO2_TABLE, O2_TABLE, DEFAULT_CROP_TABLE, ISCROP_TABLE, ISURBAN_TABLE, NATURAL_TABLE, &
-<<<<<<< HEAD
-                             LOW_DENSITY_RESIDENTIAL_TABLE, HIGH_DENSITY_RESIDENTIAL_TABLE, HIGH_INTENSITY_INDUSTRIAL_TABLE
-=======
                              LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE,LCZ_5_TABLE,LCZ_6_TABLE,LCZ_7_TABLE,LCZ_8_TABLE,  &
                              LCZ_9_TABLE,LCZ_10_TABLE,LCZ_11_TABLE
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     USE module_sf_urban,    only: IRI_SCHEME
     USE module_ra_gfdleta,  only: cal_mon_day
 !----------------------------------------------------------------
@@ -131,11 +110,8 @@ CONTAINS
     INTEGER,                                         INTENT(IN   ) ::  IOPT_SOIL ! soil configuration option
     INTEGER,                                         INTENT(IN   ) ::  IOPT_PEDO ! soil pedotransfer function option
     INTEGER,                                         INTENT(IN   ) ::  IOPT_CROP ! crop model option (0->none; 1->Liu et al.; 2->Gecros)
-<<<<<<< HEAD
-=======
     INTEGER,                                         INTENT(IN   ) ::  IOPT_IRR  ! irrigation scheme (0->none; >1 irrigation scheme ON)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_IRRM ! irrigation method
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     INTEGER,                                         INTENT(IN   ) ::  IZ0TLND   ! option of Chen adjustment of Czil (not used)
     INTEGER,                                         INTENT(IN   ) ::  sf_urban_physics   ! urban physics option
     REAL,    DIMENSION( ims:ime,       8, jms:jme ), INTENT(IN   ) ::  SOILCOMP  ! soil sand and clay percentage
@@ -148,24 +124,18 @@ CONTAINS
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  U_PHY     ! 3D U wind component [m/s]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  V_PHY     ! 3D V wind component [m/s]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SWDOWN    ! solar down at surface [W m-2]
-<<<<<<< HEAD
-=======
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SWDDIF    ! solar down at surface [W m-2]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SWDDIR    ! solar down at surface [W m-2]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  GLW       ! longwave down at surface [W m-2]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  P8W3D     ! 3D pressure, valid at interface [Pa]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  PRECIP_IN ! total input precipitation [mm]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SR        ! frozen precipitation ratio [-]
-<<<<<<< HEAD
    INTEGER,  INTENT(IN   )   :: AHE_SCHEME
    REAL, INTENT(IN), DIMENSION( 0:23, ims:ime, jms:jme ), OPTIONAL :: AHE24
    REAL, INTENT(OUT), DIMENSION( ims:ime, jms:jme ) :: AHUCM
    REAL, DIMENSION(0:23) :: AH24
    REAL :: AH
 
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !Optional Detailed Precipitation Partitioning Inputs
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_RAINC  ! convective precipitation entering land model [mm] ! MB/AN : v3.7
@@ -203,8 +173,6 @@ CONTAINS
 !    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)          ::  REFDK_2D  ! Reference Soil Conductivity
 !    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)          ::  REFKDT_2D ! Soil Infiltration Parameter
 
-<<<<<<< HEAD
-=======
 ! placeholders for 2D irrigation parameters
 !    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)          ::  IRR_FRAC_2D   ! irrigation Fraction
 !    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)          ::  IRR_HAR_2D    ! number of days before harvest date to stop irrigation 
@@ -216,7 +184,6 @@ CONTAINS
 !    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)          ::  FIRTFAC_2D    ! flood application rate factor
 !    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)          ::  IR_RAIN_2D    ! maximum precipitation to stop irrigation trigger
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! INOUT (with generic LSM equivalent)
 
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  TSK       ! surface radiative temperature [K]
@@ -257,10 +224,7 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  SNEQVOXY  ! snow mass at last time step(mm h2o)
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ALBOLDXY  ! snow albedo at last time step (-)
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  QSNOWXY   ! snowfall on the ground [mm/s]
-<<<<<<< HEAD
-=======
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  QRAINXY   ! rainfall on the ground [mm/s]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  WSLAKEXY  ! lake water storage [mm]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ZWTXY     ! water table depth [m]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  WAXY      ! water in the "aquifer" [mm]
@@ -333,8 +297,6 @@ CONTAINS
          &                           ims,ime, jms,jme, kms,kme,  &  ! m -> memory
          &                           its,ite, jts,jte, kts,kte      ! t -> tile
 
-<<<<<<< HEAD
-=======
 !2D inout irrigation variables 
     REAL,    DIMENSION( ims:ime,          jms:jme ),  INTENT(IN)    :: IRFRACT    ! irrigation fraction
     REAL,    DIMENSION( ims:ime,          jms:jme ),  INTENT(IN)    :: SIFRACT    ! sprinkler irrigation fraction
@@ -370,7 +332,6 @@ CONTAINS
     REAL                                                            :: IRFIRATE   ! rate of irrigation by micro [m/timestep]
     REAL                                                            :: FIRR       ! latent heating due to sprinkler evaporation (w m-2)
     REAL                                                            :: EIRR       ! evaporation due to sprinkler evaporation (mm/s)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! 1D equivalent of 2D/3D fields
 
@@ -432,10 +393,7 @@ CONTAINS
     REAL                                :: SNEQVO       ! snow mass at last time step(mm h2o)
     REAL                                :: ALBOLD       ! snow albedo at last time step (-)
     REAL                                :: QSNOW        ! snowfall on the ground [mm/s]
-<<<<<<< HEAD
-=======
     REAL                                :: QRAIN        ! rainfall on the ground [mm/s]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     REAL                                :: WSLAKE       ! lake water storage [mm]
     REAL                                :: ZWT          ! water table depth [m]
     REAL                                :: WA           ! water in the "aquifer" [mm]
@@ -571,11 +529,7 @@ CONTAINS
 
     CALL NOAHMP_OPTIONS(IDVEG  ,IOPT_CRS  ,IOPT_BTR  ,IOPT_RUN  ,IOPT_SFC  ,IOPT_FRZ , &
                      IOPT_INF  ,IOPT_RAD  ,IOPT_ALB  ,IOPT_SNF  ,IOPT_TBOT, IOPT_STC , &
-<<<<<<< HEAD
-		     IOPT_RSF  ,IOPT_SOIL ,IOPT_PEDO ,IOPT_CROP )
-=======
 		     IOPT_RSF  ,IOPT_SOIL ,IOPT_PEDO ,IOPT_CROP ,IOPT_IRR  ,IOPT_IRRM)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
     IPRINT    =  .false.                     ! debug printout
 
@@ -724,10 +678,7 @@ CONTAINS
        SNEQVO                = SNEQVOXY(I,J)                ! SWE previous timestep
        ALBOLD                = ALBOLDXY(I,J)                ! albedo previous timestep, for snow aging
        QSNOW                 = QSNOWXY (I,J)                ! snow falling on ground
-<<<<<<< HEAD
-=======
        QRAIN                 = QRAINXY (I,J)                ! rain falling on ground
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        WSLAKE                = WSLAKEXY(I,J)                ! lake water storage (can be neg.) (mm)
        ZWT                   = ZWTXY   (I,J)                ! depth to water table [m]
        WA                    = WAXY    (I,J)                ! water storage in aquifer [mm]
@@ -749,8 +700,6 @@ CONTAINS
        RECH                  = 0.
        DEEPRECH              = 0.  
 
-<<<<<<< HEAD
-=======
 ! irrigation vars
        IRRFRA                = IRFRACT(I,J)    ! irrigation fraction
        SIFAC                 = SIFRACT(I,J)    ! sprinkler irrigation fraction
@@ -769,7 +718,6 @@ CONTAINS
        FIRR                  = 0.0             ! latent heating due to sprinkler evaporation (W m-2)
        EIRR                  = 0.0             ! evaporation from sprinkler (mm/s)
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        if(iopt_crop == 2) then   ! gecros crop model
 
          gecros1d(1:60)      = gecros_state(I,1:60,J)       ! Gecros variables 2D -> local
@@ -807,17 +755,11 @@ CONTAINS
           IF(IPRINT) PRINT *, i,j,'RESET SOIL in surfce.F'
           SOILTYP = 7
        ENDIF
-<<<<<<< HEAD
-
-       IF( IVGTYP(I,J) == ISURBAN_TABLE                  .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL_TABLE .or. &
-           IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL_TABLE .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL_TABLE ) THEN
-=======
          IF( IVGTYP(I,J) == ISURBAN_TABLE    .or. IVGTYP(I,J) == LCZ_1_TABLE .or. IVGTYP(I,J) == LCZ_2_TABLE .or. &
              IVGTYP(I,J) == LCZ_3_TABLE      .or. IVGTYP(I,J) == LCZ_4_TABLE .or. IVGTYP(I,J) == LCZ_5_TABLE .or. &
              IVGTYP(I,J) == LCZ_6_TABLE      .or. IVGTYP(I,J) == LCZ_7_TABLE .or. IVGTYP(I,J) == LCZ_8_TABLE .or. &
              IVGTYP(I,J) == LCZ_9_TABLE      .or. IVGTYP(I,J) == LCZ_10_TABLE .or. IVGTYP(I,J) == LCZ_11_TABLE ) THEN
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
          IF(SF_URBAN_PHYSICS == 0 ) THEN
            VEGTYP = ISURBAN_TABLE
@@ -841,8 +783,6 @@ CONTAINS
 !       parameters%refdk  = REFDK_2D (I,J)         ! Reference Soil Conductivity
 !       parameters%refkdt = REFKDT_2D(I,J)         ! Soil Infiltration Parameter
 
-<<<<<<< HEAD
-=======
 ! placeholders for 2D irrigation params
 !       parameters%IRR_FRAC   = IRR_FRAC_2D(I,J)   ! irrigation Fraction
 !       parameters%IRR_HAR    = IRR_HAR_2D(I,J)    ! number of days before harvest date to stop irrigation 
@@ -854,7 +794,6 @@ CONTAINS
 !       parameters%FIRTFAC    = FIRTFAC_2D(I,J)    ! flood application rate factor
 !       parameters%IR_RAIN    = IR_RAIN_2D(I,J)    ! maximum precipitation to stop irrigation trigger
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        CALL TRANSFER_MP_PARAMETERS(VEGTYP,SOILTYP,SLOPETYP,SOILCOLOR,CROPTYPE,parameters)
        
        if(iopt_soil == 3 .and. .not. parameters%urban_flag) then
@@ -881,13 +820,6 @@ CONTAINS
 	 parameters%GDDS5  = SEASON_GDD(I,J) / 1770.0 * parameters%GDDS5
        end if
 
-<<<<<<< HEAD
-!=== hydrological processes for vegetation in urban model ===
-!=== irrigate vegetaion only in urban area, MAY-SEP, 9-11pm
-
-       IF( IVGTYP(I,J) == ISURBAN_TABLE                  .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL_TABLE .or. &
-           IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL_TABLE .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL_TABLE ) THEN
-=======
        if(iopt_irr == 2) then ! based on planting and harvesting dates.
          parameters%PLTDAY = PLANTING(I,J)
          parameters%HSDAY  = HARVEST (I,J)
@@ -900,7 +832,6 @@ CONTAINS
                IVGTYP(I,J) == LCZ_3_TABLE      .or. IVGTYP(I,J) == LCZ_4_TABLE .or. IVGTYP(I,J) == LCZ_5_TABLE .or. &
                IVGTYP(I,J) == LCZ_6_TABLE      .or. IVGTYP(I,J) == LCZ_7_TABLE .or. IVGTYP(I,J) == LCZ_8_TABLE .or. &
                IVGTYP(I,J) == LCZ_9_TABLE      .or. IVGTYP(I,J) == LCZ_10_TABLE .or. IVGTYP(I,J) == LCZ_11_TABLE ) THEN
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
          IF(SF_URBAN_PHYSICS > 0 .AND. IRI_SCHEME == 1 ) THEN
 	     SOLAR_TIME = (JULIAN - INT(JULIAN))*24 + XLONG(I,J)/15.0
@@ -1030,17 +961,11 @@ CONTAINS
             QC      , SWDN    , LWDN    ,                               & ! IN : Forcing
 	    PRCPCONV, PRCPNONC, PRCPSHCV, PRCPSNOW, PRCPGRPL, PRCPHAIL, & ! IN : Forcing
             TBOT    , CO2PP   , O2PP    , FOLN    , FICEOLD , Z_ML    , & ! IN : Forcing
-<<<<<<< HEAD
-            ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
-            STC     , SMH2O   , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 
-            CANLIQ  , CANICE  , TV      , TG      , QSFC1D  , QSNOW   , & ! IN/OUT : 
-=======
             IRRFRA  , SIFAC   , MIFAC   , FIFAC   , LLANDUSE,           & ! IN : Irrigation: fractions	
             ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
             STC     , SMH2O   , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 
             CANLIQ  , CANICE  , TV      , TG      , QSFC1D  , QSNOW   , & ! IN/OUT : 
             QRAIN   ,                                                   & ! IN/OUT :
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             ISNOW   , ZSNSO   , SNDPTH  , SWE     , SNICE   , SNLIQ   , & ! IN/OUT : 
             ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
             STMASS  , WOOD    , STBLCP  , FASTCP  , PLAI    , PSAI    , & ! IN/OUT : 
@@ -1049,11 +974,8 @@ CONTAINS
             SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
             GECROS1D,                                                   & ! IN/OUT :
             Z0WRF   ,                                                   &
-<<<<<<< HEAD
-=======
             IRCNTSI , IRCNTMI , IRCNTFI , IRAMTSI , IRAMTMI , IRAMTFI , & ! IN/OUT : Irrigation: vars
             IRSIRATE, IRMIRATE, IRFIRATE, FIRR    , EIRR    ,           & ! IN/OUT : Irrigation: vars
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
             FGEV    , FCTR    , ECAN    , ETRAN   , ESOIL   , TRAD    , & ! OUT : 
             TGB     , TGV     , T2MV    , T2MB    , Q2MV    , Q2MB    , & ! OUT : 
@@ -1071,13 +993,8 @@ CONTAINS
 #endif
             )            ! OUT :
                   
-<<<<<<< HEAD
-            QFX(I,J) = ECAN + ESOIL + ETRAN
-            LH       (I,J)                = FCEV + FGEV + FCTR
-=======
             QFX(I,J) = ECAN + ESOIL + ETRAN + EIRR
             LH(I,J)  = FCEV + FGEV  + FCTR  + FIRR
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
    ENDIF ! glacial split ends 
 
@@ -1126,10 +1043,7 @@ CONTAINS
              SNEQVOXY (I,J)                = SNEQVO
              ALBOLDXY (I,J)                = ALBOLD
              QSNOWXY  (I,J)                = QSNOW
-<<<<<<< HEAD
-=======
              QRAINXY  (I,J)                = QRAIN
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              WSLAKEXY (I,J)                = WSLAKE
              ZWTXY    (I,J)                = ZWT
              WAXY     (I,J)                = WA
@@ -1215,8 +1129,6 @@ CONTAINS
              GDDXY    (I,J) = GDD   !XING 
 	     PGSXY    (I,J) = PGS
 
-<<<<<<< HEAD
-=======
              ! irrigation
              IRNUMSI(I,J)                  = IRCNTSI
              IRNUMMI(I,J)                  = IRCNTMI
@@ -1230,7 +1142,6 @@ CONTAINS
              IRELOSS(I,J)                  = IRELOSS(I,J)+(EIRR*DT) ! mm
              IRRSPLH(I,J)                  = IRRSPLH(I,J)+(FIRR*DT) ! Joules/m^2
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              if(iopt_crop == 2) then   ! gecros crop model
 
                !*** Check for harvest
@@ -1282,17 +1193,11 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
   parameters%EBLFOREST = EBLFOREST_TABLE
 
   parameters%URBAN_FLAG = .FALSE.
-<<<<<<< HEAD
-  IF( VEGTYPE == ISURBAN_TABLE                  .or. VEGTYPE == LOW_DENSITY_RESIDENTIAL_TABLE  .or. &
-      VEGTYPE == HIGH_DENSITY_RESIDENTIAL_TABLE .or. VEGTYPE == HIGH_INTENSITY_INDUSTRIAL_TABLE ) THEN
-     parameters%URBAN_FLAG = .TRUE.
-=======
   IF( VEGTYPE == ISURBAN_TABLE    .or. VEGTYPE == LCZ_1_TABLE .or. VEGTYPE == LCZ_2_TABLE .or. &
              VEGTYPE == LCZ_3_TABLE      .or. VEGTYPE == LCZ_4_TABLE .or. VEGTYPE == LCZ_5_TABLE .or. &
              VEGTYPE == LCZ_6_TABLE      .or. VEGTYPE == LCZ_7_TABLE .or. VEGTYPE == LCZ_8_TABLE .or. &
              VEGTYPE == LCZ_9_TABLE      .or. VEGTYPE == LCZ_10_TABLE .or. VEGTYPE == LCZ_11_TABLE ) THEN
       parameters%URBAN_FLAG = .TRUE.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   ENDIF
 
 !------------------------------------------------------------------------------------------!
@@ -1307,10 +1212,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
   parameters%DEN    =    DEN_TABLE(VEGTYPE)       !tree density (no. of trunks per m2)
   parameters%RC     =     RC_TABLE(VEGTYPE)       !tree crown radius (m)
   parameters%MFSNO  =  MFSNO_TABLE(VEGTYPE)       !snowmelt m parameter ()
-<<<<<<< HEAD
-=======
   parameters%SCFFAC = SCFFAC_TABLE(VEGTYPE)       !snow cover factor (m) (originally hard-coded 2.5*z0 in SCF formulation)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   parameters%SAIM   =   SAIM_TABLE(VEGTYPE,:)     !monthly stem area index, one-sided
   parameters%LAIM   =   LAIM_TABLE(VEGTYPE,:)     !monthly leaf area index, one-sided
   parameters%SLA    =    SLA_TABLE(VEGTYPE)       !single-side leaf area per Kg [m2/kg]
@@ -1386,8 +1288,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%GDDS3     =     GDDS3_TABLE(CROPTYPE)    ! GDD from seeding to post vegetative 
    parameters%GDDS4     =     GDDS4_TABLE(CROPTYPE)    ! GDD from seeding to intial reproductive
    parameters%GDDS5     =     GDDS5_TABLE(CROPTYPE)    ! GDD from seeding to pysical maturity 
-<<<<<<< HEAD
-=======
    parameters%C3PSN     =     C3PSNI_TABLE(CROPTYPE)   ! parameters from stomata ! Zhe Zhang 2020-07-13
    parameters%KC25      =      KC25I_TABLE(CROPTYPE)
    parameters%AKC       =       AKCI_TABLE(CROPTYPE)
@@ -1399,7 +1299,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%MP        =        MPI_TABLE(CROPTYPE)
    parameters%FOLNMX    =    FOLNMXI_TABLE(CROPTYPE)
    parameters%QE25      =      QE25I_TABLE(CROPTYPE)   ! ends here
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    parameters%C3C4      =      C3C4_TABLE(CROPTYPE)    ! photosynthetic pathway:  1. = c3 2. = c4
    parameters%AREF      =      AREF_TABLE(CROPTYPE)    ! reference maximum CO2 assimulation rate 
    parameters%PSNRF     =     PSNRF_TABLE(CROPTYPE)    ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
@@ -1426,12 +1325,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%STPT      =      STPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to stem
    parameters%RTPT      =      RTPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to root
    parameters%GRAINPT   =   GRAINPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to grain
-<<<<<<< HEAD
-=======
    parameters%LFCT      =      LFCT_TABLE(CROPTYPE,:)  ! fraction of translocation to grain ! Zhe Zhang 2020-07-13
    parameters%STCT      =      STCT_TABLE(CROPTYPE,:)  ! fraction of translocation to grain
    parameters%RTCT      =      RTCT_TABLE(CROPTYPE,:)  ! fraction of translocation to grain
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    parameters%BIO2LAI   =   BIO2LAI_TABLE(CROPTYPE)    ! leaf are per living leaf biomass [m^2/kg]
   END IF
 
@@ -1445,13 +1341,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%FSATMX     =      FSATMX_TABLE
    parameters%Z0SNO      =       Z0SNO_TABLE
    parameters%SSI        =         SSI_TABLE
-<<<<<<< HEAD
-   parameters%SWEMX      =       SWEMX_TABLE
-=======
    parameters%SNOW_RET_FAC = SNOW_RET_FAC_TABLE
    parameters%SNOW_EMIS  =   SNOW_EMIS_TABLE
    parameters%SWEMX        =     SWEMX_TABLE
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    parameters%TAU0         =      TAU0_TABLE
    parameters%GRAIN_GROWTH = GRAIN_GROWTH_TABLE
    parameters%EXTRA_GROWTH = EXTRA_GROWTH_TABLE
@@ -1486,8 +1378,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     parameters%REFDK  = REFDK_TABLE
     parameters%REFKDT = REFKDT_TABLE
 
-<<<<<<< HEAD
-=======
 !------------------------------------------------------------------------------------------!
 ! Transfer irrigation parameters
 !------------------------------------------------------------------------------------------!
@@ -1501,7 +1391,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     parameters%FIRTFAC    = FIRTFAC_TABLE       ! flood application rate factor
     parameters%IR_RAIN    = IR_RAIN_TABLE       ! maximum precipitation to stop irrigation trigger
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! ----------------------------------------------------------------------
 ! Transfer GENPARM parameters
 ! ----------------------------------------------------------------------
@@ -1650,22 +1539,11 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
        TSLB , SMOIS , SH2O , DZS , FNDSOILW , FNDSNOWH ,             &
        TSK, isnowxy , tvxy     ,tgxy     ,canicexy ,         TMN,     XICE,   &
        canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
-<<<<<<< HEAD
-       fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
-=======
        fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy, qrainxy, wslakexy, zwtxy, waxy, &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
        stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
        grainxy  ,gddxy    ,                                                   &
        croptype ,cropcat  ,                      &
-<<<<<<< HEAD
-!jref:start
-       t2mvxy   ,t2mbxy   ,chstarxy,            &
-!jref:end       
-       NSOIL, restart,                 &
-       allowed_to_read , iopt_run,  iopt_crop,                        &
-=======
        irnumsi  ,irnummi  ,irnumfi  ,irwatsi,    &
        irwatmi  ,irwatfi  ,ireloss  ,irsivol,    &
        irmivol  ,irfivol  ,irrsplh  ,            &
@@ -1674,7 +1552,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 !jref:end       
        NSOIL, restart,                 &
        allowed_to_read , iopt_run,  iopt_crop, iopt_irr, iopt_irrm,           &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        sf_urban_physics,                         &  ! urban scheme
        ids,ide, jds,jde, kds,kde,                &
        ims,ime, jms,jme, kms,kme,                &
@@ -1697,11 +1574,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
          &                           ims,ime, jms,jme, kms,kme,  &
          &                           its,ite, jts,jte, kts,kte
 
-<<<<<<< HEAD
-    INTEGER, INTENT(IN)       ::     NSOIL, iopt_run, iopt_crop
-=======
     INTEGER, INTENT(IN)       ::     NSOIL, iopt_run, iopt_crop, iopt_irr, iopt_irrm
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
     LOGICAL, INTENT(IN)       ::     restart,                    &
          &                           allowed_to_read
@@ -1749,10 +1622,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: sneqvoxy    !snow mass at last time step(mm h2o)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: alboldxy    !snow albedo at last time step (-)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qsnowxy     !snowfall on the ground [mm/s]
-<<<<<<< HEAD
-=======
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qrainxy     !rainfall on the ground [mm/s]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: wslakexy    !lake water storage [mm]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: zwtxy       !water table depth [m]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: waxy        !water in the "aquifer" [mm]
@@ -1771,8 +1641,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
     INTEGER, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: cropcat
     REAL   , DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: croptype
 
-<<<<<<< HEAD
-=======
     INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: irnumsi
     INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: irnummi
     INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: irnumfi
@@ -1785,7 +1653,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
     REAL,    DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: irfivol
     REAL,    DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: irrsplh
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! IOPT_RUN = 5 option
 
     REAL, DIMENSION(ims:ime,1:nsoil,jms:jme), INTENT(INOUT) , OPTIONAL :: smoiseq !equilibrium soil moisture content [m3m-3]
@@ -1844,10 +1711,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
     call read_mp_global_parameters()
     call read_mp_crop_parameters()
     call read_mp_optional_parameters()
-<<<<<<< HEAD
-=======
     if(iopt_irr  >= 1) call read_mp_irrigation_parameters()
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
     IF( .NOT. restart ) THEN
 
@@ -1868,11 +1732,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
        ENDIF
 
 
-<<<<<<< HEAD
-       ! Check if snow/snowh are consistent and cap SWE at 2000mm;
-=======
        ! Check if snow/snowh are consistent and cap SWE at 5000mm;
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        !  the Noah-MP code does it internally but if we don't do it here, problems ensue
        DO J = jts,jtf
           DO I = its,itf
@@ -1881,15 +1741,9 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                                      ,i,j,snow(i,j),snowh(i,j)
                CALL wrf_message(err_message)
              ENDIF
-<<<<<<< HEAD
-             IF ( SNOW( i,j ) > 2000. ) THEN
-               SNOWH(I,J) = SNOWH(I,J) * 2000. / SNOW(I,J)      ! SNOW in mm and SNOWH in m
-               SNOW (I,J) = 2000.                               ! cap SNOW at 2000, maintain density
-=======
              IF ( SNOW( i,j ) > 5000. ) THEN
                SNOWH(I,J) = SNOWH(I,J) * 5000. / SNOW(I,J)      ! SNOW in mm and SNOWH in m
                SNOW (I,J) = 5000.                               ! cap SNOW at 5000, maintain density
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              ENDIF
           ENDDO
        ENDDO
@@ -1991,10 +1845,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
              sneqvoxy   (I,J) = 0.0
              alboldxy   (I,J) = 0.65
              qsnowxy    (I,J) = 0.0
-<<<<<<< HEAD
-=======
              qrainxy    (I,J) = 0.0
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
              wslakexy   (I,J) = 0.0
 
              if(iopt_run.ne.5) then 
@@ -2051,11 +1902,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 		        croptype(i,1,j) > croptype(i,4,j) ) then   ! choose corn
 
 		   cropcat (i,j) = 1
-<<<<<<< HEAD
-                   lfmassxy(i,j) =    lai(i,j)/0.035
-=======
                    lfmassxy(i,j) =    lai(i,j)/0.015               ! Initialize lfmass Zhe Zhang 2020-07-13
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	         elseif(croptype(i,2,j) > croptype(i,1,j) .and. &
@@ -2063,11 +1910,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 		        croptype(i,2,j) > croptype(i,4,j) ) then   ! choose soybean
 
 		   cropcat (i,j) = 2
-<<<<<<< HEAD
-                   lfmassxy(i,j) =    lai(i,j)/0.015
-=======
                    lfmassxy(i,j) =    lai(i,j)/0.030               ! Initialize lfmass Zhe Zhang 2020-07-13
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                    stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	         else
@@ -2109,8 +1952,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 
              end if
 
-<<<<<<< HEAD
-=======
 ! Noah-MP irrigation scheme !pvk
              if(iopt_irr >= 1 .and. iopt_irr <= 3) then
                 if(iopt_irrm == 0 .or. iopt_irrm ==1) then       ! sprinkler
@@ -2129,7 +1970,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                 end if
              end if
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	   END IF
 
           enddo
@@ -2828,10 +2668,7 @@ end function checkIfHarvest
   SUBROUTINE noahmp_urban(sf_urban_physics,   NSOIL,         IVGTYP,  ITIMESTEP,            & ! IN : Model configuration 
                                  DT,     COSZ_URB2D,     XLAT_URB2D,                        & ! IN : Time/Space-related
                                 T3D,           QV3D,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
-<<<<<<< HEAD
-=======
                              SWDDIR,         SWDDIF,                                        &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 		                GLW,          P8W3D,         RAINBL,       DZ8W,      ZNT,  & ! IN : Forcing
                                 TSK,            HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM 
 		             ALBEDO,          EMISS,           QSFC,                        & ! IN/OUT : LSM 
@@ -2859,11 +2696,7 @@ end function checkIfHarvest
                                 chs,           chs2,           cqs2,                        & !H
                       num_urban_ndm,  urban_map_zrd,  urban_map_zwd, urban_map_gd,          & !I multi-layer urban
                        urban_map_zd,  urban_map_zdf,   urban_map_bd, urban_map_wd,          & !I multi-layer urban
-<<<<<<< HEAD
-                      urban_map_gbd,  urban_map_fbd,                                        & !I multi-layer urban
-=======
                       urban_map_gbd,  urban_map_fbd, urban_map_zgrd,                                      & !I multi-layer urban
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                        num_urban_hi,                                                        & !I multi-layer urban
                           trb_urb4d,      tw1_urb4d,      tw2_urb4d,  tgb_urb4d,            & !H multi-layer urban
                          tlev_urb3d,     qlev_urb3d,                                        & !H multi-layer urban
@@ -2873,13 +2706,10 @@ end function checkIfHarvest
                        sfvent_urb3d,   lfvent_urb3d,                                        & !H multi-layer urban
                        sfwin1_urb3d,   sfwin2_urb3d,                                        & !H multi-layer urban
                          sfw1_urb3d,     sfw2_urb3d,      sfr_urb3d,  sfg_urb3d,            & !H multi-layer urban
-<<<<<<< HEAD
-=======
                         ep_pv_urb3d,     t_pv_urb3d,                                        & !RMS
                           trv_urb4d,       qr_urb4d,      qgr_urb3d,  tgr_urb3d,            & !RMS
                         drain_urb4d,  draingr_urb3d,     sfrv_urb3d, lfrv_urb3d,            & !RMS
                           dgr_urb3d,       dg_urb3d,      lfr_urb3d,  lfg_urb3d,            & !RMS
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                            lp_urb2d,       hi_urb2d,       lb_urb2d,  hgt_urb2d,            & !H multi-layer urban
                            mh_urb2d,     stdh_urb2d,       lf_urb2d,                        & !SLUCM
                              th_phy,            rho,          p_phy,        ust,            & !I multi-layer urban
@@ -2887,13 +2717,8 @@ end function checkIfHarvest
                             a_u_bep,        a_v_bep,        a_t_bep,    a_q_bep,            & !O multi-layer urban
                             a_e_bep,        b_u_bep,        b_v_bep,                        & !O multi-layer urban
                             b_t_bep,        b_q_bep,        b_e_bep,    dlg_bep,            & !O multi-layer urban
-<<<<<<< HEAD
                            dl_u_bep,         sf_bep,         vl_bep,                        & !O multi-layer urban
 			   ahe_scheme,     ahe24,  ahucm        )
-=======
-                           dl_u_bep,         sf_bep,         vl_bep                         & !O multi-layer urban
-                 )
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
   USE module_sf_urban,    only: urban
   USE module_sf_bep,      only: bep
@@ -2917,11 +2742,8 @@ end function checkIfHarvest
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  U_PHY     ! 3D U wind component [m/s]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  V_PHY     ! 3D V wind component [m/s]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SWDOWN    ! solar down at surface [W m-2]
-<<<<<<< HEAD
-=======
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SWDDIF    ! solar down at surface [W m-2]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SWDDIR    ! solar down at surface [W m-2]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  GLW       ! longwave down at surface [W m-2]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  P8W3D     ! 3D pressure, valid at interface [Pa]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  RAINBL    ! total input precipitation [mm]
@@ -2962,14 +2784,11 @@ end function checkIfHarvest
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),          INTENT(INOUT) :: CHS, CHS2, CQS2
 
      INTEGER,  INTENT(IN   )   ::  julian, julyr                  !urban
-<<<<<<< HEAD
      INTEGER,  INTENT(IN   )   :: ahe_scheme
      REAL, INTENT(IN), DIMENSION( 0:23, ims:ime, jms:jme ), OPTIONAL :: ahe24
      REAL, INTENT(OUT), DIMENSION( ims:ime, jms:jme ) :: ahucm
      REAL, DIMENSION(0:23) :: AH24
      REAL :: AH
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 ! local variables lsm --> urban
 
@@ -3129,10 +2948,7 @@ end function checkIfHarvest
      INTEGER,                                                           INTENT(IN   ) :: urban_map_wd
      INTEGER,                                                           INTENT(IN   ) :: urban_map_gbd
      INTEGER,                                                           INTENT(IN   ) :: urban_map_fbd
-<<<<<<< HEAD
-=======
      INTEGER,                                                           INTENT(IN   ) :: urban_map_zgrd
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      INTEGER,                                                           INTENT(IN   ) :: NUM_URBAN_HI
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ),     INTENT(IN   ) :: hi_urb2d
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),                     INTENT(IN   ) :: lp_urb2d
@@ -3163,8 +2979,6 @@ end function checkIfHarvest
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ),    INTENT(INOUT) :: sfw2_urb3d
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),    INTENT(INOUT) :: sfr_urb3d
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),    INTENT(INOUT) :: sfg_urb3d
-<<<<<<< HEAD
-=======
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ep_pv_urb3d !GRZ
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: t_pv_urb3d !GRZ
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zgrd, jms:jme ),INTENT(INOUT) :: trv_urb4d !GRZ
@@ -3179,7 +2993,6 @@ end function checkIfHarvest
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: dg_urb3d !GRZ
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: lfr_urb3d !GRZ
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: lfg_urb3d !GRZ
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            INTENT(INOUT) :: a_u_bep   !Implicit momemtum component X-direction
      REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            INTENT(INOUT) :: a_v_bep   !Implicit momemtum component Y-direction
      REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            INTENT(INOUT) :: a_t_bep   !Implicit component pot. temperature
@@ -3338,15 +3151,12 @@ ILOOP : DO I = its, ite
       CHECK = 1
     END IF
 
-<<<<<<< HEAD
     IF(PRESENT(ahe24))THEN
        AH24 = ahe24(:,I,J)
     ELSE
        AH24 = 0.0
     ENDIF
 
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Call urban
 
     CALL cal_mon_day(julian,julyr,jmonth,jday)
@@ -3370,14 +3180,9 @@ ILOOP : DO I = its, ite
             hgt_urb,    frc_urb,     lb_urb,      check, CMCR_URB,TGR_URB,             & ! H
            TGRL_URB,    SMR_URB,   CMGR_URB,   CHGR_URB,   jmonth,                     & ! H
           DRELR_URB,  DRELB_URB,                                                       & ! H
-<<<<<<< HEAD
           DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,AHE_SCHEME,AH24,AH )
 
     AHUCM(I,J)    = AH
-=======
-          DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB )
-
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     TS_URB2D(I,J) = TS_URB
 
     ALBEDO(I,J)   = FRC_URB2D(I,J) * ALB_URB + (1-FRC_URB2D(I,J)) * ALBEDO(I,J)        ![-]      
@@ -3525,25 +3330,18 @@ END DO
                declin_urb,   cosz_urb2d,    omg_urb2d,                     &
             num_urban_ndm, urban_map_zrd, urban_map_zwd, urban_map_gd,     &
              urban_map_zd, urban_map_zdf,  urban_map_bd, urban_map_wd,     &
-<<<<<<< HEAD
-            urban_map_gbd, urban_map_fbd,  num_urban_hi,                   &
-=======
             urban_map_gbd, urban_map_fbd,  urban_map_zgrd,num_urban_hi,    &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                 trb_urb4d,    tw1_urb4d,    tw2_urb4d,    tgb_urb4d,       &
                tlev_urb3d,   qlev_urb3d, tw1lev_urb3d, tw2lev_urb3d,       &
               tglev_urb3d,  tflev_urb3d,  sf_ac_urb3d,  lf_ac_urb3d,       &
               cm_ac_urb3d, sfvent_urb3d, lfvent_urb3d,                     &
              sfwin1_urb3d, sfwin2_urb3d,                                   &
                sfw1_urb3d,   sfw2_urb3d,    sfr_urb3d,    sfg_urb3d,       &
-<<<<<<< HEAD
-=======
               ep_pv_urb3d,   t_pv_urb3d,                                   & !RMS
                 trv_urb4d,     qr_urb4d,    qgr_urb3d,   tgr_urb3d,        & !RMS
               drain_urb4d,draingr_urb3d,   sfrv_urb3d,  lfrv_urb3d,        & !RMS
                 dgr_urb3d,     dg_urb3d,    lfr_urb3d,   lfg_urb3d,        & !RMS
                    rainbl,       swddir,       swddif,                     &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                  lp_urb2d,     hi_urb2d,     lb_urb2d,    hgt_urb2d,       &
                   a_u_bep,      a_v_bep,      a_t_bep,                     &
                   a_e_bep,      b_u_bep,      b_v_bep,                     &
@@ -3626,11 +3424,7 @@ IF((SF_URBAN_PHYSICS == 2).OR.(SF_URBAN_PHYSICS == 3))THEN
     lh(i,j)       = qfx(i,j)*xlv
     hfx(i,j)      = hfx_urb(i,j)                         + (1-frc_urb2d(i,j))*hfx_rural(i,j)      ![W/m/m]
     sh_urb2d(i,j) = hfx_urb(i,j)/frc_urb2d(i,j)
-<<<<<<< HEAD
-    lh_urb2d(i,j) = qfx_urb(i,j)*xlv
-=======
     lh_urb2d(i,j) = qfx_urb(i,j)*xlv/frc_urb2d(i,j)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
     g_urb2d(i,j)  = grdflx_urb(i,j)
     rn_urb2d(i,j) = rs_abs_urb(i,j)+emiss_urb(i,j)*glw(i,j)-rl_up_urb(i,j)
     ust(i,j)      = (umom**2.+vmom**2.)**.25

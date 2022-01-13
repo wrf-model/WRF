@@ -17,11 +17,7 @@ CONTAINS
                     use_tot_or_hyd_p,extrap_below_grnd,missing,     &  
                     num_z_levels,max_z_levels,z_levels,             &
                     z_zl,u_zl,v_zl,t_zl,rh_zl,ght_zl,s_zl,td_zl,    &
-<<<<<<< HEAD
-                    q_zl,                                           &
-=======
                     q_zl,p_zl,                                      &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                     ids,ide, jds,jde, kds,kde,                      &
                     ims,ime, jms,jme, kms,kme,                      &
                     its,ite, jts,jte, kts,kte                       )
@@ -48,11 +44,7 @@ CONTAINS
       !  Output variables
    
       REAL   , INTENT(  OUT) ,  DIMENSION(num_z_levels)                     :: z_zl
-<<<<<<< HEAD
-      REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , num_z_levels , jms:jme) :: u_zl,v_zl,t_zl,rh_zl,ght_zl,s_zl,td_zl,q_zl
-=======
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , num_z_levels , jms:jme) :: u_zl,v_zl,t_zl,rh_zl,ght_zl,s_zl,td_zl,q_zl,p_zl
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    
       !  Local variables
    
@@ -90,61 +82,16 @@ CONTAINS
                ght_zl(i,kz,j) = missing
                s_zl  (i,kz,j) = missing
                td_zl (i,kz,j) = missing
-<<<<<<< HEAD
-=======
-               p_zl  (i,kz,j) = missing
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-            END DO
-         END DO
-      END DO
-   
-      !  Loop over each i,j location
-   
-      j_loop : DO j = jts , MIN(jte,jde-1)
-         i_loop : DO i = its , MIN(ite,ide-1)
-   
-            !  For each i,j location, loop over the selected
-            !  pressure levels to find
-   
-            ke_h = kts
-            ke_f = kts
-            kz_loop : DO kz = 1 , num_z_levels
-   
-               !  For this particular i,j and height level, find the
-               !  eta levels that surround this point on half-levels.
-               !  Negative heights are a flag to do AGL.
-   
-               ke_loop_half : DO ke = ke_h , kte-2
-   
-                  zu = ( zp(i,ke+1,j)+zb(i,ke+1,j) + zp(i,ke+2,j)+zb(i,ke+2,j) ) / 2.0 / g
-                  zd = ( zp(i,ke  ,j)+zb(i,ke  ,j) + zp(i,ke+1,j)+zb(i,ke+1,j) ) / 2.0 / g
-                  IF ( z_zl(kz) .LT. 1 ) THEN
-                     zm = ABS(z_zl(kz)) + ht(i,j)
-                  ELSE 
-                     zm = z_zl(kz)
-                  END IF
-                 
-                  IF ( ( zd .LE. zm ) .AND. ( zu .GT. zm ) ) THEN
-
-                     pu = pp(i,ke+1,j)+pb(i,ke+1,j) 
-                     pd = pp(i,ke  ,j)+pb(i,ke  ,j)
-<<<<<<< HEAD
-                     pm = ( pu * (zm-zd) + pd * (zu-zm) ) / (zu-zd)
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    
                      !  Found trapping height: up, middle, down.
                      !  We are doing first order interpolation.  
                      !  Now we just put in a list of diagnostics for this level.
-<<<<<<< HEAD
-=======
 
                      !  0. Pressure (Pa)
                      !  Note that it is ln(p) that varies linearly with height, not p itself
                      
                      pm = exp( ( log(pu) * (zm-zd) + log(pd) * (zu-zm) ) / (zu-zd) )
                      p_zl(i,kz,j) = pm
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    
                      !  1. Temperature (K)
    

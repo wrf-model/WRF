@@ -16,11 +16,7 @@ CONTAINS
 
    SUBROUTINE diagnostics_driver ( grid, config_flags,                  &
                                    moist, chem, tracer, scalar,         &
-<<<<<<< HEAD
-                                   th_phy, pi_phy, p_phy, rho_phy,      & 
-=======
                                    th_phy, pi_phy, p_phy,               & 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                    p8w, t8w, dz8w,                      &
                                    curr_secs, curr_secs2,               &
                                    diag_flag,                           &
@@ -43,91 +39,6 @@ CONTAINS
                                           SKIP_PRESS_DIAGS, SKIP_Z_DIAGS,              &
                                           DO_TRAD_FIELDS,                              &
                                           DO_SOLAR_OUTPUT,                             &
-<<<<<<< HEAD
-=======
-                                          PARAM_FIRST_SCALAR,                          &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-                                          P_QG, P_QH, P_QV, P_QC, P_QI, P_QS,          &
-                                          P_QNG, P_QH, P_QNH, P_QR, P_QNR,             &
-                                          F_QV, F_QC, F_QI, F_QS,                      &
-                     KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
-                     WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
-                     MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
-                     NSSL_2MOM, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
-                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN_SHPUND, FULL_KHAIN_LYNN,  &
-                     MORR_TM_AERO !TWG add    !,MILBRANDT3MOM, NSSL_3MOM, MORR_MILB_P3
-
-      USE module_driver_constants, ONLY: max_plevs, max_zlevs
-
-      !  From where we preferably are pulling g, Cp, etc.
-
-      USE module_model_constants, ONLY: g, R_v, R_d, Cp, T0, RCP
-
-      !  This gives us the type definition for grid (domain) and some clock information.
-
-!     USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_subgrid
-      USE module_domain, ONLY : domain, domain_clock_get, domain_get_current_time
-
-      !  All of the information from the namelist is in config_flags.  The
-      !  type declaration for this puppy must be available.  While each domain
-      !  has a config_flags, together they are stored in model_config_rec.
-
-      USE module_configure, ONLY : grid_config_rec_type, &
-                                   model_config_rec
-
-      USE module_streams
-      USE module_utility, ONLY : WRFU_Time 
-
-      !=============================================================
-      !  USE Association for the Diagnostic Packages
-      !=============================================================
-      
-      USE module_lightning_driver, ONLY : lightning_driver      
-      USE module_diag_misc, ONLY : diagnostic_output_calc
-      USE module_diag_nwp, ONLY : diagnostic_output_nwp
-      USE module_diag_cl, ONLY : clwrf_output_calc
-      USE module_diag_pld, ONLY : pld
-      USE module_diag_zld, ONLY : zld
-      USE module_diag_afwa, ONLY : afwa_diagnostics_driver
-      USE module_diag_rasm, ONLY : mean_output_calc, diurnalcycle_output_calc
-      USE module_diag_hailcast, ONLY : hailcast_diagnostic_driver
-      USE module_diag_solar, ONLY : solar_diag
-      USE module_trad_fields, ONLY : trad_fields
-
-      IMPLICIT NONE
-
-
-      !=============================================================
-      !  Subroutine Arguments
-      !=============================================================
-
-      !  Arguments passed in.  All of the diagnostics are part of the grid structure, so
-      !  even though we are not changing any of the fundamental variables, we are computing
-      !  the diagnostics.  Therefore grid is INOUT.
-
-      TYPE ( domain ), INTENT(INOUT) :: grid
-
-      !  We are not changing any of the namelist settings.
-
-      TYPE ( grid_config_rec_type ), INTENT(IN) :: config_flags
-
-      !  The 4d arrays are input only, no mods to them.
-
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_moist ) , INTENT(IN) :: moist
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_chem  ) , INTENT(IN) :: chem
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer) , INTENT(IN) :: tracer
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar) , INTENT(IN) :: scalar
-
-      !  A few handy 3d arrays computed for the physics scheme: pressure (Pa) and
-      !  temperature (K), on both half (_phy) and full levels.
-
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme)            , INTENT(IN) :: th_phy  , &
-                                                                           p_phy   , &
-                                                                           pi_phy  , &
-<<<<<<< HEAD
-                                                                           rho_phy , &
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                                            dz8w    , &
                                                                            p8w     , &
                                                                            t8w
@@ -921,51 +832,7 @@ CONTAINS
                       ,s_zl  = grid%s_zl                                    &
                       ,td_zl = grid%td_zl                                   &
                       ,q_zl = grid%q_zl                                     &
-<<<<<<< HEAD
-=======
-                      ,p_zl = grid%p_zl                                     &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-               !  Dimension arguments
-                      ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
-                      ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
-                      ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)              &
-                      ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)              &
-                      ,KTS=k_start,KTE=k_end+1                              )
-            END DO
-            !$OMP END PARALLEL DO
-         END IF TIME_TO_DO_ZL_DIAGS
-      END IF ZL_DIAGNOSTICS
-
-
-
-
-      !  AFWA diagnostic package.
-
-      AFWA_DIAGS : IF ( config_flags%afwa_diag_opt == 1 ) THEN
-
-         IF ( ( config_flags%history_interval == 0 ) ) THEN
-            WRITE (diag_message , * ) &
-            "AFWA Diagnostics Error : No 'history_interval' defined in namelist"
-            CALL wrf_error_fatal ( diag_message )
-         END IF
-
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
-         DO ij = 1 , grid%num_tiles
-
-            CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: AFWA DIAGNOSTICS' )
-
-            CALL afwa_diagnostics_driver (   grid , config_flags              &
-                         ,moist                                               &
-                         ,scalar                                              &
-                         ,chem                                                &
-                         ,th_phy , pi_phy , p_phy                             &
-                         ,grid%u_phy , grid%v_phy                             &
-<<<<<<< HEAD
-                         ,dz8w , p8w , t8w , rho_phy, grid%rho                &
-=======
                          ,dz8w , p8w , t8w , grid%rho                         &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                          ,ids, ide, jds, jde, kds, kde                        &
                          ,ims, ime, jms, jme, kms, kme                        &
                          ,ips, ipe, jps, jpe, kps, kpe                        &
@@ -1103,12 +970,8 @@ CONTAINS
           CALL solar_diag (                                                 &
               rho=grid%rho, dz8w=dz8w, ph=grid%ph_2, phb=grid%phb,          &
               cldfrac3d=grid%cldfra, coszen=grid%coszen, swdnb=grid%swdnb,  &
-<<<<<<< HEAD
-              swdnt=grid%swdnt, qv=moist(ims,kms,jms,P_QV),                 &
-=======
               swdnt=grid%swdnt, param_first_scalar=param_first_scalar,      &
               p_qc=p_qc, p_qi=p_qi, p_qs=p_qs, qv=moist(ims,kms,jms,P_QV),  &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               qc=moist(ims,kms,jms,P_QC), qi=moist(ims,kms,jms,P_QI),       &
               qs=moist(ims,kms,jms,P_QS), qc_tot=grid%qc_tot,               &
               qi_tot=grid%qi_tot,                                           &

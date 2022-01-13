@@ -76,26 +76,7 @@
 ! 1) changes and cleanup of code comments
 ! 2) correction to universal gas constant (very small change)
 
-<<<<<<< HEAD
-=======
-! CHANGES FOR WRFV4.3
-! 1) fix to saturation vapor pressure polysvp to work at T < -80 C
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
-! RATIOS AND NUMBER CONCENTRATIONS OF FIVE HYDROMETEOR SPECIES:
-! CLOUD DROPLETS, CLOUD (SMALL) ICE, RAIN, SNOW, AND GRAUPEL/HAIL.
-
-MODULE MODULE_MP_MORR_TWO_MOMENT
-   USE     module_wrf_error
-   USE module_mp_radar
-
-<<<<<<< HEAD
-! USE WRF PHYSICS CONSTANTS
-=======
 !  USE WRF PHYSICS CONSTANTS
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
   use module_model_constants, ONLY: CP, G, R => r_d, RV => r_v, EP_2
 
 !  USE module_state_description
@@ -579,11 +560,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                ,IMS,IME, JMS,JME, KMS,KME               & ! memory dims
                ,ITS,ITE, JTS,JTE, KTS,KTE               & ! tile   dims            )
 !jdf		   ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
-<<<<<<< HEAD
-               ,rainprod, evapprod                      &
-=======
                ,wetscav_on, rainprod, evapprod                      &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 		   ,QLSINK,PRECR,PRECI,PRECS,PRECG &        ! HM ADD, WRF-CHEM
                                             )
  
@@ -684,179 +661,14 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
 
-<<<<<<< HEAD
-=======
-   LOGICAL, optional, INTENT(IN) :: wetscav_on
-
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-   ! LOCAL VARIABLES
-
-   REAL, DIMENSION(its:ite, kts:kte, jts:jte)::                     &
-                      effi, effs, effr, EFFG
-
-   REAL, DIMENSION(its:ite, kts:kte, jts:jte)::                     &
-                      T, WVAR, EFFC
-
-   REAL, DIMENSION(kts:kte) ::                                                                & 
-                            QC_TEND1D, QI_TEND1D, QNI_TEND1D, QR_TEND1D,                      &
-                            NI_TEND1D, NS_TEND1D, NR_TEND1D,                                  &
-                            QC1D, QI1D, QR1D,NI1D, NS1D, NR1D, QS1D,                          &
-                            T_TEND1D,QV_TEND1D, T1D, QV1D, P1D, W1D, WVAR1D,         &
-                            EFFC1D, EFFI1D, EFFS1D, EFFR1D,DZ1D,   &
-   ! HM ADD GRAUPEL
-                            QG_TEND1D, NG_TEND1D, QG1D, NG1D, EFFG1D, &
-
-! ADD SEDIMENTATION TENDENCIES (UNITS OF KG/KG/S)
-                            QGSTEN,QRSTEN, QISTEN, QNISTEN, QCSTEN, &
-! ADD CUMULUS TENDENCIES
-                            QRCU1D, QSCU1D, QICU1D
-
-! add cumulus tendencies
-
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
-      qrcuten, qscuten, qicuten
-
-  LOGICAL, INTENT(IN), OPTIONAL ::                F_QNDROP  ! wrf-chem
-  LOGICAL :: flag_qndrop  ! wrf-chem
-  integer :: iinum ! wrf-chem
-
-! wrf-chem
-   REAL, DIMENSION(kts:kte) :: nc1d, nc_tend1d,C2PREC,CSED,ISED,SSED,GSED,RSED    
-   REAL, DIMENSION(kts:kte) :: rainprod1d, evapprod1d
-! HM add reflectivity      
-   REAL, DIMENSION(kts:kte) :: dBZ
-                          
-   REAL PRECPRT1D, SNOWRT1D, SNOWPRT1D, GRPLPRT1D ! hm added 7/13/13
-
-   INTEGER I,K,J
-
-   REAL DT
-
-   LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
-   INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
-
-<<<<<<< HEAD
-=======
    LOGICAL :: has_wetscav
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! below for wrf-chem
    flag_qndrop = .false.
    IF ( PRESENT ( f_qndrop ) ) flag_qndrop = f_qndrop
 !!!!!!!!!!!!!!!!!!!!!!
 
-<<<<<<< HEAD
-=======
-   IF( PRESENT( wetscav_on ) ) THEN
-     has_wetscav = wetscav_on
-   ELSE
-     has_wetscav = .false.
-   ENDIF
-
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-   ! Initialize tendencies (all set to 0) and transfer
-   ! array to local variables
-   DT = DT_IN   
-
-   DO I=ITS,ITE
-   DO J=JTS,JTE
-   DO K=KTS,KTE
-       T(I,K,J)        = TH(i,k,j)*PII(i,k,j)
-
-! NOTE: WVAR NOT CURRENTLY USED IN CODE !!!!!!!!!!
-! currently assign wvar to 0.5 m/s (not coupled with PBL scheme)
-
-       WVAR(I,K,J)     = 0.5
-
-! currently mixing of number concentrations also is neglected (not coupled with PBL schemes)
-
-   END DO
-   END DO
-   END DO
-
-   do i=its,ite      ! i loop (east-west)
-   do j=jts,jte      ! j loop (north-south)
-   !
-   ! Transfer 3D arrays into 1D for microphysical calculations
-   !
-
-! hm , initialize 1d tendency arrays to zero
-
-      do k=kts,kte   ! k loop (vertical)
-
-          QC_TEND1D(k)  = 0.
-          QI_TEND1D(k)  = 0.
-          QNI_TEND1D(k) = 0.
-          QR_TEND1D(k)  = 0.
-          NI_TEND1D(k)  = 0.
-          NS_TEND1D(k)  = 0.
-          NR_TEND1D(k)  = 0.
-          T_TEND1D(k)   = 0.
-          QV_TEND1D(k)  = 0.
-          nc_tend1d(k) = 0. ! wrf-chem
-
-          QC1D(k)       = QC(i,k,j)
-          QI1D(k)       = QI(i,k,j)
-          QS1D(k)       = QS(i,k,j)
-          QR1D(k)       = QR(i,k,j)
-
-          NI1D(k)       = NI(i,k,j)
-
-          NS1D(k)       = NS(i,k,j)
-          NR1D(k)       = NR(i,k,j)
-! HM ADD GRAUPEL
-          QG1D(K)       = QG(I,K,j)
-          NG1D(K)       = NG(I,K,j)
-          QG_TEND1D(K)  = 0.
-          NG_TEND1D(K)  = 0.
-
-          T1D(k)        = T(i,k,j)
-          QV1D(k)       = QV(i,k,j)
-          P1D(k)        = P(i,k,j)
-          DZ1D(k)       = DZ(i,k,j)
-          W1D(k)        = W(i,k,j)
-          WVAR1D(k)     = WVAR(i,k,j)
-! add cumulus tendencies, already decoupled
-          qrcu1d(k)     = qrcuten(i,k,j)
-          qscu1d(k)     = qscuten(i,k,j)
-          qicu1d(k)     = qicuten(i,k,j)
-      end do  !jdf added this
-! below for wrf-chem
-   IF (flag_qndrop .AND. PRESENT( qndrop )) THEN
-      iact = 3
-      DO k = kts, kte
-         nc1d(k)=qndrop(i,k,j)
-         iinum=0
-      ENDDO
-   ELSE
-      DO k = kts, kte
-         nc1d(k)=0. ! temporary placeholder, set to constant in microphysics subroutine
-         iinum=1
-      ENDDO
-   ENDIF
-
-!jdf  end do
-
-      call MORR_TWO_MOMENT_MICRO(QC_TEND1D, QI_TEND1D, QNI_TEND1D, QR_TEND1D,            &
-       NI_TEND1D, NS_TEND1D, NR_TEND1D,                                                  &
-       QC1D, QI1D, QS1D, QR1D,NI1D, NS1D, NR1D,                                          &
-       T_TEND1D,QV_TEND1D, T1D, QV1D, P1D, DZ1D, W1D, WVAR1D,                   &
-       PRECPRT1D,SNOWRT1D,                                                               &
-       SNOWPRT1D,GRPLPRT1D,                 & ! hm added 7/13/13
-       EFFC1D,EFFI1D,EFFS1D,EFFR1D,DT,                                                   &
-                                            IMS,IME, JMS,JME, KMS,KME,                   &
-                                            ITS,ITE, JTS,JTE, KTS,KTE,                   & ! HM ADD GRAUPEL
-                                    QG_TEND1D,NG_TEND1D,QG1D,NG1D,EFFG1D, &
-                                    qrcu1d, qscu1d, qicu1d, &
-! ADD SEDIMENTATION TENDENCIES
-                                  QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
-                                  nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
-#if (WRF_CHEM == 1)
-<<<<<<< HEAD
-                                  ,rainprod1d, evapprod1d & !wrf-chem
-=======
                                   ,has_wetscav,rainprod1d, evapprod1d & !wrf-chem
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                        )
 
@@ -913,15 +725,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 !          EFFIS(I,K,J)     = MAX(EFFIS(I,K,J),13.)
 
 #if ( WRF_CHEM == 1)
-<<<<<<< HEAD
-           IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
-           IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
-=======
            IF ( has_wetscav ) THEN
              IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
              IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
            ENDIF
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
       end do
@@ -967,11 +774,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                         nc3d,nc3dten,iinum, & ! wrf-chem
 				c2prec,CSED,ISED,SSED,GSED,RSED  &  ! hm added, wrf-chem
 #if (WRF_CHEM == 1)
-<<<<<<< HEAD
-        ,rainprod, evapprod &
-=======
         ,has_wetscav,rainprod, evapprod &
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
                         )
 
@@ -1069,283 +872,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
         REAL DT         ! MODEL TIME STEP (SEC)
 
-<<<<<<< HEAD
-=======
-#if (WRF_CHEM == 1)
-      LOGICAL, INTENT(IN) :: has_wetscav
-#endif
 
-
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-!.....................................................................................................
-! LOCAL VARIABLES: ALL PARAMETERS BELOW ARE LOCAL TO SCHEME AND DON'T NEED TO COMMUNICATE WITH THE
-! REST OF THE MODEL.
-
-! SIZE PARAMETER VARIABLES
-
-     REAL, DIMENSION(KTS:KTE) :: LAMC          ! SLOPE PARAMETER FOR DROPLETS (M-1)
-     REAL, DIMENSION(KTS:KTE) :: LAMI          ! SLOPE PARAMETER FOR CLOUD ICE (M-1)
-     REAL, DIMENSION(KTS:KTE) :: LAMS          ! SLOPE PARAMETER FOR SNOW (M-1)
-     REAL, DIMENSION(KTS:KTE) :: LAMR          ! SLOPE PARAMETER FOR RAIN (M-1)
-     REAL, DIMENSION(KTS:KTE) :: LAMG          ! SLOPE PARAMETER FOR GRAUPEL (M-1)
-     REAL, DIMENSION(KTS:KTE) :: CDIST1        ! PSD PARAMETER FOR DROPLETS
-     REAL, DIMENSION(KTS:KTE) :: N0I           ! INTERCEPT PARAMETER FOR CLOUD ICE (KG-1 M-1)
-     REAL, DIMENSION(KTS:KTE) :: N0S           ! INTERCEPT PARAMETER FOR SNOW (KG-1 M-1)
-     REAL, DIMENSION(KTS:KTE) :: N0RR          ! INTERCEPT PARAMETER FOR RAIN (KG-1 M-1)
-     REAL, DIMENSION(KTS:KTE) :: N0G           ! INTERCEPT PARAMETER FOR GRAUPEL (KG-1 M-1)
-     REAL, DIMENSION(KTS:KTE) :: PGAM          ! SPECTRAL SHAPE PARAMETER FOR DROPLETS
-
-! MICROPHYSICAL PROCESSES
-
-     REAL, DIMENSION(KTS:KTE) ::  NSUBC     ! LOSS OF NC DURING EVAP
-     REAL, DIMENSION(KTS:KTE) ::  NSUBI     ! LOSS OF NI DURING SUB.
-     REAL, DIMENSION(KTS:KTE) ::  NSUBS     ! LOSS OF NS DURING SUB.
-     REAL, DIMENSION(KTS:KTE) ::  NSUBR     ! LOSS OF NR DURING EVAP
-     REAL, DIMENSION(KTS:KTE) ::  PRD       ! DEP CLOUD ICE
-     REAL, DIMENSION(KTS:KTE) ::  PRE       ! EVAP OF RAIN
-     REAL, DIMENSION(KTS:KTE) ::  PRDS      ! DEP SNOW
-     REAL, DIMENSION(KTS:KTE) ::  NNUCCC    ! CHANGE N DUE TO CONTACT FREEZ DROPLETS
-     REAL, DIMENSION(KTS:KTE) ::  MNUCCC    ! CHANGE Q DUE TO CONTACT FREEZ DROPLETS
-     REAL, DIMENSION(KTS:KTE) ::  PRA       ! ACCRETION DROPLETS BY RAIN
-     REAL, DIMENSION(KTS:KTE) ::  PRC       ! AUTOCONVERSION DROPLETS
-     REAL, DIMENSION(KTS:KTE) ::  PCC       ! COND/EVAP DROPLETS
-     REAL, DIMENSION(KTS:KTE) ::  NNUCCD    ! CHANGE N FREEZING AEROSOL (PRIM ICE NUCLEATION)
-     REAL, DIMENSION(KTS:KTE) ::  MNUCCD    ! CHANGE Q FREEZING AEROSOL (PRIM ICE NUCLEATION)
-     REAL, DIMENSION(KTS:KTE) ::  MNUCCR    ! CHANGE Q DUE TO CONTACT FREEZ RAIN
-     REAL, DIMENSION(KTS:KTE) ::  NNUCCR    ! CHANGE N DUE TO CONTACT FREEZ RAIN
-     REAL, DIMENSION(KTS:KTE) ::  NPRA      ! CHANGE IN N DUE TO DROPLET ACC BY RAIN
-     REAL, DIMENSION(KTS:KTE) ::  NRAGG     ! SELF-COLLECTION/BREAKUP OF RAIN
-     REAL, DIMENSION(KTS:KTE) ::  NSAGG     ! SELF-COLLECTION OF SNOW
-     REAL, DIMENSION(KTS:KTE) ::  NPRC      ! CHANGE NC AUTOCONVERSION DROPLETS
-     REAL, DIMENSION(KTS:KTE) ::  NPRC1      ! CHANGE NR AUTOCONVERSION DROPLETS
-     REAL, DIMENSION(KTS:KTE) ::  PRAI      ! CHANGE Q ACCRETION CLOUD ICE BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  PRCI      ! CHANGE Q AUTOCONVERSIN CLOUD ICE TO SNOW
-     REAL, DIMENSION(KTS:KTE) ::  PSACWS    ! CHANGE Q DROPLET ACCRETION BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  NPSACWS   ! CHANGE N DROPLET ACCRETION BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  PSACWI    ! CHANGE Q DROPLET ACCRETION BY CLOUD ICE
-     REAL, DIMENSION(KTS:KTE) ::  NPSACWI   ! CHANGE N DROPLET ACCRETION BY CLOUD ICE
-     REAL, DIMENSION(KTS:KTE) ::  NPRCI     ! CHANGE N AUTOCONVERSION CLOUD ICE BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  NPRAI     ! CHANGE N ACCRETION CLOUD ICE
-     REAL, DIMENSION(KTS:KTE) ::  NMULTS    ! ICE MULT DUE TO RIMING DROPLETS BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  NMULTR    ! ICE MULT DUE TO RIMING RAIN BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  QMULTS    ! CHANGE Q DUE TO ICE MULT DROPLETS/SNOW
-     REAL, DIMENSION(KTS:KTE) ::  QMULTR    ! CHANGE Q DUE TO ICE RAIN/SNOW
-     REAL, DIMENSION(KTS:KTE) ::  PRACS     ! CHANGE Q RAIN-SNOW COLLECTION
-     REAL, DIMENSION(KTS:KTE) ::  NPRACS    ! CHANGE N RAIN-SNOW COLLECTION
-     REAL, DIMENSION(KTS:KTE) ::  PCCN      ! CHANGE Q DROPLET ACTIVATION
-     REAL, DIMENSION(KTS:KTE) ::  PSMLT     ! CHANGE Q MELTING SNOW TO RAIN
-     REAL, DIMENSION(KTS:KTE) ::  EVPMS     ! CHNAGE Q MELTING SNOW EVAPORATING
-     REAL, DIMENSION(KTS:KTE) ::  NSMLTS    ! CHANGE N MELTING SNOW
-     REAL, DIMENSION(KTS:KTE) ::  NSMLTR    ! CHANGE N MELTING SNOW TO RAIN
-! HM ADDED 12/13/06
-     REAL, DIMENSION(KTS:KTE) ::  PIACR     ! CHANGE QR, ICE-RAIN COLLECTION
-     REAL, DIMENSION(KTS:KTE) ::  NIACR     ! CHANGE N, ICE-RAIN COLLECTION
-     REAL, DIMENSION(KTS:KTE) ::  PRACI     ! CHANGE QI, ICE-RAIN COLLECTION
-     REAL, DIMENSION(KTS:KTE) ::  PIACRS     ! CHANGE QR, ICE RAIN COLLISION, ADDED TO SNOW
-     REAL, DIMENSION(KTS:KTE) ::  NIACRS     ! CHANGE N, ICE RAIN COLLISION, ADDED TO SNOW
-     REAL, DIMENSION(KTS:KTE) ::  PRACIS     ! CHANGE QI, ICE RAIN COLLISION, ADDED TO SNOW
-     REAL, DIMENSION(KTS:KTE) ::  EPRD      ! SUBLIMATION CLOUD ICE
-     REAL, DIMENSION(KTS:KTE) ::  EPRDS     ! SUBLIMATION SNOW
-! HM ADDED GRAUPEL PROCESSES
-     REAL, DIMENSION(KTS:KTE) ::  PRACG    ! CHANGE IN Q COLLECTION RAIN BY GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  PSACWG    ! CHANGE IN Q COLLECTION DROPLETS BY GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  PGSACW    ! CONVERSION Q TO GRAUPEL DUE TO COLLECTION DROPLETS BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  PGRACS    ! CONVERSION Q TO GRAUPEL DUE TO COLLECTION RAIN BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  PRDG    ! DEP OF GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  EPRDG    ! SUB OF GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  EVPMG    ! CHANGE Q MELTING OF GRAUPEL AND EVAPORATION
-     REAL, DIMENSION(KTS:KTE) ::  PGMLT    ! CHANGE Q MELTING OF GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  NPRACG    ! CHANGE N COLLECTION RAIN BY GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  NPSACWG    ! CHANGE N COLLECTION DROPLETS BY GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  NSCNG    ! CHANGE N CONVERSION TO GRAUPEL DUE TO COLLECTION DROPLETS BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  NGRACS    ! CHANGE N CONVERSION TO GRAUPEL DUE TO COLLECTION RAIN BY SNOW
-     REAL, DIMENSION(KTS:KTE) ::  NGMLTG    ! CHANGE N MELTING GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  NGMLTR    ! CHANGE N MELTING GRAUPEL TO RAIN
-     REAL, DIMENSION(KTS:KTE) ::  NSUBG    ! CHANGE N SUB/DEP OF GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  PSACR    ! CONVERSION DUE TO COLL OF SNOW BY RAIN
-     REAL, DIMENSION(KTS:KTE) ::  NMULTG    ! ICE MULT DUE TO ACC DROPLETS BY GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  NMULTRG    ! ICE MULT DUE TO ACC RAIN BY GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  QMULTG    ! CHANGE Q DUE TO ICE MULT DROPLETS/GRAUPEL
-     REAL, DIMENSION(KTS:KTE) ::  QMULTRG    ! CHANGE Q DUE TO ICE MULT RAIN/GRAUPEL
-
-! TIME-VARYING ATMOSPHERIC PARAMETERS
-
-     REAL, DIMENSION(KTS:KTE) ::   KAP   ! THERMAL CONDUCTIVITY OF AIR
-     REAL, DIMENSION(KTS:KTE) ::   EVS   ! SATURATION VAPOR PRESSURE
-     REAL, DIMENSION(KTS:KTE) ::   EIS   ! ICE SATURATION VAPOR PRESSURE
-     REAL, DIMENSION(KTS:KTE) ::   QVS   ! SATURATION MIXING RATIO
-     REAL, DIMENSION(KTS:KTE) ::   QVI   ! ICE SATURATION MIXING RATIO
-     REAL, DIMENSION(KTS:KTE) ::   QVQVS ! SAUTRATION RATIO
-     REAL, DIMENSION(KTS:KTE) ::   QVQVSI! ICE SATURAION RATIO
-     REAL, DIMENSION(KTS:KTE) ::   DV    ! DIFFUSIVITY OF WATER VAPOR IN AIR
-     REAL, DIMENSION(KTS:KTE) ::   XXLS  ! LATENT HEAT OF SUBLIMATION
-     REAL, DIMENSION(KTS:KTE) ::   XXLV  ! LATENT HEAT OF VAPORIZATION
-     REAL, DIMENSION(KTS:KTE) ::   CPM   ! SPECIFIC HEAT AT CONST PRESSURE FOR MOIST AIR
-     REAL, DIMENSION(KTS:KTE) ::   MU    ! VISCOCITY OF AIR
-     REAL, DIMENSION(KTS:KTE) ::   SC    ! SCHMIDT NUMBER
-     REAL, DIMENSION(KTS:KTE) ::   XLF   ! LATENT HEAT OF FREEZING
-     REAL, DIMENSION(KTS:KTE) ::   RHO   ! AIR DENSITY
-     REAL, DIMENSION(KTS:KTE) ::   AB    ! CORRECTION TO CONDENSATION RATE DUE TO LATENT HEATING
-     REAL, DIMENSION(KTS:KTE) ::   ABI    ! CORRECTION TO DEPOSITION RATE DUE TO LATENT HEATING
-
-! TIME-VARYING MICROPHYSICS PARAMETERS
-
-     REAL, DIMENSION(KTS:KTE) ::   DAP    ! DIFFUSIVITY OF AEROSOL
-     REAL    NACNT                    ! NUMBER OF CONTACT IN
-     REAL    FMULT                    ! TEMP.-DEP. PARAMETER FOR RIME-SPLINTERING
-     REAL    COFFI                    ! ICE AUTOCONVERSION PARAMETER
-
-! FALL SPEED WORKING VARIABLES (DEFINED IN CODE)
-
-      REAL, DIMENSION(KTS:KTE) ::    DUMI,DUMR,DUMFNI,DUMG,DUMFNG
-      REAL UNI, UMI,UMR
-      REAL, DIMENSION(KTS:KTE) ::    FR, FI, FNI,FG,FNG
-      REAL RGVM
-      REAL, DIMENSION(KTS:KTE) ::   FALOUTR,FALOUTI,FALOUTNI
-      REAL FALTNDR,FALTNDI,FALTNDNI,RHO2
-      REAL, DIMENSION(KTS:KTE) ::   DUMQS,DUMFNS
-      REAL UMS,UNS
-      REAL, DIMENSION(KTS:KTE) ::   FS,FNS, FALOUTS,FALOUTNS,FALOUTG,FALOUTNG
-      REAL FALTNDS,FALTNDNS,UNR,FALTNDG,FALTNDNG
-      REAL, DIMENSION(KTS:KTE) ::    DUMC,DUMFNC
-      REAL UNC,UMC,UNG,UMG
-      REAL, DIMENSION(KTS:KTE) ::   FC,FALOUTC,FALOUTNC
-      REAL FALTNDC,FALTNDNC
-      REAL, DIMENSION(KTS:KTE) ::   FNC,DUMFNR,FALOUTNR
-      REAL FALTNDNR
-      REAL, DIMENSION(KTS:KTE) ::   FNR
-
-! FALL-SPEED PARAMETER 'A' WITH AIR DENSITY CORRECTION
-
-      REAL, DIMENSION(KTS:KTE) ::    AIN,ARN,ASN,ACN,AGN
-
-! EXTERNAL FUNCTION CALL RETURN VARIABLES
-
-!      REAL GAMMA,      ! EULER GAMMA FUNCTION
-!      REAL POLYSVP,    ! SAT. PRESSURE FUNCTION
-!      REAL DERF1        ! ERROR FUNCTION
-
-! DUMMY VARIABLES
-
-     REAL DUM,DUM1,DUM2,DUMT,DUMQV,DUMQSS,DUMQSI,DUMS
-
-! PROGNOSTIC SUPERSATURATION
-
-     REAL DQSDT    ! CHANGE OF SAT. MIX. RAT. WITH TEMPERATURE
-     REAL DQSIDT   ! CHANGE IN ICE SAT. MIXING RAT. WITH T
-     REAL EPSI     ! 1/PHASE REL. TIME (SEE M2005), ICE
-     REAL EPSS     ! 1/PHASE REL. TIME (SEE M2005), SNOW
-     REAL EPSR     ! 1/PHASE REL. TIME (SEE M2005), RAIN
-     REAL EPSG     ! 1/PHASE REL. TIME (SEE M2005), GRAUPEL
-
-! NEW DROPLET ACTIVATION VARIABLES
-     REAL TAUC     ! PHASE REL. TIME (SEE M2005), DROPLETS
-     REAL TAUR     ! PHASE REL. TIME (SEE M2005), RAIN
-     REAL TAUI     ! PHASE REL. TIME (SEE M2005), CLOUD ICE
-     REAL TAUS     ! PHASE REL. TIME (SEE M2005), SNOW
-     REAL TAUG     ! PHASE REL. TIME (SEE M2005), GRAUPEL
-     REAL DUMACT,DUM3
-
-! COUNTING/INDEX VARIABLES
-
-     INTEGER K,NSTEP,N ! ,I
-
-! LTRUE IS ONLY USED TO SPEED UP THE CODE !!
-! LTRUE, SWITCH = 0, NO HYDROMETEORS IN COLUMN, 
-!               = 1, HYDROMETEORS IN COLUMN
-
-      INTEGER LTRUE
-
-! DROPLET ACTIVATION/FREEZING AEROSOL
-
-
-     REAL    CT      ! DROPLET ACTIVATION PARAMETER
-     REAL    TEMP1   ! DUMMY TEMPERATURE
-     REAL    SAT1    ! DUMMY SATURATION
-     REAL    SIGVL   ! SURFACE TENSION LIQ/VAPOR
-     REAL    KEL     ! KELVIN PARAMETER
-     REAL    KC2     ! TOTAL ICE NUCLEATION RATE
-
-       REAL CRY,KRY   ! AEROSOL ACTIVATION PARAMETERS
-
-! MORE WORKING/DUMMY VARIABLES
-
-     REAL DUMQI,DUMNI,DC0,DS0,DG0
-     REAL DUMQC,DUMQR,RATIO,SUM_DEP,FUDGEF
-
-! EFFECTIVE VERTICAL VELOCITY  (M/S)
-     REAL WEF
-
-! WORKING PARAMETERS FOR ICE NUCLEATION
-
-      REAL ANUC,BNUC
-
-! WORKING PARAMETERS FOR AEROSOL ACTIVATION
-
-        REAL AACT,GAMM,GG,PSI,ETA1,ETA2,SM1,SM2,SMAX,UU1,UU2,ALPHA
-
-! DUMMY SIZE DISTRIBUTION PARAMETERS
-
-        REAL DLAMS,DLAMR,DLAMI,DLAMC,DLAMG,LAMMAX,LAMMIN
-
-        INTEGER IDROP
-
-! FOR WRF-CHEM
-	REAL, DIMENSION(KTS:KTE)::C2PREC,CSED,ISED,SSED,GSED,RSED
-#if (WRF_CHEM == 1)
-    REAL, DIMENSION(KTS:KTE), INTENT(INOUT) :: rainprod, evapprod
-#endif
-    REAL, DIMENSION(KTS:KTE)                :: tqimelt ! melting of cloud ice (tendency)
-
-! comment lines for wrf-chem since these are intent(in) in that case
-!       REAL, DIMENSION(KTS:KTE) ::  NC3DTEN            ! CLOUD DROPLET NUMBER CONCENTRATION (1/KG/S)
-!       REAL, DIMENSION(KTS:KTE) ::  NC3D               ! CLOUD DROPLET NUMBER CONCENTRATION (1/KG)
-
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-
-! SET LTRUE INITIALLY TO 0
-
-         LTRUE = 0
-
-! ATMOSPHERIC PARAMETERS THAT VARY IN TIME AND HEIGHT
-         DO K = KTS,KTE
-
-! NC3DTEN LOCAL ARRAY INITIALIZED
-               NC3DTEN(K) = 0.
-! INITIALIZE VARIABLES FOR WRF-CHEM OUTPUT TO ZERO
-
-		C2PREC(K)=0.
-		CSED(K)=0.
-		ISED(K)=0.
-		SSED(K)=0.
-		GSED(K)=0.
-		RSED(K)=0.
-
-#if (WRF_CHEM == 1)
-         rainprod(K) = 0.
-         evapprod(K) = 0.
-         tqimelt(K)  = 0.
-         PRC(K)      = 0.
-         PRA(K)      = 0.
-#endif
-
-! LATENT HEAT OF VAPORATION
-
-            XXLV(K) = 3.1484E6-2370.*T3D(K)
-
-! LATENT HEAT OF SUBLIMATION
-
-            XXLS(K) = 3.15E6-2370.*T3D(K)+0.3337E6
-
-            CPM(K) = CP*(1.+0.887*QV3D(K))
-
-! SATURATION VAPOR PRESSURE AND MIXING RATIO
-
-! hm, add fix for low pressure, 5/12/10
-<<<<<<< HEAD
-=======
-
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
             EVS(K) = min(0.99*pres(k),POLYSVP(T3D(K),0))   ! PA
             EIS(K) = min(0.99*pres(k),POLYSVP(T3D(K),1))   ! PA
 
@@ -2109,15 +1636,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       QC3DTEN(K) = QC3DTEN(K)+PCC(K)
 
 #if (WRF_CHEM == 1)
-<<<<<<< HEAD
-         evapprod(k) = - PRE(K) - EVPMS(K) - EVPMG(K)
-         rainprod(k) = PRA(K) + PRC(K) + tqimelt(K)
-=======
       IF( has_wetscav ) THEN
          evapprod(k) = - PRE(K) - EVPMS(K) - EVPMG(K)
          rainprod(k) = PRA(K) + PRC(K) + tqimelt(K)
       END IF
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
 !.......................................................................
@@ -3360,18 +2882,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
          NR3DTEN(K) = NR3DTEN(K)+NSUBR(K)
 
 #if (WRF_CHEM == 1)
-<<<<<<< HEAD
-=======
-      IF( has_wetscav ) THEN
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-         evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
-         rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
-                       + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K)  &
-                       + PRDS(K) + PRDG(K)
-<<<<<<< HEAD
-=======
       ENDIF
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 #endif
 
          END IF !!!!!! TEMPERATURE
@@ -4154,13 +3665,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 !         POLYSVP = 10.**(-9.09718*(273.16/T-1.)-3.56654*                &
 !          LOG10(273.16/T)+0.876793*(1.-T/273.16)+						&
 !          LOG10(6.1071))*100.
-<<<<<<< HEAD
-
-
-      dt = max(-80.,t-273.16)
-      polysvp = a0i + dt*(a1i+dt*(a2i+dt*(a3i+dt*(a4i+dt*(a5i+dt*(a6i+dt*(a7i+a8i*dt))))))) 
-      polysvp = polysvp*100.
-=======
 ! hm 11/16/20, use Goff-Gratch for T < 195.8 K and Flatau et al. equal or above 195.8 K
       if (t.ge.195.8) then
          dt=t-273.15
@@ -4173,7 +3677,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
           alog10(6.1071))*100.
 
       end if
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       END IF
 
@@ -4181,22 +3684,11 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
       IF (TYPE.EQ.0) THEN
 
-<<<<<<< HEAD
-       dt = max(-80.,t-273.16)
-       polysvp = a0 + dt*(a1+dt*(a2+dt*(a3+dt*(a4+dt*(a5+dt*(a6+dt*(a7+a8*dt)))))))
-       polysvp = polysvp*100.
-
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !         POLYSVP = 10.**(-7.90298*(373.16/T-1.)+                        &
 !             5.02808*LOG10(373.16/T)-									&
 !             1.3816E-7*(10**(11.344*(1.-T/373.16))-1.)+				&
 !             8.1328E-3*(10**(-3.49149*(373.16/T-1.))-1.)+				&
 !             LOG10(1013.246))*100.
-<<<<<<< HEAD
-
-         END IF
-=======
 ! hm 11/16/20, use Goff-Gratch for T < 202.0 K and Flatau et al. equal or above 202.0 K
       if (t.ge.202.0) then
          dt = t-273.15
@@ -4213,7 +3705,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       end if
 
       END IF
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 
       END FUNCTION POLYSVP

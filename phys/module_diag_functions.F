@@ -388,14 +388,10 @@ CONTAINS
      !  ---------------------------
      Pwat=0
      DO k = 1, nz
-<<<<<<< HEAD
-       Pwat = Pwat + (qv(k) + qc(k)) * dz8w(k) * rho(k)
-=======
        !Based on AMS PWAT defination (https://glossary.ametsoc.org/wiki/Precipitable_water)
        !PWAT is corrected as the column accumulated water vapor rather than water vapor + cloud water.
        !Modified by Zhixiao
        Pwat = Pwat + qv(k) * dz8w(k) * rho(k)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
      ENDDO
              
   END FUNCTION Pwat
@@ -470,18 +466,7 @@ CONTAINS
       !  -------------------------
       REAL                    :: ws   ( nz ) !~ Saturation mixing ratio
       REAL                    :: w    ( nz ) !~ Mixing ratio
-<<<<<<< HEAD
-=======
-      REAL                    :: etheta( nz )!~ Equivalent potential temperature. Modified by Zhixiao.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-      REAL                    :: dTvK ( nz ) !~ Parcel / ambient Tv difference
-      REAL                    :: buoy ( nz ) !~ Buoyancy
-      REAL                    :: tlclK       !~ LCL temperature ( K )
-      REAL                    :: plcl        !~ LCL pressure ( Pa )
-<<<<<<< HEAD
-=======
       REAL                    :: pel         !~ Equilibrium pressure ( Pa ). Modified by Zhixiao.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       REAL                    :: nbuoy       !~ Negative buoyancy
       REAL                    :: pbuoy       !~ Positive buoyancy
   
@@ -496,27 +481,8 @@ CONTAINS
       REAL                    :: srcthetaeK  !~ Source parcel theta-e ( K )
       INTEGER                 :: srclev      !~ Level of the source parcel
       REAL                    :: spdiff      !~ Pressure difference
-<<<<<<< HEAD
-=======
-      REAL                    :: srce        !~ Equivalent potential temperature ( K ). Modified by Zhixiao.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-   
-      !~ Parcel variables
-      !  ----------------
-      REAL                    :: ptK        !~ Parcel temperature ( K )
-      REAL                    :: ptvK       !~ Parcel virtual temperature ( K )
-      REAL                    :: tvK        !~ Ambient virtual temperature ( K )
-      REAL                    :: pw         !~ Parcel mixing ratio
-  
-      !~ Other utility variables
-      !  -----------------------
-      INTEGER                 :: i, j, k    !~ Dummy iterator
-      INTEGER                 :: lfclev     !~ Level of LFC
-<<<<<<< HEAD
-=======
       INTEGER                 :: ellev      !~ Level of EL. Modified by Zhixiao.
       INTEGER                 :: lcllev     !~ Level of LCL. Modified by Zhixiao.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       INTEGER                 :: prcl       !~ Internal parcel type indicator
       INTEGER                 :: mlev       !~ Level for ML calculation
       INTEGER                 :: lyrcnt     !~ Number of layers in mean layer
@@ -538,19 +504,11 @@ CONTAINS
          PARAMETER ( g  = 9.80665 )         !~ m s^-2
       REAL                    :: RUNDEF
          PARAMETER ( RUNDEF = -9.999E30 )
-<<<<<<< HEAD
-  
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       !~ Initialize variables
       !  --------------------
       ostat  = 0
       CAPE   = REAL ( 0 )
-<<<<<<< HEAD
-      CIN    = REAL ( 0 )
-=======
       CIN    = RUNDEF !Change CIN filling values from 0 to default filling. CIN should not initially be filled by 0, because 0 means no inhibition energy. Modified by Zhixiao
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       ZLFC   = RUNDEF
       PLFC   = RUNDEF
   
@@ -580,55 +538,22 @@ CONTAINS
       DO k = sfc, nz
         ws  ( k )   = SaturationMixingRatio ( tK(k), p(k) )
         w   ( k )   = ( rh(k)/100.0 ) * ws ( k )
-<<<<<<< HEAD
-=======
-        !Removed by Zhixiao. Water vapor mixing ratio (w) is not conserved during parcel lifting processes. We should not use w to define MU layer.
-        !thetav(k)   = Theta ( VirtualTemperature ( tK (k), w (k) ), p(k)/100.0 )
-        !Added by Zhixiao. Critical modification: We use the model level with maximum equivalent potential temperature (etheta) below 500mb to define the MU layer
-        !Because equivalent potential temperature is conserved in dry and moist adiabatic processes.
-        etheta(k)   = Thetae( tK(k), p(k)/100.0, rh(k), w(k) )
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-      END DO
-  
-      srclev      = sfc
-      srctK       = tK    ( sfc )
-      srcrh       = rh    ( sfc )
-      srcp        = p     ( sfc )
-      srcws       = ws    ( sfc )
-      srcw        = w     ( sfc )
-      srctheta    = Theta ( tK(sfc), p(sfc)/100.0 )
-<<<<<<< HEAD
-=======
       srce        = etheta (sfc) !Modified by Zhixiao
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    
       !~ Compute the profile mixing ratio.  If the parcel is the MU parcel,
       !~ define our parcel to be the most unstable parcel within the lowest
       !~ 180 mb.
       !  -------------------------------------------------------------------
       mlev = sfc + 1
-<<<<<<< HEAD
-      DO k = sfc + 1, nz
-=======
       !Change initial searching level from the second to first model level. Because we did not compute pdiff, and p(k-1) properties is unnecessary.
       !Modified by Zhixiao.
       DO k = sfc, nz
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    
          !~ Identify the last layer within 100 hPa of the surface
          !  -----------------------------------------------------
          pdiff = ( p (sfc) - p (k) ) / REAL ( 100 )
          IF ( pdiff <= REAL (100) ) mlev = k
 
-<<<<<<< HEAD
-         !~ If we've made it past the lowest 180 hPa, exit the loop
-         !  -------------------------------------------------------
-         IF ( pdiff >= REAL (180) ) EXIT
-
-         IF ( prcl == 1 ) THEN
-            !IF ( (p(k) > 70000.0) .and. (w(k) > srcw) ) THEN
-            IF ( (w(k) > srcw) ) THEN
-=======
          !~ If we've made it past the lowest 500 hPa, exit the loop. MU layer is assumed below 500 hPa. Modified by Zhixiao.
          !  -------------------------------------------------------
          IF ( p(k) <= REAL (50000) ) EXIT
@@ -638,49 +563,16 @@ CONTAINS
             !IF ( (p(k) > 70000.0) .and. (w(k) > srcw) ) THEN
             ! Modified by Zhixiao, MU layer is featured by the max etheta
             IF (etheta(k) > srce)  THEN !Modified by Zhixiao.
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                srctheta = Theta ( tK(k), p(k)/100.0 )
                srcw = w ( k )
                srclev  = k
                srctK   = tK ( k )
                srcrh   = rh ( k )
                srcp    = p  ( k )
-<<<<<<< HEAD
-=======
-               srce = etheta(k) !Modified by Zhixiao
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-            END IF
-         END IF
-   
-      END DO
-   
-      !~ If we want the mean layer parcel, compute the mean values in the
-      !~ lowest 100 hPa.
-      !  ----------------------------------------------------------------
-      lyrcnt =  mlev - sfc + 1
-      IF ( prcl == 2 ) THEN
-   
-         srclev   = sfc
-         srctK    = SUM ( tK (sfc:mlev) ) / REAL ( lyrcnt )
-         srcw     = SUM ( w  (sfc:mlev) ) / REAL ( lyrcnt )
-         srcrh    = SUM ( rh (sfc:mlev) ) / REAL ( lyrcnt )
-         srcp     = SUM ( p  (sfc:mlev) ) / REAL ( lyrcnt )
-         srctheta = Theta ( srctK, srcp/100. )
-   
-      END IF
-   
-      srcthetaeK = Thetae ( srctK, srcp/100.0, srcrh, srcw )
-<<<<<<< HEAD
-   
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       !~ Calculate temperature and pressure of the LCL
       !  ---------------------------------------------
       tlclK = TLCL ( tK(srclev), rh(srclev) )
       plcl  = p(srclev) * ( (tlclK/tK(srclev))**(Cp/Rd) )
-<<<<<<< HEAD
-   
-=======
       
       !Add caculation for LCL. Modified by Zhixiao
       lcllev = -1 !Modified by Zhixiao
@@ -693,7 +585,6 @@ CONTAINS
          IF (flag) EXIT !Modified by Zhixiao
       END DO !Modified by Zhixiao  
       flag=.false. !Modified by Zhixiao
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       !~ Now lift the parcel
       !  -------------------
    
@@ -811,49 +702,6 @@ CONTAINS
       !  -----------------------------------
       flag   = .false.
       lfclev = -1
-<<<<<<< HEAD
-      nbuoy  = REAL ( 0 )
-      pbuoy = REAL ( 0 )
-      DO k = sfc + 1, nz
-         IF ( tK (k) < 253.15 ) EXIT
-         CAPE = CAPE + MAX ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
-         CIN  = CIN  + MIN ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
-   
-         !~ If we've already passed the LFC
-         !  -------------------------------
-         IF ( flag .and. buoy (k) > REAL (0) ) THEN
-            pbuoy = pbuoy + buoy (k)
-         END IF
-   
-         !~ We are buoyant now - passed the LFC
-         !  -----------------------------------
-         IF ( .not. flag .and. buoy (k) > REAL (0) .and. p (k) < plcl ) THEN
-            flag = .true.
-            pbuoy = pbuoy + buoy (k)
-            lfclev = k
-         END IF
-   
-         !~ If we think we've passed the LFC, but encounter a negative layer
-         !~ start adding it up.
-         !  ----------------------------------------------------------------
-         IF ( flag .and. buoy (k) < REAL (0) ) THEN
-            nbuoy = nbuoy + buoy (k)
-
-            !~ If the accumulated negative buoyancy is greater than the
-            !~ positive buoyancy, then we are capped off.  Got to go higher
-            !~ to find the LFC. Reset positive and negative buoyancy summations
-            !  ----------------------------------------------------------------
-            IF ( ABS (nbuoy) > pbuoy ) THEN
-               flag   = .false.
-               nbuoy  = REAL ( 0 )
-               pbuoy  = REAL ( 0 )
-               lfclev = -1
-            END IF
-         END IF
-
-      END DO
-
-=======
       ellev = -1 !Modified by Zhixiao
       DO k = sfc, nz !Modified by Zhixiao
          !~ LFC is defiend as the highest level when negative buyancy turns postive.
@@ -882,7 +730,6 @@ CONTAINS
             END IF !Modified by Zhixiao         
          END DO !Modified by Zhixiao
       END IF !Modified by Zhixiao
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       !~ Calculate lifted index by interpolating difference between
       !~ parcel and ambient Tv to 500mb.
       !  ----------------------------------------------------------
@@ -897,11 +744,7 @@ CONTAINS
          IF ( pd .le. pm ) THEN
             lidx = 0.
             EXIT
-<<<<<<< HEAD
-   
-=======
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          ELSEIF ( pu .le. pm .and. pd .gt. pm) THEN
 
             !~ Found trapping pressure: up, middle, down.
@@ -915,34 +758,21 @@ CONTAINS
          ENDIF
 
       END DO
-<<<<<<< HEAD
-   
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       !~ Assuming the the LFC is at a pressure level for now
       !  ---------------------------------------------------
       IF ( lfclev > 0 ) THEN
          PLFC = p   ( lfclev )
          ZLFC = hgt ( lfclev )
       END IF
-<<<<<<< HEAD
-   
-=======
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       IF ( PLFC /= PLFC .OR. PLFC < REAL (0) ) THEN
          PLFC = REAL ( -1 )
          ZLFC = REAL ( -1 )
       END IF
    
       IF ( CAPE /= CAPE ) cape = REAL ( 0 )
-<<<<<<< HEAD
-   
-      IF ( CIN  /= CIN  ) cin  = REAL ( 0 )
-=======
 
       IF ( CIN  /= CIN  ) cin  = RUNDEF
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
       !~ Chirp
       !  -----

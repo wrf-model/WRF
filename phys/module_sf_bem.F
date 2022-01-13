@@ -2,17 +2,6 @@ MODULE module_sf_bem
 ! -----------------------------------------------------------------------
 !  Variables and constants used in the BEM module
 ! -----------------------------------------------------------------------
-<<<<<<< HEAD
-
-#ifdef mpas
-use mpas_atmphys_utilities, only: physics_error_fatal
-#define FATAL_ERROR(M) call physics_error_fatal( M )
-#else
-use module_wrf_error
-#define FATAL_ERROR(M) call wrf_error_fatal( M )
-#endif
-=======
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          
         real emins		!emissivity of the internal walls
         parameter (emins=0.9) 
@@ -31,30 +20,6 @@ use module_wrf_error
         real hum_rat            !power of the A.C. drying/moistening the indoor air [(Kg/kg)/s]
         parameter(hum_rat=1.e-06)
 
-<<<<<<< HEAD
-=======
-        real,parameter :: effpv=0.19  ! Efficiency of PV panels installed at the roofs, typical values [0.10,0.15] 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-
-    CONTAINS
-
-!====6================================================================72
-!====6================================================================72	
-	
-	subroutine BEM(nzcanm,nlev,nhourday,dt,bw,bl,dzlev,            &
-                       nwal,nflo,nrof,ngrd,hswalout,gswal,             &
-<<<<<<< HEAD
-                       hswinout,hsrof,gsrof,                           &
-                       latent,sigma,albwal,albwin,albrof,              &
-     		       emrof,emwal,emwin,rswal,rlwal,rair,cp,          &
-     		       rhoout,tout,humout,press,                       &
-     		       rs,rl,dzwal,cswal,kwal,pwin,cop,beta,sw_cond,   &
-                       timeon,timeoff,targtemp,gaptemp,targhum,gaphum, &
-                       perflo,hsesf,hsequip,dzflo,                     &
-     		       csflo,kflo,dzgrd,csgrd,kgrd,dzrof,csrof,        &
-     		       krof,tlev,shumlev,twal,twin,tflo,tgrd,trof,     &
-     		       hsout,hlout,consump,hsvent,hlvent)
-=======
                        hswinout,hsrof,lsrof,gsrof,hspv,                &
                        latent,sigma,albwal,albwin,albrof,              &
      		       emrof,emwal,emwin,rswal,rlwal,rair,cp,          &
@@ -70,7 +35,6 @@ use module_wrf_error
                        tr_av,tpv_print,sfpv,sfr_indoor)
 
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 
 ! ---------------------------------------------------------------------
@@ -123,11 +87,7 @@ use module_wrf_error
 
 	real dt				!time step [s]
                                        
-<<<<<<< HEAD
-        integer nzcanm                  !Maximum number of vertical levels in the urban grid
-=======
            integer nzcanm                  !Maximum number of vertical levels in the urban grid
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	integer nlev			!number of floors in the building
 	integer nwal                    !number of levels inside the wall
 	integer nrof                    !number of levels inside the roof
@@ -157,46 +117,12 @@ use module_wrf_error
         real,    intent(in) :: targhum  ! Target humidity of A/C systems
         real,    intent(in) :: gaphum   ! Comfort range of specific humidity
         real,    intent(in) :: perflo   ! Peak number of occupants per unit floor area
-<<<<<<< HEAD
-=======
-        real gr_frac_roof   
-        real pv_frac_roof
-        integer gr_flag  
-        real   uout(nzcanm) 
-        real    vout(nzcanm)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-        real,    intent(in) :: hsesf    ! 
-        real,    intent(in) :: hsequip(24) ! 
-	
-	real cswal(nwal)		!Specific heat of the wall [J/(m3.K)] 
-	
-	real csflo(nflo)		!Specific heat of the floor [J/(m3.K)]
-	real csrof(nrof)		!Specific heat of the roof [J/(m3.K)] 
-	real csgrd(ngrd)		!Specific heat of the ground [J/(m3.K)]
-	
-	real kwal(nwal+1)		!Thermal conductivity in each layers of the walls (face) [W/(m.K)]
-	real kflo(nflo+1)		!Thermal diffusivity in each layers of the floors (face) [W/(m.K)]
-	real krof(nrof+1)		!Thermal diffusivity in each layers of the roof (face) [W/(m.K)]
-	real kgrd(ngrd+1)		!Thermal diffusivity in each layers of the ground (face) [W/(m.K)]
-	
-	real dzwal(nwal)		!Layer sizes of walls [m]
-	real dzflo(nflo)		!Layer sizes of floors [m]
-	real dzrof(nrof)		!Layer sizes of roof [m]
-	real dzgrd(ngrd)		!Layer sizes of ground [m]
-<<<<<<< HEAD
-	
-	real latent                      !latent heat of evaporation [J/Kg]	
-
-
-	real rs				!external short wave radiation [W/m2]
-=======
 	real tpv
         real tr_av 
 	real latent                      !latent heat of evaporation [J/Kg]	
 
         real swddif
    	real rs				!external short wave radiation [W/m2]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	real rl				!external long wave radiation [W/m2]
 	real rswal(4,nzcanm)		!short wave radiation reaching the exterior walls [W/m2]
         real rlwal(4,nzcanm)		!long wave radiation reaching the walls [W/m2]	
@@ -208,19 +134,11 @@ use module_wrf_error
 	real hswalout(4,nzcanm)	        !outside walls sensible heat flux [W/m2]
 	real hswinout(4,nzcanm)	        !outside window sensible heat flux [W/m2]
 	real hsrof			!Sensible heat flux at the roof [W/m2]
-<<<<<<< HEAD
-	
-	real rair			!ideal gas constant  [J.kg-1.K-1]
-	real sigma			!parameter (wall is not black body) [W/m2.K4]
-	real cp				!specific heat of air [J/kg.K]
-       
-=======
 	real lsrof
         real rair			!ideal gas constant  [J.kg-1.K-1]
 	real sigma			!parameter (wall is not black body) [W/m2.K4]
 	real cp				!specific heat of air [J/kg.K]
         real hfgr       !Green roof heat flux
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	
 !Input-Output
 !------------
@@ -236,17 +154,11 @@ use module_wrf_error
         real consump(nzcanm)            !Consumption for the a.c. in each floor [W]
 	real hsvent(nzcanm)		!sensible heat generated by natural ventilation [W]
 	real hlvent(nzcanm)		!latent heat generated by natural ventilation [W] 
-<<<<<<< HEAD
-        real gsrof                      !heat flux flowing inside the roof [W/m^2]
-        real gswal(4,nzcanm)             !heat flux flowing inside the floors [W/m^2]
-
-=======
         real gsrof                      !heat flux flowing inside the roof [W/m2]
         real hspv			!Sensible heat flux at the roof from the PV panels [W/m2]
         real gswal(4,nzcanm)             !heat flux flowing inside the floors [W/m2]
         real eppv                        !Electricity production of PV panels [W]
         real sfr_indoor,sfpv,tpv_print
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Local:
 ! -----
 	integer swwal                   !swich for the physical coefficients calculation
@@ -297,12 +209,6 @@ use module_wrf_error
         real hsoutbuild                 !Total sensible heat ejected into the atmosphere[W]
                                         !by the air conditioning system and per building
         real nhourday                   !number of hours from midnight, local time
-<<<<<<< HEAD
-!--------------------------------------------
-!Initialization
-!--------------------------------------------
-
-=======
         real hfgrd                      !Dummy variable to assign hfgr=0 to walls, windows and ground
 
 !
@@ -310,7 +216,6 @@ use module_wrf_error
 !--------------------------------------------
 !Initialization
 !--------------------------------------------
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
        do ilev=1,nzcanm
           hseqocc(ilev)=0.
           hleqocc(ilev)=0.
@@ -474,13 +379,6 @@ use module_wrf_error
 	 end do ! ivw
 	end do  ! ilev
 	
-<<<<<<< HEAD
-!Roof
-
-        call radfluxs(radflux,albrof,rs,emrof,rl,sigma,trof(nrof))
-
-        hrrof=radflux
-=======
 !Roof and PV panels
         
         if (pv_frac_roof.eq.0.) then
@@ -490,7 +388,6 @@ use module_wrf_error
             call radfluxspv(nzcanm,nlev,albrof,rs,swddif,emrof,rl,tr_av,tout,sigma,radflux,pv_frac_roof,tpv)
             hrrof=radflux
         endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !Internal walls for intermediate rooms
 
@@ -633,11 +530,7 @@ use module_wrf_error
 !Vertical fluxes for windows
 
 	do ilev=1,nlev
-<<<<<<< HEAD
-
-=======
                                                                                                                                                                           
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          do ivw=1,4
 	 
 	       call hsinsflux (2,1,tlev(ilev),twin(ivw,ilev),hs)
@@ -683,11 +576,7 @@ use module_wrf_error
 		call hsinsflux (1,2,tlev(nlev),trof(1),hs)
 
 		hswalins(6,nlev)=hs	       
-<<<<<<< HEAD
-      
-=======
                 sfr_indoor= hswalins(6,nlev) 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       else  ! Bottom<--->Top 
       
                 call hsinsflux (1,2,tlev(1),tgrd(ngrd),hs)
@@ -699,9 +588,6 @@ use module_wrf_error
 		hswalins(6,nlev)=hs
       
       end if
-<<<<<<< HEAD
-
-=======
 !!
 !! Calculation of the sensible heat fluxes from the PV panels & electricity producti
 
@@ -711,7 +597,6 @@ use module_wrf_error
       sfpv=hspv
       tpv_print=tpv
       endif       
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !Calculation of the temperature for the different surfaces 
 ! --------------------------------------------------------
@@ -729,11 +614,7 @@ use module_wrf_error
 	   do iwal=1,nwal
 	      twal1D(iwal)=twal(ivw,iwal,ilev)
 	   end do
-<<<<<<< HEAD
-	  
-=======
 	    
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	   call wall(swwal,nwal,dt,dzwal,kwal,cswal,htot,twal1D)
 	
 	   do iwal=1,nwal
@@ -804,25 +685,11 @@ use module_wrf_error
       swwal=1    
 
       htot(1)=hswalins(6,nlev)+hrwalins(6,nlev)     	
-<<<<<<< HEAD
-      htot(2)=hsrof+hrrof     
-=======
       htot(2)=hsrof+hrrof+lsrof 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
       gsrof=htot(2)
 
       do irof=1,nrof
          trof1D(irof)=trof(irof)
-<<<<<<< HEAD
-      end do     
-      
-      call wall(swwal,nrof,dt,dzrof,krof,csrof,htot,trof1D)
- 
-      do irof=1,nrof
-         trof(irof)=trof1D(irof)
-      end do
-      
-=======
         
       end do  
 
@@ -837,7 +704,6 @@ use module_wrf_error
        end do
       
 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! Calculation of the heat fluxes and of the temperature of the rooms
 ! ------------------------------------------------------------------
 
@@ -858,71 +724,6 @@ use module_wrf_error
 	  call fluxvent(cpint,rhoint,vollev,tlev(ilev),tout(ilev),     &
                         latent,humout(ilev),rhoout(ilev),shumlev(ilev),&
                         beta,hsvent(ilev),hlvent(ilev))
-<<<<<<< HEAD
-=======
-  
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-	      
-         !Calculation of the heat generated by conduction
-	  
-	   do iwal=1,6
-	     hswalins1D(iwal)=hswalins(iwal,ilev)
-	     surwal1D(iwal)=surwal(iwal,ilev)
-	  end do
-	  
-	   do iwal=1,4
-	     hswinins1D(iwal)=hswinins(iwal,ilev)
-	   end do
-	
-	  call fluxcond(hswalins1D,hswinins1D,surwal1D,pwin,&
-                        hscond(ilev))
-
-	!Calculation of the heat generated inside the room
- 	
-	  call fluxroo(hseqocc(ilev),hleqocc(ilev),hsvent(ilev), &
-               hlvent(ilev),hscond(ilev),hslev(ilev),hllev(ilev))
-
-	  
-	!Evolution of the temperature and of the specific humidity 
-
-	  Qb=rhoint*cpint*vollev
-
-        ! temperature regulation
-
-          call regtemp(sw_cond,nhourday,dt,Qb,hslev(ilev),       &
-                       tlev(ilev),timeon,timeoff,targtemp,gaptemp,hsneed(ilev))
-
-        ! humidity regulation 
-
-	  call reghum(sw_cond,nhourday,dt,vollev,rhoint,latent, &
-                      hllev(ilev),shumlev(ilev),timeon,timeoff,&
-                      targhum,gaphum,hlneed(ilev))
-!
-!performance of the air conditioning system for the test
-!	
-	        
-          call air_cond(hsneed(ilev),hlneed(ilev),dt, &
-                        hsout(ilev),hlout(ilev),consump(ilev), cop)
-    	         	
- 	  tlev(ilev)=tlev(ilev)+(dt/Qb)*(hslev(ilev)-hsneed(ilev))
-          	  	  
-	  shumlev(ilev)=shumlev(ilev)+(dt/(vollev*rhoint*latent))* &
-                        (hllev(ilev)-hlneed(ilev))
-           
-	end do !ilev
-        
-        call consump_total(nzcanm,nlev,consumpbuild,hsoutbuild, &
-                           hsout,consump)
-                
-      return
-      end subroutine BEM
-<<<<<<< HEAD
-
-!====6=8===============================================================72
-!====6=8===============================================================72
-
-	subroutine wall(swwall,nz,dt,dz,k,cs,flux,temp)
-=======
 !====6=8===============================================================72  
 !====6=8===============================================================72  
       subroutine hsfluxpv(nz,n,bl,bw,albr,rs,swddif,emr,rl,tr,tair,sigma,hspv,eppv,pv_frac_roof,uout,vout,tpv,dt)
@@ -1012,7 +813,6 @@ use module_wrf_error
 !====6=8===============================================================72
 
 	subroutine wall_gr(hfgr,gr_frac_roof,swwall,nz,dt,dz,k,cs,flux,temp)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	
 !______________________________________________________________________
 
@@ -1052,22 +852,7 @@ use module_wrf_error
 		
 !Input:
 !-----
-<<<<<<< HEAD
-=======
-            real hfgr        !Green roof heat flux
-            real gr_frac_roof     !Green roof fraction
-
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-	integer nz		!Number of layers inside the material
-	real dt			!Time step
-	real dz(nz)		!Layer sizes [m]
-	real cs(nz)		!Specific heat of the material [J/(m3.K)] 
-	real k(nz+1)		!Thermal conductivity in each layers (face) [W/(m.K)]
-	real flux(2)		!Internal and external flux terms.
-<<<<<<< HEAD
-=======
         
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !Input-Output:
 !-------------
@@ -1111,27 +896,6 @@ use module_wrf_error
 		 a(-1,1)=0.
 		 a(0,1)=1+k2(1)
 		 a(1,1)=-k2(1)
-<<<<<<< HEAD
-
-                 b(1)=temp(1)+flux(1)*kc(1)
-
-!!
-!!We can fixed the internal temperature	
-!!
-!!		 a(-1,1)=0.
-!!		 a(0,1)=1
-!!		 a(1,1)=0.		 	 
-!!		 
-!!		 b(1)=temp(1)
-!!
-!Computation of the internal values (iz=2,...,n-1) of A and B:
-
-	do iz=2,nz-1
-		a(-1,iz)=-k1(iz)
-		a(0,iz)=1+k1(iz)+k2(iz)
-     		a(1,iz)=-k2(iz)
-		b(iz)=temp(iz)
-=======
                  b(1)=temp(1)+flux(1)*kc(1)
 
 	do iz=2,nz-1
@@ -1266,7 +1030,6 @@ use module_wrf_error
                 a(0,iz)=1+k1(iz)+k2(iz)
                 b(iz)=temp(iz)
                 a(1,iz)=-k2(iz)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	end do		
 
 !Computation of the external value (iz=n) of A and B:
@@ -1274,21 +1037,12 @@ use module_wrf_error
 		a(-1,nz)=-k1(nz)
 		a(0,nz)=1+k1(nz)
 		a(1,nz)=0.
-<<<<<<< HEAD
-	
-		b(nz)=temp(nz)+flux(2)*kc(nz)
-
-!Resolution of the system A*T(n+1)=B
-
-	call tridia(nz,a,b,temp)
-=======
 		b(nz)=temp(nz)+flux(2)*kc(nz)
                      
 !Resolution of the system A*T(n+1)=B
 
 	call tridia(nz,a,b,temp)
 	
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
         return
 	end  subroutine wall	
@@ -1365,11 +1119,7 @@ use module_wrf_error
 !Input
 !----
 	integer swsurf  !swich for the type of surface (horizontal/vertical) 
-<<<<<<< HEAD
-        integer swwin   !swich for the type of surface (window/wall)
-=======
             integer swwin   !swich for the type of surface (window/wall)
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	real tin	!Inside temperature [K]
 	real tw		!Internal wall temperature [K]  	
 
@@ -1379,11 +1129,7 @@ use module_wrf_error
 	real hsins	!internal sensible heat flux [W/m2]
 !Local
 !-----
-<<<<<<< HEAD
-	real hc		!heat conduction coefficient [W/C.m2]
-=======
 	real hc		!heat conduction coefficient [W/\B0C.m2]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !--------------------------------------------------------------------
 
 	if (swsurf.eq.2) then	!vertical surface
@@ -1421,11 +1167,7 @@ use module_wrf_error
 	real albwin		!albedo of the windows
 	real albwal		!albedo of the internal wall					
 	real rswal(4)		!incoming short wave radiation [W/m2]
-<<<<<<< HEAD
-        real surwal(6) 		!surface of the indoor walls [m2]
-=======
             real surwal(6) 		!surface of the indoor walls [m2]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	real bw,bl		!width of the walls [m]
 	real zw			!height of the wall [m]
 	real pwin               !window proportion
@@ -1437,13 +1179,8 @@ use module_wrf_error
 !Local
 !-----
 	real transmit   !transmittance of the direct/diffused radiation
-<<<<<<< HEAD
-        real rstr	!solar radiation transmitted through the windows	
-        real surtotwal  !total indoor surface of the walls in the room
-=======
             real rstr	!solar radiation transmitted through the windows	
             real surtotwal  !total indoor surface of the walls in the room
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 	integer iw
 	real b(6)	!second member for the system
 	real a(6,6)	!matrix for the system
@@ -1460,11 +1197,7 @@ use module_wrf_error
             enddo
 
 !We suppose that the radiation is spread isotropically within the
-<<<<<<< HEAD
-!room when it passes through the windows, so the flux [W/m^2] in every 
-=======
 !room when it passes through the windows, so the flux [W/m2] in every 
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !wall is:
 
             surtotwal=0.
@@ -1718,13 +1451,8 @@ use module_wrf_error
 	real zw		!height of the wall
 	real fprl_int	!view factor
 	real fnrm_int	!view factor	
-<<<<<<< HEAD
-        real fnrm_intx	!view factor
-        real fnrm_inty	!view factor
-=======
            real fnrm_intx	!view factor
            real fnrm_inty	!view factor
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !Output
 !------
@@ -1737,11 +1465,7 @@ use module_wrf_error
 	real b_wind(6)
 	real emwal_av		!averadge emissivity of the wall
 	real emwin_av		!averadge emissivity of the window
-<<<<<<< HEAD
-	real em_av		!averadge emissivity
-=======
         real em_av		!averadge emissivity
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
         real twal_int(6)        !twalint 
 	real twin(4)   		!twinint 
 !------------------------------------------------------------------
@@ -2081,11 +1805,7 @@ use module_wrf_error
 	
 !Output
 !------
-<<<<<<< HEAD
-	real hsequ    !sensible heat gain from equipment [W/m^2]
-=======
 	real hsequ    !sensible heat gain from equipment [Wm\AF2]
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
 !---------------------------------------------------------------------	
 
@@ -2643,11 +2363,7 @@ use module_wrf_error
                         icol=k
                      endif
                   elseif(ipiv(k).gt.1)then
-<<<<<<< HEAD
-                     FATAL_ERROR('singular matrix in gaussjbem')
-=======
                      CALL wrf_error_fatal('singular matrix in gaussjbem')
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                   endif
                enddo
             endif
@@ -2668,11 +2384,7 @@ use module_wrf_error
           
          endif
          
-<<<<<<< HEAD
-         if(a(icol,icol).eq.0) FATAL_ERROR('singular matrix in gaussjbem')
-=======
          if(a(icol,icol).eq.0) CALL wrf_error_fatal('singular matrix in gaussjbem')
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
          
          pivinv=1./a(icol,icol)
          a(icol,icol)=1
@@ -2723,9 +2435,6 @@ use module_wrf_error
 	
       return
       end subroutine radfluxs
-<<<<<<< HEAD
-
-=======
 !====6=8===============================================================72  
 !====6=8===============================================================72
       subroutine radfluxspv(nz,n,alb,rs,swddif,em,rl,twal,tair,sigma,radflux,pv_frac_roof,tpv)
@@ -2772,7 +2481,6 @@ use module_wrf_error
                em*sigma*(1.-pv_frac_roof)*twal**4
       return
       end subroutine radfluxspv
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !====6=8==============================================================72 
 !====6=8==============================================================72
 !       

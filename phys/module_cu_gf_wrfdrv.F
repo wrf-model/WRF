@@ -8,13 +8,9 @@ use module_gfs_physcons, g => con_g,                           &
                          r_v => con_rv
 use module_cu_gf_deep, only: cup_gf,neg_check,autoconv,aeroevap
 use module_cu_gf_sh, only: cup_gf_sh
-<<<<<<< HEAD
-
-=======
 #if ( WRF_CHEM == 1 )
 use module_cu_gf_ctrans, only: neg_check_chem
 #endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     This convective parameterization is build to attempt     !
@@ -60,16 +56,12 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option
               ,do_capsuppress,cap_suppress_loc                  &
-<<<<<<< HEAD
-#endif                                 
-=======
 #endif
 #if ( WRF_CHEM == 1 )
               ,chem,tracer,numgas                               &
               ,num_chem,chemopt,num_tracer,traceropt            &
               ,conv_tr_wetscav,conv_tr_aqchem,chem_conv_tr      &
 #endif                                     
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
                                                                 )
 !-------------------------------------------------------------
    IMPLICIT NONE
@@ -149,127 +141,10 @@ CONTAINS
          OPTIONAL,                                              &
          INTENT(INOUT) ::                          DUDT_PHY,    &
                                                    DVDT_PHY
-<<<<<<< HEAD
-=======
-
-#if ( WRF_CHEM == 1 )
-   INTEGER,INTENT(IN   ) ::                                     &
-                                 numgas,chemopt,traceropt,      &
-                                 num_tracer,num_chem,           &
-                                 conv_tr_wetscav,conv_tr_aqchem,&
-                                 chem_conv_tr
-   REAL,DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ),     &
-         INTENT(INOUT) ::                                       &
-                                   chem
-   REAL,DIMENSION( ims:ime , kms:kme , jms:jme, num_tracer ),   &
-         INTENT(INOUT) ::                                       &
-                                   tracer
-!local
-   REAL,DIMENSION( its:ite , kts:kte , num_chem )::             &
-                        chem2d,outchemts,outchemtm,             &
-                        outchemt,totchemt
-   REAL,DIMENSION( its:ite , kts:kte , num_tracer )::           &
-                        tracer2d,outtracerts,outtracertm,       &
-                        outtracert,tottracert
-   INTEGER :: nv,iopt
-   REAL:: epsilc
-#endif
-
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-!  Stochastic
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),OPTIONAL  ::pattern_spp_conv,field_conv
-   REAL, DIMENSION( its:ite, 4 )                 ::   rstochcol !,fieldcol_conv
-! Stochastiv required by GF
-   REAL,  DIMENSION( its:ite )   :: rand_mom,rand_vmas
-   REAL,  DIMENSION( its:ite,4 ) :: rand_clos
-
-!
-! Flags relating to the optional tendency arrays declared above
-! Models that carry the optional tendencies will provdide the
-! optional arguments at compile time; these flags all the model
-! to determine at run-time whether a particular tracer is in
-! use or not.
-!
-
-   INTEGER                                 :: spp_conv
-
-#if ( WRF_DFI_RADAR == 1 )
-!
-!  option of cap suppress: 
-!        do_capsuppress = 1   do
-!        do_capsuppress = other   don't
-!
-!
-   INTEGER,      INTENT(IN   ) ,OPTIONAL   :: do_capsuppress
-   REAL, DIMENSION( ims:ime, jms:jme ),INTENT(IN   ),OPTIONAL  :: cap_suppress_loc
-   REAL, DIMENSION( its:ite ) :: cap_suppress_j
-#endif
-! LOCAL VARS
-     real,    dimension (its:ite,kts:kte) ::                    &
-        dhdt
-     real,    dimension (its:ite,kts:kte) ::                    &
-        OUTT,OUTQ,OUTQC,cupclw,outu,outv,cnvwt
-     real,    dimension (its:ite,kts:kte) ::                    &
-        OUTTs,OUTQs,OUTQCs,cupclws,outus,outvs,cnvwts
-     real,    dimension (its:ite,kts:kte) ::                    &
-        OUTTm,OUTQm,OUTQCm,cupclwm,outum,outvm,cnvwtm
-     real,    dimension (its:ite)         ::                    &
-        pret, prets,pretm,ter11, aa0, xlandi
-     real,    dimension (its:ite)         ::                    &
-        hfxi,qfxi,dxi
-!+lxz
-     integer, dimension (its:ite) ::                            &
-        ierr,ierrs,ierrm
-     integer, dimension (its:ite) ::                            &
-        kbcon, kbcons, kbconm,                                  &
-        ktop, ktops, ktopm,                                     &
-        kpbli, k22, k22s, k22m
-!.lxz
-     integer :: ibegc,iendc,jbegc,jendc
-
-     integer, dimension (its:ite)         :: jmin,jminm
-
-!
-! basic environmental input includes moisture convergence (mconv)
-! omega (omeg), windspeed (us,vs)
-!
-     real,    dimension (its:ite,kts:kte) ::                    &
-        zo,T2d,q2d,PO,P2d,US,VS,rhoi,tn,qo,tshall,qshall
-! output from cup routines, can be used for diagnostics
-     real,    dimension (its:ite,kts:kte) ::                    &
-        zus,zum,zu,zdm,zd
-     real,    dimension (its:ite,kts:kte) ::                    &
-        omeg
-     real, dimension (its:ite)            ::                    &
-        ccn,Z1,PSUR,cuten,cutens,cutenm,                        &
-        umean,vmean,pmean,xmb,xmbs,                             &
-        xmbm,xmb_out,tau_ecmwf_out,xmb_dumm
-     real, dimension (its:ite)     ::                    &
-        edt,edtm,mconv
-
-   INTEGER :: i,j,k,ICLDCK,ipr,jpr,n
-   REAL    :: tcrit,dp,dq
-   INTEGER :: itf,jtf,ktf,iss,jss,nbegin,nend
-   REAL    :: rkbcon,rktop        !-lxz
-   character*50 :: ierrc(its:ite)
-   character*50 :: ierrcs(its:ite)
-   character*50 :: ierrcm(its:ite)
-
-     real,    dimension (its:ite,kts:kte) :: hco,hcdo,zdo
-     real,    dimension (its:ite,10)         :: forcing,forcing2
-
-     integer, dimension (its:ite) :: cactiv
-     real,    dimension (its:ite,kts:kte) ::  qcheck
-
-<<<<<<< HEAD
-
-
-=======
 #if ( WRF_CHEM == 1 )
    epsilc=1.e-30
    iopt=0
 #endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
    tcrit=258.
    ipr=0 !639
    jpr=0 !141
@@ -452,87 +327,6 @@ CONTAINS
          cupclw(i,k) = 0.
          cupclwm(i,k) = 0.
          qcheck(i,k) = 0.
-<<<<<<< HEAD
-=======
-#if ( WRF_CHEM == 1 )
-         do nv=2,num_chem
-           outchemts(I,K,nv)=0.
-           outchemtm(I,K,nv)=0.
-           outchemt(I,K,nv)=0.
-           chem2d(I,K,nv)=max(epsilc,chem(i,k,j,nv))
-         enddo
-         do nv=2,num_tracer
-           outtracerts(I,K,nv)=0.
-           outtracertm(I,K,nv)=0.
-           outtracert(I,K,nv)=0.
-           tracer2d(I,K,nv)=max(epsilc,tracer(i,k,j,nv))
-         enddo
-#endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-     ENDDO
-     ENDDO
-#if (NMM_CORE==1)
-! for NMM, tendencies have already been added to T,Q, and total tendencies
-! are stored in *FTEN variables
-     DO K=kts,ktf
-     DO I=ITS,ITF
-         TN(I,K)=t2d(i,k) + RTHFTEN(i,k,j)*pi(i,k,j)*dt
-         QO(I,K)=q2d(i,k) + RQVFTEN(i,k,j)*dt
-         IF(TN(I,K).LT.200.)TN(I,K)=T2d(I,K)
-         IF(QO(I,K).LT.1.E-08)QO(I,K)=1.E-08
-     ENDDO
-     ENDDO
-#endif
-! for EM_CORE, tendencies have not yet been added to T,Q, and *FTEN variables
-! contain advective forcing only
-     DO K=kts,ktf
-     DO I=ITS,ITF
-         omeg(I,K)= -g*rho(i,k,j)*w(i,k,j)
-     enddo
-     enddo
-     do k=  kts+1,ktf-1
-     DO I = its,itf
-         if((p2d(i,1)-p2d(i,k)).gt.150.and.p2d(i,k).gt.300)then
-            dp=-.5*(p2d(i,k+1)-p2d(i,k-1))
-            umean(i)=umean(i)+us(i,k)*dp
-            vmean(i)=vmean(i)+vs(i,k)*dp
-            pmean(i)=pmean(i)+dp
-         endif
-     enddo
-     enddo
-      DO K=kts,ktf-1
-      DO I = its,itf
-        dq=(q2d(i,k+1)-q2d(i,k))
-        mconv(i)=mconv(i)+omeg(i,k)*dq/g
-      enddo
-      ENDDO
-      DO I = its,itf
-        if(mconv(i).lt.0.)mconv(i)=0.
-      ENDDO
-!
-!---- CALL CUMULUS PARAMETERIZATION
-!
-#if ( WRF_DFI_RADAR == 1 )
-      if(do_capsuppress == 1 ) then
-        DO I= its,itf
-            cap_suppress_j(i)=cap_suppress_loc(i,j)
-        ENDDO
-      endif
-#endif
-
-       if(ishallow_g3 == 1 )then
-
-          call CUP_gf_sh (                                              &
-! input variables, must be supplied
-              zo,t2d,q2d,ter11,tshall,qshall,p2d,psur,dhdt,kpbli,      &
-              rhoi,hfxi,qfxi,xlandi,ichoice_s,tcrit,dt,                  &
-! input variables. Ierr should be initialized to zero or larger than zero for
-! turning off shallow convection for grid points
-              zus,xmbs,kbcons,ktops,k22s,ierrs,ierrcs,    &
-! output tendencies
-              outts,outqs,outqcs,cnvwt,prets,cupclws,             &
-<<<<<<< HEAD
-=======
 #if ( WRF_CHEM == 1 )
               num_chem,chem2d,outchemts,          &
               num_tracer,tracer2d,outtracerts,    &
@@ -540,7 +334,6 @@ CONTAINS
               conv_tr_wetscav,conv_tr_aqchem,     &
               chem_conv_tr,                       &
 #endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 ! dimesnional variables
               itf,ktf,its,ite, kts,kte,ipr)
           do i=its,itf
@@ -619,103 +412,6 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
               ,do_capsuppress,cap_suppress_j &
 #endif
-<<<<<<< HEAD
-=======
-#if ( WRF_CHEM == 1 )
-              ,num_chem,chem2d,outchemtm       &
-              ,num_tracer,tracer2d,outtracertm &
-              ,numgas,chemopt,traceropt        &
-              ,conv_tr_wetscav,conv_tr_aqchem  &
-              ,chem_conv_tr                    &
-#endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
-              ,k22m          &
-              ,jminm)
-
-            DO I=its,itf
-            DO K=kts,ktf
-              qcheck(i,k)=q2d(i,k) +outqs(i,k)*dt
-            enddo
-            enddo
-      CALL neg_check('mid',ipr,dt,qcheck,outqm,outtm,outum,outvm,   &
-                     outqcm,pretm,its,ite,kts,kte,itf,ktf)
-    endif
-
-#if ( WRF_DFI_RADAR == 1 )
-      if(do_capsuppress == 1 ) then
-        DO I= its,itf
-            cap_suppress_j(i)=cap_suppress_loc(i,j)
-        ENDDO
-      endif
-#endif
-   if(ideep.eq.1)then
-      call cup_gf(        &
-               itf,ktf,its,ite, kts,kte  &
-
-              ,dicycle       &
-              ,ichoice       &
-              ,ipr           &
-              ,ccn           &
-              ,dt            &
-              ,0             &
-
-              ,kpbli         &
-              ,dhdt          &
-              ,xlandi        &
-
-              ,zo            &
-              ,forcing       &
-              ,t2d           &
-              ,q2d           &
-              ,ter11         &
-              ,tn            &
-              ,qo            &
-              ,p2d           &
-              ,psur          &
-              ,us            &
-              ,vs            &
-              ,rhoi          &
-              ,hfxi          &
-              ,qfxi          &
-              ,dxi            &
-              ,mconv         &
-              ,omeg          &
-
-              ,cactiv       &
-              ,cnvwt        &
-              ,zu           &
-              ,zd           &
-              ,edt          &
-              ,xmb          &
-              ,xmbm         &
-              ,xmbs         &
-              ,pret         &
-              ,outu         &
-              ,outv         &
-              ,outt         &
-              ,outq         &
-              ,outqc        &
-              ,kbcon        &
-              ,ktop         &
-              ,cupclw       &
-              ,ierr         &
-              ,ierrc        &
-!    the following should be set to zero if not available
-              ,rand_mom      & ! for stochastics mom, if temporal and spatial patterns exist
-              ,rand_vmas     & ! for stochastics vertmass, if temporal and spatial patterns exist
-              ,rand_clos     & ! for stochastics closures, if temporal and spatial patterns exist
-              ,0             & ! flag to what you want perturbed
-                               ! 1 = momentum transport 
-                               ! 2 = normalized vertical mass flux profile
-                               ! 3 = closures
-                               ! more is possible, talk to developer or
-                               ! implement yourself. pattern is expected to be
-                               ! betwee -1 and +1
-#if ( WRF_DFI_RADAR == 1 )
-              ,do_capsuppress,cap_suppress_j &
-#endif
-<<<<<<< HEAD
-=======
 #if ( WRF_CHEM == 1 )
               ,num_chem,chem2d,outchemt        &
               ,num_tracer,tracer2d,outtracert  &
@@ -723,7 +419,6 @@ CONTAINS
               ,conv_tr_wetscav,conv_tr_aqchem  &
               ,chem_conv_tr                    & 
 #endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
               ,k22          &
               ,jmin)
         jpr=0
@@ -780,8 +475,6 @@ CONTAINS
                DVDT_PHY(I,K,J)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i)
             ENDDO
             ENDDO
-<<<<<<< HEAD
-=======
 #if ( WRF_CHEM == 1 )
             DO I=ibegc,iendc
             DO K=kts,ktf
@@ -825,7 +518,6 @@ CONTAINS
               ENDDO
             endif ! tracer_opt
 #endif
->>>>>>> 57f8f5508dbfff90bee4647192e98338870a4656
 
             DO I=ibegc,iendc
               if(pret(i).gt.0. .or. pretm(i).gt.0. .or. prets(i).gt.0.)then

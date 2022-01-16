@@ -96,7 +96,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    qng=0
    rn0_r=8e6
    rn0_s=3e6
-   rn0_g=4e5
+   rn0_g=4e6
    rhos=100.0
    rhog=400.0
    !------------------------   
@@ -211,8 +211,8 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    call da_interp_lin_3d (grid%xb % wh,  iv%info(radar), model_w)
    call da_interp_lin_3d (grid%xb % rho, iv%info(radar), model_rho)
    call da_interp_lin_3d (grid%xb % qrn, iv%info(radar), model_qrn)
-   call da_interp_lin_3d (grid%xb % qrn, iv%info(radar), model_qcl)
-   call da_interp_lin_3d (grid%xb % qrn, iv%info(radar), model_qci)
+   call da_interp_lin_3d (grid%xb % qcw, iv%info(radar), model_qcl)
+   call da_interp_lin_3d (grid%xb % qci, iv%info(radar), model_qci)
    call da_interp_lin_3d (grid%xb % qsn, iv%info(radar), model_qsn)
 IF ( ASSOCIATED( grid%xb%qgr ) ) THEN
    call da_interp_lin_3d (grid%xb % qgr, iv%info(radar), model_qgr)
@@ -242,7 +242,7 @@ END IF
 
    do n=iv%info(radar)%n1,iv%info(radar)%n2
 
-      if ( use_radar_rf ) then
+      if ( use_radar_rf .and. radar_rf_opt==1) then
          ! for Xiao's default scheme
          ! Test 5.0E-8 (kg/kg) as critical value. It can not be smaller.
          do k=1,iv%info(radar)%levels(n)
@@ -367,9 +367,10 @@ END IF
             end if
 
             if (use_radar_rf .and. radar_rf_opt==2) then
+              iv % radar(n) % zmm(k) % inv = 0
+              iv % radar(n) % rf (k) % qc = -5 ! assume bad rf obs first
+              echo_rf_good = ob % radar(n) % rf(k) >= rfmin
               if ( echo_rf_good ) then
-                !select case (radar_rf_opt)
-                !case(2)
                   tmk=model_tc(k,n)+273.15
                   prs=model_p(k,n)
                   zmm=0
@@ -380,20 +381,8 @@ END IF
                                        0,zmm_ref)
                   model_rf(k,n)=dbz*radar_rf_rscl
                   iv % radar(n) % zmm(k) % inv = zmm
-                  iv % radar(n) % rf(k) % inv = 0
-                  if(ob % radar(n) % rf(k) < rfmin .and. ( model_qrn(k,n)<=2.0*rf_qthres.and. &
-                                                           model_qsn(k,n)<=2.0*rf_qthres.and. &
-                                                           model_qgr(k,n)<=2.0*rf_qthres)) then
-                     iv % radar(n) % zmm(k) % inv = 0
-                     iv % radar(n) % rf (k) % qc = -5                 
-                  else if( ob % radar(n) % rf(k) < rfmin .and. ( model_qrn(k,n)>2.0*rf_qthres.or. &
-                                                                 model_qsn(k,n)>2.0*rf_qthres.or. &
-                                                                 model_qgr(k,n)>2.0*rf_qthres) ) then
-                     iv % radar(n) % rf(k) % inv = rfmin - model_rf(k,n)
-                  else if( ob % radar(n) % rf(k) >= rfmin ) then
-                     iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - model_rf(k,n)  
-                  endif
-                !end select
+                  iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - model_rf(k,n)
+                  if (model_rf(k,n) >= rfmin) iv % radar(n) % rf (k) % qc  = 0
               end if
             end if
 

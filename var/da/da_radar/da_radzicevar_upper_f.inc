@@ -12,7 +12,7 @@
   if(flg==2) fmax=0.3 ! for hail/graupel
       
   upper_f=0
-  if(qr>=qthres.and.qice>=qthres) then
+  if(qr>1.0e-12 .and. qice>1.0e-12) then
     upper_f=fmax*min(qice/qr,qr/qice)**0.3
   endif
 

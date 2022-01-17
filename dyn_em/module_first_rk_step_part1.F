@@ -515,6 +515,7 @@ BENCH_START(surf_driver_tim)
       CALL surface_driver(                                                &
      &        HYDRO_dt=HYDRO_dt,  sfcheadrt=grid%sfcheadrt,               &
      &        INFXSRT=grid%INFXSRT,  soldrain=grid%soldrain,              &
+     &        qtiledrain=grid%qtiledrain,ZWATBLE2D=grid%ZWATBLE2D,        & ! tile drainage for WRF-Hydro
      &         ACGRDFLX=grid%acgrdflx  ,ACHFX=grid%achfx        ,ACLHF=grid%aclhf        &
      &        ,ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
@@ -838,9 +839,11 @@ BENCH_START(surf_driver_tim)
      &        ,iopt_alb=config_flags%opt_alb,   iopt_snf=config_flags%opt_snf &
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
      &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
-     &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo &
-     &        ,iopt_crop=config_flags%opt_crop, iopt_irr=config_flags%opt_irr   &
-     &        ,iopt_irrm=config_flags%opt_irrm                                       &
+     &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo  &
+     &        ,iopt_crop=config_flags%opt_crop, iopt_irr=config_flags%opt_irr    &
+     &        ,iopt_irrm=config_flags%opt_irrm                                   &
+     &        ,iopt_infdv=config_flags%opt_infdv,iopt_tdrn=config_flags%opt_tdrn &
+     &        ,soiltstep=config_flags%soiltstep
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -874,17 +877,35 @@ BENCH_START(surf_driver_tim)
      &        ,   irbxy=grid%irbxy    ,    trxy=grid%trxy    ,   evcxy=grid%evcxy    &
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &
-           !Noah-MP irrigation
+! Noah-MP extra output fields
+     &        ,    qintsxy=grid%qintsxy    ,   qintrxy=grid%qintrxy   ,   qdripsxy=grid%qdripsxy   &
+     &        ,   qdriprxy=grid%qdriprxy   ,  qthrosxy=grid%qthrosxy  ,   qthrorxy=grid%qthrorxy   &
+     &        ,   qsnsubxy=grid%qsnsubxy   ,  qsnfroxy=grid%qsnfroxy  ,    qsubcxy=grid%qsubcxy    &
+     &        ,    qfrocxy=grid%qfrocxy    ,   qfrzcxy=grid%qfrzcxy   ,   qmeltcxy=grid%qmeltcxy   &
+     &        ,   qsnbotxy=grid%qsnbotxy   , pondingxy=grid%pondingxy ,      PAHXY=grid%PAHXY      &
+     &        ,     PAHGXY=grid%PAHGXY     ,    PAHVXY=grid%PAHVXY    ,     PAHBXY=grid%PAHBXY     &
+     &        ,    FPICEXY=grid%FPICEXY    ,   qevacxy=grid%qevacxy                                &
+     &        ,    qdewcxy=grid%qdewcxy    ,   RAINLSM=grid%RAINLSM   ,    SNOWLSM=grid%SNOWLSM    &
+     &        ,   forctlsm=grid%forctlsm   ,  forcqlsm=grid%forcqlsm  ,   forcplsm=grid%forcplsm   &
+     &        ,   forczlsm=grid%forczlsm   ,  forcwlsm=grid%forcwlsm                               &
+     &        ,  acc_ssoil=grid%acc_ssoil  ,acc_qinsur=grid%acc_qinsur,  acc_qseva=grid%acc_qseva  &
+     &        , acc_etrani=grid%acc_etrani ,   eflxbxy=grid%eflxbxy                                &
+     &        , soilenergy=grid%soilenergy ,snowenergy=grid%snowenergy,    canhsxy=grid%canhsxy    &
+     &        , ACC_DWATERXY=grid%ACC_DWATERXY, ACC_PRCPXY=grid%ACC_PRCPXY,ACC_ECANXY=grid%ACC_ECANXY &
+     &        , ACC_ETRANXY=grid%ACC_ETRANXY, ACC_EDIRXY=grid%ACC_EDIRXY  &
+! Noah-MP irrigation
      &        , IRFRACT=grid%IRFRACT  , SIFRACT=grid%SIFRACT ,MIFRACT=grid%MIFRACT   &
      &        , FIFRACT=grid%FIFRACT  , IRNUMSI=grid%IRNUMSI ,IRNUMMI=grid%IRNUMMI   &
      &        , IRNUMFI=grid%IRNUMFI  , IRWATSI=grid%IRWATSI ,IRWATMI=grid%IRWATMI   &
      &        , IRWATFI=grid%IRWATFI  , IRELOSS=grid%IRELOSS ,IRSIVOL=grid%IRSIVOL   &
      &        , IRMIVOL=grid%IRMIVOL  , IRFIVOL=grid%IRFIVOL ,IRRSPLH=grid%IRRSPLH   &                       
-           !Optional hydro variables in NOAHMP
+! Noah-MP tile drainage
+     &        , QTDRAIN=grid%QTDRAIN  , TD_FRACTION=grid%TD_FRACTION                 &
+! Optional hydro variables in NOAHMP
      &        ,smcwtdxy=grid%smcwtdxy ,rechxy=grid%rechxy ,deeprechxy=grid%deeprechxy &
      &        ,fdepthxy=grid%fdepthxy, areaxy=grid%areaxy, rivercondxy=grid%rivercondxy  &
      &        ,riverbedxy=grid%riverbedxy, eqzwt=grid%eqzwt, pexpxy=grid%pexpxy &
-     &        ,qrfxy=grid%qrfxy, qspringxy=grid%qspringxy, qslatxy=grid%qslatxy, qrfsxy=grid%qrfsxy &
+     &        ,qrfxy=grid%qrfxy, qspringxy=grid%qspringxy, qslatxy=grid%qslatxy, qrfsxy=grid%qrfsxy, qlatxy=grid%qlatxy &
      &        ,qspringsxy=grid%qspringsxy, smoiseq=grid%smoiseq, wtddt=config_flags%wtddt, stepwtd=grid%stepwtd &
      &        ,gecros_state=grid%gecros_state                                   &   ! Optional gecros crop
            ! Noah UA changes

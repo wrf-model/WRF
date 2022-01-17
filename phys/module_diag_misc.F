@@ -636,5 +636,212 @@ CONTAINS
 
    END SUBROUTINE diagnostic_output_calc
 
+
+!-------------------------- NOAHMP model diagnostic output
+   subroutine noahmp_output_calc(  ims,ime, jms,jme                                  ,&
+      i_start  ,i_end    ,j_start  ,j_end    ,num_tiles                              ,&
+      dt       ,noahmp_acc_dt      ,curr_secs2,opt_run  ,stepwtd ,itimestep          ,&
+      acsagv   ,acsagb   ,acirg    ,acshg    ,acevg     ,acghv   ,acpahg   ,acirb    ,&
+      acshb    ,acevb    ,acghb    ,acpahb   ,acsav     ,acirc   ,acshc    ,acevc    ,&
+      actr     ,acpahv   ,acswdnlsm,acswuplsm,                                        &
+      aclwdnlsm,aclwuplsm,acshflsm ,aclhflsm ,acghflsm  ,acpahlsm,acints   ,acintr   ,&
+      acdrips  ,acdripr  ,acthros  ,acthror  ,acetlsm   ,&
+      acsnsub  ,acsnfro  ,acsubc   ,acfroc   ,acevac    ,acdewc  ,acfrzc   ,acmeltc  ,&
+      acsnbot  ,acponding,acrainlsm,acsnowlsm,acrainsnow,acrunsb ,acrunsf  ,isnow    ,&
+      acqlat   ,acqrf  ,acrech ,acqspring ,acecan ,acetran ,acedir ,aceflxb ,accanhs ,&
+      sag      ,irg      ,shg      ,evg      ,ghv       ,pahg    ,irb      ,shb      ,&
+      evb      ,ghb      ,pahb     ,sav      ,ircmp     ,shc     ,evc      ,tr       ,&
+      pahv     ,swdown   ,albedo   ,emiss    ,                                        &
+      glw      ,trad     ,qints    ,qintr    ,qdrips    ,qdripr  ,qthros   ,qthror   ,&
+      qsnsub   ,qsnfro   ,qsubc    ,qfroc    ,qevac     ,qdewc   ,qfrzc    ,qmeltc   ,&
+      qsnbot   ,ponding  ,rainlsm  ,snowlsm  ,runsb     ,runsf   ,fpice    ,fveg     ,&
+      qlat     ,qrf      ,deeprech ,qspring  ,ecan      ,etran   ,edir  ,eflxb,  canhs )
+
+!----------------------------------------------------------------------
+
+   implicit none
+
+!======================================================================
+
+   integer,      intent(in   )    ::  ims,ime, jms,jme, num_tiles
+
+   integer, dimension(num_tiles), intent(in) :: i_start,i_end,j_start,j_end
+
+   real   ,           intent(in) :: dt
+   real   , optional, intent(in) :: noahmp_acc_dt, curr_secs2
+   integer, optional, intent(in) :: opt_run, stepwtd, itimestep
+
+   real, dimension( ims:ime, jms:jme ), optional, intent(inout) ::                    &
+      acsagv   ,acsagb   ,acirg    ,acshg    ,acevg     ,acghv   ,acpahg   ,acirb    ,&
+      acshb    ,acevb    ,acghb    ,acpahb   ,acsav     ,acirc   ,acshc    ,acevc    ,&
+      actr     ,acpahv   ,acswdnlsm,acswuplsm,                                        &
+      aclwdnlsm,aclwuplsm,acshflsm ,aclhflsm ,acghflsm  ,acpahlsm,acints   ,acintr   ,&
+      acdrips   ,acdripr ,acthros  ,acthror  ,acetlsm   ,&
+      acsnsub  ,acsnfro  ,acsubc   ,acfroc   ,acevac    ,acdewc  ,acfrzc   ,acmeltc  ,&
+      acsnbot  ,acponding,acrainlsm,acsnowlsm,acrainsnow,acrunsb ,acrunsf  ,          &
+      acqlat   ,acqrf    ,acrech   ,acqspring,acecan    ,acetran ,acedir   ,aceflxb  ,&
+      accanhs
+
+   real, dimension( ims:ime, jms:jme ), optional, intent(in) ::                       &
+      sag      ,irg      ,shg      ,evg      ,ghv       ,pahg    ,irb      ,shb      ,&
+      evb      ,ghb      ,pahb     ,sav      ,ircmp     ,shc     ,evc      ,tr       ,&
+      pahv     ,swdown   ,albedo   ,emiss    ,                                        &
+      glw      ,trad     ,qints    ,qintr    ,qdrips    ,qdripr  ,qthros   ,qthror   ,&
+      qsnsub   ,qsnfro   ,qsubc    ,qfroc    ,qevac     ,qdewc   ,qfrzc    ,qmeltc   ,&
+      qsnbot   ,ponding  ,rainlsm  ,snowlsm  ,runsb     ,runsf   ,fpice    ,fveg     ,&
+      qlat     ,qrf      ,deeprech ,qspring  ,ecan      ,etran   ,edir     ,eflxb    ,&
+      canhs
+
+   integer, dimension( ims:ime, jms:jme ), optional, intent(in) ::   isnow
+
+   integer :: i,j,ij
+   real :: kjconvert
+
+! compute noah-mp accumulation in a given time window: noahmp_acc_dt
+
+   if (noahmp_acc_dt .gt. 0.) then
+
+!  !$omp parallel do   &
+!  !$omp private ( ij )
+
+   do ij = 1 , num_tiles
+
+      do j=j_start(ij),j_end(ij)
+      do i=i_start(ij),i_end(ij)
+         if (mod(curr_secs2, 60.* noahmp_acc_dt) == 0.) then
+            acsagb(i,j) = 0.
+            acsagv(i,j) = 0.
+            acirg(i,j)  = 0.
+            acshg(i,j)  = 0.
+            acevg(i,j)  = 0.
+            acghv(i,j)  = 0.
+            acpahg(i,j) = 0.
+            acirb(i,j)  = 0.
+            acshb(i,j)  = 0.
+            acevb(i,j)  = 0.
+            acghb(i,j)  = 0.
+            acpahb(i,j) = 0.
+            acsav(i,j)  = 0.
+            acirc(i,j)  = 0.
+            acshc(i,j)  = 0.
+            acevc(i,j)  = 0.
+            actr (i,j)  = 0.
+            acpahv(i,j) = 0.
+            accanhs(i,j)= 0.
+            acswdnlsm(i,j)  = 0.
+            acswuplsm(i,j)  = 0.
+            aclwdnlsm(i,j)  = 0.
+            aclwuplsm(i,j)  = 0.
+            acshflsm(i,j)   = 0.
+            aclhflsm(i,j)   = 0.
+            acghflsm(i,j)   = 0.
+            acpahlsm(i,j)   = 0.
+            acints(i,j)     = 0.
+            acintr(i,j)     = 0.
+            acdrips(i,j)    = 0.
+            acdripr(i,j)    = 0.
+            acthros(i,j)    = 0.
+            acthror(i,j)    = 0.
+            acsnsub(i,j)    = 0.
+            acsnfro(i,j)    = 0.
+            acsubc(i,j)     = 0.
+            acfroc(i,j)     = 0.
+            acevac(i,j)     = 0.
+            acdewc(i,j)     = 0.
+            acfrzc(i,j)     = 0.
+            acmeltc(i,j)    = 0.
+            acsnbot(i,j)    = 0.
+            acrunsf(i,j)    = 0.
+            acrunsb(i,j)    = 0.
+            acecan(i,j)     = 0.
+            acetran(i,j)    = 0.
+            acedir(i,j)     = 0.
+            acetlsm(i,j)    = 0.
+            aceflxb(i,j)    = 0.
+            acponding(i,j)  = 0.
+            acrainsnow(i,j) = 0.
+            acrainlsm(i,j)  = 0.
+            acsnowlsm(i,j)  = 0.
+            acqlat(i,j)     = 0.
+            acqrf(i,j)      = 0.
+            acrech(i,j)     = 0.
+            acqspring(i,j)  = 0.
+         endif
+
+         kjconvert = dt / 1000.0
+         acsagb(i,j) = acsagb(i,j) +  kjconvert * (1.0 - fveg(i,j)) * sag(i,j)
+         acsagv(i,j) = acsagv(i,j) +  kjconvert * fveg(i,j) * sag(i,j)
+         acirg(i,j)  = acirg(i,j)  +  kjconvert * fveg(i,j) * irg(i,j)
+         acshg(i,j)  = acshg(i,j)  +  kjconvert * fveg(i,j) * shg(i,j)
+         acevg(i,j)  = acevg(i,j)  +  kjconvert * fveg(i,j) * evg(i,j)
+         acghv(i,j)  = acghv(i,j)  +  kjconvert * fveg(i,j) * ghv(i,j)
+         acpahg(i,j) = acpahg(i,j) +  kjconvert * fveg(i,j) * pahg(i,j)
+         acirb(i,j)  = acirb(i,j)  +  kjconvert * (1.0 - fveg(i,j)) * irb(i,j)
+         acshb(i,j)  = acshb(i,j)  +  kjconvert * (1.0 - fveg(i,j)) * shb(i,j)
+         acevb(i,j)  = acevb(i,j)  +  kjconvert * (1.0 - fveg(i,j)) * evb(i,j)
+         acghb(i,j)  = acghb(i,j)  +  kjconvert * (1.0 - fveg(i,j)) * ghb(i,j)
+         acpahb(i,j) = acpahb(i,j) +  kjconvert * (1.0 - fveg(i,j)) * pahb(i,j)
+         acsav(i,j)  = acsav(i,j)  +  kjconvert * sav(i,j)
+         acirc(i,j)  = acirc(i,j)  +  kjconvert * ircmp(i,j)
+         acshc(i,j)  = acshc(i,j)  +  kjconvert * shc(i,j)
+         acevc(i,j)  = acevc(i,j)  +  kjconvert * evc(i,j)
+         actr(i,j)   = actr(i,j)   +  kjconvert * tr(i,j)
+         aceflxb(i,j)= aceflxb(i,j)+  eflxb(i,j) / 1000.0   ! multiplied by dt_soil in ENERGY
+         accanhs(i,j)= accanhs(i,j)+  kjconvert * canhs(i,j)
+         acpahv(i,j) = acpahv(i,j) +  kjconvert * pahv(i,j)
+         acswdnlsm(i,j)  = acswdnlsm(i,j)  +  kjconvert * swdown(i,j)
+         acswuplsm(i,j)  = acswuplsm(i,j)  +  kjconvert * swdown(i,j)*albedo(i,j)
+         aclwdnlsm(i,j)  = aclwdnlsm(i,j)  +  kjconvert * glw(i,j)*emiss(i,j)
+         aclwuplsm(i,j)  = aclwuplsm(i,j)  +  kjconvert * 5.67e-08*emiss(i,j)*trad(i,j)*trad(i,j)*trad(i,j)*trad(i,j)
+         acshflsm(i,j)   = acshg(i,j) + acshc(i,j) + acshb(i,j)
+         aclhflsm(i,j)   = acevg(i,j) + acevc(i,j) + actr(i,j) + acevb(i,j)
+         acghflsm(i,j)   = acghv(i,j) + acghb(i,j)
+         acpahlsm(i,j)   = acpahv(i,j) + acpahg(i,j) + acpahb(i,j)
+         acints(i,j)     = acints(i,j)     +  dt *   qints(i,j)
+         acintr(i,j)     = acintr(i,j)     +  dt *   qintr(i,j)
+         acdrips(i,j)    = acdrips(i,j)    +  dt *  qdrips(i,j)
+         acdripr(i,j)    = acdripr(i,j)    +  dt *  qdripr(i,j)
+         acthros(i,j)    = acthros(i,j)    +  dt *  qthros(i,j)
+         acthror(i,j)    = acthror(i,j)    +  dt *  qthror(i,j)
+         acsnsub(i,j)    = acsnsub(i,j)    +  dt *  qsnsub(i,j)
+         acsnfro(i,j)    = acsnfro(i,j)    +  dt *  qsnfro(i,j)
+         acsubc(i,j)     = acsubc(i,j)     +  dt *   qsubc(i,j)
+         acfroc(i,j)     = acfroc(i,j)     +  dt *   qfroc(i,j)
+         acevac(i,j)     = acevac(i,j)     +  dt *   qevac(i,j)
+         acdewc(i,j)     = acdewc(i,j)     +  dt *   qdewc(i,j)
+         acfrzc(i,j)     = acfrzc(i,j)     +  dt *   qfrzc(i,j)
+         acmeltc(i,j)    = acmeltc(i,j)    +  dt *  qmeltc(i,j)
+         acsnbot(i,j)    = acsnbot(i,j)    +  dt *  qsnbot(i,j)
+         acrunsf(i,j)    = acrunsf(i,j)    +  runsf(i,j)  ! multiplied by dt_soil in WATER
+         acrunsb(i,j)    = acrunsb(i,j)    +  runsb(i,j)  ! multiplied by dt_soil in WATER
+         acecan(i,j)     = acecan(i,j)     +  dt *    ecan(i,j)
+         acetran(i,j)    = acetran(i,j)    +  dt *   etran(i,j)
+         acedir(i,j)     = acedir(i,j)     +  dt *    edir(i,j)
+         acetlsm(i,j)    = acetlsm(i,j)    +  dt *   (etran(i,j) + edir(i,j) + ecan(i,j))
+         acponding(i,j)  = acponding(i,j)  +       ponding(i,j)
+         acrainlsm(i,j)  = acrainlsm(i,j)  +  dt *  rainlsm(i,j)
+         acsnowlsm(i,j)  = acsnowlsm(i,j)  +  dt *  snowlsm(i,j)
+         if(opt_run == 5) then
+           if(mod(itimestep,stepwtd) == 0) then
+             acqlat(i,j)     = acqlat(i,j)     +          qlat(i,j) * 1000.0
+             acqrf(i,j)      = acqrf(i,j)      +           qrf(i,j) * 1000.0
+             acrech(i,j)     = acrech(i,j)     +      deeprech(i,j)
+             acqspring(i,j)  = acqspring(i,j)  +       qspring(i,j)
+           endif
+         endif
+         if(isnow(i,j) < 0 .and. isnow(i,j) > -5) then
+            acrainsnow(i,j) =  acrainsnow(i,j) + dt * (qdripr(i,j) + qthror(i,j))
+         endif
+      enddo
+      enddo
+
+   enddo
+
+!  !$omp end parallel do
+   endif
+
+   end subroutine noahmp_output_calc
+
+
 END MODULE module_diag_misc
 #endif

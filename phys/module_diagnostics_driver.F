@@ -69,7 +69,7 @@ CONTAINS
       !=============================================================
       
       USE module_lightning_driver, ONLY : lightning_driver      
-      USE module_diag_misc, ONLY : diagnostic_output_calc
+      USE module_diag_misc, ONLY : diagnostic_output_calc, noahmp_output_calc
       USE module_diag_nwp, ONLY : diagnostic_output_nwp
       USE module_diag_cl, ONLY : clwrf_output_calc
       USE module_diag_pld, ONLY : pld
@@ -1090,6 +1090,84 @@ CONTAINS
            ,NUM_TILES=grid%num_tiles                                          &
                                                                    )
       END IF RASM_DIAGS_DIURNAL
+
+
+      !  Noah-MP accumulation output
+
+      NOAHMP_DIAGS : IF ( config_flags%sf_surface_physics == 4 .and. config_flags%noahmp_output == 3  ) THEN
+
+         CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: NOAHMP_DIAGS' )
+
+         CALL domain_clock_get ( grid, current_time=currentTime)
+
+         CALL noahmp_output_calc(                                          &
+           ims=ims, ime=ime, jms=jms, jme=jme                             ,&
+           i_start=grid%i_start, i_end=min(grid%i_end, ide-1)             ,&
+           j_start=grid%j_start, j_end=min(grid%j_end, jde-1)             ,&
+           num_tiles=grid%num_tiles                                       ,&
+           dt=grid%dt                                                     ,&
+           noahmp_acc_dt=config_flags%noahmp_acc_dt                       ,&
+           opt_run=config_flags%opt_run                                   ,&
+           stepwtd=grid%stepwtd                                           ,&
+           itimestep=grid%itimestep                                       ,&
+           curr_secs2=curr_secs2                                          ,&
+           acsagb=grid%acsagb    ,  acsagv=grid%acsagv  , sag=grid%sagxy  ,&
+            acirg=grid%acirg     ,     irg=grid%irgxy                     ,&
+            acshg=grid%acshg     ,     shg=grid%shgxy                     ,&
+            acevg=grid%acevg     ,     evg=grid%evgxy                     ,&
+            acghv=grid%acghv     ,     ghv=grid%ghvxy                     ,&
+           acpahg=grid%acpahg    ,    pahg=grid%pahgxy                    ,&
+            acirb=grid%acirb     ,     irb=grid%irbxy                     ,&
+            acshb=grid%acshb     ,     shb=grid%shbxy                     ,&
+            acevb=grid%acevb     ,     evb=grid%evbxy                     ,&
+            acghb=grid%acghb     ,     ghb=grid%ghbxy                     ,&
+           acpahb=grid%acpahb    ,    pahb=grid%pahbxy                    ,&
+            acsav=grid%acsav     ,     sav=grid%savxy                     ,&
+            acirc=grid%acirc     ,   ircmp=grid%ircxy                     ,&
+            acshc=grid%acshc     ,     shc=grid%shcxy                     ,&
+            acevc=grid%acevc     ,     evc=grid%evcxy                     ,&
+             actr=grid%actr      ,      tr=grid%trxy                      ,&
+           acpahv=grid%acpahv    ,    pahv=grid%pahvxy                    ,&
+        acswdnlsm=grid%acswdnlsm ,  swdown=grid%swnorm                    ,&
+        acswuplsm=grid%acswuplsm ,  albedo=grid%albedo                    ,&
+        aclwdnlsm=grid%aclwdnlsm ,   emiss=grid%emiss   , glw=grid%glw    ,&
+        aclwuplsm=grid%aclwuplsm ,    trad=grid%tradxy                    ,&
+        acshflsm=grid%acshflsm   ,aclhflsm=grid%aclhflsm                  ,&
+        acghflsm=grid%acghflsm   ,acpahlsm=grid%acpahlsm                  ,&
+           acints=grid%acints    ,   qints=grid%qintsxy                   ,&
+           acintr=grid%acintr    ,   qintr=grid%qintrxy                   ,&
+          acdrips=grid%acdrips   ,  qdrips=grid%qdripsxy                  ,&
+          acdripr=grid%acdripr   ,  qdripr=grid%qdriprxy                  ,&
+          acthros=grid%acthros   ,  qthros=grid%qthrosxy                  ,&
+          acthror=grid%acthror   ,  qthror=grid%qthrorxy                  ,&
+          acsnsub=grid%acsnsub   ,  qsnsub=grid%qsnsubxy                  ,&
+          acsnfro=grid%acsnfro   ,  qsnfro=grid%qsnfroxy                  ,&
+           acsubc=grid%acsubc    ,   qsubc=grid%qsubcxy                   ,&
+           acfroc=grid%acfroc    ,   qfroc=grid%qfrocxy                   ,&
+           acevac=grid%acevac    ,   qevac=grid%qevacxy                   ,&
+           acdewc=grid%acdewc    ,   qdewc=grid%qdewcxy                   ,&
+           acfrzc=grid%acfrzc    ,   qfrzc=grid%qfrzcxy                   ,&
+          acmeltc=grid%acmeltc   ,  qmeltc=grid%qmeltcxy                  ,&
+          acsnbot=grid%acsnbot   ,  qsnbot=grid%qsnbotxy                  ,&
+        acponding=grid%acponding , ponding=grid%pondingxy                 ,&
+        acrainlsm=grid%acrainlsm , rainlsm=grid%rainlsm                   ,&
+        acsnowlsm=grid%acsnowlsm , snowlsm=grid%snowlsm                   ,&
+       acrainsnow=grid%acrainsnow,   isnow=grid%isnowxy                   ,&
+          acrunsb=grid%acrunsb   ,   runsb=grid%runsbxy                   ,&
+          acrunsf=grid%acrunsf   ,   runsf=grid%runsfxy                   ,&
+           acecan=grid%acecan    ,    ecan=grid%ecanxy                    ,&
+          acetran=grid%acetran   ,   etran=grid%etranxy                   ,&
+           acedir=grid%acedir    ,    edir=grid%edirxy                    ,&
+          acetlsm=grid%acetlsm                                            ,&
+           acqlat=grid%acqlat    ,    qlat=grid%qlatxy                    ,&
+            acqrf=grid%acqrf     ,     qrf=grid%qrfxy                     ,&
+           acrech=grid%acrech    ,deeprech=grid%deeprechxy                ,&
+        acqspring=grid%acqspring , qspring=grid%qspringxy                 ,&
+            fpice=grid%fpicexy   ,    fveg=grid%fvegxy                    ,&
+          aceflxb=grid%aceflxb   ,   eflxb=grid%eflxbxy                   ,&
+          accanhs=grid%accanhs   ,   canhs=grid%canhsxy                   )
+
+      END IF NOAHMP_DIAGS
 
 
       SOLAR_FIELDS: IF (config_flags%solar_diagnostics == do_solar_output) THEN

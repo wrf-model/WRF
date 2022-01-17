@@ -1126,7 +1126,7 @@ endif
                       config_flags%opt_irr, config_flags%opt_irrm,                              &   ! Optional Noah-MP
                       grid%IRNUMSI, grid%IRNUMMI, grid%IRNUMFI, grid%IRWATSI, grid%IRWATMI,     &   ! Optional Noah-MP
                       grid%IRWATFI, grid%IRELOSS, grid%IRSIVOL, grid%IRMIVOL, grid%IRFIVOL,     &   ! Optional Noah-MP
-                      grid%IRRSPLH,                                                             &   ! Optional Noah-MP
+                      grid%IRRSPLH, grid%qtdrain,                                               &   ! Optional Noah-MP
                       grid%gecros_state,                                                        &   ! Optional gecros crop
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
@@ -1285,8 +1285,9 @@ endif
                  config_flags%num_soil_layers, grid%dzs, grid%isltyp, grid%ivgtyp, config_flags%wtddt , &
                  grid%fdepthxy   , grid%ht     , grid%riverbedxy, grid%eqzwt     ,                      &
                  grid%rivercondxy, grid%pexpxy , grid%areaxy    , grid%zwtxy     ,                      &
-                 grid%smois      , grid%sh2o   , grid%smoiseq   , grid%smcwtdxy  , grid%deeprechxy,     &
-                 grid%rechxy     , grid%qslatxy, grid%qrfsxy    , grid%qspringsxy,                      &
+                 grid%smois      , grid%sh2o   , grid%smoiseq   , grid%smcwtdxy  ,                      &
+                 grid%qlatxy     , grid%qslatxy, grid%qrfxy     , grid%qrfsxy    ,                      &
+                 grid%deeprechxy , grid%rechxy , grid%qspringxy , grid%qspringsxy,                      &
                  grid%rechclim   ,                                                                      &
                  ids,ide, jds,jde, kds,kde,                                                             &
                  ims,ime, jms,jme, kms,kme,                                                             &

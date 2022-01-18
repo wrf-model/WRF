@@ -1068,7 +1068,7 @@ Namelist variables for lake module:
                                                   the lake depth data, but this switch is set to 1, the program will stop and tell one to go back to geogrid
                                                   program. 
                                                   = 0, do not use lake depth data.
- shalwater_rough                     = 1,       ! Shallow water roughness scheme on/off.
+ shalwater_z0                        = 0,       ! Shallow water roughness scheme on (1) or off (0). Only compatible with sf_sfclay_physics = 1.
                                                   Bathymetry dataset from GEBCO Compilation Group. Please acknowledge the following in presentations and 
                                                   publications: GEBCO Compilation Group (2021) GEBCO 2021 Grid (doi:10.5285/c6612cbe-50b3-0cff-e053-6c86abc09f8f)
  shalwater_depth                     = 0.0,     ! Set constant depth [m] (must be positive) for shallow water roughness scheme if no bathymetry data availabile.

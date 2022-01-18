@@ -76,12 +76,12 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
 
 ** Using shallow water roughness (constant depth)
 &physics
-shalwater_rough                     = 1,       1,     1, 
+shalwater_z0                        = 1,       1,     1, 
 shalwater_depth                     = 40.0,
 
 ** Using shallow water roughness (with bathymetry data)
 &physics
-shalwater_rough                     = 1,       1,     1, 
+shalwater_z0                        = 1,       1,     1, 
 shalwater_depth                     = 0.0,
 
 ** Using stochastic backscatter scheme (new namelist record since v3.6)

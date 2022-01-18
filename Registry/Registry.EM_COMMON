@@ -2569,7 +2569,7 @@ rconfig   integer sf_ocean_physics        namelist,physics      1            0  
 rconfig   integer traj_opt                namelist,physics      1            0         h     "traj_opt"    "activate trajectory calculation  0=no, 1=on"   ""
 rconfig   logical dm_has_traj             namelist,physics      max_domains  .false.   rh    "has_traj"    "activate trajectory calculation per domain"   ""
 rconfig   integer tracercall              namelist,physics      1            0         h     "tracercall"  "activate tracer calculation  0=no, 1=on"   ""
-rconfig   integer shalwater_rough         namelist,physics      max_domains  0         rh    "shalwater_rough"     "shallow water roughness flag"      ""
+rconfig   integer shalwater_z0            namelist,physics      max_domains  0         rh    "shalwater_z0"     "shallow water sea surface roughness flag"      ""
 rconfig   real    shalwater_depth         namelist,physics      1            -1.0      rh    "shalwater_depth"     "water depth for shallow water scheme"      "m"
 rconfig   real    OMDT                    namelist,physics      1            1         h     "OMDT"        "Timestep of ocean model"      "s"
 rconfig   real    oml_hml0                namelist,physics      1            50        h     "oml_hml0"    "oml initial mixed layer depth value"   "m"

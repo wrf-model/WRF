@@ -327,7 +327,7 @@ integer::oops1,oops2
 
       grid%bathymetry_flag = flag_bathymetry
       IF ( flag_bathymetry .EQ. 0 ) THEN
-         IF ( grid%shalwater_rough .EQ. 1 ) THEN
+         IF ( grid%shalwater_z0 .EQ. 1 ) THEN
              CALL wrf_message ( " Warning: No bathymetry data found for shallow water roughness model." )
              IF ( grid%shalwater_depth .LE. 0.0 ) THEN
                 CALL wrf_message ( " Warning: shalwater_depth must be greater than 0.0 for WRF to run." )

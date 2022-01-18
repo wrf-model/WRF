@@ -413,11 +413,11 @@
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( ( model_config_rec % shalwater_rough(i)   .NE. 0               ) .AND. &
+         IF ( ( model_config_rec % shalwater_z0(i)   .NE. 0               ) .AND. &
               ( model_config_rec % sf_sfclay_physics(i) .NE. sfclayrevscheme ) ) THEN
             wrf_err_message = '--- ERROR: Shallow water surface roughness only works with sfclay_physics = 1'
             CALL wrf_message ( TRIM( wrf_err_message ) )
-            wrf_err_message = '           Fix shalwater_rough or sf_sfclay_physics in namelist.input.'
+            wrf_err_message = '           Fix shalwater_z0 or sf_sfclay_physics in namelist.input.'
             CALL wrf_message ( TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
          END IF

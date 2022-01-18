@@ -600,7 +600,7 @@ BENCH_START(surf_driver_tim)
      &        ,HUML=grid%huml, HVML=grid%hvml, F=grid%f                             &
      &        ,TMOML=grid%TMOML,ISWATER=iswater                                     &
      &        ,OML_RELAXATION_TIME=grid%OML_RELAXATION_TIME                         &
-     &        ,shalwater_rough=config_flags%shalwater_rough                         &
+     &        ,shalwater_z0=config_flags%shalwater_z0                               &
      &        ,water_depth=grid%water_depth                                         & 
      &        ,shalwater_depth=config_flags%shalwater_depth                         & 
      &        ,lakedepth2d=grid%lakedepth2d,    savedtke12d=grid%savedtke12d        &   

@@ -188,7 +188,7 @@ CONTAINS
                          lakemask,   lakeflag,                                   & !lake
 #endif
                          lake_depth_flag, use_lakedepth,                         & !lake
-                         water_depth, bathymetry_flag, shalwater_rough,       & !bathymetry
+                         water_depth, bathymetry_flag, shalwater_z0,         & ! bathymetry
                          shalwater_depth,                                    & ! bathymetry
                          sf_surface_mosaic, mosaic_cat, NLCAT,               & ! Noah tiling
 !CLM variables
@@ -767,7 +767,7 @@ CONTAINS
   INTEGER, INTENT(INOUT)      ::   lake_depth_flag
   INTEGER, INTENT(IN)      ::   use_lakedepth
   INTEGER, INTENT(INOUT)   ::   bathymetry_flag 
-  INTEGER, INTENT(IN)      ::   shalwater_rough  
+  INTEGER, INTENT(IN)      ::   shalwater_z0  
   REAL,    INTENT(IN)      ::   shalwater_depth  
  
 
@@ -1452,8 +1452,8 @@ CONTAINS
                 lakemask, lakeflag,                                    & !lake
 #endif
                 lake_depth_flag, use_lakedepth,                        & !lake
-                water_depth, bathymetry_flag, shalwater_rough,   & 
-                shalwater_depth,                                 & 
+                water_depth, bathymetry_flag, shalwater_z0,     & 
+                shalwater_depth,                                & 
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -2478,8 +2478,8 @@ CONTAINS
                 lakemask, lakeflag,                                      & !lake
 #endif
                 lake_depth_flag, use_lakedepth,                          & !lake
-                water_depth,bathymetry_flag, shalwater_rough,    & 
-                shalwater_depth,                                 & 
+                water_depth,bathymetry_flag, shalwater_z0,      & 
+                shalwater_depth,                                & 
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -2956,7 +2956,7 @@ CONTAINS
 #endif
   INTEGER, INTENT(IN)      ::   use_lakedepth
   INTEGER, INTENT(INOUT)      ::   lake_depth_flag
-  INTEGER, INTENT(IN)      ::   shalwater_rough  
+  INTEGER, INTENT(IN)      ::   shalwater_z0  
   REAL,    INTENT(IN)      ::   shalwater_depth  
   INTEGER, INTENT(INOUT)   ::   bathymetry_flag 
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                         ::  HT
@@ -3102,9 +3102,9 @@ CONTAINS
            CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (SFCLAYREVSCHEME)
-            CALL sfclayrevinit(ims,ime,jms,jme,            &
+            CALL sfclayrevinit(ims,ime,jms,jme,                &
                          its,ite,jts,jte,                      &
-                         bathymetry_flag, shalwater_rough,     &
+                         bathymetry_flag, shalwater_z0,        &
                          shalwater_depth, water_depth,         &
                          xland,LakeModel,lake_depth,lakemask   )
            isfc = 1

@@ -75,6 +75,7 @@
                gmt, julday, t_phy, moist, aerwrf,                         &
                p8w, t8w, p_phy, chem, rho_phy,                            &
                dz8w, xlat, xlong, z, z_at_w, gd_cloud, gd_cloud2,         &
+               bl_cld,bl_cld2,                                            &
                tauaer1,tauaer2,tauaer3,tauaer4,                           &
                gaer1,gaer2,gaer3,gaer4,                                   &
                waer1,waer2,waer3,waer4,                                   &
@@ -117,7 +118,7 @@
                pm2_5_dry,pm2_5_water
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                   &
          INTENT(INOUT ) ::                                         &
-               gd_cloud,gd_cloud2
+               gd_cloud,gd_cloud2,bl_cld,bl_cld2
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),              &
          INTENT(IN   ) :: tauaer1, tauaer2, tauaer3, tauaer4, &
                           waer1, waer2, waer3, waer4,         &
@@ -436,13 +437,24 @@ has_daylight : &
                                   moist(i,kts:kte,j,p_qc), moist(i,kts:kte,j,p_qi), &
                                   moist(i,kts:kte,j,p_qs), kts, kte )
            elseif( config_flags%pht_cldfrc_opt == 2 ) then
-             if( config_flags%cu_diag == 1 ) then
-               call cldfrac_fractional( cldfrac(kts:kte), &
+             if( config_flags%cu_diag == 1 ) then 
+                 if ( config_flags%phot_blcld .and. config_flags%icloud_bl == 1 ) then
+                    call cldfrac_fractional( cldfrac(kts:kte), &
+                                        moist(i,kts:kte,j,p_qv), &
+                                        moist(i,kts:kte,j,p_qc) + gd_cloud(i,kts:kte,j)  + &
+                                        bl_cld(i,kts:kte,j),  &
+                                        moist(i,kts:kte,j,p_qi) + gd_cloud2(i,kts:kte,j) + &
+                                        bl_cld2(i,kts:kte,j),  &
+                                        moist(i,kts:kte,j,p_qs), &
+                                        p_phy(i,kts:kte,j), t_phy(i,kts:kte,j), kts, kte )
+                 else
+                    call cldfrac_fractional( cldfrac(kts:kte), &
                                         moist(i,kts:kte,j,p_qv), &
                                         moist(i,kts:kte,j,p_qc) + gd_cloud(i,kts:kte,j),  &
                                         moist(i,kts:kte,j,p_qi) + gd_cloud2(i,kts:kte,j), &
                                         moist(i,kts:kte,j,p_qs), &
                                         p_phy(i,kts:kte,j), t_phy(i,kts:kte,j), kts, kte )
+                 endif
              else
                call cldfrac_fractional( cldfrac(kts:kte), &
                                         moist(i,kts:kte,j,p_qv), moist(i,kts:kte,j,p_qc), &
@@ -513,7 +525,14 @@ has_daylight : &
          qll(:)            = 0.
          qll(kts:kte)      = moist(i,kts:kte,j,p_qc) + moist(i,kts:kte,j,p_qi)
          if( config_flags%cu_diag == 1 ) then
-           qll(kts:kte) = qll(kts:kte) + gd_cloud(i,kts:kte,j) + gd_cloud2(i,kts:kte,j)
+           if ( config_flags%phot_blcld .and. config_flags%icloud_bl == 1 ) then
+              qll(kts:kte) = qll(kts:kte) + gd_cloud(i,kts:kte,j)  + &
+                                            gd_cloud2(i,kts:kte,j) + &
+                                            bl_cld(i,kts:kte,j)    + &
+                                            bl_cld2(i,kts:kte,j)
+           else
+             qll(kts:kte) = qll(kts:kte) + gd_cloud(i,kts:kte,j) + gd_cloud2(i,kts:kte,j)
+           endif
          endif
          qll(kts:kte) = 1.e3*rhoa(kts:kte)*qll(kts:kte)
          where( qll(kts:kte) < 1.e-5 )

@@ -960,6 +960,7 @@
               chem,rho,dz8w,grid%xlat,grid%xlong,                                     &
               zmid,z_at_w,                                                            &
               grid%qc_cu,grid%qi_cu,                                                  &
+              grid%qc_bl,grid%qi_bl,                                                  &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,                     &
               grid%ph_clno2,                                                          &
               grid%ph_no3o2,                                                          &

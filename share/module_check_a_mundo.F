@@ -1660,6 +1660,31 @@
          CALL wrf_debug ( 1, wrf_err_message )
       END IF
 
+#if (WRF_CHEM == 1)
+!-----------------------------------------------------------------------
+! Make sure phot_blcld is only used when icloud_bl==1 and MYNN is chosen.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%phot_blcld(i) ) THEN
+           IF ( ( model_config_rec%icloud_bl .eq. 1 ) .AND.  &
+                ( ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 ) .OR. &
+                  ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) ) ) THEN
+                !CORRECTLY CONFIGURED
+           ELSE
+              oops = oops + 1
+           END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: Need MYNN PBL and icloud_bl = 1 for phot_blcld = .true.'
+         CALL wrf_message(wrf_err_message)
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
 !-----------------------------------------------------------------------
 !  We need to know if any of the cumulus schemes are active. This
 !  allows the model to allocate space.

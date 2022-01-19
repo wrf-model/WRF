@@ -1,3 +1,11 @@
+# WRF-CMAQ coupled model
+rconfig  integer   wrf_cmaq_option      namelist,wrf_cmaq     1        0
+rconfig  integer   wrf_cmaq_freq        namelist,wrf_cmaq     1        1
+rconfig  integer   met_file_tstep       namelist,wrf_cmaq     1    10000
+
+rconfig  logical   direct_sw_feedback   namelist,wrf_cmaq     1  .false.
+rconfig  logical   feedback_restart     namelist,wrf_cmaq     1  .false.
+
 #state    real  mass_ws_i           ikj           twoway_feedback_data      1    -      r      "mass_ws_i"       "Water soluble i mode"       "ug/m**3"
 #state    real  mass_ws_j           ikj           twoway_feedback_data      1    -      r      "mass_ws_j"       "Water soluble j mode"       "ug/m**3"
 #state    real  mass_ws_k           ikj           twoway_feedback_data      1    -      r      "mass_ws_k"       "Water soluble k mode"       "ug/m**3"

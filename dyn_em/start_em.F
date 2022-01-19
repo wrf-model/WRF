@@ -1173,6 +1173,7 @@ endif
                       grid%tkdry3d,      grid%tksatu3d,     grid%lake2d,                            & !lake
                       config_flags%lakedepth_default,        config_flags%lake_min_elev, grid%lake_depth,     & !lake
                       grid%lakemask,        grid%lakeflag,  grid%LAKE_DEPTH_FLAG, grid%use_lakedepth,     & !lake
+                      grid%water_depth,  grid%BATHYMETRY_FLAG, grid%shalwater_z0,grid%shalwater_depth, & ! bathymetry 
                       config_flags%sf_surface_mosaic, config_flags%mosaic_cat, config_flags%num_land_cat, & ! Noah tiling
                       config_flags%maxpatch,           &   ! start of CLM variables
               grid%numc,grid%nump,grid%snl,grid%snowdp,&   !

@@ -421,6 +421,23 @@
 
 
 !-----------------------------------------------------------------------
+! Check that if the user has requested to use the shallow water surface
+! roughness drag option, then the only surface layer scheme permitted 
+! to be used is the revised MM5 MO option.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % shalwater_z0(i)   .NE. 0               ) .AND. &
+              ( model_config_rec % sf_sfclay_physics(i) .NE. sfclayrevscheme ) ) THEN
+            wrf_err_message = '--- ERROR: Shallow water surface roughness only works with sfclay_physics = 1'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           Fix shalwater_z0 or sf_sfclay_physics in namelist.input.'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Urban physics set up. If the run-time option for use_wudapt_lcz = 0,
 ! then the number of urban classes is 3. Else, if the use_wudapt_lcz = 1, 
 ! then the number increases to 11. The seemingly local variable 

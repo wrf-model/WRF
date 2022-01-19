@@ -190,6 +190,8 @@ CONTAINS
                          lakemask,   lakeflag,                                   & !lake
 #endif
                          lake_depth_flag, use_lakedepth,                         & !lake
+                         water_depth, bathymetry_flag, shalwater_z0,         & ! bathymetry
+                         shalwater_depth,                                    & ! bathymetry
                          sf_surface_mosaic, mosaic_cat, NLCAT,               & ! Noah tiling
 !CLM variables
                          maxpatch,                                           &
@@ -762,7 +764,8 @@ CONTAINS
   real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
   LOGICAL, DIMENSION( ims:ime, jms:jme ),intent(out)                      :: lake2d
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                      ::  HT
-  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
+  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  lake_depth
+  REAL,              DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  water_depth 
   real, intent(in)      ::      lakedepth_default, lake_min_elev
 #if ( EM_CORE == 1 )
   REAL,              dimension(ims:ime,jms:jme )      ::  lakemask
@@ -770,6 +773,9 @@ CONTAINS
 #endif
   INTEGER, INTENT(INOUT)      ::   lake_depth_flag
   INTEGER, INTENT(IN)      ::   use_lakedepth
+  INTEGER, INTENT(INOUT)   ::   bathymetry_flag 
+  INTEGER, INTENT(IN)      ::   shalwater_z0  
+  REAL,    INTENT(IN)      ::   shalwater_depth  
  
 
 !CLM
@@ -1486,6 +1492,8 @@ CHARACTER(LEN=8) :: name
                 lakemask, lakeflag,                                    & !lake
 #endif
                 lake_depth_flag, use_lakedepth,                        & !lake
+                water_depth, bathymetry_flag, shalwater_z0,     & 
+                shalwater_depth,                                & 
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -2521,6 +2529,8 @@ CHARACTER(LEN=8) :: name
                 lakemask, lakeflag,                                      & !lake
 #endif
                 lake_depth_flag, use_lakedepth,                          & !lake
+                water_depth,bathymetry_flag, shalwater_z0,      & 
+                shalwater_depth,                                & 
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -2991,13 +3001,17 @@ CHARACTER(LEN=8) :: name
   real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
  
   logical,    dimension(ims:ime,jms:jme ),intent(out)                        :: lake2d
-  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
+  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  lake_depth
+  REAL,              DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  water_depth 
 #if ( EM_CORE == 1 )
   REAL,              dimension(ims:ime,jms:jme ),intent(inout)      ::  lakemask
   INTEGER, INTENT(IN)      ::  lakeflag
 #endif
   INTEGER, INTENT(IN)      ::   use_lakedepth
   INTEGER, INTENT(INOUT)      ::   lake_depth_flag
+  INTEGER, INTENT(IN)      ::   shalwater_z0  
+  REAL,    INTENT(IN)      ::   shalwater_depth  
+  INTEGER, INTENT(INOUT)   ::   bathymetry_flag 
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                         ::  HT
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
@@ -3141,7 +3155,11 @@ CHARACTER(LEN=8) :: name
            CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (SFCLAYREVSCHEME)
-            CALL sfclayrevinit
+            CALL sfclayrevinit(ims,ime,jms,jme,                &
+                         its,ite,jts,jte,                      &
+                         bathymetry_flag, shalwater_z0,        &
+                         shalwater_depth, water_depth,         &
+                         xland,LakeModel,lake_depth,lakemask   )
            isfc = 1
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )

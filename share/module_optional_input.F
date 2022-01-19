@@ -43,7 +43,8 @@ MODULE module_optional_input
    INTEGER :: flag_extra_levels
 
    INTEGER :: flag_canfra   , flag_clayfrac   , flag_erod     , flag_frc_urb2d , flag_imperv , &
-              flag_lai12m   , flag_lake_depth , flag_sandfrac , flag_urb_param , flag_var_sso
+              flag_lai12m   , flag_lake_depth , flag_sandfrac , flag_urb_param , flag_var_sso, &
+              flag_bathymetry
 
    integer :: flag_cldmask, flag_cldbasez, flag_cldtopz, flag_brtemp
 
@@ -766,6 +767,16 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_lake_depth      = itmp
+      END IF
+
+      flag_name = '                                                                                '
+
+      flag_bathymetry      = 0
+
+      flag_name(1:10) = 'BATHYMETRY'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_bathymetry      = itmp
       END IF
 
 

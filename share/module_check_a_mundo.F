@@ -860,6 +860,45 @@
 #endif
 
 !-----------------------------------------------------------------------
+! Climate GHG from an input file requires coordinated pairing of
+! LW and SW schemes, and restricts which schemes are eligible.
+! Only radiation schemes CAM, RRTM, RRTMG, RRTMG_fast may be used.
+! CAM LW and CAM SW must be used together.
+! RRTM, RRTMG, RRTMG_fast LW and SW may be wildly mixed and matched 
+! together.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % ghg_input .EQ. 1 ) THEN
+         oops = 0
+         DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+            IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. CAMLWSCHEME          )   .AND. &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. CAMSWSCHEME          ) ) .OR.  &
+               ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMSCHEME           )   .OR.  &
+                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME       )   .OR.  &
+                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST  ) ) .AND. &
+                 ( ( model_config_rec % ra_sw_physics(i) .EQ. SWRADSCHEME          )   .OR.  &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME       )   .OR.  &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST  ) ) ) ) THEN
+               ! This is OK, no way would a negation have been understandable!
+            ELSE
+               oops = oops + 1
+            END IF
+         ENDDO
+
+         IF ( oops .GT. 0 ) THEN
+            wrf_err_message = '--- ERROR: ghg_input available only for these radiation schemes: CAM, RRTM, RRTMG, RRTMG_fast'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           And the LW and SW schemes must be reasonably paired together:'  
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           OK = CAM LW with CAM SW'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           OK = RRTM, RRTMG LW or SW, RRTMG_fast LW or SW may be mixed'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+         END IF
+      END IF
+
+!-----------------------------------------------------------------------
 ! If fractional_seaice = 0, and tice2tsk_if2cold = .true, nothing will happen
 !-----------------------------------------------------------------------
 

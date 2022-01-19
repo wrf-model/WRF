@@ -2400,6 +2400,7 @@ rconfig   integer     compute_radar_ref   derived               1              0
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
 rconfig   integer     ra_sw_eclipse       namelist,physics	1              0       rh       "ra_sw_eclipse"         "0/1 flag: 1=turn eclipse on"      ""
+rconfig   integer     ghg_input           namelist,physics	1              1       rh       "ghg_input"             "for CAM, RRTM, RRTMG, RRTMG_fast: 0/1 flag: 0=constant (CO2 is a function of year for RRTM*); 1=time-varying GHG from CAMtr climate file"
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   real    naer                    namelist,physics      max_domains    1e9     rh   "NAER"          ""      ""
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    -1      rh       "sf_sfclay_physics"             ""      ""

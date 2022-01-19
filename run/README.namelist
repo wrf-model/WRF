@@ -573,14 +573,20 @@ Namelist variables for controlling the adaptive time step option:
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
                                      = 1, rrtm scheme 
-                                       (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9;
+                                       (Default values for GHG in V4.2: co2vmr=(280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+                                                                        n2ovmr=319.e-9, ch4vmr=1774.e-9
                                         Values used in previous versions: co2vmr=330.e-6, n2ovmr=0., ch4vmr=0.)
                                      = 3, cam scheme
                                           also requires levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
-                                       (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9)
+                                       (Default values for GHG in V4.2: co2vmr=(280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+                                                                        n2ovmr=319.e-9, ch4vmr=1774.e-9,
+                                                                        cfc11=0.251e-9, cfc12=0.538e-9,
                                      = 14, rrtmg-k scheme from KIAPS
                                      = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
+                                       (Default values for GHG in V4.2: co2vmr=(280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+                                                                        n2ovmr=319.e-9, ch4vmr=1774.e-9,
+                                                                        cfc11=0.251e-9, cfc12=0.538e-9
                                      = 5, Goddard longwave scheme
                                      = 7, FLG (UCLA) scheme 
                                      = 31, Earth Held-Suarez forcing
@@ -611,6 +617,11 @@ Namelist variables for controlling the adaptive time step option:
                                               1 = latitude-varying decorrelation length
  ra_sw_eclipse                       = 0,   ! eclipse effect on shortwave radiation. 0: off, 1: on. 
                                               Applies to RRTMG, Goddard, old Goddard and Dudhia schemes
+ ghg_input                           = 1,   ! Option to read CAMtr_volume_mixing_ratio files of green house gas values,
+                                              as of v4.4, the default is SSP 2 with RCP 4.5 => SSP245
+                                              Used for CAM LW and SW, RRTM, RRTMG LW and SW, RRTMG_fast LW and SW
+                                              0 = do not read in the annual data
+                                              1 = read in time dependent data for CO2, N2O, CH4, CFC11, CFC12
 
  nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
                                                 calls to shortwave radiation; the value

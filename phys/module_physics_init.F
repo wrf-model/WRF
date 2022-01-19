@@ -16,6 +16,7 @@ MODULE module_physics_init
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
    USE module_dm, ONLY : wrf_dm_max_real
 #endif
+   USE module_ra_clWRF_support
 
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
@@ -39,6 +40,7 @@ CONTAINS
                          RUBLTEN,RVBLTEN,RTHBLTEN,               &
                          RQVBLTEN,RQCBLTEN,RQIBLTEN,             &
                          RTHRATEN,RTHRATENLW,RTHRATENSW,         &
+                         this_is_an_ideal_run,                   &
 #if ( EM_CORE == 1 )
                          !BSINGH - For WRFCuP scheme(11/12/2013)
                          cupflag,cldfra_cup,cldfratend_cup,      & !wig, 18-Sep-2006
@@ -308,7 +310,7 @@ CONTAINS
    INTEGER , INTENT(OUT) ,OPTIONAL      :: nyear
    REAL    , INTENT(OUT) ,OPTIONAL      :: nday
 
-   LOGICAL,  INTENT(IN)        :: start_of_simulation
+   LOGICAL,  INTENT(IN)        :: start_of_simulation, this_is_an_ideal_run
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: DX2D, AREA2D
    LOGICAL,  INTENT(IN)        :: restart
@@ -912,6 +914,11 @@ CONTAINS
   INTEGER, OPTIONAL :: irr_ph,irr_freq 
 !-----------------------------------------------------------------
 
+! Climate GHG file read for radiation
+REAL(KIND=8) :: co2dum,n2odum,ch4dum,f11dum,f12dum
+CHARACTER(LEN=8) :: name
+!-----------------------------------------------------------------
+
 #if ( EM_CORE == 1 )
 
    !  Compute 2d grid distance and 2d grid cell area. For use with
@@ -927,6 +934,35 @@ CONTAINS
       end if
    end if
 #endif
+
+   name = "        "
+   IF ( ( config_flags%ghg_input .EQ. 1 ) .AND. &
+        ( .NOT. this_is_an_ideal_run ) )   THEN
+      IF      ( config_flags%ra_lw_physics .EQ. RRTMSCHEME          ) THEN
+         name = "RRTM"
+      ELSE IF ( config_flags%ra_lw_physics .EQ. CAMLWSCHEME         ) THEN
+         name = "CAM"
+      ELSE IF ( config_flags%ra_lw_physics .EQ. RRTMG_LWSCHEME      ) THEN
+         name = "RRTMG"
+      ELSE IF ( config_flags%ra_lw_physics .EQ. RRTMG_LWSCHEME_FAST ) THEN
+         name = "RRTMG"
+      END IF
+      CALL read_CAMgases(julyr,float(julday),.true.,TRIM(name),co2dum,n2odum,ch4dum,f11dum,f12dum)
+      WRITE(message,*) 'GHG annual values from CAM trace gas file'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'Year = ',julyr,', Julian day = ',julday
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CO2   = ',co2dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'N2O   = ',n2odum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CH4   = ',ch4dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CFC11 = ',f11dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CFC12 = ',f12dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+   END IF
 
    aercu_opt=config_flags%aercu_opt !PSH/TWG 06/10/16
    aercu_fct=config_flags%aercu_fct !PSH/TWG 06/10/16

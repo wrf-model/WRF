@@ -893,6 +893,21 @@ module_fire_debug_output.o: \
 	        ../frame/module_configure.o \
 	        ../share/mediation_integrate.o
 
+module_firebrand_spotting_mpi.o: \
+		../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../frame/module_dm.o
+
+module_firebrand_spotting.o: \
+		../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../frame/module_dm.o \
+		../frame/module_state_description.o \
+		../frame/module_domain_type.o \
+		../external/esmf_time_f90/module_symbols_util.o \
+		../external/esmf_time_f90/module_utility.o \
+                module_firebrand_spotting_mpi.o
+
 module_fdda_spnudging.o :\
 		../frame/module_dm.o \
 		../frame/module_state_description.o \

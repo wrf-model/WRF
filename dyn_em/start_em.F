@@ -29,6 +29,7 @@
    USE module_sf_noahmpdrv, ONLY : groundwater_init
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
+   USE module_firebrand_spotting, ONLY : firebrand_spotting_em_init
    USE module_stoch, ONLY : setup_rand_perturb, rand_seed, update_stoch, initialize_stoch
    USE module_trajectory, ONLY : trajectory_init
 #if (WRF_CHEM == 1)
@@ -2177,6 +2178,48 @@ if(config_flags%ifire.eq.2)then
             ,ips,ipe, kps,kpe, jps,jpe )
 
    CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
+
+!-----------------------------------------------------------------------
+! fire spotting (passive Lagrangian particle transport, tracks 
+! firebrand physics properties)
+!-----------------------------------------------------------------------
+
+   IF (config_flags%fs_firebrand_gen_lim > 0) THEN
+
+       IF (config_flags%max_dom == grid%id) THEN 
+
+           WRITE (message,*) 'SPFire_init: In inner most grid_id: ', grid%id, ' of ', config_flags%max_dom
+           CALL wrf_debug ( 100 ,  message)
+           CALL wrf_debug ( 100 , 'start_em: calling firebrand_spotting_em_init ...' )
+
+           CALL firebrand_spotting_em_init ( &
+               grid          = grid,                &
+               cf            = config_flags,        &
+               fs_p_id       = grid%fs_p_id,        &
+               fs_p_dt       = grid%fs_p_dt,        &
+               fs_p_x        = grid%fs_p_x,         &
+               fs_p_y        = grid%fs_p_y,         &
+               fs_p_z        = grid%fs_p_z,         &
+               fs_p_mass     = grid%fs_p_mass,      &  
+               fs_p_diam     = grid%fs_p_diam,      & 
+               fs_p_effd     = grid%fs_p_effd,      & 
+               fs_p_temp     = grid%fs_p_temp,      & 
+               fs_p_tvel     = grid%fs_p_tvel,      & 
+               fs_last_gen_dt= grid%fs_last_gen_dt, &
+               fs_gen_idmax  = grid%fs_gen_idmax,   &
+               fs_count_landed_all   = grid%fs_count_landed_all, &
+               fs_count_landed_hist  = grid%fs_count_landed_hist,&
+               fs_landing_mask       = grid%fs_landing_mask,     &
+               fs_spotting_lkhd      = grid%fs_spotting_lkhd,    &
+               fs_frac_landed        = grid%fs_frac_landed,      &
+               fs_count_reset        = grid%fs_count_reset)
+           
+           CALL wrf_debug ( 100 , 'start_em: firebrand_spotting_em_init ok ' )
+       ENDIF
+
+   ENDIF
+!-----------------------------------------------------------------------
+
 endif
 
 #if ( WRFPLUS != 1 )

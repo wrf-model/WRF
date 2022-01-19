@@ -259,9 +259,7 @@ CONTAINS
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !rand_perturb_on
 
-!     If_multi_perturb: if ((config_flags%multi_perturb==1).and.(grid%id == 1) .and. &
-!         ((MOD(grid%itimestep, grid%stepsp) == 0) .or. grid%itimestep == 1)) then
-      IF ( grid%stepsp .NE. 0 ) THEN
+      IF ( grid%stepsp > 0 ) THEN
          stepsp_test = ( MOD(grid%itimestep, grid%stepsp) == 0 )
       ELSE
          stepsp_test = .FALSE.

@@ -395,10 +395,11 @@
 ! Check that LES PBL is only paired with acceptable other PBL options.
 ! Currently, problems occur with any CG PBL option that has a packaged 
 ! scalar component: MYNN2, MYNN3, EEPS. This test is also if a user 
-! chooses to not run a PBL scheme on a finer domain, wbut use a PBL 
+! chooses to not run a PBL scheme on a finer domain, but use a PBL 
 ! parameterized scheme on a coarser domain (obviously, just for testing 
 ! purposes).
 !-----------------------------------------------------------------------
+      exists = .FALSE.
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % bl_pbl_physics(i) .EQ. LESscheme ) THEN
@@ -418,6 +419,23 @@
          count_fatal_error = count_fatal_error + 1
       END IF 
 
+
+!-----------------------------------------------------------------------
+! Check that if the user has requested to use the shallow water surface
+! roughness drag option, then the only surface layer scheme permitted 
+! to be used is the revised MM5 MO option.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % shalwater_z0(i)   .NE. 0               ) .AND. &
+              ( model_config_rec % sf_sfclay_physics(i) .NE. sfclayrevscheme ) ) THEN
+            wrf_err_message = '--- ERROR: Shallow water surface roughness only works with sfclay_physics = 1'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           Fix shalwater_z0 or sf_sfclay_physics in namelist.input.'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Urban physics set up. If the run-time option for use_wudapt_lcz = 0,
@@ -857,6 +875,45 @@
          END IF
       ENDDO GF_test
 #endif
+
+!-----------------------------------------------------------------------
+! Climate GHG from an input file requires coordinated pairing of
+! LW and SW schemes, and restricts which schemes are eligible.
+! Only radiation schemes CAM, RRTM, RRTMG, RRTMG_fast may be used.
+! CAM LW and CAM SW must be used together.
+! RRTM, RRTMG, RRTMG_fast LW and SW may be wildly mixed and matched 
+! together.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % ghg_input .EQ. 1 ) THEN
+         oops = 0
+         DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+            IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. CAMLWSCHEME          )   .AND. &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. CAMSWSCHEME          ) ) .OR.  &
+               ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMSCHEME           )   .OR.  &
+                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME       )   .OR.  &
+                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST  ) ) .AND. &
+                 ( ( model_config_rec % ra_sw_physics(i) .EQ. SWRADSCHEME          )   .OR.  &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME       )   .OR.  &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST  ) ) ) ) THEN
+               ! This is OK, no way would a negation have been understandable!
+            ELSE
+               oops = oops + 1
+            END IF
+         ENDDO
+
+         IF ( oops .GT. 0 ) THEN
+            wrf_err_message = '--- ERROR: ghg_input available only for these radiation schemes: CAM, RRTM, RRTMG, RRTMG_fast'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           And the LW and SW schemes must be reasonably paired together:'  
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           OK = CAM LW with CAM SW'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           OK = RRTM, RRTMG LW or SW, RRTMG_fast LW or SW may be mixed'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+         END IF
+      END IF
 
 !-----------------------------------------------------------------------
 ! If fractional_seaice = 0, and tice2tsk_if2cold = .true, nothing will happen
@@ -1619,6 +1676,31 @@
          wrf_err_message = 'Need MYNN PBL for icloud_bl = 1, resetting to 0'
          CALL wrf_debug ( 1, wrf_err_message )
       END IF
+
+#if (WRF_CHEM == 1)
+!-----------------------------------------------------------------------
+! Make sure phot_blcld is only used when icloud_bl==1 and MYNN is chosen.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%phot_blcld(i) ) THEN
+           IF ( ( model_config_rec%icloud_bl .eq. 1 ) .AND.  &
+                ( ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 ) .OR. &
+                  ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) ) ) THEN
+                !CORRECTLY CONFIGURED
+           ELSE
+              oops = oops + 1
+           END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: Need MYNN PBL and icloud_bl = 1 for phot_blcld = .true.'
+         CALL wrf_message(wrf_err_message)
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
 
 !-----------------------------------------------------------------------
 !  We need to know if any of the cumulus schemes are active. This

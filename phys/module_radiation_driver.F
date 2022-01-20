@@ -173,6 +173,7 @@ CONTAINS
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
               ,EFSS,QS_CU                                                 &
+              ,GHG_INPUT                                                  &
 #if (WRF_CHEM == 1)
               ,chem                                                       &
               ,aod_out                                                    &
@@ -429,6 +430,7 @@ CONTAINS
                                        num_tiles
 
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics, sw_eclipse
+   INTEGER, INTENT(IN)            :: ghg_input
    INTEGER, INTENT(IN)            :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
@@ -1719,7 +1721,7 @@ CONTAINS
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
 !ccc Added for time-varying trace gases.
-                 ,YR=YR,JULIAN=JULIAN                               &
+                 ,YR=YR,JULIAN=JULIAN,GHG_INPUT=GHG_INPUT           &
 !ccc
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -1872,7 +1874,7 @@ CONTAINS
                      GMT=GMT,JULDAY=JULDAY,JULIAN=JULIAN,YR=YR,DT=DT,XTIME=XTIME,DECLIN=DECLIN,  &
                      SOLCON=SOLCON,RADT=RADT,DEGRAD=DEGRAD,n_cldadv=3  &
                    ,abstot_3d=abstot,absnxt_3d=absnxt,emstot_3d=emstot &
-                   ,doabsems=doabsems                               &
+                   ,doabsems=doabsems, ghg_input=ghg_input             &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -1948,7 +1950,7 @@ CONTAINS
                   calc_clean_atm_diag=calc_clean_atm_diag,          &
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
-                  YR=YR,JULIAN=JULIAN,                              &
+                  YR=YR,JULIAN=JULIAN,GHG_INPUT=GHG_INPUT,          &
 !ccc
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
@@ -2037,7 +2039,7 @@ CONTAINS
 #endif
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
-                  YR=YR,JULIAN=JULIAN,                              &
+                  YR=YR,JULIAN=JULIAN,GHG_INPUT=GHG_INPUT,          &
 !ccc
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
@@ -2208,6 +2210,7 @@ CONTAINS
                     ,RHO_PHY=rho,T3D=t                                 &
                     ,P3D=p,PI3D=pi,DZ8W=dz8w,GMT=gmt                   &
                     ,R=r_d,CP=cp,G=g,JULDAY=julday                     &
+                    ,GHG_INPUT=ghg_input                               &
                     ,XTIME=xtime,DECLIN=declin,SOLCON=solcon           &
                     ,RADFRQ=radt,ICLOUD=icloud,DEGRAD=degrad           &
                     ,warm_rain=warm_rain                               &
@@ -2371,7 +2374,7 @@ CONTAINS
                      GMT=GMT,JULDAY=JULDAY,JULIAN=JULIAN,YR=YR,DT=DT,XTIME=XTIME,DECLIN=DECLIN,  &
                      SOLCON=SOLCON,RADT=RADT,DEGRAD=DEGRAD,n_cldadv=3  &
                    ,abstot_3d=abstot,absnxt_3d=absnxt,emstot_3d=emstot &
-                   ,doabsems=doabsems                               &
+                   ,doabsems=doabsems,ghg_input=ghg_input              &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -2404,7 +2407,7 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,GHG_INPUT=GHG_INPUT,    &
 #if (EM_CORE == 1)
                      LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif
@@ -2492,6 +2495,7 @@ CONTAINS
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
                      dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+                     GHG_INPUT=GHG_INPUT,                              &
 #if (EM_CORE == 1)
                      LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif

@@ -682,26 +682,26 @@ CONTAINS
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-
+! Do NOT increase mixing at surface/kts, where exch==0
 ! this code is wrong - doesn't work if e_co is == param_first_scalar
 ! (like it happened to be the case for MOZCART)
 !     if (p_e_co > param_first_scalar )then
      if (p_e_co >= param_first_scalar )then
        if (sf_urban_physics .eq. 0 ) then
          if (emis_ant(i,kts,j,p_e_co) .gt. 0) then
-          ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
+          ekmfull(kts+1:kts+10) = max(ekmfull(kts+1:kts+10),1.)
          endif
          if (emis_ant(i,kts,j,p_e_co) .gt. 200) then
-          ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+          ekmfull(kts+1:kte/2) = max(ekmfull(kts+1:kte/2),2.)
          endif
          if (p_e_pm25i > param_first_scalar )then
           if (emis_ant(i,kts,j,p_e_pm25i)+ emis_ant(i,kts,j,p_e_pm25j) .GT. 8.19e-4*200) then
-           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+           ekmfull(kts+1:kte/2) = max(ekmfull(kts+1:kte/2),2.)
           endif
          endif
          if (p_e_pm_25 > param_first_scalar )then
           if (emis_ant(i,kts,j,p_e_pm_25) .GT. 8.19e-4*200) then
-           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+           ekmfull(kts+1:kte/2) = max(ekmfull(kts+1:kte/2),2.)
           endif
          endif
        endif
@@ -711,7 +711,7 @@ CONTAINS
 !     if (p_ebu_in_co > param_first_scalar )then
      if (p_ebu_in_co >= param_first_scalar )then
          if (ebu_in(i,1,j,p_ebu_in_co) .gt. 0) then
-          ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+          ekmfull(kts+1:kte/2) = max(ekmfull(kts+1:kte/2),2.)
          endif
      endif
 

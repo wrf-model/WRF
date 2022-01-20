@@ -16,6 +16,7 @@ MODULE module_physics_init
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
    USE module_dm, ONLY : wrf_dm_max_real
 #endif
+   USE module_ra_clWRF_support
 
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
@@ -39,6 +40,7 @@ CONTAINS
                          RUBLTEN,RVBLTEN,RTHBLTEN,               &
                          RQVBLTEN,RQCBLTEN,RQIBLTEN,             &
                          RTHRATEN,RTHRATENLW,RTHRATENSW,         &
+                         this_is_an_ideal_run,                   &
 #if ( EM_CORE == 1 )
                          !BSINGH - For WRFCuP scheme(11/12/2013)
                          cupflag,cldfra_cup,cldfratend_cup,      & !wig, 18-Sep-2006
@@ -134,7 +136,7 @@ CONTAINS
                          iopt_irr, iopt_irrm,                             &   
                          IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,     &   ! Optional Noah-MP
                          IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,     &   ! Optional Noah-MP
-                         IRRSPLH,                                         &
+                         IRRSPLH, qtdrain,                                &
                          gecros_state,                                    & ! Optional gecros crop
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
@@ -188,6 +190,8 @@ CONTAINS
                          lakemask,   lakeflag,                                   & !lake
 #endif
                          lake_depth_flag, use_lakedepth,                         & !lake
+                         water_depth, bathymetry_flag, shalwater_z0,         & ! bathymetry
+                         shalwater_depth,                                    & ! bathymetry
                          sf_surface_mosaic, mosaic_cat, NLCAT,               & ! Noah tiling
 !CLM variables
                          maxpatch,                                           &
@@ -308,7 +312,7 @@ CONTAINS
    INTEGER , INTENT(OUT) ,OPTIONAL      :: nyear
    REAL    , INTENT(OUT) ,OPTIONAL      :: nday
 
-   LOGICAL,  INTENT(IN)        :: start_of_simulation
+   LOGICAL,  INTENT(IN)        :: start_of_simulation, this_is_an_ideal_run
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: DX2D, AREA2D
    LOGICAL,  INTENT(IN)        :: restart
@@ -578,6 +582,8 @@ CONTAINS
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMSI
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMMI
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMFI
+! tile drainage
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: qtdrain
                                                                 
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
 
@@ -758,7 +764,8 @@ CONTAINS
   real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
   LOGICAL, DIMENSION( ims:ime, jms:jme ),intent(out)                      :: lake2d
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                      ::  HT
-  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
+  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  lake_depth
+  REAL,              DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  water_depth 
   real, intent(in)      ::      lakedepth_default, lake_min_elev
 #if ( EM_CORE == 1 )
   REAL,              dimension(ims:ime,jms:jme )      ::  lakemask
@@ -766,6 +773,9 @@ CONTAINS
 #endif
   INTEGER, INTENT(INOUT)      ::   lake_depth_flag
   INTEGER, INTENT(IN)      ::   use_lakedepth
+  INTEGER, INTENT(INOUT)   ::   bathymetry_flag 
+  INTEGER, INTENT(IN)      ::   shalwater_z0  
+  REAL,    INTENT(IN)      ::   shalwater_depth  
  
 
 !CLM
@@ -910,6 +920,11 @@ CONTAINS
   INTEGER, OPTIONAL :: irr_ph,irr_freq 
 !-----------------------------------------------------------------
 
+! Climate GHG file read for radiation
+REAL(KIND=8) :: co2dum,n2odum,ch4dum,f11dum,f12dum
+CHARACTER(LEN=8) :: name
+!-----------------------------------------------------------------
+
 #if ( EM_CORE == 1 )
 
    !  Compute 2d grid distance and 2d grid cell area. For use with
@@ -925,6 +940,35 @@ CONTAINS
       end if
    end if
 #endif
+
+   name = "        "
+   IF ( ( config_flags%ghg_input .EQ. 1 ) .AND. &
+        ( .NOT. this_is_an_ideal_run ) )   THEN
+      IF      ( config_flags%ra_lw_physics .EQ. RRTMSCHEME          ) THEN
+         name = "RRTM"
+      ELSE IF ( config_flags%ra_lw_physics .EQ. CAMLWSCHEME         ) THEN
+         name = "CAM"
+      ELSE IF ( config_flags%ra_lw_physics .EQ. RRTMG_LWSCHEME      ) THEN
+         name = "RRTMG"
+      ELSE IF ( config_flags%ra_lw_physics .EQ. RRTMG_LWSCHEME_FAST ) THEN
+         name = "RRTMG"
+      END IF
+      CALL read_CAMgases(julyr,float(julday),.true.,TRIM(name),co2dum,n2odum,ch4dum,f11dum,f12dum)
+      WRITE(message,*) 'GHG annual values from CAM trace gas file'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'Year = ',julyr,', Julian day = ',julday
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CO2   = ',co2dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'N2O   = ',n2odum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CH4   = ',ch4dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CFC11 = ',f11dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+      WRITE(message,*) 'CFC12 = ',f12dum,' volume mixing ratio'
+      CALL wrf_message(TRIM(message))
+   END IF
 
    aercu_opt=config_flags%aercu_opt !PSH/TWG 06/10/16
    aercu_fct=config_flags%aercu_fct !PSH/TWG 06/10/16
@@ -1426,7 +1470,7 @@ CONTAINS
                 iopt_irr, iopt_irrm,                            &
                 IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,    & ! Noah-MP Irrigation
                 IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,    & ! Noah-MP Irrigation
-                IRRSPLH,                                        & ! Noah-MP Irrigation
+                IRRSPLH, qtdrain,                               & ! Noah-MP Irrigation
                 gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
@@ -1448,6 +1492,8 @@ CONTAINS
                 lakemask, lakeflag,                                    & !lake
 #endif
                 lake_depth_flag, use_lakedepth,                        & !lake
+                water_depth, bathymetry_flag, shalwater_z0,     & 
+                shalwater_depth,                                & 
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -2461,7 +2507,7 @@ CONTAINS
                 iopt_irr, iopt_irrm,                            &
                 IRNUMSI, IRNUMMI, IRNUMFI, IRWATSI, IRWATMI,    & ! Noah-MP Irrigation
                 IRWATFI, IRELOSS, IRSIVOL, IRMIVOL, IRFIVOL,    & ! Noah-MP Irrigation
-                IRRSPLH,                                        &
+                IRRSPLH, qtdrain,                               &
                 gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
@@ -2483,6 +2529,8 @@ CONTAINS
                 lakemask, lakeflag,                                      & !lake
 #endif
                 lake_depth_flag, use_lakedepth,                          & !lake
+                water_depth,bathymetry_flag, shalwater_z0,      & 
+                shalwater_depth,                                & 
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -2816,6 +2864,8 @@ CONTAINS
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMSI
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMMI
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMFI 
+! tile drainage
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: qtdrain
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -2951,13 +3001,17 @@ CONTAINS
   real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
  
   logical,    dimension(ims:ime,jms:jme ),intent(out)                        :: lake2d
-  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
+  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  lake_depth
+  REAL,              DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  water_depth 
 #if ( EM_CORE == 1 )
   REAL,              dimension(ims:ime,jms:jme ),intent(inout)      ::  lakemask
   INTEGER, INTENT(IN)      ::  lakeflag
 #endif
   INTEGER, INTENT(IN)      ::   use_lakedepth
   INTEGER, INTENT(INOUT)      ::   lake_depth_flag
+  INTEGER, INTENT(IN)      ::   shalwater_z0  
+  REAL,    INTENT(IN)      ::   shalwater_depth  
+  INTEGER, INTENT(INOUT)   ::   bathymetry_flag 
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                         ::  HT
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
@@ -3101,7 +3155,11 @@ CONTAINS
            CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (SFCLAYREVSCHEME)
-            CALL sfclayrevinit
+            CALL sfclayrevinit(ims,ime,jms,jme,                &
+                         its,ite,jts,jte,                      &
+                         bathymetry_flag, shalwater_z0,        &
+                         shalwater_depth, water_depth,         &
+                         xland,LakeModel,lake_depth,lakemask   )
            isfc = 1
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )
@@ -3375,7 +3433,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 &
 #if (EM_CORE == 1)
-                     ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy ,dx, dy, msftx, msfty,&
+                     ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, qtdrain, areaxy ,dx, dy, msftx, msfty,&
                      wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
                      fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy,              &
                      rechclim,                  &

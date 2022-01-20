@@ -315,6 +315,7 @@
             h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
             vcsulf_old,vdrog3_vbs,                                   &
             config_flags%kemit,brch_ratio,                           &
+            config_flags%do_isorropia,                               &
             ids,ide, jds,jde, kds,kde,                               &
             ims,ime, jms,jme, kms,kme,                               &
             its,ite, jts,jte, kts,kte                                ) 

@@ -85,7 +85,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    qng=0
    rn0_r=8e6
    rn0_s=3e6
-   rn0_g=4e5
+   rn0_g=4e6
    rhos=100.0
    rhog=400.0
    !------------------------

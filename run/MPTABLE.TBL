@@ -373,12 +373,12 @@
 &noahmp_irrigation_parameters
 IRR_FRAC   = 0.10       ! irrigation Fraction
 IRR_HAR    = 20         ! number of days before harvest date to stop irrigation 
-IRR_LAI    = 0.50       ! Minimum lai to trigger irrigation
-IRR_MAD    = 0.60       ! management allowable deficit (0-1)
-FILOSS     = 0.10       ! fraction of flood irrigation loss (0-1) 
+IRR_LAI    = 0.10       ! Minimum lai to trigger irrigation
+IRR_MAD    = 0.60       ! management allowable deficit (0.0-1.0)
+FILOSS     = 0.50       ! flood irrigation loss fraction (0.0-0.99) 
 SPRIR_RATE = 6.40       ! mm/h, sprinkler irrigation rate
 MICIR_RATE = 1.38       ! mm/h, micro irrigation rate
-FIRTFAC    = 1.00       ! flood application rate factor
+FIRTFAC    = 1.20       ! flood application rate factor
 IR_RAIN    = 1.00       ! maximum precipitation to stop irrigation trigger
 /
 
@@ -476,19 +476,19 @@ RT_OVRC_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of root tunrove
 RT_OVRC_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 RT_OVRC_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 RT_OVRC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-RT_OVRC_S5 =    0.12,   0.12,   0.12,   0.12,   0.12,
-RT_OVRC_S6 =    0.06,   0.06,   0.06,   0.06,   0.06,
+RT_OVRC_S5 =   0.12,   0.12,   0.12,   0.12,   0.12,
+RT_OVRC_S6 =   0.06,   0.06,   0.06,   0.06,   0.06,
 RT_OVRC_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 RT_OVRC_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 LFMR25     =    0.8,    1.0,    1.0,    1.0,    1.0,  !  leaf maintenance respiration at 25C [umol CO2/m**2  /s]
-STMR25     =   0.05,    0.05,    0.1,    0.1,    0.1,  !  stem maintenance respiration at 25C [umol CO2/kg bio/s]
-RTMR25     =   0.05,    0.05,    0.0,    0.0,    0.0,  !  root maintenance respiration at 25C [umol CO2/kg bio/s]
+STMR25     =   0.05,   0.05,    0.1,    0.1,    0.1,  !  stem maintenance respiration at 25C [umol CO2/kg bio/s]
+RTMR25     =   0.05,   0.05,    0.0,    0.0,    0.0,  !  root maintenance respiration at 25C [umol CO2/kg bio/s]
 GRAINMR25  =    0.0,    0.0,    0.1,    0.1,    0.1,  ! grain maintenance respiration at 25C [umol CO2/kg bio/s]
 
 LFPT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to leaf
 LFPT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
-LFPT_S3    =    0.36,   0.4,    0.4,    0.4,    0.4,
+LFPT_S3    =   0.36,    0.4,    0.4,    0.4,    0.4,
 LFPT_S4    =    0.1,    0.2,    0.2,    0.2,    0.2,
 LFPT_S5    =    0.0,    0.0,    0.0,    0.0,    0.0,
 LFPT_S6    =    0.0,    0.0,    0.0,    0.0,    0.0,
@@ -497,7 +497,7 @@ LFPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 STPT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to stem
 STPT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
-STPT_S3    =    0.24,   0.2,    0.2,    0.2,    0.2,
+STPT_S3    =   0.24,    0.2,    0.2,    0.2,    0.2,
 STPT_S4    =    0.6,    0.5,    0.5,    0.5,    0.5,
 STPT_S5    =    0.0,    0.0,   0.15,   0.15,   0.15,
 STPT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
@@ -508,7 +508,7 @@ RTPT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate
 RTPT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 RTPT_S3    =    0.4,    0.4,    0.4,    0.4,    0.4,
 RTPT_S4    =    0.3,    0.3,    0.3,    0.3,    0.3,
-RTPT_S5    =    0.05,   0.05,   0.05,   0.05,   0.05,
+RTPT_S5    =   0.05,   0.05,   0.05,   0.05,   0.05,
 RTPT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
 RTPT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
 RTPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
@@ -517,15 +517,15 @@ GRAINPT_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate
 GRAINPT_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 GRAINPT_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 GRAINPT_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-GRAINPT_S5 =    0.95,   0.95,    0.8,    0.8,    0.8,
+GRAINPT_S5 =   0.95,   0.95,    0.8,    0.8,    0.8,
 GRAINPT_S6 =    1.0,    1.0,    0.9,    0.9,    0.9,
 GRAINPT_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 GRAINPT_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 LFCT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! carbohydrate translocation
 LFCT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,
-LFCT_S3    =    0.0,    0.,    0.4,    0.4,    0.4,
-LFCT_S4    =    0.0,    0.,    0.3,    0.3,    0.3,
+LFCT_S3    =    0.0,    0.0,    0.4,    0.4,    0.4,
+LFCT_S4    =    0.0,    0.0,    0.3,    0.3,    0.3,
 LFCT_S5    =    0.0,    0.0,   0.05,   0.05,   0.05,
 LFCT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
 LFCT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
@@ -533,24 +533,57 @@ LFCT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 STCT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! carbohydrate translocation
 STCT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,
-STCT_S3    =    0.0,    0.,    0.4,    0.4,    0.4,
-STCT_S4    =    0.0,    0.,    0.3,    0.3,    0.3,
-STCT_S5    =    0.0,    0.,   0.05,   0.05,   0.05,
+STCT_S3    =    0.0,    0.0,    0.4,    0.4,    0.4,
+STCT_S4    =    0.0,    0.0,    0.3,    0.3,    0.3,
+STCT_S5    =    0.0,    0.0,   0.05,   0.05,   0.05,
 STCT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
 STCT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
 STCT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 RTCT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! carbohydrate translocation
 RTCT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,
-RTCT_S3    =    0.0,    0.,    0.4,    0.4,    0.4,
-RTCT_S4    =    0.0,    0.,    0.3,    0.3,    0.3,
-RTCT_S5    =    0.0,    0.,   0.05,   0.05,   0.05,
+RTCT_S3    =    0.0,    0.0,    0.4,    0.4,    0.4,
+RTCT_S4    =    0.0,    0.0,    0.3,    0.3,    0.3,
+RTCT_S5    =    0.0,    0.0,   0.05,   0.05,   0.05,
 RTCT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
 RTCT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
 RTCT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 BIO2LAI    =  0.015,  0.030,  0.015,  0.015,  0.015,  ! leaf are per living leaf biomass [m^2/kg]
 
+/
+
+&noahmp_tiledrain_parameters
+!-----------------------------------!
+! For simple drainage model         !
+!-----------------------------------!
+DRAIN_LAYER_OPT  =  4
+    ! 0 - from one specified layer by TD_DEPTH,
+    ! 1 - from layers 1 & 2,
+    ! 2 - from layer layers 1, 2, and 3
+    ! 3 - from layer 2 and 3
+    ! 4 - from layer layers 3, 4
+    ! 5 - from all the four layers
+!-------------------------------------------------------------------------------------------------------------------------------------------------------------------- !
+!                  1       2       3       4       5       6       7       8       9      10      11      12      13      14      15      16      17      18      19  !
+!-------------------------------------------------------------------------------------------------------------------------------------------------------------------- !
+TDSMC_FAC   =   0.90,   0.90,   0.90,   0.90,   0.90,   1.25,   0.90,     1.0,   0.90,   0.90,   0.90,   0.90,   0.90,   0.90,   0.90,   0.90,   0.90,   0.90,   0.90 ! corresponds to number of soil types SOILPARAM.TBL
+TD_DEPTH    =      4,      4,     4,      4,       4,      4,      4,       4,     4,      4,       4,     4,      4,       4,     4,      4,       4,     4,      4  ! depth of drain tube from the soil surface
+TD_DC       =     20.,   20.,    20.,    20.,    20.,    20.,    20.,     20.,   20.,    20.,    20.,    20.,    20.,     20.,   20.,    20.,    20.,    20.,    20.  ! drainage coefficient (mm d^-1)
+!-------------------------------------------------------------------------------------------------------------------------------------------------------------------- !
+!
+!-------------------------------------!
+! For Hooghoudt tile drain model      !
+!-------------------------------------!
+!--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TD_DCOEF   =   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07 ! m d^-1, drainage coefficent
+TD_D       =   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00 ! m, depth to impe layer from drain water level (D)
+TD_ADEPTH  =   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00,   2.00 ! m, actual depth of imp layer from land surface
+TD_RADI    =   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07,   0.07 ! m, effective radius of drains (ro)
+TD_SPAC    =   60.0,   55.0,   45.0,   20.0,   25.0,   30.0,   40.0,   16.0,   18.0,   50.0,   15.0,   10.0,   35.0,   10.0,   60.0,   60.0,   10.0,   60.0,   60.0 ! m, distance between two drain tubes or tiles (L)
+TD_DDRAIN  =   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20,   1.20 ! m, Depth of drain
+KLAT_FAC   =   1.30,   1.80,   2.10,   2.60,   2.90,   2.50,   2.30,   3.00,   2.70,   2.00,   3.10,   3.30,   2.50,   1.00,   1.00,   1.80,   4.00,   1.00,   1.30 ! multiplication factor to lateral hyd.cond
+!--------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 /
  

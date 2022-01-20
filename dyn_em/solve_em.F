@@ -46,7 +46,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
                  ,period_em_f_sub,period_em_g_sub                                          &
                  ,halo_em_f_1_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub &
-                 ,halo_em_d_pv_sub
+                 ,halo_em_d_pv_sub,halo_firebrand_spotting_5_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -78,6 +78,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_llxy, ONLY : proj_cassini
    USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
    USE module_cpl, ONLY : coupler_on, cpl_settime, cpl_store_input
+   USE module_firebrand_spotting, ONLY : firebrand_spotting_em_driver
 
    IMPLICIT NONE
 
@@ -4745,6 +4746,54 @@ BENCH_END(bc_2d_tim)
      ENDIF
    ENDIF
 #endif
+
+   
+!-----------------------------------------------------------------------
+! firebrand spotting (passive Lagrangian particle transport, 
+! tracks firebrand physics properties)
+!-----------------------------------------------------------------------
+
+   IF(config_flags%ifire == 2 .AND. &
+       ! Check if spotting is on
+       config_flags%fs_firebrand_gen_lim > 0 .AND. & 
+       ! Check if this is the inner most grid
+       config_flags%max_dom == grid%id) THEN 
+
+#ifdef DM_PARALLEL
+       CALL wrf_debug ( 200 , ' call HALO_FIREBRAND_SPOTTING' )
+#      include "HALO_FIREBRAND_SPOTTING_5.inc"
+#endif
+
+       CALL wrf_debug ( 3 , 'solve: calling firebrand_spotting_em_driver...' )
+       CALL firebrand_spotting_em_driver (  &
+               cf            = config_flags,        &
+               grid          = grid,                &
+               fs_p_id       = grid%fs_p_id,        &
+               fs_p_dt       = grid%fs_p_dt,        &
+               fs_p_x        = grid%fs_p_x,         &
+               fs_p_y        = grid%fs_p_y,         &
+               fs_p_z        = grid%fs_p_z,         &
+               fs_gen_inst   = grid%fs_gen_inst,    &
+               fs_p_mass     = grid%fs_p_mass,      &  
+               fs_p_diam     = grid%fs_p_diam,      & 
+               fs_p_effd     = grid%fs_p_effd,      & 
+               fs_p_temp     = grid%fs_p_temp,      & 
+               fs_p_tvel     = grid%fs_p_tvel,      & 
+               fs_last_gen_dt= grid%fs_last_gen_dt, &
+               fs_gen_idmax  = grid%fs_gen_idmax,   &
+               fs_fire_ROSdt = grid%fs_fire_ROSdt,  &
+               fs_fire_area  = grid%fs_fire_area,   &
+               fs_count_landed_all   = grid%fs_count_landed_all,   &
+               fs_count_landed_hist  = grid%fs_count_landed_hist,  &
+               fs_landing_mask       = grid%fs_landing_mask,       &
+               fs_spotting_lkhd      = grid%fs_spotting_lkhd,      &
+               fs_frac_landed        = grid%fs_frac_landed,        &
+               fs_fuel_spotting_risk = grid%fs_fuel_spotting_risk, &
+               fs_count_reset        = grid%fs_count_reset)
+
+   ENDIF
+! end of firebrand spotting
+!-----------------------------------------------------------------------
 
 !  Max values of CFL for adaptive time step scheme
 

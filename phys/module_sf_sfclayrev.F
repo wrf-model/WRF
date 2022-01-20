@@ -24,7 +24,9 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux           )
+                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
+                     shalwater_z0,water_depth,shalwater_depth,     & 
+                     scm_force_flux                                )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -190,6 +192,10 @@ CONTAINS
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
+
+      INTEGER,  INTENT(IN )   ::     shalwater_z0 
+      REAL,     INTENT(IN )   ::     shalwater_depth 
+      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: water_depth 
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite ) ::                       U1D, &
@@ -231,6 +237,7 @@ CONTAINS
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX,     &
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
                 P1000mb,                                           &
+                shalwater_z0,water_depth(ims,j),shalwater_depth,   & 
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
@@ -256,6 +263,7 @@ CONTAINS
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
                      P1000mb,                                      &
+                     shalwater_z0,water_depth,shalwater_depth,     & 
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
@@ -321,6 +329,9 @@ CONTAINS
                                     
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
+      INTEGER,  INTENT(IN )   ::     shalwater_z0 
+      REAL,     INTENT(IN )   ::     shalwater_depth 
+      REAL,     DIMENSION( ims:ime ), INTENT(IN)  :: water_depth 
 ! MODULE-LOCAL VARIABLES, DEFINED IN SUBROUTINE SFCLAY
       REAL,     DIMENSION( its:ite ),  INTENT(IN   )   ::  dz8w1d
 
@@ -971,10 +982,16 @@ CONTAINS
       DO 360 I=its,ite
         IF((XLAND(I)-1.5).GE.0)THEN                                            
 !         ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
-! Since V3.7 (ref: EC Physics document for Cy36r1)
-          ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
-! V3.9: Add limit as in isftcflx = 1,2
-          ZNT(I)=MIN(ZNT(I),2.85e-3)
+          ! PSH - formulation for depth-dependent roughness from
+          ! ... Jimenez and Dudhia, 2018
+          IF ( shalwater_z0 .eq. 1 ) THEN
+             ZNT(I) = depth_dependent_z0(water_depth(I),ZNT(I),UST(I))
+          ELSE
+             ! Since V3.7 (ref: EC Physics document for Cy36r1)
+             ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
+             ! V3.9: Add limit as in isftcflx = 1,2
+             ZNT(I)=MIN(ZNT(I),2.85e-3)
+          ENDIF
 ! COARE 3.5 (Edson et al. 2013)
 !         CZC = 0.0017*WSPD(I)-0.005
 !         CZC = min(CZC,0.028)
@@ -1086,10 +1103,24 @@ CONTAINS
    END SUBROUTINE SFCLAYREV1D
 
 !====================================================================
-   SUBROUTINE sfclayrevinit
+   SUBROUTINE sfclayrevinit(ims,ime,jms,jme,                    &
+                            its,ite,jts,jte,                    &
+                            bathymetry_flag, shalwater_z0,      &
+                            shalwater_depth, water_depth,       &
+                            xland,LakeModel,lake_depth,lakemask )
 
     INTEGER                   ::      N
     REAL                      ::      zolf
+
+   INTEGER, INTENT(IN)      ::   ims,ime,jms,jme,its,ite,jts,jte
+   INTEGER, INTENT(IN)      ::   shalwater_z0 
+   REAL,    INTENT(IN)      ::   shalwater_depth 
+   INTEGER, INTENT(IN)      ::   bathymetry_flag 
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    ::  water_depth
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  xland 
+   INTEGER         ::     LakeModel
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  lake_depth
+   REAL,    DIMENSION( ims:ime, jms:jme )                   ::  lakemask  
 
     DO N=0,1000
 ! stable function tables
@@ -1103,8 +1134,72 @@ CONTAINS
        psih_unstab(n)=psih_unstable_full(zolf)
 
     ENDDO
+    IF ( shalwater_z0 .EQ. 1 ) THEN
+       CALL shalwater_init(ims,ime,jms,jme,            &
+                 its,ite,jts,jte,                      &
+                 bathymetry_flag, shalwater_z0,        &
+                 shalwater_depth, water_depth,         &
+                 xland,LakeModel,lake_depth,lakemask   )
+    END IF
 
    END SUBROUTINE sfclayrevinit
+
+   SUBROUTINE shalwater_init(ims,ime,jms,jme,                    &
+                             its,ite,jts,jte,                    &
+                             bathymetry_flag, shalwater_z0,      &
+                             shalwater_depth, water_depth,       &
+                             xland,LakeModel,lake_depth,lakemask )
+
+   INTEGER, INTENT(IN)      ::   ims,ime,jms,jme,its,ite,jts,jte
+   INTEGER, INTENT(IN)      ::   shalwater_z0 
+   REAL,    INTENT(IN)      ::   shalwater_depth 
+   INTEGER, INTENT(IN)      ::   bathymetry_flag 
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    ::  water_depth
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  xland 
+   INTEGER         ::     LakeModel
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  lake_depth
+   REAL,    DIMENSION( ims:ime, jms:jme )                   ::  lakemask  
+
+   ! Local 
+   LOGICAL :: overwrite_water_depth
+
+   overwrite_water_depth = .False.
+
+   IF ( bathymetry_flag .eq. 1 ) THEN
+      IF ( shalwater_depth .LE. 0.0 ) THEN
+         IF ( LakeModel .ge. 1 ) THEN
+            DO j = jts,jte
+               DO i = its,ite
+                  IF ( lakemask(i,j) .EQ. 1 ) THEN
+                     water_depth(i,j) = lake_depth(i,j)
+                  END IF
+               END DO
+            END DO
+         END IF
+      ELSE
+         overwrite_water_depth = .True.
+      END IF
+   ELSE
+      IF ( shalwater_depth .GT. 0.0 ) THEN
+         overwrite_water_depth = .True.
+      ELSE
+         CALL wrf_error_fatal('No bathymetry data detected and shalwater_depth not greater than 0.0. Re-run WPS to get bathymetry data or set shalwater_depth > 0.0')
+      END IF
+   END IF
+
+   IF (overwrite_water_depth) THEN 
+      DO j = jts,jte
+         DO i = its,ite
+            IF((XLAND(i,j)-1.5).GE.0)THEN
+               water_depth(i,j) = shalwater_depth
+            ELSE
+               water_depth(i,j) = -2.0 
+            END IF
+         END DO
+      END DO
+   END IF
+
+   END SUBROUTINE shalwater_init
 
       function zolri(ri,z,z0)
 !
@@ -1249,6 +1344,22 @@ CONTAINS
       return
       end function
 
+      function depth_dependent_z0(water_depth,z0,UST)
+      real :: depth_b
+      real :: effective_depth
+         IF ( water_depth .lt. 10.0 ) THEN
+           effective_depth = 10.0
+         ELSEIF ( water_depth .gt. 100.0 ) THEN
+           effective_depth = 100.0
+         ELSE
+           effective_depth = water_depth
+         ENDIF
+ 
+         depth_b = 1 / 30.0 * log (1260.0 / effective_depth)
+         depth_dependent_z0 = exp((2.7 * ust - 1.8 / depth_b) / (ust + 0.17 / depth_b) )
+         depth_dependent_z0 = MIN(depth_dependent_z0,0.1)
+     return
+     end function
 !-------------------------------------------------------------------          
 
 END MODULE module_sf_sfclayrev

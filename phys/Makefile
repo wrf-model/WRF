@@ -223,7 +223,7 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_zld.o \
 	module_diag_trad_fields.o \
         module_diag_solar.o
-
+  
 OBJS    =
 
 LIBTARGET    =  physics

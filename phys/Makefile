@@ -224,18 +224,12 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_trad_fields.o \
         module_diag_solar.o
 
-SUBMODULES =	module_sf_noahmpdrv.F \
-		module_sf_noahmp_glacier.F \
-		module_sf_noahmp_groundwater.F \
-		module_sf_noahmplsm.F
-  
 OBJS    =
 
 LIBTARGET    =  physics
 TARGETDIR    =  ./
 
 $(LIBTARGET) :
-	$(MAKE) submodules ; \
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
 		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM)
@@ -244,13 +238,19 @@ include ../configure.wrf
 
 non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
 
-submodules : $(SUBMODULES)
-	git submodule update --init --recursive
-	ln -sf noahmp/drivers/wrf/module_sf_noahmpdrv.F .
-	ln -sf noahmp/src/module_sf_noahmp_glacier.F .
-	ln -sf noahmp/src/module_sf_noahmp_groundwater.F .
-	ln -sf noahmp/src/module_sf_noahmplsm.F .
-	( cd ../run ; ln -sf ../phys/noahmp/parameters/* . )
+submodules :
+	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \
+	      \( ! -f module_sf_noahmp_groundwater.F \) -o \( ! -f module_sf_noahmplsm.F \) ] ; then \
+		echo Pulling in NoahMP submodule ; \
+		git submodule update --init --recursive ; \
+		ln -sf noahmp/drivers/wrf/module_sf_noahmpdrv.F . ; \
+		ln -sf noahmp/src/module_sf_noahmp_glacier.F . ; \
+		ln -sf noahmp/src/module_sf_noahmp_groundwater.F . ; \
+		ln -sf noahmp/src/module_sf_noahmplsm.F . ; \
+		( cd ../run ; ln -sf ../phys/noahmp/parameters/* . ) ; \
+	else \
+		echo No action required for NoahMP submodule ; \
+	fi
 
 clean:
 	@ echo 'use the clean script'

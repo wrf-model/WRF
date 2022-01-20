@@ -327,6 +327,44 @@ integer::oops1,oops2
          END IF
       END IF
 
+      grid%bathymetry_flag = flag_bathymetry
+      IF ( flag_bathymetry .EQ. 0 ) THEN
+         IF ( grid%shalwater_z0 .EQ. 1 ) THEN
+             CALL wrf_message ( " Warning: No bathymetry data found for shallow water roughness model." )
+             IF ( grid%shalwater_depth .LE. 0.0 ) THEN
+                CALL wrf_message ( " Warning: shalwater_depth must be greater than 0.0 for WRF to run." )
+             END IF
+         END IF
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+               grid%water_depth(i,j) = -4.0 
+            END DO
+         END DO
+      ELSE
+         CALL wrf_message ( " Bathymetry dataset from GEBCO Compilation Group. Please acknowledge the following in presentations and publications: GEBCO Compilation Group (2021) GEBCO 2021 Grid (doi:10.5285/c6612cbe-50b3-0cff-e053-6c86abc09f8f)." )
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+               grid%water_depth(i,j) = grid%bathymetry(i,j)
+               ! Get depth of lake based on height of water surface:
+               IF   ( grid%lu_index(i,j) .EQ. grid%islake ) THEN
+                  grid%water_depth(i,j) = grid%bathymetry(i,j) - grid%ht_gc(i,j)
+               END IF
+               ! Depth is positive:
+               grid%water_depth(i,j) = -grid%water_depth(i,j)
+               ! Set land cells to -10
+               IF ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
+                  grid%water_depth(i,j) = -2.0
+               ELSE ! Water cells:
+                  ! Find any water cells with negative (originally positive) values...
+                  ! ... indicative of mis-match of bathymetry and land mask.
+                  IF (grid%water_depth(i,j) .LT. 0.1) THEN
+                     grid%water_depth(i,j) = 0.1
+                  END IF
+               END IF
+            END DO
+         END DO
+      END IF
+
       !  Send out a quick message about the time steps based on the map scale factors.
 
       IF ( ( internal_time_loop .EQ. 1 ) .AND. ( grid%id .EQ. 1 ) .AND. &

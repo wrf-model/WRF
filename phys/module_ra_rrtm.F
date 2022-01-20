@@ -1741,7 +1741,7 @@ CONTAINS
                        ,qi3d,qs3d,qg3d,cldfra3d                   &
                        ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg             &
 !ccc Added for time-varying trace gases.
-                       ,yr, julian                                )
+                       ,yr, julian, ghg_input                     )
 !ccc
 !------------------------------------------------------------------
 !ccc
@@ -1756,7 +1756,7 @@ CONTAINS
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte
 
-   INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        ICLOUD, ghg_input
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -1827,6 +1827,7 @@ CONTAINS
 
 ! Add variables for variable trace gas concentrations (ccc)
     REAL(8)  :: co2vmr, n2ovmr, ch4vmr
+    REAL(8)  :: cfc11vmr, cfc12vmr ! NOT USED
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
     CHARACTER(LEN=256) :: message
 
@@ -1849,18 +1850,19 @@ CONTAINS
 
 !----- Calculate the trace gas concentrations from file.
 !ccc
-#ifdef CLWRFGHG
-   CALL read_CAMgases(yr,julian,"RRTM",co2vmr,n2ovmr,ch4vmr)
-#else
+   IF(ghg_input .EQ. 1 ) THEN 
+      CALL read_CAMgases(yr,julian,.false.,"RRTM",co2vmr,n2ovmr,ch4vmr,cfc11vmr,cfc12vmr)
+   ELSE
 ! values used in pre-V3.5
-!  co2vmr = 330.e-6
-!  n2ovmr = 0.
-!  ch4vmr = 0.
+   !  co2vmr = 330.e-6
+   !  n2ovmr = 0.
+   !  ch4vmr = 0.
 ! values updated to RRTMG in V3.5
-   co2vmr = 379.e-6
-   n2ovmr = 319.e-9
-   ch4vmr = 1774.e-9
-#endif
+      co2vmr = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+!     co2vmr = 379.e-6
+      n2ovmr = 319.e-9
+      ch4vmr = 1774.e-9
+   END IF
  
   IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian

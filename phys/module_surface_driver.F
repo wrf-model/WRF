@@ -5,6 +5,7 @@ CONTAINS
 
    SUBROUTINE surface_driver(                                         &
      &           HYDRO_dt,sfcheadrt,INFXSRT,soldrain,                 &
+     &           qtiledrain,ZWATBLE2D,                                & ! tile drainage for WRF-Hydro
      &           acgrdflx,achfx,aclhf                                 &
      &          ,acsnom,acsnow,snowfallac,akhs,akms,albedo,br,canwat  &
      &          ,chklowq,dt,dx,dx2d,area2d,dz8w,dzs,glw               &
@@ -44,7 +45,7 @@ CONTAINS
      &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz     &
      &          ,iopt_inf ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot ,iopt_stc     &
      &          ,iopt_gla ,iopt_rsf  ,iopt_soil ,iopt_pedo ,iopt_crop ,iopt_irr     &
-     &          ,iopt_irrm                                                          &
+     &          ,iopt_irrm,iopt_infdv,iopt_tdrn ,soiltstep                          &
      &          ,soilcomp  , soilcl1, soilcl2, soilcl3, soilcl4                     &
      &          ,isnowxy  ,tvxy      ,tgxy      ,canicexy  ,canliqxy  ,eahxy        &
      &          ,tahxy    ,cmxy      ,chxy      ,fwetxy    ,sneqvoxy  ,alboldxy     &
@@ -61,13 +62,24 @@ CONTAINS
      &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
      &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
      &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &            
+           ! Noah-MP extra output fields
+     &          ,qintsxy   ,qintrxy   ,qdripsxy ,qdriprxy  ,qthrosxy  ,qthrorxy     &
+     &          ,qsnsubxy  ,qsnfroxy  ,qsubcxy  ,qfrocxy   ,qevacxy   ,qdewcxy      &
+     &          ,qfrzcxy   ,qmeltcxy  ,qsnbotxy ,pondingxy ,PAHXY     ,PAHGXY       &
+     &          ,PAHVXY    ,PAHBXY                                                  &
+     &          ,fpicexy   ,RAINLSM   ,SNOWLSM  ,forctlsm  ,forcqlsm  ,forcplsm     &
+     &          ,forczlsm  ,forcwlsm  ,acc_ssoil,acc_qinsur,acc_qseva ,acc_etrani   &
+     &          ,eflxbxy   ,soilenergy,snowenergy, canhsxy                          &
+     &          ,ACC_DWATERXY, ACC_PRCPXY, ACC_ECANXY, ACC_ETRANXY, ACC_EDIRXY      &
            ! Noah-MP irrigation
      &          ,IRFRACT  ,SIFRACT   ,MIFRACT   ,FIFRACT   ,IRNUMSI   ,IRNUMMI      &
      &          ,IRNUMFI  ,IRWATSI   ,IRWATMI   ,IRWATFI   ,IRELOSS   ,IRSIVOL      &
-     &          ,IRMIVOL  ,IRFIVOL   ,IRRSPLH                                       &          
+     &          ,IRMIVOL  ,IRFIVOL   ,IRRSPLH                                       &
+           ! Noah-MP tile drainage
+     &          ,QTDRAIN  ,TD_FRACTION                                              &
            ! Noah-MP ground water
      &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
-     &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
+     &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy, qlatxy, qspringsxy &
      &          ,smoiseq  ,wtddt    ,stepwtd                                            &
                 ,gecros_state                                   & ! Optional gecros crop
      &          ,opt_thcnd                                                 &
@@ -76,6 +88,7 @@ CONTAINS
 #if (EM_CORE==1)
      &          ,ch,fgdp,dfgdp,vdfg,grav_settling                       & ! Katata - fog dep
 #endif
+     &          ,shalwater_z0,water_depth,shalwater_depth               & 
      &          ,lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d       & !lake
      &          ,snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d & !lake
      &          ,z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d   & !lake
@@ -255,6 +268,7 @@ CONTAINS
      &          ,urban_map_fbd                                        & !multi-layer urban
      &          ,urban_map_zgrd                                       & !multi-layer urban
      &          ,num_urban_hi                                         & !multi-layer urban
+     &          ,use_wudapt_lcz                                       & !wudapt
      &          ,tsk_rural                                            & !multi-layer urban
      &          ,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d              & !multi-layer urban
      &          ,tlev_urb3d,qlev_urb3d                                & !multi-layer urban
@@ -631,6 +645,7 @@ CONTAINS
   !added by Wei Yu for WRF_HYDRO 
    real ::  HYDRO_dt
    REAL, DIMENSION( ims:ime , jms:jme ):: sfcheadrt,INFXSRT, soldrain
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: qtiledrain,ZWATBLE2D  ! NoahMP tile drainage
 
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
@@ -849,7 +864,8 @@ CONTAINS
    INTEGER, OPTIONAL, INTENT(IN) ::    idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc , iopt_frz, &
                                     iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc, &
 				    iopt_gla, iopt_rsf, iopt_soil,iopt_pedo,iopt_crop, iopt_irr, &
-                                    iopt_irrm
+                                    iopt_irrm,iopt_infdv,iopt_tdrn
+   REAL,    OPTIONAL, INTENT(IN) :: soiltstep  ! NoahMP soil timestep (s)
    REAL,    OPTIONAL, DIMENSION(ims:ime ,8, jms:jme), INTENT(IN) :: SOILCOMP
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme)  , INTENT(IN) :: SOILCL1,SOILCL2,SOILCL3,SOILCL4
 
@@ -865,6 +881,18 @@ CONTAINS
 	  SAVXY,   SAGXY, RSSUNXY, RSSHAXY,  BGAPXY,  WGAPXY,   TGVXY,   TGBXY,   CHVXY,   CHBXY,   SHGXY, &
 	  SHCXY,   SHBXY,   EVGXY,   EVBXY,   GHVXY,   GHBXY,   IRGXY,   IRCXY,   IRBXY,    TRXY,   EVCXY, &
        CHLEAFXY,  CHUCXY,  CHV2XY,  CHB2XY,CHSTARXY                         
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(INOUT) :: acc_ssoil,acc_qinsur,acc_qseva
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(INOUT) :: ACC_DWATERXY, ACC_PRCPXY, &
+                                                                                     ACC_ECANXY, ACC_ETRANXY, ACC_EDIRXY
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(  OUT) :: eflxbxy,soilenergy, snowenergy
+   REAL, OPTIONAL, DIMENSION(ims:ime , 1:num_soil_layers, jms:jme), INTENT(INOUT) :: acc_etrani
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::    &
+               qintsxy   ,qintrxy   ,qdripsxy   ,&
+               qdriprxy  ,qthrosxy  ,qthrorxy   ,&
+               qsnsubxy  ,qsnfroxy  ,qsubcxy    ,&
+               qfrocxy   ,qevacxy   ,qdewcxy,qfrzcxy   ,qmeltcxy   ,&
+               qsnbotxy  ,pondingxy, PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
+               fpicexy,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,canhsxy
    INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: PLANTING
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: HARVEST
@@ -875,6 +903,9 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: IRWATSI, IRWATMI, IRWATFI, IRELOSS, &
                                                                      IRSIVOL, IRMIVOL, IRFIVOL, IRRSPLH
    INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: IRNUMSI, IRNUMMI, IRNUMFI
+! NoahMP tiledrainage
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN)    :: TD_FRACTION
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: QTDRAIN
 
 !  NoahMP specific fields - runoff option 5
 
@@ -883,7 +914,7 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::  smoiseq
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) ::  &
     SMCWTDXY,   RECHXY, DEEPRECHXY, FDEPTHXY,  AREAXY,  RIVERCONDXY, RIVERBEDXY,  &
-    EQZWT,      PEXPXY, QRFXY,      QSPRINGXY, QSLATXY, QRFSXY,      QSPRINGSXY                         
+    EQZWT,      PEXPXY, QRFXY,      QSPRINGXY, QSLATXY, QRFSXY, QSPRINGSXY, QLATXY                        
 
    REAL,    OPTIONAL, DIMENSION(ims:ime,60,jms:jme) :: gecros_state                  ! Optional gecros crop
 
@@ -908,6 +939,7 @@ CONTAINS
    INTEGER , INTENT(IN)        ::     urban_map_fbd
    INTEGER , INTENT(IN)        ::     urban_map_zgrd
    INTEGER, INTENT(IN )::   NUM_URBAN_HI
+   INTEGER, INTENT(IN )::   use_wudapt_lcz
    REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: trb_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ), INTENT(INOUT) :: tw1_urb4d
@@ -1351,6 +1383,9 @@ CONTAINS
                                                                                tkmg3d,         &
                                                                                tkdry3d,        &
                                                                                tksatu3d
+    INTEGER, INTENT(IN)                            :: shalwater_z0 
+    REAL,    INTENT(IN)                            :: shalwater_depth 
+    real,    dimension(ims:ime,jms:jme ),intent(inout) :: water_depth 
     real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
 #if (EM_CORE==1)
     real ,    dimension(ims:ime,jms:jme )  ::  lakemask
@@ -2011,7 +2046,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux  )
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux  ) 
 #if ( EM_CORE==1)
            DO j = j_start(ij),j_end(ij)
            DO i = i_start(ij),i_end(ij)
@@ -2033,6 +2068,7 @@ CONTAINS
            PRESENT(mol)        .AND.  PRESENT(regime)  .AND.    &
                                                       .TRUE. ) THEN
          CALL wrf_debug( 100, 'in SFCLAY' )
+
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
             CALL SFCLAYREV_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
                  p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
@@ -2049,8 +2085,9 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux, &
-                 sf_surface_physics  )
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
+                 shalwater_z0,water_depth,shalwater_depth,           & 
+                 scm_force_flux,sf_surface_physics  )
          ELSE
          CALL SFCLAYREV(u_phytmp,v_phytmp,t_phy,qv_curr,&
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
@@ -2063,7 +2100,9 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd, scm_force_flux    )
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
+               shalwater_z0,water_depth,shalwater_depth,           & 
+               scm_force_flux          ) 
 #if ( EM_CORE==1)
            DO j = j_start(ij),j_end(ij)
            DO i = i_start(ij),i_end(ij)
@@ -2678,6 +2717,7 @@ CONTAINS
                 urban_map_fbd,                                  & !I multi-layer urban
                 urban_map_zgrd,                                 & !I multi-layer urban
                 num_urban_hi,                                   & !I multi-layer urban
+                use_wudapt_lcz,                                 & !I wudapt
                 tsk_rural,                                      & !H multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
                 tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
@@ -3048,7 +3088,7 @@ CONTAINS
                   IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
 	       IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,   IOPT_IRR, &
-              IOPT_IRRM,                                                      &
+              IOPT_IRRM, IOPT_INFDV, IOPT_TDRN, soiltstep,                    &
                 IZ0TLND, SF_URBAN_PHYSICS,                                    &
 	       SOILCOMP,  SOILCL1,  SOILCL2,  SOILCL3,   SOILCL4,             &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,    SWDDIR,  &
@@ -3069,6 +3109,7 @@ CONTAINS
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
 	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,   GRAINXY,      GDDXY,PGSXY, & ! IN/OUT Noah MP only
                GECROS_STATE,                                                  & ! IN/OUT gecros model
+                QTDRAIN,   TD_FRACTION,                                       & ! IN/OUT tile drainage
 	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
                  TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
 	        RUNSBXY,   ECANXY,   EDIRXY,  ETRANXY,     FSAXY,     FIRAXY, &
@@ -3077,8 +3118,16 @@ CONTAINS
 		  SHGXY,    SHCXY,    SHBXY,    EVGXY,     EVBXY,      GHVXY, &
 		  GHBXY,    IRGXY,    IRCXY,    IRBXY,      TRXY,      EVCXY, &
 	       CHLEAFXY,   CHUCXY,   CHV2XY,   CHB2XY,    RS,                 &
+               qintsxy   ,qintrxy   ,qdripsxy   ,&
+               qdriprxy  ,qthrosxy  ,qthrorxy   ,&
+               qsnsubxy  ,qsnfroxy  ,qsubcxy    ,&
+               qfrocxy   ,qevacxy   ,qdewcxy    ,qfrzcxy   ,qmeltcxy   ,&
+               qsnbotxy  ,pondingxy ,PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
+               fpicexy,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,&
+               acc_ssoil, acc_qinsur, acc_qseva, acc_etrani, eflxbxy, soilenergy, snowenergy, canhsxy,&
+               ACC_DWATERXY, ACC_PRCPXY, ACC_ECANXY, ACC_ETRANXY, ACC_EDIRXY, &
 #ifdef WRF_HYDRO
-                 sfcheadrt,INFXSRT,soldrain,                          &    !O
+                 sfcheadrt,INFXSRT,soldrain,qtiledrain,ZWATBLE2D,             &    !O
 #endif
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
@@ -3155,7 +3204,7 @@ CONTAINS
                                   isltyp,smoiseq,dzs,wtddt,                                 &
                                   fdepthxy,areaxy,ht,isurban,ivgtyp,                         &
                                   rivercondxy,riverbedxy,eqzwt,pexpxy,                      &
-                                  smois,sh2o,smcwtdxy,zwtxy,qrfxy,deeprechxy,qspringxy,     &
+                                  smois,sh2o,smcwtdxy,zwtxy,qlatxy,qrfxy,deeprechxy,qspringxy,     &
                                   qslatxy,qrfsxy,qspringsxy,rechxy,                        &
                                   ids,ide, jds,jde, kds,kde,                             &
                                   ims,ime, jms,jme, kms,kme,                             &
@@ -5728,6 +5777,7 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
+                     shalwater_z0,water_depth,shalwater_depth,     & 
                      scm_force_flux,sf_surface_physics             )
 
      USE module_sf_sfclayrev
@@ -5804,6 +5854,9 @@ CONTAINS
                INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
+     INTEGER,  INTENT(IN )   ::     shalwater_z0 
+     REAL,     INTENT(IN )   ::     shalwater_depth 
+     REAL,     DIMENSION( ims:ime, jms:jme ) , INTENT(IN ) :: water_depth 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 
 !--------------------------------------------------------------------
@@ -5979,7 +6032,9 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux)
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
+                 shalwater_z0,water_depth,shalwater_depth,     & 
+                 scm_force_flux    )
 !
 !Restore land-point values calculated by SSiB (fds 12/2010)
      IF (itimestep .gt. 1 .and. sf_surface_physics .EQ. 8) then
@@ -6071,7 +6126,9 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
-                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd,scm_force_flux)
+                 ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd,&
+                 shalwater_z0,water_depth,shalwater_depth,     & 
+                 scm_force_flux    ) 
 !
      DO j = JTS , JTE
         DO i = ITS, ITE

@@ -573,14 +573,20 @@ Namelist variables for controlling the adaptive time step option:
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
                                      = 1, rrtm scheme 
-                                       (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9;
+                                       (Default values for GHG in V4.2: co2vmr=(280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+                                                                        n2ovmr=319.e-9, ch4vmr=1774.e-9
                                         Values used in previous versions: co2vmr=330.e-6, n2ovmr=0., ch4vmr=0.)
                                      = 3, cam scheme
                                           also requires levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
-                                       (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9)
+                                       (Default values for GHG in V4.2: co2vmr=(280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+                                                                        n2ovmr=319.e-9, ch4vmr=1774.e-9,
+                                                                        cfc11=0.251e-9, cfc12=0.538e-9,
                                      = 14, rrtmg-k scheme from KIAPS
                                      = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
+                                       (Default values for GHG in V4.2: co2vmr=(280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+                                                                        n2ovmr=319.e-9, ch4vmr=1774.e-9,
+                                                                        cfc11=0.251e-9, cfc12=0.538e-9
                                      = 5, Goddard longwave scheme
                                      = 7, FLG (UCLA) scheme 
                                      = 31, Earth Held-Suarez forcing
@@ -611,6 +617,11 @@ Namelist variables for controlling the adaptive time step option:
                                               1 = latitude-varying decorrelation length
  ra_sw_eclipse                       = 0,   ! eclipse effect on shortwave radiation. 0: off, 1: on. 
                                               Applies to RRTMG, Goddard, old Goddard and Dudhia schemes
+ ghg_input                           = 1,   ! Option to read CAMtr_volume_mixing_ratio files of green house gas values,
+                                              as of v4.4, the default is SSP 2 with RCP 4.5 => SSP245
+                                              Used for CAM LW and SW, RRTM, RRTMG LW and SW, RRTMG_fast LW and SW
+                                              0 = do not read in the annual data
+                                              1 = read in time dependent data for CO2, N2O, CH4, CFC11, CFC12
 
  nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
                                                 calls to shortwave radiation; the value
@@ -1071,6 +1082,12 @@ Namelist variables for lake module:
                                                   the lake depth data, but this switch is set to 1, the program will stop and tell one to go back to geogrid
                                                   program. 
                                                   = 0, do not use lake depth data.
+ shalwater_z0                        = 0,       ! Shallow water roughness scheme on (1) or off (0). Only compatible with sf_sfclay_physics = 1.
+                                                  Bathymetry dataset from GEBCO Compilation Group. Please acknowledge the following in presentations and 
+                                                  publications: GEBCO Compilation Group (2021) GEBCO 2021 Grid (doi:10.5285/c6612cbe-50b3-0cff-e053-6c86abc09f8f)
+ shalwater_depth                     = 0.0,     ! Set constant depth [m] (must be positive) for shallow water roughness scheme if no bathymetry data availabile.
+                                                  The scheme is intended for depths between 10.0 and 100.0 m. Any depths outside of this range will be
+                                                  rounded to the nearest limit value.
  lightning_option (max_dom)                       Lightning parameterization option to allow flash rate prediction without chemistry
                                      = 0        ! off
                                      = 1        ! PR92 based on maximum w, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 
@@ -1248,6 +1265,13 @@ Options for use with the Noah-MP Land Surface Model:
                                                      4 = BATS surface and subsurface runoff (free drainage)
                                                      5 = Miguez-Macho & Fan groundwater scheme (Miguez-Macho et al. 2007 JGR; Fan et al. 2007 JGR)
                                                            geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                     6 = Variable Infiltration Capacity Model surface runoff scheme (Wood et al., 1992, JGR)
+                                                     7 = Xiananjiang Infiltration and surface runoff scheme ((Jayawardena and Zhou, 2000)
+                                                     8 = Dynamic VIC surface runoff scheme (Liang and Xie, 2001)
+ opt_infdv                          = 0,        ! Noah-MP infiltration option in dynamic VIC runoff scheme (only works for opt_run=8)
+                                                     1 = Philip scheme
+                                                     2 = Green-Ampt scheme
+                                                     3 = Smith-Parlange scheme
  opt_frz                            = 1,        ! Noah-MP Supercooled Liquid Water option
                                                      1 = No iteration
                                                      2 = Koren's iteration
@@ -1278,37 +1302,49 @@ Options for use with the Noah-MP Land Surface Model:
                                                      1 = includes phase change
                                                      2 = slab ice (Noah)
  opt_rsf                            = 1,        ! Noah-MP surface evaporation resistance option (new in 3.8)
-                                                     1 -> Sakaguchi and Zeng, 2009
-                                                     2 -> Sellers (1992)
-                                                     3 -> adjusted Sellers to decrease RSURF for wet soil
-                                                     4 -> option 1 for non-snow; rsurf = rsurf_snow for snow (set in MPTABLE)
+                                                     1 = Sakaguchi and Zeng, 2009
+                                                     2 = Sellers (1992)
+                                                     3 = adjusted Sellers to decrease RSURF for wet soil
+                                                     4 = option 1 for non-snow; rsurf = rsurf_snow for snow (set in MPTABLE)
  opt_soil                           = 1,        ! Noah-MP options for defining soil properties
                                                            geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
-                                                     1 -> use input dominant soil texture
-                                                     2 -> use input soil texture that varies with depth
-                                                     3 -> use soil composition (sand, clay, orgm) and pedotransfer functions (OPT_PEDO)
-                                                     4 -> use input soil properties (BEXP_3D, SMCMAX_3D, etc.) (not valid in WRF)
+                                                     1 = use input dominant soil texture
+                                                     2 = use input soil texture that varies with depth
+                                                     3 = use soil composition (sand, clay, orgm) and pedotransfer functions (OPT_PEDO)
+                                                     4 = use input soil properties (BEXP_3D, SMCMAX_3D, etc.) (not valid in WRF)
  opt_pedo                           = 1,        ! Noah-MP options for pedotransfer functions (used when OPT_SOIL = 3)
                                                           geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
-                                                  1 -> Saxton and Rawls (2006)
- opt_crop                           = 0,        !  options for crop model
+                                                     1 = Saxton and Rawls (2006)
+ opt_crop                           = 0,        ! options for crop model
                                                            geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
-                                                     0 -> No crop model, will run default dynamic vegetation
-                                                     1 -> Liu, et al. 2016
-                                                     2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
+                                                     0 = No crop model, will run default dynamic vegetation
+                                                     1 = Liu, et al. 2016
+                                                     2 = Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
  
  opt_irr                            = 0,        !  options for irrigation scheme
                                                            geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
-	                                             0 -> No irrigation
-                                                     1 -> Irrigation ON
-                                                     2 -> irrigation trigger based on crop season Planting and harvesting dates
-                                                     3 -> irrigation trigger based on LAI threshold
+	                                             0 = No irrigation
+                                                     1 = Irrigation ON
+                                                     2 = irrigation trigger based on crop season Planting and harvesting dates
+                                                     3 = irrigation trigger based on LAI threshold
  opt_irrm                           = 0,        !  options for irrigation method (only if opt_irr > 0)
                                                            geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
-                                                     0 -> method based on geo_em fractions (all three methods are ON)
-                                                     1 -> sprinkler method
-                                                     2 -> micro/drip irrigation
-                                                     3 -> surface flooding  
+                                                     0 = method based on geo_em fractions (all three methods are ON)
+                                                     1 = sprinkler method
+                                                     2 = micro/drip irrigation
+                                                     3 = surface flooding  
+ opt_tdrn                           = 0,        ! Noah-MP tile drainage option (currently only tested and works with opt_run=3)
+                                                     geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                     0 = No tile drainage
+                                                     1 = Simple drainage
+                                                     2 = Hooghoudt's equation based tile drainage
+ soiltstep                          = 0.0,      ! Noah-MP soil process timestep (seconds) for solving soil water and temperature
+                                                     0 = default, the same as main NoahMP model timestep
+                                                     N * dt_noahmp, typically 15min or 30min
+ noahmp_output                      = 1,        ! Noah-MP output levels
+                                                     1 = standard output
+                                                     3 = standard output with additional water and energy budget term output
+ noahmp_acc_dt                      = 0.0,      ! Noah-MP bucket reset time interval (minutes) between outputs for accumulation (works when noahmp_output=3)
  /
 
  &fdda

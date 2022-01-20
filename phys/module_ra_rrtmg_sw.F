@@ -10063,7 +10063,7 @@ CONTAINS
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,yr,julian,                         & ! jararias 2013/08
+                       xcoszen,yr,julian,ghg_input,               & ! jararias 2013/08
                        obscur,                                    & ! amontornes-bcodina 2015/09 solar eclipses
                        proceed_cmaq_sw,                           & ! WRF-CMAQ twoway coupled model
                        nmode,                                     & ! WRF-CMAQ twoway coupled model
@@ -10095,7 +10095,7 @@ CONTAINS
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte
 
-   INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        ICLOUD, GHG_INPUT
    INTEGER, INTENT(IN )      ::        MP_PHYSICS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
@@ -10416,21 +10416,8 @@ CONTAINS
     integer:: idx_rei
     real:: corr
 
-#ifdef CLWRFGHG
 ! Using data from CAMtr_volume_mixing_ratio data file
     real(kind=8)                                 :: co2, n2o, ch4, cfc11, cfc12
-#else
-! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
-! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
-    real :: co2
-!   data co2 / 379.e-6 /
-! methane (1774 ppbv)
-    real :: ch4
-    data ch4 / 1774.e-9 / 
-! nitrous oxide (319 ppbv)
-    real :: n2o
-    data n2o / 319.e-9 / 
-#endif
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -10522,9 +10509,10 @@ CONTAINS
     character (len = 50) :: mystr         ! temporary character string
 ! end WRF-CMAQ twoway coupled model block
 
+    CHARACTER(LEN=256) :: message
+    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
 !------------------------------------------------------------------
-! Annual function for co2 in WRF v4.2
-      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &
@@ -10548,10 +10536,23 @@ CONTAINS
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
-#ifdef CLWRFGHG
 ! Read time-varying trace gases concentrations and interpolate them to run date
-   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
-#endif
+   IF ( GHG_INPUT .EQ. 1 ) THEN
+      CALL read_CAMgases(yr,julian,.false.,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+      IF ( wrf_dm_on_monitor() ) THEN
+        WRITE(message,*)'RRTMG SW CLWRF interpolated GHG values year:',yr,' julian day:',julian
+        call wrf_debug( 1, message)
+        WRITE(message,*)'  co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
+        call wrf_debug( 1, message)
+      END IF
+   ELSE
+! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
+! Annual function for co2 in WRF v4.2
+      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+!     co2 = 379.e-6
+      ch4 = 1774.e-9
+      n2o = 319.e-9
+   END IF
 
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
@@ -11043,9 +11044,11 @@ CONTAINS
 
            if(iceflgsw.eq.5)then
               do k = kts, kte
-                 snow_mass_factor = 1.0                 
+                 snow_mass_factor = 0.99        ! Assume 1% of snow overlaps the cloud ice category
+                 gicewp = gicewp + (qs1d(k)*(1.0-snow_mass_factor) * pdel(ncol,k)*100.0 / gravmks * 1000.0)
                  if (resnow1d(ncol,k) .gt. 130.)then 
-                     snow_mass_factor = (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k))
+                     snow_mass_factor = MIN(snow_mass_factor,                       &
+     &                         (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k)))
                      resnow1d(ncol,k)   = 130.0
                  endif
                  gsnowp = qs1d(k) * snow_mass_factor * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box snow water path.

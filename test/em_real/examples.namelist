@@ -74,7 +74,16 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  lakedepth_default                   = 50.,    50.,   50.,
  lake_min_elev                       = 5.,     5.,    5.,
 
- 
+** Using shallow water roughness (constant depth)
+&physics
+shalwater_z0                        = 1,       1,     1, 
+shalwater_depth                     = 40.0,
+
+** Using shallow water roughness (with bathymetry data)
+&physics
+shalwater_z0                        = 1,       1,     1, 
+shalwater_depth                     = 0.0,
+
 ** Using stochastic backscatter scheme (new namelist record since v3.6)
 
 &stoch

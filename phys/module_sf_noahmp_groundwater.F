@@ -13,7 +13,7 @@ CONTAINS
                                 ISLTYP    ,SMOISEQ  ,DZS     ,WTDDT                  ,& !in
                                 FDEPTH    ,AREA     ,TOPO    ,ISURBAN ,IVGTYP        ,& !in
                                 RIVERCOND ,RIVERBED ,EQWTD   ,PEXP                   ,& !in
-                                SMOIS     ,SH2OXY   ,SMCWTD  ,WTD  ,QRF              ,& !inout
+                                SMOIS     ,SH2OXY   ,SMCWTD  ,WTD  , QLAT, QRF       ,& !inout
                                 DEEPRECH  ,QSPRING  ,QSLAT   ,QRFS ,QSPRINGS  ,RECH  ,& !inout
                                 ids,ide, jds,jde, kds,kde,                    &
                                 ims,ime, jms,jme, kms,kme,                    &
@@ -83,7 +83,7 @@ CONTAINS
   REAL                                        :: DELTAT,RCOND,TOTWATER,PSI &
                                                 ,WFLUXDEEP,WCNDDEEP,DDZ,SMCWTDMID &
                                                 ,WPLUS,WMINUS
-  REAL,      DIMENSION( ims:ime, jms:jme )    :: QLAT
+  REAL,      DIMENSION( ims:ime, jms:jme ), INTENT(OUT)    :: QLAT
   INTEGER,   DIMENSION( ims:ime, jms:jme )    :: LANDMASK !-1 for water (ice or no ice) and glacial areas, 1 for land where the LSM does its soil moisture calculations.
   
   REAL :: BEXP,DKSAT,PSISAT,SMCMAX,SMCWLT

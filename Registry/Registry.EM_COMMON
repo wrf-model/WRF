@@ -143,6 +143,8 @@ state    real   utrop          ij       dyn_em      1        X     i1  "UTROP"  
 state    real   vmaxw          ij       dyn_em      1        Y     i1  "VMAXW"      "V-component of the max wind speed"  "m s-1"
 state    real   vtrop          ij       dyn_em      1        Y     i1  "VTROP"      "V-component of the tropopause wind" "m s-1"
 state    real   erod           ij.      misc        1        -     i012rd  "EROD" "fraction of erodible surface in each grid cell (0-1)"       "none"
+state    real   bathymetry     ij       dyn_em      1        -     i1  "bathymetry" "Bathymetry and topography" "m"
+state   integer BATHYMETRY_FLAG -       misc        1        -     i0rh   "BATHYMETRY_FLAG"   "Flag for bathymetry in the global attributes for metgrid data"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -825,6 +827,9 @@ state    real   SMSTOT           ij     misc        1         -      r          
 state    real   SOLDRAIN         ij     misc        1         -      r                                          "SOLDRAIN"         "soil column drainage"  "mm"
 state    real   SFCHEADRT        ij     misc        1         -      r                                          "SFCHEADRT"        "surface water depth"  "mm"
 state    real   INFXSRT          ij     misc        1         -      r                                          "INFXSRT"          "time step infiltration excess"  "mm"
+state    real   qtiledrain       ij     misc        1         -      r                                          "qtiledrain"        "accumulated tile drainage"  "mm"
+state    real   ZWATBLE2D        ij     misc        1         -      r                                          "ZWATBLE2D"         "water table depth for tile drainage"  "mm"
+
 state    real   SFCRUNOFF        ij     misc        1         -      rhd=(interp_mask_field:lu_index,iswater)      "SFROFF"           "SURFACE RUNOFF"     "mm"
 state    real   UDRUNOFF         ij     misc        1         -      rhd=(interp_mask_field:lu_index,iswater)      "UDROFF"           "UNDERGROUND RUNOFF" "mm"
 state  integer  IVGTYP           ij     misc        1         -     i02rhd=(interp_fcni)u=(copy_fcni)           "IVGTYP"           "DOMINANT VEGETATION CATEGORY" ""
@@ -851,8 +856,9 @@ state  integer  IFNDICEDEPTH     -      misc        1         -     ir        "F
 state    real   XLAIDYN          ij     misc        1         -     -         "XLAIDYN"     "Noah Dynamic LEAF AREA INDEX"       "m-2/m-2"
 # SKIN SST
 state    real   SSTSK            ij     misc        1         -     rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)   "SSTSK"              "SKIN SEA SURFACE TEMPERATURE" "K"
-state    real   lake_depth            ij     misc        1    -     i012rd=(interp_mask_water_field:lu_index,islake)   "lake_depth"              "lake depth" "m"
-state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
+state    real   lake_depth       ij     misc        1         -     i012rd=(interp_mask_water_field:lu_index,islake)        "lake_depth"         "lake depth" "m"
+state    real   water_depth      ij     misc        1         -     i0rhd                                                   "water_depth"        "global water depth" "m"
+state    real   DTW              ij     misc        1         -     r                                                       "DTW"                "WARM LAYER TEMP DIFF" "C"
 # Ocean surface currents
 state    real   UOCE            ij     misc        1         -     i0124rd=(interp_mask_water_field:lu_index,iswater)  "UOCE"  "SEA SURFACE ZONAL CURRENTS" "m s-1"
 state    real   VOCE            ij     misc        1         -     i0124rd=(interp_mask_water_field:lu_index,iswater)  "VOCE"  "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
@@ -2397,6 +2403,7 @@ rconfig   integer     compute_radar_ref   derived               1              0
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
 rconfig   integer     ra_sw_eclipse       namelist,physics	1              0       rh       "ra_sw_eclipse"         "0/1 flag: 1=turn eclipse on"      ""
+rconfig   integer     ghg_input           namelist,physics	1              1       rh       "ghg_input"             "for CAM, RRTM, RRTMG, RRTMG_fast: 0/1 flag: 0=constant (CO2 is a function of year for RRTM*); 1=time-varying GHG from CAMtr climate file"
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   real    naer                    namelist,physics      max_domains    1e9     rh   "NAER"          ""      ""
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    -1      rh       "sf_sfclay_physics"             ""      ""
@@ -2556,6 +2563,8 @@ rconfig   integer sf_ocean_physics        namelist,physics      1            0  
 rconfig   integer traj_opt                namelist,physics      1            0         h     "traj_opt"    "activate trajectory calculation  0=no, 1=on"   ""
 rconfig   logical dm_has_traj             namelist,physics      max_domains  .false.   rh    "has_traj"    "activate trajectory calculation per domain"   ""
 rconfig   integer tracercall              namelist,physics      1            0         h     "tracercall"  "activate tracer calculation  0=no, 1=on"   ""
+rconfig   integer shalwater_z0            namelist,physics      max_domains  0         rh    "shalwater_z0"     "shallow water sea surface roughness flag"      ""
+rconfig   real    shalwater_depth         namelist,physics      1            -1.0      rh    "shalwater_depth"     "water depth for shallow water scheme"      "m"
 rconfig   real    OMDT                    namelist,physics      1            1         h     "OMDT"        "Timestep of ocean model"      "s"
 rconfig   real    oml_hml0                namelist,physics      1            50        h     "oml_hml0"    "oml initial mixed layer depth value"   "m"
 rconfig   real    oml_gamma               namelist,physics      1            0.14      h     "oml_gamma"   "oml deep water lapse rate"   "K m-1"
@@ -2615,7 +2624,7 @@ rconfig   integer madwrf_cldinit             namelist,physics      1            
 rconfig   integer dveg        namelist,noah_mp      1           4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
 rconfig   integer opt_crs     namelist,noah_mp      1           1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
 rconfig   integer opt_btr     namelist,noah_mp      1           1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
-rconfig   integer opt_run     namelist,noah_mp      1           3         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS; 5->Miguez-Macho & Fan)"   ""
+rconfig   integer opt_run     namelist,noah_mp      1           3         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS; 5->Miguez-Macho & Fan; 6->VIC; 7->Xiananjiang; 8->Dynamic VIC)"   ""
 rconfig   integer opt_sfc     namelist,noah_mp      1           1         h    "opt_sfc"  "surface layer drag coeff (CH & CM) (1->M-O; 2->Chen97)"   ""
 rconfig   integer opt_frz     namelist,noah_mp      1           1         h    "opt_frz"  "supercooled liquid water (1-> NY06; 2->Koren99)"   ""
 rconfig   integer opt_inf     namelist,noah_mp      1           1         h    "opt_inf"  "frozen soil permeability (1-> NY06; 2->Koren99)"   ""
@@ -2631,7 +2640,12 @@ rconfig   integer opt_pedo    namelist,noah_mp      1           1         h    "
 rconfig   integer opt_crop    namelist,noah_mp      1           0         h    "opt_crop" "crop model option"   ""
 rconfig   integer opt_irr     namelist,noah_mp      1           0         h    "opt_irr"  "Noah-MP irrigation option"   ""
 rconfig   integer opt_irrm    namelist,noah_mp      1           0         h    "opt_irrm" "Noah-MP irrigation method option"   ""
-rconfig   real    WTDDT               namelist,physics         max_domains     30.      h     "wtddt"    "minutes between calls to lateral hydro"  ""
+rconfig   integer opt_infdv   namelist,noah_mp      1           0         h    "opt_infdv" "Noah-MP infiltration option in dynamic VIC runoff scheme (only works with opt_run=8), 1->Philip; 2->Green-Ampt; 3->Smith-Parlange"
+rconfig   integer opt_tdrn    namelist,noah_mp      1           0         h    "opt_tdrn" "NoahMP tile drainage option (currently only tested & works with opt_run=3), 0->no tile drainage; 1->Simple drainage; 2->Hooghoudt scheme"
+rconfig   real    soiltstep   namelist,noah_mp      1           0.        h    "soiltstep" "NoahMP soil process timestep (s) for solving soil temperature and water (default:0->same as main noahmp timestep)"
+rconfig   real    WTDDT               namelist,physics    max_domains   30.      h     "wtddt"    "minutes between calls to lateral hydro"  ""
+rconfig   real    noahmp_acc_dt       namelist,noah_mp      1           0.        h    "noahmp_acc_dt" "bucket reset time interval between outputs for noah-mp accumulation"   "minutes"
+rconfig   integer noahmp_output       namelist,noah_mp      1           1         h    "noahmp_output" "noahmp output level"   ""
 
 # For WRF Hydro
 rconfig   integer wrf_hydro               derived              1     0      h     "wrf_hydro"   "descrip"  "unit"
@@ -3065,7 +3079,7 @@ package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn,smcrel,xlaidyn
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
 package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,q_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid,t_veg24,t_veg240,fsun,fsun24,fsun240,fsd24,fsd240,fsi24,fsi240,laip,pct_pft_input
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,qrainxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4,irfract,sifract,mifract,fifract,irnumsi,irnummi,irnumfi,irwatsi,irwatmi,irwatfi,irsivol,irmivol,irfivol,ireloss,irrsplh
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,qrainxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4,irfract,sifract,mifract,fifract,irnumsi,irnummi,irnumfi,irwatsi,irwatmi,irwatfi,irsivol,irmivol,irfivol,ireloss,irrsplh,td_fraction,qtdrain,acrech,acqspring,qlatxy,qintsxy,qintrxy,qdripsxy,qdriprxy,qthrosxy,qthrorxy,qsnsubxy,qsnfroxy,qsubcxy,qfrocxy,qevacxy,qdewcxy,qfrzcxy,qmeltcxy,qsnbotxy,pondingxy,pahxy,pahgxy,pahvxy,pahbxy,fpicexy,rainlsm,snowlsm,acints,acintr,acdripr,acthror,acevac,acdewc,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,acrainlsm,acrunsb,acrunsf,acecan,acetran,acedir,acqlat,acqrf,acetlsm,acsnowlsm,acsubc,acfroc,acfrzc,acmeltc,acsnbot,acponding,acsnsub,acsnfro,acrainsnow,acdrips,acthros,acsagb,acirb,acshb,acevb,acghb,acpahb,acsagv,acirg,acshg,acevg,acghv,acpahg,acsav,acirc,acshc,acevc,actr,acpahv,acswdnlsm,acswuplsm,aclwdnlsm,aclwuplsm,acshflsm,aclhflsm,acghflsm,acpahlsm,accanhs,canhsxy,soilenergy,snowenergy,acc_ssoil,acc_qinsur,acc_qseva,acc_etrani,aceflxb,eflxbxy,acc_dwaterxy,acc_prcpxy,acc_ecanxy,acc_etranxy,acc_edirxy
 package   ctsmscheme     sf_surface_physics==6       -             - 
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,t2obs,q2obs,vegf_px,imperv,canfra,lai_px,wwlt_px,wfc_px,wsat_px,clay_px,csand_px,fmsand_px
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
@@ -3226,7 +3240,7 @@ package   icedepth_one   seaice_thickness_opt==1     -             state:icedept
 #Time series options for text output
 package   notseries             process_time_series==0                 -             -
 package   tseries               process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_p_profile,ts_w_profile
-package   tseries_add_solar     process_time_series==2                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_cldfrac2d,ts_wvp,ts_lwp,ts_iwp,ts_swp,ts_lwp_tot,ts_iwp_tot,ts_swp_tot,ts_re_qc,ts_re_qi,ts_re_qs,ts_re_qc_tot,ts_re_qi_tot,ts_re_qs_tot,ts_tau_qc,ts_tau_qi,ts_tau_qs,ts_tau_qc_tot,ts_tau_qi_tot,ts_tau_qs_tot,ts_cbaseht,ts_ctopht,ts_cbaseht_tot,ts_ctopht_tot,ts_clrnidx,ts_p_profile,ts_w_profile,ts_swdown,ts_swddni,ts_swddif,ts_swdownc,ts_swddnic,ts_swdown2,ts_swddni2,ts_swddif2,ts_swdownc2,ts_swddnic2
+package   tseries_add_solar     process_time_series==2                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_cldfrac2d,ts_wvp,ts_lwp,ts_iwp,ts_swp,ts_lwp_tot,ts_iwp_tot,ts_swp_tot,ts_re_qc,ts_re_qi,ts_re_qs,ts_re_qc_tot,ts_re_qi_tot,ts_re_qs_tot,ts_tau_qc,ts_tau_qi,ts_tau_qs,ts_tau_qc_tot,ts_tau_qi_tot,ts_tau_qs_tot,ts_cbaseht,ts_ctopht,ts_cbaseht_tot,ts_ctopht_tot,ts_clrnidx,ts_p_profile,ts_w_profile,ts_swdown,ts_swddni,ts_swddif,ts_swdownc,ts_swddnic,ts_swdown2,ts_swddni2,ts_swddif2,ts_swdownc2,ts_swddnic2,ts_ghi_accum
 
 # WRF-HAILCAST
 state    real   HAILCAST_DHAIL1   ij     misc        1         -      r          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"
@@ -3290,10 +3304,11 @@ package   io_zzz      io_form_restart==9                     -             -
 package   io_grib2    io_form_restart==10                    -             -
 package   io_pnetcdf  io_form_restart==11                    -             -
 package   io_pio      io_form_restart==12                    -             -
+package   io_netcdfpar io_form_restart==13                   -             -
 
 #WRF Hydro
 package   no_wrfhydro    wrf_hydro==0                -            -
-package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN, SFCHEADRT, INFXSRT
+package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN,SFCHEADRT,INFXSRT,qtiledrain,ZWATBLE2D
 
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
@@ -3362,6 +3377,7 @@ halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1
 halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,tracer,scalar;4:mu_1,mu_2
 halo      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
+halo      HALO_FIREBRAND_SPOTTING_5 dyn_em 48:muts,al
 halo      HALO_EM_MOIST_E_3 dyn_em 24:moist
 halo      HALO_EM_MOIST_E_5 dyn_em 48:moist
 halo      HALO_EM_MOIST_E_7 dyn_em 80:moist

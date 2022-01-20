@@ -198,8 +198,8 @@
       REAL, PARAMETER, PRIVATE:: xm0i = 1.E-12
       REAL, PARAMETER, PRIVATE:: D0c = 1.E-6
       REAL, PARAMETER, PRIVATE:: D0r = 50.E-6
-      REAL, PARAMETER, PRIVATE:: D0s = 200.E-6
-      REAL, PARAMETER, PRIVATE:: D0g = 250.E-6
+      REAL, PARAMETER, PRIVATE:: D0s = 300.E-6
+      REAL, PARAMETER, PRIVATE:: D0g = 350.E-6
       REAL, PRIVATE:: D0i, xm0s, xm0g
 
 !..Lookup table dimensions
@@ -1641,7 +1641,7 @@
             ni(k) = MAX(R2, ni1d(k)*rho(k))
             if (ni(k).le. R2) then
                lami = cie(2)/5.E-6
-               ni(k) = MIN(9999.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
+               ni(k) = MIN(999.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
             endif
             L_qi(k) = .true.
             lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
@@ -1649,7 +1649,7 @@
             xDi = (bm_i + mu_i + 1.) * ilami
             if (xDi.lt. 5.E-6) then
              lami = cie(2)/5.E-6
-             ni(k) = MIN(9999.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
+             ni(k) = MIN(999.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
             elseif (xDi.gt. 300.E-6) then
              lami = cie(2)/300.E-6
              ni(k) = cig(1)*oig2*ri(k)/am_i*lami**bm_i
@@ -2678,7 +2678,7 @@
            xDi = (bm_i + mu_i + 1.) * ilami
            if (xDi.lt. 5.E-6) then
             lami = cie(2)/5.E-6
-            xni = MIN(9999.D3, cig(1)*oig2*xri/am_i*lami**bm_i)
+            xni = MIN(999.D3, cig(1)*oig2*xri/am_i*lami**bm_i)
             niten(k) = (xni-ni1d(k)*rho(k))*odts*orho
            elseif (xDi.gt. 300.E-6) then
             lami = cie(2)/300.E-6
@@ -2689,8 +2689,8 @@
           niten(k) = -ni1d(k)*odts
          endif
          xni=MAX(0.,(ni1d(k) + niten(k)*dtsave)*rho(k))
-         if (xni.gt.9999.E3) &
-                niten(k) = (9999.E3-ni1d(k)*rho(k))*odts*orho
+         if (xni.gt.999.E3) &
+                niten(k) = (999.E3-ni1d(k)*rho(k))*odts*orho
 
 !..Rain tendency
          qrten(k) = qrten(k) + (prr_wau(k) + prr_rcw(k) &
@@ -3535,7 +3535,7 @@
             lami = cie(2)/300.E-6
            endif
            ni1d(k) = MIN(cig(1)*oig2*qi1d(k)/am_i*lami**bm_i,           &
-                         9999.D3/rho(k))
+                         999.D3/rho(k))
          endif
          qr1d(k) = qr1d(k) + qrten(k)*DT
          nr1d(k) = MAX(R2/rho(k), nr1d(k) + nrten(k)*DT)

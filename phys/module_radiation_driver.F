@@ -269,7 +269,7 @@ CONTAINS
 ! *** add new modules of schemes here
 
 #if ( WRF_CMAQ == 1)
-   USE module_twoway_ra_rrtmg_sw
+   USE module_ra_rrtmg_sw_cmaq
 #endif
 
    USE module_ra_sw         , ONLY : swrad
@@ -994,7 +994,7 @@ CONTAINS
 !---------- local test vars 
 !   real, dimension(ims:ime, kms:kme, jms:jme) ::  hlw, hsw
 
-   LOGICAL :: proceed_twoway_sw
+   LOGICAL :: proceed_cmaq_sw
 
    logical, save :: firstime = .true.
    logical, save :: feedback_restart, direct_sw_feedback
@@ -2499,7 +2499,7 @@ CONTAINS
              CALL wrf_debug(100, 'CALL rrtmg_sw')
 
              if ( direct_sw_feedback .and. feedback_is_ready ) then
-                proceed_twoway_sw = .true.
+                proceed_cmaq_sw = .true.
 
                 if (present(mass_ws_i)) then
 
@@ -2532,7 +2532,7 @@ CONTAINS
                    sig_k(:,kte+1,:) = sig_k(:,kte,:)
                 end if
              else
-                proceed_twoway_sw = .false.
+                proceed_cmaq_sw = .false.
              end if
 
              CALL RRTMG_SWRAD(                                         &
@@ -2598,7 +2598,7 @@ CONTAINS
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
                      obscur=obscur_loc,                                 & 
                      xcoszen=coszen,yr=yr,julian=julian,mp_physics=mp_physics, &   ! jararias 2013/08/14
-                     proceed_twoway_sw=proceed_twoway_sw,               & ! WRF-CMAQ coupled model
+                     proceed_cmaq_sw=proceed_cmaq_sw,                   & ! WRF-CMAQ coupled model
                      nmode=3,                                           & ! WRF-CMAQ coupled model
                      mass_ws_i=mass_ws_i,                               & ! WRF-CMAQ coupled model
                      mass_ws_j=mass_ws_j,                               & ! WRF-CMAQ coupled model
@@ -2642,7 +2642,7 @@ CONTAINS
                                                                         )
 
              ! = WRF-CMAQ twoway coupled model
-             if (proceed_twoway_sw) then
+             if (proceed_cmaq_sw) then
                 DO j=jts,jte
                    DO i=its,ite
                       sw_ttauxar_01(i,j) = sum(sw_gtauxar_01(i,:,j))

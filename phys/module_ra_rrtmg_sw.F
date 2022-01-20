@@ -8855,9 +8855,9 @@
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
              swdkdir,swdkdif,                               & ! jararias, 2013/08/10
-             swdkdirc                                       & ! PAJ
-             ,calc_clean_atm_diag                          &
-             ,sw_zbbcddir, sw_dirdflux, sw_difdflux         & ! WRF-CMAQ twoway coupled model
+             swdkdirc,                                      & ! PAJ
+             calc_clean_atm_diag,                           &
+             sw_zbbcddir, sw_dirdflux, sw_difdflux          & ! WRF-CMAQ twoway coupled model
                                                                 )
 
 
@@ -10012,7 +10012,7 @@ use mcica_subcol_gen_sw, only: mcica_subcol_sw
 use module_ra_rrtmg_lw, only : inirad, o3data, relcalc, reicalc, retab
 !                               mcica_random_numbers, randomNumberSequence, &
 !                               new_RandomNumberSequence, getRandomReal
-use module_twoway_ra_rrtmg_sw
+use module_ra_rrtmg_sw_cmaq
 
 CONTAINS
 
@@ -10065,7 +10065,7 @@ CONTAINS
                        swdownc, swddnic, swddirc,                 & ! PAJ
                        xcoszen,yr,julian,                         & ! jararias 2013/08
                        obscur,                                    & ! amontornes-bcodina 2015/09 solar eclipses
-                       proceed_twoway_sw,                         & ! WRF-CMAQ twoway coupled model
+                       proceed_cmaq_sw,                           & ! WRF-CMAQ twoway coupled model
                        nmode,                                     & ! WRF-CMAQ twoway coupled model
                        mass_ws_i, mass_ws_j, mass_ws_k,           & ! WRF-CMAQ twoway coupled model
                        mass_in_i, mass_in_j, mass_in_k,           & ! WRF-CMAQ twoway coupled model
@@ -10254,7 +10254,7 @@ CONTAINS
                                REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: obscur	
 
 ! begin WRF-CMAQ twoway coupled model block
-   LOGICAL, INTENT(IN) :: proceed_twoway_sw
+   LOGICAL, INTENT(IN) :: proceed_cmaq_sw
 
 ! ** FSB items needed for new aerosol code from CMAQ
    integer, optional, intent(in)  ::  nmode  ! number of log-normal modes
@@ -11239,7 +11239,7 @@ CONTAINS
             ssaaer(ncol,k,nb) = 1.
             asmaer(ncol,k,nb) = 0.
 
-            if (proceed_twoway_sw) then
+            if (proceed_cmaq_sw) then
                INMASS_ws(1)  = mass_ws_i(i,k,j)
                INMASS_ws(2)  = mass_ws_j(i,k,j)
                INMASS_ws(3)  = mass_ws_k(i,k,j)
@@ -11309,7 +11309,7 @@ CONTAINS
                asmaer(ncol,k,nb) = gaer
             end if
          enddo ! loop over layers
-         if (proceed_twoway_sw) then
+         if (proceed_cmaq_sw) then
 ! No aerosols in top layer above model top (kte+1).
             tauaer(ncol, kte+1 ,nb) = 0.
             ssaaer(ncol, kte+1 ,nb) = 1.
@@ -11534,7 +11534,7 @@ CONTAINS
          enddo
       else
 
-         if (proceed_twoway_sw) then   ! this is for WRF-CMAQ twoway coupled model
+         if (proceed_cmaq_sw) then   ! this is for WRF-CMAQ twoway coupled model
             gtauxar_01 (i,:,j) = 0.0
             gtauxar_02 (i,:,j) = 0.0
             gtauxar_03 (i,:,j) = 0.0

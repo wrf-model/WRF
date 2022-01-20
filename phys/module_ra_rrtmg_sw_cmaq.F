@@ -1,4 +1,4 @@
-MODULE module_twoway_ra_rrtmg_sw
+MODULE module_ra_rrtmg_sw_cmaq
 
 contains
 
@@ -324,4 +324,4 @@ contains
 
       end subroutine get_aerosol_Optics_RRTMG_SW
 
-END MODULE module_twoway_ra_rrtmg_sw
+END MODULE module_ra_rrtmg_sw_cmaq

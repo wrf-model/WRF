@@ -3752,13 +3752,16 @@ CONTAINS
       DO k = kts,kte
 
          delz = MAX(100., dz(k))
-         RH_00L = 0.53 + MIN(0.46,SQRT(1./(50.0+gridkm*gridkm*delz*0.01)))
-         RH_00O = 0.86 + MIN(0.13,SQRT(1./(50.0+gridkm*gridkm*delz*0.01)))
+         RH_00L = 0.77 + MIN(0.22,SQRT(1./(50.0+gridkm*gridkm*delz*0.01)))
+         RH_00O = 0.85 + MIN(0.14,SQRT(1./(50.0+gridkm*gridkm*delz*0.01)))
          RHUM = rh(k)
 
-         if (qc(k).gt.1.E-6 .or. qi(k).ge.1.E-6                         &
-     &                    .or. (qs(k).gt.1.E-5 .and. t(k).lt.273.)) then
+         if (qc(k).gt.1.E-6 .or. qi(k).ge.1.E-7                         &
+     &                    .or. (qs(k).gt.1.E-6 .and. t(k).lt.273.)) then
             CLDFRA(K) = 1.0
+         elseif (((qc(k)+qi(k)).gt.1.E-10) .and.                        &
+     &                                    ((qc(k)+qi(k)).lt.1.E-6)) then
+            CLDFRA(K) = MIN(0.99, 0.1*(11.0 + log10(qc(k)+qi(k))))
          else
 
             IF ((XLAND-1.5).GT.0.) THEN                                  !--- Ocean
@@ -3767,10 +3770,10 @@ CONTAINS
                RH_00 = RH_00L
             ENDIF
 
-            tc = t(k) - 273.15
+            tc = MAX(-80.0, t(k) - 273.15)
             if (tc .lt. -12.0) RH_00 = RH_00L
 
-            if (tc .ge. 29.0) then
+            if (tc .ge. 25.0) then
                CLDFRA(K) = 0.0
             elseif (tc .ge. -12.0) then
                RHUM = MIN(rh(k), 1.0)
@@ -3779,24 +3782,16 @@ CONTAINS
                if (max_relh.gt.1.12 .or. (.NOT.(modify_qvapor)) ) then
 !..For HRRR model, the following look OK.
                   RHUM = MIN(rh(k), 1.45)
-                  RH_00 = RH_00 + (1.45-RH_00)*(-12.0-tc)/(-12.0+112.)
-             if (RH_00 .ge. 1.5) then
-              WRITE (dbg_msg,*) ' FATAL: RH_00 too large (1.5): ', RH_00, RH_00L, tc
-              CALL wrf_error_fatal (dbg_msg)
-             endif
+                  RH_00 = RH_00 + (1.45-RH_00)*(-12.0-tc)/(-12.0+85.)
                   CLDFRA(K) = MAX(0., 1.0-SQRT((1.46-RHUM)/(1.46-RH_00)))
                else
 !..but for the GFS model, RH is way lower.
                   RHUM = MIN(rh(k), 1.05)
-                  RH_00 = RH_00 + (1.05-RH_00)*(-12.0-tc)/(-12.0+112.)
-             if (RH_00 .ge. 1.05) then
-              WRITE (dbg_msg,*) ' FATAL: RH_00 too large (1.05): ', RH_00, RH_00L, tc
-              CALL wrf_error_fatal (dbg_msg)
-             endif
+                  RH_00 = RH_00 + (1.05-RH_00)*(-12.0-tc)/(-12.0+85.)
                   CLDFRA(K) = MAX(0., 1.0-SQRT((1.06-RHUM)/(1.06-RH_00)))
                endif
             endif
-            if (CLDFRA(K).gt.0.) CLDFRA(K) = MAX(0.01, MIN(CLDFRA(K),0.95))
+            if (CLDFRA(K).gt.0.) CLDFRA(K) = MAX(0.01, MIN(CLDFRA(K),0.99))
 
             if (debug_flag) then
               WRITE (dbg_msg,*) 'DEBUG-GT: cloud fraction (k,RH_00, RHUM, CF): ',k,RH_00,RHUM,CLDFRA(K)
@@ -3804,6 +3799,7 @@ CONTAINS
             endif
 
          endif
+         if (cldfra(k).gt.0.0 .and. p(k).lt.7000.0) CLDFRA(K) = 0.0
       ENDDO
 
 
@@ -3990,9 +3986,9 @@ CONTAINS
       ENDDO
 
 
-      k_cldb = k_m12C + 5
+      k_cldb = k_m12C + 3
       in_cloud = .false.
-      k = k_m12C + 4
+      k = k_m12C + 2
       DO WHILE (.not. in_cloud .AND. k.gt.kbot)
          k_cldt = 0
          if (cfr1d(k).ge.0.01) then
@@ -4045,13 +4041,14 @@ CONTAINS
       do k = k1, k2
          tdz = tdz + dz(k)
       enddo
-      max_iwc = ABS(qvs(k2)-qvs(k1))
+!     max_iwc = ABS(qvs(k2)-qvs(k1))
+      max_iwc = MAX(0.0, qvs(k1)-qvs(k2))
 !     print*, ' max_iwc = ', max_iwc, ' over DZ=',tdz
 
       do k = k1, k2
-         max_iwc = MAX(1.E-5, max_iwc - (qi(k)+qs(k)))
+         max_iwc = MAX(1.E-6, max_iwc - (qi(k)+qs(k)))
       enddo
-      max_iwc = MIN(2.E-3, max_iwc)
+      max_iwc = MIN(1.E-4, max_iwc)
 
       this_dz = 0.0
       do k = k1, k2
@@ -4061,7 +4058,7 @@ CONTAINS
             this_dz = this_dz + dz(k)
          endif
          this_iwc = max_iwc*this_dz/tdz
-         iwc = MAX(5.E-6, this_iwc*(1.-entr))
+         iwc = MAX(1.E-6, this_iwc*(1.-entr))
          if (cfr(k).gt.0.0.and.cfr(k).lt.1.0.and.T(k).ge.203.16) then
             qi(k) = qi(k) + cfr(k)*cfr(k)*iwc
          endif
@@ -4086,13 +4083,14 @@ CONTAINS
       do k = k1, k2
          tdz = tdz + dz(k)
       enddo
-      max_lwc = ABS(qvs(k2)-qvs(k1))
+!     max_lwc = ABS(qvs(k2)-qvs(k1))
+      max_lwc = MAX(0.0, qvs(k1)-qvs(k2))
 !     print*, ' max_lwc = ', max_lwc, ' over DZ=',tdz
 
       do k = k1, k2
-         max_lwc = MAX(1.E-5, max_lwc - qc(k))
+         max_lwc = MAX(1.E-6, max_lwc - qc(k))
       enddo
-      max_lwc = MIN(2.E-3, max_lwc)
+      max_lwc = MIN(1.E-4, max_lwc)
 
       this_dz = 0.0
       do k = k1, k2
@@ -4102,8 +4100,8 @@ CONTAINS
             this_dz = this_dz + dz(k)
          endif
          this_lwc = max_lwc*this_dz/tdz
-         lwc = MAX(5.E-6, this_lwc*(1.-entr))
-         if (cfr(k).gt.0.0.and.cfr(k).lt.1.0.and.T(k).ge.253.16) then
+         lwc = MAX(1.E-6, this_lwc*(1.-entr))
+         if (cfr(k).gt.0.0.and.cfr(k).lt.1.0.and.T(k).ge.258.16) then
             qc(k) = qc(k) + cfr(k)*cfr(k)*lwc
          endif
       enddo

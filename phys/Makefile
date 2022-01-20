@@ -223,6 +223,11 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_zld.o \
 	module_diag_trad_fields.o \
         module_diag_solar.o
+
+SUBMODULES =	module_sf_noahmpdrv.F \
+		module_sf_noahmp_glacier.F \
+		module_sf_noahmp_groundwater.F \
+		module_sf_noahmplsm.F
   
 OBJS    =
 
@@ -230,6 +235,7 @@ LIBTARGET    =  physics
 TARGETDIR    =  ./
 
 $(LIBTARGET) :
+	$(MAKE) submodules ; \
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
 		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM)
@@ -237,6 +243,14 @@ $(LIBTARGET) :
 include ../configure.wrf
 
 non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
+
+submodules : $(SUBMODULES)
+	git submodule update --init --recursive
+	ln -sf noahmp/drivers/wrf/module_sf_noahmpdrv.F .
+	ln -sf noahmp/src/module_sf_noahmp_glacier.F .
+	ln -sf noahmp/src/module_sf_noahmp_groundwater.F .
+	ln -sf noahmp/src/module_sf_noahmplsm.F .
+	( cd ../run ; ln -sf ../phys/noahmp/parameters/* . )
 
 clean:
 	@ echo 'use the clean script'

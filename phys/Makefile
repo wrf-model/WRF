@@ -242,7 +242,7 @@ submodules :
 	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \
 	      \( ! -f module_sf_noahmp_groundwater.F \) -o \( ! -f module_sf_noahmplsm.F \) ] ; then \
 		echo Pulling in NoahMP submodule ; \
-		git submodule update --init --recursive ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
 		ln -sf noahmp/drivers/wrf/module_sf_noahmpdrv.F . ; \
 		ln -sf noahmp/src/module_sf_noahmp_glacier.F . ; \
 		ln -sf noahmp/src/module_sf_noahmp_groundwater.F . ; \

@@ -101,6 +101,8 @@ CONTAINS
               , QNDROP, F_QNDROP                                          &
               ,QNIFA,F_QNIFA                                              &
               ,QNWFA,F_QNWFA                                              &
+              ,QNBCA                                                      &
+              ,wif_input_opt                                              &
               ,qc_tot, qi_tot                                             &
               ,ACSWUPT   ,ACSWUPTC                                        &
               ,ACSWDNT   ,ACSWDNTC                                        &
@@ -798,12 +800,13 @@ CONTAINS
          INTENT(INOUT ) ::                                        &
                                                                pb &
                                         ,qv,qc,qr,qi,qs,qg,qh,qndrop,      &
-                                                      qnifa,qnwfa,      & ! Trude
+                                                      qnifa,qnwfa,qnbca,   & ! Trude
                                                       qi2,qi3        ! for P3
 
    LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qh,f_qndrop,&
                                                 f_qnifa,f_qnwfa,        &  ! trude
                                                 f_qi2,f_qi3            ! for P3
+   INTEGER, OPTIONAL, INTENT(IN) :: wif_input_opt
      ! Solar diag
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT), OPTIONAL  ::  qc_tot, qi_tot
 !shbaek
@@ -1508,7 +1511,7 @@ CONTAINS
      ENDIF
    ENDIF
 
-! Allocate aerosol arrays used by aer_opt = 3 option, and explicit AOD from QNWFA+QNIFA   (Trude)
+! Allocate aerosol arrays used by aer_opt = 3 option, and explicit AOD from QNWFA+QNIFA(+QNBCA)   (Trude)
    IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa) .AND. PRESENT(taod5503d) .AND.  PRESENT(taod5502d)) THEN
       IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                              &
                  (sw_physics.eq.RRTMG_SWSCHEME                          &
@@ -1519,7 +1522,7 @@ CONTAINS
                   .OR. sw_physics.eq.RRTMK_SWSCHEME                     &
 #endif
                   )) THEN
-         CALL wrf_debug (150, 'DEBUG-GT:  computing 3D AOD from QNWFA+QNIFA')
+         CALL wrf_debug (150, 'DEBUG-GT:  computing 3D AOD from QNWFA+QNIFA(+QNBCA)')
 
          allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
          allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -1539,8 +1542,8 @@ CONTAINS
               end do
            end do
 
-           call gt_aod (p, DZ8W, t, qv, qnwfa, qnifa, taod5503d,        &
-                    ims,ime, jms,jme, kms,kme,its,ite, jts,jte, kts,kte) 
+           call gt_aod (p, DZ8W, t, qv, qnwfa, qnifa, qnbca, taod5503d,        &
+                    wif_input_opt, ims,ime, jms,jme, kms,kme,its,ite, jts,jte, kts,kte) 
 
            do j=jts,jte
               do i=its,ite
@@ -5063,8 +5066,8 @@ END SUBROUTINE aer_p_int
 
 !+---+-----------------------------------------------------------------+
 
-      SUBROUTINE gt_aod(p_phy,DZ8W,t_phy,qvapor, nwfa,nifa, taod5503d,  &
-     &             ims,ime, jms,jme, kms,kme, its,ite, jts,jte, kts,kte)
+      SUBROUTINE gt_aod(p_phy,DZ8W,t_phy,qvapor, nwfa,nifa,nbca, taod5503d,  &
+     &             wif_input_opt, ims,ime, jms,jme, kms,kme, its,ite, jts,jte, kts,kte)
 
       USE module_mp_thompson, only: RSLF
 
@@ -5075,97 +5078,133 @@ END SUBROUTINE aer_p_int
 
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) ::           &
      &                                            t_phy,p_phy, DZ8W,    &
-     &                                            qvapor, nifa, nwfa
+     &                                            qvapor, nifa, nwfa, nbca
       REAL,DIMENSION(ims:ime,kms:kme,jms:jme),INTENT(INOUT):: taod5503d
-                                                              
+      INTEGER, INTENT(IN):: wif_input_opt
+
       !..Local variables. 
 
-      REAL, DIMENSION(its:ite,kts:kte,jts:jte):: AOD_wfa, AOD_ifa
-      REAL:: RH, a_RH,b_RH, rh_d,rh_f, rhoa,qvsat, unit_bext1,unit_bext3
+      REAL, DIMENSION(its:ite,kts:kte,jts:jte):: AOD_wfa, AOD_ifa, AOD_bca
+      REAL:: RH, a_RH,b_RH, rh_d,rh_f, rhoa,qvsat, unit_bext1,unit_bext3,unit_bext4
       REAL:: ntemp
       INTEGER :: i, k, j, RH_idx, RH_idx1, RH_idx2, t_idx
       INTEGER, PARAMETER:: rind=8
       REAL, DIMENSION(rind), PARAMETER:: rh_arr =                       &
      &                      (/10., 60., 70., 80., 85., 90., 95., 99.8/)
-      REAL, DIMENSION(rind,4,2) :: lookup_tabl                           ! RH, temp, water-friendly, ice-friendly
+      REAL, DIMENSION(rind,4,3) :: lookup_tabl                           ! RH, temp, water-friendly, ice-friendly
 
       lookup_tabl(1,1,1) =  5.73936E-15  
       lookup_tabl(1,1,2) =  2.63577E-12
+      lookup_tabl(1,1,3) =  7.83852E-16
       lookup_tabl(1,2,1) =  5.73936E-15  
       lookup_tabl(1,2,2) =  2.63577E-12
+      lookup_tabl(1,2,3) =  7.83803E-16
       lookup_tabl(1,3,1) =  5.73936E-15  
       lookup_tabl(1,3,2) =  2.63577E-12
+      lookup_tabl(1,3,3) =  7.83770E-16
       lookup_tabl(1,4,1) =  5.73936E-15  
       lookup_tabl(1,4,2) =  2.63577E-12
+      lookup_tabl(1,4,3) =  7.83692E-16
 
       lookup_tabl(2,1,1) = 6.93515E-15  
       lookup_tabl(2,1,2) = 2.72095E-12
+      lookup_tabl(2,1,3) = 9.96291E-16
       lookup_tabl(2,2,1) = 6.93168E-15  
-      lookup_tabl(2,2,2) = 2.72092E-12  
+      lookup_tabl(2,2,2) = 2.72092E-12
+      lookup_tabl(2,2,3) = 9.94950E-16  
       lookup_tabl(2,3,1) = 6.92570E-15  
-      lookup_tabl(2,3,2) = 2.72091E-12 
+      lookup_tabl(2,3,2) = 2.72091E-12
+      lookup_tabl(2,3,3) = 9.93238E-16 
       lookup_tabl(2,4,1) = 6.91833E-15  
       lookup_tabl(2,4,2) = 2.72087E-12
+      lookup_tabl(2,4,3) = 9.91346E-16
 
       lookup_tabl(3,1,1) = 7.24707E-15  
       lookup_tabl(3,1,2) = 2.77219E-12
+      lookup_tabl(3,1,3) = 1.11936E-15
       lookup_tabl(3,2,1) = 7.23809E-15  
       lookup_tabl(3,2,2) = 2.77222E-12
+      lookup_tabl(3,2,3) = 1.11687E-15
       lookup_tabl(3,3,1) = 7.23108E-15  
       lookup_tabl(3,3,2) = 2.77201E-12
+      lookup_tabl(3,3,3) = 1.11447E-15
       lookup_tabl(3,4,1) = 7.21800E-15  
       lookup_tabl(3,4,2) = 2.77111E-12
+      lookup_tabl(3,4,3) = 1.11061E-15
 
       lookup_tabl(4,1,1) = 8.95130E-15  
       lookup_tabl(4,1,2) = 2.87263E-12
+      lookup_tabl(4,1,3) = 1.36116E-15
       lookup_tabl(4,2,1) = 9.01582E-15  
       lookup_tabl(4,2,2) = 2.87252E-12
+      lookup_tabl(4,2,3) = 1.35479E-15
       lookup_tabl(4,3,1) = 9.13216E-15  
       lookup_tabl(4,3,2) = 2.87241E-12
+      lookup_tabl(4,3,3) = 1.34787E-15
       lookup_tabl(4,4,1) = 9.16219E-15  
       lookup_tabl(4,4,2) = 2.87211E-12
+      lookup_tabl(4,4,3) = 1.33910E-15
 
       lookup_tabl(5,1,1) = 1.06695E-14  
       lookup_tabl(5,1,2) = 2.96752E-12
+      lookup_tabl(5,1,3) = 1.58848E-15
       lookup_tabl(5,2,1) = 1.06370E-14  
       lookup_tabl(5,2,2) = 2.96726E-12
+      lookup_tabl(5,2,3) = 1.57854E-15
       lookup_tabl(5,3,1) = 1.05999E-14  
       lookup_tabl(5,3,2) = 2.96702E-12
+      lookup_tabl(5,3,3) = 1.56648E-15
       lookup_tabl(5,4,1) = 1.05443E-14  
       lookup_tabl(5,4,2) = 2.96603E-12
+      lookup_tabl(5,4,3) = 1.55057E-15
 
       lookup_tabl(6,1,1) = 1.37908E-14  
       lookup_tabl(6,1,2) = 3.15081E-12
+      lookup_tabl(6,1,3) = 2.02033E-15
       lookup_tabl(6,2,1) = 1.37172E-14  
       lookup_tabl(6,2,2) = 3.15020E-12
+      lookup_tabl(6,2,3) = 1.99948E-15
       lookup_tabl(6,3,1) = 1.36362E-14  
       lookup_tabl(6,3,2) = 3.14927E-12
+      lookup_tabl(6,3,3) = 1.97488E-15
       lookup_tabl(6,4,1) = 1.35287E-14  
       lookup_tabl(6,4,2) = 3.14817E-12
+      lookup_tabl(6,4,3) = 1.94523E-15
 
       lookup_tabl(7,1,1) = 2.26019E-14  
       lookup_tabl(7,1,2) = 3.66798E-12
+      lookup_tabl(7,1,3) = 3.14156E-15
       lookup_tabl(7,2,1) = 2.24435E-14  
       lookup_tabl(7,2,2) = 3.66540E-12
+      lookup_tabl(7,2,3) = 3.08114E-15
       lookup_tabl(7,3,1) = 2.23254E-14  
       lookup_tabl(7,3,2) = 3.66173E-12
+      lookup_tabl(7,3,3) = 3.01021E-15
       lookup_tabl(7,4,1) = 2.20496E-14  
       lookup_tabl(7,4,2) = 3.65796E-12
+      lookup_tabl(7,4,3) = 2.92456E-15
 
       lookup_tabl(8,1,1) = 4.41983E-13  
       lookup_tabl(8,1,2) = 7.50091E-11
+      lookup_tabl(8,1,3) = 1.95503E-14
       lookup_tabl(8,2,1) = 3.93335E-13  
       lookup_tabl(8,2,2) = 6.79097E-11
+      lookup_tabl(8,2,3) = 1.74308E-14
       lookup_tabl(8,3,1) = 3.45569E-13  
       lookup_tabl(8,3,2) = 6.07845E-11
+      lookup_tabl(8,3,3) = 1.53194E-14
       lookup_tabl(8,4,1) = 2.96971E-13  
-      lookup_tabl(8,4,2) = 5.36085E-11     
+      lookup_tabl(8,4,2) = 5.36085E-11
+      lookup_tabl(8,4,3) = 1.32479E-14     
 
       DO j=jts,jte
          DO k=kts,kte
             DO i=its,ite
                AOD_wfa(i,k,j) = 0.
                AOD_ifa(i,k,j) = 0.
+               if ( wif_input_opt .eq. 2 ) then
+                  AOD_bca(i,k,j) = 0.
+               end if
             END DO
          END DO
       END DO
@@ -5231,12 +5270,22 @@ END SUBROUTINE aer_p_int
                unit_bext3 = lookup_tabl(RH_idx1,t_idx,2)                &
      &                    + (lookup_tabl(RH_idx2,t_idx,2)               &
      &                    - lookup_tabl(RH_idx1,t_idx,2))*rh_f
+               if ( wif_input_opt .eq. 2 ) then
+                  unit_bext4 = lookup_tabl(RH_idx1,t_idx,3)             &
+     &                       + (lookup_tabl(RH_idx2,t_idx,3)            &
+     &                       - lookup_tabl(RH_idx1,t_idx,3))*rh_f
+               end if
 
                ntemp = MAX(1., MIN(99999.E6, nwfa(i,k,j)))
                AOD_wfa(i,k,j) = unit_bext1*ntemp*dz8w(i,k,j)*rhoa
 
                ntemp = MAX(0.01, MIN(9999.E6, nifa(i,k,j)))
                AOD_ifa(i,k,j) = unit_bext3*ntemp*dz8w(i,k,j)*rhoa
+
+               if ( wif_input_opt .eq. 2 ) then
+                  ntemp = MAX(1., MIN(9999.E9, nbca(i,k,j)))
+                  AOD_bca(i,k,j) = unit_bext4*ntemp*dz8w(i,k,j)*rhoa
+               end if
 
             END DO
          END DO
@@ -5245,7 +5294,11 @@ END SUBROUTINE aer_p_int
       DO j=jts,jte
          DO k=kts,kte
             DO i=its,ite
-               taod5503d(i,k,j) = MAX(1.E-3, aod_wfa(i,k,j) + aod_ifa(i,k,j))
+               if ( wif_input_opt .eq. 2 ) then
+                  taod5503d(i,k,j) = MAX(1.E-3, aod_wfa(i,k,j) + aod_ifa(i,k,j) + aod_bca(i,k,j))
+               else
+                  taod5503d(i,k,j) = MAX(1.E-3, aod_wfa(i,k,j) + aod_ifa(i,k,j))
+               end if
             END DO
          END DO
       END DO

@@ -507,6 +507,7 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_netcdfpar_path )
       { $_ =~ s/CONFIGURE_WRFIO_NFPAR/wrfio_nfpar/g ;
         $_ =~ s:CONFIGURE_NETCDFPAR_FLAG:-DNETCDFPAR: ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_BUILD:: ;
         if ( $ENV{NETCDFPAR_LDFLAGS} ) {
           $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdfpar/libwrfio_nfpar.a $ENV{NETCDFPAR_LDFLAGS} : ;
         } elsif ( $sw_os eq "Interix" ) {
@@ -518,6 +519,7 @@ while ( <CONFIGURE_DEFAULTS> )
     else
       { $_ =~ s/CONFIGURE_WRFIO_NFPAR//g ;
         $_ =~ s:CONFIGURE_NETCDFPAR_FLAG::g ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_BUILD:echo SKIPPING: ;
         $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH::g ;
          }
 

@@ -33,7 +33,7 @@ exit;
 
 __DATA__
 ###########################################################################################
-# The following subroutines will be add pre-fix da
+# The following subroutines will be add prefix da
 all_sub_
 call_pkg_and_dist
 collect_generic_and_call_pkg

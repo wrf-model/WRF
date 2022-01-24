@@ -60,7 +60,7 @@ CONTAINS
     USE module_physics_addtendc, ONLY : update_phy_ten
 
     USE module_sfs_driver !JDM
-    USE module_stoch, ONLY : update_stoch_ten, perturb_physics_tend,RAND_PERT_UPDATE
+    USE module_stoch, ONLY : update_stoch_ten, perturb_physics_tend, RAND_PERT_UPDATE, contiguize_2d
 
 
     IMPLICIT NONE
@@ -138,10 +138,14 @@ CONTAINS
     INTEGER  num_road_layers
     INTEGER  iswater
     INTEGER  rk_step 
+    INTEGER  n
+    LOGICAL :: stepsp_test
 
 #if ( WRF_DFI_RADAR == 1 )
     INTEGER  i_start,i_end,j_start,j_end,i,j,k
 #endif
+
+    REAL, DIMENSION(ims:ime,jms:jme) :: SPFORCS3d_loc, SPFORCC3d_loc, SP_AMP3d_loc
 
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).
@@ -254,6 +258,64 @@ CONTAINS
                            grid%stddev_cutoff_rand_pert,grid%gridpt_stddev_rand_pert, & 
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !rand_perturb_on
+
+      IF ( grid%stepsp > 0 ) THEN
+         stepsp_test = ( MOD(grid%itimestep, grid%stepsp) == 0 )
+      ELSE
+         stepsp_test = .FALSE.
+      END IF
+      If_multi_perturb: if ((config_flags%multi_perturb==1).and.(grid%id == 1) .and. &
+          (stepsp_test .or. grid%itimestep == 1)) then
+        Loop_multi_perturb: DO n = 2, config_flags%num_pert_3d
+           CALL contiguize_2d ( .TRUE. , grid%SPFORCS3d, SPFORCS3d_loc, n,       &
+                                ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                                ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                                ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+           CALL contiguize_2d ( .TRUE. , grid%SPFORCC3d, SPFORCC3d_loc, n,       &
+                                ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                                ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                                ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+           CALL contiguize_2d ( .TRUE. , grid%SP_AMP3d,  SP_AMP3d_loc,  n,       &
+                                ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                                ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                                ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+           CALL RAND_PERT_UPDATE(grid,'T',                                     &
+                           SPFORCS3d_loc, SPFORCC3d_loc, SP_AMP3d_loc,         &
+                           grid%ALPH_RAND3d(n),                                &
+                           ips, ipe, jps, jpe, kps, kpe,                       &
+                           ids, ide, jds, jde, kds, kde,                       &
+                           ims, ime, jms, jme, kms, kme,                       &
+                           k_start, k_end,                                     &
+                           imsx,imex,jmsx,jmex,kmsx,kmex,                      &
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,                      &
+                           imsy,imey,jmsy,jmey,kmsy,kmey,                      &
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           config_flags%restart, grid%iseedarr_mult3d(:,n),    &
+                           config_flags%seed_dim,                              &
+                           grid%DX,grid%DY,grid%mult3d_vertstruc(n),           &
+                           grid%PERT3D(:,:,:,n),                               &
+                           grid%stddev_cutoff_mult3d(n),                       &
+                           grid%gridpt_stddev_mult3d(n),                       &
+                           grid%VERTSTRUCC3d(:,:,:,n),                         &
+                           grid%VERTSTRUCS3d(:,:,:,n),                         &
+                           grid%VERTAMPT3d(:,n)                                )
+           CALL contiguize_2d ( .FALSE., grid%SPFORCS3d, SPFORCS3d_loc, n,       &
+                                ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                                ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                                ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+           CALL contiguize_2d ( .FALSE., grid%SPFORCC3d, SPFORCC3d_loc, n,       &
+                                ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                                ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                                ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+           CALL contiguize_2d ( .FALSE., grid%SP_AMP3d,  SP_AMP3d_loc,  n,       &
+                                ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                                ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                                ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+        END DO Loop_multi_perturb
+      ENDIF If_multi_perturb
+
       if ((grid%spp_conv==1).and.(grid%id .EQ. 1 )) then
            CALL RAND_PERT_UPDATE(grid,'T',                                     &
                            grid%SPFORCS2,grid%SPFORCC2,                        &

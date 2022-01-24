@@ -2,6 +2,8 @@
 !WRF:MEDIATION_LAYER:PHYSICS
 !
 MODULE module_radiation_driver
+  real, private, parameter :: ALBEDO_MIN = 0.0, ALBEDO_MAX = 1.0, ANGEXP_MIN = 0.0, AOD_MIN = 0.0, &
+      AERASY_MIN = -1.0, AERASY_MAX = 1.0, QVAPOR_MIN = 0.0, QCLOUD_MIN = 0.0, QSNOW_MIN = 0.0
 CONTAINS
 !BOP
 ! !IROUTINE: radiation_driver - interface to radiation physics options
@@ -51,6 +53,19 @@ CONTAINS
               ,CURR_SECS, ADAPT_STEP_FLAG                                 &
               ,SWDOWN2, SWDDNI2, SWDDIF2, SWDDIR2                         &
               ,SWDOWNC2, SWDDNIC2                                         &
+              ,couple_farms                                               &
+! WRF-Solar EPS
+              ,multi_perturb                                              &
+              ,pert_farms                                                 &
+              ,perts_albedo, perts_aod, perts_angstrom, perts_assymfac    &
+              ,perts_qvapor, perts_qcloud, perts_qsnow                    &
+              ,pert_farms_albedo, pert_farms_aod                          &
+              ,pert_farms_angexp, pert_farms_aerasy                       &
+              ,pert_farms_qv, pert_farms_qc                               &
+              ,pert_farms_qs                                              &
+              ,pert_cld3                                                  &
+              ,perts_th                                                   &
+              ,pert_cld3_qv, pert_cld3_t                                  &
               !BSINGH - For WRFCuP scheme (optional args)
               ,cu_physics,shallowcu_forced_ra                             &
               ,cubot,cutop,cldfra_cup                                     &
@@ -438,6 +453,13 @@ CONTAINS
    integer, intent(in)            :: swint_opt
    integer, intent(in), OPTIONAL  :: solar_opt
    integer                        :: solar_opt_local
+     ! WRF-Solar EPS
+   integer, intent (in) :: multi_perturb
+   logical, intent (in) :: pert_farms, pert_cld3, couple_farms
+   real, intent (in) :: pert_farms_albedo, pert_farms_aod, pert_farms_angexp, pert_farms_aerasy, &
+       pert_farms_qv, pert_farms_qc, pert_farms_qs, pert_cld3_qv, pert_cld3_t
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_albedo, perts_aod, &
+       perts_angstrom, perts_assymfac, perts_qvapor, perts_qcloud, perts_qsnow, perts_th
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
@@ -624,8 +646,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(IN   )  ::                                  XLAT, &
                                                            XLONG, &
-                                                          ALBEDO, &
                                                            EMISS
+   real, dimension (ims:ime, jms:jme), intent(inout) :: albedo
 !
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(INOUT)  ::                                   GSW, &
@@ -903,6 +925,9 @@ CONTAINS
      INTEGER, PARAMETER:: taer_angexp_opt = 3                            !  input option for aerosol Angstrom exponent
      INTEGER, PARAMETER:: taer_ssa_opt = 3                               !  input option for aerosol ssa
      INTEGER, PARAMETER:: taer_asy_opt = 3                               !  input option for aerosol asy
+
+! WRF-Solar EPS
+  real, dimension(:, :, :), allocatable :: qv_tmp, qc_tmp, qs_tmp
 
 
 !---------- local test vars 
@@ -1337,8 +1362,13 @@ CONTAINS
 
              DO k = kts,kte
                 p_1d(k) = p(i,k,j)
-                t_1d(k) = t(i,k,j)
-                qv_1d(k) = qv(i,k,j)
+                if (pert_cld3 .and. multi_perturb == 1) then
+                  t_1d(k) = (1.0 + perts_th(i, k, j) * pert_cld3_t) * t(i, k, j)
+                  qv_1d(k) = max (0.0, (1.0 + perts_qvapor(i, k, j) * pert_cld3_qv) * qv(i, k, j))
+                else
+                  t_1d(k) = t(i,k,j)
+                  qv_1d(k) = qv(i,k,j)
+                end if
                 qc_1d(k) = qc(i,k,j)
                 qi_1d(k) = qi(i,k,j)
                 qs_1d(k) = qs(i,k,j)
@@ -2761,13 +2791,55 @@ CONTAINS
     if (swint_opt == 2) then
        call wrf_debug(100,'SW surface irradiance calculated with FARMS')
    
-       if (aer_opt == 1) then
-         DO j=jts,jte
-           DO i=its,ite
-             aod5502d(i, j) = aodtot(i, j)
-           ENDDO
-         ENDDO
-       end if
+       select case (aer_opt)
+         case (0)
+           !$OMP PARALLEL DO   &
+           !$OMP PRIVATE (ij ,i, j, its, ite, jts, jte)
+           do ij = 1,num_tiles
+             its = i_start(ij)
+             ite = i_end(ij)
+             jts = j_start(ij)
+             jte = j_end(ij)
+             DO j=jts,jte
+               DO i=its,ite
+                 aod5502d(i, j) = 0.0
+                 angexp2d(i, j) = 0.0
+                 aerssa2d(i, j) = 0.0
+                 aerasy2d(i, j) = 0.0
+               ENDDO
+             ENDDO
+           end do
+           !$OMP END PARALLEL DO
+
+         case (1)
+           !$OMP PARALLEL DO   &
+           !$OMP PRIVATE (ij ,i, j, its, ite, jts, jte)
+           do ij = 1,num_tiles
+             its = i_start(ij)
+             ite = i_end(ij)
+             jts = j_start(ij)
+             jte = j_end(ij)
+             DO j=jts,jte
+               DO i=its,ite
+                 aod5502d(i, j) = aodtot(i, j)
+                 angexp2d(i, j) = aer_angexp_val
+                 aerssa2d(i, j) = aer_ssa_val
+                 aerasy2d(i, j) = aer_asy_val
+               ENDDO
+             ENDDO
+           end do
+           !$OMP END PARALLEL DO
+
+         case (2)
+           continue
+
+         case (3)
+           continue
+
+         case default
+           CALL wrf_error_fatal('Unkonown aer_opt to FARMS. Only options 0, 1, 2, and 3 are supported.')
+
+       end select
    
        !---------------
        !$OMP PARALLEL DO   &
@@ -2777,13 +2849,55 @@ CONTAINS
          ite = i_end(ij)
          jts = j_start(ij)
          jte = j_end(ij)
+
+         if (pert_farms .and. multi_perturb == 1) then
+           allocate (qv_tmp(its:ite, kts:kte, jts:jte))
+           allocate (qc_tmp(its:ite, kts:kte, jts:jte))
+           allocate (qs_tmp(its:ite, kts:kte, jts:jte))
+
+           call Add_multi_perturb_swrad_perturbations (perts_albedo, perts_aod, perts_angstrom, &
+               perts_assymfac, perts_qvapor, perts_qcloud, perts_qsnow, pert_farms_albedo, pert_farms_aod, &
+               pert_farms_angexp, pert_farms_aerasy, pert_farms_qv, pert_farms_qc, pert_farms_qs, &
+               albedo, aod5502d, angexp2d, aerasy2d, qv, qc, qs, qv_tmp, qc_tmp, qs_tmp, its, ite, jts, jte, &
+               ims, ime, jms, jme, kms, kme, kts, kte)
+         end if
+
          call farms_driver (ims, ime, jms, jme, its, ite, jts, jte, kms, kme, kts, kte, &
               p8w, rho, dz8w, albedo, aer_opt, aerssa2d, aerasy2d, aod5502d, angexp2d,  &
               coszen_loc, qv, qi, qs, qc, re_cloud, re_ice, re_snow,                    &
               julian, swdown2, swddir2, swddni2, swddif2, swdownc2, swddnic2,           &
               has_reqc, has_reqi, has_reqs, CLDFRA)
+
+         if (pert_farms .and. multi_perturb == 1) then
+           call Remove_multi_perturb_swrad_perturbations (perts_albedo, perts_aod, perts_angstrom, &
+               perts_assymfac, perts_qvapor, perts_qcloud, perts_qsnow, pert_farms_albedo, pert_farms_aod, &
+               pert_farms_angexp, pert_farms_aerasy, pert_farms_qv, pert_farms_qc, pert_farms_qs, &
+               albedo, aod5502d, angexp2d, aerasy2d, qv, qc, qs, qv_tmp, qc_tmp, qs_tmp, its, ite, jts, jte, &
+               ims, ime, jms, jme, kms, kme, kts, kte)
+
+           deallocate (qv_tmp)
+           deallocate (qc_tmp)
+           deallocate (qs_tmp)
+         end if
        enddo
        !$OMP END PARALLEL DO
+
+       if (couple_farms) then
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE (ij, i, j, its, ite, jts, jte)
+         do ij = 1,num_tiles
+           its = i_start(ij)
+           ite = i_end(ij)
+           jts = j_start(ij)
+           jte = j_end(ij)
+           do j = jts, jte
+             do i = its, ite
+               swdown(i, j) = swdown2(i, j)
+             end do
+           end do
+         end do
+         !$OMP END PARALLEL DO
+       end if
     end if
  end if
 
@@ -5306,5 +5420,92 @@ END SUBROUTINE aer_p_int
       END SUBROUTINE gt_aod
 
 !+---+-----------------------------------------------------------------+
+
+   subroutine  Add_multi_perturb_swrad_perturbations (perts_albedo, perts_aod, perts_angstrom, &
+       perts_assymfac, perts_qvapor, perts_qcloud, perts_qsnow, pert_farms_albedo, pert_farms_aod, &
+       pert_farms_angexp, pert_farms_aerasy, pert_farms_qv, pert_farms_qc, pert_farms_qs, &
+       albedo, aod5502d, angexp2d, aerasy2d, qv, qc, qs, qv_tmp, qc_tmp, qs_tmp, its, ite, jts, jte, &
+       ims, ime, jms, jme, kms, kme, kts, kte)
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte
+     real, intent(in) :: pert_farms_albedo, pert_farms_aod, pert_farms_angexp, pert_farms_aerasy, &
+         pert_farms_qv, pert_farms_qc, pert_farms_qs
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_albedo, perts_aod, perts_angstrom, &
+               perts_assymfac, perts_qvapor, perts_qcloud, perts_qsnow
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: qv, qc, qs
+     real, dimension(ims:ime, jms:jme), intent (inout) :: albedo, aod5502d, angexp2d, aerasy2d
+     real, dimension (its:ite, kts:kte, jts:jte), intent(out) :: qv_tmp, qc_tmp, qs_tmp
+
+     integer :: i, j, k
+
+
+     k = 1
+     do j = jts, jte
+       do i = its, ite
+         albedo(i, j) = min (max (ALBEDO_MIN, (1.0 + perts_albedo(i, k, j) * pert_farms_albedo) * albedo(i, j)), AERASY_MAX)
+         angexp2d(i, j) = max (ANGEXP_MIN, (1.0 + perts_angstrom(i, k, j) * pert_farms_angexp) * angexp2d(i, j))
+         aod5502d(i, j) = max (AOD_MIN, (1.0 + perts_aod(i, k, j) * pert_farms_aod) * aod5502d(i, j))
+         aerasy2d(i, j) = min (max (AERASY_MIN, (1.0 + perts_assymfac(i, k, j) * pert_farms_aerasy) * aerasy2d(i, j)), AERASY_MAX)
+       end do
+     end do
+
+     do j = jts, jte
+       do k = kts, kte
+         do i = its, ite
+           qv_tmp(i, k, j) = qv(i, k, j)
+           qv(i, k, j) = max (QVAPOR_MIN, (1.0 + perts_qvapor(i, k, j) * pert_farms_qv) * qv(i, k, j))
+           qc_tmp(i, k, j) = qc(i, k, j)
+           qc(i, k, j) = max (QCLOUD_MIN, (1.0 + perts_qcloud(i, k, j) * pert_farms_qc) * qc(i, k, j))
+           qs_tmp(i, k, j) = qs(i, k, j)
+           qs(i, k, j) = max (QSNOW_MIN, (1.0 + perts_qsnow(i, k, j) * pert_farms_qs) * qs(i, k, j))
+         end do
+       end do
+     end do
+
+   end subroutine  Add_multi_perturb_swrad_perturbations
+
+   subroutine  Remove_multi_perturb_swrad_perturbations (perts_albedo, perts_aod, perts_angstrom, &
+       perts_assymfac, perts_qvapor, perts_qcloud, perts_qsnow, pert_farms_albedo, pert_farms_aod, &
+       pert_farms_angexp, pert_farms_aerasy, pert_farms_qv, pert_farms_qc, pert_farms_qs, &
+       albedo, aod5502d, angexp2d, aerasy2d, qv, qc, qs, qv_tmp, qc_tmp, qs_tmp, its, ite, jts, jte, &
+       ims, ime, jms, jme, kms, kme, kts, kte)
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte
+     real, intent(in) :: pert_farms_albedo, pert_farms_aod, pert_farms_angexp, pert_farms_aerasy, &
+         pert_farms_qv, pert_farms_qc, pert_farms_qs
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_albedo, perts_aod, perts_angstrom, &
+               perts_assymfac, perts_qvapor, perts_qcloud, perts_qsnow
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: qv, qc, qs
+     real, dimension(ims:ime, jms:jme), intent (inout) :: albedo, aod5502d, angexp2d, aerasy2d
+     real, dimension (its:ite, kts:kte, jts:jte), intent(in) :: qv_tmp, qc_tmp, qs_tmp
+
+     integer :: i, j, k
+
+
+     k = 1
+     do j = jts, jte
+       do i = its, ite
+         albedo(i, j) = min (max (ALBEDO_MIN, albedo(i, j) / (1.0 + perts_albedo(i, k, j) * pert_farms_albedo)), ALBEDO_MAX)
+         angexp2d(i, j) = max (ANGEXP_MIN, angexp2d(i, j) / (1.0 + perts_angstrom(i, k, j) * pert_farms_angexp))
+         aod5502d(i, j) = max (AOD_MIN, aod5502d(i, j) / (1.0 + perts_aod(i, k, j) * pert_farms_aod))
+         aerasy2d(i, j) = min (max (AERASY_MIN, aerasy2d(i, j) / (1.0 + perts_assymfac(i, k, j) * pert_farms_aerasy)), AERASY_MAX)
+       end do
+     end do
+
+     do j = jts, jte
+       do k = kts, kte
+         do i = its, ite
+           qv(i, k, j) = max (QVAPOR_MIN, qv(i, k, j) - perts_qvapor(i, k, j) * pert_farms_qv * qv_tmp(i, k, j))
+           qc(i, k, j) = max (QCLOUD_MIN, qc(i, k, j) - perts_qcloud(i, k, j) * pert_farms_qc * qc_tmp(i, k, j))
+           qs(i, k, j) = max (QSNOW_MIN, qs(i, k, j) - perts_qsnow(i, k, j) * pert_farms_qs * qs_tmp(i, k, j))
+         end do
+       end do
+     end do
+
+   end subroutine  Remove_multi_perturb_swrad_perturbations
 
 END MODULE module_radiation_driver

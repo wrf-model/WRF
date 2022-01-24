@@ -3910,7 +3910,20 @@ BENCH_START(micro_driver_tim)
       &        ,WACT=grid%WACT,CCN1_GS=grid%CCN1_GS,CCN2_GS=grid%CCN2_GS,CCN3_GS=grid%CCN3_GS  &
       &        ,CCN4_GS=grid%CCN4_GS,CCN5_GS=grid%CCN5_GS,CCN6_GS=grid%CCN6_GS &
       &        ,CCN7_GS=grid%CCN7_GS,NR_CU=grid%NR_CU,QR_CU=grid%QR_CU,NS_CU=grid%NS_CU &
-      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm)
+      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm  &
+! WRF-Solar EPS
+      &        ,multi_perturb=config_flags%multi_perturb                 &
+      &        ,pert_thom=config_flags%pert_thom                         &
+      &        ,perts_qvapor=grid%pert3d(:,:,:,P_PQVAPOR)                &
+      &        ,perts_qcloud=grid%pert3d(:,:,:,P_PQCLOUD)                &
+      &        ,perts_qice=grid%pert3d(:,:,:,P_PQICE)                    &
+      &        ,perts_qsnow=grid%pert3d(:,:,:,P_PQSNOW)                  &
+      &        ,perts_ni=grid%pert3d(:,:,:,P_PNI)                        &
+      &        ,pert_thom_qv=config_flags%pert_thom_qv                   &
+      &        ,pert_thom_qc=config_flags%pert_thom_qc                   &
+      &        ,pert_thom_qi=config_flags%pert_thom_qi                   &
+      &        ,pert_thom_qs=config_flags%pert_thom_qs                   &
+      &        ,pert_thom_ni=config_flags%pert_thom_ni  )
                                                                           
 BENCH_END(micro_driver_tim)
 

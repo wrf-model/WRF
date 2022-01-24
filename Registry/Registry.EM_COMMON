@@ -2548,6 +2548,7 @@ rconfig   integer alevsiz_cu              namelist,physics      1             1 
 rconfig   integer aercu_opt               namelist,physics      1             0       -      "aercu_opt"    "aerosol input option for multiscale KF"      ""
 rconfig   real    aercu_fct               namelist,physics      1             1.0     -      "aercu_fct"    "aerosol multiplication factor"               ""
 rconfig   integer aercu_used              derived               1             0       -      "aercu_used"   "derived nml for packaging"      ""
+rconfig   logical couple_farms            namelist,physics      1             .false. -      "couple_farms" "coupling FARMS radiation to land surface model"     ""
 
 #BSINGH - added shallowcu_forced_ra, numBins, thBinSize, rBinSize, minDeepFreq, minShallowFreq, shcu_aerosols_opt for CuP scheme
 

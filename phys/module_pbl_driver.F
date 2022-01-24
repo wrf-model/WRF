@@ -2,6 +2,9 @@
 !
 
 MODULE module_pbl_driver
+  real, private, parameter :: QCLOUD_MIN = 0.0
+  real, private, parameter :: QVAPOR_MIN = 0.0
+  real, private, parameter :: QKE_MIN = 1.e-4
 CONTAINS
 
 !------------------------------------------------------------------
@@ -107,6 +110,14 @@ CONTAINS
                ,frac_up,rc_mf                                      & 
 ! Wind Turbine Parameterizations
                ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id                 &
+! WRF-Solar EPS
+                 ,multi_perturb, pert_mynn                         &
+                 ,perts_qvapor                                     &
+                 ,perts_qcloud                                     &
+                 ,perts_th                                         &
+                 ,perts_tke                                        &
+                 ,pert_mynn_qv, pert_mynn_qc, pert_mynn_t          &
+                 ,pert_mynn_qke                                    &
 ! variables required for camuwpbl scheme
                , z_at_w,cldfra_old_mp,cldfra, rthratenlw             &
                , tauresx2d,tauresy2d                                 &
@@ -431,8 +442,15 @@ CONTAINS
                                                            u_phy, &
                                                            v_phy, &
                                                             dz8w, &
-                                                               z, &
-                                                          th_phy
+                                                               z
+  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) :: th_phy
+
+! WRF-Solar EPS
+   integer, intent (in) :: multi_perturb
+   LOGICAL, intent (in) :: pert_mynn
+   real, intent (in) :: pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_tke
 
 !1D variables required for CAMUWPBL scheme
    REAL , DIMENSION( kms:kme ) ,                                      &
@@ -721,6 +739,7 @@ CONTAINS
    REAL, OPTIONAL,   DIMENSION( ims:ime , jms:jme ),                    &  !mchen
                INTENT(IN   )    ::                        CTOPO, &
                                                           CTOPO2
+   real, dimension (:, :, :), allocatable :: qke_tmp
 
 ! Variables and Diagnostic for QNSE and EDKF JP
    INTEGER, INTENT(IN) ::  mfshconv
@@ -1601,6 +1620,15 @@ CONTAINS
                  initflag=0
               ENDIF
               
+              if (pert_mynn .and. multi_perturb == 1) then
+                allocate (qke_tmp(its:ite, kts:kte, jts:jte))
+
+                call Add_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
+                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
+                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                  ims, ime, jms, jme, kms, kme, kts, kte)
+              end if
+
               CALL  mynn_bl_driver(&
                    &initflag=initflag,restart=restart,cycling=cycling,   &
                    &grav_settling=grav_settling,                         &
@@ -1660,6 +1688,15 @@ CONTAINS
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    )
+
+              if (pert_mynn .and. multi_perturb == 1) then
+                call Remove_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
+                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
+                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                  ims, ime, jms, jme, kms, kme, kts, kte)
+
+                  deallocate (qke_tmp)
+              end if
            ELSE
                WRITE ( message , FMT = '(A,20(L1,1X))' )            &
                  'present: '//                                      &
@@ -2135,6 +2172,109 @@ CONTAINS
    ENDIF
 
    END SUBROUTINE pbl_driver
+
+   subroutine  Add_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
+                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
+                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                  ims, ime, jms, jme, kms, kme, kts, kte)
+
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte
+     logical, optional, intent(in) :: bl_mynn_tkeadvect
+     real, intent(in) :: pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_tke
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: th_phy, qke, qv_curr, qc_curr
+     real, optional, dimension (ims:ime, kms:kme, jms:jme), intent(inout) :: qke_adv
+     real, dimension (its:ite, kts:kte, jts:jte), intent(out) :: qke_tmp
+
+     integer :: i, j, k
+
+
+     do j = jts, jte
+       do k = kts, kte 
+         do i = its, ite 
+           qc_curr(i, k, j) = max (QCLOUD_MIN, (1.0 + perts_qcloud(i, k, j) * pert_mynn_qc) * qc_curr(i, k, j))
+           qv_curr(i, k, j) = max (QVAPOR_MIN, (1.0 + perts_qvapor(i, k, j) * pert_mynn_qv) * qv_curr(i, k, j))
+           th_phy(i, k, j) = (1.0 + perts_th(i, k, j) * pert_mynn_t) * th_phy(i, k, j)
+         end do
+       end do
+     end do
+
+     if (bl_mynn_tkeadvect) then
+       do j = jts, jte
+         do k = kts, kte
+           do i = its, ite
+             qke_tmp(i, k, j) = qke_adv(i, k, j)
+             qke_adv(i, k, j) = max (QKE_MIN, (1.0 + perts_tke(i, k, j) * pert_mynn_qke) * qke_adv(i, k, j))
+           end do
+         end do
+       end do
+     else
+       do j = jts, jte
+         do k = kts, kte
+           do i = its, ite
+             qke_tmp(i, k, j) = qke(i, k, j)
+             qke(i, k, j) = max (QKE_MIN, (1.0 + perts_tke(i, k, j) * pert_mynn_qke) * qke(i, k, j))
+           end do
+         end do
+       end do
+     end if
+
+   end subroutine  Add_multi_perturb_pbl_perturbations
+
+   subroutine  Remove_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
+                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
+                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                  ims, ime, jms, jme, kms, kme, kts, kte)
+
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte
+     logical, optional, intent(in) :: bl_mynn_tkeadvect
+     real, intent(in) :: pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_tke
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: th_phy, qke, qv_curr, qc_curr
+     real, optional, dimension (ims:ime, kms:kme, jms:jme), intent(inout) :: qke_adv
+     real, dimension (its:ite, kts:kte, jts:jte), intent(in) :: qke_tmp
+
+     integer :: i, j, k
+
+
+     do j = jts, jte
+       do k = kts, kte
+         do i = its, ite
+           qc_curr(i, k, j) = max (QCLOUD_MIN, qc_curr(i, k, j) / (1.0 + perts_qcloud(i, k, j) * pert_mynn_qc))
+           qv_curr(i, k, j) = max (QVAPOR_MIN, qv_curr(i, k, j) / (1.0 + perts_qvapor(i, k, j) * pert_mynn_qv))
+           th_phy(i, k, j) = th_phy(i, k, j) / (1.0 + perts_th(i, k, j) * pert_mynn_t)
+         end do
+       end do
+     end do
+
+     if (bl_mynn_tkeadvect) then
+       do j = jts, jte
+         do k = kts, kte
+           do i = its, ite
+             qke_adv(i, k, j) = max (QKE_MIN, qke_adv(i, k, j) - perts_tke(i, k, j) * pert_mynn_qke * qke_tmp(i, k, j))
+             qke(i, k, j) = qke_adv(i, k, j)
+           end do
+         end do
+       end do
+     else
+       do j = jts, jte
+         do k = kts, kte
+           do i = its, ite
+             qke(i, k, j) = max (QKE_MIN, qke(i, k, j) - perts_tke(i, k, j) * pert_mynn_qke * qke_tmp(i, k, j))
+           end do
+         end do
+       end do
+     end if
+
+   end subroutine  Remove_multi_perturb_pbl_perturbations
 
 !=============================================================================
           SUBROUTINE diff3d(DT,CP,DZ,TH ,QV,QC,T,U,V,RHO                              &

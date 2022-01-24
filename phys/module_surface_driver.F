@@ -1,6 +1,7 @@
 !WRF:MEDIATION_LAYER:PHYSICS
 !
 MODULE module_surface_driver
+  real, private, parameter :: QVAPOR_MIN = 0.0, SMOIS_MIN = 0.0, SMOIS_MAX = 1.0
 CONTAINS
 
    SUBROUTINE surface_driver(                                         &
@@ -314,6 +315,11 @@ CONTAINS
      &          ,spp_lsm,pattern_spp_lsm,field_sf                     &  !SPP
      &          ,spp_pbl,pattern_spp_pbl                              &  !SPP
      &          ,XLAIDYN                                              &
+  ! WRF-Solar EPS
+     &          ,multi_perturb                                        & 
+     &          ,pert_noah, perts_qvapor, perts_th, perts_smois       &
+     &          ,perts_tsoil, pert_noah_qv, pert_noah_t               &
+     &          ,pert_noah_smois, pert_noah_tslb                      &
      &          ,irrigation,sf_surf_irr_scheme, irr_daily_amount      & !IRRIG
      &          ,irr_start_hour,irr_num_hours,irr_start_julianday     &
      &          ,irr_end_julianday,irr_freq,irr_ph,irr_rand_field     &
@@ -642,6 +648,13 @@ CONTAINS
    REAL , INTENT(IN )::   U_FRAME
    REAL , INTENT(IN )::   V_FRAME
 
+     ! WRF-Solar EPS
+   integer, intent(in) :: multi_perturb 
+   logical, intent(in) :: pert_noah
+   real, intent(in):: pert_noah_qv,pert_noah_t, pert_noah_smois,pert_noah_tslb
+   real, dimension (ims:ime, kms:kme, jms:jme) ,intent(inout), optional :: perts_qvapor, perts_th, &
+       perts_smois, perts_tsoil
+
   !added by Wei Yu for WRF_HYDRO 
    real ::  HYDRO_dt
    REAL, DIMENSION( ims:ime , jms:jme ):: sfcheadrt,INFXSRT, soldrain
@@ -828,7 +841,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   P_PHY
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   RHO
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   TH_PHY
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   T_PHY
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT)::   T_PHY
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   U_PHY
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   V_PHY
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   Z
@@ -1447,6 +1460,8 @@ CONTAINS
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT),OPTIONAL :: irr_rand_field
    INTEGER, INTENT(IN ),OPTIONAL:: sf_surf_irr_scheme,irr_start_hour,irr_num_hours,irr_start_julianday,irr_end_julianday,irr_freq,irr_ph
 
+! WRF-Solar EPS
+  real, dimension (:, :, :), allocatable :: smois_tmp, tslb_tmp
 
 !
 !------------------------------------------------------------------
@@ -2778,6 +2793,16 @@ CONTAINS
 !
 !  END FASDAS
 !
+               if (pert_noah .and. multi_perturb == 1) then
+                 allocate (tslb_tmp(i_start(ij):i_end(ij), 1:num_soil_layers, j_start(ij):j_end(ij)))
+                 allocate (smois_tmp(i_start(ij):i_end(ij), 1:num_soil_layers, j_start(ij):j_end(ij)))
+
+                 call Add_multi_perturb_lsm_perturbations (perts_qvapor, perts_th, perts_smois, perts_tsoil, &
+                   pert_noah_qv, pert_noah_t, pert_noah_smois, pert_noah_tslb, t_phy, qv_curr, tslb, smois, &
+                   tslb_tmp, smois_tmp, num_soil_layers, i_start(ij), i_end(ij), j_start(ij), j_end(ij), ims, &
+                   ime, jms, jme, kms, kme, kts, kte)
+               end if
+
                CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,swddir,swddif,     &
                 glw,smstav,smstot,    &
@@ -2869,6 +2894,15 @@ CONTAINS
 !
                 ,RS,XLAIDYN,IRRIGATION_CHANNEL)
          ENDIF
+
+         if (pert_noah .and. multi_perturb == 1) then
+           call Remove_multi_perturb_lsm_perturbations (perts_qvapor, perts_th, perts_smois, perts_tsoil, &
+               pert_noah_qv, pert_noah_t, pert_noah_smois, pert_noah_tslb, t_phy, qv_curr, tslb, smois, &
+               tslb_tmp, smois_tmp, num_soil_layers, i_start(ij), i_end(ij), j_start(ij), j_end(ij), ims, &
+               ime, jms, jme, kms, kme, kts, kte)
+           deallocate (tslb_tmp)
+           deallocate (smois_tmp)
+         end if
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
@@ -7140,5 +7174,79 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 
 !=======================================================================
 !=======================================================================
+
+   subroutine Add_multi_perturb_lsm_perturbations (perts_qvapor, perts_th, perts_smois, perts_tsoil, &
+       pert_noah_qv, pert_noah_t, pert_noah_smois, pert_noah_tslb, t_phy, qv_curr, tslb, smois, &
+       tslb_tmp, smois_tmp, num_soil_layers, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte)
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte, num_soil_layers
+     real, intent(in) :: pert_noah_qv, pert_noah_t, pert_noah_smois, pert_noah_tslb
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+         perts_th, perts_smois, perts_tsoil
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: t_phy, qv_curr
+     real, dimension(ims:ime, 1:num_soil_layers, jms:jme), intent (inout) :: tslb, smois
+     real, dimension (its:ite, 1:num_soil_layers, jts:jte), intent(out) :: tslb_tmp, smois_tmp
+
+     integer :: i, j, k
+
+
+     k = 1
+     do j = jts, jte
+       do i = its, ite
+           qv_curr(i, k, j) = max (QVAPOR_MIN, (1.0 + perts_qvapor(i, k, j) * pert_noah_qv) * qv_curr(i, k, j))
+           t_phy(i, k, j) = (1.0 + perts_th(i, k, j) * pert_noah_t) * t_phy(i, k, j)
+       end do
+     end do
+
+     do j = jts, jte
+       do k = 1, num_soil_layers
+         do i = its, ite
+           smois_tmp(i, k, j) = smois(i, k, j)
+           smois(i, k, j) = min (SMOIS_MAX, max (SMOIS_MIN, (1.0 + perts_smois(i, k, j) * pert_noah_smois) * smois(i, k, j)))
+           tslb_tmp(i, k, j) = tslb(i, k, j)
+           tslb(i, k, j) = (1.0 + perts_tsoil(i, k, j) * pert_noah_tslb) * tslb(i, k, j)
+         end do
+       end do
+     end do
+
+   end subroutine Add_multi_perturb_lsm_perturbations
+
+   subroutine Remove_multi_perturb_lsm_perturbations (perts_qvapor, perts_th, perts_smois, perts_tsoil, &
+       pert_noah_qv, pert_noah_t, pert_noah_smois, pert_noah_tslb, t_phy, qv_curr, tslb, smois, &
+       tslb_tmp, smois_tmp, num_soil_layers, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte)
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte, num_soil_layers
+     real, intent(in) :: pert_noah_qv, pert_noah_t, pert_noah_smois, pert_noah_tslb
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+         perts_th, perts_smois, perts_tsoil
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: t_phy, qv_curr
+     real, dimension(ims:ime, 1:num_soil_layers, jms:jme), intent (inout) :: tslb, smois
+     real, dimension (its:ite, 1:num_soil_layers, jts:jte), intent(in) :: tslb_tmp, smois_tmp
+
+     integer :: i, j, k
+
+
+     k = 1
+     do j = jts, jte
+       do i = its, ite
+           qv_curr(i, k, j) = max (QVAPOR_MIN, qv_curr(i, k, j) / (1.0 + perts_qvapor(i, k, j) * pert_noah_qv))
+           t_phy(i, k, j) = t_phy(i, k, j) / (1.0 + perts_th(i, k, j) * pert_noah_t)
+       end do
+     end do
+
+     do j = jts, jte
+       do k = 1, num_soil_layers
+         do i = its, ite
+           smois(i, k, j) = min (SMOIS_MAX, max (SMOIS_MIN, smois(i, k, j) - perts_smois(i, k, j) * pert_noah_smois * smois_tmp(i, k, j)))
+           tslb(i, k, j) = tslb(i, k, j) - perts_tsoil(i, k, j) * pert_noah_tslb * tslb_tmp(i, k, j)
+         end do
+       end do
+     end do
+
+  end subroutine Remove_multi_perturb_lsm_perturbations
 
 END MODULE module_surface_driver

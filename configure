@@ -158,6 +158,12 @@ if test -n "$PERL" ; then
     
 fi
 
+if [ -e $NETCDF/bin/nc-config ] ; then
+  ncversion=`nc-config --version | awk '{print $2}'` 
+else
+  ncversion=OLD
+fi
+
 PROBS=FALSE
 if [ -n "$NETCDFPAR" ] ; then
   NETCDF="$NETCDFPAR"

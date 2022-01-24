@@ -1013,16 +1013,16 @@ chemics :
 physics :
 	@ echo '--------------------------------------'
 	if [ $(WRF_CHEM) -eq 0 ] ; then \
-		( cd phys ; $(MAKE) CF2=" " ) ; \
+		( cd phys ; $(MAKE) submodules ; $(MAKE) CF2=" " ) ; \
 	else \
-		( cd phys ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
+		( cd phys ; $(MAKE) submodules ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
 	fi
 
 physics_plus :
 	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
-	   ( cd phys ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
+	   ( cd phys ; $(MAKE) submodules ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
 	else \
-	   ( cd phys ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
+	   ( cd phys ; $(MAKE) submodules ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
 	fi
 
 wrftlmadj :

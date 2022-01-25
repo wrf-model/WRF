@@ -39,9 +39,17 @@
  ISCROP                    =  2
  EBLFOREST                 = 13
  NATURAL                   =  5
- LOW_DENSITY_RESIDENTIAL   = 31
- HIGH_DENSITY_RESIDENTIAL  = 32
- HIGH_INTENSITY_INDUSTRIAL = 33
+ LCZ_1   = 31
+ LCZ_2   = 32
+ LCZ_3   = 33
+ LCZ_4   = 34
+ LCZ_5   = 35
+ LCZ_6   = 36
+ LCZ_7   = 37
+ LCZ_8   = 38
+ LCZ_9   = 39
+ LCZ_10   = 40
+ LCZ_11   = 41
 
  !---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  !          1      2      3      4      5      6      7      8      9      10     11     12     13     14     15     16     17     18     19     20     21     22     23     24     25     26    27
@@ -53,7 +61,11 @@
  HVB   =  1.00,  0.10,  0.10,  0.10,  0.10,  0.15,  0.05,  0.10,  0.10,  0.10,  11.5,  7.00,  8.00,  8.50,  10.0,  0.00,  0.05,  0.10,  0.00,  0.10,  0.10,  0.10,  0.10,  0.00,  0.10,  0.00,  0.00,
  DEN   =  0.01,  25.0,  25.0,  25.0,  25.0,  25.0,  100.,  10.0,  10.0,  0.02,  0.10,  0.28,  0.02,  0.28,  0.10,  0.01,  10.0,  0.10,  0.01,  1.00,  1.00,  1.00,  1.00,  0.00,  0.01,  0.01,  0.01,
  RC    =  1.00,  0.08,  0.08,  0.08,  0.08,  0.08,  0.03,  0.12,  0.12,  3.00,  1.40,  1.20,  3.60,  1.20,  1.40,  0.01,  0.10,  1.40,  0.01,  0.30,  0.30,  0.30,  0.30,  0.00,  0.01,  0.01,  0.01,
- MFSNO =  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,
+!MFSNO =  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,  2.50,
+! C. He 12/17/2020: optimized MFSNO values dependent on land type based on evaluation with SNOTEL SWE and MODIS SCF, surface albedo
+ MFSNO =  4.00,  3.00,  3.00,  3.00,  4.00,  4.00,  2.00,  2.00,  2.00,  2.00,  1.00,  1.00,  1.00,  1.00,  1.00,  3.00,  3.00,  3.00,  3.00,  3.50,  3.50,  3.50,  3.50,  2.50,  3.50,  3.50,  3.50,
+! C. He 12/17/2020: optimized snow cover factor (m) in SCF formulation to replace original constant 2.5*z0,z0=0.002m, based on evaluation with SNOTEL SWE and MODIS SCF, surface albedo
+ SCFFAC= 0.042, 0.014, 0.014, 0.014, 0.026, 0.026, 0.020, 0.018, 0.016, 0.020, 0.008, 0.008, 0.008, 0.008, 0.008, 0.030, 0.020, 0.020, 0.016, 0.030, 0.030, 0.030, 0.030, 0.030, 0.030, 0.030, 0.030,  
 
  ! Row 1:  Vis
  ! Row 2:  Near IR
@@ -76,8 +88,8 @@
  TAUS_NIR=0.00, 0.380, 0.380, 0.380, 0.380, 0.380, 0.380, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.000, 0.380, 0.001, 0.000, 0.380, 0.001, 0.001, 0.001, 0.000, 0.001, 0.000, 0.000,
 
  XL    = 0.000, -0.30, -0.30, -0.30, -0.30, -0.30, -0.30, 0.010, 0.250, 0.010, 0.250, 0.010, 0.010, 0.010, 0.250, 0.000, -0.30, 0.250, 0.000, -0.30, 0.250, 0.250, 0.250, 0.000, 0.250, 0.000, 0.000,
-! CWPVT =   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,
- CWPVT =  0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,  0.18,  0.18,  0.18,
+ ! make CWPVT vegetation dependent according to J. Goudriaan, Crop Micrometeorology: A Simulation Study (Simulation monographs), 1977). C. He, 12/17/2020
+ CWPVT =  0.18,  1.67,  1.67,  1.67,  1.67,   0.5,   5.0,   1.0,   2.0,   1.0,  0.67,  0.18,  0.67,  0.18,  0.29,  0.18,  1.67,  0.67,  0.18,  1.67,  0.67,  1.00,  0.18,  0.18,  0.18,  0.18,  0.18,
  C3PSN =   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,
  KC25  =  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,  30.0,
  AKC   =   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,   2.1,
@@ -183,10 +195,17 @@
  ISCROP                    = 12
  EBLFOREST                 =  2
  NATURAL                   = 14
- LOW_DENSITY_RESIDENTIAL   = 31
- HIGH_DENSITY_RESIDENTIAL  = 32
- HIGH_INTENSITY_INDUSTRIAL = 33
-
+ LCZ_1   = 31
+ LCZ_2   = 32
+ LCZ_3   = 33
+ LCZ_4   = 34
+ LCZ_5   = 35
+ LCZ_6   = 36
+ LCZ_7   = 37
+ LCZ_8   = 38
+ LCZ_9   = 39
+ LCZ_10   = 40
+ LCZ_11   = 41
  !---------------------------------------------------------------------------------------------------------------------------------------------------------------------
  !          1       2       3       4       5       6       7       8       9      10      11      12      13      14      15      16      17      18      19      20
  !---------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -197,7 +216,11 @@
  HVB   =  8.50,   8.00,   7.00,   11.5,   10.0,   0.10,   0.10,   0.10,   0.10,   0.05,   0.10,   0.10,   1.00,   0.10,   0.00,   0.00,   0.00,   0.30,   0.20,   0.10,
  DEN   =  0.28,   0.02,   0.28,   0.10,   0.10,   10.0,   10.0,   10.0,   0.02,   100.,   5.05,   25.0,   0.01,   25.0,   0.00,   0.01,   0.01,   1.00,   1.00,   1.00,
  RC    =  1.20,   3.60,   1.20,   1.40,   1.40,   0.12,   0.12,   0.12,   3.00,   0.03,   0.75,   0.08,   1.00,   0.08,   0.00,   0.01,   0.01,   0.30,   0.30,   0.30,
- MFSNO =  2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,
+!MFSNO =  2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,   2.50,
+! C. He 12/17/2020: optimized MFSNO values dependent on land type based on evaluation with SNOTEL SWE and MODIS SCF, surface albedo
+ MFSNO =  1.00,   1.00,   1.00,   1.00,   1.00,   2.00,   2.00,   2.00,   2.00,   2.00,   3.00,   3.00,   4.00,   4.00,   2.50,   3.00,   3.00,   3.50,   3.50,   3.50,
+! C. He 12/17/2020: optimized snow cover factor (m) in SCF formulation to replace original constant 2.5*z0,z0=0.002m, based on evaluation with SNOTEL SWE and MODIS SCF, surface albedo
+ SCFFAC = 0.008, 0.008,  0.008,  0.008,  0.008,  0.016,  0.016,  0.020,  0.020,  0.020,  0.020,  0.014,  0.042,  0.026,  0.030,  0.016,  0.030,  0.030,  0.030,  0.030,
 
  ! Row 1:  Vis
  ! Row 2:  Near IR
@@ -220,8 +243,8 @@
  TAUS_NIR=0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.380, 0.1905,  0.380,  0.000,  0.380,  0.000,  0.000,  0.000,  0.001,  0.001,  0.001,
 
  XL    = 0.010,  0.010,  0.010,  0.250,  0.250,  0.010,  0.010,  0.010,  0.010,  -0.30, -0.025,  -0.30,  0.000,  -0.30,  0.000,  0.000,  0.000,  0.250,  0.250,  0.250,
-! CWPVT =   3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,    3.0,
- CWPVT =  0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,   0.18,
+! make CWPVT vegetation dependent according to J. Goudriaan, Crop Micrometeorology: A Simulation Study (Simulation monographs), 1977). C. He, 12/17/2020
+ CWPVT =  0.18,   0.67,   0.18,   0.67,   0.29,    1.0,    2.0,    1.3,    1.0,    5.0,   1.17,   1.67,   1.67,   1.67,   0.18,   0.18,   0.18,   0.67,    1.0,   0.18,
  C3PSN =   1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,    1.0,
  KC25  =  30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,   30.0,
  AKC   =   2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,    2.1,
@@ -327,6 +350,8 @@
 
   Z0SNO  = 0.002        !snow surface roughness length (m) (0.002)
   SSI    = 0.03         !liquid water holding capacity for snowpack (m3/m3) (0.03)
+  SNOW_RET_FAC  = 5.e-5 !snowpack water release timescale factor (1/s)
+  SNOW_EMIS     = 0.95  !snow emissivity (bring from hard-coded value of 1.0 to here)
   SWEMX  = 1.00         !new snow mass to fully cover old snow (mm)
                         !equivalent to 10mm depth (density = 100 kg/m3)
   TAU0          = 1.e6  !tau0 from Yang97 eqn. 10a
@@ -345,6 +370,18 @@
 
 /
 
+&noahmp_irrigation_parameters
+IRR_FRAC   = 0.10       ! irrigation Fraction
+IRR_HAR    = 20         ! number of days before harvest date to stop irrigation 
+IRR_LAI    = 0.50       ! Minimum lai to trigger irrigation
+IRR_MAD    = 0.60       ! management allowable deficit (0-1)
+FILOSS     = 0.10       ! fraction of flood irrigation loss (0-1) 
+SPRIR_RATE = 6.40       ! mm/h, sprinkler irrigation rate
+MICIR_RATE = 1.38       ! mm/h, micro irrigation rate
+FIRTFAC    = 1.00       ! flood application rate factor
+IR_RAIN    = 1.00       ! maximum precipitation to stop irrigation trigger
+/
+
 &noahmp_crop_parameters
 
  ! NCROP = 5
@@ -360,21 +397,31 @@ DEFAULT_CROP = 0                                      ! The default crop type(1-
 !                1       2       3       4       5
 !----------------------------------------------------------
  
-PLTDAY     =    130,    111,    111,    111,    111,  ! Planting date
-HSDAY      =    280,    300,    300,    300,    300,  ! Harvest date
+PLTDAY     =    111,    131,    111,    111,    111,  ! Planting date
+HSDAY      =    300,    280,    300,    300,    300,  ! Harvest date
 PLANTPOP   =   78.0,   78.0,   78.0,   78.0,   78.0,  ! Plant density [per ha] - used?
 IRRI       =    0.0,    0.0,    0.0,    0.0,    0.0,  ! Irrigation strategy 0= non-irrigation 1=irrigation (no water-stress)
 
 GDDTBASE   =   10.0,   10.0,   10.0,   10.0,   10.0,  ! Base temperature for GDD accumulation [C]
 GDDTCUT    =   30.0,   30.0,   30.0,   30.0,   30.0,  ! Upper temperature for GDD accumulation [C]
-GDDS1      =   60.0,   50.0,   50.0,   50.0,   50.0,  ! GDD from seeding to emergence
-GDDS2      =  675.0,  718.0,  718.0,  718.0,  718.0,  ! GDD from seeding to initial vegetative 
-GDDS3      = 1183.0,  933.0,  933.0,  933.0,  933.0,  ! GDD from seeding to post vegetative 
-GDDS4      = 1253.0, 1103.0, 1103.0, 1103.0, 1103.0,  ! GDD from seeding to intial reproductive
-GDDS5      = 1605.0, 1555.0, 1555.0, 1555.0, 1555.0,  ! GDD from seeding to pysical maturity 
-
+GDDS1      =   50.0,   60.0,   50.0,   50.0,   50.0,  ! GDD from seeding to emergence
+GDDS2      =  625.0,  675.0,  718.0,  718.0,  718.0,  ! GDD from seeding to initial vegetative
+GDDS3      =  933.0, 1183.0,  933.0,  933.0,  933.0,  ! GDD from seeding to post vegetative
+GDDS4      = 1103.0, 1253.0, 1103.0, 1103.0, 1103.0,  ! GDD from seeding to intial reproductive
+GDDS5      = 1555.0, 1605.0, 1555.0, 1555.0, 1555.0,  ! GDD from seeding to pysical maturity
+C3PSN      =    0.0,    1.0,    1.0,    1.0,    1.0,  ! transfer crop-specific photosynthetic parameters
+KC25       =   30.0,   30.0,   30.0,   30.0,   30.0,  ! Zhe Zhang
+AKC        =    2.1,    2.1,    2.1,    2.1,    2.1,  ! 2020-02-05
+KO25       =   3.E4,   3.E4,   3.E4,   3.E4,   3.E4,  !
+AKO        =    1.2,    1.2,    1.2,    1.2,    1.2,  !
+AVCMX      =    2.4,    2.4,    2.4,    2.4,    2.4,  !
+VCMX25     =   60.0,   80.0,   60.0,   60.0,   55.0,  !
+BP         =   4.E4,   1.E4,   2.E3,   2.E3,   2.E3,  !
+MP         =     4.,     9.,     6.,     9.,     9.,  !
+FOLNMX     =    1.5,    1.5,    1.5,    1.5,    1.5,  !
+QE25       =   0.05,   0.06,   0.06,   0.06,   0.06,  !
 C3C4       =      2,      1,      2,      2,      2,  ! photosynthetic pathway:  1. = c3 2. = c4
-Aref       =    7.0,    7.0,    7.0,    7.0,    7.0,  ! reference maximum CO2 assimulation rate 
+Aref       =    7.0,    7.0,    7.0,    7.0,    7.0,  ! reference maximum CO2 assimulation rate
 PSNRF      =   0.85,   0.85,   0.85,   0.85,   0.85,  ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
 I2PAR      =    0.5,    0.5,    0.5,    0.5,    0.5,  ! Fraction of incoming solar radiation to photosynthetically active radiation
 TASSIM0    =    8.0,    8.0,    8.0,    8.0,    8.0,  ! Minimum temperature for CO2 assimulation [C]
@@ -390,7 +437,7 @@ LEFREEZ    =    268,    268,    268,    268,    268,  ! characteristic T for lea
 DILE_FC_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! coeficient for temperature leaf stress death [1/s]
 DILE_FC_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 DILE_FC_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
-DILE_FC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0, 
+DILE_FC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
 DILE_FC_S5 =    0.5,    0.5,    0.5,    0.5,    0.5,
 DILE_FC_S6 =    0.5,    0.5,    0.5,    0.5,    0.5,
 DILE_FC_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
@@ -411,8 +458,8 @@ LF_OVRC_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of leaf turnove
 LF_OVRC_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 LF_OVRC_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 LF_OVRC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-LF_OVRC_S5 =    0.2,   0.48,   0.48,   0.48,   0.48,
-LF_OVRC_S6 =    0.3,   0.48,   0.48,   0.48,   0.48,
+LF_OVRC_S5 =    0.2,    0.2,   0.48,   0.48,   0.48,
+LF_OVRC_S6 =    0.3,    0.3,   0.48,   0.48,   0.48,
 LF_OVRC_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 LF_OVRC_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
@@ -420,8 +467,8 @@ ST_OVRC_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of stem turnove
 ST_OVRC_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 ST_OVRC_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 ST_OVRC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-ST_OVRC_S5 =   0.12,   0.12,   0.12,   0.12,   0.12,
-ST_OVRC_S6 =   0.06,   0.06,   0.06,   0.06,   0.06,
+ST_OVRC_S5 =    0.2,   0.12,   0.12,   0.12,   0.12,
+ST_OVRC_S6 =    0.3,   0.06,   0.06,   0.06,   0.06,
 ST_OVRC_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 ST_OVRC_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
@@ -429,21 +476,20 @@ RT_OVRC_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of root tunrove
 RT_OVRC_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 RT_OVRC_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 RT_OVRC_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-RT_OVRC_S5 =   0.12,   0.12,   0.12,   0.12,   0.12,
-RT_OVRC_S6 =   0.06,   0.06,   0.06,   0.06,   0.06,
+RT_OVRC_S5 =    0.12,   0.12,   0.12,   0.12,   0.12,
+RT_OVRC_S6 =    0.06,   0.06,   0.06,   0.06,   0.06,
 RT_OVRC_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 RT_OVRC_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
-             
-LFMR25     =    1.0,    1.0,    1.0,    1.0,    1.0,  !  leaf maintenance respiration at 25C [umol CO2/m**2  /s]
-STMR25     =   0.05,    0.1,    0.1,    0.1,    0.1,  !  stem maintenance respiration at 25C [umol CO2/kg bio/s]
-RTMR25     =   0.05,    0.0,    0.0,    0.0,    0.0,  !  root maintenance respiration at 25C [umol CO2/kg bio/s]
-GRAINMR25  =    0.0,    0.1,    0.1,    0.1,    0.1,  ! grain maintenance respiration at 25C [umol CO2/kg bio/s]
+LFMR25     =    0.8,    1.0,    1.0,    1.0,    1.0,  !  leaf maintenance respiration at 25C [umol CO2/m**2  /s]
+STMR25     =   0.05,    0.05,    0.1,    0.1,    0.1,  !  stem maintenance respiration at 25C [umol CO2/kg bio/s]
+RTMR25     =   0.05,    0.05,    0.0,    0.0,    0.0,  !  root maintenance respiration at 25C [umol CO2/kg bio/s]
+GRAINMR25  =    0.0,    0.0,    0.1,    0.1,    0.1,  ! grain maintenance respiration at 25C [umol CO2/kg bio/s]
 
 LFPT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to leaf
 LFPT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
-LFPT_S3    =    0.4,    0.4,    0.4,    0.4,    0.4,
-LFPT_S4    =    0.2,    0.2,    0.2,    0.2,    0.2,
+LFPT_S3    =    0.36,   0.4,    0.4,    0.4,    0.4,
+LFPT_S4    =    0.1,    0.2,    0.2,    0.2,    0.2,
 LFPT_S5    =    0.0,    0.0,    0.0,    0.0,    0.0,
 LFPT_S6    =    0.0,    0.0,    0.0,    0.0,    0.0,
 LFPT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
@@ -451,33 +497,60 @@ LFPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 STPT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to stem
 STPT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
-STPT_S3    =    0.2,    0.2,    0.2,    0.2,    0.2,
-STPT_S4    =    0.5,    0.5,    0.5,    0.5,    0.5,
-STPT_S5    =    0.0,   0.15,   0.15,   0.15,   0.15,
-STPT_S6    =    0.0,   0.05,   0.05,   0.05,   0.05,
+STPT_S3    =    0.24,   0.2,    0.2,    0.2,    0.2,
+STPT_S4    =    0.6,    0.5,    0.5,    0.5,    0.5,
+STPT_S5    =    0.0,    0.0,   0.15,   0.15,   0.15,
+STPT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
 STPT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
-STPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0, 
+STPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
 RTPT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to root
 RTPT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
-RTPT_S3    =   0.34,    0.4,    0.4,    0.4,    0.4,
+RTPT_S3    =    0.4,    0.4,    0.4,    0.4,    0.4,
 RTPT_S4    =    0.3,    0.3,    0.3,    0.3,    0.3,
-RTPT_S5    =   0.05,   0.05,   0.05,   0.05,   0.05,
-RTPT_S6    =    0.0,   0.05,   0.05,   0.05,   0.05,
+RTPT_S5    =    0.05,   0.05,   0.05,   0.05,   0.05,
+RTPT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
 RTPT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
 RTPT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
-   
+
 GRAINPT_S1 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! fraction of carbohydrate flux to grain
 GRAINPT_S2 =    0.0,    0.0,    0.0,    0.0,    0.0,  ! One row for each of 8 stages
 GRAINPT_S3 =    0.0,    0.0,    0.0,    0.0,    0.0,
 GRAINPT_S4 =    0.0,    0.0,    0.0,    0.0,    0.0,
-GRAINPT_S5 =   0.95,    0.8,    0.8,    0.8,    0.8,
-GRAINPT_S6 =    1.0,    0.9,    0.9,    0.9,    0.9,
+GRAINPT_S5 =    0.95,   0.95,    0.8,    0.8,    0.8,
+GRAINPT_S6 =    1.0,    1.0,    0.9,    0.9,    0.9,
 GRAINPT_S7 =    0.0,    0.0,    0.0,    0.0,    0.0,
 GRAINPT_S8 =    0.0,    0.0,    0.0,    0.0,    0.0,
 
+LFCT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! carbohydrate translocation
+LFCT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,
+LFCT_S3    =    0.0,    0.,    0.4,    0.4,    0.4,
+LFCT_S4    =    0.0,    0.,    0.3,    0.3,    0.3,
+LFCT_S5    =    0.0,    0.0,   0.05,   0.05,   0.05,
+LFCT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
+LFCT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
+LFCT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
 
-BIO2LAI   =  0.035,  0.015,  0.015,  0.015,  0.015,  ! leaf are per living leaf biomass [m^2/kg]
+STCT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! carbohydrate translocation
+STCT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,
+STCT_S3    =    0.0,    0.,    0.4,    0.4,    0.4,
+STCT_S4    =    0.0,    0.,    0.3,    0.3,    0.3,
+STCT_S5    =    0.0,    0.,   0.05,   0.05,   0.05,
+STCT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
+STCT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
+STCT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
+
+RTCT_S1    =    0.0,    0.0,    0.0,    0.0,    0.0,  ! carbohydrate translocation
+RTCT_S2    =    0.0,    0.0,    0.0,    0.0,    0.0,
+RTCT_S3    =    0.0,    0.,    0.4,    0.4,    0.4,
+RTCT_S4    =    0.0,    0.,    0.3,    0.3,    0.3,
+RTCT_S5    =    0.0,    0.,   0.05,   0.05,   0.05,
+RTCT_S6    =    0.0,    0.0,   0.05,   0.05,   0.05,
+RTCT_S7    =    0.0,    0.0,    0.0,    0.0,    0.0,
+RTCT_S8    =    0.0,    0.0,    0.0,    0.0,    0.0,
+
+BIO2LAI    =  0.015,  0.030,  0.015,  0.015,  0.015,  ! leaf are per living leaf biomass [m^2/kg]
+
 
 /
  

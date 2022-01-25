@@ -280,6 +280,10 @@ subroutine da_wrfvar_init2
       if (.not. print_detail_outerloop) then
          call da_get_unit (stats_unit)
          open(unit=stats_unit,file="statistics",status="replace")
+#if (WRF_CHEM == 1)
+         call da_get_unit (stats_unit2)
+         open(unit=stats_unit2,file="statistics_chem",status="replace")
+#endif
       end if
       open(unit=jo_unit,file="jo",status="replace")
       open(unit=check_max_iv_unit,file="check_max_iv",status="replace")

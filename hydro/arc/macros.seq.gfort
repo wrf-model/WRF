@@ -36,7 +36,7 @@ F90FLAGS  =       -w -c -ffree-form -ffree-line-length-none -fconvert=big-endian
 MODFLAG	=	-I./ -I../mod
 LDFLAGS	=	
 CPPINVOKE 	=       -cpp
-CPPFLAGS	=       -I"../Data_Rec" $(HYDRO_D) $(SPATIAL_SOIL) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
+CPPFLAGS	=       -I"../Data_Rec" $(HYDRO_D) $(SPATIAL_SOIL)
 LIBS 	=	
 NETCDFINC       =       $(NETCDF_INC)
 NETCDFLIB       =       -L$(NETCDF_LIB) -lnetcdff -lnetcdf

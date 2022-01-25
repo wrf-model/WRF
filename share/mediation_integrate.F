@@ -1052,7 +1052,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 !  De-reference dimension information stored in the grid data structure.
 !
 !  From the hybrid, construct the GPMs on isobaric surfaces and then interpolate those
-!  values on to the nested domain. 23 standard prssure levels are assumed here. For
+!  values on to the nested domain. 23 standard pressure levels are assumed here. For
 !  levels below ground, lapse rate atmosphere is assumed before the use of vertical
 !  spline interpolation 
 !
@@ -2475,6 +2475,7 @@ END SUBROUTINE open_hist_w
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if ( WRF_CHEM == 1 )
+#if (DA_CORE != 1)
 
 SUBROUTINE med_read_wrf_chem_input ( grid , config_flags )
   ! Driver layer
@@ -3149,6 +3150,7 @@ SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
    CALL wrf_debug (00 , 'mediation_integrate: med_read_wrf_chem_fireemissions: exit' )
 
 END SUBROUTINE med_read_wrf_chem_emissopt3
+#endif
 #endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

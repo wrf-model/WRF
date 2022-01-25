@@ -1978,7 +1978,7 @@ enddo
   IRI = 1
   IPI = 1
 
-	IF(AMAX1(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
+	IF(max(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
 
     RW = 0.0
     IRW = 0
@@ -6052,25 +6052,25 @@ enddo
 
  ! ... (KS) - Broadcating Liquid drops
 #if (defined(DM_PARALLEL))
-   	DM_BCAST_MACRO_R16 ( FAF1 )
-   	DM_BCAST_MACRO_R16 ( FBF1 )
-   	DM_BCAST_MACRO_R16 ( FAB1 )
-   	DM_BCAST_MACRO_R16 ( FBB1 )
+   	DM_BCAST_MACRO_R16(FAF1)
+   	DM_BCAST_MACRO_R16(FBF1)
+   	DM_BCAST_MACRO_R16(FAB1)
+   	DM_BCAST_MACRO_R16(FBB1)
    ! ... (KS) - Broadcating Snow
-   	DM_BCAST_MACRO_R16 ( FAF3 )
-   	DM_BCAST_MACRO_R16 ( FBF3 )
-   	DM_BCAST_MACRO_R16 ( FAB3 )
-   	DM_BCAST_MACRO_R16 ( FBB3 )
+   	DM_BCAST_MACRO_R16(FAF3)
+   	DM_BCAST_MACRO_R16(FBF3)
+   	DM_BCAST_MACRO_R16(FAB3)
+   	DM_BCAST_MACRO_R16(FBB3)
    ! ... (KS) - Broadcating Graupel
-   	DM_BCAST_MACRO_R16 ( FAF4 )
-   	DM_BCAST_MACRO_R16 ( FBF4 )
-   	DM_BCAST_MACRO_R16 ( FAB4 )
-   	DM_BCAST_MACRO_R16 ( FBB4 )
+   	DM_BCAST_MACRO_R16(FAF4)
+   	DM_BCAST_MACRO_R16(FBF4)
+   	DM_BCAST_MACRO_R16(FAB4)
+   	DM_BCAST_MACRO_R16(FBB4)
    ! ### (KS) - Broadcating Hail
-   	DM_BCAST_MACRO_R16 ( FAF5 )
-   	DM_BCAST_MACRO_R16 ( FBF5 )
-   	DM_BCAST_MACRO_R16 ( FAB5 )
-   	DM_BCAST_MACRO_R16 ( FBB5 )
+   	DM_BCAST_MACRO_R16(FAF5)
+   	DM_BCAST_MACRO_R16(FBF5)
+   	DM_BCAST_MACRO_R16(FAB5)
+   	DM_BCAST_MACRO_R16(FBB5)
  ! ### (KS) - Broadcating Usetables array
  	  CALL wrf_dm_bcast_integer ( usetables , size ( usetables ) * IWORDSIZE )
 #endif
@@ -6141,8 +6141,8 @@ enddo
     BRKWEIGHT = 0.0d0
  	 CALL BREAKINIT_KS(PKIJ,QKJ,ECOALMASSM,BRKWEIGHT,XL,DROPRADII,BR_MAX,JBREAK,JMAX,NKR,VR1) ! Rain Spontanous Breakup
 #if (defined(DM_PARALLEL))
- 	 	DM_BCAST_MACRO_R4 (PKIJ)
-    DM_BCAST_MACRO_R4 (QKJ)
+ 	 	DM_BCAST_MACRO_R4(PKIJ)
+    DM_BCAST_MACRO_R4(QKJ)
 #endif
  	  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading BREAKINIT_KS" '
     CALL wrf_debug(000, errmess)
@@ -9064,7 +9064,7 @@ end if
 
      PI=3.1415927d0
      rho=1.0d0            ! Water Density,[rho]=g/cm^3
-     sigma=72.8d0         ! Surf. Tension,(H2O,20°C)=7.28d-2 N/m
+     sigma=72.8d0         ! Surf. Tension,(H2O,20C)=7.28d-2 N/m
                       ! [sigma]=g/s^2
      ak10=rho*PI/12.0d0
 

@@ -228,6 +228,9 @@ CONTAINS
       CALL nl_set_nproc_y ( 1, ntasks_y )
       WRITE( wrf_err_message , * )'Ntasks in X ',ntasks_x,', ntasks in Y ',ntasks_y
       CALL wrf_message( wrf_err_message )
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+      CALL MPI_BARRIER( local_communicator, ierr )
+#endif
       RETURN
    END SUBROUTINE wrf_dm_initialize
 
@@ -1295,7 +1298,7 @@ CONTAINS
       RETURN
    END FUNCTION getrealmpitype
 
-   REAL FUNCTION wrf_dm_max_int ( inval )
+   INTEGER FUNCTION wrf_dm_max_int ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
       INTEGER, intent(in) :: inval
@@ -4254,7 +4257,7 @@ endif
             DO i = MAX(ids,ips),MIN(ide-1,ipe)
 
                DO k = 1, kpe-1
-                  grid%pb(i,k,j) = ngrid%c3h(k)*(ngrid%c1h(k)*grid%mub(i,j)+ngrid%c2h(k)) + ngrid%c4h(k) + ngrid%p_top
+                  grid%pb(i,k,j) = ngrid%c3h(k) * grid%mub(i,j) + ngrid%c4h(k) + ngrid%p_top
              
                   !  If this is a real run, recalc t_init.
    
@@ -4307,7 +4310,11 @@ endif
                qvf1 = qvf1*qvf2
       
                p(i,kk,j) = - 0.5*((ngrid%c1f(k)*grid%Mu_2(i,j))+qvf1*(ngrid%c1f(k)*grid%Mub(i,j)+ngrid%c2f(k)))/ngrid%rdnw(kk)/qvf2
-               qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               IF ( config_flags%use_theta_m == 0) THEN
+                  qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               ELSE
+                  qvf = 1.
+               ENDIF
                al(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
                            (((p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm) - grid%alb(i,kk,j)
       
@@ -4320,7 +4327,11 @@ endif
                   qvf2 = 1./(1.+qvf1)
                   qvf1 = qvf1*qvf2
                   p(i,kk,j) = p(i,kk+1,j) - ((ngrid%c1f(k)*grid%Mu_2(i,j)) + qvf1*(ngrid%c1f(k)*grid%Mub(i,j)+ngrid%c2f(k)))/qvf2/ngrid%rdn(kk+1)
-                  qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+                  IF ( config_flags%use_theta_m == 0) THEN
+                     qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+                  ELSE
+                     qvf = 1.
+                  ENDIF
                   al(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
                               (((p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm) - grid%alb(i,kk,j)
                END DO

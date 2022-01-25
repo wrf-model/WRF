@@ -36,6 +36,10 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 &  qv_currd, qc_curr, qc_currd, qr_curr, qr_currd, qi_curr, qs_curr, qg_curr, qndrop_curr, &
 &  qni_curr, qh_curr, qnh_curr, qzr_curr, qzi_curr, qzs_curr, qzg_curr, &
 &  qzh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qvolg_curr, qvolh_curr &
+&  ,qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,fi_curr,fs_curr    & ! for ntu3m
+&  ,vi_curr,vs_curr,vg_curr,ai_curr,as_curr,ag_curr,ah_curr,i3m_curr     & ! for ntu3m
+&  ,f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,f_vi,f_vs,f_vg          & ! for ntu3m
+&  ,f_ai,f_as,f_ag,f_ah,f_i3m                                            & ! for ntu3m
 &  , f_qv, f_qc, f_qr, f_qi, f_qs, f_qg, f_qndrop, f_qni, f_qns, f_qnr, &
 &  f_qng, f_qnc, f_qnn, f_qh, f_qnh, f_qzr, f_qzi, f_qzs, f_qzg, f_qzh, &
 &  f_qvolg, f_qvolh, qrcuten, qscuten, qicuten, qt_curr, f_qt, &
@@ -48,7 +52,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
                     ,WSM6SCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
-                    ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME  !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME, NTU  !,MILBRANDT3MOM, ntu3m
 
 ! Model Layer
    USE module_model_constants
@@ -311,6 +315,12 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 &  qi_curr, qs_curr, qg_curr, qt_curr, qndrop_curr, qni_curr, qh_curr, &
 &  qnh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qzr_curr, &
 &  qzi_curr, qzs_curr, qzg_curr, qzh_curr, qvolg_curr, qvolh_curr
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: & ! for ntu3m
+&        qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,fi_curr,     & ! for ntu3m
+&        fs_curr,vi_curr,vs_curr,vg_curr,ai_curr,as_curr,ag_curr,       & ! for ntu3m
+&        ah_curr,i3m_curr                                                 ! for ntu3m
+   LOGICAL, OPTIONAL :: f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,   & ! for ntu3m
+&                       f_vi,f_vs,f_vg,f_ai,f_as,f_ag,f_ah,f_i3m          ! for ntu3m
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  qv_currd, qc_currd, qr_currd
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN) :: &

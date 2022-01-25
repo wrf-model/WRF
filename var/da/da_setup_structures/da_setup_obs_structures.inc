@@ -71,6 +71,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_radarobs         = .false.
       use_radar_rv         = .false.
       use_radar_rf         = .false.
+#if (WRF_CHEM == 1)
+      use_chemic_surfobs     = .false.
+#endif
       ob_format = ob_format_ascii
    end if
 
@@ -151,6 +154,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_radarobs         = .false.
       use_radar_rv         = .false.
       use_radar_rf         = .false.
+#if (WRF_CHEM == 1)
+      use_chemic_surfobs     = .false.
+#endif
    end if
 
    if ( use_pseudo_rad ) then
@@ -289,6 +295,13 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       call da_setup_obs_structures_rain (grid, ob, iv) 
    end if
 
+#if (WRF_CHEM == 1)
+   if ( (use_chemic_surfobs) ) then
+      call da_message((/'Using ASCII format chem IC observation input'/))
+      call da_setup_obs_structures_chem_sfc (ob, iv, grid)
+   end if
+#endif
+
    if (use_rad) then
 #if defined(CRTM) || defined(RTTOV)
       ! Radiance files can only be in BUFR
@@ -312,7 +325,11 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    do i=1,num_fgat_time
       write(unit=stdout, fmt='(3x,a,i2)') 'ob time ', i
       do j=1,num_ob_indexes
-         if(j.eq.27)cycle 
+         if(j.eq.27 &
+#if (WRF_CHEM == 1)
+            .or. j.eq.29 .or. j.eq.30 &
+#endif
+         )cycle
          if (use_gpsztdobs .and.obs_names(j) == 'gpspw         ' ) then
             ob_name = 'gpsztd        '
          else
@@ -326,9 +343,16 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
                iv%info(j)%thin_ptotal(i) - iv%info(j)%thin_ptotal(i-1), ' global (post-thinning), ', &
                iv%info(j)%thin_plocal(i) - iv%info(j)%thin_plocal(i-1), ' local (post-thinning)'
          else
+#if (WRF_CHEM == 1)
+            write(unit=stdout, fmt='(6x,a,i10,a,i8,a,i8,a,i8,a)') &
+               ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
+               iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local', &
+               iv%info(chemic_surf)%ntotal, 'chem total', iv%info(chemic_surf)%nlocal, 'chem local'
+#else
             write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
                ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
                iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local'
+#endif
          end if ! thin_conv_ascii
          end if
       end do

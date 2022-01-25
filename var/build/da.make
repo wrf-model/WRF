@@ -12,6 +12,7 @@ WRFVAR_OBJS = \
    da_minimisation.o \
    da_vtox_transforms.o \
    da_obs.o \
+   da_chem_sfc.o \
    da_obs_io.o \
    da_join_iv_for_multi_inc.o \
    da_metar.o \
@@ -69,6 +70,7 @@ WRFVAR_OBJS = \
    gsi_kinds.o \
    gsi_constants.o \
    gsi_thinning.o \
+   mod_clddet_geoir.o \
    da_wrfvar_io.o \
    da_airsr.o \
    da_wrfvar_top.o \

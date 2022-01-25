@@ -21,8 +21,8 @@ subroutine da_rescale_background_errors (var_scaling, len_scaling, &
 
    if (trace_use_dull) call da_trace_entry("da_rescale_background_errors")
 
-   write(unit=stdout,fmt='(3x,"Scaling: var, len, ds:",3e15.6 )') &
-                                     var_scaling, len_scaling, ds
+   write(unit=stdout,fmt='(3x,"Scaling: var, len, ds: ",a10,a,3e15.6 )') &
+                           trim(be_sub % name), '  ', var_scaling, len_scaling, ds
 
    !--------------------------------------------------------------------------
    ! [1.0] Initialise:

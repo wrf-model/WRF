@@ -504,9 +504,7 @@ while ( <CONFIGURE_DEFAULTS> )
          close (FH);
 
          if ( $wrf_cmaq_option eq 1 )   # build WRF-CMAQ coupled model
-            { system("cp  Registry/registry.WRF-CMAQ-twoway_full  Registry/registry.WRF-CMAQ-twoway");
-
-              if ( $lib_path_wo_cmaq == 1 )
+            { if ( $lib_path_wo_cmaq == 1 )
                  { open (FILE, "<Makefile") || die "File not found";
                    my @lines = <FILE>;
                    close (FILE);
@@ -521,7 +519,7 @@ while ( <CONFIGURE_DEFAULTS> )
                  }
 
               if ( $registry_wo_cmaq == 1 )
-                 { open (FILE, "<Registry/registry.WRF-CMAQ-twoway") || die "File not found";
+                 { open (FILE, "<Registry/registry.CMAQ") || die "File not found";
                    my @lines = <FILE>;
                    close (FILE);
 
@@ -529,7 +527,7 @@ while ( <CONFIGURE_DEFAULTS> )
                      { $_ =~ s/#state/state/g;
                      }
 
-                   open (FILE, ">Registry/registry.WRF-CMAQ-twoway") || die "File not found";
+                   open (FILE, ">Registry/registry.CMAQ") || die "File not found";
                    print FILE @lines;
                    close (FILE);
                  }
@@ -574,7 +572,7 @@ while ( <CONFIGURE_DEFAULTS> )
                  }
 
               if ( $registry_wo_cmaq == 0 )
-                 { open (FILE, "<Registry/registry.WRF-CMAQ-twoway") || die "File not found";
+                 { open (FILE, "<Registry/registry.CMAQ") || die "File not found";
                    my @lines = <FILE>;
                    close (FILE);
 
@@ -582,7 +580,7 @@ while ( <CONFIGURE_DEFAULTS> )
                      { $_ =~ s/state/#state/g;
                      }
 
-                   open (FILE, ">Registry/registry.WRF-CMAQ-twoway") || die "File not found";
+                   open (FILE, ">Registry/registry.CMAQ") || die "File not found";
                    print FILE @lines;
                    close (FILE);
                  }

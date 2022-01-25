@@ -479,8 +479,8 @@ while ( <CONFIGURE_DEFAULTS> )
            }
          close (FH);
 
-         # determine whether declarations in Registry/registry.WRF-CMAQ-twoway is commented out or not
-         my $file = "Registry/registry.WRF-CMAQ-twoway";
+         # determine whether declarations in Registry/registry.CMAQ is commented out or not
+         my $file = "Registry/registry.CMAQ";
          open (FH, $file) or die("File $file not found");
 
          $registry_wo_cmaq = 0;

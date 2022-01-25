@@ -496,9 +496,9 @@ SUBROUTINE microphysics_driver(                                          &
                                                                  rliq      !Vertically-integrated reserved cloud condensate(m/s)
 
 ! WRF-Solar EPS
-   integer, intent (in) :: multi_perturb 
-   logical, intent (in) :: pert_thom
-   real, intent (in) :: pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, pert_thom_ni
+   integer, intent (in), optional :: multi_perturb 
+   logical, intent (in), optional :: pert_thom
+   real, intent (in), optional :: pert_thom_qv, pert_thom_qc, pert_thom_qi, pert_thom_qs, pert_thom_ni
    real, dimension(ims:ime, kms:kme, jms:jme ), intent (in), optional :: perts_qvapor, perts_qcloud, perts_qice, &
        perts_qsnow, perts_ni 
   real, dimension(:, :, :), allocatable :: qv_tmp, qc_tmp, qi_tmp, qs_tmp, qni_tmp

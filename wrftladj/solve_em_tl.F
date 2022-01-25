@@ -664,8 +664,8 @@ BENCH_END(g_set_phys_bc_tim)
                              , imsy,imey,jmsy,jmey,kmsy,kmey    &
                              , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
-                             , f_flux                           &
-                             , feedback_is_ready                &
+                             , f_flux=f_flux                    &
+                             , feedback_is_ready=feedback_is_ready    & 
                              )
 
 #ifdef DM_PARALLEL

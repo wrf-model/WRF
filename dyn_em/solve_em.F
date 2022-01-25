@@ -825,9 +825,9 @@ BENCH_START(calc_p_rho_tim)
                              , imsy, imey, jmsy, jmey, kmsy, kmey    &
                              , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
-                             , f_flux                           &
-                             , aerocu                           &
-                             , restart_flag                     &
+                             , f_flux=f_flux                    &
+                             , aerocu=aerocu                    &
+                             , restart_flag=restart_flag        &
                              , feedback_is_ready=feedback_is_ready    &
                             )
 

@@ -1,0 +1,147 @@
+!*----------------------------------------------------------------------------
+!*
+!*  WRF ADIOS2 I/O
+!*  Author: Michael Laufer
+!*  	    Toga Networks, a Huawei Company
+!*  	    michael.laufer@toganetworks.com
+!*  Author: Erick Fredj
+!*  	    Computer Science Department, The Jerusalem College of Technology
+!*	    fredj@jct.ac.il
+!*	    Toga Networks, a Huawei Company
+!*	    erick.fredj@toganetworks.com
+!*    	        
+!*  Date:    November 3, 2021
+!*
+!*----------------------------------------------------------------------------
+
+  use wrf_data_adios2
+  use ext_adios2_support_routines
+  use adios2
+  implicit none
+  include 'wrf_status_codes.h'
+  integer               ,intent(in)     :: DataHandle
+  character*(*)         ,intent(in)     :: Element
+  TYPE_COUNT
+  TYPE_DATA
+  integer               ,intent(out)    :: Status
+  type(wrf_data_handle) ,pointer        :: DH
+  integer                               :: stat
+  integer                               :: stat2
+  integer               ,allocatable    :: Buffer(:)
+  integer                               :: i
+  type(adios2_attribute)                :: AttributeID
+
+  call GetDH(DataHandle,DH,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) &
+'Warning Status = ',Status,' in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+IF ( adios2_ok_to_put_dom_ti( DataHandle ) ) THEN
+  if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
+    Status = WRF_WARN_FILE_NOT_OPENED  
+    write(msg,*) &
+'Warning FILE NOT OPENED in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
+    STATUS = WRF_WARN_WRITE_RONLY_FILE  
+    write(msg,*) &
+'Warning WRITE READ ONLY FILE in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
+#ifdef LOG
+      allocate(Buffer(Count), STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_ALLOCATION_ERROR 
+        write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      do i=1,Count
+        if(data(i)) then
+           Buffer(i)=1
+        else
+           Buffer(i)=0
+        endif
+      enddo
+      call adios2_define_attribute(AttributeID, DH%adios2IO, Element, Buffer, Count, stat)
+      call adios2_err(stat,Status)
+      if(Status /= WRF_NO_ERR) then
+        write(msg,*) 'adios2 error in ext_adios2_put_dom_ti',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , TRIM(msg))
+        return
+      endif
+      deallocate(Buffer, STAT=stat2)
+      if(stat2/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR 
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+#else
+#ifdef CHAR_TYPE
+      call adios2_define_attribute(AttributeID, DH%adios2IO, Element, Data, stat)
+#else
+      call adios2_define_attribute(AttributeID, DH%adios2IO, Element, Data, Count, stat)
+#endif
+      call adios2_err(stat,Status)
+      if(Status /= WRF_NO_ERR) then
+        write(msg,*) 'adios2 error in ext_adios2_put_dom_ti ',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , TRIM(msg))
+        return
+      endif
+#endif
+  elseif (DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
+#ifdef LOG
+      allocate(Buffer(Count), STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_ALLOCATION_ERROR 
+        write(msg,*) &
+'Fatal ALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      do i=1,Count
+        if(data(i)) then
+           Buffer(i)=1
+        else
+           Buffer(i)=0
+        endif
+      enddo
+      call adios2_define_attribute(AttributeID, DH%adios2IO, Element, Buffer, Count, stat)
+      call adios2_err(stat,Status)
+      if(Status /= WRF_NO_ERR) then
+        write(msg,*) 'adios2 error in ext_adios2_put_dom_ti ',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , TRIM(msg))
+        return
+      endif
+      deallocate(Buffer, STAT=stat2)
+      if(stat2/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR  
+        write(msg,*) &
+'Fatal DEALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+#else
+#ifdef CHAR_TYPE
+      call adios2_define_attribute(AttributeID, DH%adios2IO, Element, Data, stat)
+#else
+      call adios2_define_attribute(AttributeID, DH%adios2IO, Element, Data, Count, stat)
+#endif
+      call adios2_err(stat,Status)
+      if(Status /= WRF_NO_ERR) then
+        write(msg,*) 'adios2 error in ext_adios2_put_dom_ti ',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , TRIM(msg))
+        return
+      endif
+#endif
+  else
+    Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
+    write(msg,*) &
+'Fatal error BAD FILE STATUS in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+    call wrf_debug ( FATAL , msg)
+  endif
+ENDIF
+  return

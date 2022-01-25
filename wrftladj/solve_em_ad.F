@@ -138,6 +138,8 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 
    REAL                            :: t_new
 
+   LOGICAL :: feedback_is_ready   ! CMAQ
+
    ! Changes in tendency at this timestep
    real ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) :: h_tendency, &
                                                                                    z_tendency
@@ -251,6 +253,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 !  Initialize linkedlist
    !CALL linkedlist_initialize
  
+   feedback_is_ready = .false.
 !  set runge-kutta solver (2nd or 3rd order)
 
    dynamics_option = config_flags%rk_ord
@@ -686,6 +689,7 @@ BENCH_END(set_phys_bc_tim)
                              , f_flux                           &
                              , aerocu                           &
                              , restart_flag                     &
+                             , feedback_is_ready                &
                             )
 
 #ifdef DM_PARALLEL

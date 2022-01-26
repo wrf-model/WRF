@@ -240,6 +240,20 @@ include ../configure.wrf
 
 non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
 
+submodules :
+	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \
+	      \( ! -f module_sf_noahmp_groundwater.F \) -o \( ! -f module_sf_noahmplsm.F \) ] ; then \
+		echo Pulling in NoahMP submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf noahmp/drivers/wrf/module_sf_noahmpdrv.F . ; \
+		ln -sf noahmp/src/module_sf_noahmp_glacier.F . ; \
+		ln -sf noahmp/src/module_sf_noahmp_groundwater.F . ; \
+		ln -sf noahmp/src/module_sf_noahmplsm.F . ; \
+		( cd ../run ; ln -sf ../phys/noahmp/parameters/MPTABLE.TBL . ) ; \
+	else \
+		echo No action required for NoahMP submodule ; \
+	fi
+
 clean:
 	@ echo 'use the clean script'
 

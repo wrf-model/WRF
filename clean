@@ -80,6 +80,9 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup
     /bin/rm -f Registry/Registry.backup
     /bin/rm -f run/namelist.input.backup.*
+    /bin/rm -f phys/module_sf_noahmpdrv.F phys/module_sf_noahmp_glacier.F \
+               phys/module_sf_noahmp_groundwater.F phys/module_sf_noahmplsm.F \
+               run/MPTABLE.TBL
   endif
 endif
 

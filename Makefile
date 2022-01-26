@@ -108,6 +108,22 @@ framework_only : configcheck
 
 wrf : framework_only
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
+	if [ \( ! -f run/MPTABLE.TBL \) -o \
+	     \( ! -f phys/module_sf_noahmpdrv.F \) -o \
+	     \( ! -f phys/module_sf_noahmp_glacier.F \) -o \
+	     \( ! -f phys/module_sf_noahmp_groundwater.F \) -o \
+	     \( ! -f phys/module_sf_noahmplsm.F \) ] ; then \
+	   echo " " ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo "Error Error Error NoahMP submodule files not populating WRF directories" ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo " " ; \
+	   exit 31 ; \
+	else \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo "NoahMP submodule files populating WRF directories" ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	fi
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi
@@ -1009,20 +1025,20 @@ chemics :
 physics :
 	@ echo '--------------------------------------'
 	if [ $(WRF_CHEM) -eq 0 ] ; then \
-		( cd phys ; $(MAKE) CF2=" " ) ; \
+		( cd phys ; $(MAKE) submodules ; $(MAKE) CF2=" " ) ; \
 		if [ $(WRF_CMAQ) -eq 1 ] ; then \
 			@ echo '----------- make cmaq ----------------' ; \
 			( rm -f main/libcmaqlib.a; cd cmaq ; $(MAKE) -f Makefile.twoway ) ; \
 		fi \
 	else \
-		( cd phys ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
+		( cd phys ; $(MAKE) submodules ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
 	fi
 
 physics_plus :
 	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
-	   ( cd phys ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
+	   ( cd phys ; $(MAKE) submodules ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
 	else \
-	   ( cd phys ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
+	   ( cd phys ; $(MAKE) submodules ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
 	fi
 
 wrftlmadj :

@@ -667,6 +667,35 @@
 # endif
 
 !-----------------------------------------------------------------------
+! With CMAQ coupling, if the option "direct_sw_feedback" is activated,
+! then the only SW radiation scheme set up to support this is RRTMG.
+!-----------------------------------------------------------------------
+# if ( WRF_CMAQ == 1 ) 
+      cmaq : DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % direct_sw_feedback ) .AND. &
+              ( model_config_rec % wrf_cmaq_option .EQ. 1 ) .AND. &
+              ( model_config_rec % ra_sw_physics(i) .NE. rrtmg_swscheme ) ) THEN
+            wrf_err_message = '--- ERROR: With CMAQ coupling, "direct_sw_feedback=T" requires RRTMG SW'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+            EXIT cmaq
+         END IF
+      ENDDO cmaq
+# else
+      cmaq : DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % direct_sw_feedback ) .OR. & 
+              ( model_config_rec % wrf_cmaq_option .EQ. 1 ) ) THEN
+            wrf_err_message = '--- ERROR: The option "direct_sw_feedback=T" and "wrf_cmaq_option==1" require CMAQ coupling'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+            EXIT cmaq
+         END IF
+      ENDDO cmaq
+# endif
+
+!-----------------------------------------------------------------------
 ! Print a warning message for not using a combination of radiation and microphysics from Goddard
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom

@@ -5,6 +5,9 @@
 # Be sure to run as ./configure (to avoid getting a system configure command by mistake)
 #
 
+use Cwd qw(getcwd);
+$wrf_cmaq_option =  $ENV{'WRF_CMAQ'};     # determine building WRF-CMAQ coupled model or not
+
 select((select(STDOUT), $|=1)[0]);
 $sw_perl_path = perl ;
 $sw_netcdf_path = "" ;
@@ -449,11 +452,155 @@ open CONFIGURE_DEFAULTS, "cat ./arch/configure.defaults |"  ;
 $latchon = 0 ;
 while ( <CONFIGURE_DEFAULTS> )
 {
+  if ( $_ =~ /ifort compiler/ )
+     { $lioapi_temp = 'Linux2_x86_64ifort';
+     }
+  elsif ( $_ =~ /PGI compiler/ )
+     { $lioapi_temp = 'Linux2_x86_64pg';
+     }
+  elsif ( $_ =~ /gfortran compiler/ )
+     { $lioapi_temp = 'Linux2_x86_64gfort';
+     }
+
   if ( substr( $_, 0, 5 ) eq "#ARCH" && $latchon == 1 )
   {
     close CONFIGURE_DEFAULTS ;
     if ( $sw_opt_level eq "-f" ) {
-      open CONFIGURE_DEFAULTS, "cat ./arch/postamble ./arch/noopt_exceptions_f |"  or die "horribly" ;
+
+         # determine whether variable EM_MODULE_DIR contains -I../cmaq or not
+         my $file = "Makefile";
+         open(FH, $file) or die("File $file not found");
+
+         $lib_path_wo_cmaq = 1;
+         while ( my $String = <FH> )
+           { if($String =~ /-I..\/dyn_em -I..\/cmaq/)
+               { $lib_path_wo_cmaq = 0;
+               }
+           }
+         close (FH);
+
+         # determine whether declarations in Registry/registry.CMAQ is commented out or not
+         my $file = "Registry/registry.CMAQ";
+         open (FH, $file) or die("File $file not found");
+
+         $registry_wo_cmaq = 0;
+         while ( my $String = <FH> )
+           { if($String =~ /#state/)
+               { $registry_wo_cmaq = 1;
+               }
+           }
+         close (FH);
+
+         # determine whether express #NOWIN LIB_BUNDLED contains $(IOAPI_LIB) or not
+         my $file = "arch/preamble";
+         open (FH, $file) or die("File $file not found");
+
+         $bundle_wo_ioapi = 1;
+         while ( my $String = <FH> )
+           { if ( $String =~ /IOAPI_LIB/ )
+               { $bundle_wo_ioapi = 0;
+               }
+           }
+         close (FH);
+
+         if ( $wrf_cmaq_option eq 1 )   # build WRF-CMAQ coupled model
+            { if ( $lib_path_wo_cmaq == 1 )
+                 { open (FILE, "<Makefile") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach ( @lines )
+                     { $_ =~ s/ -I..\/dyn_em/ -I..\/dyn_em -I..\/cmaq/g;
+                     }
+
+                   open (FILE, ">Makefile") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              if ( $registry_wo_cmaq == 1 )
+                 { open (FILE, "<Registry/registry.CMAQ") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach (@lines)
+                     { $_ =~ s/#state/state/g;
+                     }
+
+                   open (FILE, ">Registry/registry.CMAQ") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              if ( $bundle_wo_ioapi == 1 )
+                 { open (FILE, "<arch/preamble") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach (@lines)
+                     { $_ =~ s/#NOWIN LIB_BUNDLED     = \\/#NOWIN LIB_BUNDLED     = \$(IOAPI_LIB) \\/g;
+                     }
+
+                   open (FILE, ">arch/preamble") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              open (FH, '>', wrf_cmaq_path) or die $! ;
+              $ioapi_path = $ENV{'IOAPI'} ;
+              print FH "CMAQLIB = libcmaqlib.a \n" ;
+              print FH "IOAPI      = $ioapi_path\n" ;
+              print FH "LIOAPI     = $lioapi\n" ;
+              print FH "IOAPI_LIB  = -L$ioapi_path/$lioapi -lioapi \n" ;
+              close (FH) ;
+              open CONFIGURE_DEFAULTS, "cat wrf_cmaq_path ./arch/postamble ./arch/noopt_exceptions_f |"  or die "horribly" ;
+            }
+         else
+            { if ( $lib_path_wo_cmaq == 0 )
+                 { open (FILE, "<Makefile") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach (@lines)
+                     { $_ =~ s/ -I..\/cmaq//g;
+                     }
+
+                   open (FILE, ">Makefile") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+
+                 }
+
+              if ( $registry_wo_cmaq == 0 )
+                 { open (FILE, "<Registry/registry.CMAQ") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach(@lines)
+                     { $_ =~ s/state/#state/g;
+                     }
+
+                   open (FILE, ">Registry/registry.CMAQ") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              if ( $bundle_wo_ioapi == 0 )
+                 { open (FILE, "<arch/preamble") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach (@lines)
+                     { $_ =~ s/ \$\(IOAPI_LIB\)//g;
+                     }
+ 
+                   open (FILE, ">arch/preamble") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              open CONFIGURE_DEFAULTS, "cat ./arch/postamble ./arch/noopt_exceptions_f |"  or die "horribly" ;
+            }
     } else {
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble ./arch/noopt_exceptions |"  or die "horribly" ;
     }
@@ -720,6 +867,7 @@ while ( <CONFIGURE_DEFAULTS> )
                printf "Compile for nesting? (1=basic, 2=preset moves, 3=vortex following) [default 1]: " ;
              }
              $response = <STDIN> ;
+             $lioapi = $lioapi_temp;
           } 
           printf "\n" ;
           lc $response ;
@@ -803,6 +951,10 @@ if ($latchon == 0) { # Never hurts to check that we actually found the option ag
 close CONFIGURE_DEFAULTS ;
 close POSTAMBLE ;
 close ARCH_NOOPT_EXCEPTIONS ;
+
+if ( $wrf_cmaq_option eq 1 )
+   { unlink "wrf_cmaq_path";
+   }
 
 open CONFIGURE_WRF, "> configure.wrf" or die "cannot append configure.wrf" ;
 open ARCH_PREAMBLE, "< arch/preamble" or die "cannot open arch/preamble" ;

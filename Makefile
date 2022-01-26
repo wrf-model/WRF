@@ -1010,6 +1010,10 @@ physics :
 	@ echo '--------------------------------------'
 	if [ $(WRF_CHEM) -eq 0 ] ; then \
 		( cd phys ; $(MAKE) CF2=" " ) ; \
+		if [ $(WRF_CMAQ) -eq 1 ] ; then \
+			@ echo '----------- make cmaq ----------------' ; \
+			( rm -f main/libcmaqlib.a; cd cmaq ; $(MAKE) -f Makefile.twoway ) ; \
+		fi \
 	else \
 		( cd phys ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
 	fi

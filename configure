@@ -25,6 +25,7 @@ while [ $# -ge 1 ]; do
       -r8) rword="-r8" ;;
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
       chem) WRF_CHEM=1  ;;
+      cmaq) WRF_CMAQ=1  ;;
       kpp) WRF_KPP=1  ;;
       radardfi) WRF_DFI_RADAR=1  ;;
       wrfda) wrf_core=DA_CORE ;;
@@ -499,6 +500,12 @@ if [ -n "$WRF_DFI_RADAR" ] ; then
     compileflags="${compileflags}!-DWRF_DFI_RADAR=1"
   fi
 fi
+
+if [ -n "$WRF_CMAQ" ] ; then
+  echo building WRF with CMAQ option
+  compileflags="${compileflags}!-DWRF_CMAQ"
+fi
+
 if [ -n "$WRF_CHEM" ] ; then
   if [ $WRF_CHEM = 1 ] ; then
     echo building WRF with chemistry option

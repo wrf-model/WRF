@@ -8855,8 +8855,9 @@
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
              swdkdir,swdkdif,                               & ! jararias, 2013/08/10
-             swdkdirc                                       & ! PAJ
-             ,calc_clean_atm_diag                          &
+             swdkdirc,                                      & ! PAJ
+             calc_clean_atm_diag,                           &
+             sw_zbbcddir, sw_dirdflux, sw_difdflux          & ! WRF-CMAQ twoway coupled model
                                                                 )
 
 
@@ -9089,6 +9090,10 @@
         swdkdir(:,:), & ! Total shortwave downward direct flux (W/m2),  Dimensions: (ncol,nlay) jararias, 2013/08/10
         swdkdif(:,:), & ! Total shortwave downward diffuse flux (W/m2), Dimensions: (ncol,nlay) jararias, 2013/08/10
         swdkdirc(:,:)   ! Total shortwave downward direct flux clear sky (W/m2),  Dimensions: (ncol,nlay)
+
+      real, intent(out) :: sw_zbbcddir,   &  ! WRF-CMAQ twoway coupled model
+                           sw_dirdflux,   &  ! WRF-CMAQ twoway coupled model
+                           sw_difdflux       ! WRF-CMAQ twoway coupled model
 
 
 
@@ -9594,6 +9599,12 @@
 ! End longitude loop
       enddo
 
+! begin WRF-CMAQ twoway coupled model block
+      sw_zbbcddir = zbbcddir(1)
+      sw_dirdflux = dirdflux(1)
+      sw_difdflux = difdflux(1)
+! end WRF-CMAQ twoway coupled model block
+
       end subroutine rrtmg_sw
 
 !*************************************************************************
@@ -10001,6 +10012,7 @@ use mcica_subcol_gen_sw, only: mcica_subcol_sw
 use module_ra_rrtmg_lw, only : inirad, o3data, relcalc, reicalc, retab
 !                               mcica_random_numbers, randomNumberSequence, &
 !                               new_RandomNumberSequence, getRandomReal
+use module_ra_rrtmg_sw_cmaq
 
 CONTAINS
 
@@ -10051,8 +10063,26 @@ CONTAINS
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,yr,julian,ghg_input,                & ! jararias 2013/08
-                       obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
+                       xcoszen,yr,julian,ghg_input,               & ! jararias 2013/08
+                       obscur,                                    & ! amontornes-bcodina 2015/09 solar eclipses
+                       proceed_cmaq_sw,                           & ! WRF-CMAQ twoway coupled model
+                       nmode,                                     & ! WRF-CMAQ twoway coupled model
+                       mass_ws_i, mass_ws_j, mass_ws_k,           & ! WRF-CMAQ twoway coupled model
+                       mass_in_i, mass_in_j, mass_in_k,           & ! WRF-CMAQ twoway coupled model
+                       mass_ec_i, mass_ec_j, mass_ec_k,           & ! WRF-CMAQ twoway coupled model
+                       mass_ss_i, mass_ss_j, mass_ss_k,           & ! WRF-CMAQ twoway coupled model
+                       mass_h2o_i, mass_h2o_j, mass_h2o_k,        & ! WRF-CMAQ twoway coupled model
+                       dgn_i, dgn_j, dgn_k,                       & ! WRF-CMAQ twoway coupled model
+                       sig_i, sig_j, sig_k,                       & ! WRF-CMAQ twoway coupled model
+                       gtauxar_01, gtauxar_02, gtauxar_03,        & ! WRF-CMAQ twoway coupled model
+                       gtauxar_04, gtauxar_05,                    & ! WRF-CMAQ twoway coupled model
+                       asy_fac_01, asy_fac_02, asy_fac_03,        & ! WRF-CMAQ twoway coupled model
+                       asy_fac_04, asy_fac_05,                    & ! WRF-CMAQ twoway coupled model
+                       ssa_01, ssa_02, ssa_03,                    & ! WRF-CMAQ twoway coupled model
+                       ssa_04, ssa_05                             & ! WRF-CMAQ twoway coupled model
+                       ,sw_zbbcddir                               & ! WRF-CMAQ twoway coupled model
+                       ,sw_dirdflux                               & ! WRF-CMAQ twoway coupled model
+                       ,sw_difdflux                               & ! WRF-CMAQ twoway coupled model
                        )
 !------------------------------------------------------------------
    USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
@@ -10222,6 +10252,49 @@ CONTAINS
 ! amontornes-bcodina 2015/09 solar eclipses
 !  obscur --> degree of obscuration for solar eclipses prediction (2D)
                                REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: obscur	
+
+! begin WRF-CMAQ twoway coupled model block
+   LOGICAL, INTENT(IN) :: proceed_cmaq_sw
+
+! ** FSB items needed for new aerosol code from CMAQ
+   integer, optional, intent(in)  ::  nmode  ! number of log-normal modes
+
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(in) :: &
+         mass_ws_i, mass_ws_j, mass_ws_k,                  & ! mass cocentrations in [ ug/m**3 ] for water
+                                                             ! soluble species in each mode
+         mass_in_i, mass_in_j, mass_in_k,                  & ! mass cocentrations in [ ug/m**3 ] for water
+                                                             ! insoluble species in each mode
+         mass_ec_i, mass_ec_j, mass_ec_k,                  & ! mass cocentrations in [ ug/m**3 ] for elemental
+                                                             ! carbon species in each mode
+         mass_ss_i, mass_ss_j, mass_ss_k,                  & ! mass cocentrations in [ ug/m**3 ] for aerosol
+                                                             ! water species in each mode
+         mass_h2o_i, mass_h2o_j, mass_h2o_k,               & ! mass cocentrations in [ ug/m**3 ] for sea
+                                                             ! salt species in each mode
+         dgn_i, dgn_j, dgn_k,                              & ! geometric mean diameter of each mode  [ m ]
+         sig_i, sig_j, sig_k                                 ! geometric standard deviation of each mode
+
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(out) :: &
+         gtauxar_01,                                       & ! Aerosol optical depth of RRTMG SW band 11
+         gtauxar_02,                                       & ! Aerosol optical depth of RRTMG SW band 10
+         gtauxar_03,                                       & ! Aerosol optical depth of RRTMG SW band  9
+         gtauxar_04,                                       & ! Aerosol optical depth of RRTMG SW band  8
+         gtauxar_05,                                       & ! Aerosol optical depth of RRTMG SW band  7
+         asy_fac_01,                                       & ! asymmetry factor of RRTMG SW band 11
+         asy_fac_02,                                       & ! asymmetry factor of RRTMG SW band 10
+         asy_fac_03,                                       & ! asymmetry factor of RRTMG SW band  9
+         asy_fac_04,                                       & ! asymmetry factor of RRTMG SW band  8
+         asy_fac_05,                                       & ! asymmetry factor of RRTMG SW band  7
+         ssa_01,                                           & ! single scattering albedo of RRTMG SW band 11
+         ssa_02,                                           & ! single scattering albedo of RRTMG SW band 10
+         ssa_03,                                           & ! single scattering albedo of RRTMG SW band  9
+         ssa_04,                                           & ! single scattering albedo of RRTMG SW band  8
+         ssa_05                                              ! single scattering albedo of RRTMG SW band  7
+
+   REAL, DIMENSION( ims:ime, jms:jme ), optional, INTENT(OUT) :: &
+         sw_zbbcddir,                                      &  ! clearsky downward direct shortwave flux (w/m2)
+         sw_dirdflux,                                      &  ! Direct downward shortwave surface flux
+         sw_difdflux                                          ! Diffuse downward shortwave surface flux
+! end WRF-CMAQ twoway coupled model block
 
 !  LOCAL VARS
  
@@ -10407,6 +10480,34 @@ CONTAINS
     LOGICAL :: predicate
 
     REAL :: da, eot ! jararias, 14/08/2013
+
+! begin WRF-CMAQ twoway coupled model block
+#if ( WRF_CMAQ == 1 )
+    REAL, DIMENSION (3) :: INMASS_ws,  &  ! holds mass cocentrations in [ ug/m**3 ] for 
+                                          ! water soluble species in all three modes
+                           INMASS_in,  &  ! holds mass cocentrations in [ ug/m**3 ] for
+                                          ! water insoluble species in all three modes
+                           INMASS_ec,  &  ! holds mass cocentrations in [ ug/m**3 ] for
+                                          ! elemental carbon species in all three modes
+                           INMASS_ss,  &  ! holds mass cocentrations in [ ug/m**3 ] for
+                                          ! aerosol water species in all three modes
+                           INMASS_h2o, &  ! holds mass cocentrations in [ ug/m**3 ] for
+                                          ! sea salt species in all three modes
+                           INDGN,      &  ! holds geometric mean diameter in all three modes
+                           INSIG          ! holds geometric standard deviation in all three modes
+#endif
+    REAL :: xtauaer,                   &  ! temporary variable for Aerosol Optical Depth
+            waer,                      &  ! temporary variable for single scattering albedo
+            gaer,                      &  ! temporary variable for symmetry factor
+            delta_z,                   &  ! layer thickness
+            loc_sw_zbbcddir,           &  ! clearsky downward direct shortwave flux (w/m2)
+            loc_sw_dirdflux,           &  ! Direct downward shortwave surface flux
+            loc_sw_difdflux               ! Diffuse downward shortwave surface flux
+
+    INTEGER :: modes                      ! number of modes
+
+    character (len = 50) :: mystr         ! temporary character string
+! end WRF-CMAQ twoway coupled model block
 
     CHARACTER(LEN=256) :: message
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
@@ -11134,6 +11235,91 @@ CONTAINS
 
 ! ... Aerosol effects. Added aerosol feedbacks from Chem , 03/2010 -czhao
 !
+#if ( WRF_CMAQ == 1 )
+      do nb = 1, nbndsw
+         do k = kts,kte+1
+            tauaer(ncol,k,nb) = 0.
+            ssaaer(ncol,k,nb) = 1.
+            asmaer(ncol,k,nb) = 0.
+
+            if (proceed_cmaq_sw) then
+               INMASS_ws(1)  = mass_ws_i(i,k,j)
+               INMASS_ws(2)  = mass_ws_j(i,k,j)
+               INMASS_ws(3)  = mass_ws_k(i,k,j)
+               INMASS_in(1)  = mass_in_i(i,k,j)
+               INMASS_in(2)  = mass_in_j(i,k,j)
+               INMASS_in(3)  = mass_in_k(i,k,j)
+               INMASS_ec(1)  = mass_ec_i(i,k,j)
+               INMASS_ec(2)  = mass_ec_j(i,k,j)
+               INMASS_ec(3)  = mass_ec_k(i,k,j)
+               INMASS_ss(1)  = mass_ss_i(i,k,j)
+               INMASS_ss(2)  = mass_ss_j(i,k,j)
+               INMASS_ss(3)  = mass_ss_k(i,k,j)
+               INMASS_h2o(1) = mass_h2o_i(i,k,j)
+               INMASS_h2o(2) = mass_h2o_j(i,k,j)
+               INMASS_h2o(3) = mass_h2o_k(i,k,j)
+               INDGN(1)      = dgn_i(i,k,j)
+               INDGN(2)      = dgn_j(i,k,j)
+               INDGN(3)      = dgn_k(i,k,j)
+               INSIG(1)      = sig_i(i,k,j)
+               INSIG(2)      = sig_j(i,k,j)
+               INSIG(3)      = sig_k(i,k,j)
+
+               delta_z    = dz8w(i,k,j)
+
+               call get_aerosol_Optics_RRTMG_SW( nb,nmode,delta_z,    &
+                     INMASS_ws, INMASS_in, INMASS_ec, INMASS_ss,      &
+                     INMASS_h2o,  INDGN, INSIG,                       &
+                     xtauaer, waer, gaer  )
+
+               write (mystr, *) xtauaer
+               if (trim(mystr) == ' NaN') then
+                  write (6, '(a13, 2i5)')     ' ==d==       ', nb, nmode
+                  write (6, '(a13, 5e18.10)') ' ==d== delta ', delta_z
+                  write (6, '(a13, 5e18.10)') ' ==d== ws    ', INMASS_ws
+                  write (6, '(a13, 5e18.10)') ' ==d== in    ', INMASS_in
+                  write (6, '(a13, 5e18.10)') ' ==d== ec    ', INMASS_ec
+                  write (6, '(a13, 5e18.10)') ' ==d== ss    ', INMASS_ss
+                  write (6, '(a13, 5e18.10)') ' ==d== h2o   ', INMASS_h2o
+                  write (6, '(a13, 5e18.10)') ' ==d== indgn ', INDGN
+                  write (6, '(a13, 5e18.10)') ' ==d== insig ', INSIG
+               end if
+
+               if (nb == 11) then
+                  gtauxar_01 (i,k,j) = xtauaer
+                  asy_fac_01 (i,k,j) = gaer
+                  ssa_01 (i,k,j)     = waer
+               else if (nb == 10) then
+                  gtauxar_02 (i,k,j) = xtauaer
+                  asy_fac_02 (i,k,j) = gaer
+                  ssa_02 (i,k,j)     = waer
+               else if (nb == 9) then
+                  gtauxar_03 (i,k,j) = xtauaer
+                  asy_fac_03 (i,k,j) = gaer
+                  ssa_03 (i,k,j)     = waer
+               else if (nb == 8) then
+                  gtauxar_04 (i,k,j) = xtauaer
+                  asy_fac_04 (i,k,j) = gaer
+                  ssa_04 (i,k,j)     = waer
+               else if (nb == 7) then
+                  gtauxar_05 (i,k,j) = xtauaer
+                  asy_fac_05 (i,k,j) = gaer
+                  ssa_05 (i,k,j)     = waer
+               end if
+
+               tauaer(ncol,k,nb) = xtauaer
+               ssaaer(ncol,k,nb) = waer
+               asmaer(ncol,k,nb) = gaer
+            end if
+         enddo ! loop over layers
+         if (proceed_cmaq_sw) then
+! No aerosols in top layer above model top (kte+1).
+            tauaer(ncol, kte+1 ,nb) = 0.
+            ssaaer(ncol, kte+1 ,nb) = 1.
+            asmaer(ncol, kte+1 ,nb) = 0.
+         end if
+      enddo ! loop over wavelengths
+#else
       do nb = 1, nbndsw
       do k = kts,kte+1
          tauaer(ncol,k,nb) = 0.
@@ -11152,6 +11338,7 @@ CONTAINS
                end do
             end do
       end if
+#endif
 
 #if ( WRF_CHEM == 1 )
    IF ( AER_RA_FEEDBACK == 1) then
@@ -11281,8 +11468,17 @@ CONTAINS
              swdkdir, swdkdif,                     &  ! jararias, 2012/08/10
              swdkdirc                              &  ! PAJ
              ,calc_clean_atm_diag                 &
+             ,loc_sw_zbbcddir                      &  ! WRF-CMAQ twoway coupled model
+             ,loc_sw_dirdflux                      &  ! WRF-CMAQ twoway coupled model
+             ,loc_sw_difdflux                      &  ! WRF-CMAQ twoway coupled model
                                                    )
 
+         ! WRF-CMAQ twoway coupled model
+         if (present(sw_zbbcddir)) then
+            sw_zbbcddir(i,j) = loc_sw_zbbcddir
+            sw_dirdflux(i,j) = loc_sw_dirdflux
+            sw_difdflux(i,j) = loc_sw_difdflux
+         end if
 
 ! Output net absorbed shortwave surface flux and shortwave cloud forcing
 ! at the top of atmosphere (W/m2)
@@ -11340,6 +11536,25 @@ CONTAINS
             rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
       else
+
+         if (proceed_cmaq_sw) then   ! this is for WRF-CMAQ twoway coupled model
+            gtauxar_01 (i,:,j) = 0.0
+            gtauxar_02 (i,:,j) = 0.0
+            gtauxar_03 (i,:,j) = 0.0
+            gtauxar_04 (i,:,j) = 0.0
+            gtauxar_05 (i,:,j) = 0.0
+            asy_fac_01 (i,:,j) = 0.0
+            asy_fac_02 (i,:,j) = 0.0
+            asy_fac_03 (i,:,j) = 0.0
+            asy_fac_04 (i,:,j) = 0.0
+            asy_fac_05 (i,:,j) = 0.0
+            ssa_01 (i,:,j)     = 0.0
+            ssa_02 (i,:,j)     = 0.0
+            ssa_04 (i,:,j)     = 0.0
+            ssa_04 (i,:,j)     = 0.0
+            ssa_05 (i,:,j)     = 0.0
+         end if
+
          if (present(swupt)) then 
 ! Output up and down toa fluxes for total and clear sky
             swupt(i,j)     = 0.

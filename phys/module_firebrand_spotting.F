@@ -9,6 +9,7 @@
 
 MODULE module_firebrand_spotting
 
+    USE, INTRINSIC :: IEEE_ARITHMETIC
     USE module_domain,       ONLY : get_ijk_from_grid, domain               ! grid
     USE module_configure,    ONLY : grid_config_rec_type                    ! config_flags
     USE module_symbols_util, ONLY : WRFU_TimeInterval, WRFU_TimeIntervalGet, WRFU_TimeIntervalSet
@@ -2332,9 +2333,9 @@ END FUNCTION order_val
             !-------------------------------------------------------------------------------
             sparse_mask = .FALSE. 
 
-            WHERE (ISNAN(fs_p_mass) .OR. ISNAN(fs_p_diam) .OR. &
-                   ISNAN(fs_p_effd) .OR. ISNAN(fs_p_temp) .OR. &
-                   ISNAN(fs_p_tvel)) fs_p_effd = ZERO_dp ! ediam=zero will be removed in remove_br
+            WHERE (IEEE_IS_NAN(fs_p_mass) .OR. IEEE_IS_NAN(fs_p_diam) .OR. &
+                   IEEE_IS_NAN(fs_p_effd) .OR. IEEE_IS_NAN(fs_p_temp) .OR. &
+                   IEEE_IS_NAN(fs_p_tvel)) fs_p_effd = ZERO_dp ! ediam=zero will be removed in remove_br
 
 
             !===============================================================================
@@ -3141,7 +3142,7 @@ END FUNCTION order_val
                 CYCLE ! Skip physics              
             ENDIF
 
-            IF (ISNAN(zout(pp)) .OR. ABS(zout(pp)) > HUGE(1.0)) THEN
+            IF (IEEE_IS_NAN(zout(pp)) .OR. ABS(zout(pp)) > HUGE(1.0)) THEN
                 fs_p_prop(pp) = p_properties(ZERO_DP, ZERO_DP, ZERO_DP, ZERO_DP, ZERO_DP)
                 zout(pp) = ZERO_dp   
                 xout(pp) = ZERO_dp 
@@ -3192,7 +3193,7 @@ END FUNCTION order_val
                                      loc_d = loc_d,   &     
                                      fbprop  = fs_p_prop(pp))
             
-            IF (ISNAN(fs_p_prop(pp)%p_tvel)) THEN
+            IF (IEEE_IS_NAN(fs_p_prop(pp)%p_tvel)) THEN
                 fs_p_prop(pp) = p_properties(ZERO_DP, ZERO_DP, ZERO_DP, ZERO_DP, ZERO_DP)
                 zout(pp) = ZERO_dp
 

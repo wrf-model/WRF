@@ -7,6 +7,7 @@ RM      =       rm -f
 
 MODULES = \
 	module_bep_bem_helper.o \
+	complex_number_module.o \
 	module_cam_shr_kind_mod.o \
 	module_cam_support.o \
 	module_cam_shr_const_mod.o \
@@ -116,6 +117,7 @@ MODULES = \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
+	module_ra_rrtmg_aero_optical_util_cmaq.o \
 	module_ra_rrtmg_lwf.o  \
 	module_ra_rrtmg_swf.o  \
         module_ra_rrtmg_lwk.o  \

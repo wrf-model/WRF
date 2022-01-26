@@ -108,6 +108,16 @@ framework_only : configcheck
 
 wrf : framework_only
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
+	if [ ! -f run/MPTABLE.TBL ] ; then \
+	   echo " " ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo "Error Error Error NoahMP submodule files not populating WRF directories" ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo " " ; \
+	   exit 31 ; \
+	else \
+	   echo "DAVE ALL IS WELL IN PHYSICS LAND" ; \
+	fi
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi

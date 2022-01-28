@@ -224,17 +224,14 @@ Namelist variables specifically for the WPS input for real:
  maxw_horiz_pres_diff                = 5000     ! Pressure threshold (Pa).  For using the level of max winds, when the
                                                   pressure difference between neighboring values exceeds this maximum,
                                                   the variable is NOT inserted into the column for vertical interpolation.
-                                                  ARW real only.
  trop_horiz_pres_diff                = 5000     ! Pressure threshold (Pa).  For using the tropopause level, when the
                                                   pressure difference between neighboring values exceeds this maximum,
                                                   the variable is NOT inserted into the column for vertical interpolation.
-                                                  ARW real only.
  maxw_above_this_level               = 30000    ! Minimum height (actually it is pressure in Pa) to allow using the 
                                                   level of max wind information in real.  With a value of 300 hPa, then
                                                   a max wind value at 500 hPa will be ignored.
-                                                  ARW real only.
  use_maxw_level                                   0=do not use max wind speed level in vertical interpolation inside
-                                                  of the ARW real program, 1 = use level
+                                                  of the real program, 1 = use level
  use_trop_level                                   as above, with tropopause level data
  sfcp_to_sfcp                        = .false.  ! Optional method to compute model's surface pressure when incoming
                                                   data only has surface pressure and terrain, but not SLP
@@ -256,7 +253,7 @@ Namelist variables specifically for the WPS input for real:
  hypsometric_opt                     = 2,       ! = 1: default method
                                                   = 2: it uses an alternative way (less biased 
                                                   when compared against input data) to compute height in program 
-                                                  real and pressure in model (ARW only). 
+                                                  real and pressure in model.
  p_top_requested                     = 5000     ! p_top (Pa) to use in the model
  vert_refine_fact                    = 1        ! vertical refinement factor for ndown, not used for concurrent vertical grid refinement
  vert_refine_method (max_dom)        = 0        ! vertical refinement method (new in 3.7)
@@ -395,8 +392,7 @@ Namelist variables for controlling the automatic moving nest:
                                                   >1: for both: will be used for decomposition
 
 Namelist variables for controlling the adaptive time step option:
-                   These options are only valid for the ARW core.  
- use_adaptive_time_step              = .false.  ! T/F use adaptive time stepping, ARW only
+ use_adaptive_time_step              = .false.  ! T/F use adaptive time stepping.
  step_to_output_time                 = .true.   ! if adaptive time stepping, T/F modify the
                                                   time steps so that the exact history time is reached
  target_cfl(max_dom)                 = 1.2,1.2  ! vertical and horizontal CFL <= to this value implies
@@ -670,8 +666,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, NCEP Global Forecast System scheme 
                                      = 4, QNSE surface layer
                                      = 5, MYNN surface layer
-                                     = 7, Pleim-Xiu surface layer (ARW only)
-                                     = 10, TEMF surface layer (ARW only)
+                                     = 7, Pleim-Xiu surface layer
+                                     = 10, TEMF surface layer
                                      = 91, Old MM5 scheme (previously option 1)
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
@@ -682,7 +678,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 4, Noah-MP land-surface model (see additional &noah_mp namelist)
                                      = 5, Community Land Model version 4 (CLM4), adapted from CAM
                                      = 6, Community Terrestrial Systems Model (CTSM). See doc/README.CTSM for info on running this option.
-                                     = 7, Pleim-Xiu LSM (ARW)
+                                     = 7, Pleim-Xiu LSM
                                      = 8, Simplified Simple Biosphere Model (SSiB) 
                                           - can be used with Dudhia/RRTM, CAM or RRTMG radiation options
 
@@ -727,14 +723,14 @@ Namelist variables for controlling the adaptive time step option:
                                           sf_sfclay_physics=1 or 2 as well as 5
                                      = 6, MYNN 3rd level TKE scheme, works only
                                           MYNNSFC (sf_sfclay_physics = 5)
-                                     = 7, ACM2 (Pleim) PBL (ARW)
+                                     = 7, ACM2 (Pleim) PBL
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
-                                     = 10, TEMF (Total Energy Mass Flux) scheme (ARW only)
+                                     = 10, TEMF (Total Energy Mass Flux) scheme
                                           sf_sfclay_physics=10
                                      = 11, Shin-Hong 'scale-aware' PBL scheme
-                                     = 12, Grenier-Bretherton-McCaa scheme (ARW only)
-                                     = 16, TKE+TKE dissipation rate (epsilon) scheme (ARW only)
+                                     = 12, Grenier-Bretherton-McCaa scheme
+                                     = 16, TKE+TKE dissipation rate (epsilon) scheme
                                            works with surface layer options 1,91,2,5.
                                      = 99, MRF scheme
 
@@ -801,15 +797,15 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, Grell-Freitas ensemble scheme
                                      = 4, Scale-aware GFS Simplified Arakawa-Schubert (SAS) scheme 
                                      = 5, Grell 3D ensemble scheme
-                                     = 6, Modifed Tiedtke scheme (ARW only)
+                                     = 6, Modifed Tiedtke scheme
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
-                                     = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
+                                     = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs
                                      = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, KIM Simplified Arakawa-Schubert scheme (KSAS) across gray-zone resolutions
                                      = 16, A newer Tiedtke scheme
                                      = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
                                      = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
-                                     = 96, Previous NEW GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
+                                     = 96, Previous NEW GFS simplified Arakawa-Schubert scheme from YSU
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
 
@@ -839,7 +835,7 @@ Namelist variables for controlling the adaptive time step option:
  cudt (max_dom)                      = 0,       ! minutes between cumulus physics calls
  kfeta_trigger                       KF trigger option (cu_physics=1 only):
                                      = 1, default option
-                                     = 2, moisture-advection based trigger (Ma and Tan [2009]) - ARW only
+                                     = 2, moisture-advection based trigger (Ma and Tan [2009])
                                      = 3, RH-dependent additional perturbation to option 1 (JMA)
  cugd_avedx                          ; number of grid boxes over which subsidence is spread.
                                      = 1, default, for large grid distances
@@ -1014,7 +1010,7 @@ Namelist variables for controlling the adaptive time step option:
                                                       2 = Zilitinkevitch (czil=0.1))
                                                       for mynn sfc (0=Zilitinkevitch (def),1=Chen-Zhang,2=mod Yang,3=const zt)
  mp_tend_lim                         = 10.,     ! limit on temp tendency from mp latent heating from radar data assimilation
- prec_acc_dt (max_dom)               = 0.,      ! number of minutes in precipitation bucket (ARW only) - will add three
+ prec_acc_dt (max_dom)               = 0.,      ! number of minutes in precipitation bucket - will add three
                                                   new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc
  topo_wind (max_dom)                 = 0,       ! 1 = improve effect of topography for surface winds.
  ua_phys                             = .false.  ! Option to activate UA Noah changes: a different snow-cover physics in
@@ -1636,7 +1632,7 @@ The following are for observation nudging:
  swap_pole_with_next_j               = .false.  ! T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
  actual_distance_average             = .false.  ! T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
  gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
-                                     = 1       ; for running the WRF-ARW with its gravity wave drag
+                                     = 1       ; for running with gravity wave drag (Choi and Hong 2015)
                                      = 3       ; NOAA/GSL gravity wave drag and turbulent orographic form drag
  gwd_diags                           = 0       ; set to 1 to output diagnostics for gwd_opt = 3
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
@@ -1856,7 +1852,7 @@ Hybrid Vertical Coordinate (HVC) vs Terrain Following (TF)
 
 Traditional / full fields model output
 
-The ARW WRF model output may be modified at run-time to also include a stream that contains
+The WRF model output may be modified at run-time to also include a stream that contains
 more traditional fields: temperature, pressure, geopotential height, etc. The flag needs to 
 be activated in the namelist (diag_nwp2 = 1). In the registry.trad_fields, the output stream 
 is "h1", so that stream needs to be explicitly requested in the namelist.input file.

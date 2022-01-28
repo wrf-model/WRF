@@ -803,8 +803,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, KIM Simplified Arakawa-Schubert scheme (KSAS) across gray-zone resolutions
                                      = 16, A newer Tiedtke scheme
-                                     = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
-                                     = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
+                                     = 94, 2015 GFS Simplified Arakawa-Schubert scheme (from HWRF, use with caution) 
+                                     = 95, Previous GFS Simplified Arakawa-Schubert scheme (from HWRF, use with caution) 
                                      = 96, Previous NEW GFS simplified Arakawa-Schubert scheme from YSU
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme

@@ -38,12 +38,13 @@
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
 !..Last modified: 24 Jan 2018   Aerosol additions to v3.5.1 code 9/2013
 !..                 Cloud fraction additions 11/2014 part of pre-v3.7
-!..                 2-moment graupel/hail additions Aug. 2018 (released in v4.4)
+!..                 3-moment graupel/hail additions Aug. 2018 (released in v4.4)
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
 !
 
+#define OLDGRAUPEL
 
       MODULE module_mp_thompson
 
@@ -70,11 +71,9 @@
       REAL, PARAMETER, PRIVATE:: rho_w = 1000.0
       REAL, PRIVATE:: rho_s = 100.0
       REAL, PARAMETER, PRIVATE:: rho_i = 890.0
-      INTEGER, PARAMETER, PRIVATE:: NRHG9 = 9
-      INTEGER, PARAMETER, PRIVATE:: NRHG1 = 1 ! NRHG will be set to 1 for mp8,28 or 9 for mp38
-      REAL, DIMENSION(NRHG9), PARAMETER, PRIVATE:: &
+      INTEGER, PARAMETER, PRIVATE:: NRHG = 9
+      REAL, DIMENSION(NRHG), PARAMETER, PRIVATE:: &
            rho_g = (/50., 100., 200., 300., 400., 500., 600., 700., 800./)
-      INTEGER, PARAMETER :: idx_bg1 = 5 ! representative rho_g index when NRHG=1
 
 !..Prescribed number of cloud droplets.  Set according to known data or
 !.. roughly 100 per cc (100.E6 m^-3) for Maritime cases and
@@ -127,11 +126,12 @@
       REAL, PARAMETER, PRIVATE:: bm_r = 3.0
       REAL, PARAMETER, PRIVATE:: am_s = 0.069
       REAL, PARAMETER, PRIVATE:: bm_s = 2.0
-      REAL, DIMENSION(NRHG9), PARAMETER,PRIVATE:: am_g = (/              &
+      REAL, DIMENSION(NRHG), PARAMETER,PRIVATE:: am_g = (/              &
      &            PI*rho_g(1)/6.0, PI*rho_g(2)/6.0, PI*rho_g(3)/6.0,    &
      &            PI*rho_g(4)/6.0, PI*rho_g(5)/6.0, PI*rho_g(6)/6.0,    &
      &            PI*rho_g(7)/6.0, PI*rho_g(8)/6.0, PI*rho_g(9)/6.0 /)
       REAL, PARAMETER, PRIVATE:: bm_g = 3.0
+      INTEGER, PARAMETER, PRIVATE:: idx_bg1 = 5
       REAL, PARAMETER, PRIVATE:: am_i = PI*rho_i/6.0
       REAL, PARAMETER, PRIVATE:: bm_i = 3.0
 
@@ -146,11 +146,11 @@
       REAL, PARAMETER, PRIVATE:: fv_s = 100.0
       REAL, PARAMETER, PRIVATE:: av_g_old = 442.0
       REAL, PARAMETER, PRIVATE:: bv_g_old = 0.89
-      REAL, DIMENSION(NRHG9), PRIVATE:: & ! Computed from A. Heymsfield: Best - Reynolds relation
+      REAL, DIMENSION(NRHG), PRIVATE:: & ! Computed from A. Heymsfield: Best - Reynolds relation
      &    av_g = (/ 45.9173813, 67.0867386, 98.0158463, 122.353378,     &
      &              143.204224, 161.794724, 178.762115, 194.488785,     &
      &              209.225876/)
-      REAL, DIMENSION(NRHG9), PRIVATE:: & ! Computed from A. Heymsfield: Best - Reynolds relation
+      REAL, DIMENSION(NRHG), PRIVATE:: & ! Computed from A. Heymsfield: Best - Reynolds relation
      &    bv_g = (/0.640961647, 0.640961647, 0.640961647, 0.640961647,  &
      &             0.640961647, 0.640961647, 0.640961647, 0.640961647,  &
      &             0.640961647/)
@@ -400,9 +400,9 @@
       REAL, PRIVATE:: ore1, org1, org2, org3, obmr
       REAL, DIMENSION(17), PRIVATE:: cse, csg
       REAL, PRIVATE:: oams, obms, ocms
-      REAL, DIMENSION(12,NRHG9), PRIVATE:: cge, cgg
+      REAL, DIMENSION(12,NRHG), PRIVATE:: cge, cgg
       REAL, PRIVATE:: oge1, ogg1, ogg2, ogg3, obmg
-      REAL, DIMENSION(NRHG9), PRIVATE:: oamg, ocmg
+      REAL, DIMENSION(NRHG), PRIVATE:: oamg, ocmg
 
 !..Declaration of precomputed constants in various rate eqns.
       REAL:: t1_qr_qc, t1_qr_qi, t2_qr_qi, t1_qg_qc, t1_qs_qc, t1_qs_qi
@@ -456,13 +456,10 @@
 
       if (PRESENT(ng)) then
          is_hail_aware = .TRUE.
-         NRHG = NRHG9
       else
-         NRHG = NRHG1
-         av_g(idx_bg1) = av_g_old
-         bv_g(idx_bg1) = bv_g_old
+         av_g(6) = av_g_old
+         bv_g(6) = bv_g_old
       endif
-      idx_bgmax = MAX(NRHG, idx_bg1)
 
       is_aerosol_aware = .FALSE.
       micro_init = .FALSE.
@@ -664,7 +661,7 @@
 !..Compute min ice diam from mass, min snow/graupel mass from diam.
       D0i = (xm0i/am_i)**(1./bm_i)
       xm0s = am_s * D0s**bm_s
-      xm0g = am_g(idx_bgmax) * D0g**bm_g
+      xm0g = am_g(NRHG) * D0g**bm_g
 
 !..These constants various exponents and gamma() assoc with cloud,
 !.. rain, snow, and graupel.
@@ -1030,7 +1027,7 @@
       xam_s = am_s
       xbm_s = bm_s
       xmu_s = mu_s
-      xam_g = am_g(idx_bg1)
+      xam_g = am_g(5)
       xbm_g = bm_g
       xmu_g = mu_g
       call radar_init
@@ -1131,7 +1128,7 @@
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max, nr_max
       REAL:: nwfa1
       INTEGER:: i, j, k
-      REAL:: ygra1, zans1, mvd_r
+      REAL:: xslw1, ygra1, zans1, mvd_r
       DOUBLE PRECISION:: lamg, lam_exp, lamr, N0_min, N0_exp
       INTEGER:: k_0, k_inj
       INTEGER:: imax_qc,imax_qr,imax_qi,imax_qs,imax_qg,imax_ni,imax_nr
@@ -1264,10 +1261,26 @@
 
             do k = kte, kts, -1
                if (qg1d(k).gt.R1) then
+#ifdef OLDGRAUPEL
+                  N0_min = gonv_max
+                  xslw1 = 0.01
+                  if (k.gt.k_0 .and. qr1d(k).gt.1.E-8) then
+                     lamr = (am_r*crg(3)*org2*max(R2,nr1d(k))/qr1d(k))**obmr
+                     mvd_r = (3.0 + mu_r + 0.672) / lamr
+                     if (mvd_r.gt.100E-6) xslw1 = 4.01 + alog10(mvd_r)
+                  endif
+                  ygra1 = 4.31 + alog10(max(5.E-5, qg1d(k)*rho(k)))
+                  zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
+                  N0_exp = 10.**(zans1)
+                  N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
+                  N0_min = MIN(N0_exp, N0_min)
+                  N0_exp = N0_min
+#else
                   ygra1 = alog10(max(1.E-9, qg1d(k)*rho(k)))
                   zans1 = 3.0 + 2./7.*(ygra1+8.)
                   zans1 = MAX(2., MIN(zans1, 6.))
                   N0_exp = 10.**(zans1)
+#endif
                   lam_exp = (N0_exp*am_g(idx_bg1)*cgg(1,1)/(rho(k)*qg1d(k)))**oge1
                   lamg = lam_exp * (cgg(3,1)*ogg2*ogg1)**obmg
                   ng1d(k) = cgg(2,1)*ogg3*rho(k)*qg1d(k)*lamg**bm_g / am_g(idx_bg1)
@@ -1566,8 +1579,8 @@
            prs_ide
 
       DOUBLE PRECISION, DIMENSION(kts:kte):: prg_scw, prg_rfz, prg_gde, &
-           prg_gcw, prg_rci, prg_rcs, prg_rcg, prg_ihm,                 &
-           png_rcs, png_rcg, png_scw, png_gde,                          &
+           prg_gcw, prg_rci, prg_rcs, prg_rcg, prg_ihm, prg_sml,        &
+           png_rcs, png_rcg, png_sml, png_scw, png_gde,                 &
            pbg_scw, pbg_rfz, pbg_gcw, pbg_rci, pbg_rcs, pbg_rcg,        &
            pbg_sml, pbg_gml
 
@@ -1623,7 +1636,7 @@
       INTEGER, DIMENSION(5):: ksed1
       INTEGER:: nir, nis, nig, nii, nic, niin
       INTEGER:: idx_tc, idx_t, idx_s, idx_g1, idx_g, idx_r1, idx_r,     &
-                idx_i1, idx_i, idx_c, idx, idx_d, idx_n, idx_in, idx_bgmax
+                idx_i1, idx_i, idx_c, idx, idx_d, idx_n, idx_in
       INTEGER, DIMENSION(kts:kte):: idx_bg
 
       LOGICAL:: melti, no_micro
@@ -1739,6 +1752,8 @@
          prg_rcg(k) = 0.
          prg_ihm(k) = 0.
          !   new source/sink terms for 3-moment graupel
+         prg_sml(k) = 0.
+         png_sml(k) = 0.
          png_scw(k) = 0.
          png_rcs(k) = 0.
          png_rcg(k) = 0.
@@ -1915,10 +1930,10 @@
             L_qg(k) = .true.
             rg(k) = qg1d(k)*rho(k)
             ng(k) = MAX(R2, ng1d(k)*rho(k))
-            rb(k) = MAX(qg1d(k)/rho_g(idx_bgmax), qb1d(k))
+            rb(k) = MAX(qg1d(k)/rho_g(NRHG), qb1d(k))
             rb(k) = MIN(qg1d(k)/rho_g(1), rb(k))
             qb1d(k) = rb(k)
-            idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/rb(k) *0.01)+1,idx_bgmax))
+            idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/rb(k) *0.01)+1,NRHG))
             if (ng(k).le. R2) then
                mvd_g(k) = 1.5E-3
                lamg = (3.0 + mu_g + 0.672) / mvd_g(k)
@@ -1942,7 +1957,7 @@
             idx_bg(k) = idx_bg1
             rg(k) = R1
             ng(k) = R2
-            rb(k) = R1/rho(k)/rho_g(idx_bgmax)
+            rb(k) = R1/rho(k)/rho_g(NRHG)
             L_qg(k) = .false.
          endif
          if (.not. is_hail_aware) idx_bg(k) = idx_bg1
@@ -2912,7 +2927,7 @@
          endif
 
 !..Snow conservation.
-         sump = prs_sde(k) - prs_ihm(k) - prr_sml(k) &
+         sump = prs_sde(k) - prs_ihm(k) - prr_sml(k) - prg_sml(k) &
                 + prs_rcs(k)
          rate_max = -rs(k)*odts
          if (sump.lt. rate_max .and. L_qs(k)) then
@@ -2921,6 +2936,7 @@
           prs_ihm(k) = prs_ihm(k) * ratio
           prr_sml(k) = prr_sml(k) * ratio
           prs_rcs(k) = prs_rcs(k) * ratio
+          prg_sml(k) = prg_sml(k) * ratio
          endif
 
 !..Graupel conservation.
@@ -3091,20 +3107,20 @@
 !..Snow tendency
          qsten(k) = qsten(k) + (prs_iau(k) + prs_sde(k) + prs_sci(k)    &
                       + prs_scw(k) + prs_rcs(k) + prs_ide(k)            &
-                      - prs_ihm(k) - prr_sml(k))                        &
+                      - prs_ihm(k) - prr_sml(k) - prg_sml(k))           &
                       * orho
 
 !..Graupel tendency
          qgten(k) = qgten(k) + (prg_scw(k) + prg_rfz(k) &
                       + prg_gde(k) + prg_rcg(k) + prg_gcw(k) &
                       + prg_rci(k) + prg_rcs(k) - prg_ihm(k) &
-                      - prr_gml(k))                          &
+                      - prr_gml(k) + prg_sml(k))                        &
                       * orho
 
 !..Graupel number tendency
          ngten(k) = ngten(k) + (png_scw(k) + pnr_rfz(k) - png_rcg(k)    &
                       + pnr_rci(k) + png_rcs(k) + png_gde(k)            &
-                      - pnr_gml(k)) * orho
+                      + png_sml(k) - pnr_gml(k)) * orho
 
 !..Graupel volume mixing ratio tendency
          qbten(k) = qbten(k) + (pbg_scw(k) + pbg_rfz(k)                 &
@@ -3117,7 +3133,7 @@
 !.. 3.0 times minimum size (D0g) and 25 mm.
          xrg=MAX(R1,(qg1d(k) + qgten(k)*dtsave)*rho(k))
          xng=MAX(R2,(ng1d(k) + ngten(k)*dtsave)*rho(k))
-         xrb=MAX(xrg/rho(k)/rho_g(idx_bgmax),(qb1d(k) + qbten(k)*dtsave))
+         xrb=MAX(xrg/rho(k)/rho_g(NRHG),(qb1d(k) + qbten(k)*dtsave))
          xrb=MIN(xrg/rho(k)/rho_g(1), xrb)
 
          if (xrg .gt. R1) then
@@ -3125,7 +3141,7 @@
             mvd_g(k) = (3.0 + mu_g + 0.672) / lamg
 
       if(debug_flag) then
-           xrho_g = MAX(rho_g(1),MIN(rg(k)/rho(k)/rb(k),rho_g(idx_bgmax)))
+           xrho_g = MAX(rho_g(1),MIN(rg(k)/rho(k)/rb(k),rho_g(NRHG)))
            afall = a_coeff*((4.0*xrho_g*9.8)/(3.0*rho(k)))**b_coeff
            afall = afall * visco(k)**(1.0-2.0*b_coeff)
            vtg1 = rhof(k)*afall*cgg(6,idx_bg(k))*ogg3 / lamg**bfall
@@ -3134,7 +3150,7 @@
          CALL wrf_debug(0, mp_debug)
          write(mp_debug, *) 'DEBUG: qgten: ', qgten(k), prg_scw(k), prg_rfz(k), prg_gde(k), prg_rcg(k), prg_gcw(k), prg_rci(k), prg_rcs(k), prg_ihm(k), prr_gml(k)
          CALL wrf_debug(0, mp_debug)
-         write(mp_debug, *) 'DEBUG: ngten: ', ngten(k), png_scw(k), pnr_rfz(k), png_rcg(k), pnr_rci(k), png_rcs(k), pnr_gml(k)
+         write(mp_debug, *) 'DEBUG: ngten: ', ngten(k), png_scw(k), pnr_rfz(k), png_rcg(k), pnr_rci(k), png_rcs(k), png_sml(k), pnr_gml(k)
          CALL wrf_debug(0, mp_debug)
          write(mp_debug, *) 'DEBUG: qbten: ', qbten(k), pbg_scw(k), pbg_rfz(k), pbg_gcw(k), pbg_rci(k), pbg_rcs(k), pbg_rcg(k), pbg_sml(k), pbg_gml(k)
          CALL wrf_debug(0, mp_debug)
@@ -3267,13 +3283,13 @@
                L_qg(k) = .true.
                rg(k) = (qg1d(k) + qgten(k)*DT)*rho(k)
                ng(k) = MAX(R2, (ng1d(k) + ngten(k)*DT)*rho(k))
-               rb(k) = MAX(rg(k)/rho(k)/rho_g(idx_bgmax), qb1d(k) + qbten(k)*DT)
+               rb(k) = MAX(rg(k)/rho(k)/rho_g(NRHG), qb1d(k) + qbten(k)*DT)
                rb(k) = MIN(rg(k)/rho(k)/rho_g(1), rb(k))
-               idx_bg(k) = MAX(1,MIN(NINT(rg(k)/rho(k)/rb(k) *0.01)+1,idx_bgmax))
+               idx_bg(k) = MAX(1,MIN(NINT(rg(k)/rho(k)/rb(k) *0.01)+1,NRHG))
             else
                rg(k) = R1
                ng(k) = R2
-               rb(k) = R1/rho(k)/rho_g(idx_bgmax)
+               rb(k) = R1/rho(k)/rho_g(NRHG)
                idx_bg(k) = idx_bg1
                L_qg(k) = .false.
             endif
@@ -3285,10 +3301,25 @@
          do k = kte, kts, -1
          if ((qg1d(k) + qgten(k)*DT) .gt. R1) then
             rg(k) = (qg1d(k) + qgten(k)*DT)*rho(k)
+#ifdef OLDGRAUPEL
+               N0_min = gonv_max
+               xslw1 = 0.01
+               if (k.gt.k_0 .and. qr1d(k).gt.1.E-8) then
+                  lamr = (am_r*crg(3)*org2*max(R2,nr1d(k))/qr1d(k))**obmr
+                  if (mvd_r(k).gt.100E-6) xslw1 = 4.01 + alog10(mvd_r(k))
+               endif
+               ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
+               zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
+               N0_exp = 10.**(zans1)
+               N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
+               N0_min = MIN(N0_exp, N0_min)
+               N0_exp = N0_min
+#else
                ygra1 = alog10(max(1.E-9, rg(k)))
                zans1 = 3.0 + 2./7.*(ygra1+8.)
                zans1 = MAX(2., MIN(zans1, 6.))
                N0_exp = 10.**(zans1)
+#endif
                lam_exp = (N0_exp*am_g(idx_bg(k))*cgg(1,1)/rg(k))**oge1
                lamg = lam_exp * (cgg(3,1)*ogg2*ogg1)**obmg
                ng(k) = cgg(2,1)*ogg3*rg(k)*lamg**bm_g / am_g(idx_bg(k))
@@ -3296,7 +3327,7 @@
          else
             rg(k) = R1
                ng(k) = R2
-               rb(k) = R1/rho(k)/rho_g(idx_bgmax)
+               rb(k) = R1/rho(k)/rho_g(NRHG)
             L_qg(k) = .false.
          endif
       enddo
@@ -3717,7 +3748,8 @@
            t3_vts = Kap0*csg(1)*ils1**cse(1)
            t4_vts = Kap1*Mrat**mu_s*csg(7)*ils2**cse(7)
            vts = rhof(k)*av_s * (t1_vts+t2_vts)/(t3_vts+t4_vts)
-           if (prr_sml(k) .gt. 0.0) then 
+           if (prr_sml(k) .gt. 0.0) then ! this was twet(k) > 0 in Anders version
+           !if (temp(k).gt. (T_0+0.1)) then
             SR = rs(k)/(rs(k)+rr(k))
             vtsk(k) = vts*SR + (1.-SR)*vtrk(k)
            else
@@ -3746,7 +3778,7 @@
 
           if (rg(k).gt. R1) then
            if (is_hail_aware) then
-              xrho_g = MAX(rho_g(1),MIN(rg(k)/rho(k)/rb(k),rho_g(idx_bgmax)))
+              xrho_g = MAX(rho_g(1),MIN(rg(k)/rho(k)/rb(k),rho_g(NRHG)))
               afall = a_coeff*((4.0*xrho_g*9.8)/(3.0*rho(k)))**b_coeff
               afall = afall * visco(k)**(1.0-2.0*b_coeff)
            else
@@ -3913,7 +3945,7 @@
          qbten(k) = qbten(k) - sed_b(k)*odzq*onstep(4)
          rg(k) = MAX(R1, rg(k) - sed_g(k)*odzq*DT*onstep(4))
          ng(k) = MAX(R2, ng(k) - sed_n(k)*odzq*DT*onstep(4))
-         rb(k) = MAX(R1/rho(k)/rho_g(idx_bgmax), rb(k) - sed_b(k)*odzq*DT*onstep(4))
+         rb(k) = MAX(R1/rho(k)/rho_g(NRHG), rb(k) - sed_b(k)*odzq*DT*onstep(4))
          do k = ksed1(4), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
@@ -3927,7 +3959,7 @@
                                            *odzq*DT*onstep(4))
             ng(k) = MAX(R2, ng(k) + (sed_n(k+1)-sed_n(k)) &
                                            *odzq*DT*onstep(4))
-            rb(k) = MAX(rg(k)/rho(k)/rho_g(idx_bgmax), rb(k) + (sed_b(k+1)-sed_b(k))  &
+            rb(k) = MAX(rg(k)/rho(k)/rho_g(NRHG), rb(k) + (sed_b(k+1)-sed_b(k))  &
                                            *odzq*DT*onstep(4))
          enddo
 
@@ -4060,9 +4092,9 @@
            ng1d(k) = 0.0
            qb1d(k) = 0.0
          else
-           qb1d(k) = MAX(qg1d(k)/rho_g(idx_bgmax), qb1d(k) + qbten(k)*DT)
+           qb1d(k) = MAX(qg1d(k)/rho_g(NRHG), qb1d(k) + qbten(k)*DT)
            qb1d(k) = MIN(qg1d(k)/rho_g(1), qb1d(k))
-           idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/qb1d(k) *0.01)+1,idx_bgmax))
+           idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/qb1d(k) *0.01)+1,NRHG))
            if (.not. is_hail_aware) idx_bg(k) = idx_bg1
            lamg = (am_g(idx_bg(k))*cgg(3,1)*ogg2*ng1d(k)/qg1d(k))**obmg
            mvd_g(k) = (3.0 + mu_g + 0.672) / lamg
@@ -4282,7 +4314,7 @@
           CLOSE(63)
           RETURN    ! ----- RETURN
  9234     CONTINUE
-          CALL wrf_error_fatal("Error writing "//qr_acr_qg_name//"")
+          CALL wrf_error_fatal("Error writing qr_acr_qgV3.dat")
         ENDIF
       ENDIF
 
@@ -4969,7 +5001,7 @@
       elseif (species .eq. 's') then
          vt = av_s*D**bv_s
       elseif (species .eq. 'g') then
-         vt = av_g(idx_bg1)*D**bv_g(idx_bg1)
+         vt = av_g(6)*D**bv_g(6)
       endif
 
       Cc    = 1. + 2.*meanPath/Da *(1.257+0.4*exp(-0.55*Da/meanPath))
@@ -5783,9 +5815,9 @@
          if (qg1d(k) .gt. R2) then
             rg(k) = qg1d(k)*rho(k)
             ng(k) = MAX(R2, ng1d(k)*rho(k))
-            rb(k) = MAX(qg1d(k)/rho_g(idx_bgmax), qb1d(k))
+            rb(k) = MAX(qg1d(k)/rho_g(NRHG), qb1d(k))
             rb(k) = MIN(qg1d(k)/rho_g(1), rb(k))
-            idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/rb(k) *0.01)+1,idx_bgmax))
+            idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/rb(k) *0.01)+1,NRHG))
             if (.not. is_hail_aware) idx_bg(k) = idx_bg1
             L_qg(k) = .true.
          else

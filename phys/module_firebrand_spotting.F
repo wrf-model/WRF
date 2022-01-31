@@ -570,7 +570,7 @@ END FUNCTION order_val
 
         ENDIF
 
-        get_fuel_cat = ksb(cat)
+        get_fuel_cat = ksb(icat)
 
     END FUNCTION get_fuel_cat
 !=============================================================

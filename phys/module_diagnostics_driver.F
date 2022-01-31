@@ -34,10 +34,10 @@ CONTAINS
                                           DO_SOLAR_OUTPUT,                             &
                                           PARAM_FIRST_SCALAR,                          &
                                           P_QG, P_QH, P_QV, P_QC, P_QI, P_QS,          &
-                                          P_QNG, P_QH, P_QNH, P_QR, P_QNR,             &
+                                          P_QNG, P_QH, P_QNH, P_QR, P_QNR, P_QVOLG,    &
                                           F_QV, F_QC, F_QI, F_QS,                      &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
-                     WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
+                     WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO, THOMPSONGH,         &
                      MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
                      NSSL_2MOM, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
                      MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN_SHPUND, FULL_KHAIN_LYNN,  &
@@ -457,7 +457,7 @@ CONTAINS
                 ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
                                                                     )
 
-        CASE (THOMPSON, THOMPSONAERO)
+        CASE (THOMPSON, THOMPSONAERO, THOMPSONGH)
 
       CALL diagnostic_output_nwp(                                   &
                  U=grid%u_2    ,V=grid%v_2                           &
@@ -493,6 +493,8 @@ CONTAINS
                 ,QG_CURR=moist(ims,kms,jms,P_QG)                     &
                 ,QR_CURR=moist(ims,kms,jms,P_QR)                     &  !  gthompsn
                 ,NR_CURR=scalar(ims,kms,jms,P_QNR)                   &  !  gthompsn
+                ,NG_CURR=scalar(ims,kms,jms,P_QNG)                   &  ! THOMPSONGH
+                ,QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG)              &  ! THOMPSONGH
                 ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g          &
       ! Dimension arguments
                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &

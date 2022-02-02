@@ -1,5 +1,5 @@
 !  Create an initial data set for the WRF model based on real data.  This         
-!  program is specifically set up for the Eulerian, mass-based coordinate.      
+!  program is specifically set up for the Eulerian, mass-based coordinate.       
 PROGRAM real_data
 
    USE module_machine

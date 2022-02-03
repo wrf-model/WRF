@@ -2,10 +2,6 @@ Description of namelist variables
 
 ---------------------------------
  
-For WRF-NMM users, please see Chapter 5 of the WRF-NMM User's Guide for 
-information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
-
-
  Note: variables followed by (max_dom) indicate that this variable needs to
        be defined for the nests when max_dom > 1.
 
@@ -25,7 +21,6 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  start_second (max_dom)              = 00,	! two digit second of starting time
                                                   Note: the start time is used to name the first wrfout file.
                                                   It also controls the start time for nest domains, and the time to restart
- tstart (max_dom)                    = 00,	! FOR NMM: starting hour of the forecast
  end_year (max_dom)                  = 2001,	! four digit year of ending time
  end_month (max_dom)                 = 06,	! two digit month of ending time
  end_day (max_dom)                   = 12,	! two digit day of ending time
@@ -91,10 +86,6 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
 To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ! Input to real from WPS (default since 3.0)
                                      = "wrf_real_input_em.d<domain>.<date>"  ! Input to real from SI
-
-To choose between SI and WPS input to real for NMM core:
- auxinput1_inname                    = "met_nm.d<domain>.<date>"             ! Input to real from WPS
-                                     = "wrf_real_input_nm.d<domain>.<date>"  ! Input to real from SI
 
 Other output options:
 
@@ -180,8 +171,8 @@ For automatic moving nests: requires special input data, and environment variabl
                                                   Note: this refers to full levels including surface and top
                                                   vertical dimensions need to be the same for all nests
                                                   Note: most variables are unstaggered (= staggered dim - 1)
- dx (max_dom)                        = 10000,	! grid length in x direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.667)
- dy (max_dom)                        = 10000,	! grid length in y direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.0658) 
+ dx (max_dom)                        = 10000,	! grid length in x direction; unit in meters. 
+ dy (max_dom)                        = 10000,	! grid length in y direction; unit in meters.
  ztop (max_dom)                      = 19000.	! used in mass model for idealized cases
  grid_id (max_dom)                   = 1,	! domain identifier
  parent_id (max_dom)                 = 0,       ! id of the parent domain
@@ -189,9 +180,9 @@ For automatic moving nests: requires special input data, and environment variabl
  j_parent_start (max_dom)            = 0,       ! starting LLC J-indices from the parent domain
  parent_grid_ratio (max_dom)         = 1,       ! parent-to-nest domain grid size ratio: for real-data cases
                                                   the ratio has to be odd! for idealized cases,
-                                                  the ratio can be even if feedback is set to 0. (NMM: must be 3)
+                                                  the ratio can be even if feedback is set to 0.
  parent_time_step_ratio (max_dom)    = 1,       ! parent-to-nest time step ratio! it can be different
-                                                  from the parent_grid_ratio (NMM: must be 3)
+                                                  from the parent_grid_ratio
  feedback                            = 1,       ! feedback from nest to its parent domain; 0 = no feedback
  smooth_option                       = 2        ! smoothing option for parent domain, used only with feedback
                                                   option on. 0: no smoothing; 1: 1-2-1 smoothing; 2: smoothing-desmoothing (default)
@@ -233,17 +224,14 @@ Namelist variables specifically for the WPS input for real:
  maxw_horiz_pres_diff                = 5000     ! Pressure threshold (Pa).  For using the level of max winds, when the
                                                   pressure difference between neighboring values exceeds this maximum,
                                                   the variable is NOT inserted into the column for vertical interpolation.
-                                                  ARW real only.
  trop_horiz_pres_diff                = 5000     ! Pressure threshold (Pa).  For using the tropopause level, when the
                                                   pressure difference between neighboring values exceeds this maximum,
                                                   the variable is NOT inserted into the column for vertical interpolation.
-                                                  ARW real only.
  maxw_above_this_level               = 30000    ! Minimum height (actually it is pressure in Pa) to allow using the 
                                                   level of max wind information in real.  With a value of 300 hPa, then
                                                   a max wind value at 500 hPa will be ignored.
-                                                  ARW real only.
  use_maxw_level                                   0=do not use max wind speed level in vertical interpolation inside
-                                                  of the ARW real program, 1 = use level
+                                                  of the real program, 1 = use level
  use_trop_level                                   as above, with tropopause level data
  sfcp_to_sfcp                        = .false.  ! Optional method to compute model's surface pressure when incoming
                                                   data only has surface pressure and terrain, but not SLP
@@ -265,12 +253,8 @@ Namelist variables specifically for the WPS input for real:
  hypsometric_opt                     = 2,       ! = 1: default method
                                                   = 2: it uses an alternative way (less biased 
                                                   when compared against input data) to compute height in program 
-                                                  real and pressure in model (ARW only). 
+                                                  real and pressure in model.
  p_top_requested                     = 5000     ! p_top (Pa) to use in the model
- ptsgm                               = 42000.   ! FOR NMM:  defines the pressure interface dividing
-                                                            the terrain following portion of the hybrid vertical
-                                                            coordinate (p > ptsgm) and the purely
-                                                            isobaric portion of the vertical coordinate (p < ptsgm)
  vert_refine_fact                    = 1        ! vertical refinement factor for ndown, not used for concurrent vertical grid refinement
  vert_refine_method (max_dom)        = 0        ! vertical refinement method (new in 3.7)
                                                   0: no vertical refinement
@@ -408,8 +392,7 @@ Namelist variables for controlling the automatic moving nest:
                                                   >1: for both: will be used for decomposition
 
 Namelist variables for controlling the adaptive time step option:
-                   These options are only valid for the ARW core.  
- use_adaptive_time_step              = .false.  ! T/F use adaptive time stepping, ARW only
+ use_adaptive_time_step              = .false.  ! T/F use adaptive time stepping.
  step_to_output_time                 = .true.   ! if adaptive time stepping, T/F modify the
                                                   time steps so that the exact history time is reached
  target_cfl(max_dom)                 = 1.2,1.2  ! vertical and horizontal CFL <= to this value implies
@@ -528,7 +511,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
                                            for each ice
                                      = 56, NTU multi-moment scheme  ! for ntu3m
-                                     = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
+                                     = 95, Ferrier (old Eta) microphysics
                                      = 96, Madwrf
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
@@ -623,17 +606,6 @@ Namelist variables for controlling the adaptive time step option:
                                               0 = do not read in the annual data
                                               1 = read in time dependent data for CO2, N2O, CH4, CFC11, CFC12
 
- nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
-                                                calls to shortwave radiation; the value
-                                                is set in Registry.NMM but is overridden
-                                                by namelist value; radt will be computed
-                                                from this.
-
- nradl (max_dom)                     = FOR NMM: number of fundamental timesteps between 
-                                                calls to longwave radiation; the value
-                                                is set in Registry.NMM but is overridden
-                                                by namelist value.
-
  co2tf                               CO2 transmission function flag only for GFDL radiation
                                      = 0,  ! read CO2 function data from pre-generated file
                                      = 1,  ! generate CO2 functions internally in the forecast
@@ -694,8 +666,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, NCEP Global Forecast System scheme 
                                      = 4, QNSE surface layer
                                      = 5, MYNN surface layer
-                                     = 7, Pleim-Xiu surface layer (ARW only)
-                                     = 10, TEMF surface layer (ARW only)
+                                     = 7, Pleim-Xiu surface layer
+                                     = 10, TEMF surface layer
                                      = 91, Old MM5 scheme (previously option 1)
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
@@ -706,7 +678,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 4, Noah-MP land-surface model (see additional &noah_mp namelist)
                                      = 5, Community Land Model version 4 (CLM4), adapted from CAM
                                      = 6, Community Terrestrial Systems Model (CTSM). See doc/README.CTSM for info on running this option.
-                                     = 7, Pleim-Xiu LSM (ARW)
+                                     = 7, Pleim-Xiu LSM
                                      = 8, Simplified Simple Biosphere Model (SSiB) 
                                           - can be used with Dudhia/RRTM, CAM or RRTMG radiation options
 
@@ -751,16 +723,15 @@ Namelist variables for controlling the adaptive time step option:
                                           sf_sfclay_physics=1 or 2 as well as 5
                                      = 6, MYNN 3rd level TKE scheme, works only
                                           MYNNSFC (sf_sfclay_physics = 5)
-                                     = 7, ACM2 (Pleim) PBL (ARW)
+                                     = 7, ACM2 (Pleim) PBL
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
-                                     = 10, TEMF (Total Energy Mass Flux) scheme (ARW only)
+                                     = 10, TEMF (Total Energy Mass Flux) scheme
                                           sf_sfclay_physics=10
                                      = 11, Shin-Hong 'scale-aware' PBL scheme
-                                     = 12, Grenier-Bretherton-McCaa scheme (ARW only)
-                                     = 16, TKE+TKE dissipation rate (epsilon) scheme (ARW only)
+                                     = 12, Grenier-Bretherton-McCaa scheme
+                                     = 16, TKE+TKE dissipation rate (epsilon) scheme
                                            works with surface layer options 1,91,2,5.
-                                     = 93, 2015 GFS scheme (NMM only)
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ! minutes between boundary-layer physics calls
@@ -770,12 +741,6 @@ Namelist variables for controlling the adaptive time step option:
 				     = 1, Settling from Dyunkerke 1991 (in atmos and at surface)
 				     = 2, Fogdes (vegetation & wind speed dependent; Katata et al. 2008) at surface 
                                           and Dyunkerke in the atmos.
-
- nphs (max_dom)                      = FOR NMM: number of fundamental timesteps between
-                                                calls to turbulence and microphysics;
-                                                the value is set in Registry.NMM but is
-                                                overridden by namelist value; bldt will
-                                                be computed from this.
  ysu_topdown_pblmix                  = 0,  ! whether to turn on top-down, radiation-driven mixing (1=yes)
  mfshconv (max_dom)                  = 1,  ! whether to turn on new day-time EDMF QNSE (0=no)
  topo_wind (max_dom)                 = 0,  ! turn off, 
@@ -832,15 +797,15 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, Grell-Freitas ensemble scheme
                                      = 4, Scale-aware GFS Simplified Arakawa-Schubert (SAS) scheme 
                                      = 5, Grell 3D ensemble scheme
-                                     = 6, Modifed Tiedtke scheme (ARW only)
+                                     = 6, Modifed Tiedtke scheme
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
-                                     = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
+                                     = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs
                                      = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, KIM Simplified Arakawa-Schubert scheme (KSAS) across gray-zone resolutions
                                      = 16, A newer Tiedtke scheme
-                                     = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
-                                     = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
-                                     = 96, Previous NEW GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
+                                     = 94, 2015 GFS Simplified Arakawa-Schubert scheme (from HWRF, use with caution) 
+                                     = 95, Previous GFS Simplified Arakawa-Schubert scheme (from HWRF, use with caution) 
+                                     = 96, Previous NEW GFS simplified Arakawa-Schubert scheme from YSU
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
 
@@ -870,7 +835,7 @@ Namelist variables for controlling the adaptive time step option:
  cudt (max_dom)                      = 0,       ! minutes between cumulus physics calls
  kfeta_trigger                       KF trigger option (cu_physics=1 only):
                                      = 1, default option
-                                     = 2, moisture-advection based trigger (Ma and Tan [2009]) - ARW only
+                                     = 2, moisture-advection based trigger (Ma and Tan [2009])
                                      = 3, RH-dependent additional perturbation to option 1 (JMA)
  cugd_avedx                          ; number of grid boxes over which subsidence is spread.
                                      = 1, default, for large grid distances
@@ -900,20 +865,6 @@ Namelist variables for controlling the adaptive time step option:
                                                   set automatically
  alevsiz_cu                          = 1        ! number of levels in global aerosol data: 30 for CESM input,
                                                   set automatically
-
- ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
-                                                calls to convection; the value is set in Registry.NMM
-                                                but is overridden by namelist value; cudt will be
-                                                computed from this.
-
- tprec (max_dom)                     = FOR NMM: number of hours in precipitation bucket
- theat (max_dom)                     = FOR NMM: number of hours in latent heating bucket
- tclod (max_dom)                     = FOR NMM: number of hours in cloud fraction average
- trdsw (max_dom)                     = FOR NMM: number of hours in short wave buckets
- trdlw (max_dom)                     = FOR NMM: number of hours in long wave buckets
- tsrfc (max_dom)                     = FOR NMM: number of hours in surface flux buckets
- pcpflg (max_dom)                    = FOR NMM: logical switch for precipitation assimilation
-
  isfflx                              = 1,	! heat and moisture fluxes from the surface
                                                   (only works for sf_sfclay_physics = 1,5,7,11)
                                                   1 = with fluxes from the surface 
@@ -1000,7 +951,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   auxinput4_inname = "wrflowinp_d<domain>", 
                                                   and in V3.2 io_form_auxinput4
  usemonalb                           = .false.  ! use monthly albedo map instead of table value
-                                                  (must be set to true for NMM, and recommended for sst_update=1)
+                                                  (recommended for sst_update=1)
  rdmaxalb                            = .true.   ! use snow albedo from geogrid; false means using values from table
  rdlai2d                             = .false.  ! use LAI from input; false means using values from table
                                                   if sst_update=1, LAI will also be in wrflowinp file
@@ -1059,7 +1010,7 @@ Namelist variables for controlling the adaptive time step option:
                                                       2 = Zilitinkevitch (czil=0.1))
                                                       for mynn sfc (0=Zilitinkevitch (def),1=Chen-Zhang,2=mod Yang,3=const zt)
  mp_tend_lim                         = 10.,     ! limit on temp tendency from mp latent heating from radar data assimilation
- prec_acc_dt (max_dom)               = 0.,      ! number of minutes in precipitation bucket (ARW only) - will add three
+ prec_acc_dt (max_dom)               = 0.,      ! number of minutes in precipitation bucket - will add three
                                                   new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc
  topo_wind (max_dom)                 = 0,       ! 1 = improve effect of topography for surface winds.
  ua_phys                             = .false.  ! Option to activate UA Noah changes: a different snow-cover physics in
@@ -1158,6 +1109,7 @@ Stochastic parameterization schemes:
                                                    Determines amplitude of random perturbations
  lengthscale_sppt (max_dom)           = 150000.0 ! Perturbation lengthscale (in m).
  timescale_sppt (max_dom)             = 21600.0  ! Temporal decorrelation of random field (in s).
+ sppt_vertstruc                       = 0.       ! vertical structure for sppt, 0: constant, 1: random phase.
  stddev_cutoff_sppt (max_dom)         = 2.0      ! Cutoff tails of perturbation pattern above this threshold standard deviation.
  iseed_sppt                                        Seed for random number stream for sppt. Will be
                                                    combined with seed nens signifying ensemble member number and initial
@@ -1680,8 +1632,7 @@ The following are for observation nudging:
  swap_pole_with_next_j               = .false.  ! T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
  actual_distance_average             = .false.  ! T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
  gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
-                                     = 1       ; for running the WRF-ARW with its gravity wave drag
-                                     = 2       ; for running the WRF-NMM with its gravity wave drag
+                                     = 1       ; for running with gravity wave drag (Choi and Hong 2015)
                                      = 3       ; NOAA/GSL gravity wave drag and turbulent orographic form drag
  gwd_diags                           = 0       ; set to 1 to output diagnostics for gwd_opt = 3
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
@@ -1722,10 +1673,6 @@ The following are for observation nudging:
                                                   requires usage of bdy_inname = "wrfbdy_d<domain>_<date>"
                                                   the real program can generate all LBC files in a single run
                                                   only a single time period is in each separate LBC file
-
- euler_adv                           = .false., ! conservative Eulerian passive advection (NMM only)
- idtadt                              = 1,       ! fundamental timesteps between calls to Euler advection, dynamics (NMM only)
- idtadc                              = 1        ! fundamental timesteps between calls to Euler advection, chemistry (NMM only)
 
  &ideal
  ideal_case                          = 0        ! ideal case number. Option selects CASEs within module_initialize_ideal.F
@@ -1905,7 +1852,7 @@ Hybrid Vertical Coordinate (HVC) vs Terrain Following (TF)
 
 Traditional / full fields model output
 
-The ARW WRF model output may be modified at run-time to also include a stream that contains
+The WRF model output may be modified at run-time to also include a stream that contains
 more traditional fields: temperature, pressure, geopotential height, etc. The flag needs to 
 be activated in the namelist (diag_nwp2 = 1). In the registry.trad_fields, the output stream 
 is "h1", so that stream needs to be explicitly requested in the namelist.input file.

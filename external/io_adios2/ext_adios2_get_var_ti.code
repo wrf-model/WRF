@@ -1,7 +1,15 @@
 !*----------------------------------------------------------------------------
 !*
 !*  WRF ADIOS2 I/O
-!   Author:  Michael Laufer michael.laufer@huawei.com
+!*  Author: Michael Laufer
+!*  	    Toga Networks, a Huawei Company
+!*  	    michael.laufer@toganetworks.com
+!*  Author: Erick Fredj
+!*  	    Computer Science Department, The Jerusalem College of Technology
+!*	    fredj@jct.ac.il
+!*	    Toga Networks, a Huawei Company
+!*	    erick.fredj@toganetworks.com
+!*    	        
 !*  Date:    November 3, 2021
 !*
 !*----------------------------------------------------------------------------

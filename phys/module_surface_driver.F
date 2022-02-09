@@ -2754,7 +2754,9 @@ CONTAINS
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
+#ifdef WRF_HYDRO
                 ,sfcheadrt,INFXSRT, soldrain                    & !hydro
+#endif
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
                 ,RS,XLAIDYN,IRRIGATION_CHANNEL)
            ELSE
@@ -2884,14 +2886,10 @@ CONTAINS
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
-                ,sfcheadrt,INFXSRT, soldrain &
-!
-!  FASDAS
-!
+#ifdef WRF_HYDRO
+                ,sfcheadrt,INFXSRT, soldrain                    &
+#endif
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    &
-!
-!  END FASDAS
-!
                 ,RS,XLAIDYN,IRRIGATION_CHANNEL)
          ENDIF
 

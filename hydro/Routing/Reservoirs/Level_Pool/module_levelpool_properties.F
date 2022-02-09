@@ -7,6 +7,7 @@
 module module_levelpool_properties
 
     use module_reservoir, only: reservoir_properties
+    use iso_fortran_env, only: int64
     implicit none
 
     ! Extend/derive level pool properties from the abstract base
@@ -21,7 +22,7 @@ module module_levelpool_properties
         real :: orifice_coefficient      ! orifice coefficient
         real :: orifice_area             ! orifice area (meters^2)
         real :: max_depth                ! max depth of reservoir before overtop (meters)
-        integer :: lake_number           ! lake number
+        integer(kind=int64) :: lake_number           ! lake number
 
     contains
 
@@ -47,7 +48,7 @@ contains
         real, intent(in)    :: orifice_coefficient      ! orifice coefficient
         real, intent(in)    :: orifice_area             ! orifice area (meters^2)
         real, intent(in)    :: max_depth                ! max depth of reservoir before overtop (meters)
-        integer, intent(in) :: lake_number              ! lake number
+        integer(kind=int64), intent(in) :: lake_number              ! lake number
 
         ! Assign the values passed in to a particular level pool reservoir
         ! properties object's variables.

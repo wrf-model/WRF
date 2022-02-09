@@ -935,6 +935,7 @@ if (nlst(did)%CHANRTSWCRT.eq.1 .or. nlst(did)%CHANRTSWCRT.eq.2) then
        RT_DOMAIN(did)%MUSK, RT_DOMAIN(did)%MUSX, RT_DOMAIN(did)%QLINK, &
        RT_DOMAIN(did)%CHANLEN, RT_DOMAIN(did)%MannN, RT_DOMAIN(did)%So, RT_DOMAIN(did)%ChSSlp,RT_DOMAIN(did)%Bw, &
        RT_DOMAIN(did)%Tw,  RT_DOMAIN(did)%Tw_CC, RT_DOMAIN(did)%n_CC, &
+       RT_DOMAIN(did)%ChannK,&
        RT_DOMAIN(did)%RESHT, &
        RT_DOMAIN(did)%CVOL, RT_DOMAIN(did)%QLAKEI, &
        RT_DOMAIN(did)%QLAKEO, RT_DOMAIN(did)%LAKENODE, &
@@ -954,6 +955,7 @@ if (nlst(did)%CHANRTSWCRT.eq.1 .or. nlst(did)%CHANRTSWCRT.eq.2) then
        , rt_domain(did)%accSfcLatRunoff,    rt_domain(did)%accBucket &
        , rt_domain(did)%qSfcLatRunoff,        rt_domain(did)%qBucket &
        , rt_domain(did)%QLateral,            rt_domain(did)%velocity &
+       ,                                     rt_domain(did)%qloss    &
        ,                                     RT_DOMAIN(did)%HLINK    &
        , rt_domain(did)%nlinksize,            nlst(did)%OVRTSWCRT &
        ,                                     nlst(did)%SUBRTSWCRT &
@@ -975,6 +977,7 @@ else
        RT_DOMAIN(did)%HLINK, RT_DOMAIN(did)%ELRT,RT_DOMAIN(did)%CHANLEN,&
        RT_DOMAIN(did)%MannN,RT_DOMAIN(did)%So, RT_DOMAIN(did)%ChSSlp, &
        RT_DOMAIN(did)%Bw,RT_DOMAIN(did)%Tw,RT_DOMAIN(did)%Tw_CC, RT_DOMAIN(did)%n_CC, &
+       RT_DOMAIN(did)%ChannK,& 
        RT_DOMAIN(did)%RESHT, &
        RT_DOMAIN(did)%ZELEV, RT_DOMAIN(did)%CVOL, &
        RT_DOMAIN(did)%NLAKES, RT_DOMAIN(did)%QLAKEI, RT_DOMAIN(did)%QLAKEO,&
@@ -993,7 +996,7 @@ else
        , rt_domain(did)%CH_LNKRT_SL   &
        ,nlst(did)%GwBaseSwCRT, gw2d(did)%ho, gw2d(did)%qgw_chanrt, &
        nlst(did)%gwChanCondSw, nlst(did)%gwChanCondConstIn, &
-       nlst(did)%gwChanCondConstOut, rt_domain(did)%velocity &
+       nlst(did)%gwChanCondConstOut, rt_domain(did)%velocity, rt_domain(did)%qloss &
        )
 endif
 

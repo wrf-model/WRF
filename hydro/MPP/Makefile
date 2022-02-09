@@ -12,7 +12,7 @@ all:	$(OBJS)
 hashtable.o: hashtable.F
 	@echo ""
 	$(RMD) $(*).o $(*).mod $(*).stb *~
-	$(COMPILER90) -O3 -g $(F90FLAGS) $(LDFLAGS) -c $(*).F
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) -c $(*).F
 	cp hashtable.mod ../mod
 	ar -r ../lib/libHYDRO.a $(@)
 

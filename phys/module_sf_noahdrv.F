@@ -115,7 +115,10 @@ CONTAINS
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
-                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
+                  dl_u_bep,sf_bep,vl_bep                        &
+#ifdef WRF_HYDRO
+                 ,sfcheadrt,INFXSRT,soldrain                    &   !O multi-layer urban
+#endif
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                         &
                  ,IRR_CHAN                                          &
@@ -269,12 +272,15 @@ CONTAINS
    INTEGER,  INTENT(IN   )   ::  julian, julyr                  !urban
 
 !added by Wei Yu  for routing
+#ifdef WRF_HYDRO
     REAL,    DIMENSION( ims:ime, jms:jme )                     , &
              INTENT(INOUT)  :: sfcheadrt,INFXSRT,soldrain 
     real :: etpnd1
+#endif
 !end added
 
-
+! new local vars for hydro
+   REAL :: etpnd1_hydro,sfcheadrt_hydro,infxsrt_hydro
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
@@ -1077,6 +1083,15 @@ CONTAINS
 !
 !  END FASDAS
 !
+#ifdef WRF_HYDRO
+       etpnd1_hydro = 0.
+       sfcheadrt_hydro = sfcheadrt(i,j)
+       infxsrt_hydro = infxsrt(i,j)
+#else
+       etpnd1_hydro = 0.
+       sfcheadrt_hydro = 0.
+       infxsrt_hydro = 0.
+#endif
        CALL SFLX (I,J,FFROZP, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,       &    !C
                  LOCAL,                                            &    !L
                  LUTYPE, SLTYPE,                                   &    !CL
@@ -1099,14 +1114,18 @@ CONTAINS
                  SNOTIME1,                                         &
                  RIBB,                                             &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
-                 sfcheadrt(i,j),                                   &    !I
-                 INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
+! WRF_HYDRO vars
+                 sfcheadrt_hydro,                                  &    !I
+                 INFXSRT_hydro,ETPND1_hydro                        &    !O
+                ,OPT_THCND,AOASIS                                  &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    &   ! fasdas
                 ,IRRIGATION_CHANNEL)
 
-
 #ifdef WRF_HYDRO
                  soldrain(i,j) = RUNOFF2*DT*1000.0
+                 sfcheadrt(i,j) = sfcheadrt_hydro
+                 infxsrt(i,j) = INFXSRT_hydro
+                 etpnd1 = etpnd1_hydro
 #endif
     ELSEIF (ICE == -1) THEN
 
@@ -2414,7 +2433,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
                   dl_u_bep,sf_bep,vl_bep                        & !O multi-layer urban
+#ifdef WRF_HYDRO
                  ,sfcheadrt,INFXSRT, soldrain                   & !hydro
+#endif
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                     & !O
                  ,IRR_CHAN                                      &
@@ -2566,10 +2587,15 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    INTEGER,  INTENT(IN   )   ::  julian,julyr
 
 !added by Wei Yu  for routing
+#ifdef WRF_HYDRO
     REAL,    DIMENSION( ims:ime, jms:jme )                     , &
              INTENT(INOUT)  :: sfcheadrt,INFXSRT,soldrain 
     real :: etpnd1
+#endif
 !end added
+
+! new local vars for hydro
+   REAL :: etpnd1_hydro,sfcheadrt_hydro,infxsrt_hydro
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
@@ -3531,13 +3557,18 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        SNOTIME1,                                         &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
-                       sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
-                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
-                 ,IRRIGATION_CHANNEL  )
+! WRF_HYDRO vars
+                       sfcheadrt_hydro,                                  &    !I
+                       INFXSRT_hydro,ETPND1_hydro                        &    !O
+                      ,OPT_THCND,AOASIS                                  &    !O
+                      ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
+                      ,IRRIGATION_CHANNEL  )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0
+                       sfcheadrt(i,j) = sfcheadrt_hydro
+                       infxsrt(i,j) = INFXSRT_hydro
+                       etpnd1 = etpnd1_hydro
 #endif
           ELSEIF (ICE == -1) THEN
       
@@ -4453,13 +4484,18 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        SNOTIME1,                                         &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
-                       sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
-                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
+! WRF_HYDRO vars
+                       sfcheadrt_hydro,                                  &    !I
+                       INFXSRT_hydro,ETPND1_hydro                        &    !O
+                      ,OPT_THCND,AOASIS                                  &    !O
+                      ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
                       ,IRRIGATION_CHANNEL )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0
+                       sfcheadrt(i,j) = sfcheadrt_hydro
+                       infxsrt(i,j) = INFXSRT_hydro
+                       etpnd1 = etpnd1_hydro
 #endif
           ELSEIF (ICE == -1) THEN
       

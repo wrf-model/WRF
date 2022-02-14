@@ -26,6 +26,7 @@ module module_GW_baseflow
    use MODULE_mpp_GWBUCKET, only: gw_sum_real, gw_write_io_real
    use MODULE_mpp_ReachLS, only : updatelinkv
 #endif
+   use iso_fortran_env, only: int64
    implicit none
 
 !#include "rt_include.inc"
@@ -293,7 +294,7 @@ contains
    real, intent(in), dimension(ix,jx)                :: runoff1x_in
    real, dimension(ix,jx)                            :: runoff1x
    real, intent(in)                                  :: basns_area(numbasns),dist(ixrt,jxrt,9),DT
-   integer, intent(in)                                  :: basnsInd(numbasns)
+   integer(kind=int64), intent(in)                       :: basnsInd(numbasns)
    real, intent(in),dimension(numbasns)              :: C,ex,z_mx
    real, intent(out),dimension(numbasns)             :: qout_gwsubbas
    real, intent(out),dimension(numbasns)             :: qin_gwsubbas
@@ -525,7 +526,7 @@ contains
       integer,dimension(global_rt_nx,global_rt_ny) :: gw_strm_msk
       real,dimension(numbasns) :: gwbas_pix_ct 
       real,dimension(gnumbasns) :: tmp_gwbas_pix_ct 
-      integer, intent(in), dimension(:) :: basnsInd
+      integer(kind=int64), intent(in), dimension(:) :: basnsInd
 
       gw_strm_msk = 0
 

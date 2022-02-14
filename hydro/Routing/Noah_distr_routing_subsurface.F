@@ -162,6 +162,10 @@ SUBROUTINE SUBSFC_RTNG(subrt_data, subrt_static, subrt_input, subrt_output, CWAT
     !DJG    - SUBSURFACE ROUITNG ONLY PERFORMED ON SATURATED LAYERS
     !DJG -----------------------------------------------------------------
 
+    !Z. Cui -----------------------------------------------------------------
+    !Move SUBDT initialization up to avoid crash when HYDRO_D is defined
+    SUBDT = subrt_static%dt                !-- initialize the routing timestep to DT
+    !Z. Cui -----------------------------------------------------------------
 #ifdef HYDRO_D
     ! ADCHANGE: START Initial water balance variables
     ! ALL VARS in MM
@@ -204,7 +208,6 @@ SUBROUTINE SUBSFC_RTNG(subrt_data, subrt_static, subrt_input, subrt_output, CWAT
 
     !DJG Set up mass balance checks...
     !         CWATAVAIL = 0.            !-- initialize subsurface watavail
-    SUBDT = subrt_static%dt                !-- initialize the routing timestep to DT
 
 
     !!!! Find saturated layer depth...
@@ -601,6 +604,7 @@ SUBROUTINE ROUTE_SUBSURFACE1(dist, z, latksat, soldep, &
    real*8, DIMENSION(XX,YY) :: qsub_tmp, QSUBDRY_tmp ! temp trackers for fluxes (m3/s)
    ! Local parameters
    real, parameter :: nexp=1.0  ! local power law exponent
+   real :: tmp_dist(9)
 
    ! Initialize temp variables
    qsub_tmp = 0.
@@ -626,7 +630,8 @@ SUBROUTINE ROUTE_SUBSURFACE1(dist, z, latksat, soldep, &
             ! ADCHANGE: Always call routine to check for steepest elev+head slope
             ! Updates IXX0, JYY0, index, and beta for steepest slope neighbor.
             ! Note that beta will be -1 if steepest slope cannot be found.
-            call GETSUB8(i, j, XX, YY, Z, so8rt, dist(i,j,:), &
+            tmp_dist = dist(i,j,:)
+            call GETSUB8(i, j, XX, YY, Z, so8rt, tmp_dist, &
                          IXX0, JYY0, index, beta)
 
             if (dist(i,j,index) .le. 0) then
@@ -933,4 +938,3 @@ SUBROUTINE ROUTE_SUBSURFACE2(                                 &
     !DJG------------------------------------------------------------
 end subroutine ROUTE_SUBSURFACE2
 !DJG------------------------------------------------------------
-

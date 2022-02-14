@@ -26,14 +26,17 @@ module module_UDMAP
   use module_mpp_land, only: my_id, local_startx_rt, local_starty_rt,  &
        local_endx_rt,local_endy_rt, left_id, right_id, down_id, up_id, mpp_collect_1d_int_mem, &
        IO_id , numprocs
-  use module_mpp_land, only: mpp_land_bcast_int, mpp_land_bcast_real8_1d, mpp_land_bcast_int1
+  use module_mpp_land, only: mpp_land_bcast_int, mpp_land_bcast_real8_1d, mpp_land_bcast_int1, mpp_land_bcast_int8
   
   use module_mpp_land, only: sum_int1d, global_rt_nx, global_rt_ny, write_IO_rt_int, MPP_LAND_COM_INTEGER
   
   use MODULE_mpp_ReachLS, only : updatelinkv, ReachLS_write_io, com_write1dInt, &
-       com_decomp1dInt, pack_decomp_int, pack_decomp_real8
+       com_decomp1dInt, pack_decomp_int, pack_decomp_real8, &
+       com_decomp1dint8, pack_decomp_int8, com_write1dInt8
   use module_hydro_stop, only:HYDRO_stop
   use hashtable
+
+  use iso_fortran_env, only: int64
 #endif
 
   implicit none
@@ -48,7 +51,7 @@ type userDefineMapping
     integer, allocatable, dimension(:) :: grid_i, grid_j
     real, allocatable, dimension(:) :: weight, nodeArea, cellArea
     integer :: ngrids
-    integer :: myid
+    integer(kind=int64) :: myid
 !   for bucket model definition
     real, allocatable, dimension(:) :: cellWeight
     integer, allocatable, dimension(:) :: cell_i, cell_j
@@ -57,7 +60,7 @@ end type userDefineMapping
 
 TYPE ( userDefineMapping ), allocatable, DIMENSION (:) :: LUDRSL
 
-integer, allocatable, dimension(:) :: bufid
+integer(kind=int64), allocatable, dimension(:) :: bufid
 real*8 , allocatable, dimension(:) :: bufw
 integer :: LNUMRSL  ! number of local links
 integer :: ter_rt_flag
@@ -84,8 +87,8 @@ contains
     subroutine readUDMP(ixrt,jxrt,npid, nlinksl)
         implicit none
         integer :: i,j,Ndata, did, Npid, nlinksl, k, m, kk
-        integer,allocatable,dimension(:) :: g1bufid, gbufid, linkid ,bufidflag, &
-               bufid_tmp, nprocs_map, lnsizes, istart
+        integer,allocatable,dimension(:) ::  nprocs_map, lnsizes, istart
+        integer(kind=int64), allocatable, dimension(:) :: g1bufid, gbufid, linkid, bufid_tmp, bufidflag
         integer :: ix_bufid, ii, ixrt,jxrt
         integer, allocatable, dimension(:) :: gbufi,gbufj,bufsize
         real*8 , allocatable, dimension(:) :: gbufw
@@ -153,15 +156,15 @@ contains
 !      check  polyid and linkid
         allocate(linkid(nlinksl))
         if(my_id .eq. io_id) then
-            call get1d_int(trim(nlst(did)%route_link_f),"link",linkid)
+            call get1d_int64(trim(nlst(did)%route_link_f),"link",linkid)
             allocate(gbufid(npid))
-            call get1d_int(trim(nlst(did)%UDMAP_FILE),"polyid",gbufid)
+            call get1d_int64(trim(nlst(did)%UDMAP_FILE),"polyid",gbufid)
         endif
 #ifdef MPP_LAND
        if(nlinksl .gt. 0) then
-          call mpp_land_bcast_int(nlinksl,linkid)
+          call mpp_land_bcast_int8(nlinksl,linkid)
        endif
-       call com_decomp1dInt(gbufid,npid,bufid_tmp,ix_bufid)
+       call com_decomp1dInt8(gbufid,npid,bufid_tmp,ix_bufid)
 #endif
        if(ix_bufid .gt. 0) then
           allocate(bufidflag(ix_bufid))
@@ -181,7 +184,7 @@ contains
 
        block
          type(hash_t) :: hash_table
-         integer :: val,it
+         integer(kind=int64) :: val,it
          logical :: found
          
          call hash_table%set_all_idx(bufid_tmp, ix_bufid)
@@ -195,7 +198,7 @@ contains
        end block
 
 #ifdef MPP_LAND
-      call com_write1dInt(bufidflag,ix_bufid,gbufid,npid)
+      call com_write1dInt8(bufidflag,ix_bufid,gbufid,npid)
 #endif
       if(ix_bufid .gt. 0) then
           if(allocated(bufidflag)) deallocate(bufidflag)
@@ -224,7 +227,7 @@ contains
 
 
       if(lnsizes(my_id+1) .gt. 0) allocate(bufid(lnsizes(my_id+1) ))
-      call pack_decomp_int(g1bufid, ndata, nprocs_map, lnsizes, istart,bufid)
+      call pack_decomp_int8(g1bufid, ndata, nprocs_map, lnsizes, istart,bufid)
       if(my_id .eq. io_id) then 
             if(allocated(g1bufid)) deallocate(g1bufid)
       endif
@@ -510,6 +513,29 @@ contains
           iret = nf_get_var_int(ncid, varid, out_buff)
           iret = nf_close(ncid)
       end subroutine get1d_int
+
+    subroutine get1d_int64(fileName,var_name,out_buff)
+        implicit none
+        integer :: ivar, iret,varid,ncid
+        integer(kind=int64) out_buff(:)
+        character(len=*), intent(in) :: var_name
+        character(len=*), intent(in) :: fileName
+
+        iret = nf_open(trim(fileName), NF_NOWRITE, ncid)
+        if (iret .ne. 0) then
+            print*,"FATAL ERROR: Failed to open the netcdf file: ",trim(fileName)
+            call hydro_stop("In get1d_int() -  Failed to open the netcdf file")
+            return
+        endif
+        ivar = nf_inq_varid(ncid,trim(var_name),  varid)
+        if(ivar .ne. 0) then
+            write(6,*) "Read Variable Error file: ",trim(fileName)
+            write(6,*) "Read Error: could not find ",trim(var_name)
+            call hydro_stop("In get1d_int() - failed to read netcdf variable name.")
+        end if
+        iret = nf_get_var_int64(ncid, varid, out_buff)
+        iret = nf_close(ncid)
+    end subroutine get1d_int64
 
       subroutine getUDMP_area(cell_area)
          implicit none

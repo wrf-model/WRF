@@ -1171,6 +1171,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRAUPELNCV=GRAUPELNCV,              &
                      SR=SR,                              &
 #if ( WRF_CHEM == 1 )
+                     WETSCAV_ON=config_flags%wetscav_onoff == 1, &
                      RAINPROD=rainprod,                  &
                      EVAPPROD=evapprod,                  &
 #endif

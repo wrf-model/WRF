@@ -504,6 +504,7 @@ CONTAINS
                 ,NUM_TILES=grid%num_tiles                            &
                 ,MAX_TIME_STEP=grid%max_time_step                    &
                 ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
+                                                                     )
 
         CASE (THOMPSONGH)
 

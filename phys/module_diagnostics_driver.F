@@ -457,7 +457,55 @@ CONTAINS
                 ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
                                                                     )
 
-        CASE (THOMPSON, THOMPSONAERO, THOMPSONGH)
+        CASE (THOMPSON, THOMPSONAERO)
+
+      CALL diagnostic_output_nwp(                                   &
+                 U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy ,P8W=p8w                            &
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,XTIME=grid%xtime                                    &
+      ! Selection flag 
+                ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
+                ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
+                ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
+                ,MPUSE_HAIL=config_flags%hail_opt                    &  !  gthompsn
+                ,NSSL_ALPHAH=config_flags%nssl_alphah                &  !  gthompsn
+                ,NSSL_ALPHAHL=config_flags%nssl_alphahl              &  !  gthompsn
+                ,NSSL_CNOH=config_flags%nssl_cnoh                    &  !  gthompsn
+                ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
+                ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
+                ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
+                ,CURR_SECS2=curr_secs2                               &
+                ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
+                ,DIAGFLAG=diag_flag                                  &
+                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,ITIMESTEP=grid%itimestep                            &
+                ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
+                ,WSPD10MAX=grid%wspd10max                            &
+                ,UP_HELI_MAX=grid%up_heli_max                        &
+                ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max       &
+                ,ZNW=grid%znw,W_COLMEAN=grid%w_colmean               &
+                ,NUMCOLPTS=grid%numcolpts,W_MEAN=grid%w_mean         &
+                ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grid%grpl_colint &
+                ,REFD_MAX=grid%refd_max                              &
+                ,refl_10cm=grid%refl_10cm                            &
+                ,HAIL_MAXK1=grid%hail_maxk1,HAIL_MAX2D=grid%hail_max2d &  !  gthompsn
+                ,QG_CURR=moist(ims,kms,jms,P_QG)                     &
+                ,QR_CURR=moist(ims,kms,jms,P_QR)                     &  !  gthompsn
+                ,NR_CURR=scalar(ims,kms,jms,P_QNR)                   &  !  gthompsn
+                ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g          &
+      ! Dimension arguments
+                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+                ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+                ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)   &
+                ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
+                ,KTS=k_start, KTE=min(k_end,kde-1)                   &
+                ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
+
+        CASE (THOMPSONGH)
 
       CALL diagnostic_output_nwp(                                   &
                  U=grid%u_2    ,V=grid%v_2                           &

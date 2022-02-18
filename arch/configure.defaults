@@ -42,7 +42,6 @@ RANLIB          =      ls
 RLFLAGS		=	
 #ranlib
 CC_TOOLS        =      cc 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD 
 
 ###########################################################
 #ARCH    Linux i486 i586 i686 armv7l aarch64, gfortran compiler with gcc #serial smpar dmpar dm+sm
@@ -87,7 +86,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux i486 i586 i686, g95 compiler with gcc #serial dmpar
@@ -131,7 +129,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, PGI compiler with gcc # serial smpar dmpar dm+sm
@@ -175,7 +172,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le, PGI compiler with pgcc, SGI MPT # serial smpar dmpar dm+sm
@@ -219,7 +215,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le, PGI accelerator compiler with gcc # serial smpar dmpar dm+sm
@@ -262,7 +257,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, ifort compiler with icc #serial smpar dmpar dm+sm
@@ -340,7 +334,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, Xeon Phi (MIC architecture) ifort compiler with icc # dm+sm
@@ -388,7 +381,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      gcc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, Xeon (SNB with AVX mods) ifort compiler with icc # serial smpar dmpar dm+sm
@@ -436,7 +428,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      gcc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, ifort compiler with icc, SGI MPT #serial smpar dmpar dm+sm
@@ -508,7 +499,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, ifort compiler with icc, IBM POE #serial smpar dmpar dm+sm
@@ -558,7 +548,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    ia64 Linux ifort compiler with icc 9.x,10.x #serial smpar dmpar dm+sm
@@ -640,7 +629,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux SGI Altix, ifort compiler with icc 9.x,10.x #serial smpar dmpar dm+sm
@@ -724,7 +712,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux i486 i586 i686 x86_64 ppc64le, PathScale compiler with pathcc #serial dmpar
@@ -768,7 +755,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le, gfortran compiler with gcc  #serial smpar dmpar dm+sm
@@ -813,7 +799,6 @@ M4              =      m4 -G
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) PGI compiler with pgcc #serial smpar dmpar dm+sm
@@ -857,7 +842,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      cc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
@@ -904,7 +888,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      cc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) intel compiler with clang EDIT FOR OPENMPI #serial smpar dmpar dm+sm
@@ -950,7 +933,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      cc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) g95 with gcc #serial dmpar
@@ -995,7 +977,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib -c
 RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) gfortran with gcc #serial smpar dmpar dm+sm
@@ -1040,7 +1021,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) gfortran with clang #serial smpar dmpar dm+sm
@@ -1085,7 +1065,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      clang
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) xlf  #serial dmpar
@@ -1131,7 +1110,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    AIX xlf compiler with xlc #serial smpar dmpar dm+sm
@@ -1180,7 +1158,6 @@ M4              =       m4 -B 20000
 RANLIB          =       ranlib
 RLFLAGS		=	
 CC_TOOLS        =       cc
-NETCDFPAR_BUILD	=       CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, xlf compiler with xlc # serial smpar dmpar dm+sm
@@ -1232,7 +1209,6 @@ M4              =       m4 -B 14000
 RANLIB          =       ranlib
 RLFLAGS		=	
 CC_TOOLS        =       cc
-NETCDFPAR_BUILD	=       CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Cray XC CLE/Linux x86_64, PGI compiler with gcc # serial dmpar smpar dm+sm
@@ -1295,7 +1271,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Cray XE and XC CLE/Linux x86_64, Cray CCE compiler # serial dmpar smpar dm+sm
@@ -1346,7 +1321,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      gcc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Cray XC CLE/Linux x86_64, Xeon ifort compiler # serial dmpar smpar dm+sm
@@ -1396,7 +1370,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      gcc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 
 ###########################################################
@@ -1449,8 +1422,6 @@ M4              =       m4 -B 14000
 RANLIB          =       ranlib
 RLFLAGS		=	
 CC_TOOLS        =       cc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
-
 ###########################################################
 #ARCH    Linux ppc64 BG /P xlf compiler with xlc # smpar dmpar dm+sm
 #     developed on surveyor.alcf.anl.gov (thanks to ANL/ALCF)
@@ -1498,8 +1469,6 @@ M4              =       m4 -B 14000
 RANLIB          =       ranlib
 RLFLAGS		=	
 CC_TOOLS        =       cc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
-
 ###########################################################
 #ARCH    Linux ppc64 IBM Blade Server xlf compiler with xlc # dmpar
 #    provided by Luis C. Cana Cascallar for IBM JS21 blade server, May 2009
@@ -1544,7 +1513,6 @@ M4              =       m4 -B 14000
 RANLIB          =       ranlib
 RLFLAGS		=	
 CC_TOOLS        =       xlc -q64
-NETCDFPAR_BUILD	=       CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, PGI compiler with pgcc # serial smpar dmpar dm+sm
@@ -1588,7 +1556,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    CYGWIN_NT i686, PGI compiler on Windows # serial smpar dmpar dm+sm
@@ -1632,7 +1599,6 @@ M4              =       NA
 RANLIB          =       ranlib
 RLFLAGS		=	
 CC_TOOLS        =       $(SCC) 
-NETCDFPAR_BUILD	=       CONFIGURE_NETCDFPAR_BUILD
 
 LIB_EXTERNAL    = \
                      ../external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.lib \
@@ -1690,7 +1656,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) PGI compiler with pgcc -f90= #serial smpar dmpar dm+sm
@@ -1734,7 +1699,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      cc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
@@ -1781,7 +1745,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      cc
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Darwin (MACOS) gfortran with gcc openmpi #serial smpar dmpar dm+sm
@@ -1826,7 +1789,6 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, PGI compiler with pgcc -f90= # serial smpar dmpar dm+sm
@@ -1870,10 +1832,9 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Linux HSW/BDW x86_64 ppc64le i486 i586 i686, ifort compiler with icc #serial smpar dmpar dm+sm
+#ARCH    Linux x86_64 ppc64le i486 i586 i686, ifort compiler with icc #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       INTEL ($SFC/$SCC): HSW/BDW
 DMPARALLEL      =       # 1
@@ -1915,7 +1876,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    Linux KNL x86_64 ppc64le i486 i586 i686, ifort compiler with icc #serial smpar dmpar dm+sm
@@ -1960,7 +1920,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
 #ARCH    CYGWIN_NT i686 x86_64 Cygwin, gfortran compiler with gcc  #serial smpar dmpar dm+sm
@@ -2005,7 +1964,6 @@ M4              =      m4 -G
 RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC)
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 LIB_EXTERNAL    = \
                      $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.dll.a \
@@ -2064,7 +2022,57 @@ M4              =      m4 -G
 RANLIB          =      ranlib
 RLFLAGS         =
 CC_TOOLS        =      $(SCC)
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
+
+###########################################################
+#ARCH    AMD Linux x86_64 #serial smpar dmpar dm+sm
+# Supported AMDARCH are znver1, znver2 and znver3 for ZEN1, ZEN2 and ZEN3 Respectively
+# For optimized AMDFCFLAGS and AMDLDFLAGS, please contact toolchainsupport@amd.com
+#
+DESCRIPTION     =       AMD ($SFC/$SCC) :  AMD ZEN1/ ZEN2/ ZEN3 Architectures
+DMPARALLEL      =       1
+OMPCPP          =       -D_OPENMP
+OMP             =       -fopenmp
+OMPCC           =       -fopenmp
+SFC             =       flang
+SCC             =       clang
+CCOMP           =       clang
+DM_FC           =       mpif90
+DM_CC           =       mpicc
+FC              =       time $(DM_FC)
+CC              =       $(DM_CC)
+LD              =       $(FC)
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+
+AMDARCH         =       -march=znver3
+AMDMATHLIB      =       -fveclib=AMDLIBM
+AMDLDFLAGS      =       -Wl,-mllvm -Wl,-enable-loop-reversal -Wl,-mllvm -Wl,-enable-gather -Wl,-mllvm -Wl,-vectorize-noncontigous-memory-aggressively
+AMDFCFLAGS      =
+
+PROMOTION       =
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM -DRPC_TYPES=2
+CFLAGS_LOCAL    =       -w -c -m64 -Ofast -ffast-math $(AMDARCH)
+LDFLAGS_LOCAL   =       -m64 -Ofast -Mstack_arrays $(AMDARCH) $(AMDLDFLAGS) $(AMDMATHLIB) -lamdlibm -lomp
+CPLUSPLUSLIB    =
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -Ofast -ffast-math $(AMDARCH) -Mbyteswapio -Mstack_arrays -ftree-vectorize -Mbyteswapio -funroll-loops -finline-aggressive -finline-hint-functions $(AMDMATHLIB) $(AMDFCFLAGS)
+FCREDUCEDOPT    =       -O3 $(AMDARCH) -ffast-math -Mstack_arrays -DFCREDUCEDOPT
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfreeform
+FCSUFFIX        =
+BYTESWAPIO      =       -Mbyteswapio
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       -Ofast -ffast-math $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG=
+TRADFLAG        =       -traditional
+CPP             =       /lib/cpp -P
+AR              =       llvm-ar
+ARFLAGS         =       ru
+M4              =       m4
+RANLIB          =       llvm-ranlib
+RLFLAGS         =
+CC_TOOLS        =       $(SCC)
 
 #insert new stanza here
 
@@ -2110,7 +2118,6 @@ M4              =      m4
 RANLIB          =      ranlib
 RLFLAGS         =
 CC_TOOLS        =      /usr/bin/gcc -Wall
-NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 #insert new stanza before the Fujitsu block, keep Fujitsu at the end of the list
 ###########################################################

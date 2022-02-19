@@ -538,9 +538,9 @@ integer::oops1,oops2
       ELSE IF ( ( flag_snow .EQ. 1 ) .AND. ( flag_snowh .EQ. 0 ) ) THEN
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
-!              ( kg/m^2 -> m)  & ( liquid to snow depth, 5:1 ratio )
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
-               grid%snowh(i,j) = grid%snow(i,j) / 1000. * 5.
+               ! Hill et al 2019, Cryosphere         
+               grid%snowh(i,j) = (10.**(((log10(grid%snow(i,j))-log10(0.146))/1.102)))/1000.
             END DO
          END DO
 

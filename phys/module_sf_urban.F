@@ -686,7 +686,7 @@ use module_wrf_error
    SIGMA_ZED = stdh_urb
 
  !Calculate Wind Direction and Assign Appropriae lf_urb
-   !WDR = (180.0/PI)*ATAN2(U10,V10)
+   WDR = (180.0/PI)*ATAN2(U10,V10)
    
    IF(WDR.ge.0.0.and.WDR.lt.22.5)THEN
      lambda_f = lf_urb(1)
@@ -698,7 +698,7 @@ use module_wrf_error
      lambda_f = lf_urb(1)
    ELSEIF(WDR.gt.22.5.and.WDR.le.67.5)THEN
      lambda_f = lf_urb(2)
-   ELSEIF(WDR.ge.-67.5.and.WDR.lt.-22.5)THEN
+   ELSEIF(WDR.ge.-157.5.and.WDR.lt.-112.5)THEN
      lambda_f = lf_urb(2)
    ELSEIF(WDR.gt.67.5.and.WDR.le.112.5)THEN
      lambda_f = lf_urb(3)
@@ -706,7 +706,7 @@ use module_wrf_error
      lambda_f = lf_urb(3)
    ELSEIF(WDR.gt.112.5.and.WDR.le.157.5)THEN
      lambda_f = lf_urb(4)
-   ELSEIF(WDR.ge.-157.5.and.WDR.lt.-112.5)THEN
+   ELSEIF(WDR.ge.-67.5.and.WDR.lt.-22.5)THEN
      lambda_f = lf_urb(4)
    ELSE
      lambda_f = lf_urb(1)

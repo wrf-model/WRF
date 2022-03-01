@@ -733,7 +733,7 @@ CONTAINS
       CASE (DUSTGOCARTAFWA)
         CALL wrf_debug(15,'AFWA modified Gocart dust emissions')
         call gocart_dust_afwa_driver(dtstep,config_flags,alt,             &
-         chem,rho_phy,smois,u10,v10,p8w,dz8w,erod,erod_dri,dustin,snowh,  &
+         chem,rho_phy,smois,u10,v10,dz8w,erod,erod_dri,dustin,snowh,      &
          isltyp,vegfra,lai_vegmask,xland,dx,g,emis_dust,                  &
          ust,znt,clayfrac,sandfrac,clayfrac_nga,sandfrac_nga,afwa_dustloft,&!EDH
          tot_dust,tot_edust,vis_dust,dust_alpha,dust_gamma,dust_smtune,dust_ustune, &

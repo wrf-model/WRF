@@ -235,41 +235,41 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
 
       else if (chem_cv_options == 108) then
 
-      read (iunit, fmt='(A6,F10.6,1X,F10.6,1X,I4,3I2,2F9.1,4F9.3)', iostat=iost)  &
-            SiteID,                                   &
-            platform%info%lat,                        &
-            platform%info%lon,                        &
-            iyear, imonth, iday, ihour,               &
-            pm25,  pm10,   so2,  no2,   o3, co
+         read (iunit, fmt='(A6,F10.6,1X,F10.6,1X,I4,3I2,2F9.1,4F9.3)', iostat=iost)  &
+               SiteID,                                   &
+               platform%info%lat,                        &
+               platform%info%lon,                        &
+               iyear, imonth, iday, ihour,               &
+               pm25,  pm10,   so2,  no2,   o3, co
 
-      platform%info%id = trim(SiteID)
-      read(SiteID,'(I6)') isite
-      write (platform%info%date_char,'(i4,3(i2.2))')  iyear, imonth, iday, ihour
+         platform%info%id = trim(SiteID)
+         read(SiteID,'(I6)') isite
+         write (platform%info%date_char,'(i4,3(i2.2))')  iyear, imonth, iday, ihour
 
-      !!!!!!!!!!!!!!!!!!!
-      ! Caution: Observations are assumed to have the same unit of ppmv.
-      ! Unit conversion (to ppmv) must have been done in the preprocessing.
-      ! (ex. The original chinese data had ug/m3 for gas species.)
-      !!!!!!!!!!!!!!!!!!!
+         !!!!!!!!!!!!!!!!!!!
+         ! Caution: Observations are assumed to have the same unit of ppmv.
+         ! Unit conversion (to ppmv) must have been done in the preprocessing.
+         ! (ex. The original chinese data had ug/m3 for gas species.)
+         !!!!!!!!!!!!!!!!!!!
 
-      select case ( chemicda_opt )
-      case ( 1 )
+         select case ( chemicda_opt )
+         case ( 1 )
             platform%chem(PARAM_FIRST_SCALAR  )%inv = pm25
             platform%info%name                      = "pm25"
-      case ( 2 )
+         case ( 2 )
             platform%chem(PARAM_FIRST_SCALAR  )%inv = pm10
             platform%info%name                      = "pm10"
-      case ( 3 )
+         case ( 3 )
             platform%chem(PARAM_FIRST_SCALAR  )%inv = pm25
             platform%chem(PARAM_FIRST_SCALAR+1)%inv = pm10
             platform%info%name                      = "all_pm"
-      case ( 4 )
+         case ( 4 )
             platform%chem(PARAM_FIRST_SCALAR  )%inv = so2
             platform%chem(PARAM_FIRST_SCALAR+1)%inv = no2
             platform%chem(PARAM_FIRST_SCALAR+2)%inv = o3
             platform%chem(PARAM_FIRST_SCALAR+3)%inv = co
             platform%info%name                      = "gas"
-      case ( 5 )
+         case ( 5 )
             platform%chem(PARAM_FIRST_SCALAR  )%inv = pm25
             platform%chem(PARAM_FIRST_SCALAR+1)%inv = pm10
             platform%chem(PARAM_FIRST_SCALAR+2)%inv = so2
@@ -277,23 +277,35 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
             platform%chem(PARAM_FIRST_SCALAR+4)%inv = o3
             platform%chem(PARAM_FIRST_SCALAR+5)%inv = co
             platform%info%name                      = "all"
-      case default
+         case default
             platform%chem(PARAM_FIRST_SCALAR  )%inv = pm25
             platform%info%name                      = ""
-      end select
+         end select
 
-      ! Sanity check
-      !!!!!!!!!!!!!!!!!!!
-      do ichem = PARAM_FIRST_SCALAR, num_chemic_surf
-         ipm = ichem - PARAM_FIRST_SCALAR + 1
-         if (platform%chem(ichem)%inv<0.or.abs(platform%chem(ichem)%inv)>=max_pm(ipm)) then
-             platform%chem(ichem)%inv=missing_r
-         else
-             platform%chem(ichem)%qc = 0
-         endif
-      end do
+         ! Sanity check
+         !!!!!!!!!!!!!!!!!!!
+         do ichem = PARAM_FIRST_SCALAR, num_chemic_surf
+            ipm = ichem - PARAM_FIRST_SCALAR + 1
+            if (platform%chem(ichem)%inv<0.or.abs(platform%chem(ichem)%inv)>=max_pm(ipm)) then
+                platform%chem(ichem)%inv=missing_r
+            else
+                platform%chem(ichem)%qc = 0
+            endif
+         end do
 
-      end if ! (chem_cv_options == 10) then
+         if ((chemicda_opt == 3) .or. (chemicda_opt == 5)) then
+          if ((platform%chem(PARAM_FIRST_SCALAR+1)%inv.lt.platform%chem(PARAM_FIRST_SCALAR)%inv) .or. &
+              (platform%chem(PARAM_FIRST_SCALAR+1)%inv<0).or.(platform%chem(PARAM_FIRST_SCALAR)%inv<0)) then ! Feb-27-2022
+              platform%chem(PARAM_FIRST_SCALAR+1)%inv = missing_r
+              platform%chem(PARAM_FIRST_SCALAR+1)%qc  = missing
+          else
+              ! pm10 <= pm10 - pm25 residual
+              platform%chem(PARAM_FIRST_SCALAR+1)%inv = platform%chem(PARAM_FIRST_SCALAR+1)%inv - &
+                                                        platform%chem(PARAM_FIRST_SCALAR)%inv
+          endif
+         end if ! ((chemicda_opt == 3) .or. (chemicda_opt == 5)) then
+
+      end if !  if (chem_cv_options == 108)
 
       if (iost /= 0) then
          ! FIX? This is expected, but its unclear how we handle failure

@@ -361,8 +361,10 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          if (num_obs > 0) then
             do n = 1, num_obs    
                read(unit_in,'(2i8)') levels, ifgat
-               if (if_write) write(omb_unit,'(2i8)')levels, ifgat
-               num = num + 1
+               if (if_write) then
+                  write(omb_unit,'(2i8)')levels, ifgat
+                  num = num + 1
+               end if
                do k = 1, levels
                   read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                      kk,l, stn_id, &          ! Station
@@ -385,8 +387,10 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          if (num_obs > 0) then
             do n = 1, num_obs    
                read(unit_in,'(2i8)') levels, ifgat
-               if (if_write) write(omb_unit,'(2i8)')levels, ifgat
-               num = num + 1
+               if (if_write) then
+                  write(omb_unit,'(2i8)')levels, ifgat
+                  num = num + 1
+               end if
                do k = 1, levels
                   read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                      kk,l, stn_id, &          ! Station
@@ -429,8 +433,10 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          if (num_obs > 0) then
             do n = 1, num_obs    
                read(unit_in,'(2i8)') levels, ifgat
-               if (if_write) write(omb_unit,'(2i8)')levels, ifgat
-               num = num + 1
+               if (if_write) then
+                  write(omb_unit,'(2i8)')levels, ifgat
+                  num = num + 1
+               end if
                do k = 1, levels
                   read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                      kk,l, stn_id, &          ! Station

@@ -199,7 +199,7 @@ CONTAINS
       REAL, DIMENSION(3):: cge, cgg
       DOUBLE PRECISION:: f_d, sum_ng, sum_t, lamg, ilamg, N0_g, lam_exp, N0exp
       DOUBLE PRECISION:: lamr, N0min
-      REAL:: mvd_r, xslw1, ygra1, zans1
+      REAL:: xslw1, ygra1, zans1, mvd_r
       INTEGER:: ng, n, k_0
 
     REAL                                       :: time_from_output

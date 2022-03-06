@@ -180,7 +180,6 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
    ! Innovations and obs errors for chemic_surf (e.g., surfce concentration)
 
    do ichem = PARAM_FIRST_SCALAR, num_chemic_surf
-
       ipm = ichem - PARAM_FIRST_SCALAR + 1
  
       do n=iv%info(chemic_surf)%n1,iv%info(chemic_surf)%n2

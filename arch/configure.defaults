@@ -2048,7 +2048,7 @@ AMDMATHLIB      =       -fveclib=AMDLIBM
 AMDLDFLAGS      =       -Wl,-mllvm -Wl,-enable-loop-reversal -Wl,-mllvm -Wl,-enable-gather -Wl,-mllvm -Wl,-vectorize-noncontigous-memory-aggressively
 AMDFCFLAGS      =
 
-PROMOTION       =
+PROMOTION       =       -fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM -DRPC_TYPES=2
 CFLAGS_LOCAL    =       -w -c -m64 -Ofast -ffast-math $(AMDARCH)
 LDFLAGS_LOCAL   =       -m64 -Ofast -Mstack_arrays $(AMDARCH) $(AMDLDFLAGS) $(AMDMATHLIB) -lamdlibm -lomp

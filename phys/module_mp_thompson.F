@@ -4298,7 +4298,7 @@
         CALL wrf_dm_gatherv(tnr_racg, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
         CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
 #endif
-        CALL end_timing ( TRIM("table computation "//qr_acr_qg_name//"") )
+        CALL end_timing ( TRIM("table computation qr_acr_qgV4.dat") )
 !+---+-----------------------------------------------------------------+
 
 

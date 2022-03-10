@@ -23,7 +23,7 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
 
 !  Max thresholds of abs(o-b) in pm25,  pm10,  so2,  no2,  o3,  co
    real,dimension(6):: maxomb = (/100., 100., 0.20, 0.20, 0.20, 20./)
-   real             :: err_o1, err_o2, err_r1, err_r2
+   real             :: err_o, err_r
 
    if (trace_use) call da_trace_entry("da_get_innov_vector_chem_sfc")
 
@@ -111,7 +111,7 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
 
       end if
 
-   else if (chem_cv_options >= 108) then   ! racm_soa_vbs_da or racm_soa_vbs_aqchem_da
+   else if (chem_cv_options == 108) then   ! racm_soa_vbs_da
 
       if (chemicda_opt == 1 .or. chemicda_opt == 3 .or. chemicda_opt == 5) then   ! pm2.5
 
@@ -120,13 +120,6 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
             model_chemic_surf(:,p_chemsi_pm25) = model_chemic_surf(:,p_chemsi_pm25) + &
                                                  model_rho(:,ichem)  * model_chemic(:,ichem)
          end do
-
-         if( (p_chem_ic_p25cwi .gt. p_chem_ic_p25i) .and. chem_cv_options == 109 ) then   ! aqueous chemistry
-         do ichem = p_chem_ic_so4cwj,p_chem_ic_p25cwi
-            model_chemic_surf(:,p_chemsi_pm25) = model_chemic_surf(:,p_chemsi_pm25) + &
-                                                 model_rho(:,ichem)  * model_chemic(:,ichem)
-         enddo
-         endif
 
       end if
 
@@ -138,13 +131,6 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
                                                  model_rho(:,ichem) * model_chemic(:,ichem)
          end do
 
-         if( (p_chem_ic_p25cwi .gt. p_chem_ic_p25i) .and. chem_cv_options == 109 ) then   ! aqueous chemistry
-         do ichem = p_chem_ic_so4cwj,p_chem_ic_soilcw
-            model_chemic_surf(:,p_chemsi_pm10) = model_chemic_surf(:,p_chemsi_pm10) + &
-                                                 model_rho(:,ichem)  * model_chemic(:,ichem)
-         end do
-         endif
-
       end if !(chemicda_opt == 2) then
 
       if (chemicda_opt == 3 .or. chemicda_opt == 5) then   ! pm10 after pm2.5
@@ -155,13 +141,6 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
             model_chemic_surf(:,p_chemsi_pm10) = model_chemic_surf(:,p_chemsi_pm10) + &
                                                      model_rho(:,ichem) * model_chemic(:,ichem)
          end do
-
-         if( (p_chem_ic_p25cwi .gt. p_chem_ic_p25i) .and. chem_cv_options == 109 ) then   ! aqueous chemistry
-         do ichem = p_chem_ic_anthcw,p_chem_ic_soilcw
-            model_chemic_surf(:,p_chemsi_pm10) = model_chemic_surf(:,p_chemsi_pm10) + &
-                                                     model_rho(:,ichem) * model_chemic(:,ichem)
-         end do
-         endif
 
       end if !(chemicda_opt == 3 .or. chemicda_opt == 5)
 
@@ -180,6 +159,7 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
    ! Innovations and obs errors for chemic_surf (e.g., surfce concentration)
 
    do ichem = PARAM_FIRST_SCALAR, num_chemic_surf
+
       ipm = ichem - PARAM_FIRST_SCALAR + 1
  
       do n=iv%info(chemic_surf)%n1,iv%info(chemic_surf)%n2
@@ -196,21 +176,10 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
              ob % chemic_surf(n) % chem(ichem) - model_chemic_surf(n,ichem)
 
              ! Observation error specification
-              err_o1 = 1.0 + 0.0075 * ob % chemic_surf(n) % chem(ichem)
-              err_o2 = 1.5 + 0.0075 * ob % chemic_surf(n) % chem(ichem)
-              err_r1 = 0.5 * err_o1 * sqrt(grid%dx/Lrepr)
-              err_r2 = 0.5 * err_o2 * sqrt(grid%dx/Lrepr)
+             err_o = 1.5 + 0.0075 * ob % chemic_surf(n) % chem(ichem)
+             err_r = 0.5 * err_o * sqrt(grid%dx/Lrepr)
 
-              if (chemicda_opt == 3 .or. chemicda_opt == 5 ) then   ! PM10 is treated as (PM10 - PM2.5) residual.
-               if (ichem  == PARAM_FIRST_SCALAR+1 ) then
-                   iv % chemic_surf(n) % chem(ichem) % error = 1.0*sqrt(err_o1**2 + err_r1**2) ! reduced error for PM10
-               else   ! PM2.5 and gas species (so2, no2, o3, co)
-                   iv % chemic_surf(n) % chem(ichem) % error = 1.0*sqrt(err_o2**2 + err_r2**2) ! Ha (GMD2022)
-               end if
-              else     ! PM10 is not a residual.
-                   iv % chemic_surf(n) % chem(ichem) % error = 1.0*sqrt(err_o2**2 + err_r2**2) ! Ha (GMD2022)
-                  !iv % chemic_surf(n) % chem(ichem) % error = 1.5*sqrt(err_o1**2 + err_r1**2) ! Wei's error
-              end if
+             iv % chemic_surf(n) % chem(ichem) % error = 1.0*sqrt(err_o**2 + err_r**2) ! Ha (GMD2022)
 
             ! Quality Control
             ! ----------------

@@ -3653,7 +3653,6 @@ CONTAINS
 !save old tsk_ice
                          tsk_save(i,j)  = tsk(i,j)
                          tsk(i,j)  = ( tsk(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * TSK_SEA(i,j)  )
-                         pblh(i,j) = ( pblh(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * PBLH_SEA(i,j) )
                       ENDIF
                    ENDDO
                 ENDDO
@@ -6018,6 +6017,8 @@ CONTAINS
      MOL_HOLD(its:ite,jts:jte)    = MOL(its:ite,jts:jte)
      PSIH_HOLD(its:ite,jts:jte)   = PSIH(its:ite,jts:jte)
      PSIM_HOLD(its:ite,jts:jte)   = PSIM(its:ite,jts:jte)
+     FH_HOLD(its:ite,jts:jte)     = FH(its:ite,jts:jte)
+     FM_HOLD(its:ite,jts:jte)     = FM(its:ite,jts:jte)
      QFX_HOLD(its:ite,jts:jte)    = QFX(its:ite,jts:jte)
      QGH_HOLD(its:ite,jts:jte)    = QGH(its:ite,jts:jte)
      REGIME_HOLD(its:ite,jts:jte) = REGIME(its:ite,jts:jte)
@@ -6446,6 +6447,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      MOL_HOLD(its:ite,jts:jte)    = MOL(its:ite,jts:jte)
      PSIH_HOLD(its:ite,jts:jte)   = PSIH(its:ite,jts:jte)
      PSIM_HOLD(its:ite,jts:jte)   = PSIM(its:ite,jts:jte)
+     FH_HOLD(its:ite,jts:jte)     = FH(its:ite,jts:jte)
+     FM_HOLD(its:ite,jts:jte)     = FM(its:ite,jts:jte)
      QFX_HOLD(its:ite,jts:jte)    = QFX(its:ite,jts:jte)
      QGH_HOLD(its:ite,jts:jte)    = QGH(its:ite,jts:jte)
      REGIME_HOLD(its:ite,jts:jte) = REGIME(its:ite,jts:jte)

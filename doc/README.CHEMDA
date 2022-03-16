@@ -14,7 +14,7 @@ Sun, W., Liu, Z., Chen, D., Zhao, P., and Chen, M., 2020: Development and applic
 
 Analysis variables includes the four gas-phase variables (O3, CO, NO2 and SO2) and aerosol variables
 from different aerosol schemes in WRF-Chem. Version 4.3 works with GOCART (15 species) or 4-bin MOSAIC
-(32 species) aerosol scheme. Version 4.4 added another aerosol scheme MADE/VBS (35 aerosol variable)
+(32 species) aerosol scheme. Version 4.4 added another aerosol scheme MADE/VBS (35 species)
 (Ha, 2022).
 
 Ha, S., 2022: Implementation of aerosol data assimilation in WRFDA (v4.0.3) for WRF-Chem (v3.9.1) using the 

@@ -47,9 +47,9 @@ chem_cv_options= 0,  # this parameter sets chem control variables. 0 is defulat,
  
 chemicda_opt= 1, # set obs assimilated, default 1, assimilate pm2.5
               2, # assimilate pm10
-              3, # assimilate pm2.5+pm10
-              4, # assimilate co+o3+so2+no2
-              5, # assimilate pm2.5+pm10+co+o3+so2+no2
+              3, # assimilate pm2.5 and pm10
+              4, # assimilate co, o3, so2, and no2
+              5, # assimilate pm2.5, pm10, co, o3, so2, and no2
 
 var_scaling12=1.0, 1.0, …, # array with a dimension of 45*max_outer_iterations, 
                            # inflation factors of chemical background error variances
@@ -60,8 +60,9 @@ len_scaling12=1.0, 1.0, …, # arrary with a dimension of 45*max_outer_iteration
                            # inflation factors of chemical background error length scales. 
                            # Default values is 1.
 
-use_chemic_surfobs = .true., # Default is true, read in ob_chemsfc.ascii file that includes 6 types of   
-    # observations at analysis time. Please refer to var/da/da_obs_io/da_read_obs_chem_sfc.inc for format.
+use_chemic_surfobs = .true., # Default is true, read in ob_chemsfc.ascii file that includes 6 types of
+    # observation that are assumed to be processed for each analysis time and provided in the unit and
+    # the format specified in var/da/da_obs_io/da_read_obs_chem_sfc.inc and da_scan_obs_chem_sfc.inc.
 /
 
 4. Chemical/Aerosols background error covariance statistics

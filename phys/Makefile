@@ -7,6 +7,7 @@ RM      =       rm -f
 
 MODULES = \
 	module_bep_bem_helper.o \
+	complex_number_module.o \
 	module_cam_shr_kind_mod.o \
 	module_cam_support.o \
 	module_cam_shr_const_mod.o \
@@ -116,6 +117,7 @@ MODULES = \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
+	module_ra_rrtmg_aero_optical_util_cmaq.o \
 	module_ra_rrtmg_lwf.o  \
 	module_ra_rrtmg_swf.o  \
         module_ra_rrtmg_lwk.o  \
@@ -237,6 +239,20 @@ $(LIBTARGET) :
 include ../configure.wrf
 
 non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
+
+submodules :
+	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \
+	      \( ! -f module_sf_noahmp_groundwater.F \) -o \( ! -f module_sf_noahmplsm.F \) ] ; then \
+		echo Pulling in NoahMP submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf noahmp/drivers/wrf/module_sf_noahmpdrv.F . ; \
+		ln -sf noahmp/src/module_sf_noahmp_glacier.F . ; \
+		ln -sf noahmp/src/module_sf_noahmp_groundwater.F . ; \
+		ln -sf noahmp/src/module_sf_noahmplsm.F . ; \
+		( cd ../run ; ln -sf ../phys/noahmp/parameters/MPTABLE.TBL . ) ; \
+	else \
+		echo No action required for NoahMP submodule ; \
+	fi
 
 clean:
 	@ echo 'use the clean script'

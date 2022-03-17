@@ -324,6 +324,18 @@
          count_fatal_error = count_fatal_error + 1
       END IF
 
+!-----------------------------------------------------------------------
+! Check that multi_perturb and adptive time setp are not both activated
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+      IF ((model_config_rec%multi_perturb(i) == 1) .and. model_config_rec%use_adaptive_time_step) then
+            wrf_err_message = '--- ERROR: multi_perturb and adpative time step are not compatible.'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that SMS-3DTKE scheme (km_opt=5) Must work with diff_opt=2
@@ -605,6 +617,17 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If couple_farms is true, swint_opt must be 2
+!-----------------------------------------------------------------------
+      IF ( model_config_rec%couple_farms .AND. model_config_rec%swint_opt /= 2 ) THEN
+         wrf_err_message = '--- ERROR: Options couple_farms = T requires swint_opt  = 2'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Change either one in namelist.input and rerun the model'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! For ARW users, a request for CU=4 (SAS) should be switched to option
 ! CU = 95.
 !-----------------------------------------------------------------------
@@ -641,6 +664,35 @@
          END IF
       ENDDO god_r8
 
+# endif
+
+!-----------------------------------------------------------------------
+! With CMAQ coupling, if the option "direct_sw_feedback" is activated,
+! then the only SW radiation scheme set up to support this is RRTMG.
+!-----------------------------------------------------------------------
+# if ( WRF_CMAQ == 1 ) 
+      cmaq : DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % direct_sw_feedback ) .AND. &
+              ( model_config_rec % wrf_cmaq_option .EQ. 1 ) .AND. &
+              ( model_config_rec % ra_sw_physics(i) .NE. rrtmg_swscheme ) ) THEN
+            wrf_err_message = '--- ERROR: With CMAQ coupling, "direct_sw_feedback=T" requires RRTMG SW'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+            EXIT cmaq
+         END IF
+      ENDDO cmaq
+# else
+      cmaq : DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % direct_sw_feedback ) .OR. & 
+              ( model_config_rec % wrf_cmaq_option .EQ. 1 ) ) THEN
+            wrf_err_message = '--- ERROR: The option "direct_sw_feedback=T" and "wrf_cmaq_option==1" require CMAQ coupling'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+            EXIT cmaq
+         END IF
+      ENDDO cmaq
 # endif
 
 !-----------------------------------------------------------------------
@@ -1403,6 +1455,63 @@
             wrf_err_message = '--- ERROR: If sst_update /= 0, one of the auxinput4_interval settings must be /= 0'
             CALL wrf_debug ( 0, TRIM(wrf_err_message) )
             wrf_err_message = '--- Set auxinput4_interval_s to the same value as interval_seconds (usually a pretty good guess).'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      END IF
+
+!-----------------------------------------------------------------------
+! If qna_update = 0, set io_form_auxinput17 to 0 so WRF will not try to
+! input the data; auxinput_interval must also be 0
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%qna_update .EQ. 0 ) THEN
+         model_config_rec%io_form_auxinput17 = 0
+         DO i = 1, model_config_rec % max_dom
+            wrf_err_message = '--- NOTE: qna_update is 0, ' // &
+                  'setting io_form_auxinput17 = 0 and auxinput17_interval = 0 for all domains'
+            CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
+            model_config_rec%auxinput17_interval(i)   = 0
+            model_config_rec%auxinput17_interval_y(i) = 0
+            model_config_rec%auxinput17_interval_d(i) = 0
+            model_config_rec%auxinput17_interval_h(i) = 0
+            model_config_rec%auxinput17_interval_m(i) = 0
+            model_config_rec%auxinput17_interval_s(i) = 0
+         ENDDO
+      ELSE
+         IF ( model_config_rec%io_form_auxinput17 .EQ. 0 ) THEN
+            wrf_err_message = '--- ERROR: If qna_update /= 0, io_form_auxinput17 must be /= 0'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Set io_form_auxinput17 in the time_control namelist (probably to 2).'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      END IF
+
+!-----------------------------------------------------------------------
+! If qna_update = 1, we need to make sure that two nml items are set:
+!   1. io_form_auxinput17 = 2 (only for one domain)
+!   2. auxinput17_interval = NON-ZERO (just check most coarse domain)
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%qna_update .EQ. 1 ) THEN
+         IF ( model_config_rec%io_form_auxinput17 .EQ. 0 ) THEN
+            wrf_err_message = '--- ERROR: If qna_update /= 0, io_form_auxinput17 must be /= 0'
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            wrf_err_message = '--- Set io_form_auxinput17 in the time_control namelist (probably to 2).'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+
+         IF ( ( model_config_rec%auxinput17_interval(1)   .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_y(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_d(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_h(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_m(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_s(1) .EQ. 0 ) ) THEN
+            wrf_err_message = '--- ERROR: If qna_update /= 0, one of the auxinput17_interval settings must be /= 0'
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            wrf_err_message = '--- Set auxinput17_interval_s to the same value as interval_seconds (usually a pretty good guess).'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
          END IF
@@ -2353,7 +2462,8 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
-            IF ( model_config_rec%use_aero_icbc .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
+            IF ( (model_config_rec%use_aero_icbc .OR. model_config_rec%use_rap_aero_icbc) &
+                                      .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
                 model_config_rec%scalar_pblmix(i) = 1
                 oops = oops + 1
             END IF
@@ -2396,9 +2506,39 @@
        END IF
      END DO
 
-     IF ( model_config_rec%aer_init_opt > 0 ) THEN
-       model_config_rec%wif_input_opt = 1
-     END IF
+!-----------------------------------------------------------------------
+!  Set aer_fire_emit_opt for Thompson-MP-Aero (mp_physics=28)
+!-----------------------------------------------------------------------
+     DO i = 1, model_config_rec % max_dom
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .AND. model_config_rec%wif_fire_emit) THEN
+         IF ( model_config_rec%aer_init_opt .EQ. 2) THEN
+           IF ( model_config_rec%wif_input_opt .EQ. 1 ) THEN
+             model_config_rec%aer_fire_emit_opt = 1
+           ELSE IF ( model_config_rec%wif_input_opt .EQ. 2 ) THEN
+             model_config_rec%aer_fire_emit_opt = 2
+           END IF
+         ELSE IF ( model_config_rec%aer_init_opt .EQ. 0 .OR. model_config_rec%aer_init_opt .EQ. 1) THEN
+           wrf_err_message = '--- ERROR: wif_fire_emit=.true. but selected aerosol source does not contain fire emissions '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           wrf_err_message = '--- ERROR: Please use first guess aerosol source with fire emissions and set use_rap_aero_icbc=.true. '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           count_fatal_error = count_fatal_error + 1
+         END IF
+       END IF
+     END DO
+
+!-----------------------------------------------------------------------
+!  Set warning message if wif_fire_inj for Thompson-MP-Aero (mp_physics=28)
+!  is turned on when no PBL scheme is active
+!-----------------------------------------------------------------------
+     DO i = 1, model_config_rec % max_dom
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .AND. model_config_rec%wif_fire_emit) THEN
+         IF ( model_config_rec%bl_pbl_physics(i) .EQ. 0  ) THEN
+           wrf_err_message = '--- WARNING: PBL scheme not active but wif_fire_inj=1 for mp_physics=28 '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         END IF
+       END IF
+     END DO
 
 !-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.

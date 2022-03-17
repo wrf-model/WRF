@@ -7,9 +7,9 @@ MODULE module_optional_input
               flag_qg       , flag_qh       , &
               flag_qni      , flag_qnc      , flag_qnr      , &
               flag_qns      , flag_qng      , flag_qnh      , &
-              flag_qnwfa2d  , flag_qnifa2d  , &
-              flag_qnwfa    , flag_qnifa    , &
-              flag_qnwfa_cl , flag_qnifa_cl , &
+              flag_qnwfa2d  , flag_qnifa2d  , flag_qnbca2d  , flag_qnocbb2d , flag_qnbcbb2d , &
+              flag_qnwfa    , flag_qnifa    , flag_qnbca    , &
+              flag_qnwfa_cl , flag_qnifa_cl , flag_qnbca_cl , &
               flag_p_wif    , &
               flag_sh       , flag_speccldl , flag_speccldf
 
@@ -305,10 +305,15 @@ USE module_io_domain
       flag_qnh      = 0
       flag_qnwfa2d  = 0
       flag_qnifa2d  = 0
+      flag_qnbca2d  = 0
+      flag_qnocbb2d = 0
+      flag_qnbcbb2d = 0
       flag_qnwfa    = 0
       flag_qnifa    = 0
+      flag_qnbca    = 0
       flag_qnwfa_cl = 0
       flag_qnifa_cl = 0
+      flag_qnbca_cl = 0
       flag_p_wif    = 0
       flag_sh       = 0
       flag_speccldl = 0
@@ -393,6 +398,21 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_qnifa2d   = itmp
       END IF
+      flag_name(1:8) = 'QNBCA2D '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnbca2d   = itmp
+      END IF
+      flag_name(1:8) = 'QNOCBB2D'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnocbb2d   = itmp
+      END IF
+      flag_name(1:8) = 'QNBCBB2D'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnbcbb2d   = itmp
+      END IF
       flag_name(1:8) = 'QNWFA    '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
@@ -403,6 +423,11 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_qnifa     = itmp
       END IF
+      flag_name(1:8) = 'QNBCA    '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnbca     = itmp
+      END IF
       flag_name(1:8) = 'QNWFA_CL'
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
@@ -412,6 +437,11 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qnifa_cl  = itmp
+      END IF
+      flag_name(1:8) = 'QNBCA_CL'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnbca_cl  = itmp
       END IF
       flag_name(1:8) = 'P_WIF   '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )

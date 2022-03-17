@@ -12117,9 +12117,11 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 
            if(iceflgsw.eq.5)then
               do k = kts, kte
-                 snow_mass_factor = 1.0                 
+                 snow_mass_factor = 0.99        ! Assume 1% of snow overlaps the cloud ice category
+                 gicewp = gicewp + (qs1d(k)*(1.0-snow_mass_factor) * pdel(ncol,k)*100.0 / gravmks * 1000.0)
                  if (resnow1d(icol,k) .gt. 130.)then 
-                     snow_mass_factor = (130.0/resnow1d(icol,k))*(130.0/resnow1d(icol,k))
+                     snow_mass_factor = MIN(snow_mass_factor,                       &
+     &                         (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k)))
                      resnow1d(icol,k)   = 130.0
                  endif
                  gsnowp = qs1d(k) * snow_mass_factor * pdel(icol,k)*100.0 / gravmks * 1000.0     ! Grid box snow water path.

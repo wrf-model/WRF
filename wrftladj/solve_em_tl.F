@@ -115,6 +115,8 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
 
    REAL                            :: t_new
 
+   LOGICAL :: feedback_is_ready   ! CMAQ
+
    ! Changes in tendency at this timestep
    real ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) :: h_tendency, &
                                                                                    z_tendency
@@ -219,6 +221,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
 ! Initialize timers if compiled with -DBENCH
 #include "bench_solve_em_init.h"
 
+   feedback_is_ready = .false.
 !  set runge-kutta solver (2nd or 3rd order)
 
    dynamics_option = config_flags%rk_ord
@@ -661,7 +664,8 @@ BENCH_END(g_set_phys_bc_tim)
                              , imsy,imey,jmsy,jmey,kmsy,kmey    &
                              , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
-                             , f_flux                           &
+                             , f_flux=f_flux                    &
+                             , feedback_is_ready=feedback_is_ready    & 
                              )
 
 #ifdef DM_PARALLEL

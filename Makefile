@@ -108,6 +108,22 @@ framework_only : configcheck
 
 wrf : framework_only
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
+	if [ \( ! -f run/MPTABLE.TBL \) -o \
+	     \( ! -f phys/module_sf_noahmpdrv.F \) -o \
+	     \( ! -f phys/module_sf_noahmp_glacier.F \) -o \
+	     \( ! -f phys/module_sf_noahmp_groundwater.F \) -o \
+	     \( ! -f phys/module_sf_noahmplsm.F \) ] ; then \
+	   echo " " ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo "Error Error Error NoahMP submodule files not populating WRF directories" ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo " " ; \
+	   exit 31 ; \
+	else \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo "NoahMP submodule files populating WRF directories" ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	fi
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi
@@ -115,10 +131,6 @@ wrf : framework_only
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
-	fi
-	if [ ! -f run/p3_lookupTable_1.dat-5.3-3momI ] ; then \
-	  ( cd run ; cp p3_lookupTable_1.dat-5.3-3momI.gz hold.gz ; \
-	    gunzip hold.gz ; mv hold p3_lookupTable_1.dat-5.3-3momI ) ; \
 	fi
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -574,14 +586,15 @@ em_real : wrf
                ln -sf ../../run/eclipse_besselian_elements.dat . ;     \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
                ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;     \
-               ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;     \
-               ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ;  \
+               ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.7 . ;     \
+               ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.3 . ;  \
                ln -sf ../../run/HLC.TBL . ;                            \
                ln -sf ../../run/wind-turbine-1.tbl . ;                 \
                ln -sf ../../run/ishmael-gamma-tab.bin . ;              \
                ln -sf ../../run/ishmael-qi-qc.bin . ;                  \
                ln -sf ../../run/ishmael-qi-qr.bin . ;                  \
                ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
+               ln -sf ../../run/STOCHPERT.TBL . ;                      \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -655,14 +668,15 @@ em_real : wrf
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
              ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;    \
-             ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;    \
-             ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ; \
+             ln -sf ../../run/p3_lookupTable_1.dat-3momI_v5.1.7 . ;    \
+             ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.3 . ; \
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
              ln -sf ../../run/ishmael-gamma-tab.bin . ;             \
              ln -sf ../../run/ishmael-qi-qc.bin . ;                 \
              ln -sf ../../run/ishmael-qi-qr.bin . ;                 \
              ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;       \
+             ln -sf ../../run/STOCHPERT.TBL . ;                     \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -921,13 +935,13 @@ framework :
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
           cd ../io_netcdfpar ; \
-          $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" \
+          $(NETCDFPAR_BUILD) $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdfpar ; \
-          $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" \
+          $(NETCDFPAR_BUILD) $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
@@ -1011,16 +1025,20 @@ chemics :
 physics :
 	@ echo '--------------------------------------'
 	if [ $(WRF_CHEM) -eq 0 ] ; then \
-		( cd phys ; $(MAKE) CF2=" " ) ; \
+		( cd phys ; $(MAKE) submodules ; $(MAKE) CF2=" " ) ; \
+		if [ $(WRF_CMAQ) -eq 1 ] ; then \
+			@ echo '----------- make cmaq ----------------' ; \
+			( rm -f main/libcmaqlib.a; cd cmaq ; $(MAKE) -f Makefile.twoway ) ; \
+		fi \
 	else \
-		( cd phys ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
+		( cd phys ; $(MAKE) submodules ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
 	fi
 
 physics_plus :
 	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
-	   ( cd phys ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
+	   ( cd phys ; $(MAKE) submodules ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
 	else \
-	   ( cd phys ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
+	   ( cd phys ; $(MAKE) submodules ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
 	fi
 
 wrftlmadj :

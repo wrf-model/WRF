@@ -1035,7 +1035,8 @@ endif
                       grid%stepbl,grid%stepra,grid%stepcu,                   &
                       grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
                       grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
-                      z_at_q, grid%alt, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
+                      z_at_q, grid%alt, grid%qnwfa2d, grid%qnbca2d,     & ! G. Thompson
+                      scalar(ims,kms,jms,1), num_scalar,                & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
                       grid%phb,grid%ph_2,grid%p,grid%pb,                & ! for ntu3m

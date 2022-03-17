@@ -646,6 +646,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1,  ! use interpolation
                                      = 2,  ! Calls the Fast All-Sky Radiation Model for Solar applications (FARMS)
                                            ! every model time step. 
+ couple_farms                        = .false. ! True) uses FARMS SW radiation to drive the LSM, False) Uses the SW radiation from rad_sw_physics
  cam_abs_freq_s                      = 21600  ! default CAM clearsky longwave absorption calculation frequency
                                                 (recommended minimum value to speed scheme up)
  levsiz                              = 59     ! for CAM radiation input ozone levels, set automatically
@@ -1217,6 +1218,44 @@ Stochastically perturbed parameter scheme (SPP) (spp=1)
                                                   combined with seed nens signifying ensemble member number and initial
                                                   start time to ensure different random number streams for forecasts
                                                   starting from different initial times and for different ensemble members.
+
+Multiple perturbations for WRF-Solar EPS (multi_perturb = 1)
+ multi_perturb         = 0        ! 1) WRF-Solar EPS: turns on stochastic perturbations tailored for solar energy applications
+ spdt                  = -1.0     ! Frequency to update the stochastic perturbations [minutes]. A negative value indicates for every time step
+ pert_farms            = .false.  ! Activates perturbations to the FARMS parameterization
+ pert_farms_albedo     = 0.0      ! 1.0) Perturbs the albedo, 0.0) no perturbations. Similar for other entries below
+ pert_farms_aod        = 0.0
+ pert_farms_angexp     = 0.0
+ pert_farms_aerasy     = 0.0
+ pert_farms_qv         = 0.0
+ pert_farms_qc         = 0.0
+ pert_farms_qs         = 0.0
+ pert_deng             = .false.  ! Activates perturbations to Deng's shcu parameterization
+ pert_deng_qv          = 0.0
+ pert_deng_qc          = 0.0
+ pert_deng_t           = 0.0
+ pert_deng_w           = 0.0
+ pert_mynn             = .false.  ! Activates perturbations to the MYNN PBL parameterization
+ pert_mynn_qv          = 0.0
+ pert_mynn_qc          = 0.0
+ pert_mynn_t           = 0.0
+ pert_mynn_qke         = 0.0
+ pert_noah             = .false.  ! Activates perturbations to the Noah LSM
+ pert_noah_qv          = 0.0
+ pert_noah_t           = 0.0
+ pert_noah_smois       = 0.0
+ pert_noah_tslb        = 0.0
+ pert_thom             = .false.  ! Activates perturbations to thompson microphysics
+ pert_thom_qv          = 0.0
+ pert_thom_qc          = 0.0
+ pert_thom_qi          = 0.0
+ pert_thom_qs          = 0.0
+ pert_thom_ni          = 0.0
+ pert_cld3             = .false. ! Activates perturbations to clouds generated with icloud = 3
+ pert_cld3_qv          = 0.0
+ pert_cld3_t           = 0.0
+
+ num_pert_3d           = 15 ! Number of entries in STOCHPERT.TBL plus one (No need to modify)
 
 ; Stochastic Perturbations to the boundary conditions?| (perturb_bdy)
  perturb_bdy                        = 0         ! No boundary perturbations

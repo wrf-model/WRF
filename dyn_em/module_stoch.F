@@ -108,8 +108,10 @@ contains
                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
 
 
+    USE module_dm
     USE module_configure
     USE module_domain, ONLY : domain
+    USE module_wrf_error
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, &
                           wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y, data_order_xzy
@@ -130,7 +132,15 @@ contains
                                                 ipsy,ipey,jpsy,jpey,kpsy,kpey
 
       LOGICAL                  ::               first_trip_for_this_domain
-      INTEGER                  ::               K
+      INTEGER                  ::               K, n, nfield, ierr, iseed, vertstruc, kvar
+      real                     :: std, lengthscale, timescale, std_cutoff
+      character (len = 10)    :: varname
+      LOGICAL , EXTERNAL       :: wrf_dm_on_monitor
+      INTEGER                  :: stochpert_unit
+      INTEGER , PARAMETER      :: OPEN_OK = 0
+      CHARACTER (len = 1024)   :: message
+      logical, parameter :: DEBUG_MULTI_PERT = .true.
+      REAL, DIMENSION(ims:ime,jms:jme) :: SPFORCS3d_loc, SPFORCC3d_loc, SP_AMP3d_loc
 
 
    IF ( first_trip_for_this_domain ) THEN
@@ -139,7 +149,8 @@ contains
 
    IF ((( grid%id == 1) .AND. (.NOT. grid%did_stoch)) .AND. &
        (( grid%skebs_on== 1) .OR.( grid%sppt_on== 1) .OR. ( grid%rand_perturb_on== 1) .OR. &
-         ( grid%spp_conv== 1) .OR. ( grid%spp_pbl== 1) .OR. ( grid%spp_lsm== 1)) ) THEN
+         ( grid%spp_conv== 1) .OR. ( grid%spp_pbl== 1) .OR. ( grid%spp_lsm== 1)) .or. &
+        (config_flags%multi_perturb == 1)) THEN
 
      grid%did_stoch = .TRUE.
 
@@ -259,6 +270,183 @@ IF (grid%sppt_on==1) then
          enddo
        ENDIF !rand_perturb_on
      ENDIF
+
+       ! Initialize MULTI_PERTURB
+     If_multi_perturb: IF (config_flags%multi_perturb == 1) then
+         ! Set frequency to update perturbations: spdt is in min and dt is in s
+       grid%stepsp = nint (config_flags%spdt * 60.0 / grid%dt)
+       grid%stepsp = max (grid%stepsp, 1)
+
+         ! Initialize perturbations
+       stochpert_unit = 97
+       IF ( wrf_dm_on_monitor() ) THEN
+         OPEN(stochpert_unit, FILE='STOCHPERT.TBL',FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr)
+         IF ( ierr .NE. OPEN_OK ) THEN
+           WRITE(message,FMT='(A)') &
+           'module_stoch.F: INITIALIZE_STOCH: open failure for STOCHPERT.TBL'
+           CALL wrf_error_fatal ( message )
+         END IF
+         REWIND(stochpert_unit)
+       ENDIF
+
+       if (DEBUG_MULTI_PERT) print *, 'num_pert3d = ', num_pert3d
+       if (DEBUG_MULTI_PERT) print *, 'num_pert_3d = ', config_flags%num_pert_3d
+         ! Reads stoch table
+         if ( wrf_dm_on_monitor() ) then
+           READ (stochpert_unit,*)  ! Skip
+           READ (stochpert_unit,*)  ! the
+           READ (stochpert_unit,*)  ! header
+         end if
+       DO n = 2, config_flags%num_pert_3d
+         IF ( wrf_dm_on_monitor() ) THEN
+           read (stochpert_unit, *) nfield, varname, std, lengthscale, timescale, std_cutoff, &
+               iseed, vertstruc
+           select case (trim(varname))
+             case ('ALBEDO')
+               kvar = P_PALBEDO
+
+             case ('AOD')
+               kvar = P_PAOD
+
+             case ('ANGSTROM')
+               kvar = P_PANGSTROM
+
+             case ('ASSYMFAC')
+               kvar = P_PASSYMFAC
+
+             case ('QVAPOR')
+               kvar = P_PQVAPOR
+
+             case ('QCLOUD')
+               kvar = P_PQCLOUD
+
+             case ('QICE')
+               kvar = P_PQICE
+
+             case ('QSNOW')
+               kvar = P_PQSNOW
+
+             case ('NI')
+               kvar = P_PNI
+
+             case ('TH')
+               kvar = P_PTH
+
+             case ('TKE')
+               kvar = P_PTKE
+
+             case ('SMOIS')
+               kvar = P_PSMOIS
+
+             case ('TSOIL')
+               kvar = P_PTSOIL
+
+             case ('W')
+               kvar = P_PW
+
+             case default
+               WRITE(message,FMT='(A)') &
+                   'module_stoch.F: Invalid entry in STOCHPERT.TBL'
+               CALL wrf_error_fatal ( message )
+    
+           end select
+
+           grid%gridpt_stddev_mult3d(kvar) = std
+           grid%lengthscale_mult3d(kvar) = lengthscale
+           grid%timescale_mult3d(kvar) = timescale
+           grid%stddev_cutoff_mult3d(kvar) = std_cutoff
+           grid%ISEED_MULT3D(kvar) = iseed
+           grid%mult3d_vertstruc(kvar) = vertstruc
+
+           if (DEBUG_MULTI_PERT) print *, kvar, varname, grid%gridpt_stddev_mult3d(kvar), &
+                             grid%lengthscale_mult3d(kvar), grid%timescale_mult3d(kvar), &
+                             grid%stddev_cutoff_mult3d(kvar), grid%ISEED_MULT3D(kvar), &
+                             grid%mult3d_vertstruc(kvar)
+         ENDIF
+           ! Note that num_pert_3d is the dimension of the 1d arrays from the table
+           ! and num_pert3d is the number of allocated pert3d elements from the package (<= num_pert_3d)
+         CALL wrf_dm_bcast_bytes (grid%gridpt_stddev_mult3d,   config_flags%num_pert_3d * RWORDSIZE )
+         CALL wrf_dm_bcast_bytes (grid%lengthscale_mult3d,     config_flags%num_pert_3d * RWORDSIZE )
+         CALL wrf_dm_bcast_bytes (grid%timescale_mult3d,       config_flags%num_pert_3d * RWORDSIZE )
+         CALL wrf_dm_bcast_bytes (grid%stddev_cutoff_mult3d,   config_flags%num_pert_3d * RWORDSIZE )
+         CALL wrf_dm_bcast_bytes (grid%ISEED_MULT3D,           config_flags%num_pert_3d * IWORDSIZE )
+         CALL wrf_dm_bcast_bytes (grid%mult3d_vertstruc,       config_flags%num_pert_3d * IWORDSIZE )
+       END DO
+
+       Loop_multi_perturb: DO n = 2, config_flags%num_pert_3d
+         CALL contiguize_2d ( .TRUE. , grid%SPFORCS3d, SPFORCS3d_loc, n,       &
+                              ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                              ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                              ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+         CALL contiguize_2d ( .TRUE. , grid%SPFORCC3d, SPFORCC3d_loc, n,       &
+                              ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                              ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                              ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+         CALL contiguize_2d ( .TRUE. , grid%SP_AMP3d,  SP_AMP3d_loc,  n,       &
+                              ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                              ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                              ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+         if ((.not.config_flags%restart) .or. (.not.config_flags%hrrr_cycling)) then
+           call rand_seed (config_flags, grid%ISEED_MULT3D(n), grid%iseedarr_mult3d(:,n)  , 1, config_flags%seed_dim)
+         endif
+         call SETUP_RAND_PERTURB('R',                                     &
+                       grid%mult3d_vertstruc(n),config_flags%restart,     &
+                       SP_AMP3d_loc,SPFORCC3d_loc,SPFORCS3d_loc,          &
+                       grid%ALPH_RAND3d(n),                               &
+                       grid%VERTSTRUCC3d(:,:,:,n),grid%VERTSTRUCS3d(:,:,:,n),grid%VERTAMPT3d(:,n),     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%stepsp * grid%time_step,grid%DX,grid%DY,      &
+                       grid%gridpt_stddev_mult3d(n),                      &
+                       grid%lengthscale_mult3d(n),                        &
+                       grid%timescale_mult3d(n),                          &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+
+!        if (.not.config_flags%restart) then ! spin up
+!          do k = 1,10
+!            CALL RAND_PERT_UPDATE(grid,'R',                                   &
+!                          SPFORCS3d_loc,SPFORCC3d_loc,SP_AMP3d_loc,           &
+!                          grid%ALPH_RAND3d(n),                                &
+!                          ips, ipe, jps, jpe, kps, kpe,                       &
+!                          ids, ide, jds, jde, kds, kde,                       &
+!                          ims, ime, jms, jme, kms, kme,                       &
+!                          kts, kte,                                           &
+!                          imsx,imex,jmsx,jmex,kmsx,kmex,                      &
+!                          ipsx,ipex,jpsx,jpex,kpsx,kpex,                      &
+!                          imsy,imey,jmsy,jmey,kmsy,kmey,                      &
+!                          ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
+!                          grid%num_stoch_levels,grid%num_stoch_levels,        &
+!                          grid%num_stoch_levels,grid%num_stoch_levels,        &
+!                          config_flags%restart, grid%iseedarr_mult3d(:,n),    &
+!                          config_flags%seed_dim,                              &
+!                          grid%DX,grid%DY,grid%mult3d_vertstruc(n),           &
+!                          grid%PERT3D(:,:,:,n),                               &
+!                          grid%stddev_cutoff_mult3d(n),                       &
+!                          grid%gridpt_stddev_mult3d(n),                       &
+!                          grid%VERTSTRUCC3d(:,:,:,n),grid%VERTSTRUCS3d(:,:,:,n),grid%VERTAMPT3d(:,n)       )
+!          enddo
+!        end if
+         CALL contiguize_2d ( .FALSE., grid%SPFORCS3d, SPFORCS3d_loc, n,       &
+                              ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                              ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                              ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+         CALL contiguize_2d ( .FALSE., grid%SPFORCC3d, SPFORCC3d_loc, n,       &
+                              ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                              ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                              ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+         CALL contiguize_2d ( .FALSE., grid%SP_AMP3d,  SP_AMP3d_loc,  n,       &
+                              ips, ipe, jps, jpe, 1, config_flags%num_pert_3d, &
+                              ids, ide, jds, jde, 1, config_flags%num_pert_3d, &
+                              ims, ime, jms, jme, 1, config_flags%num_pert_3d  )
+       END DO Loop_multi_perturb
+     ENDIF  If_multi_perturb
+     IF ( wrf_dm_on_monitor() ) CLOSE (stochpert_unit)
+
 
 ! Initialize Stochastic Parameter Perturbations to convection scheme
      IF (grid%spp_conv==1) then
@@ -907,6 +1095,7 @@ IF (grid%sppt_on==1) then
 ! This subroutine evolves the spectral pattern and transforms it back to gridpoint space.
 
 
+!pajm
       SUBROUTINE RAND_PERT_UPDATE       (grid, variable_in,                   &
                           SPFORCS,SPFORCC,SP_AMP,ALPH_RAND,                   &
                           ips, ipe, jps, jpe, kps, kpe,                       &
@@ -926,6 +1115,7 @@ IF (grid%sppt_on==1) then
 
 
     USE module_domain, ONLY : domain
+!pajm Do we need the following line USE module_state_description, ONLY : num_pert3d
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, &
                           wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y, data_order_xzy
@@ -1357,5 +1547,41 @@ IF (grid%sppt_on==1) then
       end if
 
       end SUBROUTINE rand_seed
+
+!     ------------------------------------------------------------------
+
+      SUBROUTINE contiguize_2d ( in_out, d3, d2, n ,               &
+                                 ips, ipe, jps, jpe, kps, kpe,     &
+                                 ids, ide, jds, jde, kds, kde,     &
+                                 ims, ime, jms, jme, kms, kme      )
+         IMPLICIT NONE
+      
+         LOGICAL, INTENT(IN) :: in_out ! d3->d2 = T; d2->d3 = F
+         INTEGER, INTENT(IN) :: n
+         INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde,     &
+                                ims, ime, jms, jme, kms, kme,     &
+                                ips, ipe, jps, jpe, kps, kpe
+      
+         REAL, INTENT(INOUT), DIMENSION(ims:ime,        jms:jme) :: d2
+         REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: d3
+      
+         INTEGER :: i, j
+      
+         IF ( in_out ) THEN 
+            DO j = jms, jme
+               DO i = ims, ime
+                  d2(i,j) = d3(i,n,j)
+               END DO
+            END DO
+         ELSE
+            DO j = jms, jme
+               DO i = ims, ime
+                  d3(i,n,j) = d2(i,j)
+               END DO
+            END DO
+         END IF
+      
+      END SUBROUTINE contiguize_2d
+
 !     ------------------------------------------------------------------
       end module module_stoch

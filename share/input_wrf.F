@@ -1124,7 +1124,7 @@
         CASE ( input_only, auxinput1_only, auxinput2_only,       &
                auxinput3_only, auxinput4_only, auxinput5_only,  &
                auxinput6_only, auxinput7_only, auxinput8_only,  &
-               auxinput9_only, auxinput10_only )
+               auxinput9_only, auxinput10_only, auxinput17_only )
 #if ( WRF_CHEM == 1 )
            IF( (config_flags%io_style_emissions .eq. 1) .and.                                &
               ((switch.eq.auxinput5_only) .or. (switch.eq.auxinput6_only) .or. &

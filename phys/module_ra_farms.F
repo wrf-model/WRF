@@ -26,7 +26,6 @@
     real, parameter :: DE_ICE_MIN = 5.0, DE_ICE_MAX = 140.0
     real, parameter :: DE_CLOUD_MIN = 5.0, DE_CLOUD_MAX = 120.0
     real, parameter :: TAU_MIN = 0.0001, TAU_MAX = 300.0
-    real, parameter :: AOD550_VAL = 0.12, ANGEXP_VAL = 1.3, AERSSA_VAL = 0.85, AERASY_VAL = 0.9
     real, parameter :: RE_CLOUD_CLIM = 8.E-6, RE_ICE_CLIM = 24.E-6, RE_SNOW_CLIM = 24.E-6
 
   contains
@@ -180,18 +179,6 @@
                end if
              else
                tau_qs = 0.0
-             end if
-
-               ! Aerosols
-             if (aer_opt == 1) then
-                angexp2d(i, j) = ANGEXP_VAL
-                aerssa2d(i, j) = AERSSA_VAL
-                aerasy2d(i, j) = AERASY_VAL
-             else if (aer_opt == 0) then
-                aod5502d(i, j) = 0.0
-                angexp2d(i, j) = 0.0
-                aerssa2d(i, j) = 0.0
-                aerasy2d(i, j) = 0.0
              end if
 
              beta = aod5502d(i, j) * (1000.0/ 550.0) ** (- angexp2d(i, j))

@@ -67,7 +67,7 @@ CONTAINS
      &          ,qintsxy   ,qintrxy   ,qdripsxy ,qdriprxy  ,qthrosxy  ,qthrorxy     &
      &          ,qsnsubxy  ,qsnfroxy  ,qsubcxy  ,qfrocxy   ,qevacxy   ,qdewcxy      &
      &          ,qfrzcxy   ,qmeltcxy  ,qsnbotxy ,pondingxy ,PAHXY     ,PAHGXY       &
-     &          ,PAHVXY    ,PAHBXY                                                  &
+     &          ,PAHVXY    ,PAHBXY    ,qmeltxy                                      &
      &          ,fpicexy   ,RAINLSM   ,SNOWLSM  ,forctlsm  ,forcqlsm  ,forcplsm     &
      &          ,forczlsm  ,forcwlsm  ,acc_ssoil,acc_qinsur,acc_qseva ,acc_etrani   &
      &          ,eflxbxy   ,soilenergy,snowenergy, canhsxy                          &
@@ -904,7 +904,7 @@ CONTAINS
                qdriprxy  ,qthrosxy  ,qthrorxy   ,&
                qsnsubxy  ,qsnfroxy  ,qsubcxy    ,&
                qfrocxy   ,qevacxy   ,qdewcxy,qfrzcxy   ,qmeltcxy   ,&
-               qsnbotxy  ,pondingxy, PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
+               qsnbotxy  ,qmeltxy   ,pondingxy, PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
                fpicexy,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,canhsxy
    INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: PLANTING
@@ -3154,7 +3154,7 @@ CONTAINS
                qdriprxy  ,qthrosxy  ,qthrorxy   ,&
                qsnsubxy  ,qsnfroxy  ,qsubcxy    ,&
                qfrocxy   ,qevacxy   ,qdewcxy    ,qfrzcxy   ,qmeltcxy   ,&
-               qsnbotxy  ,pondingxy ,PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
+               qsnbotxy  ,qmeltxy   ,pondingxy ,PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
                fpicexy,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,&
                acc_ssoil, acc_qinsur, acc_qseva, acc_etrani, eflxbxy, soilenergy, snowenergy, canhsxy,&
                ACC_DWATERXY, ACC_PRCPXY, ACC_ECANXY, ACC_ETRANXY, ACC_EDIRXY, &

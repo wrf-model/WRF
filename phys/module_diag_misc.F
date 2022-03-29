@@ -645,7 +645,7 @@ CONTAINS
       acshb    ,acevb    ,acghb    ,acpahb   ,acsav     ,acirc   ,acshc    ,acevc    ,&
       actr     ,acpahv   ,acswdnlsm,acswuplsm,                                        &
       aclwdnlsm,aclwuplsm,acshflsm ,aclhflsm ,acghflsm  ,acpahlsm,acints   ,acintr   ,&
-      acdrips  ,acdripr  ,acthros  ,acthror  ,acetlsm   ,&
+      acdrips  ,acdripr  ,acthros  ,acthror  ,acetlsm   ,acsnmelt,                    &
       acsnsub  ,acsnfro  ,acsubc   ,acfroc   ,acevac    ,acdewc  ,acfrzc   ,acmeltc  ,&
       acsnbot  ,acponding,acrainlsm,acsnowlsm,acrainsnow,acrunsb ,acrunsf  ,isnow    ,&
       acqlat   ,acqrf  ,acrech ,acqspring ,acecan ,acetran ,acedir ,aceflxb ,accanhs ,&
@@ -655,7 +655,8 @@ CONTAINS
       glw      ,trad     ,qints    ,qintr    ,qdrips    ,qdripr  ,qthros   ,qthror   ,&
       qsnsub   ,qsnfro   ,qsubc    ,qfroc    ,qevac     ,qdewc   ,qfrzc    ,qmeltc   ,&
       qsnbot   ,ponding  ,rainlsm  ,snowlsm  ,runsb     ,runsf   ,fpice    ,fveg     ,&
-      qlat     ,qrf      ,deeprech ,qspring  ,ecan      ,etran   ,edir  ,eflxb,  canhs )
+      qlat     ,qrf      ,deeprech ,qspring  ,ecan      ,etran   ,edir     ,eflxb    ,&
+      canhs    ,qmelt    )
 
 !----------------------------------------------------------------------
 
@@ -676,7 +677,7 @@ CONTAINS
       acshb    ,acevb    ,acghb    ,acpahb   ,acsav     ,acirc   ,acshc    ,acevc    ,&
       actr     ,acpahv   ,acswdnlsm,acswuplsm,                                        &
       aclwdnlsm,aclwuplsm,acshflsm ,aclhflsm ,acghflsm  ,acpahlsm,acints   ,acintr   ,&
-      acdrips   ,acdripr ,acthros  ,acthror  ,acetlsm   ,&
+      acdrips   ,acdripr ,acthros  ,acthror  ,acetlsm   ,acsnmelt,                    &
       acsnsub  ,acsnfro  ,acsubc   ,acfroc   ,acevac    ,acdewc  ,acfrzc   ,acmeltc  ,&
       acsnbot  ,acponding,acrainlsm,acsnowlsm,acrainsnow,acrunsb ,acrunsf  ,          &
       acqlat   ,acqrf    ,acrech   ,acqspring,acecan    ,acetran ,acedir   ,aceflxb  ,&
@@ -690,7 +691,7 @@ CONTAINS
       qsnsub   ,qsnfro   ,qsubc    ,qfroc    ,qevac     ,qdewc   ,qfrzc    ,qmeltc   ,&
       qsnbot   ,ponding  ,rainlsm  ,snowlsm  ,runsb     ,runsf   ,fpice    ,fveg     ,&
       qlat     ,qrf      ,deeprech ,qspring  ,ecan      ,etran   ,edir     ,eflxb    ,&
-      canhs
+      canhs    ,qmelt
 
    integer, dimension( ims:ime, jms:jme ), optional, intent(in) ::   isnow
 
@@ -751,6 +752,7 @@ CONTAINS
             acfrzc(i,j)     = 0.
             acmeltc(i,j)    = 0.
             acsnbot(i,j)    = 0.
+            acsnmelt(i,j)   = 0.
             acrunsf(i,j)    = 0.
             acrunsb(i,j)    = 0.
             acecan(i,j)     = 0.
@@ -812,6 +814,7 @@ CONTAINS
          acfrzc(i,j)     = acfrzc(i,j)     +  dt *   qfrzc(i,j)
          acmeltc(i,j)    = acmeltc(i,j)    +  dt *  qmeltc(i,j)
          acsnbot(i,j)    = acsnbot(i,j)    +  dt *  qsnbot(i,j)
+         acsnmelt(i,j)   = acsnmelt(i,j)   +  dt *   qmelt(i,j)
          acrunsf(i,j)    = acrunsf(i,j)    +  runsf(i,j)  ! multiplied by dt_soil in WATER
          acrunsb(i,j)    = acrunsb(i,j)    +  runsb(i,j)  ! multiplied by dt_soil in WATER
          acecan(i,j)     = acecan(i,j)     +  dt *    ecan(i,j)

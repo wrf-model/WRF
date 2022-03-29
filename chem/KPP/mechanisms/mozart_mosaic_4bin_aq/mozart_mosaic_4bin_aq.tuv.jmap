@@ -5,7 +5,7 @@ no2 : j_no2
 n2o5 : j_n2o5_b
 n2o : j_n2o
 hno3 : j_hno3
-no3o : j_no3_a
+no3o : j_no3_a + j_no3_b
 hno4 : j_hno4
 h2o2 : j_h2o2
 ch3o2h : j_ch3ooh

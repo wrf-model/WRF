@@ -3171,7 +3171,7 @@ CONTAINS
          IF(SF_URBAN_PHYSICS > 0 ) THEN  !urban
          
 	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
-                                 DT,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
+                               DTBL,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
                               T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
                              SWDDIR,         SWDDIF,                                        &
 		                GLW,            P8W,         RAINBL,       DZ8W,      ZNT,  & ! IN : Forcing

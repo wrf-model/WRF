@@ -2067,8 +2067,8 @@ CC_TOOLS        =      $(SCC)
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    AMD Linux x86_64 #serial smpar dmpar dm+sm
-# Supported AMDARCH are znver1, znver2 and znver3 for ZEN1, ZEN2 and ZEN3 Respectively
+#ARCH    AMD Linux x86_64, AOCC flang compiler with AOCC clang  #serial smpar dmpar dm+sm
+# Supported AMDARCH are znver1, znver2 and znver3 for ZEN1, ZEN2 and ZEN3 respectively
 # For optimized AMDFCFLAGS and AMDLDFLAGS, please reach out to toolchainsupport@amd.com
 #
 

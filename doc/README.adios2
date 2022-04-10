@@ -31,7 +31,7 @@ File conversions time per output fule for a case such as the benchmark CONUS 2.5
 
 INSTALLATION:
 WRF is configured for use with ADIOS2 by setting the $ADIOS2 environment variable to the ADIOS2 root installation directory, just like the PnetCDF, and PHDF5 backends.
-ADIOS2 installation should be configured for MPI and Blosc, and requires a version of ADIOS2 NEWER than v2.7.1.
+ADIOS2 installation should be configured for MPI and Blosc, and requires a version of ADIOS2 >= v2.8.0.
 
 ADVANCED:
 In general ADIOS2 parameters can be set using an XML file (see ADIOS2 documentation for more details). 

@@ -90,5 +90,4 @@ MODULE module_fire_emis
 
     END SUBROUTINE fire_emis_simple_plumerise
 
-
 END MODULE module_fire_emis

@@ -649,7 +649,9 @@ module_cu_gf_sh.o: \
 module_cu_gf_ctrans.o: \
                 ../chem/module_chem_utilities.o \
                 ../share/module_HLaw.o \
-                ../frame/module_configure.o 
+                ../share/module_ctrans_aqchem.o \
+                ../frame/module_configure.o \
+                ../frame/module_state_description.o 
 module_cumulus_driver.o: \
 		module_cu_kf.o \
 		module_cu_g3.o \

@@ -98,12 +98,10 @@ subroutine da_write_obs_chem_sfc(it,ob, iv, re)
 
          if (iv%info(chemic_surf)%proc_domain(1,n)) then
             num_obs = num_obs + 1
-            if (chem_cv_options > 1 .and. chem_cv_options < 108) then
              write(ounit,'(2i8)') 1, ifgat
              if (chemicda_opt == 5) then
                write(ounit2,'(2i8)') 1, ifgat
              end if
-            end if !  if (chem_cv_options > 1 .and. chem_cv_options < 108)
 
             ipcc = p_chemsi_pm25
             jpcc = p_chemsi_pm10

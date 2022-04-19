@@ -456,7 +456,6 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
 #if (WRF_CHEM == 1)
       case ('chem' )
          if (num_obs > 0) then
-          !if (chem_cv_options > 1 .and. chem_cv_options < 100) then
             do n = 1, num_obs
                read(unit_in,'(2i8)')levels, ifgat
                if (if_write) then
@@ -519,7 +518,6 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                end do
             end do
 
-          !endif !(chem_cv_options >= 100) then
          end if !  if (num_obs > 0) then
 
          if (if_write) exit reports
@@ -527,7 +525,6 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
 
       case ('gas' )
          if (num_obs > 0) then
-          !if (chem_cv_options >= 108) then
            do n = 1, num_obs
               read(unit_in,'(2i8)')levels, ifgat
               if (if_write) then
@@ -551,7 +548,6 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                        chem_obs4, chem_inv4, chem_qc4, chem_err4, chem_inc4
               end if
            end do   !  do n = 1, num_obs
-          !endif     !  if (chem_cv_options >= 108) then
          end if     !  if (num_obs > 0) then
 
          if (if_write) exit reports

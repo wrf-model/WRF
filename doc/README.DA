@@ -37,7 +37,7 @@ Version 4.4 was released on April 20, 2022.
       Shen, F., D. Xu, H. Li, J. Min, and R. Liu，2021: Assimilation of GPM Microwave Imager Radiance data with
        the WRF Hybrid 3DEnVar System for the Prediction of Typhoon Chan-hom (2015), Atmospheric Research. 251, 105422.
 
-    - New option for surface aerosol data assimilation with MADE-VBS aerosol scheme. The ~doc/README.DA_chem
+    - New option for surface aerosol data assimilation with the MADE-VBS aerosol scheme. The ~doc/README.DA_chem
       file provides a description for all chemical/aerosol DA options currently available.
       Ha, Soyoung, 2022: Implementation of aerosol data assimilation in WRFDA (V4.0.3) for WRF-Chem (V3.9.1)
         using the MADE/VBS scheme. Geosci. Model Dev., 15, 1769–1788.
@@ -69,7 +69,7 @@ Version 4.4 was released on April 20, 2022.
 
     - Fixed a bug in calculating TAMDAR aircraft temperature bias correction.
 
-    - Fixed bugs that caused running time issues of chemical DA with certain compilers.
+    - Fixed bugs that caused some runtime issues of chemical DA.
 
 V4.3 Release Notes :
 -------------------

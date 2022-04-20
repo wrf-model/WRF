@@ -9,7 +9,7 @@
 #		The output from real is placed into the scalar arrays.
 ###############################################################################
 
-###   Thompson Water Ice Friendly Aerosols WIF
+###   Thompson Water Ice Black-Carbon Friendly Aerosols WIF (updated in 4.4)
 
 dimspec  wif    2     namelist=num_wif_levels          z     num_wif_levels
 

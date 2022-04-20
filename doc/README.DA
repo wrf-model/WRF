@@ -50,7 +50,7 @@ Version 4.4 was released on April 20, 2022.
     - Allow to set thinning mesh differently for different conventional observations through a new namelist
       parameter "thin_conv_opt(num_ob_indexes)". Also reduced memory use for thinning conventional observations.
 
-    - WRFDA gpsref code has been restructured to moved QC steps in da_get_innov_vector_gpsref.inc to a separate
+    - WRFDA gpsref code has been restructured to move QC steps in da_get_innov_vector_gpsref.inc to a separate
       subroutine in a new file da_qc_gpsref.inc. New namelist variables are added to have more flexibility for
       testing gpsref QC impact. Several issues with gpsref diagnostic output have been fixed and qcstat info
       for gpsref is now in new qcstat_gpsref_xx.

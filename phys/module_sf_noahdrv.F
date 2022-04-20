@@ -965,6 +965,9 @@ CONTAINS
                  ALBEDOK =0.2         !  0.2
                  ALBBRD  =0.2         !0.2
                  EMISSI = 0.98                                 !for VEGTYP=5
+                 LWDN   = GLW(I,J) * EMISSI
+                 SOLNET = SOLDN * (1.0 - ALBEDOK)
+
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
                      T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
@@ -3384,8 +3387,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       !Fei: urban. for urban surface, if calling UCM, redefine the natural surface in cities as
       ! the "NATURAL" category in the VEGPARM.TBL
       	
-      	!   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
-                       
+      	!   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN                 
       
            !           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
            !            IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
@@ -3440,7 +3442,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        ALBEDOK =0.2         !  0.2
                        ALBBRD  =0.2         !  0.2
                        EMISSI = 0.98        !  for VEGTYP=5       
-                       
+                       LWDN   = GLW(I,J) * EMISSI
+                       SOLNET = SOLDN * (1.0 - ALBEDOK)
+ 
       		      T1= TS_RUL2D_mosaic(I,mosaic_i,J)
                        
                  ENDIF
@@ -4360,6 +4364,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        ALBEDOK =0.2         !  0.2
                        ALBBRD  =0.2         !0.2
                        EMISSI = 0.98                                 !for VEGTYP=5
+                       LWDN   = GLW(I,J) * EMISSI
+                       SOLNET = SOLDN * (1.0 - ALBEDOK)
+
       		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
                      T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))

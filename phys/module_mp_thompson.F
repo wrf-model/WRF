@@ -44,7 +44,6 @@
 !+---+-----------------------------------------------------------------+
 !
 
-#define OLDGRAUPEL
 
       MODULE module_mp_thompson
 
@@ -457,8 +456,8 @@
       if (PRESENT(ng)) then
          is_hail_aware = .TRUE.
       else
-         av_g(6) = av_g_old
-         bv_g(6) = bv_g_old
+         av_g(idx_bg1) = av_g_old
+         bv_g(idx_bg1) = bv_g_old
       endif
 
       is_aerosol_aware = .FALSE.
@@ -1027,7 +1026,7 @@
       xam_s = am_s
       xbm_s = bm_s
       xmu_s = mu_s
-      xam_g = am_g(5)
+      xam_g = am_g(idx_bg1)
       xbm_g = bm_g
       xmu_g = mu_g
       call radar_init
@@ -1135,7 +1134,7 @@
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max, nr_max
       REAL:: nwfa1, noc_emit, nbc_emit
-      REAL:: xslw1, ygra1, zans1, mvd_r
+      REAL:: ygra1, zans1
       DOUBLE PRECISION:: lamg, lam_exp, lamr, N0_min, N0_exp
       INTEGER:: i, j, k, k_0, k_inj
       INTEGER:: imax_qc,imax_qr,imax_qi,imax_qs,imax_qg,imax_ni,imax_nr
@@ -1268,26 +1267,10 @@
 
             do k = kte, kts, -1
                if (qg1d(k).gt.R1) then
-#ifdef OLDGRAUPEL
-                  N0_min = gonv_max
-                  xslw1 = 0.01
-                  if (k.gt.k_0 .and. qr1d(k).gt.1.E-8) then
-                     lamr = (am_r*crg(3)*org2*max(R2,nr1d(k))/qr1d(k))**obmr
-                     mvd_r = (3.0 + mu_r + 0.672) / lamr
-                     if (mvd_r.gt.100E-6) xslw1 = 4.01 + alog10(mvd_r)
-                  endif
-                  ygra1 = 4.31 + alog10(max(5.E-5, qg1d(k)*rho(k)))
-                  zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
-                  N0_exp = 10.**(zans1)
-                  N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
-                  N0_min = MIN(N0_exp, N0_min)
-                  N0_exp = N0_min
-#else
                   ygra1 = alog10(max(1.E-9, qg1d(k)*rho(k)))
                   zans1 = 3.0 + 2./7.*(ygra1+8.)
                   zans1 = MAX(2., MIN(zans1, 6.))
                   N0_exp = 10.**(zans1)
-#endif
                   lam_exp = (N0_exp*am_g(idx_bg1)*cgg(1,1)/(rho(k)*qg1d(k)))**oge1
                   lamg = lam_exp * (cgg(3,1)*ogg2*ogg1)**obmg
                   ng1d(k) = cgg(2,1)*ogg3*rho(k)*qg1d(k)*lamg**bm_g / am_g(idx_bg1)
@@ -3333,25 +3316,10 @@
          do k = kte, kts, -1
          if ((qg1d(k) + qgten(k)*DT) .gt. R1) then
             rg(k) = (qg1d(k) + qgten(k)*DT)*rho(k)
-#ifdef OLDGRAUPEL
-               N0_min = gonv_max
-               xslw1 = 0.01
-               if (k.gt.k_0 .and. qr1d(k).gt.1.E-8) then
-                  lamr = (am_r*crg(3)*org2*max(R2,nr1d(k))/qr1d(k))**obmr
-                  if (mvd_r(k).gt.100E-6) xslw1 = 4.01 + alog10(mvd_r(k))
-               endif
-               ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
-               zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
-               N0_exp = 10.**(zans1)
-               N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
-               N0_min = MIN(N0_exp, N0_min)
-               N0_exp = N0_min
-#else
                ygra1 = alog10(max(1.E-9, rg(k)))
                zans1 = 3.0 + 2./7.*(ygra1+8.)
                zans1 = MAX(2., MIN(zans1, 6.))
                N0_exp = 10.**(zans1)
-#endif
                lam_exp = (N0_exp*am_g(idx_bg(k))*cgg(1,1)/rg(k))**oge1
                lamg = lam_exp * (cgg(3,1)*ogg2*ogg1)**obmg
                ng(k) = cgg(2,1)*ogg3*rg(k)*lamg**bm_g / am_g(idx_bg(k))

@@ -1,4 +1,4 @@
-/##############################################################################
+###############################################################################
 #	This is an example registry.  
 #	It has the necessary pieces to allow a set of input fields to come
 #	into the real program from metgrid.  These fields are assumed to

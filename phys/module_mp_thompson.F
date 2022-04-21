@@ -4175,10 +4175,10 @@
 
       good = 0
       IF ( wrf_dm_on_monitor() ) THEN
-        INQUIRE(FILE="qr_acr_qgV3.dat",EXIST=lexist)
+        INQUIRE(FILE="qr_acr_qgV4.dat",EXIST=lexist)
         IF ( lexist ) THEN
-          CALL wrf_message("ThompMP: read qr_acr_qgV3.dat instead of computing")
-          OPEN(63,file="qr_acr_qgV3.dat",form="unformatted",err=1234)
+          CALL wrf_message("ThompMP: read qr_acr_qgV4.dat instead of computing")
+          OPEN(63,file="qr_acr_qgV4.dat",form="unformatted",err=1234)
           READ(63,err=1234) tcg_racg
           READ(63,err=1234) tmr_racg
           READ(63,err=1234) tcr_gacr
@@ -4191,12 +4191,12 @@
             INQUIRE(63,opened=lopen)
             IF (lopen) THEN
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error reading qr_acr_qgV3.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error reading qr_acr_qgV4.dat. Aborting because force_read_thompson is .true.")
               ENDIF
               CLOSE(63)
             ELSE
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error opening qr_acr_qgV3.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error opening qr_acr_qgV4.dat. Aborting because force_read_thompson is .true.")
               ENDIF
             ENDIF
           ELSE
@@ -4207,7 +4207,7 @@
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN
-            CALL wrf_error_fatal("Non-existent qr_acr_qgV3.dat. Aborting because force_read_thompson is .true.")
+            CALL wrf_error_fatal("Non-existent qr_acr_qgV4.dat. Aborting because force_read_thompson is .true.")
           ENDIF
         ENDIF
       ENDIF
@@ -4328,8 +4328,8 @@
 
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
-          CALL wrf_message("Writing qr_acr_qgV3.dat in Thompson MP init")
-          OPEN(63,file="qr_acr_qgV3.dat",form="unformatted",err=9234)
+          CALL wrf_message("Writing qr_acr_qgV4.dat in Thompson MP init")
+          OPEN(63,file="qr_acr_qgV4.dat",form="unformatted",err=9234)
           WRITE(63,err=9234) tcg_racg
           WRITE(63,err=9234) tmr_racg
           WRITE(63,err=9234) tcr_gacr
@@ -4339,7 +4339,7 @@
           CLOSE(63)
           RETURN    ! ----- RETURN
  9234     CONTINUE
-          CALL wrf_error_fatal("Error writing qr_acr_qgV3.dat")
+          CALL wrf_error_fatal("Error writing qr_acr_qgV4.dat")
         ENDIF
       ENDIF
 

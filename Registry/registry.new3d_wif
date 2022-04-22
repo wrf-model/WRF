@@ -1,4 +1,4 @@
-/##############################################################################
+###############################################################################
 #	This is an example registry.  
 #	It has the necessary pieces to allow a set of input fields to come
 #	into the real program from metgrid.  These fields are assumed to
@@ -9,12 +9,12 @@
 #		The output from real is placed into the scalar arrays.
 ###############################################################################
 
-###   Thompson Water Ice Friendly Aerosols WIF
+###   Thompson Water Ice Black-Carbon Friendly Aerosols WIF (updated in 4.4)
 
 dimspec  wif    2     namelist=num_wif_levels          z     num_wif_levels
 
 rconfig   integer num_wif_levels    namelist,domains	   1              30      irh    "num_wif_levels" "number of levels in the Thompson Water Ice Friendly Aerosols" ""
-rconfig   integer wif_input_opt     namelist,domains       1              1       irh    "wif_input_opt"  "0=do not process the Water Ice Friendly Aerosol input from metgrid"
+rconfig   integer wif_input_opt     namelist,domains       1              0       irh    "wif_input_opt"  "0=do not process the Water Ice Friendly Aerosol input from metgrid"
 
 state    real       qnwfa_gc       i{wif}j      dyn_em      1        Z     i1         "QNWFA"   "water-friendly aerosol  num concentration"   "# kg-1"
 state    real       qnifa_gc       i{wif}j      dyn_em      1        Z     i1         "QNIFA"   "water-friendly aerosol  num concentration"   "# kg-1"

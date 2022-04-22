@@ -130,7 +130,7 @@
      &            PI*rho_g(4)/6.0, PI*rho_g(5)/6.0, PI*rho_g(6)/6.0,    &
      &            PI*rho_g(7)/6.0, PI*rho_g(8)/6.0, PI*rho_g(9)/6.0 /)
       REAL, PARAMETER, PRIVATE:: bm_g = 3.0
-      INTEGER, PARAMETER, PRIVATE:: idx_bg1 = 5
+      INTEGER, PARAMETER :: idx_bg1 = 5
       REAL, PARAMETER, PRIVATE:: am_i = PI*rho_i/6.0
       REAL, PARAMETER, PRIVATE:: bm_i = 3.0
 
@@ -1594,8 +1594,8 @@
            prs_ide
 
       DOUBLE PRECISION, DIMENSION(kts:kte):: prg_scw, prg_rfz, prg_gde, &
-           prg_gcw, prg_rci, prg_rcs, prg_rcg, prg_ihm, prg_sml,        &
-           png_rcs, png_rcg, png_sml, png_scw, png_gde,                 &
+           prg_gcw, prg_rci, prg_rcs, prg_rcg, prg_ihm,                 &
+           png_rcs, png_rcg, png_scw, png_gde,                          &
            pbg_scw, pbg_rfz, pbg_gcw, pbg_rci, pbg_rcs, pbg_rcg,        &
            pbg_sml, pbg_gml
 
@@ -1767,8 +1767,6 @@
          prg_rcg(k) = 0.
          prg_ihm(k) = 0.
          !   new source/sink terms for 3-moment graupel
-         prg_sml(k) = 0.
-         png_sml(k) = 0.
          png_scw(k) = 0.
          png_rcs(k) = 0.
          png_rcg(k) = 0.
@@ -2942,7 +2940,7 @@
          endif
 
 !..Snow conservation.
-         sump = prs_sde(k) - prs_ihm(k) - prr_sml(k) - prg_sml(k) &
+         sump = prs_sde(k) - prs_ihm(k) - prr_sml(k) &
                 + prs_rcs(k)
          rate_max = -rs(k)*odts
          if (sump.lt. rate_max .and. L_qs(k)) then
@@ -2951,7 +2949,6 @@
           prs_ihm(k) = prs_ihm(k) * ratio
           prr_sml(k) = prr_sml(k) * ratio
           prs_rcs(k) = prs_rcs(k) * ratio
-          prg_sml(k) = prg_sml(k) * ratio
          endif
 
 !..Graupel conservation.
@@ -3122,20 +3119,20 @@
 !..Snow tendency
          qsten(k) = qsten(k) + (prs_iau(k) + prs_sde(k) + prs_sci(k)    &
                       + prs_scw(k) + prs_rcs(k) + prs_ide(k)            &
-                      - prs_ihm(k) - prr_sml(k) - prg_sml(k))           &
+                      - prs_ihm(k) - prr_sml(k))                        &
                       * orho
 
 !..Graupel tendency
          qgten(k) = qgten(k) + (prg_scw(k) + prg_rfz(k) &
                       + prg_gde(k) + prg_rcg(k) + prg_gcw(k) &
                       + prg_rci(k) + prg_rcs(k) - prg_ihm(k) &
-                      - prr_gml(k) + prg_sml(k))                        &
+                      - prr_gml(k))                          &
                       * orho
 
 !..Graupel number tendency
          ngten(k) = ngten(k) + (png_scw(k) + pnr_rfz(k) - png_rcg(k)    &
                       + pnr_rci(k) + png_rcs(k) + png_gde(k)            &
-                      + png_sml(k) - pnr_gml(k)) * orho
+                      - pnr_gml(k)) * orho
 
 !..Graupel volume mixing ratio tendency
          qbten(k) = qbten(k) + (pbg_scw(k) + pbg_rfz(k)                 &
@@ -3165,7 +3162,7 @@
          CALL wrf_debug(0, mp_debug)
          write(mp_debug, *) 'DEBUG: qgten: ', qgten(k), prg_scw(k), prg_rfz(k), prg_gde(k), prg_rcg(k), prg_gcw(k), prg_rci(k), prg_rcs(k), prg_ihm(k), prr_gml(k)
          CALL wrf_debug(0, mp_debug)
-         write(mp_debug, *) 'DEBUG: ngten: ', ngten(k), png_scw(k), pnr_rfz(k), png_rcg(k), pnr_rci(k), png_rcs(k), png_sml(k), pnr_gml(k)
+         write(mp_debug, *) 'DEBUG: ngten: ', ngten(k), png_scw(k), pnr_rfz(k), png_rcg(k), pnr_rci(k), png_rcs(k), pnr_gml(k)
          CALL wrf_debug(0, mp_debug)
          write(mp_debug, *) 'DEBUG: qbten: ', qbten(k), pbg_scw(k), pbg_rfz(k), pbg_gcw(k), pbg_rci(k), pbg_rcs(k), pbg_rcg(k), pbg_sml(k), pbg_gml(k)
          CALL wrf_debug(0, mp_debug)
@@ -3748,8 +3745,7 @@
            t3_vts = Kap0*csg(1)*ils1**cse(1)
            t4_vts = Kap1*Mrat**mu_s*csg(7)*ils2**cse(7)
            vts = rhof(k)*av_s * (t1_vts+t2_vts)/(t3_vts+t4_vts)
-           if (prr_sml(k) .gt. 0.0) then ! this was twet(k) > 0 in Anders version
-           !if (temp(k).gt. (T_0+0.1)) then
+           if (prr_sml(k) .gt. 0.0) then 
             SR = rs(k)/(rs(k)+rr(k))
             vtsk(k) = vts*SR + (1.-SR)*vtrk(k)
            else
@@ -4994,7 +4990,7 @@
       elseif (species .eq. 's') then
          vt = av_s*D**bv_s
       elseif (species .eq. 'g') then
-         vt = av_g(6)*D**bv_g(6)
+         vt = av_g(idx_bg1)*D**bv_g(idx_bg1)
       endif
 
       Cc    = 1. + 2.*meanPath/Da *(1.257+0.4*exp(-0.55*Da/meanPath))

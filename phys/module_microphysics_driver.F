@@ -262,7 +262,14 @@ SUBROUTINE microphysics_driver(                                          &
    ! WRF Single-Moment 6-class, Lim and Hong (2003 WRF workshop)
    ! Eta Grid-scale Cloud and Precipitation scheme (EGCP01, Ferrier)
    !   * etampnew - what's in the operational 4-km High-Resolution Window Runs
+   ! Goddard 4-ice scheme (2016)
+   ! Thompson (2008)
    ! Milbrandt and Yau (2005)
+   ! Morrison (2009)
+   ! CAM
+   ! SBU-YLin (2011)
+   ! WRF Double-Moment 5-class
+   ! WRF Double-Moment 6-class
 
 !----------------------------------------------------------------------
    IMPLICIT NONE

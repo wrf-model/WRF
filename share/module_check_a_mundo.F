@@ -2514,7 +2514,7 @@
          IF ( model_config_rec%aer_init_opt .GT. 0 .and. model_config_rec%qna_update .EQ. 0 ) THEN
            wrf_err_message = '--- ERROR: Time-varying sfc aerosol emissions not set for mp_physics=28 '
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-           wrf_err_message = '--- ERROR: Please set qna_update=1 and control though auxinput17 options '
+           wrf_err_message = '--- ERROR: Please set qna_update=1 and control through auxinput17 options '
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
            count_fatal_error = count_fatal_error + 1
          END IF

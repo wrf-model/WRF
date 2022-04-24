@@ -85,6 +85,7 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
    allocate ( platform%chem (num_chemic_surf) )
    obs_index = chemic_surf
 
+   if (chem_cv_options >= 108) &
    write(*,'(A,6f7.1)') "da_read_obs_chem_sfc: pm25, pm10, so2, no2, o3, co obs are rejected if >= ", max_pm
 
    imin=0     ! minutes

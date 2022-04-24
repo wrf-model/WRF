@@ -183,11 +183,13 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
 
             ! Quality Control
             ! ----------------
+           if (chem_cv_options >= 108) then
             if (abs(iv % chemic_surf(n) % chem(ichem) % inv) .ge. maxomb(ipm)) then
                 iv % chemic_surf(n) % chem(ichem) % inv   = missing_r
                 iv % chemic_surf(n) % chem(ichem) % qc    = missing
                 iv % chemic_surf(n) % chem(ichem) % error = missing_r
             end if
+           end if
 
          end if    ! good obs
 

@@ -257,7 +257,7 @@ Namelist variables specifically for the WPS input for real:
  wif_input_opt                       = 0        ! = 1: option to process the Water Ice Friendly Aerosol input from metgrid for use with mp_physics=28
                                                   = 2: since V4.4, option to use black carbon aerosol category with mp_physics=28, as well as its radiative effect. Must include
                                                        file QNWFA_QNIFA_QNBCA_SIGMA_MONTHLY.dat during WPS 
- num_wif_levels                      = 27       ! number of levels in the Thompson Water Ice Friendly aerosols (mp_physic=28) 
+ num_wif_levels                      = 30       ! number of levels in the Thompson Water Ice Friendly aerosols (mp_physic=28) 
  p_top_requested                     = 5000     ! p_top (Pa) to use in the model
  vert_refine_fact                    = 1        ! vertical refinement factor for ndown, not used for concurrent vertical grid refinement
  vert_refine_method (max_dom)        = 0        ! vertical refinement method

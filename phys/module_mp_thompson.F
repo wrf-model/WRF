@@ -70,9 +70,11 @@
       REAL, PARAMETER, PRIVATE:: rho_w = 1000.0
       REAL, PRIVATE:: rho_s = 100.0
       REAL, PARAMETER, PRIVATE:: rho_i = 890.0
-      INTEGER, PARAMETER, PRIVATE:: NRHG = 9
-      REAL, DIMENSION(NRHG), PARAMETER, PRIVATE:: &
+      INTEGER, PARAMETER, PRIVATE:: NRHG9 = 9
+      INTEGER, PARAMETER, PRIVATE:: NRHG1 = 1 ! NRHG will be set to 1 for mp8,28 or 9 for mp38
+      REAL, DIMENSION(NRHG9), PARAMETER, PRIVATE:: &
            rho_g = (/50., 100., 200., 300., 400., 500., 600., 700., 800./)
+      INTEGER, PARAMETER :: idx_bg1 = 5 ! representative rho_g index when NRHG=1
 
 !..Prescribed number of cloud droplets.  Set according to known data or
 !.. roughly 100 per cc (100.E6 m^-3) for Maritime cases and
@@ -125,12 +127,11 @@
       REAL, PARAMETER, PRIVATE:: bm_r = 3.0
       REAL, PARAMETER, PRIVATE:: am_s = 0.069
       REAL, PARAMETER, PRIVATE:: bm_s = 2.0
-      REAL, DIMENSION(NRHG), PARAMETER,PRIVATE:: am_g = (/              &
+      REAL, DIMENSION(NRHG9), PARAMETER,PRIVATE:: am_g = (/              &
      &            PI*rho_g(1)/6.0, PI*rho_g(2)/6.0, PI*rho_g(3)/6.0,    &
      &            PI*rho_g(4)/6.0, PI*rho_g(5)/6.0, PI*rho_g(6)/6.0,    &
      &            PI*rho_g(7)/6.0, PI*rho_g(8)/6.0, PI*rho_g(9)/6.0 /)
       REAL, PARAMETER, PRIVATE:: bm_g = 3.0
-      INTEGER, PARAMETER :: idx_bg1 = 5
       REAL, PARAMETER, PRIVATE:: am_i = PI*rho_i/6.0
       REAL, PARAMETER, PRIVATE:: bm_i = 3.0
 
@@ -145,11 +146,11 @@
       REAL, PARAMETER, PRIVATE:: fv_s = 100.0
       REAL, PARAMETER, PRIVATE:: av_g_old = 442.0
       REAL, PARAMETER, PRIVATE:: bv_g_old = 0.89
-      REAL, DIMENSION(NRHG), PRIVATE:: & ! Computed from A. Heymsfield: Best - Reynolds relation
+      REAL, DIMENSION(NRHG9), PRIVATE:: & ! Computed from A. Heymsfield: Best - Reynolds relation
      &    av_g = (/ 45.9173813, 67.0867386, 98.0158463, 122.353378,     &
      &              143.204224, 161.794724, 178.762115, 194.488785,     &
      &              209.225876/)
-      REAL, DIMENSION(NRHG), PRIVATE:: & ! Computed from A. Heymsfield: Best - Reynolds relation
+      REAL, DIMENSION(NRHG9), PRIVATE:: & ! Computed from A. Heymsfield: Best - Reynolds relation
      &    bv_g = (/0.640961647, 0.640961647, 0.640961647, 0.640961647,  &
      &             0.640961647, 0.640961647, 0.640961647, 0.640961647,  &
      &             0.640961647/)
@@ -399,9 +400,9 @@
       REAL, PRIVATE:: ore1, org1, org2, org3, obmr
       REAL, DIMENSION(17), PRIVATE:: cse, csg
       REAL, PRIVATE:: oams, obms, ocms
-      REAL, DIMENSION(12,NRHG), PRIVATE:: cge, cgg
+      REAL, DIMENSION(12,NRHG9), PRIVATE:: cge, cgg
       REAL, PRIVATE:: oge1, ogg1, ogg2, ogg3, obmg
-      REAL, DIMENSION(NRHG), PRIVATE:: oamg, ocmg
+      REAL, DIMENSION(NRHG9), PRIVATE:: oamg, ocmg
 
 !..Declaration of precomputed constants in various rate eqns.
       REAL:: t1_qr_qc, t1_qr_qi, t2_qr_qi, t1_qg_qc, t1_qs_qc, t1_qs_qi
@@ -447,7 +448,7 @@
       CHARACTER*256:: mp_debug
 
 
-      INTEGER:: i, j, k, l, m, n
+      INTEGER:: i, j, k, l, m, n, NRHG, idx_bgmax
       REAL:: h_01, niIN3, niCCN3, niBC3, max_test, z1
       LOGICAL:: micro_init, has_CCN, has_IN
 
@@ -455,10 +456,13 @@
 
       if (PRESENT(ng)) then
          is_hail_aware = .TRUE.
+         NRHG = NRHG9
       else
+         NRHG = NRHG1
          av_g(idx_bg1) = av_g_old
          bv_g(idx_bg1) = bv_g_old
       endif
+      idx_bgmax = MAX(NRHG, idx_bg1)
 
       is_aerosol_aware = .FALSE.
       micro_init = .FALSE.
@@ -660,7 +664,7 @@
 !..Compute min ice diam from mass, min snow/graupel mass from diam.
       D0i = (xm0i/am_i)**(1./bm_i)
       xm0s = am_s * D0s**bm_s
-      xm0g = am_g(NRHG) * D0g**bm_g
+      xm0g = am_g(idx_bgmax) * D0g**bm_g
 
 !..These constants various exponents and gamma() assoc with cloud,
 !.. rain, snow, and graupel.
@@ -1035,7 +1039,7 @@
 
 !..Rain collecting graupel & graupel collecting rain.
       CALL wrf_debug(200, '  creating rain collecting graupel table')
-      call qr_acr_qg
+      call qr_acr_qg(NRHG)
 
 !..Rain collecting snow & snow collecting rain.
       CALL wrf_debug(200, '  creating rain collecting snow table')
@@ -1651,7 +1655,7 @@
       INTEGER, DIMENSION(5):: ksed1
       INTEGER:: nir, nis, nig, nii, nic, niin
       INTEGER:: idx_tc, idx_t, idx_s, idx_g1, idx_g, idx_r1, idx_r,     &
-                idx_i1, idx_i, idx_c, idx, idx_d, idx_n, idx_in
+                idx_i1, idx_i, idx_c, idx, idx_d, idx_n, idx_in, idx_bgmax
       INTEGER, DIMENSION(kts:kte):: idx_bg
 
       LOGICAL:: melti, no_micro
@@ -1943,10 +1947,10 @@
             L_qg(k) = .true.
             rg(k) = qg1d(k)*rho(k)
             ng(k) = MAX(R2, ng1d(k)*rho(k))
-            rb(k) = MAX(qg1d(k)/rho_g(NRHG), qb1d(k))
+            rb(k) = MAX(qg1d(k)/rho_g(idx_bgmax), qb1d(k))
             rb(k) = MIN(qg1d(k)/rho_g(1), rb(k))
             qb1d(k) = rb(k)
-            idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/rb(k) *0.01)+1,NRHG))
+            idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/rb(k) *0.01)+1,idx_bgmax))
             if (ng(k).le. R2) then
                mvd_g(k) = 1.5E-3
                lamg = (3.0 + mu_g + 0.672) / mvd_g(k)
@@ -1970,7 +1974,7 @@
             idx_bg(k) = idx_bg1
             rg(k) = R1
             ng(k) = R2
-            rb(k) = R1/rho(k)/rho_g(NRHG)
+            rb(k) = R1/rho(k)/rho_g(idx_bgmax)
             L_qg(k) = .false.
          endif
          if (.not. is_hail_aware) idx_bg(k) = idx_bg1
@@ -3145,7 +3149,7 @@
 !.. 3.0 times minimum size (D0g) and 25 mm.
          xrg=MAX(R1,(qg1d(k) + qgten(k)*dtsave)*rho(k))
          xng=MAX(R2,(ng1d(k) + ngten(k)*dtsave)*rho(k))
-         xrb=MAX(xrg/rho(k)/rho_g(NRHG),(qb1d(k) + qbten(k)*dtsave))
+         xrb=MAX(xrg/rho(k)/rho_g(idx_bgmax),(qb1d(k) + qbten(k)*dtsave))
          xrb=MIN(xrg/rho(k)/rho_g(1), xrb)
 
          if (xrg .gt. R1) then
@@ -3153,7 +3157,7 @@
             mvd_g(k) = (3.0 + mu_g + 0.672) / lamg
 
       if(debug_flag) then
-           xrho_g = MAX(rho_g(1),MIN(rg(k)/rho(k)/rb(k),rho_g(NRHG)))
+           xrho_g = MAX(rho_g(1),MIN(rg(k)/rho(k)/rb(k),rho_g(idx_bgmax)))
            afall = a_coeff*((4.0*xrho_g*9.8)/(3.0*rho(k)))**b_coeff
            afall = afall * visco(k)**(1.0-2.0*b_coeff)
            vtg1 = rhof(k)*afall*cgg(6,idx_bg(k))*ogg3 / lamg**bfall
@@ -3295,13 +3299,13 @@
                L_qg(k) = .true.
                rg(k) = (qg1d(k) + qgten(k)*DT)*rho(k)
                ng(k) = MAX(R2, (ng1d(k) + ngten(k)*DT)*rho(k))
-               rb(k) = MAX(rg(k)/rho(k)/rho_g(NRHG), qb1d(k) + qbten(k)*DT)
+               rb(k) = MAX(rg(k)/rho(k)/rho_g(idx_bgmax), qb1d(k) + qbten(k)*DT)
                rb(k) = MIN(rg(k)/rho(k)/rho_g(1), rb(k))
-               idx_bg(k) = MAX(1,MIN(NINT(rg(k)/rho(k)/rb(k) *0.01)+1,NRHG))
+               idx_bg(k) = MAX(1,MIN(NINT(rg(k)/rho(k)/rb(k) *0.01)+1,idx_bgmax))
             else
                rg(k) = R1
                ng(k) = R2
-               rb(k) = R1/rho(k)/rho_g(NRHG)
+               rb(k) = R1/rho(k)/rho_g(idx_bgmax)
                idx_bg(k) = idx_bg1
                L_qg(k) = .false.
             endif
@@ -3324,7 +3328,7 @@
          else
             rg(k) = R1
                ng(k) = R2
-               rb(k) = R1/rho(k)/rho_g(NRHG)
+               rb(k) = R1/rho(k)/rho_g(idx_bgmax)
             L_qg(k) = .false.
          endif
       enddo
@@ -3774,7 +3778,7 @@
 
           if (rg(k).gt. R1) then
            if (is_hail_aware) then
-              xrho_g = MAX(rho_g(1),MIN(rg(k)/rho(k)/rb(k),rho_g(NRHG)))
+              xrho_g = MAX(rho_g(1),MIN(rg(k)/rho(k)/rb(k),rho_g(idx_bgmax)))
               afall = a_coeff*((4.0*xrho_g*9.8)/(3.0*rho(k)))**b_coeff
               afall = afall * visco(k)**(1.0-2.0*b_coeff)
            else
@@ -3941,7 +3945,7 @@
          qbten(k) = qbten(k) - sed_b(k)*odzq*onstep(4)
          rg(k) = MAX(R1, rg(k) - sed_g(k)*odzq*DT*onstep(4))
          ng(k) = MAX(R2, ng(k) - sed_n(k)*odzq*DT*onstep(4))
-         rb(k) = MAX(R1/rho(k)/rho_g(NRHG), rb(k) - sed_b(k)*odzq*DT*onstep(4))
+         rb(k) = MAX(R1/rho(k)/rho_g(idx_bgmax), rb(k) - sed_b(k)*odzq*DT*onstep(4))
          do k = ksed1(4), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
@@ -3955,7 +3959,7 @@
                                            *odzq*DT*onstep(4))
             ng(k) = MAX(R2, ng(k) + (sed_n(k+1)-sed_n(k)) &
                                            *odzq*DT*onstep(4))
-            rb(k) = MAX(rg(k)/rho(k)/rho_g(NRHG), rb(k) + (sed_b(k+1)-sed_b(k))  &
+            rb(k) = MAX(rg(k)/rho(k)/rho_g(idx_bgmax), rb(k) + (sed_b(k+1)-sed_b(k))  &
                                            *odzq*DT*onstep(4))
          enddo
 
@@ -4088,9 +4092,9 @@
            ng1d(k) = 0.0
            qb1d(k) = 0.0
          else
-           qb1d(k) = MAX(qg1d(k)/rho_g(NRHG), qb1d(k) + qbten(k)*DT)
+           qb1d(k) = MAX(qg1d(k)/rho_g(idx_bgmax), qb1d(k) + qbten(k)*DT)
            qb1d(k) = MIN(qg1d(k)/rho_g(1), qb1d(k))
-           idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/qb1d(k) *0.01)+1,NRHG))
+           idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/qb1d(k) *0.01)+1,idx_bgmax))
            if (.not. is_hail_aware) idx_bg(k) = idx_bg1
            lamg = (am_g(idx_bg(k))*cgg(3,1)*ogg2*ng1d(k)/qg1d(k))**obmg
            mvd_g(k) = (3.0 + mu_g + 0.672) / lamg
@@ -4114,11 +4118,12 @@
 !..Rain collecting graupel (and inverse).  Explicit CE integration.
 !+---+-----------------------------------------------------------------+
 
-      subroutine qr_acr_qg
+      subroutine qr_acr_qg(NRHG)
 
       USE module_timing
       implicit none
 
+      INTEGER, INTENT(IN):: NRHG
 !..Local variables
       INTEGER:: i, j, k, m, n, n2, n3
       INTEGER:: km, km_s, km_e
@@ -4131,18 +4136,24 @@
       LOGICAL lexist,lopen
       INTEGER good
       LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-
+      CHARACTER (LEN=15):: qr_acr_qg_name
 !+---+
 
       CALL nl_get_force_read_thompson(1,force_read_thompson)
       CALL nl_get_write_thompson_tables(1,write_thompson_tables)
 
+      if (is_hail_aware) then
+         qr_acr_qg_name="qr_acr_qgV4.dat"
+      else
+         qr_acr_qg_name="qr_acr_qgV3.dat"
+   endif
+
       good = 0
       IF ( wrf_dm_on_monitor() ) THEN
-        INQUIRE(FILE="qr_acr_qgV4.dat",EXIST=lexist)
+        INQUIRE(FILE=qr_acr_qg_name,EXIST=lexist)
         IF ( lexist ) THEN
-          CALL wrf_message("ThompMP: read qr_acr_qgV4.dat instead of computing")
-          OPEN(63,file="qr_acr_qgV4.dat",form="unformatted",err=1234)
+          CALL wrf_message("ThompMP: read "//qr_acr_qg_name//" instead of computing")
+          OPEN(63,file=qr_acr_qg_name,form="unformatted",err=1234)
           READ(63,err=1234) tcg_racg
           READ(63,err=1234) tmr_racg
           READ(63,err=1234) tcr_gacr
@@ -4155,12 +4166,12 @@
             INQUIRE(63,opened=lopen)
             IF (lopen) THEN
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error reading qr_acr_qgV4.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error reading "//qr_acr_qg_name//". Aborting because force_read_thompson is .true.")
               ENDIF
               CLOSE(63)
             ELSE
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error opening qr_acr_qgV4.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error opening "//qr_acr_qg_name//". Aborting because force_read_thompson is .true.")
               ENDIF
             ENDIF
           ELSE
@@ -4171,7 +4182,7 @@
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN
-            CALL wrf_error_fatal("Non-existent qr_acr_qgV4.dat. Aborting because force_read_thompson is .true.")
+            CALL wrf_error_fatal("Non-existent "//qr_acr_qg_name//". Aborting because force_read_thompson is .true.")
           ENDIF
         ENDIF
       ENDIF
@@ -4287,13 +4298,13 @@
         CALL wrf_dm_gatherv(tnr_racg, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
         CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
 #endif
-        CALL end_timing ( TRIM("table computation qr_acr_qgV4.dat") )
+        CALL end_timing ( TRIM("table computation "//qr_acr_qg_name//"") )
 !+---+-----------------------------------------------------------------+
 
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
-          CALL wrf_message("Writing qr_acr_qgV4.dat in Thompson MP init")
-          OPEN(63,file="qr_acr_qgV4.dat",form="unformatted",err=9234)
+          CALL wrf_message("Writing "//qr_acr_qg_name//" in Thompson MP init")
+          OPEN(63,file=qr_acr_qg_name,form="unformatted",err=9234)
           WRITE(63,err=9234) tcg_racg
           WRITE(63,err=9234) tmr_racg
           WRITE(63,err=9234) tcr_gacr
@@ -4303,7 +4314,7 @@
           CLOSE(63)
           RETURN    ! ----- RETURN
  9234     CONTINUE
-          CALL wrf_error_fatal("Error writing qr_acr_qgV4.dat")
+          CALL wrf_error_fatal("Error writing "//qr_acr_qg_name//"")
         ENDIF
       ENDIF
 
@@ -5749,7 +5760,7 @@
       REAL:: a_, b_, loga_, tc0
       DOUBLE PRECISION:: fmelt_s, fmelt_g
 
-      INTEGER:: i, k, k_0, kbot, n, ktop
+      INTEGER:: i, k, k_0, kbot, n, ktop, idx_bgmax
       LOGICAL:: melti
       LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
 
@@ -5762,6 +5773,12 @@
       do k = kts, kte
          dBZ(k) = -35.0
       enddo
+
+      if (is_hail_aware) then
+         idx_bgmax = NRHG9
+      else
+         idx_bgmax = idx_bg1
+      endif
 
 !+---+-----------------------------------------------------------------+
 !..Put column of data into local arrays.
@@ -5798,9 +5815,9 @@
          if (qg1d(k) .gt. R2) then
             rg(k) = qg1d(k)*rho(k)
             ng(k) = MAX(R2, ng1d(k)*rho(k))
-            rb(k) = MAX(qg1d(k)/rho_g(NRHG), qb1d(k))
+            rb(k) = MAX(qg1d(k)/rho_g(idx_bgmax), qb1d(k))
             rb(k) = MIN(qg1d(k)/rho_g(1), rb(k))
-            idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/rb(k) *0.01)+1,NRHG))
+            idx_bg(k) = MAX(1,MIN(NINT(qg1d(k)/rb(k) *0.01)+1,idx_bgmax))
             if (.not. is_hail_aware) idx_bg(k) = idx_bg1
             L_qg(k) = .true.
          else

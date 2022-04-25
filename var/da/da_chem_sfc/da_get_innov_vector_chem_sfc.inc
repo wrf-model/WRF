@@ -1,6 +1,13 @@
 subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
    !-----------------------------------------------------------------------
-   ! Purpose: TBD    
+   ! Purpose: Compute innovation vectors for surface chemical obs
+   !
+   ! Caution: chem_cv_options == 10 or 20 assumes all six species in [ug/m3]
+   !          chem_cv_options == 108 assumes pm25 and pm10 in [ug/m3], but
+   !                                         so2, no2, o3, co in [ppmv]
+   !          Thus, data QC and obs errors change with the units.
+   ! For input data format, check var/da/da_obs_io/da_read_obs_chem_sfc.inc 
+   ! (Soyoung Ha, Apr-25-2022)
    !-----------------------------------------------------------------------
 
    implicit none
@@ -21,9 +28,10 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
 !  FIXME: It would be better to put this parameter in the namelist.
    real, parameter  :: Lrepr = 3000. !2000.    ! Scaling factor for obs error [meters]
 
-!  Max thresholds of abs(o-b) in pm25,  pm10,  so2,  no2,  o3,  co
-   real,dimension(6):: maxomb = (/100., 100., 0.20, 0.20, 0.20, 20./)
-   real             :: err_o, err_r
+!  For chem_cv_options = 10 or 20, maximum thresholds is 120 except for co, which is 120*1000.
+!  For chem_cv_options = 108, max thresholds of abs(o-b) in pm25,  pm10,  so2,  no2,  o3,  co
+   real,dimension(6):: maxomb = (/100., 100., 0.20, 0.20, 0.20, 20./) ! [ug/m3, ug/m3, ppmv, ppmv, ppmv, ppmv]
+   real             :: err_o, err_r, thresh
 
    if (trace_use) call da_trace_entry("da_get_innov_vector_chem_sfc")
 
@@ -46,6 +54,7 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
       call da_interp_lin_2d (grid%xbchem%chem_ic(:,:,1,ichem),  iv%info(chemic_surf), 1, model_chemic(:,ichem))
       call da_interp_lin_2d (grid%xb    %rho    (:,:,1),        iv%info(chemic_surf), 1, model_rho   (:,ichem))
    end do
+
 
    ! [1.1] Compute prior observations at obs sites
    if (chem_cv_options == 10) then           ! gocart_test
@@ -175,15 +184,24 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
              iv % chemic_surf(n) % chem(ichem) % inv = &
              ob % chemic_surf(n) % chem(ichem) - model_chemic_surf(n,ichem)
 
-             ! Observation error specification
+             ! Observation errors ([ug/m3]) 
              err_o = 1.5 + 0.0075 * ob % chemic_surf(n) % chem(ichem)
              err_r = 0.5 * err_o * sqrt(grid%dx/Lrepr)
 
              iv % chemic_surf(n) % chem(ichem) % error = 1.0*sqrt(err_o**2 + err_r**2) ! Ha (GMD2022)
 
+             if (chem_cv_options >= 108 .and. ipm > 2) &    ! gas obs error as 10 percent of obs values
+                 iv % chemic_surf(n) % chem(ichem) % error = ob % chemic_surf(n) % chem(ichem) * 0.10
+
             ! Quality Control
             ! ----------------
-            if (abs(iv % chemic_surf(n) % chem(ichem) % inv) .ge. maxomb(ipm)) then
+            thresh = maxomb(ipm)
+            if (chem_cv_options >= 1 .and. chem_cv_options < 108) then  ! pm and gas species in [ug/m3]
+                thresh = 120.
+                if(ichem.eq.num_chemic_surf) thresh = thresh*1000. ! mg to ug for co
+            endif
+     
+            if (abs(iv % chemic_surf(n) % chem(ichem) % inv) .ge. thresh) then !maxomb(ipm)
                 iv % chemic_surf(n) % chem(ichem) % inv   = missing_r
                 iv % chemic_surf(n) % chem(ichem) % qc    = missing
                 iv % chemic_surf(n) % chem(ichem) % error = missing_r

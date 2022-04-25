@@ -5,6 +5,9 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
    !
    ! History: 03/2019  Creation (Wei Sun)
    !          06/2021  Add maximum thresholds for each species (Soyoung Ha)
+   ! Caution: chem_cv_options == 10 or 20 assumes all six species in [ug/m3]
+   !          chem_cv_options == 108 assumes pm25 and pm10 in [ug/m3], but 
+   !                                         so2, no2, o3, co in [ppmv]
    !-------------------------------------------------------------------------
 
    implicit none
@@ -13,9 +16,9 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
    character(len=*),  intent(in)    :: filename
    type(domain),     intent(in)     :: grid     ! first guess state.
 
-   ! Maximum thresholds for observation values - treat as missing above these values
+   ! chem_cv_options == 108: Maximum thresholds for observation values - treat as missing above these values
    ! FIXME: We may want to put these maximum thresholds in namelist later.
-   real, dimension(6)  :: max_pm = (/500.,999.,2.0, 2.0, 2.0, 50./)
+   real, dimension(6)  :: max_pm = (/500.,999.,2.0, 2.0, 2.0, 50./)  ! [ug/m3, ug/m3, ppmv, ppmv, ppmv, ppmv]
    real                :: pm25, pm10, so2, no2, o3, co
 
    character (len =   6)        :: SiteID
@@ -85,7 +88,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
    allocate ( platform%chem (num_chemic_surf) )
    obs_index = chemic_surf
 
-   write(*,'(A,6f7.1)') "da_read_obs_chem_sfc: pm25, pm10, so2, no2, o3, co obs are rejected if >= ", max_pm
 
    imin=0     ! minutes
 
@@ -284,6 +286,8 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
 
          ! Sanity check
          !!!!!!!!!!!!!!!!!!!
+         write(*,'(A,6f7.1)') &
+         "da_read_obs_chem_sfc: pm25, pm10 [ug/m3], so2, no2, o3, co [ppmv] obs are rejected if >= ", max_pm
          do ichem = PARAM_FIRST_SCALAR, num_chemic_surf
             ipm = ichem - PARAM_FIRST_SCALAR + 1
             if (platform%chem(ichem)%inv<0.or.abs(platform%chem(ichem)%inv)>=max_pm(ipm)) then

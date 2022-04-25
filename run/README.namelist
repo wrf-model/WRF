@@ -502,7 +502,13 @@ Namelist variables for controlling the adaptive time step option:
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                        This option has two climatological aerosol input options:
                                        use_aero_icbc = .F. : use constant values
-                                       use_aero_icbc = .T. : use input from WPS
+                                       use_aero_icbc = .T. : use climatological aerosol input from WPS
+ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-time data containing aerosols (new in 4.4)
+ qna_update                          = 0   ! set to 1 to update time-varying sfc aerosol emission from climatology or real-time data 
+                                             with mp_physics = 28. Use with input file ‘wrfqnainp_d0*’
+                                             (must set auxinput17_interval and io_form_auxinput17; new in 4.4)
+ wif_fire_emit                       = .false.   ! set to .true. to include biomass burning organic and black carbon aerosols with mp_physics = 28 (new in 4.4)
+ wif_fire_inj                        = 1   ! (default) vertically distribute biomass burning emissions in mp_physics = 28 (new in 4.4)
                                      = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version
@@ -641,12 +647,6 @@ Namelist variables for controlling the adaptive time step option:
  alevsiz                             = 12  ! for Tegen aerosol input levels, set automatically 
  no_src_types                        = 6   ! for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
                                              and stratospheric aerosol (volcanic ashes - currently 0), set automatically
- use_rap_aero_icbc                   = .true.   ! Option to ingest real-time data containing aerosols (default is false – off; new in 4.4)
- qna_update                          = 1   ! Update time-varying sfc aerosol emission from climatology or real-time data 
-                                             with mp_physics = 28. Use with input file ‘wrfqnainp_d0*’
-                                             (must set auxinput17_interval and io_form_auxinput17). Default is 0=off (new in 4.4)
- wif_fire_emit                       = .true.   ! Option to include biomass burning organic and black carbon aerosols with mp_physics = 28 (new in 4.4)
- wif_fire_inj                        = 1   ! (default) vertically distribute biomass burning emissions in mp_physics = 28 (new in 4.4)
 
  The following aerosol options allow RRTMG and new Goddard radiation schemes to see it, but the aerosols are
      constant during the model integration.

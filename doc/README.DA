@@ -22,6 +22,55 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 4 source code release.
 ======================================
 
+V4.4 Release Notes :
+-------------------
+
+Version 4.4 was released on April 26, 2022.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  - New features:
+  ----------------
+    - New capability for assimilating GPM GMI radiance data, contributed by Dr. Dongmei Xu at 
+      the Nanjing University of Information Science & Technology.
+      Shen, F., D. Xu, H. Li, J. Min, and R. Liu，2021: Assimilation of GPM Microwave Imager Radiance data with
+       the WRF Hybrid 3DEnVar System for the Prediction of Typhoon Chan-hom (2015), Atmospheric Research. 251, 105422.
+
+    - New option for surface aerosol data assimilation with the MADE-VBS aerosol scheme. The ~doc/README.DA_chem
+      file provides a description for all chemical/aerosol DA options currently available.
+      Ha, Soyoung, 2022: Implementation of aerosol data assimilation in WRFDA (V4.0.3) for WRF-Chem (V3.9.1)
+        using the MADE/VBS scheme. Geosci. Model Dev., 15, 1769–1788.
+
+    - Ingest NCEP's satwnd.bufr to assimilate more AMVs that are not included in NCEP's prepbufr file.
+      The "use_satwnd_bufr" namelist parameter default is true.
+
+  - Updated features:
+  -------------------
+    - Allow to set thinning mesh differently for different conventional observations through a new namelist
+      parameter "thin_conv_opt(num_ob_indexes)". Also reduced memory use for thinning conventional observations.
+
+    - WRFDA gpsref code has been restructured to move QC steps in da_get_innov_vector_gpsref.inc to a separate
+      subroutine in a new file da_qc_gpsref.inc. New namelist variables are added to have more flexibility for
+      testing gpsref QC impact. Several issues with gpsref diagnostic output have been fixed and qcstat info
+      for gpsref is now in new qcstat_gpsref_xx.
+
+    - Bug fixes and enhancements for applications related to offline VarBC (use_background_errors=false), 
+      3DEns-FGAT (num_fgat_time>0 and ensdim_alpha>0 and je_factor=1.0), precondition_cg=true and
+      orthonorm_gradient=true when ensdim_alpha>0, full-ensemble mode (ensdim_alpha>0 and je_factor=1.0).
+
+    - Enable the assimilation of metop-c AMSU-A and MHS radiances with updated VARBC.in and "radiance info" files.
+
+  - Bug fixes:
+  ------------
+    - For direct assimilation of radar reflectivity, remove the use of "qthres" in the forward operator, which can
+      cause an unrealistic low bound of computed reflectivity. Also simplify the quality control to keep data with
+      both observed and background reflectivity >=rfmin (a namelist parameter).
+
+    - Fixed a bug in calculating TAMDAR aircraft temperature bias correction.
+
+    - Fixed memory leaks and runtime crashes due to the missing specification for time info inside chemical DA..
+
 V4.3 Release Notes :
 -------------------
 

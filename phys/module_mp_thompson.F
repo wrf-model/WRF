@@ -66,6 +66,8 @@
       REAL, PARAMETER, PRIVATE:: T_0 = 273.15
       REAL, PARAMETER, PRIVATE:: PI = 3.1415926536
 
+      INTEGER, PRIVATE:: NRHG, idx_bgmax
+
 !..Densities of rain, snow, graupel, and cloud ice.
       REAL, PARAMETER, PRIVATE:: rho_w = 1000.0
       REAL, PRIVATE:: rho_s = 100.0
@@ -447,7 +449,7 @@
       CHARACTER*256:: mp_debug
 
 
-      INTEGER:: i, j, k, l, m, n, NRHG, idx_bgmax
+      INTEGER:: i, j, k, l, m, n
       REAL:: h_01, niIN3, niCCN3, niBC3, max_test, z1
       LOGICAL:: micro_init, has_CCN, has_IN
 
@@ -5728,7 +5730,7 @@
       REAL:: a_, b_, loga_, tc0
       DOUBLE PRECISION:: fmelt_s, fmelt_g
 
-      INTEGER:: i, k, k_0, kbot, n, ktop, idx_bgmax
+      INTEGER:: i, k, k_0, kbot, n, ktop
       LOGICAL:: melti
       LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
 
@@ -5741,12 +5743,6 @@
       do k = kts, kte
          dBZ(k) = -35.0
       enddo
-
-      if (is_hail_aware) then
-         idx_bgmax = NRHG9
-      else
-         idx_bgmax = idx_bg1
-      endif
 
 !+---+-----------------------------------------------------------------+
 !..Put column of data into local arrays.

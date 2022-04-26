@@ -1037,7 +1037,7 @@
 
 !..Rain collecting graupel & graupel collecting rain.
       CALL wrf_debug(200, '  creating rain collecting graupel table')
-      call qr_acr_qg(NRHG)
+      call qr_acr_qg
 
 !..Rain collecting snow & snow collecting rain.
       CALL wrf_debug(200, '  creating rain collecting snow table')
@@ -4088,12 +4088,11 @@
 !..Rain collecting graupel (and inverse).  Explicit CE integration.
 !+---+-----------------------------------------------------------------+
 
-      subroutine qr_acr_qg(NRHG)
+      subroutine qr_acr_qg
 
       USE module_timing
       implicit none
 
-      INTEGER, INTENT(IN):: NRHG
 !..Local variables
       INTEGER:: i, j, k, m, n, n2, n3
       INTEGER:: km, km_s, km_e

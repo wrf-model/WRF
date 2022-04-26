@@ -1022,11 +1022,8 @@
 !+---+-----------------------------------------------------------------+
       SUBROUTINE mp_gt_driver(qv, qc, qr, qi, qs, qg, ni, nr, nc,        &
                               nwfa, nifa, nbca, nwfa2d, nifa2d, nbca2d,  &
-                              nocbb2d, nbcbb2d,                          &
                               aer_init_opt, wif_input_opt,               &
-                              aer_fire_emit_opt, wif_fire_inj,           &
-                              th, pii, p, w, z_at_mass, dz,              &
-                              dt_in, itimestep, PBLH,                    &
+                              th, pii, p, w, dz, dt_in, itimestep,       &
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
                               GRAUPELNC, GRAUPELNCV, SR, &
@@ -1051,7 +1048,7 @@
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           nc, nwfa, nifa, nbca
       REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d, nifa2d, &
-                                                      nbca2d, nocbb2d, nbcbb2d
+                                                                nbca2d
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
@@ -1061,10 +1058,6 @@
 #endif
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
                           pii, p, w, dz
-      REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
-                          z_at_mass
-      REAL, OPTIONAL, DIMENSION(ims:ime, jms:jme), INTENT(IN):: &
-                          PBLH
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
                           RAINNC, RAINNCV, SR
       REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT)::      &
@@ -1073,8 +1066,7 @@
                           refl_10cm
       REAL, INTENT(IN):: dt_in
       INTEGER, INTENT(IN):: itimestep
-      INTEGER, OPTIONAL, INTENT(IN):: &
-                aer_init_opt, wif_input_opt, aer_fire_emit_opt, wif_fire_inj
+      INTEGER, OPTIONAL, INTENT(IN):: aer_init_opt, wif_input_opt
 #if ( WRF_CHEM == 1 )
       LOGICAL, INTENT(in) :: wetscav_on
 #endif
@@ -1092,8 +1084,8 @@
       REAL, DIMENSION(its:ite, jts:jte):: pcp_ra, pcp_sn, pcp_gr, pcp_ic
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max, nr_max
-      REAL:: nwfa1, noc_emit, nbc_emit
-      INTEGER:: i, j, k, k_inj
+      REAL:: nwfa1
+      INTEGER:: i, j, k
       INTEGER:: imax_qc,imax_qr,imax_qi,imax_qs,imax_qg,imax_ni,imax_nr
       INTEGER:: jmax_qc,jmax_qr,jmax_qi,jmax_qs,jmax_qg,jmax_ni,jmax_nr
       INTEGER:: kmax_qc,kmax_qr,kmax_qi,kmax_qs,kmax_qg,kmax_ni,kmax_nr
@@ -1255,31 +1247,6 @@
             else
                nbca1d(kts) = 0.0
             endif
-
-!..Add organic carbon (OC) and black carbon (BC) biomass burning emissions
-            if (aer_fire_emit_opt .gt. 0) then
-               if (wif_fire_inj .eq. 1) then  ! distribute aerosol through PBL
-                  k_inj = kts
-                  do while (z_at_mass(i,k_inj,j) .lt. PBLH(i,j))
-                     k_inj = k_inj + 1
-                  end do
-                  noc_emit = (nocbb2d(i,j)*dt_in)/k_inj  ! num oc aer per grid cell
-                  if (aer_fire_emit_opt .eq. 2) then
-                     nbc_emit = (nbcbb2d(i,j)*dt_in)/k_inj  ! num bc aer per grid cell
-                  end if
-                  do k = kts, k_inj
-                     nwfa1d(k) = nwfa1d(k) + noc_emit
-                     if (aer_fire_emit_opt .eq. 2) then
-                        nbca1d(k) = nbca1d(k) + nbc_emit
-                     end if
-                  end do
-               else  ! emit at sfc
-                  nwfa1d(kts) = nwfa1d(kts) + nocbb2d(i,j)*dt_in
-                  if (aer_fire_emit_opt .eq. 2) then
-                     nbca1d(kts) = nbca1d(kts) + nbcbb2d(i,j)*dt_in
-                  end if
-               endif
-            end if
 !..
 !..END AEROSOL EMISSIONS
 !..

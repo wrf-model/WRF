@@ -21,6 +21,7 @@ module module_rfc_forecasts
     use module_reservoir, only: reservoir, reservoir_input, reservoir_output
     use module_reservoir_read_rfc_time_series_data, only: time_series_data
     use module_hydro_stop, only: HYDRO_stop
+    use iso_fortran_env, only: int64
     implicit none
 
     ! Extend/derive rfc forecasts type from the abstract base
@@ -71,7 +72,7 @@ contains
         real,    intent(in)    :: orifice_area              ! orifice area (meters^2)
         real,    intent(in)    :: lake_max_water_elevation  ! max water elevation (meters)
         real,    intent(in)    :: initial_fractional_depth  ! initial fraction water depth
-        integer, intent(in)    :: lake_number               ! lake number
+        integer(kind=int64), intent(in)    :: lake_number               ! lake number
         integer, intent(in)    :: reservoir_type            ! reservoir type
         character(len=*),   intent(in) :: reservoir_parameter_file
         character(len=19),  intent(in) :: start_date

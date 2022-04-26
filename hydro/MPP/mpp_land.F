@@ -23,6 +23,7 @@ MODULE MODULE_MPP_LAND
 
   use MODULE_CPL_LAND
   use mpi
+  use iso_fortran_env, only: int64
 
   IMPLICIT NONE
   !integer, public :: HYDRO_COMM_WORLD ! communicator for WRF-Hydro - moved to MODULE_CPL_LAND
@@ -141,7 +142,7 @@ MODULE MODULE_MPP_LAND
 
   !old subroutine MPP_LAND_INIT(flag, ew_numprocs, sn_numprocs)
   subroutine MPP_LAND_INIT(in_global_nx,in_global_ny)
-!    ### initialize the land model logically based on the two D method. 
+!    ### initialize the land model logically based on the two D method.
 !    ### Call this function directly if it is nested with WRF.
     implicit none
     integer, optional :: in_global_nx, in_global_ny
@@ -150,7 +151,7 @@ MODULE MODULE_MPP_LAND
     logical mpi_inited
 
     global_nx = in_global_nx
-    global_ny = in_global_ny 
+    global_ny = in_global_ny
 
     ! left_right_np = ew_numprocs
     ! up_down_np  = sn_numprocs
@@ -898,6 +899,38 @@ MODULE MODULE_MPP_LAND
       return
   end subroutine write_IO_RT_int
 
+  subroutine write_IO_RT_int8(in_buff,out_buff)
+      ! the IO node will receive the data from the rest process.
+      integer(kind=int64),intent(in),dimension(:,:) :: in_buff
+      integer(kind=int64),intent(out),dimension(:,:) ::  out_buff
+      integer tag, i, status, ierr,size
+      integer ibegin,iend,jbegin,jend
+      if(my_id .ne. IO_id) then
+          size = local_rt_nx*local_rt_ny
+          tag = 2
+          call mpi_send(in_buff,size,MPI_INTEGER8, IO_id,     &
+                  tag,HYDRO_COMM_WORLD,ierr)
+      else
+          do i = 0, numprocs - 1
+              ibegin = startx(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
+              if(ibegin.gt.1) ibegin=ibegin - 1
+              iend   = ibegin + local_rt_nx_size(i+1) -1
+              jbegin = starty(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
+              if(jbegin.gt.1) jbegin=jbegin - 1
+              jend   = jbegin + local_rt_ny_size(i+1) -1
+              if(i .eq. IO_id) then
+                  out_buff(ibegin:iend,jbegin:jend) = in_buff
+              else
+                  size = local_rt_nx_size(i+1)*local_rt_ny_size(i+1)
+                  tag = 2
+                  call mpi_recv(out_buff(ibegin:iend,jbegin:jend),size,&
+                          MPI_INTEGER8,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+              end if
+          end do
+      end if
+      return
+  end subroutine write_IO_RT_int8
+
   subroutine mpp_land_bcast_log1(inout)
       logical inout
       integer ierr
@@ -917,6 +950,27 @@ MODULE MODULE_MPP_LAND
       call mpp_land_sync()
     return
   end subroutine mpp_land_bcast_int
+
+  subroutine mpp_land_bcast_int8(size,inout)
+      integer size
+      integer(kind=int64) inout(size)
+      integer ierr
+      call mpi_bcast(inout,size,MPI_INTEGER8,   &
+              IO_id,HYDRO_COMM_WORLD,ierr)
+      call mpp_land_sync()
+      return
+  end subroutine mpp_land_bcast_int8
+
+  subroutine mpp_land_bcast_int8_1d(inout)
+      integer len
+      integer(kind=int64) inout(:)
+      integer ierr
+      len = size(inout,1)
+      call mpi_bcast(inout,len,MPI_INTEGER8,   &
+              IO_id,HYDRO_COMM_WORLD,ierr)
+      call mpp_land_sync()
+      return
+  end subroutine mpp_land_bcast_int8_1d
 
   subroutine mpp_land_bcast_int1d(inout)
       integer len
@@ -1194,6 +1248,23 @@ MODULE MODULE_MPP_LAND
     return
   end subroutine MPP_LAND_COM_INTEGER
 
+
+      subroutine MPP_LAND_COM_INTEGER8(data,NX,NY,flag)
+          !   ### Communicate message on left right and up bottom directions.
+          integer NX,NY
+          integer flag != 99  test only for land model. (replace the boundary).
+          != 1   get the sum of the boundary value.
+          integer(kind=int64) data(nx,ny)
+          real in_out_data(nx,ny)
+
+          in_out_data = data + 0.0
+          call MPP_LAND_LR_COM(in_out_data,NX,NY,flag)
+          call MPP_LAND_UB_COM(in_out_data,NX,NY,flag)
+          data = in_out_data + 0
+
+          return
+      end subroutine MPP_LAND_COM_INTEGER8
+
      subroutine read_restart_3(unit,nz,out)
         integer unit,nz,i
         real buf3(global_nx,global_ny,nz),&
@@ -1361,6 +1432,43 @@ MODULE MODULE_MPP_LAND
       return
   end subroutine decompose_RT_int
 
+  subroutine decompose_RT_int8 (in_buff,out_buff,g_nx,g_ny,nx,ny)
+      ! usage: all of the cpu call this subroutine.
+      ! the IO node will distribute the data to rest of the node.
+      integer g_nx,g_ny,nx,ny
+      integer(kind=int64),intent(in),dimension(:,:) ::  in_buff
+      integer(kind=int64),intent(out),dimension(:,:) :: out_buff
+      integer tag, i, status, ierr,size
+      integer ibegin,iend,jbegin,jend
+
+      tag = 2
+      call mpp_land_sync()
+      if(my_id == IO_id) then
+          do i = 0, numprocs - 1
+              ibegin = startx(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
+              if(ibegin > 1) ibegin=ibegin - 1
+              iend   = ibegin + local_rt_nx_size(i+1) -1
+              jbegin = starty(i+1)*rt_AGGFACTRT - (rt_AGGFACTRT-1)
+              if(jbegin > 1) jbegin=jbegin - 1
+              jend   = jbegin + local_rt_ny_size(i+1) -1
+
+              if(my_id == i) then
+                  out_buff=in_buff(ibegin:iend,jbegin:jend)
+              else
+                  ! send data to the rest process.
+                  size = (iend-ibegin+1)*(jend-jbegin+1)
+                  call mpi_send(in_buff(ibegin:iend,jbegin:jend),size,&
+                          MPI_INTEGER8, i,tag,HYDRO_COMM_WORLD,ierr)
+              end if
+          end do
+      else
+          size = nx*ny
+          call mpi_recv(out_buff,size,MPI_INTEGER8,IO_id, &
+                  tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+      end if
+      return
+  end subroutine decompose_RT_int8
+
   subroutine getNX_NY(nprocs,nx,ny)
   ! calculate the nx and ny based on the total nprocs.
     integer nprocs, nx, ny, n
@@ -1479,7 +1587,7 @@ MODULE MODULE_MPP_LAND
   ! communicate the data for channel routine.
       implicit none
       integer ix,jy,size
-      integer Link_location(ix,jy)
+      integer(kind=int64) Link_location(ix,jy)
       integer i,j, flag
       real Link_V(size), tmp_inout(ix,jy)
 
@@ -1544,7 +1652,7 @@ MODULE MODULE_MPP_LAND
   ! communicate the data for channel routine.
       implicit none
       integer ix,jy,size
-      integer Link_location(ix,jy)
+      integer(kind=int64) Link_location(ix,jy)
       integer i,j, flag
       real*8 ::  Link_V(size), tmp_inout(ix,jy)
 
@@ -1608,9 +1716,9 @@ MODULE MODULE_MPP_LAND
   ! communicate the data for channel routine.
       implicit none
       integer ix,jy,size
-      integer Link_location(ix,jy)
+      integer(kind=int64) Link_location(ix,jy)
       integer i,j, flag
-      integer Link_V(size), tmp_inout(ix,jy)
+      integer(kind=int64) Link_V(size), tmp_inout(ix,jy)
 
       if(size .eq. 0) then
            tmp_inout = -999
@@ -1639,8 +1747,10 @@ MODULE MODULE_MPP_LAND
          enddo
     endif
 
+
+
 !   commu nicate tmp_inout
-    call MPP_LAND_COM_INTEGER(tmp_inout, ix,jy,flag)
+    call MPP_LAND_COM_INTEGER8(tmp_inout, ix,jy,flag)
 
 !map the data back to Link_V
     if(size .eq. 0) return
@@ -1665,6 +1775,8 @@ MODULE MODULE_MPP_LAND
                Link_V(Link_location(i,jy)) = tmp_inout(i,jy)
       enddo
   end subroutine MPP_CHANNEL_COM_INT
+
+
      subroutine print_2(unit,in,fm)
         integer unit
         character(len=*) fm
@@ -1906,8 +2018,81 @@ MODULE MODULE_MPP_LAND
            if(allocated(tmp_v)) deallocate(tmp_v)
      end subroutine write_chanel_int
 
+     subroutine write_chanel_int8(v,map_l2g,gnlinks,nlinks,g_v)
+          implicit none
+          integer gnlinks,nlinks, map_l2g(nlinks)
+          integer(kind=int64) ::  recv(nlinks), v(nlinks)
+          integer(kind=int64), allocatable, dimension(:) :: tmp_v
+          integer, allocatable, dimension(:) :: tmp_map
+          integer(kind=int64), dimension(:) :: g_v
+          integer i, ierr, tag, k
+          integer length, node, message_len
 
-     subroutine write_lake_real(v,nodelist_in,nlakes)
+          if(my_id .eq. io_id) then
+              allocate(tmp_map(gnlinks))
+              allocate(tmp_v(gnlinks))
+              if(nlinks .le. 0) then
+                  tmp_map = -999
+              else
+                  tmp_map(1:nlinks) = map_l2g(1:nlinks)
+              endif
+          else
+              allocate(tmp_map(1))
+              allocate(tmp_v(1))
+          endif
+
+
+          if(my_id .eq. IO_id) then
+              do i = 0, numprocs - 1
+                  message_len = mpp_nlinks(i+1)
+                  if(i .ne. my_id) then
+                      !block receive  from other node.
+
+                      tag = 109
+                      call mpi_recv(tmp_map(1:message_len),message_len,MPI_INTEGER,i, &
+                              tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+                      tag = 119
+                      call mpi_recv(tmp_v(1:message_len),message_len,MPI_INTEGER8,i,  &
+                              tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+
+                      do k = 1,message_len
+                          if(tmp_map(k) .gt. 0) then
+                              node = tmp_map(k)
+                              g_v(node) = tmp_v(k)
+                          else
+#ifdef HYDRO_D
+                      write(6,*) "Maping infor k=",k," node=",tmp_v(k)
+#endif
+                          endif
+                      enddo
+                  else
+                      do k = 1,nlinks
+                          if(map_l2g(k) .gt. 0) then
+                              node = map_l2g(k)
+                              g_v(node) = v(k)
+                          else
+#ifdef HYDRO_D
+                      write(6,*) "Maping infor k=",k," node=",map_l2g(k)
+#endif
+                          endif
+                      enddo
+                  end if
+
+              end do
+          else
+              tag =  109
+              call mpi_send(map_l2g,nlinks,MPI_INTEGER, IO_id,     &
+                      tag,HYDRO_COMM_WORLD,ierr)
+              tag = 119
+              call mpi_send(v,nlinks,MPI_INTEGER8,IO_id,   &
+                      tag,HYDRO_COMM_WORLD,ierr)
+          end if
+          if(allocated(tmp_map)) deallocate(tmp_map)
+          if(allocated(tmp_v)) deallocate(tmp_v)
+      end subroutine write_chanel_int8
+
+
+      subroutine write_lake_real(v,nodelist_in,nlakes)
         implicit none
         real recv(nlakes), v(nlakes)
         integer nodelist(nlakes), nlakes, nodelist_in(nlakes)
@@ -2058,6 +2243,31 @@ MODULE MODULE_MPP_LAND
        return
     end subroutine combine_int1d
 
+  subroutine combine_int8_1d(vin,nsize, flag)
+      implicit none
+      integer nsize,i,j,tag,ierr, flag, k
+      integer(kind=int64), dimension(nsize):: vin,recv
+      tag = 319
+      if(nsize .le. 0) return
+      if(my_id .eq. IO_id) then
+          do i = 0, numprocs - 1
+              if(i .ne. my_id) then
+                  call mpi_recv(recv,nsize,MPI_INTEGER8,i,  &
+                          tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+                  do k = 1, nsize
+                      if(recv(k) .ne. flag) then
+                          vin(k) = recv(k)
+                      endif
+                  enddo
+              endif
+          end do
+      else
+          call mpi_send(vin,nsize,MPI_INTEGER8,IO_id,   &
+                  tag,HYDRO_COMM_WORLD,ierr)
+      endif
+      call mpp_land_bcast_int8_1d(vin)
+      return
+  end subroutine combine_int8_1d
 
     subroutine sum_real1d(vin,nsize)
        implicit none
@@ -2362,7 +2572,36 @@ MODULE MODULE_MPP_LAND
 
      end subroutine updateLake_seqInt
 
-     subroutine updateLake_seq(in,nsize,in0)
+      subroutine updateLake_seqInt8(in,nsize,in0)
+          implicit none
+          integer :: nsize
+          integer(kind=int64), dimension(nsize) :: in
+          integer(kind=int64), dimension(nsize) :: tmp
+          integer(kind=int64), dimension(:) :: in0
+          integer tag, i, status, ierr, k
+          if(nsize .le. 0) return
+
+          tag = 29
+          if(my_id .ne. IO_id) then
+              call mpi_send(in,nsize,MPI_INTEGER8, IO_id,     &
+                      tag,HYDRO_COMM_WORLD,ierr)
+          else
+              do i = 0, numprocs - 1
+                  if(i .ne. IO_id) then
+                      call mpi_recv(tmp,nsize,&
+                              MPI_INTEGER8,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+                      do k = 1, nsize
+                          if(in0(k) .ne. tmp(k)) in(k) = tmp(k)
+                      end do
+                  end if
+              end do
+          end if
+          call mpp_land_bcast_int8_1d(in)
+
+      end subroutine updateLake_seqInt8
+
+
+      subroutine updateLake_seq(in,nsize,in0)
        implicit none
        integer :: nsize
        real, dimension(nsize) :: in
@@ -2579,6 +2818,3 @@ MODULE MODULE_MPP_LAND
 
 
 END MODULE MODULE_MPP_LAND
-
-
-

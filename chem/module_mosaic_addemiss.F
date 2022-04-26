@@ -32,9 +32,9 @@ CONTAINS
                config_flags, chem, slai, ust, smois, ivgtyp, isltyp,       &
                emis_ant,ebu,biom_active,dust_opt,                          &
                !czhao  
-               ktau,p8w, u_phy,v_phy,rho_phy,g,dx,erod,  &  ! GOCART DUST 
+                ktau, u_phy,v_phy,rho_phy,g,dx,erod,                        &
                dust_emiss_active, seasalt_emiss_active,                    &
-               dust_flux, seas_flux,                                       &
+                seas_flux,emis_dust,                                        &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -61,12 +61,16 @@ CONTAINS
 
    INTEGER, INTENT(IN) ::    dust_emiss_active, seasalt_emiss_active, biom_active, dust_opt
 
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: dust_flux, seas_flux
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: seas_flux
+
+   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTIONAL,           &
+         INTENT(INOUT ) ::                                                 &
+         emis_dust
 
    !czhao 
    INTEGER, INTENT(IN) :: ktau
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )  ,               &
-          INTENT(IN) ::  p8w, u_phy,v_phy,rho_phy
+          INTENT(IN) ::  u_phy,v_phy,rho_phy
    REAL, INTENT(IN   ) ::  dx, g
    REAL, DIMENSION( ims:ime, jms:jme,3),&
          INTENT(IN ) ::     erod
@@ -737,13 +741,14 @@ size_loop: &
         !czhao+++++++++++++++++++++++++++
         if (dust_opt == 13) then 
         !czhao---------------------------
-         call mosaic_dust_gocartemis (ktau,dtstep,config_flags%num_soil_layers,alt,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                   &
-         ivgtyp,isltyp,xland,dx,g,                                         &
-         dust_flux,                                                        &
-         ids,ide, jds,jde, kds,kde,                                        &
-         ims,ime, jms,jme, kms,kme,                                        &
-         its,ite, jts,jte, kts,kte             ) 
+         call mosaic_dust_gocartemis (dtstep,config_flags%start_month,      &
+         config_flags%num_soil_layers,alt,u_phy,                         &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,erod,                     &
+         isltyp,xland,g,                                                 &
+         emis_dust,                                                      &
+         ids,ide, jds,jde, kds,kde,                                      &
+         ims,ime, jms,jme, kms,kme,                                      &
+         its,ite, jts,jte, kts,kte) 
         endif
 
 
@@ -2004,32 +2009,39 @@ END MODULE module_mosaic_addemiss
    END subroutine mosaic_dust_emiss
 
 !====================================================================================
-!add another dust emission scheme following GOCART mechanism  --czhao  09/17/2009
+! add another dust emission scheme following GOCART mechanism  --czhao  09/17/2009
+! Ukhov A. 02/28/2022. Code clean up and refactoring. Removed dublicate mosaic_source_du().
+! Instead original source_du() is called from module_gocart_dust.F
 !====================================================================================
-  subroutine mosaic_dust_gocartemis (ktau,dt,num_soil_layers,alt,u_phy,    &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                   &
-         ivgtyp,isltyp,xland,dx,g,                                         &
-         dust_flux,                                                        &
-         ids,ide, jds,jde, kds,kde,                                        &
-         ims,ime, jms,jme, kms,kme,                                        &
-         its,ite, jts,jte, kts,kte                                         )
+  subroutine mosaic_dust_gocartemis (dt,start_month,num_soil_layers,alt,  &            
+         u_phy,v_phy,chem,rho_phy,dz8w,smois,u10,v10,erod,                &
+         isltyp,xland,g,                                                  &
+         emis_dust,                                                       &
+         ids,ide, jds,jde, kds,kde,                                       &
+         ims,ime, jms,jme, kms,kme,                                       &
+         its,ite, jts,jte, kts,kte)
   USE module_data_gocart_dust
   USE module_configure
   USE module_state_description
   USE module_model_constants, ONLY: mwdry
   USE module_data_mosaic_asect
+  USE gocart_dust, ONLY: source_du
   IMPLICIT NONE
 
-   INTEGER,      INTENT(IN   ) :: ktau, num_soil_layers,           &
+   INTEGER,      INTENT(IN   ) :: start_month,num_soil_layers,            &
                                   ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
    INTEGER,DIMENSION( ims:ime , jms:jme )                  ,               &
-          INTENT(IN   ) ::                                                 &
-                                                     ivgtyp,               &
-                                                     isltyp
+          INTENT(IN   ) ::       isltyp
+                                                     
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
+
+   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTIONAL,           &
+         INTENT(INOUT ) ::       emis_dust
+         
+
    REAL, DIMENSION( ims:ime, num_soil_layers, jms:jme ) ,      &
       INTENT(INOUT) ::                               smois
    REAL,  DIMENSION( ims:ime , jms:jme, 3 )                   ,               &
@@ -2042,37 +2054,27 @@ END MODULE module_mosaic_addemiss
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
           INTENT(IN   ) ::                                                 &
                                                         alt,               &
-                                                     dz8w,p8w,             &
+                                                     dz8w,                 &
                                               u_phy,v_phy,rho_phy
 
-  REAL, INTENT(IN   ) :: dt,dx,g
-  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: dust_flux
+  REAL, INTENT(IN   ) :: dt,g
 !
 ! local variables
 !
-  integer :: nmx,i,j,k,ndt,imx,jmx,lmx
-  integer ilwi, start_month
+  integer :: nmx,i,j,k,imx,jmx,lmx
+  integer,dimension (1,1) :: ilwi
   real*8, DIMENSION (3) :: erodin
-  real*8, DIMENSION (5) :: bems
-  real*8  w10m,gwet,airden,airmas
-  real*8  cdustemis,jdustemis,cdustcon,jdustcon
-  real*8  cdustdens,jdustdens,mass1part,jdustdiam,cdustdiam,dp_meanvol_tmp
-  real factaa, factbb, fracoin, fracca, fracco3, fractot
-  real*8  dxy
-  real*8  conver,converi
-  real dttt
-  real soilfacj,rhosoilj,rhosoilc
-  integer p1st,l_oin,l,n
+  real*8, DIMENSION (5) :: tc,bems
+  real*8, dimension (1,1) :: w10m,gwet,airden
+  real*8  mass1part
+  real  factbb, fracoin, fracca, fracco3, fractot
+  real*8  converi
+  integer p1st,l_oin,l,n,l_ca, l_co3 
   real :: densdust
-  real sz(8),ftot,frac_10um
-  real totalemis,accfrac,corfrac,rscale
+  real totalemis
   integer iphase, itype
-
-  rscale=1.01  !  to account for the emitted dust with radius larger than 10 um
-  accfrac=0.07              ! assign 7% to accumulation mode
-  corfrac=0.93              ! assign 93% to coarse mode
-  accfrac=accfrac*rscale
-  corfrac=corfrac*rscale
+  real :: dz_lowest
+  real sz(8)
 
   p1st = param_first_scalar
 
@@ -2116,74 +2118,84 @@ END MODULE module_mosaic_addemiss
           sz(4) = sz(7) + sz(8)
         ENDIF
 
-  conver=1.e-9
   converi=1.e9
-
-  dust_flux(:,:) = 0.0
-
 !
 ! number of dust bins
-  nmx=5
+!
+  imx=1
+  jmx=1
+  lmx=1
+  nmx=ndust
   k=kts
   do j=jts,jte
   do i=its,ite
-!
-! don't do dust over water!!!
-     if(xland(i,j).lt.1.5)then
 
-     ilwi=1
-     start_month = 3   ! it doesn't matter, ch_dust is not a month dependent now, a constant
-     w10m=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
-     airmas=-(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g   ! kg 
+! no dust over water!!!
+!
+     if(xland(i,j).lt.1.5)then
+      ilwi(1,1)=1     
+
+      ! tc is dummy parameter. Just to conform with source_du() call from module_gocart_dust.F
+      tc(:) = 0.0
+
+      w10m=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
 
 ! we don't trust the u10,v10 values, if model layers are very thin near surface
      if(dz8w(i,kts,j).lt.12.)w10m=sqrt(u_phy(i,kts,j)*u_phy(i,kts,j)+v_phy(i,kts,j)*v_phy(i,kts,j))
-    !erodin(1)=erod(i,j,1)/dx/dx   ! czhao erod shouldn't be scaled to the area, because it's a fraction
-    !erodin(2)=erod(i,j,2)/dx/dx
-    !erodin(3)=erod(i,j,3)/dx/dx
      erodin(1)=erod(i,j,1)
      erodin(2)=erod(i,j,2)
      erodin(3)=erod(i,j,3)
 !
 !  volumetric soil moisture over porosity
-     gwet=smois(i,1,j)/porosity(isltyp(i,j))
-     ndt=ifix(dt)
-     airden=rho_phy(i,kts,j)
-     dxy=dx*dx
+      gwet(1,1)=smois(i,k,j)/porosity(isltyp(i,j))
+      airden(1,1)=rho_phy(i,k,j)
+      dz_lowest = dz8w(i,k,j)
 
-    call mosaic_source_du( nmx, dt, &
-                     erodin, ilwi, dxy, w10m, gwet, airden, airmas, &
-                     bems,start_month,g)
+      !call from module_gocart_dust.F
+      call source_du( imx,jmx,lmx,nmx, dt, tc, &
+                       erodin, ilwi, w10m, gwet, airden, &
+                       dz_lowest,bems,start_month,g)
 
-!bems: kg/timestep/cell
-    !sum up the dust emission from 0.1-10 um in radius 
-    ! unit change from kg/timestep/cell to ug/m2/s
-    totalemis=(sum(bems(1:5))/dt)*converi/dxy
+      ! bems: (kg/m2/timestep)
 
-    dust_flux(i,j) = totalemis
+      ! A. Ukhov
+      ! GOCART radii range for 1..5 bins: 0.1-10 um, where 4th bin: 3-6 um, 5th bin: 6-10 um.
+      ! MOSAIC radii range for 1..8 bins: 0.0195-5 um, where 8th bin: 2.5-5 um.
+      ! Therefore account only 1-4 GOCART bins, when calculating total dust flux from the surface.
+      ! ln(5/3)/ln(6/3)=0.74 is contribution from the 4 GOCART bin.
+      totalemis=(sum(bems(1:3))+bems(4)*0.74)*converi !ug/m2/timestep
 
-    !totalemis=totalemis*rscale !to account for the particles larger than 10 um 
-                              ! based on assumed size distribution
-    jdustemis = totalemis*accfrac   ! accumulation mode
-    cdustemis = totalemis*corfrac   ! coarse mode 
+      ! A. Ukhov
+      ! for output diagnostics
+      ! bems (kg/m2) per dt
+      ! p_edust1...5 is accumulated dust emission (kg/m2)
+      emis_dust(i,1,j,p_edust1)=emis_dust(i,1,j,p_edust1)+bems(1)
+      emis_dust(i,1,j,p_edust2)=emis_dust(i,1,j,p_edust2)+bems(2)
+      emis_dust(i,1,j,p_edust3)=emis_dust(i,1,j,p_edust3)+bems(3)
+      emis_dust(i,1,j,p_edust4)=emis_dust(i,1,j,p_edust4)+bems(4)
+      emis_dust(i,1,j,p_edust5)=emis_dust(i,1,j,p_edust5)+bems(5)
 
-    ftot=jdustemis+cdustemis  ! total dust emission in ug/m2/s 
-!    ftot=ftot*frac_10um  ! only in diameter range of 0-10um
-
-!   apportion other inorganics only
-         factaa = (dt/dz8w(i,k,j))*alt(i,k,j)
-         factbb = factaa * ftot
-         fracoin = 0.97
-         fracca = 0.03*0.4
-         fracco3 = 0.03*0.6
-         fractot = fracoin
+      factbb = (totalemis/dz8w(i,k,j))*alt(i,k,j) !(ug/kg)
+      fracoin = 0.97
+      fracca = 0.03*0.4
+      fracco3 = 0.03*0.6
+      fractot = fracoin + fracca + fracco3
 
          do 1810 n = 1, nsize_aer(itype)
             l_oin = lptr_oin_aer(n,itype,iphase)
+            l_ca = lptr_ca_aer(n,itype,iphase)
+            l_co3 = lptr_co3_aer(n,itype,iphase)
+
             if (l_oin >= p1st) then
-               chem(i,k,j,l_oin) = chem(i,k,j,l_oin) +      &
-               factbb * sz(n) * fracoin
-! mass1part is mass of a single particle in ug, density of dust ~2.5 g cm-3
+                chem(i,k,j,l_oin) = chem(i,k,j,l_oin) +   &
+                factbb * sz(n) * fracoin
+             if (l_ca >= p1st)                            &
+                  chem(i,k,j,l_ca) = chem(i,k,j,l_ca) +     &
+                  factbb * sz(n) * fracca
+             if (l_co3 >= p1st)                           &
+                  chem(i,k,j,l_co3) = chem(i,k,j,l_co3) +   &
+                  factbb * sz(n) * fracco3
+
                if (n <= 5) densdust=2.5
                if (n > 5 ) densdust=2.65
                ! added option for 4bin WRF
@@ -2191,10 +2203,11 @@ END MODULE module_mosaic_addemiss
                  if (n <= 2) densdust=2.5
                  if (n > 2 ) densdust=2.65
                endif
+
+            ! mass1part is mass of a single particle in ug
                mass1part=0.523598*(dcen_sect(n,itype)**3)*densdust*1.0e06
                l = numptr_aer(n,itype,iphase)
-               if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) +   &
-                        factbb * sz(n) * fractot / mass1part
+             if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + factbb * sz(n) * fractot/ mass1part
             end if
 1810    continue
 
@@ -2204,94 +2217,6 @@ END MODULE module_mosaic_addemiss
 
 
 end subroutine mosaic_dust_gocartemis
-
-  SUBROUTINE mosaic_source_du( nmx, dt1, &
-                     erod, ilwi, dxy, w10m, gwet, airden, airmas, &
-                     bems,month,g0)
-
-! ****************************************************************************
-! *  Evaluate the source of each dust particles size classes  (kg/m3)        
-! *  by soil emission.
-! *  Input:
-! *         EROD      Fraction of erodible grid cell                (-)
-! *                   for 1: Sand, 2: Silt, 3: Clay
-! *         DUSTDEN   Dust density                                  (kg/m3)
-! *         DXY       Surface of each grid cell                     (m2)
-! *         AIRVOL    Volume occupy by each grid boxes              (m3)
-! *         NDT1      Time step                                     (s)
-! *         W10m      Velocity at the anemometer level (10meters)   (m/s)
-! *         u_tresh   Threshold velocity for particule uplifting    (m/s)
-! *         CH_dust   Constant to fudge the total emission of dust  (s2/m2)
-! *      
-! *  Output:
-! *         DSRC      Source of each dust type           (kg/timestep/cell) 
-! *
-! *  Working:
-! *         SRC       Potential source                   (kg/m/timestep/cell)
-! *
-! ****************************************************************************
-
- USE module_data_gocart_dust
-
-  INTEGER, INTENT(IN)    :: nmx
-  REAL*8,    INTENT(IN)  :: erod(ndcls)
-  INTEGER, INTENT(IN)    :: ilwi,month
-
-  REAL*8,    INTENT(IN)    :: w10m, gwet
-  REAL*8,    INTENT(IN)    :: dxy
-  REAL*8,    INTENT(IN)    :: airden, airmas
-  REAL*8,    INTENT(OUT)   :: bems(nmx)
-
-  REAL*8    :: den(nmx), diam(nmx)
-  REAL*8    :: tsrc, u_ts0, cw, u_ts, dsrc, srce
-  REAL, intent(in)    :: g0
-  REAL    :: rhoa, g,dt1
-  INTEGER :: i, j, n, m, k
-
-  ! default is 1 ug s2 m-5 == 1.e-9 kg s2 m-5
-  !ch_dust(:,:)=0.8D-9   ! ch_dust is defined here instead of in the chemics_ini.F if with SORGAM  -czhao
-   ch_dust(:,:)=1.0D-9  ! default 
-  !ch_dust(:,:)=0.65D-9  ! ch_dust is scaled for Sahara 
-
-  ! executable statemenst
-  DO n = 1, nmx
-     ! Threshold velocity as a function of the dust density and the diameter from Bagnold (1941)
-     den(n) = den_dust(n)*1.0D-3
-     diam(n) = 2.0*reff_dust(n)*1.0D2
-     g = g0*1.0E2
-     ! Pointer to the 3 classes considered in the source data files
-     m = ipoint(n)
-     tsrc = 0.0
-              rhoa = airden*1.0D-3
-              u_ts0 = 0.13*1.0D-2*SQRT(den(n)*g*diam(n)/rhoa)* &
-                   SQRT(1.0+0.006/den(n)/g/(diam(n))**2.5)/ &
-                   SQRT(1.928*(1331.0*(diam(n))**1.56+0.38)**0.092-1.0)
-
-              ! Case of surface dry enough to erode
-             IF (gwet < 0.5) THEN  !  Pete's modified value
-!              IF (gwet < 0.2) THEN
-                 u_ts = MAX(0.0D+0,u_ts0*(1.2D+0+2.0D-1*LOG10(MAX(1.0D-3, gwet))))
-              ELSE
-                 ! Case of wet surface, no erosion
-                 u_ts = 100.0
-              END IF
-              srce = frac_s(n)*erod(m)*dxy  ! (m2)
-              IF (ilwi == 1 ) THEN
-                 dsrc = ch_dust(n,month)*srce*w10m**2 &
-                      * (w10m - u_ts)*dt1  ! (kg)
-              ELSE
-                 dsrc = 0.0
-              END IF
-              IF (dsrc < 0.0) dsrc = 0.0
-
-              ! Update dust mixing ratio at first model level.
-              !tc(n) = tc(n) + dsrc / airmas    !kg/kg-dryair -czhao
-              bems(n) = dsrc     ! kg/timestep/cell
-
-  ENDDO
-
-END SUBROUTINE mosaic_source_du
-
 !===========================================================================
 
 !----------------------------------------------------------------------

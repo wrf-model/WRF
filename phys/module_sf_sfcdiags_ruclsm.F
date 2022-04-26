@@ -47,8 +47,8 @@ CONTAINS
 
       LOGICAL :: FLUX
 
-!      flux = .true.
-      flux = .false.
+      flux = .true.
+      !flux = .false.
 
       DO J=jts,jte
         DO I=its,ite

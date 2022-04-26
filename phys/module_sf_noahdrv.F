@@ -115,7 +115,10 @@ CONTAINS
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
-                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
+                  dl_u_bep,sf_bep,vl_bep                        &
+#ifdef WRF_HYDRO
+                 ,sfcheadrt,INFXSRT,soldrain                    &   !O multi-layer urban
+#endif
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                         &
                  ,IRR_CHAN                                          &
@@ -269,12 +272,15 @@ CONTAINS
    INTEGER,  INTENT(IN   )   ::  julian, julyr                  !urban
 
 !added by Wei Yu  for routing
+#ifdef WRF_HYDRO
     REAL,    DIMENSION( ims:ime, jms:jme )                     , &
              INTENT(INOUT)  :: sfcheadrt,INFXSRT,soldrain 
     real :: etpnd1
+#endif
 !end added
 
-
+! new local vars for hydro
+   REAL :: etpnd1_hydro,sfcheadrt_hydro,infxsrt_hydro
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
@@ -959,6 +965,9 @@ CONTAINS
                  ALBEDOK =0.2         !  0.2
                  ALBBRD  =0.2         !0.2
                  EMISSI = 0.98                                 !for VEGTYP=5
+                 LWDN   = GLW(I,J) * EMISSI
+                 SOLNET = SOLDN * (1.0 - ALBEDOK)
+
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
                      T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
@@ -1077,6 +1086,15 @@ CONTAINS
 !
 !  END FASDAS
 !
+#ifdef WRF_HYDRO
+       etpnd1_hydro = 0.
+       sfcheadrt_hydro = sfcheadrt(i,j)
+       infxsrt_hydro = infxsrt(i,j)
+#else
+       etpnd1_hydro = 0.
+       sfcheadrt_hydro = 0.
+       infxsrt_hydro = 0.
+#endif
        CALL SFLX (I,J,FFROZP, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,       &    !C
                  LOCAL,                                            &    !L
                  LUTYPE, SLTYPE,                                   &    !CL
@@ -1099,14 +1117,18 @@ CONTAINS
                  SNOTIME1,                                         &
                  RIBB,                                             &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
-                 sfcheadrt(i,j),                                   &    !I
-                 INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
+! WRF_HYDRO vars
+                 sfcheadrt_hydro,                                  &    !I
+                 INFXSRT_hydro,ETPND1_hydro                        &    !O
+                ,OPT_THCND,AOASIS                                  &    !O
                 ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    &   ! fasdas
                 ,IRRIGATION_CHANNEL)
 
-
 #ifdef WRF_HYDRO
                  soldrain(i,j) = RUNOFF2*DT*1000.0
+                 sfcheadrt(i,j) = sfcheadrt_hydro
+                 infxsrt(i,j) = INFXSRT_hydro
+                 etpnd1 = etpnd1_hydro
 #endif
     ELSEIF (ICE == -1) THEN
 
@@ -1312,7 +1334,7 @@ CONTAINS
             SSGD_URB  = 0.8*SOLDN        ! [W/m/m]
             SSGQ_URB  = SSG_URB-SSGD_URB ! [W/m/m]
             LLG_URB   = GLW(I,J)         ! [W/m/m]
-            RAIN_URB  = RAINBL(I,J)      ! [mm]
+            RAIN_URB  = RAINBL(I,J) / DT * 3600.0      ! [mm/hr]
             RHOO_URB  = SFCPRS / (287.04 * SFCTMP * (1.0+ 0.61 * Q2K)) ![kg/m/m/m]
             ZA_URB    = ZLVL             ! [m]
             DELT_URB  = DT               ! [sec]
@@ -1690,7 +1712,7 @@ CONTAINS
 !           emiss(i,j)=(1.-frc_urb2d(i,j))*emiss_rural(i,j)+frc_urb2d(i,j)*emiss_urb(i,j)
 ! using the emissivity and the total longwave upward radiation estimate the averaged skin temperature
            IF (FRC_URB2D(I,J).GT.0.) THEN
-              rl_up_rural=-emiss_rural(i,j)*sigma_sb*(tsk_rural(i,j)**4.)-(1.-emissi)*glw(i,j)
+              rl_up_rural=-emiss_rural(i,j)*sigma_sb*(tsk_rural(i,j)**4.)-(1.-emiss_rural(i,j))*glw(i,j)
               rl_up_tot=(1.-frc_urb2d(i,j))*rl_up_rural+frc_urb2d(i,j)*rl_up_urb(i,j)   
               emiss(i,j)=(1.-frc_urb2d(i,j))*emiss_rural(i,j)+frc_urb2d(i,j)*emiss_urb(i,j)
               ts_urb2d(i,j)=(max(0.,(-rl_up_urb(i,j)-(1.-emiss_urb(i,j))*glw(i,j))/emiss_urb(i,j)/sigma_sb))**0.25
@@ -2414,7 +2436,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
                   dl_u_bep,sf_bep,vl_bep                        & !O multi-layer urban
+#ifdef WRF_HYDRO
                  ,sfcheadrt,INFXSRT, soldrain                   & !hydro
+#endif
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                     & !O
                  ,IRR_CHAN                                      &
@@ -2566,10 +2590,15 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    INTEGER,  INTENT(IN   )   ::  julian,julyr
 
 !added by Wei Yu  for routing
+#ifdef WRF_HYDRO
     REAL,    DIMENSION( ims:ime, jms:jme )                     , &
              INTENT(INOUT)  :: sfcheadrt,INFXSRT,soldrain 
     real :: etpnd1
+#endif
 !end added
+
+! new local vars for hydro
+   REAL :: etpnd1_hydro,sfcheadrt_hydro,infxsrt_hydro
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
@@ -3358,8 +3387,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       !Fei: urban. for urban surface, if calling UCM, redefine the natural surface in cities as
       ! the "NATURAL" category in the VEGPARM.TBL
       	
-      	!   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
-                       
+      	!   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN                 
       
            !           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
            !            IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
@@ -3414,7 +3442,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        ALBEDOK =0.2         !  0.2
                        ALBBRD  =0.2         !  0.2
                        EMISSI = 0.98        !  for VEGTYP=5       
-                       
+                       LWDN   = GLW(I,J) * EMISSI
+                       SOLNET = SOLDN * (1.0 - ALBEDOK)
+ 
       		      T1= TS_RUL2D_mosaic(I,mosaic_i,J)
                        
                  ENDIF
@@ -3531,13 +3561,18 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        SNOTIME1,                                         &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
-                       sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
-                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
-                 ,IRRIGATION_CHANNEL  )
+! WRF_HYDRO vars
+                       sfcheadrt_hydro,                                  &    !I
+                       INFXSRT_hydro,ETPND1_hydro                        &    !O
+                      ,OPT_THCND,AOASIS                                  &    !O
+                      ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
+                      ,IRRIGATION_CHANNEL  )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0
+                       sfcheadrt(i,j) = sfcheadrt_hydro
+                       infxsrt(i,j) = INFXSRT_hydro
+                       etpnd1 = etpnd1_hydro
 #endif
           ELSEIF (ICE == -1) THEN
       
@@ -3733,7 +3768,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SSGD_URB  = 0.8*SOLDN        ! [W/m/m]
                   SSGQ_URB  = SSG_URB-SSGD_URB ! [W/m/m]
                   LLG_URB   = GLW(I,J)         ! [W/m/m]
-                  RAIN_URB  = RAINBL(I,J)      ! [mm]
+                  RAIN_URB  = RAINBL(I,J) / DT * 3600.0      ! [mm/hr]
                   RHOO_URB  = SFCPRS / (287.04 * SFCTMP * (1.0+ 0.61 * Q2K)) ![kg/m/m/m]
                   ZA_URB    = ZLVL             ! [m]
                   DELT_URB  = DT               ! [sec]
@@ -4329,6 +4364,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        ALBEDOK =0.2         !  0.2
                        ALBBRD  =0.2         !0.2
                        EMISSI = 0.98                                 !for VEGTYP=5
+                       LWDN   = GLW(I,J) * EMISSI
+                       SOLNET = SOLDN * (1.0 - ALBEDOK)
+
       		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
                      T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
@@ -4453,13 +4491,18 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        SNOTIME1,                                         &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
-                       sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
-                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
+! WRF_HYDRO vars
+                       sfcheadrt_hydro,                                  &    !I
+                       INFXSRT_hydro,ETPND1_hydro                        &    !O
+                      ,OPT_THCND,AOASIS                                  &    !O
+                      ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
                       ,IRRIGATION_CHANNEL )
       
 #ifdef WRF_HYDRO
                        soldrain(i,j) = RUNOFF2*DT*1000.0
+                       sfcheadrt(i,j) = sfcheadrt_hydro
+                       infxsrt(i,j) = INFXSRT_hydro
+                       etpnd1 = etpnd1_hydro
 #endif
           ELSEIF (ICE == -1) THEN
       
@@ -4619,7 +4662,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SSGD_URB  = 0.8*SOLDN        ! [W/m/m]
                   SSGQ_URB  = SSG_URB-SSGD_URB ! [W/m/m]
                   LLG_URB   = GLW(I,J)         ! [W/m/m]
-                  RAIN_URB  = RAINBL(I,J)      ! [mm]
+                  RAIN_URB  = RAINBL(I,J) / DT * 3600.0     ! [mm/hr]
                   RHOO_URB  = SFCPRS / (287.04 * SFCTMP * (1.0+ 0.61 * Q2K)) ![kg/m/m/m]
                   ZA_URB    = ZLVL             ! [m]
                   DELT_URB  = DT               ! [sec]

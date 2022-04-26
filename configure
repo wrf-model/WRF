@@ -1033,10 +1033,10 @@ fi
 
 # testing for location of rpc/types.h file, used in landuse
 if [ -f /usr/include/rpc/types.h ] ; then
-  sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=1/' configure.wrf > configure.wrf.edit
+  sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=1 &/' configure.wrf > configure.wrf.edit
   mv configure.wrf.edit configure.wrf
 elif [ -f /usr/include/tirpc/rpc/types.h ] ; then
-  sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=2/' configure.wrf > configure.wrf.edit
+  sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=2 &/' configure.wrf > configure.wrf.edit
   mv configure.wrf.edit configure.wrf
 else
   echo "************************** W A R N I N G ************************************"

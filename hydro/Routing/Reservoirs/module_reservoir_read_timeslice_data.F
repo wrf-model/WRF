@@ -218,7 +218,7 @@ contains
             write(observation_resolution_string, "(I2)") observation_resolution_minutes
 
             ! Negative for going back in time
-            observation_resolution_seconds = observation_resolution_minutes * 60 * -1
+            observation_resolution_seconds = observation_resolution_minutes * 60 * (-1)
 
             ! Loop through the total timeslice periods to look for and read timeslice files
             do timeslice_file_index = 1, total_timeslice_time_periods

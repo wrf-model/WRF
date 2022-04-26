@@ -2507,6 +2507,21 @@
      END DO
 
 !-----------------------------------------------------------------------
+!  Check if qna_update=0 when aer_init_opt>0 for Thompson-MP-Aero (mp_physics=28)
+!-----------------------------------------------------------------------
+     DO i = 1, model_config_rec % max_dom
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+         IF ( model_config_rec%aer_init_opt .GT. 0 .and. model_config_rec%qna_update .EQ. 0 ) THEN
+           wrf_err_message = '--- ERROR: Time-varying sfc aerosol emissions not set for mp_physics=28 '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           wrf_err_message = '--- ERROR: Please set qna_update=1 and control through auxinput17 options '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           count_fatal_error = count_fatal_error + 1
+         END IF
+       END IF
+     END DO
+
+!-----------------------------------------------------------------------
 !  Set aer_fire_emit_opt for Thompson-MP-Aero (mp_physics=28)
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom

@@ -777,7 +777,7 @@ CONTAINS
                                    its,ite,kts,kte,itf)
               DO I=ibegc,iendc
               DO K=kts,ktf
-              do nv=2,num_tracer
+              do nv=2,num_chem
                 chem(I,K,J,nv)=max(epsilc,chem(i,k,j,nv)+totchemt(i,k,nv)*dt)
               enddo
               ENDDO
@@ -788,7 +788,7 @@ CONTAINS
                                    its,ite,kts,kte,itf)
               DO I=ibegc,iendc
               DO K=kts,ktf
-              do nv=2,num_chem
+              do nv=2,num_tracer
                  tracer(I,K,J,nv)=max(epsilc,tracer(i,k,j,nv)+tottracert(i,k,nv)*dt)
               enddo ! nv
               ENDDO

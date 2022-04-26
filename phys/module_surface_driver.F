@@ -67,7 +67,7 @@ CONTAINS
      &          ,qintsxy   ,qintrxy   ,qdripsxy ,qdriprxy  ,qthrosxy  ,qthrorxy     &
      &          ,qsnsubxy  ,qsnfroxy  ,qsubcxy  ,qfrocxy   ,qevacxy   ,qdewcxy      &
      &          ,qfrzcxy   ,qmeltcxy  ,qsnbotxy ,pondingxy ,PAHXY     ,PAHGXY       &
-     &          ,PAHVXY    ,PAHBXY                                                  &
+     &          ,PAHVXY    ,PAHBXY    ,qmeltxy                                      &
      &          ,fpicexy   ,RAINLSM   ,SNOWLSM  ,forctlsm  ,forcqlsm  ,forcplsm     &
      &          ,forczlsm  ,forcwlsm  ,acc_ssoil,acc_qinsur,acc_qseva ,acc_etrani   &
      &          ,eflxbxy   ,soilenergy,snowenergy, canhsxy                          &
@@ -904,7 +904,7 @@ CONTAINS
                qdriprxy  ,qthrosxy  ,qthrorxy   ,&
                qsnsubxy  ,qsnfroxy  ,qsubcxy    ,&
                qfrocxy   ,qevacxy   ,qdewcxy,qfrzcxy   ,qmeltcxy   ,&
-               qsnbotxy  ,pondingxy, PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
+               qsnbotxy  ,qmeltxy   ,pondingxy, PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
                fpicexy,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,canhsxy
    INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: PLANTING
@@ -2754,7 +2754,9 @@ CONTAINS
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
+#ifdef WRF_HYDRO
                 ,sfcheadrt,INFXSRT, soldrain                    & !hydro
+#endif
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
                 ,RS,XLAIDYN,IRRIGATION_CHANNEL)
            ELSE
@@ -2884,14 +2886,10 @@ CONTAINS
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
-                ,sfcheadrt,INFXSRT, soldrain &
-!
-!  FASDAS
-!
+#ifdef WRF_HYDRO
+                ,sfcheadrt,INFXSRT, soldrain                    &
+#endif
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    &
-!
-!  END FASDAS
-!
                 ,RS,XLAIDYN,IRRIGATION_CHANNEL)
          ENDIF
 
@@ -3156,7 +3154,7 @@ CONTAINS
                qdriprxy  ,qthrosxy  ,qthrorxy   ,&
                qsnsubxy  ,qsnfroxy  ,qsubcxy    ,&
                qfrocxy   ,qevacxy   ,qdewcxy    ,qfrzcxy   ,qmeltcxy   ,&
-               qsnbotxy  ,pondingxy ,PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
+               qsnbotxy  ,qmeltxy   ,pondingxy ,PAHXY      ,PAHGXY, PAHVXY, PAHBXY,&
                fpicexy,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,&
                acc_ssoil, acc_qinsur, acc_qseva, acc_etrani, eflxbxy, soilenergy, snowenergy, canhsxy,&
                ACC_DWATERXY, ACC_PRCPXY, ACC_ECANXY, ACC_ETRANXY, ACC_EDIRXY, &
@@ -3173,7 +3171,7 @@ CONTAINS
          IF(SF_URBAN_PHYSICS > 0 ) THEN  !urban
          
 	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
-                                 DT,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
+                               DTBL,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
                               T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
                              SWDDIR,         SWDDIF,                                        &
 		                GLW,            P8W,         RAINBL,       DZ8W,      ZNT,  & ! IN : Forcing
@@ -3655,7 +3653,6 @@ CONTAINS
 !save old tsk_ice
                          tsk_save(i,j)  = tsk(i,j)
                          tsk(i,j)  = ( tsk(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * TSK_SEA(i,j)  )
-                         pblh(i,j) = ( pblh(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * PBLH_SEA(i,j) )
                       ENDIF
                    ENDDO
                 ENDDO
@@ -6020,6 +6017,8 @@ CONTAINS
      MOL_HOLD(its:ite,jts:jte)    = MOL(its:ite,jts:jte)
      PSIH_HOLD(its:ite,jts:jte)   = PSIH(its:ite,jts:jte)
      PSIM_HOLD(its:ite,jts:jte)   = PSIM(its:ite,jts:jte)
+     FH_HOLD(its:ite,jts:jte)     = FH(its:ite,jts:jte)
+     FM_HOLD(its:ite,jts:jte)     = FM(its:ite,jts:jte)
      QFX_HOLD(its:ite,jts:jte)    = QFX(its:ite,jts:jte)
      QGH_HOLD(its:ite,jts:jte)    = QGH(its:ite,jts:jte)
      REGIME_HOLD(its:ite,jts:jte) = REGIME(its:ite,jts:jte)
@@ -6448,6 +6447,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      MOL_HOLD(its:ite,jts:jte)    = MOL(its:ite,jts:jte)
      PSIH_HOLD(its:ite,jts:jte)   = PSIH(its:ite,jts:jte)
      PSIM_HOLD(its:ite,jts:jte)   = PSIM(its:ite,jts:jte)
+     FH_HOLD(its:ite,jts:jte)     = FH(its:ite,jts:jte)
+     FM_HOLD(its:ite,jts:jte)     = FM(its:ite,jts:jte)
      QFX_HOLD(its:ite,jts:jte)    = QFX(its:ite,jts:jte)
      QGH_HOLD(its:ite,jts:jte)    = QGH(its:ite,jts:jte)
      REGIME_HOLD(its:ite,jts:jte) = REGIME(its:ite,jts:jte)

@@ -2519,6 +2519,39 @@ SUBROUTINE bound_tke ( tke, tke_upper_bound,       &
 
   END SUBROUTINE bound_tke
 
+!-----------------------------------------------------------------------
+
+SUBROUTINE bound_qna ( qna,                        &
+                       ids,ide, jds,jde, kds,kde,  &
+                       ims,ime, jms,jme, kms,kme,  &
+                       its,ite, jts,jte, kts,kte  )
+
+  IMPLICIT NONE
+
+  INTEGER,  INTENT(IN   )   ::          ids,ide, jds,jde, kds,kde, &
+                                        ims,ime, jms,jme, kms,kme, &
+                                        its,ite, jts,jte, kts,kte
+
+  REAL, DIMENSION( ims:ime , kms:kme , jms:jme  ), INTENT(INOUT) :: qna
+
+  INTEGER :: i,k,j
+
+!<DESCRIPTION>
+!
+! bounds aerosol between zero and current value
+!
+!</DESCRIPTION>
+
+  DO j=jts,min(jte,jde-1)
+  DO k=kts,kte-1
+  DO i=its,min(ite,ide-1)
+    qna(i,k,j) = max(qna(i,k,j),0.)
+  ENDDO
+  ENDDO
+  ENDDO
+
+  END SUBROUTINE bound_qna
+
 !----------------------------------------------------------------------------------
 !cyl: Implement the forward Lagrangian trajectory calculation in WRF
 !Chiaying Lee RSMAS/UM

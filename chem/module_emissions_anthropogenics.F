@@ -227,6 +227,16 @@ is_mozart:if( is_moz_chm ) then
             if(p_ete >= param_first_scalar) then
               chem(its:ite,k,j,p_ete) = chem(its:ite,k,j,p_ete) + emis_ant(its:ite,k,j,p_e_ol2)*conv_rho(its:ite)
             end if
+            if(p_e_hono >= param_first_scalar .and. p_hono >= param_first_scalar) then
+              chem(its:ite,k,j,p_hono) = chem(its:ite,k,j,p_hono) + emis_ant(its:ite,k,j,p_e_hono)*conv_rho(its:ite)
+            end if
+            if(p_e_terp >= param_first_scalar .and. p_api >= param_first_scalar .and. p_lim >= param_first_scalar) then
+              chem(its:ite,k,j,p_api) = chem(its:ite,k,j,p_api) + 0.5*emis_ant(its:ite,k,j,p_e_terp)*conv_rho(its:ite)
+              chem(its:ite,k,j,p_lim) = chem(its:ite,k,j,p_lim) + 0.5*emis_ant(its:ite,k,j,p_e_terp)*conv_rho(its:ite)
+            end if
+            if(p_e_co2 >= param_first_scalar .and. p_co2 >= param_first_scalar) then
+              chem(its:ite,k,j,p_co2) = chem(its:ite,k,j,p_co2) + emis_ant(its:ite,k,j,p_e_co2)*conv_rho(its:ite)
+            end if
             if( config_flags%chem_opt == GOCARTRACM_KPP .or. config_flags%chem_opt == GOCARTRADM2 ) then
               chem(its:ite,k,j,p_p10) = chem(its:ite,k,j,p_p10) + conv_rho_aer(its:ite)*emis_ant(its:ite,k,j,p_e_pm_10)
               chem(its:ite,k,j,p_p25) = chem(its:ite,k,j,p_p25) + conv_rho_aer(its:ite)*emis_ant(its:ite,k,j,p_e_pm_25)

@@ -83,6 +83,82 @@ state real      ALPH_RAND3       -      misc        1         -     -         "A
 state real      ALPH_RAND4       -      misc        1         -     -         "ALPH_RAND4"  "autoregressive coeff. for generic rand. pert."  ""
 state logical   did_stoch        -      misc        1         -     r         "DID_STOCH"   "Logical to tell us that we already did the initialization for dom 1"  ""
 
+
+# Variables for multi-pert table input
+state real      gridpt_stddev_mult3d      {pertn3d}      misc     1    -  r   "pert3d_std"  "gridpoint standard deviation of random perturbations in mult3d" ""
+state real      stddev_cutoff_mult3d      {pertn3d}      misc     1    -  r   "pert3d_cut"  "cutoff tails of pdf above this threshold standard deviation" ""
+state real      lengthscale_mult3d        {pertn3d}      misc     1    -  r   "pert3d_len"  "Correlation length scale in meters for mult3d" "m"
+state real      timescale_mult3d          {pertn3d}      misc     1    -  r   "pert3d_tim"  "Decorrelation time scale in s for mult3d" "s"
+state integer   mult3d_vertstruc          {pertn3d}      misc     1    -  r   "pert3d_ivs"  "vertical structure for mult3d: 0=constant, 1=random phase" ""
+state integer   iseed_mult3d              {pertn3d}      misc     1    -  r   "pert3d_isd"  "RANDOM SEED FOR mult3d "  ""
+state integer   ISEEDARR_mult3d           k{pertn3d}      misc     1    -  r   "ISEEDARR_MULT3D" "Array to hold seed for restart, MULT3D_PERT" "" ""
+state integer   stepsp                       -           misc     1   -  r   "stepsp" "Update perturbation every STEPSP time steps"
+
+# Namelist variables for multi-pert option
+rconfig integer multi_perturb             namelist,stoch      max_domains    0         - "stochastic forcing option: 0=none, 1=multi-perturbation option"
+rconfig logical pert_farms                namelist,stoch      max_domains    .false.    - "adding perturbations to FARMS scheme"
+rconfig real    pert_farms_albedo         namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_farms_aod            namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_farms_angexp         namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_farms_aerasy         namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_farms_qv             namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_farms_qc             namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_farms_qs             namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig logical pert_deng                 namelist,stoch      max_domains    .false.    - "adding perturbations to Deng scheme"
+rconfig real    pert_deng_qv              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_deng_qc              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_deng_t               namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_deng_w               namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig logical pert_mynn                 namelist,stoch      max_domains    .false.    - "adding perturbations to MYNN scheme"
+rconfig real    pert_mynn_qv              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_mynn_qc              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_mynn_t               namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_mynn_qke             namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig logical pert_noah                 namelist,stoch      max_domains    .false.    - "adding perturbations to Noah scheme"
+rconfig real    pert_noah_qv              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_noah_t               namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_noah_smois           namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_noah_tslb            namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig logical pert_thom                 namelist,stoch      max_domains    .false.    - "adding perturbations to Thompson scheme"
+rconfig real    pert_thom_qv              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_thom_qc              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_thom_qi              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_thom_qs              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_thom_ni              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig logical pert_cld3                 namelist,stoch      max_domains    .false.    - "adding perturbations to CLD3 scheme"
+rconfig real    pert_cld3_qv              namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    pert_cld3_t               namelist,stoch      max_domains    0.0       - "turn on/off the perturbation"
+rconfig real    spdt                      namelist,stoch      max_domains   -1.0       - "Mins to update perts. If spdt<=0 => every time step."
+
+# Perturbation arrays for multi-pert option
+state    real  SPFORCC3d        i{pertn3d}j   misc   1 XY  r       "SPFORCC3d"        "real  spect. coeff. of random perturbation field" "" ""
+state    real  SPFORCS3d        i{pertn3d}j   misc   1 XY  r       "SPFORCS3d"        "imag. spect. coeff. of random perturbation field" "" ""
+state    real  SP_AMP3d         i{pertn3d}j   misc   1 -   r       "SP_AMP3d"         "amplitude of random perturbation field" "" ""
+state    real  ALPH_RAND3d     {pertn3d}      misc   1 -   -       "ALPH_RAND3d"      "autoregressive coeff. for generic rand. pert."  ""
+state    real  VERTSTRUCC3d    ikj{pertn3d}  dyn_em 1 -   r       "VERTSTRUCC3d"     "vertical structure for stoch. pert. forcing " ""
+state    real  VERTSTRUCS3d    ikj{pertn3d}  dyn_em 1 -   r       "VERTSTRUCS3d"     "vertical structure for stoch. pert. forcing " ""
+state    real  VERTAMPT3d      k{pertn3d}    misc   1 -   r       "VERTAMPT3d"       "vert. amplitude of stoch. temperature perturb." "" ""
+
+state  real    -         i{stoclev}jf pert3d      1    -        -
+state  real   palbedo    i{stoclev}jf pert3d      1    -        h "PALBEDO" "" ""
+state  real   paod       i{stoclev}jf pert3d      1    -        h "PAOD" "" ""
+state  real   pangstrom  i{stoclev}jf pert3d      1    -        h "PANGSTROM" "" ""
+state  real   passymfac  i{stoclev}jf pert3d      1    -        h "PASSYMFAC" "" ""
+state  real   pqvapor    i{stoclev}jf pert3d      1    -        h "PQVAPOR" "" ""
+state  real   pqcloud    i{stoclev}jf pert3d      1    -        h "PQCLOUD" "" ""
+state  real   pqice      i{stoclev}jf pert3d      1    -        h "PQICE" "" ""
+state  real   pqsnow     i{stoclev}jf pert3d      1    -        h "PQSNOW" "" ""
+state  real   pni        i{stoclev}jf pert3d      1    -        h "PNI" "" ""
+state  real   pth        i{stoclev}jf pert3d      1    -        h "PTH" "" ""
+state  real   ptke       i{stoclev}jf pert3d      1    -        h "PTKE" "" ""
+state  real   psmois     i{stoclev}jf pert3d      1    -        h "PSMOIS" "" ""
+state  real   ptsoil     i{stoclev}jf pert3d      1    -        h "PTSOIL" "" ""
+state  real   pw         i{stoclev}jf pert3d      1    -        h "PW" "" ""
+state  real   p15        i{stoclev}jf pert3d      1    -        h "P15" "" ""
+
+# Namelist parameters for multi-pert option
+rconfig   integer     num_pert_3d           namelist,stoch      1                  15    - "num_pert_3d" "number of 3d random fields in STOCHPERT.TBL plue one"  ""
+
 # Namelist parameters for random number streams
 rconfig   integer     nens                namelist,stoch      1        1         - "random number seed for ensemble members "    ""   ""
 
@@ -188,3 +264,6 @@ package  skebs_perturb   skebs_on==1          -   state:ru_tendf_stoch,rv_tendf_
 package  random_perturb  rand_perturb_on==1   -   state:rand_pert,SPFORCS,SPFORCC,SP_AMP,VERTSTRUCC,VERTSTRUCS,VERTAMPT,RAND_REAL,RAND_IMAG,RAND_REAL_xxx,RAND_REAL_yyy,RAND_IMAG_xxx,RAND_IMAG_yyy
 
 package  stoch_param_perturb spp_on==1        -   state:pattern_spp_conv,field_conv,SPFORCS2,SPFORCC2,SP_AMP2,pattern_spp_pbl,field_pbl,SPFORCS3,SPFORCC3,SP_AMP3,pattern_spp_lsm,field_sf,SPFORCS4,SPFORCC4,SP_AMP4,VERTSTRUCC,VERTSTRUCS,VERTAMPT,RAND_REAL,RAND_IMAG,RAND_REAL_xxx,RAND_REAL_yyy,RAND_IMAG_xxx,RAND_IMAG_yyy
+
+package  multi_perturb  multi_perturb==1   -      state:SPFORCS3d,SPFORCC3d,SP_AMP3d,VERTSTRUCC3d,VERTSTRUCS3d,VERTAMPT3d,RAND_REAL,RAND_IMAG,RAND_REAL_xxx,RAND_REAL_yyy,RAND_IMAG_xxx,RAND_IMAG_yyy,stepsp;pert3d:palbedo,paod,pangstrom,passymfac,pqvapor,pqcloud,pqice,pqsnow,pni,pth,ptke,psmois,ptsoil,pw
+

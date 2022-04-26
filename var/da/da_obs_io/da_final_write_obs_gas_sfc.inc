@@ -15,6 +15,9 @@ subroutine da_final_write_obs_gas_sfc(it,iv)
    character(len=filename_len), allocatable     :: filename(:)
    character(len=filename_len)                  :: file
 
+   !local
+   character(len=4) :: typestr
+   typestr = 'gas'
 
    if (trace_use) call da_trace_entry("da_final_write_obs_gas_sfc")
 
@@ -44,10 +47,10 @@ subroutine da_final_write_obs_gas_sfc(it,iv)
    end if
    call da_proc_sum_int(num_obs)
    if (num_obs > 0 .and. rootproc) then
-      write(omb_unit,'(a20,i8)')'chem', num_obs  
+      write(omb_unit,'(a20,i8)') typestr, num_obs
       num_obs = 0
       do k = 0,num_procs-1
-         call da_read_omb_tmp(filename(k),iunit,num_obs,'chem',4,if_wind_sd)
+         call da_read_omb_tmp(filename(k),iunit,num_obs,typestr,3,if_wind_sd)
       end do
    end if
 

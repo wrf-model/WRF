@@ -204,7 +204,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
       !as of V3.9, da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
       call da_zero_vp_type (vp) !as of V3.9, zero out vp here
-      call da_transform_vpatox_adj(grid, be, ep, vp)
+      call da_transform_vpatox_adj(grid, be%ne, ep, vp)
       call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
 
       if (num_fgat_time > 1 .and. use_rainobs) then
@@ -250,7 +250,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
 #endif
          call da_transform_xtoxa_adj(grid)
          call da_zero_vp_type (vp)
-         call da_transform_vpatox_adj(grid, be, ep, vp, nobwin)
+         call da_transform_vpatox_adj(grid, be%ne, ep, vp, nobwin)
          !as of V3.9, the calculation of vp%alpha is taken out of vptox_adj.
          !da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
          !in order to pass in vp%alpha

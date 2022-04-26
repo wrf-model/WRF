@@ -1198,9 +1198,7 @@ if ( use_chemic_surfobs ) then
      end_index1(2) = p%ed2
      end_index1(3) = p%ed3
 
-!!     do ic = 1, num_chem-1
      do ic = PARAM_FIRST_SCALAR, num_chem
-!!!     do ic = 2,2
 #ifdef DM_PARALLEL
         if (rootproc) then
           allocate( globbuf((ide-1-ids+3)*(jde-1-jds+3)*(kde-1-kds+3)))

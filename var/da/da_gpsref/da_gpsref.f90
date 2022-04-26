@@ -17,16 +17,25 @@ module da_gpsref
       use_gpsrefobs, gpsref_thinning, pseudo_z,pseudo_val,max_error_ref, pseudo, &
       jts, jte,its,ite, npres_print, pptop, write_rej_obs_conv
    use da_control, only : pseudo_ref
+   use da_control, only : gpsref_qc_dndz_opt, gpsref_qc_dndz2_opt, gpsref_qc_gsi_opt, &
+      gpsref_qc_pcnt_opt, gpsref_qc_dndz_thresh, gpsref_qc_dndz2_thresh, &
+      gpsref_qc_pcnt_below, gpsref_qc_pcnt_above, gpsref_qc_pcnt_middle, &
+      gpsref_qc_pcnt_h1, gpsref_qc_pcnt_h2, &
+      qcflag_pcnt_below, qcflag_pcnt_middle, qcflag_pcnt_above, &
+      qcflag_dndz, qcflag_dndz2, qcflag_cutoff, qcflag_height, write_iv_gpsref, &
+      num_fgat_time
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
       maxmin_type, da_allocate_observations
    use da_interpolation, only : da_interp_lin_3d,da_interp_lin_3d_adj, &
       da_to_zk
    use da_par_util, only : da_proc_stats_combine
-   use da_par_util1, only : da_proc_sum_int
+   use da_par_util1, only : da_proc_sum_int, da_proc_sum_ints
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_max_error_qc, da_residual, da_convert_zk,da_get_print_lvl
    use da_tracing, only : da_trace_entry, da_trace_exit
+   use da_reporting, only : da_error, message, da_message, da_warning
+   use da_tools_serial, only : da_get_unit, da_free_unit
 
    ! The "stats_gpsref_type" is ONLY used locally in da_gpsref:
 
@@ -58,6 +67,7 @@ contains
 #include "da_transform_xtoy_gpsref_adj.inc"
 #include "da_check_max_iv_gpsref.inc"
 #include "da_get_innov_vector_gpsref.inc"
+#include "da_qc_gpsref.inc"
 
 end module da_gpsref
 

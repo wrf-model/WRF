@@ -59,6 +59,7 @@
    character(len=13) :: vpfile ! vp_input.0001
    integer   :: i1,i2,i3,i4,i5,i6
    logical :: ex
+   logical :: offline_varbc
 
    character(len=10) :: this_time
    character(len=8)  :: this_date
@@ -494,6 +495,9 @@
    if (use_background_errors .and. multi_inc /= 1) then
       call da_setup_background_errors (grid, be)
    else
+      be%ncv_mz = 5
+      allocate(be%cv_mz(5))
+      be%cv_mz(:) = 0
       be % ne = ensdim_alpha
       be % v1 % mz = 0
       be % v2 % mz = 0
@@ -521,6 +525,12 @@
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad .and. (use_varbc.or.freeze_varbc)) call da_varbc_init(iv, be)
 #endif
+
+   if ( be%cv%size_jb == 0 .and. be%cv%size_je == 0 .and. be%cv%size_jp > 0 ) then
+      offline_varbc = .true.
+   else
+      offline_varbc = .false.
+   end if
 
    if (use_tamdarobs .and. use_varbc_tamdar) then
         call da_varbc_tamdar_init(iv)
@@ -590,7 +600,7 @@
 
          call date_and_time(date=this_date, time=this_time)
          write(unit=message(1),fmt='(a,a8,1x,a12)') &
-            '  Fihish reading ensemble perturbations at ', this_date, &
+            '  Finish reading ensemble perturbations at ', this_date, &
             this_time(1:2)//':'//this_time(3:4)//' '//this_time(5:10)
          call da_message(message(1:1))
 
@@ -1005,17 +1015,22 @@
 
          ! adding the ensemble contribution
          if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-            ! add it to the analysis time ifgat_ana
-            ! ifgat_ana is declared in da_control.f90 and defined in da_get_time_slots.inc
-            write(unit=message(1),fmt='(a)')    ''
-            write(unit=message(2),fmt='(a,i3)') 'Applying ensemble contribution to FGAT time: ', ifgat_ana
-            call da_message(message(1:2))
-            call da_transform_vpatox (grid,be,grid%ep,grid%vp,ifgat_ana)
+            if ( use_4denvar ) then
+               ! add it to the analysis time ifgat_ana
+               ! ifgat_ana is declared in da_control.f90 and defined in da_get_time_slots.inc
+               write(unit=message(1),fmt='(a)')    ''
+               write(unit=message(2),fmt='(a,i3)') 'Applying ensemble contribution to FGAT time: ', ifgat_ana
+               call da_message(message(1:2))
+               call da_transform_vpatox (grid,be%ne,grid%ep,grid%vp,ifgat_ana)
+            else
+               ! ep does not have time dimension for non-4denvar
+               call da_transform_vpatox (grid,be%ne,grid%ep,grid%vp)
+            end if
             call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
          end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
-         call da_transform_vpatox (grid,be,grid%ep,grid%vp)
+         call da_transform_vpatox (grid,be%ne,grid%ep,grid%vp)
       endif
 
 ! mri-4dvar--------------------------
@@ -1083,6 +1098,7 @@
       ! [8.10] Output WRFVAR analysis and analysis increments:
       !------------------------------------------------------------------------
 
+      if ( .not. offline_varbc ) &
       call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
 
      if ( it < max_ext_its .and. print_detail_outerloop ) then
@@ -1111,6 +1127,7 @@
 
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
+      if ( .not. offline_varbc ) &
       call da_update_firstguess(input_grid)
 #ifdef VAR4D
       !if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)
@@ -1162,7 +1179,7 @@
    if (var4d .and. use_rainobs) deallocate(fgat_rain_flags)
    call da_deallocate_observations (iv)
    call da_deallocate_y (ob)
-   if (use_background_errors) call da_deallocate_background_errors (be)
+   if (use_background_errors .and. jb_factor>0.0) call da_deallocate_background_errors (be)
 
    if (xbx%pad_num > 0) then
       deallocate (xbx%pad_loc)

@@ -27,7 +27,7 @@ subroutine da_transform_vtod_wpec_adj(cv_size, be, ep, cv, vp, vv, xbx, grid)
       call da_transform_xtoxa_adj(grid, .true.)
 
       if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-         call da_transform_vpatox_adj(grid, be, ep, vp)
+         call da_transform_vpatox_adj(grid, be%ne, ep, vp)
       end if
 
       call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)

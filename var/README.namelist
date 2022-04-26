@@ -89,10 +89,26 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
                                               ; data are "thinned" within thinning routine, however, 
                                               ; thin_conv can be set to .false. for debugging purpose.
   thin_conv_ascii                   = .false. ; .true.: thinning for ob_format=2 (ASCII) observations 
-  thin_mesh_conv (max_instruments)  = 20.0    ; km, size of thinning mesh boxes for conventional (non-radiance) 
+  thin_conv_opt (num_ob_indexes)    = 1       ; when thin_conv=true or thin_conv_ascii=true, each ob type
+                                              ; can set its thin_conv_opt.
+                                              ; the index/order of each ob type follows the definition in
+                                              ; WRFDA/var/da/da_control/da_control.f90
+                                              ; when thin_conv=false or thin_conv_ascii=false, WRFDA sets thin_conv_opt(:)=0
+                                              ; 0: no thinning
+                                              ; 1: thinning is on, keep one ob within a thinning box
+                                              ; 2: keep multiple obs within a thinning box, only applies to use_satwnd_bufr (polaramv)
+                                              ; 3: superob in horizontal, only applies to use_satwnd_bufr (polaramv)
+                                              ; 4: superob in horizontal and vertical (need to set also thin_mesh_vert_conv),
+                                              ;    only applies to use_satwnd_bufr (polaramv)
+  thin_mesh_conv (num_ob_indexes)   = 20.0    ; km, size of horizontal thinning mesh boxes for conventional (non-radiance) 
                                               ; observations. Each observation type can set its thinning mesh and 
                                               ; the index/order follows the definition in 
                                               ; WRFDA/var/da/da_control/da_control.f90
+  thin_mesh_vert_conv(num_ob_indexes) = 100.0 ; hPa, size of vertical thinning mesh boxes for conventional (non-radiance)
+                                              ; observations. Each observation type can set its thinning mesh and
+                                              ; the index/order of each ob type follows the definition in
+                                              ; WRFDA/var/da/da_control/da_control.f90
+                                              ; only used when thin_conv_opt=4 and only implemented for use_satwnd_bufr (polaramv)
      ; use_xxxobs - .true.: assimilate xxx obs if available
      ;              .false.: do not assimilate xxx obs even if available
   use_synopobs            = .true.   
@@ -103,6 +119,10 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
   use_airepobs            = .true.
   use_geoamvobs           = .true.
   use_polaramvobs         = .true.
+  use_satwnd_bufr         = .true. ; when ob_format=1 and satwnd.bufr exists in the working directory
+                                   ; satellite AMVs are read in from satwnd.bufr and processed as polaramv
+                                   ; this is to add additional AMVs that are not included in prepBUFR
+                                   ; AMVs from prepBUFR are processed as geoamv in WRFDA
   use_bogusobs            = .true.
   use_buoyobs             = .true.
   use_profilerobs         = .true.
@@ -228,11 +248,11 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
                                                ; control variable 5 is unbalanced surface pressure for cv_options=5 and 6.
                                                ; control variable 5 is surface pressure for cv_options=7.
   var_scaling6 (max_outer_iterations)  = 1.0   ; cloud liquid water
-  var_scaling6 (max_outer_iterations)  = 1.0   ; rain water
-  var_scaling6 (max_outer_iterations)  = 1.0   ; ice water
-  var_scaling6 (max_outer_iterations)  = 1.0   ; snow
-  var_scaling6 (max_outer_iterations)  = 1.0   ; grauple
-  var_scaling6 (max_outer_iterations)  = 1.0   ; vertical velocity
+  var_scaling7 (max_outer_iterations)  = 1.0   ; rain water
+  var_scaling8 (max_outer_iterations)  = 1.0   ; ice water
+  var_scaling9 (max_outer_iterations)  = 1.0   ; snow
+  var_scaling10(max_outer_iterations)  = 1.0   ; graupel
+  var_scaling11(max_outer_iterations)  = 1.0   ; vertical velocity
   ; see the above description about the meaning of control variables 1-5.
   len_scaling1 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 1.
   len_scaling2 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 2.
@@ -582,6 +602,26 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
   gpsro_drift             = 1         ; horizontal drifting for GPSRO.  0=no drift, 1=drift
   gpseph_opt              = 1         ; 0: local operator variant, 1: non-local
   gpseph_loadbalance      = .true.    ;
+  write_iv_gpsref         = .false.   ; switch to write out RO_Innov_ files
+  ; the following gpsref_qc settings are used in da_qc_gpsref.inc
+  gpsref_qc_dndz_opt      = 1         ; 0: off, 1: on (default)
+  gpsref_qc_dndz2_opt     = 1         ; 0: off, 1: on (default)
+  gpsref_qc_dndz_thresh   = -50.0
+  gpsref_qc_dndz2_thresh  = 100.0
+  gpsref_qc_gsi_opt       = 1         ; 0: off, 1: on (default)
+  gpsref_qc_pcnt_opt      = 1         ; 0: off, 1: on (default)
+  gpsref_qc_pcnt_h1       = 7000.0
+  gpsref_qc_pcnt_h2       = 25000.0
+  gpsref_qc_pcnt_below    = 0.05
+  gpsref_qc_pcnt_middle   = 0.04
+  gpsref_qc_pcnt_above    = 0.10
+  ; uv_error_opt and uv_error_opt are only used by use_satwnd_bufr (polaramv)
+  uv_error_opt (num_ob_indexes) = 3   ; 1: single uv_error_val
+                                      ; 2: from external obs error table (same format as used in GSI)
+                                      ; 3: from ob input
+                                      ; when ob errors are not available from ob input and obs_errtable,
+                                      ; WRFDA uses uv_error_val from namelist (below) for use_satwnd_bufr (polaramv).
+  uv_error_val (num_ob_indexes) = 2.5 ; m/s, uv observation error
 /
 &perturbation   ; settings related to the 4D-Var penalty term option, which controls the
                 ; high-frequency gravity waves using a digital filter.

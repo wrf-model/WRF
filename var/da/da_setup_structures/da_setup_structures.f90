@@ -21,7 +21,7 @@ module da_setup_structures
       analysis_date,coarse_ix,coarse_ds,map_projection,coarse_jy, c2,dsm,phic, &
       pole, cone_factor, start_x,base_pres,ptop,psi1,start_y, base_lapse,base_temp,truelat2_3dv, &
       truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, print_detail_obs, &
-      use_radar_rf, use_radar_rhv, use_radar_rqv, &
+      use_radar_rf, use_radar_rhv, use_radar_rqv, radar_rf_opt, &
       num_ob_indexes,kts, kte, time_window_max, time_window_min, &
       max_fgat_time, num_fgat_time, dt_cloud_model, &
       use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, use_rainobs, &
@@ -74,7 +74,8 @@ module da_setup_structures
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
       use_seviriobs, jds_int, jde_int, anal_type_hybrid_dual_res, use_amsr2obs, nrange, use_4denvar, &
-      use_goesimgobs, use_ahiobs
+      use_goesimgobs, use_ahiobs,use_gmiobs, obs_use, thin_conv_opt, no_thin, &
+      thin_superob_hv, thin_mesh_vert_conv, use_satwnd_bufr
    use da_control, only: rden_bin, use_lsac
    use da_control, only: use_cv_w
    use da_control, only: pseudo_tpw, pseudo_ztd, pseudo_ref, pseudo_uvtpq, pseudo_elv, anal_type_qcobs
@@ -92,7 +93,8 @@ module da_setup_structures
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
       da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain, &
-      da_read_obs_lsac, da_scan_obs_lsac, da_read_obs_bufrgpsro_eph
+      da_read_obs_lsac, da_scan_obs_lsac, da_read_obs_bufrgpsro_eph, &
+      da_read_obs_bufr_satwnd, oetab
 #if (WRF_CHEM == 1)
    use da_obs_io, only : da_read_obs_chem_sfc, da_scan_obs_chem_sfc
 #endif

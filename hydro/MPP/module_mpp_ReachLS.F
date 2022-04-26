@@ -37,6 +37,7 @@ MODULE MODULE_mpp_ReachLS
      module procedure ReachLS_decompReal
      module procedure ReachLS_decompReal8
      module procedure ReachLS_decompInt
+     module procedure ReachLS_decompInt8
      module procedure ReachLS_decompChar
   end interface
 
@@ -46,6 +47,7 @@ MODULE MODULE_mpp_ReachLS
      module procedure ReachLS_wReal8
      module procedure ReachLS_wInt
      module procedure ReachLS_wInt2
+     module procedure ReachLS_wInt8
      module procedure ReachLS_wChar
   end interface
 
@@ -53,6 +55,7 @@ MODULE MODULE_mpp_ReachLS
      module procedure gbcastReal
      module procedure gbcastInt
      module procedure gbcastReal2
+     module procedure gbcastInt8
   end interface
 
   interface updateLinkV
@@ -341,12 +344,21 @@ MODULE MODULE_mpp_ReachLS
             IO_id,HYDRO_COMM_WORLD,ierr)
   end subroutine gbcastInt
 
+  subroutine gbcastInt8(inV, outV)
+      implicit none
+      integer(kind=int64), dimension(:) :: outV
+      integer(kind=int64), dimension(:) :: inV
+      integer :: ierr
+      call ReachLS_write_io(inV,outV)
+      call mpi_bcast(outV(1:gnlinksl),gnlinksl,MPI_INTEGER8,   &
+              IO_id,HYDRO_COMM_WORLD,ierr)
+  end subroutine gbcastInt8
 
   subroutine getLocalIndx(glinksl,LINKID, LLINKID)
        implicit none
-       integer, dimension(:) :: LINKID, LLINKID
+       integer(kind=int64), dimension(:) :: LINKID, LLINKID
        integer :: i,k, glinksl, ierr
-       integer :: gLinkId(glinksl)
+       integer(kind=int64) :: gLinkId(glinksl)
 
        LLINKLEN = size(LLINKID,1)
        allocate(LLINKIDINDX(LLINKLEN))
@@ -355,7 +367,7 @@ MODULE MODULE_mpp_ReachLS
 
        call ReachLS_write_io(LINKID,gLinkId)
 
-       call mpi_bcast(gLinkId(1:glinksl),glinksl,MPI_INTEGER,   &
+       call mpi_bcast(gLinkId(1:glinksl),glinksl,MPI_INTEGER8,   &
             IO_id,HYDRO_COMM_WORLD,ierr)
 
        ! The following loops are replaced by a hashtable-based algorithm
@@ -371,9 +383,9 @@ MODULE MODULE_mpp_ReachLS
 
        block
          type(hash_t) :: hash_table
-         integer :: val,it
+         integer(kind=int64) :: val,it
          logical :: found
-         
+
          call hash_table%set_all_idx(LLINKID,LLINKLEN)
          do it=1, glinksl
             call hash_table%get(gLinkId(it), val, found)
@@ -561,6 +573,38 @@ MODULE MODULE_mpp_ReachLS
 
   END subroutine ReachLS_decompInt
 
+  subroutine ReachLS_decompInt8(inV,outV)
+      implicit none
+      integer(kind=int64), INTENT(in),  dimension(:) :: inV
+      integer(kind=int64), INTENT(out), dimension(:) :: outV
+      integer ::  i, ierr, tag
+      tag = 11
+      if(my_id .eq. io_id) then
+          do i = 1, numprocs
+              if(i-1 .eq. io_id) then
+                  if(alinksl(i) .gt. 0) then
+                      outV(1:linkls_e(i)-linkls_s(i)+1) = inV(linkls_s(i):linkls_e(i))
+                  endif
+              else
+                  if(aLinksl(i) .gt. 0) then
+                      call mpi_send(inV(linkls_s(i):linkls_e(i)), &
+                              aLinksl(i),                &
+                              MPI_INTEGER8, i-1,tag,HYDRO_COMM_WORLD,ierr)
+                  endif
+              endif
+          end do
+      else
+          if(aLinksl(my_id+1) .gt. 0) then
+              call mpi_recv(outV(1:linkls_e(my_id+1)-linkls_s(my_id+1)+1), &
+                      alinksl(my_id+1),                           &
+                      MPI_INTEGER8, io_id,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+          endif
+      endif
+
+      call mpp_land_sync()
+
+  END subroutine ReachLS_decompInt8
+
 
   subroutine ReachLS_decompChar(inV,outV)
      implicit none
@@ -698,6 +742,37 @@ MODULE MODULE_mpp_ReachLS
       call mpp_land_sync()
   END subroutine ReachLS_wInt
 
+  subroutine ReachLS_wInt8(inV,outV)
+      implicit none
+      integer(kind=int64), intent(in), dimension(:)  :: inV
+      integer(kind=int64), intent(out), dimension(:) :: outV
+      integer :: i, ierr, tag
+      outV = 0
+      if(my_id .eq. io_id) then
+          do i = 1, numprocs
+              if(i-1 .eq. io_id) then
+                  if(alinksl(i) .gt. 0) then
+                      outV(linkls_s(i):linkls_e(i)) = inV(1:linkls_e(i)-linkls_s(i)+1)
+                  endif
+              else
+                  if(aLinksl(i) .gt. 0) then
+                      tag = 12
+                      call mpi_recv(outV(linkls_s(i):linkls_e(i)), &
+                              aLinksl(i),                             &
+                              MPI_INTEGER8,i-1,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+                  endif
+              endif
+          end do
+      else
+          if(aLinksl(my_id+1) .gt. 0) then
+              tag = 12
+              call mpi_send(inV(1:aLinksl(my_id+1) ), &
+                      aLinksl(my_id+1),                      &
+                      MPI_INTEGER8,io_id,tag,HYDRO_COMM_WORLD,ierr)
+          endif
+      endif
+      call mpp_land_sync()
+  END subroutine ReachLS_wInt8
 
   subroutine ReachLS_wInt2(inV,outV,len,glen)
       implicit none
@@ -836,14 +911,16 @@ MODULE MODULE_mpp_ReachLS
   end subroutine getFromInd
 
   subroutine getToInd(from,to,ind,indLen,gToNodeOut)
-    integer,dimension(:) :: from, to
+      implicit none
+
+    integer(kind=int64),dimension(:) :: from, to
     integer, allocatable, dimension(:) ::ind
-    integer, allocatable, dimension(:,:) :: gToNodeOut
+    integer(kind=int64), allocatable, dimension(:,:) :: gToNodeOut
     integer :: k, m, kk, mm,indLen, i, ierr
-    integer, dimension(gnlinksl) :: gto
+    integer(kind=int64), dimension(gnlinksl) :: gto
     integer :: maxNum, num
 
-    call gBcastValue(to,gto)
+    call gBcastValue(to, gto)
 
     !      mm = size(from,1)
     mm = l_nlinksl
@@ -865,8 +942,8 @@ MODULE MODULE_mpp_ReachLS
 
     block
       type(hash_t) :: hash_table
-      integer :: val,it
-      integer, allocatable :: num_a(:)
+      integer(kind=int64) :: val,it
+      integer(kind=int64), allocatable :: num_a(:)
       logical :: found
 
       allocate(num_a(mm))
@@ -927,7 +1004,7 @@ MODULE MODULE_mpp_ReachLS
 
     ToInd(my_id+1) = kk
     do i = 0, numprocs - 1
-       call mpi_bcast(ToInd(i+1),1,MPI_INTEGER,   &
+       call mpi_bcast(ToInd(i+1),1,MPI_INTEGER8,   &
             i,HYDRO_COMM_WORLD,ierr)
     end do
 
@@ -990,6 +1067,63 @@ MODULE MODULE_mpp_ReachLS
 
   END subroutine com_decomp1dInt
 
+  subroutine com_decomp1dInt8(inV,gsize,outV,lsize)
+      !     output outV and lsize
+      implicit none
+      integer(kind=int64),intent(in),dimension(:) :: inV
+      integer(kind=int64),allocatable,dimension(:) :: outV
+      integer ::  i, ierr, tag, imod, ncomsize
+      integer :: lsize, ssize,start, gsize, end
+      tag = 19
+      ncomsize = gsize/numprocs
+      imod = mod(gsize,numprocs)
+
+
+      if(my_id .eq. io_id) then
+          start = 0
+          end = 0
+          do i = 1, numprocs
+              if(i-1 .lt. imod) then
+                  ssize = ncomsize + 1
+              else
+                  ssize = ncomsize
+              endif
+
+              start = end + 1
+              end = start + ssize - 1
+
+              if(i-1 .eq. io_id) then
+                  if(ssize .gt. 0) then
+                      allocate(outV(ssize) )
+                      outV(1:ssize) = inV(1:ssize)
+                      lsize = ssize
+                  else
+                      lsize = 0
+                  endif
+              else
+                  if(ssize .gt. 0 ) then
+                      call mpi_send(inV(start:start+ssize-1), ssize,       &
+                              MPI_INTEGER8, i-1,tag,HYDRO_COMM_WORLD,ierr)
+                  endif
+              endif
+          end do
+      else
+          if(my_id .lt. imod) then
+              lsize = ncomsize + 1
+          else
+              lsize = ncomsize
+          endif
+          if( lsize .gt. 0) then
+              allocate(outV(lsize) )
+              call mpi_recv(outV,lsize,                           &
+                      MPI_INTEGER8, io_id,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+          endif
+      endif
+      call mpp_land_sync()
+
+
+  END subroutine com_decomp1dInt8
+
   subroutine com_write1dInt(inV,lsize,outV,gsize)
 !     output outV and lsize
       implicit none
@@ -1040,6 +1174,57 @@ MODULE MODULE_mpp_ReachLS
       call mpp_land_sync()
 
   END subroutine com_write1dInt
+
+  subroutine com_write1dInt8(inV,lsize,outV,gsize)
+      !     output outV and lsize
+      implicit none
+      integer(kind=int64), intent(in),dimension(:) :: inV
+      integer(kind=int64), dimension(:) :: outV
+      integer ::  i, ierr, tag, imod, ncomsize
+      integer :: lsize, rsize,start, gsize, end
+      tag = 18
+      ncomsize = gsize/numprocs
+      imod = mod(gsize,numprocs)
+
+      if(my_id .eq. io_id) then
+          start = 0
+          end = 0
+          do i = 1, numprocs
+              if(i-1 .lt. imod) then
+                  rsize = ncomsize + 1
+              else
+                  rsize = ncomsize
+              endif
+
+              start = end + 1
+              end = start + rsize - 1
+
+              if(i-1 .eq. io_id) then
+                  if(rsize .gt. 0) then
+                      outV(1:rsize) = inV(1:rsize)
+                  endif
+              else
+                  if(rsize .gt. 0 ) then
+                      call mpi_recv(outV(start:start+rsize-1), rsize,          &
+                              MPI_INTEGER8, i-1,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+                  endif
+              endif
+          end do
+      else
+          if(my_id .lt. imod) then
+              lsize = ncomsize + 1
+          else
+              lsize = ncomsize
+          endif
+          if( lsize .gt. 0) then
+              call mpi_send(inV, lsize,       &
+                      MPI_INTEGER8, io_id,tag,HYDRO_COMM_WORLD,ierr)
+          endif
+      endif
+
+      call mpp_land_sync()
+
+  END subroutine com_write1dInt8
 
   subroutine pack_decomp_int(g1bufid, ndata, nprocs_map, lnsizes, istart,bufid)
      implicit none
@@ -1096,6 +1281,62 @@ MODULE MODULE_mpp_ReachLS
           if(allocated(buf)) deallocate(buf)
        endif
   end subroutine pack_decomp_int
+
+  subroutine pack_decomp_int8(g1bufid, ndata, nprocs_map, lnsizes, istart,bufid)
+      implicit none
+      integer :: ndata
+      integer, dimension(:) :: nprocs_map, lnsizes
+      integer :: i,j,k, tag, ierr
+      integer(kind=int64), allocatable,dimension(:) :: buf, bufid, g1bufid
+      integer, dimension(:) :: istart
+      integer, dimension(numprocs) :: count
+      ! pack data
+
+
+      if(my_id .eq. io_id) then
+          allocate(buf(ndata))
+          count = 0
+          do i = 1, ndata
+              k = nprocs_map(i)
+              if( k .gt. 0) then
+                  buf(istart(k) + count(k)) = g1bufid(i)
+                  count(k) = count(k) + 1
+              end if
+          end do
+          !         write(6,*) " count = ", count
+          !         write(6,*) " istart = ", istart
+          !         write(6,*) " lnsizes = ", lnsizes
+      end if
+      !finish packing
+
+      call mpp_land_sync()
+      !      call hydro_finish()
+
+      if(my_id .ne. IO_id) then
+          tag = 72
+          if(lnsizes(my_id + 1) .gt. 0) then
+              call mpi_recv(bufid,lnsizes(my_id + 1),&
+                      MPI_INTEGER8,io_id,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+          endif
+      else
+          do i = 0, numprocs - 1
+              if(i .ne. my_id) then
+                  tag = 72
+                  if(lnsizes(i+1) .gt. 0) then
+                      call mpi_send(buf(istart(i+1):istart(i+1)+lnsizes(i+1)-1),  &
+                              lnsizes(i+1),MPI_INTEGER8,i, tag,HYDRO_COMM_WORLD,ierr)
+                  endif
+              else
+                  if(lnsizes(i+1) .gt. 0) then
+                      bufid = buf(istart(i+1):istart(i+1)+lnsizes(i+1)-1)
+                  endif
+              end if
+          end do
+      end if
+      if(my_id .eq. io_id) then
+          if(allocated(buf)) deallocate(buf)
+      endif
+  end subroutine pack_decomp_int8
 
   subroutine pack_decomp_real8(g1bufid, ndata, nprocs_map, lnsizes, istart,bufid)
      implicit none
@@ -1210,6 +1451,70 @@ MODULE MODULE_mpp_ReachLS
       if(allocated(gvar)) deallocate(gvar)
   end subroutine TONODE2RSL
 
+  subroutine TONODE2RSL8 (ind,inVar,size,gNLINKSL,NLINKSL,ioVar,flag)
+      implicit none
+      integer, intent(in) :: size,gNLINKSL,NLINKSL  !
+      integer, intent(in) , dimension(size) :: ind
+      integer(kind=int64), intent(in) , dimension(size) ::inVar
+      integer(kind=int64), intent(inout), dimension(nlinksl) :: ioVar
+      integer, allocatable, dimension(:) :: tmpInd
+      integer(kind=int64), allocatable, dimension(:) :: gvar, buf
+      integer :: i,j,k, tag, ierr, tmpSize, flag
+
+      if(gNLINKSL .le. 0) return
+
+      if(my_id .eq. io_id) then
+          allocate(gvar(gNLINKSL))
+      else
+          allocate(gvar(1))
+      endif
+      call ReachLS_wInt8(ioVar,gvar)
+
+      if(my_id .eq. io_id) then
+          do i = 1, numprocs
+              if(i-1 .eq. io_id) then
+                  do k = 1, size
+                      if(inVar(k) .ne. flag) then
+                          gvar(ind(k)) = inVar(k)
+                      endif
+                  end do
+              else
+                  tag = 82
+                  call mpi_recv(tmpSize,1,MPI_INTEGER,i-1,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+                  if(tmpSize .gt. 0) then
+                      allocate(buf(tmpSize))
+                      allocate(tmpInd(tmpSize))
+                      tag = 83
+                      call mpi_recv(tmpInd, tmpSize , &
+                              MPI_INTEGER,i-1,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+                      tag = 84
+                      call mpi_recv(buf, tmpSize , &
+                              MPI_INTEGER8,i-1,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
+                      do k = 1, tmpSize
+                          if(buf(k) .ne. flag) then
+                              gvar(tmpInd(k)) = buf(k)
+                          endif
+                      end do
+                      if(allocated(buf))  deallocate(buf)
+                      if(allocated(tmpInd)) deallocate(tmpInd)
+                  endif
+              endif
+          end do
+      else
+          tag = 82
+          call mpi_send(size,1,MPI_INTEGER,io_id,tag,HYDRO_COMM_WORLD,ierr)
+          if(size .gt. 0) then
+              tag = 83
+              call mpi_send(ind(1:size),size, &
+                      MPI_INTEGER,io_id,tag,HYDRO_COMM_WORLD,ierr)
+              tag = 84
+              call mpi_send(inVar(1:size),size, &
+                      MPI_INTEGER8,io_id,tag,HYDRO_COMM_WORLD,ierr)
+          endif
+      endif
+      call ReachLS_decomp(gvar, ioVar)
+      if(allocated(gvar)) deallocate(gvar)
+  end subroutine TONODE2RSL8
 
 END MODULE MODULE_mpp_ReachLS
 

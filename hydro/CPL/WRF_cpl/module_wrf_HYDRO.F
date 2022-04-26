@@ -22,10 +22,11 @@
 module module_WRF_HYDRO
 
 #ifdef MPP_LAND
+    use mpi
     use module_mpp_land, only: global_nx, global_ny, decompose_data_real, &
                  write_io_real, my_id, mpp_land_bcast_real1, IO_id, &
                 mpp_land_bcast_real, mpp_land_bcast_int1, mpp_land_init
-    use module_CPL_LAND, only: CPL_LAND_INIT, cpl_outdate
+    use module_CPL_LAND, only: CPL_LAND_INIT, cpl_outdate, HYDRO_COMM_WORLD
     use module_hydro_stop, only: HYDRO_stop
 #endif
     use module_HYDRO_drv, only: HYDRO_ini, HYDRO_exe
@@ -77,6 +78,7 @@ CONTAINS
 
         integer :: i,j
         
+        integer :: ierr
 
 !output flux and state variable
 
@@ -98,15 +100,15 @@ CONTAINS
 
   
         if(.not. RT_DOMAIN(did)%initialized) then
-           
-           call MPP_LAND_INIT()
-
            !yw nlst_rt(did)%nsoil = config_flags%num_soil_layers
            !nlst_rt(did)%nsoil = model_config_rec%num_metgrid_soil_levels
            nlst(did)%nsoil = grid%num_soil_layers
 
          
 #ifdef MPP_LAND
+           call MPI_COMM_DUP(MPI_COMM_WORLD, HYDRO_COMM_WORLD, ierr)
+           call MPP_LAND_INIT(grid%e_we - grid%s_we - 1, grid%e_sn - grid%s_sn - 1)
+
            call mpp_land_bcast_int1 (nlst(did)%nsoil)
 #endif
            allocate(nlst(did)%zsoil8(nlst(did)%nsoil))

@@ -7,7 +7,10 @@ MODULE module_optional_input
               flag_qg       , flag_qh       , &
               flag_qni      , flag_qnc      , flag_qnr      , &
               flag_qns      , flag_qng      , flag_qnh      , &
-              flag_qnwfa    , flag_qnifa    , &
+              flag_qnwfa2d  , flag_qnifa2d  , flag_qnbca2d  , flag_qnocbb2d , flag_qnbcbb2d , &
+              flag_qnwfa    , flag_qnifa    , flag_qnbca    , &
+              flag_qnwfa_cl , flag_qnifa_cl , flag_qnbca_cl , &
+              flag_p_wif    , &
               flag_sh       , flag_speccldl , flag_speccldf
 
    INTEGER :: flag_soil_levels, flag_soil_layers
@@ -40,7 +43,8 @@ MODULE module_optional_input
    INTEGER :: flag_extra_levels
 
    INTEGER :: flag_canfra   , flag_clayfrac   , flag_erod     , flag_frc_urb2d , flag_imperv , &
-              flag_lai12m   , flag_lake_depth , flag_sandfrac , flag_urb_param , flag_var_sso
+              flag_lai12m   , flag_lake_depth , flag_sandfrac , flag_urb_param , flag_var_sso, &
+              flag_bathymetry
 
    integer :: flag_cldmask, flag_cldbasez, flag_cldtopz, flag_brtemp
 
@@ -73,19 +77,6 @@ CONTAINS
                  its, ite, jts, jte, kts, kte
 
       !  Get the various indices, assume XYZ & XZY ordering.
-#if (NMM_CORE==1)
-      ids = grid%sd31 ; ide = grid%ed31 ;
-      jds = grid%sd32 ; jde = grid%ed32 ;
-      kds = grid%sd33 ; kde = grid%ed33 ;
-
-      ims = grid%sm31 ; ime = grid%em31 ;
-      jms = grid%sm32 ; jme = grid%em32 ;
-      kms = grid%sm33 ; kme = grid%em33 ;
-
-      its = grid%sp31 ; ite = grid%ep31 ;   ! note that tile is entire patch
-      jts = grid%sp32 ; jte = grid%ep32 ;   ! note that tile is entire patch
-      kts = grid%sp33 ; kte = grid%ep33 ;   ! note that tile is entire patch
-#endif
 #if (EM_CORE==1)
       ids = grid%sd31 ; ide = grid%ed31 ;
       kds = grid%sd32 ; kde = grid%ed32 ;
@@ -142,19 +133,6 @@ CONTAINS
       CHARACTER (LEN=132) :: message
 
       !  Get the various indices, assume XYZ & XZY ordering.
-#if (NMM_CORE==1)
-      ids = grid%sd31 ; ide = grid%ed31 ;
-      jds = grid%sd32 ; jde = grid%ed32 ;
-      kds = grid%sd33 ; kde = grid%ed33 ;
-
-      ims = grid%sm31 ; ime = grid%em31 ;
-      jms = grid%sm32 ; jme = grid%em32 ;
-      kms = grid%sm33 ; kme = grid%em33 ;
-
-      its = grid%sp31 ; ite = grid%ep31 ;   ! note that tile is entire patch
-      jts = grid%sp32 ; jte = grid%ep32 ;   ! note that tile is entire patch
-      kts = grid%sp33 ; kte = grid%ep33 ;   ! note that tile is entire patch
-#endif
 #if (EM_CORE==1)
       ids = grid%sd31 ; ide = grid%ed31 ;
       kds = grid%sd32 ; kde = grid%ed32 ;
@@ -325,8 +303,18 @@ USE module_io_domain
       flag_qns      = 0
       flag_qng      = 0
       flag_qnh      = 0
+      flag_qnwfa2d  = 0
+      flag_qnifa2d  = 0
+      flag_qnbca2d  = 0
+      flag_qnocbb2d = 0
+      flag_qnbcbb2d = 0
       flag_qnwfa    = 0
       flag_qnifa    = 0
+      flag_qnbca    = 0
+      flag_qnwfa_cl = 0
+      flag_qnifa_cl = 0
+      flag_qnbca_cl = 0
+      flag_p_wif    = 0
       flag_sh       = 0
       flag_speccldl = 0
       flag_speccldf = 0
@@ -400,6 +388,31 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_qnh       = itmp
       END IF
+      flag_name(1:8) = 'QNWFA2D '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnwfa2d   = itmp
+      END IF
+      flag_name(1:8) = 'QNIFA2D '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnifa2d   = itmp
+      END IF
+      flag_name(1:8) = 'QNBCA2D '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnbca2d   = itmp
+      END IF
+      flag_name(1:8) = 'QNOCBB2D'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnocbb2d   = itmp
+      END IF
+      flag_name(1:8) = 'QNBCBB2D'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnbcbb2d   = itmp
+      END IF
       flag_name(1:8) = 'QNWFA    '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
@@ -409,6 +422,31 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qnifa     = itmp
+      END IF
+      flag_name(1:8) = 'QNBCA    '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnbca     = itmp
+      END IF
+      flag_name(1:8) = 'QNWFA_CL'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnwfa_cl  = itmp
+      END IF
+      flag_name(1:8) = 'QNIFA_CL'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnifa_cl  = itmp
+      END IF
+      flag_name(1:8) = 'QNBCA_CL'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnbca_cl  = itmp
+      END IF
+      flag_name(1:8) = 'P_WIF   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_p_wif     = itmp
       END IF
       flag_name(1:8) = 'SH      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -759,6 +797,16 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_lake_depth      = itmp
+      END IF
+
+      flag_name = '                                                                                '
+
+      flag_bathymetry      = 0
+
+      flag_name(1:10) = 'BATHYMETRY'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_bathymetry      = itmp
       END IF
 
 

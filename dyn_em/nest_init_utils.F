@@ -46,6 +46,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%traj_lat = parent%traj_lat
    nest%this_is_an_ideal_run = parent%this_is_an_ideal_run
    nest%lake_depth_flag = parent%lake_depth_flag
+   nest%bathymetry_flag = parent%bathymetry_flag
 
    CALL nl_get_mminlu ( 1, char_junk )
    CALL nl_get_iswater( 1, iswater )

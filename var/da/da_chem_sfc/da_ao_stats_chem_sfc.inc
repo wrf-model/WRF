@@ -35,10 +35,6 @@ subroutine da_ao_stats_chem_sfc (stats_unit, iv, re, ob)
 
    do ichem=PARAM_FIRST_SCALAR, num_chemic_surf
    nchem=0
-!   stats%maximum%chem(ichem) = maxmin_type (missing_r, 0, 0)
-!   stats%minimum%chem(ichem) = maxmin_type (missing_r, 0, 0)
-!   stats%average = residual_chem_sfc_type(0.0, 0.0, 0.0, 0.0, 0.0)
-!   stats%rms_err = stats%average
 
    do n=1, iv%info(chemic_surf)%nlocal
       if (iv%info(chemic_surf)%proc_domain(1,n)) then
@@ -67,7 +63,7 @@ subroutine da_ao_stats_chem_sfc (stats_unit, iv, re, ob)
          write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for chem'
          if (chemicda_opt == 1 .or. chemicda_opt == 2) then
            call da_print_stats_chem_sfc(stats_unit, nchem, stats)
-         else if (chemicda_opt == 3 .or. chemicda_opt == 4 .or. chemicda_opt == 5) then
+         else if (chemicda_opt >= 3) then
               call da_print_stats_chem_sfc(stats_unit, nchem, stats, ichem)
          end if
       end if

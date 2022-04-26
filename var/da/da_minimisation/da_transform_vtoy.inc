@@ -45,7 +45,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 #ifdef VAR4D
       call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
       if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-         call da_transform_vpatox(grid, be, ep, vp)
+         call da_transform_vpatox(grid, be%ne, ep, vp)
          call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
       end if
       call domain_clock_get( grid, start_timestr=timestr )
@@ -195,7 +195,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
       do nobwin = num_subtwindow, 1 , -1
          if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-            call da_transform_vpatox(grid, be, ep, vp, nobwin)
+            call da_transform_vpatox(grid, be%ne, ep, vp, nobwin)
             if ( num_subtwindow > 1 ) then
                !reset grid%xa = grid%xa_static
                call da_copy_xa(grid%xa, grid%xa_static)

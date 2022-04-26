@@ -341,8 +341,6 @@ module_cu_ntiedtke.o: ../share/module_model_constants.o
 module_ra_gfdleta.o:  ../frame/module_dm.o \
 		module_mp_etanew.o
 
-module_ra_HWRF.o:   ../frame/module_dm.o module_mp_HWRF.o
-
 module_ra_rrtm.o: ../frame/module_wrf_error.o \
 		module_ra_clWRF_support.o \
 		../frame/module_dm.o
@@ -489,7 +487,7 @@ module_sf_ruclsm.o: ../frame/module_wrf_error.o module_data_gocart_dust.o
 
 module_sf_pxlsm.o: ../share/module_model_constants.o module_sf_pxlsm_data.o
 
-module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
+module_ra_rrtmg_sw.o: module_ra_rrtmg_aero_optical_util_cmaq.o module_ra_rrtmg_lw.o
 module_ra_rrtmg_swf.o: module_ra_rrtmg_lwf.o
 module_ra_rrtmg_swk.o: module_ra_rrtmg_lwk.o module_ra_effective_radius.o
 
@@ -518,10 +516,10 @@ module_physics_init.o : \
 		module_ra_cam.o		\
 		$(PHYS_CU) $(PHYS_BL) \
 		module_ra_cam_support.o		\
+		module_ra_clWRF_support.o	\
 		module_ra_sw.o			\
 		module_ra_gsfcsw.o		\
 		module_ra_gfdleta.o		\
-		module_ra_HWRF.o		\
 		module_ra_hs.o			\
                 module_ra_flg.o                 \
 		module_sf_sfclay.o		\
@@ -580,7 +578,6 @@ module_physics_init.o : \
 		module_mp_wsm6.o		\
 		module_mp_etanew.o		\
 		module_mp_fer_hires.o 		\
-		module_mp_HWRF.o		\
 		module_mp_fast_sbm.o		\
 		module_fdda_psufddagd.o		\
 		module_fdda_spnudging.o         \
@@ -616,7 +613,7 @@ module_microphysics_driver.o: \
 		$(PHYS_MP) \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
-		module_mp_fer_hires.o module_mp_HWRF.o  \
+		module_mp_fer_hires.o \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
 		module_mp_gsfcgce_4ice_nuwrf.o  \
@@ -642,11 +639,18 @@ module_shallowcu_driver.o: \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o
 
+module_cu_gf_deep.o: \
+                module_cu_gf_ctrans.o
 module_cu_gf_wrfdrv.o: \
 		module_cu_gf_deep.o \
 		module_cu_gf_sh.o
 module_cu_gf_sh.o: \
 		module_cu_gf_deep.o
+module_cu_gf_ctrans.o: \
+                ../chem/module_chem_utilities.o \
+                ../share/module_HLaw.o \
+                ../share/module_ctrans_aqchem.o \
+                ../frame/module_state_description.o 
 module_cumulus_driver.o: \
 		module_cu_kf.o \
 		module_cu_g3.o \
@@ -707,6 +711,7 @@ module_radiation_driver.o: \
 		module_ra_rrtm.o \
 		module_ra_rrtmg_lw.o \
 		module_ra_rrtmg_sw.o \
+		module_ra_rrtmg_aero_optical_util_cmaq.o \
 		module_ra_rrtmg_lwf.o \
 		module_ra_rrtmg_swf.o \
                 module_ra_rrtmg_lwk.o \
@@ -714,7 +719,6 @@ module_radiation_driver.o: \
 		module_ra_cam.o \
 		module_ra_farms.o \
 		module_ra_gfdleta.o \
-		module_ra_HWRF.o \
 		module_ra_hs.o \
 		module_ra_goddard.o \
                 module_ra_flg.o \
@@ -896,6 +900,21 @@ module_fire_debug_output.o: \
 	        ../frame/module_domain.o \
 	        ../frame/module_configure.o \
 	        ../share/mediation_integrate.o
+
+module_firebrand_spotting_mpi.o: \
+		../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../frame/module_dm.o
+
+module_firebrand_spotting.o: \
+		../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../frame/module_dm.o \
+		../frame/module_state_description.o \
+		../frame/module_domain_type.o \
+		../external/esmf_time_f90/module_symbols_util.o \
+		../external/esmf_time_f90/module_utility.o \
+                module_firebrand_spotting_mpi.o
 
 module_fdda_spnudging.o :\
 		../frame/module_dm.o \
@@ -1211,17 +1230,6 @@ module_random.o: bobrand.o
 
 # DEPENDENCIES for main
 
-convert_nmm.o: \
-	../frame/module_machine.o \
-	../frame/module_domain.o \
-	../frame/module_driver_constants.o \
-	../frame/module_configure.o \
-	../frame/module_timing.o \
-	../frame/module_dm.o \
-	../share/module_bc.o \
-	../share/module_io_domain.o \
-	$(ESMF_MOD_DEPENDENCE)
-
 convert_em.o: \
 	../frame/module_machine.o \
 	../frame/module_domain.o \
@@ -1243,12 +1251,6 @@ ideal_em.o: \
 	../share/module_io_domain.o \
 	../dyn_$(SOLVER)/$(CASE_MODULE) \
 	$(ESMF_MOD_DEPENDENCE)
-
-ideal_nmm.o: \
-	../dyn_$(SOLVER)/$(CASE_MODULE) \
-	../share/module_optional_input.o \
-	../share/module_io_domain.o \
-	../share/input_wrf.o 
 
 ndown_em.o: \
 	../frame/module_machine.o \

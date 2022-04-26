@@ -100,7 +100,7 @@ subroutine da_setup_obs_structures_radar( grid, ob, iv )
 
    ! Calculate DT for RF DA
 
-   if (use_radar_rf) then
+   if (use_radar_rf .and. radar_rf_opt==1) then
       if (.not. DT_cloud_model) then
          do j = jts,jte
             do i = its, ite

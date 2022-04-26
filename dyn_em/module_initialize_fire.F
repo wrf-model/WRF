@@ -91,7 +91,6 @@ CONTAINS
    REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho, u, v, qv, pd_in
    INTEGER :: nl_in
 
-
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc
    REAL    :: B1, B2, B3, B4, B5
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
@@ -114,6 +113,7 @@ CONTAINS
 
    INTEGER :: xs , xe , ys , ye
    INTEGER :: mtn_type
+   INTEGER :: ks, ke, id
    INTEGER :: &  ! fire mesh sizes
               iots,iote,jots,jote, &            ! tile dims out
              ifds,ifde, kfds,kfde, jfds,jfde,                              &
@@ -330,25 +330,69 @@ CONTAINS
 ! set up the grid
    write(6,*) '*************************************'
 
-   IF (stretch_grd) THEN ! exponential or hyperbolic tangential stretch for eta
-
-    IF (stretch_hyp) THEN ! hyperbolic tangential stretch (more levels at the surface)
-     write(6,*) ' hyperbolic tangential stretching activated with z_scale =',z_scale
-     DO k=1, kde          
-      grid%znw(k) = -1.* (tanh(z_scale*(float(k-1) / float(kde-1) -1.)))/ &
-                                 (tanh(z_scale))
-     ENDDO
-    ELSE                 ! exponential stretch for eta (nearly constant dz)
-    write(6,*) ' exponential grid stretching activated with z_scale =',z_scale
-     DO k=1, kde 
-     grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
-                            (1.-exp(-1./z_scale))
-     ENDDO
-    ENDIF 
+   IF (model_config_rec%eta_levels(1) .EQ. -1) THEN !we do not have eta_levels from namelist
+     IF (stretch_grd) THEN ! exponential or hyperbolic tangential stretch for eta
+  
+      IF (stretch_hyp) THEN ! hyperbolic tangential stretch (more levels at the surface)
+       write(6,*) ' hyperbolic tangential stretching activated with z_scale =',z_scale
+       DO k=1, kde          
+        grid%znw(k) = -1.* (tanh(z_scale*(float(k-1) / float(kde-1) -1.)))/ &
+                                   (tanh(z_scale))
+       ENDDO
+      ELSE                 ! exponential stretch for eta (nearly constant dz)
+      write(6,*) ' exponential grid stretching activated with z_scale =',z_scale
+       DO k=1, kde 
+       grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
+                              (1.-exp(-1./z_scale))
+       ENDDO
+      ENDIF 
+     ELSE
+     write(6,*) ' no grid stretching'
+       DO k=1, kde 
+        grid%znw(k) = 1. - float(k-1)/float(kde-1)
+       ENDDO
+     ENDIF
    ELSE
-   write(6,*) ' no grid stretching'
-     DO k=1, kde 
-      grid%znw(k) = 1. - float(k-1)/float(kde-1)
+     CALL wrf_debug(0,"module_initialize_les: vertical nesting is enabled, using eta_levels specified in namelist.input")
+     ks = 0
+     DO id=1,grid%id
+        ks = ks+model_config_rec%e_vert(id)
+     ENDDO
+     IF (ks .GT. max_eta) THEN
+        CALL wrf_error_fatal("too many vertical levels, increase max_eta in frame/module_driver_constants.F")
+     ENDIF
+        !Now set the eta_levels to what we specified in the namelist. We've
+        !packed all the domains' eta_levels into a 'vector' and now we need
+        !to pull only the section of the vector associated with our domain
+        !of interest, which is between indicies ks and ke.
+     IF (grid%id .EQ. 1) THEN
+       ks = 1
+       ke = model_config_rec%e_vert(1)
+     ELSE
+       id = 1
+       ks = 1
+       ke = 0
+       DO WHILE (grid%id .GT. id)
+         id = id+1
+         ks = ks+model_config_rec%e_vert(id-1)
+         ke = ks+model_config_rec%e_vert(id)
+       ENDDO
+     ENDIF
+     DO k=1,kde
+       grid%znw(k) = model_config_rec%eta_levels(ks+k-1)
+     ENDDO
+     !Check the value of the first and last eta level for our domain,
+     !then check that the vector of eta levels is only decreasing
+     IF (grid%znw(1) .NE. 1.0) THEN
+       CALL wrf_error_fatal("error with specified eta_levels, first level is not 1.0")
+     ENDIF
+     IF (grid%znw(kde) .NE. 0.0) THEN
+       CALL wrf_error_fatal("error with specified eta_levels, last level is not 0.0")
+     ENDIF
+     DO k=2,kde
+       IF (grid%znw(k) .GT. grid%znw(k-1)) THEN
+         CALL wrf_error_fatal("eta_levels are not uniformly decreasing from 1.0 to 0.0")
+       ENDIF
      ENDDO
    ENDIF
    write(6,*) '*************************************'

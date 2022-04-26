@@ -1,0 +1,79 @@
+
+                Aerosol/Chemical Data Assimilation in WRFDA
+              ------------------------------------------------
+
+1. Introduction
+-------------
+Aerosol/Chemical data assimilation capability is introduced in version 4.3, which allows the assimilation 
+of 6 types of surface measurements (PM2.5, PM10, O3, CO, NO2, SO2) with 3DVAR and provides the analyzed 
+initial conditions for WRF-Chem. This new capability is documented by Sun et al. (2020).
+
+Sun, W., Liu, Z., Chen, D., Zhao, P., and Chen, M., 2020: Development and application of the WRFDA-Chem 
+  three-dimensional variational (3DVAR) system: aiming to improve air quality forecasting and diagnose 
+  model deficiencies, Atmos. Chem. Phys., 20, 9311-9329.
+
+Analysis variables includes the four gas-phase variables (O3, CO, NO2 and SO2) and aerosol variables
+from different aerosol schemes in WRF-Chem. Version 4.3 works with GOCART (15 species) or 4-bin MOSAIC
+(32 species) aerosol scheme. Version 4.4 added another aerosol scheme MADE/VBS (35 species)
+(Ha, 2022).
+
+Ha, S., 2022: Implementation of aerosol data assimilation in WRFDA (v4.0.3) for WRF-Chem (v3.9.1) using the 
+RACM/MADE-VBS scheme, Geosci. Model Dev., 15, 1769–1788, https://doi.org/10.5194/gmd-15-1769-2022.
+
+
+2. Compilation
+---------------
+To compile 3DVAR with aerosol/chemical DA capability, following the commands below:
+
+setenv WRF_CHEM 1
+./configure wrfda
+./compile all_wrfvar
+
+The executable is still da_wrfvar.exe, but now it can take WRF-Chem’s initial condition file as the background 
+(i. e., the ‘fg’ file) and perform the aerosol/chemical analysis in addition to the usual function for 
+meteorological analysis. 
+
+3. Namelist setting
+------------------
+All related settings are in a new namelist section named "wrfvarchem". Each namelist 
+parameter is explained below.
+
+&wrfvarchem
+chem_cv_options= 0,  # this parameter sets chem control variables. 0 is defulat, no chemical DA.
+                10,  # control variables are 4 gas + 15 GOCART aerosol variables 
+                20,  # control variables are 4 gas + 32 MOSAIC aerosol variables.
+               108,  # control variables are 4 gas + 35 MADE/VBS aerosol variables
+
+ 
+chemicda_opt= 1, # set obs assimilated, default 1, assimilate pm2.5
+              2, # assimilate pm10
+              3, # assimilate pm2.5 and pm10
+              4, # assimilate co, o3, so2, and no2
+              5, # assimilate pm2.5, pm10, co, o3, so2, and no2
+
+var_scaling12=1.0, 1.0, …, # array with a dimension of 45*max_outer_iterations, 
+                           # inflation factors of chemical background error variances
+                           # of aerosol/gas analysis variables at different
+                           # outer loops. Default values are 1 (no inflation).
+
+len_scaling12=1.0, 1.0, …, # arrary with a dimension of 45*max_outer_iterations, 
+                           # inflation factors of chemical background error length scales. 
+                           # Default values is 1.
+
+use_chemic_surfobs = .true., # Default is true, read in ob_chemsfc.ascii file that includes 6 types of
+    # observation that are assumed to be processed for each analysis time and provided in the unit and
+    # the format specified in var/da/da_obs_io/da_read_obs_chem_sfc.inc and da_scan_obs_chem_sfc.inc.
+/
+
+4. Chemical/Aerosols background error covariance statistics
+-----------------------------------------------------------
+The standard GEN_BE package included in WRFDA cannot obtain the background error statistics for 
+aerosol/chemical variables. Users will need to use https://github.com/wrf-model/GENBE_2.0 to 
+generate a be.dat file that contains the background errors of chemical variables. Please refer 
+to the online commit message for its use.
+
+5. Test case
+---------------
+A testcase is provided in https://www2.mmm.ucar.edu/wrf/users/wrfda/chemda_testcase/.
+We have no resource to provide the assistance of this capability for users’ own applications. 
+

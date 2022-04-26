@@ -25,6 +25,7 @@ Module module_RT_data
    use module_subsurface_input
    use module_subsurface_output
    use module_reservoir, only: reservoir_container
+   use iso_fortran_env, only: int64
    IMPLICIT NONE
    INTEGER, PARAMETER :: max_domain=5
 

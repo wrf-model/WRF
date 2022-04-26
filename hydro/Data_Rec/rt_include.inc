@@ -42,10 +42,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !DJG   VARIABLES FOR ROUTING
   !INTEGER, allocatable, DIMENSION(:,:)      :: CH_NETRT !-- keeps track of the 0-1 channel network ! moved to overland%streams_and_lakes
-  INTEGER, allocatable, DIMENSION(:,:)      :: CH_LNKRT !-- linked routing grid (should combine with CH_NETRT.. redundant Gochis!)
+  INTEGER(kind=int64), allocatable, DIMENSION(:,:)      :: CH_LNKRT !-- linked routing grid (should combine with CH_NETRT.. redundant Gochis!)
 
 
-  INTEGER, allocatable, DIMENSION(:,:)      :: CH_NETLNK, GCH_NETLNK !-- assigns a unique value to each channel gridpoint, called links
+  INTEGER(kind=int64), allocatable, DIMENSION(:,:)      :: CH_NETLNK, GCH_NETLNK !-- assigns a unique value to each channel gridpoint, called links
   REAL,    allocatable, DIMENSION(:,:)      :: LATVAL,LONVAL !-- lat lon
   REAL,    allocatable, DIMENSION(:,:)      :: TERRAIN
   REAL,    allocatable, DIMENSION(:,:)      :: landRunOff   ! used for NHDPLUS only
@@ -73,7 +73,7 @@
 
   INTEGER :: nToInd
   INTEGER,    allocatable, DIMENSION(:)      :: toNodeInd
-  INTEGER,    allocatable, DIMENSION(:,:)      :: gtoNode
+  INTEGER(kind=int64),    allocatable, DIMENSION(:,:)      :: gtoNode
 
 ! temp arrary cwatavail
   !real, allocatable, DIMENSION(:,:,:)      :: SMCREFRT  ! SMCREFRT moved to subsurface grid_transform module
@@ -81,7 +81,7 @@
 !DJG   VARIABLES FOR GW/Baseflow
   INTEGER :: numbasns
   INTEGER :: gnumbasns
-  INTEGER, allocatable, DIMENSION(:)     :: basnsInd ! basin index for tile
+  integer(kind=int64), allocatable, dimension(:)     :: basnsInd ! basin index for tile
   INTEGER, allocatable, DIMENSION(:,:)   :: GWSUBBASMSK  !GW basin mask grid
   REAL,    allocatable, DIMENSION(:,:)   :: qinflowbase  !strm inflow/baseflow from GW
   REAL,    allocatable, DIMENSION(:,:)   :: SOLDRAIN     !time-step drainage
@@ -115,9 +115,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !DJG,DNY   VARIABLES FOR CHANNEL ROUTING
 !-- channel params
-  INTEGER, allocatable, DIMENSION(:)   :: LINK       !channel link
-  INTEGER, allocatable, DIMENSION(:)   :: TO_NODE    !link's to node
-  INTEGER, allocatable, DIMENSION(:)   :: FROM_NODE  !link's from node
+  INTEGER(kind=int64), allocatable, DIMENSION(:)   :: LINK       !channel link
+  INTEGER(kind=int64), allocatable, DIMENSION(:)   :: TO_NODE    !link's to node
+  INTEGER(kind=int64), allocatable, DIMENSION(:)   :: FROM_NODE  !link's from node
   INTEGER, allocatable, DIMENSION(:)   :: ORDER      !link's order
   INTEGER, allocatable, DIMENSION(:)   :: STRMFRXSTPTS      !frxst point flag
   CHARACTER(len=15), allocatable, DIMENSION(:) :: gages
@@ -130,22 +130,22 @@
   INTEGER, allocatable, DIMENSION(:)   :: TYPEN      !type of link 0 strm 1 lake
   REAL, allocatable, DIMENSION(:)      :: QLAKEI      !lake inflow in difussion scheme
   REAL, allocatable, DIMENSION(:)      :: QLAKEO      !lake outflow in difussion scheme
-  INTEGER, allocatable, DIMENSION(:)   :: LAKENODE   !which nodes flow into which lakes
-  INTEGER, allocatable, DIMENSION(:)   :: LINKID     ! id of links on linked routing
+  INTEGER(kind=int64), allocatable, DIMENSION(:)   :: LAKENODE   !which nodes flow into which lakes
+  integer(kind=int64), allocatable, dimension(:)   :: LINKID     ! id of links on linked routing
   REAL, allocatable, DIMENSION(:)      :: CVOL       ! channel volume
-  INTEGER, allocatable, DIMENSION(:,:)   :: pnode    !parent nodes : start from 2
+  INTEGER(kind=int64), allocatable, DIMENSION(:,:)   :: pnode    !parent nodes : start from 2
   integer :: maxv_p              ! array size for  second column of the pnode
 
   REAL, allocatable, DIMENSION(:)      :: MUSK, MUSX !muskingum params
   REAL, allocatable, DIMENSION(:)      :: CHANLEN    !link length
   REAL, allocatable, DIMENSION(:)      :: MannN      !mannings N
   REAL, allocatable, DIMENSION(:)      :: So     !link slope and channel conductivity (m/s)
+  REAL, allocatable, DIMENSION(:)      :: Channk ! channel infiltration parameter
   REAL, allocatable, DIMENSION(:)      :: ChSSlp ! channel side slope
   REAL, allocatable, DIMENSION(:)      :: Bw     ! Bottom width of channel
   REAL, allocatable, DIMENSION(:)      :: Tw     ! top width of channel
   REAL, allocatable, DIMENSION(:)      :: Tw_CC  ! top width of the (CC) compound channel
   REAL, allocatable, DIMENSION(:)      :: n_CC   ! mannings N of (CC) compound channel
-
   REAL, allocatable, DIMENSION(:,:)    :: QLINK      !flow in link
   integer, allocatable, DIMENSION(:)   :: ascendIndex !sorting of routelink
 #ifdef WRF_HYDRO_NUDGING
@@ -154,14 +154,14 @@
   REAL, allocatable, DIMENSION(:)      :: HLINK      !head in link
   REAL, allocatable, DIMENSION(:)      :: ZELEV      !elevation of nodes for channel
   INTEGER, allocatable, DIMENSION(:)   :: CHANXI,CHANYJ !map chan to fine grid
-  REAL,  DIMENSION(50)     :: BOTWID,TOPWID,HLINK_INIT,CHAN_SS,CHMann !Channel parms from table
+  REAL,  DIMENSION(50)     :: BOTWID,CHANN_K,TOPWID,HLINK_INIT,CHAN_SS,CHMann !Channel parms from table
   REAL,  DIMENSION(50)     :: TOPWIDCC, NCC  !topwidth and mannings n of compund
 
   ! VARIABLES FOR  RESERVOIRS
   REAL, allocatable, DIMENSION(:)      :: RESHT  !reservoir height
 !-- lake params
-  INTEGER, allocatable, DIMENSION(:) :: LAKEIDA     !id of lakes in routlink file
-  INTEGER, allocatable, DIMENSION(:) :: LAKEIDM     !id of LAKES Modeled in LAKEPARM.nc or tbl
+  integer(kind=int64), allocatable, dimension(:) :: LAKEIDA     !id of lakes in routlink file
+  integer(kind=int64), allocatable, dimension(:) :: LAKEIDM     !id of LAKES Modeled in LAKEPARM.nc or tbl
   REAL, allocatable, DIMENSION(:)    :: HRZAREA    !horizontal extent of lake, km^2
   REAL, allocatable, DIMENSION(:)    :: WEIRL      !overtop weir length (m)
   REAL, allocatable, DIMENSION(:)    :: DAML      !overtop weir length (m)
@@ -177,15 +177,15 @@
   REAL  , allocatable, DIMENSION(:)  ::   qSfcLatRunoff,   qBucket, qBtmVertRunoff
   REAL, allocatable, DIMENSION(:)    :: accLndRunOff, accQLateral, accStrmvolrt
   !REAL, allocatable, DIMENSION(:)    :: qqLndRunOff, qqStrmvolrt, qqBucket
-  REAL, allocatable, DIMENSION(:)    :: QLateral, velocity
+  REAL, allocatable, DIMENSION(:)    :: QLateral, velocity, qloss
 
 #ifdef MPP_LAND
   INTEGER, allocatable, DIMENSION(:)    :: lake_index,nlinks_index
-  INTEGER, allocatable, DIMENSION(:,:)  :: Link_location
-  INTEGER, allocatable, DIMENSION(:)  :: LLINKID
+  INTEGER(kind=int64), allocatable, DIMENSION(:,:)  :: Link_location
+  integer(kind=int64), allocatable, dimension(:)  :: LLINKID
   integer mpp_nlinks, yw_mpp_nlinks, LNLINKSL
 #endif
-  INTEGER, allocatable, DIMENSION(:,:)      :: CH_LNKRT_SL !-- reach based links used for mapping
+  INTEGER(kind=int64), allocatable, DIMENSION(:,:)      :: CH_LNKRT_SL !-- reach based links used for mapping
 
 
   REAL,    allocatable, DIMENSION(:,:)      :: OVROUGHRTFAC,RETDEPRTFAC

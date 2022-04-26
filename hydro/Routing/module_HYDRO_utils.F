@@ -21,6 +21,7 @@
 module module_HYDRO_utils
   use module_RT_data, only: rt_domain
   use config_base, only: nlst
+  use iso_fortran_env, only: int64
 #ifdef MPP_LAND
   use module_mpp_land, only: global_nx, global_ny, my_id, IO_id, &
        decompose_data_real, write_io_real, MPP_LAND_COM_REAL, &
@@ -406,11 +407,33 @@ contains
       end do
    end subroutine get_area_g
 
+    subroutine get_area_g8(basns_area,GWSUBBASMSK, numbasns,ix,jx,dist)
+        integer :: i,j, n, ix,jx, numbasns
+        integer :: count(numbasns)
+        real :: basns_area(numbasns) , dist(ix,jx,9)
+        integer(kind=int64) :: GWSUBBASMSK(ix,jx)
+        basns_area = 0
+        count = 0
+        do  j = 1, jx
+            do  i = 1, ix
+                n = GWSUBBASMSK(i,j)
+                if(n .gt. 0) then
+                    basns_area(n) = basns_area(n)+dist(i,j,9)
+                    count(n) = count(n) + 1
+                endif
+            end do
+        end do
+        do i = 1, numbasns
+            if(count(i) .gt. 0) then
+                basns_area(i) = basns_area(i) / count(i)
+            end if
+        end do
+    end subroutine get_area_g8
 
    subroutine get_node_area(did)
        integer :: did
-       call get_area_g(rt_domain(did)%node_area,rt_domain(did)%CH_NETLNK, &
-         rt_domain(did)%NLINKS,rt_domain(did)%ixrt,rt_domain(did)%jxrt,rt_domain(did)%overland%properties%distance_to_neighbor)
+       call get_area_g8(rt_domain(did)%node_area, rt_domain(did)%CH_NETLNK, &
+         rt_domain(did)%NLINKS,rt_domain(did)%ixrt, rt_domain(did)%jxrt, rt_domain(did)%overland%properties%distance_to_neighbor)
    end subroutine get_node_area
     
 

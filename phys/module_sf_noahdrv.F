@@ -965,6 +965,9 @@ CONTAINS
                  ALBEDOK =0.2         !  0.2
                  ALBBRD  =0.2         !0.2
                  EMISSI = 0.98                                 !for VEGTYP=5
+                 LWDN   = GLW(I,J) * EMISSI
+                 SOLNET = SOLDN * (1.0 - ALBEDOK)
+
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
                      T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
@@ -1331,7 +1334,7 @@ CONTAINS
             SSGD_URB  = 0.8*SOLDN        ! [W/m/m]
             SSGQ_URB  = SSG_URB-SSGD_URB ! [W/m/m]
             LLG_URB   = GLW(I,J)         ! [W/m/m]
-            RAIN_URB  = RAINBL(I,J)      ! [mm]
+            RAIN_URB  = RAINBL(I,J) / DT * 3600.0      ! [mm/hr]
             RHOO_URB  = SFCPRS / (287.04 * SFCTMP * (1.0+ 0.61 * Q2K)) ![kg/m/m/m]
             ZA_URB    = ZLVL             ! [m]
             DELT_URB  = DT               ! [sec]
@@ -1709,7 +1712,7 @@ CONTAINS
 !           emiss(i,j)=(1.-frc_urb2d(i,j))*emiss_rural(i,j)+frc_urb2d(i,j)*emiss_urb(i,j)
 ! using the emissivity and the total longwave upward radiation estimate the averaged skin temperature
            IF (FRC_URB2D(I,J).GT.0.) THEN
-              rl_up_rural=-emiss_rural(i,j)*sigma_sb*(tsk_rural(i,j)**4.)-(1.-emissi)*glw(i,j)
+              rl_up_rural=-emiss_rural(i,j)*sigma_sb*(tsk_rural(i,j)**4.)-(1.-emiss_rural(i,j))*glw(i,j)
               rl_up_tot=(1.-frc_urb2d(i,j))*rl_up_rural+frc_urb2d(i,j)*rl_up_urb(i,j)   
               emiss(i,j)=(1.-frc_urb2d(i,j))*emiss_rural(i,j)+frc_urb2d(i,j)*emiss_urb(i,j)
               ts_urb2d(i,j)=(max(0.,(-rl_up_urb(i,j)-(1.-emiss_urb(i,j))*glw(i,j))/emiss_urb(i,j)/sigma_sb))**0.25
@@ -3384,8 +3387,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       !Fei: urban. for urban surface, if calling UCM, redefine the natural surface in cities as
       ! the "NATURAL" category in the VEGPARM.TBL
       	
-      	!   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
-                       
+      	!   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN                 
       
            !           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
            !            IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
@@ -3440,7 +3442,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        ALBEDOK =0.2         !  0.2
                        ALBBRD  =0.2         !  0.2
                        EMISSI = 0.98        !  for VEGTYP=5       
-                       
+                       LWDN   = GLW(I,J) * EMISSI
+                       SOLNET = SOLDN * (1.0 - ALBEDOK)
+ 
       		      T1= TS_RUL2D_mosaic(I,mosaic_i,J)
                        
                  ENDIF
@@ -3764,7 +3768,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SSGD_URB  = 0.8*SOLDN        ! [W/m/m]
                   SSGQ_URB  = SSG_URB-SSGD_URB ! [W/m/m]
                   LLG_URB   = GLW(I,J)         ! [W/m/m]
-                  RAIN_URB  = RAINBL(I,J)      ! [mm]
+                  RAIN_URB  = RAINBL(I,J) / DT * 3600.0      ! [mm/hr]
                   RHOO_URB  = SFCPRS / (287.04 * SFCTMP * (1.0+ 0.61 * Q2K)) ![kg/m/m/m]
                   ZA_URB    = ZLVL             ! [m]
                   DELT_URB  = DT               ! [sec]
@@ -4360,6 +4364,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        ALBEDOK =0.2         !  0.2
                        ALBBRD  =0.2         !0.2
                        EMISSI = 0.98                                 !for VEGTYP=5
+                       LWDN   = GLW(I,J) * EMISSI
+                       SOLNET = SOLDN * (1.0 - ALBEDOK)
+
       		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
                      T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
@@ -4655,7 +4662,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SSGD_URB  = 0.8*SOLDN        ! [W/m/m]
                   SSGQ_URB  = SSG_URB-SSGD_URB ! [W/m/m]
                   LLG_URB   = GLW(I,J)         ! [W/m/m]
-                  RAIN_URB  = RAINBL(I,J)      ! [mm]
+                  RAIN_URB  = RAINBL(I,J) / DT * 3600.0     ! [mm/hr]
                   RHOO_URB  = SFCPRS / (287.04 * SFCTMP * (1.0+ 0.61 * Q2K)) ![kg/m/m/m]
                   ZA_URB    = ZLVL             ! [m]
                   DELT_URB  = DT               ! [sec]

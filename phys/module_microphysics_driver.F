@@ -248,6 +248,8 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
    USE module_irrigation
 
+   USE module_fire_emis
+
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
    !
@@ -260,7 +262,14 @@ SUBROUTINE microphysics_driver(                                          &
    ! WRF Single-Moment 6-class, Lim and Hong (2003 WRF workshop)
    ! Eta Grid-scale Cloud and Precipitation scheme (EGCP01, Ferrier)
    !   * etampnew - what's in the operational 4-km High-Resolution Window Runs
+   ! Goddard 4-ice scheme (2016)
+   ! Thompson (2008)
    ! Milbrandt and Yau (2005)
+   ! Morrison (2009)
+   ! CAM
+   ! SBU-YLin (2011)
+   ! WRF Double-Moment 5-class
+   ! WRF Double-Moment 6-class
 
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -1055,18 +1064,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      NWFA2D=qnwfa2d,                     &
                      NIFA2D=qnifa2d,                     &
                      NBCA2D=qnbca2d,                     &
-                     NOCBB2D=qnocbb2d,                   &
-                     NBCBB2D=qnbcbb2d,                   &
                      aer_init_opt=config_flags%aer_init_opt,   &
                      wif_input_opt=config_flags%wif_input_opt, &
-                     aer_fire_emit_opt=config_flags%aer_fire_emit_opt, &
-                     wif_fire_inj=config_flags%wif_fire_inj,   &
                      TH=th,                              &
                      PII=pi_phy,                         &
                      P=p,                                &
                      W=w,                                &
-                     PBLH=PBLH,                          &
-                     z_at_mass=z_at_mass,                &
                      DZ=dz8w,                            &
                      DT_IN=dt,                           &
                      ITIMESTEP=itimestep,                &
@@ -1107,6 +1110,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 deallocate (qs_tmp)
                 deallocate (qni_tmp)
               end if
+
+              IF (config_flags%aer_fire_emit_opt.gt.0)  then
+                CALL wrf_debug ( 200 , ' call fire_emis_simple_plumerise' )
+                CALL fire_emis_simple_plumerise (config_flags%wif_fire_inj, config_flags%aer_fire_emit_opt  &
+                    ,z_at_mass, pblh, qnwfa_curr, qnbca_curr   &
+                    ,qnocbb2d, qnbcbb2d, dt, ids, ide, jds, jde, kds, kde                    &
+                    ,ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte                       )
+              ENDIF
 
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )

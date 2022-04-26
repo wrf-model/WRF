@@ -61,7 +61,7 @@ CONTAINS
    INTEGER, INTENT(IN  ) ::                               JULDAY  
 
    ! --- jararias 14/08/2013
-   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: COSZEN
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) ::     COSZEN
    REAL, OPTIONAL, INTENT(IN) :: JULIAN
 
 !-- amontornes-bcodina 2015/09
@@ -285,7 +285,7 @@ CONTAINS
                                         SOLCON,XLAT,XLONG,ALBEDO, &
                                                   RADFRQ, DEGRAD
 
-   REAL, OPTIONAL, INTENT(IN) :: COSZEN, JULIAN ! jararias, 14/08/2013
+   REAL, INTENT(IN) :: COSZEN, JULIAN 
 
 !
    INTEGER, INTENT(IN) :: icloud
@@ -346,20 +346,7 @@ CONTAINS
        bexth2o=5.E-6
 !       SOLTOP=SOLCON
        SOLTOP = SOLCON*(1-obscur0)
-       ! jararias, 14/08/2013
-       if (present(coszen)) then
-          csza=coszen
-       else
-!         da=6.2831853071795862*(julian-1)/365.
-!         eot=(0.000075+0.001868*cos(da)-0.032077*sin(da) &
-!            -0.014615*cos(2*da)-0.04089*sin(2*da))*(229.18)
-          xt24 = mod(xtime+radfrq*0.5,1440.)+eot
-          tloctm = gmt + xt24/60. + xlong/15.
-          hrang = 15. * (tloctm-12.) * degrad
-          xxlat = xlat * degrad
-          csza = sin(xxlat) * sin(declin) &
-               + cos(xxlat) * cos(declin) * cos(hrang)
-       end if
+       csza=coszen
 
 !     RETURN IF NIGHT        
       IF(CSZA.LE.1.E-9)GOTO 7

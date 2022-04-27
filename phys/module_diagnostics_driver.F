@@ -457,7 +457,7 @@ CONTAINS
                 ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &
                                                                     )
 
-        CASE (THOMPSON, THOMPSONAERO, THOMPSONGH)
+        CASE (THOMPSON, THOMPSONAERO)
 
       CALL diagnostic_output_nwp(                                   &
                  U=grid%u_2    ,V=grid%v_2                           &
@@ -493,8 +493,6 @@ CONTAINS
                 ,QG_CURR=moist(ims,kms,jms,P_QG)                     &
                 ,QR_CURR=moist(ims,kms,jms,P_QR)                     &  !  gthompsn
                 ,NR_CURR=scalar(ims,kms,jms,P_QNR)                   &  !  gthompsn
-                ,NG_CURR=scalar(ims,kms,jms,P_QNG)                   &  ! THOMPSONGH
-                ,QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG)              &  ! THOMPSONGH
                 ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g          &
       ! Dimension arguments
                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &

@@ -1619,7 +1619,7 @@
       REAL:: Ef_rw, Ef_sw, Ef_gw, Ef_rr
       REAL:: Ef_ra, Ef_sa, Ef_ga
       REAL:: dtsave, odts, odt, odzq, hgt_agl
-      REAL:: xslw1, ygra1, zans1, eva_factor
+      REAL:: ygra1, zans1, eva_factor
       REAL:: SR, melt_f
       INTEGER:: i, k, k2, n, nn, nstep, k_0, kbot, IT, iexfrq, k_melting
       INTEGER, DIMENSION(5):: ksed1
@@ -5734,7 +5734,6 @@
       LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
 
       DOUBLE PRECISION:: cback, x, eta, f_d
-      REAL:: xslw1, ygra1, zans1
       INTEGER :: k_0loop
 
 !+---+

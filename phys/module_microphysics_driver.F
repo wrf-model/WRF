@@ -1118,6 +1118,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                     ,qnocbb2d, qnbcbb2d, dt, ids, ide, jds, jde, kds, kde                    &
                     ,ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte                       )
               ENDIF
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
+             ENDIF
 !
         CASE (THOMPSONGH)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )

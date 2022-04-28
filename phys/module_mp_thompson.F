@@ -71,8 +71,11 @@
       REAL, PRIVATE:: rho_s = 100.0
       REAL, PARAMETER, PRIVATE:: rho_i = 890.0
       INTEGER, PARAMETER, PRIVATE:: NRHG = 9
+      INTEGER, PARAMETER, PRIVATE:: NRHG1 = 1
+      INTEGER :: NRHGtable
       REAL, DIMENSION(NRHG), PARAMETER, PRIVATE:: &
            rho_g = (/50., 100., 200., 300., 400., 500., 600., 700., 800./)
+      INTEGER, PARAMETER :: idx_bg1 = 5 ! index for rhog when mp=8 or 28
 
 !..Prescribed number of cloud droplets.  Set according to known data or
 !.. roughly 100 per cc (100.E6 m^-3) for Maritime cases and
@@ -130,7 +133,6 @@
      &            PI*rho_g(4)/6.0, PI*rho_g(5)/6.0, PI*rho_g(6)/6.0,    &
      &            PI*rho_g(7)/6.0, PI*rho_g(8)/6.0, PI*rho_g(9)/6.0 /)
       REAL, PARAMETER, PRIVATE:: bm_g = 3.0
-      INTEGER, PARAMETER :: idx_bg1 = 5
       REAL, PARAMETER, PRIVATE:: am_i = PI*rho_i/6.0
       REAL, PARAMETER, PRIVATE:: bm_i = 3.0
 
@@ -1035,7 +1037,12 @@
 
 !..Rain collecting graupel & graupel collecting rain.
       CALL wrf_debug(200, '  creating rain collecting graupel table')
-      call qr_acr_qg
+
+      if (.not. is_hail_aware) then
+         call qr_acr_qg(NRHG1)
+      else
+         call qr_acr_qg(NRHG)
+      endif
 
 !..Rain collecting snow & snow collecting rain.
       CALL wrf_debug(200, '  creating rain collecting snow table')
@@ -4082,16 +4089,18 @@
 !..Rain collecting graupel (and inverse).  Explicit CE integration.
 !+---+-----------------------------------------------------------------+
 
-      subroutine qr_acr_qg
+      subroutine qr_acr_qg(NRHGtable)
 
       USE module_timing
       implicit none
+      
+      INTEGER, INTENT(IN) ::NRHGtable
 
 !..Local variables
       INTEGER:: i, j, k, m, n, n2, n3
       INTEGER:: km, km_s, km_e
       DOUBLE PRECISION, DIMENSION(nbg):: N_g
-      DOUBLE PRECISION, DIMENSION(nbg,NRHG):: vg
+      DOUBLE PRECISION, DIMENSION(nbg,NRHGtable):: vg
       DOUBLE PRECISION, DIMENSION(nbr):: vr, N_r
       DOUBLE PRECISION:: N0_r, N0_g, lam_exp, lamg, lamr
       DOUBLE PRECISION:: massg, massr, dvg, dvr, t1, t2, z1, z2, y1, y2
@@ -4167,7 +4176,7 @@
               + 0.07934E9*Dr(n2)*Dr(n2)*Dr(n2)                          &
               - 0.002362E12*Dr(n2)*Dr(n2)*Dr(n2)*Dr(n2)
         enddo
-        do n3 = 1, NRHG
+        do n3 = 1, NRHGtable
         do n = 1, nbg
          vg(n,n3) = av_g(n3)*Dg(n)**bv_g(n3)
         enddo
@@ -4194,7 +4203,7 @@
             N_r(n2) = N0_r*Dr(n2)**mu_r *DEXP(-lamr*Dr(n2))*dtr(n2)
          enddo
 
-         do n3 = 1, NRHG
+         do n3 = 1, NRHGtable
          do j = 1, ntb_g
          do i = 1, ntb_g1
             lam_exp = (N0g_exp(i)*am_g(n3)*cgg(1,1)/r_g(j))**oge1
@@ -4244,6 +4253,18 @@
          enddo
          enddo
         enddo
+
+        if (.not. is_hail_aware) then
+!. Distribute the same value across NRHG dimension
+         do n3 = 2, NRHG
+            tcg_racg(:,:,n3,:,:) = tcg_racg(:,:,1,:,:)
+            tmr_racg(:,:,n3,:,:) = tmr_racg(:,:,1,:,:)
+            tcr_gacr(:,:,n3,:,:) = tcr_gacr(:,:,1,:,:)
+            tmg_gacr(:,:,n3,:,:) = tmg_gacr(:,:,1,:,:)
+            tnr_racg(:,:,n3,:,:) = tnr_racg(:,:,1,:,:)
+            tnr_gacr(:,:,n3,:,:) = tnr_gacr(:,:,1,:,:)
+         enddo
+        endif
 
 !..Note wrf_dm_gatherv expects zero-based km_s, km_e (J. Michalakes, 2009Oct30).
 

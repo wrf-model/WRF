@@ -1126,7 +1126,7 @@
       REAL, DIMENSION(its:ite, jts:jte):: pcp_ra, pcp_sn, pcp_gr, pcp_ic
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max, nr_max
-      REAL:: nwfa1, noc_emit, nbc_emit
+      REAL:: nwfa1
       REAL:: ygra1, zans1
       DOUBLE PRECISION:: lamg, lam_exp, lamr, N0_min, N0_exp
       INTEGER:: i, j, k, k_0, k_inj

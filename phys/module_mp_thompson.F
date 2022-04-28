@@ -4084,6 +4084,7 @@
 
       subroutine qr_acr_qg
 
+      USE module_timing
       implicit none
 
 !..Local variables
@@ -4157,6 +4158,9 @@
 #endif
       ELSE
         CALL wrf_message("ThompMP: computing qr_acr_qg")
+!+---+-----------------------------------------------------------------+
+        CALL start_timing
+
         do n2 = 1, nbr
 !        vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
          vr(n2) = -0.1021 + 4.932E3*Dr(n2) - 0.9551E6*Dr(n2)*Dr(n2)     &
@@ -4251,6 +4255,9 @@
         CALL wrf_dm_gatherv(tnr_racg, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
         CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
 #endif
+        CALL end_timing ( TRIM("table computation qr_acr_qgV4.dat") )
+!+---+-----------------------------------------------------------------+
+
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
           CALL wrf_message("Writing qr_acr_qgV3.dat in Thompson MP init")

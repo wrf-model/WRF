@@ -2561,7 +2561,6 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%mp_physics(i) .eq. full_khain_lynn) THEN
-              oops = oops + 1
          wrf_err_message = '--- ERROR: full bin spectral microphysics should not be used '
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '--- ERROR: use fast version instead (mp_physics=30)'

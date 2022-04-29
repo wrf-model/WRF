@@ -4177,6 +4177,7 @@
         enddo
         do n3 = 1, NRHGtable
         do n = 1, nbg
+         ! idx_bg indexes module coefficients, not vg
          if (.not. is_hail_aware) idx_bg = idx_bg1
          if (is_hail_aware) idx_bg = n3              
          vg(n,n3) = av_g(idx_bg)*Dg(n)**bv_g(idx_bg)
@@ -4228,8 +4229,8 @@
                do n = 1, nbg
                   massg = am_g(idx_bg) * Dg(n)**bm_g
 
-                  dvg = 0.5d0*((vr(n2) - vg(n,idx_bg)) + DABS(vr(n2)-vg(n,idx_bg)))
-                  dvr = 0.5d0*((vg(n,idx_bg) - vr(n2)) + DABS(vg(n,idx_bg)-vr(n2)))
+                  dvg = 0.5d0*((vr(n2) - vg(n,n3)) + DABS(vr(n2)-vg(n,n3)))
+                  dvr = 0.5d0*((vg(n,n3) - vr(n2)) + DABS(vg(n,n3)-vr(n2)))
 
                   t1 = t1+ PI*.25*Ef_rg*(Dg(n)+Dr(n2))*(Dg(n)+Dr(n2)) &
                       *dvg*massg * N_g(n)* N_r(n2)

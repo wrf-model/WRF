@@ -72,7 +72,6 @@
       REAL, PARAMETER, PRIVATE:: rho_i = 890.0
       INTEGER, PARAMETER, PRIVATE:: NRHG = 9
       INTEGER, PARAMETER, PRIVATE:: NRHG1 = 1
-      INTEGER :: NRHGtable
       REAL, DIMENSION(NRHG), PARAMETER, PRIVATE:: &
            rho_g = (/50., 100., 200., 300., 400., 500., 600., 700., 800./)
       INTEGER, PARAMETER :: idx_bg1 = 5 ! index for rhog when mp=8 or 28
@@ -4097,7 +4096,7 @@
       INTEGER, INTENT(IN) ::NRHGtable
 
 !..Local variables
-      INTEGER:: i, j, k, m, n, n2, n3
+      INTEGER:: i, j, k, m, n, n2, n3, idx_bg
       INTEGER:: km, km_s, km_e
       DOUBLE PRECISION, DIMENSION(nbg):: N_g
       DOUBLE PRECISION, DIMENSION(nbg,NRHGtable):: vg
@@ -4178,7 +4177,9 @@
         enddo
         do n3 = 1, NRHGtable
         do n = 1, nbg
-         vg(n,n3) = av_g(n3)*Dg(n)**bv_g(n3)
+         if (.not. is_hail_aware) idx_bg = idx_bg1
+         if (is_hail_aware) idx_bg = n3              
+         vg(n,n3) = av_g(idx_bg)*Dg(n)**bv_g(idx_bg)
         enddo
         enddo
 
@@ -4204,9 +4205,12 @@
          enddo
 
          do n3 = 1, NRHGtable
+          if (.not. is_hail_aware) idx_bg = idx_bg1
+          if (is_hail_aware) idx_bg = n3              
+
          do j = 1, ntb_g
          do i = 1, ntb_g1
-            lam_exp = (N0g_exp(i)*am_g(n3)*cgg(1,1)/r_g(j))**oge1
+            lam_exp = (N0g_exp(i)*am_g(idx_bg)*cgg(1,1)/r_g(j))**oge1
             lamg = lam_exp * (cgg(3,1)*ogg2*ogg1)**obmg
             N0_g = N0g_exp(i)/(cgg(2,1)*lam_exp) * lamg**cge(2,1)
             do n = 1, nbg
@@ -4222,10 +4226,10 @@
             do n2 = 1, nbr
                massr = am_r * Dr(n2)**bm_r
                do n = 1, nbg
-                  massg = am_g(n3) * Dg(n)**bm_g
+                  massg = am_g(idx_bg) * Dg(n)**bm_g
 
-                  dvg = 0.5d0*((vr(n2) - vg(n,n3)) + DABS(vr(n2)-vg(n,n3)))
-                  dvr = 0.5d0*((vg(n,n3) - vr(n2)) + DABS(vg(n,n3)-vr(n2)))
+                  dvg = 0.5d0*((vr(n2) - vg(n,idx_bg)) + DABS(vr(n2)-vg(n,idx_bg)))
+                  dvr = 0.5d0*((vg(n,idx_bg) - vr(n2)) + DABS(vg(n,idx_bg)-vr(n2)))
 
                   t1 = t1+ PI*.25*Ef_rg*(Dg(n)+Dr(n2))*(Dg(n)+Dr(n2)) &
                       *dvg*massg * N_g(n)* N_r(n2)

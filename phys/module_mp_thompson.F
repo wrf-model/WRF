@@ -4107,18 +4107,28 @@
       LOGICAL lexist,lopen
       INTEGER good
       LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-
+      CHARACTER (LEN=20):: qr_acr_qg_name
 !+---+
 
       CALL nl_get_force_read_thompson(1,force_read_thompson)
       CALL nl_get_write_thompson_tables(1,write_thompson_tables)
 
+      if (is_hail_aware) then
+         ! Table for mp=38
+         ! V1: new table dimension (NRHG), computes all, rho_g(1:NRHG)
+         qr_acr_qg_name="qr_acr_qg_mp38V1.dat"
+      else
+         ! Table for mp=8 or mp=28
+         ! V4: new table dimension (NRHG), computes only rho_g(idx_bg1)
+         qr_acr_qg_name="qr_acr_qg_mp28V4.dat" 
+   endif
+
       good = 0
       IF ( wrf_dm_on_monitor() ) THEN
-        INQUIRE(FILE="qr_acr_qgV4.dat",EXIST=lexist)
+        INQUIRE(FILE=qr_acr_qg_name,EXIST=lexist)
         IF ( lexist ) THEN
-          CALL wrf_message("ThompMP: read qr_acr_qgV4.dat instead of computing")
-          OPEN(63,file="qr_acr_qgV4.dat",form="unformatted",err=1234)
+          CALL wrf_message("ThompMP: read "//qr_acr_qg_name//" instead of computing")
+          OPEN(63,file=qr_acr_qg_name,form="unformatted",err=1234)
           READ(63,err=1234) tcg_racg
           READ(63,err=1234) tmr_racg
           READ(63,err=1234) tcr_gacr
@@ -4131,12 +4141,12 @@
             INQUIRE(63,opened=lopen)
             IF (lopen) THEN
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error reading qr_acr_qgV4.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error reading "//qr_acr_qg_name//". Aborting because force_read_thompson is .true.")
               ENDIF
               CLOSE(63)
             ELSE
               IF( force_read_thompson ) THEN
-                CALL wrf_error_fatal("Error opening qr_acr_qgV4.dat. Aborting because force_read_thompson is .true.")
+                CALL wrf_error_fatal("Error opening "//qr_acr_qg_name//". Aborting because force_read_thompson is .true.")
               ENDIF
             ENDIF
           ELSE
@@ -4147,7 +4157,7 @@
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN
-            CALL wrf_error_fatal("Non-existent qr_acr_qgV4.dat. Aborting because force_read_thompson is .true.")
+            CALL wrf_error_fatal("Non-existent "//qr_acr_qg_name//". Aborting because force_read_thompson is .true.")
           ENDIF
         ENDIF
       ENDIF
@@ -4165,7 +4175,7 @@
         CALL wrf_dm_bcast_double(tnr_gacr,SIZE(tnr_gacr))
 #endif
       ELSE
-        CALL wrf_message("ThompMP: computing qr_acr_qg")
+        CALL wrf_message("ThompMP: computing qr_acr_qg table: "//qr_acr_qg_name)
 !+---+-----------------------------------------------------------------+
         CALL start_timing
 
@@ -4281,13 +4291,13 @@
         CALL wrf_dm_gatherv(tnr_racg, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
         CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
 #endif
-        CALL end_timing ( TRIM("table computation qr_acr_qgV4.dat") )
+        CALL end_timing ( TRIM("table computation "//qr_acr_qg_name//"") )
 !+---+-----------------------------------------------------------------+
 
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
-          CALL wrf_message("Writing qr_acr_qgV4.dat in Thompson MP init")
-          OPEN(63,file="qr_acr_qgV4.dat",form="unformatted",err=9234)
+          CALL wrf_message("Writing "//qr_acr_qg_name//" in Thompson MP init")
+          OPEN(63,file=qr_acr_qg_name,form="unformatted",err=9234)
           WRITE(63,err=9234) tcg_racg
           WRITE(63,err=9234) tmr_racg
           WRITE(63,err=9234) tcr_gacr
@@ -4297,7 +4307,7 @@
           CLOSE(63)
           RETURN    ! ----- RETURN
  9234     CONTINUE
-          CALL wrf_error_fatal("Error writing qr_acr_qgV4.dat")
+          CALL wrf_error_fatal("Error writing "//qr_acr_qg_name//"")
         ENDIF
       ENDIF
 

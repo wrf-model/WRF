@@ -2556,6 +2556,21 @@
      END DO
 
 !-----------------------------------------------------------------------
+! Stop the model if full_khain_lynn or mp_physics = 32 is selected
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%mp_physics(i) .eq. full_khain_lynn) THEN
+              oops = oops + 1
+         wrf_err_message = '--- ERROR: full bin spectral microphysics should not be used '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: use fast version instead (mp_physics=30)'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO      ! Loop over domains
+
+!-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.
 !-----------------------------------------------------------------------
      DO i=1,model_config_rec%max_dom

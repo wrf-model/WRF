@@ -186,37 +186,39 @@ if ! [ -x $nc_config ] ; then
    exit
 fi
 
-PROBS=FALSE
+ncversion=`$nc_config --version | cut -d' ' -f2`
+# check if parallel I/O feature is enabled in NetCDF library
 if [ -n "$NETCDFPAR" ] ; then
-  if [ ! -e $nc_config ] ; then
-    PROBS=TRUE
-  else
-    ncversion=`$nc_config --version | awk '{print $2}'`
-    ncversiona=`echo $ncversion | cut -c 1`
-    ncversionb=`echo $ncversion | cut -c 3`
-    ncversionc=`echo $ncversion | cut -c 5`
-    ncversiona=`expr $ncversiona \* 100`
-    ncversionb=`expr $ncversionb \* 10`
-    ncversionabc=`expr $ncversiona   + $ncversionb`
-    ncversionabc=`expr $ncversionabc + $ncversionc`
-    if [ $ncversionabc -lt 474 ] ; then
-      PROBS=TRUE
-    fi
-  fi
-  if [ "$PROBS" == "TRUE" ] ; then
-    echo
-    echo Cannot activate NETCDFPAR with this version of NetCDF: $ncversion
-    echo You need NetCDF version 4.7.4 or newer
-    echo Use a newer version of NetCDF, or unset the env variable NETCDFPAR
-    echo
-    exit
-  fi
-  NETCDF4="1"
-  USENETCDFPAR="1"
-  export NETCDF
-  export NETCDF4
-  export USENETCDFPAR
+   nc_has_parallel4=`$nc_config --has-parallel4`
+   if test "x$nc_has_parallel4" != xyes ; then
+      echo
+      echo NETCDFPAR is set but the NetCDF library under $NETCDFPAR is not
+      echo built with parallel NetCDF-4 I/O feature enabled. Abort.
+      echo
+      exit
+   fi
+   # WRF requires NetCDF version 4.7.4 when using parallel NetCDF-4 feature
+   ncversiona=`echo $ncversion | cut -c 1`
+   ncversionb=`echo $ncversion | cut -c 3`
+   ncversionc=`echo $ncversion | cut -c 5`
+   ncversiona=`expr $ncversiona \* 100`
+   ncversionb=`expr $ncversionb \* 10`
+   ncversionabc=`expr $ncversiona   + $ncversionb`
+   ncversionabc=`expr $ncversionabc + $ncversionc`
+   if [ $ncversionabc -lt 474 ] ; then
+      echo
+      echo Cannot activate NETCDFPAR with this version of NetCDF: $ncversion
+      echo You need NetCDF version 4.7.4 or newer
+      echo Use a newer version of NetCDF, or unset the env variable NETCDFPAR
+      echo
+      exit
+   fi
+   USENETCDFPAR="1"
 fi
+NETCDF4="1"
+export NETCDF
+export NETCDF4
+export USENETCDFPAR
 
 if  test -z "$NETCDF_classic"  ; then
   export NETCDF4=1

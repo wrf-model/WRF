@@ -220,29 +220,28 @@ export NETCDF
 export NETCDF4
 export USENETCDFPAR
 
+# Check NetCDF C libaray files
+if [ -f "$NETCDF/lib/libnetcdf.a" ] || [ -f "$NETCDF/lib/libnetcdf.so" ] || [ -f "$NETCDF/lib/libnetcdf.dll.a" ] ; then
+    USENETCDF="-lnetcdf"
+else
+    USENETCDF=""
+fi
+export USENETCDF=$USENETCDF
+
+# Check NetCDF Fortran library files, assuming both C and Fortran libraries
+# are installed in the same location set in environment variable NETCDF.
+echo "Checking NetCDF Fortran library under dir: $NETCDF"
+if [ -f "$NETCDF/lib/libnetcdff.a" ] ||  [ -f "$NETCDF/lib/libnetcdff.so" ] || [ -f "$NETCDF/lib/libnetcdff.dll.a" ] ; then
+   USENETCDFF="-lnetcdff"
+else
+   USENETCDFF=""
+fi
+export USENETCDFF=$USENETCDFF
+
 if  test -z "$NETCDF_classic"  ; then
   export NETCDF4=1
 else
   unset NETCDF4
-fi
-
-USENETCDFF=""
-USENETCDF=""
-if [ -n "$NETCDF" ] ; then
-  echo "Will use NETCDF in dir: $NETCDF"
-# Oh UNIDATA, why make it so hard ...
-  if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" -o -f "$NETCDF/lib/libnetcdff.dll.a" ] ; then
-    USENETCDFF="-lnetcdff"
-  else
-    USENETCDFF=" "
-  fi
-  if [ -f "$NETCDF/lib/libnetcdf.a" -o -f "$NETCDF/lib/libnetcdf.so" -o -f "$NETCDF/lib/libnetcdf.dll.a" ] ; then
-    USENETCDF="-lnetcdf"
-  else
-    USENETCDF=" "
-  fi
-  export USENETCDF=$USENETCDF
-  export USENETCDFF=$USENETCDFF
 fi
 
 # If the user asked for classic netcdf, acquiesce to the request.

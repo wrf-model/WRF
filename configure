@@ -314,7 +314,7 @@ if [ -n "$NETCDF4" ] && [ $NETCDF4 -eq 1 ] ; then
       n=`echo $buff | wc -w`
       lastword=`echo "$buff" | cut -d' ' -f$n | sed 's/\/$//'`
       c="`echo $lastword | cut -c1`"
-      if [ "$c" == "/" ] ; then
+      if [ "$c" = "/" ] ; then
          NETCDF=$lastword
       else
         c="`echo $lastword | cut -c1-2`"
@@ -913,7 +913,7 @@ EOF
       echo "NetCDF version: ${ncversion}"
       echo "Enabled NetCDF-4/HDF-5: `$nc_config --has-nc4`"
       echo "NetCDF built with PnetCDF: `$nc_config --has-pnetcdf`"
-      if [ "$USENETCDFPAR" == "1" ] ; then
+      if [ "$USENETCDFPAR" = "1" ] ; then
          echo "Using parallel NetCDF via NETCDFPAR option"
       fi
       echo " "

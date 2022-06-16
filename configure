@@ -159,6 +159,18 @@ if test -n "$PERL" ; then
     
 fi
 
+# WRF requires env variable NETCDF to be set by users
+if [ -z "$NETCDF" ] ; then
+  echo ' '
+  echo '**********************************************************************'
+  echo ' Environment variable NETCDF is not set or empty.'
+  echo ' Please set NETCDF to the installation path of NetCDF libraries.'
+  echo ' Stopping'
+  echo '**********************************************************************'
+  echo ' '
+  exit 5
+fi
+
 if [ -e $NETCDF/bin/nc-config ] ; then
   ncversion=`nc-config --version | awk '{print $2}'` 
 else
@@ -198,16 +210,6 @@ if [ -n "$NETCDFPAR" ] ; then
   export USENETCDFPAR
 fi
 
-if  test -z "$NETCDF"  ; then
-  echo ' '
-  echo '*****************************************************************************'
-  echo 'No environment variable NETCDF set.'
-  echo 'Stopping'
-  echo '*****************************************************************************'
-  echo ' '
-  exit 5
-fi
-
 if  test -z "$NETCDF_classic"  ; then
   export NETCDF4=1
 else
@@ -231,14 +233,6 @@ if [ -n "$NETCDF" ] ; then
   fi
   export USENETCDF=$USENETCDF
   export USENETCDFF=$USENETCDFF
-else
-  echo ' '
-  echo '*****************************************************************************'
-  echo 'No environment variable NETCDF set.'
-  echo 'Stopping'
-  echo '*****************************************************************************'
-  echo ' '
-  exit 6
 fi
 
 # If the user asked for classic netcdf, acquiesce to the request.

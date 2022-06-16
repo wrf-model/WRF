@@ -171,6 +171,11 @@ if [ -z "$NETCDF" ] ; then
   exit 5
 fi
 
+# supersede env NETCDFPAR over NETCDF
+if [ -n "$NETCDFPAR" ] ; then
+   NETCDF="$NETCDFPAR"
+fi
+
 nc_config="$NETCDF/bin/nc-config"
 if ! [ -x $nc_config ] ; then
    echo
@@ -183,7 +188,6 @@ fi
 
 PROBS=FALSE
 if [ -n "$NETCDFPAR" ] ; then
-  NETCDF="$NETCDFPAR"
   if [ ! -e $nc_config ] ; then
     PROBS=TRUE
   else

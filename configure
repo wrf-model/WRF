@@ -275,14 +275,11 @@ if [ -z "$CURL_PATH" ] ; then CURL_PATH=''; fi
 
 if [ -n "$NETCDF4" ] && [ $NETCDF4 -eq 1 ] ; then
     DEP_LIB_PATH=''
-    if [ -f $nf_config ] ; then
-      nx_config="$nf_config --flibs"
-      DEP_LIB_PATH="`$nx_config | awk '{for(i=1;i<=NF;i++){if(match($i, /-L.*/)) {print $i} } }'`"
-      CURL="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lcurl") {print $i} } }'`"
-      GPFS="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lgpfs") {print $i} } }'`"
-    fi
+    nx_config="$nf_config --flibs"
+    DEP_LIB_PATH="`$nx_config | awk '{for(i=1;i<=NF;i++){if(match($i, /-L.*/)) {print $i} } }'`"
+    CURL="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lcurl") {print $i} } }'`"
+    GPFS="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lgpfs") {print $i} } }'`"
     if [ "$DEP_LIB_PATH" = '' ] ; then
-      if [ -f $nc_config ] ; then
         nx_config="$nc_config --libs"
         DEP_LIB_PATH="`$nx_config | awk '{for(i=1;i<=NF;i++){if(match($i, /-L.*/)) {print $i} } }'`"
         CURL="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lcurl") {print $i} } }'`"
@@ -293,7 +290,6 @@ if [ -n "$NETCDF4" ] && [ $NETCDF4 -eq 1 ] ; then
         if [ "$GPFS" != '' -a  "$GPFS_PATH" = '' ] ; then
            GPFS_PATH="DEFAULT"
         fi
-      fi
     fi
     for P in "$HDF5_PATH" "$ZLIB_PATH" "$GPFS_PATH" "$CURL_PATH"
     do
@@ -911,15 +907,13 @@ EOF
       echo "           Fortran compiler is $SFC_arch"
       echo "              It will build in $netcdf_arch"
       echo " "
-      if [ -e $nc_config ] ; then
-        echo "NetCDF version: ${ncversion}"
-        echo "Enabled NetCDF-4/HDF-5: `$nc_config --has-nc4`"
-        echo "NetCDF built with PnetCDF: `$nc_config --has-pnetcdf`"
-        if [ "$USENETCDFPAR" == "1" ] ; then
-          echo "Using parallel NetCDF via NETCDFPAR option"
-        fi
-        echo " "
+      echo "NetCDF version: ${ncversion}"
+      echo "Enabled NetCDF-4/HDF-5: `$nc_config --has-nc4`"
+      echo "NetCDF built with PnetCDF: `$nc_config --has-pnetcdf`"
+      if [ "$USENETCDFPAR" == "1" ] ; then
+         echo "Using parallel NetCDF via NETCDFPAR option"
       fi
+      echo " "
     fi
     echo
   fi

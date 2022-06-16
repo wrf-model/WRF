@@ -179,9 +179,9 @@ fi
 nc_config="$NETCDF/bin/nc-config"
 if ! [ -x $nc_config ] ; then
    echo
-   echo A valid NetCDF command 'nc-confg' could not be found. Please set a
-   echo valid installation path of NetCDF libraries in environment variable
-   echo NETCDF. Abort.
+   echo "A valid NetCDF command 'nc-confg' could not be found. Please set a"
+   echo "valid installation path of NetCDF libraries in environment variable"
+   echo "NETCDF. Abort."
    echo
    exit
 fi
@@ -192,8 +192,10 @@ if [ -n "$NETCDFPAR" ] ; then
    nc_has_parallel4=`$nc_config --has-parallel4`
    if test "x$nc_has_parallel4" != xyes ; then
       echo
-      echo NETCDFPAR is set but the NetCDF library under $NETCDFPAR is not
-      echo built with parallel NetCDF-4 I/O feature enabled. Abort.
+      echo "NETCDFPAR is set but the NetCDF library under"
+      echo "   $NETCDFPAR"
+      echo "is not built with parallel NetCDF-4 I/O feature enabled."
+      echo "Abort."
       echo
       exit
    fi
@@ -242,9 +244,10 @@ nf_config="$NETCDF/bin/nf-config"
 if ! [ -x $nf_config ] ; then
    echo
    echo "A valid NetCDF command 'nf-confg' could not be found under"
-   echo "  $NETCDF"
-   echo "Please set a valid install path of NetCDF library in environment"
-   echo "variable NETCDF. Abort."
+   echo "   $NETCDF"
+   echo "Please set a valid installation path of NetCDF library in"
+   echo "environment variable NETCDF. Note both NetCDF-C and NetCDF-Fortran"
+   echo "libraries must be installed in the same location. Abort."
    echo
    exit
 fi

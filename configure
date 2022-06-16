@@ -238,36 +238,34 @@ else
 fi
 export USENETCDFF=$USENETCDFF
 
-if  test -z "$NETCDF_classic"  ; then
-  export NETCDF4=1
-else
-  unset NETCDF4
+nf_config="$NETCDF/bin/nf-config"
+if ! [ -x $nf_config ] ; then
+   echo
+   echo "A valid NetCDF command 'nf-confg' could not be found under"
+   echo "  $NETCDF"
+   echo "Please set a valid install path of NetCDF library in environment"
+   echo "variable NETCDF. Abort."
+   echo
+   exit
 fi
 
 # If the user asked for classic netcdf, acquiesce to the request.
-
-ans="`which nf-config`"
-status="$?"
-if [ "$ans" = "nf-config:" -o "$ans" = "" -o "$status" != "0" ] ; then
-    export NETCDF_classic=1
-    unset NETCDF4
-else
-  if [ -n "$NETCDF_classic" ] ; then
-    if [ $NETCDF_classic -eq 1 ] ; then
+if [ -n "$NETCDF_classic" ] ; then
+   if [ $NETCDF_classic -eq 1 ] ; then
       unset  NETCDF4
-    else
+   else
       unset  NETCDF_classic
       export NETCDF4=1
-    fi
-  else
-    if [ "`nf-config --has-nc4`" = "yes" ] ; then
+   fi
+else
+   has_nc4=`$nf_config --has-nc4`
+   if test "x$has_nc4" = xyes ; then
       unset  NETCDF_classic
       export NETCDF4=1
-    else
+   else
       export NETCDF_classic=1
       unset  NETCDF4
-    fi
-  fi
+   fi
 fi
 
 if [ -z "$HDF5_PATH" ] ; then HDF5_PATH=''; fi
@@ -278,8 +276,8 @@ if [ -z "$CURL_PATH" ] ; then CURL_PATH=''; fi
 if [ -n "$NETCDF4" ] ; then
   if [ $NETCDF4 -eq 1 ] ; then
     DEP_LIB_PATH=''
-    if [ -f $NETCDF/bin/nf-config ] ; then
-      nx_config="$NETCDF/bin/nf-config --flibs"
+    if [ -f $nf_config ] ; then
+      nx_config="$nf_config --flibs"
       DEP_LIB_PATH="`$nx_config | awk '{for(i=1;i<=NF;i++){if(match($i, /-L.*/)) {print $i} } }'`"
       CURL="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lcurl") {print $i} } }'`"
       GPFS="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lgpfs") {print $i} } }'`"

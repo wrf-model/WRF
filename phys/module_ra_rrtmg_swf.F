@@ -11386,8 +11386,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
 !  Ozone
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         OPTIONAL                                               , &
-         INTENT(IN   ) :: O33D
+         INTENT(INOUT) :: O33D
    INTEGER, OPTIONAL, INTENT(IN ) :: o3input
 !  EC aerosol: no_src = naerec = 6
    INTEGER,           INTENT(IN ) :: no_src
@@ -11731,7 +11730,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
             QV1D(K)=max(0.,QV1D(K))
          ENDDO
 
-         IF (PRESENT(O33D)) THEN
+         IF (o3input.eq.2) THEN
             DO K=kts,kte
                O31D(K)=O33D(I,K,J)
             ENDDO
@@ -11992,20 +11991,16 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !         call inirad (o3mmr,plev,kts,kte)
          call inirad (o3mmr,plev(icol,:),kts,kte)
 
-        if(present(o33d)) then
+        if(o3input.eq.2) then
          do k = kts, kte+1
             o3vmr(icol,k) = o3mmr(k) * amdo
-            IF ( PRESENT( O33D ) ) THEN
-            if(o3input .eq. 2)then
-               if(k.le.kte)then
-                 o3vmr(icol,k) = o31d(k)
-               else
+            if(k.le.kte)then
+               o3vmr(icol,k) = o31d(k)
+            else
 ! apply shifted climatology profile above model top
-                 o3vmr(icol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo
-                 if(o3vmr(icol,k) .le. 0.)o3vmr(icol,k) = o3mmr(k)*amdo
-               endif
+               o3vmr(icol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo
+               if(o3vmr(icol,k) .le. 0.)o3vmr(icol,k) = o3mmr(k)*amdo
             endif
-            ENDIF
          enddo
         else
          do k = kts, kte+1

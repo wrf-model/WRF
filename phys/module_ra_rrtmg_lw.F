@@ -12412,7 +12412,6 @@ CONTAINS
             endif
          enddo
         else
-         print *, 'are we here in lw rad'
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
             o31d(k) = o3vmr(ncol,k)

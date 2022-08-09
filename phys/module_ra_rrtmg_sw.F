@@ -10930,7 +10930,6 @@ CONTAINS
             endif
          enddo
         else
-         print *, 'are we here in the else part'
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
             o31d(k) = o3vmr(ncol,k)

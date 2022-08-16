@@ -886,6 +886,7 @@ package   ntu_plus              mp_physics_plus==56     -          g_moist:g_qv,
 package   etampnew_plus         mp_physics_plus==95     -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
 package   lscond_plus           mp_physics_plus==98     -          g_moist:g_qv;a_moist:a_qv
 package   mkessler_plus         mp_physics_plus==99     -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   ivanr_micro_plus      mp_physics_plus==150    -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
 
 rconfig   integer cu_used_plus    derived               1          0       -     "cu_used_plus"   "turn on if any cumulus scheme is used"
 rconfig   integer shcu_used_plus  derived               1          0       -     "shcu_used_plus" "turn on if any shallow cumulus scheme is used"

@@ -591,6 +591,7 @@ package   ntu             mp_physics==56               -             moist:qv,qc
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs
 package   lscondscheme    mp_physics==98               -             moist:qv
 package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr
+package   ivanr_micro     mp_physics==150              -             moist:qv,qc,qr,qs
 #
 package   mpnotset_4dvar         mp_physics_4dvar==-1     -          g_moist:g_qv;a_moist:a_qv
 package   passiveqv_4dvar        mp_physics_4dvar==0      -          g_moist:g_qv;a_moist:a_qv
@@ -623,6 +624,7 @@ package   ntu_4dvar              mp_physics_4dvar==56     -          g_moist:g_q
 package   etampnew_4dvar         mp_physics_4dvar==95     -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
 package   lscond_4dvar           mp_physics_4dvar==98     -          g_moist:g_qv;a_moist:a_qv
 package   mkessler_4dvar         mp_physics_4dvar==99     -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   ivanr_micro_4dvar      mp_physics_4dvar==150    -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs 
 
 package   surfdragscheme  bl_pbl_physics==98           -             -
 package   ducuscheme      cu_physics==98               -             -

@@ -1949,6 +1949,7 @@ CONTAINS
                  ,XTIME=xtime,JULIAN=julian                         &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
+                 ,CLD=cld                                           &       ! w2id
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
                  ,ACFRST=acfrst,NCFRST=ncfrst                       &
                  ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &
@@ -2809,6 +2810,7 @@ CONTAINS
                  ,XTIME=xtime,JULIAN=julian                         &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
+                 ,CLD=cld                                           &       ! w2id
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
                  ,ACFRST=acfrst,NCFRST=ncfrst                       &
                  ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &

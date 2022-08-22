@@ -1225,9 +1225,9 @@ state    real    CUPPT           ij     misc        1         -      r        "C
 state    real   rswtoa           ij     misc        1         -      -
 state    real   rlwtoa           ij     misc        1         -      -
 state    real   czmean           ij     misc        1         -      -
-state    real   cfracl           ij     misc        1         -      -
-state    real   cfracm           ij     misc        1         -      -
-state    real   cfrach           ij     misc        1         -      -
+state    real   cfracl           ij     misc        1         -     rh       "CFRACL"    "Low cloud fraction"                   ""
+state    real   cfracm           ij     misc        1         -     rh       "CFRACM"    "Middle cloud fraction"                ""
+state    real   cfrach           ij     misc        1         -     rh       "CFRACH"    "High cloud fraction"                  ""
 state    real   acfrst           ij     misc        1         -      -
 state integer   ncfrst           ij     misc        1         -      -
 state    real   acfrcv           ij     misc        1         -      -

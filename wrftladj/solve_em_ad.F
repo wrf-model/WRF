@@ -3946,6 +3946,11 @@ BENCH_START(micro_driver_tim)
 ! YLIN
 ! RI_CURR INPUT
       &        , RI_CURR=grid%rimi                                          &
+      &        , cld=grid%cld                                               & ! w2id
+      &        , tw2=grid%tw2                                               & ! w2id
+      &        , pw2=grid%pw2                                               & ! w2id
+      &        , qw2=grid%qw2                                               & ! w2id
+      &        , f_snow=grid%f_snow                                         & ! w2id
       &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
       &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
       &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &

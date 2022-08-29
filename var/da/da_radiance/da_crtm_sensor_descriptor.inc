@@ -33,6 +33,7 @@ subroutine da_crtm_sensor_descriptor(nsensor,sensor_descriptor)
         if (satellite_id == 1) crtm_sat='m08'
         if (satellite_id == 2) crtm_sat='m09'
         if (satellite_id == 3) crtm_sat='m10'
+        if (satellite_id == 4) crtm_sat='m11'
      else if (trim(crtm_platform_name(platform_id)) == 'gcom-w') then
         if (satellite_id == 1) crtm_sat='gcom-w1'
      else

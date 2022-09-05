@@ -18,7 +18,7 @@ module module_NWM_io_dict
 implicit none
 
 ! Declare parameter values for module.
-integer, parameter :: numChVars = 10
+integer, parameter :: numChVars = 11
 integer, parameter :: numLdasVars = 98
 integer, parameter :: numRtDomainVars = 5
 integer, parameter :: numLakeVars = 2
@@ -168,7 +168,7 @@ type ldasMeta
    character(len=1024), dimension(20) :: crsCharAttNames,crsFloatAttNames
    character(len=1024), dimension(20) :: crsCharAttVals
    real, dimension(20,20) :: crsRealAttVals
-   real, dimension(20) :: crsRealAttLen
+   integer, dimension(20) :: crsRealAttLen
    integer :: nCrsRealAtts, nCrsCharAtts
    ! Establish x/y related variables.
    character(len=1024), dimension(20) :: xCharAttNames,xFloatAttNames
@@ -239,7 +239,7 @@ type rtDomainMeta
    character(len=1024), dimension(20) :: crsCharAttNames,crsFloatAttNames
    character(len=1024), dimension(20) :: crsCharAttVals
    real, dimension(20,20) :: crsRealAttVals
-   real, dimension(20) :: crsRealAttLen
+   integer, dimension(20) :: crsRealAttLen
    integer :: nCrsRealAtts, nCrsCharAtts
    ! Establish x/y related variables.
    character(len=1024), dimension(20) :: xCharAttNames,xFloatAttNames
@@ -393,7 +393,7 @@ type chrtGrdMeta
    character(len=1024), dimension(20) :: crsCharAttNames,crsFloatAttNames
    character(len=1024), dimension(20) :: crsCharAttVals
    real, dimension(20,20) :: crsRealAttVals
-   real, dimension(20) :: crsRealAttLen
+   integer, dimension(20) :: crsRealAttLen
    integer :: nCrsRealAtts, nCrsCharAtts
    ! Establish x/y related variables.
    character(len=1024), dimension(20) :: xCharAttNames,xFloatAttNames
@@ -468,7 +468,7 @@ type lsmMeta
    character(len=1024), dimension(20) :: crsCharAttNames,crsFloatAttNames
    character(len=1024), dimension(20) :: crsCharAttVals
    real, dimension(20,20) :: crsRealAttVals
-   real, dimension(20) :: crsRealAttLen
+   integer, dimension(20) :: crsRealAttLen
    integer :: nCrsRealAtts, nCrsCharAtts
    ! Establish x/y related variables.
    character(len=1024), dimension(20) :: xCharAttNames,xFloatAttNames
@@ -740,39 +740,42 @@ subroutine initChrtDict(chrtOutDict,diagFlag,procId)
    !                            "qBtmVertRunoff","AccSfcLatRunoff","accBucket"/)
    chrtOutDict%varNames(:) = [character(len=64) :: "streamflow","nudge","q_lateral","velocity",&
                               "Head","qSfcLatRunoff","qBucket",&
-                              "qBtmVertRunoff","AccSfcLatRunoff","accBucket"]
+                              "qBtmVertRunoff","AccSfcLatRunoff","accBucket","qloss"]
    chrtOutDict%longName(:) = [character(len=64) :: "River Flow","Amount of stream flow alteration",&
                               "Runoff into channel reach","River Velocity",&
                               "River Stage","Runoff from terrain routing",&
                               "Flux from gw bucket",&
                               "Runoff from bottom of soil to bucket",&
                               "Accumulated runoff from terrain routing",&
-                              "Accumulated runoff from gw bucket"]
+                              "Accumulated runoff from gw bucket",&
+                              "Channel Infiltration"]
    chrtOutDict%units(:) = [character(len=64) :: "m3 s-1","m3 s-1","m3 s-1","m s-1",&
                                                 "meter","m3 s-1","m3 s-1",&
-                                                "m3","m3","m3"]
+                                                "m3","m3","m3","m3 s-1"]
    chrtOutDict%coordNames(:) = [character(len=64) :: "latitude longitude","latitude longitude",&
                                  "latitude longitude","latitude longitude",&
                                  "latitude longitude","latitude longitude",&
                                  "latitude longitude","latitude longitude",&
-                                 "latitude longitude","latitude longitude"]
+                                 "latitude longitude","latitude longitude",&
+                                 "latitude longitude"]
    chrtOutDict%scaleFactor(:) = [0.01,0.01,0.1,0.01,0.01,0.00001,0.00001,0.001,&
-                                 0.01,0.01]
+                                 0.01,0.01,0.1]
    chrtOutDict%addOffset(:) = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,&
-                               0.0]
+                               0.0,0.0]
    ! Initialize all output flags to 0. Modify (if absolutely necessary) in the
-   ! output subroutine.
-   chrtOutDict%outFlag(:) = [0,0,0,0,0,0,0,0,0,0]
-   chrtOutDict%timeZeroFlag(:) = [1,1,1,1,1,1,1,1,1,1]
+   ! output subroutine. 
+   chrtOutDict%outFlag(:) = [0,0,0,0,0,0,0,0,0,0,0]
+   chrtOutDict%timeZeroFlag(:) = [1,1,1,1,1,1,1,1,1,1,1]
    chrtOutDict%fillReal(:) = [-9999.0,-9999.0,-9999.0,-9999.0,-9999.0,-9999.0,&
-                              -9999.0,-9999.0,-9999.0,-9999.0]
+                              -9999.0,-9999.0,-9999.0,-9999.0,-9999.0]
    chrtOutDict%missingReal(:) = [-9999.0,-9999.0,-9999.0,-9999.0,-9999.0,&
-                                 -9999.0,-9999.0,-9999.0,-9999.0,-9999.0]
+                                 -9999.0,-9999.0,-9999.0,-9999.0,-9999.0,&
+                                 -9999.0]
    chrtOutDict%validMinDbl(:) = [0.0d0, -50000.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                  0.0d0, 0.0d0]
+                                  0.0d0, 0.0d0, 0.0d0]
    chrtOutDict%validMaxDbl(:) = [50000.0d0, 50000.0d0, 50000.0d0, 50000.0d0, 50000.0d0, &
                                   20000.0d0, 20000.0d0, 20000.0d0, 50000.0d0, &
-                                  50000.0d0]
+                                  50000.0d0, 50000.0d0]
    ! Loop through and calculate missing/fill/min/max values that will be placed
    ! into the NetCDF attributes after scale_factor/add_offset are applied.
    do i=1,numChVars

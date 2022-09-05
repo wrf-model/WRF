@@ -25,12 +25,12 @@ while [ $# -ge 1 ]; do
       -r8) rword="-r8" ;;
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
       chem) WRF_CHEM=1  ;;
+      cmaq) WRF_CMAQ=1  ;;
       kpp) WRF_KPP=1  ;;
       radardfi) WRF_DFI_RADAR=1  ;;
       wrfda) wrf_core=DA_CORE ;;
       4dvar) wrf_core=4D_DA_CORE ;;
       arw) wrf_core=EM_CORE  ;;
-      nmm) wrf_core=NMM_CORE  ;;
       coamps) wrf_core=COAMPS_CORE  ;;
       titan) WRF_TITAN=1 ; break ;;
       mars) WRF_MARS=1 ; break ;;
@@ -157,6 +157,45 @@ if test -n "$PERL" ; then
         PERL=""
     fi
     
+fi
+
+if [ -e $NETCDF/bin/nc-config ] ; then
+  ncversion=`nc-config --version | awk '{print $2}'` 
+else
+  ncversion=OLD
+fi
+
+PROBS=FALSE
+if [ -n "$NETCDFPAR" ] ; then
+  NETCDF="$NETCDFPAR"
+  if [ ! -e $NETCDF/bin/nc-config ] ; then
+    PROBS=TRUE
+  else
+    ncversion=`nc-config --version | awk '{print $2}'`
+    ncversiona=`echo $ncversion | cut -c 1`
+    ncversionb=`echo $ncversion | cut -c 3`
+    ncversionc=`echo $ncversion | cut -c 5`
+    ncversiona=`expr $ncversiona \* 100`
+    ncversionb=`expr $ncversionb \* 10`
+    ncversionabc=`expr $ncversiona   + $ncversionb`
+    ncversionabc=`expr $ncversionabc + $ncversionc`
+    if [ $ncversionabc -lt 474 ] ; then
+      PROBS=TRUE
+    fi
+  fi
+  if [ "$PROBS" == "TRUE" ] ; then
+    echo
+    echo Cannot activate NETCDFPAR with this version of NetCDF: $ncversion
+    echo You need NetCDF version 4.7.4 or newer
+    echo Use a newer version of NetCDF, or unset the env variable NETCDFPAR
+    echo
+    exit
+  fi
+  NETCDF4="1"
+  USENETCDFPAR="1"
+  export NETCDF
+  export NETCDF4
+  export USENETCDFPAR
 fi
 
 if  test -z "$NETCDF"  ; then
@@ -455,33 +494,18 @@ if [ -n "$PNETCDF_QUILT" ]; then
   echo Enabling quilt_pnc I/O server implementation.
   compileflags="${compileflags}!-DPNETCDF_QUILT=1"
 fi
-if [ -n "$WRF_NMM_CORE" ]; then
-  if [ $WRF_NMM_CORE = 1 ]; then
-    export WRF_NMM_NEST=1
-    if [ -n "$HWRF" ]; then
-      if [ $HWRF = 1 ]; then
-        echo building WRF with HWRF option
-        compileflags="${compileflags}!-DHWRF=1"
-        if [ -n "$IDEAL_NMM_TC" ]; then
-          echo building WRF with NMM Idealized Tropical Cyclone option
-          compileflags="${compileflags}!-DIDEAL_NMM_TC=1"
-        fi
-      fi
-    fi
-    if [ -n "$IBM_REDUCE_BUG_WORKAROUND" ]; then
-      if [ $IBM_REDUCE_BUG_WORKAROUND = 1 ]; then
-        echo adding IBM_REDUCE_BUG_WORKAROUND flag for some IBM systems
-        compileflags="${compileflags}!-DIBM_REDUCE_BUG_WORKAROUND"
-      fi
-    fi
-  fi
-fi
 if [ -n "$WRF_DFI_RADAR" ] ; then
   if [ $WRF_DFI_RADAR = 1 ] ; then
     echo building WRF with radar dfi option
     compileflags="${compileflags}!-DWRF_DFI_RADAR=1"
   fi
 fi
+
+if [ -n "$WRF_CMAQ" ] ; then
+  echo building WRF with CMAQ option
+  compileflags="${compileflags}!-DWRF_CMAQ"
+fi
+
 if [ -n "$WRF_CHEM" ] ; then
   if [ $WRF_CHEM = 1 ] ; then
     echo building WRF with chemistry option
@@ -504,16 +528,6 @@ if [ -n "$WRFPLUS" ] ; then
     echo building WRF for TL and AD
     compileflags="!-DWRFPLUS"
     echo $compileflags
-  fi
-fi
-
-if [ -n "$WRF_NMM_CORE" -a -n "$WRF_CHEM" ]; then
-  if [ $WRF_NMM_CORE = 1  -a  $WRF_CHEM = 1 ]; then
-    echo
-    echo "NMM is no longer compatible with the Chemistry option."
-    echo
-    # alphabetically: c=3, o=15, so co2 = 3+15+2 = 20
-    exit 20
   fi
 fi
 
@@ -552,7 +566,7 @@ if test -n "$PERL" ; then
    srch=`grep -i "^#ARCH.*$os" arch/configure.defaults | grep -i "$mach"`
    if [ -n "$srch" ] ; then
      $PERL arch/Config.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
-          -netcdf=$NETCDF -pnetcdf=$PNETCDF -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
+          -netcdf=$NETCDF -pnetcdf=$PNETCDF -netcdfpar=$NETCDFPAR -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
           -time=$FORTRAN_COMPILER_TIMER -tfl="$TFL" -cfl="$CFL" -config_line="$config_line" \
           -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -dep_lib_path="$DEP_LIB_PATH"
@@ -897,6 +911,16 @@ EOF
       echo "                 C compiler is $SCC_arch"
       echo "           Fortran compiler is $SFC_arch"
       echo "              It will build in $netcdf_arch"
+      echo " "
+      if [ -e $NETCDF/bin/nc-config ] ; then
+        echo "NetCDF version: ${ncversion}"
+        echo "Enabled NetCDF-4/HDF-5: `nc-config --has-nc4`"
+        echo "NetCDF built with PnetCDF: `nc-config --has-pnetcdf`"
+        if [ "$USENETCDFPAR" == "1" ] ; then
+          echo "Using parallel NetCDF via NETCDFPAR option"
+        fi
+        echo " "
+      fi
     fi
     echo
   fi
@@ -1009,13 +1033,11 @@ fi
 
 # testing for location of rpc/types.h file, used in landuse
 if [ -f /usr/include/rpc/types.h ] ; then
-  sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=1/' configure.wrf > configure.wrf.edit
+  sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=1 &/' configure.wrf > configure.wrf.edit
   mv configure.wrf.edit configure.wrf
-echo standard location of RPC
 elif [ -f /usr/include/tirpc/rpc/types.h ] ; then
-  sed -e '/^ARCH_LOCAL/s/$/ -DRPC_TYPES=2/' configure.wrf > configure.wrf.edit
+  sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=2 &/' configure.wrf > configure.wrf.edit
   mv configure.wrf.edit configure.wrf
-echo newer location of RPC
 else
   echo "************************** W A R N I N G ************************************"
   echo " "
@@ -1044,8 +1066,8 @@ if [ -n "$NETCDF4" ] ; then
       echo "--enable-netcdf4                                                             "
       echo
       echo "OR set NETCDF_classic variable                                               "
-      echo "   bash/ksh : export NETCDF_classic=1
-      echo "        csh : setenv NETCDF_classic 1
+      echo "   bash/ksh : export NETCDF_classic=1                                        "
+      echo "        csh : setenv NETCDF_classic 1                                        "
       echo 
       echo "Then re-run this configure script                                            "
       echo

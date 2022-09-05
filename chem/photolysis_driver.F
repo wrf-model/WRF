@@ -5,6 +5,7 @@
                dt_cld,af_dir,af_dn,af_up,par,erythema,                   &
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,              &
                chem,rho_phy,dz8w,xlat,xlong,z,z_at_w,gd_cloud,gd_cloud2, &
+               bl_cld,bl_cld2,                                           &
                ph_macr,ph_o31d,ph_o33p,ph_no2,                           &
                ph_clno2,                                                 &
                ph_no3o2,                                                 &
@@ -99,7 +100,7 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
          OPTIONAL,                                                     &
          INTENT(INOUT ) ::                                             &
-           gd_cloud,gd_cloud2
+           gd_cloud,gd_cloud2,bl_cld,bl_cld2
 !
 ! arrays that hold the aerosol optical properties
 !
@@ -225,6 +226,7 @@
                gmt, julday, t_phy, moist, aerwrf,                      &
                p8w, t8w, p_phy, chem, rho_phy,                         &
                dz8w, xlat, xlong, z, z_at_w, gd_cloud, gd_cloud2,      &
+               bl_cld,bl_cld2,                                         &
                tauaer1,tauaer2,tauaer3,tauaer4,                        &
                gaer1,gaer2,gaer3,gaer4,                                &
                waer1,waer2,waer3,waer4,                                &

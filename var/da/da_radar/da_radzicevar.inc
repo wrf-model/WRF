@@ -133,7 +133,6 @@ subroutine da_radzicevar(qvp0,qra0,qsn0,qgr0,qnr0,qns0,qng0,tmk0,prs,dbz,       
   integer        :: temi01,temi02,temi03    ! temporary variable for integer
 
   real           :: para_pr,para_pdx_dq,para_pdx_df        ! for 
-  real           :: tc
 
   !---------------------------------------------------------------------------------
 
@@ -161,17 +160,6 @@ subroutine da_radzicevar(qvp0,qra0,qsn0,qgr0,qnr0,qns0,qng0,tmk0,prs,dbz,       
 !  if(qra0<qthres) qra=qthres
 !  if(qsn0<qthres) qsn=qthres
 !  if(qgr0<qthres) qgr=qthres
-
-  tc=tmk-273.15
-  if(tc<=0.0) then
-    qra=max(qthres*(1+exp(-(tc-5.0)**2/6.25)),qra)
-    qsn=max(qthres*2,qsn)
-    qgr=max(qthres*2,qgr)
-  else
-    qra=max(qthres*2,qra)
-    qsn=max(qthres*(1+exp(-(tc-5.0)**2/6.25)),qsn)
-    qgr=max(qthres*(1+exp(-(tc-5.0)**2/6.25)),qgr)
-  endif
 
   if(tlopt>=1.and.gropt>=1) then
     dqra=0
@@ -408,7 +396,7 @@ subroutine da_radzicevar(qvp0,qra0,qsn0,qgr0,qnr0,qns0,qng0,tmk0,prs,dbz,       
 ! Convert to dBZ
 !-------------------------------------
   if(tlopt==0) then
-     dbz = max(-15.0,10. * log10(z_e))
+     dbz = 10. * log10(z_e)
   endif
 ! save z_e mm^6 mm^-3
   zmm=z_e

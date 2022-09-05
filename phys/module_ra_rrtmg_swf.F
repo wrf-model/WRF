@@ -11225,7 +11225,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                        coszr, julday, solcon,                     &
                        albedo, t3d, t8w, tsk,                     &
                        p3d, p8w, pi3d, rho3d,                     &
-                       dz8w, cldfra3d, lradius, iradius,          & 
+                       dz8w, cldfra3d, ghg_input,                 &
+                       lradius, iradius,                          & 
                        is_cammgmp_used, r, g,                     &
                        re_cloud,re_ice,re_snow,                   &
                        has_reqc,has_reqi,has_reqs,                &
@@ -11259,6 +11260,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                        xcoszen,yr,julian                          & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
+      USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
       IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
@@ -11268,7 +11270,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte
 
-   INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        ICLOUD, GHG_INPUT
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -11523,16 +11525,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
     integer:: idx_rei
     real:: corr
 
+    real(kind=8)                                 :: co2, n2o, ch4, cfc11, cfc12
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
-! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
-    real :: co2
-!   data co2 / 379.e-6 /
-! methane (1774 ppbv)
-    real :: ch4
-    data ch4 / 1774.e-9 / 
-! nitrous oxide (319 ppbv)
-    real :: n2o
-    data n2o / 319.e-9 / 
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -11605,9 +11599,10 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! mji - write
 !    REAL, DIMENSION( ims:ime, jms:jme ) ::         SWDB, SWUT
 
+    CHARACTER(LEN=256) :: message
+    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
 !------------------------------------------------------------------
-! Annual function for co2 in WRF v4.2
-      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &
@@ -11643,6 +11638,24 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !                                                              
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
+!
+! Read time-varying trace gases concentrations and interpolate them to run date.
+   IF ( GHG_INPUT .EQ. 1 ) THEN
+      CALL read_CAMgases(yr,julian,.false.,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+      IF ( wrf_dm_on_monitor() ) THEN
+        WRITE(message,*)'RRTMG SWF CLWRF interpolated GHG values year:',yr,' julian day:',julian
+        call wrf_debug( 1, message)
+        WRITE(message,*)'  co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
+        call wrf_debug( 1, message)
+      END IF
+   ELSE
+! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
+! Annual function for co2 in WRF v4.2
+      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+!     co2 = 379.e-6
+      ch4 = 1774.e-9
+      n2o = 319.e-9
+   END IF
 
 ! jararias, 14/08/2013
       if (present(xcoszen)) then
@@ -12104,9 +12117,11 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 
            if(iceflgsw.eq.5)then
               do k = kts, kte
-                 snow_mass_factor = 1.0                 
+                 snow_mass_factor = 0.99        ! Assume 1% of snow overlaps the cloud ice category
+                 gicewp = gicewp + (qs1d(k)*(1.0-snow_mass_factor) * pdel(ncol,k)*100.0 / gravmks * 1000.0)
                  if (resnow1d(icol,k) .gt. 130.)then 
-                     snow_mass_factor = (130.0/resnow1d(icol,k))*(130.0/resnow1d(icol,k))
+                     snow_mass_factor = MIN(snow_mass_factor,                       &
+     &                         (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k)))
                      resnow1d(icol,k)   = 130.0
                  endif
                  gsnowp = qs1d(k) * snow_mass_factor * pdel(icol,k)*100.0 / gravmks * 1000.0     ! Grid box snow water path.

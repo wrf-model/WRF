@@ -32,13 +32,6 @@ CONTAINS
       kid_ret = 0
       nests_to_open = .false.
       CALL nl_get_max_dom( 1, max_dom )
-#if (NMM_CORE == 1)
-# if (NMM_NEST == 0)
-      IF ( max_dom > 1 ) THEN
-        CALL wrf_error_fatal( 'WRF-NMM compiled without nesting; set max_dom to 1 in namelist.input' )
-      END IF
-# endif
-#endif
       DO nestid = 2, max_dom
         CALL nl_get_grid_allowed( nestid, grid_allowed )
         IF ( .NOT. active_domain( nestid ) .AND. grid_allowed ) THEN

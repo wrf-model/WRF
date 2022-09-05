@@ -22,6 +22,7 @@ module module_levelpool
     use module_reservoir, only: reservoir, reservoir_input, &
                                      reservoir_output
     use module_hydro_stop, only: HYDRO_stop
+    use iso_fortran_env, only: int64
 
 #ifdef RESERVOIR_D
     use module_reservoir_utilities, only: create_levelpool_diagnostic_log_file, &
@@ -68,7 +69,7 @@ contains
         real, intent(in)    :: orifice_coefficient       ! orifice coefficient
         real, intent(in)    :: orifice_area              ! orifice area (meters^2)
         real, intent(in)    :: max_depth                 ! max depth of reservoir before overtop (meters)
-        integer, intent(in) :: lake_number               ! lake number
+        integer(kind=int64), intent(in) :: lake_number               ! lake number
         character(len=15)   :: lake_number_string
 
 #ifdef RESERVOIR_D
@@ -236,7 +237,7 @@ contains
         real, intent(IN)    :: oc      ! orifice coeff.
         real, intent(IN)    :: oa      ! orifice area (m^2)
         real, intent(IN)    :: maxh    ! max depth of reservoir before overtop (m)
-        integer, intent(IN) :: ln      ! lake number
+        integer(kind=int64), intent(IN) :: ln      ! lake number
 
         !!DJG Add lake option switch here...move up to namelist in future versions...
         integer :: LAKE_OPT            ! Lake model option (move to namelist later)

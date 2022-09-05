@@ -1374,7 +1374,7 @@
 
       use parkind, only : im => kind_im, rb => kind_rb
       use parrrsw, only : nbndsw, ngptsw
-      use rrsw_con, only: grav
+      use rrsw_con, only: grav, pi
       use rrsw_wvn, only: ngb
       use rrsw_vsn
 
@@ -1389,9 +1389,12 @@
 ! Public subroutines
 !------------------------------------------------------------------
 
-! mji - Add height needed for exponential-ranom cloud overlap method (icld=4)
-      subroutine mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, hgt, &
+! mji - Add height needed for exponential and exponential-random cloud overlap methods 
+!       (icld=4 and 5, respectively) along with idcor, juldat and lat used to specify
+!       the decorrelation length for these methods
+      subroutine mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
                        cldfrac, ciwp, clwp, cswp, rei, rel, res, tauc, ssac, asmc, fsfc, &
+                       hgt, idcor, juldat, lat, &
                        cldfmcl, ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, &
                        taucmcl, ssacmcl, asmcmcl, fsfcmcl)
 
@@ -1438,6 +1441,9 @@
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(in) :: res(:,:)           ! cloud snow particle size
                                                       !    Dimensions: (ncol,nlay)
+      integer(kind=im), intent(in) :: idcor           ! Decorrelation length type
+      integer(kind=im), intent(in) :: juldat          ! Julian date (day of year, 1-365)
+      real(kind=rb),    intent(in) :: lat             ! latitude (degrees, -90 to 90)
 
 ! ----- Output -----
 ! Atmosphere/clouds - cldprmc [mcica]
@@ -1475,6 +1481,14 @@
 !      real(kind=rb) :: qi(ncol,nlay)                 ! ice water (specific humidity)
 !      real(kind=rb) :: ql(ncol,nlay)                 ! liq water (specific humidity)
 
+! MJI - For latitude dependent decorrelation length
+       real(kind=rb), parameter :: am1 = 1.4315_rb
+       real(kind=rb), parameter :: am2 = 2.1219_rb
+       real(kind=rb), parameter :: am4 = -25.584_rb
+       real(kind=rb), parameter :: amr = 7._rb
+       real(kind=rb) :: am3
+       real(kind=rb) :: decorr_len(ncol)              ! decorrelation length (meters)
+       real(kind=rb), parameter :: Zo_default = 2500._rb  ! default constant decorrelation length (m)
 
 ! Return if clear sky
       if (icld.eq.0) return
@@ -1505,17 +1519,39 @@
 !         ql(ilev) = (clwp(ilev) * grav) / (pdel(ilev) * 1000._rb)
 !      enddo
 
+! MJI - Latitude and day of year dependent decorrelation length
+      if (idcor .eq. 1) then
+! Derive decorrelation length based on day of year and latitude (from NASA GMAO method)
+! Result is in meters
+         if (juldat .gt. 181) then
+            am3 = -4._rb * amr / 365._rb * (juldat-272)
+         else
+            am3 = 4._rb * amr / 365._rb * (juldat-91)
+         endif
+! Latitude in radians, decorrelation length in meters
+!         decorr_len(:) = ( am1 + am2 * exp(-(lat*180._rb/pi - am3)**2 / (am4*am4)) ) * 1.e3_rb
+! Latitude in degrees, decorrelation length in meters
+         decorr_len(:) = ( am1 + am2 * exp(-(lat - am3)**2 / (am4*am4)) ) * 1.e3_rb
+      else
+! Spatially and temporally constant decorrelation length
+         decorr_len(:) = Zo_default
+      endif
+
 !  Generate the stochastic subcolumns of cloud optical properties for the shortwave;
-      call generate_stochastic_clouds_sw (ncol, nlay, nsubcsw, icld, irng, pmid, hgt, cldfrac, clwp, ciwp, cswp, &
-                               tauc, ssac, asmc, fsfc, cldfmcl, clwpmcl, ciwpmcl, cswpmcl, &
+      call generate_stochastic_clouds_sw (ncol, nlay, nsubcsw, icld, irng, pmid, cldfrac, clwp, ciwp, cswp, &
+                               tauc, ssac, asmc, fsfc, &
+                               hgt, decorr_len, &
+                               cldfmcl, clwpmcl, ciwpmcl, cswpmcl, &
                                taucmcl, ssacmcl, asmcmcl, fsfcmcl, permuteseed)
 
       end subroutine mcica_subcol_sw
 
 
 !-------------------------------------------------------------------------------------------------
-      subroutine generate_stochastic_clouds_sw(ncol, nlay, nsubcol, icld, irng, pmid, hgt, cld, clwp, ciwp, cswp, &
-                               tauc, ssac, asmc, fsfc, cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch,        &
+      subroutine generate_stochastic_clouds_sw(ncol, nlay, nsubcol, icld, irng, pmid, cld, clwp, ciwp, cswp, &
+                               tauc, ssac, asmc, fsfc, &
+                               hgt, decorr_len, &
+                               cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch,        &
                                tauc_stoch, ssac_stoch, asmc_stoch, fsfc_stoch, changeSeed) 
 !-------------------------------------------------------------------------------------------------
 
@@ -1612,6 +1648,8 @@
                                                       !    Dimensions: (nbndsw,ncol,nlay)
       real(kind=rb), intent(in) :: fsfc(:,:,:)        ! in-cloud forward scattering fraction (non-delta scaled)
                                                       !    Dimensions: (nbndsw,ncol,nlay)
+      real(kind=rb), intent(in) :: decorr_len(:)      ! decorrelation length (meters)
+                                                      !    Dimensions: (ncol)
 
       real(kind=rb), intent(out) :: cld_stoch(:,:,:)  ! subcolumn cloud fraction 
                                                       !    Dimensions: (ngptsw,ncol,nlay)
@@ -1647,7 +1685,7 @@
       integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum-random,
                                                       ! 3 = maximum overlap, 4 = exponential,
                                                       ! 5 = exponential-random
-      real(kind=rb), parameter  :: Zo = 2500._rb      ! length scale (m) 
+      real(kind=rb)                   :: Zo_inv(ncol) ! inverse of decorrelation length scale (m)
       real(kind=rb), dimension(ncol,nlay) :: alpha    ! overlap parameter
 
 ! Constants (min value for cloud fraction and cloud water and ice)
@@ -1674,6 +1712,7 @@
 
 ! Pass input cloud overlap setting to local variable
       overlap = icld
+      Zo_inv(:) = 1._rb / decorr_len(:)
 
 ! Ensure that cloud fractions are in bounds 
       do ilev = 1, nlay
@@ -1797,8 +1836,8 @@
 
 ! mji - Activate exponential cloud overlap option
          case(4)
-            ! Exponential overlap: weighting between maximum and random overlap increases with the distance.
-            ! The random numbers for exponential overlap verify:
+            ! Exponential overlap: transition from maximum to random cloud overlap increases 
+            ! exponentially with layer thickness and distance through layers
             ! j=1   RAN(j)=RND1
             ! j>1   if RND1 < alpha(j,j-1) => RAN(j) = RAN(j-1)
             !                                 RAN(j) = RND2
@@ -1809,7 +1848,7 @@
             do i = 1, ncol
                alpha(i, 1) = 0._rb
                do ilev = 2,nlay
-                  alpha(i, ilev) = exp( -( hgt (i, ilev) -  hgt (i, ilev-1)) / Zo)
+                  alpha(i, ilev) = exp( -(hgt(i,ilev) - hgt(i,ilev-1)) * Zo_inv(i))
                enddo
             enddo
 
@@ -1845,8 +1884,55 @@
 
 ! mji - Exponential-random cloud overlap option
          case(5)
-            ! Exponential-random overlap:
-            call wrf_error_fatal("Cloud Overlap case 5: ER has not yet been implemented. Stopping...") 
+       ! Exponential_Random overlap: transition from maximum to random cloud overlap increases 
+       ! exponentially with layer thickness and with distance through adjacent cloudy layers. 
+       ! Non-adjacent blocks of clouds are treated randomly, and each block begins a new 
+       ! exponential transition from maximum to random. 
+       !
+       ! compute alpha: bottom to top
+       ! - set alpha to 0 in bottom layer (no layer below for correlation)
+       do i = 1, ncol
+          alpha(i, 1) = 0._rb
+          do ilev = 2,nlay
+             alpha(i, ilev) = exp( -(hgt(i,ilev) - hgt(i,ilev-1) ) * Zo_inv(i))
+          ! Decorrelate layers when clear layer follows a cloudy layer to enforce
+          ! random correlation between non-adjacent cloudy layers
+             if (cldf(i,ilev) .eq. 0.0_rb .and. cldf(i,ilev-1) .gt. 0.0_rb) then 
+                alpha(i,ilev) = 0.0_rb
+             endif
+          end do
+       end do
+       
+       ! generate 2 streams of random numbers
+       ! CDF2 is used to select which sub-columns are vertically correlated relative to alpha
+       ! CDF  is used to select which sub-columns are treated as cloudy relative to cloud fraction
+       if (irng.eq.0) then 
+          do isubcol = 1,nsubcol
+             do ilev = 1,nlay
+                call kissvec(seed1, seed2, seed3, seed4, rand_num)
+                CDF(isubcol, :, ilev) = rand_num
+                call kissvec(seed1, seed2, seed3, seed4, rand_num)
+                CDF2(isubcol, :, ilev) = rand_num
+             end do
+          end do
+       elseif (irng.eq.1) then
+          do isubcol = 1, nsubcol
+             do i = 1, ncol
+                do ilev = 1,nlay
+                   rand_num_mt = getRandomReal(randomNumbers)
+                   CDF(isubcol,i,ilev) = rand_num_mt
+                   rand_num_mt = getRandomReal(randomNumbers)
+                   CDF2(isubcol,i,ilev) = rand_num_mt
+                enddo
+             enddo
+          enddo
+       endif
+       ! generate vertical correlations in random number arrays - bottom to top
+       do ilev = 2,nlay
+          where (CDF2(:, :, ilev) < spread(alpha (:,ilev), dim=1, nCopies=nsubcol) )
+             CDF(:,:,ilev) = CDF(:,:,ilev-1) 
+          end where
+       end do
 
       end select
 
@@ -8769,8 +8855,9 @@
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
              swdkdir,swdkdif,                               & ! jararias, 2013/08/10
-             swdkdirc                                       & ! PAJ
-             ,calc_clean_atm_diag                          &
+             swdkdirc,                                      & ! PAJ
+             calc_clean_atm_diag,                           &
+             sw_zbbcddir, sw_dirdflux, sw_difdflux          & ! WRF-CMAQ twoway coupled model
                                                                 )
 
 
@@ -9003,6 +9090,10 @@
         swdkdir(:,:), & ! Total shortwave downward direct flux (W/m2),  Dimensions: (ncol,nlay) jararias, 2013/08/10
         swdkdif(:,:), & ! Total shortwave downward diffuse flux (W/m2), Dimensions: (ncol,nlay) jararias, 2013/08/10
         swdkdirc(:,:)   ! Total shortwave downward direct flux clear sky (W/m2),  Dimensions: (ncol,nlay)
+
+      real, intent(out) :: sw_zbbcddir,   &  ! WRF-CMAQ twoway coupled model
+                           sw_dirdflux,   &  ! WRF-CMAQ twoway coupled model
+                           sw_difdflux       ! WRF-CMAQ twoway coupled model
 
 
 
@@ -9508,6 +9599,12 @@
 ! End longitude loop
       enddo
 
+! begin WRF-CMAQ twoway coupled model block
+      sw_zbbcddir = zbbcddir(1)
+      sw_dirdflux = dirdflux(1)
+      sw_difdflux = difdflux(1)
+! end WRF-CMAQ twoway coupled model block
+
       end subroutine rrtmg_sw
 
 !*************************************************************************
@@ -9915,6 +10012,7 @@ use mcica_subcol_gen_sw, only: mcica_subcol_sw
 use module_ra_rrtmg_lw, only : inirad, o3data, relcalc, reicalc, retab
 !                               mcica_random_numbers, randomNumberSequence, &
 !                               new_RandomNumberSequence, getRandomReal
+use module_ra_rrtmg_sw_cmaq
 
 CONTAINS
 
@@ -9936,7 +10034,7 @@ CONTAINS
                        re_cloud,re_ice,re_snow,                   &
                        has_reqc,has_reqi,has_reqs,                &
                        icloud, warm_rain,                         &
-                       cldovrlp,                                  & ! J. Henderson AER: cldovrlp namelist value
+                       cldovrlp,idcor,                            & ! J. Henderson AER: cldovrlp namelist value
                        f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
@@ -9965,10 +10063,29 @@ CONTAINS
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,yr,julian,                          & ! jararias 2013/08
-                       obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
+                       xcoszen,yr,julian,ghg_input,               & ! jararias 2013/08
+                       obscur,                                    & ! amontornes-bcodina 2015/09 solar eclipses
+                       proceed_cmaq_sw,                           & ! WRF-CMAQ twoway coupled model
+                       nmode,                                     & ! WRF-CMAQ twoway coupled model
+                       mass_ws_i, mass_ws_j, mass_ws_k,           & ! WRF-CMAQ twoway coupled model
+                       mass_in_i, mass_in_j, mass_in_k,           & ! WRF-CMAQ twoway coupled model
+                       mass_ec_i, mass_ec_j, mass_ec_k,           & ! WRF-CMAQ twoway coupled model
+                       mass_ss_i, mass_ss_j, mass_ss_k,           & ! WRF-CMAQ twoway coupled model
+                       mass_h2o_i, mass_h2o_j, mass_h2o_k,        & ! WRF-CMAQ twoway coupled model
+                       dgn_i, dgn_j, dgn_k,                       & ! WRF-CMAQ twoway coupled model
+                       sig_i, sig_j, sig_k,                       & ! WRF-CMAQ twoway coupled model
+                       gtauxar_01, gtauxar_02, gtauxar_03,        & ! WRF-CMAQ twoway coupled model
+                       gtauxar_04, gtauxar_05,                    & ! WRF-CMAQ twoway coupled model
+                       asy_fac_01, asy_fac_02, asy_fac_03,        & ! WRF-CMAQ twoway coupled model
+                       asy_fac_04, asy_fac_05,                    & ! WRF-CMAQ twoway coupled model
+                       ssa_01, ssa_02, ssa_03,                    & ! WRF-CMAQ twoway coupled model
+                       ssa_04, ssa_05                             & ! WRF-CMAQ twoway coupled model
+                       ,sw_zbbcddir                               & ! WRF-CMAQ twoway coupled model
+                       ,sw_dirdflux                               & ! WRF-CMAQ twoway coupled model
+                       ,sw_difdflux                               & ! WRF-CMAQ twoway coupled model
                        )
 !------------------------------------------------------------------
+   USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
@@ -9978,7 +10095,7 @@ CONTAINS
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte
 
-   INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        ICLOUD, GHG_INPUT
    INTEGER, INTENT(IN )      ::        MP_PHYSICS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
@@ -10136,6 +10253,49 @@ CONTAINS
 !  obscur --> degree of obscuration for solar eclipses prediction (2D)
                                REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: obscur	
 
+! begin WRF-CMAQ twoway coupled model block
+   LOGICAL, INTENT(IN) :: proceed_cmaq_sw
+
+! ** FSB items needed for new aerosol code from CMAQ
+   integer, optional, intent(in)  ::  nmode  ! number of log-normal modes
+
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(in) :: &
+         mass_ws_i, mass_ws_j, mass_ws_k,                  & ! mass cocentrations in [ ug/m**3 ] for water
+                                                             ! soluble species in each mode
+         mass_in_i, mass_in_j, mass_in_k,                  & ! mass cocentrations in [ ug/m**3 ] for water
+                                                             ! insoluble species in each mode
+         mass_ec_i, mass_ec_j, mass_ec_k,                  & ! mass cocentrations in [ ug/m**3 ] for elemental
+                                                             ! carbon species in each mode
+         mass_ss_i, mass_ss_j, mass_ss_k,                  & ! mass cocentrations in [ ug/m**3 ] for aerosol
+                                                             ! water species in each mode
+         mass_h2o_i, mass_h2o_j, mass_h2o_k,               & ! mass cocentrations in [ ug/m**3 ] for sea
+                                                             ! salt species in each mode
+         dgn_i, dgn_j, dgn_k,                              & ! geometric mean diameter of each mode  [ m ]
+         sig_i, sig_j, sig_k                                 ! geometric standard deviation of each mode
+
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(out) :: &
+         gtauxar_01,                                       & ! Aerosol optical depth of RRTMG SW band 11
+         gtauxar_02,                                       & ! Aerosol optical depth of RRTMG SW band 10
+         gtauxar_03,                                       & ! Aerosol optical depth of RRTMG SW band  9
+         gtauxar_04,                                       & ! Aerosol optical depth of RRTMG SW band  8
+         gtauxar_05,                                       & ! Aerosol optical depth of RRTMG SW band  7
+         asy_fac_01,                                       & ! asymmetry factor of RRTMG SW band 11
+         asy_fac_02,                                       & ! asymmetry factor of RRTMG SW band 10
+         asy_fac_03,                                       & ! asymmetry factor of RRTMG SW band  9
+         asy_fac_04,                                       & ! asymmetry factor of RRTMG SW band  8
+         asy_fac_05,                                       & ! asymmetry factor of RRTMG SW band  7
+         ssa_01,                                           & ! single scattering albedo of RRTMG SW band 11
+         ssa_02,                                           & ! single scattering albedo of RRTMG SW band 10
+         ssa_03,                                           & ! single scattering albedo of RRTMG SW band  9
+         ssa_04,                                           & ! single scattering albedo of RRTMG SW band  8
+         ssa_05                                              ! single scattering albedo of RRTMG SW band  7
+
+   REAL, DIMENSION( ims:ime, jms:jme ), optional, INTENT(OUT) :: &
+         sw_zbbcddir,                                      &  ! clearsky downward direct shortwave flux (w/m2)
+         sw_dirdflux,                                      &  ! Direct downward shortwave surface flux
+         sw_difdflux                                          ! Diffuse downward shortwave surface flux
+! end WRF-CMAQ twoway coupled model block
+
 !  LOCAL VARS
  
    REAL, DIMENSION( kts:kte+1 ) ::                          Pw1D, &
@@ -10165,9 +10325,14 @@ CONTAINS
                                                             nlay, &
                                                             icld, &
                                                         cldovrlp, & ! J. Henderson AER
+                                                           idcor, &
+                                                          juldat, &
                                                          inflgsw, &
                                                         iceflgsw, &
                                                         liqflgsw
+! Latitude 
+    real                                          ::         lat
+
 ! Dimension with extra layer from model top to TOA
     real, dimension( 1, kts:kte+2 )  ::                     plev, &
                                                             tlev
@@ -10251,16 +10416,8 @@ CONTAINS
     integer:: idx_rei
     real:: corr
 
-! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
-! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
-    real :: co2
-!   data co2 / 379.e-6 /
-! methane (1774 ppbv)
-    real :: ch4
-    data ch4 / 1774.e-9 / 
-! nitrous oxide (319 ppbv)
-    real :: n2o
-    data n2o / 319.e-9 / 
+! Using data from CAMtr_volume_mixing_ratio data file
+    real(kind=8)                                 :: co2, n2o, ch4, cfc11, cfc12
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -10324,9 +10481,38 @@ CONTAINS
 
     REAL :: da, eot ! jararias, 14/08/2013
 
+! begin WRF-CMAQ twoway coupled model block
+#if ( WRF_CMAQ == 1 )
+    REAL, DIMENSION (3) :: INMASS_ws,  &  ! holds mass cocentrations in [ ug/m**3 ] for 
+                                          ! water soluble species in all three modes
+                           INMASS_in,  &  ! holds mass cocentrations in [ ug/m**3 ] for
+                                          ! water insoluble species in all three modes
+                           INMASS_ec,  &  ! holds mass cocentrations in [ ug/m**3 ] for
+                                          ! elemental carbon species in all three modes
+                           INMASS_ss,  &  ! holds mass cocentrations in [ ug/m**3 ] for
+                                          ! aerosol water species in all three modes
+                           INMASS_h2o, &  ! holds mass cocentrations in [ ug/m**3 ] for
+                                          ! sea salt species in all three modes
+                           INDGN,      &  ! holds geometric mean diameter in all three modes
+                           INSIG          ! holds geometric standard deviation in all three modes
+#endif
+    REAL :: xtauaer,                   &  ! temporary variable for Aerosol Optical Depth
+            waer,                      &  ! temporary variable for single scattering albedo
+            gaer,                      &  ! temporary variable for symmetry factor
+            delta_z,                   &  ! layer thickness
+            loc_sw_zbbcddir,           &  ! clearsky downward direct shortwave flux (w/m2)
+            loc_sw_dirdflux,           &  ! Direct downward shortwave surface flux
+            loc_sw_difdflux               ! Diffuse downward shortwave surface flux
+
+    INTEGER :: modes                      ! number of modes
+
+    character (len = 50) :: mystr         ! temporary character string
+! end WRF-CMAQ twoway coupled model block
+
+    CHARACTER(LEN=256) :: message
+    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
 !------------------------------------------------------------------
-! Annual function for co2 in WRF v4.2
-      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &
@@ -10350,6 +10536,24 @@ CONTAINS
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
+! Read time-varying trace gases concentrations and interpolate them to run date
+   IF ( GHG_INPUT .EQ. 1 ) THEN
+      CALL read_CAMgases(yr,julian,.false.,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+      IF ( wrf_dm_on_monitor() ) THEN
+        WRITE(message,*)'RRTMG SW CLWRF interpolated GHG values year:',yr,' julian day:',julian
+        call wrf_debug( 1, message)
+        WRITE(message,*)'  co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
+        call wrf_debug( 1, message)
+      END IF
+   ELSE
+! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
+! Annual function for co2 in WRF v4.2
+      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+!     co2 = 379.e-6
+      ch4 = 1774.e-9
+      n2o = 319.e-9
+   END IF
+
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
 
@@ -10543,6 +10747,8 @@ CONTAINS
 
 ! Select cloud overlap assumption (1 = random, 2 = maximum-random, 3 = maximum, 4 = exponential, 5 = exponential-random
          icld=cldovrlp ! J. Henderson AER assign namelist variable cldovrlp to existing icld
+! Set julian date
+         juldat = julian
 
 ! Select cloud liquid and ice optics parameterization options
 ! For passing in cloud optical properties directly:
@@ -10838,9 +11044,11 @@ CONTAINS
 
            if(iceflgsw.eq.5)then
               do k = kts, kte
-                 snow_mass_factor = 1.0                 
+                 snow_mass_factor = 0.99        ! Assume 1% of snow overlaps the cloud ice category
+                 gicewp = gicewp + (qs1d(k)*(1.0-snow_mass_factor) * pdel(ncol,k)*100.0 / gravmks * 1000.0)
                  if (resnow1d(ncol,k) .gt. 130.)then 
-                     snow_mass_factor = (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k))
+                     snow_mass_factor = MIN(snow_mass_factor,                       &
+     &                         (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k)))
                      resnow1d(ncol,k)   = 130.0
                  endif
                  gsnowp = qs1d(k) * snow_mass_factor * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box snow water path.
@@ -11004,9 +11212,10 @@ CONTAINS
          permuteseed = 1
 
 ! Sub-column generator for McICA
-! mji - Add layer height needed for exponential (icld=4) and exponential-random (icld=5) overlap options
-         call mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, hgt, &
+         lat = XLAT(i,j) !retrieve scalar latitude for column calculation
+         call mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
                        cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, ssacld, asmcld, fsfcld, &
+                       hgt, idcor, juldat, lat, &
                        cldfmcl, ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, &
                        taucmcl, ssacmcl, asmcmcl, fsfcmcl)
 
@@ -11026,6 +11235,91 @@ CONTAINS
 
 ! ... Aerosol effects. Added aerosol feedbacks from Chem , 03/2010 -czhao
 !
+#if ( WRF_CMAQ == 1 )
+      do nb = 1, nbndsw
+         do k = kts,kte+1
+            tauaer(ncol,k,nb) = 0.
+            ssaaer(ncol,k,nb) = 1.
+            asmaer(ncol,k,nb) = 0.
+
+            if (proceed_cmaq_sw) then
+               INMASS_ws(1)  = mass_ws_i(i,k,j)
+               INMASS_ws(2)  = mass_ws_j(i,k,j)
+               INMASS_ws(3)  = mass_ws_k(i,k,j)
+               INMASS_in(1)  = mass_in_i(i,k,j)
+               INMASS_in(2)  = mass_in_j(i,k,j)
+               INMASS_in(3)  = mass_in_k(i,k,j)
+               INMASS_ec(1)  = mass_ec_i(i,k,j)
+               INMASS_ec(2)  = mass_ec_j(i,k,j)
+               INMASS_ec(3)  = mass_ec_k(i,k,j)
+               INMASS_ss(1)  = mass_ss_i(i,k,j)
+               INMASS_ss(2)  = mass_ss_j(i,k,j)
+               INMASS_ss(3)  = mass_ss_k(i,k,j)
+               INMASS_h2o(1) = mass_h2o_i(i,k,j)
+               INMASS_h2o(2) = mass_h2o_j(i,k,j)
+               INMASS_h2o(3) = mass_h2o_k(i,k,j)
+               INDGN(1)      = dgn_i(i,k,j)
+               INDGN(2)      = dgn_j(i,k,j)
+               INDGN(3)      = dgn_k(i,k,j)
+               INSIG(1)      = sig_i(i,k,j)
+               INSIG(2)      = sig_j(i,k,j)
+               INSIG(3)      = sig_k(i,k,j)
+
+               delta_z    = dz8w(i,k,j)
+
+               call get_aerosol_Optics_RRTMG_SW( nb,nmode,delta_z,    &
+                     INMASS_ws, INMASS_in, INMASS_ec, INMASS_ss,      &
+                     INMASS_h2o,  INDGN, INSIG,                       &
+                     xtauaer, waer, gaer  )
+
+               write (mystr, *) xtauaer
+               if (trim(mystr) == ' NaN') then
+                  write (6, '(a13, 2i5)')     ' ==d==       ', nb, nmode
+                  write (6, '(a13, 5e18.10)') ' ==d== delta ', delta_z
+                  write (6, '(a13, 5e18.10)') ' ==d== ws    ', INMASS_ws
+                  write (6, '(a13, 5e18.10)') ' ==d== in    ', INMASS_in
+                  write (6, '(a13, 5e18.10)') ' ==d== ec    ', INMASS_ec
+                  write (6, '(a13, 5e18.10)') ' ==d== ss    ', INMASS_ss
+                  write (6, '(a13, 5e18.10)') ' ==d== h2o   ', INMASS_h2o
+                  write (6, '(a13, 5e18.10)') ' ==d== indgn ', INDGN
+                  write (6, '(a13, 5e18.10)') ' ==d== insig ', INSIG
+               end if
+
+               if (nb == 11) then
+                  gtauxar_01 (i,k,j) = xtauaer
+                  asy_fac_01 (i,k,j) = gaer
+                  ssa_01 (i,k,j)     = waer
+               else if (nb == 10) then
+                  gtauxar_02 (i,k,j) = xtauaer
+                  asy_fac_02 (i,k,j) = gaer
+                  ssa_02 (i,k,j)     = waer
+               else if (nb == 9) then
+                  gtauxar_03 (i,k,j) = xtauaer
+                  asy_fac_03 (i,k,j) = gaer
+                  ssa_03 (i,k,j)     = waer
+               else if (nb == 8) then
+                  gtauxar_04 (i,k,j) = xtauaer
+                  asy_fac_04 (i,k,j) = gaer
+                  ssa_04 (i,k,j)     = waer
+               else if (nb == 7) then
+                  gtauxar_05 (i,k,j) = xtauaer
+                  asy_fac_05 (i,k,j) = gaer
+                  ssa_05 (i,k,j)     = waer
+               end if
+
+               tauaer(ncol,k,nb) = xtauaer
+               ssaaer(ncol,k,nb) = waer
+               asmaer(ncol,k,nb) = gaer
+            end if
+         enddo ! loop over layers
+         if (proceed_cmaq_sw) then
+! No aerosols in top layer above model top (kte+1).
+            tauaer(ncol, kte+1 ,nb) = 0.
+            ssaaer(ncol, kte+1 ,nb) = 1.
+            asmaer(ncol, kte+1 ,nb) = 0.
+         end if
+      enddo ! loop over wavelengths
+#else
       do nb = 1, nbndsw
       do k = kts,kte+1
          tauaer(ncol,k,nb) = 0.
@@ -11044,6 +11338,7 @@ CONTAINS
                end do
             end do
       end if
+#endif
 
 #if ( WRF_CHEM == 1 )
    IF ( AER_RA_FEEDBACK == 1) then
@@ -11173,8 +11468,17 @@ CONTAINS
              swdkdir, swdkdif,                     &  ! jararias, 2012/08/10
              swdkdirc                              &  ! PAJ
              ,calc_clean_atm_diag                 &
+             ,loc_sw_zbbcddir                      &  ! WRF-CMAQ twoway coupled model
+             ,loc_sw_dirdflux                      &  ! WRF-CMAQ twoway coupled model
+             ,loc_sw_difdflux                      &  ! WRF-CMAQ twoway coupled model
                                                    )
 
+         ! WRF-CMAQ twoway coupled model
+         if (present(sw_zbbcddir)) then
+            sw_zbbcddir(i,j) = loc_sw_zbbcddir
+            sw_dirdflux(i,j) = loc_sw_dirdflux
+            sw_difdflux(i,j) = loc_sw_difdflux
+         end if
 
 ! Output net absorbed shortwave surface flux and shortwave cloud forcing
 ! at the top of atmosphere (W/m2)
@@ -11232,6 +11536,25 @@ CONTAINS
             rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
       else
+
+         if (proceed_cmaq_sw) then   ! this is for WRF-CMAQ twoway coupled model
+            gtauxar_01 (i,:,j) = 0.0
+            gtauxar_02 (i,:,j) = 0.0
+            gtauxar_03 (i,:,j) = 0.0
+            gtauxar_04 (i,:,j) = 0.0
+            gtauxar_05 (i,:,j) = 0.0
+            asy_fac_01 (i,:,j) = 0.0
+            asy_fac_02 (i,:,j) = 0.0
+            asy_fac_03 (i,:,j) = 0.0
+            asy_fac_04 (i,:,j) = 0.0
+            asy_fac_05 (i,:,j) = 0.0
+            ssa_01 (i,:,j)     = 0.0
+            ssa_02 (i,:,j)     = 0.0
+            ssa_04 (i,:,j)     = 0.0
+            ssa_04 (i,:,j)     = 0.0
+            ssa_05 (i,:,j)     = 0.0
+         end if
+
          if (present(swupt)) then 
 ! Output up and down toa fluxes for total and clear sky
             swupt(i,j)     = 0.

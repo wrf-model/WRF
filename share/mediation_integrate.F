@@ -57,10 +57,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    INTEGER                                    :: ialarm
    INTEGER                                    :: rc
    TYPE(WRFU_Time) :: currTime, startTime
-#if ( HWRF == 1 )
-   INTEGER :: hr, min, sec, ms,julyr,julday
-   REAL :: GMT
-#endif
 
    CHARACTER*256          :: message
 #if (WRFPLUS == 1)
@@ -97,12 +93,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      IF       ( ( config_flags%restart )                    .AND. &
                 ( config_flags%write_hist_at_0h_rst )       .AND. &
                 ( currTime .EQ. startTime )                       ) THEN
-#if ( NMM_CORE == 1 )
-! NMM-only: outputs boundary arrays of certain variables:
-!      call med_boundary_out(grid,config_flags)
-#endif
-
-
        !  output history at beginning of restart if alarm is ringing
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
       
@@ -224,6 +214,20 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
          ENDIF
        ENDIF
 #endif
+     ELSE IF( ialarm .EQ. AUXINPUT17_ALARM ) THEN
+       IF( config_flags%qna_update .EQ. 1) THEN
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+           call wrf_debug(00,' CALL med_read_qna_emissions ')
+           CALL med_read_qna_emissions ( grid , config_flags )
+           CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+           call wrf_debug(00,' Back from CALL med_read_qna_emissions ')
+         ENDIF
+       ELSE
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+           CALL med_auxinput_in ( grid, ialarm, config_flags )
+           CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+         ENDIF
+       ENDIF
 #if ( EM_CORE == 1 )
      ELSE IF( ialarm .EQ. AUXINPUT11_ALARM ) THEN
        IF( config_flags%obs_nudge_opt .EQ. 1) THEN
@@ -343,14 +347,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF ( ( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) .AND. &
         ( currTime .NE. startTime ) ) THEN
-#if ( HWRF == 1 )
-!zhang's doing
-     CALL domain_clock_get( grid, current_time=CurrTime )
-     CALL WRFU_TimeGet( CurrTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
-     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
-      if (grid%id .eq. 2) call med_namelist_out ( grid , config_flags )
-!end of zhang's doing
-#endif
      IF ( grid%id .EQ. 1 ) THEN
        ! Only the parent initiates the restart writing. Otherwise, different
        ! domains may be written out at different times and with different 
@@ -952,341 +948,6 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
 #endif
 
-#if (NMM_CORE == 1 && NMM_NEST == 1)
-!===================================================================================
-!  Added for the NMM core. This is gopal's doing.
-!===================================================================================
-
-   INTERFACE
-
-     SUBROUTINE med_nest_egrid_configure ( parent , nest )
-        USE module_domain       , ONLY : domain
-        TYPE(domain) , POINTER                 :: parent , nest
-     END SUBROUTINE med_nest_egrid_configure 
-
-     SUBROUTINE med_construct_egrid_weights ( parent , nest )
-        USE module_domain       , ONLY : domain
-        TYPE(domain) , POINTER                 :: parent , nest
-     END SUBROUTINE med_construct_egrid_weights
-
-     SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
-                                    PINT,T,Q,CWM,            &
-                                    FIS,QSH,PD,PDTOP,PTOP,   &
-                                    ETA1,ETA2,               &
-                                    DETA1,DETA2,             &
-                                    IDS,IDE,JDS,JDE,KDS,KDE, &
-                                    IMS,IME,JMS,JME,KMS,KME, &
-                                    IPS,IPE,JPS,JPE,KPS,KPE  )
-!
-
-         USE MODULE_MODEL_CONSTANTS
-         IMPLICIT NONE
-         INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
-         INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
-         INTEGER,    INTENT(IN   )                            :: IPS,IPE,JPS,JPE,KPS,KPE
-         REAL,       INTENT(IN   )                            :: PDTOP,PTOP
-         REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
-         REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QSH
-         REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(IN) :: PINT,T,Q,CWM
-         REAL, DIMENSION(KMS:KME)                , INTENT(OUT):: PSTD
-         REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(OUT):: Z3d,Q3d,T3d
-
-     END SUBROUTINE BASE_STATE_PARENT
-
-     SUBROUTINE NEST_TERRAIN ( nest, config_flags )
-       USE module_domain        , ONLY : domain
-       USE module_configure     , ONLY : grid_config_rec_type
-       TYPE(domain) , POINTER                        :: nest
-       TYPE(grid_config_rec_type) , INTENT(IN)       :: config_flags
-     END SUBROUTINE NEST_TERRAIN
-
-    SUBROUTINE med_interp_domain ( parent , nest )
-        USE module_domain       , ONLY : domain
-        TYPE(domain) , POINTER                 :: parent , nest
-    END SUBROUTINE med_interp_domain
-
-    SUBROUTINE med_init_domain_constants_nmm ( parent, nest )
-        USE module_domain       , ONLY : domain
-        TYPE(domain) , POINTER                    :: parent , nest
-    END SUBROUTINE med_init_domain_constants_nmm
-
-    SUBROUTINE start_domain ( grid , allowed_to_move )
-        USE module_domain       , ONLY : domain
-        TYPE(domain) :: grid
-        LOGICAL, INTENT(IN) :: allowed_to_move
-    END SUBROUTINE start_domain
-
-   END INTERFACE
-
-#if ( HWRF == 1 )
-!zhang's doing test
-   if (config_flags%restart .or. nest%analysis) then
-   nest%first_force = .true.
-   else
-   nest%first_force = .false.
-   endif
-!end of zhang's doing
-
-   ! Do we run the MOIST and SCALAR interp/smooth functions? (u=(), d=(), f=() and s=())
-
-   ! Only run it if a non-bulk scheme is in use, since bulk schemes do
-   ! not use MOIST and SCALAR as prognostic variables (they are
-   ! recalculated on the fly every timestep):
-!zhang's doing for analysis option
-  IF(.not. nest%analysis .and. .not. config_flags%restart)THEN    ! initialize for cold-start
-#endif
-
-!----------------------------------------------------------------------------
-!  initialize nested domain configurations including setting up wbd,sbd, etc 
-!----------------------------------------------------------------------------
-
-   CALL med_nest_egrid_configure ( parent , nest )
-
-!-------------------------------------------------------------------------
-!  initialize lat-lons and determine weights 
-!-------------------------------------------------------------------------
-
-    CALL med_construct_egrid_weights ( parent, nest )
-!
-!
-!  De-reference dimension information stored in the grid data structure.
-!
-!  From the hybrid, construct the GPMs on isobaric surfaces and then interpolate those
-!  values on to the nested domain. 23 standard prssure levels are assumed here. For
-!  levels below ground, lapse rate atmosphere is assumed before the use of vertical
-!  spline interpolation 
-!
-
-
-    IDS = parent%sd31
-    IDE = parent%ed31
-    JDS = parent%sd32
-    JDE = parent%ed32
-    KDS = parent%sd33
-    KDE = parent%ed33
-
-    IMS = parent%sm31
-    IME = parent%em31
-    JMS = parent%sm32
-    JME = parent%em32
-    KMS = parent%sm33
-    KME = parent%em33
-
-    IPS = parent%sp31
-    IPE = parent%ep31
-    JPS = parent%sp32
-    JPE = parent%ep32
-    KPS = parent%sp33
-    KPE = parent%ep33
-
-    ! CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD,  &
-    !                          parent%PINT,parent%T,parent%Q,parent%CWM,      &
-    !                          parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,   &
-    !                          parent%ETA1,parent%ETA2,                               &
-    !                          parent%DETA1,parent%DETA2,                             &
-    !                          IDS,IDE,JDS,JDE,KDS,KDE,                                       &
-    !                          IMS,IME,JMS,JME,KMS,KME,                                       &
-    !                          IPS,IPE,JPS,JPE,KPS,KPE                                        )
-
-!  
-!   Set new terrain. Since some terrain adjustment is done within the interpolation calls
-!   at the next step, the new terrain over the nested domain has to be called here.
-!
-    IDS = nest%sd31
-    IDE = nest%ed31
-    JDS = nest%sd32
-    JDE = nest%ed32
-    KDS = nest%sd33
-    KDE = nest%ed33
-
-    IMS = nest%sm31
-    IME = nest%em31
-    JMS = nest%sm32
-    JME = nest%em32
-    KMS = nest%sm33
-    KME = nest%em33
-
-    IPS = nest%sp31
-    IPE = nest%ep31
-    JPS = nest%sp32
-    JPE = nest%ep32
-    KPS = nest%sp33
-    KPE = nest%ep33
-
-
-    IF ( nest%active_this_task ) THEN
-    CALL NEST_TERRAIN ( nest, config_flags )
-    ENDIF
-
-!   Initialize some more constants required especially for terrain adjustment processes
-
-    IF ( nest%active_this_task .AND. parent%active_this_task ) THEN
-    nest%PSTD=parent%PSTD
-    ENDIF
-#ifdef DM_PARALLEL
-    IF ( nest%active_this_task .OR. parent%active_this_task ) THEN
-      IF ( parent%active_this_task ) THEN
-        CALL BYTE_BCAST( parent%PSTD, KME*RWORDSIZE, mpi_comm_to_kid( which_kid( nest%id ) , parent%id ) )
-      ELSE
-        CALL BYTE_BCAST( nest%PSTD, KME*RWORDSIZE, mpi_comm_to_mom( nest%id ) )
-      ENDIF
-    ENDIF
-#endif
-
-    IF ( nest%active_this_task ) THEN
-      nest%KZMAX=KME
-      parent%KZMAX=KME  ! just for safety
-
-      DO J = JPS, MIN(JPE,JDE-1)
-        DO I = IPS, MIN(IPE,IDE-1)
-         nest%fis(I,J)=nest%hres_fis(I,J)
-       ENDDO
-      ENDDO
-
-!--------------------------------------------------------------------------
-!  interpolation call
-!--------------------------------------------------------------------------
-
-! initialize nest with interpolated data from the parent
-
-      nest%imask_nostag = 0 
-      nest%imask_xstag  = 0 
-      nest%imask_ystag  = 0 
-      nest%imask_xystag = 0 
-    ENDIF
-
-#if ( HWRF == 1 )
-   CALL med_interp_domain( parent, nest )
-#else
-    CALL domain_clock_get( parent, start_time=strt_time, current_time=cur_time )
-
-    IF ( .not. ( config_flags%restart .AND. strt_time .EQ. cur_time ) ) THEN
-
-write(0,*)__FILE__,__LINE__,parent%id,nest%id
-     CALL med_interp_domain( parent, nest )
-write(0,*)__FILE__,__LINE__
-
-    ELSE
-
-     CALL domain_clock_get( nest, current_timestr=timestr )
-     CALL construct_filename2a ( rstname , config_flags%rst_inname , nest%id , 2 , timestr )
-
-     WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading'
-     CALL wrf_message ( message )
-     CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
-     CALL open_r_dataset ( fid , TRIM(rstname) , nest , nest_config_flags , "DATASET=RESTART", ierr )
-     IF ( ierr .NE. 0 ) THEN
-       WRITE( message , '("program wrf: error opening ",A32," for reading")') TRIM(rstname)
-       CALL WRF_ERROR_FATAL ( message )
-     ENDIF
-     CALL input_restart ( fid,   nest , nest_config_flags , ierr )
-     CALL close_dataset ( fid , nest_config_flags , "DATASET=RESTART" )
-
-    END IF
-
-#endif
-!------------------------------------------------------------------------------
-!  set up constants (module_initialize_real.F for nested nmm domain)
-!-----------------------------------------------------------------------------
-
-    CALL med_init_domain_constants_nmm ( parent, nest )
-
-!--------------------------------------------------------------------------------------
-! set some other initial fields, fill out halos, etc. 
-!--------------------------------------------------------------------------------------
-
-    IF ( nest%active_this_task) THEN
-      CALL push_communicators_for_domain( nest%id )
-      CALL start_domain ( nest, .TRUE.)
-      CALL pop_communicators_for_domain
-    ENDIF
-    
-
-#if ( HWRF == 1 )
-!zhang's doing: else for analysis or restart option
-
-!zhang test
-    CALL nl_set_isice ( nest%id , config_flags%isice )   
-    CALL nl_set_isoilwater ( nest%id , config_flags%isoilwater )   
-    CALL nl_set_isurban ( nest%id , config_flags%isurban )   
-    CALL nl_set_gmt    ( nest%id , config_flags%gmt    )   
-    CALL nl_set_julyr (nest%id, config_flags%julyr)       
-    CALL nl_set_julday ( nest%id , config_flags%julday )
-!zhang test ends
-    IF ( nest%active_this_task) THEN
-     CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
-     CALL push_communicators_for_domain( nest%id )
-     CALL med_analysis_out ( nest, nest_config_flags )
-     CALL pop_communicators_for_domain
-    ENDIF
-
-   ELSE
-
-!------------------------------------------------------------------------------------
-!  read in analysis (equivalent of restart for the nested domains)
-!------------------------------------------------------------------------------------
-
-!zhang's doing
-  IF ( nest%active_this_task) THEN
-  IF( nest%analysis .and. .not. config_flags%restart)THEN
-   CALL push_communicators_for_domain( nest%id )
-   CALL med_analysis_in ( nest, config_flags )
-   CALL pop_communicators_for_domain
-  ELSE IF (config_flags%restart)THEN
-   CALL push_communicators_for_domain( nest%id )
-   CALL med_restart_in ( nest, config_flags )
-   CALL pop_communicators_for_domain
-  ENDIF
-  ENDIF
-!end of zhang's doing
-
-!----------------------------------------------------------------------------
-!  initialize nested domain configurations including setting up wbd,sbd, etc
-!----------------------------------------------------------------------------
-
-   CALL med_nest_egrid_configure ( parent , nest )
-
-!-------------------------------------------------------------------------
-!  initialize lat-lons and determine weights (overwrite for safety)
-!-------------------------------------------------------------------------
-
-   CALL med_construct_egrid_weights ( parent, nest )
-
-   nest%imask_nostag = 0
-   nest%imask_xstag  = 0
-   nest%imask_ystag  = 0
-   nest%imask_xystag = 0
-
-!------------------------------------------------------------------------------
-!  set up constants (module_initialize_real.F for nested nmm domain)
-!-----------------------------------------------------------------------------
-
-    CALL med_init_domain_constants_nmm ( parent, nest )
-
-!--------------------------------------------------------------------------------------
-! set some other initial fields, fill out halos, etc. (again, safety sake only)
-! Also, in order to accomodate some physics initialization after nest move, set
-! analysis back to false for future use
-!--------------------------------------------------------------------------------------
-
-
-  IF ( nest%active_this_task) THEN
-    CALL push_communicators_for_domain( nest%id )
-    CALL start_domain ( nest, .TRUE.)
-    CALL pop_communicators_for_domain
-  ENDIF
-
-    nest%analysis=.FALSE.
-    CALL nl_set_analysis( nest%id, nest%analysis)
-
-  ENDIF
-
-#endif
-
-!===================================================================================
-!  Added for the NMM core. End of gopal's doing.
-!===================================================================================
-#endif
   RETURN
 END SUBROUTINE med_nest_initial
 
@@ -1316,12 +977,6 @@ SUBROUTINE med_nest_force ( parent , nest )
   ! Local
    INTEGER                                    :: idum1 , idum2 , fid, rc
 
-#if (NMM_CORE == 1 && NMM_NEST == 1)
-   INTEGER                  :: IDS,IDE,JDS,JDE,KDS,KDE     ! gopal
-   INTEGER                  :: IMS,IME,JMS,JME,KMS,KME
-   INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
-#endif
-
    INTERFACE
      SUBROUTINE med_force_domain ( parent , nest )
         USE module_domain       , ONLY : domain
@@ -1331,74 +986,7 @@ SUBROUTINE med_nest_force ( parent , nest )
         USE module_domain       , ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
-#if (NMM_CORE == 1 && NMM_NEST == 1)
-!===================================================================================
-!  Added for the NMM core. This is gopal's doing.
-!===================================================================================
-
-     SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
-                                    PINT,T,Q,CWM,            &
-                                    FIS,QSH,PD,PDTOP,PTOP,   &
-                                    ETA1,ETA2,               &
-                                    DETA1,DETA2,             &
-                                    IDS,IDE,JDS,JDE,KDS,KDE, &
-                                    IMS,IME,JMS,JME,KMS,KME, &
-                                    ITS,ITE,JTS,JTE,KTS,KTE  )
-!
-
-         USE MODULE_MODEL_CONSTANTS
-         IMPLICIT NONE
-         INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
-         INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
-         INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
-         REAL,       INTENT(IN   )                            :: PDTOP,PTOP
-         REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
-         REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QSH
-         REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(IN) :: PINT,T,Q,CWM
-         REAL, DIMENSION(KMS:KME)                , INTENT(OUT):: PSTD
-         REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(OUT):: Z3d,Q3d,T3d
-
-     END SUBROUTINE BASE_STATE_PARENT
-
-#endif
    END INTERFACE
-
-#if (NMM_CORE == 1 && NMM_NEST == 1)
-
-!  De-reference dimension information stored in the grid data structure.
-
-    IDS = parent%sd31
-    IDE = parent%ed31
-    JDS = parent%sd32
-    JDE = parent%ed32
-    KDS = parent%sd33
-    KDE = parent%ed33
-
-    IMS = parent%sm31
-    IME = parent%em31
-    JMS = parent%sm32
-    JME = parent%em32
-    KMS = parent%sm33
-    KME = parent%em33
-
-    ITS = parent%sp31
-    ITE = parent%ep31
-    JTS = parent%sp32
-    JTE = parent%ep32
-    KTS = parent%sp33
-    KTE = parent%ep33
-
-
-    ! CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD, &
-    !                          parent%PINT,parent%T,parent%Q,parent%CWM,     &
-    !                          parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,  &
-    !                          parent%ETA1,parent%ETA2,                              &
-    !                          parent%DETA1,parent%DETA2,                            &
-    !                          IDS,IDE,JDS,JDE,KDS,KDE,                                      &
-    !                          IMS,IME,JMS,JME,KMS,KME,                                      &
-    !                          ITS,ITE,JTS,JTE,KTS,KTE                                       )
-
-#endif
 
    IF ( .NOT. WRFU_ClockIsStopTime(nest%domain_clock ,rc=rc) ) THEN
 ! initialize nest with interpolated data from the parent
@@ -1494,13 +1082,6 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
   ! Local
    INTEGER                                    :: rc
    CHARACTER*256                              :: message
-#if ( HWRF == 1 )
-!zhang's doing
-   TYPE(WRFU_Time) :: CurrTime  !zhang new
-   INTEGER :: hr, min, sec, ms,julyr,julday
-   REAL :: GMT
-!end of zhang's doing
-#endif
 
 ! #if (EM_CORE == 1)
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
@@ -1525,15 +1106,6 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
-#if ( HWRF == 1 )
-!zhang's doing
-!zhang new     CALL ESMF_TimeGet( grid%current_time, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
-     CALL domain_clock_get( grid, current_time=CurrTime )
-     CALL WRFU_TimeGet( CurrTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
-     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
-      if (grid%id .eq. 2) call med_namelist_out ( grid , config_flags )
-!end of zhang's doing
-#endif
      IF ( grid%id .EQ. 1 ) THEN
        CALL med_restart_out ( grid , config_flags )
      ENDIF
@@ -1548,155 +1120,6 @@ END SUBROUTINE med_last_solve_io
 #endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-#if ( HWRF == 1 )
-!==================================================================================
-!  Added for the NMM 3d var. This is simply an extension of med_restart_out.
-!  The file is simply called wrfanal***. This is gopal's doing
-!===================================================================================
-!
-SUBROUTINE med_analysis_in ( grid , config_flags )
-  ! Driver layer
-   USE module_domain    , ONLY : domain, domain_clock_get
-   USE module_io_domain
-   USE module_timing
-  ! Model layer
-   USE module_configure , ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
-!zhang   USE WRF_ESMF_MOD
-
-   IMPLICIT NONE
-
-  ! Arguments
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-
-  ! Local
-   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*256                          :: rstname , outname
-   INTEGER                                :: fid , rid
-   CHARACTER (LEN=256)                    :: message
-   INTEGER                                :: ierr
-   INTEGER                                :: myproc
-!zhang old    TYPE(ESMF_Time)                        :: CurrTime
-   TYPE(WRFU_Time)                        :: CurrTime
-   CHARACTER*80                           :: timestr
-
-   IF ( wrf_dm_on_monitor() ) THEN
-     CALL start_timing
-   END IF
-
-   rid=grid%id
-
-!zhang's doing   CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
-!zhang's doing   CALL wrf_timetoa ( CurrTime, timestr )
-   CALL domain_clock_get( grid, current_timestr=timestr )
-   CALL construct_filename2a ( rstname ,config_flags%anl_outname, grid%id , 2 , timestr )
-
-   WRITE( message , '("med_analysis_in: opening ",A," for reading")' ) TRIM ( rstname )
-   CALL wrf_debug( 1 , message )
-   CALL open_r_dataset ( rid, TRIM(rstname), grid , &
-                         config_flags , "DATASET=RESTART", ierr )
-
-   IF ( ierr .NE. 0 ) THEN
-      ! Could not open the analysis file, so notify user and abort.
-
-      write(message,'(A,I0,A,A,A)') 'ERROR: Domain ',grid%id,' analysis file ',trim(rstname),' is missing.'
-      call wrf_error_fatal(message)
-
-      ! It is unsafe to continue with a cold start when the analysis
-      ! file is missing because the model expects that it is being
-      ! restart if an analysis=T.  Hence, some variables will not be
-      ! correctly initialized.
-
-      ! Thus, we never reach this line:
-      write(message,'(A,I0,A)') '-------> Domain ',grid%id,' running as a cold start (interp from parent).'
-      call wrf_message(message)
-
-      if(wrf_dm_on_monitor()) then
-         WRITE ( message , FMT = '("Failing to read restart for domain ",I8)' ) grid%id
-         CALL end_timing ( TRIM(message) )
-      endif
-
-      return
-   ELSE
-      ! Was able to open the analysis file.  Read it as a restart file.
-
-      CALL input_restart ( rid, grid , config_flags , ierr )
-      IF ( wrf_dm_on_monitor() ) THEN
-         WRITE ( message , FMT = '("Reading restart for domain ",I8)' ) grid%id
-         CALL end_timing ( TRIM(message) )
-      END IF
-      CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
-   ENDIF
-
-   RETURN
-
-END SUBROUTINE med_analysis_in
-!=========================================================================================================
-!=========================================================================================================
-SUBROUTINE med_analysis_out ( grid , config_flags )
-  ! Driver layer
-   USE module_domain    , ONLY : domain, domain_clock_get
-   USE module_io_domain
-   USE module_timing
-  ! Model layer
-   USE module_configure , ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
-!zhang   USE WRF_ESMF_MOD
-
-   IMPLICIT NONE
-
-  ! Arguments
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-
-  ! Local
-   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*256                          :: rstname , outname
-   INTEGER                                :: fid , rid
-   CHARACTER (LEN=256)                    :: message
-   INTEGER                                :: ierr
-   INTEGER                                :: myproc
-!zhang   TYPE(ESMF_Time)                        :: CurrTime
-   TYPE(WRFU_Time)                        :: CurrTime
-   CHARACTER*80                           :: timestr
-
-   if(.not. config_flags%write_analysis) then
-      write(message,'("Writing of an analysis file is disabled for domain ",I0," because write_analysis=F")') grid%id
-      call wrf_debug(1,message)
-      return
-   endif
-
-   IF ( wrf_dm_on_monitor() ) THEN
-     CALL start_timing
-   END IF
-
-   rid=grid%id
-
-!zhang's doing   CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
-!zhang's doing   CALL wrf_timetoa ( CurrTime, timestr )
-   CALL domain_clock_get( grid, current_timestr=timestr )
-   CALL construct_filename2a ( rstname ,config_flags%anl_outname, grid%id , 2 , timestr )
-
-   WRITE( message , '("med_analysis_out: opening ",A," for writing")' ) TRIM ( rstname )
-   CALL wrf_debug( 1 , message )
-   CALL open_w_dataset ( rid, TRIM(rstname), grid , &
-                         config_flags , output_restart , "DATASET=RESTART", ierr )
-
-   IF ( ierr .NE. 0 ) THEN
-     CALL WRF_message( message )
-   ENDIF
-   CALL output_restart ( rid, grid , config_flags , ierr )
-   IF ( wrf_dm_on_monitor() ) THEN
-     WRITE ( message , FMT = '("Writing restart for domain ",I8)' ) grid%id
-     CALL end_timing ( TRIM(message) )
-   END IF
-   CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
-   RETURN
-END SUBROUTINE med_analysis_out
-
-#endif 
 
 RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
   ! Driver layer
@@ -1762,118 +1185,7 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
    RETURN
 END SUBROUTINE med_restart_out
 
-#if ( NMM_CORE == 1 && NMM_NEST == 1)
-#ifdef EXTRA_HWRF_DEBUG_STUFF
-SUBROUTINE med_boundary_out ( grid , config_flags )
-  ! Driver layer
-   USE module_domain    , ONLY : domain , domain_clock_get
-   USE module_io_domain
-   USE module_timing
-   USE module_configure , ONLY : grid_config_rec_type
-  ! Model layer
-!   USE module_bc_time_utilities
-   USE module_utility
-   use module_bdywrite
-
-   IMPLICIT NONE
-
-  ! Arguments
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-
-  ! Local
-   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*256                          :: rstname , outname
-   INTEGER                                :: fid , rid, kid
-   CHARACTER (LEN=256)                    :: message
-   INTEGER                                :: ierr
-   INTEGER                                :: myproc
-   CHARACTER*80                           :: timestr
-   TYPE (grid_config_rec_type)            :: kid_config_flags
-
-   IF ( wrf_dm_on_monitor() ) THEN
-     CALL start_timing
-   END IF
-
-! take this out - no effect - LPC
-!   rid=grid%id !zhang's doing
-
-   ! write out this domains boundary file first
-
-   CALL domain_clock_get( grid, current_timestr=timestr )
-   CALL construct_filename2a ( rstname , 'sambdyout_d<domain>_<date>' , grid%id , 2 , timestr )
-
-   call bdywrite(grid,rstname)
-
-   IF ( wrf_dm_on_monitor() ) THEN
-     CALL end_timing('Sam''s Special Boundary Output (TM)')
-   END IF
-   RETURN
-END SUBROUTINE med_boundary_out
-#endif
-#endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-#if ( HWRF == 1 )
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!zhang's doing
-SUBROUTINE med_restart_in ( grid , config_flags )
-  ! Driver layer
-   USE module_domain    , ONLY : domain, domain_clock_get
-   USE module_io_domain
-   USE module_timing
-  ! Model layer
-   USE module_configure , ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
-
-   IMPLICIT NONE
-
-  ! Arguments
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-
-  ! Local
-   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*256                          :: rstname , outname
-   INTEGER                                :: fid , rid
-   CHARACTER (LEN=256)                    :: message
-   INTEGER                                :: ierr
-   INTEGER                                :: myproc
-!zhang old    TYPE(ESMF_Time)                        :: CurrTime
-   TYPE(WRFU_Time)                        :: CurrTime
-   CHARACTER*80                           :: timestr
-
-   IF ( wrf_dm_on_monitor() ) THEN
-     CALL start_timing
-   END IF
-
-   rid=grid%id
-
-!zhang's doing   CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
-!zhang's doing   CALL wrf_timetoa ( CurrTime, timestr )
-   CALL domain_clock_get( grid, current_timestr=timestr )
-   CALL construct_filename2a ( rstname ,config_flags%rst_outname, grid%id , 2 , timestr )
-
-   WRITE( message , '("med_restart_in: opening ",A," for reading")' ) TRIM ( rstname )
-   CALL wrf_debug( 1 , message )
-   CALL open_r_dataset ( rid, TRIM(rstname), grid , &
-                         config_flags , "DATASET=RESTART", ierr )
-
-   IF ( ierr .NE. 0 ) THEN
-!    CALL WRF_message( message )
-     CALL WRF_ERROR_FATAL('NESTED DOMAIN ERROR: FOR ANALYSIS SET TO TRUE, YOU NEED wrfanal FILE')
-   ENDIF
-   CALL input_restart ( rid, grid , config_flags , ierr )
-   IF ( wrf_dm_on_monitor() ) THEN
-     WRITE ( message , FMT = '("Reading restart for domain ",I8)' ) grid%id
-     CALL end_timing ( TRIM(message) )
-   END IF
-   CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
-   RETURN
-
-END SUBROUTINE med_restart_in
-!end of zhang's doing
-#endif
 
 SUBROUTINE med_hist_out ( grid , stream, config_flags )
   ! Driver layer
@@ -1906,20 +1218,6 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      WRITE(message,*)'med_hist_out: invalid history stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
-
-#if ( HWRF == 1 )
-       ! HWRF special: auxhist2 and auxhist3 are duplicates of
-       ! history (0), so there is no point in outputting more than one of
-       ! them at the same time.  Prefer 0 over 2, and 2 over 3:
-      if ( (stream==HISTORY_ALARM .or. stream==AUXHIST2_ALARM) .and. &
-           WRFU_AlarmIsRinging( grid%alarms(AUXHIST3_ALARM) ) ) then
-         CALL WRFU_AlarmRingerOff(grid%alarms(AUXHIST3_ALARM))
-      endif
-      if ( stream==HISTORY_ALARM .and. &
-           WRFU_AlarmIsRinging( grid%alarms(AUXHIST2_ALARM) ) ) then
-         CALL WRFU_AlarmRingerOff(grid%alarms(AUXHIST2_ALARM))
-      endif
-#endif
 
    SELECT CASE( stream )
      CASE ( HISTORY_ALARM )
@@ -1955,11 +1253,6 @@ write(0,*)__FILE__,__LINE__,' grid%id ',grid%id,' grid%oid ',grid%oid
      WRITE ( message , FMT = '("Writing ",A," for domain ",I8)' )TRIM(fname),grid%id
      CALL end_timing ( TRIM(message) )
    END IF
-
-#if (NMM_CORE == 1)
-   ! Reset tornado genesis fields after output:
-   call nmm_request_tg_reset(grid,config_flags,stream)
-#endif
 
    RETURN
 END SUBROUTINE med_hist_out
@@ -2367,7 +1660,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
                            config_flags , insub , n2, ierr )
    ENDIF
    IF ( ierr .NE. 0 ) THEN
-     WRITE ( message , '("open_aux_u : error opening ",A," for reading. ",I3)') &
+     WRITE ( message , '("open_aux_u : error opening ",A," for reading. ",I5)') &
        TRIM ( fname ), ierr
      CALL wrf_message( message )
    ENDIF
@@ -2417,7 +1710,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    IF ( adjust ) THEN 
      CALL adjust_io_timestr( grid%io_intervals( alarm_id ), CT, ST, timestr )
    ENDIF
-#if (DA_CORE != 1 && NMM_CORE != 1)
+#if (DA_CORE != 1 )
 !----------------------------------------------------------------------
 ! RASM Climate Diagnostics - JR, AS, MS  - October 2016
 !----------------------------------------------------------------------
@@ -2463,8 +1756,8 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
                            config_flags , outsub , n2, ierr )
    ENDIF
    IF ( ierr .NE. 0 ) THEN
-     WRITE ( message , '("open_hist_w : error opening ",A," for writing. ",I3)') &
-       TRIM ( fname ), ierr
+     WRITE ( message , '("open_hist_w : error opening ",A," for writing. ",I5)') &
+        TRIM ( fname ), ierr
      CALL wrf_message( message )
    ENDIF
 
@@ -3155,75 +2448,64 @@ END SUBROUTINE med_read_wrf_chem_emissopt3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#if ( HWRF == 1 )
-!zhang's doing for outputing restart namelist parameters
-RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
+SUBROUTINE med_read_qna_emissions ( grid , config_flags )
   ! Driver layer
-   USE module_domain    , ONLY : domain, domain_clock_get
+   USE module_domain    , ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
-  ! Model layer
    USE module_configure , ONLY : grid_config_rec_type
+  ! Model layer
    USE module_bc_time_utilities
-!zhang new   USE WRF_ESMF_MOD
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
    USE module_utility
-!zhang new ends
 
    IMPLICIT NONE
 
   ! Arguments
-   TYPE(domain), INTENT(IN)                   :: grid
+   TYPE(domain)                               :: grid
+
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
 
-  ! Local
-!zhang new   TYPE(ESMF_Time)                        :: CurrTime
-   TYPE(WRFU_Time) :: CurrTime
-   INTEGER                                :: nout,rc,kid
-   INTEGER                                :: hr, min, sec, ms,julyr,julday
-   REAL                                   :: GMT
-   CHARACTER*256                          :: prefix, outname
-   CHARACTER*80                           :: timestr
-   LOGICAL                                :: exist
-   LOGICAL,EXTERNAL :: wrf_dm_on_monitor
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
 
-   TYPE (grid_config_rec_type)            :: kid_config_flags
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=256)                    :: inpname
 
-   prefix = "wrfnamelist_d<domain>_<date>"
-   nout = 99
+#include "wrf_io_flags.h"
 
-!zhang new   CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=rc )
-!zhang new   CALL wrf_timetoa ( CurrTime, timestr )
-   CALL domain_clock_get( grid, current_timestr=timestr )
-!zhang new ends
-   CALL construct_filename2a ( outname , prefix, grid%id , 2 , timestr )
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
 
-   IF ( wrf_dm_on_monitor() ) THEN
+      CALL construct_filename1 ( inpname , 'wrfqnainp' , grid%id , 2 )
+      WRITE(message,*)'mediation_integrate: med_read_qna_emissions: Open file ',TRIM(inpname)
+      CALL wrf_message( TRIM(message) )
 
-   CLOSE (NOUT)
-   OPEN ( FILE   = trim(outname) , UNIT   = nout, STATUS = 'UNKNOWN', FORM   = 'FORMATTED')
-!zhang new   CALL ESMF_TimeGet( grid%current_time, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
-   CALL domain_clock_get( grid, current_time=CurrTime )
-   CALL WRFU_TimeGet( CurrTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
-!zhang new ends
-   gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
-   WRITE(NOUT,*) grid%i_parent_start
-   WRITE(NOUT,*) grid%j_parent_start
-   WRITE(NOUT,*) julyr
-   WRITE(NOUT,*) julday
-   WRITE(NOUT,*) gmt
+     if( grid%auxinput17_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput17_oid , config_flags , "DATASET=AUXINPUT17" )
+     endif
 
-   CLOSE (NOUT)
-   ENDIF
+      CALL open_r_dataset ( grid%auxinput17_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT17", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_qna_emissions: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
 
-   ! call recursively for children, (if any)
-   DO kid = 1, max_nests
-      IF ( ASSOCIATED( grid%nests(kid)%ptr ) ) THEN
-        CALL model_to_grid_config_rec ( grid%nests(kid)%ptr%id , model_config_rec , kid_config_flags )
-        CALL med_namelist_out ( grid%nests(kid)%ptr , kid_config_flags )
-      ENDIF
-   ENDDO
+         WRITE(message,*)'mediation_integrate: med_read_qna_emissions: Read surface aerosol emissions at time ',&
+         TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
 
-   RETURN
-END SUBROUTINE med_namelist_out
-!end of zhang's doing
-#endif
+         CALL wrf_debug (00 , 'mediation_integrate: calling input_auxinput17' )
+         CALL input_auxinput17 ( grid%auxinput17_oid, grid , config_flags , ierr )
+
+         CALL close_dataset ( grid%auxinput17_oid , config_flags , "DATASET=AUXINPUT17" )
+
+   CALL wrf_debug (00 , 'mediation_integrate: med_read_qna_emissions: exit' )
+
+END SUBROUTINE med_read_qna_emissions

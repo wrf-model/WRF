@@ -1,0 +1,164 @@
+!*------------------------------------------------------------------------------
+!*  Standard Disclaimer
+!*
+!*  Forecast Systems Laboratory
+!*  NOAA/OAR/ERL/FSL
+!*  325 Broadway
+!*  Boulder, CO     80303
+!*
+!*  AVIATION DIVISION
+!*  ADVANCED COMPUTING BRANCH
+!*  SMS/NNT Version: 2.0.0 
+!*
+!*  This software and its documentation are in the public domain and
+!*  are furnished "as is".  The United States government, its 
+!*  instrumentalities, officers, employees, and agents make no 
+!*  warranty, express or implied, as to the usefulness of the software 
+!*  and documentation for any purpose.  They assume no 
+!*  responsibility (1) for the use of the software and documentation; 
+!*  or (2) to provide technical support to users.
+!* 
+!*  Permission to use, copy, modify, and distribute this software is
+!*  hereby granted, provided that this disclaimer notice appears in 
+!*  all copies.  All modifications to this software must be clearly
+!*  documented, and are solely the responsibility of the agent making
+!*  the modification.  If significant modifications or enhancements
+!*  are made to this software, the SMS Development team
+!*  (sms-info@fsl.noaa.gov) should be notified.
+!*
+!*----------------------------------------------------------------------------
+!*
+!*  WRF NetCDF I/O
+!   Author:  Jacques Middlecoff jacquesm@fsl.noaa.gov
+!*  Date:    October 6, 2000
+!*
+!*----------------------------------------------------------------------------
+
+  use wrf_data_ncpar
+  use ext_ncdpar_support_routines
+  implicit none
+  include 'wrf_status_codes.h'
+  include 'netcdf.inc'
+  integer               ,intent(in)     :: DataHandle
+  character*(*)         ,intent(in)     :: Element
+  TYPE_DATA
+  TYPE_COUNT
+  integer               ,intent(out)    :: Status
+  type(wrf_data_handle) ,pointer        :: DH
+  integer                               :: stat
+  integer                               :: stat2
+  integer               ,allocatable    :: Buffer(:)
+  integer                               :: i
+
+  call GetDH(DataHandle,DH,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) &
+'Warning Status = ',Status,' in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+! Do nothing unless it is time to write time-independent domain metadata.  
+IF ( ncdpar_ok_to_put_dom_ti( DataHandle ) ) THEN
+  if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
+    Status = WRF_WARN_FILE_NOT_OPENED  
+    write(msg,*) &
+'Warning FILE NOT OPENED in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
+    STATUS = WRF_WARN_WRITE_RONLY_FILE  
+    write(msg,*) &
+'Warning WRITE READ ONLY FILE in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
+#ifdef LOG
+      allocate(Buffer(Count), STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_ALLOCATION_ERROR 
+        write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      do i=1,Count
+        if(data(i)) then
+           Buffer(i)=1
+        else
+           Buffer(i)=0
+        endif
+      enddo
+      stat = NF_ROUTINE (DH%NCID,NF_GLOBAL,Element,ARGS)
+      deallocate(Buffer, STAT=stat2)
+      if(stat2/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR 
+        write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+#else
+      stat = NF_ROUTINE (DH%NCID,NF_GLOBAL,Element,ARGS)
+#endif
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__,' Element ',Element
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+  elseif (DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE) then
+    stat = NF_REDEF(DH%NCID)
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) &
+'NetCDF error in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__,' Element ',Element
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+#ifdef LOG
+      allocate(Buffer(Count), STAT=stat)
+      if(stat/= 0) then
+        Status = WRF_ERR_FATAL_ALLOCATION_ERROR 
+        write(msg,*) &
+'Fatal ALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+      do i=1,Count
+        if(data(i)) then
+           Buffer(i)=1
+        else
+           Buffer(i)=0
+        endif
+      enddo
+      stat = NF_ROUTINE (DH%NCID,NF_GLOBAL,Element,ARGS)
+      deallocate(Buffer, STAT=stat2)
+      if(stat2/= 0) then
+        Status = WRF_ERR_FATAL_DEALLOCATION_ERR  
+        write(msg,*) &
+'Fatal DEALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( FATAL , msg)
+        return
+      endif
+#else
+      stat = NF_ROUTINE (DH%NCID,NF_GLOBAL,Element,ARGS)
+#endif
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) &
+'NetCDF error in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__,' Element ',Element
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+    stat = NF_ENDDEF(DH%NCID)
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) &
+'NetCDF error in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__,' Element ',Element
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+  else
+    Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
+    write(msg,*) &
+'Fatal error BAD FILE STATUS in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+    call wrf_debug ( FATAL , msg)
+  endif
+ENDIF
+  return

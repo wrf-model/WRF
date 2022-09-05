@@ -124,22 +124,6 @@
    model_config_rec % wrf_hydro = 0
 #endif
 
-#if (NMM_CORE == 1) && (NMM_NEST == 1)
-!-----------------------------------------------------------------------
-! Ensure that minimum NMM corral distances are supplied for all domains.
-!-----------------------------------------------------------------------
-   do i=1,model_config_rec%max_dom
-      if(model_config_rec%corral_x(i)<5) then
-         call wrf_message("Corral X distance must be at least 5 due to intermediate domain halos.")
-         model_config_rec%corral_x(i)=5
-      endif
-      if(model_config_rec%corral_y(i)<5) then
-         call wrf_message("Corral Y distance must be at least 5 due to intermediate domain halos.")
-         model_config_rec%corral_y(i)=5
-      endif
-    enddo
-#endif
-
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
 ! AFWA diagnostics require each domain is treated the same. If
@@ -340,6 +324,18 @@
          count_fatal_error = count_fatal_error + 1
       END IF
 
+!-----------------------------------------------------------------------
+! Check that multi_perturb and adptive time setp are not both activated
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+      IF ((model_config_rec%multi_perturb(i) == 1) .and. model_config_rec%use_adaptive_time_step) then
+            wrf_err_message = '--- ERROR: multi_perturb and adpative time step are not compatible.'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that SMS-3DTKE scheme (km_opt=5) Must work with diff_opt=2
@@ -402,6 +398,53 @@
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Fix km_opt or sf_sfclay_physics in namelist.input.'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+
+!-----------------------------------------------------------------------
+! Check that LES PBL is only paired with acceptable other PBL options.
+! Currently, problems occur with any CG PBL option that has a packaged 
+! scalar component: MYNN2, MYNN3, EEPS. This test is also if a user 
+! chooses to not run a PBL scheme on a finer domain, but use a PBL 
+! parameterized scheme on a coarser domain (obviously, just for testing 
+! purposes).
+!-----------------------------------------------------------------------
+      exists = .FALSE.
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % bl_pbl_physics(i) .EQ. LESscheme ) THEN
+            exists = .TRUE.
+         END IF
+      END DO
+      IF ( ( exists ) .AND. &
+           ( ( model_config_rec % bl_pbl_physics(1) .EQ. MYNNPBLSCHEME2 ) .OR. &
+             ( model_config_rec % bl_pbl_physics(1) .EQ. MYNNPBLSCHEME3 ) .OR. &
+             ( model_config_rec % bl_pbl_physics(1) .EQ. EEPSSCHEME     ) ) ) THEN
+         WRITE(wrf_err_message,fmt='(a,i2)') '--- ERROR: LES PBL on fine grid does not work with CG PBL option ',model_config_rec % bl_pbl_physics(1)
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '           Fix bl_pbl_physics in namelist.input: choose a CG PBL option without any scalar components'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         wrf_err_message = '           Alternatively, remove all of the packaged variables from the CG PBL selection'
+         CALL wrf_message ( TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF 
+
+
+!-----------------------------------------------------------------------
+! Check that if the user has requested to use the shallow water surface
+! roughness drag option, then the only surface layer scheme permitted 
+! to be used is the revised MM5 MO option.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % shalwater_z0(i)   .NE. 0               ) .AND. &
+              ( model_config_rec % sf_sfclay_physics(i) .NE. sfclayrevscheme ) ) THEN
+            wrf_err_message = '--- ERROR: Shallow water surface roughness only works with sfclay_physics = 1'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           Fix shalwater_z0 or sf_sfclay_physics in namelist.input.'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
          END IF
       ENDDO
@@ -574,8 +617,19 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If couple_farms is true, swint_opt must be 2
+!-----------------------------------------------------------------------
+      IF ( model_config_rec%couple_farms .AND. model_config_rec%swint_opt /= 2 ) THEN
+         wrf_err_message = '--- ERROR: Options couple_farms = T requires swint_opt  = 2'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Change either one in namelist.input and rerun the model'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! For ARW users, a request for CU=4 (SAS) should be switched to option
-! CU = 95. The option CU = 4 is a scaleaware scheme used by NMM.
+! CU = 95.
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
@@ -613,6 +667,35 @@
 # endif
 
 !-----------------------------------------------------------------------
+! With CMAQ coupling, if the option "direct_sw_feedback" is activated,
+! then the only SW radiation scheme set up to support this is RRTMG.
+!-----------------------------------------------------------------------
+# if ( WRF_CMAQ == 1 ) 
+      cmaq : DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % direct_sw_feedback ) .AND. &
+              ( model_config_rec % wrf_cmaq_option .EQ. 1 ) .AND. &
+              ( model_config_rec % ra_sw_physics(i) .NE. rrtmg_swscheme ) ) THEN
+            wrf_err_message = '--- ERROR: With CMAQ coupling, "direct_sw_feedback=T" requires RRTMG SW'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+            EXIT cmaq
+         END IF
+      ENDDO cmaq
+# else
+      cmaq : DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( ( model_config_rec % direct_sw_feedback ) .OR. & 
+              ( model_config_rec % wrf_cmaq_option .EQ. 1 ) ) THEN
+            wrf_err_message = '--- ERROR: The option "direct_sw_feedback=T" and "wrf_cmaq_option==1" require CMAQ coupling'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+            EXIT cmaq
+         END IF
+      ENDDO cmaq
+# endif
+
+!-----------------------------------------------------------------------
 ! Print a warning message for not using a combination of radiation and microphysics from Goddard
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
@@ -630,27 +713,6 @@
          END IF
       ENDDO
 
-#endif
-
-!-----------------------------------------------------------------------
-! Check that some microphysics is not allowed for WRF-NMM run
-!-----------------------------------------------------------------------
-#if (NMM_CORE == 1) || (HWRF == 1)
-      DO i = 1, model_config_rec % max_dom
-         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec % mp_physics(i) == nuwrf4icescheme .OR. &
-              model_config_rec % mp_physics(i) == nssl_2mom .OR. &
-              model_config_rec % mp_physics(i) == nssl_2momccn .OR. &
-              model_config_rec % mp_physics(i) == nssl_1mom .OR. &
-              model_config_rec % mp_physics(i) == nssl_1momlfo .OR. &
-              model_config_rec % mp_physics(i) == nssl_2momg ) THEN
-            wrf_err_message = '--- ERROR: Chosen microphysics scheme cannot run with WRF-NMM '
-            CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '--- Fix mp_physics in namelist.input '
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-         END IF
-      ENDDO
 #endif
 
 !-----------------------------------------------------------------------
@@ -867,6 +929,45 @@
 #endif
 
 !-----------------------------------------------------------------------
+! Climate GHG from an input file requires coordinated pairing of
+! LW and SW schemes, and restricts which schemes are eligible.
+! Only radiation schemes CAM, RRTM, RRTMG, RRTMG_fast may be used.
+! CAM LW and CAM SW must be used together.
+! RRTM, RRTMG, RRTMG_fast LW and SW may be wildly mixed and matched 
+! together.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % ghg_input .EQ. 1 ) THEN
+         oops = 0
+         DO i = 1, model_config_rec % max_dom
+            IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+            IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. CAMLWSCHEME          )   .AND. &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. CAMSWSCHEME          ) ) .OR.  &
+               ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMSCHEME           )   .OR.  &
+                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME       )   .OR.  &
+                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST  ) ) .AND. &
+                 ( ( model_config_rec % ra_sw_physics(i) .EQ. SWRADSCHEME          )   .OR.  &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME       )   .OR.  &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST  ) ) ) ) THEN
+               ! This is OK, no way would a negation have been understandable!
+            ELSE
+               oops = oops + 1
+            END IF
+         ENDDO
+
+         IF ( oops .GT. 0 ) THEN
+            wrf_err_message = '--- ERROR: ghg_input available only for these radiation schemes: CAM, RRTM, RRTMG, RRTMG_fast'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           And the LW and SW schemes must be reasonably paired together:'  
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           OK = CAM LW with CAM SW'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '           OK = RRTM, RRTMG LW or SW, RRTMG_fast LW or SW may be mixed'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+         END IF
+      END IF
+
+!-----------------------------------------------------------------------
 ! If fractional_seaice = 0, and tice2tsk_if2cold = .true, nothing will happen
 !-----------------------------------------------------------------------
 
@@ -962,24 +1063,6 @@
       END IF
 
 
-#endif
-
-#if (NMM_CORE == 1) || (HWRF == 1)
-!-----------------------------------------------------------------------
-!           Check that NOAH-MP LSM is not allowed for WRF-NMM run
-!-----------------------------------------------------------------------
-      DO i = 1, model_config_rec % max_dom
-         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
-            WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
-            CALL wrf_message ( TRIM ( wrf_err_message ) )
-            WRITE(wrf_err_message, '("              does not work with NMM ")')
-            CALL wrf_message ( TRIM ( wrf_err_message ) )
-            WRITE(wrf_err_message, '("Select a different LSM scheme ")')
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-         END IF
-      END DO
 #endif
 
 !-----------------------------------------------------------------------
@@ -1228,15 +1311,6 @@
       END IF
    END IF
 
-#elif( NMM_CORE == 1 )
-!----------------------------------------------------------------------------
-! If NMM core and trajectories are on then halt.
-!----------------------------------------------------------------------------
-   IF ( model_config_rec%traj_opt /= 0 ) THEN
-         wrf_err_message = 'Trajectories not supported in NMM core '
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-   END IF
 #endif
 
 #if (EM_CORE == 1)
@@ -1381,6 +1455,63 @@
             wrf_err_message = '--- ERROR: If sst_update /= 0, one of the auxinput4_interval settings must be /= 0'
             CALL wrf_debug ( 0, TRIM(wrf_err_message) )
             wrf_err_message = '--- Set auxinput4_interval_s to the same value as interval_seconds (usually a pretty good guess).'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      END IF
+
+!-----------------------------------------------------------------------
+! If qna_update = 0, set io_form_auxinput17 to 0 so WRF will not try to
+! input the data; auxinput_interval must also be 0
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%qna_update .EQ. 0 ) THEN
+         model_config_rec%io_form_auxinput17 = 0
+         DO i = 1, model_config_rec % max_dom
+            wrf_err_message = '--- NOTE: qna_update is 0, ' // &
+                  'setting io_form_auxinput17 = 0 and auxinput17_interval = 0 for all domains'
+            CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
+            model_config_rec%auxinput17_interval(i)   = 0
+            model_config_rec%auxinput17_interval_y(i) = 0
+            model_config_rec%auxinput17_interval_d(i) = 0
+            model_config_rec%auxinput17_interval_h(i) = 0
+            model_config_rec%auxinput17_interval_m(i) = 0
+            model_config_rec%auxinput17_interval_s(i) = 0
+         ENDDO
+      ELSE
+         IF ( model_config_rec%io_form_auxinput17 .EQ. 0 ) THEN
+            wrf_err_message = '--- ERROR: If qna_update /= 0, io_form_auxinput17 must be /= 0'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Set io_form_auxinput17 in the time_control namelist (probably to 2).'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      END IF
+
+!-----------------------------------------------------------------------
+! If qna_update = 1, we need to make sure that two nml items are set:
+!   1. io_form_auxinput17 = 2 (only for one domain)
+!   2. auxinput17_interval = NON-ZERO (just check most coarse domain)
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%qna_update .EQ. 1 ) THEN
+         IF ( model_config_rec%io_form_auxinput17 .EQ. 0 ) THEN
+            wrf_err_message = '--- ERROR: If qna_update /= 0, io_form_auxinput17 must be /= 0'
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            wrf_err_message = '--- Set io_form_auxinput17 in the time_control namelist (probably to 2).'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+
+         IF ( ( model_config_rec%auxinput17_interval(1)   .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_y(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_d(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_h(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_m(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput17_interval_s(1) .EQ. 0 ) ) THEN
+            wrf_err_message = '--- ERROR: If qna_update /= 0, one of the auxinput17_interval settings must be /= 0'
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            wrf_err_message = '--- Set auxinput17_interval_s to the same value as interval_seconds (usually a pretty good guess).'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
          END IF
@@ -1654,6 +1785,31 @@
          wrf_err_message = 'Need MYNN PBL for icloud_bl = 1, resetting to 0'
          CALL wrf_debug ( 1, wrf_err_message )
       END IF
+
+#if (WRF_CHEM == 1)
+!-----------------------------------------------------------------------
+! Make sure phot_blcld is only used when icloud_bl==1 and MYNN is chosen.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%phot_blcld(i) ) THEN
+           IF ( ( model_config_rec%icloud_bl .eq. 1 ) .AND.  &
+                ( ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 ) .OR. &
+                  ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) ) ) THEN
+                !CORRECTLY CONFIGURED
+           ELSE
+              oops = oops + 1
+           END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: Need MYNN PBL and icloud_bl = 1 for phot_blcld = .true.'
+         CALL wrf_message(wrf_err_message)
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
 
 !-----------------------------------------------------------------------
 !  We need to know if any of the cumulus schemes are active. This
@@ -2306,7 +2462,8 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
-            IF ( model_config_rec%use_aero_icbc .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
+            IF ( (model_config_rec%use_aero_icbc .OR. model_config_rec%use_rap_aero_icbc) &
+                                      .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
                 model_config_rec%scalar_pblmix(i) = 1
                 oops = oops + 1
             END IF
@@ -2335,6 +2492,68 @@
          wrf_err_message = '--- WARNING: MYNN is set to mix scalars, turning off scalar_pblmix'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
+!  Set aer_init_opt for Thompson-MP-Aero (mp_physics=28)
+!-----------------------------------------------------------------------
+     DO i = 1, model_config_rec % max_dom
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+         IF ( model_config_rec%use_aero_icbc ) THEN
+           model_config_rec%aer_init_opt = 1
+         ELSE IF ( model_config_rec%use_rap_aero_icbc ) THEN
+           model_config_rec%aer_init_opt = 2
+         END IF
+       END IF
+     END DO
+
+!-----------------------------------------------------------------------
+!  Check if qna_update=0 when aer_init_opt>0 for Thompson-MP-Aero (mp_physics=28)
+!-----------------------------------------------------------------------
+     DO i = 1, model_config_rec % max_dom
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+         IF ( model_config_rec%aer_init_opt .GT. 0 .and. model_config_rec%qna_update .EQ. 0 ) THEN
+           wrf_err_message = '--- ERROR: Time-varying sfc aerosol emissions not set for mp_physics=28 '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           wrf_err_message = '--- ERROR: Please set qna_update=1 and control through auxinput17 options '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           count_fatal_error = count_fatal_error + 1
+         END IF
+       END IF
+     END DO
+
+!-----------------------------------------------------------------------
+!  Set aer_fire_emit_opt for Thompson-MP-Aero (mp_physics=28)
+!-----------------------------------------------------------------------
+     DO i = 1, model_config_rec % max_dom
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .AND. model_config_rec%wif_fire_emit) THEN
+         IF ( model_config_rec%aer_init_opt .EQ. 2) THEN
+           IF ( model_config_rec%wif_input_opt .EQ. 1 ) THEN
+             model_config_rec%aer_fire_emit_opt = 1
+           ELSE IF ( model_config_rec%wif_input_opt .EQ. 2 ) THEN
+             model_config_rec%aer_fire_emit_opt = 2
+           END IF
+         ELSE IF ( model_config_rec%aer_init_opt .EQ. 0 .OR. model_config_rec%aer_init_opt .EQ. 1) THEN
+           wrf_err_message = '--- ERROR: wif_fire_emit=.true. but selected aerosol source does not contain fire emissions '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           wrf_err_message = '--- ERROR: Please use first guess aerosol source with fire emissions and set use_rap_aero_icbc=.true. '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           count_fatal_error = count_fatal_error + 1
+         END IF
+       END IF
+     END DO
+
+!-----------------------------------------------------------------------
+!  Set warning message if wif_fire_inj for Thompson-MP-Aero (mp_physics=28)
+!  is turned on when no PBL scheme is active
+!-----------------------------------------------------------------------
+     DO i = 1, model_config_rec % max_dom
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .AND. model_config_rec%wif_fire_emit) THEN
+         IF ( model_config_rec%bl_pbl_physics(i) .EQ. 0  ) THEN
+           wrf_err_message = '--- WARNING: PBL scheme not active but wif_fire_inj=1 for mp_physics=28 '
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         END IF
+       END IF
+     END DO
 
 !-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.
@@ -3054,7 +3273,7 @@
 
       END IF     
       
-#if ( (NMM_CORE != 1) && (DA_CORE != 1) )
+#if (DA_CORE != 1)
 !-----------------------------------------------------------------------
 ! How big to allocate random seed arrays.
 !-----------------------------------------------------------------------
@@ -3207,7 +3426,7 @@
 ! sf_surface_physics
 !-----------------------------------------------------------------------
 
-#if ((EM_CORE == 1) || (NMM_CORE == 1))
+#if (EM_CORE == 1)
       IF      (   model_config_rec % sf_surface_physics(1) .EQ. NOLSMSCHEME  ) THEN
          model_config_rec % num_soil_layers = 5
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SLABSCHEME   ) THEN
@@ -3228,17 +3447,11 @@
          model_config_rec % num_soil_layers = 2
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME    ) THEN
          model_config_rec % num_soil_layers = 10
-#if (EM_CORE == 1)
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CTSMSCHEME    ) THEN
          ! Using 4 for the sake of the sea ice scheme
          model_config_rec % num_soil_layers = 4
-#endif
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SSIBSCHEME   ) THEN
          model_config_rec % num_soil_layers = 3
-#if (NMM_CORE == 1)
-      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. GFDLSLAB     ) THEN
-         model_config_rec % num_soil_layers = 4
-#endif
       ELSE
          CALL wrf_debug       ( 0 , '--- ERROR: Unknown sf_surface_physics has no associated number of soil levels' )
          WRITE (wrf_err_message, FMT='(A,I6)') '--- ERROR: sf_surface_physics = ' , model_config_rec % sf_surface_physics(1)

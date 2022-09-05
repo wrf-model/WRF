@@ -51,6 +51,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    ! Variables for Conjugate Gradient preconditioning
    real                              :: precon(1:cv_size)      ! cv copy.
    real                              :: g_total, g_partial, jo_partial                          
+   integer                           :: nv_precon
    integer                           :: i, ii, nv, nn, istart, iend
    integer, allocatable              ::  sz(:)
 
@@ -62,22 +63,6 @@ subroutine da_minimise_cg(grid, config_flags,            &
    !-------------------------------------------------------------------------
    ! [1.0] Initialization:
    !-------------------------------------------------------------------------
-   allocate (sz(be%ncv_mz-2))
-   sz(1) = be%cv%size1
-   sz(2) = be%cv%size2
-   sz(3) = be%cv%size3
-   sz(4) = be%cv%size4
-   sz(5) = be%cv%size5
-   if ( be%ncv_mz > 10 ) then
-      sz(6)  = be%cv%size6
-      sz(7)  = be%cv%size7
-      sz(8)  = be%cv%size8
-      sz(9)  = be%cv%size9
-      sz(10) = be%cv%size10
-   end if
-   if ( be%ncv_mz == 8 .or. be%ncv_mz == 13 ) then
-      sz(be%ncv_mz-2) = be%cv%size11i
-   end if
 
    jp_start   = be % cv % size_jb + be % cv % size_je + 1
    jp_end     = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
@@ -102,20 +87,46 @@ subroutine da_minimise_cg(grid, config_flags,            &
    if (precondition_cg) then
       g_total = da_dot(cv_size,ghat,ghat)
 
+      !cv_mz: v1, v2, v3, v4, v5, [v6, v7, v8, v9, v10], [v11], [alpha_cv, ne]
+      if ( be%ne > 0 ) then
+         nv_precon = be%ncv_mz - 1
+      else
+         nv_precon = be%ncv_mz - 2
+      end if
+      allocate (sz(nv_precon))
+      sz(1) = be%cv%size1
+      sz(2) = be%cv%size2
+      sz(3) = be%cv%size3
+      sz(4) = be%cv%size4
+      sz(5) = be%cv%size5
+      if ( be%ncv_mz > 10 ) then
+         sz(6)  = be%cv%size6
+         sz(7)  = be%cv%size7
+         sz(8)  = be%cv%size8
+         sz(9)  = be%cv%size9
+         sz(10) = be%cv%size10
+      end if
+      if ( be%ncv_mz == 8 .or. be%ncv_mz == 13 ) then ! has cv_w
+         sz(be%ncv_mz-2) = be%cv%size11i
+      end if
+      if ( be%ne > 0 ) then
+         sz(nv_precon) = be%cv%size_alphac
+      end if
+
       iend    = 0
-      do nv = 1, (be%ncv_mz - 2)
+      do nv = 1, nv_precon
          nn = sz(nv) / be%cv_mz(nv)
          do ii = 1, be%cv_mz(nv)
             istart     = iend + 1
             iend       = istart + nn - 1
             g_partial  = da_dot(nn, ghat(istart:iend), ghat(istart:iend))
-            jo_partial = j0_total / SUM(be%cv_mz(1:(be%ncv_mz-2)))
-            precon(istart:iend)=  1 / &
-               (1 + precondition_factor*(g_partial/g_total)/(jo_partial/j0_total))
+            jo_partial = j0_total / SUM(be%cv_mz(1:nv_precon))
+            precon(istart:iend)=  1.0 / &
+               (1.0 + precondition_factor*(g_partial/g_total)/(jo_partial/j0_total))
          end do
       end do
+      deallocate(sz)
    end if
-   deallocate(sz)
 
    phat  = - precon * ghat
 
@@ -168,7 +179,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
     ! Orthonormalize new gradient (using modified Gramm-Schmidt algorithm)
       if (orthonorm_gradient) then
          do i = iter-1, 0, -1
-            gdot = da_dot_cv(cv_size, ghat, qhat(i)%values, grid, be%cv_mz, be%ncv_mz &
+            gdot = da_dot_cv(cv_size, precon*ghat, qhat(i)%values, grid, be%cv_mz, be%ncv_mz &
 #if (WRF_CHEM == 1)
                ,be%cv_mz_chemic &
 #endif

@@ -43,7 +43,16 @@ use module_state_description, only : num_chemic_surf, num_chem, &
       p_chem_ic_so4_a01, p_chem_ic_so4_a02, p_chem_ic_so4_a03, p_chem_ic_so4_a04, p_chem_ic_no3_a01, p_chem_ic_no3_a02, p_chem_ic_no3_a03, p_chem_ic_no3_a04,&
       p_chem_ic_nh4_a01, p_chem_ic_nh4_a02, p_chem_ic_nh4_a03, p_chem_ic_nh4_a04, p_chem_ic_cl_a01, p_chem_ic_cl_a02, p_chem_ic_cl_a03, p_chem_ic_cl_a04, &
       p_chem_ic_na_a01, p_chem_ic_na_a02, p_chem_ic_na_a03, p_chem_ic_na_a04, p_chem_ic_oin_a01, p_chem_ic_oin_a02, p_chem_ic_oin_a03, p_chem_ic_oin_a04, &
-      p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co
+      p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co, &
+      p_chem_ic_so4aj,  p_chem_ic_so4ai,  p_chem_ic_nh4aj,  p_chem_ic_nh4ai,  &   ! aerosols in racm_soa_vbs_da
+      p_chem_ic_no3aj,  p_chem_ic_no3ai,  p_chem_ic_naaj,   p_chem_ic_naai,   &
+      p_chem_ic_asoa1j, p_chem_ic_asoa1i, p_chem_ic_asoa2j, p_chem_ic_asoa2i, &
+      p_chem_ic_asoa3j, p_chem_ic_asoa3i, p_chem_ic_asoa4j, p_chem_ic_asoa4i, &
+      p_chem_ic_bsoa1j, p_chem_ic_bsoa1i, p_chem_ic_bsoa2j, p_chem_ic_bsoa2i, &
+      p_chem_ic_bsoa3j, p_chem_ic_bsoa3i, p_chem_ic_bsoa4j, p_chem_ic_bsoa4i, &
+      p_chem_ic_orgpaj, p_chem_ic_orgpai, p_chem_ic_ecj,    p_chem_ic_eci,    &
+      p_chem_ic_p25j,   p_chem_ic_p25i,   p_chem_ic_antha,  p_chem_ic_seas,   &
+      p_chem_ic_claj,   p_chem_ic_clai,   p_chem_ic_soila
 #endif
 
 use da_define_structures, only : iv_type, y_type, jo_type, maxmin_type, &

@@ -77,21 +77,10 @@ subroutine da_setup_background_errors(grid, be)
    be % v11% mz = 0
 
 #if (WRF_CHEM == 1)
-   num_cv_3d_basic = 0
-   num_cv_3d_extra = 0
-   num_cv_2d = 0
 
    if (num_chem >= PARAM_FIRST_SCALAR) then
-!      allocate (be%v12 (num_chem) )
-!      do ic = 1, num_chem
-!         be % v12(ic) % mz = 0
-!      end do
       allocate (be%cv%sizechemic (num_chem) )
    end if
-
-   be % ncv_mz_chemic  = num_cv_3d_basic + num_cv_3d_extra + num_cv_2d
-   allocate ( be%cv_mz_chemic(1:be%ncv_mz_chemic) )
-   be%cv_mz_chemic(:) = 0 ! initialize
 
 #endif
 

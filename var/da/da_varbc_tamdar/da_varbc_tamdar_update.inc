@@ -48,7 +48,7 @@
              if (iv%varbc_tamdar%nobs(iphase,iflt) > 0 .and. iv%varbc_tamdar%ifuse(iphase,iflt) > 0) then
                  do ipred = 1, npred
                     varbc_param_tl(ipred,iphase,iflt) = &
-                              SUM( cv(iv%varbc_tamdar%index(ipred,iphase,iflt)) * &
+                              SUM( cv(iv%varbc_tamdar%index(1:npred,iphase,iflt)) * &
                                    iv%varbc_tamdar%vtox(ipred,1:npred,iphase,iflt) )
                  end do
              end if

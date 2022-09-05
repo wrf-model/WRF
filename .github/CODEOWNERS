@@ -74,7 +74,6 @@ README.md				@wrf-model/global_owner
 #	Dynamics
 
 /dyn_em/				@wrf-model/arw_dev
-/dyn_nmm/				@wrf-model/hwrf_dev
 
 #       WRF-Hydro
 
@@ -101,7 +100,6 @@ README.md				@wrf-model/global_owner
 #	Test directories
 
 /test/em_*				@wrf-model/arw_dev
-/test/nmm_*				@wrf-model/hwrf_dev
 /test/em_fire/				@wrf-model/fire
 
 #	Executable directory

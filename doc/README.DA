@@ -22,6 +22,132 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 4 source code release.
 ======================================
 
+V4.4 Release Notes :
+-------------------
+
+Version 4.4 was released on April 26, 2022.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  - New features:
+  ----------------
+    - New capability for assimilating GPM GMI radiance data, contributed by Dr. Dongmei Xu at 
+      the Nanjing University of Information Science & Technology.
+      Shen, F., D. Xu, H. Li, J. Min, and R. Liu，2021: Assimilation of GPM Microwave Imager Radiance data with
+       the WRF Hybrid 3DEnVar System for the Prediction of Typhoon Chan-hom (2015), Atmospheric Research. 251, 105422.
+
+    - New option for surface aerosol data assimilation with the MADE-VBS aerosol scheme. The ~doc/README.DA_chem
+      file provides a description for all chemical/aerosol DA options currently available.
+      Ha, Soyoung, 2022: Implementation of aerosol data assimilation in WRFDA (V4.0.3) for WRF-Chem (V3.9.1)
+        using the MADE/VBS scheme. Geosci. Model Dev., 15, 1769–1788.
+
+    - Ingest NCEP's satwnd.bufr to assimilate more AMVs that are not included in NCEP's prepbufr file.
+      The "use_satwnd_bufr" namelist parameter default is true.
+
+  - Updated features:
+  -------------------
+    - Allow to set thinning mesh differently for different conventional observations through a new namelist
+      parameter "thin_conv_opt(num_ob_indexes)". Also reduced memory use for thinning conventional observations.
+
+    - WRFDA gpsref code has been restructured to move QC steps in da_get_innov_vector_gpsref.inc to a separate
+      subroutine in a new file da_qc_gpsref.inc. New namelist variables are added to have more flexibility for
+      testing gpsref QC impact. Several issues with gpsref diagnostic output have been fixed and qcstat info
+      for gpsref is now in new qcstat_gpsref_xx.
+
+    - Bug fixes and enhancements for applications related to offline VarBC (use_background_errors=false), 
+      3DEns-FGAT (num_fgat_time>0 and ensdim_alpha>0 and je_factor=1.0), precondition_cg=true and
+      orthonorm_gradient=true when ensdim_alpha>0, full-ensemble mode (ensdim_alpha>0 and je_factor=1.0).
+
+    - Enable the assimilation of metop-c AMSU-A and MHS radiances with updated VARBC.in and "radiance info" files.
+
+  - Bug fixes:
+  ------------
+    - For direct assimilation of radar reflectivity, remove the use of "qthres" in the forward operator, which can
+      cause an unrealistic low bound of computed reflectivity. Also simplify the quality control to keep data with
+      both observed and background reflectivity >=rfmin (a namelist parameter).
+
+    - Fixed a bug in calculating TAMDAR aircraft temperature bias correction.
+
+    - Fixed memory leaks and runtime crashes due to the missing specification for time info inside chemical DA..
+
+V4.3 Release Notes :
+-------------------
+
+Version 4.3 was released on May 10, 2021.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  New features:
+  --------------
+    - New capability for Multi-Resolution Incremental 4DVar (MRI-4DVar).
+      Liu, Z., J. Ban, J.-S, Hong, and Y.-H. Kuo, 2020: Multi-resolution incremental 
+        4D-Var for WRF: Implementation and application at convective scale, 
+        Q. J. R. Meteorol. Soc., 146, 3661-3674.
+
+    - New capability for assimilating surface pm2.5, pm10, O3, CO, NO2, SO2 using 3DVar.
+      Sun, W., Liu, Z., Chen, D., Zhao, P., and Chen, M., 2020: Development and application
+      of the WRFDA-Chem three-dimensional variational (3DVAR) system: aiming to improve air 
+      quality forecasting and diagnose model deficiencies, Atmos. Chem. Phys., 20, 9311-9329.
+
+  Updated features:
+  -----------------
+    - WRFDA gen_be_v3 is updated for cv_options=5 and ensemble applications.
+       Please see var/gen_be_v3/README.gen_be_v3.
+
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-4.3.html for a full list of updates
+
+V4.2 Release Notes :
+-------------------
+
+Version 4.2 was released on April 23, 2020.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  New features:
+  ---------------
+    - New capability for directly assimilating radar reflectivity using a new observation 
+        operator and its TL/AD considering snow and graupel.
+      Wang, S. and Z. Liu, 2019: A radar reflectivity operator with ice-phase hydrometeors 
+        for variational data assimilation (version 1.0) and its evaluation with real radar data, 
+        Geosci. Model Dev., 12, 4031–4051.
+
+    - New capability for variational bias correction of TAMDAR T observations.
+      The bias correction is applied based upon aircraft's IDs and phases (descent/ascent/cruise). 
+        To turn on this function, set "use_varbc_tamdar = true" in namelist (\wrfvar4).
+      Gao, F., Z. Liu, J. Ma, A. N. Jacobs, P. P. Childs, and H. Wang, 2019: Variational Bias 
+        Correction of TAMDAR Temperature Observations in the WRF Data Assimilation System. 
+        Monthly Weather Review. 147. 10.1175/MWR-D-18-0025.1.
+
+    - New channel-based cloud detection scheme for Infrared sensors based on the Particle Filter.
+      This is now the default option for IR cloud detection (use_clddet=2).
+      Xu D., T. Auligné, G. Descombes, and C. Snyder, 2016: A method for retrieving clouds with 
+        satellite infrared radiances using the particle filter. Geosci. Model Dev., 9, 3919–3932.
+
+    - New capability for an IR-only cloud detection scheme for AHI radiance data assimilation.
+      To turn this option on, set use_clddet_zz=true.
+      Wu, Y., Z. Liu, and D. Li, 2020, Improving forecasts of a record-breaking rainstorm in Guangzhou 
+        by assimilating every 10-min AHI radiances with WRF 4DVAR. Atmospheric Research, 239, 104912.
+
+      Zhuge, X., Zou, X., 2016. Test of a modified infrared-only ABI cloud mask algorithm for AHI 
+        radiance observations. J. Appl. Meteorol. Climatol. 55 (11), 2529–2546.
+
+    - New stand-alone gen_be_v3. See var/gen_be_v3/README.gen_be_v3 for more info.
+
+  Updated features:
+  ------------------
+    - Improved analysis_type="RANDOMCV". Now multiple perturbed output can be obtained with one WRFDA run,      set new namelist "n_randomcv" to the desired number of ensemble.
+
+    - For EnVar DA applications, logical "alpha_vertloc" namelist switch is replaced by new integer 
+      option "alpha_vertloc_opt". See var/README.namelist.
+
+    - New DA ep_format option to read in ensemble perturbation (ep) generated by existing gen_be_ep2 
+      and new gen_be_v3 utilities.
+
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-4.2.html for a full list of updates
+
 V4.1 Release Notes :
 -------------------
 

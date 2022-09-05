@@ -2,6 +2,9 @@
 !
 
 MODULE module_pbl_driver
+  real, private, parameter :: QCLOUD_MIN = 0.0
+  real, private, parameter :: QVAPOR_MIN = 0.0
+  real, private, parameter :: QKE_MIN = 1.e-4
 CONTAINS
 
 !------------------------------------------------------------------
@@ -11,10 +14,6 @@ CONTAINS
                  ,bldtacttime                                      & 
                  ,rublten,rvblten,rthblten                         &
                  ,tsk,xland,znt                                    &
-#if (HWRF==1)
-                 ,msang,scurx,scury,iwavecpl,lcurr_sf              &
-                 ,mznt                                             &
-#endif
                  ,ht                                               &   
                  ,ust,pblh,hfx,qfx,grdflx,hpbl_hold                &
                  ,u_phy,v_phy,w,th_phy,rho                         &
@@ -60,18 +59,6 @@ CONTAINS
               ! EEPS
                  ,pep,pek_adv,pep_adv                              &
                  ,restart,cycling                                  &
-#if (NMM_CORE==1)
-                 ,DISHEAT                                          &
-                 ,HPBL2D, EVAP2D, HEAT2D, RC2D                     &   !Kwon FOR SHAL. CON.
-#if ( HWRF == 1 )
-                 ,VAR_RIC                                          &   !Kwon for Variable Ric
-#endif
-                 ,DKU3D,DKT3D                                      &
-#endif
-#if (HWRF==1)
-                 ,coef_ric_l,coef_ric_s,gfs_alpha                  &
-                 ,pert_pbl, ens_random_seed, ens_pblamp            &
-#endif
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -103,6 +90,7 @@ CONTAINS
              !  Optional aerosol
                  ,qnwfa_curr,f_qnwfa                               &
                  ,qnifa_curr,f_qnifa                               &
+                 ,qnbca_curr,f_qnbca                               &
              !  Optional moisture tracer flags
                  ,f_qv,f_qc,f_qr                                   &
                  ,f_qi,f_qs,f_qg                                   &
@@ -113,9 +101,7 @@ CONTAINS
                ,sf_bep,vl_bep                              &
                ,sf_sfclay_physics,sf_urban_physics         &
                ,tke_pbl,el_pbl                             &
-#if (NMM_CORE != 1)
-               ,wu_tur,wv_tur,wt_tur,wq_tur &
-#endif
+               ,wu_tur,wv_tur,wt_tur,wq_tur                &
 ! variables  for GBM PBL
                ,exch_tke, rthraten                         &
                ,a_e_bep,b_e_bep,dlg_bep,dl_u_bep           &
@@ -124,6 +110,14 @@ CONTAINS
                ,frac_up,rc_mf                                      & 
 ! Wind Turbine Parameterizations
                ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id                 &
+! WRF-Solar EPS
+                 ,multi_perturb, pert_mynn                         &
+                 ,perts_qvapor                                     &
+                 ,perts_qcloud                                     &
+                 ,perts_th                                         &
+                 ,perts_tke                                        &
+                 ,pert_mynn_qv, pert_mynn_qc, pert_mynn_t          &
+                 ,pert_mynn_qke                                    &
 ! variables required for camuwpbl scheme
                , z_at_w,cldfra_old_mp,cldfra, rthratenlw             &
                , tauresx2d,tauresy2d                                 &
@@ -160,7 +154,7 @@ CONTAINS
                    FITCHSCHEME,SHINHONGSCHEME,                       &
                    TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,                  &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar,& !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
-                   p_qnwfa,p_qnifa
+                   p_qnwfa,p_qnifa,p_qnbca
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : SURFDRAGSCHEME
 #endif
@@ -184,9 +178,6 @@ CONTAINS
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
-#if (HWRF==1)
-   USE module_bl_gfsedmf, only: bl_gfsedmf
-#endif
    USE module_bl_acm
    USE module_bl_gwdo
    USE module_bl_gwdo_gsl
@@ -421,26 +412,6 @@ CONTAINS
    LOGICAL,      INTENT(IN   )    ::   warm_rain
    LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMUWPBL
    LOGICAL,    OPTIONAL,   INTENT(IN   )    ::   restart,cycling !used by mynn
-#if (HWRF==1)
-   INTEGER,      INTENT(IN   )    ::   iwavecpl
-   LOGICAL,      INTENT(IN   )    ::   lcurr_sf
-#endif
-#if (NMM_CORE==1)
-   LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
-   REAL, DIMENSION( ims:ime , jms:jme ),                         &
-                   INTENT(OUT) ::  HPBL2D, EVAP2D, HEAT2D, RC2D      !Kwon for Shallow Convection
-
-   REAL, DIMENSION( ims:ime , jms:jme , kms:kme ),                         &
-                   INTENT(OUT) ::  DKU3D,DKT3D                      !Kwon duffusivity
-#endif
-#if ( HWRF == 1 )
-   REAL,       INTENT(IN)         ::   VAR_RIC                       !Kwon for variable Ric
-   integer,intent(in) :: ens_random_seed
-   real,intent(in) :: ens_pblamp
-   logical,intent(in) :: pert_pbl
-   REAL,       INTENT(IN)         ::   gfs_alpha,coef_ric_l,coef_ric_s
-#endif
-
 
    REAL,       DIMENSION( kms:kme ),                              &
                OPTIONAL, INTENT(IN   )    ::               znu,   &
@@ -471,8 +442,15 @@ CONTAINS
                                                            u_phy, &
                                                            v_phy, &
                                                             dz8w, &
-                                                               z, &
-                                                          th_phy
+                                                               z
+  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) :: th_phy
+
+! WRF-Solar EPS
+   integer, intent (in) :: multi_perturb
+   LOGICAL, intent (in) :: pert_mynn
+   real, intent (in) :: pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_tke
 
 !1D variables required for CAMUWPBL scheme
    REAL , DIMENSION( kms:kme ) ,                                      &
@@ -524,12 +502,6 @@ CONTAINS
                                                               BR, &
                                                                F, &
                                                          CHKLOWQ
-#if (HWRF==1)
-   REAL,       DIMENSION( ims:ime , jms:jme ),                    &
-               INTENT(IN   )    ::                         SCURX, &
-                                                           SCURY, &
-                                                           MSANG
-#endif
 
 !
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
@@ -539,9 +511,6 @@ CONTAINS
                                                              HFX, &
                                                              QFX, &
                                                              ZNT, &
-#if (HWRF==1)
-                                                            MZNT, &  ! KWON FOR MOMENTUM Z0
-#endif
                                                             QSFC, &
                                                             AKHS, &
                                                             AKMS, &
@@ -569,11 +538,9 @@ CONTAINS
                                                         RTHBLTEN, &
                                            EXCH_H,EXCH_M,TKE_PBL, &
                                                         RTHRATEN  ! for GBM PBL scheme
-#if (NMM_CORE != 1)
  REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(OUT)    ::                       WU_TUR,WV_TUR,WT_TUR,WQ_TUR
 !
-#endif
 
 !MYNN
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
@@ -616,7 +583,7 @@ CONTAINS
         &    INTENT(OUT) ::                               maxMF
 
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
-           INTENT(INOUT) ::         qnwfa_curr,qnifa_curr
+           INTENT(INOUT) ::         qnwfa_curr,qnifa_curr,qnbca_curr
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) ::  exch_tke      ! for GBM PBL scheme
@@ -708,7 +675,8 @@ CONTAINS
                                                      ,f_qnc     & !used in CAMUWPBL
                                                      ,f_qni     & !used in CAMUWPBL
                                                      ,f_qnwfa   &
-                                                     ,f_qnifa
+                                                     ,f_qnifa   &
+                                                     ,f_qnbca
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
@@ -721,7 +689,7 @@ CONTAINS
                      ,rqiblten,rqsblten,rqgblten,rqniblten         !rqniblten  used in CAMUWPBL
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::   & !local: added for MYNN
-                      rqncblten,rqnwfablten,rqnifablten
+                      rqncblten,rqnwfablten,rqnifablten,rqnbcablten
 
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                OPTIONAL                                         , &
@@ -771,6 +739,7 @@ CONTAINS
    REAL, OPTIONAL,   DIMENSION( ims:ime , jms:jme ),                    &  !mchen
                INTENT(IN   )    ::                        CTOPO, &
                                                           CTOPO2
+   real, dimension (:, :, :), allocatable :: qke_tmp
 
 ! Variables and Diagnostic for QNSE and EDKF JP
    INTEGER, INTENT(IN) ::  mfshconv
@@ -835,7 +804,7 @@ CONTAINS
    LOGICAL :: flag_bep
    LOGICAL :: flag_myjsfc
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg, &
-              flag_qnc,flag_qni, flag_qnwfa, flag_qnifa
+              flag_qnc,flag_qni, flag_qnwfa, flag_qnifa, flag_qnbca
    CHARACTER*256 :: message
    REAL    :: next_bl_time
    LOGICAL :: run_param , doing_adapt_dt , decided
@@ -856,12 +825,10 @@ CONTAINS
 !
 !!!!!!!if using BEP set flag_bep to true
     SELECT CASE(sf_urban_physics)
-#if (NMM_CORE != 1)
       CASE (BEPSCHEME)
         flag_bep=.true.
       CASE (BEP_BEMSCHEME)
         flag_bep=.true.
-#endif
       CASE DEFAULT
         flag_bep=.false.
     END SELECT
@@ -883,6 +850,7 @@ CONTAINS
   flag_qni = .FALSE. ; IF ( PRESENT( F_QNI ) ) flag_qni = F_QNI !Used in CAMUWPBL
   flag_qnwfa = .FALSE. ; IF ( PRESENT( F_QNWFA ) ) flag_qnwfa = F_QNWFA
   flag_qnifa = .FALSE. ; IF ( PRESENT( F_QNIFA ) ) flag_qnifa = F_QNIFA
+  flag_qnbca = .FALSE. ; IF ( PRESENT( F_QNBCA ) ) flag_qnbca = F_QNBCA
 
   if (bl_pbl_physics .eq. 0) return
 
@@ -996,14 +964,9 @@ CONTAINS
       DTBL=DT*STEPBL
    endif
 
-#if (NMM_CORE != 1)
 !!Alberto. If idiff=1, then compute the tendencies at the end in the routine diff3d
 !!Alberto. If idiff=0, then compute the tendencies in each PBL routine (standard version).
        idiff=0
-#else
-! Added this else clause so that idiff is always initialized regardless of which core we are using
-       idiff=0
-#endif
 
    IF ( idiff .EQ. 1 ) THEN
      ALLOCATE (a_u(ims:ime,kms:kme,jms:jme))       ! Implicit component for the momemtum in X-direction
@@ -1074,7 +1037,6 @@ CONTAINS
            ENDDO
       ENDIF
 
-#if (NMM_CORE != 1)
       IF ( idiff.eq.1 ) THEN
 !Alberto
 ! Here we should put a switch: 
@@ -1152,8 +1114,6 @@ CONTAINS
 ! this can be added to b_t, b_q, or b_u, b_v.
 !!!!!!!!!!!!!!!!!!!           
  
-#endif 
-      
    ENDDO
    !$OMP END PARALLEL DO
 !
@@ -1426,21 +1386,6 @@ CONTAINS
               ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
               ,WSPD=wspd,BR=br                                      &
               ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
-#if (NMM_CORE==1)
-              ,DISHEAT=DISHEAT                                      &
-#endif
-#if ( HWRF == 1 )
-              ,ALPHA=gfs_alpha                                      &
-              ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &   !Kwon add FOR SHAL. CON.
-              ,VAR_RIC=VAR_RIC                                      &   !Kwon for variable Ric
-              ,U10=U10,V10=V10,ZNT=ZNT,MZNT=MZNT,RC2D=RC2D          &   !Kwon for variable Ric
-              ,DKU3D=DKU3D,DKT3D=DKT3D                              &
-              ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s,xland=xland    &
-              ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY,IWAVECPL=IWAVECPL,LCURR_SF=LCURR_SF &
-              ,pert_pbl=pert_pbl                                    &
-              ,ens_random_seed=ens_random_seed                      &
-              ,ens_pblamp=ens_pblamp                                &
-#endif
               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
@@ -1461,60 +1406,6 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call GFS pbl')
            ENDIF
 
-#if (HWRF==1)
-      CASE (GFSEDMFSCHEME)
-           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
-                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
-                                                        .TRUE.  ) THEN
-             CALL wrf_debug(100,'in GFS')
-             CALL bl_gfsedmf(                                       &
-               U3D=u_phytmp,V3D=v_phytmp                            &
-              ,TH3D=th_phy,T3D=t_phy                                &
-              ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
-              ,P3D=p_phy,PI3D=pi_phy                                &
-              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
-              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
-              ,RQIBLTEN=rqiblten                                    &
-              ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg                  &
-              ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
-              ,DZ8W=dz8w,z=z,PSFC=psfc                              &
-              ,UST=ust,PBL=pblh,PSIM=psim,PSIH=psih                 &
-              ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
-              ,WSPD=wspd,BR=br                                      &
-              ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
-              ,DISHEAT=DISHEAT                                      &
-              ,RTHRATEN=RTHRATEN                    &
-              ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &
-              ,U10=u10,V10=v10,ZNT=mznt                             &
-              ,DKU3D=dku3d,DKT3D=dkt3d                             &
-              ,VAR_RIC=VAR_RIC                                      &
-              ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s          &
-              ,ALPHA=gfs_alpha                                      &
-              ,xland=xland                                          &
-#if (HWRF==1)
-              ,pert_pbl=pert_pbl                                    &
-              ,ens_random_seed=ens_random_seed                      &
-              ,ens_pblamp=ens_pblamp                                &
-#endif
-              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
-              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
-              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                                                                    )
-           ELSE
-               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
-                 'present: '//                                      &
-                 'qv_curr, '//                                      &
-                 'qc_curr, '//                                      &
-                 'rqvblten, '//                                     &
-                 'rqcblten = ',                                     &
-                  PRESENT( qv_curr ) ,                              &
-                  PRESENT( qc_curr ) ,                              &
-                  PRESENT( rqvblten ) ,                             &
-                  PRESENT( rqcblten )
-               CALL wrf_debug(0,message)
-               CALL wrf_error_fatal('Lack arguments to call GFS edmf pbl')
-           ENDIF
-#endif
       CASE (MYJPBLSCHEME)
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1729,6 +1620,15 @@ CONTAINS
                  initflag=0
               ENDIF
               
+              if (pert_mynn .and. multi_perturb == 1) then
+                allocate (qke_tmp(its:ite, kts:kte, jts:jte))
+
+                call Add_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
+                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
+                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                  ims, ime, jms, jme, kms, kme, kts, kte)
+              end if
+
               CALL  mynn_bl_driver(&
                    &initflag=initflag,restart=restart,cycling=cycling,   &
                    &grav_settling=grav_settling,                         &
@@ -1736,7 +1636,7 @@ CONTAINS
                    &u=u_phy,v=v_phy,w=w,th=th_phy,qv=qv_curr,            &
                    &qc=qc_curr,qi=qi_curr,                               &
                    &qnc=qnc_curr,qni=qni_curr,                           &
-                   &QNWFA=qnwfa_curr,QNIFA=qnifa_curr,                   &
+                   &QNWFA=qnwfa_curr,QNIFA=qnifa_curr,QNBCA=qnbca_curr,  &
                    &p=p_phy,exner=pi_phy,rho=rho,T3D=t_phy,              &
                    &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,        &
                    &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,   &
@@ -1753,6 +1653,7 @@ CONTAINS
                    &RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten,&
                    &RQNCBLTEN=rqncblten,RQNIBLTEN=rqniblten,             &
                    &RQNWFABLTEN=rqnwfablten,RQNIFABLTEN=rqnifablten,     &
+                   &RQNBCABLTEN=rqnbcablten,                             &
                    &EXCH_H=exch_h,EXCH_M=exch_m,                         &
                    &pblh=pblh,KPBL=KPBL                                  &
                    &,el_pbl=el_pbl                                       &
@@ -1782,10 +1683,20 @@ CONTAINS
                    &,FLAG_QC=flag_qc,FLAG_QI=flag_qi                     &
                    &,FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni                 &
                    &,FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa         &
+                   &,FLAG_QNBCA=flag_qnbca                               &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    )
+
+              if (pert_mynn .and. multi_perturb == 1) then
+                call Remove_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
+                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
+                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                  ims, ime, jms, jme, kms, kme, kts, kte)
+
+                  deallocate (qke_tmp)
+              end if
            ELSE
                WRITE ( message , FMT = '(A,20(L1,1X))' )            &
                  'present: '//                                      &
@@ -1876,6 +1787,16 @@ CONTAINS
                 enddo
                 enddo
               ENDIF
+              IF (PRESENT( qnbca_curr ) .AND. Flag_qnbca) THEN
+                !print*,"Updating qnbca after mynn-edmf",P_QNBCA
+                DO j=j_start(ij),j_end(ij)
+                DO k=kts,kte
+                DO i=i_start(ij),i_end(ij)
+                   scalar_tend(i,k,j,P_QNBCA)=RQNBCABLTEN(i,k,j)
+                enddo
+                enddo
+                enddo
+              ENDIF
            ENDIF
 
         CASE (EEPSSCHEME)
@@ -1934,7 +1855,7 @@ CONTAINS
               ,RHO=rho,QV_CURR=qv_curr,QC_CURR=qc_curr,HFX=hfx                 &
               ,QFX=qfx,USTAR=ust,CP=cp,G=g                                     &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten               &
-              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                            &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                             &
               ,TKE=tke_pbl,DLK=el_pbl,WU=wu_tur,WV=wv_tur,WT=wt_tur,WQ=wq_tur  &
               ,EXCH_H=exch_h,EXCH_M=exch_m,PBLH=pblh                           &
               ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep                 &
@@ -2186,8 +2107,6 @@ CONTAINS
 !JOE-END
 #endif
 
-#if (NMM_CORE != 1)
-
      IF (idiff.eq.1) THEN
 
 !Alberto: here we call the general routine to solve the diffusion
@@ -2205,8 +2124,8 @@ CONTAINS
               ,U=u_phy,V=v_phy,RHO=rho,EXCH_H=exch_h                  &
               ,EXCH_M=exch_m                                          &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten      &
-             ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                    &
-              ,WU=wu_tur,WV=wv_tur,WT=wt_tur,WQ=wq_tur                    &
+              ,WU=wu_tur,WV=wv_tur,WT=wt_tur,WQ=wq_tur                &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                    &
               ,A_U=a_u,A_V=a_v,A_T=a_t,A_Q=a_q        &
               ,B_U=b_u,B_V=b_v,B_T=b_t,B_Q=b_q        &
               ,SF=sf,VL=vl            &
@@ -2247,14 +2166,115 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
           ENDIF
 
-#endif
-      
    ENDDO
    !$OMP END PARALLEL DO
 
    ENDIF
 
    END SUBROUTINE pbl_driver
+
+   subroutine  Add_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
+                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
+                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                  ims, ime, jms, jme, kms, kme, kts, kte)
+
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte
+     logical, optional, intent(in) :: bl_mynn_tkeadvect
+     real, intent(in) :: pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_tke
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: th_phy, qke, qv_curr, qc_curr
+     real, optional, dimension (ims:ime, kms:kme, jms:jme), intent(inout) :: qke_adv
+     real, dimension (its:ite, kts:kte, jts:jte), intent(out) :: qke_tmp
+
+     integer :: i, j, k
+
+
+     do j = jts, jte
+       do k = kts, kte 
+         do i = its, ite 
+           qc_curr(i, k, j) = max (QCLOUD_MIN, (1.0 + perts_qcloud(i, k, j) * pert_mynn_qc) * qc_curr(i, k, j))
+           qv_curr(i, k, j) = max (QVAPOR_MIN, (1.0 + perts_qvapor(i, k, j) * pert_mynn_qv) * qv_curr(i, k, j))
+           th_phy(i, k, j) = (1.0 + perts_th(i, k, j) * pert_mynn_t) * th_phy(i, k, j)
+         end do
+       end do
+     end do
+
+     if (bl_mynn_tkeadvect) then
+       do j = jts, jte
+         do k = kts, kte
+           do i = its, ite
+             qke_tmp(i, k, j) = qke_adv(i, k, j)
+             qke_adv(i, k, j) = max (QKE_MIN, (1.0 + perts_tke(i, k, j) * pert_mynn_qke) * qke_adv(i, k, j))
+           end do
+         end do
+       end do
+     else
+       do j = jts, jte
+         do k = kts, kte
+           do i = its, ite
+             qke_tmp(i, k, j) = qke(i, k, j)
+             qke(i, k, j) = max (QKE_MIN, (1.0 + perts_tke(i, k, j) * pert_mynn_qke) * qke(i, k, j))
+           end do
+         end do
+       end do
+     end if
+
+   end subroutine  Add_multi_perturb_pbl_perturbations
+
+   subroutine  Remove_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
+                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
+                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                  ims, ime, jms, jme, kms, kme, kts, kte)
+
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte
+     logical, optional, intent(in) :: bl_mynn_tkeadvect
+     real, intent(in) :: pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_tke
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: th_phy, qke, qv_curr, qc_curr
+     real, optional, dimension (ims:ime, kms:kme, jms:jme), intent(inout) :: qke_adv
+     real, dimension (its:ite, kts:kte, jts:jte), intent(in) :: qke_tmp
+
+     integer :: i, j, k
+
+
+     do j = jts, jte
+       do k = kts, kte
+         do i = its, ite
+           qc_curr(i, k, j) = max (QCLOUD_MIN, qc_curr(i, k, j) / (1.0 + perts_qcloud(i, k, j) * pert_mynn_qc))
+           qv_curr(i, k, j) = max (QVAPOR_MIN, qv_curr(i, k, j) / (1.0 + perts_qvapor(i, k, j) * pert_mynn_qv))
+           th_phy(i, k, j) = th_phy(i, k, j) / (1.0 + perts_th(i, k, j) * pert_mynn_t)
+         end do
+       end do
+     end do
+
+     if (bl_mynn_tkeadvect) then
+       do j = jts, jte
+         do k = kts, kte
+           do i = its, ite
+             qke_adv(i, k, j) = max (QKE_MIN, qke_adv(i, k, j) - perts_tke(i, k, j) * pert_mynn_qke * qke_tmp(i, k, j))
+             qke(i, k, j) = qke_adv(i, k, j)
+           end do
+         end do
+       end do
+     else
+       do j = jts, jte
+         do k = kts, kte
+           do i = its, ite
+             qke(i, k, j) = max (QKE_MIN, qke(i, k, j) - perts_tke(i, k, j) * pert_mynn_qke * qke_tmp(i, k, j))
+           end do
+         end do
+       end do
+     end if
+
+   end subroutine  Remove_multi_perturb_pbl_perturbations
 
 !=============================================================================
           SUBROUTINE diff3d(DT,CP,DZ,TH ,QV,QC,T,U,V,RHO                              &

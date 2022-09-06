@@ -15375,8 +15375,8 @@ integer,external :: omp_get_thread_num
 !  Ozone
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          OPTIONAL                                               , &
-         INTENT(IN   ) :: O33D
-   INTEGER, OPTIONAL, INTENT(IN ) :: o3input
+         INTENT(INOUT) :: O33D
+   INTEGER, INTENT(IN ) :: o3input
 
       real, parameter :: thresh=1.e-9
       real slope
@@ -15674,7 +15674,7 @@ integer,external :: omp_get_thread_num
             QV1D(K)=max(0.,QV1D(K))
          ENDDO
 
-         IF (PRESENT(O33D)) THEN
+         IF (o3input.eq.2) THEN
             DO K=kts,kte
                O31D(K)=O33D(I,K,J)
             ENDDO
@@ -16015,20 +16015,16 @@ integer,external :: omp_get_thread_num
          call inirad (o3mmr,plev(icol,:),kts,nlay-1)
 
 ! Steven Cavallo: Changed to nlayers from kte+1
-        if(present(o33d)) then
+        if(o3input.eq.2) then
          do k = kts, nlayers
             o3vmr(icol,k) = o3mmr(k) * amdo
-            IF ( PRESENT( O33D ) ) THEN
-            if(o3input .eq. 2)then
-               if(k.le.kte)then
-                 o3vmr(icol,k) = o31d(k)
-               else
+            if(k.le.kte)then
+               o3vmr(icol,k) = o31d(k)
+            else
 ! apply shifted climatology profile above model top
-                 o3vmr(icol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo
-                 if(o3vmr(icol,k) .le. 0.)o3vmr(icol,k) = o3mmr(k)*amdo
-               endif
+               o3vmr(icol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo
+               if(o3vmr(icol,k) .le. 0.)o3vmr(icol,k) = o3mmr(k)*amdo
             endif
-            ENDIF
          enddo
         else
          do k = kts, nlayers

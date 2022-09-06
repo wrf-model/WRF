@@ -10214,9 +10214,8 @@ CONTAINS
 
 !  Ozone
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         OPTIONAL                                               , &
-         INTENT(IN   ) :: O33D
-   INTEGER, OPTIONAL, INTENT(IN ) :: o3input
+         INTENT(INOUT) :: O33D
+   INTEGER, INTENT(IN ) :: o3input
 !  EC aerosol: no_src = naerec = 6
    INTEGER,           INTENT(IN ) :: no_src
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, 1:no_src )       , &
@@ -10598,7 +10597,7 @@ CONTAINS
             QV1D(K)=max(0.,QV1D(K))
          ENDDO
 
-         IF (PRESENT(O33D)) THEN
+         IF (o3input.eq.2) THEN
             DO K=kts,kte
                O31D(K)=O33D(I,K,J)
             ENDDO
@@ -10919,24 +10918,21 @@ CONTAINS
 ! Get ozone profile including amount in extra layer above model top
          call inirad (o3mmr,plev,kts,kte)
 
-        if(present(o33d)) then
+        if(o3input.eq.2) then
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
-            IF ( PRESENT( O33D ) ) THEN
-            if(o3input .eq. 2)then
-               if(k.le.kte)then
-                 o3vmr(ncol,k) = o31d(k)
-               else
+            if(k.le.kte)then
+               o3vmr(ncol,k) = o31d(k)
+            else
 ! apply shifted climatology profile above model top
-                 o3vmr(ncol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo
-                 if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
-               endif
+               o3vmr(ncol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo
+               if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
             endif
-            ENDIF
          enddo
         else
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
+            o31d(k) = o3vmr(ncol,k)
          enddo
         endif
 

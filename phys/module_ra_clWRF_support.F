@@ -168,7 +168,13 @@ CONTAINS
                 CALL wrf_message( message) 
              ENDIF
 
-             IF (istatus /= -1) THEN
+             IF (istatus == -1) THEN
+                WRITE(message,*) "Normal ending of CAMtr_volume_mixing_ratio file"
+                CALL wrf_message( message)
+             ELSE IF (istatus == -4001) THEN ! Cray CCE compiler throws -4001 rather than -1
+                WRITE(message,*) "Normal ending of CAMtr_volume_mixing_ratio file"
+                CALL wrf_message( message)
+             ELSE ! if not -1 or -4001, then abort
                 WRITE(message,*) "   Not normal ending of CAMtr_volume_mixing_ratio file"
                 call wrf_error_fatal( message) 
              END IF

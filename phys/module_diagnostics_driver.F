@@ -1149,6 +1149,7 @@ CONTAINS
            acfrzc=grid%acfrzc    ,   qfrzc=grid%qfrzcxy                   ,&
           acmeltc=grid%acmeltc   ,  qmeltc=grid%qmeltcxy                  ,&
           acsnbot=grid%acsnbot   ,  qsnbot=grid%qsnbotxy                  ,&
+         acsnmelt=grid%acsnmelt  ,   qmelt=grid%qmeltxy                   ,&
         acponding=grid%acponding , ponding=grid%pondingxy                 ,&
         acrainlsm=grid%acrainlsm , rainlsm=grid%rainlsm                   ,&
         acsnowlsm=grid%acsnowlsm , snowlsm=grid%snowlsm                   ,&

@@ -639,11 +639,18 @@ module_shallowcu_driver.o: \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o
 
+module_cu_gf_deep.o: \
+                module_cu_gf_ctrans.o
 module_cu_gf_wrfdrv.o: \
 		module_cu_gf_deep.o \
 		module_cu_gf_sh.o
 module_cu_gf_sh.o: \
 		module_cu_gf_deep.o
+module_cu_gf_ctrans.o: \
+                ../chem/module_chem_utilities.o \
+                ../share/module_HLaw.o \
+                ../share/module_ctrans_aqchem.o \
+                ../frame/module_state_description.o 
 module_cumulus_driver.o: \
 		module_cu_kf.o \
 		module_cu_g3.o \

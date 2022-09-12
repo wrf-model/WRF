@@ -6,6 +6,9 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
    ! History: 03/2019  Creation (Wei Sun)
    !
    !          06/2021  Add maximum thresholds for each species (Soyoung Ha)
+   ! Caution: chem_cv_options == 10 or 20 assumes all six species in [ug/m3]
+   !          chem_cv_options == 108 assumes pm25 and pm10 in [ug/m3], but
+   !                                         so2, no2, o3, co in [ppmv]
    !-------------------------------------------------------------------------
 
    implicit none
@@ -14,9 +17,9 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
    character(len=*),  intent(in)    :: filename
    type(domain),     intent(in)     :: grid     ! first guess state.
 
-   ! Maximum thresholds for observation values - treat as missing above these values
+   ! chem_cv_options == 108: Maximum thresholds for observation values - treat as missing above these values
    ! FIXME: We may want to put these maximum thresholds in namelist later.
-   real, dimension(6)  :: max_pm = (/500.,999.,2.0, 2.0, 2.0, 50./)
+   real, dimension(6)  :: max_pm = (/500.,999.,2.0, 2.0, 2.0, 50./)  ! [ug/m3, ug/m3, ppmv, ppmv, ppmv, ppmv]
    real                         :: pm25, pm10, so2, no2, o3, co
 
    character (len =   6)        :: SiteID

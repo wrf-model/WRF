@@ -440,6 +440,7 @@ contains
    real    ::  prnumfac,bfx0,hfx0,qfx0,delb,dux,dvx,                           &
                dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,     &
                prfac,prfac2,phim8z
+   real    ::  cenlfrac
 !
    integer,  dimension( its:ite )            ::                          kpbl
    real,     dimension( its:ite )            ::                           hol
@@ -972,7 +973,13 @@ contains
          rigs(i) = rigsmax
        endif
        rigs(i)     = max(min(rigs(i), rigsmax),rimin)
-       enlfrac2(i) = max(min(wm3/wstar3(i)/(1.+cpent/rigs(i)),entfmax), entfmin)
+       if((rigs(i).gt.0) .and. (abs(rigs(i)+cpent) .le. 1.e-6))then
+          cenlfrac = entfmax
+       else
+          cenlfrac = rigs(i)/(rigs(i)+cpent)
+       endif
+       cenlfrac = min(cenlfrac,entfmax)
+       enlfrac2(i) = max(wm3/wstar3(i)*cenlfrac, entfmin)
        enlfrac2(i) = enlfrac2(i)*enlfrac
      endif
    enddo

@@ -29,9 +29,9 @@ SBM (Options 30 and 32):
 	termvels.asc
 
 P3 (Options 50, 51, and 52)
-	p3_lookupTable_1.dat-2momI_v5.1.6_oldDimax
-	p3_lookupTable_1.dat-3momI_v5.1.6.gz
-	p3_lookupTable_2.dat-4.1
+	p3_lookupTable_1.dat-3momI_v5.1.7
+	p3_lookupTable_1.dat-5.3-2momI
+	p3_lookupTable_2.dat-2momI_v5.2.3
 
 Jensen (Option 55):
 	ishmael-gamma-tab.bin
@@ -93,7 +93,7 @@ Radiation
 RRTM (ra_lw_physics Option 1): 
 	RRTM_DATA
 	RRTM_DATA_DBL
-        (if compiled with -DCLWRFGHG, rename/link one of the following to CAMtr_volume_mixing_ratio)
+        (Since V4.4, using these files becomes a runtime option. *.SSP245 is linked by default)
 	        CAMtr_volume_mixing_ratio.A1B
         	CAMtr_volume_mixing_ratio.A2
         	CAMtr_volume_mixing_ratio.RCP4.5
@@ -116,7 +116,7 @@ CAM (Option 3):
         	ozone.formatted
         	ozone_lat.formatted
         	ozone_plev.formatted
-        (if compiled with -DCLWRFGHG, rename/link one of the following to CAMtr_volume_mixing_ratio)
+        (Since V4.4, using these files becomes a runtime option. *.SSP245 is linked by default)
         	CAMtr_volume_mixing_ratio.A1B
         	CAMtr_volume_mixing_ratio.A2
         	CAMtr_volume_mixing_ratio.RCP4.5
@@ -141,7 +141,7 @@ RRTMG (Option 4,24,14):
         	ozone.formatted
         	ozone_lat.formatted
         	ozone_plev.formatted
-        (if compiled with -DCLWRFGHG, rename/link one of the following to CAMtr_volume_mixing_ratio)
+        (Since V4.4, using these files becomes a runtime option. *.SSP245 is linked by default)
         	CAMtr_volume_mixing_ratio.A1B
         	CAMtr_volume_mixing_ratio.A2
         	CAMtr_volume_mixing_ratio.RCP4.5

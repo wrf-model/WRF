@@ -4,6 +4,7 @@
 module module_reservoir_utilities
     use netcdf
     use module_hydro_stop, only: HYDRO_stop
+    use iso_fortran_env, only: int64
     implicit none
 
 #ifndef NCEP_WCOSS
@@ -168,10 +169,10 @@ contains
     subroutine read_reservoir_type(reservoir_parameter_file, lake_parameter_lake_ids, number_of_lake_parameter_lakes, &
         reservoir_types)
         character(len=*), intent(in) :: reservoir_parameter_file
-        integer, dimension(:), intent(in) :: lake_parameter_lake_ids
+        integer(kind=int64), dimension(:), intent(in) :: lake_parameter_lake_ids
         integer, intent(in) :: number_of_lake_parameter_lakes
         integer, dimension(:), intent(inout) :: reservoir_types
-        integer, allocatable, dimension(:) :: reservoir_parameter_lake_ids
+        integer(kind=int64), allocatable, dimension(:) :: reservoir_parameter_lake_ids
 
         integer, dimension(nf90_max_var_dims) :: dim_ids
         integer :: ncid, var_id, lake_index, number_of_reservoirs, number_of_reservoir_types
@@ -358,7 +359,8 @@ contains
     ! Read lake id from reservoir parameter file and determine the lake_id_index, which
     ! is the index of the particular reservoir's values in all of the parameter arrays.
     subroutine read_netcdf_lake_id(ncid, lake_number, netcdf_array_name, reservoir_parameter_file, lake_id_index)
-        integer, intent(in) :: ncid, lake_number
+        integer, intent(in)          :: ncid
+        integer(kind=int64), intent(in)  :: lake_number
         character(len=*), intent(in) :: netcdf_array_name
         character(len=*), intent(in) :: reservoir_parameter_file
         integer, intent(out) :: lake_id_index
@@ -624,7 +626,7 @@ contains
         lake_number_string_trimmed = ADJUSTL(trim(lake_number_string))
         filename_string = "hybrid_logs_"//ADJUSTL(trim(lake_number_string_trimmed))//".csv"
 
-        open (113, file=filename_string, status="unknown", access = 'append')
+        open (113, file=filename_string, status="unknown", position = 'append')
 
         write (113, "(I20, A1, I20, A1, I20, A1, I20, A1, A15, A1, I20, A1, F15.5, A1, F15.5, &
         A1, F15.15, A1, F15.5, A1, F15.5, A1, F15.5, A1, F15.5, A1, F15.5)") &
@@ -675,7 +677,7 @@ contains
         lake_number_string_trimmed = ADJUSTL(trim(lake_number_string))
         filename_string = "rfc_forecasts_logs_"//ADJUSTL(trim(lake_number_string_trimmed))//".csv"
 
-        open (113, file=filename_string, status="unknown", access = 'append')
+        open (113, file=filename_string, status="unknown", position = 'append')
 
         write (113, "(I20, A1, I20, A1, I20, A1, I20, A1, I20, A1, A5, A1, F15.5, A1, &
         F15.5, A1, F15.5, A1, F15.5)") &
@@ -721,7 +723,7 @@ contains
         lake_number_string_trimmed = ADJUSTL(trim(lake_number_string))
         filename_string = "levelpool_logs_"//ADJUSTL(trim(lake_number_string_trimmed))//".csv"
 
-        open (113, file=filename_string, status="unknown", access = 'append')
+        open (113, file=filename_string, status="unknown", position = 'append')
 
         write (113, "(F15.8, A1, F15.8, A1, F15.8)") &
         inflow, ',', water_elevation, ',', outflow

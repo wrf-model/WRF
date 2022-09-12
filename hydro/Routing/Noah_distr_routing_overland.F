@@ -30,7 +30,7 @@ subroutine OverlandRouting( &
     REAL, INTENT(IN) :: DT, DTRT_TER
     integer, INTENT(IN) :: ixrt, jxrt, rt_option
     !REAL, INTENT(out), DIMENSION(IXRT,JXRT)   :: SFCHEADSUBRT  ! moved into overland_data%control
-    real, intent(inout) :: q_sfcflx_x,q_sfcflx_y
+    real, dimension(IXRT,JXRT), intent(inout) :: q_sfcflx_x,q_sfcflx_y
 
     ! REMOVED VARIABLES
     !INTEGER, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: LAKE_MSKRT
@@ -484,7 +484,7 @@ SUBROUTINE ROUTE_OVERLAND1(dt,                                &
     INTEGER :: i,j
     REAL IXX8,IYY8
     INTEGER  IXX0,JYY0,index, SO8RT_D(XX,YY,3)
-    REAL  tmp_gsize,hsum
+    REAL :: tmp_gsize, hsum, tmp_gsize_arr(9)
 
     !!! Initialize variables
 
@@ -507,7 +507,8 @@ SUBROUTINE ROUTE_OVERLAND1(dt,                                &
                 sfx = so8RT(i,j,index)-(h(IXX0,JYY0)-h(i,j))*0.001*tmp_gsize
                 hmax = h(i,j)*0.001  !Specify max head for mass flux limit...
                 if(sfx .lt. 1E-20) then
-                    call GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,so8rt,gsize(i,j,:),sfx,XX,YY)
+                    tmp_gsize_arr = gsize(i,j,:)
+                    call GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,so8rt,tmp_gsize_arr,sfx,XX,YY)
                 end if
                 if(IXX0 > 0) then  ! do the rest if the lowest grid can be found.
                     if(sfx .lt. 1E-20) then
@@ -876,4 +877,3 @@ SUBROUTINE ROUTE_OVERLAND2 (dt,                               &
 
     !DJG ----------------------------------------------------------------------
 end subroutine ROUTE_OVERLAND2
-

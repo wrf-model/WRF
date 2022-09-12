@@ -73,7 +73,7 @@ CONTAINS
          vprm_in,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
          xtime,tslb,wet_in,rainc,rainnc,potevp,sfcevp,lu_index,            &
          biomt_par,emit_par,ebio_co2oce,eghg_bio,                          &
-         dust_flux, seas_flux,                                             &
+         seas_flux,                                                        &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -324,7 +324,7 @@ CONTAINS
       REAL, DIMENSION(ims:ime, 8, jms:jme, num_vprm_in), INTENT(IN)     ::  vprm_in
       REAL, DIMENSION(ims:ime, 1,jms:jme, num_eghg_bio), INTENT(INOUT ) ::  eghg_bio
 
-      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT)   :: dust_flux, seas_flux
+      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT)   :: seas_flux
 ! CO2
       REAL, DIMENSION(8) :: rad_vprm,lambda_vprm,alpha_vprm,resp_vprm
 ! CH4
@@ -733,8 +733,8 @@ CONTAINS
       CASE (DUSTGOCARTAFWA)
         CALL wrf_debug(15,'AFWA modified Gocart dust emissions')
         call gocart_dust_afwa_driver(dtstep,config_flags,alt,             &
-         chem,rho_phy,smois,u10,v10,p8w,dz8w,erod,erod_dri,dustin,snowh,  &
-         isltyp,vegfra,lai_vegmask,xland,dx,g,emis_dust,                  &
+         chem,rho_phy,smois,u10,v10,dz8w,erod,erod_dri,dustin,snowh,      &
+         isltyp,vegfra,lai_vegmask,xland,g,emis_dust,                     &
          ust,znt,clayfrac,sandfrac,clayfrac_nga,sandfrac_nga,afwa_dustloft,&!EDH
          tot_dust,tot_edust,vis_dust,dust_alpha,dust_gamma,dust_smtune,dust_ustune, &
          ids,ide, jds,jde, kds,kde,                                        &
@@ -1585,9 +1585,9 @@ CONTAINS
             config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
             emis_ant,ebu,config_flags%biomass_burn_opt,                  &
             config_flags%dust_opt,                                       &
-            ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                      &
+            ktau,u_phy,v_phy,rho_phy,g,dx,erod,                          &
             dust_emiss_active, seasalt_emiss_active,                     &
-            dust_flux, seas_flux,                                        &
+            seas_flux,emis_dust,                                         &
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )

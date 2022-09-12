@@ -17,8 +17,7 @@ subroutine da_final_write_obs_gas_sfc(it,iv)
 
    !local
    character(len=4) :: typestr
-   typestr = 'chem'
-   if (chem_cv_options >= 108) typestr = 'gas'
+   typestr = 'gas'
 
    if (trace_use) call da_trace_entry("da_final_write_obs_gas_sfc")
 

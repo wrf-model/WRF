@@ -71,7 +71,6 @@ MODULE module_mp_ivanr_micro
       REAL :: ASNOW,ARAIN
       REAL :: SEAMASK
       INTEGER :: I,J,K,KFLIP
-      LOGICAL,SAVE :: lfirst=.TRUE.
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -84,7 +83,7 @@ MODULE module_mp_ivanr_micro
       ENDDO
       ENDDO
 
-      IF (lfirst) THEN
+      IF (itimestep .eq. 1) THEN
         DO j = jts,jte
         DO k = kts,kte
         DO i = its,ite
@@ -96,7 +95,6 @@ MODULE module_mp_ivanr_micro
         ENDDO
         ENDDO
         ENDDO
-        lfirst=.FALSE.
       ENDIF
 
       DO j = jts,jte

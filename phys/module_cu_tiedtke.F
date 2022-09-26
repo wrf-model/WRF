@@ -2935,7 +2935,8 @@ contains
             zzmzk = -(pgeoh(jl,ikh)-pgeoh(jl,kk))*zrg
             ztmzk = -(pgeoh(jl,ikh)-pgeoh(jl,ikt))*zrg
             arg = 3.1415*(zzmzk/ztmzk)*0.5
-            !zorgde = tan(arg)*3.1415*0.5/ztmzk
+            ! there is difference in last position with glibc 2.26 library with atan on aarch64 and x86
+            ! sensative parameter and small difference will be magnify in later computations  
             zorgde = real(tan(dble(arg))*3.1415*0.5/dble(ztmzk))
             zdprho = (paph(jl,kk+1)-paph(jl,kk))*(zrg*zrrho)
             zodetr(jl,kk) = min(zorgde,1.e-3)*pmfu(jl,kk+1)*zdprho

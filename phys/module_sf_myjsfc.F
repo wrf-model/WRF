@@ -1088,6 +1088,7 @@ CONTAINS
 !     INTEGER :: MPI_INTEGER,MPI_MAX
 !
       REAL :: SM,X,ZETA1,ZETA2,ZRNG1,ZRNG2
+      DOUBLE PRECISION :: X2
 !
       REAL :: PIHF=3.1415926/2.,EPS=1.E-6
 !----------------------------------------------------------------------
@@ -1209,7 +1210,9 @@ CONTAINS
 !----------------------------------------------------------------------
           X=SQRT(SQRT(1.-16.*ZETA1))
 !
-          PSIM1(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
+          !PSIM1(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
+          X2 = dble(X)
+          PSIM1(K)=real(-2.d0 * log((X2+1.d0)/2.d0)-log((X2*X2+1.d0)/2.d0)+2.d0*atan(X2)-dble(PIHF))
           PSIH1(K)=-2.*LOG((X*X+1.)/2.)
 !
 !----------------------------------------------------------------------
@@ -1246,7 +1249,9 @@ CONTAINS
 !
           X=SQRT(SQRT(1.-16.*ZETA2))
 !
-          PSIM2(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
+          !PSIM2(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
+          X2 = dble(X)
+          PSIM2(K)=real(-2.d0*LOG((X2+1.d0)/2.d0)-LOG((X2*X2+1.d0)/2.d0)+2.*ATAN(X2)-dble(PIHF))
           PSIH2(K)=-2.*LOG((X*X+1.)/2.)
 !----------------------------------------------------------------------
 !***  STABLE RANGE

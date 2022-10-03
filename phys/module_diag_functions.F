@@ -500,7 +500,6 @@ CONTAINS
       INTEGER                 :: i, j, k    !~ Dummy iterator
       INTEGER                 :: lfclev     !~ Level of LFC
       INTEGER                 :: ellev      !~ Level of EL. Modified by Zhixiao.
-      INTEGER                 :: lcllev     !~ Level of LCL. Modified by Zhixiao.
       INTEGER                 :: prcl       !~ Internal parcel type indicator
       INTEGER                 :: mlev       !~ Level for ML calculation
       INTEGER                 :: lyrcnt     !~ Number of layers in mean layer
@@ -628,17 +627,6 @@ CONTAINS
       tlclK = TLCL ( tK(srclev), rh(srclev) )
       plcl  = p(srclev) * ( (tlclK/tK(srclev))**(Cp/Rd) )
       
-      !Add caculation for LCL. Modified by Zhixiao
-      lcllev = -1 !Modified by Zhixiao
-      flag=.false. !Modified by Zhixiao
-      DO k=sfc,nz !zhixiao search the layer of LCL
-         IF (p (k) <= plcl) THEN !Modified by Zhixiao
-             lcllev=k !Modified by Zhixiao
-             flag=.true. !Modified by Zhixiao
-         END IF !Modified by Zhixiao
-         IF (flag) EXIT !Modified by Zhixiao
-      END DO !Modified by Zhixiao  
-      flag=.false. !Modified by Zhixiao
       !~ Now lift the parcel
       !  -------------------
    

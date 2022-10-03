@@ -785,12 +785,12 @@ CONTAINS
             ! https://glossary.ametsoc.org/wiki/Convective_inhibition
              between LCL and EL
             IF ( p (k) <= plcl .and. p (k) > plfc) THEN !Modified by Zhixiao
-               ! CAPE is the vertically integrated positive buoyant energy between LFC and EL
-               CAPE = CAPE + MAX ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
-            END IF
-            IF ( p (k) <= plfc .and. p (k) > pel) THEN !Modified by Zhixiao
                ! CIN is the vertically integrated negative buoyant energy between LCL and LFC
                CIN  = CIN  + MIN ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
+            END IF
+            IF ( p (k) <= plfc .and. p (k) > pel) THEN !Modified by Zhixiao
+               ! CAPE is the vertically integrated positive buoyant energy between LFC and EL
+               CAPE = CAPE + MAX ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
             END IF !Modified by Zhixiao         
          END DO !Modified by Zhixiao
       END IF !Modified by Zhixiao

@@ -771,7 +771,6 @@ CONTAINS
             ! Make CAPE and CIN consistent with AMS definition
             ! https://glossary.ametsoc.org/wiki/Convective_available_potential_energy
             ! https://glossary.ametsoc.org/wiki/Convective_inhibition
-             between LCL and EL
             IF ( p (k) <= plcl .and. p (k) > plfc) THEN !Modified by Zhixiao
                ! CIN is the vertically integrated negative buoyant energy between LCL and LFC
                CIN  = CIN  + MIN ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
